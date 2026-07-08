@@ -9,6 +9,7 @@
  */
 import { useMemo } from 'react';
 import { Gauge } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   connectorBrand,
   assignedCred,
@@ -18,6 +19,7 @@ import {
 } from './matrixShared';
 
 export default function LlmOverviewMatrix({ projects, llmCreds, assign }: LlmOverviewMatrixProps) {
+  const { t } = useTranslation();
   const wired = projects.filter((p) => p.llm_tracking_credential_id);
   const pct = projects.length ? Math.round((wired.length / projects.length) * 100) : 0;
 
@@ -46,7 +48,7 @@ export default function LlmOverviewMatrix({ projects, llmCreds, assign }: LlmOve
             {wired.length}
             <span className="text-foreground/40">/{projects.length}</span>
           </span>
-          <span className="typo-caption text-foreground/60">projects instrumented</span>
+          <span className="typo-caption text-foreground/60">{t.plugins.dev_tools.llm_projects_instrumented}</span>
           <div className="ml-auto flex items-center gap-1.5">
             {tallies.map(([svc, n]) => {
               const b = connectorBrand(svc);
@@ -92,7 +94,7 @@ export default function LlmOverviewMatrix({ projects, llmCreds, assign }: LlmOve
                     className="text-[11px] text-foreground/70 shrink-0 max-w-[120px]"
                   />
                 ) : (
-                  <span className="text-[10px] uppercase tracking-wide text-status-warning shrink-0">gap</span>
+                  <span className="text-[10px] uppercase tracking-wide text-status-warning shrink-0">{t.plugins.dev_tools.llm_gap}</span>
                 )}
               </div>
               <ConnectorSocket

@@ -8,11 +8,9 @@
  *    read live from the assigned tool through the shared `llmTracingAdapters`
  *    wrapper, over a rolling 24h/7d/30d window.
  *
- * NOTE (Phase 2a): copy is intentionally in English pending the Phase-3 i18n pass
- * (this module's UI is slated for a `/prototype` visual iteration first — see the
- * feature plan). Layer 1 uses a plain control set for the same reason.
+ * All user-facing copy is i18n'd via `t.plugins.dev_tools.llm_*`.
  */
-import { useCallback, type ReactNode } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 import { BarChart3, RefreshCw, AlertCircle, Plug, Clock } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { updateProject } from '@/api/devTools/devTools';
@@ -21,6 +19,7 @@ import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/l
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { toastCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useLlmPinpoints } from './useLlmPinpoints';
 import type { LlmPinpoint, LlmWindow } from './llmTracingAdapters';
 import type { LlmOverviewMatrixProps } from './matrixShared';
@@ -37,6 +36,7 @@ const WINDOW_TABS: SegmentedTab<LlmWindow>[] = [
 // ---------------------------------------------------------------------------
 
 function AssignmentMatrix() {
+  const { t } = useTranslation();
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const { llmCreds } = useLlmPinpoints();
@@ -59,10 +59,7 @@ function AssignmentMatrix() {
     return (
       <div className="mx-4 mt-3 rounded-card border border-primary/10 bg-secondary/40 px-4 py-3 flex items-center gap-2.5">
         <Plug className="w-4 h-4 text-primary/50 shrink-0" />
-        <div className="text-[11px] text-foreground/60">
-          No Langfuse / LangSmith / Helicone / LightTrack credential in your vault yet. Add one under
-          Vault → Connectors, then assign it here.
-        </div>
+        <div className="text-[11px] text-foreground/60">{t.plugins.dev_tools.llm_no_cred}</div>
       </div>
     );
   }
@@ -74,67 +71,6 @@ function AssignmentMatrix() {
 // ---------------------------------------------------------------------------
 // Layer 2 — pinpoints table
 // ---------------------------------------------------------------------------
-
-const COLUMNS: TableColumn<LlmPinpoint>[] = [
-  {
-    key: 'useCaseName',
-    label: 'Use case',
-    width: 'minmax(160px, 1.6fr)',
-    sortable: true,
-    render: (r) =>
-      r.useCaseName ? (
-        <span className="text-foreground truncate">{r.useCaseName}</span>
-      ) : (
-        <span className="text-foreground/40 italic">unnamed</span>
-      ),
-  },
-  {
-    key: 'provider',
-    label: 'Provider',
-    width: 'minmax(90px, 0.8fr)',
-    sortable: true,
-    render: (r) => <span className="text-foreground/80">{r.provider}</span>,
-  },
-  {
-    key: 'model',
-    label: 'Model',
-    width: 'minmax(140px, 1.2fr)',
-    sortable: true,
-    render: (r) => <span className="text-foreground/80 truncate">{r.model}</span>,
-  },
-  {
-    key: 'calls',
-    label: 'Calls',
-    width: '90px',
-    align: 'right',
-    sortable: true,
-    sortFn: (a, b) => a.calls - b.calls,
-    render: (r) => <Numeric value={r.calls} />,
-  },
-  {
-    key: 'tokens',
-    label: 'Tokens',
-    width: '110px',
-    align: 'right',
-    sortable: true,
-    sortFn: (a, b) => a.inputTokens + a.outputTokens - (b.inputTokens + b.outputTokens),
-    render: (r) => <Numeric value={r.inputTokens + r.outputTokens} />,
-  },
-  {
-    key: 'cost',
-    label: 'Est. $',
-    width: '96px',
-    align: 'right',
-    sortable: true,
-    sortFn: (a, b) => a.totalCostUsd - b.totalCostUsd,
-    render: (r) => (
-      <span className="text-foreground/80">
-        ${' '}
-        <Numeric value={r.totalCostUsd} precision={r.totalCostUsd >= 1 ? 2 : 4} />
-      </span>
-    ),
-  },
-];
 
 function StateMessage({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle: string }) {
   return (
@@ -151,8 +87,74 @@ function StateMessage({ icon, title, subtitle }: { icon: ReactNode; title: strin
 // ---------------------------------------------------------------------------
 
 export default function LlmOverviewPage() {
+  const { t, tx } = useTranslation();
+  const dt = t.plugins.dev_tools;
   const data = useLlmPinpoints();
   const { activeProject, state, pinpoints, error, cred, timeWindow, setTimeWindow, reload } = data;
+
+  const columns = useMemo<TableColumn<LlmPinpoint>[]>(
+    () => [
+      {
+        key: 'useCaseName',
+        label: dt.llm_col_usecase,
+        width: 'minmax(160px, 1.6fr)',
+        sortable: true,
+        render: (r) =>
+          r.useCaseName ? (
+            <span className="text-foreground truncate">{r.useCaseName}</span>
+          ) : (
+            <span className="text-foreground/40 italic">{dt.llm_unnamed}</span>
+          ),
+      },
+      {
+        key: 'provider',
+        label: dt.llm_col_provider,
+        width: 'minmax(90px, 0.8fr)',
+        sortable: true,
+        render: (r) => <span className="text-foreground/80">{r.provider}</span>,
+      },
+      {
+        key: 'model',
+        label: dt.llm_col_model,
+        width: 'minmax(140px, 1.2fr)',
+        sortable: true,
+        render: (r) => <span className="text-foreground/80 truncate">{r.model}</span>,
+      },
+      {
+        key: 'calls',
+        label: dt.llm_col_calls,
+        width: '90px',
+        align: 'right',
+        sortable: true,
+        sortFn: (a, b) => a.calls - b.calls,
+        render: (r) => <Numeric value={r.calls} />,
+      },
+      {
+        key: 'tokens',
+        label: dt.llm_col_tokens,
+        width: '110px',
+        align: 'right',
+        sortable: true,
+        sortFn: (a, b) => a.inputTokens + a.outputTokens - (b.inputTokens + b.outputTokens),
+        render: (r) => <Numeric value={r.inputTokens + r.outputTokens} />,
+      },
+      {
+        key: 'cost',
+        label: dt.llm_col_cost,
+        width: '96px',
+        align: 'right',
+        sortable: true,
+        sortFn: (a, b) => a.totalCostUsd - b.totalCostUsd,
+        render: (r) => (
+          <span className="text-foreground/80">
+            ${' '}
+            <Numeric value={r.totalCostUsd} precision={r.totalCostUsd >= 1 ? 2 : 4} />
+          </span>
+        ),
+      },
+    ],
+    [dt],
+  );
 
   return (
     <div className="h-full w-full flex flex-col min-h-0" data-testid="llm-overview-page">
@@ -160,10 +162,8 @@ export default function LlmOverviewPage() {
       <div className="mx-4 mt-3 flex items-center gap-3">
         <BarChart3 className="w-4 h-4 text-primary/70 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <h2 className="typo-body font-semibold text-foreground">LLM Overview</h2>
-          <p className="text-[11px] text-foreground/50">
-            Where this project calls an LLM — use case, provider, model, usage and estimated cost.
-          </p>
+          <h2 className="typo-heading text-foreground">{dt.llm_title}</h2>
+          <p className="text-[11px] text-foreground/50">{dt.llm_subtitle}</p>
         </div>
         <SegmentedTabs
           tabs={WINDOW_TABS}
@@ -172,13 +172,13 @@ export default function LlmOverviewPage() {
           variant="segment"
           size="sm"
           fullWidth={false}
-          ariaLabel="Time window"
+          ariaLabel={dt.llm_aria_window}
         />
         <button
           onClick={reload}
           className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/8 focus-ring"
-          title="Refresh"
-          aria-label="Refresh"
+          title={dt.llm_refresh}
+          aria-label={dt.llm_refresh}
         >
           <RefreshCw className="w-3.5 h-3.5" />
         </button>
@@ -192,26 +192,22 @@ export default function LlmOverviewPage() {
         {!activeProject ? (
           <StateMessage
             icon={<AlertCircle className="w-8 h-8" />}
-            title="No project selected"
-            subtitle="Pick a Dev Tools project to see its LLM usage."
+            title={dt.llm_no_project_title}
+            subtitle={dt.llm_no_project_sub}
           />
         ) : state === 'empty' ? (
-          <StateMessage
-            icon={<Plug className="w-8 h-8" />}
-            title="No LLM-observability connector"
-            subtitle="Connect Langfuse, LangSmith, Helicone, or LightTrack in Vault → Connectors, then assign it to this project above."
-          />
+          <StateMessage icon={<Plug className="w-8 h-8" />} title={dt.llm_empty_title} subtitle={dt.llm_empty_sub} />
         ) : state === 'unmapped' ? (
           <StateMessage
             icon={<Plug className="w-8 h-8" />}
-            title="Not assigned to this project"
-            subtitle="Assign one of your LLM-observability connectors to this project using the matrix above."
+            title={dt.llm_unmapped_title}
+            subtitle={dt.llm_unmapped_sub}
           />
         ) : state === 'unsupported' ? (
           <StateMessage
             icon={<Clock className="w-8 h-8" />}
-            title={`Live data for ${cred?.serviceType ?? 'this tool'} is coming soon`}
-            subtitle="This connector is assigned, but its live adapter lands in a later phase. LightTrack works today."
+            title={tx(dt.llm_unsupported_title, { tool: cred?.serviceType ?? dt.llm_this_tool })}
+            subtitle={dt.llm_unsupported_sub}
           />
         ) : state === 'loading' ? (
           <div className="flex-1 flex items-center justify-center">
@@ -220,19 +216,22 @@ export default function LlmOverviewPage() {
         ) : state === 'error' ? (
           <StateMessage
             icon={<AlertCircle className="w-8 h-8 text-red-400/70" />}
-            title="Couldn't load LLM usage"
-            subtitle={error ?? 'Unknown error'}
+            title={dt.llm_error_title}
+            subtitle={error ?? dt.llm_unknown_error}
           />
         ) : pinpoints.length === 0 ? (
           <StateMessage
             icon={<BarChart3 className="w-8 h-8" />}
-            title="No LLM calls in this window"
-            subtitle={`${cred?.name ?? 'The connector'} reported no calls in the last ${timeWindow}. Widen the window or check that the tool is receiving traces.`}
+            title={dt.llm_empty_calls_title}
+            subtitle={tx(dt.llm_empty_calls_sub, {
+              name: cred?.name ?? dt.llm_the_connector,
+              window: timeWindow,
+            })}
           />
         ) : (
           <div className="flex-1 min-h-0 flex flex-col">
             <UnifiedTable
-              columns={COLUMNS}
+              columns={columns}
               data={pinpoints}
               getRowKey={(r) => `${r.useCaseName ?? '∅'}|${r.provider}|${r.model}`}
               rowHeight={40}
@@ -240,11 +239,11 @@ export default function LlmOverviewPage() {
               borderless
               defaultSortKey="cost"
               defaultSortDir="desc"
-              ariaLabel="LLM pinpoints"
+              ariaLabel={dt.llm_aria_table}
               tableId="llm-overview-pinpoints"
             />
             <div className="px-4 py-1.5 border-t border-primary/10 text-[10px] text-foreground/40">
-              Costs are token×price estimates from {cred?.serviceType ?? 'the tool'}, not billed amounts.
+              {tx(dt.llm_cost_note, { tool: cred?.serviceType ?? dt.llm_this_tool })}
             </div>
           </div>
         )}

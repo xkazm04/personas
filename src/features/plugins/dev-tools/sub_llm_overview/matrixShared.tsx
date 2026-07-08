@@ -3,6 +3,7 @@
  * brand lookup, and two reusable leaves (a brand chip + the connector picker).
  */
 import { Plug } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CONNECTOR_META } from '@/lib/connectors/connectorMeta';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -75,7 +76,7 @@ export function ConnectorSocket({
   llmCreds,
   onChange,
   testId,
-  placeholder = 'Wire a tracer…',
+  placeholder,
   className,
 }: {
   value: string | null;
@@ -85,8 +86,9 @@ export function ConnectorSocket({
   placeholder?: string;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const options: ThemedSelectOption[] = [
-    { value: '', label: 'Not wired' },
+    { value: '', label: t.plugins.dev_tools.llm_not_wired },
     ...llmCreds.map((c): ThemedSelectOption => {
       const b = connectorBrand(c.serviceType);
       return {
@@ -106,7 +108,7 @@ export function ConnectorSocket({
         onValueChange={(v) => onChange(v || null)}
         filterable
         hideSearch
-        placeholder={placeholder}
+        placeholder={placeholder ?? t.plugins.dev_tools.llm_wire_placeholder}
       />
     </span>
   );
