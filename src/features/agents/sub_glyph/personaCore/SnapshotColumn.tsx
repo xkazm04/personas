@@ -28,13 +28,13 @@ export function SnapshotColumn({ core }: { core: PersonaCore }) {
             }`}
             style={on ? { borderColor: colorWithAlpha(a.color, 0.55), background: colorWithAlpha(a.color, 0.1) } : undefined}
           >
-            {/* Avatar */}
+            {/* Avatar — the signature AI-persona head glyph, drawing in on view */}
             <span
-              className="relative shrink-0 w-12 h-12 rounded-input flex items-center justify-center overflow-hidden"
-              style={{ background: colorWithAlpha(a.color, on ? 0.18 : 0.08), boxShadow: `inset 0 0 0 1px ${colorWithAlpha(a.color, 0.25)}` }}
+              className="relative shrink-0 w-14 h-14 rounded-input flex items-center justify-center overflow-hidden"
+              style={{ background: colorWithAlpha(a.color, on ? 0.16 : 0.06), boxShadow: `inset 0 0 0 1px ${colorWithAlpha(a.color, on ? 0.4 : 0.2)}` }}
             >
               {glyph ? (
-                <MotionizedGlyph data={glyph.data} viewBox={glyph.viewBox} spread={0.8} className="w-11 h-11" />
+                <MotionizedGlyph data={glyph.data} viewBox={glyph.viewBox} spread={0.9} className="w-[54px] h-[54px]" />
               ) : (
                 <Icon className="w-5 h-5" style={{ color: a.color }} />
               )}

@@ -25,13 +25,15 @@ function parseArgs(argv) {
   }
   return a;
 }
+const rgb = (hex) => { const m = /^#([0-9a-f]{6})$/i.exec(hex); if (!m) return null; const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 // "Light" = high luminance (catches white AND light lavender/panel highlights)
 // without touching saturated neon accents (amber/cyan/violet sit well below 0.82).
-const nearWhite = (hex) => {
-  const m = /^#([0-9a-f]{6})$/i.exec(hex); if (!m) return false;
-  const n = parseInt(m[1], 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.82;
-};
+const nearWhite = (hex) => { const c = rgb(hex); return c ? (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255 > 0.82 : false; };
+// "Near-black" = all channels very dark. STRICT (< 26) so a black BACKGROUND is
+// caught but dark line-work like navy (#0D1F51, blue channel 0x51) is NOT.
+const nearBlack = (hex) => { const c = rgb(hex); return c ? Math.max(c[0], c[1], c[2]) < 26 : false; };
+// Either extreme reads as surface (white-bg or black-bg source art).
+const isSurface = (hex) => nearWhite(hex) || nearBlack(hex);
 // rough bbox from all numbers in a path (exact enough to spot the full-canvas rect)
 function roughBox(d) {
   const nums = (d.match(/-?\d*\.?\d+/g) || []).map(Number);
@@ -64,15 +66,18 @@ export function svgToGlyphData(svg, { name, order = "radial", whiteKeep = 0.1 } 
   // reordering hides colored fills behind navy. `delay` drives timing only.
   const out = [];
   for (const p of paths) {
-    const box = roughBox(p.d);
-    const coversCanvas = box.minX <= 2 && box.minY <= 2 && box.maxX >= W - 2 && box.maxY >= H - 2;
-    if (nearWhite(p.fill) && coversCanvas) continue; // drop full-canvas bg
-    // Near-white regions ABOVE `whiteKeep` area are treated as surface negative-
-    // space → recolored to `var(--background)`. Below it they're FOREGROUND details
-    // (sparks, highlights) → kept light. Lower whiteKeep (e.g. 0.02) for wireframe
-    // art where mid-size white facets should read as dark (edges-only look).
+    const raw = roughBox(p.d);
+    // Clamp to the canvas — spline control points can sit far outside it and
+    // otherwise inflate the bbox, corrupting the coversCanvas / areaFrac tests.
+    const box = { minX: Math.max(0, raw.minX), minY: Math.max(0, raw.minY), maxX: Math.min(W, raw.maxX), maxY: Math.min(H, raw.maxY) };
+    const coversCanvas = box.minX <= 4 && box.minY <= 4 && box.maxX >= W - 4 && box.maxY >= H - 4;
+    // Surface-coloured regions (white OR black) that are the bg / large negative-
+    // space are RECOLORED to `var(--background)` — NOT dropped: VTracer's stacked
+    // output relies on them painting over accents to carve line gaps (linework art),
+    // and they follow the theme for free. Small surface paths (sparks, highlights,
+    // thin holes) stay as-is. Lower `whiteKeep` (e.g. 0.02) for wireframe/lattice.
     const areaFrac = ((box.maxX - box.minX) * (box.maxY - box.minY)) / canvasArea;
-    const fill = nearWhite(p.fill) && areaFrac > whiteKeep ? "var(--background)" : p.fill;
+    const fill = isSurface(p.fill) && (coversCanvas || areaFrac > whiteKeep) ? "var(--background)" : p.fill;
     const a = anchor(p.d);
     const dist = Math.hypot(a.x - cx, a.y - cy) / maxR; // 0 (center) .. 1 (corner)
     const ang = (Math.atan2(a.y - cy, a.x - cx) + Math.PI) / (2 * Math.PI); // 0..1 clockwise

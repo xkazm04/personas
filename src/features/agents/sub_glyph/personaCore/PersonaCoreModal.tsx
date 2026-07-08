@@ -15,7 +15,7 @@ import { PersonaCoreCodex } from "./PersonaCoreCodex";
 
 export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore; isOpen: boolean; onClose: () => void }) {
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} titleId="persona-core-modal" size="6xl">
+    <BaseModal isOpen={isOpen} onClose={onClose} titleId="persona-core-modal" size="6xl" maxWidthClass="max-w-[86rem]">
       <div className="flex flex-col gap-4 p-5" data-testid="persona-core-modal">
         <div className="flex flex-col gap-0.5">
           <h2 id="persona-core-modal" className="typo-heading-lg text-foreground">Persona core</h2>

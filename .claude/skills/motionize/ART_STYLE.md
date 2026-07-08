@@ -55,6 +55,37 @@ white can vibrate); glow filters should **soften** (light surfaces don't emit).
 - **Emissive accents can breathe.** After the reveal, accent dots / orbit arcs may
   pulse or drift *slowly* (loading states), never busily.
 
+## Signature system — the Persona Head glyph
+
+The canonical way to *depict a persona/archetype* is an **abstract AI persona
+head-and-face glyph** in glowing hairline linework — one symbol per archetype,
+same construction, so a persona reads instantly and its variations feel like one
+family. This is the signature "what a Persona visually IS" tool; reuse it wherever
+an archetype/persona needs a face (mentality cards, persona headers, pickers).
+
+**Prompt template** (keep it verbatim except the bracketed bits):
+> A single abstract AI persona head-and-face glyph, centered, on a flat solid
+> **black** background. The head is a **[SILHOUETTE]** rendered in minimal glowing
+> linework — **[2–3 distinctive features]**. **[3 personality adjectives]**. Uniform
+> **[teal|violet|amber]** linework, evenly lit, no gradient falloff, no card, no
+> frame, no UI, no fog, no particles. Sharp crisp edges, high contrast, uniform
+> stroke weight, hairline outline only. Flat vector-illustration style, symmetrical,
+> 1:1 aspect ratio.
+
+- **Black background** (not white) — the tracer drops the full-canvas black and
+  `emit-glyph`'s `nearBlack` (strict `max<26`, so navy line-work survives) sends
+  interior black to `var(--background)`, leaving neon lines on the dark surface.
+- **Tight 3-colour rotation** — teal / violet / amber cycled across the set, NOT
+  each archetype's semantic colour. Uniformity is what makes them a family; the
+  card frame can still carry the semantic colour.
+- **Hairline, uniform stroke, no glow in the raster** — glow is the SVG filter
+  later. "Head silhouette + a few confident feature lines," symmetrical, 1:1.
+- Distinguish archetypes by **silhouette + feature motif**, not colour: guardian
+  helmet/brow/shield-jaw, analyst scanning-lens + grid facets, operator hub-node +
+  headset arc, craftsman faceted low-poly seams, scout swept crest + directional
+  slashes, sentinel steady sensor eye + scan line, curator archive bands + keystone,
+  shipper upward chevrons + decisive jaw, chief-of-staff crown arc + guarded eye.
+
 ## Consistency checklist
 
 - Dark surface, tight neon accent set, navy line-work. ✔
