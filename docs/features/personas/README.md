@@ -25,9 +25,10 @@ Describe surface as a **persona-core configurator**, so creation is one flow:
    Dialogue+Cinema). Type what you want; the LLM resolves the spec with
    clarifying questions. Under the intent sits the **persona-core badge**
    (`sub_glyph/personaCore/`): the slot that replaced the redundant "What" leaf
-   (the intent already IS the "what"). It opens the **Character** configurator
-   (`personaCore/CoreCharacter.tsx`), rethought 2026-07-08 against the real
-   corpus. Four surfaces:
+   (the intent already IS the "what"). It opens the persona-core configurator
+   (`sub_glyph/personaCore/` — layout is mid-`/prototype`: Workbench / Sheet /
+   Guided variants share the same blocks in `coreSections.tsx`), rethought
+   2026-07-08 against the real corpus. Four surfaces:
    - **Disposition** — one Cautious↔Bold slider. (Collapsed from Risk+Speed,
      which are near-collinear across the 18 dial-carrying personas.)
    - **Character traits** — a clickable 20-trait palette in 5 axes (Rigor /
