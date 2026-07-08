@@ -154,7 +154,17 @@ async function generate(args) {
     writeFileSync(abs, buf);
     outputs.push({ output: abs, bytes: buf.length, url: urls[i] });
   }
-  console.log(JSON.stringify({ success: true, model: MODEL, generationId: genId, outputs }, null, 2));
+
+  // Cloud cleanup — delete the generation from Leonardo unless --no-cleanup.
+  // gpt-image-2 gens accumulate in the account otherwise (this tool previously
+  // never cleaned up, unlike leonardo-image.mjs). Best-effort.
+  let cleaned = false;
+  if (genId && !args["no-cleanup"]) {
+    const del = await api("DELETE", `/v1/generations/${genId}`);
+    cleaned = del.ok;
+    process.stderr.write(`[gpt-image-2@leonardo] cloud cleanup ${del.ok ? "ok" : `failed(${del.status})`}\n`);
+  }
+  console.log(JSON.stringify({ success: true, model: MODEL, generationId: genId, cleaned, outputs }, null, 2));
 }
 
 const { command, args } = parseArgs(process.argv);
