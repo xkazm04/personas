@@ -379,9 +379,10 @@ export function foldByUseCase(rows: LlmPinpoint[]): LlmPinpoint[] {
   const groups = new Map<string, LlmPinpoint[]>();
   for (const r of rows) {
     // Un-named rows key by model so each model is its own "unnamed" row; named
-    // rows key by name so they collapse across models. The NUL prefix keeps a
-    // literal use-case named "model:x" from colliding with the fallback bucket.
-    const key = r.useCaseName ?? ` model:${r.model}`;
+    // rows key by name so they collapse across models. The distinct `name:` /
+    // `model:` prefixes keep a literal use-case named "model:x" from colliding
+    // with the un-named fallback bucket.
+    const key = r.useCaseName != null ? `name:${r.useCaseName}` : `model:${r.model}`;
     const g = groups.get(key);
     if (g) g.push(r);
     else groups.set(key, [r]);
