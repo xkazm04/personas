@@ -289,6 +289,50 @@ pub async fn run_extract(pool: &DbPool, cfg: ExtractConfig) -> Result<ExtractSum
     Ok(sum)
 }
 
+/// One URL's preview result: the record the rules would extract, with no DB
+/// write. Powers the Wizard's "test extraction in isolation" step (Phase 1b-2).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewRow {
+    pub url: String,
+    pub record: Value,
+    pub error: Option<String>,
+    pub bytes: usize,
+}
+
+/// Fetch the first `max_urls` URLs and apply the rules WITHOUT upserting — a
+/// dry run so the user can validate selectors before saving. No dataset, no
+/// persistence, no persona.
+pub async fn preview_extract(
+    urls: Vec<String>,
+    rules: RuleSet,
+    max_urls: usize,
+) -> Result<Vec<PreviewRow>, String> {
+    let compiled = rules.compile().map_err(|e| e.to_string())?;
+    let f = fetcher();
+    let mut out = Vec::new();
+    for url in urls.iter().take(max_urls.max(1)) {
+        let req = FetchRequest {
+            strategy: FetchStrategy::Http,
+            ..FetchRequest::new(url)
+        };
+        match f.fetch(req).await {
+            Ok(o) => {
+                let doc = o.html.unwrap_or_default();
+                let record = extract_one(&compiled, &doc);
+                out.push(PreviewRow { url: url.clone(), record, error: None, bytes: doc.len() });
+            }
+            Err(e) => out.push(PreviewRow {
+                url: url.clone(),
+                record: Value::Null,
+                error: Some(e.to_string()),
+                bytes: 0,
+            }),
+        }
+    }
+    Ok(out)
+}
+
 /// Read records back from a dataset, newest first. `changed_only` returns only
 /// records whose content has ever changed since first seen.
 pub fn query_dataset(

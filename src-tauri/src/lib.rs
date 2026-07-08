@@ -2747,6 +2747,7 @@ pub fn run() {
             commands::infrastructure::scraper::scraper_run_config,
             commands::infrastructure::scraper::scraper_delete_config,
             commands::infrastructure::scraper::scraper_run_extract,
+            commands::infrastructure::scraper::scraper_preview_extract,
             commands::infrastructure::scraper::scraper_generate_rules,
             commands::infrastructure::scraper::scraper_list_datasets,
             commands::infrastructure::scraper::scraper_query_dataset,

@@ -100,6 +100,38 @@ pub async fn scraper_run_extract(
     }
 }
 
+/// Dry-run the extraction against the first URL(s) and return what the rules
+/// WOULD pull — no dataset write, no persona. The Wizard's "preview" step uses
+/// this to validate selectors in isolation before saving.
+#[tauri::command]
+pub async fn scraper_preview_extract(
+    _state: State<'_, Arc<AppState>>,
+    config: Value,
+    max_urls: Option<usize>,
+) -> Result<Value, String> {
+    #[cfg(feature = "scraper")]
+    {
+        let urls: Vec<String> = config
+            .get("urls")
+            .and_then(Value::as_array)
+            .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+            .unwrap_or_default();
+        if urls.is_empty() {
+            return Err("Add at least one URL to preview.".into());
+        }
+        let rules: pumper_core::extract::RuleSet =
+            serde_json::from_value(config.get("rules").cloned().unwrap_or(Value::Null))
+                .map_err(|e| format!("invalid rules: {e}"))?;
+        let rows = crate::engine::scraper::preview_extract(urls, rules, max_urls.unwrap_or(1)).await?;
+        serde_json::to_value(rows).map_err(|e| e.to_string())
+    }
+    #[cfg(not(feature = "scraper"))]
+    {
+        let _ = (config, max_urls);
+        Err(NOT_ENABLED.to_string())
+    }
+}
+
 /// Per-dataset rollup (name, record count, last updated).
 #[tauri::command]
 pub fn scraper_list_datasets(state: State<'_, Arc<AppState>>) -> Result<Value, String> {

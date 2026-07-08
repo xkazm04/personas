@@ -94,6 +94,29 @@ export const deleteScraperConfig = (id: string) =>
 export const runScraperExtract = (config: ScraperConfigInput) =>
   invokeWithTimeout<ExtractSummary>('scraper_run_extract', { config });
 
+/** One URL's dry-run preview (no persistence). */
+export interface PreviewRow {
+  url: string;
+  record: Record<string, unknown> | null;
+  error: string | null;
+  bytes: number;
+}
+
+/**
+ * Dry-run the rules against the first `maxUrls` URLs and return what they would
+ * extract — no dataset write, no persona. Powers the Wizard's preview step.
+ */
+export const previewScraperExtract = (
+  urls: string[],
+  rules: ScrapeRuleSet,
+  maxUrls = 1,
+) =>
+  invokeWithTimeout<PreviewRow[]>(
+    'scraper_preview_extract',
+    { config: { urls, rules }, maxUrls },
+    { timeoutMs: 60_000 },
+  );
+
 /**
  * Generate an extraction ruleset from a natural-language description via the
  * Claude Code CLI. Pass a `url` to have the page's HTML fetched for grounding,

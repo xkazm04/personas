@@ -4,18 +4,19 @@ import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 
-import { ExtractStep, OutputStep, ScheduleStep, SourceStep, STEPS, stepComplete } from './EditorSteps';
+import { ExtractStep, OutputStep, PreviewStep, ScheduleStep, SourceStep, STEPS, stepComplete } from './EditorSteps';
 import type { EditorVariantProps } from './useScrapeForm';
 
 /**
- * Editor variant B — "Wizard". Mental model: a guided assembly line. One
- * pipeline step at a time with a progress rail down the left; you can't lose
- * your place, and each step is fully focused. Best for first-time authoring and
- * for leaning on the LLM builder without distraction.
+ * The scrape editor — a guided assembly line. One pipeline step at a time with a
+ * progress rail down the left; you can't lose your place, and each step is fully
+ * focused. The Preview step dry-runs the rules against the live page so pumper
+ * can be validated in isolation before anything is saved.
  */
 const STEP_BODY = {
   source: SourceStep,
   extract: ExtractStep,
+  preview: PreviewStep,
   output: OutputStep,
   schedule: ScheduleStep,
 } as const;
