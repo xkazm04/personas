@@ -240,7 +240,11 @@ export default function ProjectManagerPage() {
       sortable: true,
       sortFn: (a, b) => a.name.localeCompare(b.name),
       render: (project) => (
-        <span className="typo-body text-foreground font-semibold flex items-center gap-2 min-w-0">
+        // typo-heading carries font-weight:700 and is defined un-layered, so it
+        // wins over the Tailwind weight utilities (which lose to the un-layered
+        // typo-* classes). This makes the name the genuinely-heaviest cell; the
+        // other columns stay on muted typo-caption (500) so they read lighter.
+        <span className="typo-heading text-foreground flex items-center gap-2 min-w-0">
           <span className="truncate">{project.name}</span>
           {project.teamId && (() => {
             const teamMeta = teamNameById.get(project.teamId);
@@ -283,7 +287,7 @@ export default function ProjectManagerPage() {
       label: t.plugins.dev_tools.col_path,
       width: 'minmax(160px, 1.6fr)',
       render: (project) => (
-        <span className="typo-caption text-foreground font-normal truncate block">{project.path}</span>
+        <span className="typo-caption truncate block">{project.path}</span>
       ),
     },
     {
@@ -291,7 +295,7 @@ export default function ProjectManagerPage() {
       label: t.plugins.dev_tools.col_tech_stack,
       width: 'minmax(100px, 0.9fr)',
       render: (project) => (
-        <span className="typo-caption text-foreground font-normal truncate block">{project.techStack.join(', ')}</span>
+        <span className="typo-caption truncate block">{project.techStack.join(', ')}</span>
       ),
     },
     {
@@ -307,7 +311,7 @@ export default function ProjectManagerPage() {
       sortable: true,
       sortFn: (a, b) => a.createdAt.localeCompare(b.createdAt),
       render: (project) => (
-        <span className="typo-caption text-foreground font-normal">{project.createdAt}</span>
+        <span className="typo-caption">{project.createdAt}</span>
       ),
     },
     {
