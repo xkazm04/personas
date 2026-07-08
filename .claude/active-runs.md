@@ -94,11 +94,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### prototype-scraper-ui — /prototype: Scraper management surface, 3 directional variants (session opus-4-8[1m])
-- Started: 2026-07-08. Status: started. Branch: master (per user preference; new files only + tight wiring edits).
-- Paths: src/features/scraper/** (NEW), src/api/scraper.ts, src-tauri/src/commands/infrastructure/scraper.rs, src-tauri/src/engine/scraper.rs (dataset_summaries), src-tauri/src/lib.rs (7 command registrations), scraper sidebar wiring (types.ts, routeSections.ts, sidebarData.ts, PersonasPage.tsx), src/lib/commandNames.generated.ts.
-- Note: Phase 1b-2. Greenfield Scraper UI (devOnly sidebar section) over the Phase 1b backend. Enabling Tauri commands + baseline + 3 directional variants behind a SegmentedTabs switcher for live A/B.
-
 ### studio-chain-app — dual-dev: chain trade-signal app in Studio + harden Studio (session opus-4-8[1m])
 - Started: 2026-07-05. Completed: 2026-07-06. Commits: 5ee5408e8 (Studio hardening H8-H11 + logging + observer), b8e1c4b3a (dual-dev docs/driver). ChainSonar v1 (all 8 plan phases) SHIPPED — lives in its own project git at ~/.personas/projects/chainsonar (per-turn Studio snapshots), not this repo. Studio-repo work verified: tsc clean, eslint clean on changed files, clippy adds no findings (crate has ~452 pre-existing warnings + event-registry drift — out of scope).
 - Paths: src/features/studio/**, src/test/automation/bridge.ts, scripts/studio-chain.mjs, docs/plans/chain-signal-studio-app.md, docs/plans/studio-hardening-log.md, docs/concepts/web-build-best-practices.md, src-tauri/src/companion/session.rs (build doctrine/instruction only), src-tauri/src/webbuild/**.
@@ -888,6 +883,9 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### prototype-scraper-ui — /prototype: Scraper management UI + editor (session opus-4-8[1m]) — completed (31115a9de)
+- 2026-07-08: Phase 1b-2 SHIPPED. Two /prototype arcs, both consolidated to a winner: management view → **Control Room** (dense ops table; Pipeline + Field Notebook retired), editor → **Wizard** (guided step rail; Composer + Blueprint retired). Scraper re-homed from a top-level sidebar section to a **devOnly Plugins sub-tab** (wired like drive/twin: PluginTab, PluginsSidebarNav, uiSlice default set, navCatalog, pluginTheme). New capabilities: **LLM pipeline builder** (scraper_generate_rules → Claude CLI writes field rules from a description, grounded in fetched page HTML) + **Preview step** (scraper_preview_extract: dry-run pumper on the first URL, no persist/persona) + **title/description split** on the schema (incremental migration). Enabling layer = 7→9 frontend Tauri commands (config CRUD + run/preview/generate/datasets/query, untyped-JSON, feature-degrading). Commits: 9d6c63fc6 (enabling) · 9de678652 (mgmt 3 variants) · e36aadd7f (re-home + Control Room) · 60fd24c6d (LLM backend) · 666382d21 (editor 3 variants) · a0df0958f (Wizard + title/desc) · 31115a9de (preview). Gate: --features desktop,scraper builds, scraper unit tests pass, tsc + eslint clean throughout. Throwaway launch config: src-tauri/.tauri-scraper-dev.conf.json (untracked). Prior: Phase 1a (9f5b40122) + 1b-1 (6b5730964).
 
 ### pumper-scraper-phase1a — declarative-extract core (session opus-4-8[1m]) — completed (9f5b40122)
 - 2026-07-08: Phase 1a of Pumper-in-Personas. scraper_records change-detected table (rusqlite, no sqlx — D2); engine/scraper.rs upsert_record/run_extract/query_dataset (SSRF-safe http Fetcher + pumper_core::extract CSS/regex/JSON-pointer); management routes /api/scrape/{extract,query}; MCP tools run_extract + query_dataset (bridge-forwarded, connector-gated). Verified: dataset_change_detection unit test + scraper & default builds green. Deferred to 1b: config persistence + UI, cron scheduling, example scrapers. Plan: docs/plans/pumper-inbuilt-feasibility.md. Prior phases: Phase 0 (817b9ff31) + follow-ups (563157e9d) + live E2E (926e0b36e).
