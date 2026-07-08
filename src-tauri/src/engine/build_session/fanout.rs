@@ -26,13 +26,21 @@
 //! `multiagent`; the sequential path is untouched.
 #![allow(dead_code)]
 
+use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
+
 use serde_json::Value;
+use tauri::ipc::Channel;
 
 use super::super::cli_process::{read_line_limited, CliProcessDriver};
 use super::super::types::CliArgs;
 use super::orchestrator::{lane, run_lanes, LaneTask};
 use super::parser::parse_build_line;
-use crate::db::models::BuildEvent;
+use crate::db::models::{BuildEvent, BuildPhase, UpdateBuildSession};
+use crate::db::repos::core::build_sessions as build_session_repo;
+use crate::db::DbPool;
+use crate::ActiveProcessRegistry;
 
 /// One capability's resolved fields — the `capability_resolution` events the
 /// sub-agent emitted (lane-stamped), plus an `error` if the lane failed.
@@ -183,6 +191,196 @@ pub async fn fan_out_resolution(
             },
         })
         .collect()
+}
+
+/// Run one serial CLI turn in the shared session dir, returning the parsed
+/// events. `continue_session` adds `--continue` so the assembly turn resumes
+/// the head turn's conversation (behavior_core + enumeration context).
+async fn run_cli_turn(
+    cli_args: &CliArgs,
+    exec_dir: &Path,
+    prompt: &[u8],
+    session_id: &str,
+    continue_session: bool,
+) -> Result<Vec<BuildEvent>, String> {
+    let mut args = cli_args.clone();
+    if continue_session {
+        args.args.push("--continue".to_string());
+    }
+    let mut driver = CliProcessDriver::spawn(&args, exec_dir.to_path_buf())
+        .map_err(|e| format!("spawn failed: {e}"))?;
+    driver
+        .write_stdin_line(prompt)
+        .await
+        .map_err(|e| format!("write failed: {e}"))?;
+    driver.close_stdin().await;
+    let mut events = Vec::new();
+    if let Some(mut reader) = driver.take_stdout_reader() {
+        loop {
+            match read_line_limited(&mut reader).await {
+                Ok(Some(line)) => events.extend(parse_build_line(&line, session_id)),
+                Ok(None) | Err(_) => break,
+            }
+        }
+    }
+    let _ = driver.wait().await;
+    Ok(events)
+}
+
+/// Pull the capability list out of a `capability_enumeration` payload, tolerant
+/// of the shapes the LLM emits (a bare array, or `{capabilities|use_cases|...: [..]}`).
+fn extract_capabilities(enumeration: &Value) -> Vec<Value> {
+    if let Some(arr) = enumeration.as_array() {
+        return arr.clone();
+    }
+    for key in ["capabilities", "use_cases", "useCases", "capability_enumeration"] {
+        if let Some(arr) = enumeration.get(key).and_then(|v| v.as_array()) {
+            return arr.clone();
+        }
+    }
+    Vec::new()
+}
+
+/// Multi-agent one-shot build (build-orchestration Phase 3). Rust-orchestrated:
+/// a serial head turn (behavior_core + enumeration), a bounded parallel fan-out
+/// of per-capability resolution, then a serial assembly turn (agent_ir). Reuses
+/// the existing `oneshot::run_post_draft` back-half for test → promote.
+///
+/// FIRST DRAFT — the prompt grounding + merge/assembly need live iteration.
+/// Called only when `multiagent && one_shot`; the sequential path is untouched.
+#[allow(clippy::too_many_arguments)]
+pub async fn run_multiagent_oneshot(
+    pool: DbPool,
+    app_handle: tauri::AppHandle,
+    channel: Channel<Value>,
+    session_id: String,
+    persona_id: String,
+    cli_args: CliArgs,
+    exec_dir: PathBuf,
+    initial_prompt: Arc<str>,
+    connector_context: String,
+    max_parallel: usize,
+    cancel_flag: Arc<AtomicBool>,
+    registry: Arc<ActiveProcessRegistry>,
+) -> Result<(), String> {
+    let emit = |ev: &BuildEvent| {
+        let _ = super::events::dual_emit(&pool, &channel, &app_handle, ev);
+    };
+
+    // ── 1. Head turn: behavior_core + capability_enumeration only ──────────
+    let _ = super::events::update_phase(&pool, &session_id, BuildPhase::Analyzing);
+    let head_prompt = format!(
+        "{initial}\n\n## THIS TURN ONLY\n\
+         Emit ONLY the behavior_core event, then the capability_enumeration event, \
+         then STOP. Do NOT resolve capability fields (no capability_resolution), do NOT \
+         emit persona_resolution, and do NOT emit agent_ir — those happen in later steps. \
+         Output raw JSON only, one event per line.",
+        initial = initial_prompt,
+    );
+    let head = run_cli_turn(&cli_args, &exec_dir, head_prompt.as_bytes(), &session_id, false).await?;
+    for ev in &head {
+        emit(ev);
+    }
+    if cancel_flag.load(std::sync::atomic::Ordering::Acquire) {
+        return Err("cancelled".to_string());
+    }
+
+    let behavior_core = head
+        .iter()
+        .find_map(|e| match e {
+            BuildEvent::BehaviorCoreUpdate { data, .. } => Some(data.clone()),
+            _ => None,
+        })
+        .unwrap_or_else(|| serde_json::json!({}));
+    let capabilities = head
+        .iter()
+        .find_map(|e| match e {
+            BuildEvent::CapabilityEnumerationUpdate { data, .. } => Some(extract_capabilities(data)),
+            _ => None,
+        })
+        .unwrap_or_default();
+    if capabilities.is_empty() {
+        return Err("head turn produced no capability_enumeration".to_string());
+    }
+    tracing::info!(
+        session_id = %session_id,
+        caps = capabilities.len(),
+        "multiagent: enumerated capabilities, fanning out resolution"
+    );
+
+    // ── 2. Fan-out: resolve each capability in parallel ────────────────────
+    let _ = super::events::update_phase(&pool, &session_id, BuildPhase::Resolving);
+    let resolutions = fan_out_resolution(
+        cli_args.clone(),
+        session_id.clone(),
+        behavior_core,
+        capabilities,
+        connector_context,
+        max_parallel,
+    )
+    .await;
+
+    let mut injection_lines: Vec<String> = Vec::new();
+    for res in &resolutions {
+        for ev in &res.events {
+            emit(ev);
+            if let BuildEvent::CapabilityResolutionUpdate {
+                capability_id,
+                field,
+                value,
+                ..
+            } = ev
+            {
+                injection_lines.push(format!(
+                    "{{\"id\":\"{capability_id}\",\"field\":\"{field}\",\"value\":{value}}}"
+                ));
+            }
+        }
+        if let Some(err) = &res.error {
+            tracing::warn!(session_id = %session_id, cap = %res.capability_id, error = %err, "multiagent: lane error");
+        }
+    }
+    if cancel_flag.load(std::sync::atomic::Ordering::Acquire) {
+        return Err("cancelled".to_string());
+    }
+
+    // ── 3. Assembly turn: emit agent_ir from the merged resolutions ────────
+    let assembly_prompt = format!(
+        "The capabilities were resolved in parallel. Here are ALL resolved capability fields \
+         (one per line):\n{lines}\n\nUsing the behavior_core (already in context) and these \
+         resolved capabilities, emit any remaining persona-wide fields (persona_resolution) and \
+         then the final agent_ir. Do NOT re-resolve capabilities. Output raw JSON only, one \
+         event per line, ending with the agent_ir event.",
+        lines = injection_lines.join("\n"),
+    );
+    let asm = run_cli_turn(&cli_args, &exec_dir, assembly_prompt.as_bytes(), &session_id, true).await?;
+    for ev in &asm {
+        emit(ev);
+    }
+    let ir = asm.iter().find_map(|e| match e {
+        BuildEvent::CellUpdate { cell_key, data, .. } if cell_key == "agent_ir" => Some(data.clone()),
+        _ => None,
+    });
+    let ir_str = match ir {
+        Some(v) => serde_json::to_string(&v).map_err(|e| format!("serialize agent_ir: {e}"))?,
+        None => return Err("assembly turn produced no agent_ir".to_string()),
+    };
+
+    // ── 4. Save agent_ir + DraftReady, then hand to the oneshot back-half ──
+    build_session_repo::update(
+        &pool,
+        &session_id,
+        &UpdateBuildSession {
+            agent_ir: Some(Some(ir_str)),
+            phase: Some(BuildPhase::DraftReady.as_str().to_string()),
+            ..Default::default()
+        },
+    )
+    .map_err(|e| format!("save agent_ir: {e}"))?;
+
+    super::oneshot::run_post_draft(app_handle.clone(), session_id, persona_id, cancel_flag, registry)
+        .await;
+    Ok(())
 }
 
 #[cfg(test)]

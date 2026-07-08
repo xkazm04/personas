@@ -464,6 +464,43 @@ pub(super) async fn run_session(
     }
     let session_exec_dir = SessionExecDir::new(session_exec_path);
 
+    // Build orchestration Phase 3: multi-agent resolution fan-out. Isolated,
+    // one_shot ONLY — the serial loop below is 100% untouched. Rust orchestrates
+    // a serial head (behavior_core + enumeration) → bounded parallel per-capability
+    // resolution → serial agent_ir assembly → the existing oneshot back-half.
+    if multiagent && one_shot {
+        let budget = 3usize; // keeps us under the subscription rate limiter (Phase 2)
+        let result = super::fanout::run_multiagent_oneshot(
+            pool.clone(),
+            app_handle.clone(),
+            channel.clone(),
+            session_id.clone(),
+            persona_id.clone(),
+            cli_args.clone(),
+            session_exec_dir.path().to_path_buf(),
+            Arc::clone(&initial_prompt),
+            String::new(), // connector_context — populated for connector fixtures later
+            budget,
+            cancel_flag.clone(),
+            registry.clone(),
+        )
+        .await;
+        if let Err(e) = result {
+            tracing::warn!(session_id = %session_id, error = %e, "multiagent build failed");
+            let _ = update_phase_with_error(&pool, &session_id, &format!("multi-agent build: {e}"));
+            emit_error(
+                &pool,
+                &channel,
+                &app_handle,
+                &session_id,
+                &format!("Multi-agent build failed: {e}"),
+                false,
+            );
+        }
+        cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
+        return;
+    }
+
     // Build telemetry (Phase 0): sum CLI cost/tokens across resolution turns.
     // Written to the session row after each turn so build-bench reads cumulative
     // build cost. (One-shot test/fix-pass cost in oneshot.rs is a follow-up.)
