@@ -5,7 +5,7 @@
  * data comes from the shared composer.
  */
 import { useMemo, useState } from 'react';
-import { Search, Zap, Bot, Cog, Store } from 'lucide-react';
+import { Search, Zap, Bot, Cog, Store, Globe } from 'lucide-react';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import type { SystemOpKindMeta } from '@/api/systemOps';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
@@ -66,6 +66,11 @@ export function StudioSourceRail({ c }: { c: StudioComposer }) {
     () => subscribedFeeds.filter((f) => !q || f.name.toLowerCase().includes(q) || f.slug.toLowerCase().includes(q)),
     [subscribedFeeds, q],
   );
+  // Local-scraper pipeline Signals get their own group; everything else is a
+  // curated Marketplace feed. Both wire in identically (event_listener on
+  // `shared:<slug>`) — the split is purely for legibility on the rail.
+  const marketplaceFeeds = useMemo(() => filteredFeeds.filter((f) => f.category !== 'scraper'), [filteredFeeds]);
+  const scraperFeeds = useMemo(() => filteredFeeds.filter((f) => f.category === 'scraper'), [filteredFeeds]);
   const filteredPersonas = useMemo(
     () => c.healthyPersonas.filter((p) => !q || p.name.toLowerCase().includes(q)),
     [c.healthyPersonas, q],
@@ -100,13 +105,30 @@ export function StudioSourceRail({ c }: { c: StudioComposer }) {
           />
         ))}
         {/* Marketplace category — subscribed feeds wire in as event listeners */}
-        {sourceKind === 'signals' && (
+        {sourceKind === 'signals' && marketplaceFeeds.length > 0 && (
           <div className="pt-2.5 pb-1 px-1 flex items-center gap-1.5">
             <Store className="w-3 h-3 text-sky-400" />
             <span className="typo-caption uppercase tracking-wide text-foreground/70">{st.group_marketplace}</span>
           </div>
         )}
-        {sourceKind === 'signals' && filteredFeeds.map((f) => (
+        {sourceKind === 'signals' && marketplaceFeeds.map((f) => (
+          <MarketplaceSourceCard
+            key={f.slug}
+            feed={f}
+            hint={st.marketplace_source_hint}
+            active={c.armedSource?.kind === 'marketplace' && c.armedSource.slug === f.slug}
+            onPick={() => c.setArmedSource((s) => (s?.kind === 'marketplace' && s.slug === f.slug ? null : { kind: 'marketplace', slug: f.slug, label: f.name }))}
+          />
+        ))}
+        {/* Scraper category — local-scraper pipeline change/error Signals */}
+        {sourceKind === 'signals' && scraperFeeds.length > 0 && (
+          <div className="pt-2.5 pb-1 px-1 flex items-center gap-1.5">
+            <Globe className="w-3 h-3 text-teal-400" />
+            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text -- feature name, matches sidebar 'Scraper' */}
+            <span className="typo-caption uppercase tracking-wide text-foreground/70">Scraper</span>
+          </div>
+        )}
+        {sourceKind === 'signals' && scraperFeeds.map((f) => (
           <MarketplaceSourceCard
             key={f.slug}
             feed={f}
