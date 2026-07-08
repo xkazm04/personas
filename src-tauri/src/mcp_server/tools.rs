@@ -680,42 +680,11 @@ fn scrape_bridge(path: &str, body: &Value) -> Result<String, String> {
     })
 }
 
-/// `fetch_readable` — fetch a URL and return clean Markdown.
-#[cfg(feature = "scraper")]
-fn handle_fetch_readable(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    if !scraper_connector_present(pool) {
-        return Err("Local Scraper connector is not available in this app.".to_string());
-    }
-    let url = args
-        .get("url")
-        .and_then(|v| v.as_str())
-        .ok_or("Missing required 'url'")?;
-    scrape_bridge("readable", &json!({ "url": url }))
-}
-
-/// `run_extract` — declarative scrape: fetch URLs, apply CSS/regex/JSON-pointer
-/// rules, upsert change-detected records into a dataset. The tool args ARE the
-/// extract config, forwarded verbatim.
-#[cfg(feature = "scraper")]
-fn handle_run_extract(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    if !scraper_connector_present(pool) {
-        return Err("Local Scraper connector is not available in this app.".to_string());
-    }
-    if !args.get("urls").map(|u| u.is_array()).unwrap_or(false)
-        || !args.get("rules").map(|r| r.is_object()).unwrap_or(false)
-        || !args.get("dataset").map(|d| d.is_string()).unwrap_or(false)
-    {
-        return Err("run_extract requires 'urls' (array), 'rules' (object), and 'dataset' (string)".into());
-    }
-    scrape_bridge("extract", args)
-}
-
 /// `query_dataset` — read change-detected records back from a scraper dataset.
+/// The one scraper MCP tool kept after the Phase 1c pivot to Signals: a persona
+/// reacting to a `shared:scrape.*` Signal uses it to pull the actual records.
 #[cfg(feature = "scraper")]
-fn handle_query_dataset(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    if !scraper_connector_present(pool) {
-        return Err("Local Scraper connector is not available in this app.".to_string());
-    }
+fn handle_query_dataset(args: &Value, _pool: &McpDbPool) -> Result<String, String> {
     let dataset = args
         .get("dataset")
         .and_then(|v| v.as_str())
@@ -726,67 +695,6 @@ fn handle_query_dataset(args: &Value, pool: &McpDbPool) -> Result<String, String
         "changed_only": args.get("changed_only").and_then(Value::as_bool).unwrap_or(false),
     });
     scrape_bridge("query", &body)
-}
-
-/// `save_scrape` — create/update a saved, optionally cron-scheduled scrape.
-#[cfg(feature = "scraper")]
-fn handle_save_scrape(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    if !scraper_connector_present(pool) {
-        return Err("Local Scraper connector is not available in this app.".to_string());
-    }
-    if !args.get("name").map(Value::is_string).unwrap_or(false)
-        || !args.get("urls").map(Value::is_array).unwrap_or(false)
-        || !args.get("rules").map(Value::is_object).unwrap_or(false)
-        || !args.get("dataset").map(Value::is_string).unwrap_or(false)
-    {
-        return Err("save_scrape requires 'name', 'urls' (array), 'rules' (object), 'dataset'".into());
-    }
-    scrape_bridge("config-save", args)
-}
-
-/// `list_scrapes` — list saved scrape configs (with schedule + last-run status).
-#[cfg(feature = "scraper")]
-fn handle_list_scrapes(_args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    if !scraper_connector_present(pool) {
-        return Err("Local Scraper connector is not available in this app.".to_string());
-    }
-    scrape_bridge("config-list", &json!({}))
-}
-
-/// `run_scrape` — run a saved scrape config now, by id.
-#[cfg(feature = "scraper")]
-fn handle_run_scrape(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    if !scraper_connector_present(pool) {
-        return Err("Local Scraper connector is not available in this app.".to_string());
-    }
-    let id = args
-        .get("id")
-        .and_then(Value::as_str)
-        .ok_or("Missing required 'id'")?;
-    scrape_bridge("config-run", &json!({ "id": id }))
-}
-
-/// Whether the `local_scraper` built-in connector is present in the catalog.
-/// Ties `fetch_readable` advertisement + execution to the connector's presence,
-/// so the tool and connector stay consistent (the connector is seeded only in
-/// `scraper`-feature builds — see db::seed_builtin_connectors).
-///
-/// NOTE: MCP tools are advertised globally to every persona — the personas-mcp
-/// process is persona-agnostic (drive_*/obsidian_*/etc. all work this way), so
-/// true per-*persona* grant gating isn't available here without cross-cutting
-/// tool-scoping infrastructure. This is the app-level control we can offer.
-#[cfg(feature = "scraper")]
-fn scraper_connector_present(pool: &McpDbPool) -> bool {
-    pool.get()
-        .and_then(|conn| {
-            conn.query_row(
-                "SELECT 1 FROM connector_definitions WHERE id = 'builtin-local-scraper' LIMIT 1",
-                [],
-                |_| Ok(()),
-            )
-            .map_err(|e| e.to_string())
-        })
-        .is_ok()
 }
 
 #[cfg_attr(not(feature = "scraper"), allow(unused_variables))]
@@ -1177,38 +1085,15 @@ pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
         }, "required": ["content"] }
     }));
 
-    // Embedded local scraper (Pumper) — Phase 0. Advertised only in `scraper`
-    // builds AND when the local_scraper connector is present in the catalog.
+    // Embedded local scraper (Pumper). After the Phase 1c pivot to Signals, the
+    // scraper communicates via the event bus, not persona-invoked tools — the one
+    // tool kept is `query_dataset`, so a persona reacting to a `shared:scrape.*`
+    // Signal can pull the underlying records. Advertised in `scraper` builds.
     #[cfg(feature = "scraper")]
-    if scraper_connector_present(pool) {
-        tools.push(json!({
-        "name": "fetch_readable",
-        "description": "Fetch a web page and return its main content as clean Markdown. Local scraper; HTTP tier only (no JavaScript rendering). Use for articles, docs, and server-rendered pages.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "url": { "type": "string", "description": "The absolute http(s) URL to fetch" }
-            },
-            "required": ["url"]
-        }
-        }));
-        tools.push(json!({
-            "name": "run_extract",
-            "description": "Scrape structured data from web pages using declarative rules, and store change-detected records in a named dataset. Each field maps to a rule: {\"type\":\"css\",\"selector\":\"h1\",\"attr\":null,\"all\":false} | {\"type\":\"regex\",\"pattern\":\"...\",\"group\":0} | {\"type\":\"json\",\"pointer\":\"/a/b\"}. Re-running only surfaces new/changed rows. HTTP tier only (no JavaScript rendering).",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "urls": { "type": "array", "items": { "type": "string" }, "description": "Absolute http(s) URLs to scrape" },
-                    "rules": { "type": "object", "description": "Field name → extraction rule (css/regex/json)" },
-                    "dataset": { "type": "string", "description": "Dataset name to upsert records into" },
-                    "key_field": { "type": "string", "description": "Extracted field to use as the record key (defaults to the URL)" }
-                },
-                "required": ["urls", "rules", "dataset"]
-            }
-        }));
+    {
         tools.push(json!({
             "name": "query_dataset",
-            "description": "Read change-detected records back from a scraper dataset (newest first). Use after run_extract to see what was scraped or what changed.",
+            "description": "Read change-detected records back from a local-scraper dataset (newest first). Use when reacting to a scrape Signal to see what was scraped or what changed.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -1217,39 +1102,6 @@ pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
                     "changed_only": { "type": "boolean", "description": "Only records whose content changed since first seen (default false)" }
                 },
                 "required": ["dataset"]
-            }
-        }));
-        tools.push(json!({
-            "name": "save_scrape",
-            "description": "Save a named, reusable scrape (optionally cron-scheduled to run automatically). Same shape as run_extract plus a name and optional cron. Returns the saved config with its id.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "id": { "type": "string", "description": "Existing config id to update (omit to create)" },
-                    "name": { "type": "string", "description": "Short, recognizable title for this scrape" },
-                    "description": { "type": "string", "description": "Optional one-line overview of the use case" },
-                    "urls": { "type": "array", "items": { "type": "string" } },
-                    "rules": { "type": "object", "description": "Field → extraction rule (css/regex/json)" },
-                    "dataset": { "type": "string" },
-                    "key_field": { "type": "string" },
-                    "cron": { "type": "string", "description": "Optional 5-field cron (UTC) to run automatically; omit for manual only" },
-                    "enabled": { "type": "boolean", "description": "Default true" }
-                },
-                "required": ["name", "urls", "rules", "dataset"]
-            }
-        }));
-        tools.push(json!({
-            "name": "list_scrapes",
-            "description": "List saved scrapes with their schedule, last run time, and last status.",
-            "inputSchema": { "type": "object", "properties": {} }
-        }));
-        tools.push(json!({
-            "name": "run_scrape",
-            "description": "Run a saved scrape now by id. Returns the extract summary (new/changed/unchanged).",
-            "inputSchema": {
-                "type": "object",
-                "properties": { "id": { "type": "string", "description": "Saved scrape config id" } },
-                "required": ["id"]
             }
         }));
     }
@@ -1293,17 +1145,7 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "obsidian_vault_search" => handle_obsidian_vault_search(args, pool),
         "obsidian_vault_write_note" => handle_obsidian_vault_write_note(args, pool),
         #[cfg(feature = "scraper")]
-        "fetch_readable" => handle_fetch_readable(args, pool),
-        #[cfg(feature = "scraper")]
-        "run_extract" => handle_run_extract(args, pool),
-        #[cfg(feature = "scraper")]
         "query_dataset" => handle_query_dataset(args, pool),
-        #[cfg(feature = "scraper")]
-        "save_scrape" => handle_save_scrape(args, pool),
-        #[cfg(feature = "scraper")]
-        "list_scrapes" => handle_list_scrapes(args, pool),
-        #[cfg(feature = "scraper")]
-        "run_scrape" => handle_run_scrape(args, pool),
         _ => Err(format!("Unknown tool: {name}")),
     };
 

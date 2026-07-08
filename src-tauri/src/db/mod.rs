@@ -1278,18 +1278,14 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
     //
     // To add/edit a connector: edit the JSON file, then run:
     //   node scripts/generate-connector-seed.mjs
+    // The embedded-Pumper "local-scraper" connector was retired in Phase 1c —
+    // the scraper now talks to the app via Signals (event bus), not a connector
+    // or persona-invoked MCP tools. Remove it from any DB a prior build seeded.
+    let _ = conn.execute(
+        "DELETE FROM connector_definitions WHERE id = 'builtin-local-scraper' AND is_builtin = 1",
+        [],
+    );
     for c in connectors {
-        // The local scraper (embedded Pumper) only works when the app is built
-        // with the `scraper` feature. Don't surface a dead connector in builds
-        // without it, and remove it if a prior scraper build seeded it.
-        #[cfg(not(feature = "scraper"))]
-        if c.id == "builtin-local-scraper" {
-            let _ = conn.execute(
-                "DELETE FROM connector_definitions WHERE id = ?1 AND is_builtin = 1",
-                params![c.id],
-            );
-            continue;
-        }
         conn.execute(
             "INSERT OR IGNORE INTO connector_definitions
              (id, name, label, icon_url, color, category, fields,

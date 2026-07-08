@@ -109,14 +109,9 @@ pub fn management_router(state: ManagementState) -> Router {
         // Local scraper (embedded Pumper) -- the personas-mcp `fetch_readable`
         // tool forwards here so the SSRF-safe fetch runs in the main app where
         // the engine lives (the mcp binary has no engine module).
-        .route("/api/scrape/readable", post(scrape_readable))
-        .route("/api/scrape/extract", post(scrape_extract))
+        // The scraper pivoted to Signals in Phase 1c; the only bridge route kept
+        // is dataset read-back (for the query_dataset MCP tool).
         .route("/api/scrape/query", post(scrape_query))
-        // Saved scrape configs (Phase 1b)
-        .route("/api/scrape/config-save", post(scrape_config_save))
-        .route("/api/scrape/config-list", post(scrape_config_list))
-        .route("/api/scrape/config-run", post(scrape_config_run))
-        .route("/api/scrape/config-delete", post(scrape_config_delete))
         // A2A Gateway -- agent card discovery + JSON-RPC entry point
         .route("/agent-card/{persona_id}", get(get_agent_card))
         .route("/a2a/{persona_id}", post(handle_a2a_request))
@@ -298,64 +293,6 @@ const API_KEY_RATE_WINDOW: Duration = Duration::from_secs(60);
 /// `scopes` comes from `parsed_scopes`, which fails closed (empty vec) on a
 /// corrupt column, so a malformed row authorizes nothing scope-gated.
 #[derive(Deserialize)]
-struct ScrapeReadableBody {
-    url: String,
-}
-
-/// `POST /api/scrape/readable` — fetch a URL and return clean Markdown via the
-/// embedded local scraper (Pumper, http tier, SSRF-safe). Authorized by the
-/// default `/api/` POST rule (`personas:execute`). Returns 501 when the app is
-/// built without the `scraper` feature.
-async fn scrape_readable(Json(body): Json<ScrapeReadableBody>) -> Response {
-    #[cfg(feature = "scraper")]
-    {
-        match crate::engine::scraper::fetch_readable(&body.url).await {
-            Ok(markdown) => (StatusCode::OK, markdown).into_response(),
-            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
-        }
-    }
-    #[cfg(not(feature = "scraper"))]
-    {
-        let _ = body;
-        (
-            StatusCode::NOT_IMPLEMENTED,
-            "scraper feature not enabled in this build",
-        )
-            .into_response()
-    }
-}
-
-/// `POST /api/scrape/extract` — run a declarative extract (fetch URLs → apply
-/// CSS/regex/JSON-pointer rules → upsert change-detected records). SSRF-safe.
-async fn scrape_extract(
-    AxumState(_state): AxumState<Arc<ManagementState>>,
-    Json(_body): Json<serde_json::Value>,
-) -> Response {
-    #[cfg(feature = "scraper")]
-    {
-        let cfg: crate::engine::scraper::ExtractConfig = match serde_json::from_value(_body) {
-            Ok(c) => c,
-            Err(e) => {
-                return (StatusCode::BAD_REQUEST, format!("invalid extract config: {e}"))
-                    .into_response()
-            }
-        };
-        match crate::engine::scraper::run_extract(&_state.pool, cfg).await {
-            Ok(summary) => Json(summary).into_response(),
-            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
-        }
-    }
-    #[cfg(not(feature = "scraper"))]
-    {
-        (
-            StatusCode::NOT_IMPLEMENTED,
-            "scraper feature not enabled in this build",
-        )
-            .into_response()
-    }
-}
-
-#[derive(Deserialize)]
 struct ScrapeQueryBody {
     dataset: String,
     #[serde(default)]
@@ -388,80 +325,6 @@ async fn scrape_query(
             "scraper feature not enabled in this build",
         )
             .into_response()
-    }
-}
-
-#[derive(Deserialize)]
-struct ScrapeConfigIdBody {
-    id: String,
-}
-
-/// `POST /api/scrape/config-save` — create/update a saved scrape config.
-async fn scrape_config_save(
-    AxumState(_state): AxumState<Arc<ManagementState>>,
-    Json(_body): Json<serde_json::Value>,
-) -> Response {
-    #[cfg(feature = "scraper")]
-    {
-        match crate::engine::scraper::config_save(&_state.pool, &_body) {
-            Ok(cfg) => Json(cfg).into_response(),
-            Err(e) => (StatusCode::BAD_REQUEST, e).into_response(),
-        }
-    }
-    #[cfg(not(feature = "scraper"))]
-    {
-        (StatusCode::NOT_IMPLEMENTED, "scraper feature not enabled in this build").into_response()
-    }
-}
-
-/// `POST /api/scrape/config-list` — list saved scrape configs.
-async fn scrape_config_list(AxumState(_state): AxumState<Arc<ManagementState>>) -> Response {
-    #[cfg(feature = "scraper")]
-    {
-        match crate::engine::scraper::config_list(&_state.pool) {
-            Ok(list) => Json(list).into_response(),
-            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
-        }
-    }
-    #[cfg(not(feature = "scraper"))]
-    {
-        (StatusCode::NOT_IMPLEMENTED, "scraper feature not enabled in this build").into_response()
-    }
-}
-
-/// `POST /api/scrape/config-run` — run a saved scrape config now.
-async fn scrape_config_run(
-    AxumState(_state): AxumState<Arc<ManagementState>>,
-    Json(_body): Json<ScrapeConfigIdBody>,
-) -> Response {
-    #[cfg(feature = "scraper")]
-    {
-        match crate::engine::scraper::config_run(&_state.pool, &_body.id).await {
-            Ok(summary) => Json(summary).into_response(),
-            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
-        }
-    }
-    #[cfg(not(feature = "scraper"))]
-    {
-        (StatusCode::NOT_IMPLEMENTED, "scraper feature not enabled in this build").into_response()
-    }
-}
-
-/// `POST /api/scrape/config-delete` — delete a saved scrape config.
-async fn scrape_config_delete(
-    AxumState(_state): AxumState<Arc<ManagementState>>,
-    Json(_body): Json<ScrapeConfigIdBody>,
-) -> Response {
-    #[cfg(feature = "scraper")]
-    {
-        match crate::engine::scraper::config_delete(&_state.pool, &_body.id) {
-            Ok(()) => Json(serde_json::json!({ "ok": true })).into_response(),
-            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
-        }
-    }
-    #[cfg(not(feature = "scraper"))]
-    {
-        (StatusCode::NOT_IMPLEMENTED, "scraper feature not enabled in this build").into_response()
     }
 }
 
