@@ -25,6 +25,8 @@ import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { GlyphTopBar } from "./GlyphTopBar";
 import { DialogueStageSurface } from "./DialogueStageSurface";
 import { DialogueComposePanel } from "./DialogueComposePanel";
+import { usePersonaCore } from "./personaCore/usePersonaCore";
+import { PersonaCoreModal } from "./personaCore/PersonaCoreModal";
 import { useComposeConfig } from "./useComposeConfig";
 import { useRecipeStarters } from "./useRecipeStarters";
 import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
@@ -52,9 +54,12 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
   const hasPending = (pendingQuestions?.length ?? 0) > 0;
   const postCompose = !isCompose;
 
+  const core = usePersonaCore(buildSessionId);
+  const [coreModalOpen, setCoreModalOpen] = useState(false);
   const cfg = useComposeConfig({
     intentText, onIntentChange, onLaunch, onQuickConfigChange,
     initialNotificationChannels, resetKey: buildSessionId,
+    coreAugmentation: core.launchAugmentation(),
   });
   const starters = useRecipeStarters(intentText);
 
@@ -100,6 +105,8 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
               launchDisabled={launchDisabled}
               cfg={cfg}
               starters={starters}
+              core={core}
+              onOpenCore={() => setCoreModalOpen(true)}
             />
           ) : (
             /* The compose panel PERSISTS through the entire build — the brief,
@@ -120,6 +127,8 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
                 composing={loading}
                 syncRole={role}
                 syncMission={mission}
+                core={core}
+                onOpenCore={() => setCoreModalOpen(true)}
               />
               {loading ? (
                 <CinemaReel fastForward={hasPending} />
@@ -132,6 +141,7 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
       </div>
 
       {cfg.modals}
+      <PersonaCoreModal core={core} isOpen={coreModalOpen} onClose={() => setCoreModalOpen(false)} />
     </div>
   );
 }

@@ -16,6 +16,8 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { getConnectorMeta, ConnectorIcon } from "@/lib/connectors/connectorMeta";
+import { PersonaCoreBadge } from "./personaCore/PersonaCoreBadge";
+import type { PersonaCore } from "./personaCore/usePersonaCore";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
 import { RecipeAlternativeModal } from "./RecipeAlternativeModal";
@@ -43,10 +45,15 @@ export interface DialogueComposePanelProps {
   /** Streamed-in real identity (behavior_core) — populates the sync header when locked. */
   syncRole?: string | null;
   syncMission?: string | null;
+  /** Persona-core configurator state + opener — renders the temperament badge
+   *  under the intent (the slot that replaced the old "What" leaf). */
+  core?: PersonaCore;
+  onOpenCore?: () => void;
 }
 
 export function DialogueComposePanel({
   intentText, onIntentChange, onLaunch, launchDisabled, cfg, starters, locked = false, composing = false, syncRole = null, syncMission = null,
+  core, onOpenCore,
 }: DialogueComposePanelProps) {
   const { t } = useTranslation();
   const [openRecipe, setOpenRecipe] = useState<RecipeMatch | null>(null);
@@ -154,6 +161,12 @@ export function DialogueComposePanel({
               className="w-full bg-transparent typo-body-lg text-foreground placeholder:text-foreground/35 placeholder:italic focus:outline-none resize-none disabled:cursor-default"
               data-testid="agent-intent-input"
             />
+
+            {/* Persona-core badge — the temperament slot that replaced "What".
+                The intent above is the purpose; this is the mentality under it. */}
+            {core && onOpenCore && (
+              <PersonaCoreBadge core={core} onOpen={onOpenCore} locked={locked} />
+            )}
 
             <AnimatePresence>
               {(shownStarters.length > 0) && (locked ? !!topStarter : true) && (
