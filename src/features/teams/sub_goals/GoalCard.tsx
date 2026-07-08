@@ -1,18 +1,29 @@
 /**
- * Goal card variant — "Fill".
+ * GoalCard — the goal board card.
  *
- * Metaphor: the card *is* a progress meter. A single-line row whose background
- * fills left-to-right in proportion to completion (emerald when a checklist
- * drives it, violet for manual progress), with the title + a percent riding on
- * top. No inline checklist, no manual nudger, no separate meta row — the whole
- * card is the gauge, so a column of goals reads like a stack of fuel bars.
+ * A single-line card whose background fills left-to-right in proportion to
+ * completion (emerald when a checklist drives it, violet for manual progress),
+ * with the title + percent riding on top. No inline checklist, manual nudger, or
+ * separate meta row — the whole card is the gauge, so a lane of goals reads like
+ * a stack of fuel bars and stays scannable instead of each card growing several
+ * rows tall. To-dos and progress nudging live in the detail drawer, opened by
+ * clicking the card.
  */
 import { FolderKanban, ListChecks, Clock } from 'lucide-react';
-import type { GoalCardVariantProps } from './GoalCardLedger';
+import type { DevGoal } from '@/lib/bindings/DevGoal';
+import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import { goalStatusMeta, isOngoing } from './goalStatus';
 import { goalAccentEdgeStyle } from './goalsTheme';
 
-export default function GoalCardFill({ goal, items, projectName, onOpen }: GoalCardVariantProps) {
+export interface GoalCardProps {
+  goal: DevGoal;
+  items: DevGoalItem[];
+  /** Origin-project name — shown as a chip in cross-project scope; undefined hides it. */
+  projectName?: string;
+  onOpen?: () => void;
+}
+
+export default function GoalCard({ goal, items, projectName, onOpen }: GoalCardProps) {
   const meta = goalStatusMeta(goal.status);
   const StatusIcon = meta.icon;
   const done = items.filter((i) => i.done).length;
