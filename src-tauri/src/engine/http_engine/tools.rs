@@ -45,8 +45,8 @@ pub(super) async fn run_tool_loop(
     let mcp_pool = mcp_server::db::open_pool(&default_data_dir().join("personas.db")).ok();
     let connectors_on = mcp_pool.as_ref().map(connector_tools_enabled).unwrap_or(false);
     let mut schemas = builtin_tool_schemas();
-    if mcp_pool.is_some() {
-        for t in mcp_server::tools::list_tools() {
+    if let Some(mcp_pool) = mcp_pool.as_ref() {
+        for t in mcp_server::tools::list_tools(mcp_pool) {
             let name = t.get("name").and_then(Value::as_str).unwrap_or("");
             if tool_allowed(name, connectors_on) {
                 schemas.push(json!({

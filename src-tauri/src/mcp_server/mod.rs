@@ -48,7 +48,7 @@ pub fn handle_jsonrpc(line: &str, pool: &db::McpDbPool) -> Option<Value> {
         }
         "notifications/initialized" => None, // notification, no response
         "tools/list" => {
-            let tool_list = tools::list_tools();
+            let tool_list = tools::list_tools(pool);
             Some(json!({ "jsonrpc": "2.0", "result": { "tools": tool_list }, "id": id }))
         }
         "tools/call" => {

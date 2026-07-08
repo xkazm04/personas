@@ -162,9 +162,21 @@ and the `local-scraper` built-in connector. **Verified:** live test `fetch_reada
 fetched example.com through pumper-core's Fetcher → Markdown (ok, 1.3s); `cargo check
 --features desktop,scraper` (lib + personas-mcp bin) Finished 0 errors; default `--features
 desktop` build unaffected (0 errors).
-**Next (P0 follow-ups):** gate the `local-scraper` connector seed so it only shows when the
-`scraper` feature ships; add connector-grant gating so `fetch_readable` is advertised only to
-personas granted the connector; drive it live through a persona (E2E).
+**P0 follow-ups:**
+- ✅ **Connector seed feature-gated** — `db::seed_builtin_connectors` skips (and deletes) the
+  `builtin-local-scraper` row in non-`scraper` builds, so it never appears in a release that
+  can't run it.
+- ✅ **Tool advertisement tied to the connector** — `list_tools(pool)` advertises `fetch_readable`
+  only when the `local_scraper` connector is present in the catalog, and `handle_fetch_readable`
+  re-checks at call time. **Finding:** true per-*persona* grant gating is NOT available in this
+  architecture — the `personas-mcp` process is persona-agnostic and advertises every local tool
+  globally (`drive_*`, `obsidian_*`, … all do this). Per-persona tool scoping is a cross-cutting
+  item (would gate all local tools), tracked separately; the connector-present check is the
+  app-level control we can offer today.
+- ⏳ **Live persona E2E** — pending. Can't drive the currently-running app (it's a non-`scraper`
+  build, so it lacks the route) and can't run a second live instance (single-instance + keyring
+  singleton). Needs a one-off `--features desktop,scraper` app launch; the live unit test
+  (`fetch_readable_live`) + full compile already prove the fetch + route + tool chain.
 **Scope note:** ships the **http tier only** — the claude research tier is deferred to
 P1 and the browser tier to P2 (both stubbed with disabled impls). D2 (drop sqlx) was
 resolved early: `pumper-core` now has a default-on `storage` feature, and Personas

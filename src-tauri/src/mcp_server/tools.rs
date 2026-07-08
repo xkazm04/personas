@@ -649,7 +649,10 @@ fn handle_context_neighbors(args: &Value, pool: &McpDbPool) -> Result<String, St
 /// SSRF-safe fetch actually runs) with the bridge system key, mirroring how the
 /// vault tools use the credential proxy.
 #[cfg(feature = "scraper")]
-fn handle_fetch_readable(args: &Value) -> Result<String, String> {
+fn handle_fetch_readable(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    if !scraper_connector_present(pool) {
+        return Err("Local Scraper connector is not available in this app.".to_string());
+    }
     let url = args
         .get("url")
         .and_then(|v| v.as_str())
@@ -685,7 +688,31 @@ fn handle_fetch_readable(args: &Value) -> Result<String, String> {
     })
 }
 
-pub fn list_tools() -> Vec<Value> {
+/// Whether the `local_scraper` built-in connector is present in the catalog.
+/// Ties `fetch_readable` advertisement + execution to the connector's presence,
+/// so the tool and connector stay consistent (the connector is seeded only in
+/// `scraper`-feature builds — see db::seed_builtin_connectors).
+///
+/// NOTE: MCP tools are advertised globally to every persona — the personas-mcp
+/// process is persona-agnostic (drive_*/obsidian_*/etc. all work this way), so
+/// true per-*persona* grant gating isn't available here without cross-cutting
+/// tool-scoping infrastructure. This is the app-level control we can offer.
+#[cfg(feature = "scraper")]
+fn scraper_connector_present(pool: &McpDbPool) -> bool {
+    pool.get()
+        .and_then(|conn| {
+            conn.query_row(
+                "SELECT 1 FROM connector_definitions WHERE id = 'builtin-local-scraper' LIMIT 1",
+                [],
+                |_| Ok(()),
+            )
+            .map_err(|e| e.to_string())
+        })
+        .is_ok()
+}
+
+#[cfg_attr(not(feature = "scraper"), allow(unused_variables))]
+pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
     let mut tools = vec![
         json!({
             "name": "personas_list",
@@ -1072,10 +1099,11 @@ pub fn list_tools() -> Vec<Value> {
         }, "required": ["content"] }
     }));
 
-    // Embedded local scraper (Pumper) — Phase 0. Only advertised when the app is
-    // built with `--features scraper`.
+    // Embedded local scraper (Pumper) — Phase 0. Advertised only in `scraper`
+    // builds AND when the local_scraper connector is present in the catalog.
     #[cfg(feature = "scraper")]
-    tools.push(json!({
+    if scraper_connector_present(pool) {
+        tools.push(json!({
         "name": "fetch_readable",
         "description": "Fetch a web page and return its main content as clean Markdown. Local scraper; HTTP tier only (no JavaScript rendering). Use for articles, docs, and server-rendered pages.",
         "inputSchema": {
@@ -1085,7 +1113,8 @@ pub fn list_tools() -> Vec<Value> {
             },
             "required": ["url"]
         }
-    }));
+        }));
+    }
 
     tools
 }
@@ -1126,7 +1155,7 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "obsidian_vault_search" => handle_obsidian_vault_search(args, pool),
         "obsidian_vault_write_note" => handle_obsidian_vault_write_note(args, pool),
         #[cfg(feature = "scraper")]
-        "fetch_readable" => handle_fetch_readable(args),
+        "fetch_readable" => handle_fetch_readable(args, pool),
         _ => Err(format!("Unknown tool: {name}")),
     };
 
