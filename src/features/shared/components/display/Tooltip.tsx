@@ -242,7 +242,14 @@ export function Tooltip({
       const tooltip = tooltipRef.current;
       if (!trigger || !tooltip) return;
 
-      const triggerRect = trigger.getBoundingClientRect();
+      // The default trigger wrapper is `display:contents` (box-less), so in
+      // Chromium/WebView2 its getBoundingClientRect() is 0×0 — which would pin the
+      // tooltip to the viewport's top-left corner. Fall back to the wrapped child's
+      // real box so tooltips position correctly (notably inside portals/modals).
+      let triggerRect = trigger.getBoundingClientRect();
+      if (triggerRect.width === 0 && triggerRect.height === 0 && trigger.firstElementChild) {
+        triggerRect = trigger.firstElementChild.getBoundingClientRect();
+      }
       const tooltipRect = tooltip.getBoundingClientRect();
 
       const resolved = resolvePlacement(triggerRect, tooltipRect, placement);
