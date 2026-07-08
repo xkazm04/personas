@@ -14,7 +14,12 @@ update each phase's **Status** line as we land it.
 
 ## Phase 1c — event-driven pivot: scraper as a Signal producer (2026-07-08)
 
-**Status:** in progress. **Reframe:** the scraper stops being a persona-invoked
+**Status:** ✅ COMPLETE (2026-07-08). Proven live: a run emits
+`shared:scrape.<id>.changed` on the bus (verified in `persona_events`), feeds
+auto-register + subscribe (verified in `shared_event_catalog`/`_subscriptions`),
+and they surface as a dedicated "Scraper" group on the Chain Studio Signals rail.
+Commits: E1+E2 `2f50a69d7` · E3 `48ed16e87` · reconcile+docs `0dcf3c134` · E4
+`b474dea1c`. **Reframe:** the scraper stops being a persona-invoked
 *connector* and becomes a **standalone Signal producer**. It keeps owning its own
 SQLite tables (`scraper_configs`, `scraper_records`); it communicates with the rest
 of the app **only through the persona event bus** (`docs/features/events`), so users
