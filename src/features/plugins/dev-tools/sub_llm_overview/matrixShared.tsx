@@ -1,8 +1,6 @@
 /**
- * Shared pieces for the Layer-1 assignment-matrix variants: the common props
- * shape, connector-brand lookup, and two reusable leaves (a brand chip + the
- * connector picker). Hoisted here so every variant renders identical wiring
- * behaviour and the same brand iconography.
+ * Shared pieces for the Layer-1 assignment matrix: the props shape, connector-
+ * brand lookup, and two reusable leaves (a brand chip + the connector picker).
  */
 import { Plug } from 'lucide-react';
 import { CONNECTOR_META } from '@/lib/connectors/connectorMeta';
@@ -10,8 +8,8 @@ import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/compone
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 
-/** Identical props every matrix variant receives (the baseline's data layer). */
-export interface MatrixVariantProps {
+/** Data the matrix renders from (supplied by the page wrapper). */
+export interface LlmOverviewMatrixProps {
   projects: DevProject[];
   llmCreds: PersonaCredential[];
   assign: (projectId: string, credId: string | null) => void;

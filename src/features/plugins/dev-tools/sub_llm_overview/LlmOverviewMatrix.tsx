@@ -1,13 +1,11 @@
 /**
- * Coverage board — the matrix as a fleet-instrumentation status view.
+ * LlmOverviewMatrix — the Layer-1 assignment matrix (Dev Tools · LLM Overview).
  *
- * Metaphor: portfolio coverage — "instrument the fleet, close the gaps". Flips
- * the mental model from per-project assignment to a status-first read: a top
- * strip answers "how much of my fleet is instrumented, and on which tools?" (a
- * coverage meter + per-tool tally), and below, projects are brand-badged tiles in
- * a grid with the un-wired ones flagged as gaps. Different from baseline (a flat
- * per-row list with no portfolio signal) and from Patch bay (per-project rows) by
- * leading with coverage instead of the assignment control.
+ * A fleet-instrumentation status view: the top strip answers "how much of my
+ * fleet is instrumented, and on which tools?" (a coverage meter + per-tool
+ * tally), and below, projects are brand-badged tiles in a grid with the un-wired
+ * ones flagged as gaps — leading with coverage rather than the assignment
+ * control. Wiring a project writes `dev_projects.llm_tracking_credential_id`.
  */
 import { useMemo } from 'react';
 import { Gauge } from 'lucide-react';
@@ -16,10 +14,10 @@ import {
   assignedCred,
   ConnectorChip,
   ConnectorSocket,
-  type MatrixVariantProps,
+  type LlmOverviewMatrixProps,
 } from './matrixShared';
 
-export default function MatrixCoverage({ projects, llmCreds, assign }: MatrixVariantProps) {
+export default function LlmOverviewMatrix({ projects, llmCreds, assign }: LlmOverviewMatrixProps) {
   const wired = projects.filter((p) => p.llm_tracking_credential_id);
   const pct = projects.length ? Math.round((wired.length / projects.length) * 100) : 0;
 
