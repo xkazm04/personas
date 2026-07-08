@@ -1,31 +1,27 @@
-/** coreSections — the shared building blocks the persona-core layout variants
- *  compose (snapshot row, disposition + conflict, model + effort engine). Keeping
- *  them here means the three prototype layouts differ only in ARRANGEMENT, and the
- *  calibrated typography lives in one place.
+/** coreSections — shared pieces + the typography strategy for the persona-core
+ *  configurator (the "Codex" layout).
  *
- *  Typography tiers (fixing the flat-contrast read):
- *   • Column header  → typo-title-lg      (1rem, tinted)      — dominant
- *   • Field label    → typo-heading        (0.875rem, 700 fg)  — clearly above body
- *   • Interactive    → typo-body text-fg   (0.875rem, 400 fg)  — readable, not muted
- *   • Description    → typo-caption         (0.875rem, 70% fg)  — the only muted tier
+ *  Typography tiers — the goal is that a column TITLE clearly dominates the
+ *  content beneath it, and the field markers read as quiet overlines, not as more
+ *  body text:
+ *   • Column title  → typo-section-title  (1.125rem, tinted)     — dominant anchor
+ *   • Field marker  → typo-label           (0.75rem, uppercase)   — quiet overline
+ *   • Content       → typo-body text-fg    (0.875rem, 400 fg)     — the readable tier
+ *   • Description   → typo-caption          (0.875rem, 70% fg)     — the only muted tier
  */
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
-import { coreIcon, PolaritySlider, Segment, ACCENT } from "./coreBits";
-import { CONFLICT_STYLES } from "./coreTraits";
-import { MODEL_TIERS, EFFORT_TIERS, type PersonaCore } from "./usePersonaCore";
+import { coreIcon } from "./coreBits";
+import type { PersonaCore } from "./usePersonaCore";
 
-/** Plain-language disposition label for the readback surfaces. */
-export const dispositionWord = (v: number) => (v < 0.34 ? "Cautious" : v > 0.66 ? "Bold" : "Balanced");
-
-/** Section/column heading — the dominant tier. */
+/** Column title — the dominant tier that anchors each column. */
 export function SectionHeader({ children }: { children: React.ReactNode }) {
-  return <span className="typo-title-lg">{children}</span>;
+  return <span className="typo-section-title">{children}</span>;
 }
 
-/** Field label — bold foreground, clearly above the muted description tier. */
+/** Field marker — a quiet uppercase overline, deliberately below the content. */
 export function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span className="typo-heading text-foreground">{children}</span>;
+  return <span className="typo-label uppercase tracking-[0.15em] text-foreground/85">{children}</span>;
 }
 
 /** Vertical mentality medallions — the snapshot presets as a right-column list.
@@ -52,61 +48,6 @@ export function SnapshotColumn({ core }: { core: PersonaCore }) {
           </motion.button>
         );
       })}
-    </div>
-  );
-}
-
-/** Disposition slider + conflict style, with the snapshot colour flash. */
-export function DispositionBlock({ core }: { core: PersonaCore }) {
-  const { state } = core;
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="relative rounded-card border border-card-border bg-secondary/20 p-3 overflow-hidden">
-        <AnimatePresence>
-          {core.preset && (
-            <motion.div
-              key={state.archetypeId}
-              initial={{ opacity: 0.5 }} animate={{ opacity: 0 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: colorWithAlpha(core.preset.color, 0.16) }}
-            />
-          )}
-        </AnimatePresence>
-        <PolaritySlider label="Disposition" lowLabel="Cautious" highLabel="Bold" value={state.disposition} color="#fb7185" onChange={core.setDisposition} />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <FieldLabel>In disagreement</FieldLabel>
-        <div className="flex flex-wrap gap-1.5">
-          {CONFLICT_STYLES.map((c) => {
-            const active = state.conflictStyle === c.id;
-            return (
-              <button
-                key={c.id} type="button"
-                onClick={() => core.setConflict(c.id)}
-                title={c.blurb}
-                data-testid={`core-conflict-${c.id}`}
-                aria-pressed={active}
-                className={`px-2.5 py-1 rounded-full border typo-body transition-colors cursor-pointer ${active ? "text-foreground border-transparent" : "text-foreground/85 border-card-border hover:border-foreground/30"}`}
-                style={active ? { background: colorWithAlpha("#fbbf24", 0.18), boxShadow: "inset 0 0 0 1px rgba(251,191,36,0.5)" } : undefined}
-              >
-                {c.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Model tier × reasoning effort. */
-export function EngineBlock({ core }: { core: PersonaCore }) {
-  return (
-    <div className="flex flex-col gap-4">
-      <Segment label="Model" layoutGroup="model" color={ACCENT} value={core.state.model} onChange={core.setModel} options={MODEL_TIERS} />
-      <Segment label="Reasoning effort" layoutGroup="effort" color="#a78bfa" value={core.state.effort} onChange={core.setEffort} options={EFFORT_TIERS} />
     </div>
   );
 }

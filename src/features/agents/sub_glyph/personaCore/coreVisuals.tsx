@@ -25,7 +25,7 @@ function IconTile({ icon: Icon, label, active, color, onClick, testid, blurb }: 
       style={active ? { borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.14) } : undefined}
     >
       <Icon className="w-4 h-4" style={{ color: active ? color : undefined }} />
-      <span className="typo-caption text-foreground leading-none">{label}</span>
+      <span className="typo-body text-foreground leading-none">{label}</span>
     </motion.button>
   );
   return blurb ? <Tooltip content={blurb}>{tile}</Tooltip> : tile;
@@ -67,7 +67,7 @@ export function EffortMeter({ core }: { core: PersonaCore }) {
             <button type="button" onClick={() => core.setEffort(e.id as EffortLevel)} data-testid={`core-effort-${e.id}`} aria-pressed={core.state.effort === e.id}
               className="flex-1 flex flex-col items-center gap-1 cursor-pointer group">
               <span className="w-full rounded-sm transition-colors" style={{ height: h, background: on ? colorWithAlpha(purple, core.state.effort === e.id ? 0.9 : 0.5) : "rgba(255,255,255,0.08)" }} />
-              <span className={`typo-caption leading-none ${core.state.effort === e.id ? "text-foreground" : "text-foreground/85 group-hover:text-foreground"}`}>{e.label}</span>
+              <span className={`typo-body leading-none ${core.state.effort === e.id ? "text-foreground" : "text-foreground/85 group-hover:text-foreground"}`}>{e.label}</span>
             </button>
           </Tooltip>
         );
