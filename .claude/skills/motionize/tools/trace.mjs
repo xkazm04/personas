@@ -8,7 +8,8 @@
  * Usage:
  *   node trace.mjs --input flat.png --output icon.svg \
  *     [--mode spline|polygon|pixel] [--color-precision 6] [--filter-speckle 4] \
- *     [--corner-threshold 60] [--path-precision 5] [--no-optimize]
+ *     [--corner-threshold 60] [--path-precision 5] [--no-optimize] \
+ *     [--emit data.ts --name GLYPH_NAME [--order radial|angular]]   # one-pass component data
  * Prefer a FLAT source (solid fills, hard edges, no glow/gradients) — glow is a
  * later SVG/CSS filter, not something to trace.
  */
@@ -16,6 +17,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { dirname, resolve } from "path";
 import { vectorize, ColorMode, Hierarchical, PathSimplifyMode } from "@neplex/vectorizer";
 import { optimize } from "svgo";
+import { svgToGlyphData } from "./emit-glyph.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -66,6 +68,17 @@ async function main() {
   mkdirSync(dirname(abs), { recursive: true });
   writeFileSync(abs, svg);
   const pathCount = (svg.match(/<path/g) || []).length;
-  console.log(JSON.stringify({ success: true, output: abs, bytes: svg.length, paths: pathCount, config }, null, 2));
+  const result = { success: true, output: abs, bytes: svg.length, paths: pathCount, config };
+
+  // One-pass component data: trace → animatable {d,fill,delay}[] TS module.
+  if (args.emit && args.name) {
+    const { ts, elements, dropped } = svgToGlyphData(svg, { name: args.name, order: args.order });
+    const emitAbs = resolve(args.emit);
+    mkdirSync(dirname(emitAbs), { recursive: true });
+    writeFileSync(emitAbs, ts);
+    result.emit = { output: emitAbs, elements, dropped };
+  }
+
+  console.log(JSON.stringify(result, null, 2));
 }
 main().catch((e) => { console.error(JSON.stringify({ error: String(e?.message || e) }, null, 2)); process.exit(1); });

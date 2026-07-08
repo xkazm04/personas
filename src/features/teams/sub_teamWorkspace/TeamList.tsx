@@ -2,7 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Users, Zap, Trash2, ArrowRight, Layers, PenLine, Workflow, type LucideIcon } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { TeamNetworkGlyph } from './TeamNetworkGlyph';
+import { MotionizedGlyph, type GlyphElement } from './MotionizedGlyph';
+import { NETWORK_GLYPH, NETWORK_GLYPH_VIEWBOX } from './networkGlyphData';
+import { CINEMATIC_GLYPH, CINEMATIC_GLYPH_VIEWBOX } from './cinematicGlyphData';
+import { BLOOM_GLYPH, BLOOM_GLYPH_VIEWBOX } from './bloomGlyphData';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { hasUnsentDraft } from '../sub_collab/useTeamChannel';
@@ -399,6 +402,13 @@ function MembersHoverPreview({ teamId, memberCount, personaIndex }: {
   );
 }
 
+type GlyphKind = 'cinematic' | 'network' | 'bloom';
+const GLYPH_VARIANTS: { id: GlyphKind; label: string; data: GlyphElement[]; viewBox: string; glow?: boolean; spread: number }[] = [
+  { id: 'cinematic', label: 'Cinematic', data: CINEMATIC_GLYPH, viewBox: CINEMATIC_GLYPH_VIEWBOX, glow: true, spread: 1.1 },
+  { id: 'network', label: 'Network', data: NETWORK_GLYPH, viewBox: NETWORK_GLYPH_VIEWBOX, spread: 1.1 },
+  { id: 'bloom', label: 'Bloom', data: BLOOM_GLYPH, viewBox: BLOOM_GLYPH_VIEWBOX, spread: 1.4 },
+];
+
 function EmptyState({
   onCreate,
   onAuto,
@@ -410,9 +420,23 @@ function EmptyState({
   onPreset: () => void;
   t: ReturnType<typeof useTranslation>['t'];
 }) {
+  const [glyph, setGlyph] = useState<GlyphKind>('cinematic');
+  const v = GLYPH_VARIANTS.find((g) => g.id === glyph)!;
   return (
     <div className="animate-fade-slide-in text-center py-12">
-      <TeamNetworkGlyph className="w-44 h-44 mx-auto mb-2" />
+      <MotionizedGlyph key={glyph} data={v.data} viewBox={v.viewBox} glow={v.glow} spread={v.spread} className="w-44 h-44 mx-auto mb-2" />
+      {/* Prototype — compare art directions; pick one and drop the switcher. */}
+      <div className="inline-flex gap-0.5 mb-4 rounded-input border border-primary/10 p-0.5 bg-background/40">
+        {GLYPH_VARIANTS.map((g) => (
+          <button
+            key={g.id}
+            onClick={() => setGlyph(g.id)}
+            className={`px-2.5 py-1 rounded-input typo-caption transition-colors ${glyph === g.id ? 'bg-primary/15 text-primary' : 'text-foreground opacity-60 hover:opacity-100'}`}
+          >
+            {g.label}
+          </button>
+        ))}
+      </div>
       <h2 className="typo-heading-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
       <p className="typo-body text-foreground mb-6 max-w-sm mx-auto">{t.pipeline.no_teams_hint}</p>
       <div className="flex flex-wrap items-center justify-center gap-3">

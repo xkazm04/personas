@@ -16,6 +16,13 @@ generator**. Motionize consumes flat art and produces animated React components.
 **flat** twin (solid fills, hard edges, no glow/gradients), trace *that*, then add
 glow back as an SVG/CSS filter — that separation is what puts traces "under control".
 
+**Read [`ART_STYLE.md`](./ART_STYLE.md) first** — the shared visual language (concept-
+art / cinematic feel via a dark surface + tight neon accent set + emissive SVG-filter
+glow) so every glyph is consistent. **Always produce a dark AND a light variant** —
+we own the coloring, so no asset should be one bitmap stretched across themes
+(recolor the same traced SVG per role, selected via `useIsDarkTheme()`; the tracer's
+negative-space `var(--background)` flips with the theme for free).
+
 ## Pipeline (four steps)
 
 ### 0. One-time setup
@@ -44,27 +51,35 @@ node .claude/skills/motionize/tools/qwen-recognize.mjs \
 DashScope OpenAI-compatible endpoint, `qwen3.7-plus` + quota-fallbacks, `$QWEN_API_KEY`
 (free 1M tokens / 90 days per model). If it isn't flat/clean, re-prompt step 1.
 
-### 3. Trace → clean multi-path SVG
+### 3. Trace → clean SVG (+ animatable data, one pass)
 ```bash
 node .claude/skills/motionize/tools/trace.mjs \
   --input .claude/skills/motionize/out/<name>-flat.png \
   --output .claude/skills/motionize/out/<name>.svg \
-  --mode spline --color-precision 6 --filter-speckle 4
+  --mode spline --color-precision 4 --filter-speckle 6 \
+  --emit src/features/<area>/<name>GlyphData.ts --name <NAME>_GLYPH   # folds in the data step
 ```
 `@neplex/vectorizer` (VTracer) → one `<path>` per color region + SVGO cleanup.
-Tune `--filter-speckle` up to kill residual noise; `--mode polygon` for a harder
-geometric look; `--mono` (Binary) for a single-color line mark. Re-validate the
-rendered SVG against the original with Qwen (step 2) if fidelity matters.
+`--emit`/`--name` bakes the paths into a `{ d, fill, delay }[]` TS module in the
+same pass (radial `delay` = distance to centre, so a many-path trace becomes an
+orchestrated center-out reveal; `--order angular` for a clockwise sweep). Handles
+the trace gotchas (drops full-canvas bg, recolors large negative-space to
+`var(--background)`, preserves paint order). Tune `--filter-speckle` (10–40) + lower
+`--color-precision` (3–4) until the path count matches the *real* regions.
+(`emit-glyph.mjs` is the same core as a standalone CLI.)
 
 ### 4. Motionize → React component
-Hand the SVG's paths to **Motion (framer-motion, already in the app)**:
-- Inline the `<path>`s as `motion.path`, `initial={{ pathLength: 0, opacity: 0 }}`,
-  `animate={{ pathLength: 1, opacity: 1 }}`, staggered via `transition.delay` per
-  index for a sequential self-draw. Add `strokeDasharray="0 1"` to avoid SSR flash.
-- For fills (not just strokes) reveal with opacity/clip; for a frame-exact rendered
-  asset, drive the same paths with Remotion `interpolate(frame, …)`.
-- Keep it a self-contained component (e.g. `<name>Glyph.tsx`) that renders inline
-  SVG — no runtime tracing, the SVG is baked at authoring time.
+A tiny data-driven component maps the emitted array to **Motion (framer-motion)**:
+- `NETWORK_GLYPH.map(p => <motion.path d={p.d} fill={p.fill} … delay={p.delay*SPREAD} />)`.
+- **Opacity always, transform when allowed** — opacity cross-fade plays even under
+  reduced motion (`useMotion().shouldAnimate` gates the scale/pop, NOT the fade), so
+  the reveal is never a hard snap. Scale from each path's own centre with
+  `style={{ transformOrigin: 'center', transformBox: 'fill-box' }}`.
+- Add glow via an SVG `<filter>` (feGaussianBlur+feMerge) on accent paths for the
+  cinematic emissive look; a faint `<radialGradient>` behind = "fog".
+- For a frame-exact rendered asset, drive the same paths with Remotion `interpolate`.
+- Ship a **dark + light** variant (recolor the array by role, pick via `useIsDarkTheme`).
+  Self-contained component, SVG baked at authoring time (no runtime tracing).
 
 ## Gotchas (learned)
 
