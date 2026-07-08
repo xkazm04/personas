@@ -42,13 +42,13 @@ forward" test.
 ## Run
 
 ```bash
-# Baseline only (works today):
+# Baseline (lean fixture — completes headless in a few minutes):
 uvx --with httpx python tools/test-mcp/run_build_bench.py \
-    --fixture web-research-desk --variant sequential --repeat 3
+    --fixture lite-web-summary --variant sequential --repeat 3
 
-# Side-by-side once the multi-agent path lands (Phase 2+):
+# As-is/to-be side-by-side once the resolution fan-out lands:
 uvx --with httpx python tools/test-mcp/run_build_bench.py \
-    --fixture web-research-desk --variant sequential --variant multiagent --repeat 3
+    --fixture lite-web-summary --variant sequential --variant multiagent --repeat 3
 ```
 
 Before **Phase 0** (auto-create draft persona) lands, pass an existing draft
@@ -71,13 +71,30 @@ bundle, score the rubric dimensions (0–3), and write
 `verdicts/<fixture>/<variant>-<n>.json`. This mirrors the athena suite — the
 judge is the CLI session itself, no `ANTHROPIC_API_KEY`, no SDK.
 
+## Auto-answer (headless robustness)
+
+A one-shot build occasionally parks in `awaiting_input` (a gate the LLM couldn't
+resolve autonomously — often a connector-credential choice). Since the benchmark
+measures build **time**, not interaction, the driver **auto-answers** any parked
+question: it reads the pending question's `cell_key`, answers with the fixture's
+`answers[cell_key]` (optional) or its `default_answer` / a built-in default, and
+keeps polling — bounded to 3 answers per cell so an unresolvable gate bails
+(`STUCK:<cell>`) instead of looping. The progress line shows `· Nq` for N
+questions answered.
+
 ## Fixtures
 
+- [`fixtures/lite-web-summary.json`](./fixtures/lite-web-summary.json) — **the
+  baseline fixture.** 3 native web-research capabilities, **no connectors**, so it
+  promotes headless in ~3-5 min and gives a clean, repeatable number. Use it for
+  the baseline and the as-is/to-be A/B.
 - [`fixtures/web-research-desk.json`](./fixtures/web-research-desk.json) — the
-  canonical fixture: 3 web-research capabilities (native web tools) + 2 connector
-  tool-reactions (Airtable, Notion). Chosen because it exercises **fan-out #1**
-  (5 independent capability resolutions) and **fan-out #2** (2 real connector
-  tool-tests) — the two parallelism seams the multi-agent build targets.
+  **fan-out stress fixture**: 3 web-research capabilities + 2 connector
+  tool-reactions (Airtable, Notion), exercising **fan-out #1** (5 independent
+  capability resolutions) and **fan-out #2** (2 connector tool-tests). Heavier —
+  needs vault creds for the connectors and can exceed a bounded one-shot timeout;
+  reach for it once the resolution fan-out lands and you want to see it work at
+  scale, not for a quick baseline.
 
 Add a fixture by dropping a `<id>.json` next to it with `intent`, `expected`
 (hard assertions), and `rubric` (quality dimensions). See the web-research fixture

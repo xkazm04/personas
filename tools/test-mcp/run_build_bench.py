@@ -100,12 +100,16 @@ def main() -> None:
             run = run_one_build(
                 client, args.fixture, intent, variant,
                 persona_id=args.persona_id, mode=mode, timeout_s=args.timeout,
+                answers=fixture.get("answers"), default_answer=fixture.get("default_answer"),
             )
             cap = capture_build(db, session_id=run.session_id, persona_id=run.persona_id)
             results = evaluate_assertions(fixture, cap)
             gpr = gate_pass_rate(results)
+            extra = f" · {run.questions_answered}q" if run.questions_answered else ""
+            if run.stuck_question:
+                extra += f" · STUCK:{run.stuck_question}"
             print(f"    -> {run.terminal_phase} in {run.total_seconds}s · "
-                  f"{len(cap.capabilities)} caps · gate {gpr*100:.0f}%", flush=True)
+                  f"{len(cap.capabilities)} caps · gate {gpr*100:.0f}%{extra}", flush=True)
 
             # judge bundle (athena-style, for the operator's Claude judge pass)
             bundle = judge_bundle(fixture, cap, run, results)

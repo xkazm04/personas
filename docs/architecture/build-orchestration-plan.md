@@ -122,26 +122,63 @@ tests pass. Runtime A/B (identical-output check) pending a live harness run.
 
 ---
 
-## Phase 3 — Fan-out #2: parallel tool tests  ·  _first real parallelism_
+## Phase 4 — Scripted + parallel connector tool tests  ·  _deferred behind resolution fan-out_
 
-**Why.** Tool tests are independent by construction and run late (one-shot
-`run_tool_tests`), so this is the cheapest, safest win and a clean measurement of
-the scheduler under load.
+> **REORDERED (2026-07-08 baseline).** This was Phase 3, but the baseline showed
+> resolution dominates the tool-test phase **~8:1** (a clean simple build spent
+> ~120s resolving vs ~15-18s testing, and the ratio only grows with capability
+> count). The tool-test phase is a ≤15% slice, so its ceiling is small — this
+> optimization now **follows** the resolution fan-out (Phase 3 below), which
+> targets the 80%+. Section kept in full; only its priority changed.
 
-**Changes**
-1. In one-shot post-draft, dispatch each tool/connector test as its own bounded
-   sub-agent through the scheduler instead of the current sequential loop.
-2. Each test gets its own session dir; results reaped into the same aggregate
-   report shape (`last_test_report`).
+> **RESCOPED after reading `run_tool_tests` (tool_tests.rs).** The original
+> "parallelize the tool tests" premise was wrong: the tool-test phase is **not**
+> N independent per-tool LLM calls. It is **one** LLM call to generate a curl
+> test-plan (`spawn_temp "build-test"`, ~50s), then a loop of fast deterministic
+> curls (`execute_test_curl`), then **another** LLM call to summarise
+> (`generate_test_summary`, ~50s). Parallelizing the 2 fast Airtable/Notion curls
+> saves ~nothing — the phase is LLM-dominated. So the gate ("the tool-test phase
+> shrinks") **cannot** be met by parallelizing curls; it can only be met by
+> **eliminating the plan-generation + summary LLM calls** — i.e. the scripted
+> approach (formerly Phase 5's first item). Phases 3 and 5.1 are therefore merged.
 
-**Risk** Medium (concurrent CLIs; rate limits). **Gate** Harness: `multiagent`
-build time **down** vs baseline (the tool-test phase shrinks), gate pass-rate +
-Airtable/Notion tool-test outcomes **unchanged**. FORWARD required.
-**Result** _(fill in)_
+**Why.** The connectors declare a `healthcheck_config`; a deterministic
+`healthcheck::run_healthcheck` (or `api_proxy::execute_api_request`) per bound
+connector IS the correct read-only test — faster, cheaper, and less flaky than an
+LLM composing curl. Running them through `run_lanes` also finally exercises the
+Phase 2 scheduler in the real build path.
+
+**Changes** (multiagent-gated; sequential keeps the LLM path untouched)
+1. Thread `orchestration` into `run_tool_tests` (signature + its callers in
+   `oneshot.rs` / the test/promote commands).
+2. In multiagent mode, **short-circuit before the `build-test` LLM spawn**: for
+   each `required_connector`, resolve its vault `credential_id` and run
+   `run_healthcheck` (deterministic) through `run_lanes` (bounded parallel),
+   building the SAME per-tool result shape (`{tool_name, status, http_status,
+   latency_ms, error, connector, output_preview}`) and aggregate the existing
+   fallback path already emits. Skip `generate_test_summary` too (deterministic
+   summary), removing both LLM calls.
+3. Built-in / native tools auto-pass exactly as the current fallback does.
+
+**Risk** Medium — behavior-changing (deterministic vs LLM-composed test) and
+security-adjacent (real API calls with vault creds). Gated on `multiagent` so the
+default path is untouched. **Not yet implemented** — needs runtime verification
+(real Airtable/Notion creds + a live harness run), since correctness here can't be
+proven by `cargo check` alone.
+
+**Gate** Harness: `multiagent` tool-test phase **down** vs baseline (both LLM
+calls gone), Airtable/Notion outcomes **unchanged** (healthcheck pass/fail ==
+the curl pass/fail). FORWARD required.
+**Result** _(investigated + rescoped + designed; implementation is the next
+focused step with live verification)._
 
 ---
 
-## Phase 4 — Fan-out #1: parallel per-capability resolution  ·  _the big lift_
+## Phase 3 — Fan-out #1: parallel per-capability resolution  ·  _the big lift · NOW THE PRIORITY_
+
+> **PROMOTED ahead of tool-tests (2026-07-08 baseline).** Resolution is 80%+ of
+> build time and scales with capability count; this is where the measurable win
+> is. Implement this before the scripted tool-tests (Phase 4).
 
 **Why.** The largest serial stretch. 5 capabilities (the fixture) resolve
 independently once identity + enumeration exist.
@@ -154,6 +191,32 @@ independently once identity + enumeration exist.
 3. **Barrier**: `assemble agent_ir` on the lead session — dedup tools, reconcile
    connectors, resolve persona-wide fields, detect cross-capability conflicts.
 4. Interactive mode stays fully serial (unchanged).
+
+**Implementation approach (the paradigm shift).** Today the build is ONE LLM
+conversation that the *LLM* drives across `--continue` turns (it decides when to
+emit behavior_core, enumeration, each resolution, agent_ir). Fan-out inverts the
+control: *Rust* orchestrates. Concretely, in `run_session` under `multiagent`:
+- Run the serial head as today until `CapabilityEnumerationUpdate` lands, then
+  extract the capability list + the resolved `behavior_core` from `resolved_cells`.
+- New **per-capability prompt** builder (a focused variant in `session_prompt.rs`):
+  "given this behavior_core + this ONE capability + these connectors, emit the
+  `capability_resolution` JSON for it" — must produce the SAME event shape
+  `parse_build_line` already handles.
+- New **`fan_out_resolution(...)`**: builds one `LaneTask` per capability, each
+  spawning its own `CliProcessDriver` (fresh session dir, no `--continue`) with
+  that prompt, draining output through `read_line_limited` + `parse_build_line`;
+  dispatched via `orchestrator::run_lanes` (bounded budget). Each lane stamps
+  `lane = cap-<id>` on its resolution events (Phase 1's field — already wired).
+- **Merge**: fold each lane's `CapabilityResolutionUpdate`s into `resolved_cells`,
+  then run one lead-session turn (or a deterministic assembler) to produce
+  `agent_ir` from the merged parts, reconciling shared connectors + dedup tools.
+- The interactive gate machine (mpsc park/resume) is bypassed in this path — it
+  only applies to serial interactive builds.
+
+This is a genuine restructure of the intricate `run_session` loop (~1700 lines),
+not a tweak. It needs runtime iteration (prompt grounding, merge correctness) —
+hence it should be built when the harness can verify it live (a non-throttled
+subscription window + the `lite-web-summary` baseline for A/B).
 
 **Risk** High (the `--continue` model doesn't survive fan-out; context must be
 passed in; barrier reconciliation must catch conflicts). **Gate** Harness:
@@ -191,11 +254,21 @@ test phase. Config location asserted by the fixture's connector-binding check.
 
 ## Sequencing summary
 
+**Revised order after the 2026-07-08 baseline** (resolution dominates tool-test
+~8:1, so the capability fan-out is promoted ahead of the tool-test work):
+
 ```
-Phase 0 (telemetry+baseline) ─┬─> Phase 1 (events) ─> Phase 2 (scaffold) ─> Phase 3 (tool-test fan-out) ─> Phase 4 (capability fan-out)
-                              └─> Phase 5 (scripted connector calls)  [independent track]
+Phase 0 (telemetry+baseline) ─> Phase 1 (events) ─> Phase 2 (scaffold) ─> Phase 3 (CAPABILITY fan-out) ─> Phase 4 (scripted tool-tests)
+                                                                          └─> Phase 5 (scripted connector calls)  [independent track]
 ```
 
-Phase 0 gates everything (nothing is measurable without it). Phases 1→4 are the
-orchestration spine, each FORWARD-gated by build-bench. Phase 5 can run in
-parallel and is itself measured by the connector tool-test outcome + cost.
+Phase 0 gates everything (nothing is measurable without it). Phase 3 (per-capability
+resolution fan-out) is now the priority — it targets the 80%+ of build time.
+Phase 4 (scripted tool-tests) follows; its ceiling is the ≤15% tool-test slice.
+Phase 5 can run in parallel. Each is FORWARD-gated by build-bench.
+
+_Baseline evidence (2026-07-08): a clean simple build split ~120s resolution vs
+~15-18s tool-test (~8:1); the ratio grows with capability count. The heavier
+5-cap `web-research-desk` fixture couldn't complete in a bounded headless run,
+which is what motivated the lean `lite-web-summary` baseline fixture + the
+driver's auto-answer._
