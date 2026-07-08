@@ -21,6 +21,7 @@ pub mod llm_spend;
 pub mod incremental_scan;
 pub mod qwen_engine;
 pub mod research_lab;
+pub mod scraper;
 pub mod settings;
 pub mod setup;
 pub mod skill_files;

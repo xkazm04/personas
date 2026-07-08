@@ -2741,6 +2741,14 @@ pub fn run() {
             // Infrastructure -- Setup / Auto-install
             commands::infrastructure::setup::start_setup_install,
             commands::infrastructure::setup::cancel_setup_install,
+            // Infrastructure -- Local scraper (Pumper, Phase 1b)
+            commands::infrastructure::scraper::scraper_list_configs,
+            commands::infrastructure::scraper::scraper_save_config,
+            commands::infrastructure::scraper::scraper_run_config,
+            commands::infrastructure::scraper::scraper_delete_config,
+            commands::infrastructure::scraper::scraper_run_extract,
+            commands::infrastructure::scraper::scraper_list_datasets,
+            commands::infrastructure::scraper::scraper_query_dataset,
             // Infrastructure -- Settings
             commands::infrastructure::settings::get_app_setting,
             commands::infrastructure::settings::get_app_settings_bulk,

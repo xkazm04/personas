@@ -309,6 +309,27 @@ pub fn query_dataset(
     Ok(rows.filter_map(|x| x.ok()).collect())
 }
 
+/// Per-dataset rollup for the UI: name, record count, last update.
+pub fn dataset_summaries(pool: &DbPool) -> Result<Vec<Value>, String> {
+    let conn = pool.get().map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT dataset, COUNT(*) AS n, MAX(updated_at) AS last
+             FROM scraper_records GROUP BY dataset ORDER BY last DESC",
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |r| {
+            Ok(serde_json::json!({
+                "name": r.get::<_, String>(0)?,
+                "count": r.get::<_, i64>(1)?,
+                "lastUpdated": r.get::<_, Option<String>>(2)?,
+            }))
+        })
+        .map_err(|e| e.to_string())?;
+    Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
 // ---------------------------------------------------------------------------
 // Saved scrape configs + scheduling (Phase 1b)
 // ---------------------------------------------------------------------------
