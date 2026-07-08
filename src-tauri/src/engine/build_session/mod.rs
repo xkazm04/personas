@@ -18,6 +18,7 @@
 //!   - `events`         — Tauri-channel + DB-update glue.
 
 mod events;
+mod fanout;
 mod fix_pass;
 mod gates;
 mod oneshot;

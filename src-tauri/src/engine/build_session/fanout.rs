@@ -1,0 +1,214 @@
+//! Per-capability resolution fan-out — build-orchestration Phase 3 (the big lift).
+//!
+//! The core new mechanic for the multi-agent build. Today the build is ONE Claude
+//! CLI conversation the model drives across `--continue` turns. This inverts the
+//! control: once `behavior_core` + `capability_enumeration` exist, each capability
+//! is resolved in its OWN CLI conversation (fresh temp dir, NO `--continue`), in
+//! parallel, bounded by the Phase 2 `orchestrator::run_lanes` scheduler. Each
+//! sub-agent gets the persona identity + the single capability + connector context
+//! and emits `capability_resolution` events for that capability only; the caller
+//! merges them back into `resolved_cells` and then runs the serial agent_ir
+//! assembly (one lead turn) as before.
+//!
+//! ## STATUS — first draft, NOT yet wired, NOT runtime-verified
+//! This module is the fan-out MECHANIC. The remaining Phase 3 step is to wire it
+//! into `run_session` behind the `multiagent` flag:
+//!   1. run the serial head (turn 0) until `behavior_core` + `capability_enumeration`
+//!      land; extract the behavior_core JSON + the capability list from the parsed
+//!      events (or `resolved_cells`), and build the connector-context blob;
+//!   2. call [`fan_out_resolution`]; dual-emit each returned event; fold the
+//!      resolutions into `resolved_cells`;
+//!   3. run one lead turn to assemble `agent_ir` from the merged capabilities,
+//!      then continue to DraftReady → oneshot test/promote as today.
+//! The prompt grounding + the merge/assembly correctness need live iteration
+//! against the `lite-web-summary` baseline (a `cargo check` can't prove them),
+//! which is why the wiring is deferred to a verifiable session. Gated on
+//! `multiagent`; the sequential path is untouched.
+#![allow(dead_code)]
+
+use serde_json::Value;
+
+use super::super::cli_process::{read_line_limited, CliProcessDriver};
+use super::super::types::CliArgs;
+use super::orchestrator::{lane, run_lanes, LaneTask};
+use super::parser::parse_build_line;
+use crate::db::models::BuildEvent;
+
+/// One capability's resolved fields — the `capability_resolution` events the
+/// sub-agent emitted (lane-stamped), plus an `error` if the lane failed.
+pub struct CapabilityResolution {
+    pub capability_id: String,
+    pub events: Vec<BuildEvent>,
+    pub error: Option<String>,
+}
+
+/// Build the focused prompt for one capability's sub-agent. It carries the
+/// persona identity (`behavior_core`) + the single capability + connector
+/// context, and instructs the model to emit ONLY that capability's
+/// `capability_resolution` events (no other capabilities, no clarifying
+/// questions, no agent_ir). Self-sufficient: sub-agents get no `--continue`
+/// history, so all context is in this prompt.
+pub fn build_capability_prompt(
+    behavior_core: &Value,
+    capability: &Value,
+    connector_context: &str,
+) -> String {
+    let cap_id = capability.get("id").and_then(|v| v.as_str()).unwrap_or("");
+    format!(
+        "You are resolving ONE capability of an AI persona that is already defined. \
+         The persona's identity and its full capability list are fixed — your job is \
+         only to flesh out the single capability below.\n\n\
+         ## Persona identity (behavior_core)\n{core}\n\n\
+         ## The capability to resolve (resolve ONLY this one)\n{cap}\n\n\
+         ## Available connectors\n{conn}\n\n\
+         ## Your task\n\
+         Emit the v3 `capability_resolution` events for capability `{id}` and NOTHING \
+         else. Resolve each applicable field: suggested_trigger, connectors, tool_hints, \
+         event_subscriptions, input_schema, sample_input, review_policy, memory_policy, \
+         notification_channels, error_handling. Do NOT resolve other capabilities; do NOT \
+         emit behavior_core / capability_enumeration / persona_resolution / agent_ir; do \
+         NOT ask clarifying questions — pick sensible defaults.\n\n\
+         Output raw JSON only, one event per line, each of the form:\n\
+         {{\"capability_resolution\": {{\"id\": \"{id}\", \"field\": \"<field-name>\", \
+         \"value\": <field-value>, \"status\": \"resolved\"}}}}\n",
+        core = serde_json::to_string_pretty(behavior_core).unwrap_or_default(),
+        cap = serde_json::to_string_pretty(capability).unwrap_or_default(),
+        conn = connector_context,
+        id = cap_id,
+    )
+}
+
+/// Resolve one capability in its own CLI conversation (fresh temp dir, no
+/// `--continue`). Returns the capability's `capability_resolution` events
+/// (lane-stamped), filtering out anything else the sub-agent may have emitted.
+/// Errors are captured on the returned struct — never panics the lane.
+async fn resolve_one_capability(
+    cli_args: CliArgs,
+    prompt: String,
+    session_id: String,
+    capability_id: String,
+) -> CapabilityResolution {
+    let lane_id = format!("cap-{capability_id}");
+    let mut driver = match CliProcessDriver::spawn_temp(&cli_args, "build-cap") {
+        Ok(d) => d,
+        Err(e) => {
+            return CapabilityResolution {
+                capability_id,
+                events: vec![],
+                error: Some(format!("spawn failed: {e}")),
+            }
+        }
+    };
+    if let Err(e) = driver.write_stdin_line(prompt.as_bytes()).await {
+        driver.kill().await;
+        return CapabilityResolution {
+            capability_id,
+            events: vec![],
+            error: Some(format!("write failed: {e}")),
+        };
+    }
+    driver.close_stdin().await;
+
+    let mut raw_events: Vec<BuildEvent> = Vec::new();
+    if let Some(mut reader) = driver.take_stdout_reader() {
+        loop {
+            match read_line_limited(&mut reader).await {
+                Ok(Some(line)) => raw_events.extend(parse_build_line(&line, &session_id)),
+                Ok(None) | Err(_) => break,
+            }
+        }
+    }
+    let _ = driver.finish().await;
+
+    // Keep only THIS capability's resolution events; stamp the lane.
+    let mut events = Vec::new();
+    for mut ev in raw_events {
+        if let BuildEvent::CapabilityResolutionUpdate {
+            capability_id: cid,
+            lane,
+            ..
+        } = &mut ev
+        {
+            if *cid == capability_id {
+                *lane = Some(lane_id.clone());
+                events.push(ev);
+            }
+        }
+    }
+    CapabilityResolution {
+        capability_id,
+        events,
+        error: None,
+    }
+}
+
+/// Fan out per-capability resolution across `capabilities`, at most
+/// `max_parallel` concurrent (via `orchestrator::run_lanes`). Each capability
+/// resolves in its own CLI conversation. Results come back one per capability,
+/// in input order.
+pub async fn fan_out_resolution(
+    cli_args: CliArgs,
+    session_id: String,
+    behavior_core: Value,
+    capabilities: Vec<Value>,
+    connector_context: String,
+    max_parallel: usize,
+) -> Vec<CapabilityResolution> {
+    let tasks: Vec<LaneTask<CapabilityResolution>> = capabilities
+        .into_iter()
+        .filter_map(|cap| {
+            let cap_id = cap.get("id").and_then(|v| v.as_str())?.to_string();
+            let prompt = build_capability_prompt(&behavior_core, &cap, &connector_context);
+            let args = cli_args.clone();
+            let sid = session_id.clone();
+            let cid = cap_id.clone();
+            Some(lane(
+                cap_id,
+                resolve_one_capability(args, prompt, sid, cid),
+            ))
+        })
+        .collect();
+
+    run_lanes(max_parallel, tasks)
+        .await
+        .into_iter()
+        .map(|o| match o.result {
+            Ok(res) => res,
+            // A lane that panicked (should not happen — errors are captured on
+            // the struct) surfaces here as an error-only resolution.
+            Err(e) => CapabilityResolution {
+                capability_id: o.lane,
+                events: vec![],
+                error: Some(e),
+            },
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn prompt_is_scoped_to_one_capability() {
+        let core = json!({ "mission": "Summarize the web", "voice": "concise" });
+        let cap = json!({ "id": "uc_summarize_url", "title": "Summarize a URL", "summary": "Fetch + summarize a page" });
+        let p = build_capability_prompt(&core, &cap, "WebSearch, WebFetch (native, no credential)");
+        // Targets exactly this capability id, in the required event shape.
+        assert!(p.contains("uc_summarize_url"), "prompt must name the capability id");
+        assert!(p.contains("capability_resolution"), "prompt must ask for capability_resolution events");
+        assert!(p.contains("ONLY this one"), "prompt must scope to a single capability");
+        // Grounds the sub-agent in the persona identity + connectors.
+        assert!(p.contains("Summarize the web"), "prompt must inject behavior_core");
+        assert!(p.contains("WebFetch"), "prompt must inject connector context");
+        // Suppresses the things a sub-agent must not do.
+        assert!(p.contains("do NOT") || p.contains("Do NOT") || p.contains("DO NOT"));
+    }
+
+    #[test]
+    fn prompt_handles_missing_id_without_panicking() {
+        let p = build_capability_prompt(&json!({}), &json!({ "title": "x" }), "");
+        assert!(p.contains("capability_resolution"));
+    }
+}
