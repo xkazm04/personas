@@ -15,13 +15,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 const SPANS = ['sm:col-span-2 sm:row-span-2', 'sm:col-span-2', 'sm:row-span-2'];
 
 export function BentoGrid({ onPick }: { onPick: (domainId: string) => void }) {
-  const { counts } = useExploreCatalog();
+  const { templateCounts } = useExploreCatalog();
   const isDark = useIsDarkTheme();
   const { t } = useTranslation();
 
   const ranked = useMemo(
-    () => [...DOMAINS].sort((a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0)),
-    [counts],
+    () => [...DOMAINS].sort((a, b) => (templateCounts[b.id] ?? 0) - (templateCounts[a.id] ?? 0)),
+    [templateCounts],
   );
 
   return (
@@ -40,7 +40,7 @@ export function BentoGrid({ onPick }: { onPick: (domainId: string) => void }) {
             <div className="relative h-full flex flex-col justify-end p-3.5 gap-0.5">
               <span className={`text-foreground drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)] ${big ? 'typo-heading-lg' : 'typo-heading'}`}>{domainLabel(d, t.explore)}</span>
               <div className="flex items-center gap-1.5">
-                <span className="typo-caption font-medium" style={{ color: d.color }}>{counts[d.id] ?? 0}</span>
+                <span className="typo-caption font-medium" style={{ color: d.color }}>{templateCounts[d.id] ?? 0}</span>
                 <span className="typo-caption text-foreground opacity-70">{t.explore.agents}</span>
               </div>
             </div>
