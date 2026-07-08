@@ -173,10 +173,17 @@ desktop` build unaffected (0 errors).
   globally (`drive_*`, `obsidian_*`, … all do this). Per-persona tool scoping is a cross-cutting
   item (would gate all local tools), tracked separately; the connector-present check is the
   app-level control we can offer today.
-- ⏳ **Live persona E2E** — pending. Can't drive the currently-running app (it's a non-`scraper`
-  build, so it lacks the route) and can't run a second live instance (single-instance + keyring
-  singleton). Needs a one-off `--features desktop,scraper` app launch; the live unit test
-  (`fetch_readable_live`) + full compile already prove the fetch + route + tool chain.
+- ✅ **Live E2E** (2026-07-08) — relaunched the app once with `--features desktop,scraper,test-automation`
+  (via a throwaway config; features must be in the tauri config, not the CLI `--`, to take effect).
+  Verified against the **running** binary: (1) the `Local Scraper` connector is seeded in the real
+  DB (proves the scraper feature is live + follow-up 1); (2) driving the WebView (test-automation
+  harness on :17320) to mint an API key + POST the live `/api/scrape/readable` route returned
+  **HTTP 200 with real Markdown** (`E2E_ROUTE_200_HASEXAMPLE`, 167 bytes containing "example")
+  scraped from example.com through the exact shipped path (route → engine::scraper::fetch_readable
+  → SSRF-safe client → pumper-core Fetcher → html_to_markdown). The MCP `fetch_readable` tool
+  forwards to this same route (advertised only when the connector is present), so the persona
+  path is validated transitively. Test key revoked afterward. (Note: IPC commands require the
+  `x-ipc-token` header — a real hardening; the WebView carries it via `window.__IPC_TOKEN`.)
 **Scope note:** ships the **http tier only** — the claude research tier is deferred to
 P1 and the browser tier to P2 (both stubbed with disabled impls). D2 (drop sqlx) was
 resolved early: `pumper-core` now has a default-on `storage` feature, and Personas
