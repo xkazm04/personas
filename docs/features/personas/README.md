@@ -26,9 +26,10 @@ Describe surface as a **persona-core configurator**, so creation is one flow:
    clarifying questions. Under the intent sits the **persona-core badge**
    (`sub_glyph/personaCore/`): the slot that replaced the redundant "What" leaf
    (the intent already IS the "what"). It opens the persona-core configurator
-   (`sub_glyph/personaCore/` — layout is mid-`/prototype`: Workbench / Sheet /
-   Guided variants share the same blocks in `coreSections.tsx`), rethought
-   2026-07-08 against the real corpus. Four surfaces:
+   (`sub_glyph/personaCore/`, the **Codex** layout — an ordered, icon-forward
+   3-column grid: Character · Configuration · Mentality), rethought 2026-07-08
+   against the real corpus. Three surfaces (Memory is deliberately NOT here — the
+   build surface's memory dimension owns it):
    - **Disposition** — one Cautious↔Bold slider. (Collapsed from Risk+Speed,
      which are near-collinear across the 18 dial-carrying personas.)
    - **Character traits** — a clickable 20-trait palette in 5 axes (Rigor /
@@ -42,19 +43,15 @@ Describe surface as a **persona-core configurator**, so creation is one flow:
      high/xhigh). Both are first-class, backend-wired (`--effort` on every run;
      `cli_args.rs`). Effort was previously UI-hidden outside Settings→Model
      Routing. There is no separate "Speed" knob — effort is the real compute axis.
-   - **Memory** — orthogonal toggles grounded in what's actually wired:
-     *Remembers between runs* (the real default-on `persona_memories` store),
-     *Reflects & improves*, *Team ledger* (bites only when the persona is on a
-     team), *Obsidian* (off/read/mirror — mirror is a manual sync today).
-     Knowledge-base grounding is shown greyed "coming soon": runtime KB retrieval
-     for personas is unimplemented (`kb_semantic_search` has no handler).
-   - **Archetypes** (9) live in `scripts/templates/_archetypes.json`, served by
-     `list_archetypes`; snapshot chips seed disposition + conflict style from the
-     archetype `core`.
+   - **Mentality** — the 9 archetypes (`scripts/templates/_archetypes.json`,
+     served by `list_archetypes`) as a snapshot column; picking one seeds
+     disposition + conflict style **and preloads that archetype's dominant traits**
+     (`ARCHETYPE_TRAITS` in `coreTraits.ts`) so a preset lands as a complete
+     character.
    - The chosen core is appended to the launch intent as a directive block (same
-     mechanism as the memory/review toggles) — **prototype scope**: it does not
-     yet write hard config (`generation_settings.memories`, `model_profile`,
-     `--effort`). Wiring those is the flagged next-leverage follow-up.
+     mechanism as the review toggles) — **prototype scope**: it does not yet write
+     hard config (`model_profile`, `--effort`). Wiring those is the flagged
+     next-leverage follow-up.
 2. **Browse templates** — the gallery's fully pre-composed path.
 
 Simple tier renders `UnifiedBuildEntry` directly (no tab strip; templates gated).
