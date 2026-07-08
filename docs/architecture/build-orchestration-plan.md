@@ -224,7 +224,23 @@ substantial time drop on the resolution phase, `capabilities_count` == 5, gate
 pass-rate + judge quality **not down**. FORWARD required. If quality regresses,
 the barrier's reconciliation or the per-agent prompt grounding is the suspect —
 fix before proceeding, do not ship a faster-but-worse build.
-**Result** _(fill in)_
+
+**Result — FIRST VERIFIED A/B (2026-07-08, `lite-web-summary`, n=1): FORWARD.**
+Implemented as an isolated `fanout::run_multiagent_oneshot` (serial head →
+parallel per-capability resolution via `run_lanes` → serial agent_ir assembly →
+existing oneshot back-half), gated `multiagent && one_shot`.
+- multiagent **503s** vs sequential **718s** = **+30% faster**; both promoted a
+  valid **3-cap** persona at **gate 100%** — quality Δ 0. The design WORKS and is
+  faster at equal quality (not a bad idea).
+- Per-phase: sequential `analyzing` 584s + `awaiting_input` 118s; multiagent head
+  24s + `resolving` 468s (fan-out + assembly), no question round-trip.
+- **Headroom / next iterations:** (a) the 468s `resolving` for 3 *parallel* caps
+  is too high — likely the subscription throttles concurrent CLIs, so the win is
+  currently from focused contexts + skipped questions, not true parallelism;
+  investigate concurrency (rate-limit backoff, budget). (b) The multiagent path
+  doesn't record cost telemetry (`n/a` in the report) — add `record_build_usage`
+  to `run_multiagent_oneshot` so cost (more LLM calls) is comparable. (c) n=1 —
+  run `--repeat 3` for a robust median.
 
 ---
 
