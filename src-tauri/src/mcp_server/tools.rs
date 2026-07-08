@@ -1226,7 +1226,8 @@ pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
                 "type": "object",
                 "properties": {
                     "id": { "type": "string", "description": "Existing config id to update (omit to create)" },
-                    "name": { "type": "string", "description": "Human name for this scrape" },
+                    "name": { "type": "string", "description": "Short, recognizable title for this scrape" },
+                    "description": { "type": "string", "description": "Optional one-line overview of the use case" },
                     "urls": { "type": "array", "items": { "type": "string" } },
                     "rules": { "type": "object", "description": "Field → extraction rule (css/regex/json)" },
                     "dataset": { "type": "string" },

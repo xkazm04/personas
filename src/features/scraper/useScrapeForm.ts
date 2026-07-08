@@ -86,6 +86,8 @@ export interface EditorVariantProps {
 export interface ScrapeForm {
   name: string;
   setName: (v: string) => void;
+  description: string;
+  setDescription: (v: string) => void;
   urls: string;
   setUrls: (v: string) => void;
   urlList: string[];
@@ -110,6 +112,7 @@ export interface ScrapeForm {
 
 export function useScrapeForm(initial: ScraperConfig | null, isOpen: boolean): ScrapeForm {
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [urls, setUrls] = useState('');
   const [fields, setFields] = useState<RuleField[]>([]);
   const [dataset, setDataset] = useState('');
@@ -120,6 +123,7 @@ export function useScrapeForm(initial: ScraperConfig | null, isOpen: boolean): S
   useEffect(() => {
     if (!isOpen) return;
     setName(initial?.name ?? '');
+    setDescription(initial?.description ?? '');
     setUrls((initial?.urls ?? []).join('\n'));
     setFields(fieldsFromRuleSet(initial?.rules) || []);
     setDataset(initial?.dataset ?? '');
@@ -152,6 +156,7 @@ export function useScrapeForm(initial: ScraperConfig | null, isOpen: boolean): S
   const toInput = (): ScraperConfigInput => ({
     id: initial?.id,
     name: name.trim(),
+    description: description.trim() || null,
     urls: urlList,
     rules: fieldsToRuleSet(fields),
     dataset: dataset.trim(),
@@ -161,7 +166,7 @@ export function useScrapeForm(initial: ScraperConfig | null, isOpen: boolean): S
   });
 
   return {
-    name, setName, urls, setUrls, urlList,
+    name, setName, description, setDescription, urls, setUrls, urlList,
     fields, addField, updateField, removeField, setFieldsFromRuleSet,
     dataset, setDataset, keyField, setKeyField, cron, setCron, enabled, setEnabled,
     namedFieldCount, canSave, toInput,

@@ -117,7 +117,13 @@ function Row({
           )}
           <span className="text-foreground">{config.name}</span>
         </div>
-        <span className="typo-caption text-muted-foreground">→ {config.dataset}</span>
+        {config.description ? (
+          <span className="block max-w-[280px] truncate typo-caption text-muted-foreground" title={config.description}>
+            {config.description}
+          </span>
+        ) : (
+          <span className="typo-caption text-muted-foreground">→ {config.dataset}</span>
+        )}
       </td>
       <td className="px-4 py-3 text-foreground/80">
         <span className="inline-flex items-center gap-1">

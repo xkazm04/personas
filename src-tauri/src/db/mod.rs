@@ -1390,10 +1390,11 @@ fn seed_builtin_shared_events(conn: &rusqlite::Connection) -> Result<(), AppErro
 fn seed_example_scrape_config(conn: &rusqlite::Connection) -> Result<(), AppError> {
     conn.execute(
         "INSERT OR IGNORE INTO scraper_configs
-         (id, name, urls, rules, dataset, key_field, cron, enabled)
-         VALUES ('example-hn-front', ?1, ?2, ?3, 'hn_front', 'title', NULL, 0)",
+         (id, name, description, urls, rules, dataset, key_field, cron, enabled)
+         VALUES ('example-hn-front', ?1, ?2, ?3, ?4, 'hn_front', 'title', NULL, 0)",
         params![
-            "Example — Hacker News front page",
+            "Hacker News front page",
+            "Example — top story titles + links from the HN homepage.",
             r#"["https://news.ycombinator.com/"]"#,
             r#"{"title":{"type":"css","selector":".titleline > a","all":true}}"#,
         ],

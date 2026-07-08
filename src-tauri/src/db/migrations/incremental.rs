@@ -5108,6 +5108,24 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Split the scraper config's overloaded `name` into a short title + a
+    // separate use-case description (Phase 1b-2 follow-up).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "scraper_configs.description",
+            description: "scraper_configs: add description column",
+            already_applied: |conn| {
+                Ok(!has_table(conn, "scraper_configs")?
+                    || has_column(conn, "scraper_configs", "description")?)
+            },
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE scraper_configs ADD COLUMN description TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

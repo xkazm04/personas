@@ -353,6 +353,7 @@ pub fn dataset_summaries(pool: &DbPool) -> Result<Vec<Value>, String> {
 pub struct ScraperConfig {
     pub id: String,
     pub name: String,
+    pub description: Option<String>,
     pub urls: Vec<String>,
     pub rules: Value,
     pub dataset: String,
@@ -372,6 +373,7 @@ fn row_to_config(row: &rusqlite::Row) -> rusqlite::Result<ScraperConfig> {
     Ok(ScraperConfig {
         id: row.get("id")?,
         name: row.get("name")?,
+        description: row.get("description")?,
         urls: serde_json::from_str(&urls_s).unwrap_or_default(),
         rules: serde_json::from_str(&rules_s).unwrap_or(Value::Null),
         dataset: row.get("dataset")?,
@@ -397,6 +399,12 @@ fn compute_next_run(cron: &str) -> Option<String> {
 /// absent). Validates the cron + rules before persisting.
 pub fn config_save(pool: &DbPool, input: &Value) -> Result<ScraperConfig, String> {
     let name = input.get("name").and_then(Value::as_str).ok_or("missing 'name'")?.to_string();
+    let description = input
+        .get("description")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from);
     let urls = input.get("urls").cloned().filter(Value::is_array).ok_or("missing 'urls' array")?;
     let rules = input.get("rules").cloned().filter(Value::is_object).ok_or("missing 'rules' object")?;
     let dataset = input.get("dataset").and_then(Value::as_str).ok_or("missing 'dataset'")?.to_string();
@@ -421,12 +429,12 @@ pub fn config_save(pool: &DbPool, input: &Value) -> Result<ScraperConfig, String
     let conn = pool.get().map_err(|e| e.to_string())?;
     conn.execute(
         "INSERT INTO scraper_configs
-         (id, name, urls, rules, dataset, key_field, cron, enabled, next_run_at, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)
-         ON CONFLICT(id) DO UPDATE SET name=?2, urls=?3, rules=?4, dataset=?5, key_field=?6,
-             cron=?7, enabled=?8, next_run_at=?9, updated_at=?10",
+         (id, name, description, urls, rules, dataset, key_field, cron, enabled, next_run_at, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)
+         ON CONFLICT(id) DO UPDATE SET name=?2, description=?3, urls=?4, rules=?5, dataset=?6,
+             key_field=?7, cron=?8, enabled=?9, next_run_at=?10, updated_at=?11",
         rusqlite::params![
-            id, name, urls.to_string(), rules.to_string(), dataset, key_field, cron,
+            id, name, description, urls.to_string(), rules.to_string(), dataset, key_field, cron,
             enabled as i64, next_run, now
         ],
     )

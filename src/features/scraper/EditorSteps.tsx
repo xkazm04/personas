@@ -55,12 +55,20 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
 export function SourceStep({ form }: { form: ScrapeForm }) {
   return (
     <div className="flex flex-col gap-4">
-      <Labeled label="Name">
+      <Labeled label="Title — short + recognizable">
         <input
           className={INPUT_FIELD}
           value={form.name}
           onChange={(e) => form.setName(e.target.value)}
-          placeholder="Product price watch"
+          placeholder="Competitor price watch"
+        />
+      </Labeled>
+      <Labeled label="Description — a one-line overview of the use case (optional)">
+        <input
+          className={INPUT_FIELD}
+          value={form.description}
+          onChange={(e) => form.setDescription(e.target.value)}
+          placeholder="Track daily price + stock on our 3 rivals’ product pages."
         />
       </Labeled>
       <Labeled label="URLs — one per line">

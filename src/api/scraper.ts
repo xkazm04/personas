@@ -22,7 +22,10 @@ export type ScrapeRuleSet = Record<string, ScrapeRule>;
 /** A persisted, optionally cron-scheduled declarative scrape. */
 export interface ScraperConfig {
   id: string;
+  /** Short, recognizable title. */
   name: string;
+  /** Optional one-line overview of the use case. */
+  description: string | null;
   urls: string[];
   rules: ScrapeRuleSet;
   dataset: string;
@@ -40,6 +43,7 @@ export interface ScraperConfig {
 export interface ScraperConfigInput {
   id?: string;
   name: string;
+  description?: string | null;
   urls: string[];
   rules: ScrapeRuleSet;
   dataset: string;

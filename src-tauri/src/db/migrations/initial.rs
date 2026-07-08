@@ -235,6 +235,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         "CREATE TABLE IF NOT EXISTS scraper_configs (
             id            TEXT PRIMARY KEY,
             name          TEXT NOT NULL,
+            description   TEXT,
             urls          TEXT NOT NULL,
             rules         TEXT NOT NULL,
             dataset       TEXT NOT NULL,
