@@ -299,6 +299,12 @@ pub fn init_registry() {
         // both service_types route to the same strategy — Jira + Confluence.
         reg.register("jira", Box::new(AtlassianBasicAuthStrategy));
         reg.register("confluence", Box::new(AtlassianBasicAuthStrategy));
+        // LLM-observability connectors (Dev Tools → LLM Overview). Langfuse
+        // authenticates with HTTP Basic (public_key:secret_key); LangSmith with an
+        // `x-api-key` header. Helicone + Tracklight use plain Bearer and fall
+        // through to DefaultStrategy (their token lives in the `api_key` field).
+        reg.register("langfuse", Box::new(LangfuseBasicAuthStrategy));
+        reg.register("langsmith", Box::new(LangSmithStrategy));
         reg
     });
 }
@@ -774,6 +780,66 @@ impl ConnectorStrategy for AtlassianBasicAuthStrategy {
     }
 }
 
+// -- Langfuse Basic Auth (public_key:secret_key) ---------------------
+
+/// Strategy for Langfuse's public REST API, which authenticates with HTTP Basic
+/// using `public_key:secret_key` (public key = username, secret key = password).
+/// Mirrors [`AtlassianBasicAuthStrategy`] but with Langfuse's field names.
+/// `resolve_auth_token` returns the base64-encoded pair and `apply_auth` emits
+/// the final `Authorization: Basic <encoded>` header.
+pub struct LangfuseBasicAuthStrategy;
+
+#[async_trait]
+impl ConnectorStrategy for LangfuseBasicAuthStrategy {
+    fn is_oauth(&self, _fields: &HashMap<String, String>) -> bool {
+        false
+    }
+
+    async fn resolve_auth_token(
+        &self,
+        _connector_metadata: Option<&str>,
+        fields: &HashMap<String, String>,
+    ) -> Result<Option<ResolvedToken>, AppError> {
+        let Some(public_key) = find_nonempty(fields, &["public_key"]) else {
+            return Err(AppError::Validation(
+                "Langfuse credential is missing 'public_key' field".into(),
+            ));
+        };
+        let Some(secret_key) = find_nonempty(fields, &["secret_key"]) else {
+            return Err(AppError::Validation(
+                "Langfuse credential is missing 'secret_key' field".into(),
+            ));
+        };
+        let encoded = base64_encode(format!("{public_key}:{secret_key}").as_bytes());
+        Ok(Some(ResolvedToken::plain(encoded)))
+    }
+
+    /// The `token` here is the base64-encoded `public_key:secret_key` pair
+    /// produced in `resolve_auth_token`.
+    fn apply_auth(&self, request: reqwest::RequestBuilder, token: &str) -> reqwest::RequestBuilder {
+        request.header("Authorization", format!("Basic {token}"))
+    }
+}
+
+// -- LangSmith (x-api-key header) ------------------------------------
+
+/// Strategy for LangSmith (LangChain's tracing API), which authenticates with an
+/// `x-api-key: <api_key>` header rather than a Bearer token. The default token
+/// resolution already finds the `api_key` field; only `apply_auth` differs.
+pub struct LangSmithStrategy;
+
+#[async_trait]
+impl ConnectorStrategy for LangSmithStrategy {
+    fn is_oauth(&self, _fields: &HashMap<String, String>) -> bool {
+        false
+    }
+
+    /// LangSmith expects the key in an `x-api-key` header, not `Authorization`.
+    fn apply_auth(&self, request: reqwest::RequestBuilder, token: &str) -> reqwest::RequestBuilder {
+        request.header("x-api-key", token)
+    }
+}
+
 /// Minimal base64 encoder (no padding tricks). Keeps the crate dependency
 /// graph untouched — Atlassian tokens are small so a hand-rolled encoder is
 /// perfectly fine here.
@@ -882,5 +948,99 @@ mod atlassian_tests {
             // python -c "import base64; print(base64.b64encode(b'user@example.com:mytoken').decode())"
             "dXNlckBleGFtcGxlLmNvbTpteXRva2Vu"
         );
+    }
+}
+
+#[cfg(test)]
+mod llm_obs_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn langfuse_resolves_basic_pair() {
+        let s = LangfuseBasicAuthStrategy;
+        let mut f = HashMap::new();
+        f.insert("public_key".to_string(), "pk-lf-abc".to_string());
+        f.insert("secret_key".to_string(), "sk-lf-xyz".to_string());
+        assert!(!s.is_oauth(&f));
+        let resolved = s.resolve_auth_token(None, &f).await.unwrap().unwrap();
+        // base64("pk-lf-abc:sk-lf-xyz")
+        assert_eq!(resolved.token, base64_encode(b"pk-lf-abc:sk-lf-xyz"));
+    }
+
+    #[tokio::test]
+    async fn langfuse_missing_secret_errors() {
+        let s = LangfuseBasicAuthStrategy;
+        let mut f = HashMap::new();
+        f.insert("public_key".to_string(), "pk-lf-abc".to_string());
+        // no secret_key — must error rather than silently sending a half-pair
+        assert!(s.resolve_auth_token(None, &f).await.is_err());
+    }
+
+    #[test]
+    fn langfuse_apply_auth_sets_basic_header() {
+        let s = LangfuseBasicAuthStrategy;
+        let req = s
+            .apply_auth(reqwest::Client::new().get("https://cloud.langfuse.com/"), "ENC")
+            .build()
+            .unwrap();
+        assert_eq!(req.headers().get("authorization").unwrap(), "Basic ENC");
+    }
+
+    #[tokio::test]
+    async fn langsmith_resolves_api_key_plain() {
+        let s = LangSmithStrategy;
+        let mut f = HashMap::new();
+        f.insert("api_key".to_string(), "lsv2_pt_123".to_string());
+        assert!(!s.is_oauth(&f));
+        let resolved = s.resolve_auth_token(None, &f).await.unwrap().unwrap();
+        assert_eq!(resolved.token, "lsv2_pt_123");
+    }
+
+    #[test]
+    fn langsmith_apply_auth_sets_x_api_key() {
+        let s = LangSmithStrategy;
+        let req = s
+            .apply_auth(
+                reqwest::Client::new().get("https://api.smith.langchain.com/"),
+                "lsv2_pt_123",
+            )
+            .build()
+            .unwrap();
+        assert_eq!(req.headers().get("x-api-key").unwrap(), "lsv2_pt_123");
+        assert!(req.headers().get("authorization").is_none());
+    }
+
+    #[tokio::test]
+    async fn registry_routes_llm_observability_connectors() {
+        init_registry();
+        let reg = registry().unwrap();
+
+        // langfuse → LangfuseBasicAuthStrategy: resolves base64(public:secret).
+        // DefaultStrategy would return None here (no api_key/token field), so a
+        // non-None base64 pair proves the routing.
+        let langfuse = reg.get("langfuse", None);
+        let mut lf = HashMap::new();
+        lf.insert("public_key".to_string(), "pk".to_string());
+        lf.insert("secret_key".to_string(), "sk".to_string());
+        let lf_tok = langfuse.resolve_auth_token(None, &lf).await.unwrap().unwrap();
+        assert_eq!(lf_tok.token, base64_encode(b"pk:sk"));
+
+        // langsmith → LangSmithStrategy: apply_auth emits x-api-key (not Bearer).
+        let langsmith = reg.get("langsmith", None);
+        let req = langsmith
+            .apply_auth(reqwest::Client::new().get("https://x/"), "tok")
+            .build()
+            .unwrap();
+        assert_eq!(req.headers().get("x-api-key").unwrap(), "tok");
+        assert!(req.headers().get("authorization").is_none());
+
+        // helicone → DefaultStrategy (Bearer): resolves the api_key field as a
+        // plain token; not OAuth.
+        let helicone = reg.get("helicone", None);
+        let mut hf = HashMap::new();
+        hf.insert("api_key".to_string(), "sk-helicone-1".to_string());
+        assert!(!helicone.is_oauth(&hf));
+        let he_tok = helicone.resolve_auth_token(None, &hf).await.unwrap().unwrap();
+        assert_eq!(he_tok.token, "sk-helicone-1");
     }
 }

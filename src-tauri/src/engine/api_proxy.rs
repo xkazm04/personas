@@ -522,6 +522,14 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "youtube_data" => Some("https://www.googleapis.com/youtube/v3"),
         "deepgram" => Some("https://api.deepgram.com/v1"),
         "sentry" => Some("https://sentry.io"),
+        // LLM-observability connectors (Dev Tools → LLM Overview). Cloud defaults;
+        // a self-host / region override comes from the credential's host/base_url
+        // field, which is resolved *before* this well-known fallback. Helicone has
+        // no URL field so it always resolves here; Tracklight requires a base_url
+        // field (self-hosted) and never falls through to a well-known default.
+        "langfuse" => Some("https://cloud.langfuse.com"),
+        "langsmith" => Some("https://api.smith.langchain.com"),
+        "helicone" => Some("https://api.helicone.ai"),
         "alpha_vantage" => Some("https://www.alphavantage.co"),
         "google_workspace_oauth_template" => Some("https://www.googleapis.com"),
         "google_sheets" => Some("https://sheets.googleapis.com"),
