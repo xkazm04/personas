@@ -206,8 +206,15 @@ JSON-pointer rules → change-detected upsert) / `query_dataset`; management rou
 `/api/scrape/extract` + `/api/scrape/query`; MCP tools `run_extract` + `query_dataset`
 (bridge-forwarded, gated on the connector). Verified: `dataset_change_detection` unit test
 (New→Unchanged→Changed + changed_only filter); scraper + default builds green.
-**Deferred to 1b:** scrape-use-case config persistence + UI, cron scheduling, 1–2 Model-A
-example scrapers.
+**1b-1 landed (2026-07-08)** — persisted, cron-scheduled scrape configs (backend). Shipped:
+`scraper_configs` table; `engine/scraper.rs` config CRUD (`config_save`/`config_list`/`config_get`/
+`config_delete`) + `config_run` (load → run_extract → stamp last-run/status/next-fire) +
+`scraper_schedule_tick` (runs due configs, cron via `engine::cron`); a `ScraperScheduleSubscription`
+(60s tick) registered in the background scheduler; management routes `/api/scrape/config-{save,list,run,delete}`;
+MCP tools `save_scrape` / `list_scrapes` / `run_scrape`; one disabled example config seeded
+("Example — Hacker News front page"). Verified: `scrape_config_crud_and_schedule` unit test +
+scraper & default builds green.
+**Deferred to 1b-2:** the management UI (config editor + run-history surface).
 **Goal:** useful local scraping without a browser; the runtime "use case" model begins.
 **Tasks:**
 - Storage decision 3.4: implement pumper-style change-detected `Datasets` over Personas' `rusqlite` (drop sqlx) — tables `scraper_datasets` / `scraper_records` with content-hash new/changed/unchanged.

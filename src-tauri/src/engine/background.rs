@@ -476,6 +476,9 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // Runs due saved scrape configs on their cron schedule (embedded Pumper).
+        #[cfg(feature = "scraper")]
+        Box::new(subscription::ScraperScheduleSubscription { pool: pool.clone() }),
         Box::new(subscription::DigestSubscription {
             pool: pool.clone(),
             app: app.clone(),

@@ -293,6 +293,13 @@ pub struct SharedEventLocalRelaySubscription {
     pub app: AppHandle,
 }
 
+/// Runs due saved scrape configs on their cron schedule (embedded Pumper,
+/// Phase 1b). See [`super::scraper::scraper_schedule_tick`].
+#[cfg(feature = "scraper")]
+pub struct ScraperScheduleSubscription {
+    pub pool: DbPool,
+}
+
 // ---------------------------------------------------------------------------
 // Implementations
 // ---------------------------------------------------------------------------
@@ -1122,6 +1129,26 @@ impl ReactiveSubscription for SharedEventLocalRelaySubscription {
 
     async fn tick(&self) {
         super::shared_event_local_relay::shared_event_local_relay_tick(&self.pool, &self.app).await;
+    }
+}
+
+#[cfg(feature = "scraper")]
+#[async_trait::async_trait]
+impl ReactiveSubscription for ScraperScheduleSubscription {
+    fn name(&self) -> &'static str {
+        "scraper_schedule"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(60)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(30)
+    }
+
+    async fn tick(&self) {
+        super::scraper::scraper_schedule_tick(&self.pool).await;
     }
 }
 

@@ -112,6 +112,11 @@ pub fn management_router(state: ManagementState) -> Router {
         .route("/api/scrape/readable", post(scrape_readable))
         .route("/api/scrape/extract", post(scrape_extract))
         .route("/api/scrape/query", post(scrape_query))
+        // Saved scrape configs (Phase 1b)
+        .route("/api/scrape/config-save", post(scrape_config_save))
+        .route("/api/scrape/config-list", post(scrape_config_list))
+        .route("/api/scrape/config-run", post(scrape_config_run))
+        .route("/api/scrape/config-delete", post(scrape_config_delete))
         // A2A Gateway -- agent card discovery + JSON-RPC entry point
         .route("/agent-card/{persona_id}", get(get_agent_card))
         .route("/a2a/{persona_id}", post(handle_a2a_request))
@@ -383,6 +388,80 @@ async fn scrape_query(
             "scraper feature not enabled in this build",
         )
             .into_response()
+    }
+}
+
+#[derive(Deserialize)]
+struct ScrapeConfigIdBody {
+    id: String,
+}
+
+/// `POST /api/scrape/config-save` — create/update a saved scrape config.
+async fn scrape_config_save(
+    AxumState(_state): AxumState<Arc<ManagementState>>,
+    Json(_body): Json<serde_json::Value>,
+) -> Response {
+    #[cfg(feature = "scraper")]
+    {
+        match crate::engine::scraper::config_save(&_state.pool, &_body) {
+            Ok(cfg) => Json(cfg).into_response(),
+            Err(e) => (StatusCode::BAD_REQUEST, e).into_response(),
+        }
+    }
+    #[cfg(not(feature = "scraper"))]
+    {
+        (StatusCode::NOT_IMPLEMENTED, "scraper feature not enabled in this build").into_response()
+    }
+}
+
+/// `POST /api/scrape/config-list` — list saved scrape configs.
+async fn scrape_config_list(AxumState(_state): AxumState<Arc<ManagementState>>) -> Response {
+    #[cfg(feature = "scraper")]
+    {
+        match crate::engine::scraper::config_list(&_state.pool) {
+            Ok(list) => Json(list).into_response(),
+            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
+        }
+    }
+    #[cfg(not(feature = "scraper"))]
+    {
+        (StatusCode::NOT_IMPLEMENTED, "scraper feature not enabled in this build").into_response()
+    }
+}
+
+/// `POST /api/scrape/config-run` — run a saved scrape config now.
+async fn scrape_config_run(
+    AxumState(_state): AxumState<Arc<ManagementState>>,
+    Json(_body): Json<ScrapeConfigIdBody>,
+) -> Response {
+    #[cfg(feature = "scraper")]
+    {
+        match crate::engine::scraper::config_run(&_state.pool, &_body.id).await {
+            Ok(summary) => Json(summary).into_response(),
+            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
+        }
+    }
+    #[cfg(not(feature = "scraper"))]
+    {
+        (StatusCode::NOT_IMPLEMENTED, "scraper feature not enabled in this build").into_response()
+    }
+}
+
+/// `POST /api/scrape/config-delete` — delete a saved scrape config.
+async fn scrape_config_delete(
+    AxumState(_state): AxumState<Arc<ManagementState>>,
+    Json(_body): Json<ScrapeConfigIdBody>,
+) -> Response {
+    #[cfg(feature = "scraper")]
+    {
+        match crate::engine::scraper::config_delete(&_state.pool, &_body.id) {
+            Ok(()) => Json(serde_json::json!({ "ok": true })).into_response(),
+            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
+        }
+    }
+    #[cfg(not(feature = "scraper"))]
+    {
+        (StatusCode::NOT_IMPLEMENTED, "scraper feature not enabled in this build").into_response()
     }
 }
 

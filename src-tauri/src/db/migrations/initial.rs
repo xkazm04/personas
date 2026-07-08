@@ -227,6 +227,29 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_scraper_records_dataset ON scraper_records(dataset, updated_at);"
     )?;
 
+    // -- Saved scrape use-cases (Phase 1b) --------------------------------------
+    // A persisted, optionally cron-scheduled declarative scrape. The scheduler
+    // (engine/subscription.rs ScraperScheduleSubscription) runs due rows via
+    // engine/scraper.rs::config_run → run_extract. `urls`/`rules` are JSON.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS scraper_configs (
+            id            TEXT PRIMARY KEY,
+            name          TEXT NOT NULL,
+            urls          TEXT NOT NULL,
+            rules         TEXT NOT NULL,
+            dataset       TEXT NOT NULL,
+            key_field     TEXT,
+            cron          TEXT,
+            enabled       INTEGER NOT NULL DEFAULT 1,
+            next_run_at   TEXT,
+            last_run_at   TEXT,
+            last_status   TEXT,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_scraper_configs_due ON scraper_configs(enabled, next_run_at);"
+    )?;
+
     // -- Shared Event Analytics --------------------------------------------------
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS shared_event_analytics (

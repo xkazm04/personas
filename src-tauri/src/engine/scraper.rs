@@ -309,6 +309,201 @@ pub fn query_dataset(
     Ok(rows.filter_map(|x| x.ok()).collect())
 }
 
+// ---------------------------------------------------------------------------
+// Saved scrape configs + scheduling (Phase 1b)
+// ---------------------------------------------------------------------------
+
+/// A persisted, optionally cron-scheduled declarative scrape.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScraperConfig {
+    pub id: String,
+    pub name: String,
+    pub urls: Vec<String>,
+    pub rules: Value,
+    pub dataset: String,
+    pub key_field: Option<String>,
+    pub cron: Option<String>,
+    pub enabled: bool,
+    pub next_run_at: Option<String>,
+    pub last_run_at: Option<String>,
+    pub last_status: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+fn row_to_config(row: &rusqlite::Row) -> rusqlite::Result<ScraperConfig> {
+    let urls_s: String = row.get("urls")?;
+    let rules_s: String = row.get("rules")?;
+    Ok(ScraperConfig {
+        id: row.get("id")?,
+        name: row.get("name")?,
+        urls: serde_json::from_str(&urls_s).unwrap_or_default(),
+        rules: serde_json::from_str(&rules_s).unwrap_or(Value::Null),
+        dataset: row.get("dataset")?,
+        key_field: row.get("key_field")?,
+        cron: row.get("cron")?,
+        enabled: row.get::<_, i64>("enabled")? != 0,
+        next_run_at: row.get("next_run_at")?,
+        last_run_at: row.get("last_run_at")?,
+        last_status: row.get("last_status")?,
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
+    })
+}
+
+/// Next fire time for a cron expression as an RFC3339 string (None if invalid /
+/// no upcoming fire). Cron is evaluated in UTC by `engine::cron`.
+fn compute_next_run(cron: &str) -> Option<String> {
+    let sched = crate::engine::cron::parse_cron(cron).ok()?;
+    crate::engine::cron::next_fire_time(&sched, chrono::Utc::now()).map(|t| t.to_rfc3339())
+}
+
+/// Create or update a saved scrape config (upsert by `id`; generates one if
+/// absent). Validates the cron + rules before persisting.
+pub fn config_save(pool: &DbPool, input: &Value) -> Result<ScraperConfig, String> {
+    let name = input.get("name").and_then(Value::as_str).ok_or("missing 'name'")?.to_string();
+    let urls = input.get("urls").cloned().filter(Value::is_array).ok_or("missing 'urls' array")?;
+    let rules = input.get("rules").cloned().filter(Value::is_object).ok_or("missing 'rules' object")?;
+    let dataset = input.get("dataset").and_then(Value::as_str).ok_or("missing 'dataset'")?.to_string();
+    let key_field = input.get("key_field").and_then(Value::as_str).map(String::from);
+    let cron = input
+        .get("cron")
+        .and_then(Value::as_str)
+        .filter(|s| !s.trim().is_empty())
+        .map(String::from);
+    let enabled = input.get("enabled").and_then(Value::as_bool).unwrap_or(true);
+    if let Some(c) = &cron {
+        crate::engine::cron::parse_cron(c).map_err(|e| format!("invalid cron: {e}"))?;
+    }
+    let _: RuleSet = serde_json::from_value(rules.clone()).map_err(|e| format!("invalid rules: {e}"))?;
+    let next_run = if enabled { cron.as_deref().and_then(compute_next_run) } else { None };
+    let now = chrono::Utc::now().to_rfc3339();
+    let id = input
+        .get("id")
+        .and_then(Value::as_str)
+        .map(String::from)
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let conn = pool.get().map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT INTO scraper_configs
+         (id, name, urls, rules, dataset, key_field, cron, enabled, next_run_at, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)
+         ON CONFLICT(id) DO UPDATE SET name=?2, urls=?3, rules=?4, dataset=?5, key_field=?6,
+             cron=?7, enabled=?8, next_run_at=?9, updated_at=?10",
+        rusqlite::params![
+            id, name, urls.to_string(), rules.to_string(), dataset, key_field, cron,
+            enabled as i64, next_run, now
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+    config_get(pool, &id)?.ok_or_else(|| "config not found after save".to_string())
+}
+
+pub fn config_get(pool: &DbPool, id: &str) -> Result<Option<ScraperConfig>, String> {
+    let conn = pool.get().map_err(|e| e.to_string())?;
+    conn.query_row(
+        "SELECT * FROM scraper_configs WHERE id = ?1",
+        rusqlite::params![id],
+        row_to_config,
+    )
+    .optional()
+    .map_err(|e| e.to_string())
+}
+
+pub fn config_list(pool: &DbPool) -> Result<Vec<ScraperConfig>, String> {
+    let conn = pool.get().map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare("SELECT * FROM scraper_configs ORDER BY name ASC")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], row_to_config)
+        .map_err(|e| e.to_string())?;
+    Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
+pub fn config_delete(pool: &DbPool, id: &str) -> Result<(), String> {
+    let conn = pool.get().map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM scraper_configs WHERE id = ?1", rusqlite::params![id])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn mark_run(pool: &DbPool, id: &str, status: &str, next_run: Option<&str>) -> Result<(), String> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get().map_err(|e| e.to_string())?;
+    conn.execute(
+        "UPDATE scraper_configs SET last_run_at = ?2, last_status = ?3, next_run_at = ?4 WHERE id = ?1",
+        rusqlite::params![id, now, status, next_run],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Run a saved config now: load → run_extract → stamp last_run/status and the
+/// next scheduled fire.
+pub async fn config_run(pool: &DbPool, id: &str) -> Result<ExtractSummary, String> {
+    let cfg = config_get(pool, id)?.ok_or_else(|| format!("scrape config {id} not found"))?;
+    let rules: RuleSet =
+        serde_json::from_value(cfg.rules.clone()).map_err(|e| format!("bad rules: {e}"))?;
+    let ecfg = ExtractConfig {
+        urls: cfg.urls.clone(),
+        rules,
+        dataset: cfg.dataset.clone(),
+        key_field: cfg.key_field.clone(),
+    };
+    let result = run_extract(pool, ecfg).await;
+    let next = if cfg.enabled {
+        cfg.cron.as_deref().and_then(compute_next_run)
+    } else {
+        None
+    };
+    let status = match &result {
+        Ok(s) => format!(
+            "ok — {} new, {} changed, {} unchanged, {} error(s)",
+            s.new,
+            s.changed,
+            s.unchanged,
+            s.errors.len()
+        ),
+        Err(e) => format!("error — {e}"),
+    };
+    let _ = mark_run(pool, id, &status, next.as_deref());
+    result
+}
+
+/// Ids of enabled, cron-scheduled configs whose next fire is due (<= now).
+fn list_due(pool: &DbPool) -> Result<Vec<String>, String> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get().map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id FROM scraper_configs
+             WHERE enabled = 1 AND cron IS NOT NULL AND next_run_at IS NOT NULL AND next_run_at <= ?1",
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map(rusqlite::params![now], |r| r.get::<_, String>(0))
+        .map_err(|e| e.to_string())?;
+    Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
+/// Scheduler tick: run every due config. Called by ScraperScheduleSubscription.
+pub async fn scraper_schedule_tick(pool: &DbPool) {
+    let due = match list_due(pool) {
+        Ok(d) => d,
+        Err(e) => {
+            tracing::warn!("scraper scheduler: list_due failed: {e}");
+            return;
+        }
+    };
+    for id in due {
+        if let Err(e) = config_run(pool, &id).await {
+            tracing::warn!(config_id = %id, "scraper scheduled run failed: {e}");
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -348,6 +543,54 @@ mod tests {
         let changed = query_dataset(&pool, d, 100, true).unwrap();
         assert_eq!(changed.len(), 1, "only 'a' changed since first seen");
         assert_eq!(changed[0]["key"], "a");
+    }
+
+    /// Saved-config CRUD + cron-driven next-run computation + upsert-by-id.
+    #[test]
+    fn scrape_config_crud_and_schedule() {
+        let pool = crate::db::init_test_db().unwrap();
+        let saved = config_save(
+            &pool,
+            &serde_json::json!({
+                "name": "t",
+                "urls": ["https://example.com"],
+                "rules": { "h": { "type": "css", "selector": "h1" } },
+                "dataset": "d",
+                "cron": "* * * * *"
+            }),
+        )
+        .unwrap();
+        assert!(!saved.id.is_empty());
+        assert!(saved.enabled);
+        assert!(saved.next_run_at.is_some(), "cron should compute a next run");
+        assert_eq!(config_list(&pool).unwrap().len(), 1);
+
+        // Upsert by id → disable clears the schedule.
+        let updated = config_save(
+            &pool,
+            &serde_json::json!({
+                "id": saved.id,
+                "name": "t",
+                "urls": ["https://example.com"],
+                "rules": { "h": { "type": "css", "selector": "h1" } },
+                "dataset": "d",
+                "enabled": false
+            }),
+        )
+        .unwrap();
+        assert!(!updated.enabled);
+        assert!(updated.next_run_at.is_none());
+        assert_eq!(config_list(&pool).unwrap().len(), 1, "upsert, not insert");
+
+        // Invalid cron / rules are rejected.
+        assert!(config_save(
+            &pool,
+            &serde_json::json!({ "name":"x","urls":["u"],"rules":{"h":{"type":"css","selector":"h1"}},"dataset":"d","cron":"nope" })
+        )
+        .is_err());
+
+        config_delete(&pool, &saved.id).unwrap();
+        assert_eq!(config_list(&pool).unwrap().len(), 0);
     }
 
     #[tokio::test]

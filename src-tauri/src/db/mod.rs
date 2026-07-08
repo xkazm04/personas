@@ -253,6 +253,8 @@ pub fn init_db(
         seed_builtin_tools(&conn)?;
         seed_builtin_connectors(&conn)?;
         seed_builtin_shared_events(&conn)?;
+        #[cfg(feature = "scraper")]
+        seed_example_scrape_config(&conn)?;
     }
 
     // Defense-in-depth: scrub orphan rows whose parent persona is gone.
@@ -1379,6 +1381,23 @@ fn seed_builtin_shared_events(conn: &rusqlite::Connection) -> Result<(), AppErro
         catalog.len(),
         firings.len()
     );
+    Ok(())
+}
+
+/// Seed one disabled example scrape config so users have a working template to
+/// clone. INSERT OR IGNORE keeps a user's edits/deletion sticky across upgrades.
+#[cfg(feature = "scraper")]
+fn seed_example_scrape_config(conn: &rusqlite::Connection) -> Result<(), AppError> {
+    conn.execute(
+        "INSERT OR IGNORE INTO scraper_configs
+         (id, name, urls, rules, dataset, key_field, cron, enabled)
+         VALUES ('example-hn-front', ?1, ?2, ?3, 'hn_front', 'title', NULL, 0)",
+        params![
+            "Example — Hacker News front page",
+            r#"["https://news.ycombinator.com/"]"#,
+            r#"{"title":{"type":"css","selector":".titleline > a","all":true}}"#,
+        ],
+    )?;
     Ok(())
 }
 

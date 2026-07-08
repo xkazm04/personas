@@ -728,6 +728,44 @@ fn handle_query_dataset(args: &Value, pool: &McpDbPool) -> Result<String, String
     scrape_bridge("query", &body)
 }
 
+/// `save_scrape` — create/update a saved, optionally cron-scheduled scrape.
+#[cfg(feature = "scraper")]
+fn handle_save_scrape(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    if !scraper_connector_present(pool) {
+        return Err("Local Scraper connector is not available in this app.".to_string());
+    }
+    if !args.get("name").map(Value::is_string).unwrap_or(false)
+        || !args.get("urls").map(Value::is_array).unwrap_or(false)
+        || !args.get("rules").map(Value::is_object).unwrap_or(false)
+        || !args.get("dataset").map(Value::is_string).unwrap_or(false)
+    {
+        return Err("save_scrape requires 'name', 'urls' (array), 'rules' (object), 'dataset'".into());
+    }
+    scrape_bridge("config-save", args)
+}
+
+/// `list_scrapes` — list saved scrape configs (with schedule + last-run status).
+#[cfg(feature = "scraper")]
+fn handle_list_scrapes(_args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    if !scraper_connector_present(pool) {
+        return Err("Local Scraper connector is not available in this app.".to_string());
+    }
+    scrape_bridge("config-list", &json!({}))
+}
+
+/// `run_scrape` — run a saved scrape config now, by id.
+#[cfg(feature = "scraper")]
+fn handle_run_scrape(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    if !scraper_connector_present(pool) {
+        return Err("Local Scraper connector is not available in this app.".to_string());
+    }
+    let id = args
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("Missing required 'id'")?;
+    scrape_bridge("config-run", &json!({ "id": id }))
+}
+
 /// Whether the `local_scraper` built-in connector is present in the catalog.
 /// Ties `fetch_readable` advertisement + execution to the connector's presence,
 /// so the tool and connector stay consistent (the connector is seeded only in
@@ -1181,6 +1219,38 @@ pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
                 "required": ["dataset"]
             }
         }));
+        tools.push(json!({
+            "name": "save_scrape",
+            "description": "Save a named, reusable scrape (optionally cron-scheduled to run automatically). Same shape as run_extract plus a name and optional cron. Returns the saved config with its id.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "string", "description": "Existing config id to update (omit to create)" },
+                    "name": { "type": "string", "description": "Human name for this scrape" },
+                    "urls": { "type": "array", "items": { "type": "string" } },
+                    "rules": { "type": "object", "description": "Field → extraction rule (css/regex/json)" },
+                    "dataset": { "type": "string" },
+                    "key_field": { "type": "string" },
+                    "cron": { "type": "string", "description": "Optional 5-field cron (UTC) to run automatically; omit for manual only" },
+                    "enabled": { "type": "boolean", "description": "Default true" }
+                },
+                "required": ["name", "urls", "rules", "dataset"]
+            }
+        }));
+        tools.push(json!({
+            "name": "list_scrapes",
+            "description": "List saved scrapes with their schedule, last run time, and last status.",
+            "inputSchema": { "type": "object", "properties": {} }
+        }));
+        tools.push(json!({
+            "name": "run_scrape",
+            "description": "Run a saved scrape now by id. Returns the extract summary (new/changed/unchanged).",
+            "inputSchema": {
+                "type": "object",
+                "properties": { "id": { "type": "string", "description": "Saved scrape config id" } },
+                "required": ["id"]
+            }
+        }));
     }
 
     tools
@@ -1227,6 +1297,12 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "run_extract" => handle_run_extract(args, pool),
         #[cfg(feature = "scraper")]
         "query_dataset" => handle_query_dataset(args, pool),
+        #[cfg(feature = "scraper")]
+        "save_scrape" => handle_save_scrape(args, pool),
+        #[cfg(feature = "scraper")]
+        "list_scrapes" => handle_list_scrapes(args, pool),
+        #[cfg(feature = "scraper")]
+        "run_scrape" => handle_run_scrape(args, pool),
         _ => Err(format!("Unknown tool: {name}")),
     };
 
