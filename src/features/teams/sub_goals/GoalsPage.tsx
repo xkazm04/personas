@@ -176,7 +176,7 @@ export default function GoalsPage() {
         title={t.plugins.dev_lifecycle.tab_goals}
         subtitle={activeProject?.root_path ?? '—'}
         toolbar={
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2 flex-wrap justify-end min-w-0">
             <LifecycleProjectPicker />
             <Button
               variant="accent"
