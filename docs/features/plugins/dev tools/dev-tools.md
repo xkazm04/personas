@@ -104,7 +104,7 @@ A cross-cutting observability surface: for each Dev Project, see *every place th
 
 **Two layers:**
 
-1. **Assignment matrix** (Layer 1) — a `projects × connector` grid. Each project row carries a picker of the connected LLM-observability credentials; choosing one writes `dev_projects.llm_tracking_credential_id` via `dev_tools_update_project` (mirroring the Sentry monitoring binding). Shown whenever a project exists; if the vault has no LLM-observability credential yet it prompts to add one under Vault → Connectors.
+1. **Assignment matrix** (Layer 1) — a fleet-coverage board (`LlmOverviewMatrix`): a coverage strip (N/M projects instrumented + a per-tool tally) over a grid of brand-badged project tiles, with un-wired projects flagged as gaps. Each tile's picker — the themed brand-icon `ConnectorSocket` — writes `dev_projects.llm_tracking_credential_id` via `dev_tools_update_project` (mirroring the Sentry monitoring binding). Shown whenever a project exists; if the vault has no LLM-observability credential yet it prompts to add one under Vault → Connectors.
 2. **Pinpoints table** (Layer 2) — for the active project, a `UnifiedTable` of use-case rollups over a rolling **24h / 7d / 30d** window (columns: Use case · Provider · Model · Calls · Tokens · Est. $). One row per distinct use-case name, showing its *default* (most-called) provider+model with summed usage; un-named calls roll up under their model (rendered "unnamed"). The five connection states (empty / unmapped / unsupported / loading / connected / error) mirror the Overview cards. Costs are labelled **estimates** (token×price, not billed amounts).
 
 **Supported tools** — four builtin connectors, all behind one normalized `LlmPinpoint` contract + `foldByUseCase`:
