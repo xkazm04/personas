@@ -5,6 +5,7 @@ import { SuspenseFallback } from '@/features/shared/components/feedback/Suspense
 import { useTranslation } from '@/i18n/useTranslation';
 
 const ProjectOverviewPage = lazy(() => import('./sub_overview/ProjectOverviewPage'));
+const LlmOverviewPage = lazy(() => import('./sub_llm_overview/LlmOverviewPage'));
 const ProjectManagerPage = lazy(() => import('./sub_projects/ProjectManagerPage'));
 const GoalsPage = lazy(() => import('@/features/teams/sub_goals/GoalsPage'));
 const ContextMapPage = lazy(() => import('./sub_context/ContextMapPage'));
@@ -118,6 +119,7 @@ export default function DevToolsPage() {
         >
           <Suspense fallback={<SuspenseFallback />}>
             {devToolsTab === 'overview' && <ProjectOverviewPage />}
+            {devToolsTab === 'llm-overview' && <LlmOverviewPage />}
             {devToolsTab === 'projects' && <ProjectManagerPage />}
             {devToolsTab === 'goals' && <GoalsPage />}
             {devToolsTab === 'context-map' && <ContextMapPage />}
