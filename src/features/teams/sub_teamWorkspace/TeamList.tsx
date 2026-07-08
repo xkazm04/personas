@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Users, Zap, Trash2, ArrowRight, Layers, PenLine, Workflow, type LucideIcon } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { TeamsEmptyGlyph } from './TeamsEmptyGlyph';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { hasUnsentDraft } from '../sub_collab/useTeamChannel';
@@ -412,7 +413,7 @@ function EmptyState({
   return (
     <div className="animate-fade-slide-in text-center py-12">
       <div className="w-16 h-16 mx-auto mb-4 rounded-modal bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-        <Users className="w-8 h-8 text-indigo-400/50" />
+        <TeamsEmptyGlyph className="w-11 h-11" />
       </div>
       <h2 className="typo-heading-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
       <p className="typo-body text-foreground mb-6 max-w-sm mx-auto">{t.pipeline.no_teams_hint}</p>
