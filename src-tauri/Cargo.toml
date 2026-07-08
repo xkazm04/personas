@@ -60,6 +60,10 @@ test-automation = ["dep:xcap", "dep:image"]
 # (EngineKind variant, runner dispatch, PROVIDERS row, capability column).
 # Build with `cargo build --features ollama` when iterating on it.
 ollama = []
+# Embedded local scraper (Pumper). Phase 0: http tier only, SSRF-safe, exposed
+# as the `fetch_readable` MCP tool + `scraper_fetch_readable` command. Not in any
+# release profile yet — build with `cargo build --features scraper` while iterating.
+scraper = ["dep:pumper-core"]
 # Phase 0 scaffolding for the always-on daemon mode. Gates the
 # `personas-daemon` bin target.
 #
@@ -75,6 +79,12 @@ daemon = ["desktop-full"]
 [dependencies]
 # Internal proc-macro crate (see src-tauri/macros/).
 personas-macros = { path = "macros" }
+
+# Embedded local scraper (Pumper) — Phase 0. `default-features = false` drops
+# pumper-core's sqlx/storage tier, so this pulls only the engine traits +
+# Fetcher + Markdown (no sqlx, no Chrome, no wasmtime/tantivy). Gated behind the
+# `scraper` feature. See docs/plans/pumper-inbuilt-feasibility.md.
+pumper-core = { git = "https://github.com/xkazm04/pumper.git", rev = "7e13f31", default-features = false, optional = true }
 
 tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }
 tauri-plugin-notification = "2"

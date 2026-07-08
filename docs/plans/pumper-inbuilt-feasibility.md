@@ -153,7 +153,22 @@ possible libsqlite duplicate-symbol care), or (b) re-implement pumper's tiny
 Each phase: **Goal · Tasks (file-level) · Exit criteria · Effort.** Update Status.
 
 ### Phase 0 — prove the embedding (no Chrome, no sqlx)
-**Status:** not started
+**Status:** ✅ DONE (2026-07-08). pumper-core feature-gated + pushed (`7e13f31`); Personas
+depends via git dep (`default-features = false`). Landed: SSRF-safe `engine/scraper.rs`
+adapter (http tier, browser/claude stubbed), `fetch_readable` MCP tool that bridge-forwards
+to a new `POST /api/scrape/readable` management route (the mcp binary has no engine module,
+so the SSRF-safe fetch runs in the main app — mirrors the vault tools' credential proxy),
+and the `local-scraper` built-in connector. **Verified:** live test `fetch_readable_live`
+fetched example.com through pumper-core's Fetcher → Markdown (ok, 1.3s); `cargo check
+--features desktop,scraper` (lib + personas-mcp bin) Finished 0 errors; default `--features
+desktop` build unaffected (0 errors).
+**Next (P0 follow-ups):** gate the `local-scraper` connector seed so it only shows when the
+`scraper` feature ships; add connector-grant gating so `fetch_readable` is advertised only to
+personas granted the connector; drive it live through a persona (E2E).
+**Scope note:** ships the **http tier only** — the claude research tier is deferred to
+P1 and the browser tier to P2 (both stubbed with disabled impls). D2 (drop sqlx) was
+resolved early: `pumper-core` now has a default-on `storage` feature, and Personas
+depends with `default-features = false`.
 **Goal:** one working `scrape_*` MCP tool end-to-end, minimal deps, zero new external runtime requirements.
 **Tasks:**
 - Add `pumper-core` (+ `engine-http`, `engine-claude`) as path/git deps in `src-tauri/Cargo.toml` behind `feature = "scraper"`. Confirm no version breakage (tokio/axum/serde/reqwest already match).
@@ -213,8 +228,11 @@ Non-negotiable before any of this ships to end users:
 ## 8. Open decisions (resolve as we hit them)
 
 - **D1 (P0):** git dependency vs vendored copy of pumper crates? (CI + update flow.)
-- **D2 (P1):** re-implement `Datasets` over rusqlite (drop sqlx) — confirm the port
-  is small enough. Default: yes.
+- **D2 (P1):** ~~re-implement `Datasets` over rusqlite (drop sqlx)~~ **RESOLVED (2026-07-08):**
+  instead of re-implementing, `pumper-core` was given a default-on `storage` feature that
+  gates sqlx + Datasets/Storage/AppContext; Personas depends with `default-features = false`
+  and gets the engine traits + Fetcher + Markdown with no sqlx. When P1 needs change-detection
+  it can either enable `storage` or add a rusqlite-backed dataset layer on the Personas side.
 - **D3 (P2):** Edge-as-Chromium detection acceptable as the default browser? Per-OS
   detection order.
 - **D4:** how much of Model A (dev-shipped scrapers) do we seed at launch vs leave

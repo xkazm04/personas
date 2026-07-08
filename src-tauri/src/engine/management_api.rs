@@ -106,6 +106,10 @@ pub fn management_router(state: ManagementState) -> Router {
         )
         // Credential proxy -- route HTTP calls through stored credentials
         .route("/api/proxy/{credential_id}", post(proxy_request))
+        // Local scraper (embedded Pumper) -- the personas-mcp `fetch_readable`
+        // tool forwards here so the SSRF-safe fetch runs in the main app where
+        // the engine lives (the mcp binary has no engine module).
+        .route("/api/scrape/readable", post(scrape_readable))
         // A2A Gateway -- agent card discovery + JSON-RPC entry point
         .route("/agent-card/{persona_id}", get(get_agent_card))
         .route("/a2a/{persona_id}", post(handle_a2a_request))
@@ -286,6 +290,34 @@ const API_KEY_RATE_WINDOW: Duration = Duration::from_secs(60);
 ///
 /// `scopes` comes from `parsed_scopes`, which fails closed (empty vec) on a
 /// corrupt column, so a malformed row authorizes nothing scope-gated.
+#[derive(Deserialize)]
+struct ScrapeReadableBody {
+    url: String,
+}
+
+/// `POST /api/scrape/readable` — fetch a URL and return clean Markdown via the
+/// embedded local scraper (Pumper, http tier, SSRF-safe). Authorized by the
+/// default `/api/` POST rule (`personas:execute`). Returns 501 when the app is
+/// built without the `scraper` feature.
+async fn scrape_readable(Json(body): Json<ScrapeReadableBody>) -> Response {
+    #[cfg(feature = "scraper")]
+    {
+        match crate::engine::scraper::fetch_readable(&body.url).await {
+            Ok(markdown) => (StatusCode::OK, markdown).into_response(),
+            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
+        }
+    }
+    #[cfg(not(feature = "scraper"))]
+    {
+        let _ = body;
+        (
+            StatusCode::NOT_IMPLEMENTED,
+            "scraper feature not enabled in this build",
+        )
+            .into_response()
+    }
+}
+
 fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'static str> {
     let has = |needle: &str| scopes.iter().any(|s| s == needle);
 

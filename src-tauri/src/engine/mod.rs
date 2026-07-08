@@ -177,6 +177,8 @@ pub mod runner;
 pub mod safe_json;
 pub mod scheduler;
 pub mod scope_enforcement;
+#[cfg(feature = "scraper")]
+pub mod scraper;
 pub mod session_pool;
 #[cfg(feature = "p2p")]
 pub mod share_link;

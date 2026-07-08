@@ -643,6 +643,48 @@ fn handle_context_neighbors(args: &Value, pool: &McpDbPool) -> Result<String, St
 }
 
 /// Return the list of available MCP tools with their schemas.
+/// `fetch_readable` MCP tool — fetch a URL and return clean Markdown via the
+/// embedded Pumper scraper. The personas-mcp binary has no engine module, so it
+/// forwards to the main app's loopback route `/api/scrape/readable` (where the
+/// SSRF-safe fetch actually runs) with the bridge system key, mirroring how the
+/// vault tools use the credential proxy.
+#[cfg(feature = "scraper")]
+fn handle_fetch_readable(args: &Value) -> Result<String, String> {
+    let url = args
+        .get("url")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing required 'url'")?
+        .to_string();
+    let bridge =
+        std::env::var("PERSONAS_BRIDGE_URL").unwrap_or_else(|_| "http://127.0.0.1:9420".to_string());
+    let api_key = std::env::var("PERSONAS_API_KEY")
+        .map_err(|_| "Scraper bridge unavailable for this run (PERSONAS_API_KEY not set).".to_string())?;
+    let endpoint = format!("{}/api/scrape/readable", bridge.trim_end_matches('/'));
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| format!("runtime build failed: {e}"))?;
+    rt.block_on(async move {
+        let client = reqwest::Client::new();
+        let resp = client
+            .post(&endpoint)
+            .bearer_auth(&api_key)
+            .json(&json!({ "url": url }))
+            .send()
+            .await
+            .map_err(|e| format!("scrape request failed: {e}"))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| format!("scrape read failed: {e}"))?;
+        if !status.is_success() {
+            return Err(format!("scrape returned {status}: {text}"));
+        }
+        Ok(text)
+    })
+}
+
 pub fn list_tools() -> Vec<Value> {
     let mut tools = vec![
         json!({
@@ -1029,6 +1071,22 @@ pub fn list_tools() -> Vec<Value> {
             "execution_id": { "type": "string", "description": "Optional linked execution id" }
         }, "required": ["content"] }
     }));
+
+    // Embedded local scraper (Pumper) — Phase 0. Only advertised when the app is
+    // built with `--features scraper`.
+    #[cfg(feature = "scraper")]
+    tools.push(json!({
+        "name": "fetch_readable",
+        "description": "Fetch a web page and return its main content as clean Markdown. Local scraper; HTTP tier only (no JavaScript rendering). Use for articles, docs, and server-rendered pages.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": { "type": "string", "description": "The absolute http(s) URL to fetch" }
+            },
+            "required": ["url"]
+        }
+    }));
+
     tools
 }
 
@@ -1067,6 +1125,8 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "gcalendar_list_events" => handle_gcalendar_list_events(args, pool),
         "obsidian_vault_search" => handle_obsidian_vault_search(args, pool),
         "obsidian_vault_write_note" => handle_obsidian_vault_write_note(args, pool),
+        #[cfg(feature = "scraper")]
+        "fetch_readable" => handle_fetch_readable(args),
         _ => Err(format!("Unknown tool: {name}")),
     };
 
