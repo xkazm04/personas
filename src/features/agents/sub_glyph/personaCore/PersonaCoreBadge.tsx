@@ -1,55 +1,45 @@
-/** PersonaCoreBadge — the affordance under the intent that replaces the old
- *  "What" leaf. The intent textarea already IS the "what" (the mandatory
- *  purpose), so this slot instead carries the persona's TEMPERAMENT: a compact
- *  read of the chosen mentality + Risk/Speed/Model/Memory, opening the
+/** PersonaCoreBadge — the persona-core lever in the dimension badge row.
+ *
+ *  The intent textarea is the mandatory "what"; the persona core is one of the
+ *  OPTIONAL dimensions beside it. So this renders as a sibling chip to the other
+ *  dimension badges — icon + label, tinted when configured — and opens the
  *  configurator on click. View-only while a build is in flight.
  */
-import { Atom, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { Atom } from "lucide-react";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { coreIcon } from "./coreBits";
-import { MODEL_TIERS, type PersonaCore } from "./usePersonaCore";
+import type { PersonaCore } from "./usePersonaCore";
 
 const ACCENT = "#60A5FA";
+const EASE = [0.16, 1, 0.3, 1] as const;
 
-export function PersonaCoreBadge({ core, onOpen, locked = false }: { core: PersonaCore; onOpen: () => void; locked?: boolean }) {
-  const { configured, preset, memory, state } = core;
+export function PersonaCoreBadge({ core, onOpen, locked = false, index = 0 }: { core: PersonaCore; onOpen: () => void; locked?: boolean; index?: number }) {
+  const { configured, preset } = core;
   const PresetIcon = preset ? coreIcon(preset.icon) : Atom;
   const accent = preset?.color ?? ACCENT;
-  const modelLabel = MODEL_TIERS.find((m) => m.id === state.model)?.label ?? "Balanced";
+  const label = configured ? (preset ? preset.name : "Custom core") : "Persona core";
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={locked ? undefined : onOpen}
       disabled={locked}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: EASE, delay: 0.18 + index * 0.03 }}
       data-testid="persona-core-badge"
-      className={`group inline-flex items-center gap-2 pl-2 pr-2.5 py-1.5 rounded-interactive border transition-colors w-full sm:w-auto ${locked ? "cursor-default" : "cursor-pointer hover:border-foreground/30"}`}
+      aria-pressed={configured}
+      className={`inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-interactive border transition-colors ${locked ? "cursor-default" : "cursor-pointer hover:border-foreground/30"}`}
       style={{
-        borderColor: configured ? colorWithAlpha(accent, 0.5) : "rgba(255,255,255,0.14)",
-        background: configured ? colorWithAlpha(accent, 0.1) : "rgba(255,255,255,0.03)",
+        borderColor: configured ? colorWithAlpha(accent, 0.5) : "rgba(255,255,255,0.12)",
+        background: configured ? colorWithAlpha(accent, 0.14) : "rgba(255,255,255,0.03)",
       }}
     >
-      <span className="w-6 h-6 rounded-input flex items-center justify-center shrink-0" style={{ background: colorWithAlpha(accent, configured ? 0.2 : 0.08) }}>
+      <span className="w-5 h-5 rounded-input flex items-center justify-center shrink-0" style={{ background: configured ? colorWithAlpha(accent, 0.22) : "rgba(255,255,255,0.05)" }}>
         <PresetIcon className="w-3.5 h-3.5" style={{ color: configured ? accent : undefined }} />
       </span>
-      <span className="flex flex-col items-start leading-tight min-w-0">
-        <span className="typo-caption text-foreground">
-          {configured ? (preset ? preset.name : "Custom core") : "Persona core"}
-        </span>
-        <span className="typo-caption truncate max-w-[240px]">
-          {configured
-            ? `${riskWord(state.risk)} · ${speedWord(state.speed)} · ${modelLabel}${memory ? ` · ${memory.name}` : ""}`
-            : "Set its temperament — mentality, risk, speed, model, memory"}
-        </span>
-      </span>
-      {!locked && <ChevronRight className="w-3.5 h-3.5 shrink-0 ml-auto opacity-50 group-hover:opacity-90 transition-opacity" />}
-    </button>
+      <span className="typo-caption text-foreground">{label}</span>
+    </motion.button>
   );
-}
-
-function riskWord(v: number): string {
-  return v < 0.34 ? "Cautious" : v > 0.66 ? "Bold" : "Balanced";
-}
-function speedWord(v: number): string {
-  return v < 0.34 ? "Thorough" : v > 0.66 ? "Fast" : "Steady";
 }

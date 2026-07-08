@@ -21,7 +21,7 @@ import type { PersonaCore } from "./personaCore/usePersonaCore";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
 import { RecipeAlternativeModal } from "./RecipeAlternativeModal";
-import type { useComposeConfig } from "./useComposeConfig";
+import type { useComposeConfig, ComposeConfigItem } from "./useComposeConfig";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const ACCENT = "#60A5FA";
@@ -78,6 +78,9 @@ export function DialogueComposePanel({
   };
 
   const activeItems = cfg.items.filter((i) => i.active && i.dim !== "task");
+  // Every configurable dimension except the intent itself ("task"/What) — the
+  // badge row's clickable levers. The intent textarea already IS the "what".
+  const dimensionItems = cfg.items.filter((i) => i.kind !== "input");
   // Drop the already-selected recipe from the suggestions (see selectRecipeAlternative).
   const shownStarters = selectedRecipeId ? starters.filter((s) => s.recipe_id !== selectedRecipeId) : starters;
   const topStarter = shownStarters[0] ?? null;
@@ -162,12 +165,6 @@ export function DialogueComposePanel({
               data-testid="agent-intent-input"
             />
 
-            {/* Persona-core badge — the temperament slot that replaced "What".
-                The intent above is the purpose; this is the mentality under it. */}
-            {core && onOpenCore && (
-              <PersonaCoreBadge core={core} onOpen={onOpenCore} locked={locked} />
-            )}
-
             <AnimatePresence>
               {(shownStarters.length > 0) && (locked ? !!topStarter : true) && (
                 <motion.div
@@ -229,16 +226,18 @@ export function DialogueComposePanel({
           </div>
         </motion.div>
 
-        {/* Dimension "tags" removed (2026-07-07) — the activated dimensions are
-            shown once, in the Blueprint card beside the glyph. Set them by
-            clicking the glyph petals. */}
-        {!locked && (
-          <ThreadLine delay={0.2}>
-            <span className="typo-caption block">
-              Steer it before it runs — click a petal on the glyph to set a dimension.
-            </span>
-          </ThreadLine>
-        )}
+        {/* Dimension badges — the optional levers under the intent. They no
+            longer echo their applied VALUE (that lives once, in the Blueprint
+            card); a badge just names its dimension and lights up when set.
+            Persona core sits among them — optional, like every other dimension. */}
+        <div className="flex flex-wrap items-center gap-2">
+          {dimensionItems.map((item, i) => (
+            <DimensionBadge key={item.dim} item={item} index={i} disabled={locked} />
+          ))}
+          {core && onOpenCore && (
+            <PersonaCoreBadge core={core} onOpen={onOpenCore} locked={locked} index={dimensionItems.length} />
+          )}
+        </div>
       </div>
 
       {/* ── Forming-persona rail — interactive in compose, view-only while
@@ -353,6 +352,35 @@ export function DialogueComposePanel({
 }
 
 /** A left-accented "assistant said" line — the conversation's connective tissue. */
+/** A single dimension lever in the badge row: icon + label, tinted when set.
+ *  It deliberately does NOT show the applied value — that lives once in the
+ *  Blueprint card. Clicking opens its picker / toggles it (unless locked). */
+function DimensionBadge({ item, index, disabled = false }: { item: ComposeConfigItem; index: number; disabled?: boolean }) {
+  const Icon = item.icon;
+  return (
+    <motion.button
+      type="button"
+      onClick={disabled ? undefined : item.onClick}
+      disabled={disabled}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: EASE, delay: 0.18 + index * 0.03 }}
+      className={`inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1.5 rounded-interactive border transition-colors ${disabled ? "cursor-default" : "cursor-pointer hover:border-foreground/30"}`}
+      style={{
+        borderColor: item.active ? colorWithAlpha(item.color, 0.5) : "rgba(255,255,255,0.12)",
+        background: item.active ? colorWithAlpha(item.color, 0.14) : "rgba(255,255,255,0.03)",
+      }}
+      data-testid={`dialogue-chip-${item.dim}`}
+      aria-pressed={item.active}
+    >
+      <span className="w-5 h-5 rounded-input flex items-center justify-center shrink-0" style={{ background: item.active ? colorWithAlpha(item.color, 0.22) : "rgba(255,255,255,0.05)" }}>
+        <Icon className="w-3.5 h-3.5" style={{ color: item.active ? item.color : undefined }} />
+      </span>
+      <span className="typo-caption text-foreground">{item.label}</span>
+    </motion.button>
+  );
+}
+
 export function ThreadLine({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   return (
     <motion.div
