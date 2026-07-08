@@ -53,6 +53,7 @@ const CompanionPluginPage = lazyRetry(() => import('@/features/plugins/companion
 const PluginBrowsePage = lazyRetry(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazyRetry(() => import('@/features/schedules/components/ScheduleTimeline'));
 const StudioPage = lazyRetry(() => import('@/features/studio/StudioPage'));
+const ScraperPage = lazyRetry(() => import('@/features/scraper/ScraperPage'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
@@ -285,6 +286,7 @@ export default function PersonasPage() {
       return <ErrorBoundary onGoHome={goHome} name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'studio' && import.meta.env.DEV) return <ErrorBoundary onGoHome={goHome} name="Studio"><Suspense fallback={SectionFallback}><StudioPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'scraper' && import.meta.env.DEV) return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={SectionFallback}><ScraperPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'schedules') return <ErrorBoundary onGoHome={goHome} name="Schedules"><Suspense fallback={SectionFallback}><SchedulesPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'settings') return <ErrorBoundary onGoHome={goHome} name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
     if (selectedPersonaId && buildPersonaId === selectedPersonaId && buildPhase && buildPhase !== 'promoted') {

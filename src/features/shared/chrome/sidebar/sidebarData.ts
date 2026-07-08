@@ -44,6 +44,7 @@ export const sections: SectionDef[] = [
   // Studio — the Athena web-dev companion preview (scaffold + embedded dev
   // server). Dev-only while in active development (P1).
   { id: 'studio', icon: Globe, label: 'Studio', devOnly: true },
+  { id: 'scraper', icon: Database, label: 'Scraper', devOnly: true },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
