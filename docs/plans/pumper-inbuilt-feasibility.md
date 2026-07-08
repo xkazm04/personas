@@ -199,7 +199,15 @@ depends with `default-features = false`.
 **Effort:** S–M.
 
 ### Phase 1 — declarative extract + datasets + Model-A scrapers
-**Status:** not started
+**Status:** 1a landed (2026-07-08) — the declarative-extract core. Shipped: `scraper_records`
+change-detected table (rusqlite, no sqlx — D2); `engine/scraper.rs` `upsert_record` /
+`run_extract` (fetch URLs via the SSRF-safe http Fetcher → `pumper_core::extract` CSS/regex/
+JSON-pointer rules → change-detected upsert) / `query_dataset`; management routes
+`/api/scrape/extract` + `/api/scrape/query`; MCP tools `run_extract` + `query_dataset`
+(bridge-forwarded, gated on the connector). Verified: `dataset_change_detection` unit test
+(New→Unchanged→Changed + changed_only filter); scraper + default builds green.
+**Deferred to 1b:** scrape-use-case config persistence + UI, cron scheduling, 1–2 Model-A
+example scrapers.
 **Goal:** useful local scraping without a browser; the runtime "use case" model begins.
 **Tasks:**
 - Storage decision 3.4: implement pumper-style change-detected `Datasets` over Personas' `rusqlite` (drop sqlx) — tables `scraper_datasets` / `scraper_records` with content-hash new/changed/unchanged.

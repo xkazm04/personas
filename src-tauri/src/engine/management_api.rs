@@ -110,6 +110,8 @@ pub fn management_router(state: ManagementState) -> Router {
         // tool forwards here so the SSRF-safe fetch runs in the main app where
         // the engine lives (the mcp binary has no engine module).
         .route("/api/scrape/readable", post(scrape_readable))
+        .route("/api/scrape/extract", post(scrape_extract))
+        .route("/api/scrape/query", post(scrape_query))
         // A2A Gateway -- agent card discovery + JSON-RPC entry point
         .route("/agent-card/{persona_id}", get(get_agent_card))
         .route("/a2a/{persona_id}", post(handle_a2a_request))
@@ -310,6 +312,72 @@ async fn scrape_readable(Json(body): Json<ScrapeReadableBody>) -> Response {
     #[cfg(not(feature = "scraper"))]
     {
         let _ = body;
+        (
+            StatusCode::NOT_IMPLEMENTED,
+            "scraper feature not enabled in this build",
+        )
+            .into_response()
+    }
+}
+
+/// `POST /api/scrape/extract` — run a declarative extract (fetch URLs → apply
+/// CSS/regex/JSON-pointer rules → upsert change-detected records). SSRF-safe.
+async fn scrape_extract(
+    AxumState(_state): AxumState<Arc<ManagementState>>,
+    Json(_body): Json<serde_json::Value>,
+) -> Response {
+    #[cfg(feature = "scraper")]
+    {
+        let cfg: crate::engine::scraper::ExtractConfig = match serde_json::from_value(_body) {
+            Ok(c) => c,
+            Err(e) => {
+                return (StatusCode::BAD_REQUEST, format!("invalid extract config: {e}"))
+                    .into_response()
+            }
+        };
+        match crate::engine::scraper::run_extract(&_state.pool, cfg).await {
+            Ok(summary) => Json(summary).into_response(),
+            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
+        }
+    }
+    #[cfg(not(feature = "scraper"))]
+    {
+        (
+            StatusCode::NOT_IMPLEMENTED,
+            "scraper feature not enabled in this build",
+        )
+            .into_response()
+    }
+}
+
+#[derive(Deserialize)]
+struct ScrapeQueryBody {
+    dataset: String,
+    #[serde(default)]
+    limit: Option<i64>,
+    #[serde(default)]
+    changed_only: bool,
+}
+
+/// `POST /api/scrape/query` — read records back from a scraper dataset.
+async fn scrape_query(
+    AxumState(_state): AxumState<Arc<ManagementState>>,
+    Json(_body): Json<ScrapeQueryBody>,
+) -> Response {
+    #[cfg(feature = "scraper")]
+    {
+        match crate::engine::scraper::query_dataset(
+            &_state.pool,
+            &_body.dataset,
+            _body.limit.unwrap_or(100),
+            _body.changed_only,
+        ) {
+            Ok(records) => Json(records).into_response(),
+            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
+        }
+    }
+    #[cfg(not(feature = "scraper"))]
+    {
         (
             StatusCode::NOT_IMPLEMENTED,
             "scraper feature not enabled in this build",

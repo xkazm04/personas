@@ -208,6 +208,25 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_shared_firings_slug_seq ON shared_event_firings(slug, seq);"
     )?;
 
+    // -- Local scraper datasets (embedded Pumper, Phase 1) ----------------------
+    // Change-detected record store for the local scraper's declarative extract
+    // (engine/scraper.rs). Mirrors pumper-core's Datasets over rusqlite (no sqlx):
+    // upsert hashes the record JSON → New / Changed / Unchanged, so a re-run only
+    // surfaces what actually changed. `data` is the extracted JSON object.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS scraper_records (
+            dataset       TEXT NOT NULL,
+            key           TEXT NOT NULL,
+            data          TEXT NOT NULL,
+            content_hash  TEXT NOT NULL,
+            first_seen    TEXT NOT NULL DEFAULT (datetime('now')),
+            last_seen     TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (dataset, key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_scraper_records_dataset ON scraper_records(dataset, updated_at);"
+    )?;
+
     // -- Shared Event Analytics --------------------------------------------------
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS shared_event_analytics (

@@ -643,26 +643,18 @@ fn handle_context_neighbors(args: &Value, pool: &McpDbPool) -> Result<String, St
 }
 
 /// Return the list of available MCP tools with their schemas.
-/// `fetch_readable` MCP tool — fetch a URL and return clean Markdown via the
-/// embedded Pumper scraper. The personas-mcp binary has no engine module, so it
-/// forwards to the main app's loopback route `/api/scrape/readable` (where the
-/// SSRF-safe fetch actually runs) with the bridge system key, mirroring how the
-/// vault tools use the credential proxy.
+/// Forward a scraper request to the main app's loopback route
+/// `/api/scrape/<path>` (where the engine + SSRF-safe client live — the
+/// personas-mcp binary has no engine module), with the bridge system key.
+/// Mirrors how the vault tools use the credential proxy.
 #[cfg(feature = "scraper")]
-fn handle_fetch_readable(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    if !scraper_connector_present(pool) {
-        return Err("Local Scraper connector is not available in this app.".to_string());
-    }
-    let url = args
-        .get("url")
-        .and_then(|v| v.as_str())
-        .ok_or("Missing required 'url'")?
-        .to_string();
+fn scrape_bridge(path: &str, body: &Value) -> Result<String, String> {
     let bridge =
         std::env::var("PERSONAS_BRIDGE_URL").unwrap_or_else(|_| "http://127.0.0.1:9420".to_string());
     let api_key = std::env::var("PERSONAS_API_KEY")
         .map_err(|_| "Scraper bridge unavailable for this run (PERSONAS_API_KEY not set).".to_string())?;
-    let endpoint = format!("{}/api/scrape/readable", bridge.trim_end_matches('/'));
+    let endpoint = format!("{}/api/scrape/{}", bridge.trim_end_matches('/'), path);
+    let body = body.clone();
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -672,7 +664,7 @@ fn handle_fetch_readable(args: &Value, pool: &McpDbPool) -> Result<String, Strin
         let resp = client
             .post(&endpoint)
             .bearer_auth(&api_key)
-            .json(&json!({ "url": url }))
+            .json(&body)
             .send()
             .await
             .map_err(|e| format!("scrape request failed: {e}"))?;
@@ -686,6 +678,54 @@ fn handle_fetch_readable(args: &Value, pool: &McpDbPool) -> Result<String, Strin
         }
         Ok(text)
     })
+}
+
+/// `fetch_readable` — fetch a URL and return clean Markdown.
+#[cfg(feature = "scraper")]
+fn handle_fetch_readable(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    if !scraper_connector_present(pool) {
+        return Err("Local Scraper connector is not available in this app.".to_string());
+    }
+    let url = args
+        .get("url")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing required 'url'")?;
+    scrape_bridge("readable", &json!({ "url": url }))
+}
+
+/// `run_extract` — declarative scrape: fetch URLs, apply CSS/regex/JSON-pointer
+/// rules, upsert change-detected records into a dataset. The tool args ARE the
+/// extract config, forwarded verbatim.
+#[cfg(feature = "scraper")]
+fn handle_run_extract(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    if !scraper_connector_present(pool) {
+        return Err("Local Scraper connector is not available in this app.".to_string());
+    }
+    if !args.get("urls").map(|u| u.is_array()).unwrap_or(false)
+        || !args.get("rules").map(|r| r.is_object()).unwrap_or(false)
+        || !args.get("dataset").map(|d| d.is_string()).unwrap_or(false)
+    {
+        return Err("run_extract requires 'urls' (array), 'rules' (object), and 'dataset' (string)".into());
+    }
+    scrape_bridge("extract", args)
+}
+
+/// `query_dataset` — read change-detected records back from a scraper dataset.
+#[cfg(feature = "scraper")]
+fn handle_query_dataset(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    if !scraper_connector_present(pool) {
+        return Err("Local Scraper connector is not available in this app.".to_string());
+    }
+    let dataset = args
+        .get("dataset")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing required 'dataset'")?;
+    let body = json!({
+        "dataset": dataset,
+        "limit": args.get("limit").and_then(Value::as_i64).unwrap_or(100),
+        "changed_only": args.get("changed_only").and_then(Value::as_bool).unwrap_or(false),
+    });
+    scrape_bridge("query", &body)
 }
 
 /// Whether the `local_scraper` built-in connector is present in the catalog.
@@ -1114,6 +1154,33 @@ pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
             "required": ["url"]
         }
         }));
+        tools.push(json!({
+            "name": "run_extract",
+            "description": "Scrape structured data from web pages using declarative rules, and store change-detected records in a named dataset. Each field maps to a rule: {\"type\":\"css\",\"selector\":\"h1\",\"attr\":null,\"all\":false} | {\"type\":\"regex\",\"pattern\":\"...\",\"group\":0} | {\"type\":\"json\",\"pointer\":\"/a/b\"}. Re-running only surfaces new/changed rows. HTTP tier only (no JavaScript rendering).",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "urls": { "type": "array", "items": { "type": "string" }, "description": "Absolute http(s) URLs to scrape" },
+                    "rules": { "type": "object", "description": "Field name → extraction rule (css/regex/json)" },
+                    "dataset": { "type": "string", "description": "Dataset name to upsert records into" },
+                    "key_field": { "type": "string", "description": "Extracted field to use as the record key (defaults to the URL)" }
+                },
+                "required": ["urls", "rules", "dataset"]
+            }
+        }));
+        tools.push(json!({
+            "name": "query_dataset",
+            "description": "Read change-detected records back from a scraper dataset (newest first). Use after run_extract to see what was scraped or what changed.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "dataset": { "type": "string", "description": "Dataset name" },
+                    "limit": { "type": "integer", "description": "Max records (default 100)" },
+                    "changed_only": { "type": "boolean", "description": "Only records whose content changed since first seen (default false)" }
+                },
+                "required": ["dataset"]
+            }
+        }));
     }
 
     tools
@@ -1156,6 +1223,10 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "obsidian_vault_write_note" => handle_obsidian_vault_write_note(args, pool),
         #[cfg(feature = "scraper")]
         "fetch_readable" => handle_fetch_readable(args, pool),
+        #[cfg(feature = "scraper")]
+        "run_extract" => handle_run_extract(args, pool),
+        #[cfg(feature = "scraper")]
+        "query_dataset" => handle_query_dataset(args, pool),
         _ => Err(format!("Unknown tool: {name}")),
     };
 
