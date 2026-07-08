@@ -25,25 +25,35 @@ Describe surface as a **persona-core configurator**, so creation is one flow:
    Dialogue+Cinema). Type what you want; the LLM resolves the spec with
    clarifying questions. Under the intent sits the **persona-core badge**
    (`sub_glyph/personaCore/`): the slot that replaced the redundant "What" leaf
-   (the intent already IS the "what"). It opens a configurator that combines an
-   archetype **preset** with manual **Risk / Speed / Model / Memory** tuning.
-   - **Archetypes** (9: Guardian, Analyst, Scout, Operator, Sentinel, Curator,
-     Craftsman, Shipper, Chief of Staff) live in
-     `scripts/templates/_archetypes.json`, embedded via
-     `engine/archetype_catalog.rs`, served by `list_archetypes`. Each carries a
-     full 7-dial `core` (motivation/stance/northStar/**riskTolerance**/
-     **speedVsQuality**/conflictStyle/deference); the configurator reads
-     riskTolerance + speedVsQuality as the Risk/Speed knobs.
-   - **Memory strategies** (Focused / Learner / Team player / Grounded expert /
-     Second brain) — same catalog, picked as one knob.
-   - **Model tier** — Haiku (Fast) / Sonnet (Balanced) / Opus (Max).
-   - The chosen core is appended to the launch intent as a directive block
-     (same mechanism as the memory/review toggles), so the normal
-     build-from-intent path honours the temperament — no bespoke create pipeline.
-   - The configurator is the **Console** design (`personaCore/CoreConsole.tsx`):
-     a manual-first mixer — risk/speed sliders + model/memory pickers — with
-     archetype presets as one-click "snapshot" chips that spring the knobs to
-     the preset's values. (The Atelier/Compass prototype variants were cut.)
+   (the intent already IS the "what"). It opens the **Character** configurator
+   (`personaCore/CoreCharacter.tsx`), rethought 2026-07-08 against the real
+   corpus. Four surfaces:
+   - **Disposition** — one Cautious↔Bold slider. (Collapsed from Risk+Speed,
+     which are near-collinear across the 18 dial-carrying personas.)
+   - **Character traits** — a clickable 20-trait palette in 5 axes (Rigor /
+     Autonomy / Communication / Reliability / Temperament), distilled from the
+     `principles`/`decision_principles`/`voice`/`stance` prose of all 120
+     personas and ordered by corpus frequency (`coreTraits.ts`). This carries
+     most of the character — 102/111 base templates have no numeric `core` at
+     all. Plus a **conflict style** (challenger/analyst/pragmatist/harmonizer):
+     same model + traits, different conflict style = different deliberation.
+   - **Model** — tier (Haiku/Sonnet/Opus) **× reasoning effort** (low/medium/
+     high/xhigh). Both are first-class, backend-wired (`--effort` on every run;
+     `cli_args.rs`). Effort was previously UI-hidden outside Settings→Model
+     Routing. There is no separate "Speed" knob — effort is the real compute axis.
+   - **Memory** — orthogonal toggles grounded in what's actually wired:
+     *Remembers between runs* (the real default-on `persona_memories` store),
+     *Reflects & improves*, *Team ledger* (bites only when the persona is on a
+     team), *Obsidian* (off/read/mirror — mirror is a manual sync today).
+     Knowledge-base grounding is shown greyed "coming soon": runtime KB retrieval
+     for personas is unimplemented (`kb_semantic_search` has no handler).
+   - **Archetypes** (9) live in `scripts/templates/_archetypes.json`, served by
+     `list_archetypes`; snapshot chips seed disposition + conflict style from the
+     archetype `core`.
+   - The chosen core is appended to the launch intent as a directive block (same
+     mechanism as the memory/review toggles) — **prototype scope**: it does not
+     yet write hard config (`generation_settings.memories`, `model_profile`,
+     `--effort`). Wiring those is the flagged next-leverage follow-up.
 2. **Browse templates** — the gallery's fully pre-composed path.
 
 Simple tier renders `UnifiedBuildEntry` directly (no tab strip; templates gated).
