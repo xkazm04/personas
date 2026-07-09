@@ -1,0 +1,17 @@
+{
+  "id": "sync-two-tools",
+  "vagueness": "medium",
+  "vague_intent": "sync my tasks between my two tools",
+  "true_intent": "When I add or complete a task in Todoist, mirror that change into a Notion 'Tasks' database so my Notion workspace always reflects Todoist. It's one-way, Todoist to Notion — Notion is just the readable mirror.",
+  "must_clarify": [
+    "which two tools (neither is named)",
+    "sync direction (one-way vs two-way, and which is source)",
+    "what counts as a task change to sync (add / complete / update)"
+  ],
+  "must_not_assume": [
+    "two-way sync when the user wants one-way",
+    "specific tools without asking which two"
+  ],
+  "expect_questions": 2,
+  "notes": "'my two tools' names neither endpoint — must ask BOTH. Direction is a classic under-specified axis (one-way vs two-way); assuming two-way is a real correctness risk. Multi-slot disambiguation in one capability."
+}

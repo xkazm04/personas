@@ -1,0 +1,17 @@
+{
+  "id": "news-cadence-outside",
+  "vagueness": "medium",
+  "vague_intent": "keep me updated on tech news",
+  "true_intent": "Give me a short summary of the biggest AI and startup news twice a week — Monday and Thursday mornings — pulled from the web, delivered as an in-app notification. Just reading, nothing to publish.",
+  "must_clarify": [
+    "cadence / how often (no schedule word in the intent, so it must ask)",
+    "topic focus / which news",
+    "where to deliver the update"
+  ],
+  "must_not_assume": [
+    "a daily cadence (the intent gives no cadence at all — 'updated' is not 'daily')",
+    "a specific external publishing destination"
+  ],
+  "expect_questions": 2,
+  "notes": "Sits JUST OUTSIDE the schedule-keyword set in gates.rs (no 'daily/every/each' word), so intent_implies_trigger should be Closed and force a cadence question. Contrast with hn-digest-control which is fully specified. Tests the gate oracle boundary."
+}

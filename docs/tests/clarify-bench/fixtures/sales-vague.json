@@ -1,0 +1,18 @@
+{
+  "id": "sales-vague",
+  "vagueness": "high",
+  "vague_intent": "build an agent for my sales team",
+  "true_intent": "When a deal is marked Closed-Won in our CRM, I want a celebration message posted to the #wins Slack channel and a row appended to our 'Closed Deals' spreadsheet with the deal name, amount, and owner. That's the whole job.",
+  "must_clarify": [
+    "what the agent should DO (the job is unstated)",
+    "the trigger (what event / when)",
+    "the source system (CRM) and which one",
+    "the output destination(s)"
+  ],
+  "must_not_assume": [
+    "a generic 'sales assistant' scope instead of the specific closed-won workflow",
+    "a specific CRM or chat tool without asking"
+  ],
+  "expect_questions": 3,
+  "notes": "Goal-only, audience-scoped ('sales team') with ZERO job detail — must ask the mission question (what job) before anything. High risk of the model inventing a broad multi-capability 'sales assistant' instead of asking to narrow to the one real workflow."
+}

@@ -1,0 +1,10 @@
+{
+  "id": "hn-digest-control",
+  "vagueness": "none-control",
+  "vague_intent": "Every day at 9am, fetch the top 5 Hacker News stories and show them to me as a digest in the app titlebar. No need to publish anywhere else.",
+  "true_intent": "Exactly what I said: a daily 9am digest of the top 5 Hacker News stories, delivered to the in-app titlebar. Nothing more — no external publishing, no review step needed, it's just an informational read.",
+  "must_clarify": [],
+  "must_not_assume": [],
+  "expect_questions": 0,
+  "notes": "NEGATIVE CONTROL. Fully specified and matches the simple-periodic-report fast-path (session_prompt Rule 26: schedule cadence + informational output + no external publishing => resolve with defaults, emit ZERO clarifying questions). A correct build should ask ~0 questions and go straight to resolution. If it interrogates this intent, that is the OVER-asking failure mode — as bad as assuming."
+}

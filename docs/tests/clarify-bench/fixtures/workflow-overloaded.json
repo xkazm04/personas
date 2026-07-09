@@ -1,0 +1,17 @@
+{
+  "id": "workflow-overloaded",
+  "vagueness": "extreme",
+  "vague_intent": "manage my whole workflow and make my life easier",
+  "true_intent": "Honestly I just have one concrete pain: every morning I copy yesterday's Stripe payouts into a Google Sheet by hand. I want that one thing automated — pull yesterday's Stripe payouts and append them to my 'Revenue' sheet each morning. Nothing else.",
+  "must_clarify": [
+    "which SPECIFIC job to start with (the intent is unbounded)",
+    "the trigger / cadence",
+    "the source and destination systems"
+  ],
+  "must_not_assume": [
+    "inventing a broad multi-capability 'do everything' persona instead of asking to narrow scope",
+    "any specific tool without asking"
+  ],
+  "expect_questions": 3,
+  "notes": "SCOPE-CONTROL trap. 'manage my whole workflow' invites the model to invent 5+ vague capabilities. A good build must ask the user to narrow to a concrete first job rather than padding. Tests scope discipline under maximally open intent — the opposite failure from over-asking."
+}
