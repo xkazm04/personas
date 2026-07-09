@@ -14,6 +14,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
+import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
 import { splitSentrySlug } from './adapters';
 import {
   ConnectorChain, MonitoringChain, SentryProjectPicker,
@@ -144,7 +145,7 @@ export default function ProjectOverviewPage() {
       setDevToolsTab('task-runner');
     } else if (event.kind === 'goal_signal') {
       setPendingGoalSpotlightId(event.sourceId);
-      setDevToolsTab('goals');
+      openGoalsBoard();
     } else if (event.kind === 'scan_run') {
       setDevToolsTab('idea-scanner');
     }

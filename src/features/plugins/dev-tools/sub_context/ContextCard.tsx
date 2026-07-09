@@ -1,5 +1,6 @@
 import { File, Tag, Target, Lightbulb, Sparkles, Gauge, Layers } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ContextItem } from './contextMapTypes';
@@ -41,7 +42,7 @@ export default function ContextCard({
 
   const handleGoalsJump = () => {
     if (firstGoalId) setPendingGoalSpotlightId(firstGoalId);
-    setDevToolsTab('goals');
+    openGoalsBoard();
   };
 
   const handleIdeasJump = () => {

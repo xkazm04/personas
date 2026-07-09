@@ -5,6 +5,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 // minimal mock returns vi.fn() setters so we can assert call shape.
 const setDevToolsTab = vi.fn();
 const setPendingGoalSpotlightId = vi.fn();
+// Goals now live only under Teams; the badge navigates via the canonical
+// openGoalsBoard() helper (Teams → Goals → board) instead of setDevToolsTab.
+// vi.hoisted so the fn is initialized before the hoisted vi.mock factory runs.
+const openGoalsBoardMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (s: Record<string, unknown>) => unknown) =>
@@ -12,6 +16,10 @@ vi.mock('@/stores/systemStore', () => ({
       setDevToolsTab,
       setPendingGoalSpotlightId,
     }),
+}));
+
+vi.mock('@/features/plugins/companion/guidance/appActions', () => ({
+  openGoalsBoard: openGoalsBoardMock,
 }));
 
 vi.mock('@/i18n/useTranslation', () => ({
@@ -52,6 +60,7 @@ describe('ContextCard goal-coverage badge', () => {
   beforeEach(() => {
     setDevToolsTab.mockClear();
     setPendingGoalSpotlightId.mockClear();
+    openGoalsBoardMock.mockClear();
   });
 
   it('renders the "no goal" hint when goalCount is 0', () => {
@@ -74,7 +83,7 @@ describe('ContextCard goal-coverage badge', () => {
     const badge = screen.getByTitle(/open in goals/i);
     fireEvent.click(badge);
     expect(setPendingGoalSpotlightId).toHaveBeenCalledWith('goal-XYZ');
-    expect(setDevToolsTab).toHaveBeenCalledWith('goals');
+    expect(openGoalsBoardMock).toHaveBeenCalled();
   });
 
   it('clicking the goal badge does NOT trigger the card onSelect handler', () => {
@@ -89,6 +98,6 @@ describe('ContextCard goal-coverage badge', () => {
     render(<ContextCard ctx={makeCtx()} selected={false} onSelect={() => {}} goalCount={1} />);
     fireEvent.click(screen.getByTitle(/open in goals/i));
     expect(setPendingGoalSpotlightId).not.toHaveBeenCalled();
-    expect(setDevToolsTab).toHaveBeenCalledWith('goals');
+    expect(openGoalsBoardMock).toHaveBeenCalled();
   });
 });

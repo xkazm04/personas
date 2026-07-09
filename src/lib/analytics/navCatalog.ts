@@ -77,7 +77,7 @@ const DESIGN_SUB_TABS = ['use-cases', 'prompt', 'connectors', 'triggers', 'messa
 const CLOUD_TABS = ['cloud', 'gitlab', 'unified'] as const satisfies readonly CloudTab[];
 const SETTINGS_TABS = ['account', 'appearance', 'notifications', 'radio', 'engine', 'byom', 'portability', 'network', 'admin', 'api-keys', 'history', 'limits'] as const satisfies readonly SettingsTab[];
 const PLUGIN_TABS = ['browse', 'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion', 'scraper'] as const satisfies readonly PluginTab[];
-const DEV_TOOLS_TABS = ['overview', 'projects', 'goals', 'context-map', 'idea-scanner', 'idea-triage', 'task-runner', 'lifecycle', 'skills', 'fleet'] as const satisfies readonly DevToolsTab[];
+const DEV_TOOLS_TABS = ['overview', 'projects', 'context-map', 'idea-scanner', 'idea-triage', 'task-runner', 'lifecycle', 'skills', 'fleet'] as const satisfies readonly DevToolsTab[];
 const EVENT_BUS_TABS = ['studio', 'shared', 'live-stream', 'rate-limits', 'test', 'smee-relay', 'cloud-webhooks', 'dead-letter'] as const satisfies readonly EventBusTab[];
 const RESEARCH_LAB_TABS = ['dashboard', 'projects', 'literature', 'hypotheses', 'experiments', 'findings', 'reports', 'graph'] as const satisfies readonly ResearchLabTab[];
 
