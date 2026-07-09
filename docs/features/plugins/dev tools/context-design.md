@@ -52,6 +52,10 @@ dev_projects
           ├── dev_goals.context_id      (goal coverage)
           └── dev_kpis.context_id       (KPI scope — see §7)
 
+dev_use_cases                   the behavioral slice layer (§8): name, slug,
+  └── dev_use_case_contexts     kind, primary_context_id, status, pinned
+      (N:M to dev_contexts)     ↳ dev_kpis.use_case_id = narrowest KPI scope
+
 dev_context_file_hashes         (project_id, file_path) → sha256, size
                                 the delta-scan cache
 dev_context_group_relationships source/target group edges
@@ -187,14 +191,15 @@ cannot drift either. `/research` consumes that snapshot for relevance scoring.
 
 ## 7. Contexts × KPIs — the current pairing design
 
-KPIs (see [`kpis.md`](../../teams/kpis.md)) attach to the map through **two
-nullable FKs on `dev_kpis`**, giving three scopes:
+KPIs (see [`kpis.md`](../../teams/kpis.md)) attach to the map through **nullable
+scope FKs on `dev_kpis`**, narrowest first:
 
 | Scope | Columns | Meaning |
 | --- | --- | --- |
-| Project | both NULL | outcome of the whole project |
-| Group | `context_group_id` set | outcome of one context group |
+| Use case | `use_case_id` set | outcome of one behavioral slice (§8) |
 | Context | `context_id` + parent `context_group_id` set | outcome of one context |
+| Group | `context_group_id` set | outcome of one context group |
+| Project | all NULL | outcome of the whole project |
 
 History matters here: the KPI plan (**§10 decision #1** of
 `docs/plans/kpi-driven-orchestration.md`) deliberately **deferred per-context
@@ -219,10 +224,11 @@ How the pairing flows through the system today:
   derived SQL / frozen connector binding / manual) execute per **KPI**; nothing
   in the measurement path is context-aware.
 
-### Why the pairing struggles
+### Why the context-only pairing struggled
 
 The observed friction — *contexts are too large/abstract for KPI assignment* —
-is structural, not incidental:
+was structural, not incidental. §8's use-case scope is the answer to (1) and
+(2); (3) is why it is curated and triage-gated rather than exhaustive.
 
 1. **A context is a code-ownership unit; a KPI is an outcome.** Contexts are
    clustered by file structure (5–15 files, one file in exactly one context).
@@ -240,84 +246,88 @@ is structural, not incidental:
 
 ---
 
-## 8. Reviewed proposal: a use-case / feature layer
+## 8. The use-case slice layer (shipped)
 
-**The idea under review:** introduce *key use cases / features* as children of
-contexts and match KPIs against them, with wired tooling to measure.
+> Design + phase log: [`docs/plans/use-case-slice-layer.md`](../../../plans/use-case-slice-layer.md).
 
-**Verdict: the layer is the right move; the parent should not be a single
-context.** Two findings from the codebase shape the recommendation:
+A **use case** is a behavioral unit that slices *through* contexts rather than
+subdividing one: "checkout conversion" spans a UI context, an API context and a
+data context. It is the narrowest scope a KPI can own, and the join point
+between the codebase map and observed telemetry.
 
-- **No dev-domain use-case primitive exists** — all `use_case` machinery
-  (`persona_triggers.use_case_id`, `sub_use_cases/`) is persona-scoped. This
-  would be a new entity, with the persona schema as a precedent only.
-- **A use-case key already exists in telemetry.** The LLM Overview's
-  `LlmPinpoint` contract folds observed LLM usage **by use-case name**
-  (`foldByUseCase`; LightTrack's `/v1/usecases`, Langfuse/LangSmith/Helicone
-  adapters). The app already believes "use case" is the unit users think in —
-  it just has no first-class row for it on the project side.
-
-Recommended shape (differs from the raw idea in one important way):
+Making it a strict child of one context would have re-encoded the very mismatch
+that made the KPI pairing struggle — the moment a use case touches a second
+context (they almost all do), the hierarchy lies. So the slice is an **N:M
+junction**, and the map stays the coordinate system:
 
 ```
-dev_use_cases              project-scoped entity, NOT a strict child of one context
-  id, project_id, name (stable slug — the telemetry join key),
-  description, kind (user_flow | capability | integration | ops),
-  primary_context_id       (nullable convenience anchor)
-  pinned, status (proposed | active | archived), created_by (user | scan)
-
-dev_use_case_contexts      N:M junction — a use case is a *slice through*
-  (use_case_id, context_id)  contexts, not a subdivision of one
-
-dev_kpis.use_case_id       fourth nullable scope FK (narrowest tier), following
-                           the exact pattern the context_id ALTER established
+dev_use_cases              project-scoped: name, slug, description,
+                           kind (user_flow|capability|integration|ops),
+                           primary_context_id (render anchor),
+                           status (proposed|active|archived),
+                           created_by (user|scan|backfill), pinned
+dev_use_case_contexts      the slice (use_case_id, context_id)
+dev_kpis.use_case_id       narrowest scope; precedence use_case > context
+                           > group > project
 ```
 
-Why N:M instead of strict children: a strict child-of-context model re-encodes
-the same mismatch that makes the current pairing struggle — the moment a use
-case touches a second context (they almost all do), the hierarchy lies. The
-junction preserves the map as the coordinate system while letting outcomes cut
-across it. The `primary_context_id` keeps the Factory matrix render simple
-(place the use-case row under its primary context).
+**Cardinality is held by curation, not structure** (the §10-decision-#1 lesson):
+5–15 *key* use cases per project, capped at 12 proposals per scan and
+triage-gated exactly like KPI proposals, so a finer scope cannot flood the
+review queue.
 
-Cardinality control (the §10-decision-#1 lesson): use cases are **few and
-curated** — target 5–15 *key* use cases per project, scan-proposed but
-triage-gated (same accept/reject queue pattern as KPI proposals) and pinnable
-(same survival rule as contexts). The scan prompt should be told to propose
-use cases only where an outcome is measurable, not to enumerate every screen.
+**Where they come from.** (1) `dev_tools_backfill_use_cases` — deterministic,
+no LLM: each distinct `business_feature` label promotes to a proposed use case
+sliced across the contexts carrying it, primary = the context with most files.
+(2) `dev_tools_scan_use_cases` — a headless Claude pass over the map; a
+proposal naming a context that does not exist has that name dropped, and one
+resolving no context at all is refused. (3) By hand.
 
-What "wired tooling to measure" becomes concrete as:
+**Rescan survival — the load-bearing detail.** `clear_project_context_map`
+deletes unpinned contexts on a full re-scan and `PRAGMA foreign_keys = ON`, so
+*any* FK into `dev_contexts` dies there. A naive junction would cascade away —
+and **`dev_kpis.context_id` was already silently `SET NULL`ing**, a data-loss
+bug that predated this layer. The scan now **snapshots the links by context
+name** before spawning the CLI and **reconciles** them after the map is written
+and pruned; restores are conservative (only into `NULL`), so a user edit made
+mid-scan wins, and a context that genuinely vanished drops its link and is
+reported on the scan stream. Delta scans never delete contexts, so
+reconciliation there is an idempotent no-op.
 
-- **Telemetry join** — `dev_use_cases.name` matches the LLM Overview pinpoint
-  use-case name, so observed calls/tokens/cost per use case is available with
-  zero new instrumentation for LLM-powered features.
-- **Scoped codebase measurement** — a use case's context set gives codebase-kind
-  KPIs a file scope (coverage/lint/churn *of these files*) instead of
-  whole-repo commands.
-- **Derivation precision** — an off-track use-case KPI hands the goal
-  derivation the use case's context set as the candidate pool: tighter than a
-  group, honest about cross-context work, and the goal inherits a real
-  behavioral target instead of a structural one.
+**What it buys, concretely:**
 
-Touch points if built (all have an existing branch to extend): the KPI scan
-prompt scope rules (`kpi_scan.rs`), the Factory placement adapter
-(`factoryData.tsx` precedence chain), matrix rows (`ContextMatrix.tsx`), the
-derivation context filter (`kpi_derivation.rs`), and the export (§5 — use
-cases belong in `context-map.json` so CLI agents see them too).
+- **Derivation precision** — an off-track use-case KPI hands goal derivation the
+  use case's whole context set as the candidate pool: tighter than a group,
+  honest about cross-context work.
+- **Telemetry join** — `dev_use_cases.slug` is the normalized key an
+  LLM-observability pinpoint's use-case name resolves to (`slugifyUseCase` in
+  TS mirrors `slugify_use_case` in Rust; both suites pin the same table). The
+  LLM Overview marks which observed call sites map to a declared use case and
+  reports coverage — zero new instrumentation.
+- **Visibility** — the Context Map's use-case rail highlights every context a
+  selected use case spans and dims the rest, which is the only way a
+  cross-cutting layer can be read off a partitioned map.
+- **Export** — active use cases publish into `context-map.json` (`use_cases[]`,
+  with the slice by context name), so CLI agents see the behavioral layer too.
+
+Still open: scoped codebase measurement (give a codebase-kind KPI the use
+case's file set instead of a whole-repo command), a cost rollup per use case on
+the Context Map, and a dedicated use-case row in the Factory matrix (today a
+use-case KPI renders on its primary context's row, tagged).
 
 ---
 
 ## 9. Five development directions
 
-### 1. The use-case slice layer (the §8 proposal, made canonical)
+### 1. The use-case slice layer — ✅ shipped
 
-Ship `dev_use_cases` + junction + `dev_kpis.use_case_id` as described above,
-with the LLM Overview name-join as the first wired measurement. This is the
-highest-leverage direction because it fixes the KPI anchor problem *and* gives
-every other loop (ideas, goals, tasks) a behavioral unit to attribute to. The
-existing `dev_contexts.business_feature` string is the migration seed: a
-backfill scan can promote distinct business_feature values into proposed use
-cases.
+`dev_use_cases` + junction + `dev_kpis.use_case_id`, seeded from
+`business_feature` by a deterministic backfill and grown by a triage-gated
+scan; the LLM Overview name-join is the first wired measurement. See §8. What
+remains of this direction: **scoped codebase measurement** — hand a
+codebase-kind KPI the use case's file set (coverage/lint/churn *of these
+files*) instead of a whole-repo command, which is what makes a use-case KPI
+cheaper to measure than a project-wide one.
 
 ### 2. Context health as a measured signal (absorb the orphaned plumbing)
 
@@ -380,7 +390,8 @@ behavioral unit) and 2 (needs cheap measurements to difference).
 | Export | `src-tauri/src/commands/infrastructure/context_map_export.rs` (`context-map.json` v2 + managed CLAUDE.md splice) |
 | Repo layer | `src-tauri/src/db/repos/dev_tools.rs` (`clear_project_context_map`, `set_context_pinned`, `replace_file_hashes`) |
 | Audit | `dev_tools_audit_contexts` |
-| Frontend | `src/features/plugins/dev-tools/sub_context/` (`ContextMapPage`, `ContextCard`, `ContextDetail`, `ScanOverlay`) |
+| Frontend | `src/features/plugins/dev-tools/sub_context/` (`ContextMapPage`, `ContextCard`, `ContextDetail`, `ScanOverlay`, `UseCasePanel`, `useUseCases`) |
+| Use cases | `dev_tools_{list,get,create,update,delete}_use_case[s]` · `_list_use_cases_for_context` · `_backfill_use_cases` · `use_case_scan.rs` (`dev_tools_scan_use_cases`) · repo `snapshot_context_links` / `reconcile_context_links` · `src/lib/useCaseSlug.ts` (join key) |
 | MCP tools | `src-tauri/src/mcp_server/tools.rs` (`context_list_groups` / `context_search_by_keyword` / `context_get_by_file_path` / `context_neighbors`) |
 | KPI pairing | `kpi_scan.rs` (proposal scope rules), `engine/kpi_derivation.rs` (scope-filtered goal derivation), `src/features/teams/sub_factory/` (matrix + console) |
 | CLI projection | `.claude/skills/refresh-context/` → `.claude/codebase-context.md` |

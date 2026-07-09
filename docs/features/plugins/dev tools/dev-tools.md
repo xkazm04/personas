@@ -55,6 +55,29 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 4. Completion fires an **in-app notification** (TitleBar bell) with the counts — groups created, contexts created, files mapped — and a redirect link.
 5. **Re-scan + scheduling** — once a project has been mapped, the action row swaps the single "Scan Codebase" button for **Re-scan (incremental)** (passes `delta_mode=true` → `dev_tools_scan_codebase` diffs the live tree against `dev_context_file_hashes` and feeds the LLM only changed files, short-circuiting when nothing changed), a **Full re-scan** fallback, and a **Plan update** button. A "Last scan" relative-time tag shows recency. **Plan update** creates a weekly **system-op automation** (`planWeeklyContextScan` → `system_ops_create_automation`, `0 3 * * 1`) for the active project — the same `SystemOpAutomation` the Chain Studio commits; the background scheduler then re-derives the context map weekly and each run surfaces in the **Live Stream** via `dev_tools.context_scan_*` bus events. (Context scans are always scoped to one project.)
 
+#### Use cases — the behavioral layer above the map
+
+A **use-case rail** sits above the context board. A use case is a slice
+*through* contexts ("Checkout conversion" spans a UI, an API and a data
+context), so it is the honest owner of an outcome that no single context owns.
+Selecting one **highlights every context it spans and dims the rest** — the one
+interaction that makes a cross-cutting layer readable on a partitioned map.
+
+- **From features** (`dev_tools_backfill_use_cases`) — deterministic, no LLM:
+  promotes each distinct `business_feature` label into a proposed use case.
+- **Scan** (`dev_tools_scan_use_cases`) — a headless Claude pass proposing the
+  project's *key* use cases; capped at 12 and grounded against the map (a
+  proposal that resolves no real context is refused).
+- Proposals are **triage-gated** (accept / reject inline), which is what keeps a
+  narrower scope from flooding the review queue.
+- Each context card shows a **use-case badge**; the detail pane lists the use
+  cases covering that context and lets a new KPI be scoped to one.
+- A use case is the **narrowest KPI scope** (`dev_kpis.use_case_id`), and its
+  `slug` is the join key the **LLM Overview** uses to mark which observed LLM
+  call sites map to a declared use case.
+
+Full design: [`context-design.md`](./context-design.md) §8.
+
 #### Integrity, freshness & canonical pins
 
 The map is treated as a self-validating artifact, not a fire-and-forget snapshot (the design borrows from the `ktx` context-layer's referential-integrity posture):

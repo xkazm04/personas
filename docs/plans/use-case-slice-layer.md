@@ -1,7 +1,9 @@
 # Use-Case Slice Layer — the behavioral unit between contexts and KPIs
 
 > Direction 1 of [`docs/features/plugins/dev tools/context-design.md`](../features/plugins/dev%20tools/context-design.md) §9.
-> Status: building. P1 schema/primitive → P2 KPI scope → P3 scan → P4 UI → P5 telemetry + docs.
+> Status: **P1–P5 shipped** (877e3d35d schema + KPI scope; 18eca5671 scan + UI +
+> telemetry join). Not yet live-verified against a running app — the backend
+> commands need a Tauri rebuild. Follow-ups in "Open" below.
 
 ## Problem
 
@@ -77,10 +79,38 @@ there.
 
 ## Phases
 
-| P | Scope |
-| --- | --- |
-| P1 | Schema (2 tables + `dev_kpis.use_case_id`), models, repo CRUD, snapshot/reconcile, backfill, commands, bindings, `context-map.json` export |
-| P2 | KPI scope end-to-end: create/update, proposal-scan prompt + resolution, derivation candidate filter, Factory placement |
-| P3 | `dev_tools_scan_use_cases` — LLM proposal scan + review queue |
-| P4 | UI: use-case rail on the Context Map, KPI scope picker, i18n |
-| P5 | Telemetry join (LLM Overview rollup per use case), scoped codebase measurement, docs |
+| P | Scope | Status |
+| --- | --- | --- |
+| P1 | Schema (2 tables + `dev_kpis.use_case_id`), models, repo CRUD, snapshot/reconcile, backfill, commands, bindings, `context-map.json` export | ✅ |
+| P2 | KPI scope end-to-end: create/update, proposal-scan prompt + resolution, derivation candidate filter, Factory placement | ✅ |
+| P3 | `dev_tools_scan_use_cases` — LLM proposal scan + review queue | ✅ |
+| P4 | UI: use-case rail on the Context Map (slice highlight), KPI scope picker, i18n ×14 | ✅ |
+| P5 | Telemetry join (LLM Overview marks call sites mapped to a declared use case) | ✅ |
+
+## Verified
+
+- `reconcile_restores_slice_and_kpi_scope_across_a_full_rescan` — simulates the
+  real destruction path (`clear_project_context_map` → recreate under new ids)
+  and asserts the slice, the primary anchor and `dev_kpis.context_id` all come
+  back, that the vanished context's link drops exactly once, and that a second
+  run is a no-op.
+- `backfill_promotes_business_features_and_is_idempotent`.
+- Rust `slugify_use_case` and TS `slugifyUseCase` pin the same normalization
+  table in their own suites — if they drift, the telemetry join silently stops
+  matching.
+
+## Open
+
+- **Not live-verified.** The new Tauri commands require a rebuild of the running
+  app; the gate so far is cargo tests + vitest + tsc + eslint + i18n strict.
+- **Scoped codebase measurement** (a use case's context set gives a
+  codebase-kind KPI a file scope instead of a whole-repo command) is designed
+  but not built — the natural next slice, and what makes use-case KPIs cheaper
+  to measure than project-wide ones.
+- **Cost rollup per use case** on the use-case chip (the LLM Overview join
+  currently proves the match; it does not yet surface tokens/$ on the Context
+  Map surface).
+- `propose_kpi_auto_inner` (Athena's conversational KPI path) still passes
+  `use_case_id: None`; wire it when Athena learns to name a use case.
+- The Factory matrix anchors a use-case KPI on its primary context row. A
+  dedicated use-case row per group is the better long-term render.
