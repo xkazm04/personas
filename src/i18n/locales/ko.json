@@ -12273,7 +12273,6 @@
       "llm_wire_placeholder": "트레이서 연결…",
       "uc_accept": "수락",
       "uc_backfill": "기능에서 생성",
-      "uc_backfill_tooltip": "컨텍스트에 이미 있는 기능 라벨로 유스케이스를 생성합니다",
       "uc_cancel_scan": "스캔 취소",
       "uc_chip_tooltip": "이 유스케이스가 포괄하는 컨텍스트를 강조 표시합니다",
       "uc_context_coverage_tooltip": "이 컨텍스트를 가로지르는 유스케이스",
@@ -12294,7 +12293,10 @@
       "uc_status_proposed": "제안됨",
       "uc_title": "유스케이스",
       "llm_usecase_coverage": "{mapped}/{total}개가 유스케이스에 매핑됨",
-      "llm_usecase_linked": "유스케이스 “{name}”에 매핑됨"
+      "llm_usecase_linked": "유스케이스 “{name}”에 매핑됨",
+      "uc_backfill_created": "검토용 유스케이스 {count}개가 생성되었습니다.",
+      "uc_backfill_none": "여러 컨텍스트에 걸친 기능 라벨이 없어 생성된 항목이 없습니다. 스캔하여 유스케이스를 제안하세요.",
+      "uc_backfill_tooltip": "두 개 이상의 컨텍스트에 걸친 기능 라벨로부터 유스케이스를 생성합니다"
     },
     "doc_signing": {
       "title": "Document Signing",

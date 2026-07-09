@@ -991,7 +991,6 @@
     "llm_wire_placeholder": "Hubungkan pelacak…",
     "uc_accept": "Terima",
     "uc_backfill": "Dari fitur",
-    "uc_backfill_tooltip": "Buat kasus penggunaan dari label fitur bisnis yang sudah ada di konteks Anda",
     "uc_cancel_scan": "Batalkan pemindaian",
     "uc_chip_tooltip": "Sorot konteks yang dicakup kasus penggunaan ini",
     "uc_context_coverage_tooltip": "Kasus penggunaan yang melintasi konteks ini",
@@ -1012,7 +1011,10 @@
     "uc_status_proposed": "diusulkan",
     "uc_title": "Kasus penggunaan",
     "llm_usecase_coverage": "{mapped}/{total} dipetakan ke kasus penggunaan",
-    "llm_usecase_linked": "Dipetakan ke kasus penggunaan “{name}”"
+    "llm_usecase_linked": "Dipetakan ke kasus penggunaan “{name}”",
+    "uc_backfill_created": "{count} kasus penggunaan dibuat untuk ditinjau.",
+    "uc_backfill_none": "Tidak ada label fitur yang mencakup lebih dari satu konteks, sehingga tidak ada yang dibuat. Pindai untuk mengusulkan kasus penggunaan.",
+    "uc_backfill_tooltip": "Buat kasus penggunaan dari label fitur yang mencakup dua konteks atau lebih"
   },
   "doc_signing": {
     "title": "Penandatanganan Dokumen",

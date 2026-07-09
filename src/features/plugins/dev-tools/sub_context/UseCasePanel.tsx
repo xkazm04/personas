@@ -32,7 +32,7 @@ export default function UseCasePanel({
   hasMap: boolean;
 }) {
   const { t, tx } = useTranslation();
-  const { active, proposed, loading, scanning, scanLine, error } = state;
+  const { active, proposed, loading, scanning, scanLine, error, backfillResult } = state;
 
   const kindLabel = (kind: string): string => {
     const labels = t.plugins.dev_tools;
@@ -122,6 +122,16 @@ export default function UseCasePanel({
         <p className="typo-caption text-foreground truncate mb-2">{scanLine}</p>
       )}
       {error && <p className="typo-caption text-red-400 mb-2">{error}</p>}
+      {/* Zero is the usual answer — most feature labels name a single context,
+          which is a context title, not a slice. Say it plainly. */}
+      {backfillResult === 0 && !scanning && (
+        <p className="typo-caption text-foreground mb-2">{t.plugins.dev_tools.uc_backfill_none}</p>
+      )}
+      {backfillResult != null && backfillResult > 0 && !scanning && (
+        <p className="typo-caption text-emerald-400 mb-2">
+          {tx(t.plugins.dev_tools.uc_backfill_created, { count: backfillResult })}
+        </p>
+      )}
 
       {/* Triage queue — a narrower scope only stays useful if proposals are gated. */}
       {proposed.length > 0 && (

@@ -12273,7 +12273,6 @@
       "llm_wire_placeholder": "Tracer verknüpfen…",
       "uc_accept": "Akzeptieren",
       "uc_backfill": "Aus Features",
-      "uc_backfill_tooltip": "Erstellt Anwendungsfälle aus den Business-Feature-Labels, die Ihren Kontexten bereits zugewiesen sind",
       "uc_cancel_scan": "Scan abbrechen",
       "uc_chip_tooltip": "Hebt die Kontexte hervor, die dieser Anwendungsfall umfasst",
       "uc_context_coverage_tooltip": "Anwendungsfälle, die diesen Kontext durchqueren",
@@ -12294,7 +12293,10 @@
       "uc_status_proposed": "vorgeschlagen",
       "uc_title": "Anwendungsfälle",
       "llm_usecase_coverage": "{mapped}/{total} einem Anwendungsfall zugeordnet",
-      "llm_usecase_linked": "Dem Anwendungsfall „{name}“ zugeordnet"
+      "llm_usecase_linked": "Dem Anwendungsfall „{name}“ zugeordnet",
+      "uc_backfill_created": "{count} Anwendungsfall/-fälle zur Überprüfung erstellt.",
+      "uc_backfill_none": "Kein Feature-Label deckt mehr als einen Kontext ab, daher wurde nichts erstellt. Scannen Sie, um Anwendungsfälle vorzuschlagen.",
+      "uc_backfill_tooltip": "Erstellt Anwendungsfälle aus Feature-Labels, die zwei oder mehr Kontexte abdecken"
     },
     "doc_signing": {
       "title": "Dokument-Signierung",

@@ -991,7 +991,6 @@
     "llm_wire_placeholder": "接入追踪工具…",
     "uc_accept": "接受",
     "uc_backfill": "从功能生成",
-    "uc_backfill_tooltip": "根据上下文中已有的业务功能标签创建用例",
     "uc_cancel_scan": "取消扫描",
     "uc_chip_tooltip": "高亮此用例所跨越的上下文",
     "uc_context_coverage_tooltip": "贯穿此上下文的用例",
@@ -1012,7 +1011,10 @@
     "uc_status_proposed": "已提议",
     "uc_title": "用例",
     "llm_usecase_coverage": "{mapped}/{total} 个已映射到用例",
-    "llm_usecase_linked": "已映射到用例“{name}”"
+    "llm_usecase_linked": "已映射到用例“{name}”",
+    "uc_backfill_created": "已创建 {count} 个用例，待审核。",
+    "uc_backfill_none": "没有功能标签跨越一个以上的上下文，因此未创建任何内容。扫描以提议用例。",
+    "uc_backfill_tooltip": "根据跨越两个或更多上下文的功能标签创建用例"
   },
   "doc_signing": {
     "title": "文档签署",

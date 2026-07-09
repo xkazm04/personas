@@ -276,12 +276,23 @@ dev_kpis.use_case_id       narrowest scope; precedence use_case > context
 triage-gated exactly like KPI proposals, so a finer scope cannot flood the
 review queue.
 
-**Where they come from.** (1) `dev_tools_backfill_use_cases` — deterministic,
-no LLM: each distinct `business_feature` label promotes to a proposed use case
-sliced across the contexts carrying it, primary = the context with most files.
-(2) `dev_tools_scan_use_cases` — a headless Claude pass over the map; a
-proposal naming a context that does not exist has that name dropped, and one
-resolving no context at all is refused. (3) By hand.
+**Where they come from.** (1) `dev_tools_scan_use_cases` — a headless Claude
+pass over the map; a proposal naming a context that does not exist has that
+name dropped, and one resolving no context at all is refused. This is the
+primary path: naming a *behavior* is a judgement call. (2)
+`dev_tools_backfill_use_cases` — deterministic, no LLM, and deliberately
+narrow: it promotes only `business_feature` labels that span **two or more**
+contexts. (3) By hand.
+
+> **Why the backfill is narrow.** Measured against a real 263-context map: 179
+> of 184 distinct `business_feature` labels covered exactly *one* context, and
+> 89 were literally that context's own kebab name — the field's own doc says it
+> "often equals the context name". An unfiltered backfill would therefore have
+> minted a use case per context (~49 for one project): the degenerate
+> "use case == context" model this layer exists to avoid. A deterministic pass
+> cannot distinguish a genuine single-context behavior from a context's title,
+> so it only claims labels that demonstrably cut across contexts. Creating
+> nothing is the normal, correct outcome, and the UI says so.
 
 **Rescan survival — the load-bearing detail.** `clear_project_context_map`
 deletes unpinned contexts on a full re-scan and `PRAGMA foreign_keys = ON`, so
@@ -321,10 +332,10 @@ use-case KPI renders on its primary context's row, tagged).
 
 ### 1. The use-case slice layer — ✅ shipped
 
-`dev_use_cases` + junction + `dev_kpis.use_case_id`, seeded from
-`business_feature` by a deterministic backfill and grown by a triage-gated
-scan; the LLM Overview name-join is the first wired measurement. See §8. What
-remains of this direction: **scoped codebase measurement** — hand a
+`dev_use_cases` + junction + `dev_kpis.use_case_id`, grown by a triage-gated
+scan (with a narrow deterministic backfill for labels that genuinely span
+contexts); the LLM Overview name-join is the first wired measurement. See §8.
+What remains of this direction: **scoped codebase measurement** — hand a
 codebase-kind KPI the use case's file set (coverage/lint/churn *of these
 files*) instead of a whole-repo command, which is what makes a use-case KPI
 cheaper to measure than a project-wide one.

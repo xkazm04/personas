@@ -12531,7 +12531,7 @@
       "uc_scan_tooltip": "Let an agent propose the key use cases from your context map",
       "uc_cancel_scan": "Cancel scan",
       "uc_backfill": "From features",
-      "uc_backfill_tooltip": "Create use cases from the business-feature labels already on your contexts",
+      "uc_backfill_tooltip": "Create use cases from feature labels that span two or more contexts",
       "uc_accept": "Accept",
       "uc_reject": "Reject",
       "uc_proposals_heading": "{count} awaiting review",
@@ -12549,7 +12549,9 @@
       "uc_kind_integration": "integration",
       "uc_kind_ops": "ops",
       "llm_usecase_linked": "Mapped to the use case \"{name}\"",
-      "llm_usecase_coverage": "{mapped}/{total} mapped to a use case"
+      "llm_usecase_coverage": "{mapped}/{total} mapped to a use case",
+      "uc_backfill_none": "No feature label spans more than one context, so nothing was created. Use Scan to propose use cases.",
+      "uc_backfill_created": "Created {count} use case(s) for review."
     },
     "doc_signing": {
       "title": "Document Signing",

@@ -991,7 +991,6 @@
     "llm_wire_placeholder": "トレーサーを接続…",
     "uc_accept": "承認",
     "uc_backfill": "機能から生成",
-    "uc_backfill_tooltip": "コンテキストに付与済みの機能ラベルからユースケースを作成します",
     "uc_cancel_scan": "スキャンを中止",
     "uc_chip_tooltip": "このユースケースが及ぶコンテキストをハイライト表示します",
     "uc_context_coverage_tooltip": "このコンテキストを横断するユースケース",
@@ -1012,7 +1011,10 @@
     "uc_status_proposed": "提案済み",
     "uc_title": "ユースケース",
     "llm_usecase_coverage": "{mapped}/{total} 件がユースケースにマッピング済み",
-    "llm_usecase_linked": "ユースケース「{name}」にマッピング済み"
+    "llm_usecase_linked": "ユースケース「{name}」にマッピング済み",
+    "uc_backfill_created": "{count} 件のユースケースをレビュー用に作成しました。",
+    "uc_backfill_none": "複数のコンテキストにまたがる機能ラベルがないため、何も作成されませんでした。スキャンしてユースケースを提案してください。",
+    "uc_backfill_tooltip": "2つ以上のコンテキストにまたがる機能ラベルからユースケースを作成します"
   },
   "doc_signing": {
     "title": "ドキュメント署名",

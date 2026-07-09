@@ -991,7 +991,6 @@
     "llm_wire_placeholder": "Connecter un traceur…",
     "uc_accept": "Accepter",
     "uc_backfill": "À partir des fonctionnalités",
-    "uc_backfill_tooltip": "Créer des cas d'usage à partir des libellés de fonctionnalités métier déjà présents sur vos contextes",
     "uc_cancel_scan": "Annuler l'analyse",
     "uc_chip_tooltip": "Mettre en évidence les contextes couverts par ce cas d'usage",
     "uc_context_coverage_tooltip": "Cas d'usage qui traversent ce contexte",
@@ -1012,7 +1011,10 @@
     "uc_status_proposed": "proposé",
     "uc_title": "Cas d'usage",
     "llm_usecase_coverage": "{mapped}/{total} associés à un cas d'usage",
-    "llm_usecase_linked": "Associé au cas d'usage «{name}»"
+    "llm_usecase_linked": "Associé au cas d'usage «{name}»",
+    "uc_backfill_created": "{count} cas d'usage créé(s) pour révision.",
+    "uc_backfill_none": "Aucun libellé de fonctionnalité ne couvre plus d'un contexte, donc rien n'a été créé. Lancez une analyse pour proposer des cas d'usage.",
+    "uc_backfill_tooltip": "Créer des cas d'usage à partir des libellés de fonctionnalités qui couvrent deux contextes ou plus"
   },
   "doc_signing": {
     "title": "Signature de documents",

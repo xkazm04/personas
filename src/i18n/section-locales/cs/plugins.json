@@ -991,7 +991,6 @@
     "llm_wire_placeholder": "Propojte trasovací nástroj…",
     "uc_accept": "Přijmout",
     "uc_backfill": "Z funkcí",
-    "uc_backfill_tooltip": "Vytvořit případy užití na základě popisků obchodních funkcí, které již máte přiřazené k vašim kontextům",
     "uc_cancel_scan": "Zrušit skenování",
     "uc_chip_tooltip": "Zvýraznit kontexty, které tento případ užití pokrývá",
     "uc_context_coverage_tooltip": "Případy užití, které protínají tento kontext",
@@ -1012,7 +1011,10 @@
     "uc_status_proposed": "navrženo",
     "uc_title": "Případy užití",
     "llm_usecase_coverage": "{mapped}/{total} namapováno na případ užití",
-    "llm_usecase_linked": "Namapováno na případ užití „{name}“"
+    "llm_usecase_linked": "Namapováno na případ užití „{name}“",
+    "uc_backfill_created": "Vytvořeno {count} případů užití ke kontrole.",
+    "uc_backfill_none": "Žádný popisek funkce nepokrývá více než jeden kontext, takže nebylo nic vytvořeno. Spusťte sken a navrhněte případy užití.",
+    "uc_backfill_tooltip": "Vytvořit případy užití z popisků funkcí, které pokrývají dva nebo více kontextů"
   },
   "doc_signing": {
     "title": "Podpis dokumentů",

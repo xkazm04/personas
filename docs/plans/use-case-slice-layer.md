@@ -68,14 +68,32 @@ there.
 
 ## Provenance of use cases
 
-1. **Backfill** (deterministic, no LLM) — distinct `dev_contexts.business_feature`
-   values promote to use cases, linked to every context carrying that value;
-   primary = the context with the most files. Gives the layer data on day one.
-2. **Scan** (`dev_tools_scan_use_cases`) — a headless Claude pass over the
+1. **Scan** (`dev_tools_scan_use_cases`) — a headless Claude pass over the
    context map proposing key, *measurable* use cases with their context sets.
    Lands `status='proposed'` into the same accept/reject discipline as KPI
-   proposals.
-3. **User** — created by hand from the Context Map surface.
+   proposals. **The primary path**, because naming a behavior is a judgement.
+2. **Backfill** (deterministic, no LLM) — promotes only `business_feature`
+   labels covering **≥2 contexts**; primary = the context with the most files.
+3. **User** — created by hand.
+
+### The backfill's ≥2 rule was forced by real data
+
+The original design assumed `business_feature` was a ready-made seed. Measured
+against the live 263-context map before shipping:
+
+| | |
+|---|---|
+| distinct `business_feature` labels | 184 |
+| labels covering exactly **one** context | **179** |
+| labels literally equal to the context's kebab name | 89 / 193 |
+| labels spanning ≥2 contexts **within one project** | **0** |
+| use cases an unfiltered backfill would create for `personas` | **49** |
+
+So an unfiltered backfill mints one use case per context — the exact degenerate
+model this layer exists to prevent — and floods the triage queue. The ≥2 filter
+makes the primitive correct by construction: it can only ever create a true
+slice, it is a harmless no-op on maps like this one, and the UI states plainly
+that nothing was created and points at Scan.
 
 ## Phases
 

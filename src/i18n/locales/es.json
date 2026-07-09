@@ -12273,7 +12273,6 @@
       "llm_wire_placeholder": "Conecta un rastreador…",
       "uc_accept": "Aceptar",
       "uc_backfill": "Desde funciones",
-      "uc_backfill_tooltip": "Crea casos de uso a partir de las etiquetas de función de negocio que ya tienen tus contextos",
       "uc_cancel_scan": "Cancelar escaneo",
       "uc_chip_tooltip": "Resalta los contextos que abarca este caso de uso",
       "uc_context_coverage_tooltip": "Casos de uso que atraviesan este contexto",
@@ -12294,7 +12293,10 @@
       "uc_status_proposed": "propuesto",
       "uc_title": "Casos de uso",
       "llm_usecase_coverage": "{mapped}/{total} asignados a un caso de uso",
-      "llm_usecase_linked": "Asignado al caso de uso «{name}»"
+      "llm_usecase_linked": "Asignado al caso de uso «{name}»",
+      "uc_backfill_created": "Creados {count} caso(s) de uso para revisión.",
+      "uc_backfill_none": "Ninguna etiqueta de función abarca más de un contexto, así que no se creó nada. Escanea para proponer casos de uso.",
+      "uc_backfill_tooltip": "Crea casos de uso a partir de etiquetas de función que abarcan dos o más contextos"
     },
     "doc_signing": {
       "title": "Firma de Documentos",

@@ -12556,6 +12556,8 @@ export type Translations = {
       uc_kind_ops: string;
       llm_usecase_linked: string;
       llm_usecase_coverage: string;
+      uc_backfill_none: string;
+      uc_backfill_created: string;
     };
     doc_signing: {
       title: string;

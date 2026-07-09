@@ -23,6 +23,8 @@ export interface UseCasesState {
   /** Last line the running scan emitted, for a live status hint. */
   scanLine: string | null;
   error: string | null;
+  /** Outcome of the last backfill: how many use cases it created (often 0). */
+  backfillResult: number | null;
   reload: () => void;
   scan: () => Promise<void>;
   cancelScan: () => Promise<void>;
@@ -37,6 +39,7 @@ export function useUseCases(projectId: string | null): UseCasesState {
   const [scanning, setScanning] = useState(false);
   const [scanLine, setScanLine] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [backfillResult, setBackfillResult] = useState<number | null>(null);
   const [nonce, setNonce] = useState(0);
   const scanIdRef = useRef<string | null>(null);
 
@@ -131,8 +134,12 @@ export function useUseCases(projectId: string | null): UseCasesState {
   const backfill = useCallback(async () => {
     if (!projectId) return 0;
     setError(null);
+    setBackfillResult(null);
     try {
       const created = await api.backfillUseCases(projectId);
+      // Zero is the common, correct answer: it means no feature label in this
+      // map spans more than one context. Say so rather than look broken.
+      setBackfillResult(created.length);
       reload();
       return created.length;
     } catch (err) {
@@ -166,6 +173,7 @@ export function useUseCases(projectId: string | null): UseCasesState {
     scanning,
     scanLine,
     error,
+    backfillResult,
     reload,
     scan,
     cancelScan,

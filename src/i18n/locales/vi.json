@@ -12273,7 +12273,6 @@
       "llm_wire_placeholder": "Kết nối một tracer…",
       "uc_accept": "Chấp nhận",
       "uc_backfill": "Từ tính năng",
-      "uc_backfill_tooltip": "Tạo trường hợp sử dụng từ các nhãn tính năng nghiệp vụ đã có trên ngữ cảnh của bạn",
       "uc_cancel_scan": "Hủy quét",
       "uc_chip_tooltip": "Làm nổi bật các ngữ cảnh mà trường hợp sử dụng này bao trùm",
       "uc_context_coverage_tooltip": "Các trường hợp sử dụng cắt qua ngữ cảnh này",
@@ -12294,7 +12293,10 @@
       "uc_status_proposed": "đã đề xuất",
       "uc_title": "Trường hợp sử dụng",
       "llm_usecase_coverage": "{mapped}/{total} đã ánh xạ tới trường hợp sử dụng",
-      "llm_usecase_linked": "Đã ánh xạ tới trường hợp sử dụng «{name}»"
+      "llm_usecase_linked": "Đã ánh xạ tới trường hợp sử dụng «{name}»",
+      "uc_backfill_created": "Đã tạo {count} trường hợp sử dụng để xem xét.",
+      "uc_backfill_none": "Không có nhãn tính năng nào bao trùm nhiều hơn một ngữ cảnh, vì vậy không có gì được tạo. Quét để đề xuất trường hợp sử dụng.",
+      "uc_backfill_tooltip": "Tạo trường hợp sử dụng từ các nhãn tính năng bao trùm hai ngữ cảnh trở lên"
     },
     "doc_signing": {
       "title": "Ký tài liệu",
