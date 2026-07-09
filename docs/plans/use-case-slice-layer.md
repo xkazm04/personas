@@ -2,8 +2,8 @@
 
 > Direction 1 of [`docs/features/plugins/dev tools/context-design.md`](../features/plugins/dev%20tools/context-design.md) §9.
 > Status: **P1–P5 shipped** (877e3d35d schema + KPI scope; 18eca5671 scan + UI +
-> telemetry join). Not yet live-verified against a running app — the backend
-> commands need a Tauri rebuild. Follow-ups in "Open" below.
+> telemetry join; 23e703038 backfill correctness). Backend live-verified against
+> the running app; the UI surface and the LLM scan are not (see "Open").
 
 ## Problem
 
@@ -107,20 +107,34 @@ that nothing was created and points at Scan.
 
 ## Verified
 
+**Unit**
 - `reconcile_restores_slice_and_kpi_scope_across_a_full_rescan` — simulates the
   real destruction path (`clear_project_context_map` → recreate under new ids)
   and asserts the slice, the primary anchor and `dev_kpis.context_id` all come
   back, that the vanished context's link drops exactly once, and that a second
   run is a no-op.
-- `backfill_promotes_business_features_and_is_idempotent`.
+- `backfill_promotes_only_multi_context_features_and_is_idempotent` +
+  `backfill_creates_nothing_when_every_label_names_one_context`.
 - Rust `slugify_use_case` and TS `slugifyUseCase` pin the same normalization
   table in their own suites — if they drift, the telemetry join silently stops
   matching.
 
+**Live** (running app, real 65-KPI / 263-context database)
+- The migration applied cleanly on startup; `dev_use_cases`,
+  `dev_use_case_contexts` and `dev_kpis.use_case_id` exist, `integrity_check` ok,
+  all 65 KPIs preserved.
+- Drove the real IPC path via the test-automation harness:
+  `dev_tools_create_use_case` (camelCase → snake_case args, the `contextIds`
+  array, slug derivation, junction write), `dev_tools_list_use_cases`,
+  `dev_tools_list_use_cases_for_context` (reverse lookup), and
+  `dev_tools_delete_use_case` (junction cascade). Probe row removed; both tables
+  back to empty.
+
 ## Open
 
-- **Not live-verified.** The new Tauri commands require a rebuild of the running
-  app; the gate so far is cargo tests + vitest + tsc + eslint + i18n strict.
+- **Not live-verified:** the Context Map UI surface and the LLM use-case scan —
+  the running app's bundled frontend predates them and `use_case_scan.rs` landed
+  after its binary was built. Needs one `tauri dev` pass.
 - **Scoped codebase measurement** (a use case's context set gives a
   codebase-kind KPI a file scope instead of a whole-repo command) is designed
   but not built — the natural next slice, and what makes use-case KPIs cheaper
