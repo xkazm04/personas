@@ -27,13 +27,14 @@ import { ImproveCell } from './improve/ImproveCell';
 import { StandardsScan } from './improve/StandardsScan';
 import { GoldenGauge } from './improve/GoldenGauge';
 import { ReadinessTrend } from './ReadinessTrend';
+import { ProjectsPassportFocus } from './ProjectsPassportFocus';
 
 // Improvable cells. Tier-0 standards-config rows (CI / Self-verify) + every
 // code-requiring or connector-bindable row: context/CLAUDE.md/tests/evals/
 // security/migrations/observability (Claude deploy or scan), the monitoring
 // tooling rows (errors/logs/metrics/tracing → connector wire), hosting (deploy),
 // aiflow + skills. Each opens the cell popover with its level ladder + actions.
-const IMPROVABLE_ROWS = new Set([
+export const IMPROVABLE_ROWS = new Set([
   'ci', 'security', 'selfverify', 'context', 'instructions', 'tests', 'evals',
   'migrations', 'observability', 'aiflow', 'skills',
   'errors', 'logs', 'metrics', 'tracing', 'hosting', 'llmtracking',
@@ -59,13 +60,7 @@ const SORT_TABS: SegmentedTab<WallSort>[] = [
   { id: 'gap', label: 'Readiness gap' },
 ];
 
-export function ProjectsPassportWall({
-  passports,
-  openSlugs,
-  onOpen,
-  attentionByProject,
-  onJumpKpi,
-}: {
+export interface PassportViewProps {
   passports: AppPassport[];
   openSlugs?: Set<string>;
   onOpen?: (slug: string) => void;
@@ -73,7 +68,47 @@ export function ProjectsPassportWall({
   attentionByProject?: Map<string, WarningItem[]>;
   /** Deep-link from a warning into that KPI's console. */
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
-}) {
+}
+
+type PassportVariant = 'baseline' | 'focus';
+
+/**
+ * PROTOTYPE scaffold (throwaway) — A/B the cross-project comparison matrix
+ * (baseline) against a single-project "Focus" full-width view. Baseline is the
+ * default so nothing changes on load; removed at consolidation once a direction
+ * wins.
+ */
+export function ProjectsPassportWall(props: PassportViewProps) {
+  const [variant, setVariant] = useState<PassportVariant>('baseline');
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="typo-label text-foreground/45">Prototype</span>
+        <SegmentedTabs<PassportVariant>
+          tabs={[
+            { id: 'baseline', label: 'Compare · all projects' },
+            { id: 'focus', label: 'Focus · one project' },
+          ]}
+          activeTab={variant}
+          onTabChange={setVariant}
+          variant="pill"
+          fullWidth={false}
+          size="sm"
+          ariaLabel="Passport view"
+        />
+      </div>
+      {variant === 'focus' ? <ProjectsPassportFocus {...props} /> : <ProjectsPassportWallBaseline {...props} />}
+    </div>
+  );
+}
+
+function ProjectsPassportWallBaseline({
+  passports,
+  openSlugs,
+  onOpen,
+  attentionByProject,
+  onJumpKpi,
+}: PassportViewProps) {
   const reduce = useReducedMotion();
   const [sort, setSort] = useState<WallSort>('name');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -286,7 +321,7 @@ function CoverCell({
 
 /** Stamped-entry cell renderer — flatter, ink-on-page styling. Ordinals show a
  *  5-dot stamp scale; meaningful nulls render as a quiet gap marker. */
-function WallCell({ value }: { value: CellValue }) {
+export function WallCell({ value }: { value: CellValue }) {
   switch (value.kind) {
     case 'level':
       return <ReadinessSeal kind="level" level={value.level} score={value.score} size="sm" />;
