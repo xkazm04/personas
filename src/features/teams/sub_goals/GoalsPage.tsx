@@ -58,9 +58,6 @@ function readScope(): GoalScope {
 export default function GoalsPage() {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
-  const activeProject = useSystemStore((s) =>
-    s.projects.find((p) => p.id === s.activeProjectId),
-  );
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const goals = useSystemStore((s) => s.goals);
   const goalsTab = useSystemStore((s) => s.goalsTab);
@@ -174,9 +171,9 @@ export default function GoalsPage() {
         icon={<Target className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
         title={t.plugins.dev_lifecycle.tab_goals}
-        subtitle={activeProject?.root_path ?? '—'}
-        toolbar={
-          <div className="ml-auto flex items-center gap-2 flex-wrap justify-end min-w-0">
+        fitWidth
+        actions={
+          <>
             <LifecycleProjectPicker />
             <Button
               variant="accent"
@@ -188,7 +185,7 @@ export default function GoalsPage() {
             >
               {dl.goal_new_title}
             </Button>
-          </div>
+          </>
         }
       />
 

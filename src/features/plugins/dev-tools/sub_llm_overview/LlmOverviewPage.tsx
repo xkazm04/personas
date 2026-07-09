@@ -18,6 +18,7 @@ import { listUseCases } from '@/api/devTools/useCases';
 import { slugifyUseCase } from '@/lib/useCaseSlug';
 import { silentCatch } from '@/lib/silentCatch';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -203,32 +204,34 @@ export default function LlmOverviewPage() {
   );
 
   return (
-    <div className="h-full w-full flex flex-col min-h-0" data-testid="llm-overview-page">
-      {/* Header */}
-      <div className="mx-4 mt-3 flex items-center gap-3">
-        <BarChart3 className="w-4 h-4 text-primary/70 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <h2 className="typo-heading text-foreground">{dt.llm_title}</h2>
-          <p className="text-[11px] text-foreground/50">{dt.llm_subtitle}</p>
-        </div>
-        <SegmentedTabs
-          tabs={WINDOW_TABS}
-          activeTab={timeWindow}
-          onTabChange={setTimeWindow}
-          variant="segment"
-          size="sm"
-          fullWidth={false}
-          ariaLabel={dt.llm_aria_window}
-        />
-        <button
-          onClick={reload}
-          className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/8 focus-ring"
-          title={dt.llm_refresh}
-          aria-label={dt.llm_refresh}
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-        </button>
-      </div>
+    <ContentBox data-testid="llm-overview-page">
+      <ContentHeader
+        icon={<BarChart3 className="w-5 h-5 text-primary" />}
+        iconColor="primary"
+        title={dt.llm_title}
+        fitWidth
+        actions={
+          <>
+            <SegmentedTabs
+              tabs={WINDOW_TABS}
+              activeTab={timeWindow}
+              onTabChange={setTimeWindow}
+              variant="segment"
+              size="sm"
+              fullWidth={false}
+              ariaLabel={dt.llm_aria_window}
+            />
+            <button
+              onClick={reload}
+              className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/8 focus-ring"
+              title={dt.llm_refresh}
+              aria-label={dt.llm_refresh}
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          </>
+        }
+      />
 
       {/* Layer 1 — assignment matrix */}
       <AssignmentMatrix />
@@ -300,6 +303,6 @@ export default function LlmOverviewPage() {
           </div>
         )}
       </div>
-    </div>
+    </ContentBox>
   );
 }

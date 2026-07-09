@@ -370,6 +370,7 @@ export default function ProjectManagerPage() {
         icon={<FolderKanban className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title={t.plugins.dev_tools.projects_title}
+        fitWidth
         actions={<LifecycleProjectPicker />}
       />
 

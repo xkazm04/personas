@@ -105,6 +105,13 @@ interface ContentHeaderProps {
    *  separated by a divider. The collision-free home for a page's switches,
    *  primary action, and selectors. */
   toolbar?: ReactNode;
+  /** Constrain the header to its container width (`w-full`) instead of the
+   *  default `min-w-[80vw]` floor. Use for single-row module headers whose
+   *  right-aligned actions must never spill past the page's right edge on
+   *  narrower windows (the 80vw floor otherwise pushes them beyond the visible
+   *  content area and they get clipped). Opt-in so app-wide headers are
+   *  unchanged. */
+  fitWidth?: boolean;
   children?: ReactNode;
   /** Inline style applied to the header root — used to thread CSS custom
    *  properties (e.g. `--persona-accent`) into descendant components. */
@@ -118,6 +125,7 @@ export function ContentHeader({
   subtitle,
   actions,
   toolbar,
+  fitWidth = false,
   children,
   style,
 }: ContentHeaderProps) {
@@ -145,7 +153,11 @@ export function ContentHeader({
         // bg-primary/5 + border-primary/10 give every header the same
         // "operator console" feel as the Home dashboard. Themes derive
         // these from --color-primary, so each theme paints its own accent.
-        'border-b border-primary/10 bg-primary/5 flex-shrink-0 min-w-[80vw]',
+        // `fitWidth` clamps the header to its container so single-row module
+        // headers never push right-aligned actions past the visible edge; the
+        // default keeps the app-wide 80vw floor.
+        fitWidth ? 'w-full min-w-0 overflow-x-clip' : 'border-b border-primary/10 bg-primary/5 flex-shrink-0 min-w-[80vw]',
+        fitWidth ? 'border-b border-primary/10 bg-primary/5 flex-shrink-0' : '',
         // No `backdrop-blur` here. backdrop-filter re-samples its backdrop on
         // every compositor frame — and pointer movement / hover repaints
         // generate those frames — so in WebView2 the frosted layer flickers
@@ -160,11 +172,11 @@ export function ContentHeader({
         scrolled ? 'shadow-elevation-2' : 'shadow-none',
       ].join(' ')}
     >
-      <div className={`flex items-center gap-3 ${actions ? 'pr-20' : ''}`}>
+      <div className={`flex items-center gap-3 min-w-0 ${actions && !fitWidth ? 'pr-20' : ''}`}>
         {iconElement}
         <div className="flex-1 min-w-0">
           {/* Title = small mono-uppercase context label (Mission Control style). */}
-          <div className="typo-caption uppercase tracking-[0.3em] text-foreground font-mono">
+          <div className="typo-caption uppercase tracking-[0.3em] text-foreground font-mono truncate">
             {title}
           </div>
           {/* Subtitle = the visually dominant line (Good Evening, Operator style). */}
@@ -172,7 +184,9 @@ export function ContentHeader({
             <h1 className="typo-heading-lg text-foreground mt-0.5">{subtitle}</h1>
           )}
         </div>
-        {actions}
+        {actions && (fitWidth
+          ? <div className="shrink min-w-0 flex items-center gap-2 justify-end">{actions}</div>
+          : actions)}
       </div>
       {/* Toolbar — a thin controls bar on its own row below the title, so a long
           title and a cluster of switches/actions never fight for the same space. */}

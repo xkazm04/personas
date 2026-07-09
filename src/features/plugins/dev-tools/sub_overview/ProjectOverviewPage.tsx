@@ -179,7 +179,7 @@ export default function ProjectOverviewPage() {
           icon={<LayoutDashboard className="w-5 h-5 text-primary" />}
           iconColor="primary"
           title={po.codebase}
-          subtitle="—"
+          fitWidth
           actions={<LifecycleProjectPicker />}
         />
         <ContentBody centered>
@@ -259,7 +259,7 @@ export default function ProjectOverviewPage() {
         }
         iconColor="primary"
         title={activeProject.name}
-        subtitle={activeProject.root_path}
+        fitWidth
         actions={<LifecycleProjectPicker />}
       />
 
