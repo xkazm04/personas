@@ -157,6 +157,22 @@ const T_REF_RE = /\bt\.([a-z_][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+)*)/g;
 // quoted category name. The category becomes a used prefix under status_tokens.
 const TOKEN_LABEL_RE = /\btokenLabel\s*\(\s*t\s*,\s*['"]([a-z_][a-zA-Z0-9_]*)['"]/g;
 
+// `t` is not the only binding that carries the translation tree:
+//
+//   import { en } from '@/i18n/en'      → `en.alerts.x`   (54 modules bind English
+//                                         at module scope: alertSlice, deployTarget,
+//                                         executionSlice, modelCatalog, …)
+//   const notif = getActiveTranslations()  → `notif.execution.x`
+//
+// Scanning only `t.` reported all of `alerts.*`, `deploy_errors.*` and much of
+// `execution.*` as dead while they were live through the shim. Purging on that
+// output deletes a live key, and a missing leaf renders "" (interpolate() returns
+// empty for a non-string template) — a blank label, strictly worse than an
+// untranslated one. Collect every alias, then match `<alias>.<dotted.path>`.
+const ALIAS_DECL_RE = /(?:const|let|var)\s+(\w+)\s*=\s*getActiveTranslations\s*\(/g;
+const aliasRefRe = (name) =>
+  new RegExp(`(?<![\\w.$])${name}\\.([a-z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z0-9_]+)*)`, 'g');
+
 const usedPrefixes = new Set();
 
 for (const file of files) {
@@ -176,6 +192,21 @@ for (const file of files) {
 
   while ((m = TOKEN_LABEL_RE.exec(src)) !== null) {
     usedPrefixes.add(`status_tokens.${m[1]}`);
+  }
+
+  // `en` (the back-compat shim) plus any local alias of getActiveTranslations().
+  const aliases = new Set(['en']);
+  while ((m = ALIAS_DECL_RE.exec(src)) !== null) aliases.add(m[1]);
+  for (const alias of aliases) {
+    if (alias === 't') continue; // already covered by T_REF_RE
+    const re = aliasRefRe(alias);
+    while ((m = re.exec(src)) !== null) {
+      const path = m[1];
+      // The section-root filter is what makes this safe: `en.get(…)`,
+      // `notif.length`, `token.map` all fail it.
+      if (!topLevelSections.has(path.split('.')[0])) continue;
+      usedPrefixes.add(path);
+    }
   }
 }
 
