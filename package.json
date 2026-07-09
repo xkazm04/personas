@@ -88,7 +88,11 @@
     "tauri:dev:stable": "tauri dev --config src-tauri/tauri.stable.conf.json",
     "tauri:dev:test": "cross-env PERSONAS_INSPECTOR=1 node scripts/dev/tauri-dev-test.mjs",
     "tauri:dev:test:full": "cross-env PERSONAS_INSPECTOR=1 tauri dev -- --features test-automation",
-    "prepare": "lefthook install || true"
+    "prepare": "lefthook install || true",
+    "check:i18n:untranslated": "node scripts/i18n/check-untranslated.mjs --strict",
+    "i18n:plan-gaps": "node scripts/i18n/plan-gaps.mjs",
+    "i18n:merge-chunks": "node scripts/i18n/merge-chunks.mjs",
+    "i18n:purge-dead": "node scripts/i18n/purge-dead-keys.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
