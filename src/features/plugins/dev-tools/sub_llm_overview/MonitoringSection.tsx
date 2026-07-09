@@ -5,9 +5,8 @@
  * stats readout read live from the assigned tool (Sentry today) — unresolved
  * issues + events (24h / 7d) via the shared `fetchSentryStats` adapter.
  *
- * i18n NOTE: the monitoring-specific microcopy here is intentionally hardcoded
- * English pending an extraction pass (tracked follow-up). The stat labels reuse
- * the already-i18n'd `project_overview.*` keys.
+ * i18n: the monitoring-specific microcopy resolves from `plugins.dev_tools.mon_*`
+ * keys; the stat labels reuse the already-i18n'd `project_overview.*` keys.
  */
 import { useCallback, type ReactNode } from 'react';
 import { Shield, RefreshCw, Plug, AlertCircle, Bug, Activity, BarChart3 } from 'lucide-react';
@@ -22,14 +21,9 @@ import AssignmentMatrix from './AssignmentMatrix';
 import { useMonitoringPinpoints } from './useMonitoringPinpoints';
 import type { AssignmentMatrixProps } from './matrixShared';
 
-const MON_LABELS = {
-  coverage: 'projects monitored',
-  gap: 'gap',
-  notWired: '— not monitored —',
-  wirePlaceholder: 'Wire a monitor…',
-};
-
 function MonMatrix() {
+  const { t } = useTranslation();
+  const dt = t.plugins.dev_tools;
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const { monCreds } = useMonitoringPinpoints();
@@ -51,9 +45,7 @@ function MonMatrix() {
     return (
       <div className="mx-4 mt-3 rounded-card border border-primary/10 bg-secondary/40 px-4 py-3 flex items-center gap-2.5">
         <Plug className="w-4 h-4 text-primary/50 shrink-0" />
-        <div className="text-[11px] text-foreground/60">
-          No app-monitoring connector in your vault yet — add Sentry in Connections to map error tracking per project.
-        </div>
+        <div className="text-[11px] text-foreground/60">{dt.mon_no_cred}</div>
       </div>
     );
   }
@@ -63,7 +55,12 @@ function MonMatrix() {
     creds: monCreds,
     getCredId: (p) => p.monitoring_credential_id,
     assign,
-    labels: MON_LABELS,
+    labels: {
+      coverage: dt.mon_coverage,
+      gap: dt.mon_gap,
+      notWired: dt.mon_not_wired,
+      wirePlaceholder: dt.mon_wire_placeholder,
+    },
     testId: 'monitoring-overview-matrix',
     testIdPrefix: 'monitoring-assign',
   };
@@ -81,7 +78,8 @@ function StateMessage({ icon, title, subtitle }: { icon: ReactNode; title: strin
 }
 
 export default function MonitoringSection() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dt = t.plugins.dev_tools;
   const po = t.project_overview;
   const { activeProject, state, stats, error, cred, monCreds, reload } = useMonitoringPinpoints();
 
@@ -95,17 +93,17 @@ export default function MonitoringSection() {
           <button
             onClick={() => reload()}
             className="ml-auto p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/8 focus-ring"
-            title="Refresh"
-            aria-label="Refresh"
+            title={dt.mon_refresh}
+            aria-label={dt.mon_refresh}
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {!activeProject ? (
-          <StateMessage icon={<AlertCircle className="w-8 h-8" />} title="No project selected" subtitle="Pick a project to see its monitoring." />
+          <StateMessage icon={<AlertCircle className="w-8 h-8" />} title={dt.mon_no_project_title} subtitle={dt.mon_no_project_sub} />
         ) : state === 'empty' ? (
-          <StateMessage icon={<Plug className="w-8 h-8" />} title="No monitoring connector" subtitle="Add a Sentry credential in Connections to map monitoring." />
+          <StateMessage icon={<Plug className="w-8 h-8" />} title={dt.mon_empty_title} subtitle={dt.mon_empty_sub} />
         ) : state === 'unmapped' ? (
           cred && cred.serviceType.toLowerCase() === 'sentry' ? (
             <div className="p-4">
@@ -116,20 +114,20 @@ export default function MonitoringSection() {
               />
             </div>
           ) : (
-            <StateMessage icon={<Plug className="w-8 h-8" />} title="Not linked" subtitle="Assign a monitoring connector to this project in the matrix above." />
+            <StateMessage icon={<Plug className="w-8 h-8" />} title={dt.mon_unmapped_title} subtitle={dt.mon_unmapped_sub} />
           )
         ) : state === 'unsupported' ? (
           <StateMessage
             icon={<Bug className="w-8 h-8" />}
-            title={`${cred?.serviceType ?? 'This tool'} isn't wired for stats yet`}
-            subtitle="The assignment is saved; its live adapter is coming."
+            title={tx(dt.mon_unsupported_title, { tool: cred?.serviceType ?? dt.llm_this_tool })}
+            subtitle={dt.mon_unsupported_sub}
           />
         ) : state === 'loading' ? (
           <div className="flex-1 flex items-center justify-center">
             <LoadingSpinner />
           </div>
         ) : state === 'error' ? (
-          <StateMessage icon={<AlertCircle className="w-8 h-8 text-red-400/70" />} title="Couldn't load monitoring" subtitle={error ?? 'Unknown error'} />
+          <StateMessage icon={<AlertCircle className="w-8 h-8 text-red-400/70" />} title={dt.mon_error_title} subtitle={error ?? dt.mon_unknown_error} />
         ) : stats ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard label={po.unresolved_issues} value={stats.unresolvedIssues} icon={Bug} tone={stats.unresolvedIssues === 0 ? 'success' : stats.unresolvedIssues > 5 ? 'danger' : 'warning'} />

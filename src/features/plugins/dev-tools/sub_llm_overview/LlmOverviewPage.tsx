@@ -31,10 +31,6 @@ import AssignmentMatrix from './AssignmentMatrix';
 import MonitoringSection from './MonitoringSection';
 
 type ObsTab = 'llm' | 'monitoring';
-const OBS_TABS: SegmentedTab<ObsTab>[] = [
-  { id: 'llm', label: 'LLM' },
-  { id: 'monitoring', label: 'Monitoring' },
-];
 
 const WINDOW_TABS: SegmentedTab<LlmWindow>[] = [
   { id: '24h', label: '24h' },
@@ -113,6 +109,10 @@ function StateMessage({ icon, title, subtitle }: { icon: ReactNode; title: strin
 export default function LlmOverviewPage() {
   const { t, tx } = useTranslation();
   const dt = t.plugins.dev_tools;
+  const OBS_TABS: SegmentedTab<ObsTab>[] = [
+    { id: 'llm', label: dt.obs_tab_llm },
+    { id: 'monitoring', label: dt.obs_tab_monitoring },
+  ];
   const data = useLlmPinpoints();
   const { activeProject, state, pinpoints, error, cred, timeWindow, setTimeWindow, reload } = data;
   const [obsTab, setObsTab] = useState<ObsTab>('llm');
@@ -229,7 +229,7 @@ export default function LlmOverviewPage() {
       <ContentHeader
         icon={<BarChart3 className="w-5 h-5 text-primary" />}
         iconColor="primary"
-        title={dt.llm_title}
+        title={dt.obs_title}
         fitWidth
         actions={
           <>
@@ -240,7 +240,7 @@ export default function LlmOverviewPage() {
               variant="segment"
               size="sm"
               fullWidth={false}
-              ariaLabel="Observability view"
+              ariaLabel={dt.obs_aria_view}
             />
             {obsTab === 'llm' && (
               <>

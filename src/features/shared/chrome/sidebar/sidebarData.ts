@@ -121,7 +121,7 @@ export const artistItems: SubNavItem[] = [
 
 export const devToolsItems: SubNavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'llm-overview', label: 'LLM Overview', icon: BarChart3 },
+  { id: 'llm-overview', label: 'Observability', icon: BarChart3 },
   { id: 'context-map', label: 'Context Map', icon: Map },
   { id: 'idea-scanner', label: 'Idea Scanner', icon: Lightbulb },
   { id: 'idea-triage', label: 'Idea Triage', icon: ArrowLeftRight },
