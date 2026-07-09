@@ -117,6 +117,10 @@ After creation the modal offers to **run a context map scan** right away.
 
 ## Context Map scan
 
+> Full design reference — data model, scan protocol, integrity invariants,
+> consumers, and the KPI pairing — lives in
+> [`plugins/dev tools/context-design.md`](../plugins/dev%20tools/context-design.md).
+
 Generating a context map runs a background scan of the project folder (kicked
 off from the post-create modal, the Context Map tab, or programmatically). The
 scan streams progress, creates context **groups** and **contexts** (with file
