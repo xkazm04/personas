@@ -1,44 +1,48 @@
 /**
- * LlmOverviewMatrix — the Layer-1 assignment matrix (Dev Tools · LLM Overview).
- *
- * A fleet-instrumentation status view: the top strip answers "how much of my
- * fleet is instrumented, and on which tools?" (a coverage meter + per-tool
- * tally), and below, projects are brand-badged tiles in a grid with the un-wired
- * ones flagged as gaps — leading with coverage rather than the assignment
- * control. Wiring a project writes `dev_projects.llm_tracking_credential_id`.
+ * AssignmentMatrix — the Layer-1 projects × connectors assignment matrix,
+ * generic over the binding (LLM-observability or app-monitoring). The top strip
+ * answers "how much of my fleet is wired, and on which tools?" (a coverage meter
+ * + per-tool tally); below, projects are brand-badged tiles with the un-wired
+ * ones flagged as gaps. Wiring a project calls the caller's `assign`.
  */
 import { useMemo } from 'react';
 import { Gauge } from 'lucide-react';
-import { useTranslation } from '@/i18n/useTranslation';
 import {
   connectorBrand,
   assignedCred,
   ConnectorChip,
   ConnectorSocket,
-  type LlmOverviewMatrixProps,
+  type AssignmentMatrixProps,
 } from './matrixShared';
 
-export default function LlmOverviewMatrix({ projects, llmCreds, assign }: LlmOverviewMatrixProps) {
-  const { t } = useTranslation();
-  const wired = projects.filter((p) => p.llm_tracking_credential_id);
+export default function AssignmentMatrix({
+  projects,
+  creds,
+  getCredId,
+  assign,
+  labels,
+  testIdPrefix = 'assign',
+  testId = 'assignment-matrix',
+}: AssignmentMatrixProps) {
+  const wired = projects.filter((p) => getCredId(p));
   const pct = projects.length ? Math.round((wired.length / projects.length) * 100) : 0;
 
   const tallies = useMemo(() => {
     const m = new Map<string, number>();
     for (const p of wired) {
-      const c = assignedCred(p, llmCreds);
+      const c = assignedCred(p, creds, getCredId);
       if (c) {
         const key = c.serviceType.toLowerCase();
         m.set(key, (m.get(key) ?? 0) + 1);
       }
     }
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
-  }, [wired, llmCreds]);
+  }, [wired, creds, getCredId]);
 
   return (
     <div
       className="mx-4 mt-3 rounded-card border border-primary/10 bg-secondary/40 overflow-hidden"
-      data-testid="llm-overview-matrix"
+      data-testid={testId}
     >
       {/* Coverage strip */}
       <div className="px-4 py-3 border-b border-primary/10">
@@ -48,7 +52,7 @@ export default function LlmOverviewMatrix({ projects, llmCreds, assign }: LlmOve
             {wired.length}
             <span className="text-foreground/40">/{projects.length}</span>
           </span>
-          <span className="typo-caption text-foreground/60">{t.plugins.dev_tools.llm_projects_instrumented}</span>
+          <span className="typo-caption text-foreground/60">{labels.coverage}</span>
           <div className="ml-auto flex items-center gap-1.5">
             {tallies.map(([svc, n]) => {
               const b = connectorBrand(svc);
@@ -78,7 +82,7 @@ export default function LlmOverviewMatrix({ projects, llmCreds, assign }: LlmOve
       {/* Project tiles */}
       <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
         {projects.map((p) => {
-          const cred = assignedCred(p, llmCreds);
+          const cred = assignedCred(p, creds, getCredId);
           const brand = cred ? connectorBrand(cred.serviceType) : null;
           return (
             <div
@@ -94,14 +98,16 @@ export default function LlmOverviewMatrix({ projects, llmCreds, assign }: LlmOve
                     className="text-[11px] text-foreground/70 shrink-0 max-w-[120px]"
                   />
                 ) : (
-                  <span className="text-[10px] uppercase tracking-wide text-status-warning shrink-0">{t.plugins.dev_tools.llm_gap}</span>
+                  <span className="text-[10px] uppercase tracking-wide text-status-warning shrink-0">{labels.gap}</span>
                 )}
               </div>
               <ConnectorSocket
-                value={p.llm_tracking_credential_id}
-                llmCreds={llmCreds}
+                value={getCredId(p)}
+                creds={creds}
                 onChange={(id) => assign(p.id, id)}
-                testId={`llm-overview-assign-${p.id}`}
+                testId={`${testIdPrefix}-${p.id}`}
+                placeholder={labels.wirePlaceholder}
+                notWiredLabel={labels.notWired}
                 className="mt-1.5 block w-full"
               />
             </div>

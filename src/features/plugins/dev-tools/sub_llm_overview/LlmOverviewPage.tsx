@@ -26,8 +26,15 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useLlmPinpoints } from './useLlmPinpoints';
 import type { LlmPinpoint, LlmWindow } from './llmTracingAdapters';
-import type { LlmOverviewMatrixProps } from './matrixShared';
-import LlmOverviewMatrix from './LlmOverviewMatrix';
+import type { AssignmentMatrixProps } from './matrixShared';
+import AssignmentMatrix from './AssignmentMatrix';
+import MonitoringSection from './MonitoringSection';
+
+type ObsTab = 'llm' | 'monitoring';
+const OBS_TABS: SegmentedTab<ObsTab>[] = [
+  { id: 'llm', label: 'LLM' },
+  { id: 'monitoring', label: 'Monitoring' },
+];
 
 const WINDOW_TABS: SegmentedTab<LlmWindow>[] = [
   { id: '24h', label: '24h' },
@@ -39,7 +46,7 @@ const WINDOW_TABS: SegmentedTab<LlmWindow>[] = [
 // Layer 1 — projects × connector assignment matrix
 // ---------------------------------------------------------------------------
 
-function AssignmentMatrix() {
+function LlmMatrix() {
   const { t } = useTranslation();
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
@@ -68,8 +75,21 @@ function AssignmentMatrix() {
     );
   }
 
-  const props: LlmOverviewMatrixProps = { projects, llmCreds, assign };
-  return <LlmOverviewMatrix {...props} />;
+  const props: AssignmentMatrixProps = {
+    projects,
+    creds: llmCreds,
+    getCredId: (p) => p.llm_tracking_credential_id,
+    assign,
+    labels: {
+      coverage: t.plugins.dev_tools.llm_projects_instrumented,
+      gap: t.plugins.dev_tools.llm_gap,
+      notWired: t.plugins.dev_tools.llm_not_wired,
+      wirePlaceholder: t.plugins.dev_tools.llm_wire_placeholder,
+    },
+    testId: 'llm-overview-matrix',
+    testIdPrefix: 'llm-overview-assign',
+  };
+  return <AssignmentMatrix {...props} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +115,7 @@ export default function LlmOverviewPage() {
   const dt = t.plugins.dev_tools;
   const data = useLlmPinpoints();
   const { activeProject, state, pinpoints, error, cred, timeWindow, setTimeWindow, reload } = data;
+  const [obsTab, setObsTab] = useState<ObsTab>('llm');
 
   // The declared use-case vocabulary for this project. `dev_use_cases.slug` is
   // the join key an observed call-site name normalizes to, so an instrumented
@@ -213,28 +234,45 @@ export default function LlmOverviewPage() {
         actions={
           <>
             <SegmentedTabs
-              tabs={WINDOW_TABS}
-              activeTab={timeWindow}
-              onTabChange={setTimeWindow}
+              tabs={OBS_TABS}
+              activeTab={obsTab}
+              onTabChange={setObsTab}
               variant="segment"
               size="sm"
               fullWidth={false}
-              ariaLabel={dt.llm_aria_window}
+              ariaLabel="Observability view"
             />
-            <button
-              onClick={reload}
-              className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/8 focus-ring"
-              title={dt.llm_refresh}
-              aria-label={dt.llm_refresh}
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
+            {obsTab === 'llm' && (
+              <>
+                <SegmentedTabs
+                  tabs={WINDOW_TABS}
+                  activeTab={timeWindow}
+                  onTabChange={setTimeWindow}
+                  variant="segment"
+                  size="sm"
+                  fullWidth={false}
+                  ariaLabel={dt.llm_aria_window}
+                />
+                <button
+                  onClick={reload}
+                  className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/8 focus-ring"
+                  title={dt.llm_refresh}
+                  aria-label={dt.llm_refresh}
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
           </>
         }
       />
 
+      {obsTab === 'monitoring' ? (
+        <MonitoringSection />
+      ) : (
+        <>
       {/* Layer 1 — assignment matrix */}
-      <AssignmentMatrix />
+      <LlmMatrix />
 
       {/* Layer 2 — pinpoints for the active project */}
       <div className="flex-1 min-h-0 mx-4 my-3 flex flex-col rounded-card border border-primary/10 overflow-hidden">
@@ -303,6 +341,8 @@ export default function LlmOverviewPage() {
           </div>
         )}
       </div>
+        </>
+      )}
     </ContentBox>
   );
 }
