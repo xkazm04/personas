@@ -102,6 +102,11 @@ struct KpiProposal {
     /// empty = group-level or project-level.
     #[serde(default)]
     context_name: String,
+    /// Use case (behavioral slice through contexts) this KPI is scoped to —
+    /// the NARROWEST scope, preferred over `context_name` when an outcome spans
+    /// more than one context. Empty = not use-case scoped.
+    #[serde(default)]
+    use_case_name: String,
 }
 
 fn parse_kpi_proposal(line: &str) -> Option<KpiProposal> {
@@ -122,6 +127,7 @@ fn parse_kpi_proposal(line: &str) -> Option<KpiProposal> {
 fn build_kpi_scan_prompt(
     project_name: &str,
     groups_block: &str,
+    use_cases_block: &str,
     active_kpis: &str,
     archived_kpis: &str,
     connectors: &str,
@@ -131,6 +137,9 @@ fn build_kpi_scan_prompt(
 
 ## Context map (feature groups → what the code does)
 {groups_block}
+
+## Use cases (behavioral slices — what the product DOES, across contexts)
+{use_cases_block}
 
 ## Existing KPIs — do NOT propose duplicates or near-duplicates
 {active_kpis}
@@ -147,6 +156,7 @@ Explore the repository (you are in its root) to ground your proposals: which tes
 Rules:
 1. Per-group KPIs use the EXACT group name from the context map; cross-cutting KPIs use an empty group_name (project-level).
 1b. To scope a KPI to a SINGLE context (one subsystem) within a group, set `context_name` to the EXACT context name from the map AND set its `group_name`. Use this only when one specific context clearly owns the outcome (e.g. p95 latency for a `checkout-api` context). Leave `context_name` empty for group-level or project-level KPIs.
+1c. PREFER a USE CASE when one is listed above and the outcome is behavioral — a use case is a slice through several contexts and is the most honest owner of an outcome like "checkout conversion" or "search latency". Set `use_case_name` to the EXACT use-case name; leave `group_name` and `context_name` empty (they are inferred from the use case). Use `context_name` only when the outcome belongs to code in exactly ONE context.
 2. `category`: technical (coverage, lint debt, build time, bundle size), quality (defect/bounce/incident rates), traffic (users, requests — connector-gated), value (conversion, revenue, retention — connector-gated).
 3. `measure_kind` + `measure_config` must be a REAL, executable procedure:
    - codebase: {{"cmd": "<command runnable in repo root>", "parse": "coverage_pct" | "count_lines" | "regex:<pattern with one capture group>" | "json_path:<dot.path>"}}
@@ -161,17 +171,47 @@ Rules:
 7. `rationale`: ONE sentence the user reads in the review queue — why THIS metric steers value.
 
 For each proposal emit EXACTLY ONE line that is this JSON object and nothing else on that line:
-{{"kpi_proposal": {{"group_name": "...", "name": "...", "description": "...", "category": "technical", "measure_kind": "codebase", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 70, "target_date": null, "cadence": "weekly", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": ""}}}}
+{{"kpi_proposal": {{"group_name": "...", "name": "...", "description": "...", "category": "technical", "measure_kind": "codebase", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 70, "target_date": null, "cadence": "weekly", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": "", "use_case_name": ""}}}}
 
 Finish with one line: {{"kpi_scan_summary": {{"proposals": <count>}}}}
 "#,
         project_name = project_name,
         groups_block = groups_block,
+        use_cases_block = use_cases_block,
         active_kpis = active_kpis,
         archived_kpis = archived_kpis,
         connectors = connectors,
         max = MAX_PROPOSALS_PER_SCAN,
     )
+}
+
+/// Markdown digest of the project's accepted use cases — the behavioral slices
+/// a KPI can own. Proposals awaiting triage are excluded: they are not yet part
+/// of the project's vocabulary.
+fn use_cases_block(pool: &crate::db::DbPool, project_id: &str) -> String {
+    let use_cases = repo::list_use_cases(pool, project_id, Some("active")).unwrap_or_default();
+    if use_cases.is_empty() {
+        return "(no use cases defined — scope KPIs to groups/contexts instead)".into();
+    }
+    let contexts = repo::list_contexts_by_project(pool, project_id, None).unwrap_or_default();
+    let name_of = |id: &str| contexts.iter().find(|c| c.id == id).map(|c| c.name.as_str());
+    use_cases
+        .iter()
+        .map(|u| {
+            let slice: Vec<&str> = u.context_ids.iter().filter_map(|id| name_of(id)).collect();
+            format!(
+                "- {} [{}] — spans: {}{}",
+                u.name,
+                u.kind,
+                if slice.is_empty() { "(no contexts linked)".to_string() } else { slice.join(", ") },
+                u.description
+                    .as_deref()
+                    .map(|d| format!("\n    {}", d.chars().take(160).collect::<String>()))
+                    .unwrap_or_default()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Markdown digest of the context map for the prompt.
@@ -285,6 +325,7 @@ pub(crate) fn launch_kpi_scan(
     let prompt_text = build_kpi_scan_prompt(
         &project.name,
         &context_map_block(pool, &project_id),
+        &use_cases_block(pool, &project_id),
         &kpi_list_block(pool, &project_id, false),
         &kpi_list_block(pool, &project_id, true),
         &connectors_block(pool),
@@ -407,6 +448,7 @@ pub(crate) fn kpi_scan_prompt(pool: &crate::db::DbPool, project_id: &str) -> Res
     Ok(build_kpi_scan_prompt(
         &project.name,
         &context_map_block(pool, project_id),
+        &use_cases_block(pool, project_id),
         &kpi_list_block(pool, project_id, false),
         &kpi_list_block(pool, project_id, true),
         &connectors_block(pool),
@@ -451,6 +493,16 @@ async fn run_kpi_scan(
             .unwrap_or_default()
             .into_iter()
             .map(|c| (c.name.to_lowercase(), (c.id, c.group_id)))
+            .collect();
+    // Use-case lookup for the NARROWEST scope. A use case slices through
+    // contexts, so it carries its own context/group anchor (its primary
+    // context) rather than trusting the model's group_name. Matched on the
+    // normalized slug so casing/underscore drift still resolves.
+    let use_case_lookup: std::collections::HashMap<String, crate::db::models::DevUseCase> =
+        repo::list_use_cases(pool, project_id, Some("active"))
+            .unwrap_or_default()
+            .into_iter()
+            .map(|u| (u.slug.clone(), u))
             .collect();
 
     let mut cli_args = prompt::build_cli_args(None, None);
@@ -555,6 +607,24 @@ async fn run_kpi_scan(
                         Some((cid, cgid)) => (Some(cid.as_str()), cgid.clone().or(group_id)),
                         None => (None, group_id),
                     };
+                // Narrowest scope wins: a resolved use case anchors the KPI on
+                // its own primary context (and that context's group), replacing
+                // whatever context/group the model named. A hallucinated
+                // use-case name falls back to the context/group scope above
+                // rather than a broken FK.
+                let resolved_use_case = use_case_lookup
+                    .get(&repo::slugify_use_case(p.use_case_name.trim()))
+                    .filter(|_| !p.use_case_name.trim().is_empty());
+                let (use_case_id, context_id, group_id) = match resolved_use_case {
+                    Some(uc) => {
+                        let anchor = uc.primary_context_id.as_deref().or(uc.context_ids.first().map(|s| s.as_str()));
+                        let anchor_group = anchor
+                            .and_then(|cid| context_lookup.values().find(|(id, _)| id == cid))
+                            .and_then(|(_, gid)| gid.clone());
+                        (Some(uc.id.as_str()), anchor, anchor_group.or(group_id))
+                    }
+                    None => (None, context_id, group_id),
+                };
                 let measure_config = if p.measure_config.is_null() {
                     "{}".to_string()
                 } else {
@@ -590,6 +660,7 @@ async fn run_kpi_scan(
                     if needed.is_empty() { None } else { Some(needed) },
                     if p.metric_type.is_empty() { None } else { Some(&p.metric_type) },
                     context_id,
+                    use_case_id,
                 ) {
                     Ok(kpi) => {
                         created += 1;

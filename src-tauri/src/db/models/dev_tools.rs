@@ -220,6 +220,47 @@ pub struct DevGoalItem {
 }
 
 // ============================================================================
+// Use cases (behavioral slice layer — docs/plans/use-case-slice-layer.md)
+// ============================================================================
+
+/// A **use case** is a behavioral unit that slices *through* contexts rather
+/// than subdividing one: "checkout conversion" spans a UI context, an API
+/// context and a data context. It is the narrowest scope a KPI can own, and the
+/// join point between the codebase map and observed telemetry.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevUseCase {
+    pub id: String,
+    pub project_id: String,
+    /// Human display name ("Checkout conversion").
+    pub name: String,
+    /// Normalized join key (`checkout-conversion`). Unique per project, and the
+    /// key an LLM-observability pinpoint's use-case name is matched against.
+    pub slug: String,
+    pub description: Option<String>,
+    /// 'user_flow' | 'capability' | 'integration' | 'ops'
+    pub kind: String,
+    /// Placement convenience: which of the sliced contexts most owns this use
+    /// case. Keeps the Factory matrix's group → context row model intact.
+    pub primary_context_id: Option<String>,
+    /// 'proposed' | 'active' | 'archived' — proposals are triage-gated, so a
+    /// finer scope never floods the review queue.
+    pub status: String,
+    /// 'user' | 'scan' | 'backfill'
+    pub created_by: String,
+    /// Human-curated: a use-case scan must not re-propose or replace it.
+    #[serde(default)]
+    pub pinned: bool,
+    pub rationale: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    /// The slice: context ids this use case spans. Hydrated from
+    /// `dev_use_case_contexts`, not a column on this table.
+    #[serde(default)]
+    pub context_ids: Vec<String>,
+}
+
+// ============================================================================
 // KPIs (outcome layer above goals — docs/plans/kpi-driven-orchestration.md)
 // ============================================================================
 
@@ -234,6 +275,11 @@ pub struct DevKpi {
     /// `context_group_id` is expected to be that context's parent group —
     /// see context_taxonomy / Part 3 context-level KPIs.
     pub context_id: Option<String>,
+    /// NULL unless the KPI is scoped to one use case — the NARROWEST scope,
+    /// narrower than a single context because a use case is a behavioral slice
+    /// *through* contexts. Precedence: use_case > context > group > project.
+    /// See docs/plans/use-case-slice-layer.md.
+    pub use_case_id: Option<String>,
     pub name: String,
     pub description: Option<String>,
     /// 'technical' | 'traffic' | 'value' | 'quality'

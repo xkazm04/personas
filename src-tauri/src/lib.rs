@@ -2919,6 +2919,14 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_goal,
             commands::infrastructure::dev_tools::dev_tools_delete_goal,
             commands::infrastructure::dev_tools::dev_tools_reorder_goals,
+            // Dev Tools -- use cases (behavioral slice layer under contexts)
+            commands::infrastructure::dev_tools::dev_tools_list_use_cases,
+            commands::infrastructure::dev_tools::dev_tools_get_use_case,
+            commands::infrastructure::dev_tools::dev_tools_list_use_cases_for_context,
+            commands::infrastructure::dev_tools::dev_tools_create_use_case,
+            commands::infrastructure::dev_tools::dev_tools_update_use_case,
+            commands::infrastructure::dev_tools::dev_tools_delete_use_case,
+            commands::infrastructure::dev_tools::dev_tools_backfill_use_cases,
             // Dev Tools -- KPIs (outcome layer above goals)
             commands::infrastructure::dev_tools::dev_tools_list_kpis,
             commands::infrastructure::dev_tools::dev_tools_get_kpi,

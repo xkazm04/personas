@@ -208,14 +208,24 @@ fn build_derivation_prompt(pool: &DbPool, kpi: &DevKpi) -> String {
         .map(|m| format!("- {} → {} ({})", m.measured_at, m.value, m.source))
         .collect::<Vec<_>>()
         .join("\n");
+    // Scope-constrained candidate contexts, narrowest scope first. A use-case
+    // KPI offers the whole slice the use case spans — that is the honest
+    // candidate set for a behavioral outcome, and it is what makes use-case
+    // scope strictly better than pinning the KPI to one arbitrary context.
+    let use_case = kpi
+        .use_case_id
+        .as_deref()
+        .and_then(|id| repo::get_use_case(pool, id).ok());
     let contexts: String = repo::list_contexts_by_project(pool, &kpi.project_id, None)
         .unwrap_or_default()
         .iter()
-        .filter(|c| match &kpi.context_id {
+        .filter(|c| match (&use_case, &kpi.context_id) {
+            // Use-case-scoped: the contexts the use case slices through.
+            (Some(uc), _) => uc.context_ids.contains(&c.id),
             // Context-scoped KPI: offer only its own context (deterministic target).
-            Some(cid) => &c.id == cid,
+            (None, Some(cid)) => &c.id == cid,
             // Group-scoped: the group's contexts; project-level: all.
-            None => kpi.context_group_id.is_none() || c.group_id == kpi.context_group_id,
+            (None, None) => kpi.context_group_id.is_none() || c.group_id == kpi.context_group_id,
         })
         .take(20)
         .map(|c| format!("- id={} {}: {}", c.id, c.name, c.description.as_deref().unwrap_or("").chars().take(120).collect::<String>()))
@@ -285,9 +295,14 @@ Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON
         history = if history.is_empty() { "(single measurement)".into() } else { history },
         contexts = if contexts.is_empty() { "(no context map)".to_string() } else { contexts },
         recent_goals = if recent_goals.is_empty() { "(none)".to_string() } else { recent_goals },
-        scope_hint = match &kpi.context_id {
-            Some(cid) => format!("\n- This KPI is scoped to context id={cid}; default `context_id` to it unless the work clearly belongs to another listed context."),
-            None => String::new(),
+        scope_hint = match (&use_case, &kpi.context_id) {
+            (Some(uc), _) => format!(
+                "\n- This KPI serves the use case \"{}\" — a behavioral slice spanning the {} context(s) listed above. Pick the `context_id` where the work that moves the metric actually lands; the outcome is owned by the use case, not by one context.",
+                uc.name,
+                uc.context_ids.len()
+            ),
+            (None, Some(cid)) => format!("\n- This KPI is scoped to context id={cid}; default `context_id` to it unless the work clearly belongs to another listed context."),
+            (None, None) => String::new(),
         },
         floor_breach = if kpi_floor_breached(kpi) {
             "\n- FLOOR BREACH: this business metric is at ZERO. Do not propose incremental optimization — propose the single most direct path to ESTABLISH THE FIRST UNIT OF VALUE (the first user, the first real request). Distribution/instrumentation/activation work beats internal quality work here."
@@ -415,6 +430,7 @@ mod tests {
             project_id: "p".into(),
             context_group_id: None,
             context_id: None,
+            use_case_id: None,
             name: "t".into(),
             description: None,
             category: "technical".into(),

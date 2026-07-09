@@ -1423,6 +1423,7 @@ fn execute_calibrate_kpi(
             None,                    // needed_connector
             None,                    // metric_type
             tier,
+            None,                    // use_case_id
         )?;
     }
     if warn_at.is_some() || crit_at.is_some() {
