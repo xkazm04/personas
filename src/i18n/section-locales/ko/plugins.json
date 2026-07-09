@@ -2098,7 +2098,19 @@
     "thread_status_idle": "유휴",
     "thread_status_working": "진행 중",
     "rename_conversation": "대화 이름 변경",
-    "replied_in_thread": "Athena가 {thread}에서 답장했습니다"
+    "replied_in_thread": "Athena가 {thread}에서 답장했습니다",
+    "voice_engine_pocket": "Pocket",
+    "voice_engine_pocket_caption": "로컬 실행, 내 목소리 복제",
+    "voice_pocket_cloned_badge": "복제됨",
+    "voice_pocket_enable_blocked": "재생을 사용하려면 Pocket TTS 서비스를 시작하고 음성을 선택하세요.",
+    "voice_pocket_not_running": "실행 중 아님",
+    "voice_pocket_not_running_hint": "이 컴퓨터에서 Pocket TTS 서비스를 시작한 후 다시 확인하세요. 아래 주소에서 서비스에 연결되면 음성이 표시됩니다.",
+    "voice_pocket_running": "실행 중",
+    "voice_pocket_setup_desc": "Pocket은 모델을 항상 준비된 상태로 유지하는 작은 로컬 서비스를 통해 음성을 합성합니다. 짧은 녹음으로 만든 복제 음성으로 말할 수 있습니다.",
+    "voice_pocket_setup_title": "Pocket TTS 서비스",
+    "voice_pocket_url_label": "서비스 주소",
+    "voice_pocket_voices_desc": "복제된 음성은 서비스의 음성 폴더에서 가져옵니다. 새 음성 파일을 넣고 다시 확인하세요. 나머지는 기본 제공 음성입니다.",
+    "voice_pocket_voices_title": "Pocket 음성"
   },
   "ocr": {
     "title": "OCR",

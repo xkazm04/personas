@@ -13380,7 +13380,19 @@
       "thread_status_idle": "निष्क्रिय",
       "thread_status_working": "चल रहा है",
       "rename_conversation": "बातचीत का नाम बदलें",
-      "replied_in_thread": "Athena ने {thread} में जवाब दिया"
+      "replied_in_thread": "Athena ने {thread} में जवाब दिया",
+      "voice_engine_pocket": "Pocket",
+      "voice_engine_pocket_caption": "लोकल, आपकी आवाज़ की क्लोन बनाता है",
+      "voice_pocket_cloned_badge": "क्लोन की गई",
+      "voice_pocket_enable_blocked": "प्लेबैक चालू करने के लिए Pocket TTS सेवा शुरू करें और एक आवाज़ चुनें।",
+      "voice_pocket_not_running": "चालू नहीं है",
+      "voice_pocket_not_running_hint": "इस कंप्यूटर पर Pocket TTS सेवा शुरू करें, फिर दोबारा जांचें। नीचे दिए गए पते पर सेवा उपलब्ध होते ही आवाज़ें दिखाई देंगी।",
+      "voice_pocket_running": "चालू है",
+      "voice_pocket_setup_desc": "Pocket एक छोटी लोकल सेवा के ज़रिए आवाज़ बनाता है जो मॉडल को तैयार रखती है। यह आपकी छोटी सी रिकॉर्डिंग से बनाई गई क्लोन आवाज़ में भी बोल सकता है।",
+      "voice_pocket_setup_title": "Pocket TTS सेवा",
+      "voice_pocket_url_label": "सेवा का पता",
+      "voice_pocket_voices_desc": "क्लोन की गई आवाज़ें सेवा के voices फ़ोल्डर से आती हैं — नई आवाज़ फ़ाइल डालें और दोबारा जांचें। बाकी बिल्ट-इन आवाज़ें हैं।",
+      "voice_pocket_voices_title": "Pocket आवाज़ें"
     },
     "ocr": {
       "title": "OCR",

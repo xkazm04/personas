@@ -85,7 +85,7 @@ export type CompanionVoiceModel = (typeof COMPANION_VOICE_MODELS)[number];
  * binary, so we never quietly route users through it. `'kokoro'` is the
  * higher-quality local engine (sherpa-onnx sidecar + a shared model pack).
  */
-export type CompanionTtsEngine = 'elevenlabs' | 'piper' | 'kokoro';
+export type CompanionTtsEngine = 'elevenlabs' | 'piper' | 'kokoro' | 'pocket_tts';
 
 /**
  * STT engine for Athena's voice input. Mirrors `SttEngineId` in
@@ -128,6 +128,10 @@ export interface CompanionPluginSlice {
   /** Currently-selected Kokoro voice id (e.g. `af_heart`). Independent of
    *  the ElevenLabs / Piper selections for the same reason. */
   companionKokoroVoiceId: string | null;
+  /** Currently-selected Pocket TTS voice id — a cloned `.safetensors`
+   *  embedding name (e.g. `step4`) or a built-in Kyutai voice (e.g. `alba`).
+   *  Independent of the other engines' selections. */
+  companionPocketVoiceId: string | null;
   /**
    * Per-call voice tuning. All five are nullable: `null` means "let the
    * backend apply its default". The Voice tab exposes these as a Settings
@@ -235,6 +239,7 @@ export interface CompanionPluginSlice {
   setCompanionVoiceId: (id: string | null) => void;
   setCompanionPiperVoiceId: (id: string | null) => void;
   setCompanionKokoroVoiceId: (id: string | null) => void;
+  setCompanionPocketVoiceId: (id: string | null) => void;
   setCompanionVoiceModel: (m: CompanionVoiceModel | null) => void;
   setCompanionVoiceStability: (v: number | null) => void;
   setCompanionVoiceSimilarity: (v: number | null) => void;
@@ -274,6 +279,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionVoiceId: null,
   companionPiperVoiceId: null,
   companionKokoroVoiceId: null,
+  companionPocketVoiceId: null,
   companionVoiceModel: null,
   // Tuned defaults (vs the engine's own): a touch more stability +
   // similarity than ElevenLabs' baseline, with a hint of style.
@@ -312,6 +318,8 @@ export const createCompanionPluginSlice: StateCreator<
     set({ companionPiperVoiceId }),
   setCompanionKokoroVoiceId: (companionKokoroVoiceId) =>
     set({ companionKokoroVoiceId }),
+  setCompanionPocketVoiceId: (companionPocketVoiceId) =>
+    set({ companionPocketVoiceId }),
   setCompanionVoiceModel: (companionVoiceModel) => set({ companionVoiceModel }),
   setCompanionVoiceStability: (companionVoiceStability) =>
     set({ companionVoiceStability }),

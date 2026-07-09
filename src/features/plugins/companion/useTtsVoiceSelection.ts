@@ -30,12 +30,15 @@ export function useTtsVoiceSelection(): ResolvedTtsVoice {
   const elevenVoiceId = useSystemStore((s) => s.companionVoiceId);
   const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
   const kokoroVoiceId = useSystemStore((s) => s.companionKokoroVoiceId);
+  const pocketVoiceId = useSystemStore((s) => s.companionPocketVoiceId);
 
   switch (engine) {
     case 'piper':
       return { engine, voiceId: piperVoiceId, credentialId: null, configured: !!piperVoiceId };
     case 'kokoro':
       return { engine, voiceId: kokoroVoiceId, credentialId: null, configured: !!kokoroVoiceId };
+    case 'pocket_tts':
+      return { engine, voiceId: pocketVoiceId, credentialId: null, configured: !!pocketVoiceId };
     case 'elevenlabs':
     default:
       return {

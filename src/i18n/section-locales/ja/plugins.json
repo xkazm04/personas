@@ -2098,7 +2098,19 @@
     "thread_status_idle": "待機中",
     "thread_status_working": "実行中",
     "rename_conversation": "会話の名前を変更",
-    "replied_in_thread": "Athenaが{thread}で返信しました"
+    "replied_in_thread": "Athenaが{thread}で返信しました",
+    "voice_engine_pocket": "Pocket",
+    "voice_engine_pocket_caption": "ローカルで動作し、あなたの声を複製",
+    "voice_pocket_cloned_badge": "複製済み",
+    "voice_pocket_enable_blocked": "再生を有効にするには、Pocket TTSサービスを起動してボイスを選択してください。",
+    "voice_pocket_not_running": "停止中",
+    "voice_pocket_not_running_hint": "このコンピューターでPocket TTSサービスを起動してから、再確認してください。サービスが下記アドレスで応答可能になるとボイスが表示されます。",
+    "voice_pocket_running": "実行中",
+    "voice_pocket_setup_desc": "Pocketはモデルを常時ロードした小さなローカルサービスを通じて音声合成を行います。あなたの短い録音から作成した複製ボイスで話すこともできます。",
+    "voice_pocket_setup_title": "Pocket TTSサービス",
+    "voice_pocket_url_label": "サービスアドレス",
+    "voice_pocket_voices_desc": "複製ボイスはサービスのボイスフォルダから読み込まれます — 新しいボイスファイルを追加して再確認してください。それ以外は組み込みボイスです。",
+    "voice_pocket_voices_title": "Pocketボイス"
   },
   "ocr": {
     "title": "OCR",

@@ -2098,7 +2098,19 @@
     "thread_status_idle": "không hoạt động",
     "thread_status_working": "đang xử lý",
     "rename_conversation": "Đổi tên cuộc trò chuyện",
-    "replied_in_thread": "Athena đã trả lời trong {thread}"
+    "replied_in_thread": "Athena đã trả lời trong {thread}",
+    "voice_engine_pocket": "Pocket",
+    "voice_engine_pocket_caption": "Cục bộ, nhân bản giọng nói của bạn",
+    "voice_pocket_cloned_badge": "Đã nhân bản",
+    "voice_pocket_enable_blocked": "Khởi động dịch vụ Pocket TTS và chọn một giọng nói để bật phát âm.",
+    "voice_pocket_not_running": "Chưa chạy",
+    "voice_pocket_not_running_hint": "Khởi động dịch vụ Pocket TTS trên máy tính này, sau đó kiểm tra lại. Các giọng nói sẽ xuất hiện khi dịch vụ có thể truy cập được tại địa chỉ bên dưới.",
+    "voice_pocket_running": "Đang chạy",
+    "voice_pocket_setup_desc": "Pocket tổng hợp giọng nói thông qua một dịch vụ cục bộ nhỏ luôn giữ mô hình sẵn sàng. Nó có thể nói bằng giọng nhân bản được tạo từ một đoạn ghi âm ngắn của bạn.",
+    "voice_pocket_setup_title": "Dịch vụ Pocket TTS",
+    "voice_pocket_url_label": "Địa chỉ dịch vụ",
+    "voice_pocket_voices_desc": "Các giọng nói nhân bản đến từ thư mục voices của dịch vụ — thêm một tệp giọng nói mới và kiểm tra lại. Các giọng còn lại là giọng có sẵn.",
+    "voice_pocket_voices_title": "Giọng nói Pocket"
   },
   "ocr": {
     "title": "OCR",

@@ -91,6 +91,12 @@ pub async fn companion_tts(
                 })?;
             tts::kokoro::synthesize(&state, &request).await
         }
+        TtsEngineId::PocketTts => {
+            // No client-side semaphore: the long-lived service applies its own
+            // bounded worker pool + queue and answers 429 under overload,
+            // which `pocket::synthesize` maps to a user-facing message.
+            tts::pocket::synthesize(&request).await
+        }
     }
 }
 
@@ -185,6 +191,28 @@ pub async fn companion_tts_kokoro_status(
 ) -> Result<tts::kokoro::KokoroStatus, AppError> {
     require_auth(&state).await?;
     tts::kokoro::status()
+}
+
+/// Report whether the local Pocket TTS sidecar service is reachable (and its
+/// worker-pool size). The Voice tab gates the Pocket engine behind this so a
+/// stopped service surfaces as a setup card, not a synthesis error.
+#[tauri::command]
+pub async fn companion_tts_pocket_status(
+    state: State<'_, Arc<AppState>>,
+) -> Result<tts::pocket::PocketStatus, AppError> {
+    require_auth(&state).await?;
+    tts::pocket::status().await
+}
+
+/// List the Pocket TTS service's voices — the user's cloned `.safetensors`
+/// embeddings (category `cloned`) plus the built-in Kyutai catalog
+/// (category `premade`).
+#[tauri::command]
+pub async fn companion_tts_list_pocket_voices(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<tts::pocket::PocketVoiceEntry>, AppError> {
+    require_auth(&state).await?;
+    tts::pocket::list_voices().await
 }
 
 /// One-click download + extract of the Kokoro sidecar binary + model package

@@ -17,6 +17,7 @@ pub mod kokoro;
 pub mod kokoro_catalog;
 pub mod kokoro_installer;
 pub mod piper;
+pub mod pocket;
 
 use std::time::Duration;
 
@@ -47,6 +48,10 @@ pub enum TtsEngineId {
     /// Local Kokoro TTS via the sherpa-onnx sidecar. Requires the engine
     /// binary + the (shared) Kokoro model package. Higher quality than Piper.
     Kokoro,
+    /// Local Pocket TTS (kyutai) via a long-lived HTTP sidecar service.
+    /// The only local engine with zero-shot voice cloning — a user's
+    /// `.safetensors` embedding in the service's voices dir is a voice id.
+    PocketTts,
 }
 
 impl TtsEngineId {
@@ -55,6 +60,7 @@ impl TtsEngineId {
             TtsEngineId::Elevenlabs => "elevenlabs",
             TtsEngineId::Piper => "piper",
             TtsEngineId::Kokoro => "kokoro",
+            TtsEngineId::PocketTts => "pocket_tts",
         }
     }
 }
@@ -157,6 +163,10 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&TtsEngineId::Piper).unwrap(),
             "\"piper\""
+        );
+        assert_eq!(
+            serde_json::to_string(&TtsEngineId::PocketTts).unwrap(),
+            "\"pocket_tts\""
         );
     }
 

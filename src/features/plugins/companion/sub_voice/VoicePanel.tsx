@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Cloud, ExternalLink, HardDrive, KeyRound, Mic, RefreshCw, RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
+import { AudioWaveform, Cloud, ExternalLink, HardDrive, KeyRound, Mic, RefreshCw, RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { Slider } from '@/features/shared/components/forms/Slider';
@@ -19,6 +19,7 @@ import {
 } from '@/stores/slices/system/companionPluginSlice';
 import PiperVoicePanel from './PiperVoicePanel';
 import KokoroVoicePanel from './KokoroVoicePanel';
+import PocketVoicePanel from './PocketVoicePanel';
 import SttPanel from './SttPanel';
 import { debtText } from '@/i18n/DebtText';
 
@@ -39,6 +40,8 @@ export default function VoicePanel() {
         <PiperVoicePanel />
       ) : engine === 'kokoro' ? (
         <KokoroVoicePanel />
+      ) : engine === 'pocket_tts' ? (
+        <PocketVoicePanel />
       ) : (
         <ElevenLabsVoicePanel />
       )}
@@ -71,7 +74,7 @@ function EngineSelectorCard() {
       subtitle={t.plugins.companion.voice_engine_desc}
       titleClassName="text-primary"
     >
-      <div className="grid grid-cols-3 gap-2 px-1 py-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-1 py-2">
         <EngineButton
           active={engine === 'elevenlabs'}
           onClick={() => onSwitch('elevenlabs')}
@@ -92,6 +95,13 @@ function EngineSelectorCard() {
           icon={<HardDrive className="w-4 h-4" />}
           label={t.plugins.companion.voice_engine_piper}
           caption={t.plugins.companion.voice_engine_piper_caption}
+        />
+        <EngineButton
+          active={engine === 'pocket_tts'}
+          onClick={() => onSwitch('pocket_tts')}
+          icon={<AudioWaveform className="w-4 h-4" />}
+          label={t.plugins.companion.voice_engine_pocket}
+          caption={t.plugins.companion.voice_engine_pocket_caption}
         />
       </div>
 

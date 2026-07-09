@@ -13380,7 +13380,19 @@
       "thread_status_idle": "inaktiv",
       "thread_status_working": "läuft",
       "rename_conversation": "Unterhaltung umbenennen",
-      "replied_in_thread": "Athena hat in {thread} geantwortet"
+      "replied_in_thread": "Athena hat in {thread} geantwortet",
+      "voice_engine_pocket": "Pocket",
+      "voice_engine_pocket_caption": "Lokal, klont deine Stimme",
+      "voice_pocket_cloned_badge": "Geklont",
+      "voice_pocket_enable_blocked": "Starte den Pocket-TTS-Dienst und wähle eine Stimme aus, um die Wiedergabe zu aktivieren.",
+      "voice_pocket_not_running": "Nicht aktiv",
+      "voice_pocket_not_running_hint": "Starte den Pocket-TTS-Dienst auf diesem Computer und prüfe erneut. Stimmen erscheinen, sobald der Dienst unter der Adresse unten erreichbar ist.",
+      "voice_pocket_running": "Aktiv",
+      "voice_pocket_setup_desc": "Pocket synthetisiert über einen kleinen lokalen Dienst, der das Modell warmhält. Es kann mit einer geklonten Stimme sprechen, die aus einer kurzen Aufnahme von dir erstellt wurde.",
+      "voice_pocket_setup_title": "Pocket-TTS-Dienst",
+      "voice_pocket_url_label": "Dienstadresse",
+      "voice_pocket_voices_desc": "Geklonte Stimmen stammen aus dem Stimmenordner des Dienstes — lege eine neue Stimmdatei ab und prüfe erneut. Die übrigen sind integrierte Stimmen.",
+      "voice_pocket_voices_title": "Pocket-Stimmen"
     },
     "ocr": {
       "title": "OCR",

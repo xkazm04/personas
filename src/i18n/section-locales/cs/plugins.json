@@ -2098,7 +2098,19 @@
     "thread_status_idle": "nečinné",
     "thread_status_working": "pracuje",
     "rename_conversation": "Přejmenovat konverzaci",
-    "replied_in_thread": "Athena odpověděla v {thread}"
+    "replied_in_thread": "Athena odpověděla v {thread}",
+    "voice_engine_pocket": "Pocket",
+    "voice_engine_pocket_caption": "Lokální, klonuje váš hlas",
+    "voice_pocket_cloned_badge": "Klonovaný",
+    "voice_pocket_enable_blocked": "Spusťte službu Pocket TTS a vyberte hlas pro povolení přehrávání.",
+    "voice_pocket_not_running": "Neběží",
+    "voice_pocket_not_running_hint": "Spusťte službu Pocket TTS na tomto počítači a poté znovu zkontrolujte. Hlasy se zobrazí, jakmile bude služba dostupná na níže uvedené adrese.",
+    "voice_pocket_running": "Běží",
+    "voice_pocket_setup_desc": "Pocket syntetizuje řeč prostřednictvím malé lokální služby, která udržuje model připravený. Umí mluvit klonovaným hlasem vytvořeným z krátké nahrávky vašeho hlasu.",
+    "voice_pocket_setup_title": "Služba Pocket TTS",
+    "voice_pocket_url_label": "Adresa služby",
+    "voice_pocket_voices_desc": "Klonované hlasy pocházejí ze složky hlasů služby — přidejte nový soubor s hlasem a znovu zkontrolujte. Zbytek tvoří vestavěné hlasy.",
+    "voice_pocket_voices_title": "Hlasy Pocket"
   },
   "ocr": {
     "title": "OCR",

@@ -13380,7 +13380,19 @@
       "thread_status_idle": "nonaktif",
       "thread_status_working": "sedang berjalan",
       "rename_conversation": "Ganti nama percakapan",
-      "replied_in_thread": "Athena membalas di {thread}"
+      "replied_in_thread": "Athena membalas di {thread}",
+      "voice_engine_pocket": "Pocket",
+      "voice_engine_pocket_caption": "Lokal, mengkloning suara Anda",
+      "voice_pocket_cloned_badge": "Dikloning",
+      "voice_pocket_enable_blocked": "Jalankan layanan Pocket TTS dan pilih suara untuk mengaktifkan pemutaran.",
+      "voice_pocket_not_running": "Tidak berjalan",
+      "voice_pocket_not_running_hint": "Jalankan layanan Pocket TTS di komputer ini, lalu periksa ulang. Suara akan muncul setelah layanan dapat diakses di alamat di bawah ini.",
+      "voice_pocket_running": "Berjalan",
+      "voice_pocket_setup_desc": "Pocket mensintesis suara melalui layanan lokal kecil yang menjaga model tetap siap. Layanan ini dapat berbicara dengan suara kloning yang dibuat dari rekaman singkat suara Anda.",
+      "voice_pocket_setup_title": "Layanan Pocket TTS",
+      "voice_pocket_url_label": "Alamat layanan",
+      "voice_pocket_voices_desc": "Suara kloning berasal dari folder voices milik layanan — tambahkan file suara baru lalu periksa ulang. Sisanya adalah suara bawaan.",
+      "voice_pocket_voices_title": "Suara Pocket"
     },
     "ocr": {
       "title": "OCR",

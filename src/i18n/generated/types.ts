@@ -13532,6 +13532,18 @@ export type Translations = {
       voice_engine_kokoro_caption: string;
       voice_engine_piper: string;
       voice_engine_piper_caption: string;
+      voice_engine_pocket: string;
+      voice_engine_pocket_caption: string;
+      voice_pocket_setup_title: string;
+      voice_pocket_setup_desc: string;
+      voice_pocket_running: string;
+      voice_pocket_not_running: string;
+      voice_pocket_not_running_hint: string;
+      voice_pocket_url_label: string;
+      voice_pocket_voices_title: string;
+      voice_pocket_voices_desc: string;
+      voice_pocket_cloned_badge: string;
+      voice_pocket_enable_blocked: string;
       voice_kokoro_setup_title: string;
       voice_kokoro_setup_desc: string;
       voice_kokoro_engine_label: string;

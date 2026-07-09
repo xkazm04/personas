@@ -302,7 +302,7 @@ export interface TtsAudio {
  *   needed). Requires a Piper voice model previously downloaded through
  *   the companion voice manager.
  */
-export type TtsEngineId = 'elevenlabs' | 'piper' | 'kokoro';
+export type TtsEngineId = 'elevenlabs' | 'piper' | 'kokoro' | 'pocket_tts';
 
 /**
  * Per-call voice tuning. All fields optional; `undefined` falls back to
@@ -494,6 +494,39 @@ export async function companionTtsKokoroStatus(): Promise<KokoroStatus> {
  */
 export async function companionTtsKokoroDownload(): Promise<void> {
   return invoke<void>('companion_tts_kokoro_download');
+}
+
+// ── Pocket TTS sidecar service (local, voice cloning) ───────────────────
+
+/**
+ * Reachability of the local Pocket TTS HTTP service. Mirrors the Rust
+ * `PocketStatus`. Unlike Piper/Kokoro there is no install-to-disk state —
+ * the engine is a long-lived local service the user starts once; `running`
+ * gates the whole engine.
+ */
+export interface PocketStatus {
+  running: boolean;
+  baseUrl: string;
+  workers: number | null;
+}
+
+/**
+ * One voice reported by the Pocket TTS service. `category` is `'cloned'`
+ * for the user's own `.safetensors` embeddings (the headline feature) and
+ * `'premade'` for the built-in Kyutai catalog.
+ */
+export interface PocketVoiceEntry {
+  voiceId: string;
+  name: string;
+  category: string;
+}
+
+export async function companionTtsPocketStatus(): Promise<PocketStatus> {
+  return invoke<PocketStatus>('companion_tts_pocket_status');
+}
+
+export async function companionTtsListPocketVoices(): Promise<PocketVoiceEntry[]> {
+  return invoke<PocketVoiceEntry[]>('companion_tts_list_pocket_voices');
 }
 
 // ── Speech-to-text (voice input) ────────────────────────────────────────

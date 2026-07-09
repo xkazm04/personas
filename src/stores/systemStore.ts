@@ -109,6 +109,11 @@ export const useSystemStore = create<SystemStore>()(
         companionVoiceCredentialId: state.companionVoiceCredentialId,
         companionVoiceId: state.companionVoiceId,
         companionPiperVoiceId: state.companionPiperVoiceId,
+        // companionKokoroVoiceId was missing here since Kokoro shipped — the
+        // selection silently reset on every app restart. Fixed alongside
+        // adding the Pocket key so all four engines' picks persist.
+        companionKokoroVoiceId: state.companionKokoroVoiceId,
+        companionPocketVoiceId: state.companionPocketVoiceId,
         companionVoiceModel: state.companionVoiceModel,
         companionVoiceStability: state.companionVoiceStability,
         companionVoiceSimilarity: state.companionVoiceSimilarity,

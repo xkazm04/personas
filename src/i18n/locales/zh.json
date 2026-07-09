@@ -13380,7 +13380,19 @@
       "thread_status_idle": "空闲",
       "thread_status_working": "进行中",
       "rename_conversation": "重命名对话",
-      "replied_in_thread": "Athena在{thread}中回复了"
+      "replied_in_thread": "Athena在{thread}中回复了",
+      "voice_engine_pocket": "Pocket",
+      "voice_engine_pocket_caption": "本地运行，克隆你的声音",
+      "voice_pocket_cloned_badge": "已克隆",
+      "voice_pocket_enable_blocked": "启动 Pocket TTS 服务并选择一个语音以启用播放。",
+      "voice_pocket_not_running": "未运行",
+      "voice_pocket_not_running_hint": "在此电脑上启动 Pocket TTS 服务，然后重新检查。服务在下方地址可访问后语音才会出现。",
+      "voice_pocket_running": "运行中",
+      "voice_pocket_setup_desc": "Pocket 通过一个保持模型常驻的本地小型服务进行语音合成。它可以用一段简短录音克隆出的声音来朗读。",
+      "voice_pocket_setup_title": "Pocket TTS 服务",
+      "voice_pocket_url_label": "服务地址",
+      "voice_pocket_voices_desc": "克隆语音来自服务的语音文件夹——放入新的语音文件后重新检查即可。其余为内置语音。",
+      "voice_pocket_voices_title": "Pocket 语音"
     },
     "ocr": {
       "title": "OCR",

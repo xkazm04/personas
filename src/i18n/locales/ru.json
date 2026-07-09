@@ -13380,7 +13380,19 @@
       "thread_status_idle": "неактивно",
       "thread_status_working": "выполняется",
       "rename_conversation": "Переименовать беседу",
-      "replied_in_thread": "Athena ответила в {thread}"
+      "replied_in_thread": "Athena ответила в {thread}",
+      "voice_engine_pocket": "Pocket",
+      "voice_engine_pocket_caption": "Локально, клонирует ваш голос",
+      "voice_pocket_cloned_badge": "Клонирован",
+      "voice_pocket_enable_blocked": "Запустите службу Pocket TTS и выберите голос, чтобы включить воспроизведение.",
+      "voice_pocket_not_running": "Не запущена",
+      "voice_pocket_not_running_hint": "Запустите службу Pocket TTS на этом компьютере и проверьте ещё раз. Голоса появятся, как только служба станет доступна по адресу ниже.",
+      "voice_pocket_running": "Запущена",
+      "voice_pocket_setup_desc": "Pocket синтезирует речь через небольшую локальную службу, которая держит модель в готовности. Она может говорить клонированным голосом, созданным по короткой записи вашего голоса.",
+      "voice_pocket_setup_title": "Служба Pocket TTS",
+      "voice_pocket_url_label": "Адрес службы",
+      "voice_pocket_voices_desc": "Клонированные голоса берутся из папки голосов службы — добавьте новый файл голоса и проверьте ещё раз. Остальные — встроенные голоса.",
+      "voice_pocket_voices_title": "Голоса Pocket"
     },
     "ocr": {
       "title": "OCR",

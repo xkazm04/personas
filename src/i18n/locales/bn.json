@@ -13380,7 +13380,19 @@
       "thread_status_idle": "নিষ্ক্রিয়",
       "thread_status_working": "চলছে",
       "rename_conversation": "কথোপকথনের নাম পরিবর্তন করুন",
-      "replied_in_thread": "Athena {thread}-এ উত্তর দিয়েছে"
+      "replied_in_thread": "Athena {thread}-এ উত্তর দিয়েছে",
+      "voice_engine_pocket": "Pocket",
+      "voice_engine_pocket_caption": "স্থানীয়, আপনার কণ্ঠস্বর ক্লোন করে",
+      "voice_pocket_cloned_badge": "ক্লোন করা হয়েছে",
+      "voice_pocket_enable_blocked": "প্লেব্যাক সক্রিয় করতে Pocket TTS সার্ভিস চালু করুন এবং একটি ভয়েস নির্বাচন করুন।",
+      "voice_pocket_not_running": "চলছে না",
+      "voice_pocket_not_running_hint": "এই কম্পিউটারে Pocket TTS সার্ভিস চালু করুন, তারপর আবার চেক করুন। নিচের ঠিকানায় সার্ভিসটি সংযোগযোগ্য হলেই ভয়েসগুলো দেখা যাবে।",
+      "voice_pocket_running": "চলছে",
+      "voice_pocket_setup_desc": "Pocket একটি ছোট স্থানীয় সার্ভিসের মাধ্যমে সংশ্লেষণ করে যা মডেলটিকে প্রস্তুত রাখে। এটি আপনার একটি সংক্ষিপ্ত রেকর্ডিং থেকে তৈরি ক্লোন করা কণ্ঠে কথা বলতে পারে।",
+      "voice_pocket_setup_title": "Pocket TTS সার্ভিস",
+      "voice_pocket_url_label": "সার্ভিস ঠিকানা",
+      "voice_pocket_voices_desc": "ক্লোন করা ভয়েসগুলো সার্ভিসের ভয়েস ফোল্ডার থেকে আসে — একটি নতুন ভয়েস ফাইল যোগ করুন এবং আবার চেক করুন। বাকিগুলো বিল্ট-ইন ভয়েস।",
+      "voice_pocket_voices_title": "Pocket ভয়েসসমূহ"
     },
     "ocr": {
       "title": "OCR",

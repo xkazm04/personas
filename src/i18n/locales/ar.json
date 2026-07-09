@@ -13380,7 +13380,19 @@
       "thread_status_idle": "خامل",
       "thread_status_working": "قيد التنفيذ",
       "rename_conversation": "إعادة تسمية المحادثة",
-      "replied_in_thread": "ردت Athena في {thread}"
+      "replied_in_thread": "ردت Athena في {thread}",
+      "voice_engine_pocket": "Pocket",
+      "voice_engine_pocket_caption": "محلي، يستنسخ صوتك",
+      "voice_pocket_cloned_badge": "مستنسخ",
+      "voice_pocket_enable_blocked": "شغّل خدمة Pocket TTS واختر صوتًا لتفعيل التشغيل.",
+      "voice_pocket_not_running": "غير قيد التشغيل",
+      "voice_pocket_not_running_hint": "شغّل خدمة Pocket TTS على هذا الجهاز، ثم أعد التحقق. تظهر الأصوات بمجرد أن تصبح الخدمة قابلة للوصول على العنوان أدناه.",
+      "voice_pocket_running": "قيد التشغيل",
+      "voice_pocket_setup_desc": "يقوم Pocket بتوليد الصوت عبر خدمة محلية صغيرة تُبقي النموذج جاهزًا. يمكنه التحدث بصوت مستنسخ من تسجيل قصير لصوتك.",
+      "voice_pocket_setup_title": "خدمة Pocket TTS",
+      "voice_pocket_url_label": "عنوان الخدمة",
+      "voice_pocket_voices_desc": "الأصوات المستنسخة تأتي من مجلد أصوات الخدمة — أضف ملف صوت جديد وأعد التحقق. البقية أصوات مدمجة.",
+      "voice_pocket_voices_title": "أصوات Pocket"
     },
     "ocr": {
       "title": "OCR",

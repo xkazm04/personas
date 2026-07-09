@@ -2098,7 +2098,19 @@
     "thread_status_idle": "inactivo",
     "thread_status_working": "en curso",
     "rename_conversation": "Renombrar conversación",
-    "replied_in_thread": "Athena respondió en {thread}"
+    "replied_in_thread": "Athena respondió en {thread}",
+    "voice_engine_pocket": "Pocket",
+    "voice_engine_pocket_caption": "Local, clona tu voz",
+    "voice_pocket_cloned_badge": "Clonada",
+    "voice_pocket_enable_blocked": "Inicia el servicio Pocket TTS y selecciona una voz para habilitar la reproducción.",
+    "voice_pocket_not_running": "No está en ejecución",
+    "voice_pocket_not_running_hint": "Inicia el servicio Pocket TTS en este equipo y vuelve a comprobarlo. Las voces aparecerán cuando el servicio esté disponible en la dirección indicada abajo.",
+    "voice_pocket_running": "En ejecución",
+    "voice_pocket_setup_desc": "Pocket sintetiza voz mediante un pequeño servicio local que mantiene el modelo activo. Puede hablar con una voz clonada creada a partir de una breve grabación tuya.",
+    "voice_pocket_setup_title": "Servicio Pocket TTS",
+    "voice_pocket_url_label": "Dirección del servicio",
+    "voice_pocket_voices_desc": "Las voces clonadas provienen de la carpeta de voces del servicio: agrega un nuevo archivo de voz y vuelve a comprobarlo. El resto son voces integradas.",
+    "voice_pocket_voices_title": "Voces de Pocket"
   },
   "ocr": {
     "title": "OCR",
