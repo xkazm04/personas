@@ -169,8 +169,14 @@ proven by `cargo check` alone.
 **Gate** Harness: `multiagent` tool-test phase **down** vs baseline (both LLM
 calls gone), Airtable/Notion outcomes **unchanged** (healthcheck pass/fail ==
 the curl pass/fail). FORWARD required.
-**Result** _(investigated + rescoped + designed; implementation is the next
-focused step with live verification)._
+**Result — IMPLEMENTED (2026-07-09, env-gated, compiles).** `run_tool_tests` now
+short-circuits to `run_scripted_connector_tests` when `PERSONAS_SCRIPTED_TOOL_TESTS=1`:
+one `run_lanes` lane per `required_connector` running `healthcheck::run_healthcheck`
+(deterministic, parallel), `resolve_credential_links` → credential_id, same result
+shape, NO LLM plan/summary turns. No-op (falls to the LLM path) when the env is
+unset, so the default is untouched. **Win-verification deferred** to a connector
+fixture (web-research-desk + Airtable/Notion creds) — native-only builds have no
+connectors to script — per the "broaden coverage later" sequencing.
 
 ---
 
