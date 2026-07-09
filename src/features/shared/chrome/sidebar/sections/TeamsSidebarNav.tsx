@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, Gauge, Inbox, Factory, FolderKanban } from 'lucide-react';
+import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -244,6 +244,36 @@ export function TeamsSidebarNav() {
         >
           <FolderKanban className="w-4 h-4 flex-shrink-0" />
           Manage
+        </button>
+      </div>
+
+      {/* Lifecycle + Competition — Dev Clone automation, folded in from Dev Tools. */}
+      <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
+        <button
+          data-testid="teams-lifecycle-nav"
+          onClick={() => go('lifecycle')}
+          aria-current={teamsTab === 'lifecycle' ? 'page' : undefined}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+            teamsTab === 'lifecycle'
+              ? 'bg-primary/10 text-foreground font-semibold'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+          }`}
+        >
+          <GitBranch className="w-4 h-4 flex-shrink-0" />
+          Lifecycle
+        </button>
+        <button
+          data-testid="teams-competition-nav"
+          onClick={() => go('competition')}
+          aria-current={teamsTab === 'competition' ? 'page' : undefined}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+            teamsTab === 'competition'
+              ? 'bg-primary/10 text-foreground font-semibold'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+          }`}
+        >
+          <Swords className="w-4 h-4 flex-shrink-0" />
+          Competition
         </button>
       </div>
     </nav>

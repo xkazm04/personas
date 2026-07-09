@@ -5,7 +5,7 @@ import {
   Network, Database, Home, Compass, Shield, ShieldCheck, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
-  GraduationCap, BookOpen, Trophy, AlertOctagon, Swords,
+  GraduationCap, BookOpen, Trophy, AlertOctagon,
   User, Users, Mic, Volume2, Sparkles, Headphones,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
@@ -122,8 +122,6 @@ export const artistItems: SubNavItem[] = [
 export const devToolsItems: SubNavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'llm-overview', label: 'LLM Overview', icon: BarChart3 },
-  { id: 'lifecycle', label: 'Lifecycle', icon: GitBranch },
-  { id: 'competition', label: 'Competition', icon: Swords },
   { id: 'context-map', label: 'Context Map', icon: Map },
   { id: 'idea-scanner', label: 'Idea Scanner', icon: Lightbulb },
   { id: 'idea-triage', label: 'Idea Triage', icon: ArrowLeftRight },

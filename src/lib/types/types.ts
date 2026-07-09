@@ -394,7 +394,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 export type SidebarSection = "home" | "overview" | "teams" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "studio" | "schedules" | "settings";
 /** L2 inside the Teams section: the team workspace (canvas/orchestration) or the Goals hub. */
-export type TeamsTab = "workspace" | "goals" | "kpis" | "factory" | "projects";
+export type TeamsTab = "workspace" | "goals" | "kpis" | "factory" | "projects" | "lifecycle" | "competition";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
 export type GoalsTab = "board" | "timeline";
 /** Sub-view within the KPIs hub — surfaced as sidebar sub-items (mirrors GoalsTab). */
@@ -408,7 +408,7 @@ export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" 
 export type TemplateTab = "n8n" | "generated" | "explore" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "radio" | "engine" | "byom" | "portability" | "network" | "admin" | "api-keys" | "history" | "limits";
-export type DevToolsTab = "overview" | "llm-overview" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "competition" | "skills" | "fleet";
+export type DevToolsTab = "overview" | "llm-overview" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "skills" | "fleet";
 export type AgentTab = "all" | "create" | "groups" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion" | "scraper";
 export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";

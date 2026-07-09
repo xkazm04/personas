@@ -64,7 +64,7 @@ export function NewCompetitionModal({
       useOverviewStore.getState().processStarted(
         'competition', result.competition.id,
         `Competition: ${title.trim()} (${slots.length} competitors)`,
-        { section: 'plugins', tab: 'lifecycle' },
+        { section: 'teams', tab: 'competition' },
       );
       onCreated(); onClose();
     } catch (err) {
