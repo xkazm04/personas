@@ -258,6 +258,20 @@ reliability (re-run A/B), then optionally the Rust-side `agent_ir` assembly for
 the next speedup. The baseline's own question-loop flakiness is a separate
 harness issue.
 
+**CONFIRMED — 3rd A/B (2026-07-09, retry live, n=2): PHASE 3 DONE.**
+- **multiagent promote rate 100% (2/2)** vs sequential 50% — the assembly retry
+  fixed the failure mode. multiagent median **344s vs 761s (~2.2×)**, cost
+  **$0.56 vs $1.13 (~50% cheaper)**, both 3-cap gate-100%.
+- Multiagent is superior on EVERY measured axis: reliability, speed, cost, equal
+  quality. It also *sidesteps* the as-is path's question-loop flakiness (the
+  sequential baseline timed out in `awaiting_input` again — 50% — because it asks
+  clarifying questions the multiagent sub-agents never ask).
+- **Phase 3 shipped + verified.** Optional follow-ups (not blockers): (a) Rust-side
+  `agent_ir` assembly to cut the ~224s assembly turn (would ~halve multiagent time
+  again); (b) fix the sequential baseline's auto-answer question loop; (c) wire the
+  fan-out for connector fixtures (`connector_context` is empty today) + the heavier
+  `web-research-desk` stress fixture.
+
 ---
 
 ## Phase 5 — Scripted connector calls  ·  _parallel track, optional_
