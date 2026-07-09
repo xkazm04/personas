@@ -61,6 +61,7 @@ pub fn build_capability_prompt(
     behavior_core: &Value,
     capability: &Value,
     connector_context: &str,
+    siblings: &str,
 ) -> String {
     let cap_id = capability.get("id").and_then(|v| v.as_str()).unwrap_or("");
     format!(
@@ -69,7 +70,19 @@ pub fn build_capability_prompt(
          only to flesh out the single capability below.\n\n\
          ## Persona identity (behavior_core)\n{core}\n\n\
          ## The capability to resolve (resolve ONLY this one)\n{cap}\n\n\
+         ## The persona's OTHER capabilities (owned by separate resolvers — do NOT \
+         resolve or re-implement these; they are listed so you know what is NOT your job)\n{siblings}\n\n\
          ## Available connectors\n{conn}\n\n\
+         ## SCOPE RULES (critical — the fan-out resolves each capability in isolation)\n\
+         - Resolve ONLY the single capability `{id}`. Its `tool_hints` and `connectors` \
+         must serve THIS capability's own job — not a job owned by one of the other \
+         capabilities above (e.g. if another capability logs to Airtable or publishes to \
+         Notion, do NOT add those write tools/connectors here).\n\
+         - Bind a `connectors` value ONLY from the Available connectors list above, and \
+         ONLY when THIS capability itself calls that connector. Do NOT invent connectors \
+         that aren't listed (no email/gmail/messaging/database/vector-store unless this \
+         capability's own job genuinely requires it AND it appears in the list). Prefer \
+         native tools; when in doubt, bind fewer connectors, not more.\n\n\
          ## Your task\n\
          Emit the v3 `capability_resolution` events for capability `{id}` and NOTHING \
          else. Resolve each applicable field: suggested_trigger, connectors, tool_hints, \
@@ -82,6 +95,7 @@ pub fn build_capability_prompt(
          \"value\": <field-value>, \"status\": \"resolved\"}}}}\n",
         core = serde_json::to_string_pretty(behavior_core).unwrap_or_default(),
         cap = serde_json::to_string_pretty(capability).unwrap_or_default(),
+        siblings = siblings,
         conn = connector_context,
         id = cap_id,
     )
@@ -180,11 +194,29 @@ pub async fn fan_out_resolution(
     connector_context: String,
     max_parallel: usize,
 ) -> Vec<CapabilityResolution> {
+    // Summarise the sibling capabilities (id: title) so each isolated sub-agent
+    // knows which jobs belong to OTHER capabilities and won't re-implement them
+    // or over-bind connectors for them (the fan-out scope-creep failure mode).
+    let siblings = capabilities
+        .iter()
+        .filter_map(|c| {
+            let id = c.get("id").and_then(|v| v.as_str())?;
+            let title = c
+                .get("title")
+                .and_then(|v| v.as_str())
+                .or_else(|| c.get("summary").and_then(|v| v.as_str()))
+                .or_else(|| c.get("description").and_then(|v| v.as_str()))
+                .unwrap_or("");
+            Some(format!("- {id}: {title}"))
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
     let tasks: Vec<LaneTask<CapabilityResolution>> = capabilities
         .into_iter()
         .filter_map(|cap| {
             let cap_id = cap.get("id").and_then(|v| v.as_str())?.to_string();
-            let prompt = build_capability_prompt(&behavior_core, &cap, &connector_context);
+            let prompt =
+                build_capability_prompt(&behavior_core, &cap, &connector_context, &siblings);
             let args = cli_args.clone();
             let sid = session_id.clone();
             let cid = cap_id.clone();
@@ -407,6 +439,41 @@ async fn resolve_persona_wide(cli_args: CliArgs, prompt: String) -> (Value, Turn
     (found, usage)
 }
 
+/// Build the `## Available connectors` block for the fan-out sub-agents from the
+/// vault. Without it (`connector_context` was `String::new()` since Phase 3), the
+/// per-capability sub-agents can't bind a capability to Airtable/Notion/etc. and
+/// resolve connector reactions as native web tools instead. Lists each vault
+/// credential by `service_type` (what the sub-agent should emit in `connectors`)
+/// plus the connector catalog by category.
+fn build_connector_context(pool: &DbPool) -> String {
+    use crate::db::repos::resources::connectors as connector_repo;
+    use crate::db::repos::resources::credentials as credential_repo;
+    let creds = credential_repo::get_all(pool).unwrap_or_default();
+    let conns = connector_repo::get_all(pool).unwrap_or_default();
+    let mut lines: Vec<String> = Vec::new();
+    if !creds.is_empty() {
+        lines.push(
+            "Bound vault credentials — a capability that writes to / reads from one of \
+             these MUST emit a `connectors` field naming its service_type:"
+                .to_string(),
+        );
+        for c in &creds {
+            lines.push(format!("- {} (service_type: {})", c.name, c.service_type));
+        }
+    }
+    if !conns.is_empty() {
+        lines.push("Connector catalog:".to_string());
+        for c in &conns {
+            lines.push(format!("- {} (category: {})", c.name, c.category));
+        }
+    }
+    if lines.is_empty() {
+        "(no external connectors available — use only native tools)".to_string()
+    } else {
+        lines.join("\n")
+    }
+}
+
 /// Flatten a tool-hints value into a plain name list. Accepts a string array
 /// (`["WebSearch","WebFetch"]`), an object whose values are name arrays
 /// (`{"primary":["WebSearch"],"fallback":["WebFetch"]}` → both), or a bare
@@ -537,8 +604,24 @@ fn assemble_agent_ir(
                             }
                         }
                         "event_subscriptions" | "events" => {
-                            if value.is_array() {
-                                uc.insert("event_subscriptions".to_string(), value.clone());
+                            // AgentIrUseCaseEvent is an object {event_type, source_filter};
+                            // resolutions often emit a bare string array
+                            // (["finding_vetted", …]). Wrap strings so the parse holds.
+                            if let Some(arr) = value.as_array() {
+                                let coerced: Vec<Value> = arr
+                                    .iter()
+                                    .filter_map(|e| match e {
+                                        Value::String(s) => {
+                                            Some(serde_json::json!({ "event_type": s }))
+                                        }
+                                        Value::Object(_) => Some(e.clone()),
+                                        _ => None,
+                                    })
+                                    .collect();
+                                uc.insert(
+                                    "event_subscriptions".to_string(),
+                                    Value::Array(coerced),
+                                );
                             }
                         }
                         // Every remaining field maps to an Option<Value> on
@@ -645,6 +728,15 @@ pub async fn run_multiagent_oneshot(
     // The prose lane needs only behavior_core + enumeration, so it overlaps the
     // capability lanes instead of running as a serial assembly turn afterward.
     let _ = super::events::update_phase(&pool, &session_id, BuildPhase::Resolving);
+    // Populate the sub-agents' connector context from the vault when the caller
+    // didn't supply one (runner passes String::new()). This is what lets the
+    // fan-out bind connector-driven capabilities instead of falling back to
+    // native web tools (build-orchestration Phase 3 follow-up (c)).
+    let connector_context = if connector_context.trim().is_empty() {
+        build_connector_context(&pool)
+    } else {
+        connector_context
+    };
     let prose_prompt = build_persona_wide_prompt(&behavior_core, &capabilities);
     let (resolutions, (prose, prose_usage)) = tokio::join!(
         fan_out_resolution(
@@ -734,7 +826,8 @@ mod tests {
     fn prompt_is_scoped_to_one_capability() {
         let core = json!({ "mission": "Summarize the web", "voice": "concise" });
         let cap = json!({ "id": "uc_summarize_url", "title": "Summarize a URL", "summary": "Fetch + summarize a page" });
-        let p = build_capability_prompt(&core, &cap, "WebSearch, WebFetch (native, no credential)");
+        let siblings = "- uc_other: Do something else";
+        let p = build_capability_prompt(&core, &cap, "WebSearch, WebFetch (native, no credential)", siblings);
         // Targets exactly this capability id, in the required event shape.
         assert!(p.contains("uc_summarize_url"), "prompt must name the capability id");
         assert!(p.contains("capability_resolution"), "prompt must ask for capability_resolution events");
@@ -742,13 +835,16 @@ mod tests {
         // Grounds the sub-agent in the persona identity + connectors.
         assert!(p.contains("Summarize the web"), "prompt must inject behavior_core");
         assert!(p.contains("WebFetch"), "prompt must inject connector context");
+        // Injects the sibling list + scope rules so it won't over-bind for other caps.
+        assert!(p.contains("uc_other"), "prompt must list sibling capabilities");
+        assert!(p.contains("SCOPE RULES"), "prompt must carry the scope constraints");
         // Suppresses the things a sub-agent must not do.
         assert!(p.contains("do NOT") || p.contains("Do NOT") || p.contains("DO NOT"));
     }
 
     #[test]
     fn prompt_handles_missing_id_without_panicking() {
-        let p = build_capability_prompt(&json!({}), &json!({ "title": "x" }), "");
+        let p = build_capability_prompt(&json!({}), &json!({ "title": "x" }), "", "");
         assert!(p.contains("capability_resolution"));
     }
 }
