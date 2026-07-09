@@ -8,21 +8,31 @@ The plugin lives at `src/features/plugins/dev-tools/` and is exposed through the
 
 ## What it does
 
-Dev Tools treats each linked repository as a *Dev Project* with its own lifecycle. The project moves through eight domains, each visible as a tab:
+Dev Tools treats each linked repository as a *Dev Project*.
+
+> **Consolidated (2026-07) — project surfaces moved to the "Projects" section.**
+> The top-level **Teams** section was rebranded **Projects** and is now the home
+> for project-level work. **Project management** (the old Dev Tools "Projects"
+> CRUD tab), **Goals**, **Lifecycle** (Dev Clone setup), and **Competition** all
+> moved there (**Projects → Manage / Goals / Lifecycle / Competition / Factory**).
+> Dev Tools now hosts the **dev-automation** surfaces only. The `dev_projects`
+> domain model, the `PersonaTeam` roster (still called a "team"), and every
+> backend command are unchanged — only *where the UI lives* changed. Sections 1
+> and 7 below describe those surfaces at their new home.
+
+Dev Tools tabs today:
 
 | Domain | Direction | Storage / artifact |
 |---|---|---|
 | **Overview** (GitHub / GitLab / Sentry stats) | External → App | Read-through cache of open issues, PRs, commits, unresolved errors |
-| **LLM Overview** (where the codebase calls an LLM) | External → App | `dev_projects.llm_tracking_credential_id` binding; live use-case rollups from Langfuse / LangSmith / Helicone / LightTrack |
-| **Projects** (CRUD + GitHub linking + goals) | App | `dev_projects` table, 1 active project at a time |
+| **Observability** (LLM + app-monitoring mapping) | External → App | Two sub-tabs sharing one assignment-matrix pattern: **LLM** (`dev_projects.llm_tracking_credential_id`; use-case rollups from Langfuse / LangSmith / Helicone / LightTrack) and **Monitoring** (`dev_projects.monitoring_credential_id`; Sentry unresolved-issues + events 24h/7d via the shared `fetchSentryStats`; Better Stack listed but pending an adapter) |
 | **Context Map** (semantic code domains) | App ↔ Codebase | `dev_context_groups` + `dev_contexts`, generated from a filesystem walk |
 | **Idea Scanner** (21 LLM agents) | App → LLM → App | `dev_ideas` rows tagged with `scan_type` + per-scan history |
 | **Idea Triage** (accept / reject / delete) | Human → App | Idea status transitions; optional auto-triage rules |
 | **Task Runner** (batched execution) | App → LLM → App | `dev_tasks` rows + live output buffer + PR Bridge card |
-| **Goals** (constellation + Kanban) | App | Goal graph, dependencies, checklist to-dos, goal↔task links |
-| **Lifecycle** (Dev Clone setup) | App | Dev Clone adoption + autonomous review/scan triggers |
-| **Competition** (multi-clone strategy races) | App → Claude Code worktrees → App | Parallel task execution; quality-scored strategy leaderboard |
-| **Skills** (markdown-based dev patterns) | Disk ↔ App | `.md` files under the user's skills directory |
+| **Fleet** (Claude Code session aggregator) | App ↔ CLIs | Per-session xterm terminals over the active project's cwd |
+
+Moved to the **Projects** section (rendered by `PersonasPage` under `teamsTab`): **Manage** (project CRUD, formerly `sub_projects`), **Goals**, **Lifecycle** + **Competition** (formerly `sub_lifecycle`), and **Factory** (the project-readiness passport wall).
 
 Ideas are linked to the agent that proposed them via `DevIdea.scan_type` (a string matching a `ScanAgentDef.key`). Tasks are linked back to the originating idea via `DevTask.source_idea_id`. That single foreign-ish link is what makes the whole loop work: it lets the PR Bridge cite the agent that proposed the work, and lets the Agent Scoreboard score each agent on whether its ideas actually ship.
 
@@ -125,9 +135,20 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 3. Connecting Sentry uses an inline form (`MonitoringLinkForm`) that writes the credential ID + project slug back to `dev_projects.monitoring_*`.
 4. Stat tiles use a static color token table — dynamic Tailwind classes (`bg-${color}-500/15`) are banned here because the JIT can't see them.
 
-### 6a. LLM Overview — where the codebase calls an LLM
+### 6a. Observability — LLM + app-monitoring mapping
 
-A cross-cutting observability surface: for each Dev Project, see *every place the codebase calls an LLM* — the use-case name, provider, model, usage (calls + tokens) and estimated cost — read live from whichever LLM-observability tool the project is wired to.
+> **Renamed from "LLM Overview" (2026-07).** The module now carries an **LLM /
+> Monitoring** sub-tab switcher over one shared, accessor-driven assignment
+> matrix (`AssignmentMatrix` + `matrixShared`). The **Monitoring** sub-tab
+> applies the same philosophy to app monitoring: a projects × monitoring-
+> connector matrix writing `dev_projects.monitoring_credential_id`, over a
+> per-project stats readout (unresolved issues + events 24h/7d) that **reuses
+> the existing `fetchSentryStats` adapter** and the Overview page's
+> `SentryProjectPicker` for the org/project slug. Qualifying connectors today:
+> Sentry (live adapter) and Better Stack (renders "unsupported" until an adapter
+> ships). See `sub_llm_overview/{MonitoringSection,useMonitoringPinpoints}.tsx`.
+
+**LLM sub-tab.** For each Dev Project, see *every place the codebase calls an LLM* — the use-case name, provider, model, usage (calls + tokens) and estimated cost — read live from whichever LLM-observability tool the project is wired to.
 
 **Two layers:**
 
