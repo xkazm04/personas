@@ -286,6 +286,293 @@ fn extract_capabilities(enumeration: &Value) -> Vec<Value> {
     Vec::new()
 }
 
+/// Persona-wide prose generation (agent_ir Rust-assembly optimization). Runs IN
+/// PARALLEL with the capability fan-out — it needs only behavior_core +
+/// enumeration, not the resolutions. Produces `{name, system_prompt,
+/// structured_prompt}`, which Rust folds into the assembled agent_ir. Moving
+/// this off the serial assembly turn is the speedup.
+fn build_persona_wide_prompt(behavior_core: &Value, capabilities: &[Value]) -> String {
+    let caps_brief: Vec<Value> = capabilities
+        .iter()
+        .map(|c| {
+            serde_json::json!({
+                "id": c.get("id"),
+                "title": c.get("title"),
+                "summary": c.get("summary").or_else(|| c.get("goal")).or_else(|| c.get("description")),
+            })
+        })
+        .collect();
+    format!(
+        "You are writing the TOP-LEVEL prompt for an AI persona whose identity and \
+         capability list are already decided. Do NOT re-resolve capabilities.\n\n\
+         ## Identity (behavior_core)\n{core}\n\n\
+         ## Capabilities (already enumerated)\n{caps}\n\n\
+         Emit EXACTLY one JSON line and NOTHING else:\n\
+         {{\"persona_wide\": {{\"name\": \"<2-4 word persona name>\", \"system_prompt\": \
+         \"<the full system prompt: role, how it operates across its capabilities, its \
+         constraints and voice>\", \"structured_prompt\": {{\"identity\": \"...\", \
+         \"instructions\": \"...\", \"toolGuidance\": \"...\", \"examples\": \"...\", \
+         \"errorHandling\": \"...\"}}}}}}",
+        core = serde_json::to_string_pretty(behavior_core).unwrap_or_default(),
+        caps = serde_json::to_string_pretty(&caps_brief).unwrap_or_default(),
+    )
+}
+
+/// Extract a `persona_wide` object from a CLI stream-json line (assistant/result
+/// envelope OR raw), tolerant of markdown fences.
+fn extract_persona_wide(line: &str) -> Option<Value> {
+    let json: Value = serde_json::from_str(line.trim()).ok()?;
+    let text = json
+        .get("message")
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_array())
+        .and_then(|a| a.iter().find_map(|it| it.get("text").and_then(|t| t.as_str())))
+        .or_else(|| json.get("result").and_then(|r| r.as_str()));
+    if let Some(text) = text {
+        let cleaned = text.replace("```json", "").replace("```", "");
+        // Fast path: the model emitted one JSON line as instructed.
+        for l in cleaned.lines() {
+            if let Ok(v) = serde_json::from_str::<Value>(l.trim()) {
+                if let Some(pw) = v.get("persona_wide") {
+                    return Some(pw.clone());
+                }
+            }
+        }
+        // Fallback: pretty-printed / multi-line — parse the whole blob, or slice
+        // the balanced-brace object that starts at the `persona_wide` wrapper.
+        if let Ok(v) = serde_json::from_str::<Value>(cleaned.trim()) {
+            if let Some(pw) = v.get("persona_wide") {
+                return Some(pw.clone());
+            }
+        }
+        if let Some(idx) = cleaned.find("\"persona_wide\"") {
+            let start = cleaned[..idx].rfind('{')?;
+            let mut depth = 0i32;
+            for (off, ch) in cleaned[start..].char_indices() {
+                match ch {
+                    '{' => depth += 1,
+                    '}' => {
+                        depth -= 1;
+                        if depth == 0 {
+                            let slice = &cleaned[start..start + off + ch.len_utf8()];
+                            if let Ok(v) = serde_json::from_str::<Value>(slice) {
+                                return v.get("persona_wide").cloned();
+                            }
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        return None;
+    }
+    json.get("persona_wide").cloned()
+}
+
+/// Run the persona-wide prose sub-agent (fresh CLI). Returns the parsed
+/// `persona_wide` object (Null if it failed) + usage.
+async fn resolve_persona_wide(cli_args: CliArgs, prompt: String) -> (Value, TurnUsage) {
+    let mut driver = match CliProcessDriver::spawn_temp(&cli_args, "build-prose") {
+        Ok(d) => d,
+        Err(_) => return (Value::Null, TurnUsage::default()),
+    };
+    if driver.write_stdin_line(prompt.as_bytes()).await.is_err() {
+        driver.kill().await;
+        return (Value::Null, TurnUsage::default());
+    }
+    driver.close_stdin().await;
+    let mut usage = TurnUsage::default();
+    let mut found = Value::Null;
+    if let Some(mut reader) = driver.take_stdout_reader() {
+        loop {
+            match read_line_limited(&mut reader).await {
+                Ok(Some(line)) => {
+                    if let Some(u) = super::parser::extract_result_usage(&line) {
+                        usage.add(TurnUsage {
+                            cost_usd: u.cost_usd,
+                            input_tokens: u.input_tokens,
+                            output_tokens: u.output_tokens,
+                        });
+                    }
+                    if let Some(pw) = extract_persona_wide(&line) {
+                        found = pw;
+                    }
+                }
+                Ok(None) | Err(_) => break,
+            }
+        }
+    }
+    let _ = driver.finish().await;
+    (found, usage)
+}
+
+/// Flatten a tool-hints value into a plain name list. Accepts a string array
+/// (`["WebSearch","WebFetch"]`), an object whose values are name arrays
+/// (`{"primary":["WebSearch"],"fallback":["WebFetch"]}` → both), or a bare
+/// string. Scalar prose values inside an object (e.g. `"notes":"Use WebFetch…"`)
+/// are skipped by the has-space heuristic so only tool tokens survive.
+fn coerce_string_list(v: &Value) -> Vec<String> {
+    let mut out = Vec::new();
+    match v {
+        Value::Array(a) => {
+            for it in a {
+                if let Some(s) = it.as_str() {
+                    out.push(s.to_string());
+                }
+            }
+        }
+        Value::Object(m) => {
+            for val in m.values() {
+                match val {
+                    Value::Array(a) => {
+                        for it in a {
+                            if let Some(s) = it.as_str() {
+                                out.push(s.to_string());
+                            }
+                        }
+                    }
+                    Value::String(s) if !s.contains(' ') => out.push(s.clone()),
+                    _ => {}
+                }
+            }
+        }
+        Value::String(s) => out.push(s.clone()),
+        _ => {}
+    }
+    out
+}
+
+/// Coerce a value to a string for AgentIrUseCaseData's `Option<String>` fields.
+/// Strings pass through; objects/arrays are JSON-serialized so their content is
+/// preserved as text instead of breaking the untagged-enum parse; null → None.
+fn coerce_to_string(v: &Value) -> Option<String> {
+    match v {
+        Value::Null => None,
+        Value::String(s) => Some(s.clone()),
+        other => serde_json::to_string(other).ok(),
+    }
+}
+
+/// Assemble the `agent_ir` JSON in Rust from behavior_core + the enumerated
+/// capabilities + each capability's fan-out resolutions + the persona-wide prose.
+/// Replaces the serial assembly LLM turn. Field routing: a capability's
+/// `connectors` resolution aggregates into top-level `required_connectors`; its
+/// `tool_hints` both stays on the use-case AND aggregates into top-level `tools`
+/// (deduped); every other resolved field stays on the use-case. `agent_ir` is
+/// `#[serde(default)]` throughout, so partial population is safe.
+fn assemble_agent_ir(
+    behavior_core: &Value,
+    capabilities: &[Value],
+    resolutions: &[CapabilityResolution],
+    prose: &Value,
+) -> Value {
+    let mut use_cases: Vec<Value> = Vec::new();
+    let mut tool_hints: Vec<String> = Vec::new();
+    let mut connectors: Vec<Value> = Vec::new();
+    let mut seen_tool = std::collections::HashSet::new();
+    let mut seen_conn = std::collections::HashSet::new();
+
+    for cap in capabilities {
+        let cap_id = cap.get("id").and_then(|v| v.as_str()).unwrap_or_default();
+        let mut uc = serde_json::Map::new();
+        uc.insert("id".to_string(), serde_json::json!(cap_id));
+        if let Some(t) = cap.get("title") {
+            uc.insert("title".to_string(), t.clone());
+        }
+        if let Some(s) = cap
+            .get("summary")
+            .or_else(|| cap.get("goal"))
+            .or_else(|| cap.get("description"))
+        {
+            uc.insert("capability_summary".to_string(), s.clone());
+        }
+        if let Some(res) = resolutions.iter().find(|r| r.capability_id == cap_id) {
+            for ev in &res.events {
+                if let BuildEvent::CapabilityResolutionUpdate { field, value, .. } = ev {
+                    match field.as_str() {
+                        "connectors" => {
+                            if let Some(arr) = value.as_array() {
+                                for c in arr {
+                                    let name = c
+                                        .as_str()
+                                        .map(|s| s.to_string())
+                                        .or_else(|| c.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()));
+                                    if let Some(n) = name {
+                                        if seen_conn.insert(n) {
+                                            connectors.push(c.clone());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        "tool_hints" => {
+                            // AgentIrUseCaseData.tool_hints is Option<Vec<String>>;
+                            // resolutions emit it as either a string array OR a
+                            // richer object ({primary:[…], notes:"…"}). Flatten to
+                            // a plain name list so the untagged-enum parse holds,
+                            // and aggregate the same names into top-level tools.
+                            let hints = coerce_string_list(value);
+                            for s in &hints {
+                                if seen_tool.insert(s.clone()) {
+                                    tool_hints.push(s.clone());
+                                }
+                            }
+                            uc.insert("tool_hints".to_string(), serde_json::json!(hints));
+                        }
+                        // AgentIrUseCaseData types these as Option<String>. A
+                        // resolution may emit a rich object (e.g. structured
+                        // error_handling); JSON-stringify so it can't break the
+                        // untagged-enum parse while preserving the guidance text.
+                        "error_handling" | "description" | "category" | "execution_mode"
+                        | "capability_summary" | "title" | "model_rationale" | "id"
+                        | "source_recipe_id" | "source_recipe_version" => {
+                            if let Some(s) = coerce_to_string(value) {
+                                uc.insert(field.clone(), Value::String(s));
+                            }
+                        }
+                        "enabled" => {
+                            if value.is_boolean() {
+                                uc.insert("enabled".to_string(), value.clone());
+                            }
+                        }
+                        "event_subscriptions" | "events" => {
+                            if value.is_array() {
+                                uc.insert("event_subscriptions".to_string(), value.clone());
+                            }
+                        }
+                        // Every remaining field maps to an Option<Value> on
+                        // AgentIrUseCaseData (or is unknown and ignored) — safe
+                        // to pass through verbatim.
+                        _ => {
+                            uc.insert(field.clone(), value.clone());
+                        }
+                    }
+                }
+            }
+        }
+        use_cases.push(Value::Object(uc));
+    }
+
+    let tools: Vec<Value> = tool_hints.into_iter().map(|t| serde_json::json!(t)).collect();
+    let name = prose
+        .get("name")
+        .filter(|v| v.is_string())
+        .cloned()
+        .or_else(|| behavior_core.get("name").cloned())
+        .unwrap_or(Value::Null);
+
+    serde_json::json!({
+        "name": name,
+        "system_prompt": prose.get("system_prompt"),
+        "structured_prompt": prose.get("structured_prompt"),
+        "behavior_core": behavior_core,
+        "tools": tools,
+        "required_connectors": connectors,
+        "use_cases": use_cases,
+    })
+}
+
 /// Multi-agent one-shot build (build-orchestration Phase 3). Rust-orchestrated:
 /// a serial head turn (behavior_core + enumeration), a bounded parallel fan-out
 /// of per-capability resolution, then a serial assembly turn (agent_ir). Reuses
@@ -354,87 +641,62 @@ pub async fn run_multiagent_oneshot(
         "multiagent: enumerated capabilities, fanning out resolution"
     );
 
-    // ── 2. Fan-out: resolve each capability in parallel ────────────────────
+    // ── 2. Fan-out (per-capability resolution) + persona-wide prose, IN PARALLEL.
+    // The prose lane needs only behavior_core + enumeration, so it overlaps the
+    // capability lanes instead of running as a serial assembly turn afterward.
     let _ = super::events::update_phase(&pool, &session_id, BuildPhase::Resolving);
-    let resolutions = fan_out_resolution(
-        cli_args.clone(),
-        session_id.clone(),
-        behavior_core,
-        capabilities,
-        connector_context,
-        max_parallel,
-    )
-    .await;
+    let prose_prompt = build_persona_wide_prompt(&behavior_core, &capabilities);
+    let (resolutions, (prose, prose_usage)) = tokio::join!(
+        fan_out_resolution(
+            cli_args.clone(),
+            session_id.clone(),
+            behavior_core.clone(),
+            capabilities.clone(),
+            connector_context,
+            max_parallel,
+        ),
+        resolve_persona_wide(cli_args.clone(), prose_prompt),
+    );
 
-    let mut injection_lines: Vec<String> = Vec::new();
     let mut total_usage = head_usage;
+    total_usage.add(prose_usage);
     for res in &resolutions {
         total_usage.add(res.usage);
         for ev in &res.events {
             emit(ev);
-            if let BuildEvent::CapabilityResolutionUpdate {
-                capability_id,
-                field,
-                value,
-                ..
-            } = ev
-            {
-                injection_lines.push(format!(
-                    "{{\"id\":\"{capability_id}\",\"field\":\"{field}\",\"value\":{value}}}"
-                ));
-            }
         }
         if let Some(err) = &res.error {
             tracing::warn!(session_id = %session_id, cap = %res.capability_id, error = %err, "multiagent: lane error");
         }
     }
-    let num_turns = 2 + resolutions.len() as i64; // head + N caps + assembly
+    let num_turns = 2 + resolutions.len() as i64; // head + N cap lanes + prose lane
     if cancel_flag.load(std::sync::atomic::Ordering::Acquire) {
         return Err("cancelled".to_string());
     }
 
-    // ── 3. Assembly turn: emit agent_ir from the merged resolutions ────────
-    let assembly_prompt = format!(
-        "The capabilities were resolved in parallel. Here are ALL resolved capability fields \
-         (one per line):\n{lines}\n\nUsing the behavior_core (already in context) and these \
-         resolved capabilities, emit any remaining persona-wide fields (persona_resolution) and \
-         then the final agent_ir. Do NOT re-resolve capabilities. Output raw JSON only, one \
-         event per line, ending with the agent_ir event.",
-        lines = injection_lines.join("\n"),
-    );
-    // Assembly turn — with ONE recovery retry. The serial path does the same
-    // (log: "All N resolved but no agent_ir — sending recovery prompt"): the LLM
-    // sometimes finishes resolutions but forgets to emit agent_ir. A hard fail
-    // here was the multiagent path's reliability gap; the retry closes it.
-    let mut ir: Option<Value> = None;
-    for attempt in 0..2u8 {
-        let prompt = if attempt == 0 {
-            assembly_prompt.clone()
-        } else {
-            "You did NOT emit the agent_ir event. Emit it NOW as a single JSON line \
-             {\"agent_ir\": { ... }} containing the full persona (name, system prompt, tools, \
-             connectors, and use_cases with their resolved fields). Output that one line only."
-                .to_string()
-        };
-        let (asm, asm_usage) =
-            run_cli_turn(&cli_args, &exec_dir, prompt.as_bytes(), &session_id, true).await?;
-        total_usage.add(asm_usage);
-        for ev in &asm {
-            emit(ev);
-        }
-        ir = asm.iter().find_map(|e| match e {
-            BuildEvent::CellUpdate { cell_key, data, .. } if cell_key == "agent_ir" => {
-                Some(data.clone())
-            }
-            _ => None,
-        });
-        if ir.is_some() {
-            break;
-        }
-        tracing::warn!(session_id = %session_id, attempt, "multiagent: assembly produced no agent_ir; retrying");
+    // ── 3. Assemble agent_ir in Rust (no serial assembly LLM turn) ─────────
+    // The persona-wide prose lane ran in parallel above; here Rust folds the
+    // prose + each capability's resolutions into the final agent_ir. This
+    // replaces the ~224s serial assembly turn that was the remaining bottleneck.
+    if prose.is_null() {
+        return Err("persona-wide prose lane produced no output".to_string());
     }
+    let ir = assemble_agent_ir(&behavior_core, &capabilities, &resolutions, &prose);
+    let has_system_prompt = ir
+        .get("system_prompt")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().len() >= 40)
+        .unwrap_or(false);
+    if !has_system_prompt {
+        return Err("assembled agent_ir has no usable system_prompt".to_string());
+    }
+    tracing::info!(
+        session_id = %session_id,
+        use_cases = capabilities.len(),
+        "multiagent: assembled agent_ir in Rust"
+    );
 
-    // Telemetry: persist total CLI cost/tokens (head + all fan-out lanes + assembly).
+    // Telemetry: persist total CLI cost/tokens (head + fan-out lanes + prose lane).
     super::events::record_build_usage(
         &pool,
         &session_id,
@@ -444,10 +706,7 @@ pub async fn run_multiagent_oneshot(
         num_turns,
     );
 
-    let ir_str = match ir {
-        Some(v) => serde_json::to_string(&v).map_err(|e| format!("serialize agent_ir: {e}"))?,
-        None => return Err("assembly produced no agent_ir after retry".to_string()),
-    };
+    let ir_str = serde_json::to_string(&ir).map_err(|e| format!("serialize agent_ir: {e}"))?;
 
     // ── 4. Save agent_ir + DraftReady, then hand to the oneshot back-half ──
     build_session_repo::update(

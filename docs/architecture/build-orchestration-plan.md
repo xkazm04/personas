@@ -278,6 +278,32 @@ harness issue.
   fan-out for connector fixtures (`connector_context` is empty today) + the heavier
   `web-research-desk` stress fixture.
 
+**CONFIRMED — agent_ir Rust-assembly (follow-up (a), 2026-07-09, n=3): SHIPPED.**
+The serial assembly turn is **gone**. `run_multiagent_oneshot` now runs the
+per-capability fan-out and a persona-wide **prose lane** (`resolve_persona_wide`
+— system_prompt + structured_prompt, needs only behavior_core + enumeration) IN
+PARALLEL via `tokio::join!`, then `assemble_agent_ir` folds the prose + each
+capability's resolutions into the final `agent_ir` **in Rust** (no LLM turn).
+- multiagent **63s median (63–70s, n=3)** vs the assembly-turn multiagent **370s**
+  = **~5.9× faster**, and vs the sequential baseline **557s** = **~8.8× faster**.
+- **cost $0.30** vs assembly-turn **$0.60** (one fewer LLM turn) and sequential
+  **$0.88** — ~50–66% cheaper.
+- **100% promote (3/3)**, gate 100%, quality holds: 1545-char system_prompt on the
+  promoted persona, all 5 structured_prompt sections, 3 use-cases with clean
+  `tool_hints`, tools aggregated + deduped from the resolutions.
+- **Key fix during bring-up:** `AgentIrUseCaseData` types `error_handling` as
+  `Option<String>` and `tool_hints` as `Option<Vec<String>>`, but resolutions emit
+  them as rich objects (`{empty_body:{…}}`, `{primary:[…],notes:"…"}`). The old
+  LLM assembly reshaped silently; the Rust path must too — added `coerce_to_string`
+  (object → JSON text) + `coerce_string_list` (object/array → flat name list) for
+  every strict-typed use-case field. Without it, promote's `AgentIr` re-parse
+  failed with `did not match any variant of untagged enum AgentIrUseCase`.
+- **Known simplification:** the Rust assembler does not emit the v3 `persona` block
+  (mission/identity/voice/`decision_principles[]`), which only feeds `auto_triage`
+  capabilities + `last_design_result.persona`. The native web-research fixture has
+  no `auto_triage` UC, so it's safe here; add it to the prose-lane request before
+  running fixtures that use `review_policy.mode = auto_triage`.
+
 ---
 
 ## Phase 5 — Scripted connector calls  ·  _parallel track, optional_
