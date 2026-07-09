@@ -12525,7 +12525,31 @@
       "llm_the_connector": "The connector",
       "llm_aria_window": "Time window",
       "llm_aria_table": "LLM pinpoints",
-      "llm_unknown_error": "Unknown error"
+      "llm_unknown_error": "Unknown error",
+      "uc_title": "Use cases",
+      "uc_scan": "Scan",
+      "uc_scan_tooltip": "Let an agent propose the key use cases from your context map",
+      "uc_cancel_scan": "Cancel scan",
+      "uc_backfill": "From features",
+      "uc_backfill_tooltip": "Create use cases from the business-feature labels already on your contexts",
+      "uc_accept": "Accept",
+      "uc_reject": "Reject",
+      "uc_proposals_heading": "{count} awaiting review",
+      "uc_span_count": "spans {count}",
+      "uc_count": "{count} use case(s)",
+      "uc_chip_tooltip": "Highlight the contexts this use case spans",
+      "uc_highlight_hint": "Highlighted contexts are the ones this use case spans.",
+      "uc_empty": "No use cases yet. Scan to propose them, or build them from your feature labels.",
+      "uc_empty_no_map": "Scan the codebase into a context map first — use cases are slices through it.",
+      "uc_context_none": "No use case covers this context yet.",
+      "uc_context_coverage_tooltip": "Use cases that slice through this context",
+      "uc_status_proposed": "proposed",
+      "uc_kind_user_flow": "user flow",
+      "uc_kind_capability": "capability",
+      "uc_kind_integration": "integration",
+      "uc_kind_ops": "ops",
+      "llm_usecase_linked": "Mapped to the use case \"{name}\"",
+      "llm_usecase_coverage": "{mapped}/{total} mapped to a use case"
     },
     "doc_signing": {
       "title": "Document Signing",
@@ -17408,6 +17432,8 @@
     "source_none_hint": "Recorded by hand. Connect a live source to measure automatically.",
     "source_degraded_banner": "The last replay against {service} failed. Automatic measurement is paused until you reconnect.",
     "source_reconnect": "Reconnect",
-    "source_verified": "verified"
+    "source_verified": "verified",
+    "kpi_scope_label": "Scope",
+    "kpi_scope_this_context": "This context"
   }
 }

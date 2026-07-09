@@ -75,3 +75,21 @@ export async function deleteUseCase(id: string): Promise<boolean> {
 export async function backfillUseCases(projectId: string): Promise<DevUseCase[]> {
   return invoke<DevUseCase[]>("dev_tools_backfill_use_cases", { projectId }, { timeoutMs: 60_000 });
 }
+
+/** Start a use-case proposal scan; progress streams via USE_CASE_SCAN_* events. */
+export async function scanUseCases(projectId: string): Promise<{ scan_id: string }> {
+  return invoke<{ scan_id: string }>("dev_tools_scan_use_cases", { projectId }, { timeoutMs: 30_000 });
+}
+
+export async function cancelUseCaseScan(scanId: string): Promise<boolean> {
+  return invoke<boolean>("dev_tools_cancel_use_case_scan", { scanId });
+}
+
+export async function getUseCaseScanStatus(scanId: string): Promise<{
+  scan_id: string;
+  status: string;
+  error?: string | null;
+  lines?: string[];
+}> {
+  return invoke("dev_tools_get_use_case_scan_status", { scanId });
+}

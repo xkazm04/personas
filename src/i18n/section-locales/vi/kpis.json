@@ -181,5 +181,7 @@
     "health_snapshot": "Ảnh chụp tình trạng",
     "manual": "Nhập thủ công",
     "scan": "Quét"
-  }
+  },
+  "kpi_scope_label": "Phạm vi",
+  "kpi_scope_this_context": "Ngữ cảnh này"
 }

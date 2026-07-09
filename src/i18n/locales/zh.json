@@ -12270,7 +12270,31 @@
       "llm_unnamed": "未命名",
       "llm_unsupported_sub": "该连接器已分配，但其实时适配器将在后续阶段推出。LightTrack 目前已可使用。",
       "llm_unsupported_title": "{tool} 的实时数据即将推出",
-      "llm_wire_placeholder": "接入追踪工具…"
+      "llm_wire_placeholder": "接入追踪工具…",
+      "uc_accept": "接受",
+      "uc_backfill": "从功能生成",
+      "uc_backfill_tooltip": "根据上下文中已有的业务功能标签创建用例",
+      "uc_cancel_scan": "取消扫描",
+      "uc_chip_tooltip": "高亮此用例所跨越的上下文",
+      "uc_context_coverage_tooltip": "贯穿此上下文的用例",
+      "uc_context_none": "尚无用例覆盖此上下文。",
+      "uc_count": "{count} 个用例",
+      "uc_empty": "暂无用例。扫描以生成建议，或根据功能标签创建。",
+      "uc_empty_no_map": "请先扫描代码库以生成上下文地图——用例是贯穿其中的切片。",
+      "uc_highlight_hint": "高亮的上下文即此用例所跨越的部分。",
+      "uc_kind_capability": "能力",
+      "uc_kind_integration": "集成",
+      "uc_kind_ops": "运维",
+      "uc_kind_user_flow": "用户流程",
+      "uc_proposals_heading": "{count} 项待审核",
+      "uc_reject": "拒绝",
+      "uc_scan": "扫描",
+      "uc_scan_tooltip": "让智能体根据上下文地图提出关键用例",
+      "uc_span_count": "跨越 {count} 个",
+      "uc_status_proposed": "已提议",
+      "uc_title": "用例",
+      "llm_usecase_coverage": "{mapped}/{total} 个已映射到用例",
+      "llm_usecase_linked": "已映射到用例“{name}”"
     },
     "doc_signing": {
       "title": "文档签署",
@@ -17313,7 +17337,9 @@
       "health_snapshot": "健康快照",
       "manual": "手动录入",
       "scan": "扫描"
-    }
+    },
+    "kpi_scope_label": "范围",
+    "kpi_scope_this_context": "此上下文"
   },
   "deliberation": {
     "agenda": "议程",

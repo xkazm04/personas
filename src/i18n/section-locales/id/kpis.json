@@ -181,5 +181,7 @@
     "health_snapshot": "Snapshot kesehatan",
     "manual": "Entri manual",
     "scan": "Pindai"
-  }
+  },
+  "kpi_scope_label": "Cakupan",
+  "kpi_scope_this_context": "Konteks ini"
 }

@@ -12532,6 +12532,30 @@ export type Translations = {
       llm_aria_window: string;
       llm_aria_table: string;
       llm_unknown_error: string;
+      uc_title: string;
+      uc_scan: string;
+      uc_scan_tooltip: string;
+      uc_cancel_scan: string;
+      uc_backfill: string;
+      uc_backfill_tooltip: string;
+      uc_accept: string;
+      uc_reject: string;
+      uc_proposals_heading: string;
+      uc_span_count: string;
+      uc_count: string;
+      uc_chip_tooltip: string;
+      uc_highlight_hint: string;
+      uc_empty: string;
+      uc_empty_no_map: string;
+      uc_context_none: string;
+      uc_context_coverage_tooltip: string;
+      uc_status_proposed: string;
+      uc_kind_user_flow: string;
+      uc_kind_capability: string;
+      uc_kind_integration: string;
+      uc_kind_ops: string;
+      llm_usecase_linked: string;
+      llm_usecase_coverage: string;
     };
     doc_signing: {
       title: string;
@@ -17415,5 +17439,7 @@ export type Translations = {
     source_degraded_banner: string;
     source_reconnect: string;
     source_verified: string;
+    kpi_scope_label: string;
+    kpi_scope_this_context: string;
   };
 };

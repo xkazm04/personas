@@ -181,5 +181,7 @@
     "health_snapshot": "Health-Snapshot",
     "manual": "Manuelle Eingabe",
     "scan": "Scan"
-  }
+  },
+  "kpi_scope_label": "Bereich",
+  "kpi_scope_this_context": "Dieser Kontext"
 }

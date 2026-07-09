@@ -12270,7 +12270,31 @@
       "llm_unnamed": "chưa đặt tên",
       "llm_unsupported_sub": "Connector này đã được gán, nhưng adapter trực tiếp của nó sẽ có trong giai đoạn sau. LightTrack đã hoạt động ngay bây giờ.",
       "llm_unsupported_title": "Dữ liệu trực tiếp cho {tool} sắp ra mắt",
-      "llm_wire_placeholder": "Kết nối một tracer…"
+      "llm_wire_placeholder": "Kết nối một tracer…",
+      "uc_accept": "Chấp nhận",
+      "uc_backfill": "Từ tính năng",
+      "uc_backfill_tooltip": "Tạo trường hợp sử dụng từ các nhãn tính năng nghiệp vụ đã có trên ngữ cảnh của bạn",
+      "uc_cancel_scan": "Hủy quét",
+      "uc_chip_tooltip": "Làm nổi bật các ngữ cảnh mà trường hợp sử dụng này bao trùm",
+      "uc_context_coverage_tooltip": "Các trường hợp sử dụng cắt qua ngữ cảnh này",
+      "uc_context_none": "Chưa có trường hợp sử dụng nào bao phủ ngữ cảnh này.",
+      "uc_count": "{count} trường hợp sử dụng",
+      "uc_empty": "Chưa có trường hợp sử dụng nào. Quét để đề xuất, hoặc tạo từ nhãn tính năng của bạn.",
+      "uc_empty_no_map": "Hãy quét mã nguồn thành bản đồ ngữ cảnh trước — trường hợp sử dụng là các lát cắt xuyên qua nó.",
+      "uc_highlight_hint": "Các ngữ cảnh được làm nổi bật là những ngữ cảnh mà trường hợp sử dụng này bao trùm.",
+      "uc_kind_capability": "năng lực",
+      "uc_kind_integration": "tích hợp",
+      "uc_kind_ops": "vận hành",
+      "uc_kind_user_flow": "luồng người dùng",
+      "uc_proposals_heading": "{count} đang chờ xem xét",
+      "uc_reject": "Từ chối",
+      "uc_scan": "Quét",
+      "uc_scan_tooltip": "Để tác nhân AI đề xuất các trường hợp sử dụng chính từ bản đồ ngữ cảnh của bạn",
+      "uc_span_count": "bao trùm {count}",
+      "uc_status_proposed": "đã đề xuất",
+      "uc_title": "Trường hợp sử dụng",
+      "llm_usecase_coverage": "{mapped}/{total} đã ánh xạ tới trường hợp sử dụng",
+      "llm_usecase_linked": "Đã ánh xạ tới trường hợp sử dụng «{name}»"
     },
     "doc_signing": {
       "title": "Ký tài liệu",
@@ -17313,7 +17337,9 @@
       "health_snapshot": "Ảnh chụp tình trạng",
       "manual": "Nhập thủ công",
       "scan": "Quét"
-    }
+    },
+    "kpi_scope_label": "Phạm vi",
+    "kpi_scope_this_context": "Ngữ cảnh này"
   },
   "deliberation": {
     "agenda": "Chương trình nghị sự",

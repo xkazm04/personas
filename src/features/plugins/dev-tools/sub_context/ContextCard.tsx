@@ -1,4 +1,4 @@
-import { File, Tag, Target, Lightbulb, Sparkles, Gauge } from 'lucide-react';
+import { File, Tag, Target, Lightbulb, Sparkles, Gauge, Layers } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -12,6 +12,9 @@ export default function ContextCard({
   firstGoalId,
   ideaCount = 0,
   kpiCount = 0,
+  useCaseCount = 0,
+  highlighted = false,
+  dimmed = false,
   onScan,
   scanning = false,
   scanDisabled = false,
@@ -23,6 +26,11 @@ export default function ContextCard({
   firstGoalId?: string;
   ideaCount?: number;
   kpiCount?: number;
+  useCaseCount?: number;
+  /** This context is part of the selected use case's slice. */
+  highlighted?: boolean;
+  /** A use case is selected and this context is outside its slice. */
+  dimmed?: boolean;
   onScan?: () => void;
   scanning?: boolean;
   scanDisabled?: boolean;
@@ -47,7 +55,7 @@ export default function ContextCard({
         selected
           ? 'bg-primary/10 border-primary/20'
           : 'border-primary/10 hover:bg-primary/5 hover:border-primary/20'
-      }`}
+      } ${highlighted ? 'ring-1 ring-primary/50 border-primary/30' : ''} ${dimmed ? 'opacity-40' : ''}`}
     >
       <h4 className="typo-card-label mb-1">{ctx.name}</h4>
       <p className="text-md text-foreground line-clamp-2 mb-3">{ctx.description}</p>
@@ -99,6 +107,15 @@ export default function ContextCard({
           >
             <Gauge className="w-3 h-3" />
             {tx(t.kpis.kpi_count, { count: kpiCount })}
+          </span>
+        )}
+        {useCaseCount > 0 && (
+          <span
+            title={t.plugins.dev_tools.uc_context_coverage_tooltip}
+            className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-300"
+          >
+            <Layers className="w-3 h-3" />
+            {tx(t.plugins.dev_tools.uc_count, { count: useCaseCount })}
           </span>
         )}
         {onScan && (

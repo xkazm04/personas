@@ -10,10 +10,13 @@
  *
  * All user-facing copy is i18n'd via `t.plugins.dev_tools.llm_*`.
  */
-import { useCallback, useMemo, type ReactNode } from 'react';
-import { BarChart3, RefreshCw, AlertCircle, Plug, Clock } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { BarChart3, RefreshCw, AlertCircle, Plug, Clock, Layers } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { updateProject } from '@/api/devTools/devTools';
+import { listUseCases } from '@/api/devTools/useCases';
+import { slugifyUseCase } from '@/lib/useCaseSlug';
+import { silentCatch } from '@/lib/silentCatch';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
@@ -92,6 +95,38 @@ export default function LlmOverviewPage() {
   const data = useLlmPinpoints();
   const { activeProject, state, pinpoints, error, cred, timeWindow, setTimeWindow, reload } = data;
 
+  // The declared use-case vocabulary for this project. `dev_use_cases.slug` is
+  // the join key an observed call-site name normalizes to, so an instrumented
+  // call site either maps to a use case the project has named, or it doesn't —
+  // and that gap is worth seeing.
+  const [useCaseSlugs, setUseCaseSlugs] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    if (!activeProject) {
+      setUseCaseSlugs(new Map());
+      return;
+    }
+    let cancelled = false;
+    void listUseCases(activeProject.id, 'active')
+      .then((rows) => {
+        if (!cancelled) setUseCaseSlugs(new Map(rows.map((u) => [u.slug, u.name])));
+      })
+      .catch(silentCatch('LlmOverviewPage:listUseCases'));
+    return () => {
+      cancelled = true;
+    };
+  }, [activeProject]);
+
+  const matchUseCase = useCallback(
+    (name: string | null): string | null =>
+      name ? (useCaseSlugs.get(slugifyUseCase(name)) ?? null) : null,
+    [useCaseSlugs],
+  );
+
+  const mappedCount = useMemo(
+    () => pinpoints.filter((p) => matchUseCase(p.useCaseName) !== null).length,
+    [pinpoints, matchUseCase],
+  );
+
   const columns = useMemo<TableColumn<LlmPinpoint>[]>(
     () => [
       {
@@ -99,12 +134,23 @@ export default function LlmOverviewPage() {
         label: dt.llm_col_usecase,
         width: 'minmax(160px, 1.6fr)',
         sortable: true,
-        render: (r) =>
-          r.useCaseName ? (
-            <span className="text-foreground truncate">{r.useCaseName}</span>
-          ) : (
-            <span className="text-foreground/40 italic">{dt.llm_unnamed}</span>
-          ),
+        render: (r) => {
+          const matched = matchUseCase(r.useCaseName);
+          if (!r.useCaseName) {
+            return <span className="text-foreground/40 italic">{dt.llm_unnamed}</span>;
+          }
+          return (
+            <span className="flex items-center gap-1.5 min-w-0">
+              <span className="text-foreground truncate">{r.useCaseName}</span>
+              {matched && (
+                <Layers
+                  className="w-3 h-3 shrink-0 text-sky-400/80"
+                  aria-label={tx(dt.llm_usecase_linked, { name: matched })}
+                />
+              )}
+            </span>
+          );
+        },
       },
       {
         key: 'provider',
@@ -153,7 +199,7 @@ export default function LlmOverviewPage() {
         ),
       },
     ],
-    [dt],
+    [dt, tx, matchUseCase],
   );
 
   return (
@@ -242,8 +288,14 @@ export default function LlmOverviewPage() {
               ariaLabel={dt.llm_aria_table}
               tableId="llm-overview-pinpoints"
             />
-            <div className="px-4 py-1.5 border-t border-primary/10 text-[10px] text-foreground/40">
-              {tx(dt.llm_cost_note, { tool: cred?.serviceType ?? dt.llm_this_tool })}
+            <div className="px-4 py-1.5 border-t border-primary/10 text-[10px] text-foreground/40 flex items-center justify-between gap-3">
+              <span>{tx(dt.llm_cost_note, { tool: cred?.serviceType ?? dt.llm_this_tool })}</span>
+              {useCaseSlugs.size > 0 && (
+                <span className="flex items-center gap-1 shrink-0">
+                  <Layers className="w-3 h-3 text-sky-400/80" />
+                  {tx(dt.llm_usecase_coverage, { mapped: mappedCount, total: pinpoints.length })}
+                </span>
+              )}
             </div>
           </div>
         )}

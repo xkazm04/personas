@@ -1,14 +1,24 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { X, File, ArrowUpRight, Target, ListChecks, Gauge, Plus, Pin, PinOff } from 'lucide-react';
+import { X, File, ArrowUpRight, Target, ListChecks, Gauge, Plus, Pin, PinOff, Layers } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { TRACK_COLOR } from '@/features/teams/sub_kpis/kpiMeta';
+import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import type { ContextItem } from './contextMapTypes';
 
-export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onClose: () => void }) {
+export default function ContextDetail({
+  ctx,
+  onClose,
+  useCases = [],
+}: {
+  ctx: ContextItem;
+  onClose: () => void;
+  /** Non-archived use cases whose slice includes this context. */
+  useCases?: DevUseCase[];
+}) {
   const { t, tx } = useTranslation();
   const goals = useSystemStore((s) => s.goals);
   const tasks = useSystemStore((s) => s.tasks);
@@ -34,6 +44,11 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
   const [kpiName, setKpiName] = useState('');
   const [kpiTarget, setKpiTarget] = useState('');
   const [kpiUnit, setKpiUnit] = useState('');
+  // Scope of the KPI being authored: this context, or one of the use cases that
+  // slice through it (the narrower, more honest owner of a behavioral outcome).
+  const [kpiScopeUseCaseId, setKpiScopeUseCaseId] = useState<string | null>(null);
+
+  const activeUseCases = useMemo(() => useCases.filter((u) => u.status === 'active'), [useCases]);
 
   const handleCreateKpi = async (e: FormEvent) => {
     e.preventDefault();
@@ -45,8 +60,11 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
       await createKpi({
         projectId: activeProjectId,
         name: kpiName.trim(),
+        // A use-case-scoped KPI still records this context as its anchor, so the
+        // Factory matrix can place it; `useCaseId` is what the derivation reads.
         contextId: ctx.id,
         contextGroupId: groupId,
+        useCaseId: kpiScopeUseCaseId ?? undefined,
         category: 'technical',
         measureKind: 'manual',
         unit: kpiUnit.trim() || undefined,
@@ -56,6 +74,7 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
       setKpiName('');
       setKpiTarget('');
       setKpiUnit('');
+      setKpiScopeUseCaseId(null);
       setAdding(false);
     } catch (err) {
       toastCatch('ContextDetail:createKpi', t.kpis.create_kpi_failed)(err);
@@ -108,6 +127,38 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
       </div>
 
       <p className="text-md text-foreground mb-4">{ctx.description}</p>
+
+      {/* Use cases slicing through this context — the behavioral layer above the
+          code-ownership partition. A context with none is code nobody has named
+          an outcome for yet. */}
+      <div className="mb-4">
+        <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2 flex items-center gap-1.5">
+          <Layers className="w-3 h-3" />
+          {t.plugins.dev_tools.uc_title} ({useCases.length})
+        </h4>
+        {useCases.length === 0 ? (
+          <p className="typo-caption text-foreground italic">{t.plugins.dev_tools.uc_context_none}</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {useCases.map((uc) => (
+              <li
+                key={uc.id}
+                className="rounded-modal border border-primary/10 bg-card/30 px-2.5 py-1.5 flex items-center gap-2"
+              >
+                <span className="typo-caption text-foreground font-medium truncate flex-1">{uc.name}</span>
+                {uc.status === 'proposed' && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 shrink-0">
+                    {t.plugins.dev_tools.uc_status_proposed}
+                  </span>
+                )}
+                <span className="typo-caption text-foreground tabular-nums shrink-0">
+                  {tx(t.plugins.dev_tools.uc_span_count, { count: uc.context_ids.length })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* Goals linked to this context (cycle 8 surfaced the count; here the items) */}
       <div className="mb-4">
@@ -170,6 +221,46 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
               autoFocus
               className="w-full px-2 py-1 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
             />
+
+            {/* Scope. An outcome that spans contexts belongs to a use case, not
+                to whichever context you happened to have open. */}
+            {activeUseCases.length > 0 && (
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-primary font-medium mb-1">
+                  {t.kpis.kpi_scope_label}
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setKpiScopeUseCaseId(null)}
+                    aria-pressed={kpiScopeUseCaseId === null}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                      kpiScopeUseCaseId === null
+                        ? 'border-primary/50 bg-primary/15 text-foreground'
+                        : 'border-primary/10 bg-card/30 text-foreground hover:border-primary/30'
+                    }`}
+                  >
+                    {t.kpis.kpi_scope_this_context}
+                  </button>
+                  {activeUseCases.map((uc) => (
+                    <button
+                      key={uc.id}
+                      type="button"
+                      onClick={() => setKpiScopeUseCaseId(uc.id)}
+                      aria-pressed={kpiScopeUseCaseId === uc.id}
+                      title={tx(t.plugins.dev_tools.uc_span_count, { count: uc.context_ids.length })}
+                      className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                        kpiScopeUseCaseId === uc.id
+                          ? 'border-sky-500/50 bg-sky-500/15 text-sky-200'
+                          : 'border-primary/10 bg-card/30 text-foreground hover:border-primary/30'
+                      }`}
+                    >
+                      {uc.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <input
                 type="number"

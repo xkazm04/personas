@@ -12270,7 +12270,31 @@
       "llm_unnamed": "sans nom",
       "llm_unsupported_sub": "Ce connecteur est attribué, mais son adaptateur en direct arrive dans une phase ultérieure. LightTrack fonctionne dès aujourd'hui.",
       "llm_unsupported_title": "Les données en direct pour {tool} arrivent bientôt",
-      "llm_wire_placeholder": "Connecter un traceur…"
+      "llm_wire_placeholder": "Connecter un traceur…",
+      "uc_accept": "Accepter",
+      "uc_backfill": "À partir des fonctionnalités",
+      "uc_backfill_tooltip": "Créer des cas d'usage à partir des libellés de fonctionnalités métier déjà présents sur vos contextes",
+      "uc_cancel_scan": "Annuler l'analyse",
+      "uc_chip_tooltip": "Mettre en évidence les contextes couverts par ce cas d'usage",
+      "uc_context_coverage_tooltip": "Cas d'usage qui traversent ce contexte",
+      "uc_context_none": "Aucun cas d'usage ne couvre encore ce contexte.",
+      "uc_count": "{count} cas d'usage",
+      "uc_empty": "Aucun cas d'usage pour le moment. Lancez une analyse pour en proposer, ou créez-les à partir de vos libellés de fonctionnalités.",
+      "uc_empty_no_map": "Analysez d'abord la base de code pour obtenir une carte de contexte — les cas d'usage en sont des coupes transversales.",
+      "uc_highlight_hint": "Les contextes en surbrillance sont ceux couverts par ce cas d'usage.",
+      "uc_kind_capability": "capacité",
+      "uc_kind_integration": "intégration",
+      "uc_kind_ops": "opérations",
+      "uc_kind_user_flow": "parcours utilisateur",
+      "uc_proposals_heading": "{count} en attente de révision",
+      "uc_reject": "Rejeter",
+      "uc_scan": "Analyser",
+      "uc_scan_tooltip": "Laisser un agent proposer les cas d'usage clés à partir de votre carte de contexte",
+      "uc_span_count": "couvre {count}",
+      "uc_status_proposed": "proposé",
+      "uc_title": "Cas d'usage",
+      "llm_usecase_coverage": "{mapped}/{total} associés à un cas d'usage",
+      "llm_usecase_linked": "Associé au cas d'usage «{name}»"
     },
     "doc_signing": {
       "title": "Signature de documents",
@@ -17313,7 +17337,9 @@
       "health_snapshot": "Instantané de santé",
       "manual": "Saisie manuelle",
       "scan": "Analyse"
-    }
+    },
+    "kpi_scope_label": "Portée",
+    "kpi_scope_this_context": "Ce contexte"
   },
   "deliberation": {
     "agenda": "Ordre du jour",

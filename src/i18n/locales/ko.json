@@ -12270,7 +12270,31 @@
       "llm_unnamed": "이름 없음",
       "llm_unsupported_sub": "이 커넥터는 할당되었지만, 실시간 어댑터는 이후 단계에서 제공될 예정입니다. LightTrack은 현재 사용할 수 있습니다.",
       "llm_unsupported_title": "{tool}의 실시간 데이터는 곧 제공됩니다",
-      "llm_wire_placeholder": "트레이서 연결…"
+      "llm_wire_placeholder": "트레이서 연결…",
+      "uc_accept": "수락",
+      "uc_backfill": "기능에서 생성",
+      "uc_backfill_tooltip": "컨텍스트에 이미 있는 기능 라벨로 유스케이스를 생성합니다",
+      "uc_cancel_scan": "스캔 취소",
+      "uc_chip_tooltip": "이 유스케이스가 포괄하는 컨텍스트를 강조 표시합니다",
+      "uc_context_coverage_tooltip": "이 컨텍스트를 가로지르는 유스케이스",
+      "uc_context_none": "아직 이 컨텍스트를 다루는 유스케이스가 없습니다.",
+      "uc_count": "유스케이스 {count}개",
+      "uc_empty": "아직 유스케이스가 없습니다. 스캔하여 제안을 받거나 기능 라벨에서 생성하세요.",
+      "uc_empty_no_map": "먼저 코드베이스를 스캔해 컨텍스트 맵을 생성하세요 — 유스케이스는 그 맵을 가로지르는 조각입니다.",
+      "uc_highlight_hint": "강조 표시된 컨텍스트는 이 유스케이스가 포괄하는 범위입니다.",
+      "uc_kind_capability": "역량",
+      "uc_kind_integration": "통합",
+      "uc_kind_ops": "운영",
+      "uc_kind_user_flow": "사용자 흐름",
+      "uc_proposals_heading": "검토 대기 중 {count}개",
+      "uc_reject": "거부",
+      "uc_scan": "스캔",
+      "uc_scan_tooltip": "에이전트가 컨텍스트 맵에서 핵심 유스케이스를 제안하도록 합니다",
+      "uc_span_count": "{count}개 포괄",
+      "uc_status_proposed": "제안됨",
+      "uc_title": "유스케이스",
+      "llm_usecase_coverage": "{mapped}/{total}개가 유스케이스에 매핑됨",
+      "llm_usecase_linked": "유스케이스 “{name}”에 매핑됨"
     },
     "doc_signing": {
       "title": "Document Signing",
@@ -17313,7 +17337,9 @@
       "health_snapshot": "Health snapshot",
       "manual": "수동 입력",
       "scan": "스캔"
-    }
+    },
+    "kpi_scope_label": "범위",
+    "kpi_scope_this_context": "이 컨텍스트"
   },
   "deliberation": {
     "agenda": "안건",
