@@ -1,0 +1,224 @@
+{
+  "fixture": "lite-web-summary",
+  "summary": {
+    "multiagent": {
+      "runs": 1,
+      "promote_rate": 1.0,
+      "total_seconds_median": 70.59,
+      "total_seconds_min": 70.59,
+      "total_seconds_max": 70.59,
+      "capabilities_median": 3.0,
+      "gate_pass_rate_median": 1.0,
+      "cost_usd_median": 0.3,
+      "per_phase_seconds_median": {
+        "analyzing": 25.53,
+        "resolving": 27.03,
+        "testing": 18.03,
+        "promoted": 0.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "variant": "multiagent",
+      "tag": "multiagent-1",
+      "run": {
+        "fixture_id": "lite-web-summary",
+        "variant": "multiagent",
+        "session_id": "b2cfd3dc-2674-430d-a527-5595b5ac6d71",
+        "persona_id": "b0cb6601-1974-4efd-b2cb-fd98ccbfc3e5",
+        "ok": true,
+        "terminal_phase": "promoted",
+        "error_message": null,
+        "total_seconds": 70.59,
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 25.53
+          },
+          {
+            "phase": "testing",
+            "offset_s": 52.56
+          },
+          {
+            "phase": "promoted",
+            "offset_s": 70.59
+          }
+        ],
+        "cost_usd": 0.30278099999999997,
+        "input_tokens": 10,
+        "output_tokens": 5587,
+        "num_turns": 5,
+        "phase_timings": [
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T11:52:51.453666600+00:00"
+          },
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T11:52:51.454356200+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T11:53:16.559152700+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T11:53:42.776836700+00:00"
+          },
+          {
+            "phase": "test_complete",
+            "ts": "2026-07-09T11:54:00.622806400+00:00"
+          }
+        ],
+        "questions_answered": 0,
+        "stuck_question": null,
+        "started_at": "2026-07-09T11:52:51.447975+00:00",
+        "finished_at": "2026-07-09T11:54:02.036579+00:00"
+      },
+      "per_phase_seconds": {
+        "analyzing": 25.53,
+        "resolving": 27.03,
+        "testing": 18.03,
+        "promoted": 0.0
+      },
+      "capture": {
+        "source": "persona",
+        "capabilities": [
+          {
+            "id": "uc-36c2f6e6-eb0c-4dd3-9741-b2ec679f786d",
+            "title": "Summarize a URL",
+            "description": null,
+            "tool_hints": [
+              "WebFetch",
+              "WebSearch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-4983bf48-62a6-4442-a7d5-ace3da0d5876",
+            "title": "Answer from the Web",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-3bfc8e36-079a-4b21-b4fb-8e9035ef9ed1",
+            "title": "Daily Topic Digest",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch",
+              "CronCreate",
+              "CronList",
+              "ScheduleWakeup"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          }
+        ],
+        "connectors": [],
+        "credential_links": {},
+        "tool_tests": {
+          "connectors_resolved": [],
+          "credential_issues": [],
+          "results": [
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web fetch \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebFetch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web search \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebSearch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in cron scheduling \u2014 write-only, no read endpoint to test",
+              "status": "passed",
+              "tool_name": "CronCreate"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in cron listing \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "CronList"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in wakeup scheduling \u2014 write-only, no read endpoint to test",
+              "status": "passed",
+              "tool_name": "ScheduleWakeup"
+            }
+          ],
+          "summary": "### Overview\nYour Web Intel Scout agent is ready to go! All five essential tools have been tested and are working smoothly. Your agent can now browse the web, search for information, and schedule tasks whenever it needs to.\n\n### Results\n- **WebFetch** \u2014 \u2705 Your agent can retrieve and read web pages using the built-in web fetch feature.\n- **WebSearch** \u2014 \u2705 Your agent can search the internet and find relevant information using the built-in search capability.\n- **CronCreate** \u2014 \u2705 Your agent can schedule tasks to run on a repeating schedule at specific times.\n- **CronList** \u2014 \u2705 Your agent can view all the scheduled tasks that have been set up.\n- **ScheduleWakeup** \u2014 \u2705 Your agent can schedule wake-up events to trigger future actions at specified times.\n\n### Next Steps\nYou're all set\u2014your Web Intel Scout agent is fully functional and ready to put to work!",
+          "tools_failed": 0,
+          "tools_passed": 5,
+          "tools_skipped": 0,
+          "tools_tested": 5
+        },
+        "setup_status": "ready",
+        "persona_name": "Web Intel Scout",
+        "raw_present": true
+      },
+      "assertions": [
+        {
+          "key": "capabilities_count",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3"
+        },
+        {
+          "key": "web_research_caps",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3 (['uc-36c2f6e6-eb0c-4dd3-9741-b2ec679f786d', 'uc-4983bf48-62a6-4442-a7d5-ace3da0d5876', 'uc-3bfc8e36-079a-4b21-b4fb-8e9035ef9ed1'])"
+        },
+        {
+          "key": "no_external_search_connector",
+          "passed": true,
+          "severity": "gate",
+          "expected": "no serpapi/tavily/google_search/\u2026",
+          "actual": "none"
+        },
+        {
+          "key": "setup_status",
+          "passed": true,
+          "severity": "warn",
+          "expected": "ready",
+          "actual": "ready"
+        }
+      ],
+      "gate_pass_rate": 1.0
+    }
+  ]
+}
