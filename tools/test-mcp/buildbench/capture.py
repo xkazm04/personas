@@ -74,7 +74,8 @@ def _connectors_from_ir(ir: dict) -> list[dict]:
 
 
 def capture_build(db: DB, *, session_id: str | None, persona_id: str | None) -> CapturedBuild:
-    # 1) Prefer the promoted persona row (has credentialLinks + tool report).
+    # 1) The promoted persona row (has credentialLinks + tool report).
+    persona_cap: CapturedBuild | None = None
     if persona_id:
         rows = db.query("SELECT * FROM personas WHERE id = ? LIMIT 1", (persona_id,))
         if rows:
@@ -82,7 +83,7 @@ def capture_build(db: DB, *, session_id: str | None, persona_id: str | None) -> 
             dc = _loads(p.get("design_context")) or {}
             ldr = _loads(p.get("last_design_result")) or {}
             ucs = dc.get("useCases") or dc.get("use_cases") or ldr.get("use_cases") or []
-            return CapturedBuild(
+            persona_cap = CapturedBuild(
                 source="persona",
                 capabilities=[_norm_capability(u) for u in ucs],
                 connectors=_connectors_from_ir(ldr),
@@ -92,21 +93,31 @@ def capture_build(db: DB, *, session_id: str | None, persona_id: str | None) -> 
                 persona_name=p.get("name"),
                 raw_present=True,
             )
+            # A fully promoted persona carries its capabilities — use it as-is.
+            if persona_cap.capabilities:
+                return persona_cap
 
-    # 2) Fall back to the build session's raw IR (never promoted).
+    # 2) Fall back to the build session's raw IR. This covers both a never-promoted
+    #    draft AND a promote-BLOCKED build (e.g. a connector tool-test failed the
+    #    outcome gate) — the persona row exists but has 0 capabilities, yet the
+    #    assembled agent_ir holds the full resolved design. Keep the persona's
+    #    credentialLinks + tool report (real connector-resolution signal) when we
+    #    have them; take capabilities + connectors from the IR.
     if session_id:
         rows = db.query("SELECT * FROM build_sessions WHERE id = ? LIMIT 1", (session_id,))
         if rows:
             ir = _loads(rows[0].get("agent_ir")) or {}
             ucs = ir.get("use_cases") or []
-            return CapturedBuild(
-                source="build_session",
-                capabilities=[_norm_capability(u) for u in ucs],
-                connectors=_connectors_from_ir(ir),
-                credential_links={},
-                tool_tests=None,
-                setup_status=None,
-                raw_present=bool(ir),
-            )
+            if ucs or persona_cap is None:
+                return CapturedBuild(
+                    source="build_session" if persona_cap is None else "build_session+persona",
+                    capabilities=[_norm_capability(u) for u in ucs],
+                    connectors=_connectors_from_ir(ir),
+                    credential_links=(persona_cap.credential_links if persona_cap else {}),
+                    tool_tests=(persona_cap.tool_tests if persona_cap else None),
+                    setup_status=(persona_cap.setup_status if persona_cap else None),
+                    persona_name=(persona_cap.persona_name if persona_cap else None),
+                    raw_present=bool(ir),
+                )
 
-    return CapturedBuild(source="missing")
+    return persona_cap or CapturedBuild(source="missing")
