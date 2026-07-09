@@ -304,6 +304,56 @@ capability's resolutions into the final `agent_ir` **in Rust** (no LLM turn).
   no `auto_triage` UC, so it's safe here; add it to the prose-lane request before
   running fixtures that use `review_policy.mode = auto_triage`.
 
+**COMPLEX-FIXTURE COVERAGE + QUALITY JUDGING (2026-07-09, `web-research-desk`):**
+Broadened from the native `lite-web-summary` to the 5-cap connector fixture (3 web +
+Airtable + Notion) to stress the optimizations and judge OUTPUT QUALITY, not just
+structure. Findings:
+- **Two blocker bugs the native fixture never exercised, both fixed:** (1) the Rust
+  assembler didn't coerce `event_subscriptions` string arrays into the
+  `{event_type}` objects `AgentIrUseCaseEvent` expects; (2) the fan-out passed the
+  sub-agents an EMPTY connector context (`String::new()` since Phase 3), so they
+  couldn't bind Airtable/Notion and resolved the reactions as native web tools.
+  Fixed with element coercion + `build_connector_context` (vault credentials +
+  connector catalog) wired into the multiagent path. Also a harness fix
+  (`capture.py`): a promote-BLOCKED build (a connector tool-test failed the
+  outcome gate) left a 0-capability persona row; capture now falls back to the
+  assembled `agent_ir` so structure/quality stay judgeable.
+- **Sequential CANNOT complete this fixture:** it timed out at 900s still in
+  `analyzing`, 0 caps, no `agent_ir` — the serial single-conversation path stalls
+  on 5-cap connector resolution. Multiagent completed in ~550-720s with a full,
+  correctly-bound design. So on a complex sample the optimizations don't just avoid
+  harming quality — they PRODUCE quality output where the as-is path yields none.
+- **Quality judged (Claude-as-judge, independent judges, 0-3 rubric):** multiagent
+  output scored **~0.92** (coverage/binding/triggers all 3). Both judges docked the
+  SAME real issue: **fan-out scope-creep** — because each sub-agent resolved in
+  isolation (its own capability only), the feed-scan cap re-implemented the
+  Airtable/Notion writes, and connector padding varied run-to-run (one build even
+  invented a `gmail` connector nothing asked for). This is the one way the fan-out
+  CAN harm quality.
+- **Fix — sibling-scope constraint (commit `50764e01d`):** `build_capability_prompt`
+  now injects the sibling capability list + explicit SCOPE RULES ("bind only
+  connectors THIS capability uses, from the available list; don't re-implement
+  other caps' jobs; don't invent connectors"). Post-fix (n=2): **gate 100%**, no
+  `gmail`/external hallucination, feed-scan reduced to web+schedule tools that emit
+  events to the write caps. Re-judge: **0.94**, with `capability_distinctness` 2→3
+  (judge: "uc_feed_scan does NOT write directly to Airtable/Notion — it emits events
+  to the dedicated write caps"). Residual: built-in `personas_database`/`vector_db`/
+  `messages` still appear (credential-free, milder, arguably justified for dedup) —
+  groundedness stays 2.
+- **Verdict:** the Rust-assembly optimization does not harm quality; the fan-out's
+  isolation carried a scope-creep risk that the sibling-scope constraint mitigates
+  (distinctness restored, external hallucination gone, quality held at 0.94).
+- **Ops note:** `web-research-desk` promotes cleanly only when Airtable's live
+  healthcheck passes — it returns HTTP 422 (`INVALID_REQUEST_UNKNOWN`, needs a
+  base_id the generic healthcheck lacks) and the build-readiness outcome gate fails
+  the build on it. This is environmental (Notion passes 200), hits both variants,
+  and is orthogonal to design quality — hence judging from `agent_ir`.
+- **Open follow-ups:** (a) trim built-in-connector padding (db/vector/messages) —
+  tighten the scope rule or post-filter; (b) the v3 `persona` block still isn't
+  emitted (auto_triage gap); (c) fix the Airtable healthcheck so the fixture can
+  promote end-to-end; (d) connector fan-out roughly doubles resolving time
+  (~20s native → ~214s here) — the sub-agents are verbose on connector caps.
+
 ---
 
 ## Phase 5 — Scripted connector calls  ·  _parallel track, optional_
