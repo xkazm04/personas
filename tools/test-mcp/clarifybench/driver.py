@@ -97,6 +97,11 @@ class ClarifyRun:
     phase_timeline: list[dict] = field(default_factory=list)
     error_message: str | None = None
     hung: bool = False  # never reached terminal within the round/time budget
+    # Why it didn't converge — "timeout" (ran out of wall-clock mid-flight, usually
+    # because serial question rounds ate the budget) vs "round_cap" (kept asking
+    # past MAX_ROUNDS). Distinguishing these matters: a timeout is a SPEED failure,
+    # a round_cap is an over-asking failure.
+    stall_reason: str | None = None
 
     def as_dict(self) -> dict:
         d = self.__dict__.copy()
@@ -132,6 +137,7 @@ def run_clarify_build(
     deadline = time.monotonic() + timeout_s
     hung = False
 
+    stall_reason: str | None = None
     while True:
         status = client.post("/build/status", {"session_id": session_id})
         last = status
@@ -140,18 +146,22 @@ def run_clarify_build(
             seen.append(phase)
             timeline.append({"phase": phase, "offset_s": round(time.monotonic() - t0, 2)})
 
+        # Deadline is checked on EVERY path (the answer path used to `continue`
+        # past it, so a mid-flight timeout was mislabelled as a hang).
+        if time.monotonic() > deadline:
+            timeline.append({"phase": "__timeout__", "offset_s": round(time.monotonic() - t0, 2)})
+            hung, stall_reason = True, "timeout"
+            break
+
         if phase == "awaiting_input" and not status.get("isTerminal"):
             questions = _extract_questions(status.get("pendingQuestion"))
             if not questions:
                 # Parked with no readable question — nudge and re-poll.
                 time.sleep(poll_interval)
-                if time.monotonic() > deadline:
-                    hung = True
-                    break
                 continue
             rounds += 1
             if rounds > MAX_ROUNDS or len(transcript) >= MAX_QUESTIONS:
-                hung = True
+                hung, stall_reason = True, "round_cap"
                 timeline.append({"phase": "__round_cap_exceeded__", "offset_s": round(time.monotonic() - t0, 2)})
                 break
             for q in questions:
@@ -183,10 +193,6 @@ def run_clarify_build(
 
         if status.get("isTerminal") or (phase in TERMINAL_PHASES):
             break
-        if time.monotonic() > deadline:
-            timeline.append({"phase": "__timeout__", "offset_s": round(time.monotonic() - t0, 2)})
-            hung = True
-            break
         time.sleep(poll_interval)
 
     total = round(time.monotonic() - t0, 2)
@@ -207,4 +213,5 @@ def run_clarify_build(
         phase_timeline=timeline,
         error_message=last.get("errorMessage"),
         hung=hung,
+        stall_reason=stall_reason,
     )
