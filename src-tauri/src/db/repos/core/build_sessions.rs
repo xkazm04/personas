@@ -17,8 +17,12 @@ const UPDATE_BUILD_SESSION_SQL: &str = "
         mode = CASE WHEN ?15 THEN ?16 ELSE mode END,
         companion_session_id = CASE WHEN ?17 THEN ?18 ELSE companion_session_id END,
         disabled_dims_json = CASE WHEN ?19 THEN ?20 ELSE disabled_dims_json END,
-        updated_at = ?21
-    WHERE id = ?22";
+        total_cost_usd = CASE WHEN ?21 THEN ?22 ELSE total_cost_usd END,
+        input_tokens = CASE WHEN ?23 THEN ?24 ELSE input_tokens END,
+        output_tokens = CASE WHEN ?25 THEN ?26 ELSE output_tokens END,
+        num_turns = CASE WHEN ?27 THEN ?28 ELSE num_turns END,
+        updated_at = ?29
+    WHERE id = ?30";
 
 fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
     let phase_str: String = row.get("phase")?;
@@ -45,6 +49,11 @@ fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
         mode: row.get("mode").unwrap_or(None),
         companion_session_id: row.get("companion_session_id").unwrap_or(None),
         disabled_dims_json: row.get("disabled_dims_json").unwrap_or(None),
+        phase_timings_json: row.get("phase_timings_json").unwrap_or(None),
+        total_cost_usd: row.get("total_cost_usd").unwrap_or(None),
+        input_tokens: row.get("input_tokens").unwrap_or(None),
+        output_tokens: row.get("output_tokens").unwrap_or(None),
+        num_turns: row.get("num_turns").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -195,9 +204,41 @@ pub fn update(pool: &DbPool, id: &str, updates: &UpdateBuildSession) -> Result<(
                 .disabled_dims_json
                 .as_ref()
                 .and_then(|value| value.as_deref()),
+            updates.total_cost_usd.is_some(),
+            updates.total_cost_usd.flatten(),
+            updates.input_tokens.is_some(),
+            updates.input_tokens.flatten(),
+            updates.output_tokens.is_some(),
+            updates.output_tokens.flatten(),
+            updates.num_turns.is_some(),
+            updates.num_turns.flatten(),
             now,
             id,
         ])?;
+        Ok(())
+    })
+}
+
+/// Append one `{phase, ts}` entry to the append-only `phase_timings_json`
+/// ledger (build-orchestration Phase 0 telemetry). Uses `json_insert` at
+/// `$[#]` so it is a single atomic UPDATE with no read-modify-write race;
+/// `COALESCE(...,'[]')` seeds the array on the first call. `ts` is RFC3339.
+pub fn append_phase_timing(
+    pool: &DbPool,
+    id: &str,
+    phase: &str,
+    ts: &str,
+) -> Result<(), AppError> {
+    timed_query!("build_sessions", "build_sessions::append_phase_timing", {
+        let conn = pool.get()?;
+        let entry = serde_json::json!({ "phase": phase, "ts": ts }).to_string();
+        let mut stmt = conn.prepare_cached(
+            "UPDATE build_sessions
+                SET phase_timings_json =
+                    json_insert(COALESCE(phase_timings_json, '[]'), '$[#]', json(?1))
+              WHERE id = ?2",
+        )?;
+        stmt.execute(params![entry, id])?;
         Ok(())
     })
 }

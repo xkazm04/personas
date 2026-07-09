@@ -25,7 +25,9 @@ the subscribed persona via `engine.start_execution()`.
 ## Manual (UI button)
 
 **Entry**: `invoke('execute_persona', { persona_id, input_data? })`
-**Handler**: `src-tauri/src/commands/execution/executions.rs::execute_persona` (async Tauri command, line ~82)
+**Handler**: `src-tauri/src/commands/execution/executions.rs::execute_persona` →
+`execute_persona_inner` (the shared entry for both real runs and
+`simulate_use_case`)
 
 ### Pipeline stages
 
@@ -33,7 +35,12 @@ the subscribed persona via `engine.start_execution()`.
 2. **Validate**:
    - Fetch persona by ID
    - Check `trust_level != Revoked` (else fail)
+   - **Setup gate**: if `setup_status == "needs_credentials"` (and this isn't a
+     simulation), hard-block with a Connections-panel remediation message —
+     the persona's adoption pre-flight flagged missing connector bindings
    - Check `max_budget_usd` vs `get_monthly_spend()` (else fail)
+   - Expand `use_case_id` into `input_data._use_case` / `_time_filter` from
+     `design_context`, and resolve the per-capability `model_override` / tier
    - Parse `model_profile` JSON
 3. **CreateRecord**:
    - Call `repo::create_with_idempotency()` → `persona_executions` row
@@ -42,8 +49,11 @@ the subscribed persona via `engine.start_execution()`.
 4. **SpawnEngine**:
    - Fetch tools + inject virtual automation tools
    - Parse input_data (JSON first; fall back to `{ user_input: s }`)
-   - Check session pool for warm resume candidate
-   - Call `engine.start_execution()` (async spawn into background)
+   - Check session pool for warm resume candidate (`config_hash` includes the
+     `active_capabilities_fingerprint`)
+   - Call `engine.start_execution()` → `start_execution_with_priority`: the
+     **admission tracker** either runs it now or **enqueues** it under
+     `max_concurrent` (a `queue-status` event surfaces backpressure)
    - Advance trigger schedule if `trigger_id` was supplied
 5. **Return** — `PersonaExecution` row (frontend polls or subscribes)
 

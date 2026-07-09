@@ -32,7 +32,7 @@ CREATE TABLE persona_executions (
     claude_session_id       TEXT,        -- for warm resume
     log_file_path           TEXT,        -- path to execution log on disk
     execution_flows         TEXT,        -- JSON from execution_flow protocol messages
-    model_used              TEXT,        -- e.g. "claude-sonnet-4-20250514"
+    model_used              TEXT,        -- e.g. "claude-sonnet-4-6"
     input_tokens            INTEGER DEFAULT 0,
     output_tokens           INTEGER DEFAULT 0,
     cost_usd                REAL DEFAULT 0,
@@ -227,8 +227,10 @@ plumbing bugs.
 
 ```sql
 -- top 10 slowest pipeline stages
+-- (spans are stored as a nested tree per execution; flatten in app code
+--  or with a recursive CTE — there is no execution_traces_flattened view)
 SELECT span_type, name, AVG(duration_ms) AS avg_ms, COUNT(*) AS n
-  FROM execution_traces_flattened  -- materialized view flattening children
+  FROM execution_traces
  WHERE started_at >= datetime('now', '-24 hours')
  GROUP BY span_type, name
  ORDER BY avg_ms DESC
@@ -362,19 +364,24 @@ SELECT tu.tool_name,
 
 ## Tauri events (real-time observability)
 
-Frontend subscribes to these during execution:
+Frontend subscribes to these during execution. Names are canonical in
+`engine/event_registry.rs`. **All per-tool / per-message content rides the single
+`execution-event` channel as `StructuredExecutionEvent` variants** — there are no
+`execution-completed`, `tool-call-*`, `manual-review-created`, `memory-created`,
+or `event-created` events (those never existed; ignore any older doc that lists
+them):
 
 | Event | Payload | Frequency |
 |---|---|---|
 | `execution-output` | `{ execution_id, line }` | Each stdout line |
-| `execution-status` | `{ execution_id, status, error?, duration_ms?, cost_usd? }` | Phase transitions + finalize |
-| `execution-completed` | `{ execution_id, status, duration_ms, cost_usd }` | Once per execution |
-| `tool-call-started` | `{ execution_id, tool_name, args }` | Each tool call |
-| `tool-call-completed` | `{ execution_id, tool_name, result, duration_ms, success }` | Each tool result |
-| `manual-review-created` | `{ review_id, execution_id, title, severity }` | Review emitted |
-| `event-created` | `{ event_id, event_type, source_id }` | Event emitted |
+| `execution-status` | `{ execution_id, status, error?, duration_ms?, cost_usd? }` | Phase transitions + finalize (terminal status = the completion signal) |
+| `execution-event` | `StructuredExecutionEvent` (assistant text / tool-use / tool-result / run-result footer) | Each structured event |
+| `execution-progress` | `{ execution_id, … }` | Subagent / long-step progress |
+| `execution-heartbeat` | `{ execution_id }` | Periodic liveness |
+| `execution-review-request` | `{ review_id, execution_id, title, severity }` | Review emitted (a `request_review` / `raise_incident`) |
+| `execution-trace-span` / `execution-trace` | span open/close + finalize | Live trace tree |
 | `healing-event` | `{ execution_id, issue_id, title, severity, suggested_fix }` | Failure detected |
-| `memory-created` | `{ memory_id, persona_id, title, category }` | Memory persisted |
+| `queue-status` | `{ … }` | Admission queue / backpressure changes |
 
 ## IPC commands (post-run observability)
 

@@ -17437,5 +17437,15 @@
     "xray_label": "Zusammengesetzt aus {count} Fähigkeiten",
     "xray_tooltip": "Diese Vorlage besteht aus einer Mentalität plus Fähigkeiten aus dem Rezeptkatalog — denselben Teilen, die du in der Foundry auch manuell zusammenstellen kannst.",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "Agenten",
+    "domain_content": "Content-Studio",
+    "domain_engineering": "Entwicklung",
+    "domain_finance": "Finanzen",
+    "domain_operations": "Betrieb",
+    "domain_people": "Kunden & Personal",
+    "domain_research": "Forschung & Analyse",
+    "domain_revenue": "Vertrieb & Marketing"
   }
 }

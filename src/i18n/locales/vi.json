@@ -17437,5 +17437,15 @@
     "xray_label": "Được tạo từ {count} năng lực",
     "xray_tooltip": "Mẫu này là sự kết hợp giữa tính cách và năng lực từ danh mục công thức — cùng những thành phần bạn có thể tự soạn trong Foundry.",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "tác nhân",
+    "domain_content": "Xưởng Nội dung",
+    "domain_engineering": "Kỹ thuật",
+    "domain_finance": "Tài chính",
+    "domain_operations": "Vận hành",
+    "domain_people": "Khách hàng & Nhân sự",
+    "domain_research": "Nghiên cứu & Tình báo",
+    "domain_revenue": "Bán hàng & Tiếp thị"
   }
 }

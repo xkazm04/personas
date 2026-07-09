@@ -18,9 +18,11 @@
 //!   - `events`         — Tauri-channel + DB-update glue.
 
 mod events;
+mod fanout;
 mod fix_pass;
 mod gates;
 mod oneshot;
+mod orchestrator;
 mod parser;
 pub mod reference;
 mod runner;
@@ -133,6 +135,13 @@ impl BuildSessionManager {
         // brand guide) injected into the build prompt to ground the persona
         // instead of inventing it from the intent alone (UAT P7).
         context: Option<String>,
+        // Build orchestration variant (build-orchestration Phase 2): "sequential"
+        // (default) or "multiagent". Explicit arg wins; else the
+        // PERSONAS_BUILD_ORCHESTRATION env var; else sequential. In Phase 2,
+        // "multiagent" runs the SAME sequential resolution (the fan-out lands in
+        // Phases 3-4) — it only tags resolution events with a lane so the switch
+        // is observable end-to-end and does not change the built persona.
+        orchestration: Option<String>,
     ) -> Result<String, AppError> {
         let (input_tx, input_rx) = mpsc::channel::<UserAnswer>(32);
         let cancel_flag = Arc::new(AtomicBool::new(false));
@@ -160,6 +169,18 @@ impl BuildSessionManager {
         };
         let is_one_shot = normalized_mode.as_deref() == Some("one_shot");
 
+        // Resolve the orchestration variant (never errors — a perf/telemetry
+        // knob, not a correctness gate). Anything but "multiagent" is sequential.
+        let orchestration = {
+            let raw = orchestration
+                .or_else(|| std::env::var("PERSONAS_BUILD_ORCHESTRATION").ok())
+                .unwrap_or_default();
+            match raw.trim().to_lowercase().as_str() {
+                "multiagent" => "multiagent".to_string(),
+                _ => "sequential".to_string(),
+            }
+        };
+
         // Create the DB row
         let now = chrono::Utc::now().to_rfc3339();
         let session = BuildSession {
@@ -178,6 +199,12 @@ impl BuildSessionManager {
             mode: normalized_mode,
             companion_session_id: companion_session_id.clone(),
             disabled_dims_json: None,
+            // Build telemetry (Phase 0) — populated as the build runs.
+            phase_timings_json: None,
+            total_cost_usd: None,
+            input_tokens: None,
+            output_tokens: None,
+            num_turns: None,
             created_at: now.clone(),
             updated_at: now,
         };
@@ -199,6 +226,15 @@ impl BuildSessionManager {
         let mut cli_args = prompt::build_cli_args(None, None);
         cli_args.args.push("--model".to_string());
         cli_args.args.push("claude-sonnet-4-6".to_string());
+        // B2 streaming (interactive only): ask the CLI to emit incremental
+        // content_block_delta events so the runner can surface the persona's
+        // behavior_core to the Cinema loading view the moment the LLM finishes
+        // writing it (~15-20s), instead of at the end of the ~50-155s turn.
+        // Additive — the authoritative post-turn parse is unchanged. Skipped for
+        // one-shot/headless builds (no UI watches, so the extra stream is waste).
+        if !is_one_shot {
+            cli_args.args.push("--include-partial-messages".to_string());
+        }
 
         // Query available credentials and connectors for context-aware prompt
         let credentials = credential_repo::get_all(&pool).unwrap_or_default();
@@ -297,6 +333,7 @@ impl BuildSessionManager {
                 parser_result_json,
                 app_handle,
                 is_one_shot,
+                orchestration,
                 generation,
             )
             .await;

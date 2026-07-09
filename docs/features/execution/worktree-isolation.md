@@ -1,9 +1,9 @@
 # Per-Execution Git-Worktree Isolation — Design Note
 
 > Status: shipped, **default OFF** (`execution_worktree_isolation` setting).
-> Code: `engine/runner/mod.rs` (`run_execution`),
-> `commands/infrastructure/dev_tools/workspace.rs` (`ExecutionWorkspace`),
-> `db/settings_keys.rs` (the flag).
+> Code: `engine/runner/mod.rs` (`run_execution` — the cwd + `CODEBASE_ROOT_PATH`
+> worktree redirect), `commands/infrastructure/dev_tools/workspace.rs`
+> (`ExecutionWorkspace`), `db/settings_keys.rs` (the flag).
 
 ## The problem
 

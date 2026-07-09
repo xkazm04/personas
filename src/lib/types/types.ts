@@ -405,7 +405,7 @@ export type DesignSubTab = "use-cases" | "prompt" | "parameters" | "connectors" 
 /** Legacy EditorTab values kept only for migrating persisted state. */
 export type LegacyEditorTab = "prompt" | "connectors" | "health";
 export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability" | "leaderboard" | "director" | "certification";
-export type TemplateTab = "n8n" | "generated" | "recipes" | "presets";
+export type TemplateTab = "n8n" | "generated" | "explore" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "radio" | "engine" | "byom" | "portability" | "network" | "admin" | "api-keys" | "history" | "limits";
 export type DevToolsTab = "overview" | "llm-overview" | "projects" | "goals" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "competition" | "skills" | "fleet";

@@ -1,17 +1,17 @@
 import { useId, useRef, type KeyboardEvent } from 'react';
-import { LayoutList, AlignJustify, LayoutGrid } from 'lucide-react';
+import { LayoutList, AlignJustify } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 
-export type Density = 'comfortable' | 'compact' | 'role';
+export type Density = 'comfortable' | 'compact';
 
 interface DensityToggleProps {
   density: Density;
   onChange: (d: Density) => void;
 }
 
-const DENSITY_VALUES: Density[] = ['comfortable', 'compact', 'role'];
+const DENSITY_VALUES: Density[] = ['comfortable', 'compact'];
 
 export function DensityToggle({ density, onChange }: DensityToggleProps) {
   const { t } = useTranslation();
@@ -23,7 +23,6 @@ export function DensityToggle({ density, onChange }: DensityToggleProps) {
   const options: Array<{ value: Density; label: string; Icon: typeof LayoutList }> = [
     { value: 'comfortable', label: t.templates.search.comfortable_view, Icon: LayoutList },
     { value: 'compact', label: t.templates.search.compact_view, Icon: AlignJustify },
-    { value: 'role', label: t.templates.explore.by_role, Icon: LayoutGrid },
   ];
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {

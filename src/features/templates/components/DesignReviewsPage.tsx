@@ -9,6 +9,7 @@ import { GeneratedReviewsTab } from '@/features/templates/sub_generated';
 import N8nImportTab from '@/features/templates/sub_n8n/steps/N8nImportTab';
 import { RecipesPage } from '@/features/templates/sub_recipes';
 import { PresetLibraryPage } from '@/features/templates/sub_presets';
+import ExploreView from '@/features/templates/sub_explore/ExploreView';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import ActivityDiagramModal from '@/features/templates/sub_diagrams/ActivityDiagramModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -42,6 +43,9 @@ export default function DesignReviewsPage() {
         iconColor="violet"
         title={t.templates.page.title}
         subtitle={(() => {
+          // Explore has its own domain structure — a flat template count is
+          // misleading there, so the header shows title-only on that tab.
+          if (activeTab === 'explore') return undefined;
           // Don't flash a misleading "0 templates" while the reviews fetch is in
           // flight (the hook exposes isLoading; the page previously dropped it).
           if (isLoading && reviews.length === 0 && !(activeTab === 'generated' && galleryTotal > 0)) {
@@ -76,6 +80,11 @@ export default function DesignReviewsPage() {
               onViewFlows={setDiagramReview}
               onTotalChange={setGalleryTotal}
             />
+          )}
+          {activeTab === 'explore' && (
+            <ErrorBoundary name="Explore">
+              <ExploreView />
+            </ErrorBoundary>
           )}
           {activeTab === 'recipes' && (
             <ErrorBoundary name="Recipes">

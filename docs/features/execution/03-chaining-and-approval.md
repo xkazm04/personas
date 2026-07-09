@@ -221,13 +221,13 @@ isn't a trigger mechanism — there's no event — but it creates
 ```
 Execution #1 of persona P
   │
-  ▼ emits agent_memory {title: "X", importance: 4}
+  ▼ calls emit_memory {title: "X", importance: 4}  (or legacy agent_memory line)
   ▼ memory persisted
   │
 Execution #2 of persona P (hours/days later)
   │
-  ▼ get_for_injection fetches memories
-  ▼ "X" appears in system prompt under "Active Learnings"
+  ▼ get_for_injection_v2 fetches core/active/working memories
+  ▼ "X" appears in system prompt under "## Your Memory System"
   ▼ P's behavior shifts based on what it learned last time
 ```
 
@@ -245,7 +245,10 @@ ask** for human approval mid-run.
 
 ### Emission
 
-Persona emits:
+The persona pauses by calling the **`request_review` virtual tool** (the
+reliable primary path, intercepted in `runner/mod.rs`); the legacy JSON-line
+form below (`manual_review` / `request_review` in `PROTOCOL_KEYS`) still parses.
+Both carry the same fields:
 
 ```json
 {
@@ -275,8 +278,9 @@ INSERT INTO persona_manual_reviews
 ```
 
 Side effects:
-- OS notification fires (desktop only, via `notify-rust`)
-- Tauri event `manual-review-created` emitted with review_id
+- OS notification fires (desktop only, `dispatch.rs::notify_manual_review`)
+- Tauri event `execution-review-request` emitted with the review_id (there is
+  no `manual-review-created` event)
 - UI shows the review in a prominent panel
 
 ### Severity taxonomy

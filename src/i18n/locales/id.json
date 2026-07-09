@@ -17437,5 +17437,15 @@
     "xray_label": "Tersusun dari {count} kapabilitas",
     "xray_tooltip": "Templat ini adalah gabungan mentalitas dan kapabilitas dari katalog resep — bagian yang sama yang bisa Anda susun sendiri di Foundry.",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "agen",
+    "domain_content": "Studio Konten",
+    "domain_engineering": "Teknik",
+    "domain_finance": "Keuangan",
+    "domain_operations": "Operasional",
+    "domain_people": "Pelanggan & SDM",
+    "domain_research": "Riset & Intelijen",
+    "domain_revenue": "Penjualan & Pemasaran"
   }
 }

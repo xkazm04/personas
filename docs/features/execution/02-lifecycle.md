@@ -1,15 +1,29 @@
 # Execution lifecycle
 
 The four phases of `run_execution()` in
-`src-tauri/src/engine/runner.rs`. Every execution — manual, scheduled,
-chained, webhook-driven — goes through the same pipeline:
+`src-tauri/src/engine/runner/mod.rs` (the runner was split from a flat
+`runner.rs` into a module dir — `mod.rs` plus `credentials.rs`, `env.rs`,
+`stages.rs`, `team_context.rs`, `globals.rs`). Every execution — manual,
+scheduled, chained, webhook-driven, or a simulation — goes through the same
+pipeline:
 
 ```
- Validate → Spawn → Stream → Finalize
+ Validate → SpawnEngine → StreamOutput → FinalizeStatus
 ```
 
-Each phase has a `TraceSpan` in `execution_traces` so you can see
-exactly where time was spent after the fact.
+Each phase has a `TraceSpan` in `execution_traces` (the four stage keys are
+`validate` / `spawn_engine` / `stream_output` / `finalize_status`) so you can
+see exactly where time was spent after the fact.
+
+> **Before the pipeline: admission.** `execute_persona` → `execute_persona_inner`
+> creates the row synchronously, then hands off to `start_execution` →
+> `start_execution_with_priority`, which runs an **admission tracker**: the run
+> either starts immediately or is **enqueued** with a priority under the
+> persona's `max_concurrent`. A `queue-status` Tauri event surfaces backpressure.
+> So "spawned a background task" is really "admitted or queued." Simulations
+> (`simulate_use_case` → `is_simulation`) run the same pipeline but bypass the
+> capability `enabled` gate and the `needs_credentials` setup gate, and flag the
+> row so metrics/notifications skip it.
 
 ## 1. Validate
 
@@ -23,8 +37,9 @@ exactly where time was spent after the fact.
    every line so you can `tail -f` during a run.
 
 2. **Resolve workspace defaults** (`engine/config_merge.rs`):
-   - Check `persona.group_id` → fetch group config if set
-   - Cascade: persona-level > workspace-level > global
+   - Check `persona.home_team_id` → fetch the home team's workspace config
+     if set (replaced the retired `group_id`)
+   - Cascade: persona-level > home-team workspace > global
    - Produces `effective_config` with `max_budget_usd`, `max_turns`,
      `model`, `provider`, `base_url`, `auth_token`,
      `prompt_cache_policy`
@@ -37,7 +52,7 @@ exactly where time was spent after the fact.
    - Logs warnings as trace events
    - Does NOT fail the execution — informational only
 
-4. **Credential resolution** (`engine/runner.rs` line ~264):
+4. **Credential resolution** (`engine/runner/credentials.rs`):
    - For each tool in the tool list:
      - Match tool name → connector.services[].toolName (primary)
      - Fallback: tool.requires_credential_type → connector.name
@@ -75,29 +90,40 @@ exactly where time was spent after the fact.
 1. **Parse model profile** (from `persona.model_profile` JSON):
    ```json
    {
-     "model": "claude-sonnet-4-20250514",
+     "model": "claude-sonnet-4-6",
      "provider": "anthropic",
      "base_url": null,
      "auth_token": null,
      "prompt_cache_policy": "ephemeral"
    }
    ```
-   Resolve Ollama / LiteLLM overrides from app settings if set.
+   Resolve Ollama / LiteLLM overrides from app settings if set. **Model
+   resolution has three layers beyond this profile:** (a) a per-capability
+   `model_override` on the active use case — either a tier slug (`haiku` /
+   `opus`) or a full profile — resolved by `resolve_use_case_model_override`;
+   (b) a `DEFAULT_CAPABILITY_MODEL` fallback (sonnet) when a capability sets no
+   override; (c) a declarative persona-level routing cascade
+   (`engine/model_routing.rs::resolve_for_persona`) applied only when no explicit
+   model is set. See `engine/tier.rs` for the tier slugs.
 
-2. **Assemble prompt** (`engine/prompt.rs::assemble_prompt`):
-   - Start with `persona.system_prompt`
-   - Append workspace `shared_instructions`
+2. **Assemble prompt** (`engine/prompt/mod.rs::assemble_prompt`):
+   - Start with `persona.system_prompt` (with `{{param.KEY}}` placeholders
+     resolved from `persona.parameters` by `prompt::variables::replace_variables`
+     — the recipe-parameterization bridge, `engine/recipe_parameters.rs`)
+   - Append home-team `shared_instructions` + the `team_context` alignment block
    - Append `## Tools` section with descriptions from tool catalog +
      guidance metadata
    - Append `## Connectors` section listing available credential
      connector names from `cred_hints` + `metadata.llm_usage_hint`
      per connector
    - **Memory injection** (unless this is a session resume):
-     - Query `mem_repo::get_for_injection()`:
-       - Core memories (always injected, no limit)
-       - Top N active memories sorted by (importance desc, recency desc)
-     - Format as `## Agent Memory — Core Beliefs` and
-       `## Agent Memory — Recent Learnings`
+     - Query `mem_repo::get_for_injection_v2()` — selects the `core` / `active`
+       / `working` tiers (the 4th tier, `archive`, is never injected)
+     - Also inject **team memory** via `team_memory_repo::get_for_injection`
+       (home-team-scoped, top 15) when the persona has a `home_team_id`
+     - Rendered under a `## Your Memory System` preamble (importance 1-5,
+       auto-promotion `working → active → core`) — the old
+       `## Agent Memory — Core Beliefs` / `— Recent Learnings` headers are gone
      - Track access via `mem_repo::increment_access_batch()`
      - Run lifecycle transitions (promote/archive) via
        `mem_repo::run_lifecycle()`
@@ -105,7 +131,10 @@ exactly where time was spent after the fact.
 
 3. **Execution config snapshot** — at this point, all config is
    frozen into an `ExecutionConfig` JSON stored on the execution row.
-   Used for deterministic replay and warm-session config-hash matching.
+   Used for deterministic replay and warm-session config-hash matching. The
+   `config_hash` now folds in `structured_prompt` + an
+   `active_capabilities_fingerprint`, so toggling a capability invalidates a
+   stale warm session rather than silently reusing it.
 
 4. **Working directory setup**:
    - Path: `{TEMP}/personas-workspace/{persona_id}`
@@ -143,8 +172,21 @@ exactly where time was spent after the fact.
 
 **Span**: `Pipeline: Stream Output`
 
-The CLI stdout is read line-by-line in an async loop. Each line is
-parsed, dispatched, and optionally emitted as a Tauri event.
+The CLI stdout is read line-by-line in an async loop. Each line becomes a
+`StructuredExecutionEvent` (assistant text, tool-use, tool-result, run-result
+footer) emitted over the **single `execution-event` channel**, and is also
+scanned for protocol messages that drive DB writes.
+
+Two dispatch mechanisms coexist:
+
+- **Virtual-tool interception (primary).** The persona calls named tools
+  `emit_memory` / `emit_message` / `emit_event` / `request_review` /
+  `raise_incident` / `propose_backlog`; the runner intercepts these tool calls
+  (`runner/mod.rs`) and routes them to the same DB writes below. This is the
+  reliable path ("more reliable than JSON lines").
+- **JSON-line protocol (legacy, still parsed).** Lines matching `PROTOCOL_KEYS`
+  in `parser.rs` are extracted and dispatched. Both mechanisms end at
+  `engine/dispatch.rs`.
 
 ### Line processing
 
@@ -173,12 +215,21 @@ Each parsed message routes through `engine/dispatch.rs`:
 | `user_message` | `content` | Append to `output_data` accumulator |
 | `emit_event` | `event_type`, `source_type`, `source_id`, `target_persona_id?`, `payload?`, `use_case_id?` | Create `persona_events` row with `chain_trace_id` set — cascades to subscribers |
 | `agent_memory` | `[{title, category, content, importance, tags?}]` | Persist to `persona_memories`; will be injected in future runs |
-| `manual_review` / `request_review` | `title`, `description`, `severity`, `context_data?`, `suggested_actions?` | Create `persona_manual_reviews` row (status=pending); OS notification + `MANUAL_REVIEW_CREATED` Tauri event |
+| `manual_review` / `request_review` | `title`, `description`, `severity`, `context_data?`, `suggested_actions?` | Create `persona_manual_reviews` row (status=pending); OS notification (`dispatch.rs::notify_manual_review`) + `execution-review-request` Tauri event |
+| `persona_action` | JSON | Record a structured persona action step |
 | `execution_flow` | JSON | Store in `execution.execution_flows` — frontend renders as a flow diagram |
-| `outcome_assessment` | `accomplished`, `summary`, … | Influences post-run status semantics (partial success vs complete failure) |
 | `knowledge_annotation` | `graph_id`, `node_id`, … | Persist to knowledge graph |
-| `tool_call` | `name`, `args` | Record `ToolCallStep`, dispatch via `tool_runner` |
-| `tool_result` | `name`, `result`, `duration_ms` | Update the matching `ToolCallStep` |
+| `raise_incident` / `resolve_incident` | `title`, … / incident id | File / close a blocker in the Incidents inbox |
+| `propose_improvement` / `propose_backlog` | JSON | Queue a backlog idea (backpressure-capped) |
+| `kpi_measurement` | JSON | Record a KPI datapoint |
+
+`tool_call` / `tool_result` are **not** protocol messages — they arrive from the
+CLI stream as `AssistantToolUse` / `Result` line types and are surfaced as
+`StructuredExecutionEvent`s (which also feed the `ToolCallStep` accounting).
+Similarly, `outcome_assessment` is parsed separately from the accumulated
+assistant text via `parse_outcome_assessment` (`business_outcome` taxonomy:
+`value_delivered` / `no_input_available`, unknown values rejected), not through
+this dispatch table.
 
 ### Tool call execution (the inner loop)
 
@@ -194,23 +245,35 @@ When the CLI asks to call a tool:
    - **Built-in**: auto-pass or dispatch to engine-native handler
 2. Capture stdout + stderr + exit code
 3. Increment `tool_usage` counters
-4. Emit `tool-call-started` / `tool-call-completed` Tauri events
+4. The tool-use and tool-result surface to the UI as `StructuredExecutionEvent`
+   variants on the `execution-event` channel (there are no separate
+   `tool-call-*` events)
 
 ### Tauri events emitted during streaming
+
+The canonical event names live in `engine/event_registry.rs`. Tool calls,
+tool results, assistant text, and the run-result footer are **all** delivered as
+`StructuredExecutionEvent` variants over the single `execution-event` channel —
+there are no per-tool or per-message Tauri events. The events actually emitted
+during a run:
 
 | Event | Frequency | Purpose |
 |---|---|---|
 | `execution-output` | Each line | Live log streaming to UI |
-| `execution-status` | Phase transition | Status indicator updates |
-| `tool-call-started` | Each tool call | UI tool-call list |
-| `tool-call-completed` | Each tool result | With duration + success/failure |
-| `event-created` | `emit_event` | Chain trigger notification |
-| `manual-review-created` | `manual_review` | Approval prompt |
-| `memory-created` | `agent_memory` | Knowledge update indicator |
+| `execution-status` | Phase transition + finalize | Status indicator updates |
+| `execution-event` | Each structured event | Assistant text, tool-use, tool-result, run-result footer (see `terminalEvents.ts`) |
+| `execution-progress` | Subagent / long-step progress | Progress ticks |
+| `execution-heartbeat` | Periodic | Liveness while streaming |
+| `execution-review-request` | `request_review` | Human-approval prompt |
+| `execution-trace-span` / `execution-trace` | Span open/close + finalize | Live trace tree |
+| `healing-event` | On failure | Drives auto-healing retry |
+
+Chain fan-out is carried on the separate `event-bus` path, not a per-event Tauri
+emit.
 
 ## 4. Finalize
 
-**Span**: `Pipeline: Finalize`
+**Span**: `Pipeline: Finalize Status`
 
 ### Steps
 
@@ -245,8 +308,10 @@ When the CLI asks to call a tool:
    ```
 
 4. **Emit final events**:
-   - `execution-status` with terminal status
-   - `execution-completed` with summary metrics
+   - `execution-status` with the terminal status + summary metrics
+     (`duration_ms`, `cost_usd`) — there is no separate `execution-completed`
+     event; the terminal `execution-status` IS the completion signal
+   - a final `execution-event` (run-result footer) + `execution-trace` close
    - `healing-event` if failed (drives auto-healing retry system)
 
 5. **Session pool**:
@@ -321,12 +386,14 @@ exits cleanly. Partial `output_data` is preserved.
 
 ## Memory lifecycle (in-pipeline)
 
-1. **Pre-run**: `get_for_injection` fetches memories to inject
-2. **During run**: any `agent_memory` protocol message persists a new
-   memory (with `source_execution_id` set to this run)
+1. **Pre-run**: `get_for_injection_v2` fetches `core`/`active`/`working`
+   memories to inject (plus home-team memory via `team_memory_repo`)
+2. **During run**: an `emit_memory` virtual-tool call (or legacy `agent_memory`
+   protocol message) persists a new memory (with `source_execution_id` set to
+   this run)
 3. **Post-run**: `run_lifecycle`:
-   - Active memories with `access_count >= threshold` → promote to core
-   - Core memories with `last_accessed_at < idle_threshold` → archive
+   - `working`/`active` memories with `access_count >= threshold` → promote
+   - Idle higher-tier memories → archive
    - Archive memories older than N days → hard delete
 
 This means every execution both **reads** memories (injection) and
@@ -337,17 +404,22 @@ where the persona becomes better at its job over time.
 
 | File | Role |
 |---|---|
-| `src-tauri/src/engine/runner.rs` | `run_execution` — the main loop |
+| `src-tauri/src/engine/runner/mod.rs` | `run_execution` — the main loop |
+| `src-tauri/src/engine/runner/credentials.rs` | Tiered credential resolution + OAuth refresh + env injection |
+| `src-tauri/src/engine/runner/env.rs` | Execution env assembly (creds, `CODEBASE_ROOT_PATH`, …) |
+| `src-tauri/src/engine/runner/stages.rs` | Pipeline stage span keys |
 | `src-tauri/src/engine/cli_process.rs` | Claude CLI subprocess driver |
-| `src-tauri/src/engine/prompt.rs` | Prompt assembly, memory injection |
-| `src-tauri/src/engine/parser.rs` | Protocol message extraction |
-| `src-tauri/src/engine/dispatch.rs` | Protocol message → DB writes |
+| `src-tauri/src/engine/prompt/mod.rs` | Prompt assembly, memory injection |
+| `src-tauri/src/engine/recipe_parameters.rs` | `{{param.*}}` recipe-parameterization bridge |
+| `src-tauri/src/engine/model_routing.rs` + `tier.rs` | Declarative model routing + tier slugs |
+| `src-tauri/src/engine/parser.rs` | Protocol message extraction (`PROTOCOL_KEYS`) |
+| `src-tauri/src/engine/dispatch.rs` | Protocol / virtual-tool message → DB writes |
 | `src-tauri/src/engine/tool_runner.rs` | Tool dispatch (script/API/automation) |
 | `src-tauri/src/engine/config_merge.rs` | Cascaded config resolution |
 | `src-tauri/src/engine/failover.rs` | Provider failover chain |
 | `src-tauri/src/engine/trace.rs` | Trace span tree |
 | `src-tauri/src/engine/cost.rs` | Token → USD |
 | `src-tauri/src/engine/crypto.rs` | Credential decrypt + env sanitize |
-| `src-tauri/src/engine/oauth_refresh.rs` | OAuth refresh with per-cred locks |
+| `src-tauri/src/engine/oauth_refresh.rs` + `oauth_refresh_lock.rs` | OAuth refresh with per-cred locks |
 | `src-tauri/src/db/repos/execution/executions.rs` | Execution CRUD |
-| `src-tauri/src/db/repos/resources/memories.rs` | Memory lifecycle |
+| `src-tauri/src/db/repos/core/memories.rs` | Memory lifecycle (`get_for_injection_v2`) |

@@ -12,10 +12,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
-import { GlyphFullLayout } from "@/features/agents/sub_glyph/GlyphFullLayout";
-import { GlyphPrototypeLayout } from "@/features/agents/sub_glyph/GlyphPrototypeLayout";
-import { GlyphDialogueLayout } from "@/features/agents/sub_glyph/GlyphDialogueLayout";
 import { GlyphCinemaLayout } from "@/features/agents/sub_glyph/GlyphCinemaLayout";
+import { GlyphDialogueCinemaLayout } from "@/features/agents/sub_glyph/GlyphDialogueCinemaLayout";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
 import {
@@ -35,7 +33,6 @@ import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
-import { DebtText, debtText } from '@/i18n/DebtText';
 import AdoptionWizardModal from "@/features/templates/sub_generated/adoption/AdoptionWizardModal";
 import { BuildTemplateSuggestion } from "@/features/agents/components/matrix/BuildTemplateSuggestion";
 import { BuildContextField } from "@/features/agents/components/matrix/BuildContextField";
@@ -47,25 +44,21 @@ import type { CompanionTemplateMatch } from "@/api/companion";
 
 
 // Layout preference — persists across sessions via localStorage.
-// Two modes after 2026-05-05: the flagship "glyph-full" and the new
-// "composer-prototype" (center-prompt surface with sigil quick-setup).
-// The legacy 8-dimension matrix ("legacy-dimensions") was retired —
-// stored values for it migrate to "glyph-full" on read.
-// Prototype variants (2026-07-07, /prototype arc): "dialogue" (guided
-// conversation) and "constellation" (spatial option field) explore the
-// "combine prompt + click-config across multi-round cycles" direction against
-// the "composer-prototype" baseline. All share GlyphFullLayoutProps.
-type BuildLayout = "glyph-full" | "composer-prototype" | "dialogue" | "cinema";
+// The switcher now offers only the two cinematic variants (2026-07-07). The
+// retired variants live on as background baselines the survivors are built on —
+// GlyphFullLayout (GlyphCinemaLayout's compose delegate) and the Dialogue compose
+// pieces (DialogueComposePanel/DialogueStageSurface, used by GlyphDialogueCinemaLayout)
+// — but "glyph-full", "composer-prototype" and "dialogue" are no longer selectable.
+// "dialogue-cinema" is the default.
+type BuildLayout = "cinema" | "dialogue-cinema";
 const LAYOUT_STORAGE_KEY = "personas:build-layout";
-const BUILD_LAYOUTS: BuildLayout[] = ["glyph-full", "composer-prototype", "dialogue", "cinema"];
+const BUILD_LAYOUTS: BuildLayout[] = ["cinema", "dialogue-cinema"];
 function readLayoutPreference(): BuildLayout {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
     if (raw && (BUILD_LAYOUTS as string[]).includes(raw)) return raw as BuildLayout;
-    // Migrate retired values so users don't land on a stale preference.
-    if (raw === "legacy-dimensions" || raw === "v3-capabilities" || raw === "glyph") return "glyph-full";
   } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch1")(err); }
-  return "glyph-full";
+  return "dialogue-cinema";
 }
 function writeLayoutPreference(value: BuildLayout): void {
   try { localStorage.setItem(LAYOUT_STORAGE_KEY, value); } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch2")(err); }
@@ -723,11 +716,9 @@ export function UnifiedBuildEntry() {
       />
 
       <div className="flex-1 min-h-0 flex flex-col w-full px-4 md:px-6 xl:px-8 pt-4">
-      {/* 2026-05-06 — inline GlyphQuestionPanel removed. Both remaining
-          layouts (glyph-full and composer-prototype) host Q&A through the
-          GlyphAnswerCard overlay on the sigil; the inline panel was a
-          legacy surface for the now-deleted 8-dimension matrix and ran
-          duplicated against the overlay in the prototype. */}
+      {/* 2026-05-06 — inline GlyphQuestionPanel removed. Cinema hosts Q&A through
+          the GlyphAnswerCard overlay on the sigil; Dialogue+Cinema hosts it as a
+          dialogue turn in DialogueStageSurface. */}
 
       {adoptionReview ? (
         <AdoptionWizardModal
@@ -739,7 +730,7 @@ export function UnifiedBuildEntry() {
         />
       ) : (
         <>
-      {/* Layout toggle — two modes: glyph-full and composer-prototype. */}
+      {/* Layout toggle — two variants: Cinema and Dialogue+Cinema. */}
       <div
         className="flex-shrink-0 mb-2 flex justify-end items-center gap-2"
         data-testid="build-layout-toggle"
@@ -771,45 +762,6 @@ export function UnifiedBuildEntry() {
         <div className="inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5">
           <button
             type="button"
-            onClick={() => handleLayoutChange("glyph-full")}
-            className={`rounded-full px-3 py-1 typo-caption transition ${
-              layout === "glyph-full"
-                ? "bg-primary/20 text-primary"
-                : "text-foreground hover:text-foreground"
-            }`}
-            title={debtText("auto_glyph_full_sigil_first_flagship_build_surf_61b25b83")}
-            data-testid="build-layout-toggle-glyph-full"
-          >
-            <DebtText k="auto_glyph_full_a4abca63" />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleLayoutChange("composer-prototype")}
-            className={`rounded-full px-3 py-1 typo-caption transition ${
-              layout === "composer-prototype"
-                ? "bg-primary/20 text-primary"
-                : "text-foreground hover:text-foreground"
-            }`}
-            title={debtText("auto_composer_prototype_periphery_connectors_ce_1a3d8c28")}
-            data-testid="build-layout-toggle-prototype"
-          >
-            <DebtText k="auto_composer_prototype_9b50c4fd" />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleLayoutChange("dialogue")}
-            className={`rounded-full px-3 py-1 typo-caption transition ${
-              layout === "dialogue"
-                ? "bg-primary/20 text-primary"
-                : "text-foreground hover:text-foreground"
-            }`}
-            title="Dialogue — guided conversation compose (prototype)"
-            data-testid="build-layout-toggle-dialogue"
-          >
-            Dialogue
-          </button>
-          <button
-            type="button"
             onClick={() => handleLayoutChange("cinema")}
             className={`rounded-full px-3 py-1 typo-caption transition ${
               layout === "cinema"
@@ -821,18 +773,37 @@ export function UnifiedBuildEntry() {
           >
             Cinema
           </button>
+          <button
+            type="button"
+            onClick={() => handleLayoutChange("dialogue-cinema")}
+            className={`rounded-full px-3 py-1 typo-caption transition ${
+              layout === "dialogue-cinema"
+                ? "bg-primary/20 text-primary"
+                : "text-foreground hover:text-foreground"
+            }`}
+            title="Dialogue+Cinema — brief stays on top, cinema plays below while loading (prototype)"
+            data-testid="build-layout-toggle-dialogue-cinema"
+          >
+            Dialogue+Cinema
+          </button>
         </div>
       </div>
 
-      <BuildTemplateSuggestion
-        intent={intentText}
-        active={
-          (build.pendingQuestions?.length ?? 0) > 0 &&
-          !templateSuggestionDismissed
-        }
-        onAccept={handleAcceptTemplate}
-        onDismiss={() => setTemplateSuggestionDismissed(true)}
-      />
+      {/* The "Faster path" template alert floats at the container level for the
+          Cinema (glyph-style) layout. Dialogue+Cinema surfaces the faster path
+          INSIDE its intent component (recipe starters), so suppress the floating
+          alert there to avoid a competing above-the-fold banner. */}
+      {layout !== "dialogue-cinema" && (
+        <BuildTemplateSuggestion
+          intent={intentText}
+          active={
+            (build.pendingQuestions?.length ?? 0) > 0 &&
+            !templateSuggestionDismissed
+          }
+          onAccept={handleAcceptTemplate}
+          onDismiss={() => setTemplateSuggestionDismissed(true)}
+        />
+      )}
 
       {!build.isBuilding && !hasDesignResult && (
         <BuildContextField
@@ -877,10 +848,7 @@ export function UnifiedBuildEntry() {
           initialNotificationChannels: initialNotificationChannels ?? undefined,
         };
         const LayoutComponent =
-          layout === "composer-prototype" ? GlyphPrototypeLayout
-          : layout === "dialogue" ? GlyphDialogueLayout
-          : layout === "cinema" ? GlyphCinemaLayout
-          : GlyphFullLayout;
+          layout === "cinema" ? GlyphCinemaLayout : GlyphDialogueCinemaLayout;
         return <LayoutComponent {...layoutProps} />;
       })()}
 

@@ -1,0 +1,41 @@
+{
+  "id": "lite-web-summary",
+  "name": "Web Summarizer",
+  "description": "Lean baseline fixture: 3 native web-research capabilities, NO external connectors. Chosen to complete headless in ~3-5 min so it gives a clean, repeatable baseline (the heavier web-research-desk fixture stalls on connector questions + is too slow for a bounded one-shot run). Use this for baseline + as-is/to-be A/B; use web-research-desk as a fan-out stress fixture.",
+  "mode": "one_shot",
+
+  "intent": "Build a Web Summarizer agent with exactly THREE capabilities:\n\n(1) Summarize a URL — given a web page URL, fetch the page with the native WebFetch/http_request tool, extract the main content, and return a concise 1-paragraph summary that ends with the source URL.\n\n(2) Answer from the web — given a question, use the native WebSearch tool to find the most relevant recent sources, then synthesize a short answer that cites each source URL.\n\n(3) Daily topic digest — on a daily schedule, re-run the tracked topic searches, drop anything already seen, and return a short digest of only what is new.\n\nAll three capabilities use ONLY the native web tools (WebSearch, WebFetch, http_request). Do NOT add any external connector, credential, SerpAPI/Tavily, or storage — there is no setup required. No human review needed.",
+
+  "expected": {
+    "min_capabilities": 3,
+    "web_research_capabilities": {
+      "count": 3,
+      "tool_hints_any_of": ["web_search", "web_fetch", "http_request", "web_scraping", "rss"],
+      "must_not_require_credential": true
+    },
+    "connector_reactions": [],
+    "setup_status": "ready",
+    "hard_assertions": [
+      "capabilities_count >= 3",
+      "web_research_caps >= 3",
+      "no capability requires a credential (native web only)",
+      "no hallucinated external search connector (serpapi/tavily/google_search) present",
+      "required_connectors is empty or contains only native/zero-config entries"
+    ]
+  },
+
+  "rubric": {
+    "note": "0-3 per dimension, Claude-as-judge (athena style). Scores QUALITY; hard_assertions gate CORRECTNESS.",
+    "dimensions": [
+      { "key": "coverage", "weight": 2.0, "prompt": "Do the resolved capabilities cover all three requested jobs (summarize-URL, answer-from-web, daily digest) as distinct capabilities without padding or collapsing?" },
+      { "key": "capability_distinctness", "weight": 1.0, "prompt": "Are the 3 capabilities genuinely distinct (different inputs/triggers/outputs)?" },
+      { "key": "trigger_sensibility", "weight": 1.5, "prompt": "Is the daily digest a schedule trigger while summarize-URL / answer-from-web are manual? Penalise a schedule on the interactive ones." },
+      { "key": "groundedness", "weight": 1.5, "prompt": "Are only native web tools used (WebSearch/WebFetch/http_request)? Penalise any hallucinated tool, invented connector, or a step that wrongly requires a credential." }
+    ]
+  },
+
+  "variants": ["sequential", "multiagent"],
+  "repeat": 3,
+  "default_answer": "Use only the native web tools and sensible defaults. No connector or credential is needed. Do not ask further questions — proceed.",
+  "notes": "No vault credentials required. Should promote headless without parking in awaiting_input; if it does ask, the driver auto-answers with default_answer to keep it flowing."
+}

@@ -1,0 +1,10 @@
+{
+  "agents": "エージェント",
+  "domain_content": "コンテンツスタジオ",
+  "domain_engineering": "エンジニアリング",
+  "domain_finance": "財務",
+  "domain_operations": "オペレーション",
+  "domain_people": "顧客・人事",
+  "domain_research": "リサーチ・インテリジェンス",
+  "domain_revenue": "営業・マーケティング"
+}

@@ -46,7 +46,6 @@ export function TemplateSearchControls({
   total,
   loadedCount,
 }: Pick<TemplateSearchFilterRowProps, 'density' | 'onDensityChange' | 'sortBy' | 'onSortByChange' | 'sortDir' | 'onSortDirChange' | 'total' | 'loadedCount'>) {
-  const showListControls = density !== 'role';
   return (
     <>
       {/* Count */}
@@ -56,28 +55,25 @@ export function TemplateSearchControls({
         </span>
       )}
 
-      {/* Density toggle (includes By Role) */}
+      {/* Density toggle */}
       {density && onDensityChange && (
         <DensityToggle density={density} onChange={onDensityChange} />
       )}
 
-      {/* Sort (list modes only) */}
-      {showListControls && (
-        <SortDropdown
-          sortBy={sortBy}
-          sortDir={sortDir}
-          onSortChange={(by, dir) => {
-            onSortByChange(by);
-            onSortDirChange(dir);
-          }}
-        />
-      )}
+      {/* Sort */}
+      <SortDropdown
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSortChange={(by, dir) => {
+          onSortByChange(by);
+          onSortDirChange(dir);
+        }}
+      />
     </>
   );
 }
 
 export function TemplateSearchFilterRow({
-  density,
   selectedCategory,
   connectorFilter,
   onCategoryFilterChange,
@@ -96,8 +92,6 @@ export function TemplateSearchFilterRow({
   onBackfillTools,
   isBackfillingTools,
 }: TemplateSearchFilterRowProps) {
-  if (density === 'role') return null;
-
   return (
     <div className="px-4 pb-2.5 flex items-center gap-2">
       <FilterChips

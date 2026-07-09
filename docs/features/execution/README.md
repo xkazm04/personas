@@ -73,8 +73,9 @@ The system has four layers worth documenting separately:
 ## Rust surface
 
 ```
-src-tauri/src/commands/execution/executions.rs   (IPC: execute_persona, cancel, list, get, …)
-src-tauri/src/engine/runner.rs                   (main execution pipeline: run_execution)
+src-tauri/src/commands/execution/executions.rs   (IPC: execute_persona → execute_persona_inner, simulate_use_case, cancel, list, get, …)
+src-tauri/src/engine/runner/mod.rs               (main execution pipeline: run_execution — a module dir, not a flat runner.rs: + credentials.rs / env.rs / stages.rs / team_context.rs / globals.rs)
+src-tauri/src/engine/mod.rs                      (start_execution → start_execution_with_priority: admission tracker + queue/backpressure, queue-status event)
 src-tauri/src/engine/background.rs               (scheduler + event bus background loops)
 src-tauri/src/engine/bus.rs                      (event matching logic)
 src-tauri/src/engine/webhook.rs                  (HTTP webhook server on port 9420)
@@ -83,6 +84,9 @@ src-tauri/src/engine/prompt.rs                   (prompt assembly + memory injec
 src-tauri/src/engine/runner/team_context.rs      (team-alignment block: roster + capabilities + active team goals + self-filter doctrine + STANDARDS & BRANCHING POLICY, injected per execution. Merge authority: when a project's standards_config is set, the policy block makes the QA Guardian the SOLE merge gate for IMPLEMENTATION/code PRs — the implementer (Dev Clone) opens a PR and hands off, never self-merges/auto-merges; QA tests in an isolated worktree then merges. Enforced in-prompt because private/free repos can't configure branch-protection required checks. MECHANICAL LANES (V3/V4): Release Manager (version bump/CHANGELOG/tags) and Docs Steward (README/docs syncs) commit DIRECTLY to the base branch — no PRs in these lanes (they piled up unowned + self-superseding: QA's gate only covers code PRs); stale own-lane PRs may be self-merged/closed; anything touching source code still goes implement → PR → QA.)
 src-tauri/src/engine/goal_advance.rs             (turn a team's dev_goal into a goal-linked assignment; orchestrator auto-writes goal progress on done. Decomposition: open to-dos → steps, else LLM `decompose_goal`. Both sources chain LINEARLY — each step `depends_on` the previous — and the decompose prompt MANDATES an implementation step AND a QA test+merge step, so the orchestrator runs scope→implement→review→…→QA-merge→docs in order and the work only counts when it lands on main. QA FIX LOOP (V1/V2): when a QA step's execution emits `qa.pr.changes_requested`, the orchestrator does NOT mark it done — it resets the implementer step (with the QA verdict forwarded as `rework_feedback` + an instruction to fix the SAME PR branch) and the QA step back to pending, so the DAG re-runs implement→QA for another round; `MAX_QA_FIX_ROUNDS` (2, counted on the QA step's retry_count) then escalates by failing the step → the assignment parks at awaiting_review for a human. An assignment therefore can only complete on a clean QA pass — a goal can no longer be marked done while its PR is stranded open)
 src-tauri/src/engine/cli_process.rs              (Claude CLI subprocess driver)
+src-tauri/src/engine/prompt/mod.rs               (prompt assembly + memory injection — a module dir: + templates.rs / capabilities.rs / cli_args.rs / advisory.rs)
+src-tauri/src/engine/recipe_parameters.rs        ({{param.*}} recipe-parameterization bridge into the prompt)
+src-tauri/src/engine/model_routing.rs + tier.rs  (per-capability model_override + declarative persona model routing)
 src-tauri/src/engine/parser.rs                   (protocol message extraction from stdout)
 src-tauri/src/engine/dispatch.rs                 (protocol message → DB write. Incident loop: `raise_incident` files a blocker into the Incidents inbox; `resolve_incident` (NEW 2026-06-10) lets a persona CLOSE an open incident its work fixed, by id-prefix ≥ 8 chars — open incidents are injected with their ids + a do-not-re-raise discipline into the team-alignment block, and `audit_incidents::promote` dedupes new raises against OPEN incidents by normalized title (digits collapsed), so the same blocker re-raised across runs/cycles no longer stacks copies. Backlog backpressure: `propose_backlog` skips when the project already holds ≥ IDEA_BACKLOG_CAP pending ideas)
 src-tauri/src/engine/chain.rs                    (chain-trigger cascade evaluation — `team_handoff.<persona_uuid>` chains are the AUTHORITATIVE handoff mechanism for SDLC team cascades; named domain events like `code_review.completed`/`security.scan.completed` are advisory telemetry with no real subscribers, NOT handoff triggers. ONE DRIVER PER WORK ITEM: when the source execution is an assignment STEP (input carries assignment_id+step_id), its `team_handoff.*` triggers are SUPPRESSED (`CascadeMetrics.handoffs_suppressed`) — the assignment DAG's depends_on graph owns the flow; routing the handoff too double-drove the same work (two simultaneous implementers, competing PRs). Handoffs are also SINGLE-HOP (T3): a chain execution (depth ≥ 1) never fires further handoffs — multi-hop release→docs→release verification spirals burned ~$60/day concluding "no action needed"; multi-step flow belongs to the DAG. Step executions also receive their predecessors' `output_summary` as `predecessor_outputs` in input_data, so a dependent step acts on the prior step's actual work (PR URL/branch) instead of rediscovering it from repo state. The redundant `dev-clone.pr.created → uc_pr_review` listeners on canonical goal-managed teams are disabled (enabled=0) — the mandated QA step + bounce loop is the single QA path for goal work)
@@ -184,10 +188,15 @@ This doc set covers pillar 3. For pillar 1 see
 ## Gotchas that burn time
 
 1. **`execute_persona` creates the execution row synchronously but
-   spawns the engine asynchronously.** The Tauri command returns a
-   `PersonaExecution` with status `"queued"` almost immediately. The
-   actual CLI work happens in a background task. Frontend polls via
-   `get_execution` or subscribes to `execution-status` events.
+   spawns the engine asynchronously — and the run may be _queued_, not
+   started.** The Tauri command (`execute_persona` → `execute_persona_inner`)
+   returns a `PersonaExecution` with status `"queued"` almost immediately.
+   `start_execution_with_priority` then either runs it now or holds it behind an
+   **admission tracker** under the persona's `max_concurrent`; a `queue-status`
+   event reports backpressure. Frontend polls via `get_execution` or subscribes
+   to `execution-status` events. (`simulate_use_case` shares the same path but
+   bypasses the `enabled` + `needs_credentials` gates and is excluded from
+   metrics.)
 2. **The scheduler tick runs every ~10s, the event bus tick every ~1s.**
    If your schedule trigger looks like it fires up to 10s late, that's
    why. Raise the frequency in `background.rs` if you need tighter

@@ -1,0 +1,873 @@
+{
+  "fixture": "web-research-desk",
+  "summary": {
+    "multiagent": {
+      "runs": 2,
+      "promote_rate": 0.5,
+      "total_seconds_median": 544.34,
+      "total_seconds_min": 367.89,
+      "total_seconds_max": 720.78,
+      "capabilities_median": 5.0,
+      "gate_pass_rate_median": 0.9,
+      "cost_usd_median": 0.51,
+      "per_phase_seconds_median": {
+        "analyzing": 38.29,
+        "resolving": 262.03,
+        "testing": 26.27,
+        "promoted": 0.0,
+        "failed": 0.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "variant": "multiagent",
+      "tag": "multiagent-1",
+      "run": {
+        "fixture_id": "web-research-desk",
+        "variant": "multiagent",
+        "session_id": "430164c9-aa67-4fda-98f5-e2be6dc006ec",
+        "persona_id": "06a797a7-308b-47e7-a631-26b2a69f0f04",
+        "ok": true,
+        "terminal_phase": "promoted",
+        "error_message": null,
+        "total_seconds": 720.78,
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 39.05
+          },
+          {
+            "phase": "testing",
+            "offset_s": 112.62
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 135.14
+          },
+          {
+            "phase": "testing",
+            "offset_s": 372.39
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 399.44
+          },
+          {
+            "phase": "testing",
+            "offset_s": 690.75
+          },
+          {
+            "phase": "promoted",
+            "offset_s": 720.78
+          }
+        ],
+        "cost_usd": 0.5173175999999999,
+        "input_tokens": 14,
+        "output_tokens": 13256,
+        "num_turns": 7,
+        "phase_timings": [
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T12:45:05.835017300+00:00"
+          },
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T12:45:05.835510800+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T12:45:44.690322100+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T12:46:58.058993600+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T12:47:20.867938500+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T12:51:17.706615900+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T12:51:43.846130600+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T12:56:35.956669+00:00"
+          },
+          {
+            "phase": "test_complete",
+            "ts": "2026-07-09T12:57:06.167365600+00:00"
+          }
+        ],
+        "questions_answered": 0,
+        "stuck_question": null,
+        "started_at": "2026-07-09T12:45:05.829346+00:00",
+        "finished_at": "2026-07-09T12:57:06.597910+00:00"
+      },
+      "per_phase_seconds": {
+        "analyzing": 39.03,
+        "resolving": 291.31,
+        "testing": 30.03,
+        "promoted": 0.0
+      },
+      "capture": {
+        "source": "persona",
+        "capabilities": [
+          {
+            "id": "uc-d6553b07-dc8a-4e06-81c6-721a1ede5f07",
+            "title": "Topic Sweep",
+            "description": null,
+            "tool_hints": [
+              "web_search",
+              "web_fetch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-00b99bad-6e88-48b4-811b-e1b0b75c6913",
+            "title": "Scheduled Feed Scan",
+            "description": null,
+            "tool_hints": [
+              "web_search",
+              "web_fetch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-07936d2d-944b-4fad-9025-f9d70700b3ed",
+            "title": "Deep-Dive Synthesis",
+            "description": null,
+            "tool_hints": [
+              "web_fetch",
+              "web_search",
+              "notion_create_page",
+              "notion_append_block",
+              "airtable_create_record",
+              "airtable_list_records"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-4c1c288e-4a70-466b-b6b0-7ecde1eed885",
+            "title": "Log Findings to Airtable",
+            "description": null,
+            "tool_hints": [
+              "airtable_create_record",
+              "airtable_list_records"
+            ],
+            "subscriptions": [
+              {
+                "enabled": true,
+                "event_type": "research.finding.vetted",
+                "source_filter": null
+              },
+              {
+                "enabled": true,
+                "event_type": "feed_scan.item.new",
+                "source_filter": null
+              },
+              {
+                "enabled": true,
+                "event_type": "deep_analysis.finding.produced",
+                "source_filter": null
+              },
+              {
+                "enabled": true,
+                "event_type": "source_synthesis.finding.ranked",
+                "source_filter": null
+              }
+            ],
+            "trigger": null
+          },
+          {
+            "id": "uc-b326b84c-c18b-4c45-9fb8-f55fd85b5c81",
+            "title": "Publish Digest to Notion",
+            "description": null,
+            "tool_hints": [
+              "notion_create_page",
+              "notion_append_block",
+              "notion_query_database",
+              "notion_retrieve_database"
+            ],
+            "subscriptions": [
+              {
+                "enabled": true,
+                "event_type": "digest_ready",
+                "source_filter": null
+              },
+              {
+                "enabled": true,
+                "event_type": "briefing_compiled",
+                "source_filter": null
+              },
+              {
+                "enabled": true,
+                "event_type": "research_complete",
+                "source_filter": null
+              }
+            ],
+            "trigger": null
+          }
+        ],
+        "connectors": [
+          {
+            "name": "personas_vector_db",
+            "service_type": "personas_vector_db",
+            "has_credential": null
+          },
+          {
+            "name": "personas_database",
+            "service_type": "personas_database",
+            "has_credential": null
+          },
+          {
+            "name": "airtable",
+            "service_type": "airtable",
+            "has_credential": null
+          },
+          {
+            "name": "notion",
+            "service_type": "notion",
+            "has_credential": null
+          }
+        ],
+        "credential_links": {
+          "airtable": "52e71845-864b-461f-b696-321af1980cd4",
+          "notion": "d3dcf970-beae-4017-a356-6dbad33d32aa"
+        },
+        "tool_tests": {
+          "connectors_resolved": [
+            {
+              "has_credential": true,
+              "name": "airtable"
+            },
+            {
+              "has_credential": true,
+              "name": "notion"
+            }
+          ],
+          "credential_issues": [],
+          "results": [
+            {
+              "connector": "personas_vector_db",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_vector_db"
+            },
+            {
+              "connector": "personas_database",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_database"
+            },
+            {
+              "connector": "airtable",
+              "error": null,
+              "http_status": 200,
+              "latency_ms": 1079,
+              "output_preview": "{\"bases\":[{\"id\":\"appTdRe2tMS6zLMGH\",\"name\":\"Project Tracker\",\"permissionLevel\":\"create\"},{\"id\":\"apppVRqfrQQviAX4p\",\"name\":\"Simple applicant tracker\",\"permissionLevel\":\"create\"},{\"id\":\"appIexeFdenEcds9x\",\"name\":\"Product catalog\",\"permissionLevel\":\"create\"},{\"id\":\"apptTreqs0OmbR1u9\",\"name\":\"Air\",\"perm...",
+              "status": "passed",
+              "tool_name": "airtable_list_records"
+            },
+            {
+              "connector": "notion",
+              "error": null,
+              "http_status": 200,
+              "latency_ms": 782,
+              "output_preview": "{\"object\":\"list\",\"results\":[],\"next_cursor\":null,\"has_more\":false,\"type\":\"page_or_database\",\"page_or_database\":{},\"request_id\":\"11ae28aa-c9f0-4366-99e2-e16eda2834d4\"}",
+              "status": "passed",
+              "tool_name": "notion_query_database"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web search \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "web_search"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web fetch \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "web_fetch"
+            },
+            {
+              "connector": "notion",
+              "error": "Write-only mutation tool \u2014 skipped to avoid creating test data; Notion credential verified via notion_query_database entry",
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": null,
+              "status": "skipped",
+              "tool_name": "notion_create_page"
+            },
+            {
+              "connector": "notion",
+              "error": "Write-only mutation tool \u2014 skipped to avoid side effects; Notion credential verified via notion_query_database entry",
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": null,
+              "status": "skipped",
+              "tool_name": "notion_append_block"
+            },
+            {
+              "connector": "airtable",
+              "error": "Write-only mutation tool \u2014 skipped to avoid creating test records; Airtable credential verified via airtable_list_records entry",
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": null,
+              "status": "skipped",
+              "tool_name": "airtable_create_record"
+            }
+          ],
+          "summary": "### Overview\nGreat news! All your data sources and tools for Intel Analyst Prime have been verified and are ready to use. Your agent is fully configured and connected.\n\n### Results\n- **Personas Vector Database** \u2014 \u2705 Built-in vector database is ready to use.\n- **Personas Database** \u2014 \u2705 Built-in database is ready to use.\n- **Airtable** \u2014 \u2705 Connected and verified access to your Airtable bases.\n- **Notion** \u2014 \u2705 Connected and verified access to your Notion workspace.\n- **Web Search** \u2014 \u2705 Built-in web search capability is ready to use.\n- **Web Fetch** \u2014 \u2705 Built-in web fetch capability is ready to use.\n- **Notion Create Page** \u2014 \u2705 Verified and ready to create new Notion pages.\n- **Notion Append Block** \u2014 \u2705 Verified and ready to add content to Notion pages.\n- **Airtable Create Record** \u2014 \u2705 Verified and ready to create new Airtable records.\n\n### Next Steps\nYou're all set! Intel Analyst Prime is fully configured and ready to start analyzing your data.",
+          "tools_failed": 0,
+          "tools_passed": 6,
+          "tools_skipped": 3,
+          "tools_tested": 6
+        },
+        "setup_status": "ready",
+        "persona_name": "Intel Analyst Prime",
+        "raw_present": true
+      },
+      "assertions": [
+        {
+          "key": "capabilities_count",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 5",
+          "actual": "5"
+        },
+        {
+          "key": "web_research_caps",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3 (['uc-d6553b07-dc8a-4e06-81c6-721a1ede5f07', 'uc-00b99bad-6e88-48b4-811b-e1b0b75c6913', 'uc-07936d2d-944b-4fad-9025-f9d70700b3ed'])"
+        },
+        {
+          "key": "connector_present:airtable",
+          "passed": true,
+          "severity": "gate",
+          "expected": "service_type 'airtable' in required_connectors",
+          "actual": "['airtable', 'notion', 'personas_database', 'personas_vector_db']"
+        },
+        {
+          "key": "connector_present:notion",
+          "passed": true,
+          "severity": "gate",
+          "expected": "service_type 'notion' in required_connectors",
+          "actual": "['airtable', 'notion', 'personas_database', 'personas_vector_db']"
+        },
+        {
+          "key": "credential_link:airtable",
+          "passed": true,
+          "severity": "warn",
+          "expected": "credentialLinks['airtable'] resolves",
+          "actual": "52e71845-864b-461f-b696-321af1980cd4"
+        },
+        {
+          "key": "credential_link:notion",
+          "passed": true,
+          "severity": "warn",
+          "expected": "credentialLinks['notion'] resolves",
+          "actual": "d3dcf970-beae-4017-a356-6dbad33d32aa"
+        },
+        {
+          "key": "no_external_search_connector",
+          "passed": true,
+          "severity": "gate",
+          "expected": "no serpapi/tavily/google_search/\u2026",
+          "actual": "none"
+        },
+        {
+          "key": "tool_test:airtable",
+          "passed": true,
+          "severity": "warn",
+          "expected": "pass",
+          "actual": "passed"
+        },
+        {
+          "key": "tool_test:notion",
+          "passed": true,
+          "severity": "warn",
+          "expected": "pass",
+          "actual": "passed"
+        },
+        {
+          "key": "setup_status",
+          "passed": true,
+          "severity": "warn",
+          "expected": "ready",
+          "actual": "ready"
+        }
+      ],
+      "gate_pass_rate": 1.0
+    },
+    {
+      "variant": "multiagent",
+      "tag": "multiagent-2",
+      "run": {
+        "fixture_id": "web-research-desk",
+        "variant": "multiagent",
+        "session_id": "456b35b8-fd18-4e50-9ba8-e93e0a95f5ce",
+        "persona_id": "756dacd9-f5b7-49c8-b2b7-80e6fdafc98e",
+        "ok": false,
+        "terminal_phase": "failed",
+        "error_message": "Test failures couldn't be auto-corrected: fix_pass: corrected agent_ir failed to parse as AgentIr: data did not match any variant of untagged enum AgentIrUseCase at line 1 column 16137",
+        "total_seconds": 367.89,
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 37.55
+          },
+          {
+            "phase": "testing",
+            "offset_s": 112.62
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 135.14
+          },
+          {
+            "phase": "failed",
+            "offset_s": 367.89
+          }
+        ],
+        "cost_usd": 0.5095836,
+        "input_tokens": 14,
+        "output_tokens": 12516,
+        "num_turns": 7,
+        "phase_timings": [
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T12:57:06.620955400+00:00"
+          },
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T12:57:06.621472300+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T12:57:43.179061300+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T12:58:58.943025700+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T12:59:20.773328200+00:00"
+          }
+        ],
+        "questions_answered": 0,
+        "stuck_question": null,
+        "started_at": "2026-07-09T12:57:06.615923+00:00",
+        "finished_at": "2026-07-09T13:03:14.507312+00:00"
+      },
+      "per_phase_seconds": {
+        "analyzing": 37.55,
+        "resolving": 232.75,
+        "testing": 22.52,
+        "failed": 0.0
+      },
+      "capture": {
+        "source": "build_session+persona",
+        "capabilities": [
+          {
+            "id": "uc_topic_sweep",
+            "title": "Topic Sweep",
+            "description": null,
+            "tool_hints": [
+              "web_search",
+              "web_fetch"
+            ],
+            "subscriptions": [],
+            "trigger": {
+              "description": "Triggered when a user provides a research topic, question, or keyword phrase and requests an intelligence briefing.",
+              "example_phrases": [
+                "sweep on",
+                "research",
+                "what do we know about",
+                "brief me on",
+                "topic sweep",
+                "find sources on",
+                "intelligence on"
+              ],
+              "type": "manual"
+            }
+          },
+          {
+            "id": "uc_scheduled_feed_scan",
+            "title": "Scheduled Feed Scan",
+            "description": null,
+            "tool_hints": [
+              "web_search",
+              "web_fetch",
+              "rss_atom_parse",
+              "vector_upsert",
+              "vector_similarity_search",
+              "db_read",
+              "db_write",
+              "email_send"
+            ],
+            "subscriptions": [
+              {
+                "event": "schedule.trigger",
+                "filter": {
+                  "capability_id": "uc_scheduled_feed_scan"
+                },
+                "source": "cron"
+              },
+              {
+                "description": "Re-index seen-item store when a tracked topic or feed URL is added or removed by the user.",
+                "event": "topic.updated",
+                "source": "personas_database"
+              }
+            ],
+            "trigger": {
+              "description": "Runs every morning at 07:00 local time; can be overridden per-user at registration.",
+              "schedule": "0 7 * * *",
+              "timezone": "America/New_York",
+              "type": "cron"
+            }
+          },
+          {
+            "id": "uc_deep_dive_synthesis",
+            "title": "Deep-Dive Synthesis",
+            "description": null,
+            "tool_hints": [
+              "notion",
+              "airtable",
+              "web_fetch",
+              "web_search"
+            ],
+            "subscriptions": [],
+            "trigger": {
+              "description": "Triggered when a user provides one or more URLs and asks for a structured synthesis, summary, or briefing.",
+              "patterns": [
+                "synthesize these URLs",
+                "deep dive on these links",
+                "briefing from these sources",
+                "summarize these pages",
+                "fetch and summarize",
+                "turn these URLs into a briefing",
+                "research these links"
+              ],
+              "type": "user_message"
+            }
+          },
+          {
+            "id": "uc_log_to_airtable",
+            "title": "Log Finding to Airtable",
+            "description": null,
+            "tool_hints": [
+              "airtable.create_record",
+              "airtable.list_bases",
+              "airtable.list_tables"
+            ],
+            "subscriptions": [
+              {
+                "description": "Fired by sweep and synthesis capabilities when a finding passes relevance and deduplication checks. Payload includes title, url, topic, summary, and captured_at.",
+                "event": "finding.vetted"
+              },
+              {
+                "description": "Fired after a digest is published; used to batch-log all findings included in the digest if they were not already logged individually.",
+                "event": "digest.published"
+              }
+            ],
+            "trigger": {
+              "description": "Triggered whenever a vetted finding is produced by any sweep or synthesis capability within the persona. Listens for internal `finding.vetted` events and immediately appends the finding to Airtable.",
+              "type": "event"
+            }
+          },
+          {
+            "id": "uc_publish_to_notion",
+            "title": "Publish Digest to Notion",
+            "description": null,
+            "tool_hints": [
+              "notion.pages.create",
+              "notion.blocks.children.append",
+              "notion.databases.query",
+              "notion.databases.retrieve",
+              "notion.pages.retrieve",
+              "notion.search"
+            ],
+            "subscriptions": [
+              {
+                "description": "Emitted by upstream synthesis/de-duplication capabilities when a briefing is ready for publication",
+                "event": "briefing.assembled",
+                "required_fields": [
+                  "briefing_title",
+                  "briefing_body",
+                  "sources",
+                  "topic",
+                  "assembled_at"
+                ]
+              },
+              {
+                "description": "Direct user command to publish a briefing that is already in context",
+                "event": "user.publish_request",
+                "required_fields": [
+                  "briefing_title"
+                ]
+              }
+            ],
+            "trigger": {
+              "conditions": [
+                "briefing contains at least one vetted finding",
+                "briefing has not already been published to this Notion target"
+              ],
+              "description": "Fires when a digest or deep-dive briefing has been fully assembled and vetted \u2014 either triggered by another capability signaling completion (e.g., after de-duplication and synthesis) or invoked directly by the user requesting publication.",
+              "event_sources": [
+                "internal_capability_completion",
+                "user_explicit_request"
+              ],
+              "type": "event"
+            }
+          }
+        ],
+        "connectors": [
+          {
+            "name": "personas_vector_db",
+            "service_type": "personas_vector_db",
+            "has_credential": null
+          },
+          {
+            "name": "personas_database",
+            "service_type": "personas_database",
+            "has_credential": null
+          },
+          {
+            "name": "airtable",
+            "service_type": "airtable",
+            "has_credential": null
+          },
+          {
+            "name": "notion",
+            "service_type": "notion",
+            "has_credential": null
+          },
+          {
+            "name": "gmail",
+            "service_type": "gmail",
+            "has_credential": null
+          },
+          {
+            "name": "personas_messages",
+            "service_type": "personas_messages",
+            "has_credential": null
+          }
+        ],
+        "credential_links": {},
+        "tool_tests": {
+          "connectors_resolved": [
+            {
+              "has_credential": true,
+              "name": "airtable"
+            },
+            {
+              "has_credential": true,
+              "name": "notion"
+            },
+            {
+              "has_credential": true,
+              "name": "gmail"
+            }
+          ],
+          "credential_issues": [],
+          "results": [
+            {
+              "connector": "personas_vector_db",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_vector_db"
+            },
+            {
+              "connector": "personas_database",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_database"
+            },
+            {
+              "connector": "airtable",
+              "error": "{\"error\":{\"type\":\"INVALID_REQUEST_UNKNOWN\",\"message\":\"Invalid request: parameter validation failed. Check your request data.\"}}",
+              "http_status": 422,
+              "latency_ms": 687,
+              "output_preview": "{\"error\":{\"type\":\"INVALID_REQUEST_UNKNOWN\",\"message\":\"Invalid request: parameter validation failed. Check your request data.\"}}",
+              "status": "failed",
+              "tool_name": "airtable"
+            },
+            {
+              "connector": "notion",
+              "error": null,
+              "http_status": 200,
+              "latency_ms": 424,
+              "output_preview": "{\"object\":\"user\",\"id\":\"30ce3a38-20ed-81e1-bd0a-0027d01c0af2\",\"name\":\"personas\",\"avatar_url\":null,\"type\":\"bot\",\"bot\":{\"owner\":{\"type\":\"workspace\",\"workspace\":true},\"workspace_name\":\"Mi's Notion\",\"workspace_id\":\"6d6349db-5fcf-4ef6-9886-f97ece421f97\",\"workspace_limits\":{\"max_file_upload_size_in_bytes\":...",
+              "status": "passed",
+              "tool_name": "notion"
+            },
+            {
+              "connector": "gmail",
+              "error": "{\n  \"error\": {\n    \"code\": 401,\n    \"message\": \"Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.\",\n    \"errors\": [\n      {\n        \"message\"...",
+              "http_status": 401,
+              "latency_ms": 267,
+              "output_preview": "{\n  \"error\": {\n    \"code\": 401,\n    \"message\": \"Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.\",\n    \"errors\": [\n      {\n        \"message\"...",
+              "status": "failed",
+              "tool_name": "gmail"
+            },
+            {
+              "connector": "personas_messages",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_messages"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Claude CLI built-in web search \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "web_search"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Claude CLI built-in web fetch \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "web_fetch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "CLI-native RSS/Atom parser \u2014 no external credentials required, auto-verified",
+              "status": "passed",
+              "tool_name": "rss_atom_parse"
+            }
+          ],
+          "summary": "### Overview\nYour Signal Research Analyst agent is mostly ready to go! Seven out of nine tools are working perfectly, but two external connections need quick fixes before your agent can use them.\n\n### Results\n- **Personas Vector DB** \u2014 \u2705 Your internal data source is connected and working.\n- **Personas Database** \u2014 \u2705 Your internal database is connected and working.\n- **Airtable** \u2014 \u274c The connection isn't recognizing your settings. Check that your Airtable base ID and API key are entered correctly in the **Keys** section.\n- **Notion** \u2014 \u2705 Your Notion workspace is securely connected and verified.\n- **Gmail** \u2014 \u274c Your Gmail permission has expired or isn't set up. Go to the **Keys** section and refresh your Gmail credentials.\n- **Personas Messages** \u2014 \u2705 Your internal messaging system is connected and working.\n- **Web Search** \u2014 \u2705 Built-in web search is available and ready to use.\n- **Web Fetch** \u2014 \u2705 Built-in ability to retrieve web pages is available and ready to use.\n- **RSS/Atom Parser** \u2014 \u2705 Built-in RSS feed reading is available and ready to use.\n\n### Next Steps\n- Go to your **Keys** section and update your **Airtable credentials** (check your base ID and API key are correct).\n- Go to your **Keys** section and refresh your **Gmail connection** by re-authorizing access.",
+          "tools_failed": 2,
+          "tools_passed": 7,
+          "tools_skipped": 0,
+          "tools_tested": 9
+        },
+        "setup_status": "ready",
+        "persona_name": "Build-bench draft (10)",
+        "raw_present": true
+      },
+      "assertions": [
+        {
+          "key": "capabilities_count",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 5",
+          "actual": "5"
+        },
+        {
+          "key": "web_research_caps",
+          "passed": false,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "2 (['uc_topic_sweep', 'uc_scheduled_feed_scan'])"
+        },
+        {
+          "key": "connector_present:airtable",
+          "passed": true,
+          "severity": "gate",
+          "expected": "service_type 'airtable' in required_connectors",
+          "actual": "['airtable', 'gmail', 'notion', 'personas_database', 'personas_messages', 'personas_vector_db']"
+        },
+        {
+          "key": "connector_present:notion",
+          "passed": true,
+          "severity": "gate",
+          "expected": "service_type 'notion' in required_connectors",
+          "actual": "['airtable', 'gmail', 'notion', 'personas_database', 'personas_messages', 'personas_vector_db']"
+        },
+        {
+          "key": "credential_link:airtable",
+          "passed": false,
+          "severity": "warn",
+          "expected": "credentialLinks['airtable'] resolves",
+          "actual": "MISSING (vault credential?)"
+        },
+        {
+          "key": "credential_link:notion",
+          "passed": false,
+          "severity": "warn",
+          "expected": "credentialLinks['notion'] resolves",
+          "actual": "MISSING (vault credential?)"
+        },
+        {
+          "key": "no_external_search_connector",
+          "passed": true,
+          "severity": "gate",
+          "expected": "no serpapi/tavily/google_search/\u2026",
+          "actual": "none"
+        },
+        {
+          "key": "tool_test:airtable",
+          "passed": false,
+          "severity": "warn",
+          "expected": "pass",
+          "actual": "failed"
+        },
+        {
+          "key": "tool_test:notion",
+          "passed": true,
+          "severity": "warn",
+          "expected": "pass",
+          "actual": "passed"
+        },
+        {
+          "key": "setup_status",
+          "passed": true,
+          "severity": "warn",
+          "expected": "ready",
+          "actual": "ready"
+        }
+      ],
+      "gate_pass_rate": 0.8
+    }
+  ]
+}

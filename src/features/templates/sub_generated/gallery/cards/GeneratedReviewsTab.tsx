@@ -13,7 +13,6 @@ import { useModalStack } from '../modals/useModalStack';
 import { BackgroundBanners } from '../explore/BackgroundBanners';
 import { TrendingCarousel } from '../explore/TrendingCarousel';
 import { EmptyState } from '../explore/EmptyState';
-import { ExploreVariantA } from '../explore/ExploreVariantA';
 import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 import { TemplateModals } from '../modals/TemplateModals';
 import { TemplateDetailModal } from '../modals/TemplateDetailModal';
@@ -22,7 +21,6 @@ import { useTemplateCompare } from './useTemplateCompare';
 import { CompareTray } from './CompareTray';
 import { CompareModal } from '../modals/CompareModal';
 import { buildComparison } from './buildComparison';
-import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useGalleryActions } from './useGalleryActions';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { TemplateModal } from './reviewParseCache';
@@ -139,8 +137,7 @@ export default function GeneratedReviewsTab({
   }
 
   const noActiveFilters = !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0;
-  const showTrending = gallery.trendingTemplates.length > 0 && noActiveFilters && density !== 'role';
-  const isRoleView = density === 'role';
+  const showTrending = gallery.trendingTemplates.length > 0 && noActiveFilters;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -224,55 +221,40 @@ export default function GeneratedReviewsTab({
       )}
 
       <div className="relative flex-1 flex flex-col overflow-hidden">
-        {isRoleView ? (
-          <ErrorBoundary name="Explore By Role">
-            <ExploreVariantA
-              availableCategories={gallery.availableCategories}
-              allItems={gallery.allItems}
-              readyTemplates={gallery.readyTemplates}
-              userServiceTypes={credentialServiceTypesArray}
-              onSelectCategory={(cat) => { gallery.setCategoryFilter([cat]); setDensityRaw('comfortable'); }}
-              onSelectTemplate={(t) => modals.open({ type: 'detail', review: t })}
-            />
-          </ErrorBoundary>
-        ) : (
-          <TemplateVirtualList
-            displayItems={actions.displayItems}
-            density={density}
-            expandedRow={expandedRow}
-            searchQuery={gallery.search.trim()}
-            isAiResult={gallery.aiSearchActive}
-            installedConnectorNames={actions.installedConnectorNames}
-            credentialServiceTypes={actions.credentialServiceTypes}
-            modals={modals}
-            onToggleExpand={handleToggleExpand}
-            onViewFlows={onViewFlows}
-            onDeleteReview={actions.handleDeleteReview}
-            onAddCredential={actions.handleAddCredential}
-            rebuildReviewId={rebuild.reviewId}
-            rebuildPhase={rebuild.phase}
-            onResetRebuild={handleResetRebuild}
-            previewReviewId={preview.reviewId}
-            previewPhase={preview.phase}
-            onResetPreview={handleResetPreview}
-            isFetchingMore={gallery.isFetchingMore}
-            hasMore={gallery.hasMore}
-            isLoading={gallery.isLoading}
-            fetchMore={gallery.fetchMore}
-            compareSelectedIds={compare.selectedIds}
-            compareAtCapacity={!compare.canAdd}
-            onToggleCompare={compare.toggle}
-          />
-        )}
+        <TemplateVirtualList
+          displayItems={actions.displayItems}
+          density={density}
+          expandedRow={expandedRow}
+          searchQuery={gallery.search.trim()}
+          isAiResult={gallery.aiSearchActive}
+          installedConnectorNames={actions.installedConnectorNames}
+          credentialServiceTypes={actions.credentialServiceTypes}
+          modals={modals}
+          onToggleExpand={handleToggleExpand}
+          onViewFlows={onViewFlows}
+          onDeleteReview={actions.handleDeleteReview}
+          onAddCredential={actions.handleAddCredential}
+          rebuildReviewId={rebuild.reviewId}
+          rebuildPhase={rebuild.phase}
+          onResetRebuild={handleResetRebuild}
+          previewReviewId={preview.reviewId}
+          previewPhase={preview.phase}
+          onResetPreview={handleResetPreview}
+          isFetchingMore={gallery.isFetchingMore}
+          hasMore={gallery.hasMore}
+          isLoading={gallery.isLoading}
+          fetchMore={gallery.fetchMore}
+          compareSelectedIds={compare.selectedIds}
+          compareAtCapacity={!compare.canAdd}
+          onToggleCompare={compare.toggle}
+        />
 
-        {!isRoleView && (
-          <CompareTray
-            selected={compare.selected}
-            onRemove={compare.remove}
-            onClear={compare.clear}
-            onCompare={() => setCompareOpen(true)}
-          />
-        )}
+        <CompareTray
+          selected={compare.selected}
+          onRemove={compare.remove}
+          onClear={compare.clear}
+          onCompare={() => setCompareOpen(true)}
+        />
 
         {/* Detail modal — rendered here so `absolute inset-0` scopes it to the table area */}
         <TemplateDetailModal

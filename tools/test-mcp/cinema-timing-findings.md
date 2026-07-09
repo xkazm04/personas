@@ -92,3 +92,96 @@ timing is a product problem the cinema can't paper over. Worth its own pass
 
 Recommendation: **A now** (make the cinema robust to the real, long, data-less
 wait), and scope **B** as the follow-up that would make it truly "semi-real."
+
+---
+
+## B investigation + B1 result (2026-07-07, tried and REVERTED)
+
+Chose to pursue B ("B1 now, B2 later"). Investigation established the real
+mechanism behind the end-of-wait burst:
+
+- **The build front-loads into a SINGLE turn.** A simple build reached its
+  question in `turn=1`, which emitted `BehaviorCore + CapEnum + ClarifyingV3`
+  **together**. The prompt already says "behavior_core FIRST" — but that's
+  ordering *within the text*; the whole text arrives in one assistant envelope,
+  and the runner buffers the turn until its CLI process exits (emit is per-turn,
+  post-exit). So the batching is the LLM's single-turn cadence, not our
+  plumbing. → **B is a protocol change, not a flag.**
+
+- **B1 attempt (`f64df0e97`, reverted in `e9753b6dd`):** scope turn 0 to Phase A
+  ("emit ONLY behavior_core, then stop"), gated to interactive builds; let
+  capabilities + question follow in turn 1 via `--continue`.
+
+**B1 measured result — the identity-early goal WORKS, but the extra turn is a
+net regression:**
+
+| scenario | pre-B1 first-Q | B1 core@ | B1 outcome |
+|---|---|---|---|
+| s03 github-discord | 49.6s | **10.9s** | **timeout >200s** |
+| s06 linear-notion | 74.9s | **15.7s** | **timeout >200s** |
+| s08 sentry-responder | 61.6s | **21.8s** | **timeout >200s** |
+
+The LLM **honored** the split cleanly (turn 1 = `[BehaviorCore]` only, landing
+at 10–22s — the real role/mission reaches the frontend early, exactly the
+vision). **But turn 2 then balloons and stalls**: the per-turn log shows turn 2
+emitting **56 events** with *duplicate* `CapEnum` and 27 `CapRes` — the split
+disrupts the LLM's single-pass flow, and the "resolve everything NOW"
+continue-prompt makes it churn far longer than the equivalent work took in one
+turn. **3/3 clean runs timed out** (baselines were 50–75s), which would worsen
+the already-40% timeout rate. Reverted.
+
+**Conclusion:** the identity-early *value* is real and reachable (core at
+10–22s), but **not via an extra turn** — the extra CLI round + turn-2 ballooning
+costs 150s+/timeout, not the "+~10s" estimated. To get identity early *without*
+the extra-turn cost, the only path is **B2: stream `behavior_core` out of the
+SINGLE turn**.
+
+## B2 result — SHIPPED (`e74640a41`)
+
+Constraint update from the user: **long builds (>3 min) are acceptable; the goal
+is to extract intermediate results from long processes where possible, keeping
+final quality high via the clarifying-question round.** That reframes B1's
+"slowness" as a non-issue — but B1's real failure wasn't slowness, it was
+*destabilization* (turn 2 stalled 7+ min, no completion). So B1 stays reverted.
+
+**B2 implementation** (`--include-partial-messages` + a read-loop hook):
+- Interactive build CLI args add `--include-partial-messages` so the CLI streams
+  `content_block_delta` events (skipped for one-shot/headless).
+- The runner accumulates delta text and emits `behavior_core` the instant its
+  JSON object closes (string-aware brace matcher). Scoped to behavior_core ONLY
+  (identity, gate-independent). **Purely additive** — turn structure, prompt, and
+  the authoritative post-turn parse/gate-pass are all unchanged; dedup drops the
+  duplicate. So the build runs its natural single-turn flow and **completes
+  normally** — the B1 destabilization is structurally impossible here.
+
+**B2 measured (n=3, all completed normally — no destabilization):**
+
+| scenario | core streams @ | first question @ | early window |
+|---|---|---|---|
+| s01 memory-log | 48.4s | 152.5s | **104s early** |
+| s03 github-discord | 76.3s | 78.7s | 2.4s early |
+| s08 sentry-responder | 70.2s | 75.0s | 4.8s early |
+
+avg core@65s vs firstQ@102s → **~37s average early window, range 2–104s.**
+
+**Read:** B2 surfaces the real persona identity **as early as the LLM produces
+it** — a big win when the model front-loads behavior_core well before the rest
+(s01: 104s early), negligible when it bursts everything together at the end
+(s03/s08). This is exactly "extract intermediate results *where possible*": no
+quality or stability cost, always ≥ as early as before (which was never/at-the-
+very-end), and sometimes dramatically early. It cannot beat the model's own
+think-then-burst cadence — pushing identity earlier than the model writes it
+would require cutting `--effort` (a quality tradeoff, rejected).
+
+## Remaining options (capabilities + connectors)
+
+B2 currently streams behavior_core only. The same mechanism *could* be extended
+to stream `capability_enumeration` titles mid-turn (also gate-light) — but
+`capability_resolution`/`persona_resolution` go through the post-turn gate pass
+(suppression/synthesis), so those must stay batched. And connectors never
+resolve before the first question at all (0/10, all runs). So the cinema's real-
+data ceiling is: **identity (B2, early-when-possible) + capability titles
+(possible extension) at the wait; full populate at the handoff.** The Cinema
+itself should still be built as **abstract-until-handoff (direction A)** that
+*opportunistically* fills in whatever B2 has surfaced — abstract when nothing's
+streamed yet, real identity the moment B2 emits it.

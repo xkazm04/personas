@@ -529,14 +529,22 @@ async fn update_phase(
     session_id: &str,
     phase: BuildPhase,
 ) -> Result<(), AppError> {
-    build_session_repo::update(
+    let res = build_session_repo::update(
         &state.db,
         session_id,
         &UpdateBuildSession {
             phase: Some(phase.as_str().to_string()),
             ..Default::default()
         },
-    )
+    );
+    // Telemetry (build-orchestration Phase 0): per-phase timestamp, best-effort.
+    let _ = build_session_repo::append_phase_timing(
+        &state.db,
+        session_id,
+        phase.as_str(),
+        &chrono::Utc::now().to_rfc3339(),
+    );
+    res
 }
 
 async fn finalize_promoted(

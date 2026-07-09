@@ -13,45 +13,53 @@ A persona is the **design-time entity** — static configuration. At
 runtime it spawns an **execution** (see [execution](../execution/README.md)),
 which is the dynamic thing you see running in the process drawer.
 
-## Creating personas — the Foundry (2026-07)
+## Creating personas — Describe + persona core (2026-07)
 
 The create surface (Agents → create, and the zero-personas first run) is
-`CreatePersonaEntry` (`src/features/personas/sub_foundry/`) with three entry
-speeds that all resolve to the **same adoption pipeline**:
+`CreatePersonaEntry` (`src/features/personas/sub_foundry/`). The three-step
+**Compose (Foundry)** wizard was **retired 2026-07-07** — its one durable idea,
+foundation selection (the mentality archetype), folded into the Describe surface
+as a **persona-core configurator**, so creation is one flow:
 
-1. **Compose (Foundry, default)** — the two-layer architecture made
-   hand-composable: `Persona = Foundation (mentality archetype + memory
-   strategy) + Capabilities (recipes) + Wiring (connectors)`.
-   - **Archetypes** (9: Guardian, Analyst, Scout, Operator, Sentinel,
-     Curator, Craftsman, Shipper, Chief of Staff) live in
-     `scripts/templates/_archetypes.json`, embedded via
-     `engine/archetype_catalog.rs` and served by `list_archetypes`. Each is
-     a mini schema-v3 template persona — full 7-dial `core`
-     (motivation/stance/northStar/riskTolerance/speedVsQuality/
-     conflictStyle/deference), identity, voice, principles — distilled from
-     a corpus audit of all 111 templates' mentality prose (only 9 of 111
-     templates carry core dials; Foundry personas always do).
-   - **Memory strategies** (Focused / Learner / Team player / Grounded
-     expert / Second brain) name the intent of the app's disjoint memory
-     subsystems as one choice. v1 records the intent
-     (`design_context.memoryStrategyId`) and shows setup chips; the
-     subsystems themselves wire through their existing surfaces.
-   - **Capability rack** — the recipe catalog with an archetype-affinity
-     pre-filter; selection attaches recipes as `recipe_ref`s.
-   - **Create** synthesizes a v3 template payload and drives
-     `createPersona` → `create_adoption_session` (hydrate + normalize) →
-     `promote_build_draft`. No parallel compile path exists; a Foundry
-     persona is a template adoption of a template that never lived on disk.
-     Foundation provenance lands on `design_context.archetypeId`.
-2. **Describe it** — the intent-chat build (`UnifiedBuildEntry`), unchanged.
-   Mid-build resume (a persona with an in-flight session) renders this
-   surface directly.
-3. **Browse templates** — the gallery's fully pre-composed path.
+1. **Describe it (default)** — the intent build (`UnifiedBuildEntry` →
+   Dialogue+Cinema). Type what you want; the LLM resolves the spec with
+   clarifying questions. Under the intent sits the **persona-core badge**
+   (`sub_glyph/personaCore/`): the slot that replaced the redundant "What" leaf
+   (the intent already IS the "what"). It opens the persona-core configurator
+   (`sub_glyph/personaCore/`, the **Codex** layout — an ordered, icon-forward
+   3-column grid: Character · Configuration · Mentality), rethought 2026-07-08
+   against the real corpus. Three surfaces (Memory is deliberately NOT here — the
+   build surface's memory dimension owns it):
+   - **Disposition** — one Cautious↔Bold slider. (Collapsed from Risk+Speed,
+     which are near-collinear across the 18 dial-carrying personas.)
+   - **Character traits** — a clickable 20-trait palette in 5 axes (Rigor /
+     Autonomy / Communication / Reliability / Temperament), distilled from the
+     `principles`/`decision_principles`/`voice`/`stance` prose of all 120
+     personas and ordered by corpus frequency (`catalog.ts`). This carries
+     most of the character — 102/111 base templates have no numeric `core` at
+     all. Plus a **conflict style** (challenger/analyst/pragmatist/harmonizer):
+     same model + traits, different conflict style = different deliberation.
+   - **Model** — tier (Haiku/Sonnet/Opus) **× reasoning effort** (low/medium/
+     high/xhigh). Both are first-class, backend-wired (`--effort` on every run;
+     `cli_args.rs`). Effort was previously UI-hidden outside Settings→Model
+     Routing. There is no separate "Speed" knob — effort is the real compute axis.
+   - **Mentality** — the 9 archetypes (`scripts/templates/_archetypes.json`,
+     served by `list_archetypes`) as a snapshot column; picking one seeds
+     disposition + conflict style **and preloads that archetype's dominant traits**
+     (`ARCHETYPE_TRAITS` in `catalog.ts`) so a preset lands as a complete
+     character.
+   - The chosen core is appended to the launch intent as a directive block (same
+     mechanism as the review toggles) — **prototype scope**: it does not yet write
+     hard config (`model_profile`, `--effort`). Wiring those is the flagged
+     next-leverage follow-up.
+2. **Browse templates** — the gallery's fully pre-composed path.
 
-`core_profile` (the deliberation dials) is stamped on BOTH adoption paths
-since 2026-07-06 — previously the stamp read `persona_meta.core`, a field no
-template on disk ever carried, making it dead code everywhere (the dials
-actually live at `payload.persona.core`).
+Simple tier renders `UnifiedBuildEntry` directly (no tab strip; templates gated).
+
+`core_profile` (the deliberation dials) is stamped on the adoption path since
+2026-07-06 — previously the stamp read `persona_meta.core`, a field no template
+on disk ever carried, making it dead code (the dials live at
+`payload.persona.core`).
 
 The system has three layers worth documenting separately:
 
@@ -129,14 +137,35 @@ This doc set covers pillar 2. For pillar 1 see
 [templates/](../templates/README.md). For pillar 3 see
 [execution/](../execution/README.md).
 
-## Creating a persona — master entry + mid-build template suggestion
+## The build session — how a Describe build runs
 
-A persona is created from one surface, the from-scratch **build entry**
-(`UnifiedBuildEntry`, rendered by `PersonasPage` on the empty state or when you
-click "Create"). You start with a basic description and the build runs as it
-always has: `start_build_session` kicks off the live LLM build (rendered by
-`GlyphFullLayout` / `GlyphPrototypeLayout`), which fills the 8 dimensions and
-asks **clarifying questions** when it needs input.
+The **Describe** path (the intent build above) runs a live LLM **build
+session**. `start_build_session` spawns a long-lived backend task that drives
+the persona spec to completion; the surface is `UnifiedBuildEntry`, rendered as
+`GlyphCinemaLayout` / `GlyphDialogueCinemaLayout` (the older `GlyphFullLayout` /
+`GlyphPrototypeLayout` matrix surfaces were retired — `GlyphPrototypeLayout` is
+gone and `GlyphFullLayout` survives only as GlyphCinemaLayout's internal compose
+delegate). The session resolves the persona through the **v3 capability
+chronology** — `behavior_core → capability_enumeration → per-capability
+resolution → agent_ir` — asking **clarifying questions** when a gated dimension
+needs your input. (The legacy "8 dimensions / 3×3 matrix" is now only a
+back-compat mirror the v3 events are echoed into for the old matrix UI, not the
+build model itself.)
+
+**Interactive vs one-shot.** `start_build_session` takes a `mode`:
+`"interactive"` (default) parks on clarifying questions and waits for
+`answer_build_question`; `"one_shot"` runs autonomously — the LLM resolves every
+gate itself, then the post-draft orchestrator tests each tool, runs a fix-pass
+on failures (≤3 retries), and auto-promotes. A `context` parameter supplies
+reference grounding (a writing sample, role/goal, or brand guide), and
+`start_build_session_headless` is the Companion-driven variant.
+
+**Where build state lives.** The whole session — phase, resolved cells, pending
+question, `agent_ir`, adoption answers, mode, CLI pid — is checkpointed to the
+`build_sessions` table on every event, so a build survives navigation and app
+restart (`getActiveBuildSession` rehydrates it). The build LLM is pinned to
+`claude-sonnet-4-6` on subscription auth. The seeded-adoption counterpart lives
+in [templates/](../templates/README.md).
 
 **Mid-build template suggestion** (glyph-convergence redesign, 2026-06-01). The
 first time the build surfaces clarifying questions, a single dismissible card
@@ -150,12 +179,12 @@ a match — use it to skip these questions?"*
   cancels the running generated build session (`cancel_build_session`), and
   swaps the build surface for the **inline** template-adoption flow (faster,
   pre-configured, tested). Nothing auto-routes — the user opts in.
-- **Keep building** → dismisses the card and stays in the from-scratch
-  questionnaire. The card re-arms when the next build session starts.
+- **Keep building** → dismisses the card and stays in the from-scratch build.
+  The card re-arms when the next build session starts.
 
 This replaced an earlier describe-first front-door launcher (the deleted
 `PersonaCreator`): the suggestion now lives *mid-build* instead of gating the
-entry, so the master "type a description and start building" flow is unchanged.
+entry, so the "type a description and start building" flow is unchanged.
 
 Adoption reached this way renders **in-page**, not as a floating modal:
 `AdoptionWizardModal` has an `inline` presentation mode that swaps only its
@@ -166,8 +195,8 @@ mid-build accept path is in-page.
 
 Both on-ramps converge at `buildPhase === "draft_ready"` and share the entire
 back half (test → promote) and the same `matrixBuildSlice` state machine; the
-only difference is the front: a *generated* build (the LLM fills the 8
-dimensions via clarifying questions) vs a *seeded* build (the template's
+only difference is the front: a *generated* build (the LLM resolves the
+capabilities via clarifying questions) vs a *seeded* build (the template's
 `agent_ir` arrives pre-populated and the questionnaire only binds parameters).
 (The glyph-convergence design that introduced this shipped 2026-06-01; the
 concept doc was retired once the feature landed.)

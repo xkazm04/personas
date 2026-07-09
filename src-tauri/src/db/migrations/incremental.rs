@@ -3746,6 +3746,29 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Build telemetry (build-orchestration Phase 0). Additive observability so
+    // the build-bench harness can measure per-phase wall-clock + CLI cost/tokens
+    // for as-is vs multi-agent builds. See docs/architecture/build-orchestration-plan.md.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "build_sessions_telemetry",
+            description: "Add phase_timings_json + cost/token/turn columns to build_sessions",
+            already_applied: |conn| has_column(conn, "build_sessions", "phase_timings_json"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE build_sessions ADD COLUMN phase_timings_json TEXT;
+                     ALTER TABLE build_sessions ADD COLUMN total_cost_usd REAL;
+                     ALTER TABLE build_sessions ADD COLUMN input_tokens INTEGER;
+                     ALTER TABLE build_sessions ADD COLUMN output_tokens INTEGER;
+                     ALTER TABLE build_sessions ADD COLUMN num_turns INTEGER;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

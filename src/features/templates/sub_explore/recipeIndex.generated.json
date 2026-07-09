@@ -1,0 +1,2693 @@
+[
+{
+"id": "7e2b8d54-a141-5c16-8d76-b2a836a37fd5",
+"name": "Approval Workflow",
+"description": "Sequential approval chain: manager then admin (configurable). Sends approval notifications, handles approve/deny/return-for-info responses, enforces timeout reminders at halfway marks and escalates on full timeout. High-privilege requests a",
+"category": "workflow",
+"sourceTemplateId": "access-request-manager",
+"tags": "[\"acce",
+"toolCount": 0
+},
+{
+"id": "09e94e4a-ba35-54cd-8a61-59983b21e463",
+"name": "Audit & Reporting",
+"description": "Compile audit digests and compliance reports. Daily summary: requests received, approved, denied, escalated, expired, average time-to-approval. Weekly summary identifies bottleneck approvers. On-demand compliance report shows grants within ",
+"category": "reporting",
+"sourceTemplateId": "access-request-manager",
+"tags": "[\"acce",
+"toolCount": 0
+},
+{
+"id": "4d59fa79-cd36-5164-995b-a4d1dc1e04dd",
+"name": "Request Intake & Triage",
+"description": "Poll the configured inbox for new access request emails, parse structured fields, validate completeness, deduplicate against recent requests, classify privilege level, and create the immutable audit record. Emits the received event to kick ",
+"category": "ingestion",
+"sourceTemplateId": "access-request-manager",
+"tags": "[\"acce",
+"toolCount": 0
+},
+{
+"id": "bf47bb03-ad1e-5a9a-8458-094af1f403d1",
+"name": "Reconciliation Sync",
+"description": "Pull yesterday's finance platform transactions + matching bank statement lines, classify each as matched / partial / unmatched, and write discrepancies to the spreadsheet ledger. Default daily Mon-Fri 6:00 AM — final cadence set at the trig",
+"category": "operations",
+"sourceTemplateId": "accounting-reconciliation-use-case",
+"tags": "[\"acco",
+"toolCount": 0
+},
+{
+"id": "da49fd31-7746-593a-816b-9eb2c128d149",
+"name": "Discrepancy Alerting",
+"description": "Route each discrepancy produced by the sync to the messaging channel with tiered urgency — individual alerts for high-value items, review requests for low-confidence partials, grouped summary for low-value noise, @-mention escalation when t",
+"category": "notifications",
+"sourceTemplateId": "accounting-reconciliation-use-case",
+"tags": "[\"acco",
+"toolCount": 0
+},
+{
+"id": "a8986af1-55b7-548c-bca4-82bfd0124281",
+"name": "Weekly Email Summary",
+"description": "Compile the week's reconciliation ledger into a formatted HTML email — match rate, outstanding discrepancies by age, top 10 largest unmatched items, trend vs last week — and send to the finance distribution list. Default Friday 5:00 PM — fi",
+"category": "reporting",
+"sourceTemplateId": "accounting-reconciliation-use-case",
+"tags": "[\"acco",
+"toolCount": 0
+},
+{
+"id": "c6b1f5c6-063b-5fac-af37-315a5229e5e4",
+"name": "Monthly Report",
+"description": "For each active client, compile the month's work (items, hours, SLA compliance), run a quick site health check, generate 1–3 improvement recommendations, and send as an HTML retainer report. Default 1st of month at 09:00 — final cadence set",
+"category": "automation",
+"sourceTemplateId": "agency-client-retainer-manager",
+"tags": "[\"agen",
+"toolCount": 0
+},
+{
+"id": "1bdd7c5e-6522-5f6e-9110-b263c5b7d408",
+"name": "Request Intake",
+"description": "Polls email for new messages from registered client addresses, classifies request vs non-request vs ambiguous, assigns priority and SLA, and logs a tracked work item with an acknowledgment reply. Default every 5 minutes — final cadence set ",
+"category": "automation",
+"sourceTemplateId": "agency-client-retainer-manager",
+"tags": "[\"agen",
+"toolCount": 0
+},
+{
+"id": "19030844-10d7-5e77-b626-04d9b3fb8137",
+"name": "SLA Scan",
+"description": "Scans open work items for SLA risk (within 4 hours) and breach (already past). Alerts the agency via Messages and, for 21+ day breaches, sends the client a check-in. Default weekly — final cadence set at the trigger-composition step.",
+"category": "automation",
+"sourceTemplateId": "agency-client-retainer-manager",
+"tags": "[\"agen",
+"toolCount": 0
+},
+{
+"id": "266fd356-f09f-5ce7-a817-b75f3fb4c038",
+"name": "Work Execution",
+"description": "For each new work item, check the complexity gate and either apply the change via codebases (commit, reply, close) or flag for manual review. Out-of-retainer requests are logged as scope escalations with a client-facing estimate offer.",
+"category": "automation",
+"sourceTemplateId": "agency-client-retainer-manager",
+"tags": "[\"agen",
+"toolCount": 0
+},
+{
+"id": "efb53700-bed3-55ab-8b58-4257387c9f5a",
+"name": "Contract Intake and Analysis",
+"description": "Pulls an incoming contract (email tags/folders or webhook), extracts text, identifies the contract type, and runs the six-pass structured analysis: key terms, financials, obligations, risk assessment, red flags, market comparison. Produces ",
+"category": "analysis",
+"sourceTemplateId": "ai-contract-reviewer",
+"tags": "[\"ai-c",
+"toolCount": 0
+},
+{
+"id": "f714c64f-0e3a-573e-8cbc-1241b34f9400",
+"name": "Deadline Reminder Sweep",
+"description": "Daily scan of all tracked contract deadlines — renewal dates, termination notice windows, obligation due dates, warranty expirations. Sends tiered reminders at 30 / 14 / 7 days via email (to submitter + configured recipients) and messaging ",
+"category": "notifications",
+"sourceTemplateId": "ai-contract-reviewer",
+"tags": "[\"ai-c",
+"toolCount": 0
+},
+{
+"id": "04756772-500e-5f72-a401-dd57b66f7251",
+"name": "knowledge base Publish and Risk Alert",
+"description": "Converts the structured review record into a knowledge base pages with full sections, sends the email summary to the submitter, and fires a messaging alert when red flag count meets the high-risk threshold. Updates the contract log and dead",
+"category": "reporting",
+"sourceTemplateId": "ai-contract-reviewer",
+"tags": "[\"ai-c",
+"toolCount": 0
+},
+{
+"id": "b1ad906c-e348-5b78-8de2-e36711317a1e",
+"name": "Drive Document Ingestion",
+"description": "Watch cloud storage for new and updated documents. Extract text, run AI analysis (summary, tags, category, entities, action items, relationships, confidence), deduplicate, and create-or-update structured knowledge base pages. Maintain the l",
+"category": "content",
+"sourceTemplateId": "ai-document-intelligence-hub",
+"tags": "[\"ai-d",
+"toolCount": 0
+},
+{
+"id": "09c107a0-b84d-57af-85c8-dddb063d1595",
+"name": "Natural-Language Search",
+"description": "Listen for messages. Parse `/search`, `/find`, `/recent`, `/stats`, `/categories` commands. Score against the local index (title, tags, entities, category, summary, with recency boost) and return top 5 with Drive links. Default polling ever",
+"category": "content",
+"sourceTemplateId": "ai-document-intelligence-hub",
+"tags": "[\"ai-d",
+"toolCount": 0
+},
+{
+"id": "5789b2b7-638e-5747-861d-27445ef3bd1b",
+"name": "Weekly Growth Digest",
+"description": "Compile weekly knowledge-base metrics — docs added, updated, category breakdown, new tags, top contributors, low-confidence flags, highlighted new documents — and post to the messaging channel. Default Friday 5pm — final cadence set at the ",
+"category": "content",
+"sourceTemplateId": "ai-document-intelligence-hub",
+"tags": "[\"ai-d",
+"toolCount": 0
+},
+{
+"id": "acdf652b-4876-5fb1-afd2-07515bb78e65",
+"name": "Research Report",
+"description": "User-invoked research pipeline: accept a topic + scope, ground findings in user reference sources, search complementary angles, synthesize with confidence levels, store in the knowledge base, deliver via configured channels. Cadence is mana",
+"category": "research",
+"sourceTemplateId": "ai-research-report-generator",
+"tags": "[\"ai-r",
+"toolCount": 0
+},
+{
+"id": "8591dfd3-fb0a-5bd1-9b6f-5255927e2344",
+"name": "Research History Digest",
+"description": "Retrospective summary of the past week's research activity — top topics, scope distribution, quality trend, recurring requesters. Cadence is managed at the trigger-composition step; default Monday 9am.",
+"category": "analytics",
+"sourceTemplateId": "ai-research-report-generator",
+"tags": "[\"ai-r",
+"toolCount": 0
+},
+{
+"id": "02ca2e3f-0d4d-568c-9d3e-f6d18cfe74b6",
+"name": "Trend Watch Addendum",
+"description": "Cross-session pattern detection — which categories are accelerating, fading, or stable across the last 4 sessions. Fires only when history is deep enough for meaningful signal. Chained off the weekly briefing event.",
+"category": "research",
+"sourceTemplateId": "ai-weekly-research",
+"tags": "[\"ai-w",
+"toolCount": 0
+},
+{
+"id": "2975ba49-79d7-5cb4-9e76-a70ddf60774e",
+"name": "Weekly AI Briefing",
+"description": "Weekly synthesis of AI ecosystem developments grounded in user reference sources. Per-subdomain angle coverage, impact-scored findings, cross-session trend awareness. Cadence is managed at the trigger-composition step; default Monday 9am.",
+"category": "research",
+"sourceTemplateId": "ai-weekly-research",
+"tags": "[\"ai-w",
+"toolCount": 0
+},
+{
+"id": "c390fe3a-d6a9-5f46-bcfb-d0f7ffcf8909",
+"name": "Detect + Distribute",
+"description": "Poll CMS for new posts and schedule platform-tuned captions via Buffer. Skips blocked categories and respects blackout hours. Default polling every 5 minutes — final cadence set at the trigger-composition step.",
+"category": "content",
+"sourceTemplateId": "analytics-content-distribution-use-case",
+"tags": "[\"anal",
+"toolCount": 0
+},
+{
+"id": "8ce82ac0-86e8-5f15-9a1b-9deda71dca93",
+"name": "48-Hour Performance Review",
+"description": "Review GA + Buffer engagement for posts published 48+ hours ago. Flag viral spikes and underperformers. Update rolling baselines and platform weights. Default daily 09:00 — final cadence set at the trigger-composition step.",
+"category": "content",
+"sourceTemplateId": "analytics-content-distribution-use-case",
+"tags": "[\"anal",
+"toolCount": 0
+},
+{
+"id": "3e54df29-6813-566a-8721-60a604efbb13",
+"name": "Weekly Strategy Digest",
+"description": "Compile top 3 posts, worst performer, platform rankings, caption-style scores, and recommended strategy adjustments. Platform-removal changes require human sign-off. Default Monday 10:00 — final cadence set at the trigger-composition step.",
+"category": "content",
+"sourceTemplateId": "analytics-content-distribution-use-case",
+"tags": "[\"anal",
+"toolCount": 0
+},
+{
+"id": "814f451b-1e0e-576b-8b4d-3740d5f9afdb",
+"name": "Booking Intake",
+"description": "Processes new Calendly bookings and cancellations end-to-end: enriches CRM, sends the confirmation or acknowledgment email, notifies the team, and persists meeting state for downstream reminder and follow-up capabilities.",
+"category": "automation",
+"sourceTemplateId": "appointment-orchestrator",
+"tags": "[\"appo",
+"toolCount": 0
+},
+{
+"id": "262d4972-c244-5af0-9605-f6daf4a25eb2",
+"name": "Post-meeting Follow-up",
+"description": "Scans for meetings that ended 24h+ ago and have not yet been followed up. Composes a thanks + next-steps email, optionally routes multi-attendee drafts through manual review, sends via email, and adds a follow-up note to the CRM deals. Defa",
+"category": "automation",
+"sourceTemplateId": "appointment-orchestrator",
+"tags": "[\"appo",
+"toolCount": 0
+},
+{
+"id": "c80b13ec-016c-508e-8b27-e865fdfad261",
+"name": "Pre-meeting Reminder",
+"description": "Scans the meeting state each day for bookings starting in the next 24 hours and sends a threaded reminder email with prep, plus a messaging ping tagging the assigned rep. Default daily 08:00 UTC — final cadence set at the trigger-compositio",
+"category": "automation",
+"sourceTemplateId": "appointment-orchestrator",
+"tags": "[\"appo",
+"toolCount": 0
+},
+{
+"id": "2969b6b1-5462-573c-970e-832844526258",
+"name": "Audio Production",
+"description": "On approved script, synthesize each segment via TTS, stitch with 300ms silences via ffmpeg, verify duration, and deliver the MP3 for final review. On approval, save hook/voice/pacing preferences to memory.",
+"category": "content",
+"sourceTemplateId": "audio-briefing-host",
+"tags": "[\"audi",
+"toolCount": 0
+},
+{
+"id": "5c57371e-abb1-5e5f-b57d-3f5ec30cce12",
+"name": "Script Drafting",
+"description": "Distill any source (pasted text, file, URL, upstream agent output) into a structured two-host script: headline finding, key facts, tensions, implications, open questions, then turn-by-turn segments with strict pacing. Human approves before ",
+"category": "content",
+"sourceTemplateId": "audio-briefing-host",
+"tags": "[\"audi",
+"toolCount": 0
+},
+{
+"id": "c3722109-62e6-52eb-b796-1a501121766a",
+"name": "Generate + Curate",
+"description": "Conceive a unique art concept, generate via image AI, save to the in-app 2D gallery, present for human approval. On approval tags update + memory saves; on rejection the asset is deleted and rejection patterns update. Default daily 10:00 — ",
+"category": "content",
+"sourceTemplateId": "autonomous-art-director",
+"tags": "[\"auto",
+"toolCount": 0
+},
+{
+"id": "5f9bbd4a-20c7-53c2-b5a4-c7bb691281ff",
+"name": "In-Flight Experiment Significance Watch",
+"description": "Check every in-flight experiment against sample-size + duration guardrails and the significance threshold. Classify as RUNNING, WINNER, LOSER, or INCONCLUSIVE and prepare promote/revert/archive proposals for human review. Default weekly — f",
+"category": "analysis",
+"sourceTemplateId": "autonomous-cro-experiment-runner",
+"tags": "[\"auto",
+"toolCount": 0
+},
+{
+"id": "c6d64e9e-419a-5c90-bac2-a3f2d7039a87",
+"name": "New Variant Proposals",
+"description": "Identify underperforming pages (conversion rate > 15% below baseline) and generate up to max_new_variants_per_run hypotheses per page. Each carries category, expected lift, and target metric. Routed through human review; approved ones deplo",
+"category": "strategy",
+"sourceTemplateId": "autonomous-cro-experiment-runner",
+"tags": "[\"auto",
+"toolCount": 0
+},
+{
+"id": "244bbdd0-9a0e-5851-8cf1-10ae2727fe32",
+"name": "Combined CRO Report",
+"description": "Compose and deliver the combined weekly CRO briefing — executive summary, in-flight experiments table, significant results, new proposals, inconclusive archives. Delivered regardless of review outcomes so the user always has visibility. Def",
+"category": "communication",
+"sourceTemplateId": "autonomous-cro-experiment-runner",
+"tags": "[\"auto",
+"toolCount": 0
+},
+{
+"id": "0b13d1e5-9682-59b9-9e05-a76fbcb4bd18",
+"name": "Support Digest",
+"description": "Posts a messaging summary of the last 24 hours: issues auto-resolved, issues escalated, issues auto-closed, issues still stale — with links to notable tickets in each bucket. Default daily 9 AM — final cadence set at the trigger-composition",
+"category": "development",
+"sourceTemplateId": "autonomous-issue-resolver",
+"tags": "[\"auto",
+"toolCount": 0
+},
+{
+"id": "0c01547d-42e9-580f-9fd9-ed78c53ebce2",
+"name": "Stale Issue Triage & Resolution",
+"description": "Polls Jira for issues open past the stale threshold. Classifies state, gauges reporter sentiment, searches knowledge base + local KB for matching solutions, posts high-confidence resolutions, escalates angry + P1/P2 reporters to engineering",
+"category": "development",
+"sourceTemplateId": "autonomous-issue-resolver",
+"tags": "[\"auto",
+"toolCount": 0
+},
+{
+"id": "26b22f83-5e22-535b-8faa-aa51aef63f23",
+"name": "Issue Health Report",
+"description": "Comprehensive report covering auto-resolution rate, average time-to-resolution, KB growth, escalation outcomes, stale-issue trends, and week-over-week comparison against the prior report. Default Monday 9 AM — final cadence set at the trigg",
+"category": "development",
+"sourceTemplateId": "autonomous-issue-resolver",
+"tags": "[\"auto",
+"toolCount": 0
+},
+{
+"id": "29e6ea99-4ce7-5fbe-9b01-9bb86891de36",
+"name": "Morning BI Digest",
+"description": "Consume curated BI saved queries/cards, compute deltas against the prior run, flag direction-aware anomalies, deliver plain-English digest with deep links. Cadence is managed at the trigger-composition step; default weekday 8am.",
+"category": "analytics",
+"sourceTemplateId": "bi-dashboard-digest",
+"tags": "[\"bi-d",
+"toolCount": 0
+},
+{
+"id": "983df3be-5a0e-5b92-b8d3-ca1ac87df901",
+"name": "Domain Scan",
+"description": "Generate lookalike domain variants (typosquat, homoglyph, TLD, combosquat, subdomain abuse via CT logs), resolve each via DNS, and detect newly registered domains through delta-comparison against the known-domains ledger. Emits an event per",
+"category": "monitoring",
+"sourceTemplateId": "brand-protection-sentinel",
+"tags": "[\"bran",
+"toolCount": 0
+},
+{
+"id": "064f4f72-8bad-5c40-9d22-a84b114064d2",
+"name": "Threat Analysis & Alerting",
+"description": "For each newly detected domain, run full analysis: WHOIS lookup, DNS record enumeration, HTTP content fetch, Certificate Transparency check, hosting attribution. Score on five factors (similarity / content / email / infrastructure / recency",
+"category": "analysis",
+"sourceTemplateId": "brand-protection-sentinel",
+"tags": "[\"bran",
+"toolCount": 0
+},
+{
+"id": "a3e4bb69-0833-59a9-8f3e-115a1782fb82",
+"name": "Weekly Brand Protection Report",
+"description": "Compile a weekly summary from knowledge base entries: new threats by category and score distribution, resolved cases with timelines, landscape trends (volume changes, new mutation patterns, geographic shifts), defensive registration recomme",
+"category": "reporting",
+"sourceTemplateId": "brand-protection-sentinel",
+"tags": "[\"bran",
+"toolCount": 0
+},
+{
+"id": "ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f",
+"name": "Billing API Recovery Alerts",
+"description": "Listens for `budget.access.failure` from the weekly check and delivers a targeted Messages alert explaining why the agent is blind this week — expired credentials, rate limit, partial data, or empty billing — with provider-specific troubles",
+"category": "notifications",
+"sourceTemplateId": "budget-spending-monitor",
+"tags": "[\"budg",
+"toolCount": 0
+},
+{
+"id": "8da6a5c2-b3d4-564b-bce3-13d6fe886089",
+"name": "Weekly Cost & Resource Report",
+"description": "Pull last-7-day billing, compute WoW deltas against the rolling baseline, evaluate against the spending threshold, and alert via Messages ONLY if anomaly conditions are met — threshold breach, >50% service spike, new service appearance, or ",
+"category": "analysis",
+"sourceTemplateId": "budget-spending-monitor",
+"tags": "[\"budg",
+"toolCount": 0
+},
+{
+"id": "8b2b3e0b-14f0-5af3-9be9-be916e7b2bdf",
+"name": "Daily Threshold Tracker",
+"description": "Every day, pull month-to-date spend plus today's run-rate, project the end-of-period total, and compare against the threshold. Stay SILENT when under budget; send a single concise alert via Messages ONLY when MTD or the projection crosses t",
+"category": "monitoring",
+"sourceTemplateId": "budget-spending-monitor",
+"tags": "[\"budg",
+"toolCount": 0
+},
+{
+"id": "8f3c3f7a-8973-5773-8056-55e3ff59bf29",
+"name": "Failure Analysis",
+"description": "Parses CircleCI pipeline webhook events, fetches job steps + artifacts, classifies the failure, extracts file and line references, applies flaky-test memory, and posts an enriched messages. Emits build.failure.analyzed so uc_pr_comment_life",
+"category": "development",
+"sourceTemplateId": "build-intelligence-use-case",
+"tags": "[\"buil",
+"toolCount": 0
+},
+{
+"id": "8257237e-c784-5b6d-b79b-53506c208a09",
+"name": "Flaky Test Digest",
+"description": "Aggregates the flaky-test ledger over the past 7 days, ranks offenders by flakiness score, posts a formatted messaging layout digest to the configured messaging channels, and prunes entries older than 30 days. Default Monday 9am — final cad",
+"category": "development",
+"sourceTemplateId": "build-intelligence-use-case",
+"tags": "[\"buil",
+"toolCount": 0
+},
+{
+"id": "841f8f1b-cf8e-578b-8624-de2446ae559a",
+"name": "PR Comment Lifecycle",
+"description": "Event-listens on build.failure.analyzed. For analyses that map to an open PR, looks up the bot's existing analysis comment and PATCHes it (otherwise POSTs new). Stores a PR→comment_id map so repeated runs on the same PR update in place inst",
+"category": "development",
+"sourceTemplateId": "build-intelligence-use-case",
+"tags": "[\"buil",
+"toolCount": 0
+},
+{
+"id": "cbfac734-11d3-525a-8425-89c0cdfc28ea",
+"name": "Client Onboarding",
+"description": "Captures signup via webhook, verifies email with OTP, creates linked knowledge base Client + Project pages, generates a personalized welcome email, and posts a team announcement. Event-driven from inbound webhooks.",
+"category": "automation",
+"sourceTemplateId": "client-portal-orchestrator",
+"tags": "[\"clie",
+"toolCount": 0
+},
+{
+"id": "18a33df8-2fb4-589a-a3c6-e80c8272045c",
+"name": "Phase Monitoring",
+"description": "Polls the knowledge base Projects database for phase changes and fires the matching milestone email and messaging update. Covers Discovery→Proposal, Proposal→Active, Active→Review, Review→Completed, and weekly Active-phase progress emails. ",
+"category": "automation",
+"sourceTemplateId": "client-portal-orchestrator",
+"tags": "[\"clie",
+"toolCount": 0
+},
+{
+"id": "312eb968-c41f-5f06-950b-10483b79398f",
+"name": "Portfolio Report",
+"description": "Monthly snapshot of active projects, phase distribution, revenue pipeline, completion rate, new-client acquisition, and stalled count, with month-over-month deltas. Posts to the messaging channel and emails stakeholders. Default 1st of mont",
+"category": "automation",
+"sourceTemplateId": "client-portal-orchestrator",
+"tags": "[\"clie",
+"toolCount": 0
+},
+{
+"id": "599fa37f-f76a-5f8e-9551-27767952c25c",
+"name": "Stall Escalation",
+"description": "Identifies stalled projects (no phase change in 7+ days) and escalates through a 7/14/21-day ladder: messaging channels alert, direct messages to PM + team lead, then client re-engagement email. Deduped per project every 3 days. Default hou",
+"category": "automation",
+"sourceTemplateId": "client-portal-orchestrator",
+"tags": "[\"clie",
+"toolCount": 0
+},
+{
+"id": "ab3127cc-fb73-5ed1-9b58-0759373fe5ef",
+"name": "Context Map Refresh",
+"description": "Loads the codebase's context map, verifies every file still exists, discovers orphaned files, and flags contexts whose descriptions no longer match the code. Emits codebase.context_map.refreshed so the dimension scan runs against an up-to-d",
+"category": "development",
+"sourceTemplateId": "codebase-health-scanner",
+"tags": "[\"code",
+"toolCount": 0
+},
+{
+"id": "ef482e96-44e5-50d2-85f3-76cdbd5eae27",
+"name": "Dimension Scan",
+"description": "For each context group, scores Security / Quality / Coverage / Debt (0–100), creates backlog ideas for each issue with effort + impact + risk, and emits codebase.scan.completed per group. Runs on codebase.context_map.refreshed so scoring us",
+"category": "development",
+"sourceTemplateId": "codebase-health-scanner",
+"tags": "[\"code",
+"toolCount": 0
+},
+{
+"id": "d43905c2-ede5-5d18-9f23-1bdb345de4fd",
+"name": "Health Report",
+"description": "Aggregates per-group scan results, compares against the prior monthly snapshot, composes the combined report (table + top-3 priorities + context-map change log + trend deltas), posts via Messages, and appends a new snapshot for future trend",
+"category": "development",
+"sourceTemplateId": "codebase-health-scanner",
+"tags": "[\"code",
+"toolCount": 0
+},
+{
+"id": "4addfe48-e025-58fb-83fe-156095da7135",
+"name": "Batch Enrichment",
+"description": "Systematically process the full contact database against email history. Prioritises contacts by staleness (never-enriched first, then oldest last_enriched_at). Applies signature-extracted fields that clear the confidence threshold; routes c",
+"category": "analysis",
+"sourceTemplateId": "contact-enrichment-agent",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "ab17ac27-093b-5eb8-89e1-48a617575788",
+"name": "Conflict Resolution",
+"description": "Event-listen on conflicts emitted by batch or incremental enrichment. Presents the human with both values, confidence scores, source email counts, and a recommendation. Applies the decision and memorises the pattern so future similar confli",
+"category": "review",
+"sourceTemplateId": "contact-enrichment-agent",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "38a501e5-4c83-54b8-821f-8c2c23228edb",
+"name": "Incremental Update",
+"description": "Scan email for emails received since the last incremental run and merge any signature changes into matching contacts. Empty-field fills auto-apply at threshold; agreeing values reinforce existing confidence; contradictions route to uc_confl",
+"category": "analysis",
+"sourceTemplateId": "contact-enrichment-agent",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "ff3bdd83-f667-521c-a417-aef94d719359",
+"name": "Conflict Resolution",
+"description": "Processes accumulated field-level contact conflicts. Groups them by contact for unified review, presents both values with provenance and confidence, applies the human decision to the database, and logs the resolution. Event-listen on `conta",
+"category": "review",
+"sourceTemplateId": "contact-sync-manager",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "560d295f-224c-55e4-b332-e5226950aa39",
+"name": "Weekly Freshness Audit",
+"description": "Weekly scan of the contact database to identify records not corroborated within `stale_contact_days`, compute field-coverage gaps, prune old change-history entries past retention, and deliver a database-health report. Default Monday 9am — f",
+"category": "analysis",
+"sourceTemplateId": "contact-sync-manager",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "48b81c2e-ea42-5586-83d2-5daa0bb2e3d2",
+"name": "Signature Extraction",
+"description": "Short-interval polling loop: fetch new email messages, filter skip-list senders, isolate signature blocks, extract and score contact fields, merge into the contact database. Default every 15 minutes — final cadence set at the trigger-compos",
+"category": "analysis",
+"sourceTemplateId": "contact-sync-manager",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "97fd94fc-4473-5c29-8b0f-c85f2cb5a851",
+"name": "Approval Resolution",
+"description": "Process reviewer decisions. On approve: knowledge base → Published, notify author, confirm in the messaging channel. On reject: knowledge base → Needs Revision with reviewer feedback, notify author per delivery policy, post messaging reject",
+"category": "content",
+"sourceTemplateId": "content-approval-workflow",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "c34a5ae4-0556-5cce-866e-6d7a7430b1d3",
+"name": "Review Initiation",
+"description": "Poll knowledge base for Ready-for-Review items, email the assigned reviewer, and post a messaging approval card with full context. Records pending state locally. Default every 2 minutes — final cadence set at the trigger-composition step.",
+"category": "content",
+"sourceTemplateId": "content-approval-workflow",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "7d32142c-5609-53a2-b382-ad2bba698f66",
+"name": "SLA Escalation",
+"description": "Scan pending reviews for SLA-overdue items and execute the user's escalation policy (reminder / escalate to backup / notify author / flag Blocked in knowledge base). Default hourly — final cadence set at the trigger-composition step.",
+"category": "content",
+"sourceTemplateId": "content-approval-workflow",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "5e07793e-c964-590f-95dc-f72631789f48",
+"name": "Publish or Schedule Approved Draft",
+"description": "Listens to `review_decision.approved` events from this persona, reads the approved draft from the event's context_data, and dispatches it to the platform-specific destination connector — native LinkedIn post, X thread, Notion blog page, or ",
+"category": "content",
+"sourceTemplateId": "content-cascade",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "b1c5780a-ff95-5663-b9e1-c42174b5daee",
+"name": "Source Artifact Repurposing",
+"description": "Accepts a source artifact (YouTube URL, blog URL, podcast transcript, or pasted text) and produces platform-tuned drafts for each enabled target platform — LinkedIn long-form, X/Twitter thread, blog summary, and short-form video script idea",
+"category": "content",
+"sourceTemplateId": "content-cascade",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "ccb41ed3-bc75-5bf6-9e7d-e2afbc0c7896",
+"name": "Per-Platform Voice Profile Build",
+"description": "Builds a voice doc per target platform from 3-5 of your best example posts. Captures hook patterns, sentence-length signature, vocabulary do's/don'ts, hook→body→CTA structure, and platform constraints. Stored in `design_context.design_files",
+"category": "content",
+"sourceTemplateId": "content-cascade",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "d872e8c7-ca52-517a-99aa-08ff353d7b0a",
+"name": "Mid-Week Anomaly Check",
+"description": "Silent-unless-something-moved checkpoint. Compares partial-week metrics against expected trajectory derived from baselines. Alerts on deviations, silent when normal. Default Wednesday + Friday noon — final cadence set at the trigger-composi",
+"category": "content",
+"sourceTemplateId": "content-performance-reporter",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "7329af31-cd20-5e2d-9c1a-ae10787a016a",
+"name": "Weekly Performance Report",
+"description": "Compile the weekly report: WoW deltas, composite-scored rankings, anomaly detection against 4-week EWMA baselines, trend narrative, editorial recommendations. Default Monday 09:00 — final cadence set at the trigger-composition step.",
+"category": "content",
+"sourceTemplateId": "content-performance-reporter",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "4d115a03-9ba9-556b-88fa-abe921f7f3e1",
+"name": "legal platform Event Processing",
+"description": "Real-time webhook handler for legal platform envelope events. Fetches full envelope context, upserts into spreadsheet (envelope_id as idempotency key), posts messaging notifications to event-appropriate channels, and tracks signer velocity ",
+"category": "integration",
+"sourceTemplateId": "contract-lifecycle-use-case",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "2d6945b7-5cca-5f28-b91c-26b03249ea70",
+"name": "Unsigned Contract Reminders",
+"description": "Daily sweep that finds unsigned contracts past the remind threshold and applies the escalation ladder: polite signer reminder (capped at 3) → direct messages + email to contract owner → manual_review escalation at 14+ days. Default daily we",
+"category": "notifications",
+"sourceTemplateId": "contract-lifecycle-use-case",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "55bf5308-996a-5c0c-a3e3-6903823cc221",
+"name": "Renewal Monitoring",
+"description": "Weekly scan for contracts with renewal dates inside the configured lookahead window. Fires tiered notifications: 60d informational → 30d reminder → 14d urgent. Per-contract notification state prevents duplicates. Default weekly Monday; fina",
+"category": "notifications",
+"sourceTemplateId": "contract-lifecycle-use-case",
+"tags": "[\"cont",
+"toolCount": 0
+},
+{
+"id": "34e0d640-bd1e-51a6-9f30-9b4de55db0fe",
+"name": "Ask a Question",
+"description": "Receive a natural-language question via messaging, resolve follow-up context, generate safe SELECT SQL, execute against the database, deliver formatted result with the SQL and metadata. Event-listen on incoming messages.",
+"category": "analytics",
+"sourceTemplateId": "conversational-database-analyst",
+"tags": "[\"conv",
+"toolCount": 0
+},
+{
+"id": "d227eebc-94f4-5dfd-8c07-8cad40de7b75",
+"name": "Schema Refresh",
+"description": "Daily schema introspection with change detection. Updates the cache and notifies when new tables, altered columns, or dropped entities appear. Cadence is managed at the trigger-composition step; default daily 2am.",
+"category": "maintenance",
+"sourceTemplateId": "conversational-database-analyst",
+"tags": "[\"conv",
+"toolCount": 0
+},
+{
+"id": "02383179-2da1-5a73-a4c3-51be0a31eb72",
+"name": "Weekly Query Digest",
+"description": "Weekly rollup of question activity — most-asked patterns, most-queried tables, execution stats, rejection rate, suggestions for saved queries. Cadence is managed at the trigger-composition step; default Monday 9am.",
+"category": "analytics",
+"sourceTemplateId": "conversational-database-analyst",
+"tags": "[\"conv",
+"toolCount": 0
+},
+{
+"id": "11b980d2-65b3-5fbb-8f34-52181f543d50",
+"name": "Manual Fix Review",
+"description": "For each fix classified as `suggested` (duplicate merge, stale archive, association correction), builds a structured approval request with full context, applies the human decision, and logs the result. Event-listen on `crm.quality.critical_",
+"category": "review",
+"sourceTemplateId": "crm-data-quality-auditor",
+"tags": "[\"crm-",
+"toolCount": 0
+},
+{
+"id": "ffaf65e0-0be9-51c4-b2de-82c576e2527f",
+"name": "Weekly Report Distribution",
+"description": "Compiles the latest audit into the combined weekly briefing: a messaging formatted layout report with score header, category breakdowns, top-10 impact-ranked fixes, and pending reviews, plus a knowledge base pages for detailed browsing (whe",
+"category": "communication",
+"sourceTemplateId": "crm-data-quality-auditor",
+"tags": "[\"crm-",
+"toolCount": 0
+},
+{
+"id": "b6e5f270-369c-5a31-b920-92d8550646a4",
+"name": "Weekly CRM Audit",
+"description": "Full-database scan of contacts, companies, and deals. Detects duplicates (fuzzy-matched clusters), stale records, missing fields, and inconsistencies. Applies safe auto-fixes (max 50/run) based on `auto_fix_level`. Computes the 0-100 qualit",
+"category": "analysis",
+"sourceTemplateId": "crm-data-quality-auditor",
+"tags": "[\"crm-",
+"toolCount": 0
+},
+{
+"id": "103f9f63-fab8-5879-8c7d-dbf798ca2193",
+"name": "Event Classification & Alert",
+"description": "Receive product analytics events, classify intent, enrich with profile data, post high-intent alerts to messaging, log signals to the knowledge base. Event-listen on incoming webhooks.",
+"category": "analytics",
+"sourceTemplateId": "customer-event-intelligence",
+"tags": "[\"cust",
+"toolCount": 0
+},
+{
+"id": "005fdfeb-7a06-5e77-8d89-e620b3c3deb1",
+"name": "Pattern Escalation",
+"description": "Accumulated medium-intent signals that cross a cumulative threshold trigger a sustained-interest alert. Event-chained off uc_event_classification.",
+"category": "analytics",
+"sourceTemplateId": "customer-event-intelligence",
+"tags": "[\"cust",
+"toolCount": 0
+},
+{
+"id": "554bb37e-8b55-5ed4-9249-4def9cf33486",
+"name": "Ambiguous Review",
+"description": "For conversations that couldn't be confidently classified, posts a messaging review prompt with reaction-based classification affordance and resumes processing once a human responds. Event-listens on feedback.triage.ambiguous.",
+"category": "support",
+"sourceTemplateId": "customer-feedback-router",
+"tags": "[\"cust",
+"toolCount": 0
+},
+{
+"id": "82e93705-0730-5712-9d4d-a36f0b7d85e9",
+"name": "Feedback Triage",
+"description": "Polls ticketing for new conversations, classifies each into feature_request / bug_report / question / praise / ambiguous, deduplicates against known Linear issues, creates labeled issues for actionable items, and posts per-batch messaging s",
+"category": "support",
+"sourceTemplateId": "customer-feedback-router",
+"tags": "[\"cust",
+"toolCount": 0
+},
+{
+"id": "38427a7d-6e94-529b-8493-b89a758553a1",
+"name": "Weekly Digest",
+"description": "Compiles the week's feedback statistics, category breakdown, top recurring themes (by report_count), and pending manual reviews into a messaging digest. Prunes stale entries from deduplication memory. Default Friday 5 PM — final cadence set",
+"category": "support",
+"sourceTemplateId": "customer-feedback-router",
+"tags": "[\"cust",
+"toolCount": 0
+},
+{
+"id": "3615618f-ff53-57d3-ba9b-a51cd0fdc286",
+"name": "Decision Support",
+"description": "On-demand structured decision analysis. User invokes with a decision context (e.g., 'hire full-time editor vs Fiverr freelancers'). Agent asks clarifying questions, researches each option, builds a weighted matrix, identifies risks and miti",
+"category": "strategy",
+"sourceTemplateId": "daily-standup-compiler",
+"tags": "[\"dail",
+"toolCount": 0
+},
+{
+"id": "e5bf4917-2ab4-5e5d-b184-41f8ef4461c6",
+"name": "Personal Briefing",
+"description": "Consolidated briefing that fuses niche intelligence research (grounded in user-defined sources and goals) + goal progress check-in + pending work accountability + prioritized action plan. One focused, readable message. Cadence is managed at",
+"category": "personal_productivity",
+"sourceTemplateId": "daily-standup-compiler",
+"tags": "[\"dail",
+"toolCount": 0
+},
+{
+"id": "149395d5-a987-55b6-a6ce-c953f3ed11a1",
+"name": "Weekly Review",
+"description": "Weekly retrospective. Reviews each active goal's weekly trend and surfaces next-week focus. Triages the week's captured ideas (accept to backlog / reject / defer). Surfaces decisions reaching their 14-day checkpoint. Cadence is managed at t",
+"category": "personal_productivity",
+"sourceTemplateId": "daily-standup-compiler",
+"tags": "[\"dail",
+"toolCount": 0
+},
+{
+"id": "40c34e72-2b3c-514e-896e-fb48ee29c572",
+"name": "Anomaly Response",
+"description": "On critical breach, capture evidence, correlate metrics, hypothesize root cause, escalate with a full incident report and remediation options. Event-chained off the monitoring loop.",
+"category": "monitoring",
+"sourceTemplateId": "database-performance-monitor",
+"tags": "[\"data",
+"toolCount": 0
+},
+{
+"id": "5abd6abc-a2ce-5954-a2b3-25d4473d7868",
+"name": "Continuous Monitoring",
+"description": "Scheduled metric collection, baseline building during the silent learning period, then active monitoring with direction-aware thresholds. Cadence is managed at the trigger-composition step; default every 5 minutes.",
+"category": "monitoring",
+"sourceTemplateId": "database-performance-monitor",
+"tags": "[\"data",
+"toolCount": 0
+},
+{
+"id": "3a821ac2-9c71-5583-a860-8c254df191f2",
+"name": "Calendar Sync",
+"description": "Mirrors cards with due dates into calendar — creates, updates, and removes events as cards are added, changed, completed, or deleted. Default every 5 minutes (shared trigger) — final cadence set at the trigger-composition step.",
+"category": "automation",
+"sourceTemplateId": "deadline-synchronizer",
+"tags": "[\"dead",
+"toolCount": 0
+},
+{
+"id": "ec453445-1d7b-5148-98d5-d3e662980ba1",
+"name": "Deadline Reminders",
+"description": "Sends tiered messaging reminders as each tracked card approaches its due time: 48h informational, 4h urgent with @assigned mentions, 15min critical with @here. One message per threshold per card. Default every 5 minutes (shared trigger) — f",
+"category": "automation",
+"sourceTemplateId": "deadline-synchronizer",
+"tags": "[\"dead",
+"toolCount": 0
+},
+{
+"id": "1e7811b0-c04a-5c2f-a9d4-fda47856cd09",
+"name": "Overdue Enforcement",
+"description": "Detects cards past their due date, finds or creates a 'Blocked' list on the board, moves the card, and adds an explanatory comment plus a messaging alert. Records recurring lateness patterns so chronically late work is surfaced in future re",
+"category": "automation",
+"sourceTemplateId": "deadline-synchronizer",
+"tags": "[\"dead",
+"toolCount": 0
+},
+{
+"id": "99c24f3f-06ee-5f7c-a13f-fff4cfb52dae",
+"name": "Code-Aware Demo Recording",
+"description": "Analyze the codebase to plan a walkthrough, execute it in a live browser, and deliver annotated screenshots or video with optional commentary. Tier 1 (CDP screenshots) always works; Tier 2 (Game Bar) and Tier 3 (Playwright) upgrade automati",
+"category": "content",
+"sourceTemplateId": "demo-recorder",
+"tags": "[\"demo",
+"toolCount": 0
+},
+{
+"id": "2e703e9a-39ce-53fc-8291-63b078b5bb6a",
+"name": "Linear Ticket Sync",
+"description": "For each detected component change, searches Linear for an existing figma-sync-labeled ticket and updates it (with a new comment) or creates a new one with mapped priority and a Figma deep link. Emits design.handoff.linear_synced with the c",
+"category": "development",
+"sourceTemplateId": "design-handoff-coordinator",
+"tags": "[\"desi",
+"toolCount": 0
+},
+{
+"id": "d2c1953f-5589-50ea-9372-daa96a6d6f32",
+"name": "messaging Handoff Summary",
+"description": "Composes a formatted messaging layout summary per file-version with component bullets and Linear ticket links, posts to the configured design channel, and threads per-component details when the batch exceeds 10 items.",
+"category": "development",
+"sourceTemplateId": "design-handoff-coordinator",
+"tags": "[\"desi",
+"toolCount": 0
+},
+{
+"id": "9732a26d-735c-55dd-a477-57e437ea6b7b",
+"name": "Figma Version Detection",
+"description": "Detects new Figma file versions via polling or webhook, diffs components against the cached snapshot, classifies as added / modified / removed, and emits design.handoff.changes_detected so downstream UCs can file tickets and post summaries.",
+"category": "development",
+"sourceTemplateId": "design-handoff-coordinator",
+"tags": "[\"desi",
+"toolCount": 0
+},
+{
+"id": "f6ee8fac-c783-5607-819e-e5722c54b89f",
+"name": "Backlog Scan",
+"description": "Scan the registered codebase for improvement candidates: TODOs / FIXMEs / HACK comments, portfolio-health hotspots, risk-matrix flags, deprecated dependency usage, architectural gaps from cross-project analysis. Compose each finding as a st",
+"category": "development",
+"sourceTemplateId": "dev-clone",
+"tags": "[\"dev-",
+"toolCount": 0
+},
+{
+"id": "328df264-fffa-55ca-b666-85e2ed37c19e",
+"name": "Implementation & PR Lifecycle",
+"description": "Event-listen on accepted triage decisions. For each accepted item: understand affected code, plan the diff, create a branch, apply changes, run tests (3 iteration max), commit, create PR via GitHub. Reacts to PR review comments via webhook ",
+"category": "development",
+"sourceTemplateId": "dev-clone",
+"tags": "[\"dev-",
+"toolCount": 0
+},
+{
+"id": "95f66218-cd55-503c-8a7d-0c544e54378a",
+"name": "Release Management",
+"description": "Gathers merged PRs since the last release, drafts release notes grouped by category, runs the full test suite, and presents the release candidate to the human for approval. On approval: tag via Git, emit release-accepted event. On rejection",
+"category": "development",
+"sourceTemplateId": "dev-clone",
+"tags": "[\"dev-",
+"toolCount": 0
+},
+{
+"id": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
+"name": "Triage Pipeline",
+"description": "Event-listen on dev-clone.backlog.candidate. Presents each candidate to the human with accept / reject / defer actions. Rejection reasons persist in memory so similar candidates stop surfacing. Accept fans out to uc_implementation via event",
+"category": "review",
+"sourceTemplateId": "dev-clone",
+"tags": "[\"dev-",
+"toolCount": 0
+},
+{
+"id": "2e575c2d-e918-5743-b7ba-bd186916302a",
+"name": "Issue Synchronization",
+"description": "Mirrors source control issues to Jira with label→type+priority mapping, posts messaging notifications, and transitions Jira on issue closure. Default polling every 2 min — final cadence set at the trigger-composition step.",
+"category": "development",
+"sourceTemplateId": "dev-lifecycle-manager",
+"tags": "[\"dev-",
+"toolCount": 0
+},
+{
+"id": "c8e1cffe-150a-5d1c-8e16-5497881b9262",
+"name": "Pull Request Lifecycle",
+"description": "Detects new/updated PRs, classifies size, links to Jira, transitions status, and posts formatted messaging layout notifications. Emits oversized-PR review gates regardless of autonomy level. Default polling every 2 min — final cadence set a",
+"category": "development",
+"sourceTemplateId": "dev-lifecycle-manager",
+"tags": "[\"dev-",
+"toolCount": 0
+},
+{
+"id": "d21717d3-d637-5a25-aa7f-973e68a4b4b8",
+"name": "Release Management",
+"description": "Creates Jira versions from source control releases, stamps fixVersion on referenced tickets, and posts a changelog announcement to the releases channel. Default polling every 15 min — final cadence set at the trigger-composition step.",
+"category": "development",
+"sourceTemplateId": "dev-lifecycle-manager",
+"tags": "[\"dev-",
+"toolCount": 0
+},
+{
+"id": "fcff41fe-7d00-5ecf-a303-97dee11d5274",
+"name": "Database Health Check",
+"description": "Runs read-only health queries against the configured database (connection pool, slow queries, table growth, replication lag, bloat, failed migrations). Compares against baselines. If the database is unreachable, surfaces that as its own Cri",
+"category": "analysis",
+"sourceTemplateId": "devops-guardian",
+"tags": "[\"devo",
+"toolCount": 0
+},
+{
+"id": "590a0c44-7538-5080-9a35-870ed40d31e5",
+"name": "Deploy Regression Correlation",
+"description": "Lists deployments in the scan window and cross-references timestamps with error spikes detected by the error scan. A deploy within 2 hours of a >20% error-rate jump is flagged as a regression with commit SHA, author, and rollback hint. Defa",
+"category": "analysis",
+"sourceTemplateId": "devops-guardian",
+"tags": "[\"devo",
+"toolCount": 0
+},
+{
+"id": "db563881-c358-5d0d-aab5-7a22573f050d",
+"name": "Application Error Scan",
+"description": "Pulls unresolved errors from the monitoring provider for the last N hours, classifies severity (Critical / High / Medium / Low) using data + memory, flags new error types and regressions, and contributes the application-errors section to th",
+"category": "analysis",
+"sourceTemplateId": "devops-guardian",
+"tags": "[\"devo",
+"toolCount": 0
+},
+{
+"id": "7458572a-4829-55a0-830b-336f16147659",
+"name": "Infrastructure Metrics Scan",
+"description": "Pulls CPU, memory, error rate, latency percentile, and availability metrics from the monitoring provider; compares against 7-day baseline; flags anomalies. Contributes the infrastructure section to the combined briefing. Default daily 8 AM ",
+"category": "analysis",
+"sourceTemplateId": "devops-guardian",
+"tags": "[\"devo",
+"toolCount": 0
+},
+{
+"id": "1e3b8fa3-8146-510a-8294-21593e156389",
+"name": "Draft and Review",
+"description": "For each inbound message that needs a reply, loads the recipient's style profile + conversation context, composes a draft that matches the profile exactly, and routes through human review — or auto-sends if the contact has graduated. Update",
+"category": "review",
+"sourceTemplateId": "digital-clone",
+"tags": "[\"digi",
+"toolCount": 0
+},
+{
+"id": "eff0d838-88c1-5121-8377-48e59da49b5a",
+"name": "Inbound Triage",
+"description": "Polls all connected channels for new inbound messages, logs each to the local database, classifies by urgency/intent/key entities, and flags which messages need a reply. Emits one event per message so the draft capability can pick it up.",
+"category": "automation",
+"sourceTemplateId": "digital-clone",
+"tags": "[\"digi",
+"toolCount": 0
+},
+{
+"id": "5437968e-d364-578c-a4f2-8ccd41dac357",
+"name": "Periodic Digest",
+"description": "Aggregates activity across channels into a periodic summary: message volume, draft throughput, pending approvals, contacts near graduation, and channel health. Default every 4 hours — final cadence set at the trigger-composition step.",
+"category": "monitoring",
+"sourceTemplateId": "digital-clone",
+"tags": "[\"digi",
+"toolCount": 0
+},
+{
+"id": "4eaacf80-5eea-510f-bdfb-1ac737466283",
+"name": "Owner Notification + Commitment Tracking",
+"description": "Consumes the scanned result, sends per-owner email with tier-appropriate tone, pulls replies for date commitments, tracks overdue promises, and flags bounced or repeatedly-ignored Critical pages for manual_review. Emits docs.freshness.owner",
+"category": "development",
+"sourceTemplateId": "documentation-freshness-guardian",
+"tags": "[\"docu",
+"toolCount": 0
+},
+{
+"id": "e0d5d81d-6bb1-59e6-813f-bb49217a7b4a",
+"name": "Weekly messaging Digest",
+"description": "Posts a formatted messaging layout digest to the configured messaging channels summarizing total scanned, per-tier counts, top spaces, broken links, overdue commitments, and notification failures. Emits docs.freshness.digest_posted.",
+"category": "development",
+"sourceTemplateId": "documentation-freshness-guardian",
+"tags": "[\"docu",
+"toolCount": 0
+},
+{
+"id": "7ace1a42-fdda-5ff3-b67e-c413d78e16ed",
+"name": "Staleness Scan",
+"description": "Lists knowledge base spaces, paginates pages, classifies staleness by age tier, fetches bodies for flagged pages and validates external links. Emits docs.freshness.scanned with per-page + per-owner aggregates. Default Wednesday 9am — final ",
+"category": "development",
+"sourceTemplateId": "documentation-freshness-guardian",
+"tags": "[\"docu",
+"toolCount": 0
+},
+{
+"id": "36708684-7720-531a-ac5c-3b39a69b85ae",
+"name": "Deadline Reminders",
+"description": "For each active spreadsheet entry, compute days-to-deadline and send tiered email reminders to the assigned writer. Duplicate-proof via a local state ledger; adaptive — writers flagged as late-shipping get reminded one tier earlier. Tiers d",
+"category": "notifications",
+"sourceTemplateId": "editorial-calendar-manager",
+"tags": "[\"edit",
+"toolCount": 0
+},
+{
+"id": "b66bf5ee-c0b7-5ba9-9480-5ba9a96896ae",
+"name": "knowledge base to spreadsheet Sync",
+"description": "Reads the knowledge base editorial calendar, diffs against spreadsheet, and applies creates / updates / cancellations. Cancellations are soft — 'Cancelled' status, never deletion. Default cadence is per cycle; final cadence set at the trigg",
+"category": "integration",
+"sourceTemplateId": "editorial-calendar-manager",
+"tags": "[\"edit",
+"toolCount": 0
+},
+{
+"id": "572b538c-83b3-5f6b-83fd-73656e2f9077",
+"name": "Weekly Status Report",
+"description": "Compiles the weekly editorial dashboard — published, in-progress, overdue, content gaps, writer workload — and emails it to the configured distribution list. Default Monday morning; final cadence at the trigger-composition step.",
+"category": "reporting",
+"sourceTemplateId": "editorial-calendar-manager",
+"tags": "[\"edit",
+"toolCount": 0
+},
+{
+"id": "6cde4c09-5287-53aa-8f38-dfa12d817e88",
+"name": "Email Digest",
+"description": "Fetches unread email from the configured lookback window, ranks messages using a composite sender + content signal score, summarises the top N, and delivers a priority-tiered digest notification. Default daily 7am — final cadence set at the",
+"category": "productivity",
+"sourceTemplateId": "email-morning-digest",
+"tags": "[\"emai",
+"toolCount": 0
+},
+{
+"id": "532e3e92-b844-5b2d-99b3-f72a763312a1",
+"name": "Anomaly Alerts",
+"description": "Real-time and weekly anomaly detection on the expense ledger — high-amount expenses, potential duplicates, missing recurring charges, category spending spikes, unusual vendor frequency — routed to the messaging channel with formatted messag",
+"category": "notifications",
+"sourceTemplateId": "expense-receipt-processor",
+"tags": "[\"expe",
+"toolCount": 0
+},
+{
+"id": "8b08747a-a936-5a54-9c74-ab9f64f223fd",
+"name": "Receipt Ingest",
+"description": "Poll email for receipt-shaped emails, extract structured expense data, normalize vendors, categorize, and append to the spreadsheet ledger. Idempotent by email message ID. Default every 10 minutes — final cadence set at the trigger-composit",
+"category": "operations",
+"sourceTemplateId": "expense-receipt-processor",
+"tags": "[\"expe",
+"toolCount": 0
+},
+{
+"id": "2d63dd2d-ba14-5935-b82d-53f0fe1fb01e",
+"name": "Weekly Summary",
+"description": "Compile the week's expense ledger into a messaging formatted layout summary: total, receipts count, category breakdown with WoW change, top 5 vendors, MTD vs monthly budget with projected month-end, anomalies, pending review items. Archives",
+"category": "reporting",
+"sourceTemplateId": "expense-receipt-processor",
+"tags": "[\"expe",
+"toolCount": 0
+},
+{
+"id": "1094568c-06f3-59fe-9561-0b491f5680b5",
+"name": "Experiment Results Analysis",
+"description": "Runs daily to detect completed experiments with statistically significant winners, posts a rich messaging summary, and (per ticket-gate) auto-creates or proposes a Linear rollout ticket with priority scaled to lift magnitude. Default weekda",
+"category": "development",
+"sourceTemplateId": "feature-flag-experiment-analyst",
+"tags": "[\"feat",
+"toolCount": 0
+},
+{
+"id": "f52ff647-1db4-5031-8e3f-44574dec70c8",
+"name": "Flag Change Monitoring",
+"description": "Polls PostHog for flag changes, diffs against cached state, and posts concise formatted messaging layout change notifications to the messaging channel. Silent on first sync. Default every 10 min — final cadence set at the trigger-compositio",
+"category": "development",
+"sourceTemplateId": "feature-flag-experiment-analyst",
+"tags": "[\"feat",
+"toolCount": 0
+},
+{
+"id": "3f4a0c32-57e0-5c36-8f73-84c9cec8bd82",
+"name": "Stale Flag Digest",
+"description": "Scans active flags against a staleness threshold, excludes running-experiment flags and deny-listed prefixes, splits into normal + escalated tiers, and posts a messaging digest with recommended archival actions. Default weekdays 9am (chaine",
+"category": "development",
+"sourceTemplateId": "feature-flag-experiment-analyst",
+"tags": "[\"feat",
+"toolCount": 0
+},
+{
+"id": "d04d937f-c43f-54bb-af22-94a509f819d0",
+"name": "Flag Change Audit",
+"description": "Webhook-driven capability. Parses every LaunchDarkly flag event (create / update / toggle / delete / archive), runs collision and naming-convention checks on creation, posts a formatted messaging layout audit card to the messaging channel, ",
+"category": "development",
+"sourceTemplateId": "feature-flag-governance-use-case",
+"tags": "[\"feat",
+"toolCount": 0
+},
+{
+"id": "62c97322-835a-5782-a3f2-d7af8ba0b2a8",
+"name": "Registry Reconciliation",
+"description": "Reconciles the full LaunchDarkly flag list against the knowledge base registry. Creates missing entries, marks orphaned entries as 'Archived' with governance notes, and posts a messaging summary. Default monthly on the 1st at 02:00 — final ",
+"category": "development",
+"sourceTemplateId": "feature-flag-governance-use-case",
+"tags": "[\"feat",
+"toolCount": 0
+},
+{
+"id": "6be233cb-8072-5fb1-acdd-69a5be3a40e6",
+"name": "Stale Flag Cleanup",
+"description": "Scheduled capability. Scans all LaunchDarkly flags, identifies ones past the stale threshold with no activity, creates Linear cleanup tickets (de-duped against existing open ones), updates knowledge base entries to 'Cleanup Pending', and po",
+"category": "development",
+"sourceTemplateId": "feature-flag-governance-use-case",
+"tags": "[\"feat",
+"toolCount": 0
+},
+{
+"id": "fc73b552-a9df-5fd9-b98d-722e9c8ec92c",
+"name": "Feature Announcement Video",
+"description": "Produce a short announcement video from a feature description: generate script + visual strategy, human-approve the script, generate voiceover via TTS, compose the final video via the cloud provider, human-approve the render. Route rejectio",
+"category": "content",
+"sourceTemplateId": "feature-video-creator",
+"tags": "[\"feat",
+"toolCount": 0
+},
+{
+"id": "29721ded-e4a9-50ff-940b-73eb561ccaf4",
+"name": "finance platform → Sheets Sync",
+"description": "Pull updated finance platform invoices and yesterday's expenses, sync to the spreadsheet ledger (Invoices / Expenses / Dashboard tabs), dedupe by invoice number, and run anomaly detection against the 30-day rolling baseline with a daily ale",
+"category": "operations",
+"sourceTemplateId": "finance-controller",
+"tags": "[\"fina",
+"toolCount": 0
+},
+{
+"id": "d4aed9ee-b1f6-58dd-86df-44f927901980",
+"name": "Overdue Invoice Reminders",
+"description": "Poll finance platform for overdue invoices during business hours, classify by age (friendly 1-7d / firm 8-30d / manual review 31+d), apply the exclusion list, respect per-tier cooldowns, and send tier-appropriate email reminders. 31+ day ac",
+"category": "collections",
+"sourceTemplateId": "finance-controller",
+"tags": "[\"fina",
+"toolCount": 0
+},
+{
+"id": "cfb66ef1-c3a5-533a-b924-6c2aa3c6adf6",
+"name": "Weekly Cash Flow Summary",
+"description": "Aggregate the week's finance platform P&L, compute AR aging + top 5 expense categories + WoW deltas, and post a formatted messaging layout summary to the messaging finance channel with a link to the Dashboard sheet. Default Fridays 5:00 PM ",
+"category": "reporting",
+"sourceTemplateId": "finance-controller",
+"tags": "[\"fina",
+"toolCount": 0
+},
+{
+"id": "34e9138a-1af0-5323-bbac-712d396d6f50",
+"name": "Congressional Disclosure Scan",
+"description": "Scan Capitol Trades (with Senate EFD fallback) for politician stock disclosures in the user's sectors of interest over the last 7 days. Match against the watchlist and surface unusual sector patterns. Route findings to review — 'useful' tag",
+"category": "research",
+"sourceTemplateId": "financial-stocks-signaller",
+"tags": "[\"fina",
+"toolCount": 0
+},
+{
+"id": "90eeee84-f53f-5467-b795-be8ba315fed7",
+"name": "Sector Gem Discovery",
+"description": "Find under-covered names in the user's sectors of interest: low analyst coverage + strong technicals + recent news catalyst. Emit a gem event per candidate and a filter event per rejection reason. Route to review — useful/not-useful tags ad",
+"category": "research",
+"sourceTemplateId": "financial-stocks-signaller",
+"tags": "[\"fina",
+"toolCount": 0
+},
+{
+"id": "3fd414ff-d43a-5df7-8e85-f0b5882601c8",
+"name": "Weekly Signal Fetcher",
+"description": "Fetch weekly OHLCV + RSI + MACD + news for every ticker on the user's watchlist, compute a composite Buy/Sell/Hold signal, emit strong-outcome events, and route the signal table to human review. Reviewed decisions persist as simulated trade",
+"category": "analysis",
+"sourceTemplateId": "financial-stocks-signaller",
+"tags": "[\"fina",
+"toolCount": 0
+},
+{
+"id": "e632c344-787b-56ec-ba20-b1714ff72544",
+"name": "Invoice Template Build",
+"description": "One-time build step that renders a branded HTML invoice template from your business details and tests the time-tracking credential so the monthly flow can run unattended. Triggered once during persona creation; not user-scheduled.",
+"category": "build",
+"sourceTemplateId": "freelancer-invoice-autopilot",
+"tags": "[\"free",
+"toolCount": 0
+},
+{
+"id": "b0bf1b02-f635-5a35-b766-1f7381f19724",
+"name": "Monthly Invoice Generation",
+"description": "Pull the previous month's billable hours, apply learned rate overrides and billable/non-billable project tags, render one HTML invoice per client from the template, deliver a billing summary via Messages, and route each invoice for human re",
+"category": "operations",
+"sourceTemplateId": "freelancer-invoice-autopilot",
+"tags": "[\"free",
+"toolCount": 0
+},
+{
+"id": "ed25d219-8a77-57a3-81d2-e9a01eed114e",
+"name": "AI Sprite-Sheet Generation",
+"description": "Given an anchor character image and a list of desired animations, produce one normalized PNG sprite sheet per animation. Uses the canvas technique (anchor on left, AI fills frames on right) with a rigorous normalization pipeline (frame spac",
+"category": "content",
+"sourceTemplateId": "game-character-animator",
+"tags": "[\"game",
+"toolCount": 0
+},
+{
+"id": "0090e32b-60f3-5e80-aaee-4ce3f21361f7",
+"name": "Image → Animated Short",
+"description": "Turn one anchor image into a short animated clip (MP4/WebM). Uses image generation AI's video generator today; swaps to OpenAI's video endpoint when the user's chosen image-AI credential supports video. Output is saved to the user's configu",
+"category": "content",
+"sourceTemplateId": "game-character-animator",
+"tags": "[\"game",
+"toolCount": 0
+},
+{
+"id": "f895592e-2eff-50fe-9b02-cf75b51fe222",
+"name": "Procedural Idle Breathing",
+"description": "Produce a 4-frame breathing idle animation from any character sprite using programmatic pixel shifting. No AI calls — perfectly consistent. Usable independently of uc_generate_sprites: enable alone to add idle polish to sprite sets you alre",
+"category": "content",
+"sourceTemplateId": "game-character-animator",
+"tags": "[\"game",
+"toolCount": 0
+},
+{
+"id": "e51901e2-5b39-567a-b89b-890395eb1ed3",
+"name": "Codebase Feasibility Analysis",
+"description": "For each accepted idea, run a feasibility pass against the registered codebase: related code search, effort estimate from affected surface, benefit call. Produce the structured backlog record and emit it so downstream backlog systems (or a ",
+"category": "analysis",
+"sourceTemplateId": "idea-harvester",
+"tags": "[\"idea",
+"toolCount": 0
+},
+{
+"id": "20ed97c9-0baf-53b4-bc99-71ddf808010d",
+"name": "Idea Harvesting",
+"description": "Weekly scan across configured sources (messaging channels, knowledge base pages, Google Alerts, pasted URL queue). Extract 3-10 concrete candidates per source. Skip vague/meta content. Emit one event per candidate; candidates land in the tr",
+"category": "research",
+"sourceTemplateId": "idea-harvester",
+"tags": "[\"idea",
+"toolCount": 0
+},
+{
+"id": "bbace830-43f9-5583-b675-a71aa969127d",
+"name": "Triage Pipeline",
+"description": "For each harvested idea, present to the human with accept/reject affordance. Every decision becomes memory training data so future harvests weight categories accordingly. Accepted ideas trigger the codebase-analysis capability; rejected one",
+"category": "review",
+"sourceTemplateId": "idea-harvester",
+"tags": "[\"idea",
+"toolCount": 0
+},
+{
+"id": "ec061c32-9fef-5a33-ad80-c94df9eef861",
+"name": "Incident Intake & Classification",
+"description": "Captures a new incident report with full detail, runs fuzzy-match duplicate detection against open incidents from the last 2 hours, classifies severity by impact (S1/S2/S3/S4), generates the structured record with escalation deadline and up",
+"category": "operations",
+"sourceTemplateId": "incident-logger",
+"tags": "[\"inci",
+"toolCount": 0
+},
+{
+"id": "6a86eaad-5306-5e13-81a1-930cf03972e6",
+"name": "Post-Incident Review",
+"description": "For resolved S1 and S2 incidents, waits a configurable settling period (default 24 hours) then generates a structured post-mortem: summary, timeline, impact, root cause, response metrics, action items, lessons learned. Queries memory for re",
+"category": "review",
+"sourceTemplateId": "incident-logger",
+"tags": "[\"inci",
+"toolCount": 0
+},
+{
+"id": "0c0e441a-fd86-5f63-86e5-cacd0f2c9a46",
+"name": "Lifecycle Tracking & Escalation",
+"description": "Maintains the live status board for every open incident: processes status updates into the timeline, resets escalation timers, enforces severity-based update cadences, auto-closes stale S4 items, and requests human closure confirmation when",
+"category": "operations",
+"sourceTemplateId": "incident-logger",
+"tags": "[\"inci",
+"toolCount": 0
+},
+{
+"id": "563cf0cd-126c-5e8f-9ea2-ff1d04df897e",
+"name": "Daily Briefing",
+"description": "Daily rollup of the past 24h of ingested articles, categorized and ranked, delivered as an HTML email. Cadence is managed at the trigger-composition step; default daily 7am.",
+"category": "research",
+"sourceTemplateId": "industry-intelligence-aggregator",
+"tags": "[\"indu",
+"toolCount": 0
+},
+{
+"id": "2ecd8643-83ad-52e8-a8cb-7426b30c3cfb",
+"name": "Source Ingestion",
+"description": "Poll user-attached sources, dedupe against rolling 30-day index, AI-summarize with importance scoring, log to knowledge base, post breaking news alerts in real-time. Cadence is managed at the trigger-composition step; default every 30 minut",
+"category": "research",
+"sourceTemplateId": "industry-intelligence-aggregator",
+"tags": "[\"indu",
+"toolCount": 0
+},
+{
+"id": "1a683240-1f50-56d7-a504-d8773e527d12",
+"name": "Inbox Triage & messaging Routing",
+"description": "Poll email for unread mail, classify by sender memory + content, and post a formatted summary to the right messaging channels. Updates sender patterns after every processed message. Default polls every 1 minute — final cadence set at the tr",
+"category": "email_processing",
+"sourceTemplateId": "intake-processor",
+"tags": "[\"inta",
+"toolCount": 0
+},
+{
+"id": "fb063483-e4fa-534d-878e-bef4195a0b2d",
+"name": "knowledge base Databases Tracking",
+"description": "For each classified email, create a structured row in the configured knowledge base tracking database. Optional — skipped entirely if the knowledge base connector is disabled at adoption.",
+"category": "tracking",
+"sourceTemplateId": "intake-processor",
+"tags": "[\"inta",
+"toolCount": 0
+},
+{
+"id": "be6009e2-467f-5e8b-b140-201c66fc29f4",
+"name": "Invoice Ingest",
+"description": "Scan Email with multi-strategy queries, extract structured invoice data from body + attachments, dedupe against the SQLite ledger by message ID, insert with `pending` status, and flag low-confidence or high-value extractions for manual revi",
+"category": "operations",
+"sourceTemplateId": "invoice-tracker",
+"tags": "[\"invo",
+"toolCount": 0
+},
+{
+"id": "de4c0127-0738-5507-8600-b80ccc6abbce",
+"name": "Payment Monitor",
+"description": "Daily sweep that transitions past-due pending invoices to overdue, sends upcoming-payment reminders within the configured lead-time window, and delivers aging-bucketed overdue alerts respecting the alert-frequency cap. On the 1st of the mon",
+"category": "notifications",
+"sourceTemplateId": "invoice-tracker",
+"tags": "[\"invo",
+"toolCount": 0
+},
+{
+"id": "b80fc21f-1b22-5355-879e-2fed6c38173d",
+"name": "Monthly Deep Audit",
+"description": "Everything the weekly audit does, plus a cross-article contradiction pass over compiled wiki articles (title family clustering + body disagreement detection). More expensive than the weekly pass; opt-in. Cadence is managed at the trigger-co",
+"category": "maintenance",
+"sourceTemplateId": "knowledge-base-health-auditor",
+"tags": "[\"know",
+"toolCount": 0
+},
+{
+"id": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
+"name": "Weekly Health Audit",
+"description": "Run all three audit modes (persona memories, vector KBs, optional Obsidian vault), cap findings per category, queue every issue via manual_review with severity + recommended action, deliver a single checklist summary, and persist trend tota",
+"category": "maintenance",
+"sourceTemplateId": "knowledge-base-health-auditor",
+"tags": "[\"know",
+"toolCount": 0
+},
+{
+"id": "8fe557a7-eeca-5e0c-b057-744adda03356",
+"name": "Evening Completion Processing",
+"description": "Detects articles whose Review Status changed to Reviewed since the last run, updates Last Reviewed and Next Due in knowledge base based on each article's frequency, and posts messaging completion shoutouts. Default weekdays 5 PM — final cad",
+"category": "support",
+"sourceTemplateId": "knowledge-base-review-cycle-manager",
+"tags": "[\"know",
+"toolCount": 0
+},
+{
+"id": "cf5b451c-b5d5-5944-aaa4-9091241ea0a4",
+"name": "Morning Assignment Scan",
+"description": "Scans the knowledge base KB for articles due for review, picks reviewers from a rotation (respecting caps and Reviewer Override), sends email reminders, and posts a messaging summary. Default weekdays 9 AM — final cadence set at the trigger",
+"category": "support",
+"sourceTemplateId": "knowledge-base-review-cycle-manager",
+"tags": "[\"know",
+"toolCount": 0
+},
+{
+"id": "0dafb086-19bf-5d0c-88ea-da782f5c9b00",
+"name": "Overdue Reminder",
+"description": "Detects In-Review articles whose assignment timestamp is >48h old, sends staged follow-ups (gentle at 48-72h, urgent at 72-96h, manager escalation >96h), and records reminder counts in state. Default weekdays 9 AM (part of morning pass) — f",
+"category": "support",
+"sourceTemplateId": "knowledge-base-review-cycle-manager",
+"tags": "[\"know",
+"toolCount": 0
+},
+{
+"id": "136c0300-30bf-59af-a13d-4b55efb99489",
+"name": "Sales Alert",
+"description": "Event-listen on `sales.lead.captured` where score ≥ `alert_threshold`. Posts rich formatted messaging layout notification with score breakdown, buying signals, and CRM deep-link. For On Fire leads, additionally DMs the assigned rep with ful",
+"category": "communication",
+"sourceTemplateId": "lead-capture-pipeline",
+"tags": "[\"lead",
+"toolCount": 0
+},
+{
+"id": "d45de649-64f6-5cbc-9482-5da7e27f37ce",
+"name": "Submission Intake & Scoring",
+"description": "Receives form tool submissions (webhook primary, polling safety net). Dedups against `processed_responses.json`, scores 0-100 on the 4-factor model calibrated to `sales_motion`, classifies tier, updates/creates CRM record with touchpoints c",
+"category": "intake",
+"sourceTemplateId": "lead-capture-pipeline",
+"tags": "[\"lead",
+"toolCount": 0
+},
+{
+"id": "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87",
+"name": "Personalized Welcome Email",
+"description": "Event-listen on `sales.lead.captured`. Drafts and sends a tier-appropriate personalized welcome email via email. Cold/Warm = resource-focused low-pressure. Hot = value-prop with soft call CTA. On Fire = personal from assigned rep with direc",
+"category": "outreach",
+"sourceTemplateId": "lead-capture-pipeline",
+"tags": "[\"lead",
+"toolCount": 0
+},
+{
+"id": "478fab0f-0db5-59d2-a84d-0471660e9791",
+"name": "Lean Sweep",
+"description": "Runs the configured static-analysis CLI in the registered codebase, parses the JSON report, creates backlog ideas for each finding, deduplicates against prior sweeps, and posts a one-line summary. Default cadence is daily 8am — final cadenc",
+"category": "development",
+"sourceTemplateId": "lean-codebase-sentinel",
+"tags": "[\"lean",
+"toolCount": 0
+},
+{
+"id": "5ca4c73a-35d9-5fe2-82cd-61f47e2575e6",
+"name": "LinkedIn Watchlist Sweep",
+"description": "Periodic sweep of every LinkedIn company in the watchlist. Calls Bright Data's structured LinkedIn dataset, diffs against per-company snapshot, scores meaningful changes, ships score-≥ threshold alerts in real time. Cadence default 6h.",
+"category": "research",
+"sourceTemplateId": "linkedin-watchlist-scout",
+"tags": "[\"link",
+"toolCount": 0
+},
+{
+"id": "5bb6b6b6-5c62-5401-a309-28a15122ccf9",
+"name": "Weekly Watchlist Digest",
+"description": "Aggregates every change detected over the past 7 days. Groups by company, ranks within by importance, calls out cross-company patterns (e.g., '3 competitors hired senior MLEs this week'). Default Monday 9am.",
+"category": "research",
+"sourceTemplateId": "linkedin-watchlist-scout",
+"tags": "[\"link",
+"toolCount": 0
+},
+{
+"id": "84c29b58-bf62-50d9-aac6-ed5154310608",
+"name": "Niche Business Discovery",
+"description": "Discovery run for a given niche + location + max_results. Searches Google Maps and cross-references directories, deduplicates, quick-checks websites, tiers prospects, persists results, and delivers the lead list. Default manual / on-demand ",
+"category": "discovery",
+"sourceTemplateId": "local-business-lead-prospector",
+"tags": "[\"loca",
+"toolCount": 0
+},
+{
+"id": "a18a805e-77be-502b-b202-8d9a42cd2777",
+"name": "Pipeline Management",
+"description": "Weekly review of the full prospect database. Computes status distribution and conversion rate, re-checks websites for prospects in `new` or `contacted` status older than 7 days, updates tier when score changes, and delivers a pipeline statu",
+"category": "analysis",
+"sourceTemplateId": "local-business-lead-prospector",
+"tags": "[\"loca",
+"toolCount": 0
+},
+{
+"id": "36e446ab-23cb-5087-a83c-17daaa964f64",
+"name": "Confidence Digest",
+"description": "Scores every flagged market on composite confidence (price, news, orderbook, memory), applies calibration from past reviews, compiles the combined intelligence digest, and delivers via email. Presents findings for review; memory tightens ne",
+"category": "reporting",
+"sourceTemplateId": "market-intelligence-scout",
+"tags": "[\"mark",
+"toolCount": 0
+},
+{
+"id": "ef3400dc-08ae-5ede-a04d-67a5fb664a9b",
+"name": "Market Anomaly Watch",
+"description": "Scans Kalshi for newly listed markets and anomaly patterns (rapid probability shifts, YES+NO spread deviations, extreme initial pricing). Fetches orderbook depth for flagged markets to distinguish signal from noise. Default daily 07:00 — fi",
+"category": "analysis",
+"sourceTemplateId": "market-intelligence-scout",
+"tags": "[\"mark",
+"toolCount": 0
+},
+{
+"id": "29115c99-de65-5219-839a-5657fd52c39b",
+"name": "News Correlation",
+"description": "For each flagged market from the anomaly watch, queries News API (or web_search fallback) for contextualizing articles. Computes relevance per article (title overlap, timing, source tier, sentiment alignment) and records the top 3 per marke",
+"category": "research",
+"sourceTemplateId": "market-intelligence-scout",
+"tags": "[\"mark",
+"toolCount": 0
+},
+{
+"id": "987b9406-630d-5ed3-be71-c08a9213698a",
+"name": "Calendar Watch",
+"description": "Polls calendar during work hours, sends contextual prep emails 30 min before meetings, and posts 'in-meeting' status to the messaging channel when meetings start. Maintains per-event state to prevent duplicate actions. Default polling every",
+"category": "automation",
+"sourceTemplateId": "meeting-lifecycle-manager",
+"tags": "[\"meet",
+"toolCount": 0
+},
+{
+"id": "42cd9785-71fd-5172-88f7-6d9ea100b5f6",
+"name": "Daily Briefing",
+"description": "Morning summary email of the day's meetings — count, timeline, key attendees, preparation checklist. Initializes meeting state for the day so the calendar watch can operate on fresh entries. Default 08:00 weekdays — final cadence set at the",
+"category": "personal_productivity",
+"sourceTemplateId": "meeting-lifecycle-manager",
+"tags": "[\"meet",
+"toolCount": 0
+},
+{
+"id": "33fc8376-4cba-5803-969a-af2e502566a3",
+"name": "Post-meeting Follow-up",
+"description": "After each meeting ends, prompts the user for notes and action items, drafts a follow-up email (routed through manual review for meetings with > 2 attendees), distributes to all attendees, and clears the messaging custom status.",
+"category": "automation",
+"sourceTemplateId": "meeting-lifecycle-manager",
+"tags": "[\"meet",
+"toolCount": 0
+},
+{
+"id": "99d7c2b2-f602-553e-a508-4ff143713b2e",
+"name": "Newsletter Issue Curation",
+"description": "Fetch configured RSS feeds and web sources, deduplicate against past issues, score and select top articles, group into thematic sections, write editorial commentary, assemble responsive HTML, pass through human review, and deliver via SMTP ",
+"category": "content",
+"sourceTemplateId": "newsletter-curator",
+"tags": "[\"news",
+"toolCount": 0
+},
+{
+"id": "9b5001d0-c6fd-5b39-be02-3d00d93d1967",
+"name": "Deadline Check",
+"description": "Scans all active onboarding checklists for upcoming / due-today / overdue tasks, dispatches targeted reminders with three-tier escalation (assignee → manager CC → HR manual review), detects milestone transitions and 90-day completions. Defa",
+"category": "hr",
+"sourceTemplateId": "onboarding-tracker",
+"tags": "[\"onbo",
+"toolCount": 0
+},
+{
+"id": "e8f3711d-4b76-5789-857d-a463154e98dd",
+"name": "New Hire Checklist Setup",
+"description": "Detects new employees in the HR database, selects the right role template, and creates a structured knowledge base checklist with role-appropriate tasks across 6 milestones. Handles duplicate detection, fallback to General template with HR ",
+"category": "hr",
+"sourceTemplateId": "onboarding-tracker",
+"tags": "[\"onbo",
+"toolCount": 0
+},
+{
+"id": "51adfa5d-a248-5032-af9a-1312a907e705",
+"name": "Weekly Progress Report",
+"description": "Aggregates per-employee metrics across all active onboarding checklists, identifies at-risk hires (3+ overdue OR <50% expected progress), analyzes bottlenecks by task type, and delivers a stakeholder-facing summary to HR and managers. Defau",
+"category": "hr",
+"sourceTemplateId": "onboarding-tracker",
+"tags": "[\"onbo",
+"toolCount": 0
+},
+{
+"id": "22a3affc-2206-580b-8671-e24b66e1bba8",
+"name": "Daily Summary",
+"description": "End-of-weekday enrichment summary. Compiles today's processing counts, surfaces the top-3 highest-scored prospects with brief profiles, calls out API issues, and links back to the spreadsheet. Default weekdays 6pm — final cadence set at the",
+"category": "communication",
+"sourceTemplateId": "outbound-sales-intelligence-pipeline",
+"tags": "[\"outb",
+"toolCount": 0
+},
+{
+"id": "d5ecd4c3-6dd8-5afe-90fa-f20f7a68ecdb",
+"name": "Prospect Enrichment Pipeline",
+"description": "Short-interval polling pipeline. Reads new prospect rows from the configured spreadsheet, runs each through the five-stage pipeline (verify → person → company → analyse → draft), writes results back to the sheet with status tracking, and em",
+"category": "analysis",
+"sourceTemplateId": "outbound-sales-intelligence-pipeline",
+"tags": "[\"outb",
+"toolCount": 0
+},
+{
+"id": "171b983b-e643-5af2-bd57-989a84fa5283",
+"name": "Capture and Route",
+"description": "Polls messaging for new messages, classifies each as task/idea/bookmark/note, routes tasks to spreadsheet and others to knowledge base, and replies with a typed confirmation. Default polling every 30 seconds — final cadence set at the trigg",
+"category": "automation",
+"sourceTemplateId": "personal-capture-bot",
+"tags": "[\"pers",
+"toolCount": 0
+},
+{
+"id": "01c9ef1e-e182-5507-9071-a571f1aea0bc",
+"name": "Daily Digest",
+"description": "End-of-day summary of captures grouped by type, delivered via the messaging channel. Stores the digest in memory for historical trend tracking and clears the day's capture buffer. Default 21:00 daily — final cadence set at the trigger-compo",
+"category": "personal_productivity",
+"sourceTemplateId": "personal-capture-bot",
+"tags": "[\"pers",
+"toolCount": 0
+},
+{
+"id": "c30aea9f-1584-5db0-be3b-792abacba11f",
+"name": "Anomaly Escalation",
+"description": "Scores each flagged transaction (amount, unknown merchant, unusual hour, foreign currency, duplicate). High severity (≥5) routes to the messaging channel + email with recommended actions; standard severity to the messaging channel only. Use",
+"category": "review",
+"sourceTemplateId": "personal-finance-use-case",
+"tags": "[\"pers",
+"toolCount": 0
+},
+{
+"id": "92b1856b-e8b8-5a20-84a9-5ca453704779",
+"name": "Transaction Sync & Ledger",
+"description": "Pulls new transactions from finance platform, categorizes each, writes rows to the spreadsheet ledger, and updates the monthly budget totals. Flags anomalous charges and emits budget-threshold events when 80% or 100% lines are crossed. Defa",
+"category": "analysis",
+"sourceTemplateId": "personal-finance-use-case",
+"tags": "[\"pers",
+"toolCount": 0
+},
+{
+"id": "4595040a-3353-54e0-8ede-e0224c005e5a",
+"name": "Weekly Spending Summary",
+"description": "Compiles the past week's transactions from Sheets. Computes total spent, category breakdown, top 5 merchants, week-over-week delta, and per-category budget utilization. Delivers condensed messaging summary + detailed HTML email report. Defa",
+"category": "reporting",
+"sourceTemplateId": "personal-finance-use-case",
+"tags": "[\"pers",
+"toolCount": 0
+},
+{
+"id": "36c3affe-b12f-50aa-9b3c-8a2355107191",
+"name": "Meeting Prep",
+"description": "Detect external meetings in the next 48 hours, enrich each attendee via LinkedIn + email history, build behavioral profiles, and write a structured knowledge base prep page. Skip internal-only meetings. Use the 14-day profile cache to avoid",
+"category": "research",
+"sourceTemplateId": "personality-enriched-sales-prep",
+"tags": "[\"pers",
+"toolCount": 0
+},
+{
+"id": "b24d85f3-4ab7-5a01-8f1c-0f28cfcdd894",
+"name": "Post-Meeting Feedback",
+"description": "After each prepped meeting's end time, send a 1-4 rating prompt via messaging. Store the rating and notes. Feed repeated misclassifications into the calibration ledger so next week's classifiers sharpen. Default every 15 minutes — final cad",
+"category": "review",
+"sourceTemplateId": "personality-enriched-sales-prep",
+"tags": "[\"pers",
+"toolCount": 0
+},
+{
+"id": "325073de-6c2a-544d-a364-a00850948857",
+"name": "Pre-Meeting Reminder",
+"description": "Monitor prepped meetings and deliver a one-liner T-30 brief via the messaging channel with primary style, lead action, key avoidance, and knowledge base link. Default minute-polling so delivery lands within one minute of T-30 — final cadenc",
+"category": "messaging",
+"sourceTemplateId": "personality-enriched-sales-prep",
+"tags": "[\"pers",
+"toolCount": 0
+},
+{
+"id": "b78cbca1-0855-5fa0-9bd1-157cc0b08acc",
+"name": "Daily Briefing",
+"description": "Pulls yesterday's core metrics from the analytics tool, compares against goals + 7d/30d baselines + WoW, flags anomalies, assigns health status, delivers a plain-English briefing. Cadence is managed at the trigger-composition step; default ",
+"category": "analysis",
+"sourceTemplateId": "product-analytics-briefer",
+"tags": "[\"prod",
+"toolCount": 0
+},
+{
+"id": "aec61d93-6c55-5902-a084-e46b75ebcc60",
+"name": "Longitudinal Log",
+"description": "Writes each delivered briefing to the user's knowledge base (knowledge base or Obsidian) as a structured record — enables search across time ('every red day this quarter', 'when did DAU last spike?'). Event-chained on `analytics.briefing.de",
+"category": "archive",
+"sourceTemplateId": "product-analytics-briefer",
+"tags": "[\"prod",
+"toolCount": 0
+},
+{
+"id": "215be562-1e76-5a51-9d57-4263ca1c13c7",
+"name": "Scan & Enrich Implementation Opportunities",
+"description": "Weekly scan across configured email senders. Extracts URLs, enriches each via web fetch (with web_search fallback), classifies into new_connector / api_version / tooling, computes relevance from topic-preference memory. Cadence is managed a",
+"category": "research",
+"sourceTemplateId": "product-scout",
+"tags": "[\"prod",
+"toolCount": 0
+},
+{
+"id": "d7d804cf-5ac3-55d5-8b43-a1ba0d74a1f1",
+"name": "Triage",
+"description": "Presents each discovered candidate to the human for accept/reject. Accepted items emit to downstream implementation agents; rejected items capture a reason and train topic preferences. Event-chained on `scout.opportunity.discovered`.",
+"category": "review",
+"sourceTemplateId": "product-scout",
+"tags": "[\"prod",
+"toolCount": 0
+},
+{
+"id": "0cc7cfe6-5605-5449-a052-50bad4e63372",
+"name": "Detect and Post",
+"description": "Query the analytics tool for the latest window, compare against EWMA baselines, classify deviations by severity, and post insight cards via Messages. Tracks signal persistence and recovery across runs. Cadence is managed at the trigger-comp",
+"category": "analysis",
+"sourceTemplateId": "product-signal-detector",
+"tags": "[\"prod",
+"toolCount": 0
+},
+{
+"id": "344f23eb-28c7-5eb3-95c3-6308794963a7",
+"name": "Ticket Critical Signals",
+"description": "For Critical signals and Warnings persistent for 3+ consecutive runs, open an investigation ticket in the user's ticketing tool. Deduplicates against existing open tickets on the same metric (last 7 days) — comments rather than re-creating.",
+"category": "automation",
+"sourceTemplateId": "product-signal-detector",
+"tags": "[\"prod",
+"toolCount": 0
+},
+{
+"id": "a0f09053-db9a-5080-9796-b5ea0b2e72af",
+"name": "Baseline Refresh",
+"description": "Scheduled capability. Recalculates anomaly baselines (order-value mean / stdev, signup rate, field distributions) from the last 30 days of Supabase data. Keeps detection thresholds current as business patterns evolve. Default every 6 hours ",
+"category": "development",
+"sourceTemplateId": "real-time-database-watcher",
+"tags": "[\"real",
+"toolCount": 0
+},
+{
+"id": "906e8b82-4e28-5960-ac6c-ad7613f00d53",
+"name": "Event Routing & Anomaly Detection",
+"description": "Webhook-driven capability. Parses each Supabase row event, classifies by table + operation, enriches via REST fetches, posts formatted messaging layout cards to topic-specific messaging channels, sends welcome / confirmation emails via emai",
+"category": "development",
+"sourceTemplateId": "real-time-database-watcher",
+"tags": "[\"real",
+"toolCount": 0
+},
+{
+"id": "a7b101bb-c357-5fc5-a2ee-47fde7939daa",
+"name": "Weekly Digest",
+"description": "Scheduled capability. Compiles the week's activity across all monitored tables with week-over-week deltas and posts a formatted messaging layout digest to the operations summary channel. Default Monday 09:00 local — final cadence set at the",
+"category": "development",
+"sourceTemplateId": "real-time-database-watcher",
+"tags": "[\"real",
+"toolCount": 0
+},
+{
+"id": "aec1d257-421e-5281-ad40-268b713e7620",
+"name": "Offer Approval & Dispatch",
+"description": "When a candidate reaches the offer stage, draft the congratulations email and hold it for human review. On approval, dispatch and post a messaging confirmation; on rejection, discard with the reason logged. Never auto-sends.",
+"category": "recruiting_ops",
+"sourceTemplateId": "recruiting-pipeline-use-case",
+"tags": "[\"recr",
+"toolCount": 0
+},
+{
+"id": "8ddb7f51-3346-51df-a23a-d781a554d3c3",
+"name": "Stage Transition Processing",
+"description": "Poll HR platform for candidate stage changes. For each transition, send the stage-appropriate personalized email (acknowledgment, interview prep, rejection) via email and post a privacy-safe update to the hiring messaging channels. Offer-st",
+"category": "recruiting_ops",
+"sourceTemplateId": "recruiting-pipeline-use-case",
+"tags": "[\"recr",
+"toolCount": 0
+},
+{
+"id": "5d8deb6b-722b-5077-813f-4b684138c8a4",
+"name": "Weekly Funnel Report",
+"description": "Compile 7-day recruiting metrics from HR platform — funnel counts, stage conversion rates, time-in-stage, week-over-week deltas. Deliver via the messaging channel + email and archive a snapshot for trend analysis. Default Monday 09:00 local",
+"category": "reporting",
+"sourceTemplateId": "recruiting-pipeline-use-case",
+"tags": "[\"recr",
+"toolCount": 0
+},
+{
+"id": "4a151e59-6b19-5164-8d66-867b66091542",
+"name": "social platform Trend Digest",
+"description": "Fetch top posts from configured subreddits, dedup against a 30-day seen-posts index, cluster into themes with sentiment labels, assemble messaging-flavored markdown, and post to the configured channel. Default daily 09:00 UTC — final cadenc",
+"category": "analysis",
+"sourceTemplateId": "reddit-trend-digest",
+"tags": "[\"redd",
+"toolCount": 0
+},
+{
+"id": "5a0a2392-2d9d-552c-912c-734a6e531550",
+"name": "Source Health Tracker",
+"description": "Track per-subreddit fetch health in `state/source_health.json`. After 3 consecutive failures, emit `reddit.source.unhealthy` and include a header line in the next digest recommending removal. Runs inline with uc_digest on every fetch.",
+"category": "analysis",
+"sourceTemplateId": "reddit-trend-digest",
+"tags": "[\"redd",
+"toolCount": 0
+},
+{
+"id": "fb223f0f-dd00-5f3e-bbec-4ba12a58b430",
+"name": "Feed Scanning",
+"description": "Scheduled scan of configured RSS/Atom feeds. Deduplicates, age-filters, and runs each new item through the curation pipeline. Caps per run to keep API usage predictable. Cadence is managed at the trigger-composition step; default daily 8am.",
+"category": "curation",
+"sourceTemplateId": "research-knowledge-curator",
+"tags": "[\"rese",
+"toolCount": 0
+},
+{
+"id": "7baf2513-9711-552b-8c64-f4ca2a01d421",
+"name": "Manual Curation",
+"description": "User submits one or more URLs; persona fetches, summarizes, tags, discovers cross-references, and creates a structured KB page for each. Trigger is manual — invoked on demand.",
+"category": "curation",
+"sourceTemplateId": "research-knowledge-curator",
+"tags": "[\"rese",
+"toolCount": 0
+},
+{
+"id": "b8e9e785-0c7f-5fe3-ba7b-186969b2b984",
+"name": "Weekly Maintenance",
+"description": "Weekly audit: orphaned-page detection, taxonomy consolidation suggestions, curation stats. Doesn't mutate automatically — surfaces suggestions via Messages for human action. Cadence is managed at the trigger-composition step; default Friday",
+"category": "maintenance",
+"sourceTemplateId": "research-knowledge-curator",
+"tags": "[\"rese",
+"toolCount": 0
+},
+{
+"id": "c868be14-e5b0-503d-a691-e8d238d924a3",
+"name": "Paper Discovery",
+"description": "Query configured academic databases for papers matching keyword groups since the last scan. Dedup across databases, summarize with PMR framework, tag, cross-reference, and index. Flags low-confidence summaries for human review. Cadence is m",
+"category": "research",
+"sourceTemplateId": "research-paper-indexer",
+"tags": "[\"rese",
+"toolCount": 0
+},
+{
+"id": "ac78ce22-63c5-58a0-a4f9-551e9b62adca",
+"name": "Trend Analysis",
+"description": "Weekly index maintenance + trend detection. Dedupes preprint→published pairs, refreshes cross-references and citation counts, compares 30-day topic frequencies to the prior 30 to surface rising, new, declining, and consistent topics. Cadenc",
+"category": "analysis",
+"sourceTemplateId": "research-paper-indexer",
+"tags": "[\"rese",
+"toolCount": 0
+},
+{
+"id": "d4388f24-9c1c-5043-95ff-65c67430a39f",
+"name": "Alert & Outreach",
+"description": "Event-driven: on threshold crossings posts contextual messaging alerts (channel + owner DM) and drafts personalized email outreach (retention for churn, consultative upgrade for expansion) with 14-day suppression. Persists predictions and o",
+"category": "communication",
+"sourceTemplateId": "revenue-intelligence-copilot",
+"tags": "[\"reve",
+"toolCount": 0
+},
+{
+"id": "06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6",
+"name": "Monthly Revenue Report & Calibration",
+"description": "Compiles the month's MRR waterfall from Stripe, health distribution from local state, and prediction accuracy from the log. Adjusts scoring weights based on precision/recall. Delivers a comprehensive report to the messaging channel #revenue",
+"category": "reporting",
+"sourceTemplateId": "revenue-intelligence-copilot",
+"tags": "[\"reve",
+"toolCount": 0
+},
+{
+"id": "295d0871-6f35-5c8c-b728-5e87c145c72f",
+"name": "Payment Event Scan & Scoring",
+"description": "Polls Stripe for payment events, enriches with CRM customer context, computes churn risk and expansion readiness scores, and detects threshold crossings. Emits downstream events for alerting and outreach. Default every 5 minutes — final cad",
+"category": "analysis",
+"sourceTemplateId": "revenue-intelligence-copilot",
+"tags": "[\"reve",
+"toolCount": 0
+},
+{
+"id": "ea6f518f-2af2-546d-96f0-fb667e8cc0ed",
+"name": "Daily Revenue Summary",
+"description": "Compiles yesterday's revenue from Stripe balance transactions, enriches with spreadsheet context, computes trends against 7-day and 30-day baselines, and delivers an HTML report with anomaly detection. Default daily 08:00 — final cadence se",
+"category": "reporting",
+"sourceTemplateId": "revenue-operations-hub",
+"tags": "[\"reve",
+"toolCount": 0
+},
+{
+"id": "80257151-9304-500e-8952-560528229804",
+"name": "Payment Recovery Sequence",
+"description": "Event-driven: on each payment failure, reads customer failure history and sends the tier-appropriate email (friendly → urgent → final). Updates spreadsheet dunning state. Reverses state if a payment succeeds mid-sequence. Stops immediately ",
+"category": "communication",
+"sourceTemplateId": "revenue-operations-hub",
+"tags": "[\"reve",
+"toolCount": 0
+},
+{
+"id": "7dd523ae-6f86-59eb-ab66-3e5b56f2e233",
+"name": "Subscription Event Sync",
+"description": "Polls Stripe for subscription and payment events since the last cursor, classifies each, and reconciles the spreadsheet revenue tracker. Emits per-event signals so downstream capabilities (recovery, reporting) can react. Default every 5 min",
+"category": "analysis",
+"sourceTemplateId": "revenue-operations-hub",
+"tags": "[\"reve",
+"toolCount": 0
+},
+{
+"id": "95cfab27-c6a7-5aa1-9da4-546992542379",
+"name": "Classify and Route",
+"description": "Receives webhook payloads, classifies source/event/priority via three-tier logic, loads the matching routing rule, transforms the payload for each destination, and fan-outs. Logs every event for traceability.",
+"category": "automation",
+"sourceTemplateId": "router",
+"tags": "[\"rout",
+"toolCount": 0
+},
+{
+"id": "ff49a6f2-9b68-56ed-aac1-26f009e4052d",
+"name": "Manage Rules",
+"description": "Parses natural-language rule updates from the user ('Route Shopify to #ecommerce'), rewrites `routing_rules.json`, and confirms the diff. The rules take effect on the next webhook.",
+"category": "configuration",
+"sourceTemplateId": "router",
+"tags": "[\"rout",
+"toolCount": 0
+},
+{
+"id": "89f8b8dc-93c8-53e3-ba21-997fd98c0c55",
+"name": "Stage Response",
+"description": "Detect CRM stage transitions, send stage-appropriate personalized emails (with duplicate-check), and post a contextual team message per transition. Backward moves → team message only; skipped stages → final-stage email. Default every 5 minu",
+"category": "outreach",
+"sourceTemplateId": "sales-pipeline-autopilot",
+"tags": "[\"sale",
+"toolCount": 0
+},
+{
+"id": "be53e4e3-1f98-5e40-931c-6fa9ac21148a",
+"name": "Stale Deal Watch",
+"description": "Flag deals that haven't moved in N+ days. Tiered escalation: channel alert at 14 days, additional owner DM at 30 days. Only re-alert if the deal crosses the next tier. Default every 5 minutes — final cadence set at the trigger-composition s",
+"category": "monitoring",
+"sourceTemplateId": "sales-pipeline-autopilot",
+"tags": "[\"sale",
+"toolCount": 0
+},
+{
+"id": "090d463e-c41a-5f13-b813-f698797b993b",
+"name": "Weekly Pipeline Report",
+"description": "Monday morning pipeline health report: total value, weighted value, stage conversion rates, deals won / lost / created this week, notable patterns. Default Monday 08:00 — final cadence set at the trigger-composition step.",
+"category": "reporting",
+"sourceTemplateId": "sales-pipeline-autopilot",
+"tags": "[\"sale",
+"toolCount": 0
+},
+{
+"id": "385ab63f-7e11-5332-9a53-eb362389f0f8",
+"name": "Proposal Generation",
+"description": "Detect newly qualified deals in the CRM, research prospect company + industry + competitors + contact, compose a tiered knowledge base proposal (startup / standard / enterprise), and flag for human review. Default every 5 minutes — final ca",
+"category": "generation",
+"sourceTemplateId": "sales-proposal-generator",
+"tags": "[\"sale",
+"toolCount": 0
+},
+{
+"id": "0419e838-2093-5027-9c82-bd257713b31f",
+"name": "Review Learning",
+"description": "On review completion, apply approval or revision outcome: approved → memory reinforces successful pattern, status updated in knowledge base, approval event emitted. Revision requested → regenerate only flagged sections, resubmit for review,",
+"category": "review",
+"sourceTemplateId": "sales-proposal-generator",
+"tags": "[\"sale",
+"toolCount": 0
+},
+{
+"id": "58b47096-e109-5b73-9ae4-c29b59b5fb91",
+"name": "Sainani-Rule Draft Edit",
+"description": "Receive a scientific draft, apply the 12 Sainani rule categories with per-sentence citations and explanations, deliver a diff + clean rewrite + style report, capture author accept/reject/counter-edit decisions, and learn author voice over t",
+"category": "content",
+"sourceTemplateId": "scientific-writing-editor",
+"tags": "[\"scie",
+"toolCount": 0
+},
+{
+"id": "194648fe-5f11-5e3a-940f-4ecbc9799dc4",
+"name": "Realtime Push Scan",
+"description": "Webhook-triggered on push events to primary branches. Parse payload, trigger security scanner rescan, poll for completion, retrieve vulnerabilities, dedupe against open Jira tickets, create severity-mapped tickets for new findings, emit reg",
+"category": "realtime",
+"sourceTemplateId": "security-vulnerability-pipeline",
+"tags": "[\"secu",
+"toolCount": 0
+},
+{
+"id": "2dca09fb-1146-5617-8932-e3200967f31e",
+"name": "Regression Handling",
+"description": "Event-listens on `security.vuln.regression`. Fetches the closed Jira ticket, retrieves workflow transition IDs, reopens with the 'Reopen' transition, and adds a comment with re-introduction commit SHA, current scan date, CVSS, and the previ",
+"category": "response",
+"sourceTemplateId": "security-vulnerability-pipeline",
+"tags": "[\"secu",
+"toolCount": 0
+},
+{
+"id": "1c822cb8-55ce-5b52-a4c6-c5e43671d6c0",
+"name": "Scheduled Full Scan",
+"description": "Periodic sweep of all monitored repositories — catches newly published CVEs affecting existing dependencies without requiring a new commit. Aggregates findings across the org, bulk-deduplicates against open Jira tickets, batch-creates ticke",
+"category": "scheduled",
+"sourceTemplateId": "security-vulnerability-pipeline",
+"tags": "[\"secu",
+"toolCount": 0
+},
+{
+"id": "6a2bf81d-047f-59cf-b7af-dc6bf210a975",
+"name": "Daily Memory Flush",
+"description": "Scheduled capability. Invokes the platform's `compile_persona_memories` IPC to synthesize raw memories into wiki articles (each backed by ≥2 source memories). Default 02:00 local — final cadence set at the trigger-composition step. Runs at ",
+"category": "development",
+"sourceTemplateId": "self-evolving-codebase-memory",
+"tags": "[\"self",
+"toolCount": 0
+},
+{
+"id": "b92807b8-61ec-5f23-a9f1-d34ed86d0a00",
+"name": "Session Capture",
+"description": "Event-listen on persona.execution.completed. Drains the hooks sidecar queue for this persona's exec_dir, extracts decisions / gotchas / follow-ups / file references from each referenced transcript, and stores them as raw-tagged agent memori",
+"category": "development",
+"sourceTemplateId": "self-evolving-codebase-memory",
+"tags": "[\"self",
+"toolCount": 0
+},
+{
+"id": "bf57241c-c97c-5a8d-b200-1e96e6a811db",
+"name": "Weekly Memory Health Check",
+"description": "Scheduled capability. Audits the persona's memory layer for stale articles, contradictory pairs, and coverage gaps. Optionally also lints the Obsidian vault via obsidian_brain_lint_vault when configured. Surfaces issues via manual_review — ",
+"category": "development",
+"sourceTemplateId": "self-evolving-codebase-memory",
+"tags": "[\"self",
+"toolCount": 0
+},
+{
+"id": "7a90ad49-bf04-5235-9f46-9b42bc6ee230",
+"name": "Sentry Issue Scan",
+"description": "Queries Sentry for unresolved issues in scoped projects over the lookback window, filters by severity threshold, applies memory to auto-deprioritize known-noise patterns, and emits qualified issues to the root-cause capability. Default dail",
+"category": "monitoring",
+"sourceTemplateId": "sentry-production-monitor",
+"tags": "[\"sent",
+"toolCount": 0
+},
+{
+"id": "feab4cf2-fec3-5fcc-a57a-4d4b01b4b744",
+"name": "Codebase Root Cause Analysis",
+"description": "For each qualified issue, fetches the latest event for the full stack trace, reads source code at the error location across scoped codebases, traces cross-project callers, classifies root cause, and composes a Jira-format report with 3 rank",
+"category": "analysis",
+"sourceTemplateId": "sentry-production-monitor",
+"tags": "[\"sent",
+"toolCount": 0
+},
+{
+"id": "19da46d7-03f3-5082-b228-8a665dbf9fbc",
+"name": "Daily Digest",
+"description": "Compile daily sales metrics (revenue, orders, AOV, top 5 products, units sold, refunds, net revenue), compare against 7-day rolling average with ↑↓ indicators, and deliver to the digest channel. Default 21:00 daily — final cadence set at th",
+"category": "reporting",
+"sourceTemplateId": "sheets-e-commerce-command-center",
+"tags": "[\"shee",
+"toolCount": 0
+},
+{
+"id": "e71be662-3bfc-5a42-9869-fbf3a8381e7e",
+"name": "Inventory Watch",
+"description": "Fetch inventory levels per variant, compare against warn / critical thresholds, calculate sell-through velocity, and alert on new threshold breaches. Deduplicate so the same tier doesn't re-alert. Default every minute — final cadence set at",
+"category": "monitoring",
+"sourceTemplateId": "sheets-e-commerce-command-center",
+"tags": "[\"shee",
+"toolCount": 0
+},
+{
+"id": "a3375a9b-bbdd-5570-aa0e-5e113b8ffd5d",
+"name": "Order Stream",
+"description": "Poll the store for new orders, classify each (HIGH-VALUE / INTERNATIONAL / BULK / DISCOUNTED), append to the spreadsheet, and send immediate alerts for high-value orders. Default every minute — final cadence set at the trigger-composition s",
+"category": "monitoring",
+"sourceTemplateId": "sheets-e-commerce-command-center",
+"tags": "[\"shee",
+"toolCount": 0
+},
+{
+"id": "1f52c9ff-639a-5e0d-813e-262d83d77960",
+"name": "Refund Watch",
+"description": "Poll for new refunds, log each to the spreadsheet Refunds tab, and alert on refunds >$100 or when the reason indicates a product quality issue. Default every minute — final cadence set at the trigger-composition step.",
+"category": "monitoring",
+"sourceTemplateId": "sheets-e-commerce-command-center",
+"tags": "[\"shee",
+"toolCount": 0
+},
+{
+"id": "14a1f250-19f9-524e-b031-1da3bce5e684",
+"name": "Skill-Update Issue Writer",
+"description": "Event-driven capability. Subscribes to `review_decision.approved` (filtered to this persona's own reviews). Fetches the review's context_data via IPC callback, builds a unified diff, and POSTs an issue to GitHub or GitLab (selected by issue",
+"category": "development",
+"sourceTemplateId": "skill-librarian",
+"tags": "[\"skil",
+"toolCount": 0
+},
+{
+"id": "c1422775-da51-512b-a3bd-de049b2c3f82",
+"name": "Skill Audit & Proposal",
+"description": "Scheduled + manual capability. Diffs codebase since last_scan_at, reads every `.claude/skills/<slug>/SKILL.md`, computes per-slug usage from `Skill-Ref:` commit markers, and surfaces up to `max_proposals_per_run` edit or retirement proposal",
+"category": "development",
+"sourceTemplateId": "skill-librarian",
+"tags": "[\"skil",
+"toolCount": 0
+},
+{
+"id": "8175b459-7cd6-558d-abe5-aacef9979308",
+"name": "Branded Design Batch",
+"description": "Transform a topic brief into a batch of branded social media variations. Loads the Canva brand kit, generates platform-optimized copy, creates multiple variations (autofill brand template when matching, from-scratch otherwise), delivers pre",
+"category": "content",
+"sourceTemplateId": "social-media-designer",
+"tags": "[\"soci",
+"toolCount": 0
+},
+{
+"id": "8e06e944-dd39-536e-b758-fd66d65f4fe5",
+"name": "Design Export",
+"description": "Export selected Canva designs as downloadable PNG/PDF files. Listens for selection events from uc_design_batch (or runs on manual request) and delivers download links via Messages, with edit URL fallback on export timeout.",
+"category": "content",
+"sourceTemplateId": "social-media-designer",
+"tags": "[\"soci",
+"toolCount": 0
+},
+{
+"id": "c22f9a28-f97a-5b1c-8d25-db15556baaff",
+"name": "Dunning Sequence",
+"description": "Event-driven 3-tier failed-payment recovery. Tier 1 = friendly reminder; tier 2 = urgent warning (+ messaging); tier 3 = final 48-hour warning + 'Churn Imminent' flag + messaging escalation. Resets on mid-sequence payment success; stops imm",
+"category": "communication",
+"sourceTemplateId": "subscription-billing-use-case",
+"tags": "[\"subs",
+"toolCount": 0
+},
+{
+"id": "892975a6-d166-51ed-b7e4-44c3ca430393",
+"name": "finance platform Event Sync",
+"description": "Processes finance platform webhook events (subscription + transaction) in real time. Dedupes, classifies, and reconciles spreadsheet. Posts contextual messaging notifications (celebrations to #revenue, failures to #billing-alerts). Fires wh",
+"category": "analysis",
+"sourceTemplateId": "subscription-billing-use-case",
+"tags": "[\"subs",
+"toolCount": 0
+},
+{
+"id": "8fec7960-5455-5c70-96bf-298ace875784",
+"name": "Monthly MRR Report",
+"description": "Pulls active subscriptions from spreadsheet, computes MRR (total, new, churned, expansion, net), compares to last month, detects anomalies (churn >5%, MRR drop >10%). Writes CSV backup locally, posts a summary to the messaging channel #reve",
+"category": "reporting",
+"sourceTemplateId": "subscription-billing-use-case",
+"tags": "[\"subs",
+"toolCount": 0
+},
+{
+"id": "70e00cca-ff11-55b0-bb95-b86ab0e8dd4d",
+"name": "Daily Escalation Digest",
+"description": "Queries knowledge base for today's escalations plus 7-day history, compiles stats (counts, tier breakdown, top offenders, avg breach duration, WoW trend), and emails a styled HTML digest to the support lead. Default weekdays 6 PM — final ca",
+"category": "support",
+"sourceTemplateId": "support-escalation-engine",
+"tags": "[\"supp",
+"toolCount": 0
+},
+{
+"id": "410bed86-bf86-5ef8-8c98-23ff437f33d2",
+"name": "SLA Breach Watch & Escalation",
+"description": "Polls support platform for tickets approaching or past SLA, classifies severity by tier, enriches with repeat-offender + agent-overload patterns, posts formatted messaging layout escalations to the messaging channel (DM to lead on Critical)",
+"category": "support",
+"sourceTemplateId": "support-escalation-engine",
+"tags": "[\"supp",
+"toolCount": 0
+},
+{
+"id": "0e18c6ea-e50c-5f10-8c33-8c566fa38b7b",
+"name": "Knowledge Base Enrichment",
+"description": "On ticket resolution, extracts problem + root_cause + resolution_steps, updates the matching knowledge base KB entry (increment Frequency, update Last Used) or creates a new one. Event-listens on support platform ticket status transitioning",
+"category": "support",
+"sourceTemplateId": "support-intelligence-use-case",
+"tags": "[\"supp",
+"toolCount": 0
+},
+{
+"id": "43d1c9b8-25be-5abb-8b8e-55faeb9aedc1",
+"name": "SLA Breach Prevention",
+"description": "Evaluates tracked critical/high tickets against SLA thresholds and sends a single proactive warning when remaining time crosses into the warning window. Default every 60 seconds (paired with triage) — final cadence set at the trigger-compos",
+"category": "support",
+"sourceTemplateId": "support-intelligence-use-case",
+"tags": "[\"supp",
+"toolCount": 0
+},
+{
+"id": "5154b28a-cd99-562b-9ef1-d2a8e52b7ce5",
+"name": "Ticket Triage & Routing",
+"description": "Polls support platform for new/updated tickets, classifies sentiment + urgency, searches the knowledge base KB for matching resolutions, and routes per the urgency × KB-match matrix. Default every 60 seconds — final cadence set at the trigg",
+"category": "support",
+"sourceTemplateId": "support-intelligence-use-case",
+"tags": "[\"supp",
+"toolCount": 0
+},
+{
+"id": "eadf1ac7-ecca-55a5-8cb6-76d68e80283a",
+"name": "Deliver Report",
+"description": "Composes the structured insight report from analysis results and delivers via in-app messaging, optionally archiving to knowledge base. Updates baselines so the next run's trend comparison is accurate.",
+"category": "reporting",
+"sourceTemplateId": "survey-insights-analyzer",
+"tags": "[\"surv",
+"toolCount": 0
+},
+{
+"id": "555079dd-836b-532f-a6ad-802a6c1cfdd7",
+"name": "Process and Analyze",
+"description": "Queries the database for new responses, validates and normalizes, runs sentiment + theme + NPS analysis, compares against rolling baselines, and flags anomalies. Default daily 09:00 — final cadence set at the trigger-composition step.",
+"category": "analysis",
+"sourceTemplateId": "survey-insights-analyzer",
+"tags": "[\"surv",
+"toolCount": 0
+},
+{
+"id": "9e027497-a2d9-5c54-bc10-5700c6486ce9",
+"name": "Process Responses",
+"description": "Polls the Google Form's linked sheet, scores each new response, writes enriched records to spreadsheet, and broadcasts tier-aware summaries to the messaging channel (routing detractors to a support channel). Default polling every 2 minutes ",
+"category": "automation",
+"sourceTemplateId": "survey-processor",
+"tags": "[\"surv",
+"toolCount": 0
+},
+{
+"id": "c914eb39-a506-58d5-bf1a-adefa1bd73e7",
+"name": "Send Follow-up Email",
+"description": "Consumes processed responses and sends the tier-appropriate follow-up email (Promoter / Neutral / Detractor). Failed sends queue for retry.",
+"category": "automation",
+"sourceTemplateId": "survey-processor",
+"tags": "[\"surv",
+"toolCount": 0
+},
+{
+"id": "e6d13cd7-cff5-5c1b-bf08-a5c766846d10",
+"name": "Code Linking",
+"description": "After acceptance, searches the chosen source-control provider for PRs and commits mentioning the ADR, presents candidate links for confirmation, and writes confirmed references into the knowledge base pages. Cross-references related or supe",
+"category": "automation",
+"sourceTemplateId": "technical-decision-tracker",
+"tags": "[\"tech",
+"toolCount": 0
+},
+{
+"id": "4f29ec87-d241-555f-9347-90e3504c7b6a",
+"name": "Decision Intake",
+"description": "Manual-trigger intake that validates, enriches, and documents a new technical decision as a structured ADR in knowledge base with alternatives analysis and stakeholder sign-off.",
+"category": "automation",
+"sourceTemplateId": "technical-decision-tracker",
+"tags": "[\"tech",
+"toolCount": 0
+},
+{
+"id": "43eb2670-30f4-54c7-8f40-cbd8bebac8c0",
+"name": "Review Cycle",
+"description": "Periodic review of accepted ADRs: checks whether constraints still hold, presents a review batch with Reaffirm / Re-evaluate / Deprecate options, archives stale deprecated decisions. Default weekly Monday 09:00 — final cadence set at the tr",
+"category": "automation",
+"sourceTemplateId": "technical-decision-tracker",
+"tags": "[\"tech",
+"toolCount": 0
+},
+{
+"id": "5220dac2-4efa-5035-afb9-724e8b76e4d4",
+"name": "Command Intake & Execution",
+"description": "Webhook-driven entry point: verify operator authorization, parse natural language intent, classify destructive vs safe, execute safe operations directly with formatted Telegram response, or compose a confirmation prompt for destructive oper",
+"category": "operations",
+"sourceTemplateId": "telegram-ops-command-center",
+"tags": "[\"tele",
+"toolCount": 0
+},
+{
+"id": "6b1cf829-3578-5444-a930-bb450b06ef5e",
+"name": "Destructive Action Confirmation",
+"description": "Handles YES/CANCEL replies to pending confirmations: validates the same-operator rule, checks expiry, executes the stored destructive operation, and broadcasts a RED-severity alert to the secondary messaging channel. Webhook-driven on the s",
+"category": "operations",
+"sourceTemplateId": "telegram-ops-command-center",
+"tags": "[\"tele",
+"toolCount": 0
+},
+{
+"id": "1d099bb7-fc9a-5e1a-832b-e7f808beefa1",
+"name": "Daily Ops Summary",
+"description": "Compiles a daily rollup of commands executed (by type), current service health, recent deployments, incidents, top operators, and any pending confirmations (should be zero). Posted to Telegram and the secondary messaging channel; archived t",
+"category": "reporting",
+"sourceTemplateId": "telegram-ops-command-center",
+"tags": "[\"tele",
+"toolCount": 0
+},
+{
+"id": "bacdcdd7-dfbc-53ca-afd2-4ec5ed1af5ed",
+"name": "User Deletion & Offboarding",
+"description": "Webhook-driven capability. Processes auth provider user.deleted events. Verifies signature, soft-deletes in Supabase (status='churned', deleted_at=NOW()), sends a farewell / feedback email, posts a masked-PII churn alert to the messaging ch",
+"category": "development",
+"sourceTemplateId": "user-lifecycle-manager",
+"tags": "[\"user",
+"toolCount": 0
+},
+{
+"id": "a5d1cd82-ef99-575c-b6ce-70623fd8bda3",
+"name": "Email Change Propagation",
+"description": "Webhook-driven capability. Processes auth provider user.updated events where the primary email changed. Verifies signature, PATCHes Supabase with the new email, sends a confirmation to the NEW address, logs the change. Event-driven — not co",
+"category": "development",
+"sourceTemplateId": "user-lifecycle-manager",
+"tags": "[\"user",
+"toolCount": 0
+},
+{
+"id": "2e709a14-5c11-5478-9e1c-37989a3dbd8e",
+"name": "Onboarding Drip Sequence",
+"description": "Scheduled capability. Reads onboarding state files, advances each user's drip stage by time-since-signup (Day-1 @ 24h, Day-3 @ 72h, Day-7 @ 168h), sends the appropriate email via email, PATCHes Supabase onboarding_step, updates the state fi",
+"category": "development",
+"sourceTemplateId": "user-lifecycle-manager",
+"tags": "[\"user",
+"toolCount": 0
+},
+{
+"id": "4786985d-9b83-57a8-a536-8ca8f3f4451b",
+"name": "User Signup",
+"description": "Webhook-driven capability. Processes auth provider user.created events. Verifies Svix signature, provisions the user in Supabase (idempotent), posts a celebration to the messaging channel, sends a welcome email via email, and initializes th",
+"category": "development",
+"sourceTemplateId": "user-lifecycle-manager",
+"tags": "[\"user",
+"toolCount": 0
+},
+{
+"id": "b362fec9-50d5-5133-90dc-21b34507f652",
+"name": "Journal Reflection",
+"description": "Watches the configured Obsidian vault's `Daily/` folder. When a new daily note appears or an existing one grows by enough characters, reads the entry, walks the vault for grounded context, checks pattern memory for recurring themes, and app",
+"category": "personal_productivity",
+"sourceTemplateId": "vault-grounded-journal-coach",
+"tags": "[\"vaul",
+"toolCount": 0
+},
+{
+"id": "c62bbf82-5e82-5001-bea3-5e4f9d07f77d",
+"name": "Journal Rescan",
+"description": "Manual capability. User invokes against a specific date — typically after they've added new content to a daily note that was already coached and want a fresh reflection. Replaces the existing `## Coach` section in place rather than appendin",
+"category": "personal_productivity",
+"sourceTemplateId": "vault-grounded-journal-coach",
+"tags": "[\"vaul",
+"toolCount": 0
+},
+{
+"id": "cbdd0d9a-5661-5525-9abb-7ebc5c91bb7d",
+"name": "Weekly Pattern Digest",
+"description": "Optional capability — only runs when enable_messages_digest is true. Once a week, walks pattern memories from the last N weeks, clusters by keyword overlap, surfaces clusters that exceed the recurrence floor and haven't been digested before",
+"category": "personal_productivity",
+"sourceTemplateId": "vault-grounded-journal-coach",
+"tags": "[\"vaul",
+"toolCount": 0
+},
+{
+"id": "e300b1db-400a-5b38-9a53-5f8cdcad95c2",
+"name": "Brand Asset Generation",
+"description": "Load the design.md brief, compose a prompt from the design DNA + memory layer, generate images via the image AI, evaluate with the multimodal AI in a quality loop (max 3 cycles), deliver via Messages, and gate on human review (max 3 iterati",
+"category": "content",
+"sourceTemplateId": "visual-brand-asset-factory",
+"tags": "[\"visu",
+"toolCount": 0
+},
+{
+"id": "d9189ae3-df8a-5843-b174-86befb61a0ad",
+"name": "Design Brief Generation",
+"description": "Produce the structured design.md brief (five sections: empathy, sensory aesthetic, four-role color hierarchy, typography hierarchy, layout metaphor + do's/don'ts) stored at `design_context.design_files['design.md']`. Runs once at persona bu",
+"category": "content",
+"sourceTemplateId": "visual-brand-asset-factory",
+"tags": "[\"visu",
+"toolCount": 0
+},
+{
+"id": "41e87ce8-6c73-5361-b10a-81b5978bb176",
+"name": "Paid-Organic Cannibalization Watch",
+"description": "Cross-reference paid keyword bids with organic ranking positions. When a keyword already ranks top-3 organically, the paid spend is likely cannibalizing — surface with calculated weekly savings opportunity.",
+"category": "analysis",
+"sourceTemplateId": "web-marketing",
+"tags": "[\"web-",
+"toolCount": 0
+},
+{
+"id": "c83283bc-126d-5512-a0a3-50a962cbffa5",
+"name": "Free Promotion Source Discovery",
+"description": "Discovers free promotion surfaces — forums, subreddits, newsletters, indie-dev communities, Hacker News threads, Product Hunt waitlists — grounded in the app's own codebase README + package metadata so suggestions actually match what the pr",
+"category": "growth",
+"sourceTemplateId": "web-marketing",
+"tags": "[\"web-",
+"toolCount": 0
+},
+{
+"id": "e0ae5617-752a-5ab1-82e8-da0c7311d617",
+"name": "Optimization Proposals",
+"description": "Turn the performance scan into 5-8 specific, actionable optimization proposals. Each carries data-grounded rationale, expected impact estimate, and priority. Presented for human review; accepted items enter the user's backlog via the emitte",
+"category": "strategy",
+"sourceTemplateId": "web-marketing",
+"tags": "[\"web-",
+"toolCount": 0
+},
+{
+"id": "b921e672-5496-5cdd-9ec1-57e3ca6e4624",
+"name": "Cross-Channel Performance Scan",
+"description": "Weekly scan of paid campaign and organic analytics metrics. Computes WoW deltas against a 4-week rolling baseline and produces the performance section of the Monday briefing. Does not propose changes — hands off to uc_optimization_proposals",
+"category": "analysis",
+"sourceTemplateId": "web-marketing",
+"tags": "[\"web-",
+"toolCount": 0
+},
+{
+"id": "cee0f180-00d5-5ce0-be9e-75a9e05387ad",
+"name": "Competitor Comparison",
+"description": "Score competitor URLs with the same 8-category weighted system and produce a side-by-side comparison section appended to the audit report. Highlights where the target beats competitors and where it falls behind. Only runs when competitor UR",
+"category": "analysis",
+"sourceTemplateId": "website-conversion-audit",
+"tags": "[\"webs",
+"toolCount": 0
+},
+{
+"id": "26b39db7-df93-55ed-b2c5-a0c20c46c9d1",
+"name": "Website Conversion Audit",
+"description": "Fetch a target URL and key subpages, score 8 conversion categories, classify gaps by severity (Critical/High/Medium/Low), produce a prioritized gap report with revenue-impact framing, deliver via Messages, and learn from valuable/not-valuab",
+"category": "analysis",
+"sourceTemplateId": "website-conversion-audit",
+"tags": "[\"webs",
+"toolCount": 0
+},
+{
+"id": "bfae76f0-5997-5d7c-bea0-5a18028e4ee2",
+"name": "Portfolio Re-audit",
+"description": "Scheduled re-audit of all previously audited sites at quick depth. Compare against prior scores, flag ≥3-point improvements and regressions, deliver a change summary via messaging. Default Monday 09:00 — final cadence set at the trigger-com",
+"category": "monitoring",
+"sourceTemplateId": "website-conversion-auditor",
+"tags": "[\"webs",
+"toolCount": 0
+},
+{
+"id": "e1fe464d-f530-5fe5-a9f1-789d99934946",
+"name": "Single Site Audit",
+"description": "Crawl one business website (homepage + optional subpages + mobile viewport), score 10 conversion dimensions with evidence, compose structured audit report, and optionally generate a ready-to-paste redesign prompt for AI website builders. Ma",
+"category": "analysis",
+"sourceTemplateId": "website-conversion-auditor",
+"tags": "[\"webs",
+"toolCount": 0
+},
+{
+"id": "d9b3f724-35ef-54fd-a781-97b2af5a8d84",
+"name": "Landscape Report",
+"description": "Aggregates all classified rows into a structured market landscape report: industry breakdown, audience distribution, business model patterns, tech landscape, white-space opportunities, common positioning themes. Delivers via Messages and ar",
+"category": "analysis",
+"sourceTemplateId": "website-market-intelligence-profiler",
+"tags": "[\"webs",
+"toolCount": 0
+},
+{
+"id": "f026e7a3-90d7-5514-921e-c47ad9a3f43d",
+"name": "Profile URLs",
+"description": "Read URLs from the source list, fetch each site in rate-limited batches, apply 7-dimension classification, write results back. Handles paywalls, login walls, JS-rendered pages, and duplicates gracefully. Cadence is managed at the trigger-co",
+"category": "research",
+"sourceTemplateId": "website-market-intelligence-profiler",
+"tags": "[\"webs",
+"toolCount": 0
+},
+{
+"id": "b2e9f57f-8c68-5d35-8be9-12045d6cc51b",
+"name": "Error Classification",
+"description": "AI-classifies each ingested error across four dimensions: category (one of 7), root cause (pattern + dependency + temporal correlation), impact (blast radius + severity), and remediation (specific actionable fix). Stores classification back",
+"category": "analysis",
+"sourceTemplateId": "workflow-error-intelligence",
+"tags": "[\"work",
+"toolCount": 0
+},
+{
+"id": "228c0d05-6844-58e7-b815-97564ab21f53",
+"name": "Error Event Ingestion",
+"description": "Subscribes to platform error events from every persona and polls the execution API every 10 minutes to catch silent failures. Normalizes each error into a structured record, deduplicates within a 1-hour window, and appends to the 90-day rol",
+"category": "monitoring",
+"sourceTemplateId": "workflow-error-intelligence",
+"tags": "[\"work",
+"toolCount": 0
+},
+{
+"id": "e9f4f48e-ec0c-52d3-8a0b-918530f2c0b6",
+"name": "Cross-Workflow Pattern Detection",
+"description": "Runs four pattern checks on each classified error: recurring (same pattern 3+ in 1h), cascading (dependent persona fails within 15m), time-based clustering, service-wide outage (3+ personas on same service in 30m). Sends real-time critical ",
+"category": "analysis",
+"sourceTemplateId": "workflow-error-intelligence",
+"tags": "[\"work",
+"toolCount": 0
+},
+{
+"id": "6da5cc6d-838b-5344-9455-8305e6ca0e85",
+"name": "Daily Digest & Weekly Reliability Report",
+"description": "Compiles the daily error digest (totals, per-persona, per-category, trending, top remediation) and the weekly reliability report (error rate per persona, MTTR by category, week-over-week delta, top 3 recommendations, dependency risk map). P",
+"category": "reporting",
+"sourceTemplateId": "workflow-error-intelligence",
+"tags": "[\"work",
+"toolCount": 0
+},
+{
+"id": "7be5a3ac-a3a2-5f32-bb12-65c7583d6d16",
+"name": "3-Pass Cut Edit",
+"description": "Takes raw filmed footage + approved script. VFR normalize → Deepgram transcribe → Pass 1 retake removal (keep final match per script sentence) → Pass 2 n-gram phrase-repeat detection → Pass 3 silence polish. Runs FFmpeg locally.",
+"category": "editing",
+"sourceTemplateId": "youtube-content-pipeline",
+"tags": "[\"yout",
+"toolCount": 0
+},
+{
+"id": "5c43d914-56b5-55bd-b824-8aa15b060f37",
+"name": "Outline + Titles",
+"description": "Takes an approved topic and produces a 5-section outline (hook/problem → solution → demo → results → outro), three title options (curiosity/benefit/identity), and concrete thumbnail direction.",
+"category": "planning",
+"sourceTemplateId": "youtube-content-pipeline",
+"tags": "[\"yout",
+"toolCount": 0
+},
+{
+"id": "c7f5f6bf-7bae-5232-853d-025fdc3a35e8",
+"name": "Publish Prep",
+"description": "From the outline + final video, generate YouTube-ready assets: description (hook-first + chapter timestamps + links), 10-15 tags, chapter markers mapped to final timestamps, end-screen card picks from prior uploads, and a 1-paragraph commun",
+"category": "publishing",
+"sourceTemplateId": "youtube-content-pipeline",
+"tags": "[\"yout",
+"toolCount": 0
+},
+{
+"id": "ce7e3575-0844-51c5-9dd2-5a4c93df0eaf",
+"name": "Niche Research",
+"description": "Manual trigger with a topic idea. Runs parallel YouTube + Apify + X queries, applies the niche gate (median view count test), produces 5-10 ranked topic candidates with citations.",
+"category": "research",
+"sourceTemplateId": "youtube-content-pipeline",
+"tags": "[\"yout",
+"toolCount": 0
+},
+{
+"id": "b9f8043b-d127-5ee4-b249-3500f697876c",
+"name": "Teleprompter Script",
+"description": "Writes a 1,800-2,500 word script in the creator's voice from the approved outline. Applies open loops, loss aversion, micro-payoffs, specificity. Includes [PAUSE], [B-ROLL], [SCREEN] markers. Creator flags voice mismatches — each rejection ",
+"category": "writing",
+"sourceTemplateId": "youtube-content-pipeline",
+"tags": "[\"yout",
+"toolCount": 0
+},
+{
+"id": "c0a5e100-4b1d-4c0a-9e10-71a5c0a5e100",
+"name": "Codebase Coverage Scan",
+"description": "Scheduled scan of the registered codebase. Reads memory for prior coverage progress, picks the next lowest-coverage / untested module, writes the missing tests, validates them with run_tests, and persists updated coverage progress to memory",
+"category": "development",
+"sourceTemplateId": "qa-guardian",
+"tags": "[\"qa-g",
+"toolCount": 0
+},
+{
+"id": "b0a5e200-4b1d-4b09-9e20-72a5b0a5e200",
+"name": "Codebase Bug Hunt",
+"description": "Scheduled scan of the registered codebase for likely defects (null/None derefs, missing error handling, unhandled edge cases, resource leaks, security gaps). Reads memory for already-reported issues to avoid duplicates, files each new findi",
+"category": "development",
+"sourceTemplateId": "qa-guardian",
+"tags": "[\"qa-g",
+"toolCount": 0
+},
+{
+"id": "5dc1a001-a5c0-4a01-9e01-5dc1a0010001",
+"name": "Scheduled Architecture Review",
+"description": "Periodic architectural health review of the registered codebase: scan the current architecture, trace cross-module impacts, and produce a concise ADR (context / decision / consequences) plus a story-pointed task breakdown. Reads memory for ",
+"category": "development",
+"sourceTemplateId": "solution-architect",
+"tags": "[\"solu",
+"toolCount": 0
+},
+{
+"id": "5dc1a002-a5c0-4a02-9e02-5dc1a0020002",
+"name": "Idea Architecture Analysis",
+"description": "On-demand architectural evaluation of a proposed change or accepted idea: assess fit against the existing architecture, surface risks and trade-offs, and produce an implementation plan (ADR + scoped, story-pointed tasks) ready for a deliver",
+"category": "development",
+"sourceTemplateId": "solution-architect",
+"tags": "[\"solu",
+"toolCount": 0
+},
+{
+"id": "5dc1a003-a5c0-4a03-9e03-5dc1a0030003",
+"name": "Code Review",
+"description": "Reviews target files (or a changeset) for security vulnerabilities, correctness bugs, and quality issues. Every finding cites file:line with a concrete fix; closes with an APPROVE / REQUEST_CHANGES verdict. Reads memory for prior findings s",
+"category": "development",
+"sourceTemplateId": "code-reviewer",
+"tags": "[\"code",
+"toolCount": 0
+},
+{
+"id": "5dc1a004-a5c0-4a04-9e04-5dc1a0040004",
+"name": "Release Automation",
+"description": "When a change merges, applies semantic-versioning rules (MAJOR/MINOR/PATCH) to the merged commits, bumps the version file, prepends a categorized changelog entry, drafts release notes, and tags the release. Records each version decision in ",
+"category": "development",
+"sourceTemplateId": "release-manager",
+"tags": "[\"rele",
+"toolCount": 0
+},
+{
+"id": "5dc1a005-a5c0-4a05-9e05-5dc1a0050005",
+"name": "On-Demand Security Scan",
+"description": "Comprehensive security audit of the registered codebase: dependency-vulnerability analysis, secret/credential detection, and risky-pattern analysis (auth bypasses, PII handling, injection). Findings are severity-ranked with concrete remedia",
+"category": "security",
+"sourceTemplateId": "security-sentinel",
+"tags": "[\"secu",
+"toolCount": 0
+},
+{
+"id": "5dc1a006-a5c0-4a06-9e06-5dc1a0060006",
+"name": "Sync Documentation",
+"description": "Analyzes recent commits, identifies functional changes (ignoring formatting/test-only), and updates README sections + the changelog so docs match the shipped code. Reads memory for the last-processed commit so each run only covers new chang",
+"category": "development",
+"sourceTemplateId": "docs-steward",
+"tags": "[\"docs",
+"toolCount": 0
+},
+{
+"id": "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300",
+"name": "PR Test + Merge",
+"description": "Reactive review of a pull request Dev Clone opened: check out the PR branch in an isolated git worktree, run the project's tests there, then — per the team's standards/branching policy — enable GitHub native auto-merge (pass + automerge), a",
+"category": "development",
+"sourceTemplateId": "qa-guardian",
+"tags": "[\"qa-g",
+"toolCount": 0
+},
+{
+"id": "4810f244-cfb6-53d4-98bb-1a710ddc39ea",
+"name": "Scheduled Scan",
+"description": "Primary tracking cycle: sweep sent email threads, detect replies, classify overdue threads into graduated urgency tiers with VIP priority, and deliver a batched messaging reminder. Default every 4 hours — final cadence set at the trigger-co",
+"category": "monitoring",
+"sourceTemplateId": "email-intelligence-operator",
+"tags": "[\"emai",
+"toolCount": 0
+},
+{
+"id": "a90716fa-f0c0-51d1-983f-25cc047032aa",
+"name": "On-demand Status",
+"description": "User-triggered full status report of all tracked threads — overdue, within-threshold, and recently resolved — for pre-meeting prep or end-of-day review. Does not advance escalation tiers.",
+"category": "monitoring",
+"sourceTemplateId": "email-intelligence-operator",
+"tags": "[\"emai",
+"toolCount": 0
+},
+{
+"id": "76fb3252-633e-56b7-8002-16ee006cf1e8",
+"name": "Scan and Extract",
+"description": "Scans the inbox for unprocessed actionable email, runs three-pass NLP extraction, and emits each candidate with its confidence score for downstream creation or review. Default every 15 minutes — final cadence set at the trigger-composition ",
+"category": "analysis",
+"sourceTemplateId": "email-intelligence-operator",
+"tags": "[\"emai",
+"toolCount": 0
+},
+{
+"id": "fb0e8a6e-47f8-59b6-92c4-0428d6458039",
+"name": "Create or Review",
+"description": "Consumes extracted candidates: high-confidence items check knowledge base for duplicates and create tasks; low-confidence items route through human review and train the confidence model. Learns from approve/dismiss decisions.",
+"category": "automation",
+"sourceTemplateId": "email-intelligence-operator",
+"tags": "[\"emai",
+"toolCount": 0
+},
+{
+"id": "2e1c3383-d083-5971-a703-23f478f8cb89",
+"name": "Inbox Scan & Extraction",
+"description": "Short-interval email polling loop. Filters non-lead signals, performs multi-layer extraction (header / body / signature), assembles structured lead records with confidence scores, and hands off to the qualification capability. Default every",
+"category": "analysis",
+"sourceTemplateId": "email-intelligence-operator",
+"tags": "[\"emai",
+"toolCount": 0
+},
+{
+"id": "657d3914-b610-5304-9940-a469e20d2b20",
+"name": "Lead Qualification & Scoring",
+"description": "Event-listen on extracted lead candidates. Applies the weighted 4-signal scoring model with contextual adjustments, classifies into tiers, performs three-tier deduplication against the master database, and persists new or updated records. E",
+"category": "analysis",
+"sourceTemplateId": "email-intelligence-operator",
+"tags": "[\"emai",
+"toolCount": 0
+},
+{
+"id": "3da43c82-0a28-58fd-bdad-fb03fb2e8872",
+"name": "Human Review",
+"description": "Human-in-the-loop capability for On Fire leads (fast-track), potential fuzzy duplicates (merge decision), and low-confidence extractions (verification). Every routing path lands here with full context so the reviewer can act without leaving",
+"category": "review",
+"sourceTemplateId": "email-intelligence-operator",
+"tags": "[\"emai",
+"toolCount": 0
+},
+{
+"id": "4db88e39-3874-5ac9-8e18-4546807ad016",
+"name": "Change Monitor",
+"description": "Poll the CRM for modified Opportunities, compare against stored state, classify urgency per change, and send contextual alerts with business impact and suggested actions. Closed Lost deals trigger a loss-reason manual review. Default every ",
+"category": "monitoring",
+"sourceTemplateId": "sales-deal-intelligence",
+"tags": "[\"sale",
+"toolCount": 0
+},
+{
+"id": "b344fab1-9d2c-5554-9456-e84480f0e398",
+"name": "Daily Summary",
+"description": "Compile a daily pipeline snapshot: stage distribution, total / weighted values, movement since yesterday, velocity metrics from 90-day transition history, at-risk deals, and top deals to watch. Default 09:00 daily — final cadence set at the",
+"category": "reporting",
+"sourceTemplateId": "sales-deal-intelligence",
+"tags": "[\"sale",
+"toolCount": 0
+},
+{
+"id": "9ecf538b-0f3a-5108-9811-0300c6060202",
+"name": "Multi-Dimensional Analysis",
+"description": "Query the CRM for closed deals in the analysis window. Run seven-dimension segmentation (size, industry, rep, lead source, stakeholders, cycle length, stage progression), cross-dimensional interaction checks for significant findings, and tr",
+"category": "analysis",
+"sourceTemplateId": "sales-deal-intelligence",
+"tags": "[\"sale",
+"toolCount": 0
+},
+{
+"id": "7f8db04b-5429-5f04-a46c-f2e4c8bd2b79",
+"name": "Insight Documentation",
+"description": "Take the analysis output, rank findings by potential revenue impact, and compose a structured knowledge base report with executive summary, win/loss patterns, trend analysis, and ranked recommendations. Persist each significant finding as a",
+"category": "reporting",
+"sourceTemplateId": "sales-deal-intelligence",
+"tags": "[\"sale",
+"toolCount": 0
+},
+{
+"id": "10a9bac8-581e-5e55-875a-997428016656",
+"name": "Email Triage & Ticketing",
+"description": "Fetches unread email support emails, classifies priority using multi-signal analysis (keywords, sender history, impact language, sender frequency), creates structured knowledge base tickets with priority-tier SLA deadlines, and marks email ",
+"category": "support",
+"sourceTemplateId": "email-support-operator",
+"tags": "[\"supp",
+"toolCount": 0
+},
+{
+"id": "6dbde915-d3ad-515b-bfa1-a9f951d70c51",
+"name": "SLA Monitoring & Escalation",
+"description": "Queries knowledge base for open tickets approaching or past their SLA deadline and escalates through warning (80%), critical (90%, unassigned), and breach (100%) stages. Default every 3 minutes (paired with triage) — final cadence set at th",
+"category": "support",
+"sourceTemplateId": "email-support-operator",
+"tags": "[\"supp",
+"toolCount": 0
+},
+{
+"id": "aeb4d1d4-0bc5-545a-83f1-60d0a8ba996e",
+"name": "Email Triage",
+"description": "Polls email for new support emails, matches each against the KB, computes confidence, and routes to auto-reply, human review, or knowledge-gap detection. Default every 3 minutes — final cadence set at the trigger-composition step.",
+"category": "support",
+"sourceTemplateId": "email-support-operator",
+"tags": "[\"emai",
+"toolCount": 0
+},
+{
+"id": "088b826e-981e-52b6-b871-5458c625c8a4",
+"name": "Knowledge Gap Handling",
+"description": "For emails where the KB has no relevant article, sends a customer acknowledgment with promised response time, creates a knowledge-gap report for the support team with a suggested article outline, and tracks frequency so recurring gaps escal",
+"category": "support",
+"sourceTemplateId": "email-support-operator",
+"tags": "[\"emai",
+"toolCount": 0
+},
+{
+"id": "dc0f0f1c-b657-594e-b9b7-9d670164442a",
+"name": "Daily Activity Report",
+"description": "Compiles 24h metrics (total emails, auto-reply rate, approval rate, top categories, new gaps, confidence trend) and delivers to the configured channel. Default 9 AM daily — final cadence set at the trigger-composition step.",
+"category": "support",
+"sourceTemplateId": "email-support-operator",
+"tags": "[\"emai",
+"toolCount": 0
+}
+]

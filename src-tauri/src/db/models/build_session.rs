@@ -201,6 +201,14 @@ pub enum BuildEvent {
         field: String,
         value: serde_json::Value,
         status: String,
+        /// Build orchestration (Phase 1 groundwork): identifies the sub-agent
+        /// lane that produced this resolution when the build fans out one agent
+        /// per capability (Phase 4). `None` on the single-lane sequential build
+        /// today — `skip_serializing_if` keeps the wire payload byte-identical
+        /// until a producer sets it. `capability_id` is the natural discriminator;
+        /// `lane` adds explicit agent attribution for telemetry + the streaming UI.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        lane: Option<String>,
     },
 
     /// Persona-wide resolution: tools / connectors / notification_channels_default /
@@ -286,6 +294,19 @@ pub struct BuildSession {
     /// The runner respects this when deciding whether to emit a pending
     /// question. NULL = no disabled dims (default for fresh + legacy rows).
     pub disabled_dims_json: Option<String>,
+    /// Build telemetry (Phase 0). Append-only JSON array of `{phase, ts}`
+    /// entries stamped at each phase transition, so per-phase wall-clock is
+    /// reconstructable from persisted data (polling can't see sub-phase timing).
+    /// NULL on legacy rows + until the first transition.
+    pub phase_timings_json: Option<String>,
+    /// Summed `total_cost_usd` across the build CLI's stream-json `result`
+    /// messages (the resolution turns; test/fix-pass cost is a follow-up). NULL
+    /// until the first result carrying cost is seen.
+    pub total_cost_usd: Option<f64>,
+    pub input_tokens: Option<i64>,
+    pub output_tokens: Option<i64>,
+    /// Number of build-runner turns spawned (the outer resolution loop count).
+    pub num_turns: Option<i64>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -456,4 +477,11 @@ pub struct UpdateBuildSession {
     pub mode: Option<Option<String>>,
     pub companion_session_id: Option<Option<String>>,
     pub disabled_dims_json: Option<Option<String>>,
+    // Build telemetry (Phase 0). `phase_timings_json` is NOT here — it is
+    // append-only, managed by `build_sessions::append_phase_timing`, not this
+    // set-value update path.
+    pub total_cost_usd: Option<Option<f64>>,
+    pub input_tokens: Option<Option<i64>>,
+    pub output_tokens: Option<Option<i64>>,
+    pub num_turns: Option<Option<i64>>,
 }

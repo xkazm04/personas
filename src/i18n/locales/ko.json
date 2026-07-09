@@ -17437,5 +17437,15 @@
     "xray_label": "{count}개 기능으로 구성됨",
     "xray_tooltip": "이 템플릿은 멘탈리티와 레시피 카탈로그의 기능으로 구성됩니다 — Foundry에서 직접 구성할 수 있는 것과 동일한 구성 요소입니다.",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "에이전트",
+    "domain_content": "콘텐츠 스튜디오",
+    "domain_engineering": "엔지니어링",
+    "domain_finance": "재무",
+    "domain_operations": "운영",
+    "domain_people": "고객 및 인사",
+    "domain_research": "리서치 및 인텔리전스",
+    "domain_revenue": "영업 및 마케팅"
   }
 }

@@ -17437,5 +17437,15 @@
     "xray_label": "مكوّن من {count} قدرات",
     "xray_tooltip": "هذا القالب عبارة عن عقلية بالإضافة إلى قدرات من كتالوج الوصفات — نفس الأجزاء التي يمكنك تركيبها يدويًا في Foundry.",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "الوكلاء",
+    "domain_content": "استوديو المحتوى",
+    "domain_engineering": "الهندسة",
+    "domain_finance": "المالية",
+    "domain_operations": "العمليات",
+    "domain_people": "العملاء والموظفون",
+    "domain_research": "الأبحاث والاستخبارات",
+    "domain_revenue": "المبيعات والتسويق"
   }
 }

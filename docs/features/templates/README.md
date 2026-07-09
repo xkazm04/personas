@@ -93,6 +93,18 @@ src-tauri/src/db/repos/communication/reviews.rs   (persona_design_reviews DAO)
   readable without leaving the modal; hidden for templates without flows.
 - **Trending quick-adopt** (`gallery/explore/TrendingCarousel.tsx`): trending cards carry a
   hover-revealed adopt action that opens the adoption flow directly from the shelf.
+- **Explore tab** (`sub_explore/`, Templates → **Explore**): the discovery surface for
+  picking from hundreds of templates + recipes without the table's overwhelm. **Level 1** is a
+  data-weighted **Bento mosaic** of 7 balanced *domains* (Engineering, Research, Content,
+  Sales & Marketing, Finance, Operations, Customer & People — `exploreDomains.ts`, derived from
+  the real category distribution so nothing is orphaned) — tile size ∝ template count, with
+  theme-aware Leonardo illustrations (`public/illustrations/explore/domain-*-{dark,light}.png`).
+  **Level 2** (`level2/DomainTable.tsx`) is a sub-domain (category) pre-filter + a dense,
+  sortable, type-to-filter table mixing that domain's templates and recipes, with an
+  All / Templates / Recipes switcher. Real data via `useExploreCatalog` (templates from
+  `getTemplateCatalog`; recipes from the build-time `recipeIndex.generated.json`). i18n:
+  `t.explore.*`. This **replaces the former "By Role" density view** (the `role` option on
+  `DensityToggle` and the `ExploreVariantA` role-cards surface were removed).
 - **Coverage filter — All / Ready / Partial / Drafts** (`gallery/search/filters/FilterChips.tsx`
   + `gallery/cards/useGalleryActions.ts`): Ready = 100% connector readiness, Partial = some.
   **Drafts** isolates unpublished (`is_published: false`) templates and is **dev-build-only**:

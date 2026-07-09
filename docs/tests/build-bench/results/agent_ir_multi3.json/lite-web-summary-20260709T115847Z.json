@@ -1,0 +1,605 @@
+{
+  "fixture": "lite-web-summary",
+  "summary": {
+    "multiagent": {
+      "runs": 3,
+      "promote_rate": 1.0,
+      "total_seconds_median": 63.06,
+      "total_seconds_min": 63.06,
+      "total_seconds_max": 70.59,
+      "capabilities_median": 3.0,
+      "gate_pass_rate_median": 1.0,
+      "cost_usd_median": 0.3,
+      "per_phase_seconds_median": {
+        "analyzing": 24.03,
+        "resolving": 25.53,
+        "testing": 13.51,
+        "promoted": 0.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "variant": "multiagent",
+      "tag": "multiagent-1",
+      "run": {
+        "fixture_id": "lite-web-summary",
+        "variant": "multiagent",
+        "session_id": "8f27e61f-fe9e-4c05-805f-c9e82237892e",
+        "persona_id": "62e7a3e8-4bae-4594-8ecb-348926cea935",
+        "ok": true,
+        "terminal_phase": "promoted",
+        "error_message": null,
+        "total_seconds": 70.59,
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 24.03
+          },
+          {
+            "phase": "testing",
+            "offset_s": 52.56
+          },
+          {
+            "phase": "promoted",
+            "offset_s": 70.58
+          }
+        ],
+        "cost_usd": 0.304389,
+        "input_tokens": 10,
+        "output_tokens": 5451,
+        "num_turns": 5,
+        "phase_timings": [
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T11:55:30.689678500+00:00"
+          },
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T11:55:30.690160200+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T11:55:53.929408900+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T11:56:23.026762700+00:00"
+          },
+          {
+            "phase": "test_complete",
+            "ts": "2026-07-09T11:56:40.432045300+00:00"
+          }
+        ],
+        "questions_answered": 0,
+        "stuck_question": null,
+        "started_at": "2026-07-09T11:55:30.684210+00:00",
+        "finished_at": "2026-07-09T11:56:41.269330+00:00"
+      },
+      "per_phase_seconds": {
+        "analyzing": 24.03,
+        "resolving": 28.53,
+        "testing": 18.02,
+        "promoted": 0.01
+      },
+      "capture": {
+        "source": "persona",
+        "capabilities": [
+          {
+            "id": "uc-af824949-3aef-45ed-87e1-55b8340197e8",
+            "title": "Summarize a URL",
+            "description": null,
+            "tool_hints": [
+              "WebFetch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-ca3febae-5695-404a-af72-503550ca0b61",
+            "title": "Answer from the Web",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-b1e7817c-19c2-4981-b0e9-fe425084e2bb",
+            "title": "Daily Topic Digest",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch",
+              "CronCreate",
+              "CronList",
+              "CronDelete",
+              "ScheduleWakeup"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          }
+        ],
+        "connectors": [],
+        "credential_links": {},
+        "tool_tests": {
+          "connectors_resolved": [],
+          "credential_issues": [],
+          "results": [
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web fetch \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebFetch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web search \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebSearch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in cron scheduling \u2014 write-only, no read endpoint to test",
+              "status": "passed",
+              "tool_name": "CronCreate"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in cron listing \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "CronList"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in cron deletion \u2014 write-only/mutating, skipped to avoid side effects",
+              "status": "passed",
+              "tool_name": "CronDelete"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in wakeup scheduling \u2014 write-only, no read endpoint to test",
+              "status": "passed",
+              "tool_name": "ScheduleWakeup"
+            }
+          ],
+          "summary": "### Overview\nYour Web Intelligence Concierge is ready to go! All 6 core capabilities have been tested and verified as working properly. Your agent can now search the web, fetch information, and schedule tasks without any issues.\n\n### Results\n- **WebFetch** \u2014 \u2705 Your agent can pull information from websites and use it to answer questions.\n- **WebSearch** \u2014 \u2705 Your agent can search the web to find current information on any topic.\n- **CronCreate** \u2014 \u2705 Your agent can schedule tasks to run automatically at specific times in the future.\n- **CronList** \u2014 \u2705 Your agent can view and manage all scheduled tasks that have been set up.\n- **CronDelete** \u2014 \u2705 Your agent can cancel scheduled tasks when they're no longer needed.\n- **ScheduleWakeup** \u2014 \u2705 Your agent can wake up at scheduled times to perform time-sensitive actions.\n\n### Next Steps\nYour Web Intelligence Concierge is all set\u2014you're ready to put it to work!",
+          "tools_failed": 0,
+          "tools_passed": 6,
+          "tools_skipped": 0,
+          "tools_tested": 6
+        },
+        "setup_status": "ready",
+        "persona_name": "Web Intelligence Concierge",
+        "raw_present": true
+      },
+      "assertions": [
+        {
+          "key": "capabilities_count",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3"
+        },
+        {
+          "key": "web_research_caps",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3 (['uc-af824949-3aef-45ed-87e1-55b8340197e8', 'uc-ca3febae-5695-404a-af72-503550ca0b61', 'uc-b1e7817c-19c2-4981-b0e9-fe425084e2bb'])"
+        },
+        {
+          "key": "no_external_search_connector",
+          "passed": true,
+          "severity": "gate",
+          "expected": "no serpapi/tavily/google_search/\u2026",
+          "actual": "none"
+        },
+        {
+          "key": "setup_status",
+          "passed": true,
+          "severity": "warn",
+          "expected": "ready",
+          "actual": "ready"
+        }
+      ],
+      "gate_pass_rate": 1.0
+    },
+    {
+      "variant": "multiagent",
+      "tag": "multiagent-2",
+      "run": {
+        "fixture_id": "lite-web-summary",
+        "variant": "multiagent",
+        "session_id": "f673ae03-120d-4865-9ee8-3dc83c20cfa7",
+        "persona_id": "e25e1855-0e0f-4f28-aa20-f3550d55337b",
+        "ok": true,
+        "terminal_phase": "promoted",
+        "error_message": null,
+        "total_seconds": 63.06,
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 24.03
+          },
+          {
+            "phase": "testing",
+            "offset_s": 49.55
+          },
+          {
+            "phase": "promoted",
+            "offset_s": 63.06
+          }
+        ],
+        "cost_usd": 0.299358,
+        "input_tokens": 10,
+        "output_tokens": 5268,
+        "num_turns": 5,
+        "phase_timings": [
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T11:56:41.290613300+00:00"
+          },
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T11:56:41.291185100+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T11:57:03.964124700+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T11:57:29.583113400+00:00"
+          },
+          {
+            "phase": "test_complete",
+            "ts": "2026-07-09T11:57:43.855071200+00:00"
+          }
+        ],
+        "questions_answered": 0,
+        "stuck_question": null,
+        "started_at": "2026-07-09T11:56:41.285726+00:00",
+        "finished_at": "2026-07-09T11:57:44.358008+00:00"
+      },
+      "per_phase_seconds": {
+        "analyzing": 24.03,
+        "resolving": 25.52,
+        "testing": 13.51,
+        "promoted": 0.0
+      },
+      "capture": {
+        "source": "persona",
+        "capabilities": [
+          {
+            "id": "uc-82e9f9b5-8de8-44d2-bda3-a0fba747b457",
+            "title": "Summarize a URL",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-f3eb4d46-7bdd-48bb-829c-20d9ffdeff2d",
+            "title": "Answer from the Web",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-85f20229-8dd4-4d0b-b5ef-a7a63717154a",
+            "title": "Daily Topic Digest",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch",
+              "CronCreate",
+              "CronList",
+              "CronDelete"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          }
+        ],
+        "connectors": [],
+        "credential_links": {},
+        "tool_tests": {
+          "connectors_resolved": [],
+          "credential_issues": [],
+          "results": [
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web search \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebSearch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web fetch \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebFetch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in cron scheduling tool \u2014 write-only, no read endpoint to test; auto-verified by platform",
+              "status": "passed",
+              "tool_name": "CronCreate"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in cron listing tool \u2014 auto-verified by platform",
+              "status": "passed",
+              "tool_name": "CronList"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in cron deletion tool \u2014 write-only/mutating, skipped to avoid state changes; auto-verified by platform",
+              "status": "passed",
+              "tool_name": "CronDelete"
+            }
+          ],
+          "summary": "### Overview\nGreat news! Your Web Research Analyst agent passed all tests and is ready to go. All five tools that power your agent are working correctly, so it can search the web, fetch content, and schedule tasks without any issues.\n\n### Results\n\n- **WebSearch** \u2014 \u2705 Your agent can search the web using built-in web search, which is always available and ready to use.\n\n- **WebFetch** \u2014 \u2705 Your agent can retrieve content from web pages using built-in web fetch, which works seamlessly whenever needed.\n\n- **CronCreate** \u2014 \u2705 Your agent can schedule tasks to run automatically on a schedule using the built-in cron tool.\n\n- **CronList** \u2014 \u2705 Your agent can see all scheduled tasks that have been created.\n\n- **CronDelete** \u2014 \u2705 Your agent can cancel scheduled tasks when they're no longer needed.\n\n### Next Steps\nYou're all set! Your Web Research Analyst agent is fully functional and ready to start researching and retrieving information from the web.",
+          "tools_failed": 0,
+          "tools_passed": 5,
+          "tools_skipped": 0,
+          "tools_tested": 5
+        },
+        "setup_status": "ready",
+        "persona_name": "Web Research Analyst",
+        "raw_present": true
+      },
+      "assertions": [
+        {
+          "key": "capabilities_count",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3"
+        },
+        {
+          "key": "web_research_caps",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3 (['uc-82e9f9b5-8de8-44d2-bda3-a0fba747b457', 'uc-f3eb4d46-7bdd-48bb-829c-20d9ffdeff2d', 'uc-85f20229-8dd4-4d0b-b5ef-a7a63717154a'])"
+        },
+        {
+          "key": "no_external_search_connector",
+          "passed": true,
+          "severity": "gate",
+          "expected": "no serpapi/tavily/google_search/\u2026",
+          "actual": "none"
+        },
+        {
+          "key": "setup_status",
+          "passed": true,
+          "severity": "warn",
+          "expected": "ready",
+          "actual": "ready"
+        }
+      ],
+      "gate_pass_rate": 1.0
+    },
+    {
+      "variant": "multiagent",
+      "tag": "multiagent-3",
+      "run": {
+        "fixture_id": "lite-web-summary",
+        "variant": "multiagent",
+        "session_id": "235a5cf5-2d66-49a0-853e-857aaab7df35",
+        "persona_id": "49df8547-9fd8-41bb-ace5-9b33ebbce3ba",
+        "ok": true,
+        "terminal_phase": "promoted",
+        "error_message": null,
+        "total_seconds": 63.06,
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 24.03
+          },
+          {
+            "phase": "testing",
+            "offset_s": 49.56
+          },
+          {
+            "phase": "promoted",
+            "offset_s": 63.06
+          }
+        ],
+        "cost_usd": 0.294363,
+        "input_tokens": 10,
+        "output_tokens": 5187,
+        "num_turns": 5,
+        "phase_timings": [
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T11:57:44.374751900+00:00"
+          },
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T11:57:44.375204800+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T11:58:08.248581+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T11:58:33.027471900+00:00"
+          },
+          {
+            "phase": "test_complete",
+            "ts": "2026-07-09T11:58:46.073204900+00:00"
+          }
+        ],
+        "questions_answered": 0,
+        "stuck_question": null,
+        "started_at": "2026-07-09T11:57:44.370827+00:00",
+        "finished_at": "2026-07-09T11:58:47.440213+00:00"
+      },
+      "per_phase_seconds": {
+        "analyzing": 24.03,
+        "resolving": 25.53,
+        "testing": 13.5,
+        "promoted": 0.0
+      },
+      "capture": {
+        "source": "persona",
+        "capabilities": [
+          {
+            "id": "uc-eeb9fb27-63f0-48e3-9477-7ef307a86396",
+            "title": "Summarize a URL",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-a6e9292b-8d1f-4b27-9d41-75b7b7b20c9f",
+            "title": "Answer from the Web",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          },
+          {
+            "id": "uc-c7f36477-8436-49bf-9851-2a9d01dd5533",
+            "title": "Daily Topic Digest",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch"
+            ],
+            "subscriptions": [],
+            "trigger": null
+          }
+        ],
+        "connectors": [],
+        "credential_links": {},
+        "tool_tests": {
+          "connectors_resolved": [],
+          "credential_issues": [],
+          "results": [
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web search \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebSearch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web fetch \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebFetch"
+            }
+          ],
+          "summary": "### Overview\nGreat news! Your Web Intel Scout agent is ready to go. Both of its web tools tested successfully and are working as expected.\n\n### Results\n- **WebSearch** \u2014 \u2705 The web search tool is working perfectly using Claude's built-in search capabilities, which are always available.\n- **WebFetch** \u2014 \u2705 The web fetching tool is working perfectly using Claude's built-in fetch capabilities, which are always available.\n\n### Next Steps\nYour agent is all set\u2014you're ready to start using Web Intel Scout to gather and analyze information from the web!",
+          "tools_failed": 0,
+          "tools_passed": 2,
+          "tools_skipped": 0,
+          "tools_tested": 2
+        },
+        "setup_status": "ready",
+        "persona_name": "Web Intel Scout",
+        "raw_present": true
+      },
+      "assertions": [
+        {
+          "key": "capabilities_count",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3"
+        },
+        {
+          "key": "web_research_caps",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3 (['uc-eeb9fb27-63f0-48e3-9477-7ef307a86396', 'uc-a6e9292b-8d1f-4b27-9d41-75b7b7b20c9f', 'uc-c7f36477-8436-49bf-9851-2a9d01dd5533'])"
+        },
+        {
+          "key": "no_external_search_connector",
+          "passed": true,
+          "severity": "gate",
+          "expected": "no serpapi/tavily/google_search/\u2026",
+          "actual": "none"
+        },
+        {
+          "key": "setup_status",
+          "passed": true,
+          "severity": "warn",
+          "expected": "ready",
+          "actual": "ready"
+        }
+      ],
+      "gate_pass_rate": 1.0
+    }
+  ]
+}

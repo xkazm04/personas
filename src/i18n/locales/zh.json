@@ -17437,5 +17437,15 @@
     "xray_label": "由 {count} 项能力组成",
     "xray_tooltip": "此模板由一种心智加上配方目录中的能力组成——与你在 Foundry 中手动组合的部分相同。",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "智能体",
+    "domain_content": "内容工作室",
+    "domain_engineering": "工程",
+    "domain_finance": "财务",
+    "domain_operations": "运营",
+    "domain_people": "客户与人力",
+    "domain_research": "研究与情报",
+    "domain_revenue": "销售与营销"
   }
 }

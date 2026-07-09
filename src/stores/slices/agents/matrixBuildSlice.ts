@@ -872,6 +872,9 @@ export const createMatrixBuildSlice: StateCreator<
         ...cap,
         [field]: value,
         resolvedFields: { ...cap.resolvedFields, [field]: status === 'resolved' ? 'resolved' : 'pending' },
+        // Phase 1 groundwork: remember which sub-agent lane resolved this
+        // capability (set by the Phase 4 fan-out; null on the sequential build).
+        lane: event.lane ?? cap.lane ?? null,
       };
       const nextOrder = existing ? sess.capabilityOrder : [...sess.capabilityOrder, capability_id];
       return {

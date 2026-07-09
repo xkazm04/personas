@@ -38,7 +38,20 @@ row; a dozen join tables hang off `persona_id`.
 | `trust_score` | `f64` | 0.0–1.0 derived metric from execution history. |
 | `parameters` | `Option<String>` | JSON array of `PersonaParameter` — user-tunable values that don't require a rebuild. |
 | `gateway_exposure` | `PersonaGatewayExposure` | `local_only` \| `invite_only` \| `public` — external HTTP API visibility. |
+| `starred` | `bool` | Durable star: marks the persona as in the Director's coaching scope (promoted from a localStorage favorite). |
+| `setup_status` | `String` | Adoption/build execute-gate: `ready` (default) or `needs_credentials`. A `needs_credentials` persona shows a "Setup required" badge and is skipped by auto-execution until its connector bindings resolve. Set by `instant_adopt_template_inner` / `promote_build_draft_inner`. |
+| `setup_detail` | `Option<String>` | JSON `PersonaSetup` (adoption-honesty redesign) — typed connector blockers, wired trigger types, and a human-readable readiness preview. `setup_status` is the coarse gate; this carries the detail the UI routes on. |
+| `last_test_report` | `Option<String>` | JSON report from the most recent `test_build_draft` / `run_tool_tests` run (per-tool / per-connector results). `None` if never tested. Read by the editor's TestReportModal. |
+| `template_category` | `Option<String>` | Lowercase category (`"development"`, `"finance"`, …) inferred at template adoption. Drives Simple-mode illustration + the export-safe icon fallback. |
+| `cli_awareness_enabled` | `bool` | Per-persona gate (default `false`) for the Athena CLI session-resume awareness block. |
+| `disabled_dims_json` | `Option<String>` | JSON `{ [use_case_id]: GlyphDimension[] }` of per-capability dims disabled in the View-mode SigilEditModal. Durable across rebuilds + runs; the runtime executor skips actions bound to disabled dims. `NULL` = none. |
 | `created_at` / `updated_at` | `String` | ISO8601 timestamps. |
+
+> **`core_profile` is a write-only column, not a struct field.** `promote_build_draft_inner`
+> stamps `personas.core_profile` from `payload.persona.core` (the 7-dial deliberation
+> temperament) via raw SQL, but the `Persona` struct does not carry it — so it won't
+> appear in the ts-rs binding or a `SELECT *` deserialize. Read it with an explicit
+> column query when you need it.
 
 ## The `personas` table
 
@@ -74,7 +87,9 @@ CREATE INDEX idx_personas_home_team_id ON personas(home_team_id);
 
 Fields added via migrations (see `incremental.rs`): `headless`,
 `source_review_id`, `trust_level`, `trust_origin`, `trust_verified_at`,
-`trust_score`, `parameters`, `gateway_exposure`.
+`trust_score`, `parameters`, `gateway_exposure`, `starred`, `last_test_report`,
+`template_category`, `cli_awareness_enabled`, `setup_status`, `setup_detail`,
+`disabled_dims_json`, and the write-only `core_profile` column.
 
 ## The `structured_prompt` JSON
 
@@ -115,8 +130,12 @@ pub struct DesignContextData {
 
 **`DesignUseCase`** — each use case carries optional `suggested_trigger`,
 `model_override`, `notification_channels`, `event_subscriptions`,
-`input_schema`, `sample_input` so the UI can render a ready-to-run
-template per use case.
+`input_schema`, `sample_input`/`sample_output` so the UI can render a
+ready-to-run template per use case. It also carries `execution_mode` (the
+strategy discriminant read at dispatch), recipe provenance
+(`source_recipe_id` / `source_recipe_version` / `adopted_at` from recipe
+adoption), `tool_hints`, and `generation_settings` (stored as raw JSON so new
+per-capability config can be added without a migration).
 
 **`engine_mode`** (per use case, optional) — `"mixed"` arms the execution's
 personas-mcp sidecar with the `llm_delegate` tool: Claude stays the
@@ -286,7 +305,9 @@ CREATE TABLE persona_memories (
 ```
 
 Extended model (in `memory.rs`) adds `tier` (`core` | `active` |
-`archive`), `access_count`, `last_accessed_at`. Lifecycle transitions
+`working` | `archive`), `access_count`, `last_accessed_at`, plus optional
+`use_case_id` (capability scope) and `home_team_id` (team scope). Injection at
+runtime uses `get_for_injection_v2` (core/active/working); lifecycle transitions
 (promote/archive) run on every execution — see
 [execution/02-lifecycle.md](../execution/02-lifecycle.md#memory-injection).
 
@@ -385,6 +406,26 @@ CREATE TABLE persona_prompt_versions (
 
 Written by `promote_build_draft_inner` on every promotion. The Lab
 Matrix uses this to A/B test prompt variants.
+
+## The `build_sessions` table (build lifecycle)
+
+Not a `persona_id` join table — this is the durable checkpoint store for a
+**live build session** (the Describe path), written *before* a persona row
+exists. `start_build_session` inserts a row at phase `initializing`; the backend
+build task updates it on every event so the build survives navigation and app
+restart (`getActiveBuildSession` / `get_build_status` rehydrate it).
+
+Columns (`build_session.rs`): `phase` (the persisted `BuildPhase`:
+`initializing → analyzing → awaiting_input → resolving → draft_ready →
+testing → test_complete → promoted`, plus `completed`/`failed`/`cancelled`),
+`resolved_cells` (per-cell JSON accumulator), `pending_question`, `agent_ir`
+(the final IR promote reads), `adoption_answers`, `intent`, `error_message`,
+`cli_pid`, `mode` (`interactive` | `one_shot`), `companion_session_id`,
+`disabled_dims_json`, `workflow_json`, `parser_result_json`. On promote,
+`promote_build_draft_inner` reads `agent_ir` and fans it out into
+`persona_tool_definitions` / `persona_tools` / `persona_triggers` /
+`persona_event_subscriptions` / `persona_prompt_versions` and the persona row
+itself (see [README](README.md#the-build-session--how-a-describe-build-runs)).
 
 ## Enums summary
 

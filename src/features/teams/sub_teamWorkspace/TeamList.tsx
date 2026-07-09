@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Users, Zap, Trash2, ArrowRight, Layers, PenLine, Workflow, type LucideIcon } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { MotionizedGlyph } from './MotionizedGlyph';
+import { NETWORK_GLYPH, NETWORK_GLYPH_VIEWBOX } from './networkGlyphData';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { hasUnsentDraft } from '../sub_collab/useTeamChannel';
@@ -411,9 +413,7 @@ function EmptyState({
 }) {
   return (
     <div className="animate-fade-slide-in text-center py-12">
-      <div className="w-16 h-16 mx-auto mb-4 rounded-modal bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-        <Users className="w-8 h-8 text-indigo-400/50" />
-      </div>
+      <MotionizedGlyph data={NETWORK_GLYPH} viewBox={NETWORK_GLYPH_VIEWBOX} spread={1.1} className="w-44 h-44 mx-auto mb-4" />
       <h2 className="typo-heading-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
       <p className="typo-body text-foreground mb-6 max-w-sm mx-auto">{t.pipeline.no_teams_hint}</p>
       <div className="flex flex-wrap items-center justify-center gap-3">

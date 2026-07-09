@@ -971,6 +971,10 @@ struct BuildStartRequest {
     /// Optional user-provided reference context to ground the build (UAT P7).
     #[serde(default)]
     context: Option<String>,
+    /// Build orchestration variant ("sequential" | "multiagent"). The build-bench
+    /// harness sends this to A/B the build path. Empty/omitted → sequential.
+    #[serde(default)]
+    orchestration: Option<String>,
 }
 
 async fn handle_build_start(
@@ -978,12 +982,55 @@ async fn handle_build_start(
     Json(req): Json<BuildStartRequest>,
 ) -> Result<String, (StatusCode, String)> {
     let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
+
+    // Benchmark ergonomics (build-orchestration Phase 0): when no persona_id is
+    // supplied, mint a draft persona shell so a one-shot build can be driven
+    // fully headlessly — promote needs a persona row to write onto. Mirrors the
+    // frontend `createPersona` draft the Describe flow makes before
+    // `start_build_session`. `orchestration` is accepted-but-ignored today; it
+    // becomes the sequential/multiagent switch in Phase 2.
+    let persona_id = if req.persona_id.trim().is_empty() {
+        match crate::db::repos::core::personas::create(
+            &app_state.db,
+            crate::db::models::CreatePersonaInput {
+                name: "Build-bench draft".to_string(),
+                system_prompt:
+                    "Draft persona created for a headless build; the build session populates this."
+                        .to_string(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(false),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+            },
+        ) {
+            Ok(p) => p.id,
+            Err(e) => {
+                return Ok(serde_json::json!({
+                    "success": false,
+                    "error": format!("auto-create draft persona failed: {e}")
+                })
+                .to_string())
+            }
+        }
+    } else {
+        req.persona_id.clone()
+    };
+
     let session_id = uuid::Uuid::new_v4().to_string();
     let dummy_channel: tauri::ipc::Channel<serde_json::Value> =
         tauri::ipc::Channel::new(|_| Ok(()));
     match app_state.build_session_manager.start_session(
         session_id.clone(),
-        req.persona_id,
+        persona_id.clone(),
         req.intent,
         dummy_channel,
         app_state.db.clone(),
@@ -995,8 +1042,12 @@ async fn handle_build_start(
         req.mode,
         req.companion_session_id,
         req.context,
+        req.orchestration,
     ) {
-        Ok(sid) => Ok(serde_json::json!({"success": true, "sessionId": sid}).to_string()),
+        Ok(sid) => Ok(
+            serde_json::json!({"success": true, "sessionId": sid, "personaId": persona_id})
+                .to_string(),
+        ),
         Err(e) => Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string()),
     }
 }
@@ -1034,6 +1085,15 @@ async fn handle_build_status(
                 "errorMessage": session.error_message,
                 "createdAt": session.created_at,
                 "updatedAt": session.updated_at,
+                // Build telemetry (Phase 0) — read by the build-bench harness.
+                "phaseTimings": session
+                    .phase_timings_json
+                    .as_deref()
+                    .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()),
+                "costUsd": session.total_cost_usd,
+                "inputTokens": session.input_tokens,
+                "outputTokens": session.output_tokens,
+                "numTurns": session.num_turns,
             });
             Ok(body.to_string())
         }

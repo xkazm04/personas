@@ -211,6 +211,18 @@ pub async fn run_tool_tests(
         ctx
     };
 
+    // Phase 4 — scripted deterministic connector tool-tests (env-gated:
+    // PERSONAS_SCRIPTED_TOOL_TESTS=1). Instead of the two LLM calls below (a
+    // ~50s plan-generation + a ~50s summary), run each bound connector's
+    // DECLARED healthcheck directly, in parallel via run_lanes — faster, cheaper,
+    // non-flaky, and semantically the correct read-only test. Falls through to
+    // the LLM path when disabled, so the default is untouched.
+    // NOTE: win-verification is deferred to a connector fixture (web-research-desk
+    // with Airtable/Notion) — native-only builds have no connectors to script.
+    if std::env::var("PERSONAS_SCRIPTED_TOOL_TESTS").ok().as_deref() == Some("1") {
+        return run_scripted_connector_tests(pool, agent_ir).await;
+    }
+
     // Step 2: Build test prompt for the CLI
     let tools_json = serde_json::to_string_pretty(&tools).unwrap_or_default();
     // The connector list is what actually needs credentials — generic tools
@@ -600,6 +612,110 @@ pub async fn run_tool_tests(
 }
 
 /// Ask the CLI to generate a human-friendly summary of test results.
+/// Phase 4: run each bound connector's declared healthcheck in parallel and
+/// build the same result shape as the LLM/fallback path — no LLM turns. Env-gated
+/// by the caller (`PERSONAS_SCRIPTED_TOOL_TESTS=1`).
+async fn run_scripted_connector_tests(
+    pool: &DbPool,
+    agent_ir: &crate::db::models::AgentIr,
+) -> Result<serde_json::Value, AppError> {
+    use super::orchestrator::{lane, run_lanes, LaneOutcome, LaneTask};
+
+    let connector_names: Vec<String> = agent_ir
+        .required_connectors
+        .iter()
+        .filter_map(|c| c.name().map(|n| n.to_string()))
+        .collect();
+    if connector_names.is_empty() {
+        return Ok(serde_json::json!({
+            "results": [], "tools_tested": 0, "tools_passed": 0, "tools_failed": 0,
+            "tools_skipped": 0, "credential_issues": [], "connectors_resolved": []
+        }));
+    }
+
+    // connector -> credential_id (unique-bind resolution, the authoritative link)
+    let links = {
+        let conn = pool.get()?;
+        crate::commands::design::connector_readiness::resolve_credential_links(
+            &conn,
+            connector_names.iter().map(|s| s.as_str()),
+        )
+    };
+
+    // One lane per connector: run its healthcheck (or credential_missing).
+    let mut tasks: Vec<LaneTask<serde_json::Value>> = Vec::new();
+    for cname in &connector_names {
+        let cred_id = links.get(cname).cloned();
+        let name = cname.clone();
+        let pool_c = pool.clone();
+        tasks.push(lane(cname.clone(), async move {
+            match cred_id {
+                None => serde_json::json!({
+                    "tool_name": name, "status": "credential_missing", "http_status": null,
+                    "latency_ms": 0, "error": format!("No credential bound for connector '{name}'"),
+                    "connector": name, "output_preview": null
+                }),
+                Some(cid) => {
+                    let started = std::time::Instant::now();
+                    let (status, error, preview) =
+                        match super::super::healthcheck::run_healthcheck(&pool_c, &cid).await {
+                            Ok(hr) if hr.success => {
+                                ("passed", serde_json::Value::Null, serde_json::Value::String(hr.message))
+                            }
+                            Ok(hr) => {
+                                ("failed", serde_json::Value::String(hr.message), serde_json::Value::Null)
+                            }
+                            Err(e) => {
+                                ("failed", serde_json::Value::String(e.to_string()), serde_json::Value::Null)
+                            }
+                        };
+                    serde_json::json!({
+                        "tool_name": name, "status": status, "http_status": null,
+                        "latency_ms": started.elapsed().as_millis() as u64,
+                        "error": error, "connector": name, "output_preview": preview
+                    })
+                }
+            }
+        }));
+    }
+
+    let mut results = Vec::new();
+    let mut passed = 0usize;
+    let mut failed = 0usize;
+    let mut credential_issues: Vec<serde_json::Value> = Vec::new();
+    for LaneOutcome { lane, result } in run_lanes(3, tasks).await {
+        let r = match result {
+            Ok(v) => v,
+            Err(e) => serde_json::json!({
+                "tool_name": lane.clone(), "status": "failed", "http_status": null,
+                "latency_ms": 0, "error": e, "connector": lane, "output_preview": null
+            }),
+        };
+        match r.get("status").and_then(|s| s.as_str()) {
+            Some("passed") => passed += 1,
+            Some("credential_missing") => {
+                failed += 1;
+                credential_issues.push(serde_json::json!({
+                    "connector": r.get("connector").cloned().unwrap_or(serde_json::Value::Null),
+                    "issue": r.get("error").cloned().unwrap_or(serde_json::Value::Null),
+                }));
+            }
+            _ => failed += 1,
+        }
+        results.push(r);
+    }
+
+    Ok(serde_json::json!({
+        "results": results,
+        "tools_tested": passed + failed,
+        "tools_passed": passed,
+        "tools_failed": failed,
+        "tools_skipped": 0usize,
+        "credential_issues": credential_issues,
+        "connectors_resolved": connector_names,
+    }))
+}
+
 async fn generate_test_summary(
     results_json: &str,
     agent_name: &str,

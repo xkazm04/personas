@@ -67,11 +67,14 @@ interface UseComposeConfigArgs {
   initialNotificationChannels?: ChannelSpecV2[];
   /** Reset all local config when the build session identity changes. */
   resetKey: string | null;
+  /** Extra directive block (e.g. the persona-core temperament) appended to the
+   *  intent right before launch, after the memory/review lines. Empty ⇒ nothing. */
+  coreAugmentation?: string;
 }
 
 export function useComposeConfig({
   intentText, onIntentChange, onLaunch, onQuickConfigChange,
-  initialNotificationChannels, resetKey,
+  initialNotificationChannels, resetKey, coreAugmentation = "",
 }: UseComposeConfigArgs) {
   const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [reviewEnabled, setReviewEnabled] = useState(false);
@@ -234,9 +237,9 @@ export function useComposeConfig({
         ? "Review: always wait for my approval before publishing output"
         : "Review: never — automatically publish without asking",
     ];
-    onIntentChange(`${intentText}\n---\n${lines.join("\n")}`);
+    onIntentChange(`${intentText}\n---\n${lines.join("\n")}${coreAugmentation}`);
     onLaunch();
-  }, [memoryEnabled, reviewEnabled, intentText, onIntentChange, onLaunch]);
+  }, [memoryEnabled, reviewEnabled, intentText, onIntentChange, onLaunch, coreAugmentation]);
 
   const modals = (
     <>

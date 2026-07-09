@@ -30,6 +30,10 @@ list_team_presets / get_team_preset (Tauri IPC)
         │
         ▼ TWO surfaces, ONE shared state machine (`usePresetAdoption`):
           (a) Templates → Presets: PresetLibraryPage → PresetPreviewModal (modal).
+              PresetLibraryPage is a data-weighted **Bento mosaic** (tile size ∝ team
+              size) with theme-aware Leonardo illustrations per preset id
+              (`public/illustrations/presets/preset-<id>-{dark,light}.png`; presets
+              without art fall back to a color-gradient tile).
           (b) Teams → "Preset Team" button / empty-state CTA → in-app PresetStudio
               (full content area, not a modal): gallery → PresetProcessHost, which
               renders the BLUEPRINT schematic (the connection graph is the hero and

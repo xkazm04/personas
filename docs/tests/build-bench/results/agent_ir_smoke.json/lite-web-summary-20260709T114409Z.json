@@ -1,0 +1,122 @@
+{
+  "fixture": "lite-web-summary",
+  "summary": {
+    "multiagent": {
+      "runs": 1,
+      "promote_rate": 0.0,
+      "total_seconds_median": 48.05,
+      "total_seconds_min": 48.05,
+      "total_seconds_max": 48.05,
+      "capabilities_median": 0.0,
+      "gate_pass_rate_median": 0.33,
+      "cost_usd_median": 0.42,
+      "per_phase_seconds_median": {
+        "analyzing": 25.53,
+        "resolving": 22.52,
+        "failed": 0.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "variant": "multiagent",
+      "tag": "multiagent-1",
+      "run": {
+        "fixture_id": "lite-web-summary",
+        "variant": "multiagent",
+        "session_id": "732f6ba4-3632-4d4d-837a-fba175bb1365",
+        "persona_id": "f5e2dfb9-fac0-4ef9-b401-f435c94bb1e1",
+        "ok": false,
+        "terminal_phase": "failed",
+        "error_message": "Validation error: OneShot agent_ir parse error: data did not match any variant of untagged enum AgentIrUseCase at line 1 column 9192",
+        "total_seconds": 48.05,
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 25.53
+          },
+          {
+            "phase": "failed",
+            "offset_s": 48.05
+          }
+        ],
+        "cost_usd": 0.4164672,
+        "input_tokens": 10,
+        "output_tokens": 5342,
+        "num_turns": 5,
+        "phase_timings": [
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T11:43:21.077772700+00:00"
+          },
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T11:43:21.078340400+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T11:43:46.326469600+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T11:44:08.891160300+00:00"
+          }
+        ],
+        "questions_answered": 0,
+        "stuck_question": null,
+        "started_at": "2026-07-09T11:43:21.072632+00:00",
+        "finished_at": "2026-07-09T11:44:09.126921+00:00"
+      },
+      "per_phase_seconds": {
+        "analyzing": 25.53,
+        "resolving": 22.52,
+        "failed": 0.0
+      },
+      "capture": {
+        "source": "persona",
+        "capabilities": [],
+        "connectors": [],
+        "credential_links": {},
+        "tool_tests": null,
+        "setup_status": "ready",
+        "persona_name": "Build-bench draft (6)",
+        "raw_present": true
+      },
+      "assertions": [
+        {
+          "key": "capabilities_count",
+          "passed": false,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "0"
+        },
+        {
+          "key": "web_research_caps",
+          "passed": false,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "0 ([])"
+        },
+        {
+          "key": "no_external_search_connector",
+          "passed": true,
+          "severity": "gate",
+          "expected": "no serpapi/tavily/google_search/\u2026",
+          "actual": "none"
+        },
+        {
+          "key": "setup_status",
+          "passed": true,
+          "severity": "warn",
+          "expected": "ready",
+          "actual": "ready"
+        }
+      ],
+      "gate_pass_rate": 0.333
+    }
+  ]
+}

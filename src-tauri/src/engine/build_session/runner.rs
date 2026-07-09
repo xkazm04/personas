@@ -27,7 +27,7 @@ use crate::ActiveProcessRegistry;
 use super::super::cli_process::{read_line_limited, CliProcessDriver};
 use super::super::types::CliArgs;
 use super::events::{
-    cleanup_session, dual_emit, emit_error, emit_session_status, update_phase,
+    cleanup_session, dual_emit, emit_error, emit_session_status, record_build_usage, update_phase,
     update_phase_with_error,
 };
 use super::gates::{
@@ -36,8 +36,8 @@ use super::gates::{
     legacy_cell_to_v3_field, synthesize_gate_question, CapabilityGates, PendingGate,
 };
 use super::parser::{
-    map_capability_field_to_legacy_dimension, map_persona_field_to_legacy_dimension,
-    parse_build_line,
+    extract_result_usage, map_capability_field_to_legacy_dimension,
+    map_persona_field_to_legacy_dimension, parse_build_line,
 };
 use super::SessionHandle;
 
@@ -107,6 +107,88 @@ async fn wait_for_cancel_flag(cancel_flag: Arc<AtomicBool>) {
     }
 }
 
+// ── B2 streaming helpers ────────────────────────────────────────────────────
+//
+// With `--include-partial-messages` the CLI interleaves `stream_event` envelopes
+// carrying incremental `content_block_delta` text. These two helpers let the read
+// loop surface the `behavior_core` object to the frontend the moment it finishes
+// streaming, without waiting for the whole ~50-155s turn. Everything else stays on
+// the authoritative post-turn parse path.
+
+/// Pull the incremental text out of one CLI stream line, if it is a
+/// `content_block_delta` inside a `stream_event` envelope. Returns None for every
+/// other line type (system/assistant/result/etc.) — those go through the normal
+/// post-turn parse.
+fn stream_delta_text(line: &str) -> Option<String> {
+    let v: serde_json::Value = serde_json::from_str(line.trim()).ok()?;
+    if v.get("type").and_then(|t| t.as_str())? != "stream_event" {
+        return None;
+    }
+    let event = v.get("event")?;
+    if event.get("type").and_then(|t| t.as_str())? != "content_block_delta" {
+        return None;
+    }
+    let text = event.get("delta")?.get("text")?.as_str()?;
+    if text.is_empty() {
+        None
+    } else {
+        Some(text.to_string())
+    }
+}
+
+/// Scan the accumulated delta buffer for a complete top-level JSON object that
+/// carries a `behavior_core` key, and if found, parse it into BuildEvents via the
+/// same path the post-turn parser uses. Returns None until the object's braces
+/// balance (still streaming) or if no behavior_core is present yet. String-aware
+/// brace matching so braces inside JSON string values don't fool the scan.
+fn extract_early_behavior_core(buf: &str, session_id: &str) -> Option<Vec<BuildEvent>> {
+    let key_at = buf.find("\"behavior_core\"")?;
+    // The object opens at the last `{` before the key.
+    let open = buf[..key_at].rfind('{')?;
+    let bytes = buf.as_bytes();
+    let mut depth = 0usize;
+    let mut in_str = false;
+    let mut esc = false;
+    let mut end = None;
+    for i in open..buf.len() {
+        let c = bytes[i];
+        if in_str {
+            if esc {
+                esc = false;
+            } else if c == b'\\' {
+                esc = true;
+            } else if c == b'"' {
+                in_str = false;
+            }
+        } else {
+            match c {
+                b'"' => in_str = true,
+                b'{' => depth += 1,
+                b'}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = Some(i);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    let end = end?; // braces not balanced yet — wait for more deltas
+    let obj = &buf[open..=end];
+    let events = parse_build_line(obj, session_id);
+    let has_core = events.iter().any(|e| {
+        matches!(e, BuildEvent::BehaviorCoreUpdate { .. })
+            || matches!(e, BuildEvent::CellUpdate { cell_key, .. } if cell_key == "behavior_core")
+    });
+    if has_core {
+        Some(events)
+    } else {
+        None
+    }
+}
+
 async fn kill_cancelled_turn(
     driver: &mut CliProcessDriver,
     registry: &ActiveProcessRegistry,
@@ -167,8 +249,20 @@ pub(super) async fn run_session(
     // and promote happen automatically; user is notified on terminal phase
     // via the BuildWatcher job + tauri-plugin-notification.
     one_shot: bool,
+    // Build orchestration variant ("sequential" | "multiagent"), already
+    // resolved + normalized by the caller. Phase 2: "multiagent" runs the same
+    // sequential resolution but tags CapabilityResolutionUpdate events with a
+    // lane (see `stamp_lanes`), so the switch is observable end-to-end without
+    // changing the built persona. Phases 3-4 make it actually fan out.
+    orchestration: String,
     handle_generation: u64,
 ) {
+    let multiagent = orchestration == "multiagent";
+    tracing::info!(
+        session_id = %session_id,
+        orchestration = %orchestration,
+        "build session starting"
+    );
     // Register run in ActiveProcessRegistry
     let _reg_flag = registry.register_run("build_session", &session_id);
 
@@ -370,6 +464,50 @@ pub(super) async fn run_session(
     }
     let session_exec_dir = SessionExecDir::new(session_exec_path);
 
+    // Build orchestration Phase 3: multi-agent resolution fan-out. Isolated,
+    // one_shot ONLY — the serial loop below is 100% untouched. Rust orchestrates
+    // a serial head (behavior_core + enumeration) → bounded parallel per-capability
+    // resolution → serial agent_ir assembly → the existing oneshot back-half.
+    if multiagent && one_shot {
+        let budget = 3usize; // keeps us under the subscription rate limiter (Phase 2)
+        let result = super::fanout::run_multiagent_oneshot(
+            pool.clone(),
+            app_handle.clone(),
+            channel.clone(),
+            session_id.clone(),
+            persona_id.clone(),
+            cli_args.clone(),
+            session_exec_dir.path().to_path_buf(),
+            Arc::clone(&initial_prompt),
+            String::new(), // connector_context — populated for connector fixtures later
+            budget,
+            cancel_flag.clone(),
+            registry.clone(),
+        )
+        .await;
+        if let Err(e) = result {
+            tracing::warn!(session_id = %session_id, error = %e, "multiagent build failed");
+            let _ = update_phase_with_error(&pool, &session_id, &format!("multi-agent build: {e}"));
+            emit_error(
+                &pool,
+                &channel,
+                &app_handle,
+                &session_id,
+                &format!("Multi-agent build failed: {e}"),
+                false,
+            );
+        }
+        cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
+        return;
+    }
+
+    // Build telemetry (Phase 0): sum CLI cost/tokens across resolution turns.
+    // Written to the session row after each turn so build-bench reads cumulative
+    // build cost. (One-shot test/fix-pass cost in oneshot.rs is a follow-up.)
+    let mut acc_cost_usd: f64 = 0.0;
+    let mut acc_input_tokens: i64 = 0;
+    let mut acc_output_tokens: i64 = 0;
+
     for turn in 0..MAX_TURNS {
         // Check cancellation
         if cancel_flag.load(Ordering::Acquire) {
@@ -382,32 +520,7 @@ pub(super) async fn run_session(
         // Turn 0: send the full system prompt.
         // Turn 1+: send only a concise follow-up — session context is preserved via --continue.
         let turn_prompt: Arc<str> = if turn == 0 {
-            // B1 identity-first (interactive only): the LLM otherwise front-loads
-            // behavior_core + capabilities + the clarifying question into a single
-            // ~50-155s turn, so the frontend (Cinema loading experience) sees NO
-            // real data until it all bursts at the end. Scoping turn 0 to Phase A
-            // makes the LLM return after ~15s with just the behavior_core, which
-            // the runner's existing per-turn emission streams to the UI early —
-            // capabilities + questions then follow in turn 1. Best case the real
-            // persona identity (mission/role/voice) lands ~15s in; worst case the
-            // LLM ignores the scope and emits everything anyway (== today, no
-            // regression). Skipped for one-shot/headless builds — no UI is
-            // watching, so the extra round would only add latency.
-            if one_shot {
-                Arc::clone(&initial_prompt)
-            } else {
-                format!(
-                    "{initial_prompt}\n\n## THIS TURN — PHASE A ONLY (identity first)\n\
-                     Emit ONLY the `behavior_core` event for this intent right now \
-                     (or, if the intent is too vague to commit to a mission, exactly \
-                     ONE mission-scope `clarifying_question`). Do NOT enumerate or \
-                     resolve capabilities yet, and do NOT emit `agent_ir`. Emit that \
-                     one JSON object, then STOP — you will be asked to continue with \
-                     capability enumeration next turn.",
-                    initial_prompt = initial_prompt,
-                )
-                .into()
-            }
+            Arc::clone(&initial_prompt)
         } else {
             // v3 capability-framework follow-up: --continue preserves the full
             // prior conversation, so the LLM already knows its progress. We
@@ -516,6 +629,18 @@ pub(super) async fn run_session(
         let mut turn_events: Vec<BuildEvent> = Vec::new();
         let mut turn_raw = String::new();
 
+        // B2 streaming: with --include-partial-messages the CLI emits
+        // content_block_delta events as the LLM types. We accumulate that delta
+        // text and, the moment a complete `behavior_core` object closes, emit it
+        // to the frontend mid-turn — so the Cinema loading view gets the real
+        // persona identity ~15-20s in instead of at the end of a 50-155s turn.
+        // Scoped to behavior_core ONLY (it's identity, not part of the capability
+        // gate state machine, so early emit can't corrupt gate logic). Purely
+        // additive: turn_raw still accumulates every line and the authoritative
+        // parse + gate-pass below is unchanged; dedup drops the duplicate core.
+        let mut early_delta_buf = String::new();
+        let mut early_core_emitted = false;
+
         if let Some(mut reader) = driver.take_stdout_reader() {
             let cancel_wait = wait_for_cancel_flag(cancel_flag.clone());
             tokio::pin!(cancel_wait);
@@ -532,6 +657,39 @@ pub(super) async fn run_session(
                                 turn_raw.push_str(&line);
                                 turn_raw.push('\n');
                                 turn_events.extend(parse_build_line(&line, &session_id));
+
+                                // Telemetry (Phase 0): sum cost/tokens from the
+                                // stream-json `result` envelope for this turn.
+                                if let Some(u) = extract_result_usage(&line) {
+                                    acc_cost_usd += u.cost_usd;
+                                    acc_input_tokens += u.input_tokens;
+                                    acc_output_tokens += u.output_tokens;
+                                }
+
+                                // Mid-turn: surface behavior_core the instant it completes.
+                                if !early_core_emitted {
+                                    if let Some(txt) = stream_delta_text(&line) {
+                                        early_delta_buf.push_str(&txt);
+                                        if let Some(core_events) =
+                                            extract_early_behavior_core(&early_delta_buf, &session_id)
+                                        {
+                                            for ev in core_events {
+                                                cancel_if_emit_dropped!(dual_emit(
+                                                    &pool,
+                                                    &channel,
+                                                    &app_handle,
+                                                    &ev
+                                                ));
+                                            }
+                                            early_core_emitted = true;
+                                            tracing::info!(
+                                                session_id = %session_id,
+                                                turn = turn + 1,
+                                                "B2: streamed behavior_core to UI mid-turn"
+                                            );
+                                        }
+                                    }
+                                }
                             }
                             Ok(None) => break,
                             Err(_) => break,
@@ -540,6 +698,17 @@ pub(super) async fn run_session(
                 }
             }
         }
+
+        // Telemetry (Phase 0): persist cumulative cost/tokens + turn count so
+        // build-bench reads build cost/speed. Best-effort, after every turn.
+        record_build_usage(
+            &pool,
+            &session_id,
+            acc_cost_usd,
+            acc_input_tokens,
+            acc_output_tokens,
+            (turn + 1) as i64,
+        );
 
         // Wait for the CLI process to exit (don't use finish() which would
         // attempt dir cleanup — we reuse session_exec_dir across turns).
@@ -557,6 +726,24 @@ pub(super) async fn run_session(
                     "Failed while waiting for CLI process to exit"
                 );
                 registry.clear_run_pid("build_session", &session_id);
+            }
+        }
+
+        // Phase 2 (build orchestration): in multiagent mode, attribute each
+        // capability resolution to a lane so the sequential→multiagent switch is
+        // observable in the event stream + telemetry. ZERO behavior change —
+        // sequential leaves `lane` None; the built persona is identical either
+        // way. `capability_id` is the lane key (Phase 4 = one sub-agent per lane).
+        if multiagent {
+            for ev in turn_events.iter_mut() {
+                if let BuildEvent::CapabilityResolutionUpdate {
+                    lane, capability_id, ..
+                } = ev
+                {
+                    if lane.is_none() {
+                        *lane = Some(format!("cap-{capability_id}"));
+                    }
+                }
             }
         }
 
@@ -780,7 +967,16 @@ pub(super) async fn run_session(
                             is_gated = is_gated,
                             "CapRes gate check"
                         );
-                        if !gate_open && is_gated {
+                        // Baseline hardening: in one_shot mode, NEVER suppress a
+                        // resolution to synthesize a clarifying question — there is
+                        // no human to answer it, so the gate would never open and
+                        // the resolution would be suppressed EVERY turn, looping
+                        // until timeout (the native-only-capability failure mode:
+                        // the `connectors` gate never closes for caps that need no
+                        // connectors). Accept the LLM's resolution; test_build_draft
+                        // surfaces any real breakage (same rationale as the agent_ir
+                        // bypass below).
+                        if !gate_open && is_gated && !one_shot {
                             // Always suppress out-of-order resolutions +
                             // their legacy mirror so resolved_cells doesn't
                             // accumulate a partial value. Only synthesize a
