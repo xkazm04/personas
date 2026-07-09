@@ -16,8 +16,8 @@ export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
   const { state } = core;
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-h-[64vh] overflow-y-auto scrollbar-thin pr-1">
-      {/* Character — ordered icon grid */}
-      <div className="flex-[1.3] min-w-0 flex flex-col gap-3">
+      {/* Character — ordered icon grid (single column) */}
+      <div className="flex-1 min-w-0 flex flex-col gap-3">
         <div className="flex items-baseline justify-between">
           <SectionHeader>Character</SectionHeader>
           {state.traits.length > 0 && <span className="typo-caption" style={{ color: ACCENT }}>{state.traits.length} traits</span>}
@@ -36,8 +36,8 @@ export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
         <div className="flex flex-col gap-2"><FieldLabel>Reasoning effort</FieldLabel><EffortMeter core={core} /></div>
       </div>
 
-      {/* Mentality */}
-      <div className="w-full lg:w-[248px] shrink-0 flex flex-col gap-3 lg:pl-6 lg:border-l border-card-border/50">
+      {/* Mentality — expanded to an equal column for the rich persona cards */}
+      <div className="flex-1 min-w-0 flex flex-col gap-3 lg:pl-6 lg:border-l border-card-border/50">
         <SectionHeader>Mentality</SectionHeader>
         <SnapshotColumn core={core} />
       </div>

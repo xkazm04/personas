@@ -20,7 +20,7 @@ export function AxisTraitGrid({ core }: { core: PersonaCore }) {
             <span className="inline-flex items-center gap-1.5 typo-label uppercase tracking-[0.15em]" style={{ color: axis.color }}>
               <AxisIcon className="w-3.5 h-3.5" /> {axis.short}
             </span>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-1 gap-1.5">
               {byAxis(axis.id).map((t) => {
                 const on = sel.has(t.id);
                 const TIcon = t.icon;
