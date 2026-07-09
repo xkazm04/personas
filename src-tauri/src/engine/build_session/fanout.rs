@@ -494,19 +494,35 @@ fn build_clarify_prompt(intent: &str, behavior_core: &Value, capabilities: &[Val
         "An AI persona is being built from the user's intent. Your ONLY job is to decide which \
          clarifying questions genuinely MUST be asked before the persona can be built, and to ask \
          them ALL AT ONCE in a single round.\n\n\
-         ## The user's original intent\n{intent}\n\n\
-         ## Identity already derived\n{core}\n\n\
-         ## Capabilities already enumerated\n{caps}\n\n\
+         ## The user's original intent (THE ONLY THING THE USER ACTUALLY SAID)\n{intent}\n\n\
+         ## Identity already derived — TREAT AS PROVISIONAL GUESSES, NOT FACTS\n{core}\n\n\
+         ## Capabilities already enumerated — ALSO PROVISIONAL\n{caps}\n\n\
          ## Connectors available in the user's vault\n{conn}\n\n\
+         ## FIRST: audit the guesses above against the user's actual intent\n\
+         The identity and capabilities were guessed by another model. If they name a provider, a \
+         destination, a filter, or a scope that does NOT appear in the user's original intent \
+         above, that is an UNCONFIRMED GUESS and you MUST ask about it — never accept it and never \
+         phrase a question that presupposes it (do NOT write \"Beyond Gmail, ...\" if the user \
+         never said Gmail).\n\n\
          ## ASK only for information that cannot be safely defaulted\n\
          Ask when — and ONLY when — the persona must BIND a value the intent leaves unnamed:\n\
          - a concrete identifier: WHICH repository, WHICH channel, WHICH database/board/sheet, \
          WHICH inbox or account, WHICH topic to track;\n\
          - a provider or destination: which service the persona reads from or writes to, when the \
          intent names none (e.g. \"post updates\" — post WHERE? \"my emails\" — which provider?);\n\
+         - a BEHAVIOUR-CHANGING QUALIFIER the intent leaves undefined. These are not identifiers, \
+         and they are easy to miss — ask for them anyway:\n\
+           * DIRECTION of an operation between two systems (one-way or two-way? which side is the \
+         source of truth?) — never assume two-way;\n\
+           * the DEFINITION of a vague filter or threshold the intent hinges on (\"important\", \
+         \"urgent\", \"relevant\", \"new\") — ask what actually qualifies;\n\
+           * WHICH of several jobs to do first, when the user named more than one;\n\
          - the concrete job/scope, when the intent is so broad the capabilities cannot be pinned \
          down (e.g. \"manage my whole workflow\") — ask the user to name the ONE job to start with;\n\
          - the trigger/cadence, ONLY when the intent implies no cadence and no event.\n\n\
+         Prefer a question that pins down WHAT the persona will do or bind over one that merely \
+         tunes HOW OFTEN it runs. If you can only ask four things, spend them on the provider, the \
+         destination, the direction, and the filter definition — not on cadence.\n\n\
          ## NEVER ask about these — resolve them with safe defaults\n\
          - memory / what to remember between runs (default: none, unless the job needs dedup or \
          cross-run state, in which case just enable it);\n\
