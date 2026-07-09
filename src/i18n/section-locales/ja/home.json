@@ -1,28 +1,4 @@
 {
-  "welcome": "ようこそ",
-  "greeting_morning": "おはようございます",
-  "greeting_afternoon": "こんにちは",
-  "greeting_evening": "こんばんは",
-  "operator": "オペレーター",
-  "summary_empty": "最初のエージェントを作成するか、プラットフォームを探索してみましょう。",
-  "summary_stats": "{personasCount}件のエージェント{personasPlural}と{credentialsCount}件の認証情報{credentialsPlural}が設定されています。",
-  "quick_navigation": "クイックナビゲーション",
-  "platform_label": "Personasプラットフォーム",
-  "roadmap": {
-    "title": "プロダクトロードマップ",
-    "subtitle": "現在構築中と次に予定していること。",
-    "unavailable": "ロードマップ利用不可",
-    "unavailable_hint": "プロダクトロードマップを読み込めませんでした。接続を確認して再試行してください。",
-    "status_in_progress": "進行中",
-    "status_next": "次",
-    "status_planned": "計画済み",
-    "status_completed": "完了",
-    "priority_now": "今",
-    "priority_next": "次",
-    "priority_later": "後で",
-    "in_progress_count": "{count} 件進行中",
-    "next_count": "{count} 件次予定"
-  },
   "setup": {
     "choose_role": "役割を選択",
     "choose_role_hint": "あなたの働き方に合わせた体験をカスタマイズします。",
@@ -50,54 +26,6 @@
     "role": "役割",
     "tool": "ツール",
     "goal": "目標"
-  },
-  "fleet": {
-    "executions_today": "本日の実行",
-    "success_rate": "成功率",
-    "active_agents": "アクティブエージェント",
-    "credentials": "クレデンシャル"
-  },
-  "nav": {
-    "overview": {
-      "label": "概要",
-      "description": "ダッシュボード分析、実行履歴、全エージェントのリアルタイム監視"
-    },
-    "personas": {
-      "label": "エージェント",
-      "description": "カスタム動作と機能を備えたAIエージェントの作成・設定・管理"
-    },
-    "events": {
-      "label": "イベント",
-      "description": "イベントトリガー、webhookリスナー、スケジュール駆動の自動化を設定"
-    },
-    "credentials": {
-      "label": "キー",
-      "description": "API認証情報、DB接続、OAuthトークン、暗号化シークレットの管理"
-    },
-    "design-reviews": {
-      "label": "テンプレート",
-      "description": "n8nワークフローのインポート、テンプレートギャラリー、エージェント設計図の生成"
-    },
-    "team": {
-      "label": "チーム",
-      "description": "ドラッグ&ドロップでマルチエージェントチームパイプラインを構築"
-    },
-    "cloud": {
-      "label": "クラウド",
-      "description": "クラウドへのデプロイ、スケジュール管理、GitLab CI連携"
-    },
-    "settings": {
-      "label": "設定",
-      "description": "アカウント設定、外観テーマ、通知ルール、エンジン構成"
-    },
-    "plugins": {
-      "label": "プラグイン",
-      "description": "サードパーティプラグインとカスタム拡張機能でエージェントを拡張"
-    },
-    "teams": {
-      "label": "チーム",
-      "description": "複数のエージェントをチームにまとめ、複数ステップのワークフローで協調して作業させる"
-    }
   },
   "learning": {
     "title": "ラーニングセンター",
@@ -150,13 +78,6 @@
     "get_started": "はじめる",
     "language": "言語"
   },
-  "icon_showcase": {
-    "lucide_tab": "Lucide（ライブラリ）",
-    "personas_tab": "Personas（アニメーション）",
-    "lucide_footer": "lucide-react -- 汎用アイコンライブラリ -- 静的",
-    "personas_footer": "9つのカスタムアイコン -- ニューラル/サーキットモチーフ -- CSSアニメーション -- テーマ適応"
-  },
-  "commander": "Commander",
   "resume": {
     "failure": "{personaName} で未読のエラーあり — 調査してください",
     "tour": "{tourTitle} を再開（{stepIndex}/{totalSteps}）— {stepTitle}",

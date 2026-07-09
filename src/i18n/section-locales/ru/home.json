@@ -1,28 +1,4 @@
 {
-  "welcome": "Добро пожаловать",
-  "greeting_morning": "Доброе утро",
-  "greeting_afternoon": "Добрый день",
-  "greeting_evening": "Добрый вечер",
-  "operator": "Оператор",
-  "summary_empty": "Начните с создания первого агента или изучите платформу.",
-  "summary_stats": "У вас настроено {personasCount} агент{personasPlural} и {credentialsCount} учётных данных{credentialsPlural}.",
-  "quick_navigation": "Быстрая навигация",
-  "platform_label": "платформа Personas",
-  "roadmap": {
-    "title": "Дорожная карта",
-    "subtitle": "Что мы строим сейчас и что будет дальше.",
-    "unavailable": "Дорожная карта недоступна",
-    "unavailable_hint": "Не удалось загрузить дорожную карту. Проверьте соединение и повторите попытку.",
-    "status_in_progress": "В процессе",
-    "status_next": "Следующее",
-    "status_planned": "Запланировано",
-    "status_completed": "Завершено",
-    "priority_now": "Сейчас",
-    "priority_next": "Далее",
-    "priority_later": "Позже",
-    "in_progress_count": "{count} в процессе",
-    "next_count": "{count} следующих"
-  },
   "setup": {
     "choose_role": "Выберите роль",
     "choose_role_hint": "Мы адаптируем интерфейс под ваш стиль работы.",
@@ -50,54 +26,6 @@
     "role": "Роль",
     "tool": "Инструмент",
     "goal": "Цель"
-  },
-  "fleet": {
-    "executions_today": "Запуски сегодня",
-    "success_rate": "Успешность",
-    "active_agents": "Активные агенты",
-    "credentials": "Учётные данные"
-  },
-  "nav": {
-    "overview": {
-      "label": "Обзор",
-      "description": "Аналитика, история выполнений и мониторинг системы в реальном времени по всем агентам"
-    },
-    "personas": {
-      "label": "Агенты",
-      "description": "Создание, настройка и управление агентами с пользовательским поведением и возможностями"
-    },
-    "events": {
-      "label": "События",
-      "description": "Настройка триггеров событий, обработчиков webhook и автоматизаций по расписанию"
-    },
-    "credentials": {
-      "label": "Ключи",
-      "description": "Управление учётными данными API, подключениями к базам данных, токенами OAuth и зашифрованными секретами"
-    },
-    "design-reviews": {
-      "label": "Шаблоны",
-      "description": "Импорт рабочих процессов n8n, галерея шаблонов и генерация схем агентов"
-    },
-    "team": {
-      "label": "Команды",
-      "description": "Создание мультиагентных командных конвейеров с визуальной оркестрацией и маршрутизацией"
-    },
-    "cloud": {
-      "label": "Облако",
-      "description": "Развёртывание агентов в облаке, управление расписаниями и интеграция с GitLab CI"
-    },
-    "settings": {
-      "label": "Настройки",
-      "description": "Настройки аккаунта, темы оформления, правила уведомлений и конфигурация движка"
-    },
-    "plugins": {
-      "label": "Плагины",
-      "description": "Расширяйте агентов плагинами и пользовательскими расширениями"
-    },
-    "teams": {
-      "label": "Команды",
-      "description": "Объединяйте несколько агентов в команду для совместной работы над многоэтапными рабочими процессами"
-    }
   },
   "learning": {
     "title": "Учебный центр",
@@ -150,13 +78,6 @@
     "get_started": "Начать",
     "language": "Язык"
   },
-  "icon_showcase": {
-    "lucide_tab": "Lucide (библиотека)",
-    "personas_tab": "Personas (анимированные)",
-    "lucide_footer": "lucide-react — универсальная библиотека иконок — статические",
-    "personas_footer": "9 пользовательских иконок — нейронные/схемные мотивы — CSS-анимация — адаптивная тема"
-  },
-  "commander": "Commander",
   "resume": {
     "failure": "Непрочитанный сбой в {personaName} — требует изучения",
     "tour": "Продолжить {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",

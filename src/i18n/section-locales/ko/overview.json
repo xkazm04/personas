@@ -1,50 +1,13 @@
 {
-  "title": "개요",
-  "no_output": "아직 출력이 없습니다",
-  "no_background_jobs": "실행 중이거나 최근 백그라운드 작업이 없습니다",
-  "background_jobs_hint": "N8n 변환, 템플릿 채택, 템플릿 생성 또는 쿼리 디버깅을 실행하면 여기에 작업이 표시됩니다",
   "filters": {
     "start_date": "시작일",
     "end_date": "종료일",
     "all_personas": "모든 에이전트"
   },
   "messages": {
-    "loading": "메시지 로딩 중...",
-    "no_messages": "메시지가 없습니다",
-    "switch_to_all": "모든 메시지를 보려면 \\\"전체\\\"로 전환해 보세요",
-    "columns": {
-      "persona": "에이전트",
-      "title": "제목",
-      "priority": "우선순위",
-      "status": "상태",
-      "created": "생성일"
-    },
-    "content_header": "내용",
     "priority_high": "높음",
     "priority_normal": "보통",
-    "priority_low": "낮음",
-    "filter_all": "전체",
-    "filter_unread": "읽지 않음",
-    "filter_high_priority": "높은 우선순위",
-    "delivery_delivered": "전달됨",
-    "delivery_failed": "실패",
-    "delivery_pending": "대기 중",
-    "delivery_queued": "대기열",
-    "channel_email": "이메일",
-    "channel_slack": "Slack",
-    "channel_telegram": "Telegram",
-    "channel_desktop": "데스크톱",
-    "id_label": "ID:",
-    "confirm_delete_title": "삭제 확인",
-    "close_message": "메시지 상세 닫기"
-  },
-  "realtime": {
-    "idle": "유휴 -- {action}을 클릭하여 트래픽을 시뮬레이션하세요",
-    "test_flow": "테스트 흐름",
-    "events_per_min": "이벤트/분",
-    "pending": "대기 중",
-    "success": "성공",
-    "in_window": "기간 내"
+    "priority_low": "낮음"
   },
   "incidents": {
     "filters_active_aria": "{count}개의 활성 필터",
@@ -160,13 +123,7 @@
     "subtitle": "에이전트 전반의 실행 상태, 비용, 이상을 모니터링합니다",
     "alert_rules": "알림 규칙",
     "refresh_metrics": "메트릭 새로 고침",
-    "persona_disabled": "에이전트 자동 비활성화됨",
-    "auto_resolved": "이 문제는 자동으로 해결되었습니다",
-    "mark_resolved": "해결됨으로 표시",
-    "manual_fix": "(수동 수정 적용됨)",
     "metrics_unavailable": "메트릭을 사용할 수 없습니다 -- 표시된 데이터가 오래되었을 수 있습니다",
-    "no_open_issues": "미해결 문제 없음",
-    "run_analysis": "문제를 확인하려면 분석을 실행하세요.",
     "error_recovery": {
       "panel_loaded": "Loaded",
       "panel_failed": "Failed to load",
@@ -175,127 +132,18 @@
   },
   "memories": {
     "title": "메모리",
-    "created_success": "메모리가 성공적으로 생성되었습니다",
-    "no_memories": "메모리가 없습니다",
-    "no_memories_hint": "에이전트가 실행될 때 여기에 중요한 노트와 학습을 저장할 수 있습니다.",
-    "no_memories_match": "현재 필터와 일치하는 메모리가 없습니다",
-    "list_aria_label": "메모리 목록",
-    "add_memory_btn": "메모리 추가",
-    "search_placeholder": "메모리 검색...",
-    "no_filter_match": "필터와 일치하는 메모리가 없습니다. 검색을 조정해 보세요.",
-    "form": {
-      "agent": "에이전트",
-      "category": "카테고리",
-      "title": "제목",
-      "content": "내용",
-      "importance": "중요도",
-      "tags": "태그",
-      "tags_hint": "(쉼표로 구분)"
-    },
-    "curation_schedule_button": "Schedule",
-    "curation_schedule_button_hint": "Schedule automatic memory curation",
-    "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
-    "curation_schedule_title": "Schedule memory curation",
-    "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
-    "curation_schedule_cron_label": "Schedule (cron)",
-    "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
-    "curation_schedule_presets_label": "Quick picks",
-    "preset_weekly_sunday": "Weekly · Sun 3am",
-    "preset_daily_3am": "Daily · 3am",
-    "preset_weekly_monday": "Weekly · Mon 9am",
-    "preset_monthly": "Monthly · 1st",
-    "curation_schedule_last_run_label": "Last run",
-    "curation_schedule_disabled_state": "Curation is disabled for this agent",
-    "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule",
     "delete_all": "모두 삭제",
     "delete_all_confirm_title": "모든 메모리를 삭제할까요?",
     "delete_all_confirm_body": "모든 메모리 {count}개를 영구 삭제합니다. 이 작업은 취소할 수 없습니다.",
     "delete_all_confirm_cta": "모두 삭제"
   },
   "memory_review": {
-    "all_conflicts_resolved": "모든 충돌이 해결되었습니다",
     "keep_prefix": "유지 “",
     "keep_suffix": "”"
-  },
-  "executions": {
-    "title": "실행",
-    "loading": "실행 기록 로딩 중...",
-    "no_agents": "아직 생성된 에이전트가 없습니다",
-    "create_first": "첫 번째 에이전트를 만들어 여기서 실행 활동을 확인하세요",
-    "no_executions": "아직 실행 기록이 없습니다",
-    "run_agent": "에이전트를 실행하여 여기서 실행 활동을 확인하세요"
-  },
-  "workflows": {
-    "loading": "워크플로 로딩 중...",
-    "title": "워크플로",
-    "subtitle": "워크스페이스 전반의 활성 및 최근 백그라운드 작업",
-    "no_jobs": "실행 중이거나 최근에 실행된 백그라운드 작업 없음",
-    "jobs_hint": "N8n 변환, 템플릿 채택, 템플릿 생성, 또는 쿼리 디버깅을 실행하면 작업이 여기에 나타납니다",
-    "all_types": "전체 유형",
-    "no_filter_match": "현재 필터에 일치하는 작업 없음",
-    "auto_refreshing": "작업이 실행 중일 때 자동 새로 고침",
-    "cancel_failed": "워크플로 작업 취소 실패"
-  },
-  "schedules": {
-    "title": "스케줄 타임라인",
-    "subtitle": "모든 예약된 에이전트 실행의 통합 보기",
-    "engine_on": "엔진 켜짐",
-    "engine_off": "엔진 꺼짐",
-    "engine_on_tooltip": "스케줄러 실행 중 -- 클릭하여 일시정지",
-    "engine_off_tooltip": "스케줄러 정지됨 -- 클릭하여 시작",
-    "active_count": "{count}개 활성",
-    "paused_count": "{count}개 일시정지",
-    "view_grouped": "그룹별",
-    "view_timeline": "타임라인",
-    "triggers_fired": "실행된 트리거: ",
-    "events_processed": "처리된 이벤트: ",
-    "delivered": "전달됨: ",
-    "failed_label": "실패: ",
-    "loading": "스케줄 로딩 중...",
-    "empty": "예약된 에이전트를 찾을 수 없습니다.",
-    "empty_hint": "에이전트에 스케줄 또는 폴링 트리거를 생성하면 여기에 표시됩니다.",
-    "group_overdue": "지연됨",
-    "group_15min": "15분 이내",
-    "group_1hour": "1시간 이내",
-    "group_6hours": "6시간 이내",
-    "group_24hours": "24시간 이내",
-    "group_later": "이후",
-    "group_paused": "일시정지 / 미예약",
-    "run_now": "지금 실행",
-    "change_frequency": "빈도 변경",
-    "pause_schedule": "스케줄 일시정지",
-    "resume_schedule": "스케줄 재개",
-    "headless_badge": "헤드리스"
-  },
-  "frequency_editor": {
-    "title": "빈도 변경",
-    "current": "현재: ",
-    "quick_presets": "빠른 프리셋",
-    "cron_expression": "Cron 표현식",
-    "interval_seconds": "간격 (초)",
-    "previewing": "미리보기 중...",
-    "next_runs": "다음 실행",
-    "invalid_cron": "유효하지 않은 cron 표현식"
-  },
-  "recovery": {
-    "agents_missed_one": "에이전트 {count}개가 실행을 놓쳤습니다",
-    "agents_missed_other": "에이전트 {count}개가 실행을 놓쳤습니다",
-    "total_skipped": "앱이 오프라인인 동안 약 {count}개의 실행이 건너뛰어졌습니다",
-    "missed_since": "{time} 이후 {count}개 놓침",
-    "every_interval": "{interval}마다",
-    "mark_for_recovery": "복구 대상으로 표시",
-    "recover": "복구",
-    "run_once": "1회 실행",
-    "run_once_tooltip": "지금 1회 실행",
-    "skip_tooltip": "건너뛰기 -- 복구하지 않음",
-    "dismiss_all": "모두 닫기",
-    "recover_selected": "선택된 {count}개 복구"
   },
   "sla": {
     "title": "에이전트 신뢰성 SLA",
     "subtitle": "에이전트 전체의 가동 시간, 실패율, 복구 메트릭",
-    "loading": "SLA 데이터 로딩 중...",
     "no_data": "실행 데이터를 사용할 수 없습니다.",
     "success_rate": "성공률",
     "executions_summary": "{successful}/{total} 실행",
@@ -308,14 +156,6 @@
     "daily_success_rate": "일별 성공률 -- {days}일",
     "per_agent": "에이전트별 신뢰성",
     "no_agent_data": "이 기간에 실행된 에이전트가 없습니다.",
-    "metric_successful": "성공",
-    "metric_failed": "실패",
-    "metric_avg_latency": "평균 지연 시간",
-    "metric_p95_latency": "P95 지연 시간",
-    "metric_cost": "비용",
-    "metric_mtbf": "MTBF",
-    "metric_auto_healed": "자동 복구됨",
-    "metric_cancelled": "취소됨",
     "success_rate_tooltip": "Success rate = successful / (successful + failed). Cancelled runs are excluded because they are user-initiated and don't reflect system reliability.",
     "all_time_badge": "All-time",
     "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
@@ -324,28 +164,6 @@
   },
   "knowledge": {
     "title": "지식 그래프",
-    "subtitle": "실행 기록에서 학습된 패턴 {count}개",
-    "total_patterns": "총 패턴",
-    "tool_sequences": "도구 시퀀스",
-    "tool_sequences_hint": "학습된 도구 체인",
-    "failure_patterns": "실패 패턴",
-    "failure_patterns_hint": "알려진 오류 시그니처",
-    "model_insights": "모델 인사이트",
-    "model_insights_hint": "모델별 성능",
-    "all_personas": "모든 에이전트 (전역)",
-    "all_types": "모든 유형",
-    "failure_drilldown": "실패 상세 분석: {date}",
-    "failure_drilldown_hint": "이 날짜 이후 활성 상태인 실패 패턴을 표시합니다.",
-    "failure_drilldown_empty": "일치하는 패턴을 찾을 수 없습니다 -- 위에서 특정 에이전트를 선택해 보세요.",
-    "unavailable": "지식 데이터를 사용할 수 없습니다",
-    "empty": "아직 지식 패턴이 없습니다",
-    "empty_hint": "실행을 수행하여 지식 그래프를 구축하세요. 모든 실행을 통해 시스템은 도구 시퀀스, 실패 패턴, 비용 대비 품질 트레이드오프를 학습합니다.",
-    "recent_learnings": "최근 학습",
-    "successes": "성공",
-    "failures": "실패",
-    "avg_cost": "평균 비용",
-    "avg_duration": "평균 소요 시간",
-    "pattern_data": "패턴 데이터",
     "patterns_tab": "패턴",
     "search_placeholder": "패턴 검색...",
     "sort_aria": "패턴 정렬",
@@ -357,24 +175,11 @@
     "pending_scope_hint": "대기 중인 모든 주석을 검토하려면 페르소나를 선택하세요.",
     "graph_tab": "그래프"
   },
-  "conflicts": {
-    "dismissed": "충돌이 무시되었습니다",
-    "resolved": "충돌이 해결되었습니다",
-    "resolve_failed": "충돌 해결에 실패했습니다",
-    "conflict_count_one": "충돌 {count}건",
-    "conflict_count_other": "충돌 {count}건"
-  },
   "dashboard": {
-    "title": "대시보드",
-    "subtitle": "운영 개요 및 시스템 상태",
     "greeting_morning": "좋은 아침입니다",
     "greeting_afternoon": "좋은 오후입니다",
     "greeting_evening": "좋은 저녁입니다",
     "default_user": "운영자",
-    "pending_reviews_prompt": "대기 중인 검토",
-    "requiring_attention": "주의가 필요합니다.",
-    "empty_cta": "첫 번째 에이전트를 생성해 시작하세요.",
-    "pipeline_failed": "{source} 로드 실패",
     "empty_title": "Personas에 오신 것을 환영합니다",
     "empty_subtitle": "첫 번째 에이전트를 생성해 실행 메트릭, 트래픽 차트, 활동을 여기서 확인하세요.",
     "create_persona": "페르소나 생성",
@@ -396,49 +201,6 @@
     "section_memory": "메모리 제안",
     "section_fleet": "플릿 최적화",
     "section_routines": "루틴 및 보관소 변경"
-  },
-  "execution_metrics": {
-    "title": "실행 메트릭",
-    "total_executions": "총 실행 수",
-    "total_cost": "총 비용",
-    "success_rate": "성공률",
-    "avg_latency": "평균 지연",
-    "cost_anomalies": "비용 이상 감지됨",
-    "no_data": "선택한 기간에 실행 데이터 없음",
-    "cost_per_day": "일일 비용",
-    "executions_by_status": "상태별 실행",
-    "success_rate_trend": "성공률 추세",
-    "latency_distribution": "지연 분포 (p50 / p95 / p99)",
-    "top_personas_by_cost": "비용별 상위 페르소나",
-    "cost_spike": "비용 급등",
-    "above_avg": "평균 이상",
-    "top_executions": "상위 실행:",
-    "executions_label": "{count}회 실행"
-  },
-  "execution_list": {
-    "recorded": "{count}회 실행 기록됨",
-    "recorded_one": "{count}회 실행 기록됨",
-    "list": "목록",
-    "metrics": "메트릭",
-    "show_list": "실행 목록 표시",
-    "show_metrics": "메트릭 대시보드 표시",
-    "showing": "{total} 중 {count}개 표시",
-    "load_more": "더 보기",
-    "filter_all": "전체",
-    "filter_running": "실행 중",
-    "filter_completed": "완료됨",
-    "filter_failed": "실패",
-    "col_persona": "페르소나",
-    "col_status": "상태",
-    "col_duration": "소요 시간",
-    "col_started": "시작됨",
-    "col_id": "ID",
-    "all_statuses": "전체 상태",
-    "all_personas": "전체 페르소나",
-    "no_agents": "아직 생성된 에이전트 없음",
-    "no_agents_hint": "첫 번째 에이전트를 생성해 여기서 실행 활동을 확인하세요.",
-    "unknown_persona": "알 수 없음",
-    "healing_retry": "복구 재시도 #{count}"
   },
   "review": {
     "title": "수동 검토",
@@ -521,44 +283,27 @@
   },
   "messages_view": {
     "title": "메시지",
-    "threads_subtitle": "{count}개 스레드",
-    "threads_subtitle_one": "{count}개 스레드",
     "messages_subtitle": "{count}개 메시지 기록됨",
     "messages_subtitle_one": "{count}개 메시지 기록됨",
     "mock_message": "모의 메시지",
     "seed_tooltip": "모의 메시지 시드 (개발 전용)",
-    "flat_view": "플랫 보기",
-    "threaded_view": "스레드 보기",
     "mark_all_read": "전체 읽음 표시",
-    "threads_of": "{total} 중 {count}개 스레드",
-    "no_threads": "아직 메시지 스레드 없음",
-    "no_threads_hint": "에이전트가 실행 중 메시지를 생성할 때 스레드가 자동으로 생성됩니다.",
     "no_messages": "아직 메시지 없음",
     "no_messages_hint": "에이전트가 실행되고 서로 통신할 때 메시지가 생성됩니다.",
     "no_filter_match": "현재 필터에 일치하는 메시지 없음",
-    "loading_replies": "답글 로딩 중...",
     "load_more": "더 보기 ({count}개 남음)",
     "col_title": "제목",
-    "col_priority": "우선순위",
-    "col_delivery": "전달",
-    "col_status": "상태",
     "col_created": "생성됨",
     "all_priorities": "전체 우선순위",
     "all_statuses": "전체 상태",
     "read": "읽음",
     "unread": "읽지 않음",
-    "new_badge": "새 글",
-    "failed_count": "{count}개 실패",
-    "pending_count": "{count}개 대기 중",
-    "sent_count": "{count}개 전송됨",
     "message_label": "메시지",
     "from_label": "{name}으로부터",
     "content_label": "내용",
     "view_execution": "실행 보기",
-    "type_label": "유형:",
     "delivery_status": "전달 상태",
     "no_channels": "전달 채널 구성 없음",
-    "confirm_delete": "삭제 확인",
     "improve_agent": "에이전트 개선",
     "improvement_started": "개선 시작됨 -- 완료되면 알림을 받습니다",
     "what_could_be_better": "무엇이 더 나아질 수 있을까요?",
@@ -571,7 +316,6 @@
     "rating_label": "Rate this message",
     "rating_star_aria": "Rate {value} of 5",
     "rating_saved": "Saved · {stars}/5",
-    "rating_clear": "Clear rating",
     "rating_memory_title": "Message rating: {stars}/5",
     "rating_memory_content_good": "User rated the output {stars}/5 stars. This message met expectations — keep the approach.",
     "rating_memory_content_neutral": "User rated the output {stars}/5 stars. Neutral feedback — review the message for marginal improvements.",
@@ -599,7 +343,6 @@
     "seed_tooltip": "모의 이벤트 시드 (개발 전용)",
     "search_placeholder": "유형, 소스, 페이로드로 이벤트 검색...",
     "loading_older": "이전 이벤트 로딩 중...",
-    "load_older": "이전 이벤트 로드",
     "no_events": "아직 이벤트 없음",
     "no_events_hint": "웹훅, 실행, 페르소나 작업의 이벤트가 에이전트가 실행되면 여기에 나타납니다.",
     "no_filter_match": "현재 필터에 일치하는 이벤트 없음",
@@ -607,12 +350,6 @@
     "view_name_placeholder": "뷰 이름 (예: '이번 주 실패한 웹훅')",
     "views_label": "뷰:",
     "delete_view": "뷰 삭제",
-    "clear_filters": "전체 필터 지우기",
-    "col_trigger": "트리거",
-    "col_persona": "페르소나",
-    "col_event_name": "이벤트 이름",
-    "col_status": "상태",
-    "col_created": "생성됨",
     "all_statuses": "전체 상태",
     "all_types": "전체 유형",
     "all_triggers": "전체 트리거",
@@ -621,43 +358,12 @@
     "source_system": "시스템",
     "source_scheduled": "예약됨",
     "event_detail_title": "이벤트:",
-    "event_detail_status": "상태:",
-    "event_id": "이벤트 ID",
-    "project": "프로젝트",
-    "source": "소스",
-    "processed": "처리됨",
-    "event_data": "이벤트 데이터",
-    "error": "오류"
+    "event_detail_status": "상태:"
   },
   "health": {
     "title": "에이전트 상태",
     "subtitle": "모든 에이전트의 실시간 상태 모니터링",
-    "all_healthy": "모든 에이전트 정상",
-    "all_healthy_hint": "모니터링되는 모든 에이전트가 정상적으로 작동 중입니다",
-    "no_agents": "아직 에이전트 없음",
-    "no_agents_hint": "에이전트를 생성해 상태 모니터링을 시작하세요",
-    "success_rate": "성공률",
-    "avg_latency": "평균 지연",
-    "executions": "실행",
-    "last_execution": "마지막 실행",
-    "never_executed": "없음",
-    "cost": "비용",
-    "healthy": "정상",
-    "warning": "경고",
-    "critical": "심각",
-    "unknown": "알 수 없음",
-    "burn_rate": "소비율 전망",
-    "monthly_budget": "월간 예산",
-    "current_burn": "현재 소비",
-    "projected": "예상",
-    "days_remaining": "남은 일수",
-    "cascade_title": "연쇄 분석",
-    "predictive_alerts": "예측 알림",
-    "no_alerts": "현재 예측 알림 없음",
-    "status_page": "상태 페이지",
-    "operational": "정상 운영",
-    "degraded": "저하됨",
-    "outage": "중단"
+    "status_page": "상태 페이지"
   },
   "leaderboard": {
     "title": "에이전트 리더보드",
@@ -699,58 +405,6 @@
     "hint_activity": "이 에이전트를 더 자주 실행하거나 예약해 활동량을 높이세요.",
     "improve_agent": "이 에이전트 개선"
   },
-  "analytics": {
-    "title": "분석",
-    "subtitle": "실행 패턴 및 추세",
-    "loading": "분석 로딩 중...",
-    "no_data": "분석 데이터 없음",
-    "executions_over_time": "시간별 실행",
-    "success_failure": "성공 vs 실패",
-    "cost_breakdown": "비용 분석",
-    "total_executions": "총 실행 수",
-    "total_cost": "총 비용",
-    "avg_success_rate": "평균 성공률",
-    "active_agents": "활성 에이전트",
-    "saved_views": "저장된 뷰",
-    "create_view": "뷰 생성",
-    "health_issues": "상태 이슈",
-    "rotation_overview": "교체 개요"
-  },
-  "usage": {
-    "title": "사용량",
-    "subtitle": "비용 및 리소스 소비",
-    "chart_error": "차트 로드 실패",
-    "chart_error_hint": "이 차트를 렌더링하는 중 오류 발생",
-    "try_again": "다시 시도"
-  },
-  "cron_agents": {
-    "title": "예약된 에이전트",
-    "subtitle": "자동 스케줄로 실행되는 에이전트",
-    "no_agents": "예약된 에이전트 없음",
-    "no_agents_hint": "에이전트에 cron 트리거를 추가해 여기에 표시하세요"
-  },
-  "timeline": {
-    "title": "활동 타임라인",
-    "subtitle": "모든 에이전트 활동의 통합 보기",
-    "no_activity": "최근 활동 없음"
-  },
-  "realtime_viz": {
-    "title": "이벤트 버스",
-    "filter_events": "이벤트 필터",
-    "pause": "일시 중지",
-    "resume": "재개",
-    "clear": "지우기",
-    "total_events": "총 이벤트",
-    "events_per_sec": "초당 이벤트",
-    "active_lanes": "활성 레인",
-    "event_type": "이벤트 유형",
-    "source": "소스",
-    "target": "대상",
-    "timestamp": "타임스탬프",
-    "payload": "페이로드",
-    "saved_views": "저장된 뷰",
-    "save_current": "현재 저장"
-  },
   "observability_extra": {
     "auto_refresh_on": "자동 새로 고침 켜짐",
     "auto_refresh_off": "자동 새로 고침 꺼짐",
@@ -758,41 +412,15 @@
     "executions_label": "실행",
     "success_rate": "성공률",
     "active_personas": "활성 페르소나",
-    "system_trace": "시스템 추적 타임라인",
-    "ipc_performance": "IPC 성능",
-    "alert_rules_label": "알림 규칙",
-    "alert_history_label": "알림 기록",
-    "healing_issues": "상태 이슈",
-    "run_analysis": "분석 실행",
-    "resolve": "해결",
-    "healing_view_list": "목록",
-    "healing_view_timeline": "타임라인",
-    "issue_details": "이슈 세부 정보",
-    "anomaly_drilldown": "이상 드릴다운",
-    "spend_overview": "지출 개요",
-    "cost_vs_executions": "비용 vs 실행",
-    "daily_executions": "일일 실행",
-    "ipc_channel": "IPC 채널",
-    "avg_duration": "평균 소요 시간",
-    "call_count": "호출 횟수",
-    "error_rate": "오류율"
+    "system_trace": "시스템 추적 타임라인"
   },
   "widgets": {
-    "recent_activity": "최근 활동",
     "view_all": "전체 보기",
-    "total_traffic": "총 트래픽",
-    "total_errors": "총 오류",
     "traffic_errors_chart": "트래픽 & 오류",
     "top_performers": "상위 성과자",
-    "metric_help": "메트릭 도움말",
-    "how_calculated": "어떻게 계산되나요?",
-    "details": "세부 정보",
     "messages_badge": "메시지",
     "reviews_badge": "검토",
-    "executions_badge": "실행",
-    "success_badge": "성공",
     "alerts_badge": "알림",
-    "agents_badge": "에이전트",
     "pipelines_badge": "파이프라인",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
@@ -801,17 +429,7 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Errors",
-    "tool_performance_empty": "No tool runs in this window",
     "tool_performance_unit_ms": "ms"
-  },
-  "cards": {
-    "fleet_optimization": "플리트 최적화",
-    "fleet_subtitle": "에이전트 성능 향상을 위한 자동화 추천",
-    "remote_control": "원격 제어",
-    "remote_subtitle": "에이전트 관리를 위한 빠른 작업",
-    "resume_setup": "설정 계속",
-    "resume_subtitle": "중단한 곳에서 계속",
-    "knowledge_hub": "지식 허브"
   },
   "activity": {
     "title": "활동",
@@ -840,23 +458,16 @@
     "prev_failed": "이전 실패",
     "success_pct": "성공 %",
     "prev_success_pct": "이전 성공 %",
-    "successful": "성공",
-    "all": "전체",
-    "running": "실행 중",
-    "all_statuses": "전체 상태",
     "showing": "{total} 중 {count}개 표시",
     "load_more": "더 보기",
-    "col_status": "상태",
     "col_duration": "소요 시간",
     "col_started": "시작됨",
-    "col_id": "ID",
     "no_agents": "아직 생성된 에이전트 없음",
     "no_agents_hint": "첫 번째 페르소나를 생성해 여기서 실행 활동을 확인하세요.",
     "no_executions": "아직 실행 없음",
     "no_executions_hint": "에이전트를 실행해 여기서 실행 활동을 확인하세요.",
     "create_persona": "페르소나 생성",
     "from_templates": "템플릿에서",
-    "execution_label": "실행",
     "unknown": "알 수 없음",
     "value_section_title": "비즈니스 가치",
     "value_delivered_rate": "가치 전달률",
@@ -867,54 +478,11 @@
     "col_cost": "비용"
   },
   "analytics_dashboard": {
-    "title": "분석",
-    "subtitle": "통합 비용, 실행, 도구 사용 분석",
-    "metrics_unavailable": "메트릭 사용 불가",
-    "auto_refresh_on": "자동 새로 고침 켜짐 (30초)",
-    "auto_refresh_off": "자동 새로 고침 꺼짐",
-    "cost_anomalies_detected": "{count}개 비용 이상 감지됨",
-    "cost_anomaly_detected": "{count}개 비용 이상 감지됨",
-    "cost_over_time": "시간별 비용",
-    "execution_health": "실행 상태",
-    "tool_usage_over_time": "시간별 도구 사용",
-    "executions_by_persona": "페르소나별 실행",
-    "latency_chart": "지연 (p50 / p95 / p99)",
-    "tool_invocations": "도구 호출",
-    "no_execution_data": "실행 데이터 없음",
-    "prev_cost": "이전 비용",
-    "successful": "성공",
-    "failed": "실패",
-    "prev_successful": "이전 성공",
-    "prev_failed": "이전 실패",
-    "invocations": "호출",
-    "anomaly_click_hint": "차트의 다이아몬드 마커를 클릭해 조사하세요",
-    "saved_views": "저장된 뷰",
-    "save_current_view": "현재 뷰 저장",
-    "smart_presets": "스마트 프리셋",
-    "your_saved_views": "저장된 뷰",
-    "view_name_placeholder": "뷰 이름...",
-    "save_view": "뷰 저장",
-    "delete_view": "뷰 삭제",
-    "this_week_vs_last": "이번 주 vs 지난 주",
-    "this_month_vs_last": "이번 달 vs 지난 달",
-    "health_issues": "건강 이슈",
-    "run_analysis": "분석 실행",
-    "analyzing": "분석 중...",
-    "analysis_complete": "분석 완료",
     "issues_found": "{count}개 이슈 발견",
     "issues_found_one": "{count}개 이슈 발견",
     "auto_fixed": "자동 수정됨",
     "executions_scanned": "{count}개 실행 검사됨",
     "executions_scanned_one": "{count}개 실행 검사됨",
-    "no_open_issues": "열린 이슈 없음",
-    "run_analysis_hint": "문제 확인을 위해 분석을 실행하세요.",
-    "filter_all": "전체",
-    "filter_open": "열림",
-    "filter_auto_fixed": "자동 수정됨",
-    "resolve": "해결",
-    "breaker": "차단기",
-    "fixed": "수정됨",
-    "retry": "재시도",
     "credential_rotation": "자격 증명 교체",
     "no_rotation_policies": "교체 정책 없음",
     "no_rotation_hint": "볼트에서 자격 증명 교체를 설정하세요.",
@@ -922,7 +490,6 @@
     "soon_count": "{count}개 곧",
     "issues_count": "{count}개 이슈",
     "issues_count_one": "{count}개 이슈",
-    "never": "없음",
     "fail_count": "{count}회 실패",
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
@@ -931,13 +498,6 @@
     "rotation_due_now": "지금 예정",
     "rotation_countdown_days_hours": "{days}일 {hours}시간",
     "rotation_countdown_hours": "{hours}h"
-  },
-  "saved_views": {
-    "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
-    }
   },
   "cron": {
     "title": "크론 에이전트",
@@ -951,21 +511,7 @@
     "no_agents_hint": "아무 에이전트에나 스케줄 트리거를 생성하면 여기 표시됩니다.",
     "headless_section": "헤드리스 백그라운드 에이전트",
     "interactive_section": "대화형 예약 에이전트",
-    "scheduled_section": "예약된 에이전트",
-    "headless_badge": "헤드리스",
-    "no_schedule": "스케줄 없음",
-    "every_interval": "매 {interval}",
-    "next": "다음",
-    "last": "마지막"
-  },
-  "activity_timeline": {
-    "title": "활동 타임라인",
-    "subtitle": "{events}개 이벤트, {messages}개 메시지",
-    "all": "전체",
-    "events": "이벤트",
-    "messages": "메시지",
-    "no_activity": "아직 활동 없음",
-    "high": "높음"
+    "scheduled_section": "예약된 에이전트"
   },
   "sla_card": {
     "successful": "성공",
@@ -975,9 +521,7 @@
     "cost": "비용",
     "mtbf": "MTBF",
     "auto_healed": "자동 복구됨",
-    "cancelled": "취소됨",
-    "failing": "{count}개 실패 중",
-    "healed": "{count}개 복구됨"
+    "cancelled": "취소됨"
   },
   "realtime_page": {
     "title": "이벤트 버스 모니터",
@@ -994,13 +538,6 @@
     "pending": "대기 중",
     "success": "성공",
     "in_window": "윈도우 내",
-    "test_flow": "테스트 흐름",
-    "testing_flow": "흐름 테스트 중...",
-    "test_event_flow": "이벤트 흐름 테스트",
-    "resume": "재개",
-    "pause": "일시정지",
-    "resume_stream": "실시간 스트림 재개",
-    "pause_stream": "실시간 스트림 일시정지",
     "search_events": "이벤트 검색...",
     "filter_type": "유형",
     "filter_status": "상태",
@@ -1011,27 +548,10 @@
     "no_saved_views": "저장된 뷰 없음",
     "save_current_filter": "현재 필터 저장",
     "view_name_placeholder": "뷰 이름...",
-    "delete_saved_view": "저장된 뷰 삭제",
-    "event_log": "이벤트 로그",
-    "entries": "{count}개 항목",
-    "filter_events": "이벤트 필터...",
-    "no_events": "아직 이벤트 없음",
-    "open_in_drawer": "세부 서랍에서 열기",
-    "event_label": "이벤트",
-    "status_label": "상태",
-    "source_label": "소스",
-    "target_label": "대상",
-    "id_label": "ID",
-    "error_label": "오류",
-    "payload_label": "페이로드",
     "close_event_details": "이벤트 세부 정보 닫기",
     "reset_to_start": "처음으로 초기화",
     "cycle_speed": "재생 속도 변경",
-    "exit_replay": "재생 종료",
-    "galaxy": "갤럭시",
-    "galaxy_desc": "혜성 꼬리가 있는 궤도 별자리",
-    "lanes": "레인",
-    "lanes_desc": "수평 스윔레인 흐름 다이어그램"
+    "exit_replay": "재생 종료"
   },
   "memory_form": {
     "agent": "에이전트",
@@ -1048,10 +568,7 @@
     "saving": "저장 중...",
     "created_success": "메모리가 성공적으로 생성됨",
     "fill_required": "저장하려면 모든 필수 항목을 입력하세요",
-    "saving_memory": "메모리 저장 중...",
-    "share_with_group": "공유 대상",
-    "share_with_group_hint": "이 그룹의 모든 페르소나는 프롬프트에서 이 메모리를 봅니다 — 스타일 가이드나 조직 정책 같은 조직 차원의 컨텍스트에 유용합니다.",
-    "share_with_group_title": "선택된 페르소나가 작성; 해당 그룹의 모든 구성원에게 표시됩니다."
+    "saving_memory": "메모리 저장 중..."
   },
   "memory_filter": {
     "search_placeholder": "메모리 검색...",
@@ -1072,9 +589,7 @@
   "memory_conflict": {
     "memory_a": "메모리 A",
     "memory_b": "메모리 B",
-    "merge": "병합",
-    "keep": "유지",
-    "vs": "vs"
+    "merge": "병합"
   },
   "observability_charts": {
     "cost_over_time": "시간별 비용",
@@ -1084,9 +599,7 @@
     "failed": "실패",
     "anomalies_detected": "{count}개 비용 이상 감지됨",
     "anomaly_detected": "{count}개 비용 이상 감지됨",
-    "anomaly_click_hint": "차트의 다이아몬드 마커를 클릭해 조사하세요",
-    "clear_traces": "완료된 추적 지우기",
-    "all_operations": "전체 작업"
+    "anomaly_click_hint": "차트의 다이아몬드 마커를 클릭해 조사하세요"
   },
   "health_extra": {
     "success": "성공",
@@ -1142,41 +655,12 @@
   "review_extra": {
     "add_note": "메모 추가 (선택 사항)...",
     "confirm": "확인",
-    "processing": "처리 중...",
-    "clear_verdicts": "모든 판정 지우기",
-    "retry_with_changes": "변경 사항으로 재시도",
-    "reject_all": "전체 거부",
-    "quick_actions": "빠른 작업",
-    "accepted": "{count}개 수락됨",
-    "rejected": "{count}개 거부됨",
-    "undecided": "{count}개 미결"
-  },
-  "widgets_extra": {
-    "execution_health_chart": "실행 상태",
-    "cost_over_time_chart": "시간별 비용",
-    "successful": "성공",
-    "failed": "실패",
-    "close": "닫기",
-    "dismiss_help": "도움말 무시",
-    "skip_tour": "투어 건너뛰기"
-  },
-  "remote_control_card": {
-    "connect_to_desktop": "데스크탑에 연결",
-    "connect_description": "원격 제어를 통해 데스크탑 CLI로 에이전트를 실행합니다. 컴퓨터에서 {command}를 시작하고 여기서 연결하세요.",
-    "requires_subscription": "Claude Pro 또는 Max 구독 필요"
-  },
-  "resume_setup_card": {
-    "resume_tour": "투어 재개",
-    "left_off_at": "중단한 곳:",
-    "steps_completed": "{completed}/{total}단계 완료",
-    "skip_tour": "투어 건너뛰기",
-    "continue_label": "계속"
+    "processing": "처리 중..."
   },
   "detail_modal": {
     "close": "닫기"
   },
   "metric_help_popover": {
-    "help_for": "{label} 도움말",
     "dismiss_help": "도움말 무시",
     "healthy": "정상:",
     "click": "클릭:",
@@ -1205,8 +689,6 @@
     "disconnect": "연결 해제"
   },
   "metrics_cards": {
-    "cost_spike": "비용 급등",
-    "above_avg": "평균 초과",
     "top_executions": "상위 실행:"
   },
   "event_log_item": {
@@ -1215,11 +697,7 @@
     "source": "소스",
     "processed": "처리됨",
     "event_data": "이벤트 데이터",
-    "copy_event_data": "이벤트 데이터 복사",
-    "copied": "복사됨",
-    "copy": "복사",
-    "error": "오류",
-    "system": "시스템"
+    "error": "오류"
   },
   "burn_rate_extra": {
     "title": "소진율 예측",
@@ -1276,48 +754,23 @@
   },
   "knowledge_graph": {
     "mock_pattern": "모의 패턴",
-    "seed_tooltip": "모의 패턴 시드 (개발 전용)",
-    "all_types": "모든 유형",
-    "all_scopes": "모든 범위",
-    "failure_drilldown_prefix": "실패 드릴다운:",
-    "failure_date_filter": "{date} 이후에 활성화된 실패 패턴 표시 중",
-    "data_unavailable": "지식 데이터를 사용할 수 없습니다",
-    "loading_patterns": "지식 패턴 로딩 중...",
-    "drilldown_toggle_title": "실패 드릴다운 표시/숨기기",
-    "no_patterns_yet": "아직 지식 패턴이 없습니다",
-    "no_patterns_yet_hint": "에이전트 실행을 통해 지식 패턴을 구축하세요. 에이전트는 시간이 지남에 따라 더 똑똑해집니다.",
-    "no_patterns_match": "현재 필터와 일치하는 패턴이 없습니다",
-    "recent_learnings": "최근 학습",
-    "curating_manually": "문서를 수동으로 큐레이팅하고 있나요?",
-    "obsidian_tip": "노트가 ~1000개 미만인 경우 Obsidian 커넥터가 볼트를 직접 동기화할 수 있습니다."
+    "seed_tooltip": "모의 패턴 시드 (개발 전용)"
   },
   "focused_decision": {
     "accept": "수락",
     "reject": "거부",
-    "media_unavailable": "미디어 사용 불가",
-    "video_not_supported": "브라우저가 비디오 재생을 지원하지 않습니다.",
-    "reject_this": "이것 거부",
-    "accept_this": "이것 수락"
+    "media_unavailable": "미디어 사용 불가"
   },
   "review_focus": {
     "all_caught_up": "모두 처리됨",
     "no_pending": "처리할 대기 중인 검토 없음.",
     "queue": "대기열",
-    "clear": "지우기",
     "clear_all_verdicts": "모든 판정 지우기",
     "quick_actions": "빠른 작업",
     "reject_all": "전체 거부",
     "accept_all": "전체 수락",
     "retry_with_changes": "변경 사항으로 재시도",
-    "video_not_supported": "브라우저가 비디오 재생을 지원하지 않습니다.",
     "carry_out_hint": "검토를 승인하고 페르소나를 실행하여 수행합니다"
-  },
-  "bulk_action_bar": {
-    "pending_reviews_selected_one": "대기 중인 리뷰 {count}개 선택됨",
-    "pending_reviews_selected_other": "대기 중인 리뷰 {count}개 선택됨"
-  },
-  "review_inbox": {
-    "drag_to_resize": "드래그하여 크기 조정"
   },
   "memory_card": {
     "confirm": "확인",
@@ -1331,14 +784,12 @@
     "importance_label": "중요도",
     "tags_label": "태그",
     "view_source_execution": "소스 실행 보기",
-    "delete_memory": "메모리 삭제",
-    "close": "닫기"
+    "delete_memory": "메모리 삭제"
   },
   "memory_table": {
     "agent": "에이전트",
     "title": "제목",
     "category": "카테고리",
-    "priority": "우선순위",
     "tags": "태그",
     "created": "생성됨"
   },
@@ -1352,7 +803,6 @@
     "baseline_label": "기준선:",
     "correlating": "이벤트 상관 분석 중...",
     "likely_root_causes": "가능한 근본 원인",
-    "correlated_events": "상관 이벤트",
     "no_correlated": "±24시간 내 상관 이벤트 없음."
   },
   "healing_issue_modal": {
@@ -1362,18 +812,10 @@
     "copied": "복사됨",
     "copy_fix": "수정 복사",
     "persona_auto_disabled": "페르소나 자동 비활성화됨",
-    "persona_auto_disabled_desc": "이 페르소나는 5회 연속 실패 후 자동으로 비활성화됐습니다. 아래 오류 패턴을 검토하고 근본 원인을 해결한 후 수동으로 다시 활성화하세요.",
     "marking_resolved_note": "해결됨으로 표시하면 복구 시스템 외부에서 이 이슈를 처리했음을 의미합니다.",
-    "retry_in_progress": "재시도 진행 중 -- 완료 시 상태가 업데이트됩니다",
     "auto_resolved": "이 이슈는 자동으로 해결됐습니다",
-    "close": "닫기",
     "resolving": "해결 중…",
-    "mark_resolved": "해결됨으로 표시",
-    "retrying_badge": "재시도 중",
-    "auto_fixed_badge": "자동 수정됨",
-    "retry_in_progress_badge": "재시도 진행 중",
-    "healed_via_retry_badge": "재시도로 복구됨",
-    "severity_suffix": "심각도"
+    "mark_resolved": "해결됨으로 표시"
   },
   "healing_issues_panel": {
     "title": "건강 이슈",
@@ -1381,22 +823,6 @@
     "run_analysis": "분석 실행",
     "no_open_issues": "열린 이슈 없음",
     "run_analysis_hint": "문제 확인을 위해 분석을 실행하세요.",
-    "ai_healing_title": "AI 자가 복구",
-    "diagnosis_label": "진단:",
-    "fixes_applied": "적용된 수정",
-    "alert_history_title": "알림 이력",
-    "all_agents_global": "모든 에이전트 (전역)",
-    "add_rule": "규칙 추가",
-    "no_rules_configured": "구성된 알림 규칙이 없습니다. 모니터링을 시작하려면 규칙을 추가하세요.",
-    "confidence_pct_suffix": "% 신뢰도",
-    "spike_on": "급증 시점",
-    "correlated_events_prefix": "상관 이벤트 (",
-    "circuit_breaker_label": "서킷 브레이커",
-    "auto_disabled_message": "이 페르소나는 반복된 실패에 대한 서킷 브레이커 대응으로 자동으로 비활성화되었습니다.",
-    "execution_label": "실행:",
-    "issue_marked_as": "이 문제는 다음으로 표시됨",
-    "retry_in_progress": "재시도 진행 중 — 완료 시 상태가 업데이트됩니다.",
-    "resolve_issue_title": "문제를 해결됨으로 표시",
     "healing_audit_log": "복구 감사 로그",
     "no_silent_failures": "조용한 실패 기록 없음.",
     "analysis_complete_prefix": "분석 완료:"
@@ -1449,13 +875,6 @@
     "event_id_label": "이벤트 ID",
     "broadcast": "(브로드캐스트)"
   },
-  "event_bus_overlay": {
-    "earlier_events_not_shown_one": "이전 이벤트 {count}건 표시되지 않음",
-    "earlier_events_not_shown_other": "이전 이벤트 {count}건 표시되지 않음"
-  },
-  "event_bus_filter": {
-    "search_placeholder": "이벤트 검색…"
-  },
   "realtime_stats": {
     "events_per_min": "이벤트/분",
     "pending": "대기 중",
@@ -1481,32 +900,13 @@
     "heartbeats_btn": "하트비트",
     "reliability_btn": "신뢰성"
   },
-  "crash_logs": {
-    "title": "충돌 로그",
-    "no_logs": "기록된 충돌 로그가 없습니다.",
-    "component_stack_separator": "--- Component Stack ---"
-  },
   "popup_fields": {
     "sign_up_free_at": "무료 가입 위치:",
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", 설정에서 API 키를 복사하세요. 이 키는 로컬에 저장되며 모든 에이전트에서 공유됩니다."
   },
-  "events_list": {
-    "save_view_tooltip": "현재 필터를 보기로 저장",
-    "clear_filters_tooltip": "모든 필터 지우기"
-  },
-  "dashboard_home": {
-    "you_have": "보유 중:"
-  },
-  "fleet_optimization_card": {
-    "title": "플릿 최적화"
-  },
   "usage_filters": {
     "time_range_label": "시간 범위"
-  },
-  "day_range_picker": {
-    "start_date": "시작일",
-    "end_date": "종료일"
   },
   "healing_summary": {
     "auto_fixed_this_week": "이번 주 자동 수정됨",
@@ -1516,14 +916,12 @@
     "title": "Upcoming Routines",
     "subtitle": "next scheduled runs",
     "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "never_fired": "pending first run"
   },
   "vault_recent_changes": {
     "title": "Vault Changes",
     "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "empty": "No recent sync activity."
   },
   "heatmap": {
     "title_persona": "Activity over the last year",

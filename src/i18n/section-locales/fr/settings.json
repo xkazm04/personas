@@ -1,6 +1,4 @@
 {
-  "title": "Paramètres",
-  "settings_saved": "Paramètres enregistrés",
   "account": {
     "title": "Compte",
     "subtitle": "Gérez votre connexion et votre profil",
@@ -66,14 +64,6 @@
       "synced_memories": "Mémoires",
       "synced_knowledge_patterns": "Connaissances"
     }
-  },
-  "appearance_extra": {
-    "simple": "Simple",
-    "simple_hint": "Fonctionnalités principales uniquement",
-    "full": "Complet",
-    "full_hint": "Afficher l'interface complète",
-    "dev": "Dev",
-    "dev_hint": "Débloquer les outils de développement"
   },
   "appearance": {
     "title": "Apparence",
@@ -625,27 +615,6 @@
     "empty_filtered": "Aucune entrée ne correspond au filtre de catégorie actuel.",
     "before": "Avant",
     "after": "Après"
-  },
-  "quality_gates": {
-    "title": "Portes de qualité",
-    "loading": "Chargement...",
-    "error_loading": "Erreur de chargement de la configuration",
-    "active_rules": "{count} règles de filtre actives",
-    "loading_config": "Chargement de la configuration des portes de qualité...",
-    "description": "Les portes de qualité filtrent les mémoires et révisions générées par IA lors de l'expédition des exécutions. Les motifs sont comparés en sous-chaînes avec le titre et contenu combinés de chaque soumission. Lorsqu'un motif correspond, l'action configurée est appliquée. Ces règles empêchent le bruit opérationnel (erreurs d'identifiants, traces de pile, rapports d'espace de travail vides) de polluer votre base de connaissances.",
-    "memory_filters": "Filtres de mémoire",
-    "memory_filters_desc": "Appliqués aux soumissions AgentMemory. Bloque les échecs opérationnels et les fuites d'identifiants pour ne pas être stockés comme mémoires de persona.",
-    "review_filters": "Filtres de révision",
-    "review_filters_desc": "Appliqués aux soumissions ManualReview. Filtre les erreurs d'infrastructure pour que seules les vraies décisions métier atteignent la file de révision.",
-    "rejected_categories": "Catégories rejetées",
-    "rules_count": "{count} règle",
-    "rules_count_plural": "{count} règles",
-    "reset_defaults": "Réinitialiser aux valeurs par défaut",
-    "confirm_reset": "Confirmer la réinitialisation ?",
-    "rules_hint": "Les règles sont chargées depuis la base de données à chaque expédition. Les changements prennent effet immédiatement.",
-    "action_reject": "Reject",
-    "action_tag": "Tag",
-    "action_warn": "Warn"
   },
   "api_keys": {
     "title": "API Keys",

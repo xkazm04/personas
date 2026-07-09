@@ -1,24 +1,6 @@
 {
-  "title": "Trezor",
-  "subtitle": "Zvolte způsob přidání přihlašovacího údaje",
-  "add_from_catalog": "Přidat z katalogu",
-  "ai_designed": "AI navržený přihlašovací údaj",
   "workspace_connect": "Workspace Connect",
   "quick_start": "Rychlý start",
-  "health": {
-    "healthy": "v pořádku",
-    "needs_attention": "vyžaduje pozornost",
-    "untested": "netestováno"
-  },
-  "list": {
-    "no_credentials": "Nebyly detekovány žádné ověřené služby. Vyberte ručně níže.",
-    "delete_confirm": "Smazat tento přihlašovací údaj?",
-    "blast_radius": "Oblast dopadu",
-    "no_dependencies": "Žádní agenti nezávisí na tomto přihlašovacím údaji. Lze bezpečně upravit nebo odebrat.",
-    "affected_agents": "Dotčení agenti",
-    "affected_events": "Dotčené události",
-    "sort_label": "Seřadit:"
-  },
   "import": {
     "title": "Zdroj importu",
     "picker_subtitle": "Zvolte zdroj vašich tajných klíčů",
@@ -44,29 +26,6 @@
     "import_secrets_other": "Importovat {count} tajných údajů"
   },
   "features": {
-    "anomaly_detected": "Detekována anomálie: přihlašovací údaj náhle selhává po předchozím úspěchu. Možné zneplatnění.",
-    "history": "Historie",
-    "event_triggers": "Spouštěče událostí",
-    "rotation_policy": {
-      "rotate_every": "Rotovat každých",
-      "days": "dní",
-      "no_policy": "Žádná politika rotace nakonfigurována.",
-      "oauth_refresh_active": "Obnova OAuth tokenu aktivní",
-      "oauth_refresh_active_auto": "Automatická obnova OAuth aktivní",
-      "auto_rotation_active": "Auto-rotace aktivní",
-      "rotation_paused": "Rotace pozastavena",
-      "rotate_now": "Rotovat hned",
-      "enable_rotation": "Zapnout rotaci",
-      "enabling": "Zapínání...",
-      "remove_policy_tooltip": "Odebrat politiku rotace",
-      "save": "Uložit",
-      "cancel": "Zrušit",
-      "rotation_failed": "Rotace selhala: {error}",
-      "remove_failed": "Nepodařilo se odebrat politiku: {error}",
-      "update_failed": "Nepodařilo se aktualizovat periodu: {error}",
-      "enable_failed": "Nepodařilo se zapnout rotaci: {error}",
-      "last_rotated": "Naposledy rotováno {time}"
-    },
     "anomaly": {
       "healthy": "V pořádku",
       "transient_issues": "Dočasné problémy",
@@ -78,21 +37,6 @@
       "permanent": "Trvalé: {rate}",
       "transient": "Dočasné: {rate}",
       "tolerance": "Tolerance: {rate}"
-    },
-    "rotation_badge": {
-      "disabled": "Vypnuto",
-      "perm_errors": "Trvalé chyby",
-      "degrading": "Zhoršuje se",
-      "backoff": "Čekání na nový pokus"
-    },
-    "audit": {
-      "empty": "Zatím žádné záznamy v auditu. Operace se zde objeví.",
-      "op_decrypted": "Dešifrováno",
-      "op_created": "Vytvořeno",
-      "op_updated": "Aktualizováno",
-      "op_deleted": "Smazáno",
-      "op_healthcheck": "Test připojení",
-      "filter_all": "vše"
     },
     "intelligence": {
       "operation": "Operace",
@@ -205,15 +149,7 @@
   "body": {
     "authorizing": "Autorizace u {name}...",
     "authorize_with": "Autorizovat u {name}",
-    "authorize_hint": "Otevře přihlášení {name} a uloží přístup po vašem schválení.",
-    "consent_completed": "Souhlas u {name} dokončen v {time}",
-    "update_failed": "Nepodařilo se aktualizovat údaje",
-    "delete_credential": "Smazat údaje"
-  },
-  "connector": {
-    "filter_all": "Vše",
-    "filter_connected": "Připojeno",
-    "filter_available": "Dostupné"
+    "consent_completed": "Souhlas u {name} dokončen v {time}"
   },
   "auto_cred": {
     "guided_setup": "Průvodce nastavením",
@@ -254,38 +190,6 @@
     "save_procedure": "Uložit proceduru",
     "procedure_saved": "Procedura uložena"
   },
-  "vector": {
-    "documents_tab": "Dokumenty",
-    "search_tab": "Hledat",
-    "settings_tab": "Nastavení",
-    "ingest_title": "Přidat dokumenty",
-    "ingest_hint": "Sem přetáhněte soubory nebo klikněte k výběru",
-    "ingest_drop": "Pustit pro přidání",
-    "ingest_supported": "Podporováno: txt, md, html, csv, json, yaml, kód",
-    "starting_ingestion": "Zpracovávání souborů...",
-    "no_valid_files": "Nebyly nalezeny platné cesty k souborům. Zkuste soubory přetáhnout jednotlivě.",
-    "no_documents": "Zatím žádné dokumenty",
-    "no_documents_hint": "Sem přetáhněte soubory, vložte text nebo naskenujte složku k tvorbě báze znalostí.",
-    "refresh": "Obnovit",
-    "paste_text": "Vložit text",
-    "directory": "Složka",
-    "delete_document": "Smazat dokument",
-    "document_count_one": "{count} dokument",
-    "document_count_other": "{count} dokumentů",
-    "show_full": "Zobrazit celý výňatek",
-    "show_less": "Zobrazit méně",
-    "copy_content": "Kopírovat obsah",
-    "kb_info": "Informace o bázi znalostí",
-    "embedding_model": "Model vyhledávání",
-    "dimensions": "Dimenze",
-    "chunk_size": "Velikost sekcí",
-    "chunk_overlap": "Překryv sekcí",
-    "statistics": "Statistiky",
-    "documents": "Dokumenty",
-    "chunks": "Sekce",
-    "local_embedding": "Lokální vyhledávání",
-    "local_embedding_hint": "Indexování vyhledávání běží lokálně pomocí {model} ({dims} dimenzí). Žádná data neopouštějí váš počítač. Model (~23 MB) se stáhne při prvním použití a uloží lokálně."
-  },
   "design_modal": {
     "title": "Navrhnout údaje",
     "error_title": "Něco se nepovedlo",
@@ -301,60 +205,12 @@
     "start_over": "Začít znovu",
     "try_again_with": "Zkusit znovu s tímto požadavkem"
   },
-  "desktop": {
-    "installed": "Nainstalováno",
-    "running": "Běží",
-    "not_installed": "Není nainstalováno"
-  },
-  "graph": {
-    "no_dependencies": "Bez závislostí",
-    "connection_count_one": "{count} připojení",
-    "connection_count_other": "{count} připojení",
-    "dep_count_one": "{count} závisl.",
-    "dep_count_other": "{count} závisl.",
-    "not_tested": "Netestováno",
-    "healthy": "V pořádku",
-    "unhealthy": "Nefunkční"
-  },
-  "wizard": {
-    "detected": "Detekováno ({count})",
-    "available": "Dostupné ({count})",
-    "already_added": "Již přidáno ({count})",
-    "no_match": "Žádné služby neodpovídají \"{search}\"",
-    "already_added_badge": "Již přidáno",
-    "local": "Lokální",
-    "cli_auth": "CLI ověření",
-    "session": "Relace"
-  },
   "playground": {
-    "tab_overview": "Přehled",
-    "tab_api_explorer": "API Explorer",
-    "tab_recipes": "Recepty",
-    "tab_mcp_tools": "MCP nástroje",
-    "tab_rotation": "Rotace",
-    "add_tag": "Přidat štítek...",
-    "no_connector": "Pro tento typ přihlašovacího údaje není dostupná definice konektoru.",
-    "try_button": "Vyzkoušet",
-    "parameters": "Parametry",
-    "request_body": "Tělo požadavku",
-    "path_placeholder": "/api/v1/resource",
-    "sending": "Odesílání...",
-    "mcp_input_schema": "Schéma vstupu",
     "mcp_run": "Spustit",
     "mcp_error": "Chyba",
     "mcp_success": "Úspěch",
     "mcp_empty": "(prázdné)",
-    "mcp_discover": "Objevit nástroje MCP serveru",
-    "mcp_discover_hint": "Připojte se k MCP serveru pro objevení dostupných nástrojů.",
-    "mcp_discover_button": "Objevit nástroje",
-    "response_empty": "(prázdná odpověď)",
-    "header": "Hlavička",
-    "value": "Hodnota",
-    "path_parameters": "Parametry cesty",
-    "query_parameters": "Parametry dotazu",
-    "headers": "Hlavičky",
-    "body": "Tělo",
-    "empty_response": "(prázdná odpověď)"
+    "response_empty": "(prázdná odpověď)"
   },
   "playground_extra": {
     "add_tag": "Přidat štítek...",
@@ -721,37 +577,11 @@
     "title_dependencies": "Závislosti",
     "title_databases": "Databáze"
   },
-  "bulk_healthcheck": {
-    "title": "Výsledky kontroly",
-    "needs_attention": "Vyžaduje pozornost",
-    "slowest_responses": "Nejpomalejší odezvy",
-    "passed_count": "{count} prošlo",
-    "failed_count": "{count} selhalo",
-    "total_count": "{count} celkem"
-  },
-  "health_bar": {
-    "healthy": "v pořádku",
-    "needs_attention": "vyžaduje pozornost",
-    "untested": "netestováno"
-  },
   "breadcrumb": {
     "aria_label": "Navigační drobečky Trezoru"
   },
   "credential_card": {
-    "deleting": "Mazání {name}...",
-    "no_connector": "Definice konektoru pro tento typ údajů není dostupná.",
-    "stored_result": "Uložený výsledek testu",
-    "delete_credential": "Smazat údaje",
-    "corrupted": "Poškozeno",
-    "corrupted_tooltip": "Metadata kontrol poškozena. Skóre anomálií bude dostupné po další úspěšné kontrole.",
-    "field_count_one": "{count} pole",
-    "field_count_other": "{count} polí",
-    "add_tag_placeholder": "Přidat štítek...",
-    "add_tag_button": "Přidat štítek",
-    "remove_tag": "Odebrat štítek \"{tag}\"",
-    "copy_credential_id": "Kopírovat ID údajů",
-    "refresh_oauth": "Obnovit OAuth token hned",
-    "refresh": "Obnovit"
+    "delete_credential": "Smazat údaje"
   },
   "vault_badge": {
     "needs_attention": "Vyžaduje pozornost",
@@ -783,21 +613,6 @@
     "label_type": "Typ",
     "unverified_warning": "Nepodařilo se ověřit všechny závislosti. Někteří agenti nebo automatizace nemusí být zobrazeni."
   },
-  "card_body": {
-    "failed_update": "Aktualizace údajů selhala",
-    "authorizing_with": "Autorizace u {name}...",
-    "authorize_with": "Autorizovat u {name}",
-    "authorize_hint": "Spustí proces souhlasu u {name} a po schválení aktualizuje token.",
-    "consent_completed": "Souhlas u {name} dokončen v {time}"
-  },
-  "card_details": {
-    "tab_intelligence": "Inteligence",
-    "tab_rotation": "Rotace",
-    "tab_token_lifetime": "Životnost tokenu",
-    "tab_services": "Služby ({count})",
-    "tab_events": "Události ({count})",
-    "tab_audit": "Audit"
-  },
   "intelligence_tab": {
     "loading": "Načítání inteligentních dat",
     "tab_overview": "Přehled",
@@ -818,18 +633,6 @@
     "link_structural": "strukturální",
     "link_observed": "vysledované",
     "via_connector": "přes {connector}"
-  },
-  "token_metrics": {
-    "loading": "Načítání metrik...",
-    "no_metrics": "Zatím žádné metriky obnovy tokenu. Objeví se po první obnově OAuth.",
-    "trend_warning": "Životnost tokenů se zkracuje – možná omezení poskytovatele nebo změna pravidel.",
-    "total_refreshes": "Celkem obnovení",
-    "failure_rate": "Míra selhání",
-    "avg_lifetime": "Průměrná životnost",
-    "avg_drift": "Průměrná odchylka",
-    "recent_ttls": "Poslední TTL poskytovatele",
-    "recent_refreshes": "Poslední obnovení",
-    "fallback_used": "Fallback ({fallback}s) použit u {rate}% obnovení ({count}/{total}) — poskytovatel nevrací"
   },
   "reauth_banner": {
     "access_revoked": ") -- přístup byl zrušen. Znovu autorizuj, aby se automatizace obnovily.",
@@ -932,17 +735,7 @@
   },
   "audit_log": {
     "empty": "Zatím žádné auditní záznamy",
-    "empty_hint": "Operace se budou zaznamenávat, jakmile nastanou.",
-    "access_events_hint": "Události přístupu se zobrazí zde.",
-    "loading": "Načítání časové osy auditu...",
-    "total_accesses": "{count} celkem",
-    "personas_one": "{count} persona",
-    "personas_other": "{count} person",
-    "accesses_24h": "{count} za 24h",
-    "anomalies_one": "{count} anomálie",
-    "anomalies_other": "{count} anomálií",
-    "no_anomalies": "Žádné anomálie",
-    "show_all": "Zobrazit všech {count} záznamů"
+    "empty_hint": "Operace se budou zaznamenávat, jakmile nastanou."
   },
   "credential_import": {
     "import_from": "Importovat z {source}",
@@ -983,66 +776,6 @@
     "health_healthy": "Zdravé",
     "health_failing": "Selhávající",
     "health_untested": "Netestované"
-  },
-  "wizard_detect": {
-    "no_services": "Žádné služby neodpovídají \"{search}\"",
-    "select_services": "Vyber služby, pro které chceš přidat přihlašovací údaje, nebo naskenuj pro automatickou detekci.",
-    "scanning": "Skenování CLI nástrojů a relací prohlížeče...",
-    "scan_button": "Naskenovat autentizované služby",
-    "search_services": "Hledat služby...",
-    "desktop_bridge": "Desktop bridge -- automaticky rozpoznáno",
-    "batch_complete": "Hromadné nastavení dokončeno",
-    "skip_service": "Přeskočit tuto službu",
-    "no_filter_match": "Zkus jiný vyhledávací výraz nebo vymaž filtr.",
-    "set_up_credentials": "Nastavit přihlašovací údaje",
-    "clear_selection": "Vymazat výběr",
-    "set_up_services": "Nastavit {count} služeb{plural}",
-    "setting_up": "Nastavování {current} z {total}",
-    "wizard_title": "Průvodce nastavením přihlašovacích údajů",
-    "choose_service": "Vyber službu k nastavení",
-    "ai_walk_description": "AI tě krok za krokem provede získáním API přihlašovacích údajů.",
-    "wizard_subtitle": "Nastavení přihlašovacích údajů vedené AI",
-    "wizard_subtitle_batch": "Nastavování {count} služeb{plural}"
-  },
-  "autopilot": {
-    "title": "API Autopilot",
-    "input_hint": "Vlož URL nebo obsah OpenAPI specifikace pro automatické vygenerování konektoru",
-    "preview_hint": "Zkontroluj parsovanou API a vyber, které endpointy zahrnout",
-    "generated_hint": "Konektor byl úspěšně vygenerován",
-    "connector_generated": "Konektor úspěšně vygenerován",
-    "api_playground": "API Playground",
-    "api_playground_hint": "Otestuj vygenerované API nástroje před jejich použitím",
-    "paste_spec": "Vlož OpenAPI specifikaci (JSON nebo YAML)",
-    "valid_url_error": "Zadej platnou URL (např. https://api.example.com/openapi.json)",
-    "authentication": "Autentizace",
-    "connector_name": "Název konektoru",
-    "color": "Barva",
-    "endpoints_selected": "Endpointy ({selected}/{total} vybráno)",
-    "generating": "Generování...",
-    "generate_connector": "Vygenerovat konektor ({count} nástrojů)",
-    "base_url": "Základní URL",
-    "headers_label": "Hlavičky",
-    "header_name_placeholder": "Název hlavičky",
-    "query_parameters": "Query parametry",
-    "param_name_placeholder": "Název parametru",
-    "request_body": "Tělo požadavku (JSON)",
-    "from_url": "Z URL",
-    "paste_content": "Vložit obsah",
-    "openapi_spec_url": "URL OpenAPI specifikace",
-    "openapi_format_hint": "Podporuje OpenAPI 3.x a Swagger 2.x specifikace ve formátu JSON nebo YAML",
-    "parsing_spec": "Parsování specifikace...",
-    "parse_analyze": "Parsovat a analyzovat",
-    "connector_in_catalog": "{connectorLabel} je nyní dostupný v katalogu konektorů s {toolCount} definicemi nástrojů.",
-    "generated_tools": "Vygenerované nástroje ({count})",
-    "credential_fields": "Pole přihlašovacího údaje",
-    "open_playground": "Otevřít playground",
-    "copy_connector_id": "Kopírovat ID konektoru",
-    "go_to_catalog": "Přejít do katalogu",
-    "response_headers": "Hlavičky odpovědi ({count})",
-    "base_url_placeholder": "https://api.example.com",
-    "openapi_url_placeholder": "https://api.example.com/openapi.json",
-    "auth_schemes": "auth schémata",
-    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "Nenalezeny žádné přihlašovací údaje",
@@ -1176,18 +909,6 @@
     "sort_most_used_with_recipes": "Most-used with recipes",
     "new_connector_ribbon": "New",
     "new_connector_tooltip": "Added in the last 30 days"
-  },
-  "cli_capture": {
-    "cta": "Importovat z lokálního CLI",
-    "hint": "Místo vkládání API klíče použij lokální CLI, do kterého jsi už přihlášen.",
-    "running": "Spouštění lokálního CLI...",
-    "success": "Přihlašovací údaje zachyceny z CLI",
-    "token_ttl_notice": "Tento token vyprší za {seconds}s a bude automaticky obnoven.",
-    "source_label": "CLI",
-    "missing_binary": "`{binary}` není nainstalován nebo není v povoleném umístění.",
-    "unauthenticated": "Nejsi přihlášen do {binary}. {instruction}",
-    "capture_failed": "Zachycení z CLI selhalo: {detail}",
-    "timeout": "Zachycení z CLI vypršelo. Zkus nejdřív spustit příkaz ručně."
   },
   "schemas": {
     "none_configured": "Nic není nakonfigurováno.",
@@ -1403,11 +1124,6 @@
     "retrying": "Zkouším znovu\\u2026",
     "retry_authorized": "Autorizoval jsem \\u2014 zkusit znovu",
     "retry_failed": "Opakování selhalo"
-  },
-  "rotation_insight": {
-    "perm_errors": "Zjištěny trvalé chyby -- pokus o rotaci, upozornění odesláno.",
-    "degrading": "Dlouhodobá degradace -- spuštěna preventivní rotace.",
-    "backoff": "Přechodná selhání -- aktivní exponenciální backoff."
   },
   "schema_configs": {
     "mcp": {

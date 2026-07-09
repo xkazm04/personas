@@ -1,50 +1,13 @@
 {
-  "title": "Přehled",
-  "no_output": "Zatím žádný výstup",
-  "no_background_jobs": "Žádné běžící ani nedávné úlohy na pozadí",
-  "background_jobs_hint": "Úlohy se zde zobrazí při spuštění N8n transformací, adopcí šablon, generování šablon nebo ladění dotazů",
   "filters": {
     "start_date": "Datum od",
     "end_date": "Datum do",
     "all_personas": "Všechny persony"
   },
   "messages": {
-    "loading": "Načítání zpráv...",
-    "no_messages": "Zatím žádné zprávy",
-    "switch_to_all": "Zkuste přepnout na \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Vše\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" pro zobrazení všech zpráv",
-    "columns": {
-      "persona": "Persona",
-      "title": "Název",
-      "priority": "Priorita",
-      "status": "Stav",
-      "created": "Vytvořeno"
-    },
-    "content_header": "Obsah",
     "priority_high": "Vysoká",
     "priority_normal": "Normální",
-    "priority_low": "Nízká",
-    "filter_all": "Vše",
-    "filter_unread": "Nepřečtené",
-    "filter_high_priority": "Vysoká priorita",
-    "delivery_delivered": "Doručeno",
-    "delivery_failed": "Selhalo",
-    "delivery_pending": "Čeká",
-    "delivery_queued": "Ve frontě",
-    "channel_email": "Email",
-    "channel_slack": "Slack",
-    "channel_telegram": "Telegram",
-    "channel_desktop": "Desktop",
-    "id_label": "ID:",
-    "confirm_delete_title": "Potvrdit smazání",
-    "close_message": "Zavřít detail zprávy"
-  },
-  "realtime": {
-    "idle": "Nečinný -- klikněte na {action} pro simulaci provozu",
-    "test_flow": "Testovací tok",
-    "events_per_min": "událostí/min",
-    "pending": "čeká",
-    "success": "úspěch",
-    "in_window": "v okně"
+    "priority_low": "Nízká"
   },
   "incidents": {
     "filters_active_aria": "{count} aktivní filtry",
@@ -160,13 +123,7 @@
     "subtitle": "Sleduj zdraví spouštění, náklady a anomálie napříč agenty",
     "alert_rules": "Pravidla upozornění",
     "refresh_metrics": "Obnovit metriky",
-    "persona_disabled": "Persona automaticky vypnuta",
-    "auto_resolved": "Tento problém byl automaticky vyřešen",
-    "mark_resolved": "Označit jako vyřešené",
-    "manual_fix": "(manuální oprava provedena)",
     "metrics_unavailable": "Metriky nedostupné -- zobrazená data mohou být zastaralá",
-    "no_open_issues": "Žádné otevřené problémy",
-    "run_analysis": "Spusťte analýzu pro kontrolu problémů.",
     "error_recovery": {
       "panel_loaded": "Loaded",
       "panel_failed": "Failed to load",
@@ -175,127 +132,18 @@
   },
   "memories": {
     "title": "Vzpomínky",
-    "created_success": "Vzpomínka úspěšně vytvořena",
-    "no_memories": "Zatím žádné vzpomínky",
-    "no_memories_hint": "Když agenti běží, mohou zde ukládat cenné poznámky a poznatky.",
-    "no_memories_match": "Žádné vzpomínky neodpovídají aktuálním filtrům",
-    "list_aria_label": "Seznam vzpomínek",
-    "add_memory_btn": "Přidat vzpomínku",
-    "search_placeholder": "Hledat vzpomínky...",
-    "no_filter_match": "Žádné vzpomínky neodpovídají filtrům. Zkus upravit vyhledávání.",
-    "form": {
-      "agent": "Agent",
-      "category": "Kategorie",
-      "title": "Název",
-      "content": "Obsah",
-      "importance": "Důležitost",
-      "tags": "Štítky",
-      "tags_hint": "(oddělené čárkou)"
-    },
-    "curation_schedule_button": "Schedule",
-    "curation_schedule_button_hint": "Schedule automatic memory curation",
-    "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
-    "curation_schedule_title": "Schedule memory curation",
-    "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
-    "curation_schedule_cron_label": "Schedule (cron)",
-    "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
-    "curation_schedule_presets_label": "Quick picks",
-    "preset_weekly_sunday": "Weekly · Sun 3am",
-    "preset_daily_3am": "Daily · 3am",
-    "preset_weekly_monday": "Weekly · Mon 9am",
-    "preset_monthly": "Monthly · 1st",
-    "curation_schedule_last_run_label": "Last run",
-    "curation_schedule_disabled_state": "Curation is disabled for this agent",
-    "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule",
     "delete_all": "Smazat vše",
     "delete_all_confirm_title": "Smazat všechny vzpomínky?",
     "delete_all_confirm_body": "Tímto trvale smažete všech {count} vzpomínek. Tuto akci nelze vrátit zpět.",
     "delete_all_confirm_cta": "Smazat vše"
   },
   "memory_review": {
-    "all_conflicts_resolved": "Všechny konflikty vyřešeny",
     "keep_prefix": "Zachovat „",
     "keep_suffix": "”"
-  },
-  "executions": {
-    "title": "Spuštění",
-    "loading": "Načítání spuštění...",
-    "no_agents": "Zatím žádní agenti",
-    "create_first": "Vytvořte prvního agenta pro zobrazení aktivity spuštění",
-    "no_executions": "Zatím žádná spuštění",
-    "run_agent": "Spusťte agenta pro zobrazení aktivity spuštění"
-  },
-  "workflows": {
-    "loading": "Načítání workflow...",
-    "title": "Workflows",
-    "subtitle": "Aktivní a nedávné operace na pozadí napříč pracovním prostorem",
-    "no_jobs": "Žádné úlohy na pozadí neběží ani nejsou nedávné",
-    "jobs_hint": "Úlohy se zde zobrazí, když spustíš N8n transformace, adopce šablon, generování šablon nebo ladění dotazů",
-    "all_types": "Všechny typy",
-    "no_filter_match": "Žádné úlohy neodpovídají aktuálním filtrům",
-    "auto_refreshing": "Automaticky obnovováno, dokud úlohy běží",
-    "cancel_failed": "Zrušení workflow úlohy selhalo"
-  },
-  "schedules": {
-    "title": "Časová osa plánů",
-    "subtitle": "Souhrnný pohled na všechna plánovaná spuštění agentů",
-    "engine_on": "Engine zapnut",
-    "engine_off": "Engine vypnut",
-    "engine_on_tooltip": "Plánovač běží -- klikněte pro pozastavení",
-    "engine_off_tooltip": "Plánovač zastaven -- klikněte pro spuštění",
-    "active_count": "{count} aktivních",
-    "paused_count": "{count} pozastavených",
-    "view_grouped": "Seskupeno",
-    "view_timeline": "Časová osa",
-    "triggers_fired": "Spouštěče spuštěny: ",
-    "events_processed": "Události zpracovány: ",
-    "delivered": "Doručeno: ",
-    "failed_label": "Selhalo: ",
-    "loading": "Načítání plánů...",
-    "empty": "Nenalezeni žádní plánovaní agenti.",
-    "empty_hint": "Vytvořte plán nebo polling spouštěč na libovolném agentovi pro zobrazení zde.",
-    "group_overdue": "Po termínu",
-    "group_15min": "Příštích 15 minut",
-    "group_1hour": "Příští hodina",
-    "group_6hours": "Příštích 6 hodin",
-    "group_24hours": "Příštích 24 hodin",
-    "group_later": "Později",
-    "group_paused": "Pozastaveno / Neplánováno",
-    "run_now": "Spustit nyní",
-    "change_frequency": "Změnit frekvenci",
-    "pause_schedule": "Pozastavit plán",
-    "resume_schedule": "Obnovit plán",
-    "headless_badge": "headless"
-  },
-  "frequency_editor": {
-    "title": "Změnit frekvenci",
-    "current": "Aktuální: ",
-    "quick_presets": "Rychlé předvolby",
-    "cron_expression": "Cron výraz",
-    "interval_seconds": "Interval (sekundy)",
-    "previewing": "Náhled...",
-    "next_runs": "Příští spuštění",
-    "invalid_cron": "Neplatný cron výraz"
-  },
-  "recovery": {
-    "agents_missed_one": "{count} agent zmeškal spuštění",
-    "agents_missed_other": "{count} agentů zmeškalo spuštění",
-    "total_skipped": "~{count} celkem přeskočených spuštění, když byla aplikace offline",
-    "missed_since": "{count} zmeškáno od {time}",
-    "every_interval": "každých {interval}",
-    "mark_for_recovery": "Označit k obnově",
-    "recover": "Obnovit",
-    "run_once": "Spustit 1x",
-    "run_once_tooltip": "Spustit jednou nyní",
-    "skip_tooltip": "Přeskočit -- neobnovovat",
-    "dismiss_all": "Zamítnout vše",
-    "recover_selected": "Obnovit {count} vybraných"
   },
   "sla": {
     "title": "SLA spolehlivosti agentů",
     "subtitle": "Dostupnost, míra selhání a metriky samoopravy napříč agenty",
-    "loading": "Načítání SLA dat...",
     "no_data": "Žádná data o spuštění nejsou dostupná.",
     "success_rate": "Úspěšnost",
     "executions_summary": "{successful}/{total} spuštění",
@@ -308,14 +156,6 @@
     "daily_success_rate": "Denní úspěšnost -- {days} dní",
     "per_agent": "Spolehlivost per agent",
     "no_agent_data": "Žádní agenti nebyli spuštěni v tomto období.",
-    "metric_successful": "Úspěšné",
-    "metric_failed": "Selhané",
-    "metric_avg_latency": "Průměrná latence",
-    "metric_p95_latency": "P95 latence",
-    "metric_cost": "Náklady",
-    "metric_mtbf": "MTBF",
-    "metric_auto_healed": "Automaticky opraveno",
-    "metric_cancelled": "Zrušeno",
     "success_rate_tooltip": "Success rate = successful / (successful + failed). Cancelled runs are excluded because they are user-initiated and don't reflect system reliability.",
     "all_time_badge": "All-time",
     "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
@@ -324,28 +164,6 @@
   },
   "knowledge": {
     "title": "Graf znalostí",
-    "subtitle": "{count} vzorů naučených z historie spuštění",
-    "total_patterns": "Celkem vzorů",
-    "tool_sequences": "Sekvence nástrojů",
-    "tool_sequences_hint": "Naučené řetězce nástrojů",
-    "failure_patterns": "Vzory selhání",
-    "failure_patterns_hint": "Známé signatury chyb",
-    "model_insights": "Poznatky o modelech",
-    "model_insights_hint": "Výkon dle modelu",
-    "all_personas": "Všechny persony (globální)",
-    "all_types": "Všechny typy",
-    "failure_drilldown": "Detail selhání: {date}",
-    "failure_drilldown_hint": "Zobrazení vzorů selhání aktivních v tento den nebo později.",
-    "failure_drilldown_empty": "Žádné odpovídající vzory -- zkuste vybrat konkrétní personu výše.",
-    "unavailable": "Data znalostí nejsou dostupná",
-    "empty": "Zatím žádné vzory znalostí",
-    "empty_hint": "Spouštějte agenty pro budování grafu znalostí. Každé spuštění učí systém o sekvencích nástrojů, vzorech selhání a kompromisech mezi náklady a kvalitou.",
-    "recent_learnings": "Nedávné poznatky",
-    "successes": "Úspěchy",
-    "failures": "Selhání",
-    "avg_cost": "Průměrné náklady",
-    "avg_duration": "Průměrná doba",
-    "pattern_data": "Data vzoru",
     "patterns_tab": "Vzory",
     "search_placeholder": "Hledat vzory...",
     "sort_aria": "Seřadit vzory",
@@ -357,24 +175,11 @@
     "pending_scope_hint": "Vyberte personu pro kontrolu všech čekajících anotací.",
     "graph_tab": "Graf"
   },
-  "conflicts": {
-    "dismissed": "Konflikt zamítnut",
-    "resolved": "Konflikt vyřešen",
-    "resolve_failed": "Nepodařilo se vyřešit konflikt",
-    "conflict_count_one": "{count} konflikt",
-    "conflict_count_other": "{count} konfliktů"
-  },
   "dashboard": {
-    "title": "Dashboard",
-    "subtitle": "Provozní přehled a stav systému",
     "greeting_morning": "Dobré ráno",
     "greeting_afternoon": "Dobré odpoledne",
     "greeting_evening": "Dobrý večer",
     "default_user": "Operátore",
-    "pending_reviews_prompt": "čekajících kontrol",
-    "requiring_attention": "vyžadujících pozornost.",
-    "empty_cta": "Vytvoř svého prvního agenta a začni.",
-    "pipeline_failed": "{source} se nepodařilo načíst",
     "empty_title": "Vítej v Personas",
     "empty_subtitle": "Vytvoř svého prvního agenta a začni sledovat metriky spouštění, grafy provozu a aktivitu zde.",
     "create_persona": "Vytvořit personu",
@@ -396,49 +201,6 @@
     "section_memory": "Návrhy paměti",
     "section_fleet": "Optimalizace flotily",
     "section_routines": "Rutiny a změny trezoru"
-  },
-  "execution_metrics": {
-    "title": "Metriky spouštění",
-    "total_executions": "Celkem spuštění",
-    "total_cost": "Celkové náklady",
-    "success_rate": "Míra úspěšnosti",
-    "avg_latency": "Průměrná latence",
-    "cost_anomalies": "Zjištěny anomálie nákladů",
-    "no_data": "Za vybrané období nejsou žádná data o spouštění",
-    "cost_per_day": "Náklady za den",
-    "executions_by_status": "Spuštění podle stavu",
-    "success_rate_trend": "Trend míry úspěšnosti",
-    "latency_distribution": "Distribuce latence (p50 / p95 / p99)",
-    "top_personas_by_cost": "Top persony podle nákladů",
-    "cost_spike": "Skok v nákladech",
-    "above_avg": "nad průměrem",
-    "top_executions": "Top spuštění:",
-    "executions_label": "{count} spuštění"
-  },
-  "execution_list": {
-    "recorded": "{count} spuštění zaznamenáno",
-    "recorded_one": "{count} spuštění zaznamenáno",
-    "list": "Seznam",
-    "metrics": "Metriky",
-    "show_list": "Zobrazit seznam spouštění",
-    "show_metrics": "Zobrazit dashboard metrik",
-    "showing": "Zobrazeno {count} z {total}",
-    "load_more": "Načíst více",
-    "filter_all": "Vše",
-    "filter_running": "Běží",
-    "filter_completed": "Dokončeno",
-    "filter_failed": "Selhalo",
-    "col_persona": "Persona",
-    "col_status": "Stav",
-    "col_duration": "Doba trvání",
-    "col_started": "Začátek",
-    "col_id": "ID",
-    "all_statuses": "Všechny stavy",
-    "all_personas": "Všechny persony",
-    "no_agents": "Zatím nejsou vytvořeni žádní agenti",
-    "no_agents_hint": "Vytvoř svého prvního agenta, abys zde viděl aktivitu spouštění.",
-    "unknown_persona": "Neznámý",
-    "healing_retry": "Healing pokus č. {count}"
   },
   "review": {
     "title": "Ruční kontroly",
@@ -521,44 +283,27 @@
   },
   "messages_view": {
     "title": "Zprávy",
-    "threads_subtitle": "{count} vláken",
-    "threads_subtitle_one": "{count} vlákno",
     "messages_subtitle": "{count} zpráv zaznamenáno",
     "messages_subtitle_one": "{count} zpráva zaznamenána",
     "mock_message": "Ukázková zpráva",
     "seed_tooltip": "Nasadit ukázkovou zprávu (pouze dev)",
-    "flat_view": "Ploché zobrazení",
-    "threaded_view": "Vláknové zobrazení",
     "mark_all_read": "Označit vše jako přečtené",
-    "threads_of": "{count} z {total} vláken",
-    "no_threads": "Zatím žádná vlákna zpráv",
-    "no_threads_hint": "Vlákna se automaticky vytvářejí, když agenti produkují zprávy během spouštění.",
     "no_messages": "Zatím žádné zprávy",
     "no_messages_hint": "Zprávy se vytvářejí, když agenti běží a komunikují mezi sebou.",
     "no_filter_match": "Žádné zprávy neodpovídají aktuálním filtrům",
-    "loading_replies": "Načítání odpovědí...",
     "load_more": "Načíst více ({count} zbývá)",
     "col_title": "Název",
-    "col_priority": "Priorita",
-    "col_delivery": "Doručení",
-    "col_status": "Stav",
     "col_created": "Vytvořeno",
     "all_priorities": "Všechny priority",
     "all_statuses": "Všechny stavy",
     "read": "Přečteno",
     "unread": "Nepřečteno",
-    "new_badge": "Nové",
-    "failed_count": "{count} selhalo",
-    "pending_count": "{count} čeká",
-    "sent_count": "{count} odesláno",
     "message_label": "Zpráva",
     "from_label": "Od {name}",
     "content_label": "Obsah",
     "view_execution": "Zobrazit spuštění",
-    "type_label": "Typ:",
     "delivery_status": "Stav doručení",
     "no_channels": "Žádné kanály doručení nejsou nakonfigurovány",
-    "confirm_delete": "Potvrdit smazání",
     "improve_agent": "Vylepšit agenta",
     "improvement_started": "Vylepšení spuštěno -- bude vyrozuměn po dokončení",
     "what_could_be_better": "Co by mohlo být lepší?",
@@ -571,7 +316,6 @@
     "rating_label": "Rate this message",
     "rating_star_aria": "Rate {value} of 5",
     "rating_saved": "Saved · {stars}/5",
-    "rating_clear": "Clear rating",
     "rating_memory_title": "Message rating: {stars}/5",
     "rating_memory_content_good": "User rated the output {stars}/5 stars. This message met expectations — keep the approach.",
     "rating_memory_content_neutral": "User rated the output {stars}/5 stars. Neutral feedback — review the message for marginal improvements.",
@@ -599,7 +343,6 @@
     "seed_tooltip": "Nasadit ukázkovou událost (pouze dev)",
     "search_placeholder": "Hledat události podle typu, zdroje nebo payloadu...",
     "loading_older": "Načítání starších událostí...",
-    "load_older": "Načíst starší události",
     "no_events": "Zatím žádné události",
     "no_events_hint": "Události z webhooků, spouštění a akcí person se zde zobrazí, jakmile agenti poběží.",
     "no_filter_match": "Žádné události neodpovídají aktuálním filtrům",
@@ -607,12 +350,6 @@
     "view_name_placeholder": "Název zobrazení (např. 'Selhané webhooky tento týden')",
     "views_label": "Zobrazení:",
     "delete_view": "Smazat zobrazení",
-    "clear_filters": "Vymazat všechny filtry",
-    "col_trigger": "Spouštěč",
-    "col_persona": "Persona",
-    "col_event_name": "Název události",
-    "col_status": "Stav",
-    "col_created": "Vytvořeno",
     "all_statuses": "Všechny stavy",
     "all_types": "Všechny typy",
     "all_triggers": "Všechny spouštěče",
@@ -621,43 +358,12 @@
     "source_system": "Systém",
     "source_scheduled": "Plánované",
     "event_detail_title": "Událost:",
-    "event_detail_status": "Stav:",
-    "event_id": "ID události",
-    "project": "Projekt",
-    "source": "Zdroj",
-    "processed": "Zpracováno",
-    "event_data": "Data události",
-    "error": "Chyba"
+    "event_detail_status": "Stav:"
   },
   "health": {
     "title": "Zdraví agentů",
     "subtitle": "Monitorování zdraví všech agentů v reálném čase",
-    "all_healthy": "Všichni agenti zdraví",
-    "all_healthy_hint": "Každý sledovaný agent funguje normálně",
-    "no_agents": "Zatím žádní agenti",
-    "no_agents_hint": "Vytvoř agenty pro zahájení sledování jejich zdraví",
-    "success_rate": "Míra úspěšnosti",
-    "avg_latency": "Průměrná latence",
-    "executions": "Spuštění",
-    "last_execution": "Poslední spuštění",
-    "never_executed": "Nikdy",
-    "cost": "Cena",
-    "healthy": "Zdravý",
-    "warning": "Varování",
-    "critical": "Kritické",
-    "unknown": "Neznámý",
-    "burn_rate": "Projekce míry spalování",
-    "monthly_budget": "Měsíční rozpočet",
-    "current_burn": "Aktuální spalování",
-    "projected": "Projekce",
-    "days_remaining": "Zbývajících dní",
-    "cascade_title": "Analýza kaskády",
-    "predictive_alerts": "Prediktivní upozornění",
-    "no_alerts": "V tuto chvíli žádná prediktivní upozornění",
-    "status_page": "Stavová stránka",
-    "operational": "V provozu",
-    "degraded": "Snížený výkon",
-    "outage": "Výpadek"
+    "status_page": "Stavová stránka"
   },
   "leaderboard": {
     "title": "Žebříček agentů",
@@ -699,58 +405,6 @@
     "hint_activity": "Spouštějte nebo plánujte tohoto agenta častěji pro vyšší aktivitu.",
     "improve_agent": "Vylepšit tohoto agenta"
   },
-  "analytics": {
-    "title": "Analytika",
-    "subtitle": "Vzorce a trendy spouštění",
-    "loading": "Načítání analytiky...",
-    "no_data": "Žádná analytická data nejsou k dispozici",
-    "executions_over_time": "Spuštění v čase",
-    "success_failure": "Úspěch vs. Selhání",
-    "cost_breakdown": "Rozpis nákladů",
-    "total_executions": "Celkem spuštění",
-    "total_cost": "Celkové náklady",
-    "avg_success_rate": "Průměrná míra úspěšnosti",
-    "active_agents": "Aktivní agenti",
-    "saved_views": "Uložená zobrazení",
-    "create_view": "Vytvořit zobrazení",
-    "health_issues": "Problémy se zdravím",
-    "rotation_overview": "Přehled rotace"
-  },
-  "usage": {
-    "title": "Využití",
-    "subtitle": "Spotřeba nákladů a zdrojů",
-    "chart_error": "Graf se nepodařilo načíst",
-    "chart_error_hint": "Při vykreslování tohoto grafu došlo k chybě",
-    "try_again": "Zkusit znovu"
-  },
-  "cron_agents": {
-    "title": "Plánovaní agenti",
-    "subtitle": "Agenti běžící podle automatických plánů",
-    "no_agents": "Žádní plánovaní agenti",
-    "no_agents_hint": "Přidej cron spouštěč k libovolnému agentovi, abys ho zde viděl"
-  },
-  "timeline": {
-    "title": "Časová osa aktivity",
-    "subtitle": "Sjednocený pohled na veškerou aktivitu agentů",
-    "no_activity": "Žádná nedávná aktivita"
-  },
-  "realtime_viz": {
-    "title": "Event Bus",
-    "filter_events": "Filtrovat události",
-    "pause": "Pozastavit",
-    "resume": "Obnovit",
-    "clear": "Vymazat",
-    "total_events": "Celkem událostí",
-    "events_per_sec": "Událostí/s",
-    "active_lanes": "Aktivní dráhy",
-    "event_type": "Typ události",
-    "source": "Zdroj",
-    "target": "Cíl",
-    "timestamp": "Časová značka",
-    "payload": "Payload",
-    "saved_views": "Uložená zobrazení",
-    "save_current": "Uložit aktuální"
-  },
   "observability_extra": {
     "auto_refresh_on": "Automatické obnovení zapnuto",
     "auto_refresh_off": "Automatické obnovení vypnuto",
@@ -758,41 +412,15 @@
     "executions_label": "Spuštění",
     "success_rate": "Míra úspěšnosti",
     "active_personas": "Aktivní persony",
-    "system_trace": "Časová osa systémového trace",
-    "ipc_performance": "Výkon IPC",
-    "alert_rules_label": "Pravidla upozornění",
-    "alert_history_label": "Historie upozornění",
-    "healing_issues": "Problémy se zdravím",
-    "run_analysis": "Spustit analýzu",
-    "resolve": "Vyřešit",
-    "healing_view_list": "Seznam",
-    "healing_view_timeline": "Časová osa",
-    "issue_details": "Detaily problému",
-    "anomaly_drilldown": "Analýza anomálie",
-    "spend_overview": "Přehled útraty",
-    "cost_vs_executions": "Náklady vs. Spuštění",
-    "daily_executions": "Denní spuštění",
-    "ipc_channel": "IPC kanál",
-    "avg_duration": "Průměrná doba trvání",
-    "call_count": "Počet volání",
-    "error_rate": "Chybovost"
+    "system_trace": "Časová osa systémového trace"
   },
   "widgets": {
-    "recent_activity": "Nedávná aktivita",
     "view_all": "Zobrazit vše",
-    "total_traffic": "Celkový provoz",
-    "total_errors": "Celkem chyb",
     "traffic_errors_chart": "Provoz a chyby",
     "top_performers": "Top výkon",
-    "metric_help": "Nápověda k metrikám",
-    "how_calculated": "Jak se to počítá?",
-    "details": "Detaily",
     "messages_badge": "Zprávy",
     "reviews_badge": "Kontroly",
-    "executions_badge": "Spuštění",
-    "success_badge": "Úspěch",
     "alerts_badge": "Upozornění",
-    "agents_badge": "Agenti",
     "pipelines_badge": "Kanály",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
@@ -801,17 +429,7 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Errors",
-    "tool_performance_empty": "No tool runs in this window",
     "tool_performance_unit_ms": "ms"
-  },
-  "cards": {
-    "fleet_optimization": "Optimalizace flotily",
-    "fleet_subtitle": "Automatizovaná doporučení pro zlepšení výkonu agentů",
-    "remote_control": "Vzdálené ovládání",
-    "remote_subtitle": "Rychlé akce pro správu agentů",
-    "resume_setup": "Pokračovat v nastavení",
-    "resume_subtitle": "Pokračuj tam, kde jsi přestal",
-    "knowledge_hub": "Centrum znalostí"
   },
   "activity": {
     "title": "Aktivita",
@@ -840,23 +458,16 @@
     "prev_failed": "Předchozí selhalo",
     "success_pct": "Úspěch %",
     "prev_success_pct": "Předchozí úspěch %",
-    "successful": "Úspěšné",
-    "all": "Vše",
-    "running": "Běží",
-    "all_statuses": "Všechny stavy",
     "showing": "Zobrazeno {count} z {total}",
     "load_more": "Načíst více",
-    "col_status": "Stav",
     "col_duration": "Doba trvání",
     "col_started": "Začátek",
-    "col_id": "ID",
     "no_agents": "Zatím nejsou vytvořeni žádní agenti",
     "no_agents_hint": "Vytvoř svou první personu, abys zde viděl aktivitu spouštění.",
     "no_executions": "Zatím žádná spuštění",
     "no_executions_hint": "Spusť agenta, abys zde viděl aktivitu spouštění.",
     "create_persona": "Vytvořit personu",
     "from_templates": "Ze šablon",
-    "execution_label": "Spuštění",
     "unknown": "Neznámý",
     "value_section_title": "Obchodní hodnota",
     "value_delivered_rate": "Míra doručené hodnoty",
@@ -867,54 +478,11 @@
     "col_cost": "Náklady"
   },
   "analytics_dashboard": {
-    "title": "Analytika",
-    "subtitle": "Sjednocená analytika nákladů, spouštění a využití nástrojů",
-    "metrics_unavailable": "Metriky nedostupné",
-    "auto_refresh_on": "Automatické obnovení ZAPNUTO (30s)",
-    "auto_refresh_off": "Automatické obnovení VYPNUTO",
-    "cost_anomalies_detected": "Zjištěno {count} anomálií nákladů",
-    "cost_anomaly_detected": "Zjištěna {count} anomálie nákladů",
-    "cost_over_time": "Náklady v čase",
-    "execution_health": "Zdraví spouštění",
-    "tool_usage_over_time": "Využití nástrojů v čase",
-    "executions_by_persona": "Spuštění podle persony",
-    "latency_chart": "Latence (p50 / p95 / p99)",
-    "tool_invocations": "Vyvolání nástrojů",
-    "no_execution_data": "Žádná data o spouštění",
-    "prev_cost": "Předchozí náklady",
-    "successful": "Úspěšné",
-    "failed": "Selhalo",
-    "prev_successful": "Předchozí úspěšné",
-    "prev_failed": "Předchozí selhalo",
-    "invocations": "Vyvolání",
-    "anomaly_click_hint": "Klikni na kosočtvercový marker v grafu pro prozkoumání",
-    "saved_views": "Uložená zobrazení",
-    "save_current_view": "Uložit aktuální zobrazení",
-    "smart_presets": "Chytré předvolby",
-    "your_saved_views": "Tvá uložená zobrazení",
-    "view_name_placeholder": "Název zobrazení...",
-    "save_view": "Uložit zobrazení",
-    "delete_view": "Smazat zobrazení",
-    "this_week_vs_last": "Tento týden vs. minulý týden",
-    "this_month_vs_last": "Tento měsíc vs. minulý měsíc",
-    "health_issues": "Problémy se zdravím",
-    "run_analysis": "Spustit analýzu",
-    "analyzing": "Analýza...",
-    "analysis_complete": "Analýza dokončena",
     "issues_found": "Nalezeno {count} problémů",
     "issues_found_one": "Nalezen {count} problém",
     "auto_fixed": "automaticky opraveno",
     "executions_scanned": "{count} spuštění prohledáno",
     "executions_scanned_one": "{count} spuštění prohledáno",
-    "no_open_issues": "Žádné otevřené problémy",
-    "run_analysis_hint": "Spusť analýzu pro kontrolu problémů.",
-    "filter_all": "Vše",
-    "filter_open": "Otevřené",
-    "filter_auto_fixed": "Automaticky opraveno",
-    "resolve": "Vyřešit",
-    "breaker": "breaker",
-    "fixed": "opraveno",
-    "retry": "zkusit znovu",
     "credential_rotation": "Rotace přihlašovacích údajů",
     "no_rotation_policies": "Žádné rotační politiky",
     "no_rotation_hint": "Nakonfiguruj rotaci přihlašovacích údajů v trezoru.",
@@ -922,7 +490,6 @@
     "soon_count": "{count} brzy",
     "issues_count": "{count} problémů",
     "issues_count_one": "{count} problém",
-    "never": "nikdy",
     "fail_count": "{count}x selhalo",
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
@@ -931,13 +498,6 @@
     "rotation_due_now": "nyní splatné",
     "rotation_countdown_days_hours": "{days}d {hours}h",
     "rotation_countdown_hours": "{hours}h"
-  },
-  "saved_views": {
-    "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
-    }
   },
   "cron": {
     "title": "Cron agenti",
@@ -951,21 +511,7 @@
     "no_agents_hint": "Vytvoř plánovací spouštěč u libovolného agenta, abys ho zde viděl.",
     "headless_section": "Headless agenti na pozadí",
     "interactive_section": "Interaktivní plánovaní agenti",
-    "scheduled_section": "Plánovaní agenti",
-    "headless_badge": "headless",
-    "no_schedule": "žádný plán",
-    "every_interval": "každých {interval}",
-    "next": "další",
-    "last": "poslední"
-  },
-  "activity_timeline": {
-    "title": "Časová osa aktivity",
-    "subtitle": "{events} událostí, {messages} zpráv",
-    "all": "Vše",
-    "events": "Události",
-    "messages": "Zprávy",
-    "no_activity": "Zatím žádná aktivita",
-    "high": "Vysoká"
+    "scheduled_section": "Plánovaní agenti"
   },
   "sla_card": {
     "successful": "Úspěšné",
@@ -975,9 +521,7 @@
     "cost": "Cena",
     "mtbf": "MTBF",
     "auto_healed": "Automaticky vyléčeno",
-    "cancelled": "Zrušeno",
-    "failing": "{count} selhává",
-    "healed": "{count} vyléčeno"
+    "cancelled": "Zrušeno"
   },
   "realtime_page": {
     "title": "Monitor Event Bus",
@@ -994,13 +538,6 @@
     "pending": "čeká",
     "success": "úspěch",
     "in_window": "v okně",
-    "test_flow": "Otestovat tok",
-    "testing_flow": "Testování toku...",
-    "test_event_flow": "Otestovat tok událostí",
-    "resume": "Obnovit",
-    "pause": "Pozastavit",
-    "resume_stream": "Obnovit realtime stream",
-    "pause_stream": "Pozastavit realtime stream",
     "search_events": "Hledat události...",
     "filter_type": "Typ",
     "filter_status": "Stav",
@@ -1011,27 +548,10 @@
     "no_saved_views": "Zatím žádná uložená zobrazení",
     "save_current_filter": "Uložit aktuální filtr",
     "view_name_placeholder": "Název zobrazení...",
-    "delete_saved_view": "Smazat uložené zobrazení",
-    "event_log": "Log událostí",
-    "entries": "{count} záznamů",
-    "filter_events": "Filtrovat události...",
-    "no_events": "Zatím žádné události",
-    "open_in_drawer": "Otevřít v panelu detailů",
-    "event_label": "Událost",
-    "status_label": "Stav",
-    "source_label": "Zdroj",
-    "target_label": "Cíl",
-    "id_label": "ID",
-    "error_label": "Chyba",
-    "payload_label": "Payload",
     "close_event_details": "Zavřít detaily události",
     "reset_to_start": "Resetovat na začátek",
     "cycle_speed": "Cyklovat rychlost přehrávání",
-    "exit_replay": "Ukončit přehrávání",
-    "galaxy": "Galaxie",
-    "galaxy_desc": "Orbitální souhvězdí s kometárními stopami",
-    "lanes": "Dráhy",
-    "lanes_desc": "Horizontální diagram plaveckých drah"
+    "exit_replay": "Ukončit přehrávání"
   },
   "memory_form": {
     "agent": "Agent",
@@ -1048,10 +568,7 @@
     "saving": "Ukládání...",
     "created_success": "Vzpomínka úspěšně vytvořena",
     "fill_required": "Pro uložení vyplň všechna povinná pole",
-    "saving_memory": "Ukládání vzpomínky...",
-    "share_with_group": "Sdílet s",
-    "share_with_group_hint": "Každá persona v této skupině vidí tuto vzpomínku ve své promptě — užitečné pro celoorganizační kontext jako styl nebo zásady.",
-    "share_with_group_title": "Napsáno vybranou personou; viditelné pro každého člena její skupiny."
+    "saving_memory": "Ukládání vzpomínky..."
   },
   "memory_filter": {
     "search_placeholder": "Hledat vzpomínky...",
@@ -1072,9 +589,7 @@
   "memory_conflict": {
     "memory_a": "Vzpomínka A",
     "memory_b": "Vzpomínka B",
-    "merge": "Sloučit",
-    "keep": "Zachovat",
-    "vs": "vs."
+    "merge": "Sloučit"
   },
   "observability_charts": {
     "cost_over_time": "Náklady v čase",
@@ -1084,9 +599,7 @@
     "failed": "Selhalo",
     "anomalies_detected": "Zjištěno {count} anomálií nákladů",
     "anomaly_detected": "Zjištěna {count} anomálie nákladů",
-    "anomaly_click_hint": "Klikni na kosočtvercový marker v grafu pro prozkoumání",
-    "clear_traces": "Vymazat dokončené traces",
-    "all_operations": "Všechny operace"
+    "anomaly_click_hint": "Klikni na kosočtvercový marker v grafu pro prozkoumání"
   },
   "health_extra": {
     "success": "Úspěch",
@@ -1142,41 +655,12 @@
   "review_extra": {
     "add_note": "Přidej poznámku (volitelné)...",
     "confirm": "Potvrdit",
-    "processing": "Zpracování...",
-    "clear_verdicts": "Vymazat všechny verdikty",
-    "retry_with_changes": "Zkusit znovu se změnami",
-    "reject_all": "Zamítnout vše",
-    "quick_actions": "Rychlé akce",
-    "accepted": "{count} přijato",
-    "rejected": "{count} zamítnuto",
-    "undecided": "{count} nerozhodnuto"
-  },
-  "widgets_extra": {
-    "execution_health_chart": "Zdraví spouštění",
-    "cost_over_time_chart": "Náklady v čase",
-    "successful": "Úspěšné",
-    "failed": "Selhalo",
-    "close": "Zavřít",
-    "dismiss_help": "Zavřít nápovědu",
-    "skip_tour": "Přeskočit celou prohlídku"
-  },
-  "remote_control_card": {
-    "connect_to_desktop": "Připojit k desktopu",
-    "connect_description": "Spouštějte agenty pomocí desktopového CLI přes Remote Control. Spusťte {command} na svém počítači a poté se zde připojte.",
-    "requires_subscription": "Vyžaduje předplatné Claude Pro nebo Max"
-  },
-  "resume_setup_card": {
-    "resume_tour": "Pokračovat v prohlídce",
-    "left_off_at": "Skončili jste u",
-    "steps_completed": "{completed}/{total} kroků dokončeno",
-    "skip_tour": "Přeskočit prohlídku úplně",
-    "continue_label": "Pokračovat"
+    "processing": "Zpracování..."
   },
   "detail_modal": {
     "close": "Zavřít"
   },
   "metric_help_popover": {
-    "help_for": "Nápověda pro {label}",
     "dismiss_help": "Zavřít nápovědu",
     "healthy": "V pořádku:",
     "click": "Klikněte:",
@@ -1205,8 +689,6 @@
     "disconnect": "Odpojit"
   },
   "metrics_cards": {
-    "cost_spike": "Skok nákladů",
-    "above_avg": "nad průměrem",
     "top_executions": "Nejvyšší spuštění:"
   },
   "event_log_item": {
@@ -1215,11 +697,7 @@
     "source": "Zdroj",
     "processed": "Zpracováno",
     "event_data": "Data události",
-    "copy_event_data": "Kopírovat data události",
-    "copied": "Zkopírováno",
-    "copy": "Kopírovat",
-    "error": "Chyba",
-    "system": "Systém"
+    "error": "Chyba"
   },
   "burn_rate_extra": {
     "title": "Projekce spotřeby",
@@ -1276,48 +754,23 @@
   },
   "knowledge_graph": {
     "mock_pattern": "Ukázkový vzor",
-    "seed_tooltip": "Nasadit ukázkový vzor (pouze dev)",
-    "all_types": "Všechny typy",
-    "all_scopes": "Všechny rozsahy",
-    "failure_drilldown_prefix": "Analýza selhání:",
-    "failure_date_filter": "Zobrazeny vzory selhání aktivní od {date}",
-    "data_unavailable": "Data znalostí nedostupná",
-    "loading_patterns": "Načítání vzorů znalostí...",
-    "drilldown_toggle_title": "Zobrazit/skrýt analýzu selhání",
-    "no_patterns_yet": "Zatím žádné vzory znalostí",
-    "no_patterns_yet_hint": "Spouštěj agenty pro vytváření vzorů znalostí. Agenti postupem času chytří.",
-    "no_patterns_match": "Žádné vzory neodpovídají aktuálním filtrům",
-    "recent_learnings": "Nedávné poznatky",
-    "curating_manually": "Kurátorská správa dokumentů ručně?",
-    "obsidian_tip": "Pro méně než ~1000 poznámek může Obsidian konektor synchronizovat tvůj vault přímo."
+    "seed_tooltip": "Nasadit ukázkový vzor (pouze dev)"
   },
   "focused_decision": {
     "accept": "Přijmout",
     "reject": "Odmítnout",
-    "media_unavailable": "Média nedostupná",
-    "video_not_supported": "Tvůj prohlížeč nepodporuje přehrávání videa.",
-    "reject_this": "Zamítnout toto",
-    "accept_this": "Přijmout toto"
+    "media_unavailable": "Média nedostupná"
   },
   "review_focus": {
     "all_caught_up": "Vše zpracováno",
     "no_pending": "Žádné čekající kontroly ke zpracování.",
     "queue": "Fronta",
-    "clear": "Vymazat",
     "clear_all_verdicts": "Vymazat všechna rozhodnutí",
     "quick_actions": "Rychlé akce",
     "reject_all": "Odmítnout vše",
     "accept_all": "Přijmout vše",
     "retry_with_changes": "Opakovat se změnami",
-    "video_not_supported": "Tvůj prohlížeč nepodporuje přehrávání videa.",
     "carry_out_hint": "Schválí revizi a spustí personu k provedení"
-  },
-  "bulk_action_bar": {
-    "pending_reviews_selected_one": "{count} čekající kontrola vybrána",
-    "pending_reviews_selected_other": "{count} čekajících kontrol vybráno"
-  },
-  "review_inbox": {
-    "drag_to_resize": "Táhni pro změnu velikosti"
   },
   "memory_card": {
     "confirm": "Potvrdit",
@@ -1331,14 +784,12 @@
     "importance_label": "Důležitost",
     "tags_label": "Štítky",
     "view_source_execution": "Zobrazit zdrojové spuštění",
-    "delete_memory": "Smazat paměť",
-    "close": "Zavřít"
+    "delete_memory": "Smazat paměť"
   },
   "memory_table": {
     "agent": "Agent",
     "title": "Název",
     "category": "Kategorie",
-    "priority": "Priorita",
     "tags": "Štítky",
     "created": "Vytvořeno"
   },
@@ -1352,7 +803,6 @@
     "baseline_label": "Základ:",
     "correlating": "Hledání souvislostí...",
     "likely_root_causes": "Pravděpodobné příčiny",
-    "correlated_events": "Související události",
     "no_correlated": "V okně ±24 h nebyly nalezeny žádné související události."
   },
   "healing_issue_modal": {
@@ -1362,18 +812,10 @@
     "copied": "Zkopírováno",
     "copy_fix": "Kopírovat opravu",
     "persona_auto_disabled": "Persona automaticky deaktivována",
-    "persona_auto_disabled_desc": "Tato persona byla automaticky deaktivována po 5 po sobě jdoucích selháních. Zkontrolujte vzor chyby níže a po vyřešení hlavní příčiny ji ručně znovu aktivujte.",
     "marking_resolved_note": "Označení „vyřešeno“ znamená, že jste problém vyřešili mimo systém samoobnovy.",
-    "retry_in_progress": "Probíhá opakování — stav se aktualizuje po dokončení",
     "auto_resolved": "Tento problém byl vyřešen automaticky",
-    "close": "Zavřít",
     "resolving": "Řešení…",
-    "mark_resolved": "Označit jako vyřešené",
-    "retrying_badge": "opakuje se",
-    "auto_fixed_badge": "opraveno automaticky",
-    "retry_in_progress_badge": "opakování probíhá",
-    "healed_via_retry_badge": "opraveno opakováním",
-    "severity_suffix": "závažnost"
+    "mark_resolved": "Označit jako vyřešené"
   },
   "healing_issues_panel": {
     "title": "Zdravotní problémy",
@@ -1381,22 +823,6 @@
     "run_analysis": "Spustit analýzu",
     "no_open_issues": "Žádné otevřené problémy",
     "run_analysis_hint": "Spusťte analýzu pro kontrolu problémů.",
-    "ai_healing_title": "AI Healing",
-    "diagnosis_label": "Diagnóza:",
-    "fixes_applied": "Aplikované opravy",
-    "alert_history_title": "Historie upozornění",
-    "all_agents_global": "Všichni agenti (globálně)",
-    "add_rule": "Přidat pravidlo",
-    "no_rules_configured": "Nejsou nakonfigurována žádná pravidla upozornění. Přidej pravidlo pro zahájení sledování.",
-    "confidence_pct_suffix": "% jistoty",
-    "spike_on": "skok v",
-    "correlated_events_prefix": "Korelované události (",
-    "circuit_breaker_label": "circuit breaker",
-    "auto_disabled_message": "Tato persona byla automaticky vypnuta jako circuit-breaker reakce na opakovaná selhání.",
-    "execution_label": "Spuštění:",
-    "issue_marked_as": "Tento problém je označen jako",
-    "retry_in_progress": "Probíhá opakování — stav se aktualizuje po dokončení.",
-    "resolve_issue_title": "Označit problém jako vyřešený",
     "healing_audit_log": "Audit log samoobnovy",
     "no_silent_failures": "Nejsou zaznamenány žádné tichá selhání.",
     "analysis_complete_prefix": "Analýza dokončena:"
@@ -1449,13 +875,6 @@
     "event_id_label": "ID události",
     "broadcast": "(všesměrové)"
   },
-  "event_bus_overlay": {
-    "earlier_events_not_shown_one": "{count} dřívější událost nezobrazena",
-    "earlier_events_not_shown_other": "{count} dřívějších událostí nezobrazeno"
-  },
-  "event_bus_filter": {
-    "search_placeholder": "Hledat události…"
-  },
   "realtime_stats": {
     "events_per_min": "událostí/min",
     "pending": "čeká",
@@ -1481,32 +900,13 @@
     "heartbeats_btn": "Signály",
     "reliability_btn": "Spolehlivost"
   },
-  "crash_logs": {
-    "title": "Protokoly pádů",
-    "no_logs": "Žádné protokoly pádů nejsou zaznamenány.",
-    "component_stack_separator": "--- Component Stack ---"
-  },
   "popup_fields": {
     "sign_up_free_at": "Zaregistrujte se zdarma na",
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", poté zkopírujte svůj API klíč z Nastavení. Klíč je uložen lokálně a sdílen všemi agenty."
   },
-  "events_list": {
-    "save_view_tooltip": "Uložit aktuální filtry jako zobrazení",
-    "clear_filters_tooltip": "Vymazat všechny filtry"
-  },
-  "dashboard_home": {
-    "you_have": "Máte"
-  },
-  "fleet_optimization_card": {
-    "title": "Optimalizace flotily"
-  },
   "usage_filters": {
     "time_range_label": "Časové rozmezí"
-  },
-  "day_range_picker": {
-    "start_date": "Datum začátku",
-    "end_date": "Datum konce"
   },
   "healing_summary": {
     "auto_fixed_this_week": "opraveno automaticky tento týden",
@@ -1516,14 +916,12 @@
     "title": "Upcoming Routines",
     "subtitle": "next scheduled runs",
     "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "never_fired": "pending first run"
   },
   "vault_recent_changes": {
     "title": "Vault Changes",
     "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "empty": "No recent sync activity."
   },
   "heatmap": {
     "title_persona": "Activity over the last year",

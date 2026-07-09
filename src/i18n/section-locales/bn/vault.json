@@ -1,24 +1,6 @@
 {
-  "title": "ভল্ট",
-  "subtitle": "শংসাপত্র যোগ করার পদ্ধতি বেছে নিন",
-  "add_from_catalog": "ক্যাটালগ থেকে যোগ",
-  "ai_designed": "AI-ডিজাইনড শংসাপত্র",
   "workspace_connect": "ওয়ার্কস্পেস কানেক্ট",
   "quick_start": "দ্রুত শুরু",
-  "health": {
-    "healthy": "সুস্থ",
-    "needs_attention": "মনোযোগ দরকার",
-    "untested": "পরীক্ষিত নয়"
-  },
-  "list": {
-    "no_credentials": "কোনো প্রমাণীকৃত সেবা পাওয়া যায়নি। নিচে ম্যানুয়ালি নির্বাচন করুন।",
-    "delete_confirm": "এই শংসাপত্র মুছবেন?",
-    "blast_radius": "প্রভাব পরিসর",
-    "no_dependencies": "কোনো এজেন্ট এই শংসাপত্রে নির্ভর করে না। পরিবর্তন বা মুছে ফেলা নিরাপদ।",
-    "affected_agents": "প্রভাবিত এজেন্ট",
-    "affected_events": "প্রভাবিত ইভেন্ট",
-    "sort_label": "সাজান:"
-  },
   "import": {
     "title": "ইম্পোর্ট উৎস",
     "picker_subtitle": "সিক্রেটের উৎস নির্বাচন করুন",
@@ -44,29 +26,6 @@
     "import_secrets_other": "{count}টি সিক্রেট আমদানি করুন"
   },
   "features": {
-    "anomaly_detected": "অসঙ্গতি: পূর্বে সফল শংসাপত্র হঠাৎ ব্যর্থ হচ্ছে। সম্ভাব্য প্রত্যাহার।",
-    "history": "ইতিহাস",
-    "event_triggers": "ইভেন্ট ট্রিগার",
-    "rotation_policy": {
-      "rotate_every": "প্রতি এত দিনে ঘোরান",
-      "days": "দিন",
-      "no_policy": "কোনো রোটেশন নীতি কনফিগার করা নেই।",
-      "oauth_refresh_active": "OAuth টোকেন রিফ্রেশ সক্রিয়",
-      "oauth_refresh_active_auto": "OAuth টোকেন রিফ্রেশ সক্রিয় (স্বয়ংক্রিয়)",
-      "auto_rotation_active": "অটো-রোটেশন সক্রিয়",
-      "rotation_paused": "রোটেশন বিরতিতে",
-      "rotate_now": "এখনই রোটেট করুন",
-      "enable_rotation": "রোটেশন সক্রিয় করুন",
-      "enabling": "সক্রিয় হচ্ছে...",
-      "remove_policy_tooltip": "রোটেশন নীতি সরান",
-      "save": "সংরক্ষণ করুন",
-      "cancel": "বাতিল",
-      "rotation_failed": "রোটেশন ব্যর্থ: {error}",
-      "remove_failed": "নীতি সরাতে ব্যর্থ: {error}",
-      "update_failed": "রোটেশন পিরিয়ড আপডেট করতে ব্যর্থ: {error}",
-      "enable_failed": "রোটেশন সক্রিয় করতে ব্যর্থ: {error}",
-      "last_rotated": "শেষ রোটেট হয়েছিল {time}"
-    },
     "anomaly": {
       "healthy": "সুস্থ",
       "transient_issues": "সাময়িক সমস্যা",
@@ -78,21 +37,6 @@
       "permanent": "চলমান: {rate}",
       "transient": "সাময়িক: {rate}",
       "tolerance": "সহনশীলতা: {rate}"
-    },
-    "rotation_badge": {
-      "disabled": "নিষ্ক্রিয়",
-      "perm_errors": "চলমান ত্রুটি",
-      "degrading": "আরো খারাপ হচ্ছে",
-      "backoff": "পুনরায় চেষ্টার অপেক্ষায়"
-    },
-    "audit": {
-      "empty": "এখনো কোনো অডিট এন্ট্রি নেই। অপারেশনগুলো ঘটার সাথে সাথে লগ করা হবে।",
-      "op_decrypted": "ডিক্রিপ্ট করা হয়েছে",
-      "op_created": "তৈরি হয়েছে",
-      "op_updated": "আপডেট হয়েছে",
-      "op_deleted": "মুছে ফেলা হয়েছে",
-      "op_healthcheck": "সংযোগ পরীক্ষা",
-      "filter_all": "সব"
     },
     "intelligence": {
       "operation": "অপারেশন",
@@ -205,15 +149,7 @@
   "body": {
     "authorizing": "{name} দিয়ে অনুমোদন হচ্ছে...",
     "authorize_with": "{name} দিয়ে অনুমোদন করুন",
-    "authorize_hint": "{name} সাইন-ইন খুলে এবং আপনার অনুমোদনের পরে অ্যাক্সেস সংরক্ষণ করে।",
-    "consent_completed": "{time}-এ {name} সম্মতি সম্পন্ন হয়েছে",
-    "update_failed": "ক্রেডেনশিয়াল আপডেট করতে ব্যর্থ",
-    "delete_credential": "ক্রেডেনশিয়াল মুছুন"
-  },
-  "connector": {
-    "filter_all": "সব",
-    "filter_connected": "সংযুক্ত",
-    "filter_available": "পাওয়া যাচ্ছে"
+    "consent_completed": "{time}-এ {name} সম্মতি সম্পন্ন হয়েছে"
   },
   "auto_cred": {
     "guided_setup": "গাইডেড সেটআপ",
@@ -254,38 +190,6 @@
     "save_procedure": "পদ্ধতি সংরক্ষণ করুন",
     "procedure_saved": "পদ্ধতি সংরক্ষিত"
   },
-  "vector": {
-    "documents_tab": "ডকুমেন্ট",
-    "search_tab": "খুঁজুন",
-    "settings_tab": "সেটিংস",
-    "ingest_title": "ডকুমেন্ট যোগ করুন",
-    "ingest_hint": "ফাইল এখানে ড্রপ করুন বা ব্রাউজ করতে ক্লিক করুন",
-    "ingest_drop": "যোগ করতে ফাইল ড্রপ করুন",
-    "ingest_supported": "সমর্থিত: txt, md, html, csv, json, yaml, কোড ফাইল",
-    "starting_ingestion": "ফাইল প্রক্রিয়া হচ্ছে...",
-    "no_valid_files": "কোনো বৈধ ফাইল পাথ পাওয়া যায়নি। পৃথক ফাইল ড্রপ করার চেষ্টা করুন।",
-    "no_documents": "এখনো কোনো ডকুমেন্ট নেই",
-    "no_documents_hint": "আপনার নলেজ বেস তৈরি শুরু করতে ফাইল ড্রপ করুন, টেক্সট পেস্ট করুন, বা একটি ডিরেক্টরি স্ক্যান করুন।",
-    "refresh": "রিফ্রেশ করুন",
-    "paste_text": "টেক্সট পেস্ট করুন",
-    "directory": "ডিরেক্টরি",
-    "delete_document": "ডকুমেন্ট মুছুন",
-    "document_count_one": "{count}টি ডকুমেন্ট",
-    "document_count_other": "{count}টি ডকুমেন্ট",
-    "show_full": "সম্পূর্ণ উদ্ধৃতি দেখান",
-    "show_less": "কম দেখান",
-    "copy_content": "বিষয়বস্তু কপি করুন",
-    "kb_info": "নলেজ বেস তথ্য",
-    "embedding_model": "সার্চ মডেল",
-    "dimensions": "মাত্রাসমূহ",
-    "chunk_size": "বিভাগের আকার",
-    "chunk_overlap": "বিভাগের ওভারল্যাপ",
-    "statistics": "পরিসংখ্যান",
-    "documents": "ডকুমেন্ট",
-    "chunks": "বিভাগসমূহ",
-    "local_embedding": "স্থানীয় সার্চ",
-    "local_embedding_hint": "সার্চ ইন্ডেক্সিং {model} ({dims}-dim) ব্যবহার করে স্থানীয়ভাবে চলে। আপনার মেশিন থেকে কোনো ডেটা বের হয় না। মডেলটি (~২৩MB) প্রথম ব্যবহারে ডাউনলোড হয় এবং স্থানীয়ভাবে সংরক্ষিত হয়।"
-  },
   "design_modal": {
     "title": "ক্রেডেনশিয়াল ডিজাইন করুন",
     "error_title": "কিছু ভুল হয়েছে",
@@ -301,60 +205,12 @@
     "start_over": "আবার শুরু করুন",
     "try_again_with": "আপনার অনুরোধ নিয়ে আবার চেষ্টা করুন"
   },
-  "desktop": {
-    "installed": "ইনস্টল করা",
-    "running": "চলছে",
-    "not_installed": "ইনস্টল নেই"
-  },
-  "graph": {
-    "no_dependencies": "কোনো নির্ভরতা নেই",
-    "connection_count_one": "{count}টি সংযোগ",
-    "connection_count_other": "{count}টি সংযোগ",
-    "dep_count_one": "{count}টি নির্ভরতা",
-    "dep_count_other": "{count}টি নির্ভরতা",
-    "not_tested": "পরীক্ষিত নয়",
-    "healthy": "সুস্থ",
-    "unhealthy": "অসুস্থ"
-  },
-  "wizard": {
-    "detected": "শনাক্ত ({count})",
-    "available": "পাওয়া যাচ্ছে ({count})",
-    "already_added": "ইতিমধ্যে যোগ করা ({count})",
-    "no_match": "\\\"{search}\\\" এর সাথে কোনো সেবা মেলে না",
-    "already_added_badge": "ইতিমধ্যে যোগ করা",
-    "local": "স্থানীয়",
-    "cli_auth": "CLI অথ",
-    "session": "সেশন"
-  },
   "playground": {
-    "tab_overview": "সারসংক্ষেপ",
-    "tab_api_explorer": "API এক্সপ্লোরার",
-    "tab_recipes": "রেসিপি",
-    "tab_mcp_tools": "MCP টুলস",
-    "tab_rotation": "রোটেশন",
-    "add_tag": "ট্যাগ যোগ...",
-    "no_connector": "এই শংসাপত্র ধরনের জন্য কোনো সংযোগকারী সংজ্ঞা নেই।",
-    "try_button": "চেষ্টা",
-    "parameters": "প্যারামিটার",
-    "request_body": "রিকোয়েস্ট বডি",
-    "path_placeholder": "/api/v1/resource",
-    "sending": "পাঠানো হচ্ছে...",
-    "mcp_input_schema": "ইনপুট স্কিমা",
     "mcp_run": "চালান",
     "mcp_error": "ত্রুটি",
     "mcp_success": "সফল",
     "mcp_empty": "(খালি)",
-    "mcp_discover": "MCP সার্ভার টুলস আবিষ্কার করুন",
-    "mcp_discover_hint": "পাওয়া যায় এমন টুলস আবিষ্কার করতে এবং পরীক্ষা করতে MCP সার্ভারে সংযুক্ত হন।",
-    "mcp_discover_button": "টুলস আবিষ্কার করুন",
-    "response_empty": "(খালি প্রতিক্রিয়া)",
-    "header": "হেডার",
-    "value": "মান",
-    "path_parameters": "পাথ প্যারামিটার",
-    "query_parameters": "কোয়েরি প্যারামিটার",
-    "headers": "হেডার",
-    "body": "বডি",
-    "empty_response": "(খালি রেসপন্স)"
+    "response_empty": "(খালি প্রতিক্রিয়া)"
   },
   "playground_extra": {
     "add_tag": "ট্যাগ যোগ করুন...",
@@ -721,37 +577,11 @@
     "title_dependencies": "নির্ভরতা",
     "title_databases": "ডেটাবেস"
   },
-  "bulk_healthcheck": {
-    "title": "হেলথচেক ফলাফল",
-    "needs_attention": "মনোযোগ প্রয়োজন",
-    "slowest_responses": "সবচেয়ে ধীর প্রতিক্রিয়া",
-    "passed_count": "{count}টি উত্তীর্ণ",
-    "failed_count": "{count}টি ব্যর্থ",
-    "total_count": "{count}টি মোট"
-  },
-  "health_bar": {
-    "healthy": "সুস্থ",
-    "needs_attention": "মনোযোগ প্রয়োজন",
-    "untested": "পরীক্ষিত নয়"
-  },
   "breadcrumb": {
     "aria_label": "ভল্ট ব্রেডক্রাম্ব"
   },
   "credential_card": {
-    "deleting": "{name} মুছে ফেলা হচ্ছে...",
-    "no_connector": "এই ক্রেডেনশিয়াল টাইপের জন্য কোনো কানেক্টর সংজ্ঞা পাওয়া যায়নি।",
-    "stored_result": "সংরক্ষিত সংযোগ পরীক্ষার ফলাফল",
-    "delete_credential": "ক্রেডেনশিয়াল মুছুন",
-    "corrupted": "দূষিত",
-    "corrupted_tooltip": "হেলথচেক রিং বাফার মেটাডেটা দূষিত। পরবর্তী সফল হেলথচেক খারাপ ডেটা ওভাররাইট না করা পর্যন্ত অ্যানোমালি স্কোর পাওয়া যাবে না।",
-    "field_count_one": "{count}টি ফিল্ড",
-    "field_count_other": "{count}টি ফিল্ড",
-    "add_tag_placeholder": "ট্যাগ যোগ করুন...",
-    "add_tag_button": "ট্যাগ যোগ করুন",
-    "remove_tag": "\\\"{tag}\\\" ট্যাগ সরান",
-    "copy_credential_id": "ক্রেডেনশিয়াল ID কপি করুন",
-    "refresh_oauth": "এখন OAuth টোকেন রিফ্রেশ করুন",
-    "refresh": "রিফ্রেশ করুন"
+    "delete_credential": "ক্রেডেনশিয়াল মুছুন"
   },
   "vault_badge": {
     "needs_attention": "মনোযোগ প্রয়োজন",
@@ -783,21 +613,6 @@
     "label_type": "ধরন",
     "unverified_warning": "সমস্ত নির্ভরতা যাচাই করা যায়নি। কিছু সংযুক্ত এজেন্ট বা অটোমেশন দেখানো নাও হতে পারে।"
   },
-  "card_body": {
-    "failed_update": "ক্রেডেনশিয়াল আপডেট ব্যর্থ হয়েছে",
-    "authorizing_with": "{name} দিয়ে অনুমোদন হচ্ছে...",
-    "authorize_with": "{name} দিয়ে অনুমোদন করুন",
-    "authorize_hint": "অ্যাপ-পরিচালিত {name} সম্মতি চালু করে এবং অনুমোদনের পরে রিফ্রেশ টোকেন আপডেট করে।",
-    "consent_completed": "{name} সম্মতি {time}-এ সম্পন্ন হয়েছে"
-  },
-  "card_details": {
-    "tab_intelligence": "ইন্টেলিজেন্স",
-    "tab_rotation": "রোটেশন",
-    "tab_token_lifetime": "টোকেন লাইফটাইম",
-    "tab_services": "সেবা ({count})",
-    "tab_events": "ইভেন্ট ({count})",
-    "tab_audit": "অডিট"
-  },
   "intelligence_tab": {
     "loading": "ইন্টেলিজেন্স ডেটা লোড হচ্ছে",
     "tab_overview": "সারসংক্ষেপ",
@@ -818,18 +633,6 @@
     "link_structural": "কাঠামোগত",
     "link_observed": "পর্যবেক্ষিত",
     "via_connector": "{connector}-এর মাধ্যমে"
-  },
-  "token_metrics": {
-    "loading": "মেট্রিক্স লোড হচ্ছে...",
-    "no_metrics": "এখনও কোনো টোকেন রিফ্রেশ মেট্রিক্স রেকর্ড করা হয়নি। প্রথম OAuth টোকেন রিফ্রেশের পরে মেট্রিক্স দেখাবে।",
-    "trend_warning": "টোকেন লাইফটাইম ছোট হচ্ছে — সম্ভাব্য প্রদানকারী থ্রটলিং বা নীতি পরিবর্তন।",
-    "total_refreshes": "মোট রিফ্রেশ",
-    "failure_rate": "ব্যর্থতার হার",
-    "avg_lifetime": "গড় লাইফটাইম",
-    "avg_drift": "গড় ড্রিফট",
-    "recent_ttls": "সাম্প্রতিক প্রদানকারী TTL (নতুন প্রথম)",
-    "recent_refreshes": "সাম্প্রতিক রিফ্রেশ",
-    "fallback_used": "{rate}% রিফ্রেশে ({count}/{total}) ফলব্যাক ({fallback}s) ব্যবহৃত — প্রোভাইডার বাদ দেয়"
   },
   "reauth_banner": {
     "access_revoked": ") -- অ্যাক্সেস প্রত্যাহার করা হয়েছে। অটোমেশন পুনরায় শুরু করতে পুনরায় অনুমোদন করুন।",
@@ -932,17 +735,7 @@
   },
   "audit_log": {
     "empty": "এখনও কোনো অডিট এন্ট্রি নেই",
-    "empty_hint": "কার্যক্রম হওয়ার সাথে সাথে অপারেশন লগ করা হবে।",
-    "access_events_hint": "অ্যাক্সেস ইভেন্ট এখানে দেখাবে।",
-    "loading": "অডিট টাইমলাইন লোড হচ্ছে...",
-    "total_accesses": "{count}টি মোট",
-    "personas_one": "{count}টি পার্সোনা",
-    "personas_other": "{count}টি পার্সোনা",
-    "accesses_24h": "24h-এ {count}টি",
-    "anomalies_one": "{count}টি অস্বাভাবিকতা",
-    "anomalies_other": "{count}টি অস্বাভাবিকতা",
-    "no_anomalies": "কোনো অস্বাভাবিকতা নেই",
-    "show_all": "সব {count}টি এন্ট্রি দেখান"
+    "empty_hint": "কার্যক্রম হওয়ার সাথে সাথে অপারেশন লগ করা হবে।"
   },
   "credential_import": {
     "import_from": "{source} থেকে আমদানি করুন",
@@ -983,66 +776,6 @@
     "health_healthy": "সুস্থ",
     "health_failing": "ব্যর্থ",
     "health_untested": "পরীক্ষিত নয়"
-  },
-  "wizard_detect": {
-    "no_services": "\\\"{search}\\\" এর সাথে কোনো সেবা মিলছে না",
-    "select_services": "ক্রেডেনশিয়াল যোগ করতে সেবা নির্বাচন করুন, অথবা অটো-সনাক্তের জন্য স্ক্যান করুন।",
-    "scanning": "CLI টুল ও ব্রাউজার সেশন স্ক্যান হচ্ছে...",
-    "scan_button": "প্রমাণিত সেবা স্ক্যান করুন",
-    "search_services": "সেবা অনুসন্ধান করুন...",
-    "desktop_bridge": "ডেস্কটপ ব্রিজ -- অটো-সনাক্ত",
-    "batch_complete": "ব্যাচ সেটআপ সম্পন্ন",
-    "skip_service": "এই সেবা এড়িয়ে যান",
-    "no_filter_match": "ভিন্ন সার্চ টার্ম ব্যবহার করুন বা ফিল্টার সাফ করুন।",
-    "set_up_credentials": "ক্রেডেনশিয়াল সেট আপ করুন",
-    "clear_selection": "নির্বাচন সাফ করুন",
-    "set_up_services": "{count}টি সার্ভিস{plural} সেট আপ করুন",
-    "setting_up": "{total}-এর মধ্যে {current} সেট আপ করা হচ্ছে",
-    "wizard_title": "ক্রেডেনশিয়াল সেটআপ উইজার্ড",
-    "choose_service": "সেট আপ করতে একটি সার্ভিস নির্বাচন করুন",
-    "ai_walk_description": "AI আপনাকে ধাপে ধাপে API ক্রেডেনশিয়াল পাওয়ার পথ দেখাবে।",
-    "wizard_subtitle": "AI-পরিচালিত ক্রেডেনশিয়াল সেটআপ",
-    "wizard_subtitle_batch": "{count}টি সার্ভিস{plural} সেট আপ করা হচ্ছে"
-  },
-  "autopilot": {
-    "title": "API অটোপাইলট",
-    "input_hint": "কানেক্টর অটো-জেনারেট করতে OpenAPI স্পেক URL বা কনটেন্ট পেস্ট করুন",
-    "preview_hint": "পার্স করা API পর্যালোচনা করুন এবং কোন এন্ডপয়েন্ট অন্তর্ভুক্ত করবেন নির্বাচন করুন",
-    "generated_hint": "আপনার কানেক্টর সফলভাবে তৈরি হয়েছে",
-    "connector_generated": "কানেক্টর সফলভাবে তৈরি হয়েছে",
-    "api_playground": "API প্লেগ্রাউন্ড",
-    "api_playground_hint": "ব্যবহারের আগে আপনার তৈরি API টুল পরীক্ষা করুন",
-    "paste_spec": "OpenAPI স্পেক পেস্ট করুন (JSON বা YAML)",
-    "valid_url_error": "একটি বৈধ URL দিন (যেমন https://api.example.com/openapi.json)",
-    "authentication": "প্রমাণীকরণ",
-    "connector_name": "কানেক্টর নাম",
-    "color": "রঙ",
-    "endpoints_selected": "এন্ডপয়েন্ট ({selected}/{total} নির্বাচিত)",
-    "generating": "তৈরি হচ্ছে...",
-    "generate_connector": "কানেক্টর তৈরি করুন ({count}টি টুল)",
-    "base_url": "বেস URL",
-    "headers_label": "হেডার",
-    "header_name_placeholder": "হেডার নাম",
-    "query_parameters": "কোয়েরি প্যারামিটার",
-    "param_name_placeholder": "প্যারাম নাম",
-    "request_body": "রিকোয়েস্ট বডি (JSON)",
-    "from_url": "URL থেকে",
-    "paste_content": "কন্টেন্ট পেস্ট করুন",
-    "openapi_spec_url": "OpenAPI স্পেক URL",
-    "openapi_format_hint": "JSON বা YAML ফরম্যাটে OpenAPI 3.x এবং Swagger 2.x স্পেক সমর্থন করে",
-    "parsing_spec": "স্পেক পার্স করা হচ্ছে...",
-    "parse_analyze": "পার্স ও বিশ্লেষণ করুন",
-    "connector_in_catalog": "{connectorLabel} এখন আপনার কানেক্টর ক্যাটালগে {toolCount}টি টুল সংজ্ঞা সহ উপলব্ধ।",
-    "generated_tools": "তৈরি টুল ({count})",
-    "credential_fields": "ক্রেডেনশিয়াল ফিল্ড",
-    "open_playground": "প্লেগ্রাউন্ড খুলুন",
-    "copy_connector_id": "কানেক্টর ID কপি করুন",
-    "go_to_catalog": "ক্যাটালগে যান",
-    "response_headers": "প্রতিক্রিয়া হেডার ({count})",
-    "base_url_placeholder": "https://api.example.com",
-    "openapi_url_placeholder": "https://api.example.com/openapi.json",
-    "auth_schemes": "auth স্কিম",
-    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "কোনো ক্রেডেনশিয়াল পাওয়া যায়নি",
@@ -1176,18 +909,6 @@
     "sort_most_used_with_recipes": "Most-used with recipes",
     "new_connector_ribbon": "New",
     "new_connector_tooltip": "Added in the last 30 days"
-  },
-  "cli_capture": {
-    "cta": "স্থানীয় CLI থেকে আমদানি করুন",
-    "hint": "API কী পেস্ট করার পরিবর্তে ইতিমধ্যে লগইন করা স্থানীয় CLI ব্যবহার করুন।",
-    "running": "স্থানীয় CLI চলছে...",
-    "success": "CLI থেকে ক্রেডেনশিয়াল ক্যাপচার হয়েছে",
-    "token_ttl_notice": "এই টোকেনটি {seconds}s-এ মেয়াদ শেষ হবে এবং স্বয়ংক্রিয়ভাবে রিফ্রেশ হবে।",
-    "source_label": "CLI",
-    "missing_binary": "`{binary}` ইনস্টল করা নেই বা অনুমোদিত অবস্থানে নেই।",
-    "unauthenticated": "আপনি {binary}-এ সাইন ইন করেননি। {instruction}",
-    "capture_failed": "CLI ক্যাপচার ব্যর্থ হয়েছে: {detail}",
-    "timeout": "CLI ক্যাপচার টাইমআউট হয়েছে। প্রথমে ম্যানুয়ালি কমান্ডটি চালিয়ে দেখুন।"
   },
   "schemas": {
     "none_configured": "কিছু কনফিগার নেই।",
@@ -1403,11 +1124,6 @@
     "retrying": "পুনরায় চেষ্টা হচ্ছে…",
     "retry_authorized": "আমি অনুমোদন করেছি — পুনরায় চেষ্টা করুন",
     "retry_failed": "পুনরায় চেষ্টা ব্যর্থ"
-  },
-  "rotation_insight": {
-    "perm_errors": "স্থায়ী ত্রুটি সনাক্ত -- রোটেশন চেষ্টা হয়েছে, সতর্কতা পাঠানো হচ্ছে।",
-    "degrading": "ক্রমাগত অবনতি -- প্রতিরোধমূলক রোটেশন ট্রিগার হয়েছে।",
-    "backoff": "ক্ষণস্থায়ী ত্রুটি -- এক্সপোনেনশিয়াল ব্যাকঅফ সক্রিয়।"
   },
   "schema_configs": {
     "mcp": {

@@ -1,24 +1,6 @@
 {
-  "title": "Brankas",
-  "subtitle": "Pilih cara Anda ingin menambahkan kredensial",
-  "add_from_catalog": "Tambah dari katalog",
-  "ai_designed": "Kredensial dirancang AI",
   "workspace_connect": "Hubungkan Workspace",
   "quick_start": "Mulai cepat",
-  "health": {
-    "healthy": "sehat",
-    "needs_attention": "perlu perhatian",
-    "untested": "belum diuji"
-  },
-  "list": {
-    "no_credentials": "Tidak ada layanan terotentikasi terdeteksi. Pilih secara manual di bawah.",
-    "delete_confirm": "Hapus kredensial ini?",
-    "blast_radius": "Radius Dampak",
-    "no_dependencies": "Tidak ada agen yang bergantung pada kredensial ini. Aman untuk diubah atau dihapus.",
-    "affected_agents": "Agen Terdampak",
-    "affected_events": "Peristiwa Terdampak",
-    "sort_label": "Urutkan:"
-  },
   "import": {
     "title": "Sumber Impor",
     "picker_subtitle": "Pilih sumber rahasia Anda",
@@ -44,29 +26,6 @@
     "import_secrets_other": "Impor {count} Rahasia"
   },
   "features": {
-    "anomaly_detected": "Anomali terdeteksi: kredensial tiba-tiba gagal setelah berhasil sebelumnya. Kemungkinan dicabut.",
-    "history": "Riwayat",
-    "event_triggers": "Pemicu Peristiwa",
-    "rotation_policy": {
-      "rotate_every": "Rotasi setiap",
-      "days": "hari",
-      "no_policy": "Tidak ada kebijakan rotasi yang dikonfigurasi.",
-      "oauth_refresh_active": "Refresh token OAuth aktif",
-      "oauth_refresh_active_auto": "Refresh token OAuth aktif (otomatis)",
-      "auto_rotation_active": "Rotasi otomatis aktif",
-      "rotation_paused": "Rotasi dijeda",
-      "rotate_now": "Rotasi Sekarang",
-      "enable_rotation": "Aktifkan Rotasi",
-      "enabling": "Mengaktifkan...",
-      "remove_policy_tooltip": "Hapus kebijakan rotasi",
-      "save": "Simpan",
-      "cancel": "Batal",
-      "rotation_failed": "Rotasi gagal: {error}",
-      "remove_failed": "Gagal menghapus kebijakan: {error}",
-      "update_failed": "Gagal memperbarui periode rotasi: {error}",
-      "enable_failed": "Gagal mengaktifkan rotasi: {error}",
-      "last_rotated": "Terakhir dirotasi {time}"
-    },
     "anomaly": {
       "healthy": "Sehat",
       "transient_issues": "Masalah Sementara",
@@ -78,21 +37,6 @@
       "permanent": "Berkelanjutan: {rate}",
       "transient": "Sementara: {rate}",
       "tolerance": "Toleransi: {rate}"
-    },
-    "rotation_badge": {
-      "disabled": "Dinonaktifkan",
-      "perm_errors": "Kesalahan Berkelanjutan",
-      "degrading": "Semakin Buruk",
-      "backoff": "Menunggu untuk Dicoba Ulang"
-    },
-    "audit": {
-      "empty": "Belum ada entri audit. Operasi akan dicatat saat terjadi.",
-      "op_decrypted": "Didekripsi",
-      "op_created": "Dibuat",
-      "op_updated": "Diperbarui",
-      "op_deleted": "Dihapus",
-      "op_healthcheck": "Uji Koneksi",
-      "filter_all": "semua"
     },
     "intelligence": {
       "operation": "Operasi",
@@ -205,15 +149,7 @@
   "body": {
     "authorizing": "Mengotorisasi dengan {name}...",
     "authorize_with": "Otorisasi dengan {name}",
-    "authorize_hint": "Membuka masuk {name} dan menyimpan akses Anda setelah Anda menyetujui.",
-    "consent_completed": "Persetujuan {name} selesai pada {time}",
-    "update_failed": "Gagal memperbarui kredensial",
-    "delete_credential": "Hapus kredensial"
-  },
-  "connector": {
-    "filter_all": "Semua",
-    "filter_connected": "Terhubung",
-    "filter_available": "Tersedia"
+    "consent_completed": "Persetujuan {name} selesai pada {time}"
   },
   "auto_cred": {
     "guided_setup": "Pengaturan Terpandu",
@@ -254,38 +190,6 @@
     "save_procedure": "Simpan Prosedur",
     "procedure_saved": "Prosedur disimpan"
   },
-  "vector": {
-    "documents_tab": "Dokumen",
-    "search_tab": "Cari",
-    "settings_tab": "Pengaturan",
-    "ingest_title": "Tambah Dokumen",
-    "ingest_hint": "Jatuhkan file di sini atau klik untuk jelajahi",
-    "ingest_drop": "Jatuhkan file untuk ditambahkan",
-    "ingest_supported": "Didukung: txt, md, html, csv, json, yaml, file kode",
-    "starting_ingestion": "Memproses file...",
-    "no_valid_files": "Tidak ada jalur file yang valid ditemukan. Coba jatuhkan file satu per satu.",
-    "no_documents": "Belum ada dokumen",
-    "no_documents_hint": "Jatuhkan file di sini, tempel teks, atau pindai direktori untuk mulai membangun basis pengetahuan Anda.",
-    "refresh": "Perbarui",
-    "paste_text": "Tempel Teks",
-    "directory": "Direktori",
-    "delete_document": "Hapus dokumen",
-    "document_count_one": "{count} dokumen",
-    "document_count_other": "{count} dokumen",
-    "show_full": "Tampilkan kutipan lengkap",
-    "show_less": "Tampilkan lebih sedikit",
-    "copy_content": "Salin konten",
-    "kb_info": "Info Basis Pengetahuan",
-    "embedding_model": "Model Pencarian",
-    "dimensions": "Dimensi",
-    "chunk_size": "Ukuran Bagian",
-    "chunk_overlap": "Tumpang Tindih Bagian",
-    "statistics": "Statistik",
-    "documents": "Dokumen",
-    "chunks": "Bagian",
-    "local_embedding": "Pencarian Lokal",
-    "local_embedding_hint": "Pengindeksan pencarian berjalan secara lokal menggunakan {model} ({dims}-dim). Tidak ada data yang meninggalkan mesin Anda. Model (~23MB) diunduh saat pertama kali digunakan dan disimpan secara lokal."
-  },
   "design_modal": {
     "title": "Rancang Kredensial",
     "error_title": "Terjadi kesalahan",
@@ -301,60 +205,12 @@
     "start_over": "Mulai ulang",
     "try_again_with": "Coba lagi dengan permintaan Anda"
   },
-  "desktop": {
-    "installed": "Terinstal",
-    "running": "Berjalan",
-    "not_installed": "Tidak terinstal"
-  },
-  "graph": {
-    "no_dependencies": "Tidak ada dependensi",
-    "connection_count_one": "{count} koneksi",
-    "connection_count_other": "{count} koneksi",
-    "dep_count_one": "{count} dep",
-    "dep_count_other": "{count} dep",
-    "not_tested": "Belum diuji",
-    "healthy": "Sehat",
-    "unhealthy": "Tidak Sehat"
-  },
-  "wizard": {
-    "detected": "Terdeteksi ({count})",
-    "available": "Tersedia ({count})",
-    "already_added": "Sudah ditambahkan ({count})",
-    "no_match": "Tidak ada layanan yang cocok dengan \\\"{search}\\\"",
-    "already_added_badge": "Sudah ditambahkan",
-    "local": "Lokal",
-    "cli_auth": "Auth CLI",
-    "session": "Sesi"
-  },
   "playground": {
-    "tab_overview": "Ringkasan",
-    "tab_api_explorer": "Penjelajah API",
-    "tab_recipes": "Resep",
-    "tab_mcp_tools": "Alat MCP",
-    "tab_rotation": "Rotasi",
-    "add_tag": "Tambah tag...",
-    "no_connector": "Tidak ada definisi konektor yang tersedia untuk jenis kredensial ini.",
-    "try_button": "Coba",
-    "parameters": "Parameter",
-    "request_body": "Isi Permintaan",
-    "path_placeholder": "/api/v1/resource",
-    "sending": "Mengirim...",
-    "mcp_input_schema": "Skema Masukan",
     "mcp_run": "Jalankan",
     "mcp_error": "Kesalahan",
     "mcp_success": "Berhasil",
     "mcp_empty": "(kosong)",
-    "mcp_discover": "Temukan alat server MCP",
-    "mcp_discover_hint": "Hubungkan ke server MCP untuk menemukan alat yang tersedia dan mengujinya.",
-    "mcp_discover_button": "Temukan Alat",
-    "response_empty": "(respons kosong)",
-    "header": "Header",
-    "value": "Nilai",
-    "path_parameters": "Parameter Path",
-    "query_parameters": "Parameter Query",
-    "headers": "Header",
-    "body": "Isi",
-    "empty_response": "(respons kosong)"
+    "response_empty": "(respons kosong)"
   },
   "playground_extra": {
     "add_tag": "Tambah tag...",
@@ -721,37 +577,11 @@
     "title_dependencies": "Dependensi",
     "title_databases": "Basis data"
   },
-  "bulk_healthcheck": {
-    "title": "Hasil Pemeriksaan Kesehatan",
-    "needs_attention": "Perlu Perhatian",
-    "slowest_responses": "Respons Paling Lambat",
-    "passed_count": "{count} lulus",
-    "failed_count": "{count} gagal",
-    "total_count": "{count} total"
-  },
-  "health_bar": {
-    "healthy": "sehat",
-    "needs_attention": "perlu perhatian",
-    "untested": "belum diuji"
-  },
   "breadcrumb": {
     "aria_label": "Breadcrumb brankas"
   },
   "credential_card": {
-    "deleting": "Menghapus {name}...",
-    "no_connector": "Tidak ada definisi konektor yang tersedia untuk tipe kredensial ini.",
-    "stored_result": "Hasil uji koneksi tersimpan",
-    "delete_credential": "Hapus kredensial",
-    "corrupted": "Rusak",
-    "corrupted_tooltip": "Metadata buffer ring pemeriksaan kesehatan rusak. Skor anomali tidak tersedia sampai pemeriksaan kesehatan berikutnya yang berhasil menimpa data yang rusak.",
-    "field_count_one": "{count} bidang",
-    "field_count_other": "{count} bidang",
-    "add_tag_placeholder": "Tambah tag...",
-    "add_tag_button": "Tambah tag",
-    "remove_tag": "Hapus tag \\\"{tag}\\\"",
-    "copy_credential_id": "Salin ID kredensial",
-    "refresh_oauth": "Perbarui token OAuth sekarang",
-    "refresh": "Perbarui"
+    "delete_credential": "Hapus kredensial"
   },
   "vault_badge": {
     "needs_attention": "Perlu perhatian",
@@ -783,21 +613,6 @@
     "label_type": "Tipe",
     "unverified_warning": "Tidak dapat memverifikasi semua dependensi. Beberapa agen atau otomasi yang terhubung mungkin tidak ditampilkan."
   },
-  "card_body": {
-    "failed_update": "Gagal memperbarui kredensial",
-    "authorizing_with": "Mengotorisasi dengan {name}...",
-    "authorize_with": "Otorisasi dengan {name}",
-    "authorize_hint": "Meluncurkan persetujuan {name} yang dikelola aplikasi dan memperbarui token penyegaran setelah persetujuan.",
-    "consent_completed": "Persetujuan {name} selesai pada {time}"
-  },
-  "card_details": {
-    "tab_intelligence": "Intelijen",
-    "tab_rotation": "Rotasi",
-    "tab_token_lifetime": "Masa Hidup Token",
-    "tab_services": "Layanan ({count})",
-    "tab_events": "Peristiwa ({count})",
-    "tab_audit": "Audit"
-  },
   "intelligence_tab": {
     "loading": "Memuat data intelijen",
     "tab_overview": "Ikhtisar",
@@ -818,18 +633,6 @@
     "link_structural": "struktural",
     "link_observed": "teramati",
     "via_connector": "melalui {connector}"
-  },
-  "token_metrics": {
-    "loading": "Memuat metrik...",
-    "no_metrics": "Belum ada metrik penyegaran token yang tercatat. Metrik akan muncul setelah penyegaran token OAuth pertama.",
-    "trend_warning": "Masa hidup token cenderung lebih pendek — kemungkinan throttling provider atau perubahan kebijakan.",
-    "total_refreshes": "Total Penyegaran",
-    "failure_rate": "Tingkat Kegagalan",
-    "avg_lifetime": "Rata-rata Masa Hidup",
-    "avg_drift": "Rata-rata Drift",
-    "recent_ttls": "TTL provider terbaru (terbaru pertama)",
-    "recent_refreshes": "Penyegaran terbaru",
-    "fallback_used": "Cadangan ({fallback}s) digunakan pada {rate}% refresh ({count}/{total}) -- penyedia mengabaikan"
   },
   "reauth_banner": {
     "access_revoked": "Akses dicabut",
@@ -932,17 +735,7 @@
   },
   "audit_log": {
     "empty": "Belum ada entri audit",
-    "empty_hint": "Operasi akan dicatat saat terjadi.",
-    "access_events_hint": "Peristiwa akses akan muncul di sini.",
-    "loading": "Memuat log audit...",
-    "total_accesses": "{count} total",
-    "personas_one": "{count} persona",
-    "personas_other": "{count} persona",
-    "accesses_24h": "{count} dalam 24 jam",
-    "anomalies_one": "{count} anomali",
-    "anomalies_other": "{count} anomali",
-    "no_anomalies": "Tidak ada anomali",
-    "show_all": "Tampilkan semua {count} entri"
+    "empty_hint": "Operasi akan dicatat saat terjadi."
   },
   "credential_import": {
     "import_from": "Impor dari {source}",
@@ -983,66 +776,6 @@
     "health_healthy": "Sehat",
     "health_failing": "Gagal",
     "health_untested": "Belum Diuji"
-  },
-  "wizard_detect": {
-    "no_services": "Tidak ada layanan yang cocok dengan \\\"{search}\\\"",
-    "select_services": "Pilih layanan untuk menambahkan kredensial, atau pindai untuk deteksi otomatis.",
-    "scanning": "Memindai alat CLI dan sesi browser...",
-    "scan_button": "Pindai layanan yang diautentikasi",
-    "search_services": "Cari layanan...",
-    "desktop_bridge": "Desktop bridge -- terdeteksi otomatis",
-    "batch_complete": "Pengaturan batch selesai",
-    "skip_service": "Lewati layanan ini",
-    "no_filter_match": "Coba kata kunci pencarian yang berbeda atau hapus filter Anda.",
-    "set_up_credentials": "Siapkan Kredensial",
-    "clear_selection": "Hapus pilihan",
-    "set_up_services": "Siapkan layanan {count}{plural}",
-    "setting_up": "Menyiapkan {current} dari {total}",
-    "wizard_title": "Wisaya Kredensial",
-    "choose_service": "Pilih layanan",
-    "ai_walk_description": "AI akan memandu Anda melalui pengaturan",
-    "wizard_subtitle": "Pilih layanan yang ingin Anda sambungkan",
-    "wizard_subtitle_batch": "Menyiapkan layanan {count}{plural}"
-  },
-  "autopilot": {
-    "title": "API Autopilot",
-    "input_hint": "Tempel URL spesifikasi OpenAPI atau kontennya untuk membuat konektor secara otomatis",
-    "preview_hint": "Tinjau API yang diurai dan pilih endpoint mana yang akan disertakan",
-    "generated_hint": "Konektor Anda telah berhasil dibuat",
-    "connector_generated": "Konektor Berhasil Dibuat",
-    "api_playground": "API Playground",
-    "api_playground_hint": "Uji alat API yang dibuat sebelum menggunakannya",
-    "paste_spec": "Tempel Spesifikasi OpenAPI (JSON atau YAML)",
-    "valid_url_error": "Masukkan URL yang valid (misal https://api.example.com/openapi.json)",
-    "authentication": "Autentikasi",
-    "connector_name": "Nama Konektor",
-    "color": "Warna",
-    "endpoints_selected": "Endpoint ({selected}/{total} dipilih)",
-    "generating": "Membuat...",
-    "generate_connector": "Buat Konektor ({count} alat)",
-    "base_url": "URL Dasar",
-    "headers_label": "Header",
-    "header_name_placeholder": "Nama header",
-    "query_parameters": "Parameter Query",
-    "param_name_placeholder": "Nama param",
-    "request_body": "Isi Permintaan (JSON)",
-    "from_url": "Dari URL",
-    "paste_content": "Tempel Konten",
-    "openapi_spec_url": "URL Spesifikasi OpenAPI",
-    "openapi_format_hint": "Mendukung format JSON dan YAML",
-    "parsing_spec": "Mengurai spesifikasi...",
-    "parse_analyze": "Urai & Analisis",
-    "connector_in_catalog": "{connectorLabel} kini tersedia di katalog konektor Anda dengan {toolCount} definisi alat.",
-    "generated_tools": "Alat yang dihasilkan ({count})",
-    "credential_fields": "Kolom Kredensial",
-    "open_playground": "Buka Playground",
-    "copy_connector_id": "Salin ID Konektor",
-    "go_to_catalog": "Ke Katalog",
-    "response_headers": "Header respons ({count})",
-    "base_url_placeholder": "https://api.example.com",
-    "openapi_url_placeholder": "https://api.example.com/openapi.json",
-    "auth_schemes": "Skema autentikasi",
-    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "Tidak ada kredensial ditemukan",
@@ -1176,18 +909,6 @@
     "sort_most_used_with_recipes": "Most-used with recipes",
     "new_connector_ribbon": "New",
     "new_connector_tooltip": "Added in the last 30 days"
-  },
-  "cli_capture": {
-    "cta": "Ambil via CLI",
-    "hint": "Jalankan perintah CLI untuk mengambil token secara otomatis",
-    "running": "Menjalankan...",
-    "success": "Berhasil diambil",
-    "token_ttl_notice": "Token ini kedaluwarsa dalam {seconds}d dan akan diperbarui otomatis.",
-    "source_label": "Sumber:",
-    "missing_binary": "`{binary}` belum terinstal atau tidak berada di lokasi yang diizinkan.",
-    "unauthenticated": "Anda belum masuk ke {binary}. {instruction}",
-    "capture_failed": "Pengambilan CLI gagal: {detail}",
-    "timeout": "Waktu habis"
   },
   "schemas": {
     "none_configured": "Tidak ada yang dikonfigurasi.",
@@ -1403,11 +1124,6 @@
     "retrying": "Mencoba ulang…",
     "retry_authorized": "Saya telah mengotorisasi — coba lagi",
     "retry_failed": "Percobaan ulang gagal"
-  },
-  "rotation_insight": {
-    "perm_errors": "Kesalahan permanen terdeteksi -- rotasi dicoba, peringatan dikirim.",
-    "degrading": "Degradasi berkelanjutan -- rotasi preventif dipicu.",
-    "backoff": "Kegagalan sementara -- exponential backoff aktif."
   },
   "schema_configs": {
     "mcp": {

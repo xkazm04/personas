@@ -119,7 +119,6 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "You'll fill in {count} settings during adoption",
   "_comment_tags_heading": "Section heading for the tags list",
-  "tags_heading": "Tags",
   "tag_filter_tooltip": "Mostrar recetas con esta etiqueta",
   "guardrails_heading": "Salvaguardas y memoria",
   "events_label": "Eventos",

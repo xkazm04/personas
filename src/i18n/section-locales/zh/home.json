@@ -1,28 +1,4 @@
 {
-  "welcome": "欢迎",
-  "greeting_morning": "早上好",
-  "greeting_afternoon": "下午好",
-  "greeting_evening": "晚上好",
-  "operator": "操作员",
-  "summary_empty": "开始创建您的第一个智能体或探索平台功能。",
-  "summary_stats": "您已配置 {personasCount} 个智能体{personasPlural}和 {credentialsCount} 个凭证{credentialsPlural}。",
-  "quick_navigation": "快速导航",
-  "platform_label": "Personas 平台",
-  "roadmap": {
-    "title": "产品路线图",
-    "subtitle": "我们正在构建的内容及下一步计划。",
-    "unavailable": "路线图不可用",
-    "unavailable_hint": "无法加载产品路线图。请检查网络连接后重试。",
-    "status_in_progress": "进行中",
-    "status_next": "即将到来",
-    "status_planned": "已计划",
-    "status_completed": "已完成",
-    "priority_now": "现在",
-    "priority_next": "下一步",
-    "priority_later": "之后",
-    "in_progress_count": "{count} 进行中",
-    "next_count": "{count} 即将到来"
-  },
   "setup": {
     "choose_role": "选择您的角色",
     "choose_role_hint": "我们将根据您的工作方式定制体验。",
@@ -50,54 +26,6 @@
     "role": "角色",
     "tool": "工具",
     "goal": "目标"
-  },
-  "fleet": {
-    "executions_today": "今日运行",
-    "success_rate": "成功率",
-    "active_agents": "活跃代理",
-    "credentials": "凭证"
-  },
-  "nav": {
-    "overview": {
-      "label": "概览",
-      "description": "仪表盘分析、执行历史和所有智能体的实时系统监控"
-    },
-    "personas": {
-      "label": "智能体",
-      "description": "创建、配置和管理具有自定义行为和能力的 AI 智能体"
-    },
-    "events": {
-      "label": "事件",
-      "description": "配置事件触发器、webhook 监听器和定时自动化任务"
-    },
-    "credentials": {
-      "label": "凭证",
-      "description": "管理 API 凭证、数据库连接、OAuth 令牌和加密密钥"
-    },
-    "design-reviews": {
-      "label": "模板",
-      "description": "导入 n8n 工作流、浏览模板库并生成智能体蓝图"
-    },
-    "team": {
-      "label": "团队",
-      "description": "通过拖拽编排和路由构建多智能体团队流水线"
-    },
-    "cloud": {
-      "label": "云端",
-      "description": "将智能体部署到云端基础设施、管理计划任务并集成 GitLab CI"
-    },
-    "settings": {
-      "label": "设置",
-      "description": "账户偏好、外观主题、通知规则和引擎配置"
-    },
-    "plugins": {
-      "label": "插件",
-      "description": "通过第三方插件和自定义扩展扩展您的代理"
-    },
-    "teams": {
-      "label": "团队",
-      "description": "将多个智能体组合成一个团队，共同完成多步骤工作流"
-    }
   },
   "learning": {
     "title": "学习中心",
@@ -150,13 +78,6 @@
     "get_started": "开始使用",
     "language": "语言"
   },
-  "icon_showcase": {
-    "lucide_tab": "Lucide（库）",
-    "personas_tab": "Personas（动画）",
-    "lucide_footer": "lucide-react -- 通用图标库 -- 静态",
-    "personas_footer": "9 个自定义图标 -- 神经/电路主题 -- CSS 动画 -- 主题自适应"
-  },
-  "commander": "Commander",
   "resume": {
     "failure": "{personaName} 中有未读故障 — 请调查",
     "tour": "继续 {tourTitle}（{stepIndex}/{totalSteps}）— {stepTitle}",

@@ -1,6 +1,4 @@
 {
-  "title": "Einstellungen",
-  "settings_saved": "Gespeichert",
   "account": {
     "title": "Konto",
     "subtitle": "Anmeldung und Profil verwalten",
@@ -66,14 +64,6 @@
       "synced_memories": "Erinnerungen",
       "synced_knowledge_patterns": "Wissen"
     }
-  },
-  "appearance_extra": {
-    "simple": "Einfach",
-    "simple_hint": "Nur Kernfunktionen",
-    "full": "Vollständig",
-    "full_hint": "Vollständige Oberfläche anzeigen",
-    "dev": "Entwickler",
-    "dev_hint": "Entwicklerwerkzeuge freischalten"
   },
   "appearance": {
     "title": "Erscheinungsbild",
@@ -651,27 +641,6 @@
     "empty_filtered": "Keine Einträge entsprechen dem aktuellen Kategoriefilter.",
     "before": "Vorher",
     "after": "Nachher"
-  },
-  "quality_gates": {
-    "title": "Qualitätstore",
-    "loading": "Wird geladen...",
-    "error_loading": "Fehler beim Laden der Konfiguration",
-    "active_rules": "{count} aktive Filterregeln",
-    "loading_config": "Qualitätstor-Konfiguration wird geladen...",
-    "description": "Qualitätstoren filtern KI-generierte Erinnerungen und Bewertungen während der Ausführungsverteilung. Muster werden als Teilzeichenfolgen gegen den kombinierten Titel und Inhalt jeder Einreichung abgeglichen. Wenn ein Muster übereinstimmt, wird die konfigurierte Aktion angewendet. Diese Regeln verhindern, dass operationales Rauschen (Zugangsdatenfehler, Stack-Traces, leere Arbeitsbereichsberichte) Ihre Wissensbasis verunreinigt.",
-    "memory_filters": "Erinnerungsfilter",
-    "memory_filters_desc": "Auf AgentMemory-Einreichungen angewendet. Blockiert Betriebsfehler und Zugangsdatenlecks vor der Speicherung als Persona-Erinnerungen.",
-    "review_filters": "Bewertungsfilter",
-    "review_filters_desc": "Auf ManualReview-Einreichungen angewendet. Filtert Infrastrukturfehler, sodass nur echte Geschäftsentscheidungen die Bewertungswarteschlange erreichen.",
-    "rejected_categories": "Abgelehnte Kategorien",
-    "rules_count": "{count} Regel",
-    "rules_count_plural": "{count} Regeln",
-    "reset_defaults": "Auf Standardwerte zurücksetzen",
-    "confirm_reset": "Zurücksetzen bestätigen?",
-    "rules_hint": "Regeln werden bei jeder Verteilung aus der Datenbank geladen. Änderungen werden sofort wirksam.",
-    "action_reject": "Reject",
-    "action_tag": "Tag",
-    "action_warn": "Warn"
   },
   "api_keys": {
     "title": "API Keys",

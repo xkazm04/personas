@@ -1,24 +1,6 @@
 {
-  "title": "보관함",
-  "subtitle": "자격 증명 추가 방법을 선택하세요",
-  "add_from_catalog": "카탈로그에서 추가",
-  "ai_designed": "AI 설계 자격 증명",
   "workspace_connect": "워크스페이스 연결",
   "quick_start": "빠른 시작",
-  "health": {
-    "healthy": "정상",
-    "needs_attention": "주의 필요",
-    "untested": "테스트되지 않음"
-  },
-  "list": {
-    "no_credentials": "인증된 서비스가 감지되지 않았습니다. 아래에서 수동으로 선택하세요.",
-    "delete_confirm": "이 자격 증명을 삭제하시겠습니까?",
-    "blast_radius": "영향 범위",
-    "no_dependencies": "이 자격 증명에 의존하는 에이전트가 없습니다. 수정 또는 삭제해도 안전합니다.",
-    "affected_agents": "영향받는 에이전트",
-    "affected_events": "영향받는 이벤트",
-    "sort_label": "정렬:"
-  },
   "import": {
     "title": "가져오기 소스",
     "picker_subtitle": "비밀의 소스를 선택하세요",
@@ -44,29 +26,6 @@
     "import_secrets_other": "시크릿 {count}개 가져오기"
   },
   "features": {
-    "anomaly_detected": "이상 감지: 이전 성공 후 자격 증명이 갑자기 실패합니다. 폐기 가능성이 있습니다.",
-    "history": "기록",
-    "event_triggers": "이벤트 트리거",
-    "rotation_policy": {
-      "rotate_every": "회전 주기",
-      "days": "일",
-      "no_policy": "회전 정책이 설정되지 않았습니다.",
-      "oauth_refresh_active": "OAuth 토큰 갱신 활성",
-      "oauth_refresh_active_auto": "OAuth 토큰 갱신 활성 (자동)",
-      "auto_rotation_active": "자동 교체 활성",
-      "rotation_paused": "교체 일시 중지",
-      "rotate_now": "지금 교체",
-      "enable_rotation": "교체 활성화",
-      "enabling": "활성화 중...",
-      "remove_policy_tooltip": "교체 정책 제거",
-      "save": "저장",
-      "cancel": "취소",
-      "rotation_failed": "교체 실패: {error}",
-      "remove_failed": "정책 제거 실패: {error}",
-      "update_failed": "교체 주기 업데이트 실패: {error}",
-      "enable_failed": "교체 활성화 실패: {error}",
-      "last_rotated": "{time}에 마지막 교체"
-    },
     "anomaly": {
       "healthy": "정상",
       "transient_issues": "일시적 이슈",
@@ -78,21 +37,6 @@
       "permanent": "지속: {rate}",
       "transient": "일시: {rate}",
       "tolerance": "허용 오차: {rate}"
-    },
-    "rotation_badge": {
-      "disabled": "비활성",
-      "perm_errors": "지속적 오류",
-      "degrading": "악화 중",
-      "backoff": "재시도 대기 중"
-    },
-    "audit": {
-      "empty": "아직 감사 항목 없음. 작업이 발생하면 기록됩니다.",
-      "op_decrypted": "복호화됨",
-      "op_created": "생성됨",
-      "op_updated": "업데이트됨",
-      "op_deleted": "삭제됨",
-      "op_healthcheck": "연결 테스트",
-      "filter_all": "전체"
     },
     "intelligence": {
       "operation": "작업",
@@ -205,15 +149,7 @@
   "body": {
     "authorizing": "{name}으로 인증 중...",
     "authorize_with": "{name}으로 인증",
-    "authorize_hint": "{name} 로그인을 열고 승인 후 액세스를 저장합니다.",
-    "consent_completed": "{name} 동의 완료 ({time})",
-    "update_failed": "자격 증명 업데이트 실패",
-    "delete_credential": "자격 증명 삭제"
-  },
-  "connector": {
-    "filter_all": "전체",
-    "filter_connected": "연결됨",
-    "filter_available": "사용 가능"
+    "consent_completed": "{name} 동의 완료 ({time})"
   },
   "auto_cred": {
     "guided_setup": "가이드 설정",
@@ -254,38 +190,6 @@
     "save_procedure": "절차 저장",
     "procedure_saved": "절차 저장됨"
   },
-  "vector": {
-    "documents_tab": "문서",
-    "search_tab": "검색",
-    "settings_tab": "설정",
-    "ingest_title": "문서 추가",
-    "ingest_hint": "파일을 여기에 드롭하거나 클릭해 찾아보기",
-    "ingest_drop": "파일을 드롭해 추가",
-    "ingest_supported": "지원: txt, md, html, csv, json, yaml, 코드 파일",
-    "starting_ingestion": "파일 처리 중...",
-    "no_valid_files": "유효한 파일 경로를 찾을 수 없습니다. 개별 파일을 드롭해 보세요.",
-    "no_documents": "아직 문서 없음",
-    "no_documents_hint": "파일을 여기에 드롭하거나, 텍스트를 붙여넣거나, 디렉토리를 스캔해 지식 베이스를 구축하세요.",
-    "refresh": "새로 고침",
-    "paste_text": "텍스트 붙여넣기",
-    "directory": "디렉토리",
-    "delete_document": "문서 삭제",
-    "document_count_one": "{count}개 문서",
-    "document_count_other": "{count}개 문서",
-    "show_full": "전체 발췌 보기",
-    "show_less": "접기",
-    "copy_content": "내용 복사",
-    "kb_info": "지식 베이스 정보",
-    "embedding_model": "검색 모델",
-    "dimensions": "차원",
-    "chunk_size": "섹션 크기",
-    "chunk_overlap": "섹션 중첩",
-    "statistics": "통계",
-    "documents": "문서",
-    "chunks": "섹션",
-    "local_embedding": "로컬 검색",
-    "local_embedding_hint": "{model} ({dims}차원)을 사용해 로컬에서 검색 인덱싱을 실행합니다. 데이터가 기기를 벗어나지 않습니다."
-  },
   "design_modal": {
     "title": "자격 증명 설계",
     "error_title": "오류가 발생했습니다",
@@ -301,60 +205,12 @@
     "start_over": "처음부터 다시",
     "try_again_with": "요청으로 다시 시도"
   },
-  "desktop": {
-    "installed": "설치됨",
-    "running": "실행 중",
-    "not_installed": "설치되지 않음"
-  },
-  "graph": {
-    "no_dependencies": "의존성 없음",
-    "connection_count_one": "{count}개 연결",
-    "connection_count_other": "{count}개 연결",
-    "dep_count_one": "{count}개 의존성",
-    "dep_count_other": "{count}개 의존성",
-    "not_tested": "테스트 안 됨",
-    "healthy": "정상",
-    "unhealthy": "비정상"
-  },
-  "wizard": {
-    "detected": "감지됨 ({count})",
-    "available": "사용 가능 ({count})",
-    "already_added": "이미 추가됨 ({count})",
-    "no_match": "\"{search}\"와 일치하는 서비스 없음",
-    "already_added_badge": "이미 추가됨",
-    "local": "로컬",
-    "cli_auth": "CLI 인증",
-    "session": "세션"
-  },
   "playground": {
-    "tab_overview": "개요",
-    "tab_api_explorer": "API 탐색기",
-    "tab_recipes": "레시피",
-    "tab_mcp_tools": "MCP 도구",
-    "tab_rotation": "회전",
-    "add_tag": "태그 추가...",
-    "no_connector": "이 자격 증명 유형에 사용 가능한 커넥터 정의가 없습니다.",
-    "try_button": "시도",
-    "parameters": "매개변수",
-    "request_body": "요청 본문",
-    "path_placeholder": "/api/v1/resource",
-    "sending": "전송 중...",
-    "mcp_input_schema": "입력 스키마",
     "mcp_run": "실행",
     "mcp_error": "오류",
     "mcp_success": "성공",
     "mcp_empty": "(비어 있음)",
-    "mcp_discover": "MCP 서버 도구 발견",
-    "mcp_discover_hint": "MCP 서버에 연결해 사용 가능한 도구를 발견하고 테스트하세요.",
-    "mcp_discover_button": "도구 발견",
-    "response_empty": "(빈 응답)",
-    "header": "헤더",
-    "value": "값",
-    "path_parameters": "경로 매개변수",
-    "query_parameters": "쿼리 매개변수",
-    "headers": "헤더",
-    "body": "본문",
-    "empty_response": "(빈 응답)"
+    "response_empty": "(빈 응답)"
   },
   "playground_extra": {
     "add_tag": "태그 추가...",
@@ -721,37 +577,11 @@
     "title_dependencies": "종속성",
     "title_databases": "데이터베이스"
   },
-  "bulk_healthcheck": {
-    "title": "상태 확인 결과",
-    "needs_attention": "주의 필요",
-    "slowest_responses": "가장 느린 응답",
-    "passed_count": "{count}개 통과",
-    "failed_count": "{count}개 실패",
-    "total_count": "{count}개 합계"
-  },
-  "health_bar": {
-    "healthy": "정상",
-    "needs_attention": "주의 필요",
-    "untested": "테스트 안 됨"
-  },
   "breadcrumb": {
     "aria_label": "볼트 탐색"
   },
   "credential_card": {
-    "deleting": "{name} 삭제 중...",
-    "no_connector": "이 자격 증명 유형에 사용 가능한 커넥터 정의가 없습니다.",
-    "stored_result": "저장된 연결 테스트 결과",
-    "delete_credential": "자격 증명 삭제",
-    "corrupted": "손상됨",
-    "corrupted_tooltip": "상태 확인 링 버퍼 메타데이터가 손상됨. 다음 성공적인 상태 확인이 손상된 데이터를 덮어쓸 때까지 이상 점수를 사용할 수 없습니다.",
-    "field_count_one": "{count}개 필드",
-    "field_count_other": "{count}개 필드",
-    "add_tag_placeholder": "태그 추가...",
-    "add_tag_button": "태그 추가",
-    "remove_tag": "\"{tag}\" 태그 제거",
-    "copy_credential_id": "자격 증명 ID 복사",
-    "refresh_oauth": "OAuth 토큰 지금 갱신",
-    "refresh": "갱신"
+    "delete_credential": "자격 증명 삭제"
   },
   "vault_badge": {
     "needs_attention": "주의 필요",
@@ -783,21 +613,6 @@
     "label_type": "유형",
     "unverified_warning": "모든 의존성을 확인할 수 없습니다. 일부 연결된 에이전트나 자동화가 표시되지 않을 수 있습니다."
   },
-  "card_body": {
-    "failed_update": "자격 증명 업데이트 실패",
-    "authorizing_with": "{name}으로 인증 중...",
-    "authorize_with": "{name}으로 인증",
-    "authorize_hint": "앱 관리 {name} 동의를 실행하고 승인 후 갱신 토큰을 업데이트합니다.",
-    "consent_completed": "{name} 동의 완료 ({time})"
-  },
-  "card_details": {
-    "tab_intelligence": "인텔리전스",
-    "tab_rotation": "교체",
-    "tab_token_lifetime": "토큰 수명",
-    "tab_services": "서비스 ({count})",
-    "tab_events": "이벤트 ({count})",
-    "tab_audit": "감사"
-  },
   "intelligence_tab": {
     "loading": "인텔리전스 데이터 로딩 중",
     "tab_overview": "개요",
@@ -818,18 +633,6 @@
     "link_structural": "구조적",
     "link_observed": "관찰됨",
     "via_connector": "{connector}를 통해"
-  },
-  "token_metrics": {
-    "loading": "메트릭 로딩 중...",
-    "no_metrics": "아직 토큰 갱신 메트릭이 없습니다. 첫 번째 OAuth 토큰 갱신 후 메트릭이 나타납니다.",
-    "trend_warning": "토큰 수명이 짧아지는 추세 — 공급자 제한 또는 정책 변경 가능.",
-    "total_refreshes": "총 갱신 횟수",
-    "failure_rate": "실패율",
-    "avg_lifetime": "평균 수명",
-    "avg_drift": "평균 드리프트",
-    "recent_ttls": "최근 공급자 TTL (최신순)",
-    "recent_refreshes": "최근 갱신",
-    "fallback_used": "폴백 ({fallback}s)이 {rate}%의 갱신에서 사용됨 ({count}/{total}) — 공급자 누락"
   },
   "reauth_banner": {
     "access_revoked": ") -- 액세스가 취소되었습니다. 자동화를 재개하려면 다시 인증하세요.",
@@ -932,17 +735,7 @@
   },
   "audit_log": {
     "empty": "아직 감사 항목 없음",
-    "empty_hint": "작업이 발생하면 기록됩니다.",
-    "access_events_hint": "액세스 이벤트가 여기에 나타납니다.",
-    "loading": "감사 타임라인 로딩 중...",
-    "total_accesses": "{count}개 합계",
-    "personas_one": "{count}개 페르소나",
-    "personas_other": "{count}개 페르소나",
-    "accesses_24h": "24시간 내 {count}개",
-    "anomalies_one": "{count}개 이상",
-    "anomalies_other": "{count}개 이상",
-    "no_anomalies": "이상 없음",
-    "show_all": "전체 {count}개 항목 표시"
+    "empty_hint": "작업이 발생하면 기록됩니다."
   },
   "credential_import": {
     "import_from": "{source}에서 가져오기",
@@ -983,66 +776,6 @@
     "health_healthy": "정상",
     "health_failing": "오류",
     "health_untested": "미테스트"
-  },
-  "wizard_detect": {
-    "no_services": "\"{search}\"와 일치하는 서비스 없음",
-    "select_services": "자격 증명을 추가할 서비스를 선택하거나 스캔해 자동 감지하세요.",
-    "scanning": "CLI 도구 및 브라우저 세션 스캔 중...",
-    "scan_button": "인증된 서비스 스캔",
-    "search_services": "서비스 검색...",
-    "desktop_bridge": "데스크톱 브리지 -- 자동 감지됨",
-    "batch_complete": "일괄 설정 완료",
-    "skip_service": "이 서비스 건너뛰기",
-    "no_filter_match": "다른 검색어를 사용하거나 필터를 지우세요.",
-    "set_up_credentials": "자격 증명 설정",
-    "clear_selection": "선택 지우기",
-    "set_up_services": "{count}개 서비스{plural} 설정",
-    "setting_up": "{total}개 중 {current}번째 설정 중",
-    "wizard_title": "자격 증명 설정 마법사",
-    "choose_service": "설정할 서비스 선택",
-    "ai_walk_description": "AI가 API 자격 증명 획득을 단계별로 안내합니다.",
-    "wizard_subtitle": "AI 안내 자격 증명 설정",
-    "wizard_subtitle_batch": "{count}개 서비스{plural} 설정 중"
-  },
-  "autopilot": {
-    "title": "API 오토파일럿",
-    "input_hint": "OpenAPI 스펙 URL 또는 내용을 붙여넣어 커넥터 자동 생성",
-    "preview_hint": "파싱된 API를 검토하고 포함할 엔드포인트 선택",
-    "generated_hint": "커넥터가 성공적으로 생성됨",
-    "connector_generated": "커넥터가 성공적으로 생성됨",
-    "api_playground": "API 플레이그라운드",
-    "api_playground_hint": "생성된 API 도구를 사용하기 전에 테스트하세요",
-    "paste_spec": "OpenAPI 스펙 붙여넣기 (JSON 또는 YAML)",
-    "valid_url_error": "유효한 URL을 입력하세요 (예: https://api.example.com/openapi.json)",
-    "authentication": "인증",
-    "connector_name": "커넥터 이름",
-    "color": "색상",
-    "endpoints_selected": "엔드포인트 ({selected}/{total}개 선택됨)",
-    "generating": "생성 중...",
-    "generate_connector": "커넥터 생성 ({count}개 도구)",
-    "base_url": "기본 URL",
-    "headers_label": "헤더",
-    "header_name_placeholder": "헤더 이름",
-    "query_parameters": "쿼리 매개변수",
-    "param_name_placeholder": "매개변수 이름",
-    "request_body": "요청 본문 (JSON)",
-    "from_url": "URL에서",
-    "paste_content": "내용 붙여넣기",
-    "openapi_spec_url": "OpenAPI 스펙 URL",
-    "openapi_format_hint": "JSON 또는 YAML 형식의 OpenAPI 3.x 및 Swagger 2.x 스펙 지원",
-    "parsing_spec": "스펙 파싱 중...",
-    "parse_analyze": "파싱 & 분석",
-    "connector_in_catalog": "{connectorLabel}을(를) 이제 {toolCount}개 도구 정의와 함께 커넥터 카탈로그에서 사용할 수 있습니다.",
-    "generated_tools": "생성된 도구 ({count})",
-    "credential_fields": "자격 증명 필드",
-    "open_playground": "플레이그라운드 열기",
-    "copy_connector_id": "커넥터 ID 복사",
-    "go_to_catalog": "카탈로그로 이동",
-    "response_headers": "응답 헤더 ({count})",
-    "base_url_placeholder": "https://api.example.com",
-    "openapi_url_placeholder": "https://api.example.com/openapi.json",
-    "auth_schemes": "인증 스키마",
-    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "자격 증명 없음",
@@ -1176,18 +909,6 @@
     "sort_most_used_with_recipes": "Most-used with recipes",
     "new_connector_ribbon": "New",
     "new_connector_tooltip": "Added in the last 30 days"
-  },
-  "cli_capture": {
-    "cta": "로컬 CLI에서 가져오기",
-    "hint": "API 키를 붙여넣는 대신 이미 로그인된 로컬 CLI를 사용합니다.",
-    "running": "로컬 CLI 실행 중...",
-    "success": "CLI에서 자격 증명 캡처됨",
-    "token_ttl_notice": "이 토큰은 {seconds}초 후 만료되며 자동으로 갱신됩니다.",
-    "source_label": "CLI",
-    "missing_binary": "`{binary}`가 설치되지 않았거나 허용된 위치에 있지 않습니다.",
-    "unauthenticated": "{binary}에 로그인되어 있지 않습니다. {instruction}",
-    "capture_failed": "CLI 캡처 실패: {detail}",
-    "timeout": "CLI 캡처가 시간 초과되었습니다. 먼저 수동으로 명령을 실행해 보세요."
   },
   "schemas": {
     "none_configured": "구성된 것 없음.",
@@ -1403,11 +1124,6 @@
     "retrying": "재시도 중…",
     "retry_authorized": "인증 완료 — 재시도",
     "retry_failed": "재시도 실패"
-  },
-  "rotation_insight": {
-    "perm_errors": "영구 오류 감지됨 -- 교체 시도, 알림 발송 중.",
-    "degrading": "지속적인 저하 -- 선제적 교체 트리거됨.",
-    "backoff": "일시적 실패 -- 지수 백오프 활성."
   },
   "schema_configs": {
     "mcp": {

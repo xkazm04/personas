@@ -1,50 +1,13 @@
 {
-  "title": "Resumen",
-  "no_output": "Sin resultados aún",
-  "no_background_jobs": "No hay trabajos en segundo plano en ejecución o recientes",
-  "background_jobs_hint": "Los trabajos aparecen aquí cuando ejecutas transformaciones de n8n, adopciones de plantillas, generación de plantillas o depuración de consultas",
   "filters": {
     "start_date": "Fecha de inicio",
     "end_date": "Fecha de fin",
     "all_personas": "Todos los agentes"
   },
   "messages": {
-    "loading": "Cargando mensajes...",
-    "no_messages": "Aún no hay mensajes",
-    "switch_to_all": "Prueba cambiar a \\\\\\\"Todos\\\\\\\" para ver todos los mensajes",
-    "columns": {
-      "persona": "Agente",
-      "title": "Título",
-      "priority": "Prioridad",
-      "status": "Estado",
-      "created": "Creado"
-    },
-    "content_header": "Contenido",
     "priority_high": "Alta",
     "priority_normal": "Normal",
-    "priority_low": "Baja",
-    "filter_all": "Todos",
-    "filter_unread": "No leídos",
-    "filter_high_priority": "Alta prioridad",
-    "delivery_delivered": "Entregado",
-    "delivery_failed": "Fallido",
-    "delivery_pending": "Pendiente",
-    "delivery_queued": "En cola",
-    "channel_email": "Correo",
-    "channel_slack": "Slack",
-    "channel_telegram": "Telegram",
-    "channel_desktop": "Escritorio",
-    "id_label": "ID:",
-    "confirm_delete_title": "Confirmar eliminación",
-    "close_message": "Cerrar detalle del mensaje"
-  },
-  "realtime": {
-    "idle": "Inactivo -- haz clic en {action} para simular tráfico",
-    "test_flow": "Probar flujo",
-    "events_per_min": "eventos/min",
-    "pending": "pendientes",
-    "success": "exitosos",
-    "in_window": "en ventana"
+    "priority_low": "Baja"
   },
   "incidents": {
     "filters_active_aria": "{count} filtros activos",
@@ -160,13 +123,7 @@
     "subtitle": "Supervisa el estado de ejecución, costos y anomalías en tus agentes",
     "alert_rules": "Reglas de alerta",
     "refresh_metrics": "Actualizar métricas",
-    "persona_disabled": "Agente deshabilitado automáticamente",
-    "auto_resolved": "Este problema se resolvió automáticamente",
-    "mark_resolved": "Marcar como resuelto",
-    "manual_fix": "(corrección manual aplicada)",
     "metrics_unavailable": "Métricas no disponibles -- los datos mostrados pueden estar desactualizados",
-    "no_open_issues": "Sin problemas abiertos",
-    "run_analysis": "Ejecuta un análisis para buscar problemas.",
     "error_recovery": {
       "panel_loaded": "Loaded",
       "panel_failed": "Failed to load",
@@ -175,127 +132,18 @@
   },
   "memories": {
     "title": "Memorias",
-    "created_success": "Memoria creada exitosamente",
-    "no_memories": "Aún no hay memorias",
-    "no_memories_hint": "Cuando los agentes se ejecutan, pueden almacenar notas y aprendizajes valiosos aquí.",
-    "no_memories_match": "Ninguna memoria coincide con los filtros actuales",
-    "list_aria_label": "Lista de memorias",
-    "add_memory_btn": "Agregar Memoria",
-    "search_placeholder": "Buscar memorias...",
-    "no_filter_match": "Ninguna memoria coincide con tus filtros. Prueba ajustando tu búsqueda.",
-    "form": {
-      "agent": "Agente",
-      "category": "Categoría",
-      "title": "Título",
-      "content": "Contenido",
-      "importance": "Importancia",
-      "tags": "Etiquetas",
-      "tags_hint": "(separadas por comas)"
-    },
-    "curation_schedule_button": "Schedule",
-    "curation_schedule_button_hint": "Schedule automatic memory curation",
-    "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
-    "curation_schedule_title": "Schedule memory curation",
-    "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
-    "curation_schedule_cron_label": "Schedule (cron)",
-    "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
-    "curation_schedule_presets_label": "Quick picks",
-    "preset_weekly_sunday": "Weekly · Sun 3am",
-    "preset_daily_3am": "Daily · 3am",
-    "preset_weekly_monday": "Weekly · Mon 9am",
-    "preset_monthly": "Monthly · 1st",
-    "curation_schedule_last_run_label": "Last run",
-    "curation_schedule_disabled_state": "Curation is disabled for this agent",
-    "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule",
     "delete_all": "Eliminar todo",
     "delete_all_confirm_title": "¿Eliminar todas las memorias?",
     "delete_all_confirm_body": "Esto elimina permanentemente las {count} memorias. Esta acción no se puede deshacer.",
     "delete_all_confirm_cta": "Eliminar todo"
   },
   "memory_review": {
-    "all_conflicts_resolved": "Todos los conflictos resueltos",
     "keep_prefix": "Mantener “",
     "keep_suffix": "”"
-  },
-  "executions": {
-    "title": "Ejecuciones",
-    "loading": "Cargando ejecuciones...",
-    "no_agents": "Aún no se han creado agentes",
-    "create_first": "Crea tu primer agente para ver la actividad de ejecución aquí",
-    "no_executions": "Aún no hay ejecuciones",
-    "run_agent": "Ejecuta un agente para ver la actividad de ejecución aquí"
-  },
-  "workflows": {
-    "loading": "Cargando flujos de trabajo...",
-    "title": "Flujos de trabajo",
-    "subtitle": "Operaciones en segundo plano activas y recientes en tu espacio de trabajo",
-    "no_jobs": "Sin trabajos en segundo plano activos o recientes",
-    "jobs_hint": "Los trabajos aparecen aquí cuando ejecutas transformaciones N8n, adopciones de plantillas, generación de plantillas o depuración de consultas",
-    "all_types": "Todos los tipos",
-    "no_filter_match": "Ningún trabajo coincide con los filtros actuales",
-    "auto_refreshing": "Actualización automática mientras hay trabajos en ejecución",
-    "cancel_failed": "Error al cancelar el trabajo del flujo"
-  },
-  "schedules": {
-    "title": "Línea de tiempo de programaciones",
-    "subtitle": "Vista agregada de todas las ejecuciones programadas de agentes",
-    "engine_on": "Motor encendido",
-    "engine_off": "Motor apagado",
-    "engine_on_tooltip": "Programador en ejecución -- haz clic para pausar",
-    "engine_off_tooltip": "Programador detenido -- haz clic para iniciar",
-    "active_count": "{count} activos",
-    "paused_count": "{count} en pausa",
-    "view_grouped": "Agrupado",
-    "view_timeline": "Línea de tiempo",
-    "triggers_fired": "Disparadores activados: ",
-    "events_processed": "Eventos procesados: ",
-    "delivered": "Entregados: ",
-    "failed_label": "Fallidos: ",
-    "loading": "Cargando programaciones...",
-    "empty": "No se encontraron agentes programados.",
-    "empty_hint": "Crea una programación o un disparador de sondeo en cualquier agente para verlo aquí.",
-    "group_overdue": "Vencidos",
-    "group_15min": "Próximos 15 minutos",
-    "group_1hour": "Próxima hora",
-    "group_6hours": "Próximas 6 horas",
-    "group_24hours": "Próximas 24 horas",
-    "group_later": "Más tarde",
-    "group_paused": "En pausa / Sin programar",
-    "run_now": "Ejecutar ahora",
-    "change_frequency": "Cambiar frecuencia",
-    "pause_schedule": "Pausar programación",
-    "resume_schedule": "Reanudar programación",
-    "headless_badge": "sin interfaz"
-  },
-  "frequency_editor": {
-    "title": "Cambiar frecuencia",
-    "current": "Actual: ",
-    "quick_presets": "Preajustes rápidos",
-    "cron_expression": "Expresión cron",
-    "interval_seconds": "Intervalo (segundos)",
-    "previewing": "Previsualizando...",
-    "next_runs": "Próximas ejecuciones",
-    "invalid_cron": "Expresión cron inválida"
-  },
-  "recovery": {
-    "agents_missed_one": "{count} agente perdió ejecuciones",
-    "agents_missed_other": "{count} agentes perdieron ejecuciones",
-    "total_skipped": "~{count} ejecuciones totales omitidas mientras la app estaba sin conexión",
-    "missed_since": "{count} perdidas desde {time}",
-    "every_interval": "cada {interval}",
-    "mark_for_recovery": "Marcar para recuperación",
-    "recover": "Recuperar",
-    "run_once": "Ejecutar 1x",
-    "run_once_tooltip": "Ejecutar una vez ahora",
-    "skip_tooltip": "Omitir -- no recuperar",
-    "dismiss_all": "Descartar todo",
-    "recover_selected": "Recuperar {count} seleccionados"
   },
   "sla": {
     "title": "SLA de fiabilidad de agentes",
     "subtitle": "Disponibilidad, tasas de fallo y métricas de recuperación de tu flota de agentes",
-    "loading": "Cargando datos de SLA...",
     "no_data": "No hay datos de ejecución disponibles.",
     "success_rate": "Tasa de éxito",
     "executions_summary": "{successful}/{total} ejecuciones",
@@ -308,14 +156,6 @@
     "daily_success_rate": "Tasa de éxito diaria -- {days} días",
     "per_agent": "Fiabilidad por agente",
     "no_agent_data": "Ningún agente ha ejecutado en este período.",
-    "metric_successful": "Exitosas",
-    "metric_failed": "Fallidas",
-    "metric_avg_latency": "Latencia promedio",
-    "metric_p95_latency": "Latencia P95",
-    "metric_cost": "Costo",
-    "metric_mtbf": "MTBF",
-    "metric_auto_healed": "Auto-recuperadas",
-    "metric_cancelled": "Canceladas",
     "success_rate_tooltip": "Success rate = successful / (successful + failed). Cancelled runs are excluded because they are user-initiated and don't reflect system reliability.",
     "all_time_badge": "All-time",
     "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
@@ -324,28 +164,6 @@
   },
   "knowledge": {
     "title": "Grafo de conocimiento",
-    "subtitle": "{count} patrones aprendidos del historial de ejecuciones",
-    "total_patterns": "Patrones totales",
-    "tool_sequences": "Secuencias de herramientas",
-    "tool_sequences_hint": "Cadenas de herramientas aprendidas",
-    "failure_patterns": "Patrones de fallo",
-    "failure_patterns_hint": "Firmas de error conocidas",
-    "model_insights": "Información del modelo",
-    "model_insights_hint": "Rendimiento por modelo",
-    "all_personas": "Todos los agentes (global)",
-    "all_types": "Todos los tipos",
-    "failure_drilldown": "Desglose de fallos: {date}",
-    "failure_drilldown_hint": "Mostrando patrones de fallo activos en o después de esta fecha.",
-    "failure_drilldown_empty": "No se encontraron patrones coincidentes -- intenta seleccionar un agente específico arriba.",
-    "unavailable": "Datos de conocimiento no disponibles",
-    "empty": "Aún no hay patrones de conocimiento",
-    "empty_hint": "Ejecuta ejecuciones para construir el grafo de conocimiento. Cada ejecución enseña al sistema sobre secuencias de herramientas, patrones de fallo y equilibrios costo-calidad.",
-    "recent_learnings": "Aprendizajes recientes",
-    "successes": "Éxitos",
-    "failures": "Fallos",
-    "avg_cost": "Costo promedio",
-    "avg_duration": "Duración promedio",
-    "pattern_data": "Datos del patrón",
     "patterns_tab": "Patrones",
     "search_placeholder": "Buscar patrones...",
     "sort_aria": "Ordenar patrones",
@@ -357,24 +175,11 @@
     "pending_scope_hint": "Selecciona un persona para revisar todas las anotaciones pendientes.",
     "graph_tab": "Grafo"
   },
-  "conflicts": {
-    "dismissed": "Conflicto descartado",
-    "resolved": "Conflicto resuelto",
-    "resolve_failed": "Error al resolver el conflicto",
-    "conflict_count_one": "{count} conflicto",
-    "conflict_count_other": "{count} conflictos"
-  },
   "dashboard": {
-    "title": "Panel de control",
-    "subtitle": "Resumen operativo y estado del sistema",
     "greeting_morning": "Buenos días",
     "greeting_afternoon": "Buenas tardes",
     "greeting_evening": "Buenas noches",
     "default_user": "Operador",
-    "pending_reviews_prompt": "revisiones pendientes",
-    "requiring_attention": "requieren atención.",
-    "empty_cta": "Crea tu primer agente para comenzar.",
-    "pipeline_failed": "Error al cargar {source}",
     "empty_title": "Bienvenido a Personas",
     "empty_subtitle": "Crea tu primer agente para empezar a ver métricas de ejecución, gráficos de tráfico y actividad aquí.",
     "create_persona": "Crear Persona",
@@ -396,49 +201,6 @@
     "section_memory": "Sugerencias de memoria",
     "section_fleet": "Optimización de flota",
     "section_routines": "Rutinas y cambios en el almacén"
-  },
-  "execution_metrics": {
-    "title": "Métricas de Ejecución",
-    "total_executions": "Total de Ejecuciones",
-    "total_cost": "Costo Total",
-    "success_rate": "Tasa de Éxito",
-    "avg_latency": "Latencia Promedio",
-    "cost_anomalies": "Anomalías de Costo Detectadas",
-    "no_data": "Sin datos de ejecución para el período seleccionado",
-    "cost_per_day": "Costo por Día",
-    "executions_by_status": "Ejecuciones por Estado",
-    "success_rate_trend": "Tendencia de Tasa de Éxito",
-    "latency_distribution": "Distribución de Latencia (p50 / p95 / p99)",
-    "top_personas_by_cost": "Principales Personas por Costo",
-    "cost_spike": "Pico de costo",
-    "above_avg": "sobre promedio",
-    "top_executions": "Principales ejecuciones:",
-    "executions_label": "{count} ejecuciones"
-  },
-  "execution_list": {
-    "recorded": "{count} ejecuciones registradas",
-    "recorded_one": "{count} ejecución registrada",
-    "list": "Lista",
-    "metrics": "Métricas",
-    "show_list": "Mostrar lista de ejecuciones",
-    "show_metrics": "Mostrar panel de métricas",
-    "showing": "Mostrando {count} de {total}",
-    "load_more": "Cargar más",
-    "filter_all": "Todas",
-    "filter_running": "En ejecución",
-    "filter_completed": "Completadas",
-    "filter_failed": "Fallidas",
-    "col_persona": "Persona",
-    "col_status": "Estado",
-    "col_duration": "Duración",
-    "col_started": "Iniciado",
-    "col_id": "ID",
-    "all_statuses": "Todos los estados",
-    "all_personas": "Todas las personas",
-    "no_agents": "Sin agentes creados aún",
-    "no_agents_hint": "Crea tu primer agente para ver la actividad de ejecución aquí.",
-    "unknown_persona": "Desconocido",
-    "healing_retry": "Reintento de curación #{count}"
   },
   "review": {
     "title": "Revisiones Manuales",
@@ -521,44 +283,27 @@
   },
   "messages_view": {
     "title": "Mensajes",
-    "threads_subtitle": "{count} hilos",
-    "threads_subtitle_one": "{count} hilo",
     "messages_subtitle": "{count} mensajes registrados",
     "messages_subtitle_one": "{count} mensaje registrado",
     "mock_message": "Mensaje de prueba",
     "seed_tooltip": "Crear mensaje de prueba (solo dev)",
-    "flat_view": "Vista plana",
-    "threaded_view": "Vista en hilos",
     "mark_all_read": "Marcar todos como leídos",
-    "threads_of": "{count} de {total} hilos",
-    "no_threads": "Sin hilos de mensajes aún",
-    "no_threads_hint": "Los hilos se crean automáticamente cuando los agentes producen mensajes durante las ejecuciones.",
     "no_messages": "Sin mensajes aún",
     "no_messages_hint": "Los mensajes se crean cuando los agentes se ejecutan y se comunican entre sí.",
     "no_filter_match": "Ningún mensaje coincide con los filtros actuales",
-    "loading_replies": "Cargando respuestas...",
     "load_more": "Cargar más ({count} restantes)",
     "col_title": "Título",
-    "col_priority": "Prioridad",
-    "col_delivery": "Entrega",
-    "col_status": "Estado",
     "col_created": "Creado",
     "all_priorities": "Todas las prioridades",
     "all_statuses": "Todos los estados",
     "read": "Leído",
     "unread": "No leído",
-    "new_badge": "Nuevo",
-    "failed_count": "{count} fallidos",
-    "pending_count": "{count} pendientes",
-    "sent_count": "{count} enviados",
     "message_label": "Mensaje",
     "from_label": "De {name}",
     "content_label": "Contenido",
     "view_execution": "Ver Ejecución",
-    "type_label": "Tipo:",
     "delivery_status": "Estado de Entrega",
     "no_channels": "Sin canales de entrega configurados",
-    "confirm_delete": "Confirmar eliminación",
     "improve_agent": "Mejorar Agente",
     "improvement_started": "Mejora iniciada -- se te notificará cuando termine",
     "what_could_be_better": "¿Qué podría mejorar?",
@@ -571,7 +316,6 @@
     "rating_label": "Rate this message",
     "rating_star_aria": "Rate {value} of 5",
     "rating_saved": "Saved · {stars}/5",
-    "rating_clear": "Clear rating",
     "rating_memory_title": "Message rating: {stars}/5",
     "rating_memory_content_good": "User rated the output {stars}/5 stars. This message met expectations — keep the approach.",
     "rating_memory_content_neutral": "User rated the output {stars}/5 stars. Neutral feedback — review the message for marginal improvements.",
@@ -599,7 +343,6 @@
     "seed_tooltip": "Crear evento de prueba (solo dev)",
     "search_placeholder": "Buscar eventos por tipo, origen o carga útil...",
     "loading_older": "Cargando eventos anteriores...",
-    "load_older": "Cargar eventos anteriores",
     "no_events": "Sin eventos aún",
     "no_events_hint": "Los eventos de webhooks, ejecuciones y acciones de persona aparecerán aquí cuando tus agentes se ejecuten.",
     "no_filter_match": "Ningún evento coincide con los filtros actuales",
@@ -607,12 +350,6 @@
     "view_name_placeholder": "Nombre de la vista (p. ej. 'Webhooks fallidos esta semana')",
     "views_label": "Vistas:",
     "delete_view": "Eliminar vista",
-    "clear_filters": "Limpiar todos los filtros",
-    "col_trigger": "Disparador",
-    "col_persona": "Persona",
-    "col_event_name": "Nombre del Evento",
-    "col_status": "Estado",
-    "col_created": "Creado",
     "all_statuses": "Todos los estados",
     "all_types": "Todos los tipos",
     "all_triggers": "Todos los disparadores",
@@ -621,43 +358,12 @@
     "source_system": "Sistema",
     "source_scheduled": "Programado",
     "event_detail_title": "Evento:",
-    "event_detail_status": "Estado:",
-    "event_id": "ID de Evento",
-    "project": "Proyecto",
-    "source": "Origen",
-    "processed": "Procesado",
-    "event_data": "Datos del Evento",
-    "error": "Error"
+    "event_detail_status": "Estado:"
   },
   "health": {
     "title": "Salud del Agente",
     "subtitle": "Monitoreo de salud en tiempo real en todos los agentes",
-    "all_healthy": "Todos los agentes saludables",
-    "all_healthy_hint": "Cada agente monitoreado opera normalmente",
-    "no_agents": "Sin agentes aún",
-    "no_agents_hint": "Crea agentes para comenzar a monitorear su salud",
-    "success_rate": "Tasa de Éxito",
-    "avg_latency": "Latencia Promedio",
-    "executions": "Ejecuciones",
-    "last_execution": "Última ejecución",
-    "never_executed": "Nunca",
-    "cost": "Costo",
-    "healthy": "Saludable",
-    "warning": "Advertencia",
-    "critical": "Crítico",
-    "unknown": "Desconocido",
-    "burn_rate": "Proyección de Tasa de Gasto",
-    "monthly_budget": "Presupuesto Mensual",
-    "current_burn": "Gasto Actual",
-    "projected": "Proyectado",
-    "days_remaining": "Días Restantes",
-    "cascade_title": "Análisis en Cascada",
-    "predictive_alerts": "Alertas Predictivas",
-    "no_alerts": "Sin alertas predictivas en este momento",
-    "status_page": "Página de Estado",
-    "operational": "Operacional",
-    "degraded": "Degradado",
-    "outage": "Interrupción"
+    "status_page": "Página de Estado"
   },
   "leaderboard": {
     "title": "Clasificación de Agentes",
@@ -699,58 +405,6 @@
     "hint_activity": "Activa o programa este agente con más frecuencia para aumentar la actividad.",
     "improve_agent": "Mejorar este agente"
   },
-  "analytics": {
-    "title": "Análisis",
-    "subtitle": "Patrones y tendencias de ejecución",
-    "loading": "Cargando análisis...",
-    "no_data": "Sin datos de análisis disponibles",
-    "executions_over_time": "Ejecuciones a lo Largo del Tiempo",
-    "success_failure": "Éxito vs. Fallo",
-    "cost_breakdown": "Desglose de Costos",
-    "total_executions": "Total de Ejecuciones",
-    "total_cost": "Costo Total",
-    "avg_success_rate": "Tasa de Éxito Promedio",
-    "active_agents": "Agentes Activos",
-    "saved_views": "Vistas Guardadas",
-    "create_view": "Crear Vista",
-    "health_issues": "Problemas de Salud",
-    "rotation_overview": "Resumen de Rotación"
-  },
-  "usage": {
-    "title": "Uso",
-    "subtitle": "Costo y consumo de recursos",
-    "chart_error": "Error al cargar el gráfico",
-    "chart_error_hint": "Se produjo un error al renderizar este gráfico",
-    "try_again": "Intentar de nuevo"
-  },
-  "cron_agents": {
-    "title": "Agentes Programados",
-    "subtitle": "Agentes que se ejecutan en horarios automáticos",
-    "no_agents": "Sin agentes programados",
-    "no_agents_hint": "Agrega un disparador cron a cualquier agente para verlo aquí"
-  },
-  "timeline": {
-    "title": "Línea de Tiempo de Actividad",
-    "subtitle": "Vista unificada de toda la actividad de agentes",
-    "no_activity": "Sin actividad reciente"
-  },
-  "realtime_viz": {
-    "title": "Bus de Eventos",
-    "filter_events": "Filtrar eventos",
-    "pause": "Pausar",
-    "resume": "Reanudar",
-    "clear": "Limpiar",
-    "total_events": "Total de Eventos",
-    "events_per_sec": "Eventos/seg",
-    "active_lanes": "Carriles Activos",
-    "event_type": "Tipo de Evento",
-    "source": "Origen",
-    "target": "Destino",
-    "timestamp": "Marca de Tiempo",
-    "payload": "Carga útil",
-    "saved_views": "Vistas Guardadas",
-    "save_current": "Guardar Actual"
-  },
   "observability_extra": {
     "auto_refresh_on": "Actualización automática activada",
     "auto_refresh_off": "Actualización automática desactivada",
@@ -758,41 +412,15 @@
     "executions_label": "Ejecuciones",
     "success_rate": "Tasa de Éxito",
     "active_personas": "Personas Activas",
-    "system_trace": "Línea de Tiempo de Trazas del Sistema",
-    "ipc_performance": "Rendimiento IPC",
-    "alert_rules_label": "Reglas de alerta",
-    "alert_history_label": "Historial de alertas",
-    "healing_issues": "Problemas de Salud",
-    "run_analysis": "Ejecutar análisis",
-    "resolve": "Resolver",
-    "healing_view_list": "Lista",
-    "healing_view_timeline": "Línea de tiempo",
-    "issue_details": "Detalles del Problema",
-    "anomaly_drilldown": "Análisis Detallado de Anomalías",
-    "spend_overview": "Resumen de Gasto",
-    "cost_vs_executions": "Costo vs. Ejecuciones",
-    "daily_executions": "Ejecuciones Diarias",
-    "ipc_channel": "Canal IPC",
-    "avg_duration": "Duración Promedio",
-    "call_count": "Cantidad de Llamadas",
-    "error_rate": "Tasa de Error"
+    "system_trace": "Línea de Tiempo de Trazas del Sistema"
   },
   "widgets": {
-    "recent_activity": "Actividad Reciente",
     "view_all": "Ver todo",
-    "total_traffic": "Tráfico Total",
-    "total_errors": "Total de Errores",
     "traffic_errors_chart": "Tráfico y Errores",
     "top_performers": "Mejores Rendidores",
-    "metric_help": "Ayuda con la Métrica",
-    "how_calculated": "¿Cómo se calcula esto?",
-    "details": "Detalles",
     "messages_badge": "Mensajes",
     "reviews_badge": "Revisiones",
-    "executions_badge": "Ejecuciones",
-    "success_badge": "Éxito",
     "alerts_badge": "Alertas",
-    "agents_badge": "Agentes",
     "pipelines_badge": "Canalizaciones",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
@@ -801,17 +429,7 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Errors",
-    "tool_performance_empty": "No tool runs in this window",
     "tool_performance_unit_ms": "ms"
-  },
-  "cards": {
-    "fleet_optimization": "Optimización de Flota",
-    "fleet_subtitle": "Recomendaciones automáticas para mejorar el rendimiento de agentes",
-    "remote_control": "Control Remoto",
-    "remote_subtitle": "Acciones rápidas para gestión de agentes",
-    "resume_setup": "Continuar Configuración",
-    "resume_subtitle": "Retoma donde lo dejaste",
-    "knowledge_hub": "Centro de Conocimiento"
   },
   "activity": {
     "title": "Actividad",
@@ -840,23 +458,16 @@
     "prev_failed": "Fallido Anterior",
     "success_pct": "% Éxito",
     "prev_success_pct": "% Éxito Anterior",
-    "successful": "Exitoso",
-    "all": "Todos",
-    "running": "En ejecución",
-    "all_statuses": "Todos los estados",
     "showing": "Mostrando {count} de {total}",
     "load_more": "Cargar más",
-    "col_status": "Estado",
     "col_duration": "Duración",
     "col_started": "Iniciado",
-    "col_id": "ID",
     "no_agents": "Aún no se han creado agentes",
     "no_agents_hint": "Crea tu primera persona para ver la actividad de ejecución aquí.",
     "no_executions": "Aún sin ejecuciones",
     "no_executions_hint": "Ejecuta un agente para ver la actividad de ejecución aquí.",
     "create_persona": "Crear Persona",
     "from_templates": "Desde Plantillas",
-    "execution_label": "Ejecución",
     "unknown": "Desconocido",
     "value_section_title": "Valor de negocio",
     "value_delivered_rate": "Tasa de valor entregado",
@@ -867,54 +478,11 @@
     "col_cost": "Coste"
   },
   "analytics_dashboard": {
-    "title": "Análisis",
-    "subtitle": "Análisis unificado de costos, ejecuciones y uso de herramientas",
-    "metrics_unavailable": "Métricas no disponibles",
-    "auto_refresh_on": "Auto-actualización ACTIVADA (30s)",
-    "auto_refresh_off": "Auto-actualización DESACTIVADA",
-    "cost_anomalies_detected": "{count} anomalías de costo detectadas",
-    "cost_anomaly_detected": "{count} anomalía de costo detectada",
-    "cost_over_time": "Costo a lo Largo del Tiempo",
-    "execution_health": "Salud de Ejecución",
-    "tool_usage_over_time": "Uso de Herramientas a lo Largo del Tiempo",
-    "executions_by_persona": "Ejecuciones por Persona",
-    "latency_chart": "Latencia (p50 / p95 / p99)",
-    "tool_invocations": "Invocaciones de Herramientas",
-    "no_execution_data": "Sin datos de ejecución",
-    "prev_cost": "Costo Anterior",
-    "successful": "Exitoso",
-    "failed": "Fallido",
-    "prev_successful": "Exitoso Anterior",
-    "prev_failed": "Fallido Anterior",
-    "invocations": "Invocaciones",
-    "anomaly_click_hint": "Haz clic en un marcador de diamante en el gráfico para investigar",
-    "saved_views": "Vistas Guardadas",
-    "save_current_view": "Guardar Vista Actual",
-    "smart_presets": "Preajustes Inteligentes",
-    "your_saved_views": "Tus Vistas Guardadas",
-    "view_name_placeholder": "Nombre de la vista...",
-    "save_view": "Guardar vista",
-    "delete_view": "Eliminar vista",
-    "this_week_vs_last": "Esta Semana vs Semana Pasada",
-    "this_month_vs_last": "Este Mes vs Mes Pasado",
-    "health_issues": "Problemas de Salud",
-    "run_analysis": "Ejecutar Análisis",
-    "analyzing": "Analizando...",
-    "analysis_complete": "Análisis completo",
     "issues_found": "{count} problemas encontrados",
     "issues_found_one": "{count} problema encontrado",
     "auto_fixed": "corregido automáticamente",
     "executions_scanned": "{count} ejecuciones analizadas",
     "executions_scanned_one": "{count} ejecución analizada",
-    "no_open_issues": "Sin problemas abiertos",
-    "run_analysis_hint": "Ejecuta el análisis para verificar problemas.",
-    "filter_all": "Todos",
-    "filter_open": "Abiertos",
-    "filter_auto_fixed": "Corregidos automáticamente",
-    "resolve": "Resolver",
-    "breaker": "disyuntor",
-    "fixed": "corregido",
-    "retry": "reintentar",
     "credential_rotation": "Rotación de Credenciales",
     "no_rotation_policies": "Sin políticas de rotación",
     "no_rotation_hint": "Configura la rotación en las credenciales en la Bóveda.",
@@ -922,7 +490,6 @@
     "soon_count": "{count} próximamente",
     "issues_count": "{count} problemas",
     "issues_count_one": "{count} problema",
-    "never": "nunca",
     "fail_count": "{count}x fallo",
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
@@ -931,13 +498,6 @@
     "rotation_due_now": "ahora",
     "rotation_countdown_days_hours": "{days}d {hours}h",
     "rotation_countdown_hours": "{hours}h"
-  },
-  "saved_views": {
-    "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
-    }
   },
   "cron": {
     "title": "Agentes Cron",
@@ -951,21 +511,7 @@
     "no_agents_hint": "Crea un disparador de horario en cualquier agente para verlo aquí.",
     "headless_section": "Agentes en Segundo Plano Sin Interfaz",
     "interactive_section": "Agentes Programados Interactivos",
-    "scheduled_section": "Agentes Programados",
-    "headless_badge": "sin interfaz",
-    "no_schedule": "sin horario",
-    "every_interval": "cada {interval}",
-    "next": "próximo",
-    "last": "último"
-  },
-  "activity_timeline": {
-    "title": "Línea de Tiempo de Actividad",
-    "subtitle": "{events} eventos, {messages} mensajes",
-    "all": "Todos",
-    "events": "Eventos",
-    "messages": "Mensajes",
-    "no_activity": "Sin actividad aún",
-    "high": "Alto"
+    "scheduled_section": "Agentes Programados"
   },
   "sla_card": {
     "successful": "Exitoso",
@@ -975,9 +521,7 @@
     "cost": "Costo",
     "mtbf": "MTBF",
     "auto_healed": "Auto-Recuperado",
-    "cancelled": "Cancelado",
-    "failing": "{count} fallando",
-    "healed": "{count} recuperados"
+    "cancelled": "Cancelado"
   },
   "realtime_page": {
     "title": "Monitor de Bus de Eventos",
@@ -994,13 +538,6 @@
     "pending": "pendiente",
     "success": "éxito",
     "in_window": "en ventana",
-    "test_flow": "Probar Flujo",
-    "testing_flow": "Probando flujo...",
-    "test_event_flow": "Probar flujo de eventos",
-    "resume": "Reanudar",
-    "pause": "Pausar",
-    "resume_stream": "Reanudar transmisión en tiempo real",
-    "pause_stream": "Pausar transmisión en tiempo real",
     "search_events": "Buscar eventos...",
     "filter_type": "Tipo",
     "filter_status": "Estado",
@@ -1011,27 +548,10 @@
     "no_saved_views": "Aún no hay vistas guardadas",
     "save_current_filter": "Guardar filtro actual",
     "view_name_placeholder": "Nombre de la vista...",
-    "delete_saved_view": "Eliminar vista guardada",
-    "event_log": "Registro de Eventos",
-    "entries": "{count} entradas",
-    "filter_events": "Filtrar eventos...",
-    "no_events": "Aún no hay eventos",
-    "open_in_drawer": "Abrir en panel de detalles",
-    "event_label": "Evento",
-    "status_label": "Estado",
-    "source_label": "Origen",
-    "target_label": "Destino",
-    "id_label": "ID",
-    "error_label": "Error",
-    "payload_label": "Carga útil",
     "close_event_details": "Cerrar detalles del evento",
     "reset_to_start": "Restablecer al inicio",
     "cycle_speed": "Cambiar velocidad de reproducción",
-    "exit_replay": "Salir de reproducción",
-    "galaxy": "Galaxia",
-    "galaxy_desc": "Constelación orbital con rastros de cometas",
-    "lanes": "Carriles",
-    "lanes_desc": "Diagrama de flujo horizontal con carriles"
+    "exit_replay": "Salir de reproducción"
   },
   "memory_form": {
     "agent": "Agente",
@@ -1048,10 +568,7 @@
     "saving": "Guardando...",
     "created_success": "Memoria creada exitosamente",
     "fill_required": "Completa todos los campos requeridos para guardar",
-    "saving_memory": "Guardando memoria...",
-    "share_with_group": "Compartir con",
-    "share_with_group_hint": "Cada persona del grupo ve esta memoria en su prompt — útil para contexto a nivel de organización como estilo o políticas.",
-    "share_with_group_title": "Escrito por la persona seleccionada; aparece para cada miembro de su grupo."
+    "saving_memory": "Guardando memoria..."
   },
   "memory_filter": {
     "search_placeholder": "Buscar memorias...",
@@ -1072,9 +589,7 @@
   "memory_conflict": {
     "memory_a": "Memoria A",
     "memory_b": "Memoria B",
-    "merge": "Combinar",
-    "keep": "Conservar",
-    "vs": "vs"
+    "merge": "Combinar"
   },
   "observability_charts": {
     "cost_over_time": "Costo a lo Largo del Tiempo",
@@ -1084,9 +599,7 @@
     "failed": "Fallido",
     "anomalies_detected": "{count} anomalías de costo detectadas",
     "anomaly_detected": "{count} anomalía de costo detectada",
-    "anomaly_click_hint": "Haz clic en un marcador de diamante en el gráfico para investigar",
-    "clear_traces": "Limpiar trazas completadas",
-    "all_operations": "Todas las operaciones"
+    "anomaly_click_hint": "Haz clic en un marcador de diamante en el gráfico para investigar"
   },
   "health_extra": {
     "success": "Éxito",
@@ -1142,41 +655,12 @@
   "review_extra": {
     "add_note": "Agregar una nota (opcional)...",
     "confirm": "Confirmar",
-    "processing": "Procesando...",
-    "clear_verdicts": "Limpiar todos los veredictos",
-    "retry_with_changes": "Reintentar con cambios",
-    "reject_all": "Rechazar todo",
-    "quick_actions": "Acciones Rápidas",
-    "accepted": "{count} aceptados",
-    "rejected": "{count} rechazados",
-    "undecided": "{count} sin decidir"
-  },
-  "widgets_extra": {
-    "execution_health_chart": "Salud de Ejecución",
-    "cost_over_time_chart": "Costo a lo Largo del Tiempo",
-    "successful": "Exitoso",
-    "failed": "Fallido",
-    "close": "Cerrar",
-    "dismiss_help": "Descartar ayuda",
-    "skip_tour": "Saltar recorrido completo"
-  },
-  "remote_control_card": {
-    "connect_to_desktop": "Conectar al Escritorio",
-    "connect_description": "Ejecuta agentes usando tu CLI de escritorio mediante Control Remoto. Inicia {command} en tu computadora y luego conecta aquí.",
-    "requires_subscription": "Requiere suscripción Claude Pro o Max"
-  },
-  "resume_setup_card": {
-    "resume_tour": "Reanudar Recorrido",
-    "left_off_at": "Te quedaste en",
-    "steps_completed": "{completed}/{total} pasos completados",
-    "skip_tour": "Saltar recorrido completo",
-    "continue_label": "Continuar"
+    "processing": "Procesando..."
   },
   "detail_modal": {
     "close": "Cerrar"
   },
   "metric_help_popover": {
-    "help_for": "Ayuda para {label}",
     "dismiss_help": "Descartar ayuda",
     "healthy": "Saludable:",
     "click": "Clic:",
@@ -1205,8 +689,6 @@
     "disconnect": "Desconectar"
   },
   "metrics_cards": {
-    "cost_spike": "Pico de costo",
-    "above_avg": "por encima del promedio",
     "top_executions": "Principales ejecuciones:"
   },
   "event_log_item": {
@@ -1215,11 +697,7 @@
     "source": "Origen",
     "processed": "Procesado",
     "event_data": "Datos del Evento",
-    "copy_event_data": "Copiar datos del evento",
-    "copied": "Copiado",
-    "copy": "Copiar",
-    "error": "Error",
-    "system": "Sistema"
+    "error": "Error"
   },
   "burn_rate_extra": {
     "title": "Proyecciones de Tasa de Consumo",
@@ -1276,48 +754,23 @@
   },
   "knowledge_graph": {
     "mock_pattern": "Patrón Simulado",
-    "seed_tooltip": "Sembrar un patrón simulado (solo dev)",
-    "all_types": "Todos los Tipos",
-    "all_scopes": "Todos los Alcances",
-    "failure_drilldown_prefix": "Análisis de fallos:",
-    "failure_date_filter": "Mostrando patrones de fallo activos el {date} o después",
-    "data_unavailable": "Datos de conocimiento no disponibles",
-    "loading_patterns": "Cargando patrones de conocimiento...",
-    "drilldown_toggle_title": "Mostrar/ocultar análisis de fallos",
-    "no_patterns_yet": "Aún no hay patrones de conocimiento",
-    "no_patterns_yet_hint": "Ejecuta agentes para construir patrones de conocimiento. Los agentes se vuelven más inteligentes con el tiempo.",
-    "no_patterns_match": "Ningún patrón coincide con los filtros actuales",
-    "recent_learnings": "Aprendizajes Recientes",
-    "curating_manually": "¿Curando documentos manualmente?",
-    "obsidian_tip": "Para menos de ~1000 notas, un conector de Obsidian puede sincronizar tu bóveda directamente."
+    "seed_tooltip": "Sembrar un patrón simulado (solo dev)"
   },
   "focused_decision": {
     "accept": "Aceptar",
     "reject": "Rechazar",
-    "media_unavailable": "Medios no disponibles",
-    "video_not_supported": "Tu navegador no soporta la reproducción de video.",
-    "reject_this": "Rechazar esto",
-    "accept_this": "Aceptar esto"
+    "media_unavailable": "Medios no disponibles"
   },
   "review_focus": {
     "all_caught_up": "Todo al día",
     "no_pending": "No hay revisiones pendientes por procesar.",
     "queue": "Cola",
-    "clear": "Limpiar",
     "clear_all_verdicts": "Limpiar todos los veredictos",
     "quick_actions": "Acciones Rápidas",
     "reject_all": "Rechazar todo",
     "accept_all": "Aceptar todo",
     "retry_with_changes": "Reintentar con cambios",
-    "video_not_supported": "Tu navegador no soporta la reproducción de video.",
     "carry_out_hint": "Aprueba la revisión y ejecuta la persona para llevarla a cabo"
-  },
-  "bulk_action_bar": {
-    "pending_reviews_selected_one": "{count} revisión pendiente seleccionada",
-    "pending_reviews_selected_other": "{count} revisiones pendientes seleccionadas"
-  },
-  "review_inbox": {
-    "drag_to_resize": "Arrastra para redimensionar"
   },
   "memory_card": {
     "confirm": "Confirmar",
@@ -1331,14 +784,12 @@
     "importance_label": "Importancia",
     "tags_label": "Etiquetas",
     "view_source_execution": "Ver Ejecución de Origen",
-    "delete_memory": "Eliminar Memoria",
-    "close": "Cerrar"
+    "delete_memory": "Eliminar Memoria"
   },
   "memory_table": {
     "agent": "Agente",
     "title": "Título",
     "category": "Categoría",
-    "priority": "Prioridad",
     "tags": "Etiquetas",
     "created": "Creado"
   },
@@ -1352,7 +803,6 @@
     "baseline_label": "Línea base:",
     "correlating": "Correlacionando eventos...",
     "likely_root_causes": "Causas Raíz Probables",
-    "correlated_events": "Eventos Correlacionados",
     "no_correlated": "No se encontraron eventos correlacionados en la ventana de ±24h."
   },
   "healing_issue_modal": {
@@ -1362,18 +812,10 @@
     "copied": "Copiado",
     "copy_fix": "Copiar Corrección",
     "persona_auto_disabled": "Persona deshabilitada automáticamente",
-    "persona_auto_disabled_desc": "Esta persona fue deshabilitada automáticamente después de 5 fallos consecutivos. Revisa el patrón de errores a continuación y vuelve a habilitarla manualmente una vez resuelta la causa raíz.",
     "marking_resolved_note": "Marcar como resuelto significa que has abordado este problema fuera del sistema de recuperación.",
-    "retry_in_progress": "Reintento en curso — el estado se actualizará cuando esté completo",
     "auto_resolved": "Este problema fue resuelto automáticamente",
-    "close": "Cerrar",
     "resolving": "Resolviendo…",
-    "mark_resolved": "Marcar como Resuelto",
-    "retrying_badge": "reintentando",
-    "auto_fixed_badge": "corregido automáticamente",
-    "retry_in_progress_badge": "reintento en curso",
-    "healed_via_retry_badge": "corregido mediante reintento",
-    "severity_suffix": "gravedad"
+    "mark_resolved": "Marcar como Resuelto"
   },
   "healing_issues_panel": {
     "title": "Problemas de Salud",
@@ -1381,22 +823,6 @@
     "run_analysis": "Ejecutar Análisis",
     "no_open_issues": "Sin problemas abiertos",
     "run_analysis_hint": "Ejecuta el análisis para verificar problemas.",
-    "ai_healing_title": "Sanación por IA",
-    "diagnosis_label": "Diagnóstico:",
-    "fixes_applied": "Correcciones Aplicadas",
-    "alert_history_title": "Historial de Alertas",
-    "all_agents_global": "Todos los agentes (global)",
-    "add_rule": "Agregar Regla",
-    "no_rules_configured": "No hay reglas de alerta configuradas. Agrega una regla para comenzar a monitorear.",
-    "confidence_pct_suffix": "% confianza",
-    "spike_on": "pico en",
-    "correlated_events_prefix": "Eventos Correlacionados (",
-    "circuit_breaker_label": "interruptor de circuito",
-    "auto_disabled_message": "Esta persona fue deshabilitada automáticamente como respuesta de interruptor de circuito ante fallos repetidos.",
-    "execution_label": "Ejecución:",
-    "issue_marked_as": "Este problema está marcado como",
-    "retry_in_progress": "Reintento en progreso — el estado se actualizará al completarse.",
-    "resolve_issue_title": "Marcar problema como resuelto",
     "healing_audit_log": "Registro de Auditoría de Recuperación",
     "no_silent_failures": "No se registraron fallos silenciosos.",
     "analysis_complete_prefix": "Análisis completado:"
@@ -1449,13 +875,6 @@
     "event_id_label": "ID de evento",
     "broadcast": "(difusión)"
   },
-  "event_bus_overlay": {
-    "earlier_events_not_shown_one": "{count} evento anterior no mostrado",
-    "earlier_events_not_shown_other": "{count} eventos anteriores no mostrados"
-  },
-  "event_bus_filter": {
-    "search_placeholder": "Buscar eventos…"
-  },
   "realtime_stats": {
     "events_per_min": "eventos/min",
     "pending": "pendiente",
@@ -1481,32 +900,13 @@
     "heartbeats_btn": "Latidos",
     "reliability_btn": "Fiabilidad"
   },
-  "crash_logs": {
-    "title": "Registros de fallos",
-    "no_logs": "No se han registrado fallos.",
-    "component_stack_separator": "--- Component Stack ---"
-  },
   "popup_fields": {
     "sign_up_free_at": "Regístrate gratis en",
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", luego copia tu clave API desde Configuración. Esta clave se almacena localmente y se comparte entre todos los agentes."
   },
-  "events_list": {
-    "save_view_tooltip": "Guardar filtros actuales como vista",
-    "clear_filters_tooltip": "Borrar todos los filtros"
-  },
-  "dashboard_home": {
-    "you_have": "Tienes"
-  },
-  "fleet_optimization_card": {
-    "title": "Optimización de flota"
-  },
   "usage_filters": {
     "time_range_label": "Intervalo de tiempo"
-  },
-  "day_range_picker": {
-    "start_date": "Fecha de inicio",
-    "end_date": "Fecha de fin"
   },
   "healing_summary": {
     "auto_fixed_this_week": "corregido automáticamente esta semana",
@@ -1516,14 +916,12 @@
     "title": "Upcoming Routines",
     "subtitle": "next scheduled runs",
     "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "never_fired": "pending first run"
   },
   "vault_recent_changes": {
     "title": "Vault Changes",
     "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "empty": "No recent sync activity."
   },
   "heatmap": {
     "title_persona": "Activity over the last year",

@@ -1,6 +1,4 @@
 {
-  "title": "Pengaturan",
-  "settings_saved": "Tersimpan",
   "account": {
     "title": "Akun",
     "subtitle": "Kelola masuk dan profil Anda",
@@ -66,14 +64,6 @@
       "synced_memories": "Memori",
       "synced_knowledge_patterns": "Pengetahuan"
     }
-  },
-  "appearance_extra": {
-    "simple": "Sederhana",
-    "simple_hint": "Hanya fitur inti",
-    "full": "Penuh",
-    "full_hint": "Tampilkan antarmuka lengkap",
-    "dev": "Dev",
-    "dev_hint": "Buka kunci alat pengembang"
   },
   "appearance": {
     "title": "Tampilan",
@@ -651,27 +641,6 @@
     "empty_filtered": "Tidak ada entri yang cocok dengan filter kategori saat ini.",
     "before": "Sebelum",
     "after": "Sesudah"
-  },
-  "quality_gates": {
-    "title": "Gerbang Kualitas",
-    "loading": "Memuat...",
-    "error_loading": "Kesalahan memuat konfigurasi",
-    "active_rules": "{count} aturan filter aktif",
-    "loading_config": "Memuat konfigurasi gerbang kualitas...",
-    "description": "Gerbang kualitas menyaring memori dan ulasan yang dibuat AI selama pengiriman eksekusi. Pola dicocokkan sebagai substring terhadap judul dan konten gabungan setiap pengiriman. Ketika pola cocok, tindakan yang dikonfigurasi diterapkan. Aturan ini mencegah noise operasional (kesalahan kredensial, stack trace, laporan ruang kerja kosong) dari mengotori basis pengetahuan Anda.",
-    "memory_filters": "Filter Memori",
-    "memory_filters_desc": "Diterapkan pada pengiriman AgentMemory. Memblokir kegagalan operasional dan kebocoran kredensial dari disimpan sebagai memori persona.",
-    "review_filters": "Filter Ulasan",
-    "review_filters_desc": "Diterapkan pada pengiriman ManualReview. Menyaring kesalahan infrastruktur sehingga hanya keputusan bisnis nyata yang mencapai antrean ulasan.",
-    "rejected_categories": "Kategori yang ditolak",
-    "rules_count": "{count} aturan",
-    "rules_count_plural": "{count} aturan",
-    "reset_defaults": "Reset ke default",
-    "confirm_reset": "Konfirmasi reset?",
-    "rules_hint": "Aturan dimuat dari database pada setiap pengiriman. Perubahan berlaku segera.",
-    "action_reject": "Reject",
-    "action_tag": "Tag",
-    "action_warn": "Warn"
   },
   "api_keys": {
     "title": "API Keys",

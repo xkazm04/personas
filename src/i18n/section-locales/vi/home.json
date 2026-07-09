@@ -1,28 +1,4 @@
 {
-  "welcome": "Chào mừng",
-  "greeting_morning": "Chào buổi sáng",
-  "greeting_afternoon": "Chào buổi chiều",
-  "greeting_evening": "Chào buổi tối",
-  "operator": "Điều hành viên",
-  "summary_empty": "Bắt đầu bằng cách tạo tác tử đầu tiên hoặc khám phá nền tảng.",
-  "summary_stats": "Bạn có {personasCount} tác tử{personasPlural} và {credentialsCount} thông tin xác thực{credentialsPlural} đã cấu hình.",
-  "quick_navigation": "Điều hướng nhanh",
-  "platform_label": "nền tảng Personas",
-  "roadmap": {
-    "title": "Lộ trình sản phẩm",
-    "subtitle": "Những gì chúng tôi đang xây dựng và tiếp theo.",
-    "unavailable": "Lộ trình không khả dụng",
-    "unavailable_hint": "Không thể tải lộ trình sản phẩm. Kiểm tra kết nối và thử lại.",
-    "status_in_progress": "Đang thực hiện",
-    "status_next": "Tiếp theo",
-    "status_planned": "Đã lên kế hoạch",
-    "status_completed": "Đã hoàn thành",
-    "priority_now": "Bây giờ",
-    "priority_next": "Tiếp theo",
-    "priority_later": "Sau này",
-    "in_progress_count": "{count} Đang thực hiện",
-    "next_count": "{count} Tiếp theo"
-  },
   "setup": {
     "choose_role": "Chọn vai trò của bạn",
     "choose_role_hint": "Chúng tôi sẽ tùy chỉnh trải nghiệm phù hợp với cách bạn làm việc.",
@@ -50,54 +26,6 @@
     "role": "Vai trò",
     "tool": "Công cụ",
     "goal": "Mục tiêu"
-  },
-  "fleet": {
-    "executions_today": "Chạy Hôm Nay",
-    "success_rate": "Tỷ Lệ Thành Công",
-    "active_agents": "Agent Hoạt Động",
-    "credentials": "Thông Tin Xác Thực"
-  },
-  "nav": {
-    "overview": {
-      "label": "Tổng quan",
-      "description": "Phân tích bảng điều khiển, lịch sử thực thi và giám sát hệ thống thời gian thực trên tất cả tác tử"
-    },
-    "personas": {
-      "label": "Tác tử",
-      "description": "Tạo, cấu hình và quản lý tác tử AI với hành vi và khả năng tùy chỉnh"
-    },
-    "events": {
-      "label": "Sự kiện",
-      "description": "Cấu hình trình kích hoạt sự kiện, trình lắng nghe webhook và tự động hóa theo lịch trình"
-    },
-    "credentials": {
-      "label": "Khóa",
-      "description": "Quản lý thông tin xác thực API, kết nối cơ sở dữ liệu, mã thông báo OAuth và bí mật được mã hóa"
-    },
-    "design-reviews": {
-      "label": "Mẫu",
-      "description": "Nhập quy trình n8n, duyệt thư viện mẫu và tạo bản thiết kế tác tử"
-    },
-    "team": {
-      "label": "Nhóm",
-      "description": "Xây dựng đường ống tác tử đa tác tử với điều phối kéo thả và định tuyến"
-    },
-    "cloud": {
-      "label": "Đám mây",
-      "description": "Triển khai tác tử lên hạ tầng đám mây, quản lý lịch trình và tích hợp GitLab CI"
-    },
-    "settings": {
-      "label": "Cài đặt",
-      "description": "Tùy chọn tài khoản, giao diện, quy tắc thông báo và cấu hình công cụ xử lý"
-    },
-    "plugins": {
-      "label": "Plugin",
-      "description": "Mở rộng tác nhân với plugin bên thứ ba và tiện ích tùy chỉnh"
-    },
-    "teams": {
-      "label": "Nhóm",
-      "description": "Kết hợp nhiều agent thành một nhóm cùng phối hợp trên quy trình làm việc nhiều bước"
-    }
   },
   "learning": {
     "title": "Trung tâm học tập",
@@ -150,13 +78,6 @@
     "get_started": "Bắt đầu",
     "language": "Ngôn ngữ"
   },
-  "icon_showcase": {
-    "lucide_tab": "Lucide (Thư viện)",
-    "personas_tab": "Personas (Hoạt hình)",
-    "lucide_footer": "lucide-react -- thư viện biểu tượng chung -- tĩnh",
-    "personas_footer": "9 biểu tượng tùy chỉnh -- motif thần kinh/mạch -- CSS hoạt hình -- thích ứng chủ đề"
-  },
-  "commander": "Commander",
   "resume": {
     "failure": "Lỗi chưa đọc trong {personaName} — hãy điều tra",
     "tour": "Tiếp tục {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",

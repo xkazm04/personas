@@ -1,24 +1,6 @@
 {
-  "title": "वॉल्ट",
-  "subtitle": "क्रेडेंशियल जोड़ने का तरीका चुनें",
-  "add_from_catalog": "कैटलॉग से जोड़ें",
-  "ai_designed": "AI-डिज़ाइंड क्रेडेंशियल",
   "workspace_connect": "वर्कस्पेस कनेक्ट",
   "quick_start": "त्वरित शुरुआत",
-  "health": {
-    "healthy": "स्वस्थ",
-    "needs_attention": "ध्यान आवश्यक",
-    "untested": "अपरीक्षित"
-  },
-  "list": {
-    "no_credentials": "कोई प्रमाणित सेवा नहीं मिली। नीचे से मैन्युअली चुनें।",
-    "delete_confirm": "यह क्रेडेंशियल हटाएँ?",
-    "blast_radius": "प्रभाव क्षेत्र",
-    "no_dependencies": "इस क्रेडेंशियल पर कोई एजेंट निर्भर नहीं है। संशोधित या हटाना सुरक्षित है।",
-    "affected_agents": "प्रभावित एजेंट",
-    "affected_events": "प्रभावित इवेंट",
-    "sort_label": "क्रमबद्ध करें:"
-  },
   "import": {
     "title": "आयात स्रोत",
     "picker_subtitle": "अपने सीक्रेट का स्रोत चुनें",
@@ -44,29 +26,6 @@
     "import_secrets_other": "{count} सीक्रेट्स आयात करें"
   },
   "features": {
-    "anomaly_detected": "विसंगति पाई गई: पहले सफल होने के बाद क्रेडेंशियल अचानक विफल हो रहा है। संभावित निरस्तीकरण।",
-    "history": "इतिहास",
-    "event_triggers": "इवेंट ट्रिगर",
-    "rotation_policy": {
-      "rotate_every": "हर बार घुमाएँ",
-      "days": "दिन",
-      "no_policy": "कोई रोटेशन नीति कॉन्फ़िगर नहीं है।",
-      "oauth_refresh_active": "OAuth टोकन रिफ्रेश सक्रिय",
-      "oauth_refresh_active_auto": "OAuth टोकन रिफ्रेश सक्रिय (ऑटो)",
-      "auto_rotation_active": "ऑटो-रोटेशन सक्रिय",
-      "rotation_paused": "रोटेशन रुका हुआ",
-      "rotate_now": "अभी रोटेट करें",
-      "enable_rotation": "रोटेशन सक्षम करें",
-      "enabling": "सक्षम हो रहा है...",
-      "remove_policy_tooltip": "रोटेशन नीति हटाएं",
-      "save": "सहेजें",
-      "cancel": "रद्द करें",
-      "rotation_failed": "रोटेशन विफल: {error}",
-      "remove_failed": "नीति हटाने में विफल: {error}",
-      "update_failed": "रोटेशन अवधि अपडेट करने में विफल: {error}",
-      "enable_failed": "रोटेशन सक्षम करने में विफल: {error}",
-      "last_rotated": "अंतिम रोटेट {time}"
-    },
     "anomaly": {
       "healthy": "स्वस्थ",
       "transient_issues": "अस्थायी समस्याएं",
@@ -78,21 +37,6 @@
       "permanent": "जारी: {rate}",
       "transient": "अस्थायी: {rate}",
       "tolerance": "सहनशीलता: {rate}"
-    },
-    "rotation_badge": {
-      "disabled": "अक्षम",
-      "perm_errors": "जारी त्रुटियां",
-      "degrading": "बिगड़ रहा है",
-      "backoff": "पुनः प्रयास की प्रतीक्षा"
-    },
-    "audit": {
-      "empty": "अभी तक कोई ऑडिट प्रविष्टियां नहीं। ऑपरेशन होने पर लॉग किए जाएंगे।",
-      "op_decrypted": "डिक्रिप्ट किया",
-      "op_created": "बनाया",
-      "op_updated": "अपडेट किया",
-      "op_deleted": "हटाया",
-      "op_healthcheck": "कनेक्शन परीक्षण",
-      "filter_all": "सभी"
     },
     "intelligence": {
       "operation": "ऑपरेशन",
@@ -205,15 +149,7 @@
   "body": {
     "authorizing": "{name} के साथ प्राधिकृत हो रहा है...",
     "authorize_with": "{name} के साथ प्राधिकृत करें",
-    "authorize_hint": "{name} साइन-इन खोलता है और आपकी मंजूरी के बाद आपकी पहुंच सहेजता है।",
-    "consent_completed": "{name} सहमति {time} पर पूर्ण",
-    "update_failed": "क्रेडेंशियल अपडेट करने में विफल",
-    "delete_credential": "क्रेडेंशियल हटाएं"
-  },
-  "connector": {
-    "filter_all": "सभी",
-    "filter_connected": "कनेक्टेड",
-    "filter_available": "उपलब्ध"
+    "consent_completed": "{name} सहमति {time} पर पूर्ण"
   },
   "auto_cred": {
     "guided_setup": "गाइडेड सेटअप",
@@ -254,38 +190,6 @@
     "save_procedure": "प्रक्रिया सहेजें",
     "procedure_saved": "प्रक्रिया सहेजी गई"
   },
-  "vector": {
-    "documents_tab": "दस्तावेज़",
-    "search_tab": "खोज",
-    "settings_tab": "सेटिंग्स",
-    "ingest_title": "दस्तावेज़ जोड़ें",
-    "ingest_hint": "फ़ाइलें यहाँ ड्रॉप करें या ब्राउज़ करने के लिए क्लिक करें",
-    "ingest_drop": "जोड़ने के लिए फ़ाइलें ड्रॉप करें",
-    "ingest_supported": "समर्थित: txt, md, html, csv, json, yaml, कोड फ़ाइलें",
-    "starting_ingestion": "फ़ाइलें प्रोसेस हो रही हैं...",
-    "no_valid_files": "कोई मान्य फ़ाइल पाथ नहीं मिले। अलग-अलग फ़ाइलें ड्रॉप करने का प्रयास करें।",
-    "no_documents": "अभी तक कोई दस्तावेज़ नहीं",
-    "no_documents_hint": "अपना ज्ञान आधार बनाना शुरू करने के लिए फ़ाइलें यहाँ ड्रॉप करें, टेक्स्ट पेस्ट करें, या एक डायरेक्टरी स्कैन करें।",
-    "refresh": "ताज़ा करें",
-    "paste_text": "टेक्स्ट पेस्ट करें",
-    "directory": "डायरेक्टरी",
-    "delete_document": "दस्तावेज़ हटाएं",
-    "document_count_one": "{count} दस्तावेज़",
-    "document_count_other": "{count} दस्तावेज़",
-    "show_full": "पूरा अंश दिखाएं",
-    "show_less": "कम दिखाएं",
-    "copy_content": "सामग्री कॉपी करें",
-    "kb_info": "ज्ञान आधार जानकारी",
-    "embedding_model": "खोज मॉडल",
-    "dimensions": "आयाम",
-    "chunk_size": "अनुभाग आकार",
-    "chunk_overlap": "अनुभाग ओवरलैप",
-    "statistics": "आंकड़े",
-    "documents": "दस्तावेज़",
-    "chunks": "अनुभाग",
-    "local_embedding": "स्थानीय खोज",
-    "local_embedding_hint": "खोज इंडेक्सिंग {model} ({dims}-dim) का उपयोग करके स्थानीय रूप से चलती है। कोई डेटा आपकी मशीन नहीं छोड़ता। मॉडल (~23MB) पहली बार उपयोग पर डाउनलोड होता है और स्थानीय रूप से सहेजा जाता है।"
-  },
   "design_modal": {
     "title": "क्रेडेंशियल डिज़ाइन करें",
     "error_title": "कुछ गलत हुआ",
@@ -301,60 +205,12 @@
     "start_over": "फिर से शुरू करें",
     "try_again_with": "अपने अनुरोध के साथ पुनः प्रयास करें"
   },
-  "desktop": {
-    "installed": "इंस्टॉल किया गया",
-    "running": "चल रहा है",
-    "not_installed": "इंस्टॉल नहीं"
-  },
-  "graph": {
-    "no_dependencies": "कोई निर्भरताएं नहीं",
-    "connection_count_one": "{count} कनेक्शन",
-    "connection_count_other": "{count} कनेक्शन",
-    "dep_count_one": "{count} निर्भरता",
-    "dep_count_other": "{count} निर्भरताएं",
-    "not_tested": "परीक्षण नहीं किया",
-    "healthy": "स्वस्थ",
-    "unhealthy": "अस्वस्थ"
-  },
-  "wizard": {
-    "detected": "पाया गया ({count})",
-    "available": "उपलब्ध ({count})",
-    "already_added": "पहले से जोड़ा ({count})",
-    "no_match": "\"{search}\" से मेल खाने वाली कोई सेवा नहीं",
-    "already_added_badge": "पहले से जोड़ा",
-    "local": "स्थानीय",
-    "cli_auth": "CLI auth",
-    "session": "सत्र"
-  },
   "playground": {
-    "tab_overview": "अवलोकन",
-    "tab_api_explorer": "API एक्सप्लोरर",
-    "tab_recipes": "रेसिपी",
-    "tab_mcp_tools": "MCP टूल",
-    "tab_rotation": "रोटेशन",
-    "add_tag": "टैग जोड़ें...",
-    "no_connector": "इस क्रेडेंशियल प्रकार के लिए कोई कनेक्टर परिभाषा उपलब्ध नहीं है।",
-    "try_button": "आज़माएँ",
-    "parameters": "पैरामीटर",
-    "request_body": "अनुरोध बॉडी",
-    "path_placeholder": "/api/v1/resource",
-    "sending": "भेजा जा रहा है...",
-    "mcp_input_schema": "इनपुट स्कीमा",
     "mcp_run": "चलाएं",
     "mcp_error": "त्रुटि",
     "mcp_success": "सफल",
     "mcp_empty": "(खाली)",
-    "mcp_discover": "MCP सर्वर टूल खोजें",
-    "mcp_discover_hint": "उपलब्ध टूल खोजने और उनका परीक्षण करने के लिए MCP सर्वर से कनेक्ट करें।",
-    "mcp_discover_button": "टूल खोजें",
-    "response_empty": "(खाली प्रतिक्रिया)",
-    "header": "हेडर",
-    "value": "मूल्य",
-    "path_parameters": "पाथ पैरामीटर",
-    "query_parameters": "क्वेरी पैरामीटर",
-    "headers": "हेडर",
-    "body": "बॉडी",
-    "empty_response": "(खाली प्रतिक्रिया)"
+    "response_empty": "(खाली प्रतिक्रिया)"
   },
   "playground_extra": {
     "add_tag": "टैग जोड़ें...",
@@ -721,37 +577,11 @@
     "title_dependencies": "निर्भरताएं",
     "title_databases": "डेटाबेस"
   },
-  "bulk_healthcheck": {
-    "title": "हेल्थचेक परिणाम",
-    "needs_attention": "ध्यान चाहिए",
-    "slowest_responses": "सबसे धीमी प्रतिक्रियाएं",
-    "passed_count": "{count} सफल",
-    "failed_count": "{count} विफल",
-    "total_count": "{count} कुल"
-  },
-  "health_bar": {
-    "healthy": "स्वस्थ",
-    "needs_attention": "ध्यान चाहिए",
-    "untested": "परीक्षण नहीं किया"
-  },
   "breadcrumb": {
     "aria_label": "वॉल्ट ब्रेडक्रंब"
   },
   "credential_card": {
-    "deleting": "{name} हटाया जा रहा है...",
-    "no_connector": "इस क्रेडेंशियल प्रकार के लिए कोई कनेक्टर परिभाषा उपलब्ध नहीं।",
-    "stored_result": "संग्रहीत कनेक्शन परीक्षण परिणाम",
-    "delete_credential": "क्रेडेंशियल हटाएं",
-    "corrupted": "दूषित",
-    "corrupted_tooltip": "हेल्थचेक रिंग बफर मेटाडेटा दूषित है। अगली सफल हेल्थचेक खराब डेटा को ओवरराइट करने तक अनोमली स्कोर अनुपलब्ध हैं।",
-    "field_count_one": "{count} फ़ील्ड",
-    "field_count_other": "{count} फ़ील्ड",
-    "add_tag_placeholder": "टैग जोड़ें...",
-    "add_tag_button": "टैग जोड़ें",
-    "remove_tag": "टैग \"{tag}\" हटाएँ",
-    "copy_credential_id": "क्रेडेंशियल ID कॉपी करें",
-    "refresh_oauth": "अभी OAuth टोकन ताज़ा करें",
-    "refresh": "ताज़ा करें"
+    "delete_credential": "क्रेडेंशियल हटाएं"
   },
   "vault_badge": {
     "needs_attention": "ध्यान चाहिए",
@@ -783,21 +613,6 @@
     "label_type": "प्रकार",
     "unverified_warning": "सभी निर्भरताओं को सत्यापित नहीं किया जा सका। कुछ कनेक्टेड एजेंट या ऑटोमेशन नहीं दिखाए जा सकते हैं।"
   },
-  "card_body": {
-    "failed_update": "क्रेडेंशियल अपडेट करने में विफल",
-    "authorizing_with": "{name} के साथ प्राधिकृत हो रहा है...",
-    "authorize_with": "{name} के साथ प्राधिकृत करें",
-    "authorize_hint": "ऐप-प्रबंधित {name} सहमति लॉन्च करता है और अनुमोदन के बाद रिफ्रेश टोकन अपडेट करता है।",
-    "consent_completed": "{name} सहमति {time} पर पूर्ण"
-  },
-  "card_details": {
-    "tab_intelligence": "इंटेलिजेंस",
-    "tab_rotation": "रोटेशन",
-    "tab_token_lifetime": "टोकन जीवनकाल",
-    "tab_services": "सेवाएं ({count})",
-    "tab_events": "इवेंट ({count})",
-    "tab_audit": "ऑडिट"
-  },
   "intelligence_tab": {
     "loading": "इंटेलिजेंस डेटा लोड हो रहा है",
     "tab_overview": "अवलोकन",
@@ -818,18 +633,6 @@
     "link_structural": "संरचनात्मक",
     "link_observed": "देखा गया",
     "via_connector": "{connector} के माध्यम से"
-  },
-  "token_metrics": {
-    "loading": "मेट्रिक्स लोड हो रही हैं...",
-    "no_metrics": "अभी तक कोई टोकन रिफ्रेश मेट्रिक्स रिकॉर्ड नहीं। पहले OAuth टोकन रिफ्रेश के बाद मेट्रिक्स दिखाई देंगी।",
-    "trend_warning": "टोकन जीवनकाल छोटा होता जा रहा है — संभावित प्रदाता थ्रॉटलिंग या नीति परिवर्तन।",
-    "total_refreshes": "कुल रिफ्रेश",
-    "failure_rate": "विफलता दर",
-    "avg_lifetime": "औसत जीवनकाल",
-    "avg_drift": "औसत ड्रिफ्ट",
-    "recent_ttls": "हाल के प्रदाता TTL (नवीनतम पहले)",
-    "recent_refreshes": "हाल के रिफ्रेश",
-    "fallback_used": "{rate}% रिफ़्रेश में Fallback ({fallback}s) उपयोग ({count}/{total}) — प्रदाता छोड़ देता है"
   },
   "reauth_banner": {
     "access_revoked": ") -- एक्सेस रद्द कर दिया गया था। स्वचालन फिर से शुरू करने के लिए पुनः प्राधिकृत करें।",
@@ -932,17 +735,7 @@
   },
   "audit_log": {
     "empty": "अभी तक कोई ऑडिट प्रविष्टियां नहीं",
-    "empty_hint": "ऑपरेशन होने पर लॉग किए जाएंगे।",
-    "access_events_hint": "एक्सेस इवेंट यहाँ दिखाई देंगे।",
-    "loading": "ऑडिट टाइमलाइन लोड हो रही है...",
-    "total_accesses": "{count} कुल",
-    "personas_one": "{count} पर्सोना",
-    "personas_other": "{count} पर्सोना",
-    "accesses_24h": "24 घंटे में {count}",
-    "anomalies_one": "{count} विसंगति",
-    "anomalies_other": "{count} विसंगतियाँ",
-    "no_anomalies": "कोई विसंगति नहीं",
-    "show_all": "सभी {count} प्रविष्टियाँ दिखाएँ"
+    "empty_hint": "ऑपरेशन होने पर लॉग किए जाएंगे।"
   },
   "credential_import": {
     "import_from": "{source} से आयात करें",
@@ -983,66 +776,6 @@
     "health_healthy": "स्वस्थ",
     "health_failing": "विफल",
     "health_untested": "अपरीक्षित"
-  },
-  "wizard_detect": {
-    "no_services": "\"{search}\" से मेल खाने वाली कोई सेवा नहीं",
-    "select_services": "क्रेडेंशियल जोड़ने के लिए सेवाएं चुनें, या ऑटो-डिटेक्ट के लिए स्कैन करें।",
-    "scanning": "CLI टूल और ब्राउज़र सत्र स्कैन हो रहे हैं...",
-    "scan_button": "प्रमाणित सेवाओं के लिए स्कैन करें",
-    "search_services": "सेवाएं खोजें...",
-    "desktop_bridge": "डेस्कटॉप ब्रिज -- ऑटो-डिटेक्ट",
-    "batch_complete": "बैच सेटअप पूर्ण",
-    "skip_service": "इस सेवा को छोड़ें",
-    "no_filter_match": "एक अलग खोज शब्द आज़माएं या अपना फ़िल्टर साफ़ करें।",
-    "set_up_credentials": "क्रेडेंशियल सेट करें",
-    "clear_selection": "चयन साफ़ करें",
-    "set_up_services": "{count} सेवा{plural} सेट करें",
-    "setting_up": "{total} में से {current} सेट किया जा रहा है",
-    "wizard_title": "क्रेडेंशियल सेटअप विज़ार्ड",
-    "choose_service": "सेट करने के लिए एक सेवा चुनें",
-    "ai_walk_description": "AI आपको API क्रेडेंशियल प्राप्त करने के लिए चरण-दर-चरण मार्गदर्शन देगा।",
-    "wizard_subtitle": "AI-निर्देशित क्रेडेंशियल सेटअप",
-    "wizard_subtitle_batch": "{count} सेवा{plural} सेट की जा रही हैं"
-  },
-  "autopilot": {
-    "title": "API ऑटोपायलट",
-    "input_hint": "कनेक्टर ऑटो-जनरेट करने के लिए OpenAPI spec URL या सामग्री पेस्ट करें",
-    "preview_hint": "पार्स की गई API समीक्षा करें और शामिल करने के लिए एंडपॉइंट चुनें",
-    "generated_hint": "आपका कनेक्टर सफलतापूर्वक जनरेट हो गया",
-    "connector_generated": "कनेक्टर सफलतापूर्वक जनरेट हुआ",
-    "api_playground": "API Playground",
-    "api_playground_hint": "उपयोग करने से पहले अपने जनरेट किए API टूल परीक्षण करें",
-    "paste_spec": "OpenAPI Spec (JSON या YAML) पेस्ट करें",
-    "valid_url_error": "एक मान्य URL दर्ज करें (जैसे https://api.example.com/openapi.json)",
-    "authentication": "प्रमाणीकरण",
-    "connector_name": "कनेक्टर नाम",
-    "color": "रंग",
-    "endpoints_selected": "एंडपॉइंट ({selected}/{total} चुने गए)",
-    "generating": "जनरेट हो रहा है...",
-    "generate_connector": "कनेक्टर जनरेट करें ({count} टूल)",
-    "base_url": "बेस URL",
-    "headers_label": "हेडर",
-    "header_name_placeholder": "हेडर नाम",
-    "query_parameters": "क्वेरी पैरामीटर",
-    "param_name_placeholder": "पैरामीटर नाम",
-    "request_body": "अनुरोध बॉडी (JSON)",
-    "from_url": "URL से",
-    "paste_content": "सामग्री पेस्ट करें",
-    "openapi_spec_url": "OpenAPI स्पेक URL",
-    "openapi_format_hint": "JSON या YAML फ़ॉर्मेट में OpenAPI 3.x और Swagger 2.x स्पेक्स का समर्थन करता है",
-    "parsing_spec": "स्पेक पार्स हो रहा है...",
-    "parse_analyze": "पार्स और विश्लेषण करें",
-    "connector_in_catalog": "{connectorLabel} अब {toolCount} टूल परिभाषाओं के साथ आपके कनेक्टर कैटलॉग में उपलब्ध है।",
-    "generated_tools": "उत्पन्न टूल ({count})",
-    "credential_fields": "क्रेडेंशियल फ़ील्ड्स",
-    "open_playground": "Playground खोलें",
-    "copy_connector_id": "कनेक्टर ID कॉपी करें",
-    "go_to_catalog": "कैटलॉग पर जाएँ",
-    "response_headers": "प्रतिक्रिया हेडर ({count})",
-    "base_url_placeholder": "https://api.example.com",
-    "openapi_url_placeholder": "https://api.example.com/openapi.json",
-    "auth_schemes": "प्रमाणीकरण schemes",
-    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "कोई क्रेडेंशियल नहीं मिले",
@@ -1176,18 +909,6 @@
     "sort_most_used_with_recipes": "Most-used with recipes",
     "new_connector_ribbon": "New",
     "new_connector_tooltip": "Added in the last 30 days"
-  },
-  "cli_capture": {
-    "cta": "स्थानीय CLI से आयात",
-    "hint": "API कुंजी पेस्ट करने के बजाय पहले से लॉग-इन स्थानीय CLI का उपयोग करें।",
-    "running": "स्थानीय CLI चल रहा है...",
-    "success": "CLI से क्रेडेंशियल कैप्चर किए गए",
-    "token_ttl_notice": "यह टोकन {seconds}s में समाप्त हो जाता है और स्वचालित रूप से रिफ़्रेश किया जाएगा।",
-    "source_label": "CLI",
-    "missing_binary": "`{binary}` स्थापित नहीं है या अनुमत स्थान पर नहीं है।",
-    "unauthenticated": "आप {binary} में साइन इन नहीं हैं। {instruction}",
-    "capture_failed": "CLI कैप्चर विफल: {detail}",
-    "timeout": "CLI कैप्चर टाइमआउट हुआ। पहले कमांड मैन्युअल रूप से चलाने का प्रयास करें।"
   },
   "schemas": {
     "none_configured": "कोई कॉन्फ़िगर नहीं।",
@@ -1403,11 +1124,6 @@
     "retrying": "पुनः प्रयास हो रहा है…",
     "retry_authorized": "मैंने प्राधिकृत किया — पुनः प्रयास",
     "retry_failed": "पुनः प्रयास विफल"
-  },
-  "rotation_insight": {
-    "perm_errors": "स्थायी त्रुटियां पाई गईं -- रोटेशन का प्रयास किया, अलर्ट किया।",
-    "degrading": "निरंतर क्षरण -- पूर्व-निवारक रोटेशन ट्रिगर हुआ।",
-    "backoff": "क्षणिक विफलताएं -- एक्सपोनेंशियल बैकऑफ सक्रिय।"
   },
   "schema_configs": {
     "mcp": {
