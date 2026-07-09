@@ -62,19 +62,40 @@ export const isComment = (k) => k.split('.').some((seg) => seg.startsWith('_comm
 /**
  * Does this English value carry translatable prose? Requires either two
  * alphabetic words, or one word of >=4 letters. Filters out "OK", "v2", "%",
- * "{count}", pure punctuation, and bare brand tokens.
+ * pure punctuation, and bare brand tokens.
+ *
+ * Brace spans are stripped FIRST. `"{current} / {total}"` and `"${cost}"` are
+ * pure format strings with nothing to translate — counting the words inside
+ * the braces made them look like prose and dragged 29 such keys into the
+ * translation work list, where an agent can only echo them back.
  */
 export const isTranslatable = (s) => {
-  const v = String(s);
+  const v = String(s).replace(/\{[^{}]*\}/g, ' ');
   if (!/[a-zA-Z]/.test(v) || isDNT(v)) return false;
   const w = wordish(v);
   return w.length >= 2 || (w.length === 1 && w[0].length >= 4);
 };
 
-/** `{count}` → the set of placeholder NAMES, order-insensitive. Must survive translation. */
-export const placeholders = (s) => (String(s).match(/\{[^}]+\}/g) || []).sort().join(',');
+/**
+ * The placeholders the runtime actually substitutes: exactly `{word}`, matching
+ * interpolate()'s /\{(\w+)\}/g. Anything else — a JSON example
+ * `{"key": "value"}`, an ICU skeleton `{count, plural, …}`, a mustache
+ * `{{event_type}}` — is left verbatim by the runtime and must therefore be
+ * left alone by the parity check too. Matching arbitrary `\{[^}]+\}` spans made
+ * the checker reject correct translations of JSON placeholder examples.
+ */
+const PLACEHOLDER = /\{\w+\}/g;
+export const placeholders = (s) => (String(s).match(PLACEHOLDER) || []).sort().join(',');
 
-const phList = (s) => String(s).match(/\{[^}]+\}/g) || [];
+const phList = (s) => String(s).match(PLACEHOLDER) || [];
+
+/**
+ * ICU plural/select syntax. This repo has NO ICU runtime — such a string renders
+ * literally on screen. Eight of them exist in en.json (see docs/i18n/README).
+ * Translations must never carry it, whatever the English source does.
+ */
+export const ICU_SYNTAX = /\{[^{}]*,\s*(plural|select|selectordinal)\s*,/;
+export const hasICU = (s) => ICU_SYNTAX.test(String(s));
 
 /**
  * Keys whose translation invented or renamed a placeholder.

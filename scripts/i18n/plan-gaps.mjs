@@ -65,26 +65,43 @@ for (const lang of langs) {
   const bySection = {};
   for (const k of live) (bySection[k.split('.')[0]] ||= []).push(k);
 
+  const dir = `${WORK}/gaps/${lang}`;
+  fs.mkdirSync(dir, { recursive: true });
+  const emit = (name, sections, keys) => {
+    fs.writeFileSync(
+      `${dir}/${name}`,
+      JSON.stringify(
+        { lang, sections, strings: Object.fromEntries(keys.map((k) => [k, en[k]])) },
+        null,
+        2,
+      ) + '\n',
+    );
+    index.push({ lang, sections, count: keys.length, file: `${dir}/${name}` });
+    totalKeys += keys.length;
+  };
+
+  // Big sections get dedicated parts; small ones are bin-packed whole (never
+  // split across chunks) so a translator always sees a full sibling cluster.
+  const small = [];
   for (const [section, keys] of Object.entries(bySection)) {
-    const parts = Math.ceil(keys.length / CHUNK);
-    for (let i = 0; i < keys.length; i += CHUNK) {
-      const part = Math.floor(i / CHUNK) + 1;
-      const slice = keys.slice(i, i + CHUNK);
-      const name = `${section}-${String(part).padStart(2, '0')}.json`;
-      const dir = `${WORK}/gaps/${lang}`;
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(
-        `${dir}/${name}`,
-        JSON.stringify(
-          { lang, section, part, parts, strings: Object.fromEntries(slice.map((k) => [k, en[k]])) },
-          null,
-          2,
-        ) + '\n',
-      );
-      index.push({ lang, section, part, parts, count: slice.length, file: `${dir}/${name}` });
-      totalKeys += slice.length;
+    if (keys.length > CHUNK) {
+      for (let i = 0; i < keys.length; i += CHUNK) {
+        emit(`${section}-${String(Math.floor(i / CHUNK) + 1).padStart(2, '0')}.json`, [section], keys.slice(i, i + CHUNK));
+      }
+    } else {
+      small.push([section, keys]);
     }
   }
+  small.sort((a, b) => b[1].length - a[1].length); // first-fit-decreasing
+  const cap = Math.round(CHUNK * 1.2);
+  const bins = [];
+  for (const [section, keys] of small) {
+    let bin = bins.find((b) => b.keys.length + keys.length <= cap);
+    if (!bin) bins.push((bin = { sections: [], keys: [] }));
+    bin.sections.push(section);
+    bin.keys.push(...keys);
+  }
+  bins.forEach((b, i) => emit(`mixed-${String(i + 1).padStart(2, '0')}.json`, b.sections, b.keys));
 }
 
 // Biggest chunks first → better packing across the concurrency cap.
