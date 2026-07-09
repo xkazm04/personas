@@ -53,18 +53,21 @@ the prompt-level round cap is treated as advisory):
 | `research-vague` | 0.29 | **0.92** | +0.63 |
 | `workflow-overloaded` | 0.21 | **0.78** | +0.57 |
 | `github-issues-partial` | 0.59 | **0.78** | +0.19 |
-| `emails-vague` | 0.27 | **~0.9** † | +~0.6 |
-| `sync-two-tools` | 0.67 | **~0.9** † | +~0.2 |
+| `sync-two-tools` | 0.67 | **0.86** † | +0.19 |
+| `emails-vague` | 0.27 | **0.71** † | +0.44 |
 
-**Mean 0.48 → ~0.85.** By band: controls 0.62→0.97 · medium 0.61→0.81+ ·
-high/extreme 0.29→~0.85.
+**Mean 0.48 → 0.83.** By band: controls 0.62→0.97 · medium 0.61→0.84 ·
+high/extreme 0.29→0.83.
 
 † `emails-vague` and `sync-two-tools` scored 0.31 / 0.53 in the first judged A/B
 because the head turn's Gmail guess leaked in and the direction qualifier was never
-asked. `dbc30ea85` fixed both — verified live: emails-vague now asks *"Which email
-provider?"* + the 'important' filter; sync-two-tools asks *"Should sync go both
-ways, or only one?"*. Scores estimated from the transcripts (asked + no-assumption
-dims now clear); a full re-judge of these two is the only open verification.
+asked. `dbc30ea85` fixed both, and these are the **re-judged** scores on the fixed
+build: `sync-two-tools` 0.53→**0.86** (asked direction, resolved strictly one-way,
+`required_connectors=[notion]`, no two-way machinery — the hard-fail is gone);
+`emails-vague` 0.31→**0.71** (provider now asked, no auto-send, scoped to support —
+the assumption hard-fail is gone). `emails-vague` is held to 0.71 by **under-asking**:
+it silently narrowed to a triage job and dropped the summarise + draft-reply jobs
+without surfacing them. That under-asking-on-vague is the next thing to push on.
 
 ## What each baseline failure looks like now
 
