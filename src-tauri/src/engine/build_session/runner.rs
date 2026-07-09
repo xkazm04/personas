@@ -967,7 +967,16 @@ pub(super) async fn run_session(
                             is_gated = is_gated,
                             "CapRes gate check"
                         );
-                        if !gate_open && is_gated {
+                        // Baseline hardening: in one_shot mode, NEVER suppress a
+                        // resolution to synthesize a clarifying question — there is
+                        // no human to answer it, so the gate would never open and
+                        // the resolution would be suppressed EVERY turn, looping
+                        // until timeout (the native-only-capability failure mode:
+                        // the `connectors` gate never closes for caps that need no
+                        // connectors). Accept the LLM's resolution; test_build_draft
+                        // surfaces any real breakage (same rationale as the agent_ir
+                        // bypass below).
+                        if !gate_open && is_gated && !one_shot {
                             // Always suppress out-of-order resolutions +
                             // their legacy mirror so resolved_cells doesn't
                             // accumulate a partial value. Only synthesize a
