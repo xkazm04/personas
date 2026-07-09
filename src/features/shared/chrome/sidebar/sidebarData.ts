@@ -122,7 +122,6 @@ export const artistItems: SubNavItem[] = [
 export const devToolsItems: SubNavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'llm-overview', label: 'LLM Overview', icon: BarChart3 },
-  { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'lifecycle', label: 'Lifecycle', icon: GitBranch },
   { id: 'competition', label: 'Competition', icon: Swords },
   { id: 'context-map', label: 'Context Map', icon: Map },

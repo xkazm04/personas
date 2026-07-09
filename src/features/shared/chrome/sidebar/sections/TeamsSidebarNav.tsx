@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, Gauge, Inbox, Factory } from 'lucide-react';
+import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, Gauge, Inbox, Factory, FolderKanban } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -226,6 +226,24 @@ export function TeamsSidebarNav() {
               <span className="relative w-2 h-2 rounded-full bg-violet-500 border border-violet-600/50" />
             </span>
           )}
+        </button>
+      </div>
+
+      {/* Manage — the project registry (create / edit / archive), folded in from
+          the retired Dev Tools "Projects" tab. */}
+      <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
+        <button
+          data-testid="teams-projects-nav"
+          onClick={() => go('projects')}
+          aria-current={teamsTab === 'projects' ? 'page' : undefined}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+            teamsTab === 'projects'
+              ? 'bg-primary/10 text-foreground font-semibold'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+          }`}
+        >
+          <FolderKanban className="w-4 h-4 flex-shrink-0" />
+          Manage
         </button>
       </div>
     </nav>
