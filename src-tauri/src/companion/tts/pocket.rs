@@ -62,8 +62,12 @@ pub struct PocketStatus {
 /// One voice row from the service's `GET /v1/voices`. `category` is
 /// `"cloned"` for user embeddings in the service's voices dir and
 /// `"premade"` for the built-in Kyutai catalog.
+///
+/// Casing is asymmetric on purpose: the service speaks snake_case
+/// (`voice_id`) while our IPC surface is camelCase (`voiceId`) like every
+/// other frontend-facing payload.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct PocketVoiceEntry {
     pub voice_id: String,
     pub name: String,
@@ -196,6 +200,20 @@ pub async fn synthesize(request: &TtsSynthesisRequest<'_>) -> Result<TtsAudio, A
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn voice_entry_deserializes_service_snake_case_and_serializes_camel() {
+        // Shape as actually returned by the service's GET /v1/voices.
+        let entry: PocketVoiceEntry = serde_json::from_str(
+            r#"{"voice_id":"step4","name":"step4","category":"cloned"}"#,
+        )
+        .expect("service snake_case must deserialize");
+        assert_eq!(entry.voice_id, "step4");
+
+        // ...and re-serializes camelCase for the IPC surface.
+        let out = serde_json::to_string(&entry).unwrap();
+        assert!(out.contains("\"voiceId\":\"step4\""), "got: {out}");
+    }
 
     #[test]
     fn base_url_defaults_and_trims_override() {
