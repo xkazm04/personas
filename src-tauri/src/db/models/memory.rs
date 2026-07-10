@@ -211,6 +211,14 @@ pub struct PersonaMemory {
     /// Populated by the groups_to_teams data migration; no runtime writer.
     #[serde(default)]
     pub home_team_id: Option<String>,
+    /// Reflection provenance: ids of the source memories a synthesized
+    /// insight was derived from. `None` for organic (non-synthesized)
+    /// memories. No FK by design — sources are archived on synthesis and
+    /// may later be deleted without erasing the insight's lineage. Written
+    /// only by the reflection apply path
+    /// (`repos::core::memories::create_synthesized`).
+    #[serde(default)]
+    pub derived_from: Option<Json<Vec<String>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

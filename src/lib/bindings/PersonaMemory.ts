@@ -51,4 +51,13 @@ use_case_id: string | null,
  * MEMORY CONTRACT (5): no FK by design — mirrors (2) for use_case_id.
  * Populated by the groups_to_teams data migration; no runtime writer.
  */
-home_team_id: string | null, };
+home_team_id: string | null, 
+/**
+ * Reflection provenance: ids of the source memories a synthesized
+ * insight was derived from. `None` for organic (non-synthesized)
+ * memories. No FK by design — sources are archived on synthesis and
+ * may later be deleted without erasing the insight's lineage. Written
+ * only by the reflection apply path
+ * (`repos::core::memories::create_synthesized`).
+ */
+derived_from: Array<string> | null, };

@@ -5231,6 +5231,21 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_memories.derived_from",
+            description: "Reflection provenance: JSON array of source memory ids a synthesized insight was derived from (no FK by design — sources are archived, and may later be deleted, without erasing the insight's lineage)",
+            already_applied: |conn| has_column(conn, "persona_memories", "derived_from"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_memories ADD COLUMN derived_from TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
 
     Ok(())
 }
@@ -5680,6 +5695,7 @@ mod tests {
             ("dev_contexts", "category"),
             ("dev_contexts", "business_feature"),
             ("dev_context_groups", "domain"),
+            ("persona_memories", "derived_from"),
         ] {
             assert!(
                 has_column(&conn, table, column).unwrap(),

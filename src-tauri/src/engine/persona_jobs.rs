@@ -42,6 +42,10 @@ pub const JOB_EVENT: &str = "persona://job";
 /// Kind discriminator for the v1 memory-curation job.
 pub const KIND_MEMORY_CURATION: &str = "memory_curation_run";
 
+/// Kind discriminator for the reflection job (Memory Engine v2 —
+/// consolidate related/contradicting memories into insights).
+pub const KIND_MEMORY_REFLECTION: &str = "memory_reflection_run";
+
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -341,10 +345,61 @@ async fn dispatch_handler(pool: &DbPool, job: &BackgroundJob) -> Result<String, 
         serde_json::from_str(&job.params_json).unwrap_or(serde_json::json!({}));
     match job.kind.as_str() {
         KIND_MEMORY_CURATION => memory_curation_run(pool, &params).await,
+        KIND_MEMORY_REFLECTION => memory_reflection_run(pool, &params).await,
         other => Err(AppError::Internal(format!(
             "unknown persona background job kind `{other}`"
         ))),
     }
+}
+
+/// `memory_reflection_run` job kind handler (Memory Engine v2).
+///
+/// Runs `engine::memory_reflection::run_memory_reflection` — synthesis of
+/// related/contradicting memories into durable insights — and writes the
+/// outcome as a `pending_review` proposal, exactly like curation.
+///
+/// Inputs:
+/// - `persona_id` (required): reflection is per-persona; a workspace-wide
+///   pass would mix unrelated memory pools and produce cross-persona
+///   "insights" that belong to nobody.
+/// - `instructions` (optional): ≤4096-char natural-language steering.
+async fn memory_reflection_run(
+    pool: &DbPool,
+    params: &serde_json::Value,
+) -> Result<String, AppError> {
+    let persona_id = params
+        .get("persona_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| {
+            AppError::Validation("memory_reflection_run requires persona_id".into())
+        })?;
+    let instructions = params.get("instructions").and_then(|v| v.as_str());
+    if let Some(s) = instructions {
+        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
+            return Err(AppError::Validation(format!(
+                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
+            )));
+        }
+    }
+
+    let outcome = match crate::engine::memory_reflection::run_memory_reflection(
+        pool,
+        persona_id,
+        instructions,
+    )
+    .await?
+    {
+        Some(o) => o,
+        None => return Ok("Too few memories to reflect over (minimum 5).".to_string()),
+    };
+
+    let result = serde_json::json!({
+        "proposal_id": outcome.proposal_id,
+        "reviewed": outcome.reviewed,
+        "proposed_changes": outcome.entries.len(),
+        "summary": outcome.summary,
+    });
+    Ok(result.to_string())
 }
 
 /// Maximum instructions length in characters. Mirrors the limit at

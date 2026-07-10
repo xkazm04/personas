@@ -578,6 +578,10 @@ Memories to review:
                 reason,
                 action: "delete".to_string(),
                 new_importance: None,
+                new_title: None,
+                new_content: None,
+                new_category: None,
+                source_ids: None,
             });
         } else {
             // The memory is KEPT either way. We only constrain the importance
@@ -607,6 +611,10 @@ Memories to review:
                     reason,
                     action: "update_importance".to_string(),
                     new_importance: Some(mapped),
+                    new_title: None,
+                    new_content: None,
+                    new_category: None,
+                    source_ids: None,
                 });
             } else {
                 // Keep as-is: no importance write (would lower the value or
@@ -619,6 +627,10 @@ Memories to review:
                     reason,
                     action: "keep".to_string(),
                     new_importance: None,
+                    new_title: None,
+                    new_content: None,
+                    new_category: None,
+                    source_ids: None,
                 });
             }
         }
@@ -845,6 +857,12 @@ pub struct ApplyMemoryReviewProposalResult {
     pub proposal_id: String,
     pub deleted: usize,
     pub updated: usize,
+    /// Reflection proposals only: insight memories created (with
+    /// `derived_from` provenance) by `synthesize` entries.
+    pub synthesized: usize,
+    /// Reflection proposals only: memories archived — synthesis sources
+    /// plus standalone `archive` entries. Reversible via tier restore.
+    pub archived: usize,
     pub errors: Vec<String>,
 }
 
@@ -866,6 +884,8 @@ pub fn apply_persona_memory_review_proposal(
             proposal_id,
             deleted: 0,
             updated: 0,
+            synthesized: 0,
+            archived: 0,
             errors: vec![format!(
                 "proposal already in status `{}` — no action taken",
                 proposal.status
@@ -883,6 +903,8 @@ pub fn apply_persona_memory_review_proposal(
             proposal_id,
             deleted: 0,
             updated: 0,
+            synthesized: 0,
+            archived: 0,
             errors: vec![
                 "proposal was already applied by a concurrent action — no action taken".into(),
             ],
@@ -891,6 +913,8 @@ pub fn apply_persona_memory_review_proposal(
 
     let mut deleted = 0usize;
     let mut updated = 0usize;
+    let mut synthesized = 0usize;
+    let mut archived = 0usize;
     let mut errors: Vec<String> = Vec::new();
 
     for entry in &proposal.entries {
@@ -917,6 +941,70 @@ pub fn apply_persona_memory_review_proposal(
                     )),
                 }
             }
+            // Reflection (Memory Engine v2): create the insight memory with
+            // provenance, then archive its sources. Sources are archived —
+            // never deleted — so a bad synthesis is fully recoverable, and
+            // `archive_by_ids` refuses to touch `core` even if asked.
+            "synthesize" => {
+                let sources = entry.source_ids.clone().unwrap_or_default();
+                let (Some(title), Some(content)) =
+                    (entry.new_title.as_ref(), entry.new_content.as_ref())
+                else {
+                    errors.push(format!(
+                        "synthesize entry `{}` missing new_title/new_content; skipped",
+                        entry.memory_id
+                    ));
+                    continue;
+                };
+                if sources.len() < 2 {
+                    errors.push(format!(
+                        "synthesize entry `{}` has fewer than 2 sources; skipped",
+                        entry.memory_id
+                    ));
+                    continue;
+                }
+                let input = CreatePersonaMemoryInput {
+                    persona_id: match proposal.persona_id.clone() {
+                        Some(pid) => pid,
+                        None => {
+                            errors.push(format!(
+                                "synthesize entry `{}`: proposal has no persona_id; skipped",
+                                entry.memory_id
+                            ));
+                            continue;
+                        }
+                    },
+                    title: title.clone(),
+                    content: content.clone(),
+                    category: entry.new_category.clone(),
+                    source_execution_id: None,
+                    importance: entry.new_importance,
+                    tags: Some(crate::db::models::Json(vec!["reflection".to_string()])),
+                    use_case_id: None,
+                };
+                match repo::create_synthesized(&state.db, input, &sources) {
+                    Ok(_) => {
+                        synthesized += 1;
+                        match repo::archive_by_ids(&state.db, &sources) {
+                            Ok(n) => archived += n as usize,
+                            Err(e) => errors.push(format!(
+                                "insight `{title}` created but archiving sources failed: {e}"
+                            )),
+                        }
+                    }
+                    Err(e) => errors.push(format!("synthesize `{title}`: {e}")),
+                }
+            }
+            "archive" => {
+                match repo::archive_by_ids(&state.db, &[entry.memory_id.clone()]) {
+                    Ok(n) if n > 0 => archived += n as usize,
+                    Ok(_) => errors.push(format!(
+                        "memory `{}` not archived (core-pinned or already gone)",
+                        entry.memory_id
+                    )),
+                    Err(e) => errors.push(format!("memory `{}` archive: {}", entry.memory_id, e)),
+                }
+            }
             "keep" => {} // no-op
             other => errors.push(format!(
                 "unknown action `{other}` on memory `{}`; skipped",
@@ -932,6 +1020,8 @@ pub fn apply_persona_memory_review_proposal(
         proposal_id,
         deleted,
         updated,
+        synthesized,
+        archived,
         errors,
     })
 }
@@ -971,6 +1061,69 @@ pub fn get_persona_memory_review_proposal(
 ) -> Result<Option<MemoryReviewProposal>, AppError> {
     require_auth_sync(&state)?;
     proposal_repo::get(&state.db, &proposal_id)
+}
+
+// -- LLM CLI Memory Reflection (Memory Engine v2) ---------------------------------
+
+/// Run a reflection pass over one persona's memories: the LLM consolidates
+/// related/contradicting memories into durable insights (with provenance)
+/// and flags stale rows for archive. ALWAYS proposal-mode — the result is
+/// a `persona_memory_review_proposal` row applied/discarded via the same
+/// commands as curation proposals. See `engine::memory_reflection`.
+#[tauri::command]
+pub async fn reflect_memories_with_cli(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    instructions: Option<String>,
+) -> Result<MemoryReviewResult, AppError> {
+    require_auth(&state).await?;
+    if let Some(ref s) = instructions {
+        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
+            return Err(AppError::Validation(format!(
+                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
+            )));
+        }
+    }
+    let db = state.db.clone();
+    let outcome = match crate::engine::memory_reflection::run_memory_reflection(
+        &db,
+        &persona_id,
+        instructions.as_deref(),
+    )
+    .await?
+    {
+        Some(o) => o,
+        None => {
+            return Ok(MemoryReviewResult {
+                reviewed: 0,
+                deleted: 0,
+                updated: 0,
+                details: vec![],
+                proposal_id: None,
+            });
+        }
+    };
+
+    let details: Vec<MemoryReviewDetail> = outcome
+        .entries
+        .iter()
+        .map(|e| MemoryReviewDetail {
+            id: e.memory_id.clone(),
+            title: e.title.clone(),
+            score: e.score,
+            reason: e.reason.clone(),
+            action: format!("proposed_{}", e.action),
+            error: None,
+        })
+        .collect();
+
+    Ok(MemoryReviewResult {
+        reviewed: outcome.reviewed,
+        deleted: 0,
+        updated: 0,
+        details,
+        proposal_id: Some(outcome.proposal_id),
+    })
 }
 
 // -- Dev seed: mock memory (debug builds only) -----------------------------------

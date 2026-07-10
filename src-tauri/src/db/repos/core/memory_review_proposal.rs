@@ -28,12 +28,32 @@ pub struct ProposalEntry {
     pub title: String,
     pub score: i32,
     pub reason: String,
-    /// `delete` | `keep` | `update_importance`
+    /// `delete` | `keep` | `update_importance` — curation review;
+    /// `synthesize` | `archive` — reflection pass (Memory Engine v2).
     pub action: String,
-    /// Set when action is `update_importance`. Range 1..=5.
+    /// Set when action is `update_importance` (curation) or `synthesize`
+    /// (importance of the new insight). Range 1..=5.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub new_importance: Option<i32>,
+    /// `synthesize` only: title of the new insight memory.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub new_title: Option<String>,
+    /// `synthesize` only: content of the new insight memory.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub new_content: Option<String>,
+    /// `synthesize` only: category of the new insight memory.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub new_category: Option<String>,
+    /// `synthesize` only: ids of the source memories the insight is derived
+    /// from. On apply they are archived (never deleted; `core` is skipped)
+    /// and recorded as the insight's `derived_from` provenance.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub source_ids: Option<Vec<String>>,
 }
 
 /// One row in `persona_memory_review_proposal`. Public type returned
