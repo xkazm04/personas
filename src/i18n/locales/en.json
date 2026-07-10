@@ -13555,6 +13555,8 @@
       "voice_pocket_upload_name_label": "Voice name",
       "voice_pocket_upload_save": "Add voice",
       "voice_pocket_upload_decode_failed": "Couldn't read that audio file — try a different format or re-export it.",
+      "voice_pocket_hf_gate_title": "Hugging Face account required",
+      "voice_pocket_hf_gate_desc": "Managing your own cloned voices requires a Hugging Face access token in the Credential Vault — it anchors the voice-cloning model license to your account. Add a Hugging Face credential, then come back here.",
       "voice_pocket_delete_title": "Remove voice",
       "voice_pocket_delete_body": "The reference recording for this voice will be deleted from this computer.",
       "voice_kokoro_setup_title": "Kokoro setup",

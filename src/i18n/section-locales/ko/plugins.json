@@ -2129,7 +2129,9 @@
     "voice_pocket_upload_hint": "한 사람이 또렷하게 말하는 10~30초 분량의 녹음을 업로드하세요. 대부분의 오디오 형식을 지원합니다. 녹음 품질이 그대로 반영되므로 깨끗한 음원을 사용하세요.",
     "voice_pocket_upload_name_label": "목소리 이름",
     "voice_pocket_upload_save": "목소리 추가",
-    "voice_pocket_upload_title": "내 목소리 추가"
+    "voice_pocket_upload_title": "내 목소리 추가",
+    "voice_pocket_hf_gate_desc": "직접 복제한 음성을 관리하려면 자격 증명 보관함(Credential Vault)에 Hugging Face 액세스 토큰이 필요합니다. 이 토큰은 음성 복제 모델 라이선스를 사용자 계정과 연결합니다. Hugging Face 자격 증명을 추가한 뒤 다시 돌아오세요.",
+    "voice_pocket_hf_gate_title": "Hugging Face 계정이 필요합니다"
   },
   "ocr": {
     "title": "OCR",

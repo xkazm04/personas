@@ -13411,7 +13411,9 @@
       "voice_pocket_upload_hint": "上传一段 10–30 秒、单人清晰讲话的录音——大多数音频格式均可使用。录音的音质会直接沿用，请使用清晰的录音。",
       "voice_pocket_upload_name_label": "声音名称",
       "voice_pocket_upload_save": "添加声音",
-      "voice_pocket_upload_title": "添加你的声音"
+      "voice_pocket_upload_title": "添加你的声音",
+      "voice_pocket_hf_gate_desc": "管理你自己克隆的语音需要在凭据保险库中提供 Hugging Face 访问令牌 —— 它会将语音克隆模型的许可与你的账户绑定。请先添加 Hugging Face 凭据，然后回到这里。",
+      "voice_pocket_hf_gate_title": "需要 Hugging Face 账户"
     },
     "ocr": {
       "title": "OCR",

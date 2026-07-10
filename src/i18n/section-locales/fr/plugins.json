@@ -2129,7 +2129,9 @@
     "voice_pocket_upload_hint": "Importez un enregistrement de 10 à 30 secondes d'une seule personne parlant clairement — la plupart des formats audio fonctionnent. La qualité de l'enregistrement est conservée, utilisez donc une prise propre.",
     "voice_pocket_upload_name_label": "Nom de la voix",
     "voice_pocket_upload_save": "Ajouter la voix",
-    "voice_pocket_upload_title": "Ajoutez votre voix"
+    "voice_pocket_upload_title": "Ajoutez votre voix",
+    "voice_pocket_hf_gate_desc": "La gestion de vos propres voix clonées nécessite un token d'accès Hugging Face dans le Coffre-fort des identifiants — il rattache la licence du modèle de clonage vocal à votre compte. Ajoutez un identifiant Hugging Face, puis revenez ici.",
+    "voice_pocket_hf_gate_title": "Compte Hugging Face requis"
   },
   "ocr": {
     "title": "OCR",

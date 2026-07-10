@@ -2129,7 +2129,9 @@
     "voice_pocket_upload_hint": "Nahrajte 10–30sekundovou nahrávku jedné osoby mluvící zřetelně — funguje většina zvukových formátů. Kvalita nahrávky se přenese do výsledku, použijte proto čistý záznam.",
     "voice_pocket_upload_name_label": "Název hlasu",
     "voice_pocket_upload_save": "Přidat hlas",
-    "voice_pocket_upload_title": "Přidejte svůj hlas"
+    "voice_pocket_upload_title": "Přidejte svůj hlas",
+    "voice_pocket_hf_gate_desc": "Správa vašich vlastních klonovaných hlasů vyžaduje přístupový token Hugging Face v Trezoru přihlašovacích údajů — ten propojuje licenci modelu pro klonování hlasu s vaším účtem. Přidejte přihlašovací údaje Hugging Face a poté se sem vraťte.",
+    "voice_pocket_hf_gate_title": "Vyžadován účet Hugging Face"
   },
   "ocr": {
     "title": "OCR",

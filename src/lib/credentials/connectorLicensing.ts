@@ -94,6 +94,7 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   helicone:                        'personal',
   langsmith:                       'personal',
   tracklight:                      'personal',
+  huggingface:                     'personal',
   postgres:                        'personal',
   mongodb:                         'personal',
   redis:                           'personal',

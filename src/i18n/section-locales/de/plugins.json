@@ -2129,7 +2129,9 @@
     "voice_pocket_upload_hint": "Lade eine 10–30 Sekunden lange Aufnahme einer einzelnen, klar sprechenden Person hoch — die meisten Audioformate funktionieren. Die Qualität der Aufnahme wird übernommen, verwende also eine saubere Aufnahme.",
     "voice_pocket_upload_name_label": "Stimmenname",
     "voice_pocket_upload_save": "Stimme hinzufügen",
-    "voice_pocket_upload_title": "Deine Stimme hinzufügen"
+    "voice_pocket_upload_title": "Deine Stimme hinzufügen",
+    "voice_pocket_hf_gate_desc": "Zum Verwalten Ihrer eigenen geklonten Stimmen ist ein Hugging-Face-Zugriffstoken im Anmeldedaten-Tresor erforderlich — es verknüpft die Lizenz des Voice-Cloning-Modells mit Ihrem Konto. Fügen Sie eine Hugging-Face-Anmeldeinformation hinzu und kehren Sie dann hierher zurück.",
+    "voice_pocket_hf_gate_title": "Hugging-Face-Konto erforderlich"
   },
   "ocr": {
     "title": "OCR",

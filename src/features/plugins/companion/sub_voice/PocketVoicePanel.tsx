@@ -7,6 +7,7 @@ import {
   Download,
   ExternalLink,
   FolderOpen,
+  KeyRound,
   Loader2,
   Package,
   Play,
@@ -22,6 +23,7 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useSystemStore } from '@/stores/systemStore';
+import { useVaultStore } from '@/stores/vaultStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import {
@@ -210,9 +212,34 @@ export default function PocketVoicePanel() {
  * "Add your voice" — the upload affordance that makes cloning self-serve.
  * Accepts any decodable audio file; converts to the 24kHz mono reference
  * WAV in the webview (see audioToReferenceWav.ts), then imports via IPC.
+ *
+ * Gated behind a **Hugging Face credential** in the vault: managing your own
+ * cloned voices is tied to holding an HF access token (the Pocket cloning
+ * weights are HF-gated upstream, and the token is the user's consent-anchor
+ * for voice-cloning features). Without one, the block renders a keyed-out
+ * hint pointing at the Credential Vault instead of the upload controls.
  */
 function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void }) {
   const { t } = useTranslation();
+  const credentials = useVaultStore((s) => s.credentials);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const [credLoading, setCredLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchCredentials().finally(() => {
+      if (!cancelled) setCredLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchCredentials]);
+
+  const hasHfCredential = credentials.some(
+    (c) => c.service_type.toLowerCase() === 'huggingface',
+  );
+
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [pendingWav, setPendingWav] = useState<Uint8Array | null>(null);
   const [name, setName] = useState('');
@@ -263,6 +290,28 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
       setBusy('idle');
     }
   }, [pendingWav, name, onAdded]);
+
+  if (!credLoading && !hasHfCredential) {
+    return (
+      <div className="rounded-card border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <KeyRound className="w-4 h-4 text-amber-400" />
+          <span className="typo-title text-amber-300">
+            {t.plugins.companion.voice_pocket_hf_gate_title}
+          </span>
+        </div>
+        <p className="typo-caption">{t.plugins.companion.voice_pocket_hf_gate_desc}</p>
+        <button
+          type="button"
+          onClick={() => setSidebarSection('credentials')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 typo-caption font-medium transition-colors focus-ring"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          {t.plugins.companion.voice_empty_cta}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-card border border-primary/25 bg-primary/[0.06] p-3 space-y-2">

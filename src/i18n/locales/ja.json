@@ -13411,7 +13411,9 @@
       "voice_pocket_upload_hint": "1人が明瞭に話している10〜30秒の録音をアップロードしてください。ほとんどの音声形式に対応しています。録音の音質がそのまま反映されるため、クリアな音源を使用してください。",
       "voice_pocket_upload_name_label": "音声名",
       "voice_pocket_upload_save": "音声を追加",
-      "voice_pocket_upload_title": "あなたの声を追加"
+      "voice_pocket_upload_title": "あなたの声を追加",
+      "voice_pocket_hf_gate_desc": "自分のクローン音声を管理するには、Credential Vault（認証情報保管庫）に Hugging Face アクセストークンが必要です。これにより、音声クローンモデルのライセンスがあなたのアカウントに紐付けられます。Hugging Face の認証情報を追加してから、こちらに戻ってきてください。",
+      "voice_pocket_hf_gate_title": "Hugging Face アカウントが必要です"
     },
     "ocr": {
       "title": "OCR",

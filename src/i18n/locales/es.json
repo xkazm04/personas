@@ -13411,7 +13411,9 @@
       "voice_pocket_upload_hint": "Sube una grabación de 10 a 30 segundos de una sola persona hablando con claridad; la mayoría de los formatos de audio funcionan. La calidad de la grabación se conserva, así que usa una toma limpia.",
       "voice_pocket_upload_name_label": "Nombre de la voz",
       "voice_pocket_upload_save": "Añadir voz",
-      "voice_pocket_upload_title": "Añade tu voz"
+      "voice_pocket_upload_title": "Añade tu voz",
+      "voice_pocket_hf_gate_desc": "Para gestionar tus propias voces clonadas se necesita un token de acceso de Hugging Face en la Bóveda de credenciales — así se vincula la licencia del modelo de clonación de voz a tu cuenta. Agrega una credencial de Hugging Face y luego vuelve aquí.",
+      "voice_pocket_hf_gate_title": "Se requiere una cuenta de Hugging Face"
     },
     "ocr": {
       "title": "OCR",

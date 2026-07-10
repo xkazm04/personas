@@ -13411,7 +13411,9 @@
       "voice_pocket_upload_hint": "Tải lên bản ghi âm dài 10–30 giây của một người nói rõ ràng — hầu hết các định dạng âm thanh đều dùng được. Chất lượng bản ghi sẽ được giữ nguyên, vì vậy hãy dùng bản ghi sạch.",
       "voice_pocket_upload_name_label": "Tên giọng nói",
       "voice_pocket_upload_save": "Thêm giọng nói",
-      "voice_pocket_upload_title": "Thêm giọng nói của bạn"
+      "voice_pocket_upload_title": "Thêm giọng nói của bạn",
+      "voice_pocket_hf_gate_desc": "Để tự quản lý các giọng nói đã nhân bản của bạn, cần có mã truy cập Hugging Face trong Kho lưu trữ thông tin xác thực — mã này gắn giấy phép của mô hình nhân bản giọng nói với tài khoản của bạn. Hãy thêm thông tin xác thực Hugging Face, sau đó quay lại đây.",
+      "voice_pocket_hf_gate_title": "Yêu cầu tài khoản Hugging Face"
     },
     "ocr": {
       "title": "OCR",
