@@ -4,7 +4,7 @@
 //! - The prebuilt `sherpa-onnx-offline-tts` ships its own `onnxruntime.dll`
 //!   alongside the exe and loads it in a separate process, so it can't
 //!   collide with our pinned in-process `ort 2.0.0-rc.9` — the same
-//!   DLL-version hazard `piper.rs` documents, and the reason both local
+//!   DLL-version hazard documented here, and the reason both local
 //!   engines run out-of-process. (Use the `win-x64-shared-MT-Release`
 //!   build; there is no `static` build on the sherpa-onnx releases page.)
 //! - It bundles espeak-ng phonemization, so we don't reimplement Kokoro's
@@ -38,7 +38,7 @@ use base64::Engine;
 use tauri::State;
 
 use crate::companion::tts::kokoro_catalog::find_voice_by_id;
-use crate::companion::tts::piper;
+use crate::companion::tts::engine_dir;
 use crate::companion::tts::{TtsAudio, TtsSynthesisRequest};
 use crate::error::AppError;
 use crate::AppState;
@@ -86,7 +86,7 @@ pub fn engine_binary_path() -> Option<PathBuf> {
         }
     }
     // Shared bin dir with Piper.
-    if let Ok(dir) = piper::engine_dir() {
+    if let Ok(dir) = engine_dir() {
         let candidate = dir.join(ENGINE_FILENAME);
         if candidate.is_file() {
             return Some(candidate);
@@ -168,7 +168,7 @@ pub struct KokoroStatus {
 }
 
 pub fn status() -> Result<KokoroStatus, AppError> {
-    let bin_dir = piper::engine_dir()?;
+    let bin_dir = engine_dir()?;
     let installed_path = engine_binary_path();
     Ok(KokoroStatus {
         engine_installed: installed_path.is_some(),
@@ -203,7 +203,7 @@ pub async fn synthesize(
     let paths = resolve_model_paths()?;
 
     let engine = engine_binary_path().ok_or_else(|| {
-        let dir = piper::engine_dir()
+        let dir = engine_dir()
             .map(|d| d.display().to_string())
             .unwrap_or_else(|_| "(no home dir)".into());
         AppError::Validation(format!(
@@ -245,7 +245,7 @@ pub async fn synthesize(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
-    // Hide the console window on Windows — same reasoning as piper.rs
+    // Hide the console window on Windows — DETACHED_PROCESS avoids a
     // (DETACHED_PROCESS avoids a conhost flash; all stdio is piped/null).
     #[cfg(windows)]
     {

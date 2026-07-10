@@ -18,7 +18,6 @@ const IdentityPage = lazy(() => import('./sub_identity/IdentityPage'));
 const TonePage = lazy(() => import('./sub_tone/TonePage'));
 const BrainPage = lazy(() => import('./sub_brain/BrainPage'));
 const KnowledgePage = lazy(() => import('./sub_knowledge/KnowledgePage'));
-const VoicePage = lazy(() => import('./sub_voice/VoicePage'));
 const ChannelsPage = lazy(() => import('./sub_channels/ChannelsPage'));
 const TrainingPage = lazy(() => import('./sub_training/TrainingPage'));
 
@@ -67,7 +66,6 @@ export default function TwinPage() {
           {twinTab === 'tone' && <TonePage />}
           {twinTab === 'brain' && <BrainPage />}
           {twinTab === 'knowledge' && <KnowledgePage />}
-          {twinTab === 'voice' && <VoicePage />}
           {twinTab === 'channels' && <ChannelsPage />}
           {twinTab === 'training' && <TrainingPage />}
         </Suspense>

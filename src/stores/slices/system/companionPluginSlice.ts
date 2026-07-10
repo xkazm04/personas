@@ -17,9 +17,8 @@ export type CompanionPluginTab =
  *     except via the plugin page itself (intentional — the plugin's
  *     reason to disable the footer is to declutter).
  *   - `companionSoundEnabled` — chime on completed reply.
- *   - Voice config (Phase later) — credential id + voice id + master enable.
- *     The Voice panel writes these once the user picks an ElevenLabs
- *     credential from the vault and types a voice id.
+ *   - Voice config — engine + per-engine voice id + master enable,
+ *     written by the Voice tab.
  *
  * All four toggles are persisted via systemStore's `partialize`.
  */
@@ -64,28 +63,26 @@ export interface CompanionLabJump {
 }
 
 /**
- * Allowlist of ElevenLabs models the Voice tab is permitted to write into
- * `companionVoiceModel`. Mirrored on the backend (`voice.rs::TTS_ALLOWED_MODELS`)
- * — keep them in lockstep when adding a new model.
- */
-export const COMPANION_VOICE_MODELS = [
-  'eleven_turbo_v2_5',
-  'eleven_flash_v2_5',
-  'eleven_multilingual_v2',
-  'eleven_v3',
-] as const;
-export type CompanionVoiceModel = (typeof COMPANION_VOICE_MODELS)[number];
-
-/**
  * TTS engine the user picked in the Voice tab. Mirrors `TtsEngineId` in
  * `src/api/companion.ts` and the Rust enum in `companion/tts/mod.rs`.
  *
- * Defaults to `'elevenlabs'` for back-compat with existing users — the
- * Piper engine requires a separate one-time install of the `piper`
- * binary, so we never quietly route users through it. `'kokoro'` is the
- * higher-quality local engine (sherpa-onnx sidecar + a shared model pack).
+ * `'kokoro'` (primary — curated local voices) or `'pocket_tts'`
+ * (experimental — zero-shot voice cloning). The ElevenLabs and Piper
+ * engines were descoped 2026-07-10; use `normalizeCompanionTtsEngine`
+ * wherever a persisted value may predate the descope.
  */
-export type CompanionTtsEngine = 'elevenlabs' | 'piper' | 'kokoro' | 'pocket_tts';
+export type CompanionTtsEngine = 'kokoro' | 'pocket_tts';
+
+/**
+ * Map any persisted engine value (including the descoped `'elevenlabs'` /
+ * `'piper'` strings still sitting in older localStorage) onto a live
+ * engine. Unknown -> Kokoro, matching the backend's default.
+ */
+export function normalizeCompanionTtsEngine(
+  v: string | null | undefined,
+): CompanionTtsEngine {
+  return v === 'pocket_tts' ? 'pocket_tts' : 'kokoro';
+}
 
 /**
  * STT engine for Athena's voice input. Mirrors `SttEngineId` in
@@ -115,38 +112,19 @@ export interface CompanionPluginSlice {
   companionSoundEnabled: boolean;
   companionVoiceEnabled: boolean;
   /** Which engine handles synthesis. Per-engine voice selection lives in
-   *  `companionVoiceCredentialId` + `companionVoiceId` (ElevenLabs) and
-   *  `companionPiperVoiceId` (Piper). The send pipeline picks the right
-   *  set based on this engine field. */
+   *  `companionKokoroVoiceId` / `companionPocketVoiceId`; the send
+   *  pipeline picks the right one based on this engine field. */
   companionVoiceEngine: CompanionTtsEngine;
-  companionVoiceCredentialId: string | null;
-  companionVoiceId: string | null;
-  /** Currently-selected Piper voice id (e.g. `en_US-amy-medium`).
-   *  Independent of `companionVoiceId` so switching engines doesn't
-   *  clobber either side's last selection. */
-  companionPiperVoiceId: string | null;
   /** Currently-selected Kokoro voice id (e.g. `af_heart`). Independent of
-   *  the ElevenLabs / Piper selections for the same reason. */
+   *  the Pocket selection so switching engines doesn't clobber either
+   *  side's last pick. */
   companionKokoroVoiceId: string | null;
   /** Currently-selected Pocket TTS voice id — a cloned `.safetensors`
    *  embedding name (e.g. `step4`) or a built-in Kyutai voice (e.g. `alba`).
    *  Independent of the other engines' selections. */
   companionPocketVoiceId: string | null;
-  /**
-   * Per-call voice tuning. All five are nullable: `null` means "let the
-   * backend apply its default". The Voice tab exposes these as a Settings
-   * section; advanced users can also leave them at null to inherit
-   * server-side defaults.
-   */
-  companionVoiceModel: CompanionVoiceModel | null;
-  /** 0..1 — `null` falls back to backend default (0.5). */
-  companionVoiceStability: number | null;
-  /** 0..1 — `null` falls back to backend default (0.75). */
-  companionVoiceSimilarity: number | null;
-  /** 0.7..1.2 — `null` omits the field (ElevenLabs default speed). */
+  /** Speech rate 0.7..1.2 — `null` inherits the engine default. */
   companionVoiceSpeed: number | null;
-  /** 0..1 — only meaningful on multilingual_v2 / v3. `null` omits. */
-  companionVoiceStyle: number | null;
   /**
    * Playback volume (0..1) applied to every TTS `<audio>` element, live —
    * `voicePlayback.play()` subscribes so a change affects Athena mid-sentence.
@@ -235,20 +213,10 @@ export interface CompanionPluginSlice {
   setCompanionSoundEnabled: (v: boolean) => void;
   setCompanionVoiceEnabled: (v: boolean) => void;
   setCompanionVoiceEngine: (e: CompanionTtsEngine) => void;
-  setCompanionVoiceCredentialId: (id: string | null) => void;
-  setCompanionVoiceId: (id: string | null) => void;
-  setCompanionPiperVoiceId: (id: string | null) => void;
   setCompanionKokoroVoiceId: (id: string | null) => void;
   setCompanionPocketVoiceId: (id: string | null) => void;
-  setCompanionVoiceModel: (m: CompanionVoiceModel | null) => void;
-  setCompanionVoiceStability: (v: number | null) => void;
-  setCompanionVoiceSimilarity: (v: number | null) => void;
   setCompanionVoiceSpeed: (v: number | null) => void;
-  setCompanionVoiceStyle: (v: number | null) => void;
   setCompanionVoiceVolume: (v: number) => void;
-  /** Reset tuning fields to the app defaults (Stability/Similarity 0.70,
-   *  Style 0.05; model + speed inherit the engine default via `null`). */
-  resetCompanionVoiceSettings: () => void;
   setCompanionPrefill: (p: CompanionPrefill | null) => void;
   setCompanionLabJump: (j: CompanionLabJump | null) => void;
   setCompanionPanelCompact: (v: boolean) => void;
@@ -274,19 +242,10 @@ export const createCompanionPluginSlice: StateCreator<
   companionFooterEnabled: true,
   companionSoundEnabled: true,
   companionVoiceEnabled: false,
-  companionVoiceEngine: 'elevenlabs',
-  companionVoiceCredentialId: null,
-  companionVoiceId: null,
-  companionPiperVoiceId: null,
+  companionVoiceEngine: 'kokoro',
   companionKokoroVoiceId: null,
   companionPocketVoiceId: null,
-  companionVoiceModel: null,
-  // Tuned defaults (vs the engine's own): a touch more stability +
-  // similarity than ElevenLabs' baseline, with a hint of style.
-  companionVoiceStability: 0.7,
-  companionVoiceSimilarity: 0.7,
   companionVoiceSpeed: null,
-  companionVoiceStyle: 0.05,
   companionVoiceVolume: 0.5,
   companionPrefill: null,
   companionLabJump: null,
@@ -311,31 +270,12 @@ export const createCompanionPluginSlice: StateCreator<
     set({ companionVoiceEnabled }),
   setCompanionVoiceEngine: (companionVoiceEngine) =>
     set({ companionVoiceEngine }),
-  setCompanionVoiceCredentialId: (companionVoiceCredentialId) =>
-    set({ companionVoiceCredentialId }),
-  setCompanionVoiceId: (companionVoiceId) => set({ companionVoiceId }),
-  setCompanionPiperVoiceId: (companionPiperVoiceId) =>
-    set({ companionPiperVoiceId }),
   setCompanionKokoroVoiceId: (companionKokoroVoiceId) =>
     set({ companionKokoroVoiceId }),
   setCompanionPocketVoiceId: (companionPocketVoiceId) =>
     set({ companionPocketVoiceId }),
-  setCompanionVoiceModel: (companionVoiceModel) => set({ companionVoiceModel }),
-  setCompanionVoiceStability: (companionVoiceStability) =>
-    set({ companionVoiceStability }),
-  setCompanionVoiceSimilarity: (companionVoiceSimilarity) =>
-    set({ companionVoiceSimilarity }),
   setCompanionVoiceSpeed: (companionVoiceSpeed) => set({ companionVoiceSpeed }),
-  setCompanionVoiceStyle: (companionVoiceStyle) => set({ companionVoiceStyle }),
   setCompanionVoiceVolume: (companionVoiceVolume) => set({ companionVoiceVolume }),
-  resetCompanionVoiceSettings: () =>
-    set({
-      companionVoiceModel: null,
-      companionVoiceStability: 0.7,
-      companionVoiceSimilarity: 0.7,
-      companionVoiceSpeed: null,
-      companionVoiceStyle: 0.05,
-    }),
   setCompanionPrefill: (companionPrefill) => set({ companionPrefill }),
   setCompanionLabJump: (companionLabJump) => set({ companionLabJump }),
   setCompanionPanelCompact: (companionPanelCompact) => set({ companionPanelCompact }),

@@ -8,7 +8,7 @@
 //!   non-starter — but a *long-lived local HTTP service* keeps the model
 //!   warm (one-shot spawn would pay a multi-second model load per call)
 //!   and stays out-of-process, so it can't collide with our pinned
-//!   in-process `ort 2.0.0-rc.9` (the same DLL hazard `piper.rs` documents).
+//!   in-process `ort 2.0.0-rc.9` (the same DLL hazard `kokoro.rs` documents).
 //! - The service (see `pocket-tts` repo, `service/app.py`) exposes an
 //!   ElevenLabs-shaped API, so this module is structurally a twin of
 //!   `elevenlabs.rs` with a localhost base URL and no credential.
@@ -47,7 +47,7 @@ use std::time::Duration;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 
-use crate::companion::tts::{kokoro, piper, TtsAudio, TtsSynthesisRequest};
+use crate::companion::tts::{engine_dir, kokoro, TtsAudio, TtsSynthesisRequest};
 use crate::error::AppError;
 
 /// Where the local service listens unless overridden.
@@ -84,7 +84,7 @@ pub const MODEL_DOWNLOAD_URL: &str = "https://github.com/k2-fsa/sherpa-onnx/rele
 
 /// Model package dir: `~/.personas/companion-tts/pocket/`.
 pub fn model_dir() -> Result<PathBuf, AppError> {
-    Ok(piper::engine_dir()?
+    Ok(engine_dir()?
         .parent()
         .ok_or_else(|| AppError::Internal("companion-tts dir has no parent".into()))?
         .join("pocket"))
@@ -94,7 +94,7 @@ pub fn model_dir() -> Result<PathBuf, AppError> {
 /// `<name>.wav` in here is a selectable cloned voice (10-30s of clean
 /// single-speaker audio clones best).
 pub fn voices_dir() -> Result<PathBuf, AppError> {
-    Ok(piper::engine_dir()?
+    Ok(engine_dir()?
         .parent()
         .ok_or_else(|| AppError::Internal("companion-tts dir has no parent".into()))?
         .join("pocket-voices"))
@@ -274,7 +274,7 @@ pub async fn status() -> Result<PocketStatus, AppError> {
         // render as not-running; the Voice tab offers a re-check.
         _ => (false, None),
     };
-    let bin_dir = piper::engine_dir()?;
+    let bin_dir = engine_dir()?;
     Ok(PocketStatus {
         running,
         base_url: base,
@@ -388,7 +388,7 @@ async fn synthesize_sidecar(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
-    // Hide the console window on Windows — same reasoning as piper.rs.
+    // Hide the console window on Windows — same reasoning as kokoro.rs.
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;

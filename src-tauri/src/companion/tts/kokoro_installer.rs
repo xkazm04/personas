@@ -24,7 +24,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncWriteExt;
 
-use crate::companion::tts::{kokoro, piper};
+use crate::companion::tts::{engine_dir, kokoro};
 use crate::engine::inflight_guard::InflightGuard;
 use crate::error::AppError;
 
@@ -111,7 +111,7 @@ pub async fn install(app: &AppHandle) -> Result<(), AppError> {
 }
 
 async fn install_inner(app: &AppHandle) -> Result<(), AppError> {
-    let bin_dir = piper::engine_dir()?; // shared engine bin dir
+    let bin_dir = engine_dir()?; // shared engine bin dir
     let model_dir = kokoro::model_dir()?;
     tokio::fs::create_dir_all(&bin_dir)
         .await

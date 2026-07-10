@@ -9,7 +9,7 @@ Companion is the Athena assistant plugin. It has two UI surfaces: a plugin setti
 | Plugin page | Three-tab manager for Setup, Memory, Voice | `CompanionPluginPage.tsx` |
 | Setup | Global toggles such as footer icon visibility, chime, and beta self-improve exposure | `sub_setup/SetupPanel.tsx`, `companionPluginSlice.ts` |
 | Memory | Full-page brain viewer over episodes, doctrine, identity, and constitution | `sub_memory/MemoryPanel.tsx`, `BrainViewer.tsx` |
-| Voice | ElevenLabs credential picker and voice-id binding | `sub_voice/VoicePanel.tsx`, `commands/companion/voice.rs` |
+| Voice | Engine picker (Kokoro / Pocket TTS) + per-engine voice setup | `sub_voice/VoicePanel.tsx`, `commands/companion/voice.rs` |
 | Panel | Chat, streaming, quick replies, approvals, playback | `CompanionPanel.tsx`, `CompanionToolbar.tsx`, `ApprovalCard.tsx` |
 | Avatar/footer | Athena's live video avatar **is** the footer button (left cluster, immediately right of the Network Settings icon) — tap opens/collapses the panel, **press-and-hold dictates a voice turn without opening the panel**. Avatar reflects state (idle/thinking/speaking); chime, pending playback, notice popover above icon ("Analysis completed" / proactive subject) with optional TTS announcement when voice is enabled | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `useDictation.ts`, `companionStore.ts` (`FooterNotice`, `voiceTurnRequest`) |
 
@@ -425,11 +425,11 @@ Below the latest completed assistant bubble only, `RefineChips` renders three sm
 
 ## On-demand read-aloud (per assistant bubble)
 
-When voice is configured for the user's chosen engine (resolved via `useTtsVoiceSelection` — ElevenLabs needs credential + voice id; the local engines need their own voice id), a small `BubbleReadAloud` button renders below the latest completed assistant bubble. Click → synthesizes the message via the existing `companion_tts` IPC, plays through a transient `<audio>` element, swaps to a "Stop" affordance during playback, and reverts to idle on end so the user can replay. Independent of the main TTS pipeline (which fires automatically when `voiceEnabled` is on) — this is for the "I didn't have voice on, but I want to hear what Athena just said" path. Skipped when no engine is configured to avoid hitting the backend just to surface an error.
+When voice is configured for the user's chosen engine (resolved via `useTtsVoiceSelection` — each engine needs its own voice id), a small `BubbleReadAloud` button renders below the latest completed assistant bubble. Click → synthesizes the message via the existing `companion_tts` IPC, plays through a transient `<audio>` element, swaps to a "Stop" affordance during playback, and reverts to idle on end so the user can replay. Independent of the main TTS pipeline (which fires automatically when `voiceEnabled` is on) — this is for the "I didn't have voice on, but I want to hear what Athena just said" path. Skipped when no engine is configured to avoid hitting the backend just to surface an error.
 
 ## Voice
 
-Voice playback dispatches to one of four engines, picked by the user in the Voice tab's engine selector. The slice persists `companionVoiceEngine: 'elevenlabs' | 'piper' | 'kokoro' | 'pocket_tts'`; per-engine identity (credential, voice id) lives in dedicated slice fields (`companionVoiceId` / `companionPiperVoiceId` / `companionKokoroVoiceId` / `companionPocketVoiceId`) so switching engines doesn't clobber the other side's last selection. Every playback call site resolves the active engine's identity through the shared `useTtsVoiceSelection()` hook (returns `{ engine, voiceId, credentialId, configured }`) rather than repeating the per-engine ternary — a new engine is a one-line change there.
+Voice playback dispatches to one of two engines, picked by the user in the Voice tab's engine selector: **Kokoro** (primary) or **Pocket TTS** (experimental, voice cloning). The slice persists `companionVoiceEngine: 'kokoro' | 'pocket_tts'`; per-engine voice ids live in `companionKokoroVoiceId` / `companionPocketVoiceId`. Playback call sites resolve the active identity through `useTtsVoiceSelection()`. The earlier **ElevenLabs** (cloud, credential-gated) and **Piper** (per-voice ONNX download) engines were descoped 2026-07-10 — two local engines cover the quality-vs-cloning space with no cloud bill; persisted pre-descope engine selections normalize onto Kokoro (`normalizeCompanionTtsEngine`). The Twin plugin's ElevenLabs-based voice-profile tab was descoped in the same pass (readiness is now five milestones); the ElevenLabs vault *connector* survives for other uses (e.g. Artist transcription).
 
 Backend code lives under `src-tauri/src/companion/tts/` with one submodule per engine; `commands/companion/voice.rs` is a thin dispatcher that validates input (text length, voice-id format) and routes to the right impl.
 
@@ -437,23 +437,7 @@ Backend code lives under `src-tauri/src/companion/tts/` with one submodule per e
 
 **Voice controls popover.** The chat toolbar's audio button (`VoiceControlPopover`, shown when the active engine is configured — `useTtsVoiceSelection().configured`) opens a popover with: enable/disable spoken summaries, a **volume** slider (`companionVoiceVolume`, default 0.5, applied to every TTS `<audio>` in `voicePlayback.play()` — and **live**: `play()` subscribes to the store so dragging the slider changes Athena mid-sentence; the same slider is mirrored in the Voice tab's engine card), and a **Test voice** button that synthesizes + plays a sample sentence so the user can hear the current engine/voice/volume on demand.
 
-**Settings UX.** All Voice/Setup section headers use a themed (`text-primary`) `SectionCard` title and every dropdown uses the shared `ThemedSelect` (theme-aware) rather than a raw `<select>`. When an ElevenLabs credential scopes resources, both the **voice** and **model** dropdowns populate from the scope — the model dropdown narrows the curated allowlist to the scoped subset (and prefers the scope's live label). Default tuning is Stability 0.70 / Similarity 0.70 / Style 0.05 (`companionPluginSlice` defaults; speed + model inherit the engine default). Speech-to-text setup lives in the same tab via `SttPanel`.
-
-### ElevenLabs (cloud)
-
-Backend proxy: the frontend sends text + credential id + voice id + tuning settings to `companion_tts`; the backend reads the decrypted Vault credential, calls ElevenLabs, and returns base64 MP3 (`audio/mpeg`) plus MIME metadata. API keys do not cross into the webview. Allowlist of model ids is server-side (`tts/elevenlabs.rs::TTS_ALLOWED_MODELS`).
-
-### Piper (local)
-
-Local synthesis via the official rhasspy/piper binary as a subprocess. No network at synth time; no credential needed. Two preconditions:
-
-1. **Engine binary** at `~/.personas/companion-tts/bin/piper(.exe)` (or `PERSONAS_PIPER_BIN` override, or on PATH). The Voice tab surfaces an Installed/Not-installed badge plus the expected install path; users drop the official Piper release zip's `piper.exe` (Windows) or `piper` binary (mac/Linux) into that path. Status is reported by `companion_tts_piper_engine_status`.
-
-2. **Voice model** under `~/.personas/companion-tts/piper/<voice-id>/` containing `<voice-id>.onnx` + `<voice-id>.onnx.json`. Voices are picked from a curated catalog (`tts/catalog.rs::PIPER_VOICES`, ~17 voices spanning 14 languages) and downloaded from `huggingface.co/rhasspy/piper-voices` via `companion_tts_download_piper_voice`. Atomic via `.partial` rename. Progress streams on the `companion://tts-download` event channel (throttled to 250ms / 1MB increments). `companion_tts_list_piper_voices` returns the catalog with each row's `isDownloaded` checked from disk; `companion_tts_delete_piper_voice` removes a voice's directory tree.
-
-Synthesis spawns piper with `--model voice.onnx --config voice.onnx.json --output_file <tempfile>`, writes the text on stdin, and reads the resulting WAV from disk. Result: `audio/wav` base64 plus MIME metadata (note the difference from ElevenLabs' MP3 — both are HTML5 `<audio>`-decodable, no frontend sniffing needed).
-
-**Why subprocess instead of in-process bindings?** The published `piper-rs` crate pins `ort = "=2.0.0-rc.11"` while we ship `2.0.0-rc.9` for fastembed. Two ORT versions in one process is a recipe for the same DLL-version-mismatch panic Cargo.toml warns about. Subprocess isolation gives us the official Piper Windows release (with its bundled `onnxruntime.dll`) without touching our ML stack. The cost is per-call subprocess overhead (~50–100ms), well under the synthesis time of even a one-sentence reply.
+**Settings UX.** All Voice/Setup section headers use a themed (`text-primary`) `SectionCard` title and every dropdown uses the shared `ThemedSelect` (theme-aware) rather than a raw `<select>`. The only per-call tuning left post-descope is speech rate (`companionVoiceSpeed`); everything else inherits engine defaults. Speech-to-text setup lives in the same tab via `SttPanel`.
 
 ### Kokoro (local, higher quality)
 
@@ -471,7 +455,7 @@ The curated voice list (`KOKORO_VOICES`) currently surfaces a single voice — `
 
 ### Pocket TTS (local, voice cloning)
 
-The fourth engine (`tts/pocket.rs`) is the only local one with **zero-shot voice cloning** — Athena can speak with a voice built from a ~16-second recording of the user. It wraps [kyutai's Pocket TTS](https://github.com/kyutai-labs/pocket-tts) (100M-param, CPU-only PyTorch), which has no self-contained sidecar binary; instead of a subprocess-per-call, the engine talks HTTP to a **long-lived local service** (default `http://127.0.0.1:8080`, override `PERSONAS_POCKET_TTS_URL`) that keeps the model warm. Same out-of-process rationale as Piper/Kokoro — a separate process can't collide with our pinned in-process `ort 2.0.0-rc.9` — with the added benefit that repeated syntheses skip the model reload entirely.
+The experimental engine (`tts/pocket.rs`) is the only local one with **zero-shot voice cloning** — Athena can speak with a voice built from a ~16-second recording of the user. It wraps [kyutai's Pocket TTS](https://github.com/kyutai-labs/pocket-tts) (100M-param, CPU-only PyTorch), which has no self-contained sidecar binary; instead of a subprocess-per-call, the engine talks HTTP to a **long-lived local service** (default `http://127.0.0.1:8080`, override `PERSONAS_POCKET_TTS_URL`) that keeps the model warm. Same out-of-process rationale as Piper/Kokoro — a separate process can't collide with our pinned in-process `ort 2.0.0-rc.9` — with the added benefit that repeated syntheses skip the model reload entirely.
 
 The service is the ElevenLabs-API-shaped wrapper from the pocket-tts repo (`service/app.py`): a bounded worker pool + admission queue that answers 429 under overload, which `pocket::synthesize` maps to a user-facing "at capacity" message; no client-side semaphore is used (unlike Piper/Kokoro), since backpressure lives server-side. `companion_tts_pocket_status` probes `/health` (the Voice tab gates the engine behind a running/not-running card with the service address); `companion_tts_list_pocket_voices` returns the service's voices — the user's cloned `.safetensors` embeddings (category `cloned`, listed first with a badge) plus the built-in Kyutai catalog (`premade`). Dropping a new embedding into the service's `voices/` dir and re-checking makes it selectable. Result is 24kHz `audio/wav` base64, same as Piper.
 
@@ -482,10 +466,6 @@ The service is the ElevenLabs-API-shaped wrapper from the pocket-tts repo (`serv
 **Self-serve cloning (upload).** The Voice tab's "Add your voice" block (Pocket engine only) accepts any decodable audio file: the webview converts it via the Web Audio API (`audioToReferenceWav.ts` — decode mp3/wav/flac/ogg → resample to 24kHz mono PCM16 → trim to 30s) so the Rust side needs no audio decoders, then `companion_tts_pocket_import_voice` validates the RIFF container + a 10MB cap and writes it into pocket-voices/ via temp+rename (no truncated references on crash). The new voice is auto-selected. Cloned rows carry a delete affordance behind a danger `ConfirmDialog` (`companion_tts_pocket_delete_voice`, idempotent); the manual drop-a-wav-in-the-folder path still works alongside.
 
 **License caveat.** The prebuilt ONNX package derives from a community export (KevinAHM/pocket-tts-onnx) licensed **non-commercial** — fine for personal use; re-export from the original Kyutai weights before any commercial distribution.
-
-### Language coverage UX
-
-The Piper voice browser groups voices by BCP-47 language. The user's current app locale is matched against voice prefixes (`en` matches `en-US` / `en-GB`, `cs` matches `cs-CZ`); matching groups are promoted to the top with a "Your language" badge. When no Piper voice covers the user's locale, the panel surfaces a fallback callout pointing them at ElevenLabs.
 
 ## Voice input (speech-to-text)
 

@@ -42,10 +42,9 @@ import { useTourNarration } from '../useTourNarration';
 function setVoice(overrides: Partial<Record<string, unknown>> = {}) {
   mockStoreState = {
     companionVoiceEnabled: true,
-    companionVoiceEngine: 'elevenlabs',
-    companionVoiceCredentialId: 'cred-1',
-    companionVoiceId: 'voice-1',
-    companionPiperVoiceId: null,
+    companionVoiceEngine: 'kokoro',
+    companionKokoroVoiceId: 'af_heart',
+    companionPocketVoiceId: null,
     companionVoiceVolume: 0.5,
     ...overrides,
   };
@@ -76,32 +75,31 @@ describe('useTourNarration', () => {
     expect(mockSynthesize).not.toHaveBeenCalled();
   });
 
-  it('is unavailable when ElevenLabs is selected but no credential is set', () => {
-    setVoice({ companionVoiceCredentialId: null });
+  it('is unavailable when Kokoro is selected but no voice is set', () => {
+    setVoice({ companionKokoroVoiceId: null });
     const { result } = renderHook(() => useTourNarration(STEP));
     expect(result.current.available).toBe(false);
   });
 
-  it('synthesizes the step narration through ElevenLabs when configured', async () => {
+  it('synthesizes the step narration through Kokoro when configured', async () => {
     const { result } = renderHook(() => useTourNarration(STEP));
     expect(result.current.available).toBe(true);
     await waitFor(() => expect(mockSynthesize).toHaveBeenCalledTimes(1));
     expect(mockSynthesize).toHaveBeenCalledWith(
       'Hello there.',
-      'cred-1',
-      'voice-1',
+      null,
+      'af_heart',
       undefined,
-      'elevenlabs',
+      'kokoro',
     );
     await waitFor(() => expect(mockPlay).toHaveBeenCalledWith('blob:narration'));
   });
 
-  it('uses the Piper voice id and a null credential when Piper is the engine', async () => {
+  it('uses the Pocket voice id and a null credential when Pocket is the engine', async () => {
     setVoice({
-      companionVoiceEngine: 'piper',
-      companionVoiceCredentialId: null,
-      companionVoiceId: null,
-      companionPiperVoiceId: 'en_US-amy-medium',
+      companionVoiceEngine: 'pocket_tts',
+      companionKokoroVoiceId: null,
+      companionPocketVoiceId: 'step4',
     });
     const { result } = renderHook(() => useTourNarration(STEP));
     expect(result.current.available).toBe(true);
@@ -109,9 +107,9 @@ describe('useTourNarration', () => {
     expect(mockSynthesize).toHaveBeenCalledWith(
       'Hello there.',
       null,
-      'en_US-amy-medium',
+      'step4',
       undefined,
-      'piper',
+      'pocket_tts',
     );
   });
 

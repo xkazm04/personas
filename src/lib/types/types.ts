@@ -413,7 +413,7 @@ export type AgentTab = "all" | "create" | "groups" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion" | "scraper";
 export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud" | "revitalize";
-export type TwinTab = "profiles" | "identity" | "tone" | "brain" | "knowledge" | "voice" | "channels" | "training";
+export type TwinTab = "profiles" | "identity" | "tone" | "brain" | "knowledge" | "channels" | "training";
 export type ArtistTab = "blender" | "gallery" | "media-studio";
 export type EventBusTab = "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
