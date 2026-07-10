@@ -6,6 +6,13 @@ materially edits the working tree should touch this file twice:
 
 1. **At session start (Phase 0):** read this file, scan `## Active
 
+### /perfect — round 1: skill authoring + init + proposal pass (session 42f2aa07)
+- Started: 2026-07-10
+- Status: started
+- Branch: master (main checkout)
+- Paths: .claude/skills/perfect/skill.md (new), Obsidian vault Perfect/ (outside repo), .claude/active-runs.md. Build phase (if reached) uses .claude/worktrees/perfect-* — disjoint from master.
+- Note: proposal phase writes only to the vault; repo edits happen only in build-phase worktrees + serial merges.
+
 ### /research — claude-code-2-1-182-to-200
 - Started: 2026-07-05
 - Status: completed (commit: df493b983) — floor 2.1.181 → 2.1.199; Sonnet 5 = catch (alias resolves); 0 descoped-reopens
