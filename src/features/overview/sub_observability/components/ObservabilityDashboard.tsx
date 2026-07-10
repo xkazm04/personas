@@ -91,8 +91,11 @@ export default function ObservabilityDashboard() {
 
   const drilldown = useAnomalyDrilldown();
 
-  // AI healing live stream
-  const aiHealing = useAiHealingStream(d.selectedPersonaId ?? '');
+  // AI healing live stream. On the default "All personas" filter
+  // (selectedPersonaId null) the healing analysis runs against personas[0], so
+  // the stream must subscribe to the SAME persona — otherwise it listened on ''
+  // and never surfaced the healing that was actually running.
+  const aiHealing = useAiHealingStream(d.selectedPersonaId ?? d.personas[0]?.id ?? '');
   const [healingDismissed, setHealingDismissed] = useState(false);
   // Reset dismissed state when a new healing session starts
   const showHealingOverlay = aiHealing.phase !== 'idle' && !healingDismissed;

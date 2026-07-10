@@ -67,36 +67,10 @@ export function actionWeight(card: PersonaCardModel): number {
   );
 }
 
-/** A mocked active goal for the Project columns (round-1 placeholder). */
-export interface MockGoal { title: string; progress: number }
-
-const GOAL_POOL = [
-  'Ship the onboarding funnel rework',
-  'Cut p95 latency under 400ms',
-  'Migrate billing to the new schema',
-  'Close the Q3 security findings',
-  'Parallelize the embedding pipeline',
-  'Land the design-token migration',
-  'Stabilize the release channel',
-  'Draft the data-retention policy',
-];
-
 /**
- * Deterministic mock goals for a group, derived from its id so a column shows a
- * plausible "project overview" without a real fetch. PLACEHOLDER — consolidation
- * wires real DevGoals (keyed by dev project) once the team↔project map exists.
+ * Shape of an active goal shown in a Project column. Real DevGoals (keyed by dev
+ * project) are wired here once the team↔project map exists; until then columns
+ * carry an empty list rather than fabricated placeholder goals, which were being
+ * shown to users as real project state.
  */
-export function mockGoalsForGroup(groupId: string): MockGoal[] {
-  let h = 0;
-  for (let i = 0; i < groupId.length; i++) h = (h * 31 + groupId.charCodeAt(i)) >>> 0;
-  const count = 1 + (h % 3); // 1..3 goals
-  const goals: MockGoal[] = [];
-  for (let i = 0; i < count; i++) {
-    const idx = (h + i * 7) % GOAL_POOL.length;
-    // Unsigned shift: `h` is a uint32 (>>> 0 above), so a plain signed `>>`
-    // reinterprets any h >= 2^31 as negative and yields negative percentages.
-    const progress = ((h >>> (i + 2)) % 100);
-    goals.push({ title: GOAL_POOL[idx]!, progress });
-  }
-  return goals;
-}
+export interface MockGoal { title: string; progress: number }

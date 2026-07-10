@@ -291,8 +291,11 @@ export function sanitizeVariableValue(
 ): string {
   let clean = value;
 
-  // Truncate
-  clean = clean.slice(0, MAX_VALUE_LENGTH);
+  // Truncate at the type-appropriate limit. JSON has a higher cap
+  // (MAX_JSON_VALUE_LENGTH); applying the generic 2000-char slice up front
+  // silently cut large JSON mid-structure — embedding malformed JSON into the
+  // prompt — because the later `case 'json'` re-slice was then a no-op.
+  clean = clean.slice(0, type === 'json' ? MAX_JSON_VALUE_LENGTH : MAX_VALUE_LENGTH);
 
   // Strip ANSI escape sequences from all types
   // eslint-disable-next-line no-control-regex
