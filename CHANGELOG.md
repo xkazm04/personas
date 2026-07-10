@@ -9,6 +9,8 @@ Until a stable **1.0** release, minor versions may contain breaking changes to I
 ## [Unreleased]
 
 ### Added
+- **Team memory reflection** — a reflection pass over a whole team: lessons held redundantly by two or more members are consolidated into one **team-shared** insight (visible to every member's runs once the proposal is applied; the per-member copies archive with provenance). Available via `reflect_team_memories_with_cli` and as a background job.
+- **Reflection → backlog bridge** — reflection now also extracts **product findings** (open bugs, debt, unresolved review threads mentioned in memories) and files them as pending ideas in the Dev Tools backlog, with provenance back to the source memories. The backlog's own accept/reject triage is the approval gate; saturation-capped and deduped against existing ideas.
 - **Memory reflection** (Overview → Memories → Reflect) — an LLM pass that consolidates related or contradicting memories into fewer, durable insights. Insights carry **provenance** (`Synthesized from` in the memory detail view; sources are archived, never deleted) and everything lands as a proposal you apply or discard — live memories are never touched without confirmation. Also available as a background job (`enqueue_persona_memory_reflection`).
 - **Value-aware memory recall** — the memories injected into a run are now selected by decayed value (importance × category half-life × real usage) packed whole into the prompt budget, instead of "sort by importance and truncate". Constraints barely decay; session context fades in weeks.
 - **Decay-based forgetting** — stale low-importance active memories (score below floor, ≥21 days old, importance ≤3) are auto-archived (reversible) after each run, replacing the binary 30-day rule.

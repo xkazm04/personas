@@ -20,6 +20,20 @@
 //!    synthesize = `create_synthesized` (with `derived_from` provenance)
 //!    + archive sources; archive = reversible tier flip. `core` (user-
 //!    pinned) is read-only context at every step.
+//!
+//! Two extensions on the same pipeline:
+//!
+//! - **Team reflection** (`run_team_memory_reflection`): reflects across
+//!   ALL of a team's members at once and only synthesizes lessons held by
+//!   ≥2 different members. Applied insights are published team-wide via
+//!   `home_team_id` (one shared row replaces N per-member copies); the
+//!   member copies archive with provenance intact.
+//! - **Product-findings bridge**: alongside memory actions, the LLM
+//!   extracts OPEN THREADS about the software the agents work on (bugs,
+//!   debt, unresolved review findings) which land as `pending` rows in
+//!   the dev-tools ideas backlog — that surface is already triage-gated,
+//!   so the human approval gate is preserved. Findings never consume
+//!   memories.
 
 use std::io::ErrorKind;
 
@@ -75,12 +89,18 @@ fn clamp_chars(s: &str, max: usize) -> String {
     format!("{clipped}…[truncated]")
 }
 
+/// Cap on product findings promoted to the ideas backlog per pass.
+const MAX_FINDINGS_PER_PASS: usize = 5;
+
 /// Outcome of a reflection pass, pre-proposal.
 pub struct ReflectionOutcome {
     pub proposal_id: String,
     pub reviewed: usize,
     pub entries: Vec<ProposalEntry>,
     pub summary: String,
+    /// Product findings written to the dev-tools ideas backlog (pending,
+    /// triage-gated there — independent of the memory proposal's fate).
+    pub findings_created: usize,
 }
 
 // ---------------------------------------------------------------------------
@@ -170,12 +190,30 @@ struct ArchiveSpec {
     reason: Option<String>,
 }
 
+/// An open thread about the PRODUCT the agents work on (not about the
+/// agents' own behavior) — promoted to the dev-tools ideas backlog.
+#[derive(Debug, serde::Deserialize)]
+struct ProductFindingSpec {
+    title: String,
+    #[serde(default)]
+    description: Option<String>,
+    /// `bug` | `debt` | `followup` — advisory label folded into the idea.
+    #[serde(default)]
+    kind: Option<String>,
+    #[serde(default)]
+    source_ids: Vec<String>,
+    #[serde(default)]
+    reason: Option<String>,
+}
+
 #[derive(Debug, serde::Deserialize)]
 struct ReflectionOutput {
     #[serde(default)]
     insights: Vec<InsightSpec>,
     #[serde(default)]
     archive: Vec<ArchiveSpec>,
+    #[serde(default)]
+    product_findings: Vec<ProductFindingSpec>,
     #[serde(default)]
     summary: Option<String>,
 }
@@ -223,11 +261,15 @@ fn build_reflection_prompt(
     core_ids: &[String],
     clusters: &[Vec<String>],
     instructions: Option<&str>,
+    // Some((roster id→name)) switches the prompt into TEAM mode: memories
+    // carry their owning persona, and synthesis requires cross-member
+    // convergence.
+    team_roster: Option<&std::collections::HashMap<String, String>>,
 ) -> Result<String, AppError> {
     let entries: Vec<serde_json::Value> = memories
         .iter()
         .map(|m| {
-            serde_json::json!({
+            let mut v = serde_json::json!({
                 "id": m.id,
                 "title": m.title,
                 "content": clamp_chars(&m.content, MAX_PROMPT_CONTENT_CHARS),
@@ -236,7 +278,11 @@ fn build_reflection_prompt(
                 "tier": m.tier,
                 "access_count": m.access_count,
                 "created_at": m.created_at,
-            })
+            });
+            if team_roster.is_some() {
+                v["persona_id"] = serde_json::Value::String(m.persona_id.clone());
+            }
+            v
         })
         .collect();
     let memories_json = serde_json::to_string_pretty(&entries)
@@ -251,18 +297,34 @@ fn build_reflection_prompt(
         .map(|s| format!("\n\nAdditional guidance from operator:\n{s}\n"))
         .unwrap_or_default();
 
+    let (mode_intro, team_block) = match team_roster {
+        Some(roster) => {
+            let roster_json = serde_json::to_string(roster)
+                .map_err(|e| AppError::Internal(format!("Serialize roster: {e}")))?;
+            (
+                "You are running a TEAM memory REFLECTION pass in Personas, an agent management platform. The memories below belong to the MEMBERS of one team (each carries its owning persona_id). Your job is to find lessons the team has learned REDUNDANTLY — the same knowledge held by two or more different members — and consolidate each into ONE team-shared insight that every member will see, replacing the per-member copies.",
+                format!("\n\nTeam roster (persona_id → name):\n{roster_json}\n\nTEAM RULES:\n- Synthesize ONLY when the source_ids span >= 2 DIFFERENT persona_id values — a lesson one member holds alone is not team knowledge; leave it untouched.\n- The insight content must be phrased team-neutrally (no \"I\"; it will be injected into every member's context).\n- Do not merge role-specific knowledge (e.g. a reviewer-only checklist) with implementer knowledge just because the topic matches — team knowledge is what EVERY member should act on."),
+            )
+        }
+        None => (
+            "You are running a memory REFLECTION pass for an AI agent persona in Personas, an agent management platform. Reflection consolidates many raw memories into fewer, more durable insights so the agent's limited memory budget carries maximum knowledge.",
+            String::new(),
+        ),
+    };
+
     Ok(format!(
-        r#"You are running a memory REFLECTION pass for an AI agent persona in Personas, an agent management platform. Reflection consolidates many raw memories into fewer, more durable insights so the agent's limited memory budget carries maximum knowledge.
+        r#"{mode_intro}
 
 Candidate related groups (deterministic similarity hints — advisory, you decide the real grouping):
 {clusters_json}
 
 PINNED (core-tier) memory ids — read-only context. NEVER list them in source_ids or archive:
-{core_json}
+{core_json}{team_block}
 
 Respond with ONLY a JSON object (no markdown fences, no prose):
 {{"insights":[{{"title":"...","content":"...","category":"learned","importance":3,"source_ids":["id1","id2"],"reason":"..."}}],
  "archive":[{{"id":"...","reason":"..."}}],
+ "product_findings":[{{"title":"...","description":"...","kind":"bug","source_ids":["id1"],"reason":"..."}}],
  "summary":"one short paragraph describing what this reflection found"}}
 
 Rules:
@@ -275,6 +337,7 @@ Rules:
 - Keep each insight's content focused and under ~120 words; split unrelated themes into separate insights instead of one mega-memory.
 - Consolidate INCREMENTALLY: consume at most ~60% of the non-pinned memories in this pass — prioritize the highest-value clusters and leave the rest for a future pass (over-budget insights are dropped automatically).
 - At most {MAX_INSIGHTS_PER_PASS} insights. If nothing is worth consolidating, return empty arrays — an empty reflection is a valid result.
+- PRODUCT FINDINGS (separate from memory actions; they consume nothing): extract open threads about the SOFTWARE the agent works on — unresolved bugs, known debt, unconfirmed fixes, review findings never closed. Each needs a specific actionable title, a description with enough context to act without reading the memories, and the source_ids it came from. Do NOT report the agent's own process lessons here, and do NOT report items the sources say are already fixed/closed. At most {MAX_FINDINGS_PER_PASS}; an empty array is the common correct answer.
 {guidance_block}
 Memories:
 {memories_json}"#
@@ -371,6 +434,7 @@ async fn run_claude_oneshot(prompt: &str) -> Result<String, AppError> {
 fn classify_reflection_output(
     output: ReflectionOutput,
     memories: &[PersonaMemory],
+    require_cross_member: bool,
 ) -> (Vec<ProposalEntry>, String) {
     let by_id: std::collections::HashMap<&str, &PersonaMemory> =
         memories.iter().map(|m| (m.id.as_str(), m)).collect();
@@ -400,6 +464,18 @@ fn classify_reflection_output(
         }
         if insight.title.trim().is_empty() || insight.content.trim().is_empty() {
             continue;
+        }
+        if require_cross_member {
+            // Team mode: a valid team insight must consolidate knowledge
+            // held by >= 2 DIFFERENT members — otherwise it belongs to the
+            // owning persona's own reflection, not the team's.
+            let distinct_owners: std::collections::HashSet<&str> = sources
+                .iter()
+                .filter_map(|s| by_id.get(s.as_str()).map(|m| m.persona_id.as_str()))
+                .collect();
+            if distinct_owners.len() < 2 {
+                continue;
+            }
         }
         let newly_consumed = sources.iter().filter(|s| !consumed.contains(*s)).count();
         if consumed.len() + newly_consumed > consumption_budget {
@@ -469,6 +545,213 @@ fn classify_reflection_output(
     (entries, summary)
 }
 
+// ---------------------------------------------------------------------------
+// Product-findings bridge (reflection → dev-tools ideas backlog)
+// ---------------------------------------------------------------------------
+
+/// Normalize a title for soft duplicate detection against existing ideas.
+fn normalize_title(s: &str) -> String {
+    s.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+}
+
+/// Resolve the dev project linked to a team (`dev_projects.team_id`, no FK).
+fn resolve_project_for_team(pool: &DbPool, team_id: &str) -> Option<String> {
+    let conn = pool.get().ok()?;
+    conn.query_row(
+        "SELECT id FROM dev_projects WHERE team_id = ?1 LIMIT 1",
+        rusqlite::params![team_id],
+        |r| r.get::<_, String>(0),
+    )
+    .ok()
+}
+
+/// Write validated product findings to the dev-tools ideas backlog as
+/// `pending` rows (that surface is triage-gated — accept/reject there is
+/// the human approval). Soft-deduped against existing pending + accepted
+/// idea titles; respects the backlog saturation cap. Returns rows created.
+///
+/// Best-effort by design: a failure here must never fail the reflection
+/// pass (the memory proposal is the primary output).
+fn write_product_findings(
+    pool: &DbPool,
+    project_id: Option<&str>,
+    findings: Vec<ProductFindingSpec>,
+    memories: &[PersonaMemory],
+    origin: &str,
+) -> usize {
+    use crate::db::repos::dev_tools as dev_repo;
+
+    if findings.is_empty() {
+        return 0;
+    }
+    let known_ids: std::collections::HashSet<&str> =
+        memories.iter().map(|m| m.id.as_str()).collect();
+
+    // Backlog saturation: mirror the idea scanner's discipline — don't pour
+    // findings into a queue nobody is draining.
+    let pending = match dev_repo::list_ideas(pool, project_id, Some("pending"), None, Some(crate::engine::dispatch::IDEA_BACKLOG_CAP + 1), None) {
+        Ok(rows) => rows,
+        Err(e) => {
+            tracing::warn!(error = %e, "reflection findings: pending-ideas lookup failed; skipping bridge");
+            return 0;
+        }
+    };
+    if pending.len() as i64 >= crate::engine::dispatch::IDEA_BACKLOG_CAP {
+        tracing::info!(
+            pending = pending.len(),
+            "reflection findings skipped — ideas backlog saturated"
+        );
+        return 0;
+    }
+    let mut seen_titles: std::collections::HashSet<String> =
+        pending.iter().map(|i| normalize_title(&i.title)).collect();
+    if let Ok(accepted) = dev_repo::list_ideas(pool, project_id, Some("accepted"), None, Some(200), None) {
+        seen_titles.extend(accepted.iter().map(|i| normalize_title(&i.title)));
+    }
+
+    let mut created = 0usize;
+    for f in findings.into_iter().take(MAX_FINDINGS_PER_PASS) {
+        let title = f.title.trim();
+        if title.is_empty() || seen_titles.contains(&normalize_title(title)) {
+            continue;
+        }
+        let sources: Vec<&str> = f
+            .source_ids
+            .iter()
+            .map(String::as_str)
+            .filter(|id| known_ids.contains(id))
+            .collect();
+        if sources.is_empty() {
+            continue; // no verifiable provenance — don't file it
+        }
+        let kind = f.kind.as_deref().unwrap_or("followup");
+        let description = format!(
+            "{}\n\n[{kind}] Surfaced by memory reflection ({origin}); source memories: {}",
+            f.description.as_deref().unwrap_or("").trim(),
+            sources.join(", ")
+        );
+        match dev_repo::create_idea(
+            pool,
+            project_id,
+            None,
+            "memory_reflection",
+            Some("technical"),
+            title,
+            Some(description.trim()),
+            f.reason.as_deref(),
+            None, // pending
+            None,
+            None,
+            None,
+            None,
+            None,
+        ) {
+            Ok(_) => {
+                seen_titles.insert(normalize_title(title));
+                created += 1;
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, title, "reflection findings: create_idea failed");
+            }
+        }
+    }
+    created
+}
+
+// ---------------------------------------------------------------------------
+// Pipelines
+// ---------------------------------------------------------------------------
+
+/// Shared tail of both pipelines: prompt → CLI → parse → classify →
+/// proposal + product-findings bridge.
+async fn run_reflection_core(
+    pool: &DbPool,
+    memories: &[PersonaMemory],
+    instructions: Option<&str>,
+    team: Option<(&str, &std::collections::HashMap<String, String>)>,
+    project_id: Option<String>,
+    persona_id: Option<&str>,
+) -> Result<ReflectionOutcome, AppError> {
+    let core_ids: Vec<String> = memories
+        .iter()
+        .filter(|m| m.tier == "core")
+        .map(|m| m.id.clone())
+        .collect();
+    let clusterable: Vec<PersonaMemory> = memories
+        .iter()
+        .filter(|m| m.tier != "core")
+        .cloned()
+        .collect();
+    let clusters = match team {
+        // Team mode: only clusters spanning >= 2 members are useful hints.
+        Some(_) => {
+            let by_id: std::collections::HashMap<&str, &PersonaMemory> =
+                clusterable.iter().map(|m| (m.id.as_str(), m)).collect();
+            cluster_hints(&clusterable)
+                .into_iter()
+                .filter(|group| {
+                    let owners: std::collections::HashSet<&str> = group
+                        .iter()
+                        .filter_map(|id| by_id.get(id.as_str()).map(|m| m.persona_id.as_str()))
+                        .collect();
+                    owners.len() >= 2
+                })
+                .collect()
+        }
+        None => cluster_hints(&clusterable),
+    };
+
+    let prompt = build_reflection_prompt(
+        memories,
+        &core_ids,
+        &clusters,
+        instructions,
+        team.map(|(_, roster)| roster),
+    )?;
+    let raw = run_claude_oneshot(&prompt).await?;
+    let json_str = extract_json_object(&raw)
+        .ok_or_else(|| AppError::Internal("Failed to parse reflection output as JSON".into()))?;
+    let mut output: ReflectionOutput = serde_json::from_str(&json_str)
+        .map_err(|e| AppError::Internal(format!("Invalid JSON in reflection output: {e}")))?;
+
+    let findings = std::mem::take(&mut output.product_findings);
+    let (entries, mut summary) =
+        classify_reflection_output(output, memories, team.is_some());
+
+    let proposal_id = proposal_repo::create(
+        pool,
+        CreateProposalInput {
+            persona_id,
+            // threshold is a curation concept; 0 marks "not score-gated".
+            threshold: 0,
+            instructions,
+            entries: &entries,
+            summary: Some(&summary),
+            team_id: team.map(|(tid, _)| tid),
+        },
+    )?;
+
+    let origin = match team {
+        Some((tid, _)) => format!("team {tid}"),
+        None => format!("persona {}", persona_id.unwrap_or("?")),
+    };
+    let findings_created =
+        write_product_findings(pool, project_id.as_deref(), findings, memories, &origin);
+    if findings_created > 0 {
+        summary.push_str(&format!(
+            " ({findings_created} product finding(s) filed to the ideas backlog for triage.)"
+        ));
+    }
+
+    Ok(ReflectionOutcome {
+        proposal_id,
+        reviewed: memories.len(),
+        entries,
+        summary,
+        findings_created,
+    })
+}
+
 /// Run the full reflection pipeline for one persona and write the result
 /// as a `pending_review` proposal. Returns `Ok(None)` when the persona has
 /// too few memories to reflect over.
@@ -495,45 +778,76 @@ pub async fn run_memory_reflection(
         return Ok(None);
     }
 
-    let core_ids: Vec<String> = memories
-        .iter()
-        .filter(|m| m.tier == "core")
-        .map(|m| m.id.clone())
+    // Product findings land in the project of the persona's home team.
+    let project_id = crate::db::repos::core::personas::get_by_id(pool, persona_id)
+        .ok()
+        .and_then(|p| p.home_team_id)
+        .and_then(|tid| resolve_project_for_team(pool, &tid));
+
+    run_reflection_core(pool, &memories, instructions, None, project_id, Some(persona_id))
+        .await
+        .map(Some)
+}
+
+/// Team reflection: consolidate lessons held redundantly by ≥2 members of
+/// `team_id` into team-shared insights. Membership = union of the explicit
+/// roster (`persona_team_members`) and personas whose `home_team_id` is the
+/// team. Returns `Ok(None)` when the team's combined pool is too small.
+pub async fn run_team_memory_reflection(
+    pool: &DbPool,
+    team_id: &str,
+    instructions: Option<&str>,
+) -> Result<Option<ReflectionOutcome>, AppError> {
+    // Roster: explicit members ∪ home-team personas (the app's canonical
+    // "belongs to team T" union — see commands/companion/approvals.rs).
+    let member_ids: Vec<String> = {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id FROM personas WHERE home_team_id = ?1
+             UNION
+             SELECT persona_id FROM persona_team_members WHERE team_id = ?1",
+        )?;
+        let rows = stmt.query_map(rusqlite::params![team_id], |r| r.get::<_, String>(0))?;
+        rows.filter_map(Result::ok).collect()
+    };
+    if member_ids.len() < 2 {
+        return Ok(None); // team knowledge needs at least two members
+    }
+    let roster: std::collections::HashMap<String, String> =
+        crate::db::repos::core::personas::get_by_ids(pool, &member_ids)?
+            .into_iter()
+            .map(|p| (p.id, p.name))
+            .collect();
+
+    // Combined pool: members' active/working memories (core = per-persona
+    // identity, archive = retired — both excluded), best-first, capped so
+    // the prompt stays bounded on large teams.
+    let mut memories: Vec<PersonaMemory> = repo::get_all_by_persona_ids(pool, &member_ids)?
+        .into_iter()
+        .filter(|m| m.tier == "active" || m.tier == "working")
         .collect();
-    let clusterable: Vec<PersonaMemory> = memories
-        .iter()
-        .filter(|m| m.tier != "core")
-        .cloned()
-        .collect();
-    let clusters = cluster_hints(&clusterable);
+    memories.sort_by(|a, b| {
+        b.importance
+            .cmp(&a.importance)
+            .then(b.access_count.cmp(&a.access_count))
+            .then(b.created_at.cmp(&a.created_at))
+    });
+    memories.truncate(REFLECTION_FETCH_LIMIT as usize);
+    if memories.len() < MIN_MEMORIES_FOR_REFLECTION {
+        return Ok(None);
+    }
 
-    let prompt = build_reflection_prompt(&memories, &core_ids, &clusters, instructions)?;
-    let raw = run_claude_oneshot(&prompt).await?;
-    let json_str = extract_json_object(&raw)
-        .ok_or_else(|| AppError::Internal("Failed to parse reflection output as JSON".into()))?;
-    let output: ReflectionOutput = serde_json::from_str(&json_str)
-        .map_err(|e| AppError::Internal(format!("Invalid JSON in reflection output: {e}")))?;
-
-    let (entries, summary) = classify_reflection_output(output, &memories);
-
-    let proposal_id = proposal_repo::create(
+    let project_id = resolve_project_for_team(pool, team_id);
+    run_reflection_core(
         pool,
-        CreateProposalInput {
-            persona_id: Some(persona_id),
-            // threshold is a curation concept; 0 marks "not score-gated".
-            threshold: 0,
-            instructions,
-            entries: &entries,
-            summary: Some(&summary),
-        },
-    )?;
-
-    Ok(Some(ReflectionOutcome {
-        proposal_id,
-        reviewed: memories.len(),
-        entries,
-        summary,
-    }))
+        &memories,
+        instructions,
+        Some((team_id, &roster)),
+        project_id,
+        None,
+    )
+    .await
+    .map(Some)
 }
 
 #[cfg(test)]
@@ -621,9 +935,10 @@ mod tests {
                 ArchiveSpec { id: "core1".into(), reason: None },
                 ArchiveSpec { id: "a".into(), reason: Some("consumed by synthesis".into()) },
             ],
+            product_findings: vec![],
             summary: None,
         };
-        let (entries, _summary) = classify_reflection_output(out, &ms);
+        let (entries, _summary) = classify_reflection_output(out, &ms, false);
         // 1 valid synthesize; core-sourced + unknown-sourced dropped;
         // archive of core dropped; archive of consumed source dropped.
         assert_eq!(entries.len(), 1);
@@ -632,6 +947,50 @@ mod tests {
         assert_eq!(
             entries[0].source_ids.as_deref(),
             Some(&["a".to_string(), "b".to_string()][..])
+        );
+    }
+
+    fn mem_owned(id: &str, persona: &str, title: &str, content: &str) -> PersonaMemory {
+        let mut m = mem(id, "active", title, content);
+        m.persona_id = persona.into();
+        m
+    }
+
+    #[test]
+    fn team_mode_requires_cross_member_sources() {
+        let ms = vec![
+            mem_owned("a", "p1", "lesson", "same lesson content"),
+            mem_owned("b", "p1", "lesson again", "same lesson restated"),
+            mem_owned("c", "p2", "lesson too", "same lesson from other member"),
+            mem_owned("d", "p2", "unrelated", "different topic entirely"),
+        ];
+        let insight = |title: &str, srcs: &[&str]| InsightSpec {
+            title: title.into(),
+            content: "merged".into(),
+            category: None,
+            importance: None,
+            source_ids: srcs.iter().map(|s| s.to_string()).collect(),
+            reason: None,
+        };
+        let out = ReflectionOutput {
+            insights: vec![
+                insight("single-member — rejected in team mode", &["a", "b"]),
+                insight("cross-member — accepted", &["b", "c"]),
+            ],
+            archive: vec![],
+            product_findings: vec![],
+            summary: Some("s".into()),
+        };
+        let (entries, _) = classify_reflection_output(out, &ms, true);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].title, "cross-member — accepted");
+    }
+
+    #[test]
+    fn normalize_title_collapses_case_and_whitespace() {
+        assert_eq!(
+            normalize_title("  Fix   Rate-Limit LEAK "),
+            "fix rate-limit leak"
         );
     }
 
@@ -658,9 +1017,10 @@ mod tests {
         let out = ReflectionOutput {
             insights: vec![insight("first", "a", "b"), insight("second", "c", "d")],
             archive: vec![ArchiveSpec { id: "c".into(), reason: None }],
+            product_findings: vec![],
             summary: Some("s".into()),
         };
-        let (entries, summary) = classify_reflection_output(out, &ms);
+        let (entries, summary) = classify_reflection_output(out, &ms, false);
         assert_eq!(
             entries.len(),
             2,
@@ -694,9 +1054,10 @@ mod tests {
                 reason: None,
             }],
             archive: vec![],
+            product_findings: vec![],
             summary: Some("s".into()),
         };
-        let (entries, summary) = classify_reflection_output(out, &ms);
+        let (entries, summary) = classify_reflection_output(out, &ms, false);
         assert_eq!(entries[0].new_category.as_deref(), Some("fact")); // default fallback
         assert_eq!(entries[0].new_importance, Some(5));
         assert_eq!(summary, "s");

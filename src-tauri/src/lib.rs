@@ -1663,6 +1663,7 @@ pub fn run() {
             commands::core::memories::batch_delete_memories,
             commands::core::memories::review_memories_with_cli,
             commands::core::memories::reflect_memories_with_cli,
+            commands::core::memories::reflect_team_memories_with_cli,
             commands::core::memories::apply_persona_memory_review_proposal,
             commands::core::memories::discard_persona_memory_review_proposal,
             commands::core::memories::list_persona_memory_review_proposals,
@@ -1673,6 +1674,7 @@ pub fn run() {
             // Core -- Memory curation runs (persona_background_job framework)
             commands::core::persona_jobs::enqueue_persona_memory_curation,
             commands::core::persona_jobs::enqueue_persona_memory_reflection,
+            commands::core::persona_jobs::enqueue_team_memory_reflection,
             commands::core::persona_jobs::list_persona_jobs,
             commands::core::persona_jobs::get_persona_job,
             commands::core::persona_jobs::cancel_persona_job,

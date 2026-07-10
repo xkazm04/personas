@@ -82,6 +82,13 @@ pub struct MemoryReviewProposal {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub decided_at: Option<String>,
+    /// Set when this proposal came from a TEAM reflection pass — the
+    /// consolidation spans memories from multiple members and applied
+    /// insights become team-shared (`home_team_id`) memories. `None`
+    /// for persona-scoped curation/reflection proposals.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub team_id: Option<String>,
 }
 
 /// Input to `create` — the proposal data without timestamps/status,
@@ -92,6 +99,8 @@ pub struct CreateProposalInput<'a> {
     pub instructions: Option<&'a str>,
     pub entries: &'a [ProposalEntry],
     pub summary: Option<&'a str>,
+    /// Team reflection only; `None` everywhere else.
+    pub team_id: Option<&'a str>,
 }
 
 pub fn create(pool: &DbPool, input: CreateProposalInput<'_>) -> Result<String, AppError> {
@@ -109,9 +118,9 @@ pub fn create(pool: &DbPool, input: CreateProposalInput<'_>) -> Result<String, A
     conn.execute(
         "INSERT INTO persona_memory_review_proposal
             (id, persona_id, threshold, instructions, proposal_json,
-             summary, reviewed_count, proposed_changes, status, created_at)
+             summary, reviewed_count, proposed_changes, status, created_at, team_id)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'pending_review',
-                 datetime('now'))",
+                 datetime('now'), ?9)",
         params![
             id,
             input.persona_id,
@@ -121,6 +130,7 @@ pub fn create(pool: &DbPool, input: CreateProposalInput<'_>) -> Result<String, A
             input.summary,
             reviewed_count,
             proposed_changes,
+            input.team_id,
         ],
     )?;
     Ok(id)
@@ -132,7 +142,7 @@ pub fn get(pool: &DbPool, id: &str) -> Result<Option<MemoryReviewProposal>, AppE
         .query_row(
             "SELECT id, persona_id, threshold, instructions, proposal_json,
                     summary, reviewed_count, proposed_changes, status,
-                    created_at, decided_at
+                    created_at, decided_at, team_id
              FROM persona_memory_review_proposal WHERE id = ?1",
             params![id],
             map_row,
@@ -164,7 +174,7 @@ pub fn list(
     let sql = format!(
         "SELECT id, persona_id, threshold, instructions, proposal_json,
                 summary, reviewed_count, proposed_changes, status,
-                created_at, decided_at
+                created_at, decided_at, team_id
          FROM persona_memory_review_proposal
          {where_clause}
          ORDER BY created_at DESC
@@ -225,5 +235,6 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryReviewProposal> {
         status: row.get(8)?,
         created_at: row.get(9)?,
         decided_at: row.get(10)?,
+        team_id: row.get(11)?,
     })
 }

@@ -350,19 +350,28 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
 /// stamps `derived_from` with the source memory ids. If the dedup guard
 /// returned an existing identical row, the provenance is attached to that
 /// row instead — the lineage is the same either way.
+///
+/// `home_team_id`: set by TEAM reflection so the insight is shared with
+/// every member of the team at injection time (MEMORY CONTRACT (5) — this
+/// is the one sanctioned runtime writer of the column). `None` for
+/// persona-scoped reflection.
 pub fn create_synthesized(
     pool: &DbPool,
     input: CreatePersonaMemoryInput,
     derived_from: &[String],
+    home_team_id: Option<&str>,
 ) -> Result<PersonaMemory, AppError> {
     let created = create(pool, input)?;
-    if !derived_from.is_empty() {
+    if !derived_from.is_empty() || home_team_id.is_some() {
         let json = serde_json::to_string(derived_from)
             .map_err(|e| AppError::Internal(format!("serialize derived_from: {e}")))?;
         let conn = pool.get()?;
         conn.execute(
-            "UPDATE persona_memories SET derived_from = ?1 WHERE id = ?2",
-            params![json, created.id],
+            "UPDATE persona_memories
+             SET derived_from = ?1,
+                 home_team_id = COALESCE(?2, home_team_id)
+             WHERE id = ?3",
+            params![json, home_team_id, created.id],
         )?;
     }
     get_by_id(pool, &created.id)

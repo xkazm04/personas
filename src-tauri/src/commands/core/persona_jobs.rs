@@ -104,6 +104,33 @@ pub fn enqueue_persona_memory_reflection(
     )
 }
 
+/// Enqueue a TEAM memory-reflection run: consolidate lessons held by
+/// ≥2 members into team-shared insights (proposal-gated, same flow as
+/// persona reflection). Returns the job id.
+#[tauri::command]
+pub fn enqueue_team_memory_reflection(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+    instructions: Option<String>,
+) -> Result<String, AppError> {
+    require_auth_sync(&state)?;
+    validate_instructions(instructions.as_deref())?;
+    let mut params = serde_json::Map::new();
+    params.insert(
+        "team_id".to_string(),
+        serde_json::Value::String(team_id.clone()),
+    );
+    if let Some(s) = instructions {
+        params.insert("instructions".to_string(), serde_json::Value::String(s));
+    }
+    persona_jobs::enqueue(
+        &state.db,
+        persona_jobs::KIND_TEAM_MEMORY_REFLECTION,
+        &serde_json::Value::Object(params),
+        None,
+    )
+}
+
 #[tauri::command]
 pub fn list_persona_jobs(
     state: State<'_, Arc<AppState>>,

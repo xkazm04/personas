@@ -159,3 +159,23 @@ Open follow-ups (phase 1.5, not blocking phase 2): reflection on the curation cr
 (second schedule or shared cadence), embedding re-rank behind the `ml` feature,
 provenance chain UI in `sub_memories` beyond the proposal modal, prepared-run cache
 path still uses the count-cap fetch.
+
+## 5. Phase 1.5 extensions (shipped 2026-07-10, same session)
+
+- **Team reflection** (`run_team_memory_reflection`): membership = explicit roster ∪
+  `home_team_id` personas; combined active/working pool (best-first, 200 cap);
+  cluster hints filtered to multi-member groups; classifier requires source_ids to
+  span ≥2 personas; proposal rows carry `team_id`; on apply the insight is stamped
+  `home_team_id` (the one sanctioned runtime writer — MEMORY CONTRACT (5) updated)
+  so the whole team sees it, authorship falling to the first source's owner.
+- **Product-findings bridge**: the reflection prompt additionally extracts
+  `product_findings` (open threads about the SOFTWARE, never the agent's own
+  process); validated findings (known source ids, ≤5/pass) are filed as `pending`
+  `dev_ideas` rows (`scan_type = memory_reflection`) with provenance in the
+  description — triage-gated by the existing backlog accept/reject flow, deduped by
+  normalized title vs pending+accepted, skipped entirely when the backlog is
+  saturated (`IDEA_BACKLOG_CAP`). Project resolution: persona → home team →
+  `dev_projects.team_id`; unresolvable → cross-project (NULL) idea.
+- Cloud service mapping: `POST /v1/reflect` gains `scope: persona|team` and the
+  response carries `findings[]` — the tenant decides where findings route (webhook,
+  issue tracker). Same validation firewall.

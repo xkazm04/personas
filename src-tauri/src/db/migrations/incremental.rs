@@ -2435,6 +2435,25 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    // NOTE: this step MUST live in run_incremental AFTER the table-creating
+    // step above — the file's tail belongs to `ensure_composite_fires_table`,
+    // which initial::run calls BEFORE run_incremental (an ALTER placed there
+    // fails on fresh databases with "no such table").
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_memory_review_proposal.team_id",
+            description: "Team-scoped reflection proposals: NULL for persona proposals; set when a reflection pass consolidated memories across a team's members",
+            already_applied: |conn| has_column(conn, "persona_memory_review_proposal", "team_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_memory_review_proposal ADD COLUMN team_id TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
 
     // User-persona background-job table — projects the dream-job shape
     // (queued → running → completed | failed | canceled) onto the
@@ -5696,6 +5715,7 @@ mod tests {
             ("dev_contexts", "business_feature"),
             ("dev_context_groups", "domain"),
             ("persona_memories", "derived_from"),
+            ("persona_memory_review_proposal", "team_id"),
         ] {
             assert!(
                 has_column(&conn, table, column).unwrap(),

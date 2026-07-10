@@ -46,6 +46,10 @@ pub const KIND_MEMORY_CURATION: &str = "memory_curation_run";
 /// consolidate related/contradicting memories into insights).
 pub const KIND_MEMORY_REFLECTION: &str = "memory_reflection_run";
 
+/// Kind discriminator for the TEAM reflection job — consolidate lessons
+/// held redundantly by ≥2 members into team-shared insights.
+pub const KIND_TEAM_MEMORY_REFLECTION: &str = "team_memory_reflection_run";
+
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -346,10 +350,59 @@ async fn dispatch_handler(pool: &DbPool, job: &BackgroundJob) -> Result<String, 
     match job.kind.as_str() {
         KIND_MEMORY_CURATION => memory_curation_run(pool, &params).await,
         KIND_MEMORY_REFLECTION => memory_reflection_run(pool, &params).await,
+        KIND_TEAM_MEMORY_REFLECTION => team_memory_reflection_run(pool, &params).await,
         other => Err(AppError::Internal(format!(
             "unknown persona background job kind `{other}`"
         ))),
     }
+}
+
+/// `team_memory_reflection_run` job kind handler. Inputs:
+/// - `team_id` (required)
+/// - `instructions` (optional, ≤4096 chars)
+async fn team_memory_reflection_run(
+    pool: &DbPool,
+    params: &serde_json::Value,
+) -> Result<String, AppError> {
+    let team_id = params
+        .get("team_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| {
+            AppError::Validation("team_memory_reflection_run requires team_id".into())
+        })?;
+    let instructions = params.get("instructions").and_then(|v| v.as_str());
+    if let Some(s) = instructions {
+        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
+            return Err(AppError::Validation(format!(
+                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
+            )));
+        }
+    }
+
+    let outcome = match crate::engine::memory_reflection::run_team_memory_reflection(
+        pool,
+        team_id,
+        instructions,
+    )
+    .await?
+    {
+        Some(o) => o,
+        None => {
+            return Ok(
+                "Too few members or memories to reflect over (need >=2 members, >=5 memories)."
+                    .to_string(),
+            )
+        }
+    };
+
+    let result = serde_json::json!({
+        "proposal_id": outcome.proposal_id,
+        "reviewed": outcome.reviewed,
+        "proposed_changes": outcome.entries.len(),
+        "findings_created": outcome.findings_created,
+        "summary": outcome.summary,
+    });
+    Ok(result.to_string())
 }
 
 /// `memory_reflection_run` job kind handler (Memory Engine v2).
@@ -483,6 +536,7 @@ async fn memory_curation_run(
             instructions,
             entries: &pipeline.entries,
             summary: Some(&summary),
+            team_id: None,
         },
     )?;
 

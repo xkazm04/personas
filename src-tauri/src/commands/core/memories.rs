@@ -773,6 +773,7 @@ pub async fn review_memories_with_cli(
                 instructions: instructions.as_deref(),
                 entries: &entries,
                 summary: Some(&summary),
+                team_id: None,
             },
         )?;
         // Refresh details to surface the proposal action so the UI
@@ -945,6 +946,12 @@ pub fn apply_persona_memory_review_proposal(
             // provenance, then archive its sources. Sources are archived —
             // never deleted — so a bad synthesis is fully recoverable, and
             // `archive_by_ids` refuses to touch `core` even if asked.
+            //
+            // Team proposals (proposal.team_id set): the insight is stamped
+            // with `home_team_id` so every member sees it at injection time,
+            // and — since the proposal has no persona_id — authorship falls
+            // to the owner of the first source memory (MEMORY CONTRACT (5):
+            // a team-shared memory is still authored by ONE persona).
             "synthesize" => {
                 let sources = entry.source_ids.clone().unwrap_or_default();
                 let (Some(title), Some(content)) =
@@ -963,17 +970,21 @@ pub fn apply_persona_memory_review_proposal(
                     ));
                     continue;
                 }
-                let input = CreatePersonaMemoryInput {
-                    persona_id: match proposal.persona_id.clone() {
-                        Some(pid) => pid,
-                        None => {
+                let author_persona = match proposal.persona_id.clone() {
+                    Some(pid) => pid,
+                    None => match repo::get_by_id(&state.db, &sources[0]) {
+                        Ok(src) => src.persona_id,
+                        Err(e) => {
                             errors.push(format!(
-                                "synthesize entry `{}`: proposal has no persona_id; skipped",
+                                "synthesize entry `{}`: no persona_id and first source unresolvable ({e}); skipped",
                                 entry.memory_id
                             ));
                             continue;
                         }
                     },
+                };
+                let input = CreatePersonaMemoryInput {
+                    persona_id: author_persona,
                     title: title.clone(),
                     content: content.clone(),
                     category: entry.new_category.clone(),
@@ -982,7 +993,12 @@ pub fn apply_persona_memory_review_proposal(
                     tags: Some(crate::db::models::Json(vec!["reflection".to_string()])),
                     use_case_id: None,
                 };
-                match repo::create_synthesized(&state.db, input, &sources) {
+                match repo::create_synthesized(
+                    &state.db,
+                    input,
+                    &sources,
+                    proposal.team_id.as_deref(),
+                ) {
                     Ok(_) => {
                         synthesized += 1;
                         match repo::archive_by_ids(&state.db, &sources) {
@@ -1088,6 +1104,66 @@ pub async fn reflect_memories_with_cli(
     let outcome = match crate::engine::memory_reflection::run_memory_reflection(
         &db,
         &persona_id,
+        instructions.as_deref(),
+    )
+    .await?
+    {
+        Some(o) => o,
+        None => {
+            return Ok(MemoryReviewResult {
+                reviewed: 0,
+                deleted: 0,
+                updated: 0,
+                details: vec![],
+                proposal_id: None,
+            });
+        }
+    };
+
+    let details: Vec<MemoryReviewDetail> = outcome
+        .entries
+        .iter()
+        .map(|e| MemoryReviewDetail {
+            id: e.memory_id.clone(),
+            title: e.title.clone(),
+            score: e.score,
+            reason: e.reason.clone(),
+            action: format!("proposed_{}", e.action),
+            error: None,
+        })
+        .collect();
+
+    Ok(MemoryReviewResult {
+        reviewed: outcome.reviewed,
+        deleted: 0,
+        updated: 0,
+        details,
+        proposal_id: Some(outcome.proposal_id),
+    })
+}
+
+/// Run a TEAM reflection pass: consolidate lessons held redundantly by
+/// ≥2 members of the team into team-shared insights (published via
+/// `home_team_id` on apply). Always proposal-mode — same apply/discard
+/// flow as persona reflection. See `engine::memory_reflection`.
+#[tauri::command]
+pub async fn reflect_team_memories_with_cli(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+    instructions: Option<String>,
+) -> Result<MemoryReviewResult, AppError> {
+    require_auth(&state).await?;
+    if let Some(ref s) = instructions {
+        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
+            return Err(AppError::Validation(format!(
+                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
+            )));
+        }
+    }
+    let db = state.db.clone();
+    let outcome = match crate::engine::memory_reflection::run_team_memory_reflection(
+        &db,
+        &team_id,
         instructions.as_deref(),
     )
     .await?
