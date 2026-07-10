@@ -65,3 +65,12 @@ itself reversible: sources archive (never delete), insights carry `derived_from`
 4. Losses the judge flagged (aria-label finding, ADR-0006 3/4 pointer) suggest a prompt
    nudge: "carry forward any OPEN/unresolved item verbatim — open threads never count
    as redundant."
+
+### Follow-up execution (same day)
+
+All four executed in `engine/memory_reflection.rs`: CLI timeout 4→8 min
+(`CLI_TIMEOUT_SECS`) + per-memory prompt content clamped to 700 chars; enforced
+per-pass consumption cap (`MAX_CONSUMPTION_RATIO = 0.6` of the non-core pool,
+synthesis sources + archives both counted; over-budget actions deferred and surfaced
+in the proposal summary; unit-tested); ~120-word insight-length prompt rule; the
+CARRY OPEN THREADS prompt rule. IPC/harness timeouts bumped to 9 min.

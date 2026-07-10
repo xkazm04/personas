@@ -222,8 +222,8 @@ export const reflectMemoriesWithCli = (personaId: string, instructions?: string)
     "reflect_memories_with_cli",
     { personaId, instructions },
     // Reflection spawns a one-shot CLI pass over up to 200 memories; the
-    // backend caps it at 4 minutes — give the IPC wrapper headroom.
-    { timeoutMs: 300_000 },
+    // backend caps it at 8 minutes — give the IPC wrapper headroom.
+    { timeoutMs: 540_000 },
   );
 
 /**

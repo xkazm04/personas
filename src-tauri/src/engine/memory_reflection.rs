@@ -47,6 +47,34 @@ const CLUSTER_SIMILARITY_THRESHOLD: f64 = 0.30;
 /// Upper bound on proposed insights per pass, enforced after parse.
 const MAX_INSIGHTS_PER_PASS: usize = 10;
 
+/// CLI wall-clock cap. The first live audit (docs/harness/
+/// reflect-eval-2026-07-10) saw a ~60-memory pass exceed the original
+/// 4-minute cap once in three runs; 8 minutes gives headroom without
+/// letting a hung CLI camp forever.
+const CLI_TIMEOUT_SECS: u64 = 480;
+
+/// Per-pass consumption cap: at most this fraction of the persona's
+/// non-core pool may be consumed (synthesis sources + standalone
+/// archives) in one reflection. Keeps each apply small enough to judge —
+/// the first live audit consumed 56/61 in one pass, which was correct
+/// but at the upper bound of reviewable. Deferred work simply lands in
+/// the next pass.
+const MAX_CONSUMPTION_RATIO: f64 = 0.6;
+
+/// Per-memory content clamp for the reflection prompt. Trims prompt
+/// size (the main CLI-latency driver) without losing the gist; the
+/// classifier and apply path always operate on full stored content.
+const MAX_PROMPT_CONTENT_CHARS: usize = 700;
+
+/// Clamp a string to `max` characters on a char boundary, with a marker.
+fn clamp_chars(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s.to_string();
+    }
+    let clipped: String = s.chars().take(max).collect();
+    format!("{clipped}…[truncated]")
+}
+
 /// Outcome of a reflection pass, pre-proposal.
 pub struct ReflectionOutcome {
     pub proposal_id: String,
@@ -202,7 +230,7 @@ fn build_reflection_prompt(
             serde_json::json!({
                 "id": m.id,
                 "title": m.title,
-                "content": m.content,
+                "content": clamp_chars(&m.content, MAX_PROMPT_CONTENT_CHARS),
                 "category": m.category,
                 "importance": m.importance,
                 "tier": m.tier,
@@ -243,6 +271,9 @@ Rules:
 - When two memories CONTRADICT, write the correct/current fact as an insight citing both, and say in reason which one won and why (newer, more specific, or confirmed by access patterns).
 - category ∈ fact | preference | instruction | context | learned | constraint. importance ∈ 1..5 (5 = critical).
 - Propose "archive" only for memories that are stale or redundant on their own; prefer synthesize when the content is worth keeping in consolidated form.
+- CARRY OPEN THREADS: any unresolved finding, open backlog item, pending PR status, standing veto, or unconfirmed fix mentioned in a source MUST survive verbatim (or tighter) in an insight that cites it — open threads NEVER count as redundant and must not be silently dropped.
+- Keep each insight's content focused and under ~120 words; split unrelated themes into separate insights instead of one mega-memory.
+- Consolidate INCREMENTALLY: consume at most ~60% of the non-pinned memories in this pass — prioritize the highest-value clusters and leave the rest for a future pass (over-budget insights are dropped automatically).
 - At most {MAX_INSIGHTS_PER_PASS} insights. If nothing is worth consolidating, return empty arrays — an empty reflection is a valid result.
 {guidance_block}
 Memories:
@@ -305,7 +336,7 @@ async fn run_claude_oneshot(prompt: &str) -> Result<String, AppError> {
         .ok_or_else(|| AppError::Internal("No stdout".into()))?;
     let mut reader = BufReader::new(stdout);
     let mut full_output = String::new();
-    let cli_timeout = std::time::Duration::from_secs(240);
+    let cli_timeout = std::time::Duration::from_secs(CLI_TIMEOUT_SECS);
     let read_result = tokio::time::timeout(cli_timeout, async {
         let mut line = String::new();
         while reader.read_line(&mut line).await.unwrap_or(0) > 0 {
@@ -317,9 +348,10 @@ async fn run_claude_oneshot(prompt: &str) -> Result<String, AppError> {
     if read_result.is_err() {
         let _ = child.kill().await;
         let _ = child.wait().await;
-        return Err(AppError::Internal(
-            "Memory reflection timed out after 4 minutes".into(),
-        ));
+        return Err(AppError::Internal(format!(
+            "Memory reflection timed out after {} minutes",
+            CLI_TIMEOUT_SECS / 60
+        )));
     }
     let _ = child.wait().await;
     if full_output.trim().is_empty() {
@@ -348,6 +380,14 @@ fn classify_reflection_output(
     let mut entries: Vec<ProposalEntry> = Vec::new();
     let mut consumed: std::collections::HashSet<String> = std::collections::HashSet::new();
 
+    // Per-pass consumption budget over the non-core pool: keeps a single
+    // apply small enough to judge; over-budget insights are deferred to a
+    // future pass (the memories stay in the pool, so nothing is lost).
+    let actionable_total = memories.iter().filter(|m| m.tier != "core").count();
+    let consumption_budget =
+        ((actionable_total as f64) * MAX_CONSUMPTION_RATIO).ceil() as usize;
+    let mut deferred_by_budget = 0usize;
+
     for insight in output.insights.into_iter().take(MAX_INSIGHTS_PER_PASS) {
         let sources: Vec<String> = insight
             .source_ids
@@ -359,6 +399,11 @@ fn classify_reflection_output(
             continue; // hallucinated/core/unknown sources — not a valid synthesis
         }
         if insight.title.trim().is_empty() || insight.content.trim().is_empty() {
+            continue;
+        }
+        let newly_consumed = sources.iter().filter(|s| !consumed.contains(*s)).count();
+        if consumed.len() + newly_consumed > consumption_budget {
+            deferred_by_budget += 1;
             continue;
         }
         let importance = insight.importance.unwrap_or(3).clamp(1, 5);
@@ -383,6 +428,10 @@ fn classify_reflection_output(
         if !is_actionable(&arch.id) || consumed.contains(&arch.id) {
             continue; // unknown/core, or already consumed by a synthesis
         }
+        if consumed.len() + 1 > consumption_budget {
+            deferred_by_budget += 1;
+            continue; // archives count against the same per-pass budget
+        }
         let title = by_id
             .get(arch.id.as_str())
             .map(|m| m.title.clone())
@@ -402,7 +451,7 @@ fn classify_reflection_output(
         });
     }
 
-    let summary = output
+    let mut summary = output
         .summary
         .filter(|s| !s.trim().is_empty())
         .unwrap_or_else(|| {
@@ -412,6 +461,11 @@ fn classify_reflection_output(
                 entries.iter().filter(|e| e.action == "archive").count()
             )
         });
+    if deferred_by_budget > 0 {
+        summary.push_str(&format!(
+            " ({deferred_by_budget} action(s) deferred by the per-pass consumption cap — run reflection again to continue.)"
+        ));
+    }
     (entries, summary)
 }
 
@@ -579,6 +633,47 @@ mod tests {
             entries[0].source_ids.as_deref(),
             Some(&["a".to_string(), "b".to_string()][..])
         );
+    }
+
+    #[test]
+    fn classify_defers_insights_beyond_consumption_budget() {
+        // 4 actionable memories → budget = ceil(4 × 0.6) = 3. Two 2-source
+        // insights: the first fits (2 ≤ 3), the second would push consumption
+        // to 4 > 3 and must be deferred; a standalone archive is also over
+        // budget at that point.
+        let ms = vec![
+            mem("a", "active", "t1", "c1"),
+            mem("b", "active", "t2", "c2"),
+            mem("c", "active", "t3", "c3"),
+            mem("d", "active", "t4", "c4"),
+        ];
+        let insight = |title: &str, s1: &str, s2: &str| InsightSpec {
+            title: title.into(),
+            content: "merged".into(),
+            category: None,
+            importance: None,
+            source_ids: vec![s1.into(), s2.into()],
+            reason: None,
+        };
+        let out = ReflectionOutput {
+            insights: vec![insight("first", "a", "b"), insight("second", "c", "d")],
+            archive: vec![ArchiveSpec { id: "c".into(), reason: None }],
+            summary: Some("s".into()),
+        };
+        let (entries, summary) = classify_reflection_output(out, &ms);
+        assert_eq!(entries.len(), 1, "only the first insight fits the budget");
+        assert_eq!(entries[0].title, "first");
+        assert!(
+            summary.contains("deferred by the per-pass consumption cap"),
+            "summary must surface the deferral: {summary}"
+        );
+    }
+
+    #[test]
+    fn clamp_chars_is_boundary_safe() {
+        assert_eq!(clamp_chars("short", 10), "short");
+        let clamped = clamp_chars(&"é".repeat(20), 5);
+        assert!(clamped.starts_with("ééééé") && clamped.ends_with("…[truncated]"));
     }
 
     #[test]

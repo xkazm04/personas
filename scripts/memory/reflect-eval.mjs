@@ -280,10 +280,10 @@ async function main() {
     fs.writeFileSync(path.join(dir, 'before.json'), JSON.stringify(before, null, 2));
     console.log(`  snapshot: ${before.length} non-archived memories`);
 
-    console.log('  running reflect_memories_with_cli (may take up to 4 min)…');
+    console.log('  running reflect_memories_with_cli (may take up to 8 min)…');
     let result;
     try {
-      result = await invokeIpc('reflect_memories_with_cli', { personaId }, { timeoutMs: 300_000 });
+      result = await invokeIpc('reflect_memories_with_cli', { personaId }, { timeoutMs: 540_000 });
     } catch (e) {
       console.error(`  REFLECT FAILED: ${e.message}`);
       summary.push({ persona: name, personaId, error: e.message });
