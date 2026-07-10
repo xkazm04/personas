@@ -639,8 +639,8 @@ mod tests {
     fn classify_defers_insights_beyond_consumption_budget() {
         // 4 actionable memories → budget = ceil(4 × 0.6) = 3. Two 2-source
         // insights: the first fits (2 ≤ 3), the second would push consumption
-        // to 4 > 3 and must be deferred; a standalone archive is also over
-        // budget at that point.
+        // to 4 > 3 and must be deferred; the standalone 1-memory archive
+        // still fits exactly (2 + 1 = 3).
         let ms = vec![
             mem("a", "active", "t1", "c1"),
             mem("b", "active", "t2", "c2"),
@@ -661,8 +661,13 @@ mod tests {
             summary: Some("s".into()),
         };
         let (entries, summary) = classify_reflection_output(out, &ms);
-        assert_eq!(entries.len(), 1, "only the first insight fits the budget");
+        assert_eq!(
+            entries.len(),
+            2,
+            "first insight + in-budget archive pass; second insight defers"
+        );
         assert_eq!(entries[0].title, "first");
+        assert_eq!(entries[1].action, "archive");
         assert!(
             summary.contains("deferred by the per-pass consumption cap"),
             "summary must surface the deferral: {summary}"
