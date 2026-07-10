@@ -2,9 +2,12 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { Rocket, Play, Clock, AlertCircle } from 'lucide-react';
-import { getExecution } from '@/api/agents/executions';
+import { getExecution, listExecutionsSummary } from '@/api/agents/executions';
 import { getRetryChain } from '@/api/overview/healing';
+import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
+import { Loader2 } from 'lucide-react';
 import { ExecutionComparison } from './ExecutionComparison';
 import { BulkRerunStrip } from './BulkRerunStrip';
 import { BulkRerunReport } from './BulkRerunReport';
@@ -18,6 +21,7 @@ import { TableSkeleton, type TableSkeletonColumn } from '@/features/shared/compo
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { createLogger } from '@/lib/log';
+import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useDensity } from '@/hooks/utility/data/useDensity';
 import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
@@ -25,6 +29,10 @@ import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations'
 import { Star } from 'lucide-react';
 
 const logger = createLogger('execution-list');
+
+// One page of run history. Matches the backend default (list_items_by_persona_id
+// LIMIT 50) so the store's initial fetch and each "load more" page line up.
+const PAGE_SIZE = 50;
 
 // Mirrors the default (non-compare / non-bulk) execution table grid below so the
 // loading skeleton lands in the same geometry as the real rows — status pill,
@@ -39,7 +47,7 @@ const EXECUTION_TABLE_SKELETON_COLUMNS: TableSkeletonColumn[] = [
 ];
 
 export function ExecutionList() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const e = t.agents.executions;
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
   const setRerunInputData = useSystemStore((state) => state.setRerunInputData);
@@ -71,6 +79,26 @@ export function ExecutionList() {
   const [showBulkReport, setShowBulkReport] = useState(false);
   const bulkRerun = useBulkRerun();
 
+  // Paging: the store holds the first page (default 50); additional pages are
+  // fetched on demand via load-more and appended here. Reset whenever the
+  // persona changes so we never show one persona's tail under another.
+  const [extraRows, setExtraRows] = useState<ExecutionListItem[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [reachedEnd, setReachedEnd] = useState(false);
+  useEffect(() => { setExtraRows([]); setReachedEnd(false); }, [personaId]);
+
+  // De-duplicated union of the store's first page + any loaded extra pages.
+  // Backend paging is offset-based over the raw (unfiltered) ordering, so this
+  // keeps simulations in — the display filter is applied afterwards.
+  const rawRows = useMemo(() => {
+    const seen = new Set<string>();
+    const out: ExecutionListItem[] = [];
+    for (const r of [...rawExecutions, ...extraRows]) {
+      if (!seen.has(r.id)) { seen.add(r.id); out.push(r); }
+    }
+    return out;
+  }, [rawExecutions, extraRows]);
+
   // Sticky-header scroll state. The table body is a bounded scroll container
   // (max-h + overflow-y-auto) nested inside the rounded-modal overflow-hidden
   // frame, so the 12-col header can stick to its top. `scrollEl` is set via a
@@ -91,29 +119,51 @@ export function ExecutionList() {
   // ordered by annotation updated_at DESC. Powers the "compare starred pair"
   // shortcut in compare mode.
   const starredPair = useMemo(() => {
-    const starred = rawExecutions
+    const starred = rawRows
       .map((exec) => ({ exec, ann: annotationsByExecution.get(exec.id) }))
       .filter((x) => x.ann?.starred)
       .sort((a, b) => (b.ann!.updated_at ?? '').localeCompare(a.ann!.updated_at ?? ''));
     if (starred.length < 2) return null;
     return [starred[0]!.exec.id, starred[1]!.exec.id] as const;
-  }, [rawExecutions, annotationsByExecution]);
+  }, [rawRows, annotationsByExecution]);
 
   const hasSimulations = useMemo(
-    () => rawExecutions.some((e) => e.is_simulation),
-    [rawExecutions],
+    () => rawRows.some((e) => e.is_simulation),
+    [rawRows],
   );
   const executions = useMemo(
-    () => (showSimulations ? rawExecutions : rawExecutions.filter((e) => !e.is_simulation)),
-    [rawExecutions, showSimulations],
+    () => (showSimulations ? rawRows : rawRows.filter((e) => !e.is_simulation)),
+    [rawRows, showSimulations],
   );
+
+  // Row virtualization — only visible rows mount. estimateSize is an initial
+  // guess; each row wraps its content with `virtualizer.measureElement` so the
+  // real (and expandable) height is measured dynamically.
+  const { parentRef, virtualizer } = useVirtualList(executions, 64);
+  const setScrollRefs = useCallback((node: HTMLDivElement | null) => {
+    parentRef.current = node;
+    setScrollEl(node);
+  }, [parentRef]);
+
+  const hasMore = !reachedEnd && rawRows.length >= PAGE_SIZE;
+  const handleLoadMore = useCallback(async () => {
+    if (!personaId || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const page = await listExecutionsSummary(personaId, PAGE_SIZE, rawRows.length);
+      if (page.length < PAGE_SIZE) setReachedEnd(true);
+      if (page.length > 0) setExtraRows((prev) => [...prev, ...page]);
+    } catch (err) {
+      toastCatch('execution-list:loadMore', e.load_failed_body)(err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [personaId, loadingMore, rawRows.length, e.load_failed_body]);
 
   const [sampleInput, setSampleInput] = useState('{}');
   useEffect(() => {
-    getSampleInput(selectedPersona?.name).then(setSampleInput, (err) => {
-      // Keep the '{}' default — sample input is hint-only, not load-bearing.
-      logger.warn('getSampleInput failed', { error: err });
-    });
+    // Keep the '{}' default — sample input is hint-only, not load-bearing.
+    getSampleInput(selectedPersona?.name).then(setSampleInput, silentCatch('execution-list:getSampleInput'));
   }, [selectedPersona?.name]);
 
   const handleTryIt = () => {
@@ -163,9 +213,9 @@ export function ExecutionList() {
       await Promise.all([hydrateExecution(starredPair[0]), hydrateExecution(starredPair[1])]);
       setShowComparison(true);
     } catch (err) {
-      logger.warn('Failed to hydrate starred-pair comparison', { error: err });
+      toastCatch('execution-list:autoCompareStarred', e.failed_to_hydrate_comparison)(err);
     }
-  }, [starredPair, hydrateExecution]);
+  }, [starredPair, hydrateExecution, e.failed_to_hydrate_comparison]);
 
   const leftExec = compareLeft ? executionDetails[compareLeft] ?? null : null;
   const rightExec = compareRight ? executionDetails[compareRight] ?? null : null;
@@ -202,6 +252,19 @@ export function ExecutionList() {
   const handleRerun = useCallback((inputData: string | null) => {
     setRerunInputData(inputData || '{}');
   }, [setRerunInputData]);
+
+  // Retry-of link: expand the parent run and scroll it into view. The parent is
+  // another row in the same list (guarded by the row before rendering the link).
+  const handleOpenParent = useCallback((parentId: string) => {
+    setExpandedId(parentId);
+    void hydrateExecution(parentId).catch((err) => {
+      logger.warn('Failed to hydrate parent execution', { parentId, error: err });
+    });
+    // Rows are virtualized, so an off-screen parent may not be in the DOM —
+    // drive the scroll through the virtualizer by index instead of getElementById.
+    const idx = executions.findIndex((row) => row.id === parentId);
+    if (idx >= 0) virtualizer.scrollToIndex(idx, { align: 'center' });
+  }, [hydrateExecution, executions, virtualizer]);
 
   const enterBulkMode = () => {
     setBulkMode(true);
@@ -385,12 +448,10 @@ export function ExecutionList() {
           <div className="w-12 h-12 rounded-modal bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
             <AlertCircle className="w-5.5 h-5.5 text-red-400" />
           </div>
-          {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-          <p className="typo-heading text-foreground">Couldn’t load runs</p>
-          {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-          <p className="typo-body text-foreground mt-1 max-w-[260px]">The execution history failed to load. Check your connection and try again.</p>
+          <p className="typo-heading text-foreground">{e.load_failed_title}</p>
+          <p className="typo-body text-foreground mt-1 max-w-[260px]">{e.load_failed_body}</p>
           <button onClick={() => { void refresh(); }} className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
-            Retry
+            {t.common.retry}
           </button>
         </div>
       ) : executions.length === 0 ? (
@@ -407,7 +468,7 @@ export function ExecutionList() {
         </div>
       ) : (
         <div className="overflow-hidden border border-primary/20 rounded-modal backdrop-blur-sm bg-secondary/40">
-          <div ref={setScrollEl} className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
+          <div ref={setScrollRefs} className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
             <div className={`hidden md:grid grid-cols-12 gap-4 px-4 ${densityTokens.headerPaddingY} bg-primary/8 backdrop-blur-sm typo-code text-foreground uppercase tracking-wider sticky top-0 z-10 border-b transition-[box-shadow,border-color] duration-200 ${headerStuck ? 'border-primary/20 shadow-elevation-1' : 'border-primary/10'}`}>
               {(compareMode || bulkMode) && <div className="col-span-1">{bulkMode ? e.bulk_rerun_col_header : ''}</div>}
               <div className="col-span-2">{e.col_status}</div>
@@ -418,30 +479,55 @@ export function ExecutionList() {
               <div className={compareMode || bulkMode ? 'col-span-1' : 'col-span-2'}>{e.col_cost}</div>
             </div>
 
-            {executions.map((execution, execIdx) => (
-              <ExecutionListRow
-                key={execution.id}
-                execution={executionDetails[execution.id] ?? execution}
-                execIdx={execIdx}
-                executions={executions}
-                compareMode={compareMode}
-                compareLeft={compareLeft}
-                compareRight={compareRight}
-                bulkMode={bulkMode}
-                bulkSelected={bulkSelected.has(execution.id)}
-                bulkDisabled={bulkMode && bulkRerun.phase === 'running'}
-                isExpanded={expandedId === execution.id && !compareMode && !bulkMode}
-                showRaw={showRaw}
-                hasCopied={hasCopied}
-                copiedId={copiedId}
-                capabilityTitle={execution.use_case_id ? useCaseTitleById.get(execution.use_case_id) ?? null : null}
-                onRowClick={handleRowClick}
-                onCopyId={handleCopyId}
-                onRerun={handleRerun}
-                onAutoCompareRetry={handleAutoCompareRetry}
-                densityTokens={densityTokens}
-              />
-            ))}
+            <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const execution = executions[virtualRow.index]!;
+                return (
+                  <div
+                    key={execution.id}
+                    data-index={virtualRow.index}
+                    ref={virtualizer.measureElement}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualRow.start}px)` }}
+                  >
+                    <ExecutionListRow
+                      execution={executionDetails[execution.id] ?? execution}
+                      execIdx={virtualRow.index}
+                      executions={executions}
+                      compareMode={compareMode}
+                      compareLeft={compareLeft}
+                      compareRight={compareRight}
+                      bulkMode={bulkMode}
+                      bulkSelected={bulkSelected.has(execution.id)}
+                      bulkDisabled={bulkMode && bulkRerun.phase === 'running'}
+                      isExpanded={expandedId === execution.id && !compareMode && !bulkMode}
+                      showRaw={showRaw}
+                      hasCopied={hasCopied}
+                      copiedId={copiedId}
+                      capabilityTitle={execution.use_case_id ? useCaseTitleById.get(execution.use_case_id) ?? null : null}
+                      onRowClick={handleRowClick}
+                      onCopyId={handleCopyId}
+                      onRerun={handleRerun}
+                      onAutoCompareRetry={handleAutoCompareRetry}
+                      onOpenParent={handleOpenParent}
+                      densityTokens={densityTokens}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {hasMore && (
+              <div className="p-3 border-t border-primary/10">
+                <button
+                  onClick={() => { void handleLoadMore(); }}
+                  disabled={loadingMore}
+                  className="w-full flex items-center justify-center gap-2 py-2 typo-heading rounded-modal bg-secondary/30 text-foreground border border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-60 transition-colors"
+                >
+                  {loadingMore && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {tx(e.load_more, { count: PAGE_SIZE })}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -278,6 +278,53 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   // mints a fresh one. Background (concurrent) runs never touch this slot.
   let pendingForegroundIdem: { signature: string; key: string; mintedAt: number } | null = null;
 
+  // Project a full PersonaExecution onto the lighter ExecutionListItem row shape
+  // the list renders. Lets finishExecution patch the one completed run in place
+  // instead of re-fetching the whole list (which, on a cache hit, would return a
+  // stale page missing the just-finished run's final status/cost).
+  const toListItem = (e: Awaited<ReturnType<typeof getExecution>>): ExecutionListItem => ({
+    id: e.id,
+    persona_id: e.persona_id,
+    use_case_id: e.use_case_id,
+    status: e.status,
+    input_tokens: e.input_tokens,
+    output_tokens: e.output_tokens,
+    cost_usd: e.cost_usd,
+    error_message: e.error_message,
+    duration_ms: e.duration_ms,
+    retry_of_execution_id: e.retry_of_execution_id,
+    retry_count: e.retry_count,
+    started_at: e.started_at,
+    completed_at: e.completed_at,
+    created_at: e.created_at,
+    is_simulation: e.is_simulation,
+    business_outcome: e.business_outcome,
+  });
+
+  // Upsert a single finished run into the visible list + per-persona cache,
+  // replacing an existing row (queued→completed) or prepending a brand-new one.
+  // Keeps the list coherent without a full fetchExecutions round-trip.
+  const upsertFinishedExecution = async (executionId: string, personaId: string) => {
+    const item = toListItem(await getExecution(executionId, personaId));
+    const patch = (list: ExecutionListItem[]): ExecutionListItem[] => {
+      const idx = list.findIndex((r) => r.id === item.id);
+      if (idx >= 0) { const next = list.slice(); next[idx] = item; return next; }
+      return [item, ...list];
+    };
+    set((state) => {
+      const cachedList = state.executionsCache[personaId];
+      const nextCache = cachedList
+        ? { ...state.executionsCache, [personaId]: patch(cachedList) }
+        : state.executionsCache;
+      const nextAt = cachedList
+        ? { ...state.executionsCacheAt, [personaId]: Date.now() }
+        : state.executionsCacheAt;
+      return state.executionsPersonaId === personaId
+        ? { executions: patch(state.executions), executionsCache: nextCache, executionsCacheAt: nextAt }
+        : { executionsCache: nextCache, executionsCacheAt: nextAt };
+    });
+  };
+
   return ({
     executions: [],
     executionsLoading: false,
@@ -587,8 +634,20 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     // rejected transition would pin isExecuting true and force all future runs
     // into background mode.
     set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null, isExecuting: false });
-    const personaId = get().selectedPersona?.id;
-    if (personaId) get().fetchExecutions(personaId);
+    // Upsert just the finished run into the list/cache instead of a full refetch.
+    // The run's own persona owns the row; fall back to a full fetch of the
+    // visible persona if we can't identify/fetch it.
+    const finishedPersonaId = execPersonaId ?? get().selectedPersona?.id ?? null;
+    if (execId && finishedPersonaId) {
+      void upsertFinishedExecution(execId, finishedPersonaId).catch((err) => {
+        logger.warn("finishExecution upsert failed — falling back to fetch", { executionId: execId, error: String(err) });
+        const pid = get().selectedPersona?.id;
+        if (pid) void get().fetchExecutions(pid);
+      });
+    } else {
+      const personaId = get().selectedPersona?.id;
+      if (personaId) get().fetchExecutions(personaId);
+    }
     // Health summaries are now pushed via PERSONA_HEALTH_CHANGED event from the backend
 
     // Clear recovery state
