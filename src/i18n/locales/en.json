@@ -5889,7 +5889,11 @@
       "delete_all": "Delete all",
       "delete_all_confirm_title": "Delete all memories?",
       "delete_all_confirm_body": "This permanently deletes all {count} memories. This cannot be undone.",
-      "delete_all_confirm_cta": "Delete all"
+      "delete_all_confirm_cta": "Delete all",
+      "reflect": "Reflect",
+      "reflecting": "Reflecting...",
+      "reflect_hint": "Consolidate related memories into durable insights — the result is a proposal you review before anything changes",
+      "reflect_pick_persona": "Reflect memories for an agent"
     },
     "memory_review": {
       "all_conflicts_resolved": "All conflicts resolved",
@@ -7232,7 +7236,8 @@
       "tags_label": "Tags",
       "view_source_execution": "View Source Execution",
       "delete_memory": "Delete Memory",
-      "close": "Close"
+      "close": "Close",
+      "derived_from_label": "Synthesized from"
     },
     "memory_table": {
       "agent": "Agent",

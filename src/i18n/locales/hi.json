@@ -5701,7 +5701,11 @@
       "delete_all": "सभी हटाएं",
       "delete_all_confirm_title": "सभी स्मृतियां हटाएं?",
       "delete_all_confirm_body": "यह सभी {count} स्मृतियां स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।",
-      "delete_all_confirm_cta": "सभी हटाएं"
+      "delete_all_confirm_cta": "सभी हटाएं",
+      "reflect": "चिंतन",
+      "reflect_hint": "संबंधित स्मृतियों को स्थायी अंतर्दृष्टियों में समेकित करें — परिणाम एक प्रस्ताव है जिसे आप किसी बदलाव से पहले समीक्षा करते हैं",
+      "reflect_pick_persona": "किसी एजेंट की स्मृतियों पर चिंतन करें",
+      "reflecting": "चिंतन जारी..."
     },
     "memory_review": {
       "all_conflicts_resolved": "सभी टकराव हल हो गए",
@@ -6822,7 +6826,8 @@
       "tags_label": "टैग",
       "view_source_execution": "स्रोत निष्पादन देखें",
       "delete_memory": "मेमोरी हटाएं",
-      "close": "बंद करें"
+      "close": "बंद करें",
+      "derived_from_label": "इनसे संश्लेषित"
     },
     "memory_table": {
       "agent": "एजेंट",

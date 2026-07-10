@@ -5701,7 +5701,11 @@
       "delete_all": "Alle löschen",
       "delete_all_confirm_title": "Alle Erinnerungen löschen?",
       "delete_all_confirm_body": "Dies löscht dauerhaft alle {count} Erinnerungen. Dies kann nicht rückgängig gemacht werden.",
-      "delete_all_confirm_cta": "Alle löschen"
+      "delete_all_confirm_cta": "Alle löschen",
+      "reflect": "Reflektieren",
+      "reflect_hint": "Verwandte Erinnerungen zu dauerhaften Erkenntnissen zusammenführen — das Ergebnis ist ein Vorschlag, den du prüfst, bevor sich etwas ändert",
+      "reflect_pick_persona": "Erinnerungen eines Agenten reflektieren",
+      "reflecting": "Reflektiert..."
     },
     "memory_review": {
       "all_conflicts_resolved": "Alle Konflikte gelöst",
@@ -6822,7 +6826,8 @@
       "tags_label": "Tags",
       "view_source_execution": "Quellausführung anzeigen",
       "delete_memory": "Erinnerung löschen",
-      "close": "Schließen"
+      "close": "Schließen",
+      "derived_from_label": "Synthetisiert aus"
     },
     "memory_table": {
       "agent": "Agent",

@@ -5896,6 +5896,10 @@ export type Translations = {
       delete_all_confirm_title: string;
       delete_all_confirm_body: string;
       delete_all_confirm_cta: string;
+      reflect: string;
+      reflecting: string;
+      reflect_hint: string;
+      reflect_pick_persona: string;
     };
     memory_review: {
       all_conflicts_resolved: string;
@@ -7239,6 +7243,7 @@ export type Translations = {
       view_source_execution: string;
       delete_memory: string;
       close: string;
+      derived_from_label: string;
     };
     memory_table: {
       agent: string;

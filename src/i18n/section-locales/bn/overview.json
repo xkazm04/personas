@@ -211,7 +211,11 @@
     "delete_all": "সব মুছুন",
     "delete_all_confirm_title": "সব স্মৃতি মুছবেন?",
     "delete_all_confirm_body": "এটি স্থায়ীভাবে সব {count}টি স্মৃতি মুছে দেবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
-    "delete_all_confirm_cta": "সব মুছুন"
+    "delete_all_confirm_cta": "সব মুছুন",
+    "reflect": "প্রতিফলন",
+    "reflect_hint": "সম্পর্কিত স্মৃতিগুলিকে স্থায়ী অন্তর্দৃষ্টিতে একত্রিত করুন — ফলাফল একটি প্রস্তাব যা আপনি কিছু পরিবর্তনের আগে পর্যালোচনা করবেন",
+    "reflect_pick_persona": "একটি এজেন্টের স্মৃতির প্রতিফলন করুন",
+    "reflecting": "প্রতিফলন চলছে..."
   },
   "memory_review": {
     "all_conflicts_resolved": "সব দ্বন্দ্ব সমাধান হয়েছে",
@@ -1332,7 +1336,8 @@
     "tags_label": "ট্যাগ",
     "view_source_execution": "উৎস এক্সিকিউশন দেখুন",
     "delete_memory": "স্মৃতি মুছুন",
-    "close": "বন্ধ করুন"
+    "close": "বন্ধ করুন",
+    "derived_from_label": "যা থেকে সংশ্লেষিত"
   },
   "memory_table": {
     "agent": "এজেন্ট",

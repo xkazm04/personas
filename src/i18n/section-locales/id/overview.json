@@ -211,7 +211,11 @@
     "delete_all": "Hapus semua",
     "delete_all_confirm_title": "Hapus semua memori?",
     "delete_all_confirm_body": "Ini akan menghapus semua {count} memori secara permanen. Tindakan ini tidak dapat dibatalkan.",
-    "delete_all_confirm_cta": "Hapus semua"
+    "delete_all_confirm_cta": "Hapus semua",
+    "reflect": "Refleksi",
+    "reflect_hint": "Gabungkan memori terkait menjadi wawasan tahan lama — hasilnya berupa proposal yang Anda tinjau sebelum ada perubahan",
+    "reflect_pick_persona": "Refleksikan memori sebuah agen",
+    "reflecting": "Sedang merefleksi..."
   },
   "memory_review": {
     "all_conflicts_resolved": "Semua konflik telah diselesaikan",
@@ -1332,7 +1336,8 @@
     "tags_label": "Tag",
     "view_source_execution": "Lihat Eksekusi Sumber",
     "delete_memory": "Hapus Memori",
-    "close": "Tutup"
+    "close": "Tutup",
+    "derived_from_label": "Disintesis dari"
   },
   "memory_table": {
     "agent": "Agen",

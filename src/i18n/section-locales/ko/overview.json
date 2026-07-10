@@ -211,7 +211,11 @@
     "delete_all": "모두 삭제",
     "delete_all_confirm_title": "모든 메모리를 삭제할까요?",
     "delete_all_confirm_body": "모든 메모리 {count}개를 영구 삭제합니다. 이 작업은 취소할 수 없습니다.",
-    "delete_all_confirm_cta": "모두 삭제"
+    "delete_all_confirm_cta": "모두 삭제",
+    "reflect": "리플렉션",
+    "reflect_hint": "관련 메모리를 지속적인 인사이트로 통합합니다 — 결과는 제안으로 제공되며 적용 전에 검토할 수 있습니다",
+    "reflect_pick_persona": "에이전트의 메모리 리플렉션",
+    "reflecting": "리플렉션 중..."
   },
   "memory_review": {
     "all_conflicts_resolved": "모든 충돌이 해결되었습니다",
@@ -1332,7 +1336,8 @@
     "tags_label": "태그",
     "view_source_execution": "소스 실행 보기",
     "delete_memory": "메모리 삭제",
-    "close": "닫기"
+    "close": "닫기",
+    "derived_from_label": "통합 출처"
   },
   "memory_table": {
     "agent": "에이전트",

@@ -5701,7 +5701,11 @@
       "delete_all": "Eliminar todo",
       "delete_all_confirm_title": "¿Eliminar todas las memorias?",
       "delete_all_confirm_body": "Esto elimina permanentemente las {count} memorias. Esta acción no se puede deshacer.",
-      "delete_all_confirm_cta": "Eliminar todo"
+      "delete_all_confirm_cta": "Eliminar todo",
+      "reflect": "Reflexionar",
+      "reflect_hint": "Consolida recuerdos relacionados en conclusiones duraderas — el resultado es una propuesta que revisas antes de que cambie nada",
+      "reflect_pick_persona": "Reflexionar sobre los recuerdos de un agente",
+      "reflecting": "Reflexionando..."
     },
     "memory_review": {
       "all_conflicts_resolved": "Todos los conflictos resueltos",
@@ -6822,7 +6826,8 @@
       "tags_label": "Etiquetas",
       "view_source_execution": "Ver Ejecución de Origen",
       "delete_memory": "Eliminar Memoria",
-      "close": "Cerrar"
+      "close": "Cerrar",
+      "derived_from_label": "Sintetizado a partir de"
     },
     "memory_table": {
       "agent": "Agente",

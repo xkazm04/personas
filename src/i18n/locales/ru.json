@@ -5701,7 +5701,11 @@
       "delete_all": "Удалить все",
       "delete_all_confirm_title": "Удалить все воспоминания?",
       "delete_all_confirm_body": "Это безвозвратно удалит все {count} воспоминаний. Отменить невозможно.",
-      "delete_all_confirm_cta": "Удалить все"
+      "delete_all_confirm_cta": "Удалить все",
+      "reflect": "Рефлексия",
+      "reflect_hint": "Объединяет связанные воспоминания в устойчивые выводы — результатом будет предложение, которое вы проверите до каких-либо изменений",
+      "reflect_pick_persona": "Рефлексия воспоминаний агента",
+      "reflecting": "Идёт рефлексия..."
     },
     "memory_review": {
       "all_conflicts_resolved": "Все конфликты разрешены",
@@ -6822,7 +6826,8 @@
       "tags_label": "Теги",
       "view_source_execution": "Посмотреть исходный запуск",
       "delete_memory": "Удалить память",
-      "close": "Закрыть"
+      "close": "Закрыть",
+      "derived_from_label": "Синтезировано из"
     },
     "memory_table": {
       "agent": "Агент",
