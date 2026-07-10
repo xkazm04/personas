@@ -23,6 +23,12 @@ mod logging;
 pub mod mcp_server;
 mod notifications;
 mod radio;
+/// Unified retrieval lane — shared, pure retrieval primitives (distance
+/// floor, hybrid lane ranking, excerpt-vs-full-body decision) extracted from
+/// the companion brain. `pub` so the primitives are part of the lib surface
+/// (companion consumes them today; persona-memory injection is the documented
+/// next consumer — see the module docs).
+pub mod retrieval;
 pub mod startup_timing;
 #[cfg(debug_assertions)]
 mod stream_harness;

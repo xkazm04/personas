@@ -15,6 +15,7 @@ use rusqlite::params;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+#[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
 use crate::companion::disk;
 use crate::db::UserDbPool;
@@ -123,16 +124,6 @@ pub async fn append_episode_and_embed(
     Ok(id)
 }
 
-#[cfg(not(feature = "ml"))]
-pub async fn append_episode_and_embed(
-    pool: &UserDbPool,
-    session_id: &str,
-    role: EpisodeRole,
-    content: &str,
-) -> Result<String, AppError> {
-    append_episode(pool, session_id, role, content)
-}
-
 /// Read the most recent episodes for a session, oldest-first (so they can
 /// be appended in order to the working-context bundle).
 pub fn list_recent(
@@ -165,10 +156,30 @@ pub fn list_recent(
         })?
         .collect::<Result<Vec<_>, _>>()?;
 
-    // Read full content from disk for each (excerpt is only the first 500 chars).
+    // Serve from the SQL `body_excerpt` whenever it provably holds the full
+    // body (see `retrieval::excerpt_holds_full_body`) — most conversation
+    // turns fit the excerpt cap, so this kills the per-row
+    // `fs::read_to_string` N+1 on the recall hot path. Disk is read only for
+    // genuinely long bodies (or rows whose path doesn't carry the role).
     let root = disk::brain_root()?;
     let mut out = Vec::with_capacity(rows.len());
-    for (id, rel_path, _excerpt, created_at) in rows {
+    for (id, rel_path, excerpt, created_at) in rows {
+        if crate::retrieval::excerpt_holds_full_body(
+            &excerpt,
+            crate::retrieval::EPISODE_EXCERPT_CAP,
+        ) {
+            if let Some(role) = crate::retrieval::role_from_episode_path(&rel_path) {
+                out.push(Episode {
+                    id,
+                    session_id: session_id.to_string(),
+                    role: role.to_string(),
+                    content: crate::retrieval::episode_body_from_excerpt(&excerpt),
+                    file_path: rel_path,
+                    created_at,
+                });
+                continue;
+            }
+        }
         let full = match fs::read_to_string(root.join(&rel_path)) {
             Ok(s) => s,
             Err(_) => continue, // file missing on disk — skip, don't fail the whole list
@@ -228,11 +239,16 @@ fn sha256_hex(s: &str) -> String {
 }
 
 fn excerpt_500(content: &str) -> String {
-    if content.len() <= 500 {
+    // Cap shared with the excerpt-vs-full-body decision
+    // (`retrieval::excerpt_holds_full_body`) — the reader's completeness
+    // guarantee depends on the writer's cap and boundary backoff staying
+    // exactly this shape.
+    const CAP: usize = crate::retrieval::EPISODE_EXCERPT_CAP;
+    if content.len() <= CAP {
         content.to_string()
     } else {
         // char-boundary safe truncation
-        let mut end = 500;
+        let mut end = CAP;
         while !content.is_char_boundary(end) && end > 0 {
             end -= 1;
         }

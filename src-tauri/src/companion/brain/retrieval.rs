@@ -13,11 +13,13 @@
 //! When the vec table is empty (cold start), falls through to the
 //! Phase-1 behavior of last-N raw episodes so the prompt is never empty.
 
+#[cfg(feature = "ml")]
 use std::collections::HashSet;
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
 use crate::companion::brain::backlog::{self, BacklogItem};
+#[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
 use crate::companion::brain::episodic::{self, Episode};
 use crate::companion::brain::goals::{self, Goal};
@@ -27,15 +29,22 @@ use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
+#[cfg(feature = "ml")]
+use crate::retrieval::{filter_by_distance_floor, rank_into_lanes, Lane, MAX_VECTOR_DISTANCE};
 
+#[cfg(feature = "ml")]
 const RECENCY_TURNS: u32 = 5;
+#[cfg(feature = "ml")]
 const VECTOR_EPISODE_TOPK: usize = 12;
+#[cfg(feature = "ml")]
 const VECTOR_DOCTRINE_TOPK: usize = 8;
+#[cfg(feature = "ml")]
 const VECTOR_FACT_TOPK: usize = 8;
 /// We pull this many vec0 hits in one go and split by kind in app code.
 /// vec0 doesn't natively support kind-filtered MATCH, and the search
 /// itself is the expensive part. Generous so kind-imbalanced corpora
 /// don't starve one tier.
+#[cfg(feature = "ml")]
 const VECTOR_OVERFETCH: usize = 80;
 const FALLBACK_LIMIT: u32 = 20;
 /// Always include the top-N facts by importance (regardless of vector
@@ -53,17 +62,9 @@ const ALWAYS_INCLUDE_TOP_PROCEDURALS: u32 = 6;
 const ALWAYS_INCLUDE_OPEN_BACKLOG: u32 = 6;
 /// Vector top-K for procedurals matched against the user's query.
 const VECTOR_PROCEDURAL_TOPK: usize = 4;
-/// Relevance floor for vector-matched recall. `companion_embedding` is L2
-/// over fastembed-normalized 384-d MiniLM vectors, so distance maps to
-/// cosine as `L2² = 2(1 − cos)`: ~1.0 ≈ cos 0.5 (related), ~1.41 ≈
-/// orthogonal (noise). Without this floor, retrieval was pure top-K-by-rank
-/// (`embeddings::search_similar` returns `distance` but `retrieve` discarded
-/// it), so an off-topic turn still got padded with the least-irrelevant
-/// rows — the "mixing unrelated data" failure. Hits beyond this distance are
-/// dropped, letting a lane return *empty* when nothing is actually close.
-/// Conservative on purpose (keeps cos ≳ 0.15); calibrate against a populated
-/// brain via the `recall_distance` debug log if it proves too loose/tight.
-const MAX_VECTOR_DISTANCE: f32 = 1.30;
+// The relevance floor (MAX_VECTOR_DISTANCE = 1.30) and its rationale moved to
+// `crate::retrieval` (the unified retrieval lane) together with the
+// distance-floor / lane-ranking primitives — imported above under `ml`.
 /// Doctrine rides its own kind-scoped scan (see `search_similar_kind`); fetch
 /// a little wider than the top-K so the distance floor has headroom to trim.
 const VECTOR_DOCTRINE_FETCH: usize = 24;
@@ -107,7 +108,7 @@ pub async fn retrieve(
     // happens to phrase a query that matches a fact's wording.
     let mut top_facts =
         semantic::list_facts(pool, None, false, ALWAYS_INCLUDE_TOP_FACTS).unwrap_or_default();
-    let mut fact_ids_in_recall: HashSet<String> = top_facts.iter().map(|f| f.id.clone()).collect();
+    let fact_ids_in_recall: HashSet<String> = top_facts.iter().map(|f| f.id.clone()).collect();
 
     // Phase D: stable per-turn includes — active goals, top procedurals,
     // open backlog. These don't depend on the user's query wording.
@@ -120,7 +121,7 @@ pub async fn retrieve(
     let mut top_procedurals =
         procedural::list_rules(pool, None, false, ALWAYS_INCLUDE_TOP_PROCEDURALS)
             .unwrap_or_default();
-    let mut procedural_ids_in_recall: HashSet<String> =
+    let procedural_ids_in_recall: HashSet<String> =
         top_procedurals.iter().map(|p| p.id.clone()).collect();
     let open_backlog =
         backlog::list_items(pool, None, true, ALWAYS_INCLUDE_OPEN_BACKLOG).unwrap_or_default();
@@ -143,56 +144,35 @@ pub async fn retrieve(
         &hits.iter().map(|(id, _)| id.clone()).collect::<Vec<_>>(),
     )?;
 
-    let mut episode_ids: Vec<String> = Vec::new();
-    let mut fact_ids: Vec<String> = Vec::new();
-    let mut procedural_ids: Vec<String> = Vec::new();
-    let mut dropped_far = 0usize;
-    for (id, dist) in &hits {
-        // Relevance floor (see MAX_VECTOR_DISTANCE): top-K-by-rank without a
-        // floor padded recall with the least-irrelevant rows on off-topic
-        // turns. Dropping far hits lets a lane stay empty instead.
-        if *dist > MAX_VECTOR_DISTANCE {
-            dropped_far += 1;
-            continue;
-        }
-        match kinds.get(id).map(String::as_str) {
-            Some("episode") => {
-                if !recent_ids.contains(id) && episode_ids.len() < VECTOR_EPISODE_TOPK {
-                    episode_ids.push(id.clone());
-                }
-            }
-            Some("fact") => {
-                if !fact_ids_in_recall.contains(id) && fact_ids.len() < VECTOR_FACT_TOPK {
-                    fact_ids.push(id.clone());
-                    fact_ids_in_recall.insert(id.clone());
-                }
-            }
-            Some("procedural") => {
-                if !procedural_ids_in_recall.contains(id)
-                    && procedural_ids.len() < VECTOR_PROCEDURAL_TOPK
-                {
-                    procedural_ids.push(id.clone());
-                    procedural_ids_in_recall.insert(id.clone());
-                }
-            }
-            // Doctrine rides its own kind-scoped lane below; goals/rituals/
-            // backlog don't ride the vector lane at all.
-            _ => {}
-        }
-    }
+    // Relevance floor + hybrid lane ranking — shared primitives from
+    // `crate::retrieval` (behavior identical to the loop previously inlined
+    // here). Doctrine rides its own kind-scoped lane below; goals/rituals/
+    // backlog don't ride the vector lane at all.
+    let (near_hits, dropped_far) = filter_by_distance_floor(&hits, MAX_VECTOR_DISTANCE);
+    let mut lanes = [
+        Lane::new("episode", VECTOR_EPISODE_TOPK, recent_ids),
+        Lane::new("fact", VECTOR_FACT_TOPK, fact_ids_in_recall),
+        Lane::new("procedural", VECTOR_PROCEDURAL_TOPK, procedural_ids_in_recall),
+    ];
+    rank_into_lanes(&near_hits, &kinds, &mut lanes);
+    let [episode_lane, fact_lane, procedural_lane] = lanes;
+    let episode_ids = episode_lane.selected;
+    let fact_ids = fact_lane.selected;
+    let procedural_ids = procedural_lane.selected;
 
     // Doctrine: a dedicated kind-scoped scan so it can't be starved out of the
     // shared top-K by an episode-heavy corpus (the gap that made memory/policy
     // questions answer from the constitution instead of retrieval). Same floor.
-    let doctrine_ids: Vec<String> =
+    let doctrine_hits =
         embeddings::search_similar_kind(pool, embedder, query, "doctrine", VECTOR_DOCTRINE_FETCH)
             .await
-            .unwrap_or_default()
-            .into_iter()
-            .filter(|(_, dist)| *dist <= MAX_VECTOR_DISTANCE)
-            .take(VECTOR_DOCTRINE_TOPK)
-            .map(|(id, _)| id)
-            .collect();
+            .unwrap_or_default();
+    let doctrine_ids: Vec<String> = filter_by_distance_floor(&doctrine_hits, MAX_VECTOR_DISTANCE)
+        .0
+        .into_iter()
+        .take(VECTOR_DOCTRINE_TOPK)
+        .map(|(id, _)| id)
+        .collect();
 
     tracing::debug!(
         target: "companion::recall",
@@ -205,7 +185,8 @@ pub async fn retrieve(
         "recall_distance"
     );
 
-    // Episodes: load from disk (markdown), then merge with recent oldest-first.
+    // Episodes: hydrate (SQL excerpt when complete, disk for long bodies),
+    // then merge with recent oldest-first.
     let mut extra_episodes = load_episodes_by_ids(pool, &episode_ids).unwrap_or_default();
     extra_episodes.sort_by(|a, b| a.created_at.cmp(&b.created_at));
     let mut episodes = extra_episodes;
@@ -293,7 +274,15 @@ fn lookup_kinds(
     Ok(rows.into_iter().collect())
 }
 
-/// Read full episodes by id list. Drops any whose disk file is missing.
+/// Read full episodes by id list. Serves from the SQL `body_excerpt` when it
+/// provably holds the full body (see `retrieval::excerpt_holds_full_body`) —
+/// the excerpt is already fetched, so this kills the per-row
+/// `fs::read_to_string` N+1 on the recall hot path. Disk is read only for
+/// genuinely long bodies (or nonconforming rows); long-body rows whose disk
+/// file is missing are dropped, as before. (A complete-excerpt row whose disk
+/// file was manually deleted now still surfaces — episodes are append-only by
+/// doctrine, so a missing file is an anomaly and the SQL copy is authoritative
+/// enough for recall.)
 fn load_episodes_by_ids(pool: &UserDbPool, ids: &[String]) -> Result<Vec<Episode>, AppError> {
     if ids.is_empty() {
         return Ok(Vec::new());
@@ -301,7 +290,7 @@ fn load_episodes_by_ids(pool: &UserDbPool, ids: &[String]) -> Result<Vec<Episode
     let conn = pool.get()?;
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
     let sql = format!(
-        "SELECT id, file_path, created_at
+        "SELECT id, file_path, created_at, body_excerpt
          FROM companion_node
          WHERE kind = 'episode' AND id IN ({placeholders})"
     );
@@ -313,6 +302,7 @@ fn load_episodes_by_ids(pool: &UserDbPool, ids: &[String]) -> Result<Vec<Episode
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
+                row.get::<_, Option<String>>(3)?,
             ))
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -320,7 +310,25 @@ fn load_episodes_by_ids(pool: &UserDbPool, ids: &[String]) -> Result<Vec<Episode
 
     let root = crate::companion::disk::brain_root()?;
     let mut out = Vec::with_capacity(rows.len());
-    for (id, rel_path, created_at) in rows {
+    for (id, rel_path, created_at, excerpt) in rows {
+        if let Some(excerpt) = &excerpt {
+            if crate::retrieval::excerpt_holds_full_body(
+                excerpt,
+                crate::retrieval::EPISODE_EXCERPT_CAP,
+            ) {
+                if let Some(role) = crate::retrieval::role_from_episode_path(&rel_path) {
+                    out.push(Episode {
+                        id,
+                        session_id: String::new(),
+                        role: role.to_string(),
+                        content: crate::retrieval::episode_body_from_excerpt(excerpt),
+                        file_path: rel_path,
+                        created_at,
+                    });
+                    continue;
+                }
+            }
+        }
         let full = match std::fs::read_to_string(root.join(&rel_path)) {
             Ok(s) => s,
             Err(_) => continue,
