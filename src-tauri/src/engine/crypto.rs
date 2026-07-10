@@ -474,47 +474,65 @@ fn legacy_key_migration_allowed() -> bool {
 /// 2. `PERSONAS_ALLOW_FALLBACK_KEY=1` is explicitly set -- for CI, headless
 ///    environments, or tests where no keychain daemon is available.
 pub fn get_master_key() -> Result<&'static [u8; 32], CryptoError> {
-    static KEY_STORE: OnceLock<Result<ProtectedKey, String>> = OnceLock::new();
+    // Cache only a SUCCESSFULLY-derived key. A transient keychain failure (e.g.
+    // the OS backend briefly unavailable during startup) must NOT be cached: the
+    // previous `OnceLock<Result<..>>` recorded the first *outcome*, so a single
+    // early failure returned the stale `Err` on every later call and bricked all
+    // credential encrypt/decrypt for the whole process, recoverable only by
+    // restart. Storing only on success lets a later call retry and succeed.
+    static KEY_STORE: OnceLock<ProtectedKey> = OnceLock::new();
 
-    let result = KEY_STORE.get_or_init(|| {
-        match try_keychain() {
-            Ok(key) => {
-                let _ = KEY_SOURCE.set(KeySource::Keychain);
-                Ok(ProtectedKey::new(key))
-            }
-            Err(e) => {
-                // Keychain unavailable. The local-file fallback key is weaker than
-                // keychain-bound protection (DPAPI/machine-derived, but readable by
-                // anyone who can read the user's app-data dir), so it is OPT-IN and
-                // fail-closed by default — matching the doc above and the error
-                // string below (bug-hunt 2026-06-07 #1).
-                match fallback_policy() {
-                    FallbackPolicy::Deny => {
-                        tracing::error!(
-                            "Keychain unavailable ({}). Refusing to store credentials \
-                             without OS keychain protection. Set \
-                             PERSONAS_ALLOW_FALLBACK_KEY=1 to allow a local fallback key.",
-                            e
-                        );
-                        Err(format!("Keychain unavailable: {e}"))
-                    }
-                    FallbackPolicy::Allow => {
-                        tracing::warn!(
-                            "Keychain unavailable ({}). PERSONAS_ALLOW_FALLBACK_KEY=1 is \
-                             set; using local fallback key. Credentials are still \
-                             encrypted at rest but not keychain-bound.",
-                            e
-                        );
-                        let _ = KEY_SOURCE.set(KeySource::LocalFallback);
-                        Ok(ProtectedKey::new(derive_fallback_key()))
-                    }
+    if let Some(protected) = KEY_STORE.get() {
+        return Ok(protected.expose_key());
+    }
+
+    // Not yet cached (first call, or a prior attempt failed) — try to derive now.
+    let derived: Result<ProtectedKey, String> = match try_keychain() {
+        Ok(key) => {
+            let _ = KEY_SOURCE.set(KeySource::Keychain);
+            Ok(ProtectedKey::new(key))
+        }
+        Err(e) => {
+            // Keychain unavailable. The local-file fallback key is weaker than
+            // keychain-bound protection (DPAPI/machine-derived, but readable by
+            // anyone who can read the user's app-data dir), so it is OPT-IN and
+            // fail-closed by default — matching the doc above and the error
+            // string below (bug-hunt 2026-06-07 #1).
+            match fallback_policy() {
+                FallbackPolicy::Deny => {
+                    tracing::error!(
+                        "Keychain unavailable ({}). Refusing to store credentials \
+                         without OS keychain protection. Set \
+                         PERSONAS_ALLOW_FALLBACK_KEY=1 to allow a local fallback key.",
+                        e
+                    );
+                    Err(format!("Keychain unavailable: {e}"))
+                }
+                FallbackPolicy::Allow => {
+                    tracing::warn!(
+                        "Keychain unavailable ({}). PERSONAS_ALLOW_FALLBACK_KEY=1 is \
+                         set; using local fallback key. Credentials are still \
+                         encrypted at rest but not keychain-bound.",
+                        e
+                    );
+                    let _ = KEY_SOURCE.set(KeySource::LocalFallback);
+                    Ok(ProtectedKey::new(derive_fallback_key()))
                 }
             }
         }
-    });
+    };
 
-    match result {
-        Ok(protected) => Ok(protected.expose_key()),
+    match derived {
+        Ok(protected) => {
+            // Cache the success. If another thread raced us and set it first,
+            // `set` returns our value back unstored; use whatever is now cached
+            // (both are equivalent — same keychain/fallback key material).
+            let _ = KEY_STORE.set(protected);
+            Ok(KEY_STORE
+                .get()
+                .expect("KEY_STORE was just set")
+                .expose_key())
+        }
         Err(msg) => Err(CryptoError::KeyManagement(format!(
             "Master key not available (fail-closed): {}. \
              Set PERSONAS_ALLOW_FALLBACK_KEY=1 to allow local fallback.",
