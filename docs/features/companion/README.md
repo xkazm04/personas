@@ -479,6 +479,8 @@ The service is the ElevenLabs-API-shaped wrapper from the pocket-tts repo (`serv
 
 **Routing.** A synthesis goes to the sidecar when it's installed AND the voice exists as a local wav; otherwise it falls back to the HTTP service (which contributes the built-in Kyutai catalog to the merged `companion_tts_list_pocket_voices` and keeps the model warm for faster repeated playback). Either backend alone is sufficient; nothing ships in the Personas installer itself (same runtime-download posture as Kokoro).
 
+**Self-serve cloning (upload).** The Voice tab's "Add your voice" block (Pocket engine only) accepts any decodable audio file: the webview converts it via the Web Audio API (`audioToReferenceWav.ts` — decode mp3/wav/flac/ogg → resample to 24kHz mono PCM16 → trim to 30s) so the Rust side needs no audio decoders, then `companion_tts_pocket_import_voice` validates the RIFF container + a 10MB cap and writes it into pocket-voices/ via temp+rename (no truncated references on crash). The new voice is auto-selected. Cloned rows carry a delete affordance behind a danger `ConfirmDialog` (`companion_tts_pocket_delete_voice`, idempotent); the manual drop-a-wav-in-the-folder path still works alongside.
+
 **License caveat.** The prebuilt ONNX package derives from a community export (KevinAHM/pocket-tts-onnx) licensed **non-commercial** — fine for personal use; re-export from the original Kyutai weights before any commercial distribution.
 
 ### Language coverage UX
