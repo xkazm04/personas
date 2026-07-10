@@ -1,0 +1,1264 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "emails-vague-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 2,
+        "seconds": 99.92,
+        "caps": 1
+      },
+      {
+        "tag": "github-issues-partial-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 3,
+        "seconds": 126.12,
+        "caps": 2
+      },
+      {
+        "tag": "hn-digest-control-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 0,
+        "questions": 0,
+        "seconds": 63.09,
+        "caps": 1
+      },
+      {
+        "tag": "news-cadence-outside-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 3,
+        "seconds": 143.56,
+        "caps": 1
+      },
+      {
+        "tag": "post-updates-trap-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 3,
+        "seconds": 143.42,
+        "caps": 1
+      },
+      {
+        "tag": "research-vague-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 2,
+        "questions": 4,
+        "seconds": 139.95,
+        "caps": 1
+      },
+      {
+        "tag": "sales-vague-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 2,
+        "questions": 4,
+        "seconds": 171.95,
+        "caps": 2
+      },
+      {
+        "tag": "standup-mostly-specified-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 3,
+        "seconds": 129.12,
+        "caps": 2
+      },
+      {
+        "tag": "sync-two-tools-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 2,
+        "seconds": 131.55,
+        "caps": 2
+      },
+      {
+        "tag": "workflow-overloaded-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 2,
+        "questions": 3,
+        "seconds": 181.73,
+        "caps": 1
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "emails-vague-multiagent-1",
+      "fixture": "emails-vague",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "emails-vague",
+        "variant": "multiagent",
+        "session_id": "b31ef050-e8b8-4ba2-b821-e5ed037a3a7a",
+        "persona_id": "988ba519-83d3-420c-9fd6-7803e0848e05",
+        "true_intent": "I run customer support out of a Gmail inbox. I want it to read incoming support emails, summarise each one, label the urgent ones, and draft a reply for the top few \u2014 but I always want to review before anything is sent. Nothing auto-sends. I don't want it touching my personal email, just the support address.",
+        "vague_intent": "make me a bot that helps with my emails",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 99.92,
+        "num_rounds": 1,
+        "num_questions": 2,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "How often should the daily digest run?",
+            "options": [
+              "Every morning (e.g. 8 AM)",
+              "Every evening",
+              "Twice daily (morning + evening)",
+              "On demand only"
+            ],
+            "connector_category": null,
+            "answer": "Every morning at 8 AM \u2014 that's when I go through the inbox anyway.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "Beyond Gmail, should the bot alert you through any other channel when an urgent email arrives?",
+            "options": [
+              "No, Gmail inbox only",
+              "Discord",
+              "SMS (Twilio)",
+              "No alerts, digest only"
+            ],
+            "connector_category": null,
+            "answer": "Gmail inbox only \u2014 I'll see the drafts when I check my inbox.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 36.05
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 43.55
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 56.38
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 99.92
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_morning_digest",
+          "title": "Morning Email Digest",
+          "description": null,
+          "tool_hints": [
+            "gmail.messages.list \u2014 fetch unread messages received in the last 24 hours",
+            "gmail.messages.get \u2014 retrieve full headers and body snippet for each candidate message",
+            "gmail.drafts.create \u2014 save the finished ranked digest as a draft so the user sees it on inbox open"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Runs every morning at 08:00 \u2014 matches the user's stated inbox review habit.",
+            "schedule": "0 8 * * *",
+            "timezone": "America/New_York",
+            "type": "cron"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "github-issues-partial-multiagent-1",
+      "fixture": "github-issues-partial",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "github-issues-partial",
+        "variant": "multiagent",
+        "session_id": "b77ca129-b4c1-41e6-b445-98eeaa7e17f3",
+        "persona_id": "8bac4e33-ef90-423d-a13b-b05b00f4c1ca",
+        "true_intent": "Watch the acme/backend repo. When a new issue is opened and labelled 'bug' or 'security', post a short summary to our #eng-alerts Slack channel. 'Important' = those two labels. Only new issues, in real time, not a digest.",
+        "vague_intent": "watch my GitHub repo and tell me about important issues",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 126.12,
+        "num_rounds": 1,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which GitHub repository should this persona watch?",
+            "options": [],
+            "connector_category": null,
+            "answer": "acme/backend",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "How often should the digest run?",
+            "options": [
+              "Every hour",
+              "Every 6 hours",
+              "Once a day",
+              "On every new issue or comment"
+            ],
+            "connector_category": null,
+            "answer": "On every new issue \u2014 I want it in real time, not a digest.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "Where should the digest be delivered?",
+            "options": [
+              "Discord",
+              "Gmail",
+              "In-app only",
+              "Notion"
+            ],
+            "connector_category": null,
+            "answer": "Slack \u2014 our #eng-alerts channel.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 36.05
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 43.55
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 67.56
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 126.12
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_issue_triage",
+          "title": "New Issue Triage",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "description": "Primary trigger \u2014 a net-new issue landed.",
+              "event": "github:issues:opened",
+              "repo": "acme/backend"
+            },
+            {
+              "description": "Re-score if a maintainer adds a severity or type label after initial triage.",
+              "event": "github:issues:labeled",
+              "repo": "acme/backend"
+            }
+          ],
+          "trigger": {
+            "event": "issues",
+            "filters": {
+              "actions": [
+                "opened",
+                "reopened",
+                "labeled"
+              ],
+              "repo": "acme/backend"
+            },
+            "provider": "github",
+            "rationale": "User requested real-time triage on every new issue \u2014 webhook on `issues.opened` is zero-lag vs. polling.",
+            "type": "webhook"
+          }
+        },
+        {
+          "id": "uc_repo_digest",
+          "title": "Repo Health Digest",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "description": "Fires the digest pipeline whenever a new issue is opened in acme/backend.",
+              "event": "issues.opened",
+              "repo": "acme/backend",
+              "source": "github"
+            }
+          ],
+          "trigger": {
+            "event": "issues.opened",
+            "filter": {
+              "repo": "acme/backend"
+            },
+            "mode": "realtime",
+            "rationale": "User confirmed real-time delivery on every new issue rather than a scheduled digest.",
+            "source": "github",
+            "type": "event"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "hn-digest-control-multiagent-1",
+      "fixture": "hn-digest-control",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "hn-digest-control",
+        "variant": "multiagent",
+        "session_id": "4af925bc-38d8-478c-b99a-4d21a11bfcb7",
+        "persona_id": "502b9034-f027-4736-8530-aef116f03bb6",
+        "true_intent": "Exactly what I said: a daily 9am digest of the top 5 Hacker News stories, delivered to the in-app titlebar. Nothing more \u2014 no external publishing, no review step needed, it's just an informational read.",
+        "vague_intent": "Every day at 9am, fetch the top 5 Hacker News stories and show them to me as a digest in the app titlebar. No need to publish anywhere else.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 63.09,
+        "num_rounds": 0,
+        "num_questions": 0,
+        "transcript": [],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 22.53
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 63.09
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_hn_daily_digest",
+          "title": "Daily HN Digest",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Fire once daily at 9am in the user's local timezone.",
+            "schedule": "0 9 * * *",
+            "timezone": "local",
+            "type": "cron"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "news-cadence-outside-multiagent-1",
+      "fixture": "news-cadence-outside",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "news-cadence-outside",
+        "variant": "multiagent",
+        "session_id": "6d14ba3f-c3a2-4b05-9854-4fd3c0933dc3",
+        "persona_id": "520536bd-576e-4b33-9d81-5bf4d7e07889",
+        "true_intent": "Give me a short summary of the biggest AI and startup news twice a week \u2014 Monday and Thursday mornings \u2014 pulled from the web, delivered as an in-app notification. Just reading, nothing to publish.",
+        "vague_intent": "keep me updated on tech news",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 143.56,
+        "num_rounds": 1,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Where should your tech news digest be delivered?",
+            "options": [
+              "Gmail (email)",
+              "Discord",
+              "Notion",
+              "In-app only"
+            ],
+            "connector_category": null,
+            "answer": "In-app only \u2014 I just want to read it, not have it land in my inbox.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "How often do you want to receive updates?",
+            "options": [
+              "Once daily (morning)",
+              "Twice daily (morning + evening)",
+              "Breaking news only (as it happens)",
+              "Weekly roundup"
+            ],
+            "connector_category": null,
+            "answer": "Twice a week is enough \u2014 Monday and Thursday mornings.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "Which tech topics matter most to you? (pick all that apply)",
+            "options": [
+              "AI / ML",
+              "Developer tools",
+              "Big Tech (Apple, Google, Meta, Microsoft)",
+              "Startups & funding",
+              "Policy & regulation",
+              "Infrastructure & cloud"
+            ],
+            "connector_category": null,
+            "answer": "AI / ML and Startups & funding \u2014 those two.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 36.06
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 46.56
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 68.47
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 143.56
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_biweekly_digest",
+          "title": "Twice-Weekly Tech Digest",
+          "description": null,
+          "tool_hints": [
+            "web_search",
+            "text_generation"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "cron": "0 8 * * 1,4",
+            "description": "Every Monday and Thursday at 08:00 local time",
+            "timezone": "user_local",
+            "type": "schedule"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "post-updates-trap-multiagent-1",
+      "fixture": "post-updates-trap",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "post-updates-trap",
+        "variant": "multiagent",
+        "session_id": "89cf23a6-cb5b-4086-8e05-d9ba72227208",
+        "persona_id": "fd7fddd6-b009-4455-99f5-5316be4a3437",
+        "true_intent": "Whenever we publish a new product launch page, I want a short summary posted to our team's Notion 'Launches' database so everyone can see it. The trigger is a new launch being published; the destination is Notion, not chat.",
+        "vague_intent": "post updates about our product launches so the team stays in the loop",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 143.42,
+        "num_rounds": 1,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Where should launch updates be posted? You have Discord and Gmail connected \u2014 which should the agent use?",
+            "options": [
+              "Discord (team server)",
+              "Gmail (email to team)",
+              "Both Discord and Gmail",
+              "Neither \u2014 just draft the update for me to post manually"
+            ],
+            "connector_category": null,
+            "answer": "Neither \u2014 post it to Notion. We want new launch summaries going into our team's \"Launches\" database there, not chat or email.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "What should trigger a launch update \u2014 a manual request, or automatically when a launch event occurs somewhere (e.g. a Linear issue moves to 'Done', a GitHub release is published)?",
+            "options": [
+              "Manual \u2014 I'll tell the agent when to post",
+              "Automatic \u2014 when a Linear issue reaches a certain status",
+              "Automatic \u2014 when a GitHub release is published",
+              "Automatic \u2014 on a scheduled cadence (e.g. weekly digest)"
+            ],
+            "connector_category": null,
+            "answer": "Automatic \u2014 when a GitHub release is published. That's how we mark a launch page as live.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "Where does the raw launch information live \u2014 what should the agent read to know WHAT was launched?",
+            "options": [
+              "Linear (tickets/milestones)",
+              "GitHub (releases/PRs)",
+              "I'll paste the details directly",
+              "Notion or another doc"
+            ],
+            "connector_category": null,
+            "answer": "I'll paste the details directly \u2014 I write the launch page copy anyway, so I'll hand the agent the summary.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 31.53
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 42.05
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 66.83
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 143.42
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_launch_record_publisher",
+          "title": "Launch Record Publisher",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "connector": "github",
+              "description": "Subscribe to published (non-draft) release events on the configured repository. Deliver full release payload: tag_name, name, body, html_url, published_at, author.login.",
+              "event": "release.published",
+              "filter": {
+                "draft": false
+              }
+            }
+          ],
+          "trigger": {
+            "description": "Fires automatically whenever a GitHub release is published in the watched repository. The capability will not run on draft releases or pre-releases unless the user explicitly opts in.",
+            "event": "release.published",
+            "source": "github",
+            "type": "event"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "research-vague-multiagent-1",
+      "fixture": "research-vague",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "research-vague",
+        "variant": "multiagent",
+        "session_id": "734bc550-4af7-43c7-ad93-5ae125b0e93e",
+        "persona_id": "0e4e93e8-480e-4e5e-8205-e040fc4ef6f7",
+        "true_intent": "I'm researching battery chemistry. Once a week I want it to search the web + arXiv for new papers and articles on solid-state batteries, summarise the genuinely new ones, and save the summaries to a Notion database so I can review them later.",
+        "vague_intent": "I want something for my research",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 139.95,
+        "num_rounds": 2,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "That's a broad request, so let's start with one concrete job. What is the single task you'd most like this agent to do for you? (For example: \"every morning, pull yesterday's Stripe payouts into my Revenue sheet\".)",
+            "options": [],
+            "connector_category": null,
+            "answer": "The single task: once a week, search the web and arXiv for new papers and articles on solid-state batteries, summarise the genuinely new ones, and save those summaries into a Notion database for me.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "connectors",
+            "question": "The persona is designed to write entries into Notion \u2014 should it use your connected Notion account for this?",
+            "options": [
+              "Yes, use my Notion account",
+              "No, deliver summaries in-app only",
+              "Use a different destination"
+            ],
+            "connector_category": null,
+            "answer": "Yes, use my Notion account.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "triggers",
+            "question": "Which day should the weekly research digest run?",
+            "options": [
+              "Monday",
+              "Friday",
+              "Sunday",
+              "Let the persona decide"
+            ],
+            "connector_category": null,
+            "answer": "Sunday.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "use-cases",
+            "question": "How many top entries should be saved per weekly run (this sets the max_entries_per_run limit)?",
+            "options": [
+              "5",
+              "10",
+              "20",
+              "Custom number"
+            ],
+            "connector_category": null,
+            "answer": "5",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 15.02
+          },
+          {
+            "phase": "analyzing",
+            "offset_s": 28.23
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 58.27
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 68.78
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 91.91
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 139.95
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_weekly_research_digest",
+          "title": "Weekly Research Digest",
+          "description": null,
+          "tool_hints": [
+            "notion.page_create",
+            "notion.database_query",
+            "notion.database_create_entry",
+            "web_search",
+            "arxiv.search",
+            "semantic_scholar.search",
+            "pubmed.search"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Every Sunday at 09:00 UTC",
+            "schedule": "0 9 * * 0",
+            "timezone": "UTC",
+            "type": "cron"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "sales-vague-multiagent-1",
+      "fixture": "sales-vague",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "sales-vague",
+        "variant": "multiagent",
+        "session_id": "4275dfb1-ae61-4daa-b50c-a0c190773394",
+        "persona_id": "4799081d-2a47-47f9-acdb-cf0a4d84551d",
+        "true_intent": "When a deal is marked Closed-Won in our CRM, I want a celebration message posted to the #wins Slack channel and a row appended to our 'Closed Deals' spreadsheet with the deal name, amount, and owner. That's the whole job.",
+        "vague_intent": "build an agent for my sales team",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 171.95,
+        "num_rounds": 2,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "That's a broad request, so let's start with one concrete job. What is the single task you'd most like this agent to do for you? (For example: \"every morning, pull yesterday's Stripe payouts into my Revenue sheet\".)",
+            "options": [],
+            "connector_category": null,
+            "answer": "*\"When a deal closes as won in our CRM, post a celebration message in our #wins Slack channel and add the deal to our Closed Deals spreadsheet.\"*",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "connectors",
+            "question": "Which CRM should the agent watch for closed-won deals?",
+            "options": [
+              "Attio",
+              "HubSpot",
+              "Pipedrive",
+              "ClickUp"
+            ],
+            "connector_category": null,
+            "answer": "Attio.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "connectors#2",
+            "question": "Where should win celebrations be posted? (You have Discord connected; Slack is also available but not yet in your vault.)",
+            "options": [
+              "Discord",
+              "Slack"
+            ],
+            "connector_category": null,
+            "answer": "Slack, please \u2014 that's where the team hangs out. The wins should go to our #wins channel there.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "connectors#3",
+            "question": "Where should closed deals be logged as spreadsheet rows?",
+            "options": [
+              "Airtable",
+              "Google Sheets",
+              "Notion"
+            ],
+            "connector_category": null,
+            "answer": "#wins for Slack was the plan \u2014 and for the spreadsheet, Google Sheets. That's what we use.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.01
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 21.03
+          },
+          {
+            "phase": "analyzing",
+            "offset_s": 34.31
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 68.86
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 79.36
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 113.38
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 171.95
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_win_celebration",
+          "title": "Win Celebration Post",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "condition": "new_value.stage == 'closed-won' AND previous_value.stage != 'closed-won'",
+              "entity": "deals",
+              "event_type": "record.updated",
+              "notes": "Scoped to stage transitions only \u2014 not every deal update \u2014 to avoid duplicate posts if the record is re-saved while already closed-won.",
+              "service": "attio"
+            }
+          ],
+          "trigger": {
+            "description": "Fires when Attio emits a stage-change event and the new stage is closed-won. Attio webhooks deliver the full record payload, so no secondary CRM fetch is required for basic fields.",
+            "event": "deal.stage_changed",
+            "filter": {
+              "stage": "closed-won"
+            },
+            "source": "attio",
+            "type": "webhook"
+          }
+        },
+        {
+          "id": "uc_win_logging",
+          "title": "Closed Deal Logger",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "description": "Listen for Attio deal updates where the resulting stage is exactly closed-won; ignore all other stage values.",
+              "event": "record.updated",
+              "filter": {
+                "object_type": "deals",
+                "stage_transition_to": "closed-won"
+              },
+              "source": "attio"
+            }
+          ],
+          "trigger": {
+            "description": "Fires whenever an Attio deal record is updated and its stage transitions to closed-won.",
+            "event": "record.updated",
+            "filter": {
+              "field": "stage",
+              "object": "deals",
+              "to_value": "closed-won"
+            },
+            "source": "attio",
+            "type": "webhook"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "standup-mostly-specified-multiagent-1",
+      "fixture": "standup-mostly-specified",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "standup-mostly-specified",
+        "variant": "multiagent",
+        "session_id": "21eb75f3-1db9-4602-bd11-e0fd65687e34",
+        "persona_id": "1cd1ec01-6828-422b-a9be-f40aaea804d3",
+        "true_intent": "Exactly that: a weekday 9am standup that lists yesterday's merged PRs from our main repo and posts the summary to our #standup Slack channel. The only thing I didn't say is WHICH repo and WHICH Slack channel.",
+        "vague_intent": "Every weekday at 9am, collect yesterday's merged pull requests from our repo and post a standup summary to Slack.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 129.12,
+        "num_rounds": 1,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which GitHub repository should the agent collect merged PRs from? (e.g. org/repo-name)",
+            "options": [],
+            "connector_category": null,
+            "answer": "BornDigital/personas-desktop",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "Which Slack channel should the standup digest be posted to?",
+            "options": [],
+            "connector_category": null,
+            "answer": "#standup \u2014 that's the one.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "human-review",
+            "question": "Should the Slack post go out automatically, or do you want to approve it before it's sent?",
+            "options": [
+              "Post automatically",
+              "Require approval before posting"
+            ],
+            "connector_category": null,
+            "answer": "Post automatically \u2014 the whole point is that it just shows up in #standup at 9 without me doing anything.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 40.55
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 51.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 78.06
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 129.12
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_pr_collector",
+          "title": "PR Collector & Summarizer",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Every weekday at 09:00 \u2014 fires before standup so the digest is ready when the team arrives",
+            "schedule": "0 9 * * 1-5",
+            "timezone": "Europe/Prague",
+            "type": "cron"
+          }
+        },
+        {
+          "id": "uc_slack_poster",
+          "title": "Slack Standup Poster",
+          "description": null,
+          "tool_hints": [
+            "slack.chat_postMessage \u2014 post the markdown digest to #standup",
+            "slack.conversations_list \u2014 resolve channel name to channel_id on first run (cache result)"
+          ],
+          "subscriptions": [
+            {
+              "description": "Receive the fully-formatted Markdown digest. status=ok means PRs were found; status=no_merges means the lookback window had zero merges (still post the notice).",
+              "emitted_by": "uc_pr_collector",
+              "event": "digest_ready",
+              "on_status": [
+                "ok",
+                "no_merges"
+              ],
+              "payload_fields": [
+                "date",
+                "markdown_body",
+                "pr_count",
+                "status"
+              ]
+            }
+          ],
+          "trigger": {
+            "description": "Fires when uc_pr_collector emits a completed digest payload; no polling, no cron \u2014 the poster is purely reactive to that event.",
+            "event": "digest_ready",
+            "source": "uc_pr_collector",
+            "type": "event"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "sync-two-tools-multiagent-1",
+      "fixture": "sync-two-tools",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "sync-two-tools",
+        "variant": "multiagent",
+        "session_id": "af28085f-f6ef-412a-b922-896d9b760650",
+        "persona_id": "ed342ffc-cd5b-44d6-8f14-140da3d2a5bc",
+        "true_intent": "When I add or complete a task in Todoist, mirror that change into a Notion 'Tasks' database so my Notion workspace always reflects Todoist. It's one-way, Todoist to Notion \u2014 Notion is just the readable mirror.",
+        "vague_intent": "sync my tasks between my two tools",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 131.55,
+        "num_rounds": 1,
+        "num_questions": 2,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which two task tools should be synced? You have ClickUp, Asana, Linear, Notion, Airtable, GitHub, and Jira (catalog-only) available.",
+            "options": [
+              "ClickUp \u2194 Asana",
+              "ClickUp \u2194 Linear",
+              "ClickUp \u2194 Notion",
+              "Asana \u2194 Linear",
+              "Asana \u2194 Notion",
+              "Linear \u2194 Notion",
+              "Other combination"
+            ],
+            "connector_category": null,
+            "answer": "Neither, actually \u2014 it's Todoist and Notion. I add tasks in Todoist and just want them mirrored into a Notion database.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "How often should the sync run?",
+            "options": [
+              "Every 15 minutes",
+              "Every hour",
+              "Every few hours",
+              "On demand only"
+            ],
+            "connector_category": null,
+            "answer": "Every 15 minutes.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 42.05
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 51.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 71.47
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 131.55
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_detect_and_emit",
+          "title": "Change Detector",
+          "description": null,
+          "tool_hints": [
+            "http_get:https://api.todoist.com/rest/v2/tasks (bearer token from vault once added) \u2014 full active task list on first run; incremental sync_token on subsequent runs",
+            "http_get:https://api.todoist.com/rest/v2/tasks/completed/get_all \u2014 detect completions since last cursor",
+            "notion_connector:database.query (filter: last_edited_time >= last_cursor, page_size 100) \u2014 detect Notion-side mutations",
+            "personas_database:read+write \u2014 load and persist sync state between poll cycles"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Poll Todoist REST API and Notion database every 15 minutes for task deltas",
+            "schedule": "*/15 * * * *",
+            "type": "cron"
+          }
+        },
+        {
+          "id": "uc_apply_sync",
+          "title": "Sync Applier",
+          "description": null,
+          "tool_hints": [
+            "databases.query",
+            "pages.create",
+            "pages.update",
+            "pages.retrieve",
+            "blocks.children.append"
+          ],
+          "subscriptions": [
+            {
+              "description": "Batch of detected Todoist task changes to apply into Notion",
+              "emitted_by": "uc_detect_and_emit",
+              "event": "task_changes_detected",
+              "payload_schema_ref": "ChangeSet"
+            }
+          ],
+          "trigger": {
+            "event": "task_changes_detected",
+            "fallback": {
+              "description": "Polling fallback if event bus is unavailable \u2014 aligns with user-specified 15-minute cadence",
+              "interval_minutes": 15,
+              "type": "schedule"
+            },
+            "source": "uc_detect_and_emit",
+            "type": "event"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "workflow-overloaded-multiagent-1",
+      "fixture": "workflow-overloaded",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "workflow-overloaded",
+        "variant": "multiagent",
+        "session_id": "037ab5b3-e424-494e-bca2-6e0ac7000988",
+        "persona_id": "e4d08ecc-1f23-48fc-abdc-55cd5475d0b4",
+        "true_intent": "Honestly I just have one concrete pain: every morning I copy yesterday's Stripe payouts into a Google Sheet by hand. I want that one thing automated \u2014 pull yesterday's Stripe payouts and append them to my 'Revenue' sheet each morning. Nothing else.",
+        "vague_intent": "manage my whole workflow and make my life easier",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 181.73,
+        "num_rounds": 2,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "That's a broad request, so let's start with one concrete job. What is the single task you'd most like this agent to do for you? (For example: \"every morning, pull yesterday's Stripe payouts into my Revenue sheet\".)",
+            "options": [],
+            "connector_category": null,
+            "answer": "I want to automate copying yesterday's Stripe payouts into my Google Sheet \u2014 literally that example you gave. Every morning, pull yesterday's payouts and add them as rows to my \"Revenue\" sheet.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "use-cases",
+            "question": "The Stripe\u2192Google Sheets sync is already configured. What's the ONE next job you want this persona to handle?",
+            "options": [
+              "Triage and respond to emails (Gmail)",
+              "Manage tasks across projects (Linear / ClickUp / Asana)",
+              "Schedule and track meetings (Google Calendar / Cal.com)",
+              "Monitor deployments and errors (Sentry / Better Stack)"
+            ],
+            "connector_category": null,
+            "answer": "Schedule and track meetings (Google Calendar / Cal.com) \u2014 but honestly, only if I have to pick one. The Stripe-to-Sheets thing was really all I needed; I don't want it doing anything else right now.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "connectors",
+            "question": "For that job, which tool is your source of truth?",
+            "options": [
+              "Linear",
+              "ClickUp",
+              "Asana",
+              "Notion"
+            ],
+            "connector_category": null,
+            "answer": "Stripe \u2014 the payouts come from my Stripe account, none of those.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 22.53
+          },
+          {
+            "phase": "analyzing",
+            "offset_s": 34.78
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 61.83
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 70.83
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 91.52
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 181.73
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_stripe_to_sheets_sync",
+          "title": "Stripe Payout Sync",
+          "description": null,
+          "tool_hints": [
+            "stripe.payouts.list",
+            "stripe.payouts.retrieve",
+            "google_sheets.values.get",
+            "google_sheets.values.append"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "cron": "0 6 * * *",
+            "description": "Runs daily at 06:00 UTC; can also be triggered manually at any time.",
+            "timezone": "UTC",
+            "type": "schedule"
+          }
+        }
+      ]
+    }
+  ]
+}

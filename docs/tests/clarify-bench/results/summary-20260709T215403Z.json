@@ -1,0 +1,291 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "workflow-overloaded-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 4,
+        "seconds": 140.88,
+        "caps": 1
+      },
+      {
+        "tag": "post-updates-trap-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 3,
+        "seconds": 83.83,
+        "caps": 2
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "workflow-overloaded-multiagent-1",
+      "fixture": "workflow-overloaded",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "workflow-overloaded",
+        "variant": "multiagent",
+        "session_id": "d2648c18-e704-4d6b-8b90-85c4583e7edb",
+        "persona_id": "30863b21-7c96-4d99-9c7c-c802a95fc2fa",
+        "true_intent": "Honestly I just have one concrete pain: every morning I copy yesterday's Stripe payouts into a Google Sheet by hand. I want that one thing automated \u2014 pull yesterday's Stripe payouts and append them to my 'Revenue' sheet each morning. Nothing else.",
+        "vague_intent": "manage my whole workflow and make my life easier",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 140.88,
+        "num_rounds": 1,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "Which of these capabilities should the persona focus on first? (You can expand later.)",
+            "options": [
+              "Morning Briefing \u2014 daily digest of what needs attention",
+              "Email Triage \u2014 surface emails that need a reply or action",
+              "Task Pulse \u2014 track what's overdue or blocked across task tools",
+              "PR Monitor \u2014 watch open PRs for review requests or stalls"
+            ],
+            "connector_category": null,
+            "answer": "None of those \u2014 I just want yesterday's Stripe payouts pulled and appended to my Google Sheet every morning.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "You have both Linear and ClickUp/Asana connected. Which do you actually use for tracking your tasks and issues?",
+            "options": [
+              "Linear",
+              "ClickUp",
+              "Asana",
+              "Multiple \u2014 show all of them"
+            ],
+            "connector_category": null,
+            "answer": "Neither, really \u2014 I don't need task tracking for this. It's just Stripe payouts into a Google Sheet.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "For PR monitoring, which codebase(s) should be watched \u2014 'pof', 'ascent', or both?",
+            "options": [
+              "pof only",
+              "ascent only",
+              "Both pof and ascent"
+            ],
+            "connector_category": null,
+            "answer": "I'm not monitoring PRs \u2014 I don't have codebases to watch. I just want yesterday's Stripe payouts pulled each morning and appended to my Revenue sheet.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "When should the morning briefing run?",
+            "options": [
+              "7:00 AM",
+              "8:00 AM",
+              "9:00 AM",
+              "Custom time"
+            ],
+            "connector_category": null,
+            "answer": "8:00 AM works.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 46.55
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 54.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 76.31
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 140.88
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_daily_payout_append",
+          "title": "Daily Payout Append",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Runs every morning at 8:00 AM to fetch and append the prior day's Stripe payouts.",
+            "schedule": "0 8 * * *",
+            "timezone": "America/New_York",
+            "type": "cron"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "post-updates-trap-multiagent-1",
+      "fixture": "post-updates-trap",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "post-updates-trap",
+        "variant": "multiagent",
+        "session_id": "0e7710cd-1dc9-4579-aa68-7c73ee2cbb7c",
+        "persona_id": "3f0ebdf3-4f8d-4dcb-9e2b-bb2766e010a8",
+        "true_intent": "Whenever we publish a new product launch page, I want a short summary posted to our team's Notion 'Launches' database so everyone can see it. The trigger is a new launch being published; the destination is Notion, not chat.",
+        "vague_intent": "post updates about our product launches so the team stays in the loop",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 83.83,
+        "num_rounds": 1,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Where should launch updates be posted? (Select all that apply)",
+            "options": [
+              "Discord",
+              "Slack",
+              "Email (Gmail)",
+              "Notion",
+              "Linear",
+              "ClickUp"
+            ],
+            "connector_category": null,
+            "answer": "Notion \u2014 post them into our team's Launches database there.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "What triggers a launch update \u2014 how does the agent know when a launch happened?",
+            "options": [
+              "I manually tell the agent",
+              "A ticket/task is marked complete in a project tool (Linear, ClickUp, Asana)",
+              "A GitHub release or PR merge",
+              "A scheduled check-in (e.g. weekly roundup)"
+            ],
+            "connector_category": null,
+            "answer": "A new launch page going live on our site \u2014 that's the trigger, not a ticket or a release.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "Where do the launch details come from \u2014 what's the source of truth?",
+            "options": [
+              "I type them in directly",
+              "Linear / ClickUp / Asana tickets",
+              "GitHub releases / PRs",
+              "Notion docs"
+            ],
+            "connector_category": null,
+            "answer": "GitHub releases \u2014 we publish the launch page from a release, so that's the source.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 24.03
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 31.55
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 46.3
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 83.83
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_draft_launch_update",
+          "title": "Draft Launch Update",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "action": "published",
+              "description": "Subscribe to non-draft, non-prerelease GitHub release events only. Pre-releases are excluded to avoid drafting updates for internal or staging releases.",
+              "event": "release",
+              "filter": {
+                "draft": false,
+                "prerelease": false
+              },
+              "provider": "github"
+            }
+          ],
+          "trigger": {
+            "description": "Fires whenever a new GitHub release is published. The release marks the point at which a launch page goes live, so this is the authoritative trigger for drafting a team update.",
+            "event": "release.published",
+            "source": "github",
+            "type": "event"
+          }
+        },
+        {
+          "id": "uc_post_to_team",
+          "title": "Post to Team Channels",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "emitted_by": "uc_draft_launch_update",
+              "event": "draft_approved",
+              "payload_fields": [
+                "launch_name",
+                "summary",
+                "what_shipped",
+                "why_it_matters",
+                "action_items",
+                "github_release_url",
+                "launch_page_url"
+              ]
+            }
+          ],
+          "trigger": {
+            "capability_id": "uc_draft_launch_update",
+            "condition": "draft_approved",
+            "description": "Fires when a launch update draft has been approved and is ready to publish into Notion.",
+            "source": "capability_output",
+            "type": "event"
+          }
+        }
+      ]
+    }
+  ]
+}

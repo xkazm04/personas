@@ -1,0 +1,271 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "hn-digest-control-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 0,
+        "questions": 0,
+        "seconds": 48.06,
+        "caps": 1
+      },
+      {
+        "tag": "emails-vague-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 3,
+        "seconds": 141.44,
+        "caps": 4
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "hn-digest-control-multiagent-1",
+      "fixture": "hn-digest-control",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "hn-digest-control",
+        "variant": "multiagent",
+        "session_id": "70f06ecb-5b46-4048-aea5-30e6542c594c",
+        "persona_id": "7709532b-9f86-471e-9026-a19e501b2a69",
+        "true_intent": "Exactly what I said: a daily 9am digest of the top 5 Hacker News stories, delivered to the in-app titlebar. Nothing more \u2014 no external publishing, no review step needed, it's just an informational read.",
+        "vague_intent": "Every day at 9am, fetch the top 5 Hacker News stories and show them to me as a digest in the app titlebar. No need to publish anywhere else.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 48.06,
+        "num_rounds": 0,
+        "num_questions": 0,
+        "transcript": [],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 19.53
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 48.06
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_daily_hn_digest",
+          "title": "Daily HN Digest",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Fires once daily at 9:00 AM in the user's local timezone.",
+            "schedule": "0 9 * * *",
+            "timezone": "local",
+            "type": "cron"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "emails-vague-multiagent-1",
+      "fixture": "emails-vague",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "emails-vague",
+        "variant": "multiagent",
+        "session_id": "02ef3839-fd2d-4dd1-8429-403c6bb17c01",
+        "persona_id": "022c01c6-25f0-4800-aabb-987c7c989fa3",
+        "true_intent": "I run customer support out of a Gmail inbox. I want it to read incoming support emails, summarise each one, label the urgent ones, and draft a reply for the top few \u2014 but I always want to review before anything is sent. Nothing auto-sends. I don't want it touching my personal email, just the support address.",
+        "vague_intent": "make me a bot that helps with my emails",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 141.44,
+        "num_rounds": 1,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "When should the morning digest run?",
+            "options": [
+              "On demand only",
+              "Every morning at a fixed time",
+              "When I open the app"
+            ],
+            "connector_category": null,
+            "answer": "Every morning at a fixed time \u2014 8am, before I start going through the inbox.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "Which of these do you want to prioritize first?",
+            "options": [
+              "Morning digest of important emails",
+              "Real-time urgent email alerts",
+              "Drafting replies for me"
+            ],
+            "connector_category": null,
+            "answer": "Drafting replies for me \u2014 but they must stay as drafts in Gmail for me to review, never sent automatically.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Should urgent alerts be pushed anywhere besides the app?",
+            "options": [
+              "No, in-app only",
+              "Discord",
+              "No preference"
+            ],
+            "connector_category": null,
+            "answer": "In-app only \u2014 I'll be in the app reviewing drafts anyway.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 49.56
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 55.56
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 70.88
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 141.44
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_morning_digest",
+          "title": "Morning Email Digest",
+          "description": null,
+          "tool_hints": [
+            "gmail.list_messages(q='is:unread', maxResults=param.max_digest_items)",
+            "gmail.get_message(id, format='full')",
+            "gmail.list_labels()"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "cron": "0 8 * * *",
+            "description": "Runs every morning at 08:00 in the user's local timezone.",
+            "timezone": "user_local",
+            "type": "schedule"
+          }
+        },
+        {
+          "id": "uc_urgent_alert",
+          "title": "Urgent Email Alert",
+          "description": null,
+          "tool_hints": [
+            "gmail.messages.get",
+            "gmail.messages.list",
+            "gmail.threads.get",
+            "personas_messages.publish"
+          ],
+          "subscriptions": [
+            {
+              "description": "Subscribe to all new unread inbox messages for urgency evaluation.",
+              "event": "gmail.message.received",
+              "filter": "label:INBOX is:unread"
+            }
+          ],
+          "trigger": {
+            "description": "Fires on every new inbound Gmail message; falls back to 60-second polling if push subscription is unavailable.",
+            "event": "message.received",
+            "polling_fallback_seconds": 60,
+            "source": "gmail",
+            "type": "event"
+          }
+        },
+        {
+          "id": "uc_classify_email",
+          "title": "Inbox Triage",
+          "description": null,
+          "tool_hints": [
+            "gmail_get_message",
+            "gmail_get_thread",
+            "llm_classify",
+            "personas_database_write",
+            "personas_database_read"
+          ],
+          "subscriptions": [
+            {
+              "description": "Triggers classification on every new inbox message; sent/drafts/trash excluded.",
+              "event": "gmail.message.received",
+              "filter": "label:INBOX"
+            }
+          ],
+          "trigger": {
+            "event": "message.received",
+            "mechanism": "Gmail API push notification (watch + Pub/Sub)",
+            "notes": "Fires for every new message delivered to the inbox; the raw message payload is passed directly into the capability.",
+            "source": "gmail",
+            "type": "event"
+          }
+        },
+        {
+          "id": "uc_draft_reply",
+          "title": "Smart Reply Drafter",
+          "description": null,
+          "tool_hints": [
+            "gmail.threads.get \u2014 fetch full thread history for context before drafting",
+            "gmail.drafts.create \u2014 persist the finished draft to Gmail Drafts; never call gmail.messages.send",
+            "personas_vector_db.query \u2014 retrieve user sent-email style samples to match voice and tone",
+            "personas_messages.publish \u2014 push in-app notification that a draft is ready for review"
+          ],
+          "subscriptions": [
+            {
+              "event": "email_classified",
+              "filter": {
+                "label": "needs_reply"
+              },
+              "payload_fields": [
+                "thread_id",
+                "message_id",
+                "classification_reason",
+                "urgency_score"
+              ],
+              "source": "uc_classify_email"
+            }
+          ],
+          "trigger": {
+            "filter": {
+              "label": "needs_reply"
+            },
+            "primary": "uc_classify_email.email_classified",
+            "secondary": {
+              "description": "User explicitly requests a draft for a specific thread_id",
+              "type": "manual"
+            },
+            "type": "event"
+          }
+        }
+      ]
+    }
+  ]
+}

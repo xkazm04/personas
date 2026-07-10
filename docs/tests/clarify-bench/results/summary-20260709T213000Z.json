@@ -1,0 +1,316 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "post-updates-trap-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 3,
+        "seconds": 85.36,
+        "caps": 2
+      },
+      {
+        "tag": "standup-mostly-specified-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 2,
+        "seconds": 96.12,
+        "caps": 2
+      },
+      {
+        "tag": "workflow-overloaded-multiagent-1",
+        "terminal": "failed",
+        "hung": false,
+        "rounds": 0,
+        "questions": 0,
+        "seconds": 16.53,
+        "caps": 0
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "post-updates-trap-multiagent-1",
+      "fixture": "post-updates-trap",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "post-updates-trap",
+        "variant": "multiagent",
+        "session_id": "7f22a812-c997-4e3a-a7eb-78d4f75a9777",
+        "persona_id": "a441b02c-32d4-4a2c-b5cd-b8c99c56587d",
+        "true_intent": "Whenever we publish a new product launch page, I want a short summary posted to our team's Notion 'Launches' database so everyone can see it. The trigger is a new launch being published; the destination is Notion, not chat.",
+        "vague_intent": "post updates about our product launches so the team stays in the loop",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 85.36,
+        "num_rounds": 1,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Where should launch updates be posted?",
+            "options": [
+              "Discord",
+              "Slack",
+              "Microsoft Teams",
+              "Gmail"
+            ],
+            "connector_category": null,
+            "answer": "Notion \u2014 post it to our team's 'Launches' database, not a chat app.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "What should trigger a launch update to be posted?",
+            "options": [
+              "I provide launch details manually",
+              "A new GitHub release is published",
+              "A Linear issue is marked as launched",
+              "A ClickUp task reaches a specific status"
+            ],
+            "connector_category": null,
+            "answer": "A new launch page being published on our site \u2014 none of those. Manual is the closest, but really it should fire automatically when the launch goes live.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "human-review",
+            "question": "Should the agent post updates automatically, or let you review and approve each update before it goes out?",
+            "options": [
+              "Post automatically",
+              "Let me review first"
+            ],
+            "connector_category": null,
+            "answer": "Post automatically \u2014 nobody should have to babysit it, the summary just goes straight into the Notion database.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 25.55
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 33.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 47.81
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 85.36
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_draft_launch_update",
+          "title": "Draft Launch Update",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "description": "Inbound webhook fired by the site CMS/publishing pipeline when a launch page transitions to published state.",
+              "event": "launch.page_published",
+              "payload_fields": [
+                "launch_name",
+                "launch_url",
+                "description",
+                "affected_audience",
+                "published_at",
+                "feature_tags"
+              ],
+              "source": "site_webhook"
+            }
+          ],
+          "trigger": {
+            "description": "Fires automatically when a new launch page goes live on the product site. The event payload carries the raw launch details that seed the draft.",
+            "event": "launch.page_published",
+            "type": "event"
+          }
+        },
+        {
+          "id": "uc_post_launch_update",
+          "title": "Post to Team Channel",
+          "description": null,
+          "tool_hints": [
+            "notion_create_page",
+            "notion_append_block"
+          ],
+          "subscriptions": [
+            {
+              "description": "Receives the finalized launch update object produced by the draft capability once it is marked ready to publish.",
+              "event": "launch_draft_accepted",
+              "source": "uc_draft_launch_update"
+            }
+          ],
+          "trigger": {
+            "description": "Fires automatically when a launch_draft_accepted event is received, carrying the finalized update payload. No human approval step intervenes \u2014 the post goes out immediately upon draft acceptance.",
+            "type": "event"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "standup-mostly-specified-multiagent-1",
+      "fixture": "standup-mostly-specified",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "standup-mostly-specified",
+        "variant": "multiagent",
+        "session_id": "08e2be65-70fc-4e86-9b59-a30897bca623",
+        "persona_id": "31425e13-05be-4b2b-bbaa-54c2c38d83fa",
+        "true_intent": "Exactly that: a weekday 9am standup that lists yesterday's merged PRs from our main repo and posts the summary to our #standup Slack channel. The only thing I didn't say is WHICH repo and WHICH Slack channel.",
+        "vague_intent": "Every weekday at 9am, collect yesterday's merged pull requests from our repo and post a standup summary to Slack.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 96.12,
+        "num_rounds": 1,
+        "num_questions": 2,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which GitHub repository (or repositories) should the bot pull merged PRs from? Please provide the full repo path(s), e.g. `myorg/myrepo`.",
+            "options": [],
+            "connector_category": null,
+            "answer": "It's `acme-corp/platform` \u2014 that's our main repo, just the one.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "Which Slack channel should the standup digest be posted to? Note: you have a Discord connector in your vault but no Slack connector \u2014 do you want to post to Discord instead, or will you add a Slack connector?",
+            "options": [
+              "Post to Discord (using existing connector)",
+              "I'll add a Slack connector \u2014 post to Slack",
+              "Post to a different channel/service"
+            ],
+            "connector_category": null,
+            "answer": "I'll add a Slack connector \u2014 post to Slack, channel #standup.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 45.05
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 51.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 61.58
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 96.12
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_collect_prs",
+          "title": "Collect Yesterday's Merged PRs",
+          "description": null,
+          "tool_hints": [
+            "github_search_issues",
+            "github_list_pull_requests",
+            "github_get_pull_request"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Fires every weekday at 08:00 \u2014 early enough for the digest to be ready before standup. Timezone should be updated to match the team's local timezone.",
+            "expression": "0 8 * * 1-5",
+            "timezone": "America/New_York",
+            "type": "cron"
+          }
+        },
+        {
+          "id": "uc_post_slack_standup",
+          "title": "Post Standup to Slack",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "description": "Fires when the PR-collection capability has finished building the digest. This capability consumes the emitted digest payload and proceeds to post it.",
+              "event": "uc_collect_prs.completed",
+              "required_fields": [
+                "digest_markdown",
+                "pr_count",
+                "date_label",
+                "run_id"
+              ]
+            }
+          ],
+          "trigger": {
+            "cron": "45 8 * * 1-5",
+            "description": "Weekdays at 08:45 local time so the digest lands in #standup before the 09:00 meeting.",
+            "timezone": "America/New_York",
+            "type": "schedule"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "workflow-overloaded-multiagent-1",
+      "fixture": "workflow-overloaded",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "workflow-overloaded",
+        "variant": "multiagent",
+        "session_id": "b0e8b08a-f04d-4f21-a8f8-5c17425067e6",
+        "persona_id": "9df8fd3a-ea10-4378-a3d2-4956d1ea5cca",
+        "true_intent": "Honestly I just have one concrete pain: every morning I copy yesterday's Stripe payouts into a Google Sheet by hand. I want that one thing automated \u2014 pull yesterday's Stripe payouts and append them to my 'Revenue' sheet each morning. Nothing else.",
+        "vague_intent": "manage my whole workflow and make my life easier",
+        "terminal_phase": "failed",
+        "ok": false,
+        "total_seconds": 16.53,
+        "num_rounds": 0,
+        "num_questions": 0,
+        "transcript": [],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "failed",
+            "offset_s": 16.53
+          }
+        ],
+        "error_message": "multi-agent build: head turn produced no capability_enumeration",
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": []
+    }
+  ]
+}
