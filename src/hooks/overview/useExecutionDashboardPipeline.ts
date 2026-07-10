@@ -1,7 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
-import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { log } from '@/lib/log';
 
@@ -14,10 +13,15 @@ import { log } from '@/lib/log';
  *   - executionDashboard  (DashboardHome, Analytics, ExecutionMetrics)
  *   - globalExecutions    (DashboardHome)
  *   - healingIssues       (DashboardHome, Analytics, Observability)
- *   - observabilityMetrics (Analytics, Observability)
- *   - toolUsage           (Analytics)
+ *   - observabilityMetrics (DashboardHome, Analytics, Observability)
  *   - alertRules          (Observability)
  *   - alertHistory        (Observability)
+ *
+ * `toolUsage` is deliberately NOT fetched here. Its only consumer is the
+ * unrouted Observability dashboard, and even there the tool table
+ * (ToolPerformancePanel) self-fetches an independent command. Fetching it on
+ * every dashboard refresh was pure waste, so it's left on-demand — any surface
+ * that genuinely needs the store's toolUsage calls fetchToolUsage itself.
  *
  * Uses Promise.allSettled() so that a failure in one source does not
  * block the others. Per-source errors are tracked in the store so
@@ -119,8 +123,6 @@ export function useExecutionDashboardPipeline() {
     fetchAlertRules: s.fetchAlertRules,
     fetchAlertHistory: s.fetchAlertHistory,
   })));
-  const fetchToolUsage = useAgentStore((s) => s.fetchToolUsage);
-
   const fetchDays = compareEnabled ? previousPeriodDays : effectiveDays;
   const mountedRef = useRef({ cancelled: false });
 
@@ -168,11 +170,10 @@ export function useExecutionDashboardPipeline() {
       // Wave 2: secondary data
       await settleAndReport([
         { name: 'observabilityMetrics', fn: () => fetchObservabilityMetrics(fetchDays, selectedPersonaId || undefined) },
-        { name: 'toolUsage', fn: () => fetchToolUsage(effectiveDays, selectedPersonaId || undefined) },
         { name: 'healingIssues', fn: fetchHealingIssues },
       ], 'DashboardPipeline', signal);
     },
-    [fetchExecutionDashboard, fetchObservabilityMetrics, fetchToolUsage, fetchHealingIssues, fetchGlobalExecutions, fetchDays, effectiveDays, selectedPersonaId, filterKey],
+    [fetchExecutionDashboard, fetchObservabilityMetrics, fetchHealingIssues, fetchGlobalExecutions, fetchDays, selectedPersonaId, filterKey],
   );
 
   // Debounce filter-driven refreshes to avoid redundant fetches when

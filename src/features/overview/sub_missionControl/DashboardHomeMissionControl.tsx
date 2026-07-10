@@ -7,7 +7,7 @@
 // Labels like "TRIAGE", "VITALS", "STREAM", "STATUS" are prototype-only;
 // they'll be extracted to i18n only if this direction wins.
 
-import { Suspense, useMemo, useState, useEffect, useCallback, memo } from 'react';
+import { Suspense, useMemo, useState, useCallback, memo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   ClipboardCheck, AlertTriangle, Activity, Cpu, Bell,
@@ -21,9 +21,6 @@ import { useAuthStore } from '@/stores/authStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import type { OverviewTab } from '@/lib/types/types';
-import { getOverviewBundle } from '@/api/overview/observability';
-import type { OverviewBundle } from '@/lib/bindings/OverviewBundle';
-import { silentCatch } from '@/lib/silentCatch';
 import { useAttention } from '@/hooks/useAttention';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -68,7 +65,7 @@ export default function DashboardHomeMissionControl() {
   const personas = useAgentStore((s) => s.personas);
   const {
     globalExecutions, globalExecutionCounts, memoryActions, executionDashboard,
-    executionDashboardDays, pipelineErrors, pipelineFetchedAt, setOverviewTab,
+    observabilityMetrics, pipelineErrors, pipelineFetchedAt, setOverviewTab,
     dismissMemoryAction, setPipelineError,
   } = useOverviewStore(useShallow((s) => ({
     globalExecutions: s.globalExecutions,
@@ -79,7 +76,10 @@ export default function DashboardHomeMissionControl() {
     globalExecutionCounts: s.globalExecutionCounts,
     memoryActions: s.memoryActions,
     executionDashboard: s.executionDashboard,
-    executionDashboardDays: s.executionDashboardDays,
+    // Persona-scoped metrics come from the SAME pipeline fetch that feeds the
+    // Observability tab (fetchObservabilityMetrics → get_overview_bundle). Home
+    // reads it straight from the store instead of issuing its own bundle fetch.
+    observabilityMetrics: s.observabilityMetrics,
     pipelineErrors: s.pipelineErrors,
     pipelineFetchedAt: s.pipelineFetchedAt,
     setOverviewTab: s.setOverviewTab,
@@ -116,37 +116,28 @@ export default function DashboardHomeMissionControl() {
     return { successRate, activeAgents: personas.length, recentExecs: execs.slice(0, 20) };
   }, [globalExecutions, personas, selectedPersonaId]);
 
-  // Stage 2 — when a persona is selected, pull that persona's accurate metrics
-  // from get_overview_bundle (already persona-aware on the backend) so the
-  // Vitals success ring and traffic sparkline reflect the full period instead
-  // of the rough recent-feed estimate. The 4 KPI tiles and Triage stay
-  // fleet-wide — those need per-persona attention queries (a later stage).
-  const [personaMetrics, setPersonaMetrics] = useState<OverviewBundle | null>(null);
-  useEffect(() => {
-    if (!selectedPersonaId) { setPersonaMetrics(null); return; }
-    let cancelled = false;
-    setPersonaMetrics(null);
-    getOverviewBundle(executionDashboardDays ?? 30, selectedPersonaId)
-      .then((bundle) => { if (!cancelled) setPersonaMetrics(bundle); })
-      .catch(silentCatch('DashboardHomeMissionControl:personaMetrics'));
-    return () => { cancelled = true; };
-  }, [selectedPersonaId, executionDashboardDays]);
-
+  // Stage 2 — when a persona is selected, use that persona's accurate metrics.
+  // These come from the shared pipeline's `observabilityMetrics` (the same
+  // get_overview_bundle fetch the Observability tab drives, already re-issued
+  // per-persona whenever the filter changes) so the Vitals success ring and
+  // traffic sparkline reflect the full period instead of the rough recent-feed
+  // estimate — without Home issuing its own duplicate bundle fetch. The 4 KPI
+  // tiles and Triage stay fleet-wide (those need per-persona attention queries).
   const vitals = useMemo(() => {
     const fleetPoints = executionDashboard?.daily_points ?? [];
-    if (!selectedPersonaId || !personaMetrics) {
+    if (!selectedPersonaId || !observabilityMetrics) {
       return { successRate: stats.successRate, points: fleetPoints };
     }
-    const summary = personaMetrics.metricsSummary;
+    const summary = observabilityMetrics.summary;
     const successRate = Math.round(resolveMetricPercent(
       SUCCESS_RATE_IDENTITIES.dashboardRecentExecutions,
       { numerator: summary.successfulExecutions, denominator: summary.totalExecutions },
     ));
-    const points = personaMetrics.metricsChartData.chart_points.map((p) => ({
+    const points = observabilityMetrics.chartData.chart_points.map((p) => ({
       date: p.date, total_executions: p.executions, failed: p.failed,
     }));
     return { successRate, points };
-  }, [selectedPersonaId, personaMetrics, executionDashboard, stats.successRate]);
+  }, [selectedPersonaId, observabilityMetrics, executionDashboard, stats.successRate]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -199,16 +190,16 @@ export default function DashboardHomeMissionControl() {
 
   const chartData = useMemo(() => {
     // Scope the Instruments traffic chart to the persona filter when a persona
-    // is selected, reusing the same get_overview_bundle data the Vitals
-    // sparkline draws from (see the personaMetrics fetch above).
-    if (selectedPersonaId && personaMetrics) {
-      return personaMetrics.metricsChartData.chart_points.map((p) => ({
+    // is selected, reusing the same pipeline `observabilityMetrics` data the
+    // Vitals sparkline draws from.
+    if (selectedPersonaId && observabilityMetrics) {
+      return observabilityMetrics.chartData.chart_points.map((p) => ({
         date: p.date, traffic: p.executions, errors: p.failed,
       }));
     }
     const points = executionDashboard?.daily_points ?? [];
     return points.map((p) => ({ date: p.date, traffic: p.total_executions, errors: p.failed }));
-  }, [executionDashboard, selectedPersonaId, personaMetrics]);
+  }, [executionDashboard, selectedPersonaId, observabilityMetrics]);
 
   const chartTotals = useMemo(() => {
     const totalTraffic = chartData.reduce((s, d) => s + d.traffic, 0);
