@@ -24,18 +24,13 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncWriteExt;
 
+use crate::companion::tts::sherpa_engine::{self, ENGINE_ARCHIVE_URL};
 use crate::companion::tts::{engine_dir, kokoro, pocket};
 use crate::engine::inflight_guard::InflightGuard;
 use crate::error::AppError;
 
 /// Tauri event channel for install progress + terminal states.
 pub const INSTALL_EVENT: &str = "companion://pocket-install";
-
-/// Pinned sidecar bundles (shared-MT-Release — exe + `onnxruntime.dll`).
-#[cfg(target_arch = "aarch64")]
-const ENGINE_ARCHIVE_URL: &str = "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/sherpa-onnx-v1.13.4-win-arm64-shared-MT-Release.tar.bz2";
-#[cfg(not(target_arch = "aarch64"))]
-const ENGINE_ARCHIVE_URL: &str = "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/sherpa-onnx-v1.13.4-win-x64-shared-MT-Release.tar.bz2";
 
 /// Pocket int8 model package (stable `tts-models` tag) + its top-level prefix.
 const MODEL_ARCHIVE_URL: &str = pocket::MODEL_DOWNLOAD_URL;
@@ -169,7 +164,7 @@ async fn install_inner(app: &AppHandle) -> Result<(), AppError> {
     let bin_dir2 = bin_dir.clone();
     let model_dir2 = model_dir.clone();
     tokio::task::spawn_blocking(move || -> Result<(), AppError> {
-        extract_engine(&engine_tar, &bin_dir2)?;
+        sherpa_engine::extract_engine(&engine_tar, &bin_dir2)?;
         extract_model(&model_tar, &model_dir2)?;
         Ok(())
     })
@@ -243,50 +238,6 @@ async fn download_to_file(
     file.flush()
         .await
         .map_err(|e| AppError::Internal(format!("flush {}: {e}", dest.display())))?;
-    Ok(())
-}
-
-/// Extract `sherpa-onnx-offline-tts.exe` + its sibling `*.dll` from the
-/// bundle's `bin/` into `bin_dir`. Identical filter to the Kokoro installer.
-fn extract_engine(archive: &Path, bin_dir: &Path) -> Result<(), AppError> {
-    let file = std::fs::File::open(archive)
-        .map_err(|e| AppError::Internal(format!("open engine archive: {e}")))?;
-    let decoder = bzip2::read::BzDecoder::new(file);
-    let mut ar = tar::Archive::new(decoder);
-    let mut found_exe = false;
-    for entry in ar
-        .entries()
-        .map_err(|e| AppError::Internal(format!("read engine archive: {e}")))?
-    {
-        let mut entry = entry.map_err(|e| AppError::Internal(format!("engine entry: {e}")))?;
-        let path = entry
-            .path()
-            .map_err(|e| AppError::Internal(format!("engine entry path: {e}")))?
-            .into_owned();
-        let under_bin = path
-            .components()
-            .any(|c| c.as_os_str().eq_ignore_ascii_case("bin"));
-        let Some(fname) = path.file_name().map(|s| s.to_string_lossy().into_owned()) else {
-            continue;
-        };
-        let want = under_bin
-            && (fname.eq_ignore_ascii_case("sherpa-onnx-offline-tts.exe")
-                || fname.to_ascii_lowercase().ends_with(".dll"));
-        if want {
-            let dest = bin_dir.join(&fname);
-            entry
-                .unpack(&dest)
-                .map_err(|e| AppError::Internal(format!("unpack {fname}: {e}")))?;
-            if fname.eq_ignore_ascii_case("sherpa-onnx-offline-tts.exe") {
-                found_exe = true;
-            }
-        }
-    }
-    if !found_exe {
-        return Err(AppError::Internal(
-            "engine archive did not contain sherpa-onnx-offline-tts.exe".into(),
-        ));
-    }
     Ok(())
 }
 

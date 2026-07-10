@@ -21,6 +21,7 @@ pub mod kokoro_catalog;
 pub mod kokoro_installer;
 pub mod pocket;
 pub mod pocket_installer;
+pub mod sherpa_engine;
 
 use std::path::PathBuf;
 use std::time::Duration;
