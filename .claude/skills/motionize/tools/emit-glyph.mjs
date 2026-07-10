@@ -13,7 +13,9 @@
  *    the reveal radiates center-out (hub → links → figures → outer accents).
  *
  * Usage:
- *   node emit-glyph.mjs --input traced.svg --output data.ts --name NETWORK_GLYPH [--order radial|angular]
+ *   node emit-glyph.mjs --input traced.svg --output data.ts --name NETWORK_GLYPH \
+ *     [--order radial|angular] [--white-keep 0.1] [--slab-min-area 0.25] \
+ *     [--surface-fill "#F4B214" | "#F4B214>#7C3AED"] [--surface-tolerance 40]
  */
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { dirname, resolve } from "path";
@@ -34,6 +36,12 @@ const nearWhite = (hex) => { const c = rgb(hex); return c ? (0.299 * c[0] + 0.58
 const nearBlack = (hex) => { const c = rgb(hex); return c ? Math.max(c[0], c[1], c[2]) < 26 : false; };
 // Either extreme reads as surface (white-bg or black-bg source art).
 const isSurface = (hex) => nearWhite(hex) || nearBlack(hex);
+// Distance in RGB space — the tracer quantizes one flat slab into a dozen
+// near-identical hexes, so an exact match never works.
+const near = (hex, target, tol) => {
+  const a = rgb(hex), b = rgb(target);
+  return a && b ? Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) <= tol : false;
+};
 // rough bbox from all numbers in a path (exact enough to spot the full-canvas rect)
 function roughBox(d) {
   const nums = (d.match(/-?\d*\.?\d+/g) || []).map(Number);
@@ -54,11 +62,15 @@ function anchor(d) {
  * Core: SVG string → { ts, elements, dropped }. Exported so trace.mjs can emit
  * the component data in one pass (--emit) as well as this standalone CLI.
  */
-export function svgToGlyphData(svg, { name, order = "radial", whiteKeep = 0.1 } = {}) {
+export function svgToGlyphData(svg, { name, order = "radial", whiteKeep = 0.1, surfaceFill = null, surfaceTolerance = 40, slabMinArea = null } = {}) {
   const vb = /viewBox="([^"]+)"/.exec(svg);
   const wh = /width="(\d+)"\s+height="(\d+)"/.exec(svg);
   const [W, H] = vb ? vb[1].split(/\s+/).slice(2).map(Number) : wh ? [+wh[1], +wh[2]] : [1024, 1024];
   const cx = W / 2, cy = H / 2, maxR = Math.hypot(cx, cy), canvasArea = W * H;
+
+  // "#F4B214" → demote big amber to the surface; "#F4B214>#7C3AED" → repaint it violet.
+  const [slabFrom, slabTo] = String(surfaceFill ?? "").split(">");
+  const slabArea = slabMinArea ?? whiteKeep;
 
   const paths = [...svg.matchAll(/<path\s+fill="(#[0-9A-Fa-f]+)"\s+d="([^"]+)"\s*\/>/g)].map((m) => ({ fill: m[1], d: m[2] }));
 
@@ -76,8 +88,21 @@ export function svgToGlyphData(svg, { name, order = "radial", whiteKeep = 0.1 } 
     // output relies on them painting over accents to carve line gaps (linework art),
     // and they follow the theme for free. Small surface paths (sparks, highlights,
     // thin holes) stay as-is. Lower `whiteKeep` (e.g. 0.02) for wireframe/lattice.
+    // `surfaceFill` extends the same idea to an arbitrary SLAB colour: art whose hero
+    // is one big saturated fill (an amber shield, say) reads as a blob on a dark
+    // surface. Naming that hex repaints its LARGE regions — to `var(--background)`
+    // by default, or to a target hue with `from>to` — while small regions of the same
+    // colour (droplets, dots, sparks) keep it, so the accent stays sparse. Generation
+    // rarely lands the exact palette; we own the coloring, the raster is only geometry.
     const areaFrac = ((box.maxX - box.minX) * (box.maxY - box.minY)) / canvasArea;
-    const fill = isSurface(p.fill) && (coversCanvas || areaFrac > whiteKeep) ? "var(--background)" : p.fill;
+    // NOTE: a full-canvas rect is NOT automatically the background. VTracer's Stacked
+    // mode sometimes lays the darkest quantized layer down first as an exact canvas
+    // rect and paints the white page over it — there, the rect IS the line-work, and
+    // the outlines are it showing through gaps in the layer above. Demote by COLOUR
+    // (surface-like) and never by geometry alone, or every outline disappears.
+    let fill = p.fill;
+    if (isSurface(p.fill) && (coversCanvas || areaFrac > whiteKeep)) fill = "var(--background)";
+    else if (slabFrom && near(p.fill, slabFrom, surfaceTolerance) && (coversCanvas || areaFrac > slabArea)) fill = slabTo || "var(--background)";
     const a = anchor(p.d);
     const dist = Math.hypot(a.x - cx, a.y - cy) / maxR; // 0 (center) .. 1 (corner)
     const ang = (Math.atan2(a.y - cy, a.x - cx) + Math.PI) / (2 * Math.PI); // 0..1 clockwise
@@ -95,7 +120,14 @@ function main() {
   const args = parseArgs(process.argv);
   if (!args.input || !args.output || !args.name) { console.error("Usage: --input svg --output data.ts --name NAME"); process.exit(1); }
   const svg = readFileSync(args.input, "utf8");
-  const { ts, elements, dropped } = svgToGlyphData(svg, { name: args.name, order: args.order, whiteKeep: args["white-keep"] ? Number(args["white-keep"]) : undefined });
+  const { ts, elements, dropped } = svgToGlyphData(svg, {
+    name: args.name,
+    order: args.order,
+    whiteKeep: args["white-keep"] ? Number(args["white-keep"]) : undefined,
+    surfaceFill: args["surface-fill"] || null,
+    surfaceTolerance: args["surface-tolerance"] ? Number(args["surface-tolerance"]) : undefined,
+    slabMinArea: args["slab-min-area"] ? Number(args["slab-min-area"]) : null,
+  });
   const abs = resolve(args.output);
   mkdirSync(dirname(abs), { recursive: true });
   writeFileSync(abs, ts);

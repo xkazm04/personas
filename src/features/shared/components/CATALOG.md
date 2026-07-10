@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**114 reusable components** live under `src/features/shared/components/`.
+**115 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -47,6 +47,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `HeroMesh` | _(add a `@catalog` tag)_ |
 | `InlineEditableText` | Click-to-edit inline text field. |
 | `LiveStatusDot` | Liveness dot with one shared vocabulary (off=muted, active=emerald, syncing=amber-pulse) plus an optional ping halo — used across  |
+| `MotionizedGlyph` | Traced multi-path SVG glyph that draws itself in with a center-out reveal. |
 | `Numeric` | Canonical number/percent/count display — locale + precision + unit. Use instead of raw toFixed/toLocaleString. |
 | `RelativeTime` | Live-updating "2h ago" timestamp with absolute time on hover. Use for all timestamps. |
 | `RevealItem` | RevealItem — plays a one-shot staggered fade-in for a single list/table row as it is progressively revealed; tracks entry by id so |
@@ -183,4 +184,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_114 components, 42 without a `@catalog` description._
+_115 components, 42 without a `@catalog` description._

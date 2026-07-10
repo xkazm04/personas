@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshCw, Store, Search, X, Rss, RssIcon } from 'lucide-react';
+import { RefreshCw, Store, Search, X, Rss } from 'lucide-react';
 import * as api from '@/api/events/sharedEvents';
 import { createLogger } from "@/lib/log";
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
@@ -10,6 +10,7 @@ import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscrip
 import { CatalogCard } from './CatalogCard';
 import { SubscriptionList } from './SubscriptionList';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { FEEDS_GLYPH } from '@/features/shared/glyph/glyphs/feedsGlyph';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -178,9 +179,7 @@ export function SharedEventsTab() {
             ) : (
               <div className="flex-1 flex items-center justify-center">
                 <EmptyState
-                  icon={RssIcon}
-                  iconColor="text-sky-400"
-                  iconContainerClassName="bg-sky-500/10 border-sky-500/20"
+                  glyph={FEEDS_GLYPH}
                   title={loading ? t.triggers.loading_catalog : t.triggers.no_feeds}
                   subtitle={t.triggers.no_feeds_hint}
                 />
