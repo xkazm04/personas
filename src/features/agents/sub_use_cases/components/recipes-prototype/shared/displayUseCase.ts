@@ -98,46 +98,6 @@ export function getDimLabels(t: Translations): Record<GlyphDimension, string> {
   };
 }
 
-/**
- * @deprecated Use `getHealthMeta(t)` factory instead. Kept for callers that
- * haven't migrated yet — labels will remain in English.
- */
-export const HEALTH_META: Record<UseCaseHealth, UseCaseHealthMeta> = {
-  active: {
-    label: 'Active',
-    toneText: 'text-status-success',
-    toneBg: 'bg-status-success/10',
-    toneBorder: 'border-status-success/30',
-    toneHex: '#34d399',
-    icon: null,
-  },
-  disabled: {
-    label: 'Paused',
-    toneText: 'text-foreground',
-    toneBg: 'bg-secondary/30',
-    toneBorder: 'border-border/40',
-    toneHex: '#94a3b8',
-    icon: null,
-  },
-  'needs-attention': {
-    label: 'Needs attention',
-    toneText: 'text-status-warning',
-    toneBg: 'bg-status-warning/10',
-    toneBorder: 'border-status-warning/40',
-    toneHex: '#fbbf24',
-    icon: AlertTriangle,
-  },
-};
-
-/**
- * @deprecated Use `getModeMeta(t)` factory instead.
- */
-export const MODE_META: Record<DisplayUseCase['mode'], { label: string; tone: string }> = {
-  e2e: { label: 'E2E', tone: 'text-status-success border-status-success/25 bg-status-success/10' },
-  mock: { label: 'MOCK', tone: 'text-status-warning border-status-warning/25 bg-status-warning/10' },
-  non_executable: { label: 'INFO', tone: 'text-foreground border-border/40 bg-secondary/30' },
-};
-
 export const STATE_HEX: Record<UseCaseHealth, string> = {
   active: '#34d399',
   'needs-attention': '#fbbf24',
