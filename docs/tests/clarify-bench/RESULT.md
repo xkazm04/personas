@@ -54,20 +54,32 @@ the prompt-level round cap is treated as advisory):
 | `workflow-overloaded` | 0.21 | **0.78** | +0.57 |
 | `github-issues-partial` | 0.59 | **0.78** | +0.19 |
 | `sync-two-tools` | 0.67 | **0.86** † | +0.19 |
-| `emails-vague` | 0.27 | **0.71** † | +0.44 |
+| `emails-vague` | 0.27 | **1.00** † | +0.73 |
 
-**Mean 0.48 → 0.83.** By band: controls 0.62→0.97 · medium 0.61→0.84 ·
-high/extreme 0.29→0.83.
+**Mean 0.48 → 0.85.** By band: controls 0.62→0.97 · medium 0.61→0.84 ·
+high/extreme 0.29→0.86.
 
 † `emails-vague` and `sync-two-tools` scored 0.31 / 0.53 in the first judged A/B
 because the head turn's Gmail guess leaked in and the direction qualifier was never
-asked. `dbc30ea85` fixed both, and these are the **re-judged** scores on the fixed
-build: `sync-two-tools` 0.53→**0.86** (asked direction, resolved strictly one-way,
-`required_connectors=[notion]`, no two-way machinery — the hard-fail is gone);
-`emails-vague` 0.31→**0.71** (provider now asked, no auto-send, scoped to support —
-the assumption hard-fail is gone). `emails-vague` is held to 0.71 by **under-asking**:
-it silently narrowed to a triage job and dropped the summarise + draft-reply jobs
-without surfacing them. That under-asking-on-vague is the next thing to push on.
+asked. `dbc30ea85` fixed the direction/provider hard-fails; `46312220c` then fixed
+the residual under-asking. **Re-judged (measured) scores on the fixed build:**
+- `sync-two-tools` 0.53→**0.86** — asked direction, resolved strictly one-way,
+  `required_connectors=[notion]`, no two-way machinery.
+- `emails-vague` 0.27→0.71→0.86→**1.00** — the full arc. It now asks all four
+  dimensions in ONE round: the job (select-all), provider+inbox-scope bundled into
+  one question (→ Gmail, support inbox only), and the auto-send-vs-review safety
+  question; it builds triage + label + draft-for-review (the reply job it used to
+  drop) with nothing auto-sending. Straight 3s across every dimension.
+
+### The remaining defect: the assembler drops user-confirmed connectors
+
+The final re-judge surfaced a real bug that now shows on `standup` (0.94→0.92): the
+user confirmed Slack and the capability carries a `slack_post_message` tool_hint, but
+`required_connectors` lists only `[github]`. Same class as the `google_sheets`
+omission on sales/workflow. **`assemble_agent_ir` should union into
+`required_connectors` every connector named in the clarification answers / tool_hints,
+not only those a capability emitted a `connectors` field for.** This is the top open
+follow-up; it caps a handful of otherwise-perfect builds at convergence=2.
 
 ## What each baseline failure looks like now
 
