@@ -103,7 +103,7 @@ Loop while `pool < 10` and the user hasn't said stop:
 7. **A `none` gate that carries a steer** (the user says what they wanted instead) is a re-scout order, not a rejection of the context: promote the steer to `config.md → ## User taste` if it generalizes, re-scout at the steered depth/angle, and re-propose the SAME context once before advancing the cursor. Never re-present any rejected direction.
 
 ### Phase B — Build (one Opus builder per context, Fable decides everything)
-1. **Wave plan**: group the pool's accepted directions by context → one builder per context, ≤ `config.wave_size` (default 3) concurrent. Present the wave plan in one screen; on user go (or when invoked as `/perfect build`), execute.
+1. **Wave plan**: group the pool's accepted directions by context → one builder per context, ≤ `config.wave_size` (default 3) concurrent, and **≤ 3 directions per builder brief** (a 4-direction brief exceeded one agent-session budget in round 1 — split a bigger context into two sequential builders). Present the wave plan in one screen; on user go (or when invoked as `/perfect build`), execute.
 2. **Worktree per builder** — prepared by the Director, NOT via Agent-tool isolation (those worktrees lack `node_modules`):
    ```bash
    git worktree add .claude/worktrees/perfect-<ctx> -b worktree-perfect-<ctx>
@@ -111,9 +111,13 @@ Loop while `pool < 10` and the user hasn't said stop:
    # Builders run Rust checks with the shared target: CARGO_TARGET_DIR=<main>/src-tauri/target cargo check / cargo test --lib
    ```
 3. **Brief** each builder (see template below); launch with `model: "opus"`, `subagent_type: "general-purpose"`, all briefs in one message so they run concurrently.
-4. **Mid-flight decisions**: a builder returning `DECISION NEEDED: …` gets an answer from the Director via `SendMessage` — product calls, trade-offs, and scope cuts are Fable's alone.
+4. **Mid-flight decisions**: a builder returning `DECISION NEEDED: …` gets an answer from the Director via `SendMessage` — product calls, trade-offs, and scope cuts are Fable's alone. A builder that stops without its final report gets one `SendMessage` nudge.
+   **Builder-death recovery (learned round 1 — session limits WILL kill builders):** the instant a builder dies, `git add -A && git commit --no-verify` a `wip(…)` snapshot **inside its worktree** (isolated tree — add-all is safe there; never-lose-work beats commit hygiene). Then the Director either finishes the work inline (review the WIP diff, complete gaps, split into per-direction commits along file boundaries — same-file hunks may share a commit if the message says so) or re-briefs a fresh builder after the limit resets with "continue from the WIP commit".
 5. **Review — the Director earns its title here.** Per builder branch: `git diff master...worktree-perfect-<ctx>` and review against each direction's acceptance criteria, repo conventions (shared-component catalog, design tokens, i18n keys, `invokeWithTimeout`, error registry), and taste. Verdict per direction: **merge** / **redo with notes** (SendMessage, builder fixes in place) / **drop** (`status: failed`, reason recorded). Never merge on "tests pass" alone — read the diff.
+   **Docs-vs-code check (learned round 1):** when a diff documents a behavior (contract text, formula, doc comment), grep for the code that implements it before merging — one builder shipped a beautifully-documented decay formula with the implementing SQL never written. A contract describing behavior the code doesn't have is worse than nothing.
+   **Rust gate calibration:** gate on *no NEW warnings in files this diff touched* (clippy full-crate `-D warnings` fails on hundreds of pre-existing warnings in this repo — compare against master's warnings for the same files before blaming the diff).
 6. **Merge serially**: per direction, `git merge --squash` (or cherry-pick) → ONE atomic commit on master, message `feat(<context>): <direction title>` + `Co-Authored-By` footer. Stage per-file, verify `git diff --cached --stat` matches intent (foreign pre-staged files → `git restore --staged` them). Run the config gates on master after each merge; a red gate is fixed inline before the next merge.
+   **Concurrent-master locale conflicts (learned round 1):** when another session moves the locale files under a pending cherry-pick, don't hand-merge JSON — re-apply the branch's key **adds/removes** programmatically over master's current locale files (flatten base vs branch per locale, set/delete on current, write), then regenerate `gen-types.mjs` + `split-locales.mjs` and `git add` the artifacts before `cherry-pick --continue`. Round 1's script: session scratchpad `merge-locale-keys.mjs` — recreate it from this recipe.
 7. **Doc-sync in the same turn**: user-visible changes update the mapped `docs/features/*` (+ onboarding flow / marketing module if mapped) — the Stop hook will demand it anyway.
 8. **Cleanup**: per worktree — `cmd //c rmdir` the node_modules **junction FIRST**, then `git worktree remove`, then delete the branch once its commits are on master.
 
@@ -141,6 +145,10 @@ Work ONLY in this worktree: <abs path>. Your scope is this context's files:
 
 Implement these accepted directions, one atomic commit each, message `feat(<context>): <title>`:
 <per direction: What & why · Acceptance criteria · Evidence file:line · Risks/non-goals>
+
+COMMIT EACH DIRECTION THE MOMENT IT IS DONE AND VERIFIED — never batch commits
+for the end of the session. An interrupted session must lose at most the
+direction in progress, not everything.
 
 Repo law (non-negotiable):
 - Read .claude/Design.md before any UI; reuse shared/components (CATALOG.md) — never hand-roll
