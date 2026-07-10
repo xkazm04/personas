@@ -464,13 +464,14 @@ pub(super) async fn run_session(
     }
     let session_exec_dir = SessionExecDir::new(session_exec_path);
 
-    // Build orchestration Phase 3: multi-agent resolution fan-out. Isolated,
-    // one_shot ONLY — the serial loop below is 100% untouched. Rust orchestrates
-    // a serial head (behavior_core + enumeration) → bounded parallel per-capability
-    // resolution → serial agent_ir assembly → the existing oneshot back-half.
-    if multiagent && one_shot {
+    // Build orchestration: clarify-then-fan-out. Rust orchestrates a serial head
+    // (behavior_core + enumeration) → ONE batched clarify round (interactive only;
+    // zero questions when the intent is fully specified) → bounded parallel
+    // per-capability resolution → Rust-assembled agent_ir. one_shot additionally
+    // runs the headless test/promote back-half. The serial loop below is untouched.
+    if multiagent {
         let budget = 3usize; // keeps us under the subscription rate limiter (Phase 2)
-        let result = super::fanout::run_multiagent_oneshot(
+        let result = super::fanout::run_multiagent(
             pool.clone(),
             app_handle.clone(),
             channel.clone(),
@@ -479,8 +480,11 @@ pub(super) async fn run_session(
             cli_args.clone(),
             session_exec_dir.path().to_path_buf(),
             Arc::clone(&initial_prompt),
-            String::new(), // connector_context — populated for connector fixtures later
+            raw_user_intent.clone(),
+            String::new(), // connector_context — derived from the vault inside
             budget,
+            one_shot,
+            &mut input_rx,
             cancel_flag.clone(),
             registry.clone(),
         )
