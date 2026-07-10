@@ -2121,7 +2121,15 @@
     "voice_pocket_service_desc": "اختياري. تشغيل خدمة Pocket TTS يضيف كتالوج الأصوات المدمج ويسرّع التشغيل المتكرر.",
     "voice_pocket_service_title": "متقدم: خدمة محلية",
     "voice_pocket_voices_dir_hint": "أضف صوتًا بوضع تسجيل .wav مدته 10–30 ثانية في هذا المجلد، ثم أعد الفحص. يصبح اسم الملف اسم الصوت.",
-    "voice_pocket_voices_dir_label": "مجلد الأصوات المستنسخة"
+    "voice_pocket_voices_dir_label": "مجلد الأصوات المستنسخة",
+    "voice_pocket_delete_body": "سيتم حذف التسجيل المرجعي لهذا الصوت من هذا الجهاز.",
+    "voice_pocket_delete_title": "إزالة الصوت",
+    "voice_pocket_upload_button": "اختر تسجيلاً",
+    "voice_pocket_upload_decode_failed": "تعذّرت قراءة ملف الصوت هذا — جرّب صيغة مختلفة أو أعد تصديره.",
+    "voice_pocket_upload_hint": "ارفع تسجيلاً من 10 إلى 30 ثانية لشخص واحد يتحدث بوضوح — معظم صيغ الصوت تعمل. جودة التسجيل تنتقل كما هي، لذا استخدم تسجيلاً نظيفاً.",
+    "voice_pocket_upload_name_label": "اسم الصوت",
+    "voice_pocket_upload_save": "إضافة الصوت",
+    "voice_pocket_upload_title": "أضف صوتك"
   },
   "ocr": {
     "title": "OCR",

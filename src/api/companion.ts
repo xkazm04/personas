@@ -546,6 +546,27 @@ export async function companionTtsPocketDownload(): Promise<void> {
 }
 
 /**
+ * Save an uploaded recording as a cloned voice. `audioBase64` must be a WAV
+ * the caller already converted (see `audioToReferenceWav.ts` — 24kHz mono
+ * PCM16, ≤30s); the backend validates container + size and writes it into
+ * the pocket-voices dir.
+ */
+export async function companionTtsPocketImportVoice(
+  voiceId: string,
+  audioBase64: string,
+): Promise<PocketVoiceEntry> {
+  return invoke<PocketVoiceEntry>('companion_tts_pocket_import_voice', {
+    voiceId,
+    audioBase64,
+  });
+}
+
+/** Remove a cloned voice's reference recording. Idempotent. */
+export async function companionTtsPocketDeleteVoice(voiceId: string): Promise<void> {
+  return invoke<void>('companion_tts_pocket_delete_voice', { voiceId });
+}
+
+/**
  * One voice reported by the Pocket TTS service. `category` is `'cloned'`
  * for the user's own `.safetensors` embeddings (the headline feature) and
  * `'premade'` for the built-in Kyutai catalog.

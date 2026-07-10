@@ -2121,7 +2121,15 @@
     "voice_pocket_service_desc": "वैकल्पिक। चल रही Pocket TTS सेवा बिल्ट-इन वॉइस कैटलॉग और तेज़ बार-बार प्लेबैक जोड़ती है।",
     "voice_pocket_service_title": "उन्नत: लोकल सेवा",
     "voice_pocket_voices_dir_hint": "इस फ़ोल्डर में 10–30 सेकंड की .wav रिकॉर्डिंग डालकर आवाज़ जोड़ें, फिर दोबारा जाँचें। फ़ाइल का नाम आवाज़ का नाम बन जाता है।",
-    "voice_pocket_voices_dir_label": "क्लोन की गई आवाज़ों का फ़ोल्डर"
+    "voice_pocket_voices_dir_label": "क्लोन की गई आवाज़ों का फ़ोल्डर",
+    "voice_pocket_delete_body": "इस आवाज़ की रेफरेंस रिकॉर्डिंग इस कंप्यूटर से डिलीट हो जाएगी।",
+    "voice_pocket_delete_title": "आवाज़ हटाएं",
+    "voice_pocket_upload_button": "रिकॉर्डिंग चुनें",
+    "voice_pocket_upload_decode_failed": "यह ऑडियो फ़ाइल पढ़ी नहीं जा सकी — कोई दूसरा फ़ॉर्मेट आज़माएं या इसे फिर से एक्सपोर्ट करें।",
+    "voice_pocket_upload_hint": "एक व्यक्ति की स्पष्ट रूप से बोली गई 10–30 सेकंड की रिकॉर्डिंग अपलोड करें — ज़्यादातर ऑडियो फ़ॉर्मेट चलते हैं। रिकॉर्डिंग की क्वालिटी आगे भी बनी रहती है, इसलिए एक साफ़ टेक इस्तेमाल करें।",
+    "voice_pocket_upload_name_label": "आवाज़ का नाम",
+    "voice_pocket_upload_save": "आवाज़ जोड़ें",
+    "voice_pocket_upload_title": "अपनी आवाज़ जोड़ें"
   },
   "ocr": {
     "title": "OCR",

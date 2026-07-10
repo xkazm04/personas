@@ -13403,7 +13403,15 @@
       "voice_pocket_service_desc": "可选。运行中的 Pocket TTS 服务可提供内置语音目录，并加快重复播放速度。",
       "voice_pocket_service_title": "高级：本地服务",
       "voice_pocket_voices_dir_hint": "将一段 10–30 秒的 .wav 录音放入此文件夹即可添加语音，然后重新检查。文件名将作为语音名称。",
-      "voice_pocket_voices_dir_label": "克隆语音文件夹"
+      "voice_pocket_voices_dir_label": "克隆语音文件夹",
+      "voice_pocket_delete_body": "此声音的参考录音将从本机中删除。",
+      "voice_pocket_delete_title": "移除声音",
+      "voice_pocket_upload_button": "选择录音",
+      "voice_pocket_upload_decode_failed": "无法读取该音频文件——请尝试其他格式或重新导出。",
+      "voice_pocket_upload_hint": "上传一段 10–30 秒、单人清晰讲话的录音——大多数音频格式均可使用。录音的音质会直接沿用，请使用清晰的录音。",
+      "voice_pocket_upload_name_label": "声音名称",
+      "voice_pocket_upload_save": "添加声音",
+      "voice_pocket_upload_title": "添加你的声音"
     },
     "ocr": {
       "title": "OCR",

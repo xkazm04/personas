@@ -13403,7 +13403,15 @@
       "voice_pocket_service_desc": "Tùy chọn. Một dịch vụ Pocket TTS đang chạy sẽ bổ sung danh mục giọng nói tích hợp sẵn và phát lại nhanh hơn.",
       "voice_pocket_service_title": "Nâng cao: dịch vụ cục bộ",
       "voice_pocket_voices_dir_hint": "Thêm một giọng nói bằng cách đặt tệp ghi âm .wav dài 10–30 giây vào thư mục này, sau đó kiểm tra lại. Tên tệp sẽ trở thành tên giọng nói.",
-      "voice_pocket_voices_dir_label": "Thư mục giọng nói đã nhân bản"
+      "voice_pocket_voices_dir_label": "Thư mục giọng nói đã nhân bản",
+      "voice_pocket_delete_body": "Bản ghi âm tham chiếu cho giọng nói này sẽ bị xóa khỏi máy tính này.",
+      "voice_pocket_delete_title": "Xóa giọng nói",
+      "voice_pocket_upload_button": "Chọn bản ghi âm",
+      "voice_pocket_upload_decode_failed": "Không thể đọc tệp âm thanh đó — hãy thử định dạng khác hoặc xuất lại tệp.",
+      "voice_pocket_upload_hint": "Tải lên bản ghi âm dài 10–30 giây của một người nói rõ ràng — hầu hết các định dạng âm thanh đều dùng được. Chất lượng bản ghi sẽ được giữ nguyên, vì vậy hãy dùng bản ghi sạch.",
+      "voice_pocket_upload_name_label": "Tên giọng nói",
+      "voice_pocket_upload_save": "Thêm giọng nói",
+      "voice_pocket_upload_title": "Thêm giọng nói của bạn"
     },
     "ocr": {
       "title": "OCR",

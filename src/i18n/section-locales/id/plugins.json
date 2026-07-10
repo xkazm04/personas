@@ -2121,7 +2121,15 @@
     "voice_pocket_service_desc": "Opsional. Layanan Pocket TTS yang berjalan menambahkan katalog suara bawaan dan pemutaran ulang yang lebih cepat.",
     "voice_pocket_service_title": "Lanjutan: layanan lokal",
     "voice_pocket_voices_dir_hint": "Tambahkan suara dengan memasukkan rekaman .wav berdurasi 10–30 detik ke folder ini, lalu periksa ulang. Nama file akan menjadi nama suara.",
-    "voice_pocket_voices_dir_label": "Folder suara hasil kloning"
+    "voice_pocket_voices_dir_label": "Folder suara hasil kloning",
+    "voice_pocket_delete_body": "Rekaman referensi untuk suara ini akan dihapus dari komputer ini.",
+    "voice_pocket_delete_title": "Hapus suara",
+    "voice_pocket_upload_button": "Pilih rekaman",
+    "voice_pocket_upload_decode_failed": "File audio tidak dapat dibaca — coba format lain atau ekspor ulang.",
+    "voice_pocket_upload_hint": "Unggah rekaman 10–30 detik satu orang berbicara dengan jelas — sebagian besar format audio didukung. Kualitas rekaman akan terbawa, jadi gunakan rekaman yang bersih.",
+    "voice_pocket_upload_name_label": "Nama suara",
+    "voice_pocket_upload_save": "Tambah suara",
+    "voice_pocket_upload_title": "Tambahkan suara Anda"
   },
   "ocr": {
     "title": "OCR",

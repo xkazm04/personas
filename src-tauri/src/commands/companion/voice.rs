@@ -12,6 +12,7 @@
 
 use std::sync::Arc;
 
+use base64::Engine;
 use serde::Serialize;
 use tauri::{AppHandle, State};
 
@@ -213,6 +214,35 @@ pub async fn companion_tts_list_pocket_voices(
 ) -> Result<Vec<tts::pocket::PocketVoiceEntry>, AppError> {
     require_auth(&state).await?;
     tts::pocket::list_voices().await
+}
+
+/// Save an uploaded voice recording as a Pocket cloned voice. The payload is
+/// a base64 WAV the frontend already converted (Web Audio API → 24kHz mono
+/// PCM16, trimmed to ~30s), so this decodes, validates, and writes it into
+/// the pocket-voices dir under `voice_id`.
+#[tauri::command]
+pub async fn companion_tts_pocket_import_voice(
+    state: State<'_, Arc<AppState>>,
+    voice_id: String,
+    audio_base64: String,
+) -> Result<tts::pocket::PocketVoiceEntry, AppError> {
+    require_auth(&state).await?;
+    let voice_id = validate_voice_id(&voice_id)?;
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(audio_base64.as_bytes())
+        .map_err(|e| AppError::Validation(format!("voice upload: invalid base64: {e}")))?;
+    tts::pocket::import_voice(voice_id, &bytes)
+}
+
+/// Remove a Pocket cloned voice's reference recording. Idempotent.
+#[tauri::command]
+pub async fn companion_tts_pocket_delete_voice(
+    state: State<'_, Arc<AppState>>,
+    voice_id: String,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+    let voice_id = validate_voice_id(&voice_id)?;
+    tts::pocket::delete_voice(voice_id)
 }
 
 /// One-click download + extract of the Pocket TTS sidecar binary (arch-aware:

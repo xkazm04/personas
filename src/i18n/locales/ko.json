@@ -13403,7 +13403,15 @@
       "voice_pocket_service_desc": "선택 사항입니다. Pocket TTS 서비스를 실행하면 기본 제공 음성 카탈로그가 추가되고 반복 재생 속도가 빨라집니다.",
       "voice_pocket_service_title": "고급: 로컬 서비스",
       "voice_pocket_voices_dir_hint": "10~30초 분량의 .wav 녹음 파일을 이 폴더에 넣은 뒤 다시 확인하면 음성이 추가됩니다. 파일 이름이 음성 이름으로 사용됩니다.",
-      "voice_pocket_voices_dir_label": "복제된 음성 폴더"
+      "voice_pocket_voices_dir_label": "복제된 음성 폴더",
+      "voice_pocket_delete_body": "이 목소리의 참조 녹음 파일이 이 컴퓨터에서 삭제됩니다.",
+      "voice_pocket_delete_title": "목소리 삭제",
+      "voice_pocket_upload_button": "녹음 파일 선택",
+      "voice_pocket_upload_decode_failed": "해당 오디오 파일을 읽을 수 없습니다. 다른 형식을 사용하거나 다시 내보내 보세요.",
+      "voice_pocket_upload_hint": "한 사람이 또렷하게 말하는 10~30초 분량의 녹음을 업로드하세요. 대부분의 오디오 형식을 지원합니다. 녹음 품질이 그대로 반영되므로 깨끗한 음원을 사용하세요.",
+      "voice_pocket_upload_name_label": "목소리 이름",
+      "voice_pocket_upload_save": "목소리 추가",
+      "voice_pocket_upload_title": "내 목소리 추가"
     },
     "ocr": {
       "title": "OCR",

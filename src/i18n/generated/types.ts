@@ -13555,6 +13555,14 @@ export type Translations = {
       voice_pocket_voices_dir_hint: string;
       voice_pocket_service_title: string;
       voice_pocket_service_desc: string;
+      voice_pocket_upload_title: string;
+      voice_pocket_upload_hint: string;
+      voice_pocket_upload_button: string;
+      voice_pocket_upload_name_label: string;
+      voice_pocket_upload_save: string;
+      voice_pocket_upload_decode_failed: string;
+      voice_pocket_delete_title: string;
+      voice_pocket_delete_body: string;
       voice_kokoro_setup_title: string;
       voice_kokoro_setup_desc: string;
       voice_kokoro_engine_label: string;

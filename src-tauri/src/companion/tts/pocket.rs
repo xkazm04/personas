@@ -119,6 +119,57 @@ fn voice_wav_path(voice_id: &str) -> Option<PathBuf> {
     p.is_file().then_some(p)
 }
 
+/// Uploaded reference recordings are small by construction (the frontend
+/// resamples to 24kHz mono PCM16 and trims to ~30s ≈ 1.4MB); 10MB is a
+/// generous ceiling that still rejects accidental album-length uploads.
+const VOICE_WAV_MAX_BYTES: usize = 10 * 1024 * 1024;
+
+/// Save an uploaded reference recording as a cloned voice. The frontend
+/// converts whatever the user picked (mp3/wav/flac/…) into a 24kHz mono
+/// PCM16 WAV via the Web Audio API before upload, so this only needs to
+/// sanity-check the container and size — `voice_id` is validated by the
+/// command layer (same charset rule as every other engine's voice ids).
+pub fn import_voice(voice_id: &str, wav_bytes: &[u8]) -> Result<PocketVoiceEntry, AppError> {
+    if wav_bytes.len() > VOICE_WAV_MAX_BYTES {
+        return Err(AppError::Validation(format!(
+            "voice recording too large ({} bytes, max {})",
+            wav_bytes.len(),
+            VOICE_WAV_MAX_BYTES
+        )));
+    }
+    if wav_bytes.len() < 44 || &wav_bytes[0..4] != b"RIFF" || &wav_bytes[8..12] != b"WAVE" {
+        return Err(AppError::Validation(
+            "voice recording is not a WAV file — the upload conversion failed".into(),
+        ));
+    }
+    let dir = voices_dir()?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| AppError::Internal(format!("create voices dir: {e}")))?;
+    // Write via temp + rename so a mid-write crash can't leave a truncated
+    // wav that the sidecar would then feed to the encoder.
+    let dest = dir.join(format!("{voice_id}.wav"));
+    let tmp = dir.join(format!("{voice_id}.wav.partial"));
+    std::fs::write(&tmp, wav_bytes)
+        .map_err(|e| AppError::Internal(format!("write voice wav: {e}")))?;
+    std::fs::rename(&tmp, &dest)
+        .map_err(|e| AppError::Internal(format!("finalize voice wav: {e}")))?;
+    Ok(PocketVoiceEntry {
+        voice_id: voice_id.to_string(),
+        name: voice_id.to_string(),
+        category: "cloned".into(),
+    })
+}
+
+/// Remove a cloned voice's reference wav. Idempotent — deleting a voice
+/// that doesn't exist (or was never local) returns Ok.
+pub fn delete_voice(voice_id: &str) -> Result<(), AppError> {
+    if let Some(p) = voice_wav_path(voice_id) {
+        std::fs::remove_file(&p)
+            .map_err(|e| AppError::Internal(format!("delete voice wav: {e}")))?;
+    }
+    Ok(())
+}
+
 /// Enumerate the cloned voices (wav stems in `voices_dir`).
 fn list_local_voices() -> Vec<PocketVoiceEntry> {
     let Ok(dir) = voices_dir() else { return vec![] };

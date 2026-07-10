@@ -2121,7 +2121,15 @@
     "voice_pocket_service_desc": "Optional. Ein laufender Pocket-TTS-Dienst ergänzt den integrierten Stimmenkatalog und beschleunigt die wiederholte Wiedergabe.",
     "voice_pocket_service_title": "Erweitert: lokaler Dienst",
     "voice_pocket_voices_dir_hint": "Füge eine Stimme hinzu, indem du eine 10–30 Sekunden lange .wav-Aufnahme in diesen Ordner legst, und prüfe dann erneut. Der Dateiname wird zum Stimmnamen.",
-    "voice_pocket_voices_dir_label": "Ordner für geklonte Stimmen"
+    "voice_pocket_voices_dir_label": "Ordner für geklonte Stimmen",
+    "voice_pocket_delete_body": "Die Referenzaufnahme für diese Stimme wird von diesem Computer gelöscht.",
+    "voice_pocket_delete_title": "Stimme entfernen",
+    "voice_pocket_upload_button": "Aufnahme auswählen",
+    "voice_pocket_upload_decode_failed": "Diese Audiodatei konnte nicht gelesen werden — versuche ein anderes Format oder exportiere sie erneut.",
+    "voice_pocket_upload_hint": "Lade eine 10–30 Sekunden lange Aufnahme einer einzelnen, klar sprechenden Person hoch — die meisten Audioformate funktionieren. Die Qualität der Aufnahme wird übernommen, verwende also eine saubere Aufnahme.",
+    "voice_pocket_upload_name_label": "Stimmenname",
+    "voice_pocket_upload_save": "Stimme hinzufügen",
+    "voice_pocket_upload_title": "Deine Stimme hinzufügen"
   },
   "ocr": {
     "title": "OCR",

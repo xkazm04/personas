@@ -2121,7 +2121,15 @@
     "voice_pocket_service_desc": "Volitelné. Spuštěná služba Pocket TTS přidává vestavěný katalog hlasů a rychlejší opakované přehrávání.",
     "voice_pocket_service_title": "Pokročilé: místní služba",
     "voice_pocket_voices_dir_hint": "Hlas přidáte přetažením 10–30sekundové nahrávky .wav do této složky a následnou kontrolou. Název souboru se stane názvem hlasu.",
-    "voice_pocket_voices_dir_label": "Složka klonovaných hlasů"
+    "voice_pocket_voices_dir_label": "Složka klonovaných hlasů",
+    "voice_pocket_delete_body": "Referenční nahrávka tohoto hlasu bude z tohoto počítače odstraněna.",
+    "voice_pocket_delete_title": "Odebrat hlas",
+    "voice_pocket_upload_button": "Vybrat nahrávku",
+    "voice_pocket_upload_decode_failed": "Tento zvukový soubor se nepodařilo přečíst — zkuste jiný formát nebo jej znovu exportujte.",
+    "voice_pocket_upload_hint": "Nahrajte 10–30sekundovou nahrávku jedné osoby mluvící zřetelně — funguje většina zvukových formátů. Kvalita nahrávky se přenese do výsledku, použijte proto čistý záznam.",
+    "voice_pocket_upload_name_label": "Název hlasu",
+    "voice_pocket_upload_save": "Přidat hlas",
+    "voice_pocket_upload_title": "Přidejte svůj hlas"
   },
   "ocr": {
     "title": "OCR",

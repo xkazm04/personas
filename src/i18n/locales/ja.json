@@ -13403,7 +13403,15 @@
       "voice_pocket_service_desc": "任意。Pocket TTSサービスを実行すると、内蔵の音声カタログが追加され、繰り返し再生が高速化されます。",
       "voice_pocket_service_title": "詳細設定: ローカルサービス",
       "voice_pocket_voices_dir_hint": "10〜30秒の.wav録音をこのフォルダにドロップして音声を追加し、再チェックしてください。ファイル名が音声名になります。",
-      "voice_pocket_voices_dir_label": "クローン音声フォルダ"
+      "voice_pocket_voices_dir_label": "クローン音声フォルダ",
+      "voice_pocket_delete_body": "この声の参照録音がこのコンピューターから削除されます。",
+      "voice_pocket_delete_title": "音声を削除",
+      "voice_pocket_upload_button": "録音を選択",
+      "voice_pocket_upload_decode_failed": "その音声ファイルを読み込めませんでした。別の形式で試すか、再エクスポートしてください。",
+      "voice_pocket_upload_hint": "1人が明瞭に話している10〜30秒の録音をアップロードしてください。ほとんどの音声形式に対応しています。録音の音質がそのまま反映されるため、クリアな音源を使用してください。",
+      "voice_pocket_upload_name_label": "音声名",
+      "voice_pocket_upload_save": "音声を追加",
+      "voice_pocket_upload_title": "あなたの声を追加"
     },
     "ocr": {
       "title": "OCR",

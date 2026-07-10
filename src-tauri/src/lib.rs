@@ -2666,6 +2666,8 @@ pub fn run() {
             commands::companion::voice::companion_tts_pocket_status,
             commands::companion::voice::companion_tts_list_pocket_voices,
             commands::companion::voice::companion_tts_pocket_download,
+            commands::companion::voice::companion_tts_pocket_import_voice,
+            commands::companion::voice::companion_tts_pocket_delete_voice,
             commands::companion::stt::companion_stt_transcribe,
             commands::companion::stt::companion_stt_list_models,
             commands::companion::stt::companion_stt_download_model,

@@ -13403,7 +13403,15 @@
       "voice_pocket_service_desc": "ঐচ্ছিক। একটি চলমান Pocket TTS সার্ভিস বিল্ট-ইন ভয়েস ক্যাটালগ এবং দ্রুততর পুনঃপ্লেব্যাক যোগ করে।",
       "voice_pocket_service_title": "উন্নত: লোকাল সার্ভিস",
       "voice_pocket_voices_dir_hint": "এই ফোল্ডারে ১০–৩০ সেকেন্ডের একটি .wav রেকর্ডিং রেখে একটি ভয়েস যোগ করুন, তারপর পুনরায় চেক করুন। ফাইলের নামই ভয়েসের নাম হয়ে যাবে।",
-      "voice_pocket_voices_dir_label": "ক্লোন করা ভয়েস ফোল্ডার"
+      "voice_pocket_voices_dir_label": "ক্লোন করা ভয়েস ফোল্ডার",
+      "voice_pocket_delete_body": "এই ভয়েসের রেফারেন্স রেকর্ডিং এই কম্পিউটার থেকে মুছে ফেলা হবে।",
+      "voice_pocket_delete_title": "ভয়েস মুছুন",
+      "voice_pocket_upload_button": "রেকর্ডিং বেছে নিন",
+      "voice_pocket_upload_decode_failed": "সেই অডিও ফাইলটি পড়া যায়নি — অন্য ফরম্যাট চেষ্টা করুন বা পুনরায় এক্সপোর্ট করুন।",
+      "voice_pocket_upload_hint": "একজন ব্যক্তির স্পষ্টভাবে কথা বলার ১০-৩০ সেকেন্ডের রেকর্ডিং আপলোড করুন — বেশিরভাগ অডিও ফরম্যাট কাজ করে। রেকর্ডিংয়ের গুণমান বজায় থাকে, তাই একটি পরিষ্কার টেক ব্যবহার করুন।",
+      "voice_pocket_upload_name_label": "ভয়েসের নাম",
+      "voice_pocket_upload_save": "ভয়েস যোগ করুন",
+      "voice_pocket_upload_title": "আপনার ভয়েস যোগ করুন"
     },
     "ocr": {
       "title": "OCR",
