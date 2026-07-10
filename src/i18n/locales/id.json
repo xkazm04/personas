@@ -12825,7 +12825,6 @@
       "sensory_cli_reads_empty_hint": "When a persona with CLI awareness opted in fires while you're mid-conversation in `claude`, the read will be logged here.",
       "sensory_cli_reads_row_summary": "{persona} read {count} turns",
       "voice_engine_title": "Engine",
-      "voice_engine_desc": "Cloud (ElevenLabs) is the default. Piper runs locally on your machine — no network, no API key — but needs a one-time install.",
       "voice_engine_elevenlabs": "ElevenLabs",
       "voice_engine_elevenlabs_caption": "Cloud, premium quality, ~70 languages",
       "voice_engine_piper": "Piper",
@@ -13418,7 +13417,8 @@
       "voice_pocket_upload_save": "Tambah suara",
       "voice_pocket_upload_title": "Tambahkan suara Anda",
       "voice_pocket_hf_gate_desc": "Mengelola suara kloning Anda sendiri memerlukan token akses Hugging Face di Credential Vault — token ini mengaitkan lisensi model kloning suara dengan akun Anda. Tambahkan kredensial Hugging Face, lalu kembali ke sini.",
-      "voice_pocket_hf_gate_title": "Akun Hugging Face diperlukan"
+      "voice_pocket_hf_gate_title": "Akun Hugging Face diperlukan",
+      "voice_engine_desc": "Kedua mesin berjalan secara lokal di perangkat Anda — tanpa jaringan, tanpa kunci API — setelah instalasi satu kali. Kokoro adalah pilihan default yang sudah matang; Pocket bersifat eksperimental dan dapat berbicara dengan suara yang dikloning dari rekaman Anda sendiri."
     },
     "ocr": {
       "title": "OCR",

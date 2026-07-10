@@ -1538,7 +1538,6 @@
     "sensory_cli_reads_empty_hint": "When a persona with CLI awareness opted in fires while you're mid-conversation in `claude`, the read will be logged here.",
     "sensory_cli_reads_row_summary": "{persona} read {count} turns",
     "voice_engine_title": "Engine",
-    "voice_engine_desc": "Cloud (ElevenLabs) is the default. Piper runs locally on your machine — no network, no API key — but needs a one-time install.",
     "voice_engine_elevenlabs": "ElevenLabs",
     "voice_engine_elevenlabs_caption": "Cloud, premium quality, ~70 languages",
     "voice_engine_piper": "Piper",
@@ -2131,7 +2130,8 @@
     "voice_pocket_upload_save": "إضافة الصوت",
     "voice_pocket_upload_title": "أضف صوتك",
     "voice_pocket_hf_gate_desc": "لإدارة أصواتك المستنسخة الخاصة، يلزم توفر رمز وصول Hugging Face في خزنة بيانات الاعتماد — فهو يربط ترخيص نموذج استنساخ الصوت بحسابك. أضف بيانات اعتماد Hugging Face، ثم عد إلى هنا.",
-    "voice_pocket_hf_gate_title": "مطلوب حساب Hugging Face"
+    "voice_pocket_hf_gate_title": "مطلوب حساب Hugging Face",
+    "voice_engine_desc": "يعمل كلا المحركين محليًا على جهازك — بدون اتصال بالإنترنت، بدون مفتاح API — بعد تثبيت لمرة واحدة. Kokoro هو الخيار الافتراضي المصقول؛ أما Pocket فهو تجريبي ويمكنه التحدث بصوت مستنسخ من تسجيلك الخاص."
   },
   "ocr": {
     "title": "OCR",

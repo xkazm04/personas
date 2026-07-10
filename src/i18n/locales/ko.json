@@ -12825,7 +12825,6 @@
       "sensory_cli_reads_empty_hint": "When a persona with CLI awareness opted in fires while you're mid-conversation in `claude`, the read will be logged here.",
       "sensory_cli_reads_row_summary": "{persona} read {count} turns",
       "voice_engine_title": "Engine",
-      "voice_engine_desc": "Cloud (ElevenLabs) is the default. Piper runs locally on your machine — no network, no API key — but needs a one-time install.",
       "voice_engine_elevenlabs": "ElevenLabs",
       "voice_engine_elevenlabs_caption": "Cloud, premium quality, ~70 languages",
       "voice_engine_piper": "Piper",
@@ -13418,7 +13417,8 @@
       "voice_pocket_upload_save": "목소리 추가",
       "voice_pocket_upload_title": "내 목소리 추가",
       "voice_pocket_hf_gate_desc": "직접 복제한 음성을 관리하려면 자격 증명 보관함(Credential Vault)에 Hugging Face 액세스 토큰이 필요합니다. 이 토큰은 음성 복제 모델 라이선스를 사용자 계정과 연결합니다. Hugging Face 자격 증명을 추가한 뒤 다시 돌아오세요.",
-      "voice_pocket_hf_gate_title": "Hugging Face 계정이 필요합니다"
+      "voice_pocket_hf_gate_title": "Hugging Face 계정이 필요합니다",
+      "voice_engine_desc": "두 엔진 모두 한 번만 설치하면 네트워크나 API 키 없이 기기에서 로컬로 실행됩니다. Kokoro는 완성도 높은 기본 엔진이며, Pocket은 실험적인 엔진으로 본인의 녹음에서 복제한 목소리로 말할 수 있습니다."
     },
     "ocr": {
       "title": "OCR",

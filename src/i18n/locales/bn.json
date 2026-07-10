@@ -12825,7 +12825,6 @@
       "sensory_cli_reads_empty_hint": "When a persona with CLI awareness opted in fires while you're mid-conversation in `claude`, the read will be logged here.",
       "sensory_cli_reads_row_summary": "{persona} read {count} turns",
       "voice_engine_title": "Engine",
-      "voice_engine_desc": "Cloud (ElevenLabs) is the default. Piper runs locally on your machine — no network, no API key — but needs a one-time install.",
       "voice_engine_elevenlabs": "ElevenLabs",
       "voice_engine_elevenlabs_caption": "Cloud, premium quality, ~70 languages",
       "voice_engine_piper": "Piper",
@@ -13418,7 +13417,8 @@
       "voice_pocket_upload_save": "ভয়েস যোগ করুন",
       "voice_pocket_upload_title": "আপনার ভয়েস যোগ করুন",
       "voice_pocket_hf_gate_desc": "নিজের ক্লোন করা ভয়েস পরিচালনা করতে ক্রেডেনশিয়াল ভল্টে একটি Hugging Face অ্যাক্সেস টোকেন প্রয়োজন — এটি ভয়েস-ক্লোনিং মডেলের লাইসেন্সকে আপনার অ্যাকাউন্টের সাথে সংযুক্ত করে। একটি Hugging Face ক্রেডেনশিয়াল যোগ করুন, তারপর এখানে ফিরে আসুন।",
-      "voice_pocket_hf_gate_title": "Hugging Face অ্যাকাউন্ট প্রয়োজন"
+      "voice_pocket_hf_gate_title": "Hugging Face অ্যাকাউন্ট প্রয়োজন",
+      "voice_engine_desc": "উভয় ইঞ্জিনই আপনার ডিভাইসে স্থানীয়ভাবে চলে — কোনো নেটওয়ার্ক নেই, কোনো API কী নেই — একবার ইনস্টল করার পর। Kokoro হলো পরিশীলিত ডিফল্ট; Pocket পরীক্ষামূলক এবং আপনার নিজের রেকর্ডিং থেকে ক্লোন করা কণ্ঠে কথা বলতে পারে।"
     },
     "ocr": {
       "title": "OCR",

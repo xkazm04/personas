@@ -13524,7 +13524,7 @@
       "voice_settings_default": "Default",
       "voice_settings_reset": "Reset to defaults",
       "voice_engine_title": "Engine",
-      "voice_engine_desc": "Cloud (ElevenLabs) is the default. Kokoro and Piper run locally on your machine — no network, no API key — but need a one-time install. Kokoro sounds noticeably more natural; Piper is lighter and covers more languages.",
+      "voice_engine_desc": "Both engines run locally on your machine — no network, no API key — after a one-time install. Kokoro is the polished default; Pocket is experimental and can speak with a voice cloned from your own recording.",
       "voice_engine_elevenlabs": "ElevenLabs",
       "voice_engine_elevenlabs_caption": "Cloud, premium quality, ~70 languages",
       "voice_engine_kokoro": "Kokoro",

@@ -12825,7 +12825,6 @@
       "sensory_cli_reads_empty_hint": "When a persona with CLI awareness opted in fires while you're mid-conversation in `claude`, the read will be logged here.",
       "sensory_cli_reads_row_summary": "{persona} read {count} turns",
       "voice_engine_title": "Engine",
-      "voice_engine_desc": "Cloud (ElevenLabs) is the default. Piper runs locally on your machine — no network, no API key — but needs a one-time install.",
       "voice_engine_elevenlabs": "ElevenLabs",
       "voice_engine_elevenlabs_caption": "Cloud, premium quality, ~70 languages",
       "voice_engine_piper": "Piper",
@@ -13418,7 +13417,8 @@
       "voice_pocket_upload_save": "Thêm giọng nói",
       "voice_pocket_upload_title": "Thêm giọng nói của bạn",
       "voice_pocket_hf_gate_desc": "Để tự quản lý các giọng nói đã nhân bản của bạn, cần có mã truy cập Hugging Face trong Kho lưu trữ thông tin xác thực — mã này gắn giấy phép của mô hình nhân bản giọng nói với tài khoản của bạn. Hãy thêm thông tin xác thực Hugging Face, sau đó quay lại đây.",
-      "voice_pocket_hf_gate_title": "Yêu cầu tài khoản Hugging Face"
+      "voice_pocket_hf_gate_title": "Yêu cầu tài khoản Hugging Face",
+      "voice_engine_desc": "Cả hai công cụ đều chạy cục bộ trên máy của bạn — không cần mạng, không cần khóa API — sau khi cài đặt một lần. Kokoro là tùy chọn mặc định hoàn thiện; Pocket mang tính thử nghiệm và có thể nói bằng giọng nói được nhân bản từ bản ghi âm của chính bạn."
     },
     "ocr": {
       "title": "OCR",

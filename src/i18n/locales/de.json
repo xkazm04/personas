@@ -12825,7 +12825,6 @@
       "sensory_cli_reads_empty_hint": "When a persona with CLI awareness opted in fires while you're mid-conversation in `claude`, the read will be logged here.",
       "sensory_cli_reads_row_summary": "{persona} read {count} turns",
       "voice_engine_title": "Engine",
-      "voice_engine_desc": "Cloud (ElevenLabs) is the default. Piper runs locally on your machine — no network, no API key — but needs a one-time install.",
       "voice_engine_elevenlabs": "ElevenLabs",
       "voice_engine_elevenlabs_caption": "Cloud, premium quality, ~70 languages",
       "voice_engine_piper": "Piper",
@@ -13418,7 +13417,8 @@
       "voice_pocket_upload_save": "Stimme hinzufügen",
       "voice_pocket_upload_title": "Deine Stimme hinzufügen",
       "voice_pocket_hf_gate_desc": "Zum Verwalten Ihrer eigenen geklonten Stimmen ist ein Hugging-Face-Zugriffstoken im Anmeldedaten-Tresor erforderlich — es verknüpft die Lizenz des Voice-Cloning-Modells mit Ihrem Konto. Fügen Sie eine Hugging-Face-Anmeldeinformation hinzu und kehren Sie dann hierher zurück.",
-      "voice_pocket_hf_gate_title": "Hugging-Face-Konto erforderlich"
+      "voice_pocket_hf_gate_title": "Hugging-Face-Konto erforderlich",
+      "voice_engine_desc": "Beide Engines laufen lokal auf Ihrem Gerät — ohne Netzwerk, ohne API-Schlüssel — nach einer einmaligen Installation. Kokoro ist die ausgereifte Standardoption; Pocket ist experimentell und kann mit einer aus Ihrer eigenen Aufnahme geklonten Stimme sprechen."
     },
     "ocr": {
       "title": "OCR",

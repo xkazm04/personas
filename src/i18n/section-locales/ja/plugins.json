@@ -1538,7 +1538,6 @@
     "sensory_cli_reads_empty_hint": "When a persona with CLI awareness opted in fires while you're mid-conversation in `claude`, the read will be logged here.",
     "sensory_cli_reads_row_summary": "{persona} read {count} turns",
     "voice_engine_title": "Engine",
-    "voice_engine_desc": "Cloud (ElevenLabs) is the default. Piper runs locally on your machine — no network, no API key — but needs a one-time install.",
     "voice_engine_elevenlabs": "ElevenLabs",
     "voice_engine_elevenlabs_caption": "Cloud, premium quality, ~70 languages",
     "voice_engine_piper": "Piper",
@@ -2131,7 +2130,8 @@
     "voice_pocket_upload_save": "音声を追加",
     "voice_pocket_upload_title": "あなたの声を追加",
     "voice_pocket_hf_gate_desc": "自分のクローン音声を管理するには、Credential Vault（認証情報保管庫）に Hugging Face アクセストークンが必要です。これにより、音声クローンモデルのライセンスがあなたのアカウントに紐付けられます。Hugging Face の認証情報を追加してから、こちらに戻ってきてください。",
-    "voice_pocket_hf_gate_title": "Hugging Face アカウントが必要です"
+    "voice_pocket_hf_gate_title": "Hugging Face アカウントが必要です",
+    "voice_engine_desc": "どちらのエンジンもお使いのマシン上でローカルに動作します — ネットワーク不要、APIキー不要 — 一度インストールするだけです。Kokoroは洗練されたデフォルトで、Pocketは実験的な機能で、自分の録音から複製した声で話すことができます。"
   },
   "ocr": {
     "title": "OCR",
