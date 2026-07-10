@@ -33,6 +33,7 @@ import { KpiTile, type KpiTrend } from '@/features/overview/components/shared/Kp
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
+import { computeSeriesTrendPct } from '@/features/overview/libs/computeTrends';
 import FleetOptimizationCard from './cards/FleetOptimizationCard';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { TrafficErrorsChart } from '@/features/overview/components/dashboard/widgets/TrafficErrorsChart';
@@ -530,19 +531,23 @@ export const VitalsConsole = memo(function VitalsConsole({
   personaName: string | null;
 }) {
   const { t, language } = useTranslation();
+  const { effectiveDays, compareEnabled } = useOverviewFilterValues();
 
-  // Recent-momentum delta for the Runs tile: compare the back half of the
-  // selected window against the front half. Gives the cumulative total a
-  // direction-of-travel signal without a backend period-comparison query.
+  // Direction-of-travel for the Runs tile, using a REAL prior-period comparison
+  // (the same machinery the Execution Metrics compare path uses — see
+  // computeSeriesTrendPct / splitComparisonPeriods in overview/libs). It only
+  // yields a trend when the loaded window genuinely spans two periods, i.e. the
+  // pipeline fetched at 2× (compare mode). When compare is off there is no
+  // honest prior period, so the tile shows no arrow rather than the old
+  // front-half/back-half heuristic that lied over a single window.
   const runsTrend = useMemo<KpiTrend | null>(() => {
-    if (points.length < 4) return null;
-    const mid = Math.floor(points.length / 2);
-    const sum = (arr: typeof points) => arr.reduce((s, p) => s + p.total_executions, 0);
-    const prev = sum(points.slice(0, mid));
-    const recent = sum(points.slice(mid));
-    if (prev === 0) return null;
-    return { pct: ((recent - prev) / prev) * 100, invertColor: false };
-  }, [points]);
+    const pct = computeSeriesTrendPct(
+      points.map((p) => p.total_executions),
+      effectiveDays,
+      compareEnabled,
+    );
+    return pct === null ? null : { pct, invertColor: false };
+  }, [points, effectiveDays, compareEnabled]);
 
   // Build a tiny static sparkline of traffic vs errors for context. The traffic
   // series gets a gradient-filled area (so the pane's only chart reads as

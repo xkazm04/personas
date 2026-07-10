@@ -165,6 +165,11 @@ function monthShortLabel(t: Translations, month: number): string {
 
 export function ExecutionHeatmap({
   personaId,
+  // Deliberate FIXED annual window. The heatmap is a GitHub-style contribution
+  // graph whose whole point is a constant 52-week canvas — it is NOT wired to
+  // the dashboard's 7/30/90 range switch (OverviewFilterContext.dayRange) and
+  // must not be. Callers render it as a standalone year-at-a-glance instrument;
+  // do not "unify" this with the range switch.
   days = 365,
   onDayClick,
   compact = false,

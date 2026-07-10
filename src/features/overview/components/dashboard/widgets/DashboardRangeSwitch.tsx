@@ -1,17 +1,24 @@
 import { memo, useCallback } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useOverviewStore } from '@/stores/overviewStore';
+import {
+  useOverviewFilterValues,
+  useOverviewFilterActions,
+  type OverviewDayRange,
+} from '@/features/overview/components/dashboard/OverviewFilterContext';
 
 /**
- * Compact 7d / 30d / 90d segmented control for the Home Traffic chart. Drives
- * the store's `executionDashboardDays` via `fetchExecutionDashboard`, so both
- * the fleet traffic series and the persona-scoped bundle re-query on change.
- * Labels are non-localized day shorthands (mirrors DayRangePicker); the group
- * reuses the existing time-range aria label.
+ * Compact 7d / 30d / 90d segmented control for the Home Traffic chart.
+ *
+ * Range is UNIFIED with the rest of Overview: this writes the shared
+ * `OverviewFilterContext.dayRange` (the same state the Execution Metrics
+ * DayRangePicker drives), so the single `useExecutionDashboardPipeline` fetch
+ * re-queries once — no separate `fetchExecutionDashboard` call, and no
+ * double-fetch racing the pipeline. Labels are non-localized day shorthands
+ * (mirrors DayRangePicker); the group reuses the existing time-range aria label.
  */
 
-const RANGE_OPTIONS: { value: number; label: string }[] = [
+const RANGE_OPTIONS: { value: OverviewDayRange; label: string }[] = [
   { value: 7, label: '7d' },
   { value: 30, label: '30d' },
   { value: 90, label: '90d' },
@@ -19,16 +26,14 @@ const RANGE_OPTIONS: { value: number; label: string }[] = [
 
 export const DashboardRangeSwitch = memo(function DashboardRangeSwitch() {
   const { t } = useTranslation();
-  const { days, loading, fetchExecutionDashboard } = useOverviewStore(useShallow((s) => ({
-    days: s.executionDashboardDays,
-    loading: s.executionDashboardLoading,
-    fetchExecutionDashboard: s.fetchExecutionDashboard,
-  })));
-  const active = days ?? 30;
+  const { dayRange } = useOverviewFilterValues();
+  const { setDayRange } = useOverviewFilterActions();
+  const loading = useOverviewStore((s) => s.executionDashboardLoading);
+  const active = dayRange;
 
-  const onPick = useCallback((d: number) => {
-    if (d !== active) void fetchExecutionDashboard(d);
-  }, [active, fetchExecutionDashboard]);
+  const onPick = useCallback((d: OverviewDayRange) => {
+    if (d !== active) setDayRange(d);
+  }, [active, setDayRange]);
 
   return (
     <div
