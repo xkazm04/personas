@@ -734,6 +734,13 @@ async fn do_token_refresh(
                         let mut auth = state.auth.write().await;
                         auth.user = cached_user;
                         auth.is_offline = true;
+                        // Clear the stale (expiring) token. `to_response`'s
+                        // `offline_authed` gate requires `access_token.is_none()`,
+                        // so leaving the old token in place kept that gate false —
+                        // and once it expired the user was spuriously logged out
+                        // mid-session despite a valid cached profile.
+                        auth.access_token = None;
+                        auth.token_expires_at = None;
                         auth.to_response()
                     };
                     let _ = app.emit(event_name::AUTH_STATE_CHANGED, &response);
