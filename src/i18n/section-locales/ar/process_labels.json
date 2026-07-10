@@ -15,6 +15,6 @@
   "failed_suffix": "فاشل",
   "pending_reviews_one": "{count} مراجعة معلّقة تنتظر الموافقة",
   "pending_reviews_other": "{count} مراجعة معلّقة تنتظر الموافقة",
-  "team_assignment_failed": "Team Assignment",
-  "team_assignment_unmatched": "Team Assignment"
+  "team_assignment_failed": "تعيين الفريق",
+  "team_assignment_unmatched": "تعيين الفريق"
 }

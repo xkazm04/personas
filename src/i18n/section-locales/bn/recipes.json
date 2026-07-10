@@ -111,11 +111,11 @@
   "composer_suggestion": {
     "label": "এটির জন্য আমাদের একটি রেসিপি আছে",
     "use_button": "এই রেসিপি ব্যবহার করুন",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "dismiss": "বাতিল করুন",
+    "score_label": "মিল",
+    "applied_toast": "রেসিপি প্রয়োগ করা হয়েছে: {name}",
+    "run_now": "এখনই চালান",
+    "run_now_toast": "রেসিপি প্লেগ্রাউন্ডে {name} খোলা হচ্ছে"
   },
   "discard": "বাতিল করুন",
   "yes": "হ্যাঁ",

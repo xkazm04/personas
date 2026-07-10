@@ -1,5 +1,5 @@
 {
-  "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",
-  "schema_parse_error_detail": "Error: {error}",
-  "schema_parse_error_hint": "Re-generate the recipe or edit the input schema manually to fix this."
+  "schema_parse_error": "تعذّر قراءة حقول إدخال هذه الوصفة — المخطط المخزَّن غير صالح.",
+  "schema_parse_error_detail": "الخطأ: {error}",
+  "schema_parse_error_hint": "أعد توليد الوصفة أو عدّل مخطط الإدخال يدويًا لإصلاح ذلك."
 }

@@ -13,5 +13,5 @@
   "error_toggle_rule": "فشل تبديل قاعدة التنبيه:",
   "error_dismiss": "فشل رفض التنبيه:",
   "error_clear_history": "فشل مسح سجل التنبيهات:",
-  "error_load_rules": "Failed to load alert rules:"
+  "error_load_rules": "تعذّر تحميل قواعد التنبيه:"
 }

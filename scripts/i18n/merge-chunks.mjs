@@ -93,7 +93,12 @@ for (const t of tasks) {
   const stillEn = want.filter(
     (k) => got.has(k) && isTranslatable(src[k]) && String(tr[k]) === String(src[k]),
   );
-  const undeclared = stillEn.filter((k) => !keepEnglish.includes(k));
+  // Already-allowlisted keys (a prior run's decision that this value is DNT)
+  // count as declared — an agent needn't re-declare Athena/MTBF/a localhost URL
+  // every batch.
+  const undeclared = stillEn.filter(
+    (k) => !keepEnglish.includes(k) && !allowlist.has(`*:${k}`) && !allowlist.has(`${t.lang}:${k}`),
+  );
 
   const errs = [];
   if (missing.length) errs.push(`missing ${missing.length} (${missing.slice(0, 2).join(', ')})`);

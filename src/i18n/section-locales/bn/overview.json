@@ -1279,15 +1279,15 @@
   },
   "upcoming_routines": {
     "title": "আসন্ন রুটিন",
-    "subtitle": "next scheduled runs",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
+    "subtitle": "পরবর্তী নির্ধারিত রান",
+    "empty": "কোনো নির্ধারিত রান নেই।",
+    "never_fired": "প্রথম রানের অপেক্ষায়",
     "view_all": "View schedules"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
+    "title": "ভল্টের পরিবর্তন",
+    "subtitle": "সাম্প্রতিক Obsidian সিঙ্ক",
+    "empty": "সাম্প্রতিক কোনো সিঙ্ক কার্যকলাপ নেই।",
     "view_all": "View sync log"
   },
   "heatmap": {
@@ -1331,21 +1331,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "নিম্নমুখী",
+    "stable": "স্থিতিশীল — উল্লেখযোগ্য পরিবর্তন নেই",
+    "vs_previous": "পূর্ববর্তী সময়ের তুলনায়"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "হিলিং অডিট লগ লোড করা যায়নি।",
+    "audit_fetch_cause": "লগটি সাময়িকভাবে অনুপলব্ধ হতে পারে। আপনার অন্যান্য ডেটা প্রভাবিত হয়নি।",
+    "action_retry": "আবার চেষ্টা করুন"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "সব ঠিক আছে — কোনো সতর্কতা সক্রিয় হয়নি",
+    "alerts_subtitle": "আপনার মনিটরিং নিয়মগুলো নজর রাখছে। কোনো কিছুর দিকে মনোযোগ দরকার হলে, সতর্কতা এখানে স্বয়ংক্রিয়ভাবে প্রদর্শিত হবে।",
+    "realtime_title": "রিয়েল টাইমে আপনার ইভেন্টের প্রবাহ দেখুন",
+    "realtime_subtitle": "প্রতিটি ইভেন্ট সোর্স থেকে আপনার এজেন্টের দিকে যাওয়ার সময় অ্যানিমেটেড কণাগুলো তার গতিপথ আঁকে। প্রতিটি বিন্দু আপনার সিস্টেমের মধ্য দিয়ে চলমান একটি লাইভ ইভেন্ট।",
+    "realtime_action": "একটি টেস্ট ইভেন্ট পাঠান"
   },
   "cockpit": {
     "title_default": "ককপিট",

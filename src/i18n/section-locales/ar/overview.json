@@ -1280,14 +1280,14 @@
   "upcoming_routines": {
     "title": "الجداول القادمة",
     "subtitle": "التشغيلات المجدولة القادمة",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
+    "empty": "لا توجد عمليات تشغيل مجدولة.",
+    "never_fired": "بانتظار أول تشغيل",
     "view_all": "View schedules"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
+    "title": "تغييرات الخزنة",
+    "subtitle": "مزامنة Obsidian الأخيرة",
+    "empty": "لا يوجد نشاط مزامنة حديث.",
     "view_all": "View sync log"
   },
   "heatmap": {
@@ -1331,21 +1331,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "انخفاض",
+    "stable": "مستقر — لا تغيّر يُذكر",
+    "vs_previous": "مقارنة بالفترة السابقة"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "تعذّر تحميل سجل تدقيق الإصلاح.",
+    "audit_fetch_cause": "قد يكون السجل غير متاح مؤقتًا. بياناتك الأخرى غير متأثرة.",
+    "action_retry": "إعادة المحاولة"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "الوضع سليم — لم يُطلَق أي تنبيه",
+    "alerts_subtitle": "قواعد المراقبة الخاصة بك تعمل باستمرار. إذا احتاج أي أمر إلى انتباهك، ستظهر التنبيهات هنا تلقائيًا.",
+    "realtime_title": "راقب تدفق أحداثك في الوقت الفعلي",
+    "realtime_subtitle": "تتبع جسيمات متحركة كل حدث أثناء انتقاله من المصادر إلى وكلائك. كل نقطة تمثّل حدثًا حيًا يتحرك عبر نظامك.",
+    "realtime_action": "إرسال حدث تجريبي"
   },
   "cockpit": {
     "title_default": "القمرة",
