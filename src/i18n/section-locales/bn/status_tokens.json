@@ -1,105 +1,105 @@
 {
   "execution": {
-    "queued": "Queued",
-    "running": "Running",
-    "completed": "Completed",
-    "failed": "Failed",
-    "cancelled": "Cancelled",
-    "error": "Error"
+    "queued": "কিউতে আছে",
+    "running": "চলছে",
+    "completed": "সম্পন্ন",
+    "failed": "ব্যর্থ",
+    "cancelled": "বাতিল",
+    "error": "ত্রুটি"
   },
   "event": {
-    "pending": "Pending",
-    "processing": "Processing",
-    "processed": "Processed",
-    "failed": "Failed",
-    "retrying": "Retrying"
+    "pending": "মুলতুবি",
+    "processing": "প্রক্রিয়াধীন",
+    "processed": "প্রক্রিয়াকৃত",
+    "failed": "ব্যর্থ",
+    "retrying": "পুনরায় চেষ্টা হচ্ছে"
   },
   "automation": {
-    "pending": "Pending",
-    "running": "Running",
-    "completed": "Completed",
-    "failed": "Failed",
-    "timeout": "Timed Out"
+    "pending": "মুলতুবি",
+    "running": "চলছে",
+    "completed": "সম্পন্ন",
+    "failed": "ব্যর্থ",
+    "timeout": "টাইমআউট হয়েছে"
   },
   "severity": {
-    "info": "Info",
+    "info": "তথ্য",
     "low": "Low",
-    "medium": "Medium",
-    "high": "High",
-    "critical": "Critical"
+    "medium": "মাঝারি",
+    "high": "উচ্চ",
+    "critical": "গুরুতর"
   },
   "priority": {
     "low": "Low",
-    "normal": "Normal",
-    "high": "High",
-    "urgent": "Urgent"
+    "normal": "স্বাভাবিক",
+    "high": "উচ্চ",
+    "urgent": "জরুরি"
   },
   "healing_status": {
-    "open": "Open",
-    "auto_fixed": "Auto-Fixed",
-    "acknowledged": "Acknowledged",
-    "resolved": "Resolved"
+    "open": "খোলা",
+    "auto_fixed": "স্বয়ংক্রিয়ভাবে সমাধান হয়েছে",
+    "acknowledged": "স্বীকৃত",
+    "resolved": "সমাধান হয়েছে"
   },
   "healing_category": {
-    "config": "Configuration",
-    "auth": "Authentication",
-    "network": "Network",
-    "timeout": "Timeout",
-    "quota": "Quota"
+    "config": "কনফিগারেশন",
+    "auth": "প্রমাণীকরণ",
+    "network": "নেটওয়ার্ক",
+    "timeout": "টাইমআউট",
+    "quota": "কোটা"
   },
   "connector_status": {
-    "ready": "Ready",
-    "untested": "Untested",
-    "failed": "Failed",
-    "no_credential": "No Credential",
-    "testing": "Testing"
+    "ready": "প্রস্তুত",
+    "untested": "পরীক্ষিত নয়",
+    "failed": "ব্যর্থ",
+    "no_credential": "কোনো ক্রেডেনশিয়াল নেই",
+    "testing": "পরীক্ষা হচ্ছে"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "বিশ্লেষণ হচ্ছে",
+    "planning": "পরিকল্পনা করা হচ্ছে",
+    "implementing": "বাস্তবায়ন হচ্ছে",
+    "validating": "যাচাই হচ্ছে",
+    "complete": "সম্পন্ন"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "মুলতুবি",
+    "review": "পর্যালোচনা",
+    "blocked": "অবরুদ্ধ",
+    "in_progress": "চলমান",
+    "running": "চলছে",
+    "completed": "সম্পন্ন",
+    "done": "সম্পন্ন"
   },
   "test": {
-    "generating": "Generating",
-    "running": "Running",
-    "completed": "Completed",
-    "failed": "Failed",
-    "pending": "Pending"
+    "generating": "তৈরি হচ্ছে",
+    "running": "চলছে",
+    "completed": "সম্পন্ন",
+    "failed": "ব্যর্থ",
+    "pending": "মুলতুবি"
   },
   "dev": {
-    "open": "Open",
-    "in_progress": "In Progress",
-    "completed": "Completed",
-    "blocked": "Blocked",
-    "queued": "Queued",
-    "running": "Running",
-    "failed": "Failed"
+    "open": "খোলা",
+    "in_progress": "চলমান",
+    "completed": "সম্পন্ন",
+    "blocked": "অবরুদ্ধ",
+    "queued": "কিউতে আছে",
+    "running": "চলছে",
+    "failed": "ব্যর্থ"
   },
   "circuit_breaker": {
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
-    "provider_global": "Global"
+    "provider_global": "গ্লোবাল"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "উচ্চ",
+    "medium": "মাঝারি",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "মাঝারি",
+    "high": "উচ্চ"
   },
   "verdict": {
     "production": "প্রোডাকশন",

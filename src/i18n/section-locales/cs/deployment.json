@@ -24,12 +24,12 @@
     "sending": "Odesílání...",
     "empty_response": "(prázdná odpověď)",
     "snippets": "Snippety",
-    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
+    "request_body_placeholder": "{ \"message\": \"Váš dotaz zde…\" }"
   },
   "connection": {
     "orchestrator_url_label": "URL cloudového serveru",
     "orchestrator_prefix": "https://",
-    "orchestrator_url_placeholder": "https://your-orchestrator.example.com",
+    "orchestrator_url_placeholder": "https://vas-orchestrator.example.com",
     "enter_api_key": "Zadej API klíč",
     "connect": "Připojit",
     "connected": "Připojeno",
@@ -71,7 +71,7 @@
     "token_expired": "Token vypršel",
     "token_unknown": "Stav tokenu neznámý",
     "expires": "Vyprší",
-    "scopes": "Scopes",
+    "scopes": "Rozsahy",
     "open_auth_window": "Otevřít okno autorizace",
     "complete_authorization": "Dokončit autorizaci",
     "refresh_token": "Obnovit token",
@@ -128,7 +128,7 @@
     "queue_length": "Délka fronty",
     "active_executions": "Aktivní spuštění",
     "active_execution": "Aktivní spuštění",
-    "claude_token": "Claude Token"
+    "claude_token": "Claude token"
   },
   "history": {
     "just_now": "Právě teď",

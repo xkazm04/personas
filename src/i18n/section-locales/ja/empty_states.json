@@ -14,7 +14,7 @@
   "tools_subtitle": "外部サービスをリンクして、エージェントがアクションやデータアクセスできるようにしてください。",
   "use_cases_title": "ユースケースがまだ定義されていません",
   "use_cases_subtitle": "エージェントの役割を定義 -- ワークフローからインポートするか、自然言語で記述してください。",
-  "no_results_title": "No matches for your filters",
-  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
-  "reset_filters": "Reset filters"
+  "no_results_title": "フィルターに一致する結果が見つかりません",
+  "no_results_subtitle": "フィルターを調整するか解除すると、より多くの結果が表示されます。",
+  "reset_filters": "フィルターをリセット"
 }

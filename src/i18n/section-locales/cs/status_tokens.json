@@ -44,7 +44,7 @@
     "config": "Konfigurace",
     "auth": "Autentizace",
     "network": "Síť",
-    "timeout": "Timeout",
+    "timeout": "Časový limit",
     "quota": "Kvóta"
   },
   "connector_status": {
@@ -55,20 +55,20 @@
     "testing": "Testování"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "Analýza",
+    "planning": "Plánování",
+    "implementing": "Implementace",
+    "validating": "Ověřování",
+    "complete": "Dokončeno"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "Čeká",
+    "review": "Kontrola",
+    "blocked": "Blokováno",
+    "in_progress": "Probíhá",
+    "running": "Běží",
+    "completed": "Dokončeno",
+    "done": "Dokončeno"
   },
   "test": {
     "generating": "Generování",
@@ -89,17 +89,17 @@
   "circuit_breaker": {
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
-    "provider_global": "Global"
+    "provider_global": "Globální"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "Vysoká",
+    "medium": "Střední",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "střední",
+    "high": "vysoké"
   },
   "verdict": {
     "production": "Produkce",
@@ -125,7 +125,7 @@
     "disabled": "Zakázáno",
     "perm_errors": "Trvalé chyby",
     "degrading": "Degraduje",
-    "backoff": "Backoff",
+    "backoff": "Prodleva",
     "fresh": "Čerstvý",
     "active": "Aktivní"
   }

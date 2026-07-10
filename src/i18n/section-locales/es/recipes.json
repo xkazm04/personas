@@ -82,40 +82,40 @@
   "loading_linked": "Cargando recetas vinculadas...",
   "no_linked": "Aún no hay recetas vinculadas. Haz clic en \"Agregar\" para vincular recetas de la biblioteca.",
   "run": "Ejecutar",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "Aún no hay ejecuciones",
+  "history_empty_description": "Pruebe la receta y sus ejecuciones aparecerán aquí para repetirlas y revisarlas.",
+  "history_empty_action": "Probarlo ahora",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "Análisis",
+      "automation": "Automatización",
+      "generation": "Generación",
+      "transform": "Transformación",
+      "monitoring": "Monitoreo"
     }
   },
   "schema": {
     "field_types": {
-      "text": "Text",
-      "number": "Number",
-      "boolean": "Boolean",
-      "select": "Select",
-      "textarea": "Textarea",
+      "text": "Texto",
+      "number": "Número",
+      "boolean": "Booleano",
+      "select": "Desplegable",
+      "textarea": "Área de texto",
       "json": "JSON"
     },
     "placeholders": {
       "key": "key",
-      "label": "Label"
+      "label": "Etiqueta"
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "Tenemos una receta para esto",
+    "use_button": "Usar esta receta",
+    "dismiss": "Descartar",
+    "score_label": "Coincidencia",
+    "applied_toast": "Receta aplicada: {name}",
+    "run_now": "Ejecutar ahora",
+    "run_now_toast": "Abriendo {name} en el entorno de pruebas de recetas"
   },
   "discard": "Descartar",
   "yes": "Sí",

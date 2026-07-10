@@ -14,7 +14,7 @@
   "tools_subtitle": "Verknüpfen Sie externe Dienste, damit Ihr Agent Aktionen ausführen und auf Daten zugreifen kann.",
   "use_cases_title": "Noch keine Anwendungsfälle definiert",
   "use_cases_subtitle": "Definieren Sie, was dieser Agent tun soll -- importieren Sie einen Workflow oder beschreiben Sie es in natürlicher Sprache.",
-  "no_results_title": "No matches for your filters",
-  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
-  "reset_filters": "Reset filters"
+  "no_results_title": "Keine Treffer für Ihre Filter",
+  "no_results_subtitle": "Passen Sie Ihre Filter an oder setzen Sie sie zurück, um mehr Ergebnisse zu sehen.",
+  "reset_filters": "Filter zurücksetzen"
 }

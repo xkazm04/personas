@@ -44,7 +44,7 @@
   "data": "Données",
   "quality_gates": "Filtres de contenu",
   "config_resolution": "Configuration de l'agent",
-  "admin": "Admin",
+  "admin": "Administration",
   "create": "Créer",
   "all_agents": "Tous les agents",
   "favorites": "Favoris",
@@ -74,5 +74,5 @@
   "goals": "Objectifs",
   "mission_control": "Centre de contrôle",
   "factory": "Factory",
-  "kpis": "KPIs"
+  "kpis": "KPI"
 }

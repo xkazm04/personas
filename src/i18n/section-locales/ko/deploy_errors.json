@@ -1,15 +1,15 @@
 {
-  "not_reachable": "Could not reach the server. Check the URL and your network connection.",
-  "timed_out": "Connection timed out. The server may be down or the URL may be incorrect.",
-  "dns_resolve": "Could not resolve the hostname. Double-check the URL for typos.",
-  "unauthorized": "Invalid credentials. Please verify and try again.",
-  "forbidden": "Access denied. Your credentials may not have the required permissions.",
-  "internal_server_error": "The server returned an internal error. Try again in a few minutes.",
-  "service_unavailable": "The server is temporarily unavailable. Try again shortly.",
-  "not_connected": "Not connected. Please connect first.",
-  "keyring": "Could not access stored credentials. You may need to reconnect.",
-  "oauth_expired": "OAuth token has expired. Please re-authorize.",
-  "url_empty": "Please enter the orchestrator URL.",
-  "api_key_empty": "Please enter your API key.",
-  "token_empty": "Please enter your GitLab personal access token."
+  "not_reachable": "서버에 연결할 수 없습니다. URL과 네트워크 연결을 확인하세요.",
+  "timed_out": "연결이 시간 초과되었습니다. 서버가 다운되었거나 URL이 잘못되었을 수 있습니다.",
+  "dns_resolve": "호스트 이름을 확인할 수 없습니다. URL에 오타가 없는지 다시 확인하세요.",
+  "unauthorized": "잘못된 자격 증명입니다. 확인 후 다시 시도하세요.",
+  "forbidden": "접근이 거부되었습니다. 자격 증명에 필요한 권한이 없을 수 있습니다.",
+  "internal_server_error": "서버에서 내부 오류를 반환했습니다. 잠시 후 다시 시도하세요.",
+  "service_unavailable": "서버를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하세요.",
+  "not_connected": "연결되어 있지 않습니다. 먼저 연결하세요.",
+  "keyring": "저장된 자격 증명에 접근할 수 없습니다. 다시 연결해야 할 수 있습니다.",
+  "oauth_expired": "OAuth 토큰이 만료되었습니다. 다시 인증하세요.",
+  "url_empty": "오케스트레이터 URL을 입력하세요.",
+  "api_key_empty": "API 키를 입력하세요.",
+  "token_empty": "GitLab 개인 액세스 토큰을 입력하세요."
 }

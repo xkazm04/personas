@@ -82,40 +82,40 @@
   "loading_linked": "Načítání propojených receptů...",
   "no_linked": "Zatím nejsou propojeny žádné recepty. Klikni na \"Přidat\" pro propojení receptů z knihovny.",
   "run": "Spustit",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "Zatím žádná spuštění",
+  "history_empty_description": "Otestujte recept a vaše spuštění se zde objeví pro přehrání a kontrolu.",
+  "history_empty_action": "Vyzkoušet teď",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "Analýza",
+      "automation": "Automatizace",
+      "generation": "Generování",
+      "transform": "Transformace",
+      "monitoring": "Monitorování"
     }
   },
   "schema": {
     "field_types": {
       "text": "Text",
-      "number": "Number",
+      "number": "Číslo",
       "boolean": "Boolean",
-      "select": "Select",
-      "textarea": "Textarea",
+      "select": "Výběr",
+      "textarea": "Víceřádkový text",
       "json": "JSON"
     },
     "placeholders": {
       "key": "key",
-      "label": "Label"
+      "label": "Popisek"
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "Pro tohle máme recept",
+    "use_button": "Použít tento recept",
+    "dismiss": "Zavřít",
+    "score_label": "Shoda",
+    "applied_toast": "Použit recept: {name}",
+    "run_now": "Spustit hned",
+    "run_now_toast": "Otevírá se {name} v testovacím prostředí receptu"
   },
   "discard": "Zahodit",
   "yes": "Ano",

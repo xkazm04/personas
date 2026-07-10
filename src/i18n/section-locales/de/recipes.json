@@ -25,15 +25,15 @@
   "prompt_template_help": "{{variable}}-Syntax für Platzhalter verwenden, die aus dem Eingabeschema gefüllt werden.",
   "input_schema_label": "Eingabeschema",
   "input_schema_help": "Eingabefelder mit Schlüssel, Typ und Bezeichnung definieren. Zum Neuanordnen ziehen.",
-  "tags_label": "Tags",
+  "tags_label": "Schlagwörter",
   "tab_overview": "Übersicht",
   "tab_test_runner": "Test-Runner",
   "tab_history": "Verlauf",
   "tab_versions": "Versionen",
-  "details": "Details",
+  "details": "Angaben",
   "category": "Kategorie",
   "created": "Erstellt",
-  "tags": "Tags",
+  "tags": "Schlagwörter",
   "input_fields": "Eingabefelder",
   "prompt_template": "Prompt-Vorlage",
   "col_key": "Schlüssel",
@@ -82,40 +82,40 @@
   "loading_linked": "Verknüpfte Rezepte werden geladen...",
   "no_linked": "Noch keine Rezepte verknüpft. Klicken Sie \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Hinzufügen\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\", um Rezepte aus der Bibliothek zu verknüpfen.",
   "run": "Ausführen",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "Noch keine Läufe",
+  "history_empty_description": "Testen Sie das Rezept — Ihre Läufe landen hier zur Wiedergabe und Überprüfung.",
+  "history_empty_action": "Jetzt ausprobieren",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "Analyse",
+      "automation": "Automatisierung",
+      "generation": "Generierung",
+      "transform": "Transformation",
+      "monitoring": "Überwachung"
     }
   },
   "schema": {
     "field_types": {
       "text": "Text",
-      "number": "Number",
-      "boolean": "Boolean",
-      "select": "Select",
-      "textarea": "Textarea",
+      "number": "Zahl",
+      "boolean": "Wahrheitswert",
+      "select": "Auswahl",
+      "textarea": "Textbereich",
       "json": "JSON"
     },
     "placeholders": {
       "key": "key",
-      "label": "Label"
+      "label": "Bezeichnung"
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "Dafür gibt es ein Rezept",
+    "use_button": "Rezept verwenden",
+    "dismiss": "Schließen",
+    "score_label": "Treffer",
+    "applied_toast": "Rezept angewendet: {name}",
+    "run_now": "Jetzt ausführen",
+    "run_now_toast": "{name} wird im Rezept-Playground geöffnet"
   },
   "discard": "Verwerfen",
   "yes": "Ja",

@@ -50,7 +50,7 @@
   "telemetry_detail_2": "Anonyme Nutzungsdaten (welche Bereiche und Tabs Sie besuchen) werden an Sentry gesendet, um die Entwicklung zu priorisieren. Keine persönlichen Daten, Zugangsdaten-Werte oder Ausführungsinhalte sind enthalten.",
   "telemetry_detail_3": "Keine persönlichen Daten, Zugangsdaten-Werte oder Ausführungsinhalte sind in der Telemetrie enthalten.",
   "telemetry_detail_4": "Die App prüft auf Updates über GitHub Releases.",
-  "deploy_title": "Deployment (Optional)",
+  "deploy_title": "Bereitstellung (optional)",
   "deploy_tldr": "Sie können Agenten optional in der Cloud ausführen -- nichts wird hochgeladen, es sei denn, Sie entscheiden sich dafür.",
   "deploy_detail_1": "Sie können Personas optional auf einen Cloud-Orchestrator, GitHub Actions oder GitLab CI/CD bereitstellen. Dabei wird die Persona-Konfiguration (nicht die Zugangsdaten) an die gewählte Plattform gesendet.",
   "deploy_detail_2": "Cloud-Deployment verwendet OAuth-Authentifizierung mit einem Deep-Link-Callback (personas://-Protokoll).",

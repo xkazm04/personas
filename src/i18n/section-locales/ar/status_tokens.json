@@ -55,20 +55,20 @@
     "testing": "جارٍ الاختبار"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "جارٍ التحليل",
+    "planning": "جارٍ التخطيط",
+    "implementing": "جارٍ التنفيذ",
+    "validating": "جارٍ التحقق",
+    "complete": "مكتمل"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "معلّق",
+    "review": "قيد المراجعة",
+    "blocked": "محجوب",
+    "in_progress": "قيد التنفيذ",
+    "running": "جارٍ",
+    "completed": "مكتمل",
+    "done": "مكتمل"
   },
   "test": {
     "generating": "جارٍ التوليد",
@@ -89,17 +89,17 @@
   "circuit_breaker": {
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
-    "provider_global": "Global"
+    "provider_global": "عام"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "مرتفع",
+    "medium": "متوسط",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "متوسط",
+    "high": "مرتفع"
   },
   "verdict": {
     "production": "إنتاج",

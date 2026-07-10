@@ -1,5 +1,5 @@
 {
-  "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",
-  "schema_parse_error_detail": "Error: {error}",
-  "schema_parse_error_hint": "Re-generate the recipe or edit the input schema manually to fix this."
+  "schema_parse_error": "Không thể đọc các trường đầu vào của công thức này — schema đã lưu bị sai định dạng.",
+  "schema_parse_error_detail": "Lỗi: {error}",
+  "schema_parse_error_hint": "Tạo lại công thức hoặc chỉnh sửa schema đầu vào thủ công để khắc phục."
 }

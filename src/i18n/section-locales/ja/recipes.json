@@ -82,40 +82,40 @@
   "loading_linked": "リンクされたレシピを読み込み中...",
   "no_linked": "レシピがまだリンクされていません。「追加」をクリックしてライブラリからレシピをリンクしてください。",
   "run": "実行",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "まだ実行はありません",
+  "history_empty_description": "レシピをテストすると、実行結果がここに表示され、再生・確認できます。",
+  "history_empty_action": "今すぐ試す",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "分析",
+      "automation": "自動化",
+      "generation": "生成",
+      "transform": "変換",
+      "monitoring": "モニタリング"
     }
   },
   "schema": {
     "field_types": {
-      "text": "Text",
-      "number": "Number",
-      "boolean": "Boolean",
-      "select": "Select",
-      "textarea": "Textarea",
+      "text": "テキスト",
+      "number": "数値",
+      "boolean": "真偽値",
+      "select": "選択",
+      "textarea": "テキストエリア",
       "json": "JSON"
     },
     "placeholders": {
       "key": "key",
-      "label": "Label"
+      "label": "ラベル"
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "これに合うレシピがあります",
+    "use_button": "このレシピを使う",
+    "dismiss": "閉じる",
+    "score_label": "一致度",
+    "applied_toast": "「{name}」を適用しました",
+    "run_now": "今すぐ実行",
+    "run_now_toast": "レシピプレイグラウンドで「{name}」を開いています"
   },
   "discard": "破棄",
   "yes": "はい",

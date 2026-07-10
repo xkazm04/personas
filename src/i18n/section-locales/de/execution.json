@@ -13,12 +13,12 @@
   "waiting_for_output": "Warte auf Ausgabe...",
   "no_output": "Keine Ausgabe",
   "background": "Hintergrund",
-  "time_seconds_ago": "{count}s ago",
-  "time_minutes_ago": "{count}m ago",
-  "time_hours_ago": "{count}h ago",
-  "budget_reset_tomorrow": "tomorrow",
-  "budget_reset_in_days_one": "in {count} day",
-  "budget_reset_in_days_other": "in {count} days",
-  "interruptions_per_hour_one": "({count} interruption/1h)",
-  "interruptions_per_hour_other": "({count} interruptions/1h)"
+  "time_seconds_ago": "vor {count}s",
+  "time_minutes_ago": "vor {count}m",
+  "time_hours_ago": "vor {count}h",
+  "budget_reset_tomorrow": "morgen",
+  "budget_reset_in_days_one": "in {count} Tag",
+  "budget_reset_in_days_other": "in {count} Tagen",
+  "interruptions_per_hour_one": "({count} Unterbrechung/1 Std.)",
+  "interruptions_per_hour_other": "({count} Unterbrechungen/1 Std.)"
 }

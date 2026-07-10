@@ -14,7 +14,7 @@
   "tools_subtitle": "बाहरी सेवाएँ लिंक करें ताकि आपका एजेंट कार्य कर सके और डेटा एक्सेस कर सके।",
   "use_cases_title": "अभी कोई उपयोग मामला परिभाषित नहीं",
   "use_cases_subtitle": "परिभाषित करें कि यह एजेंट क्या करे -- वर्कफ़्लो से आयात करें या सरल भाषा में बताएँ।",
-  "no_results_title": "No matches for your filters",
-  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
-  "reset_filters": "Reset filters"
+  "no_results_title": "आपके फ़िल्टर से कोई मिलान नहीं",
+  "no_results_subtitle": "अधिक परिणाम देखने के लिए अपने फ़िल्टर समायोजित करें या साफ़ करें।",
+  "reset_filters": "फ़िल्टर रीसेट करें"
 }

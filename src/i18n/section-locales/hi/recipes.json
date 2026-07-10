@@ -82,40 +82,40 @@
   "loading_linked": "लिंक की गई रेसिपी लोड हो रही हैं...",
   "no_linked": "अभी तक कोई रेसिपी लिंक नहीं। लाइब्रेरी से रेसिपी लिंक करने के लिए जोड़ें क्लिक करें।",
   "run": "चलाएं",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "अभी तक कोई रन नहीं",
+  "history_empty_description": "रेसिपी का परीक्षण करें और आपके रन रीप्ले और समीक्षा के लिए यहां आ जाएंगे।",
+  "history_empty_action": "अभी आज़माएं",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "विश्लेषण",
+      "automation": "ऑटोमेशन",
+      "generation": "जेनरेशन",
+      "transform": "ट्रांसफ़ॉर्म",
+      "monitoring": "मॉनिटरिंग"
     }
   },
   "schema": {
     "field_types": {
-      "text": "Text",
-      "number": "Number",
-      "boolean": "Boolean",
-      "select": "Select",
-      "textarea": "Textarea",
+      "text": "टेक्स्ट",
+      "number": "संख्या",
+      "boolean": "बूलियन",
+      "select": "चयन",
+      "textarea": "टेक्स्टएरिया",
       "json": "JSON"
     },
     "placeholders": {
       "key": "key",
-      "label": "Label"
+      "label": "लेबल"
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "इसके लिए हमारे पास एक रेसिपी है",
+    "use_button": "इस रेसिपी का उपयोग करें",
+    "dismiss": "खारिज करें",
+    "score_label": "मिलान",
+    "applied_toast": "रेसिपी लागू की गई: {name}",
+    "run_now": "अभी चलाएं",
+    "run_now_toast": "रेसिपी प्लेग्राउंड में {name} खोला जा रहा है"
   },
   "discard": "हटाएं",
   "yes": "हां",

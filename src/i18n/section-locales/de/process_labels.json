@@ -15,6 +15,6 @@
   "failed_suffix": "Fehlgeschlagen",
   "pending_reviews_one": "{count} ausstehende Überprüfung wartet auf Genehmigung",
   "pending_reviews_other": "{count} ausstehende Überprüfungen warten auf Genehmigung",
-  "team_assignment_failed": "Team Assignment",
-  "team_assignment_unmatched": "Team Assignment"
+  "team_assignment_failed": "Teamzuweisung",
+  "team_assignment_unmatched": "Teamzuweisung"
 }

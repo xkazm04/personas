@@ -24,7 +24,7 @@
     "sending": "Đang gửi...",
     "empty_response": "(phản hồi trống)",
     "snippets": "Đoạn mã",
-    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
+    "request_body_placeholder": "{ \"message\": \"Prompt của bạn ở đây…\" }"
   },
   "connection": {
     "orchestrator_url_label": "URL máy chủ đám mây",
@@ -224,7 +224,7 @@
     "connect_gitlab_cta": "Kết nối GitLab"
   },
   "cloud_trigger_schedule": "Theo lịch (Cron)",
-  "cloud_trigger_polling": "Polling",
+  "cloud_trigger_polling": "Thăm dò",
   "cloud_trigger_webhook": "Webhook",
   "cloud_trigger_chain": "Chuỗi",
   "cloud_trigger_manual": "Thủ công",

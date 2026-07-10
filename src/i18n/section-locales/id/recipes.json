@@ -82,24 +82,24 @@
   "loading_linked": "Memuat resep yang ditautkan...",
   "no_linked": "Belum ada resep yang ditautkan. Klik \\\"Tambah\\\" untuk menautkan resep dari perpustakaan.",
   "run": "Jalankan",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "Belum ada proses",
+  "history_empty_description": "Uji resep ini dan proses Anda akan muncul di sini untuk diputar ulang serta ditinjau.",
+  "history_empty_action": "Coba sekarang",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "Analisis",
+      "automation": "Otomatisasi",
+      "generation": "Pembuatan",
+      "transform": "Transformasi",
+      "monitoring": "Pemantauan"
     }
   },
   "schema": {
     "field_types": {
-      "text": "Text",
-      "number": "Number",
+      "text": "Teks",
+      "number": "Angka",
       "boolean": "Boolean",
-      "select": "Select",
+      "select": "Pilihan",
       "textarea": "Textarea",
       "json": "JSON"
     },
@@ -109,13 +109,13 @@
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "Ada resep untuk ini",
+    "use_button": "Gunakan resep ini",
+    "dismiss": "Tutup",
+    "score_label": "Kecocokan",
+    "applied_toast": "Resep diterapkan: {name}",
+    "run_now": "Jalankan sekarang",
+    "run_now_toast": "Membuka {name} di Playground Resep"
   },
   "discard": "Buang",
   "yes": "Ya",

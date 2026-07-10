@@ -3,7 +3,7 @@
   "sonnet": "Sonnet",
   "opus": "Opus",
   "effort_low": "Low",
-  "effort_medium": "Medium",
-  "effort_high": "High",
+  "effort_medium": "Trung bình",
+  "effort_high": "Cao",
   "effort_xhigh": "xhigh"
 }

@@ -13,12 +13,12 @@
   "waiting_for_output": "Čekání na výstup...",
   "no_output": "Žádný výstup",
   "background": "Na pozadí",
-  "time_seconds_ago": "{count}s ago",
-  "time_minutes_ago": "{count}m ago",
-  "time_hours_ago": "{count}h ago",
-  "budget_reset_tomorrow": "tomorrow",
-  "budget_reset_in_days_one": "in {count} day",
-  "budget_reset_in_days_other": "in {count} days",
-  "interruptions_per_hour_one": "({count} interruption/1h)",
-  "interruptions_per_hour_other": "({count} interruptions/1h)"
+  "time_seconds_ago": "před {count}s",
+  "time_minutes_ago": "před {count}m",
+  "time_hours_ago": "před {count}h",
+  "budget_reset_tomorrow": "zítra",
+  "budget_reset_in_days_one": "za {count} den",
+  "budget_reset_in_days_other": "za {count} dní",
+  "interruptions_per_hour_one": "({count} přerušení/1h)",
+  "interruptions_per_hour_other": "({count} přerušení/1h)"
 }

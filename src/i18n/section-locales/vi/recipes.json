@@ -82,40 +82,40 @@
   "loading_linked": "Đang tải công thức đã liên kết...",
   "no_linked": "Chưa có công thức nào được liên kết. Nhấp \\\"Thêm\\\" để liên kết công thức từ thư viện.",
   "run": "Chạy",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "Chưa có lần chạy nào",
+  "history_empty_description": "Kiểm thử công thức và các lần chạy của bạn sẽ xuất hiện tại đây để phát lại và xem xét.",
+  "history_empty_action": "Thử ngay",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "Phân tích",
+      "automation": "Tự động hóa",
+      "generation": "Tạo",
+      "transform": "Biến đổi",
+      "monitoring": "Giám sát"
     }
   },
   "schema": {
     "field_types": {
-      "text": "Text",
-      "number": "Number",
+      "text": "Văn bản",
+      "number": "Số",
       "boolean": "Boolean",
-      "select": "Select",
-      "textarea": "Textarea",
+      "select": "Lựa chọn",
+      "textarea": "Văn bản nhiều dòng",
       "json": "JSON"
     },
     "placeholders": {
       "key": "key",
-      "label": "Label"
+      "label": "Nhãn"
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "Có công thức phù hợp cho việc này",
+    "use_button": "Dùng công thức này",
+    "dismiss": "Bỏ qua",
+    "score_label": "Phù hợp",
+    "applied_toast": "Đã áp dụng công thức: {name}",
+    "run_now": "Chạy ngay",
+    "run_now_toast": "Đang mở {name} trong sân chơi công thức"
   },
   "discard": "Hủy bỏ",
   "yes": "Có",

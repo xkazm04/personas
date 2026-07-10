@@ -1,105 +1,105 @@
 {
   "execution": {
-    "queued": "Queued",
-    "running": "Running",
-    "completed": "Completed",
-    "failed": "Failed",
-    "cancelled": "Cancelled",
-    "error": "Error"
+    "queued": "대기 중",
+    "running": "실행 중",
+    "completed": "완료",
+    "failed": "실패",
+    "cancelled": "취소됨",
+    "error": "오류"
   },
   "event": {
-    "pending": "Pending",
-    "processing": "Processing",
-    "processed": "Processed",
-    "failed": "Failed",
-    "retrying": "Retrying"
+    "pending": "대기 중",
+    "processing": "처리 중",
+    "processed": "처리됨",
+    "failed": "실패",
+    "retrying": "재시도 중"
   },
   "automation": {
-    "pending": "Pending",
-    "running": "Running",
-    "completed": "Completed",
-    "failed": "Failed",
-    "timeout": "Timed Out"
+    "pending": "대기 중",
+    "running": "실행 중",
+    "completed": "완료",
+    "failed": "실패",
+    "timeout": "시간 초과"
   },
   "severity": {
-    "info": "Info",
+    "info": "정보",
     "low": "Low",
-    "medium": "Medium",
-    "high": "High",
-    "critical": "Critical"
+    "medium": "보통",
+    "high": "높음",
+    "critical": "심각"
   },
   "priority": {
     "low": "Low",
-    "normal": "Normal",
-    "high": "High",
-    "urgent": "Urgent"
+    "normal": "보통",
+    "high": "높음",
+    "urgent": "긴급"
   },
   "healing_status": {
-    "open": "Open",
-    "auto_fixed": "Auto-Fixed",
-    "acknowledged": "Acknowledged",
-    "resolved": "Resolved"
+    "open": "열림",
+    "auto_fixed": "자동 수정됨",
+    "acknowledged": "확인됨",
+    "resolved": "해결됨"
   },
   "healing_category": {
-    "config": "Configuration",
-    "auth": "Authentication",
-    "network": "Network",
-    "timeout": "Timeout",
-    "quota": "Quota"
+    "config": "구성",
+    "auth": "인증",
+    "network": "네트워크",
+    "timeout": "시간 초과",
+    "quota": "할당량"
   },
   "connector_status": {
-    "ready": "Ready",
-    "untested": "Untested",
-    "failed": "Failed",
-    "no_credential": "No Credential",
-    "testing": "Testing"
+    "ready": "준비됨",
+    "untested": "테스트 안 됨",
+    "failed": "실패",
+    "no_credential": "자격 증명 없음",
+    "testing": "테스트 중"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "분석 중",
+    "planning": "계획 중",
+    "implementing": "구현 중",
+    "validating": "검증 중",
+    "complete": "완료"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "대기 중",
+    "review": "검토",
+    "blocked": "차단됨",
+    "in_progress": "진행 중",
+    "running": "실행 중",
+    "completed": "완료",
+    "done": "완료"
   },
   "test": {
-    "generating": "Generating",
-    "running": "Running",
-    "completed": "Completed",
-    "failed": "Failed",
-    "pending": "Pending"
+    "generating": "생성 중",
+    "running": "실행 중",
+    "completed": "완료",
+    "failed": "실패",
+    "pending": "대기 중"
   },
   "dev": {
-    "open": "Open",
-    "in_progress": "In Progress",
-    "completed": "Completed",
-    "blocked": "Blocked",
-    "queued": "Queued",
-    "running": "Running",
-    "failed": "Failed"
+    "open": "열림",
+    "in_progress": "진행 중",
+    "completed": "완료",
+    "blocked": "차단됨",
+    "queued": "대기 중",
+    "running": "실행 중",
+    "failed": "실패"
   },
   "circuit_breaker": {
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
-    "provider_global": "Global"
+    "provider_global": "글로벌"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "높음",
+    "medium": "보통",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "보통",
+    "high": "높음"
   },
   "verdict": {
     "production": "프로덕션",

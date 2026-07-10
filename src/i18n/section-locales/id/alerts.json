@@ -4,7 +4,7 @@
   "metric_cost": "Total Biaya",
   "metric_cost_spike": "Biaya vs. Rata-rata",
   "metric_executions": "Eksekusi",
-  "severity_info": "Info",
+  "severity_info": "Informasi",
   "severity_warning": "Peringatan",
   "severity_critical": "Kritis",
   "error_create_rule": "Gagal membuat aturan peringatan:",
@@ -13,5 +13,5 @@
   "error_toggle_rule": "Gagal mengalihkan aturan peringatan:",
   "error_dismiss": "Gagal menutup peringatan:",
   "error_clear_history": "Gagal menghapus riwayat peringatan:",
-  "error_load_rules": "Failed to load alert rules:"
+  "error_load_rules": "Gagal memuat aturan peringatan:"
 }

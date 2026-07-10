@@ -1,10 +1,10 @@
 {
   "install_all": "Instalar todas las dependencias",
-  "log_disk_usage": "Log Disk Usage",
-  "log_disk_tracing": "Tracing logs",
-  "log_disk_crashes": "Crash reports",
-  "log_disk_files_count": "{count} files",
-  "log_disk_retention_hint": "Daily rotation, capped at {limit} files",
-  "log_disk_crash_retention_hint": "Capped at {limit} most recent reports",
-  "log_disk_unavailable": "Log directory stats unavailable."
+  "log_disk_usage": "Uso de disco de registros",
+  "log_disk_tracing": "Registros de trazas",
+  "log_disk_crashes": "Informes de fallos",
+  "log_disk_files_count": "{count} archivos",
+  "log_disk_retention_hint": "Rotación diaria, con un límite de {limit} archivos",
+  "log_disk_crash_retention_hint": "Límite de {limit} informes más recientes",
+  "log_disk_unavailable": "Las estadísticas del directorio de registros no están disponibles."
 }

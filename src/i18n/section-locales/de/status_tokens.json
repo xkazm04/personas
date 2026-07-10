@@ -55,20 +55,20 @@
     "testing": "Teste"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "Analyse",
+    "planning": "Planung",
+    "implementing": "Umsetzung",
+    "validating": "Validierung",
+    "complete": "Abgeschlossen"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "Ausstehend",
+    "review": "Prüfung",
+    "blocked": "Blockiert",
+    "in_progress": "In Bearbeitung",
+    "running": "Läuft",
+    "completed": "Abgeschlossen",
+    "done": "Abgeschlossen"
   },
   "test": {
     "generating": "Generierung",
@@ -92,14 +92,14 @@
     "provider_global": "Global"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "Hoch",
+    "medium": "Mittel",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "Mittel",
+    "high": "Hoch"
   },
   "verdict": {
     "production": "Produktion",

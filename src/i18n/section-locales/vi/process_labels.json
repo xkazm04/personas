@@ -15,6 +15,6 @@
   "failed_suffix": "Thất bại",
   "pending_reviews_one": "{count} xem xét đang chờ phê duyệt",
   "pending_reviews_other": "{count} xem xét đang chờ phê duyệt",
-  "team_assignment_failed": "Team Assignment",
-  "team_assignment_unmatched": "Team Assignment"
+  "team_assignment_failed": "Phân công nhóm",
+  "team_assignment_unmatched": "Phân công nhóm"
 }

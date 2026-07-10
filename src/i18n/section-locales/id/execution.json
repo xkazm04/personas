@@ -13,12 +13,12 @@
   "waiting_for_output": "Menunggu keluaran...",
   "no_output": "Tidak ada keluaran",
   "background": "Latar belakang",
-  "time_seconds_ago": "{count}s ago",
-  "time_minutes_ago": "{count}m ago",
-  "time_hours_ago": "{count}h ago",
-  "budget_reset_tomorrow": "tomorrow",
-  "budget_reset_in_days_one": "in {count} day",
-  "budget_reset_in_days_other": "in {count} days",
-  "interruptions_per_hour_one": "({count} interruption/1h)",
-  "interruptions_per_hour_other": "({count} interruptions/1h)"
+  "time_seconds_ago": "{count}dtk lalu",
+  "time_minutes_ago": "{count}mnt lalu",
+  "time_hours_ago": "{count}jam lalu",
+  "budget_reset_tomorrow": "besok",
+  "budget_reset_in_days_one": "dalam {count} hari",
+  "budget_reset_in_days_other": "dalam {count} hari",
+  "interruptions_per_hour_one": "({count} interupsi/1 jam)",
+  "interruptions_per_hour_other": "({count} interupsi/1 jam)"
 }

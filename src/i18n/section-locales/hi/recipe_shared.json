@@ -1,5 +1,5 @@
 {
-  "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",
-  "schema_parse_error_detail": "Error: {error}",
-  "schema_parse_error_hint": "Re-generate the recipe or edit the input schema manually to fix this."
+  "schema_parse_error": "इस रेसिपी के इनपुट फ़ील्ड नहीं पढ़े जा सके — संग्रहीत स्कीमा में गड़बड़ी है।",
+  "schema_parse_error_detail": "त्रुटि: {error}",
+  "schema_parse_error_hint": "इसे ठीक करने के लिए रेसिपी को पुनः जेनरेट करें या इनपुट स्कीमा को मैन्युअल रूप से संपादित करें।"
 }

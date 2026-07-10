@@ -1,5 +1,5 @@
 {
-  "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",
-  "schema_parse_error_detail": "Error: {error}",
-  "schema_parse_error_hint": "Re-generate the recipe or edit the input schema manually to fix this."
+  "schema_parse_error": "Die Eingabefelder dieses Rezepts konnten nicht gelesen werden — das gespeicherte Schema ist fehlerhaft.",
+  "schema_parse_error_detail": "Fehler: {error}",
+  "schema_parse_error_hint": "Generieren Sie das Rezept neu, oder bearbeiten Sie das Eingabeschema manuell, um dies zu beheben."
 }

@@ -82,40 +82,40 @@
   "loading_linked": "加载已链接配方中...",
   "no_linked": "尚未链接配方。点击「添加」以从库中链接配方。",
   "run": "运行",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "暂无运行记录",
+  "history_empty_description": "测试该配方后，运行记录将显示在此处，方便回放和查看。",
+  "history_empty_action": "立即试用",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "分析",
+      "automation": "自动化",
+      "generation": "生成",
+      "transform": "转换",
+      "monitoring": "监控"
     }
   },
   "schema": {
     "field_types": {
-      "text": "Text",
-      "number": "Number",
-      "boolean": "Boolean",
-      "select": "Select",
-      "textarea": "Textarea",
+      "text": "文本",
+      "number": "数字",
+      "boolean": "布尔值",
+      "select": "选择",
+      "textarea": "多行文本",
       "json": "JSON"
     },
     "placeholders": {
       "key": "key",
-      "label": "Label"
+      "label": "标签"
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "我们有适用的配方",
+    "use_button": "使用此配方",
+    "dismiss": "关闭",
+    "score_label": "匹配度",
+    "applied_toast": "已应用配方：{name}",
+    "run_now": "立即运行",
+    "run_now_toast": "正在配方工作区中打开 {name}"
   },
   "discard": "丢弃",
   "yes": "是",
