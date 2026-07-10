@@ -42,5 +42,13 @@
   "master_resume_title": "启动时恢复",
   "preview_play": "预览电台",
   "preview_stop": "停止预览",
-  "youtube_premium_note": "YouTube 电台通过内嵌播放器流式传输 — 无广告体验需要 YouTube Premium 会员。"
+  "youtube_premium_note": "YouTube 电台通过内嵌播放器流式传输 — 无广告体验需要 YouTube Premium 会员。",
+  "idle_subtitle": "Curated stations",
+  "kind_youtube": "YouTube",
+  "kind_stream": "Stream",
+  "source_prefix": "Source:",
+  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
+  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
+  "station_toggle_label": "Show in picker",
+  "auto_resume_description": "启用后，在应用程序打开后第一次加载收音机时，最后播放的电台会自动启动。默认关闭。"
 }

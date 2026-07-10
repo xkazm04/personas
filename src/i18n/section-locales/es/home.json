@@ -109,5 +109,84 @@
     "build_cta": "Crea tu primer agente",
     "subtitle": "Describe una tarea en lenguaje sencillo y configuraremos un agente funcional — o pide al asistente que lo haga por ti.",
     "title": "Crea tu primer agente"
+  },
+  "welcome": "Bienvenido",
+  "greeting_morning": "Buenos días",
+  "greeting_afternoon": "Buenas tardes",
+  "greeting_evening": "Buenas noches",
+  "operator": "Operador",
+  "commander": "Commander",
+  "summary_empty": "Comienza creando tu primer agente o explorando la plataforma.",
+  "summary_stats": "Tienes {personasCount} agente{personasPlural} y {credentialsCount} credencial{credentialsPlural} configurados.",
+  "quick_navigation": "Navegación rápida",
+  "platform_label": "plataforma Personas",
+  "roadmap": {
+    "title": "Hoja de ruta del producto",
+    "subtitle": "Lo que estamos construyendo ahora y lo que viene después.",
+    "unavailable": "Hoja de ruta no disponible",
+    "unavailable_hint": "No se pudo cargar la hoja de ruta. Verifica tu conexión e inténtalo de nuevo.",
+    "status_in_progress": "En progreso",
+    "status_next": "Siguiente",
+    "status_planned": "Planificado",
+    "status_completed": "Completado",
+    "priority_now": "Ahora",
+    "priority_next": "Siguiente",
+    "priority_later": "Después",
+    "in_progress_count": "{count} en progreso",
+    "next_count": "{count} siguiente"
+  },
+  "fleet": {
+    "executions_today": "Ejecuciones Hoy",
+    "success_rate": "Tasa de Éxito",
+    "active_agents": "Agentes Activos",
+    "credentials": "Credenciales"
+  },
+  "nav": {
+    "overview": {
+      "label": "Resumen",
+      "description": "Analíticas del panel, historial de ejecuciones y monitoreo del sistema en tiempo real de todos los agentes"
+    },
+    "personas": {
+      "label": "Agentes",
+      "description": "Crea, configura y gestiona agentes de IA con comportamientos y capacidades personalizadas"
+    },
+    "events": {
+      "label": "Eventos",
+      "description": "Configura disparadores de eventos, receptores de webhook y automatizaciones programadas"
+    },
+    "credentials": {
+      "label": "Credenciales",
+      "description": "Gestiona credenciales de API, conexiones a bases de datos, tokens OAuth y secretos cifrados"
+    },
+    "design-reviews": {
+      "label": "Plantillas",
+      "description": "Importa flujos de n8n, explora la galería de plantillas y genera planos de agentes"
+    },
+    "team": {
+      "label": "Equipos",
+      "description": "Construye pipelines de equipos multi-agente con orquestación visual y enrutamiento"
+    },
+    "teams": {
+      "label": "Equipos",
+      "description": "Combina múltiples agentes en un equipo que trabaja en conjunto en flujos de trabajo de varios pasos"
+    },
+    "cloud": {
+      "label": "Nube",
+      "description": "Despliega agentes en infraestructura en la nube, gestiona programaciones e integra GitLab CI"
+    },
+    "settings": {
+      "label": "Ajustes",
+      "description": "Preferencias de cuenta, temas de apariencia, reglas de notificación y configuración del motor"
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Amplía tus agentes con plugins de terceros y extensiones personalizadas"
+    }
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Biblioteca)",
+    "personas_tab": "Personas (Animado)",
+    "lucide_footer": "lucide-react -- biblioteca de íconos genérica -- estático",
+    "personas_footer": "9 íconos personalizados -- motivos neurales/circuitos -- animados con CSS -- adaptativos al tema"
   }
 }

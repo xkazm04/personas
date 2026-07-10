@@ -109,5 +109,84 @@
     "build_cta": "আপনার প্রথম এজেন্ট তৈরি করুন",
     "subtitle": "সহজ ভাষায় একটি কাজ বর্ণনা করুন, আমরা একটি কার্যকর এজেন্ট সেট আপ করব — অথবা সহকারীকে আপনার হয়ে করতে বলুন।",
     "title": "আপনার প্রথম এজেন্ট তৈরি করুন"
+  },
+  "welcome": "স্বাগতম",
+  "greeting_morning": "সুপ্রভাত",
+  "greeting_afternoon": "শুভ অপরাহ্ন",
+  "greeting_evening": "শুভ সন্ধ্যা",
+  "operator": "অপারেটর",
+  "commander": "Commander",
+  "summary_empty": "প্রথম এজেন্ট তৈরি করে বা প্ল্যাটফর্ম ঘুরে দেখে শুরু করুন।",
+  "summary_stats": "আপনার {personasCount} এজেন্ট{personasPlural} এবং {credentialsCount} শংসাপত্র{credentialsPlural} কনফিগার করা আছে।",
+  "quick_navigation": "দ্রুত নেভিগেশন",
+  "platform_label": "personas প্ল্যাটফর্ম",
+  "roadmap": {
+    "title": "পণ্য রোডম্যাপ",
+    "subtitle": "আমরা এখন কী তৈরি করছি এবং পরে কী আসবে।",
+    "unavailable": "রোডম্যাপ পাওয়া যাচ্ছে না",
+    "unavailable_hint": "পণ্য রোডম্যাপ লোড করা যায়নি। আপনার সংযোগ চেক করুন এবং আবার চেষ্টা করুন।",
+    "status_in_progress": "চলমান",
+    "status_next": "পরবর্তী",
+    "status_planned": "পরিকল্পিত",
+    "status_completed": "সম্পন্ন",
+    "priority_now": "এখন",
+    "priority_next": "পরবর্তী",
+    "priority_later": "পরে",
+    "in_progress_count": "{count}টি চলমান",
+    "next_count": "{count}টি পরবর্তী"
+  },
+  "fleet": {
+    "executions_today": "আজকের রান",
+    "success_rate": "সাফল্যের হার",
+    "active_agents": "সক্রিয় এজেন্ট",
+    "credentials": "ক্রেডেনশিয়াল"
+  },
+  "nav": {
+    "overview": {
+      "label": "সারসংক্ষেপ",
+      "description": "ড্যাশবোর্ড বিশ্লেষণ, সম্পাদন ইতিহাস এবং রিয়েল-টাইম মনিটরিং"
+    },
+    "personas": {
+      "label": "এজেন্ট",
+      "description": "AI এজেন্ট তৈরি, কনফিগার ও পরিচালনা করুন"
+    },
+    "events": {
+      "label": "ইভেন্ট",
+      "description": "ইভেন্ট ট্রিগার, webhook ও সময়সূচি অটোমেশন কনফিগার করুন"
+    },
+    "credentials": {
+      "label": "কী",
+      "description": "API শংসাপত্র, ডাটাবেস সংযোগ ও এনক্রিপ্টেড সিক্রেট পরিচালনা"
+    },
+    "design-reviews": {
+      "label": "টেমপ্লেট",
+      "description": "n8n ওয়ার্কফ্লো ইম্পোর্ট, টেমপ্লেট গ্যালারি ও এজেন্ট ব্লুপ্রিন্ট তৈরি"
+    },
+    "team": {
+      "label": "দল",
+      "description": "মাল্টি-এজেন্ট টিম পাইপলাইন ড্র্যাগ-অ্যান্ড-ড্রপে তৈরি করুন"
+    },
+    "teams": {
+      "label": "দলসমূহ",
+      "description": "একাধিক এজেন্টকে একটি দলে একত্রিত করুন যা বহু-ধাপের ওয়ার্কফ্লোতে একসাথে কাজ করে"
+    },
+    "cloud": {
+      "label": "ক্লাউড",
+      "description": "ক্লাউডে এজেন্ট ডিপ্লয়, সময়সূচি পরিচালনা ও GitLab CI ইন্টিগ্রেশন"
+    },
+    "settings": {
+      "label": "সেটিংস",
+      "description": "অ্যাকাউন্ট, থিম, বিজ্ঞপ্তি ও ইঞ্জিন কনফিগারেশন"
+    },
+    "plugins": {
+      "label": "প্লাগিন",
+      "description": "তৃতীয় পক্ষের প্লাগিন এবং কাস্টম এক্সটেনশন দিয়ে এজেন্ট প্রসারিত করুন"
+    }
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (লাইব্রেরি)",
+    "personas_tab": "Personas (অ্যানিমেটেড)",
+    "lucide_footer": "lucide-react -- সাধারণ আইকন লাইব্রেরি -- স্ট্যাটিক",
+    "personas_footer": "৯টি কাস্টম আইকন -- নিউরাল/সার্কিট মোটিফ -- CSS-অ্যানিমেটেড -- থিম-অ্যাডাপ্টিভ"
   }
 }

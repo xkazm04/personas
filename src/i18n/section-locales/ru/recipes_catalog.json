@@ -229,5 +229,6 @@
   "update_badge": "Обновление",
   "update_badge_detail_tooltip": "Установлено в версии v{from}; в каталоге теперь v{to}. Чтобы обновить, удалите и установите заново.",
   "update_badge_tooltip": "Доступна новая версия этого навыка — удалите и установите заново, чтобы обновить",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "Tags"
 }

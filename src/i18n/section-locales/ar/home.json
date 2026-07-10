@@ -109,5 +109,84 @@
     "build_cta": "أنشئ وكيلك الأول",
     "subtitle": "صف مهمة بلغة عادية وسنعدّ وكيلاً جاهزاً — أو اطلب من المساعد أن يفعل ذلك نيابةً عنك.",
     "title": "أنشئ وكيلك الأول"
+  },
+  "welcome": "مرحبًا",
+  "greeting_morning": "صباح الخير",
+  "greeting_afternoon": "مساء الخير",
+  "greeting_evening": "مساء الخير",
+  "operator": "المشغّل",
+  "commander": "القائد",
+  "summary_empty": "ابدأ بإنشاء أول وكيل لك أو استكشف المنصة.",
+  "summary_stats": "لديك {personasCount} وكيل{personasPlural} و{credentialsCount} بيانات اعتماد{credentialsPlural} مُعدّة.",
+  "quick_navigation": "التنقل السريع",
+  "platform_label": "منصة Personas",
+  "roadmap": {
+    "title": "خارطة المنتج",
+    "subtitle": "ما نبنيه الآن وما هو قادم.",
+    "unavailable": "خارطة الطريق غير متاحة",
+    "unavailable_hint": "تعذّر تحميل خارطة المنتج. تحقق من اتصالك وأعد المحاولة.",
+    "status_in_progress": "قيد التنفيذ",
+    "status_next": "التالي",
+    "status_planned": "مخطط",
+    "status_completed": "مكتمل",
+    "priority_now": "الآن",
+    "priority_next": "التالي",
+    "priority_later": "لاحقاً",
+    "in_progress_count": "{count} قيد التنفيذ",
+    "next_count": "{count} التالية"
+  },
+  "fleet": {
+    "executions_today": "التشغيلات اليوم",
+    "success_rate": "معدل النجاح",
+    "active_agents": "الوكلاء النشطون",
+    "credentials": "بيانات الاعتماد"
+  },
+  "nav": {
+    "overview": {
+      "label": "نظرة عامة",
+      "description": "تحليلات لوحة المعلومات وسجلّ التنفيذ ومراقبة النظام في الوقت الفعلي لجميع الوكلاء"
+    },
+    "personas": {
+      "label": "الوكلاء",
+      "description": "إنشاء وإعداد وإدارة وكلاء الذكاء الاصطناعي بسلوكيات وقدرات مخصصة"
+    },
+    "events": {
+      "label": "الأحداث",
+      "description": "إعداد مُشغّلات الأحداث ومستمعي webhook والأتمتة المجدولة"
+    },
+    "credentials": {
+      "label": "المفاتيح",
+      "description": "إدارة بيانات اعتماد API واتصالات قواعد البيانات ورموز OAuth والأسرار المشفّرة"
+    },
+    "design-reviews": {
+      "label": "القوالب",
+      "description": "استيراد سير عمل n8n وتصفح معرض القوالب وتوليد مخططات الوكلاء"
+    },
+    "team": {
+      "label": "الفِرَق",
+      "description": "بناء خطوط أنابيب فِرَق الوكلاء المتعددة بالسحب والإفلات والتوجيه"
+    },
+    "teams": {
+      "label": "الفِرَق",
+      "description": "ادمج عدة وكلاء في فريق واحد يعمل معاً على سير عمل متعددة الخطوات"
+    },
+    "cloud": {
+      "label": "السحابة",
+      "description": "نشر الوكلاء على البنية التحتية السحابية وإدارة الجداول ودمج GitLab CI"
+    },
+    "settings": {
+      "label": "الإعدادات",
+      "description": "تفضيلات الحساب وسمات المظهر وقواعد الإشعارات وإعدادات المحرك"
+    },
+    "plugins": {
+      "label": "الإضافات",
+      "description": "وسّع وكلاءك بإضافات طرف ثالث وامتدادات مخصصة"
+    }
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (مكتبة)",
+    "personas_tab": "Personas (متحركة)",
+    "lucide_footer": "lucide-react -- مكتبة أيقونات عامة -- ثابتة",
+    "personas_footer": "9 أيقونات مخصصة -- تصميمات عصبية/دائرية -- CSS متحرك -- متكيف مع المظهر"
   }
 }

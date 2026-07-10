@@ -42,5 +42,13 @@
   "master_resume_title": "लॉन्च पर जारी रखें",
   "preview_play": "स्टेशन प्रीव्यू",
   "preview_stop": "प्रीव्यू रोकें",
-  "youtube_premium_note": "YouTube स्टेशन एक एम्बेडेड प्लेयर के माध्यम से स्ट्रीम होते हैं — विज्ञापन-मुक्त अनुभव के लिए YouTube Premium प्लान आवश्यक है।"
+  "youtube_premium_note": "YouTube स्टेशन एक एम्बेडेड प्लेयर के माध्यम से स्ट्रीम होते हैं — विज्ञापन-मुक्त अनुभव के लिए YouTube Premium प्लान आवश्यक है।",
+  "idle_subtitle": "Curated stations",
+  "kind_youtube": "YouTube",
+  "kind_stream": "Stream",
+  "source_prefix": "Source:",
+  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
+  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
+  "station_toggle_label": "Show in picker",
+  "auto_resume_description": "चालू होने पर, ऐप खुलने के बाद पहली बार रेडियो लोड होने पर अंतिम-प्लेइंग स्टेशन स्वचालित रूप से प्रारंभ हो जाता है। डिफ़ॉल्ट रूप से बंद."
 }

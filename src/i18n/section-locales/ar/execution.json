@@ -20,5 +20,17 @@
   "budget_reset_in_days_one": "خلال {count} يوم",
   "budget_reset_in_days_other": "خلال {count} أيام",
   "interruptions_per_hour_one": "({count} انقطاع/ساعة)",
-  "interruptions_per_hour_other": "({count} انقطاعات/ساعة)"
+  "interruptions_per_hour_other": "({count} انقطاعات/ساعة)",
+  "needs_credential": "يحتاج إلى بيانات اعتماد",
+  "run_preview": "معاينة التشغيل",
+  "close_preview": "إغلاق المعاينة",
+  "budget_limit": "حد الميزانية",
+  "run_agent": "تشغيل الوكيل",
+  "model": "Model",
+  "trust": "Trust",
+  "timeout": "Timeout",
+  "preview_aria_label": "Pre-run preview for {name}",
+  "tool_count_one": "{count} tool",
+  "tool_count_other": "{count} tools",
+  "missing_count": "{count} missing"
 }

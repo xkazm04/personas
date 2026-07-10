@@ -20,5 +20,17 @@
   "budget_reset_in_days_one": "{count} দিনে",
   "budget_reset_in_days_other": "{count} দিনে",
   "interruptions_per_hour_one": "({count}টি বিঘ্ন/1h)",
-  "interruptions_per_hour_other": "({count}টি বিঘ্ন/1h)"
+  "interruptions_per_hour_other": "({count}টি বিঘ্ন/1h)",
+  "needs_credential": "ক্রেডেনশিয়াল প্রয়োজন",
+  "run_preview": "রান প্রিভিউ",
+  "close_preview": "প্রিভিউ বন্ধ করুন",
+  "budget_limit": "বাজেট সীমা",
+  "run_agent": "এজেন্ট চালান",
+  "model": "Model",
+  "trust": "Trust",
+  "timeout": "Timeout",
+  "preview_aria_label": "Pre-run preview for {name}",
+  "tool_count_one": "{count} tool",
+  "tool_count_other": "{count} tools",
+  "missing_count": "{count} missing"
 }

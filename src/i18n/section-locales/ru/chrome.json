@@ -47,7 +47,8 @@
     "nav_mode_notifications": "Уведомления (в режиме навигации)",
     "nav_mode_review": "Ручная проверка (в режиме навигации)",
     "nav_mode_schedules": "Расписания (в режиме навигации)",
-    "nav_mode_search": "Поиск (в режиме навигации)"
+    "nav_mode_search": "Поиск (в режиме навигации)",
+    "open_title": "Горячие клавиши"
   },
   "tray_schedules": "Расписания",
   "tray_schedules_today": "{count} запланировано сегодня",
@@ -66,5 +67,10 @@
   "tray_acceptance_pending": "{count} целей ожидают вашего принятия",
   "cli_not_ready_detail": "Personas запускает ваших агентов через вашу подписку Claude. Не удалось запустить сессию Claude — убедитесь, что Claude Code CLI установлен и выполнен вход, затем повторите попытку.",
   "cli_not_ready_retry": "Повторить",
-  "cli_not_ready_title": "Claude CLI не готов"
+  "cli_not_ready_title": "Claude CLI не готов",
+  "expand_sidebar": "Развернуть панель",
+  "collapse_sidebar": "Свернуть панель",
+  "network_settings": "Настройки сети",
+  "dark": "Тёмная",
+  "light": "Светлая"
 }

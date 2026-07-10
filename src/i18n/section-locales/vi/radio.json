@@ -42,5 +42,13 @@
   "master_resume_title": "Tiếp tục khi khởi động",
   "preview_play": "Xem trước kênh",
   "preview_stop": "Dừng xem trước",
-  "youtube_premium_note": "Các kênh YouTube phát qua trình phát nhúng — cần gói YouTube Premium để có trải nghiệm không có quảng cáo."
+  "youtube_premium_note": "Các kênh YouTube phát qua trình phát nhúng — cần gói YouTube Premium để có trải nghiệm không có quảng cáo.",
+  "idle_subtitle": "Curated stations",
+  "kind_youtube": "YouTube",
+  "kind_stream": "Stream",
+  "source_prefix": "Source:",
+  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
+  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
+  "station_toggle_label": "Show in picker",
+  "auto_resume_description": "Khi được bật, đài phát lần cuối sẽ tự động khởi động vào lần tải đài đầu tiên sau khi ứng dụng mở. Tắt theo mặc định."
 }

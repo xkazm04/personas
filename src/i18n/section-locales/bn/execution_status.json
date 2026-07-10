@@ -1,4 +1,8 @@
 {
   "completed": "সম্পন্ন",
-  "failed": "ব্যর্থ"
+  "failed": "ব্যর্থ",
+  "queued": "কিউতে",
+  "running": "চলছে",
+  "cancelled": "বাতিল",
+  "error": "ত্রুটি"
 }

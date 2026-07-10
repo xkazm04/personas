@@ -42,6 +42,44 @@
       "operation": "Thao tác",
       "detail": "Chi tiết",
       "time": "Thời gian"
+    },
+    "anomaly_detected": "Phát hiện bất thường: thông tin xác thực đột ngột thất bại sau khi thành công trước đó. Có thể đã bị thu hồi.",
+    "history": "Lịch sử",
+    "event_triggers": "Trình kích hoạt sự kiện",
+    "rotation_policy": {
+      "rotate_every": "Xoay vòng mỗi",
+      "days": "ngày",
+      "no_policy": "Chưa cấu hình chính sách xoay vòng.",
+      "oauth_refresh_active": "Làm mới token OAuth đang hoạt động",
+      "oauth_refresh_active_auto": "Làm mới token OAuth đang hoạt động (tự động)",
+      "auto_rotation_active": "Xoay vòng tự động đang hoạt động",
+      "rotation_paused": "Xoay vòng tạm dừng",
+      "rotate_now": "Xoay ngay",
+      "enable_rotation": "Bật xoay vòng",
+      "enabling": "Đang bật...",
+      "remove_policy_tooltip": "Xóa chính sách xoay vòng",
+      "save": "Lưu",
+      "cancel": "Hủy",
+      "rotation_failed": "Xoay vòng thất bại: {error}",
+      "remove_failed": "Không thể xóa chính sách: {error}",
+      "update_failed": "Không thể cập nhật chu kỳ xoay vòng: {error}",
+      "enable_failed": "Không thể bật xoay vòng: {error}",
+      "last_rotated": "Lần xoay cuối: {time}"
+    },
+    "rotation_badge": {
+      "disabled": "Tắt",
+      "perm_errors": "Lỗi liên tục",
+      "degrading": "Đang xấu đi",
+      "backoff": "Đang chờ thử lại"
+    },
+    "audit": {
+      "empty": "Chưa có mục kiểm tra. Các thao tác sẽ được ghi lại khi xảy ra.",
+      "op_decrypted": "Đã giải mã",
+      "op_created": "Đã tạo",
+      "op_updated": "Đã cập nhật",
+      "op_deleted": "Đã xóa",
+      "op_healthcheck": "Kiểm tra kết nối",
+      "filter_all": "tất cả"
     }
   },
   "negotiator": {
@@ -149,7 +187,10 @@
   "body": {
     "authorizing": "Đang xác thực với {name}...",
     "authorize_with": "Xác thực với {name}",
-    "consent_completed": "Đã hoàn tất xác nhận {name} lúc {time}"
+    "consent_completed": "Đã hoàn tất xác nhận {name} lúc {time}",
+    "authorize_hint": "Mở đăng nhập {name} và lưu quyền truy cập sau khi bạn chấp thuận.",
+    "update_failed": "Không thể cập nhật thông tin xác thực",
+    "delete_credential": "Xóa thông tin xác thực"
   },
   "auto_cred": {
     "guided_setup": "Thiết lập có hướng dẫn",
@@ -210,7 +251,30 @@
     "mcp_error": "Lỗi",
     "mcp_success": "Thành công",
     "mcp_empty": "(trống)",
-    "response_empty": "(phản hồi trống)"
+    "response_empty": "(phản hồi trống)",
+    "tab_overview": "Tổng quan",
+    "tab_api_explorer": "Khám phá API",
+    "tab_recipes": "Công thức",
+    "tab_mcp_tools": "Công cụ MCP",
+    "tab_rotation": "Xoay vòng",
+    "add_tag": "Thêm thẻ...",
+    "no_connector": "Không có định nghĩa trình kết nối cho loại thông tin xác thực này.",
+    "try_button": "Thử",
+    "parameters": "Tham số",
+    "request_body": "Nội dung yêu cầu",
+    "path_placeholder": "/api/v1/resource",
+    "sending": "Đang gửi...",
+    "mcp_input_schema": "Lược đồ đầu vào",
+    "mcp_discover": "Khám phá công cụ máy chủ MCP",
+    "mcp_discover_hint": "Kết nối với máy chủ MCP để khám phá các công cụ khả dụng và kiểm thử chúng.",
+    "mcp_discover_button": "Khám phá công cụ",
+    "header": "Header",
+    "value": "Giá trị",
+    "path_parameters": "Tham số đường dẫn",
+    "query_parameters": "Tham số truy vấn",
+    "headers": "Tiêu đề",
+    "body": "Nội dung",
+    "empty_response": "(phản hồi rỗng)"
   },
   "playground_extra": {
     "add_tag": "Thêm thẻ...",
@@ -581,7 +645,20 @@
     "aria_label": "Điều hướng Kho lưu trữ"
   },
   "credential_card": {
-    "delete_credential": "Xóa thông tin xác thực"
+    "delete_credential": "Xóa thông tin xác thực",
+    "deleting": "Đang xóa {name}...",
+    "no_connector": "Không có định nghĩa trình kết nối cho loại thông tin xác thực này.",
+    "stored_result": "Kết quả kiểm tra kết nối đã lưu",
+    "corrupted": "Bị hỏng",
+    "corrupted_tooltip": "Metadata của vòng đệm healthcheck bị hỏng. Điểm bất thường không khả dụng cho đến khi healthcheck thành công tiếp theo ghi đè dữ liệu xấu.",
+    "field_count_one": "{count} trường",
+    "field_count_other": "{count} trường",
+    "add_tag_placeholder": "Thêm thẻ...",
+    "add_tag_button": "Thêm thẻ",
+    "remove_tag": "Xóa thẻ \\\"{tag}\\\"",
+    "copy_credential_id": "Sao chép ID thông tin xác thực",
+    "refresh_oauth": "Làm mới token OAuth ngay",
+    "refresh": "Làm mới"
   },
   "vault_badge": {
     "needs_attention": "Cần chú ý",
@@ -735,7 +812,17 @@
   },
   "audit_log": {
     "empty": "Chưa có mục kiểm tra",
-    "empty_hint": "Các thao tác sẽ được ghi lại khi xảy ra."
+    "empty_hint": "Các thao tác sẽ được ghi lại khi xảy ra.",
+    "access_events_hint": "Sự kiện truy cập sẽ xuất hiện ở đây.",
+    "loading": "Đang tải dòng thời gian kiểm toán...",
+    "total_accesses": "{count} tổng cộng",
+    "personas_one": "{count} tác nhân",
+    "personas_other": "{count} tác nhân",
+    "accesses_24h": "{count} trong 24h",
+    "anomalies_one": "{count} bất thường",
+    "anomalies_other": "{count} bất thường",
+    "no_anomalies": "Không có bất thường",
+    "show_all": "Hiển thị tất cả {count} mục"
   },
   "credential_import": {
     "import_from": "Nhập từ {source}",
@@ -1308,5 +1395,202 @@
     "time_tracking": "Theo dõi thời gian",
     "vector_search": "Tìm kiếm vector",
     "web_scraping": "Web scraping"
+  },
+  "title": "Kho lưu trữ",
+  "subtitle": "Chọn cách bạn muốn thêm thông tin xác thực",
+  "add_from_catalog": "Thêm từ danh mục",
+  "ai_designed": "Thông tin xác thực do AI thiết kế",
+  "health": {
+    "healthy": "khỏe mạnh",
+    "needs_attention": "cần chú ý",
+    "untested": "chưa kiểm tra"
+  },
+  "list": {
+    "no_credentials": "Không phát hiện dịch vụ đã xác thực. Chọn thủ công bên dưới.",
+    "delete_confirm": "Xóa thông tin xác thực này?",
+    "blast_radius": "Phạm vi ảnh hưởng",
+    "no_dependencies": "Không có tác tử nào phụ thuộc vào thông tin xác thực này. An toàn để chỉnh sửa hoặc xóa.",
+    "affected_agents": "Tác tử bị ảnh hưởng",
+    "affected_events": "Sự kiện bị ảnh hưởng",
+    "sort_label": "Sắp xếp:"
+  },
+  "connector": {
+    "filter_all": "Tất cả",
+    "filter_connected": "Đã kết nối",
+    "filter_available": "Khả dụng"
+  },
+  "vector": {
+    "documents_tab": "Tài liệu",
+    "search_tab": "Tìm kiếm",
+    "settings_tab": "Cài đặt",
+    "ingest_title": "Thêm tài liệu",
+    "ingest_hint": "Kéo tệp vào đây hoặc nhấp để duyệt",
+    "ingest_drop": "Thả tệp để thêm",
+    "ingest_supported": "Hỗ trợ: txt, md, html, csv, json, yaml, tệp mã",
+    "starting_ingestion": "Đang xử lý tệp...",
+    "no_valid_files": "Không tìm thấy đường dẫn tệp hợp lệ. Hãy thử kéo từng tệp riêng lẻ.",
+    "no_documents": "Chưa có tài liệu",
+    "no_documents_hint": "Kéo tệp vào đây, dán văn bản, hoặc quét thư mục để bắt đầu xây dựng cơ sở kiến thức.",
+    "refresh": "Làm mới",
+    "paste_text": "Dán văn bản",
+    "directory": "Thư mục",
+    "delete_document": "Xóa tài liệu",
+    "document_count_one": "{count} tài liệu",
+    "document_count_other": "{count} tài liệu",
+    "show_full": "Hiện toàn bộ đoạn trích",
+    "show_less": "Thu gọn",
+    "copy_content": "Sao chép nội dung",
+    "kb_info": "Thông tin cơ sở kiến thức",
+    "embedding_model": "Mô hình tìm kiếm",
+    "dimensions": "Chiều",
+    "chunk_size": "Kích thước đoạn",
+    "chunk_overlap": "Chồng lấp đoạn",
+    "statistics": "Thống kê",
+    "documents": "Tài liệu",
+    "chunks": "Đoạn",
+    "local_embedding": "Tìm kiếm cục bộ",
+    "local_embedding_hint": "Lập chỉ mục tìm kiếm chạy cục bộ bằng {model} ({dims} chiều). Dữ liệu không rời máy. Mô hình (~23MB) được tải xuống lần đầu và lưu cục bộ."
+  },
+  "desktop": {
+    "installed": "Đã cài đặt",
+    "running": "Đang chạy",
+    "not_installed": "Chưa cài đặt"
+  },
+  "graph": {
+    "no_dependencies": "Không có phụ thuộc",
+    "connection_count_one": "{count} kết nối",
+    "connection_count_other": "{count} kết nối",
+    "dep_count_one": "{count} phụ thuộc",
+    "dep_count_other": "{count} phụ thuộc",
+    "not_tested": "Chưa kiểm tra",
+    "healthy": "Bình thường",
+    "unhealthy": "Không bình thường"
+  },
+  "wizard": {
+    "detected": "Đã phát hiện ({count})",
+    "available": "Khả dụng ({count})",
+    "already_added": "Đã thêm ({count})",
+    "no_match": "Không có dịch vụ nào khớp với \\\"{search}\\\"",
+    "already_added_badge": "Đã thêm",
+    "local": "Cục bộ",
+    "cli_auth": "Xác thực CLI",
+    "session": "Phiên"
+  },
+  "bulk_healthcheck": {
+    "title": "Kết quả kiểm tra sức khỏe",
+    "needs_attention": "Cần chú ý",
+    "slowest_responses": "Phản hồi chậm nhất",
+    "passed_count": "{count} đã qua",
+    "failed_count": "{count} thất bại",
+    "total_count": "{count} tổng cộng"
+  },
+  "health_bar": {
+    "healthy": "bình thường",
+    "needs_attention": "cần chú ý",
+    "untested": "chưa kiểm tra"
+  },
+  "card_body": {
+    "failed_update": "Không thể cập nhật thông tin xác thực",
+    "authorizing_with": "Đang xác thực với {name}...",
+    "authorize_with": "Xác thực với {name}",
+    "authorize_hint": "Khởi chạy đồng ý {name} được quản lý bởi ứng dụng và cập nhật refresh token sau khi chấp thuận.",
+    "consent_completed": "Đã hoàn tất xác nhận {name} lúc {time}"
+  },
+  "card_details": {
+    "tab_intelligence": "Thông minh",
+    "tab_rotation": "Xoay vòng",
+    "tab_token_lifetime": "Thời hạn token",
+    "tab_services": "Dịch vụ ({count})",
+    "tab_events": "Sự kiện ({count})",
+    "tab_audit": "Kiểm tra"
+  },
+  "token_metrics": {
+    "loading": "Đang tải số liệu...",
+    "no_metrics": "Chưa ghi lại số liệu làm mới token. Số liệu sẽ xuất hiện sau lần làm mới token OAuth đầu tiên.",
+    "trend_warning": "Thời hạn token đang có xu hướng ngắn hơn — có thể do nhà cung cấp giới hạn tốc độ hoặc thay đổi chính sách.",
+    "total_refreshes": "Tổng số lần làm mới",
+    "failure_rate": "Tỷ lệ thất bại",
+    "avg_lifetime": "Thời hạn trung bình",
+    "avg_drift": "Độ lệch trung bình",
+    "recent_ttls": "TTL gần đây từ nhà cung cấp (mới nhất trước)",
+    "recent_refreshes": "Lần làm mới gần đây",
+    "fallback_used": "Fallback ({fallback}s) được sử dụng trong {rate}% các lần làm mới ({count}/{total}) — nhà cung cấp bỏ qua"
+  },
+  "wizard_detect": {
+    "no_services": "Không có dịch vụ nào khớp với \\\"{search}\\\"",
+    "select_services": "Chọn dịch vụ để thêm thông tin xác thực, hoặc quét để tự động phát hiện.",
+    "scanning": "Đang quét công cụ CLI và phiên trình duyệt...",
+    "scan_button": "Quét dịch vụ đã xác thực",
+    "search_services": "Tìm kiếm dịch vụ...",
+    "desktop_bridge": "Cầu nối máy tính -- tự động phát hiện",
+    "batch_complete": "Thiết lập hàng loạt hoàn tất",
+    "skip_service": "Bỏ qua dịch vụ này",
+    "no_filter_match": "Hãy thử cụm từ tìm kiếm khác hoặc xóa bộ lọc.",
+    "set_up_credentials": "Thiết lập thông tin xác thực",
+    "clear_selection": "Xóa lựa chọn",
+    "set_up_services": "Thiết lập {count} dịch vụ{plural}",
+    "setting_up": "Đang thiết lập {current} trên {total}",
+    "wizard_title": "Trình hướng dẫn thiết lập thông tin xác thực",
+    "choose_service": "Chọn một dịch vụ để thiết lập",
+    "ai_walk_description": "AI sẽ hướng dẫn bạn từng bước để lấy thông tin xác thực API.",
+    "wizard_subtitle": "Thiết lập thông tin xác thực do AI hướng dẫn",
+    "wizard_subtitle_batch": "Đang thiết lập {count} dịch vụ{plural}"
+  },
+  "autopilot": {
+    "title": "API Autopilot",
+    "input_hint": "Dán URL spec OpenAPI hoặc nội dung để tự động tạo trình kết nối",
+    "preview_hint": "Xem lại API đã phân tích và chọn các điểm cuối cần đưa vào",
+    "generated_hint": "Trình kết nối của bạn đã được tạo thành công",
+    "connector_generated": "Trình kết nối đã tạo thành công",
+    "api_playground": "Sân chơi API",
+    "api_playground_hint": "Kiểm thử các công cụ API đã tạo trước khi sử dụng",
+    "paste_spec": "Dán spec OpenAPI (JSON hoặc YAML)",
+    "valid_url_error": "Nhập URL hợp lệ (vd: https://api.example.com/openapi.json)",
+    "authentication": "Xác thực",
+    "connector_name": "Tên trình kết nối",
+    "color": "Màu sắc",
+    "endpoints_selected": "Điểm cuối ({selected}/{total} đã chọn)",
+    "generating": "Đang tạo...",
+    "generate_connector": "Tạo trình kết nối ({count} công cụ)",
+    "base_url": "URL cơ sở",
+    "headers_label": "Header",
+    "header_name_placeholder": "Tên header",
+    "query_parameters": "Tham số truy vấn",
+    "param_name_placeholder": "Tên tham số",
+    "request_body": "Nội dung yêu cầu (JSON)",
+    "from_url": "Từ URL",
+    "paste_content": "Dán nội dung",
+    "openapi_spec_url": "URL đặc tả OpenAPI",
+    "openapi_format_hint": "Hỗ trợ đặc tả OpenAPI 3.x và Swagger 2.x ở định dạng JSON hoặc YAML",
+    "parsing_spec": "Đang phân tích đặc tả...",
+    "parse_analyze": "Phân tích & Phân tích chi tiết",
+    "connector_in_catalog": "{connectorLabel} hiện có sẵn trong danh mục trình kết nối của bạn với {toolCount} định nghĩa công cụ.",
+    "generated_tools": "Công cụ đã tạo ({count})",
+    "credential_fields": "Các trường thông tin xác thực",
+    "open_playground": "Mở Playground",
+    "copy_connector_id": "Sao chép ID trình kết nối",
+    "go_to_catalog": "Đi đến danh mục",
+    "response_headers": "Các header phản hồi ({count})",
+    "base_url_placeholder": "https://api.example.com",
+    "openapi_url_placeholder": "https://api.example.com/openapi.json",
+    "auth_schemes": "các phương thức xác thực",
+    "body_placeholder": "{ \"key\": \"value\" }"
+  },
+  "cli_capture": {
+    "cta": "Nhập từ CLI cục bộ",
+    "hint": "Sử dụng CLI cục bộ đã đăng nhập thay vì dán khóa API.",
+    "running": "Đang chạy CLI cục bộ...",
+    "success": "Đã lấy thông tin xác thực từ CLI",
+    "token_ttl_notice": "Token này hết hạn trong {seconds}s và sẽ được làm mới tự động.",
+    "source_label": "CLI",
+    "missing_binary": "`{binary}` chưa được cài đặt hoặc không nằm ở vị trí được cho phép.",
+    "unauthenticated": "Bạn chưa đăng nhập vào {binary}. {instruction}",
+    "capture_failed": "Lấy thông tin từ CLI thất bại: {detail}",
+    "timeout": "Lấy thông tin từ CLI hết thời gian chờ. Hãy thử chạy lệnh thủ công trước."
+  },
+  "rotation_insight": {
+    "perm_errors": "Phát hiện lỗi vĩnh viễn -- đã thử xoay vòng, đang cảnh báo.",
+    "degrading": "Suy giảm kéo dài -- đã kích hoạt xoay vòng phòng ngừa.",
+    "backoff": "Lỗi tạm thời -- đang áp dụng backoff theo cấp số nhân."
   }
 }

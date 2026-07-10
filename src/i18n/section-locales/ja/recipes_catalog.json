@@ -229,5 +229,6 @@
   "update_badge": "更新",
   "update_badge_detail_tooltip": "v{from}で導入済み。カタログは現在v{to}です。更新するには削除して再導入してください。",
   "update_badge_tooltip": "この機能の新しいバージョンが利用可能です — 削除して再導入すると更新されます",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "Tags"
 }

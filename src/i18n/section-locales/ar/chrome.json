@@ -47,7 +47,8 @@
     "nav_mode_notifications": "تبديل الإشعارات (في وضع التنقل)",
     "nav_mode_review": "تبديل المراجعة البشرية (في وضع التنقل)",
     "nav_mode_schedules": "تبديل الجداول الزمنية (في وضع التنقل)",
-    "nav_mode_search": "فتح البحث (في وضع التنقل)"
+    "nav_mode_search": "فتح البحث (في وضع التنقل)",
+    "open_title": "اختصارات لوحة المفاتيح"
   },
   "tray_schedules": "الجداول الزمنية",
   "tray_schedules_today": "{count} مجدول اليوم",
@@ -66,5 +67,10 @@
   "tray_acceptance_pending": "{count} هدف بانتظار قبولك",
   "cli_not_ready_detail": "يشغّل Personas وكلاءك على اشتراكك في Claude. تعذّر علينا بدء جلسة Claude — تأكّد من تثبيت Claude Code CLI وتسجيل الدخول، ثم أعد المحاولة.",
   "cli_not_ready_retry": "إعادة المحاولة",
-  "cli_not_ready_title": "Claude CLI غير جاهز"
+  "cli_not_ready_title": "Claude CLI غير جاهز",
+  "expand_sidebar": "توسيع الشريط الجانبي",
+  "collapse_sidebar": "طي الشريط الجانبي",
+  "network_settings": "إعدادات الشبكة",
+  "dark": "داكن",
+  "light": "فاتح"
 }

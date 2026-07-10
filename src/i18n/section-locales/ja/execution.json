@@ -20,5 +20,17 @@
   "budget_reset_in_days_one": "in {count} day",
   "budget_reset_in_days_other": "in {count} days",
   "interruptions_per_hour_one": "({count} interruption/1h)",
-  "interruptions_per_hour_other": "({count} interruptions/1h)"
+  "interruptions_per_hour_other": "({count} interruptions/1h)",
+  "needs_credential": "認証情報が必要",
+  "run_preview": "実行プレビュー",
+  "close_preview": "プレビューを閉じる",
+  "budget_limit": "予算制限",
+  "run_agent": "エージェントを実行",
+  "model": "Model",
+  "trust": "Trust",
+  "timeout": "Timeout",
+  "preview_aria_label": "Pre-run preview for {name}",
+  "tool_count_one": "{count} tool",
+  "tool_count_other": "{count} tools",
+  "missing_count": "{count} missing"
 }

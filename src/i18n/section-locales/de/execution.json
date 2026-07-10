@@ -20,5 +20,17 @@
   "budget_reset_in_days_one": "in {count} Tag",
   "budget_reset_in_days_other": "in {count} Tagen",
   "interruptions_per_hour_one": "({count} Unterbrechung/1 Std.)",
-  "interruptions_per_hour_other": "({count} Unterbrechungen/1 Std.)"
+  "interruptions_per_hour_other": "({count} Unterbrechungen/1 Std.)",
+  "needs_credential": "Zugangsdaten erforderlich",
+  "run_preview": "Lauf-Vorschau",
+  "close_preview": "Vorschau schließen",
+  "budget_limit": "Budget-Limit",
+  "run_agent": "Agent ausführen",
+  "model": "Model",
+  "trust": "Trust",
+  "timeout": "Timeout",
+  "preview_aria_label": "Pre-run preview for {name}",
+  "tool_count_one": "{count} tool",
+  "tool_count_other": "{count} tools",
+  "missing_count": "{count} missing"
 }

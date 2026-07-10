@@ -47,7 +47,8 @@
     "nav_mode_notifications": "Přepnout oznámení (v navigačním režimu)",
     "nav_mode_review": "Přepnout ruční kontrolu (v navigačním režimu)",
     "nav_mode_schedules": "Přepnout plány (v navigačním režimu)",
-    "nav_mode_search": "Otevřít vyhledávání (v navigačním režimu)"
+    "nav_mode_search": "Otevřít vyhledávání (v navigačním režimu)",
+    "open_title": "Klávesové zkratky"
   },
   "tray_schedules": "Plány",
   "tray_schedules_today": "{count} naplánováno dnes",
@@ -66,5 +67,10 @@
   "tray_acceptance_pending": "{count} cílů čeká na vaše přijetí",
   "cli_not_ready_detail": "Personas spouští vaše agenty na vašem předplatném Claude. Nepodařilo se nám spustit relaci Claude — ujistěte se, že je Claude Code CLI nainstalováno a přihlášeno, a zkuste to znovu.",
   "cli_not_ready_retry": "Zkusit znovu",
-  "cli_not_ready_title": "Claude CLI není připraveno"
+  "cli_not_ready_title": "Claude CLI není připraveno",
+  "expand_sidebar": "Rozbalit boční panel",
+  "collapse_sidebar": "Sbalit boční panel",
+  "network_settings": "Nastavení sítě",
+  "dark": "Tmavý",
+  "light": "Světlý"
 }

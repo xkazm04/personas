@@ -7,7 +7,32 @@
   "messages": {
     "priority_high": "उच्च",
     "priority_normal": "सामान्य",
-    "priority_low": "निम्न"
+    "priority_low": "निम्न",
+    "loading": "संदेश लोड हो रहे हैं...",
+    "no_messages": "अभी कोई संदेश नहीं",
+    "switch_to_all": "सभी संदेश देखने के लिए \\\"सभी\\\" पर स्विच करें",
+    "columns": {
+      "persona": "Persona",
+      "title": "शीर्षक",
+      "priority": "प्राथमिकता",
+      "status": "स्थिति",
+      "created": "बनाया गया"
+    },
+    "content_header": "सामग्री",
+    "filter_all": "सभी",
+    "filter_unread": "अपठित",
+    "filter_high_priority": "उच्च प्राथमिकता",
+    "delivery_delivered": "वितरित",
+    "delivery_failed": "विफल",
+    "delivery_pending": "लंबित",
+    "delivery_queued": "कतार में",
+    "channel_email": "ईमेल",
+    "channel_slack": "Slack",
+    "channel_telegram": "टेलीग्राम",
+    "channel_desktop": "डेस्कटॉप",
+    "id_label": "ID:",
+    "confirm_delete_title": "हटाने की पुष्टि करें",
+    "close_message": "संदेश विवरण बंद करें"
   },
   "incidents": {
     "filters_active_aria": "{count} सक्रिय फ़िल्टर",
@@ -128,18 +153,58 @@
       "panel_loaded": "Loaded",
       "panel_failed": "Failed to load",
       "panel_stale": "Data may be outdated"
-    }
+    },
+    "persona_disabled": "Persona ऑटो-अक्षम किया गया",
+    "auto_resolved": "यह समस्या स्वचालित रूप से हल हुई",
+    "mark_resolved": "हल हुआ चिह्नित करें",
+    "manual_fix": "(मैनुअल सुधार लागू)",
+    "no_open_issues": "कोई खुली समस्या नहीं",
+    "run_analysis": "समस्याओं की जाँच के लिए विश्लेषण चलाएँ।"
   },
   "memories": {
     "title": "स्मृतियाँ",
     "delete_all": "सभी हटाएं",
     "delete_all_confirm_title": "सभी स्मृतियां हटाएं?",
     "delete_all_confirm_body": "यह सभी {count} स्मृतियां स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।",
-    "delete_all_confirm_cta": "सभी हटाएं"
+    "delete_all_confirm_cta": "सभी हटाएं",
+    "created_success": "स्मृति सफलतापूर्वक बनाई गई",
+    "no_memories": "अभी कोई स्मृति नहीं",
+    "no_memories_hint": "जब एजेंट चलते हैं, तो वे यहाँ मूल्यवान नोट्स और सीख संग्रहीत कर सकते हैं।",
+    "no_memories_match": "कोई memory वर्तमान फ़िल्टर से मेल नहीं खाती",
+    "list_aria_label": "Memory सूची",
+    "add_memory_btn": "Memory जोड़ें",
+    "search_placeholder": "memories खोजें...",
+    "no_filter_match": "कोई memory आपके फ़िल्टर से मेल नहीं खाती। अपनी खोज समायोजित करने का प्रयास करें।",
+    "form": {
+      "agent": "एजेंट",
+      "category": "श्रेणी",
+      "title": "शीर्षक",
+      "content": "सामग्री",
+      "importance": "महत्व",
+      "tags": "टैग",
+      "tags_hint": "(अल्पविराम से अलग)"
+    },
+    "curation_schedule_button": "Schedule",
+    "curation_schedule_button_hint": "Schedule automatic memory curation",
+    "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
+    "curation_schedule_title": "Schedule memory curation",
+    "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
+    "curation_schedule_cron_label": "Schedule (cron)",
+    "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
+    "curation_schedule_presets_label": "Quick picks",
+    "preset_weekly_sunday": "Weekly · Sun 3am",
+    "preset_daily_3am": "Daily · 3am",
+    "preset_weekly_monday": "Weekly · Mon 9am",
+    "preset_monthly": "Monthly · 1st",
+    "curation_schedule_last_run_label": "Last run",
+    "curation_schedule_disabled_state": "Curation is disabled for this agent",
+    "curation_schedule_disable": "Disable schedule",
+    "curation_schedule_save": "Save schedule"
   },
   "memory_review": {
     "keep_prefix": "\"",
-    "keep_suffix": "\" रखें"
+    "keep_suffix": "\" रखें",
+    "all_conflicts_resolved": "सभी टकराव हल हो गए"
   },
   "sla": {
     "title": "एजेंट विश्वसनीयता SLA",
@@ -160,7 +225,16 @@
     "all_time_badge": "All-time",
     "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
     "auto_healed_tooltip": "Total issues the healing engine has auto-resolved across the lifetime of this install. This number is all-time and does not change with the time window above.",
-    "windowed_tooltip": "Computed over the selected time window above ({days} days)."
+    "windowed_tooltip": "Computed over the selected time window above ({days} days).",
+    "loading": "SLA डेटा लोड हो रहा है...",
+    "metric_successful": "सफल",
+    "metric_failed": "विफल",
+    "metric_avg_latency": "औसत विलंबता",
+    "metric_p95_latency": "P95 विलंबता",
+    "metric_cost": "लागत",
+    "metric_mtbf": "MTBF",
+    "metric_auto_healed": "ऑटो-हील",
+    "metric_cancelled": "रद्द"
   },
   "knowledge": {
     "title": "ज्ञान ग्राफ़",
@@ -173,7 +247,29 @@
     "sort_recent": "सबसे नए",
     "needs_review": "समीक्षा आवश्यक",
     "pending_scope_hint": "सभी लंबित एनोटेशन की समीक्षा के लिए एक पर्सोना चुनें।",
-    "graph_tab": "ग्राफ"
+    "graph_tab": "ग्राफ",
+    "subtitle": "निष्पादन इतिहास से सीखे गए {count} पैटर्न",
+    "total_patterns": "कुल पैटर्न",
+    "tool_sequences": "टूल अनुक्रम",
+    "tool_sequences_hint": "सीखी गई टूल श्रृंखलाएँ",
+    "failure_patterns": "विफलता पैटर्न",
+    "failure_patterns_hint": "ज्ञात त्रुटि हस्ताक्षर",
+    "model_insights": "मॉडल अंतर्दृष्टि",
+    "model_insights_hint": "मॉडल के अनुसार प्रदर्शन",
+    "all_personas": "सभी Personas (वैश्विक)",
+    "all_types": "सभी प्रकार",
+    "failure_drilldown": "विफलता ड्रिल-डाउन: {date}",
+    "failure_drilldown_hint": "इस तिथि पर या उसके बाद सक्रिय विफलता पैटर्न दिखाए जा रहे हैं।",
+    "failure_drilldown_empty": "कोई मिलता पैटर्न नहीं -- ऊपर एक विशिष्ट Persona चुनें।",
+    "unavailable": "ज्ञान डेटा अनुपलब्ध",
+    "empty": "अभी कोई ज्ञान पैटर्न नहीं",
+    "empty_hint": "ज्ञान ग्राफ़ बनाने के लिए निष्पादन चलाएँ। हर निष्पादन सिस्टम को टूल अनुक्रम, विफलता पैटर्न और लागत-गुणवत्ता ट्रेडऑफ़ सिखाता है।",
+    "recent_learnings": "हाल की सीखें",
+    "successes": "सफलताएँ",
+    "failures": "विफलताएँ",
+    "avg_cost": "औसत लागत",
+    "avg_duration": "औसत अवधि",
+    "pattern_data": "पैटर्न डेटा"
   },
   "dashboard": {
     "greeting_morning": "सुप्रभात",
@@ -200,7 +296,13 @@
     "section_instruments": "इंस्ट्रुमेंट्स",
     "section_memory": "मेमोरी सुझाव",
     "section_fleet": "फ़्लीट अनुकूलन",
-    "section_routines": "रूटीन और वॉल्ट परिवर्तन"
+    "section_routines": "रूटीन और वॉल्ट परिवर्तन",
+    "title": "डैशबोर्ड",
+    "subtitle": "परिचालन अवलोकन और सिस्टम स्थिति",
+    "pending_reviews_prompt": "लंबित समीक्षाएं",
+    "requiring_attention": "ध्यान की आवश्यकता।",
+    "empty_cta": "शुरू करने के लिए अपना पहला एजेंट बनाएं।",
+    "pipeline_failed": "{source} लोड करने में विफल"
   },
   "review": {
     "title": "मैन्युअल समीक्षाएं",
@@ -333,7 +435,25 @@
     "delete_all": "सभी हटाएं",
     "delete_all_confirm_title": "सभी संदेश हटाएं?",
     "delete_all_confirm_body": "यह सभी {count} संदेशों को स्थायी रूप से हटा देता है। इसे पूर्ववत नहीं किया जा सकता।",
-    "delete_all_confirm_cta": "सभी हटाएं"
+    "delete_all_confirm_cta": "सभी हटाएं",
+    "threads_subtitle": "{count} थ्रेड",
+    "threads_subtitle_one": "{count} थ्रेड",
+    "flat_view": "फ्लैट दृश्य",
+    "threaded_view": "थ्रेडेड दृश्य",
+    "threads_of": "{total} में से {count} थ्रेड",
+    "no_threads": "अभी तक कोई संदेश थ्रेड नहीं",
+    "no_threads_hint": "थ्रेड स्वचालित रूप से बनाए जाते हैं जब एजेंट निष्पादन के दौरान संदेश उत्पन्न करते हैं।",
+    "loading_replies": "उत्तर लोड हो रहे हैं...",
+    "col_priority": "प्राथमिकता",
+    "col_delivery": "डिलीवरी",
+    "col_status": "स्थिति",
+    "new_badge": "नया",
+    "failed_count": "{count} विफल",
+    "pending_count": "{count} लंबित",
+    "sent_count": "{count} भेजे गए",
+    "type_label": "प्रकार:",
+    "confirm_delete": "हटाने की पुष्टि करें",
+    "rating_clear": "Clear rating"
   },
   "events": {
     "title": "इवेंट",
@@ -358,12 +478,50 @@
     "source_system": "सिस्टम",
     "source_scheduled": "शेड्यूल्ड",
     "event_detail_title": "इवेंट:",
-    "event_detail_status": "स्थिति:"
+    "event_detail_status": "स्थिति:",
+    "load_older": "पुराने इवेंट लोड करें",
+    "clear_filters": "सभी फ़िल्टर साफ़ करें",
+    "col_trigger": "ट्रिगर",
+    "col_persona": "पर्सोना",
+    "col_event_name": "इवेंट नाम",
+    "col_status": "स्थिति",
+    "col_created": "बनाया गया",
+    "event_id": "इवेंट ID",
+    "project": "प्रोजेक्ट",
+    "source": "स्रोत",
+    "processed": "प्रोसेस किया",
+    "event_data": "इवेंट डेटा",
+    "error": "त्रुटि"
   },
   "health": {
     "title": "एजेंट स्वास्थ्य",
     "subtitle": "सभी एजेंटों में रियल-टाइम स्वास्थ्य निगरानी",
-    "status_page": "स्थिति पेज"
+    "status_page": "स्थिति पेज",
+    "all_healthy": "सभी एजेंट स्वस्थ",
+    "all_healthy_hint": "हर निगरानी किया गया एजेंट सामान्य रूप से काम कर रहा है",
+    "no_agents": "अभी तक कोई एजेंट नहीं",
+    "no_agents_hint": "उनके स्वास्थ्य की निगरानी शुरू करने के लिए एजेंट बनाएं",
+    "success_rate": "सफलता दर",
+    "avg_latency": "औसत विलंबता",
+    "executions": "निष्पादन",
+    "last_execution": "अंतिम निष्पादन",
+    "never_executed": "कभी नहीं",
+    "cost": "लागत",
+    "healthy": "स्वस्थ",
+    "warning": "चेतावनी",
+    "critical": "गंभीर",
+    "unknown": "अज्ञात",
+    "burn_rate": "बर्न रेट प्रक्षेपण",
+    "monthly_budget": "मासिक बजट",
+    "current_burn": "वर्तमान बर्न",
+    "projected": "प्रक्षेपित",
+    "days_remaining": "शेष दिन",
+    "cascade_title": "कैस्केड विश्लेषण",
+    "predictive_alerts": "पूर्वानुमानी अलर्ट",
+    "no_alerts": "इस समय कोई पूर्वानुमानी अलर्ट नहीं",
+    "operational": "परिचालित",
+    "degraded": "क्षीण",
+    "outage": "आउटेज"
   },
   "leaderboard": {
     "title": "एजेंट लीडरबोर्ड",
@@ -412,7 +570,24 @@
     "executions_label": "निष्पादन",
     "success_rate": "सफलता दर",
     "active_personas": "सक्रिय पर्सोना",
-    "system_trace": "सिस्टम ट्रेस टाइमलाइन"
+    "system_trace": "सिस्टम ट्रेस टाइमलाइन",
+    "ipc_performance": "IPC प्रदर्शन",
+    "alert_rules_label": "अलर्ट नियम",
+    "alert_history_label": "अलर्ट इतिहास",
+    "healing_issues": "स्वास्थ्य समस्याएं",
+    "run_analysis": "विश्लेषण चलाएं",
+    "resolve": "हल करें",
+    "healing_view_list": "सूची",
+    "healing_view_timeline": "टाइमलाइन",
+    "issue_details": "समस्या विवरण",
+    "anomaly_drilldown": "अनोमली ड्रिल-डाउन",
+    "spend_overview": "खर्च अवलोकन",
+    "cost_vs_executions": "लागत बनाम निष्पादन",
+    "daily_executions": "दैनिक निष्पादन",
+    "ipc_channel": "IPC चैनल",
+    "avg_duration": "औसत अवधि",
+    "call_count": "कॉल गिनती",
+    "error_rate": "त्रुटि दर"
   },
   "widgets": {
     "view_all": "सभी देखें",
@@ -429,7 +604,17 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Errors",
-    "tool_performance_unit_ms": "ms"
+    "tool_performance_unit_ms": "ms",
+    "recent_activity": "हाल की गतिविधि",
+    "total_traffic": "कुल ट्रैफ़िक",
+    "total_errors": "कुल त्रुटियां",
+    "tool_performance_empty": "No tool runs in this window",
+    "metric_help": "मेट्रिक सहायता",
+    "how_calculated": "यह कैसे गणना की जाती है?",
+    "details": "विवरण",
+    "executions_badge": "निष्पादन",
+    "success_badge": "सफल",
+    "agents_badge": "एजेंट"
   },
   "activity": {
     "title": "गतिविधि",
@@ -475,7 +660,14 @@
     "value_delivered_count": "वितरित मूल्य",
     "all_models": "सभी मॉडल",
     "col_model": "मॉडल",
-    "col_cost": "लागत"
+    "col_cost": "लागत",
+    "successful": "सफल",
+    "all": "सभी",
+    "running": "चल रहे",
+    "all_statuses": "सभी स्थितियां",
+    "col_status": "स्थिति",
+    "col_id": "ID",
+    "execution_label": "निष्पादन"
   },
   "analytics_dashboard": {
     "issues_found": "{count} समस्याएं मिलीं",
@@ -497,7 +689,51 @@
     "rotation_failed_for": "Failed to rotate {name}",
     "rotation_due_now": "अभी देय",
     "rotation_countdown_days_hours": "{days}दि {hours}घं",
-    "rotation_countdown_hours": "{hours}घ"
+    "rotation_countdown_hours": "{hours}घ",
+    "title": "एनालिटिक्स",
+    "subtitle": "एकीकृत लागत, निष्पादन और टूल उपयोग एनालिटिक्स",
+    "metrics_unavailable": "मेट्रिक्स अनुपलब्ध",
+    "auto_refresh_on": "ऑटो-ताज़ा चालू (30s)",
+    "auto_refresh_off": "ऑटो-ताज़ा बंद",
+    "cost_anomalies_detected": "{count} लागत अनोमलियां पाई गईं",
+    "cost_anomaly_detected": "{count} लागत अनोमली पाई गई",
+    "cost_over_time": "समय के साथ लागत",
+    "execution_health": "निष्पादन स्वास्थ्य",
+    "tool_usage_over_time": "समय के साथ टूल उपयोग",
+    "executions_by_persona": "पर्सोना के अनुसार निष्पादन",
+    "latency_chart": "विलंबता (p50 / p95 / p99)",
+    "tool_invocations": "टूल आह्वान",
+    "no_execution_data": "कोई निष्पादन डेटा नहीं",
+    "prev_cost": "पिछली लागत",
+    "successful": "सफल",
+    "failed": "विफल",
+    "prev_successful": "पिछला सफल",
+    "prev_failed": "पिछला विफल",
+    "invocations": "आह्वान",
+    "anomaly_click_hint": "जांच के लिए चार्ट पर डायमंड मार्कर क्लिक करें",
+    "saved_views": "सहेजे गए दृश्य",
+    "save_current_view": "वर्तमान दृश्य सहेजें",
+    "smart_presets": "स्मार्ट प्रीसेट",
+    "your_saved_views": "आपके सहेजे गए दृश्य",
+    "view_name_placeholder": "दृश्य नाम...",
+    "save_view": "दृश्य सहेजें",
+    "delete_view": "दृश्य हटाएं",
+    "this_week_vs_last": "इस सप्ताह बनाम पिछला",
+    "this_month_vs_last": "इस महीने बनाम पिछला",
+    "health_issues": "स्वास्थ्य समस्याएं",
+    "run_analysis": "विश्लेषण चलाएं",
+    "analyzing": "विश्लेषण हो रहा है...",
+    "analysis_complete": "विश्लेषण पूर्ण",
+    "no_open_issues": "कोई खुली समस्या नहीं",
+    "run_analysis_hint": "समस्याएं जाँचने के लिए विश्लेषण चलाएं।",
+    "filter_all": "सभी",
+    "filter_open": "खुली",
+    "filter_auto_fixed": "स्वतः-ठीक",
+    "resolve": "हल करें",
+    "breaker": "ब्रेकर",
+    "fixed": "ठीक",
+    "retry": "पुनः प्रयास",
+    "never": "कभी नहीं"
   },
   "cron": {
     "title": "Cron एजेंट",
@@ -511,7 +747,12 @@
     "no_agents_hint": "यहाँ देखने के लिए किसी भी एजेंट पर शेड्यूल ट्रिगर बनाएं।",
     "headless_section": "हेडलेस पृष्ठभूमि एजेंट",
     "interactive_section": "इंटरैक्टिव शेड्यूल्ड एजेंट",
-    "scheduled_section": "शेड्यूल्ड एजेंट"
+    "scheduled_section": "शेड्यूल्ड एजेंट",
+    "headless_badge": "हेडलेस",
+    "no_schedule": "कोई शेड्यूल नहीं",
+    "every_interval": "हर {interval}",
+    "next": "अगला",
+    "last": "अंतिम"
   },
   "sla_card": {
     "successful": "सफल",
@@ -521,7 +762,9 @@
     "cost": "लागत",
     "mtbf": "MTBF",
     "auto_healed": "स्वतः-ठीक",
-    "cancelled": "रद्द"
+    "cancelled": "रद्द",
+    "failing": "{count} विफल",
+    "healed": "{count} ठीक"
   },
   "realtime_page": {
     "title": "इवेंट बस मॉनिटर",
@@ -551,7 +794,31 @@
     "close_event_details": "इवेंट विवरण बंद करें",
     "reset_to_start": "शुरुआत पर रीसेट करें",
     "cycle_speed": "प्लेबैक गति बदलें",
-    "exit_replay": "री-प्ले से बाहर निकलें"
+    "exit_replay": "री-प्ले से बाहर निकलें",
+    "test_flow": "फ्लो टेस्ट करें",
+    "testing_flow": "फ्लो टेस्ट हो रहा है...",
+    "test_event_flow": "इवेंट फ्लो टेस्ट करें",
+    "resume": "फिर शुरू करें",
+    "pause": "रोकें",
+    "resume_stream": "रीयलटाइम स्ट्रीम फिर शुरू करें",
+    "pause_stream": "रीयलटाइम स्ट्रीम रोकें",
+    "delete_saved_view": "सहेजा गया दृश्य हटाएं",
+    "event_log": "इवेंट लॉग",
+    "entries": "{count} प्रविष्टियां",
+    "filter_events": "इवेंट फ़िल्टर करें...",
+    "no_events": "अभी कोई इवेंट नहीं",
+    "open_in_drawer": "विवरण ड्रॉअर में खोलें",
+    "event_label": "इवेंट",
+    "status_label": "स्थिति",
+    "source_label": "स्रोत",
+    "target_label": "लक्ष्य",
+    "id_label": "ID",
+    "error_label": "त्रुटि",
+    "payload_label": "पेलोड",
+    "galaxy": "गैलेक्सी",
+    "galaxy_desc": "धूमकेतु पथ के साथ कक्षीय नक्षत्र",
+    "lanes": "लेन",
+    "lanes_desc": "क्षैतिज स्विम-लेन फ्लो आरेख"
   },
   "memory_form": {
     "agent": "एजेंट",
@@ -568,7 +835,10 @@
     "saving": "सहेजा जा रहा है...",
     "created_success": "मेमोरी सफलतापूर्वक बनाई गई",
     "fill_required": "सहेजने के लिए सभी आवश्यक फ़ील्ड भरें",
-    "saving_memory": "मेमोरी सहेजी जा रही है..."
+    "saving_memory": "मेमोरी सहेजी जा रही है...",
+    "share_with_group": "साझा करें",
+    "share_with_group_hint": "इस समूह की हर पर्सोना अपनी प्रॉम्प्ट में यह स्मृति देखती है — संगठन-स्तर के संदर्भ जैसे शैली या नीतियों के लिए उपयोगी।",
+    "share_with_group_title": "चयनित पर्सोना द्वारा लिखित; उसके समूह के हर सदस्य के लिए दिखाई देती है।"
   },
   "memory_filter": {
     "search_placeholder": "मेमोरी खोजें...",
@@ -589,7 +859,9 @@
   "memory_conflict": {
     "memory_a": "मेमोरी A",
     "memory_b": "मेमोरी B",
-    "merge": "मर्ज करें"
+    "merge": "मर्ज करें",
+    "keep": "रखें",
+    "vs": "बनाम"
   },
   "observability_charts": {
     "cost_over_time": "समय के साथ लागत",
@@ -599,7 +871,9 @@
     "failed": "विफल",
     "anomalies_detected": "{count} लागत विसंगतियां पाई गईं",
     "anomaly_detected": "{count} लागत विसंगति पाई गई",
-    "anomaly_click_hint": "जांच करने के लिए चार्ट पर डायमंड मार्कर पर क्लिक करें"
+    "anomaly_click_hint": "जांच करने के लिए चार्ट पर डायमंड मार्कर पर क्लिक करें",
+    "clear_traces": "पूर्ण ट्रेस साफ़ करें",
+    "all_operations": "सभी ऑपरेशन"
   },
   "health_extra": {
     "success": "सफलता",
@@ -655,7 +929,14 @@
   "review_extra": {
     "add_note": "एक नोट जोड़ें (वैकल्पिक)...",
     "confirm": "पुष्टि करें",
-    "processing": "प्रोसेस हो रहा है..."
+    "processing": "प्रोसेस हो रहा है...",
+    "clear_verdicts": "सभी निर्णय साफ़ करें",
+    "retry_with_changes": "बदलावों के साथ पुनः प्रयास करें",
+    "reject_all": "सभी अस्वीकार करें",
+    "quick_actions": "त्वरित क्रियाएं",
+    "accepted": "{count} स्वीकार",
+    "rejected": "{count} अस्वीकार",
+    "undecided": "{count} अनिर्णीत"
   },
   "detail_modal": {
     "close": "बंद करें"
@@ -664,7 +945,8 @@
     "dismiss_help": "सहायता खारिज करें",
     "healthy": "स्वस्थ:",
     "click": "क्लिक:",
-    "got_it": "समझ गया, दोबारा न दिखाएं"
+    "got_it": "समझ गया, दोबारा न दिखाएं",
+    "help_for": "{label} के लिए सहायता"
   },
   "install_button": {
     "install_node": "Node.js इंस्टॉल करें",
@@ -689,7 +971,9 @@
     "disconnect": "डिस्कनेक्ट करें"
   },
   "metrics_cards": {
-    "top_executions": "शीर्ष निष्पादन:"
+    "top_executions": "शीर्ष निष्पादन:",
+    "cost_spike": "लागत स्पाइक",
+    "above_avg": "औसत से ऊपर"
   },
   "event_log_item": {
     "event_id": "इवेंट ID",
@@ -697,7 +981,11 @@
     "source": "स्रोत",
     "processed": "प्रोसेस किया",
     "event_data": "इवेंट डेटा",
-    "error": "त्रुटि"
+    "error": "त्रुटि",
+    "copy_event_data": "इवेंट डेटा कॉपी करें",
+    "copied": "कॉपी किया",
+    "copy": "कॉपी करें",
+    "system": "सिस्टम"
   },
   "burn_rate_extra": {
     "title": "बर्न रेट अनुमान",
@@ -754,12 +1042,28 @@
   },
   "knowledge_graph": {
     "mock_pattern": "Mock पैटर्न",
-    "seed_tooltip": "एक mock पैटर्न seed करें (केवल dev)"
+    "seed_tooltip": "एक mock पैटर्न seed करें (केवल dev)",
+    "all_types": "सभी प्रकार",
+    "all_scopes": "सभी scopes",
+    "failure_drilldown_prefix": "विफलता drill-down:",
+    "failure_date_filter": "{date} पर या उसके बाद सक्रिय विफलता पैटर्न दिखा रहा है",
+    "data_unavailable": "Knowledge डेटा अनुपलब्ध",
+    "loading_patterns": "knowledge पैटर्न लोड हो रहे हैं...",
+    "drilldown_toggle_title": "विफलता drill-down दिखाएँ/छिपाएँ",
+    "no_patterns_yet": "अभी तक कोई knowledge पैटर्न नहीं",
+    "no_patterns_yet_hint": "knowledge पैटर्न बनाने के लिए एजेंट निष्पादन चलाएँ। एजेंट समय के साथ स्मार्ट होते जाते हैं।",
+    "no_patterns_match": "कोई पैटर्न वर्तमान फ़िल्टर से मेल नहीं खाता",
+    "recent_learnings": "हाल की सीख",
+    "curating_manually": "दस्तावेज़ मैन्युअल रूप से curate कर रहे हैं?",
+    "obsidian_tip": "~1000 से कम नोट्स के लिए, एक Obsidian कनेक्टर आपके vault को सीधे sync कर सकता है।"
   },
   "focused_decision": {
     "accept": "स्वीकार करें",
     "reject": "अस्वीकार करें",
-    "media_unavailable": "मीडिया उपलब्ध नहीं"
+    "media_unavailable": "मीडिया उपलब्ध नहीं",
+    "video_not_supported": "आपका ब्राउज़र वीडियो प्लेबैक का समर्थन नहीं करता।",
+    "reject_this": "इसे अस्वीकार करें",
+    "accept_this": "इसे स्वीकार करें"
   },
   "review_focus": {
     "all_caught_up": "सब ठीक है",
@@ -770,7 +1074,9 @@
     "reject_all": "सभी अस्वीकार करें",
     "accept_all": "सभी स्वीकार करें",
     "retry_with_changes": "बदलावों के साथ पुनः प्रयास करें",
-    "carry_out_hint": "समीक्षा स्वीकृत करता है और इसे पूरा करने के लिए persona चलाता है"
+    "carry_out_hint": "समीक्षा स्वीकृत करता है और इसे पूरा करने के लिए persona चलाता है",
+    "clear": "साफ़ करें",
+    "video_not_supported": "आपका ब्राउज़र वीडियो प्लेबैक का समर्थन नहीं करता।"
   },
   "memory_card": {
     "confirm": "पुष्टि करें",
@@ -784,14 +1090,16 @@
     "importance_label": "महत्व",
     "tags_label": "टैग",
     "view_source_execution": "स्रोत निष्पादन देखें",
-    "delete_memory": "मेमोरी हटाएं"
+    "delete_memory": "मेमोरी हटाएं",
+    "close": "बंद करें"
   },
   "memory_table": {
     "agent": "एजेंट",
     "title": "शीर्षक",
     "category": "श्रेणी",
     "tags": "टैग",
-    "created": "बनाया गया"
+    "created": "बनाया गया",
+    "priority": "प्राथमिकता"
   },
   "review_results": {
     "title": "AI मेमोरी समीक्षा",
@@ -803,7 +1111,8 @@
     "baseline_label": "आधार रेखा:",
     "correlating": "सहसंबंधित इवेंट...",
     "likely_root_causes": "संभावित मूल कारण",
-    "no_correlated": "±24 घंटे की विंडो में कोई सहसंबंधित इवेंट नहीं मिला।"
+    "no_correlated": "±24 घंटे की विंडो में कोई सहसंबंधित इवेंट नहीं मिला।",
+    "correlated_events": "सहसंबंधित इवेंट"
   },
   "healing_issue_modal": {
     "issue_resolved": "समस्या हल हुई",
@@ -815,7 +1124,15 @@
     "marking_resolved_note": "हल के रूप में चिह्नित करने का अर्थ है कि आपने इस समस्या को उपचार प्रणाली के बाहर संबोधित किया है।",
     "auto_resolved": "यह समस्या स्वचालित रूप से हल हो गई",
     "resolving": "हल हो रहा है…",
-    "mark_resolved": "हल के रूप में चिह्नित करें"
+    "mark_resolved": "हल के रूप में चिह्नित करें",
+    "persona_auto_disabled_desc": "यह एजेंट 5 लगातार विफलताओं के बाद स्वचालित रूप से अक्षम कर दिया गया। नीचे त्रुटि पैटर्न की समीक्षा करें और मूल कारण हल होने के बाद मैन्युअल रूप से पुनः सक्षम करें।",
+    "retry_in_progress": "पुनः प्रयास जारी है -- पूर्ण होने पर स्थिति अपडेट होगी",
+    "close": "बंद करें",
+    "retrying_badge": "पुनः प्रयास",
+    "auto_fixed_badge": "स्वचालित रूप से ठीक किया गया",
+    "retry_in_progress_badge": "पुनः प्रयास जारी है",
+    "healed_via_retry_badge": "पुनः प्रयास से ठीक हुआ",
+    "severity_suffix": "गंभीरता"
   },
   "healing_issues_panel": {
     "title": "स्वास्थ्य समस्याएं",
@@ -825,7 +1142,23 @@
     "run_analysis_hint": "समस्याओं की जाँच के लिए विश्लेषण चलाएं।",
     "healing_audit_log": "उपचार ऑडिट लॉग",
     "no_silent_failures": "कोई मूक विफलता दर्ज नहीं।",
-    "analysis_complete_prefix": "विश्लेषण पूर्ण:"
+    "analysis_complete_prefix": "विश्लेषण पूर्ण:",
+    "ai_healing_title": "AI Healing",
+    "diagnosis_label": "निदान:",
+    "fixes_applied": "लागू किए गए fixes",
+    "alert_history_title": "Alert इतिहास",
+    "all_agents_global": "सभी एजेंट (वैश्विक)",
+    "add_rule": "नियम जोड़ें",
+    "no_rules_configured": "कोई alert नियम कॉन्फ़िगर नहीं। निगरानी शुरू करने के लिए एक नियम जोड़ें।",
+    "confidence_pct_suffix": "% विश्वास",
+    "spike_on": "spike पर",
+    "correlated_events_prefix": "सहसंबद्ध इवेंट्स (",
+    "circuit_breaker_label": "circuit breaker",
+    "auto_disabled_message": "इस पर्सोना को बार-बार विफलताओं के circuit-breaker प्रतिक्रिया के रूप में स्वचालित रूप से अक्षम किया गया था।",
+    "execution_label": "निष्पादन:",
+    "issue_marked_as": "इस समस्या को इस रूप में चिह्नित किया गया है",
+    "retry_in_progress": "पुनः प्रयास प्रगति पर — पूरा होने पर स्थिति अपडेट होगी।",
+    "resolve_issue_title": "समस्या को हल के रूप में चिह्नित करें"
   },
   "healing_timeline": {
     "loading": "टाइमलाइन लोड हो रही है...",
@@ -916,12 +1249,14 @@
     "title": "Upcoming Routines",
     "subtitle": "next scheduled runs",
     "empty": "No scheduled runs.",
-    "never_fired": "pending first run"
+    "never_fired": "pending first run",
+    "view_all": "View schedules"
   },
   "vault_recent_changes": {
     "title": "Vault Changes",
     "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity."
+    "empty": "No recent sync activity.",
+    "view_all": "View sync log"
   },
   "heatmap": {
     "title_persona": "Activity over the last year",
@@ -1192,5 +1527,272 @@
     "source_scanner": "स्कैनर",
     "tokens": "टोकन",
     "total_cost": "कुल लागत"
+  },
+  "title": "अवलोकन",
+  "no_output": "अभी कोई आउटपुट नहीं",
+  "no_background_jobs": "कोई बैकग्राउंड कार्य चल रहा या हाल का नहीं है",
+  "background_jobs_hint": "जब आप N8n ट्रांसफ़ॉर्म, टेम्पलेट अडॉप्शन, टेम्पलेट जनरेशन, या क्वेरी डीबगिंग चलाते हैं तो कार्य यहाँ दिखाई देते हैं",
+  "realtime": {
+    "idle": "निष्क्रिय -- ट्रैफ़िक सिम्युलेट करने के लिए {action} पर क्लिक करें",
+    "test_flow": "फ़्लो परीक्षण",
+    "events_per_min": "इवेंट/मिनट",
+    "pending": "लंबित",
+    "success": "सफल",
+    "in_window": "विंडो में"
+  },
+  "executions": {
+    "title": "निष्पादन",
+    "loading": "निष्पादन लोड हो रहे हैं...",
+    "no_agents": "अभी कोई एजेंट नहीं बनाया गया",
+    "create_first": "निष्पादन गतिविधि देखने के लिए अपना पहला एजेंट बनाएँ",
+    "no_executions": "अभी कोई निष्पादन नहीं",
+    "run_agent": "निष्पादन गतिविधि देखने के लिए एजेंट चलाएँ"
+  },
+  "workflows": {
+    "loading": "वर्कफ़्लो लोड हो रहे हैं...",
+    "title": "वर्कफ़्लो",
+    "subtitle": "आपके वर्कस्पेस में सक्रिय और हाल के पृष्ठभूमि ऑपरेशन",
+    "no_jobs": "कोई पृष्ठभूमि जॉब नहीं चल रही या हाल में",
+    "jobs_hint": "जॉब यहाँ दिखाई देती हैं जब आप N8n ट्रांसफॉर्म, टेम्पलेट अडॉप्शन, टेम्पलेट जनरेशन, या क्वेरी डीबगिंग चलाते हैं",
+    "all_types": "सभी प्रकार",
+    "no_filter_match": "वर्तमान फ़िल्टर से कोई जॉब मेल नहीं",
+    "auto_refreshing": "जॉब चलते समय ऑटो-ताज़ा",
+    "cancel_failed": "वर्कफ़्लो जॉब रद्द करने में विफल"
+  },
+  "schedules": {
+    "title": "शेड्यूल टाइमलाइन",
+    "subtitle": "सभी शेड्यूल किए गए एजेंट निष्पादनों का समेकित दृश्य",
+    "engine_on": "इंजन चालू",
+    "engine_off": "इंजन बंद",
+    "engine_on_tooltip": "शेड्यूलर चल रहा है -- रोकने के लिए क्लिक करें",
+    "engine_off_tooltip": "शेड्यूलर रुका हुआ है -- शुरू करने के लिए क्लिक करें",
+    "active_count": "{count} सक्रिय",
+    "paused_count": "{count} रुके हुए",
+    "view_grouped": "समूहित",
+    "view_timeline": "टाइमलाइन",
+    "triggers_fired": "ट्रिगर फ़ायर हुए: ",
+    "events_processed": "इवेंट प्रोसेस हुए: ",
+    "delivered": "वितरित: ",
+    "failed_label": "विफल: ",
+    "loading": "शेड्यूल लोड हो रहे हैं...",
+    "empty": "कोई शेड्यूल किया गया एजेंट नहीं मिला।",
+    "empty_hint": "किसी भी एजेंट पर शेड्यूल या पोलिंग ट्रिगर बनाएँ ताकि वह यहाँ दिखाई दे।",
+    "group_overdue": "देरी से",
+    "group_15min": "अगले 15 मिनट",
+    "group_1hour": "अगला घंटा",
+    "group_6hours": "अगले 6 घंटे",
+    "group_24hours": "अगले 24 घंटे",
+    "group_later": "बाद में",
+    "group_paused": "रुका / अनशेड्यूल",
+    "run_now": "अभी चलाएँ",
+    "change_frequency": "आवृत्ति बदलें",
+    "pause_schedule": "शेड्यूल रोकें",
+    "resume_schedule": "शेड्यूल फिर शुरू करें",
+    "headless_badge": "हेडलेस"
+  },
+  "frequency_editor": {
+    "title": "आवृत्ति बदलें",
+    "current": "वर्तमान: ",
+    "quick_presets": "त्वरित प्रीसेट",
+    "cron_expression": "Cron एक्सप्रेशन",
+    "interval_seconds": "अंतराल (सेकंड)",
+    "previewing": "पूर्वावलोकन...",
+    "next_runs": "अगले रन",
+    "invalid_cron": "अमान्य cron एक्सप्रेशन"
+  },
+  "recovery": {
+    "agents_missed_one": "{count} एजेंट के निष्पादन छूट गए",
+    "agents_missed_other": "{count} एजेंट के निष्पादन छूट गए",
+    "total_skipped": "ऐप ऑफ़लाइन रहते ~{count} कुल रन छूट गए",
+    "missed_since": "{time} से {count} छूट गए",
+    "every_interval": "हर {interval}",
+    "mark_for_recovery": "पुनर्प्राप्ति के लिए चिह्नित करें",
+    "recover": "पुनर्प्राप्त करें",
+    "run_once": "1x चलाएँ",
+    "run_once_tooltip": "अभी एक बार चलाएँ",
+    "skip_tooltip": "छोड़ें -- पुनर्प्राप्त न करें",
+    "dismiss_all": "सभी खारिज करें",
+    "recover_selected": "{count} चयनित पुनर्प्राप्त करें"
+  },
+  "conflicts": {
+    "dismissed": "विवाद खारिज किया गया",
+    "resolved": "विवाद हल किया गया",
+    "resolve_failed": "विवाद हल करने में विफल",
+    "conflict_count_one": "{count} विवाद",
+    "conflict_count_other": "{count} विवाद"
+  },
+  "execution_metrics": {
+    "title": "निष्पादन मेट्रिक्स",
+    "total_executions": "कुल निष्पादन",
+    "total_cost": "कुल लागत",
+    "success_rate": "सफलता दर",
+    "avg_latency": "औसत विलंबता",
+    "cost_anomalies": "लागत अनोमलियां पाई गईं",
+    "no_data": "चुनी गई अवधि के लिए कोई निष्पादन डेटा नहीं",
+    "cost_per_day": "प्रति दिन लागत",
+    "executions_by_status": "स्थिति के अनुसार निष्पादन",
+    "success_rate_trend": "सफलता दर प्रवृत्ति",
+    "latency_distribution": "विलंबता वितरण (p50 / p95 / p99)",
+    "top_personas_by_cost": "लागत के अनुसार शीर्ष पर्सोना",
+    "cost_spike": "लागत स्पाइक",
+    "above_avg": "औसत से ऊपर",
+    "top_executions": "शीर्ष निष्पादन:",
+    "executions_label": "{count} निष्पादन"
+  },
+  "execution_list": {
+    "recorded": "{count} निष्पादन रिकॉर्ड",
+    "recorded_one": "{count} निष्पादन रिकॉर्ड",
+    "list": "सूची",
+    "metrics": "मेट्रिक्स",
+    "show_list": "निष्पादन सूची दिखाएं",
+    "show_metrics": "मेट्रिक्स डैशबोर्ड दिखाएं",
+    "showing": "{total} में से {count} दिखाए जा रहे हैं",
+    "load_more": "और लोड करें",
+    "filter_all": "सभी",
+    "filter_running": "चल रहे",
+    "filter_completed": "पूर्ण",
+    "filter_failed": "विफल",
+    "col_persona": "पर्सोना",
+    "col_status": "स्थिति",
+    "col_duration": "अवधि",
+    "col_started": "शुरू हुआ",
+    "col_id": "ID",
+    "all_statuses": "सभी स्थितियां",
+    "all_personas": "सभी पर्सोना",
+    "no_agents": "अभी तक कोई एजेंट नहीं बनाया",
+    "no_agents_hint": "यहाँ निष्पादन गतिविधि देखने के लिए अपना पहला एजेंट बनाएं।",
+    "unknown_persona": "अज्ञात",
+    "healing_retry": "हीलिंग पुनः प्रयास #{count}"
+  },
+  "analytics": {
+    "title": "एनालिटिक्स",
+    "subtitle": "निष्पादन पैटर्न और रुझान",
+    "loading": "एनालिटिक्स लोड हो रही है...",
+    "no_data": "कोई एनालिटिक्स डेटा उपलब्ध नहीं",
+    "executions_over_time": "समय के साथ निष्पादन",
+    "success_failure": "सफल बनाम विफल",
+    "cost_breakdown": "लागत विवरण",
+    "total_executions": "कुल निष्पादन",
+    "total_cost": "कुल लागत",
+    "avg_success_rate": "औसत सफलता दर",
+    "active_agents": "सक्रिय एजेंट",
+    "saved_views": "सहेजे गए दृश्य",
+    "create_view": "दृश्य बनाएं",
+    "health_issues": "स्वास्थ्य समस्याएं",
+    "rotation_overview": "रोटेशन अवलोकन"
+  },
+  "usage": {
+    "title": "उपयोग",
+    "subtitle": "लागत और संसाधन उपभोग",
+    "chart_error": "चार्ट लोड करने में विफल",
+    "chart_error_hint": "इस चार्ट को रेंडर करने में त्रुटि हुई",
+    "try_again": "पुनः प्रयास करें"
+  },
+  "cron_agents": {
+    "title": "शेड्यूल्ड एजेंट",
+    "subtitle": "स्वचालित शेड्यूल पर चलने वाले एजेंट",
+    "no_agents": "कोई शेड्यूल्ड एजेंट नहीं",
+    "no_agents_hint": "यहाँ देखने के लिए किसी भी एजेंट में cron ट्रिगर जोड़ें"
+  },
+  "timeline": {
+    "title": "गतिविधि टाइमलाइन",
+    "subtitle": "सभी एजेंट गतिविधि का एकीकृत दृश्य",
+    "no_activity": "कोई हाल की गतिविधि नहीं"
+  },
+  "realtime_viz": {
+    "title": "इवेंट बस",
+    "filter_events": "इवेंट फ़िल्टर करें",
+    "pause": "रोकें",
+    "resume": "फिर शुरू करें",
+    "clear": "साफ़ करें",
+    "total_events": "कुल इवेंट",
+    "events_per_sec": "इवेंट/सेकंड",
+    "active_lanes": "सक्रिय लेन",
+    "event_type": "इवेंट प्रकार",
+    "source": "स्रोत",
+    "target": "लक्ष्य",
+    "timestamp": "टाइमस्टैम्प",
+    "payload": "पेलोड",
+    "saved_views": "सहेजे गए दृश्य",
+    "save_current": "वर्तमान सहेजें"
+  },
+  "cards": {
+    "fleet_optimization": "फ्लीट अनुकूलन",
+    "fleet_subtitle": "एजेंट प्रदर्शन सुधारने के लिए स्वचालित सिफारिशें",
+    "remote_control": "रिमोट कंट्रोल",
+    "remote_subtitle": "एजेंट प्रबंधन के लिए त्वरित कार्रवाइयां",
+    "resume_setup": "सेटअप जारी रखें",
+    "resume_subtitle": "जहाँ छोड़ा वहाँ से उठाएं",
+    "knowledge_hub": "ज्ञान हब"
+  },
+  "saved_views": {
+    "errors": {
+      "load_failed_message": "Couldn't load your saved views.",
+      "save_failed_message": "Couldn't save this view.",
+      "delete_failed_message": "Couldn't delete this view."
+    }
+  },
+  "activity_timeline": {
+    "title": "गतिविधि टाइमलाइन",
+    "subtitle": "{events} इवेंट, {messages} संदेश",
+    "all": "सभी",
+    "events": "इवेंट",
+    "messages": "संदेश",
+    "no_activity": "अभी तक कोई गतिविधि नहीं",
+    "high": "उच्च"
+  },
+  "widgets_extra": {
+    "execution_health_chart": "निष्पादन स्वास्थ्य",
+    "cost_over_time_chart": "समय के साथ लागत",
+    "successful": "सफल",
+    "failed": "विफल",
+    "close": "बंद करें",
+    "dismiss_help": "सहायता खारिज करें",
+    "skip_tour": "टूर पूरी तरह छोड़ें"
+  },
+  "remote_control_card": {
+    "connect_to_desktop": "डेस्कटॉप से कनेक्ट करें",
+    "connect_description": "रिमोट कंट्रोल के माध्यम से अपने डेस्कटॉप CLI का उपयोग करके एजेंट चलाएं। अपने कंप्यूटर पर {command} शुरू करें, फिर यहाँ कनेक्ट करें।",
+    "requires_subscription": "Claude Pro या Max सदस्यता आवश्यक है"
+  },
+  "resume_setup_card": {
+    "resume_tour": "टूर फिर शुरू करें",
+    "left_off_at": "आप यहाँ छोड़ गए थे",
+    "steps_completed": "{completed}/{total} चरण पूर्ण",
+    "skip_tour": "टूर पूरी तरह छोड़ें",
+    "continue_label": "जारी रखें"
+  },
+  "bulk_action_bar": {
+    "pending_reviews_selected_one": "{count} लंबित समीक्षा चयनित",
+    "pending_reviews_selected_other": "{count} लंबित समीक्षाएँ चयनित"
+  },
+  "review_inbox": {
+    "drag_to_resize": "आकार बदलने के लिए खींचें"
+  },
+  "event_bus_overlay": {
+    "earlier_events_not_shown_one": "{count} पहले की इवेंट नहीं दिखाई गई",
+    "earlier_events_not_shown_other": "{count} पहले की इवेंट नहीं दिखाई गईं"
+  },
+  "event_bus_filter": {
+    "search_placeholder": "इवेंट खोजें..."
+  },
+  "crash_logs": {
+    "title": "क्रैश लॉग",
+    "no_logs": "कोई क्रैश लॉग दर्ज नहीं है।",
+    "component_stack_separator": "--- Component Stack ---"
+  },
+  "events_list": {
+    "save_view_tooltip": "वर्तमान फ़िल्टर को दृश्य के रूप में सहेजें",
+    "clear_filters_tooltip": "सभी फ़िल्टर साफ़ करें"
+  },
+  "dashboard_home": {
+    "you_have": "आपके पास"
+  },
+  "fleet_optimization_card": {
+    "title": "फ्लीट अनुकूलन"
+  },
+  "day_range_picker": {
+    "start_date": "शुरू होने की तारीख",
+    "end_date": "समाप्ति तिथि"
   }
 }

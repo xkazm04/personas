@@ -229,5 +229,6 @@
   "update_badge": "Perbarui",
   "update_badge_detail_tooltip": "Diadopsi pada v{from}; katalog sekarang v{to}. Hapus dan adopsi ulang untuk memperbarui.",
   "update_badge_tooltip": "Versi terbaru dari kemampuan ini tersedia — hapus dan adopsi ulang untuk memperbarui",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "Tags"
 }

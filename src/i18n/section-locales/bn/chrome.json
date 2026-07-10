@@ -47,7 +47,8 @@
     "nav_mode_notifications": "নোটিফিকেশন টগল করুন (নেভ মোডে)",
     "nav_mode_review": "মানব পর্যালোচনা টগল করুন (নেভ মোডে)",
     "nav_mode_schedules": "সময়সূচি টগল করুন (নেভ মোডে)",
-    "nav_mode_search": "অনুসন্ধান খুলুন (নেভ মোডে)"
+    "nav_mode_search": "অনুসন্ধান খুলুন (নেভ মোডে)",
+    "open_title": "কীবোর্ড শর্টকাট"
   },
   "tray_schedules": "সময়সূচি",
   "tray_schedules_today": "আজ {count}টি নির্ধারিত",
@@ -66,5 +67,10 @@
   "tray_acceptance_pending": "{count}টি লক্ষ্য আপনার গ্রহণের অপেক্ষায়",
   "cli_not_ready_detail": "Personas আপনার এজেন্টগুলিকে আপনার Claude সাবস্ক্রিপশনে চালায়। আমরা একটি Claude সেশন শুরু করতে পারিনি — নিশ্চিত করুন যে Claude Code CLI ইনস্টল করা এবং সাইন ইন করা আছে, তারপর আবার চেষ্টা করুন।",
   "cli_not_ready_retry": "আবার চেষ্টা করুন",
-  "cli_not_ready_title": "Claude CLI প্রস্তুত নয়"
+  "cli_not_ready_title": "Claude CLI প্রস্তুত নয়",
+  "expand_sidebar": "সাইডবার প্রসারিত করুন",
+  "collapse_sidebar": "সাইডবার সংকুচিত করুন",
+  "network_settings": "নেটওয়ার্ক সেটিংস",
+  "dark": "গাঢ়",
+  "light": "হালকা"
 }

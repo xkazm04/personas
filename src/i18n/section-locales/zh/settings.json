@@ -753,5 +753,36 @@
       "api_keys": "API 密钥",
       "history": "历史记录"
     }
+  },
+  "title": "设置",
+  "settings_saved": "已保存",
+  "appearance_extra": {
+    "simple": "简单",
+    "simple_hint": "仅核心功能",
+    "full": "完整",
+    "full_hint": "显示完整界面",
+    "dev": "开发",
+    "dev_hint": "解锁开发者工具"
+  },
+  "quality_gates": {
+    "title": "质量门禁",
+    "action_reject": "Reject",
+    "action_tag": "Tag",
+    "action_warn": "Warn",
+    "loading": "加载中...",
+    "error_loading": "加载配置错误",
+    "active_rules": "{count} 条活跃过滤规则",
+    "loading_config": "加载质量门禁配置中...",
+    "description": "质量门禁在执行分发期间过滤 AI 生成的记忆和审核。模式作为子字符串与每次提交的标题和内容的组合进行匹配。当模式匹配时，应用配置的操作。这些规则防止操作噪音（凭据错误、堆栈跟踪、空工作区报告）污染您的知识库。",
+    "memory_filters": "记忆过滤器",
+    "memory_filters_desc": "应用于 AgentMemory 提交。阻止操作失败和凭据泄露被存储为代理记忆。",
+    "review_filters": "审核过滤器",
+    "review_filters_desc": "应用于 ManualReview 提交。过滤基础设施错误，使只有真正的业务决策才能到达审核队列。",
+    "rejected_categories": "被拒绝的类别",
+    "rules_count": "{count} 条规则",
+    "rules_count_plural": "{count} 条规则",
+    "reset_defaults": "重置为默认值",
+    "confirm_reset": "确认重置？",
+    "rules_hint": "规则在每次分发时从数据库加载。更改立即生效。"
   }
 }

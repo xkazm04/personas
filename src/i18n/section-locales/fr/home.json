@@ -109,5 +109,84 @@
     "build_cta": "Créer votre premier agent",
     "subtitle": "Décrivez une tâche en langage courant et nous configurerons un agent opérationnel — ou demandez à l'assistant de le faire pour vous.",
     "title": "Créez votre premier agent"
+  },
+  "welcome": "Bienvenue",
+  "greeting_morning": "Bonjour",
+  "greeting_afternoon": "Bon après-midi",
+  "greeting_evening": "Bonsoir",
+  "operator": "Opérateur",
+  "commander": "Commander",
+  "summary_empty": "Commencez par créer votre premier agent ou explorez la plateforme.",
+  "summary_stats": "Vous avez {personasCount} agent{personasPlural} et {credentialsCount} identifiant{credentialsPlural} configuré(s).",
+  "quick_navigation": "Navigation rapide",
+  "platform_label": "plateforme Personas",
+  "roadmap": {
+    "title": "Feuille de route produit",
+    "subtitle": "Ce que nous construisons maintenant et ce qui vient ensuite.",
+    "unavailable": "Feuille de route indisponible",
+    "unavailable_hint": "Impossible de charger la feuille de route. Vérifiez votre connexion et réessayez.",
+    "status_in_progress": "En cours",
+    "status_next": "Suivant",
+    "status_planned": "Planifié",
+    "status_completed": "Terminé",
+    "priority_now": "Maintenant",
+    "priority_next": "Suivant",
+    "priority_later": "Plus tard",
+    "in_progress_count": "{count} en cours",
+    "next_count": "{count} suivant"
+  },
+  "fleet": {
+    "executions_today": "Exécutions Aujourd'hui",
+    "success_rate": "Taux de Réussite",
+    "active_agents": "Agents Actifs",
+    "credentials": "Identifiants"
+  },
+  "nav": {
+    "overview": {
+      "label": "Vue d'ensemble",
+      "description": "Analyses du tableau de bord, historique des exécutions et surveillance en temps réel de tous les agents"
+    },
+    "personas": {
+      "label": "Agents",
+      "description": "Créer, configurer et gérer des agents IA avec des comportements et capacités personnalisés"
+    },
+    "events": {
+      "label": "Événements",
+      "description": "Configurer les déclencheurs d'événements, les écouteurs webhook et les automatisations planifiées"
+    },
+    "credentials": {
+      "label": "Identifiants",
+      "description": "Gérer les identifiants API, les connexions aux bases de données, les jetons OAuth et les secrets chiffrés"
+    },
+    "design-reviews": {
+      "label": "Modèles",
+      "description": "Importer des workflows n8n, parcourir la galerie de modèles et générer des plans d'agents"
+    },
+    "team": {
+      "label": "Équipes",
+      "description": "Construire des pipelines multi-agents avec orchestration et routage par glisser-déposer"
+    },
+    "teams": {
+      "label": "Équipes",
+      "description": "Combinez plusieurs agents en une équipe qui travaille ensemble sur des workflows en plusieurs étapes"
+    },
+    "cloud": {
+      "label": "Cloud",
+      "description": "Déployer des agents dans le cloud, gérer les planifications et intégrer GitLab CI"
+    },
+    "settings": {
+      "label": "Paramètres",
+      "description": "Préférences du compte, thèmes d'apparence, règles de notification et configuration du moteur"
+    },
+    "plugins": {
+      "label": "Extensions",
+      "description": "Étendez vos agents avec des extensions tierces et des plugins personnalisés"
+    }
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Bibliothèque)",
+    "personas_tab": "Personas (Animés)",
+    "lucide_footer": "lucide-react -- bibliothèque icônes générique -- statique",
+    "personas_footer": "9 icônes personnalisées -- motifs neuronaux/circuits -- animées CSS -- adaptatives au thème"
   }
 }

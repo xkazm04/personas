@@ -229,5 +229,6 @@
   "update_badge": "Cập nhật",
   "update_badge_detail_tooltip": "Đã áp dụng ở phiên bản v{from}; danh mục hiện là v{to}. Xóa và áp dụng lại để cập nhật.",
   "update_badge_tooltip": "Đã có phiên bản mới hơn của tính năng này — xóa và áp dụng lại để cập nhật",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "Tags"
 }

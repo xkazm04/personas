@@ -47,7 +47,8 @@
     "nav_mode_notifications": "Alternar notificaciones (en modo navegación)",
     "nav_mode_review": "Alternar revisión humana (en modo navegación)",
     "nav_mode_schedules": "Alternar programaciones (en modo navegación)",
-    "nav_mode_search": "Abrir búsqueda (en modo navegación)"
+    "nav_mode_search": "Abrir búsqueda (en modo navegación)",
+    "open_title": "Atajos de teclado"
   },
   "tray_schedules": "Programaciones",
   "tray_schedules_today": "{count} programadas hoy",
@@ -66,5 +67,10 @@
   "tray_acceptance_pending": "{count} objetivos pendientes de aceptación",
   "cli_not_ready_detail": "Personas ejecuta tus agentes con tu suscripción de Claude. No pudimos iniciar una sesión de Claude — asegúrate de que Claude Code CLI esté instalado y con la sesión iniciada, y vuelve a intentarlo.",
   "cli_not_ready_retry": "Reintentar",
-  "cli_not_ready_title": "Claude CLI no está listo"
+  "cli_not_ready_title": "Claude CLI no está listo",
+  "expand_sidebar": "Expandir barra lateral",
+  "collapse_sidebar": "Contraer barra lateral",
+  "network_settings": "Configuracion de red",
+  "dark": "Oscuro",
+  "light": "Claro"
 }

@@ -47,7 +47,8 @@
     "nav_mode_notifications": "通知を切り替え（ナビゲーションモード）",
     "nav_mode_review": "ヒューマンレビューを切り替え（ナビゲーションモード）",
     "nav_mode_schedules": "スケジュールを切り替え（ナビゲーションモード）",
-    "nav_mode_search": "検索を開く（ナビゲーションモード）"
+    "nav_mode_search": "検索を開く（ナビゲーションモード）",
+    "open_title": "キーボードショートカット"
   },
   "tray_schedules": "スケジュール",
   "tray_schedules_today": "本日 {count} 件のスケジュール",
@@ -66,5 +67,10 @@
   "tray_acceptance_pending": "{count} 件のゴールが承認待ちです",
   "cli_not_ready_detail": "Personas はお使いの Claude サブスクリプションでエージェントを実行します。Claude セッションを開始できませんでした — Claude Code CLI がインストールされ、サインインされていることを確認してから、再試行してください。",
   "cli_not_ready_retry": "再試行",
-  "cli_not_ready_title": "Claude CLI の準備ができていません"
+  "cli_not_ready_title": "Claude CLI の準備ができていません",
+  "expand_sidebar": "サイドバーを展開",
+  "collapse_sidebar": "サイドバーを折りたたむ",
+  "network_settings": "ネットワーク設定",
+  "dark": "ダーク",
+  "light": "ライト"
 }

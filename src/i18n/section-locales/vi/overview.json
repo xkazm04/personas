@@ -7,7 +7,32 @@
   "messages": {
     "priority_high": "Cao",
     "priority_normal": "Bình thường",
-    "priority_low": "Thấp"
+    "priority_low": "Thấp",
+    "loading": "Đang tải tin nhắn...",
+    "no_messages": "Chưa có tin nhắn",
+    "switch_to_all": "Thử chuyển sang \\\\\\\"Tất cả\\\\\\\" để xem tất cả tin nhắn",
+    "columns": {
+      "persona": "Tác tử",
+      "title": "Tiêu đề",
+      "priority": "Ưu tiên",
+      "status": "Trạng thái",
+      "created": "Ngày tạo"
+    },
+    "content_header": "Nội dung",
+    "filter_all": "Tất cả",
+    "filter_unread": "Chưa đọc",
+    "filter_high_priority": "Ưu tiên cao",
+    "delivery_delivered": "Đã gửi",
+    "delivery_failed": "Thất bại",
+    "delivery_pending": "Đang chờ",
+    "delivery_queued": "Trong hàng đợi",
+    "channel_email": "Email",
+    "channel_slack": "Slack",
+    "channel_telegram": "Telegram",
+    "channel_desktop": "Máy tính",
+    "id_label": "ID:",
+    "confirm_delete_title": "Xác nhận xóa",
+    "close_message": "Đóng chi tiết tin nhắn"
   },
   "incidents": {
     "stale_label": "Tồn đọng",
@@ -128,18 +153,58 @@
       "panel_loaded": "Loaded",
       "panel_failed": "Failed to load",
       "panel_stale": "Data may be outdated"
-    }
+    },
+    "persona_disabled": "Tác tử đã bị tự động vô hiệu hóa",
+    "auto_resolved": "Vấn đề này đã được tự động giải quyết",
+    "mark_resolved": "Đánh dấu đã giải quyết",
+    "manual_fix": "(đã sửa thủ công)",
+    "no_open_issues": "Không có vấn đề mở",
+    "run_analysis": "Chạy phân tích để kiểm tra vấn đề."
   },
   "memories": {
     "title": "Bộ nhớ",
     "delete_all": "Xóa tất cả",
     "delete_all_confirm_title": "Xóa tất cả bộ nhớ?",
     "delete_all_confirm_body": "Thao tác này sẽ xóa vĩnh viễn tất cả {count} bộ nhớ. Không thể hoàn tác.",
-    "delete_all_confirm_cta": "Xóa tất cả"
+    "delete_all_confirm_cta": "Xóa tất cả",
+    "created_success": "Đã tạo bộ nhớ thành công",
+    "no_memories": "Chưa có bộ nhớ",
+    "no_memories_hint": "Khi các tác nhân chạy, chúng có thể lưu trữ các ghi chú và bài học có giá trị tại đây.",
+    "no_memories_match": "Không có bộ nhớ nào khớp với bộ lọc hiện tại",
+    "list_aria_label": "Danh sách bộ nhớ",
+    "add_memory_btn": "Thêm bộ nhớ",
+    "search_placeholder": "Tìm kiếm bộ nhớ...",
+    "no_filter_match": "Không có bộ nhớ nào khớp với bộ lọc của bạn. Hãy thử điều chỉnh tìm kiếm.",
+    "form": {
+      "agent": "Tác tử",
+      "category": "Danh mục",
+      "title": "Tiêu đề",
+      "content": "Nội dung",
+      "importance": "Mức quan trọng",
+      "tags": "Thẻ",
+      "tags_hint": "(phân cách bằng dấu phẩy)"
+    },
+    "curation_schedule_button": "Schedule",
+    "curation_schedule_button_hint": "Schedule automatic memory curation",
+    "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
+    "curation_schedule_title": "Schedule memory curation",
+    "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
+    "curation_schedule_cron_label": "Schedule (cron)",
+    "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
+    "curation_schedule_presets_label": "Quick picks",
+    "preset_weekly_sunday": "Weekly · Sun 3am",
+    "preset_daily_3am": "Daily · 3am",
+    "preset_weekly_monday": "Weekly · Mon 9am",
+    "preset_monthly": "Monthly · 1st",
+    "curation_schedule_last_run_label": "Last run",
+    "curation_schedule_disabled_state": "Curation is disabled for this agent",
+    "curation_schedule_disable": "Disable schedule",
+    "curation_schedule_save": "Save schedule"
   },
   "memory_review": {
     "keep_prefix": "Giữ lại \"",
-    "keep_suffix": "\""
+    "keep_suffix": "\"",
+    "all_conflicts_resolved": "Tất cả xung đột đã được giải quyết"
   },
   "sla": {
     "title": "SLA độ tin cậy tác tử",
@@ -160,7 +225,16 @@
     "all_time_badge": "All-time",
     "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
     "auto_healed_tooltip": "Total issues the healing engine has auto-resolved across the lifetime of this install. This number is all-time and does not change with the time window above.",
-    "windowed_tooltip": "Computed over the selected time window above ({days} days)."
+    "windowed_tooltip": "Computed over the selected time window above ({days} days).",
+    "loading": "Đang tải dữ liệu SLA...",
+    "metric_successful": "Thành công",
+    "metric_failed": "Thất bại",
+    "metric_avg_latency": "Độ trễ TB",
+    "metric_p95_latency": "Độ trễ P95",
+    "metric_cost": "Chi phí",
+    "metric_mtbf": "MTBF",
+    "metric_auto_healed": "Tự phục hồi",
+    "metric_cancelled": "Đã hủy"
   },
   "knowledge": {
     "title": "Đồ thị tri thức",
@@ -173,7 +247,29 @@
     "sort_recent": "Mới nhất",
     "needs_review": "Cần xem xét",
     "pending_scope_hint": "Chọn một persona để xem xét tất cả chú thích đang chờ.",
-    "graph_tab": "Đồ thị"
+    "graph_tab": "Đồ thị",
+    "subtitle": "{count} mẫu đã học từ lịch sử thực thi",
+    "total_patterns": "Tổng mẫu",
+    "tool_sequences": "Chuỗi công cụ",
+    "tool_sequences_hint": "Chuỗi công cụ đã học",
+    "failure_patterns": "Mẫu lỗi",
+    "failure_patterns_hint": "Chữ ký lỗi đã biết",
+    "model_insights": "Phân tích mô hình",
+    "model_insights_hint": "Hiệu suất theo mô hình",
+    "all_personas": "Tất cả tác tử (Toàn cục)",
+    "all_types": "Tất cả loại",
+    "failure_drilldown": "Phân tích chi tiết lỗi: {date}",
+    "failure_drilldown_hint": "Hiển thị mẫu lỗi hoạt động vào hoặc sau ngày này.",
+    "failure_drilldown_empty": "Không tìm thấy mẫu khớp -- thử chọn tác tử cụ thể ở trên.",
+    "unavailable": "Dữ liệu tri thức không khả dụng",
+    "empty": "Chưa có mẫu tri thức",
+    "empty_hint": "Chạy thực thi để xây dựng đồ thị tri thức. Mỗi thực thi giúp hệ thống học về chuỗi công cụ, mẫu lỗi và sự đánh đổi chi phí-chất lượng.",
+    "recent_learnings": "Bài học gần đây",
+    "successes": "Thành công",
+    "failures": "Thất bại",
+    "avg_cost": "Chi phí TB",
+    "avg_duration": "Thời lượng TB",
+    "pattern_data": "Dữ liệu mẫu"
   },
   "dashboard": {
     "greeting_morning": "Chào buổi sáng",
@@ -200,7 +296,13 @@
     "section_instruments": "Công cụ đo lường",
     "section_memory": "Gợi ý bộ nhớ",
     "section_fleet": "Tối ưu hóa đội",
-    "section_routines": "Thói quen & thay đổi kho lưu trữ"
+    "section_routines": "Thói quen & thay đổi kho lưu trữ",
+    "title": "Bảng điều khiển",
+    "subtitle": "Tổng quan hoạt động và trạng thái hệ thống",
+    "pending_reviews_prompt": "đánh giá đang chờ",
+    "requiring_attention": "cần chú ý.",
+    "empty_cta": "Tạo tác nhân đầu tiên để bắt đầu.",
+    "pipeline_failed": "{source} tải thất bại"
   },
   "review": {
     "title": "Đánh giá thủ công",
@@ -333,7 +435,25 @@
     "delete_all": "Xóa tất cả",
     "delete_all_confirm_title": "Xóa tất cả tin nhắn?",
     "delete_all_confirm_body": "Thao tác này sẽ xóa vĩnh viễn tất cả {count} tin nhắn. Không thể hoàn tác.",
-    "delete_all_confirm_cta": "Xóa tất cả"
+    "delete_all_confirm_cta": "Xóa tất cả",
+    "threads_subtitle": "{count} luồng",
+    "threads_subtitle_one": "{count} luồng",
+    "flat_view": "Xem phẳng",
+    "threaded_view": "Xem theo luồng",
+    "threads_of": "{count} trong {total} luồng",
+    "no_threads": "Chưa có luồng tin nhắn",
+    "no_threads_hint": "Luồng được tạo tự động khi tác nhân tạo tin nhắn trong quá trình thực thi.",
+    "loading_replies": "Đang tải phản hồi...",
+    "col_priority": "Ưu tiên",
+    "col_delivery": "Gửi đi",
+    "col_status": "Trạng thái",
+    "new_badge": "Mới",
+    "failed_count": "{count} thất bại",
+    "pending_count": "{count} đang chờ",
+    "sent_count": "{count} đã gửi",
+    "type_label": "Loại:",
+    "confirm_delete": "Xác nhận xóa",
+    "rating_clear": "Clear rating"
   },
   "events": {
     "title": "Sự kiện",
@@ -358,12 +478,50 @@
     "source_system": "Hệ thống",
     "source_scheduled": "Theo lịch",
     "event_detail_title": "Sự kiện:",
-    "event_detail_status": "Trạng thái:"
+    "event_detail_status": "Trạng thái:",
+    "load_older": "Tải sự kiện cũ hơn",
+    "clear_filters": "Xóa tất cả bộ lọc",
+    "col_trigger": "Trình kích hoạt",
+    "col_persona": "Persona",
+    "col_event_name": "Tên sự kiện",
+    "col_status": "Trạng thái",
+    "col_created": "Ngày tạo",
+    "event_id": "ID sự kiện",
+    "project": "Dự án",
+    "source": "Nguồn",
+    "processed": "Đã xử lý",
+    "event_data": "Dữ liệu sự kiện",
+    "error": "Lỗi"
   },
   "health": {
     "title": "Sức khỏe tác nhân",
     "subtitle": "Theo dõi sức khỏe thời gian thực trên tất cả tác nhân",
-    "status_page": "Trang trạng thái"
+    "status_page": "Trang trạng thái",
+    "all_healthy": "Tất cả tác nhân bình thường",
+    "all_healthy_hint": "Mọi tác nhân được theo dõi đang hoạt động bình thường",
+    "no_agents": "Chưa có tác nhân",
+    "no_agents_hint": "Tạo tác nhân để bắt đầu theo dõi sức khỏe",
+    "success_rate": "Tỷ lệ thành công",
+    "avg_latency": "Độ trễ trung bình",
+    "executions": "Thực thi",
+    "last_execution": "Thực thi cuối",
+    "never_executed": "Chưa bao giờ",
+    "cost": "Chi phí",
+    "healthy": "Bình thường",
+    "warning": "Cảnh báo",
+    "critical": "Nghiêm trọng",
+    "unknown": "Không rõ",
+    "burn_rate": "Dự đoán tốc độ tiêu hao",
+    "monthly_budget": "Ngân sách hàng tháng",
+    "current_burn": "Tiêu hao hiện tại",
+    "projected": "Dự kiến",
+    "days_remaining": "Số ngày còn lại",
+    "cascade_title": "Phân tích tầng",
+    "predictive_alerts": "Cảnh báo dự đoán",
+    "no_alerts": "Không có cảnh báo dự đoán lúc này",
+    "operational": "Hoạt động",
+    "degraded": "Suy giảm",
+    "outage": "Gián đoạn"
   },
   "leaderboard": {
     "title": "Bảng xếp hạng tác nhân",
@@ -412,7 +570,24 @@
     "executions_label": "Thực thi",
     "success_rate": "Tỷ lệ thành công",
     "active_personas": "Personas đang hoạt động",
-    "system_trace": "Dòng thời gian trace hệ thống"
+    "system_trace": "Dòng thời gian trace hệ thống",
+    "ipc_performance": "Hiệu suất IPC",
+    "alert_rules_label": "Quy tắc cảnh báo",
+    "alert_history_label": "Lịch sử cảnh báo",
+    "healing_issues": "Vấn đề sức khỏe",
+    "run_analysis": "Chạy phân tích",
+    "resolve": "Giải quyết",
+    "healing_view_list": "Danh sách",
+    "healing_view_timeline": "Dòng thời gian",
+    "issue_details": "Chi tiết vấn đề",
+    "anomaly_drilldown": "Phân tích sâu bất thường",
+    "spend_overview": "Tổng quan chi tiêu",
+    "cost_vs_executions": "Chi phí vs Thực thi",
+    "daily_executions": "Thực thi hàng ngày",
+    "ipc_channel": "Kênh IPC",
+    "avg_duration": "Thời gian trung bình",
+    "call_count": "Số lần gọi",
+    "error_rate": "Tỷ lệ lỗi"
   },
   "widgets": {
     "view_all": "Xem tất cả",
@@ -429,7 +604,17 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Errors",
-    "tool_performance_unit_ms": "ms"
+    "tool_performance_unit_ms": "ms",
+    "recent_activity": "Hoạt động gần đây",
+    "total_traffic": "Tổng lưu lượng",
+    "total_errors": "Tổng lỗi",
+    "tool_performance_empty": "No tool runs in this window",
+    "metric_help": "Trợ giúp số liệu",
+    "how_calculated": "Tính như thế nào?",
+    "details": "Chi tiết",
+    "executions_badge": "Thực thi",
+    "success_badge": "Thành công",
+    "agents_badge": "Tác nhân"
   },
   "activity": {
     "title": "Hoạt động",
@@ -475,7 +660,14 @@
     "value_delivered_count": "Giá trị đạt được",
     "all_models": "Tất cả mô hình",
     "col_model": "Mô hình",
-    "col_cost": "Chi phí"
+    "col_cost": "Chi phí",
+    "successful": "Thành công",
+    "all": "Tất cả",
+    "running": "Đang chạy",
+    "all_statuses": "Tất cả trạng thái",
+    "col_status": "Trạng thái",
+    "col_id": "ID",
+    "execution_label": "Thực thi"
   },
   "analytics_dashboard": {
     "issues_found": "{count} vấn đề được tìm thấy",
@@ -497,7 +689,51 @@
     "rotation_failed_for": "Failed to rotate {name}",
     "rotation_due_now": "đến hạn ngay",
     "rotation_countdown_days_hours": "{days}n {hours}g",
-    "rotation_countdown_hours": "{hours}g"
+    "rotation_countdown_hours": "{hours}g",
+    "title": "Phân tích",
+    "subtitle": "Phân tích chi phí, thực thi và sử dụng công cụ thống nhất",
+    "metrics_unavailable": "Số liệu không khả dụng",
+    "auto_refresh_on": "Tự động làm mới BẬT (30s)",
+    "auto_refresh_off": "Tự động làm mới TẮT",
+    "cost_anomalies_detected": "{count} bất thường chi phí được phát hiện",
+    "cost_anomaly_detected": "{count} bất thường chi phí được phát hiện",
+    "cost_over_time": "Chi phí theo thời gian",
+    "execution_health": "Sức khỏe thực thi",
+    "tool_usage_over_time": "Sử dụng công cụ theo thời gian",
+    "executions_by_persona": "Thực thi theo persona",
+    "latency_chart": "Độ trễ (p50 / p95 / p99)",
+    "tool_invocations": "Lần gọi công cụ",
+    "no_execution_data": "Không có dữ liệu thực thi",
+    "prev_cost": "Chi phí trước đó",
+    "successful": "Thành công",
+    "failed": "Thất bại",
+    "prev_successful": "Thành công trước đó",
+    "prev_failed": "Thất bại trước đó",
+    "invocations": "Lần gọi",
+    "anomaly_click_hint": "Nhấp vào điểm kim cương trên biểu đồ để điều tra",
+    "saved_views": "Chế độ xem đã lưu",
+    "save_current_view": "Lưu chế độ xem hiện tại",
+    "smart_presets": "Cài đặt sẵn thông minh",
+    "your_saved_views": "Chế độ xem đã lưu của bạn",
+    "view_name_placeholder": "Tên chế độ xem...",
+    "save_view": "Lưu chế độ xem",
+    "delete_view": "Xóa chế độ xem",
+    "this_week_vs_last": "Tuần này vs tuần trước",
+    "this_month_vs_last": "Tháng này vs tháng trước",
+    "health_issues": "Vấn đề sức khỏe",
+    "run_analysis": "Chạy phân tích",
+    "analyzing": "Đang phân tích...",
+    "analysis_complete": "Phân tích hoàn tất",
+    "no_open_issues": "Không có vấn đề nào mở",
+    "run_analysis_hint": "Chạy phân tích để kiểm tra vấn đề.",
+    "filter_all": "Tất cả",
+    "filter_open": "Mở",
+    "filter_auto_fixed": "Tự động sửa",
+    "resolve": "Giải quyết",
+    "breaker": "ngắt",
+    "fixed": "đã sửa",
+    "retry": "thử lại",
+    "never": "chưa bao giờ"
   },
   "cron": {
     "title": "Tác nhân Cron",
@@ -511,7 +747,12 @@
     "no_agents_hint": "Tạo trình kích hoạt lịch trên bất kỳ tác nhân nào để xem tại đây.",
     "headless_section": "Tác nhân nền không giao diện",
     "interactive_section": "Tác nhân theo lịch tương tác",
-    "scheduled_section": "Tác nhân theo lịch"
+    "scheduled_section": "Tác nhân theo lịch",
+    "headless_badge": "không giao diện",
+    "no_schedule": "không có lịch",
+    "every_interval": "mỗi {interval}",
+    "next": "tiếp",
+    "last": "cuối"
   },
   "sla_card": {
     "successful": "Thành công",
@@ -521,7 +762,9 @@
     "cost": "Chi phí",
     "mtbf": "MTBF",
     "auto_healed": "Tự động phục hồi",
-    "cancelled": "Đã hủy"
+    "cancelled": "Đã hủy",
+    "failing": "{count} đang thất bại",
+    "healed": "{count} đã phục hồi"
   },
   "realtime_page": {
     "title": "Màn hình Bus sự kiện",
@@ -551,7 +794,31 @@
     "close_event_details": "Đóng chi tiết sự kiện",
     "reset_to_start": "Đặt lại về đầu",
     "cycle_speed": "Chuyển đổi tốc độ phát lại",
-    "exit_replay": "Thoát phát lại"
+    "exit_replay": "Thoát phát lại",
+    "test_flow": "Kiểm thử luồng",
+    "testing_flow": "Đang kiểm thử luồng...",
+    "test_event_flow": "Kiểm thử luồng sự kiện",
+    "resume": "Tiếp tục",
+    "pause": "Tạm dừng",
+    "resume_stream": "Tiếp tục luồng thời gian thực",
+    "pause_stream": "Tạm dừng luồng thời gian thực",
+    "delete_saved_view": "Xóa chế độ xem đã lưu",
+    "event_log": "Nhật ký sự kiện",
+    "entries": "{count} mục",
+    "filter_events": "Lọc sự kiện...",
+    "no_events": "Chưa có sự kiện",
+    "open_in_drawer": "Mở trong ngăn chi tiết",
+    "event_label": "Sự kiện",
+    "status_label": "Trạng thái",
+    "source_label": "Nguồn",
+    "target_label": "Đích",
+    "id_label": "ID",
+    "error_label": "Lỗi",
+    "payload_label": "Payload",
+    "galaxy": "Thiên hà",
+    "galaxy_desc": "Chùm sao quỹ đạo với đuôi sao chổi",
+    "lanes": "Làn",
+    "lanes_desc": "Sơ đồ luồng làn ngang"
   },
   "memory_form": {
     "agent": "Tác nhân",
@@ -568,7 +835,10 @@
     "saving": "Đang lưu...",
     "created_success": "Đã tạo bộ nhớ thành công",
     "fill_required": "Điền tất cả các trường bắt buộc để lưu",
-    "saving_memory": "Đang lưu bộ nhớ..."
+    "saving_memory": "Đang lưu bộ nhớ...",
+    "share_with_group": "Chia sẻ với",
+    "share_with_group_hint": "Mọi persona trong nhóm này đều thấy ký ức này trong prompt — hữu ích cho bối cảnh cấp tổ chức như phong cách hay chính sách.",
+    "share_with_group_title": "Được persona đã chọn tạo; hiển thị cho mọi thành viên trong nhóm của nó."
   },
   "memory_filter": {
     "search_placeholder": "Tìm kiếm bộ nhớ...",
@@ -589,7 +859,9 @@
   "memory_conflict": {
     "memory_a": "Bộ nhớ A",
     "memory_b": "Bộ nhớ B",
-    "merge": "Gộp"
+    "merge": "Gộp",
+    "keep": "Giữ",
+    "vs": "vs"
   },
   "observability_charts": {
     "cost_over_time": "Chi phí theo thời gian",
@@ -599,7 +871,9 @@
     "failed": "Thất bại",
     "anomalies_detected": "{count} bất thường chi phí được phát hiện",
     "anomaly_detected": "{count} bất thường chi phí được phát hiện",
-    "anomaly_click_hint": "Nhấp vào điểm kim cương trên biểu đồ để điều tra"
+    "anomaly_click_hint": "Nhấp vào điểm kim cương trên biểu đồ để điều tra",
+    "clear_traces": "Xóa trace đã hoàn thành",
+    "all_operations": "Tất cả thao tác"
   },
   "health_extra": {
     "success": "Thành công",
@@ -655,7 +929,14 @@
   "review_extra": {
     "add_note": "Thêm ghi chú (tùy chọn)...",
     "confirm": "Xác nhận",
-    "processing": "Đang xử lý..."
+    "processing": "Đang xử lý...",
+    "clear_verdicts": "Xóa tất cả phán quyết",
+    "retry_with_changes": "Thử lại với thay đổi",
+    "reject_all": "Từ chối tất cả",
+    "quick_actions": "Thao tác nhanh",
+    "accepted": "{count} đã chấp nhận",
+    "rejected": "{count} đã từ chối",
+    "undecided": "{count} chưa quyết định"
   },
   "detail_modal": {
     "close": "Đóng"
@@ -664,7 +945,8 @@
     "dismiss_help": "Bỏ qua trợ giúp",
     "healthy": "Bình thường:",
     "click": "Nhấp:",
-    "got_it": "Hiểu rồi, đừng hiện lại"
+    "got_it": "Hiểu rồi, đừng hiện lại",
+    "help_for": "Trợ giúp cho {label}"
   },
   "install_button": {
     "install_node": "Cài đặt Node.js",
@@ -689,7 +971,9 @@
     "disconnect": "Ngắt kết nối"
   },
   "metrics_cards": {
-    "top_executions": "Thực thi hàng đầu:"
+    "top_executions": "Thực thi hàng đầu:",
+    "cost_spike": "Tăng đột biến chi phí",
+    "above_avg": "trên mức trung bình"
   },
   "event_log_item": {
     "event_id": "ID sự kiện",
@@ -697,7 +981,11 @@
     "source": "Nguồn",
     "processed": "Đã xử lý",
     "event_data": "Dữ liệu sự kiện",
-    "error": "Lỗi"
+    "error": "Lỗi",
+    "copy_event_data": "Sao chép dữ liệu sự kiện",
+    "copied": "Đã sao chép",
+    "copy": "Sao chép",
+    "system": "Hệ thống"
   },
   "burn_rate_extra": {
     "title": "Dự đoán tốc độ tiêu hao",
@@ -754,12 +1042,28 @@
   },
   "knowledge_graph": {
     "mock_pattern": "Mẫu giả lập",
-    "seed_tooltip": "Tạo mẫu giả lập (chỉ dev)"
+    "seed_tooltip": "Tạo mẫu giả lập (chỉ dev)",
+    "all_types": "Tất cả loại",
+    "all_scopes": "Tất cả phạm vi",
+    "failure_drilldown_prefix": "Phân tích thất bại:",
+    "failure_date_filter": "Hiển thị các mẫu thất bại hoạt động từ hoặc sau {date}",
+    "data_unavailable": "Dữ liệu tri thức không khả dụng",
+    "loading_patterns": "Đang tải các mẫu tri thức...",
+    "drilldown_toggle_title": "Hiện/ẩn phân tích thất bại",
+    "no_patterns_yet": "Chưa có mẫu tri thức nào",
+    "no_patterns_yet_hint": "Chạy các lần thực thi tác nhân để xây dựng các mẫu tri thức. Các tác nhân trở nên thông minh hơn theo thời gian.",
+    "no_patterns_match": "Không có mẫu nào khớp với bộ lọc hiện tại",
+    "recent_learnings": "Bài học gần đây",
+    "curating_manually": "Tuyển chọn tài liệu thủ công?",
+    "obsidian_tip": "Với ít hơn ~1000 ghi chú, trình kết nối Obsidian có thể đồng bộ trực tiếp vault của bạn."
   },
   "focused_decision": {
     "accept": "Chấp nhận",
     "reject": "Từ chối",
-    "media_unavailable": "Phương tiện không khả dụng"
+    "media_unavailable": "Phương tiện không khả dụng",
+    "video_not_supported": "Trình duyệt của bạn không hỗ trợ phát video.",
+    "reject_this": "Từ chối cái này",
+    "accept_this": "Chấp nhận cái này"
   },
   "review_focus": {
     "all_caught_up": "Tất cả xong rồi",
@@ -770,7 +1074,9 @@
     "reject_all": "Từ chối tất cả",
     "accept_all": "Chấp nhận tất cả",
     "retry_with_changes": "Thử lại với thay đổi",
-    "carry_out_hint": "Phê duyệt đánh giá và chạy persona để thực hiện việc này"
+    "carry_out_hint": "Phê duyệt đánh giá và chạy persona để thực hiện việc này",
+    "clear": "Xóa",
+    "video_not_supported": "Trình duyệt của bạn không hỗ trợ phát video."
   },
   "memory_card": {
     "confirm": "Xác nhận",
@@ -784,14 +1090,16 @@
     "importance_label": "Tầm quan trọng",
     "tags_label": "Thẻ",
     "view_source_execution": "Xem thực thi nguồn",
-    "delete_memory": "Xóa bộ nhớ"
+    "delete_memory": "Xóa bộ nhớ",
+    "close": "Đóng"
   },
   "memory_table": {
     "agent": "Tác nhân",
     "title": "Tiêu đề",
     "category": "Danh mục",
     "tags": "Thẻ",
-    "created": "Ngày tạo"
+    "created": "Ngày tạo",
+    "priority": "Ưu tiên"
   },
   "review_results": {
     "title": "Đánh giá bộ nhớ AI",
@@ -803,7 +1111,8 @@
     "baseline_label": "Đường cơ sở:",
     "correlating": "Đang tương quan sự kiện...",
     "likely_root_causes": "Nguyên nhân gốc rễ có thể",
-    "no_correlated": "Không tìm thấy sự kiện tương quan trong cửa sổ ±24h."
+    "no_correlated": "Không tìm thấy sự kiện tương quan trong cửa sổ ±24h.",
+    "correlated_events": "Sự kiện tương quan"
   },
   "healing_issue_modal": {
     "issue_resolved": "Vấn đề đã giải quyết",
@@ -815,7 +1124,15 @@
     "marking_resolved_note": "Đánh dấu đã giải quyết có nghĩa là bạn đã xử lý vấn đề này bên ngoài hệ thống phục hồi.",
     "auto_resolved": "Vấn đề này đã tự động giải quyết",
     "resolving": "Đang giải quyết…",
-    "mark_resolved": "Đánh dấu đã giải quyết"
+    "mark_resolved": "Đánh dấu đã giải quyết",
+    "persona_auto_disabled_desc": "Persona này tự động bị tắt sau 5 lần thất bại liên tiếp. Hãy xem xét mẫu lỗi bên dưới và bật lại thủ công sau khi đã giải quyết nguyên nhân gốc.",
+    "retry_in_progress": "Đang thử lại -- trạng thái sẽ cập nhật khi hoàn tất",
+    "close": "Đóng",
+    "retrying_badge": "đang thử lại",
+    "auto_fixed_badge": "đã tự động sửa",
+    "retry_in_progress_badge": "đang thử lại",
+    "healed_via_retry_badge": "đã sửa qua thử lại",
+    "severity_suffix": "mức độ"
   },
   "healing_issues_panel": {
     "title": "Vấn đề sức khỏe",
@@ -825,7 +1142,23 @@
     "run_analysis_hint": "Chạy phân tích để kiểm tra vấn đề.",
     "healing_audit_log": "Nhật ký kiểm tra phục hồi",
     "no_silent_failures": "Không có lỗi thầm lặng nào được ghi.",
-    "analysis_complete_prefix": "Phân tích hoàn tất:"
+    "analysis_complete_prefix": "Phân tích hoàn tất:",
+    "ai_healing_title": "Tự phục hồi AI",
+    "diagnosis_label": "Chẩn đoán:",
+    "fixes_applied": "Đã áp dụng sửa lỗi",
+    "alert_history_title": "Lịch sử cảnh báo",
+    "all_agents_global": "Tất cả tác nhân (toàn cục)",
+    "add_rule": "Thêm quy tắc",
+    "no_rules_configured": "Không có quy tắc cảnh báo nào được cấu hình. Thêm quy tắc để bắt đầu giám sát.",
+    "confidence_pct_suffix": "% tin cậy",
+    "spike_on": "tăng đột biến vào",
+    "correlated_events_prefix": "Sự kiện tương quan (",
+    "circuit_breaker_label": "circuit breaker",
+    "auto_disabled_message": "Tác nhân này đã bị tự động vô hiệu hóa như một phản ứng circuit-breaker đối với các lần thất bại lặp lại.",
+    "execution_label": "Thực thi:",
+    "issue_marked_as": "Vấn đề này được đánh dấu là",
+    "retry_in_progress": "Đang thử lại — trạng thái sẽ cập nhật khi hoàn tất.",
+    "resolve_issue_title": "Đánh dấu vấn đề đã giải quyết"
   },
   "healing_timeline": {
     "loading": "Đang tải dòng thời gian...",
@@ -916,12 +1249,14 @@
     "title": "Upcoming Routines",
     "subtitle": "next scheduled runs",
     "empty": "No scheduled runs.",
-    "never_fired": "pending first run"
+    "never_fired": "pending first run",
+    "view_all": "View schedules"
   },
   "vault_recent_changes": {
     "title": "Vault Changes",
     "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity."
+    "empty": "No recent sync activity.",
+    "view_all": "View sync log"
   },
   "heatmap": {
     "title_persona": "Activity over the last year",
@@ -1192,5 +1527,272 @@
     "source_scanner": "Trình quét",
     "tokens": "Token",
     "total_cost": "Tổng chi phí"
+  },
+  "title": "Tổng quan",
+  "no_output": "Chưa có kết quả",
+  "no_background_jobs": "Không có công việc nền đang chạy hoặc gần đây",
+  "background_jobs_hint": "Công việc xuất hiện ở đây khi bạn chạy chuyển đổi n8n, áp dụng mẫu, tạo mẫu hoặc gỡ lỗi truy vấn",
+  "realtime": {
+    "idle": "Nhàn rỗi -- nhấp {action} để mô phỏng lưu lượng",
+    "test_flow": "Kiểm tra luồng",
+    "events_per_min": "sự kiện/phút",
+    "pending": "đang chờ",
+    "success": "thành công",
+    "in_window": "trong cửa sổ"
+  },
+  "executions": {
+    "title": "Thực thi",
+    "loading": "Đang tải thực thi...",
+    "no_agents": "Chưa tạo tác tử nào",
+    "create_first": "Tạo tác tử đầu tiên để xem hoạt động thực thi tại đây",
+    "no_executions": "Chưa có thực thi nào",
+    "run_agent": "Chạy tác tử để xem hoạt động thực thi tại đây"
+  },
+  "workflows": {
+    "loading": "Đang tải quy trình...",
+    "title": "Quy trình",
+    "subtitle": "Các thao tác nền đang hoạt động và gần đây trên không gian làm việc",
+    "no_jobs": "Không có tác vụ nền đang chạy hoặc gần đây",
+    "jobs_hint": "Tác vụ xuất hiện tại đây khi bạn chạy chuyển đổi N8n, áp dụng mẫu, tạo mẫu, hoặc gỡ lỗi truy vấn",
+    "all_types": "Tất cả loại",
+    "no_filter_match": "Không có tác vụ nào khớp bộ lọc hiện tại",
+    "auto_refreshing": "Tự động làm mới khi tác vụ đang chạy",
+    "cancel_failed": "Không thể hủy tác vụ quy trình"
+  },
+  "schedules": {
+    "title": "Dòng thời gian lịch trình",
+    "subtitle": "Tổng hợp tất cả thực thi tác tử theo lịch trình",
+    "engine_on": "Bộ lập lịch bật",
+    "engine_off": "Bộ lập lịch tắt",
+    "engine_on_tooltip": "Bộ lập lịch đang chạy -- nhấp để tạm dừng",
+    "engine_off_tooltip": "Bộ lập lịch đã dừng -- nhấp để bắt đầu",
+    "active_count": "{count} hoạt động",
+    "paused_count": "{count} tạm dừng",
+    "view_grouped": "Nhóm",
+    "view_timeline": "Dòng thời gian",
+    "triggers_fired": "Trình kích hoạt đã kích: ",
+    "events_processed": "Sự kiện đã xử lý: ",
+    "delivered": "Đã gửi: ",
+    "failed_label": "Thất bại: ",
+    "loading": "Đang tải lịch trình...",
+    "empty": "Không tìm thấy tác tử có lịch trình.",
+    "empty_hint": "Tạo lịch trình hoặc trình kích hoạt kiểm tra trên bất kỳ tác tử nào để xem tại đây.",
+    "group_overdue": "Quá hạn",
+    "group_15min": "15 phút tiếp theo",
+    "group_1hour": "Giờ tiếp theo",
+    "group_6hours": "6 giờ tiếp theo",
+    "group_24hours": "24 giờ tiếp theo",
+    "group_later": "Sau đó",
+    "group_paused": "Tạm dừng / Chưa lên lịch",
+    "run_now": "Chạy ngay",
+    "change_frequency": "Thay đổi tần suất",
+    "pause_schedule": "Tạm dừng lịch trình",
+    "resume_schedule": "Tiếp tục lịch trình",
+    "headless_badge": "không giao diện"
+  },
+  "frequency_editor": {
+    "title": "Thay đổi tần suất",
+    "current": "Hiện tại: ",
+    "quick_presets": "Cài đặt nhanh",
+    "cron_expression": "Biểu thức cron",
+    "interval_seconds": "Khoảng cách (giây)",
+    "previewing": "Đang xem trước...",
+    "next_runs": "Lần chạy tiếp theo",
+    "invalid_cron": "Biểu thức cron không hợp lệ"
+  },
+  "recovery": {
+    "agents_missed_one": "{count} tác tử đã bỏ lỡ thực thi",
+    "agents_missed_other": "{count} tác tử đã bỏ lỡ thực thi",
+    "total_skipped": "~{count} tổng lần chạy bị bỏ qua khi ứng dụng ngoại tuyến",
+    "missed_since": "{count} bỏ lỡ kể từ {time}",
+    "every_interval": "mỗi {interval}",
+    "mark_for_recovery": "Đánh dấu để khôi phục",
+    "recover": "Khôi phục",
+    "run_once": "Chạy 1 lần",
+    "run_once_tooltip": "Chạy một lần ngay",
+    "skip_tooltip": "Bỏ qua -- không khôi phục",
+    "dismiss_all": "Bỏ qua tất cả",
+    "recover_selected": "Khôi phục {count} đã chọn"
+  },
+  "conflicts": {
+    "dismissed": "Đã bỏ qua xung đột",
+    "resolved": "Đã giải quyết xung đột",
+    "resolve_failed": "Không thể giải quyết xung đột",
+    "conflict_count_one": "{count} xung đột",
+    "conflict_count_other": "{count} xung đột"
+  },
+  "execution_metrics": {
+    "title": "Số liệu thực thi",
+    "total_executions": "Tổng thực thi",
+    "total_cost": "Tổng chi phí",
+    "success_rate": "Tỷ lệ thành công",
+    "avg_latency": "Độ trễ trung bình",
+    "cost_anomalies": "Bất thường chi phí được phát hiện",
+    "no_data": "Không có dữ liệu thực thi cho khoảng thời gian đã chọn",
+    "cost_per_day": "Chi phí mỗi ngày",
+    "executions_by_status": "Thực thi theo trạng thái",
+    "success_rate_trend": "Xu hướng tỷ lệ thành công",
+    "latency_distribution": "Phân phối độ trễ (p50 / p95 / p99)",
+    "top_personas_by_cost": "Personas hàng đầu theo chi phí",
+    "cost_spike": "Tăng đột biến chi phí",
+    "above_avg": "trên mức trung bình",
+    "top_executions": "Thực thi hàng đầu:",
+    "executions_label": "{count} thực thi"
+  },
+  "execution_list": {
+    "recorded": "{count} thực thi đã ghi",
+    "recorded_one": "{count} thực thi đã ghi",
+    "list": "Danh sách",
+    "metrics": "Số liệu",
+    "show_list": "Hiện danh sách thực thi",
+    "show_metrics": "Hiện bảng số liệu",
+    "showing": "Hiển thị {count} trong {total}",
+    "load_more": "Tải thêm",
+    "filter_all": "Tất cả",
+    "filter_running": "Đang chạy",
+    "filter_completed": "Đã hoàn tất",
+    "filter_failed": "Thất bại",
+    "col_persona": "Persona",
+    "col_status": "Trạng thái",
+    "col_duration": "Thời gian",
+    "col_started": "Bắt đầu",
+    "col_id": "ID",
+    "all_statuses": "Tất cả trạng thái",
+    "all_personas": "Tất cả personas",
+    "no_agents": "Chưa tạo tác nhân nào",
+    "no_agents_hint": "Tạo tác nhân đầu tiên để xem hoạt động thực thi tại đây.",
+    "unknown_persona": "Không rõ",
+    "healing_retry": "Lần thử phục hồi #{count}"
+  },
+  "analytics": {
+    "title": "Phân tích",
+    "subtitle": "Xu hướng và mẫu thực thi",
+    "loading": "Đang tải phân tích...",
+    "no_data": "Không có dữ liệu phân tích",
+    "executions_over_time": "Thực thi theo thời gian",
+    "success_failure": "Thành công vs Thất bại",
+    "cost_breakdown": "Phân tích chi phí",
+    "total_executions": "Tổng thực thi",
+    "total_cost": "Tổng chi phí",
+    "avg_success_rate": "Tỷ lệ thành công trung bình",
+    "active_agents": "Tác nhân đang hoạt động",
+    "saved_views": "Chế độ xem đã lưu",
+    "create_view": "Tạo chế độ xem",
+    "health_issues": "Vấn đề sức khỏe",
+    "rotation_overview": "Tổng quan xoay vòng"
+  },
+  "usage": {
+    "title": "Mức sử dụng",
+    "subtitle": "Chi phí và tiêu thụ tài nguyên",
+    "chart_error": "Biểu đồ tải thất bại",
+    "chart_error_hint": "Đã xảy ra lỗi khi hiển thị biểu đồ này",
+    "try_again": "Thử lại"
+  },
+  "cron_agents": {
+    "title": "Tác nhân theo lịch",
+    "subtitle": "Tác nhân chạy theo lịch tự động",
+    "no_agents": "Không có tác nhân theo lịch",
+    "no_agents_hint": "Thêm trình kích hoạt cron vào bất kỳ tác nhân nào để xem tại đây"
+  },
+  "timeline": {
+    "title": "Dòng thời gian hoạt động",
+    "subtitle": "Xem tổng hợp tất cả hoạt động tác nhân",
+    "no_activity": "Chưa có hoạt động gần đây"
+  },
+  "realtime_viz": {
+    "title": "Bus sự kiện",
+    "filter_events": "Lọc sự kiện",
+    "pause": "Tạm dừng",
+    "resume": "Tiếp tục",
+    "clear": "Xóa",
+    "total_events": "Tổng sự kiện",
+    "events_per_sec": "Sự kiện/giây",
+    "active_lanes": "Làn đang hoạt động",
+    "event_type": "Loại sự kiện",
+    "source": "Nguồn",
+    "target": "Đích",
+    "timestamp": "Thời gian",
+    "payload": "Payload",
+    "saved_views": "Chế độ xem đã lưu",
+    "save_current": "Lưu hiện tại"
+  },
+  "cards": {
+    "fleet_optimization": "Tối ưu hóa đội",
+    "fleet_subtitle": "Đề xuất tự động để cải thiện hiệu suất tác nhân",
+    "remote_control": "Điều khiển từ xa",
+    "remote_subtitle": "Thao tác nhanh để quản lý tác nhân",
+    "resume_setup": "Tiếp tục thiết lập",
+    "resume_subtitle": "Tiếp tục từ nơi bạn đã dừng",
+    "knowledge_hub": "Trung tâm kiến thức"
+  },
+  "saved_views": {
+    "errors": {
+      "load_failed_message": "Couldn't load your saved views.",
+      "save_failed_message": "Couldn't save this view.",
+      "delete_failed_message": "Couldn't delete this view."
+    }
+  },
+  "activity_timeline": {
+    "title": "Dòng thời gian hoạt động",
+    "subtitle": "{events} sự kiện, {messages} tin nhắn",
+    "all": "Tất cả",
+    "events": "Sự kiện",
+    "messages": "Tin nhắn",
+    "no_activity": "Chưa có hoạt động",
+    "high": "Cao"
+  },
+  "widgets_extra": {
+    "execution_health_chart": "Sức khỏe thực thi",
+    "cost_over_time_chart": "Chi phí theo thời gian",
+    "successful": "Thành công",
+    "failed": "Thất bại",
+    "close": "Đóng",
+    "dismiss_help": "Bỏ qua trợ giúp",
+    "skip_tour": "Bỏ qua hướng dẫn hoàn toàn"
+  },
+  "remote_control_card": {
+    "connect_to_desktop": "Kết nối với máy tính",
+    "connect_description": "Chạy tác nhân bằng CLI máy tính qua Điều khiển từ xa. Khởi động {command} trên máy tính, sau đó kết nối tại đây.",
+    "requires_subscription": "Yêu cầu đăng ký Claude Pro hoặc Max"
+  },
+  "resume_setup_card": {
+    "resume_tour": "Tiếp tục hướng dẫn",
+    "left_off_at": "Bạn đã dừng tại",
+    "steps_completed": "{completed}/{total} bước đã hoàn thành",
+    "skip_tour": "Bỏ qua hướng dẫn hoàn toàn",
+    "continue_label": "Tiếp tục"
+  },
+  "bulk_action_bar": {
+    "pending_reviews_selected_one": "{count} bài duyệt chờ xử lý đã chọn",
+    "pending_reviews_selected_other": "{count} bài duyệt chờ xử lý đã chọn"
+  },
+  "review_inbox": {
+    "drag_to_resize": "Kéo để thay đổi kích thước"
+  },
+  "event_bus_overlay": {
+    "earlier_events_not_shown_one": "{count} sự kiện trước không hiển thị",
+    "earlier_events_not_shown_other": "{count} sự kiện trước không hiển thị"
+  },
+  "event_bus_filter": {
+    "search_placeholder": "Tìm sự kiện…"
+  },
+  "crash_logs": {
+    "title": "Nhật ký sự cố",
+    "no_logs": "Không có nhật ký sự cố nào.",
+    "component_stack_separator": "--- Component Stack ---"
+  },
+  "events_list": {
+    "save_view_tooltip": "Lưu bộ lọc hiện tại thành view",
+    "clear_filters_tooltip": "Xoá mọi bộ lọc"
+  },
+  "dashboard_home": {
+    "you_have": "Bạn có"
+  },
+  "fleet_optimization_card": {
+    "title": "Tối ưu hoá đội"
+  },
+  "day_range_picker": {
+    "start_date": "Ngày bắt đầu",
+    "end_date": "Ngày kết thúc"
   }
 }

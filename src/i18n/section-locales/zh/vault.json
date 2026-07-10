@@ -42,6 +42,44 @@
       "operation": "操作",
       "detail": "详情",
       "time": "时间"
+    },
+    "anomaly_detected": "检测到异常：凭证在之前成功后突然失败。可能已被吊销。",
+    "history": "历史",
+    "event_triggers": "事件触发器",
+    "rotation_policy": {
+      "rotate_every": "每隔",
+      "days": "天轮换",
+      "no_policy": "未配置轮换策略。",
+      "oauth_refresh_active": "OAuth 令牌刷新活跃",
+      "oauth_refresh_active_auto": "OAuth 令牌刷新活跃（自动）",
+      "auto_rotation_active": "自动轮换活跃",
+      "rotation_paused": "轮换已暂停",
+      "rotate_now": "立即轮换",
+      "enable_rotation": "启用轮换",
+      "enabling": "启用中...",
+      "remove_policy_tooltip": "删除轮换策略",
+      "save": "保存",
+      "cancel": "取消",
+      "rotation_failed": "轮换失败：{error}",
+      "remove_failed": "删除策略失败：{error}",
+      "update_failed": "更新轮换周期失败：{error}",
+      "enable_failed": "启用轮换失败：{error}",
+      "last_rotated": "上次轮换 {time}"
+    },
+    "rotation_badge": {
+      "disabled": "已禁用",
+      "perm_errors": "持续错误",
+      "degrading": "持续恶化",
+      "backoff": "等待重试"
+    },
+    "audit": {
+      "empty": "暂无审计记录。操作发生时将自动记录。",
+      "op_decrypted": "已解密",
+      "op_created": "已创建",
+      "op_updated": "已更新",
+      "op_deleted": "已删除",
+      "op_healthcheck": "连接测试",
+      "filter_all": "全部"
     }
   },
   "negotiator": {
@@ -149,7 +187,10 @@
   "body": {
     "authorizing": "正在通过 {name} 授权...",
     "authorize_with": "通过 {name} 授权",
-    "consent_completed": "{name} 授权已于 {time} 完成"
+    "consent_completed": "{name} 授权已于 {time} 完成",
+    "authorize_hint": "打开 {name} 登录页，批准后保存访问令牌。",
+    "update_failed": "更新凭据失败",
+    "delete_credential": "删除凭据"
   },
   "auto_cred": {
     "guided_setup": "引导设置",
@@ -210,7 +251,30 @@
     "mcp_error": "错误",
     "mcp_success": "成功",
     "mcp_empty": "（空）",
-    "response_empty": "（空响应）"
+    "response_empty": "（空响应）",
+    "tab_overview": "概览",
+    "tab_api_explorer": "API 浏览器",
+    "tab_recipes": "配方",
+    "tab_mcp_tools": "MCP 工具",
+    "tab_rotation": "轮换",
+    "add_tag": "添加标签...",
+    "no_connector": "此凭证类型没有可用的连接器定义。",
+    "try_button": "尝试",
+    "parameters": "参数",
+    "request_body": "请求体",
+    "path_placeholder": "/api/v1/resource",
+    "sending": "发送中...",
+    "mcp_input_schema": "输入架构",
+    "mcp_discover": "发现 MCP 服务器工具",
+    "mcp_discover_hint": "连接到 MCP 服务器以发现可用工具并测试它们。",
+    "mcp_discover_button": "发现工具",
+    "header": "请求头",
+    "value": "值",
+    "path_parameters": "路径参数",
+    "query_parameters": "查询参数",
+    "headers": "请求头",
+    "body": "请求体",
+    "empty_response": "（空响应）"
   },
   "playground_extra": {
     "add_tag": "添加标签...",
@@ -581,7 +645,20 @@
     "aria_label": "保险库面包屑"
   },
   "credential_card": {
-    "delete_credential": "删除凭据"
+    "delete_credential": "删除凭据",
+    "deleting": "正在删除 {name}...",
+    "no_connector": "此凭据类型没有可用的连接器定义。",
+    "stored_result": "已存储连接测试结果",
+    "corrupted": "已损坏",
+    "corrupted_tooltip": "健康检查环形缓冲区元数据已损坏。下次成功健康检查覆盖坏数据前，异常分数不可用。",
+    "field_count_one": "{count} 个字段",
+    "field_count_other": "{count} 个字段",
+    "add_tag_placeholder": "添加标签...",
+    "add_tag_button": "添加标签",
+    "remove_tag": "删除标签 \\\"{tag}\\\"",
+    "copy_credential_id": "复制凭据 ID",
+    "refresh_oauth": "立即刷新 OAuth 令牌",
+    "refresh": "刷新"
   },
   "vault_badge": {
     "needs_attention": "需要关注",
@@ -735,7 +812,17 @@
   },
   "audit_log": {
     "empty": "暂无审计记录",
-    "empty_hint": "操作发生时将自动记录。"
+    "empty_hint": "操作发生时将自动记录。",
+    "access_events_hint": "访问事件将显示在此。",
+    "loading": "正在加载审计时间线...",
+    "total_accesses": "共 {count} 次",
+    "personas_one": "{count} 个代理",
+    "personas_other": "{count} 个代理",
+    "accesses_24h": "24 小时内 {count} 次",
+    "anomalies_one": "{count} 项异常",
+    "anomalies_other": "{count} 项异常",
+    "no_anomalies": "无异常",
+    "show_all": "显示全部 {count} 条记录"
   },
   "credential_import": {
     "import_from": "从 {source} 导入",
@@ -1308,5 +1395,202 @@
     "time_tracking": "时间跟踪",
     "vector_search": "向量搜索",
     "web_scraping": "网页抓取"
+  },
+  "title": "密钥库",
+  "subtitle": "选择添加凭证的方式",
+  "add_from_catalog": "从目录添加",
+  "ai_designed": "AI 设计凭证",
+  "health": {
+    "healthy": "健康",
+    "needs_attention": "需要关注",
+    "untested": "未测试"
+  },
+  "list": {
+    "no_credentials": "未检测到已认证的服务。请在下方手动选择。",
+    "delete_confirm": "确定删除此凭证？",
+    "blast_radius": "影响范围",
+    "no_dependencies": "没有智能体依赖此凭证。可以安全修改或删除。",
+    "affected_agents": "受影响的智能体",
+    "affected_events": "受影响的事件",
+    "sort_label": "排序："
+  },
+  "connector": {
+    "filter_all": "全部",
+    "filter_connected": "已连接",
+    "filter_available": "可用"
+  },
+  "vector": {
+    "documents_tab": "文档",
+    "search_tab": "搜索",
+    "settings_tab": "设置",
+    "ingest_title": "添加文档",
+    "ingest_hint": "拖放文件至此或点击浏览",
+    "ingest_drop": "拖放文件以添加",
+    "ingest_supported": "支持：txt、md、html、csv、json、yaml、代码文件",
+    "starting_ingestion": "正在处理文件...",
+    "no_valid_files": "未找到有效文件路径。请尝试拖放单个文件。",
+    "no_documents": "暂无文档",
+    "no_documents_hint": "拖放文件、粘贴文本或扫描目录以开始构建知识库。",
+    "refresh": "刷新",
+    "paste_text": "粘贴文本",
+    "directory": "目录",
+    "delete_document": "删除文档",
+    "document_count_one": "{count} 个文档",
+    "document_count_other": "{count} 个文档",
+    "show_full": "显示完整摘录",
+    "show_less": "收起",
+    "copy_content": "复制内容",
+    "kb_info": "知识库信息",
+    "embedding_model": "搜索模型",
+    "dimensions": "维度",
+    "chunk_size": "片段大小",
+    "chunk_overlap": "片段重叠",
+    "statistics": "统计",
+    "documents": "文档",
+    "chunks": "片段",
+    "local_embedding": "本地搜索",
+    "local_embedding_hint": "使用 {model}（{dims} 维）在本地运行搜索索引。数据不会离开您的机器。模型（约 23MB）首次使用时下载并保存在本地。"
+  },
+  "desktop": {
+    "installed": "已安装",
+    "running": "运行中",
+    "not_installed": "未安装"
+  },
+  "graph": {
+    "no_dependencies": "无依赖关系",
+    "connection_count_one": "{count} 个连接",
+    "connection_count_other": "{count} 个连接",
+    "dep_count_one": "{count} 个依赖",
+    "dep_count_other": "{count} 个依赖",
+    "not_tested": "未测试",
+    "healthy": "健康",
+    "unhealthy": "不健康"
+  },
+  "wizard": {
+    "detected": "已检测到（{count}）",
+    "available": "可用（{count}）",
+    "already_added": "已添加（{count}）",
+    "no_match": "无服务匹配 \\\"{search}\\\"",
+    "already_added_badge": "已添加",
+    "local": "本地",
+    "cli_auth": "CLI 认证",
+    "session": "会话"
+  },
+  "bulk_healthcheck": {
+    "title": "健康检查结果",
+    "needs_attention": "需要关注",
+    "slowest_responses": "最慢响应",
+    "passed_count": "{count} 个通过",
+    "failed_count": "{count} 个失败",
+    "total_count": "共 {count} 个"
+  },
+  "health_bar": {
+    "healthy": "健康",
+    "needs_attention": "需要关注",
+    "untested": "未测试"
+  },
+  "card_body": {
+    "failed_update": "更新凭据失败",
+    "authorizing_with": "正在通过 {name} 授权...",
+    "authorize_with": "通过 {name} 授权",
+    "authorize_hint": "启动应用管理的 {name} 授权并在批准后更新刷新令牌。",
+    "consent_completed": "{name} 授权已于 {time} 完成"
+  },
+  "card_details": {
+    "tab_intelligence": "智能",
+    "tab_rotation": "轮换",
+    "tab_token_lifetime": "令牌生命周期",
+    "tab_services": "服务（{count}）",
+    "tab_events": "事件（{count}）",
+    "tab_audit": "审计"
+  },
+  "token_metrics": {
+    "loading": "正在加载指标...",
+    "no_metrics": "暂无令牌刷新指标。第一次 OAuth 令牌刷新后将显示指标。",
+    "trend_warning": "令牌生命周期呈下降趋势——可能是提供商限速或策略变更。",
+    "total_refreshes": "总刷新次数",
+    "failure_rate": "失败率",
+    "avg_lifetime": "平均生命周期",
+    "avg_drift": "平均漂移",
+    "recent_ttls": "最近提供商 TTL（最新在前）",
+    "recent_refreshes": "最近刷新",
+    "fallback_used": "在 {rate}% 的刷新中使用了回退 ({fallback}s)（{count}/{total}）— 服务商未提供"
+  },
+  "wizard_detect": {
+    "no_services": "无服务匹配 \\\"{search}\\\"",
+    "select_services": "选择要添加凭据的服务，或扫描以自动检测。",
+    "scanning": "正在扫描 CLI 工具和浏览器会话...",
+    "scan_button": "扫描已认证服务",
+    "search_services": "搜索服务...",
+    "desktop_bridge": "桌面桥接——已自动检测",
+    "batch_complete": "批量设置完成",
+    "skip_service": "跳过此服务",
+    "no_filter_match": "尝试不同的搜索词或清除筛选器。",
+    "set_up_credentials": "设置凭证",
+    "clear_selection": "清除选择",
+    "set_up_services": "设置 {count} 个服务{plural}",
+    "setting_up": "正在设置第 {current} 个 / 共 {total} 个",
+    "wizard_title": "凭证设置向导",
+    "choose_service": "选择要设置的服务",
+    "ai_walk_description": "AI 将逐步引导您获取 API 凭证。",
+    "wizard_subtitle": "AI 引导式凭证设置",
+    "wizard_subtitle_batch": "正在设置 {count} 个服务{plural}"
+  },
+  "autopilot": {
+    "title": "API 自动驾驶",
+    "input_hint": "粘贴 OpenAPI 规范 URL 或内容以自动生成连接器",
+    "preview_hint": "审查解析的 API 并选择要包含的端点",
+    "generated_hint": "连接器已成功生成",
+    "connector_generated": "连接器已成功生成",
+    "api_playground": "API 测试场",
+    "api_playground_hint": "在使用前测试您生成的 API 工具",
+    "paste_spec": "粘贴 OpenAPI 规范（JSON 或 YAML）",
+    "valid_url_error": "请输入有效 URL（例如 https://api.example.com/openapi.json）",
+    "authentication": "认证",
+    "connector_name": "连接器名称",
+    "color": "颜色",
+    "endpoints_selected": "端点（已选 {selected}/{total}）",
+    "generating": "生成中...",
+    "generate_connector": "生成连接器（{count} 个工具）",
+    "base_url": "基础 URL",
+    "headers_label": "请求头",
+    "header_name_placeholder": "请求头名称",
+    "query_parameters": "查询参数",
+    "param_name_placeholder": "参数名称",
+    "request_body": "请求体（JSON）",
+    "from_url": "从 URL",
+    "paste_content": "粘贴内容",
+    "openapi_spec_url": "OpenAPI 规范 URL",
+    "openapi_format_hint": "支持 JSON 或 YAML 格式的 OpenAPI 3.x 和 Swagger 2.x 规范",
+    "parsing_spec": "正在解析规范...",
+    "parse_analyze": "解析与分析",
+    "connector_in_catalog": "{connectorLabel} 现已在您的连接器目录中可用，包含 {toolCount} 个工具定义。",
+    "generated_tools": "生成的工具 ({count})",
+    "credential_fields": "凭证字段",
+    "open_playground": "打开测试工作台",
+    "copy_connector_id": "复制连接器 ID",
+    "go_to_catalog": "前往目录",
+    "response_headers": "响应头 ({count})",
+    "base_url_placeholder": "https://api.example.com",
+    "openapi_url_placeholder": "https://api.example.com/openapi.json",
+    "auth_schemes": "认证方案",
+    "body_placeholder": "{ \"key\": \"value\" }"
+  },
+  "cli_capture": {
+    "cta": "从本地 CLI 导入",
+    "hint": "使用已登录的本地 CLI 代替粘贴 API 密钥。",
+    "running": "正在运行本地 CLI...",
+    "success": "已从 CLI 获取凭证",
+    "token_ttl_notice": "此令牌将在 {seconds}s 后过期，将自动刷新。",
+    "source_label": "CLI",
+    "missing_binary": "`{binary}` 未安装或不在允许列表的位置。",
+    "unauthenticated": "您未登录 {binary}。{instruction}",
+    "capture_failed": "CLI 获取失败：{detail}",
+    "timeout": "CLI 获取超时。请先尝试手动运行该命令。"
+  },
+  "rotation_insight": {
+    "perm_errors": "检测到永久性错误——已尝试轮换并发出警报。",
+    "degrading": "持续性能下降——已触发预防性轮换。",
+    "backoff": "瞬时失败——指数退避活跃。"
   }
 }

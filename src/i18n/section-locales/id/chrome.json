@@ -47,7 +47,8 @@
     "nav_mode_notifications": "Alihkan notifikasi (mode nav)",
     "nav_mode_review": "Alihkan tinjauan manusia (mode nav)",
     "nav_mode_schedules": "Alihkan jadwal (mode nav)",
-    "nav_mode_search": "Buka pencarian (mode nav)"
+    "nav_mode_search": "Buka pencarian (mode nav)",
+    "open_title": "Pintasan keyboard"
   },
   "tray_schedules": "Jadwal",
   "tray_schedules_today": "{count} terjadwal hari ini",
@@ -66,5 +67,10 @@
   "tray_acceptance_pending": "{count} tujuan menunggu penerimaan Anda",
   "cli_not_ready_detail": "Personas menjalankan agen Anda dengan langganan Claude Anda. Kami tidak dapat memulai sesi Claude — pastikan Claude Code CLI sudah terpasang dan masuk, lalu coba lagi.",
   "cli_not_ready_retry": "Coba lagi",
-  "cli_not_ready_title": "Claude CLI belum siap"
+  "cli_not_ready_title": "Claude CLI belum siap",
+  "expand_sidebar": "Perluas bilah samping",
+  "collapse_sidebar": "Ciutkan bilah samping",
+  "network_settings": "Pengaturan jaringan",
+  "dark": "Gelap",
+  "light": "Terang"
 }

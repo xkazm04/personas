@@ -753,5 +753,36 @@
       "api_keys": "API klíče",
       "history": "Historie"
     }
+  },
+  "title": "Nastavení",
+  "settings_saved": "Uloženo",
+  "appearance_extra": {
+    "simple": "Jednoduchý",
+    "simple_hint": "Pouze základní funkce",
+    "full": "Kompletní",
+    "full_hint": "Zobrazit kompletní rozhraní",
+    "dev": "Dev",
+    "dev_hint": "Odemknout vývojářské nástroje"
+  },
+  "quality_gates": {
+    "title": "Filtry obsahu",
+    "action_reject": "Reject",
+    "action_tag": "Tag",
+    "action_warn": "Warn",
+    "loading": "Načítání...",
+    "error_loading": "Chyba načítání konfigurace",
+    "active_rules": "{count} aktivních filtrovacích pravidel",
+    "loading_config": "Načítání konfigurace filtrů obsahu...",
+    "description": "Filtry obsahu filtrují AI generované vzpomínky a kontroly během dispečinku spouštění. Vzory jsou porovnávány jako podřetězce proti kombinovanému titulku a obsahu každého odeslání. Když vzor odpovídá, aplikuje se nakonfigurovaná akce. Tato pravidla brání operačnímu šumu (chyby přihlašovacích údajů, stack trace, prázdné workspace reporty) ve znečišťování tvé znalostní báze.",
+    "memory_filters": "Filtry vzpomínek",
+    "memory_filters_desc": "Aplikováno na odeslání AgentMemory. Blokuje operační selhání a úniky přihlašovacích údajů před uložením jako vzpomínky persony.",
+    "review_filters": "Filtry kontrol",
+    "review_filters_desc": "Aplikováno na odeslání ManualReview. Filtruje infrastrukturní chyby, takže do fronty kontrol se dostávají pouze skutečná obchodní rozhodnutí.",
+    "rejected_categories": "Odmítnuté kategorie",
+    "rules_count": "{count} pravidlo",
+    "rules_count_plural": "{count} pravidel",
+    "reset_defaults": "Obnovit výchozí hodnoty",
+    "confirm_reset": "Potvrdit reset?",
+    "rules_hint": "Pravidla se načítají z databáze při každém dispečinku. Změny se projevují okamžitě."
   }
 }

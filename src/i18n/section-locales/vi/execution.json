@@ -20,5 +20,17 @@
   "budget_reset_in_days_one": "trong {count} ngày",
   "budget_reset_in_days_other": "trong {count} ngày",
   "interruptions_per_hour_one": "({count} gián đoạn/1h)",
-  "interruptions_per_hour_other": "({count} gián đoạn/1h)"
+  "interruptions_per_hour_other": "({count} gián đoạn/1h)",
+  "needs_credential": "cần thông tin xác thực",
+  "run_preview": "Xem trước lần chạy",
+  "close_preview": "Đóng xem trước",
+  "budget_limit": "Giới hạn ngân sách",
+  "run_agent": "Chạy tác tử",
+  "model": "Model",
+  "trust": "Trust",
+  "timeout": "Timeout",
+  "preview_aria_label": "Pre-run preview for {name}",
+  "tool_count_one": "{count} tool",
+  "tool_count_other": "{count} tools",
+  "missing_count": "{count} missing"
 }

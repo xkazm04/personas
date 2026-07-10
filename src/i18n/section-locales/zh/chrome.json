@@ -47,7 +47,8 @@
     "nav_mode_notifications": "切换通知（导航模式）",
     "nav_mode_review": "切换人工审核（导航模式）",
     "nav_mode_schedules": "切换计划（导航模式）",
-    "nav_mode_search": "打开搜索（导航模式）"
+    "nav_mode_search": "打开搜索（导航模式）",
+    "open_title": "键盘快捷键"
   },
   "tray_schedules": "计划任务",
   "tray_schedules_today": "今日 {count} 个计划任务",
@@ -66,5 +67,10 @@
   "tray_acceptance_pending": "{count} 个目标等待您接受",
   "cli_not_ready_detail": "Personas 使用您的 Claude 订阅运行您的代理。我们无法启动 Claude 会话 — 请确保已安装并登录 Claude Code CLI，然后重试。",
   "cli_not_ready_retry": "重试",
-  "cli_not_ready_title": "Claude CLI 未就绪"
+  "cli_not_ready_title": "Claude CLI 未就绪",
+  "expand_sidebar": "展开侧栏",
+  "collapse_sidebar": "收起侧栏",
+  "network_settings": "网络设置",
+  "dark": "深色",
+  "light": "浅色"
 }

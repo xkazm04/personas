@@ -20,5 +20,17 @@
   "budget_reset_in_days_one": "dalam {count} hari",
   "budget_reset_in_days_other": "dalam {count} hari",
   "interruptions_per_hour_one": "({count} interupsi/1 jam)",
-  "interruptions_per_hour_other": "({count} interupsi/1 jam)"
+  "interruptions_per_hour_other": "({count} interupsi/1 jam)",
+  "needs_credential": "butuh kredensial",
+  "run_preview": "Pratinjau Jalan",
+  "close_preview": "Tutup pratinjau",
+  "budget_limit": "Batas anggaran",
+  "run_agent": "Jalankan Agen",
+  "model": "Model",
+  "trust": "Trust",
+  "timeout": "Timeout",
+  "preview_aria_label": "Pre-run preview for {name}",
+  "tool_count_one": "{count} tool",
+  "tool_count_other": "{count} tools",
+  "missing_count": "{count} missing"
 }

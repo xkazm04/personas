@@ -229,5 +229,6 @@
   "update_badge": "Actualizar",
   "update_badge_detail_tooltip": "Adoptado en v{from}; el catálogo ahora está en v{to}. Elimina y vuelve a adoptar para actualizar.",
   "update_badge_tooltip": "Hay una versión más reciente de esta capacidad disponible — elimina y vuelve a adoptar para actualizar",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "Tags"
 }

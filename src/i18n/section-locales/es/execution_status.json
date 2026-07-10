@@ -1,4 +1,8 @@
 {
   "completed": "Completado",
-  "failed": "Fallido"
+  "failed": "Fallido",
+  "queued": "En cola",
+  "running": "Ejecutando",
+  "cancelled": "Cancelado",
+  "error": "Error"
 }
