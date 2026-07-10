@@ -503,11 +503,32 @@ fn build_clarify_prompt(intent: &str, behavior_core: &Value, capabilities: &[Val
          destination, a filter, or a scope that does NOT appear in the user's original intent \
          above, that is an UNCONFIRMED GUESS and you MUST ask about it — never accept it and never \
          phrase a question that presupposes it (do NOT write \"Beyond Gmail, ...\" if the user \
-         never said Gmail).\n\n\
+         never said Gmail).\n\
+         **The CAPABILITIES are guesses too.** If the user named a DOMAIN but never said what the \
+         persona should actually DO with it (\"helps with my emails\", \"something for my \
+         research\"), then every enumerated capability is invented. You MUST ask what it should do, \
+         offering the plausible jobs as options — and you must NOT ask a question that presupposes \
+         an invented job (do NOT ask \"when should the morning digest run?\" if the user never \
+         asked for a digest).\n\n\
+         ## How many jobs to build\n\
+         - The intent names a BOUNDED domain but no jobs (\"my emails\", \"my research\"): the user \
+         probably wants SEVERAL things. Ask what it should do and let them pick more than one — say \
+         \"select all that apply\" in the question. Do NOT ask which to do \"first\"; that wrongly \
+         throws away the jobs they also want.\n\
+         - The intent is UNBOUNDED (\"manage my whole workflow\", \"make my life easier\"): ask them \
+         to name the ONE concrete job to start with.\n\n\
+         ## Irreversible actions — always ask before acting on the user's behalf\n\
+         If any plausible job would act irreversibly on the user's behalf — send an email or \
+         message, publish or post publicly, delete data, move money — you MUST ask whether it should \
+         do that automatically or prepare a draft for the user to review. Ask this even if the \
+         capabilities currently listed look read-only, because the job the user actually wants may \
+         not be listed yet. This is the one safety question you may always spend a slot on.\n\n\
          ## ASK only for information that cannot be safely defaulted\n\
          Ask when — and ONLY when — the persona must BIND a value the intent leaves unnamed:\n\
          - a concrete identifier: WHICH repository, WHICH channel, WHICH database/board/sheet, \
-         WHICH inbox or account, WHICH topic to track;\n\
+         WHICH inbox or account, WHICH topic to track. Whenever the user says \"my X\" without \
+         naming which X, that identifier is unresolved — including the SCOPE of an account (a \
+         support inbox vs all their mail, one repo vs the whole org);\n\
          - a provider or destination: which service the persona reads from or writes to, when the \
          intent names none (e.g. \"post updates\" — post WHERE? \"my emails\" — which provider?);\n\
          - a BEHAVIOUR-CHANGING QUALIFIER the intent leaves undefined. These are not identifiers, \
@@ -520,9 +541,15 @@ fn build_clarify_prompt(intent: &str, behavior_core: &Value, capabilities: &[Val
          - the concrete job/scope, when the intent is so broad the capabilities cannot be pinned \
          down (e.g. \"manage my whole workflow\") — ask the user to name the ONE job to start with;\n\
          - the trigger/cadence, ONLY when the intent implies no cadence and no event.\n\n\
-         Prefer a question that pins down WHAT the persona will do or bind over one that merely \
-         tunes HOW OFTEN it runs. If you can only ask four things, spend them on the provider, the \
-         destination, the direction, and the filter definition — not on cadence.\n\n\
+         ## Budget your four slots — bundle, never split\n\
+         - Ask for an identifier and its SCOPE in the SAME question: \"Which email provider, and \
+         which account or inbox should it read — all your mail, or one address?\"; \"Which Slack \
+         channel should it post to?\". NEVER spend two slots on one identifier (do not ask \"where \
+         should this be posted?\" and then \"which channel?\" — that is one question).\n\
+         - Prefer a question that pins down WHAT the persona will do or BINDS over one that merely \
+         tunes HOW OFTEN it runs. If you can only ask four things, spend them on: what it should do, \
+         the provider+account/scope, the direction, and any irreversible-action approval — before \
+         cadence, and before a filter definition you could reasonably default.\n\n\
          ## NEVER ask about these — resolve them with safe defaults\n\
          - memory / what to remember between runs (default: none, unless the job needs dedup or \
          cross-run state, in which case just enable it);\n\
@@ -1181,9 +1208,13 @@ pub async fn run_multiagent(
             "{initial}\n\n## The user's answers to your clarifying questions (AUTHORITATIVE)\n{clar}\n\n\
              ## THIS TURN ONLY\n\
              Re-emit the behavior_core event and then the capability_enumeration event, scoped \
-             STRICTLY to what the user asked for above. DROP any capability their answers do not \
-             support, and do NOT invent adjacent capabilities they never requested. If they named \
-             ONE job, build ONE capability for it (plus only what that job strictly needs). Then \
+             STRICTLY to what the user asked for above. Build exactly the jobs their answers name — \
+             no more, no fewer. If they named ONE job, build ONE capability for it. If they named \
+             SEVERAL (e.g. they selected multiple things it should do), build ONE CAPABILITY PER \
+             NAMED JOB — do not silently drop the others or collapse them into a single digest. \
+             DROP any capability their answers do not support, and do NOT invent adjacent \
+             capabilities they never requested. If they said an action must be reviewed before it \
+             goes out, keep that job and mark it as draft-for-review rather than deleting it. Then \
              STOP. Do not resolve capability fields, do not emit agent_ir. Raw JSON only, one \
              event per line.",
             initial = initial_prompt,
