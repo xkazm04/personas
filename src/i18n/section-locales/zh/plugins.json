@@ -2102,7 +2102,6 @@
     "voice_engine_pocket": "Pocket",
     "voice_engine_pocket_caption": "本地运行，克隆你的声音",
     "voice_pocket_cloned_badge": "已克隆",
-    "voice_pocket_enable_blocked": "启动 Pocket TTS 服务并选择一个语音以启用播放。",
     "voice_pocket_not_running": "未运行",
     "voice_pocket_not_running_hint": "在此电脑上启动 Pocket TTS 服务，然后重新检查。服务在下方地址可访问后语音才会出现。",
     "voice_pocket_running": "运行中",
@@ -2110,7 +2109,19 @@
     "voice_pocket_setup_title": "Pocket TTS 服务",
     "voice_pocket_url_label": "服务地址",
     "voice_pocket_voices_desc": "克隆语音来自服务的语音文件夹——放入新的语音文件后重新检查即可。其余为内置语音。",
-    "voice_pocket_voices_title": "Pocket 语音"
+    "voice_pocket_voices_title": "Pocket 语音",
+    "voice_pocket_enable_blocked": "安装 Pocket 引擎（或启动服务）并选择一个语音，即可启用播放。",
+    "voice_pocket_engine_hint": "获取适用于你平台的 sherpa-onnx 发行版，将其可执行文件和 DLL 放入下方文件夹。",
+    "voice_pocket_install_button": "下载并安装",
+    "voice_pocket_install_desc": "下载语音引擎（约 23 MB）和语音模型（约 98 MB），并自动完成全部设置。",
+    "voice_pocket_install_title": "安装 Pocket 语音引擎",
+    "voice_pocket_model_hint": "下载 Pocket 语音模型包，并将其中的文件解压到下方文件夹。",
+    "voice_pocket_packaged_desc": "Pocket 使用从一段简短录音克隆的语音。一切均在本机运行——单一引擎、单一语音模型，无需账号。",
+    "voice_pocket_packaged_title": "Pocket 设置",
+    "voice_pocket_service_desc": "可选。运行中的 Pocket TTS 服务可提供内置语音目录，并加快重复播放速度。",
+    "voice_pocket_service_title": "高级：本地服务",
+    "voice_pocket_voices_dir_hint": "将一段 10–30 秒的 .wav 录音放入此文件夹即可添加语音，然后重新检查。文件名将作为语音名称。",
+    "voice_pocket_voices_dir_label": "克隆语音文件夹"
   },
   "ocr": {
     "title": "OCR",

@@ -13544,6 +13544,17 @@ export type Translations = {
       voice_pocket_voices_desc: string;
       voice_pocket_cloned_badge: string;
       voice_pocket_enable_blocked: string;
+      voice_pocket_packaged_title: string;
+      voice_pocket_packaged_desc: string;
+      voice_pocket_engine_hint: string;
+      voice_pocket_model_hint: string;
+      voice_pocket_install_title: string;
+      voice_pocket_install_desc: string;
+      voice_pocket_install_button: string;
+      voice_pocket_voices_dir_label: string;
+      voice_pocket_voices_dir_hint: string;
+      voice_pocket_service_title: string;
+      voice_pocket_service_desc: string;
       voice_kokoro_setup_title: string;
       voice_kokoro_setup_desc: string;
       voice_kokoro_engine_label: string;

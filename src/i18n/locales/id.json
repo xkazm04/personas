@@ -13384,7 +13384,6 @@
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "Lokal, mengkloning suara Anda",
       "voice_pocket_cloned_badge": "Dikloning",
-      "voice_pocket_enable_blocked": "Jalankan layanan Pocket TTS dan pilih suara untuk mengaktifkan pemutaran.",
       "voice_pocket_not_running": "Tidak berjalan",
       "voice_pocket_not_running_hint": "Jalankan layanan Pocket TTS di komputer ini, lalu periksa ulang. Suara akan muncul setelah layanan dapat diakses di alamat di bawah ini.",
       "voice_pocket_running": "Berjalan",
@@ -13392,7 +13391,19 @@
       "voice_pocket_setup_title": "Layanan Pocket TTS",
       "voice_pocket_url_label": "Alamat layanan",
       "voice_pocket_voices_desc": "Suara kloning berasal dari folder voices milik layanan — tambahkan file suara baru lalu periksa ulang. Sisanya adalah suara bawaan.",
-      "voice_pocket_voices_title": "Suara Pocket"
+      "voice_pocket_voices_title": "Suara Pocket",
+      "voice_pocket_enable_blocked": "Instal engine Pocket (atau jalankan layanannya) dan pilih suara untuk mengaktifkan pemutaran.",
+      "voice_pocket_engine_hint": "Unduh rilis sherpa-onnx untuk platform Anda dan masukkan file binary beserta DLL-nya ke folder di bawah ini.",
+      "voice_pocket_install_button": "Unduh & instal",
+      "voice_pocket_install_desc": "Mengunduh speech engine (~23 MB) dan model suara (~98 MB), lalu menyiapkan semuanya secara otomatis.",
+      "voice_pocket_install_title": "Instal engine suara Pocket",
+      "voice_pocket_model_hint": "Unduh paket model suara Pocket dan ekstrak file-nya ke folder di bawah ini.",
+      "voice_pocket_packaged_desc": "Pocket berbicara dengan suara yang dikloning dari rekaman singkat. Semuanya berjalan di komputer ini — satu engine, satu model suara, tanpa akun.",
+      "voice_pocket_packaged_title": "Pengaturan Pocket",
+      "voice_pocket_service_desc": "Opsional. Layanan Pocket TTS yang berjalan menambahkan katalog suara bawaan dan pemutaran ulang yang lebih cepat.",
+      "voice_pocket_service_title": "Lanjutan: layanan lokal",
+      "voice_pocket_voices_dir_hint": "Tambahkan suara dengan memasukkan rekaman .wav berdurasi 10–30 detik ke folder ini, lalu periksa ulang. Nama file akan menjadi nama suara.",
+      "voice_pocket_voices_dir_label": "Folder suara hasil kloning"
     },
     "ocr": {
       "title": "OCR",

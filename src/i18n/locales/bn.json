@@ -13384,7 +13384,6 @@
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "স্থানীয়, আপনার কণ্ঠস্বর ক্লোন করে",
       "voice_pocket_cloned_badge": "ক্লোন করা হয়েছে",
-      "voice_pocket_enable_blocked": "প্লেব্যাক সক্রিয় করতে Pocket TTS সার্ভিস চালু করুন এবং একটি ভয়েস নির্বাচন করুন।",
       "voice_pocket_not_running": "চলছে না",
       "voice_pocket_not_running_hint": "এই কম্পিউটারে Pocket TTS সার্ভিস চালু করুন, তারপর আবার চেক করুন। নিচের ঠিকানায় সার্ভিসটি সংযোগযোগ্য হলেই ভয়েসগুলো দেখা যাবে।",
       "voice_pocket_running": "চলছে",
@@ -13392,7 +13391,19 @@
       "voice_pocket_setup_title": "Pocket TTS সার্ভিস",
       "voice_pocket_url_label": "সার্ভিস ঠিকানা",
       "voice_pocket_voices_desc": "ক্লোন করা ভয়েসগুলো সার্ভিসের ভয়েস ফোল্ডার থেকে আসে — একটি নতুন ভয়েস ফাইল যোগ করুন এবং আবার চেক করুন। বাকিগুলো বিল্ট-ইন ভয়েস।",
-      "voice_pocket_voices_title": "Pocket ভয়েসসমূহ"
+      "voice_pocket_voices_title": "Pocket ভয়েসসমূহ",
+      "voice_pocket_enable_blocked": "প্লেব্যাক সক্রিয় করতে Pocket ইঞ্জিন ইনস্টল করুন (অথবা সার্ভিস চালু করুন) এবং একটি ভয়েস নির্বাচন করুন।",
+      "voice_pocket_engine_hint": "আপনার প্ল্যাটফর্মের জন্য sherpa-onnx রিলিজটি নিন এবং বাইনারি ও এর DLL ফাইলগুলো নিচের ফোল্ডারে রাখুন।",
+      "voice_pocket_install_button": "ডাউনলোড ও ইনস্টল করুন",
+      "voice_pocket_install_desc": "স্পিচ ইঞ্জিন (~23 MB) ও ভয়েস মডেল (~98 MB) ডাউনলোড করে, তারপর স্বয়ংক্রিয়ভাবে সব সেট আপ করে।",
+      "voice_pocket_install_title": "Pocket ভয়েস ইঞ্জিন ইনস্টল করুন",
+      "voice_pocket_model_hint": "Pocket ভয়েস মডেল প্যাকেজ ডাউনলোড করুন এবং এর ফাইলগুলো নিচের ফোল্ডারে এক্সট্র্যাক্ট করুন।",
+      "voice_pocket_packaged_desc": "Pocket একটি সংক্ষিপ্ত রেকর্ডিং থেকে ক্লোন করা ভয়েসে কথা বলে। সবকিছু এই কম্পিউটারেই চলে — একটি ইঞ্জিন, একটি ভয়েস মডেল, কোনো অ্যাকাউন্ট নেই।",
+      "voice_pocket_packaged_title": "Pocket সেটআপ",
+      "voice_pocket_service_desc": "ঐচ্ছিক। একটি চলমান Pocket TTS সার্ভিস বিল্ট-ইন ভয়েস ক্যাটালগ এবং দ্রুততর পুনঃপ্লেব্যাক যোগ করে।",
+      "voice_pocket_service_title": "উন্নত: লোকাল সার্ভিস",
+      "voice_pocket_voices_dir_hint": "এই ফোল্ডারে ১০–৩০ সেকেন্ডের একটি .wav রেকর্ডিং রেখে একটি ভয়েস যোগ করুন, তারপর পুনরায় চেক করুন। ফাইলের নামই ভয়েসের নাম হয়ে যাবে।",
+      "voice_pocket_voices_dir_label": "ক্লোন করা ভয়েস ফোল্ডার"
     },
     "ocr": {
       "title": "OCR",

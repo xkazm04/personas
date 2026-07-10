@@ -2102,7 +2102,6 @@
     "voice_engine_pocket": "Pocket",
     "voice_engine_pocket_caption": "Local, clona tu voz",
     "voice_pocket_cloned_badge": "Clonada",
-    "voice_pocket_enable_blocked": "Inicia el servicio Pocket TTS y selecciona una voz para habilitar la reproducción.",
     "voice_pocket_not_running": "No está en ejecución",
     "voice_pocket_not_running_hint": "Inicia el servicio Pocket TTS en este equipo y vuelve a comprobarlo. Las voces aparecerán cuando el servicio esté disponible en la dirección indicada abajo.",
     "voice_pocket_running": "En ejecución",
@@ -2110,7 +2109,19 @@
     "voice_pocket_setup_title": "Servicio Pocket TTS",
     "voice_pocket_url_label": "Dirección del servicio",
     "voice_pocket_voices_desc": "Las voces clonadas provienen de la carpeta de voces del servicio: agrega un nuevo archivo de voz y vuelve a comprobarlo. El resto son voces integradas.",
-    "voice_pocket_voices_title": "Voces de Pocket"
+    "voice_pocket_voices_title": "Voces de Pocket",
+    "voice_pocket_enable_blocked": "Instala el motor Pocket (o inicia el servicio) y selecciona una voz para activar la reproducción.",
+    "voice_pocket_engine_hint": "Descarga la versión de sherpa-onnx para tu plataforma y coloca el binario y sus DLL en la carpeta de abajo.",
+    "voice_pocket_install_button": "Descargar e instalar",
+    "voice_pocket_install_desc": "Descarga el motor de voz (~23 MB) y el modelo de voz (~98 MB), y luego lo configura todo automáticamente.",
+    "voice_pocket_install_title": "Instalar el motor de voz Pocket",
+    "voice_pocket_model_hint": "Descarga el paquete del modelo de voz Pocket y extrae sus archivos en la carpeta de abajo.",
+    "voice_pocket_packaged_desc": "Pocket habla con una voz clonada a partir de una grabación corta. Todo se ejecuta en este equipo: un motor, un modelo de voz, sin cuenta.",
+    "voice_pocket_packaged_title": "Configuración de Pocket",
+    "voice_pocket_service_desc": "Opcional. Un servicio Pocket TTS en ejecución añade el catálogo de voces integrado y una reproducción repetida más rápida.",
+    "voice_pocket_service_title": "Avanzado: servicio local",
+    "voice_pocket_voices_dir_hint": "Añade una voz colocando una grabación .wav de 10 a 30 segundos en esta carpeta y vuelve a comprobar. El nombre del archivo se convierte en el nombre de la voz.",
+    "voice_pocket_voices_dir_label": "Carpeta de voces clonadas"
   },
   "ocr": {
     "title": "OCR",

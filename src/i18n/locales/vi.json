@@ -13384,7 +13384,6 @@
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "Cục bộ, nhân bản giọng nói của bạn",
       "voice_pocket_cloned_badge": "Đã nhân bản",
-      "voice_pocket_enable_blocked": "Khởi động dịch vụ Pocket TTS và chọn một giọng nói để bật phát âm.",
       "voice_pocket_not_running": "Chưa chạy",
       "voice_pocket_not_running_hint": "Khởi động dịch vụ Pocket TTS trên máy tính này, sau đó kiểm tra lại. Các giọng nói sẽ xuất hiện khi dịch vụ có thể truy cập được tại địa chỉ bên dưới.",
       "voice_pocket_running": "Đang chạy",
@@ -13392,7 +13391,19 @@
       "voice_pocket_setup_title": "Dịch vụ Pocket TTS",
       "voice_pocket_url_label": "Địa chỉ dịch vụ",
       "voice_pocket_voices_desc": "Các giọng nói nhân bản đến từ thư mục voices của dịch vụ — thêm một tệp giọng nói mới và kiểm tra lại. Các giọng còn lại là giọng có sẵn.",
-      "voice_pocket_voices_title": "Giọng nói Pocket"
+      "voice_pocket_voices_title": "Giọng nói Pocket",
+      "voice_pocket_enable_blocked": "Cài đặt engine Pocket (hoặc khởi động dịch vụ) và chọn một giọng nói để bật phát âm thanh.",
+      "voice_pocket_engine_hint": "Tải bản phát hành sherpa-onnx cho hệ điều hành của bạn và đặt tệp thực thi cùng các DLL vào thư mục bên dưới.",
+      "voice_pocket_install_button": "Tải xuống & cài đặt",
+      "voice_pocket_install_desc": "Tải xuống speech engine (~23 MB) và mô hình giọng nói (~98 MB), sau đó tự động thiết lập mọi thứ.",
+      "voice_pocket_install_title": "Cài đặt Pocket voice engine",
+      "voice_pocket_model_hint": "Tải gói mô hình giọng nói Pocket và giải nén các tệp vào thư mục bên dưới.",
+      "voice_pocket_packaged_desc": "Pocket nói bằng một giọng được nhân bản từ một đoạn ghi âm ngắn. Mọi thứ chạy trên máy tính này — một engine, một mô hình giọng nói, không cần tài khoản.",
+      "voice_pocket_packaged_title": "Thiết lập Pocket",
+      "voice_pocket_service_desc": "Tùy chọn. Một dịch vụ Pocket TTS đang chạy sẽ bổ sung danh mục giọng nói tích hợp sẵn và phát lại nhanh hơn.",
+      "voice_pocket_service_title": "Nâng cao: dịch vụ cục bộ",
+      "voice_pocket_voices_dir_hint": "Thêm một giọng nói bằng cách đặt tệp ghi âm .wav dài 10–30 giây vào thư mục này, sau đó kiểm tra lại. Tên tệp sẽ trở thành tên giọng nói.",
+      "voice_pocket_voices_dir_label": "Thư mục giọng nói đã nhân bản"
     },
     "ocr": {
       "title": "OCR",

@@ -13384,7 +13384,6 @@
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "Local, clone votre voix",
       "voice_pocket_cloned_badge": "Clonée",
-      "voice_pocket_enable_blocked": "Démarrez le service Pocket TTS et sélectionnez une voix pour activer la lecture.",
       "voice_pocket_not_running": "Arrêté",
       "voice_pocket_not_running_hint": "Démarrez le service Pocket TTS sur cet ordinateur, puis revérifiez. Les voix apparaissent une fois le service accessible à l'adresse ci-dessous.",
       "voice_pocket_running": "En cours",
@@ -13392,7 +13391,19 @@
       "voice_pocket_setup_title": "Service Pocket TTS",
       "voice_pocket_url_label": "Adresse du service",
       "voice_pocket_voices_desc": "Les voix clonées proviennent du dossier de voix du service — ajoutez un nouveau fichier de voix et revérifiez. Les autres sont des voix intégrées.",
-      "voice_pocket_voices_title": "Voix Pocket"
+      "voice_pocket_voices_title": "Voix Pocket",
+      "voice_pocket_enable_blocked": "Installez le moteur Pocket (ou démarrez le service) et sélectionnez une voix pour activer la lecture.",
+      "voice_pocket_engine_hint": "Téléchargez la version sherpa-onnx pour votre plateforme et placez le binaire et ses DLL dans le dossier ci-dessous.",
+      "voice_pocket_install_button": "Télécharger et installer",
+      "voice_pocket_install_desc": "Télécharge le moteur vocal (~23 MB) et le modèle de voix (~98 MB), puis configure tout automatiquement.",
+      "voice_pocket_install_title": "Installer le moteur vocal Pocket",
+      "voice_pocket_model_hint": "Téléchargez le package du modèle de voix Pocket et extrayez ses fichiers dans le dossier ci-dessous.",
+      "voice_pocket_packaged_desc": "Pocket parle avec une voix clonée à partir d'un court enregistrement. Tout s'exécute sur cet ordinateur — un moteur, un modèle de voix, aucun compte.",
+      "voice_pocket_packaged_title": "Configuration de Pocket",
+      "voice_pocket_service_desc": "Optionnel. Un service Pocket TTS en cours d'exécution ajoute le catalogue de voix intégré et accélère la lecture répétée.",
+      "voice_pocket_service_title": "Avancé : service local",
+      "voice_pocket_voices_dir_hint": "Ajoutez une voix en déposant un enregistrement .wav de 10 à 30 secondes dans ce dossier, puis revérifiez. Le nom du fichier devient le nom de la voix.",
+      "voice_pocket_voices_dir_label": "Dossier des voix clonées"
     },
     "ocr": {
       "title": "OCR",

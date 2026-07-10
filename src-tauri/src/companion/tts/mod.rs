@@ -18,6 +18,7 @@ pub mod kokoro_catalog;
 pub mod kokoro_installer;
 pub mod piper;
 pub mod pocket;
+pub mod pocket_installer;
 
 use std::time::Duration;
 

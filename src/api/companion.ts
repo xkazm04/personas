@@ -499,15 +499,50 @@ export async function companionTtsKokoroDownload(): Promise<void> {
 // ── Pocket TTS sidecar service (local, voice cloning) ───────────────────
 
 /**
- * Reachability of the local Pocket TTS HTTP service. Mirrors the Rust
- * `PocketStatus`. Unlike Piper/Kokoro there is no install-to-disk state —
- * the engine is a long-lived local service the user starts once; `running`
- * gates the whole engine.
+ * Pocket TTS status across its two backends. Mirrors the Rust `PocketStatus`.
+ * The packaged sidecar (engine binary + int8 model, one-click installable)
+ * serves cloned wavs offline; the optional HTTP service adds the built-in
+ * Kyutai voice catalog and keeps the model warm. Either alone is usable.
  */
 export interface PocketStatus {
+  /** Optional HTTP service reachable. */
   running: boolean;
   baseUrl: string;
   workers: number | null;
+  /** Packaged sidecar: shared sherpa engine binary present. */
+  engineInstalled: boolean;
+  /** Packaged sidecar: 7-file int8 ONNX model package present. */
+  modelInstalled: boolean;
+  modelDir: string;
+  /** Drop `<name>.wav` here to add a cloned voice. */
+  voicesDir: string;
+  expectedBinaryPath: string;
+  engineDownloadUrl: string;
+  modelDownloadUrl: string;
+  canAutoInstall: boolean;
+}
+
+/**
+ * Streaming progress for the one-click Pocket TTS install. Same shape and
+ * semantics as `KokoroInstallProgress`.
+ */
+export interface PocketInstallProgress {
+  phase: 'downloading_engine' | 'downloading_model' | 'extracting' | 'completed' | 'failed';
+  bytesDownloaded: number;
+  bytesTotal: number | null;
+  error: string | null;
+}
+
+/** Tauri event channel for Pocket TTS install progress + terminal states. */
+export const POCKET_INSTALL_EVENT = 'companion://pocket-install';
+
+/**
+ * Kick off the one-click Pocket TTS install (arch-aware sidecar + int8 model).
+ * Resolves when both are in place; progress streams on `POCKET_INSTALL_EVENT`
+ * — subscribe before calling. Windows-only.
+ */
+export async function companionTtsPocketDownload(): Promise<void> {
+  return invoke<void>('companion_tts_pocket_download');
 }
 
 /**

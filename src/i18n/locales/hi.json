@@ -13384,7 +13384,6 @@
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "लोकल, आपकी आवाज़ की क्लोन बनाता है",
       "voice_pocket_cloned_badge": "क्लोन की गई",
-      "voice_pocket_enable_blocked": "प्लेबैक चालू करने के लिए Pocket TTS सेवा शुरू करें और एक आवाज़ चुनें।",
       "voice_pocket_not_running": "चालू नहीं है",
       "voice_pocket_not_running_hint": "इस कंप्यूटर पर Pocket TTS सेवा शुरू करें, फिर दोबारा जांचें। नीचे दिए गए पते पर सेवा उपलब्ध होते ही आवाज़ें दिखाई देंगी।",
       "voice_pocket_running": "चालू है",
@@ -13392,7 +13391,19 @@
       "voice_pocket_setup_title": "Pocket TTS सेवा",
       "voice_pocket_url_label": "सेवा का पता",
       "voice_pocket_voices_desc": "क्लोन की गई आवाज़ें सेवा के voices फ़ोल्डर से आती हैं — नई आवाज़ फ़ाइल डालें और दोबारा जांचें। बाकी बिल्ट-इन आवाज़ें हैं।",
-      "voice_pocket_voices_title": "Pocket आवाज़ें"
+      "voice_pocket_voices_title": "Pocket आवाज़ें",
+      "voice_pocket_enable_blocked": "प्लेबैक सक्षम करने के लिए Pocket इंजन इंस्टॉल करें (या सेवा शुरू करें) और एक आवाज़ चुनें।",
+      "voice_pocket_engine_hint": "अपने प्लेटफ़ॉर्म के लिए sherpa-onnx रिलीज़ प्राप्त करें और बाइनरी व उसकी DLLs को नीचे दिए गए फ़ोल्डर में डालें।",
+      "voice_pocket_install_button": "डाउनलोड और इंस्टॉल करें",
+      "voice_pocket_install_desc": "स्पीच इंजन (~23 MB) और वॉइस मॉडल (~98 MB) डाउनलोड करता है, फिर सब कुछ स्वचालित रूप से सेट करता है।",
+      "voice_pocket_install_title": "Pocket वॉइस इंजन इंस्टॉल करें",
+      "voice_pocket_model_hint": "Pocket वॉइस मॉडल पैकेज डाउनलोड करें और उसकी फ़ाइलें नीचे दिए गए फ़ोल्डर में एक्सट्रैक्ट करें।",
+      "voice_pocket_packaged_desc": "Pocket एक छोटी रिकॉर्डिंग से क्लोन की गई आवाज़ में बोलता है। सब कुछ इसी कंप्यूटर पर चलता है — एक इंजन, एक वॉइस मॉडल, कोई अकाउंट नहीं।",
+      "voice_pocket_packaged_title": "Pocket सेटअप",
+      "voice_pocket_service_desc": "वैकल्पिक। चल रही Pocket TTS सेवा बिल्ट-इन वॉइस कैटलॉग और तेज़ बार-बार प्लेबैक जोड़ती है।",
+      "voice_pocket_service_title": "उन्नत: लोकल सेवा",
+      "voice_pocket_voices_dir_hint": "इस फ़ोल्डर में 10–30 सेकंड की .wav रिकॉर्डिंग डालकर आवाज़ जोड़ें, फिर दोबारा जाँचें। फ़ाइल का नाम आवाज़ का नाम बन जाता है।",
+      "voice_pocket_voices_dir_label": "क्लोन की गई आवाज़ों का फ़ोल्डर"
     },
     "ocr": {
       "title": "OCR",

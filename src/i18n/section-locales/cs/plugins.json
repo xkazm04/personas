@@ -2102,7 +2102,6 @@
     "voice_engine_pocket": "Pocket",
     "voice_engine_pocket_caption": "Lokální, klonuje váš hlas",
     "voice_pocket_cloned_badge": "Klonovaný",
-    "voice_pocket_enable_blocked": "Spusťte službu Pocket TTS a vyberte hlas pro povolení přehrávání.",
     "voice_pocket_not_running": "Neběží",
     "voice_pocket_not_running_hint": "Spusťte službu Pocket TTS na tomto počítači a poté znovu zkontrolujte. Hlasy se zobrazí, jakmile bude služba dostupná na níže uvedené adrese.",
     "voice_pocket_running": "Běží",
@@ -2110,7 +2109,19 @@
     "voice_pocket_setup_title": "Služba Pocket TTS",
     "voice_pocket_url_label": "Adresa služby",
     "voice_pocket_voices_desc": "Klonované hlasy pocházejí ze složky hlasů služby — přidejte nový soubor s hlasem a znovu zkontrolujte. Zbytek tvoří vestavěné hlasy.",
-    "voice_pocket_voices_title": "Hlasy Pocket"
+    "voice_pocket_voices_title": "Hlasy Pocket",
+    "voice_pocket_enable_blocked": "Nainstalujte modul Pocket (nebo spusťte službu) a vyberte hlas, abyste povolili přehrávání.",
+    "voice_pocket_engine_hint": "Stáhněte si vydání sherpa-onnx pro vaši platformu a přetáhněte binární soubor a jeho DLL knihovny do složky níže.",
+    "voice_pocket_install_button": "Stáhnout a nainstalovat",
+    "voice_pocket_install_desc": "Stáhne řečový modul (~23 MB) a hlasový model (~98 MB) a poté vše automaticky nastaví.",
+    "voice_pocket_install_title": "Instalace hlasového modulu Pocket",
+    "voice_pocket_model_hint": "Stáhněte balíček hlasového modelu Pocket a rozbalte jeho soubory do složky níže.",
+    "voice_pocket_packaged_desc": "Pocket mluví hlasem klonovaným z krátké nahrávky. Vše běží na tomto počítači — jeden modul, jeden hlasový model, žádný účet.",
+    "voice_pocket_packaged_title": "Nastavení Pocket",
+    "voice_pocket_service_desc": "Volitelné. Spuštěná služba Pocket TTS přidává vestavěný katalog hlasů a rychlejší opakované přehrávání.",
+    "voice_pocket_service_title": "Pokročilé: místní služba",
+    "voice_pocket_voices_dir_hint": "Hlas přidáte přetažením 10–30sekundové nahrávky .wav do této složky a následnou kontrolou. Název souboru se stane názvem hlasu.",
+    "voice_pocket_voices_dir_label": "Složka klonovaných hlasů"
   },
   "ocr": {
     "title": "OCR",

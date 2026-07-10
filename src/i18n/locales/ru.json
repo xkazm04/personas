@@ -13384,7 +13384,6 @@
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "Локально, клонирует ваш голос",
       "voice_pocket_cloned_badge": "Клонирован",
-      "voice_pocket_enable_blocked": "Запустите службу Pocket TTS и выберите голос, чтобы включить воспроизведение.",
       "voice_pocket_not_running": "Не запущена",
       "voice_pocket_not_running_hint": "Запустите службу Pocket TTS на этом компьютере и проверьте ещё раз. Голоса появятся, как только служба станет доступна по адресу ниже.",
       "voice_pocket_running": "Запущена",
@@ -13392,7 +13391,19 @@
       "voice_pocket_setup_title": "Служба Pocket TTS",
       "voice_pocket_url_label": "Адрес службы",
       "voice_pocket_voices_desc": "Клонированные голоса берутся из папки голосов службы — добавьте новый файл голоса и проверьте ещё раз. Остальные — встроенные голоса.",
-      "voice_pocket_voices_title": "Голоса Pocket"
+      "voice_pocket_voices_title": "Голоса Pocket",
+      "voice_pocket_enable_blocked": "Установите движок Pocket (или запустите службу) и выберите голос, чтобы включить воспроизведение.",
+      "voice_pocket_engine_hint": "Скачайте релиз sherpa-onnx для вашей платформы и поместите исполняемый файл вместе с его DLL в папку ниже.",
+      "voice_pocket_install_button": "Скачать и установить",
+      "voice_pocket_install_desc": "Загружает движок синтеза речи (~23 МБ) и голосовую модель (~98 МБ), затем настраивает всё автоматически.",
+      "voice_pocket_install_title": "Установка голосового движка Pocket",
+      "voice_pocket_model_hint": "Скачайте пакет голосовой модели Pocket и распакуйте его файлы в папку ниже.",
+      "voice_pocket_packaged_desc": "Pocket говорит голосом, клонированным из короткой записи. Всё работает на этом компьютере — один движок, одна голосовая модель, без аккаунта.",
+      "voice_pocket_packaged_title": "Настройка Pocket",
+      "voice_pocket_service_desc": "Необязательно. Запущенная служба Pocket TTS добавляет встроенный каталог голосов и ускоряет повторное воспроизведение.",
+      "voice_pocket_service_title": "Дополнительно: локальная служба",
+      "voice_pocket_voices_dir_hint": "Чтобы добавить голос, поместите запись длительностью 10–30 секунд в формате .wav в эту папку, затем выполните проверку снова. Имя файла станет названием голоса.",
+      "voice_pocket_voices_dir_label": "Папка с клонированными голосами"
     },
     "ocr": {
       "title": "OCR",

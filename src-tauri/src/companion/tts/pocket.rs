@@ -19,13 +19,35 @@
 //! The service is expected at `http://127.0.0.1:8080` (override with the
 //! `PERSONAS_POCKET_TTS_URL` env var). It applies its own bounded queue and
 //! replies 429 under overload, so no client-side semaphore is needed.
+//!
+//! ## Two backends, one engine
+//!
+//! Since sherpa-onnx v1.13.4 ships Pocket TTS support (the SAME sidecar
+//! binary Kokoro uses), this module also has a fully-packaged **sidecar
+//! mode**: a one-shot `sherpa-onnx-offline-tts` spawn with the 7-file ONNX
+//! model package (~190MB int8) and `--reference-audio=<voice>.wav` for
+//! zero-shot cloning. No Python anywhere; installable via the same
+//! one-click download flow as Kokoro (`pocket_installer.rs`).
+//!
+//! Routing: a synthesis goes to the **sidecar** when it's installed AND the
+//! requested voice exists as a wav in `~/.personas/companion-tts/
+//! pocket-voices/`; otherwise it falls back to the HTTP service (which also
+//! carries the built-in Kyutai voice catalog). Either backend alone is
+//! sufficient; users who never start the Python service still get cloning.
+//!
+//! License note: the prebuilt ONNX export packaged by sherpa-onnx derives
+//! from a community export (KevinAHM/pocket-tts-onnx) that is licensed
+//! **non-commercial** — fine for personal use; re-export from the original
+//! weights before any commercial distribution.
 
+use std::path::PathBuf;
+use std::process::Stdio;
 use std::time::Duration;
 
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 
-use crate::companion::tts::{TtsAudio, TtsSynthesisRequest};
+use crate::companion::tts::{kokoro, piper, TtsAudio, TtsSynthesisRequest};
 use crate::error::AppError;
 
 /// Where the local service listens unless overridden.
@@ -39,6 +61,88 @@ const POCKET_TIMEOUT: Duration = Duration::from_secs(90);
 /// Health/voices probes should be snappy — the Voice tab polls this.
 const POCKET_PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 
+/// Sidecar invocation cap. A short reply is ~3s wall including model load;
+/// long text on a slow CPU stays well under this.
+const POCKET_SIDECAR_TIMEOUT: Duration = Duration::from_secs(120);
+
+/// The 7 files the sidecar needs, relative to `model_dir()`. Matches the
+/// `sherpa-onnx-pocket-tts-int8-2026-01-26` package layout.
+const MODEL_FILES: [&str; 7] = [
+    "lm_flow.int8.onnx",
+    "lm_main.int8.onnx",
+    "encoder.onnx",
+    "decoder.int8.onnx",
+    "text_conditioner.onnx",
+    "vocab.json",
+    "token_scores.json",
+];
+
+/// Where to get the sidecar binary + model package (surfaced for the manual
+/// setup path; the one-click installer pins exact assets).
+pub const ENGINE_DOWNLOAD_URL: &str = "https://github.com/k2-fsa/sherpa-onnx/releases";
+pub const MODEL_DOWNLOAD_URL: &str = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2";
+
+/// Model package dir: `~/.personas/companion-tts/pocket/`.
+pub fn model_dir() -> Result<PathBuf, AppError> {
+    Ok(piper::engine_dir()?
+        .parent()
+        .ok_or_else(|| AppError::Internal("companion-tts dir has no parent".into()))?
+        .join("pocket"))
+}
+
+/// Cloned-voice dir: `~/.personas/companion-tts/pocket-voices/`. Every
+/// `<name>.wav` in here is a selectable cloned voice (10-30s of clean
+/// single-speaker audio clones best).
+pub fn voices_dir() -> Result<PathBuf, AppError> {
+    Ok(piper::engine_dir()?
+        .parent()
+        .ok_or_else(|| AppError::Internal("companion-tts dir has no parent".into()))?
+        .join("pocket-voices"))
+}
+
+/// True when all 7 model files are present.
+pub fn is_model_installed() -> bool {
+    let Ok(dir) = model_dir() else { return false };
+    MODEL_FILES.iter().all(|f| dir.join(f).is_file())
+}
+
+/// The sidecar is usable: engine binary resolvable (shared with Kokoro —
+/// same `sherpa-onnx-offline-tts` exe) + model package present.
+pub fn sidecar_ready() -> bool {
+    kokoro::engine_binary_path().is_some() && is_model_installed()
+}
+
+/// Resolve a cloned voice's reference wav, if it exists.
+fn voice_wav_path(voice_id: &str) -> Option<PathBuf> {
+    let dir = voices_dir().ok()?;
+    let p = dir.join(format!("{voice_id}.wav"));
+    p.is_file().then_some(p)
+}
+
+/// Enumerate the cloned voices (wav stems in `voices_dir`).
+fn list_local_voices() -> Vec<PocketVoiceEntry> {
+    let Ok(dir) = voices_dir() else { return vec![] };
+    let Ok(entries) = std::fs::read_dir(&dir) else { return vec![] };
+    let mut out: Vec<PocketVoiceEntry> = entries
+        .filter_map(|e| e.ok())
+        .filter_map(|e| {
+            let p = e.path();
+            if p.extension().is_some_and(|x| x.eq_ignore_ascii_case("wav")) {
+                let stem = p.file_stem()?.to_string_lossy().into_owned();
+                Some(PocketVoiceEntry {
+                    voice_id: stem.clone(),
+                    name: stem,
+                    category: "cloned".into(),
+                })
+            } else {
+                None
+            }
+        })
+        .collect();
+    out.sort_by(|a, b| a.name.cmp(&b.name));
+    out
+}
+
 pub fn base_url() -> String {
     std::env::var("PERSONAS_POCKET_TTS_URL")
         .ok()
@@ -47,7 +151,9 @@ pub fn base_url() -> String {
         .unwrap_or_else(|| DEFAULT_BASE_URL.to_string())
 }
 
-/// Status payload for the Voice tab's Pocket service card.
+/// Status payload for the Voice tab's Pocket setup card. Reports both
+/// backends independently: the packaged sidecar (installable, offline) and
+/// the optional HTTP service (warm model + built-in voice catalog).
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PocketStatus {
@@ -57,6 +163,20 @@ pub struct PocketStatus {
     pub base_url: String,
     /// Worker-pool size reported by the service, when running.
     pub workers: Option<u32>,
+    /// Sidecar engine binary present (shared `sherpa-onnx-offline-tts`).
+    pub engine_installed: bool,
+    /// Pocket model package (7 ONNX/JSON files) present.
+    pub model_installed: bool,
+    /// Where the model package should be extracted.
+    pub model_dir: String,
+    /// Where cloned-voice wavs live.
+    pub voices_dir: String,
+    /// Where to drop the engine binary if installing manually.
+    pub expected_binary_path: String,
+    pub engine_download_url: &'static str,
+    pub model_download_url: &'static str,
+    /// One-click install supported (prebuilt sidecar exists for this OS).
+    pub can_auto_install: bool,
 }
 
 /// One voice row from the service's `GET /v1/voices`. `category` is
@@ -89,7 +209,7 @@ fn probe_client() -> Result<reqwest::Client, AppError> {
 pub async fn status() -> Result<PocketStatus, AppError> {
     let base = base_url();
     let client = probe_client()?;
-    match client.get(format!("{base}/health")).send().await {
+    let (running, workers) = match client.get(format!("{base}/health")).send().await {
         Ok(resp) if resp.status().is_success() => {
             let workers = resp
                 .json::<serde_json::Value>()
@@ -97,40 +217,175 @@ pub async fn status() -> Result<PocketStatus, AppError> {
                 .ok()
                 .and_then(|v| v["config"]["workers"].as_u64())
                 .map(|w| w as u32);
-            Ok(PocketStatus { running: true, base_url: base, workers })
+            (true, workers)
         }
         // Both "connection refused" (service down) and non-200 (loading)
         // render as not-running; the Voice tab offers a re-check.
-        _ => Ok(PocketStatus { running: false, base_url: base, workers: None }),
-    }
+        _ => (false, None),
+    };
+    let bin_dir = piper::engine_dir()?;
+    Ok(PocketStatus {
+        running,
+        base_url: base,
+        workers,
+        engine_installed: kokoro::engine_binary_path().is_some(),
+        model_installed: is_model_installed(),
+        model_dir: model_dir()?.display().to_string(),
+        voices_dir: voices_dir()?.display().to_string(),
+        expected_binary_path: bin_dir
+            .join(if cfg!(windows) { "sherpa-onnx-offline-tts.exe" } else { "sherpa-onnx-offline-tts" })
+            .display()
+            .to_string(),
+        engine_download_url: ENGINE_DOWNLOAD_URL,
+        model_download_url: MODEL_DOWNLOAD_URL,
+        can_auto_install: cfg!(target_os = "windows"),
+    })
 }
 
+/// Merged voice list: local cloned wavs (sidecar-servable, listed first)
+/// plus — when the service is reachable — its voices. Local wins on id
+/// collision so the offline path is always preferred.
 pub async fn list_voices() -> Result<Vec<PocketVoiceEntry>, AppError> {
+    let mut merged = list_local_voices();
+
     let base = base_url();
     let client = probe_client()?;
-    let resp = client
+    let service_voices: Vec<PocketVoiceEntry> = match client
         .get(format!("{base}/v1/voices"))
         .send()
         .await
-        .map_err(|_| not_running_error(&base))?;
-    if !resp.status().is_success() {
-        return Err(not_running_error(&base));
+    {
+        Ok(resp) if resp.status().is_success() => resp
+            .json::<VoicesResponse>()
+            .await
+            .map(|v| v.voices)
+            .unwrap_or_default(),
+        // Service down is fine when the sidecar is installed — the local
+        // list stands alone. Only error when NEITHER backend can serve.
+        _ => {
+            if merged.is_empty() && !sidecar_ready() {
+                return Err(not_running_error(&base));
+            }
+            vec![]
+        }
+    };
+    for v in service_voices {
+        if !merged.iter().any(|m| m.voice_id == v.voice_id) {
+            merged.push(v);
+        }
     }
-    let parsed: VoicesResponse = resp
-        .json()
-        .await
-        .map_err(|e| AppError::Internal(format!("pocket tts voices parse: {e}")))?;
-    Ok(parsed.voices)
+    Ok(merged)
 }
 
 fn not_running_error(base: &str) -> AppError {
     AppError::Validation(format!(
-        "Pocket TTS service is not reachable at {base}. Start it (uv run python -m service.app \
-         in the pocket-tts repo) or set PERSONAS_POCKET_TTS_URL, then re-check in the Voice tab."
+        "Pocket TTS has no usable backend: the packaged engine isn't installed (use the Voice \
+         tab's one-click install) and no local service is reachable at {base}. Install the \
+         engine, or start the service / set PERSONAS_POCKET_TTS_URL, then re-check."
     ))
 }
 
+/// Route a synthesis to the best available backend: the packaged sidecar
+/// when it can serve this voice (installed + a local reference wav), else
+/// the HTTP service. See the module docs for the rationale.
 pub async fn synthesize(request: &TtsSynthesisRequest<'_>) -> Result<TtsAudio, AppError> {
+    if sidecar_ready() {
+        if let Some(wav) = voice_wav_path(request.voice_id) {
+            return synthesize_sidecar(request, &wav).await;
+        }
+    }
+    synthesize_service(request).await
+}
+
+/// One-shot sidecar spawn — kokoro.rs's wire protocol with the pocket flag
+/// set and `--reference-audio` doing the zero-shot cloning.
+async fn synthesize_sidecar(
+    request: &TtsSynthesisRequest<'_>,
+    reference_wav: &std::path::Path,
+) -> Result<TtsAudio, AppError> {
+    let dir = model_dir()?;
+    let engine = kokoro::engine_binary_path().ok_or_else(|| {
+        AppError::Internal("pocket sidecar: engine binary vanished after readiness check".into())
+    })?;
+
+    let tempdir = tempfile::Builder::new()
+        .prefix("personas-pocket-")
+        .tempdir()
+        .map_err(|e| AppError::Internal(format!("pocket tempdir: {e}")))?;
+    let output_path = tempdir.path().join("out.wav");
+
+    let mut cmd = tokio::process::Command::new(&engine);
+    cmd.arg(format!("--pocket-lm-flow={}", dir.join("lm_flow.int8.onnx").display()))
+        .arg(format!("--pocket-lm-main={}", dir.join("lm_main.int8.onnx").display()))
+        .arg(format!("--pocket-encoder={}", dir.join("encoder.onnx").display()))
+        .arg(format!("--pocket-decoder={}", dir.join("decoder.int8.onnx").display()))
+        .arg(format!(
+            "--pocket-text-conditioner={}",
+            dir.join("text_conditioner.onnx").display()
+        ))
+        .arg(format!("--pocket-vocab-json={}", dir.join("vocab.json").display()))
+        .arg(format!(
+            "--pocket-token-scores-json={}",
+            dir.join("token_scores.json").display()
+        ))
+        .arg(format!("--reference-audio={}", reference_wav.display()))
+        .arg("--num-threads=4")
+        .arg(format!("--output-filename={}", output_path.display()))
+        // Text is a POSITIONAL trailing arg (same as Kokoro, unlike Piper).
+        .arg(request.text)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    // Hide the console window on Windows — same reasoning as piper.rs.
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const DETACHED_PROCESS: u32 = 0x00000008;
+        cmd.creation_flags(DETACHED_PROCESS);
+    }
+
+    let child = cmd
+        .spawn()
+        .map_err(|e| AppError::Internal(format!("spawn pocket sidecar: {e}")))?;
+
+    let output = tokio::time::timeout(POCKET_SIDECAR_TIMEOUT, child.wait_with_output())
+        .await
+        .map_err(|_| {
+            AppError::Internal(format!("pocket sidecar timed out after {POCKET_SIDECAR_TIMEOUT:?}"))
+        })?
+        .map_err(|e| AppError::Internal(format!("pocket sidecar wait: {e}")))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let snippet = if stderr.len() > 400 {
+            format!(
+                "{}…",
+                crate::utils::text::truncate_on_char_boundary(&stderr, 400)
+            )
+        } else {
+            stderr.into_owned()
+        };
+        return Err(AppError::Internal(format!(
+            "pocket sidecar exited with {}: {}",
+            output.status, snippet
+        )));
+    }
+
+    let wav_bytes = tokio::fs::read(&output_path)
+        .await
+        .map_err(|e| AppError::Internal(format!("read pocket wav: {e}")))?;
+    let byte_size = wav_bytes.len();
+    let audio_base64 = base64::engine::general_purpose::STANDARD.encode(&wav_bytes);
+
+    Ok(TtsAudio {
+        audio_base64,
+        mime_type: "audio/wav".into(),
+        byte_size,
+    })
+}
+
+async fn synthesize_service(request: &TtsSynthesisRequest<'_>) -> Result<TtsAudio, AppError> {
     let base = base_url();
     let client = reqwest::Client::builder()
         .timeout(POCKET_TIMEOUT)

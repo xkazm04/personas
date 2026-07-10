@@ -13384,7 +13384,6 @@
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "ローカルで動作し、あなたの声を複製",
       "voice_pocket_cloned_badge": "複製済み",
-      "voice_pocket_enable_blocked": "再生を有効にするには、Pocket TTSサービスを起動してボイスを選択してください。",
       "voice_pocket_not_running": "停止中",
       "voice_pocket_not_running_hint": "このコンピューターでPocket TTSサービスを起動してから、再確認してください。サービスが下記アドレスで応答可能になるとボイスが表示されます。",
       "voice_pocket_running": "実行中",
@@ -13392,7 +13391,19 @@
       "voice_pocket_setup_title": "Pocket TTSサービス",
       "voice_pocket_url_label": "サービスアドレス",
       "voice_pocket_voices_desc": "複製ボイスはサービスのボイスフォルダから読み込まれます — 新しいボイスファイルを追加して再確認してください。それ以外は組み込みボイスです。",
-      "voice_pocket_voices_title": "Pocketボイス"
+      "voice_pocket_voices_title": "Pocketボイス",
+      "voice_pocket_enable_blocked": "再生を有効にするには、Pocketエンジンをインストール(またはサービスを起動)し、音声を選択してください。",
+      "voice_pocket_engine_hint": "お使いのプラットフォーム向けのsherpa-onnxリリースを取得し、バイナリとそのDLLを下のフォルダにドロップしてください。",
+      "voice_pocket_install_button": "ダウンロードしてインストール",
+      "voice_pocket_install_desc": "音声エンジン(~23 MB)と音声モデル(~98 MB)をダウンロードし、すべて自動的にセットアップします。",
+      "voice_pocket_install_title": "Pocket音声エンジンをインストール",
+      "voice_pocket_model_hint": "Pocket音声モデルパッケージをダウンロードし、そのファイルを下のフォルダに展開してください。",
+      "voice_pocket_packaged_desc": "Pocketは短い録音からクローンされた音声で話します。すべてこのコンピューター上で動作します — 1つのエンジン、1つの音声モデル、アカウント不要。",
+      "voice_pocket_packaged_title": "Pocketのセットアップ",
+      "voice_pocket_service_desc": "任意。Pocket TTSサービスを実行すると、内蔵の音声カタログが追加され、繰り返し再生が高速化されます。",
+      "voice_pocket_service_title": "詳細設定: ローカルサービス",
+      "voice_pocket_voices_dir_hint": "10〜30秒の.wav録音をこのフォルダにドロップして音声を追加し、再チェックしてください。ファイル名が音声名になります。",
+      "voice_pocket_voices_dir_label": "クローン音声フォルダ"
     },
     "ocr": {
       "title": "OCR",

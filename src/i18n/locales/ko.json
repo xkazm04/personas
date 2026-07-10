@@ -13384,7 +13384,6 @@
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "로컬 실행, 내 목소리 복제",
       "voice_pocket_cloned_badge": "복제됨",
-      "voice_pocket_enable_blocked": "재생을 사용하려면 Pocket TTS 서비스를 시작하고 음성을 선택하세요.",
       "voice_pocket_not_running": "실행 중 아님",
       "voice_pocket_not_running_hint": "이 컴퓨터에서 Pocket TTS 서비스를 시작한 후 다시 확인하세요. 아래 주소에서 서비스에 연결되면 음성이 표시됩니다.",
       "voice_pocket_running": "실행 중",
@@ -13392,7 +13391,19 @@
       "voice_pocket_setup_title": "Pocket TTS 서비스",
       "voice_pocket_url_label": "서비스 주소",
       "voice_pocket_voices_desc": "복제된 음성은 서비스의 음성 폴더에서 가져옵니다. 새 음성 파일을 넣고 다시 확인하세요. 나머지는 기본 제공 음성입니다.",
-      "voice_pocket_voices_title": "Pocket 음성"
+      "voice_pocket_voices_title": "Pocket 음성",
+      "voice_pocket_enable_blocked": "재생을 활성화하려면 Pocket 엔진을 설치(또는 서비스를 시작)하고 음성을 선택하세요.",
+      "voice_pocket_engine_hint": "사용 중인 플랫폼용 sherpa-onnx 릴리스를 받아 바이너리와 DLL 파일을 아래 폴더에 넣으세요.",
+      "voice_pocket_install_button": "다운로드 및 설치",
+      "voice_pocket_install_desc": "음성 엔진(~23 MB)과 음성 모델(~98 MB)을 다운로드한 뒤 모든 설정을 자동으로 완료합니다.",
+      "voice_pocket_install_title": "Pocket 음성 엔진 설치",
+      "voice_pocket_model_hint": "Pocket 음성 모델 패키지를 다운로드하여 파일을 아래 폴더에 압축 해제하세요.",
+      "voice_pocket_packaged_desc": "Pocket은 짧은 녹음에서 복제한 음성으로 말합니다. 모든 처리는 이 컴퓨터에서 이루어지며, 엔진 하나와 음성 모델 하나만 있으면 계정 없이 사용할 수 있습니다.",
+      "voice_pocket_packaged_title": "Pocket 설정",
+      "voice_pocket_service_desc": "선택 사항입니다. Pocket TTS 서비스를 실행하면 기본 제공 음성 카탈로그가 추가되고 반복 재생 속도가 빨라집니다.",
+      "voice_pocket_service_title": "고급: 로컬 서비스",
+      "voice_pocket_voices_dir_hint": "10~30초 분량의 .wav 녹음 파일을 이 폴더에 넣은 뒤 다시 확인하면 음성이 추가됩니다. 파일 이름이 음성 이름으로 사용됩니다.",
+      "voice_pocket_voices_dir_label": "복제된 음성 폴더"
     },
     "ocr": {
       "title": "OCR",

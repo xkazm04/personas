@@ -215,6 +215,18 @@ pub async fn companion_tts_list_pocket_voices(
     tts::pocket::list_voices().await
 }
 
+/// One-click download + extract of the Pocket TTS sidecar binary (arch-aware:
+/// win-arm64 or win-x64) + the int8 ONNX model package into
+/// `~/.personas/companion-tts/`. Progress streams on `companion://pocket-install`.
+#[tauri::command]
+pub async fn companion_tts_pocket_download(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+    tts::pocket_installer::install(&app).await
+}
+
 /// One-click download + extract of the Kokoro sidecar binary + model package
 /// into `~/.personas/companion-tts/`. Progress streams on the
 /// `companion://kokoro-install` event channel; resolves once both are in place

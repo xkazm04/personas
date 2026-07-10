@@ -13384,7 +13384,6 @@
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "Lokal, klont deine Stimme",
       "voice_pocket_cloned_badge": "Geklont",
-      "voice_pocket_enable_blocked": "Starte den Pocket-TTS-Dienst und wähle eine Stimme aus, um die Wiedergabe zu aktivieren.",
       "voice_pocket_not_running": "Nicht aktiv",
       "voice_pocket_not_running_hint": "Starte den Pocket-TTS-Dienst auf diesem Computer und prüfe erneut. Stimmen erscheinen, sobald der Dienst unter der Adresse unten erreichbar ist.",
       "voice_pocket_running": "Aktiv",
@@ -13392,7 +13391,19 @@
       "voice_pocket_setup_title": "Pocket-TTS-Dienst",
       "voice_pocket_url_label": "Dienstadresse",
       "voice_pocket_voices_desc": "Geklonte Stimmen stammen aus dem Stimmenordner des Dienstes — lege eine neue Stimmdatei ab und prüfe erneut. Die übrigen sind integrierte Stimmen.",
-      "voice_pocket_voices_title": "Pocket-Stimmen"
+      "voice_pocket_voices_title": "Pocket-Stimmen",
+      "voice_pocket_enable_blocked": "Installiere die Pocket-Engine (oder starte den Dienst) und wähle eine Stimme aus, um die Wiedergabe zu aktivieren.",
+      "voice_pocket_engine_hint": "Lade das sherpa-onnx-Release für deine Plattform herunter und lege die Binärdatei und ihre DLLs in den unten stehenden Ordner.",
+      "voice_pocket_install_button": "Herunterladen & installieren",
+      "voice_pocket_install_desc": "Lädt die Sprach-Engine (~23 MB) und das Stimmmodell (~98 MB) herunter und richtet anschließend alles automatisch ein.",
+      "voice_pocket_install_title": "Pocket-Sprach-Engine installieren",
+      "voice_pocket_model_hint": "Lade das Pocket-Stimmmodell-Paket herunter und entpacke die Dateien in den unten stehenden Ordner.",
+      "voice_pocket_packaged_desc": "Pocket spricht mit einer aus einer kurzen Aufnahme geklonten Stimme. Alles läuft auf diesem Computer — eine Engine, ein Stimmmodell, kein Konto.",
+      "voice_pocket_packaged_title": "Pocket-Einrichtung",
+      "voice_pocket_service_desc": "Optional. Ein laufender Pocket-TTS-Dienst ergänzt den integrierten Stimmenkatalog und beschleunigt die wiederholte Wiedergabe.",
+      "voice_pocket_service_title": "Erweitert: lokaler Dienst",
+      "voice_pocket_voices_dir_hint": "Füge eine Stimme hinzu, indem du eine 10–30 Sekunden lange .wav-Aufnahme in diesen Ordner legst, und prüfe dann erneut. Der Dateiname wird zum Stimmnamen.",
+      "voice_pocket_voices_dir_label": "Ordner für geklonte Stimmen"
     },
     "ocr": {
       "title": "OCR",
