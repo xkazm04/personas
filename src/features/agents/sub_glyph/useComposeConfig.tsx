@@ -79,6 +79,10 @@ export function useComposeConfig({
   const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [reviewEnabled, setReviewEnabled] = useState(false);
   const [selectedConnectors, setSelectedConnectors] = useState<string[]>([]);
+  // Per-connector DB table scope (connector name → tables; [] / absent = all).
+  // Threaded from the connectors picker so a restricted table selection is
+  // honored instead of silently granting access to every table.
+  const [connectorTables, setConnectorTables] = useState<Record<string, string[]>>({});
   const [selectedEvents, setSelectedEvents] = useState<EventSubscription[]>([]);
   const [frequency, setFrequency] = useState<Frequency | null>(null);
   const [time, setTime] = useState("09:00");
@@ -104,6 +108,7 @@ export function useComposeConfig({
     setMemoryEnabled(false);
     setReviewEnabled(false);
     setSelectedConnectors([]);
+    setConnectorTables({});
     setSelectedEvents([]);
     setFrequency(null);
     setTime("09:00");
@@ -122,10 +127,10 @@ export function useComposeConfig({
     if (!onQuickConfigChange) return;
     onQuickConfigChange({
       frequency, days, monthDay, time,
-      selectedConnectors, connectorTables: {}, selectedEvents,
+      selectedConnectors, connectorTables, selectedEvents,
       notificationChannels: selectedChannels,
     });
-  }, [frequency, days, monthDay, time, selectedConnectors, selectedEvents, selectedChannels, onQuickConfigChange]);
+  }, [frequency, days, monthDay, time, selectedConnectors, connectorTables, selectedEvents, selectedChannels, onQuickConfigChange]);
 
   // Synthetic cell map — light the petals the user has already configured.
   const composeCellStates = useMemo(() => {
@@ -151,9 +156,9 @@ export function useComposeConfig({
     if (selectedConnectors.length === 0) return [];
     return describeSelectedConnectors({
       frequency: null, days: ["mon"], monthDay: 1, time: "09:00",
-      selectedConnectors, connectorTables: {}, selectedEvents: [], notificationChannels: [],
+      selectedConnectors, connectorTables, selectedEvents: [], notificationChannels: [],
     }, healthyConnectors);
-  }, [selectedConnectors, healthyConnectors]);
+  }, [selectedConnectors, connectorTables, healthyConnectors]);
 
   const items: ComposeConfigItem[] = useMemo(() => [
     {
@@ -253,7 +258,8 @@ export function useComposeConfig({
         open={connectorsModalOpen}
         onClose={() => setConnectorsModalOpen(false)}
         selected={selectedConnectors}
-        onApply={(next) => { setSelectedConnectors(next); setConnectorsModalOpen(false); }}
+        tables={connectorTables}
+        onApply={(next, tables) => { setSelectedConnectors(next); setConnectorTables(tables); setConnectorsModalOpen(false); }}
       />
       <ComposerSchedulePickerModal
         open={scheduleModalOpen}
