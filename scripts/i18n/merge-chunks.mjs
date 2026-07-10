@@ -59,15 +59,20 @@ for (const t of tasks) {
     problems.push(`${label}: invalid JSON (${e.message})`);
     continue;
   }
-  // Tolerate agents that wrapped the map in {strings:{…}}.
-  if (tr.strings && typeof tr.strings === 'object') tr = tr.strings;
-
   // A correct translation may legitimately equal the English source ("Import",
   // "Status", "Monitor" in German). Accepting that silently would also let a
   // lazy agent echo the input back; rejecting it outright would corrupt good
   // work. So the agent must DECLARE each such key in __keep_english — intent,
   // not coincidence — and those keys land in the gate's allowlist.
-  const keepEnglish = Array.isArray(tr.__keep_english) ? tr.__keep_english : [];
+  //
+  // Read __keep_english BEFORE unwrapping {strings:{…}} — agents put it at the
+  // wrapper's top level (sibling to `strings`), so unwrapping first drops it.
+  const keepEnglish = [
+    ...(Array.isArray(tr.__keep_english) ? tr.__keep_english : []),
+    ...(tr.strings && Array.isArray(tr.strings.__keep_english) ? tr.strings.__keep_english : []),
+  ];
+  // Tolerate agents that wrapped the map in {strings:{…}}.
+  if (tr.strings && typeof tr.strings === 'object') tr = tr.strings;
   delete tr.__keep_english;
 
   const srcAll = JSON.parse(fs.readFileSync(t.file, 'utf8')).strings;
