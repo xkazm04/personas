@@ -9340,7 +9340,14 @@
       "commit_needs_output_match": "Nhập JSONPath và giá trị mong đợi để lưu tuyến này",
       "group_marketplace": "Marketplace",
       "marketplace_empty": "Chưa có nguồn cấp nào được đăng ký — hãy đăng ký trong Marketplace để kết nối chúng vào persona.",
-      "marketplace_source_hint": "Chạy persona khi nguồn cấp này báo có thay đổi"
+      "marketplace_source_hint": "Chạy persona khi nguồn cấp này báo có thay đổi",
+      "reflect_pick_agent": "Chọn một agent…",
+      "reflect_pick_team": "Chọn một nhóm…",
+      "reflect_scope_agent": "Agent",
+      "reflect_scope_hint": "Hợp nhất nhóm ký ức đã chọn thành những hiểu biết bền vững. Kết quả là một đề xuất bạn xem xét trong Tổng quan → Ký ức — không gì thay đổi nếu bạn chưa phê duyệt.",
+      "reflect_scope_label": "Chiêm nghiệm trên",
+      "reflect_scope_team": "Nhóm",
+      "reflection_label": "Chiêm nghiệm ký ức"
     },
     "trigger_configured": "trigger đã cấu hình",
     "secret_label": "Bí mật",

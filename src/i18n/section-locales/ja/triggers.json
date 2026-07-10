@@ -725,7 +725,14 @@
     "commit_needs_output_match": "このルートを保存するには JSONPath と期待値を入力してください",
     "group_marketplace": "Marketplace",
     "marketplace_empty": "購読中のフィードはまだありません。Marketplace で購読してペルソナに接続してください。",
-    "marketplace_source_hint": "このフィードが変更を報告するとペルソナを実行します"
+    "marketplace_source_hint": "このフィードが変更を報告するとペルソナを実行します",
+    "reflect_pick_agent": "エージェントを選択…",
+    "reflect_pick_team": "チームを選択…",
+    "reflect_scope_agent": "エージェント",
+    "reflect_scope_hint": "選択したメモリ群を永続的なインサイトに統合します。結果は提案として届き、概要 → メモリで確認できます — 承認するまで何も変更されません。",
+    "reflect_scope_label": "リフレクション対象",
+    "reflect_scope_team": "チーム",
+    "reflection_label": "メモリのリフレクション"
   },
   "trigger_configured": "トリガー設定済み",
   "secret_label": "シークレット",

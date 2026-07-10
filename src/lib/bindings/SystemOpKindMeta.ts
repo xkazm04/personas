@@ -13,4 +13,9 @@ kind: string, label: string, description: string,
  * True when the op is scoped to a single dev-tools project (needs a
  * `projectId` param). The Studio prompts for the project on commit.
  */
-requiresProject: boolean, };
+requiresProject: boolean, 
+/**
+ * True when the op targets an agent OR a team (needs a `personaId` or
+ * `teamId` param). The Studio prompts for the scope on commit.
+ */
+requiresPersonaOrTeam: boolean, };

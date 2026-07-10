@@ -9340,7 +9340,14 @@
       "commit_needs_output_match": "এই রুট সংরক্ষণ করতে একটি JSONPath এবং প্রত্যাশিত মান লিখুন",
       "group_marketplace": "Marketplace",
       "marketplace_empty": "এখনও কোনও সাবস্ক্রাইব করা ফিড নেই — পার্সোনার সাথে যুক্ত করতে Marketplace-এ সাবস্ক্রাইব করুন।",
-      "marketplace_source_hint": "এই ফিড কোনও পরিবর্তনের রিপোর্ট করলে পার্সোনাটি চালায়"
+      "marketplace_source_hint": "এই ফিড কোনও পরিবর্তনের রিপোর্ট করলে পার্সোনাটি চালায়",
+      "reflect_pick_agent": "একটি এজেন্ট বেছে নিন…",
+      "reflect_pick_team": "একটি দল বেছে নিন…",
+      "reflect_scope_agent": "এজেন্ট",
+      "reflect_scope_hint": "নির্বাচিত স্মৃতিগুলিকে স্থায়ী অন্তর্দৃষ্টিতে একত্রিত করে। ফলাফল একটি প্রস্তাব যা আপনি ওভারভিউ → স্মৃতিতে পর্যালোচনা করবেন — আপনার অনুমোদন ছাড়া কিছুই পরিবর্তিত হয় না।",
+      "reflect_scope_label": "প্রতিফলনের পরিধি",
+      "reflect_scope_team": "দল",
+      "reflection_label": "স্মৃতির প্রতিফলন"
     },
     "trigger_configured": "ট্রিগার কনফিগার করা হয়েছে",
     "secret_label": "সিক্রেট",

@@ -8937,6 +8937,13 @@ export type Translations = {
       group_marketplace: string;
       marketplace_source_hint: string;
       marketplace_empty: string;
+      reflection_label: string;
+      reflect_scope_label: string;
+      reflect_scope_agent: string;
+      reflect_scope_team: string;
+      reflect_pick_agent: string;
+      reflect_pick_team: string;
+      reflect_scope_hint: string;
     };
     subscription_list: {
       active: string;

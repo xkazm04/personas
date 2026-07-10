@@ -8930,7 +8930,14 @@
       "commit_needs_output_match": "Enter a JSONPath and expected value to save this route",
       "group_marketplace": "Marketplace",
       "marketplace_source_hint": "Runs the persona when this feed reports a change",
-      "marketplace_empty": "No subscribed feeds yet — subscribe in the Marketplace to wire them into personas."
+      "marketplace_empty": "No subscribed feeds yet — subscribe in the Marketplace to wire them into personas.",
+      "reflection_label": "Memory reflection",
+      "reflect_scope_label": "Reflect over",
+      "reflect_scope_agent": "Agent",
+      "reflect_scope_team": "Team",
+      "reflect_pick_agent": "Pick an agent…",
+      "reflect_pick_team": "Pick a team…",
+      "reflect_scope_hint": "Consolidates the chosen memory pool into durable insights. The result is a proposal you review in Overview → Memories — nothing changes without your approval."
     },
     "subscription_list": {
       "active": "Active",

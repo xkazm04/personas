@@ -9340,7 +9340,14 @@
       "commit_needs_output_match": "输入 JSONPath 和期望值以保存此路由",
       "group_marketplace": "Marketplace",
       "marketplace_empty": "暂无已订阅的信息源 — 请在 Marketplace 中订阅，将其接入角色。",
-      "marketplace_source_hint": "当此信息源报告变化时运行该角色"
+      "marketplace_source_hint": "当此信息源报告变化时运行该角色",
+      "reflect_pick_agent": "选择智能体…",
+      "reflect_pick_team": "选择团队…",
+      "reflect_scope_agent": "智能体",
+      "reflect_scope_hint": "将所选记忆池整合为持久洞察。结果以提案形式呈现，可在概览 → 记忆中审核 — 未经你批准不会有任何更改。",
+      "reflect_scope_label": "反思范围",
+      "reflect_scope_team": "团队",
+      "reflection_label": "记忆反思"
     },
     "trigger_configured": "触发器已配置",
     "secret_label": "密钥",

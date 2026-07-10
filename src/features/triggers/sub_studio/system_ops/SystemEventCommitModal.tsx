@@ -5,18 +5,21 @@
  * listen for), then persists a real `SystemOpAutomation`. The Context Map
  * "Plan update" button creates the same shape directly (weekly default).
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Cog, X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button, AsyncButton } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAgentStore } from '@/stores/agentStore';
+import { usePipelineStore } from '@/stores/pipelineStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import {
-  createSystemOpAutomation, contextScanParamsJson, OP_CONTEXT_SCAN,
+  createSystemOpAutomation, contextScanParamsJson, memoryReflectionParamsJson,
+  OP_CONTEXT_SCAN, OP_MEMORY_REFLECTION,
 } from '@/api/systemOps';
 
 interface CadenceOption { id: string; cron: string }
@@ -45,30 +48,50 @@ export function SystemEventCommitModal({
 
   const isSchedule = triggerType === 'schedule';
   const isContextScan = opKind === OP_CONTEXT_SCAN;
+  const isReflection = opKind === OP_MEMORY_REFLECTION;
+
+  const personas = useAgentStore((s) => s.personas);
+  const teams = usePipelineStore((s) => s.teams);
+  const fetchTeams = usePipelineStore((s) => s.fetchTeams);
+  useEffect(() => { if (open && isReflection) void fetchTeams(); }, [open, isReflection, fetchTeams]);
 
   const [projectId, setProjectId] = useState(() => activeProjectId ?? projects[0]?.id ?? '');
   const [cadence, setCadence] = useState('weekly');
   const [customCron, setCustomCron] = useState('0 3 * * 1');
   const [eventType, setEventType] = useState('');
   const [delta, setDelta] = useState(true);
+  // Reflection scope: which pool of memories to consolidate.
+  const [reflectScope, setReflectScope] = useState<'agent' | 'team'>('agent');
+  const [reflectPersonaId, setReflectPersonaId] = useState('');
+  const [reflectTeamId, setReflectTeamId] = useState('');
 
   const cron = useMemo(() => {
     if (!isSchedule) return undefined;
     return cadence === 'custom' ? customCron.trim() : CADENCES.find((c) => c.id === cadence)?.cron;
   }, [isSchedule, cadence, customCron]);
 
-  const canCreate = (!isContextScan || !!projectId) && (isSchedule ? !!cron : !!eventType.trim());
+  const reflectTargetId = reflectScope === 'team' ? reflectTeamId : reflectPersonaId;
+  const canCreate = (!isContextScan || !!projectId)
+    && (!isReflection || !!reflectTargetId)
+    && (isSchedule ? !!cron : !!eventType.trim());
 
   const handleCreate = async () => {
     const project = projects.find((p) => p.id === projectId);
+    const reflectTargetName = reflectScope === 'team'
+      ? teams.find((tm) => tm.id === reflectTeamId)?.name
+      : personas.find((p) => p.id === reflectPersonaId)?.name;
     try {
       await createSystemOpAutomation({
         opKind,
-        paramsJson: contextScanParamsJson(projectId, delta),
+        paramsJson: isReflection
+          ? memoryReflectionParamsJson(reflectScope === 'team' ? { teamId: reflectTeamId } : { personaId: reflectPersonaId })
+          : contextScanParamsJson(projectId, delta),
         triggerKind: isSchedule ? 'schedule' : 'event',
         cron: isSchedule ? cron : undefined,
         listenEventType: isSchedule ? undefined : eventType.trim(),
-        label: project ? `${st.system_event_label} — ${project.name}` : undefined,
+        label: isReflection
+          ? (reflectTargetName ? `${st.reflection_label} — ${reflectTargetName}` : st.reflection_label)
+          : project ? `${st.system_event_label} — ${project.name}` : undefined,
       });
       addToast(st.commit_created_toast, 'success');
       onCreated();
@@ -102,6 +125,30 @@ export function SystemEventCommitModal({
                   {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </ThemedSelect>
               )}
+            </div>
+          )}
+
+          {isReflection && (
+            <div className="space-y-1.5">
+              <label className="typo-caption font-medium text-foreground">{st.reflect_scope_label}</label>
+              <div className="grid grid-cols-2 gap-2">
+                <ThemedSelect value={reflectScope} onValueChange={(v) => setReflectScope(v === 'team' ? 'team' : 'agent')}>
+                  <option value="agent">{st.reflect_scope_agent}</option>
+                  <option value="team">{st.reflect_scope_team}</option>
+                </ThemedSelect>
+                {reflectScope === 'agent' ? (
+                  <ThemedSelect value={reflectPersonaId} onValueChange={setReflectPersonaId}>
+                    <option value="">{st.reflect_pick_agent}</option>
+                    {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </ThemedSelect>
+                ) : (
+                  <ThemedSelect value={reflectTeamId} onValueChange={setReflectTeamId}>
+                    <option value="">{st.reflect_pick_team}</option>
+                    {teams.map((tm) => <option key={tm.id} value={tm.id}>{tm.name}</option>)}
+                  </ThemedSelect>
+                )}
+              </div>
+              <p className="typo-caption text-foreground opacity-70">{st.reflect_scope_hint}</p>
             </div>
           )}
 

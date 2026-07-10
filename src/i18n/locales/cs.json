@@ -9340,7 +9340,14 @@
       "commit_needs_output_match": "Pro uložení této trasy zadejte JSONPath a očekávanou hodnotu",
       "group_marketplace": "Marketplace",
       "marketplace_empty": "Zatím nemáte odebírané kanály — přihlaste se k odběru v Marketplace a propojte je s personami.",
-      "marketplace_source_hint": "Spustí personu, když tento kanál nahlásí změnu"
+      "marketplace_source_hint": "Spustí personu, když tento kanál nahlásí změnu",
+      "reflect_pick_agent": "Vyberte agenta…",
+      "reflect_pick_team": "Vyberte tým…",
+      "reflect_scope_agent": "Agent",
+      "reflect_scope_hint": "Sloučí vybrané vzpomínky do trvalých poznatků. Výsledkem je návrh, který zkontrolujete v Přehledu → Vzpomínky — bez vašeho schválení se nic nezmění.",
+      "reflect_scope_label": "Reflektovat",
+      "reflect_scope_team": "Tým",
+      "reflection_label": "Reflexe paměti"
     },
     "trigger_configured": "trigger nakonfigurován",
     "secret_label": "Tajný klíč",

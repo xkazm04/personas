@@ -9340,7 +9340,14 @@
       "commit_needs_output_match": "Введите JSONPath и ожидаемое значение, чтобы сохранить маршрут",
       "group_marketplace": "Marketplace",
       "marketplace_empty": "Пока нет подписанных лент — оформите подписку в Marketplace, чтобы связать их с персонами.",
-      "marketplace_source_hint": "Запускает персону, когда эта лента сообщает об изменении"
+      "marketplace_source_hint": "Запускает персону, когда эта лента сообщает об изменении",
+      "reflect_pick_agent": "Выберите агента…",
+      "reflect_pick_team": "Выберите команду…",
+      "reflect_scope_agent": "Агент",
+      "reflect_scope_hint": "Объединяет выбранный пул воспоминаний в устойчивые выводы. Результат — предложение, которое вы проверяете в Обзор → Воспоминания; без вашего одобрения ничего не изменится.",
+      "reflect_scope_label": "Рефлексия по",
+      "reflect_scope_team": "Команда",
+      "reflection_label": "Рефлексия памяти"
     },
     "trigger_configured": "триггер настроен",
     "secret_label": "Секрет",
