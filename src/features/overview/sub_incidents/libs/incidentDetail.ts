@@ -127,13 +127,3 @@ export function normalizeIncidentDetail(detail: string | null | undefined): Norm
   // 3. prose
   return { kind: 'prose', prose: trimmed, facts: [], rawJson: null };
 }
-
-/**
- * Convenience for list rows: the single human line to show inline, or `null`
- * when the payload is structured (in which case it belongs in the modal, not
- * on the row).
- */
-export function incidentRowSubtext(detail: string | null | undefined): string | null {
-  const n = normalizeIncidentDetail(detail);
-  return n.kind === 'prose' ? n.prose : null;
-}

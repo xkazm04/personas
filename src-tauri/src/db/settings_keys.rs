@@ -597,6 +597,9 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_KPI_GOAL_DERIVATION,
     AUTONOMOUS_KPI_EVALUATION,
     AUTONOMOUS_DIRECTOR_STORM,
+    // Read by engine/deliberation.rs but was missing here, so `set` rejected the
+    // write and the autonomous-deliberation toggle could never be enabled.
+    AUTONOMOUS_DELIBERATION,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
     CLOUD_SYNC_ENABLED,

@@ -220,20 +220,3 @@ export function parseGenesFromPrompt(prompt: string): StrategyGenes | null {
   }
   return out;
 }
-
-/**
- * Mutate a losing strategy's genes toward the winner's genes
- * with some random exploration. Used for strategy evolution.
- */
-export function mutateTowardWinner(
-  loser: StrategyGenes,
-  winner: StrategyGenes,
-  learnRate: number = 0.3,
-): StrategyGenes {
-  const mutated: StrategyGenes = { ...loser };
-  for (const key of GENE_KEYS) {
-    const delta = winner[key] - loser[key];
-    mutated[key] = clamp(loser[key] + delta * learnRate + (Math.random() - 0.5) * 2);
-  }
-  return mutated;
-}

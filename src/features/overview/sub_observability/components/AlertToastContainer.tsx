@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AlertTriangle, Info, XCircle, X } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
@@ -16,10 +16,16 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
   const style = SEVERITY_STYLES[alert.severity] ?? SEVERITY_STYLES.info!;
   const Icon = style.icon;
 
+  // Keep the latest onDismiss in a ref so the auto-dismiss timer keys only on
+  // the alert id. The container passes a fresh inline `() => dismissToast(id)`
+  // each render, so depending on `onDismiss` restarted the 8s timer on every
+  // re-render — under an alert storm the toast never dismissed.
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
   useEffect(() => {
-    const timer = setTimeout(onDismiss, AUTO_DISMISS_MS);
+    const timer = setTimeout(() => onDismissRef.current(), AUTO_DISMISS_MS);
     return () => clearTimeout(timer);
-  }, [onDismiss]);
+  }, [alert.id]);
 
   return (
     <div

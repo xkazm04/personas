@@ -139,9 +139,10 @@ export function useLifecycle({
       if (report.summary) store.setTestSummary(report.summary);
       if (report.connectors_resolved) store.setTestConnectors(report.connectors_resolved);
 
-      // All passed = no failures AND at least something ran or was auto-verified
-      const totalTools = report.tools_passed + report.tools_failed + report.tools_skipped;
-      const allPassed = report.tools_failed === 0 && totalTools > 0;
+      // All passed = no failures AND at least one tool actually passed.
+      // Skipped tools (e.g. missing credentials) are NOT tested, so a draft whose
+      // tools were all skipped must not read as "passed / ready to promote".
+      const allPassed = report.tools_failed === 0 && report.tools_passed > 0;
       const summary = report.tools_failed === 0
         ? `${report.tools_passed} passed${report.tools_skipped > 0 ? `, ${report.tools_skipped} skipped` : ''}`
         : `${report.tools_passed}/${report.tools_tested} passed, ${report.tools_failed} failed${report.credential_issues.length > 0 ? `, ${report.credential_issues.length} credential issue(s)` : ""}`;

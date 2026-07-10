@@ -660,7 +660,11 @@ pub async fn openapi_parse_from_url(
         }
     }
 
-    let response = crate::SHARED_HTTP
+    // Use the SSRF-safe client (private/link-local IPs blocked at DNS-resolve
+    // time), matching the sibling `openapi_playground_test`. The scheme check
+    // above only gates http-vs-https, not the destination address, so a plain
+    // client would happily fetch https://169.254.169.254/… (cloud metadata).
+    let response = crate::SSRF_SAFE_HTTP
         .get(url)
         .send()
         .await

@@ -321,6 +321,13 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     let needs_chain_migration = !trigger_table_sql.contains("'chain'");
 
     if needs_chain_migration {
+        // Disable FK enforcement for the table swap. With foreign_keys=ON the
+        // `DROP TABLE persona_triggers` below fires ON DELETE SET NULL on
+        // persona_executions.trigger_id (schema.rs) — nulling every execution's
+        // trigger link on legacy DBs. Same discipline as
+        // rebuild_executions_table_with_incomplete_status. Guard re-enables FK
+        // on scope exit.
+        let _fk_guard = crate::db::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
         ddl_step(
                     conn,
                             "DROP TABLE IF EXISTS persona_triggers_new;

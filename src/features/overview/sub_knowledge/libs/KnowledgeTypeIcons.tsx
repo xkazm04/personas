@@ -55,18 +55,6 @@ export function ModelPerformanceIcon(props: IconProps) {
   );
 }
 
-/** Stacked coin with data flow lines — represents cost patterns */
-export function CostPatternIcon(props: IconProps) {
-  return (
-    <svg {...defaults} {...props}>
-      <ellipse cx="8" cy="5" rx="4.5" ry="2" />
-      <path d="M3.5 5v3c0 1.1 2 2 4.5 2s4.5-.9 4.5-2V5" />
-      <path d="M3.5 8v3c0 1.1 2 2 4.5 2s4.5-.9 4.5-2V8" />
-      <path d="M13 7l1.5 1-1.5 1" />
-    </svg>
-  );
-}
-
 /** Speech bubble with brain inside — represents agent annotations */
 export function AgentAnnotationIcon(props: IconProps) {
   return (

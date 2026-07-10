@@ -175,6 +175,18 @@ pub async fn test_automation_webhook(
     require_auth(&state).await?;
     let automation = repo::get_by_id(&state.db, &id)?;
 
+    // Share the same in-flight guard as `trigger_automation`, keyed on the
+    // automation id: a "Test" fires a REAL outbound webhook, so it must not run
+    // concurrently with another test or a live trigger of the same automation
+    // (duplicate external side effects). (Unlike `trigger_automation` we do not
+    // require `is_runnable()` — testing a not-yet-active automation is intended.)
+    let _handle = INFLIGHT_TRIGGERS.guard(&id).ok_or_else(|| {
+        AppError::Validation(format!(
+            "Automation '{}' is already being triggered. Please wait for the current run to complete.",
+            automation.name
+        ))
+    })?;
+
     // Generate a realistic sample payload from the schema definition
     // instead of sending raw type descriptors to external webhooks.
     let sample_input = match &automation.input_schema {
