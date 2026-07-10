@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { vaultStatus, type VaultStatus } from "@/api/vault/credentials";
 import { toastCatch } from "@/lib/silentCatch";
@@ -68,12 +68,25 @@ export function CredentialEditForm({
     vaultStatus().then(setVault).catch(toastCatch("CredentialEditForm:fetchVaultStatus", "Failed to check vault status"));
   }, []);
 
+  // Fields the user has actually edited. Some callers pass a fresh
+  // `initialValues` object identity every render (e.g. `googleOAuth.getValues()`),
+  // so the effect below fires constantly — spreading initialValues LAST would
+  // wipe in-progress edits. Only seed fields the user hasn't touched.
+  const editedFieldsRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     if (!initialValues) return;
-    setValues((prev) => ({ ...prev, ...initialValues }));
+    setValues((prev) => {
+      const next = { ...prev };
+      for (const [k, v] of Object.entries(initialValues)) {
+        if (!editedFieldsRef.current.has(k)) next[k] = v;
+      }
+      return next;
+    });
   }, [initialValues]);
 
   const handleChange = useCallback((key: string, value: string) => {
+    editedFieldsRef.current.add(key);
     setValues(prev => ({ ...prev, [key]: value }));
     onValuesChanged?.(key, value);
     if (touched[key]) {
