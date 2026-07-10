@@ -58,6 +58,12 @@ function validateRenameTarget(newName: string): string {
   if (newName.includes('/') || newName.includes('\\') || newName.includes('\0')) {
     throw new Error('drive: rename target must be a simple file name (no path separators or NUL)');
   }
+  // `.` and `..` have no separators but still address a directory entry — a
+  // rename to `..` would escape the managed root. The path validator rejects
+  // `..` segments elsewhere; the rename target must too.
+  if (newName === '.' || newName === '..') {
+    throw new Error('drive: rename target cannot be "." or ".."');
+  }
   return newName;
 }
 
