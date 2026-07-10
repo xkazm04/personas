@@ -302,7 +302,35 @@
     "pending_reviews_prompt": "ожидающих проверок",
     "requiring_attention": "требующих внимания.",
     "empty_cta": "Создайте первого агента для начала работы.",
-    "pipeline_failed": "{source} не удалось загрузить"
+    "pipeline_failed": "{source} не удалось загрузить",
+    "instruments_subtitle": "телеметрия флота",
+    "memory_suggestions_count": "{count} предложений",
+    "pane_instruments": "Инструменты",
+    "pane_memory": "Память",
+    "pane_stream": "Поток",
+    "pane_vitals": "Показатели",
+    "spark_traffic_errors": "трафик · ошибки",
+    "status_errors": "ошибки",
+    "status_label": "статус",
+    "status_runs": "запуски",
+    "status_sources": "источники",
+    "status_synced": "синхр.",
+    "stream_agent_fallback": "агент",
+    "stream_events_count": "{count} событий",
+    "success_label": "успех",
+    "tile_agents": "Агенты",
+    "tile_alerts": "Оповещения",
+    "tile_reviews": "Проверки",
+    "tile_runs": "Запуски",
+    "traffic_label": "Трафик",
+    "triage_detail_alerts": "активные оповещения о состоянии",
+    "triage_detail_messages": "непрочитанные во входящих",
+    "triage_detail_reviews": "очередь ручной проверки",
+    "triage_tag_alert": "АЛТ",
+    "triage_tag_message": "СБЩ",
+    "triage_tag_pipeline": "СИС",
+    "triage_tag_review": "РЕЦ",
+    "vitals_subtitle_fleet": "здоровье флота"
   },
   "review": {
     "title": "Ручные проверки",
@@ -614,7 +642,11 @@
     "details": "Детали",
     "executions_badge": "Запуски",
     "success_badge": "Успех",
-    "agents_badge": "Агенты"
+    "agents_badge": "Агенты",
+    "range_days_ago": "{days} дн. назад",
+    "range_today": "Сегодня",
+    "range_yesterday": "Вчера",
+    "traffic_errors_chart_aria": "График трафика и ошибок"
   },
   "activity": {
     "title": "Активность",
@@ -1294,7 +1326,8 @@
     "month_sep": "Sep",
     "month_oct": "Oct",
     "month_nov": "Nov",
-    "month_dec": "Dec"
+    "month_dec": "Dec",
+    "aria_year_activity": "Активность выполнения за последний год"
   },
   "trend": {
     "up": "Up",

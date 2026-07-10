@@ -302,7 +302,35 @@
     "pending_reviews_prompt": "ausstehende Bewertungen",
     "requiring_attention": "erfordern Aufmerksamkeit.",
     "empty_cta": "Erstellen Sie Ihren ersten Agenten, um zu beginnen.",
-    "pipeline_failed": "{source} konnte nicht geladen werden"
+    "pipeline_failed": "{source} konnte nicht geladen werden",
+    "instruments_subtitle": "Flottentelemetrie",
+    "memory_suggestions_count": "{count} Vorschläge",
+    "pane_instruments": "Instrumente",
+    "pane_memory": "Speicher",
+    "pane_stream": "Stream",
+    "pane_vitals": "Vitalwerte",
+    "spark_traffic_errors": "Traffic · Fehler",
+    "status_errors": "Fehler",
+    "status_label": "Status",
+    "status_runs": "Läufe",
+    "status_sources": "Quellen",
+    "status_synced": "synchronisiert",
+    "stream_agent_fallback": "Agent",
+    "stream_events_count": "{count} Ereignisse",
+    "success_label": "Erfolg",
+    "tile_agents": "Agenten",
+    "tile_alerts": "Warnungen",
+    "tile_reviews": "Überprüfungen",
+    "tile_runs": "Läufe",
+    "traffic_label": "Traffic",
+    "triage_detail_alerts": "aktive Gesundheitswarnungen",
+    "triage_detail_messages": "ungelesen im Posteingang",
+    "triage_detail_reviews": "manuelle Prüfwarteschlange",
+    "triage_tag_alert": "ALT",
+    "triage_tag_message": "MSG",
+    "triage_tag_pipeline": "SYS",
+    "triage_tag_review": "REV",
+    "vitals_subtitle_fleet": "Flottengesundheit"
   },
   "review": {
     "title": "Manuelle Überprüfungen",
@@ -614,7 +642,11 @@
     "details": "Details",
     "executions_badge": "Ausführungen",
     "success_badge": "Erfolg",
-    "agents_badge": "Agenten"
+    "agents_badge": "Agenten",
+    "range_days_ago": "Vor {days} Tagen",
+    "range_today": "Heute",
+    "range_yesterday": "Gestern",
+    "traffic_errors_chart_aria": "Traffic- und Fehlerdiagramm"
   },
   "activity": {
     "title": "Aktivität",
@@ -1294,7 +1326,8 @@
     "month_sep": "Sep",
     "month_oct": "Oct",
     "month_nov": "Nov",
-    "month_dec": "Dec"
+    "month_dec": "Dec",
+    "aria_year_activity": "Ausführungsaktivität im letzten Jahr"
   },
   "trend": {
     "up": "Up",

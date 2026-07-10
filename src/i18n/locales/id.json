@@ -5721,7 +5721,35 @@
       "pending_reviews_prompt": "ulasan tertunda",
       "requiring_attention": "memerlukan perhatian.",
       "empty_cta": "Buat agen pertama Anda untuk memulai.",
-      "pipeline_failed": "{source} gagal dimuat"
+      "pipeline_failed": "{source} gagal dimuat",
+      "instruments_subtitle": "telemetri armada",
+      "memory_suggestions_count": "{count} saran",
+      "pane_instruments": "Instrumen",
+      "pane_memory": "Memori",
+      "pane_stream": "Stream",
+      "pane_vitals": "Vital",
+      "spark_traffic_errors": "traffic · error",
+      "status_errors": "error",
+      "status_label": "status",
+      "status_runs": "run",
+      "status_sources": "sumber",
+      "status_synced": "tersinkron",
+      "stream_agent_fallback": "agen",
+      "stream_events_count": "{count} event",
+      "success_label": "sukses",
+      "tile_agents": "Agen",
+      "tile_alerts": "Peringatan",
+      "tile_reviews": "Tinjauan",
+      "tile_runs": "Run",
+      "traffic_label": "Traffic",
+      "triage_detail_alerts": "peringatan kesehatan aktif",
+      "triage_detail_messages": "belum dibaca di kotak masuk",
+      "triage_detail_reviews": "antrean tinjauan manual",
+      "triage_tag_alert": "ALT",
+      "triage_tag_message": "MSG",
+      "triage_tag_pipeline": "SYS",
+      "triage_tag_review": "REV",
+      "vitals_subtitle_fleet": "kesehatan armada"
     },
     "review": {
       "title": "Ulasan Manual",
@@ -6033,7 +6061,11 @@
       "details": "Detail",
       "executions_badge": "Eksekusi",
       "success_badge": "Berhasil",
-      "agents_badge": "Agen"
+      "agents_badge": "Agen",
+      "range_days_ago": "{days} Hari Lalu",
+      "range_today": "Hari Ini",
+      "range_yesterday": "Kemarin",
+      "traffic_errors_chart_aria": "Grafik traffic dan error"
     },
     "activity": {
       "title": "Aktivitas",
@@ -6713,7 +6745,8 @@
       "month_sep": "Sep",
       "month_oct": "Oct",
       "month_nov": "Nov",
-      "month_dec": "Dec"
+      "month_dec": "Dec",
+      "aria_year_activity": "Aktivitas eksekusi selama setahun terakhir"
     },
     "trend": {
       "up": "Up",

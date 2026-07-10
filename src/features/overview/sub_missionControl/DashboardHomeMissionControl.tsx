@@ -47,7 +47,6 @@ import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilId
 import { fadeUp, staggerContainer } from '@/features/overview/libs/animations';
 import { DashboardEmptyState } from '@/features/overview/components/dashboard/DashboardEmptyState';
 import { HomeCustomizePopover } from '@/features/overview/components/dashboard/HomeCustomizePopover';
-import { DebtText } from '@/i18n/DebtText';
 
 
 const AnalyticsInserts = lazyRetry(() => import('@/features/overview/components/dashboard/widgets/AnalyticsInserts'));
@@ -64,7 +63,7 @@ interface TriageItem {
 }
 
 export default function DashboardHomeMissionControl() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const personas = useAgentStore((s) => s.personas);
   const {
@@ -169,7 +168,7 @@ export default function DashboardHomeMissionControl() {
       id: 'alerts',
       kind: 'alert',
       title: `${activeAlertCount} ${t.overview.widgets.alerts_badge}`,
-      detail: 'active health alerts',
+      detail: t.overview.dashboard.triage_detail_alerts,
       onClick: () => setOverviewTab('health'),
     });
     if (pipelineErrorCount > 0) out.push({
@@ -183,14 +182,14 @@ export default function DashboardHomeMissionControl() {
       id: 'reviews',
       kind: 'review',
       title: `${pendingReviewCount} ${t.overview.widgets.reviews_badge}`,
-      detail: 'manual review queue',
+      detail: t.overview.dashboard.triage_detail_reviews,
       onClick: () => setOverviewTab('manual-review'),
     });
     if (unreadMessageCount > 0) out.push({
       id: 'messages',
       kind: 'message',
       title: `${unreadMessageCount} ${t.overview.widgets.messages_badge}`,
-      detail: 'unread in inbox',
+      detail: t.overview.dashboard.triage_detail_messages,
       onClick: () => setOverviewTab('messages'),
     });
     // Memory suggestions get their own detailed panel in the Instruments bay
@@ -272,7 +271,7 @@ export default function DashboardHomeMissionControl() {
                   key={source}
                   severity="warning"
                   compact
-                  title={`${source} pipeline failed`}
+                  title={tx(t.overview.dashboard.pipeline_failed, { source })}
                   message={msg}
                   onDismiss={() => setPipelineError(source, null)}
                   actions={<StalenessIndicator fetchedAt={pipelineFetchedAt[source]} hasError label={source} />}
@@ -355,7 +354,7 @@ export default function DashboardHomeMissionControl() {
 
               {memoryActions.length > 0 && !hiddenSections.includes('memory') && (
                 <motion.div variants={fadeUp} className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
-                  <PaneHeader label="Memory" subtitle={`${memoryActions.length} suggestions`} />
+                  <PaneHeader label={t.overview.dashboard.pane_memory} subtitle={tx(t.overview.dashboard.memory_suggestions_count, { count: memoryActions.length })} />
                   <div className="p-3">
                     <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
                   </div>
@@ -397,9 +396,10 @@ export const InstrumentsBay = memo(function InstrumentsBay({
   personaName: string | null;
   highlightPersonaId: string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
-      <PaneHeader label="Instruments" subtitle="fleet telemetry" />
+      <PaneHeader label={t.overview.dashboard.pane_instruments} subtitle={t.overview.dashboard.instruments_subtitle} />
       <div className="p-3 grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left — leaderboard snapshot */}
         <div>
@@ -411,7 +411,7 @@ export const InstrumentsBay = memo(function InstrumentsBay({
           <StalenessIndicator
             fetchedAt={executionDashboardFetchedAt}
             hasError={executionDashboardError}
-            label="Traffic"
+            label={t.overview.dashboard.traffic_label}
           />
           {personaName && (
             <div className="typo-caption text-foreground mb-1 truncate">{personaName}</div>
@@ -444,17 +444,23 @@ const TRIAGE_SEVERITY: Record<TriageKind, number> = {
   alert: 0, pipeline: 1, review: 2, message: 3,
 };
 
-const TRIAGE_META: Record<TriageKind, { Icon: typeof ClipboardCheck; color: string; bg: string; border: string; tag: string }> = {
-  alert:    { Icon: AlertTriangle,  color: 'text-red-400',    bg: 'bg-red-500/10',    border: 'border-red-500/20',    tag: 'ALT' },
-  pipeline: { Icon: AlertCircle,    color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', tag: 'SYS' },
-  review:   { Icon: ClipboardCheck, color: 'text-amber-400',  bg: 'bg-amber-500/10',  border: 'border-amber-500/20',  tag: 'REV' },
-  message:  { Icon: Bell,           color: 'text-blue-400',   bg: 'bg-blue-500/10',   border: 'border-blue-500/20',   tag: 'MSG' },
+const TRIAGE_META: Record<TriageKind, { Icon: typeof ClipboardCheck; color: string; bg: string; border: string }> = {
+  alert:    { Icon: AlertTriangle,  color: 'text-red-400',    bg: 'bg-red-500/10',    border: 'border-red-500/20' },
+  pipeline: { Icon: AlertCircle,    color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+  review:   { Icon: ClipboardCheck, color: 'text-amber-400',  bg: 'bg-amber-500/10',  border: 'border-amber-500/20' },
+  message:  { Icon: Bell,           color: 'text-blue-400',   bg: 'bg-blue-500/10',   border: 'border-blue-500/20' },
 };
 
 export const TriagePane = memo(function TriagePane({
   items, personaScoped,
 }: { items: TriageItem[]; personaScoped: boolean }) {
   const { t, tx } = useTranslation();
+  const tagLabel: Record<TriageKind, string> = {
+    alert: t.overview.dashboard.triage_tag_alert,
+    pipeline: t.overview.dashboard.triage_tag_pipeline,
+    review: t.overview.dashboard.triage_tag_review,
+    message: t.overview.dashboard.triage_tag_message,
+  };
   const topItem = items[0];
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
@@ -493,7 +499,7 @@ export const TriagePane = memo(function TriagePane({
                 }`}
               >
                 <span className={`typo-caption font-mono px-1.5 py-0.5 rounded-interactive border ${meta.bg} ${meta.border} ${meta.color} flex-shrink-0`}>
-                  {meta.tag}
+                  {tagLabel[item.kind]}
                 </span>
                 <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${meta.color}`} />
                 <div className="flex-1 min-w-0">
@@ -532,7 +538,7 @@ export const VitalsConsole = memo(function VitalsConsole({
   points: { date: string; total_executions: number; failed: number }[];
   personaName: string | null;
 }) {
-  const { language } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Recent-momentum delta for the Runs tile: compare the back half of the
   // selected window against the front half. Gives the cumulative total a
@@ -576,7 +582,7 @@ export const VitalsConsole = memo(function VitalsConsole({
 
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
-      <PaneHeader label="Vitals" subtitle={personaName ?? 'fleet health'} />
+      <PaneHeader label={t.overview.dashboard.pane_vitals} subtitle={personaName ?? t.overview.dashboard.vitals_subtitle_fleet} />
       <div className="flex-1 flex flex-col items-center gap-5 px-4 py-6">
         <SuccessRing rate={successRate} />
         <div className="w-full space-y-2">
@@ -586,16 +592,16 @@ export const VitalsConsole = memo(function VitalsConsole({
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
-            <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} compact language={language} color="text-emerald-400" trend={runsTrend} />
-            <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" numericValue={activeAgents} color="text-violet-400" />
-            <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
-            <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />
+            <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_runs} numericValue={totalExecutions} compact language={language} color="text-emerald-400" trend={runsTrend} />
+            <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_agents} numericValue={activeAgents} color="text-violet-400" />
+            <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_alerts} numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
+            <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_reviews} numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />
           </div>
         </div>
         {sparkline && (
           <div className="w-full pt-3 border-t border-primary/10">
             <div className="flex items-center justify-between typo-caption uppercase tracking-widest text-foreground mb-1.5 font-mono">
-              <span><DebtText k="auto_traffic_errors_7c114a11" /></span>
+              <span>{t.overview.dashboard.spark_traffic_errors}</span>
               <span>{points.length}d</span>
             </div>
             <svg viewBox={`0 0 ${sparkline.w} ${sparkline.h}`} className="w-full h-10" preserveAspectRatio="none" aria-hidden="true">
@@ -621,6 +627,7 @@ export const VitalsConsole = memo(function VitalsConsole({
 });
 
 function SuccessRing({ rate }: { rate: number }) {
+  const { t } = useTranslation();
   // Honour reduced-motion: collapse the 600ms ring sweep to its final state
   // rather than animating the stroke. The global reduced-motion CSS already
   // clamps transition-duration, but gating here makes the intent explicit and
@@ -651,7 +658,7 @@ function SuccessRing({ rate }: { rate: number }) {
           <span className="text-foreground typo-body-lg">%</span>
         </div>
         <div className="typo-caption uppercase tracking-[0.25em] text-foreground mt-1 font-mono">
-          success
+          {t.overview.dashboard.success_label}
         </div>
       </div>
     </div>
@@ -680,7 +687,7 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
   onViewAll: () => void;
   personaName: string | null;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [filter, setFilter] = useState<StreamFilter>('all');
   const filtered = filter === 'all'
     ? executions
@@ -688,8 +695,8 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
       <PaneHeader
-        label="Stream"
-        subtitle={personaName ? `${personaName} · ${executions.length}` : `${executions.length} events`}
+        label={t.overview.dashboard.pane_stream}
+        subtitle={personaName ? `${personaName} · ${executions.length}` : tx(t.overview.dashboard.stream_events_count, { count: executions.length })}
       >
         <button
           onClick={onViewAll}
@@ -734,7 +741,7 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
                 <span className="text-foreground tabular-nums flex-shrink-0">{time}</span>
                 <Icon className={`w-3 h-3 flex-shrink-0 ${color}`} />
                 <span className="text-foreground/90 truncate flex-1 min-w-0 font-sans typo-body">
-                  {exec.persona_name || 'agent'}
+                  {exec.persona_name || t.overview.dashboard.stream_agent_fallback}
                 </span>
                 <span className={`${color} uppercase flex-shrink-0`}>{exec.status.slice(0, 4)}</span>
               </button>
@@ -759,27 +766,28 @@ export const StatusTicker = memo(function StatusTicker({
   lastSyncedLabel: string;
   onNavigate: (tab: OverviewTab) => void;
 }) {
+  const { t } = useTranslation();
   const fieldCls = 'flex items-center gap-1.5 typo-caption font-mono uppercase tracking-widest';
   // errors / runs / synced are shortcuts into the tab that owns each metric;
   // "sources" stays inert — it has no single dedicated destination.
   const linkCls = `${fieldCls} text-foreground rounded-interactive px-1 -mx-1 hover:text-primary transition-colors focus-ring`;
   return (
     <div className="rounded-card border border-primary/10 bg-primary/[0.03] px-4 py-2 flex items-center gap-5 overflow-x-auto">
-      <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground flex-shrink-0">status</span>
+      <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground flex-shrink-0">{t.overview.dashboard.status_label}</span>
       <div className={`${fieldCls} text-foreground`}>
-        <span className="text-foreground">sources</span>
+        <span className="text-foreground">{t.overview.dashboard.status_sources}</span>
         <span className="text-foreground tabular-nums">{pipelineSources}</span>
       </div>
       <button type="button" onClick={() => onNavigate('health')} className={linkCls}>
-        <span>errors</span>
+        <span>{t.overview.dashboard.status_errors}</span>
         <span className={`tabular-nums ${pipelineErrors > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{pipelineErrors}</span>
       </button>
       <button type="button" onClick={() => onNavigate('executions')} className={linkCls}>
-        <span>runs</span>
+        <span>{t.overview.dashboard.status_runs}</span>
         <Numeric value={totalExecutions} unit="count" />
       </button>
       <button type="button" onClick={() => onNavigate('observability')} className={`${linkCls} ml-auto flex-shrink-0`}>
-        <span>synced</span>
+        <span>{t.overview.dashboard.status_synced}</span>
         <span className="tabular-nums">{lastSyncedLabel}</span>
       </button>
     </div>

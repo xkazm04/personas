@@ -5721,7 +5721,35 @@
       "pending_reviews_prompt": "대기 중인 검토",
       "requiring_attention": "주의가 필요합니다.",
       "empty_cta": "첫 번째 에이전트를 생성해 시작하세요.",
-      "pipeline_failed": "{source} 로드 실패"
+      "pipeline_failed": "{source} 로드 실패",
+      "instruments_subtitle": "플릿 텔레메트리",
+      "memory_suggestions_count": "제안 {count}개",
+      "pane_instruments": "계기",
+      "pane_memory": "메모리",
+      "pane_stream": "스트림",
+      "pane_vitals": "바이탈",
+      "spark_traffic_errors": "트래픽 · 오류",
+      "status_errors": "오류",
+      "status_label": "상태",
+      "status_runs": "실행",
+      "status_sources": "소스",
+      "status_synced": "동기화됨",
+      "stream_agent_fallback": "에이전트",
+      "stream_events_count": "이벤트 {count}건",
+      "success_label": "성공",
+      "tile_agents": "에이전트",
+      "tile_alerts": "경고",
+      "tile_reviews": "검토",
+      "tile_runs": "실행",
+      "traffic_label": "트래픽",
+      "triage_detail_alerts": "활성 상태 경고",
+      "triage_detail_messages": "수신함 미확인",
+      "triage_detail_reviews": "수동 검토 대기열",
+      "triage_tag_alert": "경",
+      "triage_tag_message": "신",
+      "triage_tag_pipeline": "시",
+      "triage_tag_review": "검",
+      "vitals_subtitle_fleet": "플릿 상태"
     },
     "review": {
       "title": "수동 검토",
@@ -6033,7 +6061,11 @@
       "details": "세부 정보",
       "executions_badge": "실행",
       "success_badge": "성공",
-      "agents_badge": "에이전트"
+      "agents_badge": "에이전트",
+      "range_days_ago": "{days}일 전",
+      "range_today": "오늘",
+      "range_yesterday": "어제",
+      "traffic_errors_chart_aria": "트래픽 및 오류 차트"
     },
     "activity": {
       "title": "활동",
@@ -6713,7 +6745,8 @@
       "month_sep": "Sep",
       "month_oct": "Oct",
       "month_nov": "Nov",
-      "month_dec": "Dec"
+      "month_dec": "Dec",
+      "aria_year_activity": "지난 1년간의 실행 활동"
     },
     "trend": {
       "up": "Up",

@@ -5909,7 +5909,35 @@
       "pending_reviews_prompt": "pending reviews",
       "requiring_attention": "requiring attention.",
       "empty_cta": "Create your first agent to get started.",
-      "pipeline_failed": "{source} failed to load"
+      "pipeline_failed": "{source} failed to load",
+      "pane_vitals": "Vitals",
+      "pane_instruments": "Instruments",
+      "pane_stream": "Stream",
+      "vitals_subtitle_fleet": "fleet health",
+      "instruments_subtitle": "fleet telemetry",
+      "stream_events_count": "{count} events",
+      "success_label": "success",
+      "status_label": "status",
+      "status_sources": "sources",
+      "status_errors": "errors",
+      "status_runs": "runs",
+      "status_synced": "synced",
+      "traffic_label": "Traffic",
+      "spark_traffic_errors": "traffic · errors",
+      "triage_tag_alert": "ALT",
+      "triage_tag_pipeline": "SYS",
+      "triage_tag_review": "REV",
+      "triage_tag_message": "MSG",
+      "triage_detail_alerts": "active health alerts",
+      "triage_detail_reviews": "manual review queue",
+      "triage_detail_messages": "unread in inbox",
+      "tile_runs": "Runs",
+      "tile_agents": "Agents",
+      "tile_alerts": "Alerts",
+      "tile_reviews": "Reviews",
+      "pane_memory": "Memory",
+      "memory_suggestions_count": "{count} suggestions",
+      "stream_agent_fallback": "agent"
     },
     "provenance": {
       "sourced_tip": "Cites {count} source(s) you can trace and audit.",
@@ -6338,7 +6366,11 @@
       "details": "Details",
       "executions_badge": "Executions",
       "success_badge": "Success",
-      "agents_badge": "Agents"
+      "agents_badge": "Agents",
+      "traffic_errors_chart_aria": "Traffic and errors chart",
+      "range_today": "Today",
+      "range_yesterday": "Yesterday",
+      "range_days_ago": "{days} Days Ago"
     },
     "llm_spend": {
       "section_title": "Headless LLM Spend",
@@ -6765,7 +6797,8 @@
       "month_sep": "Sep",
       "month_oct": "Oct",
       "month_nov": "Nov",
-      "month_dec": "Dec"
+      "month_dec": "Dec",
+      "aria_year_activity": "Execution activity over the last year"
     },
     "detail_modal": {
       "close": "Close"

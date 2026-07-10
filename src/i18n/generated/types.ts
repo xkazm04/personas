@@ -5916,6 +5916,34 @@ export type Translations = {
       requiring_attention: string;
       empty_cta: string;
       pipeline_failed: string;
+      pane_vitals: string;
+      pane_instruments: string;
+      pane_stream: string;
+      vitals_subtitle_fleet: string;
+      instruments_subtitle: string;
+      stream_events_count: string;
+      success_label: string;
+      status_label: string;
+      status_sources: string;
+      status_errors: string;
+      status_runs: string;
+      status_synced: string;
+      traffic_label: string;
+      spark_traffic_errors: string;
+      triage_tag_alert: string;
+      triage_tag_pipeline: string;
+      triage_tag_review: string;
+      triage_tag_message: string;
+      triage_detail_alerts: string;
+      triage_detail_reviews: string;
+      triage_detail_messages: string;
+      tile_runs: string;
+      tile_agents: string;
+      tile_alerts: string;
+      tile_reviews: string;
+      pane_memory: string;
+      memory_suggestions_count: string;
+      stream_agent_fallback: string;
     };
     provenance: {
       sourced_tip: string;
@@ -6345,6 +6373,10 @@ export type Translations = {
       executions_badge: string;
       success_badge: string;
       agents_badge: string;
+      traffic_errors_chart_aria: string;
+      range_today: string;
+      range_yesterday: string;
+      range_days_ago: string;
     };
     llm_spend: {
       section_title: string;
@@ -6772,6 +6804,7 @@ export type Translations = {
       month_oct: string;
       month_nov: string;
       month_dec: string;
+      aria_year_activity: string;
     };
     detail_modal: {
       close: string;

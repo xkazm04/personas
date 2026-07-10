@@ -302,7 +302,35 @@
     "pending_reviews_prompt": "čekajících kontrol",
     "requiring_attention": "vyžadujících pozornost.",
     "empty_cta": "Vytvoř svého prvního agenta a začni.",
-    "pipeline_failed": "{source} se nepodařilo načíst"
+    "pipeline_failed": "{source} se nepodařilo načíst",
+    "instruments_subtitle": "telemetrie flotily",
+    "memory_suggestions_count": "{count} návrhů",
+    "pane_instruments": "Přístroje",
+    "pane_memory": "Paměť",
+    "pane_stream": "Stream",
+    "pane_vitals": "Vitalita",
+    "spark_traffic_errors": "provoz · chyby",
+    "status_errors": "chyby",
+    "status_label": "stav",
+    "status_runs": "běhy",
+    "status_sources": "zdroje",
+    "status_synced": "synchronizováno",
+    "stream_agent_fallback": "agent",
+    "stream_events_count": "{count} událostí",
+    "success_label": "úspěch",
+    "tile_agents": "Agenti",
+    "tile_alerts": "Upozornění",
+    "tile_reviews": "Revize",
+    "tile_runs": "Běhy",
+    "traffic_label": "Provoz",
+    "triage_detail_alerts": "aktivní zdravotní upozornění",
+    "triage_detail_messages": "nepřečteno ve schránce",
+    "triage_detail_reviews": "fronta ruční revize",
+    "triage_tag_alert": "ALT",
+    "triage_tag_message": "MSG",
+    "triage_tag_pipeline": "SYS",
+    "triage_tag_review": "REV",
+    "vitals_subtitle_fleet": "zdraví flotily"
   },
   "review": {
     "title": "Ruční kontroly",
@@ -614,7 +642,11 @@
     "details": "Detaily",
     "executions_badge": "Spuštění",
     "success_badge": "Úspěch",
-    "agents_badge": "Agenti"
+    "agents_badge": "Agenti",
+    "range_days_ago": "Před {days} dny",
+    "range_today": "Dnes",
+    "range_yesterday": "Včera",
+    "traffic_errors_chart_aria": "Graf provozu a chyb"
   },
   "activity": {
     "title": "Aktivita",
@@ -1294,7 +1326,8 @@
     "month_sep": "Sep",
     "month_oct": "Oct",
     "month_nov": "Nov",
-    "month_dec": "Dec"
+    "month_dec": "Dec",
+    "aria_year_activity": "Aktivita spouštění za poslední rok"
   },
   "trend": {
     "up": "Up",

@@ -5721,7 +5721,35 @@
       "pending_reviews_prompt": "révisions en attente",
       "requiring_attention": "nécessitant votre attention.",
       "empty_cta": "Créez votre premier agent pour commencer.",
-      "pipeline_failed": "Échec du chargement de {source}"
+      "pipeline_failed": "Échec du chargement de {source}",
+      "instruments_subtitle": "télémétrie de flotte",
+      "memory_suggestions_count": "{count} suggestions",
+      "pane_instruments": "Instruments",
+      "pane_memory": "Mémoire",
+      "pane_stream": "Flux",
+      "pane_vitals": "Vitaux",
+      "spark_traffic_errors": "trafic · erreurs",
+      "status_errors": "erreurs",
+      "status_label": "état",
+      "status_runs": "exécutions",
+      "status_sources": "sources",
+      "status_synced": "synchronisé",
+      "stream_agent_fallback": "agent",
+      "stream_events_count": "{count} événements",
+      "success_label": "succès",
+      "tile_agents": "Agents",
+      "tile_alerts": "Alertes",
+      "tile_reviews": "Révisions",
+      "tile_runs": "Exécutions",
+      "traffic_label": "Trafic",
+      "triage_detail_alerts": "alertes de santé actives",
+      "triage_detail_messages": "non lus dans la boîte de réception",
+      "triage_detail_reviews": "file d'attente de révision manuelle",
+      "triage_tag_alert": "ALT",
+      "triage_tag_message": "MSG",
+      "triage_tag_pipeline": "SYS",
+      "triage_tag_review": "REV",
+      "vitals_subtitle_fleet": "santé de la flotte"
     },
     "review": {
       "title": "Révisions manuelles",
@@ -6033,7 +6061,11 @@
       "details": "Détails",
       "executions_badge": "Exécutions",
       "success_badge": "Succès",
-      "agents_badge": "Agents"
+      "agents_badge": "Agents",
+      "range_days_ago": "Il y a {days} jours",
+      "range_today": "Aujourd'hui",
+      "range_yesterday": "Hier",
+      "traffic_errors_chart_aria": "Graphique du trafic et des erreurs"
     },
     "activity": {
       "title": "Activité",
@@ -6713,7 +6745,8 @@
       "month_sep": "Sep",
       "month_oct": "Oct",
       "month_nov": "Nov",
-      "month_dec": "Dec"
+      "month_dec": "Dec",
+      "aria_year_activity": "Activité d'exécution au cours de la dernière année"
     },
     "trend": {
       "up": "Up",

@@ -5721,7 +5721,35 @@
       "pending_reviews_prompt": "待审核",
       "requiring_attention": "需要关注。",
       "empty_cta": "创建您的第一个代理以开始使用。",
-      "pipeline_failed": "{source} 加载失败"
+      "pipeline_failed": "{source} 加载失败",
+      "instruments_subtitle": "机群遥测",
+      "memory_suggestions_count": "{count} 条建议",
+      "pane_instruments": "仪表",
+      "pane_memory": "内存",
+      "pane_stream": "流",
+      "pane_vitals": "体征",
+      "spark_traffic_errors": "流量 · 错误",
+      "status_errors": "错误",
+      "status_label": "状态",
+      "status_runs": "运行",
+      "status_sources": "来源",
+      "status_synced": "已同步",
+      "stream_agent_fallback": "代理",
+      "stream_events_count": "{count} 个事件",
+      "success_label": "成功",
+      "tile_agents": "代理",
+      "tile_alerts": "告警",
+      "tile_reviews": "审核",
+      "tile_runs": "运行",
+      "traffic_label": "流量",
+      "triage_detail_alerts": "活跃健康告警",
+      "triage_detail_messages": "收件箱未读",
+      "triage_detail_reviews": "人工审核队列",
+      "triage_tag_alert": "警",
+      "triage_tag_message": "信",
+      "triage_tag_pipeline": "系",
+      "triage_tag_review": "审",
+      "vitals_subtitle_fleet": "机群健康"
     },
     "review": {
       "title": "人工审核",
@@ -6033,7 +6061,11 @@
       "details": "详情",
       "executions_badge": "执行",
       "success_badge": "成功",
-      "agents_badge": "代理"
+      "agents_badge": "代理",
+      "range_days_ago": "{days} 天前",
+      "range_today": "今天",
+      "range_yesterday": "昨天",
+      "traffic_errors_chart_aria": "流量与错误图表"
     },
     "activity": {
       "title": "活动",
@@ -6713,7 +6745,8 @@
       "month_sep": "Sep",
       "month_oct": "Oct",
       "month_nov": "Nov",
-      "month_dec": "Dec"
+      "month_dec": "Dec",
+      "aria_year_activity": "过去一年的执行活动"
     },
     "trend": {
       "up": "Up",

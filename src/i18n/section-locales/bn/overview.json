@@ -302,7 +302,35 @@
     "pending_reviews_prompt": "মুলতুবি পর্যালোচনা",
     "requiring_attention": "মনোযোগ প্রয়োজন।",
     "empty_cta": "শুরু করতে আপনার প্রথম এজেন্ট তৈরি করুন।",
-    "pipeline_failed": "{source} লোড ব্যর্থ হয়েছে"
+    "pipeline_failed": "{source} লোড ব্যর্থ হয়েছে",
+    "instruments_subtitle": "ফ্লিট টেলিমেট্রি",
+    "memory_suggestions_count": "{count}টি পরামর্শ",
+    "pane_instruments": "ইনস্ট্রুমেন্টস",
+    "pane_memory": "মেমরি",
+    "pane_stream": "স্ট্রিম",
+    "pane_vitals": "ভাইটালস",
+    "spark_traffic_errors": "ট্র্যাফিক · ত্রুটি",
+    "status_errors": "ত্রুটি",
+    "status_label": "স্ট্যাটাস",
+    "status_runs": "রান",
+    "status_sources": "উৎস",
+    "status_synced": "সিঙ্ক করা হয়েছে",
+    "stream_agent_fallback": "এজেন্ট",
+    "stream_events_count": "{count}টি ইভেন্ট",
+    "success_label": "সফলতা",
+    "tile_agents": "এজেন্ট",
+    "tile_alerts": "অ্যালার্ট",
+    "tile_reviews": "পর্যালোচনা",
+    "tile_runs": "রান",
+    "traffic_label": "ট্র্যাফিক",
+    "triage_detail_alerts": "সক্রিয় স্বাস্থ্য অ্যালার্ট",
+    "triage_detail_messages": "ইনবক্সে অপঠিত",
+    "triage_detail_reviews": "ম্যানুয়াল পর্যালোচনা সারি",
+    "triage_tag_alert": "ALT",
+    "triage_tag_message": "MSG",
+    "triage_tag_pipeline": "SYS",
+    "triage_tag_review": "REV",
+    "vitals_subtitle_fleet": "ফ্লিট স্বাস্থ্য"
   },
   "review": {
     "title": "ম্যানুয়াল পর্যালোচনা",
@@ -614,7 +642,11 @@
     "details": "বিস্তারিত",
     "executions_badge": "এক্সিকিউশন",
     "success_badge": "সাফল্য",
-    "agents_badge": "এজেন্ট"
+    "agents_badge": "এজেন্ট",
+    "range_days_ago": "{days} দিন আগে",
+    "range_today": "আজ",
+    "range_yesterday": "গতকাল",
+    "traffic_errors_chart_aria": "ট্র্যাফিক এবং ত্রুটি চার্ট"
   },
   "activity": {
     "title": "কার্যক্রম",
@@ -1294,7 +1326,8 @@
     "month_sep": "Sep",
     "month_oct": "Oct",
     "month_nov": "Nov",
-    "month_dec": "Dec"
+    "month_dec": "Dec",
+    "aria_year_activity": "গত এক বছরের এক্সিকিউশন কার্যকলাপ"
   },
   "trend": {
     "up": "Up",

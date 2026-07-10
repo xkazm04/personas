@@ -5721,7 +5721,35 @@
       "pending_reviews_prompt": "लंबित समीक्षाएं",
       "requiring_attention": "ध्यान की आवश्यकता।",
       "empty_cta": "शुरू करने के लिए अपना पहला एजेंट बनाएं।",
-      "pipeline_failed": "{source} लोड करने में विफल"
+      "pipeline_failed": "{source} लोड करने में विफल",
+      "instruments_subtitle": "फ्लीट टेलीमेट्री",
+      "memory_suggestions_count": "{count} सुझाव",
+      "pane_instruments": "इंस्ट्रूमेंट्स",
+      "pane_memory": "मेमोरी",
+      "pane_stream": "स्ट्रीम",
+      "pane_vitals": "वाइटल्स",
+      "spark_traffic_errors": "ट्रैफ़िक · त्रुटियाँ",
+      "status_errors": "त्रुटियाँ",
+      "status_label": "स्थिति",
+      "status_runs": "रन",
+      "status_sources": "स्रोत",
+      "status_synced": "सिंक किया गया",
+      "stream_agent_fallback": "एजेंट",
+      "stream_events_count": "{count} इवेंट",
+      "success_label": "सफलता",
+      "tile_agents": "एजेंट",
+      "tile_alerts": "अलर्ट",
+      "tile_reviews": "समीक्षाएँ",
+      "tile_runs": "रन",
+      "traffic_label": "ट्रैफ़िक",
+      "triage_detail_alerts": "सक्रिय स्वास्थ्य अलर्ट",
+      "triage_detail_messages": "इनबॉक्स में अपठित",
+      "triage_detail_reviews": "मैनुअल समीक्षा कतार",
+      "triage_tag_alert": "ALT",
+      "triage_tag_message": "MSG",
+      "triage_tag_pipeline": "SYS",
+      "triage_tag_review": "REV",
+      "vitals_subtitle_fleet": "फ्लीट स्वास्थ्य"
     },
     "review": {
       "title": "मैन्युअल समीक्षाएं",
@@ -6033,7 +6061,11 @@
       "details": "विवरण",
       "executions_badge": "निष्पादन",
       "success_badge": "सफल",
-      "agents_badge": "एजेंट"
+      "agents_badge": "एजेंट",
+      "range_days_ago": "{days} दिन पहले",
+      "range_today": "आज",
+      "range_yesterday": "कल",
+      "traffic_errors_chart_aria": "ट्रैफ़िक और त्रुटियाँ चार्ट"
     },
     "activity": {
       "title": "गतिविधि",
@@ -6713,7 +6745,8 @@
       "month_sep": "Sep",
       "month_oct": "Oct",
       "month_nov": "Nov",
-      "month_dec": "Dec"
+      "month_dec": "Dec",
+      "aria_year_activity": "पिछले वर्ष में निष्पादन गतिविधि"
     },
     "trend": {
       "up": "Up",

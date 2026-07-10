@@ -5721,7 +5721,35 @@
       "pending_reviews_prompt": "مراجعات معلّقة",
       "requiring_attention": "تتطلب الانتباه.",
       "empty_cta": "أنشئ وكيلك الأول للبدء.",
-      "pipeline_failed": "فشل تحميل {source}"
+      "pipeline_failed": "فشل تحميل {source}",
+      "instruments_subtitle": "قياس عن بُعد للأسطول",
+      "memory_suggestions_count": "{count} اقتراحات",
+      "pane_instruments": "الأدوات",
+      "pane_memory": "الذاكرة",
+      "pane_stream": "البث",
+      "pane_vitals": "المؤشرات الحيوية",
+      "spark_traffic_errors": "الحركة · الأخطاء",
+      "status_errors": "أخطاء",
+      "status_label": "الحالة",
+      "status_runs": "التشغيلات",
+      "status_sources": "المصادر",
+      "status_synced": "متزامن",
+      "stream_agent_fallback": "وكيل",
+      "stream_events_count": "{count} أحداث",
+      "success_label": "نجاح",
+      "tile_agents": "الوكلاء",
+      "tile_alerts": "التنبيهات",
+      "tile_reviews": "المراجعات",
+      "tile_runs": "التشغيلات",
+      "traffic_label": "الحركة",
+      "triage_detail_alerts": "تنبيهات الصحة النشطة",
+      "triage_detail_messages": "غير مقروء في الوارد",
+      "triage_detail_reviews": "قائمة المراجعة اليدوية",
+      "triage_tag_alert": "تنب",
+      "triage_tag_message": "رسل",
+      "triage_tag_pipeline": "نظم",
+      "triage_tag_review": "مرج",
+      "vitals_subtitle_fleet": "صحة الأسطول"
     },
     "review": {
       "title": "المراجعات اليدوية",
@@ -6033,7 +6061,11 @@
       "details": "التفاصيل",
       "executions_badge": "التنفيذات",
       "success_badge": "النجاح",
-      "agents_badge": "الوكلاء"
+      "agents_badge": "الوكلاء",
+      "range_days_ago": "قبل {days} أيام",
+      "range_today": "اليوم",
+      "range_yesterday": "أمس",
+      "traffic_errors_chart_aria": "مخطط الحركة والأخطاء"
     },
     "activity": {
       "title": "النشاط",
@@ -6713,7 +6745,8 @@
       "month_sep": "Sep",
       "month_oct": "Oct",
       "month_nov": "Nov",
-      "month_dec": "Dec"
+      "month_dec": "Dec",
+      "aria_year_activity": "نشاط التنفيذ خلال العام الماضي"
     },
     "trend": {
       "up": "Up",
