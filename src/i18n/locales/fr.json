@@ -1192,7 +1192,28 @@
       "deep_fanout_hint": "Déléguer des sous-tâches parallèles indépendantes à des sous-agents. Définissez un plafond budgétaire.",
       "deep_fanout_unavailable": "Indisponible sur ce forfait — nécessite les outils Workflow/Task (Max/Team).",
       "subagents": "Sous-agents",
-      "subscription_cost_note": "≈{cost} en cas de facturation sur l'Anthropic API — inclus dans votre abonnement Claude"
+      "subscription_cost_note": "≈{cost} en cas de facturation sur l'Anthropic API — inclus dans votre abonnement Claude",
+      "chain_badge_tooltip": "Fait partie d'une chaîne multi-étapes — voir la chaîne complète",
+      "chain_current": "Cette exécution",
+      "chain_empty": "Aucune exécution liée trouvée pour cette chaîne.",
+      "chain_failed": "Impossible de charger la chaîne : {error}",
+      "chain_loading": "Chargement de la chaîne…",
+      "chain_open": "Ouvrir l'exécution",
+      "chain_partial": "Certaines exécutions de cette chaîne ne sont pas affichées — elles appartiennent peut-être à un autre persona.",
+      "chain_spans_count": "{count} segments",
+      "chain_subtitle": "Exécutions liées par cette trace de chaîne, dans l'ordre",
+      "chain_title": "Chaîne d'exécution",
+      "load_failed_body": "L'historique des exécutions n'a pas pu être chargé. Vérifiez votre connexion et réessayez.",
+      "load_failed_title": "Impossible de charger les exécutions",
+      "load_more": "Charger {count} de plus",
+      "log_truncated_banner": "Ce journal est peut-être incomplet — une partie de la sortie a été perdue suite à une erreur d'écriture.",
+      "retry_of": "Nouvelle tentative de #{id}",
+      "retry_of_field": "Nouvelle tentative de",
+      "retry_of_tooltip": "L'exécution d'origine dont ceci est une nouvelle tentative de guérison",
+      "tab_chain": "Chaîne",
+      "thinking_tooltip": "Effort de raisonnement utilisé pour cette exécution",
+      "trace_empty_hint": "Les traces détaillées sont capturées pour les exécutions utilisant des outils et les plus récentes. Cette exécution n'en a aucune à afficher.",
+      "verdict_field": "Verdict"
     },
     "lab": {
       "mode_arena": "Arène",
@@ -11151,6 +11172,11 @@
       "backoff": "Recul",
       "fresh": "Récent",
       "active": "Actif"
+    },
+    "thinking": {
+      "high": "Élevé",
+      "low": "Faible",
+      "medium": "Moyen"
     }
   },
   "project_overview": {

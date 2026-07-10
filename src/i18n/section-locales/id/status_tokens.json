@@ -128,5 +128,10 @@
     "backoff": "Mundur",
     "fresh": "Baru",
     "active": "Aktif"
+  },
+  "thinking": {
+    "high": "Tinggi",
+    "low": "Rendah",
+    "medium": "Sedang"
   }
 }

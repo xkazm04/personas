@@ -128,5 +128,10 @@
     "backoff": "バックオフ",
     "fresh": "新鮮",
     "active": "アクティブ"
+  },
+  "thinking": {
+    "high": "高",
+    "low": "低",
+    "medium": "中"
   }
 }

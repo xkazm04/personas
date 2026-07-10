@@ -1192,7 +1192,28 @@
       "deep_fanout_hint": "Delegasikan sub-tugas paralel independen ke subagen. Tetapkan batas anggaran.",
       "deep_fanout_unavailable": "Tidak tersedia di paket ini — membutuhkan alat Workflow/Task (Max/Team).",
       "subagents": "Subagen",
-      "subscription_cost_note": "≈{cost} jika ditagih ke Anthropic API — termasuk dalam langganan Claude Anda"
+      "subscription_cost_note": "≈{cost} jika ditagih ke Anthropic API — termasuk dalam langganan Claude Anda",
+      "chain_badge_tooltip": "Bagian dari chain multi-langkah — lihat chain lengkap",
+      "chain_current": "Proses ini",
+      "chain_empty": "Tidak ada proses tertaut yang ditemukan untuk chain ini.",
+      "chain_failed": "Chain gagal dimuat: {error}",
+      "chain_loading": "Memuat chain…",
+      "chain_open": "Buka proses",
+      "chain_partial": "Beberapa proses dalam chain ini tidak ditampilkan — mungkin milik persona lain.",
+      "chain_spans_count": "{count} span",
+      "chain_subtitle": "Proses yang tertaut oleh trace chain ini, secara berurutan",
+      "chain_title": "Chain eksekusi",
+      "load_failed_body": "Riwayat eksekusi gagal dimuat. Periksa koneksi Anda dan coba lagi.",
+      "load_failed_title": "Proses gagal dimuat",
+      "load_more": "Muat {count} lagi",
+      "log_truncated_banner": "Log ini mungkin tidak lengkap — sebagian output hilang karena kesalahan penulisan.",
+      "retry_of": "Percobaan ulang dari #{id}",
+      "retry_of_field": "Percobaan ulang dari",
+      "retry_of_tooltip": "Proses asli yang menjadi dasar percobaan ulang healing ini",
+      "tab_chain": "Chain",
+      "thinking_tooltip": "Upaya penalaran yang digunakan proses ini",
+      "trace_empty_hint": "Trace terperinci direkam untuk proses yang menggunakan tool dan proses yang lebih baru. Proses ini tidak memiliki trace untuk ditampilkan.",
+      "verdict_field": "Putusan"
     },
     "lab": {
       "mode_arena": "Arena",
@@ -11151,6 +11172,11 @@
       "backoff": "Mundur",
       "fresh": "Baru",
       "active": "Aktif"
+    },
+    "thinking": {
+      "high": "Tinggi",
+      "low": "Rendah",
+      "medium": "Sedang"
     }
   },
   "project_overview": {

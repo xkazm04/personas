@@ -1264,6 +1264,27 @@ export type Translations = {
       deep_fanout: string;
       deep_fanout_hint: string;
       deep_fanout_unavailable: string;
+      tab_chain: string;
+      verdict_field: string;
+      retry_of_field: string;
+      retry_of: string;
+      retry_of_tooltip: string;
+      thinking_tooltip: string;
+      load_failed_title: string;
+      load_failed_body: string;
+      log_truncated_banner: string;
+      trace_empty_hint: string;
+      load_more: string;
+      chain_title: string;
+      chain_subtitle: string;
+      chain_current: string;
+      chain_open: string;
+      chain_spans_count: string;
+      chain_partial: string;
+      chain_empty: string;
+      chain_failed: string;
+      chain_loading: string;
+      chain_badge_tooltip: string;
     };
     lab: {
       vr_title: string;
@@ -11420,6 +11441,11 @@ export type Translations = {
       backoff: string;
       fresh: string;
       active: string;
+    };
+    thinking: {
+      low: string;
+      medium: string;
+      high: string;
     };
   };
   project_overview: {

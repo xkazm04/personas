@@ -128,5 +128,10 @@
     "backoff": "退避中",
     "fresh": "全新",
     "active": "活跃"
+  },
+  "thinking": {
+    "high": "高",
+    "low": "低",
+    "medium": "中"
   }
 }

@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
-import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, ArrowLeftRight, FlaskConical } from 'lucide-react';
+import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, ArrowLeftRight, ArrowUpRight, FlaskConical } from 'lucide-react';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass, formatCost } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -10,10 +10,11 @@ import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
 import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { formatTokens } from '../../libs/useExecutionList';
 import { CostSparkline } from './CostSparkline';
+import { ExecutionValueBadges } from './ExecutionValueBadges';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
 
-type ExecutionRowData = ExecutionListItem & Partial<Pick<PersonaExecution, 'input_data' | 'model_used' | 'output_data' | 'tool_steps' | 'execution_flows' | 'log_file_path' | 'claude_session_id' | 'trigger_id' | 'execution_config' | 'log_truncated'>>;
+type ExecutionRowData = ExecutionListItem & Partial<Pick<PersonaExecution, 'input_data' | 'model_used' | 'output_data' | 'tool_steps' | 'execution_flows' | 'log_file_path' | 'claude_session_id' | 'trigger_id' | 'execution_config' | 'log_truncated' | 'director_score' | 'thinking_level'>>;
 
 interface ExecutionListRowProps {
   execution: ExecutionRowData;
@@ -34,6 +35,8 @@ interface ExecutionListRowProps {
   onCopyId: (id: string) => void;
   onRerun: (inputData: string | null) => void;
   onAutoCompareRetry: (id: string) => void;
+  /** Expand + scroll to the parent run this execution is a retry of. */
+  onOpenParent?: (id: string) => void;
   densityTokens?: DensityTokens;
 }
 
@@ -41,7 +44,7 @@ function ExecutionListRowImpl({
   execution, execIdx, executions, compareMode, compareLeft, compareRight,
   bulkMode = false, bulkSelected = false, bulkDisabled = false,
   isExpanded, showRaw, hasCopied, copiedId, capabilityTitle,
-  onRowClick, onCopyId, onRerun, onAutoCompareRetry,
+  onRowClick, onCopyId, onRerun, onAutoCompareRetry, onOpenParent,
   densityTokens = DENSITY_TOKENS.comfortable,
 }: ExecutionListRowProps) {
   const { t, tx, language } = useTranslation();
@@ -84,9 +87,18 @@ function ExecutionListRowImpl({
     </span>
   );
   const duration = <span className="typo-code text-foreground/90">{formatDuration(execution.duration_ms)}</span>;
+  const valueBadges = (
+    <ExecutionValueBadges
+      businessOutcome={execution.business_outcome}
+      directorScore={execution.director_score ?? null}
+      thinkingLevel={execution.thinking_level ?? null}
+    />
+  );
+  const parentId = execution.retry_of_execution_id;
+  const parentInList = !!parentId && executions.some((row) => row.id === parentId);
 
   return (
-    <div style={{ contain: 'layout paint style' }}>
+    <div id={`exec-row-${execution.id}`} style={{ contain: 'layout paint style' }}>
       {/* Desktop table row (md+) */}
       <div
         onClick={() => { if (!bulkDisabled) onRowClick(execution.id); }}
@@ -120,7 +132,7 @@ function ExecutionListRowImpl({
             ) : <span className="w-5 h-5 rounded-card border border-primary/20 bg-background/30" />}
           </div>
         )}
-        <div className="col-span-2 flex items-center gap-2 flex-wrap">{chevron}{statusBadge}{retryBadge}{simulatedBadge}</div>
+        <div className="col-span-2 flex items-center gap-2 flex-wrap">{chevron}{statusBadge}{retryBadge}{simulatedBadge}{valueBadges}</div>
         <div className="col-span-2 flex items-center min-w-0">{capabilityCell}</div>
         <div className={`${compareMode || bulkMode ? 'col-span-1' : 'col-span-2'} flex items-center`}>{duration}</div>
         <div className="col-span-2 typo-body text-foreground/90 flex items-center">{formatTimestamp(execution.started_at)}</div>
@@ -158,7 +170,7 @@ function ExecutionListRowImpl({
           {!bulkMode && compareMode && compareLabel && (
             <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${compareLabelClass}`}>{compareLabel}</span>
           )}
-          {chevron}{statusBadge}{retryBadge}{simulatedBadge}{duration}
+          {chevron}{statusBadge}{retryBadge}{simulatedBadge}{valueBadges}{duration}
           <RelativeTime timestamp={execution.started_at} fallback="-" showTooltip={false} className="typo-body text-foreground ml-auto" />
         </div>
         {capabilityTitle && (
@@ -188,7 +200,36 @@ function ExecutionListRowImpl({
                 <div><span className="text-foreground typo-code uppercase">{e.output_tokens}</span><Numeric as="p" value={execution.output_tokens} className="text-foreground/90 typo-code mt-0.5" /></div>
                 <div><span className="text-foreground typo-code uppercase">{e.cost}</span><p className="text-foreground/90 typo-code mt-0.5">{formatCost(execution.cost_usd, { precision: 4, language })}</p></div>
                 <div><span className="text-foreground typo-code uppercase">{e.completed}</span><p className="text-foreground/90 typo-body mt-0.5">{formatTimestamp(execution.completed_at)}</p></div>
+                {(execution.director_score != null || (execution.business_outcome && execution.business_outcome !== 'unknown') || execution.thinking_level) && (
+                  <div>
+                    <span className="text-foreground typo-code uppercase">{e.verdict_field}</span>
+                    <div className="flex items-center gap-2 flex-wrap mt-0.5">{valueBadges}</div>
+                  </div>
+                )}
               </div>
+              {parentId && (
+                <div>
+                  <span className="text-foreground typo-code uppercase">{e.retry_of_field}</span>
+                  <div className="mt-0.5">
+                    {parentInList && onOpenParent ? (
+                      <button
+                        onClick={(ev) => { ev.stopPropagation(); onOpenParent(parentId); }}
+                        className="inline-flex items-center gap-1.5 typo-code text-primary/80 hover:text-primary transition-colors"
+                      >
+                        <ArrowUpRight className="w-3 h-3" />
+                        {tx(e.retry_of, { id: parentId.slice(0, 8) })}
+                      </button>
+                    ) : (
+                      <Tooltip content={e.retry_of_tooltip}>
+                        <span className="inline-flex items-center gap-1.5 typo-code text-foreground">
+                          <ArrowUpRight className="w-3 h-3" />
+                          {tx(e.retry_of, { id: parentId.slice(0, 8) })}
+                        </span>
+                      </Tooltip>
+                    )}
+                  </div>
+                </div>
+              )}
               {execution.input_data && (
                 <div>
                   <span className="text-foreground typo-code uppercase">{e.input_data}</span>

@@ -128,5 +128,10 @@
     "backoff": "백오프",
     "fresh": "최신",
     "active": "활성"
+  },
+  "thinking": {
+    "high": "높음",
+    "low": "낮음",
+    "medium": "중간"
   }
 }

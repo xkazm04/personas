@@ -128,5 +128,10 @@
     "backoff": "Retroceso",
     "fresh": "Reciente",
     "active": "Activo"
+  },
+  "thinking": {
+    "high": "Alto",
+    "low": "Bajo",
+    "medium": "Medio"
   }
 }

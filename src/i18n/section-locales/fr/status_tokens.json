@@ -128,5 +128,10 @@
     "backoff": "Recul",
     "fresh": "Récent",
     "active": "Actif"
+  },
+  "thinking": {
+    "high": "Élevé",
+    "low": "Faible",
+    "medium": "Moyen"
   }
 }

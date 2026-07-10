@@ -1257,7 +1257,28 @@
       "subagents": "Subagents",
       "deep_fanout": "Deep fan-out",
       "deep_fanout_hint": "Delegate independent parallel sub-tasks to subagents. Set a budget cap.",
-      "deep_fanout_unavailable": "Unavailable on this plan — needs the Workflow/Task tools (Max/Team)."
+      "deep_fanout_unavailable": "Unavailable on this plan — needs the Workflow/Task tools (Max/Team).",
+      "tab_chain": "Chain",
+      "verdict_field": "Verdict",
+      "retry_of_field": "Retry of",
+      "retry_of": "Retry of #{id}",
+      "retry_of_tooltip": "The original run this is a healing retry of",
+      "thinking_tooltip": "Reasoning effort this run used",
+      "load_failed_title": "Couldn’t load runs",
+      "load_failed_body": "The execution history failed to load. Check your connection and try again.",
+      "log_truncated_banner": "This log may be incomplete — some output was dropped due to a write error.",
+      "trace_empty_hint": "Detailed traces are captured for tool-using and newer runs. This run has none to show.",
+      "load_more": "Load {count} more",
+      "chain_title": "Execution chain",
+      "chain_subtitle": "Runs linked by this chain trace, in order",
+      "chain_current": "This run",
+      "chain_open": "Open run",
+      "chain_spans_count": "{count} spans",
+      "chain_partial": "Some runs in this chain aren’t shown — they may belong to another persona.",
+      "chain_empty": "No linked runs found for this chain.",
+      "chain_failed": "Couldn’t load the chain: {error}",
+      "chain_loading": "Loading chain…",
+      "chain_badge_tooltip": "Part of a multi-step chain — view the full chain"
     },
     "lab": {
       "vr_title": "Versions & Ratings",
@@ -11414,6 +11435,11 @@
       "backoff": "Backoff",
       "fresh": "Fresh",
       "active": "Active"
+    },
+    "thinking": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
     }
   },
   "project_overview": {
