@@ -115,7 +115,7 @@
   "greeting_afternoon": "Добрый день",
   "greeting_evening": "Добрый вечер",
   "operator": "Оператор",
-  "commander": "Commander",
+  "commander": "Командир",
   "summary_empty": "Начните с создания первого агента или изучите платформу.",
   "summary_stats": "У вас настроено {personasCount} агент{personasPlural} и {credentialsCount} учётных данных{credentialsPlural}.",
   "quick_navigation": "Быстрая навигация",

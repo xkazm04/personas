@@ -115,7 +115,7 @@
   "greeting_afternoon": "Buenas tardes",
   "greeting_evening": "Buenas noches",
   "operator": "Operador",
-  "commander": "Commander",
+  "commander": "Comandante",
   "summary_empty": "Comienza creando tu primer agente o explorando la plataforma.",
   "summary_stats": "Tienes {personasCount} agente{personasPlural} y {credentialsCount} credencial{credentialsPlural} configurados.",
   "quick_navigation": "Navegación rápida",

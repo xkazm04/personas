@@ -43,12 +43,12 @@
   "preview_play": "Pratinjau stasiun",
   "preview_stop": "Hentikan pratinjau",
   "youtube_premium_note": "Stasiun YouTube dialirkan melalui pemutar tertanam — diperlukan paket YouTube Premium untuk pengalaman bebas iklan.",
-  "idle_subtitle": "Curated stations",
+  "idle_subtitle": "Stasiun pilihan",
   "kind_youtube": "YouTube",
-  "kind_stream": "Stream",
-  "source_prefix": "Source:",
-  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
-  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
-  "station_toggle_label": "Show in picker",
+  "kind_stream": "Aliran",
+  "source_prefix": "Sumber:",
+  "settings_description": "Stasiun pilihan yang diputar di latar belakang. Ada dua jenis: daftar putar YouTube (melalui IFrame Player tersembunyi — gunakan tombol sebelumnya/berikutnya untuk melompati trek) dan aliran internet langsung (satu sumber berkelanjutan — gunakan pemilih untuk beralih). Kontrolernya berada di tengah footer aplikasi.",
+  "enable_description": "Nonaktif secara default. Saat diaktifkan, kontroler ringkas muncul di tengah footer. Pilihan Anda tetap tersimpan meski aplikasi dimulai ulang.",
+  "station_toggle_label": "Tampilkan di pemilih",
   "auto_resume_description": "Jika aktif, stasiun yang terakhir diputar akan dimulai secara otomatis saat radio pertama kali dimuat setelah aplikasi dibuka. Mati secara default."
 }

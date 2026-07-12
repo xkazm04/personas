@@ -721,8 +721,8 @@
     "fail_count": "{count}x fallo",
     "rotation_manage_all": "Gestionar",
     "rotation_open_in_connections": "Abrir en Conexiones",
-    "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_started_for": "Rotación iniciada para {name}",
+    "rotation_failed_for": "No se pudo rotar {name}",
     "rotation_due_now": "ahora",
     "rotation_countdown_days_hours": "{days}d {hours}h",
     "rotation_countdown_hours": "{hours}h",
@@ -1049,7 +1049,7 @@
     "critical_health": "Estado de salud crítico",
     "byom_recommendations": "Recomendaciones de Enrutamiento BYOM",
     "per_month": "/mes",
-    "confidence_pct": "% conf"
+    "confidence_pct": "% conf."
   },
   "annotate_modal": {
     "title": "Agregar Anotación de Conocimiento",
@@ -1283,43 +1283,43 @@
     "issues_in_7d": "incidencias en 7 días"
   },
   "upcoming_routines": {
-    "title": "Upcoming Routines",
-    "subtitle": "next scheduled runs",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "title": "Próximas rutinas",
+    "subtitle": "próximas ejecuciones programadas",
+    "empty": "No hay ejecuciones programadas.",
+    "never_fired": "pendiente de la primera ejecución",
+    "view_all": "Ver programaciones"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "title": "Cambios en la bóveda",
+    "subtitle": "sincronización reciente con Obsidian",
+    "empty": "Sin actividad de sincronización reciente.",
+    "view_all": "Ver registro de sincronización"
   },
   "heatmap": {
-    "title_persona": "Activity over the last year",
-    "title_global": "Fleet activity over the last year",
-    "subtitle_executions": "{count} executions",
-    "subtitle_executions_with_cost": "{count} executions · ${cost} total",
-    "no_activity": "No activity in the last year",
-    "less": "Less",
-    "more": "More",
-    "tooltip_no_runs": "No runs",
-    "tooltip_one_run": "1 run on {date}",
-    "tooltip_runs": "{count} runs on {date}",
+    "title_persona": "Actividad durante el último año",
+    "title_global": "Actividad de la flota durante el último año",
+    "subtitle_executions": "{count} ejecuciones",
+    "subtitle_executions_with_cost": "{count} ejecuciones · ${cost} total",
+    "no_activity": "Sin actividad en el último año",
+    "less": "Menos",
+    "more": "Más",
+    "tooltip_no_runs": "Sin ejecuciones",
+    "tooltip_one_run": "1 ejecución el {date}",
+    "tooltip_runs": "{count} ejecuciones el {date}",
     "tooltip_with_cost": " · ${cost}",
-    "insights_streak": "Longest streak",
+    "insights_streak": "Racha más larga",
     "insights_streak_days": "{days}d",
-    "insights_dormant": "Dormant",
+    "insights_dormant": "Inactividad",
     "insights_dormant_days": "{days}d",
-    "insights_dormant_active": "Active today",
-    "insights_dormant_never": "Never run",
-    "insights_peak": "Peak day",
+    "insights_dormant_active": "Activo hoy",
+    "insights_dormant_never": "Nunca se ejecutó",
+    "insights_peak": "Día pico",
     "insights_peak_value": "{count} on {date}",
-    "insights_wow": "Week over week",
-    "insights_wow_up": "+{pct}% vs last week",
-    "insights_wow_down": "{pct}% vs last week",
-    "insights_wow_flat": "No change vs last week",
-    "insights_wow_new": "New activity",
+    "insights_wow": "Semana a semana",
+    "insights_wow_up": "+{pct}% frente a la semana pasada",
+    "insights_wow_down": "{pct}% frente a la semana pasada",
+    "insights_wow_flat": "Sin cambios frente a la semana pasada",
+    "insights_wow_new": "Actividad nueva",
     "month_jan": "Jan",
     "month_feb": "Feb",
     "month_mar": "Mar",
@@ -1336,21 +1336,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "Baja",
+    "stable": "Estable — sin cambios significativos",
+    "vs_previous": "frente al período anterior"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "No se pudo cargar el registro de auditoría de sanación.",
+    "audit_fetch_cause": "Es posible que el registro no esté disponible temporalmente. El resto de sus datos no se ve afectado.",
+    "action_retry": "Reintentar"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "Todo en orden — no se activó ninguna alerta",
+    "alerts_subtitle": "Sus reglas de monitoreo están vigilando. Si algo requiere atención, las alertas aparecerán aquí automáticamente.",
+    "realtime_title": "Observe sus eventos en tiempo real",
+    "realtime_subtitle": "Partículas animadas trazan cada evento a medida que viaja desde las fuentes hasta sus agentes. Cada punto es un evento en vivo que se mueve por su sistema.",
+    "realtime_action": "Enviar un evento de prueba"
   },
   "cockpit": {
     "title_default": "Cockpit",
@@ -1765,9 +1765,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "No se pudieron cargar sus vistas guardadas.",
+      "save_failed_message": "No se pudo guardar esta vista.",
+      "delete_failed_message": "No se pudo eliminar esta vista."
     }
   },
   "activity_timeline": {
@@ -1817,7 +1817,7 @@
   "crash_logs": {
     "title": "Registros de fallos",
     "no_logs": "No se han registrado fallos.",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- Pila de componentes ---"
   },
   "events_list": {
     "save_view_tooltip": "Guardar filtros actuales como vista",

@@ -4,7 +4,7 @@
   "metric_cost": "Coût total",
   "metric_cost_spike": "Coût vs. Moyenne",
   "metric_executions": "Exécutions",
-  "severity_info": "Info",
+  "severity_info": "Information",
   "severity_warning": "Avertissement",
   "severity_critical": "Critique",
   "error_create_rule": "Échec de la création de la règle d'alerte :",
@@ -13,5 +13,5 @@
   "error_toggle_rule": "Échec de la bascule de la règle d'alerte :",
   "error_dismiss": "Échec de l'ignorance de l'alerte :",
   "error_clear_history": "Échec de l'effacement de l'historique des alertes :",
-  "error_load_rules": "Failed to load alert rules:"
+  "error_load_rules": "Échec du chargement des règles d'alerte :"
 }

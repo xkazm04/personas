@@ -1283,43 +1283,43 @@
     "issues_in_7d": "sự cố trong 7 ngày"
   },
   "upcoming_routines": {
-    "title": "Upcoming Routines",
-    "subtitle": "next scheduled runs",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "title": "Lịch trình sắp tới",
+    "subtitle": "các lần chạy theo lịch tiếp theo",
+    "empty": "Không có lần chạy theo lịch nào.",
+    "never_fired": "đang chờ lần chạy đầu tiên",
+    "view_all": "Xem lịch trình"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "title": "Thay đổi kho",
+    "subtitle": "đồng bộ Obsidian gần đây",
+    "empty": "Không có hoạt động đồng bộ gần đây.",
+    "view_all": "Xem nhật ký đồng bộ"
   },
   "heatmap": {
     "title_persona": "Hoạt động trong năm qua",
-    "title_global": "Fleet activity over the last year",
-    "subtitle_executions": "{count} executions",
-    "subtitle_executions_with_cost": "{count} executions · ${cost} total",
-    "no_activity": "No activity in the last year",
-    "less": "Less",
-    "more": "More",
-    "tooltip_no_runs": "No runs",
-    "tooltip_one_run": "1 run on {date}",
-    "tooltip_runs": "{count} runs on {date}",
+    "title_global": "Hoạt động của đội trong năm qua",
+    "subtitle_executions": "{count} lần thực thi",
+    "subtitle_executions_with_cost": "{count} lần thực thi · ${cost} tổng cộng",
+    "no_activity": "Không có hoạt động nào trong năm qua",
+    "less": "Ít hơn",
+    "more": "Nhiều hơn",
+    "tooltip_no_runs": "Không có lần chạy nào",
+    "tooltip_one_run": "1 lần chạy vào {date}",
+    "tooltip_runs": "{count} lần chạy vào {date}",
     "tooltip_with_cost": " · ${cost}",
-    "insights_streak": "Longest streak",
+    "insights_streak": "Chuỗi dài nhất",
     "insights_streak_days": "{days}d",
-    "insights_dormant": "Dormant",
+    "insights_dormant": "Không hoạt động",
     "insights_dormant_days": "{days}d",
-    "insights_dormant_active": "Active today",
-    "insights_dormant_never": "Never run",
-    "insights_peak": "Peak day",
+    "insights_dormant_active": "Hoạt động hôm nay",
+    "insights_dormant_never": "Chưa từng chạy",
+    "insights_peak": "Ngày cao điểm",
     "insights_peak_value": "{count} on {date}",
-    "insights_wow": "Week over week",
-    "insights_wow_up": "+{pct}% vs last week",
-    "insights_wow_down": "{pct}% vs last week",
-    "insights_wow_flat": "No change vs last week",
-    "insights_wow_new": "New activity",
+    "insights_wow": "So với tuần trước",
+    "insights_wow_up": "+{pct}% so với tuần trước",
+    "insights_wow_down": "{pct}% so với tuần trước",
+    "insights_wow_flat": "Không thay đổi so với tuần trước",
+    "insights_wow_new": "Hoạt động mới",
     "month_jan": "Jan",
     "month_feb": "Feb",
     "month_mar": "Mar",
@@ -1336,21 +1336,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "Giảm",
+    "stable": "Ổn định — không có thay đổi đáng kể",
+    "vs_previous": "so với kỳ trước"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "Không thể tải nhật ký kiểm tra phục hồi.",
+    "audit_fetch_cause": "Nhật ký có thể tạm thời không khả dụng. Dữ liệu khác của bạn không bị ảnh hưởng.",
+    "action_retry": "Thử lại"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "Mọi thứ đều ổn — không có cảnh báo nào được kích hoạt",
+    "alerts_subtitle": "Các quy tắc giám sát của bạn đang theo dõi. Nếu có điều gì cần chú ý, cảnh báo sẽ tự động xuất hiện ở đây.",
+    "realtime_title": "Theo dõi sự kiện diễn ra theo thời gian thực",
+    "realtime_subtitle": "Các hạt chuyển động minh họa từng sự kiện khi nó di chuyển từ nguồn đến các tác nhân của bạn. Mỗi chấm là một sự kiện trực tiếp đang di chuyển qua hệ thống của bạn.",
+    "realtime_action": "Gửi một sự kiện thử nghiệm"
   },
   "cockpit": {
     "title_default": "Cockpit",
@@ -1765,9 +1765,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "Không thể tải chế độ xem đã lưu của bạn.",
+      "save_failed_message": "Không thể lưu chế độ xem này.",
+      "delete_failed_message": "Không thể xóa chế độ xem này."
     }
   },
   "activity_timeline": {

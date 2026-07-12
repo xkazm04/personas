@@ -1180,7 +1180,7 @@
     "healing_audit_log": "उपचार ऑडिट लॉग",
     "no_silent_failures": "कोई मूक विफलता दर्ज नहीं।",
     "analysis_complete_prefix": "विश्लेषण पूर्ण:",
-    "ai_healing_title": "AI Healing",
+    "ai_healing_title": "AI हीलिंग",
     "diagnosis_label": "निदान:",
     "fixes_applied": "लागू किए गए fixes",
     "alert_history_title": "Alert इतिहास",
@@ -1190,7 +1190,7 @@
     "confidence_pct_suffix": "% विश्वास",
     "spike_on": "spike पर",
     "correlated_events_prefix": "सहसंबद्ध इवेंट्स (",
-    "circuit_breaker_label": "circuit breaker",
+    "circuit_breaker_label": "सर्किट ब्रेकर",
     "auto_disabled_message": "इस पर्सोना को बार-बार विफलताओं के circuit-breaker प्रतिक्रिया के रूप में स्वचालित रूप से अक्षम किया गया था।",
     "execution_label": "निष्पादन:",
     "issue_marked_as": "इस समस्या को इस रूप में चिह्नित किया गया है",
@@ -1283,17 +1283,17 @@
     "issues_in_7d": "7 दिनों में समस्याएँ"
   },
   "upcoming_routines": {
-    "title": "Upcoming Routines",
-    "subtitle": "next scheduled runs",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "title": "आगामी रूटीन",
+    "subtitle": "अगले शेड्यूल किए गए रन",
+    "empty": "कोई शेड्यूल किया गया रन नहीं।",
+    "never_fired": "पहला रन लंबित",
+    "view_all": "शेड्यूल देखें"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "title": "वॉल्ट में बदलाव",
+    "subtitle": "हाल का Obsidian सिंक",
+    "empty": "हाल में कोई सिंक गतिविधि नहीं।",
+    "view_all": "सिंक लॉग देखें"
   },
   "heatmap": {
     "title_persona": "पिछले वर्ष में गतिविधि",
@@ -1305,21 +1305,21 @@
     "more": "अधिक",
     "tooltip_no_runs": "कोई रन नहीं",
     "tooltip_one_run": "{date} को 1 रन",
-    "tooltip_runs": "{count} runs on {date}",
+    "tooltip_runs": "{date} को {count} रन",
     "tooltip_with_cost": " · ${cost}",
-    "insights_streak": "Longest streak",
+    "insights_streak": "सबसे लंबी स्ट्रीक",
     "insights_streak_days": "{days}d",
-    "insights_dormant": "Dormant",
+    "insights_dormant": "निष्क्रिय",
     "insights_dormant_days": "{days}d",
-    "insights_dormant_active": "Active today",
-    "insights_dormant_never": "Never run",
-    "insights_peak": "Peak day",
+    "insights_dormant_active": "आज सक्रिय",
+    "insights_dormant_never": "कभी रन नहीं हुआ",
+    "insights_peak": "पीक दिन",
     "insights_peak_value": "{count} on {date}",
-    "insights_wow": "Week over week",
-    "insights_wow_up": "+{pct}% vs last week",
-    "insights_wow_down": "{pct}% vs last week",
-    "insights_wow_flat": "No change vs last week",
-    "insights_wow_new": "New activity",
+    "insights_wow": "सप्ताह दर सप्ताह",
+    "insights_wow_up": "पिछले सप्ताह की तुलना में +{pct}%",
+    "insights_wow_down": "पिछले सप्ताह की तुलना में {pct}%",
+    "insights_wow_flat": "पिछले सप्ताह की तुलना में कोई बदलाव नहीं",
+    "insights_wow_new": "नई गतिविधि",
     "month_jan": "Jan",
     "month_feb": "Feb",
     "month_mar": "Mar",
@@ -1336,21 +1336,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "नीचे",
+    "stable": "स्थिर — कोई उल्लेखनीय बदलाव नहीं",
+    "vs_previous": "पिछली अवधि की तुलना में"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "उपचार ऑडिट लॉग लोड नहीं हो सका।",
+    "audit_fetch_cause": "लॉग अस्थायी रूप से अनुपलब्ध हो सकता है। आपका बाकी डेटा सुरक्षित है।",
+    "action_retry": "पुनः प्रयास करें"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "सब ठीक है — कोई अलर्ट ट्रिगर नहीं हुआ",
+    "alerts_subtitle": "आपके निगरानी नियम नज़र रखे हुए हैं। अगर किसी चीज़ पर ध्यान देने की ज़रूरत हो, तो अलर्ट स्वचालित रूप से यहां दिखाई देंगे।",
+    "realtime_title": "अपने इवेंट्स को रीयल-टाइम में बहते हुए देखें",
+    "realtime_subtitle": "एनिमेटेड कण हर इवेंट का पथ दिखाते हैं, जैसे ही वह स्रोतों से आपके एजेंट्स तक पहुंचता है। हर बिंदु आपके सिस्टम से गुज़रने वाला एक लाइव इवेंट है।",
+    "realtime_action": "टेस्ट इवेंट भेजें"
   },
   "cockpit": {
     "title_default": "कॉकपिट",
@@ -1765,9 +1765,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "आपके सहेजे गए दृश्य लोड नहीं हो सके।",
+      "save_failed_message": "यह दृश्य सहेजा नहीं जा सका।",
+      "delete_failed_message": "यह दृश्य हटाया नहीं जा सका।"
     }
   },
   "activity_timeline": {

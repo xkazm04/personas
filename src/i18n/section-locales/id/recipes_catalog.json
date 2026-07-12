@@ -71,8 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "Pilih persona dari bilah sisi terlebih dahulu.",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup_one": "Wire {count} more connector, then adopt",
-  "adopt_tooltip_needs_setup_other": "Wire {count} more connectors, then adopt",
+  "adopt_tooltip_needs_setup_one": "Hubungkan {count} konektor lagi, lalu adopsi",
+  "adopt_tooltip_needs_setup_other": "Hubungkan {count} konektor lagi, lalu adopsi",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "Adopsi resep ini ke persona yang dipilih",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -231,5 +231,5 @@
   "update_badge_detail_tooltip": "Diadopsi pada v{from}; katalog sekarang v{to}. Hapus dan adopsi ulang untuk memperbarui.",
   "update_badge_tooltip": "Versi terbaru dari kemampuan ini tersedia — hapus dan adopsi ulang untuk memperbarui",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tags"
+  "tags_heading": "Tag"
 }

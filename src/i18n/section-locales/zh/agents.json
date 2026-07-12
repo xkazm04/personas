@@ -510,7 +510,7 @@
     "retry_of": "#{id} 的重试",
     "retry_of_field": "重试自",
     "retry_of_tooltip": "此次自愈重试所对应的原始运行",
-    "tab_chain": "Chain",
+    "tab_chain": "链",
     "thinking_tooltip": "本次运行使用的推理强度",
     "trace_empty_hint": "详细 trace 仅记录于使用工具及较新的运行中，本次运行没有可显示的 trace。",
     "verdict_field": "判定结果"
@@ -2632,16 +2632,16 @@
     "director_run": "运行 Director",
     "director_running": "运行中…",
     "director_rationale": "依据",
-    "director_accept": "Looks right",
-    "director_dismiss": "Dismiss",
-    "director_pending": "Pending review",
-    "director_resolved": "Handled",
-    "director_empty_title": "No coaching notes yet",
-    "director_empty_hint": "Run the Director to scan this persona. If everything looks healthy, it stays silent.",
-    "director_last_run_empty": "Director ran cleanly — nothing to coach on right now.",
-    "director_last_run_one": "Director added 1 new note below.",
-    "director_last_run_many": "Director added {count} new notes below.",
-    "switch_panel_director": "Director — coaching notes"
+    "director_accept": "没问题",
+    "director_dismiss": "忽略",
+    "director_pending": "待审核",
+    "director_resolved": "已处理",
+    "director_empty_title": "暂无辅导记录",
+    "director_empty_hint": "运行 Director 以扫描该人格。如果一切正常，它将保持静默。",
+    "director_last_run_empty": "Director 运行顺利，目前没有需要指导的地方。",
+    "director_last_run_one": "Director 在下方添加了 1 条新记录。",
+    "director_last_run_many": "Director 在下方添加了 {count} 条新记录。",
+    "switch_panel_director": "Director · 辅导记录"
   },
   "ops_run": {
     "execute_agent": "执行代理",
@@ -2701,7 +2701,7 @@
     "title_placeholder": "章节标题...",
     "content_placeholder": "章节内容...",
     "custom_section": "自定义章节",
-    "duplicate_title": "Another section already uses this title. Titles must be unique."
+    "duplicate_title": "已有其他章节使用此标题，标题必须唯一。"
   },
   "activity_filters": {
     "all": "全部",

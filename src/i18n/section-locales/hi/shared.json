@@ -116,8 +116,8 @@
     "generate_icon": "जेनरेट करें",
     "generating_icon": "Generating...",
     "generate_icon_prompt_placeholder": "Describe the icon you want...",
-    "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon": "एजेंट आइकन चुनें",
+    "select_agent_icon_desc": "इस एजेंट के लिए एक आइकन चुनें। थीम्ड डार्क/लाइट वेरिएंट अपने आप रेंडर होते हैं।"
   },
   "reasoning_trace": {
     "system_init": "सिस्टम इनिट",
@@ -153,10 +153,10 @@
     "active_project": "सक्रिय प्रोजेक्ट",
     "clear_completed_title": "पूर्ण और कतारबद्ध items साफ़ करें",
     "active_twin": "सक्रिय Twin",
-    "back_to_home": "Home",
-    "whats_new": "What's New",
-    "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap",
+    "back_to_home": "होम",
+    "whats_new": "नया क्या है",
+    "back_to_plugins": "प्लगइन",
+    "roadmap": "रोडमैप",
     "groups_label": "समूह"
   },
   "execution_detail": {

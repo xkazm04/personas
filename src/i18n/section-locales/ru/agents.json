@@ -2631,17 +2631,17 @@
     "director_subtitle": "Заметки коучинга от мета-персоны Director. Одобрите или отклоните их, чтобы обучить её вашему вкусу.",
     "director_run": "Запустить Director",
     "director_running": "Выполняется…",
-    "director_rationale": "Evidence",
-    "director_accept": "Looks right",
-    "director_dismiss": "Dismiss",
-    "director_pending": "Pending review",
-    "director_resolved": "Handled",
-    "director_empty_title": "No coaching notes yet",
-    "director_empty_hint": "Run the Director to scan this persona. If everything looks healthy, it stays silent.",
-    "director_last_run_empty": "Director ran cleanly — nothing to coach on right now.",
-    "director_last_run_one": "Director added 1 new note below.",
-    "director_last_run_many": "Director added {count} new notes below.",
-    "switch_panel_director": "Director — coaching notes"
+    "director_rationale": "Обоснование",
+    "director_accept": "Верно",
+    "director_dismiss": "Отклонить",
+    "director_pending": "Ожидает проверки",
+    "director_resolved": "Обработано",
+    "director_empty_title": "Пока нет рекомендаций",
+    "director_empty_hint": "Запустите Director, чтобы проверить эту персону. Если всё в порядке, он ничего не напишет.",
+    "director_last_run_empty": "Director завершил проверку без замечаний — сейчас рекомендаций нет.",
+    "director_last_run_one": "Director добавил новую рекомендацию ниже.",
+    "director_last_run_many": "Director добавил {count} новых рекомендаций ниже.",
+    "switch_panel_director": "Director — рекомендации"
   },
   "ops_run": {
     "execute_agent": "Запустить агента",
@@ -2701,7 +2701,7 @@
     "title_placeholder": "Название раздела...",
     "content_placeholder": "Содержимое раздела...",
     "custom_section": "Пользовательский раздел",
-    "duplicate_title": "Another section already uses this title. Titles must be unique."
+    "duplicate_title": "Такой заголовок уже используется другим разделом. Заголовки должны быть уникальными."
   },
   "activity_filters": {
     "all": "Все",

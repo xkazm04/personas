@@ -71,8 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "먼저 사이드바에서 페르소나를 선택하세요.",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup_one": "Wire {count} more connector, then adopt",
-  "adopt_tooltip_needs_setup_other": "Wire {count} more connectors, then adopt",
+  "adopt_tooltip_needs_setup_one": "커넥터 {count}개를 더 연결한 후 적용하세요",
+  "adopt_tooltip_needs_setup_other": "커넥터 {count}개를 더 연결한 후 적용하세요",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "선택한 페르소나에 이 레시피를 적용합니다.",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -231,5 +231,5 @@
   "update_badge_detail_tooltip": "v{from}에서 적용됨; 현재 카탈로그 버전은 v{to}입니다. 업데이트하려면 제거 후 다시 적용하세요.",
   "update_badge_tooltip": "이 기능의 최신 버전을 사용할 수 있습니다 — 업데이트하려면 제거 후 다시 적용하세요",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tags"
+  "tags_heading": "태그"
 }

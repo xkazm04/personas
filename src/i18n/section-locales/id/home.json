@@ -115,7 +115,7 @@
   "greeting_afternoon": "Selamat Siang",
   "greeting_evening": "Selamat Malam",
   "operator": "Operator",
-  "commander": "Commander",
+  "commander": "Komandan",
   "summary_empty": "Mulai dengan membuat agen pertama Anda atau menjelajahi platform.",
   "summary_stats": "Anda memiliki {personasCount} agen{personasPlural} dan {credentialsCount} kredensial{credentialsPlural} yang dikonfigurasi.",
   "quick_navigation": "Navigasi Cepat",

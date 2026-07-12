@@ -1283,17 +1283,17 @@
     "issues_in_7d": "7日間のイシュー"
   },
   "upcoming_routines": {
-    "title": "Upcoming Routines",
-    "subtitle": "next scheduled runs",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "title": "今後のルーティン",
+    "subtitle": "次回の実行予定",
+    "empty": "スケジュールされた実行はありません。",
+    "never_fired": "初回実行待ち",
+    "view_all": "スケジュールを表示"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "title": "ボルトの変更",
+    "subtitle": "直近のObsidian同期",
+    "empty": "最近の同期アクティビティはありません。",
+    "view_all": "同期ログを表示"
   },
   "heatmap": {
     "title_persona": "過去1年間のアクティビティ",
@@ -1305,21 +1305,21 @@
     "more": "多い",
     "tooltip_no_runs": "実行なし",
     "tooltip_one_run": "{date}に1件の実行",
-    "tooltip_runs": "{count} runs on {date}",
+    "tooltip_runs": "{date}に{count}件実行",
     "tooltip_with_cost": " · ${cost}",
-    "insights_streak": "Longest streak",
+    "insights_streak": "最長連続日数",
     "insights_streak_days": "{days}d",
-    "insights_dormant": "Dormant",
+    "insights_dormant": "休止中",
     "insights_dormant_days": "{days}d",
-    "insights_dormant_active": "Active today",
-    "insights_dormant_never": "Never run",
-    "insights_peak": "Peak day",
+    "insights_dormant_active": "本日アクティブ",
+    "insights_dormant_never": "未実行",
+    "insights_peak": "ピーク日",
     "insights_peak_value": "{count} on {date}",
-    "insights_wow": "Week over week",
-    "insights_wow_up": "+{pct}% vs last week",
-    "insights_wow_down": "{pct}% vs last week",
-    "insights_wow_flat": "No change vs last week",
-    "insights_wow_new": "New activity",
+    "insights_wow": "前週比",
+    "insights_wow_up": "前週比 +{pct}%",
+    "insights_wow_down": "前週比 {pct}%",
+    "insights_wow_flat": "前週から変化なし",
+    "insights_wow_new": "新規アクティビティ",
     "month_jan": "Jan",
     "month_feb": "Feb",
     "month_mar": "Mar",
@@ -1336,21 +1336,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "低下",
+    "stable": "安定 — 大きな変化なし",
+    "vs_previous": "前期間比"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "修復監査ログを読み込めませんでした。",
+    "audit_fetch_cause": "ログが一時的に利用できない可能性があります。他のデータには影響ありません。",
+    "action_retry": "再試行"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "異常なし — アラートは発生していません",
+    "alerts_subtitle": "監視ルールが常時確認しています。対応が必要な場合、アラートは自動的にここに表示されます。",
+    "realtime_title": "イベントの流れをリアルタイムで確認",
+    "realtime_subtitle": "アニメーションの粒子が、各イベントが送信元からエージェントへ移動する様子を描きます。ドットの一つひとつが、システム内を流れるライブイベントです。",
+    "realtime_action": "テストイベントを送信"
   },
   "cockpit": {
     "title_default": "コックピット",
@@ -1765,9 +1765,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "保存済みのビューを読み込めませんでした。",
+      "save_failed_message": "このビューを保存できませんでした。",
+      "delete_failed_message": "このビューを削除できませんでした。"
     }
   },
   "activity_timeline": {
@@ -1817,7 +1817,7 @@
   "crash_logs": {
     "title": "クラッシュログ",
     "no_logs": "クラッシュログは記録されていません。",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- コンポーネントスタック ---"
   },
   "events_list": {
     "save_view_tooltip": "現在のフィルターをビューとして保存",

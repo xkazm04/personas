@@ -116,8 +116,8 @@
     "generate_icon": "Generar",
     "generating_icon": "Generando...",
     "generate_icon_prompt_placeholder": "Describe el icono que quieres...",
-    "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon": "Seleccionar icono del agente",
+    "select_agent_icon_desc": "Elija un icono para este agente. Las variantes de tema oscuro/claro se muestran automáticamente."
   },
   "reasoning_trace": {
     "system_init": "Inicialización del Sistema",
@@ -153,10 +153,10 @@
     "active_project": "Proyecto Activo",
     "clear_completed_title": "Limpiar elementos completados y en cola",
     "active_twin": "Gemelo Activo",
-    "back_to_home": "Home",
-    "whats_new": "What's New",
+    "back_to_home": "Inicio",
+    "whats_new": "Novedades",
     "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap",
+    "roadmap": "Hoja de ruta",
     "groups_label": "Grupos"
   },
   "execution_detail": {

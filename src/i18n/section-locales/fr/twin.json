@@ -537,12 +537,12 @@
     "brainBody": "Obsidian est optionnel (notes lisibles par un humain). La base de connaissances est le moteur de rappel — liez-en une pour activer la mémoire sémantique.",
     "knowledgeTitle": "Choisissez ce qui reste",
     "knowledgeBody": "Les agents proposent des souvenirs ; vous les approuvez ou les rejetez. Seuls les éléments approuvés alimentent les rappels futurs.",
-    "voiceTitle": "Optional synthesis",
-    "voiceBody": "Paste a voice ID from ElevenLabs. The sliders control how expressive / consistent / stylised it sounds.",
-    "channelsTitle": "Where the twin shows up",
-    "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
-    "trainingTitle": "Interview yourself",
-    "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    "voiceTitle": "Synthèse vocale facultative",
+    "voiceBody": "Collez un identifiant de voix ElevenLabs. Les curseurs règlent l'expressivité, la constance et le style de la voix générée.",
+    "channelsTitle": "Où votre twin apparaît",
+    "channelsBody": "Chaque canal est lié à un identifiant. Mettre un canal en pause conserve la configuration mais arrête le trafic.",
+    "trainingTitle": "Interviewez-vous",
+    "trainingBody": "Choisissez un sujet — l'IA vous pose 5 questions — répondez avec votre propre voix. Le résumé de la session devient un souvenir riche en enseignements."
   },
   "gaps": {
     "title": "Ce qui manque",

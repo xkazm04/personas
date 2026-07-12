@@ -27,10 +27,10 @@
   "budget_limit": "Batas anggaran",
   "run_agent": "Jalankan Agen",
   "model": "Model",
-  "trust": "Trust",
-  "timeout": "Timeout",
-  "preview_aria_label": "Pre-run preview for {name}",
-  "tool_count_one": "{count} tool",
-  "tool_count_other": "{count} tools",
-  "missing_count": "{count} missing"
+  "trust": "Kepercayaan",
+  "timeout": "Waktu habis",
+  "preview_aria_label": "Pratinjau sebelum menjalankan {name}",
+  "tool_count_one": "{count} alat",
+  "tool_count_other": "{count} alat",
+  "missing_count": "{count} hilang"
 }

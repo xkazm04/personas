@@ -26,11 +26,11 @@
   "close_preview": "미리보기 닫기",
   "budget_limit": "예산 한도",
   "run_agent": "에이전트 실행",
-  "model": "Model",
-  "trust": "Trust",
-  "timeout": "Timeout",
-  "preview_aria_label": "Pre-run preview for {name}",
-  "tool_count_one": "{count} tool",
-  "tool_count_other": "{count} tools",
-  "missing_count": "{count} missing"
+  "model": "모델",
+  "trust": "신뢰도",
+  "timeout": "타임아웃",
+  "preview_aria_label": "{name}의 실행 전 미리보기",
+  "tool_count_one": "{count}개 도구",
+  "tool_count_other": "{count}개 도구",
+  "missing_count": "{count}개 누락"
 }

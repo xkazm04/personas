@@ -2631,17 +2631,17 @@
     "director_subtitle": "Director 메타 페르소나가 남긴 코칭 노트입니다. 승인하거나 무시하여 선호를 학습시키세요.",
     "director_run": "Director 실행",
     "director_running": "실행 중…",
-    "director_rationale": "Evidence",
-    "director_accept": "Looks right",
-    "director_dismiss": "Dismiss",
-    "director_pending": "Pending review",
-    "director_resolved": "Handled",
-    "director_empty_title": "No coaching notes yet",
-    "director_empty_hint": "Run the Director to scan this persona. If everything looks healthy, it stays silent.",
-    "director_last_run_empty": "Director ran cleanly — nothing to coach on right now.",
-    "director_last_run_one": "Director added 1 new note below.",
-    "director_last_run_many": "Director added {count} new notes below.",
-    "switch_panel_director": "Director — coaching notes"
+    "director_rationale": "근거",
+    "director_accept": "타당함",
+    "director_dismiss": "무시",
+    "director_pending": "검토 대기 중",
+    "director_resolved": "처리됨",
+    "director_empty_title": "아직 코칭 노트가 없습니다",
+    "director_empty_hint": "Director를 실행해 이 페르소나를 점검하세요. 문제가 없으면 별도의 알림 없이 넘어갑니다.",
+    "director_last_run_empty": "Director가 문제없이 실행되었습니다 — 지금은 코칭할 내용이 없습니다.",
+    "director_last_run_one": "Director가 아래에 새 노트 1개를 추가했습니다.",
+    "director_last_run_many": "Director가 아래에 새 노트 {count}개를 추가했습니다.",
+    "switch_panel_director": "Director — 코칭 노트"
   },
   "ops_run": {
     "execute_agent": "에이전트 실행",
@@ -2701,7 +2701,7 @@
     "title_placeholder": "섹션 제목...",
     "content_placeholder": "섹션 내용...",
     "custom_section": "커스텀 섹션",
-    "duplicate_title": "Another section already uses this title. Titles must be unique."
+    "duplicate_title": "다른 섹션에서 이미 사용 중인 제목입니다. 제목은 고유해야 합니다."
   },
   "activity_filters": {
     "all": "전체",

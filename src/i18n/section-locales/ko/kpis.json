@@ -178,7 +178,7 @@
   "goal_ungrounded_title": "활동 지표, 측정된 결과 아님",
   "measurement_source": {
     "evaluator": "자동 측정",
-    "health_snapshot": "Health snapshot",
+    "health_snapshot": "건강 상태 스냅샷",
     "manual": "수동 입력",
     "scan": "스캔"
   },

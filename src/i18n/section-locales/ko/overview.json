@@ -1283,17 +1283,17 @@
     "issues_in_7d": "지난 7일간 이슈"
   },
   "upcoming_routines": {
-    "title": "Upcoming Routines",
-    "subtitle": "next scheduled runs",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "title": "예정된 루틴",
+    "subtitle": "다음 예정된 실행",
+    "empty": "예약된 실행이 없습니다.",
+    "never_fired": "첫 실행 대기 중",
+    "view_all": "스케줄 보기"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "title": "볼트 변경 사항",
+    "subtitle": "최근 Obsidian 동기화",
+    "empty": "최근 동기화 활동이 없습니다.",
+    "view_all": "동기화 로그 보기"
   },
   "heatmap": {
     "title_persona": "지난 1년간의 활동",
@@ -1307,19 +1307,19 @@
     "tooltip_one_run": "{date}에 1회 실행",
     "tooltip_runs": "{date}에 {count}회 실행",
     "tooltip_with_cost": " · ${cost}",
-    "insights_streak": "Longest streak",
+    "insights_streak": "최장 연속 기록",
     "insights_streak_days": "{days}d",
-    "insights_dormant": "Dormant",
+    "insights_dormant": "휴면",
     "insights_dormant_days": "{days}d",
-    "insights_dormant_active": "Active today",
-    "insights_dormant_never": "Never run",
-    "insights_peak": "Peak day",
+    "insights_dormant_active": "오늘 활동",
+    "insights_dormant_never": "실행된 적 없음",
+    "insights_peak": "최다 활동일",
     "insights_peak_value": "{count} on {date}",
-    "insights_wow": "Week over week",
-    "insights_wow_up": "+{pct}% vs last week",
-    "insights_wow_down": "{pct}% vs last week",
-    "insights_wow_flat": "No change vs last week",
-    "insights_wow_new": "New activity",
+    "insights_wow": "전주 대비",
+    "insights_wow_up": "지난주 대비 +{pct}%",
+    "insights_wow_down": "지난주 대비 {pct}%",
+    "insights_wow_flat": "지난주 대비 변동 없음",
+    "insights_wow_new": "새로운 활동",
     "month_jan": "Jan",
     "month_feb": "Feb",
     "month_mar": "Mar",
@@ -1336,21 +1336,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "하락",
+    "stable": "안정 — 유의미한 변화 없음",
+    "vs_previous": "이전 기간 대비"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "복구 감사 로그를 불러올 수 없습니다.",
+    "audit_fetch_cause": "로그를 일시적으로 사용할 수 없을 수 있습니다. 다른 데이터에는 영향이 없습니다.",
+    "action_retry": "다시 시도"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "이상 없음 — 발생한 알림이 없습니다",
+    "alerts_subtitle": "모니터링 규칙이 계속 감시하고 있습니다. 주의가 필요한 사항이 있으면 여기에 자동으로 알림이 표시됩니다.",
+    "realtime_title": "실시간으로 흐르는 이벤트를 확인하세요",
+    "realtime_subtitle": "애니메이션 입자가 각 이벤트가 소스에서 에이전트로 이동하는 경로를 보여줍니다. 점 하나하나가 시스템을 통과하는 실시간 이벤트입니다.",
+    "realtime_action": "테스트 이벤트 보내기"
   },
   "cockpit": {
     "title_default": "코크핏",
@@ -1765,9 +1765,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "저장된 보기를 불러올 수 없습니다.",
+      "save_failed_message": "이 보기를 저장할 수 없습니다.",
+      "delete_failed_message": "이 보기를 삭제할 수 없습니다."
     }
   },
   "activity_timeline": {
@@ -1817,7 +1817,7 @@
   "crash_logs": {
     "title": "충돌 로그",
     "no_logs": "기록된 충돌 로그가 없습니다.",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- 컴포넌트 스택 ---"
   },
   "events_list": {
     "save_view_tooltip": "현재 필터를 보기로 저장",

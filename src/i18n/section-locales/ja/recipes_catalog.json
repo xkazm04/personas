@@ -71,8 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "まずサイドバーでペルソナを選択してください。",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup_one": "Wire {count} more connector, then adopt",
-  "adopt_tooltip_needs_setup_other": "Wire {count} more connectors, then adopt",
+  "adopt_tooltip_needs_setup_one": "あと{count}個のコネクタを設定すると採用できます",
+  "adopt_tooltip_needs_setup_other": "あと{count}個のコネクタを設定すると採用できます",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "このレシピを選択中のペルソナに採用します",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -231,5 +231,5 @@
   "update_badge_detail_tooltip": "v{from}で導入済み。カタログは現在v{to}です。更新するには削除して再導入してください。",
   "update_badge_tooltip": "この機能の新しいバージョンが利用可能です — 削除して再導入すると更新されます",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tags"
+  "tags_heading": "タグ"
 }

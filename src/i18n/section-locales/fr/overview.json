@@ -1343,14 +1343,14 @@
   "errorRecovery": {
     "audit_fetch_failed": "Impossible de charger le journal d'audit de l'auto-réparation.",
     "audit_fetch_cause": "Le journal est peut-être temporairement indisponible. Vos autres données ne sont pas concernées.",
-    "action_retry": "Retry"
+    "action_retry": "Réessayer"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "Tout est calme — aucune alerte déclenchée",
+    "alerts_subtitle": "Vos règles de surveillance veillent. Si quelque chose nécessite votre attention, les alertes apparaîtront automatiquement ici.",
+    "realtime_title": "Observez vos événements circuler en temps réel",
+    "realtime_subtitle": "Des particules animées retracent le trajet de chaque événement, des sources jusqu'à vos agents. Chaque point représente un événement en direct qui se déplace dans votre système.",
+    "realtime_action": "Envoyer un événement de test"
   },
   "cockpit": {
     "title_default": "Cockpit",
@@ -1588,7 +1588,7 @@
   },
   "workflows": {
     "loading": "Chargement des workflows...",
-    "title": "Workflows",
+    "title": "Tâches de fond",
     "subtitle": "Opérations d'arrière-plan actives et récentes dans votre espace de travail",
     "no_jobs": "Aucune tâche d'arrière-plan en cours ou récente",
     "jobs_hint": "Les tâches apparaissent ici lors des transformations N8n, des adoptions de modèles, des générations de modèles ou du débogage de requêtes",
@@ -1747,7 +1747,7 @@
     "events_per_sec": "Événements/sec",
     "active_lanes": "Voies actives",
     "event_type": "Type d'événement",
-    "source": "Source",
+    "source": "Provenance",
     "target": "Cible",
     "timestamp": "Horodatage",
     "payload": "Charge utile",
@@ -1765,9 +1765,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "Impossible de charger vos vues enregistrées.",
+      "save_failed_message": "Impossible d'enregistrer cette vue.",
+      "delete_failed_message": "Impossible de supprimer cette vue."
     }
   },
   "activity_timeline": {
@@ -1817,7 +1817,7 @@
   "crash_logs": {
     "title": "Journaux de plantage",
     "no_logs": "Aucun journal de plantage enregistré.",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- Pile de composants ---"
   },
   "events_list": {
     "save_view_tooltip": "Enregistrer les filtres comme vue",

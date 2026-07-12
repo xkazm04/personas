@@ -629,18 +629,18 @@
     "reviews_badge": "Ulasan",
     "alerts_badge": "Peringatan",
     "pipelines_badge": "Pipeline",
-    "tool_performance": "Tool Performance",
-    "tool_performance_subtitle": "Latency & error rate per tool",
-    "tool_performance_col_tool": "Tool",
-    "tool_performance_col_runs": "Runs",
+    "tool_performance": "Performa alat",
+    "tool_performance_subtitle": "Latensi & tingkat kesalahan per alat",
+    "tool_performance_col_tool": "Alat",
+    "tool_performance_col_runs": "Proses",
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
-    "tool_performance_col_errors": "Errors",
+    "tool_performance_col_errors": "Kesalahan",
     "tool_performance_unit_ms": "ms",
     "recent_activity": "Aktivitas Terkini",
     "total_traffic": "Total Lalu Lintas",
     "total_errors": "Total Kesalahan",
-    "tool_performance_empty": "No tool runs in this window",
+    "tool_performance_empty": "Tidak ada proses alat dalam jendela waktu ini",
     "metric_help": "Bantuan Metrik",
     "how_calculated": "Bagaimana ini dihitung?",
     "details": "Detail",
@@ -719,10 +719,10 @@
     "issues_count": "{count} masalah",
     "issues_count_one": "{count} masalah",
     "fail_count": "{count}x gagal",
-    "rotation_manage_all": "Manage",
-    "rotation_open_in_connections": "Open in Connections",
-    "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_manage_all": "Kelola",
+    "rotation_open_in_connections": "Buka di Koneksi",
+    "rotation_started_for": "Rotasi dimulai untuk {name}",
+    "rotation_failed_for": "Gagal merotasi {name}",
     "rotation_due_now": "jatuh tempo sekarang",
     "rotation_countdown_days_hours": "{days}h {hours}j",
     "rotation_countdown_hours": "{hours}j",
@@ -809,7 +809,7 @@
     "replay_subtitle_7d": "Memutar ulang 7 hari terakhir dengan kecepatan {speed}x",
     "paused": "Dijeda",
     "live": "Langsung",
-    "offline": "Offline",
+    "offline": "Luring",
     "connection_paused": "Status koneksi: Dijeda",
     "connection_live": "Status koneksi: Langsung",
     "connection_offline": "Status koneksi: Terputus",
@@ -1145,7 +1145,7 @@
   "anomaly_drilldown_extra": {
     "title": "Drill-Down Anomali",
     "value_label": "Nilai:",
-    "baseline_label": "Baseline:",
+    "baseline_label": "Dasar:",
     "correlating": "Mengkorelasikan peristiwa...",
     "likely_root_causes": "Kemungkinan Akar Penyebab",
     "no_correlated": "Tidak ada peristiwa berkorelasi ditemukan dalam jendela ±24j.",
@@ -1223,7 +1223,7 @@
     "no_traces_hint": "Jejak muncul ketika operasi desain, kredensial, atau templat berjalan",
     "all_operations": "Semua operasi",
     "clear_completed": "Hapus jejak yang selesai",
-    "span": "Span",
+    "span": "Rentang",
     "zero_ms": "0 ms"
   },
   "event_log_sidebar": {
@@ -1236,7 +1236,7 @@
     "chart_unavailable": "Grafik tidak tersedia"
   },
   "realtime_idle": {
-    "idle": "Idle"
+    "idle": "Menganggur"
   },
   "day_range": {
     "apply": "Terapkan"
@@ -1283,43 +1283,43 @@
     "issues_in_7d": "masalah dalam 7 hari"
   },
   "upcoming_routines": {
-    "title": "Upcoming Routines",
-    "subtitle": "next scheduled runs",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "title": "Rutinitas mendatang",
+    "subtitle": "proses terjadwal berikutnya",
+    "empty": "Tidak ada proses terjadwal.",
+    "never_fired": "menunggu proses pertama",
+    "view_all": "Lihat jadwal"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "title": "Perubahan Brankas",
+    "subtitle": "sinkronisasi Obsidian terbaru",
+    "empty": "Tidak ada aktivitas sinkronisasi terbaru.",
+    "view_all": "Lihat log sinkronisasi"
   },
   "heatmap": {
-    "title_persona": "Activity over the last year",
-    "title_global": "Fleet activity over the last year",
-    "subtitle_executions": "{count} executions",
-    "subtitle_executions_with_cost": "{count} executions · ${cost} total",
-    "no_activity": "No activity in the last year",
-    "less": "Less",
-    "more": "More",
-    "tooltip_no_runs": "No runs",
-    "tooltip_one_run": "1 run on {date}",
-    "tooltip_runs": "{count} runs on {date}",
+    "title_persona": "Aktivitas selama setahun terakhir",
+    "title_global": "Aktivitas armada selama setahun terakhir",
+    "subtitle_executions": "{count} eksekusi",
+    "subtitle_executions_with_cost": "{count} eksekusi · ${cost} total",
+    "no_activity": "Tidak ada aktivitas selama setahun terakhir",
+    "less": "Sedikit",
+    "more": "Banyak",
+    "tooltip_no_runs": "Tidak ada proses",
+    "tooltip_one_run": "1 proses pada {date}",
+    "tooltip_runs": "{count} proses pada {date}",
     "tooltip_with_cost": " · ${cost}",
-    "insights_streak": "Longest streak",
+    "insights_streak": "Rentetan terpanjang",
     "insights_streak_days": "{days}d",
-    "insights_dormant": "Dormant",
+    "insights_dormant": "Tidak aktif",
     "insights_dormant_days": "{days}d",
-    "insights_dormant_active": "Active today",
-    "insights_dormant_never": "Never run",
-    "insights_peak": "Peak day",
+    "insights_dormant_active": "Aktif hari ini",
+    "insights_dormant_never": "Belum pernah dijalankan",
+    "insights_peak": "Hari puncak",
     "insights_peak_value": "{count} on {date}",
-    "insights_wow": "Week over week",
-    "insights_wow_up": "+{pct}% vs last week",
-    "insights_wow_down": "{pct}% vs last week",
-    "insights_wow_flat": "No change vs last week",
-    "insights_wow_new": "New activity",
+    "insights_wow": "Perbandingan mingguan",
+    "insights_wow_up": "+{pct}% vs minggu lalu",
+    "insights_wow_down": "{pct}% vs minggu lalu",
+    "insights_wow_flat": "Tidak ada perubahan vs minggu lalu",
+    "insights_wow_new": "Aktivitas baru",
     "month_jan": "Jan",
     "month_feb": "Feb",
     "month_mar": "Mar",
@@ -1336,21 +1336,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "Turun",
+    "stable": "Stabil — tidak ada perubahan signifikan",
+    "vs_previous": "vs periode sebelumnya"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "Tidak dapat memuat log audit pemulihan.",
+    "audit_fetch_cause": "Log mungkin tidak tersedia untuk sementara waktu. Data Anda yang lain tidak terpengaruh.",
+    "action_retry": "Coba lagi"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "Semua aman — tidak ada peringatan yang muncul",
+    "alerts_subtitle": "Aturan pemantauan Anda terus mengawasi. Jika ada yang perlu diperhatikan, peringatan akan muncul otomatis di sini.",
+    "realtime_title": "Amati alur peristiwa Anda secara real-time",
+    "realtime_subtitle": "Partikel animasi melacak setiap peristiwa saat berpindah dari sumber ke agen Anda. Setiap titik adalah peristiwa langsung yang bergerak melalui sistem Anda.",
+    "realtime_action": "Kirim peristiwa uji coba"
   },
   "cockpit": {
     "title_default": "Cockpit",
@@ -1415,9 +1415,9 @@
     "dim_density": "Kepadatan kerja",
     "dim_handoff": "Kesehatan handoff",
     "dim_learning": "Siklus pembelajaran",
-    "dim_grounding": "Grounding",
+    "dim_grounding": "Landasan",
     "dim_correctness": "Ketepatan",
-    "dim_actionability": "Actionability",
+    "dim_actionability": "Keterlaksanaan",
     "dim_specificity": "Kekhususan",
     "dim_role_fidelity": "Kesetiaan peran",
     "gates_title": "Gate build / lint / test",
@@ -1497,7 +1497,7 @@
     "leg_review_resolution": "Resolusi tinjauan",
     "no_activity": "Tidak ada aktivitas Athena di jendela ini",
     "origin_autonomous": "Otonom",
-    "origin_chat": "Chat",
+    "origin_chat": "Obrolan",
     "origin_external": "Eksternal",
     "origin_headless": "Latar belakang",
     "origin_proactive": "Proaktif",
@@ -1521,7 +1521,7 @@
     "triage_passes": "Lolos",
     "triage_title": "Corong triase",
     "turns": "Giliran",
-    "vs_fleet": "Athena vs fleet",
+    "vs_fleet": "Athena vs armada",
     "vs_fleet_hint": "{athena} dari {total} total pengeluaran jendela ini"
   },
   "heartbeats": {
@@ -1765,9 +1765,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "Tidak dapat memuat tampilan tersimpan Anda.",
+      "save_failed_message": "Tidak dapat menyimpan tampilan ini.",
+      "delete_failed_message": "Tidak dapat menghapus tampilan ini."
     }
   },
   "activity_timeline": {

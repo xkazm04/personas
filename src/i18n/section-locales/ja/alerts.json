@@ -13,5 +13,5 @@
   "error_toggle_rule": "アラートルールの切り替えに失敗しました:",
   "error_dismiss": "アラートの非表示に失敗しました:",
   "error_clear_history": "アラート履歴のクリアに失敗しました:",
-  "error_load_rules": "Failed to load alert rules:"
+  "error_load_rules": "アラートルールの読み込みに失敗しました:"
 }

@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "Descartar Evento",
   "confirm_destructive_discard_event_warning": "Este evento sin procesar será descartado permanentemente.",
   "inactive": "Inactivo",
-  "rename_to": "Rename to",
+  "rename_to": "Renombrar a",
   "agent_count_one": "{count} agente",
   "agent_count_other": "{count} agentes",
   "trigger_count_one": "{count} disparador",

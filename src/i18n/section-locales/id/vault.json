@@ -1146,8 +1146,8 @@
     "phase_opening_url": "Menavigasi ke URL",
     "guidance_timeout": "Sesi telah melewati batas waktu. Layanan mungkin sedang lambat atau memerlukan interaksi manual.",
     "guidance_cli_not_found": "Claude CLI tidak terinstal atau tidak dapat diakses. Instal terlebih dahulu, lalu coba lagi.",
-    "guidance_api_billing": "There may be an issue with your API key or billing. Check your Anthropic account.",
-    "guidance_default": "The session failed unexpectedly. Check the session log for details, or set up the credential manually."
+    "guidance_api_billing": "Mungkin ada masalah dengan kunci API atau penagihan Anda. Periksa akun Anthropic Anda.",
+    "guidance_default": "Sesi gagal secara tak terduga. Periksa log sesi untuk detailnya, atau siapkan kredensial secara manual."
   },
   "negotiator_extra": {
     "panel_title": "Negosiator Kredensial AI",
@@ -1161,8 +1161,8 @@
     "ask_question": "Ajukan pertanyaan tentang langkah ini...",
     "planning_description": "AI sedang menganalisis portal developer dan membuat rencana provisi langkah demi langkah...",
     "manual_badge": "manual",
-    "paste_label": "Paste: {label}",
-    "paste_placeholder": "Paste {label} here...",
+    "paste_label": "Tempel: {label}",
+    "paste_placeholder": "Tempel {label} di sini…",
     "ask_button": "Ask"
   },
   "workspace_panel": {

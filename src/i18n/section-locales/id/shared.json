@@ -116,8 +116,8 @@
     "generate_icon": "Buat",
     "generating_icon": "Generating...",
     "generate_icon_prompt_placeholder": "Describe the icon you want...",
-    "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon": "Pilih ikon agen",
+    "select_agent_icon_desc": "Pilih ikon untuk agen ini. Varian tema gelap/terang akan ditampilkan secara otomatis."
   },
   "reasoning_trace": {
     "system_init": "Inisialisasi Sistem",
@@ -152,11 +152,11 @@
     "whats_new_update": "Diperbarui — lihat apa yang baru",
     "active_project": "Proyek Aktif",
     "clear_completed_title": "Bersihkan item yang selesai dan diantrekan",
-    "active_twin": "Active Twin",
-    "back_to_home": "Home",
-    "whats_new": "What's New",
-    "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap",
+    "active_twin": "Twin aktif",
+    "back_to_home": "Beranda",
+    "whats_new": "Yang baru",
+    "back_to_plugins": "Plugin",
+    "roadmap": "Peta Jalan",
     "groups_label": "Grup"
   },
   "execution_detail": {

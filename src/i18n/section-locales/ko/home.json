@@ -115,7 +115,7 @@
   "greeting_afternoon": "좋은 오후입니다",
   "greeting_evening": "좋은 저녁입니다",
   "operator": "운영자",
-  "commander": "Commander",
+  "commander": "사령관",
   "summary_empty": "첫 번째 에이전트를 만들거나 플랫폼을 탐색하여 시작하세요.",
   "summary_stats": "에이전트 {personasCount}개{personasPlural}와 자격 증명 {credentialsCount}개{credentialsPlural}가 설정되어 있습니다.",
   "quick_navigation": "빠른 탐색",

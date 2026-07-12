@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "Buang Acara",
   "confirm_destructive_discard_event_warning": "Acara dead-letter ini akan dibuang secara permanen.",
   "inactive": "Tidak Aktif",
-  "rename_to": "Rename to",
+  "rename_to": "Ganti nama menjadi",
   "agent_count_one": "{count} agen",
   "agent_count_other": "{count} agen",
   "trigger_count_one": "{count} pemicu",

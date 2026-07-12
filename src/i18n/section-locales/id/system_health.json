@@ -26,7 +26,7 @@
   "crash_logs": "Log Crash",
   "no_crash_logs": "Tidak ada log crash tercatat.",
   "crash_auto_cred": "Sesi auto-cred",
-  "crash_rust_panic": "Rust panic",
+  "crash_rust_panic": "Panik Rust",
   "ready_title": "Siap membuat agen pertama Anda?",
   "ready_hint": "Semua pemeriksaan lolos. Mari kami pandu Anda membuat dan menjalankan agen pertama Anda.",
   "get_started": "Mulai",
@@ -38,7 +38,7 @@
   "installation_failed": "Instalasi gagal",
   "try_manual": "Coba jalankan secara manual:",
   "official_page": "Halaman resmi",
-  "edit_key": "Edit Key",
+  "edit_key": "Edit kunci",
   "edit_config": "Edit Konfigurasi",
   "signing_in": "Sedang masuk..."
 }

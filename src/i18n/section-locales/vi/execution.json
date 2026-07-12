@@ -26,11 +26,11 @@
   "close_preview": "Đóng xem trước",
   "budget_limit": "Giới hạn ngân sách",
   "run_agent": "Chạy tác tử",
-  "model": "Model",
-  "trust": "Trust",
-  "timeout": "Timeout",
-  "preview_aria_label": "Pre-run preview for {name}",
-  "tool_count_one": "{count} tool",
-  "tool_count_other": "{count} tools",
-  "missing_count": "{count} missing"
+  "model": "Mô hình",
+  "trust": "Độ tin cậy",
+  "timeout": "Hết thời gian",
+  "preview_aria_label": "Xem trước {name} trước khi chạy",
+  "tool_count_one": "{count} công cụ",
+  "tool_count_other": "{count} công cụ",
+  "missing_count": "{count} thiếu"
 }

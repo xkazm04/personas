@@ -115,7 +115,7 @@
   "greeting_afternoon": "Chào buổi chiều",
   "greeting_evening": "Chào buổi tối",
   "operator": "Điều hành viên",
-  "commander": "Commander",
+  "commander": "Chỉ huy",
   "summary_empty": "Bắt đầu bằng cách tạo tác tử đầu tiên hoặc khám phá nền tảng.",
   "summary_stats": "Bạn có {personasCount} tác tử{personasPlural} và {credentialsCount} thông tin xác thực{credentialsPlural} đã cấu hình.",
   "quick_navigation": "Điều hướng nhanh",

@@ -43,12 +43,12 @@
   "preview_play": "방송국 미리 듣기",
   "preview_stop": "미리 듣기 중지",
   "youtube_premium_note": "YouTube 방송국은 내장 플레이어를 통해 스트리밍됩니다 — 광고 없는 경험을 위해 YouTube Premium 플랜이 필요합니다.",
-  "idle_subtitle": "Curated stations",
+  "idle_subtitle": "엄선된 방송국",
   "kind_youtube": "YouTube",
-  "kind_stream": "Stream",
-  "source_prefix": "Source:",
-  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
-  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
-  "station_toggle_label": "Show in picker",
+  "kind_stream": "스트림",
+  "source_prefix": "출처:",
+  "settings_description": "백그라운드에서 재생되는 엄선된 방송국입니다. 두 가지 종류가 있습니다: YouTube 트랙리스트(숨겨진 IFrame 플레이어를 통해 재생 — 이전/다음 버튼으로 트랙 전환)와 다이렉트 인터넷 스트림(단일 연속 소스 — 선택기로 전환). 컨트롤러는 앱 하단 푸터 중앙에 있습니다.",
+  "enable_description": "기본적으로 꺼져 있습니다. 켜면 푸터 중앙에 작은 컨트롤러가 나타납니다. 선택 사항은 재시작 후에도 유지됩니다.",
+  "station_toggle_label": "선택기에 표시",
   "auto_resume_description": "켜져 있으면 앱이 열린 후 라디오가 처음 로드될 때 마지막 재생 스테이션이 자동으로 시작됩니다. 기본적으로 꺼져 있습니다."
 }

@@ -115,7 +115,7 @@
   "greeting_afternoon": "শুভ অপরাহ্ন",
   "greeting_evening": "শুভ সন্ধ্যা",
   "operator": "অপারেটর",
-  "commander": "Commander",
+  "commander": "কমান্ডার",
   "summary_empty": "প্রথম এজেন্ট তৈরি করে বা প্ল্যাটফর্ম ঘুরে দেখে শুরু করুন।",
   "summary_stats": "আপনার {personasCount} এজেন্ট{personasPlural} এবং {credentialsCount} শংসাপত্র{credentialsPlural} কনফিগার করা আছে।",
   "quick_navigation": "দ্রুত নেভিগেশন",

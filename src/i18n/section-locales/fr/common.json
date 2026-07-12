@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "Ignorer l'événement",
   "confirm_destructive_discard_event_warning": "Cet événement en attente sera définitivement supprimé.",
   "inactive": "Inactif",
-  "rename_to": "Rename to",
+  "rename_to": "Renommer en",
   "agent_count_one": "{count} agent",
   "agent_count_other": "{count} agents",
   "trigger_count_one": "{count} déclencheur",

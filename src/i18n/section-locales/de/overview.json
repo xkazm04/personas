@@ -1347,10 +1347,10 @@
   },
   "emptyState": {
     "alerts_title": "Alles klar — keine Warnungen ausgelöst",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_subtitle": "Ihre Überwachungsregeln sind aktiv. Wenn etwas Aufmerksamkeit erfordert, werden Warnungen hier automatisch angezeigt.",
+    "realtime_title": "Beobachten Sie Ihre Ereignisse in Echtzeit",
+    "realtime_subtitle": "Animierte Partikel zeichnen den Weg jedes Ereignisses von der Quelle zu Ihren Agenten nach. Jeder Punkt ist ein Live-Ereignis, das sich durch Ihr System bewegt.",
+    "realtime_action": "Testereignis senden"
   },
   "cockpit": {
     "title_default": "Cockpit",
@@ -1765,9 +1765,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "Ihre gespeicherten Ansichten konnten nicht geladen werden.",
+      "save_failed_message": "Diese Ansicht konnte nicht gespeichert werden.",
+      "delete_failed_message": "Diese Ansicht konnte nicht gelöscht werden."
     }
   },
   "activity_timeline": {
@@ -1817,7 +1817,7 @@
   "crash_logs": {
     "title": "Absturzprotokolle",
     "no_logs": "Keine Absturzprotokolle aufgezeichnet.",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- Komponentenstapel ---"
   },
   "events_list": {
     "save_view_tooltip": "Aktuelle Filter als Ansicht speichern",

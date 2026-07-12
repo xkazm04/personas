@@ -723,7 +723,7 @@
     "om_expected_placeholder": "期待値",
     "commit_blocked_source_type": "このソースは Studio から保存できません。完了チェーンにはソースのペルソナを選択してください",
     "commit_needs_output_match": "このルートを保存するには JSONPath と期待値を入力してください",
-    "group_marketplace": "Marketplace",
+    "group_marketplace": "マーケットプレイス",
     "marketplace_empty": "購読中のフィードはまだありません。Marketplace で購読してペルソナに接続してください。",
     "marketplace_source_hint": "このフィードが変更を報告するとペルソナを実行します",
     "reflect_pick_agent": "エージェントを選択…",

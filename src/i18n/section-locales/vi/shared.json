@@ -116,8 +116,8 @@
     "generate_icon": "Tạo",
     "generating_icon": "Generating...",
     "generate_icon_prompt_placeholder": "Describe the icon you want...",
-    "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon": "Chọn biểu tượng tác nhân",
+    "select_agent_icon_desc": "Chọn một biểu tượng cho tác nhân này. Các biến thể sáng/tối theo chủ đề sẽ tự động hiển thị."
   },
   "reasoning_trace": {
     "system_init": "Khởi tạo hệ thống",
@@ -153,10 +153,10 @@
     "active_project": "Dự án đang hoạt động",
     "clear_completed_title": "Xóa các mục đã hoàn thành và đã xếp hàng",
     "active_twin": "Bản sao đang hoạt động",
-    "back_to_home": "Home",
-    "whats_new": "What's New",
-    "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap",
+    "back_to_home": "Trang chủ",
+    "whats_new": "Có gì mới",
+    "back_to_plugins": "Plugin",
+    "roadmap": "Lộ trình",
     "groups_label": "Nhóm"
   },
   "execution_detail": {

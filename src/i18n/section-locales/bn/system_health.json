@@ -26,7 +26,7 @@
   "crash_logs": "ক্র্যাশ লগ",
   "no_crash_logs": "কোনো ক্র্যাশ লগ নেই।",
   "crash_auto_cred": "অটো-ক্রেড সেশন",
-  "crash_rust_panic": "Rust panic",
+  "crash_rust_panic": "Rust প্যানিক",
   "ready_title": "প্রথম এজেন্ট তৈরি করতে প্রস্তুত?",
   "ready_hint": "সব পরীক্ষা পাস হয়েছে। প্রথম এজেন্ট তৈরি ও চালানোয় আমরা গাইড করব।",
   "get_started": "শুরু করুন",

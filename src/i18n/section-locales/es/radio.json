@@ -43,12 +43,12 @@
   "preview_play": "Vista previa de la emisora",
   "preview_stop": "Detener vista previa",
   "youtube_premium_note": "Las emisoras de YouTube se reproducen mediante un reproductor integrado — se requiere un plan YouTube Premium para una experiencia sin anuncios.",
-  "idle_subtitle": "Curated stations",
+  "idle_subtitle": "Emisoras seleccionadas",
   "kind_youtube": "YouTube",
-  "kind_stream": "Stream",
-  "source_prefix": "Source:",
-  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
-  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
-  "station_toggle_label": "Show in picker",
+  "kind_stream": "Transmisión",
+  "source_prefix": "Fuente:",
+  "settings_description": "Emisoras seleccionadas que se reproducen en segundo plano. Hay dos tipos: listas de pistas de YouTube (mediante un IFrame Player oculto — use los botones de anterior/siguiente para saltar pistas) y transmisiones directas de internet (una única fuente continua — use el selector para cambiar). El controlador se encuentra en el centro del pie de la aplicación.",
+  "enable_description": "Desactivado de forma predeterminada. Cuando está activado, aparece un controlador compacto en el centro del pie de página. Su elección se recuerda entre reinicios.",
+  "station_toggle_label": "Mostrar en el selector",
   "auto_resume_description": "Cuando está activado, la última estación reproducida se inicia automáticamente la primera vez que se carga la radio después de que se abre la aplicación. Desactivado de forma predeterminada."
 }

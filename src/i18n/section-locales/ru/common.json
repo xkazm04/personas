@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "Отменить событие",
   "confirm_destructive_discard_event_warning": "Это событие из очереди ошибок будет удалено навсегда.",
   "inactive": "Неактивен",
-  "rename_to": "Rename to",
+  "rename_to": "Переименовать в",
   "agent_count_one": "{count} агент",
   "agent_count_other": "{count} агентов",
   "trigger_count_one": "{count} триггер",

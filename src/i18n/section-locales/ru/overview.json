@@ -1283,17 +1283,17 @@
     "issues_in_7d": "проблемы за 7 дней"
   },
   "upcoming_routines": {
-    "title": "Upcoming Routines",
-    "subtitle": "next scheduled runs",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "title": "Ближайшие расписания",
+    "subtitle": "ближайшие плановые запуски",
+    "empty": "Нет запланированных запусков.",
+    "never_fired": "ожидает первого запуска",
+    "view_all": "Показать расписания"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "title": "Изменения в Хранилище",
+    "subtitle": "недавняя синхронизация с Obsidian",
+    "empty": "Недавней синхронизации не было.",
+    "view_all": "Показать журнал синхронизации"
   },
   "heatmap": {
     "title_persona": "Активность за последний год",
@@ -1307,19 +1307,19 @@
     "tooltip_one_run": "Запущено: 1 · {date}",
     "tooltip_runs": "Запущено: {count} · {date}",
     "tooltip_with_cost": " · ${cost}",
-    "insights_streak": "Longest streak",
+    "insights_streak": "Самая длинная серия",
     "insights_streak_days": "{days}d",
-    "insights_dormant": "Dormant",
+    "insights_dormant": "Неактивен",
     "insights_dormant_days": "{days}d",
-    "insights_dormant_active": "Active today",
-    "insights_dormant_never": "Never run",
-    "insights_peak": "Peak day",
+    "insights_dormant_active": "Активен сегодня",
+    "insights_dormant_never": "Ни разу не запускался",
+    "insights_peak": "Пиковый день",
     "insights_peak_value": "{count} on {date}",
-    "insights_wow": "Week over week",
-    "insights_wow_up": "+{pct}% vs last week",
-    "insights_wow_down": "{pct}% vs last week",
-    "insights_wow_flat": "No change vs last week",
-    "insights_wow_new": "New activity",
+    "insights_wow": "Неделя к неделе",
+    "insights_wow_up": "+{pct}% к прошлой неделе",
+    "insights_wow_down": "{pct}% к прошлой неделе",
+    "insights_wow_flat": "Без изменений к прошлой неделе",
+    "insights_wow_new": "Новая активность",
     "month_jan": "Jan",
     "month_feb": "Feb",
     "month_mar": "Mar",
@@ -1336,21 +1336,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "Снижение",
+    "stable": "Стабильно — без значительных изменений",
+    "vs_previous": "по сравнению с предыдущим периодом"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "Не удалось загрузить журнал аудита восстановления.",
+    "audit_fetch_cause": "Журнал может быть временно недоступен. Остальные данные не затронуты.",
+    "action_retry": "Повторить"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "Всё в порядке — оповещений нет",
+    "alerts_subtitle": "Ваши правила мониторинга работают. Если что-то потребует внимания, оповещения появятся здесь автоматически.",
+    "realtime_title": "Наблюдайте за потоком событий в реальном времени",
+    "realtime_subtitle": "Анимированные частицы показывают путь каждого события — от источника до ваших агентов. Каждая точка — это живое событие, движущееся через вашу систему.",
+    "realtime_action": "Отправить тестовое событие"
   },
   "cockpit": {
     "title_default": "Кокпит",
@@ -1765,9 +1765,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "Не удалось загрузить сохранённые представления.",
+      "save_failed_message": "Не удалось сохранить это представление.",
+      "delete_failed_message": "Не удалось удалить это представление."
     }
   },
   "activity_timeline": {

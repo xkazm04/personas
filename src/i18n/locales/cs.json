@@ -4,7 +4,7 @@
     "group_by_toggle_title": "Seskupit karty person podle přiřazené skupiny",
     "group_ungrouped": "Bez skupiny",
     "title": "Monitor person",
-    "subtitle": "{persony} persony · {attention} need attention · {running} running",
+    "subtitle": "{personas} person · {attention} vyžaduje pozornost · {running} běží",
     "close": "Zavřít monitor",
     "close_hint": "Zavřít (Esc)",
     "no_personas": "Zatím žádné persony.",
@@ -3187,8 +3187,8 @@
         "select_model": "Vybrat model",
         "assign_tool": "Přiřadit nástroj",
         "link_connector": "Propojit konektor",
-        "create_trigger": "Create a trigger",
-        "run_first_test": "Run first test"
+        "create_trigger": "Vytvořte spouštěč",
+        "run_first_test": "Spusťte první test"
       }
     },
     "template_picker": {
@@ -3197,27 +3197,27 @@
       "start_from_scratch": "Začít od nuly",
       "filter_all": "All",
       "category_devops": "DevOps",
-      "category_quality": "Quality",
-      "category_productivity": "Productivity",
-      "category_communication": "Communication",
-      "category_security": "Security",
+      "category_quality": "Kvalita",
+      "category_productivity": "Produktivita",
+      "category_communication": "Komunikace",
+      "category_security": "Zabezpečení",
       "category_data": "Data",
-      "category_documentation": "Docs",
-      "category_testing": "Testing",
-      "category_monitoring": "Monitoring",
-      "category_email": "Email",
-      "category_maintenance": "Maintenance",
-      "category_automation": "Automation",
+      "category_documentation": "Dokumentace",
+      "category_testing": "Testování",
+      "category_monitoring": "Monitorování",
+      "category_email": "E-mail",
+      "category_maintenance": "Údržba",
+      "category_automation": "Automatizace",
       "category_project_management": "PM",
-      "partial_load_warning": "Some templates could not be verified and were hidden.",
-      "skipped_label": "Skipped: {ids}",
-      "retry": "Retry",
-      "loading": "Loading templates…",
-      "empty_title": "No published templates available.",
-      "empty_hint": "Start from scratch below to create your own.",
-      "failed_title": "Could not load the template catalog.",
-      "template_failed_integrity_one": "{count} template failed integrity checks.",
-      "template_failed_integrity_other": "{count} templates failed integrity checks."
+      "partial_load_warning": "Některé šablony se nepodařilo ověřit, proto byly skryty.",
+      "skipped_label": "Přeskočeno: {ids}",
+      "retry": "Zkusit znovu",
+      "loading": "Načítání šablon…",
+      "empty_title": "Nejsou k dispozici žádné publikované šablony.",
+      "empty_hint": "Začněte níže od nuly a vytvořte si vlastní.",
+      "failed_title": "Katalog šablon se nepodařilo načíst.",
+      "template_failed_integrity_one": "{count} šablona neprošla kontrolou integrity.",
+      "template_failed_integrity_other": "{count} šablon neprošlo kontrolou integrity."
     },
     "persona_overview": {
       "no_match": "Žádné persony neodpovídají",
@@ -3253,12 +3253,12 @@
       "ask_anything": "Zeptejte se na cokoli o tomto agentovi...",
       "enter_to_send": "Enter pro odeslání, Shift+Enter pro nový řádek",
       "scroll_to_bottom": "Posunout dolů",
-      "cancel_stream": "Cancel",
-      "stream_recovered": "Stream appears stuck — chat unlocked so you can try again.",
-      "copy_failed": "Couldn't copy to clipboard",
-      "quickadd_saved": "Memory saved: {title}",
-      "quickadd_failed": "Couldn't save memory",
-      "quickadd_no_persona": "Select a persona before saving a memory",
+      "cancel_stream": "Zrušit",
+      "stream_recovered": "Streamování se zřejmě zaseklo — chat je odemčený, zkuste to znovu.",
+      "copy_failed": "Kopírování do schránky se nepodařilo",
+      "quickadd_saved": "Paměť uložena: {title}",
+      "quickadd_failed": "Paměť se nepodařilo uložit",
+      "quickadd_no_persona": "Před uložením paměti vyberte personu",
       "experiments_running_one": "Běží {count} experiment – výsledky se zobrazí, až budou připraveny",
       "experiments_running_other": "Běží {count} experimentů – výsledky se zobrazí, až budou připraveny",
       "you": "Vy",
@@ -3271,15 +3271,15 @@
       "processing": "Zpracování...",
       "delete_conversation": "Smazat konverzaci",
       "confirm_delete_conversation": "Potvrdit smazání konverzace",
-      "plan_title": "Plan",
-      "plan_count_one": "{count} item",
-      "plan_count_other": "{count} items",
-      "plan_status_pending": "Pending",
-      "plan_status_in_progress": "In progress",
-      "plan_status_completed": "Completed",
-      "plan_collapse": "Hide plan",
-      "plan_expand": "Show plan",
-      "persona_switched_during_send": "Persona switched while creating the chat session — message not sent. Try again."
+      "plan_title": "Plán",
+      "plan_count_one": "{count} položka",
+      "plan_count_other": "{count} položek",
+      "plan_status_pending": "Čeká",
+      "plan_status_in_progress": "Probíhá",
+      "plan_status_completed": "Dokončeno",
+      "plan_collapse": "Skrýt plán",
+      "plan_expand": "Zobrazit plán",
+      "persona_switched_during_send": "Persona byla během vytváření chatové relace přepnuta — zpráva nebyla odeslána. Zkuste to znovu."
     },
     "advisory": {
       "how_can_improve": "Jak může tento agent fungovat lépe?",
@@ -3295,9 +3295,9 @@
       "test_run": "Testovací spuštění",
       "test_run_desc": "Spusťte agenta a vyhodnoťte výsledek",
       "test_input_label": "Testovací vstup (volitelné)",
-      "improve_goal_placeholder": "e.g., Response tone is too robotic, needs to handle edge cases better, output format should be more structured...",
-      "experiment_hypothesis_placeholder": "e.g., Would adding examples improve output quality? Does a shorter prompt reduce hallucinations?",
-      "test_input_placeholder": "Custom input data for this test run..."
+      "improve_goal_placeholder": "např. Tón odpovědí je příliš strojový, měl by lépe zvládat okrajové případy, výstup by měl být strukturovanější…",
+      "experiment_hypothesis_placeholder": "např. Zlepšilo by přidání příkladů kvalitu výstupu? Sníží kratší prompt míru halucinací?",
+      "test_input_placeholder": "Vlastní vstupní data pro toto testovací spuštění…"
     },
     "ops": {
       "sessions": "Relace",
@@ -3312,7 +3312,7 @@
       "execute": "Spustit",
       "execute_desc": "Spustit agenta s volitelným vstupem",
       "input_optional": "Vstup (volitelné)",
-      "arena_test": "Arena Test",
+      "arena_test": "Otestovat v aréně",
       "arena_test_desc": "Přímé porovnání modelů",
       "models": "Modely",
       "improve": "Zlepšit",
@@ -3328,20 +3328,20 @@
       "versions_desc": "Historie verzí promptů a návrat zpět",
       "director": "Director",
       "director_title": "Director",
-      "director_subtitle": "Coaching notes from the Director meta-persona. Approve or dismiss to teach it your taste.",
-      "director_run": "Run Director",
-      "director_running": "Running…",
-      "director_rationale": "Evidence",
-      "director_accept": "Looks right",
-      "director_dismiss": "Dismiss",
-      "director_pending": "Pending review",
-      "director_resolved": "Handled",
-      "director_empty_title": "No coaching notes yet",
-      "director_empty_hint": "Run the Director to scan this persona. If everything looks healthy, it stays silent.",
-      "director_last_run_empty": "Director ran cleanly — nothing to coach on right now.",
-      "director_last_run_one": "Director added 1 new note below.",
-      "director_last_run_many": "Director added {count} new notes below.",
-      "switch_panel_director": "Director — coaching notes"
+      "director_subtitle": "Koučovací poznámky od meta-persony Director. Schvalte je nebo zamítněte a naučte ji tak svůj vkus.",
+      "director_run": "Spustit Director",
+      "director_running": "Probíhá…",
+      "director_rationale": "Důkazy",
+      "director_accept": "Přijmout",
+      "director_dismiss": "Zamítnout",
+      "director_pending": "Čeká na kontrolu",
+      "director_resolved": "Vyřízeno",
+      "director_empty_title": "Zatím žádné koučovací poznámky",
+      "director_empty_hint": "Spusťte Director a nechte ho personu zkontrolovat. Pokud je vše v pořádku, zůstane potichu.",
+      "director_last_run_empty": "Director proběhl bez problémů — momentálně není co řešit.",
+      "director_last_run_one": "Director níže přidal 1 novou poznámku.",
+      "director_last_run_many": "Director níže přidal {count} nových poznámek.",
+      "switch_panel_director": "Director — koučovací poznámky"
     },
     "ops_run": {
       "execute_agent": "Spustit agenta",
@@ -3354,7 +3354,7 @@
       "history": "Historie",
       "no_lab_runs": "Zatím žádná spuštění v Labu",
       "refresh_lab": "Obnovit historii Labu",
-      "arena": "Arena",
+      "arena": "Aréna",
       "improve": "Zlepšit"
     },
     "ops_health": {
@@ -3401,7 +3401,7 @@
       "title_placeholder": "Název sekce...",
       "content_placeholder": "Obsah sekce...",
       "custom_section": "Vlastní sekce",
-      "duplicate_title": "Another section already uses this title. Titles must be unique."
+      "duplicate_title": "Tento název již používá jiná sekce. Názvy musí být jedinečné."
     },
     "activity_filters": {
       "all": "Vše",
@@ -9323,7 +9323,7 @@
       "om_expected_placeholder": "očekávaná hodnota",
       "commit_blocked_source_type": "Tento zdroj nelze uložit ze Studia — pro řetězce dokončení použijte zdrojovou personu",
       "commit_needs_output_match": "Pro uložení této trasy zadejte JSONPath a očekávanou hodnotu",
-      "group_marketplace": "Marketplace",
+      "group_marketplace": "Tržiště",
       "marketplace_empty": "Zatím nemáte odebírané kanály — přihlaste se k odběru v Marketplace a propojte je s personami.",
       "marketplace_source_hint": "Spustí personu, když tento kanál nahlásí změnu",
       "reflect_pick_agent": "Vyberte agenta…",
@@ -14692,7 +14692,7 @@
   "connector_licensing": {
     "personal": "Osobní",
     "paid": "Placené",
-    "enterprise": "Enterprise"
+    "enterprise": "Firemní"
   },
   "alerts": {
     "metric_error_rate": "Chybovost",
@@ -14729,7 +14729,7 @@
   "tiers": {
     "starter_label": "Jednoduchý",
     "starter_desc": "Základní funkce pro každodenní použití",
-    "team_label": "Power",
+    "team_label": "Výkonný",
     "team_desc": "Kompletní sada funkcí"
   },
   "models": {
@@ -16464,7 +16464,7 @@
     "export_copied": "Zkopírováno!"
   },
   "cockpit": {
-    "unknown_assistant": "Unknown assistant",
+    "unknown_assistant": "Neznámý asistent",
     "inbox": {
       "relative_just_now": "právě teď",
       "relative_minutes_one": "před {m} min",

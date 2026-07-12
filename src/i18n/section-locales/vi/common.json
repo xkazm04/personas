@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "Hủy sự kiện",
   "confirm_destructive_discard_event_warning": "Sự kiện thư chết này sẽ bị hủy vĩnh viễn.",
   "inactive": "Không hoạt động",
-  "rename_to": "Rename to",
+  "rename_to": "Đổi tên thành",
   "agent_count_one": "{count} tác tử",
   "agent_count_other": "{count} tác tử",
   "trigger_count_one": "{count} trình kích hoạt",

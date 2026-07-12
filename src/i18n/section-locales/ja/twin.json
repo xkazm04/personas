@@ -542,7 +542,7 @@
     "channelsTitle": "ツインが登場する場所",
     "channelsBody": "各チャンネルは認証情報と紐づきます。チャンネルを一時停止すると、設定は保持されたまま通信のみ停止します。",
     "trainingTitle": "自分へのインタビュー",
-    "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    "trainingBody": "トピックを選んでください — AI が5つの質問をします — あなた自身の言葉で答えてください。セッションの要約は、価値の高い記憶として残ります。"
   },
   "gaps": {
     "title": "不足しているもの",

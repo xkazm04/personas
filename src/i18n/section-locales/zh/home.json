@@ -115,7 +115,7 @@
   "greeting_afternoon": "下午好",
   "greeting_evening": "晚上好",
   "operator": "操作员",
-  "commander": "Commander",
+  "commander": "指挥官",
   "summary_empty": "开始创建您的第一个智能体或探索平台功能。",
   "summary_stats": "您已配置 {personasCount} 个智能体{personasPlural}和 {credentialsCount} 个凭证{credentialsPlural}。",
   "quick_navigation": "快速导航",

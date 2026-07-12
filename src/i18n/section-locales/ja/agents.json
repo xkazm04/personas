@@ -510,7 +510,7 @@
     "retry_of": "#{id} の再試行",
     "retry_of_field": "再試行元",
     "retry_of_tooltip": "この実行が自動修復として再試行した元の実行",
-    "tab_chain": "Chain",
+    "tab_chain": "チェーン",
     "thinking_tooltip": "この実行が使用した推論エフォート",
     "trace_empty_hint": "詳細なtraceは、ツールを使用する実行および新しい実行に対して記録されます。この実行には表示するtraceがありません。",
     "verdict_field": "判定"
@@ -2632,16 +2632,16 @@
     "director_run": "Directorを実行",
     "director_running": "実行中…",
     "director_rationale": "根拠",
-    "director_accept": "Looks right",
-    "director_dismiss": "Dismiss",
-    "director_pending": "Pending review",
-    "director_resolved": "Handled",
-    "director_empty_title": "No coaching notes yet",
-    "director_empty_hint": "Run the Director to scan this persona. If everything looks healthy, it stays silent.",
-    "director_last_run_empty": "Director ran cleanly — nothing to coach on right now.",
-    "director_last_run_one": "Director added 1 new note below.",
-    "director_last_run_many": "Director added {count} new notes below.",
-    "switch_panel_director": "Director — coaching notes"
+    "director_accept": "その通り",
+    "director_dismiss": "却下",
+    "director_pending": "レビュー待ち",
+    "director_resolved": "処理済み",
+    "director_empty_title": "コーチングノートはまだありません",
+    "director_empty_hint": "Directorを実行してこのペルソナをスキャンしてください。問題がなければ、何も表示されません。",
+    "director_last_run_empty": "Directorは問題なく完了しました — 現時点でコーチングする内容はありません。",
+    "director_last_run_one": "Directorが新しいノートを1件、以下に追加しました。",
+    "director_last_run_many": "Directorが新しいノートを{count}件、以下に追加しました。",
+    "switch_panel_director": "Director — コーチングノート"
   },
   "ops_run": {
     "execute_agent": "エージェントを実行",
@@ -2701,7 +2701,7 @@
     "title_placeholder": "セクションタイトル...",
     "content_placeholder": "セクションコンテンツ...",
     "custom_section": "カスタムセクション",
-    "duplicate_title": "Another section already uses this title. Titles must be unique."
+    "duplicate_title": "このタイトルは既に別のセクションで使用されています。タイトルは一意である必要があります。"
   },
   "activity_filters": {
     "all": "すべて",

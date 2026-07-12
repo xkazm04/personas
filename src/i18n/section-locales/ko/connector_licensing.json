@@ -1,5 +1,5 @@
 {
-  "personal": "Personal",
-  "paid": "Paid",
-  "enterprise": "Enterprise"
+  "personal": "개인",
+  "paid": "유료",
+  "enterprise": "엔터프라이즈"
 }

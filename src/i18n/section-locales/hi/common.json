@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "इवेंट खारिज करें",
   "confirm_destructive_discard_event_warning": "यह डेड-लेटर इवेंट स्थायी रूप से खारिज कर दिया जाएगा।",
   "inactive": "निष्क्रिय",
-  "rename_to": "Rename to",
+  "rename_to": "नया नाम",
   "agent_count_one": "{count} एजेंट",
   "agent_count_other": "{count} एजेंट",
   "trigger_count_one": "{count} ट्रिगर",

@@ -26,11 +26,11 @@
   "close_preview": "पूर्वावलोकन बंद करें",
   "budget_limit": "बजट सीमा",
   "run_agent": "एजेंट चलाएँ",
-  "model": "Model",
-  "trust": "Trust",
-  "timeout": "Timeout",
-  "preview_aria_label": "Pre-run preview for {name}",
-  "tool_count_one": "{count} tool",
-  "tool_count_other": "{count} tools",
-  "missing_count": "{count} missing"
+  "model": "मॉडल",
+  "trust": "विश्वास",
+  "timeout": "टाइमआउट",
+  "preview_aria_label": "{name} के लिए प्री-रन पूर्वावलोकन",
+  "tool_count_one": "{count} टूल",
+  "tool_count_other": "{count} टूल्स",
+  "missing_count": "{count} अनुपस्थित"
 }

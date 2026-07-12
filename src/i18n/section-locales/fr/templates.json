@@ -1155,15 +1155,15 @@
     "friendly_endpoint_not_found": "Le point de terminaison de l'API est introuvable. La configuration du service doit peut-être être mise à jour.",
     "friendly_rate_limited": "Le service a limité la requête. C'est temporaire — réessayez dans quelques minutes.",
     "friendly_service_error": "Le service rencontre actuellement des problèmes. Cela ne provient pas de votre agent — réessayez plus tard.",
-    "friendly_timeout": "The connection timed out. The service may be slow or unavailable right now.",
-    "friendly_missing_credentials": "Missing credentials. Go to **Keys** to add the required service credentials."
+    "friendly_timeout": "La connexion a expiré. Le service est peut-être lent ou indisponible pour le moment.",
+    "friendly_missing_credentials": "Identifiants manquants. Rendez-vous dans **Identifiants** pour ajouter les identifiants de service requis."
   },
   "complexity": {
-    "beginner": "Beginner",
-    "intermediate": "Intermediate",
-    "advanced": "Advanced",
+    "beginner": "Débutant",
+    "intermediate": "Intermédiaire",
+    "advanced": "Avancé",
     "minuteShort": "~{minutes}m",
-    "minuteSetup": "~{minutes} min setup"
+    "minuteSetup": "~{minutes} min de configuration"
   },
   "presets": {
     "loading": "Chargement des préréglages…",

@@ -1283,17 +1283,17 @@
     "issues_in_7d": "7 天内的问题"
   },
   "upcoming_routines": {
-    "title": "Upcoming Routines",
-    "subtitle": "next scheduled runs",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "title": "即将执行的计划",
+    "subtitle": "接下来的计划运行",
+    "empty": "暂无计划运行。",
+    "never_fired": "等待首次运行",
+    "view_all": "查看计划"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "title": "保险库变更",
+    "subtitle": "近期 Obsidian 同步",
+    "empty": "暂无近期同步活动。",
+    "view_all": "查看同步日志"
   },
   "heatmap": {
     "title_persona": "过去一年的活动",
@@ -1305,21 +1305,21 @@
     "more": "多",
     "tooltip_no_runs": "无运行记录",
     "tooltip_one_run": "{date}：1 次运行",
-    "tooltip_runs": "{count} runs on {date}",
+    "tooltip_runs": "{date}：{count} 次运行",
     "tooltip_with_cost": " · ${cost}",
-    "insights_streak": "Longest streak",
+    "insights_streak": "最长连续",
     "insights_streak_days": "{days}d",
-    "insights_dormant": "Dormant",
+    "insights_dormant": "沉寂",
     "insights_dormant_days": "{days}d",
-    "insights_dormant_active": "Active today",
-    "insights_dormant_never": "Never run",
-    "insights_peak": "Peak day",
+    "insights_dormant_active": "今日活跃",
+    "insights_dormant_never": "从未运行",
+    "insights_peak": "峰值日",
     "insights_peak_value": "{count} on {date}",
-    "insights_wow": "Week over week",
-    "insights_wow_up": "+{pct}% vs last week",
-    "insights_wow_down": "{pct}% vs last week",
-    "insights_wow_flat": "No change vs last week",
-    "insights_wow_new": "New activity",
+    "insights_wow": "周环比",
+    "insights_wow_up": "+{pct}% 较上周",
+    "insights_wow_down": "{pct}% 较上周",
+    "insights_wow_flat": "较上周无变化",
+    "insights_wow_new": "新增活动",
     "month_jan": "Jan",
     "month_feb": "Feb",
     "month_mar": "Mar",
@@ -1336,21 +1336,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "下降",
+    "stable": "稳定——无明显变化",
+    "vs_previous": "较上一周期"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "无法加载自愈审计日志。",
+    "audit_fetch_cause": "该日志可能暂时不可用，您的其他数据不受影响。",
+    "action_retry": "重试"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "一切正常，暂无告警",
+    "alerts_subtitle": "您的监控规则正持续运行。如有需要关注的情况，告警将自动显示在此处。",
+    "realtime_title": "实时观察事件流转",
+    "realtime_subtitle": "动态粒子描绘每个事件从来源流向您的智能体的轨迹。每个光点都是系统中实时流动的一个事件。",
+    "realtime_action": "发送测试事件"
   },
   "cockpit": {
     "title_default": "驾驶舱",
@@ -1765,9 +1765,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "无法加载您已保存的视图。",
+      "save_failed_message": "无法保存此视图。",
+      "delete_failed_message": "无法删除此视图。"
     }
   },
   "activity_timeline": {
@@ -1817,7 +1817,7 @@
   "crash_logs": {
     "title": "崩溃日志",
     "no_logs": "未记录崩溃日志。",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- 组件堆栈 ---"
   },
   "events_list": {
     "save_view_tooltip": "将当前筛选条件保存为视图",

@@ -111,11 +111,11 @@
   "composer_suggestion": {
     "label": "이 작업에 맞는 레시피가 있습니다",
     "use_button": "이 레시피 사용",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "dismiss": "닫기",
+    "score_label": "일치도",
+    "applied_toast": "레시피 적용됨: {name}",
+    "run_now": "지금 실행",
+    "run_now_toast": "레시피 플레이그라운드에서 {name}을(를) 여는 중입니다"
   },
   "discard": "버리기",
   "yes": "예",
