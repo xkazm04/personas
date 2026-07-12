@@ -1,0 +1,72 @@
+{
+  "id": "builtin-huggingface",
+  "name": "huggingface",
+  "label": "Hugging Face",
+  "color": "#FFD21E",
+  "icon_url": "/icons/connectors/huggingface.svg",
+  "category": "ai",
+  "categories": [
+    "ai",
+    "voice_generation",
+    "model_hosting"
+  ],
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "hf_...",
+      "helpText": "Create at huggingface.co → Settings → Access Tokens (a read token is enough)",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://huggingface.co/api/whoami-v2",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates the access token via the Hugging Face whoami endpoint"
+  },
+  "services": [],
+  "events": [],
+  "resources": [
+    {
+      "id": "models",
+      "label": "Models",
+      "description": "Models on the Hugging Face Hub the account can access. Scope a credential to pin the models a persona is allowed to pull.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://huggingface.co/api/models?author={{username}}&limit=50",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "id",
+        "label": "id",
+        "sublabel": "pipeline_tag",
+        "meta": {
+          "downloads": "downloads",
+          "likes": "likes"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    }
+  ],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Hugging Face Hub access token — used for gated model downloads (e.g. the Pocket TTS voice-cloning weights) and Hub API calls.",
+    "docs_url": "https://huggingface.co/docs/hub/security-tokens"
+  }
+}

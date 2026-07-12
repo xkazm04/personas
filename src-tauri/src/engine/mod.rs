@@ -120,6 +120,8 @@ pub mod llm_topology;
 pub mod logger;
 pub mod management_api;
 pub mod mcp_tools;
+pub mod memory_recall;
+pub mod memory_reflection;
 pub mod pairing;
 pub mod model_routing;
 pub mod oauth_refresh;
@@ -177,9 +179,12 @@ pub mod runner;
 pub mod safe_json;
 pub mod scheduler;
 pub mod scope_enforcement;
+#[cfg(feature = "scraper")]
+pub mod scraper;
 pub mod session_pool;
 #[cfg(feature = "p2p")]
 pub mod share_link;
+pub mod shared_event_local_relay;
 pub mod shared_event_relay;
 pub mod slack_poller;
 pub mod smee_relay;

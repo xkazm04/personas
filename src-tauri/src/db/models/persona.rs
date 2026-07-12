@@ -647,12 +647,21 @@ pub fn parse_design_context(raw: Option<&str>) -> DesignContextData {
 
     // Try parsing as the new structured envelope first
     if let Ok(data) = serde_json::from_str::<DesignContextData>(raw) {
-        // If any typed field is populated, treat it as the new format
+        // If any typed field is populated, treat it as the new format. Must
+        // cover EVERY typed field — an envelope carrying only e.g.
+        // `dev_project_id` (set on every team-adopted member) previously failed
+        // this check and fell through to the legacy path, which never reads
+        // dev_project_id/connector_pipeline/archetype_id/memory_strategy_id and
+        // silently dropped them (losing the codebase-connector binding).
         if data.design_files.is_some()
             || data.credential_links.is_some()
             || data.use_cases.is_some()
             || data.summary.is_some()
             || data.twin_id.is_some()
+            || data.connector_pipeline.is_some()
+            || data.dev_project_id.is_some()
+            || data.archetype_id.is_some()
+            || data.memory_strategy_id.is_some()
         {
             return data;
         }

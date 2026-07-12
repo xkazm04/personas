@@ -221,7 +221,7 @@ pub fn format_for_prompt(d: &ObservabilityDigest) -> String {
         out.push_str("- Recent failures:\n");
         for f in &d.recent_failures {
             let err = if f.error.len() > 120 {
-                format!("{}…", &f.error[..120])
+                format!("{}…", crate::utils::text::truncate_on_char_boundary(&f.error, 120))
             } else {
                 f.error.clone()
             };

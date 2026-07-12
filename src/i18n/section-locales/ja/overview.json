@@ -199,7 +199,11 @@
     "curation_schedule_last_run_label": "最終実行",
     "curation_schedule_disabled_state": "このエージェントではキュレーションが無効になっています",
     "curation_schedule_disable": "スケジュールを無効化",
-    "curation_schedule_save": "スケジュールを保存"
+    "curation_schedule_save": "スケジュールを保存",
+    "reflect": "リフレクション",
+    "reflect_hint": "関連するメモリを永続的なインサイトに統合します — 結果は提案として届き、適用前に確認できます",
+    "reflect_pick_persona": "エージェントのメモリをリフレクション",
+    "reflecting": "リフレクション中..."
   },
   "memory_review": {
     "keep_prefix": "「",
@@ -1123,7 +1127,8 @@
     "tags_label": "タグ",
     "view_source_execution": "ソース実行を表示",
     "delete_memory": "メモリを削除",
-    "close": "閉じる"
+    "close": "閉じる",
+    "derived_from_label": "統合元"
   },
   "memory_table": {
     "agent": "エージェント",

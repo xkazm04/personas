@@ -58,4 +58,7 @@ pub struct SystemOpKindMeta {
     /// True when the op is scoped to a single dev-tools project (needs a
     /// `projectId` param). The Studio prompts for the project on commit.
     pub requires_project: bool,
+    /// True when the op targets an agent OR a team (needs a `personaId` or
+    /// `teamId` param). The Studio prompts for the scope on commit.
+    pub requires_persona_or_team: bool,
 }

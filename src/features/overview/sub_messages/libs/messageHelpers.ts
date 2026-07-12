@@ -22,23 +22,6 @@ export const priorityConfig: Record<string, PriorityStyle> = {
   low: { color: 'text-muted-foreground/70', bgColor: 'bg-transparent', borderColor: 'border-muted-foreground/25', label: 'Low', icon: ChevronDown, chipClass: 'border-dashed' },
 };
 
-export type FilterType = 'all' | 'unread' | 'high';
-
-export const FILTER_LABELS: Record<FilterType, string> = {
-  all: 'All',
-  unread: 'Unread',
-  high: 'High Priority',
-};
-
-export const COLUMN_WIDTHS = {
-  persona: '280px',
-  priority: '180px',
-  status: '120px',
-  created: '140px',
-} as const;
-
-export const GRID_TEMPLATE_COLUMNS = `${COLUMN_WIDTHS.persona} minmax(0,2fr) ${COLUMN_WIDTHS.priority} ${COLUMN_WIDTHS.status} ${COLUMN_WIDTHS.created}`;
-
 /** Row height for the flat message list. Matches the Activity list to keep
  *  the persona icon + body text comfortably aligned on a single row. */
 export const MESSAGE_ROW_HEIGHT = 56;

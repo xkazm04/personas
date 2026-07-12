@@ -23,6 +23,8 @@ export interface CreateKpiInput {
   description?: string;
   contextGroupId?: string;
   contextId?: string;
+  /** Narrowest scope — a behavioral slice through contexts. Wins over contextId. */
+  useCaseId?: string;
   category: string;
   measureKind: string;
   measureConfig?: string;
@@ -48,6 +50,7 @@ export interface UpdateKpiInput {
   description?: string | null;
   contextGroupId?: string | null;
   contextId?: string | null;
+  useCaseId?: string | null;
   category?: string;
   measureKind?: string;
   measureConfig?: string;

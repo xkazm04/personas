@@ -5,7 +5,7 @@ import {
   Network, Database, Home, Compass, Shield, ShieldCheck, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
-  GraduationCap, BookOpen, Trophy, AlertOctagon, Target, Swords,
+  GraduationCap, BookOpen, Trophy, AlertOctagon,
   User, Users, Mic, Volume2, Sparkles, Headphones,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
@@ -35,7 +35,7 @@ export interface SectionDef {
 export const sections: SectionDef[] = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'overview', icon: BarChart3, label: 'Overview' },
-  { id: 'teams', icon: Users, label: 'Teams', minTier: TIERS.TEAM },
+  { id: 'teams', icon: Users, label: 'Projects', minTier: TIERS.TEAM },
   { id: 'personas', icon: Bot, label: 'Agents' },
   { id: 'events', icon: Radio, label: 'Events', minTier: TIERS.TEAM },
   { id: 'credentials', icon: Key, label: 'Connections' },
@@ -102,7 +102,7 @@ export const eventBusItems: SubNavItem[] = [
   { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook, devOnly: true },
   { id: 'dead-letter', label: 'Dead Letter Queue', icon: Archive, devOnly: true },
   { id: 'studio', label: 'Chain Studio', icon: GitBranch },
-  { id: 'shared', label: 'Marketplace', icon: Store, devOnly: true },
+  { id: 'shared', label: 'Marketplace', icon: Store },
 ];
 
 export const templateItems: SubNavItem[] = [
@@ -121,10 +121,7 @@ export const artistItems: SubNavItem[] = [
 
 export const devToolsItems: SubNavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'projects', label: 'Projects', icon: FolderKanban },
-  { id: 'goals', label: 'Goals', icon: Target },
-  { id: 'lifecycle', label: 'Lifecycle', icon: GitBranch },
-  { id: 'competition', label: 'Competition', icon: Swords },
+  { id: 'llm-overview', label: 'Observability', icon: BarChart3 },
   { id: 'context-map', label: 'Context Map', icon: Map },
   { id: 'idea-scanner', label: 'Idea Scanner', icon: Lightbulb },
   { id: 'idea-triage', label: 'Idea Triage', icon: ArrowLeftRight },

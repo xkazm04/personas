@@ -199,7 +199,11 @@
     "curation_schedule_last_run_label": "Terakhir dijalankan",
     "curation_schedule_disabled_state": "Kurasi dinonaktifkan untuk agen ini",
     "curation_schedule_disable": "Nonaktifkan jadwal",
-    "curation_schedule_save": "Simpan jadwal"
+    "curation_schedule_save": "Simpan jadwal",
+    "reflect": "Refleksi",
+    "reflect_hint": "Gabungkan memori terkait menjadi wawasan tahan lama — hasilnya berupa proposal yang Anda tinjau sebelum ada perubahan",
+    "reflect_pick_persona": "Refleksikan memori sebuah agen",
+    "reflecting": "Sedang merefleksi..."
   },
   "memory_review": {
     "keep_prefix": "Pertahankan “",
@@ -1123,7 +1127,8 @@
     "tags_label": "Tag",
     "view_source_execution": "Lihat Eksekusi Sumber",
     "delete_memory": "Hapus Memori",
-    "close": "Tutup"
+    "close": "Tutup",
+    "derived_from_label": "Disintesis dari"
   },
   "memory_table": {
     "agent": "Agen",

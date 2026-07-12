@@ -294,10 +294,12 @@ pub async fn execute_procedure(
     let url = render_template(&procedure.http.url, &fields);
     let method = reqwest::Method::from_bytes(procedure.http.method.to_uppercase().as_bytes())
         .map_err(|_| AppError::Validation(format!("Bad HTTP method '{}'", procedure.http.method)))?;
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client: {e}")))?;
+    // SSRF-safe client: KPI procedure URLs are LLM-composed/frozen and fired on
+    // a schedule, so they must not be able to reach cloud-metadata or internal
+    // services. Matches every other outbound path in the crate (build.rs client
+    // resolves via SsrfSafeDnsResolver, blocking private/link-local IPs).
+    let client =
+        crate::engine::url_safety::build_ssrf_safe_client(std::time::Duration::from_secs(30));
 
     let mut req = client.request(method, &url);
     for (k, v) in &procedure.http.headers {

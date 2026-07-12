@@ -103,41 +103,12 @@ describe('GoalKanban — drag-and-drop + progress nudge', () => {
     expect(screen.getByText('Running goal')).toBeInTheDocument();
   });
 
-  it('clicking +5% nudge calls updateGoal with progress + 5 clamped at 100', () => {
-    testGoals = [makeGoal({ id: 'g1', title: 'Pending goal', status: 'pending', progress: 50 })];
-    render(<GoalKanban />);
-    const card = screen.getByText('Pending goal').closest('div[class*="cursor-grab"]')!;
-    fireEvent.mouseEnter(card);
-    const inc = screen.getByLabelText('Increase 5%');
-    fireEvent.click(inc);
-    expect(updateGoal).toHaveBeenCalledWith('g1', { progress: 55 });
-  });
-
-  it('clicking -5% nudge calls updateGoal with progress - 5 clamped at 0', () => {
-    testGoals = [makeGoal({ id: 'g1', title: 'Pending goal', status: 'pending', progress: 50 })];
-    render(<GoalKanban />);
-    const card = screen.getByText('Pending goal').closest('div[class*="cursor-grab"]')!;
-    fireEvent.mouseEnter(card);
-    const dec = screen.getByLabelText('Decrease 5%');
-    fireEvent.click(dec);
-    expect(updateGoal).toHaveBeenCalledWith('g1', { progress: 45 });
-  });
-
-  it('the -5% nudge is disabled when progress is 0', () => {
-    testGoals = [makeGoal({ id: 'g0', title: 'Zero goal', status: 'pending', progress: 0 })];
-    render(<GoalKanban />);
-    const card = screen.getByText('Zero goal').closest('div[class*="cursor-grab"]')!;
-    fireEvent.mouseEnter(card);
-    expect(screen.getByLabelText('Decrease 5%')).toBeDisabled();
-  });
-
-  it('the +5% nudge is disabled when progress is 100', () => {
-    testGoals = [makeGoal({ id: 'g100', title: 'Full goal', status: 'pending', progress: 100 })];
-    render(<GoalKanban />);
-    const card = screen.getByText('Full goal').closest('div[class*="cursor-grab"]')!;
-    fireEvent.mouseEnter(card);
-    expect(screen.getByLabelText('Increase 5%')).toBeDisabled();
-  });
+  // The ±5% hover nudger was deliberately dropped when GoalCardFill was promoted
+  // to the sole GoalCard (3795ab8ea) — the card is a single-line completion
+  // gauge now, and its own header says "No inline checklist, manual nudger".
+  // Progress is moved from the goal drawer instead, so there is nothing to test
+  // here. The drag-and-drop status change below is still the card's live
+  // write-path.
 
   it('goal cards expose the draggable attribute for native HTML5 drag', () => {
     testGoals = [makeGoal({ id: 'g1', title: 'Pending goal' })];

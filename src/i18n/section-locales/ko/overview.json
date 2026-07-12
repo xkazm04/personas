@@ -199,7 +199,11 @@
     "curation_schedule_last_run_label": "마지막 실행",
     "curation_schedule_disabled_state": "이 에이전트는 큐레이션이 비활성화됨",
     "curation_schedule_disable": "스케줄 비활성화",
-    "curation_schedule_save": "스케줄 저장"
+    "curation_schedule_save": "스케줄 저장",
+    "reflect": "리플렉션",
+    "reflect_hint": "관련 메모리를 지속적인 인사이트로 통합합니다 — 결과는 제안으로 제공되며 적용 전에 검토할 수 있습니다",
+    "reflect_pick_persona": "에이전트의 메모리 리플렉션",
+    "reflecting": "리플렉션 중..."
   },
   "memory_review": {
     "keep_prefix": "유지 “",
@@ -1123,7 +1127,8 @@
     "tags_label": "태그",
     "view_source_execution": "소스 실행 보기",
     "delete_memory": "메모리 삭제",
-    "close": "닫기"
+    "close": "닫기",
+    "derived_from_label": "통합 출처"
   },
   "memory_table": {
     "agent": "에이전트",

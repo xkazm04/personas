@@ -1,0 +1,680 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "workflow-overloaded-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 4,
+        "seconds": 167.95,
+        "caps": 6
+      },
+      {
+        "tag": "sales-vague-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 4,
+        "seconds": 191.3,
+        "caps": 4
+      },
+      {
+        "tag": "research-vague-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 2,
+        "questions": 5,
+        "seconds": 128.69,
+        "caps": 2
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "workflow-overloaded-multiagent-1",
+      "fixture": "workflow-overloaded",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "workflow-overloaded",
+        "variant": "multiagent",
+        "session_id": "06ac6241-b6ec-4bd4-89c3-243563d444bd",
+        "persona_id": "d2c02e11-9b23-4107-a1c5-6a995ff4a5c0",
+        "true_intent": "Honestly I just have one concrete pain: every morning I copy yesterday's Stripe payouts into a Google Sheet by hand. I want that one thing automated \u2014 pull yesterday's Stripe payouts and append them to my 'Revenue' sheet each morning. Nothing else.",
+        "vague_intent": "manage my whole workflow and make my life easier",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 167.95,
+        "num_rounds": 1,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "Which single workflow area should the persona tackle first?",
+            "options": [
+              "Email triage (Gmail)",
+              "Task & project management",
+              "Calendar intelligence",
+              "Code workflow monitoring"
+            ],
+            "connector_category": null,
+            "answer": "None of those \u2014 I just need yesterday's Stripe payouts pulled and appended to my Google Sheet every morning.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "You have both ClickUp, Asana, Linear, Airtable, and Notion connected \u2014 which do you actually use as your primary task/project tracker?",
+            "options": [
+              "ClickUp",
+              "Asana",
+              "Linear",
+              "Notion"
+            ],
+            "connector_category": null,
+            "answer": "None of those, honestly \u2014 I just need Stripe payouts pulled into a Google Sheet each morning.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "When should the morning briefing run?",
+            "options": [
+              "7:00 AM",
+              "8:00 AM",
+              "9:00 AM",
+              "Custom time"
+            ],
+            "connector_category": null,
+            "answer": "I don't need a briefing \u2014 I just need yesterday's Stripe payouts appended to my Revenue sheet. If it has to run at a time, 8:00 AM.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "For code workflow monitoring, which codebase should the persona watch \u2014 'pof' or 'ascent' (or both)?",
+            "options": [
+              "pof",
+              "ascent",
+              "Both"
+            ],
+            "connector_category": null,
+            "answer": "Neither \u2014 I'm not doing anything with code. I just need yesterday's Stripe payouts pulled and appended to my 'Revenue' Google Sheet every morning.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 40.55
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 48.05
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 67.34
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 167.95
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_morning_briefing",
+          "title": "Morning Briefing",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "label": "Daily at 8:00 AM \u2014 pull yesterday's Stripe payouts into Revenue sheet",
+            "schedule": "0 8 * * *",
+            "timezone": "America/New_York",
+            "type": "cron"
+          }
+        },
+        {
+          "id": "uc_email_triage",
+          "title": "Email Triage",
+          "description": null,
+          "tool_hints": [
+            "gmail.list_threads",
+            "gmail.get_thread",
+            "gmail.get_message",
+            "gmail.list_messages",
+            "personas_database.read",
+            "personas_database.write",
+            "personas_messages.send"
+          ],
+          "subscriptions": [
+            {
+              "description": "Primary trigger for periodic inbox scans",
+              "event": "schedule.tick",
+              "source": "internal_cron"
+            },
+            {
+              "description": "Can be invoked by the morning briefing capability to embed an email digest inline",
+              "event": "uc_morning_briefing.requested",
+              "source": "internal"
+            }
+          ],
+          "trigger": {
+            "cron": "0 8,12,17 * * 1-5",
+            "description": "Runs three times on weekdays \u2014 8 AM catches overnight arrivals, noon catches midday build-up, 5 PM catches end-of-day urgents before close",
+            "timezone": "America/New_York",
+            "type": "schedule"
+          }
+        },
+        {
+          "id": "uc_task_sync",
+          "title": "Task Sync & Prioritization",
+          "description": null,
+          "tool_hints": [
+            "linear.list_issues(filter={assignee: me, state: [todo, in_progress]}, limit: 50)",
+            "clickup.get_tasks(filter={assignee: me, status: [open, in_progress]}, limit: 50)",
+            "asana.get_tasks(filter={assignee: me, completed: false}, limit: 50)"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "cron": "0 8 * * 1-5",
+            "description": "Weekdays at 8:00 AM \u2014 user confirmed this time; runs before the workday starts",
+            "type": "scheduled"
+          }
+        },
+        {
+          "id": "uc_calendar_intelligence",
+          "title": "Calendar Intelligence",
+          "description": null,
+          "tool_hints": [
+            "google_calendar.list_events",
+            "google_calendar.get_event",
+            "google_calendar.list_calendars",
+            "google_calendar.get_freebusy"
+          ],
+          "subscriptions": [
+            {
+              "action": "emit prep reminder digest",
+              "condition": "event start is within 15 minutes and no prep reminder has been fired for this event_id today",
+              "event": "meeting_starting_soon"
+            },
+            {
+              "action": "surface conflict with both event titles, times, and a flag if one can be declined",
+              "condition": "two or more accepted events overlap by any duration",
+              "event": "conflict_detected"
+            },
+            {
+              "action": "note gap as available focus time in morning digest",
+              "condition": "free block >= 90 minutes exists between 9:00 AM and 6:00 PM with no surrounding context",
+              "event": "scheduling_gap"
+            },
+            {
+              "action": "note clear day in morning digest rather than staying silent",
+              "condition": "calendar returns zero events for the current weekday",
+              "event": "day_has_no_events"
+            }
+          ],
+          "trigger": {
+            "primary": {
+              "description": "Weekday morning scan at 7:00 AM \u2014 surfaces conflicts, gaps, and day-ahead prep reminders",
+              "schedule": "0 7 * * 1-5",
+              "type": "cron"
+            },
+            "secondary": {
+              "description": "Rolling 15-minute poll to catch same-day additions and fire pre-meeting reminders at the 15-minute mark before each event start",
+              "schedule": "*/15 * * * *",
+              "type": "cron"
+            }
+          }
+        },
+        {
+          "id": "uc_code_workflow",
+          "title": "Code Workflow Monitor",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "description": "Immediate signal when the user is added as a reviewer",
+              "event": "pull_request.review_requested",
+              "source": "github"
+            },
+            {
+              "description": "Signal when a reviewer requests changes on the user's PR",
+              "event": "pull_request.changes_requested",
+              "source": "github"
+            },
+            {
+              "description": "Signal when all required reviews pass \u2014 PR is mergeable",
+              "event": "pull_request.approved",
+              "source": "github"
+            },
+            {
+              "description": "Signal when an issue is newly assigned to the user",
+              "event": "issue.assigned",
+              "source": "github"
+            }
+          ],
+          "trigger": {
+            "description": "Poll every 2 hours during business hours (09:00\u201318:00, Mon\u2013Fri); also supports on-demand invocation.",
+            "schedule": "0 */2 9-18 * * MON-FRI",
+            "type": "scheduled"
+          }
+        },
+        {
+          "id": "uc_end_of_day_wrap",
+          "title": "End-of-Day Wrap-Up",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Weekdays at 6:00 PM local time",
+            "manual_override": true,
+            "schedule": "0 18 * * 1-5",
+            "timezone": "user_local",
+            "type": "scheduled"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "sales-vague-multiagent-1",
+      "fixture": "sales-vague",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "sales-vague",
+        "variant": "multiagent",
+        "session_id": "842aa941-5a8e-4338-a9b2-c95b083fdee3",
+        "persona_id": "ec16c5f8-f2be-4a20-8c1f-8e5045baf74c",
+        "true_intent": "When a deal is marked Closed-Won in our CRM, I want a celebration message posted to the #wins Slack channel and a row appended to our 'Closed Deals' spreadsheet with the deal name, amount, and owner. That's the whole job.",
+        "vague_intent": "build an agent for my sales team",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 191.3,
+        "num_rounds": 1,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which CRM should the agent read from and write to?",
+            "options": [
+              "Attio",
+              "HubSpot",
+              "Pipedrive",
+              "Other (specify)"
+            ],
+            "connector_category": null,
+            "answer": "HubSpot.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "When should the daily pipeline digest be delivered?",
+            "options": [
+              "Every morning at a set time",
+              "On demand when a rep asks",
+              "Both"
+            ],
+            "connector_category": null,
+            "answer": "Neither \u2014 I don't want a daily digest. I just need a message in #wins and a spreadsheet row when a deal hits Closed-Won.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "Which email account should the agent draft and send follow-ups from?",
+            "options": [
+              "Gmail (already connected)",
+              "Other"
+            ],
+            "connector_category": null,
+            "answer": "Neither \u2014 the deals live in our CRM, and I don't need emails at all. I just want a Slack post and a spreadsheet row when a deal is Closed-Won.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "How many days of silence should mark a deal as at-risk?",
+            "options": [
+              "3 days",
+              "5 days",
+              "7 days",
+              "14 days"
+            ],
+            "connector_category": null,
+            "answer": "We don't track at-risk deals \u2014 I just need the Closed-Won stuff.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 46.55
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 54.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 74.16
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 191.3
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_pipeline_digest",
+          "title": "Daily Pipeline Digest",
+          "description": null,
+          "tool_hints": [
+            "hubspot.deals.get \u2014 fetch full deal record including amount, owner, associated contacts, and close date on trigger",
+            "hubspot.webhooks.subscribe \u2014 register for dealstage \u2192 closedwon change events",
+            "slack_webhook.post_message \u2014 send formatted Closed-Won announcement to #wins with deal name, amount, owner, and a congratulatory note",
+            "airtable.records.create \u2014 append one row to the Closed-Won tracking table with fields: Deal Name, Amount, Owner, Close Date, HubSpot Deal ID, Logged At"
+          ],
+          "subscriptions": [
+            {
+              "description": "Triggers the full Closed-Won flow: fetch deal details \u2192 post to #wins \u2192 append spreadsheet row.",
+              "event": "deal.propertyChange",
+              "filter": {
+                "property": "dealstage",
+                "to_value": "closedwon"
+              },
+              "source": "hubspot"
+            }
+          ],
+          "trigger": {
+            "description": "Fire when a HubSpot deal stage transitions to Closed-Won. The user explicitly declined a scheduled daily digest \u2014 this capability is repurposed as a Closed-Won event handler that posts to #wins and appends a spreadsheet row.",
+            "event_filter": {
+              "stage": "closedwon"
+            },
+            "event_source": "hubspot",
+            "type": "event"
+          }
+        },
+        {
+          "id": "uc_lead_capture",
+          "title": "Lead Capture & CRM Logging",
+          "description": null,
+          "tool_hints": [
+            "gmail.messages.list \u2014 poll or receive new inbox messages",
+            "gmail.messages.get \u2014 fetch full message body and headers for parsing",
+            "hubspot.contacts.search \u2014 deduplicate before creating; look up by email address",
+            "hubspot.contacts.create \u2014 write new contact record with structured fields",
+            "hubspot.contacts.update \u2014 merge additional context onto an existing contact",
+            "hubspot.deals.create \u2014 optionally open a deal stub linked to the new contact when enough deal context is present in the lead message"
+          ],
+          "subscriptions": [
+            {
+              "description": "New email in monitored inbox triggers lead-extraction pipeline.",
+              "event": "gmail.message.received"
+            },
+            {
+              "description": "Form provider posts a structured payload; agent maps fields to CRM schema.",
+              "event": "webhook.form_submission"
+            }
+          ],
+          "trigger": {
+            "triggers": [
+              {
+                "description": "Fires when a new email arrives in the monitored inbox that may contain a lead inquiry.",
+                "event": "new_email",
+                "filter": {
+                  "exclude_senders": "internal_domain",
+                  "labels": [
+                    "INBOX"
+                  ]
+                },
+                "source": "gmail",
+                "type": "event"
+              },
+              {
+                "description": "Fires when a web form submission is received; form provider POSTs a JSON payload to the agent's inbound webhook endpoint.",
+                "type": "webhook"
+              }
+            ],
+            "type": "multi"
+          }
+        },
+        {
+          "id": "uc_followup_draft",
+          "title": "Follow-up Email Drafter",
+          "description": null,
+          "tool_hints": [
+            "hubspot_list_deals",
+            "hubspot_get_deal",
+            "hubspot_get_contact",
+            "hubspot_get_activity_timeline",
+            "hubspot_create_note"
+          ],
+          "subscriptions": [
+            {
+              "description": "Triggered when a deal's last-activity date exceeds {{param.stale_deal_days}} days with no logged interaction in HubSpot.",
+              "event": "deal.stale_threshold_crossed"
+            },
+            {
+              "description": "Rep explicitly requests a draft for a specific deal ID regardless of staleness.",
+              "event": "rep.manual_followup_request"
+            }
+          ],
+          "trigger": {
+            "description": "Runs every weekday morning; scans HubSpot for deals with no activity logged past the stale threshold ({{param.stale_deal_days}} days) and queues draft follow-ups for rep review.",
+            "schedule": "0 8 * * 1-5",
+            "type": "scheduled"
+          }
+        },
+        {
+          "id": "uc_meeting_prep",
+          "title": "Pre-Call Meeting Brief",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "action": "auto_trigger_brief",
+              "event": "google_calendar.event.upcoming",
+              "filter": "event starts within lead_time_minutes (default 60) AND at least one attendee email matches a HubSpot contact record"
+            },
+            {
+              "action": "run_brief_pipeline",
+              "event": "capability.invoked.uc_meeting_prep",
+              "filter": "always"
+            }
+          ],
+          "trigger": {
+            "description": "Rep explicitly requests a pre-call brief, supplying a prospect identifier and optional call time. May also be triggered automatically when a Google Calendar meeting with a known prospect contact is detected within a configurable lead time (default: 60 minutes).",
+            "modes": [
+              {
+                "invocation": "Rep calls capability with prospect name, email, or HubSpot contact/deal ID.",
+                "mode": "manual"
+              },
+              {
+                "invocation": "Google Calendar event detected whose attendee list intersects a known HubSpot contact; brief generated and surfaced automatically before the meeting start.",
+                "mode": "calendar_watch"
+              }
+            ],
+            "type": "on_demand"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "research-vague-multiagent-1",
+      "fixture": "research-vague",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "research-vague",
+        "variant": "multiagent",
+        "session_id": "07fb9a28-1f6e-4485-94cb-a7188fec57fc",
+        "persona_id": "1fa58752-dce6-4991-8de2-41469658f9d0",
+        "true_intent": "I'm researching battery chemistry. Once a week I want it to search the web + arXiv for new papers and articles on solid-state batteries, summarise the genuinely new ones, and save the summaries to a Notion database so I can review them later.",
+        "vague_intent": "I want something for my research",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 128.69,
+        "num_rounds": 2,
+        "num_questions": 5,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "That's a broad request, so let's start with one concrete job. What is the single task you'd most like this agent to do for you? (For example: \"every morning, pull yesterday's Stripe payouts into my Revenue sheet\".)",
+            "options": [],
+            "connector_category": null,
+            "answer": "Once a week, search the web and arXiv for new papers on solid-state batteries, summarise the genuinely new ones, and save those summaries into my Notion database.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "connectors",
+            "question": "Which sources should the scout search for new solid-state battery papers?",
+            "options": [
+              "arXiv only",
+              "arXiv + Semantic Scholar",
+              "arXiv + PubMed + Semantic Scholar",
+              "Web search (broader, less structured)"
+            ],
+            "connector_category": null,
+            "answer": "Web search plus arXiv \u2014 I want both the papers and the industry articles.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "triggers",
+            "question": "When should the weekly scout run?",
+            "options": [
+              "Monday morning",
+              "Friday afternoon",
+              "Sunday evening",
+              "I'll trigger it manually"
+            ],
+            "connector_category": null,
+            "answer": "Monday morning \u2014 I want the summaries waiting when I start the week.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "connectors#2",
+            "question": "Which Notion database should summaries be saved to? Please provide the database name or ID.",
+            "options": [],
+            "connector_category": null,
+            "answer": "Whatever database is called \"Battery Research\" \u2014 that's the one I've been dumping papers into.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "human-review",
+            "question": "Before saving summaries to Notion, should the scout show you the results first and wait for your approval?",
+            "options": [
+              "Yes, show me first before saving",
+              "No, save automatically"
+            ],
+            "connector_category": null,
+            "answer": "No, save automatically \u2014 I just want to check the Notion database when I have time.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 13.53
+          },
+          {
+            "phase": "analyzing",
+            "offset_s": 22.38
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 50.92
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 58.42
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 77.62
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 128.69
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_paper_search",
+          "title": "Weekly Paper Search & Summarise",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Every Monday at 08:00 \u2014 summaries are waiting when the week starts",
+            "schedule": "0 8 * * 1",
+            "timezone": "America/Chicago",
+            "type": "cron"
+          }
+        },
+        {
+          "id": "uc_notion_save",
+          "title": "Save Summaries to Notion",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "description": "Receives the list of de-duplicated, accepted paper summaries produced by the weekly search capability. Each element must conform to the input schema before a Notion page is created.",
+              "event": "uc_paper_search.completed",
+              "payload_field": "accepted_summaries"
+            }
+          ],
+          "trigger": {
+            "description": "Fires automatically when the uc_paper_search capability emits its accepted-summaries payload, so saves happen in the same Monday-morning run without a separate schedule.",
+            "event": "uc_paper_search.completed",
+            "type": "event"
+          }
+        }
+      ]
+    }
+  ]
+}

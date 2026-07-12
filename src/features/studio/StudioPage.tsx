@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Bot, RotateCcw } from 'lucide-react';
 import { toastCatch } from '@/lib/silentCatch';
 import { webbuildListProjects, webbuildListRoutes } from '@/api/webbuild';
@@ -30,6 +30,12 @@ export default function StudioPage() {
   // reload nonce — switching tabs never disturbs another tab's preview.
   const [iframeNonces, setIframeNonces] = useState<Record<string, number>>({});
   const [previewRoutes, setPreviewRoutes] = useState<Record<string, string>>({});
+  // The live path each tab's preview reports as the user navigates inside it (any
+  // client router, via the agent's History hook) — drives the address bar. Distinct
+  // from previewRoutes, which is the path WE push the iframe to (a full load).
+  const [currentPaths, setCurrentPaths] = useState<Record<string, string>>({});
+  const [urlDraft, setUrlDraft] = useState('/');
+  const urlEditing = useRef(false);
   const [routesByTab, setRoutesByTab] = useState<Record<string, string[]>>({});
   // Precise orb-pointer rect (A3) — the bounding box of the element a decision is
   // about, reported by the preview agent over postMessage.
@@ -82,11 +88,23 @@ export default function StudioPage() {
             source?: string;
             type?: string;
             found?: boolean;
+            path?: string;
             rect?: { x: number; y: number; width: number; height: number } | null;
           }
         | null;
-      if (!d || d.source !== 'athena-agent' || d.type !== 'located') return;
-      setPointerRect(d.found && d.rect ? d.rect : null);
+      if (!d || d.source !== 'athena-agent') return;
+      if (d.type === 'located') {
+        setPointerRect(d.found && d.rect ? d.rect : null);
+      } else if (d.type === 'route' && typeof d.path === 'string') {
+        // Attribute the report to its tab by matching the source frame (every warm
+        // preview is mounted + reporting, so the source disambiguates them).
+        const path = d.path;
+        const frame = Array.from(
+          document.querySelectorAll<HTMLIFrameElement>('iframe[data-tab]'),
+        ).find((f) => f.contentWindow === e.source);
+        const id = frame?.dataset.tab;
+        if (id) setCurrentPaths((m) => (m[id] === path ? m : { ...m, [id]: path }));
+      }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
@@ -150,12 +168,24 @@ export default function StudioPage() {
     const rt = runtimes[id];
     return !!rt && rt.phase === 'live' && !!rt.status?.healthy;
   });
-  const activeRoute = (activeId && previewRoutes[activeId]) || '/';
   const navRoutes = ((activeId && routesByTab[activeId]) || []).filter((r) => !r.includes('['));
   const reloadActive = () =>
     activeId && setIframeNonces((m) => ({ ...m, [activeId]: (m[activeId] ?? 0) + 1 }));
-  const goToRoute = (r: string) =>
-    activeId && setPreviewRoutes((m) => ({ ...m, [activeId]: r }));
+  // Address bar: show what the preview reports (updates live as the user clicks
+  // links inside it), falling back to the path we last pushed. navigateTo does a
+  // full load to any path — framework-agnostic (Next app/pages, React Router).
+  const activePath = (activeId && (currentPaths[activeId] ?? previewRoutes[activeId])) || '/';
+  const navigateTo = (raw: string) => {
+    if (!activeId) return;
+    const p = raw.trim() ? (raw.startsWith('/') ? raw : `/${raw}`) : '/';
+    setPreviewRoutes((m) => ({ ...m, [activeId]: p }));
+    setCurrentPaths((m) => ({ ...m, [activeId]: p }));
+  };
+
+  // Keep the address-bar draft synced to the live path, unless the user is editing.
+  useEffect(() => {
+    if (!urlEditing.current) setUrlDraft(activePath);
+  }, [activePath]);
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col">
@@ -176,6 +206,7 @@ export default function StudioPage() {
               return (
                 <iframe
                   key={`${id}-${nonce}`}
+                  data-tab={id}
                   src={`${rt.status.url}${route === '/' ? '' : route}`}
                   title={isActive ? 'preview' : `preview-${id}`}
                   aria-hidden={!isActive}
@@ -190,7 +221,7 @@ export default function StudioPage() {
               <>
                 {/* Unified preview toolbar — reload · routes · versions in one bar
                     instead of three overlays scattered around the preview edges. */}
-                <div className="absolute left-1/2 top-3 z-20 flex max-w-[82%] -translate-x-1/2 items-center gap-0.5 rounded-full border border-border bg-background/85 px-1.5 py-1 shadow-elevation-2 backdrop-blur">
+                <div className="absolute left-1/2 top-3 z-20 flex w-[min(34rem,82%)] -translate-x-1/2 items-center gap-0.5 rounded-full border border-border bg-background/85 px-1.5 py-1 shadow-elevation-2 backdrop-blur">
                   <button
                     type="button"
                     onClick={reloadActive}
@@ -199,27 +230,43 @@ export default function StudioPage() {
                   >
                     <RotateCcw className="h-4 w-4" />
                   </button>
-                  {navRoutes.length > 1 && (
-                    <>
-                      <span className="mx-0.5 h-4 w-px shrink-0 bg-border" />
-                      <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
+                  <span className="mx-0.5 h-4 w-px shrink-0 bg-border" />
+                  {/* Address bar — type any path + Enter to load it (works for
+                      Next app/pages + React Router), and it live-syncs to where the
+                      preview navigates. Discovered app-router routes autocomplete. */}
+                  <div className="flex min-w-0 flex-1 items-center">
+                    <input
+                      data-testid="studio-preview-url"
+                      value={urlDraft}
+                      list={navRoutes.length ? 'studio-routes' : undefined}
+                      onFocus={() => {
+                        urlEditing.current = true;
+                      }}
+                      onBlur={() => {
+                        urlEditing.current = false;
+                        setUrlDraft(activePath);
+                      }}
+                      onChange={(e) => setUrlDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          navigateTo(urlDraft);
+                          (e.target as HTMLInputElement).blur();
+                        }
+                      }}
+                      spellCheck={false}
+                      aria-label="Preview path"
+                      placeholder="/"
+                      className="min-w-0 flex-1 bg-transparent px-2 font-mono text-xs text-foreground/85 outline-none placeholder:text-foreground/40"
+                    />
+                    {navRoutes.length > 0 && (
+                      <datalist id="studio-routes">
                         {navRoutes.map((r) => (
-                          <button
-                            key={r}
-                            type="button"
-                            onClick={() => goToRoute(r)}
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-xs transition-colors ${
-                              activeRoute === r
-                                ? 'bg-primary/20 text-primary'
-                                : 'text-foreground/60 hover:text-foreground'
-                            }`}
-                          >
-                            {r}
-                          </button>
+                          <option key={r} value={r} />
                         ))}
-                      </div>
-                    </>
-                  )}
+                      </datalist>
+                    )}
+                  </div>
                   <span className="mx-0.5 h-4 w-px shrink-0 bg-border" />
                   <StudioVersions id={activeId} onRestored={reloadActive} />
                 </div>

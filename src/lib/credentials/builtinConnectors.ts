@@ -107,6 +107,7 @@ import langfuse from '../../../scripts/connectors/builtin/langfuse.json';
 import helicone from '../../../scripts/connectors/builtin/helicone.json';
 import langsmith from '../../../scripts/connectors/builtin/langsmith.json';
 import tracklight from '../../../scripts/connectors/builtin/tracklight.json';
+import huggingface from '../../../scripts/connectors/builtin/huggingface.json';
 
 /**
  * Builtin connector shape -- extends the shared ConnectorDefinitionBase.
@@ -215,6 +216,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   helicone,
   langsmith,
   tracklight,
+  huggingface,
 ] as BuiltinConnectorDef[];
 
 /**

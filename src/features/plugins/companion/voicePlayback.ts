@@ -25,7 +25,7 @@ export async function synthesize(
   credentialId: string | null,
   voiceId: string,
   settings?: TtsSettings,
-  engine: TtsEngineId = 'elevenlabs',
+  engine: TtsEngineId = 'kokoro',
 ): Promise<string> {
   const audio = await companionTts(text, credentialId, voiceId, settings, engine);
   const bytes = base64ToBytes(audio.audioBase64);

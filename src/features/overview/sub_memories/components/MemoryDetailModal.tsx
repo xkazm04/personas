@@ -107,6 +107,25 @@ export default function MemoryDetailModal({
             </div>
           )}
 
+          {/* Reflection provenance — which memories this insight was synthesized from */}
+          {memory.derived_from && memory.derived_from.length > 0 && (
+            <div>
+              <div className="typo-code font-mono text-foreground uppercase tracking-wider mb-1.5">{t.overview.memory_detail.derived_from_label}</div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Layers className="w-3 h-3 text-amber-400/70" />
+                {memory.derived_from.map((sourceId) => (
+                  <span
+                    key={sourceId}
+                    className="px-2 py-0.5 typo-code font-mono bg-amber-500/10 text-amber-300/80 rounded border border-amber-500/20"
+                    title={sourceId}
+                  >
+                    {sourceId.slice(0, 8)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Source execution link */}
           {memory.source_execution_id && (
             <button

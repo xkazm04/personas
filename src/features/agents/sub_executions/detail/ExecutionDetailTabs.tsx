@@ -1,18 +1,22 @@
-import { ListTree, Search, Activity, Zap, Play, Compass } from 'lucide-react';
+import { ListTree, Search, Activity, Zap, Play, Compass, Link2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { isTerminalState } from '@/lib/execution/executionState';
 
-export type DetailTab = 'detail' | 'director' | 'inspector' | 'trace' | 'pipeline' | 'replay';
+export type DetailTab = 'detail' | 'director' | 'inspector' | 'trace' | 'pipeline' | 'replay' | 'chain';
 
 interface ExecutionDetailTabsProps {
   activeTab: DetailTab;
   setActiveTab: (tab: DetailTab) => void;
   hasToolSteps: boolean;
   hasDirectorReview: boolean;
+  /** Pipeline waterfall only has data once the run has started (timeline / live trace). */
+  hasPipeline: boolean;
+  /** This run belongs to a multi-step chain — show the chain-trace tab. */
+  hasChain: boolean;
   executionStatus: string;
 }
 
-export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, hasDirectorReview, executionStatus }: ExecutionDetailTabsProps) {
+export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, hasDirectorReview, hasPipeline, hasChain, executionStatus }: ExecutionDetailTabsProps) {
   const { t } = useTranslation();
   const tabClass = (tab: DetailTab, special?: boolean) =>
     `flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${
@@ -45,10 +49,18 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, has
         <Activity className="w-3.5 h-3.5" />
         {t.agents.executions.tab_trace}
       </button>
-      <button onClick={() => setActiveTab('pipeline')} className={tabClass('pipeline')}>
-        <Zap className="w-3.5 h-3.5" />
-        {t.agents.executions.tab_pipeline}
-      </button>
+      {hasPipeline && (
+        <button onClick={() => setActiveTab('pipeline')} className={tabClass('pipeline')}>
+          <Zap className="w-3.5 h-3.5" />
+          {t.agents.executions.tab_pipeline}
+        </button>
+      )}
+      {hasChain && (
+        <button onClick={() => setActiveTab('chain')} className={tabClass('chain')}>
+          <Link2 className="w-3.5 h-3.5" />
+          {t.agents.executions.tab_chain}
+        </button>
+      )}
       {isTerminalState(executionStatus) && (
         <button onClick={() => setActiveTab('replay')} className={tabClass('replay', true)}>
           <Play className="w-3.5 h-3.5" />

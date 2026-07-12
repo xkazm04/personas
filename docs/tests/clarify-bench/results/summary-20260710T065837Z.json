@@ -1,0 +1,518 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "emails-vague-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 4,
+        "seconds": 164.03,
+        "caps": 3
+      },
+      {
+        "tag": "hn-digest-control-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 0,
+        "questions": 0,
+        "seconds": 57.06,
+        "caps": 1
+      },
+      {
+        "tag": "workflow-overloaded-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 4,
+        "seconds": 182.69,
+        "caps": 1
+      },
+      {
+        "tag": "standup-mostly-specified-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 4,
+        "seconds": 130.28,
+        "caps": 1
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "emails-vague-multiagent-1",
+      "fixture": "emails-vague",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "emails-vague",
+        "variant": "multiagent",
+        "session_id": "762bf068-8d62-4c76-9c6c-5337dc68fa58",
+        "persona_id": "70f52d19-7908-4c50-bff2-3e219e870ef4",
+        "true_intent": "I run customer support out of a Gmail inbox. I want it to read incoming support emails, summarise each one, label the urgent ones, and draft a reply for the top few \u2014 but I always want to review before anything is sent. Nothing auto-sends. I don't want it touching my personal email, just the support address.",
+        "vague_intent": "make me a bot that helps with my emails",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 164.03,
+        "num_rounds": 1,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "What should this bot actually do with your emails? Select all that apply.",
+            "options": [
+              "Summarize / digest what's in my inbox",
+              "Triage and flag important emails",
+              "Draft replies for me to review",
+              "Remind me about emails I haven't responded to"
+            ],
+            "connector_category": null,
+            "answer": "Triage and flag important emails, summarize them, and draft replies for me to review \u2014 all three of those. The reminders one I don't need.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which email provider(s) should the bot work with?",
+            "options": [
+              "Gmail",
+              "Outlook / Microsoft 365",
+              "Both",
+              "Other"
+            ],
+            "connector_category": null,
+            "answer": "Gmail",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "human-review",
+            "question": "If the bot drafts a reply, should it always wait for your approval before sending \u2014 or are there cases where it can send automatically?",
+            "options": [
+              "Always require my approval before sending",
+              "It can send automatically for certain low-stakes replies",
+              "It should never send \u2014 drafts only"
+            ],
+            "connector_category": null,
+            "answer": "Always require my approval before sending \u2014 nothing goes out until I've looked at it.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "What makes an email 'important' enough to surface to you? Describe in your own words (e.g. from specific people, contains action items, mentions deadlines, etc.)",
+            "options": [],
+            "connector_category": null,
+            "answer": "I'd say an urgent one is anything where the customer sounds really frustrated or angry, mentions they can't use the product at all, or brings up refunds or cancelling. Also anything from a customer who's emailed more than once about the same thing.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 36.05
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 45.05
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 87.45
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 164.03
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_triage",
+          "title": "Email Triage & Flagging",
+          "description": null,
+          "tool_hints": [
+            "gmail.messages.list \u2014 fetch unread messages from inbox since last triage watermark",
+            "gmail.messages.get \u2014 retrieve full message headers and body for each candidate",
+            "gmail.threads.get \u2014 pull full thread to detect repeat-contact patterns within the same topic",
+            "personas_database.query \u2014 look up prior contact records for a sender to check repeat-contact threshold",
+            "personas_database.upsert \u2014 write or update sender contact record (email, topic fingerprint, contact count, last seen) after each triage run"
+          ],
+          "subscriptions": [
+            {
+              "description": "Fires when a new unread message lands in the inbox; used to trigger real-time triage in addition to scheduled polling.",
+              "event": "gmail.message.received",
+              "filter": {
+                "labelIds": [
+                  "INBOX",
+                  "UNREAD"
+                ]
+              }
+            }
+          ],
+          "trigger": {
+            "description": "Poll Gmail inbox every 5 minutes for unread messages not yet triaged; also supports manual invocation to re-triage on demand.",
+            "schedule": "*/5 * * * *",
+            "type": "poll"
+          }
+        },
+        {
+          "id": "uc_summarize",
+          "title": "Urgent Email Digest",
+          "description": null,
+          "tool_hints": [
+            "get_message \u2014 fetch full body and headers for each flagged message ID so summaries are grounded in real content, never fabricated",
+            "read_rows \u2014 fetch triage records written by uc_triage, filtered to status IN ('urgent','follow_up') and not yet surfaced in a prior digest"
+          ],
+          "subscriptions": [
+            {
+              "event": "uc_triage.batch_complete",
+              "payload_fields": [
+                "flagged_message_ids",
+                "triage_run_id",
+                "flagged_count"
+              ],
+              "purpose": "Receive the list of newly flagged email IDs to summarize in this digest pass"
+            }
+          ],
+          "trigger": {
+            "notes": "Digest is produced after uc_triage finishes a classification pass; also available on explicit user request",
+            "primary": "uc_triage.batch_complete",
+            "secondary": {
+              "description": "User may also request a digest at any time by asking for a summary of flagged emails",
+              "type": "on_demand"
+            },
+            "type": "event"
+          }
+        },
+        {
+          "id": "uc_draft_reply",
+          "title": "Draft Reply for Review",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "description": "Primary input: the triage decision and the minimal email metadata needed to compose without a separate Gmail fetch when the snippet is sufficient.",
+              "event": "uc_triage.email_flagged_urgent",
+              "payload_fields": [
+                "thread_id",
+                "message_id",
+                "sender_email",
+                "sender_name",
+                "subject",
+                "urgency_label",
+                "urgency_reason",
+                "repeat_contact",
+                "snippet"
+              ]
+            },
+            {
+              "description": "User asks the bot to revise the draft with a note \u2014 triggers a rewrite and re-queues for approval without touching the original email.",
+              "event": "user.draft_revision_requested",
+              "payload_fields": [
+                "thread_id",
+                "draft_id",
+                "revision_note"
+              ]
+            }
+          ],
+          "trigger": {
+            "description": "Fires once per email thread each time uc_triage emits an urgent flag. Also accepts a manual trigger carrying a thread_id so the user can request a draft for any thread on demand.",
+            "event": "email_flagged_urgent",
+            "source": "uc_triage",
+            "type": "event"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "hn-digest-control-multiagent-1",
+      "fixture": "hn-digest-control",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "hn-digest-control",
+        "variant": "multiagent",
+        "session_id": "732f4034-42c3-441f-b405-6426cb19b816",
+        "persona_id": "0e61c96c-9cd5-41c3-81db-2010f64b0fe3",
+        "true_intent": "Exactly what I said: a daily 9am digest of the top 5 Hacker News stories, delivered to the in-app titlebar. Nothing more \u2014 no external publishing, no review step needed, it's just an informational read.",
+        "vague_intent": "Every day at 9am, fetch the top 5 Hacker News stories and show them to me as a digest in the app titlebar. No need to publish anywhere else.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 57.06,
+        "num_rounds": 0,
+        "num_questions": 0,
+        "transcript": [],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 22.53
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 57.06
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_hn_daily_digest",
+          "title": "Daily HN Digest",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "cron": "0 9 * * *",
+            "description": "Every day at 9:00 AM local time",
+            "timezone": "local",
+            "type": "schedule"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "workflow-overloaded-multiagent-1",
+      "fixture": "workflow-overloaded",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "workflow-overloaded",
+        "variant": "multiagent",
+        "session_id": "16c3b370-7bec-4331-9b03-79ffea3b6c63",
+        "persona_id": "263aecd2-0598-4473-a74f-ed6f4f5ee530",
+        "true_intent": "Honestly I just have one concrete pain: every morning I copy yesterday's Stripe payouts into a Google Sheet by hand. I want that one thing automated \u2014 pull yesterday's Stripe payouts and append them to my 'Revenue' sheet each morning. Nothing else.",
+        "vague_intent": "manage my whole workflow and make my life easier",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 182.69,
+        "num_rounds": 1,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "Your intent is broad \u2014 let's start with one concrete job. Which would you want this persona to tackle first?",
+            "options": [
+              "Morning briefing: surface what needs my attention across tasks, PRs, and calendar",
+              "Inbox triage: classify and prioritize emails so I see only what matters",
+              "Task prioritizer: pull open items from all my tools and rank them by urgency",
+              "PR watchlist: alert me when reviews are stalled or need my action"
+            ],
+            "connector_category": null,
+            "answer": "Morning briefing sounds closest, but honestly what I really need is simpler \u2014 every morning I want yesterday's Stripe payouts pulled and added to my \"Revenue\" Google Sheet automatically. That's the one job.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "You have both Linear and ClickUp connected. Which do you actually use for tracking your work tasks?",
+            "options": [
+              "Linear only",
+              "ClickUp only",
+              "Both \u2014 they serve different purposes",
+              "Neither \u2014 I use something else"
+            ],
+            "connector_category": null,
+            "answer": "ClickUp only.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "For calendar and meetings, which do you rely on?",
+            "options": [
+              "Google Calendar",
+              "Cal.com",
+              "Both",
+              "Neither"
+            ],
+            "connector_category": null,
+            "answer": "Google Calendar, but honestly that's not really what this is about \u2014 my thing is just about Stripe payouts and a spreadsheet, no meetings involved.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "human-review",
+            "question": "Should this persona ever take actions on your behalf automatically (e.g. reply to an email, post a Discord message, update a task status) \u2014 or always prepare a draft for you to approve first?",
+            "options": [
+              "Always prepare a draft \u2014 I'll confirm before anything is sent or changed",
+              "Routine low-risk actions (status updates, task moves) can run automatically; messages need approval",
+              "Full autonomy \u2014 act without asking unless it's irreversible"
+            ],
+            "connector_category": null,
+            "answer": "Always prepare a draft \u2014 I'll confirm before anything is sent or changed. Honestly it's just adding rows to my Google Sheet, so nothing risky, but I'd like to check it's doing it right first.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 60.08
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 72.08
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 125.62
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 182.69
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_stripe_payout_sync",
+          "title": "Daily Stripe Payout Sync",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Runs every morning at 07:00 to fetch yesterday's payouts before the workday starts",
+            "schedule": "0 7 * * *",
+            "timezone": "user_local",
+            "type": "cron"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "standup-mostly-specified-multiagent-1",
+      "fixture": "standup-mostly-specified",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "standup-mostly-specified",
+        "variant": "multiagent",
+        "session_id": "73d643a5-a41f-4926-bfb4-1e712aeaeee2",
+        "persona_id": "cec86d98-f212-474a-9b0c-f4baaec4d4a2",
+        "true_intent": "Exactly that: a weekday 9am standup that lists yesterday's merged PRs from our main repo and posts the summary to our #standup Slack channel. The only thing I didn't say is WHICH repo and WHICH Slack channel.",
+        "vague_intent": "Every weekday at 9am, collect yesterday's merged pull requests from our repo and post a standup summary to Slack.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 130.28,
+        "num_rounds": 1,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which GitHub repository should be monitored for merged pull requests? Please provide the owner/repo (e.g. acme-corp/backend).",
+            "options": [],
+            "connector_category": null,
+            "answer": "acme-corp/backend \u2014 that's our main repo.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "You don't have a Slack connector in your vault \u2014 where should the standup summary be posted?",
+            "options": [
+              "I'll add a Slack connector",
+              "Post to Discord instead",
+              "Send via Gmail instead"
+            ],
+            "connector_category": null,
+            "answer": "#standup \u2014 I'll add a Slack connector.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#3",
+            "question": "Which specific Slack channel (or destination) should receive the daily summary?",
+            "options": [],
+            "connector_category": null,
+            "answer": "#standup \u2014 that's where the team already hangs out for morning check-ins.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "human-review",
+            "question": "Should the summary post to Slack automatically each morning, or should it be queued for your review before sending?",
+            "options": [
+              "Post automatically",
+              "Queue for my review first"
+            ],
+            "connector_category": null,
+            "answer": "Queue for my review first \u2014 at least for the first week or two while I make sure the summaries look right, then we can switch it to automatic.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 36.06
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 42.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 97.23
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 130.28
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_pr_standup_summary",
+          "title": "Daily PR Standup Summary",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Every weekday at 09:00 local time",
+            "schedule": "0 9 * * 1-5",
+            "timezone": "infer_from_user",
+            "type": "cron"
+          }
+        }
+      ]
+    }
+  ]
+}

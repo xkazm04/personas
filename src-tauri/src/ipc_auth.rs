@@ -304,6 +304,15 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "artist_measure_loudness",
     "artist_trim_file",
     "artist_cancel_export",
+    // Artist -- Composition persistence (writes/reads a caller-supplied absolute
+    // file_path; without gating any IPC caller could overwrite an arbitrary file).
+    "artist_save_composition",
+    "artist_load_composition",
+    "artist_autosave_composition",
+    // Persona icon generation -- decrypts a vault credential and spends the
+    // user's image-gen API key, so it must be privileged like other secret-using
+    // commands (its sibling `list_image_gen_credentials` is read-only metadata).
+    "generate_persona_icon",
     // Data Portability — NOT in PRIVILEGED_COMMANDS because the wrapper-level
     // header check fails intermittently on Windows WebView2 (the monkey-patch
     // may not reliably forward headers for commands that open native file dialogs).

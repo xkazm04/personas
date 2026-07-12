@@ -6,10 +6,30 @@
  */
 export type ProposalEntry = { memoryId: string, title: string, score: number, reason: string, 
 /**
- * `delete` | `keep` | `update_importance`
+ * `delete` | `keep` | `update_importance` — curation review;
+ * `synthesize` | `archive` — reflection pass (Memory Engine v2).
  */
 action: string, 
 /**
- * Set when action is `update_importance`. Range 1..=5.
+ * Set when action is `update_importance` (curation) or `synthesize`
+ * (importance of the new insight). Range 1..=5.
  */
-newImportance?: number, };
+newImportance?: number, 
+/**
+ * `synthesize` only: title of the new insight memory.
+ */
+newTitle?: string, 
+/**
+ * `synthesize` only: content of the new insight memory.
+ */
+newContent?: string, 
+/**
+ * `synthesize` only: category of the new insight memory.
+ */
+newCategory?: string, 
+/**
+ * `synthesize` only: ids of the source memories the insight is derived
+ * from. On apply they are archived (never deleted; `core` is skipped)
+ * and recorded as the insight's `derived_from` provenance.
+ */
+sourceIds?: Array<string>, };

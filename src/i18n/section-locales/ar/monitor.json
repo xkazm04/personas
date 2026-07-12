@@ -3,7 +3,7 @@
   "group_by_toggle_title": "تجميع بطاقات الشخصيات حسب المجموعة المعيّنة",
   "group_ungrouped": "غير مصنّف",
   "title": "مراقب الشخصيات",
-  "subtitle": "{personas} شخصية · {attention} بحاجة إلى انتباه · {running} قيد التشغيل",
+  "subtitle": "{شخصيةs} شخصيةs · {attention} need attention · {running} running",
   "close": "إغلاق المراقب",
   "close_hint": "إغلاق (Esc)",
   "no_personas": "لا توجد شخصيات بعد.",

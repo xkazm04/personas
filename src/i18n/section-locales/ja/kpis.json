@@ -181,5 +181,7 @@
     "health_snapshot": "ヘルススナップショット",
     "manual": "手動入力",
     "scan": "スキャン"
-  }
+  },
+  "kpi_scope_label": "スコープ",
+  "kpi_scope_this_context": "このコンテキスト"
 }

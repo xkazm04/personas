@@ -96,11 +96,11 @@ export function ExecutionListFilters({
           </span>
           {compareLeft && (
             <span className="ml-auto flex items-center gap-1.5">
-              <span className="typo-code text-indigo-400">#{compareLeft.slice(0, 8)}</span>
+              <span className="typo-code text-status-info">#{compareLeft.slice(0, 8)}</span>
               {compareRight && (
                 <>
                   <span className="text-foreground">{e.vs}</span>
-                  <span className="typo-code text-pink-400">#{compareRight.slice(0, 8)}</span>
+                  <span className="typo-code text-status-error">#{compareRight.slice(0, 8)}</span>
                 </>
               )}
             </span>

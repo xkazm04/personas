@@ -199,7 +199,11 @@
     "curation_schedule_last_run_label": "Letzter Lauf",
     "curation_schedule_disabled_state": "Die Gedächtnispflege ist für diesen Agenten deaktiviert",
     "curation_schedule_disable": "Zeitplan deaktivieren",
-    "curation_schedule_save": "Zeitplan speichern"
+    "curation_schedule_save": "Zeitplan speichern",
+    "reflect": "Reflektieren",
+    "reflect_hint": "Verwandte Erinnerungen zu dauerhaften Erkenntnissen zusammenführen — das Ergebnis ist ein Vorschlag, den du prüfst, bevor sich etwas ändert",
+    "reflect_pick_persona": "Erinnerungen eines Agenten reflektieren",
+    "reflecting": "Reflektiert..."
   },
   "memory_review": {
     "keep_prefix": "Behalte „",
@@ -1123,7 +1127,8 @@
     "tags_label": "Schlagwörter",
     "view_source_execution": "Quellausführung anzeigen",
     "delete_memory": "Erinnerung löschen",
-    "close": "Schließen"
+    "close": "Schließen",
+    "derived_from_label": "Synthetisiert aus"
   },
   "memory_table": {
     "agent": "Agent",

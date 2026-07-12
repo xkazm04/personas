@@ -5,13 +5,37 @@
  * data comes from the shared composer.
  */
 import { useMemo, useState } from 'react';
-import { Search, Zap, Bot, Cog } from 'lucide-react';
+import { Search, Zap, Bot, Cog, Store, Globe } from 'lucide-react';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import type { SystemOpKindMeta } from '@/api/systemOps';
+import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import { TRIGGER_BLOCK_TEMPLATES } from './libs/triggerStudioConstants';
 import { TriggerOptionCard, PersonaOptionCard } from './StudioOptionCards';
 import { SystemOpOptionCard } from './system_ops/SystemOpOptionCard';
+import { useSubscribedFeeds } from '@/features/triggers/sub_shared/useSubscribedFeeds';
+import { FeedIcon } from '@/features/triggers/sub_shared/sharedEventsUi';
 import type { StudioComposer } from './useStudioComposer';
+
+/** A subscribed Marketplace feed as a source card — arms an event_listener on `shared:<slug>`. */
+function MarketplaceSourceCard({ feed, hint, active, onPick }: {
+  feed: SharedEventCatalogEntry; hint: string; active: boolean; onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-input border text-left transition-colors ${
+        active ? 'border-primary/50 bg-primary/10' : 'border-border bg-background/40 hover:border-foreground/25 hover:bg-secondary/40'
+      }`}
+    >
+      <FeedIcon entry={feed} className="w-7 h-7" iconSize="w-4 h-4" />
+      <span className="min-w-0 flex-1">
+        <span className="typo-body font-medium text-foreground truncate block">{feed.name}</span>
+        <span className="typo-caption text-foreground/60 truncate block">{hint}</span>
+      </span>
+    </button>
+  );
+}
 
 function SearchField({ query, onQuery, placeholder }: { query: string; onQuery: (v: string) => void; placeholder: string }) {
   return (
@@ -33,10 +57,20 @@ export function StudioSourceRail({ c }: { c: StudioComposer }) {
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
 
+  const subscribedFeeds = useSubscribedFeeds();
   const filteredTriggers = useMemo(
     () => TRIGGER_BLOCK_TEMPLATES.filter((tpl) => !q || tpl.label.toLowerCase().includes(q) || tpl.description.toLowerCase().includes(q)),
     [q],
   );
+  const filteredFeeds = useMemo(
+    () => subscribedFeeds.filter((f) => !q || f.name.toLowerCase().includes(q) || f.slug.toLowerCase().includes(q)),
+    [subscribedFeeds, q],
+  );
+  // Local-scraper pipeline Signals get their own group; everything else is a
+  // curated Marketplace feed. Both wire in identically (event_listener on
+  // `shared:<slug>`) — the split is purely for legibility on the rail.
+  const marketplaceFeeds = useMemo(() => filteredFeeds.filter((f) => f.category !== 'scraper'), [filteredFeeds]);
+  const scraperFeeds = useMemo(() => filteredFeeds.filter((f) => f.category === 'scraper'), [filteredFeeds]);
   const filteredPersonas = useMemo(
     () => c.healthyPersonas.filter((p) => !q || p.name.toLowerCase().includes(q)),
     [c.healthyPersonas, q],
@@ -70,6 +104,42 @@ export function StudioSourceRail({ c }: { c: StudioComposer }) {
             onPick={() => c.setArmedSource((s) => (s?.kind === 'trigger' && s.triggerType === tpl.triggerType ? null : { kind: 'trigger', triggerType: tpl.triggerType }))}
           />
         ))}
+        {/* Marketplace category — subscribed feeds wire in as event listeners */}
+        {sourceKind === 'signals' && marketplaceFeeds.length > 0 && (
+          <div className="pt-2.5 pb-1 px-1 flex items-center gap-1.5">
+            <Store className="w-3 h-3 text-sky-400" />
+            <span className="typo-caption uppercase tracking-wide text-foreground/70">{st.group_marketplace}</span>
+          </div>
+        )}
+        {sourceKind === 'signals' && marketplaceFeeds.map((f) => (
+          <MarketplaceSourceCard
+            key={f.slug}
+            feed={f}
+            hint={st.marketplace_source_hint}
+            active={c.armedSource?.kind === 'marketplace' && c.armedSource.slug === f.slug}
+            onPick={() => c.setArmedSource((s) => (s?.kind === 'marketplace' && s.slug === f.slug ? null : { kind: 'marketplace', slug: f.slug, label: f.name }))}
+          />
+        ))}
+        {/* Scraper category — local-scraper pipeline change/error Signals */}
+        {sourceKind === 'signals' && scraperFeeds.length > 0 && (
+          <div className="pt-2.5 pb-1 px-1 flex items-center gap-1.5">
+            <Globe className="w-3 h-3 text-teal-400" />
+            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text -- feature name, matches sidebar 'Scraper' */}
+            <span className="typo-caption uppercase tracking-wide text-foreground/70">Scraper</span>
+          </div>
+        )}
+        {sourceKind === 'signals' && scraperFeeds.map((f) => (
+          <MarketplaceSourceCard
+            key={f.slug}
+            feed={f}
+            hint={st.marketplace_source_hint}
+            active={c.armedSource?.kind === 'marketplace' && c.armedSource.slug === f.slug}
+            onPick={() => c.setArmedSource((s) => (s?.kind === 'marketplace' && s.slug === f.slug ? null : { kind: 'marketplace', slug: f.slug, label: f.name }))}
+          />
+        ))}
+        {sourceKind === 'signals' && subscribedFeeds.length === 0 && (
+          <p className="typo-caption text-foreground/60 px-1 py-1">{st.marketplace_empty}</p>
+        )}
         {sourceKind === 'personas' && filteredPersonas.map((p) => (
           <PersonaOptionCard
             key={p.id}
@@ -80,7 +150,7 @@ export function StudioSourceRail({ c }: { c: StudioComposer }) {
             onPick={() => c.setArmedSource((s) => (s?.kind === 'persona' && s.personaId === p.id ? null : { kind: 'persona', personaId: p.id }))}
           />
         ))}
-        {sourceKind === 'signals' && filteredTriggers.length === 0 && (
+        {sourceKind === 'signals' && q && filteredTriggers.length === 0 && filteredFeeds.length === 0 && (
           <p className="typo-body opacity-80 text-foreground px-1 py-2">{tx(st.no_sources_match, { query })}</p>
         )}
         {sourceKind === 'personas' && filteredPersonas.length === 0 && (

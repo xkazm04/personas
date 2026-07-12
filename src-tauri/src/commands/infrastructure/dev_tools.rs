@@ -14,7 +14,7 @@ pub use competitions::*;
 use crate::db::models::{
     AttentionQueue, ContextHealthSnapshot, CrossProjectRelation, DevContext, DevContextGroup,
     DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevKpi, DevKpiMeasurement, DevIdea,
-    DevPipeline, DevProject, DevScan, DevTask, GitOperationResult, GoalProgressSuggestion,
+    DevPipeline, DevProject, DevScan, DevTask, DevUseCase, GitOperationResult, GoalProgressSuggestion,
     PortfolioHealthSummary, PortfolioSummary, RiskMatrixEntry, TechRadarEntry, TestRunResult,
     TriageRule,
 };
@@ -2883,6 +2883,7 @@ pub fn dev_tools_create_kpi(
     needed_connector: Option<String>,
     metric_type: Option<String>,
     context_id: Option<String>,
+    use_case_id: Option<String>,
 ) -> Result<DevKpi, AppError> {
     require_auth_sync(&state)?;
     repo::create_kpi(
@@ -2906,6 +2907,7 @@ pub fn dev_tools_create_kpi(
         needed_connector.as_deref(),
         metric_type.as_deref(),
         context_id.as_deref(),
+        use_case_id.as_deref(),
     )
 }
 
@@ -2931,6 +2933,7 @@ pub fn dev_tools_update_kpi(
     needed_connector: Option<Option<String>>,
     metric_type: Option<Option<String>>,
     tier: Option<String>,
+    use_case_id: Option<Option<String>>,
 ) -> Result<DevKpi, AppError> {
     require_auth_sync(&state)?;
     repo::update_kpi(
@@ -2953,6 +2956,7 @@ pub fn dev_tools_update_kpi(
         needed_connector.as_ref().map(|o| o.as_deref()),
         metric_type.as_ref().map(|o| o.as_deref()),
         tier.as_deref(),
+        use_case_id.as_ref().map(|o| o.as_deref()),
     )
 }
 
@@ -3160,6 +3164,116 @@ pub fn dev_tools_kpi_list_bindings(
 ) -> Result<Vec<crate::db::models::DevKpiBinding>, AppError> {
     require_auth_sync(&state)?;
     repo::list_kpi_bindings(&state.db, &kpi_id)
+}
+
+// ============================================================================
+// Use cases (behavioral slice layer — docs/plans/use-case-slice-layer.md)
+// ============================================================================
+
+#[tauri::command]
+pub fn dev_tools_list_use_cases(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    status: Option<String>,
+) -> Result<Vec<DevUseCase>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_use_cases(&state.db, &project_id, status.as_deref())
+}
+
+#[tauri::command]
+pub fn dev_tools_get_use_case(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<DevUseCase, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_use_case(&state.db, &id)
+}
+
+/// Every non-archived use case whose slice includes this context.
+#[tauri::command]
+pub fn dev_tools_list_use_cases_for_context(
+    state: State<'_, Arc<AppState>>,
+    context_id: String,
+) -> Result<Vec<DevUseCase>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_use_cases_for_context(&state.db, &context_id)
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn dev_tools_create_use_case(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    name: String,
+    description: Option<String>,
+    kind: Option<String>,
+    primary_context_id: Option<String>,
+    context_ids: Option<Vec<String>>,
+    status: Option<String>,
+    created_by: Option<String>,
+    rationale: Option<String>,
+) -> Result<DevUseCase, AppError> {
+    require_auth_sync(&state)?;
+    repo::create_use_case(
+        &state.db,
+        &project_id,
+        &name,
+        description.as_deref(),
+        kind.as_deref().unwrap_or("capability"),
+        primary_context_id.as_deref(),
+        &context_ids.unwrap_or_default(),
+        status.as_deref(),
+        created_by.as_deref().unwrap_or("user"),
+        rationale.as_deref(),
+    )
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn dev_tools_update_use_case(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    name: Option<String>,
+    description: Option<Option<String>>,
+    kind: Option<String>,
+    primary_context_id: Option<Option<String>>,
+    status: Option<String>,
+    pinned: Option<bool>,
+    context_ids: Option<Vec<String>>,
+) -> Result<DevUseCase, AppError> {
+    require_auth_sync(&state)?;
+    repo::update_use_case(
+        &state.db,
+        &id,
+        name.as_deref(),
+        description.as_ref().map(|o| o.as_deref()),
+        kind.as_deref(),
+        primary_context_id.as_ref().map(|o| o.as_deref()),
+        status.as_deref(),
+        pinned,
+        context_ids.as_deref(),
+    )
+}
+
+#[tauri::command]
+pub fn dev_tools_delete_use_case(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_use_case(&state.db, &id)
+}
+
+/// Deterministic seed (no LLM): promote each distinct `business_feature` label
+/// on the context map into a `proposed` use case sliced across the contexts
+/// that carry it. Idempotent — re-running only adds labels that are new.
+#[tauri::command]
+pub fn dev_tools_backfill_use_cases(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<DevUseCase>, AppError> {
+    require_auth_sync(&state)?;
+    repo::backfill_use_cases_from_business_features(&state.db, &project_id)
 }
 
 // ============================================================================

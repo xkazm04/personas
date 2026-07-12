@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import {
-  Sparkles, Plus, Trash2, Check, Pencil, FolderTree, Mic, Brain, Volume2, Radio,
+  Sparkles, Plus, Trash2, Check, Pencil, FolderTree, Mic, Brain, Radio,
   BookOpen, Globe, FileText, ArrowUpRight, ArrowRight,
 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
@@ -30,7 +30,6 @@ const MILESTONE_TAB: Record<MilestoneKey, TwinTab> = {
   identity: 'identity',
   tone: 'tone',
   brain: 'brain',
-  voice: 'voice',
   channels: 'channels',
   memories: 'knowledge',
 };
@@ -471,8 +470,6 @@ function HeroCard(props: HeroCardProps) {
                 onJump={() => onJump(MILESTONE_TAB.tone)} title={`${t.progress.tone} — ${statusText(r.tone)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.tone })} />
               <MilestoneRow icon={Brain} label={t.profiles.chipBrain} status={r.brain}
                 onJump={() => onJump(MILESTONE_TAB.brain)} title={`${t.progress.brain} — ${statusText(r.brain)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.brain })} />
-              <MilestoneRow icon={Volume2} label={t.profiles.chipVoice} status={r.voice}
-                onJump={() => onJump(MILESTONE_TAB.voice)} title={`${t.progress.voice} — ${statusText(r.voice)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.voice })} />
               <MilestoneRow icon={Radio} label={t.profiles.chipChannels} status={r.channels} meta={r.counts.channelsActive ? `×${r.counts.channelsActive}` : undefined}
                 onJump={() => onJump(MILESTONE_TAB.channels)} title={`${t.progress.channels} — ${statusText(r.channels)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.channels })} />
               <MilestoneRow icon={BookOpen} label={t.profiles.chipMemories} status={r.memories} meta={r.counts.memoriesApproved ? `×${r.counts.memoriesApproved}` : undefined}
@@ -572,7 +569,6 @@ function SatelliteCard(props: SatelliteCardProps) {
             ['identity', FileText],
             ['tone', Mic],
             ['brain', Brain],
-            ['voice', Volume2],
             ['channels', Radio],
             ['memories', BookOpen],
           ] as const).map(([k, Icon]) => (

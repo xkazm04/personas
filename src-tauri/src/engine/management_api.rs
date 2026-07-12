@@ -106,6 +106,12 @@ pub fn management_router(state: ManagementState) -> Router {
         )
         // Credential proxy -- route HTTP calls through stored credentials
         .route("/api/proxy/{credential_id}", post(proxy_request))
+        // Local scraper (embedded Pumper) -- the personas-mcp `fetch_readable`
+        // tool forwards here so the SSRF-safe fetch runs in the main app where
+        // the engine lives (the mcp binary has no engine module).
+        // The scraper pivoted to Signals in Phase 1c; the only bridge route kept
+        // is dataset read-back (for the query_dataset MCP tool).
+        .route("/api/scrape/query", post(scrape_query))
         // A2A Gateway -- agent card discovery + JSON-RPC entry point
         .route("/agent-card/{persona_id}", get(get_agent_card))
         .route("/a2a/{persona_id}", post(handle_a2a_request))
@@ -286,6 +292,42 @@ const API_KEY_RATE_WINDOW: Duration = Duration::from_secs(60);
 ///
 /// `scopes` comes from `parsed_scopes`, which fails closed (empty vec) on a
 /// corrupt column, so a malformed row authorizes nothing scope-gated.
+#[derive(Deserialize)]
+struct ScrapeQueryBody {
+    dataset: String,
+    #[serde(default)]
+    limit: Option<i64>,
+    #[serde(default)]
+    changed_only: bool,
+}
+
+/// `POST /api/scrape/query` — read records back from a scraper dataset.
+async fn scrape_query(
+    AxumState(_state): AxumState<Arc<ManagementState>>,
+    Json(_body): Json<ScrapeQueryBody>,
+) -> Response {
+    #[cfg(feature = "scraper")]
+    {
+        match crate::engine::scraper::query_dataset(
+            &_state.pool,
+            &_body.dataset,
+            _body.limit.unwrap_or(100),
+            _body.changed_only,
+        ) {
+            Ok(records) => Json(records).into_response(),
+            Err(e) => (StatusCode::BAD_GATEWAY, e).into_response(),
+        }
+    }
+    #[cfg(not(feature = "scraper"))]
+    {
+        (
+            StatusCode::NOT_IMPLEMENTED,
+            "scraper feature not enabled in this build",
+        )
+            .into_response()
+    }
+}
+
 fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'static str> {
     let has = |needle: &str| scopes.iter().any(|s| s == needle);
 

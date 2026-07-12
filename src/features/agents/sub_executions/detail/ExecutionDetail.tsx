@@ -8,6 +8,12 @@ import { ReplaySandbox } from '@/features/agents/sub_executions/replay/ReplaySan
 import { hasNonEmptyJson } from './executionDetailTypes';
 import { ExecutionDetailTabs, type DetailTab } from './ExecutionDetailTabs';
 import { ExecutionDetailContent } from './ExecutionDetailContent';
+import { ChainTraceView } from './chain/ChainTraceView';
+import { useChainTrace } from '../libs/useChainTrace';
+import { getExecution } from '@/api/agents/executions';
+import { silentCatch } from '@/lib/silentCatch';
+import { BaseModal } from '@/lib/ui/BaseModal';
+import { X } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { AnnotationEditor } from '../components/AnnotationEditor';
 import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations';
@@ -17,13 +23,24 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 interface ExecutionDetailProps {
   execution: PersonaExecution;
+  /** Rendered inside another ExecutionDetail's chain drill-down modal — hides
+   *  the chain tab so drilling can't recurse indefinitely. */
+  nested?: boolean;
 }
 
-export function ExecutionDetail({ execution }: ExecutionDetailProps) {
+export function ExecutionDetail({ execution, nested = false }: ExecutionDetailProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>('detail');
+  const [chainOpen, setChainOpen] = useState<PersonaExecution | null>(null);
   const { byExecution, knownTags, upsert, remove } = useExecutionAnnotations(execution.persona_id);
   const annotation = byExecution.get(execution.id) ?? null;
   const { t } = useTranslation();
+  const chain = useChainTrace(execution.id, execution.persona_id, nested);
+
+  const openChainExecution = (executionId: string) => {
+    getExecution(executionId, execution.persona_id)
+      .then(setChainOpen)
+      .catch(silentCatch('execution-detail:openChainExecution'));
+  };
   const dryRun = useDryRun({
     personaId: execution.persona_id,
     getInputData: () => execution.input_data ?? undefined,
@@ -34,6 +51,10 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
   const hasInputData = hasNonEmptyJson(execution.input_data, 'object');
   const hasOutputData = hasNonEmptyJson(execution.output_data, 'object');
   const directorReviewMd = execution.director_review_md ?? null;
+  // Pipeline waterfall builds from the run's timeline (synthetic trace) or a
+  // live trace — both require the run to have started. Gate the tab so it never
+  // dead-ends on a never-started (queued) run.
+  const hasPipeline = !!execution.started_at;
 
   return (
     <div className="space-y-4">
@@ -44,6 +65,8 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           setActiveTab={setActiveTab}
           hasToolSteps={hasToolSteps}
           hasDirectorReview={!!directorReviewMd}
+          hasPipeline={hasPipeline}
+          hasChain={chain.hasChain}
           executionStatus={execution.status}
         />
         <div className="flex items-center gap-2">
@@ -76,6 +99,15 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             <PipelineWaterfall execution={execution} />
           ) : activeTab === 'trace' ? (
             <TraceInspector execution={execution} />
+          ) : activeTab === 'chain' ? (
+            <ChainTraceView
+              traces={chain.traces}
+              loading={chain.loading}
+              error={chain.error}
+              partial={chain.partial}
+              currentExecutionId={execution.id}
+              onOpenExecution={openChainExecution}
+            />
           ) : activeTab === 'inspector' && hasToolSteps ? (
             <ExecutionInspector execution={execution} />
           ) : (
@@ -97,6 +129,35 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           />
         </aside>
       </div>
+
+      {chainOpen && (
+        <BaseModal
+          isOpen={!!chainOpen}
+          onClose={() => setChainOpen(null)}
+          titleId="chain-execution-detail-title"
+          size="xl"
+          portal
+          panelClassName="bg-background border border-primary/15 rounded-modal shadow-elevation-4 overflow-hidden"
+        >
+          <div className="flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-primary/10">
+              <h3 id="chain-execution-detail-title" className="typo-heading text-foreground/90 truncate">
+                {t.agents.executions.chain_open} #{chainOpen.id.slice(0, 8)}
+              </h3>
+              <button
+                onClick={() => setChainOpen(null)}
+                aria-label={t.common.close}
+                className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto">
+              <ExecutionDetail execution={chainOpen} nested />
+            </div>
+          </div>
+        </BaseModal>
+      )}
     </div>
   );
 }

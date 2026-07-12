@@ -1,4 +1,4 @@
-import { BookOpen, Brain, Mic, Radio, User, Volume2 } from 'lucide-react';
+import { BookOpen, Brain, Mic, Radio, User } from 'lucide-react';
 import type { TwinTab } from '@/lib/types/types';
 import type { LucideIcon } from 'lucide-react';
 import type { TwinReadiness } from '../useTwinReadiness';
@@ -71,17 +71,6 @@ export function buildGaps(r: TwinReadiness): Gap[] {
       icon: Brain,
       titleKey: r.brain === 'empty' ? 'brainEmpty' : 'brainPartial',
       hintKey: r.brain === 'empty' ? 'brainEmpty' : 'brainPartial',
-    });
-  }
-  if (r.voice !== 'complete') {
-    out.push({
-      id: 'voice',
-      severity: 1,
-      priority: 4,
-      tab: 'voice',
-      icon: Volume2,
-      titleKey: 'voiceEmpty',
-      hintKey: 'voiceEmpty',
     });
   }
   if (r.channels !== 'complete') {

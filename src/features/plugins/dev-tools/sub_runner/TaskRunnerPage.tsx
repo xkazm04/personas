@@ -16,6 +16,7 @@ import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker'
 import { SCAN_AGENTS } from '../constants/scanAgents';
 import { ValueBadge } from '../sub_scanner/IdeaScannerCards';
 import { useSystemStore } from '@/stores/systemStore';
+import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { TaskOutputPanel } from './TaskOutputPanel';
 import { SelfHealingPanel } from './SelfHealingPanel';
@@ -290,9 +291,8 @@ function TaskCard({
   const sourceAgentEmoji = sourceIdea
     ? SCAN_AGENTS.find((a) => a.key === sourceIdea.scan_type)?.emoji ?? null
     : null;
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const handleGoalJump = () => {
-    setDevToolsTab('goals');
+    openGoalsBoard();
   };
 
   return (

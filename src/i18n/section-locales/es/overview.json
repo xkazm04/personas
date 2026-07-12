@@ -199,7 +199,11 @@
     "curation_schedule_last_run_label": "Última ejecución",
     "curation_schedule_disabled_state": "La curación está deshabilitada para este agente",
     "curation_schedule_disable": "Deshabilitar programación",
-    "curation_schedule_save": "Guardar programación"
+    "curation_schedule_save": "Guardar programación",
+    "reflect": "Reflexionar",
+    "reflect_hint": "Consolida recuerdos relacionados en conclusiones duraderas — el resultado es una propuesta que revisas antes de que cambie nada",
+    "reflect_pick_persona": "Reflexionar sobre los recuerdos de un agente",
+    "reflecting": "Reflexionando..."
   },
   "memory_review": {
     "keep_prefix": "Mantener “",
@@ -1123,7 +1127,8 @@
     "tags_label": "Etiquetas",
     "view_source_execution": "Ver Ejecución de Origen",
     "delete_memory": "Eliminar Memoria",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "derived_from_label": "Sintetizado a partir de"
   },
   "memory_table": {
     "agent": "Agente",

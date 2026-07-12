@@ -5,8 +5,7 @@
  * relative due date, status, and progress, and opens the goal on click. Done
  * goals drop off the timeline (no urgency left).
  */
-import { useEffect, useMemo, useState } from 'react';
-import { CalendarClock } from 'lucide-react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useSystemStore } from '@/stores/systemStore';
@@ -18,6 +17,10 @@ import { isOngoing, goalStatusMeta } from './goalStatus';
 import { GoalAtmosphere, SectionLabel, GoalProjectBadge } from './goalsTheme';
 import { GoalDetailDrawer } from './GoalDetailDrawer';
 import { GoalEditorModal } from './GoalEditorModal';
+
+// Lazy so its ~12KB of traced path data stays out of the eager entry chunk (this file
+// is pulled in by two separate lazy chunks — see GoalsEmptyGlyph).
+const GoalsEmptyGlyph = lazy(() => import('./GoalsEmptyGlyph'));
 
 type Bucket = 'overdue' | 'this_week' | 'this_month' | 'later' | 'undated';
 const BUCKET_ORDER: Bucket[] = ['overdue', 'this_week', 'this_month', 'later', 'undated'];
@@ -103,7 +106,9 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
     return (
       <div className="relative flex flex-col items-center justify-center py-16 text-center">
         <GoalAtmosphere />
-        <CalendarClock className="w-10 h-10 text-foreground mb-3" />
+        <Suspense fallback={<div className="w-36 h-36 mb-2" />}>
+          <GoalsEmptyGlyph />
+        </Suspense>
         <h3 className="typo-section-title text-foreground">{dl.timeline_no_dated}</h3>
         <p className="typo-body text-foreground mt-1 max-w-md">{dl.timeline_no_dated_sub}</p>
       </div>

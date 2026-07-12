@@ -187,11 +187,12 @@ pub(crate) fn propose_kpi_auto_inner(
         db, project_id, name.trim(), description, context_group_id, category, measure_kind,
         &measure_config, unit.unwrap_or(""), direction,
         None, None, None, cadence, Some("proposed"), "user", None, needed_connector, None, context_id,
+        /* use_case_id */ None,
     )?;
     if tier != "supporting" {
         let _ = repo::update_kpi(
             db, &kpi.id, None, None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, Some(tier),
+            None, None, None, None, None, None, Some(tier), /* use_case_id */ None,
         );
     }
     if measure_kind == "codebase" {
@@ -359,7 +360,7 @@ fn apply_composed_measure(pool: &crate::db::DbPool, kpi_id: &str, env: &Value) {
     let config = json!({ "cmd": cmd, "parse": parse }).to_string();
     let _ = repo::update_kpi(
         pool, kpi_id, None, None, None, None, None, None, Some(&config), None, None, None,
-        None, None, None, None, None, None, None,
+        None, None, None, None, None, None, None, /* use_case_id */ None,
     );
     if let Some(value) = m.get("value").and_then(|v| v.as_f64()) {
         let _ = repo::record_kpi_measurement(pool, kpi_id, value, "ai-compose", None, None);
@@ -367,6 +368,7 @@ fn apply_composed_measure(pool: &crate::db::DbPool, kpi_id: &str, env: &Value) {
             let _ = repo::update_kpi(
                 pool, kpi_id, None, None, None, None, None, None, None, None, None,
                 Some(Some(value)), None, None, None, None, None, None, None,
+                /* use_case_id */ None,
             );
         }
     }

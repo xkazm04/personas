@@ -199,7 +199,11 @@
     "curation_schedule_last_run_label": "Dernière exécution",
     "curation_schedule_disabled_state": "La révision est désactivée pour cet agent",
     "curation_schedule_disable": "Désactiver la planification",
-    "curation_schedule_save": "Enregistrer la planification"
+    "curation_schedule_save": "Enregistrer la planification",
+    "reflect": "Réflexion",
+    "reflect_hint": "Consolide les souvenirs liés en enseignements durables — le résultat est une proposition que vous validez avant tout changement",
+    "reflect_pick_persona": "Lancer une réflexion sur les souvenirs d'un agent",
+    "reflecting": "Réflexion en cours..."
   },
   "memory_review": {
     "keep_prefix": "Conserver «",
@@ -1123,7 +1127,8 @@
     "tags_label": "Étiquettes",
     "view_source_execution": "Voir l'exécution source",
     "delete_memory": "Supprimer la mémoire",
-    "close": "Fermer"
+    "close": "Fermer",
+    "derived_from_label": "Synthétisé à partir de"
   },
   "memory_table": {
     "agent": "Agent",

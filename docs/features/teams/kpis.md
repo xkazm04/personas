@@ -159,5 +159,16 @@ target / date / tier / cadence / status, or draw the warn/critical lines),
 `dev_kpis` (definition + live state + review lifecycle
 `proposed → active → paused/archived`) and `dev_kpi_measurements` (value,
 source, evidence; recording rolls `current_value`/`last_measured_at` forward
-atomically). Group-level KPIs attach to `dev_context_groups`; project-level
-KPIs have `context_group_id = NULL`.
+atomically).
+
+**Scope**, narrowest first: `use_case_id` (a behavioral slice through several
+contexts) → `context_id` (one context) → `context_group_id` (one group) →
+all NULL (project-level). The use-case tier is the honest owner of an outcome
+that spans contexts, and it is what goal derivation reads to constrain the
+candidate contexts it offers. See
+[`plugins/dev tools/context-design.md`](../plugins/dev%20tools/context-design.md) §8.
+
+> A full context re-scan recreates `dev_contexts` rows under new ids. The scan
+> snapshots and reconciles `dev_kpis.context_id` by context name, so a
+> context-scoped KPI keeps its scope across a rebuild (before this, it was
+> silently `SET NULL`ed).

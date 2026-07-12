@@ -181,5 +181,7 @@
     "health_snapshot": "Instantané de santé",
     "manual": "Saisie manuelle",
     "scan": "Analyse"
-  }
+  },
+  "kpi_scope_label": "Portée",
+  "kpi_scope_this_context": "Ce contexte"
 }

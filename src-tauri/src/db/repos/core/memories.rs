@@ -128,6 +128,7 @@ row_mapper!(row_to_memory -> PersonaMemory {
     created_at, updated_at,
     use_case_id [opt],
     home_team_id [opt],
+    derived_from [opt],
 });
 
 /// Map user-provided sort column to a safe SQL column name.
@@ -294,29 +295,41 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
 
         let conn = pool.get()?;
 
-        // 2026-05-05 — content dedup within 24h. SQL audit on the
-        // rapid-validation cohort showed Stock Price Logger landing two
-        // byte-identical memory rows from separate runs of the same day
-        // (same AAPL close, same OHLCV string). Memories are an
-        // accumulating ledger — duplicates pollute search and inflate
-        // recall context. Skip insert when the same persona already has
-        // a memory with identical content within the last 24h; return
-        // that existing row so dispatch.rs sees a normal Ok and logs
-        // a stable id.
-        let dup: Result<String, _> = conn.query_row(
-            "SELECT id FROM persona_memories
-             WHERE persona_id = ?1 AND content = ?2
-               AND created_at >= datetime(?3, '-24 hours')
-             ORDER BY created_at DESC LIMIT 1",
-            params![input.persona_id, content, now],
-            |row| row.get(0),
-        );
-        if let Ok(existing_id) = dup {
+        // Write-path semantic dedup (2026-07 — supersedes the old 24h
+        // exact-content guard). The original guard only skipped BYTE-identical
+        // rows created within 24h; the audited Stock-Price-Logger case landed
+        // identical memories from runs MORE than 24h apart, and case/whitespace
+        // variants (" AAPL Closed " vs "aapl closed") slipped through exact
+        // match entirely. We now normalize (trim, collapse internal whitespace,
+        // lowercase — the SAME `normalize_for_dedup` the manual cleanup path
+        // `find_duplicate_groups` uses) and skip the insert when the persona
+        // already holds a matching NON-core, NON-archive memory in the same
+        // capability scope. On hit we touch the survivor's `updated_at` (so the
+        // recency clock reflects this re-observation — feeds the active-tier
+        // decay in `get_for_injection_v2`) and return it, so callers
+        // (dispatch.rs, batch flows) still see a normal `Ok` with a stable id.
+        //
+        // Merge guards (MEMORY CONTRACT §1): `core` is never a dedup target
+        // (user-pinned is sacred — an identical fresh memory is inserted as a
+        // normal `active` row rather than folded into a core one), and the
+        // candidate query is bounded by `persona_id` so it can never cross
+        // personas.
+        let normalized = normalize_for_dedup(&content);
+        if let Some(existing_id) = find_normalized_duplicate(
+            &conn,
+            &input.persona_id,
+            &normalized,
+            input.use_case_id.as_deref(),
+        )? {
+            conn.execute(
+                "UPDATE persona_memories SET updated_at = ?1 WHERE id = ?2",
+                params![now, existing_id],
+            )?;
             tracing::info!(
                 persona_id = %input.persona_id,
                 title = %title,
                 existing_id = %existing_id,
-                "Skipping memory insert — identical content within 24h (dedup)"
+                "Skipping memory insert — normalized-content duplicate (write-path dedup)"
             );
             return get_by_id(pool, &existing_id);
         }
@@ -343,6 +356,58 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
     })
 }
 
+/// Create a synthesized (reflection-derived) memory with provenance.
+///
+/// Delegates to [`create`] for validation + HTML-strip + 24h dedup, then
+/// stamps `derived_from` with the source memory ids. If the dedup guard
+/// returned an existing identical row, the provenance is attached to that
+/// row instead — the lineage is the same either way.
+///
+/// `home_team_id`: set by TEAM reflection so the insight is shared with
+/// every member of the team at injection time (MEMORY CONTRACT (5) — this
+/// is the one sanctioned runtime writer of the column). `None` for
+/// persona-scoped reflection.
+pub fn create_synthesized(
+    pool: &DbPool,
+    input: CreatePersonaMemoryInput,
+    derived_from: &[String],
+    home_team_id: Option<&str>,
+) -> Result<PersonaMemory, AppError> {
+    let created = create(pool, input)?;
+    if !derived_from.is_empty() || home_team_id.is_some() {
+        let json = serde_json::to_string(derived_from)
+            .map_err(|e| AppError::Internal(format!("serialize derived_from: {e}")))?;
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_memories
+             SET derived_from = ?1,
+                 home_team_id = COALESCE(?2, home_team_id)
+             WHERE id = ?3",
+            params![json, home_team_id, created.id],
+        )?;
+    }
+    get_by_id(pool, &created.id)
+}
+
+/// All `active`-tier memories for a persona — the candidate set for the
+/// decay-based forgetting pass (`engine::memory_recall::run_decay_forgetting`).
+/// `core` is user-pinned and `working`/`archive` are handled by
+/// [`run_lifecycle`]'s existing rules, so only `active` decays.
+pub fn get_active_for_decay(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Vec<PersonaMemory>, AppError> {
+    timed_query!("persona_memories", "persona_memories::get_active_for_decay", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT * FROM persona_memories
+             WHERE persona_id = ?1 AND tier = 'active'",
+        )?;
+        let rows = stmt.query_map(params![persona_id], row_to_memory)?;
+        Ok(collect_rows(rows, "memories::get_active_for_decay"))
+    })
+}
+
 /// Why a row was rejected by `batch_create`. Stays a `&'static str` so
 /// callers can match without allocating per-row.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -350,8 +415,9 @@ pub struct MemorySkipReason {
     /// Index into the original `inputs` vec passed to `batch_create`.
     pub index: usize,
     /// Stable token. Current values: `"empty_title_or_content"`,
-    /// `"invalid_category"`. Add new tokens here when adding new skip
-    /// branches so dashboards can group on them.
+    /// `"invalid_category"`, `"duplicate_content"` (normalized-content
+    /// write-path dedup — see `find_normalized_duplicate`). Add new tokens
+    /// here when adding new skip branches so dashboards can group on them.
     pub reason: &'static str,
 }
 
@@ -384,6 +450,37 @@ pub fn batch_create(
         let now = chrono::Utc::now().to_rfc3339();
         let mut count: i64 = 0;
         let mut skipped: Vec<MemorySkipReason> = Vec::new();
+
+        // Preload existing normalized-content signatures for every persona in
+        // this batch so write-path dedup costs ONE query per distinct persona
+        // instead of one per row. Keyed by (persona_id, use_case_id,
+        // normalized_content); we also insert this batch's own rows into the
+        // set as we go, so a batch that contains its OWN duplicates collapses
+        // them too. Mirrors `create`'s dedup (core/archive excluded — never
+        // dedup targets). See `find_normalized_duplicate` for the rationale and
+        // the future embedding-dedup hook point.
+        let mut seen: std::collections::HashSet<(String, Option<String>, String)> =
+            std::collections::HashSet::new();
+        {
+            let persona_ids: std::collections::HashSet<String> =
+                inputs.iter().map(|i| i.persona_id.clone()).collect();
+            let mut sel = tx.prepare(
+                "SELECT content, use_case_id FROM persona_memories
+                 WHERE persona_id = ?1 AND tier NOT IN ('core', 'archive')",
+            )?;
+            for pid in &persona_ids {
+                let rows = sel.query_map(params![pid], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, Option<String>>(1)?,
+                    ))
+                })?;
+                for row in rows {
+                    let (content, uc) = row?;
+                    seen.insert((pid.clone(), uc, normalize_for_dedup(&content)));
+                }
+            }
+        }
 
         {
             let mut stmt = tx.prepare(
@@ -422,12 +519,30 @@ pub fn batch_create(
                 }
                 let category = category.to_string();
                 let importance = match input.importance {
-                    Some(v) => match validate_importance(v) {
-                        Ok(v) => v,
-                        Err(_) => 3,
-                    },
+                    Some(v) => validate_importance(v).unwrap_or(3),
                     None => 3,
                 };
+
+                // Write-path semantic dedup (mirrors `create`): skip a row whose
+                // normalized content already exists for this persona in the same
+                // capability scope — whether the survivor is a pre-existing row
+                // (preloaded above) or an earlier row from THIS batch.
+                let dedup_key = (
+                    input.persona_id.clone(),
+                    input.use_case_id.clone(),
+                    normalize_for_dedup(&content),
+                );
+                if seen.contains(&dedup_key) {
+                    let reason = "duplicate_content";
+                    tracing::warn!(
+                        index,
+                        persona_id = %input.persona_id,
+                        reason,
+                        "memories::batch_create skipping row: normalized-content duplicate"
+                    );
+                    skipped.push(MemorySkipReason { index, reason });
+                    continue;
+                }
 
                 stmt.execute(params![
                     id,
@@ -445,6 +560,7 @@ pub fn batch_create(
                     now,
                     input.use_case_id,
                 ])?;
+                seen.insert(dedup_key);
                 count += 1;
             }
         }
@@ -720,6 +836,50 @@ fn normalize_for_dedup(content: &str) -> String {
     content.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
 }
 
+/// Write-path dedup lookup: does `persona_id` already hold a NON-core,
+/// NON-archive memory whose normalized content equals `normalized`, in the same
+/// capability scope (`use_case_id`)? Returns the survivor's id on hit.
+///
+/// Bounded by `persona_id` (served by `idx_persona_memories_persona`) — never a
+/// full-table scan and never cross-persona. `core` is excluded so a user-pinned
+/// memory is never a dedup target (MEMORY CONTRACT §1); `archive` is excluded so
+/// retired rows aren't silently resurrected as the survivor. The `use_case_id`
+/// equality keeps capability-scoped duplicates distinct from persona-wide ones.
+/// This mirrors the scope of `find_duplicate_groups` so the write-path and the
+/// manual cleanup path agree on what "duplicate" means.
+///
+/// SEMANTIC-DEDUP HOOK POINT — this is deliberately exact-normalized-string
+/// equality today. A future embedding-based pass can widen the match here (e.g.
+/// cosine distance over content embeddings under `#[cfg(feature = "ml")]`)
+/// WITHOUT touching either caller (`create` / `batch_create`): keep the
+/// persona-scope + non-core + scope guards and replace only the equality test
+/// below with a similarity threshold.
+fn find_normalized_duplicate(
+    conn: &rusqlite::Connection,
+    persona_id: &str,
+    normalized: &str,
+    use_case_id: Option<&str>,
+) -> Result<Option<String>, AppError> {
+    let mut stmt = conn.prepare_cached(
+        "SELECT id, content, use_case_id FROM persona_memories
+         WHERE persona_id = ?1 AND tier NOT IN ('core', 'archive')",
+    )?;
+    let rows = stmt.query_map(params![persona_id], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, Option<String>>(2)?,
+        ))
+    })?;
+    for row in rows {
+        let (id, content, uc) = row?;
+        if uc.as_deref() == use_case_id && normalize_for_dedup(&content) == normalized {
+            return Ok(Some(id));
+        }
+    }
+    Ok(None)
+}
+
 /// Archive memories by id (set `tier = 'archive'`). Never touches `core`
 /// (user-pinned). Chunked + transactional like [`batch_delete`]. Reversible via
 /// [`update_tier`]`(id, "active")`. Returns the number of rows archived.
@@ -790,7 +950,7 @@ pub fn find_duplicate_groups(
             })
             .collect();
         // Stable output order (largest groups first) for predictable reporting.
-        groups.sort_by(|a, b| b.len().cmp(&a.len()));
+        groups.sort_by_key(|g| std::cmp::Reverse(g.len()));
         Ok(groups)
     })
 }
@@ -1136,8 +1296,13 @@ pub fn get_for_injection(
 /// tier so memories authored in the home-team workspace are shared across
 /// every member's prompt assembly (MEMORY CONTRACT §5).
 ///
-/// Ordering: importance DESC, access_count DESC, created_at DESC for active;
-/// importance DESC, created_at DESC for core.
+/// Ordering: core = importance DESC, created_at DESC (never decays).
+/// Active/working = the decay-aware score from MEMORY CONTRACT (6):
+/// `importance * 10 + min(access_count, 9) / (1 + age_days/7)` — importance
+/// strictly dominates (access term capped below one importance step), and the
+/// access weight fades hyperbolically with time since last injection, so a
+/// stale heavy-hitter no longer pins itself above fresh, equally-important
+/// memories.
 pub fn get_for_injection_v2(
     pool: &DbPool,
     scope: InjectionScope<'_>,
@@ -1165,7 +1330,12 @@ pub fn get_for_injection_v2(
                  SELECT * FROM persona_memories
                  WHERE {persona_scope_sql} AND tier IN ('active', 'working')
                  {active_uc_sql}
-                 ORDER BY importance DESC, access_count DESC, created_at DESC
+                 ORDER BY (importance * 10.0
+                           + MIN(access_count, 9)
+                             / (1.0 + (julianday('now')
+                                       - julianday(COALESCE(last_accessed_at, created_at))) / 7.0)
+                          ) DESC,
+                          created_at DESC
                  LIMIT ?3
              )"
             );
@@ -2224,5 +2394,200 @@ mod tests {
             "diverging capability scope must widen to persona-wide",
         );
         assert_eq!(merged.tier, "active");
+    }
+
+    // ========================================================================
+    // Direction 1 — write-path semantic (normalized-content) dedup
+    // ========================================================================
+
+    fn dedup_input(persona_id: &str, content: &str) -> CreatePersonaMemoryInput {
+        CreatePersonaMemoryInput {
+            persona_id: persona_id.to_string(),
+            title: "t".into(),
+            content: content.into(),
+            category: Some("fact".into()),
+            source_execution_id: None,
+            importance: Some(3),
+            tags: None,
+            use_case_id: None,
+        }
+    }
+
+    /// The Stock-Price-Logger case: two runs land byte-identical content. The
+    /// old 24h guard only caught same-day exact dupes; the write-path
+    /// normalized dedup collapses them regardless of when they arrive, and
+    /// returns the SAME surviving row (stable id) instead of a second row.
+    #[test]
+    fn write_path_dedup_collapses_cross_run_duplicate() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Dedup Repeat");
+        let first = create(&pool, dedup_input(&persona_id, "AAPL closed at 150.00")).unwrap();
+        let second = create(&pool, dedup_input(&persona_id, "AAPL closed at 150.00")).unwrap();
+
+        assert_eq!(first.id, second.id, "duplicate must fold into the survivor");
+        let all = get_by_persona(&pool, &persona_id, None).unwrap();
+        assert_eq!(all.len(), 1, "only one row should exist");
+    }
+
+    /// Near-duplicates that differ only by case / surrounding + internal
+    /// whitespace normalize to the same content and are deduped — the exact
+    /// variants the old byte-equality guard let through.
+    #[test]
+    fn write_path_dedup_collapses_whitespace_and_case_variants() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Dedup Variants");
+        let a = create(&pool, dedup_input(&persona_id, "The user prefers dark mode")).unwrap();
+        let b = create(
+            &pool,
+            dedup_input(&persona_id, "  the   USER prefers   Dark Mode "),
+        )
+        .unwrap();
+
+        assert_eq!(a.id, b.id, "case/whitespace variant must dedup");
+        assert_eq!(get_by_persona(&pool, &persona_id, None).unwrap().len(), 1);
+    }
+
+    /// MEMORY CONTRACT §1: `core` is never a dedup target. An identical-content
+    /// memory arriving after one has been pinned to core must be inserted as a
+    /// normal `active` row — the user's pinned memory is never silently folded
+    /// into or replaced.
+    #[test]
+    fn write_path_dedup_never_targets_core_tier() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Dedup Core Immune");
+        let pinned = create(&pool, dedup_input(&persona_id, "Ship on Fridays")).unwrap();
+        update_tier(&pool, &pinned.id, "core").unwrap();
+
+        let fresh = create(&pool, dedup_input(&persona_id, "Ship on Fridays")).unwrap();
+        assert_ne!(
+            fresh.id, pinned.id,
+            "must NOT dedup against a core memory"
+        );
+        assert_eq!(fresh.tier, "active");
+        assert_eq!(
+            get_by_persona(&pool, &persona_id, None).unwrap().len(),
+            2,
+            "core memory + new active row = two rows"
+        );
+    }
+
+    /// Dedup is bounded by persona_id: identical content authored by two
+    /// different personas stays two independent memories (cross-persona
+    /// isolation).
+    #[test]
+    fn write_path_dedup_is_per_persona() {
+        let pool = init_test_db().unwrap();
+        let persona_a = make_persona(&pool, "Dedup Persona A");
+        let persona_b = make_persona(&pool, "Dedup Persona B");
+        let a = create(&pool, dedup_input(&persona_a, "Deploy target is prod")).unwrap();
+        let b = create(&pool, dedup_input(&persona_b, "Deploy target is prod")).unwrap();
+
+        assert_ne!(a.id, b.id, "different personas must not dedup against each other");
+        assert_eq!(get_by_persona(&pool, &persona_a, None).unwrap().len(), 1);
+        assert_eq!(get_by_persona(&pool, &persona_b, None).unwrap().len(), 1);
+    }
+
+    /// `batch_create` dedups both against pre-existing rows AND within the same
+    /// batch, reporting each collapsed row with the `duplicate_content` token.
+    #[test]
+    fn batch_create_dedups_within_and_against_existing() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Batch Dedup");
+        // Pre-existing row the batch will collide with.
+        create(&pool, dedup_input(&persona_id, "Rate limit is 100 rps")).unwrap();
+
+        let inputs = vec![
+            dedup_input(&persona_id, "Rate limit is 100 rps"), // dup of pre-existing
+            dedup_input(&persona_id, "Cache TTL is 60s"),      // new
+            dedup_input(&persona_id, "cache   TTL is 60s"),    // dup within-batch (normalized)
+            dedup_input(&persona_id, "Region is eu-west-1"),   // new
+        ];
+        let result = batch_create(&pool, inputs).unwrap();
+
+        assert_eq!(result.inserted, 2, "only the two distinct rows insert");
+        let dup_indices: Vec<usize> = result
+            .skipped
+            .iter()
+            .filter(|s| s.reason == "duplicate_content")
+            .map(|s| s.index)
+            .collect();
+        assert_eq!(dup_indices, vec![0, 2], "rows 0 and 2 are duplicates");
+        // Persona now holds: pre-existing + 2 new = 3 rows.
+        assert_eq!(get_by_persona(&pool, &persona_id, None).unwrap().len(), 3);
+    }
+
+    // ========================================================================
+    // Direction 2 — decay-aware active-tier injection ranking
+    // ========================================================================
+
+    /// MEMORY CONTRACT (6): a stale heavy-hitter (huge access_count, untouched
+    /// for months) must rank BELOW a fresh memory of equal importance, because
+    /// the access term is time-windowed. Under the old monotonic sort the
+    /// heavy-hitter would win on `access_count DESC` forever.
+    #[test]
+    fn injection_ranking_decays_stale_heavy_hitters() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Decay Rank");
+        let stale = insert_scoped_memory(&pool, &persona_id, "stale heavy", "active", None);
+        let fresh = insert_scoped_memory(&pool, &persona_id, "fresh modest", "active", None);
+        let conn = pool.get().unwrap();
+        // Stale heavy-hitter: injected 500×, last touched 90 days ago.
+        conn.execute(
+            "UPDATE persona_memories SET access_count = 500,
+             last_accessed_at = datetime('now', '-90 days') WHERE id = ?1",
+            params![stale],
+        )
+        .unwrap();
+        // Fresh memory: injected a few times, touched today.
+        conn.execute(
+            "UPDATE persona_memories SET access_count = 3,
+             last_accessed_at = datetime('now') WHERE id = ?1",
+            params![fresh],
+        )
+        .unwrap();
+        drop(conn);
+
+        let tiered =
+            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
+        let order: Vec<&str> = tiered.active.iter().map(|m| m.id.as_str()).collect();
+        assert_eq!(
+            order,
+            vec![fresh.as_str(), stale.as_str()],
+            "fresh memory must outrank the stale heavy-hitter at equal importance"
+        );
+    }
+
+    /// Importance strictly dominates the decay term: a fresh, heavily-accessed
+    /// importance-3 memory must never outrank an importance-4 one, however
+    /// stale. (The access term is capped at 9 < one 10-point importance step.)
+    #[test]
+    fn injection_ranking_importance_dominates_decay() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Decay Importance");
+        let important = insert_scoped_memory(&pool, &persona_id, "important old", "active", None);
+        let busy = insert_scoped_memory(&pool, &persona_id, "busy lesser", "active", None);
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "UPDATE persona_memories SET importance = 4, access_count = 0,
+             last_accessed_at = datetime('now', '-120 days') WHERE id = ?1",
+            params![important],
+        )
+        .unwrap();
+        conn.execute(
+            "UPDATE persona_memories SET importance = 3, access_count = 400,
+             last_accessed_at = datetime('now') WHERE id = ?1",
+            params![busy],
+        )
+        .unwrap();
+        drop(conn);
+
+        let tiered =
+            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
+        let order: Vec<&str> = tiered.active.iter().map(|m| m.id.as_str()).collect();
+        assert_eq!(
+            order,
+            vec![important.as_str(), busy.as_str()],
+            "importance must dominate the decayed access term"
+        );
     }
 }

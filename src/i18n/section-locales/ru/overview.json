@@ -199,7 +199,11 @@
     "curation_schedule_last_run_label": "Последний запуск",
     "curation_schedule_disabled_state": "Курирование отключено для этого агента",
     "curation_schedule_disable": "Отключить расписание",
-    "curation_schedule_save": "Сохранить расписание"
+    "curation_schedule_save": "Сохранить расписание",
+    "reflect": "Рефлексия",
+    "reflect_hint": "Объединяет связанные воспоминания в устойчивые выводы — результатом будет предложение, которое вы проверите до каких-либо изменений",
+    "reflect_pick_persona": "Рефлексия воспоминаний агента",
+    "reflecting": "Идёт рефлексия..."
   },
   "memory_review": {
     "keep_prefix": "Оставить «",
@@ -1123,7 +1127,8 @@
     "tags_label": "Теги",
     "view_source_execution": "Посмотреть исходный запуск",
     "delete_memory": "Удалить память",
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "derived_from_label": "Синтезировано из"
   },
   "memory_table": {
     "agent": "Агент",

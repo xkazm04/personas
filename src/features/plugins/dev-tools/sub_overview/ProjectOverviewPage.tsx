@@ -14,6 +14,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
+import { openGoalsBoard, openProjectManager } from '@/features/plugins/companion/guidance/appActions';
 import { splitSentrySlug } from './adapters';
 import {
   ConnectorChain, MonitoringChain, SentryProjectPicker,
@@ -144,7 +145,7 @@ export default function ProjectOverviewPage() {
       setDevToolsTab('task-runner');
     } else if (event.kind === 'goal_signal') {
       setPendingGoalSpotlightId(event.sourceId);
-      setDevToolsTab('goals');
+      openGoalsBoard();
     } else if (event.kind === 'scan_run') {
       setDevToolsTab('idea-scanner');
     }
@@ -179,7 +180,7 @@ export default function ProjectOverviewPage() {
           icon={<LayoutDashboard className="w-5 h-5 text-primary" />}
           iconColor="primary"
           title={po.codebase}
-          subtitle="—"
+          fitWidth
           actions={<LifecycleProjectPicker />}
         />
         <ContentBody centered>
@@ -235,7 +236,7 @@ export default function ProjectOverviewPage() {
       } else if (repoState === 'empty') {
         setSidebarSection('credentials');
       } else {
-        setDevToolsTab('projects');
+        openProjectManager();
       }
       return;
     }
@@ -259,7 +260,7 @@ export default function ProjectOverviewPage() {
         }
         iconColor="primary"
         title={activeProject.name}
-        subtitle={activeProject.root_path}
+        fitWidth
         actions={<LifecycleProjectPicker />}
       />
 
@@ -384,7 +385,7 @@ export default function ProjectOverviewPage() {
                     <Button
                       variant="ghost"
                       size="xs"
-                      onClick={() => repoState === 'empty' ? setSidebarSection('credentials') : setDevToolsTab('projects')}
+                      onClick={() => repoState === 'empty' ? setSidebarSection('credentials') : openProjectManager()}
                     >
                       {repoState === 'empty' ? po.go_to_connections : po.go_to_projects}
                     </Button>
@@ -409,7 +410,7 @@ export default function ProjectOverviewPage() {
                     credentials={repoCreds}
                     activeCredId={activeRepoCredId}
                     onPickCred={(id) => { setActiveRepoCredId(id); }}
-                    onEditUrl={() => setDevToolsTab('projects')}
+                    onEditUrl={() => openProjectManager()}
                   />
                 ) : (
                   <p className="typo-caption text-foreground"><DebtText k="auto_set_a_repo_url_on_this_project_to_see_the__0fd8e832" /></p>

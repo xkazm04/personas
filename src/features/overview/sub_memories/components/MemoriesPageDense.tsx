@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Brain, Sparkles, Plus, ChevronDown, ChevronUp, Search, Trash2, Shield } from 'lucide-react';
+import { Brain, Sparkles, Plus, ChevronDown, ChevronUp, Search, Trash2, Shield, Lightbulb } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -54,7 +54,7 @@ export default function MemoriesPageDense() {
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const personas = useAgentStore((s) => s.personas);
   const {
-    memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories,
+    memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories, reflectMemories,
     memoryReviewRunning, memoryReviewResult, memoryReviewError, clearMemoryReviewResult,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
@@ -63,6 +63,7 @@ export default function MemoriesPageDense() {
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
     reviewMemories: s.reviewMemories,
+    reflectMemories: s.reflectMemories,
     memoryReviewRunning: s.memoryReviewRunning,
     memoryReviewResult: s.memoryReviewResult,
     memoryReviewError: s.memoryReviewError,
@@ -148,6 +149,23 @@ export default function MemoriesPageDense() {
     void reviewMemories(undefined).catch(() => {});
   }, [reviewMemories]);
 
+  // Reflection is per-persona (insights need one coherent memory pool), so
+  // the Reflect button opens a picker over personas that actually hold
+  // memories, ranked by how much there is to consolidate.
+  const [reflectMenuOpen, setReflectMenuOpen] = useState(false);
+  const reflectablePersonas = useMemo(() => {
+    if (!memoryStats) return [] as Array<{ id: string; name: string; count: number }>;
+    return memoryStats.agent_counts
+      .map(([id, count]) => ({ id, name: personaMap.get(id)?.name ?? id, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 12);
+  }, [memoryStats, personaMap]);
+
+  const handleReflect = useCallback((personaId: string) => {
+    setReflectMenuOpen(false);
+    void reflectMemories(personaId).catch(() => {});
+  }, [reflectMemories]);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -176,6 +194,32 @@ export default function MemoriesPageDense() {
               {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
               {memoryReviewRunning ? 'Reviewing...' : 'Review'}
             </button>
+            <div className="relative">
+              <button
+                onClick={() => setReflectMenuOpen((v) => !v)}
+                disabled={memoryReviewRunning || reflectablePersonas.length === 0}
+                title={t.overview.memories.reflect_hint}
+                className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-amber-500/15 text-amber-300 border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40"
+              >
+                {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Lightbulb className="w-3.5 h-3.5" />}
+                {memoryReviewRunning ? t.overview.memories.reflecting : t.overview.memories.reflect}
+              </button>
+              {reflectMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 z-30 min-w-[220px] max-h-72 overflow-y-auto rounded-modal border border-primary/20 bg-background shadow-elevation-3 p-1">
+                  <p className="px-2 py-1.5 typo-caption text-muted-foreground">{t.overview.memories.reflect_pick_persona}</p>
+                  {reflectablePersonas.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleReflect(p.id)}
+                      className="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded-card typo-body text-foreground/90 hover:bg-secondary/50 transition-colors"
+                    >
+                      <span className="truncate">{p.name}</span>
+                      <span className="typo-caption text-muted-foreground flex-shrink-0">{p.count}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
               Add

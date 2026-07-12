@@ -1,0 +1,498 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "emails-vague-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 3,
+        "seconds": 125.8,
+        "caps": 1
+      },
+      {
+        "tag": "sync-two-tools-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 4,
+        "seconds": 159.95,
+        "caps": 1
+      },
+      {
+        "tag": "github-issues-partial-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 4,
+        "seconds": 167.05,
+        "caps": 1
+      },
+      {
+        "tag": "hn-digest-control-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 0,
+        "questions": 0,
+        "seconds": 52.56,
+        "caps": 1
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "emails-vague-multiagent-1",
+      "fixture": "emails-vague",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "emails-vague",
+        "variant": "multiagent",
+        "session_id": "577660ed-1d92-47f0-afaf-3c6b019bd860",
+        "persona_id": "3c56d04d-577f-4907-a941-06e1171d0cb1",
+        "true_intent": "I run customer support out of a Gmail inbox. I want it to read incoming support emails, summarise each one, label the urgent ones, and draft a reply for the top few \u2014 but I always want to review before anything is sent. Nothing auto-sends. I don't want it touching my personal email, just the support address.",
+        "vague_intent": "make me a bot that helps with my emails",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 125.8,
+        "num_rounds": 1,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which email provider should this bot read from?",
+            "options": [
+              "Gmail",
+              "Outlook / Microsoft 365",
+              "Both",
+              "Other"
+            ],
+            "connector_category": null,
+            "answer": "Gmail.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "When should the morning digest run?",
+            "options": [
+              "Fixed time each day (e.g. 8 AM)",
+              "On-demand when I ask",
+              "Both"
+            ],
+            "connector_category": null,
+            "answer": "On-demand when I ask \u2014 I check the inbox first thing anyway, so I'd rather just tell it when to run.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "What counts as 'important' for triage \u2014 what should always surface, and what should be filtered out?",
+            "options": [],
+            "connector_category": null,
+            "answer": "Anything sent to the support address counts \u2014 I mainly need the urgent ones flagged, like angry customers, billing problems, or \"it's broken and I can't work\" type emails. Newsletters and obvious spam can be skipped.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.03
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 34.56
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 40.58
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 77.73
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 125.8
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_support_triage",
+          "title": "Support Inbox Triage",
+          "description": null,
+          "tool_hints": [
+            "gmail.messages.list",
+            "gmail.messages.get",
+            "gmail.threads.get"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "description": "User explicitly invokes triage (e.g. 'check support inbox', 'any urgent emails?'). No scheduled or automatic execution.",
+            "type": "on_demand"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "sync-two-tools-multiagent-1",
+      "fixture": "sync-two-tools",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "sync-two-tools",
+        "variant": "multiagent",
+        "session_id": "8f8b51ae-3297-4ba9-991e-db8d9e9167da",
+        "persona_id": "fdbb491c-9c93-45f9-88ae-7d963aae8022",
+        "true_intent": "When I add or complete a task in Todoist, mirror that change into a Notion 'Tasks' database so my Notion workspace always reflects Todoist. It's one-way, Todoist to Notion \u2014 Notion is just the readable mirror.",
+        "vague_intent": "sync my tasks between my two tools",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 159.95,
+        "num_rounds": 1,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which two task management tools do you want to sync?",
+            "options": [
+              "Linear",
+              "ClickUp",
+              "Asana",
+              "Notion",
+              "Airtable",
+              "Other"
+            ],
+            "connector_category": null,
+            "answer": "Todoist and Notion \u2014 Todoist is where I actually manage my tasks, and I want them mirrored into a Notion database.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "Which of these is your second tool (if not already covered above)?",
+            "options": [
+              "Linear",
+              "ClickUp",
+              "Asana",
+              "Notion",
+              "Airtable",
+              "Other"
+            ],
+            "connector_category": null,
+            "answer": "Notion \u2014 that's where I want my Todoist tasks mirrored to.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "Should sync go both ways, or only from one tool into the other?",
+            "options": [
+              "Two-way (changes on either side propagate to the other)",
+              "One-way only (pick a source of truth below)"
+            ],
+            "connector_category": null,
+            "answer": "One-way only \u2014 Todoist is the source of truth, Notion just mirrors it.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "How often should the sync run?",
+            "options": [
+              "In real-time / as changes happen",
+              "Every 15 minutes",
+              "Every hour",
+              "Once a day"
+            ],
+            "connector_category": null,
+            "answer": "Real-time, as changes happen \u2014 I want Notion to always reflect Todoist, so the faster the better.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 40.55
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 51.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 98.39
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 159.95
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_todoist_to_notion_sync",
+          "title": "Todoist \u2192 Notion Sync",
+          "description": null,
+          "tool_hints": [
+            "notion__query_database",
+            "notion__create_page",
+            "notion__update_page",
+            "notion__retrieve_page"
+          ],
+          "subscriptions": [
+            {
+              "description": "A new task was created in Todoist",
+              "event": "item:added",
+              "source": "todoist_webhook"
+            },
+            {
+              "description": "An existing task's fields were changed",
+              "event": "item:updated",
+              "source": "todoist_webhook"
+            },
+            {
+              "description": "A task was marked complete",
+              "event": "item:completed",
+              "source": "todoist_webhook"
+            },
+            {
+              "description": "A task was deleted from Todoist",
+              "event": "item:deleted",
+              "source": "todoist_webhook"
+            }
+          ],
+          "trigger": {
+            "delivery": "real_time",
+            "events": [
+              "item:added",
+              "item:updated",
+              "item:completed",
+              "item:deleted"
+            ],
+            "notes": "Todoist fires HTTPS webhook POST to a registered endpoint on every task mutation. The capability must expose a public endpoint and register it in Todoist's Webhooks settings under the user's app integrations.",
+            "provider": "todoist",
+            "type": "webhook"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "github-issues-partial-multiagent-1",
+      "fixture": "github-issues-partial",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "github-issues-partial",
+        "variant": "multiagent",
+        "session_id": "3ca31dd4-1e1c-42bf-95ba-642fd70f3463",
+        "persona_id": "992042ec-5bbf-41e7-a5d4-cd76e3a717bb",
+        "true_intent": "Watch the acme/backend repo. When a new issue is opened and labelled 'bug' or 'security', post a short summary to our #eng-alerts Slack channel. 'Important' = those two labels. Only new issues, in real time, not a digest.",
+        "vague_intent": "watch my GitHub repo and tell me about important issues",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 167.05,
+        "num_rounds": 1,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which GitHub repository should this persona watch? Please provide the full repo path (e.g. owner/repo-name).",
+            "options": [],
+            "connector_category": null,
+            "answer": "acme/backend",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "triggers",
+            "question": "How often should the persona check for important issues \u2014 or should it alert you immediately when a qualifying issue appears?",
+            "options": [
+              "Real-time / as soon as detected",
+              "Hourly digest",
+              "Daily digest",
+              "Weekly digest"
+            ],
+            "connector_category": null,
+            "answer": "Real-time \u2014 post to Slack as soon as a qualifying issue appears, no digests.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "What makes an issue 'important' to you? This defines the core filter.",
+            "options": [
+              "Bug reports (especially with error logs or stack traces)",
+              "Issues labeled critical/high-priority by collaborators",
+              "Issues with no response after a set time",
+              "Issues from specific contributors or teams",
+              "All of the above"
+            ],
+            "connector_category": null,
+            "answer": "*chuckles* You've got a decoy list in front of me, but my answer's simple:\n\nIssues labeled 'bug' or 'security' \u2014 those two labels are what \"important\" means for me.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "Where should important issue alerts be delivered?",
+            "options": [
+              "Discord (you have a bot token)",
+              "Gmail (you have OAuth)",
+              "In-app only (no external delivery)",
+              "Notion"
+            ],
+            "connector_category": null,
+            "answer": "#eng-alerts on Slack \u2014 that's where the team already watches for this stuff. None of those four options work for us.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.01
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 42.06
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 51.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 94.95
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 167.05
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_issue_alert",
+          "title": "Issue Alert",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "actions": [
+                "opened"
+              ],
+              "dedup_rule": "One alert per issue number, even when both labels are present.",
+              "event_type": "issues",
+              "label_filter": {
+                "logic": "ANY",
+                "mode": "exact_match",
+                "values": [
+                  "bug",
+                  "security"
+                ]
+              },
+              "provider": "github",
+              "repo": "acme/backend"
+            }
+          ],
+          "trigger": {
+            "description": "Fire immediately when a new issue is opened on acme/backend carrying the label 'bug' or 'security' (exact string match). If both labels are present, fire once.",
+            "event": "issues",
+            "filters": {
+              "action": "opened",
+              "labels": {
+                "match": "exact",
+                "values": [
+                  "bug",
+                  "security"
+                ]
+              },
+              "repository": "acme/backend"
+            },
+            "source": "github",
+            "type": "webhook"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "hn-digest-control-multiagent-1",
+      "fixture": "hn-digest-control",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "hn-digest-control",
+        "variant": "multiagent",
+        "session_id": "54a5f1d5-49e6-429b-a0ac-a2b8b0dfafe8",
+        "persona_id": "a014418a-b3d1-4d5c-8ba5-f4839fad5171",
+        "true_intent": "Exactly what I said: a daily 9am digest of the top 5 Hacker News stories, delivered to the in-app titlebar. Nothing more \u2014 no external publishing, no review step needed, it's just an informational read.",
+        "vague_intent": "Every day at 9am, fetch the top 5 Hacker News stories and show them to me as a digest in the app titlebar. No need to publish anywhere else.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 52.56,
+        "num_rounds": 0,
+        "num_questions": 0,
+        "transcript": [],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 27.03
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 52.56
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_hn_daily_digest",
+          "title": "Daily HN Digest",
+          "description": null,
+          "tool_hints": [
+            "WebFetch",
+            "SendMessage"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Every day at 9:00 AM",
+            "schedule": "0 9 * * *",
+            "timezone": "local",
+            "type": "cron"
+          }
+        }
+      ]
+    }
+  ]
+}

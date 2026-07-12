@@ -23,6 +23,12 @@ mod logging;
 pub mod mcp_server;
 mod notifications;
 mod radio;
+/// Unified retrieval lane — shared, pure retrieval primitives (distance
+/// floor, hybrid lane ranking, excerpt-vs-full-body decision) extracted from
+/// the companion brain. `pub` so the primitives are part of the lib surface
+/// (companion consumes them today; persona-memory injection is the documented
+/// next consumer — see the module docs).
+pub mod retrieval;
 pub mod startup_timing;
 #[cfg(debug_assertions)]
 mod stream_harness;
@@ -60,6 +66,22 @@ pub(crate) static SHARED_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
 /// target URL is influenced by user-supplied credential data.
 pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> =
     LazyLock::new(|| engine::ssrf_safe_dns::build_ssrf_safe_client());
+
+/// HTTP client WITHOUT the SSRF-safe DNS resolver — it can reach private/loopback
+/// targets by design. Used ONLY for connector requests whose connector metadata
+/// declares `allow_private_network: true` (inherently self-hosted tools such as a
+/// local LightTrack or a self-hosted Langfuse/LangSmith). The API proxy gates this
+/// strictly behind that flag; every other path keeps using [`SSRF_SAFE_HTTP`].
+///
+/// SECURITY: routing an untrusted / non-allow-private request through this client
+/// re-opens the SSRF hole `SSRF_SAFE_HTTP` closes. Only the flag-gated branch in
+/// `engine::api_proxy::execute_api_request` may use it.
+pub(crate) static HTTP_ALLOW_PRIVATE: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .expect("Failed to build allow-private HTTP client")
+});
 
 /// Tracks an active CLI-backed process: its task ID and optional child PID.
 pub struct ActiveProcess {
@@ -1646,6 +1668,8 @@ pub fn run() {
             commands::core::memories::update_memory_content,
             commands::core::memories::batch_delete_memories,
             commands::core::memories::review_memories_with_cli,
+            commands::core::memories::reflect_memories_with_cli,
+            commands::core::memories::reflect_team_memories_with_cli,
             commands::core::memories::apply_persona_memory_review_proposal,
             commands::core::memories::discard_persona_memory_review_proposal,
             commands::core::memories::list_persona_memory_review_proposals,
@@ -1655,6 +1679,8 @@ pub fn run() {
             commands::core::memory_compile::compile_persona_memories,
             // Core -- Memory curation runs (persona_background_job framework)
             commands::core::persona_jobs::enqueue_persona_memory_curation,
+            commands::core::persona_jobs::enqueue_persona_memory_reflection,
+            commands::core::persona_jobs::enqueue_team_memory_reflection,
             commands::core::persona_jobs::list_persona_jobs,
             commands::core::persona_jobs::get_persona_job,
             commands::core::persona_jobs::cancel_persona_job,
@@ -2251,6 +2277,8 @@ pub fn run() {
             commands::communication::shared_events::shared_events_subscribe,
             commands::communication::shared_events::shared_events_unsubscribe,
             commands::communication::shared_events::shared_events_list_subscriptions,
+            commands::communication::shared_events::shared_events_list_firings,
+            commands::communication::shared_events::shared_events_change_activity,
             // Communication -- Messages
             commands::communication::messages::list_messages,
             commands::communication::messages::get_message,
@@ -2638,13 +2666,14 @@ pub fn run() {
             commands::companion::feedback::companion_request_improvement,
             commands::companion::feedback::companion_record_ux_signal,
             commands::companion::voice::companion_tts,
-            commands::companion::voice::companion_tts_list_piper_voices,
-            commands::companion::voice::companion_tts_download_piper_voice,
-            commands::companion::voice::companion_tts_delete_piper_voice,
-            commands::companion::voice::companion_tts_piper_engine_status,
             commands::companion::voice::companion_tts_list_kokoro_voices,
             commands::companion::voice::companion_tts_kokoro_status,
             commands::companion::voice::companion_tts_kokoro_download,
+            commands::companion::voice::companion_tts_pocket_status,
+            commands::companion::voice::companion_tts_list_pocket_voices,
+            commands::companion::voice::companion_tts_pocket_download,
+            commands::companion::voice::companion_tts_pocket_import_voice,
+            commands::companion::voice::companion_tts_pocket_delete_voice,
             commands::companion::stt::companion_stt_transcribe,
             commands::companion::stt::companion_stt_list_models,
             commands::companion::stt::companion_stt_download_model,
@@ -2739,6 +2768,16 @@ pub fn run() {
             // Infrastructure -- Setup / Auto-install
             commands::infrastructure::setup::start_setup_install,
             commands::infrastructure::setup::cancel_setup_install,
+            // Infrastructure -- Local scraper (Pumper, Phase 1b)
+            commands::infrastructure::scraper::scraper_list_configs,
+            commands::infrastructure::scraper::scraper_save_config,
+            commands::infrastructure::scraper::scraper_run_config,
+            commands::infrastructure::scraper::scraper_delete_config,
+            commands::infrastructure::scraper::scraper_run_extract,
+            commands::infrastructure::scraper::scraper_preview_extract,
+            commands::infrastructure::scraper::scraper_generate_rules,
+            commands::infrastructure::scraper::scraper_list_datasets,
+            commands::infrastructure::scraper::scraper_query_dataset,
             // Infrastructure -- Settings
             commands::infrastructure::settings::get_app_setting,
             commands::infrastructure::settings::get_app_settings_bulk,
@@ -2891,6 +2930,17 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_goal,
             commands::infrastructure::dev_tools::dev_tools_delete_goal,
             commands::infrastructure::dev_tools::dev_tools_reorder_goals,
+            // Dev Tools -- use cases (behavioral slice layer under contexts)
+            commands::infrastructure::dev_tools::dev_tools_list_use_cases,
+            commands::infrastructure::dev_tools::dev_tools_get_use_case,
+            commands::infrastructure::dev_tools::dev_tools_list_use_cases_for_context,
+            commands::infrastructure::dev_tools::dev_tools_create_use_case,
+            commands::infrastructure::dev_tools::dev_tools_update_use_case,
+            commands::infrastructure::dev_tools::dev_tools_delete_use_case,
+            commands::infrastructure::dev_tools::dev_tools_backfill_use_cases,
+            commands::infrastructure::use_case_scan::dev_tools_scan_use_cases,
+            commands::infrastructure::use_case_scan::dev_tools_cancel_use_case_scan,
+            commands::infrastructure::use_case_scan::dev_tools_get_use_case_scan_status,
             // Dev Tools -- KPIs (outcome layer above goals)
             commands::infrastructure::dev_tools::dev_tools_list_kpis,
             commands::infrastructure::dev_tools::dev_tools_get_kpi,

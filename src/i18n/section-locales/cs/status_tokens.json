@@ -128,5 +128,10 @@
     "backoff": "Prodleva",
     "fresh": "Čerstvý",
     "active": "Aktivní"
+  },
+  "thinking": {
+    "high": "Vysoká",
+    "low": "Nízká",
+    "medium": "Střední"
   }
 }

@@ -1,0 +1,863 @@
+{
+  "fixture": "web-research-desk",
+  "summary": {
+    "multiagent": {
+      "runs": 2,
+      "promote_rate": 0.0,
+      "total_seconds_median": 649.46,
+      "total_seconds_min": 624.72,
+      "total_seconds_max": 674.2,
+      "capabilities_median": 5.0,
+      "gate_pass_rate_median": 1.0,
+      "cost_usd_median": 0.55,
+      "per_phase_seconds_median": {
+        "analyzing": 40.54,
+        "resolving": 213.97,
+        "testing": 50.3,
+        "failed": 0.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "variant": "multiagent",
+      "tag": "multiagent-1",
+      "run": {
+        "fixture_id": "web-research-desk",
+        "variant": "multiagent",
+        "session_id": "26fba386-5096-4e2f-b47d-f6cf4c43bae2",
+        "persona_id": "bfbe03ef-53e5-4292-8536-b471f31dd999",
+        "ok": false,
+        "terminal_phase": "failed",
+        "error_message": "Test failures couldn't be auto-corrected: fix_pass: LLM did not emit a valid agent_ir JSON block \u2014 keeping previous IR",
+        "total_seconds": 624.72,
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 39.05
+          },
+          {
+            "phase": "testing",
+            "offset_s": 129.16
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 184.72
+          },
+          {
+            "phase": "testing",
+            "offset_s": 391.97
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 416.0
+          },
+          {
+            "phase": "failed",
+            "offset_s": 624.72
+          }
+        ],
+        "cost_usd": 0.5545056,
+        "input_tokens": 14,
+        "output_tokens": 14888,
+        "num_turns": 7,
+        "phase_timings": [
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T13:32:36.663991400+00:00"
+          },
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T13:32:36.664705200+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T13:33:14.737396700+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T13:34:44.814780100+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T13:35:41.185188700+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T13:39:07.730454500+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T13:39:32.373426900+00:00"
+          }
+        ],
+        "questions_answered": 0,
+        "stuck_question": null,
+        "started_at": "2026-07-09T13:32:36.658806+00:00",
+        "finished_at": "2026-07-09T13:43:01.372474+00:00"
+      },
+      "per_phase_seconds": {
+        "analyzing": 39.03,
+        "resolving": 208.72,
+        "testing": 24.03,
+        "failed": 0.0
+      },
+      "capture": {
+        "source": "build_session+persona",
+        "capabilities": [
+          {
+            "id": "uc_topic_sweep",
+            "title": "Topic Sweep",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch"
+            ],
+            "subscriptions": [],
+            "trigger": {
+              "description": "User supplies a research topic, question, or keyword phrase and requests a current web snapshot, source ranking, or cited summary.",
+              "type": "user_message"
+            }
+          },
+          {
+            "id": "uc_feed_scan",
+            "title": "Scheduled Feed Scan",
+            "description": null,
+            "tool_hints": [
+              "WebFetch",
+              "WebSearch",
+              "CronCreate",
+              "ScheduleWakeup"
+            ],
+            "subscriptions": [
+              {
+                "description": "Primary scheduled trigger \u2014 fires the daily sweep.",
+                "event": "cron.tick",
+                "filter": "schedule_id == 'feed_scan_daily'"
+              },
+              {
+                "description": "When a new tracked topic is registered, trigger an immediate one-off scan for that topic so it is seeded with a baseline before the next daily run.",
+                "event": "topic.added"
+              },
+              {
+                "description": "Purge seen-item fingerprints for the removed topic to keep the dedup store clean.",
+                "event": "topic.removed"
+              }
+            ],
+            "trigger": {
+              "allow_manual_invoke": true,
+              "description": "Runs daily at 07:00 local time; can also be invoked manually with an optional topic filter.",
+              "schedule": "cron(0 7 * * *)",
+              "type": "scheduled"
+            }
+          },
+          {
+            "id": "uc_deep_dive",
+            "title": "Deep-Dive Synthesis",
+            "description": null,
+            "tool_hints": [
+              "WebFetch",
+              "WebSearch"
+            ],
+            "subscriptions": [],
+            "trigger": {
+              "description": "User supplies an explicit list of URLs and requests a structured research briefing; no scheduling or event required.",
+              "type": "user_invocation"
+            }
+          },
+          {
+            "id": "uc_log_airtable",
+            "title": "Log Finding to Airtable",
+            "description": null,
+            "tool_hints": [
+              "airtable_create_record",
+              "airtable_list_records"
+            ],
+            "subscriptions": [
+              {
+                "description": "Any capability that produces a reviewed, source-cited finding emits this event; uc_log_airtable appends it to Airtable without further vetting.",
+                "emitted_by": [
+                  "uc_topic_sweep",
+                  "uc_feed_scan",
+                  "uc_deep_dive"
+                ],
+                "event": "vetted_finding"
+              }
+            ],
+            "trigger": {
+              "description": "Fires automatically whenever a sibling capability emits a vetted_finding event. Can also be invoked directly with a finding payload for manual or backfill logging.",
+              "type": "event"
+            }
+          },
+          {
+            "id": "uc_publish_notion",
+            "title": "Publish Digest to Notion",
+            "description": null,
+            "tool_hints": [
+              "notion_create_page",
+              "notion_append_block",
+              "notion_query_database",
+              "notion_update_page"
+            ],
+            "subscriptions": [
+              {
+                "description": "Triggers publication whenever a deep-dive synthesis or feed scan finalises a briefing artifact.",
+                "event": "digest.completed",
+                "source_capabilities": [
+                  "uc_deep_dive",
+                  "uc_feed_scan"
+                ]
+              },
+              {
+                "description": "Triggers when a finding logged to Airtable is promoted to a full briefing and approved for team consumption.",
+                "event": "briefing.approved",
+                "source_capabilities": [
+                  "uc_log_airtable"
+                ]
+              }
+            ],
+            "trigger": {
+              "description": "Fires when another capability emits a completed digest or briefing artifact \u2014 specifically when uc_deep_dive or uc_feed_scan mark their output as finished. Can also be invoked manually with a briefing payload.",
+              "type": "event"
+            }
+          }
+        ],
+        "connectors": [
+          {
+            "name": "personas_database",
+            "service_type": "personas_database",
+            "has_credential": null
+          },
+          {
+            "name": "personas_vector_db",
+            "service_type": "personas_vector_db",
+            "has_credential": null
+          },
+          {
+            "name": "personas_messages",
+            "service_type": "personas_messages",
+            "has_credential": null
+          },
+          {
+            "name": "airtable",
+            "service_type": "airtable",
+            "has_credential": null
+          },
+          {
+            "name": "notion",
+            "service_type": "notion",
+            "has_credential": null
+          }
+        ],
+        "credential_links": {},
+        "tool_tests": {
+          "connectors_resolved": [
+            {
+              "has_credential": true,
+              "name": "airtable"
+            },
+            {
+              "has_credential": true,
+              "name": "notion"
+            }
+          ],
+          "credential_issues": [],
+          "results": [
+            {
+              "connector": "personas_database",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_database"
+            },
+            {
+              "connector": "personas_vector_db",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_vector_db"
+            },
+            {
+              "connector": "personas_messages",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_messages"
+            },
+            {
+              "connector": "airtable",
+              "error": "{\"error\":{\"type\":\"INVALID_REQUEST_UNKNOWN\",\"message\":\"Invalid request: parameter validation failed. Check your request data.\"}}",
+              "http_status": 422,
+              "latency_ms": 1014,
+              "output_preview": "{\"error\":{\"type\":\"INVALID_REQUEST_UNKNOWN\",\"message\":\"Invalid request: parameter validation failed. Check your request data.\"}}",
+              "status": "failed",
+              "tool_name": "airtable"
+            },
+            {
+              "connector": "notion",
+              "error": null,
+              "http_status": 200,
+              "latency_ms": 1010,
+              "output_preview": "{\"object\":\"user\",\"id\":\"30ce3a38-20ed-81e1-bd0a-0027d01c0af2\",\"name\":\"personas\",\"avatar_url\":null,\"type\":\"bot\",\"bot\":{\"owner\":{\"type\":\"workspace\",\"workspace\":true},\"workspace_name\":\"Mi's Notion\",\"workspace_id\":\"6d6349db-5fcf-4ef6-9886-f97ece421f97\",\"workspace_limits\":{\"max_file_upload_size_in_bytes\":...",
+              "status": "passed",
+              "tool_name": "notion"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web search \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebSearch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web fetch \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebFetch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in scheduling tool \u2014 no external API to verify",
+              "status": "passed",
+              "tool_name": "CronCreate"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in scheduling tool \u2014 no external API to verify",
+              "status": "passed",
+              "tool_name": "ScheduleWakeup"
+            }
+          ],
+          "summary": "### Overview\nExcellent work! Your Signal Research Analyst agent is almost fully set up and ready to use. All of your internal databases and most external connections are working smoothly\u2014there's just one small credential issue with Airtable that needs a quick fix.\n\n### Results\n- **personas_database** \u2014 \u2705 Your internal database is connected and working properly.\n- **personas_vector_db** \u2014 \u2705 Your AI search database is connected and working properly.\n- **personas_messages** \u2014 \u2705 Your messaging system is connected and working properly.\n- **Notion** \u2014 \u2705 Your Notion workspace is successfully connected and verified.\n- **Airtable** \u2014 \u274c Your Airtable account failed to connect because the API credentials need to be refreshed or re-added.\n- **WebSearch** \u2014 \u2705 Web search is available and ready to use.\n- **WebFetch** \u2014 \u2705 Web page retrieval is available and ready to use.\n- **CronCreate** \u2014 \u2705 Scheduled task creation is available and ready to use.\n- **ScheduleWakeup** \u2014 \u2705 Task scheduling is available and ready to use.\n\n### Next Steps\n- Go to the **Keys** section in your platform settings and reconnect your Airtable account by refreshing or re-entering your API credentials.\n- Once Airtable is reconnected, run this test again to confirm everything is fully operational.\n- Your agent can start working with all other features right away while you handle the Airtable fix.",
+          "tools_failed": 1,
+          "tools_passed": 8,
+          "tools_skipped": 0,
+          "tools_tested": 9
+        },
+        "setup_status": "ready",
+        "persona_name": "Build-bench draft (11)",
+        "raw_present": true
+      },
+      "assertions": [
+        {
+          "key": "capabilities_count",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 5",
+          "actual": "5"
+        },
+        {
+          "key": "web_research_caps",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3 (['uc_topic_sweep', 'uc_feed_scan', 'uc_deep_dive'])"
+        },
+        {
+          "key": "connector_present:airtable",
+          "passed": true,
+          "severity": "gate",
+          "expected": "service_type 'airtable' in required_connectors",
+          "actual": "['airtable', 'notion', 'personas_database', 'personas_messages', 'personas_vector_db']"
+        },
+        {
+          "key": "connector_present:notion",
+          "passed": true,
+          "severity": "gate",
+          "expected": "service_type 'notion' in required_connectors",
+          "actual": "['airtable', 'notion', 'personas_database', 'personas_messages', 'personas_vector_db']"
+        },
+        {
+          "key": "credential_link:airtable",
+          "passed": false,
+          "severity": "warn",
+          "expected": "credentialLinks['airtable'] resolves",
+          "actual": "MISSING (vault credential?)"
+        },
+        {
+          "key": "credential_link:notion",
+          "passed": false,
+          "severity": "warn",
+          "expected": "credentialLinks['notion'] resolves",
+          "actual": "MISSING (vault credential?)"
+        },
+        {
+          "key": "no_external_search_connector",
+          "passed": true,
+          "severity": "gate",
+          "expected": "no serpapi/tavily/google_search/\u2026",
+          "actual": "none"
+        },
+        {
+          "key": "tool_test:airtable",
+          "passed": false,
+          "severity": "warn",
+          "expected": "pass",
+          "actual": "failed"
+        },
+        {
+          "key": "tool_test:notion",
+          "passed": true,
+          "severity": "warn",
+          "expected": "pass",
+          "actual": "passed"
+        },
+        {
+          "key": "setup_status",
+          "passed": true,
+          "severity": "warn",
+          "expected": "ready",
+          "actual": "ready"
+        }
+      ],
+      "gate_pass_rate": 1.0
+    },
+    {
+      "variant": "multiagent",
+      "tag": "multiagent-2",
+      "run": {
+        "fixture_id": "web-research-desk",
+        "variant": "multiagent",
+        "session_id": "3bfe4391-dd06-47cf-bcce-166f7d801286",
+        "persona_id": "5c394e3f-0d87-4c8a-9bc1-a06a662ea860",
+        "ok": false,
+        "terminal_phase": "failed",
+        "error_message": "Tool test results: 9 passed, 1 failed, 0 skipped.",
+        "total_seconds": 674.2,
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 42.05
+          },
+          {
+            "phase": "testing",
+            "offset_s": 136.66
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 171.19
+          },
+          {
+            "phase": "testing",
+            "offset_s": 357.38
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 378.41
+          },
+          {
+            "phase": "testing",
+            "offset_s": 597.62
+          },
+          {
+            "phase": "failed",
+            "offset_s": 674.2
+          }
+        ],
+        "cost_usd": 0.5552646,
+        "input_tokens": 14,
+        "output_tokens": 15187,
+        "num_turns": 7,
+        "phase_timings": [
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T13:43:01.391455600+00:00"
+          },
+          {
+            "phase": "analyzing",
+            "ts": "2026-07-09T13:43:01.391869800+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T13:43:43.179871100+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T13:45:16.646370500+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T13:45:51.959696+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T13:48:57.798730800+00:00"
+          },
+          {
+            "phase": "resolving",
+            "ts": "2026-07-09T13:49:19.635769700+00:00"
+          },
+          {
+            "phase": "testing",
+            "ts": "2026-07-09T13:52:57.984451300+00:00"
+          }
+        ],
+        "questions_answered": 0,
+        "stuck_question": null,
+        "started_at": "2026-07-09T13:43:01.387874+00:00",
+        "finished_at": "2026-07-09T13:54:15.590228+00:00"
+      },
+      "per_phase_seconds": {
+        "analyzing": 42.05,
+        "resolving": 219.21,
+        "testing": 76.58,
+        "failed": 0.0
+      },
+      "capture": {
+        "source": "build_session+persona",
+        "capabilities": [
+          {
+            "id": "uc_topic_sweep",
+            "title": "Topic Sweep",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch"
+            ],
+            "subscriptions": [],
+            "trigger": {
+              "description": "User submits a topic, question, or research prompt requesting a sweep, brief, or intelligence summary. Activates whenever the user's message contains a researchable subject with no pre-existing briefing in hand.",
+              "type": "on_demand"
+            }
+          },
+          {
+            "id": "uc_feed_scan",
+            "title": "Scheduled Feed Scan",
+            "description": null,
+            "tool_hints": [
+              "WebSearch",
+              "WebFetch",
+              "CronCreate",
+              "CronList",
+              "ScheduleWakeup"
+            ],
+            "subscriptions": [
+              {
+                "event_type": "schedule.morning_digest"
+              },
+              {
+                "event_type": "user.topics_updated"
+              }
+            ],
+            "trigger": {
+              "cron": "0 7 * * *",
+              "description": "Runs automatically every morning at 07:00 in the user's local timezone; can also be invoked on-demand with an optional topics override.",
+              "timezone": "user_local",
+              "type": "schedule"
+            }
+          },
+          {
+            "id": "uc_deep_dive",
+            "title": "Deep-Dive Synthesis",
+            "description": null,
+            "tool_hints": [
+              "WebFetch",
+              "WebSearch"
+            ],
+            "subscriptions": [],
+            "trigger": {
+              "description": "User supplies one or more URLs and requests a deep-dive, synthesis, briefing, or 'read these for me' task. Trigger when the message contains \u22651 URL and intent is summarization, analysis, or structured output \u2014 not a live search or feed scan.",
+              "type": "user_message"
+            }
+          },
+          {
+            "id": "uc_log_airtable",
+            "title": "Log to Airtable",
+            "description": null,
+            "tool_hints": [
+              "airtable_create_record",
+              "airtable_search_records"
+            ],
+            "subscriptions": [
+              {
+                "description": "Each vetted finding emitted by any research capability triggers one Airtable row append.",
+                "emitted_by": [
+                  "uc_topic_sweep",
+                  "uc_feed_scan",
+                  "uc_deep_dive"
+                ],
+                "event": "vetted_finding"
+              }
+            ],
+            "trigger": {
+              "description": "Fires automatically whenever uc_topic_sweep, uc_feed_scan, or uc_deep_dive emits a vetted_finding event. Also invocable manually when a caller passes a finding payload directly.",
+              "type": "event"
+            }
+          },
+          {
+            "id": "uc_publish_notion",
+            "title": "Publish to Notion",
+            "description": null,
+            "tool_hints": [
+              "notion.pages.create",
+              "notion.blocks.children.append",
+              "notion.databases.query",
+              "notion.pages.retrieve"
+            ],
+            "subscriptions": [
+              {
+                "description": "Triggered when a deep-dive synthesis or scheduled digest has been fully assembled and is ready for publication.",
+                "emitted_by": [
+                  "uc_deep_dive",
+                  "uc_feed_scan"
+                ],
+                "event": "briefing.ready"
+              },
+              {
+                "description": "Triggered when a scheduled feed scan produces a complete digest, signalling it is ready to be pushed to Notion.",
+                "emitted_by": [
+                  "uc_feed_scan"
+                ],
+                "event": "digest.complete"
+              }
+            ],
+            "trigger": {
+              "description": "Fires automatically when any upstream capability emits a `briefing.ready` event carrying a complete, non-empty briefing payload. Can also be invoked manually by passing a briefing directly.",
+              "primary": "briefing.ready",
+              "type": "event"
+            }
+          }
+        ],
+        "connectors": [
+          {
+            "name": "personas_database",
+            "service_type": "personas_database",
+            "has_credential": null
+          },
+          {
+            "name": "personas_vector_db",
+            "service_type": "personas_vector_db",
+            "has_credential": null
+          },
+          {
+            "name": "personas_messages",
+            "service_type": "personas_messages",
+            "has_credential": null
+          },
+          {
+            "name": "airtable",
+            "service_type": "airtable",
+            "has_credential": null
+          },
+          {
+            "name": "notion",
+            "service_type": "notion",
+            "has_credential": null
+          }
+        ],
+        "credential_links": {},
+        "tool_tests": {
+          "connectors_resolved": [
+            {
+              "has_credential": true,
+              "name": "airtable"
+            },
+            {
+              "has_credential": true,
+              "name": "notion"
+            }
+          ],
+          "credential_issues": [],
+          "results": [
+            {
+              "connector": "personas_database",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_database"
+            },
+            {
+              "connector": "personas_vector_db",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_vector_db"
+            },
+            {
+              "connector": "personas_messages",
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Built-in platform connector \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "personas_messages"
+            },
+            {
+              "connector": "airtable",
+              "error": "{\"error\":{\"type\":\"INVALID_REQUEST_UNKNOWN\",\"message\":\"Invalid request: parameter validation failed. Check your request data.\"}}",
+              "http_status": 422,
+              "latency_ms": 717,
+              "output_preview": "{\"error\":{\"type\":\"INVALID_REQUEST_UNKNOWN\",\"message\":\"Invalid request: parameter validation failed. Check your request data.\"}}",
+              "status": "failed",
+              "tool_name": "airtable"
+            },
+            {
+              "connector": "notion",
+              "error": null,
+              "http_status": 200,
+              "latency_ms": 402,
+              "output_preview": "{\"object\":\"user\",\"id\":\"30ce3a38-20ed-81e1-bd0a-0027d01c0af2\",\"name\":\"personas\",\"avatar_url\":null,\"type\":\"bot\",\"bot\":{\"owner\":{\"type\":\"workspace\",\"workspace\":true},\"workspace_name\":\"Mi's Notion\",\"workspace_id\":\"6d6349db-5fcf-4ef6-9886-f97ece421f97\",\"workspace_limits\":{\"max_file_upload_size_in_bytes\":...",
+              "status": "passed",
+              "tool_name": "notion"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web search \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebSearch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Uses Claude CLI built-in web fetch \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "WebFetch"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in cron scheduling \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "CronCreate"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in cron listing \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "CronList"
+            },
+            {
+              "connector": null,
+              "error": null,
+              "http_status": null,
+              "latency_ms": 0,
+              "output_preview": "Platform built-in wakeup scheduling \u2014 auto-verified",
+              "status": "passed",
+              "tool_name": "ScheduleWakeup"
+            }
+          ],
+          "summary": "### Overview\nGreat news! Your Research Desk Analyst agent passed almost all of its tests. Nine out of ten connections are working properly, with just one quick fix needed for Airtable.\n\n### Results\n- **personas_database** \u2014 \u2705 Built-in database is working and verified.\n- **personas_vector_db** \u2014 \u2705 Built-in vector database is working and verified.\n- **personas_messages** \u2014 \u2705 Built-in messaging system is working and verified.\n- **airtable** \u2014 \u274c The connection to Airtable failed due to invalid credentials; please verify them in the **Keys** section.\n- **notion** \u2014 \u2705 Connection to your Notion workspace is working.\n- **WebSearch** \u2014 \u2705 Web search is available and ready to use through built-in Claude capabilities.\n- **WebFetch** \u2014 \u2705 Web content fetching is available and ready to use through built-in Claude capabilities.\n- **CronCreate** \u2014 \u2705 Scheduled task creation is available through built-in platform features.\n- **CronList** \u2014 \u2705 Scheduled task listing is available through built-in platform features.\n- **ScheduleWakeup** \u2014 \u2705 Wake-up scheduling is available through built-in platform features.\n\n### Next Steps\n- Go to the **Keys** section and verify that your Airtable credentials are correct and valid.\n- After updating your credentials, run the test again to confirm the Airtable connection is working.",
+          "tools_failed": 1,
+          "tools_passed": 9,
+          "tools_skipped": 0,
+          "tools_tested": 10
+        },
+        "setup_status": "ready",
+        "persona_name": "Build-bench draft (12)",
+        "raw_present": true
+      },
+      "assertions": [
+        {
+          "key": "capabilities_count",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 5",
+          "actual": "5"
+        },
+        {
+          "key": "web_research_caps",
+          "passed": true,
+          "severity": "gate",
+          "expected": ">= 3",
+          "actual": "3 (['uc_topic_sweep', 'uc_feed_scan', 'uc_deep_dive'])"
+        },
+        {
+          "key": "connector_present:airtable",
+          "passed": true,
+          "severity": "gate",
+          "expected": "service_type 'airtable' in required_connectors",
+          "actual": "['airtable', 'notion', 'personas_database', 'personas_messages', 'personas_vector_db']"
+        },
+        {
+          "key": "connector_present:notion",
+          "passed": true,
+          "severity": "gate",
+          "expected": "service_type 'notion' in required_connectors",
+          "actual": "['airtable', 'notion', 'personas_database', 'personas_messages', 'personas_vector_db']"
+        },
+        {
+          "key": "credential_link:airtable",
+          "passed": false,
+          "severity": "warn",
+          "expected": "credentialLinks['airtable'] resolves",
+          "actual": "MISSING (vault credential?)"
+        },
+        {
+          "key": "credential_link:notion",
+          "passed": false,
+          "severity": "warn",
+          "expected": "credentialLinks['notion'] resolves",
+          "actual": "MISSING (vault credential?)"
+        },
+        {
+          "key": "no_external_search_connector",
+          "passed": true,
+          "severity": "gate",
+          "expected": "no serpapi/tavily/google_search/\u2026",
+          "actual": "none"
+        },
+        {
+          "key": "tool_test:airtable",
+          "passed": false,
+          "severity": "warn",
+          "expected": "pass",
+          "actual": "failed"
+        },
+        {
+          "key": "tool_test:notion",
+          "passed": true,
+          "severity": "warn",
+          "expected": "pass",
+          "actual": "passed"
+        },
+        {
+          "key": "setup_status",
+          "passed": true,
+          "severity": "warn",
+          "expected": "ready",
+          "actual": "ready"
+        }
+      ],
+      "gate_pass_rate": 1.0
+    }
+  ]
+}

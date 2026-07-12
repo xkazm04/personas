@@ -135,12 +135,16 @@ pub fn list_items_by_persona_id(
     pool: &DbPool,
     persona_id: &str,
     limit: Option<i64>,
+    offset: Option<i64>,
 ) -> Result<Vec<ExecutionListItem>, AppError> {
     timed_query!(
         "persona_executions",
         "persona_executions::list_items_by_persona_id",
         {
             let limit = limit.unwrap_or(50);
+            // Default offset 0 preserves the original single-page behavior for
+            // existing callers that don't paginate.
+            let offset = offset.unwrap_or(0).max(0);
             let conn = pool.get()?;
             let mut stmt = conn.prepare_cached(
                 "SELECT
@@ -162,9 +166,12 @@ pub fn list_items_by_persona_id(
              FROM persona_executions
              WHERE persona_id = ?1
                AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')
-             ORDER BY created_at DESC LIMIT ?2",
+             ORDER BY created_at DESC LIMIT ?2 OFFSET ?3",
             )?;
-            let rows = stmt.query_map(params![persona_id, limit], row_to_execution_list_item)?;
+            let rows = stmt.query_map(
+                params![persona_id, limit, offset],
+                row_to_execution_list_item,
+            )?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
         }

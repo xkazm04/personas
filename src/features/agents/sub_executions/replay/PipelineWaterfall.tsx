@@ -72,22 +72,22 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       {/* Legend */}
       <div className="flex items-center gap-4 typo-body text-foreground">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-blue-500/50" /> {e.legend_frontend}
+          <span className="w-2.5 h-2.5 rounded bg-status-info/50" /> {e.legend_frontend}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-emerald-500/50" /> {e.legend_backend}
+          <span className="w-2.5 h-2.5 rounded bg-status-success/50" /> {e.legend_backend}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-amber-500/50" /> {e.legend_engine}
+          <span className="w-2.5 h-2.5 rounded bg-status-warning/50" /> {e.legend_engine}
         </div>
         {toolSteps.length > 0 && (
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-cyan-500/35" /> {e.legend_tool_call}
+            <span className="w-2.5 h-2.5 rounded bg-status-neutral/40" /> {e.legend_tool_call}
           </div>
         )}
         {isLive && (
-          <span className="ml-auto flex items-center gap-1 text-blue-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+          <span className="ml-auto flex items-center gap-1 text-status-info">
+            <span className="w-1.5 h-1.5 rounded-full bg-status-info animate-pulse" />
             {e.live}
           </span>
         )}

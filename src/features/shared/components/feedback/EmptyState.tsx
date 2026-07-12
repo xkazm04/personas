@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Key, Zap, Bot, Play, Radio, Link, ListChecks, SearchX, RotateCcw, CheckCircle2, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { MotionizedGlyph, type TracedGlyph } from '@/features/shared/components/display/MotionizedGlyph';
 
 // -- Scenario Variants --------------------------------------------
 
@@ -75,6 +76,14 @@ interface EmptyStateAction {
 
 interface EmptyStateProps {
   icon?: LucideIcon;
+  /**
+   * A traced, self-drawing glyph (see .claude/skills/motionize) rendered instead of
+   * the lucide `icon` badge. Reserve it for first-run "nothing here yet" states —
+   * a 128px illustration that draws itself is wrong for a filtered-to-zero list.
+   * Import the glyph module you need (`@/features/shared/glyph/glyphs/kpisGlyph`)
+   * rather than a shared registry: each glyph is ~10-16KB gzipped of path data.
+   */
+  glyph?: TracedGlyph;
   title?: string;
   subtitle?: string;
   description?: string;
@@ -91,6 +100,7 @@ interface EmptyStateProps {
 
 export default function EmptyState({
   icon,
+  glyph,
   title,
   subtitle,
   description,
@@ -105,7 +115,7 @@ export default function EmptyState({
   const scenarioConfigs = useScenarioConfigs();
   const scenario = variant ? scenarioConfigs[variant] : null;
 
-  const Icon = icon ?? scenario?.icon;
+  const Icon = glyph ? undefined : icon ?? scenario?.icon;
   const resolvedTitle = title ?? scenario?.title ?? '';
   const detailText = subtitle ?? description ?? scenario?.subtitle;
   const resolvedIconColor = iconColor ?? scenario?.iconColor ?? 'text-foreground';
@@ -116,6 +126,9 @@ export default function EmptyState({
     <div
       className={`animate-fade-slide-in py-8 flex flex-col items-center justify-center text-center gap-3 ${className ?? ''}`}
     >
+      {glyph && (
+        <MotionizedGlyph data={glyph.data} viewBox={glyph.viewBox} spread={1} className="w-32 h-32 -mb-1" />
+      )}
       {Icon && (
         <div className={`w-14 h-14 rounded-xl border flex items-center justify-center ${resolvedContainerClass}`}>
           <Icon className={`w-6 h-6 ${resolvedIconColor}`} />

@@ -434,6 +434,8 @@ pub async fn run_healthcheck(
         (token, fields)
     };
 
+    let allow_private =
+        super::api_proxy::connector_allows_private_network(connector.metadata.as_deref());
     execute_healthcheck_request_with_strategy(
         strategy,
         &hc_config,
@@ -441,6 +443,7 @@ pub async fn run_healthcheck(
         token,
         credential_id,
         &cred.service_type,
+        allow_private,
     )
     .await
 }
@@ -479,8 +482,18 @@ pub async fn run_healthcheck_with_fields(
         .await?
         .map(|r| r.token);
 
-    execute_healthcheck_request_with_strategy(strategy, &hc_config, fields, token, "", service_type)
-        .await
+    let allow_private =
+        super::api_proxy::connector_allows_private_network(connector.metadata.as_deref());
+    execute_healthcheck_request_with_strategy(
+        strategy,
+        &hc_config,
+        fields,
+        token,
+        "",
+        service_type,
+        allow_private,
+    )
+    .await
 }
 
 // ---------------------------------------------------------------------------
@@ -867,6 +880,10 @@ async fn execute_healthcheck_request_with_strategy(
     token: Option<String>,
     credential_id: &str,
     service_type: &str,
+    // When true (connector opted into private-network access), skip the private-IP
+    // SSRF checks and use the non-filtered HTTP client so a localhost/LAN
+    // self-hosted instance can be probed.
+    allow_private: bool,
 ) -> Result<HealthcheckResult, AppError> {
     let mut resolved_values = fields.clone();
     if let Some(ref tok) = token {
@@ -881,14 +898,22 @@ async fn execute_healthcheck_request_with_strategy(
         }
     }
 
-    // Pre-resolution SSRF defense: reject templates with placeholders in host
+    // Pre-resolution SSRF defense: reject templates with placeholders in host.
+    // Kept even for allow-private connectors — it guards against `{{scheme}}://`
+    // template injection, not private addresses.
     validate_template_url(&hc_config.endpoint)?;
-    validate_field_values(&resolved_values)?;
+    if !allow_private {
+        validate_field_values(&resolved_values)?;
+    }
 
     let resolved_endpoint = resolve_template(&hc_config.endpoint, &resolved_values);
 
-    // Post-resolution SSRF defense: reject private/internal addresses
-    validate_healthcheck_url(&resolved_endpoint)?;
+    // Post-resolution SSRF defense: reject private/internal addresses. Skipped for
+    // connectors that opted into private-network access (they connect via the
+    // non-filtered client below).
+    if !allow_private {
+        validate_healthcheck_url(&resolved_endpoint)?;
+    }
 
     // Build and send the request. 10s accommodates providers like Sentry's
     // /organizations/{slug}/ endpoint which routinely takes 3-6 seconds on
@@ -901,13 +926,19 @@ async fn execute_healthcheck_request_with_strategy(
     // connection time. `SsrfSafeDnsResolver` wraps reqwest's own DNS lookup
     // and rejects private/loopback/link-local/metadata addresses at the
     // moment that actually matters.
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .dns_resolver(std::sync::Arc::new(
-            crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
-        ))
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
+    let client = if allow_private {
+        // Self-hosted connector opted into private-network access — the
+        // non-filtered client lets a localhost/LAN healthcheck connect.
+        crate::HTTP_ALLOW_PRIVATE.clone()
+    } else {
+        reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .dns_resolver(std::sync::Arc::new(
+                crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+            ))
+            .build()
+            .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?
+    };
 
     let method = hc_config.method.as_deref().unwrap_or("GET").to_uppercase();
 

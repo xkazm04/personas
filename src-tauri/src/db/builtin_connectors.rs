@@ -888,6 +888,20 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             resources: Some(r##"[{"id":"pipelines","label":"Deal pipelines","description":"HubSpot deal pipelines (sales funnels). Scope a credential to specific pipelines so agents only act on the ones you care about.","selection":"multi","list_endpoint":{"method":"GET","url":"https://api.hubapi.com/crm/v3/pipelines/deals","headers":{"Authorization":"Bearer {{access_token}}"},"pagination":{"type":"none"}},"response_mapping":{"items_path":"results","id":"id","label":"label","sublabel":"displayOrder","meta":{"archived":"archived","stagesCount":"stages.length"}},"search":{"supported":true,"mode":"client"},"cache_ttl_seconds":1800}]"##),
         },
         BuiltinConnector {
+            id: r##"builtin-huggingface"##,
+            name: r##"huggingface"##,
+            label: r##"Hugging Face"##,
+            color: r##"#FFD21E"##,
+            icon_url: r##"/icons/connectors/huggingface.svg"##,
+            category: r##"ai"##,
+            fields: r##"[{"key":"api_key","label":"Access Token","type":"password","required":true,"placeholder":"hf_...","helpText":"Create at huggingface.co → Settings → Access Tokens (a read token is enough)","sensitive":true}]"##,
+            healthcheck_config: Some(r##"{"endpoint":"https://huggingface.co/api/whoami-v2","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates the access token via the Hugging Face whoami endpoint"}"##),
+            services: r##"[]"##,
+            events: r##"[]"##,
+            metadata: Some(r##"{"template_enabled":true,"summary":"Hugging Face Hub access token — used for gated model downloads (e.g. the Pocket TTS voice-cloning weights) and Hub API calls.","docs_url":"https://huggingface.co/docs/hub/security-tokens"}"##),
+            resources: Some(r##"[{"id":"models","label":"Models","description":"Models on the Hugging Face Hub the account can access. Scope a credential to pin the models a persona is allowed to pull.","selection":"multi","list_endpoint":{"method":"GET","url":"https://huggingface.co/api/models?author={{username}}&limit=50","headers":{"Authorization":"Bearer {{api_key}}"},"pagination":{"type":"none"}},"response_mapping":{"items_path":"$","id":"id","label":"id","sublabel":"pipeline_tag","meta":{"downloads":"downloads","likes":"likes"}},"search":{"supported":true,"mode":"client"},"cache_ttl_seconds":3600}]"##),
+        },
+        BuiltinConnector {
             id: r##"builtin-humbalytics"##,
             name: r##"humbalytics"##,
             label: r##"Humbalytics"##,
@@ -968,7 +982,7 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             healthcheck_config: Some(r##"{"endpoint":"{{host|https://cloud.langfuse.com}}/api/public/projects","method":"GET","headers":{"Authorization":"Basic {{base64(public_key:secret_key)}}"},"description":"Validates the public/secret key pair via the projects endpoint (Basic auth)"}"##),
             services: r##"[]"##,
             events: r##"[]"##,
-            metadata: Some(r##"{"template_enabled":true,"summary":"Langfuse open-source LLM engineering platform — tracing, evals, prompt management, and cost/latency analytics for LLM apps.","auth_type":"basic_api_token","auth_type_label":"Key Pair","docs_url":"https://langfuse.com/docs/api","setup_guide":"1. Open Langfuse (cloud.langfuse.com or your self-hosted instance) and select your project\n2. Go to Settings -> API Keys\n3. Click 'Create new API keys'\n4. Copy the Public Key (pk-lf-...) and Secret Key (sk-lf-...)\n5. Paste both here, and set Host if you use US cloud or self-hosting","pricing_tier":"freemium"}"##),
+            metadata: Some(r##"{"template_enabled":true,"allow_private_network":true,"summary":"Langfuse open-source LLM engineering platform — tracing, evals, prompt management, and cost/latency analytics for LLM apps.","auth_type":"basic_api_token","auth_type_label":"Key Pair","docs_url":"https://langfuse.com/docs/api","setup_guide":"1. Open Langfuse (cloud.langfuse.com or your self-hosted instance) and select your project\n2. Go to Settings -> API Keys\n3. Click 'Create new API keys'\n4. Copy the Public Key (pk-lf-...) and Secret Key (sk-lf-...)\n5. Paste both here, and set Host if you use US cloud or self-hosting","pricing_tier":"freemium"}"##),
             resources: None,
         },
         BuiltinConnector {
@@ -982,7 +996,7 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             healthcheck_config: Some(r##"{"endpoint":"{{base_url|https://api.smith.langchain.com}}/sessions?limit=1","method":"GET","headers":{"x-api-key":"{{api_key}}"},"description":"Validates the API key via the tracing projects (sessions) endpoint"}"##),
             services: r##"[]"##,
             events: r##"[]"##,
-            metadata: Some(r##"{"template_enabled":true,"summary":"LangSmith (by LangChain) LLM tracing, evaluation, and monitoring — inspect runs, datasets, and prompts for LLM and agent apps.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.smith.langchain.com/reference/api","setup_guide":"1. Sign in at smith.langchain.com\n2. Click your profile -> Settings -> API Keys\n3. Click 'Create API Key' (Personal Access Token) and copy the lsv2_... value\n4. Paste it here; set API URL if you use the EU region or self-hosting","pricing_tier":"freemium"}"##),
+            metadata: Some(r##"{"template_enabled":true,"allow_private_network":true,"summary":"LangSmith (by LangChain) LLM tracing, evaluation, and monitoring — inspect runs, datasets, and prompts for LLM and agent apps.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.smith.langchain.com/reference/api","setup_guide":"1. Sign in at smith.langchain.com\n2. Click your profile -> Settings -> API Keys\n3. Click 'Create API Key' (Personal Access Token) and copy the lsv2_... value\n4. Paste it here; set API URL if you use the EU region or self-hosting","pricing_tier":"freemium"}"##),
             resources: None,
         },
         BuiltinConnector {
@@ -1738,7 +1752,7 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             healthcheck_config: Some(r##"{"endpoint":"{{base_url|http://localhost:8787}}/health","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates the server is reachable via the /health endpoint (returns ok)"}"##),
             services: r##"[]"##,
             events: r##"[]"##,
-            metadata: Some(r##"{"template_enabled":true,"summary":"LightTrack self-hosted LLM observability + scoring — track calls, cost, and profit across OpenAI/Anthropic/Gemini, with LLM-as-judge benchmarks and per-project limits.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://github.com/xkazm04/tracklight","setup_guide":"1. Run the LightTrack API (docker run -p 8787:8787 ghcr.io/xkazm04/tracklight, or cargo build --release && lighttrack-api)\n2. Confirm it is up: curl localhost:8787/health -> ok\n3. Create a project API key (lt keys create, or the /onboard flow) — it looks like lt_<prefix>_<secret>\n4. Paste your server URL and the API key here","pricing_tier":"free"}"##),
+            metadata: Some(r##"{"template_enabled":true,"allow_private_network":true,"summary":"LightTrack self-hosted LLM observability + scoring — track calls, cost, and profit across OpenAI/Anthropic/Gemini, with LLM-as-judge benchmarks and per-project limits.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://github.com/xkazm04/tracklight","setup_guide":"1. Run the LightTrack API (docker run -p 8787:8787 ghcr.io/xkazm04/tracklight, or cargo build --release && lighttrack-api)\n2. Confirm it is up: curl localhost:8787/health -> ok\n3. Create a project API key (lt keys create, or the /onboard flow) — it looks like lt_<prefix>_<secret>\n4. Paste your server URL and the API key here","pricing_tier":"free"}"##),
             resources: None,
         },
         BuiltinConnector {

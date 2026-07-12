@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   setUseCaseGenerationSettings,
   type UseCaseGenerationSettings,
@@ -69,6 +69,15 @@ export function usePolicyControls({
 
   const [pending, setPending] = useState<PolicyKey | null>(null);
 
+  // Latest-known settings, resynced when the persisted props change. Each toggle
+  // reads and updates this ref rather than the closure's `settings` snapshot, so
+  // two quick toggles (memories then events) compose instead of clobbering each
+  // other's field via a stale read-modify-write.
+  const settingsRef = useRef(settings);
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+
   const persist = useCallback(
     async (next: UseCaseGenerationSettings, key: PolicyKey) => {
       setPending(key);
@@ -86,18 +95,29 @@ export function usePolicyControls({
   );
 
   const toggleMemories = useCallback(() => {
-    persist({ ...settings, memories: memoriesValue === 'on' ? 'off' : 'on' }, 'memories');
-  }, [memoriesValue, settings, persist]);
+    const base = settingsRef.current;
+    const cur = base.memories ?? (memoriesDefault ? 'on' : 'off');
+    const next = { ...base, memories: (cur === 'on' ? 'off' : 'on') as BoolMode };
+    settingsRef.current = next;
+    persist(next, 'memories');
+  }, [memoriesDefault, persist]);
 
   const toggleEvents = useCallback(() => {
-    persist({ ...settings, events: eventsValue === 'on' ? 'off' : 'on' }, 'events');
-  }, [eventsValue, settings, persist]);
+    const base = settingsRef.current;
+    const cur = base.events ?? 'on';
+    const next = { ...base, events: (cur === 'on' ? 'off' : 'on') as BoolMode };
+    settingsRef.current = next;
+    persist(next, 'events');
+  }, [persist]);
 
   const cycleReviews = useCallback(() => {
     const order: ReviewMode[] = ['on', 'trust_llm', 'off'];
-    const next = order[(order.indexOf(reviewsValue) + 1) % order.length] ?? 'on';
-    persist({ ...settings, reviews: next }, 'reviews');
-  }, [reviewsValue, settings, persist]);
+    const base = settingsRef.current;
+    const cur = base.reviews ?? (reviewsDefault ? 'on' : 'off');
+    const next = { ...base, reviews: order[(order.indexOf(cur) + 1) % order.length] ?? 'on' };
+    settingsRef.current = next;
+    persist(next, 'reviews');
+  }, [reviewsDefault, persist]);
 
   return {
     memoriesValue, reviewsValue, eventsValue,

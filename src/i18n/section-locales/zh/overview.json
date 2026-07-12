@@ -199,7 +199,11 @@
     "curation_schedule_last_run_label": "上次运行",
     "curation_schedule_disabled_state": "此智能体已禁用记忆整理",
     "curation_schedule_disable": "禁用计划",
-    "curation_schedule_save": "保存计划"
+    "curation_schedule_save": "保存计划",
+    "reflect": "反思",
+    "reflect_hint": "将相关记忆整合为持久洞察 — 结果以提案形式呈现，经你确认后才会生效",
+    "reflect_pick_persona": "对某个智能体的记忆进行反思",
+    "reflecting": "反思中..."
   },
   "memory_review": {
     "keep_prefix": "保留 \"",
@@ -1123,7 +1127,8 @@
     "tags_label": "标签",
     "view_source_execution": "查看源执行",
     "delete_memory": "删除记忆",
-    "close": "关闭"
+    "close": "关闭",
+    "derived_from_label": "综合自"
   },
   "memory_table": {
     "agent": "代理",

@@ -1,28 +1,49 @@
 //! Text-to-speech engine abstraction for Athena's spoken replies.
 //!
 //! The `commands::companion::voice` IPC layer is a thin dispatcher; the real
-//! work — HTTP calls to ElevenLabs, ONNX inference for Piper — lives in the
-//! per-engine submodules here. Common types (settings, audio output,
-//! validation) are hoisted into this module so engines stay consistent
-//! about input shape and frontend marshalling.
+//! work — sherpa-onnx sidecar inference — lives in the per-engine submodules
+//! here. Common types (settings, audio output, validation) are hoisted into
+//! this module so engines stay consistent about input shape and frontend
+//! marshalling.
 //!
-//! Adding a new engine = drop a new submodule alongside `elevenlabs.rs` /
-//! `piper.rs` exposing `synthesize(...) -> Result<TtsAudio, AppError>`,
+//! Two engines ship today: **Kokoro** (primary — curated high-quality
+//! voices) and **Pocket TTS** (experimental — zero-shot voice cloning).
+//! The earlier ElevenLabs (cloud, credential-gated) and Piper (per-voice
+//! ONNX) engines were descoped 2026-07-10 — two local engines cover the
+//! quality × cloning space without a cloud bill or a per-voice download UX.
+//!
+//! Adding a new engine = drop a new submodule alongside `kokoro.rs` /
+//! `pocket.rs` exposing `synthesize(...) -> Result<TtsAudio, AppError>`,
 //! add a variant to `TtsEngineId`, and wire it into `voice.rs` dispatch.
 
-pub mod catalog;
-pub mod downloader;
-pub mod elevenlabs;
 pub mod kokoro;
 pub mod kokoro_catalog;
 pub mod kokoro_installer;
-pub mod piper;
+pub mod pocket;
+pub mod pocket_installer;
+pub mod sherpa_engine;
 
+use std::path::PathBuf;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
 use crate::error::AppError;
+
+/// Shared engine-binary dir: `~/.personas/companion-tts/bin/`. Honors the
+/// `PERSONAS_HOME` override like the rest of the TTS stack. (Formerly lived
+/// in `piper.rs`; hoisted here when Piper was descoped since Kokoro + Pocket
+/// share the same sherpa-onnx binary in this dir.)
+pub fn engine_dir() -> Result<PathBuf, AppError> {
+    let base = if let Ok(override_dir) = std::env::var("PERSONAS_HOME") {
+        PathBuf::from(override_dir)
+    } else {
+        dirs::home_dir()
+            .ok_or_else(|| AppError::Internal("could not resolve home directory".into()))?
+            .join(".personas")
+    };
+    Ok(base.join("companion-tts").join("bin"))
+}
 
 /// Hard ceiling on the TTS payload — Athena should send 1-3 sentences.
 /// Anything longer is a prompt-following bug, not a real spoken summary.
@@ -30,8 +51,7 @@ use crate::error::AppError;
 /// route a giant string at a local model that would take 30s to render.
 pub const TTS_MAX_CHARS: usize = 1200;
 
-/// Cap on remote TTS round-trip. Local engines do their own bounded loop
-/// inside the synth call so they don't need this.
+/// Cap on remote TTS round-trip (used by the Pocket HTTP-service backend).
 pub const TTS_REMOTE_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Identifier for which engine should fulfill a TTS request. Serializes as
@@ -40,54 +60,46 @@ pub const TTS_REMOTE_TIMEOUT: Duration = Duration::from_secs(30);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TtsEngineId {
-    /// ElevenLabs cloud TTS. Requires a vault credential + voice id.
-    Elevenlabs,
-    /// Local Piper TTS via ONNX. Requires a downloaded voice model.
-    Piper,
-    /// Local Kokoro TTS via the sherpa-onnx sidecar. Requires the engine
-    /// binary + the (shared) Kokoro model package. Higher quality than Piper.
+    /// Local Kokoro TTS via the sherpa-onnx sidecar (primary engine).
+    /// Requires the engine binary + the (shared) Kokoro model package.
     Kokoro,
+    /// Local Pocket TTS (kyutai) — experimental. The only engine with
+    /// zero-shot voice cloning; packaged sherpa-onnx sidecar or optional
+    /// local HTTP service (see `pocket.rs`).
+    PocketTts,
 }
 
 impl TtsEngineId {
     pub fn as_str(self) -> &'static str {
         match self {
-            TtsEngineId::Elevenlabs => "elevenlabs",
-            TtsEngineId::Piper => "piper",
             TtsEngineId::Kokoro => "kokoro",
+            TtsEngineId::PocketTts => "pocket_tts",
         }
     }
 }
 
 impl Default for TtsEngineId {
     fn default() -> Self {
-        TtsEngineId::Elevenlabs
+        // Kokoro is the primary engine since the 2026-07-10 descope of
+        // ElevenLabs/Piper. Callers that don't pass `engine` (legacy
+        // persisted state) get the curated local voices.
+        TtsEngineId::Kokoro
     }
 }
 
 /// Optional per-call voice tuning. The frontend bundles whichever fields
 /// the user has customized; missing fields fall back to per-engine defaults.
-/// Some fields only make sense on certain engines (e.g. `stability` is
-/// ElevenLabs-specific, `length_scale` is Piper-specific) — engines ignore
-/// fields that don't apply.
+/// Unknown fields from older frontends (the descoped ElevenLabs tuning set)
+/// are ignored by serde, so stale persisted settings can't break the wire.
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TtsSettings {
-    // ElevenLabs fields
-    pub model_id: Option<String>,
-    pub stability: Option<f32>,
-    pub similarity_boost: Option<f32>,
-    /// Speech rate. ElevenLabs accepts 0.7..=1.2; values outside the band
-    /// degrade audio quality, so engines clamp on the way through.
+    /// Speech rate (0.7..=1.2 convention). Kokoro maps this onto the
+    /// sidecar's inverted length-scale; engines clamp on the way through.
     pub speed: Option<f32>,
-    /// Style exaggeration (0..=1). Only meaningful on multilingual_v2 / v3.
-    pub style: Option<f32>,
-    // Piper fields
-    /// Length scale (slower > 1.0 < faster). Piper-specific; ElevenLabs
-    /// ignores this. Sensible band: 0.7..=1.4.
+    /// Direct length-scale override (slower > 1.0 < faster). Takes
+    /// priority over `speed` when both are set. Sensible band: 0.7..=1.4.
     pub length_scale: Option<f32>,
-    /// Per-sample noise. Higher values = more variation. Piper-specific.
-    pub noise_scale: Option<f32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -151,21 +163,32 @@ mod tests {
     #[test]
     fn engine_id_serializes_as_snake_case() {
         assert_eq!(
-            serde_json::to_string(&TtsEngineId::Elevenlabs).unwrap(),
-            "\"elevenlabs\""
+            serde_json::to_string(&TtsEngineId::Kokoro).unwrap(),
+            "\"kokoro\""
         );
         assert_eq!(
-            serde_json::to_string(&TtsEngineId::Piper).unwrap(),
-            "\"piper\""
+            serde_json::to_string(&TtsEngineId::PocketTts).unwrap(),
+            "\"pocket_tts\""
         );
     }
 
     #[test]
-    fn engine_id_default_is_elevenlabs_for_backcompat() {
-        // Existing frontend callers that don't pass an engine field get
-        // the original behavior. Changing this default is a breaking
-        // change for the IPC surface — don't touch it casually.
-        assert_eq!(TtsEngineId::default(), TtsEngineId::Elevenlabs);
+    fn engine_id_default_is_kokoro() {
+        // Kokoro is the primary engine post-descope. Changing this default
+        // is a breaking change for the IPC surface — don't touch it casually.
+        assert_eq!(TtsEngineId::default(), TtsEngineId::Kokoro);
+    }
+
+    #[test]
+    fn tts_settings_ignores_legacy_elevenlabs_fields() {
+        // Older frontends / persisted stores may still send the descoped
+        // ElevenLabs tuning fields — they must parse cleanly, not error.
+        let s: TtsSettings = serde_json::from_str(
+            r#"{"modelId":"eleven_v3","stability":0.5,"similarityBoost":0.7,"style":0.1,"speed":1.1}"#,
+        )
+        .expect("legacy fields must be ignored");
+        assert_eq!(s.speed, Some(1.1));
+        assert_eq!(s.length_scale, None);
     }
 
     #[test]

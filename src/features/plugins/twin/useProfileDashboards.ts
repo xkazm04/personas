@@ -4,7 +4,6 @@ import { silentCatch } from '@/lib/silentCatch';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
-import type { TwinVoiceProfile } from '@/lib/bindings/TwinVoiceProfile';
 import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
 import { deriveReadiness, type TwinReadiness } from './useTwinReadiness';
 
@@ -47,7 +46,7 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
       setData((prev) => ({
         ...prev,
         [profile.id]: {
-          readiness: deriveReadiness(profile, [], [], null, []),
+          readiness: deriveReadiness(profile, [], [], []),
           channelTypes: [],
           loading: true,
         },
@@ -56,7 +55,6 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
       const results = await Promise.allSettled([
         twinApi.listTones(profile.id),
         twinApi.listChannels(profile.id),
-        twinApi.getVoiceProfile(profile.id),
         twinApi.listPendingMemories(profile.id, 'approved'),
       ]);
 
@@ -70,14 +68,11 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
       const channels: TwinChannel[] = results[1].status === 'fulfilled'
         ? results[1].value
         : (silentCatch('useProfileDashboards:listChannels')(results[1].reason), []);
-      const voice: TwinVoiceProfile | null = results[2].status === 'fulfilled'
+      const memories: TwinPendingMemory[] = results[2].status === 'fulfilled'
         ? results[2].value
-        : (silentCatch('useProfileDashboards:getVoiceProfile')(results[2].reason), null);
-      const memories: TwinPendingMemory[] = results[3].status === 'fulfilled'
-        ? results[3].value
-        : (silentCatch('useProfileDashboards:listPendingMemories')(results[3].reason), []);
+        : (silentCatch('useProfileDashboards:listPendingMemories')(results[2].reason), []);
 
-      const readiness = deriveReadiness(profile, tones, channels, voice, memories);
+      const readiness = deriveReadiness(profile, tones, channels, memories);
       const channelTypes = Array.from(new Set(channels.filter((c) => c.is_active).map((c) => c.channel_type)));
 
       setData((prev) => ({

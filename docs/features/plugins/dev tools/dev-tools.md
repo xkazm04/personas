@@ -8,20 +8,31 @@ The plugin lives at `src/features/plugins/dev-tools/` and is exposed through the
 
 ## What it does
 
-Dev Tools treats each linked repository as a *Dev Project* with its own lifecycle. The project moves through eight domains, each visible as a tab:
+Dev Tools treats each linked repository as a *Dev Project*.
+
+> **Consolidated (2026-07) — project surfaces moved to the "Projects" section.**
+> The top-level **Teams** section was rebranded **Projects** and is now the home
+> for project-level work. **Project management** (the old Dev Tools "Projects"
+> CRUD tab), **Goals**, **Lifecycle** (Dev Clone setup), and **Competition** all
+> moved there (**Projects → Manage / Goals / Lifecycle / Competition / Factory**).
+> Dev Tools now hosts the **dev-automation** surfaces only. The `dev_projects`
+> domain model, the `PersonaTeam` roster (still called a "team"), and every
+> backend command are unchanged — only *where the UI lives* changed. Sections 1
+> and 7 below describe those surfaces at their new home.
+
+Dev Tools tabs today:
 
 | Domain | Direction | Storage / artifact |
 |---|---|---|
 | **Overview** (GitHub / GitLab / Sentry stats) | External → App | Read-through cache of open issues, PRs, commits, unresolved errors |
-| **Projects** (CRUD + GitHub linking + goals) | App | `dev_projects` table, 1 active project at a time |
+| **Observability** (LLM + app-monitoring mapping) | External → App | Two sub-tabs sharing one assignment-matrix pattern: **LLM** (`dev_projects.llm_tracking_credential_id`; use-case rollups from Langfuse / LangSmith / Helicone / LightTrack) and **Monitoring** (`dev_projects.monitoring_credential_id`; Sentry unresolved-issues + events 24h/7d via the shared `fetchSentryStats`; Better Stack listed but pending an adapter) |
 | **Context Map** (semantic code domains) | App ↔ Codebase | `dev_context_groups` + `dev_contexts`, generated from a filesystem walk |
 | **Idea Scanner** (21 LLM agents) | App → LLM → App | `dev_ideas` rows tagged with `scan_type` + per-scan history |
 | **Idea Triage** (accept / reject / delete) | Human → App | Idea status transitions; optional auto-triage rules |
 | **Task Runner** (batched execution) | App → LLM → App | `dev_tasks` rows + live output buffer + PR Bridge card |
-| **Goals** (constellation + Kanban) | App | Goal graph, dependencies, checklist to-dos, goal↔task links |
-| **Lifecycle** (Dev Clone setup) | App | Dev Clone adoption + autonomous review/scan triggers |
-| **Competition** (multi-clone strategy races) | App → Claude Code worktrees → App | Parallel task execution; quality-scored strategy leaderboard |
-| **Skills** (markdown-based dev patterns) | Disk ↔ App | `.md` files under the user's skills directory |
+| **Fleet** (Claude Code session aggregator) | App ↔ CLIs | Per-session xterm terminals over the active project's cwd |
+
+Moved to the **Projects** section (rendered by `PersonasPage` under `teamsTab`): **Manage** (project CRUD, formerly `sub_projects`), **Goals**, **Lifecycle** + **Competition** (formerly `sub_lifecycle`), and **Factory** (the project-readiness passport wall).
 
 Ideas are linked to the agent that proposed them via `DevIdea.scan_type` (a string matching a `ScanAgentDef.key`). Tasks are linked back to the originating idea via `DevTask.source_idea_id`. That single foreign-ish link is what makes the whole loop work: it lets the PR Bridge cite the agent that proposed the work, and lets the Agent Scoreboard score each agent on whether its ideas actually ship.
 
@@ -44,11 +55,38 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 
 ### 2. Context Map — scan the codebase into semantic domains
 
+> Standalone design reference: [`context-design.md`](./context-design.md) —
+> data model, scan protocol, integrity invariants, consumers, KPI pairing,
+> and the forward roadmap.
+
 1. Open **Context Map**. Groups are displayed as color-tagged columns; contexts within each group show keywords, entry points, and file-path count.
 2. Click **Scan Codebase**. The Rust backend walks the filesystem, clusters files by structural signal (imports, directory layout, naming), and returns `ContextGroup`/`ContextItem` rows. A **ScanOverlay** streams progress lines and can be cancelled mid-flight. Each context card also carries a **goal-coverage badge** — a violet "N goals" chip when one or more goals reference this context (click jumps to the **Goals** tab with the first matching goal pre-selected in the Pulse spotlight), or a dashed "no goal" hint otherwise. Selecting a context opens the right-side **ContextDetail** pane which now also lists the linked goals inline (with title, progress %, and a "done / total tasks" summary per goal — each row is a button that jumps to the goal's Pulse spotlight). The hand-off uses the `pendingGoalSpotlightId` slot in `uiSlice`, which `GoalConstellation` consumes on mount.
 3. Scans survive navigation — a status-resync poll on mount reattaches to in-flight jobs via `dev_tools_get_scan_codebase_status`, so leaving the tab during a long scan and coming back picks up where you left off.
 4. Completion fires an **in-app notification** (TitleBar bell) with the counts — groups created, contexts created, files mapped — and a redirect link.
 5. **Re-scan + scheduling** — once a project has been mapped, the action row swaps the single "Scan Codebase" button for **Re-scan (incremental)** (passes `delta_mode=true` → `dev_tools_scan_codebase` diffs the live tree against `dev_context_file_hashes` and feeds the LLM only changed files, short-circuiting when nothing changed), a **Full re-scan** fallback, and a **Plan update** button. A "Last scan" relative-time tag shows recency. **Plan update** creates a weekly **system-op automation** (`planWeeklyContextScan` → `system_ops_create_automation`, `0 3 * * 1`) for the active project — the same `SystemOpAutomation` the Chain Studio commits; the background scheduler then re-derives the context map weekly and each run surfaces in the **Live Stream** via `dev_tools.context_scan_*` bus events. (Context scans are always scoped to one project.)
+
+#### Use cases — the behavioral layer above the map
+
+A **use-case rail** sits above the context board. A use case is a slice
+*through* contexts ("Checkout conversion" spans a UI, an API and a data
+context), so it is the honest owner of an outcome that no single context owns.
+Selecting one **highlights every context it spans and dims the rest** — the one
+interaction that makes a cross-cutting layer readable on a partitioned map.
+
+- **From features** (`dev_tools_backfill_use_cases`) — deterministic, no LLM:
+  promotes each distinct `business_feature` label into a proposed use case.
+- **Scan** (`dev_tools_scan_use_cases`) — a headless Claude pass proposing the
+  project's *key* use cases; capped at 12 and grounded against the map (a
+  proposal that resolves no real context is refused).
+- Proposals are **triage-gated** (accept / reject inline), which is what keeps a
+  narrower scope from flooding the review queue.
+- Each context card shows a **use-case badge**; the detail pane lists the use
+  cases covering that context and lets a new KPI be scoped to one.
+- A use case is the **narrowest KPI scope** (`dev_kpis.use_case_id`), and its
+  `slug` is the join key the **LLM Overview** uses to mark which observed LLM
+  call sites map to a declared use case.
+
+Full design: [`context-design.md`](./context-design.md) §8.
 
 #### Integrity, freshness & canonical pins
 
@@ -96,6 +134,41 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 4. A **TODAY** activity feed sits between the vital signs strip and the connections rail when the store has anything to show. `buildTodayActivity` (in `overviewHelpers.ts`) selects today's scan runs, task created / completed / failed events, and goal signals from the existing Zustand store slices — no new query — then sorts chronologically (capped at 30 entries). Each row is click-jumpable to its source surface via the established `pendingTaskFocusId` / `pendingGoalSpotlightId` handoffs; scan rows jump to the Idea Scanner tab. The "what happened today" story now lives in one panel instead of five.
 3. Connecting Sentry uses an inline form (`MonitoringLinkForm`) that writes the credential ID + project slug back to `dev_projects.monitoring_*`.
 4. Stat tiles use a static color token table — dynamic Tailwind classes (`bg-${color}-500/15`) are banned here because the JIT can't see them.
+
+### 6a. Observability — LLM + app-monitoring mapping
+
+> **Renamed from "LLM Overview" (2026-07).** The module now carries an **LLM /
+> Monitoring** sub-tab switcher over one shared, accessor-driven assignment
+> matrix (`AssignmentMatrix` + `matrixShared`). The **Monitoring** sub-tab
+> applies the same philosophy to app monitoring: a projects × monitoring-
+> connector matrix writing `dev_projects.monitoring_credential_id`, over a
+> per-project stats readout (unresolved issues + events 24h/7d) that **reuses
+> the existing `fetchSentryStats` adapter** and the Overview page's
+> `SentryProjectPicker` for the org/project slug. Qualifying connectors today:
+> Sentry (live adapter) and Better Stack (renders "unsupported" until an adapter
+> ships). See `sub_llm_overview/{MonitoringSection,useMonitoringPinpoints}.tsx`.
+
+**LLM sub-tab.** For each Dev Project, see *every place the codebase calls an LLM* — the use-case name, provider, model, usage (calls + tokens) and estimated cost — read live from whichever LLM-observability tool the project is wired to.
+
+**Two layers:**
+
+1. **Assignment matrix** (Layer 1) — a fleet-coverage board (`LlmOverviewMatrix`): a coverage strip (N/M projects instrumented + a per-tool tally) over a grid of brand-badged project tiles, with un-wired projects flagged as gaps. Each tile's picker — the themed brand-icon `ConnectorSocket` — writes `dev_projects.llm_tracking_credential_id` via `dev_tools_update_project` (mirroring the Sentry monitoring binding). Shown whenever a project exists; if the vault has no LLM-observability credential yet it prompts to add one under Vault → Connectors.
+2. **Pinpoints table** (Layer 2) — for the active project, a `UnifiedTable` of use-case rollups over a rolling **24h / 7d / 30d** window (columns: Use case · Provider · Model · Calls · Tokens · Est. $). One row per distinct use-case name, showing its *default* (most-called) provider+model with summed usage; un-named calls roll up under their model (rendered "unnamed"). The five connection states (empty / unmapped / unsupported / loading / connected / error) mirror the Overview cards. Costs are labelled **estimates** (token×price, not billed amounts).
+
+**Supported tools** — four builtin connectors, all behind one normalized `LlmPinpoint` contract + `foldByUseCase`:
+
+| Tool | Endpoint | Auth | Notes |
+|---|---|---|---|
+| **LightTrack** (self-hosted; `github.com/xkazm04/tracklight`) | `GET /v1/usecases?since=` | Bearer | Server-side rollup; **live-verified**. The `name` field + endpoint were added to LightTrack itself |
+| **Langfuse** | `GET /api/public/v2/observations` | Basic (public/secret key) | Provider inferred from the model (Langfuse doesn't report it) |
+| **LangSmith** | `POST /runs/query` | `x-api-key` | Model/provider from `extra.metadata.ls_*` |
+| **Helicone** | `POST /v1/request/query` | Bearer | Provider reported directly; `request_path` as the use-case name |
+
+The three SaaS mappers are derived from each tool's public API docs; their adapters normalize raw per-call records that a bounded pager (`fetchPaged`) + `foldByUseCase` aggregate into the rollup.
+
+**Reaching a self-hosted instance.** Self-hosted tools run on localhost/LAN, which the credential API proxy's SSRF guard normally blocks. The LLM-observability connectors that can be self-hosted declare `allow_private_network: true` in their connector metadata; the proxy **and** the healthcheck then route *their* requests through a non-filtered HTTP client (`HTTP_ALLOW_PRIVATE`) — scoped to those connectors only. Every other connector stays fully SSRF-guarded (field/URL validators + the SSRF-safe DNS/redirect client).
+
+Frontend lives in `sub_llm_overview/` (`LlmOverviewPage`, `useLlmPinpoints`, `llmTracingAdapters`); auth is handled by `LangfuseBasicAuthStrategy` / `LangSmithStrategy` in `engine/connector_strategy.rs`, and per-connector private-network gating by `engine/api_proxy.rs::connector_allows_private_network`.
 
 ### 7. Lifecycle, Goals & Competition
 
@@ -291,6 +364,10 @@ src/features/plugins/dev-tools/
 ├── sub_overview/
 │   ├── ProjectOverviewPage.tsx   # GitHub / GitLab / Sentry stat tiles
 │   └── adapters.ts               # provider detection + API adapters
+├── sub_llm_overview/             # LLM Overview tab (LLM-observability rollups)
+│   ├── LlmOverviewPage.tsx       # Layer 1 assignment matrix + Layer 2 pinpoints table
+│   ├── useLlmPinpoints.ts        # active-project binding + 5-state data layer
+│   └── llmTracingAdapters.ts     # LlmPinpoint contract + per-tool adapters + foldByUseCase
 ├── sub_projects/
 │   ├── ProjectManagerPage.tsx    # CRUD + GitHub repo selector
 │   ├── GitHubRepoSelector.tsx    # live repo list from token

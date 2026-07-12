@@ -19,6 +19,8 @@ import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
 import { useSystemStore } from '@/stores/systemStore';
+import { useAgentStore } from '@/stores/agentStore';
+import { useToastStore } from '@/stores/toastStore';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
@@ -30,6 +32,9 @@ import {
   getDimLabels,
   type DisplayUseCase,
 } from '../recipes-prototype/shared/displayUseCase';
+
+/** Rapid-repeat dedupe window for the manual "Run now" button (see handleRunActiveCapability). */
+const MANUAL_RUN_DEDUPE_MS = 1000;
 
 interface PersonaLayoutViewProps {
   credentials: CredentialMetadata[];
@@ -222,9 +227,37 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
   // always-visible capability tab bar because the per-capability detail (which
   // also carries a run-now) isn't reachable in view mode.
   const [isManualRunning, setIsManualRunning] = useState(false);
+  // Synchronous reentrancy guard: `isManualRunning` is async React state, so two
+  // clicks in the same render commit both read `false` and each spawn a real,
+  // paid CLI run. The ref is claimed before the first await. Mirrors
+  // useUseCaseDetail.handleManualRun (this button is its view-mode twin).
+  const runInFlightRef = useRef(false);
+  const lastRunRef = useRef<{ at: number; key: string } | null>(null);
   const handleRunActiveCapability = useCallback(async () => {
-    if (!personaId || !activeCapability || isManualRunning || isExecuting) return;
+    if (!personaId || !activeCapability || runInFlightRef.current || isManualRunning || isExecuting)
+      return;
     const expectedPersonaId = personaId;
+    // Budget gate: this calls the raw execute_persona IPC directly (real cost),
+    // bypassing the store action where the pause lives, so a budget-exceeded
+    // persona could keep spending through this button. Mirror the other sites.
+    if (useAgentStore.getState().isBudgetBlocked(expectedPersonaId)) {
+      useToastStore
+        .getState()
+        .addToast(
+          `Budget enforcement for "${selectedPersona?.name ?? 'persona'}" — execution blocked (budget exceeded or data unavailable)`,
+          'error',
+        );
+      return;
+    }
+    // Idempotency key: a repeat within the dedupe window reuses the prior key so
+    // the server collapses accidental double-fires into one execution; a later
+    // deliberate re-run mints a fresh key.
+    const now = Date.now();
+    const prev = lastRunRef.current;
+    const idempotencyKey =
+      prev && now - prev.at < MANUAL_RUN_DEDUPE_MS ? prev.key : crypto.randomUUID();
+    lastRunRef.current = { at: now, key: idempotencyKey };
+    runInFlightRef.current = true;
     setIsManualRunning(true);
     try {
       const inputs = activeCapability.raw?.sample_input;
@@ -236,14 +269,15 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
         inputData,
         activeCapability.id,
         undefined,
-        crypto.randomUUID(),
+        idempotencyKey,
       );
     } catch (err) {
       toastCatch('PersonaLayoutView:runActiveCapability')(err);
     } finally {
+      runInFlightRef.current = false;
       setIsManualRunning(false);
     }
-  }, [personaId, activeCapability, isManualRunning, isExecuting]);
+  }, [personaId, activeCapability, isManualRunning, isExecuting, selectedPersona?.name]);
 
   // Summary sidebar — derived from the ACTIVE capability only, not
   // aggregated across the persona. Each row shows the saved value for

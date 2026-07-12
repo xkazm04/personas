@@ -3,7 +3,7 @@
   "group_by_toggle_title": "अपनी निर्धारित समूह के अनुसार पर्सोना कार्ड समूहित करें",
   "group_ungrouped": "बिना समूह",
   "title": "पर्सोना मॉनिटर",
-  "subtitle": "{personas} पर्सोना · {attention} को ध्यान चाहिए · {running} चल रहे हैं",
+  "subtitle": "{पर्सोनाs} पर्सोनाs · {attention} need attention · {running} running",
   "close": "मॉनिटर बंद करें",
   "close_hint": "बंद करें (Esc)",
   "no_personas": "अभी कोई पर्सोना नहीं है।",

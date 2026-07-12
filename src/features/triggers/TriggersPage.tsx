@@ -76,7 +76,7 @@ export function TriggersPage() {
     'cloud-webhooks': { icon: Webhook, iconColor: 'blue', title: t.triggers.tab_cloud_webhooks, subtitle: t.triggers.tab_cloud_webhooks_subtitle },
     'dead-letter': { icon: Archive, iconColor: 'red', title: t.triggers.tab_dead_letter, subtitle: t.triggers.tab_dead_letter_subtitle },
     studio: { icon: GitBranch, iconColor: 'primary', title: t.triggers.tab_studio, subtitle: t.triggers.tab_studio_subtitle },
-    shared: { icon: Store, iconColor: 'primary', title: t.triggers.tab_shared, subtitle: t.triggers.tab_shared_subtitle },
+    shared: { icon: Store, iconColor: 'primary', title: t.triggers.tab_shared },
   }), [t]);
   const personas = useAgentStore((s) => s.personas);
   const eventBusTab = useSystemStore((s) => s.eventBusTab);

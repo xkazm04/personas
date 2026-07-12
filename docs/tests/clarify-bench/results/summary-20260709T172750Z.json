@@ -1,0 +1,1169 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "standup-mostly-specified-sequential-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 3,
+        "questions": 3,
+        "seconds": 625.7,
+        "caps": 2
+      },
+      {
+        "tag": "news-cadence-outside-sequential-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 5,
+        "questions": 5,
+        "seconds": 575.91,
+        "caps": 1
+      },
+      {
+        "tag": "post-updates-trap-sequential-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 4,
+        "questions": 4,
+        "seconds": 685.98,
+        "caps": 2
+      },
+      {
+        "tag": "sync-two-tools-sequential-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 5,
+        "questions": 5,
+        "seconds": 760.69,
+        "caps": 1
+      },
+      {
+        "tag": "github-issues-partial-sequential-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 4,
+        "questions": 4,
+        "seconds": 635.08,
+        "caps": 1
+      },
+      {
+        "tag": "sales-vague-sequential-1",
+        "terminal": "resolving",
+        "hung": true,
+        "rounds": 4,
+        "questions": 4,
+        "seconds": 900.16,
+        "caps": 0
+      },
+      {
+        "tag": "research-vague-sequential-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 4,
+        "questions": 4,
+        "seconds": 602.5,
+        "caps": 0
+      },
+      {
+        "tag": "workflow-overloaded-sequential-1",
+        "terminal": "failed",
+        "hung": false,
+        "rounds": 0,
+        "questions": 0,
+        "seconds": 34.55,
+        "caps": 0
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "standup-mostly-specified-sequential-1",
+      "fixture": "standup-mostly-specified",
+      "variant": "sequential",
+      "run": {
+        "fixture_id": "standup-mostly-specified",
+        "variant": "sequential",
+        "session_id": "dd88ef3e-f40a-4fa6-9a87-4961d547513d",
+        "persona_id": "53b24e60-d01b-4ef9-a49a-dcc6d5414a9a",
+        "true_intent": "Exactly that: a weekday 9am standup that lists yesterday's merged PRs from our main repo and posts the summary to our #standup Slack channel. The only thing I didn't say is WHICH repo and WHICH Slack channel.",
+        "vague_intent": "Every weekday at 9am, collect yesterday's merged pull requests from our repo and post a standup summary to Slack.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 625.7,
+        "num_rounds": 3,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "human-review",
+            "question": "Should the digest be posted to Slack automatically, or do you want to approve it first?",
+            "options": [
+              "A: Auto-post \u2014 publish every morning without intervention",
+              "B: Always wait \u2014 show me the draft and I'll approve before it goes live",
+              "C: On low confidence \u2014 auto-post unless something looks off (missing PRs, fetch errors)"
+            ],
+            "connector_category": null,
+            "answer": "C \u2014 auto-post unless something looks off, then check with me first.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "sample-output",
+            "question": "How should \"Slack Standup Poster\" format its output? Paste / attach an example, or pick a shape:",
+            "options": [
+              "Markdown \u2014 bullet list with short headings",
+              "Markdown \u2014 table or grid layout",
+              "Prose summary \u2014 short paragraphs, no bullets",
+              "JSON \u2014 structured payload",
+              "I'll attach an example"
+            ],
+            "connector_category": null,
+            "answer": "Markdown \u2014 bullet list with short headings, one bullet per merged PR.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 3,
+            "cell_key": "memory",
+            "question": "What should \"Daily PR Collector\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)",
+            "options": [
+              "User preferences and corrections",
+              "Items I've already approved or rejected",
+              "Recurring context (people, projects, topics I care about)",
+              "Nothing \u2014 each run is independent"
+            ],
+            "connector_category": null,
+            "answer": "Nothing \u2014 each run is independent, it should just pull yesterday's merged PRs fresh every morning.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 82.59
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 87.38
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 399.72
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 404.7
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 527.84
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 532.59
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 625.7
+          }
+        ],
+        "error_message": null,
+        "hung": false
+      },
+      "capabilities": [
+        {
+          "id": "uc_daily_pr_collector",
+          "title": "Daily PR Collector",
+          "description": "Fetches all PRs merged into the configured repo since yesterday 9am and formats a bullet-list standup digest.",
+          "tool_hints": [
+            "github_list_pull_requests",
+            "data_processing",
+            "text_analysis"
+          ],
+          "subscriptions": [
+            {
+              "description": "Emitted when the PR digest is formatted and ready for the Slack poster to publish",
+              "direction": "emit",
+              "event_type": "standup.summary.ready"
+            }
+          ],
+          "trigger": {
+            "config": {
+              "cron": "0 9 * * 1-5",
+              "timezone": "America/New_York"
+            },
+            "description": "Every weekday at 9am",
+            "trigger_type": "schedule"
+          }
+        },
+        {
+          "id": "uc_slack_standup_poster",
+          "title": "Slack Standup Poster",
+          "description": "Publishes the formatted PR bullet list to the configured Slack channel, with a confidence gate before auto-posting.",
+          "tool_hints": [
+            "slack_post_message"
+          ],
+          "subscriptions": [
+            {
+              "description": "Receives the formatted digest payload from uc_daily_pr_collector",
+              "direction": "listen",
+              "event_type": "standup.summary.ready"
+            },
+            {
+              "description": "Emitted after a successful Slack post for downstream coordination",
+              "direction": "emit",
+              "event_type": "standup.digest.published"
+            }
+          ],
+          "trigger": {
+            "config": {
+              "event_type": "standup.summary.ready"
+            },
+            "description": "Fires whenever uc_daily_pr_collector emits a ready digest",
+            "trigger_type": "event"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "news-cadence-outside-sequential-1",
+      "fixture": "news-cadence-outside",
+      "variant": "sequential",
+      "run": {
+        "fixture_id": "news-cadence-outside",
+        "variant": "sequential",
+        "session_id": "a1e48737-e776-4e00-b64e-3297ae646079",
+        "persona_id": "7165b027-c202-48c3-a08b-a34a5c5cc114",
+        "true_intent": "Give me a short summary of the biggest AI and startup news twice a week \u2014 Monday and Thursday mornings \u2014 pulled from the web, delivered as an in-app notification. Just reading, nothing to publish.",
+        "vague_intent": "keep me updated on tech news",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 575.91,
+        "num_rounds": 5,
+        "num_questions": 5,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "How do you want to stay updated on tech news?",
+            "options": [
+              "A: Scheduled digest \u2014 collect headlines daily (or weekly) and deliver a curated summary on a cadence you choose",
+              "B: Real-time monitor \u2014 watch for breaking stories and alert you the moment something significant lands",
+              "C: Interactive advisor \u2014 ask me about tech news on demand and I'll research and brief you instantly"
+            ],
+            "connector_category": null,
+            "answer": "A \u2014 a digest twice a week, Monday and Thursday mornings.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "memory",
+            "question": "What should \"Bi-Weekly Tech Digest\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)",
+            "options": [
+              "User preferences and corrections",
+              "Items I've already approved or rejected",
+              "Recurring context (people, projects, topics I care about)",
+              "Nothing \u2014 each run is independent"
+            ],
+            "connector_category": null,
+            "answer": "Recurring context \u2014 the AI and startup topics and companies I care about, so it doesn't keep repeating the same stories.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 3,
+            "cell_key": "human-review",
+            "question": "Should \"Bi-Weekly Tech Digest\" wait for your approval before publishing its output?",
+            "options": [
+              "Never \u2014 auto-publish; I can undo/discard myself",
+              "On low confidence \u2014 only pause when unsure",
+              "Always \u2014 I want to sign off every run"
+            ],
+            "connector_category": null,
+            "answer": "Never \u2014 auto-publish, it's just a summary I read.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 4,
+            "cell_key": "connectors",
+            "question": "Which storage connector should \"Bi-Weekly Tech Digest\" use?",
+            "options": [],
+            "connector_category": null,
+            "answer": "No storage \u2014 just send it to me as an in-app notification.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 5,
+            "cell_key": "triggers",
+            "question": "How should \"Bi-Weekly Tech Digest\" fire?",
+            "options": [
+              "A: On demand \u2014 I'll trigger it manually",
+              "B: On a schedule (daily/weekly/\u2026)",
+              "C: When an external event occurs (e.g. new document, inbound message)"
+            ],
+            "connector_category": null,
+            "answer": "B \u2014 on a schedule, twice a week: Monday and Thursday mornings.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 15.02
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 20.47
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 193.14
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 200.89
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 304.55
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 311.95
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 396.05
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 400.94
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 491.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 497.81
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 575.91
+          }
+        ],
+        "error_message": null,
+        "hung": false
+      },
+      "capabilities": [
+        {
+          "id": "uc_biweekly_tech_digest",
+          "title": "Bi-Weekly Tech Digest",
+          "description": "Searches the web for notable tech stories twice a week, avoids repeating previously covered stories, and auto-delivers a curated ranked digest as an in-app notification every Monday and Thursday morning.",
+          "tool_hints": [
+            "web_search",
+            "web_fetch",
+            "text_analysis"
+          ],
+          "subscriptions": [
+            {
+              "description": "Emitted after each digest is delivered, carrying story count and the top headline.",
+              "direction": "emit",
+              "event_type": "news.digest.published"
+            }
+          ],
+          "trigger": {
+            "config": {
+              "cron": "0 8 * * 1,4",
+              "timezone": "America/New_York"
+            },
+            "description": "Every Monday and Thursday at 8 am Eastern",
+            "trigger_type": "schedule"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "post-updates-trap-sequential-1",
+      "fixture": "post-updates-trap",
+      "variant": "sequential",
+      "run": {
+        "fixture_id": "post-updates-trap",
+        "variant": "sequential",
+        "session_id": "f227cf63-6a3a-420a-ab76-60f22203eb60",
+        "persona_id": "7f4454f0-05cf-4adb-8e3e-385acb62eab3",
+        "true_intent": "Whenever we publish a new product launch page, I want a short summary posted to our team's Notion 'Launches' database so everyone can see it. The trigger is a new launch being published; the destination is Notion, not chat.",
+        "vague_intent": "post updates about our product launches so the team stays in the loop",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 685.98,
+        "num_rounds": 4,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "human-review",
+            "question": "Should the announcement wait for your approval before being posted to the team?",
+            "options": [
+              "Always \u2014 I want to review and approve every announcement before it goes out",
+              "Never \u2014 auto-post once the draft looks good",
+              "On low confidence \u2014 only pause when the agent is unsure about the content"
+            ],
+            "connector_category": null,
+            "answer": "Never \u2014 auto-post once the draft looks good. I don't want to be a bottleneck on every launch summary.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "memory",
+            "question": "What should \"Publish to Team Channel\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)",
+            "options": [
+              "User preferences and corrections",
+              "Items I've already approved or rejected",
+              "Recurring context (people, projects, topics I care about)",
+              "Nothing \u2014 each run is independent"
+            ],
+            "connector_category": null,
+            "answer": "Nothing \u2014 each new launch page is its own summary, no memory needed.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 3,
+            "cell_key": "connectors",
+            "question": "Which storage connector should \"Draft Launch Announcement\" use?",
+            "options": [],
+            "connector_category": null,
+            "answer": "Notion \u2014 the Launches database in our team workspace.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 4,
+            "cell_key": "triggers",
+            "question": "How should \"Draft Launch Announcement\" fire?",
+            "options": [
+              "A: On demand \u2014 I'll trigger it manually",
+              "B: On a schedule (daily/weekly/\u2026)",
+              "C: When an external event occurs (e.g. new document, inbound message)"
+            ],
+            "connector_category": null,
+            "answer": "C \u2014 when a new launch page gets published, that's what should kick it off.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 66.09
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 74.27
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 317.55
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 322.67
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 424.78
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 431.41
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 571.05
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 576.36
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 685.98
+          }
+        ],
+        "error_message": null,
+        "hung": false
+      },
+      "capabilities": [
+        {
+          "id": "uc_draft_announcement",
+          "title": "Draft Launch Announcement",
+          "description": "When a Notion launch page is published, read its fields and draft a structured team announcement.",
+          "tool_hints": [
+            "ai_generation",
+            "text_analysis",
+            "notion"
+          ],
+          "subscriptions": [
+            {
+              "description": "Fired with the completed announcement payload and notion_page_id once the draft is ready for publishing",
+              "direction": "emit",
+              "event_type": "product.announcement.drafted"
+            }
+          ],
+          "trigger": {
+            "config": {
+              "filter": "database = 'Launches' AND event = 'page.published'",
+              "smee_channel_url": null,
+              "smee_event_filter": "page.published",
+              "source_service": "Notion",
+              "webhook_secret": null
+            },
+            "description": "Fires when Notion sends a page.published webhook event for the Launches database \u2014 attach smee.io channel URL in SmeeRelayTab after promoting",
+            "trigger_type": "webhook"
+          }
+        },
+        {
+          "id": "uc_publish_announcement",
+          "title": "Publish to Team Channel",
+          "description": "Post the completed announcement to Discord and mark the Notion page as announced.",
+          "tool_hints": [
+            "discord",
+            "notion"
+          ],
+          "subscriptions": [
+            {
+              "description": "Receives the completed announcement payload and notion_page_id from the drafting capability",
+              "direction": "listen",
+              "event_type": "product.announcement.drafted"
+            },
+            {
+              "description": "Fired after the announcement is successfully posted to Discord and Notion is marked as announced",
+              "direction": "emit",
+              "event_type": "product.announcement.published"
+            }
+          ],
+          "trigger": {
+            "config": {
+              "event_type": "product.announcement.drafted"
+            },
+            "description": "Fires automatically when the drafting capability emits a completed announcement",
+            "trigger_type": "event"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "sync-two-tools-sequential-1",
+      "fixture": "sync-two-tools",
+      "variant": "sequential",
+      "run": {
+        "fixture_id": "sync-two-tools",
+        "variant": "sequential",
+        "session_id": "49179d31-6216-4e80-ad6c-5e563c7e43c5",
+        "persona_id": "b9f00bfa-5dde-4714-8dee-f1e18a59aadd",
+        "true_intent": "When I add or complete a task in Todoist, mirror that change into a Notion 'Tasks' database so my Notion workspace always reflects Todoist. It's one-way, Todoist to Notion \u2014 Notion is just the readable mirror.",
+        "vague_intent": "sync my tasks between my two tools",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 760.69,
+        "num_rounds": 5,
+        "num_questions": 5,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "Which two task tools should be synced, and how should the sync flow?",
+            "options": [
+              "A: ClickUp \u2194 Linear \u2014 two-way real-time sync (changes in either propagate instantly)",
+              "B: Asana \u2194 Linear \u2014 two-way real-time sync",
+              "C: ClickUp \u2194 Asana \u2014 two-way real-time sync",
+              "D: One tool is the master, the other mirrors it on a schedule (pick tools + direction next)",
+              "E: Different pair \u2014 tell me which two"
+            ],
+            "connector_category": null,
+            "answer": "E: Todoist and Notion \u2014 Todoist is the source of truth and Notion just mirrors it, one-way.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "memory",
+            "question": "What should \"Todoist \u2192 Notion Mirror Sync\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)",
+            "options": [
+              "User preferences and corrections",
+              "Items I've already approved or rejected",
+              "Recurring context (people, projects, topics I care about)",
+              "Nothing \u2014 each run is independent"
+            ],
+            "connector_category": null,
+            "answer": "Nothing \u2014 each run is independent. It just needs to push whatever changed in Todoist over to Notion.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 3,
+            "cell_key": "human-review",
+            "question": "Should \"Todoist \u2192 Notion Mirror Sync\" wait for your approval before publishing its output?",
+            "options": [
+              "Never \u2014 auto-publish; I can undo/discard myself",
+              "On low confidence \u2014 only pause when unsure",
+              "Always \u2014 I want to sign off every run"
+            ],
+            "connector_category": null,
+            "answer": "Never \u2014 auto-publish. It's just mirroring my Todoist into Notion, so I don't need to approve every sync.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 4,
+            "cell_key": "connectors",
+            "question": "Which storage connector should \"Todoist \u2192 Notion Mirror Sync\" use?",
+            "options": [],
+            "connector_category": null,
+            "answer": "Notion \u2014 that's where the mirrored Tasks database lives.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 5,
+            "cell_key": "triggers",
+            "question": "How should \"Todoist \u2192 Notion Mirror Sync\" fire?",
+            "options": [
+              "A: On demand \u2014 I'll trigger it manually",
+              "B: On a schedule (daily/weekly/\u2026)",
+              "C: When an external event occurs (e.g. new document, inbound message)"
+            ],
+            "connector_category": null,
+            "answer": "C \u2014 when something changes in Todoist (a task added or completed), it should fire then.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 34.53
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 39.77
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 284.52
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 290.3
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 467.48
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 472.81
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 553.89
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 559.2
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 640.28
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 645.05
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 760.69
+          }
+        ],
+        "error_message": null,
+        "hung": false
+      },
+      "capabilities": [
+        {
+          "id": "uc_task_mirror_sync",
+          "title": "Todoist \u2192 Notion Mirror Sync",
+          "description": "Polls Todoist every 5 minutes for new or changed tasks and upserts them into the user's Notion Tasks database. Fires only when changes are detected.",
+          "tool_hints": [
+            "web_fetch",
+            "execute_sql"
+          ],
+          "subscriptions": [
+            {
+              "description": "Emitted after each poll run where changes were detected and processed, with counts of tasks created, updated, completed, and errors.",
+              "direction": "emit",
+              "event_type": "task_sync.mirror.completed"
+            }
+          ],
+          "trigger": {
+            "config": {
+              "interval_seconds": 300
+            },
+            "description": "Poll Todoist every 5 minutes \u2014 approximates event-driven firing since Todoist has no native push connector",
+            "trigger_type": "polling"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "github-issues-partial-sequential-1",
+      "fixture": "github-issues-partial",
+      "variant": "sequential",
+      "run": {
+        "fixture_id": "github-issues-partial",
+        "variant": "sequential",
+        "session_id": "015fc60d-9c3d-4027-a379-4388362480c2",
+        "persona_id": "01dd7a16-576a-4321-8970-31c79a9d0a86",
+        "true_intent": "Watch the acme/backend repo. When a new issue is opened and labelled 'bug' or 'security', post a short summary to our #eng-alerts Slack channel. 'Important' = those two labels. Only new issues, in real time, not a digest.",
+        "vague_intent": "watch my GitHub repo and tell me about important issues",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 635.08,
+        "num_rounds": 4,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "\"Watch and tell me about important issues\" could mean a few different things \u2014 which fits best?",
+            "options": [
+              "A: Scheduled digest \u2014 check the repo on a cadence (daily, weekly) and send a ranked summary of open issues, PR activity, and CI status",
+              "B: Real-time monitor \u2014 alert me the moment something important happens (new issue opened, CI fails, PR needs review, security alert)",
+              "C: Both \u2014 periodic digest for the big picture, plus real-time alerts for high-severity events only"
+            ],
+            "connector_category": null,
+            "answer": "B \u2014 real-time. When a new issue is opened on acme/backend and it's labelled 'bug' or 'security', I want to know right away, not in a daily roundup.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "memory",
+            "question": "What should \"Real-Time Issue Alert\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)",
+            "options": [
+              "User preferences and corrections",
+              "Items I've already approved or rejected",
+              "Recurring context (people, projects, topics I care about)",
+              "Nothing \u2014 each run is independent"
+            ],
+            "connector_category": null,
+            "answer": "Nothing \u2014 each run is independent.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 3,
+            "cell_key": "human-review",
+            "question": "Should \"Real-Time Issue Alert\" wait for your approval before publishing its output?",
+            "options": [
+              "Never \u2014 auto-publish; I can undo/discard myself",
+              "On low confidence \u2014 only pause when unsure",
+              "Always \u2014 I want to sign off every run"
+            ],
+            "connector_category": null,
+            "answer": "Never \u2014 auto-publish straight to Slack; alerts are useless if they're sitting waiting on me.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 4,
+            "cell_key": "triggers",
+            "question": "How should \"Real-Time Issue Alert\" fire?",
+            "options": [
+              "A: On demand \u2014 I'll trigger it manually",
+              "B: On a schedule (daily/weekly/\u2026)",
+              "C: When an external event occurs (e.g. new document, inbound message)"
+            ],
+            "connector_category": null,
+            "answer": "C \u2014 when a new issue is opened on our acme/backend repo.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 21.02
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 26.67
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 320.97
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 326.16
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 432.77
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 438.0
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 535.59
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 540.47
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 635.08
+          }
+        ],
+        "error_message": null,
+        "hung": false
+      },
+      "capabilities": [
+        {
+          "id": "uc_issue_alert",
+          "title": "Real-Time Issue Alert",
+          "description": "Fires an instant Slack alert the moment a new issue labeled 'bug' or 'security' is opened on acme/backend.",
+          "tool_hints": [
+            "github_get_issue",
+            "slack_post_message"
+          ],
+          "subscriptions": [
+            {
+              "description": "GitHub webhook payload for a newly opened issue on acme/backend",
+              "direction": "listen",
+              "event_type": "github.issue.opened"
+            },
+            {
+              "description": "Emitted after Slack alert is posted, carrying issue number, matched labels, and URL for downstream agents",
+              "direction": "emit",
+              "event_type": "github.issue.alerted"
+            }
+          ],
+          "trigger": {
+            "config": {
+              "smee_channel_url": null,
+              "smee_event_filter": "issues",
+              "webhook_secret": null
+            },
+            "description": "Fires when a new issue is opened on acme/backend \u2014 wire a smee.io channel to acme/backend > Settings > Webhooks after promote, then paste the same URL in Settings > Triggers here",
+            "trigger_type": "webhook"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "sales-vague-sequential-1",
+      "fixture": "sales-vague",
+      "variant": "sequential",
+      "run": {
+        "fixture_id": "sales-vague",
+        "variant": "sequential",
+        "session_id": "e10acb3f-d488-4d92-8a63-578722539995",
+        "persona_id": "085bbf56-9393-4f06-ab5f-fc9b8f25666c",
+        "true_intent": "When a deal is marked Closed-Won in our CRM, I want a celebration message posted to the #wins Slack channel and a row appended to our 'Closed Deals' spreadsheet with the deal name, amount, and owner. That's the whole job.",
+        "vague_intent": "build an agent for my sales team",
+        "terminal_phase": "resolving",
+        "ok": false,
+        "total_seconds": 900.16,
+        "num_rounds": 4,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "What should the sales agent primarily do for your team?",
+            "options": [
+              "A: Lead intelligence \u2014 qualify inbound leads, score them, and draft personalized outreach so reps spend time on the right prospects",
+              "B: Pipeline health monitor \u2014 track deal progress, surface stale opportunities, and send reps a daily digest of what needs attention today",
+              "C: CRM data steward \u2014 keep records enriched and accurate, flag missing fields, and auto-log activity so reps never touch data entry",
+              "D: Meeting & follow-up assistant \u2014 capture meeting notes, extract commitments, and draft follow-up emails ready for rep approval"
+            ],
+            "connector_category": null,
+            "answer": "B \u2014 but really just the closing part: when a deal hits Closed-Won I want it announced and logged.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "memory",
+            "question": "What should \"Win Logger\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)",
+            "options": [
+              "User preferences and corrections",
+              "Items I've already approved or rejected",
+              "Recurring context (people, projects, topics I care about)",
+              "Nothing \u2014 each run is independent"
+            ],
+            "connector_category": null,
+            "answer": "Nothing \u2014 each run is independent.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 3,
+            "cell_key": "human-review",
+            "question": "Should \"Win Announcement\" wait for your approval before publishing its output?",
+            "options": [
+              "Never \u2014 auto-publish; I can undo/discard myself",
+              "On low confidence \u2014 only pause when unsure",
+              "Always \u2014 I want to sign off every run"
+            ],
+            "connector_category": null,
+            "answer": "Never \u2014 auto-publish. It's just a Slack post and a spreadsheet row; I don't want to approve every closed deal.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 4,
+            "cell_key": "connectors",
+            "question": "Which spreadsheet connector should \"Win Logger\" use?",
+            "options": [],
+            "connector_category": null,
+            "answer": "Google Sheets \u2014 that's where our 'Closed Deals' sheet lives.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 12.03
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 19.55
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 424.97
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 429.86
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 572.52
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 578.16
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 770.36
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 775.48
+          },
+          {
+            "phase": "__timeout__",
+            "offset_s": 900.16
+          }
+        ],
+        "error_message": null,
+        "hung": true
+      },
+      "capabilities": []
+    },
+    {
+      "tag": "research-vague-sequential-1",
+      "fixture": "research-vague",
+      "variant": "sequential",
+      "run": {
+        "fixture_id": "research-vague",
+        "variant": "sequential",
+        "session_id": "ba114218-74a7-42c6-88bc-0b8a63095a0f",
+        "persona_id": "f24340b4-7c58-4756-b157-5c5282d3852b",
+        "true_intent": "I'm researching battery chemistry. Once a week I want it to search the web + arXiv for new papers and articles on solid-state batteries, summarise the genuinely new ones, and save the summaries to a Notion database so I can review them later.",
+        "vague_intent": "I want something for my research",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 602.5,
+        "num_rounds": 4,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "What kind of research companion do you want?",
+            "options": [
+              "A: Literature scout \u2014 monitor academic sources (arXiv, PubMed, Semantic Scholar) on a schedule and surface relevant new papers as a digest",
+              "B: Deep-dive synthesizer \u2014 on demand, research a topic across the web and academic databases and produce a structured report",
+              "C: Ongoing tracker \u2014 watch a set of topics or queries continuously and alert when something noteworthy appears"
+            ],
+            "connector_category": null,
+            "answer": "Option A \u2014 a literature scout that checks arXiv and the web once a week for new solid-state battery papers.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "memory",
+            "question": "What should \"Weekly Paper Scout\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)",
+            "options": [
+              "User preferences and corrections",
+              "Items I've already approved or rejected",
+              "Recurring context (people, projects, topics I care about)",
+              "Nothing \u2014 each run is independent"
+            ],
+            "connector_category": null,
+            "answer": "Items I've already approved or rejected \u2014 it needs to know which papers it already sent me so I only get genuinely new ones each week.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 3,
+            "cell_key": "human-review",
+            "question": "Should \"Weekly Paper Scout\" wait for your approval before publishing its output?",
+            "options": [
+              "Never \u2014 auto-publish; I can undo/discard myself",
+              "On low confidence \u2014 only pause when unsure",
+              "Always \u2014 I want to sign off every run"
+            ],
+            "connector_category": null,
+            "answer": "Always \u2014 I want to sign off every run before anything gets written to Notion.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 4,
+            "cell_key": "memory",
+            "question": "What should \"Notion Digest Publisher\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)",
+            "options": [
+              "User preferences and corrections",
+              "Items I've already approved or rejected",
+              "Recurring context (people, projects, topics I care about)",
+              "Nothing \u2014 each run is independent"
+            ],
+            "connector_category": null,
+            "answer": "Use a sensible default and proceed.",
+            "sim_ok": false,
+            "sim_error": "claude exit 1: "
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 10.58
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 17.53
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 230.75
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 235.78
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 334.89
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 340.41
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 576.16
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 579.97
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 602.5
+          }
+        ],
+        "error_message": null,
+        "hung": false
+      },
+      "capabilities": []
+    },
+    {
+      "tag": "workflow-overloaded-sequential-1",
+      "fixture": "workflow-overloaded",
+      "variant": "sequential",
+      "run": {
+        "fixture_id": "workflow-overloaded",
+        "variant": "sequential",
+        "session_id": "7fd94a7e-9435-4c8c-8f93-1f12f7eefd40",
+        "persona_id": "5de98a72-1d93-46b2-8adf-3d981b0229c1",
+        "true_intent": "Honestly I just have one concrete pain: every morning I copy yesterday's Stripe payouts into a Google Sheet by hand. I want that one thing automated \u2014 pull yesterday's Stripe payouts and append them to my 'Revenue' sheet each morning. Nothing else.",
+        "vague_intent": "manage my whole workflow and make my life easier",
+        "terminal_phase": "failed",
+        "ok": false,
+        "total_seconds": 34.55,
+        "num_rounds": 0,
+        "num_questions": 0,
+        "transcript": [],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "failed",
+            "offset_s": 34.55
+          }
+        ],
+        "error_message": null,
+        "hung": false
+      },
+      "capabilities": []
+    }
+  ]
+}

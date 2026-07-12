@@ -3,7 +3,7 @@
   "group_by_toggle_title": "Persona-Karten nach zugewiesener Gruppe gruppieren",
   "group_ungrouped": "Ohne Gruppe",
   "title": "Persona-Monitor",
-  "subtitle": "{personas} Personas · {attention} benötigen Aufmerksamkeit · {running} aktiv",
+  "subtitle": "{Personas} Personas · {attention} need attention · {running} running",
   "close": "Monitor schließen",
   "close_hint": "Schließen (Esc)",
   "no_personas": "Noch keine Personas.",

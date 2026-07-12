@@ -643,7 +643,62 @@ fn handle_context_neighbors(args: &Value, pool: &McpDbPool) -> Result<String, St
 }
 
 /// Return the list of available MCP tools with their schemas.
-pub fn list_tools() -> Vec<Value> {
+/// Forward a scraper request to the main app's loopback route
+/// `/api/scrape/<path>` (where the engine + SSRF-safe client live — the
+/// personas-mcp binary has no engine module), with the bridge system key.
+/// Mirrors how the vault tools use the credential proxy.
+#[cfg(feature = "scraper")]
+fn scrape_bridge(path: &str, body: &Value) -> Result<String, String> {
+    let bridge =
+        std::env::var("PERSONAS_BRIDGE_URL").unwrap_or_else(|_| "http://127.0.0.1:9420".to_string());
+    let api_key = std::env::var("PERSONAS_API_KEY")
+        .map_err(|_| "Scraper bridge unavailable for this run (PERSONAS_API_KEY not set).".to_string())?;
+    let endpoint = format!("{}/api/scrape/{}", bridge.trim_end_matches('/'), path);
+    let body = body.clone();
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| format!("runtime build failed: {e}"))?;
+    rt.block_on(async move {
+        let client = reqwest::Client::new();
+        let resp = client
+            .post(&endpoint)
+            .bearer_auth(&api_key)
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| format!("scrape request failed: {e}"))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| format!("scrape read failed: {e}"))?;
+        if !status.is_success() {
+            return Err(format!("scrape returned {status}: {text}"));
+        }
+        Ok(text)
+    })
+}
+
+/// `query_dataset` — read change-detected records back from a scraper dataset.
+/// The one scraper MCP tool kept after the Phase 1c pivot to Signals: a persona
+/// reacting to a `shared:scrape.*` Signal uses it to pull the actual records.
+#[cfg(feature = "scraper")]
+fn handle_query_dataset(args: &Value, _pool: &McpDbPool) -> Result<String, String> {
+    let dataset = args
+        .get("dataset")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing required 'dataset'")?;
+    let body = json!({
+        "dataset": dataset,
+        "limit": args.get("limit").and_then(Value::as_i64).unwrap_or(100),
+        "changed_only": args.get("changed_only").and_then(Value::as_bool).unwrap_or(false),
+    });
+    scrape_bridge("query", &body)
+}
+
+#[cfg_attr(not(feature = "scraper"), allow(unused_variables))]
+pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
     let mut tools = vec![
         json!({
             "name": "personas_list",
@@ -1029,6 +1084,28 @@ pub fn list_tools() -> Vec<Value> {
             "execution_id": { "type": "string", "description": "Optional linked execution id" }
         }, "required": ["content"] }
     }));
+
+    // Embedded local scraper (Pumper). After the Phase 1c pivot to Signals, the
+    // scraper communicates via the event bus, not persona-invoked tools — the one
+    // tool kept is `query_dataset`, so a persona reacting to a `shared:scrape.*`
+    // Signal can pull the underlying records. Advertised in `scraper` builds.
+    #[cfg(feature = "scraper")]
+    {
+        tools.push(json!({
+            "name": "query_dataset",
+            "description": "Read change-detected records back from a local-scraper dataset (newest first). Use when reacting to a scrape Signal to see what was scraped or what changed.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "dataset": { "type": "string", "description": "Dataset name" },
+                    "limit": { "type": "integer", "description": "Max records (default 100)" },
+                    "changed_only": { "type": "boolean", "description": "Only records whose content changed since first seen (default false)" }
+                },
+                "required": ["dataset"]
+            }
+        }));
+    }
+
     tools
 }
 
@@ -1067,6 +1144,8 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "gcalendar_list_events" => handle_gcalendar_list_events(args, pool),
         "obsidian_vault_search" => handle_obsidian_vault_search(args, pool),
         "obsidian_vault_write_note" => handle_obsidian_vault_write_note(args, pool),
+        #[cfg(feature = "scraper")]
+        "query_dataset" => handle_query_dataset(args, pool),
         _ => Err(format!("Unknown tool: {name}")),
     };
 

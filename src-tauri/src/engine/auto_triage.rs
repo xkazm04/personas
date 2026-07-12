@@ -203,7 +203,7 @@ pub fn parse_verdict_response(raw: &str) -> Result<AutoTriageDecision, String> {
     });
 
     let Some(v) = parsed else {
-        let head = &trimmed[..trimmed.len().min(500)];
+        let head = crate::utils::text::truncate_on_char_boundary(trimmed, 500);
         return Err(format!(
             "Failed to parse verdict JSON. Head (≤500 chars): {head}"
         ));

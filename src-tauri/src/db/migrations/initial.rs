@@ -189,6 +189,68 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_shared_subs_enabled ON shared_event_subscriptions(enabled);"
     )?;
 
+    // -- Baked shared-event firings (curated connector-API-change events) --------
+    // Local-first delivery: firings are code-generated into db/builtin_shared_events.rs
+    // from scripts/events/connector-events.ledger.json and seeded on startup. The
+    // local relay (engine/shared_event_local_relay.rs) delivers unseen firings
+    // (seq > subscription cursor) onto the bus as `shared:<slug>` — no cloud needed.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS shared_event_firings (
+            id               TEXT PRIMARY KEY,
+            slug             TEXT NOT NULL,
+            seq              INTEGER NOT NULL,
+            title            TEXT NOT NULL,
+            fired_at         TEXT NOT NULL,
+            payload          TEXT NOT NULL,
+            release_version  TEXT,
+            created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_shared_firings_slug_seq ON shared_event_firings(slug, seq);"
+    )?;
+
+    // -- Local scraper datasets (embedded Pumper, Phase 1) ----------------------
+    // Change-detected record store for the local scraper's declarative extract
+    // (engine/scraper.rs). Mirrors pumper-core's Datasets over rusqlite (no sqlx):
+    // upsert hashes the record JSON → New / Changed / Unchanged, so a re-run only
+    // surfaces what actually changed. `data` is the extracted JSON object.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS scraper_records (
+            dataset       TEXT NOT NULL,
+            key           TEXT NOT NULL,
+            data          TEXT NOT NULL,
+            content_hash  TEXT NOT NULL,
+            first_seen    TEXT NOT NULL DEFAULT (datetime('now')),
+            last_seen     TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (dataset, key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_scraper_records_dataset ON scraper_records(dataset, updated_at);"
+    )?;
+
+    // -- Saved scrape use-cases (Phase 1b) --------------------------------------
+    // A persisted, optionally cron-scheduled declarative scrape. The scheduler
+    // (engine/subscription.rs ScraperScheduleSubscription) runs due rows via
+    // engine/scraper.rs::config_run → run_extract. `urls`/`rules` are JSON.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS scraper_configs (
+            id            TEXT PRIMARY KEY,
+            name          TEXT NOT NULL,
+            description   TEXT,
+            urls          TEXT NOT NULL,
+            rules         TEXT NOT NULL,
+            dataset       TEXT NOT NULL,
+            key_field     TEXT,
+            cron          TEXT,
+            enabled       INTEGER NOT NULL DEFAULT 1,
+            next_run_at   TEXT,
+            last_run_at   TEXT,
+            last_status   TEXT,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_scraper_configs_due ON scraper_configs(enabled, next_run_at);"
+    )?;
+
     // -- Shared Event Analytics --------------------------------------------------
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS shared_event_analytics (

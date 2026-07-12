@@ -199,7 +199,11 @@
     "curation_schedule_last_run_label": "آخر تشغيل",
     "curation_schedule_disabled_state": "التنقيح معطّل لهذا الوكيل",
     "curation_schedule_disable": "تعطيل الجدولة",
-    "curation_schedule_save": "حفظ الجدولة"
+    "curation_schedule_save": "حفظ الجدولة",
+    "reflect": "تأمّل",
+    "reflect_hint": "دمج الذكريات المترابطة في رؤى دائمة — النتيجة اقتراح تراجعه قبل تغيير أي شيء",
+    "reflect_pick_persona": "تأمّل ذكريات وكيل",
+    "reflecting": "جارٍ التأمّل..."
   },
   "memory_review": {
     "keep_prefix": "الاحتفاظ بـ “",
@@ -1123,7 +1127,8 @@
     "tags_label": "الوسوم",
     "view_source_execution": "عرض التنفيذ المصدر",
     "delete_memory": "حذف الذاكرة",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "derived_from_label": "مُركّب من"
   },
   "memory_table": {
     "agent": "الوكيل",

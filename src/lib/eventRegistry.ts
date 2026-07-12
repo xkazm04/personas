@@ -15,6 +15,7 @@ import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
 import type { LearnedMemoryRef } from '@/lib/bindings/LearnedMemoryRef';
 import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
+import type { PendingPairingView } from '@/lib/bindings/PendingPairingView';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
@@ -134,9 +135,23 @@ export const EventName = {
   CONTEXT_GEN_STATUS: 'context-gen-status',
   CONTEXT_GEN_OUTPUT: 'context-gen-output',
   CONTEXT_GEN_COMPLETE: 'context-gen-complete',
+  // Dev-tools context-scan lifecycle, published to the persona-event BUS
+  // (not the direct context-gen channel) so it surfaces in the Live Stream.
+  DEV_TOOLS_CONTEXT_SCAN_STARTED: 'dev_tools.context_scan_started',
+  DEV_TOOLS_CONTEXT_SCAN_COMPLETED: 'dev_tools.context_scan_completed',
   IDEA_SCAN_STATUS: 'idea-scan-status',
   IDEA_SCAN_OUTPUT: 'idea-scan-output',
   IDEA_SCAN_COMPLETE: 'idea-scan-complete',
+  KPI_SCAN_STATUS: 'kpi-scan-status',
+  KPI_SCAN_OUTPUT: 'kpi-scan-output',
+  KPI_SCAN_COMPLETE: 'kpi-scan-complete',
+  // KPI measurement compose/propose (Factory measurement setup)
+  KPI_COMPOSE_STATUS: 'kpi-compose-status',
+  KPI_COMPOSE_OUTPUT: 'kpi-compose-output',
+  // Use-case proposal scan (behavioral slice layer under the context map)
+  USE_CASE_SCAN_STATUS: 'use-case-scan-status',
+  USE_CASE_SCAN_OUTPUT: 'use-case-scan-output',
+  USE_CASE_SCAN_COMPLETE: 'use-case-scan-complete',
 
   // Task executor
   TASK_EXEC_STATUS: 'task-exec-status',
@@ -223,6 +238,9 @@ export const EventName = {
 
   // Referral (personas://ref/<code> deep link received from OS)
   REFERRAL_RECEIVED: 'referral-received',
+
+  // Cloud-app pairing request (personas://pair deep link or POST /pair/request)
+  PAIRING_REQUESTED: 'pairing-requested',
 
   // Engine fallback (unrecognized engine setting)
   ENGINE_FALLBACK: 'engine-fallback',
@@ -493,6 +511,35 @@ export interface ContextGenCompletePayload {
   contexts_created: number;
   files_mapped: number;
   status: string;
+  error?: string;
+}
+
+/**
+ * Dev-tools context-scan lifecycle, published to the persona-event BUS so it
+ * surfaces in the Live Stream (engine/system_ops.rs::publish_context_scan_event).
+ * The base fields are stamped by the publisher; the rest are merged per phase.
+ */
+export interface DevToolsContextScanStartedPayload {
+  project_id: string;
+  project_name: string;
+  phase: string;
+  delta_mode: boolean;
+  is_rescan: boolean;
+}
+
+/**
+ * The `completed` phase carries the scan summary — or, when the scan failed,
+ * `status: "failed"` plus an `error` and no counts.
+ */
+export interface DevToolsContextScanCompletedPayload {
+  project_id: string;
+  project_name: string;
+  phase: string;
+  status: string;
+  scan_id: string;
+  groups_created?: number;
+  contexts_created?: number;
+  files_mapped?: number;
   error?: string;
 }
 
@@ -770,9 +817,23 @@ export interface EventPayloadMap {
   [EventName.CONTEXT_GEN_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.CONTEXT_GEN_OUTPUT]: { job_id: string; line: string };
   [EventName.CONTEXT_GEN_COMPLETE]: ContextGenCompletePayload;
+  // Bus events (Live Stream), not the direct context-gen channel.
+  [EventName.DEV_TOOLS_CONTEXT_SCAN_STARTED]: DevToolsContextScanStartedPayload;
+  [EventName.DEV_TOOLS_CONTEXT_SCAN_COMPLETED]: DevToolsContextScanCompletedPayload;
   [EventName.IDEA_SCAN_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.IDEA_SCAN_OUTPUT]: { job_id: string; line: string };
   [EventName.IDEA_SCAN_COMPLETE]: IdeaScanCompletePayload;
+  // KPI proposal scan (BackgroundJob pattern)
+  [EventName.KPI_SCAN_STATUS]: { job_id: string; status: string; error?: string };
+  [EventName.KPI_SCAN_OUTPUT]: { job_id: string; line: string };
+  [EventName.KPI_SCAN_COMPLETE]: { scan_id: string; proposals: number };
+  // KPI measurement compose/propose (BackgroundJob pattern)
+  [EventName.KPI_COMPOSE_STATUS]: { job_id: string; status: string; error?: string };
+  [EventName.KPI_COMPOSE_OUTPUT]: { job_id: string; line: string };
+  // Use-case proposal scan (BackgroundJob pattern)
+  [EventName.USE_CASE_SCAN_STATUS]: { job_id: string; status: string; error?: string };
+  [EventName.USE_CASE_SCAN_OUTPUT]: { job_id: string; line: string };
+  [EventName.USE_CASE_SCAN_COMPLETE]: { scan_id: string; proposals: number };
 
   // Task executor (BackgroundJob pattern)
   [EventName.TASK_EXEC_STATUS]: { job_id: string; status: string; error?: string };
@@ -920,6 +981,9 @@ export interface EventPayloadMap {
   [EventName.REFERRAL_RECEIVED]: {
     code: string;
   };
+
+  // Cloud-app pairing request — emitted with the Rust `PendingPairingView`.
+  [EventName.PAIRING_REQUESTED]: PendingPairingView;
 
   // Engine fallback
   [EventName.ENGINE_FALLBACK]: {

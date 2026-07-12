@@ -285,6 +285,21 @@ pub struct SharedEventRelaySubscription {
     pub state: Arc<tokio::sync::Mutex<super::shared_event_relay::SharedEventRelayState>>,
 }
 
+/// Local-first shared event relay: delivers baked curated firings (connector
+/// API-change events, seeded from `db/builtin_shared_events.rs`) to subscribers
+/// with no cloud dependency. See [`super::shared_event_local_relay`].
+pub struct SharedEventLocalRelaySubscription {
+    pub pool: DbPool,
+    pub app: AppHandle,
+}
+
+/// Runs due saved scrape configs on their cron schedule (embedded Pumper,
+/// Phase 1b). See [`super::scraper::scraper_schedule_tick`].
+#[cfg(feature = "scraper")]
+pub struct ScraperScheduleSubscription {
+    pub pool: DbPool,
+}
+
 // ---------------------------------------------------------------------------
 // Implementations
 // ---------------------------------------------------------------------------
@@ -1089,6 +1104,51 @@ impl ReactiveSubscription for SharedEventRelaySubscription {
             )
             .await;
         }
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for SharedEventLocalRelaySubscription {
+    fn name(&self) -> &'static str {
+        "shared_event_local_relay"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(300) // 5 minutes
+    }
+
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(600) // 10 minutes when idle
+    }
+
+    fn initial_delay(&self) -> Duration {
+        // Deliver soon after boot so an upgrade's fresh firings reach existing
+        // subscribers promptly (no cloud connect to wait on).
+        Duration::from_secs(20)
+    }
+
+    async fn tick(&self) {
+        super::shared_event_local_relay::shared_event_local_relay_tick(&self.pool, &self.app).await;
+    }
+}
+
+#[cfg(feature = "scraper")]
+#[async_trait::async_trait]
+impl ReactiveSubscription for ScraperScheduleSubscription {
+    fn name(&self) -> &'static str {
+        "scraper_schedule"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(60)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(30)
+    }
+
+    async fn tick(&self) {
+        super::scraper::scraper_schedule_tick(&self.pool).await;
     }
 }
 

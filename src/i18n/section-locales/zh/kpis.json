@@ -181,5 +181,7 @@
     "health_snapshot": "健康快照",
     "manual": "手动录入",
     "scan": "扫描"
-  }
+  },
+  "kpi_scope_label": "范围",
+  "kpi_scope_this_context": "此上下文"
 }

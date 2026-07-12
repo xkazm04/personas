@@ -1,0 +1,350 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "emails-vague-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 3,
+        "seconds": 173.12,
+        "caps": 2
+      },
+      {
+        "tag": "standup-mostly-specified-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 1,
+        "questions": 2,
+        "seconds": 138.34,
+        "caps": 2
+      },
+      {
+        "tag": "hn-digest-control-multiagent-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 0,
+        "questions": 0,
+        "seconds": 58.62,
+        "caps": 1
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "emails-vague-multiagent-1",
+      "fixture": "emails-vague",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "emails-vague",
+        "variant": "multiagent",
+        "session_id": "869cdd27-ffaa-4e51-a9ce-42762b45fef2",
+        "persona_id": "e304482b-8162-4c44-ac5e-17c0b5d75ff2",
+        "true_intent": "I run customer support out of a Gmail inbox. I want it to read incoming support emails, summarise each one, label the urgent ones, and draft a reply for the top few \u2014 but I always want to review before anything is sent. Nothing auto-sends. I don't want it touching my personal email, just the support address.",
+        "vague_intent": "make me a bot that helps with my emails",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 173.12,
+        "num_rounds": 1,
+        "num_questions": 3,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "use-cases",
+            "question": "What should this bot actually do with your emails? Select all that apply.",
+            "options": [
+              "Triage & prioritize my inbox (surface what matters, flag urgent)",
+              "Draft replies for me to review and send",
+              "Send a daily digest of important messages",
+              "Auto-label or organize emails into folders"
+            ],
+            "connector_category": null,
+            "answer": "Triage & prioritize my inbox, and draft replies for me to review \u2014 plus auto-labeling the urgent ones would be great. No daily digest needed.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which email provider should it connect to, and which account or inbox \u2014 all your mail, or a specific address?",
+            "options": [
+              "Gmail (all mail)",
+              "Gmail (specific label or inbox only)",
+              "Outlook / Microsoft 365",
+              "Other"
+            ],
+            "connector_category": null,
+            "answer": "Gmail \u2014 just one specific address, our support inbox. Not my personal mail.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "human-review",
+            "question": "If it drafts a reply, should it ever send the email on your behalf automatically, or always prepare a draft for you to review first?",
+            "options": [
+              "Always prepare a draft \u2014 I'll send it myself",
+              "Send automatically for routine replies, draft for anything important",
+              "Send automatically for all replies"
+            ],
+            "connector_category": null,
+            "answer": "Always prepare a draft \u2014 I'll send it myself. Nothing goes out without me reviewing it first.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 40.55
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 51.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 84.52
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 173.12
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_inbox_triage",
+          "title": "Inbox Triage & Labeling",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [
+            {
+              "description": "Subscribe to new inbound messages only; skip already-triaged messages to avoid double-processing.",
+              "event": "gmail.message.received",
+              "filter": {
+                "exclude_labels": [
+                  "SENT",
+                  "DRAFT",
+                  "TRIAGE/P1-Critical",
+                  "TRIAGE/P2-High",
+                  "TRIAGE/P3-Normal",
+                  "TRIAGE/P4-Low"
+                ],
+                "inbox": "support"
+              }
+            }
+          ],
+          "trigger": {
+            "description": "Fires when a new message lands in the designated Gmail support inbox via Gmail API push notification (Pub/Sub). Also supports manual trigger by passing a message_id directly for re-triage.",
+            "event": "message.received",
+            "source": "gmail",
+            "type": "event"
+          }
+        },
+        {
+          "id": "uc_draft_reply",
+          "title": "Draft Reply Preparation",
+          "description": null,
+          "tool_hints": [
+            "gmail.drafts.create",
+            "gmail.threads.get",
+            "gmail.messages.get"
+          ],
+          "subscriptions": [
+            {
+              "event": "email.triaged",
+              "fields_required": [
+                "message_id",
+                "thread_id",
+                "sender",
+                "subject",
+                "body_text",
+                "urgency_label",
+                "rationale"
+              ],
+              "source": "uc_inbox_triage"
+            }
+          ],
+          "trigger": {
+            "description": "Fires immediately after uc_inbox_triage classifies and labels an inbound email, receiving the triage card as input.",
+            "event": "email.triaged",
+            "source": "uc_inbox_triage",
+            "type": "event"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "standup-mostly-specified-multiagent-1",
+      "fixture": "standup-mostly-specified",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "standup-mostly-specified",
+        "variant": "multiagent",
+        "session_id": "28249a7a-fefc-44c2-b67a-ff6a6834f5d9",
+        "persona_id": "4745c397-b280-4064-af10-01f1a1bd6244",
+        "true_intent": "Exactly that: a weekday 9am standup that lists yesterday's merged PRs from our main repo and posts the summary to our #standup Slack channel. The only thing I didn't say is WHICH repo and WHICH Slack channel.",
+        "vague_intent": "Every weekday at 9am, collect yesterday's merged pull requests from our repo and post a standup summary to Slack.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 138.34,
+        "num_rounds": 1,
+        "num_questions": 2,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "connectors",
+            "question": "Which GitHub repository should it pull merged PRs from? Please provide the owner and repo name (e.g. acme-corp/backend).",
+            "options": [],
+            "connector_category": null,
+            "answer": "acme-corp/backend \u2014 that's our main repo.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 1,
+            "cell_key": "connectors#2",
+            "question": "Which Slack channel should the standup summary be posted to?",
+            "options": [],
+            "connector_category": null,
+            "answer": "#standup \u2014 it's the channel we already use for our morning standups.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.0
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 46.56
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 70.59
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 88.78
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 138.34
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_collect_prs",
+          "title": "PR Collection & Summarization",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Every weekday at 9:00 AM \u2014 fires before the team's standup window",
+            "schedule": "0 9 * * 1-5",
+            "timezone": "America/New_York",
+            "type": "cron"
+          }
+        },
+        {
+          "id": "uc_post_standup",
+          "title": "Slack Standup Publisher",
+          "description": null,
+          "tool_hints": [
+            "slack_post_message"
+          ],
+          "subscriptions": [
+            {
+              "description": "Receives the fully-formatted Slack message body produced by the PR collection capability.",
+              "event": "uc_collect_prs.completed",
+              "payload_fields": [
+                "digest_text",
+                "pr_count",
+                "run_timestamp",
+                "date_label"
+              ]
+            },
+            {
+              "description": "Triggers the error path so a manual_review blocker is posted instead of the digest.",
+              "event": "uc_collect_prs.failed",
+              "payload_fields": [
+                "error_message",
+                "run_timestamp"
+              ]
+            }
+          ],
+          "trigger": {
+            "description": "Fires immediately after uc_collect_prs emits a completed event carrying the formatted digest. Falls back to a scheduled trigger at 09:00 local team time if the upstream event is unavailable.",
+            "event": "uc_collect_prs.completed",
+            "type": "event"
+          }
+        }
+      ]
+    },
+    {
+      "tag": "hn-digest-control-multiagent-1",
+      "fixture": "hn-digest-control",
+      "variant": "multiagent",
+      "run": {
+        "fixture_id": "hn-digest-control",
+        "variant": "multiagent",
+        "session_id": "0323c271-eb34-486d-a31f-cbcad0250e35",
+        "persona_id": "93a9dfc4-9075-4c8d-82f4-fd6d4ad7de45",
+        "true_intent": "Exactly what I said: a daily 9am digest of the top 5 Hacker News stories, delivered to the in-app titlebar. Nothing more \u2014 no external publishing, no review step needed, it's just an informational read.",
+        "vague_intent": "Every day at 9am, fetch the top 5 Hacker News stories and show them to me as a digest in the app titlebar. No need to publish anywhere else.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 58.62,
+        "num_rounds": 0,
+        "num_questions": 0,
+        "transcript": [],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 24.03
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 58.62
+          }
+        ],
+        "error_message": null,
+        "hung": false,
+        "stall_reason": null
+      },
+      "capabilities": [
+        {
+          "id": "uc_hn_daily_digest",
+          "title": "Daily HN Digest",
+          "description": null,
+          "tool_hints": [],
+          "subscriptions": [],
+          "trigger": {
+            "description": "Runs once daily at 9 AM in the user's local timezone",
+            "schedule": "0 9 * * *",
+            "timezone_input": "user_configured",
+            "type": "cron"
+          }
+        }
+      ]
+    }
+  ]
+}

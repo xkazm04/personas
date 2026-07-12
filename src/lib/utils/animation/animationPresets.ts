@@ -30,8 +30,6 @@ const EASE_CURVE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 // fast    (150ms) -> dropdowns, toggles, small state changes
 // normal  (250ms) -> panels, modals, drawers, standard transitions
 // slow    (400ms) -> page transitions, wizard steps, large reveals
-export const TRANSITION_INSTANT = { duration: 0.1, ease: EASE_CURVE };
-export const TRANSITION_FAST = { duration: 0.15, ease: EASE_CURVE };
 export const TRANSITION_NORMAL = { duration: 0.25, ease: EASE_CURVE };
 export const TRANSITION_SLOW = { duration: 0.4, ease: EASE_CURVE };
 

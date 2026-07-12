@@ -199,7 +199,11 @@
     "curation_schedule_last_run_label": "Lần chạy cuối",
     "curation_schedule_disabled_state": "Tính năng rà soát đang tắt cho persona này",
     "curation_schedule_disable": "Tắt lịch trình",
-    "curation_schedule_save": "Lưu lịch trình"
+    "curation_schedule_save": "Lưu lịch trình",
+    "reflect": "Chiêm nghiệm",
+    "reflect_hint": "Hợp nhất các ký ức liên quan thành những hiểu biết bền vững — kết quả là một đề xuất bạn xem xét trước khi có bất kỳ thay đổi nào",
+    "reflect_pick_persona": "Chiêm nghiệm ký ức của một agent",
+    "reflecting": "Đang chiêm nghiệm..."
   },
   "memory_review": {
     "keep_prefix": "Giữ lại \"",
@@ -1123,7 +1127,8 @@
     "tags_label": "Thẻ",
     "view_source_execution": "Xem thực thi nguồn",
     "delete_memory": "Xóa bộ nhớ",
-    "close": "Đóng"
+    "close": "Đóng",
+    "derived_from_label": "Tổng hợp từ"
   },
   "memory_table": {
     "agent": "Tác nhân",

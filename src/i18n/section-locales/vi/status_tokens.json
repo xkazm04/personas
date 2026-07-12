@@ -128,5 +128,10 @@
     "backoff": "Đang chờ",
     "fresh": "Mới",
     "active": "Đang hoạt động"
+  },
+  "thinking": {
+    "high": "Cao",
+    "low": "Thấp",
+    "medium": "Trung bình"
   }
 }

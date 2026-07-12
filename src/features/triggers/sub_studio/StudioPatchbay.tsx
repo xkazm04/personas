@@ -160,7 +160,7 @@ export function StudioPatchbay() {
             const busy = c.committing.has(link.id);
             const showOutputMatch = link.condition === 'output_match' && link.source.kind === 'persona';
             return (
-              <div key={link.id} className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-dashed border-status-warning/40 bg-status-warning/5">
+              <div key={link.id} className="group flex items-center gap-3 px-4 py-2.5 max-w-[calc(100%-50px)] rounded-card border border-dashed border-status-warning/40 bg-status-warning/5">
                 <SourceChip source={link.source} personas={personas} completesLabel={st.persona_completes} />
                 <div className="flex items-center gap-1.5 shrink-0">
                   <div className="h-px w-4 bg-border" />
@@ -279,7 +279,7 @@ function LiveCableRow({ cb, st, personas, dim, onRename, onAdd, onDisconnect }: 
   const { row, connection } = cb;
   const EventIcon = resolveIcon(row.template);
   return (
-    <div className={`group flex items-center gap-3 px-4 py-2.5 rounded-card border border-border bg-background/60 hover:border-foreground/20 transition-colors ${dim ? 'opacity-70' : ''}`}>
+    <div className={`group flex items-center gap-3 px-4 py-2.5 max-w-[calc(100%-50px)] rounded-card border border-border bg-background/60 hover:border-foreground/20 transition-colors ${dim ? 'opacity-70' : ''}`}>
       <LiveSourceEnd row={row} connection={connection} personas={personas} />
       <div className="flex items-center gap-1.5 shrink-0">
         <div className="h-px w-4 bg-border" />

@@ -1,0 +1,203 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "emails-vague-sequential-1",
+        "terminal": "draft_ready",
+        "hung": true,
+        "rounds": 5,
+        "questions": 5,
+        "seconds": 900.58,
+        "caps": 2
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "emails-vague-sequential-1",
+      "fixture": "emails-vague",
+      "variant": "sequential",
+      "run": {
+        "fixture_id": "emails-vague",
+        "variant": "sequential",
+        "session_id": "7c1827d6-2011-4f05-94f9-814f45ce075d",
+        "persona_id": "bb3df5d6-c243-41c9-a256-888145c66437",
+        "true_intent": "I run customer support out of a Gmail inbox. I want it to read incoming support emails, summarise each one, label the urgent ones, and draft a reply for the top few \u2014 but I always want to review before anything is sent. Nothing auto-sends. I don't want it touching my personal email, just the support address.",
+        "vague_intent": "make me a bot that helps with my emails",
+        "terminal_phase": "draft_ready",
+        "ok": false,
+        "total_seconds": 900.58,
+        "num_rounds": 5,
+        "num_questions": 5,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "behavior_core",
+            "question": "What kind of email companion do you want?",
+            "options": [
+              "A: Daily briefing \u2014 scan my inbox once a day and surface what matters in a ranked digest",
+              "B: Real-time triage \u2014 watch for new messages and alert me the moment something urgent arrives",
+              "C: Interactive assistant \u2014 I ask it questions about my inbox on demand (search, summarize threads, draft replies)"
+            ],
+            "connector_category": null,
+            "answer": "A daily briefing \u00e2\u20ac\u201d one scan a day over the support inbox is enough for me.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "memory",
+            "question": "What should \"Thread Deep-Dive\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)",
+            "options": [
+              "User preferences and corrections",
+              "Items I've already approved or rejected",
+              "Recurring context (people, projects, topics I care about)",
+              "Nothing \u2014 each run is independent"
+            ],
+            "connector_category": null,
+            "answer": "Recurring context \u00e2\u20ac\u201d the people and topics that keep coming up, so it recognises repeat customers and ongoing issues.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 3,
+            "cell_key": "human-review",
+            "question": "Should \"Daily Support Digest\" wait for your approval before publishing its output?",
+            "options": [
+              "Never \u2014 auto-publish; I can undo/discard myself",
+              "On low confidence \u2014 only pause when unsure",
+              "Always \u2014 I want to sign off every run"
+            ],
+            "connector_category": null,
+            "answer": "Always \u00e2\u20ac\u201d I want to sign off every run. Nothing goes out without me reading it first.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 4,
+            "cell_key": "connectors",
+            "question": "Which storage connector should \"Daily Support Digest\" use?",
+            "options": [],
+            "connector_category": null,
+            "answer": "Google Drive \u00e2\u20ac\u201d the digest should land as a doc in the same Drive folder as our support notes.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 5,
+            "cell_key": "triggers",
+            "question": "How should \"Daily Support Digest\" fire?",
+            "options": [
+              "A: On demand \u2014 I'll trigger it manually",
+              "B: On a schedule (daily/weekly/\u2026)",
+              "C: When an external event occurs (e.g. new document, inbound message)"
+            ],
+            "connector_category": null,
+            "answer": "B \u00e2\u20ac\u201d on a schedule, once every weekday morning so I can go through the digest with my coffee.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 9.02
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 14.62
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 286.41
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 292.53
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 400.66
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 405.89
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 521.52
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 528.8
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 659.48
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 664.81
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 789.45
+          },
+          {
+            "phase": "__timeout__",
+            "offset_s": 900.58
+          }
+        ],
+        "error_message": null,
+        "hung": true
+      },
+      "capabilities": [
+        {
+          "id": "uc_daily_digest",
+          "title": "Daily Support Digest",
+          "description": "Every weekday morning, a ranked briefing is drafted for user sign-off, then written as a Google Doc into the support notes Drive folder.",
+          "tool_hints": [
+            "gmail_search",
+            "google_drive_write",
+            "text_analysis",
+            "ai_generation"
+          ],
+          "subscriptions": [
+            {
+              "description": "Emitted only after user approves and the Drive doc is written successfully.",
+              "direction": "emit",
+              "event_type": "email.digest.published"
+            }
+          ],
+          "trigger": {
+            "config": {
+              "cron": "0 {{param.digest_hour}} * * 1-5",
+              "timezone": "America/New_York"
+            },
+            "description": "Every weekday (Mon\u2013Fri) at {{param.digest_hour}}:00 local time",
+            "trigger_type": "schedule"
+          }
+        },
+        {
+          "id": "uc_thread_summary",
+          "title": "Thread Deep-Dive",
+          "description": "On-demand full summary of a specific email thread \u2014 drafted and held for user sign-off before finalising.",
+          "tool_hints": [
+            "gmail_search",
+            "text_analysis"
+          ],
+          "subscriptions": [],
+          "trigger": {
+            "config": {},
+            "description": "On demand \u2014 user supplies a thread identifier or subject keyword and requests a summary.",
+            "trigger_type": "manual"
+          }
+        }
+      ]
+    }
+  ]
+}

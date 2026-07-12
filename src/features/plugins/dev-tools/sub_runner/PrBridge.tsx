@@ -39,6 +39,7 @@ function writeDoneSteps(taskId: string, steps: Set<PrStep>): void {
 }
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
+import { openProjectManager } from '@/features/plugins/companion/guidance/appActions';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
@@ -188,7 +189,6 @@ export function PrBridge({ task }: { task: DevTask }) {
   const idea = useSourceIdea(task);
   const { createBranch, commitChanges } = useDevToolsActions();
   const addToast = useToastStore((s) => s.addToast);
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
 
   const [expanded, setExpanded] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -378,7 +378,7 @@ export function PrBridge({ task }: { task: DevTask }) {
                 variant="secondary"
                 size="xs"
                 icon={<ExternalLink className="w-3 h-3" />}
-                onClick={() => setDevToolsTab('projects')}
+                onClick={() => openProjectManager()}
               >
                 {dt.pr_bridge_link_project}
               </Button>

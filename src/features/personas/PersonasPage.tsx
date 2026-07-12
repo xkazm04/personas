@@ -37,6 +37,9 @@ const KPIsPage = lazyRetry(() => import('@/features/teams/sub_kpis/KPIsPage'));
 const FactoryPage = lazyRetry(() => import('@/features/teams/sub_factory/FactoryPage'));
 const CredentialManager = lazyRetry(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazyRetry(() => import('@/features/teams/sub_teamWorkspace/TeamCanvas'));
+const ProjectManagerPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'));
+const LifecyclePage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'));
+const CompetitionPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage'));
 const DesignReviewsPage = lazyRetry(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazyRetry(() => import('@/features/settings/components/SettingsPage'));
 const TriggersPage = lazyRetry(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
@@ -53,6 +56,7 @@ const CompanionPluginPage = lazyRetry(() => import('@/features/plugins/companion
 const PluginBrowsePage = lazyRetry(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazyRetry(() => import('@/features/schedules/components/ScheduleTimeline'));
 const StudioPage = lazyRetry(() => import('@/features/studio/StudioPage'));
+const ScraperPage = lazyRetry(() => import('@/features/scraper/ScraperPage'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
@@ -254,6 +258,15 @@ export default function PersonasPage() {
       if (teamsTab === 'goals') {
         return <ErrorBoundary onGoHome={goHome} name="Goals"><Suspense fallback={SectionFallback}><GoalsPage /></Suspense></ErrorBoundary>;
       }
+      if (teamsTab === 'projects') {
+        return <ErrorBoundary onGoHome={goHome} name="Projects"><Suspense fallback={SectionFallback}><ProjectManagerPage /></Suspense></ErrorBoundary>;
+      }
+      if (teamsTab === 'lifecycle') {
+        return <ErrorBoundary onGoHome={goHome} name="Lifecycle"><Suspense fallback={SectionFallback}><LifecyclePage /></Suspense></ErrorBoundary>;
+      }
+      if (teamsTab === 'competition') {
+        return <ErrorBoundary onGoHome={goHome} name="Competition"><Suspense fallback={SectionFallback}><CompetitionPage /></Suspense></ErrorBoundary>;
+      }
       return <ErrorBoundary onGoHome={goHome} name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'credentials') return <ErrorBoundary onGoHome={goHome} name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
@@ -280,6 +293,9 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'companion') {
         return <ErrorBoundary onGoHome={goHome} name="Companion"><Suspense fallback={SectionFallback}><CompanionPluginPage /></Suspense></ErrorBoundary>;
+      }
+      if (pluginTab === 'scraper' && import.meta.env.DEV) {
+        return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={SectionFallback}><ScraperPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary onGoHome={goHome} name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;

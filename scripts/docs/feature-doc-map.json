@@ -407,7 +407,7 @@
       "marketingModule": "plugins"
     },
     {
-      "doc": "docs/features/teams/dev-tools.md",
+      "doc": "docs/features/plugins/dev tools/dev-tools.md",
       "sourceGlobs": [
         "src/features/plugins/dev-tools/**",
         "src-tauri/src/commands/infrastructure/dev_tools.rs"
@@ -472,6 +472,14 @@
         "plugin-twin"
       ],
       "marketingModule": "plugins"
+    },
+    {
+      "doc": "docs/features/plugins/scraper.md",
+      "sourceGlobs": [
+        "src/features/scraper/**",
+        "src-tauri/src/commands/infrastructure/scraper.rs",
+        "src-tauri/src/engine/scraper.rs"
+      ]
     },
     {
       "doc": "docs/features/gitlab.md",

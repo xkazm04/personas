@@ -24,17 +24,14 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncWriteExt;
 
-use crate::companion::tts::{kokoro, piper};
+use crate::companion::tts::sherpa_engine::{self, ENGINE_ARCHIVE_URL};
+use crate::companion::tts::{engine_dir, kokoro};
 use crate::engine::inflight_guard::InflightGuard;
 use crate::error::AppError;
 
 /// Tauri event channel for install progress + terminal states.
 pub const INSTALL_EVENT: &str = "companion://kokoro-install";
 
-/// Pinned sidecar bundle (win-x64, shared-MT-Release — ships the exe +
-/// `onnxruntime.dll`). GitHub keeps old release assets, so this URL is stable;
-/// bump the version deliberately if a newer sherpa build is wanted.
-const ENGINE_ARCHIVE_URL: &str = "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.3/sherpa-onnx-v1.13.3-win-x64-shared-MT-Release.tar.bz2";
 /// Kokoro model package (stable `tts-models` tag). v1_0 specifically — the
 /// catalog's sids are verified against it; v1_1 may reorder speakers.
 const MODEL_ARCHIVE_URL: &str = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2";
@@ -111,7 +108,7 @@ pub async fn install(app: &AppHandle) -> Result<(), AppError> {
 }
 
 async fn install_inner(app: &AppHandle) -> Result<(), AppError> {
-    let bin_dir = piper::engine_dir()?; // shared engine bin dir
+    let bin_dir = engine_dir()?; // shared engine bin dir
     let model_dir = kokoro::model_dir()?;
     tokio::fs::create_dir_all(&bin_dir)
         .await
@@ -164,7 +161,7 @@ async fn install_inner(app: &AppHandle) -> Result<(), AppError> {
     let bin_dir2 = bin_dir.clone();
     let model_dir2 = model_dir.clone();
     tokio::task::spawn_blocking(move || -> Result<(), AppError> {
-        extract_engine(&engine_tar, &bin_dir2)?;
+        sherpa_engine::extract_engine(&engine_tar, &bin_dir2)?;
         extract_model(&model_tar, &model_dir2)?;
         Ok(())
     })
@@ -239,50 +236,6 @@ async fn download_to_file(
     file.flush()
         .await
         .map_err(|e| AppError::Internal(format!("flush {}: {e}", dest.display())))?;
-    Ok(())
-}
-
-/// Extract `sherpa-onnx-offline-tts.exe` + its sibling `*.dll` from the
-/// bundle's `bin/` into `bin_dir`.
-fn extract_engine(archive: &Path, bin_dir: &Path) -> Result<(), AppError> {
-    let file = std::fs::File::open(archive)
-        .map_err(|e| AppError::Internal(format!("open engine archive: {e}")))?;
-    let decoder = bzip2::read::BzDecoder::new(file);
-    let mut ar = tar::Archive::new(decoder);
-    let mut found_exe = false;
-    for entry in ar
-        .entries()
-        .map_err(|e| AppError::Internal(format!("read engine archive: {e}")))?
-    {
-        let mut entry = entry.map_err(|e| AppError::Internal(format!("engine entry: {e}")))?;
-        let path = entry
-            .path()
-            .map_err(|e| AppError::Internal(format!("engine entry path: {e}")))?
-            .into_owned();
-        let under_bin = path
-            .components()
-            .any(|c| c.as_os_str().eq_ignore_ascii_case("bin"));
-        let Some(fname) = path.file_name().map(|s| s.to_string_lossy().into_owned()) else {
-            continue;
-        };
-        let want = under_bin
-            && (fname.eq_ignore_ascii_case("sherpa-onnx-offline-tts.exe")
-                || fname.to_ascii_lowercase().ends_with(".dll"));
-        if want {
-            let dest = bin_dir.join(&fname);
-            entry
-                .unpack(&dest)
-                .map_err(|e| AppError::Internal(format!("unpack {fname}: {e}")))?;
-            if fname.eq_ignore_ascii_case("sherpa-onnx-offline-tts.exe") {
-                found_exe = true;
-            }
-        }
-    }
-    if !found_exe {
-        return Err(AppError::Internal(
-            "engine archive did not contain sherpa-onnx-offline-tts.exe".into(),
-        ));
-    }
     Ok(())
 }
 

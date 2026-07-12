@@ -712,6 +712,17 @@ async fn run_context_generation(
 ) -> Result<ContextGenSummary, AppError> {
     let is_rescan = existing_summary.is_some();
 
+    // A full rescan DELETEs unpinned contexts and recreates them under fresh
+    // ids, which cascades away the use-case slice and NULLs context-scoped
+    // KPIs. Capture those links by context NAME now; `reconcile_links` restores
+    // them once the new map is written. Delta rescans never delete contexts, so
+    // reconciliation there is an idempotent no-op.
+    let link_snapshot = if is_rescan {
+        repo::snapshot_context_links(pool, project_id).unwrap_or_default()
+    } else {
+        repo::ContextLinkSnapshot::default()
+    };
+
     // ---- Delta-mode branch ----------------------------------------------------
     // Compute the delta first so we can:
     //   (a) short-circuit when nothing changed since the last successful scan,
@@ -1093,6 +1104,7 @@ async fn run_context_generation(
             // Persist hashes even on partial success — better to under-detect
             // changes next time than to over-trigger full rescans.
             persist_scan_hashes(app, scan_id, pool, project_id, root_path).await;
+            reconcile_links(app, scan_id, pool, project_id, &link_snapshot);
             write_harness_docs(app, scan_id, pool, project_id, root_path);
             return Ok(ContextGenSummary {
                 scan_id: scan_id.to_string(),
@@ -1165,6 +1177,9 @@ async fn run_context_generation(
     // never fail here; it just tidies before publishing.
     prune_dangling_file_paths(app, scan_id, pool, project_id, root_path);
 
+    // Restore the use-case slice + context-scoped KPIs the rebuild detached.
+    reconcile_links(app, scan_id, pool, project_id, &link_snapshot);
+
     // Write the server-free harness docs (context-map.json + managed CLAUDE.md
     // section) into the managed project so a CLI opened there sees the map.
     write_harness_docs(app, scan_id, pool, project_id, root_path);
@@ -1177,6 +1192,42 @@ async fn run_context_generation(
         status: "completed".to_string(),
         error: None,
     })
+}
+
+/// Re-attach the links a full rescan detached, keyed by context name. Never
+/// fails a scan: a reconciliation error is reported on the stream and the map
+/// still publishes.
+fn reconcile_links(
+    app: &tauri::AppHandle,
+    scan_id: &str,
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    snapshot: &repo::ContextLinkSnapshot,
+) {
+    if snapshot.is_empty() {
+        return;
+    }
+    match repo::reconcile_context_links(pool, project_id, snapshot) {
+        Ok(report) if report.relinked > 0 || report.dropped > 0 => {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!(
+                    "[Milestone] Reconciled context links: {} restored, {} dropped (context no longer exists)",
+                    report.relinked, report.dropped
+                ),
+            );
+        }
+        Ok(_) => {}
+        Err(e) => {
+            tracing::error!("context link reconciliation failed: {e}");
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Warning] Could not reconcile use-case / KPI context links: {e}"),
+            );
+        }
+    }
 }
 
 /// Walk the project root + replace `dev_context_file_hashes` for this project.

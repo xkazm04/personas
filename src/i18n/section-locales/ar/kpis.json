@@ -181,5 +181,7 @@
     "health_snapshot": "لقطة الصحة",
     "manual": "إدخال يدوي",
     "scan": "فحص"
-  }
+  },
+  "kpi_scope_label": "النطاق",
+  "kpi_scope_this_context": "هذا السياق"
 }

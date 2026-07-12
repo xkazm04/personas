@@ -159,7 +159,9 @@ export interface MemoryReviewDetail {
     | 'deleted'
     | 'error'
     | 'proposed_delete'
-    | 'proposed_update_importance';
+    | 'proposed_update_importance'
+    | 'proposed_synthesize'
+    | 'proposed_archive';
   error?: string;
 }
 
@@ -206,6 +208,48 @@ export const reviewMemoriesWithCli = (
     instructions: instructions,
     autoApply: autoApply,
   });
+
+/**
+ * Run a memory REFLECTION pass (Memory Engine v2): the LLM consolidates
+ * related/contradicting memories into durable insights with `derived_from`
+ * provenance and flags stale rows for archive. Always proposal-mode — the
+ * returned `proposal_id` is applied/discarded via the same proposal
+ * commands as curation reviews. Requires a persona (reflection is
+ * per-persona by design).
+ */
+export const reflectMemoriesWithCli = (personaId: string, instructions?: string) =>
+  invoke<MemoryReviewResult>(
+    "reflect_memories_with_cli",
+    { personaId, instructions },
+    // Reflection spawns a one-shot CLI pass over up to 200 memories; the
+    // backend caps it at 8 minutes — give the IPC wrapper headroom.
+    { timeoutMs: 540_000 },
+  );
+
+/**
+ * Enqueue reflection as a background job (async twin of
+ * `reflectMemoriesWithCli`; progress arrives via the `persona://job`
+ * Tauri event). Returns the job id.
+ */
+export const enqueuePersonaMemoryReflection = (personaId: string, instructions?: string) =>
+  invoke<string>("enqueue_persona_memory_reflection", { personaId, instructions });
+
+/**
+ * TEAM reflection: consolidate lessons held redundantly by ≥2 members of
+ * a team into team-shared insights (published to every member via
+ * `home_team_id` when the proposal is applied). Same proposal flow as
+ * persona reflection; the proposal row carries `teamId`.
+ */
+export const reflectTeamMemoriesWithCli = (teamId: string, instructions?: string) =>
+  invoke<MemoryReviewResult>(
+    "reflect_team_memories_with_cli",
+    { teamId, instructions },
+    { timeoutMs: 540_000 },
+  );
+
+/** Async twin of `reflectTeamMemoriesWithCli` (background job). */
+export const enqueueTeamMemoryReflection = (teamId: string, instructions?: string) =>
+  invoke<string>("enqueue_team_memory_reflection", { teamId, instructions });
 
 // -- Memory Review Proposals (review-and-discard, F4b + F-UI) -----------------
 
