@@ -296,47 +296,36 @@ export interface TtsAudio {
  * Identifier for which engine should fulfill a TTS request. Matches the
  * snake_case wire format the Rust `TtsEngineId` enum serializes to.
  *
- * - `'elevenlabs'`: cloud TTS via the ElevenLabs API. Requires a vault
- *   credential and a voice id from the user's ElevenLabs account.
- * - `'piper'`: local TTS via ONNX inference (no network, no credential
- *   needed). Requires a Piper voice model previously downloaded through
- *   the companion voice manager.
+ * - `'kokoro'`: primary local engine (sherpa-onnx sidecar, curated voices).
+ * - `'pocket_tts'`: experimental local engine with zero-shot voice cloning.
+ *
+ * The `'elevenlabs'` and `'piper'` engines were descoped 2026-07-10.
  */
-export type TtsEngineId = 'elevenlabs' | 'piper' | 'kokoro';
+export type TtsEngineId = 'kokoro' | 'pocket_tts';
 
 /**
  * Per-call voice tuning. All fields optional; `undefined` falls back to
- * the per-engine defaults. Some fields only apply to certain engines —
- * unrelated engines silently ignore them, so it's safe to send the full
- * union.
- *
- * ElevenLabs-only: modelId, stability, similarityBoost, style.
- * Piper-only: lengthScale, noiseScale.
- * Shared: speed.
+ * the per-engine defaults.
  */
 export interface TtsSettings {
-  modelId?: string;
-  stability?: number;
-  similarityBoost?: number;
+  /** Speech rate (0.7..1.2 convention); Kokoro maps it to length-scale. */
   speed?: number;
-  style?: number;
+  /** Direct length-scale override; takes priority over `speed`. */
   lengthScale?: number;
-  noiseScale?: number;
 }
 
 /**
- * Synthesize speech for the given text.
- *
- * `engine` defaults to `'elevenlabs'` so existing callers that only knew
- * the cloud path keep working. `credentialId` is required for ElevenLabs
- * and ignored for Piper (pass `null` for local engines).
+ * Synthesize speech for the given text. `engine` defaults to `'kokoro'`
+ * (the primary engine). `credentialId` is a descoped-ElevenLabs leftover:
+ * accepted for call-site shape stability, ignored by the backend — pass
+ * `null`.
  */
 export async function companionTts(
   text: string,
   credentialId: string | null,
   voiceId: string,
   settings?: TtsSettings,
-  engine: TtsEngineId = 'elevenlabs',
+  engine: TtsEngineId = 'kokoro',
 ): Promise<TtsAudio> {
   return invoke<TtsAudio>('companion_tts', {
     text,
@@ -345,84 +334,6 @@ export async function companionTts(
     credentialId,
     settings: settings ?? null,
   });
-}
-
-// ── Piper voice catalog + downloads ─────────────────────────────────────
-
-/**
- * Catalog row + download status. The Voice tab renders these as a
- * scrollable list of cards grouped by language. `isDownloaded` decides
- * whether the row's primary action is "Download" or "Select".
- */
-export interface PiperVoiceListing {
-  voiceId: string;
-  languageCode: string;
-  languageLabel: string;
-  languageNativeLabel: string;
-  speaker: string;
-  gender: 'female' | 'male' | 'neutral';
-  quality: 'x_low' | 'low' | 'medium' | 'high';
-  approxSizeMb: number;
-  description: string;
-  isDownloaded: boolean;
-}
-
-/**
- * Streaming progress for a single Piper voice download. Frontend
- * subscribes to the `companion://tts-download` Tauri event channel and
- * matches by `voiceId`.
- *
- * `bytesTotal` is `null` when the upstream doesn't report Content-Length
- * (rare but possible) — UI should fall back to indeterminate progress.
- */
-export interface TtsDownloadProgress {
-  voiceId: string;
-  state: 'queued' | 'downloading' | 'completed' | 'failed';
-  bytesDownloaded: number;
-  bytesTotal: number | null;
-  error: string | null;
-}
-
-/**
- * Tauri event channel name for download progress + terminal states.
- */
-export const TTS_DOWNLOAD_EVENT = 'companion://tts-download';
-
-export async function companionTtsListPiperVoices(): Promise<PiperVoiceListing[]> {
-  return invoke<PiperVoiceListing[]>('companion_tts_list_piper_voices');
-}
-
-/**
- * Start a Piper voice download. Resolves once both `.onnx` and `.onnx.json`
- * are on disk. Progress is reported through `TTS_DOWNLOAD_EVENT` events
- * which the caller should subscribe to before invoking.
- */
-export async function companionTtsDownloadPiperVoice(voiceId: string): Promise<void> {
-  return invoke<void>('companion_tts_download_piper_voice', { voiceId });
-}
-
-export async function companionTtsDeletePiperVoice(voiceId: string): Promise<void> {
-  return invoke<void>('companion_tts_delete_piper_voice', { voiceId });
-}
-
-/**
- * Status of the Piper engine binary on disk. The Voice tab uses this to
- * render an Installed / Not installed badge above the voice catalog and
- * to surface the exact install path so the user can manually drop the
- * binary into place.
- */
-export interface PiperEngineStatus {
-  installed: boolean;
-  /** Resolved binary path when `installed` is true, else null. */
-  binaryPath: string | null;
-  /** Where the user should put the engine if installing manually. */
-  expectedPath: string;
-  /** Filename — `piper.exe` on Windows, `piper` elsewhere. */
-  expectedFilename: string;
-}
-
-export async function companionTtsPiperEngineStatus(): Promise<PiperEngineStatus> {
-  return invoke<PiperEngineStatus>('companion_tts_piper_engine_status');
 }
 
 // ── Kokoro voice catalog + engine/model status ──────────────────────────
@@ -494,6 +405,95 @@ export async function companionTtsKokoroStatus(): Promise<KokoroStatus> {
  */
 export async function companionTtsKokoroDownload(): Promise<void> {
   return invoke<void>('companion_tts_kokoro_download');
+}
+
+// ── Pocket TTS sidecar service (local, voice cloning) ───────────────────
+
+/**
+ * Pocket TTS status across its two backends. Mirrors the Rust `PocketStatus`.
+ * The packaged sidecar (engine binary + int8 model, one-click installable)
+ * serves cloned wavs offline; the optional HTTP service adds the built-in
+ * Kyutai voice catalog and keeps the model warm. Either alone is usable.
+ */
+export interface PocketStatus {
+  /** Optional HTTP service reachable. */
+  running: boolean;
+  baseUrl: string;
+  workers: number | null;
+  /** Packaged sidecar: shared sherpa engine binary present. */
+  engineInstalled: boolean;
+  /** Packaged sidecar: 7-file int8 ONNX model package present. */
+  modelInstalled: boolean;
+  modelDir: string;
+  /** Drop `<name>.wav` here to add a cloned voice. */
+  voicesDir: string;
+  expectedBinaryPath: string;
+  engineDownloadUrl: string;
+  modelDownloadUrl: string;
+  canAutoInstall: boolean;
+}
+
+/**
+ * Streaming progress for the one-click Pocket TTS install. Same shape and
+ * semantics as `KokoroInstallProgress`.
+ */
+export interface PocketInstallProgress {
+  phase: 'downloading_engine' | 'downloading_model' | 'extracting' | 'completed' | 'failed';
+  bytesDownloaded: number;
+  bytesTotal: number | null;
+  error: string | null;
+}
+
+/** Tauri event channel for Pocket TTS install progress + terminal states. */
+export const POCKET_INSTALL_EVENT = 'companion://pocket-install';
+
+/**
+ * Kick off the one-click Pocket TTS install (arch-aware sidecar + int8 model).
+ * Resolves when both are in place; progress streams on `POCKET_INSTALL_EVENT`
+ * — subscribe before calling. Windows-only.
+ */
+export async function companionTtsPocketDownload(): Promise<void> {
+  return invoke<void>('companion_tts_pocket_download');
+}
+
+/**
+ * Save an uploaded recording as a cloned voice. `audioBase64` must be a WAV
+ * the caller already converted (see `audioToReferenceWav.ts` — 24kHz mono
+ * PCM16, ≤30s); the backend validates container + size and writes it into
+ * the pocket-voices dir.
+ */
+export async function companionTtsPocketImportVoice(
+  voiceId: string,
+  audioBase64: string,
+): Promise<PocketVoiceEntry> {
+  return invoke<PocketVoiceEntry>('companion_tts_pocket_import_voice', {
+    voiceId,
+    audioBase64,
+  });
+}
+
+/** Remove a cloned voice's reference recording. Idempotent. */
+export async function companionTtsPocketDeleteVoice(voiceId: string): Promise<void> {
+  return invoke<void>('companion_tts_pocket_delete_voice', { voiceId });
+}
+
+/**
+ * One voice reported by the Pocket TTS service. `category` is `'cloned'`
+ * for the user's own `.safetensors` embeddings (the headline feature) and
+ * `'premade'` for the built-in Kyutai catalog.
+ */
+export interface PocketVoiceEntry {
+  voiceId: string;
+  name: string;
+  category: string;
+}
+
+export async function companionTtsPocketStatus(): Promise<PocketStatus> {
+  return invoke<PocketStatus>('companion_tts_pocket_status');
+}
+
+export async function companionTtsListPocketVoices(): Promise<PocketVoiceEntry[]> {
+  return invoke<PocketVoiceEntry[]>('companion_tts_list_pocket_voices');
 }
 
 // ── Speech-to-text (voice input) ────────────────────────────────────────

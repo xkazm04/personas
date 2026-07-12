@@ -111,15 +111,19 @@ pub(crate) async fn resolve_credential_env_vars(
                 // Try matching connector by name (e.g. "google" -> connector named "google")
                 // or by name prefix/substring for common patterns
                 for connector in &connectors {
-                    if !seen_connectors.insert(connector.name.clone()) {
-                        continue;
-                    }
-
                     let connector_matches = connector.name == *cred_type
                         || connector.name.starts_with(cred_type)
                         || cred_type.starts_with(&connector.name);
 
                     if !connector_matches {
+                        continue;
+                    }
+
+                    // Mark seen ONLY after confirming a match. Inserting before
+                    // the match test poisoned the set with non-matching
+                    // connectors, so a later tool that genuinely needs one of
+                    // them was silently skipped ("connector unavailable").
+                    if !seen_connectors.insert(connector.name.clone()) {
                         continue;
                     }
 

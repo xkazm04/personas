@@ -1,19 +1,40 @@
 /**
- * Shared pieces for the Layer-1 assignment matrix: the props shape, connector-
- * brand lookup, and two reusable leaves (a brand chip + the connector picker).
+ * Shared pieces for a Layer-1 projects × connectors assignment matrix. Generic
+ * over which binding it reads/writes: the caller supplies `getCredId` (which
+ * project field holds the assignment) + `assign` (the write) + label strings, so
+ * the same matrix drives both LLM-observability (llm_tracking_credential_id) and
+ * app-monitoring (monitoring_credential_id) tabs.
  */
 import { Plug } from 'lucide-react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { CONNECTOR_META } from '@/lib/connectors/connectorMeta';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 
+/** Caller-resolved copy so the matrix stays i18n-agnostic. */
+export interface MatrixLabels {
+  /** e.g. "projects instrumented" / "projects monitored" (after the count). */
+  coverage: string;
+  /** e.g. "gap" — shown on an unwired tile. */
+  gap: string;
+  /** The "— not wired —" option at the top of the picker. */
+  notWired: string;
+  /** Placeholder for the picker when nothing is selected. */
+  wirePlaceholder: string;
+}
+
 /** Data the matrix renders from (supplied by the page wrapper). */
-export interface LlmOverviewMatrixProps {
+export interface AssignmentMatrixProps {
   projects: DevProject[];
-  llmCreds: PersonaCredential[];
+  creds: PersonaCredential[];
+  /** Which credential id this project is bound to (or null). */
+  getCredId: (p: DevProject) => string | null;
   assign: (projectId: string, credId: string | null) => void;
+  labels: MatrixLabels;
+  /** data-testid prefix for each project's socket (default "assign"). */
+  testIdPrefix?: string;
+  /** data-testid for the matrix container. */
+  testId?: string;
 }
 
 export interface ConnectorBrand {
@@ -35,11 +56,11 @@ export function connectorBrand(serviceType: string): ConnectorBrand {
 /** The credential currently assigned to a project (or undefined). */
 export function assignedCred(
   project: DevProject,
-  llmCreds: PersonaCredential[],
+  creds: PersonaCredential[],
+  getCredId: (p: DevProject) => string | null,
 ): PersonaCredential | undefined {
-  return project.llm_tracking_credential_id
-    ? llmCreds.find((c) => c.id === project.llm_tracking_credential_id)
-    : undefined;
+  const id = getCredId(project);
+  return id ? creds.find((c) => c.id === id) : undefined;
 }
 
 /** A compact brand chip: connector icon + label. */
@@ -73,23 +94,24 @@ export function ConnectorChip({
 /** The connector picker — a themed select whose options carry brand icons. */
 export function ConnectorSocket({
   value,
-  llmCreds,
+  creds,
   onChange,
   testId,
   placeholder,
+  notWiredLabel,
   className,
 }: {
   value: string | null;
-  llmCreds: PersonaCredential[];
+  creds: PersonaCredential[];
   onChange: (credId: string | null) => void;
   testId?: string;
-  placeholder?: string;
+  placeholder: string;
+  notWiredLabel: string;
   className?: string;
 }) {
-  const { t } = useTranslation();
   const options: ThemedSelectOption[] = [
-    { value: '', label: t.plugins.dev_tools.llm_not_wired },
-    ...llmCreds.map((c): ThemedSelectOption => {
+    { value: '', label: notWiredLabel },
+    ...creds.map((c): ThemedSelectOption => {
       const b = connectorBrand(c.serviceType);
       return {
         value: c.id,
@@ -108,7 +130,7 @@ export function ConnectorSocket({
         onValueChange={(v) => onChange(v || null)}
         filterable
         hideSearch
-        placeholder={placeholder ?? t.plugins.dev_tools.llm_wire_placeholder}
+        placeholder={placeholder}
       />
     </span>
   );

@@ -128,6 +128,7 @@ row_mapper!(row_to_memory -> PersonaMemory {
     created_at, updated_at,
     use_case_id [opt],
     home_team_id [opt],
+    derived_from [opt],
 });
 
 /// Map user-provided sort column to a safe SQL column name.
@@ -352,6 +353,58 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
         )?;
 
         get_by_id(pool, &id)
+    })
+}
+
+/// Create a synthesized (reflection-derived) memory with provenance.
+///
+/// Delegates to [`create`] for validation + HTML-strip + 24h dedup, then
+/// stamps `derived_from` with the source memory ids. If the dedup guard
+/// returned an existing identical row, the provenance is attached to that
+/// row instead — the lineage is the same either way.
+///
+/// `home_team_id`: set by TEAM reflection so the insight is shared with
+/// every member of the team at injection time (MEMORY CONTRACT (5) — this
+/// is the one sanctioned runtime writer of the column). `None` for
+/// persona-scoped reflection.
+pub fn create_synthesized(
+    pool: &DbPool,
+    input: CreatePersonaMemoryInput,
+    derived_from: &[String],
+    home_team_id: Option<&str>,
+) -> Result<PersonaMemory, AppError> {
+    let created = create(pool, input)?;
+    if !derived_from.is_empty() || home_team_id.is_some() {
+        let json = serde_json::to_string(derived_from)
+            .map_err(|e| AppError::Internal(format!("serialize derived_from: {e}")))?;
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_memories
+             SET derived_from = ?1,
+                 home_team_id = COALESCE(?2, home_team_id)
+             WHERE id = ?3",
+            params![json, home_team_id, created.id],
+        )?;
+    }
+    get_by_id(pool, &created.id)
+}
+
+/// All `active`-tier memories for a persona — the candidate set for the
+/// decay-based forgetting pass (`engine::memory_recall::run_decay_forgetting`).
+/// `core` is user-pinned and `working`/`archive` are handled by
+/// [`run_lifecycle`]'s existing rules, so only `active` decays.
+pub fn get_active_for_decay(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Vec<PersonaMemory>, AppError> {
+    timed_query!("persona_memories", "persona_memories::get_active_for_decay", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT * FROM persona_memories
+             WHERE persona_id = ?1 AND tier = 'active'",
+        )?;
+        let rows = stmt.query_map(params![persona_id], row_to_memory)?;
+        Ok(collect_rows(rows, "memories::get_active_for_decay"))
     })
 }
 

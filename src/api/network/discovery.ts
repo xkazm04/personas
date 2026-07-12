@@ -122,9 +122,6 @@ export const syncPeerManifest = (peerId: string) =>
 export const getNetworkStatus = () =>
   invoke<NetworkStatusInfo>("get_network_status");
 
-export const getConnectionHealth = () =>
-  invoke<ConnectionHealth>("get_connection_health");
-
 export const getNetworkSnapshot = () =>
   invoke<NetworkSnapshot>("get_network_snapshot");
 

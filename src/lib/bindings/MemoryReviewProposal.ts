@@ -9,4 +9,11 @@ export type MemoryReviewProposal = { id: string, personaId?: string, threshold: 
 /**
  * `pending_review` | `applied` | `discarded`
  */
-status: string, createdAt: string, decidedAt?: string, };
+status: string, createdAt: string, decidedAt?: string, 
+/**
+ * Set when this proposal came from a TEAM reflection pass — the
+ * consolidation spans memories from multiple members and applied
+ * insights become team-shared (`home_team_id`) memories. `None`
+ * for persona-scoped curation/reflection proposals.
+ */
+teamId?: string, };

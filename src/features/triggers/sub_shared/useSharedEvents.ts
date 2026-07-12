@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '@/api/events/sharedEvents';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscription';
@@ -22,7 +22,13 @@ export function useSharedEvents() {
   const [category, setCategory] = useState('');
   const debouncedSearch = useDebounce(search, 300);
 
+  // Stale-response guard: a category/search change refires `load`, and the two
+  // browseCatalog calls can resolve out of order — without this token the slower
+  // (stale-query) response clobbers the catalog with the wrong results. Sibling
+  // `useSubscribedFeeds` uses the same latch pattern.
+  const loadSeqRef = useRef(0);
   const load = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
     setLoading(true);
     try {
       const [cat, subs, act] = await Promise.all([
@@ -30,13 +36,15 @@ export function useSharedEvents() {
         api.listSubscriptions(),
         api.changeActivity(),
       ]);
+      if (seq !== loadSeqRef.current) return; // superseded by a newer load
       setCatalog(cat);
       setSubscriptions(subs);
       setActivity(act);
     } catch (err) {
-      silentCatch('features/triggers/sub_shared/useSharedEvents:load')(err);
+      if (seq === loadSeqRef.current)
+        silentCatch('features/triggers/sub_shared/useSharedEvents:load')(err);
     } finally {
-      setLoading(false);
+      if (seq === loadSeqRef.current) setLoading(false);
     }
   }, [category, debouncedSearch]);
 

@@ -3,7 +3,6 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
-import type { TwinVoiceProfile } from '@/lib/bindings/TwinVoiceProfile';
 import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
 
 /**
@@ -14,7 +13,9 @@ import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
  * - Direction 5 (readiness %): the score aggregates the six milestones into a single number.
  *
  * A milestone is `'complete'` | `'partial'` | `'empty'`. The score counts
- * `complete` as 1, `partial` as 0.5, `empty` as 0, divided by 6 and rounded.
+ * `complete` as 1, `partial` as 0.5, `empty` as 0, divided by 5 and rounded.
+ * (The voice milestone was retired with the 2026-07-10 ElevenLabs descope —
+ * twin voice profiles were EL-native.)
  */
 
 export type MilestoneStatus = 'complete' | 'partial' | 'empty';
@@ -23,7 +24,6 @@ export interface TwinReadiness {
   identity: MilestoneStatus;
   tone: MilestoneStatus;
   brain: MilestoneStatus;
-  voice: MilestoneStatus;
   channels: MilestoneStatus;
   memories: MilestoneStatus;
   /** Integer 0–100. */
@@ -56,7 +56,6 @@ export function deriveReadiness(
   profile: TwinProfile | null | undefined,
   tones: TwinTone[],
   channels: TwinChannel[],
-  voiceProfile: TwinVoiceProfile | null | undefined,
   memories: TwinPendingMemory[],
 ): TwinReadiness {
   // Identity: bio present + non-trivial length
@@ -85,10 +84,6 @@ export function deriveReadiness(
     if (subpath && subpath !== defaultSubpath) brain = 'partial';
   }
 
-  // Voice: a voice_id is the minimum for "configured"
-  const voiceReady = !!voiceProfile?.voice_id && voiceProfile.voice_id.trim().length > 0;
-  const voice: MilestoneStatus = voiceReady ? 'complete' : 'empty';
-
   // Channels: at least one active is complete; all-paused is partial
   const channelsTotal = channels.length;
   const channelsActive = channels.filter((c) => c.is_active).length;
@@ -106,16 +101,14 @@ export function deriveReadiness(
     scoreOf(identity) +
     scoreOf(tone) +
     scoreOf(brain) +
-    scoreOf(voice) +
     scoreOf(channelsStatus) +
     scoreOf(memoriesStatus);
-  const score = Math.round((raw / 6) * 100);
+  const score = Math.round((raw / 5) * 100);
 
   return {
     identity,
     tone,
     brain,
-    voice,
     channels: channelsStatus,
     memories: memoriesStatus,
     score,
@@ -139,7 +132,6 @@ export function useTwinReadiness(): TwinReadiness {
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const twinTones = useSystemStore((s) => s.twinTones);
   const twinChannels = useSystemStore((s) => s.twinChannels);
-  const twinVoiceProfile = useSystemStore((s) => s.twinVoiceProfile);
   // Readiness reads the DEDICATED approved source, not twinPendingMemories —
   // the latter is overwritten with rejected/pending rows by the Brain/Knowledge
   // panels, which silently collapsed the memories milestone and dropped the score.
@@ -156,9 +148,8 @@ export function useTwinReadiness(): TwinReadiness {
     const scopedTones = profile ? twinTones.filter((t) => t.twin_id === profile.id) : [];
     const scopedChannels = profile ? twinChannels.filter((c) => c.twin_id === profile.id) : [];
     const scopedMemories = profile ? twinReadinessApproved.filter((m) => m.twin_id === profile.id) : [];
-    const scopedVoice = twinVoiceProfile && profile && twinVoiceProfile.twin_id === profile.id ? twinVoiceProfile : null;
-    return deriveReadiness(profile, scopedTones, scopedChannels, scopedVoice, scopedMemories);
-  }, [activeTwinId, twinProfiles, twinTones, twinChannels, twinVoiceProfile, twinReadinessApproved]);
+    return deriveReadiness(profile, scopedTones, scopedChannels, scopedMemories);
+  }, [activeTwinId, twinProfiles, twinTones, twinChannels, twinReadinessApproved]);
 }
 
 /**
@@ -171,7 +162,6 @@ export function useHydrateActiveTwin() {
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const fetchTones = useSystemStore((s) => s.fetchTwinTones);
   const fetchChannels = useSystemStore((s) => s.fetchTwinChannels);
-  const fetchVoice = useSystemStore((s) => s.fetchTwinVoiceProfile);
   const fetchReadinessApproved = useSystemStore((s) => s.fetchTwinReadinessApproved);
 
   const lastHydratedRef = useRef<string | null>(null);
@@ -183,8 +173,7 @@ export function useHydrateActiveTwin() {
     // Best-effort — failures are non-blocking; subtabs report their own errors.
     void fetchTones(activeTwinId);
     void fetchChannels(activeTwinId);
-    void fetchVoice(activeTwinId);
     // Populates the dedicated readiness source (not the panel-shared slice).
     void fetchReadinessApproved(activeTwinId);
-  }, [activeTwinId, fetchTones, fetchChannels, fetchVoice, fetchReadinessApproved]);
+  }, [activeTwinId, fetchTones, fetchChannels, fetchReadinessApproved]);
 }

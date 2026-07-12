@@ -72,6 +72,14 @@ export function openGoalsBoard() {
   sys.setGoalsTab('board');
 }
 
+/** Open the project registry (Projects → Manage) — folded in from the old Dev
+ *  Tools "Projects" tab. */
+export function openProjectManager() {
+  const sys = useSystemStore.getState();
+  sys.setSidebarSection('teams');
+  sys.setTeamsTab('projects');
+}
+
 /** Open the KPI dashboard (Teams → KPIs) — the second half of `goal_kpi_setup`. */
 export function openKpiDashboard() {
   const sys = useSystemStore.getState();

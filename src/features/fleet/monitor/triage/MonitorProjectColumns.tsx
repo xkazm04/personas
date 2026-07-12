@@ -16,7 +16,7 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { primaryDrawerSection, healthSegments, HEALTH_TONE_CLASS, type PersonaCardModel, type DrawerSection } from '../monitorModel';
 import { PersonaGlyph } from './PersonaGlyph';
 import {
-  actionBadges, isActionable, actionWeight, mockGoalsForGroup, COPY,
+  actionBadges, isActionable, actionWeight, COPY,
   type ActionBadge, type MockGoal,
 } from './triageModel';
 
@@ -111,7 +111,10 @@ function MonitorProjectColumnsImpl({ cards, personas, teams, selectedPersonaId, 
     }
     const cols: Column[] = teams
       .filter((tm) => rosterTeams.has(tm.id))
-      .map((tm) => ({ id: tm.id, name: tm.name, color: tm.color, cards: attentionByTeam.get(tm.id) ?? [], goals: mockGoalsForGroup(tm.id) }))
+      // No goals until real DevGoals are wired (was fabricated placeholder data
+      // shown to users as real project state). The "Active goals" section renders
+      // only when goals.length > 0, so an empty list cleanly hides it.
+      .map((tm) => ({ id: tm.id, name: tm.name, color: tm.color, cards: attentionByTeam.get(tm.id) ?? [], goals: [] as MockGoal[] }))
       .sort((a, b) => sumWeight(b.cards) - sumWeight(a.cards) || a.name.localeCompare(b.name));
     const ungrouped = attentionByTeam.get('__ungrouped__') ?? [];
     if (ungrouped.length > 0) cols.push({ id: '__ungrouped__', name: COPY.noTeam, color: '#6b7280', cards: ungrouped, goals: [] });

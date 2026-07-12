@@ -321,6 +321,13 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     let needs_chain_migration = !trigger_table_sql.contains("'chain'");
 
     if needs_chain_migration {
+        // Disable FK enforcement for the table swap. With foreign_keys=ON the
+        // `DROP TABLE persona_triggers` below fires ON DELETE SET NULL on
+        // persona_executions.trigger_id (schema.rs) — nulling every execution's
+        // trigger link on legacy DBs. Same discipline as
+        // rebuild_executions_table_with_incomplete_status. Guard re-enables FK
+        // on scope exit.
+        let _fk_guard = crate::db::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
         ddl_step(
                     conn,
                             "DROP TABLE IF EXISTS persona_triggers_new;
@@ -2430,6 +2437,25 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                         ON persona_memory_review_proposal(status, created_at DESC);
                     CREATE INDEX IF NOT EXISTS idx_persona_memory_review_proposal_persona
                         ON persona_memory_review_proposal(persona_id, created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    // NOTE: this step MUST live in run_incremental AFTER the table-creating
+    // step above — the file's tail belongs to `ensure_composite_fires_table`,
+    // which initial::run calls BEFORE run_incremental (an ALTER placed there
+    // fails on fresh databases with "no such table").
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_memory_review_proposal.team_id",
+            description: "Team-scoped reflection proposals: NULL for persona proposals; set when a reflection pass consolidated memories across a team's members",
+            already_applied: |conn| has_column(conn, "persona_memory_review_proposal", "team_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_memory_review_proposal ADD COLUMN team_id TEXT;",
                 )?;
                 Ok(())
             },
@@ -5231,6 +5257,21 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_memories.derived_from",
+            description: "Reflection provenance: JSON array of source memory ids a synthesized insight was derived from (no FK by design — sources are archived, and may later be deleted, without erasing the insight's lineage)",
+            already_applied: |conn| has_column(conn, "persona_memories", "derived_from"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_memories ADD COLUMN derived_from TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
 
     Ok(())
 }
@@ -5680,6 +5721,8 @@ mod tests {
             ("dev_contexts", "category"),
             ("dev_contexts", "business_feature"),
             ("dev_context_groups", "domain"),
+            ("persona_memories", "derived_from"),
+            ("persona_memory_review_proposal", "team_id"),
         ] {
             assert!(
                 has_column(&conn, table, column).unwrap(),

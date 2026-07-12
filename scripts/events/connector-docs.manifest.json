@@ -409,6 +409,13 @@
       "color": "#FF7A59"
     },
     {
+      "slug": "huggingface",
+      "label": "Hugging Face",
+      "docs_url": "https://huggingface.co/docs/hub/security-tokens",
+      "icon": "/icons/connectors/huggingface.svg",
+      "color": "#FFD21E"
+    },
+    {
       "slug": "humbalytics",
       "label": "Humbalytics",
       "docs_url": "https://humbalytics.com/docs/api",

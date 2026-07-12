@@ -725,7 +725,14 @@
     "commit_needs_output_match": "Introduce un JSONPath y un valor esperado para guardar esta ruta",
     "group_marketplace": "Marketplace",
     "marketplace_empty": "Aún no hay feeds suscritos: suscríbete en el Marketplace para conectarlos a las personas.",
-    "marketplace_source_hint": "Ejecuta la persona cuando este feed informa de un cambio"
+    "marketplace_source_hint": "Ejecuta la persona cuando este feed informa de un cambio",
+    "reflect_pick_agent": "Elige un agente…",
+    "reflect_pick_team": "Elige un equipo…",
+    "reflect_scope_agent": "Agente",
+    "reflect_scope_hint": "Consolida el conjunto de recuerdos elegido en conclusiones duraderas. El resultado es una propuesta que revisas en Resumen → Recuerdos — nada cambia sin tu aprobación.",
+    "reflect_scope_label": "Reflexionar sobre",
+    "reflect_scope_team": "Equipo",
+    "reflection_label": "Reflexión de memoria"
   },
   "trigger_configured": "disparador configurado",
   "secret_label": "Secreto",

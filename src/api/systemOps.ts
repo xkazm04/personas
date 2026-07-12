@@ -16,6 +16,18 @@ export type { SystemOpKindMeta } from '@/lib/bindings/SystemOpKindMeta';
 /** Op key for the dev-tools context-map scan (the first system operation). */
 export const OP_CONTEXT_SCAN = 'context_scan';
 
+/**
+ * Op key for memory reflection (Memory Engine v2): consolidates an agent's —
+ * or a whole team's — memories into durable insights via a proposal the user
+ * applies or discards. Runs as a background job; params carry `personaId`
+ * OR `teamId`.
+ */
+export const OP_MEMORY_REFLECTION = 'memory_reflection';
+
+/** Params builder for the memory-reflection op (exactly one id set). */
+export const memoryReflectionParamsJson = (scope: { personaId?: string; teamId?: string }): string =>
+  JSON.stringify(scope.teamId ? { teamId: scope.teamId } : { personaId: scope.personaId });
+
 /** Catalog of available system operations (drives the Studio target rail). */
 export const listSystemOpKinds = () =>
   invoke<SystemOpKindMeta[]>('system_ops_list_kinds');

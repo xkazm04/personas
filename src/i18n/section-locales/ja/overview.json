@@ -211,7 +211,11 @@
     "delete_all": "すべて削除",
     "delete_all_confirm_title": "すべての記憶を削除しますか？",
     "delete_all_confirm_body": "すべての{count}件の記憶が完全に削除されます。この操作は取り消せません。",
-    "delete_all_confirm_cta": "すべて削除"
+    "delete_all_confirm_cta": "すべて削除",
+    "reflect": "リフレクション",
+    "reflect_hint": "関連するメモリを永続的なインサイトに統合します — 結果は提案として届き、適用前に確認できます",
+    "reflect_pick_persona": "エージェントのメモリをリフレクション",
+    "reflecting": "リフレクション中..."
   },
   "memory_review": {
     "all_conflicts_resolved": "すべての競合が解決されました",
@@ -1364,7 +1368,8 @@
     "tags_label": "タグ",
     "view_source_execution": "ソース実行を表示",
     "delete_memory": "メモリを削除",
-    "close": "閉じる"
+    "close": "閉じる",
+    "derived_from_label": "統合元"
   },
   "memory_table": {
     "agent": "エージェント",

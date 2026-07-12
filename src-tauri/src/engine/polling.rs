@@ -302,7 +302,7 @@ pub async fn poll_due_triggers(pool: &DbPool, scheduler: &SchedulerState, http: 
                         "status_code": status.as_u16(),
                         "content_changed": true,
                         "content_hash": current_hash,
-                        "body_preview": &body[..body.len().min(2000)],
+                        "body_preview": crate::utils::text::truncate_on_char_boundary(&body, 2000),
                     });
 
                     match event_repo::publish(

@@ -725,7 +725,14 @@
     "commit_needs_output_match": "Masukkan JSONPath dan nilai yang diharapkan untuk menyimpan rute ini",
     "group_marketplace": "Marketplace",
     "marketplace_empty": "Belum ada feed berlangganan — berlanggananlah di Marketplace untuk menghubungkannya ke persona.",
-    "marketplace_source_hint": "Menjalankan persona saat feed ini melaporkan perubahan"
+    "marketplace_source_hint": "Menjalankan persona saat feed ini melaporkan perubahan",
+    "reflect_pick_agent": "Pilih agen…",
+    "reflect_pick_team": "Pilih tim…",
+    "reflect_scope_agent": "Agen",
+    "reflect_scope_hint": "Menggabungkan kumpulan memori terpilih menjadi wawasan tahan lama. Hasilnya berupa proposal yang Anda tinjau di Ringkasan → Memori — tidak ada yang berubah tanpa persetujuan Anda.",
+    "reflect_scope_label": "Refleksikan",
+    "reflect_scope_team": "Tim",
+    "reflection_label": "Refleksi memori"
   },
   "trigger_configured": "pemicu dikonfigurasi",
   "secret_label": "Rahasia",

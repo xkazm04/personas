@@ -24,6 +24,8 @@ use serde_json::Value;
 use tauri::{AppHandle, State};
 use ts_rs::TS;
 
+use personas_macros::requires;
+
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::error::AppError;
 use crate::AppState;
@@ -87,6 +89,7 @@ pub fn list_image_gen_credentials(
 /// credential. Returns the stored asset ID (the caller wraps it as
 /// `custom-icon:{id}`).
 #[tauri::command]
+#[requires(privileged)]
 pub async fn generate_persona_icon(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,

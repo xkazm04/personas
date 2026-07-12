@@ -18,7 +18,7 @@ import { toDisplayUseCase } from '@/features/agents/sub_use_cases/components/rec
 import { MonitorCapabilities } from './MonitorCapabilities';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
-import type { ManualReviewItem, SidebarSection, DevToolsTab, PluginTab } from '@/lib/types/types';
+import type { ManualReviewItem, SidebarSection, DevToolsTab, PluginTab, TeamsTab } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
@@ -51,6 +51,8 @@ function navigateToProcess(proc: ActiveProcess, dismiss: () => void) {
     } else if (section === 'plugins') {
       system.setPluginTab('dev-tools' as PluginTab);
       system.setDevToolsTab(tab as DevToolsTab);
+    } else if (section === 'teams') {
+      system.setTeamsTab(tab as TeamsTab);
     } else {
       system.setTemplateTab(tab as 'n8n' | 'generated');
     }

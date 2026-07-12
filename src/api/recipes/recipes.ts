@@ -76,9 +76,6 @@ export const cancelRecipeGeneration = () =>
 // Use Case <-> Recipe Connection
 // ============================================================================
 
-export const getUseCaseRecipes = (useCaseId: string) =>
-  invoke<RecipeDefinition[]>("get_use_case_recipes", { useCaseId });
-
 // ============================================================================
 // Recipe Versioning
 // ============================================================================

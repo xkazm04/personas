@@ -150,7 +150,7 @@ pub fn parse_fitness_objective(raw: &str) -> (FitnessObjective, Vec<String>) {
             warnings.push(format!(
                 "Fitness objective could not be parsed ({}); using defaults (speed=0.33, quality=0.34, cost=0.33). Raw value: {}",
                 e,
-                &raw[..raw.len().min(200)]
+                crate::utils::text::truncate_on_char_boundary(raw, 200)
             ));
             return (FitnessObjective::default(), warnings);
         }

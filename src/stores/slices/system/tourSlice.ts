@@ -632,7 +632,7 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
     title: "1 · Register your repo",
     description: "The pipeline starts by making a local code repository a first-class object the app can reason about. In Dev Tools › Projects, create a project: pick the folder, then under Source control bind it to a team (or a GitHub PAT) and pick the repo. Leave \"Create Codebase connector\" on — it wires a Codebase — <project> connector to the repo so agents read the right code.",
     hint: "Click \"New project\" and walk the three-stage stepper: Project → Source control → Standards.",
-    nav: { sidebarSection: "plugins", subTab: "projects", subTabSetter: "setDevToolsTab" },
+    nav: { sidebarSection: "teams", subTab: "projects", subTabSetter: "setTeamsTab" },
     completeOn: "tour:pipeline-project-explored",
     panelWidth: 380,
     highlightTestId: "dev-project-new",

@@ -23,15 +23,26 @@ use super::event_registry::event_name;
 
 /// Registered op kinds.
 pub const OP_CONTEXT_SCAN: &str = "context_scan";
+pub const OP_MEMORY_REFLECTION: &str = "memory_reflection";
 
 /// Catalog of available system operations (drives the Studio "System events" rail).
 pub fn list_kinds() -> Vec<SystemOpKindMeta> {
-    vec![SystemOpKindMeta {
-        kind: OP_CONTEXT_SCAN.to_string(),
-        label: "Context Scan Update".to_string(),
-        description: "Re-derive a dev-tools project's context map (incremental).".to_string(),
-        requires_project: true,
-    }]
+    vec![
+        SystemOpKindMeta {
+            kind: OP_CONTEXT_SCAN.to_string(),
+            label: "Context Scan Update".to_string(),
+            description: "Re-derive a dev-tools project's context map (incremental).".to_string(),
+            requires_project: true,
+            requires_persona_or_team: false,
+        },
+        SystemOpKindMeta {
+            kind: OP_MEMORY_REFLECTION.to_string(),
+            label: "Memory Reflection".to_string(),
+            description: "Consolidate an agent's or team's memories into durable insights (proposal-gated).".to_string(),
+            requires_project: false,
+            requires_persona_or_team: true,
+        },
+    ]
 }
 
 /// Whether `kind` is a registered operation.
@@ -63,8 +74,40 @@ pub fn run_op(
 ) -> Result<String, AppError> {
     match op_kind {
         OP_CONTEXT_SCAN => run_context_scan(app, pool, params, source),
+        OP_MEMORY_REFLECTION => run_memory_reflection_op(pool, params),
         other => Err(AppError::Validation(format!("Unknown system op: {other}"))),
     }
+}
+
+/// Enqueue a memory-reflection pass as a `persona_background_job` — the
+/// worker runs the (up to ~8-minute) CLI pipeline asynchronously and writes
+/// a proposal, so this op returns immediately like other launch ops. Params:
+/// `{"personaId": "…"}` (per-agent) or `{"teamId": "…"}` (cross-member team
+/// consolidation); `teamId` wins when both are present.
+fn run_memory_reflection_op(pool: &DbPool, params: &Value) -> Result<String, AppError> {
+    use crate::engine::persona_jobs;
+
+    if let Some(team_id) = params.get("teamId").and_then(|v| v.as_str()) {
+        let job_id = persona_jobs::enqueue(
+            pool,
+            persona_jobs::KIND_TEAM_MEMORY_REFLECTION,
+            &json!({ "team_id": team_id }),
+            None,
+        )?;
+        return Ok(format!("job_id={job_id}"));
+    }
+    if let Some(persona_id) = params.get("personaId").and_then(|v| v.as_str()) {
+        let job_id = persona_jobs::enqueue(
+            pool,
+            persona_jobs::KIND_MEMORY_REFLECTION,
+            &json!({ "persona_id": persona_id }),
+            Some(persona_id),
+        )?;
+        return Ok(format!("job_id={job_id}"));
+    }
+    Err(AppError::Validation(
+        "memory_reflection requires a personaId or teamId param".into(),
+    ))
 }
 
 fn run_context_scan(

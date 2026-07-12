@@ -120,6 +120,8 @@ pub mod llm_topology;
 pub mod logger;
 pub mod management_api;
 pub mod mcp_tools;
+pub mod memory_recall;
+pub mod memory_reflection;
 pub mod pairing;
 pub mod model_routing;
 pub mod oauth_refresh;

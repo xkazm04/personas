@@ -75,6 +75,62 @@ pub fn enqueue_persona_memory_curation(
     )
 }
 
+/// Enqueue a memory-reflection run for a persona (Memory Engine v2 —
+/// consolidate related/contradicting memories into durable insights with
+/// provenance). Same async proposal-mode contract as curation: the worker
+/// writes a `persona_memory_review_proposal` row the user applies or
+/// discards. Unlike curation, reflection is strictly per-persona.
+#[tauri::command]
+pub fn enqueue_persona_memory_reflection(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    instructions: Option<String>,
+) -> Result<String, AppError> {
+    require_auth_sync(&state)?;
+    validate_instructions(instructions.as_deref())?;
+    let mut params = serde_json::Map::new();
+    params.insert(
+        "persona_id".to_string(),
+        serde_json::Value::String(persona_id.clone()),
+    );
+    if let Some(s) = instructions {
+        params.insert("instructions".to_string(), serde_json::Value::String(s));
+    }
+    persona_jobs::enqueue(
+        &state.db,
+        persona_jobs::KIND_MEMORY_REFLECTION,
+        &serde_json::Value::Object(params),
+        Some(&persona_id),
+    )
+}
+
+/// Enqueue a TEAM memory-reflection run: consolidate lessons held by
+/// ≥2 members into team-shared insights (proposal-gated, same flow as
+/// persona reflection). Returns the job id.
+#[tauri::command]
+pub fn enqueue_team_memory_reflection(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+    instructions: Option<String>,
+) -> Result<String, AppError> {
+    require_auth_sync(&state)?;
+    validate_instructions(instructions.as_deref())?;
+    let mut params = serde_json::Map::new();
+    params.insert(
+        "team_id".to_string(),
+        serde_json::Value::String(team_id.clone()),
+    );
+    if let Some(s) = instructions {
+        params.insert("instructions".to_string(), serde_json::Value::String(s));
+    }
+    persona_jobs::enqueue(
+        &state.db,
+        persona_jobs::KIND_TEAM_MEMORY_REFLECTION,
+        &serde_json::Value::Object(params),
+        None,
+    )
+}
+
 #[tauri::command]
 pub fn list_persona_jobs(
     state: State<'_, Arc<AppState>>,

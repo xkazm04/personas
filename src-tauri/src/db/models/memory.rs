@@ -257,9 +257,21 @@ pub struct PersonaMemory {
     /// scope in the Groups→Teams consolidation (Phase 5).
     ///
     /// MEMORY CONTRACT (5): no FK by design — mirrors (2) for use_case_id.
-    /// Populated by the groups_to_teams data migration; no runtime writer.
+    /// Populated by the groups_to_teams data migration; the ONE sanctioned
+    /// runtime writer is `repos::core::memories::create_synthesized`, used
+    /// by team reflection to publish a cross-member insight to the whole
+    /// team (the insight is still authored by ONE persona — `persona_id`
+    /// stays NOT NULL).
     #[serde(default)]
     pub home_team_id: Option<String>,
+    /// Reflection provenance: ids of the source memories a synthesized
+    /// insight was derived from. `None` for organic (non-synthesized)
+    /// memories. No FK by design — sources are archived on synthesis and
+    /// may later be deleted without erasing the insight's lineage. Written
+    /// only by the reflection apply path
+    /// (`repos::core::memories::create_synthesized`).
+    #[serde(default)]
+    pub derived_from: Option<Json<Vec<String>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

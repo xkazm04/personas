@@ -211,7 +211,11 @@
     "delete_all": "Tout supprimer",
     "delete_all_confirm_title": "Supprimer toutes les mémoires ?",
     "delete_all_confirm_body": "Cette action supprime définitivement les {count} mémoires. Elle est irréversible.",
-    "delete_all_confirm_cta": "Tout supprimer"
+    "delete_all_confirm_cta": "Tout supprimer",
+    "reflect": "Réflexion",
+    "reflect_hint": "Consolide les souvenirs liés en enseignements durables — le résultat est une proposition que vous validez avant tout changement",
+    "reflect_pick_persona": "Lancer une réflexion sur les souvenirs d'un agent",
+    "reflecting": "Réflexion en cours..."
   },
   "memory_review": {
     "all_conflicts_resolved": "Tous les conflits résolus",
@@ -1364,7 +1368,8 @@
     "tags_label": "Tags",
     "view_source_execution": "Voir l'exécution source",
     "delete_memory": "Supprimer la mémoire",
-    "close": "Fermer"
+    "close": "Fermer",
+    "derived_from_label": "Synthétisé à partir de"
   },
   "memory_table": {
     "agent": "Agent",

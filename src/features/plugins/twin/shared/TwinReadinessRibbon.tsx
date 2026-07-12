@@ -1,4 +1,4 @@
-import { BookOpen, Brain, Mic, Radio, User, Volume2 } from 'lucide-react';
+import { BookOpen, Brain, Mic, Radio, User } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TwinTab } from '@/lib/types/types';
 import type { LucideIcon } from 'lucide-react';
@@ -17,7 +17,6 @@ const MILESTONE_META: { key: MilestoneKey; tab: TwinTab; icon: LucideIcon }[] = 
   { key: 'identity', tab: 'identity', icon: User },
   { key: 'tone', tab: 'tone', icon: Mic },
   { key: 'brain', tab: 'brain', icon: Brain },
-  { key: 'voice', tab: 'voice', icon: Volume2 },
   { key: 'channels', tab: 'channels', icon: Radio },
   { key: 'memories', tab: 'knowledge', icon: BookOpen },
 ];

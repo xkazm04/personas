@@ -407,7 +407,7 @@
       "marketingModule": "plugins"
     },
     {
-      "doc": "docs/features/teams/dev-tools.md",
+      "doc": "docs/features/plugins/dev tools/dev-tools.md",
       "sourceGlobs": [
         "src/features/plugins/dev-tools/**",
         "src-tauri/src/commands/infrastructure/dev_tools.rs"

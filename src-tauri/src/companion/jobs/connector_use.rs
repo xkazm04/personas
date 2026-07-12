@@ -701,6 +701,13 @@ async fn gmail_send_message(
     let subject = args.get("subject").and_then(|v| v.as_str()).unwrap_or("");
     let body = args.get("body").and_then(|v| v.as_str()).unwrap_or("");
 
+    // Strip CR/LF from header fields before building the RFC-822 message. `to`
+    // and `subject` are model-supplied, so an injected `\r\n` could smuggle an
+    // extra header (e.g. a hidden `Bcc:`) past the approval gate. Header values
+    // are single-line by definition; the body keeps its newlines.
+    let to = to.replace(['\r', '\n'], " ");
+    let subject = subject.replace(['\r', '\n'], " ");
+
     // RFC-822 message → base64url-safe (Gmail API requirement).
     let raw_message = format!(
         "To: {to}\r\nSubject: {subject}\r\nContent-Type: text/plain; charset=\"UTF-8\"\r\n\r\n{body}"

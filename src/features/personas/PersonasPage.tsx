@@ -37,6 +37,9 @@ const KPIsPage = lazyRetry(() => import('@/features/teams/sub_kpis/KPIsPage'));
 const FactoryPage = lazyRetry(() => import('@/features/teams/sub_factory/FactoryPage'));
 const CredentialManager = lazyRetry(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazyRetry(() => import('@/features/teams/sub_teamWorkspace/TeamCanvas'));
+const ProjectManagerPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'));
+const LifecyclePage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'));
+const CompetitionPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage'));
 const DesignReviewsPage = lazyRetry(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazyRetry(() => import('@/features/settings/components/SettingsPage'));
 const TriggersPage = lazyRetry(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
@@ -254,6 +257,15 @@ export default function PersonasPage() {
       }
       if (teamsTab === 'goals') {
         return <ErrorBoundary onGoHome={goHome} name="Goals"><Suspense fallback={SectionFallback}><GoalsPage /></Suspense></ErrorBoundary>;
+      }
+      if (teamsTab === 'projects') {
+        return <ErrorBoundary onGoHome={goHome} name="Projects"><Suspense fallback={SectionFallback}><ProjectManagerPage /></Suspense></ErrorBoundary>;
+      }
+      if (teamsTab === 'lifecycle') {
+        return <ErrorBoundary onGoHome={goHome} name="Lifecycle"><Suspense fallback={SectionFallback}><LifecyclePage /></Suspense></ErrorBoundary>;
+      }
+      if (teamsTab === 'competition') {
+        return <ErrorBoundary onGoHome={goHome} name="Competition"><Suspense fallback={SectionFallback}><CompetitionPage /></Suspense></ErrorBoundary>;
       }
       return <ErrorBoundary onGoHome={goHome} name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
     }

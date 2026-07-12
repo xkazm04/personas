@@ -211,7 +211,11 @@
     "delete_all": "حذف الكل",
     "delete_all_confirm_title": "حذف جميع الذكريات؟",
     "delete_all_confirm_body": "سيحذف هذا الإجراء {count} ذكريات بشكل دائم. لا يمكن التراجع عن هذا.",
-    "delete_all_confirm_cta": "حذف الكل"
+    "delete_all_confirm_cta": "حذف الكل",
+    "reflect": "تأمّل",
+    "reflect_hint": "دمج الذكريات المترابطة في رؤى دائمة — النتيجة اقتراح تراجعه قبل تغيير أي شيء",
+    "reflect_pick_persona": "تأمّل ذكريات وكيل",
+    "reflecting": "جارٍ التأمّل..."
   },
   "memory_review": {
     "all_conflicts_resolved": "تم حل جميع التعارضات",
@@ -1364,7 +1368,8 @@
     "tags_label": "الوسوم",
     "view_source_execution": "عرض التنفيذ المصدر",
     "delete_memory": "حذف الذاكرة",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "derived_from_label": "مُركّب من"
   },
   "memory_table": {
     "agent": "الوكيل",

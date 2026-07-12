@@ -698,15 +698,20 @@ pub async fn run_execution(
             }
             prompt_text
         } else {
+            // Fetch a WIDE active-tier candidate pool (120, vs the 40 that used
+            // to double as the injection cap) — the actual selection is the
+            // decay-scored budget pack below, so the SQL limit only needs to be
+            // generous enough that a valuable-but-SQL-unfavoured row makes the
+            // candidate set.
             match mem_repo::get_for_injection_v2(
                 &pool,
                 mem_repo::InjectionScope::for_persona(&persona.id)
                     .with_use_case(execution_use_case_id.as_deref())
                     .with_home_team(persona.home_team_id.as_deref()),
                 10,
-                40,
+                120,
             ) {
-                Ok(tiered) if !tiered.core.is_empty() || !tiered.active.is_empty() => {
+                Ok(mut tiered) if !tiered.core.is_empty() || !tiered.active.is_empty() => {
                     let mut mem_section = String::new();
 
                     // Core beliefs — always present, define agent identity
@@ -722,49 +727,50 @@ pub async fn run_execution(
                     }
 
                     // Active knowledge — recent learnings, contextual facts.
-                    // Phase 2 L1 hygiene: TOKEN-BUDGET the active section (not just a
-                    // count cap) so the injected prompt size is hard-bounded as
-                    // memory compounds — the direct fix for the measured run-over-run
-                    // cost bloat. `tiered.active` is already ordered best-first
-                    // (importance, access, recency), so we add until the budget is hit.
+                    // Memory Engine v2: decay-scored budget pack. The same char
+                    // budget as the old truncation, but WHICH memories survive
+                    // the cut is now decided by decayed value (importance ×
+                    // category half-life × access boost) instead of raw sort
+                    // order, and entries are packed whole — never mid-truncated.
                     const ACTIVE_MEM_BUDGET_CHARS: usize = 6000;
-                    if !tiered.active.is_empty() {
+                    let packed = crate::engine::memory_recall::pack_by_budget(
+                        std::mem::take(&mut tiered.active),
+                        ACTIVE_MEM_BUDGET_CHARS,
+                        chrono::Utc::now(),
+                    );
+                    if !packed.selected.is_empty() {
                         mem_section.push_str("\n\n## Agent Memory — Recent Learnings\n\n");
                         mem_section.push_str("Context from recent work. Use to inform your analysis and avoid repeating past mistakes.\n\n");
-                        let mut used = 0usize;
-                        let mut included = 0usize;
-                        for m in &tiered.active {
-                            let line = format!(
+                        for m in &packed.selected {
+                            mem_section.push_str(&format!(
                                 "- **{}** [{}] (importance: {}): {}\n",
                                 m.title, m.category, m.importance, m.content
-                            );
-                            if used + line.len() > ACTIVE_MEM_BUDGET_CHARS && included > 0 {
-                                mem_section.push_str(&format!(
-                                    "- …(+{} more lower-priority memories omitted to bound prompt size)\n",
-                                    tiered.active.len() - included
-                                ));
-                                break;
-                            }
-                            used += line.len();
-                            included += 1;
-                            mem_section.push_str(&line);
+                            ));
+                        }
+                        if packed.omitted > 0 {
+                            mem_section.push_str(&format!(
+                                "- …(+{} more lower-value memories omitted to bound prompt size)\n",
+                                packed.omitted
+                            ));
                         }
                     }
 
                     mem_section.push('\n');
-                    let total = tiered.core.len() + tiered.active.len();
                     logger.log(&format!(
-                        "[MEMORY] Injected {} memories ({} core, {} active)",
-                        total,
+                        "[MEMORY] Injected {} memories ({} core, {} active packed by value, {} omitted)",
+                        tiered.core.len() + packed.selected.len(),
                         tiered.core.len(),
-                        tiered.active.len()
+                        packed.selected.len(),
+                        packed.omitted
                     ));
 
-                    // Track access: increment counters for all injected memories
+                    // Track access: increment counters for INJECTED memories only —
+                    // omitted candidates were never seen by the model, so counting
+                    // them would corrupt the access signal decay scoring relies on.
                     let all_ids: Vec<String> = tiered
                         .core
                         .iter()
-                        .chain(tiered.active.iter())
+                        .chain(packed.selected.iter())
                         .map(|m| m.id.clone())
                         .collect();
                     if let Err(e) = mem_repo::increment_access_batch(&pool, &all_ids) {
@@ -774,6 +780,15 @@ pub async fn run_execution(
                     // Run lifecycle transitions (promote/archive) after access update
                     if let Err(e) = mem_repo::run_lifecycle(&pool, &persona.id) {
                         logger.log(&format!("[MEMORY] Lifecycle transition failed: {e}"));
+                    }
+                    // Decay-based forgetting: archive active memories whose value
+                    // fell below the floor (category half-lives; reversible).
+                    match crate::engine::memory_recall::run_decay_forgetting(&pool, &persona.id) {
+                        Ok(n) if n > 0 => {
+                            logger.log(&format!("[MEMORY] Decay-forgetting archived {n} stale memories"));
+                        }
+                        Ok(_) => {}
+                        Err(e) => logger.log(&format!("[MEMORY] Decay-forgetting failed: {e}")),
                     }
 
                     format!("{prompt_text}{mem_section}")

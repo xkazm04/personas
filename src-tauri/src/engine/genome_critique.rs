@@ -220,7 +220,7 @@ fn parse_rewrite_response(raw: &str) -> Result<Vec<String>, String> {
     });
 
     let Some(rewrite) = parsed else {
-        let head = &trimmed[..trimmed.len().min(500)];
+        let head = crate::utils::text::truncate_on_char_boundary(trimmed, 500);
         return Err(format!(
             "Failed to parse critique response. Head (≤500 chars): {head}"
         ));

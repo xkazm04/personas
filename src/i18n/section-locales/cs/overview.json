@@ -211,7 +211,11 @@
     "delete_all": "Smazat vše",
     "delete_all_confirm_title": "Smazat všechny vzpomínky?",
     "delete_all_confirm_body": "Tímto trvale smažete všech {count} vzpomínek. Tuto akci nelze vrátit zpět.",
-    "delete_all_confirm_cta": "Smazat vše"
+    "delete_all_confirm_cta": "Smazat vše",
+    "reflect": "Reflexe",
+    "reflect_hint": "Sloučí související vzpomínky do trvalých poznatků — výsledkem je návrh, který schválíte dřív, než se cokoli změní",
+    "reflect_pick_persona": "Reflektovat vzpomínky agenta",
+    "reflecting": "Probíhá reflexe..."
   },
   "memory_review": {
     "all_conflicts_resolved": "Všechny konflikty vyřešeny",
@@ -1364,7 +1368,8 @@
     "tags_label": "Štítky",
     "view_source_execution": "Zobrazit zdrojové spuštění",
     "delete_memory": "Smazat paměť",
-    "close": "Zavřít"
+    "close": "Zavřít",
+    "derived_from_label": "Syntetizováno z"
   },
   "memory_table": {
     "agent": "Agent",

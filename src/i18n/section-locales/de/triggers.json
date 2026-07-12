@@ -725,7 +725,14 @@
     "commit_needs_output_match": "Gib einen JSONPath und einen erwarteten Wert ein, um diese Route zu speichern",
     "group_marketplace": "Marketplace",
     "marketplace_empty": "Noch keine abonnierten Feeds — abonniere im Marketplace, um sie mit Personas zu verknüpfen.",
-    "marketplace_source_hint": "Führt die Persona aus, wenn dieser Feed eine Änderung meldet"
+    "marketplace_source_hint": "Führt die Persona aus, wenn dieser Feed eine Änderung meldet",
+    "reflect_pick_agent": "Agent wählen…",
+    "reflect_pick_team": "Team wählen…",
+    "reflect_scope_agent": "Agent",
+    "reflect_scope_hint": "Führt den gewählten Erinnerungspool zu dauerhaften Erkenntnissen zusammen. Das Ergebnis ist ein Vorschlag, den du unter Übersicht → Erinnerungen prüfst — ohne deine Freigabe ändert sich nichts.",
+    "reflect_scope_label": "Reflektieren über",
+    "reflect_scope_team": "Team",
+    "reflection_label": "Erinnerungs-Reflexion"
   },
   "trigger_configured": "Trigger konfiguriert",
   "secret_label": "Geheimnis",

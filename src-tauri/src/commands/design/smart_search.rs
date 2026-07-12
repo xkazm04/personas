@@ -340,7 +340,7 @@ pub async fn smart_search_templates(
             .ok_or_else(|| {
                 AppError::Internal(format!(
                     "Failed to extract search results from Claude output. Raw output:\n{}",
-                    &output_text[..output_text.len().min(500)]
+                    crate::utils::text::truncate_on_char_boundary(output_text, 500)
                 ))
             })?;
 

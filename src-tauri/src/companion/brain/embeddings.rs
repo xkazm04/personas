@@ -17,7 +17,7 @@
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 #[cfg(feature = "ml")]
-use std::sync::Once;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use rusqlite::params;
 
@@ -29,25 +29,31 @@ use crate::error::AppError;
 /// Native dim for AllMiniLML6V2Q (the model the app already ships with).
 pub const COMPANION_VEC_DIMS: usize = 384;
 
-/// Ensures the `companion_embedding` vec0 virtual table exists. Cheap to
-/// call repeatedly — gated by a `Once` so we only run it once per process.
+/// Latched to `true` only after the table has been created *successfully* this
+/// process. Unlike a `Once` (which records that the closure *ran*, not that it
+/// *succeeded*), this lets a transient first-call failure — e.g. a busy/locked
+/// pool connection — be retried on the next call instead of being cached as
+/// done, which previously left the table absent for the whole process and
+/// silently broke all vector recall (`search_similar` returned empty forever).
 #[cfg(feature = "ml")]
-static INIT_VEC_TABLE: Once = Once::new();
+static VEC_TABLE_READY: AtomicBool = AtomicBool::new(false);
 
 #[cfg(feature = "ml")]
 pub fn ensure_vec_table(pool: &UserDbPool) -> Result<(), AppError> {
-    let mut result: Result<(), AppError> = Ok(());
-    INIT_VEC_TABLE.call_once(|| {
-        result = (|| -> Result<(), AppError> {
-            let conn = pool.get()?;
-            conn.execute_batch(&format!(
-                "CREATE VIRTUAL TABLE IF NOT EXISTS companion_embedding USING vec0(node_id TEXT, embedding float[{COMPANION_VEC_DIMS}])"
-            ))?;
-            tracing::info!(dims = COMPANION_VEC_DIMS, "companion_embedding table ready");
-            Ok(())
-        })();
-    });
-    result
+    // Fast path: already created successfully this process.
+    if VEC_TABLE_READY.load(Ordering::Acquire) {
+        return Ok(());
+    }
+    // `CREATE VIRTUAL TABLE IF NOT EXISTS` is idempotent, so re-running after a
+    // prior transient failure is safe; only latch "ready" once it succeeds.
+    let conn = pool.get()?;
+    conn.execute_batch(&format!(
+        "CREATE VIRTUAL TABLE IF NOT EXISTS companion_embedding USING vec0(node_id TEXT, embedding float[{COMPANION_VEC_DIMS}])"
+    ))?;
+    if !VEC_TABLE_READY.swap(true, Ordering::AcqRel) {
+        tracing::info!(dims = COMPANION_VEC_DIMS, "companion_embedding table ready");
+    }
+    Ok(())
 }
 
 #[cfg(not(feature = "ml"))]

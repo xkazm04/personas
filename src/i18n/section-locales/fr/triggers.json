@@ -725,7 +725,14 @@
     "commit_needs_output_match": "Saisissez un JSONPath et une valeur attendue pour enregistrer cette route",
     "group_marketplace": "Marketplace",
     "marketplace_empty": "Aucun flux abonné pour l'instant — abonnez-vous dans le Marketplace pour les relier aux personas.",
-    "marketplace_source_hint": "Exécute le persona lorsque ce flux signale un changement"
+    "marketplace_source_hint": "Exécute le persona lorsque ce flux signale un changement",
+    "reflect_pick_agent": "Choisir un agent…",
+    "reflect_pick_team": "Choisir une équipe…",
+    "reflect_scope_agent": "Agent",
+    "reflect_scope_hint": "Consolide le pool de souvenirs choisi en enseignements durables. Le résultat est une proposition à valider dans Vue d'ensemble → Souvenirs — rien ne change sans votre accord.",
+    "reflect_scope_label": "Réfléchir sur",
+    "reflect_scope_team": "Équipe",
+    "reflection_label": "Réflexion mémoire"
   },
   "trigger_configured": "déclencheur configuré",
   "secret_label": "Secret",

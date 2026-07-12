@@ -16,13 +16,13 @@ beforeEach(() => {
   play.mockReset();
 });
 
-function elevenLabsProps(over: Partial<Record<string, unknown>> = {}) {
+function kokoroProps(over: Partial<Record<string, unknown>> = {}) {
   return {
     content: 'Hello from Athena.',
     voice: {
-      engine: 'elevenlabs' as const,
-      voiceId: 'voice_bbb',
-      credentialId: 'cred_aaa',
+      engine: 'kokoro' as const,
+      voiceId: 'af_heart',
+      credentialId: null,
       configured: true,
     },
     voiceSettings: undefined,
@@ -31,22 +31,22 @@ function elevenLabsProps(over: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('BubbleReadAloud', () => {
-  it('renders nothing when no engine is configured (elevenlabs missing cred)', () => {
+  it('renders nothing when no engine is configured (kokoro missing voice)', () => {
     render(
       <BubbleReadAloud
         content="hi"
-        voice={{ engine: 'elevenlabs', voiceId: null, credentialId: null, configured: false }}
+        voice={{ engine: 'kokoro', voiceId: null, credentialId: null, configured: false }}
         voiceSettings={undefined}
       />,
     );
     expect(screen.queryByTestId('companion-read-aloud')).toBeNull();
   });
 
-  it('renders nothing when no engine is configured (piper missing voice)', () => {
+  it('renders nothing when no engine is configured (pocket_tts missing voice)', () => {
     render(
       <BubbleReadAloud
         content="hi"
-        voice={{ engine: 'piper', voiceId: null, credentialId: null, configured: false }}
+        voice={{ engine: 'pocket_tts', voiceId: null, credentialId: null, configured: false }}
         voiceSettings={undefined}
       />,
     );
@@ -54,12 +54,12 @@ describe('BubbleReadAloud', () => {
   });
 
   it('renders nothing for whitespace-only content', () => {
-    render(<BubbleReadAloud {...elevenLabsProps({ content: '   ' })} />);
+    render(<BubbleReadAloud {...kokoroProps({ content: '   ' })} />);
     expect(screen.queryByTestId('companion-read-aloud')).toBeNull();
   });
 
   it('shows the Read aloud button when configured', () => {
-    render(<BubbleReadAloud {...elevenLabsProps()} />);
+    render(<BubbleReadAloud {...kokoroProps()} />);
     expect(screen.getByTestId('companion-read-aloud')).toBeInTheDocument();
   });
 
@@ -75,7 +75,7 @@ describe('BubbleReadAloud', () => {
       return { audio, done };
     });
 
-    render(<BubbleReadAloud {...elevenLabsProps()} />);
+    render(<BubbleReadAloud {...kokoroProps()} />);
     fireEvent.click(screen.getByTestId('companion-read-aloud'));
 
     // synthesizing state appears briefly.
@@ -94,10 +94,10 @@ describe('BubbleReadAloud', () => {
 
     expect(synthesize).toHaveBeenCalledWith(
       'Hello from Athena.',
-      'cred_aaa',
-      'voice_bbb',
+      null,
+      'af_heart',
       undefined,
-      'elevenlabs',
+      'kokoro',
     );
 
     // Playback ends → back to idle.
@@ -118,7 +118,7 @@ describe('BubbleReadAloud', () => {
       return { audio, done };
     });
 
-    render(<BubbleReadAloud {...elevenLabsProps()} />);
+    render(<BubbleReadAloud {...kokoroProps()} />);
     fireEvent.click(screen.getByTestId('companion-read-aloud'));
     await waitFor(() => {
       expect(
@@ -137,7 +137,7 @@ describe('BubbleReadAloud', () => {
 
   it('surfaces an error chip when synthesis rejects', async () => {
     synthesize.mockRejectedValueOnce(new Error('voice quota exhausted'));
-    render(<BubbleReadAloud {...elevenLabsProps()} />);
+    render(<BubbleReadAloud {...kokoroProps()} />);
     fireEvent.click(screen.getByTestId('companion-read-aloud'));
     await waitFor(() => {
       expect(
@@ -146,7 +146,7 @@ describe('BubbleReadAloud', () => {
     });
   });
 
-  it('routes piper engine to piperVoiceId, not voiceId', async () => {
+  it('routes pocket_tts engine to the pocket voice id', async () => {
     const audio = {} as HTMLAudioElement;
     synthesize.mockResolvedValueOnce('blob:url-3');
     play.mockImplementationOnce(() => ({
@@ -155,19 +155,19 @@ describe('BubbleReadAloud', () => {
     }));
     render(
       <BubbleReadAloud
-        content="piper test"
-        voice={{ engine: 'piper', voiceId: 'piper_en_us', credentialId: null, configured: true }}
+        content="pocket test"
+        voice={{ engine: 'pocket_tts', voiceId: 'step4', credentialId: null, configured: true }}
         voiceSettings={undefined}
       />,
     );
     fireEvent.click(screen.getByTestId('companion-read-aloud'));
     await waitFor(() => {
       expect(synthesize).toHaveBeenCalledWith(
-        'piper test',
+        'pocket test',
         null,
-        'piper_en_us',
+        'step4',
         undefined,
-        'piper',
+        'pocket_tts',
       );
     });
   });

@@ -5,7 +5,7 @@ import type { PersonaMemory } from "@/lib/types/types";
 import type { MemoryStats, MemoryReviewResult, MemoryTier } from "@/api/overview/memories";
 import type { MemoryAction } from "@/features/overview/sub_memories/libs/memoryActions";
 import { extractActionsFromReview, loadActions, saveActions } from "@/features/overview/sub_memories/libs/memoryActions";
-import { createMemory, deleteMemory, listMemoriesWithStats, mergeMemoriesAtomic, reviewMemoriesWithCli, updateMemoryTier } from "@/api/overview/memories";
+import { createMemory, deleteMemory, listMemoriesWithStats, mergeMemoriesAtomic, reflectMemoriesWithCli, reviewMemoriesWithCli, updateMemoryTier } from "@/api/overview/memories";
 
 
 export interface MemorySlice {
@@ -39,6 +39,11 @@ export interface MemorySlice {
     deleteIdB: string,
   ) => Promise<boolean>;
   reviewMemories: (personaId?: string) => Promise<MemoryReviewResult>;
+  /** Reflection pass (Memory Engine v2): consolidate related memories into
+   *  insights with provenance. Proposal-mode only; per-persona. Shares the
+   *  memoryReview* running/result/error state with reviewMemories — the UI
+   *  treats both as "an LLM memory pass is in flight". */
+  reflectMemories: (personaId: string, instructions?: string) => Promise<MemoryReviewResult>;
   clearMemoryReviewResult: () => void;
   setMemoryTier: (id: string, tier: MemoryTier) => Promise<void>;
   dismissMemoryAction: (actionId: string) => void;
@@ -226,6 +231,23 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
       const message = err instanceof Error ? err.message : String(err);
       set({ memoryReviewRunning: false, memoryReviewError: message });
       reportError(err, "Failed to review memories", set);
+      throw err;
+    }
+  },
+
+  reflectMemories: async (personaId, instructions?) => {
+    if (get().memoryReviewRunning) return get().memoryReviewResult as MemoryReviewResult;
+    set({ memoryReviewRunning: true, memoryReviewResult: null, memoryReviewError: null });
+    try {
+      const result = await reflectMemoriesWithCli(personaId, instructions);
+      // Reflection never mutates live rows (proposal-mode), so no list
+      // refresh is needed until the user applies the proposal.
+      set({ memoryReviewRunning: false, memoryReviewResult: result });
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      set({ memoryReviewRunning: false, memoryReviewError: message });
+      reportError(err, "Failed to reflect on memories", set);
       throw err;
     }
   },

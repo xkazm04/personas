@@ -730,6 +730,18 @@ pub(crate) const BUILTIN_SHARED_EVENTS: &[BuiltinSharedEvent] = &[
         event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
     },
     BuiltinSharedEvent {
+        id: r##"shared-connector-huggingface"##,
+        slug: r##"connector.huggingface.api"##,
+        name: r##"Hugging Face API updates"##,
+        description: r##"Curated updates to the Hugging Face API — new or deprecated endpoints, auth changes, and parameter changes detected from the public API docs. Subscribe to react when Hugging Face changes."##,
+        category: r##"connector_updates"##,
+        publisher: r##"Personas"##,
+        icon: Some(r##"/icons/connectors/huggingface.svg"##),
+        color: Some(r##"#FFD21E"##),
+        sample_payload: Some(r##"{"connector":"huggingface","label":"Hugging Face","docs_url":"https://huggingface.co/docs/hub/security-tokens","detected_at":"2026-01-01T00:00:00Z","summary":"Example: Hugging Face added a new endpoint and deprecated one query parameter.","tags":["new_endpoint","deprecation"],"severity":"minor","release_version":"0.0.0"}"##),
+        event_schema: Some(r##"{"type":"object","properties":{"connector":{"type":"string"},"label":{"type":"string"},"docs_url":{"type":"string"},"detected_at":{"type":"string","format":"date-time"},"summary":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"severity":{"type":"string","enum":["patch","minor","major","breaking"]},"release_version":{"type":"string"}},"required":["connector","summary","detected_at"]}"##),
+    },
+    BuiltinSharedEvent {
         id: r##"shared-connector-humbalytics"##,
         slug: r##"connector.humbalytics.api"##,
         name: r##"Humbalytics API updates"##,

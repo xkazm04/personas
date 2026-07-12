@@ -211,7 +211,11 @@
     "delete_all": "Xóa tất cả",
     "delete_all_confirm_title": "Xóa tất cả bộ nhớ?",
     "delete_all_confirm_body": "Thao tác này sẽ xóa vĩnh viễn tất cả {count} bộ nhớ. Không thể hoàn tác.",
-    "delete_all_confirm_cta": "Xóa tất cả"
+    "delete_all_confirm_cta": "Xóa tất cả",
+    "reflect": "Chiêm nghiệm",
+    "reflect_hint": "Hợp nhất các ký ức liên quan thành những hiểu biết bền vững — kết quả là một đề xuất bạn xem xét trước khi có bất kỳ thay đổi nào",
+    "reflect_pick_persona": "Chiêm nghiệm ký ức của một agent",
+    "reflecting": "Đang chiêm nghiệm..."
   },
   "memory_review": {
     "all_conflicts_resolved": "Tất cả xung đột đã được giải quyết",
@@ -1364,7 +1368,8 @@
     "tags_label": "Thẻ",
     "view_source_execution": "Xem thực thi nguồn",
     "delete_memory": "Xóa bộ nhớ",
-    "close": "Đóng"
+    "close": "Đóng",
+    "derived_from_label": "Tổng hợp từ"
   },
   "memory_table": {
     "agent": "Tác nhân",

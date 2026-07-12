@@ -115,8 +115,3 @@ export function groupIncidents(
     return (a.personaName ?? a.labelToken ?? '').localeCompare(b.personaName ?? b.labelToken ?? '');
   });
 }
-
-/** Back-compat wrapper for callers that only ever group by agent. */
-export function groupIncidentsByAgent(incidents: AuditIncident[], oldestFirst = false): IncidentGroup[] {
-  return groupIncidents(incidents, 'agent', oldestFirst);
-}

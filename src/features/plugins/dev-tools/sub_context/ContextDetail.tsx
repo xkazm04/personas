@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { X, File, ArrowUpRight, Target, ListChecks, Gauge, Plus, Pin, PinOff, Layers } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
+import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
@@ -25,7 +26,6 @@ export default function ContextDetail({
   const kpis = useSystemStore((s) => s.kpis);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const createKpi = useSystemStore((s) => s.createKpi);
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
   const setContextPinned = useSystemStore((s) => s.setContextPinned);
 
@@ -93,7 +93,7 @@ export default function ContextDetail({
 
   const handleGoalJump = (goalId: string) => {
     setPendingGoalSpotlightId(goalId);
-    setDevToolsTab('goals');
+    openGoalsBoard();
   };
 
   return (
