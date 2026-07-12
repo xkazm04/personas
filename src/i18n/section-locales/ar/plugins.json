@@ -2519,7 +2519,15 @@
     "uat_url_label": "URL الهدف (اختياري — الافتراضي بيئة اختبار المشروع)",
     "uat_verify_now": "تحقق الآن",
     "uat_verifying": "جارٍ التحقق…",
-    "uat_web_only": "UAT المتصفح متاح لمشاريع الويب فقط."
+    "uat_web_only": "UAT المتصفح متاح لمشاريع الويب فقط.",
+    "goal_explainer_progress": "كل مشروع في صف واحد، وأهدافه مرتبة من اليسار إلى اليمين حسب التاريخ وملوّنة حسب الحالة. انقر على مربع لفتح الهدف.",
+    "goal_view_progress": "التقدم",
+    "progress_empty_sub": "أنشئ أهدافًا في مشاريعك وستصطف هنا كخط زمني للمحفظة.",
+    "progress_empty_title": "لا توجد أهداف لعرضها بعد",
+    "progress_no_date": "بدون تاريخ",
+    "progress_row_counts": "{active} نشط · {done} مكتمل",
+    "progress_summary": "{projects} مشاريع · {goals} أهداف",
+    "progress_today": "اليوم"
   },
   "dev_projects": {
     "active_goals": "الأهداف النشطة",

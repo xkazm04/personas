@@ -13822,6 +13822,13 @@
       "goal_explainer_board": "Each card is a goal. \"Your turn\" holds goals that need you; \"Agent's turn\" is what your AI team is working on.",
       "goal_explainer_map": "Goals arranged by how they connect — arrows show what needs to happen first. Drag to arrange, click a goal for details.",
       "goal_explainer_timeline": "Goals laid out by target date, grouped by week and month. Goals without a date sit in their own group.",
+      "goal_explainer_progress": "Every project on one row, its goals plotted left to right by date and colored by status. Click a square to open the goal.",
+      "progress_today": "Today",
+      "progress_no_date": "No date",
+      "progress_summary": "{projects} projects · {goals} goals",
+      "progress_row_counts": "{active} active · {done} done",
+      "progress_empty_title": "No goals to plot yet",
+      "progress_empty_sub": "Create goals in your projects and they'll line up here as a portfolio timeline.",
       "goal_starters_label": "Or start with a common goal:",
       "goal_starter_created": "\"{title}\" added to your goals",
       "goal_starter_release_title": "Ship the first release",
@@ -14078,6 +14085,7 @@
       "goal_view_board": "Board",
       "goal_view_map": "Map",
       "goal_view_timeline": "Timeline",
+      "goal_view_progress": "Progress",
       "goal_view_accept": "Accept"
     },
     "dev_projects": {

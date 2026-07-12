@@ -13828,6 +13828,13 @@ export type Translations = {
       goal_explainer_board: string;
       goal_explainer_map: string;
       goal_explainer_timeline: string;
+      goal_explainer_progress: string;
+      progress_today: string;
+      progress_no_date: string;
+      progress_summary: string;
+      progress_row_counts: string;
+      progress_empty_title: string;
+      progress_empty_sub: string;
       goal_starters_label: string;
       goal_starter_created: string;
       goal_starter_release_title: string;
@@ -14084,6 +14091,7 @@ export type Translations = {
       goal_view_board: string;
       goal_view_map: string;
       goal_view_timeline: string;
+      goal_view_progress: string;
       goal_view_accept: string;
     };
     dev_projects: {

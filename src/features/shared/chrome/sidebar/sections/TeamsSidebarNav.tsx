@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords } from 'lucide-react';
+import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -17,9 +17,10 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  * - **Goals** — the Goals hub, with its view submenu (Board / Timeline)
  *   nested underneath, mirroring the team-roster indent pattern.
  */
-const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' }> = [
+const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' | 'goal_view_progress' }> = [
   { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
   { id: 'timeline', icon: CalendarClock, labelKey: 'goal_view_timeline' },
+  { id: 'progress', icon: ChartNoAxesGantt, labelKey: 'goal_view_progress' },
 ];
 
 // KPI hub sub-views — sidebar sub-items mirroring GOAL_VIEWS. Labels reuse the

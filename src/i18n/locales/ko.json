@@ -13813,7 +13813,15 @@
       "uat_url_label": "대상 URL (선택사항 — 기본값: 프로젝트 테스트 환경)",
       "uat_verify_now": "지금 검증",
       "uat_verifying": "검증 중…",
-      "uat_web_only": "브라우저 UAT는 웹 프로젝트에서만 사용 가능합니다."
+      "uat_web_only": "브라우저 UAT는 웹 프로젝트에서만 사용 가능합니다.",
+      "goal_explainer_progress": "프로젝트마다 한 행씩, 목표가 날짜순으로 왼쪽에서 오른쪽으로 배치되고 상태별로 색이 지정됩니다. 사각형을 클릭하면 목표가 열립니다.",
+      "goal_view_progress": "진행 상황",
+      "progress_empty_sub": "프로젝트에 목표를 만들면 여기에 포트폴리오 타임라인으로 정렬됩니다.",
+      "progress_empty_title": "아직 표시할 목표가 없습니다",
+      "progress_no_date": "날짜 없음",
+      "progress_row_counts": "진행 중 {active} · 완료 {done}",
+      "progress_summary": "프로젝트 {projects}개 · 목표 {goals}개",
+      "progress_today": "오늘"
     },
     "dev_projects": {
       "active_goals": "활성 목표",

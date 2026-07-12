@@ -13813,7 +13813,15 @@
       "uat_url_label": "URL cible (optionnel — par défaut l'environnement de test du projet)",
       "uat_verify_now": "Vérifier maintenant",
       "uat_verifying": "Vérification…",
-      "uat_web_only": "L'UAT navigateur est disponible pour les projets web uniquement."
+      "uat_web_only": "L'UAT navigateur est disponible pour les projets web uniquement.",
+      "goal_explainer_progress": "Chaque projet sur une ligne, ses objectifs placés de gauche à droite selon la date et colorés selon leur statut. Cliquez sur un carré pour ouvrir l'objectif.",
+      "goal_view_progress": "Progression",
+      "progress_empty_sub": "Créez des objectifs dans vos projets et ils s'aligneront ici en frise chronologique du portefeuille.",
+      "progress_empty_title": "Aucun objectif à afficher pour l'instant",
+      "progress_no_date": "Sans date",
+      "progress_row_counts": "{active} actifs · {done} terminés",
+      "progress_summary": "{projects} projets · {goals} objectifs",
+      "progress_today": "Aujourd'hui"
     },
     "dev_projects": {
       "active_goals": "objectifs actifs",

@@ -13813,7 +13813,15 @@
       "uat_url_label": "URL objetivo (opcional — por defecto el entorno de pruebas del proyecto)",
       "uat_verify_now": "Verificar ahora",
       "uat_verifying": "Verificando…",
-      "uat_web_only": "El UAT de navegador solo está disponible para proyectos web."
+      "uat_web_only": "El UAT de navegador solo está disponible para proyectos web.",
+      "goal_explainer_progress": "Cada proyecto en una fila, con sus objetivos trazados de izquierda a derecha por fecha y coloreados según su estado. Haz clic en un cuadrado para abrir el objetivo.",
+      "goal_view_progress": "Progreso",
+      "progress_empty_sub": "Crea objetivos en tus proyectos y se alinearán aquí como una línea de tiempo del portafolio.",
+      "progress_empty_title": "Aún no hay objetivos que mostrar",
+      "progress_no_date": "Sin fecha",
+      "progress_row_counts": "{active} activos · {done} completados",
+      "progress_summary": "{projects} proyectos · {goals} objetivos",
+      "progress_today": "Hoy"
     },
     "dev_projects": {
       "active_goals": "objetivos activos",
