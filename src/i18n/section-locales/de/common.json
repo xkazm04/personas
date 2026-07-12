@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "Ereignis verwerfen",
   "confirm_destructive_discard_event_warning": "Dieses unzustellbare Ereignis wird dauerhaft verworfen.",
   "inactive": "Inaktiv",
-  "rename_to": "Rename to",
+  "rename_to": "Umbenennen in",
   "agent_count_one": "{count} Agent",
   "agent_count_other": "{count} Agenten",
   "trigger_count_one": "{count} Auslöser",

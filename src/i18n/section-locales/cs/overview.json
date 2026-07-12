@@ -26,7 +26,7 @@
     "delivery_failed": "Selhalo",
     "delivery_pending": "Čeká",
     "delivery_queued": "Ve frontě",
-    "channel_email": "Email",
+    "channel_email": "E-mail",
     "channel_slack": "Slack",
     "channel_telegram": "Telegram",
     "channel_desktop": "Desktop",
@@ -184,22 +184,22 @@
       "tags": "Štítky",
       "tags_hint": "(oddělené čárkou)"
     },
-    "curation_schedule_button": "Schedule",
-    "curation_schedule_button_hint": "Schedule automatic memory curation",
-    "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
-    "curation_schedule_title": "Schedule memory curation",
-    "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
-    "curation_schedule_cron_label": "Schedule (cron)",
-    "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
-    "curation_schedule_presets_label": "Quick picks",
-    "preset_weekly_sunday": "Weekly · Sun 3am",
-    "preset_daily_3am": "Daily · 3am",
-    "preset_weekly_monday": "Weekly · Mon 9am",
-    "preset_monthly": "Monthly · 1st",
-    "curation_schedule_last_run_label": "Last run",
-    "curation_schedule_disabled_state": "Curation is disabled for this agent",
-    "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_button": "Naplánovat",
+    "curation_schedule_button_hint": "Naplánovat automatickou kontrolu paměti",
+    "curation_schedule_button_no_persona": "Vyberte agenta k naplánování kontroly paměti",
+    "curation_schedule_title": "Naplánovat kontrolu paměti",
+    "curation_schedule_description": "Spusťte kontrolu paměti automaticky podle opakujícího se plánu. Výsledek se zobrazí jako návrh, který můžete použít nebo zamítnout — vaše aktivní paměti zůstanou bez vašeho potvrzení nedotčené.",
+    "curation_schedule_cron_label": "Plán (cron)",
+    "curation_schedule_cron_hint": "Výraz cron s 5 poli: minuty, hodiny, den v měsíci, měsíc, den v týdnu.",
+    "curation_schedule_presets_label": "Rychlé volby",
+    "preset_weekly_sunday": "Týdně · Ne 3:00",
+    "preset_daily_3am": "Denně · 3:00",
+    "preset_weekly_monday": "Týdně · Po 9:00",
+    "preset_monthly": "Měsíčně · 1.",
+    "curation_schedule_last_run_label": "Poslední spuštění",
+    "curation_schedule_disabled_state": "Kontrola je pro tohoto agenta vypnuta",
+    "curation_schedule_disable": "Vypnout plán",
+    "curation_schedule_save": "Uložit plán"
   },
   "memory_review": {
     "keep_prefix": "Zachovat „",
@@ -297,7 +297,7 @@
     "section_memory": "Návrhy paměti",
     "section_fleet": "Optimalizace flotily",
     "section_routines": "Rutiny a změny trezoru",
-    "title": "Dashboard",
+    "title": "Přehled",
     "subtitle": "Provozní přehled a stav systému",
     "pending_reviews_prompt": "čekajících kontrol",
     "requiring_attention": "vyžadujících pozornost.",
@@ -481,7 +481,7 @@
     "sent_count": "{count} odesláno",
     "type_label": "Typ:",
     "confirm_delete": "Potvrdit smazání",
-    "rating_clear": "Clear rating"
+    "rating_clear": "Zrušit hodnocení"
   },
   "events": {
     "title": "Události",
@@ -636,7 +636,7 @@
     "recent_activity": "Nedávná aktivita",
     "total_traffic": "Celkový provoz",
     "total_errors": "Celkem chyb",
-    "tool_performance_empty": "No tool runs in this window",
+    "tool_performance_empty": "V tomto okně nejsou žádná spuštění nástrojů",
     "metric_help": "Nápověda k metrikám",
     "how_calculated": "Jak se to počítá?",
     "details": "Detaily",
@@ -762,7 +762,7 @@
     "filter_open": "Otevřené",
     "filter_auto_fixed": "Automaticky opraveno",
     "resolve": "Vyřešit",
-    "breaker": "breaker",
+    "breaker": "jistič",
     "fixed": "opraveno",
     "retry": "zkusit znovu",
     "never": "nikdy"
@@ -846,7 +846,7 @@
     "target_label": "Cíl",
     "id_label": "ID",
     "error_label": "Chyba",
-    "payload_label": "Payload",
+    "payload_label": "Obsah",
     "galaxy": "Galaxie",
     "galaxy_desc": "Orbitální souhvězdí s kometárními stopami",
     "lanes": "Dráhy",
@@ -1175,7 +1175,7 @@
     "healing_audit_log": "Audit log samoobnovy",
     "no_silent_failures": "Nejsou zaznamenány žádné tichá selhání.",
     "analysis_complete_prefix": "Analýza dokončena:",
-    "ai_healing_title": "AI Healing",
+    "ai_healing_title": "AI samooprava",
     "diagnosis_label": "Diagnóza:",
     "fixes_applied": "Aplikované opravy",
     "alert_history_title": "Historie upozornění",
@@ -1185,7 +1185,7 @@
     "confidence_pct_suffix": "% jistoty",
     "spike_on": "skok v",
     "correlated_events_prefix": "Korelované události (",
-    "circuit_breaker_label": "circuit breaker",
+    "circuit_breaker_label": "jistič",
     "auto_disabled_message": "Tato persona byla automaticky vypnuta jako circuit-breaker reakce na opakovaná selhání.",
     "execution_label": "Spuštění:",
     "issue_marked_as": "Tento problém je označen jako",
@@ -1278,17 +1278,17 @@
     "issues_in_7d": "problémy za 7 dní"
   },
   "upcoming_routines": {
-    "title": "Upcoming Routines",
-    "subtitle": "next scheduled runs",
-    "empty": "No scheduled runs.",
-    "never_fired": "pending first run",
-    "view_all": "View schedules"
+    "title": "Nadcházející rutiny",
+    "subtitle": "Další naplánovaná spuštění",
+    "empty": "Žádná naplánovaná spuštění.",
+    "never_fired": "čeká na první spuštění",
+    "view_all": "Zobrazit plány"
   },
   "vault_recent_changes": {
-    "title": "Vault Changes",
-    "subtitle": "recent Obsidian sync",
-    "empty": "No recent sync activity.",
-    "view_all": "View sync log"
+    "title": "Změny trezoru",
+    "subtitle": "Nedávná synchronizace s Obsidianem",
+    "empty": "V poslední době neproběhla žádná synchronizace.",
+    "view_all": "Zobrazit protokol synchronizace"
   },
   "heatmap": {
     "title_persona": "Aktivita za poslední rok",
@@ -1298,23 +1298,23 @@
     "no_activity": "Žádná aktivita za poslední rok",
     "less": "Méně",
     "more": "Více",
-    "tooltip_no_runs": "No runs",
-    "tooltip_one_run": "1 run on {date}",
-    "tooltip_runs": "{count} runs on {date}",
+    "tooltip_no_runs": "Žádná spuštění",
+    "tooltip_one_run": "1 spuštění dne {date}",
+    "tooltip_runs": "{count} spuštění dne {date}",
     "tooltip_with_cost": " · ${cost}",
-    "insights_streak": "Longest streak",
+    "insights_streak": "Nejdelší série",
     "insights_streak_days": "{days}d",
-    "insights_dormant": "Dormant",
+    "insights_dormant": "Neaktivní",
     "insights_dormant_days": "{days}d",
-    "insights_dormant_active": "Active today",
-    "insights_dormant_never": "Never run",
-    "insights_peak": "Peak day",
+    "insights_dormant_active": "Dnes aktivní",
+    "insights_dormant_never": "Nikdy nespuštěno",
+    "insights_peak": "Nejvytíženější den",
     "insights_peak_value": "{count} on {date}",
-    "insights_wow": "Week over week",
-    "insights_wow_up": "+{pct}% vs last week",
-    "insights_wow_down": "{pct}% vs last week",
-    "insights_wow_flat": "No change vs last week",
-    "insights_wow_new": "New activity",
+    "insights_wow": "Týden vs. týden",
+    "insights_wow_up": "+{pct} % vs. minulý týden",
+    "insights_wow_down": "{pct} % vs. minulý týden",
+    "insights_wow_flat": "Beze změny vs. minulý týden",
+    "insights_wow_new": "Nová aktivita",
     "month_jan": "Jan",
     "month_feb": "Feb",
     "month_mar": "Mar",
@@ -1331,21 +1331,21 @@
   },
   "trend": {
     "up": "Up",
-    "down": "Down",
-    "stable": "Stable — no significant change",
-    "vs_previous": "vs previous period"
+    "down": "Klesá",
+    "stable": "Stabilní — bez významné změny",
+    "vs_previous": "vs. předchozí období"
   },
   "errorRecovery": {
-    "audit_fetch_failed": "Could not load the healing audit log.",
-    "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
-    "action_retry": "Retry"
+    "audit_fetch_failed": "Nepodařilo se načíst protokol auditu samooprav.",
+    "audit_fetch_cause": "Protokol může být dočasně nedostupný. Ostatní data nejsou ovlivněna.",
+    "action_retry": "Zkusit znovu"
   },
   "emptyState": {
-    "alerts_title": "All clear — no alerts fired",
-    "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
-    "realtime_title": "Watch your events flow in real time",
-    "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
-    "realtime_action": "Send a test event"
+    "alerts_title": "Vše v pořádku — žádná upozornění nebyla spuštěna",
+    "alerts_subtitle": "Vaše pravidla sledování jsou aktivní. Pokud bude něco vyžadovat pozornost, upozornění se zde zobrazí automaticky.",
+    "realtime_title": "Sledujte tok vašich událostí v reálném čase",
+    "realtime_subtitle": "Animované částice sledují každou událost na cestě od zdrojů k vašim agentům. Každá tečka představuje živou událost pohybující se vaším systémem.",
+    "realtime_action": "Odeslat testovací událost"
   },
   "cockpit": {
     "title_default": "Kokpit",
@@ -1583,7 +1583,7 @@
   },
   "workflows": {
     "loading": "Načítání workflow...",
-    "title": "Workflows",
+    "title": "Workflow",
     "subtitle": "Aktivní a nedávné operace na pozadí napříč pracovním prostorem",
     "no_jobs": "Žádné úlohy na pozadí neběží ani nejsou nedávné",
     "jobs_hint": "Úlohy se zde zobrazí, když spustíš N8n transformace, adopce šablon, generování šablon nebo ladění dotazů",
@@ -1733,7 +1733,7 @@
     "no_activity": "Žádná nedávná aktivita"
   },
   "realtime_viz": {
-    "title": "Event Bus",
+    "title": "Sběrnice událostí",
     "filter_events": "Filtrovat události",
     "pause": "Pozastavit",
     "resume": "Obnovit",
@@ -1745,7 +1745,7 @@
     "source": "Zdroj",
     "target": "Cíl",
     "timestamp": "Časová značka",
-    "payload": "Payload",
+    "payload": "Obsah",
     "saved_views": "Uložená zobrazení",
     "save_current": "Uložit aktuální"
   },
@@ -1760,9 +1760,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "Nepodařilo se načíst vaše uložená zobrazení.",
+      "save_failed_message": "Nepodařilo se uložit toto zobrazení.",
+      "delete_failed_message": "Nepodařilo se smazat toto zobrazení."
     }
   },
   "activity_timeline": {

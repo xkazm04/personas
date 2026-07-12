@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "تجاهل الحدث",
   "confirm_destructive_discard_event_warning": "سيُتجاهل هذا الحدث الميت نهائياً.",
   "inactive": "غير نشط",
-  "rename_to": "Rename to",
+  "rename_to": "إعادة التسمية إلى",
   "agent_count_one": "{count} وكيل",
   "agent_count_other": "{count} وكيل",
   "trigger_count_one": "{count} مُشغّل",

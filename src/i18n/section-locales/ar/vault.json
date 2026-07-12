@@ -1537,7 +1537,7 @@
     "wizard_subtitle_batch": "جارٍ إعداد {count} خدمة{plural}"
   },
   "autopilot": {
-    "title": "API Autopilot",
+    "title": "الطيار الآلي لـAPI",
     "input_hint": "الصق رابط مواصفة OpenAPI أو محتواها لإنشاء موصّل تلقائياً",
     "preview_hint": "راجع API المحلَّل واختر نقاط النهاية للتضمين",
     "generated_hint": "تم إنشاء موصّلك بنجاح",

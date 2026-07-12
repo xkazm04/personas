@@ -71,8 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "Choisissez d'abord un persona dans la barre latérale.",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup_one": "Wire {count} more connector, then adopt",
-  "adopt_tooltip_needs_setup_other": "Wire {count} more connectors, then adopt",
+  "adopt_tooltip_needs_setup_one": "Configurez {count} connecteur supplémentaire, puis adoptez",
+  "adopt_tooltip_needs_setup_other": "Configurez {count} connecteurs supplémentaires, puis adoptez",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "Adoptez cette recette dans votre persona sélectionné",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -231,5 +231,5 @@
   "update_badge_detail_tooltip": "Adopté en v{from} ; le catalogue est maintenant en v{to}. Supprimez puis réadoptez pour mettre à jour.",
   "update_badge_tooltip": "Une nouvelle version de cette capacité est disponible — supprimez puis réadoptez pour mettre à jour",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tags"
+  "tags_heading": "Étiquettes"
 }

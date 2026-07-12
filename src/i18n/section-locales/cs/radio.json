@@ -43,12 +43,12 @@
   "preview_play": "Náhled stanice",
   "preview_stop": "Zastavit náhled",
   "youtube_premium_note": "Stanice YouTube streamují přes vložený přehrávač — pro zážitek bez reklam je vyžadován plán YouTube Premium.",
-  "idle_subtitle": "Curated stations",
+  "idle_subtitle": "Vybrané stanice",
   "kind_youtube": "YouTube",
-  "kind_stream": "Stream",
-  "source_prefix": "Source:",
-  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
-  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
-  "station_toggle_label": "Show in picker",
+  "kind_stream": "Proud",
+  "source_prefix": "Zdroj:",
+  "settings_description": "Vybrané stanice hrající na pozadí. Existují dva druhy: seznamy skladeb z YouTube (přes skrytý IFrame Player — skladby přeskočíte tlačítky pro předchozí/další) a přímé internetové proudy (jediný nepřetržitý zdroj — přepínáte pomocí výběru stanic). Ovladač najdete uprostřed zápatí aplikace.",
+  "enable_description": "Ve výchozím nastavení vypnuto. Po zapnutí se uprostřed zápatí zobrazí kompaktní ovladač. Vaše volba se pamatuje i po restartu.",
+  "station_toggle_label": "Zobrazit ve výběru",
   "auto_resume_description": "Když je zapnutá, při prvním načtení rádia po otevření aplikace se automaticky spustí naposledy hrající stanice. Ve výchozím nastavení vypnuto."
 }

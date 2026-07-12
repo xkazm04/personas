@@ -43,12 +43,12 @@
   "preview_play": "স্টেশন প্রিভিউ",
   "preview_stop": "প্রিভিউ বন্ধ",
   "youtube_premium_note": "YouTube স্টেশন একটি এমবেডেড প্লেয়ারের মাধ্যমে স্ট্রিম হয় — বিজ্ঞাপনমুক্ত অভিজ্ঞতার জন্য YouTube Premium প্ল্যান প্রয়োজন।",
-  "idle_subtitle": "Curated stations",
+  "idle_subtitle": "কিউরেটেড স্টেশন",
   "kind_youtube": "YouTube",
-  "kind_stream": "Stream",
-  "source_prefix": "Source:",
-  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
-  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
-  "station_toggle_label": "Show in picker",
+  "kind_stream": "স্ট্রীম",
+  "source_prefix": "সোর্স:",
+  "settings_description": "পটভূমিতে বাজতে থাকা কিউরেটেড স্টেশন। দুই ধরনের: YouTube ট্র্যাকলিস্ট (একটি লুকানো IFrame প্লেয়ারের মাধ্যমে — ট্র্যাক এড়িয়ে যেতে আগের/পরের বোতাম ব্যবহার করুন) এবং সরাসরি ইন্টারনেট স্ট্রীম (একটানা একক সোর্স — পরিবর্তনের জন্য পিকার ব্যবহার করুন)। কন্ট্রোলারটি অ্যাপ ফুটারের কেন্দ্রে থাকে।",
+  "enable_description": "ডিফল্টরূপে বন্ধ থাকে। চালু করা হলে, ফুটারের কেন্দ্রে একটি কমপ্যাক্ট কন্ট্রোলার দেখা যায়। রিস্টার্টের পরেও আপনার পছন্দ মনে রাখা হয়।",
+  "station_toggle_label": "পিকারে দেখান",
   "auto_resume_description": "যখন চালু হয়, অ্যাপটি খোলার পর প্রথমবার রেডিও লোড হলে শেষ-বাজানো স্টেশনটি স্বয়ংক্রিয়ভাবে শুরু হয়। ডিফল্টরূপে বন্ধ।"
 }

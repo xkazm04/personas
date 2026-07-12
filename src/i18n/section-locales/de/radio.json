@@ -43,12 +43,12 @@
   "preview_play": "Station vorhören",
   "preview_stop": "Vorschau stoppen",
   "youtube_premium_note": "YouTube-Stationen streamen über einen eingebetteten Player — für eine werbefreie Erfahrung ist YouTube Premium erforderlich.",
-  "idle_subtitle": "Curated stations",
+  "idle_subtitle": "Kuratierte Stationen",
   "kind_youtube": "YouTube",
   "kind_stream": "Stream",
-  "source_prefix": "Source:",
-  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
-  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
-  "station_toggle_label": "Show in picker",
+  "source_prefix": "Quelle:",
+  "settings_description": "Kuratierte Stationen, die im Hintergrund laufen. Es gibt zwei Arten: YouTube-Titellisten (über einen versteckten IFrame-Player — mit den Tasten für den vorherigen/nächsten Titel wechseln) und direkte Internet-Streams (eine einzelne durchgehende Quelle — zum Wechseln die Auswahl verwenden). Der Controller befindet sich in der Mitte der App-Fußleiste.",
+  "enable_description": "Standardmäßig deaktiviert. Bei Aktivierung erscheint ein kompakter Controller in der Mitte der Fußleiste. Ihre Wahl bleibt über Neustarts hinweg erhalten.",
+  "station_toggle_label": "In der Fußleisten-Auswahl anzeigen",
   "auto_resume_description": "Wenn diese Option aktiviert ist, startet der zuletzt wiedergegebene Sender automatisch, wenn das Radio zum ersten Mal geladen wird, nachdem die App geöffnet wurde. Standardmäßig deaktiviert."
 }

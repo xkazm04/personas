@@ -27,10 +27,10 @@
   "budget_limit": "Limit rozpočtu",
   "run_agent": "Spustit agenta",
   "model": "Model",
-  "trust": "Trust",
-  "timeout": "Timeout",
-  "preview_aria_label": "Pre-run preview for {name}",
-  "tool_count_one": "{count} tool",
-  "tool_count_other": "{count} tools",
-  "missing_count": "{count} missing"
+  "trust": "Důvěra",
+  "timeout": "Časový limit",
+  "preview_aria_label": "Náhled před spuštěním pro {name}",
+  "tool_count_one": "{count} nástroj",
+  "tool_count_other": "{count} nástrojů",
+  "missing_count": "{count} chybí"
 }

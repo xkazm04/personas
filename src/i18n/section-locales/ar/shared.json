@@ -116,8 +116,8 @@
     "generate_icon": "توليد",
     "generating_icon": "جار التوليد...",
     "generate_icon_prompt_placeholder": "صف الأيقونة التي تريدها...",
-    "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon": "اختيار أيقونة الوكيل",
+    "select_agent_icon_desc": "اختر أيقونة لهذا الوكيل. تُعرض تلقائيًا نسخ داكنة وفاتحة حسب السمة."
   },
   "reasoning_trace": {
     "system_init": "تهيئة النظام",
@@ -153,10 +153,10 @@
     "active_project": "المشروع النشط",
     "clear_completed_title": "مسح العناصر المكتملة والمنتظرة",
     "active_twin": "التوأم النشط",
-    "back_to_home": "Home",
-    "whats_new": "What's New",
-    "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap",
+    "back_to_home": "الرئيسية",
+    "whats_new": "ما الجديد",
+    "back_to_plugins": "الإضافات",
+    "roadmap": "خارطة الطريق",
     "groups_label": "المجموعات"
   },
   "execution_detail": {

@@ -26,11 +26,11 @@
   "close_preview": "Vorschau schließen",
   "budget_limit": "Budget-Limit",
   "run_agent": "Agent ausführen",
-  "model": "Model",
-  "trust": "Trust",
+  "model": "Modell",
+  "trust": "Vertrauen",
   "timeout": "Timeout",
-  "preview_aria_label": "Pre-run preview for {name}",
-  "tool_count_one": "{count} tool",
-  "tool_count_other": "{count} tools",
-  "missing_count": "{count} missing"
+  "preview_aria_label": "Vorschau vor der Ausführung für {name}",
+  "tool_count_one": "{count} Tool",
+  "tool_count_other": "{count} Tools",
+  "missing_count": "{count} fehlend"
 }

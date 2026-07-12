@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "ইভেন্ট বাতিল করুন",
   "confirm_destructive_discard_event_warning": "এই ডেড-লেটার ইভেন্টটি স্থায়ীভাবে বাতিল হয়ে যাবে।",
   "inactive": "নিষ্ক্রিয়",
-  "rename_to": "Rename to",
+  "rename_to": "নতুন নাম",
   "agent_count_one": "{count} এজেন্ট",
   "agent_count_other": "{count} এজেন্ট",
   "trigger_count_one": "{count} ট্রিগার",

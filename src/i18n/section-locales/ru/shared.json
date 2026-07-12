@@ -116,8 +116,8 @@
     "generate_icon": "Сгенерировать",
     "generating_icon": "Generating...",
     "generate_icon_prompt_placeholder": "Describe the icon you want...",
-    "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon": "Выбрать значок агента",
+    "select_agent_icon_desc": "Выберите значок для этого агента. Варианты для тёмной и светлой темы применяются автоматически."
   },
   "reasoning_trace": {
     "system_init": "Инициализация системы",
@@ -153,10 +153,10 @@
     "active_project": "Активный проект",
     "clear_completed_title": "Очистить завершённые и поставленные в очередь элементы",
     "active_twin": "Активный двойник",
-    "back_to_home": "Home",
-    "whats_new": "What's New",
-    "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap",
+    "back_to_home": "Главная",
+    "whats_new": "Что нового",
+    "back_to_plugins": "Плагины",
+    "roadmap": "Дорожная карта",
     "groups_label": "Группы"
   },
   "execution_detail": {

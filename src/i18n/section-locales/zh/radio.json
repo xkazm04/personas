@@ -43,12 +43,12 @@
   "preview_play": "预览电台",
   "preview_stop": "停止预览",
   "youtube_premium_note": "YouTube 电台通过内嵌播放器流式传输 — 无广告体验需要 YouTube Premium 会员。",
-  "idle_subtitle": "Curated stations",
+  "idle_subtitle": "精选电台",
   "kind_youtube": "YouTube",
-  "kind_stream": "Stream",
-  "source_prefix": "Source:",
-  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
-  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
-  "station_toggle_label": "Show in picker",
+  "kind_stream": "直播流",
+  "source_prefix": "来源：",
+  "settings_description": "精选电台在后台播放，分为两种类型：YouTube 歌单（通过隐藏的 IFrame 播放器加载，可用上一首/下一首按钮切换曲目）和直接的互联网直播流（单一连续来源，需用切换器切换）。播放控制器位于应用页脚的正中央。",
+  "enable_description": "默认关闭。开启后，页脚正中央会出现一个精简控制器。您的选择会在重启后保留。",
+  "station_toggle_label": "在选择器中显示",
   "auto_resume_description": "启用后，在应用程序打开后第一次加载收音机时，最后播放的电台会自动启动。默认关闭。"
 }

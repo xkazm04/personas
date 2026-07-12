@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "Zahodit událost",
   "confirm_destructive_discard_event_warning": "Tato událost (dead-letter) bude trvale zahozena.",
   "inactive": "Neaktivní",
-  "rename_to": "Rename to",
+  "rename_to": "Přejmenovat na",
   "agent_count_one": "{count} agent",
   "agent_count_other": "{count} agentů",
   "trigger_count_one": "{count} spouštěč",

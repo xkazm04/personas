@@ -26,11 +26,11 @@
   "close_preview": "إغلاق المعاينة",
   "budget_limit": "حد الميزانية",
   "run_agent": "تشغيل الوكيل",
-  "model": "Model",
-  "trust": "Trust",
-  "timeout": "Timeout",
-  "preview_aria_label": "Pre-run preview for {name}",
-  "tool_count_one": "{count} tool",
-  "tool_count_other": "{count} tools",
-  "missing_count": "{count} missing"
+  "model": "النموذج",
+  "trust": "الثقة",
+  "timeout": "المهلة",
+  "preview_aria_label": "معاينة قبل التشغيل لـ {name}",
+  "tool_count_one": "{count} أداة",
+  "tool_count_other": "{count} أدوات",
+  "missing_count": "{count} ناقص"
 }

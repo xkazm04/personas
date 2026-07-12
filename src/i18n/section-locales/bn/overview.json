@@ -12,7 +12,7 @@
     "no_messages": "কোনো বার্তা নেই",
     "switch_to_all": "সব বার্তা দেখতে \\\\\\\"সব\\\\\\\" এ যান",
     "columns": {
-      "persona": "Persona",
+      "persona": "পার্সোনা",
       "title": "শিরোনাম",
       "priority": "অগ্রাধিকার",
       "status": "অবস্থা",
@@ -184,22 +184,22 @@
       "tags": "ট্যাগ",
       "tags_hint": "(কমা-বিভক্ত)"
     },
-    "curation_schedule_button": "Schedule",
-    "curation_schedule_button_hint": "Schedule automatic memory curation",
-    "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
-    "curation_schedule_title": "Schedule memory curation",
-    "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
-    "curation_schedule_cron_label": "Schedule (cron)",
-    "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
-    "curation_schedule_presets_label": "Quick picks",
-    "preset_weekly_sunday": "Weekly · Sun 3am",
-    "preset_daily_3am": "Daily · 3am",
-    "preset_weekly_monday": "Weekly · Mon 9am",
-    "preset_monthly": "Monthly · 1st",
-    "curation_schedule_last_run_label": "Last run",
-    "curation_schedule_disabled_state": "Curation is disabled for this agent",
-    "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_button": "সময়সূচি",
+    "curation_schedule_button_hint": "স্বয়ংক্রিয় স্মৃতি কিউরেশনের সময়সূচি নির্ধারণ করুন",
+    "curation_schedule_button_no_persona": "কিউরেশনের সময়সূচি নির্ধারণ করতে একটি এজেন্ট বেছে নিন",
+    "curation_schedule_title": "স্মৃতি কিউরেশনের সময়সূচি",
+    "curation_schedule_description": "পুনরাবৃত্তিমূলক সময়সূচিতে স্বয়ংক্রিয়ভাবে একটি স্মৃতি পর্যালোচনা চালান। ফলাফলটি একটি প্রস্তাব হিসেবে আসে যা আপনি প্রয়োগ বা বাতিল করতে পারেন — আপনার নিশ্চিতকরণ ছাড়া আপনার লাইভ স্মৃতি কখনো স্পর্শ করা হয় না।",
+    "curation_schedule_cron_label": "সময়সূচি (cron)",
+    "curation_schedule_cron_hint": "৫-ফিল্ড cron এক্সপ্রেশন: মিনিট ঘণ্টা দিন মাস সপ্তাহের দিন।",
+    "curation_schedule_presets_label": "দ্রুত পছন্দ",
+    "preset_weekly_sunday": "সাপ্তাহিক · রবি রাত ৩টা",
+    "preset_daily_3am": "দৈনিক · রাত ৩টা",
+    "preset_weekly_monday": "সাপ্তাহিক · সোম সকাল ৯টা",
+    "preset_monthly": "মাসিক · ১লা তারিখ",
+    "curation_schedule_last_run_label": "সর্বশেষ রান",
+    "curation_schedule_disabled_state": "এই এজেন্টের জন্য কিউরেশন নিষ্ক্রিয়",
+    "curation_schedule_disable": "সময়সূচি নিষ্ক্রিয় করুন",
+    "curation_schedule_save": "সময়সূচি সংরক্ষণ করুন"
   },
   "memory_review": {
     "keep_prefix": "রাখুন “",
@@ -481,7 +481,7 @@
     "sent_count": "{count}টি পাঠানো হয়েছে",
     "type_label": "ধরন:",
     "confirm_delete": "মুছে ফেলা নিশ্চিত করুন",
-    "rating_clear": "Clear rating"
+    "rating_clear": "রেটিং সাফ করুন"
   },
   "events": {
     "title": "ইভেন্ট",
@@ -636,7 +636,7 @@
     "recent_activity": "সাম্প্রতিক কার্যক্রম",
     "total_traffic": "মোট ট্রাফিক",
     "total_errors": "মোট ত্রুটি",
-    "tool_performance_empty": "No tool runs in this window",
+    "tool_performance_empty": "এই উইন্ডোতে কোনো টুল রান নেই",
     "metric_help": "মেট্রিক্স সাহায্য",
     "how_calculated": "এটি কীভাবে গণনা করা হয়?",
     "details": "বিস্তারিত",
@@ -1282,13 +1282,13 @@
     "subtitle": "পরবর্তী নির্ধারিত রান",
     "empty": "কোনো নির্ধারিত রান নেই।",
     "never_fired": "প্রথম রানের অপেক্ষায়",
-    "view_all": "View schedules"
+    "view_all": "সময়সূচি দেখুন"
   },
   "vault_recent_changes": {
     "title": "ভল্টের পরিবর্তন",
     "subtitle": "সাম্প্রতিক Obsidian সিঙ্ক",
     "empty": "সাম্প্রতিক কোনো সিঙ্ক কার্যকলাপ নেই।",
-    "view_all": "View sync log"
+    "view_all": "সিঙ্ক লগ দেখুন"
   },
   "heatmap": {
     "title_persona": "গত এক বছরের কার্যকলাপ",
@@ -1760,9 +1760,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "আপনার সংরক্ষিত দৃশ্যগুলো লোড করা যায়নি।",
+      "save_failed_message": "এই দৃশ্যটি সংরক্ষণ করা যায়নি।",
+      "delete_failed_message": "এই দৃশ্যটি মুছে ফেলা যায়নি।"
     }
   },
   "activity_timeline": {

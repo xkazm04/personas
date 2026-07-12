@@ -766,9 +766,9 @@
   },
   "quality_gates": {
     "title": "بوابات الجودة",
-    "action_reject": "Reject",
+    "action_reject": "رفض",
     "action_tag": "Tag",
-    "action_warn": "Warn",
+    "action_warn": "تحذير",
     "loading": "جارٍ التحميل...",
     "error_loading": "خطأ في تحميل الإعداد",
     "active_rules": "{count} قاعدة تصفية نشطة",

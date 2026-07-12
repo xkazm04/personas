@@ -184,22 +184,22 @@
       "tags": "الوسوم",
       "tags_hint": "(مفصولة بفواصل)"
     },
-    "curation_schedule_button": "Schedule",
-    "curation_schedule_button_hint": "Schedule automatic memory curation",
-    "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
-    "curation_schedule_title": "Schedule memory curation",
-    "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
-    "curation_schedule_cron_label": "Schedule (cron)",
-    "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
-    "curation_schedule_presets_label": "Quick picks",
-    "preset_weekly_sunday": "Weekly · Sun 3am",
-    "preset_daily_3am": "Daily · 3am",
-    "preset_weekly_monday": "Weekly · Mon 9am",
-    "preset_monthly": "Monthly · 1st",
-    "curation_schedule_last_run_label": "Last run",
-    "curation_schedule_disabled_state": "Curation is disabled for this agent",
-    "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_button": "جدولة",
+    "curation_schedule_button_hint": "جدولة تنقيح الذكريات تلقائيًا",
+    "curation_schedule_button_no_persona": "اختر وكيلاً لجدولة التنقيح",
+    "curation_schedule_title": "جدولة تنقيح الذكريات",
+    "curation_schedule_description": "تُجري هذه الميزة مراجعة تلقائية للذاكرة وفق جدول متكرر. تصل النتيجة كاقتراح يمكنك تطبيقه أو تجاهله — لن تُمسّ ذكرياتك الفعلية دون تأكيدك.",
+    "curation_schedule_cron_label": "الجدولة (cron)",
+    "curation_schedule_cron_hint": "تعبير cron مكوّن من 5 حقول: الدقائق، الساعات، يوم الشهر، الشهر، يوم الأسبوع.",
+    "curation_schedule_presets_label": "اختيارات سريعة",
+    "preset_weekly_sunday": "أسبوعياً · الأحد 3 صباحاً",
+    "preset_daily_3am": "يومياً · 3 صباحاً",
+    "preset_weekly_monday": "أسبوعياً · الاثنين 9 صباحاً",
+    "preset_monthly": "شهرياً · الأول",
+    "curation_schedule_last_run_label": "آخر تشغيل",
+    "curation_schedule_disabled_state": "التنقيح معطّل لهذا الوكيل",
+    "curation_schedule_disable": "تعطيل الجدولة",
+    "curation_schedule_save": "حفظ الجدولة"
   },
   "memory_review": {
     "keep_prefix": "الاحتفاظ بـ “",
@@ -481,7 +481,7 @@
     "sent_count": "{count} مُرسَل",
     "type_label": "النوع:",
     "confirm_delete": "تأكيد الحذف",
-    "rating_clear": "Clear rating"
+    "rating_clear": "مسح التقييم"
   },
   "events": {
     "title": "الأحداث",
@@ -636,7 +636,7 @@
     "recent_activity": "النشاط الأخير",
     "total_traffic": "إجمالي الزيارات",
     "total_errors": "إجمالي الأخطاء",
-    "tool_performance_empty": "No tool runs in this window",
+    "tool_performance_empty": "لا توجد عمليات تشغيل للأدوات في هذه الفترة",
     "metric_help": "مساعدة المقاييس",
     "how_calculated": "كيف يتم احتساب هذا؟",
     "details": "التفاصيل",
@@ -1282,13 +1282,13 @@
     "subtitle": "التشغيلات المجدولة القادمة",
     "empty": "لا توجد عمليات تشغيل مجدولة.",
     "never_fired": "بانتظار أول تشغيل",
-    "view_all": "View schedules"
+    "view_all": "عرض الجداول"
   },
   "vault_recent_changes": {
     "title": "تغييرات الخزنة",
     "subtitle": "مزامنة Obsidian الأخيرة",
     "empty": "لا يوجد نشاط مزامنة حديث.",
-    "view_all": "View sync log"
+    "view_all": "عرض سجل المزامنة"
   },
   "heatmap": {
     "title_persona": "النشاط خلال العام الماضي",
@@ -1760,9 +1760,9 @@
   },
   "saved_views": {
     "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
+      "load_failed_message": "تعذّر تحميل عروضك المحفوظة.",
+      "save_failed_message": "تعذّر حفظ هذا العرض.",
+      "delete_failed_message": "تعذّر حذف هذا العرض."
     }
   },
   "activity_timeline": {
@@ -1812,7 +1812,7 @@
   "crash_logs": {
     "title": "سجلات الأعطال",
     "no_logs": "لم يتم تسجيل أي سجلات أعطال.",
-    "component_stack_separator": "--- Component Stack ---"
+    "component_stack_separator": "--- مكدس المكوّنات ---"
   },
   "events_list": {
     "save_view_tooltip": "حفظ المرشحات الحالية كعرض",

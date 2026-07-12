@@ -116,8 +116,8 @@
     "generate_icon": "生成",
     "generating_icon": "Generating...",
     "generate_icon_prompt_placeholder": "Describe the icon you want...",
-    "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon": "エージェントのアイコンを選択",
+    "select_agent_icon_desc": "このエージェント用のアイコンを選択してください。ダーク/ライトテーマ用のバリエーションは自動的に表示されます。"
   },
   "reasoning_trace": {
     "system_init": "システム初期化",
@@ -153,10 +153,10 @@
     "active_project": "アクティブなプロジェクト",
     "clear_completed_title": "完了済みおよびキュー済みの項目をクリア",
     "active_twin": "アクティブなツイン",
-    "back_to_home": "Home",
-    "whats_new": "What's New",
-    "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap",
+    "back_to_home": "ホーム",
+    "whats_new": "新着情報",
+    "back_to_plugins": "プラグイン",
+    "roadmap": "ロードマップ",
     "groups_label": "グループ"
   },
   "execution_detail": {

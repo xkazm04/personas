@@ -116,8 +116,8 @@
     "generate_icon": "生成",
     "generating_icon": "Generating...",
     "generate_icon_prompt_placeholder": "Describe the icon you want...",
-    "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon": "选择人格图标",
+    "select_agent_icon_desc": "为此人格选择一个图标，深色/浅色主题版本会自动适配。"
   },
   "reasoning_trace": {
     "system_init": "系统初始化",
@@ -153,10 +153,10 @@
     "active_project": "活跃项目",
     "clear_completed_title": "清除已完成和排队的项目",
     "active_twin": "活跃孪生",
-    "back_to_home": "Home",
-    "whats_new": "What's New",
-    "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap",
+    "back_to_home": "首页",
+    "whats_new": "新功能",
+    "back_to_plugins": "插件",
+    "roadmap": "路线图",
     "groups_label": "分组"
   },
   "execution_detail": {

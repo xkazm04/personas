@@ -43,12 +43,12 @@
   "preview_play": "ステーションをプレビュー",
   "preview_stop": "プレビューを停止",
   "youtube_premium_note": "YouTube ステーションは埋め込みプレーヤーでストリーミングされます — 広告なしの体験には YouTube Premium プランが必要です。",
-  "idle_subtitle": "Curated stations",
+  "idle_subtitle": "厳選されたステーション",
   "kind_youtube": "YouTube",
-  "kind_stream": "Stream",
-  "source_prefix": "Source:",
-  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
-  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
-  "station_toggle_label": "Show in picker",
+  "kind_stream": "ストリーム",
+  "source_prefix": "ソース:",
+  "settings_description": "バックグラウンドで再生される、厳選されたステーションです。種類は2つ — YouTubeのトラックリスト（非表示のIFrameプレーヤーを使用 — 前後の曲はスキップボタンで移動）と、直接のインターネットストリーム（単一の連続ソース — 切り替えはピッカーから）です。コントローラーはアプリのフッター中央にあります。",
+  "enable_description": "既定でオフです。オンにすると、フッター中央にコンパクトなコントローラーが表示されます。設定は再起動後も保持されます。",
+  "station_toggle_label": "ピッカーに表示",
   "auto_resume_description": "オンにすると、アプリを開いた後、初めてラジオが読み込まれたときに、最後に再生していたステーションが自動的に開始されます。デフォルトではオフです。"
 }

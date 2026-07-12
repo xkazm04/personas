@@ -43,12 +43,12 @@
   "preview_play": "معاينة المحطة",
   "preview_stop": "إيقاف المعاينة",
   "youtube_premium_note": "محطات YouTube تبث عبر مشغّل مدمج — يلزم اشتراك YouTube Premium للاستمتاع بتجربة خالية من الإعلانات.",
-  "idle_subtitle": "Curated stations",
+  "idle_subtitle": "محطات مُنتقاة",
   "kind_youtube": "YouTube",
-  "kind_stream": "Stream",
-  "source_prefix": "Source:",
-  "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
-  "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
-  "station_toggle_label": "Show in picker",
+  "kind_stream": "تيار",
+  "source_prefix": "المصدر:",
+  "settings_description": "محطات مُنتقاة تُشغَّل في الخلفية. نوعان: قوائم تشغيل من YouTube (عبر مشغّل IFrame مخفي — استخدم زرَّي التالي/السابق لتخطي المقاطع) وتيارات إنترنت مباشرة (مصدر واحد متواصل — استخدم المنتقى للتبديل بينها). يوجد المتحكّم في منتصف تذييل التطبيق.",
+  "enable_description": "معطّل افتراضيًا. عند التفعيل، يظهر متحكّم مُصغّر في منتصف التذييل. يُتذكَّر اختيارك عبر عمليات إعادة التشغيل.",
+  "station_toggle_label": "إظهار في المنتقى",
   "auto_resume_description": "عند التشغيل، تبدأ آخر محطة تشغيل تلقائيًا في المرة الأولى التي يتم فيها تحميل الراديو بعد فتح التطبيق. إيقاف بشكل افتراضي."
 }

@@ -116,8 +116,8 @@
     "generate_icon": "Vygenerovat",
     "generating_icon": "Generování...",
     "generate_icon_prompt_placeholder": "Popište ikonu, kterou chcete...",
-    "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon": "Výběr ikony agenta",
+    "select_agent_icon_desc": "Zvolte ikonu pro tohoto agenta. Varianty pro tmavý a světlý motiv se vykreslí automaticky."
   },
   "reasoning_trace": {
     "system_init": "Inicializace systému",
@@ -153,10 +153,10 @@
     "active_project": "Aktivní projekt",
     "clear_completed_title": "Vymazat dokončené a zařazené položky",
     "active_twin": "Aktivní Twin",
-    "back_to_home": "Home",
-    "whats_new": "What's New",
-    "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap",
+    "back_to_home": "Domů",
+    "whats_new": "Co je nového",
+    "back_to_plugins": "Pluginy",
+    "roadmap": "Plán vývoje",
     "groups_label": "Skupiny"
   },
   "execution_detail": {

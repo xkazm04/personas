@@ -141,7 +141,7 @@
   "confirm_destructive_discard_event": "丢弃事件",
   "confirm_destructive_discard_event_warning": "此死信事件将被永久丢弃。",
   "inactive": "未激活",
-  "rename_to": "Rename to",
+  "rename_to": "重命名为",
   "agent_count_one": "{count} 个智能体",
   "agent_count_other": "{count} 个智能体",
   "trigger_count_one": "{count} 个触发器",

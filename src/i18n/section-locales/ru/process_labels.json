@@ -15,6 +15,6 @@
   "failed_suffix": "Не удалось",
   "pending_reviews_one": "{count} ожидающая проверка",
   "pending_reviews_other": "{count} ожидающих проверок",
-  "team_assignment_failed": "Team Assignment",
-  "team_assignment_unmatched": "Team Assignment"
+  "team_assignment_failed": "Командное назначение",
+  "team_assignment_unmatched": "Командное назначение"
 }

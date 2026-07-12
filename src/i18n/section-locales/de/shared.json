@@ -116,8 +116,8 @@
     "generate_icon": "Generieren",
     "generating_icon": "Wird generiert...",
     "generate_icon_prompt_placeholder": "Beschreiben Sie das gewuenschte Symbol...",
-    "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon": "Agenten-Icon auswählen",
+    "select_agent_icon_desc": "Wählen Sie ein Icon für diesen Agenten aus. Passende Hell-/Dunkel-Varianten werden automatisch verwendet."
   },
   "reasoning_trace": {
     "system_init": "System-Init",
@@ -153,8 +153,8 @@
     "active_project": "Aktives Projekt",
     "clear_completed_title": "Abgeschlossene und in der Warteschlange befindliche Einträge löschen",
     "active_twin": "Aktiver Twin",
-    "back_to_home": "Home",
-    "whats_new": "What's New",
+    "back_to_home": "Start",
+    "whats_new": "Neuigkeiten",
     "back_to_plugins": "Plugins",
     "roadmap": "Roadmap",
     "groups_label": "Gruppen"

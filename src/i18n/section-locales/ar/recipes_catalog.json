@@ -71,8 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "اختر شخصية من الشريط الجانبي أولاً.",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup_one": "Wire {count} more connector, then adopt",
-  "adopt_tooltip_needs_setup_other": "Wire {count} more connectors, then adopt",
+  "adopt_tooltip_needs_setup_one": "اربط {count} موصّل إضافي، ثم اعتمد",
+  "adopt_tooltip_needs_setup_other": "اربط {count} موصّلات إضافية، ثم اعتمد",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "اعتمد هذه الوصفة في شخصيتك المحددة",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -231,5 +231,5 @@
   "update_badge_detail_tooltip": "تم الاعتماد على الإصدار v{from}؛ الكتالوج الآن في الإصدار v{to}. أزل وأعد الاعتماد للتحديث.",
   "update_badge_tooltip": "تتوفر نسخة أحدث من هذه القدرة — أزل وأعد الاعتماد للتحديث",
   "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tags"
+  "tags_heading": "الوسوم"
 }
