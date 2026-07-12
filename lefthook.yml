@@ -38,6 +38,18 @@ pre-commit:
       glob: "src/i18n/locales/*.json"
       run: node scripts/i18n/check-coverage.mjs --strict
 
+    # Key parity (above) is only half the contract: it asserts a key EXISTS in
+    # every locale, never that its VALUE was translated. The runtime `t` Proxy
+    # deep-merges English under every locale, so an untranslated value renders
+    # as English with no warning. That blind spot hid ~57k raw-English strings
+    # (~24% of the app) behind a green "0 missing" report until 2026-07-12.
+    # This gate fails when a translatable, LIVE (source-referenced) value is
+    # still byte-identical to English. Dead keys and docs/i18n allowlist entries
+    # are excluded. Close a gap with the i18n-translate skill (`gaps all`).
+    - name: i18n-no-untranslated
+      glob: "src/i18n/locales/*.json"
+      run: node scripts/i18n/check-untranslated.mjs --strict
+
 pre-push:
   jobs:
     - name: typecheck
