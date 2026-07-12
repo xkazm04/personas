@@ -53,6 +53,7 @@ const CompanionPluginPage = lazyRetry(() => import('@/features/plugins/companion
 const PluginBrowsePage = lazyRetry(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazyRetry(() => import('@/features/schedules/components/ScheduleTimeline'));
 const StudioPage = lazyRetry(() => import('@/features/studio/StudioPage'));
+const ScraperPage = lazyRetry(() => import('@/features/scraper/ScraperPage'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
@@ -280,6 +281,9 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'companion') {
         return <ErrorBoundary onGoHome={goHome} name="Companion"><Suspense fallback={SectionFallback}><CompanionPluginPage /></Suspense></ErrorBoundary>;
+      }
+      if (pluginTab === 'scraper' && import.meta.env.DEV) {
+        return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={SectionFallback}><ScraperPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary onGoHome={goHome} name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;

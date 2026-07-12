@@ -1,5 +1,4 @@
 {
-  "dismiss_error": "Bỏ qua lỗi",
   "boundary_title": "Đã xảy ra lỗi không mong muốn trong {name}",
   "boundary_title_generic": "Đã xảy ra lỗi không mong muốn",
   "boundary_body": "Đừng lo -- dữ liệu của bạn an toàn. Bạn có thể thử lại hoặc quay về bảng điều khiển.",
@@ -10,6 +9,7 @@
   "boundary_dev": "Dành cho nhà phát triển",
   "boundary_no_stack": "Không có stack trace",
   "go_back": "Quay lại",
+  "dismiss_error": "Bỏ qua lỗi",
   "not_found": "Không tìm thấy tài nguyên yêu cầu",
   "validation": "Đầu vào không hợp lệ: {detail}",
   "auth": "Xác thực thất bại -- kiểm tra thông tin xác thực của bạn",

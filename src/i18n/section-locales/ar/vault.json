@@ -1,6 +1,24 @@
 {
+  "title": "الخزنة",
+  "subtitle": "اختر طريقة إضافة بيانات الاعتماد",
+  "add_from_catalog": "إضافة من الكتالوج",
+  "ai_designed": "بيانات اعتماد مصمّمة بالذكاء الاصطناعي",
   "workspace_connect": "ربط مساحة العمل",
   "quick_start": "بداية سريعة",
+  "health": {
+    "healthy": "سليم",
+    "needs_attention": "يحتاج انتباهًا",
+    "untested": "غير مُختبَر"
+  },
+  "list": {
+    "no_credentials": "لم يتم اكتشاف خدمات مصادق عليها. اختر يدويًا أدناه.",
+    "delete_confirm": "هل تريد حذف بيانات الاعتماد هذه؟",
+    "blast_radius": "نطاق التأثير",
+    "no_dependencies": "لا يعتمد أي وكيل على بيانات الاعتماد هذه. آمن للتعديل أو الحذف.",
+    "affected_agents": "الوكلاء المتأثرون",
+    "affected_events": "الأحداث المتأثرة",
+    "sort_label": "ترتيب:"
+  },
   "import": {
     "title": "مصدر الاستيراد",
     "picker_subtitle": "اختر مصدر أسرارك",
@@ -26,23 +44,6 @@
     "import_secrets_other": "استيراد {count} أسرار"
   },
   "features": {
-    "anomaly": {
-      "healthy": "سليم",
-      "transient_issues": "مشاكل مؤقتة",
-      "degrading": "يتدهور",
-      "permanent_errors": "أخطاء مستمرة",
-      "critical": "حرج",
-      "stale": "قديم",
-      "samples": "{count} فحص",
-      "permanent": "مستمر: {rate}",
-      "transient": "مؤقت: {rate}",
-      "tolerance": "التسامح: {rate}"
-    },
-    "intelligence": {
-      "operation": "العملية",
-      "detail": "التفاصيل",
-      "time": "الوقت"
-    },
     "anomaly_detected": "تم اكتشاف خلل: بيانات الاعتماد تفشل فجأة بعد نجاح سابق. قد يكون إلغاءً.",
     "history": "السجلّ",
     "event_triggers": "مُشغّلات الأحداث",
@@ -66,6 +67,18 @@
       "enable_failed": "فشل تفعيل التدوير: {error}",
       "last_rotated": "آخر تدوير {time}"
     },
+    "anomaly": {
+      "healthy": "سليم",
+      "transient_issues": "مشاكل مؤقتة",
+      "degrading": "يتدهور",
+      "permanent_errors": "أخطاء مستمرة",
+      "critical": "حرج",
+      "stale": "قديم",
+      "samples": "{count} فحص",
+      "permanent": "مستمر: {rate}",
+      "transient": "مؤقت: {rate}",
+      "tolerance": "التسامح: {rate}"
+    },
     "rotation_badge": {
       "disabled": "معطّل",
       "perm_errors": "أخطاء مستمرة",
@@ -80,6 +93,11 @@
       "op_deleted": "تم الحذف",
       "op_healthcheck": "اختبار الاتصال",
       "filter_all": "الكل"
+    },
+    "intelligence": {
+      "operation": "العملية",
+      "detail": "التفاصيل",
+      "time": "الوقت"
     }
   },
   "negotiator": {
@@ -187,10 +205,15 @@
   "body": {
     "authorizing": "جارٍ التفويض مع {name}...",
     "authorize_with": "التفويض مع {name}",
-    "consent_completed": "اكتمل موافقة {name} في {time}",
     "authorize_hint": "يفتح صفحة تسجيل الدخول إلى {name} ويحفظ وصولك بعد موافقتك.",
+    "consent_completed": "اكتمل موافقة {name} في {time}",
     "update_failed": "فشل تحديث بيانات الاعتماد",
     "delete_credential": "حذف بيانات الاعتماد"
+  },
+  "connector": {
+    "filter_all": "الكل",
+    "filter_connected": "المتصلة",
+    "filter_available": "المتاحة"
   },
   "auto_cred": {
     "guided_setup": "الإعداد الموجَّه",
@@ -231,6 +254,38 @@
     "save_procedure": "حفظ الإجراء",
     "procedure_saved": "تم حفظ الإجراء"
   },
+  "vector": {
+    "documents_tab": "المستندات",
+    "search_tab": "البحث",
+    "settings_tab": "الإعدادات",
+    "ingest_title": "إضافة مستندات",
+    "ingest_hint": "أسقط الملفات هنا أو انقر للتصفح",
+    "ingest_drop": "أسقط الملفات للإضافة",
+    "ingest_supported": "المدعوم: txt، md، html، csv، json، yaml، ملفات الكود",
+    "starting_ingestion": "جارٍ معالجة الملفات...",
+    "no_valid_files": "لم تُعثَر على مسارات ملفات صالحة. جرب إسقاط ملفات فردية.",
+    "no_documents": "لا توجد مستندات بعد",
+    "no_documents_hint": "أسقط الملفات هنا أو الصق نصاً أو امسح مجلداً لبدء بناء قاعدة المعرفة.",
+    "refresh": "تحديث",
+    "paste_text": "لصق نص",
+    "directory": "المجلد",
+    "delete_document": "حذف المستند",
+    "document_count_one": "{count} مستند",
+    "document_count_other": "{count} مستندات",
+    "show_full": "عرض المقتطف كاملاً",
+    "show_less": "عرض أقل",
+    "copy_content": "نسخ المحتوى",
+    "kb_info": "معلومات قاعدة المعرفة",
+    "embedding_model": "نموذج البحث",
+    "dimensions": "الأبعاد",
+    "chunk_size": "حجم القسم",
+    "chunk_overlap": "تداخل الأقسام",
+    "statistics": "الإحصاءات",
+    "documents": "المستندات",
+    "chunks": "الأقسام",
+    "local_embedding": "بحث محلي",
+    "local_embedding_hint": "يعمل فهرسة البحث محلياً باستخدام {model} ({dims}-بُعد). لا تغادر البيانات جهازك. يُحمَّل النموذج (~23 ميغابايت) عند الاستخدام الأول ويُحفَظ محلياً."
+  },
   "design_modal": {
     "title": "تصميم بيانات الاعتماد",
     "error_title": "حدث خطأ ما",
@@ -246,12 +301,32 @@
     "start_over": "البدء من جديد",
     "try_again_with": "المحاولة مجدداً بطلبك"
   },
+  "desktop": {
+    "installed": "مثبّت",
+    "running": "يعمل",
+    "not_installed": "غير مثبّت"
+  },
+  "graph": {
+    "no_dependencies": "لا توجد تبعيات",
+    "connection_count_one": "{count} اتصال",
+    "connection_count_other": "{count} اتصالات",
+    "dep_count_one": "{count} تبعية",
+    "dep_count_other": "{count} تبعيات",
+    "not_tested": "غير مختبر",
+    "healthy": "سليم",
+    "unhealthy": "غير سليم"
+  },
+  "wizard": {
+    "detected": "مكتشف ({count})",
+    "available": "متاح ({count})",
+    "already_added": "تمت الإضافة مسبقاً ({count})",
+    "no_match": "لا توجد خدمات مطابقة لـ\"{search}\"",
+    "already_added_badge": "تمت الإضافة",
+    "local": "محلي",
+    "cli_auth": "مصادقة CLI",
+    "session": "الجلسة"
+  },
   "playground": {
-    "mcp_run": "تشغيل",
-    "mcp_error": "خطأ",
-    "mcp_success": "نجاح",
-    "mcp_empty": "(فارغ)",
-    "response_empty": "(استجابة فارغة)",
     "tab_overview": "نظرة عامة",
     "tab_api_explorer": "مستكشف API",
     "tab_recipes": "الوصفات",
@@ -265,9 +340,14 @@
     "path_placeholder": "/api/v1/resource",
     "sending": "جارٍ الإرسال...",
     "mcp_input_schema": "مخطط المدخل",
+    "mcp_run": "تشغيل",
+    "mcp_error": "خطأ",
+    "mcp_success": "نجاح",
+    "mcp_empty": "(فارغ)",
     "mcp_discover": "اكتشف أدوات خادم MCP",
     "mcp_discover_hint": "اتصل بخادم MCP لاكتشاف الأدوات المتاحة واختبارها.",
     "mcp_discover_button": "اكتشف الأدوات",
+    "response_empty": "(استجابة فارغة)",
     "header": "الترويسة",
     "value": "القيمة",
     "path_parameters": "معاملات المسار",
@@ -641,14 +721,27 @@
     "title_dependencies": "التبعيات",
     "title_databases": "قواعد البيانات"
   },
+  "bulk_healthcheck": {
+    "title": "نتائج فحص الصحة",
+    "needs_attention": "يحتاج انتباهاً",
+    "slowest_responses": "أبطأ الاستجابات",
+    "passed_count": "{count} ناجح",
+    "failed_count": "{count} فاشل",
+    "total_count": "{count} الإجمالي"
+  },
+  "health_bar": {
+    "healthy": "سليم",
+    "needs_attention": "يحتاج انتباهاً",
+    "untested": "غير مختبر"
+  },
   "breadcrumb": {
     "aria_label": "مسار التنقل في الخزنة"
   },
   "credential_card": {
-    "delete_credential": "حذف بيانات الاعتماد",
     "deleting": "جارٍ حذف {name}...",
     "no_connector": "لا يتوفر تعريف موصّل لهذا النوع من بيانات الاعتماد.",
     "stored_result": "نتيجة اختبار الاتصال المخزنة",
+    "delete_credential": "حذف بيانات الاعتماد",
     "corrupted": "تالف",
     "corrupted_tooltip": "بيانات الدارة المخزنة مؤقتاً للفحص الصحي تالفة. درجات الشذوذ غير متاحة حتى يُكتب فوق البيانات التالفة بفحص ناجح.",
     "field_count_one": "{count} حقل",
@@ -690,6 +783,21 @@
     "label_type": "النوع",
     "unverified_warning": "تعذّر التحقق من جميع التبعيات. قد لا تظهر بعض الوكلاء أو الأتمتة المتصلة."
   },
+  "card_body": {
+    "failed_update": "فشل تحديث بيانات الاعتماد",
+    "authorizing_with": "جارٍ التفويض مع {name}...",
+    "authorize_with": "التفويض مع {name}",
+    "authorize_hint": "يطلق موافقة {name} المُدارة من التطبيق ويُحدّث رمز التحديث بعد الموافقة.",
+    "consent_completed": "اكتملت موافقة {name} في {time}"
+  },
+  "card_details": {
+    "tab_intelligence": "الذكاء",
+    "tab_rotation": "التدوير",
+    "tab_token_lifetime": "عمر الرمز",
+    "tab_services": "الخدمات ({count})",
+    "tab_events": "الأحداث ({count})",
+    "tab_audit": "التدقيق"
+  },
   "intelligence_tab": {
     "loading": "جارٍ تحميل بيانات الذكاء",
     "tab_overview": "نظرة عامة",
@@ -710,6 +818,18 @@
     "link_structural": "هيكلي",
     "link_observed": "ملاحَظ",
     "via_connector": "عبر {connector}"
+  },
+  "token_metrics": {
+    "loading": "جارٍ تحميل المقاييس...",
+    "no_metrics": "لم تُسجَّل مقاييس تحديث الرمز بعد. ستظهر المقاييس بعد أول تحديث لرمز OAuth.",
+    "trend_warning": "عمر الرمز في تراجع -- احتمال تقييد من المزوّد أو تغيير سياسة.",
+    "total_refreshes": "إجمالي التحديثات",
+    "failure_rate": "معدل الفشل",
+    "avg_lifetime": "متوسط العمر",
+    "avg_drift": "متوسط الانحراف",
+    "recent_ttls": "مدد TTL الأخيرة (الأحدث أولاً)",
+    "recent_refreshes": "التحديثات الأخيرة",
+    "fallback_used": "استُخدم البديل ({fallback}ث) في {rate}% من عمليات التحديث ({count}/{total}) — المزوّد يحذف"
   },
   "reauth_banner": {
     "access_revoked": ") -- تم إلغاء الوصول. يرجى إعادة التصريح لاستئناف الأتمتة.",
@@ -864,6 +984,66 @@
     "health_failing": "فاشل",
     "health_untested": "غير مُختبر"
   },
+  "wizard_detect": {
+    "no_services": "لا توجد خدمات مطابقة لـ\"{search}\"",
+    "select_services": "اختر الخدمات لإضافة بيانات الاعتماد، أو امسح للاكتشاف التلقائي.",
+    "scanning": "جارٍ مسح أدوات CLI وجلسات المتصفح...",
+    "scan_button": "مسح الخدمات المصادَق عليها",
+    "search_services": "بحث في الخدمات...",
+    "desktop_bridge": "جسر سطح المكتب -- مكتشَف تلقائياً",
+    "batch_complete": "اكتمل الإعداد الدفعي",
+    "skip_service": "تخطي هذه الخدمة",
+    "no_filter_match": "جرب مصطلح بحث مختلفاً أو امسح الفلتر.",
+    "set_up_credentials": "إعداد بيانات الاعتماد",
+    "clear_selection": "مسح التحديد",
+    "set_up_services": "إعداد {count} خدمة{plural}",
+    "setting_up": "جارٍ إعداد {current} من {total}",
+    "wizard_title": "معالج إعداد بيانات الاعتماد",
+    "choose_service": "اختر خدمة للإعداد",
+    "ai_walk_description": "سيرشدك الذكاء الاصطناعي خطوة بخطوة للحصول على بيانات اعتماد API.",
+    "wizard_subtitle": "إعداد بيانات اعتماد موجَّه بالذكاء الاصطناعي",
+    "wizard_subtitle_batch": "جارٍ إعداد {count} خدمة{plural}"
+  },
+  "autopilot": {
+    "title": "API Autopilot",
+    "input_hint": "الصق رابط مواصفة OpenAPI أو محتواها لإنشاء موصّل تلقائياً",
+    "preview_hint": "راجع API المحلَّل واختر نقاط النهاية للتضمين",
+    "generated_hint": "تم إنشاء موصّلك بنجاح",
+    "connector_generated": "تم إنشاء الموصّل بنجاح",
+    "api_playground": "ملعب API",
+    "api_playground_hint": "اختبر أدوات API المُنشأة قبل استخدامها",
+    "paste_spec": "لصق مواصفة OpenAPI (JSON أو YAML)",
+    "valid_url_error": "أدخل رابطاً صالحاً (مثال: https://api.example.com/openapi.json)",
+    "authentication": "المصادقة",
+    "connector_name": "اسم الموصّل",
+    "color": "اللون",
+    "endpoints_selected": "نقاط النهاية ({selected}/{total} مختارة)",
+    "generating": "جارٍ الإنشاء...",
+    "generate_connector": "إنشاء الموصّل ({count} أداة)",
+    "base_url": "URL الأساسي",
+    "headers_label": "الترويسات",
+    "header_name_placeholder": "اسم الترويسة",
+    "query_parameters": "معاملات الاستعلام",
+    "param_name_placeholder": "اسم المعامل",
+    "request_body": "جسم الطلب (JSON)",
+    "from_url": "من URL",
+    "paste_content": "لصق المحتوى",
+    "openapi_spec_url": "URL لمواصفة OpenAPI",
+    "openapi_format_hint": "يدعم مواصفات OpenAPI 3.x و Swagger 2.x بصيغة JSON أو YAML",
+    "parsing_spec": "جارٍ تحليل المواصفة...",
+    "parse_analyze": "تحليل وفحص",
+    "connector_in_catalog": "أصبح {connectorLabel} متاحاً الآن في فهرس الموصّلات مع {toolCount} من تعريفات الأدوات.",
+    "generated_tools": "الأدوات المُولَّدة ({count})",
+    "credential_fields": "حقول بيانات الاعتماد",
+    "open_playground": "فتح ساحة التجربة",
+    "copy_connector_id": "نسخ معرّف الموصّل",
+    "go_to_catalog": "الذهاب إلى الفهرس",
+    "response_headers": "رؤوس الاستجابة ({count})",
+    "base_url_placeholder": "https://api.example.com",
+    "openapi_url_placeholder": "https://api.example.com/openapi.json",
+    "auth_schemes": "مخططات المصادقة",
+    "body_placeholder": "{ \"key\": \"value\" }"
+  },
   "foraging": {
     "no_credentials_found": "لم تُعثَر على بيانات اعتماد",
     "no_credentials_hint": "جرب ضبط متغيّرات بيئة مثل OPENAI_API_KEY أو إعداد ~/.aws/credentials.",
@@ -996,6 +1176,18 @@
     "sort_most_used_with_recipes": "الأكثر استخدامًا مع الوصفات",
     "new_connector_ribbon": "New",
     "new_connector_tooltip": "أُضيف خلال آخر 30 يومًا"
+  },
+  "cli_capture": {
+    "cta": "استيراد من CLI المحلي",
+    "hint": "استخدم CLI محلياً مُسجَّل الدخول بدلاً من لصق مفتاح API.",
+    "running": "جارٍ تشغيل CLI المحلي...",
+    "success": "تم التقاط بيانات الاعتماد من CLI",
+    "token_ttl_notice": "ينتهي هذا الرمز خلال {seconds} ث وسيتم تحديثه تلقائياً.",
+    "source_label": "CLI",
+    "missing_binary": "`{binary}` غير مُثبَّت أو ليس في موقع مسموح به.",
+    "unauthenticated": "أنت غير مُسجَّل الدخول في {binary}. {instruction}",
+    "capture_failed": "فشل التقاط CLI: {detail}",
+    "timeout": "انتهت مهلة التقاط CLI. جرّب تشغيل الأمر يدوياً أولاً."
   },
   "schemas": {
     "none_configured": "لا شيء مضبوط.",
@@ -1212,6 +1404,11 @@
     "retry_authorized": "لقد فوّضت -- إعادة المحاولة",
     "retry_failed": "فشلت إعادة المحاولة"
   },
+  "rotation_insight": {
+    "perm_errors": "أخطاء دائمة مكتشفة -- تم محاولة التدوير، جارٍ التنبيه.",
+    "degrading": "تدهور مستمر -- تم تشغيل التدوير الاستباقي.",
+    "backoff": "إخفاقات مؤقتة -- التراجع الأسي نشط."
+  },
   "schema_configs": {
     "mcp": {
       "title": "خادم MCP",
@@ -1395,202 +1592,5 @@
     "time_tracking": "تتبع الوقت",
     "vector_search": "البحث المتجهي",
     "web_scraping": "كشط الويب"
-  },
-  "title": "الخزنة",
-  "subtitle": "اختر طريقة إضافة بيانات الاعتماد",
-  "add_from_catalog": "إضافة من الكتالوج",
-  "ai_designed": "بيانات اعتماد مصمّمة بالذكاء الاصطناعي",
-  "health": {
-    "healthy": "سليم",
-    "needs_attention": "يحتاج انتباهًا",
-    "untested": "غير مُختبَر"
-  },
-  "list": {
-    "no_credentials": "لم يتم اكتشاف خدمات مصادق عليها. اختر يدويًا أدناه.",
-    "delete_confirm": "هل تريد حذف بيانات الاعتماد هذه؟",
-    "blast_radius": "نطاق التأثير",
-    "no_dependencies": "لا يعتمد أي وكيل على بيانات الاعتماد هذه. آمن للتعديل أو الحذف.",
-    "affected_agents": "الوكلاء المتأثرون",
-    "affected_events": "الأحداث المتأثرة",
-    "sort_label": "ترتيب:"
-  },
-  "connector": {
-    "filter_all": "الكل",
-    "filter_connected": "المتصلة",
-    "filter_available": "المتاحة"
-  },
-  "vector": {
-    "documents_tab": "المستندات",
-    "search_tab": "البحث",
-    "settings_tab": "الإعدادات",
-    "ingest_title": "إضافة مستندات",
-    "ingest_hint": "أسقط الملفات هنا أو انقر للتصفح",
-    "ingest_drop": "أسقط الملفات للإضافة",
-    "ingest_supported": "المدعوم: txt، md، html، csv، json، yaml، ملفات الكود",
-    "starting_ingestion": "جارٍ معالجة الملفات...",
-    "no_valid_files": "لم تُعثَر على مسارات ملفات صالحة. جرب إسقاط ملفات فردية.",
-    "no_documents": "لا توجد مستندات بعد",
-    "no_documents_hint": "أسقط الملفات هنا أو الصق نصاً أو امسح مجلداً لبدء بناء قاعدة المعرفة.",
-    "refresh": "تحديث",
-    "paste_text": "لصق نص",
-    "directory": "المجلد",
-    "delete_document": "حذف المستند",
-    "document_count_one": "{count} مستند",
-    "document_count_other": "{count} مستندات",
-    "show_full": "عرض المقتطف كاملاً",
-    "show_less": "عرض أقل",
-    "copy_content": "نسخ المحتوى",
-    "kb_info": "معلومات قاعدة المعرفة",
-    "embedding_model": "نموذج البحث",
-    "dimensions": "الأبعاد",
-    "chunk_size": "حجم القسم",
-    "chunk_overlap": "تداخل الأقسام",
-    "statistics": "الإحصاءات",
-    "documents": "المستندات",
-    "chunks": "الأقسام",
-    "local_embedding": "بحث محلي",
-    "local_embedding_hint": "يعمل فهرسة البحث محلياً باستخدام {model} ({dims}-بُعد). لا تغادر البيانات جهازك. يُحمَّل النموذج (~23 ميغابايت) عند الاستخدام الأول ويُحفَظ محلياً."
-  },
-  "desktop": {
-    "installed": "مثبّت",
-    "running": "يعمل",
-    "not_installed": "غير مثبّت"
-  },
-  "graph": {
-    "no_dependencies": "لا توجد تبعيات",
-    "connection_count_one": "{count} اتصال",
-    "connection_count_other": "{count} اتصالات",
-    "dep_count_one": "{count} تبعية",
-    "dep_count_other": "{count} تبعيات",
-    "not_tested": "غير مختبر",
-    "healthy": "سليم",
-    "unhealthy": "غير سليم"
-  },
-  "wizard": {
-    "detected": "مكتشف ({count})",
-    "available": "متاح ({count})",
-    "already_added": "تمت الإضافة مسبقاً ({count})",
-    "no_match": "لا توجد خدمات مطابقة لـ\"{search}\"",
-    "already_added_badge": "تمت الإضافة",
-    "local": "محلي",
-    "cli_auth": "مصادقة CLI",
-    "session": "الجلسة"
-  },
-  "bulk_healthcheck": {
-    "title": "نتائج فحص الصحة",
-    "needs_attention": "يحتاج انتباهاً",
-    "slowest_responses": "أبطأ الاستجابات",
-    "passed_count": "{count} ناجح",
-    "failed_count": "{count} فاشل",
-    "total_count": "{count} الإجمالي"
-  },
-  "health_bar": {
-    "healthy": "سليم",
-    "needs_attention": "يحتاج انتباهاً",
-    "untested": "غير مختبر"
-  },
-  "card_body": {
-    "failed_update": "فشل تحديث بيانات الاعتماد",
-    "authorizing_with": "جارٍ التفويض مع {name}...",
-    "authorize_with": "التفويض مع {name}",
-    "authorize_hint": "يطلق موافقة {name} المُدارة من التطبيق ويُحدّث رمز التحديث بعد الموافقة.",
-    "consent_completed": "اكتملت موافقة {name} في {time}"
-  },
-  "card_details": {
-    "tab_intelligence": "الذكاء",
-    "tab_rotation": "التدوير",
-    "tab_token_lifetime": "عمر الرمز",
-    "tab_services": "الخدمات ({count})",
-    "tab_events": "الأحداث ({count})",
-    "tab_audit": "التدقيق"
-  },
-  "token_metrics": {
-    "loading": "جارٍ تحميل المقاييس...",
-    "no_metrics": "لم تُسجَّل مقاييس تحديث الرمز بعد. ستظهر المقاييس بعد أول تحديث لرمز OAuth.",
-    "trend_warning": "عمر الرمز في تراجع -- احتمال تقييد من المزوّد أو تغيير سياسة.",
-    "total_refreshes": "إجمالي التحديثات",
-    "failure_rate": "معدل الفشل",
-    "avg_lifetime": "متوسط العمر",
-    "avg_drift": "متوسط الانحراف",
-    "recent_ttls": "مدد TTL الأخيرة (الأحدث أولاً)",
-    "recent_refreshes": "التحديثات الأخيرة",
-    "fallback_used": "استُخدم البديل ({fallback}ث) في {rate}% من عمليات التحديث ({count}/{total}) — المزوّد يحذف"
-  },
-  "wizard_detect": {
-    "no_services": "لا توجد خدمات مطابقة لـ\"{search}\"",
-    "select_services": "اختر الخدمات لإضافة بيانات الاعتماد، أو امسح للاكتشاف التلقائي.",
-    "scanning": "جارٍ مسح أدوات CLI وجلسات المتصفح...",
-    "scan_button": "مسح الخدمات المصادَق عليها",
-    "search_services": "بحث في الخدمات...",
-    "desktop_bridge": "جسر سطح المكتب -- مكتشَف تلقائياً",
-    "batch_complete": "اكتمل الإعداد الدفعي",
-    "skip_service": "تخطي هذه الخدمة",
-    "no_filter_match": "جرب مصطلح بحث مختلفاً أو امسح الفلتر.",
-    "set_up_credentials": "إعداد بيانات الاعتماد",
-    "clear_selection": "مسح التحديد",
-    "set_up_services": "إعداد {count} خدمة{plural}",
-    "setting_up": "جارٍ إعداد {current} من {total}",
-    "wizard_title": "معالج إعداد بيانات الاعتماد",
-    "choose_service": "اختر خدمة للإعداد",
-    "ai_walk_description": "سيرشدك الذكاء الاصطناعي خطوة بخطوة للحصول على بيانات اعتماد API.",
-    "wizard_subtitle": "إعداد بيانات اعتماد موجَّه بالذكاء الاصطناعي",
-    "wizard_subtitle_batch": "جارٍ إعداد {count} خدمة{plural}"
-  },
-  "autopilot": {
-    "title": "API Autopilot",
-    "input_hint": "الصق رابط مواصفة OpenAPI أو محتواها لإنشاء موصّل تلقائياً",
-    "preview_hint": "راجع API المحلَّل واختر نقاط النهاية للتضمين",
-    "generated_hint": "تم إنشاء موصّلك بنجاح",
-    "connector_generated": "تم إنشاء الموصّل بنجاح",
-    "api_playground": "ملعب API",
-    "api_playground_hint": "اختبر أدوات API المُنشأة قبل استخدامها",
-    "paste_spec": "لصق مواصفة OpenAPI (JSON أو YAML)",
-    "valid_url_error": "أدخل رابطاً صالحاً (مثال: https://api.example.com/openapi.json)",
-    "authentication": "المصادقة",
-    "connector_name": "اسم الموصّل",
-    "color": "اللون",
-    "endpoints_selected": "نقاط النهاية ({selected}/{total} مختارة)",
-    "generating": "جارٍ الإنشاء...",
-    "generate_connector": "إنشاء الموصّل ({count} أداة)",
-    "base_url": "URL الأساسي",
-    "headers_label": "الترويسات",
-    "header_name_placeholder": "اسم الترويسة",
-    "query_parameters": "معاملات الاستعلام",
-    "param_name_placeholder": "اسم المعامل",
-    "request_body": "جسم الطلب (JSON)",
-    "from_url": "من URL",
-    "paste_content": "لصق المحتوى",
-    "openapi_spec_url": "URL لمواصفة OpenAPI",
-    "openapi_format_hint": "يدعم مواصفات OpenAPI 3.x و Swagger 2.x بصيغة JSON أو YAML",
-    "parsing_spec": "جارٍ تحليل المواصفة...",
-    "parse_analyze": "تحليل وفحص",
-    "connector_in_catalog": "أصبح {connectorLabel} متاحاً الآن في فهرس الموصّلات مع {toolCount} من تعريفات الأدوات.",
-    "generated_tools": "الأدوات المُولَّدة ({count})",
-    "credential_fields": "حقول بيانات الاعتماد",
-    "open_playground": "فتح ساحة التجربة",
-    "copy_connector_id": "نسخ معرّف الموصّل",
-    "go_to_catalog": "الذهاب إلى الفهرس",
-    "response_headers": "رؤوس الاستجابة ({count})",
-    "base_url_placeholder": "https://api.example.com",
-    "openapi_url_placeholder": "https://api.example.com/openapi.json",
-    "auth_schemes": "مخططات المصادقة",
-    "body_placeholder": "{ \"key\": \"value\" }"
-  },
-  "cli_capture": {
-    "cta": "استيراد من CLI المحلي",
-    "hint": "استخدم CLI محلياً مُسجَّل الدخول بدلاً من لصق مفتاح API.",
-    "running": "جارٍ تشغيل CLI المحلي...",
-    "success": "تم التقاط بيانات الاعتماد من CLI",
-    "token_ttl_notice": "ينتهي هذا الرمز خلال {seconds} ث وسيتم تحديثه تلقائياً.",
-    "source_label": "CLI",
-    "missing_binary": "`{binary}` غير مُثبَّت أو ليس في موقع مسموح به.",
-    "unauthenticated": "أنت غير مُسجَّل الدخول في {binary}. {instruction}",
-    "capture_failed": "فشل التقاط CLI: {detail}",
-    "timeout": "انتهت مهلة التقاط CLI. جرّب تشغيل الأمر يدوياً أولاً."
-  },
-  "rotation_insight": {
-    "perm_errors": "أخطاء دائمة مكتشفة -- تم محاولة التدوير، جارٍ التنبيه.",
-    "degrading": "تدهور مستمر -- تم تشغيل التدوير الاستباقي.",
-    "backoff": "إخفاقات مؤقتة -- التراجع الأسي نشط."
   }
 }

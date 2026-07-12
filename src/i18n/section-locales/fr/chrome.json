@@ -16,6 +16,11 @@
   "update_install_when_idle": "Installer une fois inactif",
   "update_install_when_idle_status": "La mise à jour s’installera une fois {count} tâche(s) en cours terminées.",
   "update_keep_working": "Continuer à travailler",
+  "expand_sidebar": "Développer la barre latérale",
+  "collapse_sidebar": "Réduire la barre latérale",
+  "network_settings": "Paramètres réseau",
+  "dark": "Sombre",
+  "light": "Clair",
   "sign_in_google": "Se connecter avec Google",
   "signed_in": "Connecté",
   "sign_out": "Se déconnecter",
@@ -25,6 +30,7 @@
   "shortcuts": {
     "title": "Raccourcis clavier",
     "subtitle": "Appuyez sur ? à tout moment pour ouvrir cette liste",
+    "open_title": "Raccourcis clavier",
     "section_navigation": "Navigation",
     "section_agents": "Agents",
     "section_editing": "Édition",
@@ -47,8 +53,7 @@
     "nav_mode_notifications": "Afficher/masquer les notifications (mode navigation)",
     "nav_mode_review": "Afficher/masquer la revue humaine (mode navigation)",
     "nav_mode_schedules": "Afficher/masquer les planifications (mode navigation)",
-    "nav_mode_search": "Ouvrir la recherche (mode navigation)",
-    "open_title": "Raccourcis clavier"
+    "nav_mode_search": "Ouvrir la recherche (mode navigation)"
   },
   "tray_schedules": "Planifications",
   "tray_schedules_today": "{count} planifiée(s) aujourd'hui",
@@ -67,10 +72,5 @@
   "tray_acceptance_pending": "{count} objectifs en attente d'acceptation",
   "cli_not_ready_detail": "Personas exécute vos agents sur votre abonnement Claude. Nous n'avons pas pu démarrer une session Claude — assurez-vous que Claude Code CLI est installé et connecté, puis réessayez.",
   "cli_not_ready_retry": "Réessayer",
-  "cli_not_ready_title": "Claude CLI n'est pas prêt",
-  "expand_sidebar": "Développer la barre latérale",
-  "collapse_sidebar": "Réduire la barre latérale",
-  "network_settings": "Paramètres réseau",
-  "dark": "Sombre",
-  "light": "Clair"
+  "cli_not_ready_title": "Claude CLI n'est pas prêt"
 }

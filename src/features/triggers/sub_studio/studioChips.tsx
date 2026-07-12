@@ -4,7 +4,7 @@
  * template or a persona; PatchEndChip renders one end of the pending-patch
  * strip (source, persona target, or system-op target).
  */
-import { Zap, Cog } from 'lucide-react';
+import { Zap, Cog, Store } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { SystemOpKindMeta } from '@/api/systemOps';
@@ -23,6 +23,16 @@ export function SourceChip({ source, personas, completesLabel }: {
           <Icon className="w-3.5 h-3.5" />
         </span>
         <span className="typo-body font-medium text-foreground truncate">{tpl?.label ?? source.triggerType}</span>
+      </span>
+    );
+  }
+  if (source.kind === 'marketplace') {
+    return (
+      <span className="flex items-center gap-2 min-w-0 shrink">
+        <span className="w-7 h-7 rounded-input flex items-center justify-center bg-secondary/60 shrink-0 text-sky-400">
+          <Store className="w-3.5 h-3.5" />
+        </span>
+        <span className="typo-body font-medium text-foreground truncate">{source.label}</span>
       </span>
     );
   }

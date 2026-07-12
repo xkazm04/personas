@@ -16,6 +16,11 @@
   "update_install_when_idle": "Pasang saat senggang",
   "update_install_when_idle_status": "Pembaruan akan dipasang setelah {count} tugas yang berjalan selesai.",
   "update_keep_working": "Lanjutkan bekerja",
+  "expand_sidebar": "Perluas bilah samping",
+  "collapse_sidebar": "Ciutkan bilah samping",
+  "network_settings": "Pengaturan jaringan",
+  "dark": "Gelap",
+  "light": "Terang",
   "sign_in_google": "Masuk dengan Google",
   "signed_in": "Sudah masuk",
   "sign_out": "Keluar",
@@ -25,6 +30,7 @@
   "shortcuts": {
     "title": "Pintasan keyboard",
     "subtitle": "Tekan ? kapan saja untuk membuka daftar ini",
+    "open_title": "Pintasan keyboard",
     "section_navigation": "Navigasi",
     "section_agents": "Agen",
     "section_editing": "Pengeditan",
@@ -47,8 +53,7 @@
     "nav_mode_notifications": "Alihkan notifikasi (mode nav)",
     "nav_mode_review": "Alihkan tinjauan manusia (mode nav)",
     "nav_mode_schedules": "Alihkan jadwal (mode nav)",
-    "nav_mode_search": "Buka pencarian (mode nav)",
-    "open_title": "Pintasan keyboard"
+    "nav_mode_search": "Buka pencarian (mode nav)"
   },
   "tray_schedules": "Jadwal",
   "tray_schedules_today": "{count} terjadwal hari ini",
@@ -67,10 +72,5 @@
   "tray_acceptance_pending": "{count} tujuan menunggu penerimaan Anda",
   "cli_not_ready_detail": "Personas menjalankan agen Anda dengan langganan Claude Anda. Kami tidak dapat memulai sesi Claude — pastikan Claude Code CLI sudah terpasang dan masuk, lalu coba lagi.",
   "cli_not_ready_retry": "Coba lagi",
-  "cli_not_ready_title": "Claude CLI belum siap",
-  "expand_sidebar": "Perluas bilah samping",
-  "collapse_sidebar": "Ciutkan bilah samping",
-  "network_settings": "Pengaturan jaringan",
-  "dark": "Gelap",
-  "light": "Terang"
+  "cli_not_ready_title": "Claude CLI belum siap"
 }

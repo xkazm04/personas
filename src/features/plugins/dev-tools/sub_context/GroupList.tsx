@@ -22,6 +22,10 @@ interface GroupListProps {
   onScanContext?: (contextId: string) => void;
   scanningContextId?: string | null;
   scanBusy?: boolean;
+  /** contextId → how many use cases slice through it. */
+  useCaseCoverageByContext?: Map<string, number>;
+  /** Contexts spanned by the selected use case — the slice, made visible. */
+  highlightedContextIds?: Set<string>;
 }
 
 const CONTEXTS_INITIAL_RENDER = 30;
@@ -31,6 +35,7 @@ export default function GroupList({
   showNewGroup, onShowNewGroup, onCreateGroup, onScan,
   goalCoverageByContext,
   ideaCoverageByContext, kpiCoverageByContext, onScanContext, scanningContextId, scanBusy,
+  useCaseCoverageByContext, highlightedContextIds,
 }: GroupListProps) {
   const { t, tx } = useTranslation();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -126,6 +131,13 @@ export default function GroupList({
                                     firstGoalId={coverage?.firstGoalId}
                                     ideaCount={ideaCoverageByContext?.get(ctx.id) ?? 0}
                                     kpiCount={kpiCoverageByContext?.get(ctx.id) ?? 0}
+                                    useCaseCount={useCaseCoverageByContext?.get(ctx.id) ?? 0}
+                                    highlighted={highlightedContextIds?.has(ctx.id) ?? false}
+                                    dimmed={
+                                      highlightedContextIds != null &&
+                                      highlightedContextIds.size > 0 &&
+                                      !highlightedContextIds.has(ctx.id)
+                                    }
                                     onScan={onScanContext ? () => onScanContext(ctx.id) : undefined}
                                     scanning={scanningContextId === ctx.id}
                                     scanDisabled={scanBusy}

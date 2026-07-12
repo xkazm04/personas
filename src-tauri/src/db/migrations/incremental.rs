@@ -5131,6 +5131,107 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Split the scraper config's overloaded `name` into a short title + a
+    // separate use-case description (Phase 1b-2 follow-up).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "scraper_configs.description",
+            description: "scraper_configs: add description column",
+            already_applied: |conn| {
+                Ok(!has_table(conn, "scraper_configs")?
+                    || has_column(conn, "scraper_configs", "description")?)
+            },
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE scraper_configs ADD COLUMN description TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // ---------------------------------------------------------------------
+    // Use-case slice layer (docs/plans/use-case-slice-layer.md)
+    //
+    // A use case is a *slice through* contexts, not a subdivision of one: the
+    // behavioral unit ("checkout conversion") that a KPI can actually own,
+    // where a context is a code-ownership partition that outcomes cut across.
+    // `slug` is the telemetry join key — it matches the use-case name the LLM
+    // Overview already folds observability pinpoints by.
+    // ---------------------------------------------------------------------
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_use_cases",
+            description: "Use-case slice layer: behavioral units spanning contexts, the narrowest KPI scope",
+            already_applied: |conn| has_table(conn, "dev_use_cases"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_use_cases (
+                        id                 TEXT PRIMARY KEY,
+                        project_id         TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+                        name               TEXT NOT NULL,
+                        slug               TEXT NOT NULL,
+                        description        TEXT,
+                        kind               TEXT NOT NULL DEFAULT 'capability'
+                                           CHECK(kind IN ('user_flow','capability','integration','ops')),
+                        primary_context_id TEXT REFERENCES dev_contexts(id) ON DELETE SET NULL,
+                        status             TEXT NOT NULL DEFAULT 'active'
+                                           CHECK(status IN ('proposed','active','archived')),
+                        created_by         TEXT NOT NULL DEFAULT 'user'
+                                           CHECK(created_by IN ('user','scan','backfill')),
+                        pinned             INTEGER NOT NULL DEFAULT 0,
+                        rationale          TEXT,
+                        created_at         TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at         TEXT NOT NULL DEFAULT (datetime('now')),
+                        UNIQUE(project_id, slug)
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_dev_use_cases_project
+                     ON dev_use_cases(project_id, status);",
+                )?;
+                // The slice. Cascades on either side; the scan's
+                // snapshot/reconcile pass rebuilds it by context NAME after a
+                // full rescan recreates context rows under fresh ids.
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_use_case_contexts (
+                        use_case_id TEXT NOT NULL REFERENCES dev_use_cases(id) ON DELETE CASCADE,
+                        context_id  TEXT NOT NULL REFERENCES dev_contexts(id) ON DELETE CASCADE,
+                        PRIMARY KEY (use_case_id, context_id)
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_dev_use_case_contexts_context
+                     ON dev_use_case_contexts(context_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_kpis.use_case_id",
+            description: "Use-case-scoped KPIs: the narrowest KPI scope (narrower than a single context)",
+            already_applied: |conn| has_column(conn, "dev_kpis", "use_case_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_kpis ADD COLUMN use_case_id TEXT REFERENCES dev_use_cases(id) ON DELETE SET NULL;",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_dev_kpis_use_case ON dev_kpis(use_case_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
@@ -5551,6 +5652,8 @@ mod tests {
             "athena_wake_log",
             "run_budgets",
             "dev_llm_spend",
+            "dev_use_cases",
+            "dev_use_case_contexts",
         ] {
             assert!(
                 has_table(&conn, table).unwrap(),
@@ -5572,6 +5675,7 @@ mod tests {
             ("dev_kpis", "warn_at"),
             ("dev_kpis", "crit_at"),
             ("dev_kpis", "last_skip_at"),
+            ("dev_kpis", "use_case_id"),
             ("team_assignments", "goal_id"),
             ("dev_contexts", "category"),
             ("dev_contexts", "business_feature"),
@@ -5591,6 +5695,8 @@ mod tests {
             "idx_run_budgets_kind",
             "idx_team_assignment_templates_team",
             "idx_dev_kpis_context",
+            "idx_dev_kpis_use_case",
+            "idx_dev_use_cases_project",
         ] {
             assert!(
                 has_index(&conn, index).unwrap(),

@@ -67,6 +67,22 @@ pub(crate) static SHARED_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
 pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> =
     LazyLock::new(|| engine::ssrf_safe_dns::build_ssrf_safe_client());
 
+/// HTTP client WITHOUT the SSRF-safe DNS resolver — it can reach private/loopback
+/// targets by design. Used ONLY for connector requests whose connector metadata
+/// declares `allow_private_network: true` (inherently self-hosted tools such as a
+/// local LightTrack or a self-hosted Langfuse/LangSmith). The API proxy gates this
+/// strictly behind that flag; every other path keeps using [`SSRF_SAFE_HTTP`].
+///
+/// SECURITY: routing an untrusted / non-allow-private request through this client
+/// re-opens the SSRF hole `SSRF_SAFE_HTTP` closes. Only the flag-gated branch in
+/// `engine::api_proxy::execute_api_request` may use it.
+pub(crate) static HTTP_ALLOW_PRIVATE: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .expect("Failed to build allow-private HTTP client")
+});
+
 /// Tracks an active CLI-backed process: its task ID and optional child PID.
 pub struct ActiveProcess {
     /// The ID of the currently-running task (e.g. design_id, negotiation_id).
@@ -2257,6 +2273,8 @@ pub fn run() {
             commands::communication::shared_events::shared_events_subscribe,
             commands::communication::shared_events::shared_events_unsubscribe,
             commands::communication::shared_events::shared_events_list_subscriptions,
+            commands::communication::shared_events::shared_events_list_firings,
+            commands::communication::shared_events::shared_events_change_activity,
             // Communication -- Messages
             commands::communication::messages::list_messages,
             commands::communication::messages::get_message,
@@ -2745,6 +2763,16 @@ pub fn run() {
             // Infrastructure -- Setup / Auto-install
             commands::infrastructure::setup::start_setup_install,
             commands::infrastructure::setup::cancel_setup_install,
+            // Infrastructure -- Local scraper (Pumper, Phase 1b)
+            commands::infrastructure::scraper::scraper_list_configs,
+            commands::infrastructure::scraper::scraper_save_config,
+            commands::infrastructure::scraper::scraper_run_config,
+            commands::infrastructure::scraper::scraper_delete_config,
+            commands::infrastructure::scraper::scraper_run_extract,
+            commands::infrastructure::scraper::scraper_preview_extract,
+            commands::infrastructure::scraper::scraper_generate_rules,
+            commands::infrastructure::scraper::scraper_list_datasets,
+            commands::infrastructure::scraper::scraper_query_dataset,
             // Infrastructure -- Settings
             commands::infrastructure::settings::get_app_setting,
             commands::infrastructure::settings::get_app_settings_bulk,
@@ -2897,6 +2925,17 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_goal,
             commands::infrastructure::dev_tools::dev_tools_delete_goal,
             commands::infrastructure::dev_tools::dev_tools_reorder_goals,
+            // Dev Tools -- use cases (behavioral slice layer under contexts)
+            commands::infrastructure::dev_tools::dev_tools_list_use_cases,
+            commands::infrastructure::dev_tools::dev_tools_get_use_case,
+            commands::infrastructure::dev_tools::dev_tools_list_use_cases_for_context,
+            commands::infrastructure::dev_tools::dev_tools_create_use_case,
+            commands::infrastructure::dev_tools::dev_tools_update_use_case,
+            commands::infrastructure::dev_tools::dev_tools_delete_use_case,
+            commands::infrastructure::dev_tools::dev_tools_backfill_use_cases,
+            commands::infrastructure::use_case_scan::dev_tools_scan_use_cases,
+            commands::infrastructure::use_case_scan::dev_tools_cancel_use_case_scan,
+            commands::infrastructure::use_case_scan::dev_tools_get_use_case_scan_status,
             // Dev Tools -- KPIs (outcome layer above goals)
             commands::infrastructure::dev_tools::dev_tools_list_kpis,
             commands::infrastructure::dev_tools::dev_tools_get_kpi,

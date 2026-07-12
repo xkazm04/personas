@@ -19,7 +19,7 @@
  * change. See {@link SidebarLevel3} for the primitive.
  */
 import { AnimatePresence } from 'framer-motion';
-import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, type LucideIcon } from 'lucide-react';
+import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, Globe, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useCompanionStore } from "@/features/plugins/companion/companionStore";
@@ -95,6 +95,7 @@ export function PluginsSidebarNav() {
     { id: 'twin',            label: 'Twin',                                icon: Sparkles,  hasSubItems: true },
     { id: 'companion',       label: 'Companion',                           icon: Bot,       hasSubItems: true },
     { id: 'research-lab',    label: t.shared.sidebar_extra.research_lab,    icon: BookOpen, hasSubItems: true, devOnly: true },
+    { id: 'scraper',         label: 'Scraper',                             icon: Globe,     hasSubItems: false, devOnly: true },
   ], [t]);
 
   const browseMeta = allPlugins.find((p) => p.id === 'browse')!;

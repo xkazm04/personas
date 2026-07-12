@@ -119,6 +119,7 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "Vous renseignerez {count} paramètres lors de l'adoption",
   "_comment_tags_heading": "Section heading for the tags list",
+  "tags_heading": "Tags",
   "tag_filter_tooltip": "Afficher les recettes avec ce tag",
   "guardrails_heading": "Garde-fous et mémoire",
   "events_label": "Événements",
@@ -229,6 +230,5 @@
   "update_badge": "Mise à jour",
   "update_badge_detail_tooltip": "Adopté en v{from} ; le catalogue est maintenant en v{to}. Supprimez puis réadoptez pour mettre à jour.",
   "update_badge_tooltip": "Une nouvelle version de cette capacité est disponible — supprimez puis réadoptez pour mettre à jour",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tags"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

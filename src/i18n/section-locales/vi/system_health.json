@@ -1,12 +1,4 @@
 {
-  "install_all": "Cài đặt tất cả phụ thuộc",
-  "log_disk_usage": "Dung lượng đĩa nhật ký",
-  "log_disk_tracing": "Nhật ký theo dõi",
-  "log_disk_crashes": "Báo cáo sự cố",
-  "log_disk_files_count": "{count} tệp",
-  "log_disk_retention_hint": "Xoay vòng hằng ngày, giới hạn tối đa {limit} tệp",
-  "log_disk_crash_retention_hint": "Giới hạn tối đa {limit} báo cáo gần nhất",
-  "log_disk_unavailable": "Không có số liệu thư mục nhật ký.",
   "title": "Kiểm tra hệ thống",
   "subtitle": "Đang xác minh môi trường của bạn đã sẵn sàng",
   "rerun": "Chạy lại kiểm tra",
@@ -27,6 +19,7 @@
   "no_crash_logs": "Không có nhật ký sự cố nào.",
   "crash_auto_cred": "Phiên tự động xác thực",
   "crash_rust_panic": "Lỗi nghiêm trọng Rust",
+  "install_all": "Cài đặt tất cả phụ thuộc",
   "ready_title": "Sẵn sàng tạo tác tử đầu tiên?",
   "ready_hint": "Tất cả kiểm tra đã đạt. Hãy để chúng tôi hướng dẫn bạn tạo và chạy tác tử đầu tiên.",
   "get_started": "Bắt đầu",
@@ -40,5 +33,12 @@
   "official_page": "Trang chính thức",
   "edit_key": "Sửa khóa",
   "edit_config": "Sửa cấu hình",
-  "signing_in": "Đang đăng nhập..."
+  "signing_in": "Đang đăng nhập...",
+  "log_disk_usage": "Dung lượng đĩa nhật ký",
+  "log_disk_tracing": "Nhật ký theo dõi",
+  "log_disk_crashes": "Báo cáo sự cố",
+  "log_disk_files_count": "{count} tệp",
+  "log_disk_retention_hint": "Xoay vòng hằng ngày, giới hạn tối đa {limit} tệp",
+  "log_disk_crash_retention_hint": "Giới hạn tối đa {limit} báo cáo gần nhất",
+  "log_disk_unavailable": "Không có số liệu thư mục nhật ký."
 }

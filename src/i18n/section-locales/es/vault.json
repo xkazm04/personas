@@ -1,6 +1,24 @@
 {
+  "title": "Bóveda",
+  "subtitle": "Elige cómo quieres agregar una credencial",
+  "add_from_catalog": "Agregar desde el catálogo",
+  "ai_designed": "Credencial diseñada por IA",
   "workspace_connect": "Conexión de espacio de trabajo",
   "quick_start": "Inicio rápido",
+  "health": {
+    "healthy": "saludable",
+    "needs_attention": "requiere atención",
+    "untested": "sin probar"
+  },
+  "list": {
+    "no_credentials": "No se detectaron servicios autenticados. Selecciona uno manualmente a continuación.",
+    "delete_confirm": "¿Eliminar esta credencial?",
+    "blast_radius": "Radio de impacto",
+    "no_dependencies": "Ningún agente depende de esta credencial. Se puede modificar o eliminar con seguridad.",
+    "affected_agents": "Agentes afectados",
+    "affected_events": "Eventos afectados",
+    "sort_label": "Ordenar:"
+  },
   "import": {
     "title": "Origen de importación",
     "picker_subtitle": "Elige el origen de tus secretos",
@@ -26,23 +44,6 @@
     "import_secrets_other": "Importar {count} secretos"
   },
   "features": {
-    "anomaly": {
-      "healthy": "Saludable",
-      "transient_issues": "Problemas temporales",
-      "degrading": "Empeorando",
-      "permanent_errors": "Errores persistentes",
-      "critical": "Crítico",
-      "stale": "desactualizado",
-      "samples": "{count} verificaciones",
-      "permanent": "Persistente: {rate}",
-      "transient": "Temporal: {rate}",
-      "tolerance": "Tolerancia: {rate}"
-    },
-    "intelligence": {
-      "operation": "Operación",
-      "detail": "Detalle",
-      "time": "Hora"
-    },
     "anomaly_detected": "Anomalía detectada: la credencial está fallando repentinamente después de un éxito previo. Posible revocación.",
     "history": "Historial",
     "event_triggers": "Disparadores de eventos",
@@ -66,6 +67,18 @@
       "enable_failed": "Error al habilitar la rotación: {error}",
       "last_rotated": "Última rotación {time}"
     },
+    "anomaly": {
+      "healthy": "Saludable",
+      "transient_issues": "Problemas temporales",
+      "degrading": "Empeorando",
+      "permanent_errors": "Errores persistentes",
+      "critical": "Crítico",
+      "stale": "desactualizado",
+      "samples": "{count} verificaciones",
+      "permanent": "Persistente: {rate}",
+      "transient": "Temporal: {rate}",
+      "tolerance": "Tolerancia: {rate}"
+    },
     "rotation_badge": {
       "disabled": "Desactivado",
       "perm_errors": "Errores persistentes",
@@ -80,6 +93,11 @@
       "op_deleted": "Eliminado",
       "op_healthcheck": "Prueba de conexión",
       "filter_all": "todos"
+    },
+    "intelligence": {
+      "operation": "Operación",
+      "detail": "Detalle",
+      "time": "Hora"
     }
   },
   "negotiator": {
@@ -187,10 +205,15 @@
   "body": {
     "authorizing": "Autorizando con {name}...",
     "authorize_with": "Autorizar con {name}",
-    "consent_completed": "Consentimiento de {name} completado a las {time}",
     "authorize_hint": "Abre el inicio de sesión de {name} y guarda tu acceso después de que lo apruebes.",
+    "consent_completed": "Consentimiento de {name} completado a las {time}",
     "update_failed": "Error al actualizar la credencial",
     "delete_credential": "Eliminar credencial"
+  },
+  "connector": {
+    "filter_all": "Todos",
+    "filter_connected": "Conectado",
+    "filter_available": "Disponible"
   },
   "auto_cred": {
     "guided_setup": "Configuración guiada",
@@ -231,6 +254,38 @@
     "save_procedure": "Guardar procedimiento",
     "procedure_saved": "Procedimiento guardado"
   },
+  "vector": {
+    "documents_tab": "Documentos",
+    "search_tab": "Búsqueda",
+    "settings_tab": "Configuración",
+    "ingest_title": "Agregar documentos",
+    "ingest_hint": "Suelta archivos aquí o haz clic para explorar",
+    "ingest_drop": "Suelta archivos para agregar",
+    "ingest_supported": "Compatible: txt, md, html, csv, json, yaml, archivos de código",
+    "starting_ingestion": "Procesando archivos...",
+    "no_valid_files": "No se encontraron rutas de archivo válidas. Intenta soltar archivos individuales.",
+    "no_documents": "Sin documentos aún",
+    "no_documents_hint": "Suelta archivos aquí, pega texto o escanea un directorio para comenzar a construir tu base de conocimiento.",
+    "refresh": "Actualizar",
+    "paste_text": "Pegar texto",
+    "directory": "Directorio",
+    "delete_document": "Eliminar documento",
+    "document_count_one": "{count} documento",
+    "document_count_other": "{count} documentos",
+    "show_full": "Mostrar extracto completo",
+    "show_less": "Mostrar menos",
+    "copy_content": "Copiar contenido",
+    "kb_info": "Información de la base de conocimiento",
+    "embedding_model": "Modelo de búsqueda",
+    "dimensions": "Dimensiones",
+    "chunk_size": "Tamaño de sección",
+    "chunk_overlap": "Superposición de sección",
+    "statistics": "Estadísticas",
+    "documents": "Documentos",
+    "chunks": "Secciones",
+    "local_embedding": "Búsqueda local",
+    "local_embedding_hint": "La indexación de búsqueda se ejecuta localmente usando {model} ({dims} dim). Ningún dato sale de tu máquina. El modelo (~23MB) se descarga en el primer uso y se guarda localmente."
+  },
   "design_modal": {
     "title": "Diseñar credencial",
     "error_title": "Algo salió mal",
@@ -246,12 +301,32 @@
     "start_over": "Empezar de nuevo",
     "try_again_with": "Intentar de nuevo con tu solicitud"
   },
+  "desktop": {
+    "installed": "Instalado",
+    "running": "Ejecutando",
+    "not_installed": "No instalado"
+  },
+  "graph": {
+    "no_dependencies": "Sin dependencias",
+    "connection_count_one": "{count} conexión",
+    "connection_count_other": "{count} conexiones",
+    "dep_count_one": "{count} dep",
+    "dep_count_other": "{count} deps",
+    "not_tested": "No probado",
+    "healthy": "Saludable",
+    "unhealthy": "No saludable"
+  },
+  "wizard": {
+    "detected": "Detectado ({count})",
+    "available": "Disponible ({count})",
+    "already_added": "Ya agregado ({count})",
+    "no_match": "No hay servicios que coincidan con \\\"{search}\\\"",
+    "already_added_badge": "Ya agregado",
+    "local": "Local",
+    "cli_auth": "Auth CLI",
+    "session": "Sesión"
+  },
   "playground": {
-    "mcp_run": "Ejecutar",
-    "mcp_error": "Error",
-    "mcp_success": "Éxito",
-    "mcp_empty": "(vacío)",
-    "response_empty": "(respuesta vacía)",
     "tab_overview": "Resumen",
     "tab_api_explorer": "Explorador de API",
     "tab_recipes": "Recetas",
@@ -265,9 +340,14 @@
     "path_placeholder": "/api/v1/resource",
     "sending": "Enviando...",
     "mcp_input_schema": "Esquema de entrada",
+    "mcp_run": "Ejecutar",
+    "mcp_error": "Error",
+    "mcp_success": "Éxito",
+    "mcp_empty": "(vacío)",
     "mcp_discover": "Descubrir herramientas del servidor MCP",
     "mcp_discover_hint": "Conéctate al servidor MCP para descubrir las herramientas disponibles y probarlas.",
     "mcp_discover_button": "Descubrir herramientas",
+    "response_empty": "(respuesta vacía)",
     "header": "Encabezado",
     "value": "Valor",
     "path_parameters": "Parámetros de ruta",
@@ -641,14 +721,27 @@
     "title_dependencies": "Dependencias",
     "title_databases": "Bases de datos"
   },
+  "bulk_healthcheck": {
+    "title": "Resultados de verificación de salud",
+    "needs_attention": "Necesita atención",
+    "slowest_responses": "Respuestas más lentas",
+    "passed_count": "{count} aprobadas",
+    "failed_count": "{count} fallidas",
+    "total_count": "{count} total"
+  },
+  "health_bar": {
+    "healthy": "saludable",
+    "needs_attention": "necesita atención",
+    "untested": "sin probar"
+  },
   "breadcrumb": {
     "aria_label": "Navegación del Bóveda"
   },
   "credential_card": {
-    "delete_credential": "Eliminar credencial",
     "deleting": "Eliminando {name}...",
     "no_connector": "No hay definición de conector disponible para este tipo de credencial.",
     "stored_result": "Resultado de prueba de conexión almacenado",
+    "delete_credential": "Eliminar credencial",
     "corrupted": "Dañado",
     "corrupted_tooltip": "Los metadatos del búfer de anillo de verificación de salud están dañados. Las puntuaciones de anomalía no están disponibles hasta que la próxima verificación de salud exitosa sobrescriba los datos incorrectos.",
     "field_count_one": "{count} campo",
@@ -690,6 +783,21 @@
     "label_type": "Tipo",
     "unverified_warning": "No se pudieron verificar todas las dependencias. Es posible que algunos agentes o automatizaciones conectados no se muestren."
   },
+  "card_body": {
+    "failed_update": "Error al actualizar la credencial",
+    "authorizing_with": "Autorizando con {name}...",
+    "authorize_with": "Autorizar con {name}",
+    "authorize_hint": "Inicia el consentimiento de {name} gestionado por la aplicación y actualiza el token de actualización después de la aprobación.",
+    "consent_completed": "Consentimiento de {name} completado a las {time}"
+  },
+  "card_details": {
+    "tab_intelligence": "Inteligencia",
+    "tab_rotation": "Rotación",
+    "tab_token_lifetime": "Vida útil del token",
+    "tab_services": "Servicios ({count})",
+    "tab_events": "Eventos ({count})",
+    "tab_audit": "Auditoría"
+  },
   "intelligence_tab": {
     "loading": "Cargando datos de inteligencia",
     "tab_overview": "Resumen",
@@ -710,6 +818,18 @@
     "link_structural": "estructural",
     "link_observed": "observado",
     "via_connector": "vía {connector}"
+  },
+  "token_metrics": {
+    "loading": "Cargando métricas...",
+    "no_metrics": "Sin métricas de actualización de token registradas aún. Las métricas aparecerán después de la primera actualización de token OAuth.",
+    "trend_warning": "La vida útil del token está acortándose — posible limitación o cambio de política del proveedor.",
+    "total_refreshes": "Total de actualizaciones",
+    "failure_rate": "Tasa de fallos",
+    "avg_lifetime": "Vida útil promedio",
+    "avg_drift": "Deriva promedio",
+    "recent_ttls": "TTLs recientes del proveedor (más reciente primero)",
+    "recent_refreshes": "Actualizaciones recientes",
+    "fallback_used": "Reserva ({fallback}s) utilizada en el {rate}% de las actualizaciones ({count}/{total}) — el proveedor omite"
   },
   "reauth_banner": {
     "access_revoked": ") — el acceso fue revocado. Vuelve a autorizar para reanudar las automatizaciones.",
@@ -864,6 +984,66 @@
     "health_failing": "Con fallos",
     "health_untested": "Sin probar"
   },
+  "wizard_detect": {
+    "no_services": "No hay servicios que coincidan con \\\"{search}\\\"",
+    "select_services": "Selecciona los servicios para los que agregar credenciales, o escanea para detección automática.",
+    "scanning": "Escaneando herramientas CLI y sesiones del navegador...",
+    "scan_button": "Escanear servicios autenticados",
+    "search_services": "Buscar servicios...",
+    "desktop_bridge": "Puente de escritorio — auto-detectado",
+    "batch_complete": "Configuración por lotes completa",
+    "skip_service": "Omitir este servicio",
+    "no_filter_match": "Intenta con un término de búsqueda diferente o limpia tu filtro.",
+    "set_up_credentials": "Configurar credenciales",
+    "clear_selection": "Limpiar selección",
+    "set_up_services": "Configurar {count} servicio{plural}",
+    "setting_up": "Configurando {current} de {total}",
+    "wizard_title": "Asistente de configuración de credenciales",
+    "choose_service": "Elige un servicio para configurar",
+    "ai_walk_description": "La IA te guiará paso a paso para obtener las credenciales de API.",
+    "wizard_subtitle": "Configuración de credenciales guiada por IA",
+    "wizard_subtitle_batch": "Configurando {count} servicio{plural}"
+  },
+  "autopilot": {
+    "title": "Piloto automático API",
+    "input_hint": "Pega una URL o contenido de especificación OpenAPI para generar automáticamente un conector",
+    "preview_hint": "Revisa la API analizada y selecciona qué endpoints incluir",
+    "generated_hint": "Tu conector ha sido generado exitosamente",
+    "connector_generated": "Conector generado exitosamente",
+    "api_playground": "Área de pruebas API",
+    "api_playground_hint": "Prueba tus herramientas API generadas antes de usarlas",
+    "paste_spec": "Pegar especificación OpenAPI (JSON o YAML)",
+    "valid_url_error": "Ingresa una URL válida (p. ej. https://api.example.com/openapi.json)",
+    "authentication": "Autenticación",
+    "connector_name": "Nombre del conector",
+    "color": "Color",
+    "endpoints_selected": "Endpoints ({selected}/{total} seleccionados)",
+    "generating": "Generando...",
+    "generate_connector": "Generar conector ({count} herramientas)",
+    "base_url": "URL base",
+    "headers_label": "Encabezados",
+    "header_name_placeholder": "Nombre del encabezado",
+    "query_parameters": "Parámetros de consulta",
+    "param_name_placeholder": "Nombre del parámetro",
+    "request_body": "Cuerpo de la solicitud (JSON)",
+    "from_url": "Desde URL",
+    "paste_content": "Pegar contenido",
+    "openapi_spec_url": "URL de especificación OpenAPI",
+    "openapi_format_hint": "Formato JSON o YAML",
+    "parsing_spec": "Analizando especificación...",
+    "parse_analyze": "Analizar y examinar",
+    "connector_in_catalog": "{connectorLabel} ya está disponible en tu catálogo de conectores con {toolCount} definiciones de herramientas.",
+    "generated_tools": "Herramientas generadas ({count})",
+    "credential_fields": "Campos de credencial",
+    "open_playground": "Abrir área de pruebas",
+    "copy_connector_id": "Copiar ID del conector",
+    "go_to_catalog": "Ir al catálogo",
+    "response_headers": "Encabezados de respuesta ({count})",
+    "base_url_placeholder": "https://api.ejemplo.com",
+    "openapi_url_placeholder": "https://api.ejemplo.com/openapi.json",
+    "auth_schemes": "Esquemas de autenticación",
+    "body_placeholder": "{ \"key\": \"value\" }"
+  },
   "foraging": {
     "no_credentials_found": "No se encontraron credenciales",
     "no_credentials_hint": "Intenta configurar variables de entorno como OPENAI_API_KEY o configura ~/.aws/credentials.",
@@ -996,6 +1176,18 @@
     "sort_most_used_with_recipes": "Most-used with recipes",
     "new_connector_ribbon": "New",
     "new_connector_tooltip": "Added in the last 30 days"
+  },
+  "cli_capture": {
+    "cta": "Importar desde CLI local",
+    "hint": "Usa un CLI local ya autenticado en lugar de pegar una clave API.",
+    "running": "Ejecutando CLI local...",
+    "success": "Credenciales capturadas desde CLI",
+    "token_ttl_notice": "Este token expira en {seconds}s y se renovará automáticamente.",
+    "source_label": "CLI",
+    "missing_binary": "`{binary}` no está instalado o no se encuentra en una ubicación permitida.",
+    "unauthenticated": "No has iniciado sesión en {binary}. {instruction}",
+    "capture_failed": "Error al capturar desde CLI: {detail}",
+    "timeout": "La captura desde CLI ha expirado. Intenta ejecutar el comando manualmente primero."
   },
   "schemas": {
     "none_configured": "Ninguno configurado.",
@@ -1212,6 +1404,11 @@
     "retry_authorized": "He autorizado — reintentar",
     "retry_failed": "Reintento fallido"
   },
+  "rotation_insight": {
+    "perm_errors": "Errores permanentes detectados — rotación intentada, alerta enviada.",
+    "degrading": "Degradación sostenida — rotación preventiva activada.",
+    "backoff": "Fallos transitorios — retroceso exponencial activo."
+  },
   "schema_configs": {
     "mcp": {
       "title": "MCP Server",
@@ -1395,202 +1592,5 @@
     "time_tracking": "Seguimiento de tiempo",
     "vector_search": "Búsqueda vectorial",
     "web_scraping": "Web scraping"
-  },
-  "title": "Bóveda",
-  "subtitle": "Elige cómo quieres agregar una credencial",
-  "add_from_catalog": "Agregar desde el catálogo",
-  "ai_designed": "Credencial diseñada por IA",
-  "health": {
-    "healthy": "saludable",
-    "needs_attention": "requiere atención",
-    "untested": "sin probar"
-  },
-  "list": {
-    "no_credentials": "No se detectaron servicios autenticados. Selecciona uno manualmente a continuación.",
-    "delete_confirm": "¿Eliminar esta credencial?",
-    "blast_radius": "Radio de impacto",
-    "no_dependencies": "Ningún agente depende de esta credencial. Se puede modificar o eliminar con seguridad.",
-    "affected_agents": "Agentes afectados",
-    "affected_events": "Eventos afectados",
-    "sort_label": "Ordenar:"
-  },
-  "connector": {
-    "filter_all": "Todos",
-    "filter_connected": "Conectado",
-    "filter_available": "Disponible"
-  },
-  "vector": {
-    "documents_tab": "Documentos",
-    "search_tab": "Búsqueda",
-    "settings_tab": "Configuración",
-    "ingest_title": "Agregar documentos",
-    "ingest_hint": "Suelta archivos aquí o haz clic para explorar",
-    "ingest_drop": "Suelta archivos para agregar",
-    "ingest_supported": "Compatible: txt, md, html, csv, json, yaml, archivos de código",
-    "starting_ingestion": "Procesando archivos...",
-    "no_valid_files": "No se encontraron rutas de archivo válidas. Intenta soltar archivos individuales.",
-    "no_documents": "Sin documentos aún",
-    "no_documents_hint": "Suelta archivos aquí, pega texto o escanea un directorio para comenzar a construir tu base de conocimiento.",
-    "refresh": "Actualizar",
-    "paste_text": "Pegar texto",
-    "directory": "Directorio",
-    "delete_document": "Eliminar documento",
-    "document_count_one": "{count} documento",
-    "document_count_other": "{count} documentos",
-    "show_full": "Mostrar extracto completo",
-    "show_less": "Mostrar menos",
-    "copy_content": "Copiar contenido",
-    "kb_info": "Información de la base de conocimiento",
-    "embedding_model": "Modelo de búsqueda",
-    "dimensions": "Dimensiones",
-    "chunk_size": "Tamaño de sección",
-    "chunk_overlap": "Superposición de sección",
-    "statistics": "Estadísticas",
-    "documents": "Documentos",
-    "chunks": "Secciones",
-    "local_embedding": "Búsqueda local",
-    "local_embedding_hint": "La indexación de búsqueda se ejecuta localmente usando {model} ({dims} dim). Ningún dato sale de tu máquina. El modelo (~23MB) se descarga en el primer uso y se guarda localmente."
-  },
-  "desktop": {
-    "installed": "Instalado",
-    "running": "Ejecutando",
-    "not_installed": "No instalado"
-  },
-  "graph": {
-    "no_dependencies": "Sin dependencias",
-    "connection_count_one": "{count} conexión",
-    "connection_count_other": "{count} conexiones",
-    "dep_count_one": "{count} dep",
-    "dep_count_other": "{count} deps",
-    "not_tested": "No probado",
-    "healthy": "Saludable",
-    "unhealthy": "No saludable"
-  },
-  "wizard": {
-    "detected": "Detectado ({count})",
-    "available": "Disponible ({count})",
-    "already_added": "Ya agregado ({count})",
-    "no_match": "No hay servicios que coincidan con \\\"{search}\\\"",
-    "already_added_badge": "Ya agregado",
-    "local": "Local",
-    "cli_auth": "Auth CLI",
-    "session": "Sesión"
-  },
-  "bulk_healthcheck": {
-    "title": "Resultados de verificación de salud",
-    "needs_attention": "Necesita atención",
-    "slowest_responses": "Respuestas más lentas",
-    "passed_count": "{count} aprobadas",
-    "failed_count": "{count} fallidas",
-    "total_count": "{count} total"
-  },
-  "health_bar": {
-    "healthy": "saludable",
-    "needs_attention": "necesita atención",
-    "untested": "sin probar"
-  },
-  "card_body": {
-    "failed_update": "Error al actualizar la credencial",
-    "authorizing_with": "Autorizando con {name}...",
-    "authorize_with": "Autorizar con {name}",
-    "authorize_hint": "Inicia el consentimiento de {name} gestionado por la aplicación y actualiza el token de actualización después de la aprobación.",
-    "consent_completed": "Consentimiento de {name} completado a las {time}"
-  },
-  "card_details": {
-    "tab_intelligence": "Inteligencia",
-    "tab_rotation": "Rotación",
-    "tab_token_lifetime": "Vida útil del token",
-    "tab_services": "Servicios ({count})",
-    "tab_events": "Eventos ({count})",
-    "tab_audit": "Auditoría"
-  },
-  "token_metrics": {
-    "loading": "Cargando métricas...",
-    "no_metrics": "Sin métricas de actualización de token registradas aún. Las métricas aparecerán después de la primera actualización de token OAuth.",
-    "trend_warning": "La vida útil del token está acortándose — posible limitación o cambio de política del proveedor.",
-    "total_refreshes": "Total de actualizaciones",
-    "failure_rate": "Tasa de fallos",
-    "avg_lifetime": "Vida útil promedio",
-    "avg_drift": "Deriva promedio",
-    "recent_ttls": "TTLs recientes del proveedor (más reciente primero)",
-    "recent_refreshes": "Actualizaciones recientes",
-    "fallback_used": "Reserva ({fallback}s) utilizada en el {rate}% de las actualizaciones ({count}/{total}) — el proveedor omite"
-  },
-  "wizard_detect": {
-    "no_services": "No hay servicios que coincidan con \\\"{search}\\\"",
-    "select_services": "Selecciona los servicios para los que agregar credenciales, o escanea para detección automática.",
-    "scanning": "Escaneando herramientas CLI y sesiones del navegador...",
-    "scan_button": "Escanear servicios autenticados",
-    "search_services": "Buscar servicios...",
-    "desktop_bridge": "Puente de escritorio — auto-detectado",
-    "batch_complete": "Configuración por lotes completa",
-    "skip_service": "Omitir este servicio",
-    "no_filter_match": "Intenta con un término de búsqueda diferente o limpia tu filtro.",
-    "set_up_credentials": "Configurar credenciales",
-    "clear_selection": "Limpiar selección",
-    "set_up_services": "Configurar {count} servicio{plural}",
-    "setting_up": "Configurando {current} de {total}",
-    "wizard_title": "Asistente de configuración de credenciales",
-    "choose_service": "Elige un servicio para configurar",
-    "ai_walk_description": "La IA te guiará paso a paso para obtener las credenciales de API.",
-    "wizard_subtitle": "Configuración de credenciales guiada por IA",
-    "wizard_subtitle_batch": "Configurando {count} servicio{plural}"
-  },
-  "autopilot": {
-    "title": "Piloto automático API",
-    "input_hint": "Pega una URL o contenido de especificación OpenAPI para generar automáticamente un conector",
-    "preview_hint": "Revisa la API analizada y selecciona qué endpoints incluir",
-    "generated_hint": "Tu conector ha sido generado exitosamente",
-    "connector_generated": "Conector generado exitosamente",
-    "api_playground": "Área de pruebas API",
-    "api_playground_hint": "Prueba tus herramientas API generadas antes de usarlas",
-    "paste_spec": "Pegar especificación OpenAPI (JSON o YAML)",
-    "valid_url_error": "Ingresa una URL válida (p. ej. https://api.example.com/openapi.json)",
-    "authentication": "Autenticación",
-    "connector_name": "Nombre del conector",
-    "color": "Color",
-    "endpoints_selected": "Endpoints ({selected}/{total} seleccionados)",
-    "generating": "Generando...",
-    "generate_connector": "Generar conector ({count} herramientas)",
-    "base_url": "URL base",
-    "headers_label": "Encabezados",
-    "header_name_placeholder": "Nombre del encabezado",
-    "query_parameters": "Parámetros de consulta",
-    "param_name_placeholder": "Nombre del parámetro",
-    "request_body": "Cuerpo de la solicitud (JSON)",
-    "from_url": "Desde URL",
-    "paste_content": "Pegar contenido",
-    "openapi_spec_url": "URL de especificación OpenAPI",
-    "openapi_format_hint": "Formato JSON o YAML",
-    "parsing_spec": "Analizando especificación...",
-    "parse_analyze": "Analizar y examinar",
-    "connector_in_catalog": "{connectorLabel} ya está disponible en tu catálogo de conectores con {toolCount} definiciones de herramientas.",
-    "generated_tools": "Herramientas generadas ({count})",
-    "credential_fields": "Campos de credencial",
-    "open_playground": "Abrir área de pruebas",
-    "copy_connector_id": "Copiar ID del conector",
-    "go_to_catalog": "Ir al catálogo",
-    "response_headers": "Encabezados de respuesta ({count})",
-    "base_url_placeholder": "https://api.ejemplo.com",
-    "openapi_url_placeholder": "https://api.ejemplo.com/openapi.json",
-    "auth_schemes": "Esquemas de autenticación",
-    "body_placeholder": "{ \"key\": \"value\" }"
-  },
-  "cli_capture": {
-    "cta": "Importar desde CLI local",
-    "hint": "Usa un CLI local ya autenticado en lugar de pegar una clave API.",
-    "running": "Ejecutando CLI local...",
-    "success": "Credenciales capturadas desde CLI",
-    "token_ttl_notice": "Este token expira en {seconds}s y se renovará automáticamente.",
-    "source_label": "CLI",
-    "missing_binary": "`{binary}` no está instalado o no se encuentra en una ubicación permitida.",
-    "unauthenticated": "No has iniciado sesión en {binary}. {instruction}",
-    "capture_failed": "Error al capturar desde CLI: {detail}",
-    "timeout": "La captura desde CLI ha expirado. Intenta ejecutar el comando manualmente primero."
-  },
-  "rotation_insight": {
-    "perm_errors": "Errores permanentes detectados — rotación intentada, alerta enviada.",
-    "degrading": "Degradación sostenida — rotación preventiva activada.",
-    "backoff": "Fallos transitorios — retroceso exponencial activo."
   }
 }

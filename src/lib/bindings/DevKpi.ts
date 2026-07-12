@@ -10,7 +10,14 @@ context_group_id: string | null,
  * `context_group_id` is expected to be that context's parent group —
  * see context_taxonomy / Part 3 context-level KPIs.
  */
-context_id: string | null, name: string, description: string | null, 
+context_id: string | null, 
+/**
+ * NULL unless the KPI is scoped to one use case — the NARROWEST scope,
+ * narrower than a single context because a use case is a behavioral slice
+ * *through* contexts. Precedence: use_case > context > group > project.
+ * See docs/plans/use-case-slice-layer.md.
+ */
+use_case_id: string | null, name: string, description: string | null, 
 /**
  * 'technical' | 'traffic' | 'value' | 'quality'
  */

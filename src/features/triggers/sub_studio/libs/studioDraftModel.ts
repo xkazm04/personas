@@ -10,7 +10,11 @@ import { silentCatch } from '@/lib/silentCatch';
 
 export type DraftSource =
   | { kind: 'trigger'; triggerType: string }
-  | { kind: 'persona'; personaId: string };
+  | { kind: 'persona'; personaId: string }
+  // A subscribed Marketplace feed. Commits DIRECTLY to an `event_listener`
+  // trigger on the target persona, listening for `shared:<slug>` — the bus
+  // event the local relay publishes when the feed reports a change.
+  | { kind: 'marketplace'; slug: string; label: string };
 
 /**
  * Run-condition gating a link. Stored as a token (never a display string) so

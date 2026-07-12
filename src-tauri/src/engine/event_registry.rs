@@ -158,6 +158,10 @@ event_names! {
     KPI_SCAN_STATUS            => "kpi-scan-status",
     KPI_SCAN_OUTPUT            => "kpi-scan-output",
     KPI_SCAN_COMPLETE          => "kpi-scan-complete",
+    // Use-case proposal scan (behavioral slice layer under the context map)
+    USE_CASE_SCAN_STATUS       => "use-case-scan-status",
+    USE_CASE_SCAN_OUTPUT       => "use-case-scan-output",
+    USE_CASE_SCAN_COMPLETE     => "use-case-scan-complete",
     // KPI measurement compose/propose (Factory measurement setup)
     KPI_COMPOSE_STATUS         => "kpi-compose-status",
     KPI_COMPOSE_OUTPUT         => "kpi-compose-output",

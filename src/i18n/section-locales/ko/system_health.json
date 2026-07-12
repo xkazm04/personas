@@ -1,12 +1,4 @@
 {
-  "install_all": "모든 종속성 설치",
-  "log_disk_usage": "Log Disk Usage",
-  "log_disk_tracing": "Tracing logs",
-  "log_disk_crashes": "Crash reports",
-  "log_disk_files_count": "{count} files",
-  "log_disk_retention_hint": "Daily rotation, capped at {limit} files",
-  "log_disk_crash_retention_hint": "Capped at {limit} most recent reports",
-  "log_disk_unavailable": "Log directory stats unavailable.",
   "title": "시스템 점검",
   "subtitle": "환경 준비 상태를 확인하고 있습니다",
   "rerun": "점검 다시 실행",
@@ -27,6 +19,7 @@
   "no_crash_logs": "기록된 크래시 로그가 없습니다.",
   "crash_auto_cred": "자동 자격 증명 세션",
   "crash_rust_panic": "Rust 패닉",
+  "install_all": "모든 종속성 설치",
   "ready_title": "첫 번째 에이전트를 만들 준비가 되셨습니까?",
   "ready_hint": "모든 점검을 통과했습니다. 첫 번째 에이전트를 만들고 실행하는 과정을 안내해 드리겠습니다.",
   "get_started": "시작하기",
@@ -40,5 +33,12 @@
   "official_page": "공식 페이지",
   "edit_key": "키 편집",
   "edit_config": "설정 편집",
-  "signing_in": "로그인 중..."
+  "signing_in": "로그인 중...",
+  "log_disk_usage": "Log Disk Usage",
+  "log_disk_tracing": "Tracing logs",
+  "log_disk_crashes": "Crash reports",
+  "log_disk_files_count": "{count} files",
+  "log_disk_retention_hint": "Daily rotation, capped at {limit} files",
+  "log_disk_crash_retention_hint": "Capped at {limit} most recent reports",
+  "log_disk_unavailable": "Log directory stats unavailable."
 }

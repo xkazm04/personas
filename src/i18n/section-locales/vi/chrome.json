@@ -16,6 +16,11 @@
   "update_install_when_idle": "Cài khi rảnh",
   "update_install_when_idle_status": "Bản cập nhật sẽ cài đặt khi {count} tác vụ đang chạy hoàn tất.",
   "update_keep_working": "Tiếp tục làm việc",
+  "expand_sidebar": "Mở rộng thanh bên",
+  "collapse_sidebar": "Thu gọn thanh bên",
+  "network_settings": "Cài đặt mạng",
+  "dark": "Tối",
+  "light": "Sáng",
   "sign_in_google": "Đăng nhập bằng Google",
   "signed_in": "Đã đăng nhập",
   "sign_out": "Đăng xuất",
@@ -25,6 +30,7 @@
   "shortcuts": {
     "title": "Phím tắt",
     "subtitle": "Nhấn ? bất cứ lúc nào để mở danh sách này",
+    "open_title": "Phím tắt",
     "section_navigation": "Điều hướng",
     "section_agents": "Tác nhân",
     "section_editing": "Chỉnh sửa",
@@ -47,8 +53,7 @@
     "nav_mode_notifications": "Bật/tắt thông báo (ở chế độ điều hướng)",
     "nav_mode_review": "Bật/tắt đánh giá của người dùng (ở chế độ điều hướng)",
     "nav_mode_schedules": "Bật/tắt lịch trình (ở chế độ điều hướng)",
-    "nav_mode_search": "Mở tìm kiếm (ở chế độ điều hướng)",
-    "open_title": "Phím tắt"
+    "nav_mode_search": "Mở tìm kiếm (ở chế độ điều hướng)"
   },
   "tray_schedules": "Lịch biểu",
   "tray_schedules_today": "{count} được lên lịch hôm nay",
@@ -67,10 +72,5 @@
   "tray_acceptance_pending": "{count} mục tiêu đang chờ chấp thuận",
   "cli_not_ready_detail": "Personas chạy các tác nhân của bạn trên gói đăng ký Claude của bạn. Chúng tôi không thể bắt đầu phiên Claude — hãy đảm bảo rằng Claude Code CLI đã được cài đặt và đăng nhập, sau đó thử lại.",
   "cli_not_ready_retry": "Thử lại",
-  "cli_not_ready_title": "Claude CLI chưa sẵn sàng",
-  "expand_sidebar": "Mở rộng thanh bên",
-  "collapse_sidebar": "Thu gọn thanh bên",
-  "network_settings": "Cài đặt mạng",
-  "dark": "Tối",
-  "light": "Sáng"
+  "cli_not_ready_title": "Claude CLI chưa sẵn sàng"
 }

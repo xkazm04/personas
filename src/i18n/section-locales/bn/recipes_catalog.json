@@ -119,6 +119,7 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "অ্যাডপশনের সময় আপনি {count}টি সেটিং পূরণ করবেন",
   "_comment_tags_heading": "Section heading for the tags list",
+  "tags_heading": "Tags",
   "tag_filter_tooltip": "এই ট্যাগের রেসিপি দেখান",
   "guardrails_heading": "গার্ডরেল ও মেমোরি",
   "events_label": "ইভেন্ট",
@@ -229,6 +230,5 @@
   "update_badge": "আপডেট",
   "update_badge_detail_tooltip": "v{from} সংস্করণে গ্রহণ করা হয়েছে; ক্যাটালগ এখন v{to}। আপডেট করতে সরিয়ে পুনরায় গ্রহণ করুন।",
   "update_badge_tooltip": "এই ক্ষমতার একটি নতুন সংস্করণ উপলব্ধ — আপডেট করতে সরিয়ে পুনরায় গ্রহণ করুন",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tags"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

@@ -119,6 +119,7 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "Anda akan mengisi {count} pengaturan saat mengadopsi",
   "_comment_tags_heading": "Section heading for the tags list",
+  "tags_heading": "Tags",
   "tag_filter_tooltip": "Tampilkan resep dengan tag ini",
   "guardrails_heading": "Pengaman & memori",
   "events_label": "Peristiwa",
@@ -229,6 +230,5 @@
   "update_badge": "Perbarui",
   "update_badge_detail_tooltip": "Diadopsi pada v{from}; katalog sekarang v{to}. Hapus dan adopsi ulang untuk memperbarui.",
   "update_badge_tooltip": "Versi terbaru dari kemampuan ini tersedia — hapus dan adopsi ulang untuk memperbarui",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tags"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

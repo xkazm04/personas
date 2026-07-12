@@ -40,6 +40,10 @@ export interface MockKpi {
   cons?: string | null;
   /** The measurement methodic (JSON measure_config string) — surfaced for preview. */
   measureConfig?: string;
+  /** Display name of the use case this KPI is scoped to — a behavioral slice
+   *  through contexts, the narrowest KPI scope. Null when scoped to a context,
+   *  group, or the project. See docs/plans/use-case-slice-layer.md. */
+  useCaseName?: string | null;
   /** Derivation looked at this off-track KPI and judged nothing team-actionable
    *  would move it; true only while that verdict is fresh (set since the last
    *  measurement). Surfaced as the honest "over to you" state. */

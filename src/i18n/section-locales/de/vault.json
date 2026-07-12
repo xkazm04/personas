@@ -1,6 +1,24 @@
 {
+  "title": "Tresor",
+  "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
+  "add_from_catalog": "Aus Katalog hinzufügen",
+  "ai_designed": "KI-gestützte Zugangsdaten",
   "workspace_connect": "Workspace-Verbindung",
   "quick_start": "Schnellstart",
+  "health": {
+    "healthy": "gesund",
+    "needs_attention": "erfordert Aufmerksamkeit",
+    "untested": "ungetestet"
+  },
+  "list": {
+    "no_credentials": "Keine authentifizierten Dienste erkannt. Wählen Sie unten manuell aus.",
+    "delete_confirm": "Diese Zugangsdaten löschen?",
+    "blast_radius": "Auswirkungsbereich",
+    "no_dependencies": "Keine Agenten hängen von diesen Zugangsdaten ab. Sicher zu ändern oder zu entfernen.",
+    "affected_agents": "Betroffene Agenten",
+    "affected_events": "Betroffene Ereignisse",
+    "sort_label": "Sortieren:"
+  },
   "import": {
     "title": "Importquelle",
     "picker_subtitle": "Wählen Sie die Quelle Ihrer Geheimnisse",
@@ -26,23 +44,6 @@
     "import_secrets_other": "{count} Secrets importieren"
   },
   "features": {
-    "anomaly": {
-      "healthy": "Gesund",
-      "transient_issues": "Vorübergehende Probleme",
-      "degrading": "Verschlechtert sich",
-      "permanent_errors": "Andauernde Fehler",
-      "critical": "Kritisch",
-      "stale": "veraltet",
-      "samples": "{count} Prüfungen",
-      "permanent": "Andauernd: {rate}",
-      "transient": "Vorübergehend: {rate}",
-      "tolerance": "Toleranz: {rate}"
-    },
-    "intelligence": {
-      "operation": "Vorgang",
-      "detail": "Detail",
-      "time": "Zeit"
-    },
     "anomaly_detected": "Anomalie erkannt: Zugangsdaten schlagen plötzlich nach vorherigem Erfolg fehl. Mögliche Widerrufung.",
     "history": "Verlauf",
     "event_triggers": "Ereignis-Auslöser",
@@ -66,6 +67,18 @@
       "enable_failed": "Rotation konnte nicht aktiviert werden: {error}",
       "last_rotated": "Zuletzt rotiert {time}"
     },
+    "anomaly": {
+      "healthy": "Gesund",
+      "transient_issues": "Vorübergehende Probleme",
+      "degrading": "Verschlechtert sich",
+      "permanent_errors": "Andauernde Fehler",
+      "critical": "Kritisch",
+      "stale": "veraltet",
+      "samples": "{count} Prüfungen",
+      "permanent": "Andauernd: {rate}",
+      "transient": "Vorübergehend: {rate}",
+      "tolerance": "Toleranz: {rate}"
+    },
     "rotation_badge": {
       "disabled": "Deaktiviert",
       "perm_errors": "Andauernde Fehler",
@@ -80,6 +93,11 @@
       "op_deleted": "Gelöscht",
       "op_healthcheck": "Verbindungstest",
       "filter_all": "alle"
+    },
+    "intelligence": {
+      "operation": "Vorgang",
+      "detail": "Detail",
+      "time": "Zeit"
     }
   },
   "negotiator": {
@@ -187,10 +205,15 @@
   "body": {
     "authorizing": "Autorisierung mit {name}...",
     "authorize_with": "Mit {name} autorisieren",
-    "consent_completed": "{name}-Zustimmung abgeschlossen um {time}",
     "authorize_hint": "Öffnet {name}-Anmeldung und speichert Ihren Zugang nach der Genehmigung.",
+    "consent_completed": "{name}-Zustimmung abgeschlossen um {time}",
     "update_failed": "Zugangsdaten konnten nicht aktualisiert werden",
     "delete_credential": "Zugangsdaten löschen"
+  },
+  "connector": {
+    "filter_all": "Alle",
+    "filter_connected": "Verbunden",
+    "filter_available": "Verfügbar"
   },
   "auto_cred": {
     "guided_setup": "Geführte Einrichtung",
@@ -231,6 +254,38 @@
     "save_procedure": "Prozedur speichern",
     "procedure_saved": "Prozedur gespeichert"
   },
+  "vector": {
+    "documents_tab": "Dokumente",
+    "search_tab": "Suche",
+    "settings_tab": "Einstellungen",
+    "ingest_title": "Dokumente hinzufügen",
+    "ingest_hint": "Dateien hier ablegen oder zum Durchsuchen klicken",
+    "ingest_drop": "Dateien zum Hinzufügen ablegen",
+    "ingest_supported": "Unterstützt: txt, md, html, csv, json, yaml, Codedateien",
+    "starting_ingestion": "Dateien werden verarbeitet...",
+    "no_valid_files": "Keine gültigen Dateipfade gefunden. Versuchen Sie, einzelne Dateien abzulegen.",
+    "no_documents": "Noch keine Dokumente",
+    "no_documents_hint": "Dateien hier ablegen, Text einfügen oder ein Verzeichnis scannen, um Ihre Wissensbasis aufzubauen.",
+    "refresh": "Aktualisieren",
+    "paste_text": "Text einfügen",
+    "directory": "Verzeichnis",
+    "delete_document": "Dokument löschen",
+    "document_count_one": "{count} Dokument",
+    "document_count_other": "{count} Dokumente",
+    "show_full": "Vollständigen Auszug anzeigen",
+    "show_less": "Weniger anzeigen",
+    "copy_content": "Inhalt kopieren",
+    "kb_info": "Wissensbasis-Info",
+    "embedding_model": "Suchmodell",
+    "dimensions": "Dimensionen",
+    "chunk_size": "Abschnittsgröße",
+    "chunk_overlap": "Abschnittsüberlappung",
+    "statistics": "Statistiken",
+    "documents": "Dokumente",
+    "chunks": "Abschnitte",
+    "local_embedding": "Lokale Suche",
+    "local_embedding_hint": "Such-Indizierung läuft lokal mit {model} ({dims}-dim). Keine Daten verlassen Ihr Gerät. Das Modell (~23 MB) wird beim ersten Einsatz heruntergeladen und lokal gespeichert."
+  },
   "design_modal": {
     "title": "Zugangsdaten entwerfen",
     "error_title": "Etwas ist schiefgelaufen",
@@ -246,12 +301,32 @@
     "start_over": "Von vorne beginnen",
     "try_again_with": "Mit Ihrer Anfrage erneut versuchen"
   },
+  "desktop": {
+    "installed": "Installiert",
+    "running": "Läuft",
+    "not_installed": "Nicht installiert"
+  },
+  "graph": {
+    "no_dependencies": "Keine Abhängigkeiten",
+    "connection_count_one": "{count} Verbindung",
+    "connection_count_other": "{count} Verbindungen",
+    "dep_count_one": "{count} Abhängigkeit",
+    "dep_count_other": "{count} Abhängigkeiten",
+    "not_tested": "Nicht getestet",
+    "healthy": "Gesund",
+    "unhealthy": "Ungesund"
+  },
+  "wizard": {
+    "detected": "Erkannt ({count})",
+    "available": "Verfügbar ({count})",
+    "already_added": "Bereits hinzugefügt ({count})",
+    "no_match": "Keine Dienste entsprechen \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{search}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"",
+    "already_added_badge": "Bereits hinzugefügt",
+    "local": "Lokal",
+    "cli_auth": "CLI-Auth",
+    "session": "Sitzung"
+  },
   "playground": {
-    "mcp_run": "Ausführen",
-    "mcp_error": "Fehler",
-    "mcp_success": "Erfolg",
-    "mcp_empty": "(leer)",
-    "response_empty": "(leere Antwort)",
     "tab_overview": "Übersicht",
     "tab_api_explorer": "API-Explorer",
     "tab_recipes": "Rezepte",
@@ -265,9 +340,14 @@
     "path_placeholder": "/api/v1/resource",
     "sending": "Senden...",
     "mcp_input_schema": "Eingabe-Schema",
+    "mcp_run": "Ausführen",
+    "mcp_error": "Fehler",
+    "mcp_success": "Erfolg",
+    "mcp_empty": "(leer)",
     "mcp_discover": "MCP-Server-Tools entdecken",
     "mcp_discover_hint": "Mit dem MCP-Server verbinden, um verfügbare Tools zu entdecken und zu testen.",
     "mcp_discover_button": "Tools entdecken",
+    "response_empty": "(leere Antwort)",
     "header": "Header",
     "value": "Wert",
     "path_parameters": "Pfadparameter",
@@ -641,14 +721,27 @@
     "title_dependencies": "Abhängigkeiten",
     "title_databases": "Datenbanken"
   },
+  "bulk_healthcheck": {
+    "title": "Gesundheitscheck-Ergebnisse",
+    "needs_attention": "Aufmerksamkeit erforderlich",
+    "slowest_responses": "Langsamste Antworten",
+    "passed_count": "{count} bestanden",
+    "failed_count": "{count} fehlgeschlagen",
+    "total_count": "{count} gesamt"
+  },
+  "health_bar": {
+    "healthy": "gesund",
+    "needs_attention": "Aufmerksamkeit erforderlich",
+    "untested": "ungetestet"
+  },
   "breadcrumb": {
     "aria_label": "Tresor-Breadcrumb"
   },
   "credential_card": {
-    "delete_credential": "Zugangsdaten löschen",
     "deleting": "{name} wird gelöscht...",
     "no_connector": "Keine Konnektor-Definition für diesen Zugangsdaten-Typ verfügbar.",
     "stored_result": "Gespeichertes Verbindungstest-Ergebnis",
+    "delete_credential": "Zugangsdaten löschen",
     "corrupted": "Beschädigt",
     "corrupted_tooltip": "Ringpuffer-Metadaten des Gesundheitschecks sind beschädigt. Anomalie-Scores sind bis zum nächsten erfolgreichen Gesundheitscheck nicht verfügbar.",
     "field_count_one": "{count} Feld",
@@ -690,6 +783,21 @@
     "label_type": "Typ",
     "unverified_warning": "Nicht alle Abhängigkeiten konnten verifiziert werden. Einige verbundene Agenten oder Automatisierungen werden möglicherweise nicht angezeigt."
   },
+  "card_body": {
+    "failed_update": "Zugangsdaten konnten nicht aktualisiert werden",
+    "authorizing_with": "Autorisierung mit {name}...",
+    "authorize_with": "Mit {name} autorisieren",
+    "authorize_hint": "Startet App-verwaltete {name}-Zustimmung und aktualisiert Refresh-Token nach Genehmigung.",
+    "consent_completed": "{name}-Zustimmung abgeschlossen um {time}"
+  },
+  "card_details": {
+    "tab_intelligence": "Intelligenz",
+    "tab_rotation": "Rotation",
+    "tab_token_lifetime": "Token-Lebensdauer",
+    "tab_services": "Dienste ({count})",
+    "tab_events": "Ereignisse ({count})",
+    "tab_audit": "Audit"
+  },
   "intelligence_tab": {
     "loading": "Intelligenzdaten werden geladen",
     "tab_overview": "Übersicht",
@@ -710,6 +818,18 @@
     "link_structural": "strukturell",
     "link_observed": "beobachtet",
     "via_connector": "über {connector}"
+  },
+  "token_metrics": {
+    "loading": "Metriken werden geladen...",
+    "no_metrics": "Noch keine Token-Aktualisierungsmetriken aufgezeichnet. Metriken erscheinen nach der ersten OAuth-Token-Aktualisierung.",
+    "trend_warning": "Token-Lebensdauer wird kürzer \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\u2014 mögliche Anbieter-Drosselung oder Richtlinienänderung.",
+    "total_refreshes": "Gesamtaktualisierungen",
+    "failure_rate": "Fehlerrate",
+    "avg_lifetime": "Durchschn. Lebensdauer",
+    "avg_drift": "Durchschn. Drift",
+    "recent_ttls": "Letzte Anbieter-TTLs (neueste zuerst)",
+    "recent_refreshes": "Letzte Aktualisierungen",
+    "fallback_used": "Fallback ({fallback}s) in {rate}% der Aktualisierungen verwendet ({count}/{total}) — Provider gibt nicht zurück"
   },
   "reauth_banner": {
     "access_revoked": ") -- Zugriff wurde widerrufen. Bitte neu autorisieren, um Automatisierungen fortzusetzen.",
@@ -864,6 +984,66 @@
     "health_failing": "Fehlerhaft",
     "health_untested": "Ungetestet"
   },
+  "wizard_detect": {
+    "no_services": "Keine Dienste für \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{search}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" gefunden",
+    "select_services": "Dienste auswählen, für die Zugangsdaten hinzugefügt werden sollen, oder scannen zur automatischen Erkennung.",
+    "scanning": "CLI-Tools und Browsersitzungen werden gescannt...",
+    "scan_button": "Nach authentifizierten Diensten suchen",
+    "search_services": "Dienste suchen...",
+    "desktop_bridge": "Desktop-Bridge -- automatisch erkannt",
+    "batch_complete": "Stapeleinrichtung abgeschlossen",
+    "skip_service": "Diesen Dienst überspringen",
+    "no_filter_match": "Anderen Suchbegriff versuchen oder Filter löschen.",
+    "set_up_credentials": "Zugangsdaten einrichten",
+    "clear_selection": "Auswahl aufheben",
+    "set_up_services": "{count} Dienst{plural} einrichten",
+    "setting_up": "Richte {current} von {total} ein",
+    "wizard_title": "Zugangsdaten-Einrichtungsassistent",
+    "choose_service": "Dienst zum Einrichten auswählen",
+    "ai_walk_description": "Die KI führt Sie Schritt für Schritt durch das Abrufen von API-Zugangsdaten.",
+    "wizard_subtitle": "KI-gestützte Einrichtung von Zugangsdaten",
+    "wizard_subtitle_batch": "Richte {count} Dienst{plural} ein"
+  },
+  "autopilot": {
+    "title": "API-Autopilot",
+    "input_hint": "OpenAPI-Spezifikations-URL oder -Inhalt einfügen, um einen Konnektor automatisch zu generieren",
+    "preview_hint": "Die geparste API überprüfen und auswählen, welche Endpunkte einbezogen werden sollen",
+    "generated_hint": "Ihr Konnektor wurde erfolgreich generiert",
+    "connector_generated": "Konnektor erfolgreich generiert",
+    "api_playground": "API-Playground",
+    "api_playground_hint": "Generierte API-Tools vor der Verwendung testen",
+    "paste_spec": "OpenAPI-Spezifikation einfügen (JSON oder YAML)",
+    "valid_url_error": "Gültige URL eingeben (z. B. https://api.example.com/openapi.json)",
+    "authentication": "Authentifizierung",
+    "connector_name": "Konnektor-Name",
+    "color": "Farbe",
+    "endpoints_selected": "Endpunkte ({selected}/{total} ausgewählt)",
+    "generating": "Generiere...",
+    "generate_connector": "Konnektor generieren ({count} Tools)",
+    "base_url": "Basis-URL",
+    "headers_label": "Header",
+    "header_name_placeholder": "Header-Name",
+    "query_parameters": "Abfrageparameter",
+    "param_name_placeholder": "Parametername",
+    "request_body": "Anfragekörper (JSON)",
+    "from_url": "Aus URL",
+    "paste_content": "Inhalt einfügen",
+    "openapi_spec_url": "OpenAPI-Spec-URL",
+    "openapi_format_hint": "Unterstützt OpenAPI 3.x- und Swagger 2.x-Specs im JSON- oder YAML-Format",
+    "parsing_spec": "Spec wird geparst...",
+    "parse_analyze": "Parsen & analysieren",
+    "connector_in_catalog": "{connectorLabel} ist jetzt in Ihrem Konnektor-Katalog mit {toolCount} Tool-Definitionen verfügbar.",
+    "generated_tools": "Generierte Tools ({count})",
+    "credential_fields": "Zugangsdaten-Felder",
+    "open_playground": "Playground öffnen",
+    "copy_connector_id": "Konnektor-ID kopieren",
+    "go_to_catalog": "Zum Katalog",
+    "response_headers": "Response-Header ({count})",
+    "base_url_placeholder": "https://api.example.com",
+    "openapi_url_placeholder": "https://api.example.com/openapi.json",
+    "auth_schemes": "Auth-Schemata",
+    "body_placeholder": "{ \"key\": \"value\" }"
+  },
   "foraging": {
     "no_credentials_found": "Keine Zugangsdaten gefunden",
     "no_credentials_hint": "Versuchen Sie, Umgebungsvariablen wie OPENAI_API_KEY zu setzen oder ~/.aws/credentials zu konfigurieren.",
@@ -996,6 +1176,18 @@
     "sort_most_used_with_recipes": "Am häufigsten mit Rezepten verwendet",
     "new_connector_ribbon": "New",
     "new_connector_tooltip": "In den letzten 30 Tagen hinzugefügt"
+  },
+  "cli_capture": {
+    "cta": "Aus lokalem CLI importieren",
+    "hint": "Verwenden Sie ein bereits lokal angemeldetes CLI anstelle des Einfügens eines API-Schlüssels.",
+    "running": "Lokales CLI wird ausgeführt...",
+    "success": "Zugangsdaten aus CLI erfasst",
+    "token_ttl_notice": "Dieses Token läuft in {seconds}s ab und wird automatisch erneuert.",
+    "source_label": "CLI",
+    "missing_binary": "`{binary}` ist nicht installiert oder nicht an einem freigegebenen Speicherort.",
+    "unauthenticated": "Sie sind nicht bei {binary} angemeldet. {instruction}",
+    "capture_failed": "CLI-Erfassung fehlgeschlagen: {detail}",
+    "timeout": "Zeitüberschreitung bei CLI-Erfassung. Führen Sie den Befehl zuerst manuell aus."
   },
   "schemas": {
     "none_configured": "Keine konfiguriert.",
@@ -1212,6 +1404,11 @@
     "retry_authorized": "Ich habe autorisiert — erneut versuchen",
     "retry_failed": "Erneuter Versuch fehlgeschlagen"
   },
+  "rotation_insight": {
+    "perm_errors": "Permanente Fehler erkannt -- Rotation versucht, Warnung ausgelöst.",
+    "degrading": "Anhaltende Verschlechterung -- präventive Rotation ausgelöst.",
+    "backoff": "Vorübergehende Fehler -- exponentielles Backoff aktiv."
+  },
   "schema_configs": {
     "mcp": {
       "title": "MCP-Server",
@@ -1395,202 +1592,5 @@
     "time_tracking": "Zeiterfassung",
     "vector_search": "Vektorsuche",
     "web_scraping": "Web Scraping"
-  },
-  "title": "Tresor",
-  "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
-  "add_from_catalog": "Aus Katalog hinzufügen",
-  "ai_designed": "KI-gestützte Zugangsdaten",
-  "health": {
-    "healthy": "gesund",
-    "needs_attention": "erfordert Aufmerksamkeit",
-    "untested": "ungetestet"
-  },
-  "list": {
-    "no_credentials": "Keine authentifizierten Dienste erkannt. Wählen Sie unten manuell aus.",
-    "delete_confirm": "Diese Zugangsdaten löschen?",
-    "blast_radius": "Auswirkungsbereich",
-    "no_dependencies": "Keine Agenten hängen von diesen Zugangsdaten ab. Sicher zu ändern oder zu entfernen.",
-    "affected_agents": "Betroffene Agenten",
-    "affected_events": "Betroffene Ereignisse",
-    "sort_label": "Sortieren:"
-  },
-  "connector": {
-    "filter_all": "Alle",
-    "filter_connected": "Verbunden",
-    "filter_available": "Verfügbar"
-  },
-  "vector": {
-    "documents_tab": "Dokumente",
-    "search_tab": "Suche",
-    "settings_tab": "Einstellungen",
-    "ingest_title": "Dokumente hinzufügen",
-    "ingest_hint": "Dateien hier ablegen oder zum Durchsuchen klicken",
-    "ingest_drop": "Dateien zum Hinzufügen ablegen",
-    "ingest_supported": "Unterstützt: txt, md, html, csv, json, yaml, Codedateien",
-    "starting_ingestion": "Dateien werden verarbeitet...",
-    "no_valid_files": "Keine gültigen Dateipfade gefunden. Versuchen Sie, einzelne Dateien abzulegen.",
-    "no_documents": "Noch keine Dokumente",
-    "no_documents_hint": "Dateien hier ablegen, Text einfügen oder ein Verzeichnis scannen, um Ihre Wissensbasis aufzubauen.",
-    "refresh": "Aktualisieren",
-    "paste_text": "Text einfügen",
-    "directory": "Verzeichnis",
-    "delete_document": "Dokument löschen",
-    "document_count_one": "{count} Dokument",
-    "document_count_other": "{count} Dokumente",
-    "show_full": "Vollständigen Auszug anzeigen",
-    "show_less": "Weniger anzeigen",
-    "copy_content": "Inhalt kopieren",
-    "kb_info": "Wissensbasis-Info",
-    "embedding_model": "Suchmodell",
-    "dimensions": "Dimensionen",
-    "chunk_size": "Abschnittsgröße",
-    "chunk_overlap": "Abschnittsüberlappung",
-    "statistics": "Statistiken",
-    "documents": "Dokumente",
-    "chunks": "Abschnitte",
-    "local_embedding": "Lokale Suche",
-    "local_embedding_hint": "Such-Indizierung läuft lokal mit {model} ({dims}-dim). Keine Daten verlassen Ihr Gerät. Das Modell (~23 MB) wird beim ersten Einsatz heruntergeladen und lokal gespeichert."
-  },
-  "desktop": {
-    "installed": "Installiert",
-    "running": "Läuft",
-    "not_installed": "Nicht installiert"
-  },
-  "graph": {
-    "no_dependencies": "Keine Abhängigkeiten",
-    "connection_count_one": "{count} Verbindung",
-    "connection_count_other": "{count} Verbindungen",
-    "dep_count_one": "{count} Abhängigkeit",
-    "dep_count_other": "{count} Abhängigkeiten",
-    "not_tested": "Nicht getestet",
-    "healthy": "Gesund",
-    "unhealthy": "Ungesund"
-  },
-  "wizard": {
-    "detected": "Erkannt ({count})",
-    "available": "Verfügbar ({count})",
-    "already_added": "Bereits hinzugefügt ({count})",
-    "no_match": "Keine Dienste entsprechen \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{search}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"",
-    "already_added_badge": "Bereits hinzugefügt",
-    "local": "Lokal",
-    "cli_auth": "CLI-Auth",
-    "session": "Sitzung"
-  },
-  "bulk_healthcheck": {
-    "title": "Gesundheitscheck-Ergebnisse",
-    "needs_attention": "Aufmerksamkeit erforderlich",
-    "slowest_responses": "Langsamste Antworten",
-    "passed_count": "{count} bestanden",
-    "failed_count": "{count} fehlgeschlagen",
-    "total_count": "{count} gesamt"
-  },
-  "health_bar": {
-    "healthy": "gesund",
-    "needs_attention": "Aufmerksamkeit erforderlich",
-    "untested": "ungetestet"
-  },
-  "card_body": {
-    "failed_update": "Zugangsdaten konnten nicht aktualisiert werden",
-    "authorizing_with": "Autorisierung mit {name}...",
-    "authorize_with": "Mit {name} autorisieren",
-    "authorize_hint": "Startet App-verwaltete {name}-Zustimmung und aktualisiert Refresh-Token nach Genehmigung.",
-    "consent_completed": "{name}-Zustimmung abgeschlossen um {time}"
-  },
-  "card_details": {
-    "tab_intelligence": "Intelligenz",
-    "tab_rotation": "Rotation",
-    "tab_token_lifetime": "Token-Lebensdauer",
-    "tab_services": "Dienste ({count})",
-    "tab_events": "Ereignisse ({count})",
-    "tab_audit": "Audit"
-  },
-  "token_metrics": {
-    "loading": "Metriken werden geladen...",
-    "no_metrics": "Noch keine Token-Aktualisierungsmetriken aufgezeichnet. Metriken erscheinen nach der ersten OAuth-Token-Aktualisierung.",
-    "trend_warning": "Token-Lebensdauer wird kürzer \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\u2014 mögliche Anbieter-Drosselung oder Richtlinienänderung.",
-    "total_refreshes": "Gesamtaktualisierungen",
-    "failure_rate": "Fehlerrate",
-    "avg_lifetime": "Durchschn. Lebensdauer",
-    "avg_drift": "Durchschn. Drift",
-    "recent_ttls": "Letzte Anbieter-TTLs (neueste zuerst)",
-    "recent_refreshes": "Letzte Aktualisierungen",
-    "fallback_used": "Fallback ({fallback}s) in {rate}% der Aktualisierungen verwendet ({count}/{total}) — Provider gibt nicht zurück"
-  },
-  "wizard_detect": {
-    "no_services": "Keine Dienste für \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{search}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" gefunden",
-    "select_services": "Dienste auswählen, für die Zugangsdaten hinzugefügt werden sollen, oder scannen zur automatischen Erkennung.",
-    "scanning": "CLI-Tools und Browsersitzungen werden gescannt...",
-    "scan_button": "Nach authentifizierten Diensten suchen",
-    "search_services": "Dienste suchen...",
-    "desktop_bridge": "Desktop-Bridge -- automatisch erkannt",
-    "batch_complete": "Stapeleinrichtung abgeschlossen",
-    "skip_service": "Diesen Dienst überspringen",
-    "no_filter_match": "Anderen Suchbegriff versuchen oder Filter löschen.",
-    "set_up_credentials": "Zugangsdaten einrichten",
-    "clear_selection": "Auswahl aufheben",
-    "set_up_services": "{count} Dienst{plural} einrichten",
-    "setting_up": "Richte {current} von {total} ein",
-    "wizard_title": "Zugangsdaten-Einrichtungsassistent",
-    "choose_service": "Dienst zum Einrichten auswählen",
-    "ai_walk_description": "Die KI führt Sie Schritt für Schritt durch das Abrufen von API-Zugangsdaten.",
-    "wizard_subtitle": "KI-gestützte Einrichtung von Zugangsdaten",
-    "wizard_subtitle_batch": "Richte {count} Dienst{plural} ein"
-  },
-  "autopilot": {
-    "title": "API-Autopilot",
-    "input_hint": "OpenAPI-Spezifikations-URL oder -Inhalt einfügen, um einen Konnektor automatisch zu generieren",
-    "preview_hint": "Die geparste API überprüfen und auswählen, welche Endpunkte einbezogen werden sollen",
-    "generated_hint": "Ihr Konnektor wurde erfolgreich generiert",
-    "connector_generated": "Konnektor erfolgreich generiert",
-    "api_playground": "API-Playground",
-    "api_playground_hint": "Generierte API-Tools vor der Verwendung testen",
-    "paste_spec": "OpenAPI-Spezifikation einfügen (JSON oder YAML)",
-    "valid_url_error": "Gültige URL eingeben (z. B. https://api.example.com/openapi.json)",
-    "authentication": "Authentifizierung",
-    "connector_name": "Konnektor-Name",
-    "color": "Farbe",
-    "endpoints_selected": "Endpunkte ({selected}/{total} ausgewählt)",
-    "generating": "Generiere...",
-    "generate_connector": "Konnektor generieren ({count} Tools)",
-    "base_url": "Basis-URL",
-    "headers_label": "Header",
-    "header_name_placeholder": "Header-Name",
-    "query_parameters": "Abfrageparameter",
-    "param_name_placeholder": "Parametername",
-    "request_body": "Anfragekörper (JSON)",
-    "from_url": "Aus URL",
-    "paste_content": "Inhalt einfügen",
-    "openapi_spec_url": "OpenAPI-Spec-URL",
-    "openapi_format_hint": "Unterstützt OpenAPI 3.x- und Swagger 2.x-Specs im JSON- oder YAML-Format",
-    "parsing_spec": "Spec wird geparst...",
-    "parse_analyze": "Parsen & analysieren",
-    "connector_in_catalog": "{connectorLabel} ist jetzt in Ihrem Konnektor-Katalog mit {toolCount} Tool-Definitionen verfügbar.",
-    "generated_tools": "Generierte Tools ({count})",
-    "credential_fields": "Zugangsdaten-Felder",
-    "open_playground": "Playground öffnen",
-    "copy_connector_id": "Konnektor-ID kopieren",
-    "go_to_catalog": "Zum Katalog",
-    "response_headers": "Response-Header ({count})",
-    "base_url_placeholder": "https://api.example.com",
-    "openapi_url_placeholder": "https://api.example.com/openapi.json",
-    "auth_schemes": "Auth-Schemata",
-    "body_placeholder": "{ \"key\": \"value\" }"
-  },
-  "cli_capture": {
-    "cta": "Aus lokalem CLI importieren",
-    "hint": "Verwenden Sie ein bereits lokal angemeldetes CLI anstelle des Einfügens eines API-Schlüssels.",
-    "running": "Lokales CLI wird ausgeführt...",
-    "success": "Zugangsdaten aus CLI erfasst",
-    "token_ttl_notice": "Dieses Token läuft in {seconds}s ab und wird automatisch erneuert.",
-    "source_label": "CLI",
-    "missing_binary": "`{binary}` ist nicht installiert oder nicht an einem freigegebenen Speicherort.",
-    "unauthenticated": "Sie sind nicht bei {binary} angemeldet. {instruction}",
-    "capture_failed": "CLI-Erfassung fehlgeschlagen: {detail}",
-    "timeout": "Zeitüberschreitung bei CLI-Erfassung. Führen Sie den Befehl zuerst manuell aus."
-  },
-  "rotation_insight": {
-    "perm_errors": "Permanente Fehler erkannt -- Rotation versucht, Warnung ausgelöst.",
-    "degrading": "Anhaltende Verschlechterung -- präventive Rotation ausgelöst.",
-    "backoff": "Vorübergehende Fehler -- exponentielles Backoff aktiv."
   }
 }

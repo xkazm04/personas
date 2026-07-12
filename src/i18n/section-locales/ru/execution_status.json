@@ -1,8 +1,8 @@
 {
-  "completed": "Завершено",
-  "failed": "Ошибка",
   "queued": "В очереди",
   "running": "Выполняется",
+  "completed": "Завершено",
+  "failed": "Ошибка",
   "cancelled": "Отменено",
   "error": "Ошибка"
 }

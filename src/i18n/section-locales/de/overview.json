@@ -1,13 +1,14 @@
 {
+  "title": "Ereignisprotokoll",
+  "no_output": "Noch keine Ausgabe",
+  "no_background_jobs": "Keine Hintergrundaufgaben aktiv oder kürzlich",
+  "background_jobs_hint": "Aufgaben erscheinen hier, wenn Sie n8n-Transformationen, Vorlagenübernahmen, Vorlagengenerierung oder Abfrage-Debugging ausführen",
   "filters": {
     "start_date": "Startdatum",
     "end_date": "Enddatum",
     "all_personas": "Alle Personas"
   },
   "messages": {
-    "priority_high": "Hoch",
-    "priority_normal": "Normal",
-    "priority_low": "Niedrig",
     "loading": "Nachrichten werden geladen...",
     "no_messages": "Noch keine Nachrichten",
     "switch_to_all": "Wechseln Sie zu \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Alle\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\", um alle Nachrichten zu sehen",
@@ -19,6 +20,9 @@
       "created": "Erstellt"
     },
     "content_header": "Inhalt",
+    "priority_high": "Hoch",
+    "priority_normal": "Normal",
+    "priority_low": "Niedrig",
     "filter_all": "Alle",
     "filter_unread": "Ungelesen",
     "filter_high_priority": "Hohe Priorität",
@@ -33,6 +37,14 @@
     "id_label": "ID:",
     "confirm_delete_title": "Löschen bestätigen",
     "close_message": "Nachrichtendetail schließen"
+  },
+  "realtime": {
+    "idle": "Inaktiv -- klicken Sie auf {action}, um Datenverkehr zu simulieren",
+    "test_flow": "Testlauf",
+    "events_per_min": "Ereignisse/Min.",
+    "pending": "ausstehend",
+    "success": "erfolgreich",
+    "in_window": "im Fenster"
   },
   "incidents": {
     "filters_active_aria": "{count} aktive Filter",
@@ -148,25 +160,21 @@
     "subtitle": "Ausführungsgesundheit, Kosten und Anomalien aller Agenten überwachen",
     "alert_rules": "Alarmregeln",
     "refresh_metrics": "Metriken aktualisieren",
-    "metrics_unavailable": "Metriken nicht verfügbar -- angezeigte Daten können veraltet sein",
-    "error_recovery": {
-      "panel_loaded": "Geladen",
-      "panel_failed": "Laden fehlgeschlagen",
-      "panel_stale": "Daten könnten veraltet sein"
-    },
     "persona_disabled": "Persona automatisch deaktiviert",
     "auto_resolved": "Dieses Problem wurde automatisch behoben",
     "mark_resolved": "Als gelöst markieren",
     "manual_fix": "(manuell behoben)",
+    "metrics_unavailable": "Metriken nicht verfügbar -- angezeigte Daten können veraltet sein",
     "no_open_issues": "Keine offenen Probleme",
-    "run_analysis": "Analyse ausführen, um nach Problemen zu suchen."
+    "run_analysis": "Analyse ausführen, um nach Problemen zu suchen.",
+    "error_recovery": {
+      "panel_loaded": "Geladen",
+      "panel_failed": "Laden fehlgeschlagen",
+      "panel_stale": "Daten könnten veraltet sein"
+    }
   },
   "memories": {
     "title": "Erinnerungen",
-    "delete_all": "Alle löschen",
-    "delete_all_confirm_title": "Alle Erinnerungen löschen?",
-    "delete_all_confirm_body": "Dies löscht dauerhaft alle {count} Erinnerungen. Dies kann nicht rückgängig gemacht werden.",
-    "delete_all_confirm_cta": "Alle löschen",
     "created_success": "Erinnerung erfolgreich erstellt",
     "no_memories": "Noch keine Erinnerungen",
     "no_memories_hint": "Wenn Agenten laufen, können sie hier wertvolle Notizen und Erkenntnisse speichern.",
@@ -199,16 +207,95 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "Alle löschen",
+    "delete_all_confirm_title": "Alle Erinnerungen löschen?",
+    "delete_all_confirm_body": "Dies löscht dauerhaft alle {count} Erinnerungen. Dies kann nicht rückgängig gemacht werden.",
+    "delete_all_confirm_cta": "Alle löschen"
   },
   "memory_review": {
+    "all_conflicts_resolved": "Alle Konflikte gelöst",
     "keep_prefix": "Behalte „",
-    "keep_suffix": "“",
-    "all_conflicts_resolved": "Alle Konflikte gelöst"
+    "keep_suffix": "“"
+  },
+  "executions": {
+    "title": "Ausführungen",
+    "loading": "Ausführungen werden geladen...",
+    "no_agents": "Noch keine Agenten erstellt",
+    "create_first": "Erstellen Sie Ihren ersten Agenten, um hier Ausführungsaktivitäten zu sehen",
+    "no_executions": "Noch keine Ausführungen",
+    "run_agent": "Führen Sie einen Agenten aus, um hier Aktivitäten zu sehen"
+  },
+  "workflows": {
+    "loading": "Workflows werden geladen...",
+    "title": "Workflows",
+    "subtitle": "Aktive und kürzliche Hintergrundoperationen im Arbeitsbereich",
+    "no_jobs": "Keine Hintergrundjobs laufend oder kürzlich",
+    "jobs_hint": "Jobs erscheinen hier, wenn Sie n8n-Transformationen, Vorlagenübernahmen, Vorlagengenerierungen oder Abfragedebugging ausführen",
+    "all_types": "Alle Typen",
+    "no_filter_match": "Keine Jobs entsprechen den aktuellen Filtern",
+    "auto_refreshing": "Automatische Aktualisierung während Jobs laufen",
+    "cancel_failed": "Workflow-Job konnte nicht abgebrochen werden"
+  },
+  "schedules": {
+    "title": "Zeitplan-Übersicht",
+    "subtitle": "Aggregierte Ansicht aller geplanten Agentenausführungen",
+    "engine_on": "Engine An",
+    "engine_off": "Engine Aus",
+    "engine_on_tooltip": "Scheduler läuft -- klicken zum Pausieren",
+    "engine_off_tooltip": "Scheduler gestoppt -- klicken zum Starten",
+    "active_count": "{count} aktiv",
+    "paused_count": "{count} pausiert",
+    "view_grouped": "Gruppiert",
+    "view_timeline": "Zeitachse",
+    "triggers_fired": "Ausgelöste Auslöser: ",
+    "events_processed": "Verarbeitete Ereignisse: ",
+    "delivered": "Zugestellt: ",
+    "failed_label": "Fehlgeschlagen: ",
+    "loading": "Zeitpläne werden geladen...",
+    "empty": "Keine geplanten Agenten gefunden.",
+    "empty_hint": "Erstellen Sie einen Zeitplan oder Polling-Auslöser für einen Agenten, um ihn hier zu sehen.",
+    "group_overdue": "Überfällig",
+    "group_15min": "Nächste 15 Minuten",
+    "group_1hour": "Nächste Stunde",
+    "group_6hours": "Nächste 6 Stunden",
+    "group_24hours": "Nächste 24 Stunden",
+    "group_later": "Später",
+    "group_paused": "Pausiert / Ungeplant",
+    "run_now": "Jetzt ausführen",
+    "change_frequency": "Frequenz ändern",
+    "pause_schedule": "Zeitplan pausieren",
+    "resume_schedule": "Zeitplan fortsetzen",
+    "headless_badge": "headless"
+  },
+  "frequency_editor": {
+    "title": "Frequenz ändern",
+    "current": "Aktuell: ",
+    "quick_presets": "Schnellvorlagen",
+    "cron_expression": "Cron-Ausdruck",
+    "interval_seconds": "Intervall (Sekunden)",
+    "previewing": "Vorschau...",
+    "next_runs": "Nächste Läufe",
+    "invalid_cron": "Ungültiger Cron-Ausdruck"
+  },
+  "recovery": {
+    "agents_missed_one": "{count} Agent hat Ausführungen verpasst",
+    "agents_missed_other": "{count} Agenten haben Ausführungen verpasst",
+    "total_skipped": "~{count} Läufe übersprungen, während die App offline war",
+    "missed_since": "{count} verpasst seit {time}",
+    "every_interval": "alle {interval}",
+    "mark_for_recovery": "Zur Wiederherstellung markieren",
+    "recover": "Wiederherstellen",
+    "run_once": "1x ausführen",
+    "run_once_tooltip": "Jetzt einmal ausführen",
+    "skip_tooltip": "Überspringen -- nicht wiederherstellen",
+    "dismiss_all": "Alle verwerfen",
+    "recover_selected": "{count} ausgewählte wiederherstellen"
   },
   "sla": {
     "title": "Agenten-Zuverlässigkeit SLA",
     "subtitle": "Verfügbarkeit, Fehlerraten und Heilungsmetriken Ihrer Agentenflotte",
+    "loading": "SLA-Daten werden geladen...",
     "no_data": "Keine Ausführungsdaten verfügbar.",
     "success_rate": "Erfolgsrate",
     "executions_summary": "{successful}/{total} Ausführungen",
@@ -221,12 +308,6 @@
     "daily_success_rate": "Tägliche Erfolgsrate -- {days} Tage",
     "per_agent": "Zuverlässigkeit pro Agent",
     "no_agent_data": "Keine Agenten haben in diesem Zeitraum Ausführungen durchgeführt.",
-    "success_rate_tooltip": "Erfolgsrate = erfolgreich / (erfolgreich + fehlgeschlagen). Abgebrochene Ausführungen werden nicht berücksichtigt, da sie nutzerinitiiert sind und nichts über die Systemzuverlässigkeit aussagen.",
-    "all_time_badge": "Gesamt",
-    "open_issues_tooltip": "Aktuell offene Selbstheilungsprobleme über alle Agenten hinweg. Dies ist eine Momentaufnahme über die gesamte Laufzeit und ändert sich nicht mit dem oben gewählten Zeitraum — ein Problem, das vor Monaten aufgetreten und weiterhin offen ist, ist auch jetzt noch nicht behoben.",
-    "auto_healed_tooltip": "Gesamtzahl der Probleme, die die Selbstheilungs-Engine seit der Installation automatisch behoben hat. Diese Zahl bezieht sich auf die gesamte Laufzeit und ändert sich nicht mit dem oben gewählten Zeitraum.",
-    "windowed_tooltip": "Berechnet über den oben ausgewählten Zeitraum ({days} Tage).",
-    "loading": "SLA-Daten werden geladen...",
     "metric_successful": "Erfolgreich",
     "metric_failed": "Fehlgeschlagen",
     "metric_avg_latency": "Durchschn. Latenz",
@@ -234,20 +315,15 @@
     "metric_cost": "Kosten",
     "metric_mtbf": "MTBF",
     "metric_auto_healed": "Auto-Heilung",
-    "metric_cancelled": "Abgebrochen"
+    "metric_cancelled": "Abgebrochen",
+    "success_rate_tooltip": "Erfolgsrate = erfolgreich / (erfolgreich + fehlgeschlagen). Abgebrochene Ausführungen werden nicht berücksichtigt, da sie nutzerinitiiert sind und nichts über die Systemzuverlässigkeit aussagen.",
+    "all_time_badge": "Gesamt",
+    "open_issues_tooltip": "Aktuell offene Selbstheilungsprobleme über alle Agenten hinweg. Dies ist eine Momentaufnahme über die gesamte Laufzeit und ändert sich nicht mit dem oben gewählten Zeitraum — ein Problem, das vor Monaten aufgetreten und weiterhin offen ist, ist auch jetzt noch nicht behoben.",
+    "auto_healed_tooltip": "Gesamtzahl der Probleme, die die Selbstheilungs-Engine seit der Installation automatisch behoben hat. Diese Zahl bezieht sich auf die gesamte Laufzeit und ändert sich nicht mit dem oben gewählten Zeitraum.",
+    "windowed_tooltip": "Berechnet über den oben ausgewählten Zeitraum ({days} Tage)."
   },
   "knowledge": {
     "title": "Wissensgraph",
-    "patterns_tab": "Muster",
-    "search_placeholder": "Muster suchen...",
-    "sort_aria": "Muster sortieren",
-    "sort_default": "Top-Muster",
-    "sort_confidence": "Höchste Konfidenz",
-    "sort_runs": "Meiste Ausführungen",
-    "sort_recent": "Neueste",
-    "needs_review": "Zu prüfen",
-    "pending_scope_hint": "Wählen Sie eine Persona, um alle ausstehenden Anmerkungen zu prüfen.",
-    "graph_tab": "Graph",
     "subtitle": "{count} Muster aus dem Ausführungsverlauf gelernt",
     "total_patterns": "Muster gesamt",
     "tool_sequences": "Werkzeugsequenzen",
@@ -269,13 +345,36 @@
     "failures": "Fehler",
     "avg_cost": "Durchschn. Kosten",
     "avg_duration": "Durchschn. Dauer",
-    "pattern_data": "Musterdaten"
+    "pattern_data": "Musterdaten",
+    "patterns_tab": "Muster",
+    "search_placeholder": "Muster suchen...",
+    "sort_aria": "Muster sortieren",
+    "sort_default": "Top-Muster",
+    "sort_confidence": "Höchste Konfidenz",
+    "sort_runs": "Meiste Ausführungen",
+    "sort_recent": "Neueste",
+    "needs_review": "Zu prüfen",
+    "pending_scope_hint": "Wählen Sie eine Persona, um alle ausstehenden Anmerkungen zu prüfen.",
+    "graph_tab": "Graph"
+  },
+  "conflicts": {
+    "dismissed": "Konflikt verworfen",
+    "resolved": "Konflikt gelöst",
+    "resolve_failed": "Konflikt konnte nicht gelöst werden",
+    "conflict_count_one": "{count} Konflikt",
+    "conflict_count_other": "{count} Konflikte"
   },
   "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Betriebsübersicht und Systemstatus",
     "greeting_morning": "Guten Morgen",
     "greeting_afternoon": "Guten Tag",
     "greeting_evening": "Guten Abend",
     "default_user": "Bediener",
+    "pending_reviews_prompt": "ausstehende Bewertungen",
+    "requiring_attention": "erfordern Aufmerksamkeit.",
+    "empty_cta": "Erstellen Sie Ihren ersten Agenten, um zu beginnen.",
+    "pipeline_failed": "{source} konnte nicht geladen werden",
     "empty_title": "Willkommen bei Personas",
     "empty_subtitle": "Erstellen Sie Ihren ersten Agenten, um Ausführungsmetriken, Verkehrsdiagramme und Aktivitäten hier zu sehen.",
     "create_persona": "Persona erstellen",
@@ -297,12 +396,6 @@
     "section_memory": "Speichervorschläge",
     "section_fleet": "Flottenoptimierung",
     "section_routines": "Routinen & Tresor-Änderungen",
-    "title": "Dashboard",
-    "subtitle": "Betriebsübersicht und Systemstatus",
-    "pending_reviews_prompt": "ausstehende Bewertungen",
-    "requiring_attention": "erfordern Aufmerksamkeit.",
-    "empty_cta": "Erstellen Sie Ihren ersten Agenten, um zu beginnen.",
-    "pipeline_failed": "{source} konnte nicht geladen werden",
     "instruments_subtitle": "Flottentelemetrie",
     "memory_suggestions_count": "{count} Vorschläge",
     "pane_instruments": "Instrumente",
@@ -331,6 +424,49 @@
     "triage_tag_pipeline": "SYS",
     "triage_tag_review": "REV",
     "vitals_subtitle_fleet": "Flottengesundheit"
+  },
+  "execution_metrics": {
+    "title": "Ausführungsmetriken",
+    "total_executions": "Ausführungen gesamt",
+    "total_cost": "Gesamtkosten",
+    "success_rate": "Erfolgsrate",
+    "avg_latency": "Durchschn. Latenz",
+    "cost_anomalies": "Kostenanomalien erkannt",
+    "no_data": "Keine Ausführungsdaten für den ausgewählten Zeitraum",
+    "cost_per_day": "Kosten pro Tag",
+    "executions_by_status": "Ausführungen nach Status",
+    "success_rate_trend": "Erfolgsraten-Trend",
+    "latency_distribution": "Latenzverteilung (p50 / p95 / p99)",
+    "top_personas_by_cost": "Top-Personas nach Kosten",
+    "cost_spike": "Kostenanstieg",
+    "above_avg": "über Durchschnitt",
+    "top_executions": "Top-Ausführungen:",
+    "executions_label": "{count} Ausführungen"
+  },
+  "execution_list": {
+    "recorded": "{count} Ausführungen aufgezeichnet",
+    "recorded_one": "{count} Ausführung aufgezeichnet",
+    "list": "Liste",
+    "metrics": "Metriken",
+    "show_list": "Ausführungsliste anzeigen",
+    "show_metrics": "Metriken-Dashboard anzeigen",
+    "showing": "Zeige {count} von {total}",
+    "load_more": "Mehr laden",
+    "filter_all": "Alle",
+    "filter_running": "Laufend",
+    "filter_completed": "Abgeschlossen",
+    "filter_failed": "Fehlgeschlagen",
+    "col_persona": "Persona",
+    "col_status": "Status",
+    "col_duration": "Dauer",
+    "col_started": "Gestartet",
+    "col_id": "ID",
+    "all_statuses": "Alle Status",
+    "all_personas": "Alle Personas",
+    "no_agents": "Noch keine Agenten erstellt",
+    "no_agents_hint": "Erstellen Sie Ihren ersten Agenten, um die Ausführungsaktivität hier zu sehen.",
+    "unknown_persona": "Unbekannt",
+    "healing_retry": "Heilungs-Wiederholung #{count}"
   },
   "review": {
     "title": "Manuelle Überprüfungen",
@@ -413,27 +549,44 @@
   },
   "messages_view": {
     "title": "Nachrichten",
+    "threads_subtitle": "{count} Threads",
+    "threads_subtitle_one": "{count} Thread",
     "messages_subtitle": "{count} Nachrichten aufgezeichnet",
     "messages_subtitle_one": "{count} Nachricht aufgezeichnet",
     "mock_message": "Testnachricht",
     "seed_tooltip": "Testnachricht hinzufügen (nur Entwicklung)",
+    "flat_view": "Flache Ansicht",
+    "threaded_view": "Thread-Ansicht",
     "mark_all_read": "Alle als gelesen markieren",
+    "threads_of": "{count} von {total} Threads",
+    "no_threads": "Noch keine Nachrichten-Threads",
+    "no_threads_hint": "Threads werden automatisch erstellt, wenn Agenten während Ausführungen Nachrichten erzeugen.",
     "no_messages": "Noch keine Nachrichten",
     "no_messages_hint": "Nachrichten werden erstellt, wenn Agenten laufen und miteinander kommunizieren.",
     "no_filter_match": "Keine Nachrichten entsprechen den aktuellen Filtern",
+    "loading_replies": "Antworten werden geladen...",
     "load_more": "Mehr laden ({count} verbleibend)",
     "col_title": "Titel",
+    "col_priority": "Priorität",
+    "col_delivery": "Zustellung",
+    "col_status": "Status",
     "col_created": "Erstellt",
     "all_priorities": "Alle Prioritäten",
     "all_statuses": "Alle Status",
     "read": "Gelesen",
     "unread": "Ungelesen",
+    "new_badge": "Neu",
+    "failed_count": "{count} fehlgeschlagen",
+    "pending_count": "{count} ausstehend",
+    "sent_count": "{count} gesendet",
     "message_label": "Nachricht",
     "from_label": "Von {name}",
     "content_label": "Inhalt",
     "view_execution": "Ausführung anzeigen",
+    "type_label": "Typ:",
     "delivery_status": "Zustellungsstatus",
     "no_channels": "Keine Zustellungskanäle konfiguriert",
+    "confirm_delete": "Löschen bestätigen",
     "improve_agent": "Agenten verbessern",
     "improvement_started": "Verbesserung gestartet -- Sie werden benachrichtigt, wenn fertig",
     "what_could_be_better": "Was könnte besser sein?",
@@ -446,6 +599,7 @@
     "rating_label": "Diese Nachricht bewerten",
     "rating_star_aria": "{value} von 5 Sternen bewerten",
     "rating_saved": "Gespeichert · {stars}/5",
+    "rating_clear": "Clear rating",
     "rating_memory_title": "Nachrichtenbewertung: {stars}/5",
     "rating_memory_content_good": "Der Nutzer hat die Ausgabe mit {stars}/5 Sternen bewertet. Diese Nachricht hat die Erwartungen erfüllt — den Ansatz beibehalten.",
     "rating_memory_content_neutral": "Der Nutzer hat die Ausgabe mit {stars}/5 Sternen bewertet. Neutrales Feedback — die Nachricht auf kleinere Verbesserungen hin überprüfen.",
@@ -463,25 +617,7 @@
     "delete_all": "Alle löschen",
     "delete_all_confirm_title": "Alle Nachrichten löschen?",
     "delete_all_confirm_body": "Dies löscht dauerhaft alle {count} Nachrichten. Dieser Vorgang kann nicht rückgängig gemacht werden.",
-    "delete_all_confirm_cta": "Alle löschen",
-    "threads_subtitle": "{count} Threads",
-    "threads_subtitle_one": "{count} Thread",
-    "flat_view": "Flache Ansicht",
-    "threaded_view": "Thread-Ansicht",
-    "threads_of": "{count} von {total} Threads",
-    "no_threads": "Noch keine Nachrichten-Threads",
-    "no_threads_hint": "Threads werden automatisch erstellt, wenn Agenten während Ausführungen Nachrichten erzeugen.",
-    "loading_replies": "Antworten werden geladen...",
-    "col_priority": "Priorität",
-    "col_delivery": "Zustellung",
-    "col_status": "Status",
-    "new_badge": "Neu",
-    "failed_count": "{count} fehlgeschlagen",
-    "pending_count": "{count} ausstehend",
-    "sent_count": "{count} gesendet",
-    "type_label": "Typ:",
-    "confirm_delete": "Löschen bestätigen",
-    "rating_clear": "Clear rating"
+    "delete_all_confirm_cta": "Alle löschen"
   },
   "events": {
     "title": "Ereignisse",
@@ -491,6 +627,7 @@
     "seed_tooltip": "Testereignis hinzufügen (nur Entwicklung)",
     "search_placeholder": "Ereignisse nach Typ, Quelle oder Payload suchen...",
     "loading_older": "Ältere Ereignisse werden geladen...",
+    "load_older": "Ältere Ereignisse laden",
     "no_events": "Noch keine Ereignisse",
     "no_events_hint": "Ereignisse von Webhooks, Ausführungen und Persona-Aktionen erscheinen hier, wenn Ihre Agenten laufen.",
     "no_filter_match": "Keine Ereignisse entsprechen den aktuellen Filtern",
@@ -498,6 +635,12 @@
     "view_name_placeholder": "Ansichtsname (z. B. 'Fehlgeschlagene Webhooks diese Woche')",
     "views_label": "Ansichten:",
     "delete_view": "Ansicht löschen",
+    "clear_filters": "Alle Filter löschen",
+    "col_trigger": "Trigger",
+    "col_persona": "Persona",
+    "col_event_name": "Ereignisname",
+    "col_status": "Status",
+    "col_created": "Erstellt",
     "all_statuses": "Alle Status",
     "all_types": "Alle Typen",
     "all_triggers": "Alle Trigger",
@@ -507,13 +650,6 @@
     "source_scheduled": "Geplant",
     "event_detail_title": "Ereignis:",
     "event_detail_status": "Status:",
-    "load_older": "Ältere Ereignisse laden",
-    "clear_filters": "Alle Filter löschen",
-    "col_trigger": "Trigger",
-    "col_persona": "Persona",
-    "col_event_name": "Ereignisname",
-    "col_status": "Status",
-    "col_created": "Erstellt",
     "event_id": "Ereignis-ID",
     "project": "Projekt",
     "source": "Quelle",
@@ -524,7 +660,6 @@
   "health": {
     "title": "Agentengesundheit",
     "subtitle": "Echtzeit-Gesundheitsüberwachung aller Agenten",
-    "status_page": "Statusseite",
     "all_healthy": "Alle Agenten gesund",
     "all_healthy_hint": "Jeder überwachte Agent arbeitet normal",
     "no_agents": "Noch keine Agenten",
@@ -547,6 +682,7 @@
     "cascade_title": "Kaskadenanalyse",
     "predictive_alerts": "Prädiktive Warnungen",
     "no_alerts": "Derzeit keine prädiktiven Warnungen",
+    "status_page": "Statusseite",
     "operational": "Betriebsbereit",
     "degraded": "Beeinträchtigt",
     "outage": "Ausfall"
@@ -591,6 +727,58 @@
     "hint_activity": "Löse oder plane diesen Agenten häufiger aus, um die Aktivität zu steigern.",
     "improve_agent": "Diesen Agenten verbessern"
   },
+  "analytics": {
+    "title": "Analytik",
+    "subtitle": "Ausführungsmuster und Trends",
+    "loading": "Analytik wird geladen...",
+    "no_data": "Keine Analytik-Daten verfügbar",
+    "executions_over_time": "Ausführungen im Zeitverlauf",
+    "success_failure": "Erfolg vs. Fehler",
+    "cost_breakdown": "Kostenaufschlüsselung",
+    "total_executions": "Ausführungen gesamt",
+    "total_cost": "Gesamtkosten",
+    "avg_success_rate": "Durchschn. Erfolgsrate",
+    "active_agents": "Aktive Agenten",
+    "saved_views": "Gespeicherte Ansichten",
+    "create_view": "Ansicht erstellen",
+    "health_issues": "Gesundheitsprobleme",
+    "rotation_overview": "Rotationsübersicht"
+  },
+  "usage": {
+    "title": "Nutzung",
+    "subtitle": "Kosten und Ressourcenverbrauch",
+    "chart_error": "Diagramm konnte nicht geladen werden",
+    "chart_error_hint": "Beim Rendern dieses Diagramms ist ein Fehler aufgetreten",
+    "try_again": "Erneut versuchen"
+  },
+  "cron_agents": {
+    "title": "Geplante Agenten",
+    "subtitle": "Agenten, die nach automatischen Zeitplänen laufen",
+    "no_agents": "Keine geplanten Agenten",
+    "no_agents_hint": "Cron-Trigger zu einem Agenten hinzufügen, um ihn hier anzuzeigen"
+  },
+  "timeline": {
+    "title": "Aktivitätszeitlinie",
+    "subtitle": "Einheitliche Ansicht aller Agentenaktivitäten",
+    "no_activity": "Keine kürzliche Aktivität"
+  },
+  "realtime_viz": {
+    "title": "Ereignis-Bus",
+    "filter_events": "Ereignisse filtern",
+    "pause": "Pause",
+    "resume": "Fortsetzen",
+    "clear": "Leeren",
+    "total_events": "Ereignisse gesamt",
+    "events_per_sec": "Ereignisse/Sek.",
+    "active_lanes": "Aktive Spuren",
+    "event_type": "Ereignistyp",
+    "source": "Quelle",
+    "target": "Ziel",
+    "timestamp": "Zeitstempel",
+    "payload": "Payload",
+    "saved_views": "Gespeicherte Ansichten",
+    "save_current": "Aktuelle speichern"
+  },
   "observability_extra": {
     "auto_refresh_on": "Automatische Aktualisierung ein",
     "auto_refresh_off": "Automatische Aktualisierung aus",
@@ -618,12 +806,21 @@
     "error_rate": "Fehlerrate"
   },
   "widgets": {
+    "recent_activity": "Kürzliche Aktivität",
     "view_all": "Alle anzeigen",
+    "total_traffic": "Gesamtverkehr",
+    "total_errors": "Fehler gesamt",
     "traffic_errors_chart": "Verkehr & Fehler",
     "top_performers": "Top-Performer",
+    "metric_help": "Metriken-Hilfe",
+    "how_calculated": "Wie wird das berechnet?",
+    "details": "Details",
     "messages_badge": "Nachrichten",
     "reviews_badge": "Überprüfungen",
+    "executions_badge": "Ausführungen",
+    "success_badge": "Erfolg",
     "alerts_badge": "Warnungen",
+    "agents_badge": "Agenten",
     "pipelines_badge": "Pipelines",
     "tool_performance": "Tool-Performance",
     "tool_performance_subtitle": "Latenz und Fehlerquote pro Tool",
@@ -632,21 +829,21 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Fehler",
-    "tool_performance_unit_ms": "ms",
-    "recent_activity": "Kürzliche Aktivität",
-    "total_traffic": "Gesamtverkehr",
-    "total_errors": "Fehler gesamt",
     "tool_performance_empty": "No tool runs in this window",
-    "metric_help": "Metriken-Hilfe",
-    "how_calculated": "Wie wird das berechnet?",
-    "details": "Details",
-    "executions_badge": "Ausführungen",
-    "success_badge": "Erfolg",
-    "agents_badge": "Agenten",
+    "tool_performance_unit_ms": "ms",
     "range_days_ago": "Vor {days} Tagen",
     "range_today": "Heute",
     "range_yesterday": "Gestern",
     "traffic_errors_chart_aria": "Traffic- und Fehlerdiagramm"
+  },
+  "cards": {
+    "fleet_optimization": "Flotten-Optimierung",
+    "fleet_subtitle": "Automatische Empfehlungen zur Verbesserung der Agentenleistung",
+    "remote_control": "Fernsteuerung",
+    "remote_subtitle": "Schnellaktionen für die Agentenverwaltung",
+    "resume_setup": "Einrichtung fortsetzen",
+    "resume_subtitle": "Da weitermachen, wo Sie aufgehört haben",
+    "knowledge_hub": "Wissens-Hub"
   },
   "activity": {
     "title": "Aktivität",
@@ -675,16 +872,23 @@
     "prev_failed": "Vorher fehlgeschlagen",
     "success_pct": "Erfolg %",
     "prev_success_pct": "Vorher Erfolg %",
+    "successful": "Erfolgreich",
+    "all": "Alle",
+    "running": "Laufend",
+    "all_statuses": "Alle Status",
     "showing": "Zeige {count} von {total}",
     "load_more": "Mehr laden",
+    "col_status": "Status",
     "col_duration": "Dauer",
     "col_started": "Gestartet",
+    "col_id": "ID",
     "no_agents": "Noch keine Agenten erstellt",
     "no_agents_hint": "Erstellen Sie Ihre erste Persona, um die Ausführungsaktivität hier zu sehen.",
     "no_executions": "Noch keine Ausführungen",
     "no_executions_hint": "Agenten ausführen, um die Ausführungsaktivität hier zu sehen.",
     "create_persona": "Persona erstellen",
     "from_templates": "Aus Vorlagen",
+    "execution_label": "Ausführung",
     "unknown": "Unbekannt",
     "value_section_title": "Geschäftswert",
     "value_delivered_rate": "Wertlieferungsrate",
@@ -692,36 +896,9 @@
     "value_delivered_count": "Wert geliefert",
     "all_models": "Alle Modelle",
     "col_model": "Modell",
-    "col_cost": "Kosten",
-    "successful": "Erfolgreich",
-    "all": "Alle",
-    "running": "Laufend",
-    "all_statuses": "Alle Status",
-    "col_status": "Status",
-    "col_id": "ID",
-    "execution_label": "Ausführung"
+    "col_cost": "Kosten"
   },
   "analytics_dashboard": {
-    "issues_found": "{count} Probleme gefunden",
-    "issues_found_one": "{count} Problem gefunden",
-    "auto_fixed": "automatisch behoben",
-    "executions_scanned": "{count} Ausführungen gescannt",
-    "executions_scanned_one": "{count} Ausführung gescannt",
-    "credential_rotation": "Zugangsdaten-Rotation",
-    "no_rotation_policies": "Keine Rotationsrichtlinien",
-    "no_rotation_hint": "Rotation für Zugangsdaten im Tresor konfigurieren.",
-    "active_count": "{count} aktiv",
-    "soon_count": "{count} bald",
-    "issues_count": "{count} Probleme",
-    "issues_count_one": "{count} Problem",
-    "fail_count": "{count}x Fehler",
-    "rotation_manage_all": "Verwalten",
-    "rotation_open_in_connections": "In Verbindungen öffnen",
-    "rotation_started_for": "Rotation gestartet für {name}",
-    "rotation_failed_for": "Rotation von {name} fehlgeschlagen",
-    "rotation_due_now": "jetzt fällig",
-    "rotation_countdown_days_hours": "{days}T {hours}Std",
-    "rotation_countdown_hours": "{hours}h",
     "title": "Analytik",
     "subtitle": "Einheitliche Kosten-, Ausführungs- und Tool-Nutzungsanalytik",
     "metrics_unavailable": "Metriken nicht verfügbar",
@@ -756,6 +933,11 @@
     "run_analysis": "Analyse ausführen",
     "analyzing": "Analysiere...",
     "analysis_complete": "Analyse abgeschlossen",
+    "issues_found": "{count} Probleme gefunden",
+    "issues_found_one": "{count} Problem gefunden",
+    "auto_fixed": "automatisch behoben",
+    "executions_scanned": "{count} Ausführungen gescannt",
+    "executions_scanned_one": "{count} Ausführung gescannt",
     "no_open_issues": "Keine offenen Probleme",
     "run_analysis_hint": "Analyse ausführen, um nach Problemen zu suchen.",
     "filter_all": "Alle",
@@ -765,7 +947,29 @@
     "breaker": "Unterbrecher",
     "fixed": "behoben",
     "retry": "Wiederholen",
-    "never": "nie"
+    "credential_rotation": "Zugangsdaten-Rotation",
+    "no_rotation_policies": "Keine Rotationsrichtlinien",
+    "no_rotation_hint": "Rotation für Zugangsdaten im Tresor konfigurieren.",
+    "active_count": "{count} aktiv",
+    "soon_count": "{count} bald",
+    "issues_count": "{count} Probleme",
+    "issues_count_one": "{count} Problem",
+    "never": "nie",
+    "fail_count": "{count}x Fehler",
+    "rotation_manage_all": "Verwalten",
+    "rotation_open_in_connections": "In Verbindungen öffnen",
+    "rotation_started_for": "Rotation gestartet für {name}",
+    "rotation_failed_for": "Rotation von {name} fehlgeschlagen",
+    "rotation_due_now": "jetzt fällig",
+    "rotation_countdown_days_hours": "{days}T {hours}Std",
+    "rotation_countdown_hours": "{hours}h"
+  },
+  "saved_views": {
+    "errors": {
+      "load_failed_message": "Couldn't load your saved views.",
+      "save_failed_message": "Couldn't save this view.",
+      "delete_failed_message": "Couldn't delete this view."
+    }
   },
   "cron": {
     "title": "Cron-Agenten",
@@ -785,6 +989,15 @@
     "every_interval": "alle {interval}",
     "next": "nächster",
     "last": "letzter"
+  },
+  "activity_timeline": {
+    "title": "Aktivitätszeitlinie",
+    "subtitle": "{events} Ereignisse, {messages} Nachrichten",
+    "all": "Alle",
+    "events": "Ereignisse",
+    "messages": "Nachrichten",
+    "no_activity": "Noch keine Aktivität",
+    "high": "Hoch"
   },
   "sla_card": {
     "successful": "Erfolgreich",
@@ -813,6 +1026,13 @@
     "pending": "ausstehend",
     "success": "Erfolg",
     "in_window": "im Fenster",
+    "test_flow": "Flow testen",
+    "testing_flow": "Flow wird getestet...",
+    "test_event_flow": "Ereignisflow testen",
+    "resume": "Fortsetzen",
+    "pause": "Pause",
+    "resume_stream": "Echtzeit-Stream fortsetzen",
+    "pause_stream": "Echtzeit-Stream pausieren",
     "search_events": "Ereignisse suchen...",
     "filter_type": "Typ",
     "filter_status": "Status",
@@ -823,17 +1043,6 @@
     "no_saved_views": "Noch keine gespeicherten Ansichten",
     "save_current_filter": "Aktuellen Filter speichern",
     "view_name_placeholder": "Ansichtsname...",
-    "close_event_details": "Ereignisdetails schließen",
-    "reset_to_start": "Zum Anfang zurücksetzen",
-    "cycle_speed": "Wiedergabegeschwindigkeit wechseln",
-    "exit_replay": "Wiedergabe beenden",
-    "test_flow": "Flow testen",
-    "testing_flow": "Flow wird getestet...",
-    "test_event_flow": "Ereignisflow testen",
-    "resume": "Fortsetzen",
-    "pause": "Pause",
-    "resume_stream": "Echtzeit-Stream fortsetzen",
-    "pause_stream": "Echtzeit-Stream pausieren",
     "delete_saved_view": "Gespeicherte Ansicht löschen",
     "event_log": "Ereignisprotokoll",
     "entries": "{count} Einträge",
@@ -847,6 +1056,10 @@
     "id_label": "ID",
     "error_label": "Fehler",
     "payload_label": "Payload",
+    "close_event_details": "Ereignisdetails schließen",
+    "reset_to_start": "Zum Anfang zurücksetzen",
+    "cycle_speed": "Wiedergabegeschwindigkeit wechseln",
+    "exit_replay": "Wiedergabe beenden",
     "galaxy": "Galaxie",
     "galaxy_desc": "Orbitale Konstellation mit Kometenschweife",
     "lanes": "Spuren",
@@ -970,15 +1183,36 @@
     "rejected": "{count} abgelehnt",
     "undecided": "{count} unentschieden"
   },
+  "widgets_extra": {
+    "execution_health_chart": "Ausführungsgesundheit",
+    "cost_over_time_chart": "Kosten im Zeitverlauf",
+    "successful": "Erfolgreich",
+    "failed": "Fehlgeschlagen",
+    "close": "Schließen",
+    "dismiss_help": "Hilfe verwerfen",
+    "skip_tour": "Tour vollständig überspringen"
+  },
+  "remote_control_card": {
+    "connect_to_desktop": "Mit Desktop verbinden",
+    "connect_description": "Agenten mit Ihrem Desktop-CLI via Fernsteuerung ausführen. Starten Sie {command} auf Ihrem Computer, dann hier verbinden.",
+    "requires_subscription": "Erfordert Claude Pro- oder Max-Abonnement"
+  },
+  "resume_setup_card": {
+    "resume_tour": "Tour fortsetzen",
+    "left_off_at": "Sie haben aufgehört bei",
+    "steps_completed": "{completed}/{total} Schritte abgeschlossen",
+    "skip_tour": "Tour vollständig überspringen",
+    "continue_label": "Fortsetzen"
+  },
   "detail_modal": {
     "close": "Schließen"
   },
   "metric_help_popover": {
+    "help_for": "Hilfe für {label}",
     "dismiss_help": "Hilfe verwerfen",
     "healthy": "Gesund:",
     "click": "Klicken:",
-    "got_it": "Verstanden, nicht mehr anzeigen",
-    "help_for": "Hilfe für {label}"
+    "got_it": "Verstanden, nicht mehr anzeigen"
   },
   "install_button": {
     "install_node": "Node.js installieren",
@@ -1003,9 +1237,9 @@
     "disconnect": "Trennen"
   },
   "metrics_cards": {
-    "top_executions": "Top-Ausführungen:",
     "cost_spike": "Kostenanstieg",
-    "above_avg": "über Durchschnitt"
+    "above_avg": "über Durchschnitt",
+    "top_executions": "Top-Ausführungen:"
   },
   "event_log_item": {
     "event_id": "Ereignis-ID",
@@ -1013,10 +1247,10 @@
     "source": "Quelle",
     "processed": "Verarbeitet",
     "event_data": "Ereignisdaten",
-    "error": "Fehler",
     "copy_event_data": "Ereignisdaten kopieren",
     "copied": "Kopiert",
     "copy": "Kopieren",
+    "error": "Fehler",
     "system": "System"
   },
   "burn_rate_extra": {
@@ -1101,14 +1335,21 @@
     "all_caught_up": "Alles erledigt",
     "no_pending": "Keine ausstehenden Überprüfungen.",
     "queue": "Warteschlange",
+    "clear": "Leeren",
     "clear_all_verdicts": "Alle Urteile löschen",
     "quick_actions": "Schnellaktionen",
     "reject_all": "Alle ablehnen",
     "accept_all": "Alle akzeptieren",
     "retry_with_changes": "Mit Änderungen erneut versuchen",
-    "carry_out_hint": "Genehmigt die Überprüfung und führt die Persona zur Ausführung aus",
-    "clear": "Leeren",
-    "video_not_supported": "Ihr Browser unterstützt keine Videowiedergabe."
+    "video_not_supported": "Ihr Browser unterstützt keine Videowiedergabe.",
+    "carry_out_hint": "Genehmigt die Überprüfung und führt die Persona zur Ausführung aus"
+  },
+  "bulk_action_bar": {
+    "pending_reviews_selected_one": "{count} ausstehende Prüfung ausgewählt",
+    "pending_reviews_selected_other": "{count} ausstehende Prüfungen ausgewählt"
+  },
+  "review_inbox": {
+    "drag_to_resize": "Ziehen zum Ändern der Größe"
   },
   "memory_card": {
     "confirm": "Bestätigen",
@@ -1129,9 +1370,9 @@
     "agent": "Agent",
     "title": "Titel",
     "category": "Kategorie",
+    "priority": "Priorität",
     "tags": "Tags",
-    "created": "Erstellt",
-    "priority": "Priorität"
+    "created": "Erstellt"
   },
   "review_results": {
     "title": "KI-Erinnerungsüberprüfung",
@@ -1143,8 +1384,8 @@
     "baseline_label": "Basiswert:",
     "correlating": "Ereignisse werden korreliert...",
     "likely_root_causes": "Wahrscheinliche Grundursachen",
-    "no_correlated": "Keine korrelierten Ereignisse im ±24h-Fenster gefunden.",
-    "correlated_events": "Korrelierte Ereignisse"
+    "correlated_events": "Korrelierte Ereignisse",
+    "no_correlated": "Keine korrelierten Ereignisse im ±24h-Fenster gefunden."
   },
   "healing_issue_modal": {
     "issue_resolved": "Problem gelöst",
@@ -1153,13 +1394,13 @@
     "copied": "Kopiert",
     "copy_fix": "Lösung kopieren",
     "persona_auto_disabled": "Persona automatisch deaktiviert",
+    "persona_auto_disabled_desc": "Diese Persona wurde nach 5 aufeinanderfolgenden Fehlern automatisch deaktiviert. Fehlermuster prüfen und manuell reaktivieren, sobald die Ursache behoben ist.",
     "marking_resolved_note": "Als gelöst markieren bedeutet, dass Sie dieses Problem außerhalb des Heilungssystems behoben haben.",
+    "retry_in_progress": "Wiederholung läuft -- Status wird nach Abschluss aktualisiert",
     "auto_resolved": "Dieses Problem wurde automatisch gelöst",
+    "close": "Schließen",
     "resolving": "Wird gelöst…",
     "mark_resolved": "Als gelöst markieren",
-    "persona_auto_disabled_desc": "Diese Persona wurde nach 5 aufeinanderfolgenden Fehlern automatisch deaktiviert. Fehlermuster prüfen und manuell reaktivieren, sobald die Ursache behoben ist.",
-    "retry_in_progress": "Wiederholung läuft -- Status wird nach Abschluss aktualisiert",
-    "close": "Schließen",
     "retrying_badge": "wird wiederholt",
     "auto_fixed_badge": "automatisch behoben",
     "retry_in_progress_badge": "Wiederholung läuft",
@@ -1172,9 +1413,6 @@
     "run_analysis": "Analyse ausführen",
     "no_open_issues": "Keine offenen Probleme",
     "run_analysis_hint": "Analyse ausführen, um nach Problemen zu suchen.",
-    "healing_audit_log": "Heilungs-Audit-Log",
-    "no_silent_failures": "Keine stillen Fehler aufgezeichnet.",
-    "analysis_complete_prefix": "Analyse abgeschlossen:",
     "ai_healing_title": "KI-Heilung",
     "diagnosis_label": "Diagnose:",
     "fixes_applied": "Fixes angewendet",
@@ -1190,7 +1428,10 @@
     "execution_label": "Ausführung:",
     "issue_marked_as": "Dieses Problem ist markiert als",
     "retry_in_progress": "Wiederholung läuft — Status wird nach Abschluss aktualisiert.",
-    "resolve_issue_title": "Problem als behoben markieren"
+    "resolve_issue_title": "Problem als behoben markieren",
+    "healing_audit_log": "Heilungs-Audit-Log",
+    "no_silent_failures": "Keine stillen Fehler aufgezeichnet.",
+    "analysis_complete_prefix": "Analyse abgeschlossen:"
   },
   "healing_timeline": {
     "loading": "Zeitlinie wird geladen...",
@@ -1240,6 +1481,13 @@
     "event_id_label": "Ereignis-ID",
     "broadcast": "(Broadcast)"
   },
+  "event_bus_overlay": {
+    "earlier_events_not_shown_one": "{count} früheres Ereignis nicht angezeigt",
+    "earlier_events_not_shown_other": "{count} frühere Ereignisse nicht angezeigt"
+  },
+  "event_bus_filter": {
+    "search_placeholder": "Ereignisse suchen…"
+  },
   "realtime_stats": {
     "events_per_min": "Ereignisse/Min",
     "pending": "ausstehend",
@@ -1265,13 +1513,32 @@
     "heartbeats_btn": "Heartbeats",
     "reliability_btn": "Zuverlässigkeit"
   },
+  "crash_logs": {
+    "title": "Absturzprotokolle",
+    "no_logs": "Keine Absturzprotokolle aufgezeichnet.",
+    "component_stack_separator": "--- Component Stack ---"
+  },
   "popup_fields": {
     "sign_up_free_at": "Kostenlos registrieren auf",
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", kopieren Sie dann Ihren API-Schlüssel aus den Einstellungen. Der Schlüssel wird lokal gespeichert und für alle Agenten gemeinsam genutzt."
   },
+  "events_list": {
+    "save_view_tooltip": "Aktuelle Filter als Ansicht speichern",
+    "clear_filters_tooltip": "Alle Filter löschen"
+  },
+  "dashboard_home": {
+    "you_have": "Sie haben"
+  },
+  "fleet_optimization_card": {
+    "title": "Flottenoptimierung"
+  },
   "usage_filters": {
     "time_range_label": "Zeitraum"
+  },
+  "day_range_picker": {
+    "start_date": "Startdatum",
+    "end_date": "Enddatum"
   },
   "healing_summary": {
     "auto_fixed_this_week": "diese Woche automatisch behoben",
@@ -1560,272 +1827,5 @@
     "source_scanner": "Scanner",
     "tokens": "Token",
     "total_cost": "Gesamtkosten"
-  },
-  "title": "Ereignisprotokoll",
-  "no_output": "Noch keine Ausgabe",
-  "no_background_jobs": "Keine Hintergrundaufgaben aktiv oder kürzlich",
-  "background_jobs_hint": "Aufgaben erscheinen hier, wenn Sie n8n-Transformationen, Vorlagenübernahmen, Vorlagengenerierung oder Abfrage-Debugging ausführen",
-  "realtime": {
-    "idle": "Inaktiv -- klicken Sie auf {action}, um Datenverkehr zu simulieren",
-    "test_flow": "Testlauf",
-    "events_per_min": "Ereignisse/Min.",
-    "pending": "ausstehend",
-    "success": "erfolgreich",
-    "in_window": "im Fenster"
-  },
-  "executions": {
-    "title": "Ausführungen",
-    "loading": "Ausführungen werden geladen...",
-    "no_agents": "Noch keine Agenten erstellt",
-    "create_first": "Erstellen Sie Ihren ersten Agenten, um hier Ausführungsaktivitäten zu sehen",
-    "no_executions": "Noch keine Ausführungen",
-    "run_agent": "Führen Sie einen Agenten aus, um hier Aktivitäten zu sehen"
-  },
-  "workflows": {
-    "loading": "Workflows werden geladen...",
-    "title": "Workflows",
-    "subtitle": "Aktive und kürzliche Hintergrundoperationen im Arbeitsbereich",
-    "no_jobs": "Keine Hintergrundjobs laufend oder kürzlich",
-    "jobs_hint": "Jobs erscheinen hier, wenn Sie n8n-Transformationen, Vorlagenübernahmen, Vorlagengenerierungen oder Abfragedebugging ausführen",
-    "all_types": "Alle Typen",
-    "no_filter_match": "Keine Jobs entsprechen den aktuellen Filtern",
-    "auto_refreshing": "Automatische Aktualisierung während Jobs laufen",
-    "cancel_failed": "Workflow-Job konnte nicht abgebrochen werden"
-  },
-  "schedules": {
-    "title": "Zeitplan-Übersicht",
-    "subtitle": "Aggregierte Ansicht aller geplanten Agentenausführungen",
-    "engine_on": "Engine An",
-    "engine_off": "Engine Aus",
-    "engine_on_tooltip": "Scheduler läuft -- klicken zum Pausieren",
-    "engine_off_tooltip": "Scheduler gestoppt -- klicken zum Starten",
-    "active_count": "{count} aktiv",
-    "paused_count": "{count} pausiert",
-    "view_grouped": "Gruppiert",
-    "view_timeline": "Zeitachse",
-    "triggers_fired": "Ausgelöste Auslöser: ",
-    "events_processed": "Verarbeitete Ereignisse: ",
-    "delivered": "Zugestellt: ",
-    "failed_label": "Fehlgeschlagen: ",
-    "loading": "Zeitpläne werden geladen...",
-    "empty": "Keine geplanten Agenten gefunden.",
-    "empty_hint": "Erstellen Sie einen Zeitplan oder Polling-Auslöser für einen Agenten, um ihn hier zu sehen.",
-    "group_overdue": "Überfällig",
-    "group_15min": "Nächste 15 Minuten",
-    "group_1hour": "Nächste Stunde",
-    "group_6hours": "Nächste 6 Stunden",
-    "group_24hours": "Nächste 24 Stunden",
-    "group_later": "Später",
-    "group_paused": "Pausiert / Ungeplant",
-    "run_now": "Jetzt ausführen",
-    "change_frequency": "Frequenz ändern",
-    "pause_schedule": "Zeitplan pausieren",
-    "resume_schedule": "Zeitplan fortsetzen",
-    "headless_badge": "headless"
-  },
-  "frequency_editor": {
-    "title": "Frequenz ändern",
-    "current": "Aktuell: ",
-    "quick_presets": "Schnellvorlagen",
-    "cron_expression": "Cron-Ausdruck",
-    "interval_seconds": "Intervall (Sekunden)",
-    "previewing": "Vorschau...",
-    "next_runs": "Nächste Läufe",
-    "invalid_cron": "Ungültiger Cron-Ausdruck"
-  },
-  "recovery": {
-    "agents_missed_one": "{count} Agent hat Ausführungen verpasst",
-    "agents_missed_other": "{count} Agenten haben Ausführungen verpasst",
-    "total_skipped": "~{count} Läufe übersprungen, während die App offline war",
-    "missed_since": "{count} verpasst seit {time}",
-    "every_interval": "alle {interval}",
-    "mark_for_recovery": "Zur Wiederherstellung markieren",
-    "recover": "Wiederherstellen",
-    "run_once": "1x ausführen",
-    "run_once_tooltip": "Jetzt einmal ausführen",
-    "skip_tooltip": "Überspringen -- nicht wiederherstellen",
-    "dismiss_all": "Alle verwerfen",
-    "recover_selected": "{count} ausgewählte wiederherstellen"
-  },
-  "conflicts": {
-    "dismissed": "Konflikt verworfen",
-    "resolved": "Konflikt gelöst",
-    "resolve_failed": "Konflikt konnte nicht gelöst werden",
-    "conflict_count_one": "{count} Konflikt",
-    "conflict_count_other": "{count} Konflikte"
-  },
-  "execution_metrics": {
-    "title": "Ausführungsmetriken",
-    "total_executions": "Ausführungen gesamt",
-    "total_cost": "Gesamtkosten",
-    "success_rate": "Erfolgsrate",
-    "avg_latency": "Durchschn. Latenz",
-    "cost_anomalies": "Kostenanomalien erkannt",
-    "no_data": "Keine Ausführungsdaten für den ausgewählten Zeitraum",
-    "cost_per_day": "Kosten pro Tag",
-    "executions_by_status": "Ausführungen nach Status",
-    "success_rate_trend": "Erfolgsraten-Trend",
-    "latency_distribution": "Latenzverteilung (p50 / p95 / p99)",
-    "top_personas_by_cost": "Top-Personas nach Kosten",
-    "cost_spike": "Kostenanstieg",
-    "above_avg": "über Durchschnitt",
-    "top_executions": "Top-Ausführungen:",
-    "executions_label": "{count} Ausführungen"
-  },
-  "execution_list": {
-    "recorded": "{count} Ausführungen aufgezeichnet",
-    "recorded_one": "{count} Ausführung aufgezeichnet",
-    "list": "Liste",
-    "metrics": "Metriken",
-    "show_list": "Ausführungsliste anzeigen",
-    "show_metrics": "Metriken-Dashboard anzeigen",
-    "showing": "Zeige {count} von {total}",
-    "load_more": "Mehr laden",
-    "filter_all": "Alle",
-    "filter_running": "Laufend",
-    "filter_completed": "Abgeschlossen",
-    "filter_failed": "Fehlgeschlagen",
-    "col_persona": "Persona",
-    "col_status": "Status",
-    "col_duration": "Dauer",
-    "col_started": "Gestartet",
-    "col_id": "ID",
-    "all_statuses": "Alle Status",
-    "all_personas": "Alle Personas",
-    "no_agents": "Noch keine Agenten erstellt",
-    "no_agents_hint": "Erstellen Sie Ihren ersten Agenten, um die Ausführungsaktivität hier zu sehen.",
-    "unknown_persona": "Unbekannt",
-    "healing_retry": "Heilungs-Wiederholung #{count}"
-  },
-  "analytics": {
-    "title": "Analytik",
-    "subtitle": "Ausführungsmuster und Trends",
-    "loading": "Analytik wird geladen...",
-    "no_data": "Keine Analytik-Daten verfügbar",
-    "executions_over_time": "Ausführungen im Zeitverlauf",
-    "success_failure": "Erfolg vs. Fehler",
-    "cost_breakdown": "Kostenaufschlüsselung",
-    "total_executions": "Ausführungen gesamt",
-    "total_cost": "Gesamtkosten",
-    "avg_success_rate": "Durchschn. Erfolgsrate",
-    "active_agents": "Aktive Agenten",
-    "saved_views": "Gespeicherte Ansichten",
-    "create_view": "Ansicht erstellen",
-    "health_issues": "Gesundheitsprobleme",
-    "rotation_overview": "Rotationsübersicht"
-  },
-  "usage": {
-    "title": "Nutzung",
-    "subtitle": "Kosten und Ressourcenverbrauch",
-    "chart_error": "Diagramm konnte nicht geladen werden",
-    "chart_error_hint": "Beim Rendern dieses Diagramms ist ein Fehler aufgetreten",
-    "try_again": "Erneut versuchen"
-  },
-  "cron_agents": {
-    "title": "Geplante Agenten",
-    "subtitle": "Agenten, die nach automatischen Zeitplänen laufen",
-    "no_agents": "Keine geplanten Agenten",
-    "no_agents_hint": "Cron-Trigger zu einem Agenten hinzufügen, um ihn hier anzuzeigen"
-  },
-  "timeline": {
-    "title": "Aktivitätszeitlinie",
-    "subtitle": "Einheitliche Ansicht aller Agentenaktivitäten",
-    "no_activity": "Keine kürzliche Aktivität"
-  },
-  "realtime_viz": {
-    "title": "Ereignis-Bus",
-    "filter_events": "Ereignisse filtern",
-    "pause": "Pause",
-    "resume": "Fortsetzen",
-    "clear": "Leeren",
-    "total_events": "Ereignisse gesamt",
-    "events_per_sec": "Ereignisse/Sek.",
-    "active_lanes": "Aktive Spuren",
-    "event_type": "Ereignistyp",
-    "source": "Quelle",
-    "target": "Ziel",
-    "timestamp": "Zeitstempel",
-    "payload": "Payload",
-    "saved_views": "Gespeicherte Ansichten",
-    "save_current": "Aktuelle speichern"
-  },
-  "cards": {
-    "fleet_optimization": "Flotten-Optimierung",
-    "fleet_subtitle": "Automatische Empfehlungen zur Verbesserung der Agentenleistung",
-    "remote_control": "Fernsteuerung",
-    "remote_subtitle": "Schnellaktionen für die Agentenverwaltung",
-    "resume_setup": "Einrichtung fortsetzen",
-    "resume_subtitle": "Da weitermachen, wo Sie aufgehört haben",
-    "knowledge_hub": "Wissens-Hub"
-  },
-  "saved_views": {
-    "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
-    }
-  },
-  "activity_timeline": {
-    "title": "Aktivitätszeitlinie",
-    "subtitle": "{events} Ereignisse, {messages} Nachrichten",
-    "all": "Alle",
-    "events": "Ereignisse",
-    "messages": "Nachrichten",
-    "no_activity": "Noch keine Aktivität",
-    "high": "Hoch"
-  },
-  "widgets_extra": {
-    "execution_health_chart": "Ausführungsgesundheit",
-    "cost_over_time_chart": "Kosten im Zeitverlauf",
-    "successful": "Erfolgreich",
-    "failed": "Fehlgeschlagen",
-    "close": "Schließen",
-    "dismiss_help": "Hilfe verwerfen",
-    "skip_tour": "Tour vollständig überspringen"
-  },
-  "remote_control_card": {
-    "connect_to_desktop": "Mit Desktop verbinden",
-    "connect_description": "Agenten mit Ihrem Desktop-CLI via Fernsteuerung ausführen. Starten Sie {command} auf Ihrem Computer, dann hier verbinden.",
-    "requires_subscription": "Erfordert Claude Pro- oder Max-Abonnement"
-  },
-  "resume_setup_card": {
-    "resume_tour": "Tour fortsetzen",
-    "left_off_at": "Sie haben aufgehört bei",
-    "steps_completed": "{completed}/{total} Schritte abgeschlossen",
-    "skip_tour": "Tour vollständig überspringen",
-    "continue_label": "Fortsetzen"
-  },
-  "bulk_action_bar": {
-    "pending_reviews_selected_one": "{count} ausstehende Prüfung ausgewählt",
-    "pending_reviews_selected_other": "{count} ausstehende Prüfungen ausgewählt"
-  },
-  "review_inbox": {
-    "drag_to_resize": "Ziehen zum Ändern der Größe"
-  },
-  "event_bus_overlay": {
-    "earlier_events_not_shown_one": "{count} früheres Ereignis nicht angezeigt",
-    "earlier_events_not_shown_other": "{count} frühere Ereignisse nicht angezeigt"
-  },
-  "event_bus_filter": {
-    "search_placeholder": "Ereignisse suchen…"
-  },
-  "crash_logs": {
-    "title": "Absturzprotokolle",
-    "no_logs": "Keine Absturzprotokolle aufgezeichnet.",
-    "component_stack_separator": "--- Component Stack ---"
-  },
-  "events_list": {
-    "save_view_tooltip": "Aktuelle Filter als Ansicht speichern",
-    "clear_filters_tooltip": "Alle Filter löschen"
-  },
-  "dashboard_home": {
-    "you_have": "Sie haben"
-  },
-  "fleet_optimization_card": {
-    "title": "Flottenoptimierung"
-  },
-  "day_range_picker": {
-    "start_date": "Startdatum",
-    "end_date": "Enddatum"
   }
 }

@@ -3,7 +3,7 @@
   "group_by_toggle_title": "할당된 그룹별로 페르소나 카드 그룹화",
   "group_ungrouped": "그룹 없음",
   "title": "페르소나 모니터",
-  "subtitle": "페르소나 {personas}개 · 주의 필요 {attention}개 · 실행 중 {running}개",
+  "subtitle": "{페르소나s} 페르소나s · {attention} need attention · {running} running",
   "close": "모니터 닫기",
   "close_hint": "닫기 (Esc)",
   "no_personas": "아직 페르소나가 없습니다.",

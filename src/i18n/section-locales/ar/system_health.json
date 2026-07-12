@@ -1,12 +1,4 @@
 {
-  "install_all": "تثبيت جميع الاعتماديات",
-  "log_disk_usage": "استخدام قرص السجلات",
-  "log_disk_tracing": "سجلات التتبع",
-  "log_disk_crashes": "تقارير الأعطال",
-  "log_disk_files_count": "{count} ملف",
-  "log_disk_retention_hint": "تدوير يومي، بحد أقصى {limit} ملف.",
-  "log_disk_crash_retention_hint": "بحد أقصى {limit} من أحدث التقارير.",
-  "log_disk_unavailable": "إحصاءات مجلد السجلات غير متاحة.",
   "title": "فحوصات النظام",
   "subtitle": "التحقق من جاهزية بيئتك",
   "rerun": "إعادة تشغيل الفحوصات",
@@ -27,6 +19,7 @@
   "no_crash_logs": "لم يتم تسجيل أعطال.",
   "crash_auto_cred": "جلسة بيانات اعتماد تلقائية",
   "crash_rust_panic": "انهيار Rust",
+  "install_all": "تثبيت جميع الاعتماديات",
   "ready_title": "هل أنت مستعد لإنشاء أول وكيل لك؟",
   "ready_hint": "نجحت جميع الفحوصات. دعنا نرشدك لإنشاء وتشغيل أول وكيل لك.",
   "get_started": "ابدأ",
@@ -40,5 +33,12 @@
   "official_page": "الصفحة الرسمية",
   "edit_key": "تعديل المفتاح",
   "edit_config": "تعديل الإعدادات",
-  "signing_in": "جارٍ تسجيل الدخول..."
+  "signing_in": "جارٍ تسجيل الدخول...",
+  "log_disk_usage": "استخدام قرص السجلات",
+  "log_disk_tracing": "سجلات التتبع",
+  "log_disk_crashes": "تقارير الأعطال",
+  "log_disk_files_count": "{count} ملف",
+  "log_disk_retention_hint": "تدوير يومي، بحد أقصى {limit} ملف.",
+  "log_disk_crash_retention_hint": "بحد أقصى {limit} من أحدث التقارير.",
+  "log_disk_unavailable": "إحصاءات مجلد السجلات غير متاحة."
 }

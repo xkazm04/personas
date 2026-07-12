@@ -12,6 +12,7 @@ import { useScrollRestoration } from '@/hooks/utility/interaction/useScrollResto
 import { useEndReached } from '@/hooks/utility/interaction/useEndReached';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
+import { MotionizedGlyph, type TracedGlyph } from './MotionizedGlyph';
 import { buildGroupRows, type GroupSpec } from './grouping';
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from './GroupedVirtualList';
 import { createLogger } from '@/lib/log';
@@ -83,6 +84,8 @@ export interface UnifiedTableProps<T> {
   /** Empty state */
   emptyTitle?: string;
   emptyDescription?: string;
+  /** Optional traced glyph drawn above the empty title (illustrated empty state). */
+  emptyGlyph?: TracedGlyph;
   isLoading?: boolean;
   className?: string;
   /**
@@ -286,6 +289,7 @@ export function UnifiedTable<T>({
   rowHeight = 0,
   emptyTitle = 'No data',
   emptyDescription,
+  emptyGlyph,
   isLoading,
   className,
   tableId,
@@ -435,6 +439,14 @@ export function UnifiedTable<T>({
 
       {sortedData.length === 0 ? (
         <div className="py-8 text-center">
+          {emptyGlyph && (
+            <MotionizedGlyph
+              data={emptyGlyph.data}
+              viewBox={emptyGlyph.viewBox}
+              spread={1}
+              className="w-28 h-28 mx-auto mb-1"
+            />
+          )}
           <p className="typo-body text-foreground">{emptyTitle}</p>
           {emptyDescription && <p className="typo-body text-foreground/90 mt-1">{emptyDescription}</p>}
         </div>

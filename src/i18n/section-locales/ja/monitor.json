@@ -3,7 +3,7 @@
   "group_by_toggle_title": "割り当てられたグループでペルソナカードをグループ化",
   "group_ungrouped": "グループなし",
   "title": "ペルソナモニター",
-  "subtitle": "ペルソナ {personas} 件 · 対応が必要 {attention} 件 · 実行中 {running} 件",
+  "subtitle": "{ペルソナs} ペルソナs · {attention} need attention · {running} running",
   "close": "モニターを閉じる",
   "close_hint": "閉じる (Esc)",
   "no_personas": "まだペルソナがありません。",

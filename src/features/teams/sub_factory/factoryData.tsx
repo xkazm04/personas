@@ -10,10 +10,12 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 
 import * as devApi from '@/api/devTools/devTools';
 import * as kpiApi from '@/api/devTools/kpis';
+import * as useCaseApi from '@/api/devTools/useCases';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
 import type { DevContextGroup } from '@/lib/bindings/DevContextGroup';
 import type { DevContext } from '@/lib/bindings/DevContext';
+import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 
 import type {
   MockProject,
@@ -56,7 +58,7 @@ function contextDisplayName(c: DevContext): string {
   return bf && bf.length > 0 ? bf : humanize(c.name);
 }
 
-function toKpi(k: DevKpi, series: number[]): MockKpi {
+function toKpi(k: DevKpi, series: number[], useCaseName?: string | null): MockKpi {
   const baseline = k.baseline_value ?? k.current_value ?? 0;
   const target = k.target_value ?? (baseline || 1);
   const spanAbs = Math.abs(target - baseline) || Math.abs(target) || 1;
@@ -90,6 +92,7 @@ function toKpi(k: DevKpi, series: number[]): MockKpi {
     pros: k.assessment_pros ?? null,
     cons: k.assessment_cons ?? null,
     measureConfig: k.measure_config,
+    useCaseName: useCaseName ?? null,
     skipFresh,
     skipRationale: k.last_skip_rationale ?? null,
     lastMeasuredAt: rel(k.last_measured_at),
@@ -97,23 +100,48 @@ function toKpi(k: DevKpi, series: number[]): MockKpi {
   };
 }
 
-/** Assemble one project's full tree. KPIs are placed under their context
- *  (context_id); group-level / project-level KPIs get synthetic context rows so
- *  nothing is hidden from the matrix. */
+/** Assemble one project's full tree. KPIs are placed at the narrowest scope
+ *  they declare — use case (rendered on the use case's primary context, tagged
+ *  with its name) → context → group → project; the last two get synthetic
+ *  context rows so nothing is hidden from the matrix. */
 function assembleProject(
   project: { id: string; name: string; tech_stack: string | null },
   groups: DevContextGroup[],
   contexts: DevContext[],
   kpis: DevKpi[],
   seriesByKpi: Map<string, number[]>,
+  useCases: DevUseCase[],
 ): MockProject {
-  const kpi = (k: DevKpi) => toKpi(k, seriesByKpi.get(k.id) ?? []);
+  const useCaseById = new Map(useCases.map((u) => [u.id, u]));
+  const contextExists = new Set(contexts.map((c) => c.id));
+  const kpi = (k: DevKpi, useCaseName?: string | null) =>
+    toKpi(k, seriesByKpi.get(k.id) ?? [], useCaseName);
   const byContext = new Map<string, MockKpi[]>();
   const byGroupOnly = new Map<string, MockKpi[]>();
   const projectLevel: MockKpi[] = [];
+  const push = (map: Map<string, MockKpi[]>, key: string, v: MockKpi) =>
+    (map.get(key) ?? map.set(key, []).get(key)!).push(v);
+
   for (const k of kpis) {
-    if (k.context_id) (byContext.get(k.context_id) ?? byContext.set(k.context_id, []).get(k.context_id)!).push(kpi(k));
-    else if (k.context_group_id) (byGroupOnly.get(k.context_group_id) ?? byGroupOnly.set(k.context_group_id, []).get(k.context_group_id)!).push(kpi(k));
+    // A use case slices through contexts; anchor its KPI on the primary context
+    // (falling back to the first context of the slice) so the group → context
+    // matrix keeps its shape, and carry the use-case name onto the chip.
+    const uc = k.use_case_id ? useCaseById.get(k.use_case_id) : undefined;
+    if (uc) {
+      const anchor = [uc.primary_context_id, ...uc.context_ids].find(
+        (id): id is string => !!id && contextExists.has(id),
+      );
+      if (anchor) {
+        push(byContext, anchor, kpi(k, uc.name));
+        continue;
+      }
+      // Slice lost every context (e.g. a rescan removed them) — surface the KPI
+      // at project level rather than dropping it off the matrix.
+      projectLevel.push(kpi(k, uc.name));
+      continue;
+    }
+    if (k.context_id && contextExists.has(k.context_id)) push(byContext, k.context_id, kpi(k));
+    else if (k.context_group_id) push(byGroupOnly, k.context_group_id, kpi(k));
     else projectLevel.push(kpi(k));
   }
 
@@ -202,13 +230,19 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
 
         const perProject = await Promise.all(
           projects.map(async (p) => {
-            const [groups, contexts] = await Promise.all([devApi.listContextGroups(p.id), devApi.listContexts(p.id)]);
+            const [groups, contexts, useCases] = await Promise.all([
+              devApi.listContextGroups(p.id),
+              devApi.listContexts(p.id),
+              // Placement needs every non-archived use case: a KPI may be
+              // scoped to one that is still awaiting triage.
+              useCaseApi.listUseCases(p.id).catch(() => [] as DevUseCase[]),
+            ]);
             // Matrix shows MANAGED KPIs only; proposed ones live in the
             // proposals on-ramp (KpiProposalsPanel) and archived are gone.
             const pk = allKpis.filter(
               (k) => k.project_id === p.id && (k.status === 'active' || k.status === 'paused'),
             );
-            return assembleProject(p, groups, contexts, pk, seriesByKpi);
+            return assembleProject(p, groups, contexts, pk, seriesByKpi, useCases);
           }),
         );
         if (!cancelled) setData({ projects: perProject, loading: false, error: null });

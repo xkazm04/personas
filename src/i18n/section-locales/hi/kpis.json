@@ -181,5 +181,7 @@
     "health_snapshot": "स्वास्थ्य स्नैपशॉट",
     "manual": "मैन्युअल प्रविष्टि",
     "scan": "स्कैन"
-  }
+  },
+  "kpi_scope_label": "दायरा",
+  "kpi_scope_this_context": "यह संदर्भ"
 }

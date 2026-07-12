@@ -16,6 +16,11 @@
   "update_install_when_idle": "アイドル時にインストール",
   "update_install_when_idle_status": "実行中の {count} 件のタスクが完了するとアップデートがインストールされます。",
   "update_keep_working": "作業を続ける",
+  "expand_sidebar": "サイドバーを展開",
+  "collapse_sidebar": "サイドバーを折りたたむ",
+  "network_settings": "ネットワーク設定",
+  "dark": "ダーク",
+  "light": "ライト",
   "sign_in_google": "Googleでサインイン",
   "signed_in": "サインイン済み",
   "sign_out": "サインアウト",
@@ -25,6 +30,7 @@
   "shortcuts": {
     "title": "キーボードショートカット",
     "subtitle": "Press ? anytime to open this list",
+    "open_title": "キーボードショートカット",
     "section_navigation": "ナビゲーション",
     "section_agents": "エージェント",
     "section_editing": "編集",
@@ -47,8 +53,7 @@
     "nav_mode_notifications": "通知を切り替え（ナビゲーションモード）",
     "nav_mode_review": "ヒューマンレビューを切り替え（ナビゲーションモード）",
     "nav_mode_schedules": "スケジュールを切り替え（ナビゲーションモード）",
-    "nav_mode_search": "検索を開く（ナビゲーションモード）",
-    "open_title": "キーボードショートカット"
+    "nav_mode_search": "検索を開く（ナビゲーションモード）"
   },
   "tray_schedules": "スケジュール",
   "tray_schedules_today": "本日 {count} 件のスケジュール",
@@ -67,10 +72,5 @@
   "tray_acceptance_pending": "{count} 件のゴールが承認待ちです",
   "cli_not_ready_detail": "Personas はお使いの Claude サブスクリプションでエージェントを実行します。Claude セッションを開始できませんでした — Claude Code CLI がインストールされ、サインインされていることを確認してから、再試行してください。",
   "cli_not_ready_retry": "再試行",
-  "cli_not_ready_title": "Claude CLI の準備ができていません",
-  "expand_sidebar": "サイドバーを展開",
-  "collapse_sidebar": "サイドバーを折りたたむ",
-  "network_settings": "ネットワーク設定",
-  "dark": "ダーク",
-  "light": "ライト"
+  "cli_not_ready_title": "Claude CLI の準備ができていません"
 }

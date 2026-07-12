@@ -3,7 +3,7 @@
   "group_by_toggle_title": "Nhóm các thẻ persona theo nhóm được gán",
   "group_ungrouped": "Không nhóm",
   "title": "Trình giám sát persona",
-  "subtitle": "{personas} persona · {attention} cần chú ý · {running} đang chạy",
+  "subtitle": "{persona} persona · {attention} need attention · {running} running",
   "close": "Đóng trình giám sát",
   "close_hint": "Đóng (Esc)",
   "no_personas": "Chưa có persona nào.",

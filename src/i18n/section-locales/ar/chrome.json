@@ -16,6 +16,11 @@
   "update_install_when_idle": "التثبيت عند الخمول",
   "update_install_when_idle_status": "سيتم تثبيت التحديث بعد انتهاء {count} مهمة قيد التشغيل.",
   "update_keep_working": "متابعة العمل",
+  "expand_sidebar": "توسيع الشريط الجانبي",
+  "collapse_sidebar": "طي الشريط الجانبي",
+  "network_settings": "إعدادات الشبكة",
+  "dark": "داكن",
+  "light": "فاتح",
   "sign_in_google": "تسجيل الدخول بـ Google",
   "signed_in": "تم تسجيل الدخول",
   "sign_out": "تسجيل الخروج",
@@ -25,6 +30,7 @@
   "shortcuts": {
     "title": "اختصارات لوحة المفاتيح",
     "subtitle": "اضغط ? في أي وقت لفتح هذه القائمة",
+    "open_title": "اختصارات لوحة المفاتيح",
     "section_navigation": "التنقل",
     "section_agents": "الوكلاء",
     "section_editing": "التحرير",
@@ -47,8 +53,7 @@
     "nav_mode_notifications": "تبديل الإشعارات (في وضع التنقل)",
     "nav_mode_review": "تبديل المراجعة البشرية (في وضع التنقل)",
     "nav_mode_schedules": "تبديل الجداول الزمنية (في وضع التنقل)",
-    "nav_mode_search": "فتح البحث (في وضع التنقل)",
-    "open_title": "اختصارات لوحة المفاتيح"
+    "nav_mode_search": "فتح البحث (في وضع التنقل)"
   },
   "tray_schedules": "الجداول الزمنية",
   "tray_schedules_today": "{count} مجدول اليوم",
@@ -67,10 +72,5 @@
   "tray_acceptance_pending": "{count} هدف بانتظار قبولك",
   "cli_not_ready_detail": "يشغّل Personas وكلاءك على اشتراكك في Claude. تعذّر علينا بدء جلسة Claude — تأكّد من تثبيت Claude Code CLI وتسجيل الدخول، ثم أعد المحاولة.",
   "cli_not_ready_retry": "إعادة المحاولة",
-  "cli_not_ready_title": "Claude CLI غير جاهز",
-  "expand_sidebar": "توسيع الشريط الجانبي",
-  "collapse_sidebar": "طي الشريط الجانبي",
-  "network_settings": "إعدادات الشبكة",
-  "dark": "داكن",
-  "light": "فاتح"
+  "cli_not_ready_title": "Claude CLI غير جاهز"
 }

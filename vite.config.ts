@@ -193,6 +193,22 @@ export default defineConfig(async () => ({
           transform(code: string, id: string) {
             if (!id.includes("node_modules")) return null;
             if (!/\.(js|mjs|cjs)$/.test(id)) return null;
+            // xterm ships its ESM build minified (`o.toString=s`, no space), so
+            // the space-gated general transform below intentionally skips it.
+            // But WebView2 treats inherited Object.prototype.toString as
+            // read-only, so that assignment throws and the whole terminal (the
+            // Fleet module) fails to render. Rewrite xterm's narrow, safe
+            // statement form (`IDENT.PROP=IDENT<terminator>`) to defineProperty
+            // — scoped to @xterm so the minified-sequence hazard the general
+            // transform avoids can't bite other deps.
+            if (id.includes("@xterm")) {
+              const patched = code.replace(
+                /([A-Za-z_$][\w$]*)\.(toString|constructor|valueOf|toLocaleString)=(?!=)([A-Za-z_$][\w$]*)([;,)}\]])/g,
+                (_m: string, obj: string, prop: string, val: string, term: string) =>
+                  `Object.defineProperty(${obj},'${prop}',{value:${val},writable:!0,configurable:!0,enumerable:!0})${term}`,
+              );
+              return patched !== code ? { code: patched } : null;
+            }
             if (!needsTransform(code)) return null;
             const transformed = transformForWebView2(code);
             if (transformed === code) return null;

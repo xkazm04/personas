@@ -1,13 +1,14 @@
 {
+  "title": "সারসংক্ষেপ",
+  "no_output": "কোনো আউটপুট নেই",
+  "no_background_jobs": "কোনো ব্যাকগ্রাউন্ড জব চলছে না",
+  "background_jobs_hint": "N8n ট্রান্সফর্ম, টেমপ্লেট গ্রহণ, টেমপ্লেট জেনারেশন বা কোয়েরি ডিবাগিং চালালে এখানে জব দেখাবে",
   "filters": {
     "start_date": "শুরুর তারিখ",
     "end_date": "শেষ তারিখ",
     "all_personas": "সব Persona"
   },
   "messages": {
-    "priority_high": "উচ্চ",
-    "priority_normal": "সাধারণ",
-    "priority_low": "নিম্ন",
     "loading": "বার্তা লোড হচ্ছে...",
     "no_messages": "কোনো বার্তা নেই",
     "switch_to_all": "সব বার্তা দেখতে \\\\\\\"সব\\\\\\\" এ যান",
@@ -19,6 +20,9 @@
       "created": "তৈরি"
     },
     "content_header": "বিষয়বস্তু",
+    "priority_high": "উচ্চ",
+    "priority_normal": "সাধারণ",
+    "priority_low": "নিম্ন",
     "filter_all": "সব",
     "filter_unread": "অপঠিত",
     "filter_high_priority": "উচ্চ অগ্রাধিকার",
@@ -33,6 +37,14 @@
     "id_label": "ID:",
     "confirm_delete_title": "মুছে ফেলা নিশ্চিত করুন",
     "close_message": "বার্তার বিবরণ বন্ধ করুন"
+  },
+  "realtime": {
+    "idle": "নিষ্ক্রিয় -- ট্র্যাফিক সিমুলেট করতে {action} ক্লিক করুন",
+    "test_flow": "টেস্ট ফ্লো",
+    "events_per_min": "ইভেন্ট/মিনিট",
+    "pending": "মুলতুবি",
+    "success": "সফল",
+    "in_window": "উইন্ডোতে"
   },
   "incidents": {
     "stale_label": "পুরোনো",
@@ -148,25 +160,21 @@
     "subtitle": "আপনার এজেন্টগুলি জুড়ে এক্সিকিউশন স্বাস্থ্য, খরচ এবং অ্যানোমালি পর্যবেক্ষণ করুন",
     "alert_rules": "সতর্কতার নিয়ম",
     "refresh_metrics": "মেট্রিক্স রিফ্রেশ করুন",
-    "metrics_unavailable": "মেট্রিক্স অনুপলব্ধ -- ডাটা পুরনো হতে পারে",
-    "error_recovery": {
-      "panel_loaded": "লোড হয়েছে",
-      "panel_failed": "লোড করতে ব্যর্থ",
-      "panel_stale": "ডেটা পুরনো হতে পারে"
-    },
     "persona_disabled": "Persona স্বয়ংক্রিয়ভাবে অচল",
     "auto_resolved": "এই সমস্যা স্বয়ংক্রিয়ভাবে সমাধান হয়েছে",
     "mark_resolved": "সমাধান চিহ্নিত",
     "manual_fix": "(ম্যানুয়াল সমাধান)",
+    "metrics_unavailable": "মেট্রিক্স অনুপলব্ধ -- ডাটা পুরনো হতে পারে",
     "no_open_issues": "কোনো খোলা সমস্যা নেই",
-    "run_analysis": "সমস্যা পরীক্ষায় বিশ্লেষণ চালান।"
+    "run_analysis": "সমস্যা পরীক্ষায় বিশ্লেষণ চালান।",
+    "error_recovery": {
+      "panel_loaded": "লোড হয়েছে",
+      "panel_failed": "লোড করতে ব্যর্থ",
+      "panel_stale": "ডেটা পুরনো হতে পারে"
+    }
   },
   "memories": {
     "title": "স্মৃতি",
-    "delete_all": "সব মুছুন",
-    "delete_all_confirm_title": "সব স্মৃতি মুছবেন?",
-    "delete_all_confirm_body": "এটি স্থায়ীভাবে সব {count}টি স্মৃতি মুছে দেবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
-    "delete_all_confirm_cta": "সব মুছুন",
     "created_success": "স্মৃতি সফলভাবে তৈরি",
     "no_memories": "কোনো স্মৃতি নেই",
     "no_memories_hint": "যখন এজেন্ট চলে, তারা এখানে মূল্যবান নোট এবং শিক্ষা সংরক্ষণ করতে পারে।",
@@ -199,16 +207,95 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "সব মুছুন",
+    "delete_all_confirm_title": "সব স্মৃতি মুছবেন?",
+    "delete_all_confirm_body": "এটি স্থায়ীভাবে সব {count}টি স্মৃতি মুছে দেবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+    "delete_all_confirm_cta": "সব মুছুন"
   },
   "memory_review": {
+    "all_conflicts_resolved": "সব দ্বন্দ্ব সমাধান হয়েছে",
     "keep_prefix": "রাখুন “",
-    "keep_suffix": "”",
-    "all_conflicts_resolved": "সব দ্বন্দ্ব সমাধান হয়েছে"
+    "keep_suffix": "”"
+  },
+  "executions": {
+    "title": "সম্পাদন",
+    "loading": "সম্পাদন লোড হচ্ছে...",
+    "no_agents": "কোনো এজেন্ট তৈরি হয়নি",
+    "create_first": "সম্পাদন কার্যকলাপ দেখতে প্রথম এজেন্ট তৈরি করুন",
+    "no_executions": "কোনো সম্পাদন নেই",
+    "run_agent": "সম্পাদন কার্যকলাপ দেখতে একটি এজেন্ট চালান"
+  },
+  "workflows": {
+    "loading": "ওয়ার্কফ্লো লোড হচ্ছে...",
+    "title": "ওয়ার্কফ্লো",
+    "subtitle": "আপনার ওয়ার্কস্পেস জুড়ে সক্রিয় ও সাম্প্রতিক ব্যাকগ্রাউন্ড অপারেশন",
+    "no_jobs": "কোনো ব্যাকগ্রাউন্ড জব চলছে না বা সাম্প্রতিক নেই",
+    "jobs_hint": "N8n ট্রান্সফর্ম, টেমপ্লেট অ্যাডপশন, টেমপ্লেট জেনারেশন বা কোয়েরি ডিবাগিং চালালে জব এখানে দেখাবে",
+    "all_types": "সব ধরন",
+    "no_filter_match": "বর্তমান ফিল্টারের সাথে কোনো জব মিলছে না",
+    "auto_refreshing": "জব চলার সময় অটো-রিফ্রেশিং",
+    "cancel_failed": "ওয়ার্কফ্লো জব বাতিল ব্যর্থ হয়েছে"
+  },
+  "schedules": {
+    "title": "সময়সূচি টাইমলাইন",
+    "subtitle": "সব নির্ধারিত এজেন্ট সম্পাদনের সমন্বিত দৃশ্য",
+    "engine_on": "ইঞ্জিন চালু",
+    "engine_off": "ইঞ্জিন বন্ধ",
+    "engine_on_tooltip": "শিডিউলার চলছে -- থামাতে ক্লিক করুন",
+    "engine_off_tooltip": "শিডিউলার থামানো -- শুরু করতে ক্লিক করুন",
+    "active_count": "{count} সক্রিয়",
+    "paused_count": "{count} বিরতিতে",
+    "view_grouped": "গ্রুপভিত্তিক",
+    "view_timeline": "টাইমলাইন",
+    "triggers_fired": "ট্রিগার ফায়ার: ",
+    "events_processed": "ইভেন্ট প্রসেস: ",
+    "delivered": "প্রদান: ",
+    "failed_label": "ব্যর্থ: ",
+    "loading": "সময়সূচি লোড হচ্ছে...",
+    "empty": "কোনো নির্ধারিত এজেন্ট নেই।",
+    "empty_hint": "এখানে দেখতে যেকোনো এজেন্টে সময়সূচি বা পোলিং ট্রিগার তৈরি করুন।",
+    "group_overdue": "বিলম্বিত",
+    "group_15min": "পরবর্তী ১৫ মিনিট",
+    "group_1hour": "পরবর্তী ঘণ্টা",
+    "group_6hours": "পরবর্তী ৬ ঘণ্টা",
+    "group_24hours": "পরবর্তী ২৪ ঘণ্টা",
+    "group_later": "পরে",
+    "group_paused": "বিরতি / অনির্ধারিত",
+    "run_now": "এখনই চালান",
+    "change_frequency": "ফ্রিকোয়েন্সি পরিবর্তন",
+    "pause_schedule": "সময়সূচি বিরতি",
+    "resume_schedule": "সময়সূচি পুনরায় শুরু",
+    "headless_badge": "headless"
+  },
+  "frequency_editor": {
+    "title": "ফ্রিকোয়েন্সি পরিবর্তন",
+    "current": "বর্তমান: ",
+    "quick_presets": "দ্রুত প্রিসেট",
+    "cron_expression": "Cron এক্সপ্রেশন",
+    "interval_seconds": "ইন্টারভ্যাল (সেকেন্ড)",
+    "previewing": "প্রিভিউ হচ্ছে...",
+    "next_runs": "পরবর্তী রান",
+    "invalid_cron": "অবৈধ cron এক্সপ্রেশন"
+  },
+  "recovery": {
+    "agents_missed_one": "{count} এজেন্ট সম্পাদন মিস করেছে",
+    "agents_missed_other": "{count} এজেন্ট সম্পাদন মিস করেছে",
+    "total_skipped": "অ্যাপ অফলাইনে ~{count} রান এড়িয়ে গেছে",
+    "missed_since": "{time} থেকে {count} মিস",
+    "every_interval": "প্রতি {interval}",
+    "mark_for_recovery": "পুনরুদ্ধারের জন্য চিহ্নিত",
+    "recover": "পুনরুদ্ধার",
+    "run_once": "১বার চালান",
+    "run_once_tooltip": "এখন একবার চালান",
+    "skip_tooltip": "এড়িয়ে যান",
+    "dismiss_all": "সব বাতিল",
+    "recover_selected": "{count} নির্বাচিত পুনরুদ্ধার"
   },
   "sla": {
     "title": "এজেন্ট নির্ভরযোগ্যতা SLA",
     "subtitle": "এজেন্ট ফ্লিটের আপটাইম, ব্যর্থতার হার ও হিলিং মেট্রিক্স",
+    "loading": "SLA ডাটা লোড হচ্ছে...",
     "no_data": "কোনো সম্পাদন ডাটা নেই।",
     "success_rate": "সফলতার হার",
     "executions_summary": "{successful}/{total} সম্পাদন",
@@ -221,12 +308,6 @@
     "daily_success_rate": "দৈনিক সফলতার হার -- {days} দিন",
     "per_agent": "এজেন্ট-ভিত্তিক নির্ভরযোগ্যতা",
     "no_agent_data": "এই সময়ে কোনো এজেন্ট সম্পাদন হয়নি।",
-    "success_rate_tooltip": "সফলতার হার = সফল / (সফল + ব্যর্থ)। বাতিল করা রানগুলো বাদ দেওয়া হয়েছে, কারণ সেগুলো ব্যবহারকারীর দ্বারা শুরু করা হয় এবং সিস্টেমের নির্ভরযোগ্যতা প্রতিফলিত করে না।",
-    "all_time_badge": "সর্বকালীন",
-    "open_issues_tooltip": "সমস্ত এজেন্ট জুড়ে বর্তমানে খোলা হিলিং সমস্যা। এটি একটি সর্বকালীন স্ন্যাপশট এবং উপরের সময় উইন্ডোর সাথে পরিবর্তিত হয় না — মাস আগে খোলা হওয়া কোনো সমস্যা এখনও খোলা থাকলে তা এখনও সমাধান হয়নি।",
-    "auto_healed_tooltip": "এই ইনস্টলের সম্পূর্ণ সময়কালে হিলিং ইঞ্জিন স্বয়ংক্রিয়ভাবে সমাধান করা মোট সমস্যার সংখ্যা। এই সংখ্যা সর্বকালীন এবং উপরের সময় উইন্ডোর সাথে পরিবর্তিত হয় না।",
-    "windowed_tooltip": "উপরে নির্বাচিত সময় উইন্ডোর উপর ভিত্তি করে গণনা করা হয়েছে ({days} দিন)।",
-    "loading": "SLA ডাটা লোড হচ্ছে...",
     "metric_successful": "সফল",
     "metric_failed": "ব্যর্থ",
     "metric_avg_latency": "গড় লেটেন্সি",
@@ -234,20 +315,15 @@
     "metric_cost": "খরচ",
     "metric_mtbf": "MTBF",
     "metric_auto_healed": "স্বয়ং-নিরাময়",
-    "metric_cancelled": "বাতিল"
+    "metric_cancelled": "বাতিল",
+    "success_rate_tooltip": "সফলতার হার = সফল / (সফল + ব্যর্থ)। বাতিল করা রানগুলো বাদ দেওয়া হয়েছে, কারণ সেগুলো ব্যবহারকারীর দ্বারা শুরু করা হয় এবং সিস্টেমের নির্ভরযোগ্যতা প্রতিফলিত করে না।",
+    "all_time_badge": "সর্বকালীন",
+    "open_issues_tooltip": "সমস্ত এজেন্ট জুড়ে বর্তমানে খোলা হিলিং সমস্যা। এটি একটি সর্বকালীন স্ন্যাপশট এবং উপরের সময় উইন্ডোর সাথে পরিবর্তিত হয় না — মাস আগে খোলা হওয়া কোনো সমস্যা এখনও খোলা থাকলে তা এখনও সমাধান হয়নি।",
+    "auto_healed_tooltip": "এই ইনস্টলের সম্পূর্ণ সময়কালে হিলিং ইঞ্জিন স্বয়ংক্রিয়ভাবে সমাধান করা মোট সমস্যার সংখ্যা। এই সংখ্যা সর্বকালীন এবং উপরের সময় উইন্ডোর সাথে পরিবর্তিত হয় না।",
+    "windowed_tooltip": "উপরে নির্বাচিত সময় উইন্ডোর উপর ভিত্তি করে গণনা করা হয়েছে ({days} দিন)।"
   },
   "knowledge": {
     "title": "জ্ঞান গ্রাফ",
-    "patterns_tab": "প্যাটার্ন",
-    "search_placeholder": "প্যাটার্ন খুঁজুন...",
-    "sort_aria": "প্যাটার্ন সাজান",
-    "sort_default": "শীর্ষ প্যাটার্ন",
-    "sort_confidence": "সর্বোচ্চ আস্থা",
-    "sort_runs": "সর্বাধিক রান",
-    "sort_recent": "সাম্প্রতিকতম",
-    "needs_review": "পর্যালোচনা প্রয়োজন",
-    "pending_scope_hint": "সমস্ত মুলতুবি টীকা পর্যালোচনা করতে একটি পার্সোনা নির্বাচন করুন।",
-    "graph_tab": "গ্রাফ",
     "subtitle": "সম্পাদন ইতিহাস থেকে শেখা {count} প্যাটার্ন",
     "total_patterns": "মোট প্যাটার্ন",
     "tool_sequences": "টুল সিকোয়েন্স",
@@ -269,13 +345,36 @@
     "failures": "ব্যর্থ",
     "avg_cost": "গড় খরচ",
     "avg_duration": "গড় সময়কাল",
-    "pattern_data": "প্যাটার্ন ডাটা"
+    "pattern_data": "প্যাটার্ন ডাটা",
+    "patterns_tab": "প্যাটার্ন",
+    "search_placeholder": "প্যাটার্ন খুঁজুন...",
+    "sort_aria": "প্যাটার্ন সাজান",
+    "sort_default": "শীর্ষ প্যাটার্ন",
+    "sort_confidence": "সর্বোচ্চ আস্থা",
+    "sort_runs": "সর্বাধিক রান",
+    "sort_recent": "সাম্প্রতিকতম",
+    "needs_review": "পর্যালোচনা প্রয়োজন",
+    "pending_scope_hint": "সমস্ত মুলতুবি টীকা পর্যালোচনা করতে একটি পার্সোনা নির্বাচন করুন।",
+    "graph_tab": "গ্রাফ"
+  },
+  "conflicts": {
+    "dismissed": "দ্বন্দ্ব বাতিল",
+    "resolved": "দ্বন্দ্ব সমাধান",
+    "resolve_failed": "দ্বন্দ্ব সমাধান ব্যর্থ",
+    "conflict_count_one": "{count} দ্বন্দ্ব",
+    "conflict_count_other": "{count} দ্বন্দ্ব"
   },
   "dashboard": {
+    "title": "ড্যাশবোর্ড",
+    "subtitle": "অপারেশনাল সারসংক্ষেপ ও সিস্টেম স্ট্যাটাস",
     "greeting_morning": "শুভ সকাল",
     "greeting_afternoon": "শুভ বিকেল",
     "greeting_evening": "শুভ সন্ধ্যা",
     "default_user": "অপারেটর",
+    "pending_reviews_prompt": "মুলতুবি পর্যালোচনা",
+    "requiring_attention": "মনোযোগ প্রয়োজন।",
+    "empty_cta": "শুরু করতে আপনার প্রথম এজেন্ট তৈরি করুন।",
+    "pipeline_failed": "{source} লোড ব্যর্থ হয়েছে",
     "empty_title": "Personas-এ স্বাগতম",
     "empty_subtitle": "এক্সিকিউশন মেট্রিক্স, ট্রাফিক চার্ট এবং কার্যক্রম দেখতে আপনার প্রথম এজেন্ট তৈরি করুন।",
     "create_persona": "পার্সোনা তৈরি করুন",
@@ -297,12 +396,6 @@
     "section_memory": "মেমরি পরামর্শ",
     "section_fleet": "ফ্লিট অপ্টিমাইজেশন",
     "section_routines": "রুটিন ও ভল্ট পরিবর্তন",
-    "title": "ড্যাশবোর্ড",
-    "subtitle": "অপারেশনাল সারসংক্ষেপ ও সিস্টেম স্ট্যাটাস",
-    "pending_reviews_prompt": "মুলতুবি পর্যালোচনা",
-    "requiring_attention": "মনোযোগ প্রয়োজন।",
-    "empty_cta": "শুরু করতে আপনার প্রথম এজেন্ট তৈরি করুন।",
-    "pipeline_failed": "{source} লোড ব্যর্থ হয়েছে",
     "instruments_subtitle": "ফ্লিট টেলিমেট্রি",
     "memory_suggestions_count": "{count}টি পরামর্শ",
     "pane_instruments": "ইনস্ট্রুমেন্টস",
@@ -331,6 +424,49 @@
     "triage_tag_pipeline": "SYS",
     "triage_tag_review": "REV",
     "vitals_subtitle_fleet": "ফ্লিট স্বাস্থ্য"
+  },
+  "execution_metrics": {
+    "title": "এক্সিকিউশন মেট্রিক্স",
+    "total_executions": "মোট এক্সিকিউশন",
+    "total_cost": "মোট খরচ",
+    "success_rate": "সাফল্যের হার",
+    "avg_latency": "গড় লেটেন্সি",
+    "cost_anomalies": "খরচের অ্যানোমালি সনাক্ত",
+    "no_data": "নির্বাচিত সময়কালের জন্য কোনো এক্সিকিউশন ডেটা নেই",
+    "cost_per_day": "প্রতিদিনের খরচ",
+    "executions_by_status": "স্ট্যাটাস অনুসারে এক্সিকিউশন",
+    "success_rate_trend": "সাফল্যের হারের প্রবণতা",
+    "latency_distribution": "লেটেন্সি বিতরণ (p50 / p95 / p99)",
+    "top_personas_by_cost": "খরচ অনুসারে শীর্ষ পার্সোনা",
+    "cost_spike": "খরচের স্পাইক",
+    "above_avg": "গড়ের উপরে",
+    "top_executions": "শীর্ষ এক্সিকিউশন:",
+    "executions_label": "{count}টি এক্সিকিউশন"
+  },
+  "execution_list": {
+    "recorded": "{count}টি এক্সিকিউশন রেকর্ড হয়েছে",
+    "recorded_one": "{count}টি এক্সিকিউশন রেকর্ড হয়েছে",
+    "list": "তালিকা",
+    "metrics": "মেট্রিক্স",
+    "show_list": "এক্সিকিউশন তালিকা দেখান",
+    "show_metrics": "মেট্রিক্স ড্যাশবোর্ড দেখান",
+    "showing": "{total}-এর মধ্যে {count}টি দেখানো হচ্ছে",
+    "load_more": "আরও লোড করুন",
+    "filter_all": "সব",
+    "filter_running": "চলছে",
+    "filter_completed": "সম্পন্ন",
+    "filter_failed": "ব্যর্থ",
+    "col_persona": "পার্সোনা",
+    "col_status": "স্ট্যাটাস",
+    "col_duration": "সময়কাল",
+    "col_started": "শুরু হয়েছে",
+    "col_id": "ID",
+    "all_statuses": "সব স্ট্যাটাস",
+    "all_personas": "সব পার্সোনা",
+    "no_agents": "এখনও কোনো এজেন্ট তৈরি হয়নি",
+    "no_agents_hint": "এখানে এক্সিকিউশন কার্যক্রম দেখতে আপনার প্রথম এজেন্ট তৈরি করুন।",
+    "unknown_persona": "অজানা",
+    "healing_retry": "হিলিং রিট্রাই #{count}"
   },
   "review": {
     "title": "ম্যানুয়াল পর্যালোচনা",
@@ -413,27 +549,44 @@
   },
   "messages_view": {
     "title": "বার্তা",
+    "threads_subtitle": "{count}টি থ্রেড",
+    "threads_subtitle_one": "{count}টি থ্রেড",
     "messages_subtitle": "{count}টি বার্তা রেকর্ড হয়েছে",
     "messages_subtitle_one": "{count}টি বার্তা রেকর্ড হয়েছে",
     "mock_message": "মক বার্তা",
     "seed_tooltip": "একটি মক বার্তা তৈরি করুন (শুধু dev)",
+    "flat_view": "ফ্ল্যাট দৃশ্য",
+    "threaded_view": "থ্রেডেড দৃশ্য",
     "mark_all_read": "সব পঠিত চিহ্নিত করুন",
+    "threads_of": "{total}-এর মধ্যে {count}টি থ্রেড",
+    "no_threads": "এখনও কোনো বার্তার থ্রেড নেই",
+    "no_threads_hint": "এক্সিকিউশনের সময় এজেন্টগুলি বার্তা তৈরি করলে থ্রেড স্বয়ংক্রিয়ভাবে তৈরি হয়।",
     "no_messages": "এখনও কোনো বার্তা নেই",
     "no_messages_hint": "এজেন্টগুলি চলার এবং একে অপরের সাথে যোগাযোগ করার সময় বার্তা তৈরি হয়।",
     "no_filter_match": "বর্তমান ফিল্টারের সাথে কোনো বার্তা মিলছে না",
+    "loading_replies": "উত্তর লোড হচ্ছে...",
     "load_more": "আরও লোড করুন ({count}টি বাকি)",
     "col_title": "শিরোনাম",
+    "col_priority": "অগ্রাধিকার",
+    "col_delivery": "ডেলিভারি",
+    "col_status": "স্ট্যাটাস",
     "col_created": "তৈরি হয়েছে",
     "all_priorities": "সব অগ্রাধিকার",
     "all_statuses": "সব স্ট্যাটাস",
     "read": "পঠিত",
     "unread": "অপঠিত",
+    "new_badge": "নতুন",
+    "failed_count": "{count}টি ব্যর্থ",
+    "pending_count": "{count}টি মুলতুবি",
+    "sent_count": "{count}টি পাঠানো হয়েছে",
     "message_label": "বার্তা",
     "from_label": "{name} থেকে",
     "content_label": "বিষয়বস্তু",
     "view_execution": "এক্সিকিউশন দেখুন",
+    "type_label": "ধরন:",
     "delivery_status": "ডেলিভারি স্ট্যাটাস",
     "no_channels": "কোনো ডেলিভারি চ্যানেল কনফিগার করা নেই",
+    "confirm_delete": "মুছে ফেলা নিশ্চিত করুন",
     "improve_agent": "এজেন্ট উন্নত করুন",
     "improvement_started": "উন্নতি শুরু হয়েছে -- সম্পন্ন হলে জানানো হবে",
     "what_could_be_better": "কী ভালো হতে পারে?",
@@ -446,6 +599,7 @@
     "rating_label": "এই বার্তাটি রেট করুন",
     "rating_star_aria": "৫-এর মধ্যে {value} রেট করুন",
     "rating_saved": "সংরক্ষিত · {stars}/৫",
+    "rating_clear": "Clear rating",
     "rating_memory_title": "বার্তার রেটিং: {stars}/৫",
     "rating_memory_content_good": "ব্যবহারকারী আউটপুটটিকে {stars}/৫ স্টার রেট করেছেন। এই বার্তাটি প্রত্যাশা পূরণ করেছে — এই পদ্ধতি বজায় রাখুন।",
     "rating_memory_content_neutral": "ব্যবহারকারী আউটপুটটিকে {stars}/৫ স্টার রেট করেছেন। নিরপেক্ষ মতামত — সামান্য উন্নতির জন্য বার্তাটি পর্যালোচনা করুন।",
@@ -463,25 +617,7 @@
     "delete_all": "সব মুছুন",
     "delete_all_confirm_title": "সব বার্তা মুছবেন?",
     "delete_all_confirm_body": "এটি সমস্ত {count}টি বার্তা স্থায়ীভাবে মুছে দেয়। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
-    "delete_all_confirm_cta": "সব মুছুন",
-    "threads_subtitle": "{count}টি থ্রেড",
-    "threads_subtitle_one": "{count}টি থ্রেড",
-    "flat_view": "ফ্ল্যাট দৃশ্য",
-    "threaded_view": "থ্রেডেড দৃশ্য",
-    "threads_of": "{total}-এর মধ্যে {count}টি থ্রেড",
-    "no_threads": "এখনও কোনো বার্তার থ্রেড নেই",
-    "no_threads_hint": "এক্সিকিউশনের সময় এজেন্টগুলি বার্তা তৈরি করলে থ্রেড স্বয়ংক্রিয়ভাবে তৈরি হয়।",
-    "loading_replies": "উত্তর লোড হচ্ছে...",
-    "col_priority": "অগ্রাধিকার",
-    "col_delivery": "ডেলিভারি",
-    "col_status": "স্ট্যাটাস",
-    "new_badge": "নতুন",
-    "failed_count": "{count}টি ব্যর্থ",
-    "pending_count": "{count}টি মুলতুবি",
-    "sent_count": "{count}টি পাঠানো হয়েছে",
-    "type_label": "ধরন:",
-    "confirm_delete": "মুছে ফেলা নিশ্চিত করুন",
-    "rating_clear": "Clear rating"
+    "delete_all_confirm_cta": "সব মুছুন"
   },
   "events": {
     "title": "ইভেন্ট",
@@ -491,6 +627,7 @@
     "seed_tooltip": "একটি মক ইভেন্ট তৈরি করুন (শুধু dev)",
     "search_placeholder": "ধরন, উৎস বা পেলোড দিয়ে ইভেন্ট অনুসন্ধান করুন...",
     "loading_older": "পুরোনো ইভেন্ট লোড হচ্ছে...",
+    "load_older": "পুরোনো ইভেন্ট লোড করুন",
     "no_events": "এখনও কোনো ইভেন্ট নেই",
     "no_events_hint": "এজেন্টগুলি চলার সাথে সাথে webhook, এক্সিকিউশন এবং পার্সোনার কার্যক্রম থেকে ইভেন্ট এখানে দেখাবে।",
     "no_filter_match": "বর্তমান ফিল্টারের সাথে কোনো ইভেন্ট মিলছে না",
@@ -498,6 +635,12 @@
     "view_name_placeholder": "দৃশ্যের নাম (যেমন 'এই সপ্তাহের ব্যর্থ webhook')",
     "views_label": "দৃশ্য:",
     "delete_view": "দৃশ্য মুছুন",
+    "clear_filters": "সব ফিল্টার সাফ করুন",
+    "col_trigger": "ট্রিগার",
+    "col_persona": "পার্সোনা",
+    "col_event_name": "ইভেন্টের নাম",
+    "col_status": "স্ট্যাটাস",
+    "col_created": "তৈরি হয়েছে",
     "all_statuses": "সব স্ট্যাটাস",
     "all_types": "সব ধরন",
     "all_triggers": "সব ট্রিগার",
@@ -507,13 +650,6 @@
     "source_scheduled": "নির্ধারিত",
     "event_detail_title": "ইভেন্ট:",
     "event_detail_status": "স্ট্যাটাস:",
-    "load_older": "পুরোনো ইভেন্ট লোড করুন",
-    "clear_filters": "সব ফিল্টার সাফ করুন",
-    "col_trigger": "ট্রিগার",
-    "col_persona": "পার্সোনা",
-    "col_event_name": "ইভেন্টের নাম",
-    "col_status": "স্ট্যাটাস",
-    "col_created": "তৈরি হয়েছে",
     "event_id": "ইভেন্ট ID",
     "project": "প্রকল্প",
     "source": "উৎস",
@@ -524,7 +660,6 @@
   "health": {
     "title": "এজেন্ট স্বাস্থ্য",
     "subtitle": "সব এজেন্ট জুড়ে রিয়েল-টাইম স্বাস্থ্য পর্যবেক্ষণ",
-    "status_page": "স্ট্যাটাস পেজ",
     "all_healthy": "সব এজেন্ট সুস্থ",
     "all_healthy_hint": "প্রতিটি পর্যবেক্ষণকৃত এজেন্ট স্বাভাবিকভাবে কাজ করছে",
     "no_agents": "এখনও কোনো এজেন্ট নেই",
@@ -547,6 +682,7 @@
     "cascade_title": "ক্যাসকেড বিশ্লেষণ",
     "predictive_alerts": "পূর্বানুমানমূলক সতর্কতা",
     "no_alerts": "এই মুহূর্তে কোনো পূর্বানুমানমূলক সতর্কতা নেই",
+    "status_page": "স্ট্যাটাস পেজ",
     "operational": "কার্যকর",
     "degraded": "অবনতি হয়েছে",
     "outage": "বিভ্রাট"
@@ -591,6 +727,58 @@
     "hint_activity": "কার্যকলাপ বাড়াতে এই এজেন্টকে আরও ঘন ঘন ট্রিগার বা শিডিউল করুন।",
     "improve_agent": "এই এজেন্ট উন্নত করুন"
   },
+  "analytics": {
+    "title": "অ্যানালিটিক্স",
+    "subtitle": "এক্সিকিউশন প্যাটার্ন ও প্রবণতা",
+    "loading": "অ্যানালিটিক্স লোড হচ্ছে...",
+    "no_data": "কোনো অ্যানালিটিক্স ডেটা পাওয়া যায়নি",
+    "executions_over_time": "সময়ের সাথে এক্সিকিউশন",
+    "success_failure": "সাফল্য বনাম ব্যর্থতা",
+    "cost_breakdown": "খরচের বিভাজন",
+    "total_executions": "মোট এক্সিকিউশন",
+    "total_cost": "মোট খরচ",
+    "avg_success_rate": "গড় সাফল্যের হার",
+    "active_agents": "সক্রিয় এজেন্ট",
+    "saved_views": "সংরক্ষিত দৃশ্য",
+    "create_view": "দৃশ্য তৈরি করুন",
+    "health_issues": "স্বাস্থ্য সমস্যা",
+    "rotation_overview": "রোটেশন সারসংক্ষেপ"
+  },
+  "usage": {
+    "title": "ব্যবহার",
+    "subtitle": "খরচ ও রিসোর্স ব্যবহার",
+    "chart_error": "চার্ট লোড ব্যর্থ হয়েছে",
+    "chart_error_hint": "এই চার্ট রেন্ডার করতে একটি ত্রুটি হয়েছে",
+    "try_again": "আবার চেষ্টা করুন"
+  },
+  "cron_agents": {
+    "title": "নির্ধারিত এজেন্ট",
+    "subtitle": "স্বয়ংক্রিয় শিডিউলে চলা এজেন্ট",
+    "no_agents": "কোনো নির্ধারিত এজেন্ট নেই",
+    "no_agents_hint": "এখানে দেখতে যেকোনো এজেন্টে cron ট্রিগার যোগ করুন"
+  },
+  "timeline": {
+    "title": "কার্যক্রমের টাইমলাইন",
+    "subtitle": "সব এজেন্টের কার্যক্রমের একীভূত দৃশ্য",
+    "no_activity": "কোনো সাম্প্রতিক কার্যক্রম নেই"
+  },
+  "realtime_viz": {
+    "title": "ইভেন্ট বাস",
+    "filter_events": "ইভেন্ট ফিল্টার করুন",
+    "pause": "বিরতি দিন",
+    "resume": "পুনরায় শুরু করুন",
+    "clear": "সাফ করুন",
+    "total_events": "মোট ইভেন্ট",
+    "events_per_sec": "ইভেন্ট/সেকেন্ড",
+    "active_lanes": "সক্রিয় লেন",
+    "event_type": "ইভেন্ট টাইপ",
+    "source": "উৎস",
+    "target": "লক্ষ্য",
+    "timestamp": "টাইমস্ট্যাম্প",
+    "payload": "পেলোড",
+    "saved_views": "সংরক্ষিত দৃশ্য",
+    "save_current": "বর্তমান সংরক্ষণ করুন"
+  },
   "observability_extra": {
     "auto_refresh_on": "অটো-রিফ্রেশ চালু",
     "auto_refresh_off": "অটো-রিফ্রেশ বন্ধ",
@@ -618,12 +806,21 @@
     "error_rate": "ত্রুটির হার"
   },
   "widgets": {
+    "recent_activity": "সাম্প্রতিক কার্যক্রম",
     "view_all": "সব দেখুন",
+    "total_traffic": "মোট ট্রাফিক",
+    "total_errors": "মোট ত্রুটি",
     "traffic_errors_chart": "ট্রাফিক ও ত্রুটি",
     "top_performers": "শীর্ষ পারফর্মার",
+    "metric_help": "মেট্রিক্স সাহায্য",
+    "how_calculated": "এটি কীভাবে গণনা করা হয়?",
+    "details": "বিস্তারিত",
     "messages_badge": "বার্তা",
     "reviews_badge": "পর্যালোচনা",
+    "executions_badge": "এক্সিকিউশন",
+    "success_badge": "সাফল্য",
     "alerts_badge": "সতর্কতা",
+    "agents_badge": "এজেন্ট",
     "pipelines_badge": "পাইপলাইন",
     "tool_performance": "টুলের পারফরম্যান্স",
     "tool_performance_subtitle": "প্রতি টুলে লেটেন্সি ও ত্রুটির হার",
@@ -632,21 +829,21 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "ত্রুটি",
-    "tool_performance_unit_ms": "ms",
-    "recent_activity": "সাম্প্রতিক কার্যক্রম",
-    "total_traffic": "মোট ট্রাফিক",
-    "total_errors": "মোট ত্রুটি",
     "tool_performance_empty": "No tool runs in this window",
-    "metric_help": "মেট্রিক্স সাহায্য",
-    "how_calculated": "এটি কীভাবে গণনা করা হয়?",
-    "details": "বিস্তারিত",
-    "executions_badge": "এক্সিকিউশন",
-    "success_badge": "সাফল্য",
-    "agents_badge": "এজেন্ট",
+    "tool_performance_unit_ms": "ms",
     "range_days_ago": "{days} দিন আগে",
     "range_today": "আজ",
     "range_yesterday": "গতকাল",
     "traffic_errors_chart_aria": "ট্র্যাফিক এবং ত্রুটি চার্ট"
+  },
+  "cards": {
+    "fleet_optimization": "ফ্লিট অপ্টিমাইজেশন",
+    "fleet_subtitle": "এজেন্ট পারফরম্যান্স উন্নত করতে স্বয়ংক্রিয় সুপারিশ",
+    "remote_control": "রিমোট কন্ট্রোল",
+    "remote_subtitle": "এজেন্ট ব্যবস্থাপনার দ্রুত পদক্ষেপ",
+    "resume_setup": "সেটআপ চালিয়ে যান",
+    "resume_subtitle": "যেখানে ছেড়েছিলেন সেখান থেকে শুরু করুন",
+    "knowledge_hub": "জ্ঞানের কেন্দ্র"
   },
   "activity": {
     "title": "কার্যক্রম",
@@ -675,16 +872,23 @@
     "prev_failed": "পূর্ববর্তী ব্যর্থ",
     "success_pct": "সাফল্য %",
     "prev_success_pct": "পূর্ববর্তী সাফল্য %",
+    "successful": "সফল",
+    "all": "সব",
+    "running": "চলছে",
+    "all_statuses": "সব স্ট্যাটাস",
     "showing": "{total}-এর মধ্যে {count}টি দেখানো হচ্ছে",
     "load_more": "আরও লোড করুন",
+    "col_status": "স্ট্যাটাস",
     "col_duration": "সময়কাল",
     "col_started": "শুরু হয়েছে",
+    "col_id": "ID",
     "no_agents": "এখনও কোনো এজেন্ট তৈরি হয়নি",
     "no_agents_hint": "এখানে এক্সিকিউশন কার্যক্রম দেখতে আপনার প্রথম পার্সোনা তৈরি করুন।",
     "no_executions": "এখনও কোনো এক্সিকিউশন নেই",
     "no_executions_hint": "এক্সিকিউশন কার্যক্রম দেখতে একটি এজেন্ট চালান।",
     "create_persona": "পার্সোনা তৈরি করুন",
     "from_templates": "টেমপ্লেট থেকে",
+    "execution_label": "এক্সিকিউশন",
     "unknown": "অজানা",
     "value_section_title": "ব্যবসায়িক মূল্য",
     "value_delivered_rate": "মূল্য-প্রদানের হার",
@@ -692,36 +896,9 @@
     "value_delivered_count": "প্রদত্ত মূল্য",
     "all_models": "সব মডেল",
     "col_model": "মডেল",
-    "col_cost": "খরচ",
-    "successful": "সফল",
-    "all": "সব",
-    "running": "চলছে",
-    "all_statuses": "সব স্ট্যাটাস",
-    "col_status": "স্ট্যাটাস",
-    "col_id": "ID",
-    "execution_label": "এক্সিকিউশন"
+    "col_cost": "খরচ"
   },
   "analytics_dashboard": {
-    "issues_found": "{count}টি সমস্যা পাওয়া গেছে",
-    "issues_found_one": "{count}টি সমস্যা পাওয়া গেছে",
-    "auto_fixed": "স্বয়ংক্রিয়ভাবে ঠিক হয়েছে",
-    "executions_scanned": "{count}টি এক্সিকিউশন স্ক্যান হয়েছে",
-    "executions_scanned_one": "{count}টি এক্সিকিউশন স্ক্যান হয়েছে",
-    "credential_rotation": "ক্রেডেনশিয়াল রোটেশন",
-    "no_rotation_policies": "কোনো রোটেশন নীতি নেই",
-    "no_rotation_hint": "ভল্টে ক্রেডেনশিয়ালে রোটেশন কনফিগার করুন।",
-    "active_count": "{count}টি সক্রিয়",
-    "soon_count": "{count}টি শীঘ্রই",
-    "issues_count": "{count}টি সমস্যা",
-    "issues_count_one": "{count}টি সমস্যা",
-    "fail_count": "{count}x ব্যর্থ",
-    "rotation_manage_all": "ব্যবস্থাপনা করুন",
-    "rotation_open_in_connections": "সংযোগে খুলুন",
-    "rotation_started_for": "{name}-এর জন্য রোটেশন শুরু হয়েছে",
-    "rotation_failed_for": "{name} রোটেট করতে ব্যর্থ",
-    "rotation_due_now": "এখনই বাকি",
-    "rotation_countdown_days_hours": "{days}দ {hours}ঘ",
-    "rotation_countdown_hours": "{hours}ঘ",
     "title": "অ্যানালিটিক্স",
     "subtitle": "একীভূত খরচ, এক্সিকিউশন ও টুল ব্যবহারের অ্যানালিটিক্স",
     "metrics_unavailable": "মেট্রিক্স পাওয়া যাচ্ছে না",
@@ -756,6 +933,11 @@
     "run_analysis": "বিশ্লেষণ চালান",
     "analyzing": "বিশ্লেষণ হচ্ছে...",
     "analysis_complete": "বিশ্লেষণ সম্পন্ন",
+    "issues_found": "{count}টি সমস্যা পাওয়া গেছে",
+    "issues_found_one": "{count}টি সমস্যা পাওয়া গেছে",
+    "auto_fixed": "স্বয়ংক্রিয়ভাবে ঠিক হয়েছে",
+    "executions_scanned": "{count}টি এক্সিকিউশন স্ক্যান হয়েছে",
+    "executions_scanned_one": "{count}টি এক্সিকিউশন স্ক্যান হয়েছে",
     "no_open_issues": "কোনো খোলা সমস্যা নেই",
     "run_analysis_hint": "সমস্যা যাচাই করতে বিশ্লেষণ চালান।",
     "filter_all": "সব",
@@ -765,7 +947,29 @@
     "breaker": "ব্রেকার",
     "fixed": "ঠিক হয়েছে",
     "retry": "পুনরায় চেষ্টা করুন",
-    "never": "কখনও নয়"
+    "credential_rotation": "ক্রেডেনশিয়াল রোটেশন",
+    "no_rotation_policies": "কোনো রোটেশন নীতি নেই",
+    "no_rotation_hint": "ভল্টে ক্রেডেনশিয়ালে রোটেশন কনফিগার করুন।",
+    "active_count": "{count}টি সক্রিয়",
+    "soon_count": "{count}টি শীঘ্রই",
+    "issues_count": "{count}টি সমস্যা",
+    "issues_count_one": "{count}টি সমস্যা",
+    "never": "কখনও নয়",
+    "fail_count": "{count}x ব্যর্থ",
+    "rotation_manage_all": "ব্যবস্থাপনা করুন",
+    "rotation_open_in_connections": "সংযোগে খুলুন",
+    "rotation_started_for": "{name}-এর জন্য রোটেশন শুরু হয়েছে",
+    "rotation_failed_for": "{name} রোটেট করতে ব্যর্থ",
+    "rotation_due_now": "এখনই বাকি",
+    "rotation_countdown_days_hours": "{days}দ {hours}ঘ",
+    "rotation_countdown_hours": "{hours}ঘ"
+  },
+  "saved_views": {
+    "errors": {
+      "load_failed_message": "Couldn't load your saved views.",
+      "save_failed_message": "Couldn't save this view.",
+      "delete_failed_message": "Couldn't delete this view."
+    }
   },
   "cron": {
     "title": "Cron এজেন্ট",
@@ -785,6 +989,15 @@
     "every_interval": "প্রতি {interval}",
     "next": "পরবর্তী",
     "last": "শেষ"
+  },
+  "activity_timeline": {
+    "title": "কার্যক্রমের টাইমলাইন",
+    "subtitle": "{events}টি ইভেন্ট, {messages}টি বার্তা",
+    "all": "সব",
+    "events": "ইভেন্ট",
+    "messages": "বার্তা",
+    "no_activity": "এখনও কোনো কার্যক্রম নেই",
+    "high": "উচ্চ"
   },
   "sla_card": {
     "successful": "সফল",
@@ -813,6 +1026,13 @@
     "pending": "মুলতুবি",
     "success": "সাফল্য",
     "in_window": "উইন্ডোতে",
+    "test_flow": "প্রবাহ পরীক্ষা করুন",
+    "testing_flow": "প্রবাহ পরীক্ষা হচ্ছে...",
+    "test_event_flow": "ইভেন্ট প্রবাহ পরীক্ষা করুন",
+    "resume": "পুনরায় শুরু করুন",
+    "pause": "বিরতি দিন",
+    "resume_stream": "রিয়েল-টাইম স্ট্রিম পুনরায় শুরু করুন",
+    "pause_stream": "রিয়েল-টাইম স্ট্রিম বিরতি দিন",
     "search_events": "ইভেন্ট অনুসন্ধান করুন...",
     "filter_type": "ধরন",
     "filter_status": "স্ট্যাটাস",
@@ -823,17 +1043,6 @@
     "no_saved_views": "এখনও কোনো সংরক্ষিত দৃশ্য নেই",
     "save_current_filter": "বর্তমান ফিল্টার সংরক্ষণ করুন",
     "view_name_placeholder": "দৃশ্যের নাম...",
-    "close_event_details": "ইভেন্টের বিস্তারিত বন্ধ করুন",
-    "reset_to_start": "শুরুতে রিসেট করুন",
-    "cycle_speed": "প্লেব্যাক গতি পরিবর্তন করুন",
-    "exit_replay": "রিপ্লে থেকে বের হন",
-    "test_flow": "প্রবাহ পরীক্ষা করুন",
-    "testing_flow": "প্রবাহ পরীক্ষা হচ্ছে...",
-    "test_event_flow": "ইভেন্ট প্রবাহ পরীক্ষা করুন",
-    "resume": "পুনরায় শুরু করুন",
-    "pause": "বিরতি দিন",
-    "resume_stream": "রিয়েল-টাইম স্ট্রিম পুনরায় শুরু করুন",
-    "pause_stream": "রিয়েল-টাইম স্ট্রিম বিরতি দিন",
     "delete_saved_view": "সংরক্ষিত দৃশ্য মুছুন",
     "event_log": "ইভেন্ট লগ",
     "entries": "{count}টি এন্ট্রি",
@@ -847,6 +1056,10 @@
     "id_label": "ID",
     "error_label": "ত্রুটি",
     "payload_label": "পেলোড",
+    "close_event_details": "ইভেন্টের বিস্তারিত বন্ধ করুন",
+    "reset_to_start": "শুরুতে রিসেট করুন",
+    "cycle_speed": "প্লেব্যাক গতি পরিবর্তন করুন",
+    "exit_replay": "রিপ্লে থেকে বের হন",
     "galaxy": "গ্যালাক্সি",
     "galaxy_desc": "ধূমকেতু ট্রেইল সহ কক্ষীয় নক্ষত্রমণ্ডল",
     "lanes": "লেন",
@@ -970,15 +1183,36 @@
     "rejected": "{count}টি প্রত্যাখ্যাত",
     "undecided": "{count}টি অনিশ্চিত"
   },
+  "widgets_extra": {
+    "execution_health_chart": "এক্সিকিউশন স্বাস্থ্য",
+    "cost_over_time_chart": "সময়ের সাথে খরচ",
+    "successful": "সফল",
+    "failed": "ব্যর্থ",
+    "close": "বন্ধ করুন",
+    "dismiss_help": "সাহায্য বরখাস্ত করুন",
+    "skip_tour": "ট্যুর সম্পূর্ণ এড়িয়ে যান"
+  },
+  "remote_control_card": {
+    "connect_to_desktop": "ডেস্কটপে সংযুক্ত করুন",
+    "connect_description": "রিমোট কন্ট্রোলের মাধ্যমে আপনার ডেস্কটপ CLI ব্যবহার করে এজেন্ট চালান। আপনার কম্পিউটারে {command} শুরু করুন, তারপর এখানে সংযুক্ত করুন।",
+    "requires_subscription": "Claude Pro বা Max সাবস্ক্রিপশন প্রয়োজন"
+  },
+  "resume_setup_card": {
+    "resume_tour": "ট্যুর পুনরায় শুরু করুন",
+    "left_off_at": "আপনি যেখানে ছেড়েছিলেন",
+    "steps_completed": "{completed}/{total}টি ধাপ সম্পন্ন",
+    "skip_tour": "ট্যুর সম্পূর্ণ এড়িয়ে যান",
+    "continue_label": "চালিয়ে যান"
+  },
   "detail_modal": {
     "close": "বন্ধ করুন"
   },
   "metric_help_popover": {
+    "help_for": "{label}-এর জন্য সাহায্য",
     "dismiss_help": "সাহায্য বরখাস্ত করুন",
     "healthy": "সুস্থ:",
     "click": "ক্লিক করুন:",
-    "got_it": "বুঝেছি, আবার দেখাবেন না",
-    "help_for": "{label}-এর জন্য সাহায্য"
+    "got_it": "বুঝেছি, আবার দেখাবেন না"
   },
   "install_button": {
     "install_node": "Node.js ইনস্টল করুন",
@@ -1003,9 +1237,9 @@
     "disconnect": "সংযোগ বিচ্ছিন্ন করুন"
   },
   "metrics_cards": {
-    "top_executions": "শীর্ষ এক্সিকিউশন:",
     "cost_spike": "খরচের স্পাইক",
-    "above_avg": "গড়ের উপরে"
+    "above_avg": "গড়ের উপরে",
+    "top_executions": "শীর্ষ এক্সিকিউশন:"
   },
   "event_log_item": {
     "event_id": "ইভেন্ট ID",
@@ -1013,10 +1247,10 @@
     "source": "উৎস",
     "processed": "প্রক্রিয়াকৃত",
     "event_data": "ইভেন্ট ডেটা",
-    "error": "ত্রুটি",
     "copy_event_data": "ইভেন্ট ডেটা কপি করুন",
     "copied": "কপি হয়েছে",
     "copy": "কপি করুন",
+    "error": "ত্রুটি",
     "system": "সিস্টেম"
   },
   "burn_rate_extra": {
@@ -1101,14 +1335,21 @@
     "all_caught_up": "সব ঠিক আছে",
     "no_pending": "প্রক্রিয়া করার জন্য কোনো মুলতুবি পর্যালোচনা নেই।",
     "queue": "কিউ",
+    "clear": "সাফ করুন",
     "clear_all_verdicts": "সব রায় সাফ করুন",
     "quick_actions": "দ্রুত পদক্ষেপ",
     "reject_all": "সব প্রত্যাখ্যান করুন",
     "accept_all": "সব গ্রহণ করুন",
     "retry_with_changes": "পরিবর্তন সহ পুনরায় চেষ্টা করুন",
-    "carry_out_hint": "রিভিউ অনুমোদন করে এবং এটি সম্পন্ন করতে persona চালায়",
-    "clear": "সাফ করুন",
-    "video_not_supported": "আপনার ব্রাউজার ভিডিও প্লেব্যাক সমর্থন করে না।"
+    "video_not_supported": "আপনার ব্রাউজার ভিডিও প্লেব্যাক সমর্থন করে না।",
+    "carry_out_hint": "রিভিউ অনুমোদন করে এবং এটি সম্পন্ন করতে persona চালায়"
+  },
+  "bulk_action_bar": {
+    "pending_reviews_selected_one": "{count}টি মুলতুবি পর্যালোচনা নির্বাচিত",
+    "pending_reviews_selected_other": "{count}টি মুলতুবি পর্যালোচনা নির্বাচিত"
+  },
+  "review_inbox": {
+    "drag_to_resize": "আকার পরিবর্তন করতে টেনে আনুন"
   },
   "memory_card": {
     "confirm": "নিশ্চিত করুন",
@@ -1129,9 +1370,9 @@
     "agent": "এজেন্ট",
     "title": "শিরোনাম",
     "category": "বিভাগ",
+    "priority": "অগ্রাধিকার",
     "tags": "ট্যাগ",
-    "created": "তৈরি হয়েছে",
-    "priority": "অগ্রাধিকার"
+    "created": "তৈরি হয়েছে"
   },
   "review_results": {
     "title": "AI স্মৃতি পর্যালোচনা",
@@ -1143,8 +1384,8 @@
     "baseline_label": "বেসলাইন:",
     "correlating": "ঘটনা সম্পর্কযুক্ত করা হচ্ছে...",
     "likely_root_causes": "সম্ভাব্য মূল কারণ",
-    "no_correlated": "±২৪ ঘণ্টার উইন্ডোতে কোনো সম্পর্কযুক্ত ইভেন্ট পাওয়া যায়নি।",
-    "correlated_events": "সম্পর্কযুক্ত ইভেন্ট"
+    "correlated_events": "সম্পর্কযুক্ত ইভেন্ট",
+    "no_correlated": "±২৪ ঘণ্টার উইন্ডোতে কোনো সম্পর্কযুক্ত ইভেন্ট পাওয়া যায়নি।"
   },
   "healing_issue_modal": {
     "issue_resolved": "সমস্যা সমাধান হয়েছে",
@@ -1153,13 +1394,13 @@
     "copied": "কপি হয়েছে",
     "copy_fix": "সমাধান কপি করুন",
     "persona_auto_disabled": "পার্সোনা স্বয়ংক্রিয়ভাবে নিষ্ক্রিয়",
+    "persona_auto_disabled_desc": "এই পার্সোনা ৫টি ক্রমাগত ব্যর্থতার পরে স্বয়ংক্রিয়ভাবে নিষ্ক্রিয় হয়েছিল। নিচের ত্রুটির প্যাটার্ন পর্যালোচনা করুন এবং মূল কারণ সমাধান হলে ম্যানুয়ালি পুনরায় সক্রিয় করুন।",
     "marking_resolved_note": "সমাধান হয়েছে চিহ্নিত করার মানে হল আপনি হিলিং সিস্টেমের বাইরে এই সমস্যা সমাধান করেছেন।",
+    "retry_in_progress": "পুনরায় চেষ্টা চলছে -- সম্পন্ন হলে স্ট্যাটাস আপডেট হবে",
     "auto_resolved": "এই সমস্যা স্বয়ংক্রিয়ভাবে সমাধান হয়েছিল",
+    "close": "বন্ধ করুন",
     "resolving": "সমাধান হচ্ছে…",
     "mark_resolved": "সমাধান হয়েছে চিহ্নিত করুন",
-    "persona_auto_disabled_desc": "এই পার্সোনা ৫টি ক্রমাগত ব্যর্থতার পরে স্বয়ংক্রিয়ভাবে নিষ্ক্রিয় হয়েছিল। নিচের ত্রুটির প্যাটার্ন পর্যালোচনা করুন এবং মূল কারণ সমাধান হলে ম্যানুয়ালি পুনরায় সক্রিয় করুন।",
-    "retry_in_progress": "পুনরায় চেষ্টা চলছে -- সম্পন্ন হলে স্ট্যাটাস আপডেট হবে",
-    "close": "বন্ধ করুন",
     "retrying_badge": "পুনরায় চেষ্টা",
     "auto_fixed_badge": "স্বয়ংক্রিয়ভাবে ঠিক করা হয়েছে",
     "retry_in_progress_badge": "পুনরায় চেষ্টা চলছে",
@@ -1172,9 +1413,6 @@
     "run_analysis": "বিশ্লেষণ চালান",
     "no_open_issues": "কোনো খোলা সমস্যা নেই",
     "run_analysis_hint": "সমস্যা যাচাই করতে বিশ্লেষণ চালান।",
-    "healing_audit_log": "হিলিং অডিট লগ",
-    "no_silent_failures": "কোনো নীরব ব্যর্থতা রেকর্ড নেই।",
-    "analysis_complete_prefix": "বিশ্লেষণ সম্পূর্ণ:",
     "ai_healing_title": "AI হিলিং",
     "diagnosis_label": "নির্ণয়:",
     "fixes_applied": "প্রয়োগ করা ফিক্স",
@@ -1190,7 +1428,10 @@
     "execution_label": "এক্সিকিউশন:",
     "issue_marked_as": "এই সমস্যাটি চিহ্নিত",
     "retry_in_progress": "পুনরায় চেষ্টা চলছে — সম্পন্ন হলে অবস্থা আপডেট হবে।",
-    "resolve_issue_title": "সমস্যা সমাধান হিসেবে চিহ্নিত করুন"
+    "resolve_issue_title": "সমস্যা সমাধান হিসেবে চিহ্নিত করুন",
+    "healing_audit_log": "হিলিং অডিট লগ",
+    "no_silent_failures": "কোনো নীরব ব্যর্থতা রেকর্ড নেই।",
+    "analysis_complete_prefix": "বিশ্লেষণ সম্পূর্ণ:"
   },
   "healing_timeline": {
     "loading": "টাইমলাইন লোড হচ্ছে...",
@@ -1240,6 +1481,13 @@
     "event_id_label": "ইভেন্ট আইডি",
     "broadcast": "(ব্রডকাস্ট)"
   },
+  "event_bus_overlay": {
+    "earlier_events_not_shown_one": "{count} পূর্ববর্তী ইভেন্ট দেখানো হয়নি",
+    "earlier_events_not_shown_other": "{count} পূর্ববর্তী ইভেন্ট দেখানো হয়নি"
+  },
+  "event_bus_filter": {
+    "search_placeholder": "ইভেন্ট খুঁজুন..."
+  },
   "realtime_stats": {
     "events_per_min": "ইভেন্ট/মিনিট",
     "pending": "মুলতুবি",
@@ -1265,13 +1513,32 @@
     "heartbeats_btn": "হার্টবিট",
     "reliability_btn": "নির্ভরযোগ্যতা"
   },
+  "crash_logs": {
+    "title": "ক্র্যাশ লগ",
+    "no_logs": "কোনো ক্র্যাশ লগ রেকর্ড করা হয়নি।",
+    "component_stack_separator": "--- Component Stack ---"
+  },
   "popup_fields": {
     "sign_up_free_at": "বিনামূল্যে সাইন আপ করুন",
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", তারপর সেটিংস থেকে আপনার API কী কপি করুন। এই কী স্থানীয়ভাবে সংরক্ষিত এবং সমস্ত এজেন্টের মধ্যে শেয়ার করা হয়।"
   },
+  "events_list": {
+    "save_view_tooltip": "বর্তমান ফিল্টারকে ভিউ হিসাবে সংরক্ষণ করুন",
+    "clear_filters_tooltip": "সমস্ত ফিল্টার সাফ করুন"
+  },
+  "dashboard_home": {
+    "you_have": "আপনার আছে"
+  },
+  "fleet_optimization_card": {
+    "title": "ফ্লিট অপ্টিমাইজেশন"
+  },
   "usage_filters": {
     "time_range_label": "সময় পরিসীমা"
+  },
+  "day_range_picker": {
+    "start_date": "শুরুর তারিখ",
+    "end_date": "শেষের তারিখ"
   },
   "healing_summary": {
     "auto_fixed_this_week": "এই সপ্তাহে স্বয়ংক্রিয়ভাবে ঠিক হয়েছে",
@@ -1560,272 +1827,5 @@
     "source_scanner": "স্ক্যানার",
     "tokens": "টোকেন",
     "total_cost": "মোট খরচ"
-  },
-  "title": "সারসংক্ষেপ",
-  "no_output": "কোনো আউটপুট নেই",
-  "no_background_jobs": "কোনো ব্যাকগ্রাউন্ড জব চলছে না",
-  "background_jobs_hint": "N8n ট্রান্সফর্ম, টেমপ্লেট গ্রহণ, টেমপ্লেট জেনারেশন বা কোয়েরি ডিবাগিং চালালে এখানে জব দেখাবে",
-  "realtime": {
-    "idle": "নিষ্ক্রিয় -- ট্র্যাফিক সিমুলেট করতে {action} ক্লিক করুন",
-    "test_flow": "টেস্ট ফ্লো",
-    "events_per_min": "ইভেন্ট/মিনিট",
-    "pending": "মুলতুবি",
-    "success": "সফল",
-    "in_window": "উইন্ডোতে"
-  },
-  "executions": {
-    "title": "সম্পাদন",
-    "loading": "সম্পাদন লোড হচ্ছে...",
-    "no_agents": "কোনো এজেন্ট তৈরি হয়নি",
-    "create_first": "সম্পাদন কার্যকলাপ দেখতে প্রথম এজেন্ট তৈরি করুন",
-    "no_executions": "কোনো সম্পাদন নেই",
-    "run_agent": "সম্পাদন কার্যকলাপ দেখতে একটি এজেন্ট চালান"
-  },
-  "workflows": {
-    "loading": "ওয়ার্কফ্লো লোড হচ্ছে...",
-    "title": "ওয়ার্কফ্লো",
-    "subtitle": "আপনার ওয়ার্কস্পেস জুড়ে সক্রিয় ও সাম্প্রতিক ব্যাকগ্রাউন্ড অপারেশন",
-    "no_jobs": "কোনো ব্যাকগ্রাউন্ড জব চলছে না বা সাম্প্রতিক নেই",
-    "jobs_hint": "N8n ট্রান্সফর্ম, টেমপ্লেট অ্যাডপশন, টেমপ্লেট জেনারেশন বা কোয়েরি ডিবাগিং চালালে জব এখানে দেখাবে",
-    "all_types": "সব ধরন",
-    "no_filter_match": "বর্তমান ফিল্টারের সাথে কোনো জব মিলছে না",
-    "auto_refreshing": "জব চলার সময় অটো-রিফ্রেশিং",
-    "cancel_failed": "ওয়ার্কফ্লো জব বাতিল ব্যর্থ হয়েছে"
-  },
-  "schedules": {
-    "title": "সময়সূচি টাইমলাইন",
-    "subtitle": "সব নির্ধারিত এজেন্ট সম্পাদনের সমন্বিত দৃশ্য",
-    "engine_on": "ইঞ্জিন চালু",
-    "engine_off": "ইঞ্জিন বন্ধ",
-    "engine_on_tooltip": "শিডিউলার চলছে -- থামাতে ক্লিক করুন",
-    "engine_off_tooltip": "শিডিউলার থামানো -- শুরু করতে ক্লিক করুন",
-    "active_count": "{count} সক্রিয়",
-    "paused_count": "{count} বিরতিতে",
-    "view_grouped": "গ্রুপভিত্তিক",
-    "view_timeline": "টাইমলাইন",
-    "triggers_fired": "ট্রিগার ফায়ার: ",
-    "events_processed": "ইভেন্ট প্রসেস: ",
-    "delivered": "প্রদান: ",
-    "failed_label": "ব্যর্থ: ",
-    "loading": "সময়সূচি লোড হচ্ছে...",
-    "empty": "কোনো নির্ধারিত এজেন্ট নেই।",
-    "empty_hint": "এখানে দেখতে যেকোনো এজেন্টে সময়সূচি বা পোলিং ট্রিগার তৈরি করুন।",
-    "group_overdue": "বিলম্বিত",
-    "group_15min": "পরবর্তী ১৫ মিনিট",
-    "group_1hour": "পরবর্তী ঘণ্টা",
-    "group_6hours": "পরবর্তী ৬ ঘণ্টা",
-    "group_24hours": "পরবর্তী ২৪ ঘণ্টা",
-    "group_later": "পরে",
-    "group_paused": "বিরতি / অনির্ধারিত",
-    "run_now": "এখনই চালান",
-    "change_frequency": "ফ্রিকোয়েন্সি পরিবর্তন",
-    "pause_schedule": "সময়সূচি বিরতি",
-    "resume_schedule": "সময়সূচি পুনরায় শুরু",
-    "headless_badge": "headless"
-  },
-  "frequency_editor": {
-    "title": "ফ্রিকোয়েন্সি পরিবর্তন",
-    "current": "বর্তমান: ",
-    "quick_presets": "দ্রুত প্রিসেট",
-    "cron_expression": "Cron এক্সপ্রেশন",
-    "interval_seconds": "ইন্টারভ্যাল (সেকেন্ড)",
-    "previewing": "প্রিভিউ হচ্ছে...",
-    "next_runs": "পরবর্তী রান",
-    "invalid_cron": "অবৈধ cron এক্সপ্রেশন"
-  },
-  "recovery": {
-    "agents_missed_one": "{count} এজেন্ট সম্পাদন মিস করেছে",
-    "agents_missed_other": "{count} এজেন্ট সম্পাদন মিস করেছে",
-    "total_skipped": "অ্যাপ অফলাইনে ~{count} রান এড়িয়ে গেছে",
-    "missed_since": "{time} থেকে {count} মিস",
-    "every_interval": "প্রতি {interval}",
-    "mark_for_recovery": "পুনরুদ্ধারের জন্য চিহ্নিত",
-    "recover": "পুনরুদ্ধার",
-    "run_once": "১বার চালান",
-    "run_once_tooltip": "এখন একবার চালান",
-    "skip_tooltip": "এড়িয়ে যান",
-    "dismiss_all": "সব বাতিল",
-    "recover_selected": "{count} নির্বাচিত পুনরুদ্ধার"
-  },
-  "conflicts": {
-    "dismissed": "দ্বন্দ্ব বাতিল",
-    "resolved": "দ্বন্দ্ব সমাধান",
-    "resolve_failed": "দ্বন্দ্ব সমাধান ব্যর্থ",
-    "conflict_count_one": "{count} দ্বন্দ্ব",
-    "conflict_count_other": "{count} দ্বন্দ্ব"
-  },
-  "execution_metrics": {
-    "title": "এক্সিকিউশন মেট্রিক্স",
-    "total_executions": "মোট এক্সিকিউশন",
-    "total_cost": "মোট খরচ",
-    "success_rate": "সাফল্যের হার",
-    "avg_latency": "গড় লেটেন্সি",
-    "cost_anomalies": "খরচের অ্যানোমালি সনাক্ত",
-    "no_data": "নির্বাচিত সময়কালের জন্য কোনো এক্সিকিউশন ডেটা নেই",
-    "cost_per_day": "প্রতিদিনের খরচ",
-    "executions_by_status": "স্ট্যাটাস অনুসারে এক্সিকিউশন",
-    "success_rate_trend": "সাফল্যের হারের প্রবণতা",
-    "latency_distribution": "লেটেন্সি বিতরণ (p50 / p95 / p99)",
-    "top_personas_by_cost": "খরচ অনুসারে শীর্ষ পার্সোনা",
-    "cost_spike": "খরচের স্পাইক",
-    "above_avg": "গড়ের উপরে",
-    "top_executions": "শীর্ষ এক্সিকিউশন:",
-    "executions_label": "{count}টি এক্সিকিউশন"
-  },
-  "execution_list": {
-    "recorded": "{count}টি এক্সিকিউশন রেকর্ড হয়েছে",
-    "recorded_one": "{count}টি এক্সিকিউশন রেকর্ড হয়েছে",
-    "list": "তালিকা",
-    "metrics": "মেট্রিক্স",
-    "show_list": "এক্সিকিউশন তালিকা দেখান",
-    "show_metrics": "মেট্রিক্স ড্যাশবোর্ড দেখান",
-    "showing": "{total}-এর মধ্যে {count}টি দেখানো হচ্ছে",
-    "load_more": "আরও লোড করুন",
-    "filter_all": "সব",
-    "filter_running": "চলছে",
-    "filter_completed": "সম্পন্ন",
-    "filter_failed": "ব্যর্থ",
-    "col_persona": "পার্সোনা",
-    "col_status": "স্ট্যাটাস",
-    "col_duration": "সময়কাল",
-    "col_started": "শুরু হয়েছে",
-    "col_id": "ID",
-    "all_statuses": "সব স্ট্যাটাস",
-    "all_personas": "সব পার্সোনা",
-    "no_agents": "এখনও কোনো এজেন্ট তৈরি হয়নি",
-    "no_agents_hint": "এখানে এক্সিকিউশন কার্যক্রম দেখতে আপনার প্রথম এজেন্ট তৈরি করুন।",
-    "unknown_persona": "অজানা",
-    "healing_retry": "হিলিং রিট্রাই #{count}"
-  },
-  "analytics": {
-    "title": "অ্যানালিটিক্স",
-    "subtitle": "এক্সিকিউশন প্যাটার্ন ও প্রবণতা",
-    "loading": "অ্যানালিটিক্স লোড হচ্ছে...",
-    "no_data": "কোনো অ্যানালিটিক্স ডেটা পাওয়া যায়নি",
-    "executions_over_time": "সময়ের সাথে এক্সিকিউশন",
-    "success_failure": "সাফল্য বনাম ব্যর্থতা",
-    "cost_breakdown": "খরচের বিভাজন",
-    "total_executions": "মোট এক্সিকিউশন",
-    "total_cost": "মোট খরচ",
-    "avg_success_rate": "গড় সাফল্যের হার",
-    "active_agents": "সক্রিয় এজেন্ট",
-    "saved_views": "সংরক্ষিত দৃশ্য",
-    "create_view": "দৃশ্য তৈরি করুন",
-    "health_issues": "স্বাস্থ্য সমস্যা",
-    "rotation_overview": "রোটেশন সারসংক্ষেপ"
-  },
-  "usage": {
-    "title": "ব্যবহার",
-    "subtitle": "খরচ ও রিসোর্স ব্যবহার",
-    "chart_error": "চার্ট লোড ব্যর্থ হয়েছে",
-    "chart_error_hint": "এই চার্ট রেন্ডার করতে একটি ত্রুটি হয়েছে",
-    "try_again": "আবার চেষ্টা করুন"
-  },
-  "cron_agents": {
-    "title": "নির্ধারিত এজেন্ট",
-    "subtitle": "স্বয়ংক্রিয় শিডিউলে চলা এজেন্ট",
-    "no_agents": "কোনো নির্ধারিত এজেন্ট নেই",
-    "no_agents_hint": "এখানে দেখতে যেকোনো এজেন্টে cron ট্রিগার যোগ করুন"
-  },
-  "timeline": {
-    "title": "কার্যক্রমের টাইমলাইন",
-    "subtitle": "সব এজেন্টের কার্যক্রমের একীভূত দৃশ্য",
-    "no_activity": "কোনো সাম্প্রতিক কার্যক্রম নেই"
-  },
-  "realtime_viz": {
-    "title": "ইভেন্ট বাস",
-    "filter_events": "ইভেন্ট ফিল্টার করুন",
-    "pause": "বিরতি দিন",
-    "resume": "পুনরায় শুরু করুন",
-    "clear": "সাফ করুন",
-    "total_events": "মোট ইভেন্ট",
-    "events_per_sec": "ইভেন্ট/সেকেন্ড",
-    "active_lanes": "সক্রিয় লেন",
-    "event_type": "ইভেন্ট টাইপ",
-    "source": "উৎস",
-    "target": "লক্ষ্য",
-    "timestamp": "টাইমস্ট্যাম্প",
-    "payload": "পেলোড",
-    "saved_views": "সংরক্ষিত দৃশ্য",
-    "save_current": "বর্তমান সংরক্ষণ করুন"
-  },
-  "cards": {
-    "fleet_optimization": "ফ্লিট অপ্টিমাইজেশন",
-    "fleet_subtitle": "এজেন্ট পারফরম্যান্স উন্নত করতে স্বয়ংক্রিয় সুপারিশ",
-    "remote_control": "রিমোট কন্ট্রোল",
-    "remote_subtitle": "এজেন্ট ব্যবস্থাপনার দ্রুত পদক্ষেপ",
-    "resume_setup": "সেটআপ চালিয়ে যান",
-    "resume_subtitle": "যেখানে ছেড়েছিলেন সেখান থেকে শুরু করুন",
-    "knowledge_hub": "জ্ঞানের কেন্দ্র"
-  },
-  "saved_views": {
-    "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
-    }
-  },
-  "activity_timeline": {
-    "title": "কার্যক্রমের টাইমলাইন",
-    "subtitle": "{events}টি ইভেন্ট, {messages}টি বার্তা",
-    "all": "সব",
-    "events": "ইভেন্ট",
-    "messages": "বার্তা",
-    "no_activity": "এখনও কোনো কার্যক্রম নেই",
-    "high": "উচ্চ"
-  },
-  "widgets_extra": {
-    "execution_health_chart": "এক্সিকিউশন স্বাস্থ্য",
-    "cost_over_time_chart": "সময়ের সাথে খরচ",
-    "successful": "সফল",
-    "failed": "ব্যর্থ",
-    "close": "বন্ধ করুন",
-    "dismiss_help": "সাহায্য বরখাস্ত করুন",
-    "skip_tour": "ট্যুর সম্পূর্ণ এড়িয়ে যান"
-  },
-  "remote_control_card": {
-    "connect_to_desktop": "ডেস্কটপে সংযুক্ত করুন",
-    "connect_description": "রিমোট কন্ট্রোলের মাধ্যমে আপনার ডেস্কটপ CLI ব্যবহার করে এজেন্ট চালান। আপনার কম্পিউটারে {command} শুরু করুন, তারপর এখানে সংযুক্ত করুন।",
-    "requires_subscription": "Claude Pro বা Max সাবস্ক্রিপশন প্রয়োজন"
-  },
-  "resume_setup_card": {
-    "resume_tour": "ট্যুর পুনরায় শুরু করুন",
-    "left_off_at": "আপনি যেখানে ছেড়েছিলেন",
-    "steps_completed": "{completed}/{total}টি ধাপ সম্পন্ন",
-    "skip_tour": "ট্যুর সম্পূর্ণ এড়িয়ে যান",
-    "continue_label": "চালিয়ে যান"
-  },
-  "bulk_action_bar": {
-    "pending_reviews_selected_one": "{count}টি মুলতুবি পর্যালোচনা নির্বাচিত",
-    "pending_reviews_selected_other": "{count}টি মুলতুবি পর্যালোচনা নির্বাচিত"
-  },
-  "review_inbox": {
-    "drag_to_resize": "আকার পরিবর্তন করতে টেনে আনুন"
-  },
-  "event_bus_overlay": {
-    "earlier_events_not_shown_one": "{count} পূর্ববর্তী ইভেন্ট দেখানো হয়নি",
-    "earlier_events_not_shown_other": "{count} পূর্ববর্তী ইভেন্ট দেখানো হয়নি"
-  },
-  "event_bus_filter": {
-    "search_placeholder": "ইভেন্ট খুঁজুন..."
-  },
-  "crash_logs": {
-    "title": "ক্র্যাশ লগ",
-    "no_logs": "কোনো ক্র্যাশ লগ রেকর্ড করা হয়নি।",
-    "component_stack_separator": "--- Component Stack ---"
-  },
-  "events_list": {
-    "save_view_tooltip": "বর্তমান ফিল্টারকে ভিউ হিসাবে সংরক্ষণ করুন",
-    "clear_filters_tooltip": "সমস্ত ফিল্টার সাফ করুন"
-  },
-  "dashboard_home": {
-    "you_have": "আপনার আছে"
-  },
-  "fleet_optimization_card": {
-    "title": "ফ্লিট অপ্টিমাইজেশন"
-  },
-  "day_range_picker": {
-    "start_date": "শুরুর তারিখ",
-    "end_date": "শেষের তারিখ"
   }
 }

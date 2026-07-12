@@ -43,8 +43,22 @@ pub fn write_context_map_artifacts(
     let project_name = repo::get_project_by_id(pool, project_id)
         .ok()
         .map(|p| p.name);
+    // Behavioral slice layer. Only the accepted ones are published — a proposal
+    // awaiting triage is not yet part of the project's vocabulary.
+    let use_cases: Vec<_> = repo::list_use_cases(pool, project_id, None)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|u| u.status == "active")
+        .collect();
 
-    let map = build_map(project_id, project_name.as_deref(), root_path, &groups, &contexts);
+    let map = build_map(
+        project_id,
+        project_name.as_deref(),
+        root_path,
+        &groups,
+        &contexts,
+        &use_cases,
+    );
 
     let root = std::path::Path::new(root_path);
     let json_path = root.join("context-map.json");
@@ -65,9 +79,35 @@ fn build_map(
     root_path: &str,
     groups: &[crate::db::models::DevContextGroup],
     contexts: &[crate::db::models::DevContext],
+    use_cases: &[crate::db::models::DevUseCase],
 ) -> Value {
     let mut file_total = 0usize;
     let (git_commit, git_commit_count) = git_provenance(root_path);
+
+    // A use case slices *through* contexts — emit the slice by context name so a
+    // reader can resolve it without joining on ids.
+    let context_name = |id: &str| -> Option<String> {
+        contexts.iter().find(|c| c.id == id).map(|c| c.name.clone())
+    };
+    let use_cases_json: Vec<Value> = use_cases
+        .iter()
+        .map(|u| {
+            let slice: Vec<String> =
+                u.context_ids.iter().filter_map(|id| context_name(id)).collect();
+            json!({
+                "id": u.id,
+                "name": u.name,
+                // Stable join key: also the name an LLM-observability pinpoint
+                // is matched against when rolling telemetry up per use case.
+                "slug": u.slug,
+                "kind": u.kind,
+                "description": u.description,
+                "contexts": slice,
+                "primary_context": u.primary_context_id.as_deref().and_then(context_name),
+                "pinned": u.pinned,
+            })
+        })
+        .collect();
 
     let groups_json: Vec<Value> = groups
         .iter()
@@ -149,9 +189,13 @@ fn build_map(
             "groups": groups.len(),
             "contexts": contexts.len(),
             "files": file_total,
+            "use_cases": use_cases.len(),
         },
         "groups": groups_json,
         "contexts": contexts_json,
+        // The behavioral layer: outcomes cut across the code-ownership
+        // partition above. See docs/plans/use-case-slice-layer.md.
+        "use_cases": use_cases_json,
     })
 }
 

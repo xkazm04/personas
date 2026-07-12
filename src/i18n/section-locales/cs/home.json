@@ -1,4 +1,28 @@
 {
+  "welcome": "Vítejte",
+  "greeting_morning": "Dobré ráno",
+  "greeting_afternoon": "Dobré odpoledne",
+  "greeting_evening": "Dobrý večer",
+  "operator": "Operátor",
+  "summary_empty": "Začněte vytvořením prvního agenta nebo prozkoumáním platformy.",
+  "summary_stats": "Máte nakonfigurované {personasCount} agenta{personasPlural} a {credentialsCount} pověření{credentialsPlural}.",
+  "quick_navigation": "Rychlá navigace",
+  "platform_label": "platforma personas",
+  "roadmap": {
+    "title": "Plán vývoje produktu",
+    "subtitle": "Na čem pracujeme nyní a co přijde příště.",
+    "unavailable": "Plán vývoje není k dispozici",
+    "unavailable_hint": "Nepodařilo se načíst plán vývoje. Zkontrolujte připojení a zkuste to znovu.",
+    "status_in_progress": "V řešení",
+    "status_next": "Další na řadě",
+    "status_planned": "Plánováno",
+    "status_completed": "Dokončeno",
+    "priority_now": "Nyní",
+    "priority_next": "Příště",
+    "priority_later": "Později",
+    "in_progress_count": "{count} v řešení",
+    "next_count": "{count} další"
+  },
   "setup": {
     "choose_role": "Vyberte svou roli",
     "choose_role_hint": "Přizpůsobíme prostředí tomu, jak pracujete.",
@@ -26,6 +50,54 @@
     "role": "Role",
     "tool": "Nástroj",
     "goal": "Cíl"
+  },
+  "fleet": {
+    "executions_today": "Spuštění dnes",
+    "success_rate": "Úspěšnost",
+    "active_agents": "Aktivní agenti",
+    "credentials": "Přihlašovací údaje"
+  },
+  "nav": {
+    "overview": {
+      "label": "Přehled",
+      "description": "Analytika dashboardu, historie spuštění a monitorování systému v reálném čase napříč agenty"
+    },
+    "personas": {
+      "label": "Agenti",
+      "description": "Vytvářejte, konfigurujte a spravujte AI agenty s vlastním chováním a schopnostmi"
+    },
+    "events": {
+      "label": "Události",
+      "description": "Nastavte spouštěče událostí, webhook listenery a časované automatizace"
+    },
+    "credentials": {
+      "label": "Klíče",
+      "description": "Spravujte API přihlašovací údaje, databázová připojení, OAuth tokeny a šifrované tajné klíče"
+    },
+    "design-reviews": {
+      "label": "Šablony",
+      "description": "Importujte n8n workflow, procházejte galerii šablon a generujte blueprinty agentů"
+    },
+    "team": {
+      "label": "Týmy",
+      "description": "Sestavujte multi-agentní týmové pipeline s drag-and-drop orchestrací a směrováním"
+    },
+    "cloud": {
+      "label": "Cloud",
+      "description": "Nasaďte agenty do cloudové infrastruktury, spravujte plány a integrujte GitLab CI"
+    },
+    "settings": {
+      "label": "Nastavení",
+      "description": "Předvolby účtu, motivy vzhledu, pravidla oznámení a konfigurace engine"
+    },
+    "plugins": {
+      "label": "Pluginy",
+      "description": "Rozšiřte své agenty o pluginy třetích stran a vlastní rozšíření"
+    },
+    "teams": {
+      "label": "Týmy",
+      "description": "Spojte více agentů do týmu, který spolupracuje na vícekrokových pracovních postupech"
+    }
   },
   "learning": {
     "title": "Centrum výuky",
@@ -78,6 +150,13 @@
     "get_started": "Začít",
     "language": "Jazyk"
   },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Knihovna)",
+    "personas_tab": "Personas (Animované)",
+    "lucide_footer": "lucide-react – univerzální knihovna ikon – statická",
+    "personas_footer": "9 vlastních ikon – neuronové motivy – CSS animované – adaptivní téma"
+  },
+  "commander": "Commander",
   "resume": {
     "failure": "Nepřečtená chyba v {personaName} — prošetřit",
     "tour": "Pokračovat v {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
@@ -109,84 +188,5 @@
     "build_cta": "Sestavit prvního agenta",
     "subtitle": "Popište úlohu přirozeným jazykem a my nastavíme funkčního agenta — nebo to nechte na asistentovi.",
     "title": "Sestavte svého prvního agenta"
-  },
-  "welcome": "Vítejte",
-  "greeting_morning": "Dobré ráno",
-  "greeting_afternoon": "Dobré odpoledne",
-  "greeting_evening": "Dobrý večer",
-  "operator": "Operátor",
-  "commander": "Commander",
-  "summary_empty": "Začněte vytvořením prvního agenta nebo prozkoumáním platformy.",
-  "summary_stats": "Máte nakonfigurované {personasCount} agenta{personasPlural} a {credentialsCount} pověření{credentialsPlural}.",
-  "quick_navigation": "Rychlá navigace",
-  "platform_label": "platforma personas",
-  "roadmap": {
-    "title": "Plán vývoje produktu",
-    "subtitle": "Na čem pracujeme nyní a co přijde příště.",
-    "unavailable": "Plán vývoje není k dispozici",
-    "unavailable_hint": "Nepodařilo se načíst plán vývoje. Zkontrolujte připojení a zkuste to znovu.",
-    "status_in_progress": "V řešení",
-    "status_next": "Další na řadě",
-    "status_planned": "Plánováno",
-    "status_completed": "Dokončeno",
-    "priority_now": "Nyní",
-    "priority_next": "Příště",
-    "priority_later": "Později",
-    "in_progress_count": "{count} v řešení",
-    "next_count": "{count} další"
-  },
-  "fleet": {
-    "executions_today": "Spuštění dnes",
-    "success_rate": "Úspěšnost",
-    "active_agents": "Aktivní agenti",
-    "credentials": "Přihlašovací údaje"
-  },
-  "nav": {
-    "overview": {
-      "label": "Přehled",
-      "description": "Analytika dashboardu, historie spuštění a monitorování systému v reálném čase napříč agenty"
-    },
-    "personas": {
-      "label": "Agenti",
-      "description": "Vytvářejte, konfigurujte a spravujte AI agenty s vlastním chováním a schopnostmi"
-    },
-    "events": {
-      "label": "Události",
-      "description": "Nastavte spouštěče událostí, webhook listenery a časované automatizace"
-    },
-    "credentials": {
-      "label": "Klíče",
-      "description": "Spravujte API přihlašovací údaje, databázová připojení, OAuth tokeny a šifrované tajné klíče"
-    },
-    "design-reviews": {
-      "label": "Šablony",
-      "description": "Importujte n8n workflow, procházejte galerii šablon a generujte blueprinty agentů"
-    },
-    "team": {
-      "label": "Týmy",
-      "description": "Sestavujte multi-agentní týmové pipeline s drag-and-drop orchestrací a směrováním"
-    },
-    "teams": {
-      "label": "Týmy",
-      "description": "Spojte více agentů do týmu, který spolupracuje na vícekrokových pracovních postupech"
-    },
-    "cloud": {
-      "label": "Cloud",
-      "description": "Nasaďte agenty do cloudové infrastruktury, spravujte plány a integrujte GitLab CI"
-    },
-    "settings": {
-      "label": "Nastavení",
-      "description": "Předvolby účtu, motivy vzhledu, pravidla oznámení a konfigurace engine"
-    },
-    "plugins": {
-      "label": "Pluginy",
-      "description": "Rozšiřte své agenty o pluginy třetích stran a vlastní rozšíření"
-    }
-  },
-  "icon_showcase": {
-    "lucide_tab": "Lucide (Knihovna)",
-    "personas_tab": "Personas (Animované)",
-    "lucide_footer": "lucide-react – univerzální knihovna ikon – statická",
-    "personas_footer": "9 vlastních ikon – neuronové motivy – CSS animované – adaptivní téma"
   }
 }

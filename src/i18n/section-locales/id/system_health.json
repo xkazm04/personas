@@ -1,12 +1,4 @@
 {
-  "install_all": "Instal Semua Dependensi",
-  "log_disk_usage": "Penggunaan disk log",
-  "log_disk_tracing": "Log tracing",
-  "log_disk_crashes": "Laporan crash",
-  "log_disk_files_count": "{count} file",
-  "log_disk_retention_hint": "Rotasi harian, dibatasi hingga {limit} file",
-  "log_disk_crash_retention_hint": "Dibatasi hingga {limit} laporan terbaru",
-  "log_disk_unavailable": "Statistik direktori log tidak tersedia.",
   "title": "Pemeriksaan Sistem",
   "subtitle": "Memverifikasi lingkungan Anda sudah siap",
   "rerun": "Jalankan ulang pemeriksaan",
@@ -27,6 +19,7 @@
   "no_crash_logs": "Tidak ada log crash tercatat.",
   "crash_auto_cred": "Sesi auto-cred",
   "crash_rust_panic": "Rust panic",
+  "install_all": "Instal Semua Dependensi",
   "ready_title": "Siap membuat agen pertama Anda?",
   "ready_hint": "Semua pemeriksaan lolos. Mari kami pandu Anda membuat dan menjalankan agen pertama Anda.",
   "get_started": "Mulai",
@@ -40,5 +33,12 @@
   "official_page": "Halaman resmi",
   "edit_key": "Edit Key",
   "edit_config": "Edit Konfigurasi",
-  "signing_in": "Sedang masuk..."
+  "signing_in": "Sedang masuk...",
+  "log_disk_usage": "Penggunaan disk log",
+  "log_disk_tracing": "Log tracing",
+  "log_disk_crashes": "Laporan crash",
+  "log_disk_files_count": "{count} file",
+  "log_disk_retention_hint": "Rotasi harian, dibatasi hingga {limit} file",
+  "log_disk_crash_retention_hint": "Dibatasi hingga {limit} laporan terbaru",
+  "log_disk_unavailable": "Statistik direktori log tidak tersedia."
 }

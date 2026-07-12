@@ -3,7 +3,7 @@
   "group_by_toggle_title": "按分配的分组对人格卡片进行分组",
   "group_ungrouped": "未分组",
   "title": "人格监视器",
-  "subtitle": "{personas} 个人格 · {attention} 项需要关注 · {running} 个正在运行",
+  "subtitle": "{人格s} 人格s · {attention} need attention · {running} running",
   "close": "关闭监视器",
   "close_hint": "关闭(Esc)",
   "no_personas": "还没有人格。",

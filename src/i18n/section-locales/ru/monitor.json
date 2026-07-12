@@ -3,7 +3,7 @@
   "group_by_toggle_title": "Группировать карточки персон по назначенной группе",
   "group_ungrouped": "Без группы",
   "title": "Монитор персон",
-  "subtitle": "Персон: {personas} · Требуют внимания: {attention} · Выполняется: {running}",
+  "subtitle": "{персонаs} персонаs · {attention} need attention · {running} running",
   "close": "Закрыть монитор",
   "close_hint": "Закрыть (Esc)",
   "no_personas": "Персон пока нет.",

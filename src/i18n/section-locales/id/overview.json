@@ -1,13 +1,14 @@
 {
+  "title": "Ringkasan",
+  "no_output": "Belum ada keluaran",
+  "no_background_jobs": "Tidak ada pekerjaan latar belakang yang berjalan atau baru-baru ini",
+  "background_jobs_hint": "Pekerjaan muncul di sini saat Anda menjalankan transformasi n8n, adopsi templat, pembuatan templat, atau debugging kueri",
   "filters": {
     "start_date": "Tanggal Mulai",
     "end_date": "Tanggal Akhir",
     "all_personas": "Semua Persona"
   },
   "messages": {
-    "priority_high": "Tinggi",
-    "priority_normal": "Normal",
-    "priority_low": "Rendah",
     "loading": "Memuat pesan...",
     "no_messages": "Belum ada pesan",
     "switch_to_all": "Coba beralih ke \\\\\\\"Semua\\\\\\\" untuk melihat semua pesan",
@@ -19,6 +20,9 @@
       "created": "Dibuat"
     },
     "content_header": "Konten",
+    "priority_high": "Tinggi",
+    "priority_normal": "Normal",
+    "priority_low": "Rendah",
     "filter_all": "Semua",
     "filter_unread": "Belum Dibaca",
     "filter_high_priority": "Prioritas Tinggi",
@@ -33,6 +37,14 @@
     "id_label": "ID:",
     "confirm_delete_title": "Konfirmasi hapus",
     "close_message": "Tutup detail pesan"
+  },
+  "realtime": {
+    "idle": "Menganggur -- klik {action} untuk mensimulasikan lalu lintas",
+    "test_flow": "Uji Alur",
+    "events_per_min": "peristiwa/menit",
+    "pending": "tertunda",
+    "success": "berhasil",
+    "in_window": "dalam jendela"
   },
   "incidents": {
     "filters_active_aria": "{count} filter aktif",
@@ -148,25 +160,21 @@
     "subtitle": "Pantau kesehatan eksekusi, biaya, dan anomali di seluruh agen Anda",
     "alert_rules": "Aturan Peringatan",
     "refresh_metrics": "Segarkan metrik",
-    "metrics_unavailable": "Metrik tidak tersedia -- data yang ditampilkan mungkin sudah usang",
-    "error_recovery": {
-      "panel_loaded": "Loaded",
-      "panel_failed": "Failed to load",
-      "panel_stale": "Data may be outdated"
-    },
     "persona_disabled": "Persona dinonaktifkan otomatis",
     "auto_resolved": "Masalah ini diselesaikan secara otomatis",
     "mark_resolved": "Tandai Selesai",
     "manual_fix": "(perbaikan manual diterapkan)",
+    "metrics_unavailable": "Metrik tidak tersedia -- data yang ditampilkan mungkin sudah usang",
     "no_open_issues": "Tidak ada masalah terbuka",
-    "run_analysis": "Jalankan analisis untuk memeriksa masalah."
+    "run_analysis": "Jalankan analisis untuk memeriksa masalah.",
+    "error_recovery": {
+      "panel_loaded": "Loaded",
+      "panel_failed": "Failed to load",
+      "panel_stale": "Data may be outdated"
+    }
   },
   "memories": {
     "title": "Memori",
-    "delete_all": "Hapus semua",
-    "delete_all_confirm_title": "Hapus semua memori?",
-    "delete_all_confirm_body": "Ini akan menghapus semua {count} memori secara permanen. Tindakan ini tidak dapat dibatalkan.",
-    "delete_all_confirm_cta": "Hapus semua",
     "created_success": "Memori berhasil dibuat",
     "no_memories": "Belum ada memori",
     "no_memories_hint": "Memori akan muncul setelah agen dijalankan",
@@ -199,16 +207,95 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "Hapus semua",
+    "delete_all_confirm_title": "Hapus semua memori?",
+    "delete_all_confirm_body": "Ini akan menghapus semua {count} memori secara permanen. Tindakan ini tidak dapat dibatalkan.",
+    "delete_all_confirm_cta": "Hapus semua"
   },
   "memory_review": {
+    "all_conflicts_resolved": "Semua konflik telah diselesaikan",
     "keep_prefix": "Pertahankan “",
-    "keep_suffix": "”",
-    "all_conflicts_resolved": "Semua konflik telah diselesaikan"
+    "keep_suffix": "”"
+  },
+  "executions": {
+    "title": "Eksekusi",
+    "loading": "Memuat eksekusi...",
+    "no_agents": "Belum ada agen dibuat",
+    "create_first": "Buat agen pertama Anda untuk melihat aktivitas eksekusi di sini",
+    "no_executions": "Belum ada eksekusi",
+    "run_agent": "Jalankan agen untuk melihat aktivitas eksekusi di sini"
+  },
+  "workflows": {
+    "loading": "Memuat alur kerja...",
+    "title": "Alur Kerja",
+    "subtitle": "Operasi latar belakang aktif dan terkini di seluruh ruang kerja Anda",
+    "no_jobs": "Tidak ada tugas latar belakang yang berjalan atau terbaru",
+    "jobs_hint": "Tugas muncul di sini saat Anda menjalankan transformasi N8n, adopsi templat, pembuatan templat, atau debugging kueri",
+    "all_types": "Semua tipe",
+    "no_filter_match": "Tidak ada tugas yang cocok dengan filter saat ini",
+    "auto_refreshing": "Menyegarkan otomatis saat tugas berjalan",
+    "cancel_failed": "Gagal membatalkan tugas alur kerja"
+  },
+  "schedules": {
+    "title": "Lini Masa Jadwal",
+    "subtitle": "Tampilan agregat semua eksekusi agen terjadwal",
+    "engine_on": "Mesin Aktif",
+    "engine_off": "Mesin Mati",
+    "engine_on_tooltip": "Penjadwal berjalan -- klik untuk menjeda",
+    "engine_off_tooltip": "Penjadwal berhenti -- klik untuk memulai",
+    "active_count": "{count} aktif",
+    "paused_count": "{count} dijeda",
+    "view_grouped": "Dikelompokkan",
+    "view_timeline": "Lini Masa",
+    "triggers_fired": "Pemicu dijalankan: ",
+    "events_processed": "Peristiwa diproses: ",
+    "delivered": "Terkirim: ",
+    "failed_label": "Gagal: ",
+    "loading": "Memuat jadwal...",
+    "empty": "Tidak ada agen terjadwal ditemukan.",
+    "empty_hint": "Buat jadwal atau pemicu polling pada agen untuk melihatnya di sini.",
+    "group_overdue": "Terlambat",
+    "group_15min": "15 menit ke depan",
+    "group_1hour": "1 jam ke depan",
+    "group_6hours": "6 jam ke depan",
+    "group_24hours": "24 jam ke depan",
+    "group_later": "Nanti",
+    "group_paused": "Dijeda / Tidak Terjadwal",
+    "run_now": "Jalankan sekarang",
+    "change_frequency": "Ubah frekuensi",
+    "pause_schedule": "Jeda jadwal",
+    "resume_schedule": "Lanjutkan jadwal",
+    "headless_badge": "headless"
+  },
+  "frequency_editor": {
+    "title": "Ubah Frekuensi",
+    "current": "Saat ini: ",
+    "quick_presets": "Preset cepat",
+    "cron_expression": "Ekspresi cron",
+    "interval_seconds": "Interval (detik)",
+    "previewing": "Mempratinjau...",
+    "next_runs": "Eksekusi berikutnya",
+    "invalid_cron": "Ekspresi cron tidak valid"
+  },
+  "recovery": {
+    "agents_missed_one": "{count} agen melewatkan eksekusi",
+    "agents_missed_other": "{count} agen melewatkan eksekusi",
+    "total_skipped": "~{count} total eksekusi dilewati saat aplikasi offline",
+    "missed_since": "{count} terlewat sejak {time}",
+    "every_interval": "setiap {interval}",
+    "mark_for_recovery": "Tandai untuk pemulihan",
+    "recover": "Pulihkan",
+    "run_once": "Jalankan 1x",
+    "run_once_tooltip": "Jalankan sekali sekarang",
+    "skip_tooltip": "Lewati -- jangan pulihkan",
+    "dismiss_all": "Abaikan semua",
+    "recover_selected": "Pulihkan {count} yang dipilih"
   },
   "sla": {
     "title": "SLA Keandalan Agen",
     "subtitle": "Uptime, tingkat kegagalan, dan metrik pemulihan di seluruh armada agen Anda",
+    "loading": "Memuat data SLA...",
     "no_data": "Tidak ada data eksekusi tersedia.",
     "success_rate": "Tingkat Keberhasilan",
     "executions_summary": "{successful}/{total} eksekusi",
@@ -221,12 +308,6 @@
     "daily_success_rate": "Tingkat Keberhasilan Harian -- {days} Hari",
     "per_agent": "Keandalan Per Agen",
     "no_agent_data": "Tidak ada agen yang dieksekusi dalam periode ini.",
-    "success_rate_tooltip": "Success rate = successful / (successful + failed). Cancelled runs are excluded because they are user-initiated and don't reflect system reliability.",
-    "all_time_badge": "All-time",
-    "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
-    "auto_healed_tooltip": "Total issues the healing engine has auto-resolved across the lifetime of this install. This number is all-time and does not change with the time window above.",
-    "windowed_tooltip": "Computed over the selected time window above ({days} days).",
-    "loading": "Memuat data SLA...",
     "metric_successful": "Berhasil",
     "metric_failed": "Gagal",
     "metric_avg_latency": "Latensi Rata-rata",
@@ -234,20 +315,15 @@
     "metric_cost": "Biaya",
     "metric_mtbf": "MTBF",
     "metric_auto_healed": "Dipulihkan Otomatis",
-    "metric_cancelled": "Dibatalkan"
+    "metric_cancelled": "Dibatalkan",
+    "success_rate_tooltip": "Success rate = successful / (successful + failed). Cancelled runs are excluded because they are user-initiated and don't reflect system reliability.",
+    "all_time_badge": "All-time",
+    "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
+    "auto_healed_tooltip": "Total issues the healing engine has auto-resolved across the lifetime of this install. This number is all-time and does not change with the time window above.",
+    "windowed_tooltip": "Computed over the selected time window above ({days} days)."
   },
   "knowledge": {
     "title": "Graf Pengetahuan",
-    "patterns_tab": "Pola",
-    "search_placeholder": "Cari pola...",
-    "sort_aria": "Urutkan pola",
-    "sort_default": "Pola teratas",
-    "sort_confidence": "Keyakinan tertinggi",
-    "sort_runs": "Paling banyak dijalankan",
-    "sort_recent": "Terbaru",
-    "needs_review": "Perlu ditinjau",
-    "pending_scope_hint": "Pilih persona untuk meninjau semua anotasi yang tertunda.",
-    "graph_tab": "Grafik",
     "subtitle": "{count} pola dipelajari dari riwayat eksekusi",
     "total_patterns": "Total Pola",
     "tool_sequences": "Urutan Alat",
@@ -269,13 +345,36 @@
     "failures": "Gagal",
     "avg_cost": "Biaya Rata-rata",
     "avg_duration": "Durasi Rata-rata",
-    "pattern_data": "Data Pola"
+    "pattern_data": "Data Pola",
+    "patterns_tab": "Pola",
+    "search_placeholder": "Cari pola...",
+    "sort_aria": "Urutkan pola",
+    "sort_default": "Pola teratas",
+    "sort_confidence": "Keyakinan tertinggi",
+    "sort_runs": "Paling banyak dijalankan",
+    "sort_recent": "Terbaru",
+    "needs_review": "Perlu ditinjau",
+    "pending_scope_hint": "Pilih persona untuk meninjau semua anotasi yang tertunda.",
+    "graph_tab": "Grafik"
+  },
+  "conflicts": {
+    "dismissed": "Konflik diabaikan",
+    "resolved": "Konflik diselesaikan",
+    "resolve_failed": "Gagal menyelesaikan konflik",
+    "conflict_count_one": "{count} konflik",
+    "conflict_count_other": "{count} konflik"
   },
   "dashboard": {
+    "title": "Dasbor",
+    "subtitle": "Ikhtisar operasional dan status sistem",
     "greeting_morning": "Selamat Pagi",
     "greeting_afternoon": "Selamat Siang",
     "greeting_evening": "Selamat Malam",
     "default_user": "Operator",
+    "pending_reviews_prompt": "ulasan tertunda",
+    "requiring_attention": "memerlukan perhatian.",
+    "empty_cta": "Buat agen pertama Anda untuk memulai.",
+    "pipeline_failed": "{source} gagal dimuat",
     "empty_title": "Selamat datang di Personas",
     "empty_subtitle": "Buat agen pertama Anda untuk mulai melihat metrik eksekusi, grafik lalu lintas, dan aktivitas di sini.",
     "create_persona": "Buat Persona",
@@ -297,12 +396,6 @@
     "section_memory": "Saran memori",
     "section_fleet": "Optimasi armada",
     "section_routines": "Rutinitas & perubahan vault",
-    "title": "Dasbor",
-    "subtitle": "Ikhtisar operasional dan status sistem",
-    "pending_reviews_prompt": "ulasan tertunda",
-    "requiring_attention": "memerlukan perhatian.",
-    "empty_cta": "Buat agen pertama Anda untuk memulai.",
-    "pipeline_failed": "{source} gagal dimuat",
     "instruments_subtitle": "telemetri armada",
     "memory_suggestions_count": "{count} saran",
     "pane_instruments": "Instrumen",
@@ -331,6 +424,49 @@
     "triage_tag_pipeline": "SYS",
     "triage_tag_review": "REV",
     "vitals_subtitle_fleet": "kesehatan armada"
+  },
+  "execution_metrics": {
+    "title": "Metrik Eksekusi",
+    "total_executions": "Total Eksekusi",
+    "total_cost": "Total Biaya",
+    "success_rate": "Tingkat Keberhasilan",
+    "avg_latency": "Latensi Rata-rata",
+    "cost_anomalies": "Anomali Biaya Terdeteksi",
+    "no_data": "Tidak ada data eksekusi untuk periode yang dipilih",
+    "cost_per_day": "Biaya per Hari",
+    "executions_by_status": "Eksekusi berdasarkan Status",
+    "success_rate_trend": "Tren Tingkat Keberhasilan",
+    "latency_distribution": "Distribusi Latensi (p50 / p95 / p99)",
+    "top_personas_by_cost": "Persona Teratas berdasarkan Biaya",
+    "cost_spike": "Lonjakan biaya",
+    "above_avg": "di atas rata-rata",
+    "top_executions": "Eksekusi teratas:",
+    "executions_label": "{count} eksekusi"
+  },
+  "execution_list": {
+    "recorded": "{count} eksekusi tercatat",
+    "recorded_one": "{count} eksekusi tercatat",
+    "list": "Daftar",
+    "metrics": "Metrik",
+    "show_list": "Tampilkan daftar eksekusi",
+    "show_metrics": "Tampilkan dasbor metrik",
+    "showing": "Menampilkan {count} dari {total}",
+    "load_more": "Muat Lebih Banyak",
+    "filter_all": "Semua",
+    "filter_running": "Berjalan",
+    "filter_completed": "Selesai",
+    "filter_failed": "Gagal",
+    "col_persona": "Persona",
+    "col_status": "Status",
+    "col_duration": "Durasi",
+    "col_started": "Dimulai",
+    "col_id": "ID",
+    "all_statuses": "Semua status",
+    "all_personas": "Semua persona",
+    "no_agents": "Belum ada agen yang dibuat",
+    "no_agents_hint": "Buat agen pertama Anda untuk melihat aktivitas eksekusi di sini.",
+    "unknown_persona": "Tidak diketahui",
+    "healing_retry": "Percobaan ulang pemulihan #{count}"
   },
   "review": {
     "title": "Ulasan Manual",
@@ -413,27 +549,44 @@
   },
   "messages_view": {
     "title": "Pesan",
+    "threads_subtitle": "{count} utas",
+    "threads_subtitle_one": "{count} utas",
     "messages_subtitle": "{count} pesan tercatat",
     "messages_subtitle_one": "{count} pesan tercatat",
     "mock_message": "Pesan Palsu",
     "seed_tooltip": "Buat pesan palsu (hanya dev)",
+    "flat_view": "Tampilan datar",
+    "threaded_view": "Tampilan berutas",
     "mark_all_read": "Tandai Semua Dibaca",
+    "threads_of": "{count} dari {total} utas",
+    "no_threads": "Belum ada utas pesan",
+    "no_threads_hint": "Utas dibuat secara otomatis ketika agen menghasilkan pesan selama eksekusi.",
     "no_messages": "Belum ada pesan",
     "no_messages_hint": "Pesan dibuat ketika agen berjalan dan berkomunikasi satu sama lain.",
     "no_filter_match": "Tidak ada pesan yang cocok dengan filter saat ini",
+    "loading_replies": "Memuat balasan...",
     "load_more": "Muat Lebih Banyak ({count} tersisa)",
     "col_title": "Judul",
+    "col_priority": "Prioritas",
+    "col_delivery": "Pengiriman",
+    "col_status": "Status",
     "col_created": "Dibuat",
     "all_priorities": "Semua prioritas",
     "all_statuses": "Semua status",
     "read": "Dibaca",
     "unread": "Belum dibaca",
+    "new_badge": "Baru",
+    "failed_count": "{count} gagal",
+    "pending_count": "{count} tertunda",
+    "sent_count": "{count} terkirim",
     "message_label": "Pesan",
     "from_label": "Dari {name}",
     "content_label": "Konten",
     "view_execution": "Lihat Eksekusi",
+    "type_label": "Tipe:",
     "delivery_status": "Status Pengiriman",
     "no_channels": "Tidak ada saluran pengiriman yang dikonfigurasi",
+    "confirm_delete": "Konfirmasi hapus",
     "improve_agent": "Tingkatkan Agen",
     "improvement_started": "Peningkatan dimulai -- Anda akan diberitahu saat selesai",
     "what_could_be_better": "Apa yang bisa lebih baik?",
@@ -446,6 +599,7 @@
     "rating_label": "Rate this message",
     "rating_star_aria": "Rate {value} of 5",
     "rating_saved": "Saved · {stars}/5",
+    "rating_clear": "Clear rating",
     "rating_memory_title": "Message rating: {stars}/5",
     "rating_memory_content_good": "User rated the output {stars}/5 stars. This message met expectations — keep the approach.",
     "rating_memory_content_neutral": "User rated the output {stars}/5 stars. Neutral feedback — review the message for marginal improvements.",
@@ -463,25 +617,7 @@
     "delete_all": "Hapus semua",
     "delete_all_confirm_title": "Hapus semua pesan?",
     "delete_all_confirm_body": "Ini akan menghapus semua {count} pesan secara permanen. Tindakan ini tidak dapat dibatalkan.",
-    "delete_all_confirm_cta": "Hapus semua",
-    "threads_subtitle": "{count} utas",
-    "threads_subtitle_one": "{count} utas",
-    "flat_view": "Tampilan datar",
-    "threaded_view": "Tampilan berutas",
-    "threads_of": "{count} dari {total} utas",
-    "no_threads": "Belum ada utas pesan",
-    "no_threads_hint": "Utas dibuat secara otomatis ketika agen menghasilkan pesan selama eksekusi.",
-    "loading_replies": "Memuat balasan...",
-    "col_priority": "Prioritas",
-    "col_delivery": "Pengiriman",
-    "col_status": "Status",
-    "new_badge": "Baru",
-    "failed_count": "{count} gagal",
-    "pending_count": "{count} tertunda",
-    "sent_count": "{count} terkirim",
-    "type_label": "Tipe:",
-    "confirm_delete": "Konfirmasi hapus",
-    "rating_clear": "Clear rating"
+    "delete_all_confirm_cta": "Hapus semua"
   },
   "events": {
     "title": "Peristiwa",
@@ -491,6 +627,7 @@
     "seed_tooltip": "Buat peristiwa palsu (hanya dev)",
     "search_placeholder": "Cari peristiwa berdasarkan tipe, sumber, atau payload...",
     "loading_older": "Memuat peristiwa lama...",
+    "load_older": "Muat peristiwa lama",
     "no_events": "Belum ada peristiwa",
     "no_events_hint": "Peristiwa dari webhook, eksekusi, dan tindakan persona akan muncul di sini saat agen Anda berjalan.",
     "no_filter_match": "Tidak ada peristiwa yang cocok dengan filter saat ini",
@@ -498,6 +635,12 @@
     "view_name_placeholder": "Nama tampilan (misal 'Webhook gagal minggu ini')",
     "views_label": "Tampilan:",
     "delete_view": "Hapus tampilan",
+    "clear_filters": "Hapus semua filter",
+    "col_trigger": "Pemicu",
+    "col_persona": "Persona",
+    "col_event_name": "Nama Peristiwa",
+    "col_status": "Status",
+    "col_created": "Dibuat",
     "all_statuses": "Semua status",
     "all_types": "Semua tipe",
     "all_triggers": "Semua pemicu",
@@ -507,13 +650,6 @@
     "source_scheduled": "Terjadwal",
     "event_detail_title": "Peristiwa:",
     "event_detail_status": "Status:",
-    "load_older": "Muat peristiwa lama",
-    "clear_filters": "Hapus semua filter",
-    "col_trigger": "Pemicu",
-    "col_persona": "Persona",
-    "col_event_name": "Nama Peristiwa",
-    "col_status": "Status",
-    "col_created": "Dibuat",
     "event_id": "ID Peristiwa",
     "project": "Proyek",
     "source": "Sumber",
@@ -524,7 +660,6 @@
   "health": {
     "title": "Kesehatan Agen",
     "subtitle": "Pemantauan kesehatan real-time di semua agen",
-    "status_page": "Halaman Status",
     "all_healthy": "Semua agen sehat",
     "all_healthy_hint": "Setiap agen yang dipantau beroperasi secara normal",
     "no_agents": "Belum ada agen",
@@ -547,6 +682,7 @@
     "cascade_title": "Analisis Kaskade",
     "predictive_alerts": "Peringatan Prediktif",
     "no_alerts": "Tidak ada peringatan prediktif saat ini",
+    "status_page": "Halaman Status",
     "operational": "Beroperasi",
     "degraded": "Terdegradasi",
     "outage": "Gangguan"
@@ -591,6 +727,58 @@
     "hint_activity": "Picu atau jadwalkan agen ini lebih sering untuk menaikkan aktivitas.",
     "improve_agent": "Tingkatkan agen ini"
   },
+  "analytics": {
+    "title": "Analitik",
+    "subtitle": "Pola dan tren eksekusi",
+    "loading": "Memuat analitik...",
+    "no_data": "Tidak ada data analitik yang tersedia",
+    "executions_over_time": "Eksekusi Seiring Waktu",
+    "success_failure": "Berhasil vs Gagal",
+    "cost_breakdown": "Rincian Biaya",
+    "total_executions": "Total Eksekusi",
+    "total_cost": "Total Biaya",
+    "avg_success_rate": "Tingkat Keberhasilan Rata-rata",
+    "active_agents": "Agen Aktif",
+    "saved_views": "Tampilan Tersimpan",
+    "create_view": "Buat Tampilan",
+    "health_issues": "Masalah Kesehatan",
+    "rotation_overview": "Ikhtisar Rotasi"
+  },
+  "usage": {
+    "title": "Penggunaan",
+    "subtitle": "Biaya dan konsumsi sumber daya",
+    "chart_error": "Grafik gagal dimuat",
+    "chart_error_hint": "Terjadi kesalahan saat merender grafik ini",
+    "try_again": "Coba Lagi"
+  },
+  "cron_agents": {
+    "title": "Agen Terjadwal",
+    "subtitle": "Agen yang berjalan berdasarkan jadwal otomatis",
+    "no_agents": "Tidak ada agen terjadwal",
+    "no_agents_hint": "Tambahkan pemicu cron ke agen manapun untuk melihatnya di sini"
+  },
+  "timeline": {
+    "title": "Linimasa Aktivitas",
+    "subtitle": "Tampilan terpadu semua aktivitas agen",
+    "no_activity": "Tidak ada aktivitas terbaru"
+  },
+  "realtime_viz": {
+    "title": "Bus Peristiwa",
+    "filter_events": "Filter peristiwa",
+    "pause": "Jeda",
+    "resume": "Lanjutkan",
+    "clear": "Hapus",
+    "total_events": "Total Peristiwa",
+    "events_per_sec": "Peristiwa/detik",
+    "active_lanes": "Jalur Aktif",
+    "event_type": "Tipe Peristiwa",
+    "source": "Sumber",
+    "target": "Target",
+    "timestamp": "Stempel Waktu",
+    "payload": "Payload",
+    "saved_views": "Tampilan Tersimpan",
+    "save_current": "Simpan Saat Ini"
+  },
   "observability_extra": {
     "auto_refresh_on": "Penyegaran otomatis aktif",
     "auto_refresh_off": "Penyegaran otomatis nonaktif",
@@ -618,12 +806,21 @@
     "error_rate": "Tingkat Kesalahan"
   },
   "widgets": {
+    "recent_activity": "Aktivitas Terkini",
     "view_all": "Lihat semua",
+    "total_traffic": "Total Lalu Lintas",
+    "total_errors": "Total Kesalahan",
     "traffic_errors_chart": "Lalu Lintas & Kesalahan",
     "top_performers": "Performer Teratas",
+    "metric_help": "Bantuan Metrik",
+    "how_calculated": "Bagaimana ini dihitung?",
+    "details": "Detail",
     "messages_badge": "Pesan",
     "reviews_badge": "Ulasan",
+    "executions_badge": "Eksekusi",
+    "success_badge": "Berhasil",
     "alerts_badge": "Peringatan",
+    "agents_badge": "Agen",
     "pipelines_badge": "Pipeline",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
@@ -632,21 +829,21 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Errors",
-    "tool_performance_unit_ms": "ms",
-    "recent_activity": "Aktivitas Terkini",
-    "total_traffic": "Total Lalu Lintas",
-    "total_errors": "Total Kesalahan",
     "tool_performance_empty": "No tool runs in this window",
-    "metric_help": "Bantuan Metrik",
-    "how_calculated": "Bagaimana ini dihitung?",
-    "details": "Detail",
-    "executions_badge": "Eksekusi",
-    "success_badge": "Berhasil",
-    "agents_badge": "Agen",
+    "tool_performance_unit_ms": "ms",
     "range_days_ago": "{days} Hari Lalu",
     "range_today": "Hari Ini",
     "range_yesterday": "Kemarin",
     "traffic_errors_chart_aria": "Grafik traffic dan error"
+  },
+  "cards": {
+    "fleet_optimization": "Optimasi Armada",
+    "fleet_subtitle": "Rekomendasi otomatis untuk meningkatkan kinerja agen",
+    "remote_control": "Kendali Jarak Jauh",
+    "remote_subtitle": "Tindakan cepat untuk manajemen agen",
+    "resume_setup": "Lanjutkan Pengaturan",
+    "resume_subtitle": "Lanjutkan dari tempat Anda berhenti",
+    "knowledge_hub": "Pusat Pengetahuan"
   },
   "activity": {
     "title": "Aktivitas",
@@ -675,16 +872,23 @@
     "prev_failed": "Gagal Sebelumnya",
     "success_pct": "% Berhasil",
     "prev_success_pct": "% Berhasil Sebelumnya",
+    "successful": "Berhasil",
+    "all": "Semua",
+    "running": "Berjalan",
+    "all_statuses": "Semua status",
     "showing": "Menampilkan {count} dari {total}",
     "load_more": "Muat Lebih Banyak",
+    "col_status": "Status",
     "col_duration": "Durasi",
     "col_started": "Dimulai",
+    "col_id": "ID",
     "no_agents": "Belum ada agen yang dibuat",
     "no_agents_hint": "Buat persona pertama Anda untuk melihat aktivitas eksekusi di sini.",
     "no_executions": "Belum ada eksekusi",
     "no_executions_hint": "Jalankan agen untuk melihat aktivitas eksekusi di sini.",
     "create_persona": "Buat Persona",
     "from_templates": "Dari Templat",
+    "execution_label": "Eksekusi",
     "unknown": "Tidak diketahui",
     "value_section_title": "Nilai bisnis",
     "value_delivered_rate": "Tingkat nilai tersampaikan",
@@ -692,36 +896,9 @@
     "value_delivered_count": "Nilai tersampaikan",
     "all_models": "Semua model",
     "col_model": "Model",
-    "col_cost": "Biaya",
-    "successful": "Berhasil",
-    "all": "Semua",
-    "running": "Berjalan",
-    "all_statuses": "Semua status",
-    "col_status": "Status",
-    "col_id": "ID",
-    "execution_label": "Eksekusi"
+    "col_cost": "Biaya"
   },
   "analytics_dashboard": {
-    "issues_found": "{count} masalah ditemukan",
-    "issues_found_one": "{count} masalah ditemukan",
-    "auto_fixed": "diperbaiki otomatis",
-    "executions_scanned": "{count} eksekusi dipindai",
-    "executions_scanned_one": "{count} eksekusi dipindai",
-    "credential_rotation": "Rotasi Kredensial",
-    "no_rotation_policies": "Tidak ada kebijakan rotasi",
-    "no_rotation_hint": "Konfigurasikan rotasi pada kredensial di Brankas.",
-    "active_count": "{count} aktif",
-    "soon_count": "{count} segera",
-    "issues_count": "{count} masalah",
-    "issues_count_one": "{count} masalah",
-    "fail_count": "{count}x gagal",
-    "rotation_manage_all": "Manage",
-    "rotation_open_in_connections": "Open in Connections",
-    "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}",
-    "rotation_due_now": "jatuh tempo sekarang",
-    "rotation_countdown_days_hours": "{days}h {hours}j",
-    "rotation_countdown_hours": "{hours}j",
     "title": "Analitik",
     "subtitle": "Analitik biaya, eksekusi, dan penggunaan alat terpadu",
     "metrics_unavailable": "Metrik tidak tersedia",
@@ -756,6 +933,11 @@
     "run_analysis": "Jalankan Analisis",
     "analyzing": "Menganalisis...",
     "analysis_complete": "Analisis selesai",
+    "issues_found": "{count} masalah ditemukan",
+    "issues_found_one": "{count} masalah ditemukan",
+    "auto_fixed": "diperbaiki otomatis",
+    "executions_scanned": "{count} eksekusi dipindai",
+    "executions_scanned_one": "{count} eksekusi dipindai",
     "no_open_issues": "Tidak ada masalah terbuka",
     "run_analysis_hint": "Jalankan analisis untuk memeriksa masalah.",
     "filter_all": "Semua",
@@ -765,7 +947,29 @@
     "breaker": "pemutus",
     "fixed": "diperbaiki",
     "retry": "coba ulang",
-    "never": "tidak pernah"
+    "credential_rotation": "Rotasi Kredensial",
+    "no_rotation_policies": "Tidak ada kebijakan rotasi",
+    "no_rotation_hint": "Konfigurasikan rotasi pada kredensial di Brankas.",
+    "active_count": "{count} aktif",
+    "soon_count": "{count} segera",
+    "issues_count": "{count} masalah",
+    "issues_count_one": "{count} masalah",
+    "never": "tidak pernah",
+    "fail_count": "{count}x gagal",
+    "rotation_manage_all": "Manage",
+    "rotation_open_in_connections": "Open in Connections",
+    "rotation_started_for": "Rotation started for {name}",
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "jatuh tempo sekarang",
+    "rotation_countdown_days_hours": "{days}h {hours}j",
+    "rotation_countdown_hours": "{hours}j"
+  },
+  "saved_views": {
+    "errors": {
+      "load_failed_message": "Couldn't load your saved views.",
+      "save_failed_message": "Couldn't save this view.",
+      "delete_failed_message": "Couldn't delete this view."
+    }
   },
   "cron": {
     "title": "Agen Cron",
@@ -785,6 +989,15 @@
     "every_interval": "setiap {interval}",
     "next": "berikutnya",
     "last": "terakhir"
+  },
+  "activity_timeline": {
+    "title": "Linimasa Aktivitas",
+    "subtitle": "{events} peristiwa, {messages} pesan",
+    "all": "Semua",
+    "events": "Peristiwa",
+    "messages": "Pesan",
+    "no_activity": "Belum ada aktivitas",
+    "high": "Tinggi"
   },
   "sla_card": {
     "successful": "Berhasil",
@@ -813,6 +1026,13 @@
     "pending": "tertunda",
     "success": "berhasil",
     "in_window": "dalam jendela",
+    "test_flow": "Uji Aliran",
+    "testing_flow": "Menguji aliran...",
+    "test_event_flow": "Uji aliran peristiwa",
+    "resume": "Lanjutkan",
+    "pause": "Jeda",
+    "resume_stream": "Lanjutkan stream realtime",
+    "pause_stream": "Jeda stream realtime",
     "search_events": "Cari peristiwa...",
     "filter_type": "Tipe",
     "filter_status": "Status",
@@ -823,17 +1043,6 @@
     "no_saved_views": "Belum ada tampilan tersimpan",
     "save_current_filter": "Simpan filter saat ini",
     "view_name_placeholder": "Nama tampilan...",
-    "close_event_details": "Tutup detail peristiwa",
-    "reset_to_start": "Reset ke awal",
-    "cycle_speed": "Siklus kecepatan pemutaran",
-    "exit_replay": "Keluar dari pemutaran ulang",
-    "test_flow": "Uji Aliran",
-    "testing_flow": "Menguji aliran...",
-    "test_event_flow": "Uji aliran peristiwa",
-    "resume": "Lanjutkan",
-    "pause": "Jeda",
-    "resume_stream": "Lanjutkan stream realtime",
-    "pause_stream": "Jeda stream realtime",
     "delete_saved_view": "Hapus tampilan tersimpan",
     "event_log": "Log Peristiwa",
     "entries": "{count} entri",
@@ -847,6 +1056,10 @@
     "id_label": "ID",
     "error_label": "Kesalahan",
     "payload_label": "Payload",
+    "close_event_details": "Tutup detail peristiwa",
+    "reset_to_start": "Reset ke awal",
+    "cycle_speed": "Siklus kecepatan pemutaran",
+    "exit_replay": "Keluar dari pemutaran ulang",
     "galaxy": "Galaksi",
     "galaxy_desc": "Konstelasi orbital dengan jejak komet",
     "lanes": "Jalur",
@@ -970,15 +1183,36 @@
     "rejected": "{count} ditolak",
     "undecided": "{count} belum diputuskan"
   },
+  "widgets_extra": {
+    "execution_health_chart": "Kesehatan Eksekusi",
+    "cost_over_time_chart": "Biaya Seiring Waktu",
+    "successful": "Berhasil",
+    "failed": "Gagal",
+    "close": "Tutup",
+    "dismiss_help": "Abaikan bantuan",
+    "skip_tour": "Lewati tur sepenuhnya"
+  },
+  "remote_control_card": {
+    "connect_to_desktop": "Hubungkan ke Desktop",
+    "connect_description": "Jalankan agen menggunakan CLI desktop Anda melalui Kendali Jarak Jauh. Mulai {command} di komputer Anda, lalu hubungkan di sini.",
+    "requires_subscription": "Memerlukan langganan Claude Pro atau Max"
+  },
+  "resume_setup_card": {
+    "resume_tour": "Lanjutkan Tur",
+    "left_off_at": "Anda berhenti di",
+    "steps_completed": "{completed}/{total} langkah selesai",
+    "skip_tour": "Lewati tur sepenuhnya",
+    "continue_label": "Lanjutkan"
+  },
   "detail_modal": {
     "close": "Tutup"
   },
   "metric_help_popover": {
+    "help_for": "Bantuan untuk {label}",
     "dismiss_help": "Abaikan bantuan",
     "healthy": "Sehat:",
     "click": "Klik:",
-    "got_it": "Mengerti, jangan tampilkan lagi",
-    "help_for": "Bantuan untuk {label}"
+    "got_it": "Mengerti, jangan tampilkan lagi"
   },
   "install_button": {
     "install_node": "Instal Node.js",
@@ -1003,9 +1237,9 @@
     "disconnect": "Putuskan"
   },
   "metrics_cards": {
-    "top_executions": "Eksekusi teratas:",
     "cost_spike": "Lonjakan biaya",
-    "above_avg": "di atas rata-rata"
+    "above_avg": "di atas rata-rata",
+    "top_executions": "Eksekusi teratas:"
   },
   "event_log_item": {
     "event_id": "ID Peristiwa",
@@ -1013,10 +1247,10 @@
     "source": "Sumber",
     "processed": "Diproses",
     "event_data": "Data Peristiwa",
-    "error": "Kesalahan",
     "copy_event_data": "Salin data peristiwa",
     "copied": "Disalin",
     "copy": "Salin",
+    "error": "Kesalahan",
     "system": "Sistem"
   },
   "burn_rate_extra": {
@@ -1101,14 +1335,21 @@
     "all_caught_up": "Semua selesai",
     "no_pending": "Tidak ada ulasan tertunda untuk diproses.",
     "queue": "Antrean",
+    "clear": "Hapus",
     "clear_all_verdicts": "Hapus semua keputusan",
     "quick_actions": "Tindakan Cepat",
     "reject_all": "Tolak semua",
     "accept_all": "Terima semua",
     "retry_with_changes": "Coba ulang dengan perubahan",
-    "carry_out_hint": "Menyetujui ulasan dan menjalankan persona untuk melaksanakannya",
-    "clear": "Hapus",
-    "video_not_supported": "Video tidak didukung di browser ini"
+    "video_not_supported": "Video tidak didukung di browser ini",
+    "carry_out_hint": "Menyetujui ulasan dan menjalankan persona untuk melaksanakannya"
+  },
+  "bulk_action_bar": {
+    "pending_reviews_selected_one": "{count} tinjauan tertunda dipilih",
+    "pending_reviews_selected_other": "{count} tinjauan tertunda dipilih"
+  },
+  "review_inbox": {
+    "drag_to_resize": "Seret untuk mengubah ukuran"
   },
   "memory_card": {
     "confirm": "Konfirmasi",
@@ -1129,9 +1370,9 @@
     "agent": "Agen",
     "title": "Judul",
     "category": "Kategori",
+    "priority": "Prioritas",
     "tags": "Tag",
-    "created": "Dibuat",
-    "priority": "Prioritas"
+    "created": "Dibuat"
   },
   "review_results": {
     "title": "Ulasan Memori AI",
@@ -1143,8 +1384,8 @@
     "baseline_label": "Baseline:",
     "correlating": "Mengkorelasikan peristiwa...",
     "likely_root_causes": "Kemungkinan Akar Penyebab",
-    "no_correlated": "Tidak ada peristiwa berkorelasi ditemukan dalam jendela ±24j.",
-    "correlated_events": "Peristiwa Berkorelasi"
+    "correlated_events": "Peristiwa Berkorelasi",
+    "no_correlated": "Tidak ada peristiwa berkorelasi ditemukan dalam jendela ±24j."
   },
   "healing_issue_modal": {
     "issue_resolved": "Masalah Terselesaikan",
@@ -1153,13 +1394,13 @@
     "copied": "Disalin",
     "copy_fix": "Salin Perbaikan",
     "persona_auto_disabled": "Persona dinonaktifkan otomatis",
+    "persona_auto_disabled_desc": "Persona ini dinonaktifkan secara otomatis setelah 5 kegagalan berturut-turut. Tinjau pola kesalahan di bawah dan aktifkan kembali secara manual setelah akar penyebab diselesaikan.",
     "marking_resolved_note": "Menandai terselesaikan berarti Anda telah menangani masalah ini di luar sistem pemulihan.",
+    "retry_in_progress": "Percobaan ulang sedang berjalan -- status akan diperbarui saat selesai",
     "auto_resolved": "Masalah ini diselesaikan secara otomatis",
+    "close": "Tutup",
     "resolving": "Menyelesaikan…",
     "mark_resolved": "Tandai sebagai Terselesaikan",
-    "persona_auto_disabled_desc": "Persona ini dinonaktifkan secara otomatis setelah 5 kegagalan berturut-turut. Tinjau pola kesalahan di bawah dan aktifkan kembali secara manual setelah akar penyebab diselesaikan.",
-    "retry_in_progress": "Percobaan ulang sedang berjalan -- status akan diperbarui saat selesai",
-    "close": "Tutup",
     "retrying_badge": "mencoba lagi",
     "auto_fixed_badge": "diperbaiki otomatis",
     "retry_in_progress_badge": "percobaan ulang berlangsung",
@@ -1172,9 +1413,6 @@
     "run_analysis": "Jalankan Analisis",
     "no_open_issues": "Tidak ada masalah terbuka",
     "run_analysis_hint": "Jalankan analisis untuk memeriksa masalah.",
-    "healing_audit_log": "Log Audit Pemulihan",
-    "no_silent_failures": "Tidak ada kegagalan diam yang tercatat.",
-    "analysis_complete_prefix": "Analisis selesai:",
     "ai_healing_title": "Penyembuhan AI",
     "diagnosis_label": "Diagnosis:",
     "fixes_applied": "Perbaikan diterapkan:",
@@ -1190,7 +1428,10 @@
     "execution_label": "Eksekusi:",
     "issue_marked_as": "Masalah ini ditandai sebagai",
     "retry_in_progress": "Percobaan ulang sedang berlangsung",
-    "resolve_issue_title": "Selesaikan masalah"
+    "resolve_issue_title": "Selesaikan masalah",
+    "healing_audit_log": "Log Audit Pemulihan",
+    "no_silent_failures": "Tidak ada kegagalan diam yang tercatat.",
+    "analysis_complete_prefix": "Analisis selesai:"
   },
   "healing_timeline": {
     "loading": "Memuat linimasa...",
@@ -1240,6 +1481,13 @@
     "event_id_label": "ID peristiwa",
     "broadcast": "(siaran)"
   },
+  "event_bus_overlay": {
+    "earlier_events_not_shown_one": "{count} peristiwa sebelumnya tidak ditampilkan",
+    "earlier_events_not_shown_other": "{count} peristiwa sebelumnya tidak ditampilkan"
+  },
+  "event_bus_filter": {
+    "search_placeholder": "Cari peristiwa..."
+  },
   "realtime_stats": {
     "events_per_min": "peristiwa/menit",
     "pending": "tertunda",
@@ -1265,13 +1513,32 @@
     "heartbeats_btn": "Detak",
     "reliability_btn": "Keandalan"
   },
+  "crash_logs": {
+    "title": "Log kerusakan",
+    "no_logs": "Tidak ada log kerusakan yang tercatat.",
+    "component_stack_separator": "--- Component Stack ---"
+  },
   "popup_fields": {
     "sign_up_free_at": "Daftar gratis di",
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", lalu salin kunci API Anda dari Pengaturan. Kunci ini disimpan secara lokal dan dibagikan ke semua agen."
   },
+  "events_list": {
+    "save_view_tooltip": "Simpan filter saat ini sebagai tampilan",
+    "clear_filters_tooltip": "Hapus semua filter"
+  },
+  "dashboard_home": {
+    "you_have": "Anda memiliki"
+  },
+  "fleet_optimization_card": {
+    "title": "Optimisasi armada"
+  },
   "usage_filters": {
     "time_range_label": "Rentang waktu"
+  },
+  "day_range_picker": {
+    "start_date": "Tanggal mulai",
+    "end_date": "Tanggal selesai"
   },
   "healing_summary": {
     "auto_fixed_this_week": "diperbaiki otomatis minggu ini",
@@ -1560,272 +1827,5 @@
     "source_scanner": "Pemindai",
     "tokens": "Token",
     "total_cost": "Total biaya"
-  },
-  "title": "Ringkasan",
-  "no_output": "Belum ada keluaran",
-  "no_background_jobs": "Tidak ada pekerjaan latar belakang yang berjalan atau baru-baru ini",
-  "background_jobs_hint": "Pekerjaan muncul di sini saat Anda menjalankan transformasi n8n, adopsi templat, pembuatan templat, atau debugging kueri",
-  "realtime": {
-    "idle": "Menganggur -- klik {action} untuk mensimulasikan lalu lintas",
-    "test_flow": "Uji Alur",
-    "events_per_min": "peristiwa/menit",
-    "pending": "tertunda",
-    "success": "berhasil",
-    "in_window": "dalam jendela"
-  },
-  "executions": {
-    "title": "Eksekusi",
-    "loading": "Memuat eksekusi...",
-    "no_agents": "Belum ada agen dibuat",
-    "create_first": "Buat agen pertama Anda untuk melihat aktivitas eksekusi di sini",
-    "no_executions": "Belum ada eksekusi",
-    "run_agent": "Jalankan agen untuk melihat aktivitas eksekusi di sini"
-  },
-  "workflows": {
-    "loading": "Memuat alur kerja...",
-    "title": "Alur Kerja",
-    "subtitle": "Operasi latar belakang aktif dan terkini di seluruh ruang kerja Anda",
-    "no_jobs": "Tidak ada tugas latar belakang yang berjalan atau terbaru",
-    "jobs_hint": "Tugas muncul di sini saat Anda menjalankan transformasi N8n, adopsi templat, pembuatan templat, atau debugging kueri",
-    "all_types": "Semua tipe",
-    "no_filter_match": "Tidak ada tugas yang cocok dengan filter saat ini",
-    "auto_refreshing": "Menyegarkan otomatis saat tugas berjalan",
-    "cancel_failed": "Gagal membatalkan tugas alur kerja"
-  },
-  "schedules": {
-    "title": "Lini Masa Jadwal",
-    "subtitle": "Tampilan agregat semua eksekusi agen terjadwal",
-    "engine_on": "Mesin Aktif",
-    "engine_off": "Mesin Mati",
-    "engine_on_tooltip": "Penjadwal berjalan -- klik untuk menjeda",
-    "engine_off_tooltip": "Penjadwal berhenti -- klik untuk memulai",
-    "active_count": "{count} aktif",
-    "paused_count": "{count} dijeda",
-    "view_grouped": "Dikelompokkan",
-    "view_timeline": "Lini Masa",
-    "triggers_fired": "Pemicu dijalankan: ",
-    "events_processed": "Peristiwa diproses: ",
-    "delivered": "Terkirim: ",
-    "failed_label": "Gagal: ",
-    "loading": "Memuat jadwal...",
-    "empty": "Tidak ada agen terjadwal ditemukan.",
-    "empty_hint": "Buat jadwal atau pemicu polling pada agen untuk melihatnya di sini.",
-    "group_overdue": "Terlambat",
-    "group_15min": "15 menit ke depan",
-    "group_1hour": "1 jam ke depan",
-    "group_6hours": "6 jam ke depan",
-    "group_24hours": "24 jam ke depan",
-    "group_later": "Nanti",
-    "group_paused": "Dijeda / Tidak Terjadwal",
-    "run_now": "Jalankan sekarang",
-    "change_frequency": "Ubah frekuensi",
-    "pause_schedule": "Jeda jadwal",
-    "resume_schedule": "Lanjutkan jadwal",
-    "headless_badge": "headless"
-  },
-  "frequency_editor": {
-    "title": "Ubah Frekuensi",
-    "current": "Saat ini: ",
-    "quick_presets": "Preset cepat",
-    "cron_expression": "Ekspresi cron",
-    "interval_seconds": "Interval (detik)",
-    "previewing": "Mempratinjau...",
-    "next_runs": "Eksekusi berikutnya",
-    "invalid_cron": "Ekspresi cron tidak valid"
-  },
-  "recovery": {
-    "agents_missed_one": "{count} agen melewatkan eksekusi",
-    "agents_missed_other": "{count} agen melewatkan eksekusi",
-    "total_skipped": "~{count} total eksekusi dilewati saat aplikasi offline",
-    "missed_since": "{count} terlewat sejak {time}",
-    "every_interval": "setiap {interval}",
-    "mark_for_recovery": "Tandai untuk pemulihan",
-    "recover": "Pulihkan",
-    "run_once": "Jalankan 1x",
-    "run_once_tooltip": "Jalankan sekali sekarang",
-    "skip_tooltip": "Lewati -- jangan pulihkan",
-    "dismiss_all": "Abaikan semua",
-    "recover_selected": "Pulihkan {count} yang dipilih"
-  },
-  "conflicts": {
-    "dismissed": "Konflik diabaikan",
-    "resolved": "Konflik diselesaikan",
-    "resolve_failed": "Gagal menyelesaikan konflik",
-    "conflict_count_one": "{count} konflik",
-    "conflict_count_other": "{count} konflik"
-  },
-  "execution_metrics": {
-    "title": "Metrik Eksekusi",
-    "total_executions": "Total Eksekusi",
-    "total_cost": "Total Biaya",
-    "success_rate": "Tingkat Keberhasilan",
-    "avg_latency": "Latensi Rata-rata",
-    "cost_anomalies": "Anomali Biaya Terdeteksi",
-    "no_data": "Tidak ada data eksekusi untuk periode yang dipilih",
-    "cost_per_day": "Biaya per Hari",
-    "executions_by_status": "Eksekusi berdasarkan Status",
-    "success_rate_trend": "Tren Tingkat Keberhasilan",
-    "latency_distribution": "Distribusi Latensi (p50 / p95 / p99)",
-    "top_personas_by_cost": "Persona Teratas berdasarkan Biaya",
-    "cost_spike": "Lonjakan biaya",
-    "above_avg": "di atas rata-rata",
-    "top_executions": "Eksekusi teratas:",
-    "executions_label": "{count} eksekusi"
-  },
-  "execution_list": {
-    "recorded": "{count} eksekusi tercatat",
-    "recorded_one": "{count} eksekusi tercatat",
-    "list": "Daftar",
-    "metrics": "Metrik",
-    "show_list": "Tampilkan daftar eksekusi",
-    "show_metrics": "Tampilkan dasbor metrik",
-    "showing": "Menampilkan {count} dari {total}",
-    "load_more": "Muat Lebih Banyak",
-    "filter_all": "Semua",
-    "filter_running": "Berjalan",
-    "filter_completed": "Selesai",
-    "filter_failed": "Gagal",
-    "col_persona": "Persona",
-    "col_status": "Status",
-    "col_duration": "Durasi",
-    "col_started": "Dimulai",
-    "col_id": "ID",
-    "all_statuses": "Semua status",
-    "all_personas": "Semua persona",
-    "no_agents": "Belum ada agen yang dibuat",
-    "no_agents_hint": "Buat agen pertama Anda untuk melihat aktivitas eksekusi di sini.",
-    "unknown_persona": "Tidak diketahui",
-    "healing_retry": "Percobaan ulang pemulihan #{count}"
-  },
-  "analytics": {
-    "title": "Analitik",
-    "subtitle": "Pola dan tren eksekusi",
-    "loading": "Memuat analitik...",
-    "no_data": "Tidak ada data analitik yang tersedia",
-    "executions_over_time": "Eksekusi Seiring Waktu",
-    "success_failure": "Berhasil vs Gagal",
-    "cost_breakdown": "Rincian Biaya",
-    "total_executions": "Total Eksekusi",
-    "total_cost": "Total Biaya",
-    "avg_success_rate": "Tingkat Keberhasilan Rata-rata",
-    "active_agents": "Agen Aktif",
-    "saved_views": "Tampilan Tersimpan",
-    "create_view": "Buat Tampilan",
-    "health_issues": "Masalah Kesehatan",
-    "rotation_overview": "Ikhtisar Rotasi"
-  },
-  "usage": {
-    "title": "Penggunaan",
-    "subtitle": "Biaya dan konsumsi sumber daya",
-    "chart_error": "Grafik gagal dimuat",
-    "chart_error_hint": "Terjadi kesalahan saat merender grafik ini",
-    "try_again": "Coba Lagi"
-  },
-  "cron_agents": {
-    "title": "Agen Terjadwal",
-    "subtitle": "Agen yang berjalan berdasarkan jadwal otomatis",
-    "no_agents": "Tidak ada agen terjadwal",
-    "no_agents_hint": "Tambahkan pemicu cron ke agen manapun untuk melihatnya di sini"
-  },
-  "timeline": {
-    "title": "Linimasa Aktivitas",
-    "subtitle": "Tampilan terpadu semua aktivitas agen",
-    "no_activity": "Tidak ada aktivitas terbaru"
-  },
-  "realtime_viz": {
-    "title": "Bus Peristiwa",
-    "filter_events": "Filter peristiwa",
-    "pause": "Jeda",
-    "resume": "Lanjutkan",
-    "clear": "Hapus",
-    "total_events": "Total Peristiwa",
-    "events_per_sec": "Peristiwa/detik",
-    "active_lanes": "Jalur Aktif",
-    "event_type": "Tipe Peristiwa",
-    "source": "Sumber",
-    "target": "Target",
-    "timestamp": "Stempel Waktu",
-    "payload": "Payload",
-    "saved_views": "Tampilan Tersimpan",
-    "save_current": "Simpan Saat Ini"
-  },
-  "cards": {
-    "fleet_optimization": "Optimasi Armada",
-    "fleet_subtitle": "Rekomendasi otomatis untuk meningkatkan kinerja agen",
-    "remote_control": "Kendali Jarak Jauh",
-    "remote_subtitle": "Tindakan cepat untuk manajemen agen",
-    "resume_setup": "Lanjutkan Pengaturan",
-    "resume_subtitle": "Lanjutkan dari tempat Anda berhenti",
-    "knowledge_hub": "Pusat Pengetahuan"
-  },
-  "saved_views": {
-    "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
-    }
-  },
-  "activity_timeline": {
-    "title": "Linimasa Aktivitas",
-    "subtitle": "{events} peristiwa, {messages} pesan",
-    "all": "Semua",
-    "events": "Peristiwa",
-    "messages": "Pesan",
-    "no_activity": "Belum ada aktivitas",
-    "high": "Tinggi"
-  },
-  "widgets_extra": {
-    "execution_health_chart": "Kesehatan Eksekusi",
-    "cost_over_time_chart": "Biaya Seiring Waktu",
-    "successful": "Berhasil",
-    "failed": "Gagal",
-    "close": "Tutup",
-    "dismiss_help": "Abaikan bantuan",
-    "skip_tour": "Lewati tur sepenuhnya"
-  },
-  "remote_control_card": {
-    "connect_to_desktop": "Hubungkan ke Desktop",
-    "connect_description": "Jalankan agen menggunakan CLI desktop Anda melalui Kendali Jarak Jauh. Mulai {command} di komputer Anda, lalu hubungkan di sini.",
-    "requires_subscription": "Memerlukan langganan Claude Pro atau Max"
-  },
-  "resume_setup_card": {
-    "resume_tour": "Lanjutkan Tur",
-    "left_off_at": "Anda berhenti di",
-    "steps_completed": "{completed}/{total} langkah selesai",
-    "skip_tour": "Lewati tur sepenuhnya",
-    "continue_label": "Lanjutkan"
-  },
-  "bulk_action_bar": {
-    "pending_reviews_selected_one": "{count} tinjauan tertunda dipilih",
-    "pending_reviews_selected_other": "{count} tinjauan tertunda dipilih"
-  },
-  "review_inbox": {
-    "drag_to_resize": "Seret untuk mengubah ukuran"
-  },
-  "event_bus_overlay": {
-    "earlier_events_not_shown_one": "{count} peristiwa sebelumnya tidak ditampilkan",
-    "earlier_events_not_shown_other": "{count} peristiwa sebelumnya tidak ditampilkan"
-  },
-  "event_bus_filter": {
-    "search_placeholder": "Cari peristiwa..."
-  },
-  "crash_logs": {
-    "title": "Log kerusakan",
-    "no_logs": "Tidak ada log kerusakan yang tercatat.",
-    "component_stack_separator": "--- Component Stack ---"
-  },
-  "events_list": {
-    "save_view_tooltip": "Simpan filter saat ini sebagai tampilan",
-    "clear_filters_tooltip": "Hapus semua filter"
-  },
-  "dashboard_home": {
-    "you_have": "Anda memiliki"
-  },
-  "fleet_optimization_card": {
-    "title": "Optimisasi armada"
-  },
-  "day_range_picker": {
-    "start_date": "Tanggal mulai",
-    "end_date": "Tanggal selesai"
   }
 }

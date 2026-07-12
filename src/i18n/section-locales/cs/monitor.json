@@ -3,7 +3,7 @@
   "group_by_toggle_title": "Seskupit karty person podle přiřazené skupiny",
   "group_ungrouped": "Bez skupiny",
   "title": "Monitor person",
-  "subtitle": "{personas} person · {attention} vyžaduje pozornost · {running} běží",
+  "subtitle": "{persony} persony · {attention} need attention · {running} running",
   "close": "Zavřít monitor",
   "close_hint": "Zavřít (Esc)",
   "no_personas": "Zatím žádné persony.",

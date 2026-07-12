@@ -58,9 +58,6 @@ function readScope(): GoalScope {
 export default function GoalsPage() {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
-  const activeProject = useSystemStore((s) =>
-    s.projects.find((p) => p.id === s.activeProjectId),
-  );
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const goals = useSystemStore((s) => s.goals);
   const goalsTab = useSystemStore((s) => s.goalsTab);
@@ -96,6 +93,23 @@ export default function GoalsPage() {
       silentCatch('GoalsPage.persistScope')(err);
     }
   };
+
+  // Scope switch (All projects / This project). Lives in the content-body
+  // header — not the page header band — so it reads as a control over the goals
+  // shown below it. Board + Timeline honor it; the Map is always project-scoped.
+  const scopeSwitch = (
+    <SegmentedTabs<GoalScope>
+      variant="segment"
+      fullWidth={false}
+      ariaLabel={dl.goal_scope_all_projects}
+      activeTab={scope}
+      onTabChange={changeScope}
+      tabs={[
+        { id: 'all', label: dl.goal_scope_all_projects },
+        { id: 'project', label: dl.goal_scope_this_project },
+      ]}
+    />
+  );
 
   const doneCount = goals.filter((g) => isComplete(g.status)).length;
 
@@ -157,45 +171,33 @@ export default function GoalsPage() {
         icon={<Target className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
         title={t.plugins.dev_lifecycle.tab_goals}
-        subtitle={activeProject?.root_path ?? '—'}
-        toolbar={
+        fitWidth
+        actions={
           <>
-            {/* Scope switch — Board/Timeline only (the Map is always scoped to
-                one project). The project picker stays available either way, so
-                the user can narrow when needed and it remains the new-goal /
-                Map / sync target. */}
-            {(goalsTab === 'board' || goalsTab === 'timeline') && (
-              <SegmentedTabs<GoalScope>
-                variant="segment"
-                fullWidth={false}
-                ariaLabel={dl.goal_scope_all_projects}
-                activeTab={scope}
-                onTabChange={changeScope}
-                tabs={[
-                  { id: 'all', label: dl.goal_scope_all_projects },
-                  { id: 'project', label: dl.goal_scope_this_project },
-                ]}
-              />
-            )}
-            {/* Target + primary action pushed to the right edge of the bar. */}
-            <div className="ml-auto flex items-center gap-2">
-              <LifecycleProjectPicker />
-              <Button
-                variant="accent"
-                accentColor="violet"
-                size="sm"
-                icon={<Plus className="w-3.5 h-3.5" />}
-                disabled={!activeProjectId}
-                onClick={() => setEditorOpen(true)}
-              >
-                {dl.goal_new_title}
-              </Button>
-            </div>
+            <LifecycleProjectPicker />
+            <Button
+              variant="accent"
+              accentColor="violet"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              disabled={!activeProjectId}
+              onClick={() => setEditorOpen(true)}
+            >
+              {dl.goal_new_title}
+            </Button>
           </>
         }
       />
 
       <ContentBody>
+        {/* Content-header row: the scope switch scopes everything below it.
+            Shown for Board + Timeline (incl. the empty board) so the user can
+            always widen back to All projects; the Map is always project-scoped. */}
+        {(goalsTab === 'board' || goalsTab === 'timeline') && (
+          <div className="flex items-center gap-3 mb-4">
+            {scopeSwitch}
+          </div>
+        )}
         {goalsTab === 'timeline' ? (
           <div className="space-y-3">
             <GoalViewExplainer key="timeline" view="timeline" text={dl.goal_explainer_timeline} />

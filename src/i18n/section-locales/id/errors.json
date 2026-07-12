@@ -1,5 +1,4 @@
 {
-  "dismiss_error": "Abaikan kesalahan",
   "boundary_title": "Terjadi kesalahan tak terduga di {name}",
   "boundary_title_generic": "Terjadi kesalahan tak terduga",
   "boundary_body": "Jangan khawatir -- data Anda aman. Anda dapat mencoba lagi atau kembali ke dasbor.",
@@ -10,6 +9,7 @@
   "boundary_dev": "Untuk pengembang",
   "boundary_no_stack": "Tidak ada stack trace tersedia",
   "go_back": "Kembali",
+  "dismiss_error": "Abaikan kesalahan",
   "not_found": "Sumber daya yang diminta tidak ditemukan",
   "validation": "Input tidak valid: {detail}",
   "auth": "Autentikasi gagal -- periksa kredensial Anda",

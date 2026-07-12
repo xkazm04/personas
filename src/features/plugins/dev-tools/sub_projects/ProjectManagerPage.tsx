@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  FolderKanban, Plus, ChevronRight, Folder, Network, Code2, Archive, CheckSquare, Square, X as XIcon, ExternalLink,
+  FolderKanban, Plus, Folder, Network, Code2, Archive, CheckSquare, Square, X as XIcon, ExternalLink,
 } from 'lucide-react';
 import { openLocalPath, openExternalUrl } from '@/api/system/system';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
+import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
 import { useContextScanBackground } from '../hooks/useContextScanBackground';
@@ -102,8 +103,6 @@ export default function ProjectManagerPage() {
     }
   }, [selectedIds, archiving, storeUpdateProject, addToastPm, t.plugins.dev_projects.bulk_archive_success, t.plugins.dev_projects.bulk_archive_partial, clearSelection]);
 
-  const activeProject = projects.find((p) => p.id === activeProjectId);
-
   useEffect(() => {
     fetchProjects?.();
   }, [fetchProjects]);
@@ -195,12 +194,183 @@ export default function ProjectManagerPage() {
     setActiveProject?.(id);
   }, [setActiveProject]);
 
+  // Shared-table columns. Only the project name is bold; every other column is
+  // rendered at normal weight per the data-density pass. Row actions and the
+  // per-row / select-all checkboxes stop propagation so they never trigger the
+  // row's set-active click.
+  const columns: TableColumn<Project>[] = [
+    {
+      key: 'select',
+      label: '',
+      width: '40px',
+      // Select-all lives in this column's header via filterComponent.
+      filterComponent: (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); toggleSelectAll(); }}
+          title={allVisibleSelected ? t.plugins.dev_projects.bulk_select_clear : t.plugins.dev_projects.bulk_select_all}
+          aria-label={allVisibleSelected ? t.plugins.dev_projects.bulk_select_clear : t.plugins.dev_projects.bulk_select_all}
+          className="text-foreground hover:text-primary disabled:opacity-30"
+          disabled={visibleNonArchivedIds.length === 0}
+        >
+          {allVisibleSelected
+            ? <CheckSquare className="w-3.5 h-3.5" />
+            : <Square className="w-3.5 h-3.5" />}
+        </button>
+      ),
+      render: (project) => (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); toggleSelection(project.id); }}
+          disabled={project.status === 'archived'}
+          aria-label={t.plugins.dev_projects.bulk_select_row}
+          title={project.status === 'archived' ? t.plugins.dev_projects.bulk_already_archived : t.plugins.dev_projects.bulk_select_row}
+          className="text-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          {selectedIds.has(project.id)
+            ? <CheckSquare className="w-3.5 h-3.5 text-primary" />
+            : <Square className="w-3.5 h-3.5" />}
+        </button>
+      ),
+    },
+    {
+      key: 'name',
+      label: t.plugins.dev_tools.col_name,
+      width: 'minmax(180px, 1.4fr)',
+      sortable: true,
+      sortFn: (a, b) => a.name.localeCompare(b.name),
+      render: (project) => (
+        // typo-heading carries font-weight:700 and is defined un-layered, so it
+        // wins over the Tailwind weight utilities (which lose to the un-layered
+        // typo-* classes). This makes the name the genuinely-heaviest cell; the
+        // other columns stay on muted typo-caption (500) so they read lighter.
+        <span className="typo-heading text-foreground flex items-center gap-2 min-w-0">
+          <span className="truncate">{project.name}</span>
+          {project.teamId && (() => {
+            const teamMeta = teamNameById.get(project.teamId);
+            const teamFull = teamFullById.get(project.teamId);
+            const baseClass =
+              'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border typo-caption font-normal flex-shrink-0';
+            const style = teamMeta?.color
+              ? { backgroundColor: `${teamMeta.color}1a`, borderColor: `${teamMeta.color}66`, color: teamMeta.color }
+              : undefined;
+            if (teamFull) {
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setPreviewingTeam(teamFull); }}
+                  className={`${baseClass} cursor-pointer hover:scale-105 active:scale-95 transition-transform`}
+                  style={style}
+                  title={t.plugins.dev_projects.team_binding_preview_title}
+                >
+                  <Users className="w-3 h-3" />
+                  {teamMeta?.name}
+                </button>
+              );
+            }
+            return (
+              <span
+                className={baseClass}
+                style={style}
+                title={t.plugins.dev_projects.team_binding_orphan}
+              >
+                <Users className="w-3 h-3" />
+                {t.plugins.dev_projects.team_binding_orphan_label}
+              </span>
+            );
+          })()}
+        </span>
+      ),
+    },
+    {
+      key: 'path',
+      label: t.plugins.dev_tools.col_path,
+      width: 'minmax(160px, 1.6fr)',
+      render: (project) => (
+        <span className="typo-caption truncate block">{project.path}</span>
+      ),
+    },
+    {
+      key: 'tech',
+      label: t.plugins.dev_tools.col_tech_stack,
+      width: 'minmax(100px, 0.9fr)',
+      render: (project) => (
+        <span className="typo-caption truncate block">{project.techStack.join(', ')}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: t.plugins.dev_tools.col_status,
+      width: '110px',
+      render: (project) => <StatusBadge status={project.status} />,
+    },
+    {
+      key: 'created',
+      label: t.plugins.dev_tools.col_created,
+      width: '110px',
+      sortable: true,
+      sortFn: (a, b) => a.createdAt.localeCompare(b.createdAt),
+      render: (project) => (
+        <span className="typo-caption">{project.createdAt}</span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: '',
+      width: '132px',
+      align: 'right',
+      render: (project) => (
+        <div className="flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
+          {project.testEnvUrl && (
+            <button
+              type="button"
+              onClick={() => { openExternalUrl(project.testEnvUrl!).catch(toastCatch('ProjectCard:openTestEnv')); }}
+              title={t.plugins.dev_projects.open_test_env}
+              aria-label={t.plugins.dev_projects.open_test_env}
+              className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => { openLocalPath(`vscode://file/${project.path}`).catch(toastCatch('Failed to open in VS Code')); }}
+            title={t.plugins.dev_tools.row_open_vscode}
+            aria-label={t.plugins.dev_tools.row_open_vscode}
+            className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          >
+            <Code2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => { openLocalPath(project.path).catch(toastCatch('Failed to open project folder')); }}
+            title={t.plugins.dev_tools.row_open_folder}
+            aria-label={t.plugins.dev_tools.row_open_folder}
+            className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          >
+            <Folder className="w-3.5 h-3.5" />
+          </button>
+          <ProjectRowMenu projectId={project.id} projectName={project.name} onEdit={() => handleEditProject(project.id)} />
+        </div>
+      ),
+    },
+  ];
+
+  // Left-accent bar marks the active project (primary) or a bulk-selected row
+  // (amber) — replaces the old full-row background tint.
+  const rowAccent = (project: Project): string | undefined => {
+    if (selectedIds.has(project.id)) return 'border-l-amber-400';
+    if (activeProjectId === project.id) return 'border-l-primary';
+    return undefined;
+  };
+
   return (
     <ContentBox>
       <ContentHeader
         icon={<FolderKanban className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title={t.plugins.dev_tools.projects_title}
+        fitWidth
         actions={<LifecycleProjectPicker />}
       />
 
@@ -229,205 +399,65 @@ export default function ProjectManagerPage() {
           </Button>
         </ActionRow>
 
-        <div className="space-y-6">
-          {/* Active project — compact summary row for the selected project. */}
-          {activeProject ? (
-            <div className="animate-fade-slide-in border border-primary/10 rounded-2xl bg-gradient-to-br from-amber-500/5 to-transparent">
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="w-8 h-8 rounded-modal bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shrink-0">
-                  <Folder className="w-4 h-4 text-amber-400" />
-                </div>
-                <h2 className="typo-section-title shrink-0">{activeProject.name}</h2>
-                <span className="typo-caption text-foreground truncate min-w-0 flex-1">{activeProject.path}</span>
-                {activeProject.techStack.length > 0 && (
-                  <span className="typo-caption text-foreground shrink-0 hidden md:inline">
-                    {activeProject.techStack.join(' · ')}
-                  </span>
-                )}
-                <StatusBadge status={activeProject.status} />
-              </div>
-            </div>
-          ) : (
-            <div className="border border-dashed border-primary/10 rounded-2xl p-8 text-center">
-              <Folder className="w-8 h-8 text-foreground mx-auto mb-2" />
-              <p className="typo-body text-foreground">{t.plugins.dev_projects.select_or_create}</p>
-            </div>
-          )}
-
-          {/* Project list */}
-          <div>
-            <h3 className="typo-label font-semibold text-primary uppercase tracking-wider mb-3">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <h3 className="typo-label font-semibold text-primary uppercase tracking-wider">
               {t.plugins.dev_projects.all_projects}({projects.length})
             </h3>
-
-            {projects.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
-                  <FolderKanban className="w-7 h-7 text-amber-400/50" />
-                </div>
-                <p className="typo-body text-foreground mb-4">{t.plugins.dev_projects.no_projects_yet}</p>
+            {/* Bulk-action bar — inline, only when a row is selected. */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="typo-caption text-amber-300 font-medium tabular-nums">
+                  {selectedIds.size} {selectedIds.size === 1 ? t.plugins.dev_projects.bulk_selected_one : t.plugins.dev_projects.bulk_selected_many}
+                </span>
                 <Button
                   variant="accent"
                   accentColor="amber"
-                  size="sm"
-                  icon={<Plus className="w-3.5 h-3.5" />}
-                  onClick={() => { setEditingProject(null); setShowModal(true); }}
+                  size="xs"
+                  icon={<Archive className="w-3 h-3" />}
+                  loading={archiving}
+                  onClick={bulkArchive}
                 >
-                  {t.plugins.dev_projects.create_first_project}
+                  {t.plugins.dev_projects.bulk_archive_btn}
                 </Button>
-              </div>
-            ) : (
-              <div className="border border-primary/10 rounded-modal">
-                {/* Bulk-action bar — only visible when something is selected */}
-                {selectedIds.size > 0 && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/8 border-b border-amber-500/20">
-                    <span className="typo-caption text-amber-300 font-medium tabular-nums">
-                      {selectedIds.size} {selectedIds.size === 1 ? t.plugins.dev_projects.bulk_selected_one : t.plugins.dev_projects.bulk_selected_many}
-                    </span>
-                    <Button
-                      variant="accent"
-                      accentColor="amber"
-                      size="xs"
-                      icon={<Archive className="w-3 h-3" />}
-                      loading={archiving}
-                      onClick={bulkArchive}
-                    >
-                      {t.plugins.dev_projects.bulk_archive_btn}
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={clearSelection}
-                      className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground"
-                    >
-                      <XIcon className="w-3 h-3" /> {t.common.clear}
-                    </button>
-                  </div>
-                )}
-
-                {/* Table header */}
-                <div className="grid grid-cols-[28px_1fr_1.2fr_0.8fr_0.6fr_0.7fr_110px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-modal">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); toggleSelectAll(); }}
-                    title={allVisibleSelected ? t.plugins.dev_projects.bulk_select_clear : t.plugins.dev_projects.bulk_select_all}
-                    aria-label={allVisibleSelected ? t.plugins.dev_projects.bulk_select_clear : t.plugins.dev_projects.bulk_select_all}
-                    className="self-center text-foreground hover:text-primary disabled:opacity-30"
-                    disabled={visibleNonArchivedIds.length === 0}
-                  >
-                    {allVisibleSelected
-                      ? <CheckSquare className="w-3.5 h-3.5" />
-                      : <Square className="w-3.5 h-3.5" />}
-                  </button>
-                  <span>{t.plugins.dev_tools.col_name}</span>
-                  <span>{t.plugins.dev_tools.col_path}</span>
-                  <span>{t.plugins.dev_tools.col_tech_stack}</span>
-                  <span>{t.plugins.dev_tools.col_status}</span>
-                  <span>{t.plugins.dev_tools.col_created}</span>
-                  <span></span>
-                </div>
-                {/* Table rows */}
-                {projects.map((project) => (
-                  <div
-                    key={project.id}
-                    onClick={() => handleSetActive(project.id)}
-                    className={`grid grid-cols-[28px_1fr_1.2fr_0.8fr_0.6fr_0.7fr_110px] gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0 cursor-pointer transition-colors ${
-                      selectedIds.has(project.id)
-                        ? 'bg-amber-500/5 ring-1 ring-amber-500/20'
-                        : activeProjectId === project.id
-                        ? 'bg-primary/10'
-                        : 'hover:bg-primary/5'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); toggleSelection(project.id); }}
-                      disabled={project.status === 'archived'}
-                      aria-label={t.plugins.dev_projects.bulk_select_row}
-                      title={project.status === 'archived' ? t.plugins.dev_projects.bulk_already_archived : t.plugins.dev_projects.bulk_select_row}
-                      className="self-center text-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      {selectedIds.has(project.id)
-                        ? <CheckSquare className="w-3.5 h-3.5 text-primary" />
-                        : <Square className="w-3.5 h-3.5" />}
-                    </button>
-                    <span className="typo-body text-foreground font-medium flex items-center gap-2 truncate">
-                      <ChevronRight className={`w-3.5 h-3.5 text-foreground transition-transform ${activeProjectId === project.id ? 'rotate-90' : ''}`} />
-                      <span className="truncate">{project.name}</span>
-                      {project.teamId && (() => {
-                        const teamMeta = teamNameById.get(project.teamId);
-                        const teamFull = teamFullById.get(project.teamId);
-                        const baseClass =
-                          'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border typo-caption font-medium flex-shrink-0';
-                        const style = teamMeta?.color
-                          ? { backgroundColor: `${teamMeta.color}1a`, borderColor: `${teamMeta.color}66`, color: teamMeta.color }
-                          : undefined;
-                        if (teamFull) {
-                          return (
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); setPreviewingTeam(teamFull); }}
-                              className={`${baseClass} cursor-pointer hover:scale-105 active:scale-95 transition-transform`}
-                              style={style}
-                              title={t.plugins.dev_projects.team_binding_preview_title}
-                            >
-                              <Users className="w-3 h-3" />
-                              {teamMeta?.name}
-                            </button>
-                          );
-                        }
-                        return (
-                          <span
-                            className={baseClass}
-                            style={style}
-                            title={t.plugins.dev_projects.team_binding_orphan}
-                          >
-                            <Users className="w-3 h-3" />
-                            {t.plugins.dev_projects.team_binding_orphan_label}
-                          </span>
-                        );
-                      })()}
-                    </span>
-                    <span className="typo-caption text-foreground truncate self-center">{project.path}</span>
-                    <span className="typo-caption text-foreground truncate self-center">{project.techStack.join(', ')}</span>
-                    <span className="self-center"><StatusBadge status={project.status} /></span>
-                    <span className="typo-caption text-foreground self-center">{project.createdAt}</span>
-                    <div className="self-center flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
-                      {project.testEnvUrl && (
-                        <button
-                          type="button"
-                          onClick={() => { openExternalUrl(project.testEnvUrl!).catch(toastCatch('ProjectCard:openTestEnv')); }}
-                          title={t.plugins.dev_projects.open_test_env}
-                          aria-label={t.plugins.dev_projects.open_test_env}
-                          className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => { openLocalPath(`vscode://file/${project.path}`).catch(toastCatch('Failed to open in VS Code')); }}
-                        title={t.plugins.dev_tools.row_open_vscode}
-                        aria-label={t.plugins.dev_tools.row_open_vscode}
-                        className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                      >
-                        <Code2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { openLocalPath(project.path).catch(toastCatch('Failed to open project folder')); }}
-                        title={t.plugins.dev_tools.row_open_folder}
-                        aria-label={t.plugins.dev_tools.row_open_folder}
-                        className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                      >
-                        <Folder className="w-3.5 h-3.5" />
-                      </button>
-                      <ProjectRowMenu projectId={project.id} projectName={project.name} onEdit={() => handleEditProject(project.id)} />
-                    </div>
-                  </div>
-                ))}
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground"
+                >
+                  <XIcon className="w-3 h-3" /> {t.common.clear}
+                </button>
               </div>
             )}
           </div>
+
+          {projects.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
+                <FolderKanban className="w-7 h-7 text-amber-400/50" />
+              </div>
+              <p className="typo-body text-foreground mb-4">{t.plugins.dev_projects.no_projects_yet}</p>
+              <Button
+                variant="accent"
+                accentColor="amber"
+                size="sm"
+                icon={<Plus className="w-3.5 h-3.5" />}
+                onClick={() => { setEditingProject(null); setShowModal(true); }}
+              >
+                {t.plugins.dev_projects.create_first_project}
+              </Button>
+            </div>
+          ) : (
+            <UnifiedTable<Project>
+              columns={columns}
+              data={projects}
+              getRowKey={(p) => p.id}
+              onRowClick={(p) => handleSetActive(p.id)}
+              rowAccent={rowAccent}
+              stickyHeader={false}
+              ariaLabel={t.plugins.dev_projects.all_projects}
+            />
+          )}
         </div>
       </ContentBody>
 

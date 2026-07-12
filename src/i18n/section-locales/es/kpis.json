@@ -181,5 +181,7 @@
     "health_snapshot": "Instantánea de salud",
     "manual": "Entrada manual",
     "scan": "Escaneo"
-  }
+  },
+  "kpi_scope_label": "Ámbito",
+  "kpi_scope_this_context": "Este contexto"
 }

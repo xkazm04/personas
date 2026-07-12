@@ -27,8 +27,8 @@ use crate::engine::scheduler as sched_logic;
 use crate::engine::subscription::{
     self, CleanupSubscription, CloudWebhookRelaySubscription, CompositeSubscription,
     CredentialHealthcheckSubscription, EventBusSubscription, OAuthRefreshSubscription,
-    PollingSubscription, RotationSubscription, SharedEventRelaySubscription,
-    TriggerSchedulerSubscription,
+    PollingSubscription, RotationSubscription, SharedEventLocalRelaySubscription,
+    SharedEventRelaySubscription, TriggerSchedulerSubscription,
 };
 #[cfg(feature = "desktop")]
 use crate::engine::subscription::{
@@ -411,6 +411,11 @@ pub fn start_loops(
     // closing the DNS-rebinding TOCTOU window (CWE-367).
     let http = super::url_safety::build_ssrf_safe_client(Duration::from_secs(30));
 
+    // Ensure every existing scrape pipeline has its Signal feeds registered +
+    // subscribed (seeded/pre-feature configs included) so they surface in Studio.
+    #[cfg(feature = "scraper")]
+    super::scraper::reconcile_signal_feeds(&pool);
+
     // Assemble all reactive subscriptions
     #[allow(unused_mut)]
     let mut subscriptions: Vec<Box<dyn subscription::ReactiveSubscription>> = vec![
@@ -470,6 +475,15 @@ pub fn start_loops(
             app: app.clone(),
             state: shared_event_relay_state,
         }),
+        // Local-first delivery of baked curated firings (connector API-change
+        // events). Runs independently of the cloud relay above; no cloud client.
+        Box::new(SharedEventLocalRelaySubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
+        // Runs due saved scrape configs on their cron schedule (embedded Pumper).
+        #[cfg(feature = "scraper")]
+        Box::new(subscription::ScraperScheduleSubscription { pool: pool.clone() }),
         Box::new(subscription::DigestSubscription {
             pool: pool.clone(),
             app: app.clone(),

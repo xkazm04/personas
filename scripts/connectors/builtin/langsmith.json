@@ -42,6 +42,7 @@
   "resources": [],
   "metadata": {
     "template_enabled": true,
+    "allow_private_network": true,
     "summary": "LangSmith (by LangChain) LLM tracing, evaluation, and monitoring — inspect runs, datasets, and prompts for LLM and agent apps.",
     "auth_type": "api_key",
     "auth_type_label": "API Key",

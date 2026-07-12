@@ -1,12 +1,4 @@
 {
-  "install_all": "Installer toutes les dépendances",
-  "log_disk_usage": "Log Disk Usage",
-  "log_disk_tracing": "Tracing logs",
-  "log_disk_crashes": "Crash reports",
-  "log_disk_files_count": "{count} files",
-  "log_disk_retention_hint": "Daily rotation, capped at {limit} files",
-  "log_disk_crash_retention_hint": "Capped at {limit} most recent reports",
-  "log_disk_unavailable": "Log directory stats unavailable.",
   "title": "Vérifications système",
   "subtitle": "Vérification de la préparation de votre environnement",
   "rerun": "Relancer les vérifications",
@@ -27,6 +19,7 @@
   "no_crash_logs": "Aucun journal de plantage enregistré.",
   "crash_auto_cred": "Session auto-identifiant",
   "crash_rust_panic": "Panique Rust",
+  "install_all": "Installer toutes les dépendances",
   "ready_title": "Prêt à créer votre premier agent ?",
   "ready_hint": "Toutes les vérifications sont passées. Laissez-nous vous guider dans la création et l'exécution de votre premier agent.",
   "get_started": "Commencer",
@@ -40,5 +33,12 @@
   "official_page": "Page officielle",
   "edit_key": "Modifier la clé",
   "edit_config": "Modifier la configuration",
-  "signing_in": "Connexion..."
+  "signing_in": "Connexion...",
+  "log_disk_usage": "Log Disk Usage",
+  "log_disk_tracing": "Tracing logs",
+  "log_disk_crashes": "Crash reports",
+  "log_disk_files_count": "{count} files",
+  "log_disk_retention_hint": "Daily rotation, capped at {limit} files",
+  "log_disk_crash_retention_hint": "Capped at {limit} most recent reports",
+  "log_disk_unavailable": "Log directory stats unavailable."
 }

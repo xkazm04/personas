@@ -102,7 +102,7 @@ export const eventBusItems: SubNavItem[] = [
   { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook, devOnly: true },
   { id: 'dead-letter', label: 'Dead Letter Queue', icon: Archive, devOnly: true },
   { id: 'studio', label: 'Chain Studio', icon: GitBranch },
-  { id: 'shared', label: 'Marketplace', icon: Store, devOnly: true },
+  { id: 'shared', label: 'Marketplace', icon: Store },
 ];
 
 export const templateItems: SubNavItem[] = [
@@ -121,6 +121,7 @@ export const artistItems: SubNavItem[] = [
 
 export const devToolsItems: SubNavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'llm-overview', label: 'LLM Overview', icon: BarChart3 },
   { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'goals', label: 'Goals', icon: Target },
   { id: 'lifecycle', label: 'Lifecycle', icon: GitBranch },

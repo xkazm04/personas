@@ -474,6 +474,14 @@
       "marketingModule": "plugins"
     },
     {
+      "doc": "docs/features/plugins/scraper.md",
+      "sourceGlobs": [
+        "src/features/scraper/**",
+        "src-tauri/src/commands/infrastructure/scraper.rs",
+        "src-tauri/src/engine/scraper.rs"
+      ]
+    },
+    {
       "doc": "docs/features/gitlab.md",
       "sourceGlobs": [
         "src/features/plugins/gitlab/**",

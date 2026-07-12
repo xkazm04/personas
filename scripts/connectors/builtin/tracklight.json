@@ -42,6 +42,7 @@
   "resources": [],
   "metadata": {
     "template_enabled": true,
+    "allow_private_network": true,
     "summary": "LightTrack self-hosted LLM observability + scoring — track calls, cost, and profit across OpenAI/Anthropic/Gemini, with LLM-as-judge benchmarks and per-project limits.",
     "auth_type": "api_key",
     "auth_type_label": "API Key",

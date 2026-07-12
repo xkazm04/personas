@@ -119,6 +119,7 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "ستملأ {count} إعدادات أثناء الاعتماد",
   "_comment_tags_heading": "Section heading for the tags list",
+  "tags_heading": "Tags",
   "tag_filter_tooltip": "عرض الوصفات بهذا الوسم",
   "guardrails_heading": "الضوابط والذاكرة",
   "events_label": "الأحداث",
@@ -229,6 +230,5 @@
   "update_badge": "تحديث",
   "update_badge_detail_tooltip": "تم الاعتماد على الإصدار v{from}؛ الكتالوج الآن في الإصدار v{to}. أزل وأعد الاعتماد للتحديث.",
   "update_badge_tooltip": "تتوفر نسخة أحدث من هذه القدرة — أزل وأعد الاعتماد للتحديث",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tags"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

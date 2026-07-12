@@ -64,20 +64,20 @@ export function LifecycleProjectPicker() {
   }));
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative">
+    <div className="flex items-center gap-2 min-w-0 max-w-full">
+      <div className="relative min-w-0">
         <ThemedSelect
           filterable
           options={options}
           value={activeProjectId ?? ''}
           onValueChange={(v) => setActiveProject(v)}
           placeholder={t.plugins.dev_tools.select_project}
-          wrapperClassName="w-[260px]"
+          wrapperClassName="w-[260px] max-w-full min-w-0"
         />
       </div>
       {activeProject && (
         <div
-          className={`flex items-center gap-1.5 px-2 py-1 rounded-interactive border ${
+          className={`flex items-center gap-1.5 px-2 py-1 rounded-interactive border shrink-0 ${
             hasGithub
               ? 'bg-emerald-500/10 border-emerald-500/25'
               : 'bg-amber-500/5 border-amber-500/20'

@@ -181,5 +181,7 @@
     "health_snapshot": "স্বাস্থ্য স্ন্যাপশট",
     "manual": "ম্যানুয়াল এন্ট্রি",
     "scan": "স্ক্যান"
-  }
+  },
+  "kpi_scope_label": "পরিধি",
+  "kpi_scope_this_context": "এই প্রসঙ্গ"
 }

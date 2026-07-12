@@ -1,6 +1,24 @@
 {
+  "title": "保管庫",
+  "subtitle": "認証情報の追加方法を選択してください",
+  "add_from_catalog": "カタログから追加",
+  "ai_designed": "AI設計の認証情報",
   "workspace_connect": "ワークスペース接続",
   "quick_start": "クイックスタート",
+  "health": {
+    "healthy": "正常",
+    "needs_attention": "要対応",
+    "untested": "未テスト"
+  },
+  "list": {
+    "no_credentials": "認証済みサービスが見つかりません。下から手動で選択してください。",
+    "delete_confirm": "この認証情報を削除しますか？",
+    "blast_radius": "影響範囲",
+    "no_dependencies": "この認証情報に依存するエージェントはありません。安全に変更・削除できます。",
+    "affected_agents": "影響を受けるエージェント",
+    "affected_events": "影響を受けるイベント",
+    "sort_label": "並び替え:"
+  },
   "import": {
     "title": "インポート元",
     "picker_subtitle": "シークレットのソースを選択してください",
@@ -26,23 +44,6 @@
     "import_secrets_other": "{count} 件のシークレットをインポート"
   },
   "features": {
-    "anomaly": {
-      "healthy": "正常",
-      "transient_issues": "一時的な問題",
-      "degrading": "悪化中",
-      "permanent_errors": "継続的なエラー",
-      "critical": "重大",
-      "stale": "期限切れ",
-      "samples": "{count}回チェック",
-      "permanent": "継続: {rate}",
-      "transient": "一時的: {rate}",
-      "tolerance": "許容範囲: {rate}"
-    },
-    "intelligence": {
-      "operation": "操作",
-      "detail": "詳細",
-      "time": "時刻"
-    },
     "anomaly_detected": "異常検出: 以前成功していた認証情報が突然失敗しています。失効の可能性があります。",
     "history": "履歴",
     "event_triggers": "イベントトリガー",
@@ -66,6 +67,18 @@
       "enable_failed": "ローテーションの有効化に失敗: {error}",
       "last_rotated": "{time}に最後にローテーション"
     },
+    "anomaly": {
+      "healthy": "正常",
+      "transient_issues": "一時的な問題",
+      "degrading": "悪化中",
+      "permanent_errors": "継続的なエラー",
+      "critical": "重大",
+      "stale": "期限切れ",
+      "samples": "{count}回チェック",
+      "permanent": "継続: {rate}",
+      "transient": "一時的: {rate}",
+      "tolerance": "許容範囲: {rate}"
+    },
     "rotation_badge": {
       "disabled": "無効",
       "perm_errors": "継続的なエラー",
@@ -80,6 +93,11 @@
       "op_deleted": "削除済み",
       "op_healthcheck": "接続テスト",
       "filter_all": "すべて"
+    },
+    "intelligence": {
+      "operation": "操作",
+      "detail": "詳細",
+      "time": "時刻"
     }
   },
   "negotiator": {
@@ -187,10 +205,15 @@
   "body": {
     "authorizing": "{name}で認証中...",
     "authorize_with": "{name}で認証",
-    "consent_completed": "{name}の同意が{time}に完了しました",
     "authorize_hint": "{name}のサインイン画面を開き、承認後にアクセスを保存します。",
+    "consent_completed": "{name}の同意が{time}に完了しました",
     "update_failed": "認証情報の更新に失敗しました",
     "delete_credential": "認証情報を削除"
+  },
+  "connector": {
+    "filter_all": "すべて",
+    "filter_connected": "接続済み",
+    "filter_available": "利用可能"
   },
   "auto_cred": {
     "guided_setup": "ガイド付きセットアップ",
@@ -231,6 +254,38 @@
     "save_procedure": "手順を保存",
     "procedure_saved": "手順を保存しました"
   },
+  "vector": {
+    "documents_tab": "ドキュメント",
+    "search_tab": "検索",
+    "settings_tab": "設定",
+    "ingest_title": "ドキュメントを追加",
+    "ingest_hint": "ここにファイルをドロップするかクリックして参照",
+    "ingest_drop": "ファイルをドロップして追加",
+    "ingest_supported": "対応形式: txt、md、html、csv、json、yaml、コードファイル",
+    "starting_ingestion": "ファイル処理中...",
+    "no_valid_files": "有効なファイルパスが見つかりません。個別のファイルをドロップしてみてください。",
+    "no_documents": "まだドキュメントはありません",
+    "no_documents_hint": "ここにファイルをドロップするか、テキストを貼り付けるか、ディレクトリをスキャンしてナレッジベースの構築を始めてください。",
+    "refresh": "更新",
+    "paste_text": "テキストを貼り付け",
+    "directory": "ディレクトリ",
+    "delete_document": "ドキュメントを削除",
+    "document_count_one": "{count}件のドキュメント",
+    "document_count_other": "{count}件のドキュメント",
+    "show_full": "全文を表示",
+    "show_less": "折りたたむ",
+    "copy_content": "内容をコピー",
+    "kb_info": "ナレッジベース情報",
+    "embedding_model": "検索モデル",
+    "dimensions": "次元数",
+    "chunk_size": "セクションサイズ",
+    "chunk_overlap": "セクション重複",
+    "statistics": "統計",
+    "documents": "ドキュメント",
+    "chunks": "セクション",
+    "local_embedding": "ローカル検索",
+    "local_embedding_hint": "検索インデックスは{model}（{dims}次元）を使用してローカルで実行されます。データは外部に送信されません。モデル（約23MB）は初回使用時にダウンロードされ、ローカルに保存されます。"
+  },
   "design_modal": {
     "title": "認証情報を設計",
     "error_title": "問題が発生しました",
@@ -246,12 +301,32 @@
     "start_over": "最初からやり直す",
     "try_again_with": "リクエストで再試行"
   },
+  "desktop": {
+    "installed": "インストール済み",
+    "running": "実行中",
+    "not_installed": "未インストール"
+  },
+  "graph": {
+    "no_dependencies": "依存関係なし",
+    "connection_count_one": "{count}件の接続",
+    "connection_count_other": "{count}件の接続",
+    "dep_count_one": "{count}件の依存",
+    "dep_count_other": "{count}件の依存",
+    "not_tested": "未テスト",
+    "healthy": "正常",
+    "unhealthy": "異常"
+  },
+  "wizard": {
+    "detected": "検出済み（{count}）",
+    "available": "利用可能（{count}）",
+    "already_added": "追加済み（{count}）",
+    "no_match": "\"{search}\"に一致するサービスはありません",
+    "already_added_badge": "追加済み",
+    "local": "ローカル",
+    "cli_auth": "CLI認証",
+    "session": "セッション"
+  },
   "playground": {
-    "mcp_run": "実行",
-    "mcp_error": "エラー",
-    "mcp_success": "成功",
-    "mcp_empty": "（空）",
-    "response_empty": "（空のレスポンス）",
     "tab_overview": "概要",
     "tab_api_explorer": "APIエクスプローラー",
     "tab_recipes": "レシピ",
@@ -265,9 +340,14 @@
     "path_placeholder": "/api/v1/resource",
     "sending": "送信中...",
     "mcp_input_schema": "入力スキーマ",
+    "mcp_run": "実行",
+    "mcp_error": "エラー",
+    "mcp_success": "成功",
+    "mcp_empty": "（空）",
     "mcp_discover": "MCPサーバーツールを検出",
     "mcp_discover_hint": "MCPサーバーに接続して利用可能なツールを検出し、テストします。",
     "mcp_discover_button": "ツールを検出",
+    "response_empty": "（空のレスポンス）",
     "header": "ヘッダー",
     "value": "値",
     "path_parameters": "パスパラメータ",
@@ -641,14 +721,27 @@
     "title_dependencies": "依存関係",
     "title_databases": "データベース"
   },
+  "bulk_healthcheck": {
+    "title": "ヘルスチェック結果",
+    "needs_attention": "要注意",
+    "slowest_responses": "最も遅い応答",
+    "passed_count": "{count} 件合格",
+    "failed_count": "{count} 件失敗",
+    "total_count": "{count} 件合計"
+  },
+  "health_bar": {
+    "healthy": "正常",
+    "needs_attention": "要注意",
+    "untested": "未テスト"
+  },
   "breadcrumb": {
     "aria_label": "ボルトのパンくずリスト"
   },
   "credential_card": {
-    "delete_credential": "認証情報を削除",
     "deleting": "{name}を削除中...",
     "no_connector": "この認証情報タイプに利用可能なコネクタ定義がありません。",
     "stored_result": "保存済みの接続テスト結果",
+    "delete_credential": "認証情報を削除",
     "corrupted": "破損",
     "corrupted_tooltip": "ヘルスチェックのリングバッファメタデータが破損しています。次の正常なヘルスチェックが不正データを上書きするまで、異常スコアは利用できません。",
     "field_count_one": "{count}フィールド",
@@ -690,6 +783,21 @@
     "label_type": "種類",
     "unverified_warning": "すべての依存関係を確認できませんでした。接続されているエージェントや自動化の一部が表示されていない場合があります。"
   },
+  "card_body": {
+    "failed_update": "認証情報の更新に失敗しました",
+    "authorizing_with": "{name}で認証中...",
+    "authorize_with": "{name}で認証",
+    "authorize_hint": "アプリ管理の{name}の同意を起動し、承認後にリフレッシュトークンを更新します。",
+    "consent_completed": "{name}の同意が{time}に完了しました"
+  },
+  "card_details": {
+    "tab_intelligence": "インテリジェンス",
+    "tab_rotation": "ローテーション",
+    "tab_token_lifetime": "トークン有効期間",
+    "tab_services": "サービス（{count}）",
+    "tab_events": "イベント（{count}）",
+    "tab_audit": "監査"
+  },
   "intelligence_tab": {
     "loading": "インテリジェンスデータを読み込み中",
     "tab_overview": "概要",
@@ -710,6 +818,18 @@
     "link_structural": "構造的",
     "link_observed": "観測済み",
     "via_connector": "{connector}経由"
+  },
+  "token_metrics": {
+    "loading": "メトリクスを読み込み中...",
+    "no_metrics": "まだトークン更新メトリクスが記録されていません。最初のOAuthトークン更新後にメトリクスが表示されます。",
+    "trend_warning": "トークンの有効期間が短くなっています — プロバイダーのスロットリングまたはポリシー変更の可能性があります。",
+    "total_refreshes": "総更新回数",
+    "failure_rate": "失敗率",
+    "avg_lifetime": "平均有効期間",
+    "avg_drift": "平均ドリフト",
+    "recent_ttls": "最近のプロバイダーTTL（新しい順）",
+    "recent_refreshes": "最近の更新",
+    "fallback_used": "フォールバック ({fallback}秒) が更新の {rate}% ({count}/{total}) で使用されました — プロバイダが省略"
   },
   "reauth_banner": {
     "access_revoked": ") -- アクセスが取り消されました。自動化を再開するには再認証してください。",
@@ -864,6 +984,66 @@
     "health_failing": "障害",
     "health_untested": "未テスト"
   },
+  "wizard_detect": {
+    "no_services": "\"{search}\"に一致するサービスはありません",
+    "select_services": "認証情報を追加するサービスを選択するか、スキャンして自動検出します。",
+    "scanning": "CLIツールとブラウザセッションをスキャン中...",
+    "scan_button": "認証済みサービスをスキャン",
+    "search_services": "サービスを検索...",
+    "desktop_bridge": "デスクトップブリッジ -- 自動検出",
+    "batch_complete": "バッチセットアップ完了",
+    "skip_service": "このサービスをスキップ",
+    "no_filter_match": "別の検索語を試すか、フィルターをクリアしてください。",
+    "set_up_credentials": "認証情報をセットアップ",
+    "clear_selection": "選択をクリア",
+    "set_up_services": "{plural} {count} サービスをセットアップします",
+    "setting_up": "{total} 件中 {current} 件をセットアップ中",
+    "wizard_title": "認証情報セットアップウィザード",
+    "choose_service": "セットアップするサービスを選択",
+    "ai_walk_description": "AIがAPI認証情報の取得を段階的にガイドします。",
+    "wizard_subtitle": "AIガイド付き認証情報セットアップ",
+    "wizard_subtitle_batch": "{plural} {count} サービスをセットアップしています"
+  },
+  "autopilot": {
+    "title": "API自動操縦",
+    "input_hint": "OpenAPI仕様のURLまたは内容を貼り付けてコネクタを自動生成",
+    "preview_hint": "解析されたAPIを確認して含めるエンドポイントを選択",
+    "generated_hint": "コネクタが正常に生成されました",
+    "connector_generated": "コネクタが正常に生成されました",
+    "api_playground": "APIプレイグラウンド",
+    "api_playground_hint": "生成されたAPIツールを使用前にテスト",
+    "paste_spec": "OpenAPI仕様を貼り付け（JSONまたはYAML）",
+    "valid_url_error": "有効なURLを入力してください（例: https://api.example.com/openapi.json）",
+    "authentication": "認証",
+    "connector_name": "コネクタ名",
+    "color": "カラー",
+    "endpoints_selected": "エンドポイント（{selected}/{total}件選択）",
+    "generating": "生成中...",
+    "generate_connector": "コネクタを生成（{count}ツール）",
+    "base_url": "ベースURL",
+    "headers_label": "ヘッダー",
+    "header_name_placeholder": "ヘッダー名",
+    "query_parameters": "クエリパラメータ",
+    "param_name_placeholder": "パラメータ名",
+    "request_body": "リクエストボディ（JSON）",
+    "from_url": "URLから",
+    "paste_content": "コンテンツを貼り付け",
+    "openapi_spec_url": "OpenAPI仕様のURL",
+    "openapi_format_hint": "OpenAPI 3.x および Swagger 2.x 仕様をJSONまたはYAML形式でサポート",
+    "parsing_spec": "仕様を解析中...",
+    "parse_analyze": "解析と分析",
+    "connector_in_catalog": "{connectorLabel} が {toolCount} 件のツール定義とともにコネクタカタログで利用可能になりました。",
+    "generated_tools": "生成されたツール ({count})",
+    "credential_fields": "認証情報フィールド",
+    "open_playground": "プレイグラウンドを開く",
+    "copy_connector_id": "コネクタIDをコピー",
+    "go_to_catalog": "カタログへ",
+    "response_headers": "レスポンスヘッダ ({count})",
+    "base_url_placeholder": "https://api.example.com",
+    "openapi_url_placeholder": "https://api.example.com/openapi.json",
+    "auth_schemes": "認証スキーム",
+    "body_placeholder": "{ \"key\": \"value\" }"
+  },
   "foraging": {
     "no_credentials_found": "認証情報が見つかりません",
     "no_credentials_hint": "OPENAI_API_KEYなどの環境変数を設定するか、~/.aws/credentialsを設定してみてください。",
@@ -996,6 +1176,18 @@
     "sort_most_used_with_recipes": "Most-used with recipes",
     "new_connector_ribbon": "New",
     "new_connector_tooltip": "Added in the last 30 days"
+  },
+  "cli_capture": {
+    "cta": "ローカルCLIからインポート",
+    "hint": "APIキーを貼り付ける代わりに、既にログイン済みのローカルCLIを使用します。",
+    "running": "ローカルCLIを実行中...",
+    "success": "CLIから認証情報を取得しました",
+    "token_ttl_notice": "このトークンは {seconds} 秒で期限切れになり、自動的に更新されます。",
+    "source_label": "CLI",
+    "missing_binary": "`{binary}` がインストールされていない、または許可リストにない場所にあります。",
+    "unauthenticated": "{binary} にサインインしていません。{instruction}",
+    "capture_failed": "CLIからの取得に失敗しました: {detail}",
+    "timeout": "CLIからの取得がタイムアウトしました。まず手動でコマンドを実行してみてください。"
   },
   "schemas": {
     "none_configured": "設定なし。",
@@ -1212,6 +1404,11 @@
     "retry_authorized": "認証しました — 再試行",
     "retry_failed": "再試行に失敗しました"
   },
+  "rotation_insight": {
+    "perm_errors": "永続的なエラーが検出されました — ローテーションを試みてアラートを送信中。",
+    "degrading": "持続的な低下 — 予防的なローテーションをトリガー中。",
+    "backoff": "一時的な失敗 — 指数バックオフが有効です。"
+  },
   "schema_configs": {
     "mcp": {
       "title": "MCP Server",
@@ -1395,202 +1592,5 @@
     "time_tracking": "時間追跡",
     "vector_search": "ベクトル検索",
     "web_scraping": "Webスクレイピング"
-  },
-  "title": "保管庫",
-  "subtitle": "認証情報の追加方法を選択してください",
-  "add_from_catalog": "カタログから追加",
-  "ai_designed": "AI設計の認証情報",
-  "health": {
-    "healthy": "正常",
-    "needs_attention": "要対応",
-    "untested": "未テスト"
-  },
-  "list": {
-    "no_credentials": "認証済みサービスが見つかりません。下から手動で選択してください。",
-    "delete_confirm": "この認証情報を削除しますか？",
-    "blast_radius": "影響範囲",
-    "no_dependencies": "この認証情報に依存するエージェントはありません。安全に変更・削除できます。",
-    "affected_agents": "影響を受けるエージェント",
-    "affected_events": "影響を受けるイベント",
-    "sort_label": "並び替え:"
-  },
-  "connector": {
-    "filter_all": "すべて",
-    "filter_connected": "接続済み",
-    "filter_available": "利用可能"
-  },
-  "vector": {
-    "documents_tab": "ドキュメント",
-    "search_tab": "検索",
-    "settings_tab": "設定",
-    "ingest_title": "ドキュメントを追加",
-    "ingest_hint": "ここにファイルをドロップするかクリックして参照",
-    "ingest_drop": "ファイルをドロップして追加",
-    "ingest_supported": "対応形式: txt、md、html、csv、json、yaml、コードファイル",
-    "starting_ingestion": "ファイル処理中...",
-    "no_valid_files": "有効なファイルパスが見つかりません。個別のファイルをドロップしてみてください。",
-    "no_documents": "まだドキュメントはありません",
-    "no_documents_hint": "ここにファイルをドロップするか、テキストを貼り付けるか、ディレクトリをスキャンしてナレッジベースの構築を始めてください。",
-    "refresh": "更新",
-    "paste_text": "テキストを貼り付け",
-    "directory": "ディレクトリ",
-    "delete_document": "ドキュメントを削除",
-    "document_count_one": "{count}件のドキュメント",
-    "document_count_other": "{count}件のドキュメント",
-    "show_full": "全文を表示",
-    "show_less": "折りたたむ",
-    "copy_content": "内容をコピー",
-    "kb_info": "ナレッジベース情報",
-    "embedding_model": "検索モデル",
-    "dimensions": "次元数",
-    "chunk_size": "セクションサイズ",
-    "chunk_overlap": "セクション重複",
-    "statistics": "統計",
-    "documents": "ドキュメント",
-    "chunks": "セクション",
-    "local_embedding": "ローカル検索",
-    "local_embedding_hint": "検索インデックスは{model}（{dims}次元）を使用してローカルで実行されます。データは外部に送信されません。モデル（約23MB）は初回使用時にダウンロードされ、ローカルに保存されます。"
-  },
-  "desktop": {
-    "installed": "インストール済み",
-    "running": "実行中",
-    "not_installed": "未インストール"
-  },
-  "graph": {
-    "no_dependencies": "依存関係なし",
-    "connection_count_one": "{count}件の接続",
-    "connection_count_other": "{count}件の接続",
-    "dep_count_one": "{count}件の依存",
-    "dep_count_other": "{count}件の依存",
-    "not_tested": "未テスト",
-    "healthy": "正常",
-    "unhealthy": "異常"
-  },
-  "wizard": {
-    "detected": "検出済み（{count}）",
-    "available": "利用可能（{count}）",
-    "already_added": "追加済み（{count}）",
-    "no_match": "\"{search}\"に一致するサービスはありません",
-    "already_added_badge": "追加済み",
-    "local": "ローカル",
-    "cli_auth": "CLI認証",
-    "session": "セッション"
-  },
-  "bulk_healthcheck": {
-    "title": "ヘルスチェック結果",
-    "needs_attention": "要注意",
-    "slowest_responses": "最も遅い応答",
-    "passed_count": "{count} 件合格",
-    "failed_count": "{count} 件失敗",
-    "total_count": "{count} 件合計"
-  },
-  "health_bar": {
-    "healthy": "正常",
-    "needs_attention": "要注意",
-    "untested": "未テスト"
-  },
-  "card_body": {
-    "failed_update": "認証情報の更新に失敗しました",
-    "authorizing_with": "{name}で認証中...",
-    "authorize_with": "{name}で認証",
-    "authorize_hint": "アプリ管理の{name}の同意を起動し、承認後にリフレッシュトークンを更新します。",
-    "consent_completed": "{name}の同意が{time}に完了しました"
-  },
-  "card_details": {
-    "tab_intelligence": "インテリジェンス",
-    "tab_rotation": "ローテーション",
-    "tab_token_lifetime": "トークン有効期間",
-    "tab_services": "サービス（{count}）",
-    "tab_events": "イベント（{count}）",
-    "tab_audit": "監査"
-  },
-  "token_metrics": {
-    "loading": "メトリクスを読み込み中...",
-    "no_metrics": "まだトークン更新メトリクスが記録されていません。最初のOAuthトークン更新後にメトリクスが表示されます。",
-    "trend_warning": "トークンの有効期間が短くなっています — プロバイダーのスロットリングまたはポリシー変更の可能性があります。",
-    "total_refreshes": "総更新回数",
-    "failure_rate": "失敗率",
-    "avg_lifetime": "平均有効期間",
-    "avg_drift": "平均ドリフト",
-    "recent_ttls": "最近のプロバイダーTTL（新しい順）",
-    "recent_refreshes": "最近の更新",
-    "fallback_used": "フォールバック ({fallback}秒) が更新の {rate}% ({count}/{total}) で使用されました — プロバイダが省略"
-  },
-  "wizard_detect": {
-    "no_services": "\"{search}\"に一致するサービスはありません",
-    "select_services": "認証情報を追加するサービスを選択するか、スキャンして自動検出します。",
-    "scanning": "CLIツールとブラウザセッションをスキャン中...",
-    "scan_button": "認証済みサービスをスキャン",
-    "search_services": "サービスを検索...",
-    "desktop_bridge": "デスクトップブリッジ -- 自動検出",
-    "batch_complete": "バッチセットアップ完了",
-    "skip_service": "このサービスをスキップ",
-    "no_filter_match": "別の検索語を試すか、フィルターをクリアしてください。",
-    "set_up_credentials": "認証情報をセットアップ",
-    "clear_selection": "選択をクリア",
-    "set_up_services": "{plural} {count} サービスをセットアップします",
-    "setting_up": "{total} 件中 {current} 件をセットアップ中",
-    "wizard_title": "認証情報セットアップウィザード",
-    "choose_service": "セットアップするサービスを選択",
-    "ai_walk_description": "AIがAPI認証情報の取得を段階的にガイドします。",
-    "wizard_subtitle": "AIガイド付き認証情報セットアップ",
-    "wizard_subtitle_batch": "{plural} {count} サービスをセットアップしています"
-  },
-  "autopilot": {
-    "title": "API自動操縦",
-    "input_hint": "OpenAPI仕様のURLまたは内容を貼り付けてコネクタを自動生成",
-    "preview_hint": "解析されたAPIを確認して含めるエンドポイントを選択",
-    "generated_hint": "コネクタが正常に生成されました",
-    "connector_generated": "コネクタが正常に生成されました",
-    "api_playground": "APIプレイグラウンド",
-    "api_playground_hint": "生成されたAPIツールを使用前にテスト",
-    "paste_spec": "OpenAPI仕様を貼り付け（JSONまたはYAML）",
-    "valid_url_error": "有効なURLを入力してください（例: https://api.example.com/openapi.json）",
-    "authentication": "認証",
-    "connector_name": "コネクタ名",
-    "color": "カラー",
-    "endpoints_selected": "エンドポイント（{selected}/{total}件選択）",
-    "generating": "生成中...",
-    "generate_connector": "コネクタを生成（{count}ツール）",
-    "base_url": "ベースURL",
-    "headers_label": "ヘッダー",
-    "header_name_placeholder": "ヘッダー名",
-    "query_parameters": "クエリパラメータ",
-    "param_name_placeholder": "パラメータ名",
-    "request_body": "リクエストボディ（JSON）",
-    "from_url": "URLから",
-    "paste_content": "コンテンツを貼り付け",
-    "openapi_spec_url": "OpenAPI仕様のURL",
-    "openapi_format_hint": "OpenAPI 3.x および Swagger 2.x 仕様をJSONまたはYAML形式でサポート",
-    "parsing_spec": "仕様を解析中...",
-    "parse_analyze": "解析と分析",
-    "connector_in_catalog": "{connectorLabel} が {toolCount} 件のツール定義とともにコネクタカタログで利用可能になりました。",
-    "generated_tools": "生成されたツール ({count})",
-    "credential_fields": "認証情報フィールド",
-    "open_playground": "プレイグラウンドを開く",
-    "copy_connector_id": "コネクタIDをコピー",
-    "go_to_catalog": "カタログへ",
-    "response_headers": "レスポンスヘッダ ({count})",
-    "base_url_placeholder": "https://api.example.com",
-    "openapi_url_placeholder": "https://api.example.com/openapi.json",
-    "auth_schemes": "認証スキーム",
-    "body_placeholder": "{ \"key\": \"value\" }"
-  },
-  "cli_capture": {
-    "cta": "ローカルCLIからインポート",
-    "hint": "APIキーを貼り付ける代わりに、既にログイン済みのローカルCLIを使用します。",
-    "running": "ローカルCLIを実行中...",
-    "success": "CLIから認証情報を取得しました",
-    "token_ttl_notice": "このトークンは {seconds} 秒で期限切れになり、自動的に更新されます。",
-    "source_label": "CLI",
-    "missing_binary": "`{binary}` がインストールされていない、または許可リストにない場所にあります。",
-    "unauthenticated": "{binary} にサインインしていません。{instruction}",
-    "capture_failed": "CLIからの取得に失敗しました: {detail}",
-    "timeout": "CLIからの取得がタイムアウトしました。まず手動でコマンドを実行してみてください。"
-  },
-  "rotation_insight": {
-    "perm_errors": "永続的なエラーが検出されました — ローテーションを試みてアラートを送信中。",
-    "degrading": "持続的な低下 — 予防的なローテーションをトリガー中。",
-    "backoff": "一時的な失敗 — 指数バックオフが有効です。"
   }
 }

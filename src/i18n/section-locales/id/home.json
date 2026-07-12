@@ -1,4 +1,28 @@
 {
+  "welcome": "Selamat Datang",
+  "greeting_morning": "Selamat Pagi",
+  "greeting_afternoon": "Selamat Siang",
+  "greeting_evening": "Selamat Malam",
+  "operator": "Operator",
+  "summary_empty": "Mulai dengan membuat agen pertama Anda atau menjelajahi platform.",
+  "summary_stats": "Anda memiliki {personasCount} agen{personasPlural} dan {credentialsCount} kredensial{credentialsPlural} yang dikonfigurasi.",
+  "quick_navigation": "Navigasi Cepat",
+  "platform_label": "platform Personas",
+  "roadmap": {
+    "title": "Peta Jalan Produk",
+    "subtitle": "Yang sedang kami bangun sekarang dan berikutnya.",
+    "unavailable": "Peta jalan tidak tersedia",
+    "unavailable_hint": "Tidak dapat memuat peta jalan produk. Periksa koneksi Anda dan coba lagi.",
+    "status_in_progress": "Sedang Berjalan",
+    "status_next": "Berikutnya",
+    "status_planned": "Direncanakan",
+    "status_completed": "Selesai",
+    "priority_now": "Sekarang",
+    "priority_next": "Berikutnya",
+    "priority_later": "Nanti",
+    "in_progress_count": "{count} Sedang Berjalan",
+    "next_count": "{count} Berikutnya"
+  },
   "setup": {
     "choose_role": "Pilih peran Anda",
     "choose_role_hint": "Kami akan menyesuaikan pengalaman dengan cara kerja Anda.",
@@ -26,6 +50,54 @@
     "role": "Peran",
     "tool": "Alat",
     "goal": "Tujuan"
+  },
+  "fleet": {
+    "executions_today": "Eksekusi Hari Ini",
+    "success_rate": "Tingkat Keberhasilan",
+    "active_agents": "Agen Aktif",
+    "credentials": "Kredensial"
+  },
+  "nav": {
+    "overview": {
+      "label": "Ringkasan",
+      "description": "Analitik dasbor, riwayat eksekusi, dan pemantauan sistem secara real-time di semua agen"
+    },
+    "personas": {
+      "label": "Agen",
+      "description": "Buat, konfigurasi, dan kelola persona agen AI dengan perilaku dan kemampuan khusus"
+    },
+    "events": {
+      "label": "Peristiwa",
+      "description": "Konfigurasi pemicu peristiwa, pendengar webhook, dan otomasi berbasis jadwal"
+    },
+    "credentials": {
+      "label": "Kredensial",
+      "description": "Kelola kredensial API, koneksi basis data, token OAuth, dan rahasia terenkripsi"
+    },
+    "design-reviews": {
+      "label": "Templat",
+      "description": "Impor alur kerja n8n, jelajahi galeri templat, dan hasilkan cetak biru agen"
+    },
+    "team": {
+      "label": "Tim",
+      "description": "Bangun pipeline tim multi-agen dengan orkestrasi dan perutean seret-dan-lepas"
+    },
+    "cloud": {
+      "label": "Cloud",
+      "description": "Deploy agen ke infrastruktur cloud, kelola jadwal, dan integrasikan GitLab CI"
+    },
+    "settings": {
+      "label": "Pengaturan",
+      "description": "Preferensi akun, tema tampilan, aturan notifikasi, dan konfigurasi mesin"
+    },
+    "plugins": {
+      "label": "Plugin",
+      "description": "Perluas agen Anda dengan plugin pihak ketiga dan ekstensi kustom"
+    },
+    "teams": {
+      "label": "Tim",
+      "description": "Gabungkan beberapa agen menjadi tim yang bekerja bersama dalam alur kerja multi-langkah"
+    }
   },
   "learning": {
     "title": "Pusat Pembelajaran",
@@ -78,6 +150,13 @@
     "get_started": "Mulai",
     "language": "Bahasa"
   },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Pustaka)",
+    "personas_tab": "Personas (Animasi)",
+    "lucide_footer": "lucide-react -- pustaka ikon generik -- statis",
+    "personas_footer": "9 ikon kustom -- motif neural/sirkuit -- animasi CSS -- adaptif tema"
+  },
+  "commander": "Commander",
   "resume": {
     "failure": "Kegagalan belum dibaca di {personaName} — selidiki",
     "tour": "Lanjutkan {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
@@ -109,84 +188,5 @@
     "build_cta": "Buat agen pertama Anda",
     "subtitle": "Jelaskan pekerjaan dalam bahasa biasa dan kami akan menyiapkan agen yang berfungsi — atau minta asisten untuk melakukannya untuk Anda.",
     "title": "Buat agen pertama Anda"
-  },
-  "welcome": "Selamat Datang",
-  "greeting_morning": "Selamat Pagi",
-  "greeting_afternoon": "Selamat Siang",
-  "greeting_evening": "Selamat Malam",
-  "operator": "Operator",
-  "commander": "Commander",
-  "summary_empty": "Mulai dengan membuat agen pertama Anda atau menjelajahi platform.",
-  "summary_stats": "Anda memiliki {personasCount} agen{personasPlural} dan {credentialsCount} kredensial{credentialsPlural} yang dikonfigurasi.",
-  "quick_navigation": "Navigasi Cepat",
-  "platform_label": "platform Personas",
-  "roadmap": {
-    "title": "Peta Jalan Produk",
-    "subtitle": "Yang sedang kami bangun sekarang dan berikutnya.",
-    "unavailable": "Peta jalan tidak tersedia",
-    "unavailable_hint": "Tidak dapat memuat peta jalan produk. Periksa koneksi Anda dan coba lagi.",
-    "status_in_progress": "Sedang Berjalan",
-    "status_next": "Berikutnya",
-    "status_planned": "Direncanakan",
-    "status_completed": "Selesai",
-    "priority_now": "Sekarang",
-    "priority_next": "Berikutnya",
-    "priority_later": "Nanti",
-    "in_progress_count": "{count} Sedang Berjalan",
-    "next_count": "{count} Berikutnya"
-  },
-  "fleet": {
-    "executions_today": "Eksekusi Hari Ini",
-    "success_rate": "Tingkat Keberhasilan",
-    "active_agents": "Agen Aktif",
-    "credentials": "Kredensial"
-  },
-  "nav": {
-    "overview": {
-      "label": "Ringkasan",
-      "description": "Analitik dasbor, riwayat eksekusi, dan pemantauan sistem secara real-time di semua agen"
-    },
-    "personas": {
-      "label": "Agen",
-      "description": "Buat, konfigurasi, dan kelola persona agen AI dengan perilaku dan kemampuan khusus"
-    },
-    "events": {
-      "label": "Peristiwa",
-      "description": "Konfigurasi pemicu peristiwa, pendengar webhook, dan otomasi berbasis jadwal"
-    },
-    "credentials": {
-      "label": "Kredensial",
-      "description": "Kelola kredensial API, koneksi basis data, token OAuth, dan rahasia terenkripsi"
-    },
-    "design-reviews": {
-      "label": "Templat",
-      "description": "Impor alur kerja n8n, jelajahi galeri templat, dan hasilkan cetak biru agen"
-    },
-    "team": {
-      "label": "Tim",
-      "description": "Bangun pipeline tim multi-agen dengan orkestrasi dan perutean seret-dan-lepas"
-    },
-    "teams": {
-      "label": "Tim",
-      "description": "Gabungkan beberapa agen menjadi tim yang bekerja bersama dalam alur kerja multi-langkah"
-    },
-    "cloud": {
-      "label": "Cloud",
-      "description": "Deploy agen ke infrastruktur cloud, kelola jadwal, dan integrasikan GitLab CI"
-    },
-    "settings": {
-      "label": "Pengaturan",
-      "description": "Preferensi akun, tema tampilan, aturan notifikasi, dan konfigurasi mesin"
-    },
-    "plugins": {
-      "label": "Plugin",
-      "description": "Perluas agen Anda dengan plugin pihak ketiga dan ekstensi kustom"
-    }
-  },
-  "icon_showcase": {
-    "lucide_tab": "Lucide (Pustaka)",
-    "personas_tab": "Personas (Animasi)",
-    "lucide_footer": "lucide-react -- pustaka ikon generik -- statis",
-    "personas_footer": "9 ikon kustom -- motif neural/sirkuit -- animasi CSS -- adaptif tema"
   }
 }

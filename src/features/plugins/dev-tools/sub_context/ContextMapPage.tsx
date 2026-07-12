@@ -23,6 +23,8 @@ import { parseJsonArray } from './contextMapTypes';
 import ScanOverlay from './ScanOverlay';
 import ContextDetail from './ContextDetail';
 import GroupList from './GroupList';
+import UseCasePanel from './UseCasePanel';
+import { useUseCases } from './useUseCases';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
@@ -481,6 +483,31 @@ export default function ContextMapPage() {
 
   const selectedCtx = groups.flatMap((g) => g.contexts).find((c) => c.id === selectedCtxId);
 
+  // ---- Use-case slice layer ------------------------------------------------
+  // A use case cuts across contexts, so selecting one highlights its whole slice
+  // on the board — the one interaction that makes the layer legible.
+  const useCaseState = useUseCases(activeProjectId ?? null);
+  const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
+  const highlightedContextIds = useMemo(() => {
+    const uc = useCaseState.useCases.find((u) => u.id === selectedUseCaseId);
+    return new Set(uc?.context_ids ?? []);
+  }, [useCaseState.useCases, selectedUseCaseId]);
+  const useCaseCoverageByContext = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const uc of useCaseState.useCases) {
+      if (uc.status === 'archived') continue;
+      for (const cid of uc.context_ids) map.set(cid, (map.get(cid) ?? 0) + 1);
+    }
+    return map;
+  }, [useCaseState.useCases]);
+  // A selection that no longer exists (rejected, or the project switched) must
+  // not keep the board dimmed.
+  useEffect(() => {
+    if (selectedUseCaseId && !useCaseState.useCases.some((u) => u.id === selectedUseCaseId && u.status === 'active')) {
+      setSelectedUseCaseId(null);
+    }
+  }, [useCaseState.useCases, selectedUseCaseId]);
+
   // Re-scan is offered once a project has been mapped at least once; the
   // "last scan" tag (most recent group update) gives a recency cue so the user
   // knows whether a refresh is even worth it.
@@ -520,6 +547,15 @@ export default function ContextMapPage() {
           )}
         </ActionRow>
 
+        {hasContexts && (
+          <UseCasePanel
+            state={useCaseState}
+            selectedId={selectedUseCaseId}
+            onSelect={setSelectedUseCaseId}
+            hasMap={hasContexts}
+          />
+        )}
+
         <div className="flex gap-0 min-h-0 flex-1">
           <GroupList
             groups={groups}
@@ -532,12 +568,22 @@ export default function ContextMapPage() {
             goalCoverageByContext={goalCoverageByContext}
             ideaCoverageByContext={ideaCoverageByContext}
             kpiCoverageByContext={kpiCoverageByContext}
+            useCaseCoverageByContext={useCaseCoverageByContext}
+            highlightedContextIds={highlightedContextIds}
             onScanContext={handleScanContext}
             scanningContextId={scanningContextId}
             scanBusy={scanPhase === 'running'}
           />
 
-          {selectedCtx && <ContextDetail ctx={selectedCtx} onClose={() => setSelectedCtxId(null)} />}
+          {selectedCtx && (
+            <ContextDetail
+              ctx={selectedCtx}
+              onClose={() => setSelectedCtxId(null)}
+              useCases={useCaseState.useCases.filter(
+                (u) => u.status !== 'archived' && u.context_ids.includes(selectedCtx.id),
+              )}
+            />
+          )}
         </div>
       </ContentBody>
 

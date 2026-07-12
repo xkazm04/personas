@@ -1,12 +1,4 @@
 {
-  "install_all": "সব ডিপেন্ডেন্সি ইনস্টল",
-  "log_disk_usage": "লগ ডিস্ক ব্যবহার",
-  "log_disk_tracing": "ট্রেসিং লগ",
-  "log_disk_crashes": "ক্র্যাশ রিপোর্ট",
-  "log_disk_files_count": "{count}টি ফাইল",
-  "log_disk_retention_hint": "দৈনিক রোটেশন, সর্বোচ্চ {limit}টি ফাইল পর্যন্ত সীমাবদ্ধ",
-  "log_disk_crash_retention_hint": "সর্বশেষ {limit}টি রিপোর্ট পর্যন্ত সীমাবদ্ধ",
-  "log_disk_unavailable": "লগ ডিরেক্টরি পরিসংখ্যান অনুপলব্ধ।",
   "title": "সিস্টেম পরীক্ষা",
   "subtitle": "পরিবেশ প্রস্তুতি যাচাই হচ্ছে",
   "rerun": "পুনরায় পরীক্ষা",
@@ -27,6 +19,7 @@
   "no_crash_logs": "কোনো ক্র্যাশ লগ নেই।",
   "crash_auto_cred": "অটো-ক্রেড সেশন",
   "crash_rust_panic": "Rust panic",
+  "install_all": "সব ডিপেন্ডেন্সি ইনস্টল",
   "ready_title": "প্রথম এজেন্ট তৈরি করতে প্রস্তুত?",
   "ready_hint": "সব পরীক্ষা পাস হয়েছে। প্রথম এজেন্ট তৈরি ও চালানোয় আমরা গাইড করব।",
   "get_started": "শুরু করুন",
@@ -40,5 +33,12 @@
   "official_page": "অফিসিয়াল পেজ",
   "edit_key": "কী সম্পাদনা",
   "edit_config": "কনফিগ সম্পাদনা",
-  "signing_in": "সাইন ইন হচ্ছে..."
+  "signing_in": "সাইন ইন হচ্ছে...",
+  "log_disk_usage": "লগ ডিস্ক ব্যবহার",
+  "log_disk_tracing": "ট্রেসিং লগ",
+  "log_disk_crashes": "ক্র্যাশ রিপোর্ট",
+  "log_disk_files_count": "{count}টি ফাইল",
+  "log_disk_retention_hint": "দৈনিক রোটেশন, সর্বোচ্চ {limit}টি ফাইল পর্যন্ত সীমাবদ্ধ",
+  "log_disk_crash_retention_hint": "সর্বশেষ {limit}টি রিপোর্ট পর্যন্ত সীমাবদ্ধ",
+  "log_disk_unavailable": "লগ ডিরেক্টরি পরিসংখ্যান অনুপলব্ধ।"
 }

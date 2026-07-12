@@ -1,8 +1,8 @@
 {
-  "completed": "مكتمل",
-  "failed": "فشل",
   "queued": "في قائمة الانتظار",
   "running": "قيد التشغيل",
+  "completed": "مكتمل",
+  "failed": "فشل",
   "cancelled": "ملغى",
   "error": "خطأ"
 }

@@ -1,13 +1,14 @@
 {
+  "title": "概览",
+  "no_output": "暂无输出",
+  "no_background_jobs": "没有正在运行或最近的后台任务",
+  "background_jobs_hint": "运行 n8n 转换、模板采用、模板生成或查询调试时，任务会显示在此处",
   "filters": {
     "start_date": "开始日期",
     "end_date": "结束日期",
     "all_personas": "所有智能体"
   },
   "messages": {
-    "priority_high": "高",
-    "priority_normal": "普通",
-    "priority_low": "低",
     "loading": "加载消息...",
     "no_messages": "暂无消息",
     "switch_to_all": "尝试切换到\\\\\\\"全部\\\\\\\"以查看所有消息",
@@ -19,6 +20,9 @@
       "created": "创建时间"
     },
     "content_header": "内容",
+    "priority_high": "高",
+    "priority_normal": "普通",
+    "priority_low": "低",
     "filter_all": "全部",
     "filter_unread": "未读",
     "filter_high_priority": "高优先级",
@@ -33,6 +37,14 @@
     "id_label": "ID：",
     "confirm_delete_title": "确认删除",
     "close_message": "关闭消息详情"
+  },
+  "realtime": {
+    "idle": "空闲 -- 点击 {action} 模拟流量",
+    "test_flow": "测试流程",
+    "events_per_min": "事件/分钟",
+    "pending": "待处理",
+    "success": "成功",
+    "in_window": "窗口内"
   },
   "incidents": {
     "filters_active_aria": "{count} 个活动筛选器",
@@ -148,25 +160,21 @@
     "subtitle": "监控代理的执行健康状况、成本和异常",
     "alert_rules": "告警规则",
     "refresh_metrics": "刷新指标",
-    "metrics_unavailable": "指标不可用 -- 显示的数据可能已过期",
-    "error_recovery": {
-      "panel_loaded": "Loaded",
-      "panel_failed": "Failed to load",
-      "panel_stale": "Data may be outdated"
-    },
     "persona_disabled": "智能体已自动禁用",
     "auto_resolved": "此问题已自动解决",
     "mark_resolved": "标记为已解决",
     "manual_fix": "（已手动修复）",
+    "metrics_unavailable": "指标不可用 -- 显示的数据可能已过期",
     "no_open_issues": "没有未解决的问题",
-    "run_analysis": "运行分析以检查问题。"
+    "run_analysis": "运行分析以检查问题。",
+    "error_recovery": {
+      "panel_loaded": "Loaded",
+      "panel_failed": "Failed to load",
+      "panel_stale": "Data may be outdated"
+    }
   },
   "memories": {
     "title": "记忆",
-    "delete_all": "全部删除",
-    "delete_all_confirm_title": "删除所有记忆？",
-    "delete_all_confirm_body": "这将永久删除所有 {count} 条记忆，此操作无法撤销。",
-    "delete_all_confirm_cta": "全部删除",
     "created_success": "记忆创建成功",
     "no_memories": "暂无记忆",
     "no_memories_hint": "当代理运行时，可以在此存储有价值的笔记和学习内容。",
@@ -199,16 +207,95 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "全部删除",
+    "delete_all_confirm_title": "删除所有记忆？",
+    "delete_all_confirm_body": "这将永久删除所有 {count} 条记忆，此操作无法撤销。",
+    "delete_all_confirm_cta": "全部删除"
   },
   "memory_review": {
+    "all_conflicts_resolved": "所有冲突已解决",
     "keep_prefix": "保留 \"",
-    "keep_suffix": "\"",
-    "all_conflicts_resolved": "所有冲突已解决"
+    "keep_suffix": "\""
+  },
+  "executions": {
+    "title": "执行记录",
+    "loading": "加载执行记录...",
+    "no_agents": "尚未创建智能体",
+    "create_first": "创建您的第一个智能体以在此查看执行活动",
+    "no_executions": "暂无执行记录",
+    "run_agent": "运行智能体以在此查看执行活动"
+  },
+  "workflows": {
+    "loading": "加载工作流...",
+    "title": "工作流",
+    "subtitle": "工作区中活跃和最近的后台操作",
+    "no_jobs": "没有正在运行或最近的后台作业",
+    "jobs_hint": "当您运行 N8n 转换、模板采用、模板生成或查询调试时，作业会显示在此处",
+    "all_types": "所有类型",
+    "no_filter_match": "没有作业匹配当前过滤器",
+    "auto_refreshing": "作业运行时自动刷新",
+    "cancel_failed": "取消工作流作业失败"
+  },
+  "schedules": {
+    "title": "计划时间线",
+    "subtitle": "所有计划智能体执行的汇总视图",
+    "engine_on": "引擎开启",
+    "engine_off": "引擎关闭",
+    "engine_on_tooltip": "调度器运行中 -- 点击暂停",
+    "engine_off_tooltip": "调度器已停止 -- 点击启动",
+    "active_count": "{count} 个活跃",
+    "paused_count": "{count} 个已暂停",
+    "view_grouped": "分组视图",
+    "view_timeline": "时间线",
+    "triggers_fired": "已触发：",
+    "events_processed": "已处理事件：",
+    "delivered": "已送达：",
+    "failed_label": "失败：",
+    "loading": "加载计划任务...",
+    "empty": "未找到计划智能体。",
+    "empty_hint": "在任意智能体上创建计划或轮询触发器即可在此查看。",
+    "group_overdue": "已逾期",
+    "group_15min": "未来 15 分钟",
+    "group_1hour": "未来 1 小时",
+    "group_6hours": "未来 6 小时",
+    "group_24hours": "未来 24 小时",
+    "group_later": "更晚",
+    "group_paused": "已暂停 / 未计划",
+    "run_now": "立即运行",
+    "change_frequency": "更改频率",
+    "pause_schedule": "暂停计划",
+    "resume_schedule": "恢复计划",
+    "headless_badge": "无界面"
+  },
+  "frequency_editor": {
+    "title": "更改频率",
+    "current": "当前：",
+    "quick_presets": "快速预设",
+    "cron_expression": "cron 表达式",
+    "interval_seconds": "间隔（秒）",
+    "previewing": "预览中...",
+    "next_runs": "下次运行",
+    "invalid_cron": "无效的 cron 表达式"
+  },
+  "recovery": {
+    "agents_missed_one": "{count} 个智能体错过了执行",
+    "agents_missed_other": "{count} 个智能体错过了执行",
+    "total_skipped": "应用离线期间约跳过 {count} 次运行",
+    "missed_since": "自 {time} 以来错过 {count} 次",
+    "every_interval": "每 {interval}",
+    "mark_for_recovery": "标记恢复",
+    "recover": "恢复",
+    "run_once": "运行 1 次",
+    "run_once_tooltip": "立即运行一次",
+    "skip_tooltip": "跳过 -- 不恢复",
+    "dismiss_all": "全部忽略",
+    "recover_selected": "恢复已选的 {count} 个"
   },
   "sla": {
     "title": "智能体可靠性 SLA",
     "subtitle": "所有智能体的正常运行时间、故障率和修复指标",
+    "loading": "加载 SLA 数据...",
     "no_data": "无可用执行数据。",
     "success_rate": "成功率",
     "executions_summary": "{successful}/{total} 次执行",
@@ -221,12 +308,6 @@
     "daily_success_rate": "每日成功率 -- {days} 天",
     "per_agent": "单智能体可靠性",
     "no_agent_data": "此期间没有智能体执行记录。",
-    "success_rate_tooltip": "Success rate = successful / (successful + failed). Cancelled runs are excluded because they are user-initiated and don't reflect system reliability.",
-    "all_time_badge": "All-time",
-    "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
-    "auto_healed_tooltip": "Total issues the healing engine has auto-resolved across the lifetime of this install. This number is all-time and does not change with the time window above.",
-    "windowed_tooltip": "Computed over the selected time window above ({days} days).",
-    "loading": "加载 SLA 数据...",
     "metric_successful": "成功",
     "metric_failed": "失败",
     "metric_avg_latency": "平均延迟",
@@ -234,20 +315,15 @@
     "metric_cost": "成本",
     "metric_mtbf": "MTBF",
     "metric_auto_healed": "自动修复",
-    "metric_cancelled": "已取消"
+    "metric_cancelled": "已取消",
+    "success_rate_tooltip": "Success rate = successful / (successful + failed). Cancelled runs are excluded because they are user-initiated and don't reflect system reliability.",
+    "all_time_badge": "All-time",
+    "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
+    "auto_healed_tooltip": "Total issues the healing engine has auto-resolved across the lifetime of this install. This number is all-time and does not change with the time window above.",
+    "windowed_tooltip": "Computed over the selected time window above ({days} days)."
   },
   "knowledge": {
     "title": "知识图谱",
-    "patterns_tab": "模式",
-    "search_placeholder": "搜索模式...",
-    "sort_aria": "排序模式",
-    "sort_default": "热门模式",
-    "sort_confidence": "置信度最高",
-    "sort_runs": "运行最多",
-    "sort_recent": "最新",
-    "needs_review": "需审核",
-    "pending_scope_hint": "选择一个角色以审核所有待处理的注释。",
-    "graph_tab": "图表",
     "subtitle": "从执行历史中学习到 {count} 个模式",
     "total_patterns": "总模式数",
     "tool_sequences": "工具序列",
@@ -269,13 +345,36 @@
     "failures": "失败",
     "avg_cost": "平均成本",
     "avg_duration": "平均时长",
-    "pattern_data": "模式数据"
+    "pattern_data": "模式数据",
+    "patterns_tab": "模式",
+    "search_placeholder": "搜索模式...",
+    "sort_aria": "排序模式",
+    "sort_default": "热门模式",
+    "sort_confidence": "置信度最高",
+    "sort_runs": "运行最多",
+    "sort_recent": "最新",
+    "needs_review": "需审核",
+    "pending_scope_hint": "选择一个角色以审核所有待处理的注释。",
+    "graph_tab": "图表"
+  },
+  "conflicts": {
+    "dismissed": "冲突已忽略",
+    "resolved": "冲突已解决",
+    "resolve_failed": "解决冲突失败",
+    "conflict_count_one": "{count} 个冲突",
+    "conflict_count_other": "{count} 个冲突"
   },
   "dashboard": {
+    "title": "仪表盘",
+    "subtitle": "操作概览和系统状态",
     "greeting_morning": "早上好",
     "greeting_afternoon": "下午好",
     "greeting_evening": "晚上好",
     "default_user": "操作员",
+    "pending_reviews_prompt": "待审核",
+    "requiring_attention": "需要关注。",
+    "empty_cta": "创建您的第一个代理以开始使用。",
+    "pipeline_failed": "{source} 加载失败",
     "empty_title": "欢迎使用 Personas",
     "empty_subtitle": "创建您的第一个代理，开始在此处查看执行指标、流量图表和活动。",
     "create_persona": "创建代理",
@@ -297,12 +396,6 @@
     "section_memory": "记忆建议",
     "section_fleet": "舰队优化",
     "section_routines": "例程与保险库变更",
-    "title": "仪表盘",
-    "subtitle": "操作概览和系统状态",
-    "pending_reviews_prompt": "待审核",
-    "requiring_attention": "需要关注。",
-    "empty_cta": "创建您的第一个代理以开始使用。",
-    "pipeline_failed": "{source} 加载失败",
     "instruments_subtitle": "机群遥测",
     "memory_suggestions_count": "{count} 条建议",
     "pane_instruments": "仪表",
@@ -331,6 +424,49 @@
     "triage_tag_pipeline": "系",
     "triage_tag_review": "审",
     "vitals_subtitle_fleet": "机群健康"
+  },
+  "execution_metrics": {
+    "title": "执行指标",
+    "total_executions": "总执行次数",
+    "total_cost": "总成本",
+    "success_rate": "成功率",
+    "avg_latency": "平均延迟",
+    "cost_anomalies": "检测到成本异常",
+    "no_data": "所选时段没有执行数据",
+    "cost_per_day": "每日成本",
+    "executions_by_status": "按状态划分的执行次数",
+    "success_rate_trend": "成功率趋势",
+    "latency_distribution": "延迟分布（p50 / p95 / p99）",
+    "top_personas_by_cost": "按成本排名的代理",
+    "cost_spike": "成本激增",
+    "above_avg": "高于平均",
+    "top_executions": "热门执行：",
+    "executions_label": "{count} 次执行"
+  },
+  "execution_list": {
+    "recorded": "已记录 {count} 次执行",
+    "recorded_one": "已记录 {count} 次执行",
+    "list": "列表",
+    "metrics": "指标",
+    "show_list": "显示执行列表",
+    "show_metrics": "显示指标仪表盘",
+    "showing": "显示 {count} / {total}",
+    "load_more": "加载更多",
+    "filter_all": "全部",
+    "filter_running": "运行中",
+    "filter_completed": "已完成",
+    "filter_failed": "失败",
+    "col_persona": "代理",
+    "col_status": "状态",
+    "col_duration": "持续时间",
+    "col_started": "开始时间",
+    "col_id": "ID",
+    "all_statuses": "所有状态",
+    "all_personas": "所有代理",
+    "no_agents": "尚未创建代理",
+    "no_agents_hint": "创建您的第一个代理以在此处查看执行活动。",
+    "unknown_persona": "未知",
+    "healing_retry": "自愈重试 #{count}"
   },
   "review": {
     "title": "人工审核",
@@ -413,27 +549,44 @@
   },
   "messages_view": {
     "title": "消息",
+    "threads_subtitle": "{count} 个对话线程",
+    "threads_subtitle_one": "{count} 个对话线程",
     "messages_subtitle": "已记录 {count} 条消息",
     "messages_subtitle_one": "已记录 {count} 条消息",
     "mock_message": "模拟消息",
     "seed_tooltip": "植入模拟消息（仅限开发）",
+    "flat_view": "平铺视图",
+    "threaded_view": "线程视图",
     "mark_all_read": "全部标为已读",
+    "threads_of": "{count} / {total} 个线程",
+    "no_threads": "暂无消息线程",
+    "no_threads_hint": "当代理在执行期间产生消息时，线程会自动创建。",
     "no_messages": "暂无消息",
     "no_messages_hint": "当代理运行并相互通信时，会创建消息。",
     "no_filter_match": "没有消息匹配当前过滤器",
+    "loading_replies": "加载回复中...",
     "load_more": "加载更多（剩余 {count} 条）",
     "col_title": "标题",
+    "col_priority": "优先级",
+    "col_delivery": "投递",
+    "col_status": "状态",
     "col_created": "创建时间",
     "all_priorities": "所有优先级",
     "all_statuses": "所有状态",
     "read": "已读",
     "unread": "未读",
+    "new_badge": "新",
+    "failed_count": "{count} 条失败",
+    "pending_count": "{count} 条待处理",
+    "sent_count": "{count} 条已发送",
     "message_label": "消息",
     "from_label": "来自 {name}",
     "content_label": "内容",
     "view_execution": "查看执行",
+    "type_label": "类型：",
     "delivery_status": "投递状态",
     "no_channels": "未配置投递渠道",
+    "confirm_delete": "确认删除",
     "improve_agent": "改进代理",
     "improvement_started": "改进已开始 — 完成后将通知您",
     "what_could_be_better": "哪里可以改进？",
@@ -446,6 +599,7 @@
     "rating_label": "Rate this message",
     "rating_star_aria": "Rate {value} of 5",
     "rating_saved": "Saved · {stars}/5",
+    "rating_clear": "Clear rating",
     "rating_memory_title": "Message rating: {stars}/5",
     "rating_memory_content_good": "User rated the output {stars}/5 stars. This message met expectations — keep the approach.",
     "rating_memory_content_neutral": "User rated the output {stars}/5 stars. Neutral feedback — review the message for marginal improvements.",
@@ -463,25 +617,7 @@
     "delete_all": "全部删除",
     "delete_all_confirm_title": "删除所有消息？",
     "delete_all_confirm_body": "此操作将永久删除全部 {count} 条消息，无法撤销。",
-    "delete_all_confirm_cta": "全部删除",
-    "threads_subtitle": "{count} 个对话线程",
-    "threads_subtitle_one": "{count} 个对话线程",
-    "flat_view": "平铺视图",
-    "threaded_view": "线程视图",
-    "threads_of": "{count} / {total} 个线程",
-    "no_threads": "暂无消息线程",
-    "no_threads_hint": "当代理在执行期间产生消息时，线程会自动创建。",
-    "loading_replies": "加载回复中...",
-    "col_priority": "优先级",
-    "col_delivery": "投递",
-    "col_status": "状态",
-    "new_badge": "新",
-    "failed_count": "{count} 条失败",
-    "pending_count": "{count} 条待处理",
-    "sent_count": "{count} 条已发送",
-    "type_label": "类型：",
-    "confirm_delete": "确认删除",
-    "rating_clear": "Clear rating"
+    "delete_all_confirm_cta": "全部删除"
   },
   "events": {
     "title": "事件",
@@ -491,6 +627,7 @@
     "seed_tooltip": "植入模拟事件（仅限开发）",
     "search_placeholder": "按类型、来源或有效载荷搜索事件...",
     "loading_older": "加载更早的事件中...",
+    "load_older": "加载更早的事件",
     "no_events": "暂无事件",
     "no_events_hint": "当您的代理运行时，来自 webhook、执行和代理操作的事件将显示在此处。",
     "no_filter_match": "没有事件匹配当前过滤器",
@@ -498,6 +635,12 @@
     "view_name_placeholder": "视图名称（例如「本周失败的 webhook」）",
     "views_label": "视图：",
     "delete_view": "删除视图",
+    "clear_filters": "清除所有过滤器",
+    "col_trigger": "触发器",
+    "col_persona": "代理",
+    "col_event_name": "事件名称",
+    "col_status": "状态",
+    "col_created": "创建时间",
     "all_statuses": "所有状态",
     "all_types": "所有类型",
     "all_triggers": "所有触发器",
@@ -507,13 +650,6 @@
     "source_scheduled": "计划",
     "event_detail_title": "事件：",
     "event_detail_status": "状态：",
-    "load_older": "加载更早的事件",
-    "clear_filters": "清除所有过滤器",
-    "col_trigger": "触发器",
-    "col_persona": "代理",
-    "col_event_name": "事件名称",
-    "col_status": "状态",
-    "col_created": "创建时间",
     "event_id": "事件 ID",
     "project": "项目",
     "source": "来源",
@@ -524,7 +660,6 @@
   "health": {
     "title": "代理健康状况",
     "subtitle": "所有代理的实时健康监控",
-    "status_page": "状态页面",
     "all_healthy": "所有代理健康",
     "all_healthy_hint": "每个受监控的代理均正常运行",
     "no_agents": "暂无代理",
@@ -547,6 +682,7 @@
     "cascade_title": "级联分析",
     "predictive_alerts": "预测告警",
     "no_alerts": "目前没有预测告警",
+    "status_page": "状态页面",
     "operational": "正常运行",
     "degraded": "性能下降",
     "outage": "中断"
@@ -591,6 +727,58 @@
     "hint_activity": "更频繁地触发或调度该智能体以提升活跃度。",
     "improve_agent": "改进此智能体"
   },
+  "analytics": {
+    "title": "分析",
+    "subtitle": "执行模式和趋势",
+    "loading": "加载分析中...",
+    "no_data": "暂无分析数据",
+    "executions_over_time": "随时间的执行次数",
+    "success_failure": "成功与失败",
+    "cost_breakdown": "成本分解",
+    "total_executions": "总执行次数",
+    "total_cost": "总成本",
+    "avg_success_rate": "平均成功率",
+    "active_agents": "活跃代理",
+    "saved_views": "已保存视图",
+    "create_view": "创建视图",
+    "health_issues": "健康问题",
+    "rotation_overview": "轮换概览"
+  },
+  "usage": {
+    "title": "用量",
+    "subtitle": "成本和资源消耗",
+    "chart_error": "图表加载失败",
+    "chart_error_hint": "渲染此图表时发生错误",
+    "try_again": "重试"
+  },
+  "cron_agents": {
+    "title": "计划代理",
+    "subtitle": "按自动计划运行的代理",
+    "no_agents": "没有计划代理",
+    "no_agents_hint": "为任意代理添加 cron 触发器以在此处查看"
+  },
+  "timeline": {
+    "title": "活动时间线",
+    "subtitle": "所有代理活动的统一视图",
+    "no_activity": "没有最近活动"
+  },
+  "realtime_viz": {
+    "title": "事件总线",
+    "filter_events": "过滤事件",
+    "pause": "暂停",
+    "resume": "继续",
+    "clear": "清除",
+    "total_events": "总事件数",
+    "events_per_sec": "事件/秒",
+    "active_lanes": "活跃通道",
+    "event_type": "事件类型",
+    "source": "来源",
+    "target": "目标",
+    "timestamp": "时间戳",
+    "payload": "有效载荷",
+    "saved_views": "已保存视图",
+    "save_current": "保存当前"
+  },
   "observability_extra": {
     "auto_refresh_on": "自动刷新开启",
     "auto_refresh_off": "自动刷新关闭",
@@ -618,12 +806,21 @@
     "error_rate": "错误率"
   },
   "widgets": {
+    "recent_activity": "最近活动",
     "view_all": "查看全部",
+    "total_traffic": "总流量",
+    "total_errors": "总错误数",
     "traffic_errors_chart": "流量与错误",
     "top_performers": "最佳表现者",
+    "metric_help": "指标帮助",
+    "how_calculated": "如何计算？",
+    "details": "详情",
     "messages_badge": "消息",
     "reviews_badge": "审核",
+    "executions_badge": "执行",
+    "success_badge": "成功",
     "alerts_badge": "告警",
+    "agents_badge": "代理",
     "pipelines_badge": "管道",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
@@ -632,21 +829,21 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Errors",
-    "tool_performance_unit_ms": "ms",
-    "recent_activity": "最近活动",
-    "total_traffic": "总流量",
-    "total_errors": "总错误数",
     "tool_performance_empty": "No tool runs in this window",
-    "metric_help": "指标帮助",
-    "how_calculated": "如何计算？",
-    "details": "详情",
-    "executions_badge": "执行",
-    "success_badge": "成功",
-    "agents_badge": "代理",
+    "tool_performance_unit_ms": "ms",
     "range_days_ago": "{days} 天前",
     "range_today": "今天",
     "range_yesterday": "昨天",
     "traffic_errors_chart_aria": "流量与错误图表"
+  },
+  "cards": {
+    "fleet_optimization": "集群优化",
+    "fleet_subtitle": "自动化建议以提高代理性能",
+    "remote_control": "远程控制",
+    "remote_subtitle": "代理管理的快速操作",
+    "resume_setup": "继续设置",
+    "resume_subtitle": "从上次离开的地方继续",
+    "knowledge_hub": "知识中心"
   },
   "activity": {
     "title": "活动",
@@ -675,16 +872,23 @@
     "prev_failed": "上期失败",
     "success_pct": "成功率%",
     "prev_success_pct": "上期成功率%",
+    "successful": "成功",
+    "all": "全部",
+    "running": "运行中",
+    "all_statuses": "所有状态",
     "showing": "显示 {count} / {total}",
     "load_more": "加载更多",
+    "col_status": "状态",
     "col_duration": "持续时间",
     "col_started": "开始时间",
+    "col_id": "ID",
     "no_agents": "尚未创建代理",
     "no_agents_hint": "创建您的第一个代理以在此处查看执行活动。",
     "no_executions": "暂无执行",
     "no_executions_hint": "运行代理以在此处查看执行活动。",
     "create_persona": "创建代理",
     "from_templates": "从模板",
+    "execution_label": "执行",
     "unknown": "未知",
     "value_section_title": "业务价值",
     "value_delivered_rate": "价值交付率",
@@ -692,36 +896,9 @@
     "value_delivered_count": "已交付价值",
     "all_models": "所有模型",
     "col_model": "模型",
-    "col_cost": "成本",
-    "successful": "成功",
-    "all": "全部",
-    "running": "运行中",
-    "all_statuses": "所有状态",
-    "col_status": "状态",
-    "col_id": "ID",
-    "execution_label": "执行"
+    "col_cost": "成本"
   },
   "analytics_dashboard": {
-    "issues_found": "发现 {count} 个问题",
-    "issues_found_one": "发现 {count} 个问题",
-    "auto_fixed": "已自动修复",
-    "executions_scanned": "已扫描 {count} 次执行",
-    "executions_scanned_one": "已扫描 {count} 次执行",
-    "credential_rotation": "凭据轮换",
-    "no_rotation_policies": "没有轮换策略",
-    "no_rotation_hint": "在保险库中为凭据配置轮换。",
-    "active_count": "{count} 活跃",
-    "soon_count": "{count} 即将到期",
-    "issues_count": "{count} 个问题",
-    "issues_count_one": "{count} 个问题",
-    "fail_count": "{count}次失败",
-    "rotation_manage_all": "Manage",
-    "rotation_open_in_connections": "Open in Connections",
-    "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}",
-    "rotation_due_now": "立即到期",
-    "rotation_countdown_days_hours": "{days}天 {hours}小时",
-    "rotation_countdown_hours": "{hours}h",
     "title": "分析",
     "subtitle": "统一的成本、执行和工具使用分析",
     "metrics_unavailable": "指标不可用",
@@ -756,6 +933,11 @@
     "run_analysis": "运行分析",
     "analyzing": "分析中...",
     "analysis_complete": "分析完成",
+    "issues_found": "发现 {count} 个问题",
+    "issues_found_one": "发现 {count} 个问题",
+    "auto_fixed": "已自动修复",
+    "executions_scanned": "已扫描 {count} 次执行",
+    "executions_scanned_one": "已扫描 {count} 次执行",
     "no_open_issues": "没有未处理的问题",
     "run_analysis_hint": "运行分析以检查问题。",
     "filter_all": "全部",
@@ -765,7 +947,29 @@
     "breaker": "断路器",
     "fixed": "已修复",
     "retry": "重试",
-    "never": "从未"
+    "credential_rotation": "凭据轮换",
+    "no_rotation_policies": "没有轮换策略",
+    "no_rotation_hint": "在保险库中为凭据配置轮换。",
+    "active_count": "{count} 活跃",
+    "soon_count": "{count} 即将到期",
+    "issues_count": "{count} 个问题",
+    "issues_count_one": "{count} 个问题",
+    "never": "从未",
+    "fail_count": "{count}次失败",
+    "rotation_manage_all": "Manage",
+    "rotation_open_in_connections": "Open in Connections",
+    "rotation_started_for": "Rotation started for {name}",
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "立即到期",
+    "rotation_countdown_days_hours": "{days}天 {hours}小时",
+    "rotation_countdown_hours": "{hours}h"
+  },
+  "saved_views": {
+    "errors": {
+      "load_failed_message": "Couldn't load your saved views.",
+      "save_failed_message": "Couldn't save this view.",
+      "delete_failed_message": "Couldn't delete this view."
+    }
   },
   "cron": {
     "title": "Cron 代理",
@@ -785,6 +989,15 @@
     "every_interval": "每 {interval}",
     "next": "下次",
     "last": "上次"
+  },
+  "activity_timeline": {
+    "title": "活动时间线",
+    "subtitle": "{events} 个事件，{messages} 条消息",
+    "all": "全部",
+    "events": "事件",
+    "messages": "消息",
+    "no_activity": "暂无活动",
+    "high": "高"
   },
   "sla_card": {
     "successful": "成功",
@@ -813,6 +1026,13 @@
     "pending": "待处理",
     "success": "成功",
     "in_window": "在窗口内",
+    "test_flow": "测试流",
+    "testing_flow": "测试流中...",
+    "test_event_flow": "测试事件流",
+    "resume": "继续",
+    "pause": "暂停",
+    "resume_stream": "继续实时流",
+    "pause_stream": "暂停实时流",
     "search_events": "搜索事件...",
     "filter_type": "类型",
     "filter_status": "状态",
@@ -823,17 +1043,6 @@
     "no_saved_views": "暂无已保存视图",
     "save_current_filter": "保存当前过滤器",
     "view_name_placeholder": "视图名称...",
-    "close_event_details": "关闭事件详情",
-    "reset_to_start": "重置到起点",
-    "cycle_speed": "切换回放速度",
-    "exit_replay": "退出回放",
-    "test_flow": "测试流",
-    "testing_flow": "测试流中...",
-    "test_event_flow": "测试事件流",
-    "resume": "继续",
-    "pause": "暂停",
-    "resume_stream": "继续实时流",
-    "pause_stream": "暂停实时流",
     "delete_saved_view": "删除已保存视图",
     "event_log": "事件日志",
     "entries": "{count} 条记录",
@@ -847,6 +1056,10 @@
     "id_label": "ID",
     "error_label": "错误",
     "payload_label": "有效载荷",
+    "close_event_details": "关闭事件详情",
+    "reset_to_start": "重置到起点",
+    "cycle_speed": "切换回放速度",
+    "exit_replay": "退出回放",
     "galaxy": "星系",
     "galaxy_desc": "带彗星轨迹的轨道星座",
     "lanes": "通道",
@@ -970,15 +1183,36 @@
     "rejected": "{count} 条已拒绝",
     "undecided": "{count} 条未决定"
   },
+  "widgets_extra": {
+    "execution_health_chart": "执行健康状况",
+    "cost_over_time_chart": "随时间的成本",
+    "successful": "成功",
+    "failed": "失败",
+    "close": "关闭",
+    "dismiss_help": "忽略帮助",
+    "skip_tour": "完全跳过引导"
+  },
+  "remote_control_card": {
+    "connect_to_desktop": "连接到桌面",
+    "connect_description": "通过远程控制使用桌面 CLI 运行代理。在您的计算机上启动 {command}，然后在此处连接。",
+    "requires_subscription": "需要 Claude Pro 或 Max 订阅"
+  },
+  "resume_setup_card": {
+    "resume_tour": "继续引导",
+    "left_off_at": "您上次停在",
+    "steps_completed": "已完成 {completed}/{total} 步",
+    "skip_tour": "完全跳过引导",
+    "continue_label": "继续"
+  },
   "detail_modal": {
     "close": "关闭"
   },
   "metric_help_popover": {
+    "help_for": "{label} 的帮助",
     "dismiss_help": "忽略帮助",
     "healthy": "健康：",
     "click": "点击：",
-    "got_it": "明白了，不再显示",
-    "help_for": "{label} 的帮助"
+    "got_it": "明白了，不再显示"
   },
   "install_button": {
     "install_node": "安装 Node.js",
@@ -1003,9 +1237,9 @@
     "disconnect": "断开连接"
   },
   "metrics_cards": {
-    "top_executions": "热门执行：",
     "cost_spike": "成本激增",
-    "above_avg": "高于平均"
+    "above_avg": "高于平均",
+    "top_executions": "热门执行："
   },
   "event_log_item": {
     "event_id": "事件 ID",
@@ -1013,10 +1247,10 @@
     "source": "来源",
     "processed": "已处理",
     "event_data": "事件数据",
-    "error": "错误",
     "copy_event_data": "复制事件数据",
     "copied": "已复制",
     "copy": "复制",
+    "error": "错误",
     "system": "系统"
   },
   "burn_rate_extra": {
@@ -1101,14 +1335,21 @@
     "all_caught_up": "全部处理完毕",
     "no_pending": "没有待处理的审核。",
     "queue": "队列",
+    "clear": "清除",
     "clear_all_verdicts": "清除所有判决",
     "quick_actions": "快速操作",
     "reject_all": "全部拒绝",
     "accept_all": "全部接受",
     "retry_with_changes": "修改后重试",
-    "carry_out_hint": "批准审查并运行角色以执行此操作",
-    "clear": "清除",
-    "video_not_supported": "您的浏览器不支持视频播放。"
+    "video_not_supported": "您的浏览器不支持视频播放。",
+    "carry_out_hint": "批准审查并运行角色以执行此操作"
+  },
+  "bulk_action_bar": {
+    "pending_reviews_selected_one": "已选择 {count} 个待审核项",
+    "pending_reviews_selected_other": "已选择 {count} 个待审核项"
+  },
+  "review_inbox": {
+    "drag_to_resize": "拖动以调整大小"
   },
   "memory_card": {
     "confirm": "确认",
@@ -1129,9 +1370,9 @@
     "agent": "代理",
     "title": "标题",
     "category": "类别",
+    "priority": "优先级",
     "tags": "标签",
-    "created": "创建时间",
-    "priority": "优先级"
+    "created": "创建时间"
   },
   "review_results": {
     "title": "AI 记忆审核",
@@ -1143,8 +1384,8 @@
     "baseline_label": "基线：",
     "correlating": "关联事件中...",
     "likely_root_causes": "可能的根本原因",
-    "no_correlated": "在 ±24h 窗口内未找到相关事件。",
-    "correlated_events": "相关事件"
+    "correlated_events": "相关事件",
+    "no_correlated": "在 ±24h 窗口内未找到相关事件。"
   },
   "healing_issue_modal": {
     "issue_resolved": "问题已解决",
@@ -1153,13 +1394,13 @@
     "copied": "已复制",
     "copy_fix": "复制修复",
     "persona_auto_disabled": "代理已自动禁用",
+    "persona_auto_disabled_desc": "此代理在连续 5 次失败后已被自动禁用。请查看下面的错误模式，在解决根本原因后手动重新启用。",
     "marking_resolved_note": "标记为已解决意味着您已在自愈系统外解决了此问题。",
+    "retry_in_progress": "重试进行中 — 完成后状态将更新",
     "auto_resolved": "此问题已自动解决",
+    "close": "关闭",
     "resolving": "解决中…",
     "mark_resolved": "标记为已解决",
-    "persona_auto_disabled_desc": "此代理在连续 5 次失败后已被自动禁用。请查看下面的错误模式，在解决根本原因后手动重新启用。",
-    "retry_in_progress": "重试进行中 — 完成后状态将更新",
-    "close": "关闭",
     "retrying_badge": "重试中",
     "auto_fixed_badge": "已自动修复",
     "retry_in_progress_badge": "重试进行中",
@@ -1172,9 +1413,6 @@
     "run_analysis": "运行分析",
     "no_open_issues": "没有未处理的问题",
     "run_analysis_hint": "运行分析以检查问题。",
-    "healing_audit_log": "自愈审计日志",
-    "no_silent_failures": "没有记录到静默失败。",
-    "analysis_complete_prefix": "分析完成：",
     "ai_healing_title": "AI 自愈",
     "diagnosis_label": "诊断：",
     "fixes_applied": "已应用的修复",
@@ -1190,7 +1428,10 @@
     "execution_label": "执行：",
     "issue_marked_as": "此问题已标记为",
     "retry_in_progress": "重试进行中——完成后将更新状态。",
-    "resolve_issue_title": "将问题标记为已解决"
+    "resolve_issue_title": "将问题标记为已解决",
+    "healing_audit_log": "自愈审计日志",
+    "no_silent_failures": "没有记录到静默失败。",
+    "analysis_complete_prefix": "分析完成："
   },
   "healing_timeline": {
     "loading": "加载时间线中...",
@@ -1240,6 +1481,13 @@
     "event_id_label": "事件 ID",
     "broadcast": "（广播）"
   },
+  "event_bus_overlay": {
+    "earlier_events_not_shown_one": "{count} 条较早的事件未显示",
+    "earlier_events_not_shown_other": "{count} 条较早的事件未显示"
+  },
+  "event_bus_filter": {
+    "search_placeholder": "搜索事件…"
+  },
   "realtime_stats": {
     "events_per_min": "事件/分钟",
     "pending": "待处理",
@@ -1265,13 +1513,32 @@
     "heartbeats_btn": "心跳",
     "reliability_btn": "可靠性"
   },
+  "crash_logs": {
+    "title": "崩溃日志",
+    "no_logs": "未记录崩溃日志。",
+    "component_stack_separator": "--- Component Stack ---"
+  },
   "popup_fields": {
     "sign_up_free_at": "免费注册于",
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": "，然后从设置中复制您的 API 密钥。此密钥存储在本地，所有代理共享使用。"
   },
+  "events_list": {
+    "save_view_tooltip": "将当前筛选条件保存为视图",
+    "clear_filters_tooltip": "清除所有筛选条件"
+  },
+  "dashboard_home": {
+    "you_have": "您有"
+  },
+  "fleet_optimization_card": {
+    "title": "群组优化"
+  },
   "usage_filters": {
     "time_range_label": "时间范围"
+  },
+  "day_range_picker": {
+    "start_date": "开始日期",
+    "end_date": "结束日期"
   },
   "healing_summary": {
     "auto_fixed_this_week": "本周自动修复",
@@ -1560,272 +1827,5 @@
     "source_scanner": "扫描器",
     "tokens": "令牌",
     "total_cost": "总成本"
-  },
-  "title": "概览",
-  "no_output": "暂无输出",
-  "no_background_jobs": "没有正在运行或最近的后台任务",
-  "background_jobs_hint": "运行 n8n 转换、模板采用、模板生成或查询调试时，任务会显示在此处",
-  "realtime": {
-    "idle": "空闲 -- 点击 {action} 模拟流量",
-    "test_flow": "测试流程",
-    "events_per_min": "事件/分钟",
-    "pending": "待处理",
-    "success": "成功",
-    "in_window": "窗口内"
-  },
-  "executions": {
-    "title": "执行记录",
-    "loading": "加载执行记录...",
-    "no_agents": "尚未创建智能体",
-    "create_first": "创建您的第一个智能体以在此查看执行活动",
-    "no_executions": "暂无执行记录",
-    "run_agent": "运行智能体以在此查看执行活动"
-  },
-  "workflows": {
-    "loading": "加载工作流...",
-    "title": "工作流",
-    "subtitle": "工作区中活跃和最近的后台操作",
-    "no_jobs": "没有正在运行或最近的后台作业",
-    "jobs_hint": "当您运行 N8n 转换、模板采用、模板生成或查询调试时，作业会显示在此处",
-    "all_types": "所有类型",
-    "no_filter_match": "没有作业匹配当前过滤器",
-    "auto_refreshing": "作业运行时自动刷新",
-    "cancel_failed": "取消工作流作业失败"
-  },
-  "schedules": {
-    "title": "计划时间线",
-    "subtitle": "所有计划智能体执行的汇总视图",
-    "engine_on": "引擎开启",
-    "engine_off": "引擎关闭",
-    "engine_on_tooltip": "调度器运行中 -- 点击暂停",
-    "engine_off_tooltip": "调度器已停止 -- 点击启动",
-    "active_count": "{count} 个活跃",
-    "paused_count": "{count} 个已暂停",
-    "view_grouped": "分组视图",
-    "view_timeline": "时间线",
-    "triggers_fired": "已触发：",
-    "events_processed": "已处理事件：",
-    "delivered": "已送达：",
-    "failed_label": "失败：",
-    "loading": "加载计划任务...",
-    "empty": "未找到计划智能体。",
-    "empty_hint": "在任意智能体上创建计划或轮询触发器即可在此查看。",
-    "group_overdue": "已逾期",
-    "group_15min": "未来 15 分钟",
-    "group_1hour": "未来 1 小时",
-    "group_6hours": "未来 6 小时",
-    "group_24hours": "未来 24 小时",
-    "group_later": "更晚",
-    "group_paused": "已暂停 / 未计划",
-    "run_now": "立即运行",
-    "change_frequency": "更改频率",
-    "pause_schedule": "暂停计划",
-    "resume_schedule": "恢复计划",
-    "headless_badge": "无界面"
-  },
-  "frequency_editor": {
-    "title": "更改频率",
-    "current": "当前：",
-    "quick_presets": "快速预设",
-    "cron_expression": "cron 表达式",
-    "interval_seconds": "间隔（秒）",
-    "previewing": "预览中...",
-    "next_runs": "下次运行",
-    "invalid_cron": "无效的 cron 表达式"
-  },
-  "recovery": {
-    "agents_missed_one": "{count} 个智能体错过了执行",
-    "agents_missed_other": "{count} 个智能体错过了执行",
-    "total_skipped": "应用离线期间约跳过 {count} 次运行",
-    "missed_since": "自 {time} 以来错过 {count} 次",
-    "every_interval": "每 {interval}",
-    "mark_for_recovery": "标记恢复",
-    "recover": "恢复",
-    "run_once": "运行 1 次",
-    "run_once_tooltip": "立即运行一次",
-    "skip_tooltip": "跳过 -- 不恢复",
-    "dismiss_all": "全部忽略",
-    "recover_selected": "恢复已选的 {count} 个"
-  },
-  "conflicts": {
-    "dismissed": "冲突已忽略",
-    "resolved": "冲突已解决",
-    "resolve_failed": "解决冲突失败",
-    "conflict_count_one": "{count} 个冲突",
-    "conflict_count_other": "{count} 个冲突"
-  },
-  "execution_metrics": {
-    "title": "执行指标",
-    "total_executions": "总执行次数",
-    "total_cost": "总成本",
-    "success_rate": "成功率",
-    "avg_latency": "平均延迟",
-    "cost_anomalies": "检测到成本异常",
-    "no_data": "所选时段没有执行数据",
-    "cost_per_day": "每日成本",
-    "executions_by_status": "按状态划分的执行次数",
-    "success_rate_trend": "成功率趋势",
-    "latency_distribution": "延迟分布（p50 / p95 / p99）",
-    "top_personas_by_cost": "按成本排名的代理",
-    "cost_spike": "成本激增",
-    "above_avg": "高于平均",
-    "top_executions": "热门执行：",
-    "executions_label": "{count} 次执行"
-  },
-  "execution_list": {
-    "recorded": "已记录 {count} 次执行",
-    "recorded_one": "已记录 {count} 次执行",
-    "list": "列表",
-    "metrics": "指标",
-    "show_list": "显示执行列表",
-    "show_metrics": "显示指标仪表盘",
-    "showing": "显示 {count} / {total}",
-    "load_more": "加载更多",
-    "filter_all": "全部",
-    "filter_running": "运行中",
-    "filter_completed": "已完成",
-    "filter_failed": "失败",
-    "col_persona": "代理",
-    "col_status": "状态",
-    "col_duration": "持续时间",
-    "col_started": "开始时间",
-    "col_id": "ID",
-    "all_statuses": "所有状态",
-    "all_personas": "所有代理",
-    "no_agents": "尚未创建代理",
-    "no_agents_hint": "创建您的第一个代理以在此处查看执行活动。",
-    "unknown_persona": "未知",
-    "healing_retry": "自愈重试 #{count}"
-  },
-  "analytics": {
-    "title": "分析",
-    "subtitle": "执行模式和趋势",
-    "loading": "加载分析中...",
-    "no_data": "暂无分析数据",
-    "executions_over_time": "随时间的执行次数",
-    "success_failure": "成功与失败",
-    "cost_breakdown": "成本分解",
-    "total_executions": "总执行次数",
-    "total_cost": "总成本",
-    "avg_success_rate": "平均成功率",
-    "active_agents": "活跃代理",
-    "saved_views": "已保存视图",
-    "create_view": "创建视图",
-    "health_issues": "健康问题",
-    "rotation_overview": "轮换概览"
-  },
-  "usage": {
-    "title": "用量",
-    "subtitle": "成本和资源消耗",
-    "chart_error": "图表加载失败",
-    "chart_error_hint": "渲染此图表时发生错误",
-    "try_again": "重试"
-  },
-  "cron_agents": {
-    "title": "计划代理",
-    "subtitle": "按自动计划运行的代理",
-    "no_agents": "没有计划代理",
-    "no_agents_hint": "为任意代理添加 cron 触发器以在此处查看"
-  },
-  "timeline": {
-    "title": "活动时间线",
-    "subtitle": "所有代理活动的统一视图",
-    "no_activity": "没有最近活动"
-  },
-  "realtime_viz": {
-    "title": "事件总线",
-    "filter_events": "过滤事件",
-    "pause": "暂停",
-    "resume": "继续",
-    "clear": "清除",
-    "total_events": "总事件数",
-    "events_per_sec": "事件/秒",
-    "active_lanes": "活跃通道",
-    "event_type": "事件类型",
-    "source": "来源",
-    "target": "目标",
-    "timestamp": "时间戳",
-    "payload": "有效载荷",
-    "saved_views": "已保存视图",
-    "save_current": "保存当前"
-  },
-  "cards": {
-    "fleet_optimization": "集群优化",
-    "fleet_subtitle": "自动化建议以提高代理性能",
-    "remote_control": "远程控制",
-    "remote_subtitle": "代理管理的快速操作",
-    "resume_setup": "继续设置",
-    "resume_subtitle": "从上次离开的地方继续",
-    "knowledge_hub": "知识中心"
-  },
-  "saved_views": {
-    "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
-    }
-  },
-  "activity_timeline": {
-    "title": "活动时间线",
-    "subtitle": "{events} 个事件，{messages} 条消息",
-    "all": "全部",
-    "events": "事件",
-    "messages": "消息",
-    "no_activity": "暂无活动",
-    "high": "高"
-  },
-  "widgets_extra": {
-    "execution_health_chart": "执行健康状况",
-    "cost_over_time_chart": "随时间的成本",
-    "successful": "成功",
-    "failed": "失败",
-    "close": "关闭",
-    "dismiss_help": "忽略帮助",
-    "skip_tour": "完全跳过引导"
-  },
-  "remote_control_card": {
-    "connect_to_desktop": "连接到桌面",
-    "connect_description": "通过远程控制使用桌面 CLI 运行代理。在您的计算机上启动 {command}，然后在此处连接。",
-    "requires_subscription": "需要 Claude Pro 或 Max 订阅"
-  },
-  "resume_setup_card": {
-    "resume_tour": "继续引导",
-    "left_off_at": "您上次停在",
-    "steps_completed": "已完成 {completed}/{total} 步",
-    "skip_tour": "完全跳过引导",
-    "continue_label": "继续"
-  },
-  "bulk_action_bar": {
-    "pending_reviews_selected_one": "已选择 {count} 个待审核项",
-    "pending_reviews_selected_other": "已选择 {count} 个待审核项"
-  },
-  "review_inbox": {
-    "drag_to_resize": "拖动以调整大小"
-  },
-  "event_bus_overlay": {
-    "earlier_events_not_shown_one": "{count} 条较早的事件未显示",
-    "earlier_events_not_shown_other": "{count} 条较早的事件未显示"
-  },
-  "event_bus_filter": {
-    "search_placeholder": "搜索事件…"
-  },
-  "crash_logs": {
-    "title": "崩溃日志",
-    "no_logs": "未记录崩溃日志。",
-    "component_stack_separator": "--- Component Stack ---"
-  },
-  "events_list": {
-    "save_view_tooltip": "将当前筛选条件保存为视图",
-    "clear_filters_tooltip": "清除所有筛选条件"
-  },
-  "dashboard_home": {
-    "you_have": "您有"
-  },
-  "fleet_optimization_card": {
-    "title": "群组优化"
-  },
-  "day_range_picker": {
-    "start_date": "开始日期",
-    "end_date": "结束日期"
   }
 }

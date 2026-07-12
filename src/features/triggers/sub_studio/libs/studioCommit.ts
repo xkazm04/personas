@@ -46,8 +46,14 @@ export function linkCommitsViaForm(link: DraftLink): boolean {
   return link.source.kind === 'trigger' && FORM_COMMITTABLE_SOURCE_TYPES.has(link.source.triggerType);
 }
 
+/** True when the source is a Marketplace feed (direct-commits to an event_listener). */
+export function isMarketplaceSource(link: DraftLink): boolean {
+  return link.source.kind === 'marketplace';
+}
+
 /** Why a link can't be committed yet — `null` when it's committable. */
 export function commitBlocker(link: DraftLink): CommitBlocker | null {
+  if (link.source.kind === 'marketplace') return null; // fully specified — direct commit
   if (link.source.kind !== 'persona') {
     return linkCommitsViaForm(link) ? null : 'signal_source';
   }
@@ -64,6 +70,18 @@ export function commitBlocker(link: DraftLink): CommitBlocker | null {
  * sources go through the modal path instead (see {@link linkCommitsViaForm}).
  */
 export function draftLinkToTriggerInput(link: DraftLink): CreateTriggerInput | null {
+  // Marketplace feed → an event_listener trigger on the target persona that
+  // fires on `shared:<slug>` (the bus event the local relay publishes). Fully
+  // specified by the subscription, so it commits directly with no form.
+  if (link.source.kind === 'marketplace') {
+    return {
+      persona_id: link.targetPersonaId,
+      trigger_type: 'event_listener',
+      config: JSON.stringify({ listen_event_type: `shared:${link.source.slug}` }),
+      enabled: true,
+      use_case_id: null,
+    };
+  }
   if (link.source.kind !== 'persona') return null;
 
   let condition: Record<string, unknown>;

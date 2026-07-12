@@ -1,6 +1,6 @@
 {
-  "conversation_truncated": "Percakapan ini mencapai batas pesan. Pesan lama telah dihapus — pertimbangkan memulai percakapan baru untuk menjaga konteks.",
   "no_persona": "Tidak ada persona dipilih",
+  "conversation_truncated": "Percakapan ini mencapai batas pesan. Pesan lama telah dihapus — pertimbangkan memulai percakapan baru untuk menjaga konteks.",
   "stages": {
     "assembling_label": "Merangkai prompt",
     "assembling_desc": "Membangun prompt LLM dari konfigurasi dan instruksi persona",

@@ -181,5 +181,7 @@
     "health_snapshot": "Snímek stavu",
     "manual": "Ruční zadání",
     "scan": "Skenování"
-  }
+  },
+  "kpi_scope_label": "Rozsah",
+  "kpi_scope_this_context": "Tento kontext"
 }

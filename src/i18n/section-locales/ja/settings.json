@@ -1,4 +1,6 @@
 {
+  "title": "設定",
+  "settings_saved": "保存しました",
   "account": {
     "title": "アカウント",
     "subtitle": "サインインとプロフィールの管理",
@@ -64,6 +66,14 @@
       "synced_memories": "メモリ",
       "synced_knowledge_patterns": "ナレッジ"
     }
+  },
+  "appearance_extra": {
+    "simple": "シンプル",
+    "simple_hint": "主要機能のみ",
+    "full": "フル",
+    "full_hint": "完全なインターフェースを表示",
+    "dev": "開発者",
+    "dev_hint": "開発者ツールを有効化"
   },
   "appearance": {
     "title": "外観",
@@ -642,6 +652,27 @@
     "before": "変更前",
     "after": "変更後"
   },
+  "quality_gates": {
+    "title": "品質ゲート",
+    "loading": "読み込み中...",
+    "error_loading": "設定の読み込みエラー",
+    "active_rules": "{count}個のアクティブなフィルタールール",
+    "loading_config": "品質ゲートの設定を読み込み中...",
+    "description": "品質ゲートは、実行ディスパッチ中にAI生成のメモリとレビューをフィルタリングします。パターンは各提出物のタイトルとコンテンツの組み合わせに対して部分文字列として照合されます。パターンが一致すると、設定されたアクションが適用されます。これらのルールは、運用上のノイズ（認証情報エラー、スタックトレース、空のワークスペースレポート）がナレッジベースを汚染するのを防ぎます。",
+    "memory_filters": "メモリフィルター",
+    "memory_filters_desc": "AgentMemoryの提出物に適用されます。運用上の失敗や認証情報の漏洩がペルソナのメモリとして保存されるのをブロックします。",
+    "review_filters": "レビューフィルター",
+    "review_filters_desc": "ManualReviewの提出物に適用されます。インフラのエラーをフィルタリングして、本当のビジネス上の意思決定のみがレビューキューに届くようにします。",
+    "rejected_categories": "拒否されたカテゴリ",
+    "rules_count": "{count}個のルール",
+    "rules_count_plural": "{count}個のルール",
+    "reset_defaults": "デフォルトにリセット",
+    "confirm_reset": "リセットを確認しますか？",
+    "rules_hint": "ルールは各ディスパッチ時にデータベースから読み込まれます。変更はすぐに有効になります。",
+    "action_reject": "Reject",
+    "action_tag": "Tag",
+    "action_warn": "Warn"
+  },
   "api_keys": {
     "title": "API Keys",
     "description": "Generate keys for third-party tools and MCP clients to drive Personas remotely. Each key authenticates to the local management HTTP server (127.0.0.1:9420) — only valid keys can start builds, list personas, or trigger executions.",
@@ -753,36 +784,5 @@
       "api_keys": "APIキー",
       "history": "履歴"
     }
-  },
-  "title": "設定",
-  "settings_saved": "保存しました",
-  "appearance_extra": {
-    "simple": "シンプル",
-    "simple_hint": "主要機能のみ",
-    "full": "フル",
-    "full_hint": "完全なインターフェースを表示",
-    "dev": "開発者",
-    "dev_hint": "開発者ツールを有効化"
-  },
-  "quality_gates": {
-    "title": "品質ゲート",
-    "action_reject": "Reject",
-    "action_tag": "Tag",
-    "action_warn": "Warn",
-    "loading": "読み込み中...",
-    "error_loading": "設定の読み込みエラー",
-    "active_rules": "{count}個のアクティブなフィルタールール",
-    "loading_config": "品質ゲートの設定を読み込み中...",
-    "description": "品質ゲートは、実行ディスパッチ中にAI生成のメモリとレビューをフィルタリングします。パターンは各提出物のタイトルとコンテンツの組み合わせに対して部分文字列として照合されます。パターンが一致すると、設定されたアクションが適用されます。これらのルールは、運用上のノイズ（認証情報エラー、スタックトレース、空のワークスペースレポート）がナレッジベースを汚染するのを防ぎます。",
-    "memory_filters": "メモリフィルター",
-    "memory_filters_desc": "AgentMemoryの提出物に適用されます。運用上の失敗や認証情報の漏洩がペルソナのメモリとして保存されるのをブロックします。",
-    "review_filters": "レビューフィルター",
-    "review_filters_desc": "ManualReviewの提出物に適用されます。インフラのエラーをフィルタリングして、本当のビジネス上の意思決定のみがレビューキューに届くようにします。",
-    "rejected_categories": "拒否されたカテゴリ",
-    "rules_count": "{count}個のルール",
-    "rules_count_plural": "{count}個のルール",
-    "reset_defaults": "デフォルトにリセット",
-    "confirm_reset": "リセットを確認しますか？",
-    "rules_hint": "ルールは各ディスパッチ時にデータベースから読み込まれます。変更はすぐに有効になります。"
   }
 }

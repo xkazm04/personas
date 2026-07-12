@@ -1,4 +1,6 @@
 {
+  "title": "설정",
+  "settings_saved": "저장됨",
   "account": {
     "title": "계정",
     "subtitle": "로그인 및 프로필을 관리합니다",
@@ -64,6 +66,14 @@
       "synced_memories": "메모리",
       "synced_knowledge_patterns": "지식"
     }
+  },
+  "appearance_extra": {
+    "simple": "Simple",
+    "simple_hint": "Core features only",
+    "full": "Full",
+    "full_hint": "Show the complete interface",
+    "dev": "Dev",
+    "dev_hint": "Unlock developer tooling"
   },
   "appearance": {
     "title": "Appearance",
@@ -642,6 +652,27 @@
     "before": "변경 전",
     "after": "변경 후"
   },
+  "quality_gates": {
+    "title": "Quality Gates",
+    "loading": "Loading...",
+    "error_loading": "Error loading config",
+    "active_rules": "{count} active filter rules",
+    "loading_config": "Loading quality gate configuration...",
+    "description": "Quality gates filter AI-generated memories and reviews during execution dispatch. Patterns are matched as substrings against the combined title and content of each submission. When a pattern matches, the configured action is applied. These rules prevent operational noise (credential errors, stack traces, empty workspace reports) from polluting your knowledge base.",
+    "memory_filters": "Memory Filters",
+    "memory_filters_desc": "Applied to AgentMemory submissions. Blocks operational failures and credential leaks from being stored as persona memories.",
+    "review_filters": "Review Filters",
+    "review_filters_desc": "Applied to ManualReview submissions. Filters infrastructure errors so only genuine business decisions reach the review queue.",
+    "rejected_categories": "Rejected categories",
+    "rules_count": "{count} rule",
+    "rules_count_plural": "{count} rules",
+    "reset_defaults": "Reset to defaults",
+    "confirm_reset": "Confirm reset?",
+    "rules_hint": "Rules are loaded from the database on each dispatch. Changes take effect immediately.",
+    "action_reject": "Reject",
+    "action_tag": "Tag",
+    "action_warn": "Warn"
+  },
   "api_keys": {
     "title": "API Keys",
     "description": "Generate keys for third-party tools and MCP clients to drive Personas remotely. Each key authenticates to the local management HTTP server (127.0.0.1:9420) — only valid keys can start builds, list personas, or trigger executions.",
@@ -753,36 +784,5 @@
       "api_keys": "API 키",
       "history": "기록"
     }
-  },
-  "title": "설정",
-  "settings_saved": "저장됨",
-  "appearance_extra": {
-    "simple": "Simple",
-    "simple_hint": "Core features only",
-    "full": "Full",
-    "full_hint": "Show the complete interface",
-    "dev": "Dev",
-    "dev_hint": "Unlock developer tooling"
-  },
-  "quality_gates": {
-    "title": "Quality Gates",
-    "action_reject": "Reject",
-    "action_tag": "Tag",
-    "action_warn": "Warn",
-    "loading": "Loading...",
-    "error_loading": "Error loading config",
-    "active_rules": "{count} active filter rules",
-    "loading_config": "Loading quality gate configuration...",
-    "description": "Quality gates filter AI-generated memories and reviews during execution dispatch. Patterns are matched as substrings against the combined title and content of each submission. When a pattern matches, the configured action is applied. These rules prevent operational noise (credential errors, stack traces, empty workspace reports) from polluting your knowledge base.",
-    "memory_filters": "Memory Filters",
-    "memory_filters_desc": "Applied to AgentMemory submissions. Blocks operational failures and credential leaks from being stored as persona memories.",
-    "review_filters": "Review Filters",
-    "review_filters_desc": "Applied to ManualReview submissions. Filters infrastructure errors so only genuine business decisions reach the review queue.",
-    "rejected_categories": "Rejected categories",
-    "rules_count": "{count} rule",
-    "rules_count_plural": "{count} rules",
-    "reset_defaults": "Reset to defaults",
-    "confirm_reset": "Confirm reset?",
-    "rules_hint": "Rules are loaded from the database on each dispatch. Changes take effect immediately."
   }
 }

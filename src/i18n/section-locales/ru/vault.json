@@ -1,6 +1,24 @@
 {
+  "title": "Хранилище",
+  "subtitle": "Выберите способ добавления учётных данных",
+  "add_from_catalog": "Добавить из каталога",
+  "ai_designed": "Учётные данные, созданные ИИ",
   "workspace_connect": "Подключение рабочей области",
   "quick_start": "Быстрый старт",
+  "health": {
+    "healthy": "исправно",
+    "needs_attention": "требует внимания",
+    "untested": "не проверено"
+  },
+  "list": {
+    "no_credentials": "Аутентифицированные сервисы не обнаружены. Выберите вручную ниже.",
+    "delete_confirm": "Удалить эти учётные данные?",
+    "blast_radius": "Зона влияния",
+    "no_dependencies": "Ни один агент не зависит от этих учётных данных. Можно безопасно изменить или удалить.",
+    "affected_agents": "Затронутые агенты",
+    "affected_events": "Затронутые события",
+    "sort_label": "Сортировка:"
+  },
   "import": {
     "title": "Источник импорта",
     "picker_subtitle": "Выберите источник ваших секретов",
@@ -26,23 +44,6 @@
     "import_secrets_other": "Импортировать {count} секретов"
   },
   "features": {
-    "anomaly": {
-      "healthy": "В норме",
-      "transient_issues": "Временные проблемы",
-      "degrading": "Ухудшение",
-      "permanent_errors": "Постоянные ошибки",
-      "critical": "Критично",
-      "stale": "устарело",
-      "samples": "{count} проверок",
-      "permanent": "Постоянные: {rate}",
-      "transient": "Временные: {rate}",
-      "tolerance": "Допустимо: {rate}"
-    },
-    "intelligence": {
-      "operation": "Операция",
-      "detail": "Детали",
-      "time": "Время"
-    },
     "anomaly_detected": "Обнаружена аномалия: учётные данные внезапно перестали работать после предыдущего успеха. Возможный отзыв.",
     "history": "История",
     "event_triggers": "Триггеры событий",
@@ -66,6 +67,18 @@
       "enable_failed": "Не удалось включить ротацию: {error}",
       "last_rotated": "Последняя ротация {time}"
     },
+    "anomaly": {
+      "healthy": "В норме",
+      "transient_issues": "Временные проблемы",
+      "degrading": "Ухудшение",
+      "permanent_errors": "Постоянные ошибки",
+      "critical": "Критично",
+      "stale": "устарело",
+      "samples": "{count} проверок",
+      "permanent": "Постоянные: {rate}",
+      "transient": "Временные: {rate}",
+      "tolerance": "Допустимо: {rate}"
+    },
     "rotation_badge": {
       "disabled": "Отключено",
       "perm_errors": "Постоянные ошибки",
@@ -80,6 +93,11 @@
       "op_deleted": "Удалено",
       "op_healthcheck": "Тест подключения",
       "filter_all": "все"
+    },
+    "intelligence": {
+      "operation": "Операция",
+      "detail": "Детали",
+      "time": "Время"
     }
   },
   "negotiator": {
@@ -187,10 +205,15 @@
   "body": {
     "authorizing": "Авторизация через {name}...",
     "authorize_with": "Авторизоваться через {name}",
-    "consent_completed": "Согласие {name} получено в {time}",
     "authorize_hint": "Открывает форму входа {name} и сохраняет доступ после подтверждения.",
+    "consent_completed": "Согласие {name} получено в {time}",
     "update_failed": "Не удалось обновить учётные данные",
     "delete_credential": "Удалить учётные данные"
+  },
+  "connector": {
+    "filter_all": "Все",
+    "filter_connected": "Подключённые",
+    "filter_available": "Доступные"
   },
   "auto_cred": {
     "guided_setup": "Пошаговая настройка",
@@ -231,6 +254,38 @@
     "save_procedure": "Сохранить процедуру",
     "procedure_saved": "Процедура сохранена"
   },
+  "vector": {
+    "documents_tab": "Документы",
+    "search_tab": "Поиск",
+    "settings_tab": "Настройки",
+    "ingest_title": "Добавить документы",
+    "ingest_hint": "Перетащите файлы или нажмите для выбора",
+    "ingest_drop": "Перетащите файлы для добавления",
+    "ingest_supported": "Поддерживаются: txt, md, html, csv, json, yaml, файлы кода",
+    "starting_ingestion": "Обработка файлов...",
+    "no_valid_files": "Допустимые пути файлов не найдены. Попробуйте перетащить отдельные файлы.",
+    "no_documents": "Документов пока нет",
+    "no_documents_hint": "Перетащите файлы, вставьте текст или просканируйте директорию для создания базы знаний.",
+    "refresh": "Обновить",
+    "paste_text": "Вставить текст",
+    "directory": "Директория",
+    "delete_document": "Удалить документ",
+    "document_count_one": "{count} документ",
+    "document_count_other": "{count} документов",
+    "show_full": "Показать полный фрагмент",
+    "show_less": "Скрыть",
+    "copy_content": "Скопировать содержимое",
+    "kb_info": "Информация о базе знаний",
+    "embedding_model": "Модель поиска",
+    "dimensions": "Измерения",
+    "chunk_size": "Размер секции",
+    "chunk_overlap": "Перекрытие секций",
+    "statistics": "Статистика",
+    "documents": "Документы",
+    "chunks": "Секции",
+    "local_embedding": "Локальный поиск",
+    "local_embedding_hint": "Индексирование поиска работает локально с использованием {model} ({dims}-мерн.). Данные не покидают ваше устройство. Модель (~23 МБ) загружается при первом использовании и сохраняется локально."
+  },
   "design_modal": {
     "title": "Создать учётные данные",
     "error_title": "Что-то пошло не так",
@@ -246,12 +301,32 @@
     "start_over": "Начать заново",
     "try_again_with": "Повторить с запросом"
   },
+  "desktop": {
+    "installed": "Установлено",
+    "running": "Запущено",
+    "not_installed": "Не установлено"
+  },
+  "graph": {
+    "no_dependencies": "Нет зависимостей",
+    "connection_count_one": "{count} подключение",
+    "connection_count_other": "{count} подключений",
+    "dep_count_one": "{count} зависимость",
+    "dep_count_other": "{count} зависимостей",
+    "not_tested": "Не проверено",
+    "healthy": "В норме",
+    "unhealthy": "Нездорово"
+  },
+  "wizard": {
+    "detected": "Обнаружено ({count})",
+    "available": "Доступно ({count})",
+    "already_added": "Уже добавлено ({count})",
+    "no_match": "Нет сервисов по запросу \\\"{search}\\\"",
+    "already_added_badge": "Уже добавлено",
+    "local": "Локальный",
+    "cli_auth": "CLI-авторизация",
+    "session": "Сессия"
+  },
   "playground": {
-    "mcp_run": "Запустить",
-    "mcp_error": "Ошибка",
-    "mcp_success": "Успешно",
-    "mcp_empty": "(пусто)",
-    "response_empty": "(пустой ответ)",
     "tab_overview": "Обзор",
     "tab_api_explorer": "Обозреватель API",
     "tab_recipes": "Рецепты",
@@ -265,9 +340,14 @@
     "path_placeholder": "/api/v1/resource",
     "sending": "Отправка...",
     "mcp_input_schema": "Схема ввода",
+    "mcp_run": "Запустить",
+    "mcp_error": "Ошибка",
+    "mcp_success": "Успешно",
+    "mcp_empty": "(пусто)",
     "mcp_discover": "Обнаружить инструменты MCP-сервера",
     "mcp_discover_hint": "Подключитесь к MCP-серверу для обнаружения доступных инструментов и их тестирования.",
     "mcp_discover_button": "Обнаружить инструменты",
+    "response_empty": "(пустой ответ)",
     "header": "Заголовок",
     "value": "Значение",
     "path_parameters": "Параметры пути",
@@ -641,14 +721,27 @@
     "title_dependencies": "Зависимости",
     "title_databases": "Базы данных"
   },
+  "bulk_healthcheck": {
+    "title": "Результаты проверки здоровья",
+    "needs_attention": "Требует внимания",
+    "slowest_responses": "Самые медленные ответы",
+    "passed_count": "{count} пройдено",
+    "failed_count": "{count} провалено",
+    "total_count": "{count} всего"
+  },
+  "health_bar": {
+    "healthy": "в норме",
+    "needs_attention": "требует внимания",
+    "untested": "не проверено"
+  },
   "breadcrumb": {
     "aria_label": "Навигация хранилища"
   },
   "credential_card": {
-    "delete_credential": "Удалить учётные данные",
     "deleting": "Удаление {name}...",
     "no_connector": "Для этого типа учётных данных нет определения коннектора.",
     "stored_result": "Сохранённый результат проверки подключения",
+    "delete_credential": "Удалить учётные данные",
     "corrupted": "Повреждено",
     "corrupted_tooltip": "Метаданные кольцевого буфера проверки здоровья повреждены. Оценки аномалий недоступны до следующей успешной проверки.",
     "field_count_one": "{count} поле",
@@ -690,6 +783,21 @@
     "label_type": "Тип",
     "unverified_warning": "Не удалось проверить все зависимости. Некоторые подключённые агенты или автоматизации могут быть не показаны."
   },
+  "card_body": {
+    "failed_update": "Не удалось обновить учётные данные",
+    "authorizing_with": "Авторизация через {name}...",
+    "authorize_with": "Авторизоваться через {name}",
+    "authorize_hint": "Запускает согласие {name} под управлением приложения и обновляет токен обновления после подтверждения.",
+    "consent_completed": "Согласие {name} получено в {time}"
+  },
+  "card_details": {
+    "tab_intelligence": "Аналитика",
+    "tab_rotation": "Ротация",
+    "tab_token_lifetime": "Время жизни токена",
+    "tab_services": "Сервисы ({count})",
+    "tab_events": "События ({count})",
+    "tab_audit": "Аудит"
+  },
   "intelligence_tab": {
     "loading": "Загрузка аналитических данных",
     "tab_overview": "Обзор",
@@ -710,6 +818,18 @@
     "link_structural": "структурное",
     "link_observed": "наблюдаемое",
     "via_connector": "через {connector}"
+  },
+  "token_metrics": {
+    "loading": "Загрузка метрик...",
+    "no_metrics": "Метрики обновления токена пока не записаны. Метрики появятся после первого обновления токена OAuth.",
+    "trend_warning": "Время жизни токена сокращается — возможно, ограничения провайдера или изменение политики.",
+    "total_refreshes": "Всего обновлений",
+    "failure_rate": "Частота сбоев",
+    "avg_lifetime": "Среднее время жизни",
+    "avg_drift": "Среднее отклонение",
+    "recent_ttls": "Последние TTL провайдера (новейшие первые)",
+    "recent_refreshes": "Последние обновления",
+    "fallback_used": "Резерв ({fallback}с) использован в {rate}% обновлений ({count}/{total}) — провайдер не возвращает"
   },
   "reauth_banner": {
     "access_revoked": ") -- доступ был отозван. Повторно авторизуйтесь, чтобы возобновить автоматизации.",
@@ -864,6 +984,66 @@
     "health_failing": "Ошибка",
     "health_untested": "Не проверено"
   },
+  "wizard_detect": {
+    "no_services": "Нет сервисов по запросу \\\"{search}\\\"",
+    "select_services": "Выберите сервисы для добавления учётных данных или просканируйте для автообнаружения.",
+    "scanning": "Сканирование CLI-инструментов и браузерных сессий...",
+    "scan_button": "Сканировать на авторизованные сервисы",
+    "search_services": "Поиск сервисов...",
+    "desktop_bridge": "Десктопный мост — автообнаружение",
+    "batch_complete": "Пакетная настройка завершена",
+    "skip_service": "Пропустить этот сервис",
+    "no_filter_match": "Попробуйте другой поисковый запрос или сбросьте фильтр.",
+    "set_up_credentials": "Настроить учётные данные",
+    "clear_selection": "Очистить выбор",
+    "set_up_services": "Настроить {count} сервис{plural}",
+    "setting_up": "Настройка {current} из {total}",
+    "wizard_title": "Мастер настройки учётных данных",
+    "choose_service": "Выберите сервис для настройки",
+    "ai_walk_description": "ИИ проведёт вас шаг за шагом через получение учётных данных API.",
+    "wizard_subtitle": "Настройка учётных данных с помощью ИИ",
+    "wizard_subtitle_batch": "Настройка {count} сервис{plural}"
+  },
+  "autopilot": {
+    "title": "API Autopilot",
+    "input_hint": "Вставьте URL или содержимое спецификации OpenAPI для автогенерации коннектора",
+    "preview_hint": "Просмотрите разобранный API и выберите конечные точки для включения",
+    "generated_hint": "Ваш коннектор успешно создан",
+    "connector_generated": "Коннектор успешно создан",
+    "api_playground": "Площадка API",
+    "api_playground_hint": "Протестируйте созданные инструменты API перед использованием",
+    "paste_spec": "Вставить спецификацию OpenAPI (JSON или YAML)",
+    "valid_url_error": "Введите действительный URL (например, https://api.example.com/openapi.json)",
+    "authentication": "Аутентификация",
+    "connector_name": "Имя коннектора",
+    "color": "Цвет",
+    "endpoints_selected": "Конечные точки ({selected}/{total} выбрано)",
+    "generating": "Генерация...",
+    "generate_connector": "Создать коннектор ({count} инструментов)",
+    "base_url": "Базовый URL",
+    "headers_label": "Заголовки",
+    "header_name_placeholder": "Имя заголовка",
+    "query_parameters": "Параметры запроса",
+    "param_name_placeholder": "Имя параметра",
+    "request_body": "Тело запроса (JSON)",
+    "from_url": "Из URL",
+    "paste_content": "Вставить содержимое",
+    "openapi_spec_url": "URL спецификации OpenAPI",
+    "openapi_format_hint": "Поддерживает спецификации OpenAPI 3.x и Swagger 2.x в формате JSON или YAML",
+    "parsing_spec": "Разбор спецификации...",
+    "parse_analyze": "Разобрать и проанализировать",
+    "connector_in_catalog": "{connectorLabel} теперь доступен в каталоге коннекторов с {toolCount} определениями инструментов.",
+    "generated_tools": "Сгенерированные инструменты ({count})",
+    "credential_fields": "Поля учётных данных",
+    "open_playground": "Открыть песочницу",
+    "copy_connector_id": "Скопировать ID коннектора",
+    "go_to_catalog": "Перейти к каталогу",
+    "response_headers": "Заголовки ответа ({count})",
+    "base_url_placeholder": "https://api.example.com",
+    "openapi_url_placeholder": "https://api.example.com/openapi.json",
+    "auth_schemes": "схемы авторизации",
+    "body_placeholder": "{ \"key\": \"value\" }"
+  },
   "foraging": {
     "no_credentials_found": "Учётных данных не найдено",
     "no_credentials_hint": "Попробуйте установить переменные среды, например OPENAI_API_KEY, или настроить ~/.aws/credentials.",
@@ -996,6 +1176,18 @@
     "sort_most_used_with_recipes": "Most-used with recipes",
     "new_connector_ribbon": "New",
     "new_connector_tooltip": "Added in the last 30 days"
+  },
+  "cli_capture": {
+    "cta": "Импортировать из локального CLI",
+    "hint": "Используйте уже авторизованный локальный CLI вместо вставки API-ключа.",
+    "running": "Запуск локального CLI...",
+    "success": "Учётные данные получены из CLI",
+    "token_ttl_notice": "Этот токен истекает через {seconds}с и будет автоматически обновлён.",
+    "source_label": "CLI",
+    "missing_binary": "`{binary}` не установлен или не находится в разрешённом расположении.",
+    "unauthenticated": "Вы не авторизованы в {binary}. {instruction}",
+    "capture_failed": "Получение данных из CLI не удалось: {detail}",
+    "timeout": "Истекло время ожидания CLI. Попробуйте сначала выполнить команду вручную."
   },
   "schemas": {
     "none_configured": "Не настроено.",
@@ -1212,6 +1404,11 @@
     "retry_authorized": "Я авторизовал — повторить",
     "retry_failed": "Повтор не удался"
   },
+  "rotation_insight": {
+    "perm_errors": "Обнаружены постоянные ошибки — попытка ротации, отправка оповещений.",
+    "degrading": "Устойчивая деградация — запущена превентивная ротация.",
+    "backoff": "Временные сбои — активна экспоненциальная задержка повтора."
+  },
   "schema_configs": {
     "mcp": {
       "title": "MCP Server",
@@ -1395,202 +1592,5 @@
     "time_tracking": "Учет времени",
     "vector_search": "Векторный поиск",
     "web_scraping": "Веб-скрейпинг"
-  },
-  "title": "Хранилище",
-  "subtitle": "Выберите способ добавления учётных данных",
-  "add_from_catalog": "Добавить из каталога",
-  "ai_designed": "Учётные данные, созданные ИИ",
-  "health": {
-    "healthy": "исправно",
-    "needs_attention": "требует внимания",
-    "untested": "не проверено"
-  },
-  "list": {
-    "no_credentials": "Аутентифицированные сервисы не обнаружены. Выберите вручную ниже.",
-    "delete_confirm": "Удалить эти учётные данные?",
-    "blast_radius": "Зона влияния",
-    "no_dependencies": "Ни один агент не зависит от этих учётных данных. Можно безопасно изменить или удалить.",
-    "affected_agents": "Затронутые агенты",
-    "affected_events": "Затронутые события",
-    "sort_label": "Сортировка:"
-  },
-  "connector": {
-    "filter_all": "Все",
-    "filter_connected": "Подключённые",
-    "filter_available": "Доступные"
-  },
-  "vector": {
-    "documents_tab": "Документы",
-    "search_tab": "Поиск",
-    "settings_tab": "Настройки",
-    "ingest_title": "Добавить документы",
-    "ingest_hint": "Перетащите файлы или нажмите для выбора",
-    "ingest_drop": "Перетащите файлы для добавления",
-    "ingest_supported": "Поддерживаются: txt, md, html, csv, json, yaml, файлы кода",
-    "starting_ingestion": "Обработка файлов...",
-    "no_valid_files": "Допустимые пути файлов не найдены. Попробуйте перетащить отдельные файлы.",
-    "no_documents": "Документов пока нет",
-    "no_documents_hint": "Перетащите файлы, вставьте текст или просканируйте директорию для создания базы знаний.",
-    "refresh": "Обновить",
-    "paste_text": "Вставить текст",
-    "directory": "Директория",
-    "delete_document": "Удалить документ",
-    "document_count_one": "{count} документ",
-    "document_count_other": "{count} документов",
-    "show_full": "Показать полный фрагмент",
-    "show_less": "Скрыть",
-    "copy_content": "Скопировать содержимое",
-    "kb_info": "Информация о базе знаний",
-    "embedding_model": "Модель поиска",
-    "dimensions": "Измерения",
-    "chunk_size": "Размер секции",
-    "chunk_overlap": "Перекрытие секций",
-    "statistics": "Статистика",
-    "documents": "Документы",
-    "chunks": "Секции",
-    "local_embedding": "Локальный поиск",
-    "local_embedding_hint": "Индексирование поиска работает локально с использованием {model} ({dims}-мерн.). Данные не покидают ваше устройство. Модель (~23 МБ) загружается при первом использовании и сохраняется локально."
-  },
-  "desktop": {
-    "installed": "Установлено",
-    "running": "Запущено",
-    "not_installed": "Не установлено"
-  },
-  "graph": {
-    "no_dependencies": "Нет зависимостей",
-    "connection_count_one": "{count} подключение",
-    "connection_count_other": "{count} подключений",
-    "dep_count_one": "{count} зависимость",
-    "dep_count_other": "{count} зависимостей",
-    "not_tested": "Не проверено",
-    "healthy": "В норме",
-    "unhealthy": "Нездорово"
-  },
-  "wizard": {
-    "detected": "Обнаружено ({count})",
-    "available": "Доступно ({count})",
-    "already_added": "Уже добавлено ({count})",
-    "no_match": "Нет сервисов по запросу \\\"{search}\\\"",
-    "already_added_badge": "Уже добавлено",
-    "local": "Локальный",
-    "cli_auth": "CLI-авторизация",
-    "session": "Сессия"
-  },
-  "bulk_healthcheck": {
-    "title": "Результаты проверки здоровья",
-    "needs_attention": "Требует внимания",
-    "slowest_responses": "Самые медленные ответы",
-    "passed_count": "{count} пройдено",
-    "failed_count": "{count} провалено",
-    "total_count": "{count} всего"
-  },
-  "health_bar": {
-    "healthy": "в норме",
-    "needs_attention": "требует внимания",
-    "untested": "не проверено"
-  },
-  "card_body": {
-    "failed_update": "Не удалось обновить учётные данные",
-    "authorizing_with": "Авторизация через {name}...",
-    "authorize_with": "Авторизоваться через {name}",
-    "authorize_hint": "Запускает согласие {name} под управлением приложения и обновляет токен обновления после подтверждения.",
-    "consent_completed": "Согласие {name} получено в {time}"
-  },
-  "card_details": {
-    "tab_intelligence": "Аналитика",
-    "tab_rotation": "Ротация",
-    "tab_token_lifetime": "Время жизни токена",
-    "tab_services": "Сервисы ({count})",
-    "tab_events": "События ({count})",
-    "tab_audit": "Аудит"
-  },
-  "token_metrics": {
-    "loading": "Загрузка метрик...",
-    "no_metrics": "Метрики обновления токена пока не записаны. Метрики появятся после первого обновления токена OAuth.",
-    "trend_warning": "Время жизни токена сокращается — возможно, ограничения провайдера или изменение политики.",
-    "total_refreshes": "Всего обновлений",
-    "failure_rate": "Частота сбоев",
-    "avg_lifetime": "Среднее время жизни",
-    "avg_drift": "Среднее отклонение",
-    "recent_ttls": "Последние TTL провайдера (новейшие первые)",
-    "recent_refreshes": "Последние обновления",
-    "fallback_used": "Резерв ({fallback}с) использован в {rate}% обновлений ({count}/{total}) — провайдер не возвращает"
-  },
-  "wizard_detect": {
-    "no_services": "Нет сервисов по запросу \\\"{search}\\\"",
-    "select_services": "Выберите сервисы для добавления учётных данных или просканируйте для автообнаружения.",
-    "scanning": "Сканирование CLI-инструментов и браузерных сессий...",
-    "scan_button": "Сканировать на авторизованные сервисы",
-    "search_services": "Поиск сервисов...",
-    "desktop_bridge": "Десктопный мост — автообнаружение",
-    "batch_complete": "Пакетная настройка завершена",
-    "skip_service": "Пропустить этот сервис",
-    "no_filter_match": "Попробуйте другой поисковый запрос или сбросьте фильтр.",
-    "set_up_credentials": "Настроить учётные данные",
-    "clear_selection": "Очистить выбор",
-    "set_up_services": "Настроить {count} сервис{plural}",
-    "setting_up": "Настройка {current} из {total}",
-    "wizard_title": "Мастер настройки учётных данных",
-    "choose_service": "Выберите сервис для настройки",
-    "ai_walk_description": "ИИ проведёт вас шаг за шагом через получение учётных данных API.",
-    "wizard_subtitle": "Настройка учётных данных с помощью ИИ",
-    "wizard_subtitle_batch": "Настройка {count} сервис{plural}"
-  },
-  "autopilot": {
-    "title": "API Autopilot",
-    "input_hint": "Вставьте URL или содержимое спецификации OpenAPI для автогенерации коннектора",
-    "preview_hint": "Просмотрите разобранный API и выберите конечные точки для включения",
-    "generated_hint": "Ваш коннектор успешно создан",
-    "connector_generated": "Коннектор успешно создан",
-    "api_playground": "Площадка API",
-    "api_playground_hint": "Протестируйте созданные инструменты API перед использованием",
-    "paste_spec": "Вставить спецификацию OpenAPI (JSON или YAML)",
-    "valid_url_error": "Введите действительный URL (например, https://api.example.com/openapi.json)",
-    "authentication": "Аутентификация",
-    "connector_name": "Имя коннектора",
-    "color": "Цвет",
-    "endpoints_selected": "Конечные точки ({selected}/{total} выбрано)",
-    "generating": "Генерация...",
-    "generate_connector": "Создать коннектор ({count} инструментов)",
-    "base_url": "Базовый URL",
-    "headers_label": "Заголовки",
-    "header_name_placeholder": "Имя заголовка",
-    "query_parameters": "Параметры запроса",
-    "param_name_placeholder": "Имя параметра",
-    "request_body": "Тело запроса (JSON)",
-    "from_url": "Из URL",
-    "paste_content": "Вставить содержимое",
-    "openapi_spec_url": "URL спецификации OpenAPI",
-    "openapi_format_hint": "Поддерживает спецификации OpenAPI 3.x и Swagger 2.x в формате JSON или YAML",
-    "parsing_spec": "Разбор спецификации...",
-    "parse_analyze": "Разобрать и проанализировать",
-    "connector_in_catalog": "{connectorLabel} теперь доступен в каталоге коннекторов с {toolCount} определениями инструментов.",
-    "generated_tools": "Сгенерированные инструменты ({count})",
-    "credential_fields": "Поля учётных данных",
-    "open_playground": "Открыть песочницу",
-    "copy_connector_id": "Скопировать ID коннектора",
-    "go_to_catalog": "Перейти к каталогу",
-    "response_headers": "Заголовки ответа ({count})",
-    "base_url_placeholder": "https://api.example.com",
-    "openapi_url_placeholder": "https://api.example.com/openapi.json",
-    "auth_schemes": "схемы авторизации",
-    "body_placeholder": "{ \"key\": \"value\" }"
-  },
-  "cli_capture": {
-    "cta": "Импортировать из локального CLI",
-    "hint": "Используйте уже авторизованный локальный CLI вместо вставки API-ключа.",
-    "running": "Запуск локального CLI...",
-    "success": "Учётные данные получены из CLI",
-    "token_ttl_notice": "Этот токен истекает через {seconds}с и будет автоматически обновлён.",
-    "source_label": "CLI",
-    "missing_binary": "`{binary}` не установлен или не находится в разрешённом расположении.",
-    "unauthenticated": "Вы не авторизованы в {binary}. {instruction}",
-    "capture_failed": "Получение данных из CLI не удалось: {detail}",
-    "timeout": "Истекло время ожидания CLI. Попробуйте сначала выполнить команду вручную."
-  },
-  "rotation_insight": {
-    "perm_errors": "Обнаружены постоянные ошибки — попытка ротации, отправка оповещений.",
-    "degrading": "Устойчивая деградация — запущена превентивная ротация.",
-    "backoff": "Временные сбои — активна экспоненциальная задержка повтора."
   }
 }

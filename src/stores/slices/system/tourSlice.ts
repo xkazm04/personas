@@ -502,7 +502,7 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
   {
     id: "plugin-dev-tools",
     title: "Dev Tools — projects, ideas, runners",
-    description: "Dev Tools is the workspace-management plugin. Track local projects, scan a repo for idea seeds, triage the backlog, dispatch task-runners, and watch your Claude Code sessions in the Fleet sub-tab. Useful when an agent's job is to wrangle code.",
+    description: "Dev Tools is the workspace-management plugin. Track local projects, scan a repo for idea seeds, triage the backlog, dispatch task-runners, map where each project calls an LLM, and watch your Claude Code sessions in the Fleet sub-tab. Useful when an agent's job is to wrangle code.",
     hint: "Open Dev Tools and skim its sub-tabs.",
     nav: { sidebarSection: "plugins", subTab: "dev-tools" },
     completeOn: "tour:plugin-surface-visited",
@@ -511,6 +511,7 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
       { id: "dev-projects", label: "Projects", hint: "Register a local repo so agents can chat with its files, scan for issues, or run scripts." },
       { id: "dev-idea-scanner", label: "Idea scanner / triage", hint: "Scan a project for backlog candidates, then approve or reject them in Idea Triage. Approved ideas become tasks." },
       { id: "dev-task-runner", label: "Task runner", hint: "Dispatch tasks to remote workers (or Claude Code sessions). Watch progress with live logs." },
+      { id: "dev-llm-overview", label: "LLM Overview", hint: "Wire each project to an LLM-observability tool (Langfuse, LangSmith, Helicone, or LightTrack) to see where it calls an LLM — use case, provider, model, tokens and cost." },
     ],
   },
   {

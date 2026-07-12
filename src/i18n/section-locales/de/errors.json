@@ -1,5 +1,4 @@
 {
-  "dismiss_error": "Fehler verwerfen",
   "boundary_title": "Etwas Unerwartetes ist in {name} passiert",
   "boundary_title_generic": "Etwas Unerwartetes ist passiert",
   "boundary_body": "Keine Sorge -- Ihre Daten sind sicher. Sie können es erneut versuchen oder zum Dashboard zurückkehren.",
@@ -10,6 +9,7 @@
   "boundary_dev": "Für Entwickler",
   "boundary_no_stack": "Kein Stacktrace verfügbar",
   "go_back": "Zurück",
+  "dismiss_error": "Fehler verwerfen",
   "not_found": "Die angeforderte Ressource wurde nicht gefunden",
   "validation": "Ungültige Eingabe: {detail}",
   "auth": "Authentifizierung fehlgeschlagen -- prüfen Sie Ihre Zugangsdaten",

@@ -119,6 +119,7 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "적용하는 동안 설정 {count}개를 입력하게 됩니다",
   "_comment_tags_heading": "Section heading for the tags list",
+  "tags_heading": "Tags",
   "tag_filter_tooltip": "이 태그의 레시피 보기",
   "guardrails_heading": "가드레일 및 메모리",
   "events_label": "이벤트",
@@ -229,6 +230,5 @@
   "update_badge": "업데이트",
   "update_badge_detail_tooltip": "v{from}에서 적용됨; 현재 카탈로그 버전은 v{to}입니다. 업데이트하려면 제거 후 다시 적용하세요.",
   "update_badge_tooltip": "이 기능의 최신 버전을 사용할 수 있습니다 — 업데이트하려면 제거 후 다시 적용하세요",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
-  "tags_heading": "Tags"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

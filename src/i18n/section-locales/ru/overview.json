@@ -1,13 +1,14 @@
 {
+  "title": "Обзор",
+  "no_output": "Вывод отсутствует",
+  "no_background_jobs": "Нет запущенных или недавних фоновых задач",
+  "background_jobs_hint": "Задачи появляются здесь при запуске преобразований n8n, внедрений шаблонов, генерации шаблонов или отладки запросов",
   "filters": {
     "start_date": "Дата начала",
     "end_date": "Дата окончания",
     "all_personas": "Все агенты"
   },
   "messages": {
-    "priority_high": "Высокий",
-    "priority_normal": "Обычный",
-    "priority_low": "Низкий",
     "loading": "Загрузка сообщений...",
     "no_messages": "Сообщений пока нет",
     "switch_to_all": "Попробуйте переключить на \\\\\\\"Все\\\\\\\", чтобы увидеть все сообщения",
@@ -19,6 +20,9 @@
       "created": "Создано"
     },
     "content_header": "Содержание",
+    "priority_high": "Высокий",
+    "priority_normal": "Обычный",
+    "priority_low": "Низкий",
     "filter_all": "Все",
     "filter_unread": "Непрочитанные",
     "filter_high_priority": "Высокий приоритет",
@@ -33,6 +37,14 @@
     "id_label": "ID:",
     "confirm_delete_title": "Подтвердить удаление",
     "close_message": "Закрыть подробности сообщения"
+  },
+  "realtime": {
+    "idle": "Простой -- нажмите {action} для имитации трафика",
+    "test_flow": "Тестовый поток",
+    "events_per_min": "событий/мин",
+    "pending": "ожидают",
+    "success": "успешно",
+    "in_window": "в окне"
   },
   "incidents": {
     "filters_active_aria": "{count} активных фильтра",
@@ -148,25 +160,21 @@
     "subtitle": "Мониторинг состояния выполнения, затрат и аномалий по всем агентам",
     "alert_rules": "Правила оповещений",
     "refresh_metrics": "Обновить метрики",
-    "metrics_unavailable": "Метрики недоступны -- показанные данные могут быть устаревшими",
-    "error_recovery": {
-      "panel_loaded": "Loaded",
-      "panel_failed": "Failed to load",
-      "panel_stale": "Data may be outdated"
-    },
     "persona_disabled": "Агент автоматически отключён",
     "auto_resolved": "Эта проблема была решена автоматически",
     "mark_resolved": "Отметить как решённую",
     "manual_fix": "(исправлено вручную)",
+    "metrics_unavailable": "Метрики недоступны -- показанные данные могут быть устаревшими",
     "no_open_issues": "Нет открытых проблем",
-    "run_analysis": "Запустите анализ для проверки проблем."
+    "run_analysis": "Запустите анализ для проверки проблем.",
+    "error_recovery": {
+      "panel_loaded": "Loaded",
+      "panel_failed": "Failed to load",
+      "panel_stale": "Data may be outdated"
+    }
   },
   "memories": {
     "title": "Воспоминания",
-    "delete_all": "Удалить все",
-    "delete_all_confirm_title": "Удалить все воспоминания?",
-    "delete_all_confirm_body": "Это безвозвратно удалит все {count} воспоминаний. Отменить невозможно.",
-    "delete_all_confirm_cta": "Удалить все",
     "created_success": "Воспоминание успешно создано",
     "no_memories": "Воспоминаний пока нет",
     "no_memories_hint": "Когда агенты работают, они могут сохранять здесь ценные заметки и выводы.",
@@ -199,16 +207,95 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "Удалить все",
+    "delete_all_confirm_title": "Удалить все воспоминания?",
+    "delete_all_confirm_body": "Это безвозвратно удалит все {count} воспоминаний. Отменить невозможно.",
+    "delete_all_confirm_cta": "Удалить все"
   },
   "memory_review": {
+    "all_conflicts_resolved": "Все конфликты разрешены",
     "keep_prefix": "Оставить «",
-    "keep_suffix": "»",
-    "all_conflicts_resolved": "Все конфликты разрешены"
+    "keep_suffix": "»"
+  },
+  "executions": {
+    "title": "Выполнения",
+    "loading": "Загрузка выполнений...",
+    "no_agents": "Агенты ещё не созданы",
+    "create_first": "Создайте первого агента, чтобы увидеть здесь активность",
+    "no_executions": "Выполнений пока нет",
+    "run_agent": "Запустите агента, чтобы увидеть здесь активность"
+  },
+  "workflows": {
+    "loading": "Загрузка рабочих процессов...",
+    "title": "Рабочие процессы",
+    "subtitle": "Активные и недавние фоновые операции в вашем рабочем пространстве",
+    "no_jobs": "Нет запущенных или недавних фоновых задач",
+    "jobs_hint": "Задачи появляются здесь при выполнении N8n-преобразований, применения шаблонов, генерации шаблонов или отладки запросов",
+    "all_types": "Все типы",
+    "no_filter_match": "Нет задач по текущим фильтрам",
+    "auto_refreshing": "Автообновление при выполнении задач",
+    "cancel_failed": "Не удалось отменить задачу рабочего процесса"
+  },
+  "schedules": {
+    "title": "Шкала расписания",
+    "subtitle": "Сводное представление всех запланированных выполнений агентов",
+    "engine_on": "Движок включён",
+    "engine_off": "Движок выключен",
+    "engine_on_tooltip": "Планировщик работает -- нажмите для приостановки",
+    "engine_off_tooltip": "Планировщик остановлен -- нажмите для запуска",
+    "active_count": "{count} активных",
+    "paused_count": "{count} приостановлено",
+    "view_grouped": "Группировка",
+    "view_timeline": "Шкала времени",
+    "triggers_fired": "Триггеров сработало: ",
+    "events_processed": "Событий обработано: ",
+    "delivered": "Доставлено: ",
+    "failed_label": "Ошибок: ",
+    "loading": "Загрузка расписаний...",
+    "empty": "Запланированных агентов не найдено.",
+    "empty_hint": "Создайте расписание или триггер опроса для любого агента, чтобы увидеть его здесь.",
+    "group_overdue": "Просрочено",
+    "group_15min": "Следующие 15 минут",
+    "group_1hour": "Следующий час",
+    "group_6hours": "Следующие 6 часов",
+    "group_24hours": "Следующие 24 часа",
+    "group_later": "Позже",
+    "group_paused": "Приостановлено / Без расписания",
+    "run_now": "Запустить сейчас",
+    "change_frequency": "Изменить частоту",
+    "pause_schedule": "Приостановить расписание",
+    "resume_schedule": "Возобновить расписание",
+    "headless_badge": "автономный"
+  },
+  "frequency_editor": {
+    "title": "Изменить частоту",
+    "current": "Текущая: ",
+    "quick_presets": "Быстрые пресеты",
+    "cron_expression": "Выражение cron",
+    "interval_seconds": "Интервал (секунды)",
+    "previewing": "Предпросмотр...",
+    "next_runs": "Следующие запуски",
+    "invalid_cron": "Недопустимое выражение cron"
+  },
+  "recovery": {
+    "agents_missed_one": "{count} агент пропустил выполнения",
+    "agents_missed_other": "{count} агентов пропустили выполнения",
+    "total_skipped": "~{count} запусков пропущено, пока приложение было офлайн",
+    "missed_since": "{count} пропущено с {time}",
+    "every_interval": "каждые {interval}",
+    "mark_for_recovery": "Отметить для восстановления",
+    "recover": "Восстановить",
+    "run_once": "Запустить 1x",
+    "run_once_tooltip": "Запустить один раз сейчас",
+    "skip_tooltip": "Пропустить -- не восстанавливать",
+    "dismiss_all": "Отклонить все",
+    "recover_selected": "Восстановить {count} выбранных"
   },
   "sla": {
     "title": "SLA надёжности агентов",
     "subtitle": "Время безотказной работы, частота сбоев и метрики восстановления по всем агентам",
+    "loading": "Загрузка данных SLA...",
     "no_data": "Данные о выполнениях отсутствуют.",
     "success_rate": "Успешность",
     "executions_summary": "{successful}/{total} выполнений",
@@ -221,12 +308,6 @@
     "daily_success_rate": "Ежедневная успешность -- {days} дней",
     "per_agent": "Надёжность по агентам",
     "no_agent_data": "Ни один агент не выполнялся за этот период.",
-    "success_rate_tooltip": "Success rate = successful / (successful + failed). Cancelled runs are excluded because they are user-initiated and don't reflect system reliability.",
-    "all_time_badge": "All-time",
-    "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
-    "auto_healed_tooltip": "Total issues the healing engine has auto-resolved across the lifetime of this install. This number is all-time and does not change with the time window above.",
-    "windowed_tooltip": "Computed over the selected time window above ({days} days).",
-    "loading": "Загрузка данных SLA...",
     "metric_successful": "Успешных",
     "metric_failed": "Неуспешных",
     "metric_avg_latency": "Средняя задержка",
@@ -234,20 +315,15 @@
     "metric_cost": "Стоимость",
     "metric_mtbf": "MTBF",
     "metric_auto_healed": "Автовосстановлено",
-    "metric_cancelled": "Отменено"
+    "metric_cancelled": "Отменено",
+    "success_rate_tooltip": "Success rate = successful / (successful + failed). Cancelled runs are excluded because they are user-initiated and don't reflect system reliability.",
+    "all_time_badge": "All-time",
+    "open_issues_tooltip": "Currently open healing issues across all agents. This is an all-time snapshot and does not change with the time window above -- an issue that opened months ago and is still open is still broken now.",
+    "auto_healed_tooltip": "Total issues the healing engine has auto-resolved across the lifetime of this install. This number is all-time and does not change with the time window above.",
+    "windowed_tooltip": "Computed over the selected time window above ({days} days)."
   },
   "knowledge": {
     "title": "Граф знаний",
-    "patterns_tab": "Паттерны",
-    "search_placeholder": "Поиск паттернов...",
-    "sort_aria": "Сортировать паттерны",
-    "sort_default": "Топ паттернов",
-    "sort_confidence": "Наивысшая уверенность",
-    "sort_runs": "Больше всего запусков",
-    "sort_recent": "Самые новые",
-    "needs_review": "Требует проверки",
-    "pending_scope_hint": "Выберите персону, чтобы проверить все ожидающие аннотации.",
-    "graph_tab": "Граф",
     "subtitle": "{count} паттернов изучено из истории выполнений",
     "total_patterns": "Всего паттернов",
     "tool_sequences": "Цепочки инструментов",
@@ -269,13 +345,36 @@
     "failures": "Сбоев",
     "avg_cost": "Средняя стоимость",
     "avg_duration": "Средняя длительность",
-    "pattern_data": "Данные паттерна"
+    "pattern_data": "Данные паттерна",
+    "patterns_tab": "Паттерны",
+    "search_placeholder": "Поиск паттернов...",
+    "sort_aria": "Сортировать паттерны",
+    "sort_default": "Топ паттернов",
+    "sort_confidence": "Наивысшая уверенность",
+    "sort_runs": "Больше всего запусков",
+    "sort_recent": "Самые новые",
+    "needs_review": "Требует проверки",
+    "pending_scope_hint": "Выберите персону, чтобы проверить все ожидающие аннотации.",
+    "graph_tab": "Граф"
+  },
+  "conflicts": {
+    "dismissed": "Конфликт отклонён",
+    "resolved": "Конфликт разрешён",
+    "resolve_failed": "Не удалось разрешить конфликт",
+    "conflict_count_one": "{count} конфликт",
+    "conflict_count_other": "{count} конфликтов"
   },
   "dashboard": {
+    "title": "Дашборд",
+    "subtitle": "Операционный обзор и состояние системы",
     "greeting_morning": "Доброе утро",
     "greeting_afternoon": "Добрый день",
     "greeting_evening": "Добрый вечер",
     "default_user": "Оператор",
+    "pending_reviews_prompt": "ожидающих проверок",
+    "requiring_attention": "требующих внимания.",
+    "empty_cta": "Создайте первого агента для начала работы.",
+    "pipeline_failed": "{source} не удалось загрузить",
     "empty_title": "Добро пожаловать в Personas",
     "empty_subtitle": "Создайте первого агента, чтобы здесь начали отображаться метрики выполнения, графики трафика и активность.",
     "create_persona": "Создать агента",
@@ -297,12 +396,6 @@
     "section_memory": "Предложения памяти",
     "section_fleet": "Оптимизация флота",
     "section_routines": "Рутины и изменения хранилища",
-    "title": "Дашборд",
-    "subtitle": "Операционный обзор и состояние системы",
-    "pending_reviews_prompt": "ожидающих проверок",
-    "requiring_attention": "требующих внимания.",
-    "empty_cta": "Создайте первого агента для начала работы.",
-    "pipeline_failed": "{source} не удалось загрузить",
     "instruments_subtitle": "телеметрия флота",
     "memory_suggestions_count": "{count} предложений",
     "pane_instruments": "Инструменты",
@@ -331,6 +424,49 @@
     "triage_tag_pipeline": "СИС",
     "triage_tag_review": "РЕЦ",
     "vitals_subtitle_fleet": "здоровье флота"
+  },
+  "execution_metrics": {
+    "title": "Метрики выполнения",
+    "total_executions": "Всего запусков",
+    "total_cost": "Общие затраты",
+    "success_rate": "Успешность",
+    "avg_latency": "Средняя задержка",
+    "cost_anomalies": "Обнаружены аномалии затрат",
+    "no_data": "Нет данных о выполнении за выбранный период",
+    "cost_per_day": "Затраты в день",
+    "executions_by_status": "Запуски по статусам",
+    "success_rate_trend": "Тенденция успешности",
+    "latency_distribution": "Распределение задержки (p50 / p95 / p99)",
+    "top_personas_by_cost": "Топ агентов по затратам",
+    "cost_spike": "Скачок затрат",
+    "above_avg": "выше среднего",
+    "top_executions": "Топ запусков:",
+    "executions_label": "{count} запусков"
+  },
+  "execution_list": {
+    "recorded": "{count} запусков записано",
+    "recorded_one": "{count} запуск записан",
+    "list": "Список",
+    "metrics": "Метрики",
+    "show_list": "Показать список запусков",
+    "show_metrics": "Показать дашборд метрик",
+    "showing": "Показано {count} из {total}",
+    "load_more": "Загрузить ещё",
+    "filter_all": "Все",
+    "filter_running": "Выполняются",
+    "filter_completed": "Завершены",
+    "filter_failed": "Сбои",
+    "col_persona": "Агент",
+    "col_status": "Статус",
+    "col_duration": "Длительность",
+    "col_started": "Начало",
+    "col_id": "ID",
+    "all_statuses": "Все статусы",
+    "all_personas": "Все агенты",
+    "no_agents": "Агентов ещё нет",
+    "no_agents_hint": "Создайте первого агента, чтобы здесь отображалась активность выполнения.",
+    "unknown_persona": "Неизвестный",
+    "healing_retry": "Повтор при самоисправлении #{count}"
   },
   "review": {
     "title": "Ручные проверки",
@@ -413,27 +549,44 @@
   },
   "messages_view": {
     "title": "Сообщения",
+    "threads_subtitle": "{count} тредов",
+    "threads_subtitle_one": "{count} тред",
     "messages_subtitle": "{count} сообщений записано",
     "messages_subtitle_one": "{count} сообщение записано",
     "mock_message": "Тестовое сообщение",
     "seed_tooltip": "Создать тестовое сообщение (только dev)",
+    "flat_view": "Плоский вид",
+    "threaded_view": "Тредовый вид",
     "mark_all_read": "Отметить все прочитанными",
+    "threads_of": "{count} из {total} тредов",
+    "no_threads": "Тредов сообщений пока нет",
+    "no_threads_hint": "Треды создаются автоматически, когда агенты производят сообщения во время выполнения.",
     "no_messages": "Сообщений пока нет",
     "no_messages_hint": "Сообщения создаются, когда агенты работают и общаются друг с другом.",
     "no_filter_match": "Нет сообщений по текущим фильтрам",
+    "loading_replies": "Загрузка ответов...",
     "load_more": "Загрузить ещё ({count} осталось)",
     "col_title": "Заголовок",
+    "col_priority": "Приоритет",
+    "col_delivery": "Доставка",
+    "col_status": "Статус",
     "col_created": "Создано",
     "all_priorities": "Все приоритеты",
     "all_statuses": "Все статусы",
     "read": "Прочитано",
     "unread": "Непрочитано",
+    "new_badge": "Новое",
+    "failed_count": "{count} сбоев",
+    "pending_count": "{count} ожидающих",
+    "sent_count": "{count} отправлено",
     "message_label": "Сообщение",
     "from_label": "От {name}",
     "content_label": "Содержимое",
     "view_execution": "Посмотреть запуск",
+    "type_label": "Тип:",
     "delivery_status": "Статус доставки",
     "no_channels": "Каналы доставки не настроены",
+    "confirm_delete": "Подтвердить удаление",
     "improve_agent": "Улучшить агента",
     "improvement_started": "Улучшение начато — вы будете уведомлены по завершении",
     "what_could_be_better": "Что можно улучшить?",
@@ -446,6 +599,7 @@
     "rating_label": "Rate this message",
     "rating_star_aria": "Rate {value} of 5",
     "rating_saved": "Saved · {stars}/5",
+    "rating_clear": "Clear rating",
     "rating_memory_title": "Message rating: {stars}/5",
     "rating_memory_content_good": "User rated the output {stars}/5 stars. This message met expectations — keep the approach.",
     "rating_memory_content_neutral": "User rated the output {stars}/5 stars. Neutral feedback — review the message for marginal improvements.",
@@ -463,25 +617,7 @@
     "delete_all": "Удалить все",
     "delete_all_confirm_title": "Удалить все сообщения?",
     "delete_all_confirm_body": "Это безвозвратно удалит все {count} сообщений. Действие нельзя отменить.",
-    "delete_all_confirm_cta": "Удалить все",
-    "threads_subtitle": "{count} тредов",
-    "threads_subtitle_one": "{count} тред",
-    "flat_view": "Плоский вид",
-    "threaded_view": "Тредовый вид",
-    "threads_of": "{count} из {total} тредов",
-    "no_threads": "Тредов сообщений пока нет",
-    "no_threads_hint": "Треды создаются автоматически, когда агенты производят сообщения во время выполнения.",
-    "loading_replies": "Загрузка ответов...",
-    "col_priority": "Приоритет",
-    "col_delivery": "Доставка",
-    "col_status": "Статус",
-    "new_badge": "Новое",
-    "failed_count": "{count} сбоев",
-    "pending_count": "{count} ожидающих",
-    "sent_count": "{count} отправлено",
-    "type_label": "Тип:",
-    "confirm_delete": "Подтвердить удаление",
-    "rating_clear": "Clear rating"
+    "delete_all_confirm_cta": "Удалить все"
   },
   "events": {
     "title": "События",
@@ -491,6 +627,7 @@
     "seed_tooltip": "Создать тестовое событие (только dev)",
     "search_placeholder": "Поиск событий по типу, источнику или данным...",
     "loading_older": "Загрузка более старых событий...",
+    "load_older": "Загрузить более старые события",
     "no_events": "Событий пока нет",
     "no_events_hint": "События из вебхуков, запусков и действий агентов будут появляться здесь по мере их работы.",
     "no_filter_match": "Нет событий по текущим фильтрам",
@@ -498,6 +635,12 @@
     "view_name_placeholder": "Название вида (например, 'Сбои вебхуков на этой неделе')",
     "views_label": "Виды:",
     "delete_view": "Удалить вид",
+    "clear_filters": "Сбросить все фильтры",
+    "col_trigger": "Триггер",
+    "col_persona": "Агент",
+    "col_event_name": "Имя события",
+    "col_status": "Статус",
+    "col_created": "Создано",
     "all_statuses": "Все статусы",
     "all_types": "Все типы",
     "all_triggers": "Все триггеры",
@@ -507,13 +650,6 @@
     "source_scheduled": "По расписанию",
     "event_detail_title": "Событие:",
     "event_detail_status": "Статус:",
-    "load_older": "Загрузить более старые события",
-    "clear_filters": "Сбросить все фильтры",
-    "col_trigger": "Триггер",
-    "col_persona": "Агент",
-    "col_event_name": "Имя события",
-    "col_status": "Статус",
-    "col_created": "Создано",
     "event_id": "ID события",
     "project": "Проект",
     "source": "Источник",
@@ -524,7 +660,6 @@
   "health": {
     "title": "Состояние агентов",
     "subtitle": "Мониторинг состояния всех агентов в реальном времени",
-    "status_page": "Страница статуса",
     "all_healthy": "Все агенты в норме",
     "all_healthy_hint": "Каждый отслеживаемый агент работает нормально",
     "no_agents": "Агентов пока нет",
@@ -547,6 +682,7 @@
     "cascade_title": "Каскадный анализ",
     "predictive_alerts": "Предиктивные оповещения",
     "no_alerts": "Предиктивных оповещений нет",
+    "status_page": "Страница статуса",
     "operational": "Работает",
     "degraded": "Деградация",
     "outage": "Сбой"
@@ -591,6 +727,58 @@
     "hint_activity": "Запускайте или планируйте этого агента чаще, чтобы повысить активность.",
     "improve_agent": "Улучшить агента"
   },
+  "analytics": {
+    "title": "Аналитика",
+    "subtitle": "Паттерны и тенденции запусков",
+    "loading": "Загрузка аналитики...",
+    "no_data": "Данных аналитики нет",
+    "executions_over_time": "Запуски по времени",
+    "success_failure": "Успехи vs Сбои",
+    "cost_breakdown": "Разбивка стоимости",
+    "total_executions": "Всего запусков",
+    "total_cost": "Общая стоимость",
+    "avg_success_rate": "Средний процент успеха",
+    "active_agents": "Активные агенты",
+    "saved_views": "Сохранённые виды",
+    "create_view": "Создать вид",
+    "health_issues": "Проблемы состояния",
+    "rotation_overview": "Обзор ротации"
+  },
+  "usage": {
+    "title": "Использование",
+    "subtitle": "Стоимость и потребление ресурсов",
+    "chart_error": "Ошибка загрузки графика",
+    "chart_error_hint": "Произошла ошибка при отображении графика",
+    "try_again": "Повторить"
+  },
+  "cron_agents": {
+    "title": "Агенты по расписанию",
+    "subtitle": "Агенты, работающие по автоматическому расписанию",
+    "no_agents": "Агентов по расписанию нет",
+    "no_agents_hint": "Добавьте cron-триггер любому агенту для отображения здесь"
+  },
+  "timeline": {
+    "title": "Временная шкала активности",
+    "subtitle": "Единый вид активности всех агентов",
+    "no_activity": "Активности пока нет"
+  },
+  "realtime_viz": {
+    "title": "Шина событий",
+    "filter_events": "Фильтр событий",
+    "pause": "Пауза",
+    "resume": "Возобновить",
+    "clear": "Очистить",
+    "total_events": "Всего событий",
+    "events_per_sec": "Событий/сек",
+    "active_lanes": "Активных полос",
+    "event_type": "Тип события",
+    "source": "Источник",
+    "target": "Цель",
+    "timestamp": "Время",
+    "payload": "Данные",
+    "saved_views": "Сохранённые виды",
+    "save_current": "Сохранить текущий"
+  },
   "observability_extra": {
     "auto_refresh_on": "Авто-обновление включено",
     "auto_refresh_off": "Авто-обновление выключено",
@@ -618,12 +806,21 @@
     "error_rate": "Процент ошибок"
   },
   "widgets": {
+    "recent_activity": "Недавняя активность",
     "view_all": "Показать все",
+    "total_traffic": "Общий трафик",
+    "total_errors": "Всего ошибок",
     "traffic_errors_chart": "Трафик и ошибки",
     "top_performers": "Лидеры производительности",
+    "metric_help": "Справка по метрике",
+    "how_calculated": "Как рассчитывается?",
+    "details": "Детали",
     "messages_badge": "Сообщения",
     "reviews_badge": "Проверки",
+    "executions_badge": "Запуски",
+    "success_badge": "Успех",
     "alerts_badge": "Оповещения",
+    "agents_badge": "Агенты",
     "pipelines_badge": "Конвейеры",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
@@ -632,21 +829,21 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Errors",
-    "tool_performance_unit_ms": "ms",
-    "recent_activity": "Недавняя активность",
-    "total_traffic": "Общий трафик",
-    "total_errors": "Всего ошибок",
     "tool_performance_empty": "No tool runs in this window",
-    "metric_help": "Справка по метрике",
-    "how_calculated": "Как рассчитывается?",
-    "details": "Детали",
-    "executions_badge": "Запуски",
-    "success_badge": "Успех",
-    "agents_badge": "Агенты",
+    "tool_performance_unit_ms": "ms",
     "range_days_ago": "{days} дн. назад",
     "range_today": "Сегодня",
     "range_yesterday": "Вчера",
     "traffic_errors_chart_aria": "График трафика и ошибок"
+  },
+  "cards": {
+    "fleet_optimization": "Оптимизация флота",
+    "fleet_subtitle": "Автоматические рекомендации по улучшению производительности агентов",
+    "remote_control": "Удалённое управление",
+    "remote_subtitle": "Быстрые действия для управления агентами",
+    "resume_setup": "Продолжить настройку",
+    "resume_subtitle": "Продолжите с места остановки",
+    "knowledge_hub": "База знаний"
   },
   "activity": {
     "title": "Активность",
@@ -675,16 +872,23 @@
     "prev_failed": "Предыдущих сбоев",
     "success_pct": "% успеха",
     "prev_success_pct": "Предыдущий % успеха",
+    "successful": "Успешно",
+    "all": "Все",
+    "running": "Выполняется",
+    "all_statuses": "Все статусы",
     "showing": "Показано {count} из {total}",
     "load_more": "Загрузить ещё",
+    "col_status": "Статус",
     "col_duration": "Длительность",
     "col_started": "Начато",
+    "col_id": "ID",
     "no_agents": "Агентов пока не создано",
     "no_agents_hint": "Создайте первого агента для просмотра активности запусков.",
     "no_executions": "Запусков пока нет",
     "no_executions_hint": "Запустите агента для просмотра активности.",
     "create_persona": "Создать агента",
     "from_templates": "Из шаблонов",
+    "execution_label": "Запуск",
     "unknown": "Неизвестно",
     "value_section_title": "Бизнес-ценность",
     "value_delivered_rate": "Доля реализованной ценности",
@@ -692,36 +896,9 @@
     "value_delivered_count": "Доставлено ценности",
     "all_models": "Все модели",
     "col_model": "Модель",
-    "col_cost": "Стоимость",
-    "successful": "Успешно",
-    "all": "Все",
-    "running": "Выполняется",
-    "all_statuses": "Все статусы",
-    "col_status": "Статус",
-    "col_id": "ID",
-    "execution_label": "Запуск"
+    "col_cost": "Стоимость"
   },
   "analytics_dashboard": {
-    "issues_found": "Обнаружено {count} проблем",
-    "issues_found_one": "Обнаружена {count} проблема",
-    "auto_fixed": "авто-исправлено",
-    "executions_scanned": "Проверено {count} запусков",
-    "executions_scanned_one": "Проверен {count} запуск",
-    "credential_rotation": "Ротация учётных данных",
-    "no_rotation_policies": "Политик ротации нет",
-    "no_rotation_hint": "Настройте ротацию учётных данных в хранилище.",
-    "active_count": "{count} активных",
-    "soon_count": "{count} скоро",
-    "issues_count": "{count} проблем",
-    "issues_count_one": "{count} проблема",
-    "fail_count": "{count}x сбоев",
-    "rotation_manage_all": "Manage",
-    "rotation_open_in_connections": "Open in Connections",
-    "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}",
-    "rotation_due_now": "истекает сейчас",
-    "rotation_countdown_days_hours": "{days}д {hours}ч",
-    "rotation_countdown_hours": "{hours}ч",
     "title": "Аналитика",
     "subtitle": "Единая аналитика стоимости, запусков и использования инструментов",
     "metrics_unavailable": "Метрики недоступны",
@@ -756,6 +933,11 @@
     "run_analysis": "Запустить анализ",
     "analyzing": "Анализ...",
     "analysis_complete": "Анализ завершён",
+    "issues_found": "Обнаружено {count} проблем",
+    "issues_found_one": "Обнаружена {count} проблема",
+    "auto_fixed": "авто-исправлено",
+    "executions_scanned": "Проверено {count} запусков",
+    "executions_scanned_one": "Проверен {count} запуск",
     "no_open_issues": "Открытых проблем нет",
     "run_analysis_hint": "Запустите анализ для проверки проблем.",
     "filter_all": "Все",
@@ -765,7 +947,29 @@
     "breaker": "автовыключатель",
     "fixed": "исправлено",
     "retry": "повтор",
-    "never": "никогда"
+    "credential_rotation": "Ротация учётных данных",
+    "no_rotation_policies": "Политик ротации нет",
+    "no_rotation_hint": "Настройте ротацию учётных данных в хранилище.",
+    "active_count": "{count} активных",
+    "soon_count": "{count} скоро",
+    "issues_count": "{count} проблем",
+    "issues_count_one": "{count} проблема",
+    "never": "никогда",
+    "fail_count": "{count}x сбоев",
+    "rotation_manage_all": "Manage",
+    "rotation_open_in_connections": "Open in Connections",
+    "rotation_started_for": "Rotation started for {name}",
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "истекает сейчас",
+    "rotation_countdown_days_hours": "{days}д {hours}ч",
+    "rotation_countdown_hours": "{hours}ч"
+  },
+  "saved_views": {
+    "errors": {
+      "load_failed_message": "Couldn't load your saved views.",
+      "save_failed_message": "Couldn't save this view.",
+      "delete_failed_message": "Couldn't delete this view."
+    }
   },
   "cron": {
     "title": "Cron-агенты",
@@ -785,6 +989,15 @@
     "every_interval": "каждые {interval}",
     "next": "следующий",
     "last": "последний"
+  },
+  "activity_timeline": {
+    "title": "Временная шкала активности",
+    "subtitle": "{events} событий, {messages} сообщений",
+    "all": "Все",
+    "events": "События",
+    "messages": "Сообщения",
+    "no_activity": "Активности пока нет",
+    "high": "Высокая"
   },
   "sla_card": {
     "successful": "Успешно",
@@ -813,6 +1026,13 @@
     "pending": "ожидание",
     "success": "успех",
     "in_window": "в окне",
+    "test_flow": "Тест потока",
+    "testing_flow": "Тестирование потока...",
+    "test_event_flow": "Тестировать поток событий",
+    "resume": "Возобновить",
+    "pause": "Пауза",
+    "resume_stream": "Возобновить поток в реальном времени",
+    "pause_stream": "Приостановить поток в реальном времени",
     "search_events": "Поиск событий...",
     "filter_type": "Тип",
     "filter_status": "Статус",
@@ -823,17 +1043,6 @@
     "no_saved_views": "Сохранённых видов пока нет",
     "save_current_filter": "Сохранить текущий фильтр",
     "view_name_placeholder": "Название вида...",
-    "close_event_details": "Закрыть детали события",
-    "reset_to_start": "Сбросить на начало",
-    "cycle_speed": "Изменить скорость воспроизведения",
-    "exit_replay": "Выйти из воспроизведения",
-    "test_flow": "Тест потока",
-    "testing_flow": "Тестирование потока...",
-    "test_event_flow": "Тестировать поток событий",
-    "resume": "Возобновить",
-    "pause": "Пауза",
-    "resume_stream": "Возобновить поток в реальном времени",
-    "pause_stream": "Приостановить поток в реальном времени",
     "delete_saved_view": "Удалить сохранённый вид",
     "event_log": "Журнал событий",
     "entries": "{count} записей",
@@ -847,6 +1056,10 @@
     "id_label": "ID",
     "error_label": "Ошибка",
     "payload_label": "Данные",
+    "close_event_details": "Закрыть детали события",
+    "reset_to_start": "Сбросить на начало",
+    "cycle_speed": "Изменить скорость воспроизведения",
+    "exit_replay": "Выйти из воспроизведения",
     "galaxy": "Галактика",
     "galaxy_desc": "Орбитальное созвездие с хвостами комет",
     "lanes": "Полосы",
@@ -970,15 +1183,36 @@
     "rejected": "{count} отклонено",
     "undecided": "{count} без решения"
   },
+  "widgets_extra": {
+    "execution_health_chart": "Состояние запусков",
+    "cost_over_time_chart": "Затраты за период",
+    "successful": "Успешные",
+    "failed": "Сбои",
+    "close": "Закрыть",
+    "dismiss_help": "Скрыть справку",
+    "skip_tour": "Пропустить тур полностью"
+  },
+  "remote_control_card": {
+    "connect_to_desktop": "Подключиться к десктопу",
+    "connect_description": "Запускайте агентов с помощью десктопного CLI через удалённое управление. Запустите {command} на компьютере, затем подключитесь здесь.",
+    "requires_subscription": "Требуется подписка Claude Pro или Max"
+  },
+  "resume_setup_card": {
+    "resume_tour": "Продолжить тур",
+    "left_off_at": "Вы остановились на",
+    "steps_completed": "{completed}/{total} шагов выполнено",
+    "skip_tour": "Пропустить тур полностью",
+    "continue_label": "Продолжить"
+  },
   "detail_modal": {
     "close": "Закрыть"
   },
   "metric_help_popover": {
+    "help_for": "Справка для {label}",
     "dismiss_help": "Скрыть справку",
     "healthy": "В норме:",
     "click": "Нажмите:",
-    "got_it": "Понял, больше не показывать",
-    "help_for": "Справка для {label}"
+    "got_it": "Понял, больше не показывать"
   },
   "install_button": {
     "install_node": "Установить Node.js",
@@ -1003,9 +1237,9 @@
     "disconnect": "Отключить"
   },
   "metrics_cards": {
-    "top_executions": "Топ запусков:",
     "cost_spike": "Скачок затрат",
-    "above_avg": "выше среднего"
+    "above_avg": "выше среднего",
+    "top_executions": "Топ запусков:"
   },
   "event_log_item": {
     "event_id": "ID события",
@@ -1013,10 +1247,10 @@
     "source": "Источник",
     "processed": "Обработано",
     "event_data": "Данные события",
-    "error": "Ошибка",
     "copy_event_data": "Скопировать данные события",
     "copied": "Скопировано",
     "copy": "Копировать",
+    "error": "Ошибка",
     "system": "Система"
   },
   "burn_rate_extra": {
@@ -1101,14 +1335,21 @@
     "all_caught_up": "Всё в порядке",
     "no_pending": "Нет ожидающих проверок.",
     "queue": "Очередь",
+    "clear": "Очистить",
     "clear_all_verdicts": "Сбросить все решения",
     "quick_actions": "Быстрые действия",
     "reject_all": "Отклонить все",
     "accept_all": "Принять все",
     "retry_with_changes": "Повторить с изменениями",
-    "carry_out_hint": "Подтверждает проверку и запускает персону для выполнения",
-    "clear": "Очистить",
-    "video_not_supported": "Ваш браузер не поддерживает воспроизведение видео."
+    "video_not_supported": "Ваш браузер не поддерживает воспроизведение видео.",
+    "carry_out_hint": "Подтверждает проверку и запускает персону для выполнения"
+  },
+  "bulk_action_bar": {
+    "pending_reviews_selected_one": "Выбран {count} ожидающий проверки",
+    "pending_reviews_selected_other": "Выбрано {count} ожидающих проверки"
+  },
+  "review_inbox": {
+    "drag_to_resize": "Потяните, чтобы изменить размер"
   },
   "memory_card": {
     "confirm": "Подтвердить",
@@ -1129,9 +1370,9 @@
     "agent": "Агент",
     "title": "Заголовок",
     "category": "Категория",
+    "priority": "Приоритет",
     "tags": "Теги",
-    "created": "Создано",
-    "priority": "Приоритет"
+    "created": "Создано"
   },
   "review_results": {
     "title": "Обзор памяти ИИ",
@@ -1143,8 +1384,8 @@
     "baseline_label": "Базовый уровень:",
     "correlating": "Корреляция событий...",
     "likely_root_causes": "Вероятные причины",
-    "no_correlated": "Коррелирующих событий в окне ±24ч не найдено.",
-    "correlated_events": "Коррелирующие события"
+    "correlated_events": "Коррелирующие события",
+    "no_correlated": "Коррелирующих событий в окне ±24ч не найдено."
   },
   "healing_issue_modal": {
     "issue_resolved": "Проблема устранена",
@@ -1153,13 +1394,13 @@
     "copied": "Скопировано",
     "copy_fix": "Скопировать исправление",
     "persona_auto_disabled": "Агент автоматически отключён",
+    "persona_auto_disabled_desc": "Этот агент был автоматически отключён после 5 последовательных сбоев. Просмотрите паттерн ошибок ниже и повторно включите вручную после устранения причины.",
     "marking_resolved_note": "Отметка как устранённого означает, что вы решили эту проблему вне системы самоисправления.",
+    "retry_in_progress": "Повтор выполняется — статус обновится по завершении",
     "auto_resolved": "Эта проблема была автоматически устранена",
+    "close": "Закрыть",
     "resolving": "Устранение…",
     "mark_resolved": "Отметить как устранённое",
-    "persona_auto_disabled_desc": "Этот агент был автоматически отключён после 5 последовательных сбоев. Просмотрите паттерн ошибок ниже и повторно включите вручную после устранения причины.",
-    "retry_in_progress": "Повтор выполняется — статус обновится по завершении",
-    "close": "Закрыть",
     "retrying_badge": "повтор",
     "auto_fixed_badge": "исправлено автоматически",
     "retry_in_progress_badge": "идёт повтор",
@@ -1172,9 +1413,6 @@
     "run_analysis": "Запустить анализ",
     "no_open_issues": "Нет открытых проблем",
     "run_analysis_hint": "Запустите анализ для проверки на наличие проблем.",
-    "healing_audit_log": "Журнал аудита самоисправления",
-    "no_silent_failures": "Скрытых сбоев не записано.",
-    "analysis_complete_prefix": "Анализ завершён:",
     "ai_healing_title": "Самовосстановление ИИ",
     "diagnosis_label": "Диагноз:",
     "fixes_applied": "Применённые исправления",
@@ -1190,7 +1428,10 @@
     "execution_label": "Выполнение:",
     "issue_marked_as": "Эта проблема помечена как",
     "retry_in_progress": "Повтор выполняется — статус обновится по завершении.",
-    "resolve_issue_title": "Пометить проблему как решённую"
+    "resolve_issue_title": "Пометить проблему как решённую",
+    "healing_audit_log": "Журнал аудита самоисправления",
+    "no_silent_failures": "Скрытых сбоев не записано.",
+    "analysis_complete_prefix": "Анализ завершён:"
   },
   "healing_timeline": {
     "loading": "Загрузка временной шкалы...",
@@ -1240,6 +1481,13 @@
     "event_id_label": "ID события",
     "broadcast": "(широковещание)"
   },
+  "event_bus_overlay": {
+    "earlier_events_not_shown_one": "Не показано {count} более раннее событие",
+    "earlier_events_not_shown_other": "Не показано {count} более ранних событий"
+  },
+  "event_bus_filter": {
+    "search_placeholder": "Поиск событий…"
+  },
   "realtime_stats": {
     "events_per_min": "событий/мин",
     "pending": "ожидает",
@@ -1265,13 +1513,32 @@
     "heartbeats_btn": "Сигналы",
     "reliability_btn": "Надёжность"
   },
+  "crash_logs": {
+    "title": "Журналы сбоев",
+    "no_logs": "Журналы сбоев не зарегистрированы.",
+    "component_stack_separator": "--- Component Stack ---"
+  },
   "popup_fields": {
     "sign_up_free_at": "Бесплатная регистрация на",
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", затем скопируйте API-ключ из Настроек. Ключ хранится локально и используется всеми агентами."
   },
+  "events_list": {
+    "save_view_tooltip": "Сохранить текущие фильтры как представление",
+    "clear_filters_tooltip": "Очистить все фильтры"
+  },
+  "dashboard_home": {
+    "you_have": "У вас есть"
+  },
+  "fleet_optimization_card": {
+    "title": "Оптимизация флота"
+  },
   "usage_filters": {
     "time_range_label": "Временной диапазон"
+  },
+  "day_range_picker": {
+    "start_date": "Дата начала",
+    "end_date": "Дата окончания"
   },
   "healing_summary": {
     "auto_fixed_this_week": "автоматически исправлено на этой неделе",
@@ -1560,272 +1827,5 @@
     "source_scanner": "Сканеры",
     "tokens": "Токены",
     "total_cost": "Общие расходы"
-  },
-  "title": "Обзор",
-  "no_output": "Вывод отсутствует",
-  "no_background_jobs": "Нет запущенных или недавних фоновых задач",
-  "background_jobs_hint": "Задачи появляются здесь при запуске преобразований n8n, внедрений шаблонов, генерации шаблонов или отладки запросов",
-  "realtime": {
-    "idle": "Простой -- нажмите {action} для имитации трафика",
-    "test_flow": "Тестовый поток",
-    "events_per_min": "событий/мин",
-    "pending": "ожидают",
-    "success": "успешно",
-    "in_window": "в окне"
-  },
-  "executions": {
-    "title": "Выполнения",
-    "loading": "Загрузка выполнений...",
-    "no_agents": "Агенты ещё не созданы",
-    "create_first": "Создайте первого агента, чтобы увидеть здесь активность",
-    "no_executions": "Выполнений пока нет",
-    "run_agent": "Запустите агента, чтобы увидеть здесь активность"
-  },
-  "workflows": {
-    "loading": "Загрузка рабочих процессов...",
-    "title": "Рабочие процессы",
-    "subtitle": "Активные и недавние фоновые операции в вашем рабочем пространстве",
-    "no_jobs": "Нет запущенных или недавних фоновых задач",
-    "jobs_hint": "Задачи появляются здесь при выполнении N8n-преобразований, применения шаблонов, генерации шаблонов или отладки запросов",
-    "all_types": "Все типы",
-    "no_filter_match": "Нет задач по текущим фильтрам",
-    "auto_refreshing": "Автообновление при выполнении задач",
-    "cancel_failed": "Не удалось отменить задачу рабочего процесса"
-  },
-  "schedules": {
-    "title": "Шкала расписания",
-    "subtitle": "Сводное представление всех запланированных выполнений агентов",
-    "engine_on": "Движок включён",
-    "engine_off": "Движок выключен",
-    "engine_on_tooltip": "Планировщик работает -- нажмите для приостановки",
-    "engine_off_tooltip": "Планировщик остановлен -- нажмите для запуска",
-    "active_count": "{count} активных",
-    "paused_count": "{count} приостановлено",
-    "view_grouped": "Группировка",
-    "view_timeline": "Шкала времени",
-    "triggers_fired": "Триггеров сработало: ",
-    "events_processed": "Событий обработано: ",
-    "delivered": "Доставлено: ",
-    "failed_label": "Ошибок: ",
-    "loading": "Загрузка расписаний...",
-    "empty": "Запланированных агентов не найдено.",
-    "empty_hint": "Создайте расписание или триггер опроса для любого агента, чтобы увидеть его здесь.",
-    "group_overdue": "Просрочено",
-    "group_15min": "Следующие 15 минут",
-    "group_1hour": "Следующий час",
-    "group_6hours": "Следующие 6 часов",
-    "group_24hours": "Следующие 24 часа",
-    "group_later": "Позже",
-    "group_paused": "Приостановлено / Без расписания",
-    "run_now": "Запустить сейчас",
-    "change_frequency": "Изменить частоту",
-    "pause_schedule": "Приостановить расписание",
-    "resume_schedule": "Возобновить расписание",
-    "headless_badge": "автономный"
-  },
-  "frequency_editor": {
-    "title": "Изменить частоту",
-    "current": "Текущая: ",
-    "quick_presets": "Быстрые пресеты",
-    "cron_expression": "Выражение cron",
-    "interval_seconds": "Интервал (секунды)",
-    "previewing": "Предпросмотр...",
-    "next_runs": "Следующие запуски",
-    "invalid_cron": "Недопустимое выражение cron"
-  },
-  "recovery": {
-    "agents_missed_one": "{count} агент пропустил выполнения",
-    "agents_missed_other": "{count} агентов пропустили выполнения",
-    "total_skipped": "~{count} запусков пропущено, пока приложение было офлайн",
-    "missed_since": "{count} пропущено с {time}",
-    "every_interval": "каждые {interval}",
-    "mark_for_recovery": "Отметить для восстановления",
-    "recover": "Восстановить",
-    "run_once": "Запустить 1x",
-    "run_once_tooltip": "Запустить один раз сейчас",
-    "skip_tooltip": "Пропустить -- не восстанавливать",
-    "dismiss_all": "Отклонить все",
-    "recover_selected": "Восстановить {count} выбранных"
-  },
-  "conflicts": {
-    "dismissed": "Конфликт отклонён",
-    "resolved": "Конфликт разрешён",
-    "resolve_failed": "Не удалось разрешить конфликт",
-    "conflict_count_one": "{count} конфликт",
-    "conflict_count_other": "{count} конфликтов"
-  },
-  "execution_metrics": {
-    "title": "Метрики выполнения",
-    "total_executions": "Всего запусков",
-    "total_cost": "Общие затраты",
-    "success_rate": "Успешность",
-    "avg_latency": "Средняя задержка",
-    "cost_anomalies": "Обнаружены аномалии затрат",
-    "no_data": "Нет данных о выполнении за выбранный период",
-    "cost_per_day": "Затраты в день",
-    "executions_by_status": "Запуски по статусам",
-    "success_rate_trend": "Тенденция успешности",
-    "latency_distribution": "Распределение задержки (p50 / p95 / p99)",
-    "top_personas_by_cost": "Топ агентов по затратам",
-    "cost_spike": "Скачок затрат",
-    "above_avg": "выше среднего",
-    "top_executions": "Топ запусков:",
-    "executions_label": "{count} запусков"
-  },
-  "execution_list": {
-    "recorded": "{count} запусков записано",
-    "recorded_one": "{count} запуск записан",
-    "list": "Список",
-    "metrics": "Метрики",
-    "show_list": "Показать список запусков",
-    "show_metrics": "Показать дашборд метрик",
-    "showing": "Показано {count} из {total}",
-    "load_more": "Загрузить ещё",
-    "filter_all": "Все",
-    "filter_running": "Выполняются",
-    "filter_completed": "Завершены",
-    "filter_failed": "Сбои",
-    "col_persona": "Агент",
-    "col_status": "Статус",
-    "col_duration": "Длительность",
-    "col_started": "Начало",
-    "col_id": "ID",
-    "all_statuses": "Все статусы",
-    "all_personas": "Все агенты",
-    "no_agents": "Агентов ещё нет",
-    "no_agents_hint": "Создайте первого агента, чтобы здесь отображалась активность выполнения.",
-    "unknown_persona": "Неизвестный",
-    "healing_retry": "Повтор при самоисправлении #{count}"
-  },
-  "analytics": {
-    "title": "Аналитика",
-    "subtitle": "Паттерны и тенденции запусков",
-    "loading": "Загрузка аналитики...",
-    "no_data": "Данных аналитики нет",
-    "executions_over_time": "Запуски по времени",
-    "success_failure": "Успехи vs Сбои",
-    "cost_breakdown": "Разбивка стоимости",
-    "total_executions": "Всего запусков",
-    "total_cost": "Общая стоимость",
-    "avg_success_rate": "Средний процент успеха",
-    "active_agents": "Активные агенты",
-    "saved_views": "Сохранённые виды",
-    "create_view": "Создать вид",
-    "health_issues": "Проблемы состояния",
-    "rotation_overview": "Обзор ротации"
-  },
-  "usage": {
-    "title": "Использование",
-    "subtitle": "Стоимость и потребление ресурсов",
-    "chart_error": "Ошибка загрузки графика",
-    "chart_error_hint": "Произошла ошибка при отображении графика",
-    "try_again": "Повторить"
-  },
-  "cron_agents": {
-    "title": "Агенты по расписанию",
-    "subtitle": "Агенты, работающие по автоматическому расписанию",
-    "no_agents": "Агентов по расписанию нет",
-    "no_agents_hint": "Добавьте cron-триггер любому агенту для отображения здесь"
-  },
-  "timeline": {
-    "title": "Временная шкала активности",
-    "subtitle": "Единый вид активности всех агентов",
-    "no_activity": "Активности пока нет"
-  },
-  "realtime_viz": {
-    "title": "Шина событий",
-    "filter_events": "Фильтр событий",
-    "pause": "Пауза",
-    "resume": "Возобновить",
-    "clear": "Очистить",
-    "total_events": "Всего событий",
-    "events_per_sec": "Событий/сек",
-    "active_lanes": "Активных полос",
-    "event_type": "Тип события",
-    "source": "Источник",
-    "target": "Цель",
-    "timestamp": "Время",
-    "payload": "Данные",
-    "saved_views": "Сохранённые виды",
-    "save_current": "Сохранить текущий"
-  },
-  "cards": {
-    "fleet_optimization": "Оптимизация флота",
-    "fleet_subtitle": "Автоматические рекомендации по улучшению производительности агентов",
-    "remote_control": "Удалённое управление",
-    "remote_subtitle": "Быстрые действия для управления агентами",
-    "resume_setup": "Продолжить настройку",
-    "resume_subtitle": "Продолжите с места остановки",
-    "knowledge_hub": "База знаний"
-  },
-  "saved_views": {
-    "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
-    }
-  },
-  "activity_timeline": {
-    "title": "Временная шкала активности",
-    "subtitle": "{events} событий, {messages} сообщений",
-    "all": "Все",
-    "events": "События",
-    "messages": "Сообщения",
-    "no_activity": "Активности пока нет",
-    "high": "Высокая"
-  },
-  "widgets_extra": {
-    "execution_health_chart": "Состояние запусков",
-    "cost_over_time_chart": "Затраты за период",
-    "successful": "Успешные",
-    "failed": "Сбои",
-    "close": "Закрыть",
-    "dismiss_help": "Скрыть справку",
-    "skip_tour": "Пропустить тур полностью"
-  },
-  "remote_control_card": {
-    "connect_to_desktop": "Подключиться к десктопу",
-    "connect_description": "Запускайте агентов с помощью десктопного CLI через удалённое управление. Запустите {command} на компьютере, затем подключитесь здесь.",
-    "requires_subscription": "Требуется подписка Claude Pro или Max"
-  },
-  "resume_setup_card": {
-    "resume_tour": "Продолжить тур",
-    "left_off_at": "Вы остановились на",
-    "steps_completed": "{completed}/{total} шагов выполнено",
-    "skip_tour": "Пропустить тур полностью",
-    "continue_label": "Продолжить"
-  },
-  "bulk_action_bar": {
-    "pending_reviews_selected_one": "Выбран {count} ожидающий проверки",
-    "pending_reviews_selected_other": "Выбрано {count} ожидающих проверки"
-  },
-  "review_inbox": {
-    "drag_to_resize": "Потяните, чтобы изменить размер"
-  },
-  "event_bus_overlay": {
-    "earlier_events_not_shown_one": "Не показано {count} более раннее событие",
-    "earlier_events_not_shown_other": "Не показано {count} более ранних событий"
-  },
-  "event_bus_filter": {
-    "search_placeholder": "Поиск событий…"
-  },
-  "crash_logs": {
-    "title": "Журналы сбоев",
-    "no_logs": "Журналы сбоев не зарегистрированы.",
-    "component_stack_separator": "--- Component Stack ---"
-  },
-  "events_list": {
-    "save_view_tooltip": "Сохранить текущие фильтры как представление",
-    "clear_filters_tooltip": "Очистить все фильтры"
-  },
-  "dashboard_home": {
-    "you_have": "У вас есть"
-  },
-  "fleet_optimization_card": {
-    "title": "Оптимизация флота"
-  },
-  "day_range_picker": {
-    "start_date": "Дата начала",
-    "end_date": "Дата окончания"
   }
 }

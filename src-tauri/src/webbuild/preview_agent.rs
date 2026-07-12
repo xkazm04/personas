@@ -73,9 +73,33 @@ export function AthenaPreviewAgent() {
         send({ x: r.x, y: r.y, width: r.width, height: r.height }, true);
       }, 350);
     };
+    // Route reporting (A4) — post the live path to Studio so the preview toolbar
+    // reflects navigation for ANY client router (Next app/pages, React Router):
+    // they all go through the History API, so hooking it + popstate covers them.
+    const reportRoute = () =>
+      window.parent?.postMessage(
+        { source: "athena-agent", type: "route", path: location.pathname + location.search },
+        "*",
+      );
+    const origPush = history.pushState;
+    const origReplace = history.replaceState;
+    history.pushState = function (this: History, ...args: Parameters<History["pushState"]>) {
+      origPush.apply(this, args);
+      reportRoute();
+    };
+    history.replaceState = function (this: History, ...args: Parameters<History["replaceState"]>) {
+      origReplace.apply(this, args);
+      reportRoute();
+    };
+    window.addEventListener("popstate", reportRoute);
+    reportRoute();
+
     window.addEventListener("message", onMsg);
     return () => {
       window.removeEventListener("message", onMsg);
+      window.removeEventListener("popstate", reportRoute);
+      history.pushState = origPush;
+      history.replaceState = origReplace;
       clear();
     };
   }, []);
@@ -93,7 +117,14 @@ pub fn ensure(project_dir: &Path) {
     let Some(app) = app else { return };
 
     let agent_path = app.join("_athena-preview-agent.tsx");
-    if !agent_path.exists() {
+    // Refresh when absent OR stale, so existing projects pick up agent upgrades
+    // (e.g. route reporting) on their next dev-server start. It's a tool-owned,
+    // dev-gated file users don't edit, so rewriting it is safe.
+    let needs_write = match std::fs::read_to_string(&agent_path) {
+        Ok(existing) => existing != AGENT_TSX,
+        Err(_) => true,
+    };
+    if needs_write {
         let _ = std::fs::write(&agent_path, AGENT_TSX);
     }
 

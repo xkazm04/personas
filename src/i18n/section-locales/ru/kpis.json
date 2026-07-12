@@ -181,5 +181,7 @@
     "health_snapshot": "Снимок состояния",
     "manual": "Ручной ввод",
     "scan": "Сканирование"
-  }
+  },
+  "kpi_scope_label": "Область",
+  "kpi_scope_this_context": "Этот контекст"
 }
