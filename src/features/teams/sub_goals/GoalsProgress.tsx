@@ -1,29 +1,34 @@
 /**
  * GoalsProgress — portfolio-level goals overview (Goals v2 L2 "Progress" view).
  *
- * One row per project, a shared time axis running left → right, and every goal
- * rendered as a small square node positioned by its target date (done goals sit
- * at their completion date) and colored by status. Dozens of goals across all
- * projects read in one viewsight; clicking a node opens the goal detail drawer.
- * Goals without a date collect in a per-row tray on the right edge. Always
- * cross-project — the view exists to compare projects, so it ignores the
- * Board/Timeline scope switch.
+ * PROTOTYPE ROUND IN FLIGHT: the exported component wraps three directional
+ * takes on the same problem behind a temporary tab switcher (throwaway — the
+ * winner consolidates back to a single component):
+ *  - Baseline  — the original exact-date scatter (10px nodes on a real time axis)
+ *  - Sequence  — filmstrip: uniform 20px frames in chronological ORDER, no axis
+ *  - Buckets   — matrix: fixed time-bucket columns, 20px nodes wrap in cells
+ * Shared primitives (data hook, drawer, legend, node) live in progressShared.
  */
-import { useEffect, useMemo, useState } from 'react';
-import { ChartNoAxesGantt } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { useSystemStore } from '@/stores/systemStore';
-import * as devApi from '@/api/devTools/devTools';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { silentCatch } from '@/lib/silentCatch';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
-import type { Translations } from '@/i18n/en';
-import { isOngoing, isComplete, goalStatusMeta, goalStatusLabel, GOAL_STATUSES } from './goalStatus';
+import { isOngoing, isComplete } from './goalStatus';
 import { GoalAtmosphere } from './goalsTheme';
-import { GoalDetailDrawer } from './GoalDetailDrawer';
-import { GoalEditorModal } from './GoalEditorModal';
+import {
+  DAY,
+  GoalSquare,
+  ProgressLegend,
+  ProgressEmpty,
+  useGoalsPortfolio,
+  useGoalDrawer,
+  groupByProject,
+  anchorDate,
+} from './progressShared';
+import { GoalsProgressSequence } from './GoalsProgressSequence';
+import { GoalsProgressBuckets } from './GoalsProgressBuckets';
 
-const DAY = 86400000;
 /** Fixed side-column widths so the axis overlay + node tracks share one scale. */
 const LEFT_W = 200;
 const TRAY_W = 108;
@@ -34,32 +39,11 @@ const STACK_STEP = 11;
 /** Max squares drawn per stack; the rest collapse into a "+N" count. */
 const STACK_CAP = 5;
 
-type DevLifecycleT = Translations['plugins']['dev_lifecycle'];
-
-/** The date a goal is plotted at — completion beats target once it's done. */
-function anchorDate(g: DevGoal): number | null {
-  const raw = isComplete(g.status) ? (g.completed_at ?? g.target_date) : g.target_date;
-  if (!raw) return null;
-  const t = new Date(raw).getTime();
-  return Number.isNaN(t) ? null : t;
-}
-
 interface PlottedGoal {
   goal: DevGoal;
   /** 0..1 position along the time domain (already clamped). */
   frac: number;
   overdue: boolean;
-}
-
-interface ProjectRow {
-  projectId: string;
-  name: string;
-  activeCount: number;
-  doneCount: number;
-  /** Slot → stacked nodes, precomputed so row height is known up front. */
-  stacks: Array<{ frac: number; nodes: PlottedGoal[] }>;
-  undated: DevGoal[];
-  maxStack: number;
 }
 
 /** First-of-month ticks inside the domain, as axis fractions. */
@@ -80,70 +64,11 @@ function monthTicks(start: number, end: number): Array<{ frac: number; label: st
   return ticks;
 }
 
-/** Compact tooltip line — the drawer carries the full story. */
-function nodeTooltip(dl: DevLifecycleT, g: DevGoal): string {
-  const parts = [g.title, goalStatusLabel(dl, g.status), `${g.progress}%`];
-  const at = anchorDate(g);
-  if (at !== null) {
-    parts.push(new Date(at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
-  }
-  return parts.join(' · ');
-}
-
-function GoalSquare({
-  goal,
-  overdue,
-  delay,
-  dl,
-  onOpen,
-}: {
-  goal: DevGoal;
-  overdue: boolean;
-  delay: number;
-  dl: DevLifecycleT;
-  onOpen: (id: string) => void;
-}) {
-  const meta = goalStatusMeta(goal.status);
-  const done = isComplete(goal.status);
-  const ring = overdue ? '0 0 0 1.5px rgba(239,68,68,0.75), ' : '';
-  return (
-    <Tooltip content={nodeTooltip(dl, goal)}>
-      <button
-        type="button"
-        onClick={() => onOpen(goal.id)}
-        aria-label={`${goal.title} — ${goalStatusLabel(dl, goal.status)}`}
-        style={{
-          backgroundColor: meta.map.fill,
-          boxShadow: `${ring}0 0 8px -1px ${meta.map.glow}`,
-          animationDelay: `${delay}ms`,
-        }}
-        className={`animate-fade-slide-in block w-2.5 h-2.5 rounded-[3px] border border-background/80 transition-transform duration-150 hover:scale-[1.4] hover:z-20 motion-reduce:transform-none focus-ring ${done ? 'opacity-60 hover:opacity-100' : ''}`}
-      />
-    </Tooltip>
-  );
-}
-
-export function GoalsProgress() {
+function GoalsProgressBaseline() {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
-  const projects = useSystemStore((s) => s.projects);
-  const fetchProjects = useSystemStore((s) => s.fetchProjects);
-
-  // Fetched directly (not through the store's active-project goals array) so
-  // the portfolio never depends on which project is currently picked.
-  const [allGoals, setAllGoals] = useState<DevGoal[] | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    void fetchProjects?.();
-    void devApi
-      .listAllGoals()
-      .then((g) => { if (!cancelled) setAllGoals(g); })
-      .catch(silentCatch('GoalsProgress.allGoals'));
-    return () => { cancelled = true; };
-  }, [fetchProjects]);
-
-  const [detailGoalId, setDetailGoalId] = useState<string | null>(null);
-  const [editGoal, setEditGoal] = useState<DevGoal | null>(null);
+  const { projects, allGoals } = useGoalsPortfolio();
+  const { openGoal, drawer } = useGoalDrawer(allGoals ?? []);
 
   const { rows, domain, totalGoals } = useMemo(() => {
     const goals = allGoals ?? [];
@@ -170,22 +95,10 @@ export function GoalsProgress() {
     const span = end - start;
     const toFrac = (ts: number) => Math.min(0.995, Math.max(0.005, (ts - start) / span));
 
-    const byProject = new Map<string, DevGoal[]>();
-    for (const g of goals) {
-      const list = byProject.get(g.project_id);
-      if (list) list.push(g);
-      else byProject.set(g.project_id, [g]);
-    }
-
-    const rows: ProjectRow[] = [];
-    for (const p of projects) {
-      if (p.status === 'archived') continue;
-      const projectGoals = byProject.get(p.id);
-      if (!projectGoals?.length) continue;
-
+    const rows = groupByProject(projects, goals).map((row) => {
       const slots = new Map<number, PlottedGoal[]>();
       const undated: DevGoal[] = [];
-      for (const g of projectGoals) {
+      for (const g of row.goals) {
         const at = anchorDate(g);
         if (at === null) {
           undated.push(g);
@@ -207,17 +120,13 @@ export function GoalsProgress() {
         }))
         .sort((a, b) => a.frac - b.frac);
 
-      rows.push({
-        projectId: p.id,
-        name: p.name,
-        activeCount: projectGoals.filter((g) => isOngoing(g.status)).length,
-        doneCount: projectGoals.filter((g) => isComplete(g.status)).length,
+      return {
+        ...row,
         stacks,
         undated,
         maxStack: stacks.reduce((m, s) => Math.max(m, Math.min(s.nodes.length, STACK_CAP)), 1),
-      });
-    }
-    rows.sort((a, b) => b.activeCount - a.activeCount || a.name.localeCompare(b.name));
+      };
+    });
 
     return {
       rows,
@@ -226,21 +135,9 @@ export function GoalsProgress() {
     };
   }, [allGoals, projects]);
 
-  const allGoalsList = allGoals ?? [];
-
   // Still fetching — render nothing rather than flashing the empty state.
   if (allGoals === null) return null;
-
-  if (rows.length === 0) {
-    return (
-      <div className="relative flex flex-col items-center justify-center py-16 text-center">
-        <GoalAtmosphere />
-        <ChartNoAxesGantt className="w-10 h-10 text-foreground mb-3" />
-        <h3 className="typo-section-title text-foreground">{dl.progress_empty_title}</h3>
-        <p className="typo-body text-foreground mt-1 max-w-md">{dl.progress_empty_sub}</p>
-      </div>
-    );
-  }
+  if (rows.length === 0) return <ProgressEmpty dl={dl} />;
 
   let nodeIndex = 0;
   const stagger = () => Math.min(nodeIndex++, 24) * 18;
@@ -248,26 +145,7 @@ export function GoalsProgress() {
   return (
     <div className="relative pb-6" data-testid="goals-progress">
       <GoalAtmosphere />
-
-      {/* Status legend — the color key for every square below. */}
-      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1.5 mb-3">
-        {GOAL_STATUSES.map((s) => (
-          <span key={s} className="inline-flex items-center gap-1.5">
-            <span
-              className="w-2 h-2 rounded-[2px]"
-              style={{ backgroundColor: goalStatusMeta(s).map.fill }}
-            />
-            <span className="typo-caption text-foreground">{goalStatusLabel(dl, s)}</span>
-          </span>
-        ))}
-        <span className="inline-flex items-center gap-1.5">
-          <span
-            className="w-2 h-2 rounded-[2px] bg-amber-400"
-            style={{ boxShadow: '0 0 0 1.5px rgba(239,68,68,0.75)' }}
-          />
-          <span className="typo-caption text-foreground">{dl.timeline_overdue_group}</span>
-        </span>
-      </div>
+      <ProgressLegend dl={dl} />
 
       <div className="relative rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 overflow-hidden">
         {/* Time grid overlay — month lines + today, spanning every row. */}
@@ -370,7 +248,7 @@ export function GoalsProgress() {
                             overdue={n.overdue}
                             delay={stagger()}
                             dl={dl}
-                            onOpen={setDetailGoalId}
+                            onOpen={openGoal}
                           />
                         </span>
                       );
@@ -405,7 +283,7 @@ export function GoalsProgress() {
                     overdue={false}
                     delay={stagger()}
                     dl={dl}
-                    onOpen={setDetailGoalId}
+                    onOpen={openGoal}
                   />
                 ))}
               </div>
@@ -414,20 +292,60 @@ export function GoalsProgress() {
         })}
       </div>
 
-      <GoalDetailDrawer
-        isOpen={!!detailGoalId}
-        goalId={detailGoalId}
-        goalFallback={allGoalsList.find((g) => g.id === detailGoalId) ?? null}
-        onClose={() => setDetailGoalId(null)}
-        onEdit={(g) => { setDetailGoalId(null); setEditGoal(g); }}
-      />
-      {editGoal && (
-        <GoalEditorModal
-          isOpen
-          editGoal={editGoal}
-          projectId={editGoal.project_id}
-          onClose={() => setEditGoal(null)}
+      {drawer}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TEMPORARY prototype switcher — deleted at consolidation. Labels intentionally
+// untranslated (throwaway dev scaffold; winner gets proper i18n).
+// ---------------------------------------------------------------------------
+type ProtoVariant = 'baseline' | 'sequence' | 'buckets';
+const PROTO_KEY = 'personas.goals.progress.prototype';
+
+function readProtoVariant(): ProtoVariant {
+  try {
+    const v = localStorage.getItem(PROTO_KEY);
+    return v === 'sequence' || v === 'buckets' ? v : 'baseline';
+  } catch (err) {
+    silentCatch('GoalsProgress.readProtoVariant')(err);
+    return 'baseline';
+  }
+}
+
+export function GoalsProgress() {
+  const [variant, setVariant] = useState<ProtoVariant>(readProtoVariant);
+  const change = (v: ProtoVariant) => {
+    setVariant(v);
+    try {
+      localStorage.setItem(PROTO_KEY, v);
+    } catch (err) {
+      silentCatch('GoalsProgress.persistProtoVariant')(err);
+    }
+  };
+  return (
+    <div>
+      <div className="mb-3 flex justify-center">
+        <SegmentedTabs<ProtoVariant>
+          variant="segment"
+          fullWidth={false}
+          ariaLabel="Prototype variant"
+          activeTab={variant}
+          onTabChange={change}
+          tabs={[
+            { id: 'baseline', label: 'Baseline · exact dates' },
+            { id: 'sequence', label: 'Sequence · filmstrip' },
+            { id: 'buckets', label: 'Buckets · time matrix' },
+          ]}
         />
+      </div>
+      {variant === 'sequence' ? (
+        <GoalsProgressSequence />
+      ) : variant === 'buckets' ? (
+        <GoalsProgressBuckets />
+      ) : (
+        <GoalsProgressBaseline />
       )}
     </div>
   );
