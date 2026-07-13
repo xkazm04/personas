@@ -1,9 +1,8 @@
-// KpiDetailModal — the full-screen KPI detail surface that replaces the old
-// right-edge KPIDetailDrawer. Two directional layouts behind one `variant` prop
-// (prototype): 'triage' (a stacked incident "case file", max-w-4xl) and
-// 'cockpit' (a wide two-column data console, max-w-6xl). Both reuse the shared
-// data hook + the drawer's story-chart / steering / source pieces, so the only
-// thing that differs is arrangement.
+// KpiDetailModal — the full-screen KPI detail surface (replaces the retired
+// right-edge KPIDetailDrawer everywhere). A stacked "case file": header band,
+// then hero → story → steering → how-measured → source → history, with the
+// measure / pause / archive actions pinned to a footer bar. Built on the shared
+// BaseModal primitive; reuses the shared data hook + detail parts.
 import { useMemo, useState } from 'react';
 import { Archive, Cable, Gauge, Pause, Play, ShieldAlert } from 'lucide-react';
 
@@ -21,22 +20,18 @@ import { paceDescriptor } from './kpiMath';
 import { categoryMeta, kindMeta, cadenceMeta, TRACK_COLOR } from './kpiMeta';
 import { describeMeasurement } from './describeMeasurement';
 import { summarizeEvidence } from './kpiMeasurementProvenance';
-import { KpiStoryChart, KpiSourceSection } from './KPIDetailDrawer';
+import { KpiStoryChart, KpiSourceSection } from './kpiDetailParts';
 import { KpiSteeringPanel } from './KpiSteeringPanel';
 import { KPIConnectWizard } from './KPIConnectWizard';
 import { useKpiDetail } from './useKpiDetail';
-
-export type KpiModalVariant = 'triage' | 'cockpit';
 
 const TITLE_ID = 'kpi-detail-modal-title';
 
 export function KpiDetailModal({
   kpi,
-  variant,
   onClose,
 }: {
   kpi: DevKpi;
-  variant: KpiModalVariant;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -50,8 +45,6 @@ export function KpiDetailModal({
     [projects, kpi.project_id],
   );
 
-  const wide = variant === 'cockpit';
-
   return (
     <BaseModal
       isOpen
@@ -59,39 +52,22 @@ export function KpiDetailModal({
       titleId={TITLE_ID}
       portal
       staggerChildren={false}
-      maxWidthClass={wide ? 'max-w-6xl' : 'max-w-4xl'}
+      maxWidthClass="max-w-4xl"
       panelClassName="relative w-full h-[85vh] glass-md rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
     >
       <ModalHeader kpi={kpi} projectName={projectName} onClose={onClose} />
 
       <div className="flex-1 overflow-y-auto p-5">
-        {wide ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div className="space-y-5">
-              <HeroBlock kpi={kpi} />
-              <Panel title={t.kpis.chart_trend_title} icon={Gauge}>
-                <KpiStoryChart kpi={kpi} measurements={detail.measurements} linkedGoals={detail.linkedGoals} />
-              </Panel>
-              <HistoryBlock kpi={kpi} measurements={detail.measurements} />
-            </div>
-            <div className="space-y-5">
-              <KpiSteeringPanel kpi={kpi} linkedGoals={detail.linkedGoals} measurements={detail.measurements} />
-              <HowMeasured kpi={kpi} />
-              <KpiSourceSection kpi={kpi} bindings={detail.bindings} onConnect={() => setConnectOpen(true)} />
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-2xl mx-auto space-y-5">
-            <HeroBlock kpi={kpi} />
-            <Panel title={t.kpis.chart_trend_title} icon={Gauge}>
-              <KpiStoryChart kpi={kpi} measurements={detail.measurements} linkedGoals={detail.linkedGoals} />
-            </Panel>
-            <KpiSteeringPanel kpi={kpi} linkedGoals={detail.linkedGoals} measurements={detail.measurements} />
-            <HowMeasured kpi={kpi} />
-            <KpiSourceSection kpi={kpi} bindings={detail.bindings} onConnect={() => setConnectOpen(true)} />
-            <HistoryBlock kpi={kpi} measurements={detail.measurements} />
-          </div>
-        )}
+        <div className="max-w-2xl mx-auto space-y-5">
+          <HeroBlock kpi={kpi} />
+          <Panel title={t.kpis.chart_trend_title} icon={Gauge}>
+            <KpiStoryChart kpi={kpi} measurements={detail.measurements} linkedGoals={detail.linkedGoals} />
+          </Panel>
+          <KpiSteeringPanel kpi={kpi} linkedGoals={detail.linkedGoals} measurements={detail.measurements} />
+          <HowMeasured kpi={kpi} />
+          <KpiSourceSection kpi={kpi} bindings={detail.bindings} onConnect={() => setConnectOpen(true)} />
+          <HistoryBlock kpi={kpi} measurements={detail.measurements} />
+        </div>
       </div>
 
       <ActionBar

@@ -19,7 +19,7 @@ import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { paceDescriptor, kpiProgressPct } from './kpiMath';
 import { TRACK_COLOR } from './kpiMeta';
 import { AutopilotControl } from './AutopilotControl';
-import { KpiNeedsAttention, type NeedsAttentionVariant } from './KpiNeedsAttention';
+import { KpiNeedsAttention } from './KpiNeedsAttention';
 
 const CHART_ROW_H = 38;
 
@@ -65,13 +65,10 @@ export function KPIDashboard({
   loading,
   onOpen,
   onReviewProposals,
-  attnVariant = 'baseline',
 }: {
   loading: boolean;
   onOpen: (kpiId: string) => void;
   onReviewProposals: () => void;
-  /** Prototype: which "needs attention" layout to render (see KpiNeedsAttention). */
-  attnVariant?: NeedsAttentionVariant;
 }) {
   const { t } = useTranslation();
   const kpis = useSystemStore((s) => s.kpis);
@@ -238,7 +235,6 @@ export function KPIDashboard({
 
       {/* Needs attention — the only loud element on the page */}
       <KpiNeedsAttention
-        variant={attnVariant}
         offTrack={offTrack.map((o) => o.kpi)}
         projectName={projectName}
         onOpen={onOpen}
