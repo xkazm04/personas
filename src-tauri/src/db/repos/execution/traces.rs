@@ -72,6 +72,29 @@ pub fn get_by_execution_id(
     )
 }
 
+/// Back-fill the `chain_trace_id` on an execution's already-saved trace row(s).
+///
+/// The ROOT of a fresh chain saves its trace with `chain_trace_id = NULL` (it
+/// has no upstream id to inherit at spawn time); the chosen id is only known at
+/// completion, after the cascade decides `chain_trace_id = own trace_id`. Without
+/// this back-fill the root is absent from [`get_by_chain_trace_id`] and the Chain
+/// tab reads 'partial' for real chains. Idempotent: re-writing the same id is a
+/// no-op. Updates every trace row for the execution (there is normally one).
+pub fn set_chain_trace_id(
+    pool: &DbPool,
+    execution_id: &str,
+    chain_trace_id: &str,
+) -> Result<(), AppError> {
+    timed_query!("execution_traces", "execution_traces::set_chain_trace_id", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE execution_traces SET chain_trace_id = ?1 WHERE execution_id = ?2",
+            params![chain_trace_id, execution_id],
+        )?;
+        Ok(())
+    })
+}
+
 /// Get all traces sharing a chain_trace_id (distributed trace across chain executions).
 pub fn get_by_chain_trace_id(
     pool: &DbPool,
@@ -107,4 +130,133 @@ pub fn get_by_chain_trace_id(
                 .map_err(AppError::Database)
         }
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::init_test_db;
+
+    fn make_trace(
+        execution_id: &str,
+        persona_id: &str,
+        chain_trace_id: Option<&str>,
+        created_at: &str,
+    ) -> ExecutionTrace {
+        ExecutionTrace {
+            trace_id: format!("trace-{execution_id}"),
+            execution_id: execution_id.to_string(),
+            persona_id: persona_id.to_string(),
+            chain_trace_id: chain_trace_id.map(String::from),
+            spans: Vec::new(),
+            total_duration_ms: Some(10),
+            evicted_span_count: 0,
+            created_at: created_at.to_string(),
+        }
+    }
+
+    #[test]
+    fn get_by_chain_trace_id_groups_shared_id_in_created_order() {
+        let pool = init_test_db().unwrap();
+        // Two hops share chain-A; an unrelated run is on chain-B.
+        save(
+            &pool,
+            &make_trace("exec-2", "p-b", Some("chain-A"), "2026-07-10T00:00:02Z"),
+        )
+        .unwrap();
+        save(
+            &pool,
+            &make_trace("exec-1", "p-a", Some("chain-A"), "2026-07-10T00:00:01Z"),
+        )
+        .unwrap();
+        save(
+            &pool,
+            &make_trace("exec-9", "p-c", Some("chain-B"), "2026-07-10T00:00:03Z"),
+        )
+        .unwrap();
+
+        let group = get_by_chain_trace_id(&pool, "chain-A").unwrap();
+        assert_eq!(group.len(), 2, "only chain-A hops group together");
+        // Ordered by created_at ASC.
+        assert_eq!(group[0].execution_id, "exec-1");
+        assert_eq!(group[1].execution_id, "exec-2");
+        assert!(group.iter().all(|t| t.chain_trace_id.as_deref() == Some("chain-A")));
+    }
+
+    #[test]
+    fn get_by_chain_trace_id_empty_when_none_match() {
+        let pool = init_test_db().unwrap();
+        assert!(get_by_chain_trace_id(&pool, "nonexistent")
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
+    fn set_chain_trace_id_backfills_root_row() {
+        let pool = init_test_db().unwrap();
+        // Root run saved with NULL chain_trace_id (the pre-fix reality).
+        save(
+            &pool,
+            &make_trace("root-exec", "p-a", None, "2026-07-10T00:00:01Z"),
+        )
+        .unwrap();
+        // Before back-fill: the root is invisible to the chain query.
+        assert!(get_by_chain_trace_id(&pool, "trace-root-exec")
+            .unwrap()
+            .is_empty());
+
+        // Back-fill with the chosen chain id (= its own trace id, root-of-chain).
+        set_chain_trace_id(&pool, "root-exec", "trace-root-exec").unwrap();
+
+        let group = get_by_chain_trace_id(&pool, "trace-root-exec").unwrap();
+        assert_eq!(group.len(), 1);
+        assert_eq!(group[0].execution_id, "root-exec");
+        assert_eq!(group[0].chain_trace_id.as_deref(), Some("trace-root-exec"));
+        // Idempotent re-write.
+        set_chain_trace_id(&pool, "root-exec", "trace-root-exec").unwrap();
+        assert_eq!(get_by_chain_trace_id(&pool, "trace-root-exec").unwrap().len(), 1);
+    }
+
+    /// End-to-end lineage of the event-bus dispatch shape: the ROOT run saves
+    /// its trace with a NULL chain id; the wrapped `{_event, payload}` input a
+    /// downstream hop receives still yields the chain id via
+    /// `chain_trace_id_from_input`, so the hop's trace is saved WITH the id.
+    /// After the completion back-fill of the root, `get_by_chain_trace_id`
+    /// returns BOTH — the whole chain groups (no more 'partial').
+    #[test]
+    fn event_bus_shape_all_hops_share_one_chain_trace_id() {
+        use crate::engine::chain::chain_trace_id_from_input;
+        let pool = init_test_db().unwrap();
+
+        // Root completes → chooses chain id = its own trace id.
+        let root_trace_id = "trace-root";
+        save(&pool, &make_trace("root", "p-root", None, "2026-07-10T00:00:01Z")).unwrap();
+        // Completion back-fill (Direction 1b).
+        set_chain_trace_id(&pool, "root", root_trace_id).unwrap();
+
+        // The event bus wraps the raw chain payload the root emitted.
+        let wrapped_input = serde_json::json!({
+            "_event": { "event_type": "chain_triggered", "source_type": "chain" },
+            "payload": {
+                "source_persona_id": "p-root",
+                "_chain_depth": 1,
+                "_chain_trace_id": root_trace_id,
+            }
+        });
+        // The stamper reads the wrapped input and MUST recover the chain id.
+        let recovered = chain_trace_id_from_input(&wrapped_input);
+        assert_eq!(recovered.as_deref(), Some(root_trace_id));
+
+        // The hop's trace is therefore saved with the shared chain id at spawn.
+        save(
+            &pool,
+            &make_trace("hop", "p-hop", recovered.as_deref(), "2026-07-10T00:00:02Z"),
+        )
+        .unwrap();
+
+        let chain = get_by_chain_trace_id(&pool, root_trace_id).unwrap();
+        assert_eq!(chain.len(), 2, "root + hop share one chain_trace_id");
+        assert_eq!(chain[0].execution_id, "root");
+        assert_eq!(chain[1].execution_id, "hop");
+    }
 }

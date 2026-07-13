@@ -1060,12 +1060,14 @@ impl ExecutionEngine {
         // Clone log_dir for potential healing retries (log_dir is moved into run_execution)
         let log_dir_for_retry = log_dir.clone();
 
-        // Extract chain_trace_id from input_data if present (chain trigger payloads embed it)
+        // Extract chain_trace_id from input_data if present (chain trigger payloads embed it).
+        // Tolerates BOTH the raw top-level shape and the event-bus wrapped
+        // `{_event, payload}` shape — the latter nests the id under `payload`,
+        // which a top-level-only read missed, orphaning every event-dispatched
+        // hop's trace (Chain tab showed 'partial' for real chains).
         let chain_trace_id = input_data
             .as_ref()
-            .and_then(|v| v.get("_chain_trace_id"))
-            .and_then(|t| t.as_str())
-            .map(String::from);
+            .and_then(chain::chain_trace_id_from_input);
 
         // Spawn background task.
         // The inner work is wrapped in catch_unwind so that a panic inside
@@ -1829,12 +1831,12 @@ fn drain_and_start_next(
                 let log_dir = std::env::temp_dir().join("personas").join("logs");
                 let log_dir_for_retry = log_dir.clone();
 
+                // See start_execution_with_priority: tolerate both the raw and
+                // the event-bus wrapped `{_event, payload}` input shapes.
                 let chain_trace_id = ctx
                     .input_data
                     .as_ref()
-                    .and_then(|v| v.get("_chain_trace_id"))
-                    .and_then(|t| t.as_str())
-                    .map(String::from);
+                    .and_then(chain::chain_trace_id_from_input);
 
                 let tracker_clone = tracker.clone();
                 let tasks_clone = tasks.clone();
@@ -2410,14 +2412,20 @@ async fn handle_execution_result(
     // team-handoff chain triggers so the connection graph doesn't double-drive
     // the same work the orchestrator already schedules.
     let source_is_assignment_step = chain::input_is_assignment_step(source_input.as_deref());
-    let (chain_depth, mut visited, existing_chain_trace_id) = source_input
+    let (chain_depth, mut visited, existing_chain_trace_id, chain_cost_in) = source_input
         .map(|input| chain::extract_chain_metadata(Some(&input)))
         .unwrap_or_default();
     visited.insert(persona_id.to_string());
 
+    // Whether this run is a downstream hop (inherited a chain id) or the ROOT of
+    // a fresh chain (mints one from its own trace_id below).
+    let is_downstream_hop = existing_chain_trace_id.is_some();
     // Use existing chain_trace_id if this execution is part of a chain,
     // otherwise use this execution's trace_id as the root of a new chain trace
     let chain_trace_id = existing_chain_trace_id.or_else(|| result.trace_id.clone());
+    // Direction 3: fold this hop's cost into the running chain total before
+    // evaluating the next links (so the ceiling sees spend-through-this-hop).
+    let chain_cost_total = chain_cost_in + result.cost_usd;
 
     let cascade_metrics = chain::evaluate_chain_triggers(
         pool,
@@ -2429,9 +2437,31 @@ async fn handle_execution_result(
         &visited,
         chain_trace_id.as_deref(),
         source_is_assignment_step,
+        chain_cost_total,
     );
     if let Some(ref sched) = scheduler {
         sched.record_chain_cascade(&cascade_metrics);
+    }
+
+    // Direction 1b: back-fill this run's trace row so it shares the chain id.
+    // Downstream hops already receive it via the stamper, but a fresh chain's
+    // ROOT saved its trace with chain_trace_id = NULL (it had no upstream id at
+    // spawn) — without this the root is absent from get_by_chain_trace_id and
+    // the Chain tab reads 'partial'. Only stamp genuine chain participants (a
+    // hop, or a root that actually fired ≥1 link) so standalone runs keep NULL.
+    if let Some(ctid) = chain_trace_id.as_deref() {
+        if is_downstream_hop || cascade_metrics.events_published > 0 {
+            if let Err(e) =
+                crate::db::repos::execution::traces::set_chain_trace_id(pool, exec_id, ctid)
+            {
+                tracing::warn!(
+                    execution_id = %exec_id,
+                    chain_trace_id = %ctid,
+                    error = %e,
+                    "Failed to back-fill chain_trace_id on trace row"
+                );
+            }
+        }
     }
 
     // Healing check for failed executions
@@ -4052,12 +4082,14 @@ fn spawn_delayed_retry(
             // on the retry path.
             let source_is_assignment_step =
                 chain::input_is_assignment_step(source_input.as_deref());
-            let (chain_depth, mut visited, existing_chain_trace_id) = source_input
+            let (chain_depth, mut visited, existing_chain_trace_id, chain_cost_in) = source_input
                 .map(|input| chain::extract_chain_metadata(Some(&input)))
                 .unwrap_or_default();
             visited.insert(persona_id.clone());
+            let is_downstream_hop = existing_chain_trace_id.is_some();
             let chain_trace_id =
                 existing_chain_trace_id.or_else(|| result.trace_id.clone());
+            let chain_cost_total = chain_cost_in + result.cost_usd;
 
             let cascade_metrics = chain::evaluate_chain_triggers(
                 &pool,
@@ -4069,11 +4101,30 @@ fn spawn_delayed_retry(
                 &visited,
                 chain_trace_id.as_deref(),
                 source_is_assignment_step,
+                chain_cost_total,
             );
             // Best-effort metrics recording — same as the regular path
             // (`handle_execution_result`) does when a scheduler is present.
             if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
                 state.scheduler.record_chain_cascade(&cascade_metrics);
+            }
+
+            // Direction 1b: back-fill the trace row's chain_trace_id (see
+            // handle_execution_result for the rationale). Same guard: only
+            // genuine chain participants get stamped.
+            if let Some(ctid) = chain_trace_id.as_deref() {
+                if is_downstream_hop || cascade_metrics.events_published > 0 {
+                    if let Err(e) = crate::db::repos::execution::traces::set_chain_trace_id(
+                        &pool, &exec_id, ctid,
+                    ) {
+                        tracing::warn!(
+                            execution_id = %exec_id,
+                            chain_trace_id = %ctid,
+                            error = %e,
+                            "Failed to back-fill chain_trace_id on trace row"
+                        );
+                    }
+                }
             }
         }
 
