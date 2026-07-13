@@ -7,9 +7,32 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
 import { hasFailureSpike, fleetSuccessRatePct } from './lib/fleetHealth';
 import { useVaultCredentials } from './lib/useVaultCredentials';
+import { usePausableInterval } from '../lib/usePausableInterval';
 import type { SidebarSection } from '@/lib/types/types';
 
 const FLEET_METRICS_REFRESH_MS = 30_000;
+
+/** Shaped placeholder while the first metrics snapshot loads — four pill-sized
+ *  shimmer blocks matching the real strip's layout, so chrome lands without a
+ *  jump when data arrives (replaces the old render-nothing behavior). */
+function FleetHealthStripSkeleton() {
+  return (
+    <div className="flex items-center gap-2 flex-wrap" aria-hidden="true">
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className={`animate-pulse rounded-interactive bg-primary/5 border border-primary/10 ${CARD_PADDING.compact} flex items-center gap-2`}
+        >
+          <div className="w-6 h-6 rounded-interactive bg-primary/10 flex-shrink-0" />
+          <div className="flex flex-col gap-1">
+            <div className="h-3 w-8 rounded bg-primary/10" />
+            <div className="h-2.5 w-14 rounded bg-primary/8" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 interface PillProps {
   icon: LucideIcon;
@@ -62,17 +85,25 @@ export default function FleetHealthStrip() {
   const { t: globalT } = useTranslation();
   const t = globalT.home;
 
-  // Trigger the shared fetch on mount + keep it fresh. The store action is
-  // TTL-guarded + dedup-safe, so this coexists with the nav hook's prime call
-  // without doubling backend work.
-  useEffect(() => {
-    const fetch = () => void useOverviewStore.getState().fetchFleetMetrics();
-    fetch();
-    const id = setInterval(fetch, FLEET_METRICS_REFRESH_MS);
-    return () => clearInterval(id);
-  }, []);
+  // The poll only runs while the Welcome tab is the visible Home tab AND the
+  // window isn't hidden — see usePausableInterval. Under the keep-alive HomePage
+  // the strip stays mounted when the user switches tabs, so an unguarded poll
+  // would keep hitting the backend off-screen.
+  const active = useSystemStore((s) => s.sidebarSection === 'home' && s.homeTab === 'welcome');
 
-  if (!metrics) return null;
+  // Initial load on mount (the pausable interval handles refresh thereafter).
+  // The store action is TTL-guarded + dedup-safe, so this coexists with the nav
+  // hook's prime call without doubling backend work.
+  useEffect(() => {
+    void useOverviewStore.getState().fetchFleetMetrics();
+  }, []);
+  usePausableInterval(
+    () => void useOverviewStore.getState().fetchFleetMetrics(),
+    FLEET_METRICS_REFRESH_MS,
+    active,
+  );
+
+  if (!metrics) return <FleetHealthStripSkeleton />;
 
   const nav = (section: SidebarSection) => () => setSidebarSection(section);
   const fleet = t.fleet;
