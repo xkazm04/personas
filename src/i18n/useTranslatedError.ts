@@ -13,7 +13,12 @@
  */
 import * as Sentry from '@sentry/react';
 import type { Translations } from './en';
-import { resolveError, type FriendlyErrorCategory } from '@/lib/errors/errorRegistry';
+import {
+  resolveError,
+  extractAuthorizeUrl,
+  type FriendlyErrorCategory,
+  type FriendlyErrorAction,
+} from '@/lib/errors/errorRegistry';
 
 // Breadcrumb dedupe window — when the same raw error gets rendered repeatedly
 // (e.g. a hook firing on every render until the error clears), avoid flooding
@@ -50,6 +55,8 @@ export interface TranslatedError {
   message: string;
   suggestion: string;
   category: FriendlyErrorCategory;
+  /** Optional actionable follow-up (e.g. an authorize-URL button). */
+  action?: FriendlyErrorAction;
 }
 
 // Map raw error match patterns → i18n key prefixes in error_registry section.
@@ -99,6 +106,46 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   { match: 'no platform credential configured', keyPrefix: 'no_credential', category: 'user_action' },
   { match: 'Bundle file is empty or unreadable', keyPrefix: 'empty_bundle', category: 'user_action' },
   { match: 'ZIP archive does not contain manifest', keyPrefix: 'invalid_bundle', category: 'user_action' },
+
+  // ── Build-pipeline validators (previously English-only via the fallback
+  //    chain into errorRegistry; now localized). Patterns mirror ERROR_RULES
+  //    in errorRegistry.ts — keep the two in lock-step. None of these raw
+  //    strings collide with the generic entries above, so appending is safe.
+  { match: /interval_seconds must be (?:at least|>= ?)\s*\d+/i, keyPrefix: 'interval_too_fast', category: 'user_action' },
+  { match: 'interval_seconds must be a valid integer', keyPrefix: 'interval_not_number', category: 'user_action' },
+  { match: /Webhook triggers require a (?:non-empty webhook_secret|config with a non-empty webhook_secret)/, keyPrefix: 'webhook_missing_secret', category: 'recoverable' },
+  { match: 'smee_channel_url must be an https://smee.io/ URL', keyPrefix: 'smee_url_invalid', category: 'user_action' },
+  { match: /Schedule triggers require (?:either a non-empty cron expression or a positive interval_seconds|a config with either a cron expression or interval_seconds)/, keyPrefix: 'schedule_missing_timing', category: 'user_action' },
+  { match: /Invalid trigger_type '[^']+'\. Must be one of:/, keyPrefix: 'invalid_trigger_type', category: 'recoverable' },
+  { match: 'Polling URL blocked', keyPrefix: 'polling_url_blocked', category: 'user_action' },
+  // Build-session lifecycle. The specific "disappeared while waiting" rule must
+  // precede the generic "not found | disappeared" rule (mirrors ERROR_RULES).
+  { match: 'Build session has no agent_ir', keyPrefix: 'build_no_agent_ir', category: 'recoverable' },
+  { match: 'agent_ir parse error', keyPrefix: 'agent_ir_parse', category: 'recoverable' },
+  { match: 'Persona design result parse error', keyPrefix: 'design_result_parse', category: 'user_action' },
+  { match: /Build session [\w-]+ disappeared while waiting/, keyPrefix: 'build_session_disappeared', category: 'user_action' },
+  { match: /Build session .* (?:not found|disappeared)/i, keyPrefix: 'build_session_gone', category: 'user_action' },
+  { match: 'has no agent_ir and persona has no design result', keyPrefix: 'build_nothing_to_promote', category: 'recoverable' },
+  // Field-level validators (size + range).
+  { match: /(?:Name|name) (?:cannot be empty|exceeds maximum length)/, keyPrefix: 'name_invalid', category: 'user_action' },
+  { match: 'System prompt cannot be empty', keyPrefix: 'system_prompt_empty', category: 'user_action' },
+  { match: /(?:System prompt|Structured prompt) exceeds maximum size/, keyPrefix: 'prompt_too_large', category: 'user_action' },
+  { match: /max_turns must be/, keyPrefix: 'max_turns_range', category: 'user_action' },
+  { match: /max_concurrent must be between/, keyPrefix: 'max_concurrent_range', category: 'user_action' },
+  { match: /timeout_ms must be (?:>=|<=)/, keyPrefix: 'timeout_range', category: 'user_action' },
+  { match: /max_budget_usd must be (?:a finite number|>= 0)/, keyPrefix: 'budget_value_invalid', category: 'user_action' },
+  { match: /Importance must be between/, keyPrefix: 'importance_range', category: 'user_action' },
+  { match: /Unknown field '[^']+' in structured prompt/, keyPrefix: 'unknown_prompt_field', category: 'recoverable' },
+
+  // ── Structured AppError variants (registry gap closure). Four match a stable
+  //    `#[error(...)]` prefix; `Resource list` covers the External catch-all's
+  //    dominant emitter. `authorization_required` additionally carries an
+  //    authorize action (consent URL parsed from the raw string below).
+  { match: 'OAuth grant revoked', keyPrefix: 'oauth_revoked', category: 'user_action' },
+  { match: 'Retry exhausted', keyPrefix: 'retry_exhausted', category: 'recoverable' },
+  { match: 'Identity keyring lost', keyPrefix: 'keyring_lost', category: 'system' },
+  { match: 'Authorization required for tool', keyPrefix: 'authorization_required', category: 'user_action' },
+  { match: 'Resource list', keyPrefix: 'external_service', category: 'system' },
 ];
 
 type ErrorRegistryKeys = Translations['error_registry'];
@@ -133,11 +180,18 @@ export function resolveErrorTranslated(t: Translations, raw: string | null | und
       // failed" rather than only the friendly "Network is offline" copy.
       // Architect ADR: 2026-05-10-resolveerror-breadcrumb-spawn-tracing.
       recordResolveBreadcrumb(raw, rule.keyPrefix);
-      return {
+      const resolved: TranslatedError = {
         message: getRegistryString(registry, `${rule.keyPrefix}_message`) ?? raw,
         suggestion: getRegistryString(registry, `${rule.keyPrefix}_suggestion`) ?? '',
         category: rule.category,
       };
+      // AuthorizationRequired carries a per-error consent URL — surface it as an
+      // authorize action so a toast/panel can offer an "Authorize" button that
+      // opens it. Only attach when a URL was actually parseable.
+      if (rule.keyPrefix === 'authorization_required') {
+        resolved.action = { type: 'authorize', url: extractAuthorizeUrl(raw) };
+      }
+      return resolved;
     }
   }
 

@@ -21,6 +21,21 @@ import * as Sentry from '@sentry/react';
  */
 export type FriendlyErrorCategory = 'recoverable' | 'user_action' | 'system' | 'unclassified';
 
+/**
+ * Optional actionable follow-up carried on a resolved error. Currently only the
+ * `authorize` action exists: an MCP/external tool raised `AuthorizationRequired`
+ * and the user must open `url` to grant consent before retrying. Consumers that
+ * render a toast/panel can surface an "Authorize" button that opens `url`
+ * (e.g. `openExternal(action.url)` from `@tauri-apps/plugin-shell`). The static
+ * rule marks the action *type*; the concrete `url` is filled in at resolution
+ * time from the raw error string (see `extractAuthorizeUrl`).
+ */
+export interface FriendlyErrorAction {
+  type: 'authorize';
+  /** Consent URL to open. `null` when the raw error carried no parseable URL. */
+  url: string | null;
+}
+
 export interface FriendlyError {
   /** Plain-language description of what went wrong. */
   message: string;
@@ -28,6 +43,8 @@ export interface FriendlyError {
   suggestion: string;
   /** UI intent class — drives the recovered/illustrated treatment. */
   category: FriendlyErrorCategory;
+  /** Optional actionable follow-up (e.g. an authorize-URL button). */
+  action?: FriendlyErrorAction;
 }
 
 interface ErrorRule {
@@ -530,6 +547,56 @@ const ERROR_RULES: ErrorRule[] = [
       category: 'user_action',
     },
   },
+
+  // ── Structured AppError variants (registry gap closure) ──────────────
+  // These five variants previously fell through to GENERIC_FALLBACK. Four
+  // carry a stable `#[error(...)]` prefix we can match; `External` is the
+  // catch-all bucket, matched here on its dominant real emitter (the MCP
+  // resource-listing path). Mirrors ERROR_KEY_MAP in useTranslatedError.ts.
+  {
+    match: 'OAuth grant revoked',
+    error: {
+      message: 'The connection\'s authorization was revoked.',
+      suggestion: 'Reconnect the account to grant access again.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: 'Retry exhausted',
+    error: {
+      message: 'This kept failing after several automatic retries.',
+      suggestion: 'Wait a bit and try again — if it persists, check the service status or the agent\'s configuration.',
+      category: 'recoverable',
+    },
+  },
+  {
+    match: 'Identity keyring lost',
+    error: {
+      message: 'The secure credential store is no longer available.',
+      suggestion: 'Restart the app. If it persists, re-enter the affected credentials in the vault.',
+      category: 'system',
+    },
+  },
+  {
+    // Structured non-fatal error — the raw string is
+    // "Authorization required for tool '…' on credential '…' — open <url> to
+    // grant consent". The consent URL is parsed out at resolution time.
+    match: 'Authorization required for tool',
+    error: {
+      message: 'This tool needs your authorization before it can run.',
+      suggestion: 'Open the authorization page to grant consent, then try again.',
+      category: 'user_action',
+      action: { type: 'authorize', url: null },
+    },
+  },
+  {
+    match: 'Resource list',
+    error: {
+      message: 'The external service couldn\'t complete the request.',
+      suggestion: 'Check the service status and your connection, then try again.',
+      category: 'system',
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -563,12 +630,30 @@ export function resolveError(raw: string | null | undefined): FriendlyError {
         : rule.match.test(raw);
     if (matches) {
       recordRegistryBreadcrumb(raw, rule.error.category);
+      // Authorize actions carry a per-error consent URL that the static rule
+      // can't know — fill it in from the raw string at resolution time.
+      if (rule.error.action?.type === 'authorize') {
+        return { ...rule.error, action: { type: 'authorize', url: extractAuthorizeUrl(raw) } };
+      }
       return rule.error;
     }
   }
 
   recordRegistryBreadcrumb(raw, 'unclassified');
   return GENERIC_FALLBACK;
+}
+
+/**
+ * Extract the consent URL from an `AuthorizationRequired` raw error string.
+ *
+ * The Rust variant renders as: `Authorization required for tool '…' on
+ * credential '…' — open https://… to grant consent`. Returns the first http(s)
+ * URL found, or `null` if the string carried none (e.g. a truncated message).
+ */
+export function extractAuthorizeUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const m = raw.match(/https?:\/\/[^\s'"]+/);
+  return m ? m[0] : null;
 }
 
 // Local breadcrumb dedupe — same shape as useTranslatedError, but the two
