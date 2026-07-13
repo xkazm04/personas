@@ -202,6 +202,55 @@ pub fn all_category_info() -> Vec<MemoryCategoryInfo> {
 //         is a lifecycle behavior change, out of scope for the injection
 //         ranking); revisit if the cap starts evicting fresh memories.
 //
+// (7) **Active-tier recall can be TASK-RELEVANT (ml builds only).** The value
+//     ranking in (6) is task-blind: a run about invoices injects the same
+//     "most valuable" active memories as a run about tweets. Under
+//     `#[cfg(feature = "ml")]`, recall blends a semantic similarity to the
+//     run's task context into the active-tier ranking. The moving parts:
+//       - **Storage.** `repos::core::memories::{ensure_memory_vec_table,
+//         embed_and_store_memory, search_similar_memories, backfill_memory_embeddings,
+//         delete_memory_embeddings}` maintain a vec0 side-table
+//         `persona_memory_embedding(memory_id, embedding float[384])`
+//         (AllMiniLML6V2Q, the model the app already ships). It lives in the
+//         **user DB** pool — the one where sqlite-vec is registered before the
+//         pool is built (`db::init_user_db`) — NOT the main `personas.db` pool
+//         whose connections open pre-registration. Created at runtime
+//         (`CREATE VIRTUAL TABLE IF NOT EXISTS`, latched), mirroring
+//         `companion::brain::embeddings`; NO migration.
+//       - **Score.** `engine::memory_recall::pack_by_budget_relevance` ranks by
+//         `final = value_score × (1 + relevance_weight × similarity)`, where
+//         `value_score` is the unchanged `decay_score` (importance × category
+//         half-life × access boost), `similarity ∈ [0,1]` comes from
+//         `similarity_from_distance` over the KNN L2 distance, and
+//         `relevance_weight = DEFAULT_RELEVANCE_WEIGHT` (0.6). Two load-bearing
+//         bounds: **similarity 0 is a no-op** (un-embedded / off-topic /
+//         below-floor memories rank EXACTLY as the value-only pack, so a
+//         partially-indexed corpus degrades gracefully and relevance can only
+//         PROMOTE never demote); and **the lift is bounded to `1 + weight`**, so
+//         relevance reorders memories of comparable value but cannot overtake a
+//         peer worth more than `1.6×` on value alone — importance keeps the last
+//         word across real value gaps.
+//       - **Relevance floor.** `engine::memory_recall::pack_by_budget_task_aware`
+//         (the embed→KNN→floor→blend orchestrator a caller with an embedder +
+//         user-DB pool swaps in for `pack_by_budget`) applies
+//         `crate::retrieval::filter_by_distance_floor` with
+//         `crate::retrieval::MAX_VECTOR_DISTANCE` before building the similarity
+//         map, so off-topic hits are dropped (contribute similarity 0), not
+//         merely down-weighted — an off-topic run injects the value-ranked set,
+//         never irrelevant-but-close padding. Any embedding failure inside the
+//         orchestrator falls back to the value-only pack: task-aware recall is
+//         an enhancement, never a new failure mode for prompt assembly.
+//       - **Write path.** `repos::core::memories::create_with_embedding` is
+//         `create` + best-effort embed (log-and-continue — an embedding failure
+//         NEVER fails the memory write); `backfill_memory_embeddings` is the
+//         idempotent, batched repair pass for rows created before indexing
+//         existed or whose write-path embed failed.
+//       - **Unchanged by construction.** Core pinning (core is packed
+//         separately and never enters `pack_by_budget_relevance`), the 6k-char
+//         budget, and greedy whole-entry packing/omission are identical to the
+//         value-only path. Non-ml builds keep calling `pack_by_budget` and
+//         behave exactly as (6) describes.
+//
 // Any change to these rules must update this block and the cited entry
 // points together.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

@@ -1005,6 +1005,46 @@ pub fn run() {
             #[cfg(feature = "ml")]
             st.checkpoint("vector_kb_init");
 
+            // Task-relevant memory recall (MEMORY CONTRACT (7)): register the
+            // embedder + vec-registered user-DB pool so the runner's recall
+            // path and the memory repo's embed-on-write hooks can reach them
+            // without threading new parameters through every execution entry
+            // point. Then run the idempotent embedding backfill in gentle
+            // batches (delayed past boot; loops until no un-embedded,
+            // recall-eligible memory remains — each batch is diffed against
+            // the vec table, so restarts/repeat runs are safe).
+            #[cfg(feature = "ml")]
+            {
+                engine::memory_recall::init_task_recall_runtime(
+                    user_db_pool.clone(),
+                    embedding_manager.clone(),
+                );
+                let bf_main = pool.clone();
+                let bf_vec = user_db_pool.clone();
+                let bf_emb = embedding_manager.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(90)).await;
+                    loop {
+                        match db::repos::core::memories::backfill_memory_embeddings(
+                            &bf_main, &bf_vec, &bf_emb, 64,
+                        )
+                        .await
+                        {
+                            Ok(0) => break,
+                            Ok(n) => {
+                                tracing::info!(embedded = n, "memory embedding backfill: batch done");
+                                tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+                            }
+                            Err(e) => {
+                                tracing::warn!(error = %e, "memory embedding backfill stopped (next launch retries)");
+                                break;
+                            }
+                        }
+                    }
+                });
+                st.checkpoint("memory_recall_runtime");
+            }
+
             // Reconcile orphaned KB records left by crashes during creation
             #[cfg(feature = "ml")]
             {
