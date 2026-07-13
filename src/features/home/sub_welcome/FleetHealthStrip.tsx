@@ -134,8 +134,8 @@ export default function FleetHealthStrip() {
         value={successRate !== null ? `${successRate}%` : '—'}
         onClick={nav('overview')}
         pulse={failureSpike}
-        accentColor={failureSpike ? 'bg-red-500/15' : 'bg-emerald-500/15'}
-        iconColor={failureSpike ? 'text-red-400' : 'text-emerald-400'}
+        accentColor={failureSpike ? 'bg-status-error/15' : 'bg-status-success/15'}
+        iconColor={failureSpike ? 'text-status-error' : 'text-status-success'}
       />
       <MetricPill
         icon={Bot}

@@ -1,6 +1,6 @@
 import { BarChart3, Bot, Zap, Key, FlaskConical, Settings, Puzzle, Users } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { schedulePrefetchOtherHomeTabs } from '../lib/prefetch';
 import WelcomeLayout from './WelcomeLayout';
@@ -25,12 +25,28 @@ export default function HomeWelcome() {
   const { t: globalT } = useTranslation();
   const t = globalT.home;
 
+  // Re-evaluate the time-of-day greeting as time passes. Computing it only on
+  // mount meant a home view left open across noon / 6pm kept a stale
+  // "Good morning". Recompute on a 5-minute tick and whenever the window
+  // regains visibility (e.g. the user returns after lunch).
+  const [hour, setHour] = useState(() => new Date().getHours());
+  useEffect(() => {
+    const sync = () => setHour(new Date().getHours());
+    const id = setInterval(sync, 5 * 60 * 1000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') sync();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
   const greeting = useMemo(() => {
-    const hour = new Date().getHours();
     if (hour < 12) return t.greeting_morning;
     if (hour < 18) return t.greeting_afternoon;
     return t.greeting_evening;
-  }, [t]);
+  }, [t, hour]);
 
   // The user is always addressed as "Commander" on the Welcome hero — an
   // Athena-themed honorific — rather than by account name. The time-of-day
