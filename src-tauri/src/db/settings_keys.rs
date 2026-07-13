@@ -713,6 +713,14 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             )),
         };
     }
+    // Per-persona JSON-blob prefix keys (Direction 2). Their consumer structs
+    // (`AutoOptimizeConfig` / `HealthWatchConfig`) are private to
+    // `engine::management_api`, so we can't import the exact type — but we can
+    // still reject truncated/garbage JSON at write time instead of letting the
+    // Axum read handler fall back to defaults and silently drop the setting.
+    if key.starts_with(AUTO_OPTIMIZE_PREFIX) || key.starts_with(HEALTH_WATCH_PREFIX) {
+        return validate_json_wellformed(key, value);
+    }
     match key {
         COMPANION_FLEET_BOLDNESS => match value {
             "cautious" | "balanced" | "bold" => Ok(()),
@@ -790,6 +798,42 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             )),
         },
         APPEARANCE_PREFERENCES => validate_appearance_preferences(value),
+        // -------------------------------------------------------------------
+        // JSON-blob keys (Direction 2): validate against the ACTUAL consumer
+        // serde struct so a malformed blob is rejected at WRITE time instead
+        // of corrupting the store and surfacing as a parse failure at read.
+        // The consumer parses the SAME type, so any value we reject here would
+        // also fail to load — no valid write is newly blocked.
+        // -------------------------------------------------------------------
+        BYOM_POLICY => validate_json_as::<crate::engine::byom::ByomPolicy>(key, value),
+        QUALITY_GATE_CONFIG => {
+            validate_json_as::<crate::engine::quality_gate::QualityGateConfig>(key, value)
+        }
+        PERFORMANCE_DIGEST => validate_json_as::<crate::engine::digest::DigestConfig>(key, value),
+        GLOBAL_MODEL_PROFILE => {
+            validate_json_as::<crate::engine::types::ModelProfile>(key, value)
+        }
+        OBSIDIAN_BRAIN_CONFIG => {
+            validate_json_as::<crate::db::models::ObsidianVaultConfig>(key, value)
+        }
+        OBSIDIAN_MIRROR_CONFIG => {
+            validate_json_as::<crate::db::models::ObsidianMirrorConfig>(key, value)
+        }
+        OBSIDIAN_BRAIN_SAVED_VAULTS => {
+            validate_json_as::<Vec<crate::db::models::ObsidianVaultConfig>>(key, value)
+        }
+        // JSON blobs whose consumer type is private to another module
+        // (`NotificationPrefs`) or lives only in the frontend
+        // (`engine_capabilities`, `gitlab_pipeline_notification_prefs`) — we
+        // can't import the exact struct, but well-formed-JSON validation still
+        // rejects truncated/garbage writes. `notification_prefs` additionally
+        // accepts a legacy JSON-array form the consumer tolerates, so strict
+        // struct validation would be wrong here anyway.
+        NOTIFICATION_PREFS
+        | ENGINE_CAPABILITIES
+        | GITLAB_PIPELINE_NOTIFICATION_PREFS
+        | DEV_TOOLS_CROSS_PROJECT_METADATA
+        | ONBOARDING_QUEST_STATE => validate_json_wellformed(key, value),
         _ => Ok(()),
     }
 }
@@ -835,6 +879,168 @@ pub fn deprecated_replacement(key: &str) -> Option<&'static str> {
         }
         _ => None,
     }
+/// Validate that `value` deserializes into the consumer type `T`. Used by
+/// [`validate_value`] for JSON-blob keys whose exact consumer struct we can
+/// import — a malformed blob is rejected at write instead of corrupting the
+/// store (Direction 2). Kept private; the concrete `T` per key is wired above.
+fn validate_json_as<T: serde::de::DeserializeOwned>(key: &str, value: &str) -> Result<(), String> {
+    serde_json::from_str::<T>(value)
+        .map(|_| ())
+        .map_err(|e| format!("value for '{key}' is not valid JSON for its schema: {e}"))
+}
+
+/// Validate that `value` is at least well-formed JSON. Used for JSON-blob keys
+/// whose consumer type is private to another module or lives only in the
+/// frontend — we can't import the exact struct, but this still rejects
+/// truncated / garbage JSON that would corrupt the store.
+fn validate_json_wellformed(key: &str, value: &str) -> Result<(), String> {
+    serde_json::from_str::<serde_json::Value>(value)
+        .map(|_| ())
+        .map_err(|e| format!("value for '{key}' is not well-formed JSON: {e}"))
+}
+
+// =============================================================================
+// Audit categorization (Direction 1: universal settings audit)
+// =============================================================================
+
+/// Internal bookkeeping keys written by ENGINE state machines (proactive-tick
+/// cursors, "last ran" timestamps, a minted device id, a monotonic row counter,
+/// a disk-content version stamp) — NOT by user action. These are EXCLUDED from
+/// the settings audit log: auditing them would flood the Settings → History tab
+/// with machine noise that no human ever changed.
+///
+/// Documented exclusion list (keep in sync with the `AUDIT_EXCLUDED_PREFIXES`
+/// families below):
+/// - companion proactive cursors / retry state,
+/// - `*_last` / `*_last_run` timestamps,
+/// - cloud-sync device id / watermark / row counter,
+/// - the companion constitution version stamp.
+const AUDIT_EXCLUDED_KEYS: &[&str] = &[
+    // Companion proactive-tick cursors + two-phase retry state.
+    COMPANION_EXEC_REVIEW_CURSOR,
+    COMPANION_EXEC_REVIEW_RETRY,
+    COMPANION_MSG_TRIAGE_CURSOR,
+    // "last ran / last fired" timestamps.
+    PERFORMANCE_DIGEST_LAST,
+    HEALTH_DIGEST_LAST_RUN,
+    CREDENTIAL_HEALTHCHECK_LAST,
+    COMPANION_DAILY_ROLLUP_LAST,
+    COMPANION_PROFILE_SYNTHESIS_LAST,
+    // Cloud-sync bookkeeping: minted device id, last-pass watermark, row counter.
+    CLOUD_SYNC_DEVICE_ID,
+    CLOUD_SYNC_LAST_AT,
+    CLOUD_SYNC_TOTAL_ROWS,
+    // Disk-content version stamp (engine-managed on app start, not user-set).
+    COMPANION_CONSTITUTION_VERSION,
+];
+
+/// Prefix families that are internal bookkeeping (per-table cloud-sync cursors).
+const AUDIT_EXCLUDED_PREFIXES: &[&str] = &[CLOUD_SYNC_CURSOR_PREFIX];
+
+/// Map a settings key to its audit CATEGORY, or `None` if the key is internal
+/// bookkeeping that must NOT be audited (see [`AUDIT_EXCLUDED_KEYS`] /
+/// [`AUDIT_EXCLUDED_PREFIXES`]).
+///
+/// Categories align with the Settings sub-modules that surface each knob so the
+/// History tab's category filter reads naturally. The active set is:
+/// `api_keys`, `engine`, `limits`, `retention`, `byom`, `notifications`,
+/// `autonomy`, `quality_gates`, `integrations`, `sync`, `config`. Any
+/// registered-but-uncategorized key falls back to `config` (still audited).
+pub fn audit_category(key: &str) -> Option<&'static str> {
+    // Excluded exact keys and prefix families come first.
+    if AUDIT_EXCLUDED_KEYS.contains(&key) {
+        return None;
+    }
+    for prefix in AUDIT_EXCLUDED_PREFIXES {
+        if key.starts_with(prefix) {
+            return None;
+        }
+    }
+
+    // Prefix-keyed families (per-persona / per-project dynamic keys).
+    if key.starts_with(AUTO_ROLLBACK_PREFIX)
+        || key.starts_with(AUTO_OPTIMIZE_PREFIX)
+        || key.starts_with(AUTOPILOT_MODE_PREFIX)
+    {
+        return Some("autonomy");
+    }
+    if key.starts_with(HEALTH_WATCH_PREFIX) {
+        return Some("notifications");
+    }
+    if key.starts_with(EXECUTION_RETENTION_MONTHS_PREFIX) {
+        return Some("retention");
+    }
+
+    let category = match key {
+        // Secrets / credentials.
+        OLLAMA_API_KEY | LITELLM_MASTER_KEY | BROWSER_BRIDGE_PAIRING_TOKEN => "api_keys",
+        // Engine wiring: which CLI/remote engine, routing, capabilities, concurrency.
+        CLI_ENGINE
+        | QWEN_BASE_URL
+        | QWEN_MODEL
+        | QWEN_CONNECTOR_TOOLS
+        | DELEGATE_MODEL
+        | DELEGATE_BASE_URL
+        | LITELLM_BASE_URL
+        | ENGINE_CAPABILITIES
+        | GLOBAL_MODEL_PROFILE
+        | SMART_SEARCH_MODEL
+        | SEMANTIC_LINT_MODEL
+        | MAX_PARALLEL_EXECUTIONS
+        | EXECUTION_WORKTREE_ISOLATION
+        | FILE_WATCHER_DEBOUNCE_MS => "engine",
+        // Numeric ceilings / rate limits.
+        MONTHLY_COST_CEILING_USD
+        | SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR
+        | EVENT_RETENTION_MAX_COUNT => "limits",
+        // Data-retention windows.
+        EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => "retention",
+        // Bring-your-own-model policy.
+        BYOM_POLICY => "byom",
+        // Notification / digest preferences.
+        NOTIFICATION_PREFS
+        | GITLAB_PIPELINE_NOTIFICATION_PREFS
+        | PERFORMANCE_DIGEST
+        | HEALTH_DIGEST_ENABLED => "notifications",
+        // Quality gates.
+        QUALITY_GATE_CONFIG => "quality_gates",
+        // Autonomy / companion behaviour toggles.
+        ATHENA_WAKE_WINDOW_MINUTES
+        | CLI_SESSION_AWARENESS_ENABLED
+        | COMPANION_AUTONOMOUS_MODE
+        | COMPANION_DEV_MODE
+        | COMPANION_FLEET_BOLDNESS
+        | AUTONOMOUS_MESSAGE_TRIAGE
+        | DIRECTOR_BRAIN_ENABLED
+        | AUTONOMOUS_GOAL_ADVANCEMENT
+        | AUTONOMOUS_DELIBERATION
+        | COMPANION_DAILY_ROLLUP
+        | COMPANION_DAILY_ROLLUP_HOUR
+        | COMPANION_PROFILE_SYNTHESIS
+        | AUTONOMOUS_ASSIGNMENT_RETRY
+        | AUTONOMOUS_REVIEW_TRIAGE
+        | AUTONOMOUS_REVIEW_TRIAGE_HIGH
+        | AUTONOMOUS_BACKLOG_TO_GOAL
+        | AUTONOMOUS_IDEA_SCAN
+        | AUTONOMOUS_BACKLOG_TRIAGE
+        | AUTONOMOUS_ATHENA_REACTIONS
+        | AUTONOMOUS_ATHENA_REVIEW_RESOLUTION
+        | AUTONOMOUS_KPI_GOAL_DERIVATION
+        | AUTONOMOUS_KPI_EVALUATION
+        | AUTONOMOUS_DIRECTOR_STORM => "autonomy",
+        // Obsidian brain / dev-tools integrations.
+        OBSIDIAN_BRAIN_CONFIG
+        | OBSIDIAN_MIRROR_CONFIG
+        | OBSIDIAN_BRAIN_SAVED_VAULTS
+        | DEV_TOOLS_CROSS_PROJECT_METADATA => "integrations",
+        // Cloud sync (user-facing toggle only; bookkeeping excluded above).
+        CLOUD_SYNC_ENABLED => "sync",
+        // UI / onboarding state.
+        ONBOARDING_QUEST_STATE => "config",
+        // Any registered-but-uncategorized key → generic bucket (still audited).
+        _ => "config",
+    };
+    Some(category)
 }
 
 #[cfg(test)]
@@ -933,7 +1139,66 @@ mod tests {
     fn unknown_keys_skip_value_validation() {
         // Keys without a typed contract accept any value shape.
         assert!(validate_value(CLI_ENGINE, "whatever").is_ok());
-        assert!(validate_value(BYOM_POLICY, "{malformed").is_ok());
+        // NOTE: BYOM_POLICY is now validated as JSON (Direction 2); its
+        // malformed-rejection case moved to `json_blob_keys_reject_malformed`.
+    }
+
+    #[test]
+    fn json_blob_keys_reject_malformed() {
+        // Direction 2: each JSON-blob key rejects a truncated/garbage blob that
+        // was previously accepted and only surfaced as corruption at read time.
+        let malformed = "{malformed";
+        for key in [
+            BYOM_POLICY,
+            QUALITY_GATE_CONFIG,
+            PERFORMANCE_DIGEST,
+            GLOBAL_MODEL_PROFILE,
+            OBSIDIAN_BRAIN_CONFIG,
+            OBSIDIAN_MIRROR_CONFIG,
+            OBSIDIAN_BRAIN_SAVED_VAULTS,
+            NOTIFICATION_PREFS,
+            ENGINE_CAPABILITIES,
+            GITLAB_PIPELINE_NOTIFICATION_PREFS,
+            DEV_TOOLS_CROSS_PROJECT_METADATA,
+            ONBOARDING_QUEST_STATE,
+        ] {
+            assert!(
+                validate_value(key, malformed).is_err(),
+                "key {key} must reject malformed JSON {malformed:?}"
+            );
+        }
+        // Prefix JSON-blob keys too.
+        assert!(validate_value("auto_optimize:persona-1", malformed).is_err());
+        assert!(validate_value("health_watch:persona-1", malformed).is_err());
+    }
+
+    #[test]
+    fn json_blob_keys_accept_valid() {
+        // Full serialized shapes (as the UI would write them) parse. The
+        // strict-struct keys require all their fields present — exactly the
+        // contract their consumers enforce at read — so we pass complete blobs.
+        assert!(validate_value(
+            BYOM_POLICY,
+            r#"{"enabled":false,"allowed_providers":[],"blocked_providers":[],"routing_rules":[],"compliance_rules":[]}"#
+        )
+        .is_ok());
+        assert!(validate_value(
+            QUALITY_GATE_CONFIG,
+            r#"{"memoryRules":[],"memoryRejectCategories":[],"reviewRules":[]}"#
+        )
+        .is_ok());
+        assert!(validate_value(PERFORMANCE_DIGEST, r#"{"enabled":false,"cadence":"weekly"}"#).is_ok());
+        // All-optional-field structs accept an empty object.
+        assert!(validate_value(GLOBAL_MODEL_PROFILE, "{}").is_ok());
+        assert!(validate_value(OBSIDIAN_MIRROR_CONFIG, "{}").is_ok());
+        assert!(validate_value(OBSIDIAN_BRAIN_SAVED_VAULTS, "[]").is_ok());
+        // Well-formed-JSON keys accept any valid JSON.
+        assert!(validate_value(NOTIFICATION_PREFS, "{}").is_ok());
+        assert!(validate_value(NOTIFICATION_PREFS, "[]").is_ok()); // legacy array form tolerated
+        assert!(validate_value(ENGINE_CAPABILITIES, "{}").is_ok());
+        assert!(validate_value(GITLAB_PIPELINE_NOTIFICATION_PREFS, "{}").is_ok());
+        assert!(validate_value("auto_optimize:persona-1", "{}").is_ok());
+        assert!(validate_value("health_watch:persona-1", "{}").is_ok());
     }
 
     #[test]
@@ -970,6 +1235,45 @@ mod tests {
         assert!(validate_value(APPEARANCE_PREFERENCES, "not json").is_err());
         assert!(validate_value(APPEARANCE_PREFERENCES, "[1,2]").is_err());
         assert!(validate_value(APPEARANCE_PREFERENCES, "\"str\"").is_err());
+    fn audit_category_excludes_internal_bookkeeping() {
+        // Cursors, last-run timestamps, cloud-sync bookkeeping, version stamp → None.
+        assert_eq!(audit_category(COMPANION_EXEC_REVIEW_CURSOR), None);
+        assert_eq!(audit_category(COMPANION_MSG_TRIAGE_CURSOR), None);
+        assert_eq!(audit_category(COMPANION_EXEC_REVIEW_RETRY), None);
+        assert_eq!(audit_category(PERFORMANCE_DIGEST_LAST), None);
+        assert_eq!(audit_category(HEALTH_DIGEST_LAST_RUN), None);
+        assert_eq!(audit_category(CREDENTIAL_HEALTHCHECK_LAST), None);
+        assert_eq!(audit_category(COMPANION_DAILY_ROLLUP_LAST), None);
+        assert_eq!(audit_category(COMPANION_PROFILE_SYNTHESIS_LAST), None);
+        assert_eq!(audit_category(CLOUD_SYNC_DEVICE_ID), None);
+        assert_eq!(audit_category(CLOUD_SYNC_LAST_AT), None);
+        assert_eq!(audit_category(CLOUD_SYNC_TOTAL_ROWS), None);
+        assert_eq!(audit_category(COMPANION_CONSTITUTION_VERSION), None);
+        // Per-table cloud-sync cursor prefix family → None.
+        assert_eq!(audit_category("cloud_sync_cursor:executions"), None);
+    }
+
+    #[test]
+    fn audit_category_maps_user_facing_keys() {
+        assert_eq!(audit_category(OLLAMA_API_KEY), Some("api_keys"));
+        assert_eq!(audit_category(CLI_ENGINE), Some("engine"));
+        assert_eq!(audit_category(MAX_PARALLEL_EXECUTIONS), Some("engine"));
+        assert_eq!(audit_category(MONTHLY_COST_CEILING_USD), Some("limits"));
+        assert_eq!(audit_category(EVENT_RETENTION_DAYS), Some("retention"));
+        assert_eq!(audit_category(BYOM_POLICY), Some("byom"));
+        assert_eq!(audit_category(NOTIFICATION_PREFS), Some("notifications"));
+        assert_eq!(audit_category(QUALITY_GATE_CONFIG), Some("quality_gates"));
+        assert_eq!(audit_category(COMPANION_AUTONOMOUS_MODE), Some("autonomy"));
+        assert_eq!(audit_category(OBSIDIAN_BRAIN_CONFIG), Some("integrations"));
+        assert_eq!(audit_category(CLOUD_SYNC_ENABLED), Some("sync"));
+        // Prefix families.
+        assert_eq!(audit_category("auto_rollback:persona-1"), Some("autonomy"));
+        assert_eq!(audit_category("autopilot_mode:proj-1"), Some("autonomy"));
+        assert_eq!(audit_category("health_watch:persona-2"), Some("notifications"));
+        assert_eq!(
+            audit_category("execution_retention_months:persona-3"),
+            Some("retention")
+        );
     }
 
     #[test]
