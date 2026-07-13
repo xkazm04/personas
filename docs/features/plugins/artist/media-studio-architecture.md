@@ -144,6 +144,28 @@ If you need to add or change an effect, the rule is: change the compiler,
 both renderers follow. Do NOT add composition-walking code to either
 renderer — that path has been deleted.
 
+### Overlays: images, titles, and beats (three distinct things)
+
+The timeline has three text-ish / overlay item types that are easy to
+conflate but behave very differently:
+
+- **Image** (`ImageItem` → `OverlayStage::Image`) — a cutout composited over
+  the video via ffmpeg `overlay`. Has position + scale + fade.
+- **Title** (`TitleItem` → `OverlayStage::Text`) — burned-in typography: a
+  caption, heading, or number drawn into the frame via ffmpeg `drawtext`
+  (export) and a positioned DOM node (preview). Has text, position, font
+  family/weight/size, color, and fade. This is what an explainer video's
+  on-screen numbers and captions are made of.
+- **Beat** (`TextItem`) — a timeline **milestone only**. It is annotation for
+  the author (and the anchor target for word-synced timing); it compiles to
+  **no overlay** and is never drawn into preview or export. The type is named
+  `TextItem` for save-file backward compatibility; semantically it is a beat.
+
+Titles are pushed to `RenderPlan.overlays` after images, so typography always
+composites on top of cutouts. Adding a title never changes the meaning of an
+existing beat — they are separate item types precisely so that invariant
+holds.
+
 ### Transition semantics (still relevant)
 
 Fold mode (today's default) applies this rule in the compiler:
@@ -290,13 +312,16 @@ This is how 0.25× and 4× work.
 runtime:
 
 ```
-Windows: C:\Windows\Fonts\arial.ttf
-macOS:   /System/Library/Fonts/Helvetica.ttc
-Linux:   /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf (first available)
+Windows: C:\Windows\Fonts\segoeuib.ttf → arialbd.ttf → segoeui.ttf → arial.ttf
+macOS:   /System/Library/Fonts/Helvetica.ttc → /Library/Fonts/Arial.ttf
+Linux:   DejaVuSans-Bold.ttf → LiberationSans-Bold.ttf → … (first available)
 ```
 
-If no system font is found, text overlays are skipped with a warning line
-in the export log. The preview (which uses DOM text) is unaffected.
+Bold weights are preferred so a title reads as a title. If no system font is
+found, title overlays are skipped with a warning line in the export log; the
+preview (which uses DOM text) is unaffected. Note the IR also carries the
+CSS-ish `fontFamily` the compiler resolved — the two rasterizers (freetype vs
+the browser) still differ slightly on glyph metrics, an accepted divergence.
 
 ---
 

@@ -6,7 +6,7 @@
 export type TransitionType = 'cut' | 'crossfade' | 'fade_to_black';
 
 /** Semantic layer identifier. */
-export type LayerType = 'video' | 'audio' | 'text' | 'image';
+export type LayerType = 'video' | 'audio' | 'text' | 'image' | 'title';
 
 // -- Timeline items ---------------------------------------------------------
 
@@ -63,6 +63,45 @@ export interface ImageItem extends TimelineItemBase {
   fadeIn?: number;
   fadeOut?: number;
 }
+
+/**
+ * A burned-in title, caption, or number — drawn into both the preview frame
+ * and the exported file.
+ *
+ * Deliberately NOT the same type as `TextItem`. A `TextItem` is a **beat**: a
+ * timeline milestone that is never rendered. A `TitleItem` is visible
+ * typography. Keeping them separate means adding a title can never change what
+ * an existing beat means, and beats keep their word-anchor semantics.
+ */
+export interface TitleItem extends TimelineItemBase {
+  type: 'title';
+  /** The glyphs to draw. */
+  text: string;
+  /** Frame-relative center, both in [0, 1]. */
+  positionX: number;
+  positionY: number;
+  /** CSS family name. The exporter maps it to a concrete TTF. */
+  fontFamily: string;
+  fontWeight: number;
+  /** Pixels at the composition's native height; the preview scales it down. */
+  fontSizePx: number;
+  colorHex: string;
+  fadeIn?: number;
+  fadeOut?: number;
+}
+
+/** Defaults for a newly added title. Bold, centered, legible on any footage. */
+export const TITLE_DEFAULTS = {
+  text: '',
+  positionX: 0.5,
+  positionY: 0.5,
+  fontFamily: 'sans-serif',
+  fontWeight: 700,
+  fontSizePx: 64,
+  colorHex: '#ffffff',
+  fadeIn: 0.3,
+  fadeOut: 0.3,
+} as const;
 
 export interface VideoClip extends TimelineItemBase {
   type: 'video';
@@ -148,7 +187,7 @@ export interface AudioClip extends TimelineItemBase {
   measuringLoudness?: boolean;
 }
 
-export type TimelineItem = TextItem | ImageItem | VideoClip | AudioClip;
+export type TimelineItem = TextItem | ImageItem | TitleItem | VideoClip | AudioClip;
 
 // -- Composition ------------------------------------------------------------
 

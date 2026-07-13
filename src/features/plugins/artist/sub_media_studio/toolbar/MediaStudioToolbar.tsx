@@ -43,6 +43,7 @@ import type {
   ImageItem,
   TextItem,
   TimelineItem,
+  TitleItem,
   TransitionType,
   VideoClip,
 } from '../types';
@@ -98,6 +99,7 @@ export default function MediaStudioToolbar({
   const isAudio = selectedItem?.type === 'audio';
   const isText = selectedItem?.type === 'text';
   const isImage = selectedItem?.type === 'image';
+  const isTitle = selectedItem?.type === 'title';
   const isMedia = isVideo || isAudio;
 
   const update = useCallback(
@@ -365,6 +367,64 @@ export default function MediaStudioToolbar({
           )}
         </IconPopover>
 
+        {/* Title properties — the text itself plus how it's drawn. */}
+        <IconPopover icon={Type} title={t.media_studio.layer_title} disabled={!isTitle} widthPx={260}>
+          {isTitle && selectedItem && (
+            <div className="space-y-3">
+              <label className="block space-y-1">
+                <span className="typo-label text-foreground">{t.media_studio.title_text}</span>
+                <textarea
+                  value={(selectedItem as TitleItem).text}
+                  onChange={(e) => update({ text: e.target.value } as Partial<TimelineItem>)}
+                  placeholder={t.media_studio.title_text_placeholder}
+                  rows={2}
+                  className="w-full px-2 py-1.5 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground placeholder:text-foreground/40 resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/30"
+                />
+              </label>
+
+              <RangeField
+                label={t.media_studio.font_size}
+                value={(selectedItem as TitleItem).fontSizePx}
+                min={12}
+                max={240}
+                step={2}
+                onChange={(v) => update({ fontSizePx: Math.round(v) } as Partial<TimelineItem>)}
+                format={(v) => `${Math.round(v)}px`}
+              />
+
+              <label className="flex items-center justify-between gap-2">
+                <span className="typo-label text-foreground">{t.media_studio.color}</span>
+                <input
+                  type="color"
+                  value={(selectedItem as TitleItem).colorHex}
+                  onChange={(e) => update({ colorHex: e.target.value } as Partial<TimelineItem>)}
+                  className="h-7 w-12 rounded-card border border-primary/10 bg-transparent cursor-pointer"
+                  aria-label={t.media_studio.color}
+                />
+              </label>
+
+              <RangeField
+                label={`${t.media_studio.position} X`}
+                value={(selectedItem as TitleItem).positionX}
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={(v) => update({ positionX: v } as Partial<TimelineItem>)}
+                format={(v) => `${Math.round(v * 100)}%`}
+              />
+              <RangeField
+                label={`${t.media_studio.position} Y`}
+                value={(selectedItem as TitleItem).positionY}
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={(v) => update({ positionY: v } as Partial<TimelineItem>)}
+                format={(v) => `${Math.round(v * 100)}%`}
+              />
+            </div>
+          )}
+        </IconPopover>
+
         {/* Clip actions (split, extract, thumbnail, trim-to-file, transcribe) */}
         <IconPopover icon={Palette} title={debtText("auto_clip_actions_7fc4a490")} disabled={!selectedItem} widthPx={260}>
           {selectedItem && (
@@ -485,6 +545,10 @@ function warningKey(w: CompileWarning): string {
       return `proxyMissing:${w.sourceId}`;
     case 'audioSourceSilent':
       return `audioSourceSilent:${w.sourceId}`;
+    case 'textFontMissing':
+      return `textFontMissing:${w.overlayId}`;
+    case 'textEmpty':
+      return `textEmpty:${w.overlayId}`;
   }
 }
 
@@ -498,6 +562,10 @@ function warningMessage(w: CompileWarning): string {
       return `Preview proxy not used for source #${w.sourceId} on export (${w.originalPath.split(/[/\\]/).pop()}) — encoding from the original.`;
     case 'audioSourceSilent':
       return `Source #${w.sourceId} has no audio stream; the expected audio track will be silent.`;
+    case 'textFontMissing':
+      return `Title "${w.overlayId}" asked for font "${w.requested}", which isn't installed — falling back to ${w.fallback}.`;
+    case 'textEmpty':
+      return `Title "${w.overlayId}" has no text — nothing will be drawn for it.`;
   }
 }
 

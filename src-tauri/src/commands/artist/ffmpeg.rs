@@ -21,7 +21,8 @@ use crate::engine::render_plan::compile::{
     CompileDeps as RpCompileDeps, CompileOptions as RpCompileOptions, Composition as RpComposition,
 };
 use crate::engine::render_plan::{
-    compile as render_plan_compile, AudioStage, OverlayStage, RenderPlan, SourceEntry, VideoStage,
+    compile as render_plan_compile, AudioStage, OverlayStage, RenderPlan, SourceEntry,
+    TextOverlayStage, VideoStage,
 };
 use crate::error::AppError;
 use crate::AppState;
@@ -954,6 +955,8 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<St
         .iter()
         .filter_map(|o| match o {
             OverlayStage::Image(i) => Some(i.source_id),
+            // Text overlays are drawn by `drawtext` and consume no input slot.
+            OverlayStage::Text(_) => None,
         })
         .collect();
 
@@ -1014,9 +1017,8 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<St
     // sequentially; we preserve that ordering for byte-parity.
     let mut image_input_idx: HashMap<String, usize> = HashMap::new();
     for overlay in plan.overlays.iter() {
-        // Currently OverlayStage has only the Image variant; the `if let` is
-        // forward-compatible with future variants (e.g. Video, Text).
-        #[allow(irrefutable_let_patterns)]
+        // Only image overlays occupy an input slot. Text overlays are drawn
+        // by the `drawtext` filter and need no `-i`.
         if let OverlayStage::Image(img) = overlay {
             let Some(source) = plan.sources.iter().find(|s| s.id() == img.source_id) else {
                 continue;
@@ -1099,20 +1101,56 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<St
         bg_input_idx.map(|idx| format!("{idx}:v"))
     };
 
-    // ---- Step 4: image overlays ----
+    // ---- Step 4: overlays ----
+    //
+    // Images and titles are emitted in `plan.overlays` array order so the
+    // compositing stack the compiler decided on (titles last = on top) is the
+    // stack ffmpeg builds. Images chain through `overlay`; titles through
+    // `drawtext`.
+    //
+    // The system font is resolved once, and only when a title actually needs
+    // it. If no font is installed the titles are skipped rather than failing
+    // the whole export — a video missing its captions still beats no video.
+    let system_font: Option<String> = if plan
+        .overlays
+        .iter()
+        .any(|o| matches!(o, OverlayStage::Text(_)))
+    {
+        let f = resolve_system_font();
+        if f.is_none() {
+            tracing::warn!(
+                "no system font found for drawtext; title overlays will be skipped in this export"
+            );
+        }
+        f
+    } else {
+        None
+    };
+
     let mut overlay_counter = 0usize;
     for overlay in plan.overlays.iter() {
-        // Currently OverlayStage has only the Image variant; the `let...else`
-        // is forward-compatible with future variants.
-        #[allow(irrefutable_let_patterns)]
-        let OverlayStage::Image(img) = overlay
-        else {
-            continue;
-        };
-        let Some(&img_idx) = image_input_idx.get(&img.id) else {
-            continue;
-        };
         let Some(current_base) = base_video_label.clone() else {
+            continue;
+        };
+
+        let img = match overlay {
+            OverlayStage::Image(img) => img,
+            OverlayStage::Text(txt) => {
+                let Some(font) = system_font.as_deref() else {
+                    continue;
+                };
+                let next_label = format!("vt{overlay_counter}");
+                filters.push(format!(
+                    "[{current_base}]{}[{next_label}]",
+                    build_drawtext_filter(txt, font)
+                ));
+                base_video_label = Some(next_label);
+                overlay_counter += 1;
+                continue;
+            }
+        };
+
+        let Some(&img_idx) = image_input_idx.get(&img.id) else {
             continue;
         };
 
@@ -1217,6 +1255,106 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<St
 
     args.push(output_path.to_string_lossy().into_owned());
     Ok(args)
+}
+
+/// Resolve a platform-appropriate TTF path for `drawtext`. Returns None if no
+/// known font is installed — the caller skips title rendering rather than
+/// failing the export.
+///
+/// `drawtext` needs a concrete font FILE. The IR carries a CSS-ish family name
+/// (which the preview uses directly), so the two rasterizers can disagree on
+/// exact glyph metrics. That divergence is accepted and documented in the IR
+/// design doc under "what remains divergent".
+fn resolve_system_font() -> Option<String> {
+    #[cfg(target_os = "windows")]
+    let candidates: &[&str] = &[
+        r"C:\Windows\Fonts\segoeuib.ttf",
+        r"C:\Windows\Fonts\arialbd.ttf",
+        r"C:\Windows\Fonts\segoeui.ttf",
+        r"C:\Windows\Fonts\arial.ttf",
+    ];
+    #[cfg(target_os = "macos")]
+    let candidates: &[&str] = &[
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/Library/Fonts/Arial.ttf",
+    ];
+    #[cfg(target_os = "linux")]
+    let candidates: &[&str] = &[
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+    ];
+    // Android/iOS etc. never run the ffmpeg exporter, but the module still has
+    // to compile there.
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    let candidates: &[&str] = &[];
+
+    candidates
+        .iter()
+        .find(|c| Path::new(c).exists())
+        // ffmpeg's filter parser wants forward slashes even on Windows.
+        .map(|c| c.replace('\\', "/"))
+}
+
+/// Escape a user string for use inside an ffmpeg `drawtext=text='...'` clause.
+/// The filter graph uses `:` and `,` as separators and `\` as an escape, and
+/// the text itself is single-quoted, so `'` needs the full backslash dance.
+fn escape_drawtext(s: &str) -> String {
+    s.replace('\\', "\\\\")
+        .replace(':', "\\:")
+        .replace(',', "\\,")
+        .replace('\'', "\\\\\\'")
+        .replace('%', "\\%")
+}
+
+/// Build the `drawtext=...` clause for one title overlay.
+fn build_drawtext_filter(txt: &TextOverlayStage, font_file: &str) -> String {
+    let st = txt.output_start;
+    let et = txt.output_end;
+
+    let fontcolor = match txt.color_hex.strip_prefix('#') {
+        Some(hex) => format!("0x{hex}"),
+        None => txt.color_hex.clone(),
+    };
+
+    // Alpha fade envelope — the product of the in- and out-ramps. `enable`
+    // already gates rendering outside the window, so we only ramp inside it.
+    let alpha_expr = match (txt.fade_in > 0.01, txt.fade_out > 0.01) {
+        (true, true) => Some(format!(
+            "min(1\\,max(0\\,(t-{st:.3})/{fi:.3}))*min(1\\,max(0\\,({et:.3}-t)/{fo:.3}))",
+            fi = txt.fade_in,
+            fo = txt.fade_out,
+        )),
+        (true, false) => Some(format!(
+            "min(1\\,max(0\\,(t-{st:.3})/{fi:.3}))",
+            fi = txt.fade_in
+        )),
+        (false, true) => Some(format!(
+            "min(1\\,max(0\\,({et:.3}-t)/{fo:.3}))",
+            fo = txt.fade_out
+        )),
+        (false, false) => None,
+    };
+
+    let mut parts = vec![
+        format!("fontfile='{font_file}'"),
+        format!("text='{}'", escape_drawtext(&txt.text)),
+        format!("fontsize={}", txt.font_size_px),
+        format!("fontcolor={fontcolor}"),
+        format!("x=(w*{:.4})-(text_w/2)", txt.position_x),
+        format!("y=(h*{:.4})-(text_h/2)", txt.position_y),
+        format!("enable='between(t,{st:.3},{et:.3})'"),
+        // A subtle shadow keeps text legible on any background and matches
+        // the CSS drop-shadow the preview applies.
+        "shadowcolor=black@0.7".to_string(),
+        "shadowx=2".to_string(),
+        "shadowy=2".to_string(),
+    ];
+    if let Some(expr) = alpha_expr {
+        parts.push(format!("alpha='{expr}'"));
+    }
+
+    format!("drawtext={}", parts.join(":"))
 }
 
 fn build_video_stage_filter(input_idx: usize, label: &str, stage: &VideoStage) -> String {

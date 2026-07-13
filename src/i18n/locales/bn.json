@@ -14351,7 +14351,12 @@
     "beat_sidebar_collapse": "বীট তালিকা সঙ্কুচিত করুন",
     "beat_sidebar_expand": "বিট তালিকা প্রসারিত করুন",
     "beat_sidebar_empty": "এখনও কোন বীট. টাইমলাইনে মাইলস্টোন চিহ্নিত করতে একটি টেক্সট বীট যোগ করুন।",
-    "beat_sidebar_untitled": "(শিরোনামহীন)"
+    "beat_sidebar_untitled": "(শিরোনামহীন)",
+    "add_title": "শিরোনাম যোগ করুন",
+    "layer_title": "শিরোনাম",
+    "title_text": "শিরোনামের লেখা",
+    "title_text_placeholder": "শিরোনাম লিখুন…",
+    "title_untitled": "(খালি শিরোনাম)"
   },
   "research_lab": {
     "dashboard": "ড্যাশবোর্ড",

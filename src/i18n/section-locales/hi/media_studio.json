@@ -153,5 +153,10 @@
   "beat_sidebar_collapse": "बीट सूची को संक्षिप्त करें",
   "beat_sidebar_expand": "बीट सूची का विस्तार करें",
   "beat_sidebar_empty": "अभी तक कोई धड़कन नहीं. टाइमलाइन पर मील के पत्थर चिह्नित करने के लिए एक टेक्स्ट बीट जोड़ें।",
-  "beat_sidebar_untitled": "(शीर्षक रहित)"
+  "beat_sidebar_untitled": "(शीर्षक रहित)",
+  "add_title": "शीर्षक जोड़ें",
+  "layer_title": "शीर्षक",
+  "title_text": "शीर्षक टेक्स्ट",
+  "title_text_placeholder": "शीर्षक लिखें…",
+  "title_untitled": "(खाली शीर्षक)"
 }

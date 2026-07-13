@@ -9,6 +9,7 @@ import type { AudioStage } from '@/lib/bindings/AudioStage';
 import type { ImageOverlayStage } from '@/lib/bindings/ImageOverlayStage';
 import type { RenderPlan } from '@/lib/bindings/RenderPlan';
 import type { SourceEntry } from '@/lib/bindings/SourceEntry';
+import type { TextOverlayStage } from '@/lib/bindings/TextOverlayStage';
 import type { VideoStage } from '@/lib/bindings/VideoStage';
 import { approxLoudnormGain, fadeEnvelope } from './renderPlanHelpers';
 import { silentCatch } from '@/lib/silentCatch';
@@ -291,12 +292,13 @@ function CompositionPreviewImpl(
     }
   }, [dedicatedTracks]);
 
-  // -- Active image overlays -------------------------------------------------
+  // -- Active overlays -------------------------------------------------------
   //
-  // Text items are beats (timeline milestones), not rendered into the video
-  // frame. See docs/concepts/media-studio-architecture.md §Effect model —
-  // they appear only as icons on the timeline.
+  // Two kinds reach the frame: images and titles. Text *items* are beats
+  // (timeline milestones) and never compile to an overlay at all — see
+  // docs/concepts/media-studio-architecture.md §Effect model.
   type ActiveImage = { kind: 'image' } & ImageOverlayStage;
+  type ActiveTitle = { kind: 'text' } & TextOverlayStage;
 
   const activeImages: ActiveImage[] = useMemo(() => {
     if (!plan) return [];
@@ -305,6 +307,29 @@ function CompositionPreviewImpl(
         o.kind === 'image' && currentTime >= o.outputStart && currentTime < o.outputEnd,
     );
   }, [plan, currentTime]);
+
+  const activeTitles: ActiveTitle[] = useMemo(() => {
+    if (!plan) return [];
+    return plan.overlays.filter(
+      (o): o is ActiveTitle =>
+        o.kind === 'text' && currentTime >= o.outputStart && currentTime < o.outputEnd,
+    );
+  }, [plan, currentTime]);
+
+  // Titles carry a font size in pixels at the composition's NATIVE height, so
+  // the preview has to scale it by (renderedHeight / plan.height) or a 64px
+  // title on a 1080p composition would swamp a 300px-tall preview.
+  const [previewHeight, setPreviewHeight] = useState(0);
+  useEffect(() => {
+    const el = previewContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      if (entry) setPreviewHeight(entry.contentRect.height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const titleScale = plan && plan.height > 0 && previewHeight > 0 ? previewHeight / plan.height : 0;
 
   // Resolve paths for <audio>/<img> elements from the plan's source catalog.
   const audioTrackSources = useMemo(() => {
@@ -383,6 +408,37 @@ function CompositionPreviewImpl(
               </div>
             );
           })}
+
+          {/* Titles render after images so they sit on top — the same stacking
+              order the compiler encodes and the exporter reproduces. */}
+          {titleScale > 0 &&
+            activeTitles.map((overlay) => {
+              const local = currentTime - overlay.outputStart;
+              const duration = overlay.outputEnd - overlay.outputStart;
+              const opacity = fadeEnvelope(local, duration, overlay.fadeIn, overlay.fadeOut);
+              return (
+                <div
+                  key={overlay.id}
+                  className="absolute pointer-events-none whitespace-pre-wrap text-center"
+                  style={{
+                    left: `${overlay.positionX * 100}%`,
+                    top: `${overlay.positionY * 100}%`,
+                    transform: 'translate(-50%, -50%)',
+                    opacity,
+                    color: overlay.colorHex,
+                    fontFamily: overlay.fontFamily,
+                    fontWeight: overlay.fontWeight,
+                    fontSize: `${overlay.fontSizePx * titleScale}px`,
+                    lineHeight: 1.15,
+                    // Mirrors the shadowcolor=black@0.7 / shadowx=2 / shadowy=2
+                    // the exporter passes to drawtext.
+                    textShadow: `${2 * titleScale}px ${2 * titleScale}px 0 rgba(0,0,0,0.7)`,
+                  }}
+                >
+                  {overlay.text}
+                </div>
+              );
+            })}
 
           <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
             {activeVideo && activeVideo.speed !== 1 && (

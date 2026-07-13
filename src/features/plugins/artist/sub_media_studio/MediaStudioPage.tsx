@@ -19,7 +19,8 @@ import { useTimelineKeyboard } from './hooks/useTimelineKeyboard';
 import MediaStudioToolbar from './toolbar/MediaStudioToolbar';
 import { artistProbeMedia } from '@/api/artist/index';
 import { VIDEO_EXTENSIONS, AUDIO_EXTENSIONS, IMAGE_EXTENSIONS } from './constants';
-import type { VideoClip, AudioClip, TextItem, ImageItem, TimelineItem } from './types';
+import type { VideoClip, AudioClip, TextItem, ImageItem, TitleItem, TimelineItem } from './types';
+import { TITLE_DEFAULTS } from './types';
 import BeatSidebar from './BeatSidebar';
 import FfmpegStatusBanner from './FfmpegStatusBanner';
 import CompositionPreview, { type CompositionPreviewHandle } from './CompositionPreview';
@@ -62,6 +63,7 @@ export default function MediaStudioPage() {
     selectedItem,
     textItems,
     imageItems,
+    titleItems,
     videoItems,
     audioItems,
     totalDuration,
@@ -327,6 +329,19 @@ export default function MediaStudioPage() {
     addItem(beat);
   }, [textItems, addItem]);
 
+  const handleAddTitle = useCallback(() => {
+    const title: TitleItem = {
+      id: crypto.randomUUID(),
+      type: 'title',
+      label: 'Title',
+      startTime: nextStartTime(titleItems),
+      duration: 3,
+      ...TITLE_DEFAULTS,
+    };
+    addItem(title);
+    setSelectedItemId(title.id);
+  }, [titleItems, addItem, setSelectedItemId]);
+
   const handleAddImage = useCallback(async () => {
     const probe = await pickImage();
     if (!probe) return;
@@ -498,6 +513,7 @@ export default function MediaStudioPage() {
             <TimelinePanel
               engine={engine}
               textItems={textItems}
+              titleItems={titleItems}
               imageItems={imageItems}
               videoItems={videoItems}
               audioItems={audioItems}
@@ -507,6 +523,7 @@ export default function MediaStudioPage() {
               onSeek={seek}
               onUpdate={updateItem}
               onAddText={handleAddText}
+              onAddTitle={handleAddTitle}
               onAddImage={handleAddImage}
               onAddVideo={handleAddVideo}
               onAddAudio={handleAddAudio}

@@ -16,10 +16,11 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { Slider } from '@/features/shared/components/forms/Slider';
 import { PIXELS_PER_SECOND_DEFAULT, MIN_ZOOM, MAX_ZOOM } from './constants';
-import type { VideoClip, AudioClip, TextItem, ImageItem } from './types';
+import type { VideoClip, AudioClip, TextItem, ImageItem, TitleItem } from './types';
 import type { PlaybackEngine } from './hooks/useTimelinePlayback';
 import TimelineRuler from './TimelineRuler';
 import TextLane from './TextLane';
+import TitleLane from './TitleLane';
 import ImageLane from './ImageLane';
 import VideoLane from './VideoLane';
 import AudioLane from './AudioLane';
@@ -27,6 +28,7 @@ import AudioLane from './AudioLane';
 interface TimelinePanelProps {
   engine: PlaybackEngine;
   textItems: TextItem[];
+  titleItems: TitleItem[];
   imageItems: ImageItem[];
   videoItems: VideoClip[];
   audioItems: AudioClip[];
@@ -36,6 +38,7 @@ interface TimelinePanelProps {
   onSeek: (time: number) => void;
   onUpdate: (id: string, patch: Record<string, unknown>) => void;
   onAddText: () => void;
+  onAddTitle: () => void;
   onAddImage: () => void;
   onAddVideo: () => void;
   onAddAudio: () => void;
@@ -46,11 +49,11 @@ interface TimelinePanelProps {
 }
 
 const RULER_HEIGHT = 28;
-const LANE_HEIGHTS = { text: 41, image: 49, video: 57, audio: 57 } as const;
+const LANE_HEIGHTS = { text: 41, title: 49, image: 49, video: 57, audio: 57 } as const;
 
-type LaneKey = 'text' | 'image' | 'video' | 'audio';
+type LaneKey = 'text' | 'title' | 'image' | 'video' | 'audio';
 
-const LANE_KEYS: readonly LaneKey[] = ['text', 'image', 'video', 'audio'];
+const LANE_KEYS: readonly LaneKey[] = ['text', 'title', 'image', 'video', 'audio'];
 
 // Tailwind 4 JIT scans source for literal class names — dynamic template
 // strings like `bg-${color}-500/5` never get compiled. Every color shade used
@@ -80,6 +83,20 @@ const LANE_META: Record<LaneKey, { icon: typeof Type; label: string; classes: La
       countBadge: 'bg-amber-500/15 text-amber-400/80',
       addButton: 'border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400',
       collapsedStripe: 'bg-amber-500/5',
+    },
+  },
+  title: {
+    icon: Type,
+    label: 'Title',
+    classes: {
+      collapsedRail: 'bg-sky-500/5 hover:bg-sky-500/10',
+      collapsedIcon: 'text-sky-400/40',
+      collapsedLabel: 'text-sky-400/50',
+      rail: 'bg-sky-500/5',
+      railLabel: 'text-sky-400',
+      countBadge: 'bg-sky-500/15 text-sky-400/80',
+      addButton: 'border-sky-500/25 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400',
+      collapsedStripe: 'bg-sky-500/5',
     },
   },
   image: {
@@ -129,6 +146,7 @@ const LANE_META: Record<LaneKey, { icon: typeof Type; label: string; classes: La
 function TimelinePanelImpl({
   engine,
   textItems,
+  titleItems,
   imageItems,
   videoItems,
   audioItems,
@@ -138,6 +156,7 @@ function TimelinePanelImpl({
   onSeek,
   onUpdate,
   onAddText,
+  onAddTitle,
   onAddImage,
   onAddVideo,
   onAddAudio,
@@ -404,6 +423,7 @@ function TimelinePanelImpl({
             </span>
           </div>
           {renderRail('text', onAddText, textItems.length)}
+          {renderRail('title', onAddTitle, titleItems.length)}
           {renderRail('image', onAddImage, imageItems.length)}
           {renderRail('video', onAddVideo, videoItems.length)}
           {renderRail('audio', onAddAudio, audioItems.length)}
@@ -443,6 +463,19 @@ function TimelinePanelImpl({
                     onAdd={onAddText}
                     onUpdate={onUpdate}
                     videoClips={videoItems}
+                    hideHeader
+                    hideAdd
+                  />
+                ),
+                title: (
+                  <TitleLane
+                    items={titleItems}
+                    zoom={zoom}
+                    scrollX={0}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                    onAdd={onAddTitle}
+                    onUpdate={onUpdate}
                     hideHeader
                     hideAdd
                   />

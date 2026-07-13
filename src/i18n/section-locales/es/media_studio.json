@@ -153,5 +153,10 @@
   "beat_sidebar_collapse": "Contraer lista de ritmos",
   "beat_sidebar_expand": "Ampliar lista de ritmos",
   "beat_sidebar_empty": "Aún no hay ritmos. Agregue un ritmo de texto para marcar hitos en la línea de tiempo.",
-  "beat_sidebar_untitled": "(intitulado)"
+  "beat_sidebar_untitled": "(intitulado)",
+  "add_title": "Añadir título",
+  "layer_title": "Títulos",
+  "title_text": "Texto del título",
+  "title_text_placeholder": "Escribe el título…",
+  "title_untitled": "(título vacío)"
 }

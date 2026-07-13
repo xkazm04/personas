@@ -153,5 +153,10 @@
   "beat_sidebar_collapse": "طي قائمة الإيقاع",
   "beat_sidebar_expand": "قم بتوسيع قائمة الإيقاع",
   "beat_sidebar_empty": "لا يدق بعد. أضف نغمة نصية لتحديد المعالم الرئيسية على المخطط الزمني.",
-  "beat_sidebar_untitled": "(بدون عنوان)"
+  "beat_sidebar_untitled": "(بدون عنوان)",
+  "add_title": "إضافة عنوان",
+  "layer_title": "العناوين",
+  "title_text": "نص العنوان",
+  "title_text_placeholder": "اكتب العنوان…",
+  "title_untitled": "(عنوان فارغ)"
 }

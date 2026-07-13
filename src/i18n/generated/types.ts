@@ -14481,6 +14481,11 @@ export type Translations = {
     layer_audio: string;
     add_text_beat: string;
     add_image: string;
+    layer_title: string;
+    add_title: string;
+    title_untitled: string;
+    title_text: string;
+    title_text_placeholder: string;
     add_video: string;
     add_audio: string;
     empty_lane: string;

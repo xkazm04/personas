@@ -14351,7 +14351,12 @@
     "beat_sidebar_collapse": "折叠节拍列表",
     "beat_sidebar_expand": "展开节拍列表",
     "beat_sidebar_empty": "还没有节拍。添加文本节拍以标记时间轴上的里程碑。",
-    "beat_sidebar_untitled": "（无标题）"
+    "beat_sidebar_untitled": "（无标题）",
+    "add_title": "添加标题",
+    "layer_title": "标题",
+    "title_text": "标题文本",
+    "title_text_placeholder": "输入标题…",
+    "title_untitled": "(空标题)"
   },
   "research_lab": {
     "dashboard": "仪表盘",

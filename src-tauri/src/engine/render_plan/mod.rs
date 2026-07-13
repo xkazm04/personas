@@ -275,6 +275,8 @@ pub struct LoudnormMeasurements {
 pub enum OverlayStage {
     #[serde(rename = "image")]
     Image(ImageOverlayStage),
+    #[serde(rename = "text")]
+    Text(TextOverlayStage),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -296,46 +298,89 @@ pub struct ImageOverlayStage {
     pub scale: f64,
 }
 
+/// A burned-in title / caption / number, composited over the video track and
+/// rendered into both the preview frame and the exported file.
+///
+/// This is NOT a beat. Beats (`TextItemInput`) are timeline milestones the
+/// user annotates and are never drawn. Titles are the visible typography an
+/// explainer video is made of. The two are deliberately separate item types
+/// so that adding a title cannot change the meaning of an existing beat.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TextOverlayStage {
+    pub id: String,
+    pub output_start: f64,
+    pub output_end: f64,
+    pub fade_in: f64,
+    pub fade_out: f64,
+
+    pub position_x: f64,
+    pub position_y: f64,
+
+    /// The glyphs to draw. Already resolved — renderers do not interpolate.
+    pub text: String,
+
+    /// CSS-ish family name. The preview feeds this straight to `font-family`;
+    /// the exporter maps it to a concrete TTF via its own platform lookup.
+    /// Glyph metrics therefore differ slightly between the two rasterizers —
+    /// an accepted divergence, documented in the IR design doc.
+    pub font_family: String,
+    pub font_weight: u32,
+
+    /// Pixels at the composition's native height. The preview scales by
+    /// (previewHeight / composition.height).
+    pub font_size_px: u32,
+    pub color_hex: String,
+}
+
 impl OverlayStage {
     pub fn id(&self) -> &str {
         match self {
             OverlayStage::Image(i) => &i.id,
+            OverlayStage::Text(t) => &t.id,
         }
     }
 
     pub fn output_start(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.output_start,
+            OverlayStage::Text(t) => t.output_start,
         }
     }
 
     pub fn output_end(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.output_end,
+            OverlayStage::Text(t) => t.output_end,
         }
     }
 
     pub fn fade_in(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.fade_in,
+            OverlayStage::Text(t) => t.fade_in,
         }
     }
 
     pub fn fade_out(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.fade_out,
+            OverlayStage::Text(t) => t.fade_out,
         }
     }
 
     pub fn position_x(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.position_x,
+            OverlayStage::Text(t) => t.position_x,
         }
     }
 
     pub fn position_y(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.position_y,
+            OverlayStage::Text(t) => t.position_y,
         }
     }
 }
@@ -363,4 +408,18 @@ pub enum CompileWarning {
     },
     #[serde(rename = "audioSourceSilent")]
     AudioSourceSilent { source_id: u32 },
+    /// A title asked for a font family the probe says isn't installed. The
+    /// overlay still renders — it falls back to the generic family rather
+    /// than silently vanishing from the frame.
+    #[serde(rename = "textFontMissing")]
+    TextFontMissing {
+        overlay_id: String,
+        requested: String,
+        fallback: String,
+    },
+    /// A title carries no glyphs. It compiles, but nothing will be drawn —
+    /// worth surfacing because an agent-authored composition can produce
+    /// these silently.
+    #[serde(rename = "textEmpty")]
+    TextEmpty { overlay_id: String },
 }

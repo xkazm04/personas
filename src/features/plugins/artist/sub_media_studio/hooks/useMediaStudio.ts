@@ -6,6 +6,7 @@ import type {
   AudioClip,
   TextItem,
   ImageItem,
+  TitleItem,
 } from '../types';
 import {
   DEFAULT_WIDTH,
@@ -289,6 +290,10 @@ export function useMediaStudio() {
     () => composition.items.filter((i): i is ImageItem => i.type === 'image'),
     [composition.items],
   );
+  const titleItems = useMemo(
+    () => composition.items.filter((i): i is TitleItem => i.type === 'title'),
+    [composition.items],
+  );
 
   const selectedItem = useMemo(
     () => composition.items.find((i) => i.id === selectedItemId) ?? null,
@@ -320,6 +325,7 @@ export function useMediaStudio() {
     audioItems,
     textItems,
     imageItems,
+    titleItems,
     totalDuration,
     undo,
     redo,
