@@ -86,21 +86,25 @@ export default function UseCasePanel({
         </h3>
         <div className="flex items-center gap-1.5">
           {scanning ? (
-            <Button variant="ghost" size="sm" onClick={() => void state.cancelScan()}>
-              <LoadingSpinner size="xs" />
-              <span className="ml-1.5">{t.plugins.dev_tools.uc_cancel_scan}</span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void state.cancelScan()}
+              icon={<LoadingSpinner size="xs" />}
+            >
+              {t.plugins.dev_tools.uc_cancel_scan}
             </Button>
           ) : (
             <>
               <Button
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 onClick={handleBackfill}
                 disabled={!hasMap || loading}
                 title={t.plugins.dev_tools.uc_backfill_tooltip}
+                icon={<Wand2 className="w-3 h-3" />}
               >
-                <Wand2 className="w-3 h-3" />
-                <span className="ml-1.5">{t.plugins.dev_tools.uc_backfill}</span>
+                {t.plugins.dev_tools.uc_backfill}
               </Button>
               <Button
                 variant="accent"
@@ -109,9 +113,9 @@ export default function UseCasePanel({
                 onClick={() => void state.scan()}
                 disabled={!hasMap}
                 title={t.plugins.dev_tools.uc_scan_tooltip}
+                icon={<Sparkles className="w-3 h-3" />}
               >
-                <Sparkles className="w-3 h-3" />
-                <span className="ml-1.5">{t.plugins.dev_tools.uc_scan}</span>
+                {t.plugins.dev_tools.uc_scan}
               </Button>
             </>
           )}
