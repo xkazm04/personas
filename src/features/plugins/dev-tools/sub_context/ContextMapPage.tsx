@@ -24,11 +24,23 @@ import ScanOverlay from './ScanOverlay';
 import ContextDetail from './ContextDetail';
 import GroupList from './GroupList';
 import UseCasePanel from './UseCasePanel';
+import ContextLedgerVariant1 from './ContextLedgerVariant1';
+import ContextLedgerVariant2 from './ContextLedgerVariant2';
+import type { ContextLedgerProps } from './contextLedgerShared';
 import { useUseCases } from './useUseCases';
+import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
+// PROTOTYPE (/prototype): the fused-ledger A/B switcher tabs. `baseline` is the
+// current stacked UseCasePanel + GroupList; the two variants fuse contexts and
+// the use-case slice layer into one surface (see ContextLedgerVariant{1,2}).
+const LEDGER_TABS: SegmentedTab<'baseline' | 'crosstab' | 'ledger'>[] = [
+  { id: 'baseline', label: 'Baseline' },
+  { id: 'crosstab', label: 'Cross-tab' },
+  { id: 'ledger', label: 'Ledger' },
+];
 
 // ---------------------------------------------------------------------------
 // Completion handler — shared by event listener + resync polling.
@@ -488,6 +500,9 @@ export default function ContextMapPage() {
   // on the board — the one interaction that makes the layer legible.
   const useCaseState = useUseCases(activeProjectId ?? null);
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
+  // PROTOTYPE (/prototype): A/B the fused context+use-case ledger against the
+  // baseline stacked layout. `baseline` is the current UseCasePanel + GroupList.
+  const [ledgerView, setLedgerView] = useState<'baseline' | 'crosstab' | 'ledger'>('baseline');
   const highlightedContextIds = useMemo(() => {
     const uc = useCaseState.useCases.find((u) => u.id === selectedUseCaseId);
     return new Set(uc?.context_ids ?? []);
@@ -516,6 +531,21 @@ export default function ContextMapPage() {
     const times = storeGroups.map((g) => g.updated_at).filter(Boolean);
     return times.length ? times.reduce((a, b) => (a > b ? a : b)) : null;
   }, [storeGroups]);
+
+  // PROTOTYPE: the data both ledger variants consume — the same maps GroupList +
+  // UseCasePanel already receive, bundled so the variants stay pure.
+  const ledgerProps: ContextLedgerProps = {
+    groups,
+    useCaseState,
+    selectedUseCaseId,
+    onSelectUseCase: setSelectedUseCaseId,
+    selectedCtxId,
+    onSelectCtx: setSelectedCtxId,
+    goalCoverageByContext,
+    ideaCoverageByContext,
+    kpiCoverageByContext,
+    hasMap: hasContexts,
+  };
 
   return (
     <ContentBox>
@@ -547,44 +577,81 @@ export default function ContextMapPage() {
           )}
         </ActionRow>
 
+        {/* PROTOTYPE switcher — A/B the fused ledger against the baseline. */}
         {hasContexts && (
-          <UseCasePanel
-            state={useCaseState}
-            selectedId={selectedUseCaseId}
-            onSelect={setSelectedUseCaseId}
-            hasMap={hasContexts}
-          />
+          <div className="mb-2">
+            <SegmentedTabs
+              tabs={LEDGER_TABS}
+              activeTab={ledgerView}
+              onTabChange={setLedgerView}
+              variant="segment"
+              size="sm"
+              fullWidth={false}
+              ariaLabel="Context view"
+            />
+          </div>
         )}
 
-        <div className="flex gap-0 min-h-0 flex-1">
-          <GroupList
-            groups={groups}
-            selectedCtxId={selectedCtxId}
-            onSelectCtx={setSelectedCtxId}
-            showNewGroup={showNewGroup}
-            onShowNewGroup={setShowNewGroup}
-            onCreateGroup={handleCreateGroup}
-            onScan={handleScan}
-            goalCoverageByContext={goalCoverageByContext}
-            ideaCoverageByContext={ideaCoverageByContext}
-            kpiCoverageByContext={kpiCoverageByContext}
-            useCaseCoverageByContext={useCaseCoverageByContext}
-            highlightedContextIds={highlightedContextIds}
-            onScanContext={handleScanContext}
-            scanningContextId={scanningContextId}
-            scanBusy={scanPhase === 'running'}
-          />
+        {ledgerView === 'baseline' ? (
+          <>
+            {hasContexts && (
+              <UseCasePanel
+                state={useCaseState}
+                selectedId={selectedUseCaseId}
+                onSelect={setSelectedUseCaseId}
+                hasMap={hasContexts}
+              />
+            )}
 
-          {selectedCtx && (
-            <ContextDetail
-              ctx={selectedCtx}
-              onClose={() => setSelectedCtxId(null)}
-              useCases={useCaseState.useCases.filter(
-                (u) => u.status !== 'archived' && u.context_ids.includes(selectedCtx.id),
+            <div className="flex gap-0 min-h-0 flex-1">
+              <GroupList
+                groups={groups}
+                selectedCtxId={selectedCtxId}
+                onSelectCtx={setSelectedCtxId}
+                showNewGroup={showNewGroup}
+                onShowNewGroup={setShowNewGroup}
+                onCreateGroup={handleCreateGroup}
+                onScan={handleScan}
+                goalCoverageByContext={goalCoverageByContext}
+                ideaCoverageByContext={ideaCoverageByContext}
+                kpiCoverageByContext={kpiCoverageByContext}
+                useCaseCoverageByContext={useCaseCoverageByContext}
+                highlightedContextIds={highlightedContextIds}
+                onScanContext={handleScanContext}
+                scanningContextId={scanningContextId}
+                scanBusy={scanPhase === 'running'}
+              />
+
+              {selectedCtx && (
+                <ContextDetail
+                  ctx={selectedCtx}
+                  onClose={() => setSelectedCtxId(null)}
+                  useCases={useCaseState.useCases.filter(
+                    (u) => u.status !== 'archived' && u.context_ids.includes(selectedCtx.id),
+                  )}
+                />
               )}
-            />
-          )}
-        </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex gap-0 min-h-0 flex-1">
+            {ledgerView === 'crosstab' ? (
+              <ContextLedgerVariant1 {...ledgerProps} />
+            ) : (
+              <ContextLedgerVariant2 {...ledgerProps} />
+            )}
+
+            {selectedCtx && (
+              <ContextDetail
+                ctx={selectedCtx}
+                onClose={() => setSelectedCtxId(null)}
+                useCases={useCaseState.useCases.filter(
+                  (u) => u.status !== 'archived' && u.context_ids.includes(selectedCtx.id),
+                )}
+              />
+            )}
+          </div>
+        )}
       </ContentBody>
 
       <ScanOverlay scanning={scanning} lines={scanLines} onCancel={handleCancelScan} />
