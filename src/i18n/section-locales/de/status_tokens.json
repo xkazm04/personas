@@ -146,5 +146,18 @@
     "transient_process_failure": "Vorübergehender Prozessfehler",
     "unknown": "Unbekannt",
     "validation": "Validierung"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Fan-out-Limit erreicht",
+    "budget_exceeded": "Kostenobergrenze erreicht",
+    "cas_lost": "Von anderem Lauf beansprucht",
+    "cycle_detected": "Zyklus erkannt",
+    "depth_limit": "Tiefenlimit",
+    "handoff_suppressed": "Übergabe unterdrückt",
+    "malformed_config": "Ungültige Konfiguration",
+    "outside_window": "Außerhalb Aktivfenster",
+    "predicate_unmet": "Bedingung nicht erfüllt",
+    "publish_failed": "Veröffentlichung fehlgeschlagen",
+    "quarantined": "Trigger in Quarantäne"
   }
 }

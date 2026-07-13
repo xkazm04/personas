@@ -513,7 +513,9 @@
     "tab_chain": "Řetězec",
     "thinking_tooltip": "Úroveň uvažování použitá při tomto běhu",
     "trace_empty_hint": "Podrobná trasování se zaznamenávají u běhů využívajících nástroje a u novějších běhů. Tento běh žádná nemá.",
-    "verdict_field": "Verdikt"
+    "verdict_field": "Verdikt",
+    "chain_ended_because": "Proč řetězec skončil",
+    "chain_total_cost": "Náklady řetězce"
   },
   "lab": {
     "mode_arena": "Aréna",

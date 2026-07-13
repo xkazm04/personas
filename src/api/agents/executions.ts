@@ -7,6 +7,7 @@ import type { ExecutionCounts } from "@/lib/bindings/ExecutionCounts";
 import type { ExecutionSearchResult } from "@/lib/bindings/ExecutionSearchResult";
 import type { Continuation } from "@/lib/bindings/Continuation";
 import type { ExecutionTrace } from "@/lib/bindings/ExecutionTrace";
+import type { ChainStopReason } from "@/lib/bindings/ChainStopReason";
 import type { DreamReplaySession } from "@/lib/bindings/DreamReplaySession";
 import type { CircuitBreakerStatus } from "@/lib/bindings/CircuitBreakerStatus";
 import type { DryRunReport } from "@/lib/bindings/DryRunReport";
@@ -105,6 +106,9 @@ export const getExecutionTrace = (executionId: string, callerPersonaId: string) 
 
 export const getChainTrace = (chainTraceId: string, callerPersonaId: string) =>
   invoke<ExecutionTrace[]>("get_chain_trace", { chainTraceId, callerPersonaId });
+
+export const getChainStopReasons = (chainTraceId: string, callerPersonaId: string) =>
+  invoke<ChainStopReason[]>("get_chain_stop_reasons", { chainTraceId, callerPersonaId });
 
 // ============================================================================
 // Dream Replay

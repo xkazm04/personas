@@ -1231,7 +1231,9 @@
       "tab_chain": "Rantai",
       "thinking_tooltip": "Upaya penalaran yang digunakan proses ini",
       "trace_empty_hint": "Trace terperinci direkam untuk proses yang menggunakan tool dan proses yang lebih baru. Proses ini tidak memiliki trace untuk ditampilkan.",
-      "verdict_field": "Putusan"
+      "verdict_field": "Putusan",
+      "chain_ended_because": "Alasan rantai berhenti",
+      "chain_total_cost": "Biaya rantai"
     },
     "lab": {
       "mode_arena": "Arena",
@@ -11390,6 +11392,19 @@
       "transient_process_failure": "Kegagalan proses sementara",
       "unknown": "Tidak diketahui",
       "validation": "Validasi"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "Batas fan-out tercapai",
+      "budget_exceeded": "Batas biaya tercapai",
+      "cas_lost": "Diklaim oleh proses lain",
+      "cycle_detected": "Siklus terdeteksi",
+      "depth_limit": "Batas kedalaman",
+      "handoff_suppressed": "Penerusan ditahan",
+      "malformed_config": "Konfigurasi tidak valid",
+      "outside_window": "Di luar jendela aktif",
+      "predicate_unmet": "Kondisi tidak terpenuhi",
+      "publish_failed": "Publikasi gagal",
+      "quarantined": "Trigger dikarantina"
     }
   },
   "project_overview": {

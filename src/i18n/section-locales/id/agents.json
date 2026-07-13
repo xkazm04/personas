@@ -513,7 +513,9 @@
     "tab_chain": "Rantai",
     "thinking_tooltip": "Upaya penalaran yang digunakan proses ini",
     "trace_empty_hint": "Trace terperinci direkam untuk proses yang menggunakan tool dan proses yang lebih baru. Proses ini tidak memiliki trace untuk ditampilkan.",
-    "verdict_field": "Putusan"
+    "verdict_field": "Putusan",
+    "chain_ended_because": "Alasan rantai berhenti",
+    "chain_total_cost": "Biaya rantai"
   },
   "lab": {
     "mode_arena": "Arena",

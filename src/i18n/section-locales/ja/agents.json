@@ -513,7 +513,9 @@
     "tab_chain": "チェーン",
     "thinking_tooltip": "この実行が使用した推論エフォート",
     "trace_empty_hint": "詳細なtraceは、ツールを使用する実行および新しい実行に対して記録されます。この実行には表示するtraceがありません。",
-    "verdict_field": "判定"
+    "verdict_field": "判定",
+    "chain_ended_because": "チェーン終了の理由",
+    "chain_total_cost": "チェーンのコスト"
   },
   "lab": {
     "mode_arena": "アリーナ",

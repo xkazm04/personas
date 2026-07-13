@@ -1231,7 +1231,9 @@
       "tab_chain": "Chuỗi",
       "thinking_tooltip": "Mức độ suy luận mà lượt chạy này đã sử dụng",
       "trace_empty_hint": "Trace chi tiết chỉ được ghi lại cho các lượt chạy có sử dụng công cụ và các lượt chạy mới hơn. Lượt chạy này không có gì để hiển thị.",
-      "verdict_field": "Kết luận"
+      "verdict_field": "Kết luận",
+      "chain_ended_because": "Lý do chuỗi kết thúc",
+      "chain_total_cost": "Chi phí chuỗi"
     },
     "lab": {
       "mode_arena": "Đấu trường",
@@ -11390,6 +11392,19 @@
       "transient_process_failure": "Lỗi tiến trình tạm thời",
       "unknown": "Không xác định",
       "validation": "Xác thực"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "Đã đạt giới hạn phân nhánh",
+      "budget_exceeded": "Đã đạt trần chi phí",
+      "cas_lost": "Đã bị lần chạy khác chiếm",
+      "cycle_detected": "Phát hiện vòng lặp",
+      "depth_limit": "Giới hạn độ sâu",
+      "handoff_suppressed": "Đã chặn bàn giao",
+      "malformed_config": "Cấu hình không hợp lệ",
+      "outside_window": "Ngoài khung thời gian hoạt động",
+      "predicate_unmet": "Chưa đạt điều kiện",
+      "publish_failed": "Phát hành thất bại",
+      "quarantined": "Trigger đã bị cách ly"
     }
   },
   "project_overview": {

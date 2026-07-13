@@ -1303,6 +1303,8 @@ export type Translations = {
       chain_failed: string;
       chain_loading: string;
       chain_badge_tooltip: string;
+      chain_total_cost: string;
+      chain_ended_because: string;
     };
     lab: {
       vr_title: string;
@@ -11517,6 +11519,19 @@ export type Translations = {
       promising: string;
       not_ready: string;
       broken: string;
+    };
+    chain_stop: {
+      depth_limit: string;
+      handoff_suppressed: string;
+      cycle_detected: string;
+      predicate_unmet: string;
+      outside_window: string;
+      malformed_config: string;
+      cas_lost: string;
+      quarantined: string;
+      publish_failed: string;
+      budget_exceeded: string;
+      breadth_exceeded: string;
     };
     error_category: {
       rate_limit: string;

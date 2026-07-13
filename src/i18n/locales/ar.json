@@ -1231,7 +1231,9 @@
       "tab_chain": "السلسلة",
       "thinking_tooltip": "جهد التفكير المستخدم في هذا التشغيل",
       "trace_empty_hint": "يتم التقاط الآثار التفصيلية لعمليات التشغيل التي تستخدم الأدوات والأحدث. لا يحتوي هذا التشغيل على أي منها لعرضه.",
-      "verdict_field": "الحكم"
+      "verdict_field": "الحكم",
+      "chain_ended_because": "سبب انتهاء السلسلة",
+      "chain_total_cost": "تكلفة السلسلة"
     },
     "lab": {
       "mode_arena": "الساحة",
@@ -11390,6 +11392,19 @@
       "transient_process_failure": "فشل مؤقت في العملية",
       "unknown": "غير معروف",
       "validation": "التحقق"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "تم بلوغ حد التفرّع",
+      "budget_exceeded": "تم بلوغ سقف التكلفة",
+      "cas_lost": "استحوذ عليها تشغيل آخر",
+      "cycle_detected": "تم اكتشاف حلقة",
+      "depth_limit": "حد العمق",
+      "handoff_suppressed": "تم كبح التسليم",
+      "malformed_config": "إعداد غير صالح",
+      "outside_window": "خارج النافذة النشطة",
+      "predicate_unmet": "الشرط غير مستوفٍ",
+      "publish_failed": "فشل النشر",
+      "quarantined": "المُشغِّل معزول"
     }
   },
   "project_overview": {

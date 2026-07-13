@@ -1231,7 +1231,9 @@
       "tab_chain": "Цепочка",
       "thinking_tooltip": "Уровень рассуждений, использованный в этом запуске",
       "trace_empty_hint": "Подробные трассировки собираются для запусков с инструментами и более новых. Для этого запуска их нет.",
-      "verdict_field": "Вердикт"
+      "verdict_field": "Вердикт",
+      "chain_ended_because": "Почему цепочка завершилась",
+      "chain_total_cost": "Стоимость цепочки"
     },
     "lab": {
       "mode_arena": "Арена",
@@ -11390,6 +11392,19 @@
       "transient_process_failure": "Временный сбой процесса",
       "unknown": "Неизвестно",
       "validation": "Валидация"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "Достигнут лимит ветвления",
+      "budget_exceeded": "Достигнут лимит стоимости",
+      "cas_lost": "Занято другим запуском",
+      "cycle_detected": "Обнаружен цикл",
+      "depth_limit": "Лимит глубины",
+      "handoff_suppressed": "Передача подавлена",
+      "malformed_config": "Неверная конфигурация",
+      "outside_window": "Вне активного окна",
+      "predicate_unmet": "Условие не выполнено",
+      "publish_failed": "Ошибка публикации",
+      "quarantined": "Триггер в карантине"
     }
   },
   "project_overview": {

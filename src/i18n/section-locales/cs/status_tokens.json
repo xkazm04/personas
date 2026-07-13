@@ -146,5 +146,18 @@
     "transient_process_failure": "Dočasné selhání procesu",
     "unknown": "Neznámé",
     "validation": "Validace"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Dosažen limit větvení",
+    "budget_exceeded": "Dosažen strop nákladů",
+    "cas_lost": "Převzato jiným během",
+    "cycle_detected": "Zjištěn cyklus",
+    "depth_limit": "Limit hloubky",
+    "handoff_suppressed": "Předání potlačeno",
+    "malformed_config": "Neplatná konfigurace",
+    "outside_window": "Mimo aktivní okno",
+    "predicate_unmet": "Podmínka nesplněna",
+    "publish_failed": "Publikování selhalo",
+    "quarantined": "Spouštěč v karanténě"
   }
 }

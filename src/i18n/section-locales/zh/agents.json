@@ -513,7 +513,9 @@
     "tab_chain": "链",
     "thinking_tooltip": "本次运行使用的推理强度",
     "trace_empty_hint": "详细 trace 仅记录于使用工具及较新的运行中，本次运行没有可显示的 trace。",
-    "verdict_field": "判定结果"
+    "verdict_field": "判定结果",
+    "chain_ended_because": "链结束原因",
+    "chain_total_cost": "链成本"
   },
   "lab": {
     "mode_arena": "竞技场",

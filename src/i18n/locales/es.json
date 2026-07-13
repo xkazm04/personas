@@ -1231,7 +1231,9 @@
       "tab_chain": "Cadena",
       "thinking_tooltip": "Esfuerzo de razonamiento usado en esta ejecución",
       "trace_empty_hint": "Las trazas detalladas se capturan para ejecuciones que usan herramientas y las más recientes. Esta ejecución no tiene ninguna que mostrar.",
-      "verdict_field": "Veredicto"
+      "verdict_field": "Veredicto",
+      "chain_ended_because": "Por qué terminó la cadena",
+      "chain_total_cost": "Costo de la cadena"
     },
     "lab": {
       "mode_arena": "Arena",
@@ -11390,6 +11392,19 @@
       "transient_process_failure": "Fallo transitorio del proceso",
       "unknown": "Desconocido",
       "validation": "Validación"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "Límite de ramificación alcanzado",
+      "budget_exceeded": "Límite de costo alcanzado",
+      "cas_lost": "Reclamado por otra ejecución",
+      "cycle_detected": "Ciclo detectado",
+      "depth_limit": "Límite de profundidad",
+      "handoff_suppressed": "Transferencia suprimida",
+      "malformed_config": "Configuración inválida",
+      "outside_window": "Fuera de la ventana activa",
+      "predicate_unmet": "Condición no cumplida",
+      "publish_failed": "Error al publicar",
+      "quarantined": "Activador en cuarentena"
     }
   },
   "project_overview": {

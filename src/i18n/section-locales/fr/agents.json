@@ -513,7 +513,9 @@
     "tab_chain": "Chaîne",
     "thinking_tooltip": "Effort de raisonnement utilisé pour cette exécution",
     "trace_empty_hint": "Les traces détaillées sont capturées pour les exécutions utilisant des outils et les plus récentes. Cette exécution n'en a aucune à afficher.",
-    "verdict_field": "Verdict"
+    "verdict_field": "Verdict",
+    "chain_ended_because": "Motif de fin de la chaîne",
+    "chain_total_cost": "Coût de la chaîne"
   },
   "lab": {
     "mode_arena": "Arène",

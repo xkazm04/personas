@@ -146,5 +146,18 @@
     "transient_process_failure": "Временный сбой процесса",
     "unknown": "Неизвестно",
     "validation": "Валидация"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Достигнут лимит ветвления",
+    "budget_exceeded": "Достигнут лимит стоимости",
+    "cas_lost": "Занято другим запуском",
+    "cycle_detected": "Обнаружен цикл",
+    "depth_limit": "Лимит глубины",
+    "handoff_suppressed": "Передача подавлена",
+    "malformed_config": "Неверная конфигурация",
+    "outside_window": "Вне активного окна",
+    "predicate_unmet": "Условие не выполнено",
+    "publish_failed": "Ошибка публикации",
+    "quarantined": "Триггер в карантине"
   }
 }

@@ -146,5 +146,18 @@
     "transient_process_failure": "Lỗi tiến trình tạm thời",
     "unknown": "Không xác định",
     "validation": "Xác thực"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Đã đạt giới hạn phân nhánh",
+    "budget_exceeded": "Đã đạt trần chi phí",
+    "cas_lost": "Đã bị lần chạy khác chiếm",
+    "cycle_detected": "Phát hiện vòng lặp",
+    "depth_limit": "Giới hạn độ sâu",
+    "handoff_suppressed": "Đã chặn bàn giao",
+    "malformed_config": "Cấu hình không hợp lệ",
+    "outside_window": "Ngoài khung thời gian hoạt động",
+    "predicate_unmet": "Chưa đạt điều kiện",
+    "publish_failed": "Phát hành thất bại",
+    "quarantined": "Trigger đã bị cách ly"
   }
 }

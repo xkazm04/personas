@@ -1231,7 +1231,9 @@
       "tab_chain": "চেইন",
       "thinking_tooltip": "এই রানে ব্যবহৃত রিজনিং এফোর্ট",
       "trace_empty_hint": "বিস্তারিত trace শুধু টুল-ব্যবহারকারী ও নতুন রানের জন্য সংগ্রহ করা হয়। এই রানে দেখানোর মতো কিছু নেই।",
-      "verdict_field": "রায়"
+      "verdict_field": "রায়",
+      "chain_ended_because": "চেইন কেন শেষ হয়েছে",
+      "chain_total_cost": "চেইন খরচ"
     },
     "lab": {
       "mode_arena": "আরেনা",
@@ -11390,6 +11392,19 @@
       "transient_process_failure": "সাময়িক প্রক্রিয়া ব্যর্থতা",
       "unknown": "অজানা",
       "validation": "যাচাইকরণ"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "ফ্যান-আউট সীমা পৌঁছেছে",
+      "budget_exceeded": "খরচের সর্বোচ্চ সীমা পৌঁছেছে",
+      "cas_lost": "অন্য রান দাবি করেছে",
+      "cycle_detected": "চক্র শনাক্ত হয়েছে",
+      "depth_limit": "গভীরতার সীমা",
+      "handoff_suppressed": "হ্যান্ডঅফ দমন করা হয়েছে",
+      "malformed_config": "অবৈধ কনফিগ",
+      "outside_window": "সক্রিয় উইন্ডোর বাইরে",
+      "predicate_unmet": "শর্ত পূরণ হয়নি",
+      "publish_failed": "প্রকাশ ব্যর্থ হয়েছে",
+      "quarantined": "ট্রিগার কোয়ারেন্টাইন করা হয়েছে"
     }
   },
   "project_overview": {

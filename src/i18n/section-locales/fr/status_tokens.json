@@ -146,5 +146,18 @@
     "transient_process_failure": "Échec transitoire du processus",
     "unknown": "Inconnu",
     "validation": "Erreur de validation"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Limite de ramification atteinte",
+    "budget_exceeded": "Plafond de coût atteint",
+    "cas_lost": "Réclamée par une autre exécution",
+    "cycle_detected": "Cycle détecté",
+    "depth_limit": "Limite de profondeur",
+    "handoff_suppressed": "Relais supprimé",
+    "malformed_config": "Configuration invalide",
+    "outside_window": "Hors de la fenêtre active",
+    "predicate_unmet": "Condition non remplie",
+    "publish_failed": "Échec de la publication",
+    "quarantined": "Déclencheur en quarantaine"
   }
 }

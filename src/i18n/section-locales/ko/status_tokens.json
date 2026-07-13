@@ -146,5 +146,18 @@
     "transient_process_failure": "일시적 프로세스 실패",
     "unknown": "알 수 없음",
     "validation": "유효성 검사"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "팬아웃 한도 도달",
+    "budget_exceeded": "비용 한도 도달",
+    "cas_lost": "다른 실행이 선점함",
+    "cycle_detected": "순환 감지됨",
+    "depth_limit": "깊이 한도",
+    "handoff_suppressed": "핸드오프 억제됨",
+    "malformed_config": "잘못된 구성",
+    "outside_window": "활성 창 범위 밖",
+    "predicate_unmet": "조건 미충족",
+    "publish_failed": "게시 실패",
+    "quarantined": "트리거 격리됨"
   }
 }

@@ -513,7 +513,9 @@
     "tab_chain": "Kette",
     "thinking_tooltip": "Der von diesem Lauf verwendete Denkaufwand",
     "trace_empty_hint": "Detaillierte Traces werden für werkzeugnutzende und neuere Läufe erfasst. Für diesen Lauf sind keine vorhanden.",
-    "verdict_field": "Urteil"
+    "verdict_field": "Urteil",
+    "chain_ended_because": "Grund für Kettenende",
+    "chain_total_cost": "Kettenkosten"
   },
   "lab": {
     "mode_arena": "Arena",

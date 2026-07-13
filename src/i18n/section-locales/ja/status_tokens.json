@@ -146,5 +146,18 @@
     "transient_process_failure": "一時的なプロセス障害",
     "unknown": "不明",
     "validation": "検証"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "ファンアウト上限に到達",
+    "budget_exceeded": "コスト上限に到達",
+    "cas_lost": "別の実行が取得済み",
+    "cycle_detected": "循環を検出",
+    "depth_limit": "深さ上限",
+    "handoff_suppressed": "ハンドオフを抑制",
+    "malformed_config": "無効な設定",
+    "outside_window": "有効期間外",
+    "predicate_unmet": "条件を満たさない",
+    "publish_failed": "発行に失敗",
+    "quarantined": "トリガーを隔離"
   }
 }

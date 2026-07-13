@@ -1231,7 +1231,9 @@
       "tab_chain": "Řetězec",
       "thinking_tooltip": "Úroveň uvažování použitá při tomto běhu",
       "trace_empty_hint": "Podrobná trasování se zaznamenávají u běhů využívajících nástroje a u novějších běhů. Tento běh žádná nemá.",
-      "verdict_field": "Verdikt"
+      "verdict_field": "Verdikt",
+      "chain_ended_because": "Proč řetězec skončil",
+      "chain_total_cost": "Náklady řetězce"
     },
     "lab": {
       "mode_arena": "Aréna",
@@ -11390,6 +11392,19 @@
       "transient_process_failure": "Dočasné selhání procesu",
       "unknown": "Neznámé",
       "validation": "Validace"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "Dosažen limit větvení",
+      "budget_exceeded": "Dosažen strop nákladů",
+      "cas_lost": "Převzato jiným během",
+      "cycle_detected": "Zjištěn cyklus",
+      "depth_limit": "Limit hloubky",
+      "handoff_suppressed": "Předání potlačeno",
+      "malformed_config": "Neplatná konfigurace",
+      "outside_window": "Mimo aktivní okno",
+      "predicate_unmet": "Podmínka nesplněna",
+      "publish_failed": "Publikování selhalo",
+      "quarantined": "Spouštěč v karanténě"
     }
   },
   "project_overview": {

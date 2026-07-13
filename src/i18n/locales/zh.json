@@ -1231,7 +1231,9 @@
       "tab_chain": "链",
       "thinking_tooltip": "本次运行使用的推理强度",
       "trace_empty_hint": "详细 trace 仅记录于使用工具及较新的运行中，本次运行没有可显示的 trace。",
-      "verdict_field": "判定结果"
+      "verdict_field": "判定结果",
+      "chain_ended_because": "链结束原因",
+      "chain_total_cost": "链成本"
     },
     "lab": {
       "mode_arena": "竞技场",
@@ -11390,6 +11392,19 @@
       "transient_process_failure": "临时进程故障",
       "unknown": "未知",
       "validation": "校验"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "已达扇出上限",
+      "budget_exceeded": "已达成本上限",
+      "cas_lost": "已被其他运行占用",
+      "cycle_detected": "检测到循环",
+      "depth_limit": "深度上限",
+      "handoff_suppressed": "交接已抑制",
+      "malformed_config": "配置无效",
+      "outside_window": "不在活动时段内",
+      "predicate_unmet": "条件未满足",
+      "publish_failed": "发布失败",
+      "quarantined": "触发器已隔离"
     }
   },
   "project_overview": {

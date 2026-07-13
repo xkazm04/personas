@@ -146,5 +146,18 @@
     "transient_process_failure": "Fallo transitorio del proceso",
     "unknown": "Desconocido",
     "validation": "Validación"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Límite de ramificación alcanzado",
+    "budget_exceeded": "Límite de costo alcanzado",
+    "cas_lost": "Reclamado por otra ejecución",
+    "cycle_detected": "Ciclo detectado",
+    "depth_limit": "Límite de profundidad",
+    "handoff_suppressed": "Transferencia suprimida",
+    "malformed_config": "Configuración inválida",
+    "outside_window": "Fuera de la ventana activa",
+    "predicate_unmet": "Condición no cumplida",
+    "publish_failed": "Error al publicar",
+    "quarantined": "Activador en cuarentena"
   }
 }

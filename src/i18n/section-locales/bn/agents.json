@@ -513,7 +513,9 @@
     "tab_chain": "চেইন",
     "thinking_tooltip": "এই রানে ব্যবহৃত রিজনিং এফোর্ট",
     "trace_empty_hint": "বিস্তারিত trace শুধু টুল-ব্যবহারকারী ও নতুন রানের জন্য সংগ্রহ করা হয়। এই রানে দেখানোর মতো কিছু নেই।",
-    "verdict_field": "রায়"
+    "verdict_field": "রায়",
+    "chain_ended_because": "চেইন কেন শেষ হয়েছে",
+    "chain_total_cost": "চেইন খরচ"
   },
   "lab": {
     "mode_arena": "আরেনা",

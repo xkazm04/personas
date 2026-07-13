@@ -1296,7 +1296,9 @@
       "chain_empty": "No linked runs found for this chain.",
       "chain_failed": "Couldn’t load the chain: {error}",
       "chain_loading": "Loading chain…",
-      "chain_badge_tooltip": "Part of a multi-step chain — view the full chain"
+      "chain_badge_tooltip": "Part of a multi-step chain — view the full chain",
+      "chain_total_cost": "Chain cost",
+      "chain_ended_because": "Why the chain ended"
     },
     "lab": {
       "vr_title": "Versions & Ratings",
@@ -11511,6 +11513,19 @@
       "promising": "Promising",
       "not_ready": "Not Ready",
       "broken": "Broken"
+    },
+    "chain_stop": {
+      "depth_limit": "Depth limit",
+      "handoff_suppressed": "Handoff suppressed",
+      "cycle_detected": "Cycle detected",
+      "predicate_unmet": "Condition not met",
+      "outside_window": "Outside active window",
+      "malformed_config": "Invalid config",
+      "cas_lost": "Claimed by another run",
+      "quarantined": "Trigger quarantined",
+      "publish_failed": "Publish failed",
+      "budget_exceeded": "Cost ceiling reached",
+      "breadth_exceeded": "Fan-out limit reached"
     },
     "error_category": {
       "rate_limit": "Rate limit",

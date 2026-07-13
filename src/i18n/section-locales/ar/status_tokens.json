@@ -146,5 +146,18 @@
     "transient_process_failure": "فشل مؤقت في العملية",
     "unknown": "غير معروف",
     "validation": "التحقق"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "تم بلوغ حد التفرّع",
+    "budget_exceeded": "تم بلوغ سقف التكلفة",
+    "cas_lost": "استحوذ عليها تشغيل آخر",
+    "cycle_detected": "تم اكتشاف حلقة",
+    "depth_limit": "حد العمق",
+    "handoff_suppressed": "تم كبح التسليم",
+    "malformed_config": "إعداد غير صالح",
+    "outside_window": "خارج النافذة النشطة",
+    "predicate_unmet": "الشرط غير مستوفٍ",
+    "publish_failed": "فشل النشر",
+    "quarantined": "المُشغِّل معزول"
   }
 }

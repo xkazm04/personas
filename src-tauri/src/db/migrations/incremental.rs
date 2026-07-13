@@ -5272,6 +5272,34 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "chain_stop_reasons.create",
+            description: "Chain stop reasons: structured record of why a chain relay did NOT continue at each non-continuation path (handoff suppression, cycle, depth/budget limit, predicate miss, quarantine) — queryable per chain_trace_id for the Chain tab's end-of-chain explanation",
+            already_applied: |conn| has_table(conn, "chain_stop_reasons"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS chain_stop_reasons (
+                        id                TEXT PRIMARY KEY,
+                        chain_trace_id    TEXT NOT NULL,
+                        link_execution_id TEXT NOT NULL,
+                        trigger_id        TEXT,
+                        target_persona_id TEXT,
+                        reason_token      TEXT NOT NULL,
+                        detail            TEXT,
+                        chain_depth       INTEGER NOT NULL DEFAULT 0,
+                        created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_csr_chain ON chain_stop_reasons(chain_trace_id);
+                    CREATE INDEX IF NOT EXISTS idx_csr_link  ON chain_stop_reasons(link_execution_id);
+                    CREATE INDEX IF NOT EXISTS idx_csr_created ON chain_stop_reasons(created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
 
     Ok(())
 }
