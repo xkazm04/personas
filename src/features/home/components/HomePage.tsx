@@ -26,9 +26,14 @@ export default function HomePage() {
   const homeTab = useSystemStore((s) => s.homeTab);
   const devSystemCheck = import.meta.env.DEV;
 
-  // The effective active tab. `system-check` is DEV-only; outside DEV it falls
-  // back to the Welcome surface (matching the previous behavior).
-  const activeTab: HomeTab = homeTab === 'system-check' && !devSystemCheck ? 'welcome' : homeTab;
+  // The effective active tab. `system-check` is DEV-only; outside DEV — and for
+  // any unknown value from stale persisted state — it falls back to the Welcome
+  // surface (matching the old ladder's final-else behavior).
+  const KNOWN_TABS: readonly HomeTab[] = ['welcome', 'cockpit', 'roadmap', 'learning', 'system-check'];
+  const activeTab: HomeTab =
+    !KNOWN_TABS.includes(homeTab) || (homeTab === 'system-check' && !devSystemCheck)
+      ? 'welcome'
+      : homeTab;
 
   // Track which tabs have EVER been active. Only visited tabs are mounted, so
   // the first paint mounts Welcome alone (the default) — cockpit/roadmap/learning
