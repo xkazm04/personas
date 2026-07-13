@@ -1233,7 +1233,15 @@
       "trace_empty_hint": "详细 trace 仅记录于使用工具及较新的运行中，本次运行没有可显示的 trace。",
       "verdict_field": "判定结果",
       "chain_ended_because": "链结束原因",
-      "chain_total_cost": "链成本"
+      "chain_total_cost": "链成本",
+      "active_chains_agents_one": "{count} 个代理",
+      "active_chains_agents_other": "{count} 个代理",
+      "active_chains_depth": "深度 {count}",
+      "active_chains_hops_one": "{count} 跳",
+      "active_chains_hops_other": "{count} 跳",
+      "active_chains_one": "{count} 条链运行中",
+      "active_chains_other": "{count} 条链运行中",
+      "active_chains_title": "运行中的链"
     },
     "lab": {
       "mode_arena": "竞技场",

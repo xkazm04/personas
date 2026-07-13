@@ -743,6 +743,26 @@ pub fn get_chain_stop_reasons(
     )
 }
 
+/// List the chains that currently have in-flight (running/queued) executions —
+/// the answer to "what chains are running right now?", which CascadeMetrics
+/// (log-only) and the retrospective per-run Chain tab could not give. Grouped by
+/// `chain_trace_id`; returns per chain the in-flight hop count, deepest depth,
+/// accumulated cost, personas involved, and the oldest in-flight start.
+///
+/// This is an aggregate OPERATOR/observability surface, not per-run detail —
+/// it returns chain-level counts and ids, no execution content (instructions,
+/// outputs, credentials) — so it is auth-gated but not persona-scoped the way
+/// [`get_chain_trace`] is (a chain spans personas; scoping it to one caller
+/// would defeat "what is in flight across the app"). An empty vec means nothing
+/// chain-shaped is running.
+#[tauri::command]
+pub fn list_active_chains(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<crate::db::repos::execution::executions::ActiveChain>, AppError> {
+    require_auth_sync(&state)?;
+    crate::db::repos::execution::executions::list_active_chains(&state.db)
+}
+
 /// Get current circuit breaker state for all providers.
 ///
 /// Returns per-provider status (consecutive failures, open/closed, cooldown)

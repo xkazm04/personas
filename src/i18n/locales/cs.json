@@ -1233,7 +1233,15 @@
       "trace_empty_hint": "Podrobná trasování se zaznamenávají u běhů využívajících nástroje a u novějších běhů. Tento běh žádná nemá.",
       "verdict_field": "Verdikt",
       "chain_ended_because": "Proč řetězec skončil",
-      "chain_total_cost": "Náklady řetězce"
+      "chain_total_cost": "Náklady řetězce",
+      "active_chains_agents_one": "{count} agent",
+      "active_chains_agents_other": "{count} agentů",
+      "active_chains_depth": "hloubka {count}",
+      "active_chains_hops_one": "{count} skok",
+      "active_chains_hops_other": "{count} skoků",
+      "active_chains_one": "{count} řetězec běží",
+      "active_chains_other": "{count} řetězců běží",
+      "active_chains_title": "Běžící řetězce"
     },
     "lab": {
       "mode_arena": "Aréna",

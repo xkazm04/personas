@@ -1233,7 +1233,15 @@
       "trace_empty_hint": "Detaillierte Traces werden für werkzeugnutzende und neuere Läufe erfasst. Für diesen Lauf sind keine vorhanden.",
       "verdict_field": "Urteil",
       "chain_ended_because": "Grund für Kettenende",
-      "chain_total_cost": "Kettenkosten"
+      "chain_total_cost": "Kettenkosten",
+      "active_chains_agents_one": "{count} Agent",
+      "active_chains_agents_other": "{count} Agenten",
+      "active_chains_depth": "Tiefe {count}",
+      "active_chains_hops_one": "{count} Sprung",
+      "active_chains_hops_other": "{count} Sprünge",
+      "active_chains_one": "{count} Kette aktiv",
+      "active_chains_other": "{count} Ketten aktiv",
+      "active_chains_title": "Aktive Ketten"
     },
     "lab": {
       "mode_arena": "Arena",

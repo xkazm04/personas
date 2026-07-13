@@ -515,7 +515,15 @@
     "trace_empty_hint": "বিস্তারিত trace শুধু টুল-ব্যবহারকারী ও নতুন রানের জন্য সংগ্রহ করা হয়। এই রানে দেখানোর মতো কিছু নেই।",
     "verdict_field": "রায়",
     "chain_ended_because": "চেইন কেন শেষ হয়েছে",
-    "chain_total_cost": "চেইন খরচ"
+    "chain_total_cost": "চেইন খরচ",
+    "active_chains_agents_one": "{count}টি এজেন্ট",
+    "active_chains_agents_other": "{count}টি এজেন্ট",
+    "active_chains_depth": "গভীরতা {count}",
+    "active_chains_hops_one": "{count}টি ধাপ",
+    "active_chains_hops_other": "{count}টি ধাপ",
+    "active_chains_one": "{count}টি চেইন চলমান",
+    "active_chains_other": "{count}টি চেইন চলমান",
+    "active_chains_title": "চলমান চেইন"
   },
   "lab": {
     "mode_arena": "আরেনা",

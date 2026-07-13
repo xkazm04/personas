@@ -160,7 +160,17 @@ SELECT * FROM execution_traces WHERE chain_trace_id = ?;
 ```
 
 The UI "Chain View" renders this as a tree: root execution at top,
-child executions nested under the events they spawned.
+child executions nested under the events they spawned — but it is
+**retrospective** (per finished run).
+
+**Live view — what's running right now**: the `list_active_chains` IPC
+groups the currently `running`/`queued` executions by the
+`chain_trace_id` in their `input_data`, returning per chain the in-flight
+hop count, deepest depth, accumulated cost, personas involved, and oldest
+start. The executions view surfaces it as a compact "N chains in flight"
+badge (expands to the per-chain list) — and renders nothing when no chain
+work is in flight. It answers "what chains are cascading right now?", which
+the log-only cascade metrics and the retrospective Chain tab could not.
 
 **Trace continuity break**: if the payload JSON fails to parse (so the
 `chain_trace_id` field can't be extracted), the `trace_continuity_breaks`

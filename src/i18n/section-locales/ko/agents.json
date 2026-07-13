@@ -515,7 +515,15 @@
     "trace_empty_hint": "상세 추적은 도구를 사용하는 최신 실행에서만 수집됩니다. 이 실행에는 표시할 추적이 없습니다.",
     "verdict_field": "판정",
     "chain_ended_because": "체인 종료 원인",
-    "chain_total_cost": "체인 비용"
+    "chain_total_cost": "체인 비용",
+    "active_chains_agents_one": "에이전트 {count}개",
+    "active_chains_agents_other": "에이전트 {count}개",
+    "active_chains_depth": "깊이 {count}",
+    "active_chains_hops_one": "홉 {count}회",
+    "active_chains_hops_other": "홉 {count}회",
+    "active_chains_one": "실행 중인 체인 {count}개",
+    "active_chains_other": "실행 중인 체인 {count}개",
+    "active_chains_title": "실행 중인 체인"
   },
   "lab": {
     "mode_arena": "아레나",

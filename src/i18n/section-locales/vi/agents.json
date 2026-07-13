@@ -515,7 +515,15 @@
     "trace_empty_hint": "Trace chi tiết chỉ được ghi lại cho các lượt chạy có sử dụng công cụ và các lượt chạy mới hơn. Lượt chạy này không có gì để hiển thị.",
     "verdict_field": "Kết luận",
     "chain_ended_because": "Lý do chuỗi kết thúc",
-    "chain_total_cost": "Chi phí chuỗi"
+    "chain_total_cost": "Chi phí chuỗi",
+    "active_chains_agents_one": "{count} agent",
+    "active_chains_agents_other": "{count} agent",
+    "active_chains_depth": "độ sâu {count}",
+    "active_chains_hops_one": "{count} bước nhảy",
+    "active_chains_hops_other": "{count} bước nhảy",
+    "active_chains_one": "{count} chuỗi đang chạy",
+    "active_chains_other": "{count} chuỗi đang chạy",
+    "active_chains_title": "Chuỗi đang chạy"
   },
   "lab": {
     "mode_arena": "Đấu trường",

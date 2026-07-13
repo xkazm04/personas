@@ -1233,7 +1233,15 @@
       "trace_empty_hint": "Подробные трассировки собираются для запусков с инструментами и более новых. Для этого запуска их нет.",
       "verdict_field": "Вердикт",
       "chain_ended_because": "Почему цепочка завершилась",
-      "chain_total_cost": "Стоимость цепочки"
+      "chain_total_cost": "Стоимость цепочки",
+      "active_chains_agents_one": "{count} агент",
+      "active_chains_agents_other": "{count} агентов",
+      "active_chains_depth": "глубина {count}",
+      "active_chains_hops_one": "{count} переход",
+      "active_chains_hops_other": "{count} переходов",
+      "active_chains_one": "{count} цепочка в работе",
+      "active_chains_other": "{count} цепочек в работе",
+      "active_chains_title": "Цепочки в работе"
     },
     "lab": {
       "mode_arena": "Арена",

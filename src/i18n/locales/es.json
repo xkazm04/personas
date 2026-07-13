@@ -1233,7 +1233,15 @@
       "trace_empty_hint": "Las trazas detalladas se capturan para ejecuciones que usan herramientas y las más recientes. Esta ejecución no tiene ninguna que mostrar.",
       "verdict_field": "Veredicto",
       "chain_ended_because": "Por qué terminó la cadena",
-      "chain_total_cost": "Costo de la cadena"
+      "chain_total_cost": "Costo de la cadena",
+      "active_chains_agents_one": "{count} agente",
+      "active_chains_agents_other": "{count} agentes",
+      "active_chains_depth": "profundidad {count}",
+      "active_chains_hops_one": "{count} salto",
+      "active_chains_hops_other": "{count} saltos",
+      "active_chains_one": "{count} cadena en curso",
+      "active_chains_other": "{count} cadenas en curso",
+      "active_chains_title": "Cadenas en curso"
     },
     "lab": {
       "mode_arena": "Arena",

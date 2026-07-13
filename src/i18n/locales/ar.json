@@ -1233,7 +1233,15 @@
       "trace_empty_hint": "يتم التقاط الآثار التفصيلية لعمليات التشغيل التي تستخدم الأدوات والأحدث. لا يحتوي هذا التشغيل على أي منها لعرضه.",
       "verdict_field": "الحكم",
       "chain_ended_because": "سبب انتهاء السلسلة",
-      "chain_total_cost": "تكلفة السلسلة"
+      "chain_total_cost": "تكلفة السلسلة",
+      "active_chains_agents_one": "وكيل {count}",
+      "active_chains_agents_other": "{count} وكلاء",
+      "active_chains_depth": "العمق {count}",
+      "active_chains_hops_one": "قفزة {count}",
+      "active_chains_hops_other": "{count} قفزات",
+      "active_chains_one": "سلسلة {count} قيد التنفيذ",
+      "active_chains_other": "{count} سلاسل قيد التنفيذ",
+      "active_chains_title": "سلاسل قيد التنفيذ"
     },
     "lab": {
       "mode_arena": "الساحة",

@@ -515,7 +515,15 @@
     "trace_empty_hint": "Trace terperinci direkam untuk proses yang menggunakan tool dan proses yang lebih baru. Proses ini tidak memiliki trace untuk ditampilkan.",
     "verdict_field": "Putusan",
     "chain_ended_because": "Alasan rantai berhenti",
-    "chain_total_cost": "Biaya rantai"
+    "chain_total_cost": "Biaya rantai",
+    "active_chains_agents_one": "{count} agen",
+    "active_chains_agents_other": "{count} agen",
+    "active_chains_depth": "kedalaman {count}",
+    "active_chains_hops_one": "{count} lompatan",
+    "active_chains_hops_other": "{count} lompatan",
+    "active_chains_one": "{count} rantai berjalan",
+    "active_chains_other": "{count} rantai berjalan",
+    "active_chains_title": "Rantai berjalan"
   },
   "lab": {
     "mode_arena": "Arena",

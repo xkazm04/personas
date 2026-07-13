@@ -8,6 +8,7 @@ import type { ExecutionSearchResult } from "@/lib/bindings/ExecutionSearchResult
 import type { Continuation } from "@/lib/bindings/Continuation";
 import type { ExecutionTrace } from "@/lib/bindings/ExecutionTrace";
 import type { ChainStopReason } from "@/lib/bindings/ChainStopReason";
+import type { ActiveChain } from "@/lib/bindings/ActiveChain";
 import type { DreamReplaySession } from "@/lib/bindings/DreamReplaySession";
 import type { CircuitBreakerStatus } from "@/lib/bindings/CircuitBreakerStatus";
 import type { DryRunReport } from "@/lib/bindings/DryRunReport";
@@ -109,6 +110,11 @@ export const getChainTrace = (chainTraceId: string, callerPersonaId: string) =>
 
 export const getChainStopReasons = (chainTraceId: string, callerPersonaId: string) =>
   invoke<ChainStopReason[]>("get_chain_stop_reasons", { chainTraceId, callerPersonaId });
+
+/** Chains with in-flight (running/queued) executions right now, grouped by
+ *  chain_trace_id. Empty array = nothing chain-shaped is running. */
+export const listActiveChains = () =>
+  invoke<ActiveChain[]>("list_active_chains");
 
 // ============================================================================
 // Dream Replay

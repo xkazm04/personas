@@ -515,7 +515,15 @@
     "trace_empty_hint": "詳細なtraceは、ツールを使用する実行および新しい実行に対して記録されます。この実行には表示するtraceがありません。",
     "verdict_field": "判定",
     "chain_ended_because": "チェーン終了の理由",
-    "chain_total_cost": "チェーンのコスト"
+    "chain_total_cost": "チェーンのコスト",
+    "active_chains_agents_one": "{count} エージェント",
+    "active_chains_agents_other": "{count} エージェント",
+    "active_chains_depth": "深さ {count}",
+    "active_chains_hops_one": "{count} ホップ",
+    "active_chains_hops_other": "{count} ホップ",
+    "active_chains_one": "実行中のチェーン {count} 件",
+    "active_chains_other": "実行中のチェーン {count} 件",
+    "active_chains_title": "実行中のチェーン"
   },
   "lab": {
     "mode_arena": "アリーナ",

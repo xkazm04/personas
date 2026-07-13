@@ -1789,6 +1789,7 @@ pub fn run() {
             commands::execution::executions::get_execution_trace,
             commands::execution::executions::get_chain_trace,
             commands::execution::executions::get_chain_stop_reasons,
+            commands::execution::executions::list_active_chains,
             commands::execution::executions::get_dream_replay,
             commands::execution::executions::get_circuit_breaker_status,
             commands::execution::executions::preview_execution,
