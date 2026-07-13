@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles, SlidersHorizontal, ArrowLeft, Users, Settings, Brain } from 'lucide-react';
+import { SlidersHorizontal, ArrowLeft, Users, Settings, Brain } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
@@ -13,7 +13,6 @@ import {
   MemberTierChip,
   TrustMeter,
   UseCaseToggleRow,
-  OrchestrationConsole,
   AddMemberMenu,
 } from './teamStudioShared';
 import type { StudioMember } from './useTeamStudioData';
@@ -40,13 +39,13 @@ interface TeamStudioSplitVariantProps {
   onBack?: () => void;
 }
 
-type RightMode = { kind: 'member'; memberId: string } | { kind: 'orchestrate' } | { kind: 'memory' } | { kind: 'workspace' };
+type RightMode = { kind: 'member'; memberId: string } | { kind: 'memory' } | { kind: 'workspace' };
 
 export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioSplitVariantProps) {
   const { t, tx } = useTranslation();
   const ts = t.pipeline.team_studio;
   const { members, toggleUseCase, busyUseCases } = useTeamStudioData();
-  const [mode, setMode] = useState<RightMode>({ kind: 'orchestrate' });
+  const [mode, setMode] = useState<RightMode>({ kind: 'workspace' });
 
   // The studio header wears the team's identity — the icon and color that
   // became editable in Workspace settings show up where the user works.
@@ -78,11 +77,10 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
   };
 
   // Default-select the first member once the roster loads (but keep
-  // orchestrate as the initial mode so the assignment box is the first
   // thing the user sees — the primary action).
   useEffect(() => {
     if (mode.kind === 'member' && !members.some((m) => m.memberId === mode.memberId)) {
-      setMode({ kind: 'orchestrate' });
+      setMode({ kind: 'workspace' });
     }
   }, [members, mode]);
 
@@ -135,21 +133,6 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               {ts.section_workspace}
             </p>
             <div className="flex flex-col gap-0.5 rounded-card bg-secondary/20 p-1">
-              {/* Orchestrate — the primary action */}
-              <button
-                type="button"
-                data-testid="team-mode-orchestrate"
-                onClick={() => requestMode({ kind: 'orchestrate' })}
-                aria-pressed={mode.kind === 'orchestrate'}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
-                  mode.kind === 'orchestrate'
-                    ? 'border-violet-500/40 bg-gradient-to-r from-violet-500/15 to-indigo-500/15 text-violet-200'
-                    : 'border-transparent text-foreground hover:bg-secondary/40'
-                }`}
-              >
-                <Sparkles className="w-4 h-4 flex-shrink-0" />
-                <span className="typo-body font-medium">{ts.orchestrate_assignment}</span>
-              </button>
 
               {/* Team memory — the shared ledger (decisions / constraints / learnings) */}
               <button
@@ -214,10 +197,8 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
 
         {/* Right — dynamic pane */}
         <div className="flex-1 min-h-0 overflow-hidden px-5 py-4">
-          {mode.kind === 'orchestrate' ? (
-            <OrchestrationConsole teamId={teamId} members={members} layout="panel" />
-          ) : mode.kind === 'memory' ? (
-            <TeamMemoryPane teamId={teamId} onClose={() => setMode({ kind: 'orchestrate' })} />
+          {mode.kind === 'memory' ? (
+            <TeamMemoryPane teamId={teamId} onClose={() => setMode({ kind: 'workspace' })} />
           ) : mode.kind === 'workspace' ? (
             <TeamWorkspacePane teamId={teamId} onDirtyChange={(d) => { workspaceDirty.current = d; }} />
           ) : selected ? (
