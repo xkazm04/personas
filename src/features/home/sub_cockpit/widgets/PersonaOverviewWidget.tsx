@@ -22,6 +22,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useIllustration } from '@/features/plugins/companion/inbox/hooks/useIllustration';
 import { firstGrapheme } from '@/features/plugins/companion/inbox/_shared/grapheme';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -35,6 +36,7 @@ import {
   modelTierLabel,
   recentActivity,
   relativeUpdated,
+  trustPercent,
   trustToneFor,
 } from './personaStats';
 
@@ -183,7 +185,7 @@ function HeroCard({
 }) {
   const { t, tx } = useTranslation();
   const illustration = useIllustration(persona);
-  const trustPct = Math.round(persona.trust_score * 100);
+  const trust = trustPercent(persona.trust_score);
   const flag = attentionFor(persona);
 
   return (
@@ -229,8 +231,9 @@ function HeroCard({
         <KpiPanel
           icon={Shield}
           label={t.plugins.companion.persona_overview_kpi_trust}
-          value={`${trustPct}%`}
-          tone={trustTone}
+          value={`${trust.pct}%`}
+          tone={trust.overflow ? 'warn' : trustTone}
+          hint={trust.overflow ? t.plugins.companion.persona_overview_kpi_trust_clamped : undefined}
         />
         <KpiPanel
           icon={Coins}
@@ -304,11 +307,14 @@ function KpiPanel({
   label,
   value,
   tone,
+  hint,
 }: {
   icon: typeof Shield;
   label: string;
   value: string;
   tone?: 'good' | 'warn' | 'bad';
+  /** When set, the value shows a "clamped" marker and this text as a tooltip. */
+  hint?: string;
 }) {
   const valueClass =
     tone === 'good'
@@ -318,13 +324,21 @@ function KpiPanel({
         : tone === 'bad'
           ? 'text-rose-300'
           : 'text-foreground/95';
+  const valueNode = (
+    <span className={`typo-data-md font-semibold ${valueClass}`}>
+      {value}
+      {hint != null && <span aria-hidden className="ml-0.5 opacity-70">*</span>}
+    </span>
+  );
   return (
     <div className="rounded-input border border-foreground/8 bg-background/40 px-2.5 py-2">
       <div className="flex items-center gap-1.5 text-foreground">
         <Icon className="w-3 h-3" />
         <span className="text-[10px] uppercase tracking-[0.16em] font-medium">{label}</span>
       </div>
-      <div className={`typo-data-md font-semibold mt-0.5 ${valueClass}`}>{value}</div>
+      <div className="mt-0.5">
+        {hint != null ? <Tooltip content={hint}>{valueNode}</Tooltip> : valueNode}
+      </div>
     </div>
   );
 }

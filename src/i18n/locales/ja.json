@@ -13560,7 +13560,8 @@
       "voice_pocket_upload_save": "音声を追加",
       "voice_pocket_upload_title": "あなたの声を追加",
       "voice_pocket_hf_gate_desc": "自分のクローン音声を管理するには、Credential Vault（認証情報保管庫）に Hugging Face アクセストークンが必要です。これにより、音声クローンモデルのライセンスがあなたのアカウントに紐付けられます。Hugging Face の認証情報を追加してから、こちらに戻ってきてください。",
-      "voice_pocket_hf_gate_title": "Hugging Face アカウントが必要です"
+      "voice_pocket_hf_gate_title": "Hugging Face アカウントが必要です",
+      "persona_overview_kpi_trust_clamped": "信頼スコアが範囲外だったため、100% に制限されました。"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",

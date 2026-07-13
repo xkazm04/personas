@@ -13560,7 +13560,8 @@
       "voice_pocket_upload_save": "आवाज़ जोड़ें",
       "voice_pocket_upload_title": "अपनी आवाज़ जोड़ें",
       "voice_pocket_hf_gate_desc": "अपनी क्लोन की गई आवाज़ों को स्वयं प्रबंधित करने के लिए क्रेडेंशियल वॉल्ट में Hugging Face एक्सेस टोकन आवश्यक है — यह वॉइस-क्लोनिंग मॉडल के लाइसेंस को आपके खाते से जोड़ता है। एक Hugging Face क्रेडेंशियल जोड़ें, फिर यहाँ वापस आएं।",
-      "voice_pocket_hf_gate_title": "Hugging Face खाता आवश्यक है"
+      "voice_pocket_hf_gate_title": "Hugging Face खाता आवश्यक है",
+      "persona_overview_kpi_trust_clamped": "ट्रस्ट स्कोर सीमा से बाहर था और इसे 100% पर सीमित कर दिया गया है।"
     },
     "artist_gallery": {
       "loading_viewer": "viewer लोड हो रहा है…",

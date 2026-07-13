@@ -2127,7 +2127,8 @@
     "voice_pocket_upload_save": "Přidat hlas",
     "voice_pocket_upload_title": "Přidejte svůj hlas",
     "voice_pocket_hf_gate_desc": "Správa vašich vlastních klonovaných hlasů vyžaduje přístupový token Hugging Face v Trezoru přihlašovacích údajů — ten propojuje licenci modelu pro klonování hlasu s vaším účtem. Přidejte přihlašovací údaje Hugging Face a poté se sem vraťte.",
-    "voice_pocket_hf_gate_title": "Vyžadován účet Hugging Face"
+    "voice_pocket_hf_gate_title": "Vyžadován účet Hugging Face",
+    "persona_overview_kpi_trust_clamped": "Skóre důvěry bylo mimo rozsah a bylo omezeno na 100 %."
   },
   "artist_gallery": {
     "loading_viewer": "Načítání prohlížeče…",

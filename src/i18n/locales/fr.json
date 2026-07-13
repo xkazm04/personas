@@ -13560,7 +13560,8 @@
       "voice_pocket_upload_save": "Ajouter la voix",
       "voice_pocket_upload_title": "Ajoutez votre voix",
       "voice_pocket_hf_gate_desc": "La gestion de vos propres voix clonées nécessite un token d'accès Hugging Face dans le Coffre-fort des identifiants — il rattache la licence du modèle de clonage vocal à votre compte. Ajoutez un identifiant Hugging Face, puis revenez ici.",
-      "voice_pocket_hf_gate_title": "Compte Hugging Face requis"
+      "voice_pocket_hf_gate_title": "Compte Hugging Face requis",
+      "persona_overview_kpi_trust_clamped": "Le score de confiance était hors limites et a été plafonné à 100 %."
     },
     "artist_gallery": {
       "loading_viewer": "Chargement du visualiseur…",

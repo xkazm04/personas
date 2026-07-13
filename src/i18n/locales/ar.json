@@ -13560,7 +13560,8 @@
       "voice_pocket_upload_save": "إضافة الصوت",
       "voice_pocket_upload_title": "أضف صوتك",
       "voice_pocket_hf_gate_desc": "لإدارة أصواتك المستنسخة الخاصة، يلزم توفر رمز وصول Hugging Face في خزنة بيانات الاعتماد — فهو يربط ترخيص نموذج استنساخ الصوت بحسابك. أضف بيانات اعتماد Hugging Face، ثم عد إلى هنا.",
-      "voice_pocket_hf_gate_title": "مطلوب حساب Hugging Face"
+      "voice_pocket_hf_gate_title": "مطلوب حساب Hugging Face",
+      "persona_overview_kpi_trust_clamped": "كانت درجة الثقة خارج النطاق وتم تحديدها عند 100%."
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

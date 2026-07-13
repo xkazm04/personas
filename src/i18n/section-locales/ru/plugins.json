@@ -2127,7 +2127,8 @@
     "voice_pocket_upload_save": "Добавить голос",
     "voice_pocket_upload_title": "Добавьте свой голос",
     "voice_pocket_hf_gate_desc": "Для управления собственными клонированными голосами требуется токен доступа Hugging Face в Хранилище учётных данных — он привязывает лицензию модели клонирования голоса к вашей учётной записи. Добавьте учётные данные Hugging Face, а затем вернитесь сюда.",
-    "voice_pocket_hf_gate_title": "Требуется аккаунт Hugging Face"
+    "voice_pocket_hf_gate_title": "Требуется аккаунт Hugging Face",
+    "persona_overview_kpi_trust_clamped": "Оценка доверия вышла за пределы диапазона и была ограничена 100 %."
   },
   "artist_gallery": {
     "loading_viewer": "Загрузка просмотрщика…",

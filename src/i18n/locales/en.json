@@ -13428,6 +13428,7 @@
       "persona_overview_open_short": "Open",
       "persona_overview_view_full": "View full persona",
       "persona_overview_kpi_trust": "Trust",
+      "persona_overview_kpi_trust_clamped": "Trust score was out of range and has been capped at 100%.",
       "persona_overview_kpi_budget": "Budget",
       "persona_overview_kpi_max_turns": "Max turns",
       "persona_overview_active_relative": "active {when}",

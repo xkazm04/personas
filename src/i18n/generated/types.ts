@@ -13434,6 +13434,7 @@ export type Translations = {
       persona_overview_open_short: string;
       persona_overview_view_full: string;
       persona_overview_kpi_trust: string;
+      persona_overview_kpi_trust_clamped: string;
       persona_overview_kpi_budget: string;
       persona_overview_kpi_max_turns: string;
       persona_overview_active_relative: string;

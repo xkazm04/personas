@@ -13560,7 +13560,8 @@
       "voice_pocket_upload_save": "Tambah suara",
       "voice_pocket_upload_title": "Tambahkan suara Anda",
       "voice_pocket_hf_gate_desc": "Mengelola suara kloning Anda sendiri memerlukan token akses Hugging Face di Credential Vault — token ini mengaitkan lisensi model kloning suara dengan akun Anda. Tambahkan kredensial Hugging Face, lalu kembali ke sini.",
-      "voice_pocket_hf_gate_title": "Akun Hugging Face diperlukan"
+      "voice_pocket_hf_gate_title": "Akun Hugging Face diperlukan",
+      "persona_overview_kpi_trust_clamped": "Skor kepercayaan berada di luar rentang dan telah dibatasi hingga 100%."
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",

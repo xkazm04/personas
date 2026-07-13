@@ -2127,7 +2127,8 @@
     "voice_pocket_upload_save": "ভয়েস যোগ করুন",
     "voice_pocket_upload_title": "আপনার ভয়েস যোগ করুন",
     "voice_pocket_hf_gate_desc": "নিজের ক্লোন করা ভয়েস পরিচালনা করতে ক্রেডেনশিয়াল ভল্টে একটি Hugging Face অ্যাক্সেস টোকেন প্রয়োজন — এটি ভয়েস-ক্লোনিং মডেলের লাইসেন্সকে আপনার অ্যাকাউন্টের সাথে সংযুক্ত করে। একটি Hugging Face ক্রেডেনশিয়াল যোগ করুন, তারপর এখানে ফিরে আসুন।",
-    "voice_pocket_hf_gate_title": "Hugging Face অ্যাকাউন্ট প্রয়োজন"
+    "voice_pocket_hf_gate_title": "Hugging Face অ্যাকাউন্ট প্রয়োজন",
+    "persona_overview_kpi_trust_clamped": "ট্রাস্ট স্কোর সীমার বাইরে ছিল এবং ১০০%-এ সীমাবদ্ধ করা হয়েছে।"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",
