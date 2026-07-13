@@ -1,10 +1,10 @@
-// KPI dashboard (P5 round 2) — a CHART-FIRST command center over ALL
-// projects' KPIs, built on the app's recharts stack (LazyChart wrapper).
-// Visual hierarchy: a needs-attention strip (off-track KPIs as destructive
-// chips), a summary stat row, then two charts — "Distance to target"
-// (horizontal pace-colored bars, one per KPI) and "Trend" (progress-vs-target
-// lines from the measurement series). Everything clicks through to the
-// detail drawer; prose lives THERE, not on the dashboard. Filter by project.
+// KPI dashboard — a CHART-FIRST command center over ALL projects' KPIs, built
+// on the app's recharts stack (LazyChart wrapper). Visual hierarchy: a summary
+// stat row, then the KpiSignalBoard ("Distance to target" grouped BY PROJECT,
+// with each project's off-track alerts injected at the head of its card), then
+// "Trend" (progress-vs-target lines from the measurement series). Everything
+// clicks through to the KPI detail modal; prose lives THERE, not on the
+// dashboard. Filter by project.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TrendingUp, type LucideIcon } from 'lucide-react';
 
@@ -16,20 +16,11 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { KPIS_GLYPH } from '@/features/shared/glyph/glyphs/kpisGlyph';
 import { StatCard } from '@/features/shared/components/display/StatCard';
 import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
-import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { paceDescriptor, kpiOffTrackReason, type PaceDescriptor } from './kpiMath';
 import { TRACK_COLOR } from './kpiMeta';
 import { AutopilotControl } from './AutopilotControl';
 import { distancePct, type DistanceGroup, type DistanceRow } from './kpiDistance';
-import { KpiSignalBoard, type SignalVariant } from './KpiSignalBoard';
-
-// TEMP prototype switcher — A/B grouping "Distance to target" by project with
-// the error alerts injected inside. Removed at consolidation.
-const SIGNAL_VARIANTS: SegmentedTab<SignalVariant>[] = [
-  { id: 'separate', label: 'Baseline' },
-  { id: 'dossier', label: 'Project dossier' },
-  { id: 'inline', label: 'Inline alerts' },
-];
+import { KpiSignalBoard } from './KpiSignalBoard';
 
 /** Normalize one measurement onto the same axis for the trend chart. */
 function normValue(kpi: DevKpi, v: number): number | null {
@@ -61,24 +52,8 @@ export function KPIDashboard({
   const projects = useSystemStore((s) => s.projects);
   const kpiTrends = useSystemStore((s) => s.kpiTrends);
   const fetchKpiTrends = useSystemStore((s) => s.fetchKpiTrends);
-  // Context map (active project) — resolves each KPI's context/group name so the
-  // Distance-to-target section can group by context (the retired "By context"
-  // view, folded in here). KPIs whose context isn't in the active project's map
-  // fall into "Ungrouped".
-  const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const contexts = useSystemStore((s) => s.contexts);
-  const contextGroups = useSystemStore((s) => s.contextGroups);
-  const fetchContexts = useSystemStore((s) => s.fetchContexts);
-  const fetchContextGroups = useSystemStore((s) => s.fetchContextGroups);
 
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
-  const [signalVariant, setSignalVariant] = useState<SignalVariant>('separate');
-
-  useEffect(() => {
-    if (!activeProjectId) return;
-    void fetchContexts(activeProjectId);
-    void fetchContextGroups(activeProjectId);
-  }, [activeProjectId, fetchContexts, fetchContextGroups]);
 
   const projectName = useMemo(() => {
     const m = new Map<string, string>();
@@ -109,18 +84,7 @@ export function KPIDashboard({
   const met = paced.filter((p) => p.d.track === 'met').length;
 
   // --- chart models -----------------------------------------------------
-  const contextName = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const c of contexts) m.set(c.id, c.name);
-    return m;
-  }, [contexts]);
-  const groupName = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const g of contextGroups) m.set(g.id, g.name);
-    return m;
-  }, [contextGroups]);
-
-  /** One distance row per KPI — the shared model behind every grouping. */
+  /** One distance row per KPI — the shared model behind the grouping. */
   const buildRow = useCallback(
     (kpi: DevKpi, d: PaceDescriptor): DistanceRow => ({
       id: kpi.id,
@@ -139,29 +103,8 @@ export function KPIDashboard({
     [projectName],
   );
 
-  // Distance-to-target rows grouped by context. Each group's rows are sorted by
-  // KPI name (asc); groups are named-context-first (alpha), Ungrouped last.
-  const distanceGroups = useMemo<DistanceGroup[]>(() => {
-    const groups = new Map<string, DistanceGroup>();
-    for (const { kpi, d } of paced) {
-      const cn = kpi.context_id ? contextName.get(kpi.context_id) : undefined;
-      const gn = !cn && kpi.context_group_id ? groupName.get(kpi.context_group_id) : undefined;
-      let key: string, label: string, order: number;
-      if (cn) { key = `ctx:${kpi.context_id}`; label = cn; order = 0; }
-      else if (gn) { key = `grp:${kpi.context_group_id}`; label = gn; order = 0; }
-      else { key = 'ungrouped'; label = t.kpis.rollup_ungrouped; order = 1; }
-      let entry = groups.get(key);
-      if (!entry) { entry = { key, label, order, rows: [] }; groups.set(key, entry); }
-      entry.rows.push(buildRow(kpi, d));
-    }
-    const arr = [...groups.values()];
-    for (const e of arr) e.rows.sort((a, b) => a.name.localeCompare(b.name));
-    arr.sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
-    return arr;
-  }, [paced, contextName, groupName, buildRow, t]);
-
-  // The enriched grouping: distance rows grouped BY PROJECT (name asc), so the
-  // off-track alerts can be injected inside each project's own group.
+  // Distance rows grouped BY PROJECT (name asc), so the off-track alerts can be
+  // injected inside each project's own card.
   const projectGroups = useMemo<DistanceGroup[]>(() => {
     const groups = new Map<string, DistanceGroup>();
     for (const { kpi, d } of paced) {
@@ -258,29 +201,9 @@ export function KPIDashboard({
         <StatCard label={t.kpis.stat_met} value={met} tone={met ? 'success' : 'neutral'} />
       </div>
 
-      {/* TEMP prototype switcher (removed at consolidation) */}
-      <div className="flex items-center gap-2">
-        <span className="typo-caption text-foreground/60">Distance grouping:</span>
-        <SegmentedTabs
-          tabs={SIGNAL_VARIANTS}
-          activeTab={signalVariant}
-          onTabChange={setSignalVariant}
-          variant="segment"
-          size="sm"
-          fullWidth={false}
-          ariaLabel="Signal board prototype variant"
-        />
-      </div>
-
-      {/* Needs attention + Distance to target — combined per the active variant. */}
-      <KpiSignalBoard
-        variant={signalVariant}
-        offTrack={offTrack.map((o) => o.kpi)}
-        distanceGroups={distanceGroups}
-        projectGroups={projectGroups}
-        projectName={projectName}
-        onOpen={onOpen}
-      />
+      {/* Distance to target, grouped by project, with each project's off-track
+          alerts injected at the head of its card. */}
+      <KpiSignalBoard projectGroups={projectGroups} onOpen={onOpen} />
 
       {/* Trend — progress vs target over time */}
       {trendModel && (
