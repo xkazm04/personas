@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import { MessageSquare, Sparkles, Compass } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
-import { memberColor } from '../sub_redRoom/useRedRoomFeed';
+import { memberColor } from '@/lib/channel/eventModel';
 
 /**
  * Minimal member shape the channel surfaces need (presence avatars +

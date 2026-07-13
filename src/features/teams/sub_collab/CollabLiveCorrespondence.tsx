@@ -6,7 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex, PersonaChip, useAssignmentSteps } from '../sub_teamWorkspace/teamStudio/boardShared';
-import { eventFamily } from '../sub_redRoom/useRedRoomFeed';
+import { eventFamily } from '@/lib/channel/eventModel';
 import { payloadSummary } from './payloadView';
 import { useTeamChannel, parseDeliveries, CHANNEL_DRAFT_PREFIX } from './useTeamChannel';
 import {

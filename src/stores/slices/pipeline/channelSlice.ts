@@ -178,10 +178,13 @@ export const createChannelSlice: StateCreator<PipelineStore, [], [], ChannelSlic
 
   loadOlderChannel: async (teamId) => {
     const state = get().channels[teamId];
-    const cursor = state?.items[state.items.length - 1]?.at;
-    if (!cursor || state?.exhausted) return;
+    const oldest = state?.items[state.items.length - 1];
+    if (!oldest || state?.exhausted) return;
     try {
-      const older = await listTeamChannel(teamId, CHANNEL_PAGE, cursor);
+      // COMPOSITE cursor (at, id) — `at` is only second-resolution, so paging on
+      // the timestamp alone silently dropped rows that shared the boundary
+      // second with the last item of the previous page.
+      const older = await listTeamChannel(teamId, CHANNEL_PAGE, { at: oldest.at, id: oldest.id });
       set((s) => {
         const prev = s.channels[teamId];
         if (!prev) return {};

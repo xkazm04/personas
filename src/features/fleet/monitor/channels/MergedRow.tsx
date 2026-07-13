@@ -3,7 +3,7 @@ import { ExternalLink, AlertCircle, Pin, User } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
-import { eventFamily } from '@/features/teams/sub_redRoom/useRedRoomFeed';
+import { eventFamily } from '@/lib/channel/eventModel';
 import { payloadSummary } from '@/features/teams/sub_collab/payloadView';
 import { STEP_VERB, STEP_TONE, FAMILY_TEXT, AUTHOR_KIND_META, authorName, itemAccent } from '@/features/teams/sub_collab/collabRender';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
