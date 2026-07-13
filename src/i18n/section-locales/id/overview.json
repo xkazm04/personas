@@ -1863,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "Tanggal mulai",
     "end_date": "Tanggal selesai"
+  },
+  "healing_effectiveness": {
+    "attempted": "percobaan",
+    "confirmed": "dikonfirmasi",
+    "loading": "Memuat statistik pemulihan…",
+    "no_data": "Belum ada aktivitas perbaikan otomatis",
+    "recent_activity": "Aktivitas terbaru",
+    "reverted": "dikembalikan",
+    "success_rate": "tingkat keberhasilan",
+    "title": "Pemulihan otomatis",
+    "window_label": "Terakhir"
   }
 }

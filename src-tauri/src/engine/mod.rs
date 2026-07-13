@@ -4021,6 +4021,25 @@ fn spawn_delayed_retry(
                         let _ = healing_repo::revert_auto_fix_pending(&pool, &hi.id);
                         ("auto_fix_reverted", "open")
                     };
+                    // Direction 1: durably record the terminal auto-fix outcome
+                    // so per-strategy effectiveness (confirm vs revert rates) is
+                    // aggregatable. A reverted issue drops back to `open` and
+                    // loses its `auto_fixed` flag, so without this ledger row the
+                    // revert is invisible to any after-the-fact query. `detail`
+                    // carries the strategy (healing category).
+                    healing_repo::create_audit_entry(
+                        &pool,
+                        Some(&hi.persona_id),
+                        hi.execution_id.as_deref(),
+                        transition,
+                        healing_repo::EFFECTIVENESS_SUBSYSTEM,
+                        if result.success {
+                            "Auto-fix confirmed — retry succeeded"
+                        } else {
+                            "Auto-fix reverted — retry failed"
+                        },
+                        Some(hi.category.as_str()),
+                    );
                     let event_payload = types::HealingIssueUpdatedEvent {
                         issue_id: hi.id.clone(),
                         persona_id: hi.persona_id.clone(),

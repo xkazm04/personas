@@ -7246,6 +7246,17 @@
       "auto_fixed_this_week": "auto-fixed this week",
       "issues_in_7d": "issues in 7d"
     },
+    "healing_effectiveness": {
+      "title": "Self-healing",
+      "window_label": "Last",
+      "loading": "Loading healing stats…",
+      "no_data": "No auto-fix activity yet",
+      "success_rate": "success rate",
+      "confirmed": "confirmed",
+      "reverted": "reverted",
+      "attempted": "attempted",
+      "recent_activity": "Recent activity"
+    },
     "fleet_optimization": {
       "title": "Fleet optimization",
       "open_lab": "Open Lab",

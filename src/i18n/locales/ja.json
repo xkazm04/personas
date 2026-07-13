@@ -7365,6 +7365,17 @@
     "day_range_picker": {
       "start_date": "開始日",
       "end_date": "終了日"
+    },
+    "healing_effectiveness": {
+      "attempted": "試行",
+      "confirmed": "確定",
+      "loading": "修復統計を読み込み中…",
+      "no_data": "自動修復の活動はまだありません",
+      "recent_activity": "最近のアクティビティ",
+      "reverted": "取り消し",
+      "success_rate": "成功率",
+      "title": "自己修復",
+      "window_label": "直近"
     }
   },
   "matrix_v3": {

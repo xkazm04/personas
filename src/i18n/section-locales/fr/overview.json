@@ -1863,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "Date de début",
     "end_date": "Date de fin"
+  },
+  "healing_effectiveness": {
+    "attempted": "tentatives",
+    "confirmed": "confirmées",
+    "loading": "Chargement des statistiques…",
+    "no_data": "Aucune réparation automatique pour l'instant",
+    "recent_activity": "Activité récente",
+    "reverted": "annulées",
+    "success_rate": "taux de réussite",
+    "title": "Auto-réparation",
+    "window_label": "Derniers"
   }
 }

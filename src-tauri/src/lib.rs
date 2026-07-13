@@ -1903,6 +1903,7 @@ pub fn run() {
             commands::execution::healing::trigger_ai_healing,
             commands::execution::healing::get_healing_timeline,
             commands::execution::healing::list_healing_audit_log,
+            commands::execution::healing::get_healing_effectiveness,
             // Execution -- Knowledge Graph
             commands::execution::knowledge::list_execution_knowledge,
             commands::execution::knowledge::get_knowledge_injection,

@@ -7365,6 +7365,17 @@
     "day_range_picker": {
       "start_date": "Дата начала",
       "end_date": "Дата окончания"
+    },
+    "healing_effectiveness": {
+      "attempted": "попыток",
+      "confirmed": "подтверждено",
+      "loading": "Загрузка статистики…",
+      "no_data": "Пока нет авто-исправлений",
+      "recent_activity": "Недавняя активность",
+      "reverted": "отменено",
+      "success_rate": "доля успеха",
+      "title": "Самовосстановление",
+      "window_label": "Последние"
     }
   },
   "matrix_v3": {

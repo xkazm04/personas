@@ -7252,6 +7252,17 @@ export type Translations = {
       auto_fixed_this_week: string;
       issues_in_7d: string;
     };
+    healing_effectiveness: {
+      title: string;
+      window_label: string;
+      loading: string;
+      no_data: string;
+      success_rate: string;
+      confirmed: string;
+      reverted: string;
+      attempted: string;
+      recent_activity: string;
+    };
     fleet_optimization: {
       title: string;
       open_lab: string;
@@ -11540,6 +11551,8 @@ export type Translations = {
       publish_failed: string;
       budget_exceeded: string;
       breadth_exceeded: string;
+      healing_abandoned: string;
+      healing_capped: string;
     };
     error_category: {
       rate_limit: string;

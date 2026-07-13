@@ -7365,6 +7365,17 @@
     "day_range_picker": {
       "start_date": "تاريخ البدء",
       "end_date": "تاريخ الانتهاء"
+    },
+    "healing_effectiveness": {
+      "attempted": "محاولات",
+      "confirmed": "مؤكَّدة",
+      "loading": "جارٍ تحميل إحصاءات الإصلاح…",
+      "no_data": "لا يوجد نشاط إصلاح تلقائي بعد",
+      "recent_activity": "النشاط الأخير",
+      "reverted": "معكوسة",
+      "success_rate": "معدل النجاح",
+      "title": "الإصلاح الذاتي",
+      "window_label": "آخر"
     }
   },
   "matrix_v3": {

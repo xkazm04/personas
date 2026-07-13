@@ -49,3 +49,14 @@ export type { HealingAuditEntry } from "@/lib/bindings/HealingAuditEntry";
 
 export const listHealingAuditLog = (personaId?: string, limit?: number) =>
   invoke<HealingAuditEntry[]>("list_healing_audit_log", { personaId, limit });
+
+// ============================================================================
+// Healing Effectiveness Ledger
+// ============================================================================
+
+import type { HealingEffectivenessReport } from "@/lib/bindings/HealingEffectivenessReport";
+export type { HealingEffectivenessReport } from "@/lib/bindings/HealingEffectivenessReport";
+export type { HealingStrategyStat } from "@/lib/bindings/HealingStrategyStat";
+
+export const getHealingEffectiveness = (windowDays?: number) =>
+  invoke<HealingEffectivenessReport>("get_healing_effectiveness", { windowDays });

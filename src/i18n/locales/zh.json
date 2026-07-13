@@ -7365,6 +7365,17 @@
     "day_range_picker": {
       "start_date": "开始日期",
       "end_date": "结束日期"
+    },
+    "healing_effectiveness": {
+      "attempted": "次尝试",
+      "confirmed": "已确认",
+      "loading": "正在加载修复统计…",
+      "no_data": "暂无自动修复活动",
+      "recent_activity": "近期活动",
+      "reverted": "已回退",
+      "success_rate": "成功率",
+      "title": "自我修复",
+      "window_label": "最近"
     }
   },
   "matrix_v3": {

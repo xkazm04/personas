@@ -1863,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "শুরুর তারিখ",
     "end_date": "শেষের তারিখ"
+  },
+  "healing_effectiveness": {
+    "attempted": "প্রচেষ্টা",
+    "confirmed": "নিশ্চিত",
+    "loading": "নিরাময় পরিসংখ্যান লোড হচ্ছে…",
+    "no_data": "এখনও কোনো অটো-ফিক্স কার্যকলাপ নেই",
+    "recent_activity": "সাম্প্রতিক কার্যকলাপ",
+    "reverted": "প্রত্যাবর্তিত",
+    "success_rate": "সাফল্যের হার",
+    "title": "স্ব-নিরাময়",
+    "window_label": "সর্বশেষ"
   }
 }

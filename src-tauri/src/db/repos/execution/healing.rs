@@ -1,9 +1,68 @@
 use rusqlite::params;
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::db::models::{HealingAuditEntry, HealingKnowledge, PersonaHealingIssue};
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
+
+/// Subsystem tag stamped on the `healing_audit_log` rows that record a
+/// terminal auto-fix outcome (`auto_fix_confirmed` / `auto_fix_reverted`). The
+/// effectiveness aggregate filters on this so it never miscounts unrelated
+/// audit events (stale-pending sweeps, ai_heal_* diagnostics, …).
+pub const EFFECTIVENESS_SUBSYSTEM: &str = "healing_effectiveness";
+/// Audit `event_type` for a confirmed (retry succeeded) auto-fix.
+pub const EVENT_AUTO_FIX_CONFIRMED: &str = "auto_fix_confirmed";
+/// Audit `event_type` for a reverted (retry failed) auto-fix.
+pub const EVENT_AUTO_FIX_REVERTED: &str = "auto_fix_reverted";
+
+/// Per-strategy (healing issue `category`) effectiveness over a window.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct HealingStrategyStat {
+    /// The healing issue category this row aggregates (e.g. `config`,
+    /// `timeout`, `auto_heal`). Resolve to a label via
+    /// `status_tokens.healing_category` on the frontend.
+    pub category: String,
+    /// Auto-fix attempts that reached a terminal outcome in the window
+    /// (`confirmed + reverted`).
+    #[ts(type = "number")]
+    pub attempted: i64,
+    /// Attempts whose retry succeeded (issue moved to `resolved`).
+    #[ts(type = "number")]
+    pub confirmed: i64,
+    /// Attempts whose retry failed (issue reverted to `open`).
+    #[ts(type = "number")]
+    pub reverted: i64,
+    /// `confirmed / attempted`, in `0.0..=1.0`. `0.0` when `attempted == 0`.
+    pub success_rate: f64,
+}
+
+/// Windowed self-healing effectiveness ledger: how often auto-fixes actually
+/// held vs. reverted, overall and per strategy.
+///
+/// Derived entirely from the `healing_audit_log` terminal-outcome rows written
+/// when a healing retry confirms or reverts a pending fix — so revert rates
+/// (previously unknowable, since a reverted issue drops back to `open` and
+/// loses its `auto_fixed` flag) become first-class.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct HealingEffectivenessReport {
+    /// Trailing window in days the aggregate covers.
+    #[ts(type = "number")]
+    pub window_days: i64,
+    #[ts(type = "number")]
+    pub attempted: i64,
+    #[ts(type = "number")]
+    pub confirmed: i64,
+    #[ts(type = "number")]
+    pub reverted: i64,
+    /// Overall `confirmed / attempted`, in `0.0..=1.0`.
+    pub success_rate: f64,
+    /// Per-category breakdown, busiest first.
+    pub by_category: Vec<HealingStrategyStat>,
+}
 
 row_mapper!(row_to_healing_issue -> PersonaHealingIssue {
     id, persona_id, execution_id, title, description,
@@ -640,6 +699,88 @@ pub fn list_audit_log(
     })
 }
 
+/// Aggregate the self-healing effectiveness ledger over a trailing window.
+///
+/// Reads the terminal-outcome rows (`auto_fix_confirmed` / `auto_fix_reverted`,
+/// subsystem [`EFFECTIVENESS_SUBSYSTEM`]) written by the engine when a healing
+/// retry resolves, grouping by the healing issue `category` stored in `detail`.
+/// `window_days` defaults to 30 when `None`; values `<= 0` are clamped to 1.
+pub fn get_healing_effectiveness(
+    pool: &DbPool,
+    window_days: Option<i64>,
+) -> Result<HealingEffectivenessReport, AppError> {
+    timed_query!(
+        "healing_audit",
+        "healing_audit::get_healing_effectiveness",
+        {
+            let window_days = window_days.unwrap_or(30).max(1);
+            let cutoff = (chrono::Utc::now() - chrono::Duration::days(window_days)).to_rfc3339();
+
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT COALESCE(NULLIF(detail, ''), 'unknown') AS strategy,
+                        SUM(CASE WHEN event_type = ?1 THEN 1 ELSE 0 END) AS confirmed,
+                        SUM(CASE WHEN event_type = ?2 THEN 1 ELSE 0 END) AS reverted
+                 FROM healing_audit_log
+                 WHERE subsystem = ?3
+                   AND event_type IN (?1, ?2)
+                   AND created_at >= ?4
+                 GROUP BY strategy
+                 ORDER BY (confirmed + reverted) DESC, strategy ASC",
+            )?;
+            let rows = stmt.query_map(
+                params![
+                    EVENT_AUTO_FIX_CONFIRMED,
+                    EVENT_AUTO_FIX_REVERTED,
+                    EFFECTIVENESS_SUBSYSTEM,
+                    cutoff,
+                ],
+                |row| {
+                    let category: String = row.get("strategy")?;
+                    let confirmed: i64 = row.get("confirmed")?;
+                    let reverted: i64 = row.get("reverted")?;
+                    Ok((category, confirmed, reverted))
+                },
+            )?;
+
+            let mut by_category = Vec::new();
+            let (mut t_confirmed, mut t_reverted) = (0i64, 0i64);
+            for row in rows {
+                let (category, confirmed, reverted) = row.map_err(AppError::Database)?;
+                let attempted = confirmed + reverted;
+                t_confirmed += confirmed;
+                t_reverted += reverted;
+                by_category.push(HealingStrategyStat {
+                    category,
+                    attempted,
+                    confirmed,
+                    reverted,
+                    success_rate: rate(confirmed, attempted),
+                });
+            }
+
+            let attempted = t_confirmed + t_reverted;
+            Ok(HealingEffectivenessReport {
+                window_days,
+                attempted,
+                confirmed: t_confirmed,
+                reverted: t_reverted,
+                success_rate: rate(t_confirmed, attempted),
+                by_category,
+            })
+        }
+    )
+}
+
+/// `confirmed / attempted` guarded against divide-by-zero.
+fn rate(confirmed: i64, attempted: i64) -> f64 {
+    if attempted > 0 {
+        confirmed as f64 / attempted as f64
+    } else {
+        0.0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1123,5 +1264,128 @@ mod tests {
             revert_all_stale_auto_fix_pending(&pool, AUTO_FIX_PENDING_TTL_MINUTES),
             0,
         );
+    }
+
+    fn mk_effect_persona(pool: &DbPool, name: &str) -> String {
+        personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    /// Direction 1: the effectiveness ledger counts confirm vs revert per
+    /// category, computes rates, respects the window, and ignores audit rows
+    /// from other subsystems.
+    #[test]
+    fn get_healing_effectiveness_aggregates_confirm_and_revert() {
+        let pool = init_test_db().unwrap();
+        let pid = mk_effect_persona(&pool, "Effectiveness");
+
+        let confirm = |cat: &str| {
+            create_audit_entry(
+                &pool,
+                Some(&pid),
+                None,
+                EVENT_AUTO_FIX_CONFIRMED,
+                EFFECTIVENESS_SUBSYSTEM,
+                "Auto-fix confirmed — retry succeeded",
+                Some(cat),
+            );
+        };
+        let revert = |cat: &str| {
+            create_audit_entry(
+                &pool,
+                Some(&pid),
+                None,
+                EVENT_AUTO_FIX_REVERTED,
+                EFFECTIVENESS_SUBSYSTEM,
+                "Auto-fix reverted — retry failed",
+                Some(cat),
+            );
+        };
+
+        // config: 3 confirmed, 1 reverted -> 0.75. timeout: 1 confirmed -> 1.0.
+        confirm("config");
+        confirm("config");
+        confirm("config");
+        revert("config");
+        confirm("timeout");
+
+        // Noise: a non-effectiveness audit row must NOT be counted.
+        create_audit_entry(
+            &pool,
+            Some(&pid),
+            None,
+            "ai_heal_parse_failed",
+            "ai_healing",
+            "unrelated",
+            Some("config"),
+        );
+
+        // An out-of-window confirmed row (backdated 60 days) must be excluded.
+        {
+            let conn = pool.get().unwrap();
+            let old = (chrono::Utc::now() - chrono::Duration::days(60)).to_rfc3339();
+            conn.execute(
+                "INSERT INTO healing_audit_log (id, persona_id, execution_id, event_type, subsystem, message, detail, created_at)
+                 VALUES (?1, ?2, NULL, ?3, ?4, 'old', 'config', ?5)",
+                params![uuid::Uuid::new_v4().to_string(), pid, EVENT_AUTO_FIX_CONFIRMED, EFFECTIVENESS_SUBSYSTEM, old],
+            )
+            .unwrap();
+        }
+
+        let report = get_healing_effectiveness(&pool, Some(30)).unwrap();
+        assert_eq!(report.window_days, 30);
+        assert_eq!(report.attempted, 5, "5 in-window terminal outcomes");
+        assert_eq!(report.confirmed, 4);
+        assert_eq!(report.reverted, 1);
+        assert!((report.success_rate - 0.8).abs() < 1e-9);
+
+        // Busiest category first.
+        assert_eq!(report.by_category.len(), 2);
+        let config = &report.by_category[0];
+        assert_eq!(config.category, "config");
+        assert_eq!(config.attempted, 4);
+        assert_eq!(config.confirmed, 3);
+        assert_eq!(config.reverted, 1);
+        assert!((config.success_rate - 0.75).abs() < 1e-9);
+
+        let timeout = &report.by_category[1];
+        assert_eq!(timeout.category, "timeout");
+        assert_eq!(timeout.confirmed, 1);
+        assert_eq!(timeout.reverted, 0);
+        assert!((timeout.success_rate - 1.0).abs() < 1e-9);
+
+        // A wide window includes the backdated row; a narrow one excludes it.
+        let wide = get_healing_effectiveness(&pool, Some(365)).unwrap();
+        assert_eq!(wide.confirmed, 5, "365-day window includes the 60-day-old row");
+    }
+
+    #[test]
+    fn get_healing_effectiveness_empty_is_zeroed() {
+        let pool = init_test_db().unwrap();
+        let report = get_healing_effectiveness(&pool, None).unwrap();
+        assert_eq!(report.window_days, 30);
+        assert_eq!(report.attempted, 0);
+        assert_eq!(report.success_rate, 0.0);
+        assert!(report.by_category.is_empty());
     }
 }

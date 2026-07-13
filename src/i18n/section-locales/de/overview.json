@@ -1863,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "Startdatum",
     "end_date": "Enddatum"
+  },
+  "healing_effectiveness": {
+    "attempted": "Versuche",
+    "confirmed": "bestätigt",
+    "loading": "Heilungsstatistik wird geladen…",
+    "no_data": "Noch keine Auto-Fix-Aktivität",
+    "recent_activity": "Letzte Aktivität",
+    "reverted": "zurückgesetzt",
+    "success_rate": "Erfolgsrate",
+    "title": "Selbstheilung",
+    "window_label": "Letzte"
   }
 }

@@ -1863,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "Ngày bắt đầu",
     "end_date": "Ngày kết thúc"
+  },
+  "healing_effectiveness": {
+    "attempted": "lần thử",
+    "confirmed": "đã xác nhận",
+    "loading": "Đang tải thống kê sửa lỗi…",
+    "no_data": "Chưa có hoạt động tự sửa",
+    "recent_activity": "Hoạt động gần đây",
+    "reverted": "đã hoàn tác",
+    "success_rate": "tỷ lệ thành công",
+    "title": "Tự sửa lỗi",
+    "window_label": "Gần nhất"
   }
 }

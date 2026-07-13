@@ -1863,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "시작일",
     "end_date": "종료일"
+  },
+  "healing_effectiveness": {
+    "attempted": "시도",
+    "confirmed": "확정",
+    "loading": "치유 통계 로드 중…",
+    "no_data": "아직 자동 수정 활동이 없습니다",
+    "recent_activity": "최근 활동",
+    "reverted": "되돌림",
+    "success_rate": "성공률",
+    "title": "자가 치유",
+    "window_label": "최근"
   }
 }

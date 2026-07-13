@@ -1863,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "शुरू होने की तारीख",
     "end_date": "समाप्ति तिथि"
+  },
+  "healing_effectiveness": {
+    "attempted": "प्रयास",
+    "confirmed": "पुष्ट",
+    "loading": "हीलिंग आँकड़े लोड हो रहे हैं…",
+    "no_data": "अभी तक कोई ऑटो-फिक्स गतिविधि नहीं",
+    "recent_activity": "हाल की गतिविधि",
+    "reverted": "वापस लिए गए",
+    "success_rate": "सफलता दर",
+    "title": "स्व-सुधार",
+    "window_label": "पिछले"
   }
 }

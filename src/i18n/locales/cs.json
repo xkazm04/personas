@@ -7365,6 +7365,17 @@
     "day_range_picker": {
       "start_date": "Datum začátku",
       "end_date": "Datum konce"
+    },
+    "healing_effectiveness": {
+      "attempted": "pokusů",
+      "confirmed": "potvrzeno",
+      "loading": "Načítání statistik oprav…",
+      "no_data": "Zatím žádná automatická oprava",
+      "recent_activity": "Nedávná aktivita",
+      "reverted": "vráceno",
+      "success_rate": "míra úspěšnosti",
+      "title": "Samoopravení",
+      "window_label": "Posledních"
     }
   },
   "matrix_v3": {
