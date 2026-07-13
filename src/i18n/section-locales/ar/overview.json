@@ -523,7 +523,9 @@
     "source": "المصدر",
     "processed": "تمت المعالجة",
     "event_data": "بيانات الحدث",
-    "error": "خطأ"
+    "error": "خطأ",
+    "skipped_stat_label": "{skipped} متخطاة",
+    "skipped_stat_tooltip": "{skipped} من أصل {total} حدثًا خلال آخر 7 أيام لم يكن لها أي مشترك فتم تخطيها ({rate}). المعدل المرتفع يشير إلى مشغّل لا يستمع إليه أحد."
   },
   "health": {
     "title": "صحة الوكلاء",

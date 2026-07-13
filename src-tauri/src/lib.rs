@@ -2252,6 +2252,7 @@ pub fn run() {
             commands::communication::events::search_events,
             commands::communication::events::publish_event,
             commands::communication::events::list_known_event_types,
+            commands::communication::events::get_event_skipped_stats,
             commands::communication::events::list_subscriptions,
             commands::communication::events::list_all_subscriptions,
             commands::communication::events::create_subscription,

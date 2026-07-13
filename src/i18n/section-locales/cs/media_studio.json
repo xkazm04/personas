@@ -153,10 +153,5 @@
   "beat_sidebar_collapse": "Sbalit seznam beatů",
   "beat_sidebar_expand": "Rozbalte seznam beatů",
   "beat_sidebar_empty": "Zatím žádné údery. Chcete-li označit milníky na časové ose, přidejte rytmus textu.",
-  "beat_sidebar_untitled": "(bez názvu)",
-  "add_title": "Přidat titulek",
-  "layer_title": "Titulky",
-  "title_text": "Text titulku",
-  "title_text_placeholder": "Napište titulek…",
-  "title_untitled": "(prázdný titulek)"
+  "beat_sidebar_untitled": "(bez názvu)"
 }

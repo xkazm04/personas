@@ -9,6 +9,7 @@ import type { UpdateEventSubscriptionInput } from "@/lib/bindings/UpdateEventSub
 import type { DeadLetterConfig } from "@/lib/bindings/DeadLetterConfig";
 import type { BulkDeadLetterOutcome } from "@/lib/bindings/BulkDeadLetterOutcome";
 import type { EventVocabularyEntry } from "@/lib/bindings/EventVocabularyEntry";
+import type { EventSkippedStats } from "@/lib/bindings/EventSkippedStats";
 
 // ============================================================================
 // Events
@@ -59,6 +60,14 @@ export const seedMockEvent = () =>
  */
 export const listKnownEventTypes = () =>
   invoke<EventVocabularyEntry[]>("list_known_event_types");
+
+/**
+ * Aggregated no-subscriber ("skipped") signal over the last `sinceDays` days
+ * (defaults to 7 server-side). A high skipped rate flags a dead / misrouted
+ * trigger contract nothing is listening to.
+ */
+export const getEventSkippedStats = (sinceDays?: number) =>
+  invoke<EventSkippedStats>("get_event_skipped_stats", { sinceDays });
 
 // ============================================================================
 // Dead Letter Queue

@@ -6202,6 +6202,8 @@ export type Translations = {
       processed: string;
       event_data: string;
       error: string;
+      skipped_stat_label: string;
+      skipped_stat_tooltip: string;
     };
     health: {
       title: string;
@@ -10723,6 +10725,14 @@ export type Translations = {
     empty_bundle_suggestion: string;
     invalid_bundle_message: string;
     invalid_bundle_suggestion: string;
+    generic_message: string;
+    generic_suggestion: string;
+    severity_critical: string;
+    severity_high: string;
+    severity_medium: string;
+    severity_low: string;
+    recovered_title: string;
+    recovered_illustration_aria: string;
     interval_too_fast_message: string;
     interval_too_fast_suggestion: string;
     interval_not_number_message: string;
@@ -10777,14 +10787,6 @@ export type Translations = {
     authorization_required_suggestion: string;
     external_service_message: string;
     external_service_suggestion: string;
-    generic_message: string;
-    generic_suggestion: string;
-    severity_critical: string;
-    severity_high: string;
-    severity_medium: string;
-    severity_low: string;
-    recovered_title: string;
-    recovered_illustration_aria: string;
   };
   empty_states: {
     credentials_title: string;
@@ -14552,6 +14554,11 @@ export type Translations = {
     layer_audio: string;
     add_text_beat: string;
     add_image: string;
+    layer_title: string;
+    add_title: string;
+    title_untitled: string;
+    title_text: string;
+    title_text_placeholder: string;
     add_video: string;
     add_audio: string;
     empty_lane: string;

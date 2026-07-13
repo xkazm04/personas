@@ -153,10 +153,5 @@
   "beat_sidebar_collapse": "Свернуть список битов",
   "beat_sidebar_expand": "Развернуть список битов",
   "beat_sidebar_empty": "Битов пока нет. Добавьте текстовый ритм, чтобы отмечать вехи на временной шкале.",
-  "beat_sidebar_untitled": "(без названия)",
-  "add_title": "Добавить титр",
-  "layer_title": "Титры",
-  "title_text": "Текст титра",
-  "title_text_placeholder": "Введите текст титра…",
-  "title_untitled": "(пустой титр)"
+  "beat_sidebar_untitled": "(без названия)"
 }

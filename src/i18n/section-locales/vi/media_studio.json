@@ -153,10 +153,5 @@
   "beat_sidebar_collapse": "Thu gọn danh sách nhịp",
   "beat_sidebar_expand": "Mở rộng danh sách nhịp",
   "beat_sidebar_empty": "Chưa có nhịp nào. Thêm nhịp Văn bản để đánh dấu các mốc quan trọng trên dòng thời gian.",
-  "beat_sidebar_untitled": "(không có tiêu đề)",
-  "add_title": "Thêm tiêu đề",
-  "layer_title": "Tiêu đề",
-  "title_text": "Nội dung tiêu đề",
-  "title_text_placeholder": "Nhập tiêu đề…",
-  "title_untitled": "(tiêu đề trống)"
+  "beat_sidebar_untitled": "(không có tiêu đề)"
 }

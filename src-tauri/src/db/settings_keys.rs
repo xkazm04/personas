@@ -75,6 +75,15 @@ pub const EVENT_RETENTION_DAYS: &str = "event_retention_days";
 /// Default retention in days for [`EVENT_RETENTION_DAYS`].
 pub const EVENT_RETENTION_DAYS_DEFAULT: i64 = 30;
 
+/// Hard ceiling on the number of *terminal* (completed/skipped/failed/discarded)
+/// events kept, independent of age. Bounds intra-window growth: a chatty source
+/// can emit far more than `EVENT_RETENTION_DAYS` worth of events inside a single
+/// day, so age-only cleanup lets the table balloon between daily sweeps. DLQ
+/// (`dead_letter`) and in-flight (`pending`/`processing`) rows are always exempt.
+pub const EVENT_RETENTION_MAX_COUNT: &str = "event_retention_max_count";
+/// Default terminal-event ceiling for [`EVENT_RETENTION_MAX_COUNT`].
+pub const EVENT_RETENTION_MAX_COUNT_DEFAULT: i64 = 10_000;
+
 /// Execution retention period in days. Executions older than this are purged
 /// by the background cleanup task.
 pub const EXECUTION_RETENTION_DAYS: &str = "execution_retention_days";
@@ -548,6 +557,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLI_ENGINE,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
+    EVENT_RETENTION_MAX_COUNT,
     EXECUTION_RETENTION_DAYS,
     SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR,
     GLOBAL_MODEL_PROFILE,
@@ -692,6 +702,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 format!("value for '{key}' must be a non-negative integer (days), got {value:?}")
             })
         }
+        EVENT_RETENTION_MAX_COUNT => match value.parse::<u32>() {
+            Ok(n) if n > 0 => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be a positive integer (max events kept), got {value:?}"
+            )),
+        },
         SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR => match value.parse::<u32>() {
             Ok(n) if n > 0 => Ok(()),
             _ => Err(format!(

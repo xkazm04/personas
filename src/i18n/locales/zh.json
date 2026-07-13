@@ -5965,7 +5965,9 @@
       "source": "来源",
       "processed": "已处理",
       "event_data": "事件数据",
-      "error": "错误"
+      "error": "错误",
+      "skipped_stat_label": "{skipped} 条被跳过",
+      "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。"
     },
     "health": {
       "title": "代理健康状况",

@@ -4,7 +4,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
-import { searchEvents, listKnownEventTypes } from '@/api/overview/events';
+import { searchEvents, listKnownEventTypes, getEventSkippedStats } from '@/api/overview/events';
+import type { EventSkippedStats } from '@/lib/bindings/EventSkippedStats';
 import { listSavedViewsByType, createSavedView, deleteSavedView } from '@/api/overview/savedViews';
 import type { SavedView } from '@/lib/bindings/SavedView';
 import type { EventFilterInput } from '@/lib/bindings/EventFilterInput';
@@ -64,9 +65,10 @@ export function useEventLog() {
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
 
-  // Known event-type vocabulary (registry). Best-effort: the type filter
-  // still works from loaded rows if the registry fetch fails.
+  // Known event-type vocabulary (registry) + skipped-rate stats. Both are
+  // best-effort: the type filter still works from loaded rows if these fail.
   const [registryTypes, setRegistryTypes] = useState<string[]>([]);
+  const [skippedStats, setSkippedStats] = useState<EventSkippedStats | null>(null);
 
   // Determine if we're in server-search mode
   const isServerSearch = searchText.trim().length > 0 || (
@@ -95,11 +97,15 @@ export function useEventLog() {
   }, []);
 
   // Load the known-vocabulary registry (curated seed ∪ observed types) so the
-  // type filter offers every known type, not only those in loaded rows.
+  // type filter offers every known type, not only those in loaded rows. And the
+  // skipped-rate stats for the header dead-trigger signal.
   useEffect(() => {
     listKnownEventTypes()
       .then((entries) => setRegistryTypes(entries.map((e) => e.eventType)))
       .catch((err) => logger.warn('Failed to load event vocabulary', { error: err }));
+    getEventSkippedStats()
+      .then(setSkippedStats)
+      .catch((err) => logger.warn('Failed to load skipped stats', { error: err }));
   }, []);
 
   const handleBusEvent = useCallback((evt: PersonaEvent) => {
@@ -373,7 +379,7 @@ export function useEventLog() {
   };
 
   return {
-    recentEvents, pendingEventCount, personas, availableTypes,
+    recentEvents, pendingEventCount, personas, availableTypes, skippedStats,
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
     sortDirection, toggleSortDirection,
     selectedEvent, setSelectedEvent,

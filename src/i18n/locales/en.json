@@ -6195,7 +6195,9 @@
       "source": "Source",
       "processed": "Processed",
       "event_data": "Event Data",
-      "error": "Error"
+      "error": "Error",
+      "skipped_stat_label": "{skipped} skipped",
+      "skipped_stat_tooltip": "{skipped} of {total} events in the last 7 days had no subscriber and were skipped ({rate}). A high rate signals a trigger nothing is listening to."
     },
     "health": {
       "title": "Agent Health",

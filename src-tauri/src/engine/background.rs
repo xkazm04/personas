@@ -2138,6 +2138,24 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         Err(e) => tracing::error!("Event cleanup error: {}", e),
     }
 
+    // Count cap: bound intra-window growth. Age-only cleanup lets a chatty
+    // source balloon the table between daily sweeps, so also trim the oldest
+    // terminal events beyond a hard ceiling. DLQ + in-flight rows are exempt.
+    let max_count = parse_retention_setting(
+        pool,
+        settings_keys::EVENT_RETENTION_MAX_COUNT,
+        settings_keys::EVENT_RETENTION_MAX_COUNT_DEFAULT,
+    );
+    match event_repo::enforce_count_cap(pool, max_count) {
+        Ok(n) if n > 0 => tracing::info!(
+            "Trimmed {} terminal event(s) over the count cap (max={})",
+            n,
+            max_count
+        ),
+        Ok(_) => {}
+        Err(e) => tracing::error!("Event count-cap cleanup error: {}", e),
+    }
+
     // DLQ auto-retry: re-queue failed events that haven't exhausted retries
     let max_retries = event_repo::DEFAULT_MAX_RETRIES;
     match event_repo::get_retry_eligible(pool, max_retries, 20) {

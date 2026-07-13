@@ -5965,7 +5965,9 @@
       "source": "Nguồn",
       "processed": "Đã xử lý",
       "event_data": "Dữ liệu sự kiện",
-      "error": "Lỗi"
+      "error": "Lỗi",
+      "skipped_stat_label": "{skipped} bị bỏ qua",
+      "skipped_stat_tooltip": "{skipped} trong số {total} sự kiện trong 7 ngày qua không có người đăng ký nào và đã bị bỏ qua ({rate}). Tỷ lệ cao cho thấy có một trình kích hoạt mà không ai lắng nghe."
     },
     "health": {
       "title": "Sức khỏe tác nhân",

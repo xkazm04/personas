@@ -523,7 +523,9 @@
     "source": "소스",
     "processed": "처리됨",
     "event_data": "이벤트 데이터",
-    "error": "오류"
+    "error": "오류",
+    "skipped_stat_label": "{skipped}건 건너뜀",
+    "skipped_stat_tooltip": "지난 7일 동안 {total}건 중 {skipped}건의 이벤트에 구독자가 없어 건너뛰었습니다({rate}). 비율이 높다면 아무도 수신하지 않는 트리거가 있다는 신호입니다."
   },
   "health": {
     "title": "에이전트 상태",

@@ -5965,7 +5965,9 @@
       "source": "Zdroj",
       "processed": "Zpracováno",
       "event_data": "Data události",
-      "error": "Chyba"
+      "error": "Chyba",
+      "skipped_stat_label": "{skipped} přeskočeno",
+      "skipped_stat_tooltip": "{skipped} z {total} událostí za posledních 7 dní nemělo žádného odběratele a bylo přeskočeno ({rate}). Vysoký podíl signalizuje trigger, kterému nikdo nenaslouchá."
     },
     "health": {
       "title": "Zdraví agentů",

@@ -102,6 +102,38 @@ pub fn list_known_event_types(
     crate::engine::event_vocabulary::list_vocabulary(&state.db)
 }
 
+/// Aggregated no-subscriber ("skipped") signal for the events page. A high
+/// skipped rate for a type means events are firing that nothing listens to —
+/// a dead or misrouted trigger contract. `sinceDays` bounds the window
+/// (defaults to 7).
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct EventSkippedStats {
+    /// Total events in the window (all statuses).
+    pub total: i64,
+    /// How many were skipped (no subscriber matched).
+    pub skipped: i64,
+    /// Per-type breakdown, only types with ≥1 skip, most-skipped first.
+    pub by_event_type: Vec<repo::SkippedRateRow>,
+}
+
+#[tauri::command]
+pub fn get_event_skipped_stats(
+    state: State<'_, Arc<AppState>>,
+    since_days: Option<i64>,
+) -> Result<EventSkippedStats, AppError> {
+    require_auth_sync(&state)?;
+    let since_days = since_days.unwrap_or(7);
+    let (total, skipped) = repo::skipped_totals(&state.db, since_days)?;
+    let by_event_type = repo::skipped_rate_by_type(&state.db, since_days)?;
+    Ok(EventSkippedStats {
+        total,
+        skipped,
+        by_event_type,
+    })
+}
+
 #[tauri::command]
 pub fn list_subscriptions(
     state: State<'_, Arc<AppState>>,

@@ -5965,7 +5965,9 @@
       "source": "Origen",
       "processed": "Procesado",
       "event_data": "Datos del Evento",
-      "error": "Error"
+      "error": "Error",
+      "skipped_stat_label": "{skipped} omitidos",
+      "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha."
     },
     "health": {
       "title": "Salud del Agente",
