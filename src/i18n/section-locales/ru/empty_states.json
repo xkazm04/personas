@@ -14,7 +14,7 @@
   "tools_subtitle": "Подключите внешние сервисы, чтобы агент мог выполнять действия и получать данные.",
   "use_cases_title": "Сценарии использования ещё не определены",
   "use_cases_subtitle": "Определите, что должен делать агент -- импортируйте из рабочего процесса или опишите на естественном языке.",
-  "no_results_title": "No matches for your filters",
-  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
-  "reset_filters": "Reset filters"
+  "no_results_title": "По вашим фильтрам ничего не найдено.",
+  "no_results_subtitle": "Измените или сбросьте фильтры, чтобы увидеть больше результатов.",
+  "reset_filters": "Сбросить фильтры"
 }

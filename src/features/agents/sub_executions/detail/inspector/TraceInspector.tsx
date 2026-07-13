@@ -8,7 +8,6 @@ import { SpanRow } from './SpanRow';
 import { TraceSummary } from './TraceSummary';
 import { useTraceData } from './useTraceData';
 import { useTranslation } from '@/i18n/useTranslation';
-import { DebtText } from '@/i18n/DebtText';
 
 
 interface TraceInspectorProps {
@@ -53,7 +52,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
           <Activity className="w-6 h-6 text-foreground" />
         </div>
         <p className="typo-body text-foreground">{e.no_trace_data}</p>
-        <p className="typo-body text-foreground mt-1">{e.trace_spans_appear}</p>
+        <p className="typo-body text-foreground mt-1 max-w-[320px] mx-auto">{e.trace_empty_hint}</p>
       </div>
     );
   }
@@ -74,7 +73,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
             {e.span}
           </div>
           <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
-            <span><DebtText k="auto_0ms_fcebf4a4" /></span>
+            <span>{e.zero_ms}</span>
             <span>{formatDuration(totalMs)}</span>
           </div>
         </div>

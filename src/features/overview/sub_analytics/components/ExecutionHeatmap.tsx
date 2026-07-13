@@ -10,7 +10,6 @@ import type { ExecutionHeatmapData } from '@/lib/bindings/ExecutionHeatmapData';
 import type { HeatmapDay } from '@/lib/bindings/HeatmapDay';
 import type { HeatmapInsights } from '@/lib/bindings/HeatmapInsights';
 import type { Translations } from '@/i18n/en';
-import { debtText } from '@/i18n/DebtText';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
 
 
@@ -166,6 +165,11 @@ function monthShortLabel(t: Translations, month: number): string {
 
 export function ExecutionHeatmap({
   personaId,
+  // Deliberate FIXED annual window. The heatmap is a GitHub-style contribution
+  // graph whose whole point is a constant 52-week canvas — it is NOT wired to
+  // the dashboard's 7/30/90 range switch (OverviewFilterContext.dayRange) and
+  // must not be. Callers render it as a standalone year-at-a-glance instrument;
+  // do not "unify" this with the range switch.
   days = 365,
   onDayClick,
   compact = false,
@@ -337,7 +341,7 @@ function HeatmapGrid({
       // is a labelled group rather than an atomic image (role="img" would hide
       // the interactive children from assistive tech).
       role={onClick ? 'group' : 'img'}
-      aria-label={debtText("auto_execution_activity_over_the_last_year_d8c7055f")}
+      aria-label={t.overview.heatmap.aria_year_activity}
       style={{ display: 'block' }}
     >
       {monthLabels.map((m) => (

@@ -399,7 +399,35 @@
     "section_instruments": "インストゥルメント",
     "section_memory": "メモリ候補",
     "section_fleet": "フリート最適化",
-    "section_routines": "ルーティンとVault変更"
+    "section_routines": "ルーティンとVault変更",
+    "instruments_subtitle": "フリートテレメトリ",
+    "memory_suggestions_count": "{count}件の提案",
+    "pane_instruments": "計器",
+    "pane_memory": "メモリ",
+    "pane_stream": "ストリーム",
+    "pane_vitals": "バイタル",
+    "spark_traffic_errors": "トラフィック・エラー",
+    "status_errors": "エラー",
+    "status_label": "ステータス",
+    "status_runs": "実行",
+    "status_sources": "ソース",
+    "status_synced": "同期済み",
+    "stream_agent_fallback": "エージェント",
+    "stream_events_count": "{count}件のイベント",
+    "success_label": "成功",
+    "tile_agents": "エージェント",
+    "tile_alerts": "アラート",
+    "tile_reviews": "レビュー",
+    "tile_runs": "実行",
+    "traffic_label": "トラフィック",
+    "triage_detail_alerts": "アクティブなヘルスアラート",
+    "triage_detail_messages": "受信箱の未読",
+    "triage_detail_reviews": "手動レビューキュー",
+    "triage_tag_alert": "警",
+    "triage_tag_message": "信",
+    "triage_tag_pipeline": "系",
+    "triage_tag_review": "査",
+    "vitals_subtitle_fleet": "フリートヘルス"
   },
   "execution_metrics": {
     "title": "実行メトリクス",
@@ -806,7 +834,11 @@
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Errors",
     "tool_performance_empty": "No tool runs in this window",
-    "tool_performance_unit_ms": "ms"
+    "tool_performance_unit_ms": "ms",
+    "range_days_ago": "{days}日前",
+    "range_today": "今日",
+    "range_yesterday": "昨日",
+    "traffic_errors_chart_aria": "トラフィックとエラーのチャート"
   },
   "cards": {
     "fleet_optimization": "フリート最適化",
@@ -1566,7 +1598,8 @@
     "month_sep": "Sep",
     "month_oct": "Oct",
     "month_nov": "Nov",
-    "month_dec": "Dec"
+    "month_dec": "Dec",
+    "aria_year_activity": "過去1年間の実行アクティビティ"
   },
   "trend": {
     "up": "Up",

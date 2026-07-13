@@ -1,7 +1,7 @@
 {
   "title": "Deployment",
   "orchestrator_url": "URL Orkestrator",
-  "api_key": "API Key",
+  "api_key": "Kunci API",
   "connecting": "Menghubungkan...",
   "sr_connecting": "Menghubungkan ke orkestrator cloud...",
   "auth_code": "Kode Otorisasi",
@@ -24,7 +24,7 @@
     "sending": "Mengirim...",
     "empty_response": "(respons kosong)",
     "snippets": "Cuplikan",
-    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
+    "request_body_placeholder": "{ \"message\": \"Prompt Anda di sini…\" }"
   },
   "connection": {
     "orchestrator_url_label": "URL Server Cloud",
@@ -42,7 +42,7 @@
     "url_invalid": "URL tidak valid"
   },
   "deployments_panel": {
-    "deploy_persona": "Deploy Persona",
+    "deploy_persona": "Terapkan persona",
     "select_persona": "Pilih persona untuk di-deploy",
     "all_deployed": "Semua persona sudah di-deploy",
     "no_deployments_yet": "Belum ada penerapan",
@@ -170,7 +170,7 @@
     "title": "Deployment",
     "subtitle": "Semua deployment di Cloud dan GitLab",
     "refresh": "Segarkan",
-    "total": "Total",
+    "total": "Jumlah",
     "active": "Aktif",
     "paused": "Dijeda",
     "cloud": "Cloud",

@@ -108,7 +108,7 @@
     "restart": "重新开始",
     "start_tour": "开始教程",
     "steps_count": "{count} 个步骤",
-    "tour_steps_label": "What you'll learn",
+    "tour_steps_label": "您将学到的内容",
     "power_moves": "高效操作",
     "moves_used": "已使用 {used}/{total}",
     "try_it": "立即尝试",

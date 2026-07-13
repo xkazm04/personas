@@ -19,6 +19,53 @@ export interface MetricTrends {
 /** Threshold below which a change is considered "stable" */
 const STABLE_THRESHOLD_PCT = 1;
 
+/**
+ * The single source of period-over-period splitting used across Overview.
+ *
+ * A genuine prior-period comparison requires the series to actually span TWO
+ * periods (fetched at `2 × currentPeriodDays` — the pipeline does this only
+ * when `compareEnabled`). This helper enforces that invariant: it returns
+ * `null` unless comparison is active AND there is a non-empty prior half to
+ * compare against. Callers must therefore render NO trend rather than fabricate
+ * one from a single loaded window (the front-half/back-half heuristic that used
+ * to lie on the Home "Runs" tile).
+ *
+ * @param rows              Series covering up to `2 × currentPeriodDays` points.
+ * @param currentPeriodDays Days in the current period (the latter half).
+ * @param compareEnabled    Whether the 2×-window comparison fetch is active.
+ */
+export function splitComparisonPeriods<T>(
+  rows: T[],
+  currentPeriodDays: number,
+  compareEnabled: boolean,
+): { previous: T[]; current: T[] } | null {
+  if (!compareEnabled || rows.length === 0) return null;
+  const splitIdx = Math.max(0, rows.length - currentPeriodDays);
+  const previous = rows.slice(0, splitIdx);
+  const current = rows.slice(splitIdx);
+  if (previous.length === 0) return null;
+  return { previous, current };
+}
+
+/**
+ * Signed period-over-period percentage change for a plain numeric series,
+ * built on {@link splitComparisonPeriods}. Returns `null` when no genuine prior
+ * period is loaded, or when the prior period summed to zero (no baseline).
+ * A positive result means the current period is higher than the prior one.
+ */
+export function computeSeriesTrendPct(
+  values: number[],
+  currentPeriodDays: number,
+  compareEnabled: boolean,
+): number | null {
+  const split = splitComparisonPeriods(values, currentPeriodDays, compareEnabled);
+  if (!split) return null;
+  const prevSum = split.previous.reduce((s, v) => s + v, 0);
+  const currSum = split.current.reduce((s, v) => s + v, 0);
+  if (prevSum === 0) return null;
+  return ((currSum - prevSum) / prevSum) * 100;
+}
+
 function sumField(arr: Array<Record<string, string | number>>, key: string): number {
   return arr.reduce((sum, pt) => {
     const v = pt[key];
@@ -52,13 +99,9 @@ export function computePeriodTrends(
   effectiveDays: number,
   compareEnabled: boolean,
 ): MetricTrends | null {
-  if (!compareEnabled || chartData.length === 0) return null;
-
-  const splitIdx = Math.max(0, chartData.length - effectiveDays);
-  const prev = chartData.slice(0, splitIdx);
-  const curr = chartData.slice(splitIdx);
-
-  if (prev.length === 0) return null;
+  const split = splitComparisonPeriods(chartData, effectiveDays, compareEnabled);
+  if (!split) return null;
+  const { previous: prev, current: curr } = split;
 
   return {
     cost: makeTrend(sumField(curr, 'cost'), sumField(prev, 'cost')),

@@ -55,20 +55,20 @@
     "testing": "परीक्षण हो रहा है"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "विश्लेषण हो रहा है",
+    "planning": "योजना बन रही है",
+    "implementing": "कार्यान्वयन हो रहा है",
+    "validating": "सत्यापन हो रहा है",
+    "complete": "पूर्ण"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "लंबित",
+    "review": "समीक्षा",
+    "blocked": "अवरुद्ध",
+    "in_progress": "प्रगति में",
+    "running": "चल रहा है",
+    "completed": "पूर्ण",
+    "done": "पूर्ण"
   },
   "test": {
     "generating": "जेनरेट हो रहा है",
@@ -89,17 +89,17 @@
   "circuit_breaker": {
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
-    "provider_global": "Global"
+    "provider_global": "वैश्विक"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "उच्च",
+    "medium": "मध्यम",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "मध्यम",
+    "high": "उच्च"
   },
   "verdict": {
     "production": "प्रोडक्शन",
@@ -128,5 +128,10 @@
     "backoff": "बैकऑफ़",
     "fresh": "नया",
     "active": "सक्रिय"
+  },
+  "thinking": {
+    "high": "उच्च",
+    "low": "निम्न",
+    "medium": "मध्यम"
   }
 }

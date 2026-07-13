@@ -94,10 +94,24 @@ pub fn all_category_info() -> Vec<MemoryCategoryInfo> {
 // codified here so a future contributor can reason about tier + scope + access
 // without grepping the brain/companion code paths.
 //
-// (1) **Tier promotion authority.** Tier is a string column with three legal
-//     values: `"core"` (always injected, persona-wide identity), `"active"`
-//     (the scored hot set), and `"working"` / `"archive"` (deprecated /
-//     retired). Promotion to `"core"` is a USER-INITIATED action only —
+// (1) **Tier semantics + promotion authority.** Tier is a string column with
+//     FOUR legal values, ALL live. (An earlier revision of this contract
+//     called working/archive "deprecated / retired" while `run_lifecycle`
+//     actively used them — that drift is resolved here; this list is the one
+//     authoritative story and matches the code.)
+//       - `"core"` — user-pinned identity/principles. Always injected,
+//         persona-wide, NEVER decays (see (6)), never auto-modified by any
+//         batch/lifecycle path.
+//       - `"active"` — the scored hot set. Injected via the decay-aware
+//         ranking in (6); capped at ACTIVE_CAP by `run_lifecycle`
+//         (overflow archived).
+//       - `"working"` — probationary intake tier. Injected alongside active
+//         (same scoring); `run_lifecycle` promotes working → active at
+//         access_count >= 5 and archives working rows >30 days old with
+//         zero accesses.
+//       - `"archive"` — retired. Never injected, still searchable;
+//         reversible via `update_tier(id, "active")`.
+//     Promotion to `"core"` is a USER-INITIATED action only —
 //     `repos::core::memories::set_tier(persona_id, memory_id, "core")` is the
 //     single legal entry point and is reachable only from
 //     `commands/overview/memories.rs::set_memory_tier`, which is bound to an
@@ -156,6 +170,38 @@ pub fn all_category_info() -> Vec<MemoryCategoryInfo> {
 //     `get_for_injection_v2` to OR-in `group_id = ?` when the running
 //     persona has `group_id IS NOT NULL`.
 //
+// (6) **Active-tier injection ranking decays with access recency.** The
+//     active/working injection sort in `get_for_injection_v2` is NOT the
+//     monotonic `importance DESC, access_count DESC, created_at DESC` it once
+//     was — that ranking let a memory injected hundreds of times pin itself
+//     to the top forever (every injection incremented access_count, which
+//     raised its rank, which got it injected again). The sort key is now:
+//
+//         score = importance * 10.0
+//               + min(access_count, 9) / (1.0 + age_days / 7.0)
+//         age_days = julianday('now')
+//                  - julianday(COALESCE(last_accessed_at, created_at))
+//         ORDER BY score DESC, created_at DESC
+//
+//     Properties (all load-bearing):
+//       - **Importance strictly dominates.** The access term is capped at 9
+//         (< the 10-point importance step), so decay only reorders memories
+//         WITHIN an importance level — it can never demote an importance-4
+//         memory below an importance-3 one. This keeps the user/AI-assigned
+//         importance signal authoritative.
+//       - **Access weight is time-windowed** (hyperbolic, ~7-day half-life):
+//         a memory accessed today counts its (capped) access_count at full
+//         strength; at 7 days it counts half; at 70 days ~9%. A stale
+//         heavy-hitter (access_count=500, untouched for months) therefore
+//         ranks below a fresh, moderately-used memory of equal importance.
+//       - **Core NEVER decays.** The core tier keeps its own sort
+//         (importance DESC, created_at DESC) and is always injected —
+//         user-pinned is sacred.
+//       - `run_lifecycle`'s ACTIVE_CAP overflow-archival deliberately keeps
+//         the simpler monotonic ordering (changing which rows get archived
+//         is a lifecycle behavior change, out of scope for the injection
+//         ranking); revisit if the cap starts evicting fresh memories.
+//
 // Any change to these rules must update this block and the cited entry
 // points together.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -177,9 +223,12 @@ pub struct PersonaMemory {
     /// See MEMORY CONTRACT (4): bounds enforced at the DB layer via trigger.
     pub importance: i32,
     pub tags: Option<Json<Vec<String>>>,
-    /// Memory tier: "core" (always injected), "active" (selected by scoring),
-    /// "archive" (never injected, searchable only). See MEMORY CONTRACT (1)
-    /// for promotion authority — `core` is user-initiated only.
+    /// Memory tier: "core" (user-pinned, always injected, never decays),
+    /// "active" (scored hot set, decay-aware ranking — MEMORY CONTRACT (6)),
+    /// "working" (probationary intake; auto-promoted/archived by
+    /// `run_lifecycle`), "archive" (never injected, searchable only).
+    /// See MEMORY CONTRACT (1) for the full tier semantics and promotion
+    /// authority — `core` is user-initiated only.
     pub tier: String,
     /// How many times this memory has been injected into a prompt.
     /// MEMORY CONTRACT (3): only `increment_access_batch` writes this column.

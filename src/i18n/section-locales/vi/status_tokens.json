@@ -55,20 +55,20 @@
     "testing": "Đang kiểm tra"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "Đang phân tích",
+    "planning": "Đang lập kế hoạch",
+    "implementing": "Đang thực hiện",
+    "validating": "Đang kiểm tra",
+    "complete": "Hoàn tất"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "Đang chờ",
+    "review": "Đang đánh giá",
+    "blocked": "Bị chặn",
+    "in_progress": "Đang thực hiện",
+    "running": "Đang chạy",
+    "completed": "Hoàn tất",
+    "done": "Hoàn tất"
   },
   "test": {
     "generating": "Đang tạo",
@@ -89,17 +89,17 @@
   "circuit_breaker": {
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
-    "provider_global": "Global"
+    "provider_global": "Toàn cục"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "Cao",
+    "medium": "Trung bình",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "trung bình",
+    "high": "cao"
   },
   "verdict": {
     "production": "Sản xuất",
@@ -128,5 +128,10 @@
     "backoff": "Đang chờ",
     "fresh": "Mới",
     "active": "Đang hoạt động"
+  },
+  "thinking": {
+    "high": "Cao",
+    "low": "Thấp",
+    "medium": "Trung bình"
   }
 }

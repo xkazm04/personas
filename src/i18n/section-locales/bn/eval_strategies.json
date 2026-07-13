@@ -1,12 +1,12 @@
 {
-  "keyword_match_label": "Output Quality",
-  "keyword_match_description": "Checks expected behavior terms in agent output",
-  "tool_accuracy_label": "Tool Accuracy",
-  "tool_accuracy_description": "Compares expected vs actual tool calls",
-  "protocol_compliance_label": "Protocol Compliance",
-  "protocol_compliance_description": "Checks for expected protocol message patterns",
-  "confusion_detect_label": "Confusion Detection",
-  "confusion_detect_description": "Checks for known confusion/failure phrases",
-  "composite_label": "Composite",
-  "composite_description": "Weighted combination of all strategies"
+  "keyword_match_label": "আউটপুটের মান",
+  "keyword_match_description": "এজেন্টের আউটপুটে প্রত্যাশিত আচরণের শব্দ পরীক্ষা করে।",
+  "tool_accuracy_label": "টুল নির্ভুলতা",
+  "tool_accuracy_description": "প্রত্যাশিত ও প্রকৃত টুল কলের তুলনা করে।",
+  "protocol_compliance_label": "প্রোটোকল মেনে চলা",
+  "protocol_compliance_description": "প্রত্যাশিত প্রোটোকল বার্তার প্যাটার্ন পরীক্ষা করে।",
+  "confusion_detect_label": "বিভ্রান্তি শনাক্তকরণ",
+  "confusion_detect_description": "পরিচিত বিভ্রান্তি/ব্যর্থতার বাক্যাংশ পরীক্ষা করে।",
+  "composite_label": "সমন্বিত",
+  "composite_description": "সব কৌশলের ওজনযুক্ত সমন্বয়।"
 }

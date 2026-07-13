@@ -6,7 +6,6 @@ import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTool
 import { CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { useScaledFontSize } from '@/stores/themeStore';
 import { useOverviewFilterValues } from '../OverviewFilterContext';
-import { debtText } from '@/i18n/DebtText';
 import { DashboardChartCard } from './DashboardChartCard';
 
 
@@ -25,17 +24,19 @@ interface TrafficErrorsChartProps {
 }
 
 export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, totalTraffic, totalErrors, rangeControl }: TrafficErrorsChartProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const sf = useScaledFontSize();
   const { effectiveDays } = useOverviewFilterValues();
-  const rangeLabel = effectiveDays === 1 ? 'Yesterday' : `${effectiveDays} Days Ago`;
+  const rangeLabel = effectiveDays === 1
+    ? t.overview.widgets.range_yesterday
+    : tx(t.overview.widgets.range_days_ago, { days: effectiveDays });
   const formatCounter = useCallback((v: number) => Math.round(v).toLocaleString(), []);
 
   return (
     <DashboardChartCard
       title={t.overview.widgets.traffic_errors_chart}
       icon={TrendingUp}
-      ariaLabel={debtText('auto_traffic_and_errors_chart_9bc7679b')}
+      ariaLabel={t.overview.widgets.traffic_errors_chart_aria}
       isEmpty={chartData.length === 0}
       emptyVariant="chart"
       actions={
@@ -56,7 +57,7 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
       footer={
         <div className="flex justify-between typo-label text-foreground">
           <span>{rangeLabel}</span>
-          <span>Today</span>
+          <span>{t.overview.widgets.range_today}</span>
         </div>
       }
     >

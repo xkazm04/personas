@@ -1,0 +1,18 @@
+{
+  "id": "research-vague",
+  "vagueness": "high",
+  "vague_intent": "I want something for my research",
+  "true_intent": "I'm researching battery chemistry. Once a week I want it to search the web + arXiv for new papers and articles on solid-state batteries, summarise the genuinely new ones, and save the summaries to a Notion database so I can review them later.",
+  "must_clarify": [
+    "the research topic / domain",
+    "what the agent should do with it (search / summarise / track / alert)",
+    "cadence",
+    "where to store or deliver the output"
+  ],
+  "must_not_assume": [
+    "a topic (the intent names none — must ask)",
+    "a specific output destination without asking"
+  ],
+  "expect_questions": 3,
+  "notes": "Maximally underspecified — 'something for my research' names neither a job, a topic, a cadence, nor an output. Must open with a mission question. The topic itself is user-supplied content the build cannot guess."
+}

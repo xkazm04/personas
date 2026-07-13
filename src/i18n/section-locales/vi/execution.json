@@ -25,12 +25,12 @@
   "tool_count_one": "{count} tool",
   "tool_count_other": "{count} tools",
   "missing_count": "{count} missing",
-  "time_seconds_ago": "{count}s ago",
-  "time_minutes_ago": "{count}m ago",
-  "time_hours_ago": "{count}h ago",
-  "budget_reset_tomorrow": "tomorrow",
-  "budget_reset_in_days_one": "in {count} day",
-  "budget_reset_in_days_other": "in {count} days",
-  "interruptions_per_hour_one": "({count} interruption/1h)",
-  "interruptions_per_hour_other": "({count} interruptions/1h)"
+  "time_seconds_ago": "{count} giây trước",
+  "time_minutes_ago": "{count} phút trước",
+  "time_hours_ago": "{count} giờ trước",
+  "budget_reset_tomorrow": "vào ngày mai",
+  "budget_reset_in_days_one": "trong {count} ngày",
+  "budget_reset_in_days_other": "trong {count} ngày",
+  "interruptions_per_hour_one": "({count} gián đoạn/1h)",
+  "interruptions_per_hour_other": "({count} gián đoạn/1h)"
 }

@@ -14,7 +14,7 @@
   "tools_subtitle": "Hubungkan layanan eksternal agar agen Anda dapat mengambil tindakan dan mengakses data.",
   "use_cases_title": "Belum ada kasus penggunaan didefinisikan",
   "use_cases_subtitle": "Tentukan apa yang harus dilakukan agen ini -- impor dari alur kerja atau jelaskan dalam bahasa alami.",
-  "no_results_title": "No matches for your filters",
-  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
-  "reset_filters": "Reset filters"
+  "no_results_title": "Tidak ada hasil yang cocok dengan filter Anda",
+  "no_results_subtitle": "Coba sesuaikan atau hapus filter Anda untuk melihat lebih banyak hasil.",
+  "reset_filters": "Atur ulang filter"
 }

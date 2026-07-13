@@ -3,7 +3,7 @@
   "sonnet": "Sonnet",
   "opus": "Opus",
   "effort_low": "Low",
-  "effort_medium": "Medium",
-  "effort_high": "High",
+  "effort_medium": "보통",
+  "effort_high": "높음",
   "effort_xhigh": "xhigh"
 }

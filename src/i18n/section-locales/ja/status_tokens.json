@@ -55,20 +55,20 @@
     "testing": "テスト中"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "分析中",
+    "planning": "計画中",
+    "implementing": "実装中",
+    "validating": "検証中",
+    "complete": "完了"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "保留中",
+    "review": "レビュー",
+    "blocked": "ブロック中",
+    "in_progress": "進行中",
+    "running": "実行中",
+    "completed": "完了",
+    "done": "完了"
   },
   "test": {
     "generating": "生成中",
@@ -89,17 +89,17 @@
   "circuit_breaker": {
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
-    "provider_global": "Global"
+    "provider_global": "全体"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "高",
+    "medium": "中",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "中",
+    "high": "高"
   },
   "verdict": {
     "production": "本番",
@@ -128,5 +128,10 @@
     "backoff": "バックオフ",
     "fresh": "新鮮",
     "active": "アクティブ"
+  },
+  "thinking": {
+    "high": "高",
+    "low": "低",
+    "medium": "中"
   }
 }

@@ -340,6 +340,14 @@ subprocess, rolls back any in-progress DB updates.
    but is NOT durable storage. Cleanups can wipe it. Use
    `persona_memories` for knowledge and `persona_messages` /
    explicit DB writes for anything that must survive restart.
+   Note on `persona_memories` behavior (2026-07): writes dedup on
+   normalized content per persona/scope (a repeat observation touches the
+   survivor instead of inserting a duplicate), and the active-tier
+   injection ranking is decay-aware — see MEMORY CONTRACT (6) in
+   `db/models/memory.rs` (importance dominates; access weight fades with a
+   ~7-day half-life; user-pinned `core` never decays). Shared retrieval
+   primitives (vector distance floor, lane ranking) now live in
+   `src-tauri/src/retrieval/`.
 
 3. **Don't poll executions tightly**. The frontend should subscribe
    to `execution-status` / `execution-output` Tauri events instead of

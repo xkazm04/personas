@@ -1,5 +1,5 @@
 {
-  "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",
-  "schema_parse_error_detail": "Error: {error}",
-  "schema_parse_error_hint": "Re-generate the recipe or edit the input schema manually to fix this."
+  "schema_parse_error": "이 레시피의 입력 필드를 읽을 수 없습니다 — 저장된 스키마가 손상되었습니다.",
+  "schema_parse_error_detail": "오류: {error}",
+  "schema_parse_error_hint": "이 문제를 해결하려면 레시피를 다시 생성하거나 입력 스키마를 직접 수정하세요."
 }

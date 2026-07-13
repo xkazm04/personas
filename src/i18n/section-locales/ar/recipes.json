@@ -82,40 +82,40 @@
   "loading_linked": "جارٍ تحميل الوصفات المرتبطة...",
   "no_linked": "لا وصفات مرتبطة بعد. انقر \"إضافة\" لربط وصفات من المكتبة.",
   "run": "تشغيل",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "لا توجد عمليات تشغيل بعد",
+  "history_empty_description": "اختبر الوصفة وستظهر عمليات التشغيل هنا لإعادة التشغيل والمراجعة.",
+  "history_empty_action": "جرّبها الآن",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "التحليل",
+      "automation": "الأتمتة",
+      "generation": "التوليد",
+      "transform": "التحويل",
+      "monitoring": "المراقبة"
     }
   },
   "schema": {
     "field_types": {
-      "text": "Text",
-      "number": "Number",
-      "boolean": "Boolean",
-      "select": "Select",
-      "textarea": "Textarea",
+      "text": "نص",
+      "number": "رقم",
+      "boolean": "منطقي",
+      "select": "اختيار",
+      "textarea": "نص متعدد الأسطر",
       "json": "JSON"
     },
     "placeholders": {
       "key": "key",
-      "label": "Label"
+      "label": "التسمية"
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "لدينا وصفة جاهزة لهذا",
+    "use_button": "استخدام هذه الوصفة",
+    "dismiss": "تجاهل",
+    "score_label": "التطابق",
+    "applied_toast": "تم تطبيق الوصفة: {name}",
+    "run_now": "تشغيل الآن",
+    "run_now_toast": "جارٍ فتح {name} في ملعب الوصفة"
   },
   "discard": "تجاهل",
   "yes": "نعم",

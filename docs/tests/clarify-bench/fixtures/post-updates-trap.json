@@ -1,0 +1,17 @@
+{
+  "id": "post-updates-trap",
+  "vagueness": "medium-trap",
+  "vague_intent": "post updates about our product launches so the team stays in the loop",
+  "true_intent": "Whenever we publish a new product launch page, I want a short summary posted to our team's Notion 'Launches' database so everyone can see it. The trigger is a new launch being published; the destination is Notion, not chat.",
+  "must_clarify": [
+    "where to post (which destination platform — Slack vs Notion vs Teams vs email)",
+    "what triggers a post (new launch published vs manual vs schedule)",
+    "what counts as a 'product launch' / source of launches"
+  ],
+  "must_not_assume": [
+    "Slack as the destination (the obvious-but-wrong default for 'post updates … team')",
+    "a schedule trigger when the real trigger is event-based (a launch being published)"
+  ],
+  "expect_questions": 2,
+  "notes": "ASSUMPTION TRAP. 'post updates … team stays in the loop' strongly baits Slack, but the real destination is Notion. A build that assumes Slack without asking fails must_not_assume. Also tests trigger disambiguation (event vs schedule)."
+}

@@ -141,7 +141,7 @@
   "suggested_target_label": "الهدف المقترح",
   "target_date_label": "تاريخ الهدف",
   "target_label": "الهدف ({unit})",
-  "title": "KPIs",
+  "title": "KPI",
   "tool_build": "البناء",
   "tool_command": "أمر مشروع",
   "tool_linter": "فاحص الكود",

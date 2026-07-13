@@ -45,9 +45,10 @@ pub fn list_executions_summary(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     limit: Option<i64>,
+    offset: Option<i64>,
 ) -> Result<Vec<ExecutionListItem>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_items_by_persona_id(&state.db, &persona_id, limit)
+    repo::list_items_by_persona_id(&state.db, &persona_id, limit, offset)
 }
 
 #[tauri::command]

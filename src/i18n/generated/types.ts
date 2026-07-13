@@ -1392,6 +1392,27 @@ export type Translations = {
       deep_fanout: string;
       deep_fanout_hint: string;
       deep_fanout_unavailable: string;
+      tab_chain: string;
+      verdict_field: string;
+      retry_of_field: string;
+      retry_of: string;
+      retry_of_tooltip: string;
+      thinking_tooltip: string;
+      load_failed_title: string;
+      load_failed_body: string;
+      log_truncated_banner: string;
+      trace_empty_hint: string;
+      load_more: string;
+      chain_title: string;
+      chain_subtitle: string;
+      chain_current: string;
+      chain_open: string;
+      chain_spans_count: string;
+      chain_partial: string;
+      chain_empty: string;
+      chain_failed: string;
+      chain_loading: string;
+      chain_badge_tooltip: string;
     };
     lab: {
       vr_title: string;
@@ -6084,6 +6105,34 @@ export type Translations = {
       triage_jump: string;
       triage_detail_pipelines: string;
       triage_up_next: string;
+      pane_vitals: string;
+      pane_instruments: string;
+      pane_stream: string;
+      vitals_subtitle_fleet: string;
+      instruments_subtitle: string;
+      stream_events_count: string;
+      success_label: string;
+      status_label: string;
+      status_sources: string;
+      status_errors: string;
+      status_runs: string;
+      status_synced: string;
+      traffic_label: string;
+      spark_traffic_errors: string;
+      triage_tag_alert: string;
+      triage_tag_pipeline: string;
+      triage_tag_review: string;
+      triage_tag_message: string;
+      triage_detail_alerts: string;
+      triage_detail_reviews: string;
+      triage_detail_messages: string;
+      tile_runs: string;
+      tile_agents: string;
+      tile_alerts: string;
+      tile_reviews: string;
+      pane_memory: string;
+      memory_suggestions_count: string;
+      stream_agent_fallback: string;
     };
     execution_metrics: {
       title: string;
@@ -6608,6 +6657,10 @@ export type Translations = {
       alerts_badge: string;
       agents_badge: string;
       pipelines_badge: string;
+      traffic_errors_chart_aria: string;
+      range_today: string;
+      range_yesterday: string;
+      range_days_ago: string;
     };
     cards: {
       fleet_optimization: string;
@@ -7069,6 +7122,7 @@ export type Translations = {
       month_oct: string;
       month_nov: string;
       month_dec: string;
+      aria_year_activity: string;
     };
     remote_control_card: {
       connect_to_desktop: string;
@@ -11507,6 +11561,11 @@ export type Translations = {
       backoff: string;
       fresh: string;
       active: string;
+    };
+    thinking: {
+      low: string;
+      medium: string;
+      high: string;
     };
   };
   project_overview: {

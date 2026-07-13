@@ -1,0 +1,161 @@
+{
+  "summary": {
+    "runs": [
+      {
+        "tag": "hn-digest-control-sequential-1",
+        "terminal": "draft_ready",
+        "hung": false,
+        "rounds": 4,
+        "questions": 4,
+        "seconds": 399.41,
+        "caps": 1
+      }
+    ]
+  },
+  "runs": [
+    {
+      "tag": "hn-digest-control-sequential-1",
+      "fixture": "hn-digest-control",
+      "variant": "sequential",
+      "run": {
+        "fixture_id": "hn-digest-control",
+        "variant": "sequential",
+        "session_id": "9b0fb846-ac7a-4b0c-a2b7-658065848854",
+        "persona_id": "9da5ce7f-5d84-4c03-8efb-2e3890723d97",
+        "true_intent": "Exactly what I said: a daily 9am digest of the top 5 Hacker News stories, delivered to the in-app titlebar. Nothing more \u2014 no external publishing, no review step needed, it's just an informational read.",
+        "vague_intent": "Every day at 9am, fetch the top 5 Hacker News stories and show them to me as a digest in the app titlebar. No need to publish anywhere else.",
+        "terminal_phase": "draft_ready",
+        "ok": true,
+        "total_seconds": 399.41,
+        "num_rounds": 4,
+        "num_questions": 4,
+        "transcript": [
+          {
+            "round": 1,
+            "cell_key": "sample-output",
+            "question": "How should \"Daily HN Digest\" format its output? Paste / attach an example, or pick a shape:",
+            "options": [
+              "Markdown \u2014 bullet list with short headings",
+              "Markdown \u2014 table or grid layout",
+              "Prose summary \u2014 short paragraphs, no bullets",
+              "JSON \u2014 structured payload",
+              "I'll attach an example"
+            ],
+            "connector_category": null,
+            "answer": "Markdown \u2014 bullet list with short headings, one line per story.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 2,
+            "cell_key": "memory",
+            "question": "What should \"Daily HN Digest\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)",
+            "options": [
+              "User preferences and corrections",
+              "Items I've already approved or rejected",
+              "Recurring context (people, projects, topics I care about)",
+              "Nothing \u2014 each run is independent"
+            ],
+            "connector_category": null,
+            "answer": "Nothing \u2014 each run is independent, it just pulls the current top 5 stories each morning.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 3,
+            "cell_key": "human-review",
+            "question": "Should \"Daily HN Digest\" wait for your approval before publishing its output?",
+            "options": [
+              "Never \u2014 auto-publish; I can undo/discard myself",
+              "On low confidence \u2014 only pause when unsure",
+              "Always \u2014 I want to sign off every run"
+            ],
+            "connector_category": null,
+            "answer": "Never \u2014 auto-publish; it's just a read-only digest, I can ignore it if it's junk.",
+            "sim_ok": true,
+            "sim_error": null
+          },
+          {
+            "round": 4,
+            "cell_key": "connectors",
+            "question": "Which storage connector should \"Daily HN Digest\" use?",
+            "options": [],
+            "connector_category": null,
+            "answer": "No storage \u2014 it just posts the digest to the in-app titlebar each morning.",
+            "sim_ok": true,
+            "sim_error": null
+          }
+        ],
+        "phase_timeline": [
+          {
+            "phase": "analyzing",
+            "offset_s": 0.02
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 147.16
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 151.91
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 217.97
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 222.59
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 278.16
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 283.52
+          },
+          {
+            "phase": "awaiting_input",
+            "offset_s": 333.06
+          },
+          {
+            "phase": "resolving",
+            "offset_s": 337.83
+          },
+          {
+            "phase": "draft_ready",
+            "offset_s": 399.41
+          }
+        ],
+        "error_message": null,
+        "hung": false
+      },
+      "capabilities": [
+        {
+          "id": "uc_hn_daily_digest",
+          "title": "Daily HN Digest",
+          "description": "Fetch the top Hacker News stories each morning at 9am and auto-publish them as a Markdown bullet-list digest in the app titlebar. No storage, no review gate.",
+          "tool_hints": [
+            "web_fetch"
+          ],
+          "subscriptions": [
+            {
+              "description": "Emitted after the daily digest is auto-published to the titlebar, carrying status and story count.",
+              "direction": "emit",
+              "event_type": "hn.digest.published"
+            }
+          ],
+          "trigger": {
+            "config": {
+              "cron": "0 9 * * *",
+              "timezone": "local"
+            },
+            "description": "Every day at 9am local time",
+            "trigger_type": "schedule"
+          }
+        }
+      ]
+    }
+  ]
+}

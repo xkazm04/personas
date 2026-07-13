@@ -6,7 +6,7 @@
  *  dominant traits (applyPreset).
  */
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
-import { MotionizedGlyph } from "@/features/teams/sub_teamWorkspace/MotionizedGlyph";
+import { MotionizedGlyph } from "@/features/shared/components/display/MotionizedGlyph";
 import { coreIcon, ARCHETYPE_TRAITS, traitById, TRAIT_AXES } from "./catalog";
 import { ARCHETYPE_GLYPHS } from "./archetypeGlyphData";
 import type { Archetype } from "./types";

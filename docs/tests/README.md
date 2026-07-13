@@ -17,6 +17,7 @@ the **code** that runs them lives under `tools/`, `scripts/`, `tests/`, and
 | [`connectors/`](connectors/) | Vault **Catalog connections** scenarios — the connector catalog grid + the **Auto-add** (MCP/Playwright browser) credential-setup flow. | Working on connector catalog / auto-cred browser automation. |
 | [`autonomy-eval/`](autonomy-eval/) | The **Team Autonomy Evaluation Framework** — a separate workstream that runs persona teams and scores production-quality output. Has its own rubric, run protocol, seed bank, and a golden sample run. | Working on team-autonomy measurement, not day-to-day feature tests. |
 | [`athena/`](athena/) | The Athena chat **quality suite** — conversational regression with hard assertions + an LLM judge. | After any change to Athena's prompt, constitution, dispatcher, or doctrine. |
+| [`onboarding-bench/`](onboarding-bench/) | **Persona creation / onboarding at scale** — 300 catalog-grounded scenarios driven through the real app UI, testing vague-need guidance, connector choice, answer processing, and composed-persona metadata. Nightly + resumable. | Changing the build engine, the clarifying-question flow, or the creation UI. Read [LESSONS.md](onboarding-bench/LESSONS.md) first. |
 | [`fixtures/`](fixtures/) | Shared, version-controlled test inputs (render-plan fixtures, the large use-case catalog). | You need a stable input set instead of inventing one. |
 | [`_templates/`](_templates/) | The scenario-doc template. | Before writing any new scenario doc. |
 

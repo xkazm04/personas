@@ -154,7 +154,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
       )}
 
       <ExecutionMemories executionId={execution.id} executionStatus={execution.status} />
-      {execution.log_file_path && <ExecutionLogViewer executionId={execution.id} personaId={execution.persona_id} />}
+      {execution.log_file_path && <ExecutionLogViewer executionId={execution.id} personaId={execution.persona_id} logTruncated={execution.log_truncated} />}
     </div>
   );
 }

@@ -34,11 +34,11 @@
   "edit_key": "Edit Key",
   "edit_config": "Edit Konfigurasi",
   "signing_in": "Sedang masuk...",
-  "log_disk_usage": "Log Disk Usage",
-  "log_disk_tracing": "Tracing logs",
-  "log_disk_crashes": "Crash reports",
-  "log_disk_files_count": "{count} files",
-  "log_disk_retention_hint": "Daily rotation, capped at {limit} files",
-  "log_disk_crash_retention_hint": "Capped at {limit} most recent reports",
-  "log_disk_unavailable": "Log directory stats unavailable."
+  "log_disk_usage": "Penggunaan disk log",
+  "log_disk_tracing": "Log tracing",
+  "log_disk_crashes": "Laporan crash",
+  "log_disk_files_count": "{count} file",
+  "log_disk_retention_hint": "Rotasi harian, dibatasi hingga {limit} file",
+  "log_disk_crash_retention_hint": "Dibatasi hingga {limit} laporan terbaru",
+  "log_disk_unavailable": "Statistik direktori log tidak tersedia."
 }

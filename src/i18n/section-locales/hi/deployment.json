@@ -17,14 +17,14 @@
     "no_status": "कोई स्थिति डेटा उपलब्ध नहीं है।"
   },
   "api_playground": {
-    "title": "API Playground",
+    "title": "API प्लेग्राउंड",
     "request_body": "अनुरोध बॉडी",
     "response_label": "प्रतिक्रिया",
     "send_request": "अनुरोध भेजें",
     "sending": "भेजा जा रहा है...",
     "empty_response": "(खाली प्रतिक्रिया)",
     "snippets": "स्निपेट",
-    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
+    "request_body_placeholder": "{ \"message\": \"अपना प्रॉम्प्ट यहाँ लिखें…\" }"
   },
   "connection": {
     "orchestrator_url_label": "क्लाउड सर्वर URL",
@@ -71,10 +71,10 @@
     "token_expired": "टोकन समाप्त",
     "token_unknown": "टोकन स्थिति अज्ञात",
     "expires": "समाप्त होता है",
-    "scopes": "Scopes",
+    "scopes": "स्कोप",
     "open_auth_window": "प्राधिकरण विंडो खोलें",
     "complete_authorization": "प्राधिकरण पूर्ण करें",
-    "refresh_token": "Refresh Token",
+    "refresh_token": "रिफ्रेश टोकन",
     "open_authorization_window": "प्राधिकरण विंडो खोलें",
     "token_unknown_msg": "टोकन वैधता सत्यापित नहीं की जा सकी। यह सक्रिय है या नहीं, इसकी पुष्टि के लिए टोकन रिफ़्रेश करें।",
     "connect_anthropic_msg": "क्लाउड निष्पादन के लिए OAuth-आधारित प्रमाणीकरण सक्षम करने हेतु अपना Anthropic खाता कनेक्ट करें।",
@@ -88,7 +88,7 @@
     "schedule_cron": "शेड्यूल (cron)",
     "create_trigger": "ट्रिगर बनाएं",
     "creating": "बनाया जा रहा है...",
-    "cron_expression": "Cron Expression",
+    "cron_expression": "cron एक्सप्रेशन",
     "utc_suffix": "(UTC)",
     "webhook_info": "इस ट्रिगर के लिए एक webhook endpoint बनाया जाएगा। निर्माण के बाद आप payload फ़िल्टरिंग कॉन्फ़िगर कर सकते हैं।"
   },

@@ -34,11 +34,11 @@
   "edit_key": "Sửa khóa",
   "edit_config": "Sửa cấu hình",
   "signing_in": "Đang đăng nhập...",
-  "log_disk_usage": "Log Disk Usage",
-  "log_disk_tracing": "Tracing logs",
-  "log_disk_crashes": "Crash reports",
-  "log_disk_files_count": "{count} files",
-  "log_disk_retention_hint": "Daily rotation, capped at {limit} files",
-  "log_disk_crash_retention_hint": "Capped at {limit} most recent reports",
-  "log_disk_unavailable": "Log directory stats unavailable."
+  "log_disk_usage": "Dung lượng đĩa nhật ký",
+  "log_disk_tracing": "Nhật ký theo dõi",
+  "log_disk_crashes": "Báo cáo sự cố",
+  "log_disk_files_count": "{count} tệp",
+  "log_disk_retention_hint": "Xoay vòng hằng ngày, giới hạn tối đa {limit} tệp",
+  "log_disk_crash_retention_hint": "Giới hạn tối đa {limit} báo cáo gần nhất",
+  "log_disk_unavailable": "Không có số liệu thư mục nhật ký."
 }

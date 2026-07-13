@@ -82,40 +82,40 @@
   "loading_linked": "Chargement des recettes liées...",
   "no_linked": "Aucune recette liée. Cliquez sur \\\"Ajouter\\\" pour lier des recettes depuis la bibliothèque.",
   "run": "Exécuter",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "Aucune exécution pour l'instant",
+  "history_empty_description": "Testez la recette et vos exécutions apparaîtront ici, prêtes à être rejouées et révisées.",
+  "history_empty_action": "Essayer maintenant",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "Analyse",
+      "automation": "Automatisation",
+      "generation": "Génération",
+      "transform": "Transformation",
+      "monitoring": "Surveillance"
     }
   },
   "schema": {
     "field_types": {
-      "text": "Text",
-      "number": "Number",
-      "boolean": "Boolean",
-      "select": "Select",
-      "textarea": "Textarea",
+      "text": "Texte",
+      "number": "Nombre",
+      "boolean": "Booléen",
+      "select": "Liste déroulante",
+      "textarea": "Zone de texte",
       "json": "JSON"
     },
     "placeholders": {
       "key": "key",
-      "label": "Label"
+      "label": "Libellé"
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "Une recette existe déjà pour ce cas",
+    "use_button": "Utiliser cette recette",
+    "dismiss": "Ignorer",
+    "score_label": "Correspondance",
+    "applied_toast": "Recette appliquée : {name}",
+    "run_now": "Lancer maintenant",
+    "run_now_toast": "Ouverture de {name} dans le bac à sable des recettes"
   },
   "discard": "Abandonner",
   "yes": "Oui",

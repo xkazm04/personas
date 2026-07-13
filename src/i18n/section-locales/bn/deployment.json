@@ -24,7 +24,7 @@
     "sending": "পাঠানো হচ্ছে...",
     "empty_response": "(খালি রেসপন্স)",
     "snippets": "স্নিপেট",
-    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
+    "request_body_placeholder": "{ \"message\": \"আপনার প্রম্পট এখানে…\" }"
   },
   "connection": {
     "orchestrator_url_label": "ক্লাউড সার্ভার URL",

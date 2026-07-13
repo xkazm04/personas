@@ -1,0 +1,82 @@
+{
+  "run": "clarify-bench baseline",
+  "date": "2026-07-09",
+  "variant": "sequential",
+  "mode": "interactive",
+  "repeat": 1,
+  "judge": "Claude-Code-as-judge, 4 independent judges grouped by vagueness band",
+  "rubric_weights": {
+    "asked_before_assuming": 2.0,
+    "no_wrong_assumptions": 1.5,
+    "question_quality": 1.5,
+    "convergence": 2.0,
+    "efficiency_round_cap": 1.5
+  },
+  "caveats": [
+    "The LLM user-simulator answered VERBOSELY and volunteered details (repo names, topics, destinations) the build never asked for. This MASKS under-asking: a terse real user would score the build lower on asked_before_assuming and convergence. These numbers are an optimistic upper bound.",
+    "no_wrong_assumptions == 3 is VACUOUS for sales-vague / research-vague / workflow-overloaded: they produced zero capabilities, so there was nothing to assume with. Their weighted totals are inflated by this hollow pass.",
+    "One simulator call errored (research-vague R4, claude exit 1), truncating that exchange.",
+    "emails-vague ran under the pre-fix driver, which mislabelled a mid-flight wall-clock timeout as a hang; its phase actually reached draft_ready."
+  ],
+  "fixtures": [
+    {"fixture": "hn-digest-control", "band": "none-control", "outcome": "draft_ready", "rounds": 4, "questions": 4, "seconds": 399, "caps": 1,
+     "scores": {"asked_before_assuming": 3, "no_wrong_assumptions": 3, "question_quality": 1, "convergence": 3, "efficiency_round_cap": 0},
+     "weighted_total": 0.71,
+     "notes": "Converged perfectly but destroyed the zero-question fast-path: 4 serial gratuitous questions (format, memory, review, storage) all had obvious safe defaults."},
+
+    {"fixture": "standup-mostly-specified", "band": "low-control", "outcome": "draft_ready", "rounds": 3, "questions": 3, "seconds": 626, "caps": 2,
+     "scores": {"asked_before_assuming": 1, "no_wrong_assumptions": 3, "question_quality": 1, "convergence": 2, "efficiency_round_cap": 1},
+     "weighted_total": 0.53,
+     "notes": "Skipped BOTH genuinely-missing identifiers (which repo, which Slack channel) yet still spent 3 serial rounds on gratuitous questions. Asks the wrong things."},
+
+    {"fixture": "news-cadence-outside", "band": "medium", "outcome": "draft_ready", "rounds": 5, "questions": 5, "seconds": 576, "caps": 1,
+     "scores": {"asked_before_assuming": 2, "no_wrong_assumptions": 3, "question_quality": 2, "convergence": 3, "efficiency_round_cap": 1},
+     "weighted_total": 0.75,
+     "notes": "Best total. Correct twice-weekly cron (Mon/Thu), no invented destination. Topic focus never directly asked; 5 serial rounds."},
+
+    {"fixture": "sync-two-tools", "band": "medium", "outcome": "draft_ready", "rounds": 5, "questions": 5, "seconds": 761, "caps": 1,
+     "scores": {"asked_before_assuming": 2, "no_wrong_assumptions": 3, "question_quality": 2, "convergence": 2, "efficiency_round_cap": 1},
+     "weighted_total": 0.67,
+     "notes": "Best single question in the suite (R1 batched tools + direction with an escape hatch); correctly kept sync one-way. But drifted to web_fetch + execute_sql with NO Notion connector despite the user naming Notion."},
+
+    {"fixture": "github-issues-partial", "band": "medium", "outcome": "draft_ready", "rounds": 4, "questions": 4, "seconds": 635, "caps": 1,
+     "scores": {"asked_before_assuming": 1, "no_wrong_assumptions": 3, "question_quality": 2, "convergence": 2, "efficiency_round_cap": 1},
+     "weighted_total": 0.59,
+     "notes": "Never targeted ANY of the three ambiguities; repo + destination surfaced only because the simulator volunteered them. Dropped the bug/security label filter that DEFINES 'important' — would alert on every issue. Trigger correctly stayed event-based."},
+
+    {"fixture": "post-updates-trap", "band": "medium-trap", "outcome": "draft_ready", "rounds": 4, "questions": 4, "seconds": 686, "caps": 2,
+     "scores": {"asked_before_assuming": 2, "no_wrong_assumptions": 0, "question_quality": 2, "convergence": 1, "efficiency_round_cap": 1},
+     "weighted_total": 0.41,
+     "notes": "HARD FAIL on assumptions. Despite eliciting Notion, it invented a second capability 'Publish to Team Channel' hinting `discord` — a chat destination the user never confirmed. Fell into the trap with Discord standing in for Slack."},
+
+    {"fixture": "sales-vague", "band": "high", "outcome": "timeout (900s)", "rounds": 4, "questions": 4, "seconds": 900, "caps": 0,
+     "scores": {"asked_before_assuming": 1, "no_wrong_assumptions": 3, "question_quality": 2, "convergence": 0, "efficiency_round_cap": 0},
+     "weighted_total": 0.37,
+     "vacuous_no_wrong_assumptions": true,
+     "notes": "Exhausted the 900s budget after 4 serial rounds, still needing a 5th question. Zero capabilities. Never asked the Closed-Won trigger or which CRM. R1 was the strongest single question across the high band."},
+
+    {"fixture": "research-vague", "band": "high", "outcome": "draft_ready (empty)", "rounds": 4, "questions": 4, "seconds": 602, "caps": 0,
+     "scores": {"asked_before_assuming": 0, "no_wrong_assumptions": 3, "question_quality": 1, "convergence": 0, "efficiency_round_cap": 1},
+     "weighted_total": 0.29,
+     "vacuous_no_wrong_assumptions": true,
+     "notes": "Reached draft_ready with NO agent_ir — an EMPTY persona. Asked the same memory template question twice (for two different capabilities) while never asking topic, cadence, or destination."},
+
+    {"fixture": "emails-vague", "band": "high", "outcome": "draft_ready", "rounds": 5, "questions": 5, "seconds": 900, "caps": 2,
+     "scores": {"asked_before_assuming": 1, "no_wrong_assumptions": 0, "question_quality": 2, "convergence": 1, "efficiency_round_cap": 0},
+     "weighted_total": 0.27,
+     "notes": "HARD FAIL on assumptions: baked gmail_search into both capabilities without ever asking the provider. Correctly asked the auto-send safety gate (answered 'always review'). Missed 2 of 4 true-intent jobs (label urgent, draft replies) and invented a Google Drive destination."},
+
+    {"fixture": "workflow-overloaded", "band": "extreme", "outcome": "failed (34s)", "rounds": 0, "questions": 0, "seconds": 34, "caps": 0,
+     "scores": {"asked_before_assuming": 0, "no_wrong_assumptions": 3, "question_quality": "na", "convergence": 0, "efficiency_round_cap": 0},
+     "weighted_total": 0.21,
+     "vacuous_no_wrong_assumptions": true,
+     "notes": "Worst outcome. Hard-failed in 34s with ZERO questions, zero resolved cells, and NO error message, on the intent that most needed a narrowing question."}
+  ],
+  "aggregate": {
+    "mean_weighted_total": 0.48,
+    "by_band": {"none_low_control": 0.62, "medium": 0.605, "high_extreme": 0.285},
+    "efficiency_round_cap": "0 or 1 on ALL 10 fixtures — never once within the design's round cap",
+    "zero_capability_builds": ["sales-vague", "research-vague", "workflow-overloaded"],
+    "hard_assumption_failures": ["post-updates-trap (invented discord)", "emails-vague (assumed gmail)"]
+  }
+}

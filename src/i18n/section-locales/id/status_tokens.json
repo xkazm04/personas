@@ -55,20 +55,20 @@
     "testing": "Menguji"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "Menganalisis",
+    "planning": "Merencanakan",
+    "implementing": "Menerapkan",
+    "validating": "Memvalidasi",
+    "complete": "Selesai"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "Tertunda",
+    "review": "Tinjauan",
+    "blocked": "Diblokir",
+    "in_progress": "Sedang berlangsung",
+    "running": "Berjalan",
+    "completed": "Selesai",
+    "done": "Selesai"
   },
   "test": {
     "generating": "Membuat",
@@ -89,17 +89,17 @@
   "circuit_breaker": {
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
-    "provider_global": "Global"
+    "provider_global": "Keseluruhan"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "Tinggi",
+    "medium": "Sedang",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "sedang",
+    "high": "tinggi"
   },
   "verdict": {
     "production": "Produksi",
@@ -128,5 +128,10 @@
     "backoff": "Mundur",
     "fresh": "Baru",
     "active": "Aktif"
+  },
+  "thinking": {
+    "high": "Tinggi",
+    "low": "Rendah",
+    "medium": "Sedang"
   }
 }

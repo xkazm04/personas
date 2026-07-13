@@ -13,6 +13,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { KPIS_GLYPH } from '@/features/shared/glyph/glyphs/kpisGlyph';
 import { StatCard } from '@/features/shared/components/display/StatCard';
 import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { paceDescriptor, kpiProgressPct } from './kpiMath';
@@ -147,7 +148,7 @@ export function KPIDashboard({
   if (active.length === 0) {
     return (
       <EmptyState
-        icon={Gauge}
+        glyph={KPIS_GLYPH}
         title={t.kpis.empty_title}
         description={hasProposals ? t.kpis.empty_with_proposals_hint : t.kpis.empty_hint}
         action={

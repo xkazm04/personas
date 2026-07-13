@@ -22,10 +22,11 @@ export const listExecutions = (personaId: string, limit?: number) =>
     limit: limit,
   });
 
-export const listExecutionsSummary = (personaId: string, limit?: number) =>
+export const listExecutionsSummary = (personaId: string, limit?: number, offset?: number) =>
   invoke<ExecutionListItem[]>("list_executions_summary", {
     personaId,
     limit: limit,
+    offset: offset,
   });
 
 export const listAllExecutions = (limit?: number, status?: string, personaId?: string) =>

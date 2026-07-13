@@ -24,7 +24,7 @@
     "sending": "发送中...",
     "empty_response": "（空响应）",
     "snippets": "代码片段",
-    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
+    "request_body_placeholder": "{ \"message\": \"在此输入您的提示词…\" }"
   },
   "connection": {
     "orchestrator_url_label": "云服务器 URL",

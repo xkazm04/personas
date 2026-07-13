@@ -14,7 +14,7 @@
   "tools_subtitle": "외부 서비스를 연결하여 에이전트가 작업을 수행하고 데이터에 접근할 수 있도록 하세요.",
   "use_cases_title": "아직 사용 사례가 정의되지 않았습니다",
   "use_cases_subtitle": "이 에이전트가 무엇을 해야 하는지 정의하세요 -- 워크플로에서 가져오거나 자연어로 설명하세요.",
-  "no_results_title": "No matches for your filters",
-  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
-  "reset_filters": "Reset filters"
+  "no_results_title": "필터와 일치하는 항목이 없습니다",
+  "no_results_subtitle": "필터를 조정하거나 초기화하면 더 많은 결과를 볼 수 있습니다.",
+  "reset_filters": "필터 초기화"
 }

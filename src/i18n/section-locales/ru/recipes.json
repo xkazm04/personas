@@ -82,40 +82,40 @@
   "loading_linked": "Загрузка связанных рецептов...",
   "no_linked": "Связанных рецептов нет. Нажмите «Добавить» для связи рецептов из библиотеки.",
   "run": "Запустить",
-  "history_empty_title": "No runs yet",
-  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
-  "history_empty_action": "Try it now",
+  "history_empty_title": "Пока нет запусков",
+  "history_empty_description": "Протестируйте рецепт — его запуски появятся здесь для повтора и проверки.",
+  "history_empty_action": "Попробовать сейчас",
   "editor": {
     "categories": {
-      "analysis": "Analysis",
-      "automation": "Automation",
-      "generation": "Generation",
-      "transform": "Transform",
-      "monitoring": "Monitoring"
+      "analysis": "Анализ",
+      "automation": "Автоматизация",
+      "generation": "Генерация",
+      "transform": "Преобразование",
+      "monitoring": "Мониторинг"
     }
   },
   "schema": {
     "field_types": {
-      "text": "Text",
-      "number": "Number",
-      "boolean": "Boolean",
-      "select": "Select",
-      "textarea": "Textarea",
+      "text": "Текст",
+      "number": "Число",
+      "boolean": "Булево",
+      "select": "Выбор",
+      "textarea": "Многострочный текст",
       "json": "JSON"
     },
     "placeholders": {
       "key": "key",
-      "label": "Label"
+      "label": "Название"
     }
   },
   "composer_suggestion": {
-    "label": "We have a recipe for this",
-    "use_button": "Use this recipe",
-    "dismiss": "Dismiss",
-    "score_label": "Match",
-    "applied_toast": "Applied recipe: {name}",
-    "run_now": "Run now",
-    "run_now_toast": "Opening {name} in the recipe playground"
+    "label": "Для этого есть рецепт",
+    "use_button": "Использовать рецепт",
+    "dismiss": "Закрыть",
+    "score_label": "Совпадение",
+    "applied_toast": "Рецепт «{name}» применён",
+    "run_now": "Запустить сейчас",
+    "run_now_toast": "Открываем «{name}» в песочнице рецептов"
   },
   "discard": "Отменить",
   "yes": "Да",

@@ -1,0 +1,400 @@
+[
+  {
+    "id": "ctl-hn-digest-zero-ask",
+    "kind": "control",
+    "business_area": "productivity",
+    "recipe_category": "reporting",
+    "source_template_id": null,
+    "recipe_name": "Fully-specified daily digest",
+    "vagueness_tier": "specified",
+    "vague_intent": "Every day at 9am, fetch the top 5 Hacker News stories and show them to me as a digest in the app titlebar. No need to publish anywhere else.",
+    "true_intent": "Exactly as stated: a daily 9am digest of the top 5 Hacker News stories delivered to the in-app titlebar. No external publishing, no review step, no memory — it is a read-only informational report.",
+    "must_clarify": [],
+    "must_not_assume": [],
+    "expect_questions": {
+      "min": 0,
+      "max": 1
+    },
+    "expect_connector_question": false,
+    "expect_no_connector_question": true,
+    "connector_choice": null,
+    "metadata_assertions": {
+      "min_capabilities": 1,
+      "max_capabilities": 2,
+      "system_prompt_min_chars": 200,
+      "require_connector_service_types": [],
+      "forbid_connector_service_types": [],
+      "require_terminal_phase": "draft_ready",
+      "expect_trigger_type": "schedule",
+      "trigger_assertion": "hard"
+    },
+    "notes": "NEGATIVE CONTROL for over-asking. Matches the simple-periodic-report fast-path (session_prompt Rule 26: schedule cadence + informational output + no external publishing => ZERO clarifying questions). Measured baseline asked 4 gratuitous questions (output format, memory, review, storage) — this scenario is the regression gate for that."
+  },
+  {
+    "id": "ctl-standup-two-gaps",
+    "kind": "control",
+    "business_area": "development",
+    "recipe_category": "reporting",
+    "source_template_id": null,
+    "recipe_name": "Mostly-specified standup",
+    "vagueness_tier": "specified",
+    "vague_intent": "Every weekday at 9am, collect yesterday's merged pull requests from our repo and post a standup summary to Slack.",
+    "true_intent": "A weekday 9am standup listing yesterday's merged PRs from the acme/backend GitHub repo, posted to the #standup Slack channel. The only things I did not state are WHICH repo and WHICH channel.",
+    "must_clarify": [
+      "which repository",
+      "which Slack channel"
+    ],
+    "must_not_assume": [
+      "a specific repo without asking",
+      "a specific Slack channel without asking"
+    ],
+    "expect_questions": {
+      "min": 1,
+      "max": 3
+    },
+    "expect_connector_question": false,
+    "expect_no_connector_question": true,
+    "connector_choice": null,
+    "metadata_assertions": {
+      "min_capabilities": 1,
+      "max_capabilities": 2,
+      "system_prompt_min_chars": 200,
+      "require_connector_service_types": [],
+      "forbid_connector_service_types": [],
+      "require_terminal_phase": "draft_ready",
+      "expect_trigger_type": "schedule",
+      "trigger_assertion": "hard"
+    },
+    "notes": "CALIBRATION control. Trigger, source type and destination PLATFORM are all specified — the build must not re-ask those, only the two concrete identifiers. Tests 'ask only what is genuinely missing'."
+  },
+  {
+    "id": "ctl-post-updates-slack-bait",
+    "kind": "control",
+    "business_area": "marketing",
+    "recipe_category": "notifications",
+    "source_template_id": null,
+    "recipe_name": "Destination assumption trap",
+    "vagueness_tier": "vague",
+    "vague_intent": "post updates about our product launches so the team stays in the loop",
+    "true_intent": "When we publish a new product launch page, post a short summary into our team's Notion 'Launches' database. The destination is Notion, NOT a chat tool. The trigger is a launch being published, not a schedule.",
+    "must_clarify": [
+      "where to post (destination platform)",
+      "what triggers a post",
+      "what counts as a product launch"
+    ],
+    "must_not_assume": [
+      "slack as the destination",
+      "a schedule trigger instead of an event trigger"
+    ],
+    "expect_questions": {
+      "min": 2,
+      "max": 4
+    },
+    "expect_connector_question": true,
+    "expect_no_connector_question": false,
+    "connector_choice": {
+      "category": "knowledge_base",
+      "pick": "notion",
+      "decoy": "slack"
+    },
+    "metadata_assertions": {
+      "min_capabilities": 1,
+      "max_capabilities": 3,
+      "system_prompt_min_chars": 200,
+      "require_connector_service_types": [
+        "notion"
+      ],
+      "forbid_connector_service_types": [
+        "slack"
+      ],
+      "require_terminal_phase": "draft_ready"
+    },
+    "notes": "ASSUMPTION TRAP. 'post updates ... team stays in the loop' strongly baits Slack; the real destination is Notion. A build that binds Slack without asking fails must_not_assume."
+  },
+  {
+    "id": "ctl-email-decoy-outlook",
+    "kind": "control",
+    "business_area": "email",
+    "recipe_category": "support",
+    "source_template_id": null,
+    "recipe_name": "Connector-choice decoy (email)",
+    "vagueness_tier": "vague",
+    "vague_intent": "make me a bot that helps with my emails",
+    "true_intent": "I run customer support out of a Microsoft Outlook mailbox (NOT Gmail). Read incoming support mail, summarise each, label the urgent ones, and draft replies for the top few — but I always review before anything is sent. Nothing auto-sends.",
+    "must_clarify": [
+      "which email provider/account",
+      "what kind of help",
+      "whether replies auto-send or need review",
+      "which inbox scope"
+    ],
+    "must_not_assume": [
+      "gmail (the popular default) without asking",
+      "auto-sending replies without review"
+    ],
+    "expect_questions": {
+      "min": 2,
+      "max": 5
+    },
+    "expect_connector_question": true,
+    "expect_no_connector_question": false,
+    "connector_choice": {
+      "category": "email",
+      "pick": "microsoft_outlook",
+      "decoy": "gmail"
+    },
+    "metadata_assertions": {
+      "min_capabilities": 1,
+      "max_capabilities": 3,
+      "system_prompt_min_chars": 200,
+      "require_connector_service_types": [
+        "microsoft_outlook"
+      ],
+      "forbid_connector_service_types": [
+        "gmail"
+      ],
+      "require_terminal_phase": "draft_ready"
+    },
+    "notes": "CONNECTOR-CHOICE + SAFETY. The measured baseline silently bound gmail_search without ever asking the provider. Also carries the auto-send review gate — the most safety-critical dimension the build must not assume away."
+  },
+  {
+    "id": "ctl-named-connector-no-ask",
+    "kind": "control",
+    "business_area": "development",
+    "recipe_category": "monitoring",
+    "source_template_id": null,
+    "recipe_name": "Named connector, must not ask",
+    "vagueness_tier": "specified",
+    "vague_intent": "Watch the acme/backend repo on GitHub. When an issue is opened with the 'security' label, alert me in the app.",
+    "true_intent": "Exactly that: watch acme/backend on GitHub for newly-opened issues labelled 'security', and raise an in-app notification. GitHub is explicitly named — there is nothing to choose.",
+    "must_clarify": [],
+    "must_not_assume": [
+      "asking which source-control connector when GitHub was explicitly named",
+      "a schedule trigger instead of an event trigger"
+    ],
+    "expect_questions": {
+      "min": 0,
+      "max": 2
+    },
+    "expect_connector_question": false,
+    "expect_no_connector_question": true,
+    "connector_choice": null,
+    "metadata_assertions": {
+      "min_capabilities": 1,
+      "max_capabilities": 2,
+      "system_prompt_min_chars": 200,
+      "require_connector_service_types": [
+        "github"
+      ],
+      "forbid_connector_service_types": [
+        "gitlab"
+      ],
+      "require_terminal_phase": "draft_ready",
+      "expect_trigger_type": "event",
+      "trigger_assertion": "hard"
+    },
+    "notes": "DON'T-ASK oracle. The connector is named in the intent, so a connector_category question here is over-asking. Also asserts the event (not schedule) trigger."
+  },
+  {
+    "id": "ctl-workflow-scope-explosion",
+    "kind": "control",
+    "business_area": "productivity",
+    "recipe_category": "automation",
+    "source_template_id": null,
+    "recipe_name": "Scope-explosion trap",
+    "vagueness_tier": "extreme",
+    "vague_intent": "manage my whole workflow and make my life easier",
+    "true_intent": "Honestly I have one concrete pain: each morning I copy yesterday's Stripe payouts into a Google Sheet by hand. Automate exactly that — pull yesterday's Stripe payouts and append them to my 'Revenue' sheet each morning. Nothing else.",
+    "must_clarify": [
+      "which specific job to start with",
+      "the trigger / cadence",
+      "the source and destination systems"
+    ],
+    "must_not_assume": [
+      "inventing a broad multi-capability do-everything persona instead of asking to narrow scope"
+    ],
+    "expect_questions": {
+      "min": 2,
+      "max": 5
+    },
+    "expect_connector_question": true,
+    "expect_no_connector_question": false,
+    "connector_choice": {
+      "category": "spreadsheet",
+      "pick": "google_sheets",
+      "decoy": "airtable"
+    },
+    "metadata_assertions": {
+      "min_capabilities": 1,
+      "max_capabilities": 2,
+      "system_prompt_min_chars": 200,
+      "require_connector_service_types": [],
+      "forbid_connector_service_types": [],
+      "require_terminal_phase": "draft_ready"
+    },
+    "notes": "SCOPE CONTROL. Maximally open intent invites the model to invent 5+ vague capabilities. A correct build asks the user to narrow to one concrete job. max_capabilities=2 is the scope-creep gate."
+  },
+  {
+    "id": "ctl-sync-two-tools-direction",
+    "kind": "control",
+    "business_area": "productivity",
+    "recipe_category": "integration",
+    "source_template_id": null,
+    "recipe_name": "Two unnamed endpoints + direction",
+    "vagueness_tier": "vague",
+    "vague_intent": "sync my tasks between my two tools",
+    "true_intent": "When I add or complete a task in Todoist, mirror that change into a Notion 'Tasks' database. It is ONE-WAY, Todoist to Notion — Notion is only a readable mirror.",
+    "must_clarify": [
+      "which two tools",
+      "sync direction (one-way vs two-way, which is source)",
+      "what task changes to sync"
+    ],
+    "must_not_assume": [
+      "two-way sync when the user wants one-way",
+      "specific tools without asking which two"
+    ],
+    "expect_questions": {
+      "min": 2,
+      "max": 4
+    },
+    "expect_connector_question": true,
+    "expect_no_connector_question": false,
+    "connector_choice": {
+      "category": "knowledge_base",
+      "pick": "notion",
+      "decoy": "confluence"
+    },
+    "metadata_assertions": {
+      "min_capabilities": 1,
+      "max_capabilities": 3,
+      "system_prompt_min_chars": 200,
+      "require_connector_service_types": [
+        "notion"
+      ],
+      "forbid_connector_service_types": [],
+      "require_terminal_phase": "draft_ready"
+    },
+    "notes": "MULTI-SLOT disambiguation. Neither endpoint is named and the direction is under-specified; assuming two-way is a real correctness risk."
+  },
+  {
+    "id": "ctl-research-no-topic",
+    "kind": "control",
+    "business_area": "research",
+    "recipe_category": "research",
+    "source_template_id": null,
+    "recipe_name": "No topic, no cadence, no output",
+    "vagueness_tier": "extreme",
+    "vague_intent": "I want something for my research",
+    "true_intent": "I research battery chemistry. Once a week, search the web and arXiv for new papers on solid-state batteries, summarise the genuinely new ones, and save the summaries to a Notion database for later review.",
+    "must_clarify": [
+      "the research topic",
+      "what to do with it",
+      "cadence",
+      "where the output goes"
+    ],
+    "must_not_assume": [
+      "a topic (the intent names none)",
+      "an output destination without asking"
+    ],
+    "expect_questions": {
+      "min": 2,
+      "max": 5
+    },
+    "expect_connector_question": true,
+    "expect_no_connector_question": false,
+    "connector_choice": {
+      "category": "knowledge_base",
+      "pick": "notion",
+      "decoy": "confluence"
+    },
+    "metadata_assertions": {
+      "min_capabilities": 1,
+      "max_capabilities": 3,
+      "system_prompt_min_chars": 200,
+      "require_connector_service_types": [
+        "notion"
+      ],
+      "forbid_connector_service_types": [],
+      "require_terminal_phase": "draft_ready"
+    },
+    "notes": "The topic is user-supplied content the build cannot possibly guess — a pure ASK gate. Must open with a mission question."
+  },
+  {
+    "id": "ctl-sales-goal-only",
+    "kind": "control",
+    "business_area": "sales",
+    "recipe_category": "automation",
+    "source_template_id": null,
+    "recipe_name": "Audience-scoped, zero job detail",
+    "vagueness_tier": "extreme",
+    "vague_intent": "build an agent for my sales team",
+    "true_intent": "When a deal is marked Closed-Won in our CRM, post a celebration to the #wins channel and append a row to our 'Closed Deals' spreadsheet with deal name, amount and owner. That is the whole job.",
+    "must_clarify": [
+      "what the agent should do",
+      "the trigger event",
+      "the CRM source system",
+      "the output destinations"
+    ],
+    "must_not_assume": [
+      "a generic broad sales-assistant scope",
+      "a specific CRM or chat tool without asking"
+    ],
+    "expect_questions": {
+      "min": 2,
+      "max": 5
+    },
+    "expect_connector_question": true,
+    "expect_no_connector_question": false,
+    "connector_choice": {
+      "category": "crm",
+      "pick": "hubspot",
+      "decoy": "attio"
+    },
+    "metadata_assertions": {
+      "min_capabilities": 1,
+      "max_capabilities": 3,
+      "system_prompt_min_chars": 200,
+      "require_connector_service_types": [],
+      "forbid_connector_service_types": [],
+      "require_terminal_phase": "draft_ready"
+    },
+    "notes": "Goal-only with an audience but no job. High risk of inventing a broad multi-capability 'sales assistant' instead of asking to narrow."
+  },
+  {
+    "id": "ctl-cadence-outside-keywords",
+    "kind": "control",
+    "business_area": "content",
+    "recipe_category": "monitoring",
+    "source_template_id": null,
+    "recipe_name": "Just outside the schedule-keyword gate",
+    "vagueness_tier": "partial",
+    "vague_intent": "keep me updated on tech news",
+    "true_intent": "Summarise the biggest AI and startup news twice a week — Monday and Thursday mornings — pulled from the web, delivered as an in-app notification. Read-only, nothing to publish.",
+    "must_clarify": [
+      "cadence (the intent gives none)",
+      "topic focus",
+      "where to deliver"
+    ],
+    "must_not_assume": [
+      "a daily cadence ('updated' is not 'daily')",
+      "an external publishing destination"
+    ],
+    "expect_questions": {
+      "min": 1,
+      "max": 4
+    },
+    "expect_connector_question": false,
+    "expect_no_connector_question": true,
+    "connector_choice": null,
+    "metadata_assertions": {
+      "min_capabilities": 1,
+      "max_capabilities": 2,
+      "system_prompt_min_chars": 200,
+      "require_connector_service_types": [],
+      "forbid_connector_service_types": [],
+      "require_terminal_phase": "draft_ready",
+      "expect_trigger_type": "schedule",
+      "trigger_assertion": "hard"
+    },
+    "notes": "GATE-BOUNDARY probe. Sits just outside the schedule-keyword set in gates.rs (no 'daily/every/each'), so intent_implies_trigger should be Closed and force a cadence question. Contrast with ctl-hn-digest-zero-ask, which is fully inside it."
+  }
+]

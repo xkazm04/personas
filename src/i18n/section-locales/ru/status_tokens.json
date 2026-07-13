@@ -55,20 +55,20 @@
     "testing": "Тестирование"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "Анализ",
+    "planning": "Планирование",
+    "implementing": "Реализация",
+    "validating": "Проверка",
+    "complete": "Завершено"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "Ожидание",
+    "review": "Проверка",
+    "blocked": "Заблокировано",
+    "in_progress": "В процессе",
+    "running": "Выполняется",
+    "completed": "Завершено",
+    "done": "Завершено"
   },
   "test": {
     "generating": "Генерация",
@@ -89,17 +89,17 @@
   "circuit_breaker": {
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
-    "provider_global": "Global"
+    "provider_global": "Глобальный"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "Высокая",
+    "medium": "Средняя",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "средний",
+    "high": "высокий"
   },
   "verdict": {
     "production": "Продакшен",
@@ -128,5 +128,10 @@
     "backoff": "Откат",
     "fresh": "Свежий",
     "active": "Активный"
+  },
+  "thinking": {
+    "high": "Высокий",
+    "low": "Низкий",
+    "medium": "Средний"
   }
 }

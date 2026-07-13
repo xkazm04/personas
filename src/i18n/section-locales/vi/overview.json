@@ -399,7 +399,35 @@
     "section_instruments": "Công cụ đo lường",
     "section_memory": "Gợi ý bộ nhớ",
     "section_fleet": "Tối ưu hóa đội",
-    "section_routines": "Thói quen & thay đổi kho lưu trữ"
+    "section_routines": "Thói quen & thay đổi kho lưu trữ",
+    "instruments_subtitle": "đo lường hạm đội",
+    "memory_suggestions_count": "{count} gợi ý",
+    "pane_instruments": "Thiết bị",
+    "pane_memory": "Bộ nhớ",
+    "pane_stream": "Luồng",
+    "pane_vitals": "Chỉ số",
+    "spark_traffic_errors": "lưu lượng · lỗi",
+    "status_errors": "lỗi",
+    "status_label": "trạng thái",
+    "status_runs": "lượt chạy",
+    "status_sources": "nguồn",
+    "status_synced": "đã đồng bộ",
+    "stream_agent_fallback": "agent",
+    "stream_events_count": "{count} sự kiện",
+    "success_label": "thành công",
+    "tile_agents": "Agent",
+    "tile_alerts": "Cảnh báo",
+    "tile_reviews": "Đánh giá",
+    "tile_runs": "Lượt chạy",
+    "traffic_label": "Lưu lượng",
+    "triage_detail_alerts": "cảnh báo sức khỏe đang hoạt động",
+    "triage_detail_messages": "chưa đọc trong hộp thư",
+    "triage_detail_reviews": "hàng đợi đánh giá thủ công",
+    "triage_tag_alert": "ALT",
+    "triage_tag_message": "MSG",
+    "triage_tag_pipeline": "SYS",
+    "triage_tag_review": "REV",
+    "vitals_subtitle_fleet": "sức khỏe hạm đội"
   },
   "execution_metrics": {
     "title": "Số liệu thực thi",
@@ -806,7 +834,11 @@
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "Errors",
     "tool_performance_empty": "No tool runs in this window",
-    "tool_performance_unit_ms": "ms"
+    "tool_performance_unit_ms": "ms",
+    "range_days_ago": "{days} Ngày Trước",
+    "range_today": "Hôm Nay",
+    "range_yesterday": "Hôm Qua",
+    "traffic_errors_chart_aria": "Biểu đồ lưu lượng và lỗi"
   },
   "cards": {
     "fleet_optimization": "Tối ưu hóa đội",
@@ -1566,7 +1598,8 @@
     "month_sep": "Sep",
     "month_oct": "Oct",
     "month_nov": "Nov",
-    "month_dec": "Dec"
+    "month_dec": "Dec",
+    "aria_year_activity": "Hoạt động thực thi trong năm qua"
   },
   "trend": {
     "up": "Up",

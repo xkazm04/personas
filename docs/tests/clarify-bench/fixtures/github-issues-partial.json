@@ -1,0 +1,17 @@
+{
+  "id": "github-issues-partial",
+  "vagueness": "medium",
+  "vague_intent": "watch my GitHub repo and tell me about important issues",
+  "true_intent": "Watch the acme/backend repo. When a new issue is opened and labelled 'bug' or 'security', post a short summary to our #eng-alerts Slack channel. 'Important' = those two labels. Only new issues, in real time, not a digest.",
+  "must_clarify": [
+    "which repo (owner/name)",
+    "what counts as 'important' (labels / keywords / priority)",
+    "where to deliver the alert (destination)"
+  ],
+  "must_not_assume": [
+    "a specific repo without asking",
+    "a digest/schedule when the user wants real-time event alerts"
+  ],
+  "expect_questions": 3,
+  "notes": "PARTIAL spec: names the connector (GitHub) so the connector category is less ambiguous, but 'my repo' (which one), 'important' (undefined), and the output destination are all unresolved. Trigger is event-based (issue opened) — must not collapse to a schedule."
+}

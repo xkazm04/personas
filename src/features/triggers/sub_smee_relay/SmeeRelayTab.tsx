@@ -3,7 +3,7 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus, ExternalLink, Unplug, Plug,
+  Plus, ExternalLink, Plug,
   AlertCircle, Trash2, Pause, Play, Filter, X, CheckCircle2,
 } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -11,6 +11,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { RELAY_GLYPH } from '@/features/shared/glyph/glyphs/relayGlyph';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useSmeeRelayStatus } from '@/hooks/realtime/useSmeeRelayStatus';
 import { useAgentStore } from '@/stores/agentStore';
@@ -320,9 +321,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         {/* Empty state */}
         {!isLoading && relays.length === 0 && !showAdd && (
           <EmptyState
-            icon={Unplug}
-            iconColor="text-purple-400/60"
-            iconContainerClassName="bg-purple-500/10 border-purple-500/20"
+            glyph={RELAY_GLYPH}
             title={t.triggers.no_smee_relays}
             subtitle={t.triggers.smee_relay_desc}
             action={{ label: t.triggers.add_first_relay, onClick: () => setShowAdd(true), icon: Plus }}

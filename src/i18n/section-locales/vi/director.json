@@ -81,7 +81,7 @@
   "empty_subtitle": "Gắn sao một agent trên trang Agents để đưa vào huấn luyện của Director. Director chấm điểm lần chạy mới nhất của mỗi agent được gắn sao và theo dõi xem huấn luyện có hiệu quả không.",
   "empty_cta": "Đến Agents",
   "roster_title": "Phạm vi huấn luyện",
-  "roster_col_agent": "Agent",
+  "roster_col_agent": "Tác nhân",
   "roster_col_score": "Mới nhất",
   "roster_col_trend": "Xu hướng",
   "roster_col_value": "Giá trị",

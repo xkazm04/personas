@@ -1385,7 +1385,28 @@
       "subagents": "Subagents",
       "deep_fanout": "Deep fan-out",
       "deep_fanout_hint": "Delegate independent parallel sub-tasks to subagents. Set a budget cap.",
-      "deep_fanout_unavailable": "Unavailable on this plan — needs the Workflow/Task tools (Max/Team)."
+      "deep_fanout_unavailable": "Unavailable on this plan — needs the Workflow/Task tools (Max/Team).",
+      "tab_chain": "Chain",
+      "verdict_field": "Verdict",
+      "retry_of_field": "Retry of",
+      "retry_of": "Retry of #{id}",
+      "retry_of_tooltip": "The original run this is a healing retry of",
+      "thinking_tooltip": "Reasoning effort this run used",
+      "load_failed_title": "Couldn’t load runs",
+      "load_failed_body": "The execution history failed to load. Check your connection and try again.",
+      "log_truncated_banner": "This log may be incomplete — some output was dropped due to a write error.",
+      "trace_empty_hint": "Detailed traces are captured for tool-using and newer runs. This run has none to show.",
+      "load_more": "Load {count} more",
+      "chain_title": "Execution chain",
+      "chain_subtitle": "Runs linked by this chain trace, in order",
+      "chain_current": "This run",
+      "chain_open": "Open run",
+      "chain_spans_count": "{count} spans",
+      "chain_partial": "Some runs in this chain aren’t shown — they may belong to another persona.",
+      "chain_empty": "No linked runs found for this chain.",
+      "chain_failed": "Couldn’t load the chain: {error}",
+      "chain_loading": "Loading chain…",
+      "chain_badge_tooltip": "Part of a multi-step chain — view the full chain"
     },
     "lab": {
       "vr_title": "Versions & Ratings",
@@ -6077,7 +6098,35 @@
       "section_routines": "Routines & vault changes",
       "triage_jump": "Most urgent",
       "triage_detail_pipelines": "data sources failing to sync",
-      "triage_up_next": "Up next"
+      "triage_up_next": "Up next",
+      "pane_vitals": "Vitals",
+      "pane_instruments": "Instruments",
+      "pane_stream": "Stream",
+      "vitals_subtitle_fleet": "fleet health",
+      "instruments_subtitle": "fleet telemetry",
+      "stream_events_count": "{count} events",
+      "success_label": "success",
+      "status_label": "status",
+      "status_sources": "sources",
+      "status_errors": "errors",
+      "status_runs": "runs",
+      "status_synced": "synced",
+      "traffic_label": "Traffic",
+      "spark_traffic_errors": "traffic · errors",
+      "triage_tag_alert": "ALT",
+      "triage_tag_pipeline": "SYS",
+      "triage_tag_review": "REV",
+      "triage_tag_message": "MSG",
+      "triage_detail_alerts": "active health alerts",
+      "triage_detail_reviews": "manual review queue",
+      "triage_detail_messages": "unread in inbox",
+      "tile_runs": "Runs",
+      "tile_agents": "Agents",
+      "tile_alerts": "Alerts",
+      "tile_reviews": "Reviews",
+      "pane_memory": "Memory",
+      "memory_suggestions_count": "{count} suggestions",
+      "stream_agent_fallback": "agent"
     },
     "execution_metrics": {
       "title": "Execution Metrics",
@@ -6601,7 +6650,11 @@
       "success_badge": "Success",
       "alerts_badge": "Alerts",
       "agents_badge": "Agents",
-      "pipelines_badge": "Pipelines"
+      "pipelines_badge": "Pipelines",
+      "traffic_errors_chart_aria": "Traffic and errors chart",
+      "range_today": "Today",
+      "range_yesterday": "Yesterday",
+      "range_days_ago": "{days} Days Ago"
     },
     "cards": {
       "fleet_optimization": "Fleet Optimization",
@@ -7062,7 +7115,8 @@
       "month_sep": "Sep",
       "month_oct": "Oct",
       "month_nov": "Nov",
-      "month_dec": "Dec"
+      "month_dec": "Dec",
+      "aria_year_activity": "Execution activity over the last year"
     },
     "remote_control_card": {
       "connect_to_desktop": "Connect to Desktop",
@@ -11501,6 +11555,11 @@
       "backoff": "Backoff",
       "fresh": "Fresh",
       "active": "Active"
+    },
+    "thinking": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
     }
   },
   "project_overview": {

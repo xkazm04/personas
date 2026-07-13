@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { ChevronDown, ChevronRight, FileText, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, Loader2, AlertTriangle } from 'lucide-react';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getExecutionLog } from '@/api/agents/executions';
@@ -9,9 +9,12 @@ import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 interface ExecutionLogViewerProps {
   executionId: string;
   personaId: string | null;
+  /** When true, the backend flagged this log file as possibly incomplete
+   *  (dropped output due to a write error) — surface a warning banner. */
+  logTruncated?: boolean;
 }
 
-export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewerProps) {
+export function ExecutionLogViewer({ executionId, personaId, logTruncated = false }: ExecutionLogViewerProps) {
   const { t } = useTranslation();
   const [showLog, setShowLog] = useState(false);
   const [logContent, setLogContent] = useState<string | null>(null);
@@ -72,6 +75,12 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
       </div>
       {showLog && (
           <div>
+            {logTruncated && (
+              <div className="animate-fade-slide-in flex items-center gap-2 mb-2 p-2.5 bg-status-warning/10 border border-status-warning/25 rounded-modal typo-body text-status-warning">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                {t.agents.executions.log_truncated_banner}
+              </div>
+            )}
             {logLoading && (
               <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />

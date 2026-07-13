@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { RefreshCw, Search, X } from 'lucide-react';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { FEEDS_GLYPH } from '@/features/shared/glyph/glyphs/feedsGlyph';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import { useSharedEvents } from './useSharedEvents';
@@ -154,6 +155,7 @@ export function SharedEventsTab() {
           isLoading={loading}
           emptyTitle={loading ? t.triggers.loading_catalog : t.triggers.no_feeds}
           emptyDescription={t.triggers.no_feeds_hint}
+          emptyGlyph={loading ? undefined : FEEDS_GLYPH}
           defaultSortKey="last_change"
           defaultSortDir="desc"
           rowAccent={(e) => (subByEntryId.has(e.id) ? 'border-l-emerald-400' : undefined)}

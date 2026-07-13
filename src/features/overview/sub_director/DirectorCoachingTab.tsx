@@ -10,6 +10,7 @@ import { StatCard } from '@/features/shared/components/display/StatCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { COACHING_GLYPH } from '@/features/shared/glyph/glyphs/coachingGlyph';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -145,6 +146,7 @@ export default function DirectorCoachingTab() {
           <div className="flex items-center justify-center py-16"><LoadingSpinner /></div>
         ) : !p || inScope === 0 ? (
           <EmptyState
+            glyph={COACHING_GLYPH}
             title={t.director.empty_title}
             subtitle={t.director.empty_subtitle}
             action={{ label: t.director.add_to_scope, onClick: () => setAddOpen(true), icon: UserPlus }}

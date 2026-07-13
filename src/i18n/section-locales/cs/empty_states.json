@@ -14,7 +14,7 @@
   "tools_subtitle": "Připoj externí služby, aby tvůj agent mohl provádět akce a přistupovat k datům.",
   "use_cases_title": "Zatím nejsou definovány žádné případy užití",
   "use_cases_subtitle": "Definuj, co má tento agent dělat -- importuj z workflow nebo popiš prostým jazykem.",
-  "no_results_title": "No matches for your filters",
-  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
-  "reset_filters": "Reset filters"
+  "no_results_title": "Žádné výsledky pro vaše filtry",
+  "no_results_subtitle": "Zkuste upravit nebo vymazat filtry a zobrazit více výsledků.",
+  "reset_filters": "Obnovit filtry"
 }

@@ -55,20 +55,20 @@
     "testing": "测试中"
   },
   "task_phase": {
-    "analyzing": "Analyzing",
-    "planning": "Planning",
-    "implementing": "Implementing",
-    "validating": "Validating",
-    "complete": "Complete"
+    "analyzing": "分析中",
+    "planning": "规划中",
+    "implementing": "实现中",
+    "validating": "验证中",
+    "complete": "已完成"
   },
   "goal_state": {
-    "pending": "Pending",
-    "review": "Review",
-    "blocked": "Blocked",
-    "in_progress": "In Progress",
-    "running": "Running",
-    "completed": "Done",
-    "done": "Done"
+    "pending": "待处理",
+    "review": "审核中",
+    "blocked": "受阻",
+    "in_progress": "进行中",
+    "running": "运行中",
+    "completed": "已完成",
+    "done": "已完成"
   },
   "test": {
     "generating": "生成中",
@@ -89,17 +89,17 @@
   "circuit_breaker": {
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
-    "provider_global": "Global"
+    "provider_global": "全局"
   },
   "forage_confidence": {
-    "high": "High",
-    "medium": "Medium",
+    "high": "高",
+    "medium": "中",
     "low": "Low"
   },
   "capability_risk": {
     "low": "low",
-    "medium": "medium",
-    "high": "high"
+    "medium": "中",
+    "high": "高"
   },
   "verdict": {
     "production": "生产就绪",
@@ -128,5 +128,10 @@
     "backoff": "退避中",
     "fresh": "全新",
     "active": "活跃"
+  },
+  "thinking": {
+    "high": "高",
+    "low": "低",
+    "medium": "中"
   }
 }

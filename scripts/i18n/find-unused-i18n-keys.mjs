@@ -157,6 +157,40 @@ const T_REF_RE = /\bt\.([a-z_][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+)*)/g;
 // quoted category name. The category becomes a used prefix under status_tokens.
 const TOKEN_LABEL_RE = /\btokenLabel\s*\(\s*t\s*,\s*['"]([a-z_][a-zA-Z0-9_]*)['"]/g;
 
+// `t` is not the only binding that carries the translation tree:
+//
+//   import { en } from '@/i18n/en'      → `en.alerts.x`   (54 modules bind English
+//                                         at module scope: alertSlice, deployTarget,
+//                                         executionSlice, modelCatalog, …)
+//   const notif = getActiveTranslations()  → `notif.execution.x`
+//
+// Scanning only `t.` reported all of `alerts.*`, `deploy_errors.*` and much of
+// `execution.*` as dead while they were live through the shim. Purging on that
+// output deletes a live key, and a missing leaf renders "" (interpolate() returns
+// empty for a non-string template) — a blank label, strictly worse than an
+// untranslated one. Collect every alias, then match `<alias>.<dotted.path>`.
+// Bare alias: `const notif = getActiveTranslations()` — NOT followed by a dot
+// (a dotted RHS is a sub-object alias, handled separately below).
+const ALIAS_DECL_RE = /(?:const|let|var)\s+(\w+)\s*=\s*getActiveTranslations\s*\(\s*\)(?!\s*\.)/g;
+const aliasRefRe = (name) =>
+  new RegExp(`(?<![\\w.$])${name}\\.([a-z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z0-9_]+)*)`, 'g');
+
+// Chained call, never bound to a variable:
+//   getActiveTranslations().auth.login_timed_out   (src/stores/authStore.ts)
+// The whole `auth` section was deleted because nothing matched `t.auth`.
+const CHAINED_RE = /getActiveTranslations\s*\(\s*\)\.([a-z_][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+)*)/g;
+
+// Sub-object alias: a NESTED node bound to a local, then read by leaf name:
+//   const t = getActiveTranslations().agents.health_digest
+//   …
+//   interpolate(t.signal_open_healing_error, …)
+// `t.signal_open_healing_error` fails the section-root filter (the root is a
+// leaf name, not a section), so ~14 live keys under agents.health_digest looked
+// dead. Capture (alias → base path), then resolve `<alias>.<leaf>` to
+// `<base>.<leaf>`.
+const SUBOBJ_DECL_RE =
+  /(?:const|let|var)\s+(\w+)\s*=\s*(?:getActiveTranslations\s*\(\s*\)|\ben\b|\bt\b)\.([a-z_][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+)*)/g;
+
 const usedPrefixes = new Set();
 
 for (const file of files) {
@@ -177,6 +211,54 @@ for (const file of files) {
   while ((m = TOKEN_LABEL_RE.exec(src)) !== null) {
     usedPrefixes.add(`status_tokens.${m[1]}`);
   }
+
+  while ((m = CHAINED_RE.exec(src)) !== null) {
+    if (topLevelSections.has(m[1].split('.')[0])) usedPrefixes.add(m[1]);
+  }
+
+  // Sub-object aliases, resolved to their absolute path.
+  const subObj = new Map(); // aliasName -> base dotted path
+  while ((m = SUBOBJ_DECL_RE.exec(src)) !== null) {
+    const [, alias, base] = m;
+    if (topLevelSections.has(base.split('.')[0])) subObj.set(alias, base);
+  }
+  for (const [alias, base] of subObj) {
+    usedPrefixes.add(base); // the node itself is referenced
+    const re = aliasRefRe(alias);
+    while ((m = re.exec(src)) !== null) usedPrefixes.add(`${base}.${m[1]}`);
+  }
+
+  // `en` (the back-compat shim) plus any local alias of getActiveTranslations().
+  const aliases = new Set(['en']);
+  while ((m = ALIAS_DECL_RE.exec(src)) !== null) aliases.add(m[1]);
+  for (const alias of aliases) {
+    if (alias === 't') continue; // already covered by T_REF_RE
+    const re = aliasRefRe(alias);
+    while ((m = re.exec(src)) !== null) {
+      const path = m[1];
+      // The section-root filter is what makes this safe: `en.get(…)`,
+      // `notif.length`, `token.map` all fail it.
+      if (!topLevelSections.has(path.split('.')[0])) continue;
+      usedPrefixes.add(path);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Step 3b — routeSections.ts names whole sections as bare string literals
+// ---------------------------------------------------------------------------
+// `credentials: ['vault', 'connector_roles', 'auth']` — these sections are
+// preloaded by route and never written as `t.auth`. The `auth` section (1 key)
+// was purged because of this; restoring it cost a full revert. Any quoted token
+// in this file that matches a top-level section marks the whole section live.
+try {
+  const routeSrc = readFileSync(resolve(ROOT, 'src/i18n/routeSections.ts'), 'utf8');
+  for (const m of routeSrc.matchAll(/['"]([a-z_][a-zA-Z0-9_]*)['"]/g)) {
+    if (topLevelSections.has(m[1])) usedPrefixes.add(m[1]);
+  }
+} catch {
+  // routeSections.ts missing — section-preload hints unavailable; sections only
+  // referenced there will report as unused, which is a visible signal.
 }
 
 // ---------------------------------------------------------------------------

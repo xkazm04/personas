@@ -1,0 +1,16 @@
+{
+  "id": "standup-mostly-specified",
+  "vagueness": "low-control",
+  "vague_intent": "Every weekday at 9am, collect yesterday's merged pull requests from our repo and post a standup summary to Slack.",
+  "true_intent": "Exactly that: a weekday 9am standup that lists yesterday's merged PRs from our main repo and posts the summary to our #standup Slack channel. The only thing I didn't say is WHICH repo and WHICH Slack channel.",
+  "must_clarify": [
+    "which repository",
+    "which Slack channel / destination"
+  ],
+  "must_not_assume": [
+    "a specific repo without asking",
+    "a specific Slack channel without asking"
+  ],
+  "expect_questions": 2,
+  "notes": "LOW-vagueness control. Trigger (weekday 9am), source type (merged PRs), and destination platform (Slack) are all specified — so the build must NOT re-ask those. Only the concrete repo + channel identifiers are missing. A correct build asks ~2 targeted questions, not a full interrogation. Tests calibration: ask only what's genuinely missing."
+}

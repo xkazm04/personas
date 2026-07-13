@@ -62,6 +62,7 @@ pub fn build_capability_prompt(
     capability: &Value,
     connector_context: &str,
     siblings: &str,
+    clarifications: &str,
 ) -> String {
     let cap_id = capability.get("id").and_then(|v| v.as_str()).unwrap_or("");
     format!(
@@ -72,6 +73,7 @@ pub fn build_capability_prompt(
          ## The capability to resolve (resolve ONLY this one)\n{cap}\n\n\
          ## The persona's OTHER capabilities (owned by separate resolvers — do NOT \
          resolve or re-implement these; they are listed so you know what is NOT your job)\n{siblings}\n\n\
+         ## The user's own answers to the clarifying questions (AUTHORITATIVE)\n{clarifications}\n\n\
          ## Available connectors\n{conn}\n\n\
          ## SCOPE RULES (critical — the fan-out resolves each capability in isolation)\n\
          - Resolve ONLY the single capability `{id}`. Its `tool_hints` and `connectors` \
@@ -82,7 +84,13 @@ pub fn build_capability_prompt(
          ONLY when THIS capability itself calls that connector. Do NOT invent connectors \
          that aren't listed (no email/gmail/messaging/database/vector-store unless this \
          capability's own job genuinely requires it AND it appears in the list). Prefer \
-         native tools; when in doubt, bind fewer connectors, not more.\n\n\
+         native tools; when in doubt, bind fewer connectors, not more.\n\
+         - NEVER BIND AN UNCONFIRMED PROVIDER OR DESTINATION. You may bind a specific \
+         service (a mail provider, a chat destination, a database) ONLY if it is (a) named \
+         explicitly in the persona identity/capability above, or (b) confirmed by the user's \
+         answers listed above. If this capability needs a destination the user never \
+         confirmed, leave `connectors` unresolved and describe the step generically — do NOT \
+         guess Gmail, Slack, Discord, or any other plausible default.\n\n\
          ## Your task\n\
          Emit the v3 `capability_resolution` events for capability `{id}` and NOTHING \
          else. Resolve each applicable field: suggested_trigger, connectors, tool_hints, \
@@ -96,6 +104,7 @@ pub fn build_capability_prompt(
         core = serde_json::to_string_pretty(behavior_core).unwrap_or_default(),
         cap = serde_json::to_string_pretty(capability).unwrap_or_default(),
         siblings = siblings,
+        clarifications = clarifications,
         conn = connector_context,
         id = cap_id,
     )
@@ -192,6 +201,7 @@ pub async fn fan_out_resolution(
     behavior_core: Value,
     capabilities: Vec<Value>,
     connector_context: String,
+    clarifications: String,
     max_parallel: usize,
 ) -> Vec<CapabilityResolution> {
     // Summarise the sibling capabilities (id: title) so each isolated sub-agent
@@ -215,8 +225,13 @@ pub async fn fan_out_resolution(
         .into_iter()
         .filter_map(|cap| {
             let cap_id = cap.get("id").and_then(|v| v.as_str())?.to_string();
-            let prompt =
-                build_capability_prompt(&behavior_core, &cap, &connector_context, &siblings);
+            let prompt = build_capability_prompt(
+                &behavior_core,
+                &cap,
+                &connector_context,
+                &siblings,
+                &clarifications,
+            );
             let args = cli_args.clone();
             let sid = session_id.clone();
             let cid = cap_id.clone();
@@ -439,6 +454,333 @@ async fn resolve_persona_wide(cli_args: CliArgs, prompt: String) -> (Value, Turn
     (found, usage)
 }
 
+/// One clarifying question the build genuinely needs answered before it can bind
+/// a value. See `build_clarify_prompt` for the selection rules.
+#[derive(Debug, Clone)]
+pub struct ClarifyQuestion {
+    pub cell_key: String,
+    pub question: String,
+    pub options: Vec<String>,
+}
+
+/// Cell keys the clarify round is allowed to ask about. Anything else the model
+/// proposes is dropped — this is the Rust-side enforcement of "ask by information
+/// value, not by template" (clarify-bench baseline: the build interrogated
+/// memory / output-format / storage, which all have safe defaults, while never
+/// asking which repo / channel / provider it was about to bind).
+const CLARIFY_ALLOWED_CELLS: &[&str] = &[
+    "behavior_core", // mission / scope narrowing when the intent is too broad
+    "connectors",    // which provider / destination to bind
+    "triggers",      // when it fires, when the intent implies no cadence
+    "use-cases",     // which concrete job(s) to build
+    "human-review",  // ONLY when a capability writes to an external service
+];
+
+/// The single batched clarify turn. Its whole job is to decide WHICH questions
+/// carry information the build cannot safely default, and to emit them all at
+/// once so the user answers one round instead of N serial ones.
+fn build_clarify_prompt(intent: &str, behavior_core: &Value, capabilities: &[Value], connector_context: &str) -> String {
+    let caps_brief: Vec<Value> = capabilities
+        .iter()
+        .map(|c| {
+            serde_json::json!({
+                "id": c.get("id"),
+                "title": c.get("title"),
+                "summary": c.get("summary").or_else(|| c.get("goal")).or_else(|| c.get("description")),
+            })
+        })
+        .collect();
+    format!(
+        "An AI persona is being built from the user's intent. Your ONLY job is to decide which \
+         clarifying questions genuinely MUST be asked before the persona can be built, and to ask \
+         them ALL AT ONCE in a single round.\n\n\
+         ## The user's original intent (THE ONLY THING THE USER ACTUALLY SAID)\n{intent}\n\n\
+         ## Identity already derived — TREAT AS PROVISIONAL GUESSES, NOT FACTS\n{core}\n\n\
+         ## Capabilities already enumerated — ALSO PROVISIONAL\n{caps}\n\n\
+         ## Connectors available in the user's vault\n{conn}\n\n\
+         ## FIRST: audit the guesses above against the user's actual intent\n\
+         The identity and capabilities were guessed by another model. If they name a provider, a \
+         destination, a filter, or a scope that does NOT appear in the user's original intent \
+         above, that is an UNCONFIRMED GUESS and you MUST ask about it — never accept it and never \
+         phrase a question that presupposes it (do NOT write \"Beyond Gmail, ...\" if the user \
+         never said Gmail).\n\
+         **The CAPABILITIES are guesses too.** If the user named a DOMAIN but never said what the \
+         persona should actually DO with it (\"helps with my emails\", \"something for my \
+         research\"), then every enumerated capability is invented. You MUST ask what it should do, \
+         offering the plausible jobs as options — and you must NOT ask a question that presupposes \
+         an invented job (do NOT ask \"when should the morning digest run?\" if the user never \
+         asked for a digest).\n\n\
+         ## How many jobs to build\n\
+         - The intent names a BOUNDED domain but no jobs (\"my emails\", \"my research\"): the user \
+         probably wants SEVERAL things. Ask what it should do and let them pick more than one — say \
+         \"select all that apply\" in the question. Do NOT ask which to do \"first\"; that wrongly \
+         throws away the jobs they also want.\n\
+         - The intent is UNBOUNDED (\"manage my whole workflow\", \"make my life easier\"): ask them \
+         to name the ONE concrete job to start with.\n\n\
+         ## Irreversible actions — always ask before acting on the user's behalf\n\
+         If any plausible job would act irreversibly on the user's behalf — send an email or \
+         message, publish or post publicly, delete data, move money — you MUST ask whether it should \
+         do that automatically or prepare a draft for the user to review. Ask this even if the \
+         capabilities currently listed look read-only, because the job the user actually wants may \
+         not be listed yet. This is the one safety question you may always spend a slot on.\n\n\
+         ## ASK only for information that cannot be safely defaulted\n\
+         Ask when — and ONLY when — the persona must BIND a value the intent leaves unnamed:\n\
+         - a concrete identifier: WHICH repository, WHICH channel, WHICH database/board/sheet, \
+         WHICH inbox or account, WHICH topic to track. Whenever the user says \"my X\" without \
+         naming which X, that identifier is unresolved — including the SCOPE of an account (a \
+         support inbox vs all their mail, one repo vs the whole org);\n\
+         - a provider or destination: which service the persona reads from or writes to, when the \
+         intent names none (e.g. \"post updates\" — post WHERE? \"my emails\" — which provider?);\n\
+         - a BEHAVIOUR-CHANGING QUALIFIER the intent leaves undefined. These are not identifiers, \
+         and they are easy to miss — ask for them anyway:\n\
+           * DIRECTION of an operation between two systems (one-way or two-way? which side is the \
+         source of truth?) — never assume two-way;\n\
+           * the DEFINITION of a vague filter or threshold the intent hinges on (\"important\", \
+         \"urgent\", \"relevant\", \"new\") — ask what actually qualifies;\n\
+           * WHICH of several jobs to do first, when the user named more than one;\n\
+         - the concrete job/scope, when the intent is so broad the capabilities cannot be pinned \
+         down (e.g. \"manage my whole workflow\") — ask the user to name the ONE job to start with;\n\
+         - the trigger/cadence, ONLY when the intent implies no cadence and no event.\n\n\
+         ## Budget your four slots — bundle, never split\n\
+         - Ask for an identifier and its SCOPE in the SAME question: \"Which email provider, and \
+         which account or inbox should it read — all your mail, or one address?\"; \"Which Slack \
+         channel should it post to?\". NEVER spend two slots on one identifier (do not ask \"where \
+         should this be posted?\" and then \"which channel?\" — that is one question).\n\
+         - Prefer a question that pins down WHAT the persona will do or BINDS over one that merely \
+         tunes HOW OFTEN it runs. If you can only ask four things, spend them on: what it should do, \
+         the provider+account/scope, the direction, and any irreversible-action approval — before \
+         cadence, and before a filter definition you could reasonably default.\n\n\
+         ## NEVER ask about these — resolve them with safe defaults\n\
+         - memory / what to remember between runs (default: none, unless the job needs dedup or \
+         cross-run state, in which case just enable it);\n\
+         - output format (default: concise markdown);\n\
+         - where to store output / \"which storage connector\" (default: none — deliver in-app);\n\
+         - human review / approval — EXCEPT you may ask this ONCE if a capability WRITES to or \
+         PUBLISHES to an external third-party service. For read-only capabilities the default is \
+         no review.\n\n\
+         ## Hard rules\n\
+         - NEVER ask about anything the intent already states. Re-asking a specified value is a \
+         failure.\n\
+         - If the intent already names every binding it needs, output an EMPTY array. Asking zero \
+         questions is the CORRECT answer for a fully-specified intent.\n\
+         - At most 4 questions. Choose the highest-information ones.\n\
+         - Give 2-4 concrete `options` when a closed set exists; otherwise use an empty options \
+         array for a free-text answer.\n\
+         - `cell_key` must be one of: behavior_core, connectors, triggers, use-cases, human-review.\n\n\
+         Emit EXACTLY one JSON line and NOTHING else:\n\
+         {{\"clarifying_questions\": [{{\"cell_key\": \"connectors\", \"question\": \"...\", \
+         \"options\": [\"...\"]}}]}}",
+        intent = intent.trim(),
+        core = serde_json::to_string_pretty(behavior_core).unwrap_or_default(),
+        caps = serde_json::to_string_pretty(&caps_brief).unwrap_or_default(),
+        conn = connector_context,
+    )
+}
+
+/// Pull `{"clarifying_questions": [...]}` out of a CLI stream-json line, tolerant
+/// of the assistant/result envelope, markdown fences, and pretty-printing.
+fn extract_clarify_questions(line: &str) -> Option<Vec<ClarifyQuestion>> {
+    let json: Value = serde_json::from_str(line.trim()).ok()?;
+    let text = json
+        .get("message")
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_array())
+        .and_then(|a| a.iter().find_map(|it| it.get("text").and_then(|t| t.as_str())))
+        .or_else(|| json.get("result").and_then(|r| r.as_str()));
+
+    let parse_arr = |v: &Value| -> Option<Vec<ClarifyQuestion>> {
+        let arr = v.get("clarifying_questions")?.as_array()?;
+        Some(
+            arr.iter()
+                .filter_map(|q| {
+                    let cell = q.get("cell_key").and_then(|x| x.as_str())?.to_string();
+                    let question = q.get("question").and_then(|x| x.as_str())?.to_string();
+                    let options = q
+                        .get("options")
+                        .and_then(|x| x.as_array())
+                        .map(|a| a.iter().filter_map(|o| o.as_str().map(str::to_string)).collect())
+                        .unwrap_or_default();
+                    Some(ClarifyQuestion { cell_key: cell, question, options })
+                })
+                .collect(),
+        )
+    };
+
+    if let Some(text) = text {
+        let cleaned = text.replace("```json", "").replace("```", "");
+        for l in cleaned.lines() {
+            if let Ok(v) = serde_json::from_str::<Value>(l.trim()) {
+                if let Some(qs) = parse_arr(&v) {
+                    return Some(qs);
+                }
+            }
+        }
+        if let Ok(v) = serde_json::from_str::<Value>(cleaned.trim()) {
+            if let Some(qs) = parse_arr(&v) {
+                return Some(qs);
+            }
+        }
+        return None;
+    }
+    parse_arr(&json)
+}
+
+/// Sanitize the model's proposal: drop disallowed cell keys (the template
+/// questions the baseline showed it loves to ask), de-duplicate cell keys so each
+/// answer maps to exactly one question, and cap at 4.
+fn sanitize_clarify(questions: Vec<ClarifyQuestion>) -> Vec<ClarifyQuestion> {
+    let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    let mut out = Vec::new();
+    for mut q in questions {
+        if !CLARIFY_ALLOWED_CELLS.contains(&q.cell_key.as_str()) || q.question.trim().is_empty() {
+            continue;
+        }
+        let n = seen.entry(q.cell_key.clone()).or_insert(0);
+        *n += 1;
+        if *n > 1 {
+            q.cell_key = format!("{}#{}", q.cell_key, n);
+        }
+        out.push(q);
+        if out.len() == 4 {
+            break;
+        }
+    }
+    out
+}
+
+/// Run the clarify sub-agent (fresh CLI, no `--continue`).
+async fn resolve_clarify(cli_args: CliArgs, prompt: String) -> (Vec<ClarifyQuestion>, TurnUsage) {
+    let mut driver = match CliProcessDriver::spawn_temp(&cli_args, "build-clarify") {
+        Ok(d) => d,
+        Err(_) => return (Vec::new(), TurnUsage::default()),
+    };
+    if driver.write_stdin_line(prompt.as_bytes()).await.is_err() {
+        driver.kill().await;
+        return (Vec::new(), TurnUsage::default());
+    }
+    driver.close_stdin().await;
+    let mut usage = TurnUsage::default();
+    let mut found: Option<Vec<ClarifyQuestion>> = None;
+    if let Some(mut reader) = driver.take_stdout_reader() {
+        loop {
+            match read_line_limited(&mut reader).await {
+                Ok(Some(line)) => {
+                    if let Some(u) = super::parser::extract_result_usage(&line) {
+                        usage.add(TurnUsage {
+                            cost_usd: u.cost_usd,
+                            input_tokens: u.input_tokens,
+                            output_tokens: u.output_tokens,
+                        });
+                    }
+                    if let Some(qs) = extract_clarify_questions(&line) {
+                        found = Some(qs);
+                    }
+                }
+                Ok(None) | Err(_) => break,
+            }
+        }
+    }
+    let _ = driver.finish().await;
+    (sanitize_clarify(found.unwrap_or_default()), usage)
+}
+
+/// Emit every clarifying question at once, park at `awaiting_input`, and collect
+/// all answers in ONE round. This is the fix for serial asking: the runner's
+/// per-question loop costs a full CLI turn per answer, whereas this parks once.
+/// Accepts either per-cell answers (one `UserAnswer` per question) or a single
+/// `_batch` answer from the UI.
+async fn run_clarify_round(
+    pool: &DbPool,
+    channel: &Channel<Value>,
+    app_handle: &tauri::AppHandle,
+    session_id: &str,
+    questions: &[ClarifyQuestion],
+    input_rx: &mut tokio::sync::mpsc::Receiver<crate::db::models::UserAnswer>,
+    cancel_flag: &Arc<AtomicBool>,
+) -> Result<Vec<(String, String)>, String> {
+    for q in questions {
+        let ev = BuildEvent::Question {
+            session_id: session_id.to_string(),
+            cell_key: q.cell_key.clone(),
+            question: q.question.clone(),
+            options: (!q.options.is_empty()).then(|| q.options.clone()),
+            connector_category: None,
+            accepts_reference: false,
+            accepts_webhook_source: false,
+            suggested: Vec::new(),
+        };
+        let _ = super::events::dual_emit(pool, channel, app_handle, &ev);
+    }
+    // Persist the WHOLE batch (not just the last question, which is what the
+    // serial runner path does) so status/restore surfaces every open question.
+    let batch = serde_json::json!({
+        "questions": questions.iter().map(|q| serde_json::json!({
+            "cell_key": q.cell_key, "question": q.question, "options": q.options
+        })).collect::<Vec<_>>()
+    });
+    build_session_repo::update(
+        pool,
+        session_id,
+        &UpdateBuildSession {
+            phase: Some(BuildPhase::AwaitingInput.as_str().to_string()),
+            pending_question: Some(Some(batch.to_string())),
+            ..Default::default()
+        },
+    )
+    .map_err(|e| format!("saving clarify batch: {e}"))?;
+
+    let mut remaining: std::collections::HashSet<String> =
+        questions.iter().map(|q| q.cell_key.clone()).collect();
+    let mut answers: Vec<(String, String)> = Vec::new();
+    while !remaining.is_empty() {
+        match input_rx.recv().await {
+            Some(a) => {
+                if a.cell_key == "_batch" {
+                    for q in questions {
+                        answers.push((q.question.clone(), a.answer.clone()));
+                    }
+                    remaining.clear();
+                } else if remaining.remove(&a.cell_key) {
+                    let qt = questions
+                        .iter()
+                        .find(|q| q.cell_key == a.cell_key)
+                        .map(|q| q.question.clone())
+                        .unwrap_or_else(|| a.cell_key.clone());
+                    answers.push((qt, a.answer));
+                }
+            }
+            None => return Err("input channel closed while awaiting clarifications".to_string()),
+        }
+        if cancel_flag.load(std::sync::atomic::Ordering::Acquire) {
+            return Err("cancelled".to_string());
+        }
+    }
+
+    build_session_repo::update(
+        pool,
+        session_id,
+        &UpdateBuildSession {
+            phase: Some(BuildPhase::Resolving.as_str().to_string()),
+            pending_question: Some(None),
+            ..Default::default()
+        },
+    )
+    .map_err(|e| format!("clearing clarify batch: {e}"))?;
+    Ok(answers)
+}
+
+/// Render the answered clarifications as authoritative context for the fan-out.
+fn format_clarifications(answers: &[(String, String)]) -> String {
+    if answers.is_empty() {
+        return "(none — the intent named every binding it needed)".to_string();
+    }
+    answers
+        .iter()
+        .map(|(q, a)| format!("- Q: {q}\n  A: {a}"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 /// Build the `## Available connectors` block for the fan-out sub-agents from the
 /// vault. Without it (`connector_context` was `String::new()` since Phase 3), the
 /// per-capability sub-agents can't bind a capability to Airtable/Notion/etc. and
@@ -656,7 +998,8 @@ fn assemble_agent_ir(
     })
 }
 
-/// Multi-agent one-shot build (build-orchestration Phase 3). Rust-orchestrated:
+/// Multi-agent build — clarify-then-fan-out (build-orchestration Phase 3+).
+/// Rust-orchestrated:
 /// a serial head turn (behavior_core + enumeration), a bounded parallel fan-out
 /// of per-capability resolution, then a serial assembly turn (agent_ir). Reuses
 /// the existing `oneshot::run_post_draft` back-half for test → promote.
@@ -664,7 +1007,7 @@ fn assemble_agent_ir(
 /// FIRST DRAFT — the prompt grounding + merge/assembly need live iteration.
 /// Called only when `multiagent && one_shot`; the sequential path is untouched.
 #[allow(clippy::too_many_arguments)]
-pub async fn run_multiagent_oneshot(
+pub async fn run_multiagent(
     pool: DbPool,
     app_handle: tauri::AppHandle,
     channel: Channel<Value>,
@@ -673,8 +1016,11 @@ pub async fn run_multiagent_oneshot(
     cli_args: CliArgs,
     exec_dir: PathBuf,
     initial_prompt: Arc<str>,
+    raw_intent: String,
     connector_context: String,
     max_parallel: usize,
+    one_shot: bool,
+    input_rx: &mut tokio::sync::mpsc::Receiver<crate::db::models::UserAnswer>,
     cancel_flag: Arc<AtomicBool>,
     registry: Arc<ActiveProcessRegistry>,
 ) -> Result<(), String> {
@@ -701,20 +1047,84 @@ pub async fn run_multiagent_oneshot(
         return Err("cancelled".to_string());
     }
 
-    let behavior_core = head
-        .iter()
-        .find_map(|e| match e {
-            BuildEvent::BehaviorCoreUpdate { data, .. } => Some(data.clone()),
-            _ => None,
-        })
-        .unwrap_or_else(|| serde_json::json!({}));
-    let capabilities = head
-        .iter()
-        .find_map(|e| match e {
-            BuildEvent::CapabilityEnumerationUpdate { data, .. } => Some(extract_capabilities(data)),
-            _ => None,
-        })
-        .unwrap_or_default();
+    let read_head = |evs: &[BuildEvent]| -> (Value, Vec<Value>) {
+        let core = evs
+            .iter()
+            .find_map(|e| match e {
+                BuildEvent::BehaviorCoreUpdate { data, .. } => Some(data.clone()),
+                _ => None,
+            })
+            .unwrap_or_else(|| serde_json::json!({}));
+        let caps = evs
+            .iter()
+            .find_map(|e| match e {
+                BuildEvent::CapabilityEnumerationUpdate { data, .. } => {
+                    Some(extract_capabilities(data))
+                }
+                _ => None,
+            })
+            .unwrap_or_default();
+        (core, caps)
+    };
+    let (mut behavior_core, mut capabilities) = read_head(&head);
+    let mut scope_usage = TurnUsage::default();
+
+    // ── 1a. SCOPE ROUND — the intent was too broad to enumerate anything.
+    // The clarify round below runs AFTER enumeration, so an intent like "manage my
+    // whole workflow" would otherwise just hard-fail (clarify-bench baseline:
+    // workflow-overloaded failed in 34s having asked nothing). This is precisely
+    // the user who most needs to be asked. Ask ONE narrowing question, then retry.
+    if capabilities.is_empty() && !one_shot {
+        tracing::info!(session_id = %session_id, "scope: intent too broad to enumerate — asking to narrow");
+        let q = ClarifyQuestion {
+            cell_key: "behavior_core".to_string(),
+            question: "That's a broad request, so let's start with one concrete job. \
+                       What is the single task you'd most like this agent to do for you? \
+                       (For example: \"every morning, pull yesterday's Stripe payouts into my Revenue sheet\".)"
+                .to_string(),
+            options: Vec::new(),
+        };
+        let answers = run_clarify_round(
+            &pool,
+            &channel,
+            &app_handle,
+            &session_id,
+            std::slice::from_ref(&q),
+            input_rx,
+            &cancel_flag,
+        )
+        .await?;
+        let narrowed = answers
+            .first()
+            .map(|(_, a)| a.clone())
+            .unwrap_or_default();
+        if narrowed.trim().is_empty() {
+            return Err("intent too broad and no narrowing answer was given".to_string());
+        }
+        let _ = super::events::update_phase(&pool, &session_id, BuildPhase::Analyzing);
+        let retry_prompt = format!(
+            "{initial}\n\n## The user narrowed their request to ONE concrete job\n{narrowed}\n\n\
+             ## THIS TURN ONLY\n\
+             Build the persona around THAT job. Emit ONLY the behavior_core event, then the \
+             capability_enumeration event, then STOP. Do NOT invent capabilities beyond the \
+             narrowed job and its immediate support. Do NOT resolve capability fields, do NOT \
+             emit persona_resolution or agent_ir. Output raw JSON only, one event per line.",
+            initial = initial_prompt,
+            narrowed = narrowed,
+        );
+        let (head2, usage2) =
+            run_cli_turn(&cli_args, &exec_dir, retry_prompt.as_bytes(), &session_id, false).await?;
+        scope_usage = usage2;
+        for ev in &head2 {
+            emit(ev);
+        }
+        let (core2, caps2) = read_head(&head2);
+        if !caps2.is_empty() {
+            behavior_core = core2;
+            capabilities = caps2;
+        }
+    }
+
     if capabilities.is_empty() {
         return Err("head turn produced no capability_enumeration".to_string());
     }
@@ -737,6 +1147,99 @@ pub async fn run_multiagent_oneshot(
     } else {
         connector_context
     };
+
+    // ── 1b. CLARIFY ROUND (interactive only) — one batched round, or none ──
+    // The serial runner path parks once per question, each costing a full CLI
+    // turn; the clarify-bench baseline measured 3-5 serial rounds on every
+    // fixture and zero capabilities on 3 of 4 vague ones. Here a single sub-agent
+    // decides which questions carry information that cannot be safely defaulted,
+    // and we ask them ALL AT ONCE. A fully-specified intent yields zero questions.
+    let mut clarify_usage = TurnUsage::default();
+    let mut scope_shaping = false;
+    let clarifications = if one_shot {
+        // Headless: nobody to answer. Safe defaults, exactly as before.
+        "(none — headless one-shot build; resolve with sensible defaults)".to_string()
+    } else {
+        let (questions, usage) = resolve_clarify(
+            cli_args.clone(),
+            build_clarify_prompt(&raw_intent, &behavior_core, &capabilities, &connector_context),
+        )
+        .await;
+        clarify_usage = usage;
+        if cancel_flag.load(std::sync::atomic::Ordering::Acquire) {
+            return Err("cancelled".to_string());
+        }
+        if questions.is_empty() {
+            tracing::info!(session_id = %session_id, "clarify: intent fully specified — asking nothing");
+            format_clarifications(&[])
+        } else {
+            tracing::info!(
+                session_id = %session_id,
+                questions = questions.len(),
+                "clarify: asking one batched round"
+            );
+            // A question about the mission or which jobs to build RESHAPES the
+            // capability list — its answer has to feed enumeration, not just
+            // per-capability resolution (clarify-bench: workflow-overloaded asked
+            // "which single area first?" but the 6 already-enumerated capabilities
+            // were resolved anyway).
+            scope_shaping = questions
+                .iter()
+                .any(|q| q.cell_key.starts_with("behavior_core") || q.cell_key.starts_with("use-cases"));
+            let answers = run_clarify_round(
+                &pool,
+                &channel,
+                &app_handle,
+                &session_id,
+                &questions,
+                input_rx,
+                &cancel_flag,
+            )
+            .await?;
+            format_clarifications(&answers)
+        }
+    };
+
+    // ── 1c. RE-ENUMERATE when the user's answers reshaped the scope. Costs one
+    // CLI turn but no extra user-facing round, and it is the only way a "which job
+    // first?" answer can actually prune invented capabilities.
+    if scope_shaping {
+        let reenum_prompt = format!(
+            "{initial}\n\n## The user's answers to your clarifying questions (AUTHORITATIVE)\n{clar}\n\n\
+             ## THIS TURN ONLY\n\
+             Re-emit the behavior_core event and then the capability_enumeration event, scoped \
+             STRICTLY to what the user asked for above. Build exactly the jobs their answers name — \
+             no more, no fewer. If they named ONE job, build ONE capability for it. If they named \
+             SEVERAL (e.g. they selected multiple things it should do), build ONE CAPABILITY PER \
+             NAMED JOB — do not silently drop the others or collapse them into a single digest. \
+             DROP any capability their answers do not support, and do NOT invent adjacent \
+             capabilities they never requested. If they said an action must be reviewed before it \
+             goes out, keep that job and mark it as draft-for-review rather than deleting it. Then \
+             STOP. Do not resolve capability fields, do not emit agent_ir. Raw JSON only, one \
+             event per line.",
+            initial = initial_prompt,
+            clar = clarifications,
+        );
+        let (re_head, re_usage) =
+            run_cli_turn(&cli_args, &exec_dir, reenum_prompt.as_bytes(), &session_id, false).await?;
+        clarify_usage.add(re_usage);
+        for ev in &re_head {
+            emit(ev);
+        }
+        let (core2, caps2) = read_head(&re_head);
+        if !caps2.is_empty() {
+            tracing::info!(
+                session_id = %session_id,
+                before = capabilities.len(),
+                after = caps2.len(),
+                "clarify: re-enumerated capabilities against the user's answers"
+            );
+            behavior_core = core2;
+            capabilities = caps2;
+        }
+    }
+
+    let _ = super::events::update_phase(&pool, &session_id, BuildPhase::Resolving);
     let prose_prompt = build_persona_wide_prompt(&behavior_core, &capabilities);
     let (resolutions, (prose, prose_usage)) = tokio::join!(
         fan_out_resolution(
@@ -745,12 +1248,15 @@ pub async fn run_multiagent_oneshot(
             behavior_core.clone(),
             capabilities.clone(),
             connector_context,
+            clarifications.clone(),
             max_parallel,
         ),
         resolve_persona_wide(cli_args.clone(), prose_prompt),
     );
 
     let mut total_usage = head_usage;
+    total_usage.add(scope_usage);
+    total_usage.add(clarify_usage);
     total_usage.add(prose_usage);
     for res in &resolutions {
         total_usage.add(res.usage);
@@ -761,9 +1267,20 @@ pub async fn run_multiagent_oneshot(
             tracing::warn!(session_id = %session_id, cap = %res.capability_id, error = %err, "multiagent: lane error");
         }
     }
-    let num_turns = 2 + resolutions.len() as i64; // head + N cap lanes + prose lane
+    // head + prose lane + N cap lanes (+ the clarify lane when interactive)
+    let num_turns = 2 + resolutions.len() as i64 + if one_shot { 0 } else { 1 };
     if cancel_flag.load(std::sync::atomic::Ordering::Acquire) {
         return Err("cancelled".to_string());
+    }
+    // Fail loudly rather than emitting an empty persona (clarify-bench baseline:
+    // research-vague reached draft_ready with no agent_ir, workflow-overloaded
+    // hard-failed with no error message — both left the user with nothing).
+    if !resolutions.is_empty() && resolutions.iter().all(|r| r.error.is_some()) {
+        let first = resolutions
+            .iter()
+            .find_map(|r| r.error.clone())
+            .unwrap_or_default();
+        return Err(format!("every capability lane failed (first: {first})"));
     }
 
     // ── 3. Assemble agent_ir in Rust (no serial assembly LLM turn) ─────────
@@ -781,6 +1298,10 @@ pub async fn run_multiagent_oneshot(
         .unwrap_or(false);
     if !has_system_prompt {
         return Err("assembled agent_ir has no usable system_prompt".to_string());
+    }
+    let use_case_count = ir.get("use_cases").and_then(|v| v.as_array()).map_or(0, |a| a.len());
+    if use_case_count == 0 {
+        return Err("assembled agent_ir has zero capabilities — refusing to save an empty persona".to_string());
     }
     tracing::info!(
         session_id = %session_id,
@@ -812,8 +1333,20 @@ pub async fn run_multiagent_oneshot(
     )
     .map_err(|e| format!("save agent_ir: {e}"))?;
 
-    super::oneshot::run_post_draft(app_handle.clone(), session_id, persona_id, cancel_flag, registry)
+    if one_shot {
+        // Headless back-half: test → fix → promote, no human in the loop.
+        super::oneshot::run_post_draft(
+            app_handle.clone(),
+            session_id,
+            persona_id,
+            cancel_flag,
+            registry,
+        )
         .await;
+    } else {
+        // Interactive builds stop at draft_ready; the user tests/promotes in the UI.
+        tracing::info!(session_id = %session_id, "multiagent: draft ready, awaiting user test/promote");
+    }
     Ok(())
 }
 
@@ -827,7 +1360,14 @@ mod tests {
         let core = json!({ "mission": "Summarize the web", "voice": "concise" });
         let cap = json!({ "id": "uc_summarize_url", "title": "Summarize a URL", "summary": "Fetch + summarize a page" });
         let siblings = "- uc_other: Do something else";
-        let p = build_capability_prompt(&core, &cap, "WebSearch, WebFetch (native, no credential)", siblings);
+        let clarifications = "- Q: Which inbox?\n  A: the support inbox";
+        let p = build_capability_prompt(
+            &core,
+            &cap,
+            "WebSearch, WebFetch (native, no credential)",
+            siblings,
+            clarifications,
+        );
         // Targets exactly this capability id, in the required event shape.
         assert!(p.contains("uc_summarize_url"), "prompt must name the capability id");
         assert!(p.contains("capability_resolution"), "prompt must ask for capability_resolution events");
@@ -844,7 +1384,50 @@ mod tests {
 
     #[test]
     fn prompt_handles_missing_id_without_panicking() {
-        let p = build_capability_prompt(&json!({}), &json!({ "title": "x" }), "", "");
+        let p = build_capability_prompt(&json!({}), &json!({ "title": "x" }), "", "", "");
         assert!(p.contains("capability_resolution"));
+    }
+
+    /// The clarify round must be able to say "nothing to ask". A fully-specified
+    /// intent should produce zero questions, and template cells (memory / output
+    /// format / storage) must be dropped even when the model proposes them —
+    /// that is the Rust-side fix for the over-asking the baseline measured.
+    #[test]
+    fn sanitize_clarify_drops_template_cells_and_caps_at_four() {
+        let proposed = vec![
+            ClarifyQuestion { cell_key: "memory".into(), question: "remember?".into(), options: vec![] },
+            ClarifyQuestion { cell_key: "sample-output".into(), question: "format?".into(), options: vec![] },
+            ClarifyQuestion { cell_key: "connectors".into(), question: "which chat?".into(), options: vec![] },
+            ClarifyQuestion { cell_key: "connectors".into(), question: "which sheet?".into(), options: vec![] },
+            ClarifyQuestion { cell_key: "triggers".into(), question: "when?".into(), options: vec![] },
+            ClarifyQuestion { cell_key: "behavior_core".into(), question: "which job?".into(), options: vec![] },
+            ClarifyQuestion { cell_key: "use-cases".into(), question: "extra".into(), options: vec![] },
+        ];
+        let out = sanitize_clarify(proposed);
+        assert!(out.len() <= 4, "caps at 4, got {}", out.len());
+        assert!(out.iter().all(|q| !q.cell_key.starts_with("memory")));
+        assert!(out.iter().all(|q| !q.cell_key.starts_with("sample-output")));
+        // Duplicate cell keys are made unique so each answer maps to one question.
+        assert_eq!(out[0].cell_key, "connectors");
+        assert_eq!(out[1].cell_key, "connectors#2");
+    }
+
+    #[test]
+    fn sanitize_clarify_allows_empty() {
+        assert!(sanitize_clarify(vec![]).is_empty());
+    }
+
+    #[test]
+    fn extract_clarify_questions_reads_fenced_json() {
+        let line = json!({
+            "type": "assistant",
+            "message": {"content": [{"type": "text", "text":
+                "```json\n{\"clarifying_questions\":[{\"cell_key\":\"connectors\",\"question\":\"Where should it post?\",\"options\":[\"Slack\",\"Notion\"]}]}\n```"}]}
+        })
+        .to_string();
+        let qs = extract_clarify_questions(&line).expect("parses");
+        assert_eq!(qs.len(), 1);
+        assert_eq!(qs[0].cell_key, "connectors");
+        assert_eq!(qs[0].options, vec!["Slack".to_string(), "Notion".to_string()]);
     }
 }

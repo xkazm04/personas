@@ -79,6 +79,11 @@ materially edits the working tree should touch this file twice:
 
 1. **At session start (Phase 0):** read this file, scan `## Active
 
+### /perfect — round 1: skill + init + 3 proposal gates + build wave 1 (session 42f2aa07) — completed
+- 2026-07-10: 10/10 accepted directions SHIPPED across 3 contexts via 3 Opus builders in worktrees (2 killed by session limit mid-flight; Director WIP-snapshotted + finished inline). Master commits: overview 7c1192638/fe217a604/c2b0d848b + 0fa74e02a; execmon b3bec7a02/e8b9bc6c9/664df0f9f/5dc6025e2; memory f4cec387d/63adbfa89; docs 0d8fb98ba. Gates: tsc 0, vitest 183 scoped, cargo lite+full, i18n strict 0/0.
+- Vault: Obsidian Perfect/ (10 shipped direction notes, 4 context briefs incl. overview-events for round 2). Worktrees perfect-* removed. Ledger NOT staged.
+- Note: skill.md itself committed by a concurrent session as 709f09f5d.
+
 ### /research — claude-code-2-1-182-to-200
 - Started: 2026-07-05
 - Status: completed (commit: df493b983) — floor 2.1.181 → 2.1.199; Sonnet 5 = catch (alias resolves); 0 descoped-reopens

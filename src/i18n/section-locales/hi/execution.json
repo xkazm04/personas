@@ -25,12 +25,12 @@
   "tool_count_one": "{count} tool",
   "tool_count_other": "{count} tools",
   "missing_count": "{count} missing",
-  "time_seconds_ago": "{count}s ago",
-  "time_minutes_ago": "{count}m ago",
-  "time_hours_ago": "{count}h ago",
-  "budget_reset_tomorrow": "tomorrow",
-  "budget_reset_in_days_one": "in {count} day",
-  "budget_reset_in_days_other": "in {count} days",
-  "interruptions_per_hour_one": "({count} interruption/1h)",
-  "interruptions_per_hour_other": "({count} interruptions/1h)"
+  "time_seconds_ago": "{count} सेकंड पहले",
+  "time_minutes_ago": "{count}मि पहले",
+  "time_hours_ago": "{count}घं पहले",
+  "budget_reset_tomorrow": "कल",
+  "budget_reset_in_days_one": "{count} दिन में",
+  "budget_reset_in_days_other": "{count} दिनों में",
+  "interruptions_per_hour_one": "({count} रुकावट/1घं)",
+  "interruptions_per_hour_other": "({count} रुकावटें/1घं)"
 }

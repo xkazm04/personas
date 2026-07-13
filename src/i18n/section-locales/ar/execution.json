@@ -25,12 +25,12 @@
   "tool_count_one": "{count} tool",
   "tool_count_other": "{count} tools",
   "missing_count": "{count} missing",
-  "time_seconds_ago": "{count}s ago",
-  "time_minutes_ago": "{count}m ago",
-  "time_hours_ago": "{count}h ago",
-  "budget_reset_tomorrow": "tomorrow",
-  "budget_reset_in_days_one": "in {count} day",
-  "budget_reset_in_days_other": "in {count} days",
-  "interruptions_per_hour_one": "({count} interruption/1h)",
-  "interruptions_per_hour_other": "({count} interruptions/1h)"
+  "time_seconds_ago": "منذ {count} ث",
+  "time_minutes_ago": "منذ {count} د",
+  "time_hours_ago": "منذ {count} س",
+  "budget_reset_tomorrow": "غدًا",
+  "budget_reset_in_days_one": "خلال {count} يوم",
+  "budget_reset_in_days_other": "خلال {count} أيام",
+  "interruptions_per_hour_one": "({count} انقطاع/ساعة)",
+  "interruptions_per_hour_other": "({count} انقطاعات/ساعة)"
 }

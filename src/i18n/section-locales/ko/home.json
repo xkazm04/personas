@@ -108,7 +108,7 @@
     "restart": "재시작",
     "start_tour": "투어 시작",
     "steps_count": "{count}단계",
-    "tour_steps_label": "What you'll learn",
+    "tour_steps_label": "배우게 될 내용",
     "power_moves": "파워 무브",
     "moves_used": "{used}/{total} 사용됨",
     "try_it": "시도해보기",
