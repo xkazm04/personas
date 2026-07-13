@@ -3301,6 +3301,7 @@ pub fn run() {
             commands::credentials::vector_kb::kb_search,
             #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_list_documents,
+            commands::credentials::vector_kb::kb_corpus_map,
             #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_delete_document,
             // Radio

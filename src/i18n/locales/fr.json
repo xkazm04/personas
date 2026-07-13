@@ -4046,7 +4046,13 @@
       "tool_count_other": "{count} outils",
       "tab_documents": "Documents",
       "tab_search": "Recherche",
-      "tab_settings": "Paramètres"
+      "tab_settings": "Paramètres",
+      "page_label": "p. {page}",
+      "pages_label": "{count} pages",
+      "partial_text_badge": "Texte partiel",
+      "partial_text_tooltip": "Ce passage a été lu à partir d'une page essentiellement composée d'images, il peut donc être incomplet.",
+      "scanned_pages_tooltip": "Ces pages sont des images sans couche de texte, leur contenu n'est donc pas consultable. Utilisez une copie traitée par OCR pour les inclure.",
+      "scanned_pages_warning": "{count} page(s) numérisée(s) illisible(s)"
     },
     "manager": {
       "title": "Coffre-fort",

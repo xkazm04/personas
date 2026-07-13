@@ -48,6 +48,13 @@ pub struct KbDocument {
     #[ts(type = "number")]
     pub chunk_count: i32,
     pub metadata_json: Option<String>,
+    /// Pages in the source (PDF); `None` for flat text.
+    #[ts(type = "number | null")]
+    pub page_count: Option<i32>,
+    /// Pages with no readable text layer (scanned images). > 0 means part of
+    /// this document is invisible to search.
+    #[ts(type = "number")]
+    pub empty_pages: i32,
     pub status: String,
     pub error_message: Option<String>,
     pub indexed_at: Option<String>,
@@ -71,6 +78,12 @@ pub struct KbChunk {
     #[ts(type = "number")]
     pub token_count: i32,
     pub metadata_json: Option<String>,
+    /// 1-based page this chunk was read from; `None` for flat text.
+    #[ts(type = "number | null")]
+    pub source_page: Option<i32>,
+    /// 0.0..=1.0 — how faithfully this text represents its source page.
+    #[ts(type = "number")]
+    pub extraction_confidence: f32,
 }
 
 // ============================================================================
@@ -90,6 +103,15 @@ pub struct VectorSearchResult {
     #[ts(type = "number")]
     pub distance: f32,
     pub source_path: Option<String>,
+    /// Where in the source this passage came from — the citation. `None` for
+    /// flat text, which has no addressable location beyond the file itself.
+    #[ts(type = "number | null")]
+    pub source_page: Option<i32>,
+    /// How much to trust that this passage is a faithful reading of the source
+    /// (0.0..=1.0). A retrieval hit on a low-confidence chunk is a hit on text
+    /// scraped off a mostly-image page: quote it, but hedge it.
+    #[ts(type = "number")]
+    pub extraction_confidence: f32,
     pub metadata: Option<serde_json::Value>,
 }
 

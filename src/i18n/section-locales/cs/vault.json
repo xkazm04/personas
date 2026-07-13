@@ -616,7 +616,13 @@
     "tool_count_other": "{count} nástrojů",
     "tab_documents": "Dokumenty",
     "tab_search": "Hledat",
-    "tab_settings": "Nastavení"
+    "tab_settings": "Nastavení",
+    "page_label": "s. {page}",
+    "pages_label": "{count} stran",
+    "partial_text_badge": "Částečný text",
+    "partial_text_tooltip": "Tato pasáž byla načtena ze stránky tvořené převážně obrazem, takže může být neúplná.",
+    "scanned_pages_tooltip": "Tyto stránky jsou obrázky bez textové vrstvy, takže jejich obsah nelze prohledávat. Chcete-li je zahrnout, použijte kopii zpracovanou pomocí OCR.",
+    "scanned_pages_warning": "{count} naskenovaných stran nečitelných"
   },
   "manager": {
     "title": "Přihlašovací údaje",

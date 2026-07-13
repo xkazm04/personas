@@ -43,7 +43,7 @@ desktop = [
 # Full desktop = core + ML + P2P. Used by CI and production builds.
 desktop-full = ["desktop", "ml", "p2p"]
 # Vector Knowledge Base: sqlite-vec + local embeddings (ONNX)
-ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort"]
+ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort", "dep:pdf-extract"]
 # P2P / LAN Discovery & Transport (Invisible Apps)
 p2p = ["dep:ed25519-dalek", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde", "dep:socket2"]
 # mobile feature is activated automatically by Tauri v2 when targeting Android/iOS
@@ -176,6 +176,11 @@ bytemuck = "1"
 sqlite-vec = { version = "0.1", optional = true }
 fastembed = { version = "4", optional = true }
 ort = { version = "2.0.0-rc.9", optional = true }
+# PDF text-layer extraction for KB ingestion. Pure Rust (no poppler/pdfium
+# native dep). We use `extract_text_by_pages` specifically — the page split is
+# what gives each chunk a citable source page; the whole-document variant would
+# throw that away.
+pdf-extract = { version = "0.12", optional = true }
 
 # P2P / Identity (Phase 1: Invisible Apps)
 ed25519-dalek = { version = "2", features = ["serde", "zeroize", "rand_core"], optional = true }

@@ -4046,7 +4046,13 @@
       "tool_count_other": "{count} công cụ",
       "tab_documents": "Tài liệu",
       "tab_search": "Tìm kiếm",
-      "tab_settings": "Cài đặt"
+      "tab_settings": "Cài đặt",
+      "page_label": "tr. {page}",
+      "pages_label": "{count} trang",
+      "partial_text_badge": "Văn bản một phần",
+      "partial_text_tooltip": "Đoạn này được đọc từ một trang chủ yếu là hình ảnh, nên có thể chưa đầy đủ.",
+      "scanned_pages_tooltip": "Các trang này là hình ảnh không có lớp văn bản, nên nội dung không thể tìm kiếm. Hãy dùng bản đã xử lý OCR để bao gồm chúng.",
+      "scanned_pages_warning": "{count} trang quét không đọc được"
     },
     "manager": {
       "title": "Thông tin xác thực",

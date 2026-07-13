@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, ChevronDown, ChevronUp, ScanLine } from 'lucide-react';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { VectorSearchResult } from '@/api/vault/database/vectorKb';
 
@@ -10,10 +11,14 @@ interface SearchResultCardProps {
   rank: number;
 }
 
+/** Below this the passage came from a mostly-image page; flag it as partial. */
+const PARTIAL_CONFIDENCE = 0.99;
+
 export function SearchResultCard({ result, rank }: SearchResultCardProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   const [expanded, setExpanded] = useState(false);
+  const isPartial = result.extractionConfidence < PARTIAL_CONFIDENCE;
 
   const preview = result.content.length > 300 && !expanded
     ? result.content.slice(0, 300) + '...'
@@ -38,6 +43,14 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {isPartial && (
+            <Tooltip content={sh.partial_text_tooltip}>
+              <span className="inline-flex items-center gap-1 typo-code px-2 py-0.5 rounded-card border font-mono bg-amber-500/10 text-amber-400/80 border-amber-500/15">
+                <ScanLine className="w-3 h-3" aria-hidden />
+                {sh.partial_text_badge}
+              </span>
+            </Tooltip>
+          )}
           <ScoreBadge score={scorePercent} />
           <CopyButton text={result.content} tooltip="Copy content" />
         </div>
@@ -61,6 +74,9 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
 
         {/* Metadata */}
         <div className="flex items-center gap-3 mt-2 typo-caption text-foreground">
+          {result.sourcePage != null && (
+            <span className="text-primary/80">{tx(sh.page_label, { page: result.sourcePage })}</span>
+          )}
           <span>{sh.distance_label} <Numeric value={result.distance} precision={4} /></span>
           <span>{sh.chunk_label} {result.chunkId.slice(0, 8)}</span>
         </div>

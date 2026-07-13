@@ -616,7 +616,13 @@
     "tool_count_other": "{count}個のツール",
     "tab_documents": "ドキュメント",
     "tab_search": "検索",
-    "tab_settings": "設定"
+    "tab_settings": "設定",
+    "page_label": "p. {page}",
+    "pages_label": "{count} ページ",
+    "partial_text_badge": "部分テキスト",
+    "partial_text_tooltip": "この箇所はほぼ画像のページから読み取られたため、不完全な可能性があります。",
+    "scanned_pages_tooltip": "これらのページはテキストレイヤーのない画像のため、内容は検索できません。含めるには OCR 処理済みのコピーを使用してください。",
+    "scanned_pages_warning": "{count} 件のスキャンページが読み取り不可"
   },
   "manager": {
     "title": "認証情報",

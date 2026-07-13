@@ -4046,7 +4046,13 @@
       "tool_count_other": "{count} 个工具",
       "tab_documents": "文档",
       "tab_search": "搜索",
-      "tab_settings": "设置"
+      "tab_settings": "设置",
+      "page_label": "第 {page} 页",
+      "pages_label": "{count} 页",
+      "partial_text_badge": "部分文本",
+      "partial_text_tooltip": "此段落读取自以图像为主的页面，因此可能不完整。",
+      "scanned_pages_tooltip": "这些页面是没有文本层的图像，因此其内容无法搜索。请使用经过 OCR 处理的副本以纳入它们。",
+      "scanned_pages_warning": "{count} 个扫描页无法读取"
     },
     "manager": {
       "title": "凭据",

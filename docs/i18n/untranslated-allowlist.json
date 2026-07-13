@@ -1904,6 +1904,7 @@
   "fr:vault.schema_configs.database.subtype_postgresql_label",
   "fr:vault.shared.api_path_placeholder",
   "fr:vault.shared.description_label",
+  "fr:vault.shared.pages_label",
   "fr:vault.shared.services",
   "fr:vault.shared.tab_documents",
   "fr:vault.vector.chunks",

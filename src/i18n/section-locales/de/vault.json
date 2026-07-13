@@ -616,7 +616,13 @@
     "tool_count_other": "{count} Tools",
     "tab_documents": "Dokumente",
     "tab_search": "Suche",
-    "tab_settings": "Einstellungen"
+    "tab_settings": "Einstellungen",
+    "page_label": "S. {page}",
+    "pages_label": "{count} Seiten",
+    "partial_text_badge": "Teilweiser Text",
+    "partial_text_tooltip": "Diese Passage wurde von einer überwiegend aus Bildern bestehenden Seite gelesen und ist daher möglicherweise unvollständig.",
+    "scanned_pages_tooltip": "Diese Seiten sind Bilder ohne Textebene, daher ist ihr Inhalt nicht durchsuchbar. Verwenden Sie eine OCR-verarbeitete Kopie, um sie einzuschließen.",
+    "scanned_pages_warning": "{count} gescannte Seite(n) unlesbar"
   },
   "manager": {
     "title": "Zugangsdaten",

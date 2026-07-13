@@ -4046,7 +4046,13 @@
       "tool_count_other": "{count} أدوات",
       "tab_documents": "المستندات",
       "tab_search": "بحث",
-      "tab_settings": "الإعدادات"
+      "tab_settings": "الإعدادات",
+      "page_label": "ص. {page}",
+      "pages_label": "{count} صفحة",
+      "partial_text_badge": "نص جزئي",
+      "partial_text_tooltip": "قُرئ هذا المقطع من صفحة معظمها صور، لذا قد يكون غير مكتمل.",
+      "scanned_pages_tooltip": "هذه الصفحات صور بلا طبقة نص، لذا لا يمكن البحث في محتواها. استخدم نسخة معالجة بـ OCR لتضمينها.",
+      "scanned_pages_warning": "{count} صفحة ممسوحة ضوئيًا غير قابلة للقراءة"
     },
     "manager": {
       "title": "بيانات الاعتماد",

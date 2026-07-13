@@ -1820,7 +1820,7 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r##"vector_search"##,
             fields: r##"[]"##,
             healthcheck_config: None,
-            services: r##"[{"toolName":"kb_semantic_search","label":"Semantic Search"},{"toolName":"kb_list_documents","label":"List Documents"},{"toolName":"kb_ingest_text","label":"Ingest Text"}]"##,
+            services: r##"[{"toolName":"kb_corpus_map","label":"Corpus Map"},{"toolName":"kb_semantic_search","label":"Semantic Search"},{"toolName":"kb_list_documents","label":"List Documents"},{"toolName":"kb_ingest_text","label":"Ingest Text"}]"##,
             events: r##"[]"##,
             metadata: Some(r##"{"template_enabled":true,"summary":"Local vector knowledge base powered by sqlite-vec. Store documents, create embeddings locally, and run semantic search — entirely offline, no API keys needed.","auth_type":"none","auth_type_label":"Built-in (Local)","connection_mode":"local","capabilities":["file_read","vector_search","embedding"],"docs_url":"","setup_guide":"Knowledge bases are stored locally. Drop files or paste text to build your knowledge base. Embedding is done on-device using a lightweight AI model (~23MB download on first use)."}"##),
             resources: None,

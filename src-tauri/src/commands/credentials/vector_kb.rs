@@ -834,6 +834,7 @@ pub async fn kb_search(
 
     let mut stmt = conn.prepare_cached(
         "SELECT c.id, c.document_id, c.content, c.metadata_json,
+                c.source_page, c.extraction_confidence,
                 d.title, d.source_path
          FROM kb_chunks c
          JOIN kb_documents d ON d.id = c.document_id
@@ -846,8 +847,10 @@ pub async fn kb_search(
             row.get::<_, String>(1)?,
             row.get::<_, String>(2)?,
             row.get::<_, Option<String>>(3)?,
-            row.get::<_, String>(4)?,
-            row.get::<_, Option<String>>(5)?,
+            row.get::<_, Option<i32>>(4)?,
+            row.get::<_, f32>(5)?,
+            row.get::<_, String>(6)?,
+            row.get::<_, Option<String>>(7)?,
         ))
     })?;
 
@@ -855,16 +858,38 @@ pub async fn kb_search(
     #[allow(clippy::type_complexity)]
     let mut hydrated: std::collections::HashMap<
         String,
-        (String, String, Option<String>, String, Option<String>),
+        (
+            String,
+            String,
+            Option<String>,
+            Option<i32>,
+            f32,
+            String,
+            Option<String>,
+        ),
     > = std::collections::HashMap::with_capacity(matches.len());
-    for (cid, doc_id, content, meta_json, doc_title, source_path) in rows.flatten() {
-        hydrated.insert(cid, (doc_id, content, meta_json, doc_title, source_path));
+    for (cid, doc_id, content, meta_json, source_page, confidence, doc_title, source_path) in
+        rows.flatten()
+    {
+        hydrated.insert(
+            cid,
+            (
+                doc_id,
+                content,
+                meta_json,
+                source_page,
+                confidence,
+                doc_title,
+                source_path,
+            ),
+        );
     }
 
     // Rebuild results in original vector-search ranking order
     let mut results = Vec::with_capacity(matches.len());
     for (chunk_id, distance) in &matches {
-        let Some((doc_id, content, meta_json, doc_title, source_path)) = hydrated.remove(chunk_id)
+        let Some((doc_id, content, meta_json, source_page, extraction_confidence, doc_title, source_path)) =
+            hydrated.remove(chunk_id)
         else {
             continue;
         };
@@ -902,6 +927,8 @@ pub async fn kb_search(
             score,
             distance: *distance,
             source_path,
+            source_page,
+            extraction_confidence,
             metadata,
         });
     }
@@ -921,6 +948,19 @@ pub async fn kb_list_documents(
 ) -> Result<Vec<KbDocument>, AppError> {
     require_auth(&state).await?;
     kb_ingest::list_kb_documents(&state.user_db, &kb_id)
+}
+
+/// A Markdown overview of everything in a knowledge base — read this before
+/// searching it. Costs a few hundred tokens and tells an agent what the corpus
+/// contains, how large each document is, and which parts are unreadable scans.
+#[tauri::command]
+#[tracing::instrument(skip(state))]
+pub async fn kb_corpus_map(
+    state: State<'_, Arc<AppState>>,
+    kb_id: String,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+    kb_ingest::kb_corpus_map(&state.user_db, &kb_id)
 }
 
 #[tauri::command]

@@ -4278,11 +4278,17 @@ export type Translations = {
       no_documents_description: string;
       delete_document: string;
       chunks_label: string;
+      pages_label: string;
+      scanned_pages_warning: string;
+      scanned_pages_tooltip: string;
       kb_count_summary: string;
       default_patterns: string;
       add_pattern_placeholder: string;
       distance_label: string;
       chunk_label: string;
+      page_label: string;
+      partial_text_badge: string;
+      partial_text_tooltip: string;
       copy_credential_id: string;
       request_body: string;
       add_tag_title: string;

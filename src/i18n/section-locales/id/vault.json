@@ -616,7 +616,13 @@
     "tool_count_other": "{count} alat",
     "tab_documents": "Dokumen",
     "tab_search": "Cari",
-    "tab_settings": "Pengaturan"
+    "tab_settings": "Pengaturan",
+    "page_label": "hlm. {page}",
+    "pages_label": "{count} halaman",
+    "partial_text_badge": "Teks sebagian",
+    "partial_text_tooltip": "Bagian ini dibaca dari halaman yang sebagian besar berupa gambar, jadi mungkin tidak lengkap.",
+    "scanned_pages_tooltip": "Halaman ini berupa gambar tanpa lapisan teks, sehingga isinya tidak dapat dicari. Gunakan salinan yang diproses OCR untuk menyertakannya.",
+    "scanned_pages_warning": "{count} halaman pindaian tidak terbaca"
   },
   "manager": {
     "title": "Kredensial",

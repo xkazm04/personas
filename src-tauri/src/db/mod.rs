@@ -382,6 +382,26 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
     {
         let conn = pool.get()?;
         conn.execute_batch(KNOWLEDGE_BASE_SCHEMA)?;
+
+        // Defensive incremental ALTERs for columns added after the initial
+        // KNOWLEDGE_BASE_SCHEMA. Same contract as the companion block below:
+        // SQLite reports "duplicate column name" on every run after the first,
+        // and that is the success path, not an error. (The system-database
+        // migration runner in db::migrations::incremental does not cover the
+        // user database.)
+        //
+        // Chunk provenance + extraction confidence, added with PDF ingestion:
+        // pre-existing chunks came from verbatim text files, so the 1.0 default
+        // is not merely a filler value — it is correct for every backfilled row.
+        for stmt in &[
+            "ALTER TABLE kb_chunks ADD COLUMN source_page INTEGER;",
+            "ALTER TABLE kb_chunks ADD COLUMN extraction_confidence REAL NOT NULL DEFAULT 1.0;",
+            "ALTER TABLE kb_documents ADD COLUMN page_count INTEGER;",
+            "ALTER TABLE kb_documents ADD COLUMN empty_pages INTEGER NOT NULL DEFAULT 0;",
+        ] {
+            let _ = conn.execute_batch(stmt);
+        }
+
         tracing::debug!("Knowledge base schema ensured in user database");
     }
 
@@ -488,6 +508,12 @@ CREATE TABLE IF NOT EXISTS kb_documents (
     byte_size       INTEGER NOT NULL DEFAULT 0,
     chunk_count     INTEGER NOT NULL DEFAULT 0,
     metadata_json   TEXT,
+    -- Pages in the source document (PDF); NULL for flat text.
+    page_count      INTEGER,
+    -- Pages whose text layer was empty — i.e. scanned images we cannot read
+    -- without OCR. > 0 means "this document is partly invisible to search",
+    -- which the corpus map surfaces rather than letting the user guess.
+    empty_pages     INTEGER NOT NULL DEFAULT 0,
     status          TEXT NOT NULL DEFAULT 'pending',
     error_message   TEXT,
     indexed_at      TEXT,
@@ -504,6 +530,15 @@ CREATE TABLE IF NOT EXISTS kb_chunks (
     content         TEXT NOT NULL,
     token_count     INTEGER NOT NULL DEFAULT 0,
     metadata_json   TEXT,
+    -- Provenance: 1-based page this chunk was read from (paginated sources
+    -- only; NULL for flat text). Without it a retrieved chunk can be quoted
+    -- but never located, so an agent citing the KB can say what but not where.
+    source_page     INTEGER,
+    -- How faithfully this text represents its source, 0.0..=1.0. 1.0 is
+    -- verbatim; a low score means the page was mostly image and we only
+    -- recovered a scrap of text, so answers resting on it should be hedged
+    -- rather than asserted.
+    extraction_confidence REAL NOT NULL DEFAULT 1.0,
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_kb_chunks_doc ON kb_chunks(document_id);

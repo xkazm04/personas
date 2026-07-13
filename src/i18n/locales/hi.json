@@ -4046,7 +4046,13 @@
       "tool_count_other": "{count} टूल",
       "tab_documents": "दस्तावेज़",
       "tab_search": "खोज",
-      "tab_settings": "सेटिंग"
+      "tab_settings": "सेटिंग",
+      "page_label": "पृ. {page}",
+      "pages_label": "{count} पृष्ठ",
+      "partial_text_badge": "आंशिक टेक्स्ट",
+      "partial_text_tooltip": "यह अंश एक ऐसे पृष्ठ से पढ़ा गया जो ज्यादातर छवि है, इसलिए यह अधूरा हो सकता है।",
+      "scanned_pages_tooltip": "ये पृष्ठ बिना टेक्स्ट लेयर वाली छवियां हैं, इसलिए इनकी सामग्री खोजी नहीं जा सकती। इन्हें शामिल करने के लिए OCR-प्रोसेस्ड कॉपी का उपयोग करें।",
+      "scanned_pages_warning": "{count} स्कैन किया गया पृष्ठ अपठनीय"
     },
     "manager": {
       "title": "क्रेडेंशियल",

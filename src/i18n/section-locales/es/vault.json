@@ -616,7 +616,13 @@
     "tool_count_other": "{count} herramientas",
     "tab_documents": "Documentos",
     "tab_search": "Búsqueda",
-    "tab_settings": "Configuración"
+    "tab_settings": "Configuración",
+    "page_label": "pág. {page}",
+    "pages_label": "{count} páginas",
+    "partial_text_badge": "Texto parcial",
+    "partial_text_tooltip": "Este pasaje se leyó de una página que es casi toda imagen, por lo que puede estar incompleto.",
+    "scanned_pages_tooltip": "Estas páginas son imágenes sin capa de texto, por lo que su contenido no se puede buscar. Usa una copia procesada con OCR para incluirlas.",
+    "scanned_pages_warning": "{count} página(s) escaneada(s) ilegible(s)"
   },
   "manager": {
     "title": "Credenciales",

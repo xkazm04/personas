@@ -4046,7 +4046,13 @@
       "tool_count_other": "도구 {count}개",
       "tab_documents": "문서",
       "tab_search": "검색",
-      "tab_settings": "설정"
+      "tab_settings": "설정",
+      "page_label": "p. {page}",
+      "pages_label": "{count}페이지",
+      "partial_text_badge": "부분 텍스트",
+      "partial_text_tooltip": "이 구절은 대부분 이미지로 된 페이지에서 읽어온 것이므로 불완전할 수 있습니다.",
+      "scanned_pages_tooltip": "이 페이지들은 텍스트 레이어가 없는 이미지여서 내용을 검색할 수 없습니다. 포함하려면 OCR 처리된 사본을 사용하세요.",
+      "scanned_pages_warning": "스캔된 페이지 {count}개를 읽을 수 없음"
     },
     "manager": {
       "title": "자격 증명",

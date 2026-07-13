@@ -616,7 +616,13 @@
     "tool_count_other": "{count}টি টুল",
     "tab_documents": "ডকুমেন্ট",
     "tab_search": "অনুসন্ধান",
-    "tab_settings": "সেটিংস"
+    "tab_settings": "সেটিংস",
+    "page_label": "পৃ. {page}",
+    "pages_label": "{count}টি পৃষ্ঠা",
+    "partial_text_badge": "আংশিক টেক্সট",
+    "partial_text_tooltip": "এই অংশটি বেশিরভাগ ছবিযুক্ত একটি পৃষ্ঠা থেকে পড়া হয়েছে, তাই এটি অসম্পূর্ণ হতে পারে।",
+    "scanned_pages_tooltip": "এই পৃষ্ঠাগুলি টেক্সট স্তর ছাড়া ছবি, তাই এদের বিষয়বস্তু অনুসন্ধানযোগ্য নয়। এগুলি অন্তর্ভুক্ত করতে OCR-প্রক্রিয়াকৃত একটি কপি ব্যবহার করুন।",
+    "scanned_pages_warning": "{count}টি স্ক্যান করা পৃষ্ঠা অপঠনযোগ্য"
   },
   "manager": {
     "title": "ক্রেডেনশিয়াল",
