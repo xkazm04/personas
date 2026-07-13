@@ -2832,6 +2832,18 @@ fn evaluate_healing_and_retry(
     let consecutive = exec_repo::count_consecutive_real_failures(pool, persona_id)
         .unwrap_or(0);
 
+    // Storm guard signal: environmental provider failures (usage-limit /
+    // API-server-error) for this persona within the storm window. These bypass
+    // the `consecutive < 3` gate AND are excluded from the breaker above, so
+    // this is the ONLY count that bounds a sustained-incident retry storm across
+    // chains. The orchestrator caps the usage-limit / ApiError arms on it.
+    let environmental_failures_in_window = exec_repo::count_environmental_failures_in_window(
+        pool,
+        persona_id,
+        healing_orchestrator::STORM_WINDOW_MINUTES as i64,
+    )
+    .unwrap_or(0);
+
     let timeout_ms = if persona_timeout_ms > 0 {
         persona_timeout_ms as u64
     } else {
@@ -2894,6 +2906,7 @@ fn evaluate_healing_and_retry(
         timeout_ms,
         consecutive_failures: consecutive,
         retry_count: current_retry_count,
+        environmental_failures_in_window,
         kb_hint: kb_hint.as_ref(),
         has_session_id: result.claude_session_id.is_some(),
         is_dev_mode,

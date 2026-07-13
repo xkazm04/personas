@@ -37,6 +37,7 @@ fn persona_ctx(consecutive_failures: u32) -> HealingContext<'static> {
         timeout_ms: 600_000,
         consecutive_failures,
         retry_count: 0,
+        environmental_failures_in_window: 0,
         kb_hint: None,
         has_session_id: false,
         is_dev_mode: false,

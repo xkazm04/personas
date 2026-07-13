@@ -1033,6 +1033,58 @@ pub fn count_consecutive_real_failures(
     )
 }
 
+/// Storm guard: count this persona's ENVIRONMENTAL provider failures (usage /
+/// rate / session limit, and API / server 5xx / overloaded) within a rolling
+/// window of `window_minutes`.
+///
+/// These are exactly the failures the persona circuit breaker EXCLUDES (see
+/// [`count_consecutive_real_failures`]) — so during a sustained provider
+/// incident nothing else bounds the *cross-chain* retry storm: each newly
+/// scheduled run starts a fresh healing chain (retry_count = 0) and schedules
+/// its own durable `RetryAt`, and the breaker never trips because it ignores
+/// environmental failures. The healing orchestrator reads this count and, past
+/// a documented cap, folds the auto-retry into a manual issue instead of piling
+/// on another scheduled retry. The window bounds RETRY COUNT, not wait time —
+/// a single legitimate usage-window wait (hours) still schedules normally.
+///
+/// The `LIKE` shapes mirror the environmental exclusion in
+/// `count_consecutive_real_failures` plus the API/server-error shapes classified
+/// as `ApiError` by `error_taxonomy` (500/502/503/529/overloaded/server error).
+pub fn count_environmental_failures_in_window(
+    pool: &DbPool,
+    persona_id: &str,
+    window_minutes: i64,
+) -> Result<u32, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::count_environmental_failures_in_window",
+        {
+            let conn = pool.get()?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM persona_executions
+                 WHERE persona_id = ?1 AND status = 'failed'
+                   AND datetime(created_at) > datetime('now', ?2)
+                   AND (
+                        LOWER(COALESCE(error_message,'')) LIKE '%rate limit%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%usage limit%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%session limit%'
+                     OR COALESCE(error_message,'') LIKE '%429%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%overloaded%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%server error%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%internal server%'
+                     OR COALESCE(error_message,'') LIKE '%500%'
+                     OR COALESCE(error_message,'') LIKE '%502%'
+                     OR COALESCE(error_message,'') LIKE '%503%'
+                     OR COALESCE(error_message,'') LIKE '%529%'
+                   )",
+                params![persona_id, format!("-{window_minutes} minutes")],
+                |r| r.get(0),
+            )?;
+            Ok(n.min(u32::MAX as i64) as u32)
+        }
+    )
+}
+
 pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     timed_query!("persona_executions", "persona_executions::get_running", {
         let conn = pool.get()?;
