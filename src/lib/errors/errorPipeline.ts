@@ -57,15 +57,47 @@ export interface ClassifiedError {
 // Pipeline entry points
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Memoization — classify each distinct raw string at most once
+//
+// The funnel runs three regex/substring passes (taxonomy + registry +
+// explanation). Hot callers re-classify the SAME string repeatedly: the toast
+// renderer re-renders once a second for its elapsed-time label, and the
+// toastCatch path classifies the string the renderer will classify again. A
+// small bounded cache makes "classify once per error instance" literal —
+// repeat calls (from either path) return the same object without re-running any
+// matcher. `resolveError`'s own breadcrumb dedupe still fires on the first
+// (uncached) call, so telemetry is unaffected.
+// ---------------------------------------------------------------------------
+
+const CLASSIFY_CACHE_MAX = 128;
+const classifyCache = new Map<string, ClassifiedError>();
+
+function memoizedClassify(raw: string, category: ErrorCategory): ClassifiedError {
+  const cached = classifyCache.get(raw);
+  if (cached) return cached;
+  const result = buildClassifiedError(raw, category);
+  // Simple bounded LRU-ish eviction: drop the oldest insertion when full.
+  if (classifyCache.size >= CLASSIFY_CACHE_MAX) {
+    const oldest = classifyCache.keys().next().value;
+    if (oldest !== undefined) classifyCache.delete(oldest);
+  }
+  classifyCache.set(raw, result);
+  return result;
+}
+
 /**
  * Classify a raw error string through all three layers in a single pass.
  *
  * This is the primary entry point. Prefer this over calling `classifyError`,
- * `resolveError`, or `getErrorExplanation` independently.
+ * `resolveError`, or `getErrorExplanation` independently. Results are memoized
+ * per raw string, so calling it from both the toast-creation path and the
+ * toast renderer costs a single classification.
  */
 export function classifyErrorFull(raw: string): ClassifiedError {
-  const category = classifyError(raw);
-  return buildClassifiedError(raw, category);
+  const cached = classifyCache.get(raw);
+  if (cached) return cached;
+  return memoizedClassify(raw, classifyError(raw));
 }
 
 /**
@@ -75,7 +107,7 @@ export function classifyErrorFull(raw: string): ClassifiedError {
 export function classifyUnknownErrorFull(err: unknown): ClassifiedError {
   const raw = err instanceof Error ? err.message : String(err);
   const category = classifyUnknownError(err);
-  return buildClassifiedError(raw, category);
+  return memoizedClassify(raw, category);
 }
 
 // ---------------------------------------------------------------------------
