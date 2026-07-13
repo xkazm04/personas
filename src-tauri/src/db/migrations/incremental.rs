@@ -5325,14 +5325,26 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                 //   !last_design_result && (system_prompt == placeholder || blank)
                 // Also treat a NULL/blank design_context as part of "never built"
                 // for defense in depth (a finished build writes design_context).
+                //
+                // trust_origin is itself an incrementally-added column and is
+                // ABSENT in the test-binary schema when this backfill runs
+                // (the known init_test_db divergence) — guard the system-persona
+                // exclusion clause on the column's existence.
+                let system_clause = if has_column(conn, "personas", "trust_origin")? {
+                    "AND COALESCE(trust_origin, 'builtin') != 'system'"
+                } else {
+                    ""
+                };
                 ddl_step(
                     conn,
-                    "UPDATE personas SET lifecycle = 'draft'
+                    &format!(
+                        "UPDATE personas SET lifecycle = 'draft'
                      WHERE (last_design_result IS NULL OR TRIM(last_design_result) = '')
                        AND (design_context IS NULL OR TRIM(design_context) = '')
                        AND (system_prompt = 'You are a helpful AI assistant.'
                             OR TRIM(COALESCE(system_prompt, '')) = '')
-                       AND COALESCE(trust_origin, 'builtin') != 'system';",
+                       {system_clause};"
+                    ),
                 )?;
                 Ok(())
             },
