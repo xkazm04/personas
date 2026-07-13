@@ -845,6 +845,18 @@ pub(crate) async fn event_bus_tick(
         }
     };
 
+    // Push fan-out burst drain (Direction 3): a FULL batch means more events
+    // are likely still pending, but `Notify` permits coalesce — a 200-event
+    // burst fires many notifies that collapse into ~1 stored permit, so
+    // without re-arming, batches 3+ would wait a whole poll interval each
+    // (~2s per 50 events). Re-arm the wake signal so the scheduler loop runs
+    // the next tick back-to-back until an under-full batch signals the burst
+    // is drained. Claim atomicity (pending→processing above) makes redundant
+    // wakes harmless.
+    if events.len() == 50 {
+        crate::engine::subscription::event_bus_wake_signal().notify_one();
+    }
+
     if events.is_empty() {
         // No pending events — check if any executions are running to set idle mode.
         // This is a cheap query that lets subscriptions reduce their polling cadence.

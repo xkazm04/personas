@@ -26,6 +26,34 @@ use crate::engine::inflight_guard::InflightGuard;
 use crate::engine::ExecutionEngine;
 
 // ---------------------------------------------------------------------------
+// Event-bus push fan-out signal
+// ---------------------------------------------------------------------------
+
+/// Wake signal for the event-bus subscription (push fan-out).
+///
+/// The CDC drain task fires this on every `persona_events` INSERT
+/// (`db/cdc.rs`), so event→execution dispatch runs immediately instead of
+/// waiting for the 2s-active / 10s-idle poll. The poll is RETAINED unchanged as
+/// the degraded-mode heartbeat: a missed signal (CDC channel overflow, startup
+/// blackout, any future signal gap) delays dispatch by at most one poll
+/// interval instead of dropping it.
+///
+/// `Notify::notify_one` stores a permit when no waiter is parked, so a signal
+/// that lands while the event-bus tick is mid-flight is not lost — the next
+/// `notified().await` completes immediately and re-runs the tick.
+/// Double-dispatch is impossible regardless of how many wakes fire:
+/// `event_repo::claim_pending` atomically flips pending→processing, so racing
+/// signal- and poll-driven ticks can never claim the same event twice.
+static EVENT_BUS_WAKE: LazyLock<tokio::sync::Notify> = LazyLock::new(tokio::sync::Notify::new);
+
+/// The event-bus wake signal. Producers (the CDC drain task) call
+/// `.notify_one()`; the event-bus subscription loop awaits `.notified()`
+/// alongside its poll interval.
+pub fn event_bus_wake_signal() -> &'static tokio::sync::Notify {
+    &EVENT_BUS_WAKE
+}
+
+// ---------------------------------------------------------------------------
 // Trait
 // ---------------------------------------------------------------------------
 
@@ -69,6 +97,15 @@ pub trait ReactiveSubscription: Send + Sync + 'static {
     /// bug. A genuinely per-instance subscription overrides to `false`.
     fn requires_leadership(&self) -> bool {
         true
+    }
+
+    /// Optional push-wake signal. When `Some`, the scheduler loop runs the tick
+    /// as soon as the signal fires OR the poll interval elapses — whichever
+    /// comes first. The poll interval is unchanged and acts as the
+    /// degraded-mode heartbeat when signals are missed. Default `None`
+    /// (pure polling).
+    fn wake_signal(&self) -> Option<&'static tokio::sync::Notify> {
+        None
     }
 }
 
@@ -316,6 +353,13 @@ impl ReactiveSubscription for EventBusSubscription {
 
     fn idle_interval(&self) -> Duration {
         Duration::from_secs(10)
+    }
+
+    /// Push fan-out: the CDC drain task notifies on every persona_events
+    /// INSERT, so dispatch latency is bounded by CDC delivery (~ms), not the
+    /// 2s/10s poll. The poll cadence above is retained as the heartbeat.
+    fn wake_signal(&self) -> Option<&'static tokio::sync::Notify> {
+        Some(event_bus_wake_signal())
     }
 
     async fn tick(&self) {
@@ -1200,8 +1244,28 @@ async fn run_single(
     let mut was_active = true;
     let mut consecutive_panics: u32 = 0;
     let mut interval = tokio::time::interval(active_interval);
+    let wake = sub.wake_signal();
     loop {
-        interval.tick().await;
+        // Wait for the poll interval OR (when the subscription declares one)
+        // a push-wake signal — whichever fires first. A wake that lands while
+        // a tick is running is stored as a Notify permit, so the follow-up
+        // `notified()` completes immediately and the new work is picked up on
+        // the very next loop iteration (no lost wakeups). Dropping the losing
+        // `interval.tick()` future does not disturb the interval's schedule —
+        // the poll heartbeat cadence is unchanged.
+        match wake {
+            Some(notify) => {
+                tokio::select! {
+                    _ = interval.tick() => {}
+                    _ = notify.notified() => {
+                        tracing::trace!(subscription = name, "Push-wake signal received");
+                    }
+                }
+            }
+            None => {
+                interval.tick().await;
+            }
+        }
         if !scheduler.is_running() {
             break;
         }
@@ -3283,5 +3347,149 @@ mod tests {
         assert_eq!(state.stats().subscriptions_crashed, 0);
         state.record_subscription_crash("panicker");
         assert_eq!(state.stats().subscriptions_crashed, 1);
+    }
+
+    // -----------------------------------------------------------------------
+    // Push fan-out (Direction 3)
+    // -----------------------------------------------------------------------
+
+    fn bus_event_input(event_type: &str) -> crate::db::models::CreatePersonaEventInput {
+        crate::db::models::CreatePersonaEventInput {
+            event_type: event_type.to_string(),
+            source_type: "test".to_string(),
+            project_id: None,
+            source_id: None,
+            target_persona_id: None,
+            payload: None,
+            use_case_id: None,
+        }
+    }
+
+    /// Signal- and poll-driven ticks both funnel through
+    /// `event_repo::claim_pending`, whose atomic pending→processing UPDATE is
+    /// the double-dispatch guard. Race two claimers (one per path) over a
+    /// fixed set of pending events and prove every event is claimed EXACTLY
+    /// once — no event dispatched twice, none lost.
+    #[test]
+    fn no_double_dispatch_under_signal_poll_claim_race() {
+        use crate::db::repos::communication::events as event_repo;
+
+        let pool = crate::db::init_test_db().expect("init test db");
+        const TOTAL: usize = 120;
+        for i in 0..TOTAL {
+            event_repo::publish(&pool, bus_event_input(&format!("race.{i}"))).expect("publish");
+        }
+
+        let claimer = |pool: crate::db::DbPool| {
+            std::thread::spawn(move || {
+                let mut ids: Vec<String> = Vec::new();
+                loop {
+                    let batch = event_repo::claim_pending(&pool, 50).expect("claim_pending");
+                    if batch.is_empty() {
+                        break;
+                    }
+                    ids.extend(batch.into_iter().map(|e| e.id));
+                }
+                ids
+            })
+        };
+
+        // "Signal path" and "poll path" racing over the same pool.
+        let h1 = claimer(pool.clone());
+        let h2 = claimer(pool.clone());
+        let ids1 = h1.join().expect("signal-path claimer panicked");
+        let ids2 = h2.join().expect("poll-path claimer panicked");
+
+        let mut all: Vec<&String> = ids1.iter().chain(ids2.iter()).collect();
+        let total_claims = all.len();
+        all.sort();
+        all.dedup();
+        assert_eq!(
+            total_claims,
+            all.len(),
+            "an event was claimed by BOTH the signal and poll paths — double dispatch"
+        );
+        assert_eq!(
+            all.len(),
+            TOTAL,
+            "every pending event must be claimed exactly once across both paths"
+        );
+    }
+
+    /// Burst drain: 200 pending events, a wake-driven consumer that mirrors
+    /// the production loop (one claim_pending(50) batch per wakeup; a FULL
+    /// batch re-arms the signal exactly like event_bus_tick does). All 200
+    /// must drain in back-to-back signal-driven batches — far under the pure
+    /// poll floor of 3 further 2s intervals (>= 6s) — without a single poll
+    /// tick needing to fire.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn burst_of_200_drains_on_wake_far_faster_than_polling() {
+        use crate::db::repos::communication::events as event_repo;
+
+        let pool = crate::db::init_test_db().expect("init test db");
+        const TOTAL: usize = 200;
+        const POLL_INTERVAL: Duration = Duration::from_secs(2);
+
+        // Publish the burst FIRST — notifies coalesce into at most one stored
+        // permit, which is exactly the situation the full-batch re-arm in
+        // event_bus_tick exists for.
+        {
+            let pool = pool.clone();
+            tokio::task::spawn_blocking(move || {
+                for i in 0..TOTAL {
+                    event_repo::publish(&pool, bus_event_input(&format!("burst.{i}")))
+                        .expect("publish");
+                    event_bus_wake_signal().notify_one();
+                }
+            })
+            .await
+            .expect("publisher task");
+        }
+
+        let start = Instant::now();
+        let consumer = {
+            let pool = pool.clone();
+            tokio::spawn(async move {
+                let wake = event_bus_wake_signal();
+                let mut interval = tokio::time::interval(POLL_INTERVAL);
+                interval.tick().await; // consume the immediate first tick
+                let mut claimed = 0usize;
+                let mut poll_wakeups = 0u32;
+                while claimed < TOTAL {
+                    tokio::select! {
+                        _ = interval.tick() => { poll_wakeups += 1; }
+                        _ = wake.notified() => {}
+                    }
+                    // Mirror event_bus_tick: ONE batch per wakeup + full-batch re-arm.
+                    let batch = {
+                        let pool = pool.clone();
+                        tokio::task::spawn_blocking(move || event_repo::claim_pending(&pool, 50))
+                            .await
+                            .expect("claim task")
+                            .expect("claim_pending")
+                    };
+                    if batch.len() == 50 {
+                        wake.notify_one();
+                    }
+                    claimed += batch.len();
+                }
+                (claimed, poll_wakeups)
+            })
+        };
+
+        let (claimed, poll_wakeups) = tokio::time::timeout(Duration::from_secs(15), consumer)
+            .await
+            .expect("burst did not drain within 15s — wake signal path is broken")
+            .expect("consumer task panicked");
+        let elapsed = start.elapsed();
+
+        assert_eq!(claimed, TOTAL, "all burst events must be claimed");
+        // Pure polling needs >= 3 further 2s intervals after the first batch
+        // (4 batches x 50). The wake path must beat that floor decisively.
+        assert!(
+            elapsed < Duration::from_secs(6),
+            "burst drained in {elapsed:?} with {poll_wakeups} poll wakeups — \
+             expected signal-driven back-to-back batches well under the 6s poll floor"
+        );
     }
 }

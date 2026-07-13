@@ -333,6 +333,19 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
             if event.table == "persona_events"
                 && matches!(event.action, CdcAction::Insert | CdcAction::Update)
             {
+                // Push fan-out (Direction 3): a NEW persona_events row means
+                // there may be dispatch work. Wake the event-bus subscription
+                // immediately instead of leaving the event to its 2s/10s poll.
+                // Signalled from HERE (the drain consumer) rather than the
+                // update hook so the writing transaction has effectively
+                // committed by the time the tick's `claim_pending` runs; in the
+                // rare case the tick still races the commit and claims nothing,
+                // the retained poll heartbeat picks the event up next interval.
+                // UPDATE is a status transition, not new work — no signal.
+                if event.action == CdcAction::Insert {
+                    crate::engine::subscription::event_bus_wake_signal().notify_one();
+                }
+
                 match fetch_persona_event_by_rowid(&db, event.rowid) {
                     Ok(Some(persona_event)) => {
                         if let Err(e) = app_handle.emit(event_name, &persona_event) {
