@@ -29,6 +29,12 @@ function useTypewriter(target: string): string {
 const BUBBLE =
   'pointer-events-auto flex max-w-full items-start gap-2 self-start rounded-modal border border-border bg-background/95 px-3 py-2 shadow-elevation-4 backdrop-blur';
 
+// Earlier messages are a *reading* surface, not a floating hint — so they get a
+// fully opaque background (no /95, no element opacity). The translucent version
+// let the preview and the latest bubble bleed through the text underneath it.
+const HISTORY_BUBBLE =
+  'pointer-events-auto flex max-w-full items-start gap-2 self-start rounded-modal border border-border bg-background px-3 py-2 shadow-elevation-4';
+
 const Working = ({ autonomous, name }: { autonomous: boolean; name: string }) => (
   <span className="flex items-center gap-1.5 text-md text-foreground/80">
     {autonomous ? `Building ${name} autonomously` : 'Athena is working'}
@@ -139,7 +145,7 @@ export default function StudioMessages({ expanded = false }: { expanded?: boolea
             className="flex max-h-[42vh] w-full flex-col gap-1.5 overflow-y-auto"
           >
             {history.map((m) => (
-              <div key={m.id} className={`${BUBBLE} opacity-80`}>
+              <div key={m.id} className={HISTORY_BUBBLE}>
                 <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
                 <div className="min-w-0">
                   <MarkdownRenderer content={m.text} className="athena-chat-md" />
