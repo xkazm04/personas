@@ -24,7 +24,7 @@ Tabs are declared by `getSettingsItems(isDev, activeTier)` in `sidebarData.ts`. 
 | Network | Dev-only | Exposure manager and sharing/network controls | `src/features/sharing/components/ExposureManager.tsx` |
 | Quality Gates | Dev-only | Validation/test gate settings | `sub_quality_gates/components/QualityGateSettings.tsx` |
 | Recent-change chip | All tabs that have audit writers | Tiny header chip that fetches the newest audit entry for the current sub-module's category and renders "Last {action}: {when}". Click jumps to History. Self-hides when the category has no entries yet, so wiring it into a tab whose audit writer is still on a Stage-2 backlog is a no-op until Stage 2 lights it up. Currently wired into API Keys (active), Limits (forward-compat), and Notifications (forward-compat). | `shared/RecentChangeChip.tsx`, polls `list_settings_audit_entries(1, category)` every 30s |
-| History | Dev-only | Append-only audit log of settings mutations across every sub-module. Each row records category, setting key, action verb, before/after values (sanitized for secrets), actor surface, and a relative timestamp; details disclose inline on click. Stage 1 only wires API-key create/revoke as write sites — coverage of the other sub-modules rolls in across Stages 2-3. Backed by the `settings_audit_log` SQLite table. | `sub_history/components/SettingsHistoryTab.tsx`, `src-tauri/src/db/repos/resources/settings_audit_log.rs`, `src-tauri/src/db/models/settings_audit_log.rs`, `list_settings_audit_entries` IPC |
+| History | Dev-only | Append-only audit log of settings mutations across every sub-module. Each row records category, setting key, action verb, before/after values (sanitized for secrets), actor surface, and a relative timestamp; details disclose inline on click. Stages 2-3 landed 2026-07: every user-facing settings write/delete is audited at the repo layer (key→category map spanning engine/limits/retention/byom/notifications/autonomy/quality_gates/integrations/sync/config; internal engine cursors and last-run timestamps are deliberately excluded, and api_keys values get structural redaction on top of the pattern sanitizer). Backed by the `settings_audit_log` SQLite table. | `sub_history/components/SettingsHistoryTab.tsx`, `src-tauri/src/db/repos/resources/settings_audit_log.rs`, `src-tauri/src/db/models/settings_audit_log.rs`, `list_settings_audit_entries` IPC |
 | Admin | Dev-only | User-consent reset (re-show the first-use consent modal). The former guided-tour controls were removed. | `sub_admin/components/AdminSettings.tsx` |
 
 ## Settings search (command palette)
@@ -144,3 +144,12 @@ drops the origin from the allowlist. Commands: `list_pending_pairings` /
 [`docs/api/management-api.openapi.yaml`](../../api/management-api.openapi.yaml), and a
 zero-dependency reference TypeScript client (with a `pair()` helper) lives at
 [`sdk/personas-sdk.ts`](../../../sdk/personas-sdk.ts).
+
+
+## Settings integrity (2026-07)
+
+- **JSON-blob validation at write:** byom_policy, quality-gate, digest, model-profile and Obsidian config blobs are parsed against their real consumer structs in `settings_keys.rs` — malformed JSON is rejected at `set`, never discovered at read.
+- **Live propagation:** `set_app_setting`/`delete_app_setting` emit a key-only `settings-changed` event; `useSettings` consumers refresh live (no values on the bus).
+- **One autonomy model:** `engine/autonomy.rs` is the single precedence resolver — per-project `autopilot_mode` wins where set, global `autonomous_*` flags are the fallback, corrupt rows fail closed to Off; the two legacy triage keys are deprecated (write-warned).
+- **Durable appearance:** theme/density/text-scale/brightness/timezone mirror into `app_settings` (`appearance_preferences`) so a webview-profile clear no longer resets them; localStorage stays the render-path authority.
+- **Chain governance settings:** `chain_max_cost_usd` (0 = disabled) and `chain_max_links` (default 50, 0 = disabled) bound cascade cost and breadth; no Settings-UI field yet (backend + validation only).
