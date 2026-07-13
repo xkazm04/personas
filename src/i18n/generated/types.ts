@@ -415,6 +415,8 @@ export type Translations = {
       command_palette: string;
       show_shortcuts: string;
       close_overlay: string;
+      nav_history_back: string;
+      nav_history_forward: string;
       nav_mode: string;
       nav_mode_back: string;
       nav_mode_search: string;

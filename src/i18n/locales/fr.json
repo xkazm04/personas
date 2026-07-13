@@ -405,7 +405,9 @@
       "nav_mode_review": "Afficher/masquer la revue humaine (mode navigation)",
       "nav_mode_schedules": "Afficher/masquer les planifications (mode navigation)",
       "nav_mode_search": "Ouvrir la recherche (mode navigation)",
-      "open_title": "Raccourcis clavier"
+      "open_title": "Raccourcis clavier",
+      "nav_history_back": "Retour",
+      "nav_history_forward": "Avancer"
     },
     "tray_schedules": "Planifications",
     "tray_schedules_today": "{count} planifiée(s) aujourd'hui",

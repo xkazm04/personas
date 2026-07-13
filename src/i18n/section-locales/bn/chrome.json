@@ -48,7 +48,9 @@
     "nav_mode_review": "মানব পর্যালোচনা টগল করুন (নেভ মোডে)",
     "nav_mode_schedules": "সময়সূচি টগল করুন (নেভ মোডে)",
     "nav_mode_search": "অনুসন্ধান খুলুন (নেভ মোডে)",
-    "open_title": "কীবোর্ড শর্টকাট"
+    "open_title": "কীবোর্ড শর্টকাট",
+    "nav_history_back": "পিছনে যান",
+    "nav_history_forward": "সামনে যান"
   },
   "tray_schedules": "সময়সূচি",
   "tray_schedules_today": "আজ {count}টি নির্ধারিত",

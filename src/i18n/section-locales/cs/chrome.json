@@ -48,7 +48,9 @@
     "nav_mode_review": "Přepnout ruční kontrolu (v navigačním režimu)",
     "nav_mode_schedules": "Přepnout plány (v navigačním režimu)",
     "nav_mode_search": "Otevřít vyhledávání (v navigačním režimu)",
-    "open_title": "Klávesové zkratky"
+    "open_title": "Klávesové zkratky",
+    "nav_history_back": "Zpět",
+    "nav_history_forward": "Vpřed"
   },
   "tray_schedules": "Plány",
   "tray_schedules_today": "{count} naplánováno dnes",

@@ -405,7 +405,9 @@
       "nav_mode_review": "Bật/tắt đánh giá của người dùng (ở chế độ điều hướng)",
       "nav_mode_schedules": "Bật/tắt lịch trình (ở chế độ điều hướng)",
       "nav_mode_search": "Mở tìm kiếm (ở chế độ điều hướng)",
-      "open_title": "Phím tắt"
+      "open_title": "Phím tắt",
+      "nav_history_back": "Quay lại",
+      "nav_history_forward": "Tiến tới"
     },
     "tray_schedules": "Lịch biểu",
     "tray_schedules_today": "{count} được lên lịch hôm nay",

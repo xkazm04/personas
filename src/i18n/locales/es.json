@@ -405,7 +405,9 @@
       "nav_mode_review": "Alternar revisión humana (en modo navegación)",
       "nav_mode_schedules": "Alternar programaciones (en modo navegación)",
       "nav_mode_search": "Abrir búsqueda (en modo navegación)",
-      "open_title": "Atajos de teclado"
+      "open_title": "Atajos de teclado",
+      "nav_history_back": "Atrás",
+      "nav_history_forward": "Adelante"
     },
     "tray_schedules": "Programaciones",
     "tray_schedules_today": "{count} programadas hoy",

@@ -405,7 +405,9 @@
       "nav_mode_review": "Ручная проверка (в режиме навигации)",
       "nav_mode_schedules": "Расписания (в режиме навигации)",
       "nav_mode_search": "Поиск (в режиме навигации)",
-      "open_title": "Горячие клавиши"
+      "open_title": "Горячие клавиши",
+      "nav_history_back": "Назад",
+      "nav_history_forward": "Вперёд"
     },
     "tray_schedules": "Расписания",
     "tray_schedules_today": "{count} запланировано сегодня",

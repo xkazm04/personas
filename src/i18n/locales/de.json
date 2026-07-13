@@ -405,7 +405,9 @@
       "nav_mode_review": "Manuelle Prüfung umschalten (im Nav-Modus)",
       "nav_mode_schedules": "Zeitpläne umschalten (im Nav-Modus)",
       "nav_mode_search": "Suche öffnen (im Nav-Modus)",
-      "open_title": "Tastenkürzel"
+      "open_title": "Tastenkürzel",
+      "nav_history_back": "Zurück",
+      "nav_history_forward": "Vorwärts"
     },
     "tray_schedules": "Zeitpläne",
     "tray_schedules_today": "{count} heute geplant",

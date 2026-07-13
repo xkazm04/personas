@@ -56,6 +56,8 @@ describe('shortcutRegistry', () => {
           command_palette: 'Open command palette',
           show_shortcuts: 'Show keyboard shortcuts',
           close_overlay: 'Close dialog or overlay',
+          nav_history_back: 'Go back',
+          nav_history_forward: 'Go forward',
           nav_mode: 'Toggle keyboard navigation mode',
           nav_mode_back: 'Go back one page (in nav mode)',
           nav_mode_search: 'Open search (in nav mode)',

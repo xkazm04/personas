@@ -405,7 +405,9 @@
       "nav_mode_review": "मानव समीक्षा टॉगल करें (नेव मोड में)",
       "nav_mode_schedules": "शेड्यूल टॉगल करें (नेव मोड में)",
       "nav_mode_search": "खोज खोलें (नेव मोड में)",
-      "open_title": "कीबोर्ड शॉर्टकट"
+      "open_title": "कीबोर्ड शॉर्टकट",
+      "nav_history_back": "पीछे जाएँ",
+      "nav_history_forward": "आगे जाएँ"
     },
     "tray_schedules": "शेड्यूल",
     "tray_schedules_today": "आज {count} शेड्यूल",
