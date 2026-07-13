@@ -109,33 +109,55 @@ export function classifyError(error: string): ErrorCategory {
     return 'timeout';
   }
 
-  // Provider not found
+  // Provider / CLI / model not found. Includes Anthropic's `not_found_error`
+  // (404) for a retired or unknown model id, plus the raw CLI/spawn shapes.
   if (
     lower.includes('not found') ||
     lower.includes('enoent') ||
-    lower.includes('is not recognized')
+    lower.includes('is not recognized') ||
+    lower.includes('not_found_error') ||
+    lower.includes('404') ||
+    lower.includes('model not found') ||
+    lower.includes('unknown model') ||
+    lower.includes('no such model')
   ) {
     return 'provider_not_found';
   }
 
-  // Credential / auth
+  // Credential / auth / billing. Anthropic wire types (`authentication_error`
+  // 401, `permission_error` 403) plus the classic Claude Code "Credit balance
+  // is too low" billing block — all account-level and not failover-fixable.
   if (
     lower.includes('decrypt') ||
     lower.includes('credential') ||
     lower.includes('api key') ||
     lower.includes('unauthorized') ||
     lower.includes('401') ||
-    lower.includes('403')
+    lower.includes('403') ||
+    lower.includes('authentication_error') ||
+    lower.includes('permission_error') ||
+    lower.includes('forbidden') ||
+    lower.includes('credit balance') ||
+    lower.includes('billing_error') ||
+    lower.includes('payment required')
   ) {
     return 'credential_error';
   }
 
-  // Network
+  // Network — connection refused/reset, dropped sockets, DNS. The reset /
+  // hang-up / broken-pipe shapes are the transient TCP drops Claude Code CLI
+  // surfaces mid-stream (distinct from exit-code transient_process_failure).
   if (
     lower.includes('network') ||
     lower.includes('econnrefused') ||
+    lower.includes('econnreset') ||
     lower.includes('err_network') ||
     lower.includes('connection refused') ||
+    lower.includes('connection reset') ||
+    lower.includes('reset by peer') ||
+    lower.includes('socket hang up') ||
+    lower.includes('epipe') ||
+    lower.includes('broken pipe') ||
     lower.includes('dns') ||
     (lower.includes('fetch') && lower.includes('fail'))
   ) {
@@ -151,11 +173,14 @@ export function classifyError(error: string): ErrorCategory {
     return 'tool_error';
   }
 
-  // API / server errors
+  // API / server errors — 5xx and Anthropic's `overloaded_error` (529), the
+  // dominant real failure when the provider is at capacity.
   if (
     lower.includes('500') ||
     lower.includes('502') ||
     lower.includes('503') ||
+    lower.includes('529') ||
+    lower.includes('overloaded') ||
     lower.includes('api error') ||
     lower.includes('server error') ||
     lower.includes('internal server')
@@ -163,12 +188,21 @@ export function classifyError(error: string): ErrorCategory {
     return 'api_error';
   }
 
-  // Validation
+  // Validation / oversized-input errors. Anthropic `invalid_request_error`
+  // already lands here via 'invalid'; the phrasings below catch the
+  // human-readable oversize shapes (prompt/context too long, 413) that don't.
   if (
     lower.includes('validation') ||
     lower.includes('invalid') ||
     lower.includes('malformed') ||
-    lower.includes('parse error')
+    lower.includes('parse error') ||
+    lower.includes('prompt is too long') ||
+    lower.includes('context length') ||
+    lower.includes('context window') ||
+    lower.includes('request_too_large') ||
+    lower.includes('request too large') ||
+    lower.includes('payload too large') ||
+    lower.includes('413')
   ) {
     return 'validation';
   }

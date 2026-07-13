@@ -38,6 +38,20 @@ const PARITY_FIXTURES: Array<[string, ErrorCategory]> = [
   ['502 Bad Gateway', 'api_error'],
   ['validation failed: missing field', 'validation'],
   ['malformed JSON in body', 'validation'],
+  // Real fleet shapes — Claude Code CLI / Anthropic API stderr as it lands
+  // inside `Execution failed (exit code N): <stderr>`. These are the templates
+  // the failures-by-category dashboard was burying under Unknown.
+  ['API Error: 529 {"type":"overloaded_error","message":"Overloaded"}', 'api_error'],
+  ['Overloaded', 'api_error'],
+  ['API Error: 404 not_found_error: model: claude-sonnet-4-20250514', 'provider_not_found'],
+  ['model not found', 'provider_not_found'],
+  ['Credit balance is too low', 'credential_error'],
+  ['API Error: 403 permission_error', 'credential_error'],
+  ['authentication_error: invalid x-api-key', 'credential_error'],
+  ['prompt is too long: exceeds the model maximum', 'validation'],
+  ['Request too large (413)', 'validation'],
+  ['read ECONNRESET', 'network'],
+  ['socket hang up', 'network'],
   ['Execution failed (exit code 137): Killed', 'transient_process_failure'],
   ['Execution failed (exit code 1): ', 'transient_process_failure'],
   ['some entirely novel failure', 'unknown'],
