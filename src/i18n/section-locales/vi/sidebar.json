@@ -74,5 +74,9 @@
   "goals": "Mục tiêu",
   "mission_control": "Trung tâm điều hành",
   "factory": "Factory",
-  "kpis": "KPI"
+  "kpis": "KPI",
+  "competition": "Cuộc thi",
+  "development": "Phát triển",
+  "lifecycle": "Vòng đời",
+  "manage": "Quản lý"
 }

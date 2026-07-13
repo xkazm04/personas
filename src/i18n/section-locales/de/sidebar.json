@@ -74,5 +74,9 @@
   "goals": "Ziele",
   "mission_control": "Mission Control",
   "factory": "Factory",
-  "kpis": "KPIs"
+  "kpis": "KPIs",
+  "competition": "Wettbewerb",
+  "development": "Entwicklung",
+  "lifecycle": "Lebenszyklus",
+  "manage": "Verwalten"
 }

@@ -74,5 +74,9 @@
   "goals": "Objetivos",
   "mission_control": "Centro de mando",
   "factory": "Fábrica",
-  "kpis": "KPIs"
+  "kpis": "KPIs",
+  "competition": "Competición",
+  "development": "Desarrollo",
+  "lifecycle": "Ciclo de vida",
+  "manage": "Gestionar"
 }

@@ -511,6 +511,10 @@ export type Translations = {
     director_attention_sr_other: string;
     kpis: string;
     factory: string;
+    development: string;
+    manage: string;
+    lifecycle: string;
+    competition: string;
   };
   home: {
     get_started: {

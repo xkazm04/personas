@@ -504,7 +504,11 @@
     "goals": "ゴール",
     "mission_control": "ミッションコントロール",
     "factory": "ファクトリー",
-    "kpis": "KPI"
+    "kpis": "KPI",
+    "competition": "コンペティション",
+    "development": "開発",
+    "lifecycle": "ライフサイクル",
+    "manage": "管理"
   },
   "home": {
     "setup": {

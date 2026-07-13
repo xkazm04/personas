@@ -504,7 +504,11 @@
     "director_attention_sr": "{count} agent needs coaching",
     "director_attention_sr_other": "{count} agents need coaching",
     "kpis": "KPIs",
-    "factory": "Factory"
+    "factory": "Factory",
+    "development": "Development",
+    "manage": "Manage",
+    "lifecycle": "Lifecycle",
+    "competition": "Competition"
   },
   "home": {
     "get_started": {

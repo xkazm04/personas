@@ -74,5 +74,9 @@
   "goals": "Cíle",
   "mission_control": "Řídicí centrum",
   "factory": "Továrna",
-  "kpis": "KPI"
+  "kpis": "KPI",
+  "competition": "Soutěž",
+  "development": "Vývoj",
+  "lifecycle": "Životní cyklus",
+  "manage": "Správa"
 }

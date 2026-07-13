@@ -504,7 +504,11 @@
     "goals": "Tujuan",
     "mission_control": "Pusat kendali",
     "factory": "Factory",
-    "kpis": "KPI"
+    "kpis": "KPI",
+    "competition": "Kompetisi",
+    "development": "Pengembangan",
+    "lifecycle": "Siklus Hidup",
+    "manage": "Kelola"
   },
   "home": {
     "setup": {

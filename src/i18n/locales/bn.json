@@ -504,7 +504,11 @@
     "goals": "লক্ষ্যসমূহ",
     "mission_control": "মিশন কন্ট্রোল",
     "factory": "ফ্যাক্টরি",
-    "kpis": "KPI"
+    "kpis": "KPI",
+    "competition": "প্রতিযোগিতা",
+    "development": "ডেভেলপমেন্ট",
+    "lifecycle": "লাইফসাইকেল",
+    "manage": "পরিচালনা"
   },
   "home": {
     "setup": {

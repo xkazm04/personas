@@ -74,5 +74,9 @@
   "goals": "लक्ष्य",
   "mission_control": "मिशन कंट्रोल",
   "factory": "फैक्टरी",
-  "kpis": "KPI"
+  "kpis": "KPI",
+  "competition": "प्रतिस्पर्धा",
+  "development": "डेवलपमेंट",
+  "lifecycle": "लाइफसाइकल",
+  "manage": "प्रबंधन"
 }

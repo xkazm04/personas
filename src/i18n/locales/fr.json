@@ -504,7 +504,11 @@
     "goals": "Objectifs",
     "mission_control": "Centre de contrôle",
     "factory": "Factory",
-    "kpis": "KPI"
+    "kpis": "KPI",
+    "competition": "Compétition",
+    "development": "Développement",
+    "lifecycle": "Cycle de vie",
+    "manage": "Gérer"
   },
   "home": {
     "setup": {
