@@ -1556,6 +1556,7 @@
   "fr:models.opus",
   "fr:models.sonnet",
   "fr:monitor.channel_filter_talk",
+  "fr:monitor.channel_importance",
   "fr:monitor.channels_author_athena",
   "fr:monitor.channels_filter_signal",
   "fr:monitor.cloud",

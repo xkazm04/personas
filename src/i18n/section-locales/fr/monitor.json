@@ -179,5 +179,7 @@
   "grid_state_failed": "Échec",
   "grid_state_idle": "Inactif",
   "grid_state_running": "En cours",
-  "grid_ungrouped": "Sans groupe"
+  "grid_ungrouped": "Sans groupe",
+  "channel_heard_by": "Entendu par",
+  "channel_importance": "Importance"
 }

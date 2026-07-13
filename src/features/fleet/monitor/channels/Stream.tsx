@@ -8,6 +8,7 @@ import type { ChannelKind } from '@/api/pipeline/teamChannel';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { LensStream } from './LensStream';
 import { useLensFeed } from './useLensFeed';
+import { StreamMemoryViews } from './StreamMemoryViews';
 import {
   ALL_FAMILIES, ALL_KINDS, EMPTY_LENS, activeLensCount, callsign, facetCounts, fetchKinds,
   matchesLens, memoryModesAvailable, type LensState, type MemoryMode,
@@ -117,7 +118,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
 
   const selected = useMemo(() => teams.filter((t) => t.selected), [teams]);
-  const { rows, loading } = useLensFeed(selected, fetchKinds(lens));
+  const { rows, loading, hasMore, loadMore, counts } = useLensFeed(selected, fetchKinds(lens));
 
   const nameOf = useCallback(
     (pid: string | null) => (pid ? personaIndex.get(pid)?.name : undefined),
@@ -146,6 +147,30 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
     for (const r of rows) m.set(r.team.teamId, (m.get(r.team.teamId) ?? 0) + 1);
     return m;
   }, [rows]);
+
+  /**
+   * Kind counts come from SQL, summed over the scoped teams — NOT from `rows`.
+   * A facet cannot count what it never fetched: deliberation turns are absent
+   * from the blended read (P1 made them opt-in so they'd stop leaking into the
+   * conversation), so deriving this from loaded rows rendered "Deliberation 0"
+   * for teams holding hundreds of them. `count_team_channel_kinds` counts where
+   * the rows actually are.
+   */
+  const kindTotals = useMemo(() => {
+    const totals: Record<ChannelKind, number> = { step: 0, event: 0, memory: 0, message: 0, deliberation: 0 };
+    let any = false;
+    for (const tm of selected) {
+      const c = counts[tm.teamId];
+      if (!c) continue;
+      any = true;
+      totals.step += c.step;
+      totals.event += c.event;
+      totals.memory += c.memory;
+      totals.message += c.message;
+      totals.deliberation += c.deliberation;
+    }
+    return any ? totals : null;
+  }, [selected, counts]);
 
   return (
     <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden">
@@ -189,22 +214,15 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
         <div className="flex-shrink-0 w-[248px] border-r border-border bg-foreground/[0.012] overflow-y-auto p-2">
           <FacetGroup title="Kind">
             {ALL_KINDS.map((k) => {
-              const f = facets.kinds.find((x) => x.key === k)!;
               const Icon = KIND_META[k].icon;
               const on = lens.kinds.has(k);
-              // Deliberation turns are NOT in the blended fetch (P1 made them
-              // opt-in so they'd stop leaking into the conversation), so we
-              // cannot count them from the rows we have. Showing "0" would be a
-              // lie — a team can have hundreds. Show "—" until it's selected,
-              // at which point the fetch asks for them and the count is real.
-              const unknown = k === 'deliberation' && !on;
+              const total = kindTotals?.[k];
               return (
                 <button
                   key={k}
                   type="button"
                   onClick={() => toggle('kinds', k)}
                   aria-pressed={on}
-                  title={unknown ? 'Not counted in the blended feed — select to load' : undefined}
                   className={`w-full flex items-center gap-2 px-2 py-1 rounded-interactive text-left transition-colors ${
                     on ? 'bg-primary/12 hover:bg-primary/18' : 'hover:bg-secondary/30'
                   }`}
@@ -214,7 +232,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
                     {KIND_META[k].label}
                   </span>
                   <span className="ml-auto typo-caption tabular-nums text-foreground opacity-50">
-                    {unknown ? '—' : f.count}
+                    {total ?? '·'}
                   </span>
                 </button>
               );
@@ -306,11 +324,21 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
         </div>
 
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
-          <LensStream
-            rows={visible}
-            onOpen={(r: TaggedItem) => setDetail(r.item)}
-            emptyLabel={active > 0 ? 'No transmissions match this lens.' : 'No transmissions in these channels yet.'}
-          />
+          {memoryModes && lens.memoryMode !== 'list' && selected[0] ? (
+            <StreamMemoryViews
+              teamId={selected[0].teamId}
+              mode={lens.memoryMode}
+              onExit={() => setMemoryMode('list')}
+            />
+          ) : (
+            <LensStream
+              rows={visible}
+              onOpen={(r: TaggedItem) => setDetail(r.item)}
+              emptyLabel={active > 0 ? 'No transmissions match this lens.' : 'No transmissions in these channels yet.'}
+              hasMore={hasMore}
+              onEndReached={loadMore}
+            />
+          )}
         </div>
       </div>
 

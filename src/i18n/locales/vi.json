@@ -180,7 +180,9 @@
     "grid_state_failed": "Thất bại",
     "grid_state_idle": "Không hoạt động",
     "grid_state_running": "Đang chạy",
-    "grid_ungrouped": "Chưa nhóm"
+    "grid_ungrouped": "Chưa nhóm",
+    "channel_heard_by": "Được nghe bởi",
+    "channel_importance": "Mức quan trọng"
   },
   "common": {
     "loading": "Đang tải...",

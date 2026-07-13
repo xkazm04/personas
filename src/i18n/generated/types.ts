@@ -187,6 +187,8 @@ export type Translations = {
     channels_author_all: string;
     channels_author_you: string;
     channels_author_athena: string;
+    channel_heard_by: string;
+    channel_importance: string;
   };
   common: {
     unknown_error: string;

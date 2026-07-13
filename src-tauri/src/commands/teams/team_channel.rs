@@ -379,6 +379,94 @@ pub(crate) fn read_channel(
     Ok(items)
 }
 
+/// Per-kind row counts for a team's channel.
+///
+/// The Stream's facet rail cannot count what it did not fetch — and deliberation
+/// turns are deliberately absent from the blended read (they used to leak into
+/// the conversation), so the rail was showing "Deliberation 0" for teams with
+/// hundreds of turns. Counting has to happen where the rows are.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ChannelKindCounts {
+    // i64 in SQL, but `number` on the wire: ts-rs maps i64 to `bigint`, which
+    // will not do arithmetic with the plain numbers the facet rail sums. A row
+    // count cannot approach 2^53, so this is safe — and it keeps the binding
+    // usable. (Same trap as memory `importance`, which we hit in P1.)
+    #[ts(type = "number")]
+    pub step: i64,
+    #[ts(type = "number")]
+    pub event: i64,
+    #[ts(type = "number")]
+    pub memory: i64,
+    #[ts(type = "number")]
+    pub message: i64,
+    #[ts(type = "number")]
+    pub deliberation: i64,
+}
+
+#[tauri::command]
+pub fn count_team_channel_kinds(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+) -> Result<ChannelKindCounts, AppError> {
+    require_auth_sync(&state)?;
+    let conn = state.db.get()?;
+
+    let step: i64 = conn.query_row(
+        "SELECT count(*) FROM team_assignment_events e
+         JOIN team_assignments a ON a.id = e.assignment_id
+         WHERE a.team_id = ?1
+           AND e.kind IN ('created','step_running','step_done','step_failed','step_skipped',
+                          'status_awaiting_review','status_done','qa_changes_requested_rework')",
+        params![team_id],
+        |r| r.get(0),
+    )?;
+
+    let event: i64 = conn.query_row(
+        "SELECT count(*) FROM persona_events e
+         WHERE e.source_id IN (SELECT persona_id FROM persona_team_members WHERE team_id = ?1)
+           AND e.event_type != 'task_completed'
+           AND e.event_type NOT LIKE '\\_chain\\_%' ESCAPE '\\'",
+        params![team_id],
+        |r| r.get(0),
+    )?;
+
+    let memory: i64 = conn.query_row(
+        "SELECT count(*) FROM team_memories WHERE team_id = ?1 AND category != 'directive'",
+        params![team_id],
+        |r| r.get(0),
+    )?;
+
+    // 'message' = the channel table's non-deliberation rows PLUS the legacy
+    // directives still living in team_memories — the same union the read-model's
+    // `message` lens serves.
+    let msg_rows: i64 = conn.query_row(
+        "SELECT count(*) FROM team_channel_messages WHERE team_id = ?1 AND deliberation_id IS NULL",
+        params![team_id],
+        |r| r.get(0),
+    )?;
+    let legacy_directives: i64 = conn.query_row(
+        "SELECT count(*) FROM team_memories WHERE team_id = ?1 AND category = 'directive'",
+        params![team_id],
+        |r| r.get(0),
+    )?;
+
+    let deliberation: i64 = conn.query_row(
+        "SELECT count(*) FROM team_channel_messages WHERE team_id = ?1 AND deliberation_id IS NOT NULL",
+        params![team_id],
+        |r| r.get(0),
+    )?;
+
+    Ok(ChannelKindCounts {
+        step,
+        event,
+        memory,
+        message: msg_rows + legacy_directives,
+        deliberation,
+    })
+}
+
 /// Post a user directive into the team channel. C1: stored in the
 /// authoritative `team_channel_messages` table (`author_kind='user'`,
 /// `consumer='inject'`). The orchestrator injects recent channel messages
@@ -567,6 +655,43 @@ mod tests {
         let items = read_channel(&conn, TEAM, Some(5), None, None, Some(&kinds)).unwrap();
         assert_eq!(items[0].importance, Some(9));
         assert_eq!(items[0].label, "learning");
+    }
+
+    /// The facet counts must AGREE with the lens they describe. A count that
+    /// disagrees with what selecting it actually shows is worse than no count —
+    /// which is the whole reason this command exists (the rail was reading
+    /// "Deliberation 0" for teams with hundreds of turns, because it was
+    /// counting rows it had never fetched).
+    #[test]
+    fn kind_counts_agree_with_the_lens_they_describe() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        seed_team(&conn);
+        conn.execute(
+            "INSERT INTO team_deliberations (id, team_id, topic, created_at, updated_at)
+             VALUES ('d1', ?1, 't', datetime('now'), datetime('now'))",
+            params![TEAM],
+        )
+        .unwrap();
+
+        for i in 0..3 {
+            msg(&conn, &format!("talk{i}"), "2026-07-13 10:00:00", "persona", None);
+        }
+        for i in 0..5 {
+            msg(&conn, &format!("turn{i}"), "2026-07-13 10:00:00", "persona", Some("d1"));
+        }
+        memory(&conn, "m1", "2026-07-13 09:00:00", "observation", 5);
+        memory(&conn, "m2", "2026-07-13 09:00:00", "decision", 5);
+
+        // What the lens returns…
+        let msgs = read_channel(&conn, TEAM, Some(200), None, None, Some(&["message".into()])).unwrap();
+        let turns = read_channel(&conn, TEAM, Some(200), None, None, Some(&["deliberation".into()])).unwrap();
+        let mems = read_channel(&conn, TEAM, Some(200), None, None, Some(&["memory".into()])).unwrap();
+
+        // …must be what the rail promises.
+        assert_eq!(msgs.len(), 3);
+        assert_eq!(turns.len(), 5, "the count the old rail rendered as 0");
+        assert_eq!(mems.len(), 2);
     }
 
     /// THE LEAK. Deliberation turns are rows in team_channel_messages; the

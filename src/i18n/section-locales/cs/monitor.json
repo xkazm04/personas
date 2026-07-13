@@ -179,5 +179,7 @@
   "grid_state_failed": "Selhalo",
   "grid_state_idle": "Nečinné",
   "grid_state_running": "Běží",
-  "grid_ungrouped": "Bez skupiny"
+  "grid_ungrouped": "Bez skupiny",
+  "channel_heard_by": "Slyšeli",
+  "channel_importance": "Důležitost"
 }

@@ -180,7 +180,9 @@
     "grid_state_failed": "Falló",
     "grid_state_idle": "Inactivo",
     "grid_state_running": "En ejecución",
-    "grid_ungrouped": "Sin grupo"
+    "grid_ungrouped": "Sin grupo",
+    "channel_heard_by": "Escuchado por",
+    "channel_importance": "Importancia"
   },
   "common": {
     "loading": "Cargando...",

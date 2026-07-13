@@ -179,5 +179,7 @@
   "grid_state_failed": "Gagal",
   "grid_state_idle": "Tidak aktif",
   "grid_state_running": "Berjalan",
-  "grid_ungrouped": "Tanpa grup"
+  "grid_ungrouped": "Tanpa grup",
+  "channel_heard_by": "Didengar oleh",
+  "channel_importance": "Kepentingan"
 }

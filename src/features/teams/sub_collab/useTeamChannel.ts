@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { countUnread, EMPTY_CHANNEL, type ChannelTeamState } from '@/stores/slices/pipeline/channelSlice';
+import { channelKey, countUnread, EMPTY_CHANNEL, type ChannelTeamState } from '@/stores/slices/pipeline/channelSlice';
+import type { ChannelKind } from '@/api/pipeline/teamChannel';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
 /* ----------------------------------------------------------------------------
@@ -78,21 +79,24 @@ export function derivePresence(items: TeamChannelItem[]): Map<string, PresenceSt
  * mounted. Refcounted in the slice — the first subscriber triggers an immediate
  * fetch, and the shared service keeps every subscribed channel fresh.
  */
-export function useChannelSubscription(teamIds: string[]): void {
+export function useChannelSubscription(teamIds: string[], kinds?: ChannelKind[]): void {
   const subscribe = usePipelineStore((s) => s.subscribeChannel);
-  // Subscribe by value, not identity — callers routinely pass a fresh array.
+  // Subscribe by VALUE, not identity — callers routinely pass fresh arrays.
   const key = teamIds.join(',');
+  const kindKey = kinds && kinds.length ? [...kinds].sort().join(',') : '';
 
   useEffect(() => {
     const ids = key ? key.split(',') : [];
-    const releases = ids.map((id) => subscribe(id));
+    const asked = kindKey ? (kindKey.split(',') as ChannelKind[]) : undefined;
+    const releases = ids.map((id) => subscribe(id, asked));
     return () => releases.forEach((release) => release());
-  }, [key, subscribe]);
+  }, [key, kindKey, subscribe]);
 }
 
-/** One team's cached channel state (never undefined). */
+/** One team's cached BLENDED channel state (never undefined). The Stream keys
+ *  its own entries by (team, kinds); this hook is always the blended read. */
 function useChannelState(teamId: string): ChannelTeamState {
-  return usePipelineStore(useShallow((s) => s.channels[teamId] ?? EMPTY_CHANNEL));
+  return usePipelineStore(useShallow((s) => s.channels[channelKey(teamId)] ?? EMPTY_CHANNEL));
 }
 
 /**
@@ -116,8 +120,8 @@ export function useTeamChannel(teamId: string) {
   const sendChannelDirective = usePipelineStore((s) => s.sendChannelDirective);
   const markChannelSeen = usePipelineStore((s) => s.markChannelSeen);
 
-  const refreshHead = useCallback(() => void refreshChannel(teamId), [refreshChannel, teamId]);
-  const loadOlder = useCallback(() => void loadOlderChannel(teamId), [loadOlderChannel, teamId]);
+  const refreshHead = useCallback(() => void refreshChannel(channelKey(teamId)), [refreshChannel, teamId]);
+  const loadOlder = useCallback(() => void loadOlderChannel(channelKey(teamId)), [loadOlderChannel, teamId]);
   const markSeen = useCallback(() => markChannelSeen(teamId), [markChannelSeen, teamId]);
   const sendDirective = useCallback(
     (content: string, replyTo?: string) => sendChannelDirective(teamId, content, replyTo),

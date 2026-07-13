@@ -1,20 +1,19 @@
 import { useMemo, type ReactNode } from 'react';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { derivePresence, useChannelSubscription } from '@/features/teams/sub_collab/useTeamChannel';
-import { MAX_MERGED_ROWS, type FeedTeam, type TaggedItem, type PresenceMap } from './types';
+import { LIVE_FEED_WINDOW, type FeedTeam, type TaggedItem, type PresenceMap } from './types';
 
 /* ----------------------------------------------------------------------------
  * Merge infrastructure for the combined cross-team channel views.
  *
- * P0 (monitor consolidation): this used to mount one hidden `TeamFeed` component
- * per team, each running `useTeamChannel` — which meant its own 15s poll and its
- * own TEAM_ASSIGNMENT_PROGRESS listener. With the shared `channelSlice`, the
- * feeders are gone: we declare interest in the teams (refcounted) and read the
- * merged result straight out of the store. Two surfaces watching the same team
- * now cost one fetch, not two.
+ * P0: this used to mount one hidden `TeamFeed` component per team, each running
+ * `useTeamChannel` — its own 15s poll and its own TEAM_ASSIGNMENT_PROGRESS
+ * listener apiece. With the shared `channelSlice` the feeders are gone: we
+ * declare interest (refcounted) and read the merged result out of the store.
  *
- * The combined views stay READ-ONLY (click a row → the shared detail modal);
- * full per-team interaction lives in the grid layout.
+ * P2: the Stream stopped using this entirely — it reads (team, kinds) cache
+ * entries and pages a real k-way merge. The ONLY consumer left is
+ * LiveChannelOverlay, which diffs recent arrivals into corner pop-ups.
  * -------------------------------------------------------------------------- */
 
 /** Merge every subscribed team's cached channel into one newest-first stream. */
@@ -41,11 +40,10 @@ export function useMergedChannels(teams: FeedTeam[]): {
     }
 
     flat.sort((a, b) => b.item.at.localeCompare(a.item.at));
-    // Bound the merged window so memory + the virtualizer stay cheap no matter
-    // how many teams are selected. The newest MAX_MERGED_ROWS are kept; the
-    // virtualized list only ever mounts the visible slice of these.
-    // (P2 replaces this cap with a k-way merge cursor + real paging.)
-    const merged = flat.length > MAX_MERGED_ROWS ? flat.slice(0, MAX_MERGED_ROWS) : flat;
+    // The pop-up overlay only diffs RECENT arrivals to decide what to pop, so a
+    // bounded window is correct here. (The Stream's unbounded history lives in
+    // the shared channel cache + its k-way merge — it no longer uses this feed.)
+    const merged = flat.length > LIVE_FEED_WINDOW ? flat.slice(0, LIVE_FEED_WINDOW) : flat;
     return { merged, presenceByTeam, byTeam };
   }, [teams, channels]);
 }

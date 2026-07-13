@@ -1,6 +1,7 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import type { TeamChannelMessage } from '@/lib/bindings/TeamChannelMessage';
+import type { ChannelKindCounts } from '@/lib/bindings/ChannelKindCounts';
 
 /** The lenses `list_team_channel` can be filtered to. Omitting `kinds` blends
  *  all of them except `deliberation` (deliberation turns are opt-in — they are
@@ -40,3 +41,14 @@ export const listTeamChannel = (
 /** Post a user directive into the channel (delivered at step boundaries, with receipts). */
 export const postTeamDirective = (teamId: string, content: string, replyTo?: string) =>
   invoke<TeamChannelMessage>('post_team_directive', { teamId, content, replyTo: replyTo ?? null });
+
+/**
+ * Per-kind row counts for a team's channel, straight from SQL.
+ *
+ * The Stream's facet rail cannot count rows it never fetched — and deliberation
+ * turns are deliberately absent from the blended read (they used to leak into
+ * the conversation), so the rail was rendering "Deliberation 0" for teams with
+ * hundreds of turns. Counting has to happen where the rows are.
+ */
+export const countTeamChannelKinds = (teamId: string) =>
+  invoke<ChannelKindCounts>('count_team_channel_kinds', { teamId });

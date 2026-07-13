@@ -180,7 +180,9 @@
     "grid_state_failed": "失敗",
     "grid_state_idle": "待機中",
     "grid_state_running": "実行中",
-    "grid_ungrouped": "グループなし"
+    "grid_ungrouped": "グループなし",
+    "channel_heard_by": "受信者",
+    "channel_importance": "重要度"
   },
   "common": {
     "loading": "読み込み中...",

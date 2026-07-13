@@ -179,5 +179,7 @@
   "grid_state_failed": "Сбой",
   "grid_state_idle": "Простаивает",
   "grid_state_running": "Выполняется",
-  "grid_ungrouped": "Без группы"
+  "grid_ungrouped": "Без группы",
+  "channel_heard_by": "Услышали",
+  "channel_importance": "Важность"
 }

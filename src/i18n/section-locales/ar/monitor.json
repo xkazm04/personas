@@ -179,5 +179,7 @@
   "grid_state_failed": "فشل",
   "grid_state_idle": "خامل",
   "grid_state_running": "قيد التشغيل",
-  "grid_ungrouped": "غير مُجمَّع"
+  "grid_ungrouped": "غير مُجمَّع",
+  "channel_heard_by": "استمع إليها",
+  "channel_importance": "الأهمية"
 }

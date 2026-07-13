@@ -180,7 +180,9 @@
     "review_dispatch_blocked": "Approved, but couldn’t carry out the action",
     "channels_author_all": "Everyone",
     "channels_author_you": "You",
-    "channels_author_athena": "Athena"
+    "channels_author_athena": "Athena",
+    "channel_heard_by": "Heard by",
+    "channel_importance": "Importance"
   },
   "common": {
     "unknown_error": "Unknown error",

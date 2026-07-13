@@ -180,7 +180,9 @@
     "grid_state_failed": "失败",
     "grid_state_idle": "空闲",
     "grid_state_running": "运行中",
-    "grid_ungrouped": "未分组"
+    "grid_ungrouped": "未分组",
+    "channel_heard_by": "接收者",
+    "channel_importance": "重要性"
   },
   "common": {
     "loading": "加载中...",

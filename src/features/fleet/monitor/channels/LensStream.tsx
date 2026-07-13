@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
@@ -17,17 +17,23 @@ import type { TaggedItem } from './types';
  * an old row back into view must never re-fire it (plan §5.4).
  */
 export function LensStream({
-  rows: data, onOpen, emptyLabel,
+  rows: data, onOpen, emptyLabel, hasMore, onEndReached,
 }: {
   rows: TaggedItem[];
   onOpen: (row: TaggedItem) => void;
   emptyLabel: string;
+  hasMore?: boolean;
+  /** Fired once when the tail scrolls into view — pages the merge deeper. */
+  onEndReached?: () => void;
 }) {
   const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const seenRef = useRef<Set<string>>(new Set());
+  // One in-flight page at a time; released when new rows land.
+  const fetching = useRef(false);
+  useEffect(() => { fetching.current = false; }, [data.length]);
 
   const labels = useMemo(() => timeGroupLabels(t), [t]);
   const { rows, headerIndexes } = useMemo(
@@ -50,7 +56,19 @@ export function LensStream({
     <div className="relative flex-1 min-h-0">
       <div
         ref={scrollRef}
-        onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 240)}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          setScrolled(el.scrollTop > 240);
+          // Within a screen of the tail → page the merge deeper. Guarded by a
+          // ref so a burst of scroll events fires exactly one fetch.
+          if (hasMore && onEndReached && !fetching.current) {
+            const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+            if (remaining < el.clientHeight) {
+              fetching.current = true;
+              onEndReached();
+            }
+          }
+        }}
         className="absolute inset-0 overflow-y-auto"
       >
         <div style={{ height: virtualizer.getTotalSize(), position: 'relative', width: '100%' }}>

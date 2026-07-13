@@ -179,5 +179,7 @@
   "grid_state_failed": "실패",
   "grid_state_idle": "대기 중",
   "grid_state_running": "실행 중",
-  "grid_ungrouped": "그룹 없음"
+  "grid_ungrouped": "그룹 없음",
+  "channel_heard_by": "수신자",
+  "channel_importance": "중요도"
 }

@@ -180,7 +180,9 @@
     "grid_state_failed": "ব্যর্থ",
     "grid_state_idle": "নিষ্ক্রিয়",
     "grid_state_running": "চলছে",
-    "grid_ungrouped": "গোষ্ঠীবিহীন"
+    "grid_ungrouped": "গোষ্ঠীবিহীন",
+    "channel_heard_by": "শুনেছে",
+    "channel_importance": "গুরুত্ব"
   },
   "common": {
     "loading": "লোড হচ্ছে...",

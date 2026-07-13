@@ -1,47 +1,62 @@
 import type { StateCreator } from "zustand";
 import type { PipelineStore } from "../../storeTypes";
 
-import { listTeamChannel, postTeamDirective } from "@/api/pipeline/teamChannel";
+import {
+  listTeamChannel,
+  postTeamDirective,
+  countTeamChannelKinds,
+  type ChannelKind,
+} from "@/api/pipeline/teamChannel";
 import { silentCatch } from "@/lib/silentCatch";
 import type { TeamChannelItem } from "@/lib/bindings/TeamChannelItem";
+import type { ChannelKindCounts } from "@/lib/bindings/ChannelKindCounts";
 
 /* ----------------------------------------------------------------------------
  * CHANNEL SLICE — the single owner of team-channel state.
  *
- * Before this slice, three surfaces each mounted their own per-team feed hook:
- * the monitor's channel grid (one per selected team), the merged timeline (one
- * per team again), and LiveChannelOverlay at App root (one per team, always).
- * Each carried its own 15s poll and its own TEAM_ASSIGNMENT_PROGRESS listener,
- * so watching N teams from the monitor while live pop-ups were enabled meant 3N
- * polls and 3N listeners for the same rows.
+ * Before this slice, three surfaces each mounted their own per-team feed hook,
+ * each with its own 15s poll and its own TEAM_ASSIGNMENT_PROGRESS listener — so
+ * watching N teams cost 3N of each. Now surfaces `subscribeChannel` (refcounted)
+ * and exactly one poll loop + one push listener (`useChannelService`, mounted
+ * once in BackgroundServices) refreshes whatever is currently subscribed.
  *
- * Now: surfaces `subscribeChannel(teamId)` (refcounted), the cache lives here,
- * and exactly one poll loop + one push listener — `useChannelService`, mounted
- * once in BackgroundServices — refreshes whatever is currently subscribed. N
- * surfaces on the same team share one fetch.
+ * The cache is keyed by (team, KINDS), not by team. The Stream's kind lens is
+ * pushed down into SQL — asking for `memory` runs only the memory query — so a
+ * blended page and a memory-only page are different pages of different queries
+ * and cannot share a cache entry. `useTeamChannel` uses the blended key; the
+ * Stream uses whatever its lens asks for.
  *
- * See docs/plans/monitor-consolidation.md § Pillar 0.
+ * See docs/plans/monitor-consolidation.md § Pillar 0 + Pillar 2.
  * -------------------------------------------------------------------------- */
 
-/** Rows fetched per page (head refresh and keyset older-pages alike). */
+/** Rows fetched per page. */
 export const CHANNEL_PAGE = 60;
 
-/** Poll cadence for the sources that have no push channel (bus events,
- *  memories). Step movement arrives immediately via TEAM_ASSIGNMENT_PROGRESS. */
+/** Poll cadence for the sources with no push channel (bus events, memories). */
 export const CHANNEL_POLL_MS = 15_000;
 
 const LAST_SEEN_PREFIX = "personas.channel.lastSeen.";
 
-/** Per-team channel cache. */
+/** Cache key. `kinds` is order-insensitive; empty = the blended read. */
+export function channelKey(teamId: string, kinds?: ChannelKind[]): string {
+  const k = kinds && kinds.length ? [...kinds].sort().join(",") : "";
+  return `${teamId}|${k}`;
+}
+
+function parseKey(key: string): { teamId: string; kinds: ChannelKind[] | undefined } {
+  const bar = key.indexOf("|");
+  const teamId = key.slice(0, bar);
+  const rest = key.slice(bar + 1);
+  return { teamId, kinds: rest ? (rest.split(",") as ChannelKind[]) : undefined };
+}
+
 export interface ChannelTeamState {
   items: TeamChannelItem[];
-  /** True once the head page has landed at least once. */
   loaded: boolean;
-  /** True once a keyset page came back empty — start of conversation. */
+  /** No older rows exist — the start of this channel's history. */
   exhausted: boolean;
-  /** A directive post is in flight. */
   posting: boolean;
-  /** Newest `item.at` the user has actually looked at (D6). Null = never. */
+  /** Newest `at` the user has actually looked at (D6). Null = never. */
   lastSeenAt: string | null;
 }
 
@@ -72,9 +87,9 @@ function writeLastSeen(teamId: string, at: string): void {
 }
 
 /**
- * Unread = items newer than the last-seen watermark that the user did not write
- * themselves. A team never read before counts as fully unread, which is what a
- * messenger sidebar should show on first run.
+ * Unread = items newer than the last-seen watermark that the user did not write.
+ * A never-read team counts as fully unread, which is what a messenger sidebar
+ * should show on first run.
  */
 export function countUnread(state: ChannelTeamState): number {
   let n = 0;
@@ -86,51 +101,77 @@ export function countUnread(state: ChannelTeamState): number {
   return n;
 }
 
+/**
+ * THE MERGE HORIZON — the deepest timestamp a cross-team merge can honestly show.
+ *
+ * The Stream is a k-way merge of independently-paged lists. Team A may be loaded
+ * back to Monday while team B only reaches Friday: BELOW Friday the merge is
+ * incomplete, because B has rows down there we haven't fetched yet. Render them
+ * anyway and B's rows appear ABOVE the user's scroll position on the next page —
+ * the classic merge-paging jitter, where history rewrites itself as you read it.
+ *
+ * So the horizon is the NEWEST of the per-team oldest rows, over the teams that
+ * still have history. Rows at or above it are provably complete; anything older
+ * is held back until every team has paged past it. When all teams are exhausted
+ * the horizon lifts (null) and the whole merge renders.
+ */
+export function mergeHorizon(states: ChannelTeamState[]): string | null {
+  let horizon: string | null = null;
+  for (const s of states) {
+    if (s.exhausted) continue; // no more history — this team can't surprise us
+    const oldest = s.items[s.items.length - 1]?.at;
+    if (!oldest) continue;
+    if (horizon === null || oldest > horizon) horizon = oldest;
+  }
+  return horizon;
+}
+
 export interface ChannelSlice {
   // State
-  /** Per-team channel cache. Keyed by team_id. */
+  /** Per-(team, kinds) cache. Keyed by `channelKey`. */
   channels: Record<string, ChannelTeamState>;
-  /** Refcount of live subscribers per team. Drives what the service polls. */
+  /** Refcount of live subscribers per key. Drives what the service polls. */
   channelSubs: Record<string, number>;
+  /** Server-side per-kind row counts, keyed by team id. The facet rail cannot
+   *  count rows it never fetched — hence a dedicated count command. */
+  channelCounts: Record<string, ChannelKindCounts>;
 
   // Actions
-  /** Subscribe a surface to a team's channel. Returns the release function —
-   *  call it on unmount. The first subscriber triggers an immediate fetch; the
-   *  cache survives the last release (warm for the next open). */
-  subscribeChannel: (teamId: string) => () => void;
-  /** Refresh the head page and merge it over what's already loaded. */
-  refreshChannel: (teamId: string) => Promise<void>;
-  /** Refresh every currently-subscribed team. The service's only entry point. */
+  /** Subscribe a surface to a (team, kinds) channel. Returns the release fn. */
+  subscribeChannel: (teamId: string, kinds?: ChannelKind[]) => () => void;
+  refreshChannel: (key: string) => Promise<void>;
   refreshSubscribedChannels: () => Promise<void>;
-  /** Keyset-page one screen of older history. */
-  loadOlderChannel: (teamId: string) => Promise<void>;
-  /** Post a user directive, then refresh the head so receipts land. */
+  /** Keyset-page one screen of older history for one key. */
+  loadOlderChannel: (key: string) => Promise<void>;
+  /**
+   * Page the cross-team merge one screen deeper. Deepens the SHALLOWEST team —
+   * the one whose oldest row is newest — because that team is what holds the
+   * horizon up. Repeated calls walk every team back in step.
+   */
+  loadOlderMerged: (teamIds: string[], kinds?: ChannelKind[]) => Promise<void>;
+  fetchChannelCounts: (teamId: string) => Promise<void>;
   sendChannelDirective: (teamId: string, content: string, replyTo?: string) => Promise<void>;
-  /** Mark the channel read up to its newest row (D6). */
   markChannelSeen: (teamId: string) => void;
 }
 
 export const createChannelSlice: StateCreator<PipelineStore, [], [], ChannelSlice> = (set, get) => ({
   channels: {},
   channelSubs: {},
+  channelCounts: {},
 
-  subscribeChannel: (teamId) => {
-    const prior = get().channelSubs[teamId] ?? 0;
-    set((s) => ({ channelSubs: { ...s.channelSubs, [teamId]: (s.channelSubs[teamId] ?? 0) + 1 } }));
+  subscribeChannel: (teamId, kinds) => {
+    const key = channelKey(teamId, kinds);
+    const prior = get().channelSubs[key] ?? 0;
+    set((s) => ({ channelSubs: { ...s.channelSubs, [key]: (s.channelSubs[key] ?? 0) + 1 } }));
 
     if (prior === 0) {
-      // First subscriber: seed the cache entry (hydrating the persisted
-      // last-seen watermark) and fetch immediately rather than waiting out a
-      // poll tick.
-      if (!get().channels[teamId]) {
+      if (!get().channels[key]) {
         set((s) => ({
-          channels: {
-            ...s.channels,
-            [teamId]: { ...EMPTY_CHANNEL, lastSeenAt: readLastSeen(teamId) },
-          },
+          channels: { ...s.channels, [key]: { ...EMPTY_CHANNEL, lastSeenAt: readLastSeen(teamId) } },
         }));
       }
-      void get().refreshChannel(teamId);
+      void get().refreshChannel(key);
+      if (!get().channelCounts[teamId]) void get().fetchChannelCounts(teamId);
     }
 
     let released = false;
@@ -138,22 +179,21 @@ export const createChannelSlice: StateCreator<PipelineStore, [], [], ChannelSlic
       if (released) return; // idempotent — StrictMode double-invokes cleanups
       released = true;
       set((s) => {
-        const next = (s.channelSubs[teamId] ?? 1) - 1;
+        const next = (s.channelSubs[key] ?? 1) - 1;
         const subs = { ...s.channelSubs };
-        if (next <= 0) delete subs[teamId];
-        else subs[teamId] = next;
+        if (next <= 0) delete subs[key];
+        else subs[key] = next;
         return { channelSubs: subs };
       });
     };
   },
 
-  refreshChannel: async (teamId) => {
+  refreshChannel: async (key) => {
+    const { teamId, kinds } = parseKey(key);
     try {
-      const head = await listTeamChannel(teamId, CHANNEL_PAGE);
+      const head = await listTeamChannel(teamId, CHANNEL_PAGE, undefined, kinds);
       set((s) => {
-        const prev = s.channels[teamId] ?? { ...EMPTY_CHANNEL, lastSeenAt: readLastSeen(teamId) };
-        // Merge the fresh head over the loaded window, keeping older pages that
-        // the head no longer covers.
+        const prev = s.channels[key] ?? { ...EMPTY_CHANNEL, lastSeenAt: readLastSeen(teamId) };
         const seen = new Set(head.map((i) => i.id));
         const oldest = head[head.length - 1]?.at;
         const olderTail = prev.items.filter(
@@ -162,7 +202,17 @@ export const createChannelSlice: StateCreator<PipelineStore, [], [], ChannelSlic
         return {
           channels: {
             ...s.channels,
-            [teamId]: { ...prev, items: [...head, ...olderTail], loaded: true },
+            [key]: {
+              ...prev,
+              items: [...head, ...olderTail],
+              loaded: true,
+              // A short FIRST page is the whole channel — nothing older exists.
+              // Without this, a team with 3 rows never becomes `exhausted`, and
+              // it would pin the merge horizon at its own oldest row forever,
+              // hiding every other team's history below that point.
+              exhausted:
+                prev.items.length === 0 && head.length < CHANNEL_PAGE ? true : prev.exhausted,
+            },
           },
         };
       });
@@ -172,30 +222,35 @@ export const createChannelSlice: StateCreator<PipelineStore, [], [], ChannelSlic
   },
 
   refreshSubscribedChannels: async () => {
-    const teamIds = Object.keys(get().channelSubs);
-    await Promise.all(teamIds.map((id) => get().refreshChannel(id)));
+    const keys = Object.keys(get().channelSubs);
+    await Promise.all(keys.map((k) => get().refreshChannel(k)));
   },
 
-  loadOlderChannel: async (teamId) => {
-    const state = get().channels[teamId];
+  loadOlderChannel: async (key) => {
+    const { teamId, kinds } = parseKey(key);
+    const state = get().channels[key];
     const oldest = state?.items[state.items.length - 1];
     if (!oldest || state?.exhausted) return;
     try {
       // COMPOSITE cursor (at, id) — `at` is only second-resolution, so paging on
-      // the timestamp alone silently dropped rows that shared the boundary
-      // second with the last item of the previous page.
-      const older = await listTeamChannel(teamId, CHANNEL_PAGE, { at: oldest.at, id: oldest.id });
+      // the timestamp alone silently dropped rows sharing the boundary second.
+      const older = await listTeamChannel(
+        teamId,
+        CHANNEL_PAGE,
+        { at: oldest.at, id: oldest.id },
+        kinds,
+      );
       set((s) => {
-        const prev = s.channels[teamId];
+        const prev = s.channels[key];
         if (!prev) return {};
         const known = new Set(prev.items.map((i) => i.id));
         return {
           channels: {
             ...s.channels,
-            [teamId]: {
+            [key]: {
               ...prev,
               items: [...prev.items, ...older.filter((i) => !known.has(i.id))],
-              exhausted: older.length === 0,
+              exhausted: older.length < CHANNEL_PAGE,
             },
           },
         };
@@ -205,33 +260,63 @@ export const createChannelSlice: StateCreator<PipelineStore, [], [], ChannelSlic
     }
   },
 
+  loadOlderMerged: async (teamIds, kinds) => {
+    const { channels } = get();
+    // The shallowest team is what holds the horizon up — deepen that one.
+    let target: string | null = null;
+    let shallowest: string | null = null;
+    for (const teamId of teamIds) {
+      const key = channelKey(teamId, kinds);
+      const s = channels[key];
+      if (!s || s.exhausted) continue;
+      const oldest = s.items[s.items.length - 1]?.at;
+      if (!oldest) continue;
+      if (shallowest === null || oldest > shallowest) {
+        shallowest = oldest;
+        target = key;
+      }
+    }
+    if (target) await get().loadOlderChannel(target);
+  },
+
+  fetchChannelCounts: async (teamId) => {
+    try {
+      const counts = await countTeamChannelKinds(teamId);
+      set((s) => ({ channelCounts: { ...s.channelCounts, [teamId]: counts } }));
+    } catch (e) {
+      silentCatch("teams/channel:counts")(e);
+    }
+  },
+
   sendChannelDirective: async (teamId, content, replyTo) => {
     const text = content.trim();
     if (!text) return;
+    const key = channelKey(teamId);
     const patch = (posting: boolean) =>
       set((s) => {
-        const prev = s.channels[teamId];
+        const prev = s.channels[key];
         if (!prev) return {};
-        return { channels: { ...s.channels, [teamId]: { ...prev, posting } } };
+        return { channels: { ...s.channels, [key]: { ...prev, posting } } };
       });
     patch(true);
     try {
       await postTeamDirective(teamId, text, replyTo);
-      await get().refreshChannel(teamId);
+      await get().refreshChannel(key);
     } finally {
       patch(false);
     }
   },
 
   markChannelSeen: (teamId) => {
-    const state = get().channels[teamId];
+    const key = channelKey(teamId);
+    const state = get().channels[key];
     const newest = state?.items[0]?.at;
     if (!newest || state?.lastSeenAt === newest) return;
     writeLastSeen(teamId, newest);
     set((s) => {
-      const prev = s.channels[teamId];
+      const prev = s.channels[key];
       if (!prev) return {};
-      return { channels: { ...s.channels, [teamId]: { ...prev, lastSeenAt: newest } } };
+      return { channels: { ...s.channels, [key]: { ...prev, lastSeenAt: newest } } };
     });
   },
 });
