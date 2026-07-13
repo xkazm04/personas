@@ -94,14 +94,20 @@ pub fn setting_key(project_id: &str) -> String {
 
 /// Load every project's EXPLICIT autopilot mode in one query (project_id → mode).
 /// Projects with no row are absent (→ the caller falls back to the global flag).
+///
+/// Fail-closed: a row whose value does not parse into a known mode is treated as
+/// [`AutopilotMode::Off`] (the most restrictive) rather than skipped, so a
+/// corrupt row can never *widen* autonomy past the global flag. Unknown enum
+/// values are already rejected at write time by
+/// [`crate::db::settings_keys::validate_value`]; this only hardens against a row
+/// that bypassed validation.
 pub fn load_modes(pool: &DbPool) -> HashMap<String, AutopilotMode> {
     let mut map = HashMap::new();
     if let Ok(rows) = crate::db::repos::core::settings::get_by_prefix(pool, AUTOPILOT_MODE_PREFIX) {
         for (key, val) in rows {
             if let Some(pid) = key.strip_prefix(AUTOPILOT_MODE_PREFIX) {
-                if let Some(mode) = AutopilotMode::parse(&val) {
-                    map.insert(pid.to_string(), mode);
-                }
+                let mode = AutopilotMode::parse(&val).unwrap_or(AutopilotMode::Off);
+                map.insert(pid.to_string(), mode);
             }
         }
     }
@@ -171,6 +177,15 @@ mod tests {
         // No explicit mode → follow the global flag (legacy behavior).
         assert!(cap_enabled(&modes, "p_unset", true, KpiEvaluation));
         assert!(!cap_enabled(&modes, "p_unset", false, KpiEvaluation));
+    }
+
+    #[test]
+    fn parse_treats_unknown_as_none() {
+        // The fail-closed contract in `load_modes` relies on unknown → None so it
+        // can coerce to Off. Guard that invariant here (load_modes needs a DB).
+        assert_eq!(AutopilotMode::parse(""), None);
+        assert_eq!(AutopilotMode::parse("garbage"), None);
+        assert_eq!(AutopilotMode::parse("FULL"), None); // case-sensitive
     }
 
     #[test]

@@ -260,8 +260,10 @@ pub const COMPANION_FLEET_BOLDNESS: &str = "companion_fleet_boldness";
 /// Default level for [`COMPANION_FLEET_BOLDNESS`] when the row is unset.
 pub const COMPANION_FLEET_BOLDNESS_DEFAULT: &str = "bold";
 
-/// LEGACY (no longer read): message triage stopped being an independent
-/// knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. When the master
+/// DEPRECATED / LEGACY (no longer read): message triage stopped being an
+/// independent knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. Setting it
+/// has no effect and emits a deprecation warning (see [`deprecated_replacement`]);
+/// the autonomy resolver ([`crate::engine::autonomy`]) never consults it. When the master
 /// autonomous toggle is ON, the proactive tick's message-triage leg runs
 /// (batched headless decision classifying each unread persona message as
 /// `done` / `digest` / `attention`; high/urgent priority can never be
@@ -367,8 +369,10 @@ pub const AUTONOMOUS_ASSIGNMENT_RETRY: &str = "autonomous_assignment_retry";
 /// Default for [`AUTONOMOUS_ASSIGNMENT_RETRY`] — off (opt-in autonomy).
 pub const AUTONOMOUS_ASSIGNMENT_RETRY_DEFAULT: bool = false;
 
-/// LEGACY (no longer read): review triage stopped being an independent
-/// knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. When the master
+/// DEPRECATED / LEGACY (no longer read): review triage stopped being an
+/// independent knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. Setting it
+/// has no effect and emits a deprecation warning (see [`deprecated_replacement`]);
+/// the autonomy resolver ([`crate::engine::autonomy`]) never consults it. When the master
 /// autonomous toggle is ON, `ManualReviewAutoTriageSubscription` resolves
 /// `persona_manual_reviews` pending past a grace window unattended
 /// (conservative policy: auto-approves only low/medium severity; leaves
@@ -770,9 +774,37 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     }
 }
 
+/// If `key` is a DEPRECATED settings key that is still allow-listed for
+/// backward-compat but no longer read by any consumer, returns a short human
+/// message naming what supersedes it. Returns `None` for live keys.
+///
+/// Used by [`crate::db::repos::core::settings::set`] to emit a `tracing::warn!`
+/// deprecation breadcrumb when something writes a quarantined key — so a stale
+/// UI toggle or external writer surfaces in observability instead of silently
+/// persisting an inert row. The autonomy model that superseded these keys lives
+/// in [`crate::engine::autonomy`].
+pub fn deprecated_replacement(key: &str) -> Option<&'static str> {
+    match key {
+        AUTONOMOUS_MESSAGE_TRIAGE | AUTONOMOUS_REVIEW_TRIAGE => {
+            Some("implied by companion_autonomous_mode (the master autonomy toggle); this key is no longer read")
+        }
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn deprecated_keys_flagged_live_keys_not() {
+        assert!(deprecated_replacement(AUTONOMOUS_MESSAGE_TRIAGE).is_some());
+        assert!(deprecated_replacement(AUTONOMOUS_REVIEW_TRIAGE).is_some());
+        // Live keys and the still-active high-severity opt-in are NOT deprecated.
+        assert!(deprecated_replacement(COMPANION_AUTONOMOUS_MODE).is_none());
+        assert!(deprecated_replacement(AUTONOMOUS_REVIEW_TRIAGE_HIGH).is_none());
+        assert!(deprecated_replacement(AUTONOMOUS_GOAL_ADVANCEMENT).is_none());
+    }
 
     #[test]
     fn exact_key_accepted() {

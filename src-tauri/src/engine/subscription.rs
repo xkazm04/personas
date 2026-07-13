@@ -1565,20 +1565,13 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
     }
 
     async fn tick(&self) {
-        use crate::engine::autopilot::{self, Capability};
+        use crate::engine::autonomy::{self, Action};
         // Default-OFF gate — opt-in only, per-project autopilot overrides it.
         // A project in `full` mode advances even when the global flag is off;
         // when neither is on, the tick is a no-op (as before).
-        let global = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_GOAL_ADVANCEMENT,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
-        let modes = autopilot::load_modes(&self.pool);
-        if !global && !autopilot::any_enabled(&modes) {
+        let global = autonomy::global_enabled(&self.pool, Action::GoalAdvancement);
+        let modes = autonomy::load_modes(&self.pool);
+        if !global && !autonomy::any_enabled(&modes) {
             return;
         }
         // G1: quota-aware backpressure — don't start NEW team work while the
@@ -1615,7 +1608,7 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
             }
             // Only `full`-mode projects auto-advance (or legacy global-on
             // projects with no explicit mode).
-            if !autopilot::cap_enabled(&modes, &project_id, global, Capability::GoalAdvancement) {
+            if !autonomy::is_allowed(&modes, &project_id, global, Action::GoalAdvancement) {
                 continue;
             }
             if !seen_teams.insert(team_id.clone()) {
@@ -1789,14 +1782,8 @@ impl ReactiveSubscription for AssignmentAutoResumeSubscription {
 
     async fn tick(&self) {
         // Default-OFF gate — opt-in only.
-        let enabled = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_ASSIGNMENT_RETRY,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
+        use crate::engine::autonomy::{self, Action};
+        let enabled = autonomy::global_enabled(&self.pool, Action::AssignmentRetry);
         if !enabled {
             return;
         }
@@ -1987,14 +1974,8 @@ impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
         // Gated on the master autonomous toggle: turning autonomy ON implies
         // review triage (no separate opt-in; the legacy
         // `autonomous_review_triage` key is no longer consulted).
-        let enabled = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::COMPANION_AUTONOMOUS_MODE,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
+        use crate::engine::autonomy::{self, Action};
+        let enabled = autonomy::global_enabled(&self.pool, Action::CompanionMaster);
         if !enabled {
             return;
         }
@@ -2002,14 +1983,7 @@ impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
         // High/critical auto-approval is a SEPARATE, riskier opt-in: only safe
         // technical-status items (allowlist) with no business/policy marker
         // (denylist) are approved; genuine business/policy decisions stay human.
-        let high_enabled = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_REVIEW_TRIAGE_HIGH,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
+        let high_enabled = autonomy::global_enabled(&self.pool, Action::ReviewTriageHigh);
 
         let pool = self.pool.clone();
         let triaged = tokio::task::spawn_blocking(move || {
@@ -2154,14 +2128,8 @@ impl ReactiveSubscription for BacklogToGoalSubscription {
 
     async fn tick(&self) {
         // Default-OFF gate — opt-in only.
-        let enabled = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_BACKLOG_TO_GOAL,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
+        use crate::engine::autonomy::{self, Action};
+        let enabled = autonomy::global_enabled(&self.pool, Action::BacklogToGoal);
         if !enabled {
             return;
         }
@@ -2336,14 +2304,8 @@ impl ReactiveSubscription for IdeaReplenishSubscription {
 
     async fn tick(&self) {
         // Default-OFF gate — opt-in only.
-        let enabled = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_IDEA_SCAN,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
+        use crate::engine::autonomy::{self, Action};
+        let enabled = autonomy::global_enabled(&self.pool, Action::IdeaScan);
         if !enabled {
             return;
         }
@@ -2454,14 +2416,8 @@ impl ReactiveSubscription for BacklogTriageSubscription {
     }
 
     async fn tick(&self) {
-        let enabled = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_BACKLOG_TRIAGE,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
+        use crate::engine::autonomy::{self, Action};
+        let enabled = autonomy::global_enabled(&self.pool, Action::BacklogTriage);
         if !enabled {
             return;
         }
@@ -2562,14 +2518,8 @@ impl ReactiveSubscription for DirectorStormSubscription {
     }
 
     async fn tick(&self) {
-        let enabled = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_DIRECTOR_STORM,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
+        use crate::engine::autonomy::{self, Action};
+        let enabled = autonomy::global_enabled(&self.pool, Action::DirectorStorm);
         if !enabled {
             return;
         }
@@ -2651,14 +2601,8 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
     }
 
     async fn tick(&self) {
-        let enabled = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_ATHENA_REACTIONS,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
+        use crate::engine::autonomy::{self, Action};
+        let enabled = autonomy::global_enabled(&self.pool, Action::AthenaReactions);
         if !enabled {
             return;
         }
@@ -2672,14 +2616,7 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
         // backlog promotion starved — the 06-09 fleet deadlock), so draining
         // them outranks commentary. Opt-in via its own setting; each candidate
         // is one CLI decision + (on approve) one resumed QA round.
-        let resolution_on = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_ATHENA_REVIEW_RESOLUTION,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
+        let resolution_on = autonomy::global_enabled(&self.pool, Action::AthenaReviewResolution);
         if resolution_on {
             const MAX_RESOLUTIONS_PER_TICK: usize = 2;
             let candidates = {
@@ -2820,17 +2757,10 @@ impl ReactiveSubscription for KpiGoalDerivationSubscription {
     }
 
     async fn tick(&self) {
-        use crate::engine::autopilot::{self, Capability};
-        let global = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_KPI_GOAL_DERIVATION,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
-        let modes = autopilot::load_modes(&self.pool);
-        if !global && !autopilot::any_enabled(&modes) {
+        use crate::engine::autonomy::{self, Action};
+        let global = autonomy::global_enabled(&self.pool, Action::KpiGoalDerivation);
+        let modes = autonomy::load_modes(&self.pool);
+        if !global && !autonomy::any_enabled(&modes) {
             return;
         }
         if quota_cooldown_active(&self.pool) {
@@ -2855,7 +2785,7 @@ impl ReactiveSubscription for KpiGoalDerivationSubscription {
         let mut candidates: Vec<_> = candidates
             .into_iter()
             .filter(|kpi| {
-                autopilot::cap_enabled(&modes, &kpi.project_id, global, Capability::KpiGoalDerivation)
+                autonomy::is_allowed(&modes, &kpi.project_id, global, Action::KpiGoalDerivation)
             })
             .collect();
         candidates.truncate(KPI_DERIVATION_MAX_PER_TICK);
@@ -2912,19 +2842,12 @@ impl ReactiveSubscription for KpiEvaluationSubscription {
     }
 
     async fn tick(&self) {
-        use crate::engine::autopilot::{self, Capability};
+        use crate::engine::autonomy::{self, Action};
         // Per-project autopilot overrides the global flag; when the global flag
         // is off AND no project opted in, this tick is a no-op (as before).
-        let global = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_KPI_EVALUATION,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
-        let modes = autopilot::load_modes(&self.pool);
-        if !global && !autopilot::any_enabled(&modes) {
+        let global = autonomy::global_enabled(&self.pool, Action::KpiEvaluation);
+        let modes = autonomy::load_modes(&self.pool);
+        if !global && !autonomy::any_enabled(&modes) {
             return;
         }
         if quota_cooldown_active(&self.pool) {
@@ -2956,7 +2879,7 @@ impl ReactiveSubscription for KpiEvaluationSubscription {
         };
 
         for project_id in projects {
-            if !autopilot::cap_enabled(&modes, &project_id, global, Capability::KpiEvaluation) {
+            if !autonomy::is_allowed(&modes, &project_id, global, Action::KpiEvaluation) {
                 continue; // this project's autopilot mode doesn't include measuring
             }
             match crate::engine::kpi_eval::evaluate_due_kpis(&self.pool, &project_id).await {
@@ -3022,18 +2945,12 @@ impl ReactiveSubscription for FleetLivenessWatchdog {
     }
 
     async fn tick(&self) {
-        let advancement_on = crate::db::repos::core::settings::get(
-            &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_GOAL_ADVANCEMENT,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
+        use crate::engine::autonomy::{self, Action};
+        let advancement_on = autonomy::global_enabled(&self.pool, Action::GoalAdvancement);
         // A project on `full` autopilot advances even with the global flag off,
         // so the stall watchdog must arm for it too — otherwise per-project
         // advancement would have no liveness protection.
-        let any_full = crate::engine::autopilot::load_modes(&self.pool)
+        let any_full = autonomy::load_modes(&self.pool)
             .values()
             .any(|m| *m == crate::engine::autopilot::AutopilotMode::Full);
         if !advancement_on && !any_full {

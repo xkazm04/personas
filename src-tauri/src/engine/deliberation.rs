@@ -21,7 +21,6 @@ use crate::db::models::{DeliberationAgendaItem, ProposalSpec, TeamDeliberation};
 use crate::db::repos::resources::{
     deliberation as deliberation_repo, team_channel as team_channel_repo,
 };
-use crate::db::settings_keys::AUTONOMOUS_DELIBERATION;
 use crate::db::DbPool;
 use crate::engine::subscription::{quota_cooldown_active, ReactiveSubscription};
 use crate::error::AppError;
@@ -795,11 +794,8 @@ impl ReactiveSubscription for DeliberationSubscription {
     }
 
     async fn tick(&self) {
-        let enabled = crate::db::repos::core::settings::get(&self.pool, AUTONOMOUS_DELIBERATION)
-            .ok()
-            .flatten()
-            .as_deref()
-            == Some("true");
+        use crate::engine::autonomy::{self, Action};
+        let enabled = autonomy::global_enabled(&self.pool, Action::Deliberation);
         if !enabled {
             return;
         }

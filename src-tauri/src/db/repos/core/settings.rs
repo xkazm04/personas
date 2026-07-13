@@ -40,6 +40,15 @@ pub fn get(pool: &DbPool, key: &str) -> Result<Option<String>, AppError> {
 pub fn set(pool: &DbPool, key: &str, value: &str) -> Result<(), AppError> {
     settings_keys::validate_key(key).map_err(AppError::Validation)?;
     settings_keys::validate_value(key, value).map_err(AppError::Validation)?;
+    // Quarantined-key breadcrumb: writing a DEPRECATED key still persists (the
+    // row stays harmless + allow-listed), but a warn surfaces the stale writer.
+    if let Some(superseded_by) = settings_keys::deprecated_replacement(key) {
+        tracing::warn!(
+            key = key,
+            superseded_by = superseded_by,
+            "settings::set called with a DEPRECATED key — value persisted but no consumer reads it"
+        );
+    }
     timed_query!("app_settings", "app_settings::set", {
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
