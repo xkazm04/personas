@@ -11635,7 +11635,16 @@
       "auto_hibernate_desc": "Hiberne automatiquement les sessions inactives au-delà du seuil défini — libère le processus même lorsque Fleet n'est pas au premier plan. Elles restent reprénables via Réveiller. Fonctionne pendant que Personas est ouvert.",
       "auto_hibernate_toggle": "Activer l'hibernation automatique",
       "auto_hibernate_after": "Après",
-      "auto_hibernate_minutes_unit": "min d'inactivité"
+      "auto_hibernate_minutes_unit": "min d'inactivité",
+      "live_slots_desc": "Limitez le nombre de processus claude exécutés simultanément. Quand la flotte atteint la limite, la session inactive la plus ancienne est mise en hibernation pour libérer de la place — elle reste reprenables via Réveiller. Les sessions en cours ne sont jamais interrompues.",
+      "live_slots_max_label": "Max",
+      "live_slots_title": "Limiter les sessions actives",
+      "live_slots_toggle": "Activer la limite de sessions",
+      "live_slots_unit": "sessions actives",
+      "headless_badge": "Arrière-plan",
+      "headless_no_terminal": "Session en arrière-plan — s'exécute sans terminal. Répondez depuis le bandeau « Besoin de vous » ; la progression s'affiche dans Insights.",
+      "spawn_headless_hint": "Mode headless — pas de terminal en direct, bien plus léger en CPU et RAM. Répondez depuis le bandeau « Besoin de vous » ; suivez la progression dans Insights.",
+      "spawn_headless_toggle": "Exécuter en arrière-plan (sans terminal)"
     },
     "title": "Extensions",
     "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",

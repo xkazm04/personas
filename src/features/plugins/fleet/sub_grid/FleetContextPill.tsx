@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Gauge, Minimize2 } from 'lucide-react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { readTranscript } from '@/api/fleet/fleet';
+import { readTranscript, sessionMetadata } from '@/api/fleet/fleet';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -44,9 +44,13 @@ export function FleetContextPill({ claudeSessionId, sessionId, canCompact = fals
       return;
     }
     let cancelled = false;
-    readTranscript(claudeSessionId)
+    // Prefer the incremental per-session rollup (folds only newly-appended
+    // transcript bytes) — a 40-tile grid mounting 40 pills must not trigger 40
+    // full multi-MB JSONL parses. Whole-file read only on a rollup miss.
+    sessionMetadata(claudeSessionId)
+      .then((s) => (s ? s : readTranscript(claudeSessionId)))
       .then((s) => { if (!cancelled) setCtx(Number(s.lastContextTokens)); })
-      .catch(silentCatch('FleetContextPill:readTranscript'));
+      .catch(silentCatch('FleetContextPill:sessionMetadata'));
     return () => { cancelled = true; };
   }, [claudeSessionId]);
 

@@ -19,7 +19,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use portable_pty::MasterPty;
 
-use super::types::{FleetSession, FleetSessionState};
+use super::types::{FleetSession, FleetSessionMode, FleetSessionState};
 
 /// Default cap (bytes) for a session's output ring buffer. Bounds the desktop
 /// app's memory per session regardless of how much a 1M-token run prints: a
@@ -46,20 +46,43 @@ pub struct OutputRing {
     /// Wrapping u32: only ever compared for equality, and a poller can't
     /// miss 2^32 pushes inside one poll interval.
     rev: u32,
+    /// Persistent VT screen model (fleet-scale Tier C). Lazily built on the
+    /// first `render_screen` call (catching up from the ring once), then fed
+    /// **incrementally** by every `push` — so steady-state screen reads are
+    /// O(screen) instead of re-parsing up to 512 KiB per call. That matters at
+    /// scale: orchestration wakes, screen-hash dedupes, execution-time
+    /// re-checks, and previews all read screens, and a 40-session fleet was
+    /// paying a full ring re-parse for each. Rebuilt (one catch-up feed) when
+    /// the requested dims change (PTY resize). Memory: one rows×cols cell grid
+    /// per session — tens of KB.
+    parser: Option<vt100::Parser>,
+    /// Dims the parser currently models — a mismatch triggers a rebuild.
+    parser_dims: (u16, u16),
 }
 
 impl OutputRing {
     pub fn new(cap: usize) -> Self {
-        Self { buf: VecDeque::new(), cap, subscribed: false, rev: 0 }
+        Self {
+            buf: VecDeque::new(),
+            cap,
+            subscribed: false,
+            rev: 0,
+            parser: None,
+            parser_dims: (0, 0),
+        }
     }
 
-    /// Append raw PTY bytes, trimming the oldest beyond `cap`.
+    /// Append raw PTY bytes, trimming the oldest beyond `cap`, and feed the
+    /// live screen model (if one has been materialized) incrementally.
     pub fn push(&mut self, bytes: &[u8]) {
         self.rev = self.rev.wrapping_add(1);
         self.buf.extend(bytes.iter().copied());
         let len = self.buf.len();
         if len > self.cap {
             self.buf.drain(0..len - self.cap);
+        }
+        if let Some(p) = self.parser.as_mut() {
+            p.process(bytes);
         }
     }
 
@@ -108,17 +131,28 @@ impl OutputRing {
     /// TUI — an `AskUserQuestion` menu, a permission prompt — renders as the
     /// operator actually sees it instead of collapsing to fragments. `cols` MUST
     /// match the size claude drew at, or a cursor-positioned line wraps wrong.
-    pub fn render_screen(&self, rows: u16, cols: u16) -> Vec<String> {
+    pub fn render_screen(&mut self, rows: u16, cols: u16) -> Vec<String> {
         let rows = rows.max(8);
         let cols = cols.max(40);
-        let mut parser = vt100::Parser::new(rows, cols, 0);
-        // Feed the whole ring in order so the final screen reflects the latest
-        // repaint. The oldest bytes may be a truncated escape (the ring drops
-        // from the front) — vt100 resynchronizes, and the final screen is set by
-        // the last complete paint regardless.
-        let bytes: Vec<u8> = self.buf.iter().copied().collect();
-        parser.process(&bytes);
-        let contents = parser.screen().contents();
+        // Materialize (or rebuild after a resize) the persistent screen model:
+        // one catch-up feed of the whole ring, then `push` keeps it current
+        // incrementally, making every later call O(screen). The oldest ring
+        // bytes may be a truncated escape (the ring drops from the front) —
+        // vt100 resynchronizes, and the final screen is set by the last
+        // complete repaint regardless.
+        if self.parser.is_none() || self.parser_dims != (rows, cols) {
+            let mut parser = vt100::Parser::new(rows, cols, 0);
+            let bytes: Vec<u8> = self.buf.iter().copied().collect();
+            parser.process(&bytes);
+            self.parser = Some(parser);
+            self.parser_dims = (rows, cols);
+        }
+        let contents = self
+            .parser
+            .as_ref()
+            .expect("parser materialized above")
+            .screen()
+            .contents();
         let mut lines: Vec<String> = contents.lines().map(str::to_string).collect();
         while lines.last().is_some_and(|l| l.trim().is_empty()) {
             lines.pop();
@@ -260,6 +294,10 @@ pub struct FleetSessionInner {
     /// self-expiring window). `0` = not active. Drives the `athena_active` DTO.
     pub athena_active_until_ms: i64,
     pub args: Vec<String>,
+    /// Interactive PTY vs headless stream-json — see [`FleetSessionMode`].
+    /// Decides how `write_input` treats bytes (raw PTY keys vs one wrapped
+    /// stream-json user message) and whether the UI may attach an xterm.
+    pub mode: FleetSessionMode,
     /// PTY dimensions (kept in sync with `resize`). Used to reconstruct the
     /// rendered screen grid from the raw ring via vt100 — the cols especially
     /// must match what claude drew at, or a cursor-addressed TUI wraps wrong.
@@ -309,6 +347,7 @@ impl FleetSessionInner {
             name: self.name.clone(),
             title: self.title.clone(),
             args: self.args.clone(),
+            mode: self.mode,
             state: self.state,
             last_activity_ms: self.last_activity_ms,
             last_pty_output_ms: self.last_pty_output_ms,
@@ -400,21 +439,66 @@ impl FleetRegistry {
         })
     }
 
-    /// Writes `bytes` to the session's PTY stdin. No-op if missing/exited.
+    /// Writes `bytes` to the session's stdin. No-op if missing/exited.
+    ///
+    /// Interactive: raw PTY key bytes, exactly as callers ship them.
+    /// Headless: the payload is treated as ONE complete user message — trailing
+    /// CR/LF is stripped and the text is wrapped into a stream-json
+    /// `{"type":"user",...}` line (the `-p --input-format stream-json` protocol).
+    /// All real callers on this lane (broadcast, quick-reply, Athena's
+    /// `fleet_send_input`) send whole lines; an xterm never attaches to a
+    /// headless session, so per-keystroke writes can't occur.
     pub fn write_input(&self, session_id: &str, bytes: &[u8]) -> Result<(), String> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let Some(session) = map.get(session_id) else {
             return Err(format!("session not found: {session_id}"));
+        };
+        let wrapped: Option<Vec<u8>> = match session.mode {
+            FleetSessionMode::Interactive => None,
+            FleetSessionMode::Headless => {
+                let text = String::from_utf8_lossy(bytes);
+                let text = text.trim_end_matches(['\r', '\n']);
+                if text.is_empty() {
+                    // A bare Enter has no headless meaning — swallow it.
+                    return Ok(());
+                }
+                Some(headless_user_message(text).into_bytes())
+            }
         };
         let mut writer_guard = session.writer.lock().unwrap_or_else(|e| e.into_inner());
         let Some(writer) = writer_guard.as_mut() else {
             return Err(format!("session writer dropped: {session_id}"));
         };
         writer
-            .write_all(bytes)
+            .write_all(wrapped.as_deref().unwrap_or(bytes))
             .map_err(|e| format!("write failed: {e}"))?;
         writer.flush().map_err(|e| format!("flush failed: {e}"))?;
         Ok(())
+    }
+
+    /// Direct state transition for lanes that observe the process itself
+    /// (the headless stream-json reader) rather than hooks. Sets state +
+    /// reason + freshens activity; returns `true` only on a real change so
+    /// the caller emits one event per transition. Never resurrects terminal
+    /// states (`Exited` / `Hibernated`).
+    pub fn set_state_direct(
+        &self,
+        session_id: &str,
+        state: FleetSessionState,
+        reason: &str,
+    ) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else { return false; };
+        if matches!(session.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+            return false;
+        }
+        session.last_activity_ms = now_ms();
+        if session.state == state {
+            return false;
+        }
+        session.state = state;
+        session.state_reason = Some(reason.to_string());
+        true
     }
 
     /// Resize the PTY for `session_id`.
@@ -592,7 +676,7 @@ impl FleetRegistry {
             .iter()
             .filter_map(|(id, known_rev)| {
                 let session = map.get(id)?;
-                let ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
+                let mut ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
                 let rev = ring.rev();
                 if *known_rev == Some(rev) {
                     return None; // unchanged since the caller last looked
@@ -618,8 +702,9 @@ impl FleetRegistry {
     pub fn render_screen_for(&self, session_id: &str) -> Option<(u32, Vec<String>)> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let session = map.get(session_id)?;
-        let ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
-        Some((ring.rev(), ring.render_screen(session.rows, session.cols)))
+        let mut ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
+        let rev = ring.rev();
+        Some((rev, ring.render_screen(session.rows, session.cols)))
     }
 
     /// Records that the child has exited. Updates state and clears the
@@ -641,7 +726,7 @@ impl FleetRegistry {
                 Some(c) => {
                     let base = fleet_exit_reason(c);
                     let tail = {
-                        let ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
+                        let mut ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
                         ring.render_screen(session.rows, session.cols)
                     };
                     match last_meaningful_line(&tail) {
@@ -787,6 +872,19 @@ impl FleetRegistry {
     }
 }
 
+/// Serialize one user turn as a stream-json input line for a headless
+/// (`claude -p --input-format stream-json`) session. Trailing newline
+/// included — the protocol is line-delimited JSON.
+pub fn headless_user_message(text: &str) -> String {
+    let msg = serde_json::json!({
+        "type": "user",
+        "message": { "role": "user", "content": [{ "type": "text", "text": text }] }
+    });
+    let mut line = msg.to_string();
+    line.push('\n');
+    line
+}
+
 /// Human-readable reason for a non-zero Fleet child exit. Renders the OS code
 /// in hex (the form Windows documents NTSTATUS in) and special-cases the codes
 /// we've actually seen, so the UI can explain an exit the user would otherwise
@@ -921,6 +1019,7 @@ mod tests {
             title: None,
             athena_active_until_ms: 0,
             args: Vec::new(),
+            mode: FleetSessionMode::Interactive,
             cols: 120,
             rows: 32,
             state,
@@ -958,6 +1057,37 @@ mod tests {
         assert!(joined.contains("Enter to select"), "got: {joined}");
         // The cooker would NOT reconstruct these cursor-addressed rows.
         assert!(cook_lines(seq, 40).join("\n").trim() != joined.trim());
+    }
+
+    #[test]
+    fn render_screen_incremental_feed_matches_full_reparse() {
+        // Tier C: after the parser is materialized by a first render, later
+        // pushes feed it incrementally — the resulting screen must equal what
+        // a from-scratch re-parse of the same bytes produces.
+        let part1: &[u8] = b"\x1b[?1049h\x1b[2J\x1b[1;1HChoose validation strategy:";
+        let part2: &[u8] = b"\x1b[3;3H1. Throw\x1b[4;3H2. Return null\x1b[6;1HEnter to select";
+
+        let mut incremental = OutputRing::new(OUTPUT_RING_CAP);
+        incremental.push(part1);
+        let _ = incremental.render_screen(10, 80); // materializes the parser
+        incremental.push(part2); // fed incrementally
+
+        let mut full = OutputRing::new(OUTPUT_RING_CAP);
+        full.push(part1);
+        full.push(part2);
+
+        assert_eq!(incremental.render_screen(10, 80), full.render_screen(10, 80));
+    }
+
+    #[test]
+    fn render_screen_rebuilds_on_dim_change() {
+        let mut ring = OutputRing::new(OUTPUT_RING_CAP);
+        ring.push(b"\x1b[1;1Hhello");
+        let at80 = ring.render_screen(10, 80);
+        assert!(at80.join("\n").contains("hello"));
+        // Resize → rebuild from the ring at the new dims; content survives.
+        let at120 = ring.render_screen(20, 120);
+        assert!(at120.join("\n").contains("hello"));
     }
 
     #[test]

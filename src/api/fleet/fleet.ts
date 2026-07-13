@@ -146,6 +146,16 @@ export const wakeSession = (sessionId: string, cols?: number, rows?: number) =>
   invoke<string>('fleet_wake_session', { sessionId, cols, rows });
 
 /**
+ * Spawn a headless (stream-json) `claude -p` session at `cwd`, seeded with
+ * `task` as its first user message. No PTY and no TUI redraw loop — the
+ * resource-light lane for background/Athena-driven work. The UI renders a
+ * status block / Insights for it (never an xterm); replies go through
+ * `writeInput`, which the backend wraps into a stream-json user message.
+ */
+export const spawnHeadlessSession = (cwd: string, task: string, args?: string[]) =>
+  invoke<string>('fleet_spawn_headless_session', { cwd, task, args });
+
+/**
  * Configure the always-on auto-hibernate policy (P3.2): the staleness ticker
  * hibernates Idle/Stale sessions inactive longer than `afterMinutes` when
  * `enabled`. The frontend owns the persisted setting and pushes it here on
@@ -153,6 +163,15 @@ export const wakeSession = (sessionId: string, cols?: number, rows?: number) =>
  */
 export const setAutoHibernate = (enabled: boolean, afterMinutes: number) =>
   invoke<null>('fleet_set_auto_hibernate', { enabled, afterMinutes });
+
+/**
+ * Configure the live-slot scheduler: cap how many process-backed `claude`
+ * sessions run at once — overflow Idle/Stale sessions are hibernated (oldest
+ * first) and can be woken later. `0` disables the cap. Same push-on-change +
+ * push-on-refresh plumbing as auto-hibernate.
+ */
+export const setLiveSlots = (maxLive: number) =>
+  invoke<null>('fleet_set_live_slots', { maxLive });
 
 /**
  * Tune the staleness cutoffs (seconds; clamped server-side): flat-log time

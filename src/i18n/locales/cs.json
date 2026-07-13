@@ -11635,7 +11635,16 @@
       "auto_hibernate_desc": "Automaticky hibernuje relace, které jsou nečinné déle než nastavený limit — uvolní proces i když Fleet není v popředí. Relace zůstávají obnovitelné přes Probudit. Běží, dokud je Personas otevřené.",
       "auto_hibernate_toggle": "Povolit automatickou hibernaci",
       "auto_hibernate_after": "Po",
-      "auto_hibernate_minutes_unit": "min nečinnosti"
+      "auto_hibernate_minutes_unit": "min nečinnosti",
+      "live_slots_desc": "Omezte, kolik procesů claude běží najednou. Když flotila dosáhne limitu, nejstarší nečinná relace se hibernuje, aby uvolnila místo — zůstává obnovitelná přes Probudit. Pracující relace nejsou nikdy přerušeny.",
+      "live_slots_max_label": "Max",
+      "live_slots_title": "Omezit živé relace",
+      "live_slots_toggle": "Povolit limit relací",
+      "live_slots_unit": "živých relací",
+      "headless_badge": "Na pozadí",
+      "headless_no_terminal": "Relace na pozadí — běží bez terminálu. Odpovídejte z lišty „Potřebuje vás“; průběh se zobrazuje v Přehledech.",
+      "spawn_headless_hint": "Bezhlavý režim — bez živého terminálu, výrazně nižší nároky na CPU a RAM. Odpovídejte z lišty „Potřebuje vás“; průběh sledujte v Přehledech.",
+      "spawn_headless_toggle": "Spustit na pozadí (bez terminálu)"
     },
     "title": "Pluginy",
     "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",

@@ -36,7 +36,27 @@ pub async fn fleet_spawn_session(
     let args = args.unwrap_or_default();
     let cols = cols.unwrap_or(120);
     let rows = rows.unwrap_or(32);
+    // Live-slot scheduler: if a cap is set and the fleet is at it, hibernate
+    // the oldest idle session first so the new one starts inside the budget.
+    super::stale::free_slot_for_spawn(&app);
     pty::spawn_session(app, cwd, args, cols, rows)
+}
+
+/// Spawn a headless (stream-json) `claude -p` session rooted at `cwd`, seeded
+/// with `task` as its first user message. No PTY, no TUI redraw loop —
+/// the resource-light lane for Athena-driven background work. Returns the
+/// internal session id. See `headless.rs`.
+#[tauri::command]
+pub async fn fleet_spawn_headless_session(
+    app: AppHandle,
+    cwd: String,
+    task: String,
+    args: Option<Vec<String>>,
+) -> Result<String, String> {
+    let cwd = PathBuf::from(cwd);
+    // Headless spawns consume a live slot like any other session.
+    super::stale::free_slot_for_spawn(&app);
+    super::headless::spawn_headless_session(app, cwd, task, args.unwrap_or_default())
 }
 
 /// Write UTF-8 `text` to the session's PTY stdin. Does NOT append a
@@ -182,6 +202,8 @@ pub async fn fleet_wake_session(
         .ok_or_else(|| format!("session not resumable: {session_id}"))?;
     let cols = cols.unwrap_or(120);
     let rows = rows.unwrap_or(32);
+    // A wake consumes a live slot like any spawn — make room first if capped.
+    super::stale::free_slot_for_spawn(&app);
     let new_id = pty::spawn_session(
         app.clone(),
         cwd,
@@ -208,6 +230,17 @@ pub async fn fleet_wake_session(
 #[tauri::command]
 pub async fn fleet_set_auto_hibernate(enabled: bool, after_minutes: u32) -> Result<(), String> {
     super::stale::set_auto_hibernate(enabled, (after_minutes as u64) * 60);
+    Ok(())
+}
+
+/// Configure the live-slot scheduler (fleet-scale Tier A): cap how many
+/// process-backed `claude` sessions run at once — overflow Idle/Stale sessions
+/// are hibernated (oldest first) and can be woken later. `0` disables the cap.
+/// Same frontend-owned plumbing as auto-hibernate: the persisted setting is
+/// pushed here on change + on every Fleet refresh.
+#[tauri::command]
+pub async fn fleet_set_live_slots(max_live: u32) -> Result<(), String> {
+    super::stale::set_live_slots(max_live as u64);
     Ok(())
 }
 

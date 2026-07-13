@@ -38,14 +38,36 @@ pub const RESUME_CONTINUATION_PROMPT: &str =
     "Session resumed by Personas Fleet. In one line, note where things stand and \
      what's next — then wait for further input.";
 
+/// Claude Code NESTING env markers. When the Personas app itself is launched
+/// from a Claude Code session (the normal dev workflow — `npm run tauri:dev`
+/// from an agent's shell), every fleet child inherits the parent session's
+/// markers. Claude ≥ 2.1.19x sees them and silently runs as a NESTED/child
+/// session: it never registers in ~/.claude/sessions and — critically — never
+/// persists a `<session-id>.jsonl` transcript, so Hibernate/Wake and
+/// orphan-Resume fail with "No conversation found with session ID …" even
+/// though the session ran fine. Root-caused live 2026-07-02 via A/B console
+/// spawns: identical argv, markers present → no session storage; markers
+/// stripped → registers + persists (kind=interactive). Fleet sessions are
+/// first-class top-level sessions — never children. Shared by the PTY and
+/// headless spawn paths.
+pub(super) const CLAUDE_NESTING_ENV: &[&str] = &[
+    "CLAUDECODE",
+    "CLAUDE_CODE_CHILD_SESSION",
+    "CLAUDE_CODE_SESSION_ID",
+    "CLAUDE_CODE_ENTRYPOINT",
+    "CLAUDE_CODE_EXECPATH",
+    "CLAUDE_CODE_SSE_PORT",
+    "CLAUDE_EFFORT",
+];
+
 /// MCP wiring artefacts created at spawn time. Returned so we can hand
 /// them to the cmd builder and the reaper (which cleans up the temp
-/// file on session exit).
-struct McpSpawn {
+/// file on session exit). Shared with the headless spawn path.
+pub(super) struct McpSpawn {
     /// Absolute path to the per-session mcp.json. Empty Option when
     /// MCP couldn't be wired (local_http not yet started, or write
     /// failed) — caller proceeds without `--mcp-config`.
-    config_path: Option<PathBuf>,
+    pub(super) config_path: Option<PathBuf>,
 }
 
 /// `fleet-session-output` event payload.
@@ -379,27 +401,7 @@ pub fn spawn_session(
         cmd.env_remove(key);
     }
 
-    // Strip Claude Code NESTING markers. When the Personas app itself is
-    // launched from a Claude Code session (the normal dev workflow — `npm run
-    // tauri:dev` from an agent's shell), every fleet PTY child inherits the
-    // parent session's markers (CLAUDECODE, CLAUDE_CODE_CHILD_SESSION,
-    // CLAUDE_CODE_SESSION_ID, …). Claude ≥ 2.1.19x sees them and silently runs
-    // as a NESTED/child session: it never registers in ~/.claude/sessions and —
-    // critically — never persists a `<session-id>.jsonl` transcript, so
-    // Hibernate/Wake and orphan-Resume fail with "No conversation found with
-    // session ID …" even though the session ran fine. Root-caused live 2026-07-02
-    // via A/B console spawns: identical argv, markers present → no session
-    // storage; markers stripped → registers + persists (kind=interactive).
-    // Fleet sessions are first-class top-level sessions — never children.
-    const CLAUDE_NESTING_ENV: &[&str] = &[
-        "CLAUDECODE",
-        "CLAUDE_CODE_CHILD_SESSION",
-        "CLAUDE_CODE_SESSION_ID",
-        "CLAUDE_CODE_ENTRYPOINT",
-        "CLAUDE_CODE_EXECPATH",
-        "CLAUDE_CODE_SSE_PORT",
-        "CLAUDE_EFFORT",
-    ];
+    // Strip Claude Code NESTING markers — see [`CLAUDE_NESTING_ENV`].
     for &key in CLAUDE_NESTING_ENV {
         cmd.env_remove(key);
     }
@@ -448,6 +450,7 @@ pub fn spawn_session(
         title: None,
         athena_active_until_ms: 0,
         args: args.clone(),
+        mode: super::types::FleetSessionMode::Interactive,
         cols,
         rows,
         state: FleetSessionState::Spawning,
@@ -516,7 +519,7 @@ pub fn spawn_session(
 /// `McpSpawn { config_path: None }` if MCP can't be wired right now
 /// (local_http server not yet started, write failed, etc) — callers
 /// proceed without `--mcp-config` rather than failing the spawn.
-fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
+pub(super) fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
     let port = match crate::local_http::port() {
         Some(p) => p,
         None => {
@@ -694,6 +697,13 @@ fn reaper_loop(
         }
     };
 
+    finalize_child_exit(&app, &session_id, exit_code);
+}
+
+/// Shared post-exit bookkeeping for BOTH child lanes (PTY reaper + headless
+/// reaper): log why the session ended, honor the hibernation flag, mark
+/// exited + emit, and reconcile operative memory. Exactly once per session.
+pub(super) fn finalize_child_exit(app: &AppHandle, session_id: &str, exit_code: Option<i32>) {
     // Always log WHY a session ended. Previously the reaper logged nothing on a
     // normal-looking exit, so an abnormal death (crash / spawn-time
     // STATUS_DLL_INIT_FAILED) left no breadcrumb at all.
@@ -716,24 +726,24 @@ fn reaper_loop(
     // emit Exited, and skip exit reconciliation (the conversation lives on and
     // can be resumed). The MCP/temp-file cleanup in the spawning task still
     // runs — the process really is gone.
-    if registry().is_hibernating(&session_id) {
+    if registry().is_hibernating(session_id) {
         tracing::debug!(session_id = %session_id, "fleet reaper: child exited for hibernation");
         // Confirmed gone — now drop the PID record (hibernate kept it so
         // process_scan tracked the live process through the kill→exit window).
-        registry().clear_child_pid(&session_id);
-        emit_registry_changed(&app, "updated", &session_id);
+        registry().clear_child_pid(session_id);
+        emit_registry_changed(app, "updated", session_id);
         return;
     }
 
-    registry().mark_exited(&session_id, exit_code);
+    registry().mark_exited(session_id, exit_code);
     let _ = app.emit(
         event_name::FLEET_SESSION_EXITED,
         ExitedPayload {
-            session_id: &session_id,
+            session_id,
             exit_code,
         },
     );
-    emit_registry_changed(&app, "updated", &session_id);
+    emit_registry_changed(app, "updated", session_id);
 
     // Update operative memory directly. The JS bridge in
     // useFleetCompanionBridge.ts ALSO writes here on the next tick,
@@ -753,7 +763,7 @@ fn reaper_loop(
     //
     // The JS path still owns episode writes (the brain bridge has
     // the pool reference); this path owns operative-memory state.
-    rust_reconcile_after_exit(&app, &session_id, exit_code);
+    rust_reconcile_after_exit(app, session_id, exit_code);
 }
 
 fn rust_reconcile_after_exit(app: &AppHandle, session_id: &str, exit_code: Option<i32>) {

@@ -11898,7 +11898,16 @@
       "auto_hibernate_desc": "Automatically hibernate sessions that sit idle past the threshold — freeing the process even when Fleet isn't focused. They stay resumable via Wake. Runs while Personas is open.",
       "auto_hibernate_toggle": "Enable auto-hibernate",
       "auto_hibernate_after": "After",
-      "auto_hibernate_minutes_unit": "min idle"
+      "auto_hibernate_minutes_unit": "min idle",
+      "live_slots_title": "Limit live sessions",
+      "live_slots_desc": "Cap how many claude processes run at once. When the fleet is at the limit, the oldest idle session is hibernated to make room — it stays resumable via Wake. Working sessions are never interrupted.",
+      "live_slots_toggle": "Enable session limit",
+      "live_slots_max_label": "Max",
+      "live_slots_unit": "live sessions",
+      "spawn_headless_toggle": "Run in background (no terminal)",
+      "spawn_headless_hint": "Headless mode — no live terminal, much lighter on CPU and RAM. Reply from the \"Needs you\" banner; inspect progress in Insights.",
+      "headless_badge": "Background",
+      "headless_no_terminal": "Background session — runs without a terminal. Reply from the \"Needs you\" banner; progress shows in Insights."
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

@@ -28,6 +28,7 @@ vi.mock('@/api/fleet/fleet', () => ({
   // policy to Rust; resolve so the fire-and-forget calls don't throw.
   setAutoHibernate: vi.fn().mockResolvedValue(undefined),
   setStateCutoffs: vi.fn().mockResolvedValue(undefined),
+  setLiveSlots: vi.fn().mockResolvedValue(undefined),
 }));
 
 import * as fleetApi from '@/api/fleet/fleet';
@@ -48,6 +49,7 @@ function makeSession(partial: Partial<FleetSession> = {}): FleetSession {
     name: null,
     title: null,
     args: [],
+    mode: 'interactive',
     athenaActive: false,
     state: 'spawning',
     lastActivityMs: BigInt(1_000_000),

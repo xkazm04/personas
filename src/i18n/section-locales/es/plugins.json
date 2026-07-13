@@ -189,7 +189,16 @@
     "auto_hibernate_desc": "Hiberna automáticamente las sesiones inactivas que superen el umbral — liberando el proceso incluso cuando Fleet no está en primer plano. Siguen siendo reanudables con Despertar. Se ejecuta mientras Personas está abierto.",
     "auto_hibernate_toggle": "Activar hibernación automática",
     "auto_hibernate_after": "Después de",
-    "auto_hibernate_minutes_unit": "min inactivo"
+    "auto_hibernate_minutes_unit": "min inactivo",
+    "live_slots_desc": "Limita cuántos procesos de claude se ejecutan a la vez. Cuando la flota alcanza el límite, la sesión inactiva más antigua se hiberna para hacer sitio — sigue siendo reanudable con Despertar. Las sesiones en curso nunca se interrumpen.",
+    "live_slots_max_label": "Máx.",
+    "live_slots_title": "Limitar sesiones activas",
+    "live_slots_toggle": "Activar límite de sesiones",
+    "live_slots_unit": "sesiones activas",
+    "headless_badge": "Segundo plano",
+    "headless_no_terminal": "Sesión en segundo plano — se ejecuta sin terminal. Responde desde el banner «Te necesita»; el progreso se muestra en Insights.",
+    "spawn_headless_hint": "Modo headless: sin terminal en vivo, mucho más ligero en CPU y RAM. Responde desde el banner «Te necesita»; consulta el progreso en Insights.",
+    "spawn_headless_toggle": "Ejecutar en segundo plano (sin terminal)"
   },
   "title": "Plugins",
   "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",

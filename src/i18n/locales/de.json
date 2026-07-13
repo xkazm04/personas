@@ -11635,7 +11635,16 @@
       "auto_hibernate_desc": "Sitzungen, die den Schwellenwert überschreiten, automatisch hibernieren — der Prozess wird freigegeben, auch wenn Fleet nicht im Fokus ist. Sie bleiben über „Aufwecken“ wiederherstellbar. Läuft, solange Personas geöffnet ist.",
       "auto_hibernate_toggle": "Auto-Hibernierung aktivieren",
       "auto_hibernate_after": "Nach",
-      "auto_hibernate_minutes_unit": "Min. Leerlauf"
+      "auto_hibernate_minutes_unit": "Min. Leerlauf",
+      "live_slots_desc": "Begrenzt, wie viele claude-Prozesse gleichzeitig laufen. Ist die Flotte am Limit, wird die älteste inaktive Sitzung in den Ruhezustand versetzt, um Platz zu schaffen — sie bleibt über Aufwecken fortsetzbar. Arbeitende Sitzungen werden nie unterbrochen.",
+      "live_slots_max_label": "Max.",
+      "live_slots_title": "Live-Sitzungen begrenzen",
+      "live_slots_toggle": "Sitzungslimit aktivieren",
+      "live_slots_unit": "aktive Sitzungen",
+      "headless_badge": "Hintergrund",
+      "headless_no_terminal": "Hintergrundsitzung — läuft ohne Terminal. Antworten über das „Braucht dich“-Banner; der Fortschritt erscheint unter Insights.",
+      "spawn_headless_hint": "Headless-Modus — kein Live-Terminal, deutlich weniger CPU- und RAM-Last. Antworten über das „Braucht dich“-Banner; Fortschritt unter Insights.",
+      "spawn_headless_toggle": "Im Hintergrund ausführen (ohne Terminal)"
     },
     "title": "Plugins",
     "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",
