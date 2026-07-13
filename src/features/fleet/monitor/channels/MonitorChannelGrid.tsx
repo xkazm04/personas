@@ -4,11 +4,25 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { CollabLiveCorrespondence } from '@/features/teams/sub_collab/CollabLiveCorrespondence';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 import { Stream } from './Stream';
+import { ConversationBriefing } from './ConversationBriefing';
+import { ConversationDossier } from './ConversationDossier';
 import type { StreamTeam } from './types';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
 type ChannelLayout = 'grid' | 'timeline';
+
+/* /prototype scaffold (P3 round 1) — THROWAWAY. The grid of cramped per-team
+ * channels is the baseline; two messenger directions compete to replace it.
+ * Briefing puts the work IN the stream as full-width bands; Dossier keeps the
+ * stream pure chat and moves the work into the rail behind slim anchors. */
+type ConvVariant = 'baseline' | 'briefing' | 'dossier';
+
+const CONV_VARIANTS: Array<{ id: ConvVariant; label: string; hint: string }> = [
+  { id: 'baseline', label: 'Grid', hint: 'today — one cramped channel card per team' },
+  { id: 'briefing', label: 'Briefing', hint: 'messenger — work lives IN the stream as full-width bands' },
+  { id: 'dossier', label: 'Dossier', hint: 'messenger — stream stays pure chat; work opens in the rail' },
+];
 
 /**
  * Channel mode — watch multiple team channels at once. A thin compact topbar
@@ -68,6 +82,7 @@ function MonitorChannelGridImpl({ teams, personas }: { teams: PersonaTeam[]; per
   // Layout: the combined TIMELINE is the default (compact, scales to hundreds
   // of rows); GRID (separate channels) is one click away for per-team action.
   const [layout, setLayout] = useState<ChannelLayout>('timeline');
+  const [convVariant, setConvVariant] = useState<ConvVariant>('baseline');
   const LAYOUTS: Array<{ id: ChannelLayout; label: string; hint: string }> = [
     { id: 'timeline', label: t.monitor.channels_layout_timeline, hint: t.monitor.channels_layout_timeline_hint },
     { id: 'grid', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint },
@@ -129,9 +144,39 @@ function MonitorChannelGridImpl({ teams, personas }: { teams: PersonaTeam[]; per
     );
   }
 
-  // GRID — separate channels with the topbar team chips.
+  // GRID — the baseline, plus the two messenger variants competing to replace it.
   return (
     <div className="h-full flex flex-col min-h-0">
+      <div className="flex-shrink-0 flex items-center gap-1 px-4 pt-2">
+        {CONV_VARIANTS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setConvVariant(v.id)}
+            aria-pressed={convVariant === v.id}
+            title={v.hint}
+            className={`px-2.5 py-1 rounded-interactive typo-caption transition-colors ${
+              convVariant === v.id ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground opacity-45 hover:opacity-80'
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+        <span className="ml-2 typo-caption text-foreground opacity-30 truncate">
+          {CONV_VARIANTS.find((v) => v.id === convVariant)?.hint}
+        </span>
+      </div>
+
+      {convVariant !== 'baseline' && (
+        <div className="flex-1 min-h-0 p-2">
+          {convVariant === 'briefing'
+            ? <ConversationBriefing teams={workspaceTeams} />
+            : <ConversationDossier teams={workspaceTeams} />}
+        </div>
+      )}
+
+      {convVariant === 'baseline' && (
+      <>
       <div className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 border-b border-primary/10 bg-secondary/10 overflow-x-auto">
         <span className="typo-label uppercase tracking-wider text-foreground flex-shrink-0">{t.monitor.channels_teams_label}</span>
         {channelTeams.map((tm) => {
@@ -178,6 +223,8 @@ function MonitorChannelGridImpl({ teams, personas }: { teams: PersonaTeam[]; per
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }
