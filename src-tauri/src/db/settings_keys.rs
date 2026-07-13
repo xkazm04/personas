@@ -879,6 +879,8 @@ pub fn deprecated_replacement(key: &str) -> Option<&'static str> {
         }
         _ => None,
     }
+}
+
 /// Validate that `value` deserializes into the consumer type `T`. Used by
 /// [`validate_value`] for JSON-blob keys whose exact consumer struct we can
 /// import — a malformed blob is rejected at write instead of corrupting the
@@ -1235,6 +1237,9 @@ mod tests {
         assert!(validate_value(APPEARANCE_PREFERENCES, "not json").is_err());
         assert!(validate_value(APPEARANCE_PREFERENCES, "[1,2]").is_err());
         assert!(validate_value(APPEARANCE_PREFERENCES, "\"str\"").is_err());
+    }
+
+    #[test]
     fn audit_category_excludes_internal_bookkeeping() {
         // Cursors, last-run timestamps, cloud-sync bookkeeping, version stamp → None.
         assert_eq!(audit_category(COMPANION_EXEC_REVIEW_CURSOR), None);
