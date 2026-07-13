@@ -24,7 +24,6 @@ import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { isComplete } from './goalStatus';
 import { GoalAtmosphere } from './goalsTheme';
 import {
-  DAY,
   NODE_PX,
   GoalSquare,
   AddGoalButton,
@@ -35,18 +34,30 @@ import {
   groupByProject,
   anchorDate,
   isOverdue,
+  isRecentlyDone,
 } from './progressShared';
 
 const LEFT_W = 200;
+
+/** A frame on the strip: the goal plus everything its node needs, precomputed. */
+interface StripNode {
+  goal: DevGoal;
+  overdue: boolean;
+  /** Entry-animation stagger (ms). Baked in so memoized nodes get stable props. */
+  delay: number;
+}
 
 /**
  * How much completed history the strip carries.
  * `all` — every done goal · `recent` — only those finished in the last 7 days ·
  * `none` — no done goals at all (live work only).
+ *
+ * Applied as CSS (the strip's `data-done-filter`, matched by `group-data-*`
+ * variants on the nodes), NOT by rebuilding the node list — see GoalSquare's
+ * header for why. This predicate exists only to COUNT what's hidden.
  */
 type DoneFilter = 'all' | 'recent' | 'none';
 const DONE_FILTER_KEY = 'personas.goals.progress.doneFilter';
-const RECENT_WINDOW = 7 * DAY;
 
 function readDoneFilter(): DoneFilter {
   try {
@@ -63,10 +74,7 @@ function passesFilter(g: DevGoal, filter: DoneFilter, now: number): boolean {
   if (!isComplete(g.status)) return true;
   if (filter === 'all') return true;
   if (filter === 'none') return false;
-  const at = anchorDate(g);
-  // A done goal with no completion stamp has no recency to judge — treat it as
-  // old history rather than surfacing it in the recent window.
-  return at !== null && now - at <= RECENT_WINDOW;
+  return isRecentlyDone(g, now);
 }
 
 export function GoalsProgress() {
@@ -85,40 +93,58 @@ export function GoalsProgress() {
     }
   };
 
-  const { rows, shownGoals, hiddenGoals, now } = useMemo(() => {
+  /**
+   * The strip layout — ordered ONCE per data change and deliberately independent
+   * of the done-filter. Every goal keeps a mounted node; the filter only decides
+   * which ones are visible (see `hiddenIds` below). Rebuilding this list per
+   * filter flip is what made the flip expensive: each of the ~230 completed
+   * nodes would unmount and remount (Tooltip and all), ~300ms of jank for a
+   * change that is really just "show/hide these squares".
+   */
+  const rows = useMemo(() => {
     const goals = allGoals ?? [];
     const now = Date.now();
-    let shownGoals = 0;
+    let nodeIndex = 0;
+    const toNode = (g: DevGoal): StripNode => ({
+      goal: g,
+      overdue: isOverdue(g, now),
+      delay: Math.min(nodeIndex++, 24) * 14,
+    });
 
-    const rows = groupByProject(projects, goals)
-      .map((row) => {
-        const visible = row.goals.filter((g) => passesFilter(g, doneFilter, now));
-        const dated = visible
-          .map((g) => ({ g, at: anchorDate(g) }))
-          .filter((x): x is { g: DevGoal; at: number } => x.at !== null)
-          .sort((a, b) => a.at - b.at);
-        shownGoals += visible.length;
-        return {
-          ...row,
-          past: dated.filter((x) => x.at < now).map((x) => x.g),
-          future: dated.filter((x) => x.at >= now).map((x) => x.g),
-          undated: visible.filter((g) => anchorDate(g) === null),
-          visibleCount: visible.length,
-        };
-      })
-      // A project whose every goal was filtered out still gets a row — it owns
-      // goals, and its "+" is the way to start the next one.
-      .filter((row) => row.goals.length > 0);
+    return groupByProject(projects, goals).map((row) => {
+      const dated = row.goals
+        .map((g) => ({ g, at: anchorDate(g) }))
+        .filter((x): x is { g: DevGoal; at: number } => x.at !== null)
+        .sort((a, b) => a.at - b.at);
+      return {
+        ...row,
+        past: dated.filter((x) => x.at < now).map((x) => toNode(x.g)),
+        future: dated.filter((x) => x.at >= now).map((x) => toNode(x.g)),
+        undated: row.goals.filter((g) => anchorDate(g) === null).map(toNode),
+      };
+    });
+  }, [allGoals, projects]);
 
-    return { rows, shownGoals, hiddenGoals: goals.length - shownGoals, now };
-  }, [allGoals, projects, doneFilter]);
+  /**
+   * The filter's only JS-side output: which goals the CSS is hiding. Drives the
+   * counts and the per-row dashed rule — never the node list itself.
+   */
+  const hiddenIds = useMemo(() => {
+    const now = Date.now();
+    const hidden = new Set<string>();
+    if (doneFilter === 'all') return hidden;
+    for (const g of allGoals ?? []) {
+      if (!passesFilter(g, doneFilter, now)) hidden.add(g.id);
+    }
+    return hidden;
+  }, [allGoals, doneFilter]);
 
   // Still fetching — render nothing rather than flashing the empty state.
   if (allGoals === null) return null;
   if (rows.length === 0) return <ProgressEmpty dl={dl} />;
 
-  let nodeIndex = 0;
-  const stagger = () => Math.min(nodeIndex++, 24) * 14;
+  const hiddenGoals = hiddenIds.size;
+  const shownGoals = allGoals.length - hiddenGoals;
 
   return (
     <div className="relative pb-6" data-testid="goals-progress">
@@ -146,7 +172,13 @@ export function GoalsProgress() {
         </div>
       </div>
 
-      <div className="relative rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 overflow-hidden">
+      {/* The strip owns the filter: nodes carry static `group-data-[done-filter=…]`
+          hide-rules, so flipping this attribute is a style recalc — no node
+          re-renders, no remounts. */}
+      <div
+        data-done-filter={doneFilter}
+        className="group/strip relative rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 overflow-hidden"
+      >
         {/* Header — summary + the strip's reading direction. */}
         <div className="flex items-center border-b border-primary/10 bg-secondary/20">
           <div className="shrink-0 px-3 py-2" style={{ width: LEFT_W }}>
@@ -197,12 +229,12 @@ export function GoalsProgress() {
               className="flex-1 flex flex-wrap items-center content-center gap-1.5 px-3 py-2.5"
               style={{ minHeight: NODE_PX + 20 }}
             >
-              {row.past.map((g) => (
+              {row.past.map((n) => (
                 <GoalSquare
-                  key={g.id}
-                  goal={g}
-                  overdue={isOverdue(g, now)}
-                  delay={stagger()}
+                  key={n.goal.id}
+                  goal={n.goal}
+                  overdue={n.overdue}
+                  delay={n.delay}
                   dl={dl}
                   onOpen={openGoal}
                 />
@@ -215,37 +247,38 @@ export function GoalsProgress() {
                   style={{ height: NODE_PX }}
                 />
               </Tooltip>
-              {row.future.map((g) => (
+              {row.future.map((n) => (
                 <GoalSquare
-                  key={g.id}
-                  goal={g}
-                  overdue={false}
-                  delay={stagger()}
+                  key={n.goal.id}
+                  goal={n.goal}
+                  overdue={n.overdue}
+                  delay={n.delay}
                   dl={dl}
                   onOpen={openGoal}
                 />
               ))}
-              {row.undated.length > 0 && (
-                <>
-                  <Tooltip content={dl.progress_no_date}>
-                    <span
-                      aria-hidden="true"
-                      className="border-l border-dashed border-primary/30 mx-0.5"
-                      style={{ height: NODE_PX }}
-                    />
-                  </Tooltip>
-                  {row.undated.map((g) => (
-                    <GoalSquare
-                      key={g.id}
-                      goal={g}
-                      overdue={false}
-                      delay={stagger()}
-                      dl={dl}
-                      onOpen={openGoal}
-                    />
-                  ))}
-                </>
+              {/* The dashed rule only earns its place when a dateless goal is
+                  actually visible — but the nodes themselves stay mounted so a
+                  filter flip never remounts them. */}
+              {row.undated.some((n) => !hiddenIds.has(n.goal.id)) && (
+                <Tooltip content={dl.progress_no_date}>
+                  <span
+                    aria-hidden="true"
+                    className="border-l border-dashed border-primary/30 mx-0.5"
+                    style={{ height: NODE_PX }}
+                  />
+                </Tooltip>
               )}
+              {row.undated.map((n) => (
+                <GoalSquare
+                  key={n.goal.id}
+                  goal={n.goal}
+                  overdue={n.overdue}
+                  delay={n.delay}
+                  dl={dl}
+                  onOpen={openGoal}
+                />
+              ))}
 
               {/* Tail: the next empty frame — authors a goal in THIS project. */}
               <AddGoalButton

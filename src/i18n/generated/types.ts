@@ -13754,9 +13754,7 @@ export type Translations = {
       goal_scaffold_timeline_title: string;
       goal_scaffold_timeline_sub: string;
       goal_field_title: string;
-      goal_field_title_placeholder: string;
       goal_field_description: string;
-      goal_field_description_placeholder: string;
       goal_field_status: string;
       goal_field_target_date: string;
       goal_target_asap: string;

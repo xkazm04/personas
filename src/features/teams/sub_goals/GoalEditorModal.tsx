@@ -139,13 +139,15 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
           <label htmlFor="goal-title" className="typo-caption font-medium text-foreground mb-1.5 block">
             {dl.goal_field_title}
           </label>
+          {/* No placeholder by design — a suggested title/description reads as a
+              prompt to copy, and users shipped goals literally named after the
+              example. The label alone says what the field is. */}
           <input
             id="goal-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={dl.goal_field_title_placeholder}
             autoFocus
-            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/80 focus-ring"
+            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground focus-ring"
           />
         </div>
 
@@ -158,9 +160,8 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
             id="goal-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder={dl.goal_field_description_placeholder}
             rows={3}
-            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/80 focus-ring resize-none"
+            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground focus-ring resize-none"
           />
         </div>
 

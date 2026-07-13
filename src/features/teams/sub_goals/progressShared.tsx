@@ -5,7 +5,7 @@
  * node, the status legend, and the empty state — the pieces GoalsProgress
  * composes. Kept as a separate module so the view file stays about layout.
  */
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ChartNoAxesGantt, Plus } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
@@ -35,6 +35,21 @@ export function anchorDate(g: DevGoal): number | null {
 export function isOverdue(g: DevGoal, now: number): boolean {
   const at = anchorDate(g);
   return at !== null && at < now && isOngoing(g.status);
+}
+
+/** The done-filter's recency window. */
+export const RECENT_WINDOW = 7 * DAY;
+
+/**
+ * Completed inside the recency window — the single definition behind BOTH the
+ * node's CSS hide-rule and the "N hidden" count, so the two can't disagree. A
+ * done goal with no completion stamp has no recency to prove and counts as old
+ * history (not recent).
+ */
+export function isRecentlyDone(g: DevGoal, now: number = Date.now()): boolean {
+  if (!isComplete(g.status)) return false;
+  const at = anchorDate(g);
+  return at !== null && now - at <= RECENT_WINDOW;
 }
 
 /** Compact tooltip line — the drawer carries the full story. */
@@ -168,8 +183,19 @@ export const NODE_PX = 20;
  * The goal node: a status-filled square carrying an inner progress bar while the
  * goal is ongoing (a done goal reads as complete without one) and a red ring
  * when it's overdue.
+ *
+ * PERF — why the done-filter lives in CSS, not in props:
+ * a portfolio row holds hundreds of these and each mounts a Tooltip (measured
+ * ~0.7ms apiece, ~150ms for 226). Both obvious approaches re-touch every node on
+ * a filter flip — dropping them from the tree remounts them (~300ms of jank),
+ * and a `filtered` prop re-renders them (no better). So the filter is expressed
+ * as `group-data-*` variants instead: the node's classes depend only on the
+ * goal, the STRIP carries the active filter as a data attribute, and flipping it
+ * is a style recalc that re-renders exactly zero nodes (the memo below then
+ * holds on every parent re-render). `display:none` also takes hidden nodes out
+ * of the a11y tree for free.
  */
-export function GoalSquare({
+export const GoalSquare = memo(function GoalSquare({
   goal,
   overdue,
   delay,
@@ -185,6 +211,15 @@ export function GoalSquare({
   const meta = goalStatusMeta(goal.status);
   const done = isComplete(goal.status);
   const ring = overdue ? '0 0 0 1.5px rgba(239,68,68,0.75), ' : '';
+  // Hide rules, keyed off the strip's data-done-filter. A done goal always
+  // vanishes under `none`; under `recent` it vanishes unless it finished inside
+  // the window (a done goal with no completion stamp has no recency to prove,
+  // so it counts as old history).
+  const filterCls = done
+    ? `group-data-[done-filter=none]/strip:hidden ${
+        isRecentlyDone(goal) ? '' : 'group-data-[done-filter=recent]/strip:hidden'
+      }`
+    : '';
   return (
     <Tooltip content={nodeTooltip(dl, goal)}>
       <button
@@ -198,7 +233,7 @@ export function GoalSquare({
           boxShadow: `${ring}0 0 8px -1px ${meta.map.glow}`,
           animationDelay: `${delay}ms`,
         }}
-        className={`animate-fade-slide-in relative block overflow-hidden rounded-[5px] border border-background/80 transition-transform duration-150 hover:scale-125 hover:z-20 motion-reduce:transform-none focus-ring ${done ? 'opacity-60 hover:opacity-100' : ''}`}
+        className={`animate-fade-slide-in relative block overflow-hidden rounded-[5px] border border-background/80 transition-transform duration-150 hover:scale-125 hover:z-20 motion-reduce:transform-none focus-ring ${done ? 'opacity-60 hover:opacity-100' : ''} ${filterCls}`}
       >
         {!done && (
           <span className="absolute inset-x-[3px] bottom-[3px] h-[3px] rounded-full bg-background/35 overflow-hidden">
@@ -211,12 +246,14 @@ export function GoalSquare({
       </button>
     </Tooltip>
   );
-}
+});
 
 /**
  * Row-tail "+" affordance — same footprint as a goal node, so it reads as the
  * next empty frame in the strip. Opens the goal editor with this row's project
- * already selected.
+ * already selected. No tooltip by design: the dashed empty frame is
+ * self-evident, and a hover card on every row is noise. The accessible name
+ * still carries the project.
  */
 export function AddGoalButton({
   projectName,
@@ -228,17 +265,15 @@ export function AddGoalButton({
   onClick: () => void;
 }) {
   return (
-    <Tooltip content={label}>
-      <button
-        type="button"
-        onClick={onClick}
-        aria-label={`${label} — ${projectName}`}
-        style={{ width: NODE_PX, height: NODE_PX }}
-        className="flex items-center justify-center rounded-[5px] border border-dashed border-primary/25 text-foreground transition-colors hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-violet-300 focus-ring"
-      >
-        <Plus className="w-3 h-3" />
-      </button>
-    </Tooltip>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${label} — ${projectName}`}
+      style={{ width: NODE_PX, height: NODE_PX }}
+      className="flex items-center justify-center rounded-[5px] border border-dashed border-primary/25 text-foreground transition-colors hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-violet-300 focus-ring"
+    >
+      <Plus className="w-3 h-3" />
+    </button>
   );
 }
 
