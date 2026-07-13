@@ -350,7 +350,10 @@
     "edge_count_other": "{count} aristas",
     "adoption_count_one": "{count} adopción",
     "adoption_count_other": "{count} adopciones",
-    "selected": "seleccionados"
+    "selected": "seleccionados",
+    "command_palette_create_agent": "Crear nuevo agente",
+    "command_palette_go_to": "Ir a {label}",
+    "command_palette_leaderboard": "Clasificación de agentes"
   },
   "chrome": {
     "app_title": "Personas",
@@ -504,7 +507,8 @@
     "goals": "Objetivos",
     "mission_control": "Centro de mando",
     "factory": "Fábrica",
-    "kpis": "KPIs"
+    "kpis": "KPIs",
+    "studio": "Studio"
   },
   "home": {
     "setup": {

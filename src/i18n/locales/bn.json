@@ -350,7 +350,10 @@
     "edge_count_other": "{count} এজ",
     "adoption_count_one": "{count} গ্রহণ",
     "adoption_count_other": "{count} গ্রহণ",
-    "selected": "নির্বাচিত"
+    "selected": "নির্বাচিত",
+    "command_palette_create_agent": "নতুন এজেন্ট তৈরি করুন",
+    "command_palette_go_to": "{label}-এ যান",
+    "command_palette_leaderboard": "এজেন্ট লিডারবোর্ড"
   },
   "chrome": {
     "app_title": "Personas",
@@ -504,7 +507,8 @@
     "goals": "লক্ষ্যসমূহ",
     "mission_control": "মিশন কন্ট্রোল",
     "factory": "ফ্যাক্টরি",
-    "kpis": "KPI"
+    "kpis": "KPI",
+    "studio": "স্টুডিও"
   },
   "home": {
     "setup": {

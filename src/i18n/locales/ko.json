@@ -350,7 +350,10 @@
     "edge_count_other": "엣지 {count}개",
     "adoption_count_one": "채택 {count}개",
     "adoption_count_other": "채택 {count}개",
-    "selected": "선택됨"
+    "selected": "선택됨",
+    "command_palette_create_agent": "새 에이전트 만들기",
+    "command_palette_go_to": "{label}(으)로 이동",
+    "command_palette_leaderboard": "에이전트 리더보드"
   },
   "chrome": {
     "app_title": "Personas",
@@ -504,7 +507,8 @@
     "goals": "목표",
     "mission_control": "미션 컨트롤",
     "factory": "팩토리",
-    "kpis": "KPI"
+    "kpis": "KPI",
+    "studio": "스튜디오"
   },
   "home": {
     "setup": {

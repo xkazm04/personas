@@ -166,5 +166,8 @@
   "edge_count_other": "{count} cạnh",
   "adoption_count_one": "{count} lần áp dụng",
   "adoption_count_other": "{count} lần áp dụng",
-  "selected": "đã chọn"
+  "selected": "đã chọn",
+  "command_palette_create_agent": "Tạo tác nhân mới",
+  "command_palette_go_to": "Đi tới {label}",
+  "command_palette_leaderboard": "Bảng xếp hạng tác nhân"
 }

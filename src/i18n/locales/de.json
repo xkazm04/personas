@@ -350,7 +350,10 @@
     "edge_count_other": "{count} Kanten",
     "adoption_count_one": "{count} Übernahme",
     "adoption_count_other": "{count} Übernahmen",
-    "selected": "ausgewählt"
+    "selected": "ausgewählt",
+    "command_palette_create_agent": "Neuen Agenten erstellen",
+    "command_palette_go_to": "Zu {label} gehen",
+    "command_palette_leaderboard": "Agenten-Bestenliste"
   },
   "chrome": {
     "app_title": "Personas",
@@ -504,7 +507,8 @@
     "goals": "Ziele",
     "mission_control": "Mission Control",
     "factory": "Factory",
-    "kpis": "KPIs"
+    "kpis": "KPIs",
+    "studio": "Studio"
   },
   "home": {
     "setup": {

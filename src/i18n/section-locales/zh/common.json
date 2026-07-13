@@ -166,5 +166,8 @@
   "edge_count_other": "{count} 条边",
   "adoption_count_one": "{count} 次采用",
   "adoption_count_other": "{count} 次采用",
-  "selected": "已选择"
+  "selected": "已选择",
+  "command_palette_create_agent": "创建新智能体",
+  "command_palette_go_to": "前往 {label}",
+  "command_palette_leaderboard": "智能体排行榜"
 }

@@ -166,5 +166,8 @@
   "edge_count_other": "{count} एज",
   "adoption_count_one": "{count} अपनाया गया",
   "adoption_count_other": "{count} अपनाए गए",
-  "selected": "चयनित"
+  "selected": "चयनित",
+  "command_palette_create_agent": "नया एजेंट बनाएँ",
+  "command_palette_go_to": "{label} पर जाएँ",
+  "command_palette_leaderboard": "एजेंट लीडरबोर्ड"
 }

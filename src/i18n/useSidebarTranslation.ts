@@ -24,6 +24,7 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     ['credentials', sb.keys],
     ['design-reviews', sb.templates],
     ['plugins', sb.plugins],
+    ['studio', sb.studio],
     ['settings', sb.settings],
     ['teams', sb.teams],
     ['cloud', sb.cloud],

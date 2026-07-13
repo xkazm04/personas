@@ -350,7 +350,10 @@
     "edge_count_other": "{count} hran",
     "adoption_count_one": "{count} adopce",
     "adoption_count_other": "{count} adopcí",
-    "selected": "vybráno"
+    "selected": "vybráno",
+    "command_palette_create_agent": "Vytvořit nového agenta",
+    "command_palette_go_to": "Přejít na {label}",
+    "command_palette_leaderboard": "Žebříček agentů"
   },
   "chrome": {
     "app_title": "Personas",
@@ -504,7 +507,8 @@
     "goals": "Cíle",
     "mission_control": "Řídicí centrum",
     "factory": "Továrna",
-    "kpis": "KPI"
+    "kpis": "KPI",
+    "studio": "Studio"
   },
   "home": {
     "setup": {

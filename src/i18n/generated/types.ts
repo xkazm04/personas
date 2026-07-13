@@ -314,6 +314,9 @@ export type Translations = {
     command_palette_navigate: string;
     command_palette_select: string;
     command_palette_commands: string;
+    command_palette_go_to: string;
+    command_palette_create_agent: string;
+    command_palette_leaderboard: string;
     loading_label: string;
     creating: string;
     skip: string;
@@ -444,6 +447,7 @@ export type Translations = {
     templates: string;
     teams: string;
     cloud: string;
+    studio: string;
     settings: string;
     welcome: string;
     cockpit: string;

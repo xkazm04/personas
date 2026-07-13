@@ -8,6 +8,7 @@
   "*:plugins.companion.voice_engine_elevenlabs",
   "*:plugins.companion.voice_engine_kokoro",
   "*:plugins.companion.voice_engine_piper",
+  "*:sidebar.studio",
   "*:templates.adopt_modal.persona_label",
   "*:vault.shared.extract_entity_type_ph",
   "ar:agents.connectors.auto_input_schema_placeholder",

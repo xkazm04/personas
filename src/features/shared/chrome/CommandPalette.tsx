@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from 'react';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import {
-  Search, Bot, Home, BarChart3, Radio, Key, FlaskConical,
-  Settings, Plus, Power, Play, ToggleLeft, Copy, Puzzle,
+  Search, Bot, Key, FlaskConical,
+  Plus, Power, Play, ToggleLeft, Copy,
   HeartPulse, Pencil, Trophy,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
@@ -11,12 +11,14 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useTranslation } from '@/i18n/useTranslation';
-import type { SidebarSection } from '@/lib/types/types';
+import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import {
   type PaletteItem, type ResultKind,
   fuzzyMatch, fuzzyScore, entryScore, trackRecent, getRecentAgentIds,
   agentItem, credentialItem, templateItem, automationItem,
   agentActionItems, type AgentActionCallbacks,
+  reachablePaletteSections,
 } from '@/features/shared/chrome/commandPaletteUtils';
 import { executePersona } from '@/api/agents/executions';
 import { duplicatePersona } from '@/api/agents/personas';
@@ -28,21 +30,8 @@ import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
 import { useSettingsSearchEntries } from '@/features/settings/search/useSettingsSearchEntries';
 
-// -- Section icons -----------------------------------------------------
-
-const NAV_ITEMS: { id: SidebarSection; label: string; icon: React.ReactNode }[] = [
-  { id: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
-  { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
-  { id: 'personas', label: 'Agents', icon: <Bot className="w-4 h-4" /> },
-  { id: 'events', label: 'Event Bus', icon: <Radio className="w-4 h-4" /> },
-  { id: 'credentials', label: 'Keys', icon: <Key className="w-4 h-4" /> },
-  { id: 'design-reviews', label: 'Templates', icon: <FlaskConical className="w-4 h-4" /> },
-  { id: 'plugins', label: 'Plugins', icon: <Puzzle className="w-4 h-4" /> },
-  { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
-];
-
 export default function CommandPalette() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const searchT = t.settings.search;
   const open = useCommandPaletteStore((s) => s.open);
   const scope = useCommandPaletteStore((s) => s.scope);
@@ -61,6 +50,9 @@ export default function CommandPalette() {
   const credentials = useVaultStore((s) => s.credentials);
   const automations = useVaultStore((s) => s.automations);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
+  const tier = useTier();
+  const labelOf = useSidebarLabels();
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
   const storeUpdatePersona = useAgentStore((s) => s.updatePersona);
@@ -148,6 +140,29 @@ export default function CommandPalette() {
     },
   }), [addToast, storeUpdatePersona, storeFetchPersonas, setSidebarSection, selectPersona, personas]);
 
+  // Navigation destinations — derived from the single nav registry and
+  // gate-filtered (tier + devOnly) at render time, so the palette can reach
+  // every section the sidebar can (previously it hardcoded 8, silently missing
+  // Projects/Studio and never offering the Schedules overlay). Labels resolve
+  // through the same localized source as the sidebar rail. Overlay-only
+  // sections (Schedules) open their title-bar overlay instead of navigating.
+  const paletteNavSections = useMemo(() => {
+    const isDev = import.meta.env.DEV;
+    return reachablePaletteSections({ isDev, isTierVisible: tier.isVisible })
+      .map((e) => {
+        const Icon = e.icon;
+        const onSelect = e.reachability === 'overlay-only'
+          ? () => setHeaderOverlay(e.id === 'schedules' ? 'schedules' : 'none')
+          : () => setSidebarSection(e.id);
+        return {
+          id: e.id,
+          label: labelOf(e.labelKey, e.label),
+          icon: <Icon className="w-4 h-4" />,
+          onSelect,
+        };
+      });
+  }, [tier, labelOf, setSidebarSection, setHeaderOverlay]);
+
   // Stage 1: stable entity lists (only recomputed when entities change, not on every keystroke)
   const stableItems = useMemo(() => {
     const agentItems = personas.map(p =>
@@ -162,19 +177,19 @@ export default function CommandPalette() {
     const autoItems = automations.map(a =>
       automationItem(a, setSidebarSection, paletteIcons.flask),
     );
-    const navItems = NAV_ITEMS.map(nav => ({
+    const navItems = paletteNavSections.map(nav => ({
       id: `nav:${nav.id}`, kind: 'navigation' as const, label: nav.label,
-      icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
+      icon: nav.icon, onSelect: nav.onSelect,
     }));
     const cbs = agentActions();
     const commandItems: PaletteItem[] = [
       {
-        id: 'cmd:create-agent', kind: 'action', label: 'Create New Agent',
+        id: 'cmd:create-agent', kind: 'action', label: t.common.command_palette_create_agent,
         icon: <Plus className="w-4 h-4" />,
         onSelect: () => { setSidebarSection('personas'); setIsCreatingPersona(true); },
       },
       {
-        id: 'cmd:leaderboard', kind: 'action', label: 'Agent Leaderboard',
+        id: 'cmd:leaderboard', kind: 'action', label: t.common.command_palette_leaderboard,
         icon: <Trophy className="w-4 h-4" />,
         onSelect: () => {
           setSidebarSection('overview');
@@ -183,9 +198,10 @@ export default function CommandPalette() {
           );
         },
       },
-      ...NAV_ITEMS.map(nav => ({
-        id: `cmd:nav-${nav.id}`, kind: 'action' as const, label: `Go to ${nav.label}`,
-        icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
+      ...paletteNavSections.map(nav => ({
+        id: `cmd:nav-${nav.id}`, kind: 'action' as const,
+        label: tx(t.common.command_palette_go_to, { label: nav.label }),
+        icon: nav.icon, onSelect: nav.onSelect,
       })),
       ...agentActionItems(personas, cbs, {
         run: paletteIcons.play, toggle: paletteIcons.toggle, duplicate: paletteIcons.copy,
@@ -193,7 +209,7 @@ export default function CommandPalette() {
       }),
     ];
     return { agentItems, credItems, templateItems, autoItems, navItems, commandItems };
-  }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, paletteIcons, agentActions]);
+  }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, paletteIcons, agentActions, paletteNavSections, t, tx]);
 
   // Settings entries (inline toggles + deep links). An empty query surfaces the
   // recommended set only when the palette was opened focused on settings; typing

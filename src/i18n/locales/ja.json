@@ -350,7 +350,10 @@
     "edge_count_other": "{count}エッジ",
     "adoption_count_one": "{count}件の採用",
     "adoption_count_other": "{count}件の採用",
-    "selected": "選択済"
+    "selected": "選択済",
+    "command_palette_create_agent": "新しいエージェントを作成",
+    "command_palette_go_to": "{label}に移動",
+    "command_palette_leaderboard": "エージェントリーダーボード"
   },
   "chrome": {
     "app_title": "Personas",
@@ -504,7 +507,8 @@
     "goals": "ゴール",
     "mission_control": "ミッションコントロール",
     "factory": "ファクトリー",
-    "kpis": "KPI"
+    "kpis": "KPI",
+    "studio": "スタジオ"
   },
   "home": {
     "setup": {
