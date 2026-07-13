@@ -1,6 +1,7 @@
 /* eslint-disable custom/no-hardcoded-jsx-text -- i18n for the Stream lands with the P6 sweep. */
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Radio, Search, X, Layers, Users, Signal, Brain } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailModal';
 import { memberColor, type EventFamily } from '@/lib/channel/eventModel';
@@ -113,6 +114,7 @@ export interface StreamProps {
 }
 
 export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: StreamProps) {
+  const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
   const [lens, setLens] = useState<LensState>(EMPTY_LENS);
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
@@ -257,6 +259,14 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
               ))}
             </FacetGroup>
           )}
+
+          {/* Kind counts are CORPUS totals (SQL). Family + callsign counts describe
+              only the loaded window — they narrow rows already fetched. Different
+              numbers meaning different things is exactly the kind of quiet lie
+              this rail exists to avoid, so it says which is which. */}
+          <p className="px-2 pb-1.5 typo-caption text-foreground opacity-40 leading-snug">
+            {t.monitor.stream_facet_scope_note}
+          </p>
 
           <FacetGroup title="Event family">
             {ALL_FAMILIES.map((fam: EventFamily) => {

@@ -181,5 +181,6 @@
   "grid_state_running": "실행 중",
   "grid_ungrouped": "그룹 없음",
   "channel_heard_by": "수신자",
-  "channel_importance": "중요도"
+  "channel_importance": "중요도",
+  "stream_facet_scope_note": "종류 개수는 전체 수치입니다. 패밀리와 콜사인 개수는 지금까지 불러온 행 기준입니다."
 }

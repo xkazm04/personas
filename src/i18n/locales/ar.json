@@ -182,7 +182,8 @@
     "grid_state_running": "قيد التشغيل",
     "grid_ungrouped": "غير مُجمَّع",
     "channel_heard_by": "استمع إليها",
-    "channel_importance": "الأهمية"
+    "channel_importance": "الأهمية",
+    "stream_facet_scope_note": "أعداد الأنواع إجمالية. أعداد العائلة والنداء تصف الصفوف المحمّلة حتى الآن."
   },
   "common": {
     "loading": "جارٍ التحميل...",

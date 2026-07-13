@@ -181,5 +181,6 @@
   "grid_state_running": "実行中",
   "grid_ungrouped": "グループなし",
   "channel_heard_by": "受信者",
-  "channel_importance": "重要度"
+  "channel_importance": "重要度",
+  "stream_facet_scope_note": "種別の件数は総数です。ファミリーとコールサインの件数は、これまでに読み込んだ行が対象です。"
 }

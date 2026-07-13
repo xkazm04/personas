@@ -182,7 +182,8 @@
     "grid_state_running": "En cours",
     "grid_ungrouped": "Sans groupe",
     "channel_heard_by": "Entendu par",
-    "channel_importance": "Importance"
+    "channel_importance": "Importance",
+    "stream_facet_scope_note": "Les décomptes par type sont des totaux. Ceux par famille et indicatif portent sur les lignes déjà chargées."
   },
   "common": {
     "loading": "Chargement...",

@@ -182,7 +182,8 @@
     "grid_state_running": "चल रहा है",
     "grid_ungrouped": "बिना समूह",
     "channel_heard_by": "सुना गया",
-    "channel_importance": "महत्व"
+    "channel_importance": "महत्व",
+    "stream_facet_scope_note": "काइंड की गिनती कुल है। फ़ैमिली और कॉलसाइन की गिनती अब तक लोड हुई पंक्तियों की है।"
   },
   "common": {
     "loading": "लोड हो रहा है...",

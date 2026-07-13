@@ -182,7 +182,8 @@
     "channels_author_you": "You",
     "channels_author_athena": "Athena",
     "channel_heard_by": "Heard by",
-    "channel_importance": "Importance"
+    "channel_importance": "Importance",
+    "stream_facet_scope_note": "Kind counts are totals. Family and callsign counts describe the rows loaded so far."
   },
   "common": {
     "unknown_error": "Unknown error",

@@ -189,6 +189,7 @@ export type Translations = {
     channels_author_athena: string;
     channel_heard_by: string;
     channel_importance: string;
+    stream_facet_scope_note: string;
   };
   common: {
     unknown_error: string;

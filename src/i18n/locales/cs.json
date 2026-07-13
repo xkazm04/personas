@@ -182,7 +182,8 @@
     "grid_state_running": "Běží",
     "grid_ungrouped": "Bez skupiny",
     "channel_heard_by": "Slyšeli",
-    "channel_importance": "Důležitost"
+    "channel_importance": "Důležitost",
+    "stream_facet_scope_note": "Počty druhů jsou celkové. Počty rodin a volacích znaků popisují dosud načtené řádky."
   },
   "common": {
     "loading": "Načítání...",

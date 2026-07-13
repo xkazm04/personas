@@ -181,5 +181,6 @@
   "grid_state_running": "Läuft",
   "grid_ungrouped": "Ohne Gruppe",
   "channel_heard_by": "Gehört von",
-  "channel_importance": "Wichtigkeit"
+  "channel_importance": "Wichtigkeit",
+  "stream_facet_scope_note": "Art-Zählungen sind Gesamtwerte. Familien- und Rufzeichen-Zählungen beziehen sich auf die bisher geladenen Zeilen."
 }

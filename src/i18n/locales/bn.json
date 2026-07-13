@@ -182,7 +182,8 @@
     "grid_state_running": "চলছে",
     "grid_ungrouped": "গোষ্ঠীবিহীন",
     "channel_heard_by": "শুনেছে",
-    "channel_importance": "গুরুত্ব"
+    "channel_importance": "গুরুত্ব",
+    "stream_facet_scope_note": "কাইন্ড সংখ্যা মোট। ফ্যামিলি ও কলসাইন সংখ্যা এখন পর্যন্ত লোড হওয়া সারি বোঝায়।"
   },
   "common": {
     "loading": "লোড হচ্ছে...",

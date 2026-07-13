@@ -181,5 +181,6 @@
   "grid_state_running": "运行中",
   "grid_ungrouped": "未分组",
   "channel_heard_by": "接收者",
-  "channel_importance": "重要性"
+  "channel_importance": "重要性",
+  "stream_facet_scope_note": "类型计数为总数。族群与呼号计数仅统计已加载的行。"
 }

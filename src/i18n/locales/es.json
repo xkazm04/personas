@@ -182,7 +182,8 @@
     "grid_state_running": "En ejecución",
     "grid_ungrouped": "Sin grupo",
     "channel_heard_by": "Escuchado por",
-    "channel_importance": "Importancia"
+    "channel_importance": "Importancia",
+    "stream_facet_scope_note": "Los recuentos por tipo son totales. Los de familia e indicativo describen las filas cargadas hasta ahora."
   },
   "common": {
     "loading": "Cargando...",

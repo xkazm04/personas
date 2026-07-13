@@ -181,5 +181,6 @@
   "grid_state_running": "Berjalan",
   "grid_ungrouped": "Tanpa grup",
   "channel_heard_by": "Didengar oleh",
-  "channel_importance": "Kepentingan"
+  "channel_importance": "Kepentingan",
+  "stream_facet_scope_note": "Jumlah jenis adalah total. Jumlah famili dan callsign menjelaskan baris yang sudah dimuat."
 }
