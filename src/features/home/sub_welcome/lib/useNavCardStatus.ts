@@ -9,24 +9,28 @@
  *  - events:     events in the last 24h, trend vs prior day
  *  - credentials: external (3rd-party) connections + built-in/local connectors
  *
- * Attention counts (messages/reviews) are read from the shared attention
- * registry — the Sidebar already drives the polling, so this hook adds no new
- * pollers. The windowed metrics (incidents, executions, events, credentials)
- * are fetched once per mount of the Welcome surface, which is a snapshot view.
+ * This hook owns NO IPC. It reads the shared Overview spine (`homeSpineSlice`
+ * on `useOverviewStore`) for the windowed metrics (incidents, active-persona
+ * window, event window) and triggers the shared fetch when cold via
+ * `primeHomeSpine` — so repeated Welcome mounts and other Home surfaces share a
+ * single cached fetch. Attention counts (messages/reviews) come from the shared
+ * attention registry (the Sidebar drives that polling). Teams come from
+ * `pipelineStore`; credentials from the canonical `vaultStore`. The derived
+ * chip values are identical to the pre-spine inline maths — only the fetch
+ * location moved (see stores/slices/overview/homeSpineWindows.ts).
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Activity, AlertOctagon, ClipboardCheck, HardDrive, Key, MessageSquare, Users, Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { useAttention } from '@/hooks/useAttention';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
-import { getAuditIncidentsSummary } from '@/api/overview/incidents';
-import { listAllExecutions } from '@/api/agents/executions';
-import { listEventsInRange } from '@/api/overview/events';
+import type { Window2 } from '@/stores/slices/overview/homeSpineWindows';
 import { isLocalConnector } from './connectorScope';
+import { useVaultCredentials } from './useVaultCredentials';
 
 export type NavChipTone = 'red' | 'amber' | 'blue' | 'emerald' | 'cyan' | 'sky' | 'slate';
 export type NavTrend = 'up' | 'down' | 'flat';
@@ -41,8 +45,7 @@ export interface NavStatChip {
   title: string;
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const WINDOW_LIMIT = 500;
+const ZERO_WINDOW: Window2 = { curr: 0, prev: 0 };
 
 function trendOf(curr: number, prev: number): NavTrend {
   return curr > prev ? 'up' : curr < prev ? 'down' : 'flat';
@@ -52,82 +55,25 @@ function pctChange(curr: number, prev: number): number {
   return Math.round(((curr - prev) / prev) * 100);
 }
 
-interface Window2 { curr: number; prev: number }
-
 export function useNavCardStatus(): Record<string, NavStatChip[]> {
   const { t, tx } = useTranslation();
   const ns = t.home.nav_status;
   const { counts } = useAttention('sidebar');
   const teams = usePipelineStore((s) => s.teams);
 
-  const [incidents, setIncidents] = useState(0);
-  const [agents, setAgents] = useState<Window2>({ curr: 0, prev: 0 });
-  const [events, setEvents] = useState<Window2>({ curr: 0, prev: 0 });
-  const [creds, setCreds] = useState<Array<{ service_type: string }>>([]);
+  // Windowed metrics — read straight from the shared Overview spine.
+  const incidents = useOverviewStore((s) => s.homeOpenIncidents) ?? 0;
+  const agents = useOverviewStore((s) => s.homeActivePersonaWindow) ?? ZERO_WINDOW;
+  const events = useOverviewStore((s) => s.homeEventWindow) ?? ZERO_WINDOW;
 
-  useEffect(() => { void usePipelineStore.getState().fetchTeams(); }, []);
+  // ONE credentials source — the canonical vault store (shared with FleetHealthStrip).
+  const creds = useVaultCredentials();
 
+  // Trigger the shared fetches when cold. `primeHomeSpine` is TTL-guarded, so
+  // calling it on every mount is cheap and dedupes across Home surfaces.
   useEffect(() => {
-    getAuditIncidentsSummary()
-      .then((s) => setIncidents(Number(s.open) || 0))
-      .catch(silentCatch('useNavCardStatus:incidents'));
-  }, []);
-
-  // Distinct personas with an execution in each 24h window.
-  useEffect(() => {
-    listAllExecutions(WINDOW_LIMIT)
-      .then((rows) => {
-        const now = Date.now();
-        const curr = new Set<string>();
-        const prev = new Set<string>();
-        for (const r of rows) {
-          const ts = Date.parse(r.created_at);
-          if (Number.isNaN(ts)) continue;
-          const age = now - ts;
-          if (age < 0) continue;
-          if (age <= DAY_MS) curr.add(r.persona_id);
-          else if (age <= 2 * DAY_MS) prev.add(r.persona_id);
-        }
-        setAgents({ curr: curr.size, prev: prev.size });
-      })
-      .catch(silentCatch('useNavCardStatus:executions'));
-  }, []);
-
-  // Event volume in each 24h window. One 48h fetch partitioned client-side —
-  // two separate range calls cost ~150ms of backend work each on every Home
-  // landing (×2 again under StrictMode), and this is a snapshot chip, not an
-  // exact count: WINDOW_LIMIT bounds it either way.
-  useEffect(() => {
-    const now = Date.now();
-    const iso = (ms: number) => new Date(ms).toISOString();
-    const cutoff = now - DAY_MS;
-    listEventsInRange(iso(now - 2 * DAY_MS), iso(now), WINDOW_LIMIT * 2)
-      .then((res) => {
-        let curr = 0;
-        let prev = 0;
-        for (const e of res.events) {
-          const ts = Date.parse(e.created_at);
-          if (Number.isNaN(ts)) continue;
-          if (ts >= cutoff) curr++; else prev++;
-        }
-        setEvents({ curr, prev });
-      })
-      .catch(silentCatch('useNavCardStatus:events'));
-  }, []);
-
-  // Credentials — lazy-load the vault store to keep it off the home bundle.
-  useEffect(() => {
-    let unsub: (() => void) | undefined;
-    void import('@/stores/vaultStore').then(({ useVaultStore }) => {
-      const s = useVaultStore.getState();
-      setCreds(s.credentials);
-      if (s.credentials.length === 0) s.fetchCredentials().catch(() => {});
-      let prev = s.credentials;
-      unsub = useVaultStore.subscribe((st) => {
-        if (st.credentials !== prev) { prev = st.credentials; setCreds(st.credentials); }
-      });
-    });
-    return () => unsub?.();
+    void usePipelineStore.getState().fetchTeams();
+    useOverviewStore.getState().primeHomeSpine();
   }, []);
 
   return useMemo(() => {

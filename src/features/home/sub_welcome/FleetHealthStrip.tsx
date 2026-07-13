@@ -1,65 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Activity, CheckCircle2, Bot, Key, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
-import { getMetricsSummary } from '@/api/overview/observability';
-import { listCredentials } from '@/api/vault/credentials';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
 import { hasFailureSpike, fleetSuccessRatePct } from './lib/fleetHealth';
+import { useVaultCredentials } from './lib/useVaultCredentials';
 import type { SidebarSection } from '@/lib/types/types';
-import { silentCatch } from '@/lib/silentCatch';
-
-
-interface FleetMetrics {
-  executionsToday: number;
-  // Success rate over TERMINAL runs only (completed / (completed + failed)), or
-  // null when nothing has finished yet (all in-flight) → render neutral "—".
-  successRate: number | null;
-  credentialCount: number;
-  hasFailureSpike: boolean;
-}
 
 const FLEET_METRICS_REFRESH_MS = 30_000;
-
-function useFleetMetrics() {
-  const [metrics, setMetrics] = useState<FleetMetrics | null>(null);
-
-  useEffect(() => {
-    // `cancelled` guards against a state write after unmount (the fetch can
-    // resolve once the home view is gone). The interval keeps the strip fresh —
-    // it previously loaded once on mount and then froze for the session.
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const [summary, credentials] = await Promise.all([
-          getMetricsSummary(1),
-          listCredentials(),
-        ]);
-        if (cancelled) return;
-
-        // Rate + spike are computed over TERMINAL executions only (completed +
-        // failed); in-flight/cancelled rows are excluded so the pill isn't
-        // diluted by running work (see lib/fleetHealth.ts). `successfulExecutions`
-        // is the backend's `completed` count.
-        setMetrics({
-          executionsToday: summary.totalExecutions,
-          successRate: fleetSuccessRatePct(summary.successfulExecutions, summary.failedExecutions),
-          credentialCount: credentials.length,
-          hasFailureSpike: hasFailureSpike(summary.successfulExecutions, summary.failedExecutions),
-        });
-      } catch (err) {
-        if (!cancelled) silentCatch("features/home/sub_welcome/FleetHealthStrip:catch1")(err);
-      }
-    };
-
-    void load();
-    const id = setInterval(() => void load(), FLEET_METRICS_REFRESH_MS);
-    return () => { cancelled = true; clearInterval(id); };
-  }, []);
-
-  return metrics;
-}
 
 interface PillProps {
   icon: LucideIcon;
@@ -96,7 +46,11 @@ function MetricPill({ icon: Icon, label, value, onClick, pulse, accentColor, ico
 }
 
 export default function FleetHealthStrip() {
-  const metrics = useFleetMetrics();
+  // Fleet metrics ride the shared Overview spine (homeSpineSlice): FleetHealthStrip
+  // reads the cached 1-day snapshot and triggers the SHARED fetch — it no longer
+  // owns any IPC. Credentials come from the single canonical vault source.
+  const metrics = useOverviewStore((s) => s.fleetMetrics);
+  const credentialCount = useVaultCredentials().length;
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   // "Active agents" = ENABLED personas (the configured fleet), NOT personas that
   // happened to execute in the metrics window. summary.activePersonas counts the
@@ -108,18 +62,34 @@ export default function FleetHealthStrip() {
   const { t: globalT } = useTranslation();
   const t = globalT.home;
 
+  // Trigger the shared fetch on mount + keep it fresh. The store action is
+  // TTL-guarded + dedup-safe, so this coexists with the nav hook's prime call
+  // without doubling backend work.
+  useEffect(() => {
+    const fetch = () => void useOverviewStore.getState().fetchFleetMetrics();
+    fetch();
+    const id = setInterval(fetch, FLEET_METRICS_REFRESH_MS);
+    return () => clearInterval(id);
+  }, []);
+
   if (!metrics) return null;
 
   const nav = (section: SidebarSection) => () => setSidebarSection(section);
-
   const fleet = t.fleet;
+
+  // Rate + spike are computed over TERMINAL executions only (completed + failed);
+  // in-flight/cancelled rows are excluded so the pill isn't diluted by running
+  // work (see lib/fleetHealth.ts). `successfulExecutions` is the backend's
+  // `completed` count.
+  const successRate = fleetSuccessRatePct(metrics.successfulExecutions, metrics.failedExecutions);
+  const failureSpike = hasFailureSpike(metrics.successfulExecutions, metrics.failedExecutions);
 
   return (
     <div className="animate-fade-slide-in motion-reduce:animate-none flex items-center gap-2 flex-wrap">
       <MetricPill
         icon={Activity}
         label={fleet.executions_today}
-        value={metrics.executionsToday}
+        value={metrics.totalExecutions}
         onClick={nav('overview')}
         accentColor="bg-indigo-500/15"
         iconColor="text-indigo-400"
@@ -130,11 +100,11 @@ export default function FleetHealthStrip() {
         // No finished runs yet (all in-flight / nothing executed) → successRate
         // is null; show a neutral "—" instead of a misleading confident "0%"/
         // "100%" for a fleet whose runs haven't terminated.
-        value={metrics.successRate !== null ? `${metrics.successRate}%` : '—'}
+        value={successRate !== null ? `${successRate}%` : '—'}
         onClick={nav('overview')}
-        pulse={metrics.hasFailureSpike}
-        accentColor={metrics.hasFailureSpike ? 'bg-red-500/15' : 'bg-emerald-500/15'}
-        iconColor={metrics.hasFailureSpike ? 'text-red-400' : 'text-emerald-400'}
+        pulse={failureSpike}
+        accentColor={failureSpike ? 'bg-red-500/15' : 'bg-emerald-500/15'}
+        iconColor={failureSpike ? 'text-red-400' : 'text-emerald-400'}
       />
       <MetricPill
         icon={Bot}
@@ -147,7 +117,7 @@ export default function FleetHealthStrip() {
       <MetricPill
         icon={Key}
         label={fleet.credentials}
-        value={metrics.credentialCount}
+        value={credentialCount}
         onClick={nav('credentials')}
         accentColor="bg-amber-500/15"
         iconColor="text-amber-400"
