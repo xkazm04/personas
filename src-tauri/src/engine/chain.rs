@@ -65,8 +65,9 @@ pub mod stop_reason {
     pub const PUBLISH_FAILED: &str = "publish_failed";
     /// The accumulated chain cost hit the configured ceiling (Direction 3).
     pub const BUDGET_EXCEEDED: &str = "budget_exceeded";
-    /// Reserved for a sibling direction's fan-out breadth cap.
-    #[allow(dead_code)]
+    /// The chain's fan-out reached the configured link (breadth) ceiling — the
+    /// count of links already spawned under this chain trace hit
+    /// `CHAIN_MAX_LINKS`, so the whole cascade halts before firing further links.
     pub const BREADTH_EXCEEDED: &str = "breadth_exceeded";
 }
 
@@ -141,6 +142,20 @@ fn read_chain_cost_ceiling(pool: &DbPool) -> f64 {
         .and_then(|raw| raw.trim().parse::<f64>().ok())
         .filter(|c| c.is_finite() && *c >= 0.0)
         .unwrap_or(crate::db::settings_keys::CHAIN_MAX_COST_USD_DEFAULT)
+}
+
+/// Read the configured chain BREADTH ceiling (max links per chain trace) from
+/// settings. Returns [`CHAIN_MAX_LINKS_DEFAULT`] (a generous always-on net) when
+/// unset, empty, or non-numeric; an explicit `"0"` disables the cap. Unlike the
+/// cost ceiling this defaults to a NON-zero value on purpose — the depth ceiling
+/// is a hard always-on constant, so breadth (the other unbounded axis) gets a
+/// generous default too rather than shipping the guard off.
+fn read_chain_link_ceiling(pool: &DbPool) -> u32 {
+    crate::db::repos::core::settings::get(pool, crate::db::settings_keys::CHAIN_MAX_LINKS)
+        .ok()
+        .flatten()
+        .and_then(|raw| raw.trim().parse::<u32>().ok())
+        .unwrap_or(crate::db::settings_keys::CHAIN_MAX_LINKS_DEFAULT)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -257,6 +272,58 @@ pub fn evaluate_chain_triggers(
         );
         metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
         return metrics;
+    }
+
+    // Direction 1: chain fan-out BREADTH ceiling. The depth-8 limit bounds a
+    // chain's path LENGTH; this is the only brake on its WIDTH. One completion
+    // can match many triggers and each match branches again, so a fan-out grows
+    // unbounded across hops even when no single path is deep. We count the links
+    // already spawned under this chain trace (`execution_traces` rows sharing the
+    // `chain_trace_id`, an indexed COUNT) and, once that reaches the configured
+    // ceiling, halt the whole cascade before firing any further link — recording
+    // a single breadth stop reason. Only meaningful when this hop belongs to a
+    // chain trace (no id → nothing to count against, and a run with no trace id
+    // can't be part of a tracked fan-out). `0` / unset conventions live in
+    // [`read_chain_link_ceiling`].
+    if let Some(ctid) = chain_trace_id {
+        let link_ceiling = read_chain_link_ceiling(pool);
+        if link_ceiling > 0 {
+            match crate::db::repos::execution::traces::count_by_chain_trace_id(pool, ctid) {
+                Ok(links_so_far) if links_so_far >= link_ceiling => {
+                    tracing::warn!(
+                        source_persona_id = %source_persona_id,
+                        chain_depth,
+                        chain_trace_id = %ctid,
+                        links_so_far,
+                        link_ceiling,
+                        "Chain breadth ceiling reached ({} >= {}); halting cascade",
+                        links_so_far,
+                        link_ceiling,
+                    );
+                    record_stop(
+                        None,
+                        None,
+                        stop_reason::BREADTH_EXCEEDED,
+                        Some(format!(
+                            "chain already spawned {links_so_far} links, reaching the ceiling of {link_ceiling}"
+                        )),
+                    );
+                    metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
+                    return metrics;
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    // Best-effort: a failed count must never fail the cascade —
+                    // fall through and let the link fire (the depth/cost/cycle
+                    // guards still apply). Logged so a chronic failure surfaces.
+                    tracing::warn!(
+                        chain_trace_id = %ctid,
+                        error = %e,
+                        "Chain breadth count failed; skipping breadth guard for this hop"
+                    );
+                }
+            }
+        }
     }
 
     for trigger in chain_triggers {
@@ -1931,5 +1998,110 @@ mod tests {
             payload.get("_chain_trace_id").and_then(|t| t.as_str()),
             Some("trace-b3")
         );
+    }
+
+    // =========================================================================
+    // Chain fan-out breadth guard tests (Direction 1)
+    // =========================================================================
+
+    /// Insert `n` execution_traces rows sharing `chain_trace_id` to simulate a
+    /// chain that has already spawned `n` links.
+    fn seed_chain_links(pool: &crate::db::DbPool, chain_trace_id: &str, n: usize) {
+        use crate::engine::trace::ExecutionTrace;
+        for i in 0..n {
+            let trace = ExecutionTrace {
+                trace_id: format!("t-{chain_trace_id}-{i}"),
+                execution_id: format!("e-{chain_trace_id}-{i}"),
+                persona_id: "p".into(),
+                chain_trace_id: Some(chain_trace_id.to_string()),
+                spans: Vec::new(),
+                total_duration_ms: Some(1),
+                evicted_span_count: 0,
+                created_at: format!("2026-07-10T00:00:{:02}Z", i % 60),
+            };
+            crate::db::repos::execution::traces::save(pool, &trace).unwrap();
+        }
+    }
+
+    fn set_max_links(pool: &crate::db::DbPool, value: &str) {
+        crate::db::repos::core::settings::set(
+            pool,
+            crate::db::settings_keys::CHAIN_MAX_LINKS,
+            value,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn test_chain_breadth_disabled_by_explicit_zero() {
+        // Explicit "0" disables the cap even with a huge number of prior links.
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        set_max_links(&pool, "0");
+        seed_chain_links(&pool, "trace-br0", 100);
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br0"), false, 0.0,
+        );
+        assert_eq!(metrics.events_published, 1);
+        assert!(stop_tokens(&pool, "trace-br0").is_empty());
+    }
+
+    #[test]
+    fn test_chain_breadth_ceiling_halts_with_stop_reason() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        set_max_links(&pool, "2");
+        // 2 links already spawned → at the ceiling → halt before firing.
+        seed_chain_links(&pool, "trace-br1", 2);
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br1"), false, 0.0,
+        );
+        assert_eq!(metrics.events_published, 0);
+        // Breadth is a whole-cascade halt evaluated right after the triggers are
+        // loaded/counted (co-located with the budget halt), so triggers_evaluated
+        // reflects the loaded set but nothing is published.
+        assert_eq!(metrics.triggers_evaluated, 1);
+        assert_eq!(
+            stop_tokens(&pool, "trace-br1"),
+            vec![stop_reason::BREADTH_EXCEEDED]
+        );
+    }
+
+    #[test]
+    fn test_chain_breadth_under_ceiling_fires() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        set_max_links(&pool, "5");
+        seed_chain_links(&pool, "trace-br2", 2); // 2 < 5 → fires
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br2"), false, 0.0,
+        );
+        assert_eq!(metrics.events_published, 1);
+        assert!(stop_tokens(&pool, "trace-br2").is_empty());
+    }
+
+    #[test]
+    fn test_chain_breadth_default_generous_does_not_trip_small_chains() {
+        // No CHAIN_MAX_LINKS row → default (50). A handful of links still fires.
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        seed_chain_links(&pool, "trace-br3", 3);
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br3"), false, 0.0,
+        );
+        assert_eq!(metrics.events_published, 1);
+        assert!(stop_tokens(&pool, "trace-br3").is_empty());
     }
 }

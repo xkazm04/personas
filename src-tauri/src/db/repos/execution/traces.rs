@@ -132,6 +132,32 @@ pub fn get_by_chain_trace_id(
     )
 }
 
+/// Count the traces already saved under a `chain_trace_id` — i.e. how many
+/// executions (links) this chain has spawned so far. Cheap: `chain_trace_id` is
+/// indexed (`idx_et_chain`), so this is an index-only `COUNT(*)`. Used by the
+/// cascade evaluator's fan-out BREADTH guard (the depth ceiling bounds path
+/// length; this bounds total width). Counting traces is preferred over counting
+/// the chain EVENTS because events store their trace id only inside the payload
+/// JSON (unindexed — a full scan), whereas the trace column is indexed; the only
+/// cost is that a link queued-but-not-yet-started has no trace row yet, so this
+/// slightly UNDER-counts, which makes the guard trip conservatively-late, never
+/// falsely.
+pub fn count_by_chain_trace_id(pool: &DbPool, chain_trace_id: &str) -> Result<u32, AppError> {
+    timed_query!(
+        "execution_traces",
+        "execution_traces::count_by_chain_trace_id",
+        {
+            let conn = pool.get()?;
+            let count: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM execution_traces WHERE chain_trace_id = ?1",
+                params![chain_trace_id],
+                |row| row.get(0),
+            )?;
+            Ok(count.max(0) as u32)
+        }
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -189,6 +215,20 @@ mod tests {
         assert!(get_by_chain_trace_id(&pool, "nonexistent")
             .unwrap()
             .is_empty());
+    }
+
+    #[test]
+    fn count_by_chain_trace_id_counts_only_the_matching_chain() {
+        let pool = init_test_db().unwrap();
+        assert_eq!(count_by_chain_trace_id(&pool, "chain-A").unwrap(), 0);
+        save(&pool, &make_trace("e1", "p", Some("chain-A"), "2026-07-10T00:00:01Z")).unwrap();
+        save(&pool, &make_trace("e2", "p", Some("chain-A"), "2026-07-10T00:00:02Z")).unwrap();
+        save(&pool, &make_trace("e3", "p", Some("chain-B"), "2026-07-10T00:00:03Z")).unwrap();
+        // A run with no chain id must not be counted against any chain.
+        save(&pool, &make_trace("e4", "p", None, "2026-07-10T00:00:04Z")).unwrap();
+        assert_eq!(count_by_chain_trace_id(&pool, "chain-A").unwrap(), 2);
+        assert_eq!(count_by_chain_trace_id(&pool, "chain-B").unwrap(), 1);
+        assert_eq!(count_by_chain_trace_id(&pool, "chain-Z").unwrap(), 0);
     }
 
     #[test]

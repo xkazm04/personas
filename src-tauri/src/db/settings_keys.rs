@@ -575,6 +575,24 @@ pub const CHAIN_MAX_COST_USD: &str = "chain_max_cost_usd";
 /// Default chain cost ceiling in USD. `0.0` means no ceiling (disabled).
 pub const CHAIN_MAX_COST_USD_DEFAULT: f64 = 0.0;
 
+/// Chain fan-out BREADTH ceiling — the maximum number of links (executions) a
+/// single chain trace may spawn. The depth-8 limit bounds a chain's path
+/// LENGTH; this is the only brake on its WIDTH: one completion can match many
+/// triggers, each of which branches again, so without a breadth cap a fan-out
+/// grows unbounded across hops even when no single path is deep. Enforced in the
+/// cascade evaluator by counting `execution_traces` rows already sharing the
+/// chain's `chain_trace_id`; when that count reaches this ceiling, the cascade
+/// halts before firing further links (records a `breadth_exceeded` chain stop
+/// reason). Stored as a positive-integer string. The literal `"0"` disables the
+/// cap (matching [`CHAIN_MAX_COST_USD`]'s "0 = no ceiling" convention); UNSET
+/// falls back to [`CHAIN_MAX_LINKS_DEFAULT`] — a generous always-on safety net,
+/// since the whole point of this guard is that nothing else bounds breadth.
+pub const CHAIN_MAX_LINKS: &str = "chain_max_links";
+/// Default chain breadth ceiling (links per chain trace) when the row is unset.
+/// Generous enough that no legitimate chain reaches it (depth is capped at 8, so
+/// 50 links is already a pathological fan-out); set the row to `"0"` to disable.
+pub const CHAIN_MAX_LINKS_DEFAULT: u32 = 50;
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -650,6 +668,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_TOTAL_ROWS,
     APPEARANCE_PREFERENCES,
     CHAIN_MAX_COST_USD,
+    CHAIN_MAX_LINKS,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -802,6 +821,10 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 "value for '{key}' must be a non-negative decimal USD amount, got {value:?}"
             )),
         },
+        // Non-negative integer link count; `0` disables the breadth cap.
+        CHAIN_MAX_LINKS => value.parse::<u32>().map(|_| ()).map_err(|_| {
+            format!("value for '{key}' must be a non-negative integer (max links per chain), got {value:?}")
+        }),
         COMPANION_DAILY_ROLLUP_HOUR => match value.parse::<u32>() {
             Ok(h) if h <= 23 => Ok(()),
             _ => Err(format!(
