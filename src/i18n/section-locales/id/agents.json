@@ -840,7 +840,9 @@
     "eco_col_resolved": "Terselesaikan",
     "eco_empty": "Belum ada hasil evaluasi — jalankan Lab untuk mengisi efisiensi biaya.",
     "eco_subtitle": "Seberapa sering setiap model menyelesaikan evaluasi, dan berapa biaya per keberhasilan.",
-    "eco_title": "Efisiensi Biaya"
+    "eco_title": "Efisiensi Biaya",
+    "vr_col_tokens": "Token",
+    "vr_tokens_tooltip": "Rata-rata {input} masuk / {output} keluar per proses"
   },
   "design": {
     "select_agent": "Pilih agen untuk memulai analisis desain",

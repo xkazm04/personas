@@ -840,7 +840,9 @@
     "eco_col_resolved": "已解决",
     "eco_empty": "暂无评估结果 — 运行实验室以填充成本效益数据。",
     "eco_subtitle": "每个模型解决评估的频率及每次成功的成本。",
-    "eco_title": "成本效益"
+    "eco_title": "成本效益",
+    "vr_col_tokens": "令牌",
+    "vr_tokens_tooltip": "每次运行平均输入 {input} / 输出 {output}"
   },
   "design": {
     "select_agent": "选择代理以开始设计分析",

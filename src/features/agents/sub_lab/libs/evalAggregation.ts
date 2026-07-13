@@ -7,6 +7,10 @@ export interface CellAggregate {
   avgProtocolCompliance: number;
   compositeScore: number;
   totalCost: number;
+  /** Prompt + completion tokens summed across the cell's samples. Cost is
+   *  price-weighted and so hides which variant is actually token-hungry;
+   *  a cheap model can still be the heaviest reader. */
+  totalTokens: number;
   avgDuration: number;
   count: number;
 }
@@ -33,6 +37,7 @@ interface VersionAccum {
   protocolCompliance: number;
   protocolComplianceCount: number;
   totalCost: number;
+  totalTokens: number;
   totalDuration: number;
   count: number;
 }
@@ -46,6 +51,7 @@ interface CellAccum {
   protocolCompliance: number;
   protocolComplianceCount: number;
   totalCost: number;
+  totalTokens: number;
   totalDuration: number;
   count: number;
 }
@@ -69,7 +75,7 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
         toolAccuracy: 0, toolAccuracyCount: 0,
         outputQuality: 0, outputQualityCount: 0,
         protocolCompliance: 0, protocolComplianceCount: 0,
-        totalCost: 0, totalDuration: 0, count: 0,
+        totalCost: 0, totalTokens: 0, totalDuration: 0, count: 0,
       });
       versionOrder.push(r.versionId);
     }
@@ -78,6 +84,7 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
     if (r.outputQualityScore != null) { va.outputQuality += r.outputQualityScore; va.outputQualityCount++; }
     if (r.protocolCompliance != null) { va.protocolCompliance += r.protocolCompliance; va.protocolComplianceCount++; }
     va.totalCost += r.costUsd;
+    va.totalTokens += r.inputTokens + r.outputTokens;
     va.totalDuration += r.durationMs;
     va.count++;
 
@@ -89,7 +96,7 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
         toolAccuracy: 0, toolAccuracyCount: 0,
         outputQuality: 0, outputQualityCount: 0,
         protocolCompliance: 0, protocolComplianceCount: 0,
-        totalCost: 0, totalDuration: 0, count: 0,
+        totalCost: 0, totalTokens: 0, totalDuration: 0, count: 0,
       };
     }
     const cell = cellAccums[r.versionId]![r.modelId]!;
@@ -98,6 +105,7 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
     if (r.outputQualityScore != null) { cell.outputQuality += r.outputQualityScore; cell.outputQualityCount++; }
     if (r.protocolCompliance != null) { cell.protocolCompliance += r.protocolCompliance; cell.protocolComplianceCount++; }
     cell.totalCost += r.costUsd;
+    cell.totalTokens += r.inputTokens + r.outputTokens;
     cell.totalDuration += r.durationMs;
   }
 
@@ -119,6 +127,7 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
       // formula and the golden test that pins it.
       compositeScore: compositeScore(avgTA, avgOQ, avgPC),
       totalCost: a.totalCost,
+      totalTokens: a.totalTokens,
       avgDuration: Math.round(a.totalDuration / n),
       count: a.count,
     };
@@ -141,6 +150,7 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
         avgProtocolCompliance: avgPC,
         compositeScore: compositeScore(avgTA, avgOQ, avgPC),
         totalCost: c.totalCost,
+        totalTokens: c.totalTokens,
         avgDuration: Math.round(c.totalDuration / n),
         count: c.count,
       };

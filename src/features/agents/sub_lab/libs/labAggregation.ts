@@ -21,6 +21,7 @@ interface Accum {
   protocolCompliance: number;
   protocolComplianceCount: number;
   totalCost: number;
+  totalTokens: number;
   totalDuration: number;
   count: number;
 }
@@ -30,15 +31,16 @@ function newAccum(): Accum {
     toolAccuracy: 0, toolAccuracyCount: 0,
     outputQuality: 0, outputQualityCount: 0,
     protocolCompliance: 0, protocolComplianceCount: 0,
-    totalCost: 0, totalDuration: 0, count: 0,
+    totalCost: 0, totalTokens: 0, totalDuration: 0, count: 0,
   };
 }
 
-function addToAccum(a: Accum, ta: number | null, oq: number | null, pc: number | null, cost: number, dur: number) {
+function addToAccum(a: Accum, ta: number | null, oq: number | null, pc: number | null, cost: number, dur: number, tokens: number) {
   if (ta != null) { a.toolAccuracy += ta; a.toolAccuracyCount++; }
   if (oq != null) { a.outputQuality += oq; a.outputQualityCount++; }
   if (pc != null) { a.protocolCompliance += pc; a.protocolComplianceCount++; }
   a.totalCost += cost;
+  a.totalTokens += tokens;
   a.totalDuration += dur;
   a.count++;
 }
@@ -59,6 +61,7 @@ function finalizeAccum(a: Accum) {
     // excluded from the averages above (see `addToAccum`), not coerced to 0.
     compositeScore: compositeScore(avgTA, avgOQ, avgPC),
     totalCost: a.totalCost,
+    totalTokens: a.totalTokens,
     avgDuration: Math.round(a.totalDuration / n),
     count: a.count,
   };
@@ -74,6 +77,9 @@ export interface ArenaModelAggregate {
   avgProtocolCompliance: number;
   compositeScore: number;
   totalCost: number;
+  /** Prompt + completion tokens across the group. Cost is price-weighted and
+   *  hides which variant is token-hungry; a cheap model can still read most. */
+  totalTokens: number;
   avgDuration: number;
   count: number;
 }
@@ -99,7 +105,7 @@ export function aggregateArenaResults(results: LabArenaResult[]): ArenaAggregati
       modelOrder.push(r.modelId);
     }
     const acc = modelAccums.get(r.modelId)!;
-    addToAccum(acc, r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance, r.costUsd, r.durationMs);
+    addToAccum(acc, r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance, r.costUsd, r.durationMs, r.inputTokens + r.outputTokens);
 
     // Track scenarios + matrix
     scenarioSet.add(r.scenarioName);
@@ -132,6 +138,9 @@ export interface AbVersionAggregate {
   avgProtocolCompliance: number;
   compositeScore: number;
   totalCost: number;
+  /** Prompt + completion tokens across the group. Cost is price-weighted and
+   *  hides which variant is token-hungry; a cheap model can still read most. */
+  totalTokens: number;
   avgDuration: number;
   count: number;
 }
@@ -155,7 +164,7 @@ export function aggregateAbResults(results: LabAbResult[]): AbAggregation {
       versionOrder.push(r.versionId);
     }
     const acc = versionAccums.get(r.versionId)!;
-    addToAccum(acc, r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance, r.costUsd, r.durationMs);
+    addToAccum(acc, r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance, r.costUsd, r.durationMs, r.inputTokens + r.outputTokens);
 
     scenarioSet.add(r.scenarioName);
     if (!matrix[r.scenarioName]) matrix[r.scenarioName] = {};
@@ -186,6 +195,9 @@ export interface MatrixVariantAggregate {
   avgProtocolCompliance: number;
   compositeScore: number;
   totalCost: number;
+  /** Prompt + completion tokens across the group. Cost is price-weighted and
+   *  hides which variant is token-hungry; a cheap model can still read most. */
+  totalTokens: number;
   avgDuration: number;
   count: number;
 }
@@ -208,7 +220,7 @@ export function aggregateMatrixResults(results: LabMatrixResult[]): MatrixAggreg
       variantOrder.push(r.variant);
     }
     const acc = variantAccums.get(r.variant)!;
-    addToAccum(acc, r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance, r.costUsd, r.durationMs);
+    addToAccum(acc, r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance, r.costUsd, r.durationMs, r.inputTokens + r.outputTokens);
 
     scenarioSet.add(r.scenarioName);
     if (!matrix[r.scenarioName]) matrix[r.scenarioName] = {};

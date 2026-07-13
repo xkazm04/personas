@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, Trash2, Upload, AlertCircle } from 'lucide-react';
+import { FileText, Trash2, Upload, AlertCircle, ScanLine } from 'lucide-react';
 import { createLogger } from '@/lib/log';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const logger = createLogger('vector-kb-documents');
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
@@ -135,9 +136,20 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                       {doc.sourceType}
                       {doc.sourcePath && <span className="ml-1.5">-- {truncatePath(doc.sourcePath)}</span>}
                       <span className="ml-1.5">{formatBytes(doc.byteSize)}</span>
+                      {doc.pageCount != null && (
+                        <span className="ml-1.5">{t.vault.shared.pages_label.replace('{count}', String(doc.pageCount))}</span>
+                      )}
                       <span className="ml-1.5">{t.vault.shared.chunks_label.replace('{count}', String(doc.chunkCount))}</span>
                     </p>
                   </div>
+                  {doc.emptyPages > 0 && (
+                    <Tooltip content={t.vault.shared.scanned_pages_tooltip}>
+                      <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card border bg-amber-500/10 text-amber-400/80 border-amber-500/15 shrink-0">
+                        <ScanLine className="w-3 h-3" aria-hidden />
+                        {t.vault.shared.scanned_pages_warning.replace('{count}', String(doc.emptyPages))}
+                      </span>
+                    </Tooltip>
+                  )}
                   <StatusBadge status={doc.status} error={doc.errorMessage} />
                   <button
                     onClick={() => void handleDelete(doc.id)}

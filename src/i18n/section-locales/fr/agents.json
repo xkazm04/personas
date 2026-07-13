@@ -840,7 +840,9 @@
     "eco_col_resolved": "Résolu",
     "eco_empty": "Aucun résultat d'évaluation — lancez le Lab pour alimenter l'efficacité des coûts.",
     "eco_subtitle": "À quelle fréquence chaque modèle résout une évaluation et ce que coûte chaque succès.",
-    "eco_title": "Efficacité des coûts"
+    "eco_title": "Efficacité des coûts",
+    "vr_col_tokens": "Tokens",
+    "vr_tokens_tooltip": "{input} en entrée / {output} en sortie par exécution en moyenne"
   },
   "design": {
     "select_agent": "Sélectionnez un agent pour démarrer l'analyse de conception",

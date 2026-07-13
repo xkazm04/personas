@@ -6,11 +6,14 @@ use rusqlite::params;
 use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_dialog::DialogExt;
 
-use crate::db::models::{KbDocument, KbSearchQuery, KnowledgeBase, VectorSearchResult};
+use crate::db::models::{
+    KbDocument, KbEntity, KbExtractionRun, KbExtractionSchema, KbSearchQuery, KnowledgeBase,
+    VectorSearchResult,
+};
 use crate::db::repos::resources::audit_log;
 use crate::db::{DbPool, UserDbPool};
 use crate::engine::event_registry::event_name;
-use crate::engine::kb_ingest;
+use crate::engine::{kb_extract, kb_ingest};
 use crate::engine::vector_store::SqliteVectorStore;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -834,6 +837,7 @@ pub async fn kb_search(
 
     let mut stmt = conn.prepare_cached(
         "SELECT c.id, c.document_id, c.content, c.metadata_json,
+                c.source_page, c.extraction_confidence,
                 d.title, d.source_path
          FROM kb_chunks c
          JOIN kb_documents d ON d.id = c.document_id
@@ -846,8 +850,10 @@ pub async fn kb_search(
             row.get::<_, String>(1)?,
             row.get::<_, String>(2)?,
             row.get::<_, Option<String>>(3)?,
-            row.get::<_, String>(4)?,
-            row.get::<_, Option<String>>(5)?,
+            row.get::<_, Option<i32>>(4)?,
+            row.get::<_, f32>(5)?,
+            row.get::<_, String>(6)?,
+            row.get::<_, Option<String>>(7)?,
         ))
     })?;
 
@@ -855,16 +861,38 @@ pub async fn kb_search(
     #[allow(clippy::type_complexity)]
     let mut hydrated: std::collections::HashMap<
         String,
-        (String, String, Option<String>, String, Option<String>),
+        (
+            String,
+            String,
+            Option<String>,
+            Option<i32>,
+            f32,
+            String,
+            Option<String>,
+        ),
     > = std::collections::HashMap::with_capacity(matches.len());
-    for (cid, doc_id, content, meta_json, doc_title, source_path) in rows.flatten() {
-        hydrated.insert(cid, (doc_id, content, meta_json, doc_title, source_path));
+    for (cid, doc_id, content, meta_json, source_page, confidence, doc_title, source_path) in
+        rows.flatten()
+    {
+        hydrated.insert(
+            cid,
+            (
+                doc_id,
+                content,
+                meta_json,
+                source_page,
+                confidence,
+                doc_title,
+                source_path,
+            ),
+        );
     }
 
     // Rebuild results in original vector-search ranking order
     let mut results = Vec::with_capacity(matches.len());
     for (chunk_id, distance) in &matches {
-        let Some((doc_id, content, meta_json, doc_title, source_path)) = hydrated.remove(chunk_id)
+        let Some((doc_id, content, meta_json, source_page, extraction_confidence, doc_title, source_path)) =
+            hydrated.remove(chunk_id)
         else {
             continue;
         };
@@ -902,6 +930,8 @@ pub async fn kb_search(
             score,
             distance: *distance,
             source_path,
+            source_page,
+            extraction_confidence,
             metadata,
         });
     }
@@ -921,6 +951,89 @@ pub async fn kb_list_documents(
 ) -> Result<Vec<KbDocument>, AppError> {
     require_auth(&state).await?;
     kb_ingest::list_kb_documents(&state.user_db, &kb_id)
+}
+
+/// A Markdown overview of everything in a knowledge base — read this before
+/// searching it. Costs a few hundred tokens and tells an agent what the corpus
+/// contains, how large each document is, and which parts are unreadable scans.
+#[tauri::command]
+#[tracing::instrument(skip(state))]
+pub async fn kb_corpus_map(
+    state: State<'_, Arc<AppState>>,
+    kb_id: String,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+    kb_ingest::kb_corpus_map(&state.user_db, &kb_id)
+}
+
+// ============================================================================
+// Structured Extraction (LLM document -> typed rows) — see vector/DESIGN.md
+// ============================================================================
+
+/// Pass 1: propose an extraction schema by sampling the KB. Synchronous (one
+/// LLM call) — the user reviews/edits the result before running extraction.
+#[tauri::command]
+#[tracing::instrument(skip(state))]
+pub async fn kb_infer_schema(
+    state: State<'_, Arc<AppState>>,
+    kb_id: String,
+) -> Result<KbExtractionSchema, AppError> {
+    require_auth(&state).await?;
+    kb_extract::infer_schema(&state.user_db, &kb_id).await
+}
+
+/// Pass 2: run extraction against an approved schema. Creates a run row and
+/// processes documents in a background task; progress arrives on
+/// `kb-extraction-progress`. Returns the run id immediately.
+#[tauri::command]
+#[tracing::instrument(skip(app, state, schema))]
+pub async fn kb_run_extraction(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    kb_id: String,
+    schema: KbExtractionSchema,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    let run_id = uuid::Uuid::new_v4().to_string();
+    kb_extract::create_run(&state.user_db, &kb_id, &run_id, &schema)?;
+
+    let user_db = state.user_db.clone();
+    let run_id_task = run_id.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) =
+            kb_extract::run_extraction(app, user_db.clone(), kb_id, run_id_task.clone(), schema)
+                .await
+        {
+            tracing::error!(run_id = %run_id_task, error = %e, "KB extraction run failed");
+            let _ = kb_extract::finalize_run(&user_db, &run_id_task, 0, Some(&e.to_string()));
+        }
+    });
+
+    Ok(run_id)
+}
+
+/// All extraction runs for a KB, newest first.
+#[tauri::command]
+#[tracing::instrument(skip(state))]
+pub async fn kb_list_extraction_runs(
+    state: State<'_, Arc<AppState>>,
+    kb_id: String,
+) -> Result<Vec<KbExtractionRun>, AppError> {
+    require_auth(&state).await?;
+    kb_extract::list_runs(&state.user_db, &kb_id)
+}
+
+/// Extracted entities for a KB, optionally filtered to one entity type.
+#[tauri::command]
+#[tracing::instrument(skip(state))]
+pub async fn kb_list_entities(
+    state: State<'_, Arc<AppState>>,
+    kb_id: String,
+    entity_type: Option<String>,
+) -> Result<Vec<KbEntity>, AppError> {
+    require_auth(&state).await?;
+    kb_extract::list_entities(&state.user_db, &kb_id, entity_type.as_deref())
 }
 
 #[tauri::command]

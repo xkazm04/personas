@@ -8,4 +8,14 @@
  * three sub-scores are present (renormalised when some are missing); `None`
  * when the pair has no scored sample yet.
  */
-export type LabVersionRating = { versionId: string, versionNumber: number, modelId: string, provider: string, compositeScore: number | null, toolAccuracy: number | null, outputQuality: number | null, protocolCompliance: number | null, costUsd: number, durationMs: number, sampleCount: number, lastMeasuredAt: string | null, };
+export type LabVersionRating = { versionId: string, versionNumber: number, modelId: string, provider: string, compositeScore: number | null, toolAccuracy: number | null, outputQuality: number | null, protocolCompliance: number | null, costUsd: number, durationMs: number, 
+/**
+ * Mean prompt tokens per sample. Cost alone hides the token story when
+ * models are priced differently — a cheaper model can still be the token
+ * hog. Surfaced next to `cost_usd` in the Versions & Ratings table.
+ */
+inputTokens: number, 
+/**
+ * Mean completion tokens per sample.
+ */
+outputTokens: number, sampleCount: number, lastMeasuredAt: string | null, };

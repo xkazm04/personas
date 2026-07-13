@@ -840,7 +840,9 @@
     "eco_col_resolved": "Resueltos",
     "eco_empty": "Sin resultados de evaluación — ejecuta el Lab para ver la eficiencia de costes.",
     "eco_subtitle": "Con qué frecuencia cada modelo resuelve una evaluación y cuánto cuesta cada éxito.",
-    "eco_title": "Eficiencia de costes"
+    "eco_title": "Eficiencia de costes",
+    "vr_col_tokens": "Tokens",
+    "vr_tokens_tooltip": "{input} de entrada / {output} de salida por ejecución de media"
   },
   "design": {
     "select_agent": "Selecciona un agente para iniciar el análisis de diseño",
