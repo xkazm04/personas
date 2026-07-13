@@ -12584,7 +12584,11 @@
       "llm_usecase_linked": "Mapped to the use case \"{name}\"",
       "llm_usecase_coverage": "{mapped}/{total} mapped to a use case",
       "uc_backfill_none": "No feature label spans more than one context, so nothing was created. Use Scan to propose use cases.",
-      "uc_backfill_created": "Created {count} use case(s) for review."
+      "uc_backfill_created": "Created {count} use case(s) for review.",
+      "context_search_placeholder": "Filter contexts…",
+      "context_search_no_results": "No contexts match",
+      "context_column_label": "Context",
+      "context_pinned": "Pinned"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

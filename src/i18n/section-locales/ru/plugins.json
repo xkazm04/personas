@@ -1030,7 +1030,11 @@
     "obs_aria_view": "Раздел Observability",
     "obs_tab_llm": "LLM",
     "obs_tab_monitoring": "Мониторинг",
-    "obs_title": "Наблюдаемость"
+    "obs_title": "Наблюдаемость",
+    "context_column_label": "Контекст",
+    "context_pinned": "Закреплено",
+    "context_search_no_results": "Нет подходящих контекстов",
+    "context_search_placeholder": "Фильтр контекстов…"
   },
   "doc_signing": {
     "sign_heading": "Подписать документ",

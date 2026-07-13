@@ -1030,7 +1030,11 @@
     "obs_aria_view": "Chế độ xem Observability",
     "obs_tab_llm": "LLM",
     "obs_tab_monitoring": "Giám sát",
-    "obs_title": "Khả năng quan sát"
+    "obs_title": "Khả năng quan sát",
+    "context_column_label": "Ngữ cảnh",
+    "context_pinned": "Đã ghim",
+    "context_search_no_results": "Không có ngữ cảnh nào khớp",
+    "context_search_placeholder": "Lọc ngữ cảnh…"
   },
   "doc_signing": {
     "sign_heading": "Ký tài liệu",

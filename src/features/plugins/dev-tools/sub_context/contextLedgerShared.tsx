@@ -1,16 +1,20 @@
-// Shared scaffolding for the two Context Ledger prototype variants.
+// Shared building blocks for the Context Ledger (see ContextLedger.tsx).
 //
-// Both variants fuse the context map and the use-case slice layer into one
-// compact surface. The pieces here are what they have in common — the props
-// contract, the per-kind visual language, the per-context coverage chips, and
-// the pending-proposal triage strip — so a tweak lands once, not twice.
+// The ledger fuses the context map and the use-case slice layer into one
+// surface. These are its reusable parts — the props contract, the per-kind
+// visual language, the per-context coverage cluster, the use-case actions, and
+// the pending-proposal triage strip — kept out of the view so each is testable
+// and extractable on its own.
 import type { ReactNode } from 'react';
 import { Check, FileCode2, Layers, Lightbulb, Route, Boxes, Plug, Wrench, Gauge, Target, X } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useSystemStore } from '@/stores/systemStore';
+import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
+import type { Translations } from '@/i18n/en';
 
 import type { ContextGroup } from './contextMapTypes';
 import type { UseCasesState } from './useUseCases';
@@ -21,7 +25,7 @@ export interface GoalCoverage {
 }
 
 /** Everything a ledger variant needs — the same data ContextMapPage already
- *  computes for GroupList + UseCasePanel, handed over verbatim. */
+ *  computes for the ledger, handed over verbatim. */
 export interface ContextLedgerProps {
   groups: ContextGroup[];
   useCaseState: UseCasesState;
@@ -33,6 +37,19 @@ export interface ContextLedgerProps {
   ideaCoverageByContext: Map<string, number>;
   kpiCoverageByContext: Map<string, number>;
   hasMap: boolean;
+  /** Run the idea scanner scoped to one context (the per-row ✨ action). */
+  onScanContext: (contextId: string) => void;
+  /** The context whose per-row scan is currently running, if any. */
+  scanningContextId: string | null;
+  /** A scan (context or codebase) is in flight — disables per-row scan. */
+  scanBusy: boolean;
+  /** Group authoring — the inline "new group" form the ActionRow's + Group
+   *  button opens (the ledger hosts the form; the button lives in the page). */
+  showNewGroup: boolean;
+  onShowNewGroup: (v: boolean) => void;
+  onCreateGroup: (name: string, color: string) => void;
+  /** Kick a full codebase scan — offered from the zero-groups empty state. */
+  onScan: () => void;
 }
 
 // -- per-kind visual language --------------------------------------------------
@@ -69,12 +86,6 @@ export const KIND_DOT: Record<string, string> = {
   emerald: 'bg-emerald-400',
   amber: 'bg-amber-400',
 };
-export const KIND_CHIP: Record<string, string> = {
-  violet: 'border-violet-500/30 bg-violet-500/10 text-violet-300',
-  sky: 'border-sky-500/30 bg-sky-500/10 text-sky-300',
-  emerald: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-  amber: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-};
 
 // -- per-context coverage chips ------------------------------------------------
 
@@ -83,6 +94,10 @@ interface CoverageChipProps {
   count: number;
   label: string;
   stem: 'sky' | 'violet' | 'amber' | 'rose';
+  /** When set AND count > 0, the chip becomes a button that jumps to the
+   *  attached work (the goal spotlight / the idea triage queue). */
+  onJump?: () => void;
+  jumpTitle?: string;
 }
 
 const COVERAGE_STEM: Record<string, string> = {
@@ -93,16 +108,35 @@ const COVERAGE_STEM: Record<string, string> = {
 };
 
 /** One compact metric — an icon + a count, muted to zero when there is none.
- *  The whole row of these is how a context declares "what's attached to me". */
-export function CoverageChip({ icon, count, label, stem }: CoverageChipProps) {
+ *  The whole row of these is how a context declares "what's attached to me".
+ *  A metric with attached work is clickable and hands off to that surface. */
+export function CoverageChip({ icon, count, label, stem, onJump, jumpTitle }: CoverageChipProps) {
   const active = count > 0;
+  const cls = `inline-flex items-center gap-1 tabular-nums typo-caption ${
+    active ? COVERAGE_STEM[stem] : 'text-foreground/25'
+  }`;
+
+  if (active && onJump) {
+    return (
+      <button
+        type="button"
+        title={jumpTitle}
+        onClick={(e) => {
+          // The row itself is clickable (opens the context) — don't do both.
+          e.stopPropagation();
+          onJump();
+        }}
+        className={`${cls} hover:underline underline-offset-2`}
+      >
+        {icon}
+        {count}
+      </button>
+    );
+  }
+
   return (
     <Tooltip content={`${count} ${label}`}>
-      <span
-        className={`inline-flex items-center gap-1 tabular-nums typo-caption ${
-          active ? COVERAGE_STEM[stem] : 'text-foreground/25'
-        }`}
-      >
+      <span className={cls}>
         {icon}
         {count}
       </span>
@@ -110,11 +144,15 @@ export function CoverageChip({ icon, count, label, stem }: CoverageChipProps) {
   );
 }
 
-/** The standard four-metric coverage cluster for one context. */
+/** The standard five-metric coverage cluster for one context. Goals and ideas
+ *  are click-through: they hand off to the Goals board (seeding the spotlight)
+ *  and the idea-triage queue respectively — the shortcuts the old ContextCard
+ *  badges carried, preserved on the ledger row. */
 export function ContextCoverage({
   fileCount,
   useCaseCount,
   goalCount,
+  firstGoalId,
   ideaCount,
   kpiCount,
   t,
@@ -122,43 +160,48 @@ export function ContextCoverage({
   fileCount: number;
   useCaseCount: number;
   goalCount: number;
+  firstGoalId?: string;
   ideaCount: number;
   kpiCount: number;
   t: TDevTools;
 }) {
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
+
+  const jumpToGoals = () => {
+    if (firstGoalId) setPendingGoalSpotlightId(firstGoalId);
+    openGoalsBoard();
+  };
+  const jumpToIdeas = () => setDevToolsTab('idea-triage');
+
   return (
     <span className="inline-flex items-center gap-2.5">
       <CoverageChip icon={<FileCode2 className="w-3 h-3" />} count={fileCount} label={t.files} stem="rose" />
       <CoverageChip icon={<Layers className="w-3 h-3" />} count={useCaseCount} label={t.uc_title} stem="sky" />
-      <CoverageChip icon={<Target className="w-3 h-3" />} count={goalCount} label="goals" stem="violet" />
-      <CoverageChip icon={<Lightbulb className="w-3 h-3" />} count={ideaCount} label="ideas" stem="amber" />
+      <CoverageChip
+        icon={<Target className="w-3 h-3" />}
+        count={goalCount}
+        label="goals"
+        stem="violet"
+        onJump={jumpToGoals}
+        jumpTitle={t.context_goal_coverage_tooltip}
+      />
+      <CoverageChip
+        icon={<Lightbulb className="w-3 h-3" />}
+        count={ideaCount}
+        label="ideas"
+        stem="amber"
+        onJump={jumpToIdeas}
+        jumpTitle={t.context_idea_coverage_tooltip}
+      />
       <CoverageChip icon={<Gauge className="w-3 h-3" />} count={kpiCount} label="KPIs" stem="rose" />
     </span>
   );
 }
 
-// The subset of the dev_tools translation object the shared pieces reach for.
-// Kept structural (not the full generated type) so the variants can pass
-// `t.plugins.dev_tools` straight through.
-export interface TDevTools {
-  files: string;
-  uc_title: string;
-  uc_scan: string;
-  uc_backfill: string;
-  uc_cancel_scan: string;
-  uc_scan_tooltip: string;
-  uc_backfill_tooltip: string;
-  uc_accept: string;
-  uc_reject: string;
-  uc_proposals_heading: string;
-  uc_span_count: string;
-  uc_kind_user_flow: string;
-  uc_kind_capability: string;
-  uc_kind_integration: string;
-  uc_kind_ops: string;
-  uc_empty_no_map: string;
-  [key: string]: string;
-}
+/** The dev_tools translation slice, straight off the generated tree — so a typo
+ *  in a key is a compile error rather than an `undefined` at runtime. */
+export type TDevTools = Translations['plugins']['dev_tools'];
 
 // -- shared header actions (scan / from-features / cancel) ---------------------
 

@@ -12319,7 +12319,11 @@
       "obs_aria_view": "Zobrazení pozorovatelnosti",
       "obs_tab_llm": "LLM",
       "obs_tab_monitoring": "Monitorování",
-      "obs_title": "Pozorovatelnost"
+      "obs_title": "Pozorovatelnost",
+      "context_column_label": "Kontext",
+      "context_pinned": "Připnuto",
+      "context_search_no_results": "Žádné kontexty neodpovídají",
+      "context_search_placeholder": "Filtrovat kontexty…"
     },
     "doc_signing": {
       "sign_heading": "Podepsat dokument",

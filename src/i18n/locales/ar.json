@@ -12319,7 +12319,11 @@
       "obs_aria_view": "عرض قابلية الملاحظة",
       "obs_tab_llm": "LLM",
       "obs_tab_monitoring": "المراقبة",
-      "obs_title": "قابلية الملاحظة"
+      "obs_title": "قابلية الملاحظة",
+      "context_column_label": "السياق",
+      "context_pinned": "مثبّت",
+      "context_search_no_results": "لا توجد سياقات مطابقة",
+      "context_search_placeholder": "تصفية السياقات…"
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

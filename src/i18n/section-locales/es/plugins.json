@@ -1030,7 +1030,11 @@
     "obs_aria_view": "Vista de observabilidad",
     "obs_tab_llm": "LLM",
     "obs_tab_monitoring": "Monitorización",
-    "obs_title": "Observabilidad"
+    "obs_title": "Observabilidad",
+    "context_column_label": "Contexto",
+    "context_pinned": "Fijado",
+    "context_search_no_results": "Ningún contexto coincide con",
+    "context_search_placeholder": "Filtrar contextos…"
   },
   "doc_signing": {
     "sign_heading": "Firmar un Documento",

@@ -1030,7 +1030,11 @@
     "obs_aria_view": "ऑब्ज़र्वेबिलिटी व्यू",
     "obs_tab_llm": "LLM",
     "obs_tab_monitoring": "मॉनिटरिंग",
-    "obs_title": "ऑब्ज़र्वेबिलिटी"
+    "obs_title": "ऑब्ज़र्वेबिलिटी",
+    "context_column_label": "संदर्भ",
+    "context_pinned": "पिन किया गया",
+    "context_search_no_results": "कोई संदर्भ मेल नहीं खाता",
+    "context_search_placeholder": "संदर्भ फ़िल्टर करें…"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

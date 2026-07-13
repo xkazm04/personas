@@ -1030,7 +1030,11 @@
     "obs_aria_view": "Tampilan Observability",
     "obs_tab_llm": "LLM",
     "obs_tab_monitoring": "Pemantauan",
-    "obs_title": "Observability"
+    "obs_title": "Observability",
+    "context_column_label": "Konteks",
+    "context_pinned": "Disematkan",
+    "context_search_no_results": "Tidak ada konteks yang cocok",
+    "context_search_placeholder": "Filter konteks…"
   },
   "doc_signing": {
     "sign_heading": "Tandatangani Dokumen",

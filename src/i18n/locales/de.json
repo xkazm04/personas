@@ -12319,7 +12319,11 @@
       "obs_aria_view": "Observability-Ansicht",
       "obs_tab_llm": "LLM",
       "obs_tab_monitoring": "Monitoring",
-      "obs_title": "Observability"
+      "obs_title": "Observability",
+      "context_column_label": "Kontext",
+      "context_pinned": "Angeheftet",
+      "context_search_no_results": "Kein Kontext entspricht",
+      "context_search_placeholder": "Kontexte filtern…"
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",

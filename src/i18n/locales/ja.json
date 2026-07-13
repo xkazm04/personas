@@ -12319,7 +12319,11 @@
       "obs_aria_view": "Observabilityビュー",
       "obs_tab_llm": "LLM",
       "obs_tab_monitoring": "モニタリング",
-      "obs_title": "オブザーバビリティ"
+      "obs_title": "オブザーバビリティ",
+      "context_column_label": "コンテキスト",
+      "context_pinned": "ピン留め済み",
+      "context_search_no_results": "一致するコンテキストがありません",
+      "context_search_placeholder": "コンテキストを絞り込む…"
     },
     "doc_signing": {
       "sign_heading": "ドキュメントに署名",

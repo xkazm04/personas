@@ -12591,6 +12591,10 @@ export type Translations = {
       llm_usecase_coverage: string;
       uc_backfill_none: string;
       uc_backfill_created: string;
+      context_search_placeholder: string;
+      context_search_no_results: string;
+      context_column_label: string;
+      context_pinned: string;
     };
     doc_signing: {
       sign_heading: string;
