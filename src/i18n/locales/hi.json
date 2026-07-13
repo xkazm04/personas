@@ -696,6 +696,18 @@
       "personas_tab": "Personas (एनिमेटेड)",
       "lucide_footer": "lucide-react -- जेनेरिक आइकन लाइब्रेरी -- स्टैटिक",
       "personas_footer": "9 कस्टम आइकन -- न्यूरल/सर्किट मोटिफ -- CSS-एनिमेटेड -- थीम-अनुकूली"
+    },
+    "since_left": {
+      "alerts": "{count} अलर्ट जारी",
+      "alerts_other": "{count} अलर्ट जारी",
+      "approvals": "{count} अनुमोदन लंबित",
+      "approvals_other": "{count} अनुमोदन लंबित",
+      "dismiss": "खारिज करें",
+      "failed": "{count} विफल",
+      "failed_other": "{count} विफल",
+      "runs": "{count} रन",
+      "runs_other": "{count} रन",
+      "title": "जब से आप गए"
     }
   },
   "agents": {

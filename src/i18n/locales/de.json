@@ -696,6 +696,18 @@
       "personas_tab": "Personas (Animiert)",
       "lucide_footer": "lucide-react -- allgemeine Icon-Bibliothek -- statisch",
       "personas_footer": "9 benutzerdefinierte Icons -- neuronale/Schaltkreismotive -- CSS-animiert -- themenadaptiv"
+    },
+    "since_left": {
+      "alerts": "{count} Warnung ausgelöst",
+      "alerts_other": "{count} Warnungen ausgelöst",
+      "approvals": "{count} Freigabe ausstehend",
+      "approvals_other": "{count} Freigaben ausstehend",
+      "dismiss": "Schließen",
+      "failed": "{count} fehlgeschlagen",
+      "failed_other": "{count} fehlgeschlagen",
+      "runs": "{count} Lauf",
+      "runs_other": "{count} Läufe",
+      "title": "Seit Sie weg waren"
     }
   },
   "agents": {

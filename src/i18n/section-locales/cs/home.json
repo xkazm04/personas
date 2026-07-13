@@ -188,5 +188,17 @@
     "personas_tab": "Personas (Animované)",
     "lucide_footer": "lucide-react – univerzální knihovna ikon – statická",
     "personas_footer": "9 vlastních ikon – neuronové motivy – CSS animované – adaptivní téma"
+  },
+  "since_left": {
+    "alerts": "{count} upozornění",
+    "alerts_other": "{count} upozornění",
+    "approvals": "{count} čekající schválení",
+    "approvals_other": "{count} čekajících schválení",
+    "dismiss": "Zavřít",
+    "failed": "{count} selhalo",
+    "failed_other": "{count} selhalo",
+    "runs": "{count} běh",
+    "runs_other": "{count} běhů",
+    "title": "Od vašeho odchodu"
   }
 }

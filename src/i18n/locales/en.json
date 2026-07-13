@@ -649,6 +649,18 @@
       "active_agents": "Active Agents",
       "credentials": "Credentials"
     },
+    "since_left": {
+      "title": "Since you left",
+      "runs": "{count} run",
+      "runs_other": "{count} runs",
+      "failed": "{count} failed",
+      "failed_other": "{count} failed",
+      "alerts": "{count} alert raised",
+      "alerts_other": "{count} alerts raised",
+      "approvals": "{count} approval waiting",
+      "approvals_other": "{count} approvals waiting",
+      "dismiss": "Dismiss"
+    },
     "nav": {
       "overview": {
         "label": "Overview",

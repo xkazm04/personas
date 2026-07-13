@@ -696,6 +696,18 @@
       "personas_tab": "Personas (애니메이션)",
       "lucide_footer": "lucide-react -- 일반 아이콘 라이브러리 -- 정적",
       "personas_footer": "커스텀 아이콘 9개 -- 신경/회로 모티프 -- CSS 애니메이션 -- 테마 적응형"
+    },
+    "since_left": {
+      "alerts": "{count}개 알림 발생",
+      "alerts_other": "{count}개 알림 발생",
+      "approvals": "{count}개 승인 대기",
+      "approvals_other": "{count}개 승인 대기",
+      "dismiss": "닫기",
+      "failed": "{count}회 실패",
+      "failed_other": "{count}회 실패",
+      "runs": "{count}회 실행",
+      "runs_other": "{count}회 실행",
+      "title": "떠난 이후"
     }
   },
   "agents": {

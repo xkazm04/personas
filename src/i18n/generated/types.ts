@@ -655,6 +655,18 @@ export type Translations = {
       active_agents: string;
       credentials: string;
     };
+    since_left: {
+      title: string;
+      runs: string;
+      runs_other: string;
+      failed: string;
+      failed_other: string;
+      alerts: string;
+      alerts_other: string;
+      approvals: string;
+      approvals_other: string;
+      dismiss: string;
+    };
     nav: {
       overview: {
         label: string;

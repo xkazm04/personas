@@ -696,6 +696,18 @@
       "personas_tab": "Personas (অ্যানিমেটেড)",
       "lucide_footer": "lucide-react -- সাধারণ আইকন লাইব্রেরি -- স্ট্যাটিক",
       "personas_footer": "৯টি কাস্টম আইকন -- নিউরাল/সার্কিট মোটিফ -- CSS-অ্যানিমেটেড -- থিম-অ্যাডাপ্টিভ"
+    },
+    "since_left": {
+      "alerts": "{count}টি সতর্কতা জারি",
+      "alerts_other": "{count}টি সতর্কতা জারি",
+      "approvals": "{count}টি অনুমোদন অপেক্ষমাণ",
+      "approvals_other": "{count}টি অনুমোদন অপেক্ষমাণ",
+      "dismiss": "বাতিল করুন",
+      "failed": "{count}টি ব্যর্থ",
+      "failed_other": "{count}টি ব্যর্থ",
+      "runs": "{count}টি রান",
+      "runs_other": "{count}টি রান",
+      "title": "আপনি চলে যাওয়ার পর"
     }
   },
   "agents": {

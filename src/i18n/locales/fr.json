@@ -696,6 +696,18 @@
       "personas_tab": "Personas (Animés)",
       "lucide_footer": "lucide-react -- bibliothèque icônes générique -- statique",
       "personas_footer": "9 icônes personnalisées -- motifs neuronaux/circuits -- animées CSS -- adaptatives au thème"
+    },
+    "since_left": {
+      "alerts": "{count} alerte déclenchée",
+      "alerts_other": "{count} alertes déclenchées",
+      "approvals": "{count} approbation en attente",
+      "approvals_other": "{count} approbations en attente",
+      "dismiss": "Ignorer",
+      "failed": "{count} en échec",
+      "failed_other": "{count} en échec",
+      "runs": "{count} exécution",
+      "runs_other": "{count} exécutions",
+      "title": "Depuis votre départ"
     }
   },
   "agents": {

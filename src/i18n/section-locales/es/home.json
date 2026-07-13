@@ -188,5 +188,17 @@
     "personas_tab": "Personas (Animado)",
     "lucide_footer": "lucide-react -- biblioteca de íconos genérica -- estático",
     "personas_footer": "9 íconos personalizados -- motivos neurales/circuitos -- animados con CSS -- adaptativos al tema"
+  },
+  "since_left": {
+    "alerts": "{count} alerta generada",
+    "alerts_other": "{count} alertas generadas",
+    "approvals": "{count} aprobación pendiente",
+    "approvals_other": "{count} aprobaciones pendientes",
+    "dismiss": "Descartar",
+    "failed": "{count} fallida",
+    "failed_other": "{count} fallidas",
+    "runs": "{count} ejecución",
+    "runs_other": "{count} ejecuciones",
+    "title": "Desde que te fuiste"
   }
 }

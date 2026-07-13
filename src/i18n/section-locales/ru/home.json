@@ -188,5 +188,17 @@
     "personas_tab": "Personas (анимированные)",
     "lucide_footer": "lucide-react — универсальная библиотека иконок — статические",
     "personas_footer": "9 пользовательских иконок — нейронные/схемные мотивы — CSS-анимация — адаптивная тема"
+  },
+  "since_left": {
+    "alerts": "{count} оповещение",
+    "alerts_other": "{count} оповещений",
+    "approvals": "{count} ожидает подтверждения",
+    "approvals_other": "{count} ожидают подтверждения",
+    "dismiss": "Закрыть",
+    "failed": "{count} с ошибкой",
+    "failed_other": "{count} с ошибками",
+    "runs": "{count} запуск",
+    "runs_other": "{count} запусков",
+    "title": "С момента вашего ухода"
   }
 }
