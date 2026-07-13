@@ -338,6 +338,18 @@ pub fn is_technical_failure(category: &ErrorCategory) -> bool {
 }
 
 /// Returns `true` for categories that should trigger provider failover.
+///
+/// This is the **guard on the failover/breaker layer entry**: only eligible
+/// categories cross into the provider circuit breaker. It is consumed in two
+/// load-bearing places, both keyed off this single predicate so the FFI never
+/// drifts from the engine:
+/// - [`super::failover::classify_error`] returns `Some(category)` iff eligible;
+///   the runner records a provider-circuit-breaker failure only when that is
+///   `Some` (see `runner::mod` — "Record circuit breaker outcome"). An
+///   ineligible category (credential/validation/tool/unknown) never counts
+///   toward the provider breaker.
+/// - `AppError`'s serializer emits a `failover_eligible` hint over IPC so the
+///   frontend can branch without re-running any classifier (`crate::error`).
 pub fn is_failover_eligible(category: &ErrorCategory) -> bool {
     matches!(
         category,

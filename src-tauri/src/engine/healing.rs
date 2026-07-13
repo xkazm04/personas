@@ -81,7 +81,11 @@ pub enum HealingAction {
 /// Full diagnosis produced by [`diagnose`].
 #[derive(Debug, Clone)]
 pub struct HealingDiagnosis {
-    #[allow(dead_code)]
+    /// The failure category this diagnosis was produced for. Load-bearing:
+    /// `engine::mod::retry_reason_for` matches on it to pick the
+    /// `scheduled_retries` reason tag (`api_error_resume` vs
+    /// `usage_limit_window`), which in turn drives the drain path's
+    /// resume-vs-fresh decision. Keep it populated on every construction.
     pub category: FailureCategory,
     pub action: HealingAction,
     pub title: String,

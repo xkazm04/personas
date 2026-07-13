@@ -31,8 +31,7 @@ fn persona_ctx(consecutive_failures: u32) -> HealingContext<'static> {
         // A non-auto-fixable error so the orchestrator's only knob is the
         // persona-level breaker count, not the rule-based retry path.
         error: "Claude CLI not found",
-        timed_out: false,
-        session_limit_reached: false,
+        category: crate::engine::healing::FailureCategory::ProviderNotFound,
         usage_limit: None,
         execution_state: "failed",
         timeout_ms: 600_000,

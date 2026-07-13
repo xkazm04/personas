@@ -2882,10 +2882,13 @@ fn evaluate_healing_and_retry(
         .unwrap_or(0);
 
     // --- Decision tree (see healing_orchestrator module docs for precedence) ---
+    // `category` was classified once above (the single classification on the
+    // failure path) — thread it in so the orchestrator does NOT re-run the
+    // string ladder. `timed_out` / `session_limit_reached` already folded into
+    // `category` via `classify_error`, so they are not passed again.
     let ctx = healing_orchestrator::HealingContext {
         error: error_str,
-        timed_out,
-        session_limit_reached: result.session_limit_reached,
+        category,
         usage_limit: result.usage_limit.as_ref(),
         execution_state: exec_state_str,
         timeout_ms,
