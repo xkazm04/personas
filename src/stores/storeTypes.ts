@@ -16,6 +16,7 @@ import type { EventSlice } from "./slices/overview/eventSlice";
 import type { HealingSlice } from "./slices/overview/healingSlice";
 import type { TeamSlice } from "./slices/pipeline/teamSlice";
 import type { AssignmentSlice } from "./slices/pipeline/assignmentSlice";
+import type { ChannelSlice } from "./slices/pipeline/channelSlice";
 import type { MemorySlice } from "./slices/overview/memorySlice";
 import type { UiSlice } from "./slices/system/uiSlice";
 import type { TestSlice } from "./slices/agents/testSlice";
@@ -210,12 +211,13 @@ export type OverviewStore = CoreState &
   CertificationSlice &
   ProcessActivitySlice;
 
-/** Pipeline domain: triggers, teams, recipes, assignments */
+/** Pipeline domain: triggers, teams, recipes, assignments, team channels */
 export type PipelineStore = CoreState &
   TriggerSlice &
   TeamSlice &
   RecipeSlice &
-  AssignmentSlice;
+  AssignmentSlice &
+  ChannelSlice;
 
 /** Vault domain: credentials, databases, automations, rotation, catalog UI prefs */
 export type VaultStore = CoreState &

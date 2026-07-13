@@ -12,6 +12,7 @@ import { useLabEvents } from "@/hooks/lab/useLabEvents";
 import { useHealthDigestScheduler, useHealthDigestPrefetch } from "@/features/agents/sub_health";
 import { useRemediationEvaluator } from "@/features/vault/shared/hooks/health/useRemediationEvaluator";
 import { useAssignmentNotificationDispatcher, useGlobalAssignmentProgressListener } from "@/features/teams/sub_assignments";
+import { useChannelService } from "@/features/teams/sub_collab/useChannelService";
 import { useAthenaAssignmentReconciliation } from "@/features/plugins/companion/useAthenaAssignmentReconciliation";
 import { useObsidianVaultRehydration } from "@/features/plugins/obsidian-brain/useObsidianVaultRehydration";
 import { useGlobalAlertEvaluator } from "@/features/overview/sub_observability/libs/useGlobalAlertEvaluator";
@@ -37,6 +38,11 @@ export default function BackgroundServices() {
   // module, so the live checklist + assignment board reflect reality the
   // instant the user returns to the team.
   useGlobalAssignmentProgressListener();
+  // The single refresh driver for every subscribed team channel — one poll loop
+  // and one TEAM_ASSIGNMENT_PROGRESS listener for the whole app. Channel
+  // surfaces (collab, the merged timeline, live pop-ups) only declare interest
+  // via subscribeChannel; they no longer fetch for themselves.
+  useChannelService();
   // Phase 4 — when an Athena-dispatched assignment finishes, record its outcome
   // into OperativeMemory so Athena's chat can reason about the team's result.
   useAthenaAssignmentReconciliation();
