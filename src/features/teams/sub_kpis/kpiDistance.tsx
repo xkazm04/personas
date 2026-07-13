@@ -11,6 +11,7 @@ export const CHART_ROW_H = 38;
 export interface DistanceRow {
   id: string;
   name: string;
+  projectId: string;
   project: string;
   /** Progress toward target, 0–115% (overshoot visible). */
   pct: number;
@@ -20,6 +21,8 @@ export interface DistanceRow {
   unit: string;
   track: KpiTrack;
   reason: OffTrackReason | null;
+  /** KPI category token — lets the board render its icon without the DevKpi. */
+  category: string;
 }
 
 export interface DistanceGroup {

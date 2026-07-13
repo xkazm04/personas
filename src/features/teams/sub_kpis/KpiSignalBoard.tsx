@@ -1,34 +1,38 @@
-// KpiSignalBoard — /prototype: combining the dashboard's "Needs attention" and
-// "Distance to target" sections into one surface. Three variants behind a
-// `variant` prop:
-//   · 'separate' — baseline: the attention strip stacked above the distance
-//                  chart (today's layout);
-//   · 'unified'  — ONE pace board. Every KPI is a pace row grouped by context;
-//                  off-track rows are flagged + pinned to the top of their
-//                  group, so "needs attention" is emphasis inside the board
-//                  rather than a separate strip;
-//   · 'split'    — the attention list and the distance chart side by side in a
-//                  two-pane grid, so triage and full-picture read together.
-import { Gauge, ShieldAlert } from 'lucide-react';
+// KpiSignalBoard — /prototype: enriching "Distance to target" by grouping it
+// BY PROJECT and injecting the off-track error alerts inside each project's
+// group. Three variants behind a `variant` prop:
+//   · 'separate' — baseline: attention strip stacked above a context-grouped
+//                  distance chart (today's layout, kept for A/B);
+//   · 'dossier'  — one card per project. An alert BAND is injected at the head
+//                  of the card (that project's off-track KPIs as incident
+//                  chips), with the project's full distance bars underneath;
+//   · 'inline'   — one card per project, rendered as pace rows. Off-track KPIs
+//                  are injected IN PLACE as expanded alert rows (reason + value
+//                  + bar), pinned above the healthy rows. The alert *is* the row.
+import { FolderKanban, Gauge, ShieldAlert } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { OffTrackReason } from './kpiMath';
+import { categoryMeta } from './kpiMeta';
 import { DistanceBars, type DistanceGroup, type DistanceRow } from './kpiDistance';
 import { KpiNeedsAttention } from './KpiNeedsAttention';
 
-export type SignalVariant = 'separate' | 'unified' | 'split';
+export type SignalVariant = 'separate' | 'dossier' | 'inline';
 
 interface BoardProps {
   offTrack: DevKpi[];
+  /** Distance rows grouped by context — the baseline's grouping. */
   distanceGroups: DistanceGroup[];
+  /** Distance rows grouped by project — the enriched grouping. */
+  projectGroups: DistanceGroup[];
   projectName: (id: string) => string;
   onOpen: (kpiId: string) => void;
 }
 
 export function KpiSignalBoard({ variant, ...props }: BoardProps & { variant: SignalVariant }) {
-  if (variant === 'unified') return <UnifiedBoard {...props} />;
-  if (variant === 'split') return <SplitBoard {...props} />;
+  if (variant === 'dossier') return <DossierBoard {...props} />;
+  if (variant === 'inline') return <InlineBoard {...props} />;
   return <SeparateBoard {...props} />;
 }
 
@@ -44,6 +48,8 @@ function useReasonLabel() {
   };
 }
 
+const isOff = (r: DistanceRow) => r.track === 'off-track';
+
 // -- shared chrome -----------------------------------------------------------
 
 function Panel({ title, icon: Icon, right, children }: { title: string; icon: typeof Gauge; right?: React.ReactNode; children: React.ReactNode }) {
@@ -51,7 +57,7 @@ function Panel({ title, icon: Icon, right, children }: { title: string; icon: ty
     <section className="rounded-card border border-primary/15 bg-secondary/10 p-4 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none">
       <div className="flex items-center gap-1.5 mb-3">
         <Icon className="w-3.5 h-3.5 text-primary" aria-hidden />
-        <h3 className="typo-overline text-foreground flex-1">{title}</h3>
+        <h3 className="typo-overline text-foreground flex-1 truncate">{title}</h3>
         {right}
       </div>
       {children}
@@ -59,13 +65,13 @@ function Panel({ title, icon: Icon, right, children }: { title: string; icon: ty
   );
 }
 
-/** The grouped distance chart body (recharts bars per context group). */
-function DistanceChart({ distanceGroups, onOpen }: { distanceGroups: DistanceGroup[]; onOpen: (id: string) => void }) {
+/** The grouped distance chart body (recharts bars per group). */
+function DistanceChart({ groups, onOpen }: { groups: DistanceGroup[]; onOpen: (id: string) => void }) {
   return (
     <div className="space-y-4">
-      {distanceGroups.map((g) => (
+      {groups.map((g) => (
         <div key={g.key}>
-          {distanceGroups.length > 1 && (
+          {groups.length > 1 && (
             <div className="flex items-center gap-2 mb-1.5">
               <span className="typo-caption text-foreground font-medium truncate">{g.label}</span>
               <span className="typo-caption text-foreground tabular-nums">{g.rows.length}</span>
@@ -78,7 +84,14 @@ function DistanceChart({ distanceGroups, onOpen }: { distanceGroups: DistanceGro
   );
 }
 
-// -- separate (baseline: strip stacked above distance) -----------------------
+/** "3 off track" — the per-project severity count, or nothing when healthy. */
+function OffCount({ n }: { n: number }) {
+  const { t, tx } = useTranslation();
+  if (n === 0) return null;
+  return <span className="typo-caption text-status-error tabular-nums">{tx(t.kpis.attn_off_count, { count: n })}</span>;
+}
+
+// -- separate (baseline: strip stacked above context-grouped distance) -------
 
 function SeparateBoard({ offTrack, distanceGroups, projectName, onOpen }: BoardProps) {
   const { t } = useTranslation();
@@ -86,27 +99,99 @@ function SeparateBoard({ offTrack, distanceGroups, projectName, onOpen }: BoardP
     <div className="space-y-4">
       <KpiNeedsAttention offTrack={offTrack} projectName={projectName} onOpen={onOpen} />
       <Panel title={t.kpis.chart_distance_title} icon={Gauge}>
-        <DistanceChart distanceGroups={distanceGroups} onOpen={onOpen} />
+        <DistanceChart groups={distanceGroups} onOpen={onOpen} />
       </Panel>
     </div>
   );
 }
 
-// -- unified (one pace board, off-track pinned + flagged) --------------------
+// -- dossier (project card; alert band injected at the head) -----------------
 
-function PaceRow({ row, reasonLabel, onOpen }: { row: DistanceRow; reasonLabel: (r: OffTrackReason | null) => string | null; onOpen: (id: string) => void }) {
-  const off = row.track === 'off-track';
-  const reason = off ? reasonLabel(row.reason) : null;
+function IncidentChip({ row, onOpen }: { row: DistanceRow; onOpen: (id: string) => void }) {
+  const reasonLabel = useReasonLabel();
+  const CatIcon = categoryMeta(row.category).icon;
+  const reason = reasonLabel(row.reason);
   return (
     <button
       type="button"
       onClick={() => onOpen(row.id)}
-      data-testid={`kpi-pace-${row.id}`}
-      className={`w-full flex items-center gap-3 rounded-interactive px-2 py-1.5 text-left transition-colors ${
-        off ? 'bg-status-error/8 hover:bg-status-error/15' : 'hover:bg-secondary/30'
+      data-testid={`kpi-attention-${row.id}`}
+      className="inline-flex items-center gap-1.5 rounded-interactive border border-status-error/40 bg-status-error/10 hover:bg-status-error/20 transition-colors px-2 py-1"
+    >
+      <CatIcon className="w-3.5 h-3.5 text-status-error flex-shrink-0" aria-hidden />
+      <span className="typo-caption text-foreground font-medium">{row.name}</span>
+      <span className="typo-caption text-foreground/80 tabular-nums">
+        {row.current ?? '—'}/{row.target ?? '—'} {row.unit}
+      </span>
+      {reason && (
+        <span className="typo-overline text-status-error border-l border-status-error/30 pl-1.5">{reason}</span>
+      )}
+    </button>
+  );
+}
+
+function DossierBoard({ projectGroups, onOpen }: BoardProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-4" data-testid="kpi-signal-dossier">
+      {projectGroups.map((g) => {
+        const off = g.rows.filter(isOff);
+        return (
+          <Panel
+            key={g.key}
+            title={g.label}
+            icon={FolderKanban}
+            right={
+              <div className="flex items-center gap-2">
+                <OffCount n={off.length} />
+                <span className="typo-caption text-foreground/70 tabular-nums">{g.rows.length}</span>
+              </div>
+            }
+          >
+            {/* The error alerts, injected at the head of the project's card. */}
+            {off.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap rounded-card border border-status-error/30 bg-status-error/5 px-2.5 py-2 mb-3">
+                <ShieldAlert className="w-4 h-4 text-status-error flex-shrink-0" aria-hidden />
+                <span className="typo-overline text-status-error mr-1">{t.kpis.attention_label}</span>
+                {off.map((row) => (
+                  <IncidentChip key={row.id} row={row} onOpen={onOpen} />
+                ))}
+              </div>
+            )}
+            <DistanceBars rows={g.rows} onOpen={onOpen} />
+          </Panel>
+        );
+      })}
+    </div>
+  );
+}
+
+// -- inline (project card; off-track injected in place as alert rows) --------
+
+function PaceRow({ row, onOpen }: { row: DistanceRow; onOpen: (id: string) => void }) {
+  const reasonLabel = useReasonLabel();
+  const off = isOff(row);
+  const CatIcon = categoryMeta(row.category).icon;
+  const reason = off ? reasonLabel(row.reason) : null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(row.id)}
+      data-testid={off ? `kpi-attention-${row.id}` : `kpi-pace-${row.id}`}
+      className={`w-full flex items-center gap-3 px-2.5 py-2 text-left transition-colors ${
+        off
+          ? 'rounded-card border border-status-error/35 bg-status-error/8 hover:bg-status-error/15'
+          : 'rounded-interactive hover:bg-secondary/30'
       }`}
     >
-      <span className="typo-caption text-foreground truncate flex-1 min-w-0">{row.name}</span>
+      <CatIcon
+        className={`w-3.5 h-3.5 flex-shrink-0 ${off ? 'text-status-error' : 'text-foreground/50'}`}
+        aria-hidden
+      />
+      <span className={`typo-caption truncate flex-1 min-w-0 ${off ? 'text-foreground font-medium' : 'text-foreground'}`}>
+        {row.name}
+      </span>
       <span className="hidden sm:block w-32 h-1.5 rounded-full bg-primary/10 overflow-hidden flex-shrink-0">
         <span className="block h-full rounded-full" style={{ width: `${Math.min(100, row.pct)}%`, background: row.fill }} />
       </span>
@@ -121,79 +206,35 @@ function PaceRow({ row, reasonLabel, onOpen }: { row: DistanceRow; reasonLabel: 
   );
 }
 
-function UnifiedBoard({ distanceGroups, onOpen }: BoardProps) {
-  const { t, tx } = useTranslation();
-  const reasonLabel = useReasonLabel();
-  const offCount = distanceGroups.reduce((n, g) => n + g.rows.filter((r) => r.track === 'off-track').length, 0);
-
+function InlineBoard({ projectGroups, onOpen }: BoardProps) {
   return (
-    <Panel
-      title={t.kpis.chart_distance_title}
-      icon={Gauge}
-      right={
-        offCount > 0 ? (
-          <span className="typo-caption text-status-error tabular-nums">{tx(t.kpis.attn_off_count, { count: offCount })}</span>
-        ) : undefined
-      }
-    >
-      <div className="space-y-4" data-testid="kpi-signal-unified">
-        {distanceGroups.map((g) => {
-          // Off-track first (attention), then by name — the "needs attention"
-          // emphasis, folded into the pace list.
-          const rows = [...g.rows].sort(
-            (a, b) => Number(b.track === 'off-track') - Number(a.track === 'off-track') || a.name.localeCompare(b.name),
-          );
-          const offInGroup = rows.filter((r) => r.track === 'off-track').length;
-          return (
-            <div key={g.key}>
-              {distanceGroups.length > 1 && (
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="typo-caption text-foreground font-medium truncate">{g.label}</span>
-                  <span className="typo-caption text-foreground/70 tabular-nums">{rows.length}</span>
-                  {offInGroup > 0 && (
-                    <span className="typo-overline text-status-error">{tx(t.kpis.attn_off_count, { count: offInGroup })}</span>
-                  )}
-                </div>
-              )}
-              <div className="space-y-0.5">
-                {rows.map((row) => (
-                  <PaceRow key={row.id} row={row} reasonLabel={reasonLabel} onOpen={onOpen} />
-                ))}
+    <div className="space-y-4" data-testid="kpi-signal-inline">
+      {projectGroups.map((g) => {
+        // Off-track injected in place, pinned above the healthy rows.
+        const rows = [...g.rows].sort(
+          (a, b) => Number(isOff(b)) - Number(isOff(a)) || a.name.localeCompare(b.name),
+        );
+        const off = rows.filter(isOff);
+        return (
+          <Panel
+            key={g.key}
+            title={g.label}
+            icon={FolderKanban}
+            right={
+              <div className="flex items-center gap-2">
+                <OffCount n={off.length} />
+                <span className="typo-caption text-foreground/70 tabular-nums">{rows.length}</span>
               </div>
+            }
+          >
+            <div className="space-y-1">
+              {rows.map((row) => (
+                <PaceRow key={row.id} row={row} onOpen={onOpen} />
+              ))}
             </div>
-          );
-        })}
-      </div>
-    </Panel>
-  );
-}
-
-// -- split (attention + distance side by side) -------------------------------
-
-function SplitBoard({ offTrack, distanceGroups, projectName, onOpen }: BoardProps) {
-  const { t } = useTranslation();
-  const hasAttention = offTrack.length > 0;
-
-  if (!hasAttention) {
-    return (
-      <Panel title={t.kpis.chart_distance_title} icon={Gauge}>
-        <DistanceChart distanceGroups={distanceGroups} onOpen={onOpen} />
-      </Panel>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start" data-testid="kpi-signal-split">
-      <div className="space-y-2">
-        <div className="flex items-center gap-1.5">
-          <ShieldAlert className="w-3.5 h-3.5 text-status-error" aria-hidden />
-          <h3 className="typo-overline text-status-error">{t.kpis.attention_label}</h3>
-        </div>
-        <KpiNeedsAttention offTrack={offTrack} projectName={projectName} onOpen={onOpen} />
-      </div>
-      <Panel title={t.kpis.chart_distance_title} icon={Gauge}>
-        <DistanceChart distanceGroups={distanceGroups} onOpen={onOpen} />
-      </Panel>
+          </Panel>
+        );
+      })}
     </div>
   );
 }
