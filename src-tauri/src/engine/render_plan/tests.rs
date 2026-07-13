@@ -340,6 +340,7 @@ fn title_item(id: &str, start: f64, duration: f64, text: &str) -> TimelineItem {
         color_hex: "#ffffff".into(),
         fade_in: 0.0,
         fade_out: 0.0,
+        enter: None,
     })
 }
 
@@ -379,6 +380,7 @@ fn titles_composite_on_top_of_images() {
             scale: 1.0,
             fade_in: 0.0,
             fade_out: 0.0,
+            enter: None,
         }),
     ];
     let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
@@ -428,6 +430,58 @@ fn title_with_unavailable_font_falls_back_and_warns() {
         .warnings
         .iter()
         .any(|w| matches!(w, CompileWarning::TextFontMissing { .. })));
+}
+
+#[test]
+fn overlay_entrance_resolves_and_clamps() {
+    let mut comp = empty_comp();
+    // Entrance duration deliberately longer than the clip — must clamp.
+    comp.items = vec![TimelineItem::Image(ImageItemInput {
+        id: Some("i1".into()),
+        label: None,
+        file_path: "/logo.png".into(),
+        start_time: 0.0,
+        duration: 1.0,
+        position_x: 0.5,
+        position_y: 0.5,
+        scale: 1.0,
+        fade_in: 0.0,
+        fade_out: 0.0,
+        enter: Some(OverlayEnterInput {
+            duration: 5.0,
+            offset_x: 0.0,
+            offset_y: 0.2,
+            easing: Some("easeOut".into()),
+        }),
+    })];
+    let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
+
+    let OverlayStage::Image(img) = &plan.overlays[0] else {
+        panic!("expected image overlay");
+    };
+    let enter = img.enter.as_ref().expect("entrance resolved");
+    assert!(enter.duration <= 1.0, "entrance clamped to clip duration");
+    assert_eq!(enter.offset_y, 0.2);
+    assert_eq!(enter.easing, Easing::EaseOut);
+}
+
+#[test]
+fn zero_offset_entrance_collapses_to_none() {
+    let mut comp = empty_comp();
+    comp.items = vec![title_item("t1", 0.0, 2.0, "hi")];
+    if let TimelineItem::Title(t) = &mut comp.items[0] {
+        t.enter = Some(OverlayEnterInput {
+            duration: 0.5,
+            offset_x: 0.0,
+            offset_y: 0.0,
+            easing: None,
+        });
+    }
+    let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
+    let OverlayStage::Text(txt) = &plan.overlays[0] else {
+        panic!("expected text overlay");
+    };
+    assert!(txt.enter.is_none(), "a zero-offset entrance is nothing to animate");
 }
 
 #[test]
@@ -529,6 +583,7 @@ fn baseline_plan() -> RenderPlan {
             scale: 1.0,
             fade_in: 0.0,
             fade_out: 0.0,
+            enter: None,
         }),
     ];
     compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap()

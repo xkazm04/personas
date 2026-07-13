@@ -166,6 +166,28 @@ composites on top of cutouts. Adding a title never changes the meaning of an
 existing beat — they are separate item types precisely so that invariant
 holds.
 
+#### Overlay entrance animation
+
+Both image and title overlays carry an optional `enter` (`OverlayEnter`): a
+positional entrance where the overlay starts offset from its resting position
+and eases in over `duration` seconds. This is the "spring up, staggered"
+motion an explainer video is built from — each cutout rises into place, and
+staggering falls out naturally from each overlay's own `outputStart`.
+
+Scope is deliberately **position + opacity only, not scale**:
+
+- ffmpeg's `overlay` filter accepts time-varying `x`/`y` expressions, so
+  position animates in a single filtergraph pass (`overlay_pos_expr` in
+  `ffmpeg.rs` emits the eased expression; `enterOffset` in
+  `renderPlanHelpers.ts` is the preview's matching math). Easing curves:
+  `linear`, `easeOut` (`1-(1-p)²`), `easeInOut` (cosine).
+- Opacity continues to use the existing fade envelope.
+- **Scale is not animated.** ffmpeg's `scale` filter params are not
+  time-varying, so a scale-spring would need a second, per-frame render path
+  (headless-Chromium / Remotion-style) that duplicates the preview↔export
+  parity the RenderPlan IR exists to avoid. That's the deferred follow-up; the
+  positional entrance delivers the staggered slide-in today.
+
 ### Transition semantics (still relevant)
 
 Fold mode (today's default) applies this rule in the compiler:

@@ -52,6 +52,31 @@ export interface BeatAnchor {
   occurrence: number;
 }
 
+/** Overlay easing curve. Matches the Rust `Easing` enum. */
+export type OverlayEasing = 'linear' | 'easeOut' | 'easeInOut';
+
+/**
+ * A positional entrance animation shared by image and title overlays. The
+ * overlay starts at `position + (offsetX, offsetY)` and eases to `position`
+ * over `duration` seconds. Position + opacity only (opacity via the fade
+ * envelope) — scale is deliberately not animated. Mirrors the Rust
+ * `OverlayEnterInput`.
+ */
+export interface OverlayEntrance {
+  duration: number;
+  offsetX: number;
+  offsetY: number;
+  easing: OverlayEasing;
+}
+
+/** A slide-up entrance: rises from ~15% of frame height, quick ease-out. */
+export const ENTRANCE_SPRING_UP: OverlayEntrance = {
+  duration: 0.4,
+  offsetX: 0,
+  offsetY: 0.15,
+  easing: 'easeOut',
+};
+
 export interface ImageItem extends TimelineItemBase {
   type: 'image';
   filePath: string;
@@ -62,6 +87,8 @@ export interface ImageItem extends TimelineItemBase {
   positionY: number;
   fadeIn?: number;
   fadeOut?: number;
+  /** Optional positional entrance. Undefined = static. */
+  enter?: OverlayEntrance;
 }
 
 /**
@@ -88,6 +115,8 @@ export interface TitleItem extends TimelineItemBase {
   colorHex: string;
   fadeIn?: number;
   fadeOut?: number;
+  /** Optional positional entrance. Undefined = static. */
+  enter?: OverlayEntrance;
 }
 
 /** Defaults for a newly added title. Bold, centered, legible on any footage. */

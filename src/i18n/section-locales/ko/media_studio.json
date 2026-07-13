@@ -153,5 +153,18 @@
   "beat_sidebar_collapse": "비트 목록 접기",
   "beat_sidebar_expand": "비트 목록 확장",
   "beat_sidebar_empty": "아직 비트가 없습니다. 타임라인에 이정표를 표시하려면 텍스트 비트를 추가하세요.",
-  "beat_sidebar_untitled": "(제목 없음)"
+  "beat_sidebar_untitled": "(제목 없음)",
+  "add_title": "제목 추가",
+  "entrance": "등장",
+  "entrance_animate": "등장 애니메이션",
+  "entrance_down": "아래",
+  "entrance_duration": "속도",
+  "entrance_left": "왼쪽",
+  "entrance_none": "없음",
+  "entrance_right": "오른쪽",
+  "entrance_up": "위",
+  "layer_title": "제목",
+  "title_text": "제목 텍스트",
+  "title_text_placeholder": "제목 입력…",
+  "title_untitled": "(제목 없음)"
 }

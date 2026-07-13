@@ -292,10 +292,48 @@ pub struct ImageOverlayStage {
     pub position_x: f64,
     pub position_y: f64,
 
+    /// Optional positional entrance — the overlay eases into `position_*` from
+    /// an offset. This is the "spring up, staggered" motion an explainer video
+    /// is built from. None = the overlay is static at `position_*`.
+    pub enter: Option<OverlayEnter>,
+
     /// Must reference a 'file' or 'proxy' source.
     pub source_id: u32,
     /// 1.0 = source's natural size within the frame.
     pub scale: f64,
+}
+
+/// A positional entrance animation. The overlay starts at
+/// `position + (offset_x, offset_y)` and eases to `position` over `duration`
+/// seconds from the stage's `output_start`.
+///
+/// Deliberately position + opacity only, NOT scale. ffmpeg's `overlay` filter
+/// takes time-varying `x`/`y` expressions, so position animates cleanly in a
+/// single filtergraph pass with no per-frame rasterizer. Scale is not
+/// time-varying in the `scale` filter, so a scale-spring would need a second
+/// render path — deferred. Opacity uses the existing fade envelope.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayEnter {
+    /// Seconds from `output_start` over which the entrance plays. Clamped to
+    /// the stage duration by the compiler.
+    pub duration: f64,
+    /// Starting offset in frame-relative units (fraction of width / height),
+    /// added to `position_*` at t=output_start and eased to 0 by
+    /// output_start + duration. Positive `offset_y` = rises up into place.
+    pub offset_x: f64,
+    pub offset_y: f64,
+    pub easing: Easing,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, TS, PartialEq, Eq)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub enum Easing {
+    Linear,
+    EaseOut,
+    EaseInOut,
 }
 
 /// A burned-in title / caption / number, composited over the video track and
@@ -332,6 +370,10 @@ pub struct TextOverlayStage {
     /// (previewHeight / composition.height).
     pub font_size_px: u32,
     pub color_hex: String,
+
+    /// Optional positional entrance — see `OverlayEnter`. Same motion model as
+    /// image overlays so a title can slide/pop in alongside its cutouts.
+    pub enter: Option<OverlayEnter>,
 }
 
 impl OverlayStage {

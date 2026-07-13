@@ -153,5 +153,18 @@
   "beat_sidebar_collapse": "বীট তালিকা সঙ্কুচিত করুন",
   "beat_sidebar_expand": "বিট তালিকা প্রসারিত করুন",
   "beat_sidebar_empty": "এখনও কোন বীট. টাইমলাইনে মাইলস্টোন চিহ্নিত করতে একটি টেক্সট বীট যোগ করুন।",
-  "beat_sidebar_untitled": "(শিরোনামহীন)"
+  "beat_sidebar_untitled": "(শিরোনামহীন)",
+  "add_title": "শিরোনাম যোগ করুন",
+  "entrance": "প্রবেশ",
+  "entrance_animate": "প্রবেশ অ্যানিমেশন",
+  "entrance_down": "নিচে",
+  "entrance_duration": "গতি",
+  "entrance_left": "বামে",
+  "entrance_none": "কোনোটি নয়",
+  "entrance_right": "ডানে",
+  "entrance_up": "উপরে",
+  "layer_title": "শিরোনামসমূহ",
+  "title_text": "শিরোনাম টেক্সট",
+  "title_text_placeholder": "শিরোনাম টাইপ করুন…",
+  "title_untitled": "(খালি শিরোনাম)"
 }

@@ -14424,7 +14424,20 @@
     "beat_sidebar_collapse": "Beatliste einklappen",
     "beat_sidebar_expand": "Beatliste erweitern",
     "beat_sidebar_empty": "Noch keine Beats. Fügen Sie einen Text-Beat hinzu, um Meilensteine ​​auf der Zeitleiste zu markieren.",
-    "beat_sidebar_untitled": "(ohne Titel)"
+    "beat_sidebar_untitled": "(ohne Titel)",
+    "add_title": "Titel hinzufügen",
+    "entrance": "Einblendung",
+    "entrance_animate": "Einblenden",
+    "entrance_down": "Runter",
+    "entrance_duration": "Geschwindigkeit",
+    "entrance_left": "Links",
+    "entrance_none": "Keine",
+    "entrance_right": "Rechts",
+    "entrance_up": "Hoch",
+    "layer_title": "Titel",
+    "title_text": "Titeltext",
+    "title_text_placeholder": "Titel eingeben…",
+    "title_untitled": "(leerer Titel)"
   },
   "research_lab": {
     "dashboard": "Dashboard",

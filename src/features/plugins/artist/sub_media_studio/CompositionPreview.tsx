@@ -11,7 +11,7 @@ import type { RenderPlan } from '@/lib/bindings/RenderPlan';
 import type { SourceEntry } from '@/lib/bindings/SourceEntry';
 import type { TextOverlayStage } from '@/lib/bindings/TextOverlayStage';
 import type { VideoStage } from '@/lib/bindings/VideoStage';
-import { approxLoudnormGain, fadeEnvelope } from './renderPlanHelpers';
+import { approxLoudnormGain, enterOffset, fadeEnvelope } from './renderPlanHelpers';
 import { silentCatch } from '@/lib/silentCatch';
 
 
@@ -386,6 +386,7 @@ function CompositionPreviewImpl(
             const local = currentTime - overlay.outputStart;
             const duration = overlay.outputEnd - overlay.outputStart;
             const opacity = fadeEnvelope(local, duration, overlay.fadeIn, overlay.fadeOut);
+            const { dx, dy } = enterOffset(overlay.enter, local);
             const path = imagePathFor(overlay);
             if (!path) return null;
             return (
@@ -393,8 +394,8 @@ function CompositionPreviewImpl(
                 key={overlay.id}
                 className="absolute pointer-events-none"
                 style={{
-                  left: `${overlay.positionX * 100}%`,
-                  top: `${overlay.positionY * 100}%`,
+                  left: `${(overlay.positionX + dx) * 100}%`,
+                  top: `${(overlay.positionY + dy) * 100}%`,
                   transform: `translate(-50%, -50%) scale(${overlay.scale})`,
                   opacity,
                 }}
@@ -416,13 +417,14 @@ function CompositionPreviewImpl(
               const local = currentTime - overlay.outputStart;
               const duration = overlay.outputEnd - overlay.outputStart;
               const opacity = fadeEnvelope(local, duration, overlay.fadeIn, overlay.fadeOut);
+              const { dx, dy } = enterOffset(overlay.enter, local);
               return (
                 <div
                   key={overlay.id}
                   className="absolute pointer-events-none whitespace-pre-wrap text-center"
                   style={{
-                    left: `${overlay.positionX * 100}%`,
-                    top: `${overlay.positionY * 100}%`,
+                    left: `${(overlay.positionX + dx) * 100}%`,
+                    top: `${(overlay.positionY + dy) * 100}%`,
                     transform: 'translate(-50%, -50%)',
                     opacity,
                     color: overlay.colorHex,

@@ -14424,7 +14424,20 @@
     "beat_sidebar_collapse": "Réduire la liste des rythmes",
     "beat_sidebar_expand": "Développer la liste des rythmes",
     "beat_sidebar_empty": "Pas encore de battements. Ajoutez un rythme de texte pour marquer les jalons sur la chronologie.",
-    "beat_sidebar_untitled": "(sans titre)"
+    "beat_sidebar_untitled": "(sans titre)",
+    "add_title": "Ajouter un titre",
+    "entrance": "Entrée",
+    "entrance_animate": "Animer l'entrée",
+    "entrance_down": "Bas",
+    "entrance_duration": "Vitesse",
+    "entrance_left": "Gauche",
+    "entrance_none": "Aucune",
+    "entrance_right": "Droite",
+    "entrance_up": "Haut",
+    "layer_title": "Titres",
+    "title_text": "Texte du titre",
+    "title_text_placeholder": "Saisissez le titre…",
+    "title_untitled": "(titre vide)"
   },
   "research_lab": {
     "dashboard": "Tableau de bord",

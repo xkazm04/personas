@@ -153,5 +153,18 @@
   "beat_sidebar_collapse": "Свернуть список битов",
   "beat_sidebar_expand": "Развернуть список битов",
   "beat_sidebar_empty": "Битов пока нет. Добавьте текстовый ритм, чтобы отмечать вехи на временной шкале.",
-  "beat_sidebar_untitled": "(без названия)"
+  "beat_sidebar_untitled": "(без названия)",
+  "add_title": "Добавить заголовок",
+  "entrance": "Появление",
+  "entrance_animate": "Анимация появления",
+  "entrance_down": "Вниз",
+  "entrance_duration": "Скорость",
+  "entrance_left": "Влево",
+  "entrance_none": "Нет",
+  "entrance_right": "Вправо",
+  "entrance_up": "Вверх",
+  "layer_title": "Заголовки",
+  "title_text": "Текст заголовка",
+  "title_text_placeholder": "Введите заголовок…",
+  "title_untitled": "(пустой заголовок)"
 }

@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 
 use super::invariants::assert_invariants;
 use super::{
-    AudioStage, AudioTrack, CompileWarning, ImageOverlayStage, LoudnormMeasurements,
-    NormalizeDirective, OverlapKind, OverlapNext, OverlayStage, RenderPlan, SourceEntry,
-    TextOverlayStage, VideoStage, RENDER_PLAN_SCHEMA_VERSION,
+    AudioStage, AudioTrack, CompileWarning, Easing, ImageOverlayStage, LoudnormMeasurements,
+    NormalizeDirective, OverlapKind, OverlapNext, OverlayEnter, OverlayStage, RenderPlan,
+    SourceEntry, TextOverlayStage, VideoStage, RENDER_PLAN_SCHEMA_VERSION,
 };
 
 // =============================================================================
@@ -197,6 +197,22 @@ pub struct ImageItemInput {
     pub fade_in: f64,
     #[serde(default)]
     pub fade_out: f64,
+    #[serde(default)]
+    pub enter: Option<OverlayEnterInput>,
+}
+
+/// Authoring shape of an overlay entrance animation. Mirrors `OverlayEnter`
+/// in the IR; the compiler clamps and resolves it into the stage.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayEnterInput {
+    pub duration: f64,
+    #[serde(default)]
+    pub offset_x: f64,
+    #[serde(default)]
+    pub offset_y: f64,
+    #[serde(default)]
+    pub easing: Option<String>,
 }
 
 /// A burned-in title / caption / number. Distinct from `TextItemInput`, which
@@ -229,6 +245,8 @@ pub struct TitleItemInput {
     pub fade_in: f64,
     #[serde(default)]
     pub fade_out: f64,
+    #[serde(default)]
+    pub enter: Option<OverlayEnterInput>,
 }
 
 /// The generic family every platform can rasterize. Also the fallback when a
@@ -249,6 +267,29 @@ fn default_font_size() -> u32 {
 
 fn default_color_hex() -> String {
     "#ffffff".to_string()
+}
+
+/// Resolve an authoring entrance into the IR shape. `stage_duration` clamps the
+/// entrance so it can't run past the overlay's own life. A zero-or-negative
+/// duration, or a zero offset, collapses to None (nothing to animate).
+fn resolve_enter(input: &Option<OverlayEnterInput>, stage_duration: f64) -> Option<OverlayEnter> {
+    let e = input.as_ref()?;
+    let duration = e.duration.max(0.0).min(stage_duration);
+    if duration <= 0.0 || (e.offset_x == 0.0 && e.offset_y == 0.0) {
+        return None;
+    }
+    let easing = match e.easing.as_deref() {
+        Some("linear") => Easing::Linear,
+        Some("easeInOut") => Easing::EaseInOut,
+        // easeOut is the sensible default for an entrance (fast in, settle).
+        _ => Easing::EaseOut,
+    };
+    Some(OverlayEnter {
+        duration,
+        offset_x: e.offset_x,
+        offset_y: e.offset_y,
+        easing,
+    })
 }
 
 fn default_one() -> f64 {
@@ -839,6 +880,7 @@ pub fn compile(
             fade_out,
             position_x: img.position_x.clamp(0.0, 1.0),
             position_y: img.position_y.clamp(0.0, 1.0),
+            enter: resolve_enter(&img.enter, img.duration),
             source_id,
             scale: img.scale.max(0.0),
         }));
@@ -897,6 +939,7 @@ pub fn compile(
             font_weight: title.font_weight,
             font_size_px: title.font_size_px.max(1),
             color_hex: title.color_hex.clone(),
+            enter: resolve_enter(&title.enter, title.duration),
         }));
     }
 

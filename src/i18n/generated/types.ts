@@ -14559,6 +14559,14 @@ export type Translations = {
     title_untitled: string;
     title_text: string;
     title_text_placeholder: string;
+    entrance: string;
+    entrance_animate: string;
+    entrance_none: string;
+    entrance_up: string;
+    entrance_down: string;
+    entrance_left: string;
+    entrance_right: string;
+    entrance_duration: string;
     add_video: string;
     add_audio: string;
     empty_lane: string;

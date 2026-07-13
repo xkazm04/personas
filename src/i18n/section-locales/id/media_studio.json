@@ -153,5 +153,18 @@
   "beat_sidebar_collapse": "Ciutkan daftar ketukan",
   "beat_sidebar_expand": "Perluas daftar ketukan",
   "beat_sidebar_empty": "Belum ada ketukan. Tambahkan irama Teks untuk menandai pencapaian di garis waktu.",
-  "beat_sidebar_untitled": "(tanpa judul)"
+  "beat_sidebar_untitled": "(tanpa judul)",
+  "add_title": "Tambah judul",
+  "entrance": "Masuk",
+  "entrance_animate": "Animasikan masuk",
+  "entrance_down": "Bawah",
+  "entrance_duration": "Kecepatan",
+  "entrance_left": "Kiri",
+  "entrance_none": "Tidak ada",
+  "entrance_right": "Kanan",
+  "entrance_up": "Atas",
+  "layer_title": "Judul",
+  "title_text": "Teks judul",
+  "title_text_placeholder": "Ketik judul…",
+  "title_untitled": "(judul kosong)"
 }

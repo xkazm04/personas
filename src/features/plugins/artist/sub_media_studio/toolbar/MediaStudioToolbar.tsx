@@ -42,6 +42,7 @@ import type {
   Composition,
   ImageItem,
   TextItem,
+  OverlayEntrance,
   TimelineItem,
   TitleItem,
   TransitionType,
@@ -352,18 +353,24 @@ export default function MediaStudioToolbar({
           )}
         </IconPopover>
 
-        {/* Image scale */}
-        <IconPopover icon={SlidersHorizontal} title={debtText("auto_image_scale_f31fd127")} disabled={!isImage}>
+        {/* Image scale + entrance */}
+        <IconPopover icon={SlidersHorizontal} title={debtText("auto_image_scale_f31fd127")} disabled={!isImage} widthPx={260}>
           {isImage && selectedItem && (
-            <RangeField
-              label="Scale"
-              value={(selectedItem as ImageItem).scale}
-              min={0.1}
-              max={3}
-              step={0.05}
-              onChange={(v) => update({ scale: v } as Partial<TimelineItem>)}
-              format={(v) => `${Math.round(v * 100)}%`}
-            />
+            <div className="space-y-3">
+              <RangeField
+                label="Scale"
+                value={(selectedItem as ImageItem).scale}
+                min={0.1}
+                max={3}
+                step={0.05}
+                onChange={(v) => update({ scale: v } as Partial<TimelineItem>)}
+                format={(v) => `${Math.round(v * 100)}%`}
+              />
+              <EntranceControls
+                enter={(selectedItem as ImageItem).enter}
+                onChange={(next) => update({ enter: next } as Partial<TimelineItem>)}
+              />
+            </div>
           )}
         </IconPopover>
 
@@ -420,6 +427,11 @@ export default function MediaStudioToolbar({
                 step={0.01}
                 onChange={(v) => update({ positionY: v } as Partial<TimelineItem>)}
                 format={(v) => `${Math.round(v * 100)}%`}
+              />
+
+              <EntranceControls
+                enter={(selectedItem as TitleItem).enter}
+                onChange={(next) => update({ enter: next } as Partial<TimelineItem>)}
               />
             </div>
           )}
@@ -531,6 +543,95 @@ function WarningsRow({
           </button>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Map a direction choice to an entrance offset (frame-relative fraction). */
+const ENTRANCE_DIRECTIONS = {
+  up: { offsetX: 0, offsetY: 0.15 },
+  down: { offsetX: 0, offsetY: -0.15 },
+  left: { offsetX: 0.15, offsetY: 0 },
+  right: { offsetX: -0.15, offsetY: 0 },
+} as const;
+
+type EntranceDir = keyof typeof ENTRANCE_DIRECTIONS;
+
+/** Read the current direction from an entrance, or null if none/static. */
+function entranceDirOf(enter: OverlayEntrance | undefined): EntranceDir | null {
+  if (!enter) return null;
+  if (enter.offsetY > 0) return 'up';
+  if (enter.offsetY < 0) return 'down';
+  if (enter.offsetX > 0) return 'left';
+  if (enter.offsetX < 0) return 'right';
+  return null;
+}
+
+/**
+ * Entrance-animation controls shared by the title and image overlay popovers.
+ * A direction picker (or None) plus a speed slider. Position + easing only —
+ * the ffmpeg-native motion subset. `enter === undefined` means static.
+ */
+function EntranceControls({
+  enter,
+  onChange,
+}: {
+  enter: OverlayEntrance | undefined;
+  onChange: (next: OverlayEntrance | undefined) => void;
+}) {
+  const { t } = useTranslation();
+  const current = entranceDirOf(enter);
+  const duration = enter?.duration ?? 0.4;
+
+  const setDir = (dir: EntranceDir | null) => {
+    if (dir === null) {
+      onChange(undefined);
+      return;
+    }
+    onChange({ duration, easing: 'easeOut', ...ENTRANCE_DIRECTIONS[dir] });
+  };
+
+  const dirs: { key: EntranceDir | null; label: string }[] = [
+    { key: null, label: t.media_studio.entrance_none },
+    { key: 'up', label: t.media_studio.entrance_up },
+    { key: 'down', label: t.media_studio.entrance_down },
+    { key: 'left', label: t.media_studio.entrance_left },
+    { key: 'right', label: t.media_studio.entrance_right },
+  ];
+
+  return (
+    <div className="space-y-2 border-t border-primary/10 pt-3">
+      <span className="typo-label text-foreground">{t.media_studio.entrance}</span>
+      <div className="flex flex-wrap gap-1">
+        {dirs.map((d) => {
+          const active = current === d.key;
+          return (
+            <button
+              key={d.label}
+              type="button"
+              onClick={() => setDir(d.key)}
+              className={`px-2 py-1 text-md rounded-card border transition-colors ${
+                active
+                  ? 'bg-sky-500/25 border-sky-400 text-sky-100'
+                  : 'bg-secondary/40 border-primary/10 text-foreground hover:bg-secondary/60'
+              }`}
+            >
+              {d.label}
+            </button>
+          );
+        })}
+      </div>
+      {enter && (
+        <RangeField
+          label={t.media_studio.entrance_duration}
+          value={duration}
+          min={0.1}
+          max={1.5}
+          step={0.05}
+          onChange={(v) => onChange({ ...enter, duration: v })}
+          format={(v) => `${v.toFixed(2)}s`}
+        />
+      )}
     </div>
   );
 }
