@@ -118,6 +118,7 @@ Loop while `pool < 10` and the user hasn't said stop:
    **Rust gate calibration:** gate on *no NEW warnings in files this diff touched* (clippy full-crate `-D warnings` fails on hundreds of pre-existing warnings in this repo — compare against master's warnings for the same files before blaming the diff).
 6. **Merge serially**: per direction, `git merge --squash` (or cherry-pick) → ONE atomic commit on master, message `feat(<context>): <direction title>` + `Co-Authored-By` footer. Stage per-file, verify `git diff --cached --stat` matches intent (foreign pre-staged files → `git restore --staged` them). Run the config gates on master after each merge; a red gate is fixed inline before the next merge.
    **Concurrent-master locale conflicts (learned round 1):** when another session moves the locale files under a pending cherry-pick, don't hand-merge JSON — re-apply the branch's key **adds/removes** programmatically over master's current locale files (flatten base vs branch per locale, set/delete on current, write), then regenerate `gen-types.mjs` + `split-locales.mjs` and `git add` the artifacts before `cherry-pick --continue`. Round 1's script: session scratchpad `merge-locale-keys.mjs` — recreate it from this recipe.
+   **Union-merge discipline (learned round 4 the hard way):** both-append cherry-pick conflicts are USUALLY safe to keep-both — but only when each side is a complete declaration. NEVER blind-union hunks whose sides end mid-function (a glued test-fn and a swallowed closing brace turned master red for two picks). Read every seam; and **read the compile gate's output BEFORE `cherry-pick --continue`** — a `&&`-chained check that failed while you already moved on is worse than no check.
    **Concurrent-session DIRTY files blocking a pick (learned round 2):** never stash, never wait — commit around them. (a) Dirty `en.json`: stage `HEAD + your keys` directly into the index (`git hash-object -w` + `git update-index --cacheinfo`), and write `their-working-copy + your keys` to disk — their uncommitted work stays theirs, and their later commit can't revert your keys. (b) Dirty Rust/source file: same index trick, content built by `git merge-file` (base=branch-fork, ours=HEAD, theirs=branch), plus a second merge-file for the working copy. (c) **Shared append-files** (`lib.rs` command registrations, `commandNames.generated.ts`, generated i18n): NEVER wholesale-`checkout` a branch's version across sequential picks — it clobbers earlier picks' registrations (tsc catches it too late). Patch-union (`git diff branch~..branch -- file | git apply --3way`) or regenerate from source, always.
 6b. **Cross-builder integration gate (learned round 3):** parallel builders each verify against the master they forked from — their work can be mutually incompatible (one retired a type-union member another targeted; one restructured a component another wrote tests against). After ALL of a wave's picks land, run tsc + the union of the wave's test suites on master BEFORE wrap; treat failures as Director-fixed integration commits, not builder redos. When two builders share a direction dependency, fork the dependent builder's worktree AFTER the dependency merges (sequenced builder) — it worked cleanly in round 3.
 7. **Doc-sync in the same turn**: user-visible changes update the mapped `docs/features/*` (+ onboarding flow / marketing module if mapped) — the Stop hook will demand it anyway.
@@ -152,10 +153,11 @@ COMMIT EACH DIRECTION THE MOMENT IT IS DONE AND VERIFIED — never batch commits
 for the end of the session. An interrupted session must lose at most the
 direction in progress, not everything.
 
-FOREGROUND ONLY: run every compile/test as a blocking foreground command and
-wait for it — NEVER spawn a background run and "wait for the notification"
-(you will idle forever and the Director has to nudge you). Shared-cargo-target
-lock waits from parallel builders are normal; let the command block.
+FOREGROUND ONLY — this means the tool mechanics: NEVER set run_in_background
+on a shell command, never spawn "waiter" scripts, never end your turn with
+"the notification will tell me" (it won't — you will idle until the Director
+nudges you; this has burned 5+ nudges across waves). Run every compile/test as
+ONE blocking foreground command; shared-cargo-target lock waits are normal.
 
 SEARCH BEFORE BUILDING: before implementing any new mechanism, grep for an
 existing implementation of the same concept and LAYER ON it rather than
