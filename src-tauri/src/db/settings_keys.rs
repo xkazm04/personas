@@ -547,6 +547,24 @@ pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
 /// fall back to the legacy global `autonomous_*` flags.
 pub const AUTOPILOT_MODE_PREFIX: &str = "autopilot_mode:";
 
+/// Durable mirror of the webview appearance preferences (JSON-encoded object:
+/// `themeId`, `textScale`, `brightness`, `density`, `timezone`, a11y toggles,
+/// `customTheme`). The render-path authority stays in webview localStorage
+/// (`persona-theme` Zustand persist) — reading it is synchronous and never
+/// blocks first paint — but localStorage is per-webview-profile, and a profile
+/// clear silently wiped every appearance choice: the exact loss mode that
+/// dropped [`OBSIDIAN_BRAIN_SAVED_VAULTS`] until its 2026-06 migration. The
+/// frontend writes through on change (debounced) and re-hydrates from this row
+/// on a fresh/cleared profile (`src/lib/appearanceMirror.ts`).
+///
+/// Value validation: must parse as a JSON object; the *stable* enum fields
+/// (`textScale` ∈ large|larger|xl, `brightness` ∈ low|mid|high, `density` ∈
+/// cozy|comfortable|compact) are checked when present. Theme ids and timezone
+/// are deliberately NOT validated here — the theme catalog lives in the
+/// frontend and a newly added theme id must not be rejected by a stale Rust
+/// validator (unknown values are coerced on read instead).
+pub const APPEARANCE_PREFERENCES: &str = "appearance_preferences";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -620,6 +638,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,
     CLOUD_SYNC_TOTAL_ROWS,
+    APPEARANCE_PREFERENCES,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -770,8 +789,34 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 "value for '{key}' must be an hour 0–23, got {value:?}"
             )),
         },
+        APPEARANCE_PREFERENCES => validate_appearance_preferences(value),
         _ => Ok(()),
     }
+}
+
+/// Typed contract for [`APPEARANCE_PREFERENCES`]: a JSON object whose stable
+/// enum fields — when present — hold known values. Fields owned by the frontend
+/// catalog (theme id, timezone, customTheme) are accepted as-is; unknown values
+/// there are coerced on read by the frontend mirror instead of rejected here.
+fn validate_appearance_preferences(value: &str) -> Result<(), String> {
+    let parsed: serde_json::Value = serde_json::from_str(value)
+        .map_err(|e| format!("value for '{APPEARANCE_PREFERENCES}' must be valid JSON: {e}"))?;
+    let obj = parsed
+        .as_object()
+        .ok_or_else(|| format!("value for '{APPEARANCE_PREFERENCES}' must be a JSON object"))?;
+    let check_enum = |field: &str, allowed: &[&str]| -> Result<(), String> {
+        match obj.get(field) {
+            None | Some(serde_json::Value::Null) => Ok(()),
+            Some(serde_json::Value::String(s)) if allowed.contains(&s.as_str()) => Ok(()),
+            Some(other) => Err(format!(
+                "'{APPEARANCE_PREFERENCES}.{field}' must be one of {allowed:?}, got {other}"
+            )),
+        }
+    };
+    check_enum("textScale", &["large", "larger", "xl"])?;
+    check_enum("brightness", &["low", "mid", "high"])?;
+    check_enum("density", &["cozy", "comfortable", "compact"])?;
+    Ok(())
 }
 
 /// If `key` is a DEPRECATED settings key that is still allow-listed for
@@ -898,6 +943,33 @@ mod tests {
         assert!(validate_value(MONTHLY_COST_CEILING_USD, "50").is_ok());
         assert!(validate_value(MONTHLY_COST_CEILING_USD, "50.00").is_ok());
         assert!(validate_value(MONTHLY_COST_CEILING_USD, "1234.56").is_ok());
+    }
+
+    #[test]
+    fn appearance_preferences_key_and_value_validation() {
+        assert!(validate_key(APPEARANCE_PREFERENCES).is_ok());
+        // Minimal and full valid objects accepted.
+        assert!(validate_value(APPEARANCE_PREFERENCES, "{}").is_ok());
+        assert!(validate_value(
+            APPEARANCE_PREFERENCES,
+            r#"{"themeId":"dark-bronze","textScale":"xl","brightness":"high","density":"compact","timezone":"America/New_York","dim":true,"customTheme":null}"#
+        )
+        .is_ok());
+        // Unknown theme id is ACCEPTED (frontend-owned catalog; coerced on read).
+        assert!(validate_value(
+            APPEARANCE_PREFERENCES,
+            r#"{"themeId":"some-future-theme"}"#
+        )
+        .is_ok());
+        // Stable enum fields ARE validated when present.
+        assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"textScale":"gigantic"}"#).is_err());
+        assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"brightness":"ultra"}"#).is_err());
+        assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"density":"spacious"}"#).is_err());
+        assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"density":3}"#).is_err());
+        // Non-object / malformed JSON rejected.
+        assert!(validate_value(APPEARANCE_PREFERENCES, "not json").is_err());
+        assert!(validate_value(APPEARANCE_PREFERENCES, "[1,2]").is_err());
+        assert!(validate_value(APPEARANCE_PREFERENCES, "\"str\"").is_err());
     }
 
     #[test]
