@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 
-use super::{NowPlaying, PlayStatus, RadioState, Station, StationCursor, StationSource, Track};
+use super::{NowPlaying, PlayStatus, RadioState, Station, StationCursor, StationSource};
 
 /// On-disk shape of `src-tauri/data/radio_stations.json`. Versioned in
 /// case we ever need to migrate. Uses camelCase to match `Station`'s

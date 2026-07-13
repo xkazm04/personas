@@ -17,7 +17,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::db::models::{DevKpi, PersonaCredential};
+use crate::db::models::DevKpi;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
 use crate::error::AppError;

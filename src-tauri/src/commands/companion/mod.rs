@@ -35,6 +35,7 @@ use futures_util::FutureExt;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::companion::brain::doctrine;
+#[cfg(feature = "ml")]
 use crate::companion::dev_session;
 use crate::companion::disk;
 use crate::companion::proactive as proactive_engine;

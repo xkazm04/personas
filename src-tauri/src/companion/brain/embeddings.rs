@@ -19,6 +19,7 @@ use std::sync::Arc;
 #[cfg(feature = "ml")]
 use std::sync::atomic::{AtomicBool, Ordering};
 
+#[cfg(feature = "ml")]
 use rusqlite::params;
 
 use crate::db::UserDbPool;

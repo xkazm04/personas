@@ -12,7 +12,7 @@
 //! 600 chars). Bigger notes get truncated; we don't run any LLM here.
 
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::UNIX_EPOCH;
 
 use chrono::{DateTime, Utc};
 use tokio::fs;

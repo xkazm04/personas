@@ -13,11 +13,13 @@
 //! When the vec table is empty (cold start), falls through to the
 //! Phase-1 behavior of last-N raw episodes so the prompt is never empty.
 
+#[cfg(feature = "ml")]
 use std::collections::HashSet;
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
 use crate::companion::brain::backlog::{self, BacklogItem};
+#[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
 use crate::companion::brain::episodic::{self, Episode};
 use crate::companion::brain::goals::{self, Goal};

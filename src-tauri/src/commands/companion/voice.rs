@@ -12,7 +12,6 @@
 use std::sync::Arc;
 
 use base64::Engine;
-use serde::Serialize;
 use tauri::{AppHandle, State};
 
 // Re-export the engine-agnostic types so the existing

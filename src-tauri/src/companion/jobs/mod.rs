@@ -19,6 +19,7 @@ pub mod curation_run;
 pub mod operations_views;
 pub mod scan_codebase;
 
+#[cfg(feature = "ml")]
 use std::sync::Arc;
 
 use chrono::Utc;

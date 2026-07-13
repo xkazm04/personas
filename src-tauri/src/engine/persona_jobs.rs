@@ -22,6 +22,7 @@
 //! the job kinds for each side grow. A future architect pass can DRY
 //! them up if the divergence stays small.
 
+#[cfg(test)]
 use std::sync::Arc;
 
 use chrono::Utc;

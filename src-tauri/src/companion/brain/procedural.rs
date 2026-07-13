@@ -26,6 +26,7 @@ use rusqlite::{params, OptionalExtension};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+#[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
 use crate::companion::disk;
 use crate::db::UserDbPool;

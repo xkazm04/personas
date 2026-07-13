@@ -14,7 +14,6 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::AppState;
-use personas_macros::requires;
 
 // -- Types --------------------------------------------------------------
 
