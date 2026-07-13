@@ -23,6 +23,7 @@ import { useOverviewData } from './useOverviewData';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { EditableProjectPipeline } from './EditableProjectPipeline';
 import { StandardsScanCard } from './StandardsScanCard';
+import { PulseGlyph } from './PulseGlyph';
 
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
@@ -185,7 +186,7 @@ export default function ProjectOverviewPage() {
         />
         <ContentBody centered>
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <LayoutDashboard className="w-10 h-10 text-foreground mb-3" />
+            <PulseGlyph size={128} className="mb-4" />
             <p className="typo-section-title">{po.no_project_selected}</p>
             <p className="typo-body text-foreground mt-1">{po.select_project_hint}</p>
           </div>
@@ -311,7 +312,7 @@ export default function ProjectOverviewPage() {
                 events_24h:  { icon: Activity, value: monitorStats?.eventsLast24h ?? '—', label: po.events_24h, tone: events24Tone, loading: monitorState === 'loading' },
                 events_7d:   { icon: BarChart3, value: monitorStats?.eventsLastWeek ?? '—', label: po.events_7d, tone: events7Tone, loading: monitorState === 'loading' },
               };
-              return tileOrder.map((id) => {
+              return tileOrder.map((id, idx) => {
                 const t = tilesById[id];
                 return (
                   <VitalTile
@@ -321,6 +322,7 @@ export default function ProjectOverviewPage() {
                     label={t.label}
                     tone={t.tone}
                     loading={t.loading}
+                    index={idx}
                     draggable
                     isDragging={draggingTileId === id}
                     onDragStart={() => setDraggingTileId(id)}
@@ -522,7 +524,7 @@ const TONE_TEXT: Record<Tone, string> = {
 };
 
 function VitalTile({
-  icon: Icon, value, label, tone, loading,
+  icon: Icon, value, label, tone, loading, index = 0,
   draggable, isDragging, onDragStart, onDragEnd, onDragOver, onDrop,
   onActivate, actionLabel,
 }: {
@@ -531,6 +533,7 @@ function VitalTile({
   label: string;
   tone: Tone;
   loading?: boolean;
+  index?: number;
   draggable?: boolean;
   isDragging?: boolean;
   onDragStart?: (e: DragEvent<HTMLDivElement>) => void;
@@ -540,32 +543,57 @@ function VitalTile({
   onActivate?: () => void;
   actionLabel?: string;
 }) {
+  const { shouldAnimate } = useMotion();
   return (
-    <div
-      draggable={draggable}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-      onClick={onActivate}
-      onKeyDown={onActivate ? (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(); }
-      } : undefined}
-      role={onActivate ? 'button' : undefined}
-      tabIndex={onActivate ? 0 : undefined}
-      title={actionLabel}
-      aria-label={onActivate && actionLabel ? `${label} — ${actionLabel}` : undefined}
-      className={`rounded-card border ${TONE_BG[tone]} px-3 py-2.5 transition-all ${
-        draggable ? 'cursor-grab active:cursor-grabbing' : ''
-      } ${onActivate ? 'hover:ring-1 hover:ring-primary/30 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40' : ''} ${isDragging ? 'opacity-40' : ''}`}
+    // Outer motion wrapper does the staggered mount reveal only — native HTML5
+    // drag stays on the inner div (framer's motion.* drag-handler types collide
+    // with the native DragEvent ones, so we don't put drag on motion.div).
+    <motion.div
+      initial={shouldAnimate ? { opacity: 0, y: 8 } : { opacity: 0 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index, 6) * 0.05, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="flex items-center justify-between mb-1.5">
-        <Icon className={`w-3.5 h-3.5 ${TONE_TEXT[tone]}`} />
-        {loading && <RefreshCw className="w-3 h-3 animate-spin text-foreground" />}
+      <div
+        draggable={draggable}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onClick={onActivate}
+        onKeyDown={onActivate ? (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(); }
+        } : undefined}
+        role={onActivate ? 'button' : undefined}
+        tabIndex={onActivate ? 0 : undefined}
+        title={actionLabel}
+        aria-label={onActivate && actionLabel ? `${label} — ${actionLabel}` : undefined}
+        className={`rounded-card border ${TONE_BG[tone]} px-3 py-2.5 transition-all ${
+          draggable ? 'cursor-grab active:cursor-grabbing' : ''
+        } ${onActivate ? 'hover:ring-1 hover:ring-primary/30 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40' : ''} ${isDragging ? 'opacity-40' : ''}`}
+      >
+        <div className="flex items-center justify-between mb-1.5">
+          <Icon className={`w-3.5 h-3.5 ${TONE_TEXT[tone]}`} />
+        </div>
+        {/* Loading → shimmer skeleton in place of the numeral; when the value
+            lands it cross-fades in (keyed on value) instead of snapping. */}
+        <div className="h-[1.75rem] flex items-center">
+          {loading ? (
+            <span className="block h-6 w-12 rounded bg-primary/10 animate-pulse" aria-hidden="true" />
+          ) : (
+            <motion.p
+              key={String(value)}
+              initial={shouldAnimate ? { opacity: 0, y: 4 } : { opacity: 0 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+              className={`typo-data-lg leading-none ${TONE_TEXT[tone]}`}
+            >
+              {value}
+            </motion.p>
+          )}
+        </div>
+        <p className="typo-caption text-foreground truncate mt-1">{label}</p>
       </div>
-      <p className={`typo-data-lg leading-none ${TONE_TEXT[tone]}`}>{value}</p>
-      <p className="typo-caption text-foreground truncate mt-1">{label}</p>
-    </div>
+    </motion.div>
   );
 }
 
