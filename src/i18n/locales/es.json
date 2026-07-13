@@ -13794,7 +13794,10 @@
       "progress_filter_recent": "7D",
       "progress_future": "Futuro",
       "progress_hidden_note": "{count} objetivos completados ocultos",
-      "progress_past": "Pasado"
+      "progress_past": "Pasado",
+      "goal_view_missions": "Misiones",
+      "mission_link_goal": "Vincular a un objetivo…",
+      "mission_unlinked": "Sin objetivo"
     },
     "dev_projects": {
       "active_goals": "objetivos activos",

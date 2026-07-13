@@ -13794,7 +13794,10 @@
       "progress_filter_recent": "7日",
       "progress_future": "未来",
       "progress_hidden_note": "完了ゴール {count} 件を非表示",
-      "progress_past": "過去"
+      "progress_past": "過去",
+      "goal_view_missions": "ミッション",
+      "mission_link_goal": "ゴールに紐づける…",
+      "mission_unlinked": "ゴールなし"
     },
     "dev_projects": {
       "active_goals": "アクティブなゴール",

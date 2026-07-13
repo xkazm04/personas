@@ -13794,7 +13794,10 @@
       "progress_filter_recent": "٧ أيام",
       "progress_future": "المستقبل",
       "progress_hidden_note": "تم إخفاء {count} هدفًا مكتملًا",
-      "progress_past": "الماضي"
+      "progress_past": "الماضي",
+      "goal_view_missions": "المهام",
+      "mission_link_goal": "اربط بهدف…",
+      "mission_unlinked": "بلا هدف"
     },
     "dev_projects": {
       "active_goals": "الأهداف النشطة",

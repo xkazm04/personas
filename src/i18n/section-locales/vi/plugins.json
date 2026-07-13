@@ -2502,7 +2502,10 @@
     "progress_filter_recent": "7N",
     "progress_future": "Tương lai",
     "progress_hidden_note": "Đã ẩn {count} mục tiêu hoàn thành",
-    "progress_past": "Quá khứ"
+    "progress_past": "Quá khứ",
+    "goal_view_missions": "Nhiệm vụ",
+    "mission_link_goal": "Liên kết với mục tiêu…",
+    "mission_unlinked": "Chưa có mục tiêu"
   },
   "dev_projects": {
     "active_goals": "mục tiêu đang hoạt động",

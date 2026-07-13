@@ -2502,7 +2502,10 @@
     "progress_filter_recent": "7天",
     "progress_future": "未来",
     "progress_hidden_note": "已隐藏 {count} 个已完成目标",
-    "progress_past": "过去"
+    "progress_past": "过去",
+    "goal_view_missions": "任务",
+    "mission_link_goal": "关联到目标…",
+    "mission_unlinked": "无目标"
   },
   "dev_projects": {
     "active_goals": "活跃目标",

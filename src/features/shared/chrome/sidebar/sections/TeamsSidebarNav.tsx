@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Users, Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords } from 'lucide-react';
+import { Users, Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Rocket } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -20,8 +20,9 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  *   surfaces folded in from the retired Dev Tools tabs (Manage / Lifecycle /
  *   Factory / Competition). See DEV_ITEMS.
  */
-const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' | 'goal_view_progress' }> = [
+const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' | 'goal_view_progress' | 'goal_view_missions' }> = [
   { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
+  { id: 'missions', icon: Rocket, labelKey: 'goal_view_missions' },
   { id: 'timeline', icon: CalendarClock, labelKey: 'goal_view_timeline' },
   { id: 'progress', icon: ChartNoAxesGantt, labelKey: 'goal_view_progress' },
 ];

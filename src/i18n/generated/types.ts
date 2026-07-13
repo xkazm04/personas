@@ -14066,6 +14066,9 @@ export type Translations = {
       goal_view_timeline: string;
       goal_view_progress: string;
       goal_view_accept: string;
+      goal_view_missions: string;
+      mission_unlinked: string;
+      mission_link_goal: string;
     };
     dev_projects: {
       bulk_selected_one: string;

@@ -13794,7 +13794,10 @@
       "progress_filter_recent": "৭দি",
       "progress_future": "ভবিষ্যৎ",
       "progress_hidden_note": "{count} সম্পন্ন লক্ষ্য লুকানো",
-      "progress_past": "অতীত"
+      "progress_past": "অতীত",
+      "goal_view_missions": "মিশন",
+      "mission_link_goal": "একটি লক্ষ্যের সাথে যুক্ত করুন…",
+      "mission_unlinked": "কোনো লক্ষ্য নেই"
     },
     "dev_projects": {
       "active_goals": "সক্রিয় লক্ষ্য",

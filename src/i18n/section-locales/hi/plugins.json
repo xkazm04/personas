@@ -2502,7 +2502,10 @@
     "progress_filter_recent": "7दि",
     "progress_future": "भविष्य",
     "progress_hidden_note": "{count} पूर्ण लक्ष्य छिपाए गए",
-    "progress_past": "अतीत"
+    "progress_past": "अतीत",
+    "goal_view_missions": "मिशन",
+    "mission_link_goal": "किसी लक्ष्य से जोड़ें…",
+    "mission_unlinked": "कोई लक्ष्य नहीं"
   },
   "dev_projects": {
     "active_goals": "सक्रिय goals",

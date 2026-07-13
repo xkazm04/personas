@@ -2502,7 +2502,10 @@
     "progress_filter_recent": "7일",
     "progress_future": "미래",
     "progress_hidden_note": "완료된 목표 {count}개 숨김",
-    "progress_past": "과거"
+    "progress_past": "과거",
+    "goal_view_missions": "미션",
+    "mission_link_goal": "목표에 연결…",
+    "mission_unlinked": "목표 없음"
   },
   "dev_projects": {
     "active_goals": "활성 목표",

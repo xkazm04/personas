@@ -2502,7 +2502,10 @@
     "progress_filter_recent": "7H",
     "progress_future": "Mendatang",
     "progress_hidden_note": "{count} sasaran selesai disembunyikan",
-    "progress_past": "Lampau"
+    "progress_past": "Lampau",
+    "goal_view_missions": "Misi",
+    "mission_link_goal": "Tautkan ke sasaran…",
+    "mission_unlinked": "Tanpa sasaran"
   },
   "dev_projects": {
     "active_goals": "tujuan aktif",

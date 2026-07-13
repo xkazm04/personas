@@ -2502,7 +2502,10 @@
     "progress_filter_recent": "7T",
     "progress_future": "Zukunft",
     "progress_hidden_note": "{count} erledigte Ziele ausgeblendet",
-    "progress_past": "Vergangenheit"
+    "progress_past": "Vergangenheit",
+    "goal_view_missions": "Missionen",
+    "mission_link_goal": "Mit Ziel verknüpfen…",
+    "mission_unlinked": "Kein Ziel"
   },
   "dev_projects": {
     "active_goals": "aktive Ziele",

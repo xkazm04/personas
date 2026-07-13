@@ -1658,6 +1658,7 @@
   "fr:plugins.companion.voice_volume_label",
   "fr:plugins.dev_lifecycle.goal_field_description",
   "fr:plugins.dev_lifecycle.goal_view_kanban_label",
+  "fr:plugins.dev_lifecycle.goal_view_missions",
   "fr:plugins.dev_lifecycle.legend_parent",
   "fr:plugins.dev_projects.github_url_placeholder",
   "fr:plugins.dev_projects.main_branch_placeholder",

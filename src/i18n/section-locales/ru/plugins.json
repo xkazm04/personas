@@ -2502,7 +2502,10 @@
     "progress_filter_recent": "7д",
     "progress_future": "Будущее",
     "progress_hidden_note": "Скрыто завершённых целей: {count}",
-    "progress_past": "Прошлое"
+    "progress_past": "Прошлое",
+    "goal_view_missions": "Миссии",
+    "mission_link_goal": "Связать с целью…",
+    "mission_unlinked": "Без цели"
   },
   "dev_projects": {
     "active_goals": "активных целей",

@@ -13794,7 +13794,10 @@
       "progress_filter_recent": "7D",
       "progress_future": "Budoucnost",
       "progress_hidden_note": "Skryto hotových cílů: {count}",
-      "progress_past": "Minulost"
+      "progress_past": "Minulost",
+      "goal_view_missions": "Mise",
+      "mission_link_goal": "Připojit k cíli…",
+      "mission_unlinked": "Bez cíle"
     },
     "dev_projects": {
       "active_goals": "aktivních cílů",
