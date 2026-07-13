@@ -564,6 +564,16 @@ pub const AUTOPILOT_MODE_PREFIX: &str = "autopilot_mode:";
 /// frontend and a newly added theme id must not be rejected by a stale Rust
 /// validator (unknown values are coerced on read instead).
 pub const APPEARANCE_PREFERENCES: &str = "appearance_preferences";
+/// Chain cost ceiling in USD. Accumulated cost rides hop→hop in the chain event
+/// metadata (`_chain_cost_usd`); when a completing hop's running total reaches
+/// this ceiling, the cascade evaluator halts (records a `budget_exceeded` chain
+/// stop reason instead of publishing the next link). This is the ONLY brake on
+/// runaway chain COST — the depth-8 limit only bounds hop COUNT. Stored as a
+/// decimal string (e.g. `"5.00"`); the literal `"0"` / unset = no ceiling
+/// (disabled), matching [`MONTHLY_COST_CEILING_USD`]'s convention.
+pub const CHAIN_MAX_COST_USD: &str = "chain_max_cost_usd";
+/// Default chain cost ceiling in USD. `0.0` means no ceiling (disabled).
+pub const CHAIN_MAX_COST_USD_DEFAULT: f64 = 0.0;
 
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
@@ -639,6 +649,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_LAST_AT,
     CLOUD_SYNC_TOTAL_ROWS,
     APPEARANCE_PREFERENCES,
+    CHAIN_MAX_COST_USD,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -785,7 +796,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 )),
             }
         }
-        MONTHLY_COST_CEILING_USD => match value.parse::<f64>() {
+        MONTHLY_COST_CEILING_USD | CHAIN_MAX_COST_USD => match value.parse::<f64>() {
             Ok(n) if n.is_finite() && n >= 0.0 => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be a non-negative decimal USD amount, got {value:?}"
