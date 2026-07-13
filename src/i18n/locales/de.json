@@ -16879,7 +16879,13 @@
       "scan": "Scan"
     },
     "kpi_scope_label": "Bereich",
-    "kpi_scope_this_context": "Dieser Kontext"
+    "kpi_scope_this_context": "Dieser Kontext",
+    "attn_days_left": "{days}T übrig",
+    "attn_off_count": "{count} abgewichen",
+    "attn_overdue": "{days}T überfällig",
+    "attn_reason_crit": "Kritisch",
+    "attn_reason_floor": "Untergrenze",
+    "attn_reason_pace": "Im Rückstand"
   },
   "deliberation": {
     "agenda": "Tagesordnung",

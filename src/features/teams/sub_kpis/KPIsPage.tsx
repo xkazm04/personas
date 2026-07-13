@@ -12,9 +12,20 @@ import { toastCatch } from '@/lib/silentCatch';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
+import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { KPIDashboard } from './KPIDashboard';
 import { KPIProposalsQueue } from './KPIProposalsQueue';
 import { KPIDetailDrawer } from './KPIDetailDrawer';
+import { KpiDetailModal } from './KpiDetailModal';
+import type { NeedsAttentionVariant } from './KpiNeedsAttention';
+
+// TEMP prototype switcher — A/B the "needs attention" strip + detail surface.
+// Removed at consolidation (only the winner survives).
+const ATTN_VARIANTS: SegmentedTab<NeedsAttentionVariant>[] = [
+  { id: 'baseline', label: 'Baseline (drawer)' },
+  { id: 'triage', label: 'Triage' },
+  { id: 'cockpit', label: 'Cockpit' },
+];
 
 export default function KPIsPage() {
   const { t } = useTranslation();
@@ -30,6 +41,7 @@ export default function KPIsPage() {
   const setKpisTab = useSystemStore((s) => s.setKpisTab);
 
   const [openKpiId, setOpenKpiId] = useState<string | null>(null);
+  const [attnVariant, setAttnVariant] = useState<NeedsAttentionVariant>('baseline');
 
   useEffect(() => {
     // Cross-project scope: the dashboard charts + proposals table span every
@@ -100,13 +112,34 @@ export default function KPIsPage() {
         {kpisTab === 'proposals' ? (
           <KPIProposalsQueue onRefresh={() => void fetchAllKpis()} />
         ) : (
-          <KPIDashboard
-            loading={kpisLoading}
-            onOpen={(id) => setOpenKpiId(id)}
-            onReviewProposals={() => setKpisTab('proposals')}
-          />
+          <div className="space-y-3">
+            {/* TEMP prototype switcher (removed at consolidation) */}
+            <div className="flex items-center gap-2">
+              <span className="typo-caption text-foreground/60">Needs-attention prototype:</span>
+              <SegmentedTabs
+                tabs={ATTN_VARIANTS}
+                activeTab={attnVariant}
+                onTabChange={setAttnVariant}
+                variant="segment"
+                size="sm"
+                fullWidth={false}
+                ariaLabel="Needs attention prototype variant"
+              />
+            </div>
+            <KPIDashboard
+              loading={kpisLoading}
+              onOpen={(id) => setOpenKpiId(id)}
+              onReviewProposals={() => setKpisTab('proposals')}
+              attnVariant={attnVariant}
+            />
+          </div>
         )}
-        {openKpi && <KPIDetailDrawer kpi={openKpi} onClose={() => setOpenKpiId(null)} />}
+        {openKpi &&
+          (attnVariant === 'baseline' ? (
+            <KPIDetailDrawer kpi={openKpi} onClose={() => setOpenKpiId(null)} />
+          ) : (
+            <KpiDetailModal kpi={openKpi} variant={attnVariant} onClose={() => setOpenKpiId(null)} />
+          ))}
       </ContentBody>
     </ContentBox>
   );

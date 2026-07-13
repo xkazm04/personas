@@ -16879,7 +16879,13 @@
       "scan": "Escaneo"
     },
     "kpi_scope_label": "Ámbito",
-    "kpi_scope_this_context": "Este contexto"
+    "kpi_scope_this_context": "Este contexto",
+    "attn_days_left": "{days}d rest.",
+    "attn_off_count": "{count} desviados",
+    "attn_overdue": "{days}d de retraso",
+    "attn_reason_crit": "Crítico",
+    "attn_reason_floor": "Mínimo",
+    "attn_reason_pace": "Atrasado"
   },
   "deliberation": {
     "agenda": "Agenda",

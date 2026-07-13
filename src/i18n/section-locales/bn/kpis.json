@@ -183,5 +183,11 @@
     "scan": "স্ক্যান"
   },
   "kpi_scope_label": "পরিধি",
-  "kpi_scope_this_context": "এই প্রসঙ্গ"
+  "kpi_scope_this_context": "এই প্রসঙ্গ",
+  "attn_days_left": "{days}দি বাকি",
+  "attn_off_count": "{count} ট্র্যাকের বাইরে",
+  "attn_overdue": "{days}দি বিলম্বিত",
+  "attn_reason_crit": "সংকটজনক",
+  "attn_reason_floor": "ফ্লোর",
+  "attn_reason_pace": "পিছিয়ে"
 }

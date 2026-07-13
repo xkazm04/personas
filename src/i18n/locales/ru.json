@@ -16879,7 +16879,13 @@
       "scan": "Сканирование"
     },
     "kpi_scope_label": "Область",
-    "kpi_scope_this_context": "Этот контекст"
+    "kpi_scope_this_context": "Этот контекст",
+    "attn_days_left": "ещё {days}д",
+    "attn_off_count": "{count} вне плана",
+    "attn_overdue": "просрочено {days}д",
+    "attn_reason_crit": "Критично",
+    "attn_reason_floor": "Порог",
+    "attn_reason_pace": "Отстаёт"
   },
   "deliberation": {
     "agenda": "Повестка",

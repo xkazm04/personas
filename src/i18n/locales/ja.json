@@ -16879,7 +16879,13 @@
       "scan": "スキャン"
     },
     "kpi_scope_label": "スコープ",
-    "kpi_scope_this_context": "このコンテキスト"
+    "kpi_scope_this_context": "このコンテキスト",
+    "attn_days_left": "残り{days}日",
+    "attn_off_count": "{count}件逸脱",
+    "attn_overdue": "{days}日超過",
+    "attn_reason_crit": "危機的",
+    "attn_reason_floor": "下限",
+    "attn_reason_pace": "遅延"
   },
   "deliberation": {
     "agenda": "議題",

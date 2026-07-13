@@ -183,5 +183,11 @@
     "scan": "Quét"
   },
   "kpi_scope_label": "Phạm vi",
-  "kpi_scope_this_context": "Ngữ cảnh này"
+  "kpi_scope_this_context": "Ngữ cảnh này",
+  "attn_days_left": "còn {days}n",
+  "attn_off_count": "{count} chệch mục tiêu",
+  "attn_overdue": "trễ {days}n",
+  "attn_reason_crit": "Nghiêm trọng",
+  "attn_reason_floor": "Sàn",
+  "attn_reason_pace": "Chậm"
 }

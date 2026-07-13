@@ -16879,7 +16879,13 @@
       "scan": "Pindai"
     },
     "kpi_scope_label": "Cakupan",
-    "kpi_scope_this_context": "Konteks ini"
+    "kpi_scope_this_context": "Konteks ini",
+    "attn_days_left": "{days}h lagi",
+    "attn_off_count": "{count} melenceng",
+    "attn_overdue": "telat {days}h",
+    "attn_reason_crit": "Kritis",
+    "attn_reason_floor": "Batas",
+    "attn_reason_pace": "Tertinggal"
   },
   "deliberation": {
     "agenda": "Agenda",

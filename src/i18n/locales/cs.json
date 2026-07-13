@@ -16879,7 +16879,13 @@
       "scan": "Skenování"
     },
     "kpi_scope_label": "Rozsah",
-    "kpi_scope_this_context": "Tento kontext"
+    "kpi_scope_this_context": "Tento kontext",
+    "attn_days_left": "zbývá {days}d",
+    "attn_off_count": "{count} mimo plán",
+    "attn_overdue": "{days}d po termínu",
+    "attn_reason_crit": "Kritické",
+    "attn_reason_floor": "Dno",
+    "attn_reason_pace": "Pozadu"
   },
   "deliberation": {
     "agenda": "Agenda",

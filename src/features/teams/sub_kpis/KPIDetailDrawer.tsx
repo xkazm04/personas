@@ -291,7 +291,7 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
 // Data source — the KPI's active binding (or the invitation to create one)
 // =============================================================================
 
-function KpiSourceSection({
+export function KpiSourceSection({
   kpi,
   bindings,
   onConnect,
@@ -376,7 +376,7 @@ function ts(s: string): number {
   return new Date(s.replace(' ', 'T')).getTime();
 }
 
-function KpiStoryChart({
+export function KpiStoryChart({
   kpi,
   measurements,
   linkedGoals,

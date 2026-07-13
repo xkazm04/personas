@@ -16945,6 +16945,12 @@ export type Translations = {
     autopilot_full_desc: string;
     filter_all_projects: string;
     attention_label: string;
+    attn_off_count: string;
+    attn_reason_floor: string;
+    attn_reason_crit: string;
+    attn_reason_pace: string;
+    attn_overdue: string;
+    attn_days_left: string;
     stat_active: string;
     stat_on_track: string;
     stat_off_track: string;

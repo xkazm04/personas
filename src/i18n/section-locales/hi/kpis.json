@@ -183,5 +183,11 @@
     "scan": "स्कैन"
   },
   "kpi_scope_label": "दायरा",
-  "kpi_scope_this_context": "यह संदर्भ"
+  "kpi_scope_this_context": "यह संदर्भ",
+  "attn_days_left": "{days}दि शेष",
+  "attn_off_count": "{count} पटरी से बाहर",
+  "attn_overdue": "{days}दि विलंबित",
+  "attn_reason_crit": "गंभीर",
+  "attn_reason_floor": "न्यूनतम",
+  "attn_reason_pace": "पीछे"
 }

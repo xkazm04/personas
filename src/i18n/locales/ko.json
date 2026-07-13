@@ -16879,7 +16879,13 @@
       "scan": "스캔"
     },
     "kpi_scope_label": "범위",
-    "kpi_scope_this_context": "이 컨텍스트"
+    "kpi_scope_this_context": "이 컨텍스트",
+    "attn_days_left": "{days}일 남음",
+    "attn_off_count": "{count}개 이탈",
+    "attn_overdue": "{days}일 초과",
+    "attn_reason_crit": "심각",
+    "attn_reason_floor": "하한",
+    "attn_reason_pace": "지연"
   },
   "deliberation": {
     "agenda": "안건",

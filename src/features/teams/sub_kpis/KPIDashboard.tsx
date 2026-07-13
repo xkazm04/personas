@@ -6,7 +6,7 @@
 // lines from the measurement series). Everything clicks through to the
 // detail drawer; prose lives THERE, not on the dashboard. Filter by project.
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Gauge, TrendingUp, type LucideIcon } from 'lucide-react';
+import { Gauge, TrendingUp, type LucideIcon } from 'lucide-react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useSystemStore } from '@/stores/systemStore';
@@ -19,6 +19,7 @@ import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { paceDescriptor, kpiProgressPct } from './kpiMath';
 import { TRACK_COLOR } from './kpiMeta';
 import { AutopilotControl } from './AutopilotControl';
+import { KpiNeedsAttention, type NeedsAttentionVariant } from './KpiNeedsAttention';
 
 const CHART_ROW_H = 38;
 
@@ -64,10 +65,13 @@ export function KPIDashboard({
   loading,
   onOpen,
   onReviewProposals,
+  attnVariant = 'baseline',
 }: {
   loading: boolean;
   onOpen: (kpiId: string) => void;
   onReviewProposals: () => void;
+  /** Prototype: which "needs attention" layout to render (see KpiNeedsAttention). */
+  attnVariant?: NeedsAttentionVariant;
 }) {
   const { t } = useTranslation();
   const kpis = useSystemStore((s) => s.kpis);
@@ -233,24 +237,12 @@ export function KPIDashboard({
       )}
 
       {/* Needs attention — the only loud element on the page */}
-      {offTrack.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap rounded-card border border-status-error/30 bg-status-error/5 px-3 py-2.5">
-          <AlertTriangle className="w-4 h-4 text-status-error flex-shrink-0" />
-          <span className="typo-overline text-status-error">{t.kpis.attention_label}</span>
-          {offTrack.map(({ kpi }) => (
-            <button
-              key={kpi.id}
-              type="button"
-              onClick={() => onOpen(kpi.id)}
-              className="typo-caption text-foreground rounded-interactive border border-status-error/40 bg-status-error/10 hover:bg-status-error/20 transition-colors px-2 py-0.5 tabular-nums"
-              data-testid={`kpi-attention-${kpi.id}`}
-            >
-              <span className="font-medium">{kpi.name}</span>{' '}
-              {kpi.current_value ?? '—'} / {kpi.target_value ?? '—'} {kpi.unit}
-            </button>
-          ))}
-        </div>
-      )}
+      <KpiNeedsAttention
+        variant={attnVariant}
+        offTrack={offTrack.map((o) => o.kpi)}
+        projectName={projectName}
+        onOpen={onOpen}
+      />
 
       {/* Summary strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

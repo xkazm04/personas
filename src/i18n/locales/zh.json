@@ -16879,7 +16879,13 @@
       "scan": "扫描"
     },
     "kpi_scope_label": "范围",
-    "kpi_scope_this_context": "此上下文"
+    "kpi_scope_this_context": "此上下文",
+    "attn_days_left": "剩{days}天",
+    "attn_off_count": "{count} 项偏离",
+    "attn_overdue": "逾期{days}天",
+    "attn_reason_crit": "严重",
+    "attn_reason_floor": "下限",
+    "attn_reason_pace": "落后"
   },
   "deliberation": {
     "agenda": "议程",

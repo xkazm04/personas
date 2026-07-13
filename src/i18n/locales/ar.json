@@ -16879,7 +16879,13 @@
       "scan": "فحص"
     },
     "kpi_scope_label": "النطاق",
-    "kpi_scope_this_context": "هذا السياق"
+    "kpi_scope_this_context": "هذا السياق",
+    "attn_days_left": "متبقٍ {days}ي",
+    "attn_off_count": "{count} خارج المسار",
+    "attn_overdue": "متأخر {days}ي",
+    "attn_reason_crit": "حرِج",
+    "attn_reason_floor": "الحد الأدنى",
+    "attn_reason_pace": "متأخر"
   },
   "deliberation": {
     "agenda": "جدول الأعمال",
