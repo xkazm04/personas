@@ -137,7 +137,14 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
     }
 
     // Timeout patterns
-    if lower.contains("timed out") || lower.contains("timeout") || lower.contains("deadline") {
+    // `etimedout` (Node's socket-timeout errno) is ported from the TS ladder —
+    // this file is the source of truth, so the match lives here and TS mirrors
+    // it. See PARITY_FIXTURES below and `errorTaxonomy.parity.test.ts`.
+    if lower.contains("timed out")
+        || lower.contains("timeout")
+        || lower.contains("deadline")
+        || lower.contains("etimedout")
+    {
         return ErrorCategory::Timeout;
     }
 
@@ -580,5 +587,60 @@ mod tests {
         assert_eq!(json, "\"rate_limit\"");
         let parsed: ErrorCategory = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed, cat);
+    }
+
+    // --- Cross-FFI parity fixtures -------------------------------------------
+    //
+    // MIRRORED PAIR — this list is kept byte-for-byte in sync with
+    // `src/lib/errors/__tests__/errorTaxonomy.parity.test.ts` (PARITY_FIXTURES).
+    // Both ladders (Rust `classify_error` and TS `classifyError`) must map every
+    // fixture string to the same category. When you add a case to one side, add
+    // the SAME case with the SAME expected category to the other file. The
+    // parity guarantee is what lets the frontend trust the Rust-computed
+    // `category` on the IPC envelope.
+    //
+    // `snake_case` here == the TS string-literal category on the other side.
+    const PARITY_FIXTURES: &[(&str, ErrorCategory)] = &[
+        ("Error: rate limit exceeded", ErrorCategory::RateLimit),
+        ("Too many requests", ErrorCategory::RateLimit),
+        ("HTTP 429 from provider", ErrorCategory::RateLimit),
+        ("quota exceeded for this key", ErrorCategory::RateLimit),
+        ("usage limit reached", ErrorCategory::RateLimit),
+        ("Session limit reached", ErrorCategory::SessionLimit),
+        ("Execution timed out after 600s", ErrorCategory::Timeout),
+        ("Request timeout", ErrorCategory::Timeout),
+        ("deadline exceeded", ErrorCategory::Timeout),
+        ("connect ETIMEDOUT 10.0.0.1:443", ErrorCategory::Timeout),
+        ("Claude CLI not found", ErrorCategory::ProviderNotFound),
+        ("spawn ENOENT", ErrorCategory::ProviderNotFound),
+        ("'claude' is not recognized", ErrorCategory::ProviderNotFound),
+        ("Failed to decrypt credential", ErrorCategory::CredentialError),
+        ("Invalid API key provided", ErrorCategory::CredentialError),
+        ("HTTP 401 Unauthorized", ErrorCategory::CredentialError),
+        ("403 returned", ErrorCategory::CredentialError),
+        ("ECONNREFUSED 127.0.0.1:3000", ErrorCategory::Network),
+        ("ERR_NETWORK while fetching", ErrorCategory::Network),
+        ("connection refused", ErrorCategory::Network),
+        ("fetch failed", ErrorCategory::Network),
+        ("tool_use failed", ErrorCategory::ToolError),
+        ("Tool call failed", ErrorCategory::ToolError),
+        ("HTTP 500 internal server error", ErrorCategory::ApiError),
+        ("502 Bad Gateway", ErrorCategory::ApiError),
+        ("validation failed: missing field", ErrorCategory::Validation),
+        ("malformed JSON in body", ErrorCategory::Validation),
+        ("Execution failed (exit code 137): Killed", ErrorCategory::TransientProcessFailure),
+        ("Execution failed (exit code 1): ", ErrorCategory::TransientProcessFailure),
+        ("some entirely novel failure", ErrorCategory::Unknown),
+    ];
+
+    #[test]
+    fn test_parity_fixtures_classify_consistently() {
+        for (input, expected) in PARITY_FIXTURES {
+            assert_eq!(
+                classify_error_str(input),
+                *expected,
+                "parity fixture {input:?} classified wrong"
+            );
+        }
     }
 }
