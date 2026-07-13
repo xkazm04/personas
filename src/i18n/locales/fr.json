@@ -11423,7 +11423,9 @@
       "outside_window": "Hors de la fenêtre active",
       "predicate_unmet": "Condition non remplie",
       "publish_failed": "Échec de la publication",
-      "quarantined": "Déclencheur en quarantaine"
+      "quarantined": "Déclencheur en quarantaine",
+      "healing_abandoned": "Réparation abandonnée",
+      "healing_capped": "Tentatives de réparation épuisées"
     }
   },
   "project_overview": {

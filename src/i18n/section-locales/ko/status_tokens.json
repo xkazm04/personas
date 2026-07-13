@@ -158,6 +158,8 @@
     "outside_window": "활성 창 범위 밖",
     "predicate_unmet": "조건 미충족",
     "publish_failed": "게시 실패",
-    "quarantined": "트리거 격리됨"
+    "quarantined": "트리거 격리됨",
+    "healing_abandoned": "자가 치유 중단",
+    "healing_capped": "치유 재시도 소진"
   }
 }

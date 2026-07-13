@@ -307,10 +307,10 @@ pub async fn process_healing_result(
         .unwrap_or_else(|| "AI healing completed without structured diagnosis".to_string());
 
     // Apply DB-level fixes
-    let applied_descriptions = if !fixes.is_empty() {
+    let (applied_descriptions, prompt_changed) = if !fixes.is_empty() {
         apply_db_fixes(pool, persona_id, &fixes)?
     } else {
-        Vec::new()
+        (Vec::new(), false)
     };
 
     if !applied_descriptions.is_empty() {
@@ -320,6 +320,21 @@ pub async fn process_healing_result(
             applied_descriptions.len(),
             applied_descriptions,
         );
+    }
+
+    // Snapshot the healed prompt as a new production version so the heal is
+    // visible to version-level metrics and auto-rollback can never revert it to
+    // an older, pre-heal snapshot (see [`snapshot_healed_prompt`]). Best-effort:
+    // the prompt is already committed to the persona row, so a snapshot failure
+    // is logged but must not fail the heal.
+    if prompt_changed {
+        if let Err(e) = snapshot_healed_prompt(pool, persona_id, fixes.len()) {
+            tracing::warn!(
+                persona_id = %persona_id,
+                error = %e,
+                "AI healing: failed to snapshot healed prompt as a new version",
+            );
+        }
     }
 
     Ok(AiHealingResult {
@@ -337,14 +352,22 @@ pub async fn process_healing_result(
 /// Apply database-level fixes (prompt changes, config updates) atomically
 /// within a single SQLite transaction. Either all DB fixes succeed or none
 /// are persisted, preventing partially-healed persona state.
+///
+/// Returns the applied-fix descriptions and a `prompt_changed` flag — `true`
+/// when any fix mutated `personas.system_prompt` / `structured_prompt`. The
+/// caller uses the flag to snapshot the healed prompt as a new production
+/// `persona_prompt_versions` row (see [`snapshot_healed_prompt`]); without that
+/// snapshot the heal is invisible to version-level metrics and auto-rollback
+/// could revert it to an older, pre-heal snapshot.
 fn apply_db_fixes(
     pool: &DbPool,
     persona_id: &str,
     fixes: &[HealingFix],
-) -> Result<Vec<String>, AppError> {
+) -> Result<(Vec<String>, bool), AppError> {
     use rusqlite::params;
 
     let mut applied = Vec::new();
+    let mut prompt_changed = false;
     let now = chrono::Utc::now().to_rfc3339();
 
     let mut conn = pool.get()?;
@@ -375,6 +398,7 @@ fn apply_db_fixes(
                             params![fix.payload, now, persona_id],
                         )
                         .map_err(AppError::Database)?;
+                        prompt_changed = true;
                         applied.push(format!("Updated system_prompt: {}", fix.description));
                     }
                     "structured_prompt" => {
@@ -382,6 +406,7 @@ fn apply_db_fixes(
                             "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
                             params![fix.payload, now, persona_id],
                         ).map_err(AppError::Database)?;
+                        prompt_changed = true;
                         applied.push(format!("Updated structured_prompt: {}", fix.description));
                     }
                     other => {
@@ -407,6 +432,7 @@ fn apply_db_fixes(
                                         "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
                                         params![updated, now, persona_id],
                                     ).map_err(AppError::Database)?;
+                                    prompt_changed = true;
                                     applied.push(format!(
                                         "Patched section '{}': {}",
                                         other, fix.description
@@ -590,7 +616,67 @@ fn apply_db_fixes(
 
     tx.commit().map_err(AppError::Database)?;
 
-    Ok(applied)
+    Ok((applied, prompt_changed))
+}
+
+/// Snapshot the persona's now-current (healed) prompt as a new
+/// `persona_prompt_versions` row and promote it to `production`, demoting the
+/// prior production version.
+///
+/// This closes the "heal is invisible to version metrics" gap documented in
+/// [`crate::engine::healing_orchestrator`]. `apply_db_fixes` writes the healed
+/// prompt straight into the `personas` row; without a matching version snapshot
+/// the version history's latest/production row still holds the *pre-heal*
+/// prompt, so auto-rollback (which restores from version snapshots) could revert
+/// a good heal to an older snapshot, and its version-level error-rate metrics
+/// attribute post-heal executions to the wrong version. By capturing the healed
+/// prompt as the new production version we make the heal a first-class version:
+/// the canonical production state IS the heal, and a rollback restores the
+/// healed prompt rather than the pre-heal one.
+///
+/// Best-effort by contract at the call site (a failed snapshot must never fail
+/// the heal, which already committed), but returns `Result` so it is unit
+/// testable.
+fn snapshot_healed_prompt(
+    pool: &DbPool,
+    persona_id: &str,
+    fix_count: usize,
+) -> Result<(), AppError> {
+    use crate::db::repos::execution::metrics;
+    use rusqlite::params;
+
+    // Read the healed prompt fields straight from the persona row so the
+    // snapshot captures a coherent (system_prompt, structured_prompt) pair —
+    // the same pair auto-rollback's `perform_rollback` restores atomically.
+    let conn = pool.get()?;
+    let (system_prompt, structured_prompt): (Option<String>, Option<String>) = conn
+        .query_row(
+            "SELECT system_prompt, structured_prompt FROM personas WHERE id = ?1",
+            params![persona_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .map_err(AppError::Database)?;
+    drop(conn);
+
+    let change_summary = format!(
+        "AI healing applied {} fix{}",
+        fix_count,
+        if fix_count == 1 { "" } else { "es" }
+    );
+
+    let version = metrics::create_prompt_version(
+        pool,
+        persona_id,
+        structured_prompt,
+        system_prompt,
+        Some(change_summary),
+    )?;
+
+    // Promote the healed version to production (atomically demoting the prior
+    // production row) so the canonical/current version reflects the heal.
+    metrics::promote_to_production(pool, &version.id)?;
+
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -945,6 +1031,129 @@ mod tests {
         assert!(
             !fix_text_was_dropped(output, 0),
             "output without any healing_fix text must not be flagged"
+        );
+    }
+
+    // --- Direction 2b: heal snapshots the healed prompt as a production version
+
+    use crate::db::init_test_db;
+    use crate::db::models::CreatePersonaInput;
+    use crate::db::repos::core::personas;
+    use crate::db::repos::execution::metrics;
+
+    fn mk_persona(pool: &crate::db::DbPool, system_prompt: &str) -> String {
+        personas::create(
+            pool,
+            CreatePersonaInput {
+                name: "Heal Target".into(),
+                system_prompt: system_prompt.into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    /// The core Direction 2b contract: after an AI heal rewrites the prompt and
+    /// snapshots it, the persona's canonical **production** version is the HEALED
+    /// prompt — so a rollback (which restores from a version snapshot) restores
+    /// the heal, not the pre-heal prompt. Before the snapshot the production
+    /// version is still pre-heal — the exact hazard the fix closes.
+    #[test]
+    fn heal_snapshots_healed_prompt_as_production_version() {
+        let pool = init_test_db().unwrap();
+        let persona_id = mk_persona(&pool, "ORIGINAL");
+
+        // Pre-heal canonical version: v1 = "ORIGINAL", tagged production. This is
+        // what a stale rollback would revert to before the fix.
+        let v1 = metrics::create_prompt_version(
+            &pool,
+            &persona_id,
+            None,
+            Some("ORIGINAL".into()),
+            Some("initial".into()),
+        )
+        .unwrap();
+        metrics::promote_to_production(&pool, &v1.id).unwrap();
+
+        // Apply an AI-heal prompt fix -> "HEALED".
+        let fixes = vec![HealingFix {
+            fix_type: "modify_prompt".into(),
+            target: "system_prompt".into(),
+            description: "rewrite for clarity".into(),
+            payload: "HEALED".into(),
+        }];
+        let (_applied, prompt_changed) = apply_db_fixes(&pool, &persona_id, &fixes).unwrap();
+        assert!(prompt_changed, "a modify_prompt fix must report prompt_changed");
+
+        // The live persona row now holds the healed prompt...
+        let persona = personas::get_by_id(&pool, &persona_id).unwrap();
+        assert_eq!(persona.system_prompt, "HEALED");
+
+        // ...but WITHOUT the snapshot, the production version is still pre-heal —
+        // a rollback here would revert the heal (the documented hazard).
+        let prod_before = metrics::get_production_version(&pool, &persona_id)
+            .unwrap()
+            .expect("a production version exists");
+        assert_eq!(
+            prod_before.system_prompt.as_deref(),
+            Some("ORIGINAL"),
+            "before snapshot the production version is still the pre-heal prompt",
+        );
+
+        // Snapshot the healed prompt — this is what process_healing_result does.
+        snapshot_healed_prompt(&pool, &persona_id, fixes.len()).unwrap();
+
+        // Now the canonical production version IS the heal: a rollback restores
+        // HEALED, not ORIGINAL.
+        let prod_after = metrics::get_production_version(&pool, &persona_id)
+            .unwrap()
+            .expect("a production version exists");
+        assert_eq!(
+            prod_after.system_prompt.as_deref(),
+            Some("HEALED"),
+            "after snapshot the production version reflects the heal",
+        );
+        assert!(
+            prod_after.version_number > v1.version_number,
+            "the healed version supersedes the pre-heal one",
+        );
+
+        // Exactly one production version (promote demoted the prior one).
+        let versions = metrics::get_prompt_versions(&pool, &persona_id, Some(10)).unwrap();
+        let production_count = versions.iter().filter(|v| v.tag == "production").count();
+        assert_eq!(production_count, 1, "never two production rows for one persona");
+    }
+
+    /// Config-only heals (timeout / max_turns) must NOT snapshot a prompt
+    /// version — nothing about the prompt changed.
+    #[test]
+    fn config_only_heal_does_not_report_prompt_changed() {
+        let pool = init_test_db().unwrap();
+        let persona_id = mk_persona(&pool, "ORIGINAL");
+
+        let fixes = vec![HealingFix {
+            fix_type: "update_config".into(),
+            target: "timeout_ms".into(),
+            description: "bump timeout".into(),
+            payload: "900000".into(),
+        }];
+        let (_applied, prompt_changed) = apply_db_fixes(&pool, &persona_id, &fixes).unwrap();
+        assert!(
+            !prompt_changed,
+            "a config-only fix must not report prompt_changed",
         );
     }
 }

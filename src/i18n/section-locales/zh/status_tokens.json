@@ -158,6 +158,8 @@
     "outside_window": "不在活动时段内",
     "predicate_unmet": "条件未满足",
     "publish_failed": "发布失败",
-    "quarantined": "触发器已隔离"
+    "quarantined": "触发器已隔离",
+    "healing_abandoned": "已放弃修复",
+    "healing_capped": "修复重试已用尽"
   }
 }

@@ -3615,6 +3615,18 @@ fn spawn_healing_chain(
                         "healing_execution_id": exec_id,
                     }),
                 );
+                // Direction 2a: a cancelled heal is a user stop, not an
+                // abandonment — only surface the chain-stop when the heal run
+                // genuinely failed.
+                if !cancelled.load(Ordering::Acquire) {
+                    record_healing_chain_stop(
+                        &pool,
+                        &original_exec_id,
+                        &persona_id,
+                        chain::stop_reason::HEALING_ABANDONED,
+                        "AI-heal run did not succeed; no fix applied".to_string(),
+                    );
+                }
                 return;
             }
 
@@ -3682,6 +3694,18 @@ fn spawn_healing_chain(
                             // circuit_breaker was moved, create a fresh ref
                             Arc::new(failover::ProviderCircuitBreaker::new()),
                         );
+                    } else if heal_result.fixes_applied.is_empty() {
+                        // Direction 2a: the heal ran to completion but produced
+                        // no actionable fix, so the original (possibly chained)
+                        // link stays broken with no retry scheduled. Surface it
+                        // as a chain stop for chained runs.
+                        record_healing_chain_stop(
+                            &pool,
+                            &original_exec_id,
+                            &persona_id,
+                            chain::stop_reason::HEALING_ABANDONED,
+                            "AI-heal produced no actionable fix".to_string(),
+                        );
                     }
                 }
                 Err(e) => {
@@ -3693,6 +3717,15 @@ fn spawn_healing_chain(
                             "persona_id": persona_id,
                             "phase": "failed",
                         }),
+                    );
+                    // Direction 2a: applying the parsed fixes failed — the heal
+                    // did not repair the link.
+                    record_healing_chain_stop(
+                        &pool,
+                        &original_exec_id,
+                        &persona_id,
+                        chain::stop_reason::HEALING_ABANDONED,
+                        format!("AI-heal fix application failed: {e}"),
                     );
                 }
             }
@@ -3746,6 +3779,52 @@ fn spawn_healing_chain(
         #[cfg(feature = "desktop")]
         crate::tray::refresh_tray(&app_for_cleanup);
     });
+}
+
+/// Direction 2a: record a `chain_stop_reasons` row when a self-healing pathway
+/// abandons (or caps out on) a CHAINED execution, so the Chain tab can answer
+/// "why did this chain stop?" for healing exhaustion the same way it already
+/// does for depth/budget/predicate stops.
+///
+/// Best-effort and chain-scoped: it resolves the ORIGINAL execution's
+/// `chain_trace_id` from its `input_data` and records nothing when the run was
+/// not part of a chain (mirrors the wave-4 pattern — a non-chain healing
+/// abandonment surfaces via the healing audit log, not the chain audit). A lost
+/// audit row never affects control flow.
+fn record_healing_chain_stop(
+    pool: &DbPool,
+    original_exec_id: &str,
+    persona_id: &str,
+    reason_token: &str,
+    detail: String,
+) {
+    let meta = exec_repo::get_by_id(pool, original_exec_id)
+        .ok()
+        .and_then(|e| e.input_data)
+        .map(|input| chain::extract_chain_metadata(Some(&input)));
+    let (chain_depth, chain_trace_id) = match meta {
+        Some((depth, _visited, Some(ctid), _cost)) => (depth, ctid),
+        _ => return, // not a chain participant — nothing to surface here
+    };
+    if let Err(e) = crate::db::repos::execution::chain_stop_reasons::record(
+        pool,
+        crate::db::repos::execution::chain_stop_reasons::ChainStopReasonInput {
+            chain_trace_id: &chain_trace_id,
+            link_execution_id: original_exec_id,
+            trigger_id: None,
+            target_persona_id: Some(persona_id),
+            reason_token,
+            detail: Some(detail),
+            chain_depth,
+        },
+    ) {
+        tracing::warn!(
+            original_exec_id = %original_exec_id,
+            reason_token = %reason_token,
+            error = %e,
+            "Failed to record healing chain stop reason",
+        );
+    }
 }
 
 /// Reason tag stored on a `scheduled_retries` row. Drives the drain path's
@@ -4052,6 +4131,21 @@ fn spawn_delayed_retry(
                         emit_event(&app, event_name::AUTO_FIX_COMPLETED, &event_payload);
                     }
                 }
+            }
+
+            // Direction 2a: a healing retry that failed again with its retry
+            // budget exhausted is a terminal healing exhaustion — record a chain
+            // stop so a chained cascade shows why it ended (mirrors wave-4). The
+            // per-issue revert above flips the issue back to `open`; this closes
+            // the chain-audit gap the retry ladder previously left silent.
+            if !result.success && retry_count >= healing::MAX_RETRY_COUNT {
+                record_healing_chain_stop(
+                    &pool,
+                    &original_exec_id,
+                    &persona_id,
+                    chain::stop_reason::HEALING_CAPPED,
+                    format!("healing retry #{retry_count} failed; retry budget exhausted"),
+                );
             }
 
             // Notification

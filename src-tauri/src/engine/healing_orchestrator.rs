@@ -45,15 +45,16 @@
 //!   releasing on every path. **Invariant: the two prompt writes can never
 //!   interleave for one persona.**
 //!
-//!   KNOWN GAP (follow-up): `apply_db_fixes` mutates the live prompt WITHOUT
-//!   snapshotting a new `persona_prompt_versions` row, so auto-rollback's
-//!   version-level error-rate metrics still attribute the persona's history to
-//!   the pre-heal production version. The slot above stops the concurrent
-//!   clobber, but a later tick can still roll a healed prompt back to an older
-//!   snapshot because the heal is invisible to the version metrics. Versioning
-//!   the heal (new production version + deployment marker) is the deeper fix and
-//!   is deliberately deferred — it needs a version-semantics decision, not a
-//!   guess.
+//!   RESOLVED: `apply_db_fixes` now snapshots the healed prompt as a new
+//!   `persona_prompt_versions` row and promotes it to `production` (see
+//!   `ai_healing::snapshot_healed_prompt`, called from `process_healing_result`
+//!   whenever a fix mutates a prompt column). The heal is therefore a
+//!   first-class version: auto-rollback's version-level error-rate metrics
+//!   attribute post-heal executions to the healed version, and a rollback
+//!   restores the healed prompt rather than reverting it to an older, pre-heal
+//!   snapshot. The `healing_personas` slot above still prevents the concurrent
+//!   prompt clobber; this closes the deferred version-visibility gap on top of
+//!   it.
 //!
 //! - **The `healing_personas` lock** prevents concurrent AI healing sessions
 //!   on the same persona — and now also blocks an auto-rollback prompt write

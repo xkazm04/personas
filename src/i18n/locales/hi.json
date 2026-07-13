@@ -11423,7 +11423,9 @@
       "outside_window": "सक्रिय विंडो के बाहर",
       "predicate_unmet": "शर्त पूरी नहीं हुई",
       "publish_failed": "प्रकाशन विफल",
-      "quarantined": "ट्रिगर क्वारंटीन किया गया"
+      "quarantined": "ट्रिगर क्वारंटीन किया गया",
+      "healing_abandoned": "स्व-सुधार रुक गया",
+      "healing_capped": "सुधार के प्रयास समाप्त"
     }
   },
   "project_overview": {

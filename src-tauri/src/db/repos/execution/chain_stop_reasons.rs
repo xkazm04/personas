@@ -176,4 +176,41 @@ mod tests {
         let pool = init_test_db().unwrap();
         assert!(get_by_chain_trace_id(&pool, "nope").unwrap().is_empty());
     }
+
+    /// Direction 2a: the healing abandonment tokens are distinct, non-empty, and
+    /// round-trip through the same audit path the wave-4 stop reasons use. The
+    /// engine records these when a healing pathway gives up on / caps out a
+    /// chained execution.
+    #[test]
+    fn healing_stop_reason_tokens_round_trip() {
+        assert_eq!(stop_reason::HEALING_ABANDONED, "healing_abandoned");
+        assert_eq!(stop_reason::HEALING_CAPPED, "healing_capped");
+        assert_ne!(stop_reason::HEALING_ABANDONED, stop_reason::HEALING_CAPPED);
+
+        let pool = init_test_db().unwrap();
+        record(
+            &pool,
+            ChainStopReasonInput {
+                target_persona_id: Some("p-heal"),
+                detail: Some("AI-heal produced no actionable fix".into()),
+                ..input("chain-H", "orig-exec", stop_reason::HEALING_ABANDONED, 2)
+            },
+        )
+        .unwrap();
+        record(
+            &pool,
+            ChainStopReasonInput {
+                detail: Some("healing retry #3 failed; retry budget exhausted".into()),
+                ..input("chain-H", "orig-exec", stop_reason::HEALING_CAPPED, 2)
+            },
+        )
+        .unwrap();
+
+        let rows = get_by_chain_trace_id(&pool, "chain-H").unwrap();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].reason_token, stop_reason::HEALING_ABANDONED);
+        assert_eq!(rows[0].target_persona_id.as_deref(), Some("p-heal"));
+        assert_eq!(rows[1].reason_token, stop_reason::HEALING_CAPPED);
+        assert!(rows[1].detail.as_deref().unwrap().contains("exhausted"));
+    }
 }

@@ -11423,7 +11423,9 @@
       "outside_window": "Ngoài khung thời gian hoạt động",
       "predicate_unmet": "Chưa đạt điều kiện",
       "publish_failed": "Phát hành thất bại",
-      "quarantined": "Trigger đã bị cách ly"
+      "quarantined": "Trigger đã bị cách ly",
+      "healing_abandoned": "Đã ngừng tự sửa",
+      "healing_capped": "Hết lượt thử sửa lỗi"
     }
   },
   "project_overview": {

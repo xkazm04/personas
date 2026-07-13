@@ -158,6 +158,8 @@
     "outside_window": "Вне активного окна",
     "predicate_unmet": "Условие не выполнено",
     "publish_failed": "Ошибка публикации",
-    "quarantined": "Триггер в карантине"
+    "quarantined": "Триггер в карантине",
+    "healing_abandoned": "Восстановление прекращено",
+    "healing_capped": "Попытки восстановления исчерпаны"
   }
 }

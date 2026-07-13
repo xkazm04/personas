@@ -158,6 +158,8 @@
     "outside_window": "Außerhalb Aktivfenster",
     "predicate_unmet": "Bedingung nicht erfüllt",
     "publish_failed": "Veröffentlichung fehlgeschlagen",
-    "quarantined": "Trigger in Quarantäne"
+    "quarantined": "Trigger in Quarantäne",
+    "healing_abandoned": "Heilung aufgegeben",
+    "healing_capped": "Heilungsversuche erschöpft"
   }
 }

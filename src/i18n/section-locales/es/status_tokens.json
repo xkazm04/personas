@@ -158,6 +158,8 @@
     "outside_window": "Fuera de la ventana activa",
     "predicate_unmet": "Condición no cumplida",
     "publish_failed": "Error al publicar",
-    "quarantined": "Activador en cuarentena"
+    "quarantined": "Activador en cuarentena",
+    "healing_abandoned": "Reparación abandonada",
+    "healing_capped": "Reintentos de reparación agotados"
   }
 }

@@ -11423,7 +11423,9 @@
       "outside_window": "সক্রিয় উইন্ডোর বাইরে",
       "predicate_unmet": "শর্ত পূরণ হয়নি",
       "publish_failed": "প্রকাশ ব্যর্থ হয়েছে",
-      "quarantined": "ট্রিগার কোয়ারেন্টাইন করা হয়েছে"
+      "quarantined": "ট্রিগার কোয়ারেন্টাইন করা হয়েছে",
+      "healing_abandoned": "নিরাময় থেমে গেছে",
+      "healing_capped": "নিরাময়ের পুনঃচেষ্টা শেষ"
     }
   },
   "project_overview": {

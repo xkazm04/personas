@@ -11544,7 +11544,9 @@
       "quarantined": "Trigger quarantined",
       "publish_failed": "Publish failed",
       "budget_exceeded": "Cost ceiling reached",
-      "breadth_exceeded": "Fan-out limit reached"
+      "breadth_exceeded": "Fan-out limit reached",
+      "healing_abandoned": "Healing gave up",
+      "healing_capped": "Healing retries exhausted"
     },
     "error_category": {
       "rate_limit": "Rate limit",

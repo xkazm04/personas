@@ -11423,7 +11423,9 @@
       "outside_window": "Mimo aktivní okno",
       "predicate_unmet": "Podmínka nesplněna",
       "publish_failed": "Publikování selhalo",
-      "quarantined": "Spouštěč v karanténě"
+      "quarantined": "Spouštěč v karanténě",
+      "healing_abandoned": "Opravy se vzdaly",
+      "healing_capped": "Pokusy o opravu vyčerpány"
     }
   },
   "project_overview": {

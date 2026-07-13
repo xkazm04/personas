@@ -11423,7 +11423,9 @@
       "outside_window": "Di luar jendela aktif",
       "predicate_unmet": "Kondisi tidak terpenuhi",
       "publish_failed": "Publikasi gagal",
-      "quarantined": "Trigger dikarantina"
+      "quarantined": "Trigger dikarantina",
+      "healing_abandoned": "Pemulihan menyerah",
+      "healing_capped": "Percobaan pemulihan habis"
     }
   },
   "project_overview": {

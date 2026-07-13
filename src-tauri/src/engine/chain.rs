@@ -69,6 +69,16 @@ pub mod stop_reason {
     /// count of links already spawned under this chain trace hit
     /// `CHAIN_MAX_LINKS`, so the whole cascade halts before firing further links.
     pub const BREADTH_EXCEEDED: &str = "breadth_exceeded";
+    /// A self-healing pathway for a chained execution gave up without recovering
+    /// the link: the AI-heal run itself failed, produced no actionable fix, or a
+    /// healing retry failed again with retry budget still remaining. Recorded
+    /// from the engine's healing outcome paths (see `engine::mod`) only when the
+    /// original execution carried a `chain_trace_id`.
+    pub const HEALING_ABANDONED: &str = "healing_abandoned";
+    /// A self-healing retry ladder for a chained execution exhausted its retry
+    /// budget (`healing::MAX_RETRY_COUNT`) without recovering the link — the
+    /// capped counterpart of [`HEALING_ABANDONED`].
+    pub const HEALING_CAPPED: &str = "healing_capped";
 }
 
 use crate::db::repos::execution::chain_stop_reasons::{self, ChainStopReasonInput};

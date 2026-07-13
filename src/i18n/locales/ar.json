@@ -11423,7 +11423,9 @@
       "outside_window": "خارج النافذة النشطة",
       "predicate_unmet": "الشرط غير مستوفٍ",
       "publish_failed": "فشل النشر",
-      "quarantined": "المُشغِّل معزول"
+      "quarantined": "المُشغِّل معزول",
+      "healing_abandoned": "توقّف الإصلاح",
+      "healing_capped": "استُنفدت محاولات الإصلاح"
     }
   },
   "project_overview": {
