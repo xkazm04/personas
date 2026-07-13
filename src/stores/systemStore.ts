@@ -61,6 +61,8 @@ export const useSystemStore = create<SystemStore>()(
         fleetNotifyAwaiting: state.fleetNotifyAwaiting,
         fleetAutoHibernate: state.fleetAutoHibernate,
         fleetAutoHibernateMinutes: state.fleetAutoHibernateMinutes,
+        fleetLiveSlotsEnabled: state.fleetLiveSlotsEnabled,
+        fleetMaxLiveSessions: state.fleetMaxLiveSessions,
         fleetStaleMinutes: state.fleetStaleMinutes,
         fleetFrozenMinutes: state.fleetFrozenMinutes,
         fleetActiveSessionId: state.fleetActiveSessionId,

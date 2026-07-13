@@ -11622,7 +11622,12 @@
       "auto_hibernate_desc": "Tự động ngủ đông các phiên không hoạt động quá ngưỡng — giải phóng tiến trình ngay cả khi Fleet không được tập trung. Vẫn có thể tiếp tục qua Đánh thức. Chạy khi Personas đang mở.",
       "auto_hibernate_toggle": "Bật tự động ngủ đông",
       "auto_hibernate_after": "Sau",
-      "auto_hibernate_minutes_unit": "phút không hoạt động"
+      "auto_hibernate_minutes_unit": "phút không hoạt động",
+      "live_slots_desc": "Giới hạn số tiến trình claude chạy cùng lúc. Khi đội đạt giới hạn, phiên nhàn rỗi lâu nhất sẽ được ngủ đông để nhường chỗ — vẫn có thể tiếp tục qua Đánh thức. Các phiên đang làm việc không bao giờ bị gián đoạn.",
+      "live_slots_max_label": "Tối đa",
+      "live_slots_title": "Giới hạn phiên đang chạy",
+      "live_slots_toggle": "Bật giới hạn phiên",
+      "live_slots_unit": "phiên đang chạy"
     },
     "title": "Plugin",
     "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",

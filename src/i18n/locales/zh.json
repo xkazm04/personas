@@ -11622,7 +11622,12 @@
       "auto_hibernate_desc": "自动休眠超过阈值时间的空闲会话 — 即使 Fleet 未处于焦点也会释放进程。通过唤醒仍可恢复。在 Personas 打开时运行。",
       "auto_hibernate_toggle": "启用自动休眠",
       "auto_hibernate_after": "超过",
-      "auto_hibernate_minutes_unit": "分钟空闲"
+      "auto_hibernate_minutes_unit": "分钟空闲",
+      "live_slots_desc": "限制同时运行的 claude 进程数量。当机队达到上限时，最久未活动的空闲会话将被休眠以腾出空间 — 随时可通过唤醒恢复。工作中的会话绝不会被中断。",
+      "live_slots_max_label": "上限",
+      "live_slots_title": "限制在线会话数",
+      "live_slots_toggle": "启用会话上限",
+      "live_slots_unit": "个在线会话"
     },
     "title": "插件",
     "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",

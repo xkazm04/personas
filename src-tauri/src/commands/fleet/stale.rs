@@ -103,6 +103,30 @@ pub fn set_auto_hibernate(enabled: bool, after_secs: u64) {
 }
 
 // ---------------------------------------------------------------------------
+// Live-slot scheduler (fleet-scale Tier A) — cap how many process-backed
+// `claude` sessions run at once. The fleet becomes "N tracked conversations,
+// ≤max live processes": overflow Idle/Stale sessions are hibernated
+// (transcripts persist; Wake resumes them), so RAM/CPU tracks *active* work,
+// not tracked work. 0 = unlimited (feature off). Soft cap by design —
+// Running/AwaitingInput/Spawning sessions are never evicted, so a burst of
+// genuinely-working sessions may exceed the cap until some go idle.
+// Same frontend-owned plumbing as auto-hibernate: pushed on change + refresh.
+// ---------------------------------------------------------------------------
+
+static MAX_LIVE_SESSIONS: AtomicU64 = AtomicU64::new(0);
+
+/// Update the live-slot cap. `0` disables the scheduler. Called by
+/// `fleet_set_live_slots`.
+pub fn set_live_slots(max_live: u64) {
+    MAX_LIVE_SESSIONS.store(max_live, Ordering::Relaxed);
+}
+
+/// The configured live-slot cap (0 = unlimited / off).
+pub fn live_slot_cap() -> u64 {
+    MAX_LIVE_SESSIONS.load(Ordering::Relaxed)
+}
+
+// ---------------------------------------------------------------------------
 // User-tunable state cutoffs — set from Fleet → Settings via
 // `fleet_set_state_cutoffs`, mirroring the auto-hibernate plumbing (persisted
 // in the frontend slice, pushed on change + on every Fleet refresh). 0 = use
@@ -253,6 +277,7 @@ fn tick_once(app: &AppHandle) {
     };
     if snaps.is_empty() {
         auto_hibernate_pass(app);
+        live_slot_pass(app);
         return;
     }
 
@@ -463,6 +488,7 @@ fn tick_once(app: &AppHandle) {
     }
 
     auto_hibernate_pass(app);
+    live_slot_pass(app);
 }
 
 /// Auto-hibernate Idle/Stale sessions that have been inactive past the
@@ -502,6 +528,119 @@ fn auto_hibernate_pass(app: &AppHandle) {
                     session_id: sid,
                     state: "hibernated",
                     reason: Some(format!("Auto-hibernated after {} min idle", after_secs / 60)),
+                },
+            );
+        }
+    }
+}
+
+/// Minimal per-session facts the live-slot policy needs — extracted so the
+/// eviction choice is a pure, unit-tested decision.
+#[derive(Clone)]
+struct SlotSnap {
+    id: String,
+    state: FleetSessionState,
+    /// Resumable: hibernate only makes sense with a bound claude_session_id.
+    has_cc_id: bool,
+    /// Process-backed: only sessions whose process Fleet owns count against
+    /// (and can free) a slot. Hooks-only external rows have no child_pid.
+    has_pid: bool,
+    last_activity_ms: i64,
+}
+
+/// Pure live-slot policy: given the fleet's process-backed population and the
+/// cap, return the sessions to hibernate — oldest-idle first, Idle/Stale +
+/// resumable only, and never more than the overflow. Running / AwaitingInput /
+/// Spawning sessions are untouchable (soft cap): evicting working sessions
+/// would lose in-flight work, which the never-lose-work rule forbids.
+fn live_slot_evictions(snaps: &[SlotSnap], cap: u64) -> Vec<String> {
+    if cap == 0 {
+        return Vec::new();
+    }
+    let live = snaps.iter().filter(|s| s.has_pid && !matches!(s.state, FleetSessionState::Exited | FleetSessionState::Hibernated)).count() as u64;
+    if live <= cap {
+        return Vec::new();
+    }
+    let overflow = (live - cap) as usize;
+    let mut candidates: Vec<&SlotSnap> = snaps
+        .iter()
+        .filter(|s| {
+            s.has_pid
+                && s.has_cc_id
+                && matches!(s.state, FleetSessionState::Idle | FleetSessionState::Stale)
+        })
+        .collect();
+    candidates.sort_by_key(|s| s.last_activity_ms);
+    candidates.into_iter().take(overflow).map(|s| s.id.clone()).collect()
+}
+
+/// Snapshot the registry into the pure policy's shape.
+fn slot_snapshot() -> Vec<SlotSnap> {
+    let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+    map.values()
+        .map(|s| SlotSnap {
+            id: s.id.clone(),
+            state: s.state,
+            has_cc_id: s.claude_session_id.is_some(),
+            has_pid: s.child_pid.is_some(),
+            last_activity_ms: s.last_activity_ms,
+        })
+        .collect()
+}
+
+/// Enforce the live-slot cap: hibernate overflow Idle/Stale sessions (oldest
+/// idle first) until the process-backed live count fits the cap. Runs every
+/// ticker tick; also the rebalance path after a burst of spawns.
+fn live_slot_pass(app: &AppHandle) {
+    let cap = live_slot_cap();
+    if cap == 0 {
+        return;
+    }
+    let evict = live_slot_evictions(&slot_snapshot(), cap);
+    for sid in evict {
+        // `require_resting = true`: re-validate Idle/Stale inside hibernate()'s
+        // lock — a hook may have flipped the session to Running/AwaitingInput
+        // between the snapshot and now. Never sleep a live turn.
+        if registry().hibernate(&sid, true) {
+            tracing::info!(session_id = %sid, cap, "fleet live-slots: hibernated overflow session");
+            let _ = app.emit(
+                event_name::FLEET_SESSION_STATE,
+                FleetStatePayload {
+                    session_id: sid,
+                    state: "hibernated",
+                    reason: Some(format!(
+                        "Hibernated to stay within the live-session limit ({cap}) — wake to resume"
+                    )),
+                },
+            );
+        }
+    }
+}
+
+/// Best-effort slot freeing before a spawn/wake: if the cap is set and the
+/// fleet is at/over it, hibernate the single best idle candidate so the new
+/// session starts inside the budget. If nothing is evictable (everything is
+/// genuinely working), the spawn proceeds anyway — soft cap; the ticker
+/// rebalances as sessions go idle.
+pub fn free_slot_for_spawn(app: &AppHandle) {
+    let cap = live_slot_cap();
+    if cap == 0 {
+        return;
+    }
+    // Pretend the cap is one lower so a fleet sitting exactly AT the cap
+    // frees a slot for the incoming session.
+    let evict = live_slot_evictions(&slot_snapshot(), cap.saturating_sub(1));
+    if let Some(sid) = evict.first() {
+        if registry().hibernate(sid, true) {
+            tracing::info!(session_id = %sid, cap, "fleet live-slots: hibernated to make room for a new session");
+            let _ = app.emit(
+                event_name::FLEET_SESSION_STATE,
+                FleetStatePayload {
+                    session_id: sid.clone(),
+                    state: "hibernated",
+                    reason: Some(format!(
+                        "Hibernated to free a live-session slot (limit {cap}) — wake to resume"
+                    )),
                 },
             );
         }
@@ -618,5 +757,67 @@ mod tests {
         // Already past Spawning → not our case.
         assert!(!is_never_attached(Running, false, ATTACH_MS, ATTACH_MS));
         assert!(!is_never_attached(Idle, false, ATTACH_MS, ATTACH_MS));
+    }
+
+    fn snap(id: &str, state: FleetSessionState, has_cc_id: bool, has_pid: bool, last_activity_ms: i64) -> SlotSnap {
+        SlotSnap { id: id.into(), state, has_cc_id, has_pid, last_activity_ms }
+    }
+
+    #[test]
+    fn live_slots_zero_cap_is_off() {
+        use FleetSessionState::*;
+        let snaps = vec![snap("a", Idle, true, true, 1), snap("b", Idle, true, true, 2)];
+        assert!(live_slot_evictions(&snaps, 0).is_empty());
+    }
+
+    #[test]
+    fn live_slots_under_cap_evicts_nothing() {
+        use FleetSessionState::*;
+        let snaps = vec![snap("a", Running, true, true, 1), snap("b", Idle, true, true, 2)];
+        assert!(live_slot_evictions(&snaps, 2).is_empty());
+        assert!(live_slot_evictions(&snaps, 5).is_empty());
+    }
+
+    #[test]
+    fn live_slots_evicts_oldest_idle_first_up_to_overflow() {
+        use FleetSessionState::*;
+        let snaps = vec![
+            snap("working", Running, true, true, 1),
+            snap("old-idle", Idle, true, true, 10),
+            snap("older-stale", Stale, true, true, 5),
+            snap("fresh-idle", Idle, true, true, 100),
+        ];
+        // 4 live, cap 2 → evict 2, oldest-activity first.
+        assert_eq!(live_slot_evictions(&snaps, 2), vec!["older-stale".to_string(), "old-idle".to_string()]);
+        // cap 3 → evict only the single oldest candidate.
+        assert_eq!(live_slot_evictions(&snaps, 3), vec!["older-stale".to_string()]);
+    }
+
+    #[test]
+    fn live_slots_never_evicts_working_awaiting_or_unresumable() {
+        use FleetSessionState::*;
+        let snaps = vec![
+            snap("running", Running, true, true, 1),
+            snap("awaiting", AwaitingInput, true, true, 2),
+            snap("spawning", Spawning, false, true, 3),
+            // Idle but no cc id → can't be resumed, so never hibernated.
+            snap("unbound-idle", Idle, false, true, 4),
+        ];
+        // 4 live, cap 1 → overflow 3, but zero eligible candidates.
+        assert!(live_slot_evictions(&snaps, 1).is_empty());
+    }
+
+    #[test]
+    fn live_slots_ignores_processless_and_terminal_rows() {
+        use FleetSessionState::*;
+        let snaps = vec![
+            // External hooks-only row (no pid) — neither counts nor evicts.
+            snap("external", Idle, true, false, 1),
+            snap("hibernated", Hibernated, true, false, 2),
+            snap("exited", Exited, true, false, 3),
+            snap("live", Idle, true, true, 4),
+        ];
+        // Only one process-backed live session → within cap 1 → nothing.
+        assert!(live_slot_evictions(&snaps, 1).is_empty());
     }
 }

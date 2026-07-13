@@ -11892,6 +11892,11 @@ export type Translations = {
       auto_hibernate_toggle: string;
       auto_hibernate_after: string;
       auto_hibernate_minutes_unit: string;
+      live_slots_title: string;
+      live_slots_desc: string;
+      live_slots_toggle: string;
+      live_slots_max_label: string;
+      live_slots_unit: string;
     };
     title: string;
     subtitle: string;

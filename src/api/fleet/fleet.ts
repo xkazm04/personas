@@ -155,6 +155,15 @@ export const setAutoHibernate = (enabled: boolean, afterMinutes: number) =>
   invoke<null>('fleet_set_auto_hibernate', { enabled, afterMinutes });
 
 /**
+ * Configure the live-slot scheduler: cap how many process-backed `claude`
+ * sessions run at once — overflow Idle/Stale sessions are hibernated (oldest
+ * first) and can be woken later. `0` disables the cap. Same push-on-change +
+ * push-on-refresh plumbing as auto-hibernate.
+ */
+export const setLiveSlots = (maxLive: number) =>
+  invoke<null>('fleet_set_live_slots', { maxLive });
+
+/**
  * Tune the staleness cutoffs (seconds; clamped server-side): flat-log time
  * before `Stale`, and total PTY silence before a `Running` session is flagged
  * frozen. Same push-on-change + push-on-refresh plumbing as auto-hibernate.

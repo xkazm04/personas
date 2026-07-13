@@ -11622,7 +11622,12 @@
       "auto_hibernate_desc": "Hibernasi otomatis sesi yang tidak aktif melewati batas waktu — membebaskan proses meski Fleet tidak difokuskan. Tetap bisa dilanjutkan via Bangunkan. Berjalan selama Personas terbuka.",
       "auto_hibernate_toggle": "Aktifkan hibernasi otomatis",
       "auto_hibernate_after": "Setelah",
-      "auto_hibernate_minutes_unit": "menit tidak aktif"
+      "auto_hibernate_minutes_unit": "menit tidak aktif",
+      "live_slots_desc": "Batasi berapa banyak proses claude yang berjalan sekaligus. Saat armada mencapai batas, sesi idle terlama dihibernasi untuk memberi ruang — tetap dapat dilanjutkan lewat Bangunkan. Sesi yang sedang bekerja tidak pernah diganggu.",
+      "live_slots_max_label": "Maks",
+      "live_slots_title": "Batasi sesi aktif",
+      "live_slots_toggle": "Aktifkan batas sesi",
+      "live_slots_unit": "sesi aktif"
     },
     "title": "Plugin",
     "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",
