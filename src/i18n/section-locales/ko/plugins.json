@@ -2483,7 +2483,14 @@
     "progress_no_date": "날짜 없음",
     "progress_row_counts": "진행 중 {active} · 완료 {done}",
     "progress_summary": "프로젝트 {projects}개 · 목표 {goals}개",
-    "progress_today": "오늘"
+    "progress_today": "오늘",
+    "progress_filter_all": "전체",
+    "progress_filter_done_aria": "완료된 작업을 얼마나 표시할지",
+    "progress_filter_none": "숨김",
+    "progress_filter_recent": "7일",
+    "progress_future": "미래",
+    "progress_hidden_note": "완료된 목표 {count}개 숨김",
+    "progress_past": "과거"
   },
   "dev_projects": {
     "active_goals": "활성 목표",

@@ -2483,7 +2483,14 @@
     "progress_no_date": "कोई तारीख़ नहीं",
     "progress_row_counts": "{active} सक्रिय · {done} पूर्ण",
     "progress_summary": "{projects} प्रोजेक्ट · {goals} लक्ष्य",
-    "progress_today": "आज"
+    "progress_today": "आज",
+    "progress_filter_all": "सभी",
+    "progress_filter_done_aria": "कितना पूर्ण कार्य दिखाना है",
+    "progress_filter_none": "कोई नहीं",
+    "progress_filter_recent": "7दि",
+    "progress_future": "भविष्य",
+    "progress_hidden_note": "{count} पूर्ण लक्ष्य छिपाए गए",
+    "progress_past": "अतीत"
   },
   "dev_projects": {
     "active_goals": "सक्रिय goals",

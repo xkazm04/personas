@@ -2483,7 +2483,14 @@
     "progress_no_date": "Bez data",
     "progress_row_counts": "{active} aktivních · {done} hotových",
     "progress_summary": "{projects} projektů · {goals} cílů",
-    "progress_today": "Dnes"
+    "progress_today": "Dnes",
+    "progress_filter_all": "Vše",
+    "progress_filter_done_aria": "Kolik hotové práce zobrazit",
+    "progress_filter_none": "Nic",
+    "progress_filter_recent": "7D",
+    "progress_future": "Budoucnost",
+    "progress_hidden_note": "Skryto hotových cílů: {count}",
+    "progress_past": "Minulost"
   },
   "dev_projects": {
     "active_goals": "aktivních cílů",

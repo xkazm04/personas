@@ -2483,7 +2483,14 @@
     "progress_no_date": "无日期",
     "progress_row_counts": "{active} 进行中 · {done} 已完成",
     "progress_summary": "{projects} 个项目 · {goals} 个目标",
-    "progress_today": "今天"
+    "progress_today": "今天",
+    "progress_filter_all": "全部",
+    "progress_filter_done_aria": "显示多少已完成的工作",
+    "progress_filter_none": "不显示",
+    "progress_filter_recent": "7天",
+    "progress_future": "未来",
+    "progress_hidden_note": "已隐藏 {count} 个已完成目标",
+    "progress_past": "过去"
   },
   "dev_projects": {
     "active_goals": "活跃目标",

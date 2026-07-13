@@ -13768,7 +13768,14 @@
       "progress_no_date": "Tanpa tanggal",
       "progress_row_counts": "{active} aktif · {done} selesai",
       "progress_summary": "{projects} proyek · {goals} sasaran",
-      "progress_today": "Hari ini"
+      "progress_today": "Hari ini",
+      "progress_filter_all": "Semua",
+      "progress_filter_done_aria": "Seberapa banyak pekerjaan selesai yang ditampilkan",
+      "progress_filter_none": "Tidak ada",
+      "progress_filter_recent": "7H",
+      "progress_future": "Mendatang",
+      "progress_hidden_note": "{count} sasaran selesai disembunyikan",
+      "progress_past": "Lampau"
     },
     "dev_projects": {
       "active_goals": "tujuan aktif",

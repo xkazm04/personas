@@ -13778,6 +13778,13 @@ export type Translations = {
       goal_explainer_progress: string;
       progress_today: string;
       progress_no_date: string;
+      progress_past: string;
+      progress_future: string;
+      progress_filter_done_aria: string;
+      progress_filter_all: string;
+      progress_filter_recent: string;
+      progress_filter_none: string;
+      progress_hidden_note: string;
       progress_summary: string;
       progress_row_counts: string;
       progress_empty_title: string;

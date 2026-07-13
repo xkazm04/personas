@@ -1,13 +1,12 @@
 /**
- * Shared primitives for the Progress-view prototype round (baseline + variants).
+ * Internal toolkit for the Progress view (the portfolio filmstrip).
  *
- * Hoisted out of GoalsProgress so the directional variants (Sequence, Buckets)
- * compose from the same data hook, drawer wiring, legend, and goal-square node
- * instead of forking them. Survives consolidation as the Progress view's
- * internal toolkit; the variant files themselves are throwaway.
+ * Holds the cross-project data hook, the detail-drawer/editor wiring, the goal
+ * node, the status legend, and the empty state — the pieces GoalsProgress
+ * composes. Kept as a separate module so the view file stays about layout.
  */
-import { useEffect, useState, type ReactNode } from 'react';
-import { ChartNoAxesGantt } from 'lucide-react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { ChartNoAxesGantt, Plus } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import * as devApi from '@/api/devTools/devTools';
@@ -48,21 +47,34 @@ export function nodeTooltip(dl: DevLifecycleT, g: DevGoal): string {
   return parts.join(' · ');
 }
 
-/** Cross-project portfolio data: all projects + all goals, fetched directly. */
-export function useGoalsPortfolio(): { projects: DevProject[]; allGoals: DevGoal[] | null } {
+/**
+ * Cross-project portfolio data: all projects + all goals, fetched directly (not
+ * via the store's active-project goals array) so the view never depends on which
+ * project is currently picked. `refresh` re-pulls after a mutation (create/edit
+ * lands in the store, not in this local copy).
+ */
+export function useGoalsPortfolio(): {
+  projects: DevProject[];
+  allGoals: DevGoal[] | null;
+  refresh: () => void;
+} {
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const [allGoals, setAllGoals] = useState<DevGoal[] | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    void fetchProjects?.();
+
+  const load = useCallback(() => {
     void devApi
       .listAllGoals()
-      .then((g) => { if (!cancelled) setAllGoals(g); })
+      .then(setAllGoals)
       .catch(silentCatch('GoalsProgress.allGoals'));
-    return () => { cancelled = true; };
-  }, [fetchProjects]);
-  return { projects, allGoals };
+  }, []);
+
+  useEffect(() => {
+    void fetchProjects?.();
+    load();
+  }, [fetchProjects, load]);
+
+  return { projects, allGoals, refresh: load };
 }
 
 export interface PortfolioProjectGoals {
@@ -98,36 +110,64 @@ export function groupByProject(projects: DevProject[], goals: DevGoal[]): Portfo
   return rows;
 }
 
-/** Detail-drawer + editor wiring shared by every variant. */
-export function useGoalDrawer(goals: DevGoal[]): { openGoal: (id: string) => void; drawer: ReactNode } {
+/**
+ * Detail-drawer + goal-editor wiring. `openGoal` opens an existing goal;
+ * `createGoalIn` opens the editor in create mode with the project prefilled (the
+ * per-row "+" affordance). Both mutate through the store, so every close calls
+ * `onMutated` to re-pull the portfolio's own copy of the goals.
+ */
+export function useGoalDrawer(
+  goals: DevGoal[],
+  onMutated: () => void,
+): {
+  openGoal: (id: string) => void;
+  createGoalIn: (projectId: string) => void;
+  drawer: ReactNode;
+} {
   const [detailGoalId, setDetailGoalId] = useState<string | null>(null);
   const [editGoal, setEditGoal] = useState<DevGoal | null>(null);
+  const [createProjectId, setCreateProjectId] = useState<string | null>(null);
+
+  const closeDetail = () => {
+    setDetailGoalId(null);
+    onMutated();
+  };
+  const closeEditor = () => {
+    setEditGoal(null);
+    setCreateProjectId(null);
+    onMutated();
+  };
+
   const drawer = (
     <>
       <GoalDetailDrawer
         isOpen={!!detailGoalId}
         goalId={detailGoalId}
         goalFallback={goals.find((g) => g.id === detailGoalId) ?? null}
-        onClose={() => setDetailGoalId(null)}
+        onClose={closeDetail}
         onEdit={(g) => { setDetailGoalId(null); setEditGoal(g); }}
       />
-      {editGoal && (
+      {(editGoal || createProjectId) && (
         <GoalEditorModal
           isOpen
           editGoal={editGoal}
-          projectId={editGoal.project_id}
-          onClose={() => setEditGoal(null)}
+          projectId={editGoal?.project_id ?? createProjectId!}
+          onClose={closeEditor}
         />
       )}
     </>
   );
-  return { openGoal: setDetailGoalId, drawer };
+
+  return { openGoal: setDetailGoalId, createGoalIn: setCreateProjectId, drawer };
 }
 
+/** Node edge length (px) — the filmstrip's unit of pitch. */
+export const NODE_PX = 20;
+
 /**
- * The goal node. `sm` = the original 10px square (baseline). `lg` = the 20px
- * square: same status fill, plus an inner mini progress bar on ongoing goals
- * (done goals read as complete without one).
+ * The goal node: a status-filled square carrying an inner progress bar while the
+ * goal is ongoing (a done goal reads as complete without one) and a red ring
+ * when it's overdue.
  */
 export function GoalSquare({
   goal,
@@ -135,22 +175,16 @@ export function GoalSquare({
   delay,
   dl,
   onOpen,
-  size = 'sm',
 }: {
   goal: DevGoal;
   overdue: boolean;
   delay: number;
   dl: DevLifecycleT;
   onOpen: (id: string) => void;
-  size?: 'sm' | 'lg';
 }) {
   const meta = goalStatusMeta(goal.status);
   const done = isComplete(goal.status);
   const ring = overdue ? '0 0 0 1.5px rgba(239,68,68,0.75), ' : '';
-  const sizeCls =
-    size === 'lg'
-      ? 'w-5 h-5 rounded-[5px] hover:scale-125'
-      : 'w-2.5 h-2.5 rounded-[3px] hover:scale-[1.4]';
   return (
     <Tooltip content={nodeTooltip(dl, goal)}>
       <button
@@ -158,13 +192,15 @@ export function GoalSquare({
         onClick={() => onOpen(goal.id)}
         aria-label={`${goal.title} — ${goalStatusLabel(dl, goal.status)}`}
         style={{
+          width: NODE_PX,
+          height: NODE_PX,
           backgroundColor: meta.map.fill,
           boxShadow: `${ring}0 0 8px -1px ${meta.map.glow}`,
           animationDelay: `${delay}ms`,
         }}
-        className={`animate-fade-slide-in relative block overflow-hidden border border-background/80 transition-transform duration-150 hover:z-20 motion-reduce:transform-none focus-ring ${sizeCls} ${done ? 'opacity-60 hover:opacity-100' : ''}`}
+        className={`animate-fade-slide-in relative block overflow-hidden rounded-[5px] border border-background/80 transition-transform duration-150 hover:scale-125 hover:z-20 motion-reduce:transform-none focus-ring ${done ? 'opacity-60 hover:opacity-100' : ''}`}
       >
-        {size === 'lg' && !done && (
+        {!done && (
           <span className="absolute inset-x-[3px] bottom-[3px] h-[3px] rounded-full bg-background/35 overflow-hidden">
             <span
               className="absolute inset-y-0 left-0 rounded-full bg-foreground/90"
@@ -177,20 +213,51 @@ export function GoalSquare({
   );
 }
 
-/** Status color key shown above every variant's grid. */
-export function ProgressLegend({ dl, size = 'sm' }: { dl: DevLifecycleT; size?: 'sm' | 'lg' }) {
-  const swatch = size === 'lg' ? 'w-3 h-3 rounded-[3px]' : 'w-2 h-2 rounded-[2px]';
+/**
+ * Row-tail "+" affordance — same footprint as a goal node, so it reads as the
+ * next empty frame in the strip. Opens the goal editor with this row's project
+ * already selected.
+ */
+export function AddGoalButton({
+  projectName,
+  label,
+  onClick,
+}: {
+  projectName: string;
+  label: string;
+  onClick: () => void;
+}) {
   return (
-    <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1.5 mb-3">
+    <Tooltip content={label}>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={`${label} — ${projectName}`}
+        style={{ width: NODE_PX, height: NODE_PX }}
+        className="flex items-center justify-center rounded-[5px] border border-dashed border-primary/25 text-foreground transition-colors hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-violet-300 focus-ring"
+      >
+        <Plus className="w-3 h-3" />
+      </button>
+    </Tooltip>
+  );
+}
+
+/** Status color key shown above the grid. */
+export function ProgressLegend({ dl }: { dl: DevLifecycleT }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
       {GOAL_STATUSES.map((s) => (
         <span key={s} className="inline-flex items-center gap-1.5">
-          <span className={swatch} style={{ backgroundColor: goalStatusMeta(s).map.fill }} />
+          <span
+            className="w-3 h-3 rounded-[3px]"
+            style={{ backgroundColor: goalStatusMeta(s).map.fill }}
+          />
           <span className="typo-caption text-foreground">{goalStatusLabel(dl, s)}</span>
         </span>
       ))}
       <span className="inline-flex items-center gap-1.5">
         <span
-          className={`${swatch} bg-amber-400`}
+          className="w-3 h-3 rounded-[3px] bg-amber-400"
           style={{ boxShadow: '0 0 0 1.5px rgba(239,68,68,0.75)' }}
         />
         <span className="typo-caption text-foreground">{dl.timeline_overdue_group}</span>

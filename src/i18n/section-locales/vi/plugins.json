@@ -2483,7 +2483,14 @@
     "progress_no_date": "Không có ngày",
     "progress_row_counts": "{active} đang thực hiện · {done} hoàn thành",
     "progress_summary": "{projects} dự án · {goals} mục tiêu",
-    "progress_today": "Hôm nay"
+    "progress_today": "Hôm nay",
+    "progress_filter_all": "Tất cả",
+    "progress_filter_done_aria": "Hiển thị bao nhiêu công việc đã hoàn thành",
+    "progress_filter_none": "Không",
+    "progress_filter_recent": "7N",
+    "progress_future": "Tương lai",
+    "progress_hidden_note": "Đã ẩn {count} mục tiêu hoàn thành",
+    "progress_past": "Quá khứ"
   },
   "dev_projects": {
     "active_goals": "mục tiêu đang hoạt động",

@@ -13768,7 +13768,14 @@
       "progress_no_date": "بدون تاريخ",
       "progress_row_counts": "{active} نشط · {done} مكتمل",
       "progress_summary": "{projects} مشاريع · {goals} أهداف",
-      "progress_today": "اليوم"
+      "progress_today": "اليوم",
+      "progress_filter_all": "الكل",
+      "progress_filter_done_aria": "مقدار العمل المكتمل المعروض",
+      "progress_filter_none": "بلا",
+      "progress_filter_recent": "٧ أيام",
+      "progress_future": "المستقبل",
+      "progress_hidden_note": "تم إخفاء {count} هدفًا مكتملًا",
+      "progress_past": "الماضي"
     },
     "dev_projects": {
       "active_goals": "الأهداف النشطة",

@@ -2483,7 +2483,14 @@
     "progress_no_date": "Sin fecha",
     "progress_row_counts": "{active} activos · {done} completados",
     "progress_summary": "{projects} proyectos · {goals} objetivos",
-    "progress_today": "Hoy"
+    "progress_today": "Hoy",
+    "progress_filter_all": "Todo",
+    "progress_filter_done_aria": "Cuánto trabajo completado mostrar",
+    "progress_filter_none": "Nada",
+    "progress_filter_recent": "7D",
+    "progress_future": "Futuro",
+    "progress_hidden_note": "{count} objetivos completados ocultos",
+    "progress_past": "Pasado"
   },
   "dev_projects": {
     "active_goals": "objetivos activos",

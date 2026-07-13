@@ -13768,7 +13768,14 @@
       "progress_no_date": "Без даты",
       "progress_row_counts": "{active} активных · {done} завершённых",
       "progress_summary": "{projects} проектов · {goals} целей",
-      "progress_today": "Сегодня"
+      "progress_today": "Сегодня",
+      "progress_filter_all": "Все",
+      "progress_filter_done_aria": "Сколько завершённой работы показывать",
+      "progress_filter_none": "Нет",
+      "progress_filter_recent": "7д",
+      "progress_future": "Будущее",
+      "progress_hidden_note": "Скрыто завершённых целей: {count}",
+      "progress_past": "Прошлое"
     },
     "dev_projects": {
       "active_goals": "активных целей",

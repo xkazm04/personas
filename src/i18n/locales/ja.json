@@ -13768,7 +13768,14 @@
       "progress_no_date": "日付なし",
       "progress_row_counts": "進行中 {active} · 完了 {done}",
       "progress_summary": "{projects} プロジェクト · {goals} ゴール",
-      "progress_today": "今日"
+      "progress_today": "今日",
+      "progress_filter_all": "すべて",
+      "progress_filter_done_aria": "完了した作業をどこまで表示するか",
+      "progress_filter_none": "非表示",
+      "progress_filter_recent": "7日",
+      "progress_future": "未来",
+      "progress_hidden_note": "完了ゴール {count} 件を非表示",
+      "progress_past": "過去"
     },
     "dev_projects": {
       "active_goals": "アクティブなゴール",

@@ -13768,7 +13768,14 @@
       "progress_no_date": "Ohne Datum",
       "progress_row_counts": "{active} aktiv · {done} erledigt",
       "progress_summary": "{projects} Projekte · {goals} Ziele",
-      "progress_today": "Heute"
+      "progress_today": "Heute",
+      "progress_filter_all": "Alle",
+      "progress_filter_done_aria": "Wie viel abgeschlossene Arbeit angezeigt wird",
+      "progress_filter_none": "Keine",
+      "progress_filter_recent": "7T",
+      "progress_future": "Zukunft",
+      "progress_hidden_note": "{count} erledigte Ziele ausgeblendet",
+      "progress_past": "Vergangenheit"
     },
     "dev_projects": {
       "active_goals": "aktive Ziele",

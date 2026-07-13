@@ -2483,7 +2483,14 @@
     "progress_no_date": "তারিখ নেই",
     "progress_row_counts": "{active} সক্রিয় · {done} সম্পন্ন",
     "progress_summary": "{projects} প্রকল্প · {goals} লক্ষ্য",
-    "progress_today": "আজ"
+    "progress_today": "আজ",
+    "progress_filter_all": "সব",
+    "progress_filter_done_aria": "কতটা সম্পন্ন কাজ দেখানো হবে",
+    "progress_filter_none": "কিছু না",
+    "progress_filter_recent": "৭দি",
+    "progress_future": "ভবিষ্যৎ",
+    "progress_hidden_note": "{count} সম্পন্ন লক্ষ্য লুকানো",
+    "progress_past": "অতীত"
   },
   "dev_projects": {
     "active_goals": "সক্রিয় লক্ষ্য",
