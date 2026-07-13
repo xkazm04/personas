@@ -17,8 +17,7 @@ import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCo
 import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';
 import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestration/useOperativeMemoryBridge';
 import { lazyRetry } from '@/lib/lazyRetry';
-import { navSection, passesGates } from '@/lib/navigation/registry';
-import { renderSectionRoute, isRoutableSection } from '@/features/personas/sectionRouter';
+import { renderSectionRoute, isRoutableSection, isSectionGated } from '@/features/personas/sectionRouter';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 
 // Section PRIMARIES (Home, Overview, Teams canvas, Agents table, Events,
@@ -204,8 +203,7 @@ export default function PersonasPage() {
     // renders Home immediately instead of briefly mounting a forbidden surface
     // before the Sidebar redirect effect fires. Overlay-only sections have no
     // router branch, so they fall through to the persona default below.
-    const entry = navSection(sidebarSection);
-    if (!passesGates(entry.gates, { isDev: import.meta.env.DEV, isTierVisible: tier.isVisible })) {
+    if (isSectionGated(sidebarSection, { isDev: import.meta.env.DEV, isTierVisible: tier.isVisible })) {
       return renderSectionRoute('home', goHome);
     }
 

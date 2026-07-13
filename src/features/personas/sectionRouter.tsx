@@ -20,7 +20,7 @@ import { Suspense, type ComponentType, type ReactNode } from 'react';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import type { SidebarSection } from '@/lib/types/types';
-import { navSection } from '@/lib/navigation/registry';
+import { navSection, passesGates, type GateContext } from '@/lib/navigation/registry';
 
 // Shared Suspense fallback — null (content fades in via the motion wrapper).
 const SectionFallback = null;
@@ -92,4 +92,14 @@ export function renderSectionRoute(section: RoutableSection, onGoHome: () => voi
 /** Convenience: the registry gates for a routable section (single source of truth). */
 export function sectionGates(section: SidebarSection) {
   return navSection(section).gates;
+}
+
+/**
+ * Whether a section is blocked by its registry gates for the given context.
+ * The content router uses this to fail a forbidden section straight to Home —
+ * uniform with the sidebar rail and command palette — instead of briefly
+ * mounting a gated surface before the Sidebar redirect effect catches up.
+ */
+export function isSectionGated(section: SidebarSection, ctx: GateContext): boolean {
+  return !passesGates(navSection(section).gates, ctx);
 }
