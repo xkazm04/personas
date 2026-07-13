@@ -10352,6 +10352,19 @@ export type Translations = {
       empty_filtered: string;
       before: string;
       after: string;
+      categories: {
+        api_keys: string;
+        engine: string;
+        limits: string;
+        retention: string;
+        byom: string;
+        notifications: string;
+        autonomy: string;
+        quality_gates: string;
+        integrations: string;
+        sync: string;
+        config: string;
+      };
     };
     api_keys: {
       title: string;

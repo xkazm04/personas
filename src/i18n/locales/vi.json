@@ -10122,7 +10122,20 @@
       "empty": "Chưa có thay đổi cài đặt nào được ghi nhận. Các thay đổi thực hiện từ đây trở đi sẽ xuất hiện trong danh sách này.",
       "empty_filtered": "Không có mục nào khớp với bộ lọc danh mục hiện tại.",
       "before": "Trước",
-      "after": "Sau"
+      "after": "Sau",
+      "categories": {
+        "api_keys": "Khóa API",
+        "autonomy": "Tự động",
+        "byom": "BYOM",
+        "config": "Chung",
+        "engine": "Engine",
+        "integrations": "Tích hợp",
+        "limits": "Giới hạn",
+        "notifications": "Thông báo",
+        "quality_gates": "Cổng chất lượng",
+        "retention": "Lưu giữ",
+        "sync": "Đồng bộ đám mây"
+      }
     },
     "api_keys": {
       "title": "Khóa API",

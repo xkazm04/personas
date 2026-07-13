@@ -10336,7 +10336,7 @@
     "history": {
       "title": "Settings History",
       "subtitle": "Audit log of changes made to settings",
-      "description": "Append-only record of who changed which setting and when. Use this to trace back surprising behavior or coordinate audit reviews. Today only API-key create and revoke actions are recorded; coverage of the other sub-modules is rolling in.",
+      "description": "Append-only record of who changed which setting and when. Use this to trace back surprising behavior or coordinate audit reviews. Every user-facing settings change is recorded here — API keys, engine, limits, retention, autonomy, notifications and more; secret values are redacted, and internal engine bookkeeping is excluded.",
       "refresh": "Refresh",
       "filter_category": "Category",
       "filter_all": "All",
@@ -10345,7 +10345,20 @@
       "empty": "No settings changes recorded yet. Mutations made from here on will appear in this list.",
       "empty_filtered": "No entries match the current category filter.",
       "before": "Before",
-      "after": "After"
+      "after": "After",
+      "categories": {
+        "api_keys": "API Keys",
+        "engine": "Engine",
+        "limits": "Limits",
+        "retention": "Retention",
+        "byom": "BYOM",
+        "notifications": "Notifications",
+        "autonomy": "Autonomy",
+        "quality_gates": "Quality Gates",
+        "integrations": "Integrations",
+        "sync": "Cloud Sync",
+        "config": "General"
+      }
     },
     "api_keys": {
       "title": "API Keys",

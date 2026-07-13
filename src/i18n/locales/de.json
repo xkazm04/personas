@@ -10122,7 +10122,20 @@
       "empty": "Bisher wurden keine Änderungen an den Einstellungen aufgezeichnet. Ab jetzt vorgenommene Änderungen erscheinen in dieser Liste.",
       "empty_filtered": "Keine Einträge entsprechen dem aktuellen Kategoriefilter.",
       "before": "Vorher",
-      "after": "Nachher"
+      "after": "Nachher",
+      "categories": {
+        "api_keys": "API-Schlüssel",
+        "autonomy": "Autonomie",
+        "byom": "BYOM",
+        "config": "Allgemein",
+        "engine": "Engine",
+        "integrations": "Integrationen",
+        "limits": "Limits",
+        "notifications": "Benachrichtigungen",
+        "quality_gates": "Qualitäts-Gates",
+        "retention": "Aufbewahrung",
+        "sync": "Cloud-Sync"
+      }
     },
     "api_keys": {
       "title": "API-Schlüssel",

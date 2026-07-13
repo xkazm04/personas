@@ -10096,7 +10096,20 @@
       "empty": "尚未记录任何设置变更。从此处起的修改将出现在此列表中。",
       "empty_filtered": "没有记录与当前类别筛选匹配。",
       "before": "变更前",
-      "after": "变更后"
+      "after": "变更后",
+      "categories": {
+        "api_keys": "API 密钥",
+        "autonomy": "自主运行",
+        "byom": "BYOM",
+        "config": "常规",
+        "engine": "引擎",
+        "integrations": "集成",
+        "limits": "限制",
+        "notifications": "通知",
+        "quality_gates": "质量门",
+        "retention": "保留",
+        "sync": "云同步"
+      }
     },
     "api_keys": {
       "title": "API 密钥",

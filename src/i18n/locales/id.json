@@ -10122,7 +10122,20 @@
       "empty": "Belum ada perubahan pengaturan yang tercatat. Perubahan yang dilakukan mulai sekarang akan muncul dalam daftar ini.",
       "empty_filtered": "Tidak ada entri yang cocok dengan filter kategori saat ini.",
       "before": "Sebelum",
-      "after": "Sesudah"
+      "after": "Sesudah",
+      "categories": {
+        "api_keys": "Kunci API",
+        "autonomy": "Otonomi",
+        "byom": "BYOM",
+        "config": "Umum",
+        "engine": "Mesin",
+        "integrations": "Integrasi",
+        "limits": "Batas",
+        "notifications": "Notifikasi",
+        "quality_gates": "Gerbang Kualitas",
+        "retention": "Retensi",
+        "sync": "Sinkronisasi Cloud"
+      }
     },
     "api_keys": {
       "title": "Kunci API",

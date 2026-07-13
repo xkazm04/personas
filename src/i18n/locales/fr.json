@@ -10096,7 +10096,20 @@
       "empty": "Aucune modification de paramètre enregistrée pour le moment. Les modifications effectuées à partir de maintenant apparaîtront dans cette liste.",
       "empty_filtered": "Aucune entrée ne correspond au filtre de catégorie actuel.",
       "before": "Avant",
-      "after": "Après"
+      "after": "Après",
+      "categories": {
+        "api_keys": "Clés API",
+        "autonomy": "Autonomie",
+        "byom": "BYOM",
+        "config": "Général",
+        "engine": "Moteur",
+        "integrations": "Intégrations",
+        "limits": "Limites",
+        "notifications": "Notifications",
+        "quality_gates": "Contrôles qualité",
+        "retention": "Rétention",
+        "sync": "Synchronisation cloud"
+      }
     },
     "api_keys": {
       "title": "Clés API",

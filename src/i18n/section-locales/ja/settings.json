@@ -640,7 +640,20 @@
     "empty": "設定の変更はまだ記録されていません。今後の変更はこの一覧に表示されます。",
     "empty_filtered": "現在のカテゴリフィルターに一致するエントリはありません。",
     "before": "変更前",
-    "after": "変更後"
+    "after": "変更後",
+    "categories": {
+      "api_keys": "APIキー",
+      "autonomy": "自律動作",
+      "byom": "BYOM",
+      "config": "一般",
+      "engine": "エンジン",
+      "integrations": "連携",
+      "limits": "上限",
+      "notifications": "通知",
+      "quality_gates": "品質ゲート",
+      "retention": "保持期間",
+      "sync": "クラウド同期"
+    }
   },
   "api_keys": {
     "title": "APIキー",
