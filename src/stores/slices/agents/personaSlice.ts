@@ -70,7 +70,7 @@ export interface PersonaSlice {
   fetchPersonaSummaries: () => Promise<void>;
   fetchDetail: (id: string) => Promise<void>;
   prefetchPersona: (id: string, signal?: AbortSignal) => Promise<void>;
-  createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string; structured_prompt?: string; design_context?: string }) => Promise<Persona>;
+  createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string; structured_prompt?: string; design_context?: string; lifecycle?: string }) => Promise<Persona>;
   duplicatePersona: (id: string) => Promise<Persona>;
   updatePersona: (id: string, input: PartialPersonaUpdate) => Promise<void>;
   applyPersonaOp: (id: string, op: PersonaOperation) => Promise<void>;
@@ -311,6 +311,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         max_turns: null,
         design_context: input.design_context ?? null,
         notification_channels: null,
+        lifecycle: input.lifecycle ?? null,
       });
       set((state) => ({ personas: [persona, ...state.personas] }));
       void import("@/lib/analytics").then((a) => a.markActivation("persona_created"));

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Layers, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, Layers, Trash2 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -15,6 +15,10 @@ interface PersonaOverviewBatchBarProps {
    * so the bar gracefully degrades for any other batch-bar consumers.
    */
   onMoveToGroup?: (homeTeamId: string | null) => Promise<void> | void;
+  /** Bulk-archive the selection. Hidden when omitted (e.g. Archived view). */
+  onArchive?: () => Promise<void> | void;
+  /** Bulk-restore the selection. Shown only in the Archived view. */
+  onRestore?: () => Promise<void> | void;
 }
 
 export function PersonaOverviewBatchBar({
@@ -22,6 +26,8 @@ export function PersonaOverviewBatchBar({
   onDelete,
   onClear,
   onMoveToGroup,
+  onArchive,
+  onRestore,
 }: PersonaOverviewBatchBarProps) {
   const { t, tx } = useTranslation();
   const { teams, fetchTeams } = usePipelineStore(
@@ -134,6 +140,26 @@ export function PersonaOverviewBatchBar({
             </div>
           )}
         </div>
+      )}
+      {onArchive && (
+        <button
+          type="button"
+          onClick={() => void onArchive()}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 transition-colors"
+        >
+          <Archive className="w-3.5 h-3.5" />
+          {t.agents.persona_list.batch_archive}
+        </button>
+      )}
+      {onRestore && (
+        <button
+          type="button"
+          onClick={() => void onRestore()}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 transition-colors"
+        >
+          <ArchiveRestore className="w-3.5 h-3.5" />
+          {t.agents.persona_list.batch_restore}
+        </button>
       )}
       <button
         type="button"

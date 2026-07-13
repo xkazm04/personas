@@ -90,6 +90,14 @@ pub const EXECUTION_RETENTION_DAYS: &str = "execution_retention_days";
 /// Default retention in days for [`EXECUTION_RETENTION_DAYS`] (two months).
 pub const EXECUTION_RETENTION_DAYS_DEFAULT: i64 = 60;
 
+/// Draft-persona retention in days. Abandoned build drafts (lifecycle `draft`
+/// with no execution history) older than this are swept by the background
+/// cleanup task. `0` disables the sweep — deletion is destructive, so this is
+/// OPT-IN and defaults OFF. Stored as a non-negative integer string.
+pub const DRAFT_RETENTION_DAYS: &str = "draft_retention_days";
+/// Default draft retention in days. `0` means the sweep is disabled (opt-in).
+pub const DRAFT_RETENTION_DAYS_DEFAULT: i64 = 0;
+
 /// Per-persona ceiling for scheduled executions in a rolling hour.
 pub const SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR: &str = "schedule_executions_per_persona_hour";
 /// Default per-persona hourly ceiling for scheduled executions.
@@ -609,6 +617,7 @@ const ALLOWED_KEYS: &[&str] = &[
     EVENT_RETENTION_DAYS,
     EVENT_RETENTION_MAX_COUNT,
     EXECUTION_RETENTION_DAYS,
+    DRAFT_RETENTION_DAYS,
     SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR,
     GLOBAL_MODEL_PROFILE,
     FILE_WATCHER_DEBOUNCE_MS,
@@ -758,7 +767,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 "value for '{key}' must be one of cautious|balanced|bold, got {value:?}"
             )),
         },
-        EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => {
+        EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS | DRAFT_RETENTION_DAYS => {
             value.parse::<u32>().map(|_| ()).map_err(|_| {
                 format!("value for '{key}' must be a non-negative integer (days), got {value:?}")
             })

@@ -1848,7 +1848,12 @@
     "delete_agents_message": "{count} agent(s) et toute leur configuration seront définitivement supprimés.",
     "delete_drafts": "Supprimer {count} brouillon(s)",
     "delete_drafts_message": "{count} brouillon(s) d'agent seront définitivement supprimés.",
-    "system_persona_undeletable": "Le Director est un persona système et ne peut pas être supprimé."
+    "system_persona_undeletable": "Le Director est un persona système et ne peut pas être supprimé.",
+    "archived_done": "{count} persona(s) archivée(s)",
+    "bulk_delete_done": "{deleted} persona(s) supprimée(s)",
+    "bulk_delete_failed": "Échec de la suppression des personas",
+    "bulk_delete_partial": "{deleted} supprimée(s) ; {skipped} ignorée(s)",
+    "restored_done": "{count} persona(s) restaurée(s)"
   },
   "persona_list": {
     "all_personas": "Tous les agents",
@@ -1884,7 +1889,12 @@
     "batch_moved_partial": "{ok} déplacées vers {group} ; {failed} échouées",
     "render_cap_notice": "Affichage de {shown} sur {total} — affinez avec la recherche ou les filtres pour voir le reste.",
     "star_director_add": "Marquer pour ajouter au périmètre de coaching du Director",
-    "star_director_remove": "Marqué — dans le périmètre de coaching du Director. Cliquez pour retirer."
+    "star_director_remove": "Marqué — dans le périmètre de coaching du Director. Cliquez pour retirer.",
+    "badge_archived": "Archivée",
+    "batch_archive": "Archiver",
+    "batch_restore": "Restaurer",
+    "show_active_personas": "Afficher les personas actives",
+    "show_archived_personas": "Afficher les personas archivées"
   },
   "editor_ui": {
     "max_budget_label": "Budget max (USD)",

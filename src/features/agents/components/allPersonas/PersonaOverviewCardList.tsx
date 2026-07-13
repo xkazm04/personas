@@ -207,7 +207,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
         <div className="flex items-center gap-2 flex-wrap">
           {building
             ? <BuildingBadge />
-            : <StatusBadge enabled={p.enabled} health={health} isDraft={draft} />}
+            : <StatusBadge enabled={p.enabled} health={health} isDraft={draft} isArchived={p.lifecycle === 'archived'} />}
           <SetupStatusBadge status={p.setup_status} setupDetail={p.setup_detail} />
         </div>
         {p.enabled && !draft && (

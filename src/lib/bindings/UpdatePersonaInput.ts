@@ -12,4 +12,10 @@ cli_awareness_enabled: boolean | null,
  * unchanged); inner `Option<String>` lets callers explicitly clear
  * the column with `Some(None)`. Set by the View-mode SigilEditModal.
  */
-disabled_dims_json: string | null | null, };
+disabled_dims_json: string | null | null, 
+/**
+ * Lifecycle stage (`draft` | `active` | `archived`). Partial-update:
+ * `None` = leave unchanged. Promote/archive/restore drive this; the repo
+ * validates the value against `PersonaLifecycle`.
+ */
+lifecycle: string | null, };

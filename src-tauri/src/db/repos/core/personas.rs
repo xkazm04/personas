@@ -6,7 +6,7 @@ use tracing::instrument;
 
 use crate::db::models::{
     CreatePersonaInput, HealthStatus, Persona, PersonaGatewayExposure, PersonaHealth,
-    PersonaSummary, PersonaTrustLevel, PersonaTrustOrigin, UpdatePersonaInput,
+    PersonaLifecycle, PersonaSummary, PersonaTrustLevel, PersonaTrustOrigin, UpdatePersonaInput,
 };
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
@@ -421,6 +421,11 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
             .get::<_, Option<String>>("disabled_dims_json")
             .ok()
             .flatten(),
+        lifecycle: row
+            .get::<_, Option<String>>("lifecycle")
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| "active".to_string()),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -448,6 +453,32 @@ pub fn get_all(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
             tracing::warn!(elapsed_ms, "personas::get_all exceeded 100ms threshold");
         }
         Ok(result)
+    })
+}
+
+/// List personas filtered to a set of lifecycle stages (redacted, list view).
+/// An empty `stages` slice returns everything (equivalent to `get_all`). Used
+/// by the roster's server-side lifecycle filter — the default view passes
+/// `["active","draft"]`, the Archived view passes `["archived"]`.
+#[instrument(skip(pool))]
+pub fn get_all_by_lifecycle(pool: &DbPool, stages: &[&str]) -> Result<Vec<Persona>, AppError> {
+    if stages.is_empty() {
+        return get_all(pool);
+    }
+    timed_query!("personas", "personas::get_all_by_lifecycle", {
+        let conn = pool.get()?;
+        let placeholders: Vec<String> = (0..stages.len()).map(|i| format!("?{}", i + 1)).collect();
+        let sql = format!(
+            "SELECT * FROM personas WHERE COALESCE(lifecycle, 'active') IN ({}) ORDER BY created_at DESC",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = stages
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), row_to_persona_redacted)?;
+        Ok(collect_rows(rows, "personas::get_all_by_lifecycle"))
     })
 }
 
@@ -557,6 +588,53 @@ pub fn set_starred(pool: &DbPool, id: &str, starred: bool) -> Result<bool, AppEr
     Ok(starred)
 }
 
+/// Set a persona's lifecycle stage directly. Validates the value against the
+/// `PersonaLifecycle` enum. Used by the build promote path (→ `active`) and the
+/// build cancel/fail cleanup guard. Does NOT touch `enabled` — lifecycle and
+/// the runtime-pause switch are orthogonal.
+pub fn set_lifecycle(
+    pool: &DbPool,
+    id: &str,
+    lifecycle: PersonaLifecycle,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    let updated = conn.execute(
+        "UPDATE personas SET lifecycle = ?1, updated_at = datetime('now') WHERE id = ?2",
+        params![lifecycle.as_str(), id],
+    )?;
+    if updated == 0 {
+        return Err(AppError::NotFound(format!("persona {id}")));
+    }
+    Ok(())
+}
+
+/// Archive a persona: move it to `archived` while preserving ALL history (no
+/// cascade — executions, memories, messages stay). Blocked for system-origin
+/// personas (e.g. the Director). Returns the refreshed persona.
+#[instrument(skip(pool))]
+pub fn archive_persona(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
+    let existing = get_by_id(pool, id)?;
+    if existing.trust_origin == PersonaTrustOrigin::System {
+        return Err(AppError::Validation(
+            "System personas cannot be archived".into(),
+        ));
+    }
+    set_lifecycle(pool, id, PersonaLifecycle::Archived)?;
+    get_by_id(pool, id)
+}
+
+/// Restore an archived persona back to `active`. If the persona is not archived
+/// this is a no-op that still returns the current row. Returns the refreshed
+/// persona.
+#[instrument(skip(pool))]
+pub fn restore_persona(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
+    let existing = get_by_id(pool, id)?;
+    if existing.lifecycle == PersonaLifecycle::Archived.as_str() {
+        set_lifecycle(pool, id, PersonaLifecycle::Active)?;
+    }
+    get_by_id(pool, id)
+}
+
 #[instrument(skip(pool, input), fields(persona_name = %input.name))]
 pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, AppError> {
     timed_query!("personas", "personas::create", {
@@ -633,6 +711,13 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
         let max_concurrent = input.max_concurrent.unwrap_or(4);
         let timeout_ms = input.timeout_ms.unwrap_or(600_000);
 
+        // Lifecycle: default `active`; the build-stub path passes `draft`.
+        // Validate against the enum so a bad IPC value can't poison the column.
+        let lifecycle = match input.lifecycle.as_deref() {
+            Some(s) => s.parse::<PersonaLifecycle>()?.as_str().to_string(),
+            None => PersonaLifecycle::Active.as_str().to_string(),
+        };
+
         if let Some(ref channels_json) = input.notification_channels {
             validate_notification_channels(channels_json)?;
         }
@@ -649,8 +734,8 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
              (id, project_id, name, description, system_prompt, structured_prompt,
               icon, color, enabled, sensitive, max_concurrent, timeout_ms,
               model_profile, max_budget_usd, max_turns, design_context,
-              notification_channels, created_at, updated_at)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?18)
+              notification_channels, lifecycle, created_at, updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)
              RETURNING *",
                 params![
                     id,
@@ -670,6 +755,7 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
                     input.max_turns,
                     input.design_context,
                     encrypted_channels,
+                    lifecycle,
                     now,
                 ],
                 row_to_persona,
@@ -732,6 +818,10 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         }
         if let Some(ref channels_json) = input.notification_channels {
             validate_notification_channels(channels_json)?;
+        }
+        // Validate lifecycle against the enum before it reaches the SET clause.
+        if let Some(ref lc) = input.lifecycle {
+            lc.parse::<PersonaLifecycle>()?;
         }
 
         // Encrypt auth_token inside model_profile before storing
@@ -909,6 +999,14 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         push_field_param!(
             input.disabled_dims_json,
             "disabled_dims_json",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.lifecycle,
+            "lifecycle",
             sets,
             param_idx,
             param_values,
@@ -1352,6 +1450,137 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
+/// Does this persona have ANY execution rows? Guard used by the draft cleanup
+/// paths (build cancel/fail, TTL sweep) so a draft that already produced work
+/// is never silently swept.
+pub fn has_executions(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1",
+            params![id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    Ok(count > 0)
+}
+
+/// Delete a persona ONLY when it is a `draft` with no execution history. Returns
+/// `Ok(true)` when it was deleted, `Ok(false)` when the guard declined (not a
+/// draft, has executions, or already gone). The single remedy for orphaned
+/// build stubs — build cancel/fail and the TTL sweep both route through here so
+/// the "never destroy real work" guard lives in exactly one place.
+#[instrument(skip(pool))]
+pub fn delete_draft_if_safe(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    let persona = match get_by_id(pool, id) {
+        Ok(p) => p,
+        Err(AppError::NotFound(_)) => return Ok(false),
+        Err(e) => return Err(e),
+    };
+    if persona.lifecycle != PersonaLifecycle::Draft.as_str() {
+        return Ok(false);
+    }
+    if persona.trust_origin == PersonaTrustOrigin::System {
+        return Ok(false);
+    }
+    if has_executions(pool, id)? {
+        return Ok(false);
+    }
+    delete(pool, id)
+}
+
+/// Bulk-delete personas in one call, returning a per-id outcome so the caller
+/// can report exactly what happened. System-origin personas are `protected`
+/// (never deleted); a missing row or DB error is reported as `failed` with a
+/// reason. Iterates the same single-persona drain path server-side so the
+/// frontend's "delete drafts" button is one IPC instead of N.
+#[instrument(skip(pool))]
+pub fn bulk_delete_personas(
+    pool: &DbPool,
+    ids: &[String],
+) -> Result<Vec<crate::db::models::BulkDeleteOutcome>, AppError> {
+    use crate::db::models::BulkDeleteOutcome;
+    let mut outcomes = Vec::with_capacity(ids.len());
+    for id in ids {
+        // Protect system-origin personas (the Director) up front so we return
+        // `protected` rather than attempting the delete.
+        let origin = match get_by_id(pool, id) {
+            Ok(p) => Some(p.trust_origin),
+            Err(AppError::NotFound(_)) => None,
+            Err(e) => {
+                outcomes.push(BulkDeleteOutcome {
+                    id: id.clone(),
+                    status: "failed".into(),
+                    reason: Some(e.to_string()),
+                });
+                continue;
+            }
+        };
+        match origin {
+            None => outcomes.push(BulkDeleteOutcome {
+                id: id.clone(),
+                status: "failed".into(),
+                reason: Some("persona not found".into()),
+            }),
+            Some(PersonaTrustOrigin::System) => outcomes.push(BulkDeleteOutcome {
+                id: id.clone(),
+                status: "protected".into(),
+                reason: Some("system persona cannot be deleted".into()),
+            }),
+            Some(_) => match delete(pool, id) {
+                Ok(true) => outcomes.push(BulkDeleteOutcome {
+                    id: id.clone(),
+                    status: "deleted".into(),
+                    reason: None,
+                }),
+                Ok(false) => outcomes.push(BulkDeleteOutcome {
+                    id: id.clone(),
+                    status: "failed".into(),
+                    reason: Some("persona not found".into()),
+                }),
+                Err(e) => outcomes.push(BulkDeleteOutcome {
+                    id: id.clone(),
+                    status: "failed".into(),
+                    reason: Some(e.to_string()),
+                }),
+            },
+        }
+    }
+    Ok(outcomes)
+}
+
+/// TTL sweep: delete `draft` personas older than `retention_days` that have no
+/// execution history. `retention_days <= 0` disables the sweep (returns 0).
+/// Routes each candidate through `delete_draft_if_safe` so the same guard
+/// applies. Returns the number actually deleted.
+#[instrument(skip(pool))]
+pub fn sweep_stale_drafts(pool: &DbPool, retention_days: i64) -> Result<usize, AppError> {
+    if retention_days <= 0 {
+        return Ok(0);
+    }
+    let candidate_ids: Vec<String> = {
+        let conn = pool.get()?;
+        let cutoff = (chrono::Utc::now() - chrono::Duration::days(retention_days)).to_rfc3339();
+        let mut stmt = conn.prepare(
+            "SELECT id FROM personas
+             WHERE COALESCE(lifecycle, 'active') = 'draft'
+               AND created_at < ?1
+               AND COALESCE(trust_origin, 'builtin') != 'system'",
+        )?;
+        let rows = stmt.query_map(params![cutoff], |r| r.get::<_, String>(0))?;
+        rows.filter_map(|r| r.ok()).collect()
+    };
+    let mut deleted = 0usize;
+    for id in candidate_ids {
+        match delete_draft_if_safe(pool, &id) {
+            Ok(true) => deleted += 1,
+            Ok(false) => {}
+            Err(e) => tracing::warn!(persona_id = %id, error = %e, "sweep_stale_drafts: delete failed"),
+        }
+    }
+    Ok(deleted)
+}
+
 /// Returns a summary of resources that will be affected by deleting a persona.
 #[instrument(skip(pool))]
 pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {
@@ -1521,6 +1750,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -1580,6 +1810,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -1618,6 +1849,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -1686,6 +1918,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         );
         assert!(result.is_err());
@@ -1712,6 +1945,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -1764,6 +1998,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -1815,6 +2050,7 @@ mod tests {
             max_turns: None,
             design_context: None,
             notification_channels: None,
+            lifecycle: None,
         };
 
         // max_concurrent < 1
@@ -1872,6 +2108,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -1934,6 +2171,7 @@ mod tests {
                 max_turns: Some(10),
                 design_context: Some(r#"{"use_cases":[]}"#.into()),
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap()
@@ -2199,5 +2437,248 @@ mod tests {
             ChannelScopeV2::All(s) => assert_eq!(s, "*"),
             _ => panic!("expected All(\"*\")"),
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Persona lifecycle (Direction 1) + draft GC / bulk delete (Direction 2)
+    // -----------------------------------------------------------------------
+
+    fn lifecycle_input(name: &str, prompt: &str) -> CreatePersonaInput {
+        CreatePersonaInput {
+            name: name.into(),
+            system_prompt: prompt.into(),
+            project_id: None,
+            description: None,
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: Some(true),
+            max_concurrent: None,
+            timeout_ms: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: None,
+            notification_channels: None,
+            lifecycle: None,
+        }
+    }
+
+    #[test]
+    fn test_lifecycle_defaults_to_active() {
+        let pool = init_test_db().unwrap();
+        let p = create(&pool, lifecycle_input("Active One", "Real prompt.")).unwrap();
+        assert_eq!(p.lifecycle, "active", "default lifecycle must be active");
+    }
+
+    #[test]
+    fn test_lifecycle_draft_stamp_and_promote_roundtrip() {
+        let pool = init_test_db().unwrap();
+        let mut input = lifecycle_input("Draft One", "You are a helpful AI assistant.");
+        input.lifecycle = Some("draft".into());
+        let p = create(&pool, input).unwrap();
+        assert_eq!(p.lifecycle, "draft");
+
+        // Promote (mirrors the build promote path setting lifecycle=active).
+        set_lifecycle(&pool, &p.id, PersonaLifecycle::Active).unwrap();
+        assert_eq!(get_by_id(&pool, &p.id).unwrap().lifecycle, "active");
+    }
+
+    #[test]
+    fn test_create_rejects_invalid_lifecycle() {
+        let pool = init_test_db().unwrap();
+        let mut input = lifecycle_input("Bad LC", "Prompt.");
+        input.lifecycle = Some("nonsense".into());
+        assert!(create(&pool, input).is_err());
+    }
+
+    #[test]
+    fn test_backfill_infers_draft_not_coincidental_prompt() {
+        // Reproduces the migration backfill logic against seeded rows: a stub
+        // with the placeholder prompt AND no design result → draft; a REAL
+        // persona whose prompt merely LOOKS like the placeholder but HAS a
+        // design result → NOT draft (the exact bug the heuristic replaces).
+        let pool = init_test_db().unwrap();
+
+        // Stub draft: placeholder prompt, no design.
+        let stub = create(
+            &pool,
+            lifecycle_input("Stub", "You are a helpful AI assistant."),
+        )
+        .unwrap();
+        // Coincidental: placeholder-looking prompt but a real completed build.
+        let coincidental = create(
+            &pool,
+            lifecycle_input("Coincidental", "You are a helpful AI assistant."),
+        )
+        .unwrap();
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET last_design_result = '{\"ok\":true}' WHERE id = ?1",
+                params![coincidental.id],
+            )
+            .unwrap();
+            // Reset both to 'active' then run the SAME backfill UPDATE the
+            // migration performs.
+            conn.execute("UPDATE personas SET lifecycle = 'active'", []).unwrap();
+            conn.execute(
+                "UPDATE personas SET lifecycle = 'draft'
+                 WHERE (last_design_result IS NULL OR TRIM(last_design_result) = '')
+                   AND (design_context IS NULL OR TRIM(design_context) = '')
+                   AND (system_prompt = 'You are a helpful AI assistant.'
+                        OR TRIM(COALESCE(system_prompt, '')) = '')
+                   AND COALESCE(trust_origin, 'builtin') != 'system';",
+                [],
+            )
+            .unwrap();
+        }
+        assert_eq!(get_by_id(&pool, &stub.id).unwrap().lifecycle, "draft");
+        assert_eq!(
+            get_by_id(&pool, &coincidental.id).unwrap().lifecycle,
+            "active",
+            "a persona with a design result must NOT be inferred as draft"
+        );
+    }
+
+    #[test]
+    fn test_archive_preserves_row_and_restore() {
+        let pool = init_test_db().unwrap();
+        let p = create(&pool, lifecycle_input("Archive Me", "Real.")).unwrap();
+
+        let archived = archive_persona(&pool, &p.id).unwrap();
+        assert_eq!(archived.lifecycle, "archived");
+        // Row still exists (archive is not delete).
+        assert_eq!(get_by_id(&pool, &p.id).unwrap().lifecycle, "archived");
+
+        let restored = restore_persona(&pool, &p.id).unwrap();
+        assert_eq!(restored.lifecycle, "active");
+    }
+
+    #[test]
+    fn test_archive_blocks_system_origin() {
+        let pool = init_test_db().unwrap();
+        let p = create(&pool, lifecycle_input("Sys", "Real.")).unwrap();
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET trust_origin = 'system' WHERE id = ?1",
+                params![p.id],
+            )
+            .unwrap();
+        }
+        assert!(
+            archive_persona(&pool, &p.id).is_err(),
+            "system personas must not be archivable"
+        );
+    }
+
+    #[test]
+    fn test_get_all_by_lifecycle_filter() {
+        let pool = init_test_db().unwrap();
+        let a = create(&pool, lifecycle_input("A", "Real.")).unwrap();
+        let mut d_in = lifecycle_input("D", "You are a helpful AI assistant.");
+        d_in.lifecycle = Some("draft".into());
+        let d = create(&pool, d_in).unwrap();
+        let arch = create(&pool, lifecycle_input("Arch", "Real.")).unwrap();
+        archive_persona(&pool, &arch.id).unwrap();
+
+        let active_draft = get_all_by_lifecycle(&pool, &["active", "draft"]).unwrap();
+        let ids: Vec<&str> = active_draft.iter().map(|p| p.id.as_str()).collect();
+        assert!(ids.contains(&a.id.as_str()));
+        assert!(ids.contains(&d.id.as_str()));
+        assert!(!ids.contains(&arch.id.as_str()));
+
+        let archived = get_all_by_lifecycle(&pool, &["archived"]).unwrap();
+        assert_eq!(archived.len(), 1);
+        assert_eq!(archived[0].id, arch.id);
+    }
+
+    #[test]
+    fn test_bulk_delete_outcomes_incl_protected() {
+        let pool = init_test_db().unwrap();
+        let a = create(&pool, lifecycle_input("BulkA", "Real.")).unwrap();
+        let sys = create(&pool, lifecycle_input("BulkSys", "Real.")).unwrap();
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET trust_origin = 'system' WHERE id = ?1",
+                params![sys.id],
+            )
+            .unwrap();
+        }
+        let outcomes = bulk_delete_personas(
+            &pool,
+            &[a.id.clone(), sys.id.clone(), "does-not-exist".to_string()],
+        )
+        .unwrap();
+        let by_id = |id: &str| outcomes.iter().find(|o| o.id == id).unwrap();
+        assert_eq!(by_id(&a.id).status, "deleted");
+        assert_eq!(by_id(&sys.id).status, "protected");
+        assert_eq!(by_id("does-not-exist").status, "failed");
+        // Real deletes happened; system persona survives.
+        assert!(get_by_id(&pool, &a.id).is_err());
+        assert!(get_by_id(&pool, &sys.id).is_ok());
+    }
+
+    #[test]
+    fn test_delete_draft_guard_survives_executions() {
+        let pool = init_test_db().unwrap();
+        let mut d_in = lifecycle_input("Guarded", "You are a helpful AI assistant.");
+        d_in.lifecycle = Some("draft".into());
+        let d = create(&pool, d_in).unwrap();
+
+        // Seed an execution row so the guard must decline.
+        {
+            let conn = pool.get().unwrap();
+            let now = chrono::Utc::now().to_rfc3339();
+            conn.execute(
+                "INSERT INTO persona_executions (id, persona_id, status, created_at, updated_at)
+                 VALUES (?1, ?2, 'completed', ?3, ?3)",
+                params![uuid::Uuid::new_v4().to_string(), d.id, now],
+            )
+            .unwrap();
+        }
+        assert_eq!(
+            delete_draft_if_safe(&pool, &d.id).unwrap(),
+            false,
+            "a draft with executions must NOT be swept"
+        );
+        assert!(get_by_id(&pool, &d.id).is_ok());
+
+        // A clean draft (no executions) IS deletable.
+        let mut c_in = lifecycle_input("Clean", "You are a helpful AI assistant.");
+        c_in.lifecycle = Some("draft".into());
+        let c = create(&pool, c_in).unwrap();
+        assert_eq!(delete_draft_if_safe(&pool, &c.id).unwrap(), true);
+        assert!(get_by_id(&pool, &c.id).is_err());
+
+        // An ACTIVE persona is never swept by this guard.
+        let act = create(&pool, lifecycle_input("Act", "Real.")).unwrap();
+        assert_eq!(delete_draft_if_safe(&pool, &act.id).unwrap(), false);
+    }
+
+    #[test]
+    fn test_sweep_stale_drafts_off_by_default() {
+        let pool = init_test_db().unwrap();
+        let mut d_in = lifecycle_input("Old Draft", "You are a helpful AI assistant.");
+        d_in.lifecycle = Some("draft".into());
+        let d = create(&pool, d_in).unwrap();
+        // Backdate creation well past any retention window.
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET created_at = '2000-01-01T00:00:00Z' WHERE id = ?1",
+                params![d.id],
+            )
+            .unwrap();
+        }
+        // retention 0 = disabled → no sweep.
+        assert_eq!(sweep_stale_drafts(&pool, 0).unwrap(), 0);
+        assert!(get_by_id(&pool, &d.id).is_ok(), "off-by-default must not sweep");
+
+        // With a positive retention the old clean draft IS swept.
+        assert_eq!(sweep_stale_drafts(&pool, 7).unwrap(), 1);
+        assert!(get_by_id(&pool, &d.id).is_err());
     }
 }

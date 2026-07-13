@@ -25,6 +25,7 @@ pub fn create_test_persona(pool: &DbPool, name: &str, system_prompt: &str) -> Pe
             max_turns: None,
             design_context: None,
             notification_channels: None,
+            lifecycle: None,
         },
     )
     .unwrap()

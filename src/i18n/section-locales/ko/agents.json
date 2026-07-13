@@ -1848,7 +1848,12 @@
     "delete_agents_message": "{count}개 에이전트와 모든 구성이 영구적으로 제거됩니다.",
     "delete_drafts": "{count}개 초안 삭제",
     "delete_drafts_message": "{count}개 초안 에이전트가 영구적으로 제거됩니다.",
-    "system_persona_undeletable": "Director는 시스템 페르소나이므로 삭제할 수 없습니다."
+    "system_persona_undeletable": "Director는 시스템 페르소나이므로 삭제할 수 없습니다.",
+    "archived_done": "페르소나 {count}개를 보관했습니다",
+    "bulk_delete_done": "페르소나 {deleted}개를 삭제했습니다",
+    "bulk_delete_failed": "페르소나 삭제에 실패했습니다",
+    "bulk_delete_partial": "{deleted}개 삭제, {skipped}개 건너뜀",
+    "restored_done": "페르소나 {count}개를 복원했습니다"
   },
   "persona_list": {
     "all_personas": "전체 페르소나",
@@ -1884,7 +1889,12 @@
     "batch_moved_partial": "{ok}개를 {group}(으)로 이동했습니다; {failed}개 실패",
     "render_cap_notice": "{total}개 중 {shown}개 표시 — 검색이나 필터로 좁혀 나머지를 확인하세요.",
     "star_director_add": "별표를 눌러 Director의 코칭 범위에 추가",
-    "star_director_remove": "별표됨 — Director의 코칭 범위에 포함됨. 클릭하여 제거."
+    "star_director_remove": "별표됨 — Director의 코칭 범위에 포함됨. 클릭하여 제거.",
+    "badge_archived": "보관됨",
+    "batch_archive": "보관",
+    "batch_restore": "복원",
+    "show_active_personas": "활성 페르소나 표시",
+    "show_archived_personas": "보관된 페르소나 표시"
   },
   "editor_ui": {
     "max_budget_label": "최대 예산 (USD)",

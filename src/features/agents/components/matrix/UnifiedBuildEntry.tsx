@@ -532,6 +532,9 @@ export function UnifiedBuildEntry() {
           name,
           description: trimmed.slice(0, 200) || undefined,
           system_prompt: "You are a helpful AI assistant.",
+          // First-class draft from birth; promote_build_draft flips it to
+          // `active` when the build finishes.
+          lifecycle: "draft",
         });
         personaId = persona.id;
         setDraftPersonaId(personaId);

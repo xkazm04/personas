@@ -1848,7 +1848,12 @@
     "delete_agents_message": "{count} агент(ов) и вся их конфигурация будут удалены навсегда.",
     "delete_drafts": "Удалить {count} черновик(ов)",
     "delete_drafts_message": "{count} черновых агент(ов) будут удалены навсегда.",
-    "system_persona_undeletable": "Director — системная персона, её нельзя удалить."
+    "system_persona_undeletable": "Director — системная персона, её нельзя удалить.",
+    "archived_done": "Архивировано персон: {count}",
+    "bulk_delete_done": "Удалено персон: {deleted}",
+    "bulk_delete_failed": "Не удалось удалить персоны",
+    "bulk_delete_partial": "Удалено: {deleted}; пропущено: {skipped}",
+    "restored_done": "Восстановлено персон: {count}"
   },
   "persona_list": {
     "all_personas": "Все агенты",
@@ -1884,7 +1889,12 @@
     "batch_moved_partial": "Перемещено {ok} в {group}; {failed} не удалось",
     "render_cap_notice": "Показано {shown} из {total} — уточните поиск или фильтры, чтобы увидеть остальные.",
     "star_director_add": "Отметить звёздочкой, чтобы добавить в область коучинга Director",
-    "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать."
+    "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать.",
+    "badge_archived": "В архиве",
+    "batch_archive": "Архивировать",
+    "batch_restore": "Восстановить",
+    "show_active_personas": "Показать активные персоны",
+    "show_archived_personas": "Показать архивные персоны"
   },
   "editor_ui": {
     "max_budget_label": "Максимальный бюджет (USD)",

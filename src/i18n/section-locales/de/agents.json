@@ -1848,7 +1848,12 @@
     "delete_agents_message": "{count} Agent(en) und ihre gesamte Konfiguration werden dauerhaft entfernt.",
     "delete_drafts": "{count} Entwurf/-würfe löschen",
     "delete_drafts_message": "{count} Entwurfs-Agent(en) werden dauerhaft entfernt.",
-    "system_persona_undeletable": "Der Director ist eine Systempersona und kann nicht gelöscht werden."
+    "system_persona_undeletable": "Der Director ist eine Systempersona und kann nicht gelöscht werden.",
+    "archived_done": "{count} Persona(s) archiviert",
+    "bulk_delete_done": "{deleted} Persona(s) gelöscht",
+    "bulk_delete_failed": "Personas konnten nicht gelöscht werden",
+    "bulk_delete_partial": "{deleted} gelöscht; {skipped} übersprungen",
+    "restored_done": "{count} Persona(s) wiederhergestellt"
   },
   "persona_list": {
     "all_personas": "Alle Personas",
@@ -1884,7 +1889,12 @@
     "batch_moved_partial": "{ok} nach {group} verschoben; {failed} fehlgeschlagen",
     "render_cap_notice": "Zeige {shown} von {total} — Suche oder Filter eingrenzen, um weitere zu sehen.",
     "star_director_add": "Markieren, um zum Coaching-Bereich des Directors hinzuzufügen",
-    "star_director_remove": "Markiert — im Coaching-Bereich des Directors. Klicken zum Entfernen."
+    "star_director_remove": "Markiert — im Coaching-Bereich des Directors. Klicken zum Entfernen.",
+    "badge_archived": "Archiviert",
+    "batch_archive": "Archivieren",
+    "batch_restore": "Wiederherstellen",
+    "show_active_personas": "Aktive Personas anzeigen",
+    "show_archived_personas": "Archivierte Personas anzeigen"
   },
   "editor_ui": {
     "max_budget_label": "Max. Budget (USD)",

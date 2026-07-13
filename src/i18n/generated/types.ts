@@ -2646,6 +2646,11 @@ export type Translations = {
       delete_drafts: string;
       delete_drafts_message: string;
       system_persona_undeletable: string;
+      bulk_delete_done: string;
+      bulk_delete_partial: string;
+      bulk_delete_failed: string;
+      archived_done: string;
+      restored_done: string;
     };
     persona_list: {
       all_personas: string;
@@ -2656,8 +2661,11 @@ export type Translations = {
       badge_draft: string;
       badge_disabled: string;
       badge_building: string;
+      badge_archived: string;
       batch_selected: string;
       batch_delete: string;
+      batch_archive: string;
+      batch_restore: string;
       batch_clear: string;
       batch_move_to_group: string;
       batch_move_to_group_empty: string;
@@ -2679,6 +2687,8 @@ export type Translations = {
       favorites: string;
       show_all_personas: string;
       show_only_favorites: string;
+      show_archived_personas: string;
+      show_active_personas: string;
       clear_search: string;
       col_persona: string;
       no_connectors_configured: string;

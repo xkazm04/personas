@@ -5300,6 +5300,44 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    // First-class persona lifecycle (Draft → Active → Archived). Replaces the
+    // frontend draft heuristic (`!last_design_result && prompt == default`) with
+    // a durable column. Default `active` so every existing real persona keeps
+    // routing to the editor. The one-time backfill infers `draft` from the SAME
+    // heuristic the frontend used — a persona that never finished a build (no
+    // design result / design context) AND still carries the placeholder/empty
+    // system_prompt. A completed build always populated `last_design_result`, so
+    // a real persona whose prompt merely LOOKS like the placeholder is NOT
+    // yanked into draft. Archiving lands only via the runtime archive command.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas.lifecycle",
+            description: "First-class persona lifecycle column (draft|active|archived) + draft backfill",
+            already_applied: |conn| has_column(conn, "personas", "lifecycle"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE personas ADD COLUMN lifecycle TEXT NOT NULL DEFAULT 'active';
+                     CREATE INDEX IF NOT EXISTS idx_personas_lifecycle ON personas(lifecycle);",
+                )?;
+                // Backfill drafts. Mirrors PersonaOverviewPage's isDraft():
+                //   !last_design_result && (system_prompt == placeholder || blank)
+                // Also treat a NULL/blank design_context as part of "never built"
+                // for defense in depth (a finished build writes design_context).
+                ddl_step(
+                    conn,
+                    "UPDATE personas SET lifecycle = 'draft'
+                     WHERE (last_design_result IS NULL OR TRIM(last_design_result) = '')
+                       AND (design_context IS NULL OR TRIM(design_context) = '')
+                       AND (system_prompt = 'You are a helpful AI assistant.'
+                            OR TRIM(COALESCE(system_prompt, '')) = '')
+                       AND COALESCE(trust_origin, 'builtin') != 'system';",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
 
     Ok(())
 }

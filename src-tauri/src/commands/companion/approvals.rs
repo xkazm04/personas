@@ -2662,6 +2662,9 @@ async fn execute_build_oneshot(
             max_turns: None,
             design_context: None,
             notification_channels: None,
+            // First-class draft: this is a build stub, promoted to `active`
+            // by promote_build_draft once the build finishes.
+            lifecycle: Some("draft".to_string()),
         },
     )?;
 

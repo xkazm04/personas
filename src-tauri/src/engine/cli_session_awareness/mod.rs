@@ -85,7 +85,7 @@ mod integration_tests {
     }
 
     fn make_persona(system_prompt: &str) -> crate::db::models::Persona {
-        crate::db::models::Persona {
+        crate::db::models::Persona { lifecycle: "active".to_string(),
             id: "p_e2e".into(),
             project_id: "proj_e2e".into(),
             name: "CLI E2E".into(),

@@ -137,6 +137,54 @@ This doc set covers pillar 2. For pillar 1 see
 [templates/](../templates/README.md). For pillar 3 see
 [execution/](../execution/README.md).
 
+## Persona lifecycle — draft · active · archived
+
+Every persona row carries a first-class **`lifecycle`** column
+(`draft` | `active` | `archived`, default `active`). It replaced a fragile
+frontend heuristic (`!last_design_result && system_prompt === "You are a helpful
+AI assistant."`) that could yank a *real* persona whose prompt merely resembled
+the placeholder into build mode.
+
+- **`draft`** — an eagerly-created build stub. The intent build (`UnifiedBuildEntry`
+  → `createPersona({ lifecycle: "draft" })`) and the Companion `build_oneshot`
+  stub both stamp `draft`. In the roster a draft shows a **Draft** badge and a
+  click re-opens the build flow (keyed on `lifecycle === "draft"`, not the old
+  prompt match). `promote_build_draft` flips it to `active` when the build
+  finishes.
+- **`active`** — a real, usable persona. The default for everything created
+  outside the build-stub path, including template adoption and team synthesis
+  (those produce ready personas, so they are never stranded as drafts).
+- **`archived`** — retired but preserved. `archive_persona` moves a persona to
+  `archived` **without any cascade** — executions, memories, messages all stay.
+  `restore_persona` returns it to `active`. Archiving is blocked for
+  system-origin personas (the Director). `enabled` stays orthogonal — it is the
+  runtime-pause switch, not an off-state.
+
+The roster's **Archived** toolbar toggle (`statusFilter === "archived"`) is the
+one view that shows archived personas; every other view hides them. The
+`list_personas` command takes an optional `lifecycle` filter
+(`["active","draft"]` / `["archived"]`); `None` returns everything.
+
+**A one-time backfill** on migration infers `draft` from the old heuristic
+(placeholder/blank prompt AND no design result AND no design context, excluding
+system personas), so existing stubs keep their draft affordance while a real
+persona with a completed build stays `active`.
+
+### Draft cleanup — bulk delete, cancel/fail GC, TTL sweep
+
+- **`bulk_delete_personas(ids)`** deletes personas in **one** IPC and returns a
+  per-id outcome (`deleted` | `protected` | `failed`). System personas are
+  `protected`. The roster's batch-delete and "Delete drafts" buttons use it
+  instead of N sequential `delete_persona` calls.
+- **Build cancel** (`cancel_build_session`) deletes the eagerly-created draft it
+  was building — but only via `delete_draft_if_safe`, which declines unless the
+  persona is a `draft` with **no execution history** (a re-build of an active
+  persona, or a draft that already produced work, survives).
+- **TTL sweep** — the background `cleanup_tick` runs `sweep_stale_drafts` against
+  the `draft_retention_days` setting: abandoned drafts (draft, no executions)
+  older than the window are deleted through the same guard. **Default `0` =
+  disabled (opt-in)** — deletion is destructive.
+
 ## The build session — how a Describe build runs
 
 The **Describe** path (the intent build above) runs a live LLM **build

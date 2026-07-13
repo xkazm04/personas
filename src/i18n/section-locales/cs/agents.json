@@ -1848,7 +1848,12 @@
     "delete_agents_message": "{count} agent(y/ů) a veškerá jejich konfigurace budou trvale odstraněny.",
     "delete_drafts": "Smazat {count} návrh(y/ů)",
     "delete_drafts_message": "{count} rozpracovaných agentů bude trvale odstraněno.",
-    "system_persona_undeletable": "Director je systémová persona a nelze ji smazat."
+    "system_persona_undeletable": "Director je systémová persona a nelze ji smazat.",
+    "archived_done": "Archivováno {count} person",
+    "bulk_delete_done": "Smazáno {deleted} person",
+    "bulk_delete_failed": "Nepodařilo se smazat persony",
+    "bulk_delete_partial": "Smazáno {deleted}; přeskočeno {skipped}",
+    "restored_done": "Obnoveno {count} person"
   },
   "persona_list": {
     "all_personas": "Všechny persony",
@@ -1884,7 +1889,12 @@
     "batch_moved_partial": "{ok} přesunuto do {group}; {failed} selhalo",
     "render_cap_notice": "Zobrazeno {shown} z {total} — upřesněte vyhledáváním nebo filtry pro zobrazení zbytku.",
     "star_director_add": "Označit hvězdičkou pro přidání do rozsahu koučování Directora",
-    "star_director_remove": "Označeno hvězdičkou — v rozsahu koučování Directora. Kliknutím odeberete."
+    "star_director_remove": "Označeno hvězdičkou — v rozsahu koučování Directora. Kliknutím odeberete.",
+    "badge_archived": "Archivováno",
+    "batch_archive": "Archivovat",
+    "batch_restore": "Obnovit",
+    "show_active_personas": "Zobrazit aktivní persony",
+    "show_archived_personas": "Zobrazit archivované persony"
   },
   "editor_ui": {
     "max_budget_label": "Max. rozpočet (USD)",

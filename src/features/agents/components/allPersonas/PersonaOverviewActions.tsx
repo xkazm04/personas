@@ -1,7 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useConfirmDestructive } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { BlastRadiusPanelLazy } from '@/features/overview/components/BlastRadiusPanel';
-import { getPersonaBlastRadius } from '@/api/agents/personas';
+import { getPersonaBlastRadius, bulkDeletePersonas, archivePersona, restorePersona } from '@/api/agents/personas';
+import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
@@ -65,6 +66,37 @@ export function usePersonaActions({
     [personas, confirm, t.agents.overview_actions.delete_agent, t.agents.overview_actions.delete_agent_message, t.agents.overview_actions.system_persona_undeletable, deletePersona, setSelectedIds],
   );
 
+  // Bulk delete via the single `bulk_delete_personas` IPC (one round-trip
+  // instead of N sequential deletes) with a per-id outcome toast. Refreshes the
+  // store afterward so the roster reflects every removal.
+  const runBulkDelete = useCallback(
+    async (ids: string[]) => {
+      if (ids.length === 0) return;
+      try {
+        const outcomes = await bulkDeletePersonas(ids);
+        const deleted = outcomes.filter((o) => o.status === 'deleted').length;
+        const protectedCount = outcomes.filter((o) => o.status === 'protected').length;
+        const failed = outcomes.filter((o) => o.status === 'failed').length;
+        await useAgentStore.getState().fetchPersonas();
+        if (failed > 0 || protectedCount > 0) {
+          useToastStore.getState().addToast(
+            tx(t.agents.overview_actions.bulk_delete_partial, { deleted, skipped: protectedCount + failed }),
+            'warning',
+          );
+        } else {
+          useToastStore.getState().addToast(
+            tx(t.agents.overview_actions.bulk_delete_done, { deleted }),
+            'success',
+          );
+        }
+      } catch (err) {
+        logger.error('Bulk delete failed', { error: err });
+        useToastStore.getState().addToast(t.agents.overview_actions.bulk_delete_failed, 'error');
+      }
+    },
+    [tx, t.agents.overview_actions.bulk_delete_partial, t.agents.overview_actions.bulk_delete_done, t.agents.overview_actions.bulk_delete_failed],
+  );
+
   const handleBatchDelete = useCallback(() => {
     if (selectedIds.size === 0) return;
     // System personas (the Director) can't be deleted — drop them from the batch.
@@ -78,16 +110,10 @@ export function usePersonaActions({
       message: tx(t.agents.overview_actions.delete_agents_message, { count }),
       onConfirm: async () => {
         setSelectedIds(new Set());
-        for (const id of ids) {
-          try {
-            await deletePersona(id);
-          } catch (err) {
-            logger.error('Failed to delete persona', { id, error: err });
-          }
-        }
+        await runBulkDelete(ids);
       },
     });
-  }, [personas, selectedIds, confirm, tx, t.agents.overview_actions.delete_agents, t.agents.overview_actions.delete_agents_message, setSelectedIds, deletePersona]);
+  }, [personas, selectedIds, confirm, tx, t.agents.overview_actions.delete_agents, t.agents.overview_actions.delete_agents_message, setSelectedIds, runBulkDelete]);
 
   const draftIds = useMemo(
     () => personas.filter((p) => isDraft(p)).map((p) => p.id),
@@ -101,18 +127,51 @@ export function usePersonaActions({
       title: tx(t.agents.overview_actions.delete_drafts, { count }),
       message: tx(t.agents.overview_actions.delete_drafts_message, { count }),
       onConfirm: async () => {
-        for (const id of draftIds) {
-          try {
-            await deletePersona(id);
-          } catch (err) {
-            logger.error('Failed to delete draft persona', { id, error: err });
-          }
-        }
+        await runBulkDelete(draftIds);
       },
     });
-  }, [draftIds, confirm, tx, t.agents.overview_actions.delete_drafts, t.agents.overview_actions.delete_drafts_message, deletePersona]);
+  }, [draftIds, confirm, tx, t.agents.overview_actions.delete_drafts, t.agents.overview_actions.delete_drafts_message, runBulkDelete]);
+
+  // Bulk archive/restore of the current selection. Archive preserves all
+  // history; system personas are skipped server-side (they error) so we filter
+  // them out up front for a clean count.
+  const handleBatchArchive = useCallback(async () => {
+    const ids = [...selectedIds].filter(
+      (id) => personas.find((p) => p.id === id)?.trust_origin !== 'system',
+    );
+    if (ids.length === 0) return;
+    let ok = 0;
+    for (const id of ids) {
+      try {
+        await archivePersona(id);
+        ok += 1;
+      } catch (err) {
+        logger.error('Failed to archive persona', { id, error: err });
+      }
+    }
+    setSelectedIds(new Set());
+    await useAgentStore.getState().fetchPersonas();
+    useToastStore.getState().addToast(tx(t.agents.overview_actions.archived_done, { count: ok }), 'success');
+  }, [selectedIds, personas, setSelectedIds, tx, t.agents.overview_actions.archived_done]);
+
+  const handleBatchRestore = useCallback(async () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    let ok = 0;
+    for (const id of ids) {
+      try {
+        await restorePersona(id);
+        ok += 1;
+      } catch (err) {
+        logger.error('Failed to restore persona', { id, error: err });
+      }
+    }
+    setSelectedIds(new Set());
+    await useAgentStore.getState().fetchPersonas();
+    useToastStore.getState().addToast(tx(t.agents.overview_actions.restored_done, { count: ok }), 'success');
+  }, [selectedIds, setSelectedIds, tx, t.agents.overview_actions.restored_done]);
 
   const handleEdit = useCallback((id: string) => selectPersona(id), [selectPersona]);
 
-  return { modal, handleDelete, handleBatchDelete, handleDeleteDrafts, handleEdit, draftIds };
+  return { modal, handleDelete, handleBatchDelete, handleDeleteDrafts, handleBatchArchive, handleBatchRestore, handleEdit, draftIds };
 }

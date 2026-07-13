@@ -2566,7 +2566,12 @@
       "delete_agents_message": "{count} tác nhân và toàn bộ cấu hình của chúng sẽ bị xóa vĩnh viễn.",
       "delete_drafts": "Xóa {count} nháp",
       "delete_drafts_message": "{count} tác nhân nháp sẽ bị xóa vĩnh viễn.",
-      "system_persona_undeletable": "Director là persona hệ thống và không thể xóa."
+      "system_persona_undeletable": "Director là persona hệ thống và không thể xóa.",
+      "archived_done": "Đã lưu trữ {count} persona",
+      "bulk_delete_done": "Đã xóa {deleted} persona",
+      "bulk_delete_failed": "Không thể xóa persona",
+      "bulk_delete_partial": "Đã xóa {deleted}; đã bỏ qua {skipped}",
+      "restored_done": "Đã khôi phục {count} persona"
     },
     "persona_list": {
       "all_personas": "Tất cả tác nhân",
@@ -2602,7 +2607,12 @@
       "batch_moved_partial": "Đã chuyển {ok} sang {group}; {failed} thất bại",
       "render_cap_notice": "Đang hiển thị {shown} trong {total} — thu hẹp bằng tìm kiếm hoặc bộ lọc để xem phần còn lại.",
       "star_director_add": "Gắn sao để thêm vào phạm vi huấn luyện của Director",
-      "star_director_remove": "Đã gắn sao — trong phạm vi huấn luyện của Director. Nhấn để xóa."
+      "star_director_remove": "Đã gắn sao — trong phạm vi huấn luyện của Director. Nhấn để xóa.",
+      "badge_archived": "Đã lưu trữ",
+      "batch_archive": "Lưu trữ",
+      "batch_restore": "Khôi phục",
+      "show_active_personas": "Hiển thị persona đang hoạt động",
+      "show_archived_personas": "Hiển thị persona đã lưu trữ"
     },
     "editor_ui": {
       "max_budget_label": "Ngân sách tối đa (USD)",

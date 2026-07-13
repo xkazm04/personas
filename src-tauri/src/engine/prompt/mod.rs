@@ -872,7 +872,7 @@ mod tests {
     use crate::engine::types::ModelProfile;
 
     fn test_persona() -> Persona {
-        Persona {
+        Persona { lifecycle: "active".to_string(),
             id: "test-id".into(),
             project_id: "proj-1".into(),
             name: "Test Agent".into(),

@@ -2566,7 +2566,12 @@
       "delete_agents_message": "{count} एजेंट और उनकी सभी कॉन्फ़िगरेशन स्थायी रूप से हटाई जाएगी।",
       "delete_drafts": "{count} ड्राफ्ट हटाएं",
       "delete_drafts_message": "{count} ड्राफ्ट एजेंट स्थायी रूप से हटाए जाएंगे।",
-      "system_persona_undeletable": "Director एक सिस्टम persona है और इसे हटाया नहीं जा सकता।"
+      "system_persona_undeletable": "Director एक सिस्टम persona है और इसे हटाया नहीं जा सकता।",
+      "archived_done": "{count} पर्सोना आर्काइव किए गए",
+      "bulk_delete_done": "{deleted} पर्सोना हटाए गए",
+      "bulk_delete_failed": "पर्सोना हटाने में विफल",
+      "bulk_delete_partial": "{deleted} हटाए गए; {skipped} छोड़े गए",
+      "restored_done": "{count} पर्सोना पुनर्स्थापित किए गए"
     },
     "persona_list": {
       "all_personas": "सभी पर्सोना",
@@ -2602,7 +2607,12 @@
       "batch_moved_partial": "{ok} {group} में स्थानांतरित; {failed} विफल",
       "render_cap_notice": "{total} में से {shown} दिखाए जा रहे हैं — बाकी देखने के लिए खोज या फ़िल्टर का उपयोग करें।",
       "star_director_add": "Director की कोचिंग सूची में जोड़ने के लिए स्टार करें",
-      "star_director_remove": "स्टार किया — Director की कोचिंग सूची में है। हटाने के लिए क्लिक करें।"
+      "star_director_remove": "स्टार किया — Director की कोचिंग सूची में है। हटाने के लिए क्लिक करें।",
+      "badge_archived": "आर्काइव किया गया",
+      "batch_archive": "आर्काइव करें",
+      "batch_restore": "पुनर्स्थापित करें",
+      "show_active_personas": "सक्रिय पर्सोना दिखाएं",
+      "show_archived_personas": "आर्काइव किए गए पर्सोना दिखाएं"
     },
     "editor_ui": {
       "max_budget_label": "अधिकतम बजट (USD)",

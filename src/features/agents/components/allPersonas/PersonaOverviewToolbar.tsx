@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Search, Star, X } from 'lucide-react';
+import { Archive, Search, Star, X } from 'lucide-react';
 import { HEALTH_STYLES } from './PersonaOverviewBadges';
 import type { AgentListViewConfig } from './ViewPresetBar';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -8,6 +8,7 @@ const STATUS_LABELS: Record<string, string> = {
   enabled: 'Active',
   disabled: 'Disabled',
   building: 'Building / Drafts',
+  archived: 'Archived',
 };
 
 interface PersonaOverviewToolbarProps {
@@ -135,6 +136,25 @@ export function PersonaOverviewToolbar({
         }`}
       >
         <Star className={`w-3.5 h-3.5 ${view.favoriteOnly ? 'fill-amber-400' : ''}`} />
+      </button>
+
+      {/* Archived quick-toggle (icon-only) — flips between the default roster
+          and the Archived view. */}
+      <button
+        type="button"
+        onClick={() =>
+          onViewChange({ ...view, statusFilter: view.statusFilter === 'archived' ? 'all' : 'archived' })
+        }
+        title={view.statusFilter === 'archived' ? t.agents.persona_list.show_active_personas : t.agents.persona_list.show_archived_personas}
+        aria-label={view.statusFilter === 'archived' ? t.agents.persona_list.show_active_personas : t.agents.persona_list.show_archived_personas}
+        aria-pressed={view.statusFilter === 'archived'}
+        className={`flex items-center justify-center p-1.5 rounded-card border transition-all ${
+          view.statusFilter === 'archived'
+            ? 'border-zinc-500/40 bg-zinc-500/15 text-zinc-300'
+            : 'border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50'
+        }`}
+      >
+        <Archive className="w-3.5 h-3.5" />
       </button>
 
       {/* Active filter chips */}

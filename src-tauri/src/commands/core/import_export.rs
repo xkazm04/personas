@@ -445,6 +445,7 @@ pub(crate) fn import_persona_from_value(
             max_turns: p.max_turns,
             design_context: p.design_context.clone(),
             notification_channels: p.notification_channels.clone(),
+            lifecycle: None,
         },
     )?;
     let new_id = new_persona.id.clone();

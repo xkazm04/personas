@@ -2270,6 +2270,28 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         Ok(_) => {}
         Err(e) => tracing::error!("Auto-listener backfill error: {}", e),
     }
+
+    // Draft-persona TTL sweep: delete abandoned build stubs (lifecycle `draft`,
+    // no execution history) older than `draft_retention_days`. Default 0 =
+    // disabled (opt-in), because deletion is destructive. `sweep_stale_drafts`
+    // routes each candidate through the same `delete_draft_if_safe` guard the
+    // build cancel path uses, so a draft that produced work is never swept.
+    let draft_retention_days = parse_retention_setting(
+        pool,
+        settings_keys::DRAFT_RETENTION_DAYS,
+        settings_keys::DRAFT_RETENTION_DAYS_DEFAULT,
+    );
+    if draft_retention_days > 0 {
+        match crate::db::repos::core::personas::sweep_stale_drafts(pool, draft_retention_days) {
+            Ok(n) if n > 0 => tracing::info!(
+                "Draft sweep: deleted {} abandoned draft persona(s) (retention={}d)",
+                n,
+                draft_retention_days
+            ),
+            Ok(_) => {}
+            Err(e) => tracing::error!("Draft sweep error: {}", e),
+        }
+    }
 }
 
 /// Emit event update to frontend for realtime visualization.

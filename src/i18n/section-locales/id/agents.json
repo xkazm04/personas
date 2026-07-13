@@ -1848,7 +1848,12 @@
     "delete_agents_message": "{count} agen dan semua konfigurasinya akan dihapus secara permanen.",
     "delete_drafts": "Hapus {count} Draf",
     "delete_drafts_message": "{count} agen draf akan dihapus secara permanen.",
-    "system_persona_undeletable": "Director adalah persona sistem dan tidak dapat dihapus."
+    "system_persona_undeletable": "Director adalah persona sistem dan tidak dapat dihapus.",
+    "archived_done": "{count} persona diarsipkan",
+    "bulk_delete_done": "{deleted} persona dihapus",
+    "bulk_delete_failed": "Gagal menghapus persona",
+    "bulk_delete_partial": "{deleted} dihapus; {skipped} dilewati",
+    "restored_done": "{count} persona dipulihkan"
   },
   "persona_list": {
     "all_personas": "Semua Persona",
@@ -1884,7 +1889,12 @@
     "batch_moved_partial": "Memindahkan {ok} ke {group}; {failed} gagal",
     "render_cap_notice": "Menampilkan {shown} dari {total} — persempit dengan pencarian atau filter untuk melihat sisanya.",
     "star_director_add": "Beri bintang untuk menambahkan ke cakupan pembinaan Director",
-    "star_director_remove": "Diberi bintang — ada dalam cakupan pembinaan Director. Klik untuk menghapus."
+    "star_director_remove": "Diberi bintang — ada dalam cakupan pembinaan Director. Klik untuk menghapus.",
+    "badge_archived": "Diarsipkan",
+    "batch_archive": "Arsipkan",
+    "batch_restore": "Pulihkan",
+    "show_active_personas": "Tampilkan persona aktif",
+    "show_archived_personas": "Tampilkan persona yang diarsipkan"
   },
   "editor_ui": {
     "max_budget_label": "Anggaran Maks (USD)",

@@ -2353,7 +2353,7 @@ mod tests {
             ]
         })
         .to_string();
-        let persona = Persona {
+        let persona = Persona { lifecycle: "active".to_string(),
             id: "p-1".into(),
             project_id: "default".into(),
             name: "Email Buddy".into(),
@@ -2404,7 +2404,7 @@ mod tests {
     #[test]
     fn agent_card_falls_back_to_default_skill_when_no_use_cases() {
         let now = chrono::Utc::now().to_rfc3339();
-        let persona = Persona {
+        let persona = Persona { lifecycle: "active".to_string(),
             id: "p-2".into(),
             project_id: "default".into(),
             name: "Helper".into(),

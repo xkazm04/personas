@@ -309,7 +309,7 @@ mod tests {
 
         // Build a minimal persona and inject. Mirrors what
         // daemon::runtime::inject_ambient_for_daemon does.
-        let mut persona = crate::db::models::Persona {
+        let mut persona = crate::db::models::Persona { lifecycle: "active".to_string(),
             id: "p_e2e".into(),
             project_id: "proj_e2e".into(),
             name: "E2E".into(),

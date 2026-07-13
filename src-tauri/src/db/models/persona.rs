@@ -152,6 +152,64 @@ impl FromStr for PersonaTrustOrigin {
     }
 }
 
+/// First-class persona lifecycle stage — a durable column replacing the old
+/// frontend string-match heuristic (`!last_design_result && prompt == default`).
+///
+/// - `Draft`    — created but not yet promoted from a build session. The roster
+///                shows a "draft" badge and clicking re-opens the build flow.
+/// - `Active`   — a real, usable persona (the default for everything created
+///                outside the build-stub path, incl. template/team adoption).
+/// - `Archived` — retired but preserved. All history (executions, memories,
+///                messages) is kept — archiving is NOT a delete. `enabled`
+///                stays orthogonal (it is the runtime pause switch).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum PersonaLifecycle {
+    Draft,
+    #[default]
+    Active,
+    Archived,
+}
+
+impl fmt::Display for PersonaLifecycle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl PersonaLifecycle {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Draft => "draft",
+            Self::Active => "active",
+            Self::Archived => "archived",
+        }
+    }
+
+    pub fn is_draft(&self) -> bool {
+        matches!(self, Self::Draft)
+    }
+
+    pub fn is_archived(&self) -> bool {
+        matches!(self, Self::Archived)
+    }
+}
+
+impl FromStr for PersonaLifecycle {
+    type Err = AppError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "draft" => Ok(Self::Draft),
+            "active" => Ok(Self::Active),
+            "archived" => Ok(Self::Archived),
+            _ => Err(AppError::Validation(format!(
+                "Invalid lifecycle '{s}': must be 'draft', 'active', or 'archived'"
+            ))),
+        }
+    }
+}
+
 /// Parameter type discriminator for persona free parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -582,12 +640,22 @@ pub struct Persona {
     /// NULL = no disables; this is the default for fresh + legacy rows.
     #[serde(default)]
     pub disabled_dims_json: Option<String>,
+    /// First-class lifecycle stage (`draft` | `active` | `archived`). Replaces
+    /// the old frontend draft heuristic. Defaults to `active`; the build-stub
+    /// creation path stamps `draft`, promote stamps `active`, archive/restore
+    /// move to/from `archived`. Stored as the lowercase string.
+    #[serde(default = "default_lifecycle")]
+    pub lifecycle: String,
     pub created_at: String,
     pub updated_at: String,
 }
 
 fn default_setup_status() -> String {
     "ready".to_string()
+}
+
+fn default_lifecycle() -> String {
+    "active".to_string()
 }
 
 impl Persona {
@@ -741,6 +809,11 @@ pub struct CreatePersonaInput {
     pub max_turns: Option<i32>,
     pub design_context: Option<String>,
     pub notification_channels: Option<String>,
+    /// Optional lifecycle stamp at creation. `None` → `active` (the default for
+    /// manual creation + template/team adoption). The build-stub path passes
+    /// `Some("draft")` so drafts are first-class from birth.
+    #[serde(default)]
+    pub lifecycle: Option<String>,
 }
 
 /// Canonical health level for a persona, derived from recent execution outcomes.
@@ -764,6 +837,20 @@ pub struct PersonaHealth {
     pub runs_today: i64,
     /// 7-day execution count histogram (index 0 = 6 days ago, index 6 = today)
     pub sparkline: Vec<i64>,
+}
+
+/// Per-id result of a `bulk_delete_personas` call. `status` is one of
+/// `deleted` | `protected` | `failed`; `reason` carries the human-readable
+/// cause for the non-`deleted` outcomes (system-origin protection, not-found,
+/// or a DB error).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct BulkDeleteOutcome {
+    pub id: String,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// Lightweight summary for sidebar badges: trigger count, last execution time, and health.
@@ -808,4 +895,8 @@ pub struct UpdatePersonaInput {
     /// unchanged); inner `Option<String>` lets callers explicitly clear
     /// the column with `Some(None)`. Set by the View-mode SigilEditModal.
     pub disabled_dims_json: Option<Option<String>>,
+    /// Lifecycle stage (`draft` | `active` | `archived`). Partial-update:
+    /// `None` = leave unchanged. Promote/archive/restore drive this; the repo
+    /// validates the value against `PersonaLifecycle`.
+    pub lifecycle: Option<String>,
 }

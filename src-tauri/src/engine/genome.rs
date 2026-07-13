@@ -659,7 +659,7 @@ mod tests {
     use super::*;
 
     fn make_test_persona(name: &str, prompt: &str) -> Persona {
-        Persona {
+        Persona { lifecycle: "active".to_string(),
             id: format!("test-{name}"),
             project_id: "default".into(),
             name: name.into(),

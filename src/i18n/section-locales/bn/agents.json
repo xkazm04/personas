@@ -1848,7 +1848,12 @@
     "delete_agents_message": "{count}টি এজেন্ট এবং তাদের সব কনফিগারেশন স্থায়ীভাবে সরানো হবে।",
     "delete_drafts": "{count}টি খসড়া মুছুন",
     "delete_drafts_message": "{count}টি খসড়া এজেন্ট স্থায়ীভাবে সরানো হবে।",
-    "system_persona_undeletable": "Director একটি সিস্টেম পার্সোনা এবং এটি মুছে ফেলা যাবে না।"
+    "system_persona_undeletable": "Director একটি সিস্টেম পার্সোনা এবং এটি মুছে ফেলা যাবে না।",
+    "archived_done": "{count}টি পারসোনা আর্কাইভ করা হয়েছে",
+    "bulk_delete_done": "{deleted}টি পারসোনা মুছে ফেলা হয়েছে",
+    "bulk_delete_failed": "পারসোনা মুছে ফেলা ব্যর্থ হয়েছে",
+    "bulk_delete_partial": "{deleted}টি মুছে ফেলা হয়েছে; {skipped}টি এড়িয়ে যাওয়া হয়েছে",
+    "restored_done": "{count}টি পারসোনা পুনরুদ্ধার করা হয়েছে"
   },
   "persona_list": {
     "all_personas": "সব পার্সোনা",
@@ -1884,7 +1889,12 @@
     "batch_moved_partial": "{ok}টি {group}-এ সরানো হয়েছে; {failed}টি ব্যর্থ",
     "render_cap_notice": "{total}-এর মধ্যে {shown}টি দেখানো হচ্ছে — বাকিগুলি দেখতে অনুসন্ধান বা ফিল্টার দিয়ে সংকুচিত করুন।",
     "star_director_add": "Director-এর কোচিং স্কোপে যোগ করতে তারকা চিহ্নিত করুন",
-    "star_director_remove": "তারকা চিহ্নিত — Director-এর কোচিং স্কোপে আছে। সরাতে ক্লিক করুন।"
+    "star_director_remove": "তারকা চিহ্নিত — Director-এর কোচিং স্কোপে আছে। সরাতে ক্লিক করুন।",
+    "badge_archived": "আর্কাইভ করা",
+    "batch_archive": "আর্কাইভ",
+    "batch_restore": "পুনরুদ্ধার",
+    "show_active_personas": "সক্রিয় পারসোনা দেখান",
+    "show_archived_personas": "আর্কাইভ করা পারসোনা দেখান"
   },
   "editor_ui": {
     "max_budget_label": "সর্বোচ্চ বাজেট (USD)",

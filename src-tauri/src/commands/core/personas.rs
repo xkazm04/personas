@@ -4,7 +4,7 @@ use tauri::{AppHandle, State};
 use ts_rs::TS;
 
 use crate::db::models::{
-    CreatePersonaInput, Persona, PersonaAutomation, PersonaEventSubscription,
+    BulkDeleteOutcome, CreatePersonaInput, Persona, PersonaAutomation, PersonaEventSubscription,
     PersonaSummary, PersonaTeam, PersonaToolDefinition, PersonaTrigger, UpdateExecutionStatus,
     UpdatePersonaInput,
 };
@@ -24,10 +24,49 @@ use personas_macros::requires;
 use crate::validation::persona as pv;
 use crate::AppState;
 
+/// List personas, optionally filtered to a set of lifecycle stages. `None`
+/// (the default, back-compat) returns every persona; the roster's Archived view
+/// passes `["archived"]`, the default view can pass `["active","draft"]`.
 #[tauri::command]
 #[requires(auth)]
-pub fn list_personas(state: State<'_, Arc<AppState>>) -> Result<Vec<Persona>, AppError> {
-    repo::get_all(&state.db)
+pub fn list_personas(
+    state: State<'_, Arc<AppState>>,
+    lifecycle: Option<Vec<String>>,
+) -> Result<Vec<Persona>, AppError> {
+    match lifecycle {
+        Some(stages) if !stages.is_empty() => {
+            let refs: Vec<&str> = stages.iter().map(|s| s.as_str()).collect();
+            repo::get_all_by_lifecycle(&state.db, &refs)
+        }
+        _ => repo::get_all(&state.db),
+    }
+}
+
+/// Archive a persona: move it to lifecycle `archived` (preserving ALL history —
+/// no cascade). Blocked for system-origin personas. Returns the updated row.
+#[tauri::command]
+#[requires(auth)]
+pub fn archive_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Persona, AppError> {
+    repo::archive_persona(&state.db, &id)
+}
+
+/// Restore an archived persona back to lifecycle `active`. Returns the updated row.
+#[tauri::command]
+#[requires(auth)]
+pub fn restore_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Persona, AppError> {
+    repo::restore_persona(&state.db, &id)
+}
+
+/// Bulk-delete personas in one IPC, returning a per-id outcome
+/// (`deleted` | `protected` | `failed`). Replaces the frontend's N sequential
+/// `delete_persona` calls for the "delete drafts" / batch-delete paths.
+#[tauri::command]
+#[requires(auth)]
+pub fn bulk_delete_personas(
+    state: State<'_, Arc<AppState>>,
+    ids: Vec<String>,
+) -> Result<Vec<BulkDeleteOutcome>, AppError> {
+    repo::bulk_delete_personas(&state.db, &ids)
 }
 
 #[tauri::command]

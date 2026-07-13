@@ -473,9 +473,32 @@ pub async fn cancel_build_session(
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
 
+    // Capture the session's persona BEFORE cancelling so we can clean up an
+    // orphaned build stub afterward.
+    let persona_id = build_session_repo::get_by_id(&state.db, &session_id)
+        .ok()
+        .flatten()
+        .map(|s| s.persona_id);
+
     state
         .build_session_manager
-        .cancel_session(&session_id, &state.db, &state.process_registry)
+        .cancel_session(&session_id, &state.db, &state.process_registry)?;
+
+    // Draft GC: delete the eagerly-created draft persona this cancelled build
+    // was building — but ONLY when it's still a `draft` with no execution
+    // history. A re-build of an established (active) persona, or a draft that
+    // already produced work, is left untouched (guard lives in
+    // `delete_draft_if_safe`). Best-effort: a cleanup failure never fails the
+    // cancel the user asked for.
+    if let Some(pid) = persona_id {
+        match crate::db::repos::core::personas::delete_draft_if_safe(&state.db, &pid) {
+            Ok(true) => tracing::info!(persona_id = %pid, "cancel_build_session: removed orphaned draft persona"),
+            Ok(false) => {}
+            Err(e) => tracing::warn!(persona_id = %pid, error = %e, "cancel_build_session: draft cleanup failed"),
+        }
+    }
+
+    Ok(())
 }
 
 /// Read the currently pending clarifying question on a build session, if any.
@@ -2374,6 +2397,7 @@ fn update_persona_in_tx(
             icon = COALESCE(?5, icon),
             color = COALESCE(?6, color),
             enabled = 1,
+            lifecycle = 'active',
             notification_channels = COALESCE(?7, notification_channels),
             design_context = ?8,
             last_design_result = ?9,

@@ -2566,7 +2566,12 @@
       "delete_agents_message": "{count} 个代理及其所有配置将被永久删除。",
       "delete_drafts": "删除 {count} 个草稿",
       "delete_drafts_message": "{count} 个草稿代理将被永久删除。",
-      "system_persona_undeletable": "Director 是系统角色，无法删除。"
+      "system_persona_undeletable": "Director 是系统角色，无法删除。",
+      "archived_done": "已归档 {count} 个角色",
+      "bulk_delete_done": "已删除 {deleted} 个角色",
+      "bulk_delete_failed": "删除角色失败",
+      "bulk_delete_partial": "已删除 {deleted} 个；跳过 {skipped} 个",
+      "restored_done": "已恢复 {count} 个角色"
     },
     "persona_list": {
       "all_personas": "所有代理",
@@ -2602,7 +2607,12 @@
       "batch_moved_partial": "已移动 {ok} 个到 {group}；{failed} 个失败",
       "render_cap_notice": "显示 {total} 中的 {shown} 个 — 通过搜索或筛选来查看其余内容。",
       "star_director_add": "收藏以加入 Director 的辅导范围",
-      "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。"
+      "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。",
+      "badge_archived": "已归档",
+      "batch_archive": "归档",
+      "batch_restore": "恢复",
+      "show_active_personas": "显示活跃角色",
+      "show_archived_personas": "显示已归档角色"
     },
     "editor_ui": {
       "max_budget_label": "最大预算（USD）",

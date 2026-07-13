@@ -2566,7 +2566,12 @@
       "delete_agents_message": "{count} 件のエージェントとすべての設定が完全に削除されます。",
       "delete_drafts": "{count} 件の下書きを削除",
       "delete_drafts_message": "{count} 件の下書きエージェントが完全に削除されます。",
-      "system_persona_undeletable": "Director はシステムペルソナであり削除できません。"
+      "system_persona_undeletable": "Director はシステムペルソナであり削除できません。",
+      "archived_done": "{count}件のペルソナをアーカイブしました",
+      "bulk_delete_done": "{deleted}件のペルソナを削除しました",
+      "bulk_delete_failed": "ペルソナの削除に失敗しました",
+      "bulk_delete_partial": "{deleted}件を削除、{skipped}件をスキップしました",
+      "restored_done": "{count}件のペルソナを復元しました"
     },
     "persona_list": {
       "all_personas": "すべてのペルソナ",
@@ -2602,7 +2607,12 @@
       "batch_moved_partial": "{ok} 件を {group} に移動; {failed} 件失敗",
       "render_cap_notice": "{total} 件中 {shown} 件を表示中 — 検索またはフィルタで絞り込んでください。",
       "star_director_add": "スターを付けて Director のコーチング対象に追加",
-      "star_director_remove": "スター付き — Director のコーチング対象です。クリックして解除。"
+      "star_director_remove": "スター付き — Director のコーチング対象です。クリックして解除。",
+      "badge_archived": "アーカイブ済み",
+      "batch_archive": "アーカイブ",
+      "batch_restore": "復元",
+      "show_active_personas": "アクティブなペルソナを表示",
+      "show_archived_personas": "アーカイブ済みのペルソナを表示"
     },
     "editor_ui": {
       "max_budget_label": "最大予算（USD）",

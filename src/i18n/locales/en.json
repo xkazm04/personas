@@ -2639,7 +2639,12 @@
       "delete_agents_message": "{count} agent(s) and all their configuration will be permanently removed.",
       "delete_drafts": "Delete {count} Draft(s)",
       "delete_drafts_message": "{count} draft agent(s) will be permanently removed.",
-      "system_persona_undeletable": "The Director is a system persona and can't be deleted."
+      "system_persona_undeletable": "The Director is a system persona and can't be deleted.",
+      "bulk_delete_done": "Deleted {deleted} persona(s)",
+      "bulk_delete_partial": "Deleted {deleted}; skipped {skipped}",
+      "bulk_delete_failed": "Failed to delete personas",
+      "archived_done": "Archived {count} persona(s)",
+      "restored_done": "Restored {count} persona(s)"
     },
     "persona_list": {
       "all_personas": "All Personas",
@@ -2650,8 +2655,11 @@
       "badge_draft": "Draft",
       "badge_disabled": "Disabled",
       "badge_building": "Building",
+      "badge_archived": "Archived",
       "batch_selected": "{count} selected",
       "batch_delete": "Delete",
+      "batch_archive": "Archive",
+      "batch_restore": "Restore",
       "batch_clear": "Clear",
       "batch_move_to_group": "Set home team…",
       "batch_move_to_group_empty": "No workspaces yet — create one under Teams",
@@ -2673,6 +2681,8 @@
       "favorites": "Favorites",
       "show_all_personas": "Show all personas",
       "show_only_favorites": "Show only favorites",
+      "show_archived_personas": "Show archived personas",
+      "show_active_personas": "Show active personas",
       "clear_search": "Clear search",
       "col_persona": "Persona",
       "no_connectors_configured": "No connectors configured"
