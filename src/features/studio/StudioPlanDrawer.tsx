@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ListChecks, X } from 'lucide-react';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { PlanGlyph } from './PlanGlyph';
 import StudioChecklistStepper from './StudioChecklistStepper';
 import type { BuildPhase } from './studioBuildModel';
 
@@ -83,8 +84,8 @@ export default function StudioPlanDrawer({
             {hasPlan ? (
               <StudioChecklistStepper phases={phases} stagger />
             ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
-                <ListChecks className="h-8 w-8 text-foreground/25" />
+              <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
+                <PlanGlyph size={88} />
                 <p className="typo-caption text-foreground/50">
                   No plan yet — Athena will lay one out as you build.
                 </p>
