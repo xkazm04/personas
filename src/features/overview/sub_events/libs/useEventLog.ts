@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
-import { searchEvents } from '@/api/overview/events';
+import { searchEvents, listKnownEventTypes } from '@/api/overview/events';
 import { listSavedViewsByType, createSavedView, deleteSavedView } from '@/api/overview/savedViews';
 import type { SavedView } from '@/lib/bindings/SavedView';
 import type { EventFilterInput } from '@/lib/bindings/EventFilterInput';
@@ -64,6 +64,10 @@ export function useEventLog() {
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
 
+  // Known event-type vocabulary (registry). Best-effort: the type filter
+  // still works from loaded rows if the registry fetch fails.
+  const [registryTypes, setRegistryTypes] = useState<string[]>([]);
+
   // Determine if we're in server-search mode
   const isServerSearch = searchText.trim().length > 0 || (
     statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId
@@ -88,6 +92,14 @@ export function useEventLog() {
     listSavedViewsByType(SAVED_VIEW_TYPE)
       .then(setSavedViews)
       .catch((err) => logger.warn('Failed to load saved views', { error: err }));
+  }, []);
+
+  // Load the known-vocabulary registry (curated seed ∪ observed types) so the
+  // type filter offers every known type, not only those in loaded rows.
+  useEffect(() => {
+    listKnownEventTypes()
+      .then((entries) => setRegistryTypes(entries.map((e) => e.eventType)))
+      .catch((err) => logger.warn('Failed to load event vocabulary', { error: err }));
   }, []);
 
   const handleBusEvent = useCallback((evt: PersonaEvent) => {
@@ -174,14 +186,17 @@ export function useEventLog() {
     };
   }, [executeSearch, statusFilter, typeFilter, selectedPersonaId, searchText]);
 
-  // Derive available event types from the data
+  // Available event types = known-vocabulary registry ∪ types seen in loaded
+  // rows. The registry is the primary source (so a listener can be filtered for
+  // even before any matching event has loaded); loaded rows backfill any type
+  // not yet in the registry (e.g. brand-new, not-yet-refreshed observed types).
   const availableTypes = useMemo(() => {
-    const types = new Set<string>();
+    const types = new Set<string>(registryTypes);
     for (const e of recentEvents) {
       if (e.event_type) types.add(e.event_type);
     }
     return Array.from(types).sort();
-  }, [recentEvents]);
+  }, [recentEvents, registryTypes]);
 
   // Use server results when filters are active, otherwise client-side filter.
   // In both modes, merged with older events fetched via loadOlder.

@@ -80,9 +80,26 @@ pub fn publish_event(
         )));
     }
 
+    // Known-vocabulary validation: an unknown event_type logs a warning with the
+    // nearest known type (never rejects). Catches typo'd types that would
+    // otherwise silently never match any listener.
+    crate::engine::event_vocabulary::validate_and_warn(&input.event_type);
+
     let event = repo::publish(&state.db, input)?;
     // CDC auto-emits on persona_events INSERT
     Ok(event)
+}
+
+/// List the known event-type vocabulary: the curated builtin seed merged with
+/// every distinct type actually observed in `persona_events`. Feeds the events
+/// UI type filter and trigger/listener creation so discovery isn't limited to
+/// the handful of types in the currently-loaded rows.
+#[tauri::command]
+pub fn list_known_event_types(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<crate::engine::event_vocabulary::EventVocabularyEntry>, AppError> {
+    require_auth_sync(&state)?;
+    crate::engine::event_vocabulary::list_vocabulary(&state.db)
 }
 
 #[tauri::command]

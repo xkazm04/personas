@@ -8,6 +8,7 @@ import type { CreateEventSubscriptionInput } from "@/lib/bindings/CreateEventSub
 import type { UpdateEventSubscriptionInput } from "@/lib/bindings/UpdateEventSubscriptionInput";
 import type { DeadLetterConfig } from "@/lib/bindings/DeadLetterConfig";
 import type { BulkDeadLetterOutcome } from "@/lib/bindings/BulkDeadLetterOutcome";
+import type { EventVocabularyEntry } from "@/lib/bindings/EventVocabularyEntry";
 
 // ============================================================================
 // Events
@@ -50,6 +51,14 @@ export const testEventFlow = (eventType: string, payload?: string) =>
 
 export const seedMockEvent = () =>
   invoke<PersonaEvent>("seed_mock_event", {});
+
+/**
+ * The known event-type vocabulary: the curated builtin seed merged with every
+ * distinct type observed in `persona_events`. Feeds the events type filter and
+ * trigger/listener creation so discovery isn't limited to loaded rows.
+ */
+export const listKnownEventTypes = () =>
+  invoke<EventVocabularyEntry[]>("list_known_event_types");
 
 // ============================================================================
 // Dead Letter Queue

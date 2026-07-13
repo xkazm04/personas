@@ -86,6 +86,7 @@ pub mod enclave;
 pub mod error_taxonomy;
 pub mod eval;
 pub mod event_registry;
+pub mod event_vocabulary;
 pub mod events;
 pub mod evolution;
 mod execution_engine;

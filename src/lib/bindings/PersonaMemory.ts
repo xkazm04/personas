@@ -13,9 +13,12 @@ export type PersonaMemory = { id: string, persona_id: string, title: string, con
  */
 importance: number, tags: Array<string> | null, 
 /**
- * Memory tier: "core" (always injected), "active" (selected by scoring),
- * "archive" (never injected, searchable only). See MEMORY CONTRACT (1)
- * for promotion authority — `core` is user-initiated only.
+ * Memory tier: "core" (user-pinned, always injected, never decays),
+ * "active" (scored hot set, decay-aware ranking — MEMORY CONTRACT (6)),
+ * "working" (probationary intake; auto-promoted/archived by
+ * `run_lifecycle`), "archive" (never injected, searchable only).
+ * See MEMORY CONTRACT (1) for the full tier semantics and promotion
+ * authority — `core` is user-initiated only.
  */
 tier: string, 
 /**
