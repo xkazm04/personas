@@ -194,7 +194,11 @@
     "live_slots_max_label": "Max.",
     "live_slots_title": "Live-Sitzungen begrenzen",
     "live_slots_toggle": "Sitzungslimit aktivieren",
-    "live_slots_unit": "aktive Sitzungen"
+    "live_slots_unit": "aktive Sitzungen",
+    "headless_badge": "Hintergrund",
+    "headless_no_terminal": "Hintergrundsitzung — läuft ohne Terminal. Antworten über das „Braucht dich“-Banner; der Fortschritt erscheint unter Insights.",
+    "spawn_headless_hint": "Headless-Modus — kein Live-Terminal, deutlich weniger CPU- und RAM-Last. Antworten über das „Braucht dich“-Banner; Fortschritt unter Insights.",
+    "spawn_headless_toggle": "Im Hintergrund ausführen (ohne Terminal)"
   },
   "title": "Plugins",
   "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",

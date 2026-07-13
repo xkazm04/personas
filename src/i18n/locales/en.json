@@ -11890,7 +11890,11 @@
       "live_slots_desc": "Cap how many claude processes run at once. When the fleet is at the limit, the oldest idle session is hibernated to make room — it stays resumable via Wake. Working sessions are never interrupted.",
       "live_slots_toggle": "Enable session limit",
       "live_slots_max_label": "Max",
-      "live_slots_unit": "live sessions"
+      "live_slots_unit": "live sessions",
+      "spawn_headless_toggle": "Run in background (no terminal)",
+      "spawn_headless_hint": "Headless mode — no live terminal, much lighter on CPU and RAM. Reply from the \"Needs you\" banner; inspect progress in Insights.",
+      "headless_badge": "Background",
+      "headless_no_terminal": "Background session — runs without a terminal. Reply from the \"Needs you\" banner; progress shows in Insights."
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

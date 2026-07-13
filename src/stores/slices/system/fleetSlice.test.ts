@@ -49,6 +49,7 @@ function makeSession(partial: Partial<FleetSession> = {}): FleetSession {
     name: null,
     title: null,
     args: [],
+    mode: 'interactive',
     athenaActive: false,
     state: 'spawning',
     lastActivityMs: BigInt(1_000_000),

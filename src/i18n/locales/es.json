@@ -11627,7 +11627,11 @@
       "live_slots_max_label": "Máx.",
       "live_slots_title": "Limitar sesiones activas",
       "live_slots_toggle": "Activar límite de sesiones",
-      "live_slots_unit": "sesiones activas"
+      "live_slots_unit": "sesiones activas",
+      "headless_badge": "Segundo plano",
+      "headless_no_terminal": "Sesión en segundo plano — se ejecuta sin terminal. Responde desde el banner «Te necesita»; el progreso se muestra en Insights.",
+      "spawn_headless_hint": "Modo headless: sin terminal en vivo, mucho más ligero en CPU y RAM. Responde desde el banner «Te necesita»; consulta el progreso en Insights.",
+      "spawn_headless_toggle": "Ejecutar en segundo plano (sin terminal)"
     },
     "title": "Plugins",
     "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",

@@ -11627,7 +11627,11 @@
       "live_slots_max_label": "최대",
       "live_slots_title": "라이브 세션 제한",
       "live_slots_toggle": "세션 제한 사용",
-      "live_slots_unit": "개의 라이브 세션"
+      "live_slots_unit": "개의 라이브 세션",
+      "headless_badge": "백그라운드",
+      "headless_no_terminal": "백그라운드 세션 — 터미널 없이 실행됩니다. \"도움 필요\" 배너에서 응답하고, 진행 상황은 Insights에 표시됩니다.",
+      "spawn_headless_hint": "헤드리스 모드 — 라이브 터미널 없이 CPU와 RAM 부담이 훨씬 적습니다. 응답은 \"도움 필요\" 배너에서, 진행 상황은 Insights에서 확인하세요.",
+      "spawn_headless_toggle": "백그라운드로 실행 (터미널 없음)"
     },
     "title": "플러그인",
     "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",

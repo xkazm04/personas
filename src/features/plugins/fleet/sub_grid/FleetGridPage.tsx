@@ -29,7 +29,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { EventName } from '@/lib/eventRegistry';
-import { spawnSession, writeInput, hibernateSession, wakeSession, killSession } from '@/api/fleet/fleet';
+import { spawnSession, spawnHeadlessSession, writeInput, hibernateSession, wakeSession, killSession } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useToastStore } from '@/stores/toastStore';
@@ -422,11 +422,14 @@ export default function FleetGridPage() {
 
   // Spawn seeded with a first task — the prompt rides as a positional argv
   // (`claude "<task>"`), so the session starts working the moment it boots.
+  // `headless` routes to the stream-json background lane (no PTY/terminal).
   // Returns success so the modal keeps the draft open on failure for a retry.
-  const handleSpawnWithTask = useCallback(async (prompt: string): Promise<boolean> => {
+  const handleSpawnWithTask = useCallback(async (prompt: string, headless: boolean): Promise<boolean> => {
     if (!activeProject) return false;
     try {
-      const id = await spawnSession(activeProject.root_path, [prompt]);
+      const id = headless
+        ? await spawnHeadlessSession(activeProject.root_path, prompt)
+        : await spawnSession(activeProject.root_path, [prompt]);
       setActiveSession(id);
       refresh();
       return true;
@@ -836,6 +839,18 @@ export default function FleetGridPage() {
                           ? `Exit code ${activeSession.exitCode}`
                           : 'Process exited unexpectedly'}
                       </p>
+                    </div>
+                  ) : activeSession.mode === 'headless' ? (
+                    // Headless sessions have no TTY — there is nothing an xterm
+                    // could attach to. Show the transcript rollup instead;
+                    // replies go through the Needs-You banner / Athena.
+                    <div className="h-full flex flex-col min-h-0" data-testid="fleet-headless-pane">
+                      <p className="shrink-0 px-3 py-2 text-[12px] text-foreground opacity-70 border-b border-primary/10">
+                        {t.plugins.fleet.headless_no_terminal}
+                      </p>
+                      <div className="flex-1 min-h-0">
+                        <FleetSessionInsights claudeSessionId={activeSession.claudeSessionId} />
+                      </div>
                     </div>
                   ) : (
                     <FleetTerminalPane sessionId={activeSession.id} />

@@ -3388,6 +3388,7 @@ pub fn run() {
             commands::fleet::commands::fleet_rename_session,
             commands::fleet::commands::fleet_hibernate_session,
             commands::fleet::commands::fleet_wake_session,
+            commands::fleet::commands::fleet_spawn_headless_session,
             commands::fleet::commands::fleet_set_auto_hibernate,
             commands::fleet::commands::fleet_set_live_slots,
             commands::fleet::commands::fleet_set_state_cutoffs,

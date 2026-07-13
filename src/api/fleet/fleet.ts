@@ -146,6 +146,16 @@ export const wakeSession = (sessionId: string, cols?: number, rows?: number) =>
   invoke<string>('fleet_wake_session', { sessionId, cols, rows });
 
 /**
+ * Spawn a headless (stream-json) `claude -p` session at `cwd`, seeded with
+ * `task` as its first user message. No PTY and no TUI redraw loop — the
+ * resource-light lane for background/Athena-driven work. The UI renders a
+ * status block / Insights for it (never an xterm); replies go through
+ * `writeInput`, which the backend wraps into a stream-json user message.
+ */
+export const spawnHeadlessSession = (cwd: string, task: string, args?: string[]) =>
+  invoke<string>('fleet_spawn_headless_session', { cwd, task, args });
+
+/**
  * Configure the always-on auto-hibernate policy (P3.2): the staleness ticker
  * hibernates Idle/Stale sessions inactive longer than `afterMinutes` when
  * `enabled`. The frontend owns the persisted setting and pushes it here on

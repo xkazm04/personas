@@ -42,6 +42,23 @@ pub async fn fleet_spawn_session(
     pty::spawn_session(app, cwd, args, cols, rows)
 }
 
+/// Spawn a headless (stream-json) `claude -p` session rooted at `cwd`, seeded
+/// with `task` as its first user message. No PTY, no TUI redraw loop —
+/// the resource-light lane for Athena-driven background work. Returns the
+/// internal session id. See `headless.rs`.
+#[tauri::command]
+pub async fn fleet_spawn_headless_session(
+    app: AppHandle,
+    cwd: String,
+    task: String,
+    args: Option<Vec<String>>,
+) -> Result<String, String> {
+    let cwd = PathBuf::from(cwd);
+    // Headless spawns consume a live slot like any other session.
+    super::stale::free_slot_for_spawn(&app);
+    super::headless::spawn_headless_session(app, cwd, task, args.unwrap_or_default())
+}
+
 /// Write UTF-8 `text` to the session's PTY stdin. Does NOT append a
 /// newline — callers (xterm.js `onData`) ship raw key bytes.
 #[tauri::command]

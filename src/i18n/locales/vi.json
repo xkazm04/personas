@@ -11627,7 +11627,11 @@
       "live_slots_max_label": "Tối đa",
       "live_slots_title": "Giới hạn phiên đang chạy",
       "live_slots_toggle": "Bật giới hạn phiên",
-      "live_slots_unit": "phiên đang chạy"
+      "live_slots_unit": "phiên đang chạy",
+      "headless_badge": "Nền",
+      "headless_no_terminal": "Phiên chạy nền — không có terminal. Trả lời từ băng rôn \"Cần bạn\"; tiến độ hiển thị trong Insights.",
+      "spawn_headless_hint": "Chế độ headless — không có terminal trực tiếp, nhẹ hơn nhiều về CPU và RAM. Trả lời từ băng rôn \"Cần bạn\"; theo dõi tiến độ trong Insights.",
+      "spawn_headless_toggle": "Chạy nền (không có terminal)"
     },
     "title": "Plugin",
     "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",

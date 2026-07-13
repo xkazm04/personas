@@ -194,7 +194,11 @@
     "live_slots_max_label": "最大",
     "live_slots_title": "ライブセッション数を制限",
     "live_slots_toggle": "セッション上限を有効化",
-    "live_slots_unit": "件のライブセッション"
+    "live_slots_unit": "件のライブセッション",
+    "headless_badge": "バックグラウンド",
+    "headless_no_terminal": "バックグラウンドセッション — ターミナルなしで実行中。返信は「要対応」バナーから、進捗は Insights に表示されます。",
+    "spawn_headless_hint": "ヘッドレスモード — ライブターミナルなしで、CPU と RAM の負荷を大幅に軽減。返信は「要対応」バナーから、進捗は Insights で確認できます。",
+    "spawn_headless_toggle": "バックグラウンドで実行（ターミナルなし）"
   },
   "title": "プラグイン",
   "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",

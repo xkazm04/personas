@@ -19,7 +19,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use portable_pty::MasterPty;
 
-use super::types::{FleetSession, FleetSessionState};
+use super::types::{FleetSession, FleetSessionMode, FleetSessionState};
 
 /// Default cap (bytes) for a session's output ring buffer. Bounds the desktop
 /// app's memory per session regardless of how much a 1M-token run prints: a
@@ -260,6 +260,10 @@ pub struct FleetSessionInner {
     /// self-expiring window). `0` = not active. Drives the `athena_active` DTO.
     pub athena_active_until_ms: i64,
     pub args: Vec<String>,
+    /// Interactive PTY vs headless stream-json — see [`FleetSessionMode`].
+    /// Decides how `write_input` treats bytes (raw PTY keys vs one wrapped
+    /// stream-json user message) and whether the UI may attach an xterm.
+    pub mode: FleetSessionMode,
     /// PTY dimensions (kept in sync with `resize`). Used to reconstruct the
     /// rendered screen grid from the raw ring via vt100 — the cols especially
     /// must match what claude drew at, or a cursor-addressed TUI wraps wrong.
@@ -309,6 +313,7 @@ impl FleetSessionInner {
             name: self.name.clone(),
             title: self.title.clone(),
             args: self.args.clone(),
+            mode: self.mode,
             state: self.state,
             last_activity_ms: self.last_activity_ms,
             last_pty_output_ms: self.last_pty_output_ms,
@@ -400,21 +405,66 @@ impl FleetRegistry {
         })
     }
 
-    /// Writes `bytes` to the session's PTY stdin. No-op if missing/exited.
+    /// Writes `bytes` to the session's stdin. No-op if missing/exited.
+    ///
+    /// Interactive: raw PTY key bytes, exactly as callers ship them.
+    /// Headless: the payload is treated as ONE complete user message — trailing
+    /// CR/LF is stripped and the text is wrapped into a stream-json
+    /// `{"type":"user",...}` line (the `-p --input-format stream-json` protocol).
+    /// All real callers on this lane (broadcast, quick-reply, Athena's
+    /// `fleet_send_input`) send whole lines; an xterm never attaches to a
+    /// headless session, so per-keystroke writes can't occur.
     pub fn write_input(&self, session_id: &str, bytes: &[u8]) -> Result<(), String> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let Some(session) = map.get(session_id) else {
             return Err(format!("session not found: {session_id}"));
+        };
+        let wrapped: Option<Vec<u8>> = match session.mode {
+            FleetSessionMode::Interactive => None,
+            FleetSessionMode::Headless => {
+                let text = String::from_utf8_lossy(bytes);
+                let text = text.trim_end_matches(['\r', '\n']);
+                if text.is_empty() {
+                    // A bare Enter has no headless meaning — swallow it.
+                    return Ok(());
+                }
+                Some(headless_user_message(text).into_bytes())
+            }
         };
         let mut writer_guard = session.writer.lock().unwrap_or_else(|e| e.into_inner());
         let Some(writer) = writer_guard.as_mut() else {
             return Err(format!("session writer dropped: {session_id}"));
         };
         writer
-            .write_all(bytes)
+            .write_all(wrapped.as_deref().unwrap_or(bytes))
             .map_err(|e| format!("write failed: {e}"))?;
         writer.flush().map_err(|e| format!("flush failed: {e}"))?;
         Ok(())
+    }
+
+    /// Direct state transition for lanes that observe the process itself
+    /// (the headless stream-json reader) rather than hooks. Sets state +
+    /// reason + freshens activity; returns `true` only on a real change so
+    /// the caller emits one event per transition. Never resurrects terminal
+    /// states (`Exited` / `Hibernated`).
+    pub fn set_state_direct(
+        &self,
+        session_id: &str,
+        state: FleetSessionState,
+        reason: &str,
+    ) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else { return false; };
+        if matches!(session.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+            return false;
+        }
+        session.last_activity_ms = now_ms();
+        if session.state == state {
+            return false;
+        }
+        session.state = state;
+        session.state_reason = Some(reason.to_string());
+        true
     }
 
     /// Resize the PTY for `session_id`.
@@ -787,6 +837,19 @@ impl FleetRegistry {
     }
 }
 
+/// Serialize one user turn as a stream-json input line for a headless
+/// (`claude -p --input-format stream-json`) session. Trailing newline
+/// included — the protocol is line-delimited JSON.
+pub fn headless_user_message(text: &str) -> String {
+    let msg = serde_json::json!({
+        "type": "user",
+        "message": { "role": "user", "content": [{ "type": "text", "text": text }] }
+    });
+    let mut line = msg.to_string();
+    line.push('\n');
+    line
+}
+
 /// Human-readable reason for a non-zero Fleet child exit. Renders the OS code
 /// in hex (the form Windows documents NTSTATUS in) and special-cases the codes
 /// we've actually seen, so the UI can explain an exit the user would otherwise
@@ -921,6 +984,7 @@ mod tests {
             title: None,
             athena_active_until_ms: 0,
             args: Vec::new(),
+            mode: FleetSessionMode::Interactive,
             cols: 120,
             rows: 32,
             state,
