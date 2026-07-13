@@ -81,14 +81,12 @@ export function TalkBubble({ item, onOpen }: { item: TeamChannelItem; onOpen: (i
 /* ── ASSIGNMENT ────────────────────────────────────────────────────────────── */
 
 export function AssignmentCard({
-  assignmentId, items, expanded, onToggle, dense,
+  assignmentId, items, expanded, onToggle,
 }: {
   assignmentId: string;
   items: TeamChannelItem[];
   expanded: boolean;
   onToggle: () => void;
-  /** Dense = the anchor form (Dossier); full = the band form (Briefing). */
-  dense?: boolean;
 }) {
   const personaIndex = usePersonaIndex();
   const label = clusterStatus(items);
@@ -110,23 +108,6 @@ export function AssignmentCard({
   const personaIds = steps.map((s) => s.assignedPersonaId);
   const rework = steps.reduce((n, s) => n + (s.retryCount ?? 0), 0);
   const done = steps.filter((s) => s.status === 'done').length;
-
-  if (dense) {
-    return (
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full my-1 flex items-center gap-2 px-2.5 py-1.5 rounded-interactive border border-border bg-secondary/20 hover:bg-secondary/35 transition-colors text-left"
-      >
-        <Wand2 className="w-3.5 h-3.5 flex-shrink-0 text-status-info" />
-        <span className="typo-caption text-foreground truncate flex-1">{title}</span>
-        <StepProgressStrip steps={steps} />
-        <span className={`typo-caption tabular-nums flex-shrink-0 ${meta.tone}`}>
-          {done}/{steps.length || '·'}
-        </span>
-      </button>
-    );
-  }
 
   return (
     <div className="my-2 rounded-card border border-status-info/25 bg-status-info/[0.06] overflow-hidden">
@@ -225,13 +206,15 @@ const DELIB_STATUS: Record<string, string> = {
 };
 
 export function DeliberationCard({
-  deliberation, items, expanded, onToggle, dense,
+  deliberation, items, expanded, onToggle, onFocus,
 }: {
   deliberation: TeamDeliberation | undefined;
   items: TeamChannelItem[];
   expanded: boolean;
   onToggle: () => void;
-  dense?: boolean;
+  /** Send this deliberation's CONTROLS to the rail. Expanding shows its turns;
+   *  focusing is what lets you drive it — two different verbs on purpose. */
+  onFocus: () => void;
 }) {
   const personaIndex = usePersonaIndex();
   const topic = deliberation?.topic ?? 'Deliberation';
@@ -240,21 +223,6 @@ export function DeliberationCard({
   const spent = Number(deliberation?.costSpentUsd ?? 0);
   const budget = Number(deliberation?.costBudgetUsd ?? 5);
   const pct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0;
-
-  if (dense) {
-    return (
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full my-1 flex items-center gap-2 px-2.5 py-1.5 rounded-interactive border border-violet-400/25 bg-violet-400/[0.07] hover:bg-violet-400/[0.12] transition-colors text-left"
-      >
-        <Scale className="w-3.5 h-3.5 flex-shrink-0 text-violet-300" />
-        <span className="typo-caption text-foreground truncate flex-1">{topic}</span>
-        <span className={`typo-caption flex-shrink-0 ${DELIB_STATUS[status] ?? ''}`}>{status}</span>
-        <span className="typo-caption text-foreground opacity-45 tabular-nums flex-shrink-0">r{round}</span>
-      </button>
-    );
-  }
 
   return (
     <div className="my-2 rounded-card border border-violet-400/25 bg-violet-400/[0.05] overflow-hidden">
@@ -276,6 +244,15 @@ export function DeliberationCard({
             className={`block h-full rounded-full ${pct > 80 ? 'bg-status-warning' : 'bg-violet-400'}`}
             style={{ width: `${pct}%` }}
           />
+        </span>
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => { e.stopPropagation(); onFocus(); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onFocus(); } }}
+          className="flex-shrink-0 px-2 py-0.5 rounded-interactive border border-violet-400/30 typo-caption text-violet-300 hover:bg-violet-400/15 transition-colors"
+        >
+          Drive
         </span>
         <ChevronDown className={`w-4 h-4 flex-shrink-0 text-foreground opacity-40 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
