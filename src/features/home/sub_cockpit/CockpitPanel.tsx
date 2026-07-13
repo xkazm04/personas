@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Compass, Info, MessageCircle } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 
 import {
   companionGetCockpit,
@@ -8,7 +9,10 @@ import {
   type CompanionCockpitSpecBody,
   type CompanionCockpitWidget,
 } from '@/api/companion';
+import { getMetricsSummary } from '@/api/overview/observability';
+import type { MetricsSummary } from '@/lib/bindings/MetricsSummary';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -18,10 +22,14 @@ import {
   ContentHeader,
 } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { cockpitRowSpan, cockpitWidgetRegistry } from './widgetRegistry';
-import { DebtText } from '@/i18n/DebtText';
+import { composeDefaultCockpit, type DefaultCockpitLabels } from './defaultCockpit';
+
+/** Window (days) for the default-cockpit fleet-vitals stat grid. */
+const DEFAULT_COCKPIT_METRICS_DAYS = 7;
 
 
 /**
@@ -46,6 +54,20 @@ export default function CockpitPanel() {
   const setCompanionState = useCompanionStore((s) => s.setState);
   const contextualCockpit = useSystemStore((s) => s.contextualCockpit);
   const setContextualCockpit = useSystemStore((s) => s.setContextualCockpit);
+
+  // Fleet state for the deterministic default cockpit (shown when the user
+  // has never had Athena compose one). Both are already reachable client-side;
+  // no LLM call. `personas` also feeds the persona_overview widget's own fetch.
+  const { personas, fetchPersonas } = useAgentStore(
+    useShallow((s) => ({ personas: s.personas, fetchPersonas: s.fetchPersonas })),
+  );
+  const [metrics, setMetrics] = useState<MetricsSummary | null>(null);
+  useEffect(() => {
+    if (!personas || personas.length === 0) fetchPersonas().catch(silentCatch('cockpit_fetch_personas'));
+    getMetricsSummary(DEFAULT_COCKPIT_METRICS_DAYS)
+      .then(setMetrics)
+      .catch(silentCatch('cockpit_metrics_summary'));
+  }, [personas, fetchPersonas]);
 
   // Empty-state CTA: seed Athena with a concrete "compose a persona overview
   // cockpit" request and auto-send it, then open the chat panel so the user
@@ -100,6 +122,8 @@ export default function CockpitPanel() {
     'cockpit_compose_listen',
   );
 
+  const cockpit = t.overview.cockpit;
+
   // Active spec body: contextual overlay wins.
   let persistentBody: CompanionCockpitSpecBody | null = null;
   if (spec) {
@@ -107,18 +131,63 @@ export default function CockpitPanel() {
       persistentBody = JSON.parse(spec.specJson) as CompanionCockpitSpecBody;
     } catch (err) { silentCatch("features/home/sub_cockpit/CockpitPanel:catch1")(err); }
   }
-  const body = contextualCockpit ? contextualCockpit.spec : persistentBody;
+
+  // Deterministic starter cockpit — Athena's composed spec (persistentBody)
+  // always wins; this only fills the never-composed gap, and only when there's
+  // real fleet state to show. A brand-new install with zero personas keeps the
+  // "talk to Athena" CTA.
+  const defaultLabels = useMemo<DefaultCockpitLabels>(
+    () => ({
+      title: cockpit.default_title,
+      callout: { title: cockpit.default_callout_title, body: cockpit.default_callout_body },
+      vitalsTitle: cockpit.default_vitals_title,
+      rosterTitle: cockpit.default_roster_title,
+      attentionTitle: cockpit.default_attention_title,
+      attentionEmpty: cockpit.default_attention_empty,
+      stat: {
+        activePersonas: cockpit.default_stat_active_personas,
+        successRate: cockpit.default_stat_success_rate,
+        executions: cockpit.default_stat_executions,
+        needsAttention: cockpit.default_stat_needs_attention,
+      },
+      attentionReason: {
+        setup: cockpit.default_attention_setup,
+        disabled: cockpit.default_attention_paused,
+        low_trust: cockpit.default_attention_low_trust,
+      },
+    }),
+    [cockpit],
+  );
+  const showDefault =
+    !contextualCockpit && !spec && !error && (personas?.length ?? 0) > 0;
+  const defaultBody = useMemo(
+    () => (showDefault ? composeDefaultCockpit(personas ?? [], metrics, defaultLabels) : null),
+    [showDefault, personas, metrics, defaultLabels],
+  );
+
+  const body = contextualCockpit
+    ? contextualCockpit.spec
+    : persistentBody ?? defaultBody;
   const widgets = body?.widgets ?? [];
   const headerTitle = contextualCockpit
-    ? body?.title ?? t.overview.cockpit.title_default
-    : body?.title ?? 'Cockpit';
-  const headerSubtitle = contextualCockpit
+    ? body?.title ?? cockpit.title_default
+    : defaultBody
+      ? cockpit.default_title
+      : body?.title ?? cockpit.title_default;
+  const headerSubtitle: ReactNode = contextualCockpit
     ? contextualCockpit.source.kind === 'explain'
-      ? t.overview.cockpit.subtitle_explaining
-      : t.overview.cockpit.subtitle_contextual
+      ? cockpit.subtitle_explaining
+      : cockpit.subtitle_contextual
     : spec
-      ? `Composed by Athena — updated ${formatRelative(spec.updatedAt)}`
-      : 'Your companion-driven workspace';
+      ? (
+          <>
+            {cockpit.subtitle_composed_prefix}{' '}
+            <RelativeTime timestamp={spec.updatedAt} />
+          </>
+        )
+      : defaultBody
+        ? cockpit.default_subtitle
+        : cockpit.subtitle_default;
 
   const talkToAthena = (
     <button
@@ -128,7 +197,7 @@ export default function CockpitPanel() {
       data-testid="cockpit-talk-to-athena"
     >
       <MessageCircle className="w-3.5 h-3.5" />
-      <DebtText k="auto_talk_to_athena_4a34b995" />
+      {cockpit.talk_to_athena}
     </button>
   );
 
@@ -177,18 +246,17 @@ export default function CockpitPanel() {
             <LoadingSpinner size="lg" />
           </div>
         ) : !contextualCockpit && error && !spec ? (
-          <div className="rounded-modal border border-red-500/20 bg-red-500/5 p-6 flex flex-col items-center gap-3 text-center">
-            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-            <p className="typo-body text-red-400 font-medium">Couldn’t load your cockpit</p>
+          <div className="rounded-modal border border-status-error/20 bg-status-error/5 p-6 flex flex-col items-center gap-3 text-center">
+            <p className="typo-body text-status-error font-medium">{cockpit.error_title}</p>
             <button
               type="button"
               onClick={load}
               className="rounded-modal border border-primary/20 px-3 py-1.5 typo-body text-primary hover:bg-primary/10 transition-colors"
             >
-              Retry
+              {cockpit.error_retry}
             </button>
           </div>
-        ) : !contextualCockpit && !spec ? (
+        ) : !contextualCockpit && !spec && !defaultBody ? (
           <CockpitEmptyState onTalk={composePersonaCockpit} />
         ) : (
           <div className="grid grid-cols-12 gap-3 auto-rows-[180px]">
@@ -203,6 +271,8 @@ export default function CockpitPanel() {
 }
 
 function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
+  const { t, tx } = useTranslation();
+  const cockpit = t.overview.cockpit;
   return (
     <div
       data-testid="cockpit-empty-state"
@@ -222,11 +292,12 @@ function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
       </div>
 
       <div className="relative z-10 flex flex-col items-center gap-4 px-6 pb-10 max-w-md">
-        <div className="typo-body font-medium text-foreground/90"><DebtText k="auto_your_cockpit_is_empty_88e25bb2" /></div>
+        <div className="typo-body font-medium text-foreground/90">{cockpit.empty_title}</div>
         <div className="typo-caption text-foreground">
-          <DebtText k="auto_ask_athena_to_compose_a_cockpit_view_try_fcc2f4df" />
-          <span className="text-foreground"> <DebtText k="auto_show_me_my_personas_796e0c66" /> </span>
-          or <span className="text-foreground"><DebtText k="auto_what_needs_my_attention_70790810" /></span>.
+          {tx(cockpit.empty_hint, {
+            personas: cockpit.empty_example_personas,
+            attention: cockpit.empty_example_attention,
+          })}
         </div>
         <button
           type="button"
@@ -235,7 +306,7 @@ function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-input typo-caption font-medium bg-primary/15 hover:bg-primary/25 text-primary border border-primary/25 hover:border-primary/40 shadow-elevation-2 transition-colors"
         >
           <MessageCircle className="w-3.5 h-3.5" />
-          <DebtText k="auto_talk_to_athena_4a34b995" />
+          {cockpit.talk_to_athena}
         </button>
       </div>
     </div>
@@ -243,6 +314,7 @@ function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
 }
 
 function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
+  const { t, tx } = useTranslation();
   const span = Math.max(1, Math.min(12, widget.span ?? 6));
   const rowSpan = cockpitRowSpan(widget.kind);
   const Component = cockpitWidgetRegistry[widget.kind];
@@ -257,20 +329,10 @@ function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
       {Component ? (
         <Component title={widget.title} config={widget.config} />
       ) : (
-        <div className="rounded-card border border-rose-500/30 bg-rose-500/[0.06] p-4 typo-caption text-rose-300 h-full flex items-center justify-center">
-          <DebtText k="auto_unknown_widget_aedf060d" /> {widget.kind}
+        <div className="rounded-card border border-status-error/30 bg-status-error/[0.06] p-4 typo-caption text-status-error h-full flex items-center justify-center">
+          {tx(t.overview.cockpit.unknown_widget, { kind: widget.kind })}
         </div>
       )}
     </div>
   );
-}
-
-function formatRelative(iso: string): string {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return iso;
-  const sec = (Date.now() - t) / 1000;
-  if (sec < 60) return 'just now';
-  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
-  return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
