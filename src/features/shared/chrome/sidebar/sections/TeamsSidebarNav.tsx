@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords } from 'lucide-react';
+import { Users, Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -27,10 +27,10 @@ const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 
 ];
 
 // KPI hub sub-views — sidebar sub-items mirroring GOAL_VIEWS. Labels reuse the
-// existing kpis.view_* keys (no new i18n).
-const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'view_dashboard' | 'view_rollup' | 'view_proposals' }> = [
+// existing kpis.view_* keys (no new i18n). "By context" (rollup) was folded into
+// the Dashboard's grouped Distance-to-target section and retired.
+const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'view_dashboard' | 'view_proposals' }> = [
   { id: 'dashboard', icon: LayoutDashboard, labelKey: 'view_dashboard' },
-  { id: 'rollup', icon: Waypoints, labelKey: 'view_rollup' },
   { id: 'proposals', icon: Inbox, labelKey: 'view_proposals' },
 ];
 

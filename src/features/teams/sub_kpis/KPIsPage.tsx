@@ -15,8 +15,6 @@ import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecyc
 import { KPIDashboard } from './KPIDashboard';
 import { KPIProposalsQueue } from './KPIProposalsQueue';
 import { KPIDetailDrawer } from './KPIDetailDrawer';
-import { KPIExplainer } from './KPIExplainer';
-import { ContextKpiDashboard } from './ContextKpiDashboard';
 
 export default function KPIsPage() {
   const { t } = useTranslation();
@@ -99,11 +97,8 @@ export default function KPIsPage() {
         }
       />
       <ContentBody>
-        <KPIExplainer />
         {kpisTab === 'proposals' ? (
           <KPIProposalsQueue onRefresh={() => void fetchAllKpis()} />
-        ) : kpisTab === 'rollup' ? (
-          <ContextKpiDashboard onOpen={(id) => setOpenKpiId(id)} />
         ) : (
           <KPIDashboard
             loading={kpisLoading}
