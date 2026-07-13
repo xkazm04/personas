@@ -1,19 +1,24 @@
 import { memo } from 'react';
-import { Ear, ExternalLink, Star } from 'lucide-react';
+import { Ear, ExternalLink } from 'lucide-react';
 import { memberColor, parsePayload } from '@/lib/channel/eventModel';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { TaggedItem } from './types';
-import { callsign, itemKind, rowFamily, type Density } from './lensModel';
+import { callsign, itemKind, rowFamily } from './lensModel';
 
 /* ----------------------------------------------------------------------------
- * STREAM ROW — one transmission, in either density.
+ * STREAM ROW — one transmission. A dense 30px radio line, and only that.
  *
- * Shared by every Stream variant so the row taxonomy can't drift between them
- * (plan §5.1). Carries the Red Room affordances the consolidation must not
- * lose (§7.2): the family colour rail, the persona-coloured callsign, the raw
- * event_type, the payload summary + artifact link, and "Heard by" — which is
- * now a server-side subscription join (`consumers`) rather than the old
- * N-per-member client fan-out.
+ * The Stream is a LOG, so it commits to the log density: `hh:mm:ss · CALLSIGN ·
+ * event_type · summary`, monospace, fixed height. A "comfortable" density was
+ * prototyped and cut — a second row height bought nothing the detail modal
+ * doesn't already do better, and it cost exact virtualizer math (fixed itemSize
+ * beats measureElement) plus a control in a header we're trying to keep empty.
+ *
+ * Carries the Red Room affordances the consolidation must not lose (§7.2): the
+ * family colour rail, the persona-coloured callsign, the raw event_type, the
+ * payload summary + artifact link, and "Heard by" — now a server-side
+ * subscription join (`consumers`) rather than the old N-per-member client
+ * fan-out.
  *
  * COLOUR DISCIPLINE (plan §5.2), three systems, three jobs, never mixed:
  *   team colour    → the left inset rail (identity of the CHANNEL)
@@ -21,7 +26,8 @@ import { callsign, itemKind, rowFamily, type Density } from './lensModel';
  *   persona colour → the callsign (identity of the SPEAKER)
  * -------------------------------------------------------------------------- */
 
-export const ROW_H: Record<Density, number> = { radio: 30, comfortable: 52 };
+/** The radio row is a fixed 30px — exact virtualizer math, no measurement. */
+export const ROW_HEIGHT = 30;
 
 const FAMILY_TEXT: Record<string, string> = {
   handoff: 'text-violet-300',
@@ -62,11 +68,10 @@ function ImportanceDots({ value }: { value: number }) {
 }
 
 export const StreamRow = memo(function StreamRow({
-  row, persona, density, onOpen,
+  row, persona, onOpen,
 }: {
   row: TaggedItem;
   persona: Persona | undefined;
-  density: Density;
   onOpen: (row: TaggedItem) => void;
 }) {
   const { item, team } = row;
@@ -84,54 +89,34 @@ export const StreamRow = memo(function StreamRow({
 
   const railColor = team.teamColor;
 
-  if (density === 'radio') {
-    return (
-      <button
-        type="button"
-        onClick={() => onOpen(row)}
-        style={{ height: ROW_H.radio, boxShadow: `inset 2px 0 0 ${railColor}` }}
-        className="w-full text-left flex items-center gap-2 px-3 font-mono hover:bg-secondary/25 transition-colors"
-      >
-        <span className="typo-caption text-foreground tabular-nums flex-shrink-0 opacity-70">{hhmmss(item.at)}</span>
-        <span className="typo-caption font-semibold flex-shrink-0 w-28 truncate" style={{ color }} title={sign}>
-          {sign}
-        </span>
-        <span className={`typo-caption flex-shrink-0 max-w-[13rem] truncate ${tokenClass}`} title={token}>
-          {token}
-        </span>
-        {kind === 'memory' && item.importance != null && <ImportanceDots value={item.importance} />}
-        <span className="typo-caption text-foreground truncate" title={summary}>
-          {summary}
-        </span>
-        {heard > 0 && (
-          <span className="ml-auto flex-shrink-0 inline-flex items-center gap-1 typo-caption text-foreground opacity-60" title={`Heard by ${heard}`}>
-            <Ear className="w-3 h-3" /> {heard}
-          </span>
-        )}
-        {parsed?.artifact && (
-          <span className="flex-shrink-0 inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
-            <ExternalLink className="w-3 h-3" /> {parsed.artifact.label}
-          </span>
-        )}
-      </button>
-    );
-  }
-
   return (
     <button
       type="button"
       onClick={() => onOpen(row)}
-      style={{ height: ROW_H.comfortable, boxShadow: `inset 2px 0 0 ${railColor}` }}
-      className="w-full text-left flex flex-col justify-center gap-0.5 px-3 hover:bg-secondary/25 transition-colors"
+      style={{ height: ROW_HEIGHT, boxShadow: `inset 2px 0 0 ${railColor}` }}
+      className="w-full text-left flex items-center gap-2 px-3 font-mono hover:bg-secondary/25 transition-colors"
     >
-      <span className="flex items-center gap-2">
-        {kind === 'memory' && <Star className="w-3 h-3 text-amber-300/90 flex-shrink-0" />}
-        <span className="typo-caption font-semibold flex-shrink-0" style={{ color }}>{sign}</span>
-        <span className={`typo-caption font-mono flex-shrink-0 max-w-[16rem] truncate ${tokenClass}`}>{token}</span>
-        {kind === 'memory' && item.importance != null && <ImportanceDots value={item.importance} />}
-        <span className="typo-caption text-foreground opacity-50 tabular-nums font-mono ml-auto flex-shrink-0">{hhmmss(item.at)}</span>
+      <span className="typo-caption text-foreground tabular-nums flex-shrink-0 opacity-70">{hhmmss(item.at)}</span>
+      <span className="typo-caption font-semibold flex-shrink-0 w-28 truncate" style={{ color }} title={sign}>
+        {sign}
       </span>
-      <span className="typo-caption text-foreground truncate" title={summary}>{summary}</span>
+      <span className={`typo-caption flex-shrink-0 max-w-[13rem] truncate ${tokenClass}`} title={token}>
+        {token}
+      </span>
+      {kind === 'memory' && item.importance != null && <ImportanceDots value={item.importance} />}
+      <span className="typo-caption text-foreground truncate" title={summary}>
+        {summary}
+      </span>
+      {heard > 0 && (
+        <span className="ml-auto flex-shrink-0 inline-flex items-center gap-1 typo-caption text-foreground opacity-60" title={`Heard by ${heard}`}>
+          <Ear className="w-3 h-3" /> {heard}
+        </span>
+      )}
+      {parsed?.artifact && (
+        <span className="flex-shrink-0 inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
+          <ExternalLink className="w-3 h-3" /> {parsed.artifact.label}
+        </span>
+      )}
     </button>
   );
 });

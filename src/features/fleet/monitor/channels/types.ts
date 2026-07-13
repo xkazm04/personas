@@ -20,12 +20,10 @@ export interface TaggedItem {
 /** Presence per persona-id, as reported by `useTeamChannel`. */
 export type PresenceMap = Map<string, 'working' | 'waiting'>;
 
-/** Noise filter for the merged stream. */
-export type FeedFilter = 'all' | 'signal' | 'alerts';
-
-/** Author filter — separate the human-in-the-loop decision-makers so an
- *  autonomous Athena post never reads as a user decision. */
-export type AuthorFilter = 'all' | 'you' | 'athena';
+/** A team in the Stream's channel facet — a FeedTeam plus its on/off state. */
+export interface StreamTeam extends FeedTeam {
+  selected: boolean;
+}
 
 /** Hard cap on the merged window — bounds memory + keeps the virtualizer cheap
  *  regardless of how many teams are selected. */

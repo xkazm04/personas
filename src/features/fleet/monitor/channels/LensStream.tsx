@@ -4,24 +4,22 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from '@/features/shared/components/display/GroupedVirtualList';
 import { buildGroupRows, timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
-import { StreamRow, ROW_H } from './StreamRow';
+import { StreamRow, ROW_HEIGHT } from './StreamRow';
 import type { TaggedItem } from './types';
-import type { Density } from './lensModel';
 
 /**
- * LENS STREAM — the virtualized, day-grouped log, in either density.
+ * LENS STREAM — the virtualized, day-grouped log.
  *
- * The same TanStack machinery as `VirtualStream`, but the row height follows the
- * density toggle instead of being pinned to 30px, and rows render through the
- * shared `StreamRow` so both variants show identical transmissions. Entrance
- * animation is gated to genuinely-new rows (<8s old, unseen) — scrolling an old
- * row back into view must never re-fire it (plan §5.4).
+ * Supersedes `VirtualStream`. Same TanStack machinery, but rows render through
+ * the shared `StreamRow` and the list is day-grouped. Fixed 30px itemSize — the
+ * log commits to one density, so the virtualizer never has to measure.
+ * Entrance animation is gated to genuinely-new rows (<8s old, unseen); scrolling
+ * an old row back into view must never re-fire it (plan §5.4).
  */
 export function LensStream({
-  rows: data, density, onOpen, emptyLabel,
+  rows: data, onOpen, emptyLabel,
 }: {
   rows: TaggedItem[];
-  density: Density;
   onOpen: (row: TaggedItem) => void;
   emptyLabel: string;
 }) {
@@ -37,12 +35,11 @@ export function LensStream({
     [data, labels],
   );
 
-  const size = ROW_H[density];
   const { virtualizer } = useGroupedVirtualizer({
     count: rows.length,
     headerIndexes,
     getScrollElement: () => scrollRef.current,
-    itemSize: size,
+    itemSize: ROW_HEIGHT,
   });
 
   if (data.length === 0) {
@@ -85,9 +82,9 @@ export function LensStream({
               <div
                 key={`${row.item.team.teamId}:${id}`}
                 className={fresh ? 'animate-channel-row-in' : undefined}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: size, transform: `translateY(${v.start}px)` }}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_HEIGHT, transform: `translateY(${v.start}px)` }}
               >
-                <StreamRow row={row.item} persona={persona} density={density} onOpen={onOpen} />
+                <StreamRow row={row.item} persona={persona} onOpen={onOpen} />
               </div>
             );
           })}

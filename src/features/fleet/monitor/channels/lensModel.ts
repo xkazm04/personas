@@ -28,8 +28,6 @@ export const ALL_FAMILIES: EventFamily[] = [
   'handoff', 'pr', 'qa', 'release', 'failure', 'build', 'note', 'other',
 ];
 
-export type Density = 'radio' | 'comfortable';
-
 /** Memory's analytical presentations (D2). Gated: only when memory is the sole
  *  kind AND a single team is scoped (D8 — a run-diff compares runs of ONE team). */
 export type MemoryMode = 'list' | 'timeline' | 'diff';
@@ -42,7 +40,6 @@ export interface LensState {
   /** Empty = all speakers. */
   callsigns: Set<string>;
   search: string;
-  density: Density;
   memoryMode: MemoryMode;
 }
 
@@ -51,7 +48,6 @@ export const EMPTY_LENS: LensState = {
   families: new Set(),
   callsigns: new Set(),
   search: '',
-  density: 'radio',
   memoryMode: 'list',
 };
 

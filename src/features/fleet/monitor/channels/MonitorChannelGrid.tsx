@@ -3,7 +3,8 @@ import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CollabLiveCorrespondence } from '@/features/teams/sub_collab/CollabLiveCorrespondence';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
-import { ChannelTimelineWorkspace, type WorkspaceTeam } from './ChannelTimelineWorkspace';
+import { Stream } from './Stream';
+import type { StreamTeam } from './types';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
@@ -73,7 +74,7 @@ function MonitorChannelGridImpl({ teams, personas }: { teams: PersonaTeam[]; per
   ];
   // All channel teams + their selected flag + roster — the workspace owns the
   // team filter (left sidebar), so the topbar chips are grid-mode only.
-  const workspaceTeams: WorkspaceTeam[] = useMemo(
+  const workspaceTeams: StreamTeam[] = useMemo(
     () =>
       channelTeams.map((tm) => ({
         teamId: tm.id,
@@ -117,7 +118,7 @@ function MonitorChannelGridImpl({ teams, personas }: { teams: PersonaTeam[]; per
   if (layout === 'timeline') {
     return (
       <div className="h-full p-2">
-        <ChannelTimelineWorkspace
+        <Stream
           teams={workspaceTeams}
           onToggle={toggle}
           allOn={allOn}
