@@ -12323,7 +12323,17 @@
       "context_column_label": "コンテキスト",
       "context_pinned": "ピン留め済み",
       "context_search_no_results": "一致するコンテキストがありません",
-      "context_search_placeholder": "コンテキストを絞り込む…"
+      "context_search_placeholder": "コンテキストを絞り込む…",
+      "uc_detail_contexts": "対象コンテキスト",
+      "uc_detail_description": "説明",
+      "uc_detail_no_description": "説明はありません。",
+      "uc_detail_primary": "主要",
+      "uc_detail_rationale": "重要な理由",
+      "uc_detail_source": "提案元",
+      "uc_source_backfill": "機能ラベル",
+      "uc_source_scan": "エージェントスキャン",
+      "uc_source_user": "あなた",
+      "uc_view_details": "詳細を見る"
     },
     "doc_signing": {
       "sign_heading": "ドキュメントに署名",

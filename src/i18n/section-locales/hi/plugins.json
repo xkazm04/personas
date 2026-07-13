@@ -1034,7 +1034,17 @@
     "context_column_label": "संदर्भ",
     "context_pinned": "पिन किया गया",
     "context_search_no_results": "कोई संदर्भ मेल नहीं खाता",
-    "context_search_placeholder": "संदर्भ फ़िल्टर करें…"
+    "context_search_placeholder": "संदर्भ फ़िल्टर करें…",
+    "uc_detail_contexts": "शामिल संदर्भ",
+    "uc_detail_description": "विवरण",
+    "uc_detail_no_description": "कोई विवरण उपलब्ध नहीं है।",
+    "uc_detail_primary": "मुख्य",
+    "uc_detail_rationale": "यह क्यों महत्वपूर्ण है",
+    "uc_detail_source": "प्रस्तावक",
+    "uc_source_backfill": "फ़ीचर लेबल",
+    "uc_source_scan": "एजेंट स्कैन",
+    "uc_source_user": "आप",
+    "uc_view_details": "विवरण देखें"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

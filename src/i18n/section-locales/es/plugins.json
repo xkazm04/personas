@@ -1034,7 +1034,17 @@
     "context_column_label": "Contexto",
     "context_pinned": "Fijado",
     "context_search_no_results": "Ningún contexto coincide con",
-    "context_search_placeholder": "Filtrar contextos…"
+    "context_search_placeholder": "Filtrar contextos…",
+    "uc_detail_contexts": "Contextos cubiertos",
+    "uc_detail_description": "Descripción",
+    "uc_detail_no_description": "No se proporcionó descripción.",
+    "uc_detail_primary": "principal",
+    "uc_detail_rationale": "Por qué importa",
+    "uc_detail_source": "Propuesto por",
+    "uc_source_backfill": "Etiquetas de funcionalidad",
+    "uc_source_scan": "Análisis del agente",
+    "uc_source_user": "Tú",
+    "uc_view_details": "Ver detalles"
   },
   "doc_signing": {
     "sign_heading": "Firmar un Documento",

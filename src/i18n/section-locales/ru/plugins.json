@@ -1034,7 +1034,17 @@
     "context_column_label": "Контекст",
     "context_pinned": "Закреплено",
     "context_search_no_results": "Нет подходящих контекстов",
-    "context_search_placeholder": "Фильтр контекстов…"
+    "context_search_placeholder": "Фильтр контекстов…",
+    "uc_detail_contexts": "Охваченные контексты",
+    "uc_detail_description": "Описание",
+    "uc_detail_no_description": "Описание не указано.",
+    "uc_detail_primary": "основной",
+    "uc_detail_rationale": "Почему это важно",
+    "uc_detail_source": "Предложено",
+    "uc_source_backfill": "Метки функций",
+    "uc_source_scan": "Сканирование агентом",
+    "uc_source_user": "Вами",
+    "uc_view_details": "Посмотреть детали"
   },
   "doc_signing": {
     "sign_heading": "Подписать документ",

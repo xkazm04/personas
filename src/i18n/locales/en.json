@@ -12588,7 +12588,17 @@
       "context_search_placeholder": "Filter contexts…",
       "context_search_no_results": "No contexts match",
       "context_column_label": "Context",
-      "context_pinned": "Pinned"
+      "context_pinned": "Pinned",
+      "uc_view_details": "View details",
+      "uc_detail_description": "Description",
+      "uc_detail_rationale": "Why it matters",
+      "uc_detail_contexts": "Contexts covered",
+      "uc_detail_primary": "primary",
+      "uc_detail_source": "Proposed by",
+      "uc_detail_no_description": "No description provided.",
+      "uc_source_scan": "Agent scan",
+      "uc_source_backfill": "Feature labels",
+      "uc_source_user": "You"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

@@ -12323,7 +12323,17 @@
       "context_column_label": "Konteks",
       "context_pinned": "Disematkan",
       "context_search_no_results": "Tidak ada konteks yang cocok",
-      "context_search_placeholder": "Filter konteks…"
+      "context_search_placeholder": "Filter konteks…",
+      "uc_detail_contexts": "Konteks yang tercakup",
+      "uc_detail_description": "Deskripsi",
+      "uc_detail_no_description": "Deskripsi tidak tersedia.",
+      "uc_detail_primary": "utama",
+      "uc_detail_rationale": "Mengapa ini penting",
+      "uc_detail_source": "Diusulkan oleh",
+      "uc_source_backfill": "Label fitur",
+      "uc_source_scan": "Pemindaian agen",
+      "uc_source_user": "Anda",
+      "uc_view_details": "Lihat detail"
     },
     "doc_signing": {
       "sign_heading": "Tandatangani Dokumen",

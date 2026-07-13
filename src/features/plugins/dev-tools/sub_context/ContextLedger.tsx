@@ -90,6 +90,13 @@ export default function ContextLedger(props: ContextLedgerProps) {
       .filter((g) => g.contexts.length > 0);
   }, [groups, query]);
 
+  // contextId → name, for the proposal detail modal's spanned-context list.
+  const contextNames = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const g of groups) for (const c of g.contexts) m.set(c.id, c.name);
+    return m;
+  }, [groups]);
+
   // Grid: context record (name + coverage) then one narrow column per use case.
   const gridTemplate = `minmax(280px, 1.6fr) repeat(${cols.length}, 34px)`;
 
@@ -119,7 +126,14 @@ export default function ContextLedger(props: ContextLedgerProps) {
         </div>
       </div>
 
-      <ProposalStrip proposals={useCaseState.proposed} onAccept={useCaseState.accept} onReject={useCaseState.reject} t={t} tx={tx} />
+      <ProposalStrip
+        proposals={useCaseState.proposed}
+        onAccept={useCaseState.accept}
+        onReject={useCaseState.reject}
+        contextNames={contextNames}
+        t={t}
+        tx={tx}
+      />
 
       {/* inline new-group form — opened by the page's "+ Group" action */}
       {showNewGroup && (

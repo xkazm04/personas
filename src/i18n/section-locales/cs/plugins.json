@@ -1034,7 +1034,17 @@
     "context_column_label": "Kontext",
     "context_pinned": "Připnuto",
     "context_search_no_results": "Žádné kontexty neodpovídají",
-    "context_search_placeholder": "Filtrovat kontexty…"
+    "context_search_placeholder": "Filtrovat kontexty…",
+    "uc_detail_contexts": "Zahrnuté kontexty",
+    "uc_detail_description": "Popis",
+    "uc_detail_no_description": "Popis nebyl zadán.",
+    "uc_detail_primary": "primární",
+    "uc_detail_rationale": "Proč na tom záleží",
+    "uc_detail_source": "Navrhl",
+    "uc_source_backfill": "Štítky funkcí",
+    "uc_source_scan": "Sken agenta",
+    "uc_source_user": "Vy",
+    "uc_view_details": "Zobrazit podrobnosti"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",

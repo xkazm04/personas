@@ -12595,6 +12595,16 @@ export type Translations = {
       context_search_no_results: string;
       context_column_label: string;
       context_pinned: string;
+      uc_view_details: string;
+      uc_detail_description: string;
+      uc_detail_rationale: string;
+      uc_detail_contexts: string;
+      uc_detail_primary: string;
+      uc_detail_source: string;
+      uc_detail_no_description: string;
+      uc_source_scan: string;
+      uc_source_backfill: string;
+      uc_source_user: string;
     };
     doc_signing: {
       sign_heading: string;

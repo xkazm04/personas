@@ -12323,7 +12323,17 @@
       "context_column_label": "প্রেক্ষাপট",
       "context_pinned": "পিন করা হয়েছে",
       "context_search_no_results": "কোনো প্রেক্ষাপট মেলেনি",
-      "context_search_placeholder": "প্রেক্ষাপট ফিল্টার করুন…"
+      "context_search_placeholder": "প্রেক্ষাপট ফিল্টার করুন…",
+      "uc_detail_contexts": "অন্তর্ভুক্ত প্রেক্ষাপট",
+      "uc_detail_description": "বিবরণ",
+      "uc_detail_no_description": "কোনো বিবরণ দেওয়া হয়নি।",
+      "uc_detail_primary": "প্রধান",
+      "uc_detail_rationale": "এটি কেন গুরুত্বপূর্ণ",
+      "uc_detail_source": "প্রস্তাবক",
+      "uc_source_backfill": "ফিচার লেবেল",
+      "uc_source_scan": "এজেন্ট স্ক্যান",
+      "uc_source_user": "আপনি",
+      "uc_view_details": "বিস্তারিত দেখুন"
     },
     "doc_signing": {
       "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

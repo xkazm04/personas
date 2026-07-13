@@ -12323,7 +12323,17 @@
       "context_column_label": "السياق",
       "context_pinned": "مثبّت",
       "context_search_no_results": "لا توجد سياقات مطابقة",
-      "context_search_placeholder": "تصفية السياقات…"
+      "context_search_placeholder": "تصفية السياقات…",
+      "uc_detail_contexts": "السياقات المشمولة",
+      "uc_detail_description": "الوصف",
+      "uc_detail_no_description": "لا يوجد وصف.",
+      "uc_detail_primary": "أساسي",
+      "uc_detail_rationale": "لماذا يهم هذا",
+      "uc_detail_source": "اقترحه",
+      "uc_source_backfill": "تصنيفات الميزات",
+      "uc_source_scan": "فحص الوكيل",
+      "uc_source_user": "أنت",
+      "uc_view_details": "عرض التفاصيل"
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

@@ -12323,7 +12323,17 @@
       "context_column_label": "Ngữ cảnh",
       "context_pinned": "Đã ghim",
       "context_search_no_results": "Không có ngữ cảnh nào khớp",
-      "context_search_placeholder": "Lọc ngữ cảnh…"
+      "context_search_placeholder": "Lọc ngữ cảnh…",
+      "uc_detail_contexts": "Ngữ cảnh liên quan",
+      "uc_detail_description": "Mô tả",
+      "uc_detail_no_description": "Chưa có mô tả.",
+      "uc_detail_primary": "chính",
+      "uc_detail_rationale": "Vì sao điều này quan trọng",
+      "uc_detail_source": "Đề xuất bởi",
+      "uc_source_backfill": "Nhãn tính năng",
+      "uc_source_scan": "Quét bởi tác nhân",
+      "uc_source_user": "Bạn",
+      "uc_view_details": "Xem chi tiết"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

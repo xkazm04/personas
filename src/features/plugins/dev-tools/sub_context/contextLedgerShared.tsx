@@ -5,8 +5,8 @@
 // visual language, the per-context coverage cluster, the use-case actions, and
 // the pending-proposal triage strip — kept out of the view so each is testable
 // and extractable on its own.
-import type { ReactNode } from 'react';
-import { Check, FileCode2, Layers, Lightbulb, Route, Boxes, Plug, Wrench, Gauge, Target, X } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { Check, FileCode2, Info, Layers, Lightbulb, Wrench, Gauge, Target, X } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -16,6 +16,8 @@ import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import type { Translations } from '@/i18n/en';
 
+import UseCaseDetailModal from './UseCaseDetailModal';
+import { kindMeta, KIND_TEXT } from './useCaseKind';
 import type { ContextGroup } from './contextMapTypes';
 import type { UseCasesState } from './useUseCases';
 
@@ -51,41 +53,6 @@ export interface ContextLedgerProps {
   /** Kick a full codebase scan — offered from the zero-groups empty state. */
   onScan: () => void;
 }
-
-// -- per-kind visual language --------------------------------------------------
-
-export interface KindMeta {
-  icon: typeof Route;
-  /** Tailwind stem, used for dot / chip / border tints. */
-  stem: string;
-  labelKey: 'uc_kind_user_flow' | 'uc_kind_capability' | 'uc_kind_integration' | 'uc_kind_ops';
-}
-
-export const KIND_META: Record<string, KindMeta> = {
-  user_flow: { icon: Route, stem: 'violet', labelKey: 'uc_kind_user_flow' },
-  capability: { icon: Boxes, stem: 'sky', labelKey: 'uc_kind_capability' },
-  integration: { icon: Plug, stem: 'emerald', labelKey: 'uc_kind_integration' },
-  ops: { icon: Wrench, stem: 'amber', labelKey: 'uc_kind_ops' },
-};
-
-export function kindMeta(kind: string): KindMeta {
-  return KIND_META[kind] ?? KIND_META.capability!;
-}
-
-/** Static class maps — Tailwind's JIT can't see interpolated stems, so the
- *  variants read these instead of building `text-${stem}-300` at runtime. */
-export const KIND_TEXT: Record<string, string> = {
-  violet: 'text-violet-300',
-  sky: 'text-sky-300',
-  emerald: 'text-emerald-300',
-  amber: 'text-amber-300',
-};
-export const KIND_DOT: Record<string, string> = {
-  violet: 'bg-violet-400',
-  sky: 'bg-sky-400',
-  emerald: 'bg-emerald-400',
-  amber: 'bg-amber-400',
-};
 
 // -- per-context coverage chips ------------------------------------------------
 
@@ -259,41 +226,51 @@ export function ProposalStrip({
   proposals,
   onAccept,
   onReject,
+  contextNames,
   t,
   tx,
 }: {
   proposals: DevUseCase[];
   onAccept: (id: string) => void;
   onReject: (id: string) => void;
+  /** contextId → display name, for the detail modal's spanned-context list. */
+  contextNames: Map<string, string>;
   t: TDevTools;
   tx: (template: string, vars: Record<string, string | number>) => string;
 }) {
+  const [detailId, setDetailId] = useState<string | null>(null);
+
   if (proposals.length === 0) return null;
+
+  const detail = proposals.find((p) => p.id === detailId) ?? null;
+
   return (
-    <div className="mb-2 rounded-modal border border-amber-500/20 bg-amber-500/[0.04] p-2">
-      <p className="typo-label text-amber-300/80 mb-1.5 px-1">
+    <div className="mb-2 rounded-modal border border-amber-500/25 p-2">
+      <p className="typo-label text-amber-300 mb-1.5 px-1">
         {tx(t.uc_proposals_heading, { count: proposals.length })}
       </p>
-      <div className="flex flex-col gap-1">
+
+      {/* Titles only — everything else (description, rationale, the slice) lives
+          one click away in the detail modal, so the queue stays scannable. */}
+      <div className="flex flex-col">
         {proposals.map((uc) => {
           const meta = kindMeta(uc.kind);
           const Icon = meta.icon;
           return (
-            <div
-              key={uc.id}
-              className="flex items-center gap-2 rounded-input border border-primary/10 bg-card/40 px-2 py-1.5"
-            >
+            <div key={uc.id} className="flex items-center gap-2 px-1 py-1 rounded-input hover:bg-secondary/20 transition-colors">
               <Icon className={`w-3.5 h-3.5 shrink-0 ${KIND_TEXT[meta.stem]}`} />
-              <span className="typo-body font-medium text-foreground truncate">{uc.name}</span>
-              <span className="typo-caption text-foreground/60 tabular-nums shrink-0">
-                {tx(t.uc_span_count, { count: uc.context_ids.length })}
-              </span>
-              {uc.rationale && (
-                <span className="typo-caption text-foreground/60 truncate hidden sm:block flex-1">
-                  {uc.rationale}
-                </span>
-              )}
-              <span className="flex items-center gap-0.5 shrink-0 ml-auto">
+              <button
+                type="button"
+                onClick={() => setDetailId(uc.id)}
+                title={t.uc_view_details}
+                className="typo-body font-medium text-foreground truncate text-left hover:text-primary hover:underline underline-offset-2 min-w-0 flex-1"
+              >
+                {uc.name}
+              </button>
+              <span className="flex items-center gap-0.5 shrink-0">
+                <Button variant="ghost" size="icon-sm" onClick={() => setDetailId(uc.id)} aria-label={t.uc_view_details} title={t.uc_view_details}>
+                  <Info className="w-3.5 h-3.5 text-foreground/60" />
+                </Button>
                 <Button variant="ghost" size="icon-sm" onClick={() => onAccept(uc.id)} aria-label={t.uc_accept} title={t.uc_accept}>
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
                 </Button>
@@ -305,6 +282,17 @@ export function ProposalStrip({
           );
         })}
       </div>
+
+      <UseCaseDetailModal
+        useCase={detail}
+        contextNames={contextNames}
+        onClose={() => setDetailId(null)}
+        onAccept={onAccept}
+        onReject={onReject}
+      />
     </div>
   );
 }
+
+// Re-exported so the ledger keeps a single import site for its vocabulary.
+export { kindMeta, KIND_META, KIND_TEXT, KIND_DOT, type KindMeta } from './useCaseKind';

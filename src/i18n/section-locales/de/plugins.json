@@ -1034,7 +1034,17 @@
     "context_column_label": "Kontext",
     "context_pinned": "Angeheftet",
     "context_search_no_results": "Kein Kontext entspricht",
-    "context_search_placeholder": "Kontexte filtern…"
+    "context_search_placeholder": "Kontexte filtern…",
+    "uc_detail_contexts": "Abgedeckte Kontexte",
+    "uc_detail_description": "Beschreibung",
+    "uc_detail_no_description": "Keine Beschreibung angegeben.",
+    "uc_detail_primary": "primär",
+    "uc_detail_rationale": "Warum das wichtig ist",
+    "uc_detail_source": "Vorgeschlagen von",
+    "uc_source_backfill": "Feature-Labels",
+    "uc_source_scan": "Agenten-Scan",
+    "uc_source_user": "Sie",
+    "uc_view_details": "Details anzeigen"
   },
   "doc_signing": {
     "sign_heading": "Dokument signieren",
