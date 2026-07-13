@@ -703,7 +703,11 @@
     "all_statuses": "Tất cả trạng thái",
     "col_status": "Trạng thái",
     "col_id": "ID",
-    "execution_label": "Thực thi"
+    "execution_label": "Thực thi",
+    "error_category_by_persona": "Lỗi nhiều nhất theo tác nhân",
+    "error_category_prior_period": "so với kỳ trước",
+    "error_category_section_title": "Lỗi theo danh mục",
+    "error_category_total_failures": "Tổng số lỗi"
   },
   "analytics_dashboard": {
     "issues_found": "{count} vấn đề được tìm thấy",

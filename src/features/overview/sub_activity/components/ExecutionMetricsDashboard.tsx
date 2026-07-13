@@ -10,6 +10,7 @@ import { AnomalyBadge } from './MetricsCards';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { MetricsCharts } from './MetricsCharts';
 import { ValueRollupSection } from './ValueRollupSection';
+import { ErrorCategorySection } from './ErrorCategorySection';
 import { AthenaUsageSection } from './AthenaUsageSection';
 import { LlmSpendSection } from './LlmSpendSection';
 
@@ -102,6 +103,9 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
 
       {/* Business-value rollup (value-delivered rate, cost-per-value, outcomes) */}
       <ValueRollupSection days={m.days} />
+
+      {/* Category-aware error analytics (failures by taxonomy category + deltas) */}
+      <ErrorCategorySection days={m.days} />
 
       {/* Anomalies */}
       {m.data.cost_anomalies.length > 0 && (

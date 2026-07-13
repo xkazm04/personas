@@ -703,7 +703,11 @@
     "all_statuses": "جميع الحالات",
     "col_status": "الحالة",
     "col_id": "المعرّف",
-    "execution_label": "التنفيذ"
+    "execution_label": "التنفيذ",
+    "error_category_by_persona": "أكثر الأخطاء حسب الوكيل",
+    "error_category_prior_period": "مقارنة بالفترة السابقة",
+    "error_category_section_title": "الأخطاء حسب الفئة",
+    "error_category_total_failures": "إجمالي الأخطاء"
   },
   "analytics_dashboard": {
     "issues_found": "تم اكتشاف {count} مشكلة",

@@ -6145,7 +6145,11 @@
       "all_statuses": "جميع الحالات",
       "col_status": "الحالة",
       "col_id": "المعرّف",
-      "execution_label": "التنفيذ"
+      "execution_label": "التنفيذ",
+      "error_category_by_persona": "أكثر الأخطاء حسب الوكيل",
+      "error_category_prior_period": "مقارنة بالفترة السابقة",
+      "error_category_section_title": "الأخطاء حسب الفئة",
+      "error_category_total_failures": "إجمالي الأخطاء"
     },
     "analytics_dashboard": {
       "issues_found": "تم اكتشاف {count} مشكلة",
@@ -11229,6 +11233,19 @@
       "high": "مرتفع",
       "low": "منخفض",
       "medium": "متوسط"
+    },
+    "error_category": {
+      "api_error": "خطأ في API",
+      "credential_error": "خطأ في بيانات الاعتماد",
+      "network": "الشبكة",
+      "provider_not_found": "المزوّد غير موجود",
+      "rate_limit": "حد المعدل",
+      "session_limit": "حد الجلسة",
+      "timeout": "انتهاء المهلة",
+      "tool_error": "خطأ في الأداة",
+      "transient_process_failure": "فشل مؤقت في العملية",
+      "unknown": "غير معروف",
+      "validation": "التحقق"
     }
   },
   "project_overview": {

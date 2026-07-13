@@ -6484,6 +6484,10 @@
       "value_delivered_rate": "Value-delivered rate",
       "cost_per_value": "Cost / value run",
       "value_delivered_count": "Value delivered",
+      "error_category_section_title": "Failures by category",
+      "error_category_total_failures": "Total failures",
+      "error_category_prior_period": "vs. prior period",
+      "error_category_by_persona": "Top failure by agent",
       "no_data": "No execution data for the selected period",
       "cost_per_day": "Cost per Day",
       "executions_by_status": "Executions by Status",
@@ -11363,6 +11367,19 @@
       "promising": "Promising",
       "not_ready": "Not Ready",
       "broken": "Broken"
+    },
+    "error_category": {
+      "rate_limit": "Rate limit",
+      "session_limit": "Session limit",
+      "timeout": "Timeout",
+      "provider_not_found": "Provider not found",
+      "credential_error": "Credential error",
+      "network": "Network",
+      "validation": "Validation",
+      "tool_error": "Tool error",
+      "api_error": "API error",
+      "transient_process_failure": "Transient process failure",
+      "unknown": "Unknown"
     },
     "execution": {
       "queued": "Queued",

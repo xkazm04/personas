@@ -703,7 +703,11 @@
     "all_statuses": "Tous les statuts",
     "col_status": "Statut",
     "col_id": "ID",
-    "execution_label": "Exécution"
+    "execution_label": "Exécution",
+    "error_category_by_persona": "Principale panne par agent",
+    "error_category_prior_period": "vs période précédente",
+    "error_category_section_title": "Pannes par catégorie",
+    "error_category_total_failures": "Total des pannes"
   },
   "analytics_dashboard": {
     "issues_found": "{count} problèmes trouvés",

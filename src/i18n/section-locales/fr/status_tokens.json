@@ -133,5 +133,18 @@
     "high": "Élevé",
     "low": "Faible",
     "medium": "Moyen"
+  },
+  "error_category": {
+    "api_error": "Erreur API",
+    "credential_error": "Erreur d'identifiants",
+    "network": "Réseau",
+    "provider_not_found": "Fournisseur introuvable",
+    "rate_limit": "Limite de débit",
+    "session_limit": "Limite de session",
+    "timeout": "Délai dépassé",
+    "tool_error": "Erreur d'outil",
+    "transient_process_failure": "Échec transitoire du processus",
+    "unknown": "Inconnu",
+    "validation": "Erreur de validation"
   }
 }

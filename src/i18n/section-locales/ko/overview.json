@@ -703,7 +703,11 @@
     "all_statuses": "전체 상태",
     "col_status": "상태",
     "col_id": "ID",
-    "execution_label": "실행"
+    "execution_label": "실행",
+    "error_category_by_persona": "에이전트별 주요 실패",
+    "error_category_prior_period": "이전 기간 대비",
+    "error_category_section_title": "카테고리별 실패",
+    "error_category_total_failures": "총 실패 수"
   },
   "analytics_dashboard": {
     "issues_found": "{count}개 이슈 발견",

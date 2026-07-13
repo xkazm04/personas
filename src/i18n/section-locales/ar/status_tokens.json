@@ -133,5 +133,18 @@
     "high": "مرتفع",
     "low": "منخفض",
     "medium": "متوسط"
+  },
+  "error_category": {
+    "api_error": "خطأ في API",
+    "credential_error": "خطأ في بيانات الاعتماد",
+    "network": "الشبكة",
+    "provider_not_found": "المزوّد غير موجود",
+    "rate_limit": "حد المعدل",
+    "session_limit": "حد الجلسة",
+    "timeout": "انتهاء المهلة",
+    "tool_error": "خطأ في الأداة",
+    "transient_process_failure": "فشل مؤقت في العملية",
+    "unknown": "غير معروف",
+    "validation": "التحقق"
   }
 }

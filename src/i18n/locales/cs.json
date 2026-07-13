@@ -6145,7 +6145,11 @@
       "all_statuses": "Všechny stavy",
       "col_status": "Stav",
       "col_id": "ID",
-      "execution_label": "Spuštění"
+      "execution_label": "Spuštění",
+      "error_category_by_persona": "Nejčastější selhání dle agenta",
+      "error_category_prior_period": "oproti předchozímu období",
+      "error_category_section_title": "Selhání podle kategorie",
+      "error_category_total_failures": "Celkem selhání"
     },
     "analytics_dashboard": {
       "issues_found": "Nalezeno {count} problémů",
@@ -11229,6 +11233,19 @@
       "high": "Vysoká",
       "low": "Nízká",
       "medium": "Střední"
+    },
+    "error_category": {
+      "api_error": "Chyba API",
+      "credential_error": "Chyba přihlašovacích údajů",
+      "network": "Síť",
+      "provider_not_found": "Poskytovatel nenalezen",
+      "rate_limit": "Limit požadavků",
+      "session_limit": "Limit relace",
+      "timeout": "Vypršení času",
+      "tool_error": "Chyba nástroje",
+      "transient_process_failure": "Dočasné selhání procesu",
+      "unknown": "Neznámé",
+      "validation": "Validace"
     }
   },
   "project_overview": {

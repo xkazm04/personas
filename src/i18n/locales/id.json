@@ -6145,7 +6145,11 @@
       "all_statuses": "Semua status",
       "col_status": "Status",
       "col_id": "ID",
-      "execution_label": "Eksekusi"
+      "execution_label": "Eksekusi",
+      "error_category_by_persona": "Kegagalan terbanyak per agen",
+      "error_category_prior_period": "vs. periode sebelumnya",
+      "error_category_section_title": "Kegagalan menurut kategori",
+      "error_category_total_failures": "Total kegagalan"
     },
     "analytics_dashboard": {
       "issues_found": "{count} masalah ditemukan",
@@ -11229,6 +11233,19 @@
       "high": "Tinggi",
       "low": "Rendah",
       "medium": "Sedang"
+    },
+    "error_category": {
+      "api_error": "Kesalahan API",
+      "credential_error": "Kesalahan kredensial",
+      "network": "Jaringan",
+      "provider_not_found": "Penyedia tidak ditemukan",
+      "rate_limit": "Batas laju",
+      "session_limit": "Batas sesi",
+      "timeout": "Waktu habis",
+      "tool_error": "Kesalahan alat",
+      "transient_process_failure": "Kegagalan proses sementara",
+      "unknown": "Tidak diketahui",
+      "validation": "Validasi"
     }
   },
   "project_overview": {

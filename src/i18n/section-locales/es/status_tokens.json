@@ -133,5 +133,18 @@
     "high": "Alto",
     "low": "Bajo",
     "medium": "Medio"
+  },
+  "error_category": {
+    "api_error": "Error de API",
+    "credential_error": "Error de credencial",
+    "network": "Red",
+    "provider_not_found": "Proveedor no encontrado",
+    "rate_limit": "Límite de tasa",
+    "session_limit": "Límite de sesión",
+    "timeout": "Tiempo agotado",
+    "tool_error": "Error de herramienta",
+    "transient_process_failure": "Fallo transitorio del proceso",
+    "unknown": "Desconocido",
+    "validation": "Validación"
   }
 }

@@ -6145,7 +6145,11 @@
       "all_statuses": "Все статусы",
       "col_status": "Статус",
       "col_id": "ID",
-      "execution_label": "Запуск"
+      "execution_label": "Запуск",
+      "error_category_by_persona": "Основные сбои по агенту",
+      "error_category_prior_period": "к прошлому периоду",
+      "error_category_section_title": "Сбои по категориям",
+      "error_category_total_failures": "Всего сбоев"
     },
     "analytics_dashboard": {
       "issues_found": "Обнаружено {count} проблем",
@@ -11229,6 +11233,19 @@
       "high": "Высокий",
       "low": "Низкий",
       "medium": "Средний"
+    },
+    "error_category": {
+      "api_error": "Ошибка API",
+      "credential_error": "Ошибка учётных данных",
+      "network": "Сеть",
+      "provider_not_found": "Провайдер не найден",
+      "rate_limit": "Лимит запросов",
+      "session_limit": "Лимит сессии",
+      "timeout": "Тайм-аут",
+      "tool_error": "Ошибка инструмента",
+      "transient_process_failure": "Временный сбой процесса",
+      "unknown": "Неизвестно",
+      "validation": "Валидация"
     }
   },
   "project_overview": {

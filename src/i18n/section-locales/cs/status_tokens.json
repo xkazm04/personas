@@ -133,5 +133,18 @@
     "high": "Vysoká",
     "low": "Nízká",
     "medium": "Střední"
+  },
+  "error_category": {
+    "api_error": "Chyba API",
+    "credential_error": "Chyba přihlašovacích údajů",
+    "network": "Síť",
+    "provider_not_found": "Poskytovatel nenalezen",
+    "rate_limit": "Limit požadavků",
+    "session_limit": "Limit relace",
+    "timeout": "Vypršení času",
+    "tool_error": "Chyba nástroje",
+    "transient_process_failure": "Dočasné selhání procesu",
+    "unknown": "Neznámé",
+    "validation": "Validace"
   }
 }

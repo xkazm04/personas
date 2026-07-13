@@ -133,5 +133,18 @@
     "high": "উচ্চ",
     "low": "নিম্ন",
     "medium": "মাঝারি"
+  },
+  "error_category": {
+    "api_error": "API ত্রুটি",
+    "credential_error": "শংসাপত্র ত্রুটি",
+    "network": "নেটওয়ার্ক",
+    "provider_not_found": "প্রদানকারী পাওয়া যায়নি",
+    "rate_limit": "রেট সীমা",
+    "session_limit": "সেশন সীমা",
+    "timeout": "সময় শেষ",
+    "tool_error": "টুল ত্রুটি",
+    "transient_process_failure": "সাময়িক প্রক্রিয়া ব্যর্থতা",
+    "unknown": "অজানা",
+    "validation": "যাচাইকরণ"
   }
 }

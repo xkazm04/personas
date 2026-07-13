@@ -6490,6 +6490,10 @@ export type Translations = {
       value_delivered_rate: string;
       cost_per_value: string;
       value_delivered_count: string;
+      error_category_section_title: string;
+      error_category_total_failures: string;
+      error_category_prior_period: string;
+      error_category_by_persona: string;
       no_data: string;
       cost_per_day: string;
       executions_by_status: string;
@@ -11369,6 +11373,19 @@ export type Translations = {
       promising: string;
       not_ready: string;
       broken: string;
+    };
+    error_category: {
+      rate_limit: string;
+      session_limit: string;
+      timeout: string;
+      provider_not_found: string;
+      credential_error: string;
+      network: string;
+      validation: string;
+      tool_error: string;
+      api_error: string;
+      transient_process_failure: string;
+      unknown: string;
     };
     execution: {
       queued: string;

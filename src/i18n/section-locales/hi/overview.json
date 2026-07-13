@@ -703,7 +703,11 @@
     "all_statuses": "सभी स्थितियां",
     "col_status": "स्थिति",
     "col_id": "ID",
-    "execution_label": "निष्पादन"
+    "execution_label": "निष्पादन",
+    "error_category_by_persona": "एजेंट अनुसार शीर्ष विफलता",
+    "error_category_prior_period": "पिछली अवधि की तुलना में",
+    "error_category_section_title": "श्रेणी अनुसार विफलताएँ",
+    "error_category_total_failures": "कुल विफलताएँ"
   },
   "analytics_dashboard": {
     "issues_found": "{count} समस्याएं मिलीं",

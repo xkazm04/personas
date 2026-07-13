@@ -6145,7 +6145,11 @@
       "all_statuses": "Todos los estados",
       "col_status": "Estado",
       "col_id": "ID",
-      "execution_label": "Ejecución"
+      "execution_label": "Ejecución",
+      "error_category_by_persona": "Mayor fallo por agente",
+      "error_category_prior_period": "vs. periodo anterior",
+      "error_category_section_title": "Fallos por categoría",
+      "error_category_total_failures": "Fallos totales"
     },
     "analytics_dashboard": {
       "issues_found": "{count} problemas encontrados",
@@ -11229,6 +11233,19 @@
       "high": "Alto",
       "low": "Bajo",
       "medium": "Medio"
+    },
+    "error_category": {
+      "api_error": "Error de API",
+      "credential_error": "Error de credencial",
+      "network": "Red",
+      "provider_not_found": "Proveedor no encontrado",
+      "rate_limit": "Límite de tasa",
+      "session_limit": "Límite de sesión",
+      "timeout": "Tiempo agotado",
+      "tool_error": "Error de herramienta",
+      "transient_process_failure": "Fallo transitorio del proceso",
+      "unknown": "Desconocido",
+      "validation": "Validación"
     }
   },
   "project_overview": {

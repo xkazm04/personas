@@ -133,5 +133,18 @@
     "high": "高",
     "low": "低",
     "medium": "中"
+  },
+  "error_category": {
+    "api_error": "APIエラー",
+    "credential_error": "認証情報エラー",
+    "network": "ネットワーク",
+    "provider_not_found": "プロバイダーが見つかりません",
+    "rate_limit": "レート制限",
+    "session_limit": "セッション制限",
+    "timeout": "タイムアウト",
+    "tool_error": "ツールエラー",
+    "transient_process_failure": "一時的なプロセス障害",
+    "unknown": "不明",
+    "validation": "検証"
   }
 }

@@ -703,7 +703,11 @@
     "all_statuses": "すべてのステータス",
     "col_status": "ステータス",
     "col_id": "ID",
-    "execution_label": "実行"
+    "execution_label": "実行",
+    "error_category_by_persona": "エージェント別の主な失敗",
+    "error_category_prior_period": "前期間との比較",
+    "error_category_section_title": "カテゴリ別の失敗",
+    "error_category_total_failures": "失敗の合計"
   },
   "analytics_dashboard": {
     "issues_found": "{count}件の問題が見つかりました",

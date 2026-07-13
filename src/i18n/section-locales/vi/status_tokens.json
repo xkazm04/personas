@@ -133,5 +133,18 @@
     "high": "Cao",
     "low": "Thấp",
     "medium": "Trung bình"
+  },
+  "error_category": {
+    "api_error": "Lỗi API",
+    "credential_error": "Lỗi thông tin xác thực",
+    "network": "Mạng",
+    "provider_not_found": "Không tìm thấy nhà cung cấp",
+    "rate_limit": "Giới hạn tần suất",
+    "session_limit": "Giới hạn phiên",
+    "timeout": "Hết thời gian chờ",
+    "tool_error": "Lỗi công cụ",
+    "transient_process_failure": "Lỗi tiến trình tạm thời",
+    "unknown": "Không xác định",
+    "validation": "Xác thực"
   }
 }

@@ -6145,7 +6145,11 @@
       "all_statuses": "所有状态",
       "col_status": "状态",
       "col_id": "ID",
-      "execution_label": "执行"
+      "execution_label": "执行",
+      "error_category_by_persona": "最常出错的智能体",
+      "error_category_prior_period": "较上一周期",
+      "error_category_section_title": "按类别统计失败",
+      "error_category_total_failures": "失败总数"
     },
     "analytics_dashboard": {
       "issues_found": "发现 {count} 个问题",
@@ -11229,6 +11233,19 @@
       "high": "高",
       "low": "低",
       "medium": "中"
+    },
+    "error_category": {
+      "api_error": "API 错误",
+      "credential_error": "凭据错误",
+      "network": "网络",
+      "provider_not_found": "未找到提供方",
+      "rate_limit": "速率限制",
+      "session_limit": "会话上限",
+      "timeout": "超时",
+      "tool_error": "工具错误",
+      "transient_process_failure": "临时进程故障",
+      "unknown": "未知",
+      "validation": "校验"
     }
   },
   "project_overview": {

@@ -133,5 +133,18 @@
     "high": "Hoch",
     "low": "Niedrig",
     "medium": "Mittel"
+  },
+  "error_category": {
+    "api_error": "API-Fehler",
+    "credential_error": "Anmeldedatenfehler",
+    "network": "Netzwerk",
+    "provider_not_found": "Anbieter nicht gefunden",
+    "rate_limit": "Ratenlimit",
+    "session_limit": "Sitzungslimit",
+    "timeout": "Zeitüberschreitung",
+    "tool_error": "Werkzeugfehler",
+    "transient_process_failure": "Vorübergehender Prozessfehler",
+    "unknown": "Unbekannt",
+    "validation": "Validierung"
   }
 }

@@ -6145,7 +6145,11 @@
       "all_statuses": "সব স্ট্যাটাস",
       "col_status": "স্ট্যাটাস",
       "col_id": "ID",
-      "execution_label": "এক্সিকিউশন"
+      "execution_label": "এক্সিকিউশন",
+      "error_category_by_persona": "এজেন্ট অনুযায়ী শীর্ষ ব্যর্থতা",
+      "error_category_prior_period": "পূর্ববর্তী সময়ের তুলনায়",
+      "error_category_section_title": "শ্রেণি অনুযায়ী ব্যর্থতা",
+      "error_category_total_failures": "মোট ব্যর্থতা"
     },
     "analytics_dashboard": {
       "issues_found": "{count}টি সমস্যা পাওয়া গেছে",
@@ -11229,6 +11233,19 @@
       "high": "উচ্চ",
       "low": "নিম্ন",
       "medium": "মাঝারি"
+    },
+    "error_category": {
+      "api_error": "API ত্রুটি",
+      "credential_error": "শংসাপত্র ত্রুটি",
+      "network": "নেটওয়ার্ক",
+      "provider_not_found": "প্রদানকারী পাওয়া যায়নি",
+      "rate_limit": "রেট সীমা",
+      "session_limit": "সেশন সীমা",
+      "timeout": "সময় শেষ",
+      "tool_error": "টুল ত্রুটি",
+      "transient_process_failure": "সাময়িক প্রক্রিয়া ব্যর্থতা",
+      "unknown": "অজানা",
+      "validation": "যাচাইকরণ"
     }
   },
   "project_overview": {

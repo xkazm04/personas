@@ -703,7 +703,11 @@
     "all_statuses": "Semua status",
     "col_status": "Status",
     "col_id": "ID",
-    "execution_label": "Eksekusi"
+    "execution_label": "Eksekusi",
+    "error_category_by_persona": "Kegagalan terbanyak per agen",
+    "error_category_prior_period": "vs. periode sebelumnya",
+    "error_category_section_title": "Kegagalan menurut kategori",
+    "error_category_total_failures": "Total kegagalan"
   },
   "analytics_dashboard": {
     "issues_found": "{count} masalah ditemukan",

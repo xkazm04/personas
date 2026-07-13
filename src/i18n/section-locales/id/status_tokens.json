@@ -133,5 +133,18 @@
     "high": "Tinggi",
     "low": "Rendah",
     "medium": "Sedang"
+  },
+  "error_category": {
+    "api_error": "Kesalahan API",
+    "credential_error": "Kesalahan kredensial",
+    "network": "Jaringan",
+    "provider_not_found": "Penyedia tidak ditemukan",
+    "rate_limit": "Batas laju",
+    "session_limit": "Batas sesi",
+    "timeout": "Waktu habis",
+    "tool_error": "Kesalahan alat",
+    "transient_process_failure": "Kegagalan proses sementara",
+    "unknown": "Tidak diketahui",
+    "validation": "Validasi"
   }
 }

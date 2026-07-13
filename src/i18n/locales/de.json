@@ -6145,7 +6145,11 @@
       "all_statuses": "Alle Status",
       "col_status": "Status",
       "col_id": "ID",
-      "execution_label": "Ausführung"
+      "execution_label": "Ausführung",
+      "error_category_by_persona": "Häufigster Fehler pro Agent",
+      "error_category_prior_period": "vs. Vorperiode",
+      "error_category_section_title": "Fehler nach Kategorie",
+      "error_category_total_failures": "Fehler gesamt"
     },
     "analytics_dashboard": {
       "issues_found": "{count} Probleme gefunden",
@@ -11229,6 +11233,19 @@
       "high": "Hoch",
       "low": "Niedrig",
       "medium": "Mittel"
+    },
+    "error_category": {
+      "api_error": "API-Fehler",
+      "credential_error": "Anmeldedatenfehler",
+      "network": "Netzwerk",
+      "provider_not_found": "Anbieter nicht gefunden",
+      "rate_limit": "Ratenlimit",
+      "session_limit": "Sitzungslimit",
+      "timeout": "Zeitüberschreitung",
+      "tool_error": "Werkzeugfehler",
+      "transient_process_failure": "Vorübergehender Prozessfehler",
+      "unknown": "Unbekannt",
+      "validation": "Validierung"
     }
   },
   "project_overview": {

@@ -133,5 +133,18 @@
     "high": "Высокий",
     "low": "Низкий",
     "medium": "Средний"
+  },
+  "error_category": {
+    "api_error": "Ошибка API",
+    "credential_error": "Ошибка учётных данных",
+    "network": "Сеть",
+    "provider_not_found": "Провайдер не найден",
+    "rate_limit": "Лимит запросов",
+    "session_limit": "Лимит сессии",
+    "timeout": "Тайм-аут",
+    "tool_error": "Ошибка инструмента",
+    "transient_process_failure": "Временный сбой процесса",
+    "unknown": "Неизвестно",
+    "validation": "Валидация"
   }
 }
