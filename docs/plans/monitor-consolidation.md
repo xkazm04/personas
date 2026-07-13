@@ -187,6 +187,19 @@ behaviour):
 Regenerate bindings: `cargo test --manifest-path src-tauri/Cargo.toml export_bindings`, commit
 `src/lib/bindings/TeamChannelItem.ts`.
 
+**As-built (P1).** The read-model body was extracted into `read_channel(&Connection, …)` so the
+cursor and lens behaviour could be tested against a real SQLite schema; the `#[tauri::command]` is
+now auth + delegate. Two deviations from the sketch above, both deliberate:
+
+- The **family lens stays a client-side derivation** over an event row's `label` (which *is* the raw
+  `event_type`), in `src/lib/channel/eventModel.ts`. Pushing the 8-family regex into SQL buys nothing
+  until a family-only view can starve, and a second copy of the vocabulary in Rust is exactly the
+  drift the D9 extraction exists to prevent.
+- Truncate-after-union **stays**, and is now correct: with the composite cursor the next page resumes
+  at precisely `(at, id)` of the last row served, so rows trimmed by the truncate come back on the
+  following page instead of being skipped. The old timestamp-only cursor is what made truncation
+  lossy.
+
 ### 4.3 Pillar 2 — Stream: one virtualized list, many dimensions (read-only)
 
 Keep `VirtualStream` (TanStack) as the renderer. Replace the feed. No composer (D5).
@@ -336,8 +349,8 @@ Each phase is independently shippable and independently revertable.
 
 | Phase | Work | Gate |
 | --- | --- | --- |
-| **P0** | `channelSlice` + refcounted subscription + unread model (D6); collapse the three `useTeamChannel` mount sites and `useTeamPresence` onto it; rewire `LiveChannelOverlay`. No visible change. | Poll count drops from 3N to 1N; existing surfaces unchanged; vitest green |
-| **P1** | `list_team_channel`: `kinds` param, composite `(at,id)` cursor, `deliberation_id`, memory `importance`/`category`, event `event_type`/`family`/`consumers`. Regen bindings. Fix the deliberation leak. Move `eventFamily`/`memberColor`/`parsePayload`/`toEpochUtc` to `src/lib/channel/` (D9). | `cargo test` incl. a same-second-burst pagination test; `export_bindings`; binding-drift CI job |
+| **P0** ✅ | `channelSlice` + refcounted subscription + unread model (D6); collapse the three `useTeamChannel` mount sites and `useTeamPresence` onto it; rewire `LiveChannelOverlay`. No visible change. **LANDED `e9174f7d9`.** | Poll count drops from 3N to 1N; existing surfaces unchanged; vitest green |
+| **P1** ✅ | `list_team_channel`: `kinds` push-down, composite `(at,id)` cursor, `deliberation_id`, memory `importance`, event `consumers`. Regen bindings. Fix the deliberation leak. Move `eventFamily`/`memberColor`/`parsePayload`/`toEpochUtc` to `src/lib/channel/` (D9). | `cargo test` incl. a same-second-burst pagination test; `export_bindings`; binding-drift CI job |
 | **P2** | **`/prototype` the Stream lens UX** (lens chips + density + memory sub-modes are the design risk). Then: k-way merge paging, drop `MAX_MERGED_ROWS`, lenses, density toggle, memory sub-modes, merged detail modal. **Delete** `sub_redRoom/**`, **retire** `sub_teamMemory`'s pane host. | Stream holds ≥5k rows at 60fps; Red Room's 8 families + callsign lens + "Heard by" all reachable; live-verify via :17320 |
 | **P3** | **`/prototype` the messenger layout** (sidebar + card taxonomy + right rail). Then: sidebar-of-projects, virtualized message list (`measureElement`), assignment cards, deliberation cards + right rail, composer-driven assign, Quick Answer relocation (D5). **Delete** `CollabPane`, `DeliberationsPane`, `OrchestrationConsole`'s assign half, `MonitorChannelGrid`'s grid mode. | Every affordance in §7.3 preserved; conversation smooth at 2k messages; assign-via-composer produces a running assignment end-to-end; live-verify via :17320 |
 | **P4** | Goals Missions tab. **Delete** `TeamAssignmentBoardFlightDeck` + `TeamAssignmentBoard` (keep `boardShared` primitives). | No assignment (goal-linked or not) is unreachable; pause/resume/replay work from the new tab |
