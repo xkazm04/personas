@@ -1060,6 +1060,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap()
