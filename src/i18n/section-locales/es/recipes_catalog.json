@@ -71,7 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "Primero, elija una persona en la barra lateral.",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup": "Wire {count} more connector{count, plural, one {} other {s}}, then adopt",
+  "adopt_tooltip_needs_setup_one": "Conectar {count} conector más y luego adoptar",
+  "adopt_tooltip_needs_setup_other": "Conectar {count} conectores más y luego adoptar",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "Adopte esta receta en la persona seleccionada",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -119,7 +120,6 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "Completará {count} ajustes durante la adopción",
   "_comment_tags_heading": "Section heading for the tags list",
-  "tags_heading": "Tags",
   "tag_filter_tooltip": "Mostrar recetas con esta etiqueta",
   "guardrails_heading": "Salvaguardas y memoria",
   "events_label": "Eventos",
@@ -230,5 +230,6 @@
   "update_badge": "Actualizar",
   "update_badge_detail_tooltip": "Adoptado en v{from}; el catálogo ahora está en v{to}. Elimina y vuelve a adoptar para actualizar.",
   "update_badge_tooltip": "Hay una versión más reciente de esta capacidad disponible — elimina y vuelve a adoptar para actualizar",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "Etiquetas"
 }

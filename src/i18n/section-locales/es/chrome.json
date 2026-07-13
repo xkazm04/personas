@@ -16,11 +16,6 @@
   "update_install_when_idle": "Instalar al desocuparse",
   "update_install_when_idle_status": "La actualización se instalará cuando terminen {count} tarea(s) en curso.",
   "update_keep_working": "Seguir trabajando",
-  "expand_sidebar": "Expandir barra lateral",
-  "collapse_sidebar": "Contraer barra lateral",
-  "network_settings": "Configuracion de red",
-  "dark": "Oscuro",
-  "light": "Claro",
   "sign_in_google": "Iniciar sesion con Google",
   "signed_in": "Sesion iniciada",
   "sign_out": "Cerrar sesion",
@@ -30,7 +25,6 @@
   "shortcuts": {
     "title": "Atajos de teclado",
     "subtitle": "Pulse ? en cualquier momento para abrir esta lista",
-    "open_title": "Atajos de teclado",
     "section_navigation": "Navegación",
     "section_agents": "Agentes",
     "section_editing": "Edición",
@@ -53,7 +47,8 @@
     "nav_mode_notifications": "Alternar notificaciones (en modo navegación)",
     "nav_mode_review": "Alternar revisión humana (en modo navegación)",
     "nav_mode_schedules": "Alternar programaciones (en modo navegación)",
-    "nav_mode_search": "Abrir búsqueda (en modo navegación)"
+    "nav_mode_search": "Abrir búsqueda (en modo navegación)",
+    "open_title": "Atajos de teclado"
   },
   "tray_schedules": "Programaciones",
   "tray_schedules_today": "{count} programadas hoy",
@@ -72,5 +67,10 @@
   "tray_acceptance_pending": "{count} objetivos pendientes de aceptación",
   "cli_not_ready_detail": "Personas ejecuta tus agentes con tu suscripción de Claude. No pudimos iniciar una sesión de Claude — asegúrate de que Claude Code CLI esté instalado y con la sesión iniciada, y vuelve a intentarlo.",
   "cli_not_ready_retry": "Reintentar",
-  "cli_not_ready_title": "Claude CLI no está listo"
+  "cli_not_ready_title": "Claude CLI no está listo",
+  "expand_sidebar": "Expandir barra lateral",
+  "collapse_sidebar": "Contraer barra lateral",
+  "network_settings": "Configuracion de red",
+  "dark": "Oscuro",
+  "light": "Claro"
 }

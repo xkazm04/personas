@@ -1,5 +1,5 @@
 {
-  "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",
-  "schema_parse_error_detail": "Error: {error}",
-  "schema_parse_error_hint": "Re-generate the recipe or edit the input schema manually to fix this."
+  "schema_parse_error": "Nepodařilo se načíst vstupní pole tohoto receptu — uložené schéma je poškozené.",
+  "schema_parse_error_detail": "Chyba: {error}",
+  "schema_parse_error_hint": "Vygenerujte recept znovu, nebo upravte vstupní schéma ručně."
 }

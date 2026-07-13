@@ -13,5 +13,5 @@
   "error_toggle_rule": "अलर्ट नियम टॉगल करने में विफल:",
   "error_dismiss": "अलर्ट हटाने में विफल:",
   "error_clear_history": "अलर्ट इतिहास साफ़ करने में विफल:",
-  "error_load_rules": "Failed to load alert rules:"
+  "error_load_rules": "अलर्ट नियम लोड करने में विफल:"
 }

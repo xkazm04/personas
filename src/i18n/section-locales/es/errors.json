@@ -1,4 +1,5 @@
 {
+  "dismiss_error": "Descartar error",
   "boundary_title": "Algo inesperado ocurrió en {name}",
   "boundary_title_generic": "Algo inesperado ocurrió",
   "boundary_body": "No te preocupes -- tus datos están seguros. Puedes intentar de nuevo o volver al panel.",
@@ -9,7 +10,6 @@
   "boundary_dev": "Para desarrolladores",
   "boundary_no_stack": "No hay traza de pila disponible",
   "go_back": "Volver",
-  "dismiss_error": "Descartar error",
   "not_found": "El recurso solicitado no fue encontrado",
   "validation": "Entrada inválida: {detail}",
   "auth": "Autenticación fallida -- verifica tus credenciales",

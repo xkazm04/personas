@@ -16,11 +16,6 @@
   "update_install_when_idle": "निष्क्रिय होने पर इंस्टॉल करें",
   "update_install_when_idle_status": "{count} चल रहे कार्य पूरे होने पर अपडेट इंस्टॉल होगा।",
   "update_keep_working": "काम करते रहें",
-  "expand_sidebar": "साइडबार विस्तृत करें",
-  "collapse_sidebar": "साइडबार संकुचित करें",
-  "network_settings": "नेटवर्क सेटिंग्स",
-  "dark": "डार्क",
-  "light": "लाइट",
   "sign_in_google": "Google से साइन इन करें",
   "signed_in": "साइन इन किया",
   "sign_out": "साइन आउट करें",
@@ -30,7 +25,6 @@
   "shortcuts": {
     "title": "कीबोर्ड शॉर्टकट",
     "subtitle": "इस सूची को खोलने के लिए कभी भी ? दबाएं",
-    "open_title": "कीबोर्ड शॉर्टकट",
     "section_navigation": "नेविगेशन",
     "section_agents": "एजेंट",
     "section_editing": "संपादन",
@@ -53,7 +47,8 @@
     "nav_mode_notifications": "सूचनाएं टॉगल करें (नेव मोड में)",
     "nav_mode_review": "मानव समीक्षा टॉगल करें (नेव मोड में)",
     "nav_mode_schedules": "शेड्यूल टॉगल करें (नेव मोड में)",
-    "nav_mode_search": "खोज खोलें (नेव मोड में)"
+    "nav_mode_search": "खोज खोलें (नेव मोड में)",
+    "open_title": "कीबोर्ड शॉर्टकट"
   },
   "tray_schedules": "शेड्यूल",
   "tray_schedules_today": "आज {count} शेड्यूल",
@@ -72,5 +67,10 @@
   "tray_acceptance_pending": "{count} लक्ष्य आपकी स्वीकृति की प्रतीक्षा में",
   "cli_not_ready_detail": "Personas आपके एजेंट्स को आपकी Claude सदस्यता पर चलाता है। हम एक Claude सत्र शुरू नहीं कर सके — सुनिश्चित करें कि Claude Code CLI इंस्टॉल और साइन इन है, फिर पुनः प्रयास करें।",
   "cli_not_ready_retry": "पुनः प्रयास करें",
-  "cli_not_ready_title": "Claude CLI तैयार नहीं है"
+  "cli_not_ready_title": "Claude CLI तैयार नहीं है",
+  "expand_sidebar": "साइडबार विस्तृत करें",
+  "collapse_sidebar": "साइडबार संकुचित करें",
+  "network_settings": "नेटवर्क सेटिंग्स",
+  "dark": "डार्क",
+  "light": "लाइट"
 }

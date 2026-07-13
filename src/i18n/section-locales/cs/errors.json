@@ -1,4 +1,5 @@
 {
+  "dismiss_error": "Zavřít chybu",
   "boundary_title": "V {name} došlo k něčemu neočekávanému",
   "boundary_title_generic": "Došlo k něčemu neočekávanému",
   "boundary_body": "Nebuď znepokojen -- tvá data jsou v bezpečí. Můžeš to zkusit znovu nebo se vrátit na dashboard.",
@@ -9,7 +10,6 @@
   "boundary_dev": "Pro vývojáře",
   "boundary_no_stack": "Stack trace není k dispozici",
   "go_back": "Zpět",
-  "dismiss_error": "Zavřít chybu",
   "not_found": "Požadovaný zdroj nebyl nalezen",
   "validation": "Neplatný vstup: {detail}",
   "auth": "Autentizace selhala -- zkontroluj své přihlašovací údaje",

@@ -71,7 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "Сначала выберите персону в боковой панели.",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup": "Wire {count} more connector{count, plural, one {} other {s}}, then adopt",
+  "adopt_tooltip_needs_setup_one": "Подключите ещё {count} коннектор, чтобы принять рецепт",
+  "adopt_tooltip_needs_setup_other": "Чтобы принять рецепт, подключите ещё коннекторов: {count}",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "Принять этот рецепт в выбранную персону",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -119,7 +120,6 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "При принятии нужно будет заполнить параметров: {count}",
   "_comment_tags_heading": "Section heading for the tags list",
-  "tags_heading": "Tags",
   "tag_filter_tooltip": "Показать рецепты с этим тегом",
   "guardrails_heading": "Ограничения и память",
   "events_label": "События",
@@ -230,5 +230,6 @@
   "update_badge": "Обновление",
   "update_badge_detail_tooltip": "Установлено в версии v{from}; в каталоге теперь v{to}. Чтобы обновить, удалите и установите заново.",
   "update_badge_tooltip": "Доступна новая версия этого навыка — удалите и установите заново, чтобы обновить",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "Теги"
 }

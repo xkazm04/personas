@@ -1,6 +1,6 @@
 {
-  "no_persona": "Keine Persona ausgewählt",
   "conversation_truncated": "Diese Unterhaltung hat das Nachrichtenlimit erreicht. Ältere Nachrichten wurden entfernt — erwägen Sie, eine neue Unterhaltung zu beginnen, um den Kontext zu erhalten.",
+  "no_persona": "Keine Persona ausgewählt",
   "stages": {
     "assembling_label": "Prompt zusammenstellen",
     "assembling_desc": "LLM-Prompt aus Persona-Konfiguration und Anweisungen wird erstellt",

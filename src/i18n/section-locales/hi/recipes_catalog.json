@@ -71,7 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "पहले साइडबार से एक पर्सोना चुनें।",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup": "Wire {count} more connector{count, plural, one {} other {s}}, then adopt",
+  "adopt_tooltip_needs_setup_one": "अपनाने से पहले {count} और कनेक्टर जोड़ें",
+  "adopt_tooltip_needs_setup_other": "अपनाने से पहले {count} और कनेक्टर जोड़ें",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "इस रेसिपी को अपने चयनित पर्सोना में अपनाएं",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -119,7 +120,6 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "अपनाते समय आप {count} सेटिंग्स भरेंगे।",
   "_comment_tags_heading": "Section heading for the tags list",
-  "tags_heading": "Tags",
   "tag_filter_tooltip": "इस टैग वाली रेसिपी दिखाएं",
   "guardrails_heading": "गार्डरेल और मेमोरी",
   "events_label": "इवेंट",
@@ -230,5 +230,6 @@
   "update_badge": "अपडेट",
   "update_badge_detail_tooltip": "v{from} में अपनाया गया; कैटलॉग अब v{to} है। अपडेट के लिए हटाएं और फिर से अपनाएं।",
   "update_badge_tooltip": "इस क्षमता का नया संस्करण उपलब्ध है — अपडेट के लिए हटाएं और फिर से अपनाएं",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "टैग"
 }

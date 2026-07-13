@@ -1,4 +1,12 @@
 {
+  "install_all": "全依存関係をインストール",
+  "log_disk_usage": "ログディスク使用量",
+  "log_disk_tracing": "トレースログ",
+  "log_disk_crashes": "クラッシュレポート",
+  "log_disk_files_count": "{count}個のファイル",
+  "log_disk_retention_hint": "毎日ローテーション、上限{limit}件",
+  "log_disk_crash_retention_hint": "直近{limit}件まで保持",
+  "log_disk_unavailable": "ログディレクトリの統計情報を取得できません。",
   "title": "システムチェック",
   "subtitle": "環境の準備状況を確認中",
   "rerun": "チェックを再実行",
@@ -19,7 +27,6 @@
   "no_crash_logs": "クラッシュログはありません。",
   "crash_auto_cred": "自動認証セッション",
   "crash_rust_panic": "Rustパニック",
-  "install_all": "全依存関係をインストール",
   "ready_title": "最初のエージェントを作成しますか？",
   "ready_hint": "全チェックが合格しました。エージェントの作成と実行をガイドします。",
   "get_started": "はじめる",
@@ -33,12 +40,5 @@
   "official_page": "公式ページ",
   "edit_key": "キーを編集",
   "edit_config": "設定を編集",
-  "signing_in": "サインイン中...",
-  "log_disk_usage": "Log Disk Usage",
-  "log_disk_tracing": "Tracing logs",
-  "log_disk_crashes": "Crash reports",
-  "log_disk_files_count": "{count} files",
-  "log_disk_retention_hint": "Daily rotation, capped at {limit} files",
-  "log_disk_crash_retention_hint": "Capped at {limit} most recent reports",
-  "log_disk_unavailable": "Log directory stats unavailable."
+  "signing_in": "サインイン中..."
 }

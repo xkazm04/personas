@@ -1,8 +1,8 @@
 {
-  "queued": "대기 중",
-  "running": "실행 중",
   "completed": "완료됨",
   "failed": "실패",
+  "queued": "대기 중",
+  "running": "실행 중",
   "cancelled": "취소됨",
   "error": "오류"
 }

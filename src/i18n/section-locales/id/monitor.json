@@ -3,7 +3,7 @@
   "group_by_toggle_title": "Kelompokkan kartu persona berdasarkan grupnya",
   "group_ungrouped": "Tanpa grup",
   "title": "Monitor Persona",
-  "subtitle": "{persona} persona · {attention} need attention · {running} running",
+  "subtitle": "{personas} persona · {attention} perlu perhatian · {running} berjalan",
   "close": "Tutup monitor",
   "close_hint": "Tutup (Esc)",
   "no_personas": "Belum ada persona.",

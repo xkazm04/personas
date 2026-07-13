@@ -71,7 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "请先在侧边栏中选择一个人格。",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup": "Wire {count} more connector{count, plural, one {} other {s}}, then adopt",
+  "adopt_tooltip_needs_setup_one": "还需再连接 {count} 个连接器才能采用",
+  "adopt_tooltip_needs_setup_other": "还需再连接 {count} 个连接器才能采用",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "将此配方采用到您所选的人格",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -119,7 +120,6 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "在采用过程中，您需要填写 {count} 项设置",
   "_comment_tags_heading": "Section heading for the tags list",
-  "tags_heading": "Tags",
   "tag_filter_tooltip": "显示带此标签的配方",
   "guardrails_heading": "防护与记忆",
   "events_label": "事件",
@@ -230,5 +230,6 @@
   "update_badge": "更新",
   "update_badge_detail_tooltip": "采用时为 v{from}；目录现为 v{to}。请移除并重新采用以更新。",
   "update_badge_tooltip": "此功能有可用的新版本 — 移除并重新采用以更新",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "标签"
 }

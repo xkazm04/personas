@@ -1,4 +1,12 @@
 {
+  "install_all": "Nainstalovat všechny závislosti",
+  "log_disk_usage": "Diskové využití logů",
+  "log_disk_tracing": "Trasovací logy",
+  "log_disk_crashes": "Crash reporty",
+  "log_disk_files_count": "{count} souborů",
+  "log_disk_retention_hint": "Denní rotace, omezeno na {limit} souborů",
+  "log_disk_crash_retention_hint": "Omezeno na {limit} nejnovějších reportů",
+  "log_disk_unavailable": "Statistiky adresáře s logy nejsou k dispozici.",
   "title": "Systémové kontroly",
   "subtitle": "Ověřování, že je tvé prostředí připravené",
   "rerun": "Spustit kontroly znovu",
@@ -19,7 +27,6 @@
   "no_crash_logs": "Žádné crash logy nezaznamenány.",
   "crash_auto_cred": "Auto-cred relace",
   "crash_rust_panic": "Rust panic",
-  "install_all": "Nainstalovat všechny závislosti",
   "ready_title": "Připraven vytvořit svého prvního agenta?",
   "ready_hint": "Všechny kontroly prošly. Necháme tě projít vytvořením a spuštěním prvního agenta.",
   "get_started": "Začít",
@@ -33,12 +40,5 @@
   "official_page": "Oficiální stránka",
   "edit_key": "Upravit klíč",
   "edit_config": "Upravit konfiguraci",
-  "signing_in": "Přihlašování...",
-  "log_disk_usage": "Diskové využití logů",
-  "log_disk_tracing": "Trasovací logy",
-  "log_disk_crashes": "Crash reporty",
-  "log_disk_files_count": "{count} souborů",
-  "log_disk_retention_hint": "Denní rotace, omezeno na {limit} souborů",
-  "log_disk_crash_retention_hint": "Omezeno na {limit} nejnovějších reportů",
-  "log_disk_unavailable": "Statistiky adresáře s logy nejsou k dispozici."
+  "signing_in": "Přihlašování..."
 }

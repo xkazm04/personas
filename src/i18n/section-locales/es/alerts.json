@@ -13,5 +13,5 @@
   "error_toggle_rule": "No se pudo cambiar el estado de la regla de alerta:",
   "error_dismiss": "No se pudo descartar la alerta:",
   "error_clear_history": "No se pudo limpiar el historial de alertas:",
-  "error_load_rules": "Failed to load alert rules:"
+  "error_load_rules": "No se pudieron cargar las reglas de alerta:"
 }

@@ -1,8 +1,8 @@
 {
-  "queued": "Ve frontě",
-  "running": "Běží",
   "completed": "Dokončeno",
   "failed": "Selhalo",
+  "queued": "Ve frontě",
+  "running": "Běží",
   "cancelled": "Zrušeno",
   "error": "Chyba"
 }

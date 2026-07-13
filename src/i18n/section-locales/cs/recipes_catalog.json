@@ -71,7 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "Nejprve vyberte personu z postranního panelu.",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup": "Wire {count} more connector{count, plural, one {} other {s}}, then adopt",
+  "adopt_tooltip_needs_setup_one": "Připojte ještě {count} konektor, pak adoptujte.",
+  "adopt_tooltip_needs_setup_other": "Připojte ještě {count} konektor(y/ů), pak adoptujte.",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "Přijmout tento recept do vybrané persony",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -119,7 +120,6 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "Během přijímání vyplníte {count} nastavení",
   "_comment_tags_heading": "Section heading for the tags list",
-  "tags_heading": "Tags",
   "tag_filter_tooltip": "Zobrazit recepty s tímto štítkem",
   "guardrails_heading": "Pojistky a paměť",
   "events_label": "Události",
@@ -230,5 +230,6 @@
   "update_badge": "Aktualizace",
   "update_badge_detail_tooltip": "Adoptováno ve verzi v{from}; katalog je nyní ve verzi v{to}. Pro aktualizaci odeberte a znovu adoptujte.",
   "update_badge_tooltip": "Je k dispozici novější verze této schopnosti — odeberte a znovu adoptujte pro aktualizaci",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "Štítky"
 }

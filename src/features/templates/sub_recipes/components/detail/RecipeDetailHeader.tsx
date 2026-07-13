@@ -148,7 +148,12 @@ export function RecipeDetailHeader({
                 : eligibility.state === 'incompatible'
                   ? eligibility.reason
                   : eligibility.state === 'adoptable-with-setup'
-                    ? tx(t.recipes_catalog.adopt_tooltip_needs_setup, { count: eligibility.missingConnectors.length })
+                    ? tx(
+                        eligibility.missingConnectors.length === 1
+                          ? t.recipes_catalog.adopt_tooltip_needs_setup_one
+                          : t.recipes_catalog.adopt_tooltip_needs_setup_other,
+                        { count: eligibility.missingConnectors.length },
+                      )
                     : t.recipes_catalog.adopt_tooltip_ready
             }
           >

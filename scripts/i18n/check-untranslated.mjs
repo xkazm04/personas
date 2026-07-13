@@ -24,20 +24,44 @@ import {
   loadAllowlist,
 } from './lib/untranslated.mjs';
 
+import { execSync } from 'node:child_process';
+
 const argv = process.argv.slice(2);
 const strict = argv.includes('--strict');
 const asJson = argv.includes('--json');
 const full = argv.includes('--full');
+const includeDead = argv.includes('--include-dead');
 const only = argv.find((a) => a.startsWith('--lang='))?.split('=')[1];
 
 const en = readCatalog('en');
 const allow = loadAllowlist();
 const langs = only ? [only] : locales();
 
+// A DEAD key (no source-file call site) that stays English is not a defect — it
+// is never rendered. Excluding these keeps the gate focused on strings a user
+// can actually see, matching plan-gaps. Pass --include-dead to audit everything.
+// The dead-key scanner is the same one plan-gaps trusts; if it regresses, a live
+// gap could hide, so --include-dead exists for periodic full audits.
+let dead = new Set();
+if (!includeDead) {
+  try {
+    dead = new Set(
+      JSON.parse(
+        execSync('node scripts/i18n/find-unused-i18n-keys.mjs --json --full', {
+          encoding: 'utf8',
+          maxBuffer: 128e6,
+        }),
+      ).unusedKeys,
+    );
+  } catch {
+    // scanner unavailable → fail safe by checking everything (dead stays empty).
+  }
+}
+
 const report = {};
 let total = 0;
 for (const lang of langs) {
-  const keys = untranslatedKeys(en, readCatalog(lang), lang, allow);
+  const keys = untranslatedKeys(en, readCatalog(lang), lang, allow).filter((k) => !dead.has(k));
   report[lang] = keys;
   total += keys.length;
 }

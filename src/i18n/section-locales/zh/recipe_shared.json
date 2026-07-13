@@ -1,5 +1,5 @@
 {
-  "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",
-  "schema_parse_error_detail": "Error: {error}",
-  "schema_parse_error_hint": "Re-generate the recipe or edit the input schema manually to fix this."
+  "schema_parse_error": "无法读取此配方的输入字段，存储的架构格式有误。",
+  "schema_parse_error_detail": "错误：{error}",
+  "schema_parse_error_hint": "请重新生成配方，或手动编辑输入架构以解决此问题。"
 }

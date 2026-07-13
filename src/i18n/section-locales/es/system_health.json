@@ -1,4 +1,12 @@
 {
+  "install_all": "Instalar todas las dependencias",
+  "log_disk_usage": "Uso de disco de registros",
+  "log_disk_tracing": "Registros de trazas",
+  "log_disk_crashes": "Informes de fallos",
+  "log_disk_files_count": "{count} archivos",
+  "log_disk_retention_hint": "Rotación diaria, con un límite de {limit} archivos",
+  "log_disk_crash_retention_hint": "Límite de {limit} informes más recientes",
+  "log_disk_unavailable": "Las estadísticas del directorio de registros no están disponibles.",
   "title": "Verificaciones del sistema",
   "subtitle": "Verificando que tu entorno esté listo",
   "rerun": "Re-ejecutar verificaciones",
@@ -19,7 +27,6 @@
   "no_crash_logs": "No se han registrado fallos.",
   "crash_auto_cred": "Sesión de credencial automática",
   "crash_rust_panic": "Pánico de Rust",
-  "install_all": "Instalar todas las dependencias",
   "ready_title": "¿Listo para crear tu primer agente?",
   "ready_hint": "Todas las verificaciones pasaron. Permítenos guiarte para crear y ejecutar tu primer agente.",
   "get_started": "Comenzar",
@@ -33,12 +40,5 @@
   "official_page": "Página oficial",
   "edit_key": "Editar clave",
   "edit_config": "Editar configuración",
-  "signing_in": "Iniciando sesión...",
-  "log_disk_usage": "Uso de disco de registros",
-  "log_disk_tracing": "Registros de trazas",
-  "log_disk_crashes": "Informes de fallos",
-  "log_disk_files_count": "{count} archivos",
-  "log_disk_retention_hint": "Rotación diaria, con un límite de {limit} archivos",
-  "log_disk_crash_retention_hint": "Límite de {limit} informes más recientes",
-  "log_disk_unavailable": "Las estadísticas del directorio de registros no están disponibles."
+  "signing_in": "Iniciando sesión..."
 }

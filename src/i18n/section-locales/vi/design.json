@@ -1,6 +1,6 @@
 {
-  "no_persona": "Chưa chọn tác tử",
   "conversation_truncated": "Cuộc hội thoại này đã đạt giới hạn tin nhắn. Các tin nhắn cũ hơn đã bị xóa — hãy cân nhắc bắt đầu cuộc hội thoại mới để duy trì ngữ cảnh.",
+  "no_persona": "Chưa chọn tác tử",
   "stages": {
     "assembling_label": "Đang lắp ráp prompt",
     "assembling_desc": "Xây dựng prompt LLM từ cấu hình và chỉ dẫn tác tử",

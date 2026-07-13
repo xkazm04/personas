@@ -1,4 +1,12 @@
 {
+  "install_all": "सभी डिपेंडेंसी इंस्टॉल करें",
+  "log_disk_usage": "लॉग डिस्क उपयोग",
+  "log_disk_tracing": "ट्रेसिंग लॉग",
+  "log_disk_crashes": "क्रैश रिपोर्ट",
+  "log_disk_files_count": "{count} फ़ाइलें",
+  "log_disk_retention_hint": "दैनिक रोटेशन, अधिकतम {limit} फ़ाइलें तक सीमित",
+  "log_disk_crash_retention_hint": "अधिकतम {limit} सबसे हाल की रिपोर्ट तक सीमित",
+  "log_disk_unavailable": "लॉग डायरेक्टरी आँकड़े अनुपलब्ध हैं।",
   "title": "सिस्टम जाँच",
   "subtitle": "आपका वातावरण तैयार है यह सत्यापित किया जा रहा है",
   "rerun": "जाँच फिर चलाएँ",
@@ -19,7 +27,6 @@
   "no_crash_logs": "कोई क्रैश लॉग रिकॉर्ड नहीं किया गया।",
   "crash_auto_cred": "ऑटो-क्रेड सत्र",
   "crash_rust_panic": "Rust पैनिक",
-  "install_all": "सभी डिपेंडेंसी इंस्टॉल करें",
   "ready_title": "अपना पहला एजेंट बनाने के लिए तैयार?",
   "ready_hint": "सभी जाँचें पास हो गईं। आइए आपका पहला एजेंट बनाने और चलाने में मार्गदर्शन करें।",
   "get_started": "शुरू करें",
@@ -33,12 +40,5 @@
   "official_page": "आधिकारिक पेज",
   "edit_key": "कुंजी संपादित करें",
   "edit_config": "कॉन्फ़िग संपादित करें",
-  "signing_in": "साइन इन हो रहा है...",
-  "log_disk_usage": "लॉग डिस्क उपयोग",
-  "log_disk_tracing": "ट्रेसिंग लॉग",
-  "log_disk_crashes": "क्रैश रिपोर्ट",
-  "log_disk_files_count": "{count} फ़ाइलें",
-  "log_disk_retention_hint": "दैनिक रोटेशन, अधिकतम {limit} फ़ाइलें तक सीमित",
-  "log_disk_crash_retention_hint": "अधिकतम {limit} सबसे हाल की रिपोर्ट तक सीमित",
-  "log_disk_unavailable": "लॉग डायरेक्टरी आँकड़े अनुपलब्ध हैं।"
+  "signing_in": "साइन इन हो रहा है..."
 }

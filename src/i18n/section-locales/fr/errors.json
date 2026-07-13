@@ -1,4 +1,5 @@
 {
+  "dismiss_error": "Ignorer l'erreur",
   "boundary_title": "Quelque chose d'inattendu s'est produit dans {name}",
   "boundary_title_generic": "Quelque chose d'inattendu s'est produit",
   "boundary_body": "Ne vous inquiétez pas -- vos données sont en sécurité. Vous pouvez réessayer ou retourner au tableau de bord.",
@@ -9,7 +10,6 @@
   "boundary_dev": "Pour les développeurs",
   "boundary_no_stack": "Aucune trace de pile disponible",
   "go_back": "Retour",
-  "dismiss_error": "Ignorer l'erreur",
   "not_found": "La ressource demandée est introuvable",
   "validation": "Entrée invalide : {detail}",
   "auth": "Échec de l'authentification -- vérifiez vos identifiants",

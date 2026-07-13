@@ -148,7 +148,12 @@ export function UseCaseDetailExpanded({
             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-interactive border border-card-border bg-secondary/50 text-foreground/85 hover:border-primary/40 hover:text-primary typo-caption cursor-pointer transition-colors"
             title={
               policy.aliasCount > 0
-                ? tx(t.agents.use_cases.rename_event_tooltip_count, { count: policy.aliasCount })
+                ? tx(
+                    policy.aliasCount === 1
+                      ? t.agents.use_cases.rename_event_tooltip_count_one
+                      : t.agents.use_cases.rename_event_tooltip_count_other,
+                    { count: policy.aliasCount },
+                  )
                 : t.agents.use_cases.rename_event_tooltip_empty
             }
           >

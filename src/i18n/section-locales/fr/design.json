@@ -1,6 +1,6 @@
 {
-  "no_persona": "Aucun agent sélectionné",
   "conversation_truncated": "Conversation tronquée pour des raisons de performance",
+  "no_persona": "Aucun agent sélectionné",
   "stages": {
     "assembling_label": "Assemblage du prompt",
     "assembling_desc": "Construction du prompt LLM à partir de la configuration et des instructions de l'agent",

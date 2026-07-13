@@ -723,7 +723,7 @@
     "om_expected_placeholder": "अपेक्षित मान",
     "commit_blocked_source_type": "यह स्रोत स्टूडियो से सहेजा नहीं जा सकता — पूर्णता श्रृंखलाओं के लिए स्रोत पर्सोना चुनें",
     "commit_needs_output_match": "यह रूट सहेजने के लिए JSONPath और अपेक्षित मान दर्ज करें",
-    "group_marketplace": "Marketplace",
+    "group_marketplace": "मार्केटप्लेस",
     "marketplace_empty": "अभी तक कोई सब्सक्राइब किया गया फ़ीड नहीं — पर्सोना में जोड़ने के लिए Marketplace में सब्सक्राइब करें।",
     "marketplace_source_hint": "जब यह फ़ीड कोई बदलाव रिपोर्ट करता है तो पर्सोना को चलाता है",
     "reflect_pick_agent": "एक एजेंट चुनें…",

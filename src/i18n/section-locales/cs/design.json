@@ -1,6 +1,6 @@
 {
-  "no_persona": "Není vybrána žádná persona",
   "conversation_truncated": "Tato konverzace dosáhla limitu zpráv. Starší zprávy byly odstraněny — zvaž začátek nové konverzace pro zachování kontextu.",
+  "no_persona": "Není vybrána žádná persona",
   "stages": {
     "assembling_label": "Příprava instrukcí",
     "assembling_desc": "Skládání instrukcí agenta z tvých nastavení",

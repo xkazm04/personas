@@ -3,7 +3,7 @@
   "sonnet": "Sonnet",
   "opus": "Opus",
   "effort_low": "Low",
-  "effort_medium": "Medium",
-  "effort_high": "High",
-  "effort_xhigh": "xhigh"
+  "effort_medium": "Moyen",
+  "effort_high": "Élevé",
+  "effort_xhigh": "Très élevé"
 }

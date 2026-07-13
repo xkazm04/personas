@@ -1,14 +1,13 @@
 {
-  "title": "نظرة عامة",
-  "no_output": "لا يوجد مخرجات بعد",
-  "no_background_jobs": "لا توجد مهام خلفية جارية أو حديثة",
-  "background_jobs_hint": "تظهر المهام هنا عند تشغيل تحويلات n8n أو اعتمادات القوالب أو توليد القوالب أو تصحيح الاستعلامات",
   "filters": {
     "start_date": "تاريخ البداية",
     "end_date": "تاريخ النهاية",
     "all_personas": "جميع الوكلاء"
   },
   "messages": {
+    "priority_high": "عالية",
+    "priority_normal": "عادية",
+    "priority_low": "منخفضة",
     "loading": "جارٍ تحميل الرسائل...",
     "no_messages": "لا توجد رسائل بعد",
     "switch_to_all": "جرّب التبديل إلى \\\\\\\"الكل\\\\\\\" لعرض جميع الرسائل",
@@ -20,9 +19,6 @@
       "created": "تاريخ الإنشاء"
     },
     "content_header": "المحتوى",
-    "priority_high": "عالية",
-    "priority_normal": "عادية",
-    "priority_low": "منخفضة",
     "filter_all": "الكل",
     "filter_unread": "غير مقروءة",
     "filter_high_priority": "أولوية عالية",
@@ -37,14 +33,6 @@
     "id_label": "المعرّف:",
     "confirm_delete_title": "تأكيد الحذف",
     "close_message": "إغلاق تفاصيل الرسالة"
-  },
-  "realtime": {
-    "idle": "خامل -- انقر على {action} لمحاكاة حركة المرور",
-    "test_flow": "اختبار التدفق",
-    "events_per_min": "أحداث/دقيقة",
-    "pending": "معلّق",
-    "success": "ناجح",
-    "in_window": "في النافذة"
   },
   "incidents": {
     "filters_active_aria": "{count} عوامل تصفية نشطة",
@@ -160,21 +148,25 @@
     "subtitle": "مراقبة صحة التنفيذ والتكاليف والشذوذات عبر جميع وكلائك",
     "alert_rules": "قواعد التنبيه",
     "refresh_metrics": "تحديث المقاييس",
-    "persona_disabled": "تم تعطيل الوكيل تلقائيًا",
-    "auto_resolved": "تم حل هذه المشكلة تلقائيًا",
-    "mark_resolved": "وضع علامة محلول",
-    "manual_fix": "(تم تطبيق إصلاح يدوي)",
     "metrics_unavailable": "المقاييس غير متوفرة -- البيانات المعروضة قد تكون قديمة",
-    "no_open_issues": "لا توجد مشاكل مفتوحة",
-    "run_analysis": "شغّل التحليل للتحقق من المشاكل.",
     "error_recovery": {
       "panel_loaded": "تم التحميل",
       "panel_failed": "فشل التحميل",
       "panel_stale": "قد تكون البيانات قديمة"
-    }
+    },
+    "persona_disabled": "تم تعطيل الوكيل تلقائيًا",
+    "auto_resolved": "تم حل هذه المشكلة تلقائيًا",
+    "mark_resolved": "وضع علامة محلول",
+    "manual_fix": "(تم تطبيق إصلاح يدوي)",
+    "no_open_issues": "لا توجد مشاكل مفتوحة",
+    "run_analysis": "شغّل التحليل للتحقق من المشاكل."
   },
   "memories": {
     "title": "الذكريات",
+    "delete_all": "حذف الكل",
+    "delete_all_confirm_title": "حذف جميع الذكريات؟",
+    "delete_all_confirm_body": "سيحذف هذا الإجراء {count} ذكريات بشكل دائم. لا يمكن التراجع عن هذا.",
+    "delete_all_confirm_cta": "حذف الكل",
     "created_success": "تم إنشاء الذكرى بنجاح",
     "no_memories": "لا توجد ذكريات بعد",
     "no_memories_hint": "عندما يعمل الوكلاء، يمكنهم تخزين ملاحظات ودروس قيّمة هنا.",
@@ -192,114 +184,35 @@
       "tags": "الوسوم",
       "tags_hint": "(مفصولة بفواصل)"
     },
-    "curation_schedule_button": "Schedule",
-    "curation_schedule_button_hint": "Schedule automatic memory curation",
-    "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
-    "curation_schedule_title": "Schedule memory curation",
-    "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
-    "curation_schedule_cron_label": "Schedule (cron)",
-    "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
-    "curation_schedule_presets_label": "Quick picks",
-    "preset_weekly_sunday": "Weekly · Sun 3am",
-    "preset_daily_3am": "Daily · 3am",
-    "preset_weekly_monday": "Weekly · Mon 9am",
-    "preset_monthly": "Monthly · 1st",
-    "curation_schedule_last_run_label": "Last run",
-    "curation_schedule_disabled_state": "Curation is disabled for this agent",
-    "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule",
-    "delete_all": "حذف الكل",
-    "delete_all_confirm_title": "حذف جميع الذكريات؟",
-    "delete_all_confirm_body": "سيحذف هذا الإجراء {count} ذكريات بشكل دائم. لا يمكن التراجع عن هذا.",
-    "delete_all_confirm_cta": "حذف الكل",
+    "curation_schedule_button": "جدولة",
+    "curation_schedule_button_hint": "جدولة تنقيح الذكريات تلقائيًا",
+    "curation_schedule_button_no_persona": "اختر وكيلاً لجدولة التنقيح",
+    "curation_schedule_title": "جدولة تنقيح الذكريات",
+    "curation_schedule_description": "تُجري هذه الميزة مراجعة تلقائية للذاكرة وفق جدول متكرر. تصل النتيجة كاقتراح يمكنك تطبيقه أو تجاهله — لن تُمسّ ذكرياتك الفعلية دون تأكيدك.",
+    "curation_schedule_cron_label": "الجدولة (cron)",
+    "curation_schedule_cron_hint": "تعبير cron مكوّن من 5 حقول: الدقائق، الساعات، يوم الشهر، الشهر، يوم الأسبوع.",
+    "curation_schedule_presets_label": "اختيارات سريعة",
+    "preset_weekly_sunday": "أسبوعياً · الأحد 3 صباحاً",
+    "preset_daily_3am": "يومياً · 3 صباحاً",
+    "preset_weekly_monday": "أسبوعياً · الاثنين 9 صباحاً",
+    "preset_monthly": "شهرياً · الأول",
+    "curation_schedule_last_run_label": "آخر تشغيل",
+    "curation_schedule_disabled_state": "التنقيح معطّل لهذا الوكيل",
+    "curation_schedule_disable": "تعطيل الجدولة",
+    "curation_schedule_save": "حفظ الجدولة",
     "reflect": "تأمّل",
     "reflect_hint": "دمج الذكريات المترابطة في رؤى دائمة — النتيجة اقتراح تراجعه قبل تغيير أي شيء",
     "reflect_pick_persona": "تأمّل ذكريات وكيل",
     "reflecting": "جارٍ التأمّل..."
   },
   "memory_review": {
-    "all_conflicts_resolved": "تم حل جميع التعارضات",
     "keep_prefix": "الاحتفاظ بـ “",
-    "keep_suffix": "”"
-  },
-  "executions": {
-    "title": "عمليات التنفيذ",
-    "loading": "جارٍ تحميل عمليات التنفيذ...",
-    "no_agents": "لم يتم إنشاء وكلاء بعد",
-    "create_first": "أنشئ أول وكيل لعرض نشاط التنفيذ هنا",
-    "no_executions": "لا توجد عمليات تنفيذ بعد",
-    "run_agent": "شغّل وكيلًا لعرض نشاط التنفيذ هنا"
-  },
-  "workflows": {
-    "loading": "جارٍ تحميل سير العمل...",
-    "title": "سير العمل",
-    "subtitle": "العمليات الخلفية النشطة والأخيرة في مساحة العمل",
-    "no_jobs": "لا توجد وظائف خلفية جارية أو حديثة",
-    "jobs_hint": "تظهر الوظائف هنا عند تشغيل تحويلات N8n، أو اعتماد القوالب، أو توليد القوالب، أو تصحيح الاستعلامات",
-    "all_types": "جميع الأنواع",
-    "no_filter_match": "لا توجد وظائف تطابق المرشحات الحالية",
-    "auto_refreshing": "تحديث تلقائي أثناء تشغيل الوظائف",
-    "cancel_failed": "فشل إلغاء وظيفة سير العمل"
-  },
-  "schedules": {
-    "title": "الجدول الزمني",
-    "subtitle": "عرض مجمّع لجميع عمليات التنفيذ المجدولة للوكلاء",
-    "engine_on": "المحرك مُفعَّل",
-    "engine_off": "المحرك مُعطَّل",
-    "engine_on_tooltip": "المُجدوِل يعمل -- انقر للإيقاف المؤقت",
-    "engine_off_tooltip": "المُجدوِل متوقف -- انقر للبدء",
-    "active_count": "{count} نشط",
-    "paused_count": "{count} متوقف مؤقتًا",
-    "view_grouped": "مجمّع",
-    "view_timeline": "خط زمني",
-    "triggers_fired": "مُشغّلات نُفّذت: ",
-    "events_processed": "أحداث مُعالجة: ",
-    "delivered": "تم التسليم: ",
-    "failed_label": "فشل: ",
-    "loading": "جارٍ تحميل الجداول...",
-    "empty": "لم يتم العثور على وكلاء مجدولين.",
-    "empty_hint": "أنشئ جدولًا أو مُشغّل استطلاع على أي وكيل لعرضه هنا.",
-    "group_overdue": "متأخر",
-    "group_15min": "خلال 15 دقيقة",
-    "group_1hour": "خلال ساعة",
-    "group_6hours": "خلال 6 ساعات",
-    "group_24hours": "خلال 24 ساعة",
-    "group_later": "لاحقًا",
-    "group_paused": "متوقف مؤقتًا / غير مجدول",
-    "run_now": "تشغيل الآن",
-    "change_frequency": "تغيير التردد",
-    "pause_schedule": "إيقاف الجدول مؤقتًا",
-    "resume_schedule": "استئناف الجدول",
-    "headless_badge": "بدون واجهة"
-  },
-  "frequency_editor": {
-    "title": "تغيير التردد",
-    "current": "الحالي: ",
-    "quick_presets": "إعدادات سريعة",
-    "cron_expression": "تعبير cron",
-    "interval_seconds": "الفترة (بالثواني)",
-    "previewing": "جارٍ المعاينة...",
-    "next_runs": "التشغيلات التالية",
-    "invalid_cron": "تعبير cron غير صالح"
-  },
-  "recovery": {
-    "agents_missed_one": "{count} وكيل فاته عمليات تنفيذ",
-    "agents_missed_other": "{count} وكلاء فاتتهم عمليات تنفيذ",
-    "total_skipped": "~{count} إجمالي التشغيلات المتخطّاة أثناء عدم اتصال التطبيق",
-    "missed_since": "{count} فائتة منذ {time}",
-    "every_interval": "كل {interval}",
-    "mark_for_recovery": "تحديد للاسترداد",
-    "recover": "استرداد",
-    "run_once": "تشغيل 1×",
-    "run_once_tooltip": "تشغيل مرة واحدة الآن",
-    "skip_tooltip": "تخطّي -- عدم الاسترداد",
-    "dismiss_all": "تجاهل الكل",
-    "recover_selected": "استرداد {count} محدد"
+    "keep_suffix": "”",
+    "all_conflicts_resolved": "تم حل جميع التعارضات"
   },
   "sla": {
     "title": "موثوقية الوكلاء SLA",
     "subtitle": "وقت التشغيل ومعدلات الفشل ومقاييس الإصلاح عبر أسطول الوكلاء",
-    "loading": "جارٍ تحميل بيانات SLA...",
     "no_data": "لا تتوفر بيانات تنفيذ.",
     "success_rate": "نسبة النجاح",
     "executions_summary": "{successful}/{total} تنفيذ",
@@ -312,6 +225,12 @@
     "daily_success_rate": "نسبة النجاح اليومية -- {days} يومًا",
     "per_agent": "موثوقية كل وكيل",
     "no_agent_data": "لم ينفّذ أي وكيل خلال هذه الفترة.",
+    "success_rate_tooltip": "معدّل النجاح = الناجحة / (الناجحة + الفاشلة). يتم استبعاد التشغيلات الملغاة لأن الإلغاء يتم بمبادرة من المستخدم ولا يعكس موثوقية النظام.",
+    "all_time_badge": "الإجمالي",
+    "open_issues_tooltip": "مشكلات الإصلاح المفتوحة حاليًا عبر جميع الوكلاء. هذه لقطة إجمالية لا تتغيّر حسب النطاق الزمني أعلاه — فالمشكلة التي فُتحت قبل أشهر ولا تزال مفتوحة، لا تزال معطّلة حتى الآن.",
+    "auto_healed_tooltip": "إجمالي المشكلات التي حلّها محرّك الإصلاح تلقائيًا طوال عمر هذا التثبيت. هذا الرقم إجمالي ولا يتغيّر حسب النطاق الزمني أعلاه.",
+    "windowed_tooltip": "مُحتسب على مدى النطاق الزمني المحدد أعلاه ({days} يومًا).",
+    "loading": "جارٍ تحميل بيانات SLA...",
     "metric_successful": "ناجح",
     "metric_failed": "فاشل",
     "metric_avg_latency": "متوسط زمن الاستجابة",
@@ -319,15 +238,20 @@
     "metric_cost": "التكلفة",
     "metric_mtbf": "MTBF",
     "metric_auto_healed": "إصلاح تلقائي",
-    "metric_cancelled": "ملغى",
-    "success_rate_tooltip": "معدّل النجاح = الناجحة / (الناجحة + الفاشلة). يتم استبعاد التشغيلات الملغاة لأن الإلغاء يتم بمبادرة من المستخدم ولا يعكس موثوقية النظام.",
-    "all_time_badge": "الإجمالي",
-    "open_issues_tooltip": "مشكلات الإصلاح المفتوحة حاليًا عبر جميع الوكلاء. هذه لقطة إجمالية لا تتغيّر حسب النطاق الزمني أعلاه — فالمشكلة التي فُتحت قبل أشهر ولا تزال مفتوحة، لا تزال معطّلة حتى الآن.",
-    "auto_healed_tooltip": "إجمالي المشكلات التي حلّها محرّك الإصلاح تلقائيًا طوال عمر هذا التثبيت. هذا الرقم إجمالي ولا يتغيّر حسب النطاق الزمني أعلاه.",
-    "windowed_tooltip": "مُحتسب على مدى النطاق الزمني المحدد أعلاه ({days} يومًا)."
+    "metric_cancelled": "ملغى"
   },
   "knowledge": {
     "title": "رسم المعرفة البياني",
+    "patterns_tab": "الأنماط",
+    "search_placeholder": "البحث عن الأنماط...",
+    "sort_aria": "فرز الأنماط",
+    "sort_default": "أهم الأنماط",
+    "sort_confidence": "أعلى ثقة",
+    "sort_runs": "الأكثر تشغيلاً",
+    "sort_recent": "الأحدث",
+    "needs_review": "بحاجة إلى مراجعة",
+    "pending_scope_hint": "اختر شخصية لمراجعة جميع التعليقات المعلّقة.",
+    "graph_tab": "الرسم البياني",
     "subtitle": "{count} نمط مُتعلَّم من سجلّ التنفيذ",
     "total_patterns": "إجمالي الأنماط",
     "tool_sequences": "تسلسلات الأدوات",
@@ -349,36 +273,13 @@
     "failures": "إخفاقات",
     "avg_cost": "متوسط التكلفة",
     "avg_duration": "متوسط المدة",
-    "pattern_data": "بيانات النمط",
-    "patterns_tab": "الأنماط",
-    "search_placeholder": "البحث عن الأنماط...",
-    "sort_aria": "فرز الأنماط",
-    "sort_default": "أهم الأنماط",
-    "sort_confidence": "أعلى ثقة",
-    "sort_runs": "الأكثر تشغيلاً",
-    "sort_recent": "الأحدث",
-    "needs_review": "بحاجة إلى مراجعة",
-    "pending_scope_hint": "اختر شخصية لمراجعة جميع التعليقات المعلّقة.",
-    "graph_tab": "الرسم البياني"
-  },
-  "conflicts": {
-    "dismissed": "تم تجاهل التعارض",
-    "resolved": "تم حل التعارض",
-    "resolve_failed": "فشل حل التعارض",
-    "conflict_count_one": "{count} تعارض",
-    "conflict_count_other": "{count} تعارضات"
+    "pattern_data": "بيانات النمط"
   },
   "dashboard": {
-    "title": "لوحة التحكم",
-    "subtitle": "نظرة عامة تشغيلية وحالة النظام",
     "greeting_morning": "صباح الخير",
     "greeting_afternoon": "مساء الخير",
     "greeting_evening": "مساء الخير",
     "default_user": "المشغّل",
-    "pending_reviews_prompt": "مراجعات معلّقة",
-    "requiring_attention": "تتطلب الانتباه.",
-    "empty_cta": "أنشئ وكيلك الأول للبدء.",
-    "pipeline_failed": "فشل تحميل {source}",
     "empty_title": "مرحباً بك في Personas",
     "empty_subtitle": "أنشئ وكيلك الأول لبدء رؤية مقاييس التنفيذ ومخططات الزيارات والنشاط هنا.",
     "create_persona": "إنشاء وكيل",
@@ -400,6 +301,12 @@
     "section_memory": "اقتراحات الذاكرة",
     "section_fleet": "تحسين الأسطول",
     "section_routines": "الروتين وتغييرات الخزينة",
+    "title": "لوحة التحكم",
+    "subtitle": "نظرة عامة تشغيلية وحالة النظام",
+    "pending_reviews_prompt": "مراجعات معلّقة",
+    "requiring_attention": "تتطلب الانتباه.",
+    "empty_cta": "أنشئ وكيلك الأول للبدء.",
+    "pipeline_failed": "فشل تحميل {source}",
     "instruments_subtitle": "قياس عن بُعد للأسطول",
     "memory_suggestions_count": "{count} اقتراحات",
     "pane_instruments": "الأدوات",
@@ -428,49 +335,6 @@
     "triage_tag_pipeline": "نظم",
     "triage_tag_review": "مرج",
     "vitals_subtitle_fleet": "صحة الأسطول"
-  },
-  "execution_metrics": {
-    "title": "مقاييس التنفيذ",
-    "total_executions": "إجمالي التنفيذات",
-    "total_cost": "إجمالي التكلفة",
-    "success_rate": "معدل النجاح",
-    "avg_latency": "متوسط التأخر",
-    "cost_anomalies": "شذوذات التكلفة المكتشفة",
-    "no_data": "لا توجد بيانات تنفيذ للفترة المحددة",
-    "cost_per_day": "التكلفة اليومية",
-    "executions_by_status": "التنفيذات حسب الحالة",
-    "success_rate_trend": "اتجاه معدل النجاح",
-    "latency_distribution": "توزيع التأخر (p50 / p95 / p99)",
-    "top_personas_by_cost": "أعلى الوكلاء تكلفةً",
-    "cost_spike": "ارتفاع في التكلفة",
-    "above_avg": "فوق المتوسط",
-    "top_executions": "أعلى التنفيذات:",
-    "executions_label": "{count} تنفيذ"
-  },
-  "execution_list": {
-    "recorded": "{count} تنفيذ مسجّل",
-    "recorded_one": "{count} تنفيذ مسجّل",
-    "list": "قائمة",
-    "metrics": "مقاييس",
-    "show_list": "إظهار قائمة التنفيذات",
-    "show_metrics": "إظهار لوحة المقاييس",
-    "showing": "عرض {count} من {total}",
-    "load_more": "تحميل المزيد",
-    "filter_all": "الكل",
-    "filter_running": "جارٍ",
-    "filter_completed": "مكتمل",
-    "filter_failed": "فاشل",
-    "col_persona": "الوكيل",
-    "col_status": "الحالة",
-    "col_duration": "المدة",
-    "col_started": "بدأ",
-    "col_id": "المعرّف",
-    "all_statuses": "جميع الحالات",
-    "all_personas": "جميع الوكلاء",
-    "no_agents": "لم يتم إنشاء وكلاء بعد",
-    "no_agents_hint": "أنشئ وكيلك الأول لرؤية نشاط التنفيذ هنا.",
-    "unknown_persona": "غير معروف",
-    "healing_retry": "إعادة محاولة الإصلاح #{count}"
   },
   "review": {
     "title": "المراجعات اليدوية",
@@ -553,44 +417,27 @@
   },
   "messages_view": {
     "title": "الرسائل",
-    "threads_subtitle": "{count} خيوط",
-    "threads_subtitle_one": "{count} خيط",
     "messages_subtitle": "{count} رسالة مسجّلة",
     "messages_subtitle_one": "{count} رسالة مسجّلة",
     "mock_message": "رسالة تجريبية",
     "seed_tooltip": "بذر رسالة تجريبية (للمطورين فقط)",
-    "flat_view": "عرض مسطّح",
-    "threaded_view": "عرض مترابط",
     "mark_all_read": "وسم الكل كمقروء",
-    "threads_of": "{count} من {total} خيط",
-    "no_threads": "لا توجد خيوط رسائل بعد",
-    "no_threads_hint": "تُنشأ الخيوط تلقائياً عندما ينتج الوكلاء رسائل أثناء التنفيذات.",
     "no_messages": "لا توجد رسائل بعد",
     "no_messages_hint": "تُنشأ الرسائل عندما تعمل الوكلاء وتتواصل مع بعضها.",
     "no_filter_match": "لا توجد رسائل تطابق المرشحات الحالية",
-    "loading_replies": "جارٍ تحميل الردود...",
     "load_more": "تحميل المزيد ({count} متبقٍّ)",
     "col_title": "العنوان",
-    "col_priority": "الأولوية",
-    "col_delivery": "التسليم",
-    "col_status": "الحالة",
     "col_created": "تاريخ الإنشاء",
     "all_priorities": "جميع الأولويات",
     "all_statuses": "جميع الحالات",
     "read": "مقروء",
     "unread": "غير مقروء",
-    "new_badge": "جديد",
-    "failed_count": "{count} فاشل",
-    "pending_count": "{count} معلّق",
-    "sent_count": "{count} مُرسَل",
     "message_label": "الرسالة",
     "from_label": "من {name}",
     "content_label": "المحتوى",
     "view_execution": "عرض التنفيذ",
-    "type_label": "النوع:",
     "delivery_status": "حالة التسليم",
     "no_channels": "لم يتم تكوين قنوات تسليم",
-    "confirm_delete": "تأكيد الحذف",
     "improve_agent": "تحسين الوكيل",
     "improvement_started": "بدأ التحسين -- ستتلقى إشعاراً عند الانتهاء",
     "what_could_be_better": "ما الذي يمكن تحسينه؟",
@@ -603,7 +450,6 @@
     "rating_label": "قيّم هذه الرسالة",
     "rating_star_aria": "تقييم {value} من 5",
     "rating_saved": "تم الحفظ · {stars}/5",
-    "rating_clear": "Clear rating",
     "rating_memory_title": "تقييم الرسالة: {stars}/5",
     "rating_memory_content_good": "قيّم المستخدم الناتج بـ {stars}/5 نجوم. حقّقت هذه الرسالة التوقعات — واصل اتّباع هذا الأسلوب.",
     "rating_memory_content_neutral": "قيّم المستخدم الناتج بـ {stars}/5 نجوم. تقييم محايد — راجع الرسالة بحثًا عن تحسينات طفيفة.",
@@ -621,7 +467,25 @@
     "delete_all": "حذف الكل",
     "delete_all_confirm_title": "حذف جميع الرسائل؟",
     "delete_all_confirm_body": "يؤدي هذا إلى حذف جميع الرسائل {count} نهائياً. لا يمكن التراجع عن هذا الإجراء.",
-    "delete_all_confirm_cta": "حذف الكل"
+    "delete_all_confirm_cta": "حذف الكل",
+    "threads_subtitle": "{count} خيوط",
+    "threads_subtitle_one": "{count} خيط",
+    "flat_view": "عرض مسطّح",
+    "threaded_view": "عرض مترابط",
+    "threads_of": "{count} من {total} خيط",
+    "no_threads": "لا توجد خيوط رسائل بعد",
+    "no_threads_hint": "تُنشأ الخيوط تلقائياً عندما ينتج الوكلاء رسائل أثناء التنفيذات.",
+    "loading_replies": "جارٍ تحميل الردود...",
+    "col_priority": "الأولوية",
+    "col_delivery": "التسليم",
+    "col_status": "الحالة",
+    "new_badge": "جديد",
+    "failed_count": "{count} فاشل",
+    "pending_count": "{count} معلّق",
+    "sent_count": "{count} مُرسَل",
+    "type_label": "النوع:",
+    "confirm_delete": "تأكيد الحذف",
+    "rating_clear": "مسح التقييم"
   },
   "events": {
     "title": "الأحداث",
@@ -631,7 +495,6 @@
     "seed_tooltip": "بذر حدث تجريبي (للمطورين فقط)",
     "search_placeholder": "بحث في الأحداث بالنوع أو المصدر أو الحمولة...",
     "loading_older": "جارٍ تحميل الأحداث الأقدم...",
-    "load_older": "تحميل الأحداث الأقدم",
     "no_events": "لا توجد أحداث بعد",
     "no_events_hint": "ستظهر هنا الأحداث من webhooks والتنفيذات وإجراءات الوكلاء عند تشغيل وكلائك.",
     "no_filter_match": "لا توجد أحداث تطابق المرشحات الحالية",
@@ -639,12 +502,6 @@
     "view_name_placeholder": "اسم العرض (مثل: 'Webhooks الفاشلة هذا الأسبوع')",
     "views_label": "العروض:",
     "delete_view": "حذف العرض",
-    "clear_filters": "مسح جميع المرشحات",
-    "col_trigger": "المُشغّل",
-    "col_persona": "الوكيل",
-    "col_event_name": "اسم الحدث",
-    "col_status": "الحالة",
-    "col_created": "تاريخ الإنشاء",
     "all_statuses": "جميع الحالات",
     "all_types": "جميع الأنواع",
     "all_triggers": "جميع المُشغّلات",
@@ -654,6 +511,13 @@
     "source_scheduled": "مجدوَل",
     "event_detail_title": "الحدث:",
     "event_detail_status": "الحالة:",
+    "load_older": "تحميل الأحداث الأقدم",
+    "clear_filters": "مسح جميع المرشحات",
+    "col_trigger": "المُشغّل",
+    "col_persona": "الوكيل",
+    "col_event_name": "اسم الحدث",
+    "col_status": "الحالة",
+    "col_created": "تاريخ الإنشاء",
     "event_id": "معرّف الحدث",
     "project": "المشروع",
     "source": "المصدر",
@@ -664,6 +528,7 @@
   "health": {
     "title": "صحة الوكلاء",
     "subtitle": "مراقبة الصحة في الوقت الفعلي عبر جميع الوكلاء",
+    "status_page": "صفحة الحالة",
     "all_healthy": "جميع الوكلاء بصحة جيدة",
     "all_healthy_hint": "كل وكيل مراقَب يعمل بشكل طبيعي",
     "no_agents": "لا توجد وكلاء بعد",
@@ -686,7 +551,6 @@
     "cascade_title": "تحليل التسلسل",
     "predictive_alerts": "التنبيهات التنبؤية",
     "no_alerts": "لا توجد تنبيهات تنبؤية في هذا الوقت",
-    "status_page": "صفحة الحالة",
     "operational": "تشغيلي",
     "degraded": "متدهور",
     "outage": "عطل"
@@ -731,58 +595,6 @@
     "hint_activity": "شغّل أو جدوِل هذا الوكيل بوتيرة أكبر لرفع النشاط.",
     "improve_agent": "حسّن هذا الوكيل"
   },
-  "analytics": {
-    "title": "التحليلات",
-    "subtitle": "أنماط واتجاهات التنفيذ",
-    "loading": "جارٍ تحميل التحليلات...",
-    "no_data": "لا توجد بيانات تحليلية",
-    "executions_over_time": "التنفيذات بمرور الوقت",
-    "success_failure": "النجاح مقابل الفشل",
-    "cost_breakdown": "تفصيل التكلفة",
-    "total_executions": "إجمالي التنفيذات",
-    "total_cost": "إجمالي التكلفة",
-    "avg_success_rate": "متوسط معدل النجاح",
-    "active_agents": "الوكلاء النشطون",
-    "saved_views": "العروض المحفوظة",
-    "create_view": "إنشاء عرض",
-    "health_issues": "مشاكل الصحة",
-    "rotation_overview": "نظرة عامة على التدوير"
-  },
-  "usage": {
-    "title": "الاستخدام",
-    "subtitle": "التكلفة واستهلاك الموارد",
-    "chart_error": "فشل تحميل المخطط",
-    "chart_error_hint": "حدث خطأ أثناء عرض هذا المخطط",
-    "try_again": "حاول مرة أخرى"
-  },
-  "cron_agents": {
-    "title": "الوكلاء المجدوَلة",
-    "subtitle": "الوكلاء التي تعمل وفق جداول تلقائية",
-    "no_agents": "لا توجد وكلاء مجدوَلة",
-    "no_agents_hint": "أضف مُشغّل cron لأي وكيل لرؤيته هنا"
-  },
-  "timeline": {
-    "title": "الجدول الزمني للنشاط",
-    "subtitle": "عرض موحّد لجميع نشاطات الوكلاء",
-    "no_activity": "لا يوجد نشاط حديث"
-  },
-  "realtime_viz": {
-    "title": "ناقل الأحداث",
-    "filter_events": "تصفية الأحداث",
-    "pause": "إيقاف مؤقت",
-    "resume": "استئناف",
-    "clear": "مسح",
-    "total_events": "إجمالي الأحداث",
-    "events_per_sec": "حدث/ثانية",
-    "active_lanes": "المسارات النشطة",
-    "event_type": "نوع الحدث",
-    "source": "المصدر",
-    "target": "الهدف",
-    "timestamp": "الطابع الزمني",
-    "payload": "الحمولة",
-    "saved_views": "العروض المحفوظة",
-    "save_current": "حفظ الحالي"
-  },
   "observability_extra": {
     "auto_refresh_on": "التحديث التلقائي مفعّل",
     "auto_refresh_off": "التحديث التلقائي معطّل",
@@ -810,21 +622,12 @@
     "error_rate": "معدل الأخطاء"
   },
   "widgets": {
-    "recent_activity": "النشاط الأخير",
     "view_all": "عرض الكل",
-    "total_traffic": "إجمالي الزيارات",
-    "total_errors": "إجمالي الأخطاء",
     "traffic_errors_chart": "الزيارات والأخطاء",
     "top_performers": "الأعلى أداءً",
-    "metric_help": "مساعدة المقاييس",
-    "how_calculated": "كيف يتم احتساب هذا؟",
-    "details": "التفاصيل",
     "messages_badge": "الرسائل",
     "reviews_badge": "المراجعات",
-    "executions_badge": "التنفيذات",
-    "success_badge": "النجاح",
     "alerts_badge": "التنبيهات",
-    "agents_badge": "الوكلاء",
     "pipelines_badge": "خطوط الأنابيب",
     "tool_performance": "أداء الأدوات",
     "tool_performance_subtitle": "زمن الاستجابة ومعدّل الأخطاء لكل أداة",
@@ -833,21 +636,21 @@
     "tool_performance_col_avg": "Avg",
     "tool_performance_col_max": "Max",
     "tool_performance_col_errors": "الأخطاء",
-    "tool_performance_empty": "No tool runs in this window",
     "tool_performance_unit_ms": "ms",
+    "recent_activity": "النشاط الأخير",
+    "total_traffic": "إجمالي الزيارات",
+    "total_errors": "إجمالي الأخطاء",
+    "tool_performance_empty": "لا توجد عمليات تشغيل للأدوات في هذه الفترة",
+    "metric_help": "مساعدة المقاييس",
+    "how_calculated": "كيف يتم احتساب هذا؟",
+    "details": "التفاصيل",
+    "executions_badge": "التنفيذات",
+    "success_badge": "النجاح",
+    "agents_badge": "الوكلاء",
     "range_days_ago": "قبل {days} أيام",
     "range_today": "اليوم",
     "range_yesterday": "أمس",
     "traffic_errors_chart_aria": "مخطط الحركة والأخطاء"
-  },
-  "cards": {
-    "fleet_optimization": "تحسين الأسطول",
-    "fleet_subtitle": "توصيات آلية لتحسين أداء الوكلاء",
-    "remote_control": "التحكم عن بعد",
-    "remote_subtitle": "إجراءات سريعة لإدارة الوكلاء",
-    "resume_setup": "متابعة الإعداد",
-    "resume_subtitle": "تابع من حيث توقفت",
-    "knowledge_hub": "مركز المعرفة"
   },
   "activity": {
     "title": "النشاط",
@@ -876,23 +679,16 @@
     "prev_failed": "فاشل سابق",
     "success_pct": "نسبة النجاح %",
     "prev_success_pct": "نسبة النجاح السابقة %",
-    "successful": "ناجح",
-    "all": "الكل",
-    "running": "جارٍ",
-    "all_statuses": "جميع الحالات",
     "showing": "عرض {count} من {total}",
     "load_more": "تحميل المزيد",
-    "col_status": "الحالة",
     "col_duration": "المدة",
     "col_started": "بدأ",
-    "col_id": "المعرّف",
     "no_agents": "لم يتم إنشاء وكلاء بعد",
     "no_agents_hint": "أنشئ وكيلك الأول لرؤية نشاط التنفيذ هنا.",
     "no_executions": "لا توجد تنفيذات بعد",
     "no_executions_hint": "شغّل وكيلاً لرؤية نشاط التنفيذ هنا.",
     "create_persona": "إنشاء وكيل",
     "from_templates": "من القوالب",
-    "execution_label": "التنفيذ",
     "unknown": "غير معروف",
     "value_section_title": "القيمة التجارية",
     "value_delivered_rate": "معدل تسليم القيمة",
@@ -900,9 +696,36 @@
     "value_delivered_count": "القيمة المسلمة",
     "all_models": "جميع النماذج",
     "col_model": "النموذج",
-    "col_cost": "التكلفة"
+    "col_cost": "التكلفة",
+    "successful": "ناجح",
+    "all": "الكل",
+    "running": "جارٍ",
+    "all_statuses": "جميع الحالات",
+    "col_status": "الحالة",
+    "col_id": "المعرّف",
+    "execution_label": "التنفيذ"
   },
   "analytics_dashboard": {
+    "issues_found": "تم اكتشاف {count} مشكلة",
+    "issues_found_one": "تم اكتشاف {count} مشكلة",
+    "auto_fixed": "إصلاح تلقائي",
+    "executions_scanned": "تم مسح {count} تنفيذ",
+    "executions_scanned_one": "تم مسح {count} تنفيذ",
+    "credential_rotation": "تدوير بيانات الاعتماد",
+    "no_rotation_policies": "لا توجد سياسات تدوير",
+    "no_rotation_hint": "اضبط التدوير على بيانات الاعتماد في الخزنة.",
+    "active_count": "{count} نشط",
+    "soon_count": "{count} قريباً",
+    "issues_count": "{count} مشكلة",
+    "issues_count_one": "{count} مشكلة",
+    "fail_count": "{count}x فشل",
+    "rotation_manage_all": "إدارة",
+    "rotation_open_in_connections": "فتح في المفاتيح",
+    "rotation_started_for": "بدأ التدوير لـ{name}",
+    "rotation_failed_for": "فشل التدوير لـ{name}",
+    "rotation_due_now": "مستحق الآن",
+    "rotation_countdown_days_hours": "{days}ي {hours}س",
+    "rotation_countdown_hours": "{hours}س",
     "title": "التحليلات",
     "subtitle": "تحليلات موحّدة للتكلفة والتنفيذ واستخدام الأدوات",
     "metrics_unavailable": "المقاييس غير متاحة",
@@ -937,11 +760,6 @@
     "run_analysis": "تشغيل التحليل",
     "analyzing": "جارٍ التحليل...",
     "analysis_complete": "اكتمل التحليل",
-    "issues_found": "تم اكتشاف {count} مشكلة",
-    "issues_found_one": "تم اكتشاف {count} مشكلة",
-    "auto_fixed": "إصلاح تلقائي",
-    "executions_scanned": "تم مسح {count} تنفيذ",
-    "executions_scanned_one": "تم مسح {count} تنفيذ",
     "no_open_issues": "لا توجد مشاكل مفتوحة",
     "run_analysis_hint": "شغّل التحليل للتحقق من المشاكل.",
     "filter_all": "الكل",
@@ -951,29 +769,7 @@
     "breaker": "قاطع",
     "fixed": "مُصلَح",
     "retry": "إعادة المحاولة",
-    "credential_rotation": "تدوير بيانات الاعتماد",
-    "no_rotation_policies": "لا توجد سياسات تدوير",
-    "no_rotation_hint": "اضبط التدوير على بيانات الاعتماد في الخزنة.",
-    "active_count": "{count} نشط",
-    "soon_count": "{count} قريباً",
-    "issues_count": "{count} مشكلة",
-    "issues_count_one": "{count} مشكلة",
-    "never": "أبداً",
-    "fail_count": "{count}x فشل",
-    "rotation_manage_all": "إدارة",
-    "rotation_open_in_connections": "فتح في المفاتيح",
-    "rotation_started_for": "بدأ التدوير لـ{name}",
-    "rotation_failed_for": "فشل التدوير لـ{name}",
-    "rotation_due_now": "مستحق الآن",
-    "rotation_countdown_days_hours": "{days}ي {hours}س",
-    "rotation_countdown_hours": "{hours}س"
-  },
-  "saved_views": {
-    "errors": {
-      "load_failed_message": "Couldn't load your saved views.",
-      "save_failed_message": "Couldn't save this view.",
-      "delete_failed_message": "Couldn't delete this view."
-    }
+    "never": "أبداً"
   },
   "cron": {
     "title": "وكلاء Cron",
@@ -993,15 +789,6 @@
     "every_interval": "كل {interval}",
     "next": "التالي",
     "last": "الأخير"
-  },
-  "activity_timeline": {
-    "title": "الجدول الزمني للنشاط",
-    "subtitle": "{events} حدث، {messages} رسالة",
-    "all": "الكل",
-    "events": "الأحداث",
-    "messages": "الرسائل",
-    "no_activity": "لا يوجد نشاط بعد",
-    "high": "مرتفع"
   },
   "sla_card": {
     "successful": "ناجح",
@@ -1030,13 +817,6 @@
     "pending": "معلّق",
     "success": "نجاح",
     "in_window": "في النافذة",
-    "test_flow": "اختبار التدفق",
-    "testing_flow": "جارٍ اختبار التدفق...",
-    "test_event_flow": "اختبار تدفق الأحداث",
-    "resume": "استئناف",
-    "pause": "إيقاف مؤقت",
-    "resume_stream": "استئناف البث المباشر",
-    "pause_stream": "إيقاف البث المباشر مؤقتاً",
     "search_events": "بحث في الأحداث...",
     "filter_type": "النوع",
     "filter_status": "الحالة",
@@ -1047,6 +827,17 @@
     "no_saved_views": "لا توجد عروض محفوظة بعد",
     "save_current_filter": "حفظ المرشح الحالي",
     "view_name_placeholder": "اسم العرض...",
+    "close_event_details": "إغلاق تفاصيل الحدث",
+    "reset_to_start": "إعادة تعيين إلى البداية",
+    "cycle_speed": "تدوير سرعة التشغيل",
+    "exit_replay": "الخروج من إعادة التشغيل",
+    "test_flow": "اختبار التدفق",
+    "testing_flow": "جارٍ اختبار التدفق...",
+    "test_event_flow": "اختبار تدفق الأحداث",
+    "resume": "استئناف",
+    "pause": "إيقاف مؤقت",
+    "resume_stream": "استئناف البث المباشر",
+    "pause_stream": "إيقاف البث المباشر مؤقتاً",
     "delete_saved_view": "حذف العرض المحفوظ",
     "event_log": "سجل الأحداث",
     "entries": "{count} مدخلة",
@@ -1060,10 +851,6 @@
     "id_label": "المعرّف",
     "error_label": "الخطأ",
     "payload_label": "الحمولة",
-    "close_event_details": "إغلاق تفاصيل الحدث",
-    "reset_to_start": "إعادة تعيين إلى البداية",
-    "cycle_speed": "تدوير سرعة التشغيل",
-    "exit_replay": "الخروج من إعادة التشغيل",
     "galaxy": "مجرّة",
     "galaxy_desc": "كوكبة مدارية مع مسارات المذنبات",
     "lanes": "مسارات",
@@ -1187,36 +974,15 @@
     "rejected": "{count} مرفوض",
     "undecided": "{count} غير محدد"
   },
-  "widgets_extra": {
-    "execution_health_chart": "صحة التنفيذ",
-    "cost_over_time_chart": "التكلفة بمرور الوقت",
-    "successful": "ناجح",
-    "failed": "فاشل",
-    "close": "إغلاق",
-    "dismiss_help": "رفض المساعدة",
-    "skip_tour": "تخطي الجولة بالكامل"
-  },
-  "remote_control_card": {
-    "connect_to_desktop": "الاتصال بسطح المكتب",
-    "connect_description": "شغّل الوكلاء باستخدام CLI سطح المكتب عبر التحكم عن بعد. شغّل {command} على جهازك، ثم اتصل هنا.",
-    "requires_subscription": "يتطلب اشتراك Claude Pro أو Max"
-  },
-  "resume_setup_card": {
-    "resume_tour": "استئناف الجولة",
-    "left_off_at": "توقفت عند",
-    "steps_completed": "{completed}/{total} خطوات مكتملة",
-    "skip_tour": "تخطي الجولة بالكامل",
-    "continue_label": "متابعة"
-  },
   "detail_modal": {
     "close": "إغلاق"
   },
   "metric_help_popover": {
-    "help_for": "مساعدة لـ {label}",
     "dismiss_help": "رفض المساعدة",
     "healthy": "سليم:",
     "click": "انقر:",
-    "got_it": "فهمت، لا تُظهر مجدداً"
+    "got_it": "فهمت، لا تُظهر مجدداً",
+    "help_for": "مساعدة لـ {label}"
   },
   "install_button": {
     "install_node": "تثبيت Node.js",
@@ -1241,9 +1007,9 @@
     "disconnect": "قطع الاتصال"
   },
   "metrics_cards": {
+    "top_executions": "أعلى التنفيذات:",
     "cost_spike": "ارتفاع في التكلفة",
-    "above_avg": "فوق المتوسط",
-    "top_executions": "أعلى التنفيذات:"
+    "above_avg": "فوق المتوسط"
   },
   "event_log_item": {
     "event_id": "معرّف الحدث",
@@ -1251,10 +1017,10 @@
     "source": "المصدر",
     "processed": "تمت المعالجة",
     "event_data": "بيانات الحدث",
+    "error": "خطأ",
     "copy_event_data": "نسخ بيانات الحدث",
     "copied": "تم النسخ",
     "copy": "نسخ",
-    "error": "خطأ",
     "system": "النظام"
   },
   "burn_rate_extra": {
@@ -1339,21 +1105,14 @@
     "all_caught_up": "أحسنت",
     "no_pending": "لا توجد مراجعات معلّقة للمعالجة.",
     "queue": "قائمة الانتظار",
-    "clear": "مسح",
     "clear_all_verdicts": "مسح جميع الأحكام",
     "quick_actions": "إجراءات سريعة",
     "reject_all": "رفض الكل",
     "accept_all": "قبول الكل",
     "retry_with_changes": "إعادة المحاولة مع تغييرات",
-    "video_not_supported": "متصفحك لا يدعم تشغيل الفيديو.",
-    "carry_out_hint": "يوافق على المراجعة ويشغّل الشخصية لتنفيذها"
-  },
-  "bulk_action_bar": {
-    "pending_reviews_selected_one": "{count} مراجعة معلقة محددة",
-    "pending_reviews_selected_other": "{count} مراجعات معلقة محددة"
-  },
-  "review_inbox": {
-    "drag_to_resize": "اسحب لتغيير الحجم"
+    "carry_out_hint": "يوافق على المراجعة ويشغّل الشخصية لتنفيذها",
+    "clear": "مسح",
+    "video_not_supported": "متصفحك لا يدعم تشغيل الفيديو."
   },
   "memory_card": {
     "confirm": "تأكيد",
@@ -1375,9 +1134,9 @@
     "agent": "الوكيل",
     "title": "العنوان",
     "category": "الفئة",
-    "priority": "الأولوية",
     "tags": "الوسوم",
-    "created": "تاريخ الإنشاء"
+    "created": "تاريخ الإنشاء",
+    "priority": "الأولوية"
   },
   "review_results": {
     "title": "مراجعة الذاكرة بالذكاء الاصطناعي",
@@ -1389,8 +1148,8 @@
     "baseline_label": "الخط الأساسي:",
     "correlating": "جارٍ الربط بالأحداث...",
     "likely_root_causes": "الأسباب الجذرية المحتملة",
-    "correlated_events": "الأحداث المترابطة",
-    "no_correlated": "لم يتم العثور على أحداث مترابطة في نافذة ±24 ساعة."
+    "no_correlated": "لم يتم العثور على أحداث مترابطة في نافذة ±24 ساعة.",
+    "correlated_events": "الأحداث المترابطة"
   },
   "healing_issue_modal": {
     "issue_resolved": "تم حل المشكلة",
@@ -1399,13 +1158,13 @@
     "copied": "تم النسخ",
     "copy_fix": "نسخ الإصلاح",
     "persona_auto_disabled": "تم تعطيل الوكيل تلقائياً",
-    "persona_auto_disabled_desc": "تم تعطيل هذا الوكيل تلقائياً بعد 5 إخفاقات متتالية. راجع نمط الخطأ أدناه وأعد التفعيل يدوياً بعد حل السبب الجذري.",
     "marking_resolved_note": "وسم المشكلة كمحلولة يعني أنك عالجتها خارج نظام الإصلاح.",
-    "retry_in_progress": "إعادة المحاولة جارية — ستتحدث الحالة عند الاكتمال",
     "auto_resolved": "تم حل هذه المشكلة تلقائياً",
-    "close": "إغلاق",
     "resolving": "جارٍ الحل…",
     "mark_resolved": "وسم كمحلول",
+    "persona_auto_disabled_desc": "تم تعطيل هذا الوكيل تلقائياً بعد 5 إخفاقات متتالية. راجع نمط الخطأ أدناه وأعد التفعيل يدوياً بعد حل السبب الجذري.",
+    "retry_in_progress": "إعادة المحاولة جارية — ستتحدث الحالة عند الاكتمال",
+    "close": "إغلاق",
     "retrying_badge": "إعادة المحاولة",
     "auto_fixed_badge": "تم الإصلاح تلقائياً",
     "retry_in_progress_badge": "إعادة المحاولة قيد التنفيذ",
@@ -1418,6 +1177,9 @@
     "run_analysis": "تشغيل التحليل",
     "no_open_issues": "لا توجد مشاكل مفتوحة",
     "run_analysis_hint": "شغّل التحليل للتحقق من المشاكل.",
+    "healing_audit_log": "سجل مراجعة الإصلاح",
+    "no_silent_failures": "لم يتم تسجيل إخفاقات صامتة.",
+    "analysis_complete_prefix": "اكتمل التحليل:",
     "ai_healing_title": "المعالجة بالذكاء الاصطناعي",
     "diagnosis_label": "التشخيص:",
     "fixes_applied": "الإصلاحات المطبقة",
@@ -1433,10 +1195,7 @@
     "execution_label": "التنفيذ:",
     "issue_marked_as": "تم وسم هذه المشكلة كـ",
     "retry_in_progress": "إعادة المحاولة قيد التنفيذ — ستُحدَّث الحالة عند الاكتمال.",
-    "resolve_issue_title": "وسم المشكلة كمحلولة",
-    "healing_audit_log": "سجل مراجعة الإصلاح",
-    "no_silent_failures": "لم يتم تسجيل إخفاقات صامتة.",
-    "analysis_complete_prefix": "اكتمل التحليل:"
+    "resolve_issue_title": "وسم المشكلة كمحلولة"
   },
   "healing_timeline": {
     "loading": "جارٍ تحميل الجدول الزمني...",
@@ -1486,13 +1245,6 @@
     "event_id_label": "معرّف الحدث",
     "broadcast": "(بث)"
   },
-  "event_bus_overlay": {
-    "earlier_events_not_shown_one": "{count} حدث سابق غير معروض",
-    "earlier_events_not_shown_other": "{count} أحداث سابقة غير معروضة"
-  },
-  "event_bus_filter": {
-    "search_placeholder": "بحث الأحداث..."
-  },
   "realtime_stats": {
     "events_per_min": "أحداث/دقيقة",
     "pending": "قيد الانتظار",
@@ -1518,32 +1270,13 @@
     "heartbeats_btn": "نبضات",
     "reliability_btn": "الموثوقية"
   },
-  "crash_logs": {
-    "title": "سجلات الأعطال",
-    "no_logs": "لم يتم تسجيل أي سجلات أعطال.",
-    "component_stack_separator": "--- Component Stack ---"
-  },
   "popup_fields": {
     "sign_up_free_at": "اشترك مجاناً على",
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": "، ثم انسخ مفتاح API من الإعدادات. يُخزَّن هذا المفتاح محلياً ويُشارَك بين جميع الوكلاء."
   },
-  "events_list": {
-    "save_view_tooltip": "حفظ المرشحات الحالية كعرض",
-    "clear_filters_tooltip": "مسح جميع المرشحات"
-  },
-  "dashboard_home": {
-    "you_have": "لديك"
-  },
-  "fleet_optimization_card": {
-    "title": "تحسين الأسطول"
-  },
   "usage_filters": {
     "time_range_label": "النطاق الزمني"
-  },
-  "day_range_picker": {
-    "start_date": "تاريخ البدء",
-    "end_date": "تاريخ الانتهاء"
   },
   "healing_summary": {
     "auto_fixed_this_week": "تم الإصلاح تلقائياً هذا الأسبوع",
@@ -1554,13 +1287,13 @@
     "subtitle": "التشغيلات المجدولة القادمة",
     "empty": "لا توجد عمليات تشغيل مجدولة.",
     "never_fired": "بانتظار أول تشغيل",
-    "view_all": "View schedules"
+    "view_all": "عرض الجداول"
   },
   "vault_recent_changes": {
     "title": "تغييرات الخزنة",
     "subtitle": "مزامنة Obsidian الأخيرة",
     "empty": "لا يوجد نشاط مزامنة حديث.",
-    "view_all": "View sync log"
+    "view_all": "عرض سجل المزامنة"
   },
   "heatmap": {
     "title_persona": "النشاط خلال العام الماضي",
@@ -1832,5 +1565,272 @@
     "source_scanner": "الماسحات",
     "tokens": "الرموز",
     "total_cost": "التكلفة الإجمالية"
+  },
+  "title": "نظرة عامة",
+  "no_output": "لا يوجد مخرجات بعد",
+  "no_background_jobs": "لا توجد مهام خلفية جارية أو حديثة",
+  "background_jobs_hint": "تظهر المهام هنا عند تشغيل تحويلات n8n أو اعتمادات القوالب أو توليد القوالب أو تصحيح الاستعلامات",
+  "realtime": {
+    "idle": "خامل -- انقر على {action} لمحاكاة حركة المرور",
+    "test_flow": "اختبار التدفق",
+    "events_per_min": "أحداث/دقيقة",
+    "pending": "معلّق",
+    "success": "ناجح",
+    "in_window": "في النافذة"
+  },
+  "executions": {
+    "title": "عمليات التنفيذ",
+    "loading": "جارٍ تحميل عمليات التنفيذ...",
+    "no_agents": "لم يتم إنشاء وكلاء بعد",
+    "create_first": "أنشئ أول وكيل لعرض نشاط التنفيذ هنا",
+    "no_executions": "لا توجد عمليات تنفيذ بعد",
+    "run_agent": "شغّل وكيلًا لعرض نشاط التنفيذ هنا"
+  },
+  "workflows": {
+    "loading": "جارٍ تحميل سير العمل...",
+    "title": "سير العمل",
+    "subtitle": "العمليات الخلفية النشطة والأخيرة في مساحة العمل",
+    "no_jobs": "لا توجد وظائف خلفية جارية أو حديثة",
+    "jobs_hint": "تظهر الوظائف هنا عند تشغيل تحويلات N8n، أو اعتماد القوالب، أو توليد القوالب، أو تصحيح الاستعلامات",
+    "all_types": "جميع الأنواع",
+    "no_filter_match": "لا توجد وظائف تطابق المرشحات الحالية",
+    "auto_refreshing": "تحديث تلقائي أثناء تشغيل الوظائف",
+    "cancel_failed": "فشل إلغاء وظيفة سير العمل"
+  },
+  "schedules": {
+    "title": "الجدول الزمني",
+    "subtitle": "عرض مجمّع لجميع عمليات التنفيذ المجدولة للوكلاء",
+    "engine_on": "المحرك مُفعَّل",
+    "engine_off": "المحرك مُعطَّل",
+    "engine_on_tooltip": "المُجدوِل يعمل -- انقر للإيقاف المؤقت",
+    "engine_off_tooltip": "المُجدوِل متوقف -- انقر للبدء",
+    "active_count": "{count} نشط",
+    "paused_count": "{count} متوقف مؤقتًا",
+    "view_grouped": "مجمّع",
+    "view_timeline": "خط زمني",
+    "triggers_fired": "مُشغّلات نُفّذت: ",
+    "events_processed": "أحداث مُعالجة: ",
+    "delivered": "تم التسليم: ",
+    "failed_label": "فشل: ",
+    "loading": "جارٍ تحميل الجداول...",
+    "empty": "لم يتم العثور على وكلاء مجدولين.",
+    "empty_hint": "أنشئ جدولًا أو مُشغّل استطلاع على أي وكيل لعرضه هنا.",
+    "group_overdue": "متأخر",
+    "group_15min": "خلال 15 دقيقة",
+    "group_1hour": "خلال ساعة",
+    "group_6hours": "خلال 6 ساعات",
+    "group_24hours": "خلال 24 ساعة",
+    "group_later": "لاحقًا",
+    "group_paused": "متوقف مؤقتًا / غير مجدول",
+    "run_now": "تشغيل الآن",
+    "change_frequency": "تغيير التردد",
+    "pause_schedule": "إيقاف الجدول مؤقتًا",
+    "resume_schedule": "استئناف الجدول",
+    "headless_badge": "بدون واجهة"
+  },
+  "frequency_editor": {
+    "title": "تغيير التردد",
+    "current": "الحالي: ",
+    "quick_presets": "إعدادات سريعة",
+    "cron_expression": "تعبير cron",
+    "interval_seconds": "الفترة (بالثواني)",
+    "previewing": "جارٍ المعاينة...",
+    "next_runs": "التشغيلات التالية",
+    "invalid_cron": "تعبير cron غير صالح"
+  },
+  "recovery": {
+    "agents_missed_one": "{count} وكيل فاته عمليات تنفيذ",
+    "agents_missed_other": "{count} وكلاء فاتتهم عمليات تنفيذ",
+    "total_skipped": "~{count} إجمالي التشغيلات المتخطّاة أثناء عدم اتصال التطبيق",
+    "missed_since": "{count} فائتة منذ {time}",
+    "every_interval": "كل {interval}",
+    "mark_for_recovery": "تحديد للاسترداد",
+    "recover": "استرداد",
+    "run_once": "تشغيل 1×",
+    "run_once_tooltip": "تشغيل مرة واحدة الآن",
+    "skip_tooltip": "تخطّي -- عدم الاسترداد",
+    "dismiss_all": "تجاهل الكل",
+    "recover_selected": "استرداد {count} محدد"
+  },
+  "conflicts": {
+    "dismissed": "تم تجاهل التعارض",
+    "resolved": "تم حل التعارض",
+    "resolve_failed": "فشل حل التعارض",
+    "conflict_count_one": "{count} تعارض",
+    "conflict_count_other": "{count} تعارضات"
+  },
+  "execution_metrics": {
+    "title": "مقاييس التنفيذ",
+    "total_executions": "إجمالي التنفيذات",
+    "total_cost": "إجمالي التكلفة",
+    "success_rate": "معدل النجاح",
+    "avg_latency": "متوسط التأخر",
+    "cost_anomalies": "شذوذات التكلفة المكتشفة",
+    "no_data": "لا توجد بيانات تنفيذ للفترة المحددة",
+    "cost_per_day": "التكلفة اليومية",
+    "executions_by_status": "التنفيذات حسب الحالة",
+    "success_rate_trend": "اتجاه معدل النجاح",
+    "latency_distribution": "توزيع التأخر (p50 / p95 / p99)",
+    "top_personas_by_cost": "أعلى الوكلاء تكلفةً",
+    "cost_spike": "ارتفاع في التكلفة",
+    "above_avg": "فوق المتوسط",
+    "top_executions": "أعلى التنفيذات:",
+    "executions_label": "{count} تنفيذ"
+  },
+  "execution_list": {
+    "recorded": "{count} تنفيذ مسجّل",
+    "recorded_one": "{count} تنفيذ مسجّل",
+    "list": "قائمة",
+    "metrics": "مقاييس",
+    "show_list": "إظهار قائمة التنفيذات",
+    "show_metrics": "إظهار لوحة المقاييس",
+    "showing": "عرض {count} من {total}",
+    "load_more": "تحميل المزيد",
+    "filter_all": "الكل",
+    "filter_running": "جارٍ",
+    "filter_completed": "مكتمل",
+    "filter_failed": "فاشل",
+    "col_persona": "الوكيل",
+    "col_status": "الحالة",
+    "col_duration": "المدة",
+    "col_started": "بدأ",
+    "col_id": "المعرّف",
+    "all_statuses": "جميع الحالات",
+    "all_personas": "جميع الوكلاء",
+    "no_agents": "لم يتم إنشاء وكلاء بعد",
+    "no_agents_hint": "أنشئ وكيلك الأول لرؤية نشاط التنفيذ هنا.",
+    "unknown_persona": "غير معروف",
+    "healing_retry": "إعادة محاولة الإصلاح #{count}"
+  },
+  "analytics": {
+    "title": "التحليلات",
+    "subtitle": "أنماط واتجاهات التنفيذ",
+    "loading": "جارٍ تحميل التحليلات...",
+    "no_data": "لا توجد بيانات تحليلية",
+    "executions_over_time": "التنفيذات بمرور الوقت",
+    "success_failure": "النجاح مقابل الفشل",
+    "cost_breakdown": "تفصيل التكلفة",
+    "total_executions": "إجمالي التنفيذات",
+    "total_cost": "إجمالي التكلفة",
+    "avg_success_rate": "متوسط معدل النجاح",
+    "active_agents": "الوكلاء النشطون",
+    "saved_views": "العروض المحفوظة",
+    "create_view": "إنشاء عرض",
+    "health_issues": "مشاكل الصحة",
+    "rotation_overview": "نظرة عامة على التدوير"
+  },
+  "usage": {
+    "title": "الاستخدام",
+    "subtitle": "التكلفة واستهلاك الموارد",
+    "chart_error": "فشل تحميل المخطط",
+    "chart_error_hint": "حدث خطأ أثناء عرض هذا المخطط",
+    "try_again": "حاول مرة أخرى"
+  },
+  "cron_agents": {
+    "title": "الوكلاء المجدوَلة",
+    "subtitle": "الوكلاء التي تعمل وفق جداول تلقائية",
+    "no_agents": "لا توجد وكلاء مجدوَلة",
+    "no_agents_hint": "أضف مُشغّل cron لأي وكيل لرؤيته هنا"
+  },
+  "timeline": {
+    "title": "الجدول الزمني للنشاط",
+    "subtitle": "عرض موحّد لجميع نشاطات الوكلاء",
+    "no_activity": "لا يوجد نشاط حديث"
+  },
+  "realtime_viz": {
+    "title": "ناقل الأحداث",
+    "filter_events": "تصفية الأحداث",
+    "pause": "إيقاف مؤقت",
+    "resume": "استئناف",
+    "clear": "مسح",
+    "total_events": "إجمالي الأحداث",
+    "events_per_sec": "حدث/ثانية",
+    "active_lanes": "المسارات النشطة",
+    "event_type": "نوع الحدث",
+    "source": "المصدر",
+    "target": "الهدف",
+    "timestamp": "الطابع الزمني",
+    "payload": "الحمولة",
+    "saved_views": "العروض المحفوظة",
+    "save_current": "حفظ الحالي"
+  },
+  "cards": {
+    "fleet_optimization": "تحسين الأسطول",
+    "fleet_subtitle": "توصيات آلية لتحسين أداء الوكلاء",
+    "remote_control": "التحكم عن بعد",
+    "remote_subtitle": "إجراءات سريعة لإدارة الوكلاء",
+    "resume_setup": "متابعة الإعداد",
+    "resume_subtitle": "تابع من حيث توقفت",
+    "knowledge_hub": "مركز المعرفة"
+  },
+  "saved_views": {
+    "errors": {
+      "load_failed_message": "تعذّر تحميل عروضك المحفوظة.",
+      "save_failed_message": "تعذّر حفظ هذا العرض.",
+      "delete_failed_message": "تعذّر حذف هذا العرض."
+    }
+  },
+  "activity_timeline": {
+    "title": "الجدول الزمني للنشاط",
+    "subtitle": "{events} حدث، {messages} رسالة",
+    "all": "الكل",
+    "events": "الأحداث",
+    "messages": "الرسائل",
+    "no_activity": "لا يوجد نشاط بعد",
+    "high": "مرتفع"
+  },
+  "widgets_extra": {
+    "execution_health_chart": "صحة التنفيذ",
+    "cost_over_time_chart": "التكلفة بمرور الوقت",
+    "successful": "ناجح",
+    "failed": "فاشل",
+    "close": "إغلاق",
+    "dismiss_help": "رفض المساعدة",
+    "skip_tour": "تخطي الجولة بالكامل"
+  },
+  "remote_control_card": {
+    "connect_to_desktop": "الاتصال بسطح المكتب",
+    "connect_description": "شغّل الوكلاء باستخدام CLI سطح المكتب عبر التحكم عن بعد. شغّل {command} على جهازك، ثم اتصل هنا.",
+    "requires_subscription": "يتطلب اشتراك Claude Pro أو Max"
+  },
+  "resume_setup_card": {
+    "resume_tour": "استئناف الجولة",
+    "left_off_at": "توقفت عند",
+    "steps_completed": "{completed}/{total} خطوات مكتملة",
+    "skip_tour": "تخطي الجولة بالكامل",
+    "continue_label": "متابعة"
+  },
+  "bulk_action_bar": {
+    "pending_reviews_selected_one": "{count} مراجعة معلقة محددة",
+    "pending_reviews_selected_other": "{count} مراجعات معلقة محددة"
+  },
+  "review_inbox": {
+    "drag_to_resize": "اسحب لتغيير الحجم"
+  },
+  "event_bus_overlay": {
+    "earlier_events_not_shown_one": "{count} حدث سابق غير معروض",
+    "earlier_events_not_shown_other": "{count} أحداث سابقة غير معروضة"
+  },
+  "event_bus_filter": {
+    "search_placeholder": "بحث الأحداث..."
+  },
+  "crash_logs": {
+    "title": "سجلات الأعطال",
+    "no_logs": "لم يتم تسجيل أي سجلات أعطال.",
+    "component_stack_separator": "--- مكدس المكوّنات ---"
+  },
+  "events_list": {
+    "save_view_tooltip": "حفظ المرشحات الحالية كعرض",
+    "clear_filters_tooltip": "مسح جميع المرشحات"
+  },
+  "dashboard_home": {
+    "you_have": "لديك"
+  },
+  "fleet_optimization_card": {
+    "title": "تحسين الأسطول"
+  },
+  "day_range_picker": {
+    "start_date": "تاريخ البدء",
+    "end_date": "تاريخ الانتهاء"
   }
 }

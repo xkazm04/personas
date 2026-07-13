@@ -1,4 +1,12 @@
 {
+  "install_all": "Установить все зависимости",
+  "log_disk_usage": "Дисковое пространство журналов",
+  "log_disk_tracing": "Журналы трассировки",
+  "log_disk_crashes": "Отчёты о сбоях",
+  "log_disk_files_count": "Файлов: {count}",
+  "log_disk_retention_hint": "Ежедневная ротация, не более {limit} файлов",
+  "log_disk_crash_retention_hint": "Не более {limit} последних отчётов",
+  "log_disk_unavailable": "Статистика по каталогу журналов недоступна.",
   "title": "Проверки системы",
   "subtitle": "Проверка готовности вашего окружения",
   "rerun": "Перезапустить проверки",
@@ -19,7 +27,6 @@
   "no_crash_logs": "Сбои не зафиксированы.",
   "crash_auto_cred": "Сессия автоматических учётных данных",
   "crash_rust_panic": "Паника Rust",
-  "install_all": "Установить все зависимости",
   "ready_title": "Готовы создать первого агента?",
   "ready_hint": "Все проверки пройдены. Давайте проведём вас через создание и запуск первого агента.",
   "get_started": "Начать",
@@ -33,12 +40,5 @@
   "official_page": "Официальная страница",
   "edit_key": "Изменить ключ",
   "edit_config": "Изменить конфигурацию",
-  "signing_in": "Вход...",
-  "log_disk_usage": "Log Disk Usage",
-  "log_disk_tracing": "Tracing logs",
-  "log_disk_crashes": "Crash reports",
-  "log_disk_files_count": "{count} files",
-  "log_disk_retention_hint": "Daily rotation, capped at {limit} files",
-  "log_disk_crash_retention_hint": "Capped at {limit} most recent reports",
-  "log_disk_unavailable": "Log directory stats unavailable."
+  "signing_in": "Вход..."
 }

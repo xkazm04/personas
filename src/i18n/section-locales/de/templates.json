@@ -1161,9 +1161,9 @@
   "complexity": {
     "beginner": "Einsteiger",
     "intermediate": "Fortgeschritten",
-    "advanced": "Advanced",
+    "advanced": "Experte",
     "minuteShort": "~{minutes}m",
-    "minuteSetup": "~{minutes} min setup"
+    "minuteSetup": "~{minutes} Min. Einrichtung"
   },
   "presets": {
     "loading": "Presets werden geladen…",

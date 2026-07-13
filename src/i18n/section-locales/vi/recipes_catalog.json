@@ -71,7 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "Hãy chọn một persona từ thanh bên trước.",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup": "Wire {count} more connector{count, plural, one {} other {s}}, then adopt",
+  "adopt_tooltip_needs_setup_one": "Còn {count} trình kết nối cần thiết lập trước khi áp dụng",
+  "adopt_tooltip_needs_setup_other": "Còn {count} trình kết nối cần thiết lập trước khi áp dụng",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "Áp dụng công thức này vào persona đã chọn",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -119,7 +120,6 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "Bạn sẽ điền {count} thiết lập trong quá trình áp dụng",
   "_comment_tags_heading": "Section heading for the tags list",
-  "tags_heading": "Tags",
   "tag_filter_tooltip": "Hiện công thức có thẻ này",
   "guardrails_heading": "Rào chắn & bộ nhớ",
   "events_label": "Sự kiện",
@@ -230,5 +230,6 @@
   "update_badge": "Cập nhật",
   "update_badge_detail_tooltip": "Đã áp dụng ở phiên bản v{from}; danh mục hiện là v{to}. Xóa và áp dụng lại để cập nhật.",
   "update_badge_tooltip": "Đã có phiên bản mới hơn của tính năng này — xóa và áp dụng lại để cập nhật",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "Thẻ"
 }

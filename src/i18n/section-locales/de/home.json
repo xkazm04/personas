@@ -1,28 +1,4 @@
 {
-  "welcome": "Willkommen",
-  "greeting_morning": "Guten Morgen",
-  "greeting_afternoon": "Guten Tag",
-  "greeting_evening": "Guten Abend",
-  "operator": "Operator",
-  "summary_empty": "Erstellen Sie Ihren ersten Agenten oder erkunden Sie die Plattform.",
-  "summary_stats": "Sie haben {personasCount} Agent{personasPlural} und {credentialsCount} Zugangsdaten{credentialsPlural} konfiguriert.",
-  "quick_navigation": "Schnellnavigation",
-  "platform_label": "Personas-Plattform",
-  "roadmap": {
-    "title": "Produkt-Roadmap",
-    "subtitle": "Was wir jetzt bauen und was als Nächstes kommt.",
-    "unavailable": "Roadmap nicht verfügbar",
-    "unavailable_hint": "Die Produkt-Roadmap konnte nicht geladen werden. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
-    "status_in_progress": "In Bearbeitung",
-    "status_next": "Nächste",
-    "status_planned": "Geplant",
-    "status_completed": "Abgeschlossen",
-    "priority_now": "Jetzt",
-    "priority_next": "Nächste",
-    "priority_later": "Später",
-    "in_progress_count": "{count} in Bearbeitung",
-    "next_count": "{count} nächste"
-  },
   "setup": {
     "choose_role": "Wählen Sie Ihre Rolle",
     "choose_role_hint": "Wir passen die Erfahrung an Ihre Arbeitsweise an.",
@@ -50,54 +26,6 @@
     "role": "Rolle",
     "tool": "Tool",
     "goal": "Ziel"
-  },
-  "fleet": {
-    "executions_today": "Ausführungen Heute",
-    "success_rate": "Erfolgsrate",
-    "active_agents": "Aktive Agenten",
-    "credentials": "Zugangsdaten"
-  },
-  "nav": {
-    "overview": {
-      "label": "Übersicht",
-      "description": "Dashboard-Analysen, Ausführungsverlauf und Echtzeit-Systemüberwachung aller Agenten"
-    },
-    "personas": {
-      "label": "Agenten",
-      "description": "KI-Agenten mit individuellen Verhaltensweisen und Fähigkeiten erstellen, konfigurieren und verwalten"
-    },
-    "events": {
-      "label": "Ereignisse",
-      "description": "Ereignis-Auslöser, webhook-Listener und zeitgesteuerte Automatisierungen konfigurieren"
-    },
-    "credentials": {
-      "label": "Zugangsdaten",
-      "description": "API-Zugangsdaten, Datenbankverbindungen, OAuth-Token und verschlüsselte Geheimnisse verwalten"
-    },
-    "design-reviews": {
-      "label": "Vorlagen",
-      "description": "n8n-Workflows importieren, Vorlagengalerie durchsuchen und Agenten-Baupläne generieren"
-    },
-    "team": {
-      "label": "Teams",
-      "description": "Multi-Agenten-Team-Pipelines mit Drag-and-Drop-Orchestrierung und Routing erstellen"
-    },
-    "cloud": {
-      "label": "Cloud",
-      "description": "Agenten in der Cloud bereitstellen, Zeitpläne verwalten und GitLab CI integrieren"
-    },
-    "settings": {
-      "label": "Einstellungen",
-      "description": "Kontoeinstellungen, Darstellung, Benachrichtigungsregeln und Engine-Konfiguration"
-    },
-    "plugins": {
-      "label": "Plugins",
-      "description": "Erweitern Sie Ihre Agenten mit Drittanbieter-Plugins und eigenen Erweiterungen"
-    },
-    "teams": {
-      "label": "Teams",
-      "description": "Mehrere Agenten zu einem Team zusammenfassen, das gemeinsam mehrstufige Workflows bearbeitet"
-    }
   },
   "learning": {
     "title": "Lernzentrum",
@@ -150,13 +78,6 @@
     "get_started": "Loslegen",
     "language": "Sprache"
   },
-  "icon_showcase": {
-    "lucide_tab": "Lucide (Bibliothek)",
-    "personas_tab": "Personas (Animiert)",
-    "lucide_footer": "lucide-react -- allgemeine Icon-Bibliothek -- statisch",
-    "personas_footer": "9 benutzerdefinierte Icons -- neuronale/Schaltkreismotive -- CSS-animiert -- themenadaptiv"
-  },
-  "commander": "Commander",
   "resume": {
     "failure": "Ungelesener Fehler in {personaName} — untersuchen",
     "tour": "{tourTitle} fortsetzen ({stepIndex}/{totalSteps}) — {stepTitle}",
@@ -188,5 +109,84 @@
     "build_cta": "Ersten Agenten erstellen",
     "subtitle": "Beschreibe eine Aufgabe in einfacher Sprache und wir richten einen funktionierenden Agenten ein — oder bitte den Assistenten, es für dich zu tun.",
     "title": "Ersten Agenten erstellen"
+  },
+  "welcome": "Willkommen",
+  "greeting_morning": "Guten Morgen",
+  "greeting_afternoon": "Guten Tag",
+  "greeting_evening": "Guten Abend",
+  "operator": "Operator",
+  "commander": "Commander",
+  "summary_empty": "Erstellen Sie Ihren ersten Agenten oder erkunden Sie die Plattform.",
+  "summary_stats": "Sie haben {personasCount} Agent{personasPlural} und {credentialsCount} Zugangsdaten{credentialsPlural} konfiguriert.",
+  "quick_navigation": "Schnellnavigation",
+  "platform_label": "Personas-Plattform",
+  "roadmap": {
+    "title": "Produkt-Roadmap",
+    "subtitle": "Was wir jetzt bauen und was als Nächstes kommt.",
+    "unavailable": "Roadmap nicht verfügbar",
+    "unavailable_hint": "Die Produkt-Roadmap konnte nicht geladen werden. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "status_in_progress": "In Bearbeitung",
+    "status_next": "Nächste",
+    "status_planned": "Geplant",
+    "status_completed": "Abgeschlossen",
+    "priority_now": "Jetzt",
+    "priority_next": "Nächste",
+    "priority_later": "Später",
+    "in_progress_count": "{count} in Bearbeitung",
+    "next_count": "{count} nächste"
+  },
+  "fleet": {
+    "executions_today": "Ausführungen Heute",
+    "success_rate": "Erfolgsrate",
+    "active_agents": "Aktive Agenten",
+    "credentials": "Zugangsdaten"
+  },
+  "nav": {
+    "overview": {
+      "label": "Übersicht",
+      "description": "Dashboard-Analysen, Ausführungsverlauf und Echtzeit-Systemüberwachung aller Agenten"
+    },
+    "personas": {
+      "label": "Agenten",
+      "description": "KI-Agenten mit individuellen Verhaltensweisen und Fähigkeiten erstellen, konfigurieren und verwalten"
+    },
+    "events": {
+      "label": "Ereignisse",
+      "description": "Ereignis-Auslöser, webhook-Listener und zeitgesteuerte Automatisierungen konfigurieren"
+    },
+    "credentials": {
+      "label": "Zugangsdaten",
+      "description": "API-Zugangsdaten, Datenbankverbindungen, OAuth-Token und verschlüsselte Geheimnisse verwalten"
+    },
+    "design-reviews": {
+      "label": "Vorlagen",
+      "description": "n8n-Workflows importieren, Vorlagengalerie durchsuchen und Agenten-Baupläne generieren"
+    },
+    "team": {
+      "label": "Teams",
+      "description": "Multi-Agenten-Team-Pipelines mit Drag-and-Drop-Orchestrierung und Routing erstellen"
+    },
+    "teams": {
+      "label": "Teams",
+      "description": "Mehrere Agenten zu einem Team zusammenfassen, das gemeinsam mehrstufige Workflows bearbeitet"
+    },
+    "cloud": {
+      "label": "Cloud",
+      "description": "Agenten in der Cloud bereitstellen, Zeitpläne verwalten und GitLab CI integrieren"
+    },
+    "settings": {
+      "label": "Einstellungen",
+      "description": "Kontoeinstellungen, Darstellung, Benachrichtigungsregeln und Engine-Konfiguration"
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Erweitern Sie Ihre Agenten mit Drittanbieter-Plugins und eigenen Erweiterungen"
+    }
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Bibliothek)",
+    "personas_tab": "Personas (Animiert)",
+    "lucide_footer": "lucide-react -- allgemeine Icon-Bibliothek -- statisch",
+    "personas_footer": "9 benutzerdefinierte Icons -- neuronale/Schaltkreismotive -- CSS-animiert -- themenadaptiv"
   }
 }

@@ -1,6 +1,6 @@
 {
-  "no_persona": "エージェント未選択",
   "conversation_truncated": "この会話はメッセージ制限に達しました。古いメッセージは削除されました — コンテキストを保持するため、新しい会話を開始することを検討してください。",
+  "no_persona": "エージェント未選択",
   "stages": {
     "assembling_label": "プロンプトを組み立て中",
     "assembling_desc": "エージェント設定と指示からLLMプロンプトを構築中",

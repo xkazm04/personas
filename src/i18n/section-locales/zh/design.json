@@ -1,6 +1,6 @@
 {
-  "no_persona": "未选择智能体",
   "conversation_truncated": "此对话已达到消息限制。较旧的消息已被移除——考虑开始新对话以保留上下文。",
+  "no_persona": "未选择智能体",
   "stages": {
     "assembling_label": "组装提示词",
     "assembling_desc": "根据智能体配置和指令构建 LLM 提示词",

@@ -71,7 +71,8 @@
   "_comment_adopt_tooltip_no_persona": "Adopt button tooltip when no persona is selected",
   "adopt_tooltip_no_persona": "Wählen Sie zuerst eine Persona in der Seitenleiste aus.",
   "_comment_adopt_tooltip_needs_setup": "Adopt button tooltip when connectors are missing",
-  "adopt_tooltip_needs_setup": "Wire {count} more connector{count, plural, one {} other {s}}, then adopt",
+  "adopt_tooltip_needs_setup_one": "Noch {count} Konnektor einrichten, dann übernehmen",
+  "adopt_tooltip_needs_setup_other": "Noch {count} Konnektoren einrichten, dann übernehmen",
   "_comment_adopt_tooltip_ready": "Adopt button tooltip when recipe is ready to adopt",
   "adopt_tooltip_ready": "Übernehmen Sie dieses Rezept in Ihre ausgewählte Persona",
   "_comment_adopt_with_setup_label": "Adopt button label when setup is required",
@@ -119,7 +120,6 @@
   "_comment_bindings_count_other": "Plural binding count sentence shown during adoption",
   "bindings_count_other": "Sie füllen bei der Übernahme {count} Einstellungen aus",
   "_comment_tags_heading": "Section heading for the tags list",
-  "tags_heading": "Tags",
   "tag_filter_tooltip": "Rezepte mit diesem Tag anzeigen",
   "guardrails_heading": "Leitplanken & Gedächtnis",
   "events_label": "Ereignisse",
@@ -230,5 +230,6 @@
   "update_badge": "Update",
   "update_badge_detail_tooltip": "Übernommen mit v{from}; Katalog ist jetzt v{to}. Entfernen und neu übernehmen, um zu aktualisieren.",
   "update_badge_tooltip": "Eine neuere Version dieser Fähigkeit ist verfügbar — entfernen und neu übernehmen, um zu aktualisieren",
-  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word",
+  "tags_heading": "Tags"
 }
