@@ -23,8 +23,6 @@ import { classifyUnknownError, categoryLabel } from "@/lib/errorTaxonomy";
 import { storeBus } from "@/lib/storeBus";
 import { autoAssignPersonaIcons } from "@/lib/icons/autoAssignIcons";
 
-const DEGRADATION_THRESHOLD = 3;
-
 /** Sub-resources fetched via getPersonaDetail, cached by persona ID. */
 export interface PersonaDetailExtras {
   tools: PersonaToolDefinition[];
@@ -62,9 +60,6 @@ export interface PersonaSlice {
   personaTriggerCounts: Record<string, number>;
   personaLastRun: Record<string, string | null>;
   personaHealthMap: Record<string, PersonaHealth>;
-  summaryConsecutiveFailures: number;
-  detailConsecutiveFailures: number;
-  degradationError: string | null;
   /** Whether the editor has unsaved changes -- set by EditorBody. */
   isEditorDirty: boolean;
   /** Persona ID the user tried to switch to while dirty. */
@@ -101,9 +96,6 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   personaTriggerCounts: {},
   personaLastRun: {},
   personaHealthMap: {},
-  summaryConsecutiveFailures: 0,
-  detailConsecutiveFailures: 0,
-  degradationError: null,
   isEditorDirty: false,
   pendingSelectPersonaId: null,
 
@@ -171,21 +163,11 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         personaTriggerCounts: triggerCounts,
         personaLastRun: lastRun,
         personaHealthMap: healthMap,
-        summaryConsecutiveFailures: 0,
-        degradationError: get().detailConsecutiveFailures >= DEGRADATION_THRESHOLD
-          ? get().degradationError : null,
       });
     } catch (err) {
       if (seq !== fetchSummariesSeq) return; // superseded by a newer request
-      const failures = get().summaryConsecutiveFailures + 1;
       const category = classifyUnknownError(err);
-      logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), attempt: failures, error: String(err) });
-      set({
-        summaryConsecutiveFailures: failures,
-        degradationError: failures >= DEGRADATION_THRESHOLD
-          ? `Sidebar data unavailable (${categoryLabel(category)} error, ${failures} consecutive failures)`
-          : get().degradationError,
-      });
+      logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), error: String(err) });
     }
   },
 
@@ -214,16 +196,12 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           detailCache: nextCache,
           selectedPersona: deriveSelectedPersona(nextPersonas, id, nextCache),
           isLoading: false,
-          detailConsecutiveFailures: 0,
-          degradationError: state.summaryConsecutiveFailures >= DEGRADATION_THRESHOLD
-            ? state.degradationError : null,
         };
       });
     } catch (err) {
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
-      const failures = get().detailConsecutiveFailures + 1;
       const category = classifyUnknownError(err);
-      logger.warn("fetchDetail failed", { personaId: id, category: categoryLabel(category), attempt: failures, error: String(err) });
+      logger.warn("fetchDetail failed", { personaId: id, category: categoryLabel(category), error: String(err) });
       // Clear stale selection so the editor doesn't render with missing data
       set((state) => {
         const nextCache = { ...state.detailCache };
@@ -234,10 +212,6 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           selectedPersonaId: null,
           detailCache: nextCache,
           selectedPersona: null,
-          detailConsecutiveFailures: failures,
-          degradationError: failures >= DEGRADATION_THRESHOLD
-            ? `Persona loading degraded (${categoryLabel(category)} error, ${failures} consecutive failures)`
-            : state.degradationError,
         };
       });
     }
