@@ -42,7 +42,9 @@ export default function SinceYouLeftBriefing() {
       return {
         icon: Bell,
         label: tx(line.count === 1 ? sl.alerts : sl.alerts_other, { count: line.count }),
-        onClick: goTo('observability'),
+        // Alerts live on the Health tab ('observability' was removed from the
+        // OverviewTab union — it never had a router case).
+        onClick: goTo('health'),
         accent: 'text-amber-400',
       };
     }
