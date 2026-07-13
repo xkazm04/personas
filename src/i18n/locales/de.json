@@ -1540,7 +1540,9 @@
       "eco_col_resolved": "Gelöst",
       "eco_empty": "Noch keine Auswertungsergebnisse — Lab ausführen, um Kosteneffizienz zu befüllen.",
       "eco_subtitle": "Wie oft jedes Modell eine Auswertung löst und was jeder Erfolg kostet.",
-      "eco_title": "Kosteneffizienz"
+      "eco_title": "Kosteneffizienz",
+      "vr_col_tokens": "Token",
+      "vr_tokens_tooltip": "Durchschnittlich {input} Eingabe / {output} Ausgabe pro Lauf"
     },
     "design": {
       "select_agent": "Agenten auswählen, um Designanalyse zu starten",

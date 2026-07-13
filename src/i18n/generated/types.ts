@@ -1302,6 +1302,8 @@ export type Translations = {
       vr_col_rating: string;
       vr_col_delta: string;
       vr_col_cost: string;
+      vr_col_tokens: string;
+      vr_tokens_tooltip: string;
       vr_col_status: string;
       vr_col_actions: string;
       vr_status_active: string;

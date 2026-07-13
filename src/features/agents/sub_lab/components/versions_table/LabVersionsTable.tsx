@@ -30,6 +30,10 @@ const MODEL_VERSION_LABEL: Record<string, string> = {
   opus: 'Opus 4.8',
 };
 
+/** Mean prompt + completion tokens for a measured row; 0 when never measured. */
+const totalTokens = (row: VersionRow): number =>
+  row.rating ? row.rating.inputTokens + row.rating.outputTokens : 0;
+
 const modelLabel = (modelId: string | null): string => {
   if (!modelId) return '—';
   const versioned = Object.entries(MODEL_VERSION_LABEL).find(([k]) => modelId === k || modelId.includes(k));
@@ -195,6 +199,25 @@ export function LabVersionsTable() {
             {row.rating ? <>$<Numeric value={row.rating.costUsd} precision={3} /></> : '—'}
           </span>
         ) },
+      // Cost is price-weighted, so it hides which pair is actually token-hungry —
+      // a cheaper model can still be the heaviest reader. Both axes, side by side.
+      { key: 'tokens', label: lab.vr_col_tokens, width: '90px', align: 'right',
+        sortable: true,
+        sortFn: (a, b) => totalTokens(a) - totalTokens(b),
+        render: (row) => (
+          <span className="typo-caption text-foreground tabular-nums">
+            {row.rating ? (
+              <Tooltip
+                content={tx(lab.vr_tokens_tooltip, {
+                  input: Math.round(row.rating.inputTokens),
+                  output: Math.round(row.rating.outputTokens),
+                })}
+              >
+                <span><Numeric value={totalTokens(row)} unit="count" precision={0} /></span>
+              </Tooltip>
+            ) : '—'}
+          </span>
+        ) },
       { key: 'status', label: lab.vr_col_status, width: '130px', render: (row) => <VersionStatusBadge row={row} /> },
       { key: 'actions', label: lab.vr_col_actions, width: '210px', render: (row) => (
         <VersionRowActions
@@ -206,7 +229,7 @@ export function LabVersionsTable() {
       ) },
     ],
     // handlers/activeVersion/measuring are stable enough per render; re-derive on these.
-    [lab, measuringVersionId, activeVersion, handlers],
+    [lab, tx, measuringVersionId, activeVersion, handlers],
   );
 
   if (!personaId) {

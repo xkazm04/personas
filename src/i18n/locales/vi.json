@@ -1540,7 +1540,9 @@
       "eco_col_resolved": "Đã giải quyết",
       "eco_empty": "Chưa có kết quả đánh giá — chạy Lab để xem hiệu quả chi phí.",
       "eco_subtitle": "Mỗi model giải quyết eval bao nhiêu lần và mỗi lần thành công tốn bao nhiêu.",
-      "eco_title": "Hiệu quả chi phí"
+      "eco_title": "Hiệu quả chi phí",
+      "vr_col_tokens": "Token",
+      "vr_tokens_tooltip": "Trung bình {input} vào / {output} ra mỗi lần chạy"
     },
     "design": {
       "select_agent": "Chọn tác nhân để bắt đầu phân tích thiết kế",

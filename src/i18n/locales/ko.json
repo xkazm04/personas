@@ -1540,7 +1540,9 @@
       "eco_col_resolved": "해결됨",
       "eco_empty": "아직 평가 결과 없음 — Lab을 실행하여 비용 효율을 확인하세요.",
       "eco_subtitle": "각 모델이 평가를 해결하는 빈도와 성공당 비용입니다.",
-      "eco_title": "비용 효율"
+      "eco_title": "비용 효율",
+      "vr_col_tokens": "토큰",
+      "vr_tokens_tooltip": "실행당 평균 입력 {input} / 출력 {output}"
     },
     "design": {
       "select_agent": "디자인 분석을 시작할 에이전트를 선택하세요",

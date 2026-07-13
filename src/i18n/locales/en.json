@@ -1296,6 +1296,8 @@
       "vr_col_rating": "Rating",
       "vr_col_delta": "Baseline",
       "vr_col_cost": "Cost",
+      "vr_col_tokens": "Tokens",
+      "vr_tokens_tooltip": "{input} in / {output} out per run on average",
       "vr_col_status": "Status",
       "vr_col_actions": "Actions",
       "vr_status_active": "Active",

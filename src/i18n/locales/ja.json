@@ -1540,7 +1540,9 @@
       "eco_col_resolved": "解決済み",
       "eco_empty": "まだ評価結果がありません — Lab を実行してコスト効率を確認してください。",
       "eco_subtitle": "各モデルが評価をどれだけ解決するか、および各成功のコスト。",
-      "eco_title": "コスト効率"
+      "eco_title": "コスト効率",
+      "vr_col_tokens": "トークン",
+      "vr_tokens_tooltip": "1回の実行あたり平均 入力 {input} / 出力 {output}"
     },
     "design": {
       "select_agent": "デザイン分析を開始するエージェントを選択",
