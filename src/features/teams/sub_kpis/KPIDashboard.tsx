@@ -22,6 +22,17 @@ import { AutopilotControl } from './AutopilotControl';
 
 const CHART_ROW_H = 38;
 
+interface DistanceRow {
+  id: string;
+  name: string;
+  project: string;
+  pct: number;
+  fill: string;
+  current: number | null;
+  target: number | null;
+  unit: string;
+}
+
 /** Progress toward target as 0–115% (overshoot visible), direction-aware. */
 function distancePct(kpi: DevKpi): number | null {
   const pct = kpiProgressPct(kpi);
@@ -63,8 +74,23 @@ export function KPIDashboard({
   const projects = useSystemStore((s) => s.projects);
   const kpiTrends = useSystemStore((s) => s.kpiTrends);
   const fetchKpiTrends = useSystemStore((s) => s.fetchKpiTrends);
+  // Context map (active project) — resolves each KPI's context/group name so the
+  // Distance-to-target section can group by context (the retired "By context"
+  // view, folded in here). KPIs whose context isn't in the active project's map
+  // fall into "Ungrouped".
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const contexts = useSystemStore((s) => s.contexts);
+  const contextGroups = useSystemStore((s) => s.contextGroups);
+  const fetchContexts = useSystemStore((s) => s.fetchContexts);
+  const fetchContextGroups = useSystemStore((s) => s.fetchContextGroups);
 
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeProjectId) return;
+    void fetchContexts(activeProjectId);
+    void fetchContextGroups(activeProjectId);
+  }, [activeProjectId, fetchContexts, fetchContextGroups]);
 
   const projectName = useMemo(() => {
     const m = new Map<string, string>();
@@ -95,22 +121,46 @@ export function KPIDashboard({
   const met = paced.filter((p) => p.d.track === 'met').length;
 
   // --- chart models -----------------------------------------------------
-  const distanceData = useMemo(
-    () =>
-      paced
-        .map(({ kpi, d }) => ({
-          id: kpi.id,
-          name: kpi.name,
-          project: projectName(kpi.project_id),
-          pct: distancePct(kpi) ?? 0,
-          fill: TRACK_COLOR[d.track],
-          current: kpi.current_value,
-          target: kpi.target_value,
-          unit: kpi.unit,
-        }))
-        .sort((a, b) => a.pct - b.pct),
-    [paced, projectName],
-  );
+  const contextName = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of contexts) m.set(c.id, c.name);
+    return m;
+  }, [contexts]);
+  const groupName = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const g of contextGroups) m.set(g.id, g.name);
+    return m;
+  }, [contextGroups]);
+
+  // Distance-to-target rows grouped by context. Each group's rows are sorted by
+  // KPI name (asc); groups are named-context-first (alpha), Ungrouped last.
+  const distanceGroups = useMemo(() => {
+    const groups = new Map<string, { key: string; label: string; order: number; rows: DistanceRow[] }>();
+    for (const { kpi, d } of paced) {
+      const cn = kpi.context_id ? contextName.get(kpi.context_id) : undefined;
+      const gn = !cn && kpi.context_group_id ? groupName.get(kpi.context_group_id) : undefined;
+      let key: string, label: string, order: number;
+      if (cn) { key = `ctx:${kpi.context_id}`; label = cn; order = 0; }
+      else if (gn) { key = `grp:${kpi.context_group_id}`; label = gn; order = 0; }
+      else { key = 'ungrouped'; label = t.kpis.rollup_ungrouped; order = 1; }
+      let entry = groups.get(key);
+      if (!entry) { entry = { key, label, order, rows: [] }; groups.set(key, entry); }
+      entry.rows.push({
+        id: kpi.id,
+        name: kpi.name,
+        project: projectName(kpi.project_id),
+        pct: distancePct(kpi) ?? 0,
+        fill: TRACK_COLOR[d.track],
+        current: kpi.current_value,
+        target: kpi.target_value,
+        unit: kpi.unit,
+      });
+    }
+    const arr = [...groups.values()];
+    for (const e of arr) e.rows.sort((a, b) => a.name.localeCompare(b.name));
+    arr.sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+    return arr;
+  }, [paced, contextName, groupName, projectName, t]);
 
   const trendModel = useMemo(() => {
     const series = filtered
@@ -214,72 +264,24 @@ export function KPIDashboard({
         <StatCard label={t.kpis.stat_met} value={met} tone={met ? 'success' : 'neutral'} />
       </div>
 
-      {/* Distance to target — pace-colored horizontal bars, click → drawer */}
+      {/* Distance to target — pace-colored horizontal bars, click → drawer.
+          Grouped by context (Ungrouped last); each group's bars sorted by name. */}
       <ChartPanel title={t.kpis.chart_distance_title} icon={Gauge}>
-        <LazyChart
-          fallback={<div className="h-24" />}
-          render={(R) => (
-            <R.ResponsiveContainer width="100%" height={distanceData.length * CHART_ROW_H + 30}>
-              <R.BarChart
-                accessibilityLayer={false}
-                data={distanceData}
-                layout="vertical"
-                margin={{ top: 0, right: 36, bottom: 0, left: 8 }}
-                onClick={(state) => {
-                  const payload = (
-                    state as unknown as { activePayload?: Array<{ payload?: { id?: string } }> }
-                  )?.activePayload?.[0]?.payload;
-                  if (payload?.id) onOpen(payload.id);
-                }}
-              >
-                <R.XAxis
-                  type="number"
-                  domain={[0, 115]}
-                  tickFormatter={(v: number) => `${v}%`}
-                  stroke="var(--muted-foreground)"
-                  fontSize={11}
-                />
-                <R.YAxis
-                  type="category"
-                  dataKey="name"
-                  width={210}
-                  stroke="var(--muted-foreground)"
-                  fontSize={12}
-                  tickLine={false}
-                />
-                <R.ReferenceLine x={100} stroke="var(--status-success)" strokeDasharray="4 3" />
-                <R.Tooltip
-                  cursor={{ fill: 'var(--secondary)', opacity: 0.3 }}
-                  contentStyle={{
-                    background: 'var(--background)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  formatter={((value: unknown, _n: unknown, item: unknown) => {
-                    const p = (
-                      item as { payload?: { current?: number | null; target?: number | null; unit?: string; project?: string } }
-                    )?.payload;
-                    const cur = p?.current ?? '—';
-                    const tgt = p?.target ?? '—';
-                    return [`${String(value)}% — ${cur} / ${tgt} ${p?.unit ?? ''}`, p?.project ?? ''];
-                  }) as never}
-                />
-                <R.Bar dataKey="pct" radius={[0, 4, 4, 0]} barSize={16} cursor="pointer">
-                  {distanceData.map((row) => (
-                    <R.Cell key={row.id} fill={row.fill} />
-                  ))}
-                  <R.LabelList
-                    dataKey="pct"
-                    position="right"
-                    formatter={((v: unknown) => `${String(v)}%`) as never}
-                    style={{ fill: 'var(--foreground)', fontSize: 11 }}
-                  />
-                </R.Bar>
-              </R.BarChart>
-            </R.ResponsiveContainer>
-          )}
-        />
+        <div className="space-y-4">
+          {distanceGroups.map((g) => (
+            <div key={g.key}>
+              {/* Header only when there's more than one group — a lone group
+                  (e.g. no context map) keeps the clean single-chart look. */}
+              {distanceGroups.length > 1 && (
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="typo-caption text-foreground font-medium truncate">{g.label}</span>
+                  <span className="typo-caption text-foreground tabular-nums">{g.rows.length}</span>
+                </div>
+              )}
+              <DistanceBars rows={g.rows} onOpen={onOpen} />
+            </div>
+          ))}
+        </div>
       </ChartPanel>
 
       {/* Trend — progress vs target over time */}
@@ -340,6 +342,77 @@ export function KPIDashboard({
         </ChartPanel>
       )}
     </div>
+  );
+}
+
+/** The pace-colored horizontal bar chart for one set of Distance-to-target rows.
+ *  Extracted so the Distance section can render one chart per context group. */
+function DistanceBars({ rows, onOpen }: { rows: DistanceRow[]; onOpen: (kpiId: string) => void }) {
+  return (
+    <LazyChart
+      fallback={<div className="h-24" />}
+      render={(R) => (
+        <R.ResponsiveContainer width="100%" height={rows.length * CHART_ROW_H + 30}>
+          <R.BarChart
+            accessibilityLayer={false}
+            data={rows}
+            layout="vertical"
+            margin={{ top: 0, right: 36, bottom: 0, left: 8 }}
+            onClick={(state) => {
+              const payload = (
+                state as unknown as { activePayload?: Array<{ payload?: { id?: string } }> }
+              )?.activePayload?.[0]?.payload;
+              if (payload?.id) onOpen(payload.id);
+            }}
+          >
+            <R.XAxis
+              type="number"
+              domain={[0, 115]}
+              tickFormatter={(v: number) => `${v}%`}
+              stroke="var(--muted-foreground)"
+              fontSize={11}
+            />
+            <R.YAxis
+              type="category"
+              dataKey="name"
+              width={210}
+              stroke="var(--muted-foreground)"
+              fontSize={12}
+              tickLine={false}
+            />
+            <R.ReferenceLine x={100} stroke="var(--status-success)" strokeDasharray="4 3" />
+            <R.Tooltip
+              cursor={{ fill: 'var(--secondary)', opacity: 0.3 }}
+              contentStyle={{
+                background: 'var(--background)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                fontSize: 12,
+              }}
+              formatter={((value: unknown, _n: unknown, item: unknown) => {
+                const p = (
+                  item as { payload?: { current?: number | null; target?: number | null; unit?: string; project?: string } }
+                )?.payload;
+                const cur = p?.current ?? '—';
+                const tgt = p?.target ?? '—';
+                return [`${String(value)}% — ${cur} / ${tgt} ${p?.unit ?? ''}`, p?.project ?? ''];
+              }) as never}
+            />
+            <R.Bar dataKey="pct" radius={[0, 4, 4, 0]} barSize={16} cursor="pointer">
+              {rows.map((row) => (
+                <R.Cell key={row.id} fill={row.fill} />
+              ))}
+              <R.LabelList
+                dataKey="pct"
+                position="right"
+                formatter={((v: unknown) => `${String(v)}%`) as never}
+                style={{ fill: 'var(--foreground)', fontSize: 11 }}
+              />
+            </R.Bar>
+          </R.BarChart>
+        </R.ResponsiveContainer>
+      )}
+    />
   );
 }
 
