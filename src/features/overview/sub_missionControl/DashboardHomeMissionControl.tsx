@@ -782,7 +782,7 @@ export const StatusTicker = memo(function StatusTicker({
         <span>{t.overview.dashboard.status_runs}</span>
         <Numeric value={totalExecutions} unit="count" />
       </button>
-      <button type="button" onClick={() => onNavigate('observability')} className={`${linkCls} ml-auto flex-shrink-0`}>
+      <button type="button" onClick={() => onNavigate('home')} className={`${linkCls} ml-auto flex-shrink-0`}>
         <span>{t.overview.dashboard.status_synced}</span>
         <span className="tabular-nums">{lastSyncedLabel}</span>
       </button>

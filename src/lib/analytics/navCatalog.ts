@@ -17,6 +17,7 @@
  * test (`summary.test.ts`) guards structural invariants (unique keys, non-empty
  * value sets, sections drawn from `SECTIONS`).
  */
+import { NAV_SECTIONS } from '@/lib/navigation/registry';
 import type {
   SidebarSection,
   HomeTab,
@@ -49,35 +50,37 @@ export interface TabDimension {
   readonly values: readonly string[];
 }
 
-/** All sidebar sections, in nav order. Mirrors `SidebarSection`. */
-export const SECTIONS = [
-  'home',
-  'overview',
-  'teams',
-  'personas',
-  'events',
-  'credentials',
-  'design-reviews',
-  'plugins',
-  'schedules',
-  'settings',
-] as const satisfies readonly SidebarSection[];
+/**
+ * All navigation sections, in nav order — DERIVED from the navigation registry
+ * (`@/lib/navigation/registry`) so analytics coverage can never silently omit a
+ * section (or invent one that no longer exists). Every reachability class is
+ * tracked (sidebar + overlay-only like Schedules + any hidden), because a
+ * user can visit any of them.
+ */
+export const SECTIONS: readonly SidebarSection[] = NAV_SECTIONS.map((e) => e.id);
 
 // -- Per-dimension value sets (mirror the unions in types.ts) ----------------
 // Declared separately so each gets its own `satisfies` drift guard.
 
 const HOME_TABS = ['welcome', 'cockpit', 'roadmap', 'system-check', 'learning'] as const satisfies readonly HomeTab[];
-const OVERVIEW_TABS = ['home', 'incidents', 'executions', 'manual-review', 'messages', 'events', 'knowledge', 'sla', 'health', 'observability', 'leaderboard', 'director', 'certification'] as const satisfies readonly OverviewTab[];
-const TEAMS_TABS = ['workspace', 'goals', 'projects', 'lifecycle', 'competition'] as const satisfies readonly TeamsTab[];
+// `observability` was removed from OverviewTab — it had no OverviewPage router
+// case (the ObservabilityDashboard component is mounted elsewhere), so tracking
+// it inflated the "ignored" denominator with an unreachable tab.
+const OVERVIEW_TABS = ['home', 'incidents', 'executions', 'manual-review', 'messages', 'events', 'knowledge', 'sla', 'health', 'leaderboard', 'director', 'certification'] as const satisfies readonly OverviewTab[];
+// kpis + factory are live TeamsSidebarNav tabs with PersonasPage router cases.
+const TEAMS_TABS = ['workspace', 'goals', 'kpis', 'factory', 'projects', 'lifecycle', 'competition'] as const satisfies readonly TeamsTab[];
 const GOALS_TABS = ['board', 'timeline'] as const satisfies readonly GoalsTab[];
-const TEMPLATE_TABS = ['n8n', 'generated', 'recipes', 'presets'] as const satisfies readonly TemplateTab[];
+// explore is a live template sidebar tab (the gallery Explore view).
+const TEMPLATE_TABS = ['n8n', 'generated', 'explore', 'recipes', 'presets'] as const satisfies readonly TemplateTab[];
 const AGENT_TABS = ['all', 'create', 'groups', 'cloud'] as const satisfies readonly AgentTab[];
 const EDITOR_TABS = ['activity', 'matrix', 'use-cases', 'lab', 'settings', 'chat', 'design', 'assertions'] as const satisfies readonly EditorTab[];
 const DESIGN_SUB_TABS = ['use-cases', 'prompt', 'connectors', 'triggers', 'messaging', 'automations'] as const satisfies readonly DesignSubTab[];
 const CLOUD_TABS = ['cloud', 'gitlab', 'unified'] as const satisfies readonly CloudTab[];
 const SETTINGS_TABS = ['account', 'appearance', 'notifications', 'radio', 'engine', 'byom', 'portability', 'network', 'admin', 'api-keys', 'history', 'limits'] as const satisfies readonly SettingsTab[];
 const PLUGIN_TABS = ['browse', 'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion', 'scraper'] as const satisfies readonly PluginTab[];
-const DEV_TOOLS_TABS = ['overview', 'context-map', 'idea-scanner', 'idea-triage', 'task-runner', 'skills', 'fleet'] as const satisfies readonly DevToolsTab[];
+// llm-overview added (the Dev Tools "Observability" sub-tab). `skills` is kept —
+// DevToolsPage routes it (`devToolsTab === 'skills' || 'fleet'` → FleetPage).
+const DEV_TOOLS_TABS = ['overview', 'llm-overview', 'context-map', 'idea-scanner', 'idea-triage', 'task-runner', 'skills', 'fleet'] as const satisfies readonly DevToolsTab[];
 const EVENT_BUS_TABS = ['studio', 'shared', 'live-stream', 'rate-limits', 'test', 'smee-relay', 'cloud-webhooks', 'dead-letter'] as const satisfies readonly EventBusTab[];
 const RESEARCH_LAB_TABS = ['dashboard', 'projects', 'literature', 'hypotheses', 'experiments', 'findings', 'reports', 'graph'] as const satisfies readonly ResearchLabTab[];
 
