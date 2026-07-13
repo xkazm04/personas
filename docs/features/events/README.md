@@ -135,11 +135,17 @@ Design: [`docs/plans/pumper-inbuilt-feasibility.md`](../../plans/pumper-inbuilt-
 - `TriggerExecutionHistory` links a trigger back to executions it caused.
 - `DryRunResultView` displays backend dry-run feedback.
 
+## Delivery & hygiene (2026-07)
+
+- **Push dispatch:** a CDC insert on `persona_events` wakes the event→execution dispatch loop immediately (`engine/subscription.rs` wake signal); the 2s/10s poll remains only as a degraded-mode heartbeat, so trigger latency is sub-second and bursts drain without the old 50-events-per-tick ceiling. CDC delivery itself counts drops observably and replays rows written during the startup warm-up window (and now decrypts encrypted payloads before emitting).
+- **Event-type vocabulary:** `publish_event` validates the free-form `event_type` against a known-type registry (`engine/event_vocabulary.rs`) — unknown types log a warning with the nearest canonical suggestion (never rejected), and the Events page type filter is fed from the registry (`list_known_event_types`) instead of only the loaded rows.
+- **Retention & dead triggers:** cleanup is count-bounded (`event_retention_max_count`, default 10,000 — terminal rows only; DLQ and pending rows exempt) on top of the 30-day age sweep, and the Events header shows an "N skipped" pill (from `get_event_skipped_stats`) so events that fire with no matching subscriber — dead triggers — are visible instead of silently marked Skipped.
+
 ## Backend command surface
 
 | Family | Commands |
 | --- | --- |
-| Event log | `list_events`, `list_events_in_range`, `search_events`, `publish_event` |
+| Event log | `list_events`, `list_events_in_range`, `search_events`, `publish_event`, `list_known_event_types`, `get_event_skipped_stats` |
 | Subscriptions | `list_subscriptions`, `list_all_subscriptions`, `create_subscription`, `update_subscription`, `delete_subscription` |
 | Testing | `test_event_flow`, `seed_mock_event` |
 | Dead letters | `list_dead_letter_events`, `count_dead_letter_events`, `retry_dead_letter_event`, `discard_dead_letter_event`, `bulk_retry_dead_letter_events`, `bulk_discard_dead_letter_events`, `get_dead_letter_config` |

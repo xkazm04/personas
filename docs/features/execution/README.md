@@ -347,7 +347,12 @@ subprocess, rolls back any in-progress DB updates.
    `db/models/memory.rs` (importance dominates; access weight fades with a
    ~7-day half-life; user-pinned `core` never decays). Shared retrieval
    primitives (vector distance floor, lane ranking) now live in
-   `src-tauri/src/retrieval/`.
+   `src-tauri/src/retrieval/`. On `ml` builds recall is additionally
+   **task-relevant** (MEMORY CONTRACT (7)): the run's input is embedded and
+   KNN'd against a `persona_memory_embedding` vec0 side-table, and each
+   memory's value score is blended as `value × (1 + 0.6 × similarity)` —
+   relevance reorders within value bands but never flips wide value gaps,
+   and non-`ml` builds keep the pure value ranking.
 
 3. **Don't poll executions tightly**. The frontend should subscribe
    to `execution-status` / `execution-output` Tauri events instead of
