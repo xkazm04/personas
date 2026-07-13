@@ -14,6 +14,8 @@ import { QuickAnswerBody } from '@/features/agents/quick-answer/QuickAnswerBody'
 import { GoalsTimeline } from '@/features/teams/sub_goals/GoalsTimeline';
 import { MergedChannels } from './mergedFeed';
 import { VirtualStream } from './VirtualStream';
+import { StreamConsole } from './StreamConsole';
+import { StreamQuery } from './StreamQuery';
 // Dev harness: enforce one live pop-up from this top strip (kept for dev).
 import { emitMockLiveMessage } from '../live/liveDevHarness';
 import { matchesFilter, matchesAuthor } from './feedFilter';
@@ -456,15 +458,9 @@ function WorkspaceInner({
  * team-targeted composer below. See the "Performance model" note above for how
  * feed updates and resize/typing are isolated to keep it smooth at scale.
  */
-export function ChannelTimelineWorkspace({
+function ChannelTimelineBaseline({
   teams, onToggle, allOn, onSetAll, layoutControl,
-}: {
-  teams: WorkspaceTeam[];
-  onToggle: (teamId: string) => void;
-  allOn: boolean;
-  onSetAll: (on: boolean) => void;
-  layoutControl?: ReactNode;
-}) {
+}: WorkspaceProps) {
   const personaIndex = usePersonaIndex();
   const feedTeams = useMemo(() => teams.filter((tm) => tm.selected), [teams]);
 
@@ -489,6 +485,67 @@ export function ChannelTimelineWorkspace({
         );
       }}
     </MergedChannels>
+  );
+}
+
+export interface WorkspaceProps {
+  teams: WorkspaceTeam[];
+  onToggle: (teamId: string) => void;
+  allOn: boolean;
+  onSetAll: (on: boolean) => void;
+  layoutControl?: ReactNode;
+}
+
+/* ── /prototype scaffold (P2 round 1) — THROWAWAY ──────────────────────────────
+ * A/B the Stream's lens UX. Both variants answer the same question — five
+ * composable lens dimensions + density + memory sub-modes can't live in a header
+ * — with opposite bets on WHERE filtering lives:
+ *
+ *   Console — lenses move OUT of the header into a facet rail with live counts.
+ *             Discoverable (you read what's in the log), costs 248px forever.
+ *   Query   — lenses aren't chrome at all; one command bar, chips, full-bleed
+ *             log. The stream is the product; filtering is a transient act.
+ *
+ * The switcher and the losing variant are deleted at consolidation.
+ * ------------------------------------------------------------------------- */
+type StreamVariant = 'baseline' | 'console' | 'query';
+
+const VARIANTS: { id: StreamVariant; label: string; hint: string }[] = [
+  { id: 'baseline', label: 'Baseline', hint: 'today — noise/author filters, composer, Quick Answer' },
+  { id: 'console', label: 'Console', hint: 'facet rail — every lens with live counts' },
+  { id: 'query', label: 'Query', hint: 'command bar — chips, full-bleed log' },
+];
+
+export function ChannelTimelineWorkspace(props: WorkspaceProps) {
+  const [variant, setVariant] = useState<StreamVariant>('baseline');
+
+  return (
+    <div className="h-full flex flex-col min-h-0 gap-1.5">
+      <div className="flex-shrink-0 flex items-center gap-1 px-1">
+        {VARIANTS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setVariant(v.id)}
+            aria-pressed={variant === v.id}
+            title={v.hint}
+            className={`px-2.5 py-1 rounded-interactive typo-caption transition-colors ${
+              variant === v.id ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/45 hover:text-foreground/80'
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+        <span className="ml-2 typo-caption text-foreground/30 truncate">
+          {VARIANTS.find((v) => v.id === variant)?.hint}
+        </span>
+      </div>
+      <div className="flex-1 min-h-0">
+        {variant === 'baseline' && <ChannelTimelineBaseline {...props} />}
+        {variant === 'console' && <StreamConsole {...props} />}
+        {variant === 'query' && <StreamQuery {...props} />}
+      </div>
+    </div>
   );
 }
 
