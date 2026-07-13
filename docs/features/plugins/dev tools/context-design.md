@@ -181,7 +181,7 @@ cannot drift either. `/research` consumes that snapshot for relevance scoring.
 | **Idea scanner** (`idea_scanner.rs::run_scan_core`) | `context_id(s)` scope the scan; the prompt summarizes only the selected contexts. The Context Map tab's per-card ⚡ button runs exactly this (agents auto-matched by keyword rules), and new ideas persist with `context_id` → the idea-coverage badge. |
 | **KPI proposal scan** (`kpi_scan.rs`) | Renders the whole group→context hierarchy into the prompt; proposals may name a group or a single context (§7). |
 | **Goal derivation** (`engine/kpi_derivation.rs`) | The candidate contexts offered to the LLM are filtered by the source KPI's scope; the chosen `context_id` is validated against the live map before the goal is created. |
-| **Coverage badges** (`sub_context/ContextCard.tsx`) | Each card shows goal / idea / KPI counts keyed by `context_id`, with jump-to-surface handoffs. |
+| **Coverage cluster** (`sub_context/contextLedgerShared.tsx`) | Each ledger row shows file / use-case / goal / idea / KPI counts keyed by `context_id`; the goal and idea counts are click-through handoffs (Goals board, idea triage). |
 | **MCP context tools** (`mcp_server/tools.rs`) | Four read-only tools for executing personas: `context_list_groups`, `context_search_by_keyword`, `context_get_by_file_path` ("what feature owns this file"), `context_neighbors` (the `cross_refs` graph). Tool descriptions tell agents to prefer these over grep for architecture questions. |
 | **Per-persona project pin** | `design_context.dev_project_id` is injected as `PERSONAS_DEV_PROJECT_ID` into the personas-mcp sidecar per run, so a persona bound to repo X reads X's contexts authoritatively. |
 | **CLI sessions** | The managed `CLAUDE.md` section + `context-map.json` + `/refresh-context` snapshot (§5). |
@@ -315,9 +315,10 @@ reconciliation there is an idempotent no-op.
   TS mirrors `slugify_use_case` in Rust; both suites pin the same table). The
   LLM Overview marks which observed call sites map to a declared use case and
   reports coverage — zero new instrumentation.
-- **Visibility** — the Context Map's use-case rail highlights every context a
-  selected use case spans and dims the rest, which is the only way a
-  cross-cutting layer can be read off a partitioned map.
+- **Visibility** — the Context Map is a cross-tab ledger: contexts are rows,
+  active use cases are columns, and a filled cell is a slice membership. Read
+  down a column for a use case's whole slice, across a row for a context's use
+  cases — the only way a cross-cutting layer can be read off a partitioned map.
 - **Export** — active use cases publish into `context-map.json` (`use_cases[]`,
   with the slice by context name), so CLI agents see the behavioral layer too.
 
@@ -401,7 +402,7 @@ behavioral unit) and 2 (needs cheap measurements to difference).
 | Export | `src-tauri/src/commands/infrastructure/context_map_export.rs` (`context-map.json` v2 + managed CLAUDE.md splice) |
 | Repo layer | `src-tauri/src/db/repos/dev_tools.rs` (`clear_project_context_map`, `set_context_pinned`, `replace_file_hashes`) |
 | Audit | `dev_tools_audit_contexts` |
-| Frontend | `src/features/plugins/dev-tools/sub_context/` (`ContextMapPage`, `ContextCard`, `ContextDetail`, `ScanOverlay`, `UseCasePanel`, `useUseCases`) |
+| Frontend | `src/features/plugins/dev-tools/sub_context/` (`ContextMapPage`, `ContextLedger`, `contextLedgerShared`, `ContextDetail`, `ScanOverlay`, `useUseCases`) |
 | Use cases | `dev_tools_{list,get,create,update,delete}_use_case[s]` · `_list_use_cases_for_context` · `_backfill_use_cases` · `use_case_scan.rs` (`dev_tools_scan_use_cases`) · repo `snapshot_context_links` / `reconcile_context_links` · `src/lib/useCaseSlug.ts` (join key) |
 | MCP tools | `src-tauri/src/mcp_server/tools.rs` (`context_list_groups` / `context_search_by_keyword` / `context_get_by_file_path` / `context_neighbors`) |
 | KPI pairing | `kpi_scan.rs` (proposal scope rules), `engine/kpi_derivation.rs` (scope-filtered goal derivation), `src/features/teams/sub_factory/` (matrix + console) |

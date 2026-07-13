@@ -59,19 +59,34 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 > data model, scan protocol, integrity invariants, consumers, KPI pairing,
 > and the forward roadmap.
 
-1. Open **Context Map**. Groups are displayed as color-tagged columns; contexts within each group show keywords, entry points, and file-path count.
-2. Click **Scan Codebase**. The Rust backend walks the filesystem, clusters files by structural signal (imports, directory layout, naming), and returns `ContextGroup`/`ContextItem` rows. A **ScanOverlay** streams progress lines and can be cancelled mid-flight. Each context card also carries a **goal-coverage badge** — a violet "N goals" chip when one or more goals reference this context (click jumps to the **Goals** tab with the first matching goal pre-selected in the Pulse spotlight), or a dashed "no goal" hint otherwise. Selecting a context opens the right-side **ContextDetail** pane which now also lists the linked goals inline (with title, progress %, and a "done / total tasks" summary per goal — each row is a button that jumps to the goal's Pulse spotlight). The hand-off uses the `pendingGoalSpotlightId` slot in `uiSlice`, which `GoalConstellation` consumes on mount.
+1. Open **Context Map**. It renders as a single **ledger** (`ContextLedger.tsx`) — a cross-tab whose rows are contexts (grouped into colour-tagged group bands) and whose columns are the project's active **use cases**. See *Use cases* below for how to read it.
+2. Click **Scan Codebase**. The scan spawns a Claude CLI pass over the repo (not a structural file walk) and streams `ContextGroup`/`ContextItem` rows back; a **ScanOverlay** streams progress lines and can be cancelled mid-flight. Each ledger row carries that context's **coverage cluster** — files · use cases · goals · ideas · KPIs — where the goal count jumps to the **Goals** board (pre-selecting the first matching goal via the `pendingGoalSpotlightId` slot in `uiSlice`) and the idea count jumps to **Idea Triage**. Selecting a row opens the right-side **ContextDetail** pane, which lists the linked goals inline (title, progress %, and a "done / total tasks" summary per goal) plus the use cases covering that context.
 3. Scans survive navigation — a status-resync poll on mount reattaches to in-flight jobs via `dev_tools_get_scan_codebase_status`, so leaving the tab during a long scan and coming back picks up where you left off.
 4. Completion fires an **in-app notification** (TitleBar bell) with the counts — groups created, contexts created, files mapped — and a redirect link.
 5. **Re-scan + scheduling** — once a project has been mapped, the action row swaps the single "Scan Codebase" button for **Re-scan (incremental)** (passes `delta_mode=true` → `dev_tools_scan_codebase` diffs the live tree against `dev_context_file_hashes` and feeds the LLM only changed files, short-circuiting when nothing changed), a **Full re-scan** fallback, and a **Plan update** button. A "Last scan" relative-time tag shows recency. **Plan update** creates a weekly **system-op automation** (`planWeeklyContextScan` → `system_ops_create_automation`, `0 3 * * 1`) for the active project — the same `SystemOpAutomation` the Chain Studio commits; the background scheduler then re-derives the context map weekly and each run surfaces in the **Live Stream** via `dev_tools.context_scan_*` bus events. (Context scans are always scoped to one project.)
 
 #### Use cases — the behavioral layer above the map
 
-A **use-case rail** sits above the context board. A use case is a slice
-*through* contexts ("Checkout conversion" spans a UI, an API and a data
-context), so it is the honest owner of an outcome that no single context owns.
-Selecting one **highlights every context it spans and dims the rest** — the one
-interaction that makes a cross-cutting layer readable on a partitioned map.
+The Context Map renders as **one ledger** (`ContextLedger.tsx`) — a
+cross-tabulation, not a card board:
+
+- **Rows are contexts**, wrapped in their group bands. Each row carries that
+  context's real coverage — files · use cases · goals · ideas · KPIs — and the
+  goal / idea counts **click through** (goals seed the spotlight and open the
+  Goals board; ideas open the triage queue).
+- **Columns are the active use cases.** A filled cell means *this use case
+  slices through this context*; the use case's primary context is ringed. So
+  you read **down** a column to see a use case's whole slice, and **across** a
+  row to see which use cases touch a context — the N:M relation is a shape, not
+  a cross-reference exercise. Clicking a column header highlights that use case.
+- The header carries a **context search/filter**, the use-case **Scan** /
+  **From features** actions, and the pending-proposal **triage strip**. Each row
+  has a per-context **idea-scan** action; the inline **new-group** form opens
+  here from the "+ Group" action.
+
+A use case is a slice *through* contexts ("Checkout conversion" spans a UI, an
+API and a data context), so it is the honest owner of an outcome that no single
+context owns.
 
 - **From features** (`dev_tools_backfill_use_cases`) — deterministic, no LLM:
   promotes each distinct `business_feature` label into a proposed use case.
@@ -374,8 +389,10 @@ src/features/plugins/dev-tools/
 │   ├── CrossProjectMetadataModal.tsx
 │   └── ImplementationLog.tsx     # per-project activity feed
 ├── sub_context/
-│   ├── ContextMapPage.tsx        # group/context board + scan orchestration
-│   ├── GroupList.tsx · ContextCard.tsx · ContextDetail.tsx
+│   ├── ContextMapPage.tsx        # scan orchestration + data assembly
+│   ├── ContextLedger.tsx         # the ledger: contexts × use-cases cross-tab
+│   ├── contextLedgerShared.tsx   # props contract, coverage cluster, triage strip
+│   ├── useUseCases.ts · ContextDetail.tsx
 │   └── ScanOverlay.tsx           # streaming progress overlay
 ├── sub_scanner/
 │   ├── IdeaScannerPage.tsx       # agent selection grid + results + history
