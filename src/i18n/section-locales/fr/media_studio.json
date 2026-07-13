@@ -166,5 +166,13 @@
   "layer_title": "Titres",
   "title_text": "Texte du titre",
   "title_text_placeholder": "Saisissez le titre…",
-  "title_untitled": "(titre vide)"
+  "title_untitled": "(titre vide)",
+  "voiceover": "Voix off",
+  "voiceover_added": "Voix off ajoutée à la timeline",
+  "voiceover_generate": "Générer la voix off",
+  "voiceover_generating": "Synthèse en cours…",
+  "voiceover_not_installed": "Moteur vocal local non installé — configurez-le d'abord dans les paramètres vocaux du compagnon.",
+  "voiceover_text": "Narration",
+  "voiceover_text_placeholder": "Saisissez ce que le narrateur doit dire…",
+  "voiceover_voice": "Voix"
 }

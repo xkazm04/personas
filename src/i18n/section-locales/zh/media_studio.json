@@ -166,5 +166,13 @@
   "layer_title": "标题",
   "title_text": "标题文本",
   "title_text_placeholder": "输入标题…",
-  "title_untitled": "(空标题)"
+  "title_untitled": "(空标题)",
+  "voiceover": "配音",
+  "voiceover_added": "配音已添加到时间轴",
+  "voiceover_generate": "生成配音",
+  "voiceover_generating": "合成中…",
+  "voiceover_not_installed": "尚未安装本地语音引擎 — 请先在 Companion 的语音设置中进行配置。",
+  "voiceover_text": "旁白",
+  "voiceover_text_placeholder": "输入旁白应该说的内容…",
+  "voiceover_voice": "音色"
 }

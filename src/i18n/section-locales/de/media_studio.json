@@ -166,5 +166,13 @@
   "layer_title": "Titel",
   "title_text": "Titeltext",
   "title_text_placeholder": "Titel eingeben…",
-  "title_untitled": "(leerer Titel)"
+  "title_untitled": "(leerer Titel)",
+  "voiceover": "Voiceover",
+  "voiceover_added": "Voiceover zur Zeitleiste hinzugefügt",
+  "voiceover_generate": "Voiceover generieren",
+  "voiceover_generating": "Wird synthetisiert…",
+  "voiceover_not_installed": "Lokale Sprach-Engine nicht installiert — richten Sie sie zuerst in den Companion-Spracheinstellungen ein.",
+  "voiceover_text": "Erzähltext",
+  "voiceover_text_placeholder": "Geben Sie ein, was der Erzähler sagen soll…",
+  "voiceover_voice": "Stimme"
 }

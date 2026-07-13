@@ -14567,6 +14567,14 @@ export type Translations = {
     entrance_left: string;
     entrance_right: string;
     entrance_duration: string;
+    voiceover: string;
+    voiceover_text: string;
+    voiceover_text_placeholder: string;
+    voiceover_voice: string;
+    voiceover_generate: string;
+    voiceover_generating: string;
+    voiceover_added: string;
+    voiceover_not_installed: string;
     add_video: string;
     add_audio: string;
     empty_lane: string;

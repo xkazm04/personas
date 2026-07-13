@@ -14437,7 +14437,15 @@
     "layer_title": "タイトル",
     "title_text": "タイトルテキスト",
     "title_text_placeholder": "タイトルを入力…",
-    "title_untitled": "(タイトルなし)"
+    "title_untitled": "(タイトルなし)",
+    "voiceover": "ボイスオーバー",
+    "voiceover_added": "ボイスオーバーをタイムラインに追加しました",
+    "voiceover_generate": "ボイスオーバーを生成",
+    "voiceover_generating": "合成中…",
+    "voiceover_not_installed": "ローカル音声エンジンが未インストールです — まずコンパニオンの音声設定でセットアップしてください。",
+    "voiceover_text": "ナレーション",
+    "voiceover_text_placeholder": "ナレーターに話させる内容を入力…",
+    "voiceover_voice": "音声"
   },
   "research_lab": {
     "dashboard": "ダッシュボード",

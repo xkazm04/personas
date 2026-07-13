@@ -105,6 +105,33 @@ export const artistCheckFfmpeg = () =>
 export const artistProbeMedia = (filePath: string) =>
   invoke<MediaProbeResult>("artist_probe_media", { filePath });
 
+// -- Voiceover (local Kokoro TTS) -------------------------------------------
+
+// The voiceover commands reuse the companion's Kokoro catalog + status types
+// (same backend structs) rather than redefining them.
+import type { KokoroVoiceEntry, KokoroStatus } from "@/api/companion";
+
+export interface VoiceoverResult {
+  filePath: string;
+  byteSize: number;
+}
+
+/**
+ * Synthesize narration text into a WAV via the local Kokoro sidecar and return
+ * its path. The caller probes the path for duration and adds it to the
+ * timeline as an audio clip.
+ */
+export const artistSynthesizeVoiceover = (text: string, voiceId: string) =>
+  invoke<VoiceoverResult>("artist_synthesize_voiceover", { text, voiceId });
+
+/** List the Kokoro voices available for narration. */
+export const artistListVoiceoverVoices = () =>
+  invoke<KokoroVoiceEntry[]>("artist_list_voiceover_voices");
+
+/** Whether the Kokoro sidecar binary + model are installed. */
+export const artistVoiceoverStatus = () =>
+  invoke<KokoroStatus>("artist_voiceover_status");
+
 // -- Media Export (ffmpeg) --------------------------------------------------
 
 /**

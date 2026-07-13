@@ -2583,6 +2583,9 @@ pub fn run() {
             commands::artist::transcribe::artist_transcribe_media,
             commands::artist::transcribe::artist_transcribe_providers_available,
             commands::artist::transcribe::artist_check_local_whisper,
+            commands::artist::voiceover::artist_synthesize_voiceover,
+            commands::artist::voiceover::artist_list_voiceover_voices,
+            commands::artist::voiceover::artist_voiceover_status,
             commands::artist::transcribe::artist_load_transcript,
             // Dev Tools -- Skill Files (browser/editor)
             commands::infrastructure::skill_files::skill_files_list,

@@ -166,5 +166,13 @@
   "layer_title": "Judul",
   "title_text": "Teks judul",
   "title_text_placeholder": "Ketik judul…",
-  "title_untitled": "(judul kosong)"
+  "title_untitled": "(judul kosong)",
+  "voiceover": "Sulih Suara",
+  "voiceover_added": "Sulih suara ditambahkan ke timeline",
+  "voiceover_generate": "Buat sulih suara",
+  "voiceover_generating": "Menyintesis…",
+  "voiceover_not_installed": "Mesin suara lokal belum terpasang — atur dulu di pengaturan Suara companion.",
+  "voiceover_text": "Narasi",
+  "voiceover_text_placeholder": "Ketik apa yang harus diucapkan narator…",
+  "voiceover_voice": "Suara"
 }

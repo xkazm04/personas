@@ -166,5 +166,13 @@
   "layer_title": "Заголовки",
   "title_text": "Текст заголовка",
   "title_text_placeholder": "Введите заголовок…",
-  "title_untitled": "(пустой заголовок)"
+  "title_untitled": "(пустой заголовок)",
+  "voiceover": "Закадровый голос",
+  "voiceover_added": "Озвучка добавлена на таймлайн",
+  "voiceover_generate": "Создать озвучку",
+  "voiceover_generating": "Синтез…",
+  "voiceover_not_installed": "Локальный голосовой движок не установлен — сначала настройте его в настройках голоса компаньона.",
+  "voiceover_text": "Текст озвучки",
+  "voiceover_text_placeholder": "Введите, что должен сказать диктор…",
+  "voiceover_voice": "Голос"
 }

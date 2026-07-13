@@ -37,6 +37,7 @@ import { useToastStore } from '@/stores/toastStore';
 import type { PlaybackEngine } from '../hooks/useTimelinePlayback';
 import type { MediaStudioPersistence } from '../hooks/useMediaStudioPersistence';
 import TransitionPicker from '../TransitionPicker';
+import VoiceoverButton from '../VoiceoverButton';
 import type {
   AudioClip,
   Composition,
@@ -436,6 +437,24 @@ export default function MediaStudioToolbar({
             </div>
           )}
         </IconPopover>
+
+        {/* Voiceover — synthesize narration onto the timeline via local TTS. */}
+        <VoiceoverButton
+          onGenerated={({ filePath, duration, label }) =>
+            onAddItem({
+              id: crypto.randomUUID(),
+              type: 'audio',
+              label,
+              startTime: totalDuration,
+              duration,
+              filePath,
+              trimStart: 0,
+              trimEnd: 0,
+              mediaDuration: duration,
+              volume: 1,
+            })
+          }
+        />
 
         {/* Clip actions (split, extract, thumbnail, trim-to-file, transcribe) */}
         <IconPopover icon={Palette} title={debtText("auto_clip_actions_7fc4a490")} disabled={!selectedItem} widthPx={260}>

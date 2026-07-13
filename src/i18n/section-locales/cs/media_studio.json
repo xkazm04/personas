@@ -166,5 +166,13 @@
   "layer_title": "Titulky",
   "title_text": "Text titulku",
   "title_text_placeholder": "Napište titulek…",
-  "title_untitled": "(prázdný titulek)"
+  "title_untitled": "(prázdný titulek)",
+  "voiceover": "Namluvený komentář",
+  "voiceover_added": "Komentář byl přidán na časovou osu",
+  "voiceover_generate": "Vygenerovat komentář",
+  "voiceover_generating": "Syntetizuje se…",
+  "voiceover_not_installed": "Lokální hlasový engine není nainstalován — nejprve jej nastavte v nastavení hlasu společníka.",
+  "voiceover_text": "Text vyprávění",
+  "voiceover_text_placeholder": "Napište, co má vypravěč říct…",
+  "voiceover_voice": "Hlas"
 }

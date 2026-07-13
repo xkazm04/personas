@@ -166,5 +166,13 @@
   "layer_title": "Tiêu đề",
   "title_text": "Văn bản tiêu đề",
   "title_text_placeholder": "Nhập tiêu đề…",
-  "title_untitled": "(tiêu đề trống)"
+  "title_untitled": "(tiêu đề trống)",
+  "voiceover": "Lồng tiếng",
+  "voiceover_added": "Đã thêm lồng tiếng vào dòng thời gian",
+  "voiceover_generate": "Tạo lồng tiếng",
+  "voiceover_generating": "Đang tổng hợp…",
+  "voiceover_not_installed": "Chưa cài đặt công cụ giọng nói cục bộ — hãy thiết lập trong phần Cài đặt giọng nói của companion trước.",
+  "voiceover_text": "Lời dẫn",
+  "voiceover_text_placeholder": "Nhập nội dung người dẫn chuyện sẽ nói…",
+  "voiceover_voice": "Giọng đọc"
 }

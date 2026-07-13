@@ -166,5 +166,13 @@
   "layer_title": "शीर्षक",
   "title_text": "शीर्षक टेक्स्ट",
   "title_text_placeholder": "शीर्षक लिखें…",
-  "title_untitled": "(खाली शीर्षक)"
+  "title_untitled": "(खाली शीर्षक)",
+  "voiceover": "वॉयसओवर",
+  "voiceover_added": "वॉयसओवर टाइमलाइन में जोड़ा गया",
+  "voiceover_generate": "वॉयसओवर जनरेट करें",
+  "voiceover_generating": "संश्लेषण हो रहा है…",
+  "voiceover_not_installed": "लोकल वॉइस इंजन इंस्टॉल नहीं है — पहले इसे कंपैनियन की वॉइस सेटिंग्स में सेट करें।",
+  "voiceover_text": "नैरेशन",
+  "voiceover_text_placeholder": "टाइप करें कि नैरेटर को क्या कहना चाहिए…",
+  "voiceover_voice": "आवाज़"
 }
