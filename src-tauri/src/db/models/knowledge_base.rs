@@ -168,3 +168,98 @@ pub struct KbIngestProgress {
     pub current_file: Option<String>,
     pub error: Option<String>,
 }
+
+// ============================================================================
+// Structured Extraction (LLM document -> typed rows)
+// ============================================================================
+
+/// One field of an entity type in an extraction schema.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct KbSchemaField {
+    pub name: String,
+    /// What this field holds, in the model's words — carried into the
+    /// extraction prompt so the second pass knows what to look for.
+    pub description: String,
+}
+
+/// One entity type the schema will extract (e.g. "footing", "line_item").
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct KbSchemaEntity {
+    pub entity_type: String,
+    pub description: String,
+    pub fields: Vec<KbSchemaField>,
+}
+
+/// A proposed-or-approved extraction schema: the set of entity types and their
+/// fields the model will pull out of the corpus. Inferred in pass 1, edited by
+/// the user, then applied in pass 2 — see `vector/DESIGN.md`.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct KbExtractionSchema {
+    pub entities: Vec<KbSchemaEntity>,
+}
+
+/// One extraction pass over a knowledge base.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct KbExtractionRun {
+    pub id: String,
+    pub kb_id: String,
+    /// The approved `KbExtractionSchema`, serialized. Kept on the run so its
+    /// entities can be interpreted without re-deriving the schema.
+    pub schema_json: String,
+    pub status: String,
+    #[ts(type = "number")]
+    pub entity_count: i32,
+    pub error_message: Option<String>,
+    pub created_at: String,
+    pub completed_at: Option<String>,
+}
+
+/// One typed object extracted from a document.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct KbEntity {
+    pub id: String,
+    pub run_id: String,
+    pub kb_id: String,
+    pub document_id: Option<String>,
+    /// Source document title, hydrated on read for display. Not a stored column.
+    pub document_title: Option<String>,
+    /// 1-based page the object was found on; `None` for flat-text sources.
+    #[ts(type = "number | null")]
+    pub source_page: Option<i32>,
+    pub entity_type: String,
+    /// The model's short label for this instance, e.g. "F10 footing".
+    pub entity_key: String,
+    /// Field -> value object matching the run's schema.
+    pub attributes: Option<serde_json::Value>,
+    #[ts(type = "number")]
+    pub extraction_confidence: f32,
+    pub created_at: String,
+}
+
+/// Progress event for a running extraction pass.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct KbExtractionProgress {
+    pub run_id: String,
+    pub kb_id: String,
+    pub status: String,
+    #[ts(type = "number")]
+    pub documents_total: usize,
+    #[ts(type = "number")]
+    pub documents_done: usize,
+    #[ts(type = "number")]
+    pub entities_found: usize,
+    pub current_document: Option<String>,
+    pub error: Option<String>,
+}

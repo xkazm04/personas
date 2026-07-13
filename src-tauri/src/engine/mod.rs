@@ -112,6 +112,8 @@ pub mod inflight_guard;
 pub mod intent_compiler;
 pub mod kb_index;
 #[cfg(feature = "ml")]
+pub mod kb_extract;
+#[cfg(feature = "ml")]
 pub mod kb_ingest;
 pub mod knowledge;
 pub mod lifecycle;

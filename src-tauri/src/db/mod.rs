@@ -563,6 +563,39 @@ CREATE TRIGGER IF NOT EXISTS kb_chunks_fts_au AFTER UPDATE ON kb_chunks BEGIN
     INSERT INTO kb_chunks_fts(kb_chunks_fts, rowid, content) VALUES ('delete', old.rowid, old.content);
     INSERT INTO kb_chunks_fts(rowid, content) VALUES (new.rowid, new.content);
 END;
+
+-- Structured extraction: one row per extraction pass over a KB. The approved
+-- schema is stored on the run so the extracted entities can be interpreted
+-- later without re-deriving it.
+CREATE TABLE IF NOT EXISTS kb_extraction_runs (
+    id              TEXT PRIMARY KEY,
+    kb_id           TEXT NOT NULL REFERENCES knowledge_bases(id) ON DELETE CASCADE,
+    schema_json     TEXT NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'running',
+    entity_count    INTEGER NOT NULL DEFAULT 0,
+    error_message   TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    completed_at    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_kb_extraction_runs_kb ON kb_extraction_runs(kb_id);
+
+-- One typed object the model pulled out of a document. entity_key is its short
+-- label ("F10 footing"); attributes_json is the field->value object matching
+-- the run's schema. source_page carries the citation forward from the chunk.
+CREATE TABLE IF NOT EXISTS kb_entities (
+    id                    TEXT PRIMARY KEY,
+    run_id                TEXT NOT NULL REFERENCES kb_extraction_runs(id) ON DELETE CASCADE,
+    kb_id                 TEXT NOT NULL REFERENCES knowledge_bases(id) ON DELETE CASCADE,
+    document_id           TEXT REFERENCES kb_documents(id) ON DELETE SET NULL,
+    source_page           INTEGER,
+    entity_type           TEXT NOT NULL,
+    entity_key            TEXT NOT NULL,
+    attributes_json       TEXT NOT NULL DEFAULT '{}',
+    extraction_confidence REAL NOT NULL DEFAULT 1.0,
+    created_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_kb_entities_run ON kb_entities(run_id);
+CREATE INDEX IF NOT EXISTS idx_kb_entities_kb_type ON kb_entities(kb_id, entity_type);
 "#;
 
 /// Schema for the Companion (Athena) plugin. Lives in the user database
