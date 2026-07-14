@@ -2751,5 +2751,37 @@
     "done": "Duplicado como «{name}»",
     "done_with_wiring": "Duplicado como «{name}»: se copiaron {triggers} activador(es) y {subscriptions} suscripción(es), desactivados en la copia",
     "failed": "No se pudo duplicar el agente"
+  },
+  "change_history": {
+    "empty": "Aún no hay cambios registrados",
+    "empty_value": "(vacío)",
+    "fields": {
+      "cli_awareness_enabled": "Conciencia de CLI",
+      "color": "Color",
+      "description": "Descripción",
+      "design_context": "Contexto de diseño",
+      "enabled": "Habilitado",
+      "headless": "Sin interfaz",
+      "icon": "Icono",
+      "lifecycle": "Ciclo de vida",
+      "max_budget_usd": "Presupuesto",
+      "max_concurrent": "Máx. concurrentes",
+      "max_turns": "Máx. turnos",
+      "model_profile": "Model",
+      "name": "Nombre",
+      "notification_channels": "Notificaciones",
+      "parameters": "Parámetros",
+      "sensitive": "Vista previa sensible",
+      "structured_prompt": "Prompt",
+      "system_prompt": "Prompt del sistema",
+      "timeout_ms": "Tiempo de espera"
+    },
+    "sources": {
+      "editor": "Editor",
+      "fanout": "Distribución",
+      "header": "Encabezado",
+      "other": "Otro"
+    },
+    "title": "Historial de cambios"
   }
 }

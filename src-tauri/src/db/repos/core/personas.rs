@@ -995,12 +995,12 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         };
 
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+        let mut conn = pool.get()?;
 
         // Build dynamic SET clause and params in a single pass
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now.clone())];
 
         push_field_param!(input.name, "name", sets, param_idx, param_values, clone);
         push_field_param!(
@@ -1183,11 +1183,27 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
             param_values.iter().map(|p| p.as_ref()).collect();
-        conn.query_row(&sql, params_ref.as_slice(), row_to_persona)
+
+        // Wrap the UPDATE + change-log writes in one transaction so the audit
+        // rows commit atomically with the persona edit. The diff is computed
+        // from `existing` (already loaded above) — no extra SELECT round-trip.
+        let tx = conn.transaction()?;
+        let persona = tx
+            .query_row(&sql, params_ref.as_slice(), row_to_persona)
             .map_err(|e| match e {
                 rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Persona {id}")),
                 other => AppError::Database(other),
-            })
+            })?;
+        // Field-level change history. Never let an audit failure sink a real
+        // edit — log and continue if the writer errors.
+        let source = input.source.as_deref().or(Some("other"));
+        if let Err(e) = crate::db::repos::resources::persona_change_log::write_diff(
+            &tx, id, &existing, &input, source, &now,
+        ) {
+            tracing::warn!(persona_id = %id, error = %e, "persona change-log write failed");
+        }
+        tx.commit()?;
+        Ok(persona)
     })
 }
 

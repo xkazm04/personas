@@ -2751,5 +2751,37 @@
     "done": "已复制为“{name}”",
     "done_with_wiring": "已复制为“{name}” — 已复制 {triggers} 个触发器和 {subscriptions} 个订阅（副本中已禁用）",
     "failed": "无法复制代理"
+  },
+  "change_history": {
+    "empty": "暂无变更记录",
+    "empty_value": "(空)",
+    "fields": {
+      "cli_awareness_enabled": "CLI 感知",
+      "color": "颜色",
+      "description": "描述",
+      "design_context": "设计上下文",
+      "enabled": "已启用",
+      "headless": "无头模式",
+      "icon": "图标",
+      "lifecycle": "生命周期",
+      "max_budget_usd": "预算",
+      "max_concurrent": "最大并发数",
+      "max_turns": "最大轮数",
+      "model_profile": "模型",
+      "name": "名称",
+      "notification_channels": "通知",
+      "parameters": "参数",
+      "sensitive": "敏感预览",
+      "structured_prompt": "提示词",
+      "system_prompt": "系统提示词",
+      "timeout_ms": "超时时间"
+    },
+    "sources": {
+      "editor": "编辑器",
+      "fanout": "扇出",
+      "header": "标题栏",
+      "other": "其他"
+    },
+    "title": "变更历史"
   }
 }

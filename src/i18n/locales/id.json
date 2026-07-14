@@ -3554,6 +3554,38 @@
       "done": "Diduplikasi sebagai \"{name}\"",
       "done_with_wiring": "Diduplikasi sebagai \"{name}\" — menyalin {triggers} pemicu dan {subscriptions} langganan, dinonaktifkan pada salinan",
       "failed": "Gagal menduplikasi agen"
+    },
+    "change_history": {
+      "empty": "Belum ada perubahan tercatat",
+      "empty_value": "(kosong)",
+      "fields": {
+        "cli_awareness_enabled": "Kesadaran CLI",
+        "color": "Warna",
+        "description": "Deskripsi",
+        "design_context": "Konteks desain",
+        "enabled": "Diaktifkan",
+        "headless": "Headless",
+        "icon": "Ikon",
+        "lifecycle": "Siklus hidup",
+        "max_budget_usd": "Anggaran",
+        "max_concurrent": "Maks bersamaan",
+        "max_turns": "Maks giliran",
+        "model_profile": "Model",
+        "name": "Nama",
+        "notification_channels": "Notifikasi",
+        "parameters": "Parameter",
+        "sensitive": "Pratinjau sensitif",
+        "structured_prompt": "Prompt",
+        "system_prompt": "Prompt sistem",
+        "timeout_ms": "Batas waktu"
+      },
+      "sources": {
+        "editor": "Editor",
+        "fanout": "Fan-out",
+        "header": "Header",
+        "other": "Lainnya"
+      },
+      "title": "Riwayat perubahan"
     }
   },
   "vault": {

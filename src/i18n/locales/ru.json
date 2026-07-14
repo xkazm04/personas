@@ -3554,6 +3554,38 @@
       "done": "Дублировано как «{name}»",
       "done_with_wiring": "Дублировано как «{name}» — скопировано триггеров: {triggers}, подписок: {subscriptions} (отключены в копии)",
       "failed": "Не удалось дублировать агента"
+    },
+    "change_history": {
+      "empty": "Изменений пока нет",
+      "empty_value": "(пусто)",
+      "fields": {
+        "cli_awareness_enabled": "Осведомлённость о CLI",
+        "color": "Цвет",
+        "description": "Описание",
+        "design_context": "Контекст дизайна",
+        "enabled": "Включено",
+        "headless": "Без интерфейса",
+        "icon": "Значок",
+        "lifecycle": "Жизненный цикл",
+        "max_budget_usd": "Бюджет",
+        "max_concurrent": "Макс. одновременно",
+        "max_turns": "Макс. ходов",
+        "model_profile": "Model",
+        "name": "Имя",
+        "notification_channels": "Уведомления",
+        "parameters": "Параметры",
+        "sensitive": "Чувствительный предпросмотр",
+        "structured_prompt": "Промпт",
+        "system_prompt": "Системный промпт",
+        "timeout_ms": "Тайм-аут"
+      },
+      "sources": {
+        "editor": "Редактор",
+        "fanout": "Fan-out",
+        "header": "Заголовок",
+        "other": "Другое"
+      },
+      "title": "История изменений"
     }
   },
   "vault": {

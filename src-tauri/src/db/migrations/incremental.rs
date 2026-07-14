@@ -1061,6 +1061,36 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created settings_audit_log table");
     }
 
+    // -- Persona Change Log (append-only field-level edit trail) ---------
+    // "Who changed my agent's model / budget / prompt and when." One row per
+    // changed field per update_persona call. Secret-bearing fields
+    // (model_profile, notification_channels) are logged with values redacted
+    // to "(changed)". Bounded per-persona retention is enforced in the repo.
+    let has_persona_change_log: bool = conn
+        .prepare(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_change_log'",
+        )?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_persona_change_log {
+        ddl_step(
+            conn,
+            "CREATE TABLE IF NOT EXISTS persona_change_log (
+                id           TEXT PRIMARY KEY,
+                persona_id   TEXT NOT NULL,
+                field        TEXT NOT NULL,
+                before_value TEXT,
+                after_value  TEXT,
+                source       TEXT,
+                created_at   TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_pcl_persona ON persona_change_log(persona_id, created_at DESC);",
+        )?;
+        tracing::info!("Created persona_change_log table");
+    }
+
     // -- Tool Execution Audit Log (append-only) --------------------------
     let has_tool_audit_log: bool = conn
         .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tool_execution_audit_log'")?

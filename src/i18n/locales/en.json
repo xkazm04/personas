@@ -3554,6 +3554,38 @@
       "activate_agent": "Activate Agent",
       "create_agent": "Create Agent",
       "min_completeness": "Add more detail to reach 40% completeness"
+    },
+    "change_history": {
+      "title": "Change history",
+      "empty": "No changes recorded yet",
+      "empty_value": "(empty)",
+      "sources": {
+        "editor": "Editor",
+        "header": "Header",
+        "fanout": "Fan-out",
+        "other": "Other"
+      },
+      "fields": {
+        "name": "Name",
+        "description": "Description",
+        "system_prompt": "System prompt",
+        "structured_prompt": "Prompt",
+        "icon": "Icon",
+        "color": "Color",
+        "enabled": "Enabled",
+        "sensitive": "Sensitive preview",
+        "headless": "Headless",
+        "max_concurrent": "Max concurrent",
+        "timeout_ms": "Timeout",
+        "max_budget_usd": "Budget",
+        "max_turns": "Max turns",
+        "design_context": "Design context",
+        "parameters": "Parameters",
+        "lifecycle": "Lifecycle",
+        "cli_awareness_enabled": "CLI awareness",
+        "model_profile": "Model",
+        "notification_channels": "Notifications"
+      }
     }
   },
   "director": {

@@ -3554,6 +3554,38 @@
       "done": "Dupliziert als „{name}“",
       "done_with_wiring": "Dupliziert als „{name}“ — {triggers} Trigger und {subscriptions} Abonnement(s) kopiert, in der Kopie deaktiviert",
       "failed": "Agent konnte nicht dupliziert werden"
+    },
+    "change_history": {
+      "empty": "Noch keine Änderungen erfasst",
+      "empty_value": "(leer)",
+      "fields": {
+        "cli_awareness_enabled": "CLI-Erkennung",
+        "color": "Farbe",
+        "description": "Beschreibung",
+        "design_context": "Design-Kontext",
+        "enabled": "Aktiviert",
+        "headless": "Headless",
+        "icon": "Symbol",
+        "lifecycle": "Lebenszyklus",
+        "max_budget_usd": "Budget",
+        "max_concurrent": "Max. gleichzeitig",
+        "max_turns": "Max. Runden",
+        "model_profile": "Modell",
+        "name": "Name",
+        "notification_channels": "Benachrichtigungen",
+        "parameters": "Parameter",
+        "sensitive": "Sensible Vorschau",
+        "structured_prompt": "Prompt",
+        "system_prompt": "System-Prompt",
+        "timeout_ms": "Zeitlimit"
+      },
+      "sources": {
+        "editor": "Editor",
+        "fanout": "Fan-out",
+        "header": "Kopfzeile",
+        "other": "Sonstiges"
+      },
+      "title": "Änderungsverlauf"
     }
   },
   "vault": {

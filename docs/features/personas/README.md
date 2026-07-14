@@ -437,6 +437,25 @@ to a built-in `agent-icon:` inferred from the persona's `template_category`,
 so a shared persona arrives with a sensible catalog icon rather than a dead
 reference.
 
+### Change history — who changed what, when
+
+The Settings tab shows a read-only **Change history** list (`PersonaChangeHistory`,
+`src/features/agents/sub_editor/components/`) answering "who changed my agent's
+model / budget / prompt, and when". Every `update_persona` writes one row per
+*changed* field to the append-only `persona_change_log` table
+(`src-tauri/src/db/repos/resources/persona_change_log.rs`), computed from the
+already-loaded persona row inside the same UPDATE transaction — no extra SELECT
+on the autosave path. Each row carries the field name, truncated before→after
+values, a `source` tag (`editor` · `header` · `fanout` · `other`, derived from
+the optional `UpdatePersonaInput.source`), and a timestamp.
+
+- **Secrets are never stored.** `model_profile` and `notification_channels`
+  carry `auth_token`s; their values are redacted to `"(changed)"`.
+- **Noise control.** Same-field edits within 30s coalesce into the prior row
+  (keeping the original before-value); per-persona history is capped at 200 rows.
+- Read via the `list_persona_change_log` IPC command. Restore/rollback is out of
+  scope — this is an inspection surface only.
+
 ## Home team — workspace anchor
 
 > **History:** the standalone **PersonaGroup** primitive (a `persona_groups`

@@ -3554,6 +3554,38 @@
       "done": "「{name}」として複製しました",
       "done_with_wiring": "「{name}」として複製しました — {triggers}件のトリガーと{subscriptions}件のサブスクリプションをコピー（コピー側は無効）",
       "failed": "エージェントを複製できませんでした"
+    },
+    "change_history": {
+      "empty": "変更履歴はまだありません",
+      "empty_value": "(空)",
+      "fields": {
+        "cli_awareness_enabled": "CLI認識",
+        "color": "カラー",
+        "description": "説明",
+        "design_context": "デザインコンテキスト",
+        "enabled": "有効",
+        "headless": "ヘッドレス",
+        "icon": "アイコン",
+        "lifecycle": "ライフサイクル",
+        "max_budget_usd": "予算",
+        "max_concurrent": "最大同時実行数",
+        "max_turns": "最大ターン数",
+        "model_profile": "モデル",
+        "name": "名前",
+        "notification_channels": "通知",
+        "parameters": "パラメータ",
+        "sensitive": "機密情報プレビュー",
+        "structured_prompt": "プロンプト",
+        "system_prompt": "システムプロンプト",
+        "timeout_ms": "タイムアウト"
+      },
+      "sources": {
+        "editor": "エディタ",
+        "fanout": "ファンアウト",
+        "header": "ヘッダー",
+        "other": "その他"
+      },
+      "title": "変更履歴"
     }
   },
   "vault": {

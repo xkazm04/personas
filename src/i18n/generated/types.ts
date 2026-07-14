@@ -3561,6 +3561,38 @@ export type Translations = {
       create_agent: string;
       min_completeness: string;
     };
+    change_history: {
+      title: string;
+      empty: string;
+      empty_value: string;
+      sources: {
+        editor: string;
+        header: string;
+        fanout: string;
+        other: string;
+      };
+      fields: {
+        name: string;
+        description: string;
+        system_prompt: string;
+        structured_prompt: string;
+        icon: string;
+        color: string;
+        enabled: string;
+        sensitive: string;
+        headless: string;
+        max_concurrent: string;
+        timeout_ms: string;
+        max_budget_usd: string;
+        max_turns: string;
+        design_context: string;
+        parameters: string;
+        lifecycle: string;
+        cli_awareness_enabled: string;
+        model_profile: string;
+        notification_channels: string;
+      };
+    };
   };
   director: {
     panel_title: string;

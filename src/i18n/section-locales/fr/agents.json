@@ -2751,5 +2751,37 @@
     "done": "Dupliqué sous « {name} »",
     "done_with_wiring": "Dupliqué sous « {name} » — {triggers} déclencheur(s) et {subscriptions} abonnement(s) copiés, désactivés sur la copie",
     "failed": "Échec de la duplication de l'agent"
+  },
+  "change_history": {
+    "empty": "Aucune modification enregistrée",
+    "empty_value": "(vide)",
+    "fields": {
+      "cli_awareness_enabled": "Conscience CLI",
+      "color": "Couleur",
+      "description": "Description",
+      "design_context": "Contexte de conception",
+      "enabled": "Activé",
+      "headless": "Sans interface",
+      "icon": "Icône",
+      "lifecycle": "Cycle de vie",
+      "max_budget_usd": "Budget",
+      "max_concurrent": "Concurrence max",
+      "max_turns": "Tours max",
+      "model_profile": "Modèle",
+      "name": "Nom",
+      "notification_channels": "Notifications",
+      "parameters": "Paramètres",
+      "sensitive": "Aperçu sensible",
+      "structured_prompt": "Invite",
+      "system_prompt": "Invite système",
+      "timeout_ms": "Délai d'expiration"
+    },
+    "sources": {
+      "editor": "Éditeur",
+      "fanout": "Répartition",
+      "header": "En-tête",
+      "other": "Autre"
+    },
+    "title": "Historique des modifications"
   }
 }

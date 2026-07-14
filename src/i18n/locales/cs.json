@@ -3554,6 +3554,38 @@
       "done": "Duplikováno jako „{name}“",
       "done_with_wiring": "Duplikováno jako „{name}“ — zkopírováno {triggers} spouštěčů a {subscriptions} odběrů, v kopii zakázáno",
       "failed": "Nepodařilo se duplikovat agenta"
+    },
+    "change_history": {
+      "empty": "Zatím nejsou zaznamenány žádné změny",
+      "empty_value": "(prázdné)",
+      "fields": {
+        "cli_awareness_enabled": "Povědomí o CLI",
+        "color": "Barva",
+        "description": "Popis",
+        "design_context": "Kontext návrhu",
+        "enabled": "Povoleno",
+        "headless": "Bez uživatelského rozhraní",
+        "icon": "Ikona",
+        "lifecycle": "Životní cyklus",
+        "max_budget_usd": "Rozpočet",
+        "max_concurrent": "Max. souběžných",
+        "max_turns": "Max. kol",
+        "model_profile": "Model",
+        "name": "Název",
+        "notification_channels": "Oznámení",
+        "parameters": "Parametry",
+        "sensitive": "Náhled citlivých údajů",
+        "structured_prompt": "Prompt",
+        "system_prompt": "Systémový prompt",
+        "timeout_ms": "Časový limit"
+      },
+      "sources": {
+        "editor": "Editor",
+        "fanout": "Rozvětvení",
+        "header": "Záhlaví",
+        "other": "Ostatní"
+      },
+      "title": "Historie změn"
     }
   },
   "vault": {

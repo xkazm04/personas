@@ -11,6 +11,7 @@ import { EditorTabBar } from './EditorTabBar';
 import { EditorEmptyState } from './EditorEmptyState';
 import { PersonaDecisionsFooter } from './PersonaDecisionsFooter';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
+import { PersonaChangeHistory } from './PersonaChangeHistory';
 import {
   ActivityTab,
   PersonaSettingsTab,
@@ -196,6 +197,11 @@ export function EditorBody() {
                   setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
                   onDelete={handleDelete}
                 />
+                {selectedPersona?.id && (
+                  <div className="max-w-3xl 3xl:max-w-4xl 4xl:max-w-5xl mt-4">
+                    <PersonaChangeHistory personaId={selectedPersona.id} />
+                  </div>
+                )}
               </EditorTabContent>
             )}
           </Suspense>

@@ -3554,6 +3554,38 @@
       "done": "\"{name}\" के रूप में डुप्लिकेट किया गया",
       "done_with_wiring": "\"{name}\" के रूप में डुप्लिकेट किया गया — {triggers} ट्रिगर और {subscriptions} सदस्यता कॉपी की गईं, कॉपी में अक्षम",
       "failed": "एजेंट डुप्लिकेट करने में विफल"
+    },
+    "change_history": {
+      "empty": "अभी तक कोई परिवर्तन दर्ज नहीं हुआ",
+      "empty_value": "(खाली)",
+      "fields": {
+        "cli_awareness_enabled": "CLI जागरूकता",
+        "color": "रंग",
+        "description": "विवरण",
+        "design_context": "डिज़ाइन संदर्भ",
+        "enabled": "सक्षम",
+        "headless": "हेडलेस",
+        "icon": "आइकन",
+        "lifecycle": "जीवनचक्र",
+        "max_budget_usd": "बजट",
+        "max_concurrent": "अधिकतम समवर्ती",
+        "max_turns": "अधिकतम टर्न",
+        "model_profile": "Model",
+        "name": "नाम",
+        "notification_channels": "सूचनाएं",
+        "parameters": "पैरामीटर",
+        "sensitive": "संवेदनशील पूर्वावलोकन",
+        "structured_prompt": "प्रॉम्प्ट",
+        "system_prompt": "सिस्टम प्रॉम्प्ट",
+        "timeout_ms": "टाइमआउट"
+      },
+      "sources": {
+        "editor": "एडिटर",
+        "fanout": "फैन-आउट",
+        "header": "हेडर",
+        "other": "अन्य"
+      },
+      "title": "परिवर्तन इतिहास"
     }
   },
   "vault": {

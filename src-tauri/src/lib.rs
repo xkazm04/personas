@@ -1676,6 +1676,7 @@ pub fn run() {
             commands::core::personas::create_persona,
             commands::core::personas::update_persona,
             commands::core::personas::update_persona_parameters,
+            commands::core::personas::list_persona_change_log,
             commands::core::personas::sync_capability_parameters,
             commands::core::personas::duplicate_persona,
             commands::core::personas::persona_blast_radius,

@@ -3554,6 +3554,38 @@
       "done": "\"{name}\" হিসেবে ডুপ্লিকেট করা হয়েছে",
       "done_with_wiring": "\"{name}\" হিসেবে ডুপ্লিকেট করা হয়েছে — {triggers}টি ট্রিগার এবং {subscriptions}টি সাবস্ক্রিপশন কপি করা হয়েছে, কপিতে নিষ্ক্রিয়",
       "failed": "এজেন্ট ডুপ্লিকেট করা যায়নি"
+    },
+    "change_history": {
+      "empty": "এখনও কোনো পরিবর্তন রেকর্ড করা হয়নি",
+      "empty_value": "(empty)",
+      "fields": {
+        "cli_awareness_enabled": "CLI সচেতনতা",
+        "color": "রং",
+        "description": "বিবরণ",
+        "design_context": "ডিজাইন প্রসঙ্গ",
+        "enabled": "সক্রিয়",
+        "headless": "হেডলেস",
+        "icon": "আইকন",
+        "lifecycle": "লাইফসাইকেল",
+        "max_budget_usd": "বাজেট",
+        "max_concurrent": "সর্বোচ্চ একযোগে",
+        "max_turns": "সর্বোচ্চ টার্ন",
+        "model_profile": "Model",
+        "name": "নাম",
+        "notification_channels": "বিজ্ঞপ্তি",
+        "parameters": "প্যারামিটার",
+        "sensitive": "সংবেদনশীল প্রিভিউ",
+        "structured_prompt": "প্রম্পট",
+        "system_prompt": "সিস্টেম প্রম্পট",
+        "timeout_ms": "টাইমআউট"
+      },
+      "sources": {
+        "editor": "এডিটর",
+        "fanout": "ফ্যান-আউট",
+        "header": "হেডার",
+        "other": "অন্যান্য"
+      },
+      "title": "পরিবর্তনের ইতিহাস"
     }
   },
   "vault": {

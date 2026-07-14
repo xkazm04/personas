@@ -2751,5 +2751,37 @@
     "done": "Đã nhân bản thành \"{name}\"",
     "done_with_wiring": "Đã nhân bản thành \"{name}\" — đã sao chép {triggers} trình kích hoạt và {subscriptions} đăng ký, bị tắt trên bản sao",
     "failed": "Không thể nhân bản tác nhân"
+  },
+  "change_history": {
+    "empty": "Chưa có thay đổi nào được ghi lại",
+    "empty_value": "(trống)",
+    "fields": {
+      "cli_awareness_enabled": "Nhận biết CLI",
+      "color": "Màu sắc",
+      "description": "Mô tả",
+      "design_context": "Ngữ cảnh thiết kế",
+      "enabled": "Đã bật",
+      "headless": "Chế độ headless",
+      "icon": "Biểu tượng",
+      "lifecycle": "Vòng đời",
+      "max_budget_usd": "Ngân sách",
+      "max_concurrent": "Số lượng đồng thời tối đa",
+      "max_turns": "Số lượt tối đa",
+      "model_profile": "Model",
+      "name": "Tên",
+      "notification_channels": "Kênh thông báo",
+      "parameters": "Tham số",
+      "sensitive": "Xem trước dữ liệu nhạy cảm",
+      "structured_prompt": "Prompt",
+      "system_prompt": "Prompt hệ thống",
+      "timeout_ms": "Thời gian chờ"
+    },
+    "sources": {
+      "editor": "Trình chỉnh sửa",
+      "fanout": "Phân tán",
+      "header": "Tiêu đề",
+      "other": "Khác"
+    },
+    "title": "Lịch sử thay đổi"
   }
 }

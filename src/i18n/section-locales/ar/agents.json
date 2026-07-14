@@ -2751,5 +2751,37 @@
     "done": "تم النسخ باسم \"{name}\"",
     "done_with_wiring": "تم النسخ باسم \"{name}\" — تم نسخ {triggers} مُشغِّل و{subscriptions} اشتراك، معطّلة في النسخة",
     "failed": "تعذّر تكرار الوكيل"
+  },
+  "change_history": {
+    "empty": "لا توجد تغييرات مسجلة بعد",
+    "empty_value": "(فارغ)",
+    "fields": {
+      "cli_awareness_enabled": "وعي CLI",
+      "color": "اللون",
+      "description": "الوصف",
+      "design_context": "سياق التصميم",
+      "enabled": "مفعّل",
+      "headless": "بدون واجهة",
+      "icon": "الأيقونة",
+      "lifecycle": "دورة الحياة",
+      "max_budget_usd": "الميزانية",
+      "max_concurrent": "الحد الأقصى المتزامن",
+      "max_turns": "الحد الأقصى للأدوار",
+      "model_profile": "Model",
+      "name": "الاسم",
+      "notification_channels": "الإشعارات",
+      "parameters": "المعاملات",
+      "sensitive": "معاينة حساسة",
+      "structured_prompt": "التوجيه",
+      "system_prompt": "توجيه النظام",
+      "timeout_ms": "المهلة"
+    },
+    "sources": {
+      "editor": "المحرر",
+      "fanout": "التوزيع المتفرع",
+      "header": "الرأس",
+      "other": "أخرى"
+    },
+    "title": "سجل التغييرات"
   }
 }
