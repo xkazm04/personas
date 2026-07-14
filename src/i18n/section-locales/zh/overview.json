@@ -528,7 +528,8 @@
     "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。",
     "type_labels": {
       "sla_breach_opened": "SLA 违规已开始",
-      "sla_breach_recovered": "SLA 违规已恢复"
+      "sla_breach_recovered": "SLA 违规已恢复",
+      "schedule_missed_offline": "错过的计划运行（离线）"
     }
   },
   "health": {

@@ -114,6 +114,8 @@ const BUILTIN_EVENT_TYPES: &[(&str, &str)] = &[
     ("trigger_fired", "ingress"),
     ("file_changed", "ingress"),
     ("context_rule_match", "ingress"),
+    // Scheduler reliability signals (never listener-matched — informational)
+    ("schedule.missed.offline", "scheduler"),
 ];
 
 /// Lazily-built set of the *canonical* forms of every builtin type, for O(1)

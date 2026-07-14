@@ -528,7 +528,8 @@
     "skipped_stat_tooltip": "{skipped} dari {total} event dalam 7 hari terakhir tidak memiliki pelanggan dan dilewati ({rate}). Tingkat yang tinggi menandakan ada pemicu yang tidak didengarkan siapa pun.",
     "type_labels": {
       "sla_breach_opened": "Pelanggaran SLA dibuka",
-      "sla_breach_recovered": "Pelanggaran SLA pulih"
+      "sla_breach_recovered": "Pelanggaran SLA pulih",
+      "schedule_missed_offline": "Jadwal terlewat (offline)"
     }
   },
   "health": {

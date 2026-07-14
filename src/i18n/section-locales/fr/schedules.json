@@ -114,5 +114,9 @@
   "last24h_show_less": "Afficher moins",
   "last24h_retry_at": "nouvelle tentative {time}",
   "unverified": "Non vérifié",
-  "unverified_tooltip": "Aucun enregistrement d'exécution pour ce créneau — il a pu être ignoré, limité en fréquence, dépasser le budget ou l'application était fermée."
+  "unverified_tooltip": "Aucun enregistrement d'exécution pour ce créneau — il a pu être ignoré, limité en fréquence, dépasser le budget ou l'application était fermée.",
+  "missed_backfill_cta": "Rattraper",
+  "missed_dismiss": "Ignorer l’avis d’exécutions manquées",
+  "missed_offline": "{count} manquée(s) hors ligne",
+  "missed_offline_tooltip": "Des exécutions planifiées ont été ignorées pendant que l’app était fermée. Le rattrapage les rejoue (dédupliqué et plafonné), ou ignorez pour effacer."
 }

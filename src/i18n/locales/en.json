@@ -6402,7 +6402,8 @@
       "event_detail_status": "Status:",
       "type_labels": {
         "sla_breach_opened": "SLA breach opened",
-        "sla_breach_recovered": "SLA breach recovered"
+        "sla_breach_recovered": "SLA breach recovered",
+        "schedule_missed_offline": "Missed schedule runs (offline)"
       },
       "load_older": "Load older events",
       "clear_filters": "Clear all filters",
@@ -11209,6 +11210,10 @@
     "backfill_result_capped": "Result was capped — narrow the window or run again from the last slot to continue.",
     "backfill_result_show_slots": "Show enqueued fire times",
     "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit.",
+    "missed_offline": "Missed {count} while offline",
+    "missed_backfill_cta": "Backfill",
+    "missed_offline_tooltip": "Scheduled runs were skipped while the app was closed. Backfill replays them (deduped and capped), or dismiss to clear.",
+    "missed_dismiss": "Dismiss missed-runs notice",
     "more_actions": "More actions",
     "advanced_actions_aria": "More schedule actions",
     "skip_next_fire": "Skip next fire",

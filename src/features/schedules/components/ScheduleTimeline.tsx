@@ -18,8 +18,8 @@ import {
   type TimeGroup,
 } from '../libs/scheduleHelpers';
 import { useScheduleActions } from '../libs/useScheduleActions';
-import { getSchedulerStatus, startScheduler, stopScheduler } from '@/api/pipeline/scheduler';
-import type { SchedulerStats } from '@/api/pipeline/scheduler';
+import { getSchedulerStatus, startScheduler, stopScheduler, listScheduleMissedRuns, clearScheduleMissedRuns } from '@/api/pipeline/scheduler';
+import type { SchedulerStats, ScheduleMissedRuns } from '@/api/pipeline/scheduler';
 import ScheduleRow from './ScheduleRow';
 import ScheduleRecentRuns from './ScheduleRecentRuns';
 
@@ -38,6 +38,10 @@ export default function ScheduleTimeline() {
 
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
   const [schedulerStats, setSchedulerStats] = useState<SchedulerStats | null>(null);
+  // Direction 1 (missed-runs visibility): per-trigger count of scheduled slots
+  // discarded while the app was offline. Fetched alongside the schedule list
+  // and rendered as a "missed N while offline" badge on each row.
+  const [missedMap, setMissedMap] = useState<Map<string, ScheduleMissedRuns>>(new Map());
   // Sidebar filter is now group-scoped (a team or the "No team" bucket), so it
   // carries a SET of persona ids plus a display label. `null` = show all.
   const [filter, setFilter] = useState<{ ids: Set<string>; label: string } | null>(null);
@@ -84,6 +88,9 @@ export default function ScheduleTimeline() {
             getSchedulerStatus()
               .then((d) => { if (!cancelled) setSchedulerStats(d); })
               .catch(silentCatch("ScheduleTimeline:refresh")),
+            listScheduleMissedRuns()
+              .then((rows) => { if (!cancelled) setMissedMap(new Map(rows.map((r) => [r.triggerId, r]))); })
+              .catch(silentCatch("ScheduleTimeline:missed")),
           ]);
         } finally {
           inFlight = null;
@@ -145,6 +152,20 @@ export default function ScheduleTimeline() {
     } catch (err) { silentCatch("features/schedules/components/ScheduleTimeline:catch1")(err); }
   };
 
+  // Clear a trigger's missed-while-offline badge (after backfill or dismiss)
+  // and drop it from the local map so the badge disappears immediately.
+  const dismissMissed = async (triggerId: string) => {
+    try {
+      await clearScheduleMissedRuns(triggerId);
+      setMissedMap((prev) => {
+        if (!prev.has(triggerId)) return prev;
+        const next = new Map(prev);
+        next.delete(triggerId);
+        return next;
+      });
+    } catch (err) { silentCatch("ScheduleTimeline:dismissMissed")(err); }
+  };
+
   const renderEntries = (items: ScheduleEntry[]) =>
     items.map((entry) => (
       <ScheduleRow
@@ -155,12 +176,14 @@ export default function ScheduleTimeline() {
         isEditing={actionState.editing === entry.agent.trigger_id}
         isBackfilling={actionState.backfilling === entry.agent.trigger_id}
         lastBackfill={actionState.lastBackfill[entry.agent.trigger_id] ?? null}
+        missed={missedMap.get(entry.agent.trigger_id) ?? null}
         onManualExecute={() => manualExecute(entry.agent)}
         onToggleEnabled={() => toggleEnabled(entry.agent)}
         onUpdateFrequency={(cron, interval, tz) => updateFrequency(entry.agent, cron, interval, tz)}
         onBackfill={async (startIso, endIso) => {
           await backfill(entry.agent, startIso, endIso);
         }}
+        onDismissMissed={() => dismissMissed(entry.agent.trigger_id)}
         onPreviewCron={(cron, tz) => previewCron(cron, tz, entry.agent.trigger_id)}
         onSkipNextFire={() => skipNextFire(entry.agent)}
         onRunIn={(delayMs) => runIn(entry.agent, delayMs)}

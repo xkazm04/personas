@@ -528,7 +528,8 @@
     "skipped_stat_tooltip": "{skipped} من أصل {total} حدثًا خلال آخر 7 أيام لم يكن لها أي مشترك فتم تخطيها ({rate}). المعدل المرتفع يشير إلى مشغّل لا يستمع إليه أحد.",
     "type_labels": {
       "sla_breach_opened": "بدء خرق اتفاقية مستوى الخدمة (SLA)",
-      "sla_breach_recovered": "التعافي من خرق اتفاقية مستوى الخدمة (SLA)"
+      "sla_breach_recovered": "التعافي من خرق اتفاقية مستوى الخدمة (SLA)",
+      "schedule_missed_offline": "تشغيلات مجدولة فائتة (دون اتصال)"
     }
   },
   "health": {

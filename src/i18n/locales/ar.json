@@ -6162,7 +6162,8 @@
       "skipped_stat_tooltip": "{skipped} من أصل {total} حدثًا خلال آخر 7 أيام لم يكن لها أي مشترك فتم تخطيها ({rate}). المعدل المرتفع يشير إلى مشغّل لا يستمع إليه أحد.",
       "type_labels": {
         "sla_breach_opened": "بدء خرق اتفاقية مستوى الخدمة (SLA)",
-        "sla_breach_recovered": "التعافي من خرق اتفاقية مستوى الخدمة (SLA)"
+        "sla_breach_recovered": "التعافي من خرق اتفاقية مستوى الخدمة (SLA)",
+        "schedule_missed_offline": "تشغيلات مجدولة فائتة (دون اتصال)"
       }
     },
     "health": {
@@ -11042,7 +11043,11 @@
     "last24h_show_less": "عرض أقل",
     "last24h_retry_at": "إعادة محاولة تلقائية {time}",
     "unverified": "غير مؤكد",
-    "unverified_tooltip": "لا يوجد سجل تشغيل لهذه الفترة — ربما تم تخطيها أو تقييد معدلها أو تجاوزت الميزانية أو كان التطبيق مغلقًا."
+    "unverified_tooltip": "لا يوجد سجل تشغيل لهذه الفترة — ربما تم تخطيها أو تقييد معدلها أو تجاوزت الميزانية أو كان التطبيق مغلقًا.",
+    "missed_backfill_cta": "تعويض",
+    "missed_dismiss": "تجاهل إشعار التشغيلات الفائتة",
+    "missed_offline": "فات {count} أثناء عدم الاتصال",
+    "missed_offline_tooltip": "تم تخطّي عمليات التشغيل المجدولة أثناء إغلاق التطبيق. التعويض يعيد تشغيلها (مع إزالة التكرار وحد أقصى)، أو تجاهل للمسح."
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

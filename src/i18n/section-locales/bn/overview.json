@@ -528,7 +528,8 @@
     "skipped_stat_tooltip": "গত ৭ দিনে {total}টির মধ্যে {skipped}টি ইভেন্টের কোনো সাবস্ক্রাইবার ছিল না এবং সেগুলি এড়িয়ে যাওয়া হয়েছে ({rate})। উচ্চ হার নির্দেশ করে যে এমন একটি ট্রিগার আছে যা কেউ শুনছে না।",
     "type_labels": {
       "sla_breach_opened": "SLA লঙ্ঘন শুরু হয়েছে",
-      "sla_breach_recovered": "SLA লঙ্ঘন থেকে পুনরুদ্ধার"
+      "sla_breach_recovered": "SLA লঙ্ঘন থেকে পুনরুদ্ধার",
+      "schedule_missed_offline": "মিস হওয়া নির্ধারিত রান (অফলাইন)"
     }
   },
   "health": {

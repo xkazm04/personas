@@ -528,7 +528,8 @@
     "skipped_stat_tooltip": "{skipped} des {total} événements des 7 derniers jours n'avaient aucun abonné et ont été ignorés ({rate}). Un taux élevé signale un déclencheur que personne n'écoute.",
     "type_labels": {
       "sla_breach_opened": "Violation de SLA ouverte",
-      "sla_breach_recovered": "Violation de SLA rétablie"
+      "sla_breach_recovered": "Violation de SLA rétablie",
+      "schedule_missed_offline": "Exécutions planifiées manquées (hors ligne)"
     }
   },
   "health": {

@@ -528,7 +528,8 @@
     "skipped_stat_tooltip": "지난 7일 동안 {total}건 중 {skipped}건의 이벤트에 구독자가 없어 건너뛰었습니다({rate}). 비율이 높다면 아무도 수신하지 않는 트리거가 있다는 신호입니다.",
     "type_labels": {
       "sla_breach_opened": "SLA 위반 발생",
-      "sla_breach_recovered": "SLA 위반 복구됨"
+      "sla_breach_recovered": "SLA 위반 복구됨",
+      "schedule_missed_offline": "놓친 예약 실행 (오프라인)"
     }
   },
   "health": {

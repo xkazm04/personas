@@ -3907,6 +3907,36 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Durable per-trigger schedule side-state: the count of scheduled slots
+    // that were DISCARDED while the app was offline (the startup overdue sweep
+    // fires ONE catch-up and drops the rest under the default backfill cap of
+    // 1), so a daily-job user gets a visible "missed N while offline" record
+    // instead of silent loss. One row per schedule trigger; cleared after the
+    // user backfills or dismisses. MUST stay INSIDE `run_incremental` (fresh
+    // DBs run this after the base schema; the tail belongs to
+    // `ensure_composite_fires_table`, which runs BEFORE `run_incremental`).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "schedule_missed_runs",
+            description: "Per-trigger discarded-while-offline slot count for schedule visibility",
+            already_applied: |conn| has_table(conn, "schedule_missed_runs"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS schedule_missed_runs (
+                        trigger_id      TEXT PRIMARY KEY,
+                        missed_count    INTEGER NOT NULL DEFAULT 0,
+                        first_missed_at TEXT,
+                        last_missed_at  TEXT,
+                        updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

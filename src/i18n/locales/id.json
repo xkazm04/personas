@@ -6162,7 +6162,8 @@
       "skipped_stat_tooltip": "{skipped} dari {total} event dalam 7 hari terakhir tidak memiliki pelanggan dan dilewati ({rate}). Tingkat yang tinggi menandakan ada pemicu yang tidak didengarkan siapa pun.",
       "type_labels": {
         "sla_breach_opened": "Pelanggaran SLA dibuka",
-        "sla_breach_recovered": "Pelanggaran SLA pulih"
+        "sla_breach_recovered": "Pelanggaran SLA pulih",
+        "schedule_missed_offline": "Jadwal terlewat (offline)"
       }
     },
     "health": {
@@ -11042,7 +11043,11 @@
     "last24h_show_less": "Tampilkan lebih sedikit",
     "last24h_retry_at": "coba ulang otomatis {time}",
     "unverified": "Belum terverifikasi",
-    "unverified_tooltip": "Tidak ada catatan run untuk slot ini — mungkin dilewati, dibatasi rate, melebihi anggaran, atau aplikasi tertutup."
+    "unverified_tooltip": "Tidak ada catatan run untuk slot ini — mungkin dilewati, dibatasi rate, melebihi anggaran, atau aplikasi tertutup.",
+    "missed_backfill_cta": "Susulkan",
+    "missed_dismiss": "Tutup pemberitahuan run terlewat",
+    "missed_offline": "Terlewat {count} saat offline",
+    "missed_offline_tooltip": "Jalankan terjadwal dilewati saat aplikasi tertutup. Backfill memutarnya ulang (dedup dan dibatasi), atau tutup untuk menghapus."
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

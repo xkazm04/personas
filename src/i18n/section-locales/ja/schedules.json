@@ -114,5 +114,9 @@
   "last24h_show_less": "表示を減らす",
   "last24h_retry_at": "自動再試行 {time}",
   "unverified": "未確認",
-  "unverified_tooltip": "このスロットの実行記録がありません — スキップ、レート制限、予算超過、またはアプリが閉じていた可能性があります。"
+  "unverified_tooltip": "このスロットの実行記録がありません — スキップ、レート制限、予算超過、またはアプリが閉じていた可能性があります。",
+  "missed_backfill_cta": "バックフィル",
+  "missed_dismiss": "未実行の通知を閉じる",
+  "missed_offline": "オフライン中に{count}件を逃しました",
+  "missed_offline_tooltip": "アプリが閉じている間、スケジュール実行がスキップされました。バックフィルで再実行します（重複排除・上限あり）。閉じると消去します。"
 }

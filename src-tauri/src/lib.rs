@@ -1809,6 +1809,8 @@ pub fn run() {
             commands::execution::scheduler::stop_scheduler,
             commands::execution::scheduler::get_subscription_health,
             commands::execution::scheduler::backfill_schedule,
+            commands::execution::scheduler::list_schedule_missed_runs,
+            commands::execution::scheduler::clear_schedule_missed_runs,
             // Execution -- Tests
             commands::execution::tests::start_test_run,
             commands::execution::tests::list_test_runs,

@@ -6409,6 +6409,7 @@ export type Translations = {
       type_labels: {
         sla_breach_opened: string;
         sla_breach_recovered: string;
+        schedule_missed_offline: string;
       };
       load_older: string;
       clear_filters: string;
@@ -11215,6 +11216,10 @@ export type Translations = {
     backfill_result_capped: string;
     backfill_result_show_slots: string;
     backfill_inline_tooltip: string;
+    missed_offline: string;
+    missed_backfill_cta: string;
+    missed_offline_tooltip: string;
+    missed_dismiss: string;
     more_actions: string;
     advanced_actions_aria: string;
     skip_next_fire: string;

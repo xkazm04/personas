@@ -6162,7 +6162,8 @@
       "skipped_stat_tooltip": "{skipped} des {total} événements des 7 derniers jours n'avaient aucun abonné et ont été ignorés ({rate}). Un taux élevé signale un déclencheur que personne n'écoute.",
       "type_labels": {
         "sla_breach_opened": "Violation de SLA ouverte",
-        "sla_breach_recovered": "Violation de SLA rétablie"
+        "sla_breach_recovered": "Violation de SLA rétablie",
+        "schedule_missed_offline": "Exécutions planifiées manquées (hors ligne)"
       }
     },
     "health": {
@@ -11042,7 +11043,11 @@
     "last24h_show_less": "Afficher moins",
     "last24h_retry_at": "nouvelle tentative {time}",
     "unverified": "Non vérifié",
-    "unverified_tooltip": "Aucun enregistrement d'exécution pour ce créneau — il a pu être ignoré, limité en fréquence, dépasser le budget ou l'application était fermée."
+    "unverified_tooltip": "Aucun enregistrement d'exécution pour ce créneau — il a pu être ignoré, limité en fréquence, dépasser le budget ou l'application était fermée.",
+    "missed_backfill_cta": "Rattraper",
+    "missed_dismiss": "Ignorer l’avis d’exécutions manquées",
+    "missed_offline": "{count} manquée(s) hors ligne",
+    "missed_offline_tooltip": "Des exécutions planifiées ont été ignorées pendant que l’app était fermée. Le rattrapage les rejoue (dédupliqué et plafonné), ou ignorez pour effacer."
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

@@ -114,5 +114,9 @@
   "last24h_show_less": "Weniger anzeigen",
   "last24h_retry_at": "Auto-Wiederholung {time}",
   "unverified": "Unbestätigt",
-  "unverified_tooltip": "Kein Ausführungseintrag für diesen Slot — er wurde möglicherweise übersprungen, ratenbegrenzt, hat das Budget überschritten oder die App war geschlossen."
+  "unverified_tooltip": "Kein Ausführungseintrag für diesen Slot — er wurde möglicherweise übersprungen, ratenbegrenzt, hat das Budget überschritten oder die App war geschlossen.",
+  "missed_backfill_cta": "Nachholen",
+  "missed_dismiss": "Hinweis auf verpasste Läufe verwerfen",
+  "missed_offline": "{count} verpasst während offline",
+  "missed_offline_tooltip": "Geplante Ausführungen wurden übersprungen, während die App geschlossen war. Nachholen spielt sie erneut ab (dedupliziert und begrenzt), oder verwerfen zum Löschen."
 }

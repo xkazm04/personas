@@ -114,5 +114,9 @@
   "last24h_show_less": "Zobrazit méně",
   "last24h_retry_at": "automatický opakování {time}",
   "unverified": "Neověřeno",
-  "unverified_tooltip": "Pro tento slot není žádný záznam běhu — mohl být přeskočen, omezen limitem, překročit rozpočet nebo byla aplikace zavřená."
+  "unverified_tooltip": "Pro tento slot není žádný záznam běhu — mohl být přeskočen, omezen limitem, překročit rozpočet nebo byla aplikace zavřená.",
+  "missed_backfill_cta": "Doplnit",
+  "missed_dismiss": "Zavřít upozornění na zmeškané běhy",
+  "missed_offline": "Zmeškáno {count} během offline",
+  "missed_offline_tooltip": "Naplánované běhy byly přeskočeny, když byla aplikace zavřená. Doplnění je znovu přehraje (bez duplicit a s limitem), nebo zavřete pro vymazání."
 }

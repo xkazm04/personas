@@ -1600,6 +1600,72 @@ pub(crate) fn log_schedule_rate_limit_issue(
     }
 }
 
+/// Direction 1 (missed-runs visibility): persist `discarded` dropped slots for
+/// a trigger and publish a feed-visible `schedule.missed.offline` event so the
+/// schedule UI can surface "missed N while offline". The count accumulates
+/// across gaps and is cleared when the user backfills or dismisses. The event
+/// carries no side-effect: `schedule.missed.offline` is not a listener-matched
+/// type, so it never spawns an execution — it is purely informational.
+pub(crate) fn record_and_emit_missed_runs(
+    pool: &DbPool,
+    trigger: &crate::db::models::PersonaTrigger,
+    discarded: i64,
+    now_str: &str,
+) {
+    if let Err(err) = trigger_repo::record_missed_runs(pool, &trigger.id, discarded, now_str) {
+        tracing::warn!(
+            trigger_id = %trigger.id,
+            persona_id = %trigger.persona_id,
+            error = %err,
+            "failed to persist discarded-while-offline slot count"
+        );
+        return;
+    }
+
+    let mut meta = serde_json::Map::new();
+    meta.insert(
+        "trigger_id".into(),
+        serde_json::Value::String(trigger.id.clone()),
+    );
+    meta.insert(
+        "target_persona_id".into(),
+        serde_json::Value::String(trigger.persona_id.clone()),
+    );
+    meta.insert(
+        "missed_count".into(),
+        serde_json::Value::Number(discarded.into()),
+    );
+    meta.insert(
+        "detected_at".into(),
+        serde_json::Value::String(now_str.to_string()),
+    );
+    let payload = serde_json::to_string(&serde_json::Value::Object(meta)).ok();
+
+    match event_repo::publish(
+        pool,
+        CreatePersonaEventInput {
+            event_type: "schedule.missed.offline".into(),
+            source_type: "scheduler".into(),
+            source_id: Some(trigger.id.clone()),
+            target_persona_id: Some(trigger.persona_id.clone()),
+            project_id: None,
+            payload,
+            use_case_id: trigger.use_case_id.clone(),
+        },
+    ) {
+        Ok(_) => tracing::info!(
+            trigger_id = %trigger.id,
+            persona_id = %trigger.persona_id,
+            discarded,
+            "Scheduled slots discarded while offline — recorded + signalled"
+        ),
+        Err(e) => tracing::warn!(
+            trigger_id = %trigger.id,
+            "failed to publish schedule.missed.offline event: {}", e
+        ),
+    }
+}
+
 /// Enumerate cron/interval slots that should have fired strictly between
 /// `last_fire` (exclusive) and `now` (inclusive), excluding the most-recent
 /// one (which the existing scheduler tick path will fire as the "current"
@@ -1847,6 +1913,36 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             }
         }
 
+        // Direction 1 (missed-runs visibility): enumerate the full set of slots
+        // missed strictly between (last_triggered_at, now], independent of the
+        // backfill policy. In the DEFAULT single-catch-up case (backfill_cap ==
+        // 1) EVERY one of these older slots is silently discarded; we count them
+        // so a daily-job user who closed the app for N days gets a visible
+        // "missed N while offline" record instead of silent loss. Bounded by
+        // BACKFILL_HARD_CAP (100) — a longer gap reports the cap.
+        let missed_total: usize = if trigger.trigger_type == "schedule" {
+            trigger
+                .last_triggered_at
+                .as_deref()
+                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                .map(|last_dt| {
+                    compute_missed_backfill_slots(
+                        &cfg,
+                        last_dt.with_timezone(&chrono::Utc),
+                        now,
+                        crate::engine::cron::seed_hash(&trigger.id),
+                    )
+                    .len()
+                })
+                .unwrap_or(0)
+        } else {
+            0
+        };
+        // Count of missed slots this tick actually replayed via backfill for
+        // THIS trigger — subtracted from missed_total so the "discarded" figure
+        // reflects only slots that were genuinely dropped.
+        let mut backfill_emitted_for_trigger: usize = 0;
+
         // 2.5. Backfill catch-up: when max_backfill > 1 AND the trigger has
         // an explicit last_triggered_at, emit catch-up events for any older
         // missed slots strictly between (last_triggered_at, now]. The
@@ -1965,6 +2061,7 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                                     .or_default() += 1;
                                 fired += 1;
                                 backfill_emitted_this_tick += 1;
+                                backfill_emitted_for_trigger += 1;
                             }
                             Err(e) => {
                                 tracing::error!(
@@ -2033,6 +2130,18 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                 tracing::error!(trigger_id = %trigger.id, "Failed to mark trigger: {}", e);
                 continue;
             }
+        }
+
+        // Direction 1 (missed-runs visibility): the live slot just fired via
+        // mark_triggered. Any older missed slots NOT replayed by the backfill
+        // path above were discarded (the default single-catch-up drops them).
+        // Persist the count and emit a feed-visible event so an offline gap is
+        // visible instead of silently lost. Only fires after a real multi-slot
+        // gap (missed_total > emitted); a continuously-running scheduler sees
+        // missed_total == 0 and records nothing.
+        let discarded_missed = missed_total.saturating_sub(backfill_emitted_for_trigger);
+        if discarded_missed > 0 {
+            record_and_emit_missed_runs(pool, &trigger, discarded_missed as i64, &now_str);
         }
 
         // 5. Schedule advanced -- now safe to publish the event
@@ -2657,6 +2766,83 @@ mod tests {
         assert_eq!(slots.len(), 2);
         assert_eq!(slots[0].hour(), 10);
         assert_eq!(slots[1].hour(), 11);
+    }
+
+    // ========================================================================
+    // Direction 1: discarded-while-offline count. The tick fires ONE live slot
+    // and (optionally) some backfill extras; every OTHER missed slot in the gap
+    // is discarded. `discarded = missed_total - backfill_emitted_for_trigger`,
+    // where `missed_total = compute_missed_backfill_slots(...).len()`.
+    // ========================================================================
+
+    #[test]
+    fn test_discarded_default_cap_drops_all_older_slots() {
+        // DEFAULT single-catch-up (backfill_cap == 1 → 0 extras emitted). A
+        // daily job whose app was closed across an 8-hour gap of an hourly cron:
+        // 8 slots after 04:00 up to 12:30 → compute drops the live (12:00) → 7
+        // older slots. With 0 backfill extras all 7 are discarded.
+        use crate::db::models::TriggerConfig;
+        use chrono::TimeZone;
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("0 * * * *".into()),
+            interval_seconds: None,
+            timezone: Some("UTC".into()),
+            max_backfill: None, // default → cap 1 → 0 extras
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 4, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
+        let missed_total = compute_missed_backfill_slots(&cfg, last, now, 0).len();
+        assert_eq!(missed_total, 7, "05:00..=11:00 older slots (12:00 is live)");
+        let backfill_emitted_for_trigger = 0usize; // cap == 1
+        let discarded = missed_total.saturating_sub(backfill_emitted_for_trigger);
+        assert_eq!(discarded, 7);
+    }
+
+    #[test]
+    fn test_discarded_partial_cap_reduces_count() {
+        // With max_backfill = 4 the tick replays up to (cap-1)=3 extras; the
+        // remaining older slots are discarded. Same 7-slot gap → 3 replayed,
+        // 4 discarded.
+        use crate::db::models::TriggerConfig;
+        use chrono::TimeZone;
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("0 * * * *".into()),
+            interval_seconds: None,
+            timezone: Some("UTC".into()),
+            max_backfill: Some(4),
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 4, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
+        let missed_total = compute_missed_backfill_slots(&cfg, last, now, 0).len();
+        assert_eq!(missed_total, 7);
+        let backfill_emitted_for_trigger = 3usize; // (cap - 1), budget permitting
+        let discarded = missed_total.saturating_sub(backfill_emitted_for_trigger);
+        assert_eq!(discarded, 4);
+    }
+
+    #[test]
+    fn test_discarded_none_when_no_gap() {
+        // Continuously-running scheduler: last fire is the previous slot, so
+        // there is no older gap → 0 missed → 0 discarded (no record/emit).
+        use crate::db::models::TriggerConfig;
+        use chrono::TimeZone;
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("0 * * * *".into()),
+            interval_seconds: None,
+            timezone: Some("UTC".into()),
+            max_backfill: None,
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
+        let missed_total = compute_missed_backfill_slots(&cfg, last, now, 0).len();
+        assert_eq!(missed_total, 0);
+        assert_eq!(missed_total.saturating_sub(0), 0);
     }
 
     #[test]

@@ -528,7 +528,8 @@
     "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha.",
     "type_labels": {
       "sla_breach_opened": "Incumplimiento de SLA iniciado",
-      "sla_breach_recovered": "Incumplimiento de SLA recuperado"
+      "sla_breach_recovered": "Incumplimiento de SLA recuperado",
+      "schedule_missed_offline": "Ejecuciones programadas perdidas (sin conexión)"
     }
   },
   "health": {

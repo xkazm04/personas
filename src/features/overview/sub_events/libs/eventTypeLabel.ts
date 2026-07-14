@@ -16,6 +16,8 @@ export function eventTypeLabel(t: Translations, eventType: string): string {
       return labels.sla_breach_opened;
     case 'sla.breach.recovered':
       return labels.sla_breach_recovered;
+    case 'schedule.missed.offline':
+      return labels.schedule_missed_offline;
     default:
       return eventType;
   }

@@ -6162,7 +6162,8 @@
       "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。",
       "type_labels": {
         "sla_breach_opened": "SLA 违规已开始",
-        "sla_breach_recovered": "SLA 违规已恢复"
+        "sla_breach_recovered": "SLA 违规已恢复",
+        "schedule_missed_offline": "错过的计划运行（离线）"
       }
     },
     "health": {
@@ -11042,7 +11043,11 @@
     "last24h_show_less": "收起",
     "last24h_retry_at": "自动重试于 {time}",
     "unverified": "未验证",
-    "unverified_tooltip": "此时段没有运行记录 — 可能被跳过、受速率限制、超出预算，或应用已关闭。"
+    "unverified_tooltip": "此时段没有运行记录 — 可能被跳过、受速率限制、超出预算，或应用已关闭。",
+    "missed_backfill_cta": "补运行",
+    "missed_dismiss": "忽略错过运行提示",
+    "missed_offline": "离线期间错过 {count} 次",
+    "missed_offline_tooltip": "应用关闭期间跳过了计划运行。补运行会重放它们（去重并有上限），或忽略以清除。"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

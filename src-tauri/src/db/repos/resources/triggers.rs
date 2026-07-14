@@ -1844,6 +1844,91 @@ pub fn set_status(
 }
 
 // ---------------------------------------------------------------------------
+// Schedule missed-runs (discarded-while-offline) side-state
+// ---------------------------------------------------------------------------
+
+/// Per-trigger record of scheduled slots that were DISCARDED while the app was
+/// offline. The startup overdue sweep fires ONE catch-up per trigger and drops
+/// the rest under the default backfill cap of 1; this row is the durable
+/// "missed N while offline" signal surfaced in the schedule UI. Cleared after
+/// the user backfills or dismisses.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ScheduleMissedRuns {
+    pub trigger_id: String,
+    pub missed_count: i64,
+    pub first_missed_at: Option<String>,
+    pub last_missed_at: Option<String>,
+}
+
+/// Accumulate `delta` discarded slots for a trigger. Idempotent-friendly:
+/// `first_missed_at` is preserved across calls (the earliest gap), while
+/// `last_missed_at` tracks the most recent detection. A `delta` of 0 or less
+/// is a no-op so callers can pass a raw count without guarding.
+pub fn record_missed_runs(
+    pool: &DbPool,
+    trigger_id: &str,
+    delta: i64,
+    now: &str,
+) -> Result<(), AppError> {
+    if delta <= 0 {
+        return Ok(());
+    }
+    timed_query!("schedule_missed_runs", "schedule_missed_runs::record", {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO schedule_missed_runs
+                 (trigger_id, missed_count, first_missed_at, last_missed_at, updated_at)
+             VALUES (?1, ?2, ?3, ?3, ?3)
+             ON CONFLICT(trigger_id) DO UPDATE SET
+                 missed_count    = missed_count + excluded.missed_count,
+                 first_missed_at = COALESCE(schedule_missed_runs.first_missed_at, excluded.first_missed_at),
+                 last_missed_at  = excluded.last_missed_at,
+                 updated_at      = excluded.updated_at",
+            params![trigger_id, delta, now],
+        )?;
+        Ok(())
+    })
+}
+
+/// List every trigger with a non-zero discarded-while-offline count, for the
+/// schedule UI's "missed N while offline" badge.
+pub fn list_missed_runs(pool: &DbPool) -> Result<Vec<ScheduleMissedRuns>, AppError> {
+    timed_query!("schedule_missed_runs", "schedule_missed_runs::list", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT trigger_id, missed_count, first_missed_at, last_missed_at
+             FROM schedule_missed_runs
+             WHERE missed_count > 0
+             ORDER BY last_missed_at DESC",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(ScheduleMissedRuns {
+                trigger_id: row.get(0)?,
+                missed_count: row.get(1)?,
+                first_missed_at: row.get(2)?,
+                last_missed_at: row.get(3)?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
+/// Clear a trigger's discarded-while-offline count after the user backfills or
+/// dismisses it. Idempotent — clearing an absent row is a no-op.
+pub fn clear_missed_runs(pool: &DbPool, trigger_id: &str) -> Result<(), AppError> {
+    timed_query!("schedule_missed_runs", "schedule_missed_runs::clear", {
+        let conn = pool.get()?;
+        conn.execute(
+            "DELETE FROM schedule_missed_runs WHERE trigger_id = ?1",
+            params![trigger_id],
+        )?;
+        Ok(())
+    })
+}
+
+// ---------------------------------------------------------------------------
 // Composite trigger fire persistence
 // ---------------------------------------------------------------------------
 

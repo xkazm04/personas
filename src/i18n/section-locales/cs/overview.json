@@ -528,7 +528,8 @@
     "skipped_stat_tooltip": "{skipped} z {total} událostí za posledních 7 dní nemělo žádného odběratele a bylo přeskočeno ({rate}). Vysoký podíl signalizuje trigger, kterému nikdo nenaslouchá.",
     "type_labels": {
       "sla_breach_opened": "Porušení SLA zahájeno",
-      "sla_breach_recovered": "Porušení SLA vyřešeno"
+      "sla_breach_recovered": "Porušení SLA vyřešeno",
+      "schedule_missed_offline": "Zmeškané naplánované běhy (offline)"
     }
   },
   "health": {

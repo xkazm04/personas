@@ -65,6 +65,28 @@ pub fn get_subscription_health(
     Ok(state.scheduler.subscription_health())
 }
 
+/// Direction 1 (missed-runs visibility): list every schedule trigger that has
+/// scheduled slots discarded while the app was offline. The schedule UI renders
+/// a "missed N while offline" badge with one-click backfill from this.
+#[tauri::command]
+pub fn list_schedule_missed_runs(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<trigger_repo::ScheduleMissedRuns>, AppError> {
+    require_auth_sync(&state)?;
+    trigger_repo::list_missed_runs(&state.db)
+}
+
+/// Clear a trigger's discarded-while-offline count after the user backfilled the
+/// gap or explicitly dismissed the badge. Idempotent.
+#[tauri::command]
+pub fn clear_schedule_missed_runs(
+    state: State<'_, Arc<AppState>>,
+    trigger_id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    trigger_repo::clear_missed_runs(&state.db, &trigger_id)
+}
+
 /// Result of a user-initiated schedule backfill — see `backfill_schedule`.
 #[derive(Debug, Clone, serde::Serialize, TS)]
 #[ts(export)]

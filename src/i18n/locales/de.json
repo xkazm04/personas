@@ -6162,7 +6162,8 @@
       "skipped_stat_tooltip": "{skipped} von {total} Ereignissen der letzten 7 Tage hatten keinen Abonnenten und wurden übersprungen ({rate}). Eine hohe Quote deutet auf einen Trigger hin, dem niemand zuhört.",
       "type_labels": {
         "sla_breach_opened": "SLA-Verstoß geöffnet",
-        "sla_breach_recovered": "SLA-Verstoß behoben"
+        "sla_breach_recovered": "SLA-Verstoß behoben",
+        "schedule_missed_offline": "Verpasste geplante Ausführungen (offline)"
       }
     },
     "health": {
@@ -11042,7 +11043,11 @@
     "last24h_show_less": "Weniger anzeigen",
     "last24h_retry_at": "Auto-Wiederholung {time}",
     "unverified": "Unbestätigt",
-    "unverified_tooltip": "Kein Ausführungseintrag für diesen Slot — er wurde möglicherweise übersprungen, ratenbegrenzt, hat das Budget überschritten oder die App war geschlossen."
+    "unverified_tooltip": "Kein Ausführungseintrag für diesen Slot — er wurde möglicherweise übersprungen, ratenbegrenzt, hat das Budget überschritten oder die App war geschlossen.",
+    "missed_backfill_cta": "Nachholen",
+    "missed_dismiss": "Hinweis auf verpasste Läufe verwerfen",
+    "missed_offline": "{count} verpasst während offline",
+    "missed_offline_tooltip": "Geplante Ausführungen wurden übersprungen, während die App geschlossen war. Nachholen spielt sie erneut ab (dedupliziert und begrenzt), oder verwerfen zum Löschen."
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

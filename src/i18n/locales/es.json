@@ -6162,7 +6162,8 @@
       "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha.",
       "type_labels": {
         "sla_breach_opened": "Incumplimiento de SLA iniciado",
-        "sla_breach_recovered": "Incumplimiento de SLA recuperado"
+        "sla_breach_recovered": "Incumplimiento de SLA recuperado",
+        "schedule_missed_offline": "Ejecuciones programadas perdidas (sin conexión)"
       }
     },
     "health": {
@@ -11042,7 +11043,11 @@
     "last24h_show_less": "Ver menos",
     "last24h_retry_at": "reintento automático {time}",
     "unverified": "Sin verificar",
-    "unverified_tooltip": "No hay registro de ejecución para este intervalo: pudo omitirse, limitarse por tasa, superar el presupuesto o la app estaba cerrada."
+    "unverified_tooltip": "No hay registro de ejecución para este intervalo: pudo omitirse, limitarse por tasa, superar el presupuesto o la app estaba cerrada.",
+    "missed_backfill_cta": "Recuperar",
+    "missed_dismiss": "Descartar aviso de ejecuciones perdidas",
+    "missed_offline": "Se perdieron {count} sin conexión",
+    "missed_offline_tooltip": "Se omitieron ejecuciones programadas mientras la app estaba cerrada. Recuperar las repite (sin duplicados y con límite), o descártalo para borrar."
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
