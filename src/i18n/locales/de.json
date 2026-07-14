@@ -12423,7 +12423,9 @@
       "ctx_indicator_kpis": "KPIs",
       "llm_propose_aria": "„{name}“ als Use Case vorschlagen",
       "llm_propose_done": "„{name}“ vorgeschlagen — auf der Context Map annehmen",
-      "llm_propose_tooltip": "Als Use Case vorschlagen"
+      "llm_propose_tooltip": "Als Use Case vorschlagen",
+      "sidebar_source": "Quelle",
+      "sidebar_source_any": "Beliebig"
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",

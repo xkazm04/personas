@@ -12695,6 +12695,8 @@ export type Translations = {
       llm_propose_aria: string;
       llm_propose_done: string;
       ctx_indicator_kpis: string;
+      sidebar_source: string;
+      sidebar_source_any: string;
     };
     doc_signing: {
       sign_heading: string;

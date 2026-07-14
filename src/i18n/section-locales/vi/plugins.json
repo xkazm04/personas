@@ -1053,7 +1053,9 @@
     "ctx_indicator_kpis": "KPI",
     "llm_propose_aria": "Đề xuất “{name}” làm tính năng",
     "llm_propose_done": "“{name}” đã được đề xuất — chấp nhận trên Context Map",
-    "llm_propose_tooltip": "Đề xuất làm tính năng"
+    "llm_propose_tooltip": "Đề xuất làm tính năng",
+    "sidebar_source": "Nguồn",
+    "sidebar_source_any": "Bất kỳ"
   },
   "doc_signing": {
     "sign_heading": "Ký tài liệu",

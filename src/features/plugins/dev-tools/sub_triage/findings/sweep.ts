@@ -20,7 +20,6 @@ import {
   fetchLlmPinpoints,
   hasLiveAdapter,
 } from '@/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters';
-import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
 import type { PlanItem } from '@/features/teams/sub_factory/passport/improve/improvePlan';
 import { silentCatch } from '@/lib/silentCatch';
@@ -35,11 +34,18 @@ import {
 import { SWEEP_CAP } from './findingConfig';
 import type { FindingDraft, KpiAttention, SweepResult } from './types';
 
+/** The only credential fields the sweep reads — accepts both the vault store's
+ *  `CredentialMetadata` and a full `PersonaCredential`. */
+export interface SweepCredential {
+  id: string;
+  serviceType: string;
+}
+
 /** Everything the sweep needs that it can't fetch itself (the Factory-side data
  *  lives in a React context, so the caller passes it in). */
 export interface SweepInputs {
   project: DevProject;
-  credentials: PersonaCredential[];
+  credentials: SweepCredential[];
   /** The project's passport — enables standards + passport-gap emitters. */
   passport?: AppPassport;
   /** The fleet improve plan (filtered to this project inside the emitter). */

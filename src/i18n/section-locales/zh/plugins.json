@@ -1053,7 +1053,9 @@
     "ctx_indicator_kpis": "KPI",
     "llm_propose_aria": "将“{name}”提议为功能",
     "llm_propose_done": "“{name}”已提议 — 在 Context Map 中接受",
-    "llm_propose_tooltip": "提议为功能"
+    "llm_propose_tooltip": "提议为功能",
+    "sidebar_source": "来源",
+    "sidebar_source_any": "全部"
   },
   "doc_signing": {
     "sign_heading": "签署文档",

@@ -12423,7 +12423,9 @@
       "ctx_indicator_kpis": "KPI",
       "llm_propose_aria": "Proposer « {name} » comme fonctionnalité",
       "llm_propose_done": "« {name} » proposé — validez-le sur la Context Map",
-      "llm_propose_tooltip": "Proposer comme fonctionnalité"
+      "llm_propose_tooltip": "Proposer comme fonctionnalité",
+      "sidebar_source": "Source",
+      "sidebar_source_any": "Toutes"
     },
     "doc_signing": {
       "sign_heading": "Signer un document",

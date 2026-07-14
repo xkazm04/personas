@@ -1053,7 +1053,9 @@
     "ctx_indicator_kpis": "KPI",
     "llm_propose_aria": "「{name}」を機能として提案",
     "llm_propose_done": "「{name}」を提案しました — Context Mapで承認してください",
-    "llm_propose_tooltip": "機能として提案"
+    "llm_propose_tooltip": "機能として提案",
+    "sidebar_source": "ソース",
+    "sidebar_source_any": "すべて"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",

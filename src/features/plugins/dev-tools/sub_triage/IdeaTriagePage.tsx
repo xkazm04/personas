@@ -20,6 +20,8 @@ import { EffortRiskFilter } from './EffortRiskFilter';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { computeAgentStats } from '../sub_scanner/AgentScoreboard';
 import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
+import { FindingBadge, originMeta } from './findings/FindingBadge';
+import { SweepButton } from './findings/SweepButton';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,6 +43,10 @@ interface TriageIdea {
   impact: number;
   risk: number;
   status: 'pending' | 'accepted' | 'rejected';
+  /** Which sensor raised this (findings spine). `null` = a classic scanner idea. */
+  origin: string | null;
+  /** JSON evidence behind a finding — rendered in the badge's popover. */
+  evidence: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -153,9 +159,14 @@ function SwipeCard({
 
       {/* Card content */}
       <div className="p-6 h-full flex flex-col">
-        {/* Category + agent + effort/impact/risk */}
+        {/* Provenance + category + effort/impact/risk. A sensor finding leads with
+            its origin badge (and its evidence); a scanner idea leads with its agent. */}
         <div className="flex items-center gap-1.5 flex-wrap mb-4">
-          <span className="typo-heading-lg">{idea.agentEmoji}</span>
+          {idea.origin ? (
+            <FindingBadge origin={idea.origin} evidence={idea.evidence} />
+          ) : (
+            <span className="typo-heading-lg">{idea.agentEmoji}</span>
+          )}
           <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
             {catLabel}
           </span>
@@ -167,7 +178,7 @@ function SwipeCard({
 
         {/* Title + description */}
         <h3 className="typo-heading-lg font-semibold text-primary mb-2">{idea.title}</h3>
-        {idea.agentLabel && (
+        {!idea.origin && idea.agentLabel && (
           <p className="text-md text-foreground -mt-1 mb-2 flex items-center gap-1.5 flex-wrap">
             <span>{idea.agentEmoji}</span>
             <span className="font-medium text-foreground/85">{idea.agentLabel}</span>
@@ -242,6 +253,7 @@ export default function IdeaTriagePage() {
 
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
   const [filterScanType, setFilterScanType] = useState<string | null>(null);
+  const [filterOrigin, setFilterOrigin] = useState<string | null>(null);
   const [effortRange, setEffortRange] = useState<[number, number]>([1, 10]);
   const [riskRange, setRiskRange] = useState<[number, number]>([1, 10]);
   const [sortMode, setSortMode] = useState<TriageSortMode>('default');
@@ -275,12 +287,26 @@ export default function IdeaTriagePage() {
         impact: i.impact ?? 5,
         risk: i.risk ?? 5,
         status: (i.status as TriageIdea['status']) || 'pending',
+        origin: i.origin ?? null,
+        evidence: i.evidence ?? null,
       };
     }),
   [storeIdeas, agentRankByKey]);
 
+  // Pending findings by sensor — drives the provenance filter (and hides it
+  // entirely when no sensor has raised anything).
+  const originCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const i of ideas) {
+      if (i.status !== 'pending' || !i.origin) continue;
+      m.set(i.origin, (m.get(i.origin) ?? 0) + 1);
+    }
+    return m;
+  }, [ideas]);
+
   const pendingIdeas = ideas
     .filter((i) => i.status === 'pending' && (filterCategory === 'all' || i.category === filterCategory))
+    .filter((i) => !filterOrigin || i.origin === filterOrigin)
     .filter((i) => !filterScanType || storeIdeas.find((si) => si.id === i.id)?.scan_type === filterScanType)
     .filter((i) => i.effort >= effortRange[0] && i.effort <= effortRange[1])
     .filter((i) => i.risk >= riskRange[0] && i.risk <= riskRange[1]);
@@ -403,6 +429,7 @@ export default function IdeaTriagePage() {
             </>
           }
         >
+          <SweepButton projectId={activeProjectId} onSwept={() => { if (activeProjectId) void fetchIdeas(activeProjectId); }} />
           <button
             onClick={() => window.dispatchEvent(new CustomEvent(SHORTCUTS_OPEN_EVENT))}
             className="w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors"
@@ -445,6 +472,44 @@ export default function IdeaTriagePage() {
                 );
               })}
             </div>
+
+            {/* Provenance — only shown once a sensor has actually raised something,
+                so a project that only runs the Idea Scanner sees no new chrome. */}
+            {originCounts.size > 0 && (
+              <>
+                <h3 className="text-md uppercase tracking-wider text-primary font-medium mb-2">
+                  {dt.sidebar_source}
+                </h3>
+                <div className="flex flex-wrap gap-1 mb-3 pb-3 border-b border-border/15">
+                  <button
+                    onClick={() => setFilterOrigin(null)}
+                    className={`px-2 py-1 rounded-card text-md transition-colors ${
+                      filterOrigin === null ? 'bg-primary/10 text-foreground font-medium' : 'text-foreground hover:bg-primary/5'
+                    }`}
+                  >
+                    {dt.sidebar_source_any}
+                  </button>
+                  {[...originCounts.entries()].map(([origin, count]) => {
+                    const meta = originMeta(origin);
+                    if (!meta) return null;
+                    const Icon = meta.icon;
+                    return (
+                      <button
+                        key={origin}
+                        onClick={() => setFilterOrigin(filterOrigin === origin ? null : origin)}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-card text-md transition-colors ${
+                          filterOrigin === origin ? 'bg-primary/10 text-foreground font-medium' : 'text-foreground hover:bg-primary/5'
+                        }`}
+                      >
+                        <Icon className="w-3 h-3" aria-hidden />
+                        {meta.label}
+                        <span className="tabular-nums text-foreground/50">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             <h3 className="text-md uppercase tracking-wider text-primary font-medium mb-2">
               {dt.sidebar_category}

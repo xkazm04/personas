@@ -1053,7 +1053,9 @@
     "ctx_indicator_kpis": "KPIs",
     "llm_propose_aria": "Proponer “{name}” como funcionalidad",
     "llm_propose_done": "“{name}” propuesto — acéptalo en el Context Map",
-    "llm_propose_tooltip": "Proponer como funcionalidad"
+    "llm_propose_tooltip": "Proponer como funcionalidad",
+    "sidebar_source": "Origen",
+    "sidebar_source_any": "Cualquiera"
   },
   "doc_signing": {
     "sign_heading": "Firmar un Documento",

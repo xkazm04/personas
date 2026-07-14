@@ -12423,7 +12423,9 @@
       "ctx_indicator_kpis": "مؤشرات الأداء",
       "llm_propose_aria": "اقترح “{name}” كحالة استخدام",
       "llm_propose_done": "تم اقتراح “{name}” — اقبله في خريطة السياق",
-      "llm_propose_tooltip": "اقترح كحالة استخدام"
+      "llm_propose_tooltip": "اقترح كحالة استخدام",
+      "sidebar_source": "المصدر",
+      "sidebar_source_any": "الكل"
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

@@ -12423,7 +12423,9 @@
       "ctx_indicator_kpis": "KPI",
       "llm_propose_aria": "Usulkan “{name}” sebagai fitur",
       "llm_propose_done": "“{name}” diusulkan — terima di Context Map",
-      "llm_propose_tooltip": "Usulkan sebagai fitur"
+      "llm_propose_tooltip": "Usulkan sebagai fitur",
+      "sidebar_source": "Sumber",
+      "sidebar_source_any": "Semua"
     },
     "doc_signing": {
       "sign_heading": "Tandatangani Dokumen",

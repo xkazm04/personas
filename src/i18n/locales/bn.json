@@ -12423,7 +12423,9 @@
       "ctx_indicator_kpis": "KPI",
       "llm_propose_aria": "“{name}” কে ইউজ কেস হিসেবে প্রস্তাব করুন",
       "llm_propose_done": "“{name}” প্রস্তাব করা হয়েছে — Context Map-এ গ্রহণ করুন",
-      "llm_propose_tooltip": "ইউজ কেস হিসেবে প্রস্তাব করুন"
+      "llm_propose_tooltip": "ইউজ কেস হিসেবে প্রস্তাব করুন",
+      "sidebar_source": "উৎস",
+      "sidebar_source_any": "যেকোনো"
     },
     "doc_signing": {
       "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

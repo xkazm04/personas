@@ -1053,7 +1053,9 @@
     "ctx_indicator_kpis": "KPI",
     "llm_propose_aria": "Navrhnout „{name}“ jako funkci",
     "llm_propose_done": "„{name}“ navrženo — přijměte to v Mapě kontextu",
-    "llm_propose_tooltip": "Navrhnout jako funkci"
+    "llm_propose_tooltip": "Navrhnout jako funkci",
+    "sidebar_source": "Zdroj",
+    "sidebar_source_any": "Libovolný"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",

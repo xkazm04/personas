@@ -1686,6 +1686,7 @@
   "fr:plugins.dev_tools.legend_parent",
   "fr:plugins.dev_tools.llm_col_tokens",
   "fr:plugins.dev_tools.scoreboard_col_agent",
+  "fr:plugins.dev_tools.sidebar_source",
   "fr:plugins.dev_tools.slot_btn_diff",
   "fr:plugins.dev_tools.uc_detail_description",
   "fr:plugins.doc_signing.signature_label",

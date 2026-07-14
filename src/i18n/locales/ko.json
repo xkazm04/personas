@@ -12423,7 +12423,9 @@
       "ctx_indicator_kpis": "KPI",
       "llm_propose_aria": "“{name}”을(를) 기능으로 제안",
       "llm_propose_done": "“{name}”이(가) 제안되었습니다 — Context Map에서 수락하세요",
-      "llm_propose_tooltip": "기능으로 제안"
+      "llm_propose_tooltip": "기능으로 제안",
+      "sidebar_source": "소스",
+      "sidebar_source_any": "전체"
     },
     "doc_signing": {
       "sign_heading": "문서 서명하기",

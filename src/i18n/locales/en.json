@@ -12688,7 +12688,9 @@
       "llm_propose_tooltip": "Propose as a feature",
       "llm_propose_aria": "Propose “{name}” as a feature",
       "llm_propose_done": "“{name}” proposed — accept it on the Context Map",
-      "ctx_indicator_kpis": "KPIs"
+      "ctx_indicator_kpis": "KPIs",
+      "sidebar_source": "Source",
+      "sidebar_source_any": "Any"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

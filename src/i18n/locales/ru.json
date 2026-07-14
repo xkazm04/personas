@@ -12423,7 +12423,9 @@
       "ctx_indicator_kpis": "KPI",
       "llm_propose_aria": "Предложить «{name}» как функцию",
       "llm_propose_done": "«{name}» предложено — примите на Context Map",
-      "llm_propose_tooltip": "Предложить как функцию"
+      "llm_propose_tooltip": "Предложить как функцию",
+      "sidebar_source": "Источник",
+      "sidebar_source_any": "Любой"
     },
     "doc_signing": {
       "sign_heading": "Подписать документ",
