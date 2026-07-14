@@ -42,7 +42,7 @@ export function PublishPresetButton({ teamId }: { teamId: string }) {
         <Users className="w-4 h-4 text-primary/80" />
         <h3 className="typo-label uppercase tracking-wider text-foreground">{p.heading}</h3>
       </div>
-      <p className="typo-caption text-foreground">{p.hint}</p>
+      <p className="typo-caption font-normal text-foreground">{p.hint}</p>
       <div className="mt-1">
         <Button
           variant="secondary"

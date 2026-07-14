@@ -56,7 +56,6 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
   // Identity facet — editable post-creation (was frozen at create until now).
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [icon, setIcon] = useState('');
   const [color, setColor] = useState('#6366f1');
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(0);
@@ -74,7 +73,6 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
     setTurns(team.default_max_turns != null ? String(team.default_max_turns) : '');
     setName(team.name);
     setDescription(team.description ?? '');
-    setIcon(team.icon ?? '');
     setColor(team.color ?? '#6366f1');
   }, [team]);
 
@@ -90,10 +88,9 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
     return (
       (name.trim() !== team.name && name.trim() !== '') ||
       (description.trim() !== (team.description ?? '') && description.trim() !== '') ||
-      (icon.trim() !== (team.icon ?? '') && icon.trim() !== '') ||
       color !== (team.color ?? '#6366f1')
     );
-  }, [team, name, description, icon, color]);
+  }, [team, name, description, color]);
 
   const dirty = useMemo(() => {
     if (!team) return false;
@@ -122,13 +119,13 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
     const profileModel = MODEL_OPTIONS.find((m) => m.key === modelKey)?.model ?? null;
     const input: UpdateTeamInput = {
       // Identity facet: value sets, null skips (plain Option — no clear lane;
-      // description/icon lack the double_option deserializer, so an emptied
+      // description lacks the double_option deserializer, so an emptied
       // field is treated as "unchanged", never as "clear").
       name: name.trim() !== '' && name.trim() !== team.name ? name.trim() : null,
       description: description.trim() !== '' && description.trim() !== (team.description ?? '') ? description.trim() : null,
       canvas_data: null,
       team_config: null,
-      icon: icon.trim() !== '' && icon.trim() !== (team.icon ?? '') ? icon.trim() : null,
+      icon: null, // never set from the UI — see the identity block below
       color: color !== (team.color ?? '#6366f1') ? color : null,
       enabled: null,
       // Workspace facet — value sets, null clears (double_option).
@@ -148,7 +145,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
     } finally {
       setSaving(false);
     }
-  }, [team, teamId, name, description, icon, color, instructions, modelKey, budget, turns, fetchTeams, addToast, ts]);
+  }, [team, teamId, name, description, color, instructions, modelKey, budget, turns, fetchTeams, addToast, ts]);
 
   // Disband: deletes the PersonaTeam (cascading membership + connections) but
   // NOT the member personas — they survive ungrouped. The store's deleteTeam
@@ -176,33 +173,26 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
       </div>
       <p className="typo-caption text-foreground -mt-2">{ts.workspace_hint}</p>
 
-      {/* Team identity — name / description / icon / color, editable post-creation */}
+      {/* Team identity — name / description / color, editable post-creation */}
       <div className="rounded-card border border-primary/10 bg-secondary/10 p-3 space-y-3">
         <div className="flex items-center gap-2">
           <Layers className="w-3.5 h-3.5 text-indigo-300/80" />
           <span className="typo-label uppercase tracking-wider text-foreground">{ts.identity_section}</span>
         </div>
-        <div className="grid grid-cols-[1fr_88px] gap-3">
-          <label className="flex flex-col gap-1.5">
-            <span className="typo-label text-foreground/85">{t.pipeline.team_name}</span>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="typo-label text-foreground/85">{ts.identity_icon_label}</span>
-            <input
-              type="text"
-              value={icon}
-              maxLength={4}
-              onChange={(e) => setIcon(e.target.value)}
-              className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 text-center focus:outline-none focus:border-primary/60"
-            />
-          </label>
-        </div>
+        {/* The icon field is deliberately gone. It was a free-text input whose
+            value was looked up in a named-icon map and, on a miss, rendered as
+            RAW TEXT — so any string you typed became literal text where an icon
+            should be, with no way to discover the valid names. Teams use the
+            default glyph until there's a real picker. */}
+        <label className="flex flex-col gap-1.5">
+          <span className="typo-label text-foreground/85">{t.pipeline.team_name}</span>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
+          />
+        </label>
         <label className="flex flex-col gap-1.5">
           <span className="typo-label text-foreground/85">{t.common.description}</span>
           <input
@@ -223,7 +213,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
                 title={colorName}
                 aria-pressed={color === hex}
                 className={`w-7 h-7 rounded-card transition-all flex items-center justify-center ${
-                  color === hex ? 'ring-2 ring-offset-2 ring-offset-background scale-110' : 'hover:scale-105'
+                  color === hex ? 'scale-110' : 'hover:scale-105'
                 }`}
                 style={{ backgroundColor: hex }}
               >
@@ -232,7 +222,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
             ))}
           </div>
         </div>
-        <p className="typo-caption text-foreground">{ts.identity_hint}</p>
+        <p className="typo-caption font-normal text-foreground">{ts.identity_hint}</p>
       </div>
 
       {/* Shared instructions */}
@@ -309,7 +299,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           <Trash2 className="w-4 h-4 text-red-400/80" />
           <h3 className="typo-label uppercase tracking-wider text-red-300">{ts.disband_heading}</h3>
         </div>
-        <p className="typo-caption text-foreground">{ts.disband_hint}</p>
+        <p className="typo-caption font-normal text-foreground">{ts.disband_hint}</p>
         <div className="flex items-center gap-2 mt-1">
           {confirmDisband ? (
             <>

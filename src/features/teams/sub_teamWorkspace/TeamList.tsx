@@ -243,10 +243,18 @@ const NAMED_TEAM_ICONS: Record<string, LucideIcon> = {
 };
 
 /** Row glyph: a named lucide icon, else the emoji string, else the Layers fallback. */
+/**
+ * A team's glyph. A stored `icon` is only honoured when it names a REAL icon —
+ * anything else falls back to the default.
+ *
+ * It used to render an unrecognised string as raw text, which meant whatever a
+ * user typed into the (now removed) free-text icon field appeared as literal
+ * text where an image should be. Existing teams still carry those strings, so
+ * the guard has to live here, not just at the input.
+ */
 function TeamGlyph({ icon }: { icon: string | null }) {
   const Named = icon ? NAMED_TEAM_ICONS[icon.trim().toLowerCase()] : undefined;
   if (Named) return <Named className="w-3.5 h-3.5" />;
-  if (icon) return <span className="typo-body leading-none">{icon}</span>;
   return <Layers className="w-3.5 h-3.5" />;
 }
 

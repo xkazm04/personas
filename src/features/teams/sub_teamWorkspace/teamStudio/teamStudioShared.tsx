@@ -88,7 +88,7 @@ export function UseCaseToggleRow({ useCase, busy, onToggle, compact }: UseCaseTo
           {useCase.title}
         </span>
         {!compact && (useCase.capabilitySummary || useCase.description) && (
-          <span className="block truncate typo-caption text-foreground">
+          <span className="block typo-caption font-normal text-foreground/85">
             {useCase.capabilitySummary || useCase.description}
           </span>
         )}

@@ -100,11 +100,9 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
             className="w-9 h-9 rounded-card border flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: `${teamAccent}26`, borderColor: `${teamAccent}59` }}
           >
-            {team?.icon ? (
-              <span aria-hidden className="typo-body-lg leading-none">{team.icon}</span>
-            ) : (
-              <Users className="w-5 h-5" style={{ color: teamAccent }} />
-            )}
+            {/* Always the default glyph. This used to print `team.icon` verbatim,
+                so a team whose icon field held plain text showed that text here. */}
+            <Users className="w-5 h-5" style={{ color: teamAccent }} />
           </span>
         }
         title={ts.header_label}
