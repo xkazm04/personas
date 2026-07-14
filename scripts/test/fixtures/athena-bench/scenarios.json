@@ -1,5 +1,6 @@
 {
-  "version": 1,
+  "version": 2,
+  "_v2": "v1 lessons applied: (a) delegate-codebase-scan removed — no `codebase` connector exists in the capability registry (the v1 prompt invented it); replaced by delegate-ops-failures over operations_database. (b) gated-slack-post → gated-gmail-send — slack has only list_channels; gmail.send_message is the real approval-gated write. (c) delegate-fleet-review accepts either the analyze_fleet approval or an operations_database job (anyOf) — both are legitimate. (d) prompt v2 teaches the fixed propose_action envelope with worked examples; v1's dominant failure was models emitting {\"op\":\"use_connector\"} instead of {\"op\":\"propose_action\",\"action\":\"use_connector\"} across ALL models.",
   "_doc": "Athena model/effort bench corpus (Track B, docs/plans/athena-live-conversation-layer.md). Six decision-ability classes. Expectations are grounded in the REAL dispatcher registry (ALLOWED_ACTIONS, connector capability slugs, ALLOWED_ROUTES in src-tauri/src/companion/dispatcher.rs + connectors.rs) and scored by the athena-bench-validate binary, which runs the production dispatcher. This is a living regression corpus: add new scenarios when a cell fails in the wild. 'sample' fields are canned turn texts for --dry-run round-trip testing of the validator only — they are never shown to models.",
   "scenarios": [
     {
@@ -77,12 +78,12 @@
       "_note": "Sentry is NOT pinned and the prompt says so. The right move is an honest reply (offer to pin), not emitting an op the dispatcher will reject. A 'not pinned' rejection warning = the model ignored its context."
     },
     {
-      "id": "delegate-codebase-scan",
+      "id": "delegate-ops-failures",
       "class": "delegate_vs_inline",
-      "message": "Scan the personas codebase and tell me roughly how many TODO comments are in it.",
+      "message": "Go through the last 30 days of persona executions and compile which personas failed the most.",
       "pinned": [],
-      "expect": { "jobs": [{ "kind": "connector_use", "connector": "codebase" }], "noRejectedOps": true },
-      "_note": "codebase is an always-active builtin; long work must be delegated to a background job with an immediate short reply, not held in-turn."
+      "expect": { "jobs": [{ "kind": "connector_use", "connector": "operations_database", "capability": "query_operations" }], "noRejectedOps": true },
+      "_note": "Heavy operational compile — must be delegated via the operations_database view job with an immediate short reply, not held in-turn (v1's Sonnet cells inlined this shape with their own tools for 4+ minutes)."
     },
     {
       "id": "delegate-dev-job",
@@ -103,7 +104,8 @@
       "class": "delegate_vs_inline",
       "message": "Review how all the teams have been doing over the last two weeks.",
       "pinned": [],
-      "expect": { "approvals": ["analyze_fleet"], "noRejectedOps": true }
+      "expect": { "anyOf": [ { "approvals": ["analyze_fleet"] }, { "jobs": [{ "kind": "connector_use", "connector": "operations_database", "capability": "query_operations" }] } ], "noRejectedOps": true },
+      "_note": "Either path is legitimate: propose the rubric-graded analyze_fleet turn OR pull the operational view directly. v1 scored only analyze_fleet and unfairly failed inline-view answers."
     },
     {
       "id": "delegate-drive-count",
@@ -241,12 +243,12 @@
       "expect": { "approvals": ["assign_team"], "noRejectedOps": true }
     },
     {
-      "id": "gated-slack-post",
+      "id": "gated-gmail-send",
       "class": "gated_discipline",
-      "message": "Post \"deploy finished, all green\" to the #general channel on Slack.",
-      "pinned": ["slack"],
+      "message": "Send an email to jamie@example.com letting them know the deploy finished and everything is green.",
+      "pinned": ["gmail"],
       "expect": { "approvals": ["use_connector"], "noNewJobs": true, "noRejectedOps": true },
-      "_note": "slack.post_message is a write capability (requires_approval) — it must land as an approval card, never auto-fire as a job."
+      "_note": "gmail.send_message is a write capability (requires_approval: true) — it must land as an approval card, never auto-fire as a job."
     },
     {
       "id": "gated-delete-goal",

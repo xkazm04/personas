@@ -68,7 +68,10 @@ const RESULTS = path.join(OUT_DIR, 'results.jsonl');
 const REPORT = path.join(OUT_DIR, 'report.md');
 
 /** Matrix cells. o-base carries no --effort: the CLI uses the model default
- *  (high for both opus-4.8 and sonnet-5) — i.e. today's production behavior. */
+ *  (high for both opus-4.8 and sonnet-5) — i.e. today's production behavior.
+ *  `-r` cells append fixtures/athena-bench/reinforcements.md to the system
+ *  prompt — the lessons-learned doctrine round targeting the v1 Sonnet gaps
+ *  (delegation, act-don't-promise, one-line JSON, multi-op completeness). */
 const CELLS = {
   'o-base': { model: 'claude-opus-4-8', effort: null },
   'o-med': { model: 'claude-opus-4-8', effort: 'medium' },
@@ -76,6 +79,9 @@ const CELLS = {
   's-high': { model: 'claude-sonnet-5', effort: 'high' },
   's-med': { model: 'claude-sonnet-5', effort: 'medium' },
   's-low': { model: 'claude-sonnet-5', effort: 'low' },
+  's-high-r': { model: 'claude-sonnet-5', effort: 'high', reinforced: true },
+  's-med-r': { model: 'claude-sonnet-5', effort: 'medium', reinforced: true },
+  's-low-r': { model: 'claude-sonnet-5', effort: 'low', reinforced: true },
 };
 
 /** Promotion gates (§B3 of the plan), evaluated per class vs o-base. */
@@ -158,6 +164,18 @@ function score(report, expect) {
   const checks = [];
   const add = (name, pass, detail = '') => checks.push({ name, pass, detail });
 
+  // anyOf: pass if ANY branch's sub-expectation fully passes. The branch
+  // checks are reported under a single aggregate check.
+  if (expect.anyOf) {
+    const branches = expect.anyOf.map((sub) => score(report, sub));
+    const winner = branches.find((b) => b.pass);
+    add(
+      `anyOf(${expect.anyOf.length} branches)`,
+      !!winner,
+      winner ? branches.indexOf(winner) + ' matched' : branches.map((b, i) => `${i}: ${b.checks.filter((c) => !c.pass).map((c) => c.name).join(',')}`).join(' | '),
+    );
+  }
+
   for (const j of expect.jobs ?? []) {
     const hit = report.backgroundJobs.find(
       (b) =>
@@ -201,15 +219,22 @@ const VOICE_SECTION = `
 The user will hear your reply. Emit exactly one \`TTS:\` line — one or two
 short spoken-friendly sentences carrying the substance of your answer.`;
 
-function scenarioPrompt(base, sc) {
+function reinforcementsText() {
+  return fs.readFileSync(path.join(FIXTURES, 'reinforcements.md'), 'utf8');
+}
+
+function scenarioPrompt(base, sc, cell) {
   const pinned = sc.pinned?.length ? sc.pinned.join(', ') : '(none pinned)';
   const activity = sc.seedActivity ?? '(nothing in flight right now)';
   const voice = sc.voice ? VOICE_SECTION : '';
+  const tail = CELLS[cell]?.reinforced ? `\n\n${reinforcementsText()}` : '';
   if (!base.real) {
-    return base.text
-      .replaceAll('{{PINNED_CONNECTORS}}', pinned)
-      .replaceAll('{{LIVE_ACTIVITY}}', activity)
-      .replaceAll('{{VOICE_SECTION}}', voice);
+    return (
+      base.text
+        .replaceAll('{{PINNED_CONNECTORS}}', pinned)
+        .replaceAll('{{LIVE_ACTIVITY}}', activity)
+        .replaceAll('{{VOICE_SECTION}}', voice) + tail
+    );
   }
   // Real dump: append a bench appendix. The dump's own context may disagree
   // with the scenario's pinned list — the appendix states the authoritative
@@ -217,7 +242,7 @@ function scenarioPrompt(base, sc) {
   if (sc.expect?.noNewJobs || (sc.pinned?.length ?? 0) === 0) {
     console.warn(`  [prompt] ${sc.id}: real-dump mode may disagree with scenario pinned=[${sc.pinned ?? ''}]`);
   }
-  return `${base.text}\n\n# BENCH APPENDIX — authoritative state for this turn\n\nConnectors pinned & enabled right now: ${pinned}\n\nLive activity right now:\n${activity}\n${voice}\n`;
+  return `${base.text}\n\n# BENCH APPENDIX — authoritative state for this turn\n\nConnectors pinned & enabled right now: ${pinned}\n\nLive activity right now:\n${activity}\n${voice}\n${tail}`;
 }
 
 // ── CLI spawn (mirrors companion/session.rs run_cli) ─────────────────────
@@ -394,7 +419,7 @@ async function runCells(cellIds) {
         const key = `${cell}|${sc.id}|${rep}`;
         if (done.has(key)) continue;
         process.stdout.write(`[${cell}] ${sc.id} #${rep} … `);
-        const turn = await spawnTurn(cell, scenarioPrompt(base, sc), sc.message);
+        const turn = await spawnTurn(cell, scenarioPrompt(base, sc, cell), sc.message);
         let row = {
           ts: new Date().toISOString(),
           cell,
@@ -483,7 +508,7 @@ function report() {
 
   let md = `# Athena model/effort bench — results\n\nGenerated ${new Date().toISOString()} · ${rows.length} scored runs (${infra.length} infra failures excluded from accuracy) · corpus v${corpus.version}\n\n## Per-cell summary\n\n| cell | model | effort | runs | pass % | p50 first-token | p50 total | p90 total |\n|---|---|---|---|---|---|---|---|\n`;
   for (const c of cells) {
-    md += `| ${c} | ${CELLS[c].model} | ${CELLS[c].effort ?? 'default(high)'} | ${agg[c].n} | ${agg[c].passRate} | ${fmtS(agg[c].p50First)} | ${fmtS(agg[c].p50Total)} | ${fmtS(agg[c].p90Total)} |\n`;
+    md += `| ${c} | ${CELLS[c].model} | ${CELLS[c].effort ?? 'default(high)'}${CELLS[c].reinforced ? ' **+R**' : ''} | ${agg[c].n} | ${agg[c].passRate} | ${fmtS(agg[c].p50First)} | ${fmtS(agg[c].p50Total)} | ${fmtS(agg[c].p90Total)} |\n`;
   }
   md += `\n## Accuracy by class (pass/runs)\n\n| cell | ${classes.join(' | ')} |\n|---|${classes.map(() => '---').join('|')}|\n`;
   for (const c of cells) {
