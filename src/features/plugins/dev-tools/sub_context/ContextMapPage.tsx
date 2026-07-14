@@ -24,7 +24,7 @@ import ScanOverlay from './ScanOverlay';
 import ContextDetail from './ContextDetail';
 import ContextLedger from './ContextLedger';
 import ContextGroupRowsPills from './ContextGroupRowsPills';
-import ContextGroupRowsCards from './ContextGroupRowsCards';
+import ContextGroupRowsStats from './ContextGroupRowsStats';
 import type { ContextLedgerProps } from './contextLedgerShared';
 import { buildKpiStatusByContext } from './contextKpiStatus';
 import { useUseCases } from './useUseCases';
@@ -36,11 +36,11 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 // PROTOTYPE (/prototype round 2): the Context Map's layout A/B. `crosstab` is
 // the shipped ledger (contexts × features); the two group-row variants lay one
 // group per row with its contexts inline, tinted by KPI health.
-type ContextView = 'crosstab' | 'roster' | 'cards';
+type ContextView = 'crosstab' | 'roster' | 'roster-stats';
 const VIEW_TABS: SegmentedTab<ContextView>[] = [
   { id: 'crosstab', label: 'Cross-tab' },
   { id: 'roster', label: 'Roster' },
-  { id: 'cards', label: 'Cards' },
+  { id: 'roster-stats', label: 'Roster+' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -597,7 +597,7 @@ export default function ContextMapPage() {
           ) : contextView === 'roster' ? (
             <ContextGroupRowsPills {...ledgerProps} />
           ) : (
-            <ContextGroupRowsCards {...ledgerProps} />
+            <ContextGroupRowsStats {...ledgerProps} />
           )}
 
           {selectedCtx && (
