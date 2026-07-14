@@ -313,7 +313,7 @@ function loadDone() {
     if (!line.trim()) continue;
     try {
       const r = JSON.parse(line);
-      done.add(`${r.cell}|${r.scenarioId}|${r.rep}`);
+      if (!r.infra) done.add(`${r.cell}|${r.scenarioId}|${r.rep}`);
     } catch { /* skip corrupt line */ }
   }
   return done;
@@ -383,7 +383,10 @@ async function runCells(cellIds) {
           stderr: turn.stderr,
         };
         if (turn.timedOut || turn.isError || !turn.turnText) {
-          row = { ...row, pass: false, checks: [{ name: 'turn-completed', pass: false, detail: turn.timedOut ? 'timeout' : 'cli error/empty' }] };
+          // Infra failure (rate limit, CLI error, timeout) — recorded for
+          // visibility but excluded from accuracy and NOT added to the done
+          // set, so a later invocation retries it.
+          row = { ...row, pass: false, infra: true, checks: [{ name: 'turn-completed', pass: false, detail: turn.timedOut ? 'timeout' : 'cli error/empty' }] };
           console.log(turn.timedOut ? 'TIMEOUT' : 'CLI ERROR');
         } else {
           const report = runValidator(bin, turn.turnText, sc.pinned ?? []);
@@ -412,11 +415,18 @@ function report() {
     console.error('no results yet');
     process.exit(1);
   }
-  const rows = fs
+  const allRows = fs
     .readFileSync(RESULTS, 'utf8')
     .split('\n')
     .filter(Boolean)
     .map((l) => JSON.parse(l));
+  // Infra failures (rate limit / CLI error / timeout) are visibility-only:
+  // they never count against accuracy. Dedupe scored rows by key (a retried
+  // key keeps its last scored row).
+  const infra = allRows.filter((r) => r.infra);
+  const byKey = new Map();
+  for (const r of allRows.filter((r) => !r.infra)) byKey.set(`${r.cell}|${r.scenarioId}|${r.rep}`, r);
+  const rows = [...byKey.values()];
   const classes = [...new Set(rows.map((r) => r.class))].sort();
   const cells = Object.keys(CELLS).filter((c) => rows.some((r) => r.cell === c));
 
@@ -438,7 +448,7 @@ function report() {
     };
   }
 
-  let md = `# Athena model/effort bench — results\n\nGenerated ${new Date().toISOString()} · ${rows.length} runs · corpus v${corpus.version}\n\n## Per-cell summary\n\n| cell | model | effort | runs | pass % | p50 first-token | p50 total | p90 total |\n|---|---|---|---|---|---|---|---|\n`;
+  let md = `# Athena model/effort bench — results\n\nGenerated ${new Date().toISOString()} · ${rows.length} scored runs (${infra.length} infra failures excluded from accuracy) · corpus v${corpus.version}\n\n## Per-cell summary\n\n| cell | model | effort | runs | pass % | p50 first-token | p50 total | p90 total |\n|---|---|---|---|---|---|---|---|\n`;
   for (const c of cells) {
     md += `| ${c} | ${CELLS[c].model} | ${CELLS[c].effort ?? 'default(high)'} | ${agg[c].n} | ${agg[c].passRate} | ${fmtS(agg[c].p50First)} | ${fmtS(agg[c].p50Total)} | ${fmtS(agg[c].p90Total)} |\n`;
   }
