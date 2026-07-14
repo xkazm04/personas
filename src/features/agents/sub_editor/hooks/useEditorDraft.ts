@@ -19,7 +19,6 @@ export function useEditorDraft() {
   const [baseline, setBaseline] = useState<PersonaDraft>(draft);
   const [dismissedWarnings, setDismissedWarnings] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [connectorsMissing, setConnectorsMissing] = useState(0);
 
   const prevPersonaIdRef = useRef(selectedPersona?.id);
 
@@ -119,7 +118,5 @@ export function useEditorDraft() {
     dismissWarnings: () => setDismissedWarnings(true),
     showDeleteConfirm,
     setShowDeleteConfirm,
-    connectorsMissing,
-    setConnectorsMissing,
   };
 }

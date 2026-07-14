@@ -1,10 +1,9 @@
-import { useState, useRef, useMemo, useCallback, useEffect, type CSSProperties } from 'react';
+import { useState, useRef, useCallback, useEffect, type CSSProperties } from 'react';
 import { AlertCircle, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaAvatar } from '@/features/agents/components/PersonaAvatar';
 import { useAgentStore } from "@/stores/agentStore";
-import { useVaultStore } from "@/stores/vaultStore";
 import { toastCatch } from '@/lib/silentCatch';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
@@ -14,6 +13,7 @@ import { useParsedDesignContext } from '@/stores/selectors/personaSelectors';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
+import { usePersonaReadiness } from '../libs/usePersonaReadiness';
 import { QuickStatsBar } from './QuickStatsBar';
 import { ShareAgentButton } from './ShareAgentButton';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -37,10 +37,9 @@ interface PersonaEditorHeaderProps {
  * See `docs/concepts/persona-capabilities/08-frontend-impact.md`.
  */
 export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: PersonaEditorHeaderProps) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
-  const credentials = useVaultStore((s) => s.credentials);
   const effective = useEffectivePersona(draft, baseline);
   const designContext = useParsedDesignContext();
   const [showReadinessPopover, setShowReadinessPopover] = useState(false);
@@ -57,24 +56,9 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
     return () => document.removeEventListener('keydown', handleKey);
   }, [showReadinessPopover]);
 
-  const triggers = selectedPersona?.triggers;
-  const subscriptions = selectedPersona?.subscriptions;
-  const tools = selectedPersona?.tools;
-
-  const readiness = useMemo(() => {
-    if (!selectedPersona) return { canEnable: false, reasons: [] as string[] };
-    const reasons: string[] = [];
-    if (!(triggers || []).length && !(subscriptions || []).length) {
-      reasons.push(t.agents.editor_ui.no_triggers_or_subs);
-    }
-    const credTypes = new Set(credentials.map((c) => c.service_type));
-    const missingCreds = (tools || [])
-      .filter((tl) => tl.requires_credential_type && !credTypes.has(tl.requires_credential_type))
-      .map((tl) => tl.requires_credential_type!);
-    const unique = [...new Set(missingCreds)];
-    if (unique.length > 0) reasons.push(tx(t.agents.editor_ui.missing_credentials, { credentials: unique.join(', ') }));
-    return { canEnable: reasons.length === 0, reasons };
-  }, [selectedPersona, triggers, subscriptions, tools, credentials, t, tx]);
+  // Single readiness resolver shared with the Design-tab missing-connector
+  // badge — see usePersonaReadiness. Header only consumes canEnable + reasons.
+  const readiness = usePersonaReadiness();
 
   const handleHeaderToggle = useCallback(async () => {
     if (!selectedPersona) return;

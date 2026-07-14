@@ -105,7 +105,6 @@ export interface UiSlice {
   n8nTransformActive: boolean;
   templateAdoptActive: boolean;
   showDesignNudge: boolean;
-  showCloudNudge: boolean;
   isCreatingPersona: boolean;
   autoStartDesignInstruction: string | null;
   rebuildActive: boolean;
@@ -223,7 +222,6 @@ export interface UiSlice {
   setN8nTransformActive: (active: boolean) => void;
   setTemplateAdoptActive: (active: boolean) => void;
   setShowDesignNudge: (show: boolean) => void;
-  setShowCloudNudge: (show: boolean) => void;
   setIsCreatingPersona: (creating: boolean) => void;
   setAutoStartDesignInstruction: (instruction: string | null) => void;
   setRebuildActive: (active: boolean) => void;
@@ -365,7 +363,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   n8nTransformActive: false,
   templateAdoptActive: false,
   showDesignNudge: false,
-  showCloudNudge: false,
   isCreatingPersona: false,
   autoStartDesignInstruction: null,
   rebuildActive: false,
@@ -475,7 +472,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setN8nTransformActive: (active) => set({ n8nTransformActive: active }),
   setTemplateAdoptActive: (active) => set({ templateAdoptActive: active }),
   setShowDesignNudge: (show) => set({ showDesignNudge: show }),
-  setShowCloudNudge: (show) => set({ showCloudNudge: show }),
   setIsCreatingPersona: (creating) => set({ isCreatingPersona: creating }),
   setAutoStartDesignInstruction: (instruction) => set({ autoStartDesignInstruction: instruction }),
   setRebuildActive: (active) => set({ rebuildActive: active }),

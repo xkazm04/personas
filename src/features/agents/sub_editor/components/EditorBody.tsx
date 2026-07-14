@@ -6,7 +6,7 @@ import { RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
-import { UnsavedChangesBanner, CloudNudgeBanner, PartialLoadBanner } from './EditorBanners';
+import { UnsavedChangesBanner, PartialLoadBanner } from './EditorBanners';
 import { EditorTabBar } from './EditorTabBar';
 import { EditorEmptyState } from './EditorEmptyState';
 import { PersonaDecisionsFooter } from './PersonaDecisionsFooter';
@@ -21,6 +21,7 @@ import { SubTabSurface } from './SubTabSurface';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
 import { useEditorDraft } from '../hooks/useEditorDraft';
+import { usePersonaReadiness } from '../libs/usePersonaReadiness';
 import { usePersonaSwitchGuard } from '../hooks/usePersonaSwitchGuard';
 import { useEditorKeyboard } from '../hooks/useEditorKeyboard';
 import { useTier } from '@/hooks/utility/interaction/useTier';
@@ -50,8 +51,12 @@ export function EditorBody() {
     undo, redo,
     partialLoadWarnings, dismissWarnings,
     showDeleteConfirm, setShowDeleteConfirm,
-    connectorsMissing, setConnectorsMissing,
   } = useEditorDraft();
+
+  // Design-tab missing-connector badge — from the SAME readiness resolver the
+  // header popover uses, so the count and the "why can't I enable" reasons
+  // never drift. Memoized inside the hook, so this doesn't churn the tab bar.
+  const { missingConnectorCount } = usePersonaReadiness();
 
   const { handleDiscardAndSwitch, handleSaveAndSwitch } = usePersonaSwitchGuard({
     cancelAllDebouncedSaves,
@@ -144,8 +149,7 @@ export function EditorBody() {
         onDismiss={cancelPendingSwitch}
       />
 
-      <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={connectorsMissing} failedTabs={failedTabs} />
-      <CloudNudgeBanner />
+      <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={missingConnectorCount} failedTabs={failedTabs} />
       <PartialLoadBanner warnings={partialLoadWarnings} onDismiss={dismissWarnings} />
 
       {failedTabs.length > 0 && (
@@ -182,7 +186,6 @@ export function EditorBody() {
                 draft={draft}
                 patch={patch}
                 modelDirty={modelDirty}
-                onConnectorsMissingChange={setConnectorsMissing}
               />
             )}
             {editorTab === 'settings' && (
