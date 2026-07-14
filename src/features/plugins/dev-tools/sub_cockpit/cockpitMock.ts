@@ -317,7 +317,10 @@ export type LoopMark = 'regressed' | 'moved' | 'inflight' | 'proposed' | null;
 
 export interface MockContextCell {
   id: string;
+  /** Full name for tooltips: "Group · short". */
   name: string;
+  /** The visible plate label (R4): short, two words, truncation-tolerant. */
+  short: string;
   dims: { errors: CellTone; cost: CellTone; kpi: CellTone; loop: CellTone };
   /** The loop artifact on this context, if any (drawn as the cell's glyph). */
   mark: LoopMark;
@@ -346,6 +349,7 @@ function hash(s: string): number {
 const rnd = (seed: string) => (hash(seed) % 1000) / 1000;
 
 const TOPICS = ['ingest', 'render', 'cache', 'sync', 'routing', 'schema', 'webhooks', 'sessions', 'billing', 'export', 'search', 'notify', 'audit', 'quota', 'themes', 'uploads'];
+const SUFFIX = ['api', 'ui', 'jobs', 'store', 'flow', 'rules', 'view', 'guard'];
 
 interface GridProfile {
   /** [pCrit, pWarn] per measured dimension. */
@@ -374,9 +378,11 @@ function genGrid(
     name: g.name,
     cells: Array.from({ length: g.size }, (_, ci) => {
       const seed = `${projectSeed}/${gi}/${ci}`;
+      const short = `${TOPICS[hash(seed) % TOPICS.length]} ${SUFFIX[hash(seed + 's') % SUFFIX.length]}`;
       const cell: MockContextCell = {
         id: `${seed}`,
-        name: `${g.name} · ${TOPICS[hash(seed) % TOPICS.length]}`,
+        name: `${g.name} · ${short}`,
+        short,
         dims: {
           errors: tone(`${seed}e`, profile.errors, profile.unwired.includes('errors')),
           cost: tone(`${seed}c`, profile.cost, profile.unwired.includes('cost')),

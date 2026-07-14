@@ -24,17 +24,25 @@ import { ContentBox, ContentHeader } from '@/features/shared/components/layout/C
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { MOCK_PROJECTS } from './cockpitMock';
 import CockpitFloorplan from './CockpitFloorplan';
-import CockpitSpectrum from './CockpitSpectrum';
+import CockpitPlates from './CockpitPlates';
+import CockpitWeighted from './CockpitWeighted';
 
-type VariantId = 'floorplan' | 'spectrum';
+// R4: Floorplan won R3's composition; Spectrum deleted. The new A/B keeps the
+// group-block die-map but puts CONTEXT NAMES on the rectangles — state readable
+// at first sight, no tooltip required. Plates = uniform name-plates in
+// architectural order (spatial memory); Weighted = severity-sized tiles in
+// worst-first order (the layout itself triages). Floorplan stays as the R3
+// reference for glanceability comparison.
+type VariantId = 'plates' | 'weighted' | 'floorplan';
 
 const VARIANT_TABS: SegmentedTab<VariantId>[] = [
-  { id: 'floorplan', label: 'Floorplan' },
-  { id: 'spectrum', label: 'Spectrum' },
+  { id: 'plates', label: 'Plates' },
+  { id: 'weighted', label: 'Weighted' },
+  { id: 'floorplan', label: 'Floorplan (R3 ref)' },
 ];
 
 export default function CockpitPrototypePage() {
-  const [variant, setVariant] = useState<VariantId>('floorplan');
+  const [variant, setVariant] = useState<VariantId>('plates');
   const [projectId, setProjectId] = useState(MOCK_PROJECTS[0]!.id);
   const project = MOCK_PROJECTS.find((p) => p.id === projectId) ?? MOCK_PROJECTS[0]!;
 
@@ -48,8 +56,8 @@ export default function CockpitPrototypePage() {
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Health grid — prototype R3"
-        subtitle="First layer · one cell per context (50–100) · colour + symbolics only, names on hover · KPI click-through is a later round"
+        title="Health grid — prototype R4"
+        subtitle="First layer · named context rectangles (50–100) · state at first sight, no tooltips needed · KPI click-through is a later round"
         fitWidth
         actions={
           <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -74,9 +82,9 @@ export default function CockpitPrototypePage() {
           </div>
         }
       />
-      {variant === 'floorplan'
-        ? <CockpitFloorplan project={project} />
-        : <CockpitSpectrum project={project} />}
+      {variant === 'plates' && <CockpitPlates project={project} />}
+      {variant === 'weighted' && <CockpitWeighted project={project} />}
+      {variant === 'floorplan' && <CockpitFloorplan project={project} />}
     </ContentBox>
   );
 }
