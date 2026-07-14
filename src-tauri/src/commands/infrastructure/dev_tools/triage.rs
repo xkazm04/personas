@@ -77,6 +77,10 @@ mod tests {
             provider: None,
             model: None,
             rejection_reason: None,
+            origin: None,
+            use_case_id: None,
+            evidence: None,
+            dedup_key: None,
             created_at: "2026-05-02T00:00:00Z".into(),
             updated_at: "2026-05-02T00:00:00Z".into(),
         }

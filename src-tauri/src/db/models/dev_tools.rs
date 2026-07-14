@@ -571,9 +571,32 @@ pub struct DevIdea {
     pub provider: Option<String>,
     pub model: Option<String>,
     pub rejection_reason: Option<String>,
+    /// Which sensor raised this (the findings spine — see
+    /// `docs/plans/dev-findings-loop.md`). `None` = a classic Idea-Scanner idea.
+    /// One of: `standards_finding` | `passport_gap` | `llm_cost` | `sentry_spike`
+    /// | `kpi_offtrack`.
+    pub origin: Option<String>,
+    /// The use case the emitting signal belongs to. Orphan-tolerant (no FK).
+    pub use_case_id: Option<String>,
+    /// JSON blob of the raw numbers that justified emission. Phase 3's
+    /// verification probe re-measures against these — keep them comparable.
+    pub evidence: Option<String>,
+    /// Stable key per underlying signal (`sentry:<shortId>`, …). A sweep never
+    /// re-raises a finding already present in ANY status, `rejected` included.
+    pub dedup_key: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
+
+/// The sensors that can raise a finding. Kept as a validated allowlist so a typo
+/// in an emitter can't quietly create a new origin the triage UI won't render.
+pub const FINDING_ORIGINS: [&str; 5] = [
+    "standards_finding",
+    "passport_gap",
+    "llm_cost",
+    "sentry_spike",
+    "kpi_offtrack",
+];
 
 // ============================================================================
 // Dev Scans

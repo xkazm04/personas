@@ -5,4 +5,25 @@ export type DevIdea = { id: string, project_id: string | null, context_id: strin
  * Strategist triage rank (1 = do next). Set by the backlog-triage job;
  * promotion prefers ranked ideas. None = unranked.
  */
-priority: number | null, provider: string | null, model: string | null, rejection_reason: string | null, created_at: string, updated_at: string, };
+priority: number | null, provider: string | null, model: string | null, rejection_reason: string | null, 
+/**
+ * Which sensor raised this (the findings spine — see
+ * `docs/plans/dev-findings-loop.md`). `None` = a classic Idea-Scanner idea.
+ * One of: `standards_finding` | `passport_gap` | `llm_cost` | `sentry_spike`
+ * | `kpi_offtrack`.
+ */
+origin: string | null, 
+/**
+ * The use case the emitting signal belongs to. Orphan-tolerant (no FK).
+ */
+use_case_id: string | null, 
+/**
+ * JSON blob of the raw numbers that justified emission. Phase 3's
+ * verification probe re-measures against these — keep them comparable.
+ */
+evidence: string | null, 
+/**
+ * Stable key per underlying signal (`sentry:<shortId>`, …). A sweep never
+ * re-raises a finding already present in ANY status, `rejected` included.
+ */
+dedup_key: string | null, created_at: string, updated_at: string, };

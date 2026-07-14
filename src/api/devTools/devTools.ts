@@ -667,6 +667,43 @@ export const listIdeas = (projectId?: string, status?: string, category?: string
 export const getIdea = (id: string) =>
   invoke<DevIdea>("dev_tools_get_idea", { id });
 
+// -- the findings spine (docs/plans/dev-findings-loop.md) --------------------
+
+/** The sensors that can raise a finding. Mirrors `FINDING_ORIGINS` in Rust. */
+export const FINDING_ORIGINS = [
+  "standards_finding",
+  "passport_gap",
+  "llm_cost",
+  "sentry_spike",
+  "kpi_offtrack",
+] as const;
+export type FindingOrigin = (typeof FINDING_ORIGINS)[number];
+
+export interface CreateFindingInput {
+  projectId: string;
+  origin: FindingOrigin;
+  title: string;
+  description?: string;
+  category?: string;
+  contextId?: string;
+  useCaseId?: string;
+  /** JSON string — the raw numbers that justified emission. */
+  evidence?: string;
+  dedupKey: string;
+  effort?: number;
+  impact?: number;
+  risk?: number;
+}
+
+/** Raise a sensor finding. Resolves to `null` when `dedupKey` already exists on
+ *  the project in ANY status (idempotent — a human "no" is durable). */
+export const createFinding = (input: CreateFindingInput) =>
+  invoke<DevIdea | null>("dev_tools_create_finding", { ...input });
+
+/** Every dedup key already spoken for on this project — the sweep's pre-filter. */
+export const listFindingDedupKeys = (projectId: string) =>
+  safeInvoke<string[]>([], "dev_tools_list_finding_dedup_keys", { projectId });
+
 export const updateIdea = (id: string, updates: { status?: string; title?: string; description?: string; category?: string; effort?: number; impact?: number; risk?: number; rejectionReason?: string }) =>
   invoke<DevIdea>("dev_tools_update_idea", {
     id,

@@ -144,6 +144,12 @@ fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
         provider: row.get("provider")?,
         model: row.get("model")?,
         rejection_reason: row.get("rejection_reason")?,
+        // Findings-spine columns — `unwrap_or(None)` so a row read through a
+        // pre-migration connection (or a SELECT that omits them) still maps.
+        origin: row.get("origin").unwrap_or(None),
+        use_case_id: row.get("use_case_id").unwrap_or(None),
+        evidence: row.get("evidence").unwrap_or(None),
+        dedup_key: row.get("dedup_key").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -2759,6 +2765,101 @@ pub fn create_idea(
     })
 }
 
+/// Create an idea raised by a SENSOR rather than the Idea Scanner — the findings
+/// spine (`docs/plans/dev-findings-loop.md`). Separate from `create_idea` so the
+/// scanner's 14-arg signature and every existing call site stay untouched.
+///
+/// `dedup_key` is the idempotency guard: if a non-deleted idea already carries it
+/// for this project, nothing is inserted and `Ok(None)` comes back. That includes
+/// `rejected` ideas — a human "no" is durable, and only deleting the idea frees
+/// the key for re-emission.
+#[allow(clippy::too_many_arguments)]
+pub fn create_finding(
+    pool: &DbPool,
+    project_id: &str,
+    origin: &str,
+    title: &str,
+    description: Option<&str>,
+    category: Option<&str>,
+    context_id: Option<&str>,
+    use_case_id: Option<&str>,
+    evidence: Option<&str>,
+    dedup_key: &str,
+    effort: Option<i32>,
+    impact: Option<i32>,
+    risk: Option<i32>,
+) -> Result<Option<DevIdea>, AppError> {
+    if title.trim().is_empty() {
+        return Err(AppError::Validation("Title cannot be empty".into()));
+    }
+    if !crate::db::models::FINDING_ORIGINS.contains(&origin) {
+        return Err(AppError::Validation(format!("Unknown finding origin: {origin}")));
+    }
+    if dedup_key.trim().is_empty() {
+        return Err(AppError::Validation("Finding dedup_key cannot be empty".into()));
+    }
+
+    timed_query!("dev_ideas", "dev_ideas::create_finding", {
+        let conn = pool.get()?;
+
+        let existing: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND dedup_key = ?2",
+            params![project_id, dedup_key],
+            |r| r.get(0),
+        )?;
+        if existing > 0 {
+            return Ok(None);
+        }
+
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let canonical_category = category
+            .and_then(crate::db::models::IdeaCategory::from_token)
+            .unwrap_or(crate::db::models::DEFAULT_IDEA_CATEGORY);
+
+        conn.execute(
+            "INSERT INTO dev_ideas (id, project_id, context_id, scan_type, category, title, description, status, effort, impact, risk, origin, use_case_id, evidence, dedup_key, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?15)",
+            params![
+                id,
+                project_id,
+                context_id,
+                origin, // scan_type doubles as the sensor tag, so the Scoreboard groups findings too
+                canonical_category.as_str(),
+                title,
+                description,
+                effort,
+                impact,
+                risk,
+                origin,
+                use_case_id,
+                evidence,
+                dedup_key,
+                now
+            ],
+        )?;
+
+        get_idea_by_id(pool, &id).map(Some)
+    })
+}
+
+/// Every dedup key already spoken for on this project — the sweep's pre-filter,
+/// so N drafts cost one query instead of N existence checks.
+pub fn list_finding_dedup_keys(pool: &DbPool, project_id: &str) -> Result<Vec<String>, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::list_dedup_keys", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT dedup_key FROM dev_ideas WHERE project_id = ?1 AND dedup_key IS NOT NULL",
+        )?;
+        let rows = stmt.query_map(params![project_id], |r| r.get::<_, String>(0))?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    })
+}
+
 #[allow(clippy::too_many_arguments)]
 /// Strategist triage: set (or clear) an idea's rank. 1 = do next.
 pub fn set_idea_priority(pool: &DbPool, id: &str, priority: Option<i32>) -> Result<(), AppError> {
@@ -3747,6 +3848,11 @@ pub fn bulk_create_ideas_cross_project(
                 provider: None,
                 model: None,
                 rejection_reason: None,
+                // Scanner batch — not a sensor finding.
+                origin: None,
+                use_case_id: None,
+                evidence: None,
+                dedup_key: None,
                 created_at: now.clone(),
                 updated_at: now.clone(),
             });

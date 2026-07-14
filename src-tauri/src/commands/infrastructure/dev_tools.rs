@@ -1098,6 +1098,55 @@ pub fn dev_tools_create_idea(
     )
 }
 
+/// Raise a sensor-emitted finding into the idea backlog (the findings spine —
+/// `docs/plans/dev-findings-loop.md`). Idempotent: returns `None` when the
+/// project already carries an idea with this `dedup_key` in ANY status.
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn dev_tools_create_finding(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    origin: String,
+    title: String,
+    description: Option<String>,
+    category: Option<String>,
+    context_id: Option<String>,
+    use_case_id: Option<String>,
+    evidence: Option<String>,
+    dedup_key: String,
+    effort: Option<i32>,
+    impact: Option<i32>,
+    risk: Option<i32>,
+) -> Result<Option<DevIdea>, AppError> {
+    require_auth_sync(&state)?;
+    repo::create_finding(
+        &state.db,
+        &project_id,
+        &origin,
+        &title,
+        description.as_deref(),
+        category.as_deref(),
+        context_id.as_deref(),
+        use_case_id.as_deref(),
+        evidence.as_deref(),
+        &dedup_key,
+        effort,
+        impact,
+        risk,
+    )
+}
+
+/// Every dedup key already spoken for on this project — lets a sweep filter its
+/// drafts in one round-trip instead of one existence check per draft.
+#[tauri::command]
+pub fn dev_tools_list_finding_dedup_keys(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<String>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_finding_dedup_keys(&state.db, &project_id)
+}
+
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub fn dev_tools_update_idea(

@@ -3037,6 +3037,8 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_list_ideas,
             commands::infrastructure::dev_tools::dev_tools_get_idea,
             commands::infrastructure::dev_tools::dev_tools_create_idea,
+            commands::infrastructure::dev_tools::dev_tools_create_finding,
+            commands::infrastructure::dev_tools::dev_tools_list_finding_dedup_keys,
             commands::infrastructure::dev_tools::dev_tools_update_idea,
             commands::infrastructure::dev_tools::dev_tools_accept_idea,
             commands::infrastructure::dev_tools::dev_tools_reject_idea,
