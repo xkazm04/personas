@@ -13,7 +13,6 @@ function readiness(over: Partial<TwinReadiness> = {}): TwinReadiness {
     identity: 'complete',
     tone: 'complete',
     brain: 'complete',
-    voice: 'complete',
     channels: 'complete',
     memories: 'complete',
     score: 100,
@@ -99,15 +98,15 @@ describe('ReadinessGapPopover', () => {
   });
 
   it('caps the visible gap list at 3 and surfaces a "+N more" footer', () => {
-    // Five empty milestones → 4 hidden under the top-3 cap → "+2 more".
+    // All five milestones empty → 2 hidden under the top-3 cap → "+2 more".
     const r = readiness({
       identity: 'empty',
       tone: 'empty',
       brain: 'empty',
-      voice: 'empty',
       channels: 'empty',
-      score: 17,
-      counts: { toneRows: 0, toneHasSpecific: false, channelsTotal: 0, channelsActive: 0, memoriesApproved: 5, memoriesPending: 0 },
+      memories: 'empty',
+      score: 0,
+      counts: { toneRows: 0, toneHasSpecific: false, channelsTotal: 0, channelsActive: 0, memoriesApproved: 0, memoriesPending: 0 },
     });
     render(<ReadinessGapPopover readiness={r} onJumpTo={vi.fn()} />);
     fireEvent.click(screen.getByRole('button'));
@@ -115,7 +114,7 @@ describe('ReadinessGapPopover', () => {
     expect(screen.getByText(/no bio yet/i)).toBeInTheDocument();
     expect(screen.getByText(/no tone captured/i)).toBeInTheDocument();
     expect(screen.getByText(/no knowledge bound/i)).toBeInTheDocument();
-    // Voice + channels are over the cap → "+2 more" footer line.
+    // Channels + memories are over the cap → "+2 more" footer line.
     expect(screen.getByText(/\+2 more/)).toBeInTheDocument();
   });
 

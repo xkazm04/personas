@@ -10,14 +10,14 @@ import type { TwinReadiness } from '../useTwinReadiness';
  * A gap is derived purely from the existing TwinReadiness shape — no new
  * data fetches. Empty milestones (severity 1) rank above partial milestones
  * (severity 0); ties broken by a stable priority that favours foundations
- * (identity → tone → brain → voice → channels → memories).
+ * (identity → tone → brain → channels → memories). The voice milestone was
+ * retired with the 2026-07-10 ElevenLabs descope — five milestones remain.
  */
 
 export type GapTitleKey =
   | 'identityEmpty' | 'identityPartial'
   | 'toneEmpty' | 'tonePartial'
   | 'brainEmpty' | 'brainPartial'
-  | 'voiceEmpty'
   | 'channelsEmpty' | 'channelsPartial'
   | 'memoriesEmpty' | 'memoriesPartial';
 
@@ -103,10 +103,10 @@ export function buildGaps(r: TwinReadiness): Gap[] {
 }
 
 /**
- * Readiness points a single gap would add if closed. Each of the six
- * milestones is worth 100/6 of the score; an empty milestone recovers the
- * full slice, a partial one recovers half. Rounded for display (+17% / +8%).
+ * Readiness points a single gap would add if closed. Each of the five
+ * milestones is worth 100/5 of the score; an empty milestone recovers the
+ * full slice, a partial one recovers half. Rounded for display (+20% / +10%).
  */
 export function gapScoreDelta(gap: Gap): number {
-  return Math.round(((gap.severity === 1 ? 1 : 0.5) / 6) * 100);
+  return Math.round(((gap.severity === 1 ? 1 : 0.5) / 5) * 100);
 }
