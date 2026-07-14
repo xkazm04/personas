@@ -10,12 +10,12 @@ import type { PersonaTrustOrigin } from "./PersonaTrustOrigin";
  * skipped (reported, not cloned) so the duplicate flow can tell the user
  * exactly what carried over.
  */
-export type DuplicatePersonaResult = { triggersCopied: number, subscriptionsCopied: number, automationsSkipped: number, toolsShared: number, credentialLinksShared: number, id: string, project_id: string, name: string, description: string | null, system_prompt: string, structured_prompt: string | null, icon: string | null, color: string | null, enabled: boolean, sensitive: boolean, headless: boolean,
+export type DuplicatePersonaResult = { triggersCopied: number, subscriptionsCopied: number, automationsSkipped: number, toolsShared: number, credentialLinksShared: number, id: string, project_id: string, name: string, description: string | null, system_prompt: string, structured_prompt: string | null, icon: string | null, color: string | null, enabled: boolean, sensitive: boolean, headless: boolean, 
 /**
  * Per-persona star: marks the persona as in the Director's coaching scope.
  * Promoted from a localStorage-only favorite to a durable column.
  */
-starred: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null,
+starred: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, 
 /**
  * JSON-encoded report from the most recent `test_build_draft` run for
  * this persona (A-grade Phase 2, 2026-05-03). Shape matches the value
@@ -26,29 +26,29 @@ starred: boolean, max_concurrent: number, timeout_ms: number, notification_chann
  * `None` for personas that have never run a test (manual templates,
  * legacy installs).
  */
-last_test_report: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null,
+last_test_report: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, 
 /**
  * Workspace anchor (Groups→Teams consolidation): the one team whose
  * shared instructions + defaults + injected memory apply at runtime.
  */
-home_team_id: string | null, source_review_id: string | null, trust_level: PersonaTrustLevel, trust_origin: PersonaTrustOrigin, trust_verified_at: string | null, trust_score: number,
+home_team_id: string | null, source_review_id: string | null, trust_level: PersonaTrustLevel, trust_origin: PersonaTrustOrigin, trust_verified_at: string | null, trust_score: number, 
 /**
  * Free parameters: JSON array of `PersonaParameter` definitions.
  * Adjustable at runtime without triggering a rebuild.
  */
-parameters: string | null,
+parameters: string | null, 
 /**
  * Visibility to the external management HTTP API.
  * Defaults to `LocalOnly` so existing personas are not exposed.
  */
-gateway_exposure: PersonaGatewayExposure,
+gateway_exposure: PersonaGatewayExposure, 
 /**
  * Lowercase template category (e.g. `"development"`, `"finance"`) derived
  * by `infer_template_category` when the persona was created via template
  * adoption. `None` for manually-created or pre-Phase-17 personas. Used by
  * Simple-mode's illustration resolver tier-3 (see `useIllustration.ts`).
  */
-template_category: string | null,
+template_category: string | null, 
 /**
  * Phase 5 v1: per-persona gate for the Claude CLI session-resume
  * awareness feature. When `true` AND the global cli_session toggle on
@@ -58,7 +58,7 @@ template_category: string | null,
  * persona. See `docs/features/companion/athena-cli-session-
  * awareness.md`.
  */
-cli_awareness_enabled: boolean,
+cli_awareness_enabled: boolean, 
 /**
  * Adoption pre-flight signal. `ready` (default) means every declared
  * connector has a matching vault credential or is a built-in local
@@ -68,7 +68,7 @@ cli_awareness_enabled: boolean,
  * auto-execution until the user fixes it. Set by
  * `instant_adopt_template_inner` and `promote_build_draft_inner`.
  */
-setup_status: string,
+setup_status: string, 
 /**
  * JSON-encoded `PersonaSetup` (adoption-honesty redesign) — the
  * structured account of what the persona needs: typed connector
@@ -77,7 +77,7 @@ setup_status: string,
  * this carries the detail the UI routes on. NULL on legacy rows and
  * until the next promote writes it.
  */
-setup_detail: string | null,
+setup_detail: string | null, 
 /**
  * JSON-encoded `{ [use_case_id]: GlyphDimension[] }` recording per-
  * capability dim disables set in the View mode SigilEditModal.
@@ -86,7 +86,7 @@ setup_detail: string | null,
  * re-build flows (seeds the build session's disabled_dims_json).
  * NULL = no disables; this is the default for fresh + legacy rows.
  */
-disabled_dims_json: string | null,
+disabled_dims_json: string | null, 
 /**
  * First-class lifecycle stage (`draft` | `active` | `archived`). Replaces
  * the old frontend draft heuristic. Defaults to `active`; the build-stub
