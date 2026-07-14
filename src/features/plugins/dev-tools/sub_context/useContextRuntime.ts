@@ -108,15 +108,27 @@ export function useContextRuntime(
   const monCredId = project?.monitoring_credential_id ?? null;
   const monSlug = project?.monitoring_project_slug ?? null;
 
+  // Resolve credentials to PRIMITIVES before they reach an effect. Depending on
+  // the `credentials` array itself would re-run the fetch on every render that
+  // hands back a new array identity — which is a refetch → setState → render →
+  // refetch loop that wedges the tab. Only the id + serviceType matter.
+  const llmServiceType = useMemo(
+    () => (llmCredId ? credentials.find((c) => c.id === llmCredId)?.serviceType ?? null : null),
+    [llmCredId, credentials],
+  );
+  const monCredResolvedId = useMemo(
+    () => (monCredId ? credentials.find((c) => c.id === monCredId)?.id ?? null : null),
+    [monCredId, credentials],
+  );
+
   // -- LLM spend per use-case slug (30d) --------------------------------------
   useEffect(() => {
-    const cred = llmCredId ? credentials.find((c) => c.id === llmCredId) : undefined;
-    if (!cred || !hasLiveAdapter(cred.serviceType)) {
+    if (!llmCredId || !llmServiceType || !hasLiveAdapter(llmServiceType)) {
       setCostBySlug(new Map());
       return;
     }
     let cancelled = false;
-    void fetchLlmPinpoints(cred.serviceType, cred.id, '30d')
+    void fetchLlmPinpoints(llmServiceType, llmCredId, '30d')
       .then((rows) => {
         if (cancelled) return;
         const m = new Map<string, number>();
@@ -134,18 +146,17 @@ export function useContextRuntime(
     return () => {
       cancelled = true;
     };
-  }, [llmCredId, credentials]);
+  }, [llmCredId, llmServiceType]);
 
   // -- Sentry unresolved issues ----------------------------------------------
   useEffect(() => {
-    const cred = monCredId ? credentials.find((c) => c.id === monCredId) : undefined;
     const [orgSlug, projSlug] = splitSentrySlug(monSlug);
-    if (!cred || !orgSlug || !projSlug) {
+    if (!monCredResolvedId || !orgSlug || !projSlug) {
       setIssues([]);
       return;
     }
     let cancelled = false;
-    void fetchSentryUnresolvedIssues(cred.id, orgSlug, projSlug)
+    void fetchSentryUnresolvedIssues(monCredResolvedId, orgSlug, projSlug)
       .then((rows) => {
         if (!cancelled) setIssues(rows);
       })
@@ -156,7 +167,7 @@ export function useContextRuntime(
     return () => {
       cancelled = true;
     };
-  }, [monCredId, monSlug, credentials]);
+  }, [monCredResolvedId, monSlug]);
 
   return useMemo(() => {
     if (costBySlug.size === 0 && issues.length === 0) return EMPTY;
