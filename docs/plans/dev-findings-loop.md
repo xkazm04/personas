@@ -308,7 +308,7 @@ let the user compose the loop in Studio.
   published from the REPO so no caller can forget. A finding raised, or a verdict landed, publishes to
   the event bus. It becomes routable like any other source and shows up in Live
   Stream for free (add to `sub_live_stream/eventTypeMeta.ts`).
-- **Two dispatch ops, deliberately parallel (the A/B):**
+- **Two dispatch ops, deliberately parallel (the A/B)** — ✅ **SHIPPED (`402ada2ac`)**:
   - `signal_dispatch_runner` — hand the finding to the **Dev Task Runner** (autonomous;
     already builds + PRs). *"Let the app do it."*
   - `signal_dispatch_fleet` — hand the finding to a **Fleet** CLI session
@@ -318,11 +318,14 @@ let the user compose the loop in Studio.
   flag, no fork in the engine. This resolves the old "two executors" risk: it isn't a
   fork, **it's the feature** (`docs/features/fleet.md`).
 
-### C/D/E — deferred, in this order
+### C/D — ✅ SHIPPED (`402ada2ac`); E still deferred
 
-- **C. Dispatch** (the two ops above) — build after A+B prove the core and the UX.
-- **D. Fleet** gains a *finding-aware session* (evidence + dedup key in context), so a
-  human at a live session can pick up unverified findings.
+- **C. Dispatch** — both ops live. Bind `signal.raised` to one or the other in Studio.
+- **D. Fleet** — a Fleet-dispatched finding opens a session seeded with the finding +
+  its evidence, and STILL creates a linked `dev_tasks` row, so verification judges both
+  arms identically (otherwise the A/B wouldn't be comparable).
+- **Gap fixed while building:** event-fired ops never saw their triggering event. They
+  now receive it under a reserved `_event` param — every future event-driven op benefits.
 - **E. Studio / Athena — SEPARATE DESIGN TOPIC (do not fold into this plan).**
   Direction, recorded only: Studio is the "moment" layer where **Athena leads
   development for a typically non-technical user** — she consumes scans/findings to
