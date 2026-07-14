@@ -185,3 +185,15 @@ export function GhostGrid({ project }: { project: MockProject }) {
 }
 
 export { dominantTone };
+
+/** R6 — element-anchored tooltip placement. Anchoring to the CURSOR (R5) drifted
+ *  away from the plate near window edges; anchoring to the hovered element's rect
+ *  keeps the tooltip attached: below the plate, left-aligned, flipping above and
+ *  clamping horizontally only when out of room. */
+export function anchorTip(rect: DOMRect, w: number, h: number): { left: number; top: number } {
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  if (left + w > window.innerWidth - 12) left = Math.max(12, window.innerWidth - w - 12);
+  if (top + h > window.innerHeight - 12) top = Math.max(12, rect.top - h - 8);
+  return { left, top };
+}

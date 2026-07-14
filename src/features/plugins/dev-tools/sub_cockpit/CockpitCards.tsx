@@ -11,8 +11,9 @@
 // pill, a two-column dimension grid, a sentence for the loop mark. Built to
 // host larger formatted content later (R6+).
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, CircleDollarSign, Gauge, Radio, Send, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
-import { GhostGrid, GridMasthead, NEON, dominantTone } from './cockpitGlyphs';
+import { GhostGrid, GridMasthead, NEON, anchorTip, dominantTone } from './cockpitGlyphs';
 import {
   cellStats, gridFor,
   type CellTone, type MockContextCell, type MockContextGroup, type MockProject,
@@ -32,15 +33,15 @@ const MARK_META: Record<string, { Icon: typeof Send; c: string; sentence: string
 
 // -- the custom tooltip -------------------------------------------------------------
 
-interface TipState { cell: MockContextCell; group: string; x: number; y: number }
+interface TipState { cell: MockContextCell; group: string; rect: DOMRect }
 
 function CardTooltip({ tip }: { tip: TipState }) {
   const { cell, group } = tip;
   const tone = dominantTone(cell);
   const s = cellStats(cell);
   const mark = cell.mark ? MARK_META[cell.mark] : null;
-  const left = Math.min(tip.x + 16, window.innerWidth - 300);
-  const top = Math.min(tip.y + 16, window.innerHeight - 210);
+  // R6 positioning fix: anchored to the hovered plate, not the cursor.
+  const { left, top } = anchorTip(tip.rect, 280, 210);
   const dim = (Icon: typeof Gauge, label: string, value: string | null, hue: string) => (
     <div className="flex items-center gap-2 min-w-0">
       <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: value === null ? 'rgba(148,163,184,.35)' : hue }} aria-hidden />
@@ -52,7 +53,11 @@ function CardTooltip({ tip }: { tip: TipState }) {
       </span>
     </div>
   );
-  return (
+  // PORTAL: `position:fixed` resolves against a transformed ancestor (the page
+  // wrapper animates with a transform), which displaced the tooltip — the R5
+  // "far from the element" bug. Rendering into document.body restores viewport
+  // coordinates.
+  return createPortal(
     <div
       data-testid="cockpit-tooltip"
       className="fixed z-50 w-[280px] pointer-events-none rounded-xl overflow-hidden"
@@ -88,7 +93,8 @@ function CardTooltip({ tip }: { tip: TipState }) {
           <span className="typo-caption">{mark.sentence}</span>
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -117,8 +123,7 @@ function Plate({ cell, group, onHover, onLeave }: {
         ...(tone === 'crit' ? { border: `1px solid ${NEON.red}66`, boxShadow: `0 0 10px ${NEON.red}22` } : {}),
         ...(cell.mark === 'regressed' ? { boxShadow: `0 0 12px ${NEON.red}55` } : {}),
       }}
-      onMouseEnter={(e) => onHover({ cell, group, x: e.clientX, y: e.clientY })}
-      onMouseMove={(e) => onHover({ cell, group, x: e.clientX, y: e.clientY })}
+      onMouseEnter={(e) => onHover({ cell, group, rect: e.currentTarget.getBoundingClientRect() })}
       onMouseLeave={onLeave}
     >
       <span className="flex items-center gap-1.5 min-w-0">

@@ -23,26 +23,24 @@ import { FlaskConical } from 'lucide-react';
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { MOCK_PROJECTS } from './cockpitMock';
-import CockpitPlates from './CockpitPlates';
-import CockpitConsole from './CockpitConsole';
 import CockpitCards from './CockpitCards';
+import CockpitFocus from './CockpitFocus';
 
-// R5: Plates won R4 (uniform named rectangles). The new A/B gives each variant
-// its OWN design identity — typography, colour tone, plate anatomy (two rows
-// with a divider: name row + icons/statuses/short numbers) and a CUSTOM tooltip
-// built for larger formatted content later. Console = ops/terminal identity
-// (mono, sharp, colour rationed to state). Cards = soft editorial identity
-// (ink-carries-colour, rounded, spacious). Plates stays as the R4 reference.
-type VariantId = 'console' | 'cards' | 'plates';
+// R6: Cards won R5 (editorial identity); Plates + Console removed. Focus fuses
+// Console's group boxes into Cards' skin with a focus-first content strategy:
+// the divider IS a thin KPI-progress line, all-green plates recede (title
+// readable, the rest faded on a green wash), and a new blue SETUP state marks
+// unconfigured contexts (KPI not defined / sensors unwired). Tooltips are now
+// ELEMENT-ANCHORED (the R5 cursor anchoring drifted near window edges).
+type VariantId = 'focus' | 'cards';
 
 const VARIANT_TABS: SegmentedTab<VariantId>[] = [
-  { id: 'console', label: 'Console' },
-  { id: 'cards', label: 'Cards' },
-  { id: 'plates', label: 'Plates (R4 ref)' },
+  { id: 'focus', label: 'Focus' },
+  { id: 'cards', label: 'Cards (R5 ref)' },
 ];
 
 export default function CockpitPrototypePage() {
-  const [variant, setVariant] = useState<VariantId>('console');
+  const [variant, setVariant] = useState<VariantId>('focus');
   const [projectId, setProjectId] = useState(MOCK_PROJECTS[0]!.id);
   const project = MOCK_PROJECTS.find((p) => p.id === projectId) ?? MOCK_PROJECTS[0]!;
 
@@ -56,8 +54,8 @@ export default function CockpitPrototypePage() {
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Health grid — prototype R5"
-        subtitle="First layer · two-row plates (name + icons/numbers) · custom rich tooltips on hover · KPI click-through is a later round"
+        title="Health grid — prototype R6"
+        subtitle="First layer · KPI-progress dividers · greens recede, blue = setup needed · anchored tooltips · click-through is a later round"
         fitWidth
         actions={
           <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -82,9 +80,8 @@ export default function CockpitPrototypePage() {
           </div>
         }
       />
-      {variant === 'console' && <CockpitConsole project={project} />}
+      {variant === 'focus' && <CockpitFocus project={project} />}
       {variant === 'cards' && <CockpitCards project={project} />}
-      {variant === 'plates' && <CockpitPlates project={project} />}
     </ContentBox>
   );
 }
