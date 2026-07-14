@@ -11048,7 +11048,9 @@
     "missed_backfill_cta": "Chạy bù",
     "missed_dismiss": "Bỏ qua thông báo lần chạy bị lỡ",
     "missed_offline": "Đã bỏ lỡ {count} khi ngoại tuyến",
-    "missed_offline_tooltip": "Các lần chạy theo lịch đã bị bỏ qua khi ứng dụng đóng. Chạy bù sẽ phát lại chúng (đã khử trùng lặp và giới hạn), hoặc bỏ qua để xóa."
+    "missed_offline_tooltip": "Các lần chạy theo lịch đã bị bỏ qua khi ứng dụng đóng. Chạy bù sẽ phát lại chúng (đã khử trùng lặp và giới hạn), hoặc bỏ qua để xóa.",
+    "reason_invalid_timezone": "Tạm dừng — múi giờ không hợp lệ",
+    "reason_unscheduled": "Tạm dừng — không có lịch hợp lệ"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

@@ -118,5 +118,7 @@
   "missed_backfill_cta": "补运行",
   "missed_dismiss": "忽略错过运行提示",
   "missed_offline": "离线期间错过 {count} 次",
-  "missed_offline_tooltip": "应用关闭期间跳过了计划运行。补运行会重放它们（去重并有上限），或忽略以清除。"
+  "missed_offline_tooltip": "应用关闭期间跳过了计划运行。补运行会重放它们（去重并有上限），或忽略以清除。",
+  "reason_invalid_timezone": "已暂停 — 时区无效",
+  "reason_unscheduled": "已暂停 — 无有效计划"
 }

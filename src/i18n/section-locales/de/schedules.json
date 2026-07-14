@@ -118,5 +118,7 @@
   "missed_backfill_cta": "Nachholen",
   "missed_dismiss": "Hinweis auf verpasste Läufe verwerfen",
   "missed_offline": "{count} verpasst während offline",
-  "missed_offline_tooltip": "Geplante Ausführungen wurden übersprungen, während die App geschlossen war. Nachholen spielt sie erneut ab (dedupliziert und begrenzt), oder verwerfen zum Löschen."
+  "missed_offline_tooltip": "Geplante Ausführungen wurden übersprungen, während die App geschlossen war. Nachholen spielt sie erneut ab (dedupliziert und begrenzt), oder verwerfen zum Löschen.",
+  "reason_invalid_timezone": "Pausiert — ungültige Zeitzone",
+  "reason_unscheduled": "Pausiert — kein gültiger Zeitplan"
 }

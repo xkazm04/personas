@@ -1522,6 +1522,77 @@ pub(crate) fn schedule_hourly_cap_exceeded(
     recent + pending >= ceiling
 }
 
+/// Direction 3 (lost fires get a home): a publish failure AFTER `mark_triggered`
+/// has advanced the schedule is a PERMANENTLY LOST fire — the slot is gone and
+/// was previously recorded only in a `tracing::error!`. Reuse the existing
+/// healing-issue mechanism (mirrors `log_schedule_rate_limit_issue`) so the loss
+/// becomes an actionable, user-visible issue. Deduped to one open issue per
+/// trigger episode: while an issue is open, further lost fires for the same
+/// trigger fold into it instead of spamming a new row per failed publish.
+pub(crate) fn log_schedule_lost_fire_issue(
+    pool: &DbPool,
+    trigger: &crate::db::models::PersonaTrigger,
+    slot_iso: &str,
+    error: &str,
+) {
+    let title = "Scheduled fire lost after schedule advanced";
+    let category = "schedule_lost_fire";
+    let already_open = match pool.get() {
+        Ok(conn) => conn
+            .query_row(
+                "SELECT EXISTS(
+                    SELECT 1 FROM persona_healing_issues
+                    WHERE persona_id = ?1
+                      AND status = 'open'
+                      AND category = ?2
+                      AND title = ?3
+                )",
+                rusqlite::params![trigger.persona_id, category, title],
+                |row| row.get::<_, bool>(0),
+            )
+            .unwrap_or(false),
+        Err(err) => {
+            tracing::warn!(
+                trigger_id = %trigger.id,
+                persona_id = %trigger.persona_id,
+                error = %err,
+                "failed to check existing schedule lost-fire healing issue"
+            );
+            false
+        }
+    };
+    if already_open {
+        return;
+    }
+
+    let description = format!(
+        "Schedule trigger {} advanced its schedule but the event publish failed for the fire due at {}, so that run was lost ({}). The schedule pointer already moved, so it will not retry on its own.",
+        trigger.id, slot_iso, error
+    );
+    let suggested_fix = format!(
+        "Replay the lost run with Backfill on trigger {}, then check the event bus / database health if this recurs.",
+        trigger.id
+    );
+    if let Err(err) = healing_repo::create(
+        pool,
+        &trigger.persona_id,
+        title,
+        &description,
+        false,
+        Some("high"),
+        Some(category),
+        None,
+        Some(&suggested_fix),
+    ) {
+        tracing::warn!(
+            trigger_id = %trigger.id,
+            persona_id = %trigger.persona_id,
+            error = %err,
+            "failed to create schedule lost-fire healing issue"
+        );
+    }
+}
+
 /// Decide whether a scheduled persona is over its monthly budget.
 ///
 /// This is the canonical decision shared with the manual/preview gate in
@@ -2204,6 +2275,14 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                                     trigger_id = %trigger.id,
                                     "Backfill publish failed: {}", e
                                 );
+                                // Direction 3: a dropped backfill slot is a lost
+                                // fire too — give it a home instead of only a log.
+                                log_schedule_lost_fire_issue(
+                                    pool,
+                                    &trigger,
+                                    &slot_iso,
+                                    &e.to_string(),
+                                );
                             }
                         }
                     }
@@ -2313,10 +2392,15 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                     pending_id = %pf.id,
                     "Trigger in approval mode — fire held for human approval (event not published)"
                 ),
-                Err(e) => tracing::error!(
-                    trigger_id = %trigger.id,
-                    "Failed to hold trigger fire for approval: {}", e
-                ),
+                Err(e) => {
+                    tracing::error!(
+                        trigger_id = %trigger.id,
+                        "Failed to hold trigger fire for approval: {}", e
+                    );
+                    // Direction 3: the schedule advanced but the approval hold
+                    // failed to persist, so this fire is lost — give it a home.
+                    log_schedule_lost_fire_issue(pool, &trigger, &now_str, &e.to_string());
+                }
             }
             continue;
         }
@@ -2345,6 +2429,10 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             }
             Err(e) => {
                 tracing::error!(trigger_id = %trigger.id, "Failed to publish trigger event: {}", e);
+                // Direction 3 (lost fires get a home): the schedule already
+                // advanced via mark_triggered, so this fire is permanently lost.
+                // Record a deduped healing issue instead of only a log line.
+                log_schedule_lost_fire_issue(pool, &trigger, &now_str, &e.to_string());
             }
         }
     }

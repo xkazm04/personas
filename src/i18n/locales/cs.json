@@ -11048,7 +11048,9 @@
     "missed_backfill_cta": "Doplnit",
     "missed_dismiss": "Zavřít upozornění na zmeškané běhy",
     "missed_offline": "Zmeškáno {count} během offline",
-    "missed_offline_tooltip": "Naplánované běhy byly přeskočeny, když byla aplikace zavřená. Doplnění je znovu přehraje (bez duplicit a s limitem), nebo zavřete pro vymazání."
+    "missed_offline_tooltip": "Naplánované běhy byly přeskočeny, když byla aplikace zavřená. Doplnění je znovu přehraje (bez duplicit a s limitem), nebo zavřete pro vymazání.",
+    "reason_invalid_timezone": "Pozastaveno — neplatné časové pásmo",
+    "reason_unscheduled": "Pozastaveno — žádný platný plán"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

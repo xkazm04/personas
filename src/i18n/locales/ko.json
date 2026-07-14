@@ -11048,7 +11048,9 @@
     "missed_backfill_cta": "백필",
     "missed_dismiss": "놓친 실행 알림 닫기",
     "missed_offline": "오프라인 중 {count}회 놓침",
-    "missed_offline_tooltip": "앱이 닫혀 있는 동안 예약 실행이 건너뛰어졌습니다. 백필은 이를 다시 실행합니다(중복 제거 및 상한 적용). 닫으면 지워집니다."
+    "missed_offline_tooltip": "앱이 닫혀 있는 동안 예약 실행이 건너뛰어졌습니다. 백필은 이를 다시 실행합니다(중복 제거 및 상한 적용). 닫으면 지워집니다.",
+    "reason_invalid_timezone": "일시중지 — 잘못된 시간대",
+    "reason_unscheduled": "일시중지 — 유효한 예약 없음"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

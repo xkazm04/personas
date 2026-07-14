@@ -7,7 +7,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
-import { formatRelative } from '../libs/scheduleHelpers';
+import { formatRelative, scheduleReasonLabel } from '../libs/scheduleHelpers';
 import FrequencyEditor from './FrequencyEditor';
 import BackfillModal from './BackfillModal';
 import { ScheduleRowHistoryPanel } from './ScheduleRowHistoryPanel';
@@ -147,6 +147,14 @@ export default function ScheduleRow({
             <span className="font-mono typo-code text-foreground">{schedule}</span>
             {agent.cron_expression && (
               <span className="text-amber-400/50 text-[10px] font-medium">{tzLabel}</span>
+            )}
+            {missed?.statusReason && (
+              <span
+                className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-red-500/10 text-red-400 border border-red-500/20"
+                title={missed.statusReasonDetail ?? undefined}
+              >
+                {scheduleReasonLabel(t, missed.statusReason)}
+              </span>
             )}
             {agent.description && (
               <>

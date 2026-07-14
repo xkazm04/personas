@@ -431,6 +431,13 @@ pub fn update(
                     &timezone,
                     &error,
                 );
+            } else {
+                // Direction 3: schedule is valid again (e.g. the timezone was
+                // corrected) — clear any persisted pause reason so the row stops
+                // showing "Paused (invalid timezone)".
+                if let Err(e) = clear_schedule_status_reason(pool, id) {
+                    tracing::warn!(trigger_id = id, error = %e, "failed to clear schedule status reason");
+                }
             }
         }
 
@@ -446,6 +453,20 @@ fn record_invalid_timezone_issue(
     timezone: &str,
     error: &str,
 ) {
+    // Direction 3 (lost fires get a home): persist a machine-readable reason so
+    // the schedule row can explain WHY next_trigger_at is NULL instead of just
+    // showing "Paused/Unscheduled". Done before the dedup gate below so the
+    // reason is always current even when the healing issue is already open.
+    let detail = format!("timezone `{timezone}` for cron `{cron_expr}` ({error})");
+    if let Err(e) = set_schedule_status_reason(pool, trigger_id, "invalid_timezone", Some(&detail)) {
+        tracing::warn!(
+            trigger_id,
+            persona_id,
+            error = %e,
+            "failed to persist invalid-timezone schedule status reason"
+        );
+    }
+
     let title = "Fix schedule timezone";
     let description = format!(
         "Scheduled trigger `{trigger_id}` uses invalid timezone `{timezone}` for cron `{cron_expr}` ({error}). \
@@ -1860,6 +1881,13 @@ pub struct ScheduleMissedRuns {
     pub missed_count: i64,
     pub first_missed_at: Option<String>,
     pub last_missed_at: Option<String>,
+    /// Direction 3: machine-readable reason the schedule is Paused/Unscheduled
+    /// (e.g. `invalid_timezone`). `None` when the schedule is healthy. Surfaced
+    /// in the schedule row next to the Paused/Unscheduled state.
+    pub status_reason: Option<String>,
+    /// Human-facing detail for `status_reason` (e.g. the offending timezone +
+    /// parser error). Not translated — a diagnostic string.
+    pub status_reason_detail: Option<String>,
 }
 
 /// Accumulate `delta` discarded slots for a trigger. Idempotent-friendly:
@@ -1898,9 +1926,10 @@ pub fn list_missed_runs(pool: &DbPool) -> Result<Vec<ScheduleMissedRuns>, AppErr
     timed_query!("schedule_missed_runs", "schedule_missed_runs::list", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare_cached(
-            "SELECT trigger_id, missed_count, first_missed_at, last_missed_at
+            "SELECT trigger_id, missed_count, first_missed_at, last_missed_at,
+                    status_reason, status_reason_detail
              FROM schedule_missed_runs
-             WHERE missed_count > 0
+             WHERE missed_count > 0 OR status_reason IS NOT NULL
              ORDER BY last_missed_at DESC",
         )?;
         let rows = stmt.query_map([], |row| {
@@ -1909,6 +1938,8 @@ pub fn list_missed_runs(pool: &DbPool) -> Result<Vec<ScheduleMissedRuns>, AppErr
                 missed_count: row.get(1)?,
                 first_missed_at: row.get(2)?,
                 last_missed_at: row.get(3)?,
+                status_reason: row.get(4)?,
+                status_reason_detail: row.get(5)?,
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
@@ -1917,15 +1948,80 @@ pub fn list_missed_runs(pool: &DbPool) -> Result<Vec<ScheduleMissedRuns>, AppErr
 
 /// Clear a trigger's discarded-while-offline count after the user backfills or
 /// dismisses it. Idempotent — clearing an absent row is a no-op.
+///
+/// Preserves any `status_reason` (a bad-timezone pause is independent of the
+/// missed-count badge): the row is deleted only when no reason remains.
 pub fn clear_missed_runs(pool: &DbPool, trigger_id: &str) -> Result<(), AppError> {
     timed_query!("schedule_missed_runs", "schedule_missed_runs::clear", {
         let conn = pool.get()?;
         conn.execute(
-            "DELETE FROM schedule_missed_runs WHERE trigger_id = ?1",
+            "UPDATE schedule_missed_runs
+             SET missed_count = 0, first_missed_at = NULL, last_missed_at = NULL,
+                 updated_at = ?2
+             WHERE trigger_id = ?1",
+            params![trigger_id, chrono::Utc::now().to_rfc3339()],
+        )?;
+        conn.execute(
+            "DELETE FROM schedule_missed_runs
+             WHERE trigger_id = ?1 AND missed_count = 0 AND status_reason IS NULL",
             params![trigger_id],
         )?;
         Ok(())
     })
+}
+
+/// Direction 3: persist a machine-readable reason the schedule is
+/// Paused/Unscheduled (e.g. `invalid_timezone`) on the per-trigger side-state
+/// row. `detail` is an optional human-facing diagnostic. Upserts so the reason
+/// coexists with any missed-count on the same row.
+pub fn set_schedule_status_reason(
+    pool: &DbPool,
+    trigger_id: &str,
+    reason: &str,
+    detail: Option<&str>,
+) -> Result<(), AppError> {
+    timed_query!(
+        "schedule_missed_runs",
+        "schedule_missed_runs::set_status_reason",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO schedule_missed_runs
+                     (trigger_id, status_reason, status_reason_detail, updated_at)
+                 VALUES (?1, ?2, ?3, ?4)
+                 ON CONFLICT(trigger_id) DO UPDATE SET
+                     status_reason        = excluded.status_reason,
+                     status_reason_detail = excluded.status_reason_detail,
+                     updated_at           = excluded.updated_at",
+                params![trigger_id, reason, detail, chrono::Utc::now().to_rfc3339()],
+            )?;
+            Ok(())
+        }
+    )
+}
+
+/// Direction 3: clear a schedule's pause reason once it is healthy again (e.g.
+/// the timezone was corrected). Deletes the row if no missed-count remains.
+pub fn clear_schedule_status_reason(pool: &DbPool, trigger_id: &str) -> Result<(), AppError> {
+    timed_query!(
+        "schedule_missed_runs",
+        "schedule_missed_runs::clear_status_reason",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE schedule_missed_runs
+                 SET status_reason = NULL, status_reason_detail = NULL, updated_at = ?2
+                 WHERE trigger_id = ?1",
+                params![trigger_id, chrono::Utc::now().to_rfc3339()],
+            )?;
+            conn.execute(
+                "DELETE FROM schedule_missed_runs
+                 WHERE trigger_id = ?1 AND missed_count = 0 AND status_reason IS NULL",
+                params![trigger_id],
+            )?;
+            Ok(())
+        }
+    )
 }
 
 // ---------------------------------------------------------------------------

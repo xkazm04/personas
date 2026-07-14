@@ -11048,7 +11048,9 @@
     "missed_backfill_cta": "Rattraper",
     "missed_dismiss": "Ignorer l’avis d’exécutions manquées",
     "missed_offline": "{count} manquée(s) hors ligne",
-    "missed_offline_tooltip": "Des exécutions planifiées ont été ignorées pendant que l’app était fermée. Le rattrapage les rejoue (dédupliqué et plafonné), ou ignorez pour effacer."
+    "missed_offline_tooltip": "Des exécutions planifiées ont été ignorées pendant que l’app était fermée. Le rattrapage les rejoue (dédupliqué et plafonné), ou ignorez pour effacer.",
+    "reason_invalid_timezone": "En pause — fuseau horaire invalide",
+    "reason_unscheduled": "En pause — aucune planification valide"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

@@ -118,5 +118,7 @@
   "missed_backfill_cta": "バックフィル",
   "missed_dismiss": "未実行の通知を閉じる",
   "missed_offline": "オフライン中に{count}件を逃しました",
-  "missed_offline_tooltip": "アプリが閉じている間、スケジュール実行がスキップされました。バックフィルで再実行します（重複排除・上限あり）。閉じると消去します。"
+  "missed_offline_tooltip": "アプリが閉じている間、スケジュール実行がスキップされました。バックフィルで再実行します（重複排除・上限あり）。閉じると消去します。",
+  "reason_invalid_timezone": "一時停止 — 無効なタイムゾーン",
+  "reason_unscheduled": "一時停止 — 有効なスケジュールなし"
 }

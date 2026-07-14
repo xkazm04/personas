@@ -118,5 +118,7 @@
   "missed_backfill_cta": "Recuperar",
   "missed_dismiss": "Descartar aviso de ejecuciones perdidas",
   "missed_offline": "Se perdieron {count} sin conexión",
-  "missed_offline_tooltip": "Se omitieron ejecuciones programadas mientras la app estaba cerrada. Recuperar las repite (sin duplicados y con límite), o descártalo para borrar."
+  "missed_offline_tooltip": "Se omitieron ejecuciones programadas mientras la app estaba cerrada. Recuperar las repite (sin duplicados y con límite), o descártalo para borrar.",
+  "reason_invalid_timezone": "En pausa — zona horaria no válida",
+  "reason_unscheduled": "En pausa — sin programación válida"
 }

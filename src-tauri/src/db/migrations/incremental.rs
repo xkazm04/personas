@@ -3937,6 +3937,28 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Direction 3 (lost fires get a home): machine-readable reason a schedule is
+    // Paused/Unscheduled (e.g. `invalid_timezone`), stored on the same per-trigger
+    // side-state row so the schedule row can explain WHY next_trigger_at is NULL
+    // instead of just showing "Paused/Unscheduled". Guarded ALTER — reuses the
+    // Direction 1 table so a trigger can carry both a missed count and a reason.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "schedule_missed_runs.status_reason",
+            description: "Machine-readable schedule pause reason (e.g. invalid_timezone)",
+            already_applied: |conn| has_column(conn, "schedule_missed_runs", "status_reason"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE schedule_missed_runs ADD COLUMN status_reason TEXT;
+                     ALTER TABLE schedule_missed_runs ADD COLUMN status_reason_detail TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

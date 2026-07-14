@@ -11048,7 +11048,9 @@
     "missed_backfill_cta": "बैकफ़िल",
     "missed_dismiss": "छूटे रन की सूचना खारिज करें",
     "missed_offline": "ऑफ़लाइन के दौरान {count} छूट गए",
-    "missed_offline_tooltip": "ऐप बंद रहने के दौरान शेड्यूल किए गए रन छोड़ दिए गए। बैकफ़िल उन्हें फिर से चलाता है (डुप्लिकेट हटाकर और सीमा के साथ), या साफ़ करने के लिए खारिज करें।"
+    "missed_offline_tooltip": "ऐप बंद रहने के दौरान शेड्यूल किए गए रन छोड़ दिए गए। बैकफ़िल उन्हें फिर से चलाता है (डुप्लिकेट हटाकर और सीमा के साथ), या साफ़ करने के लिए खारिज करें।",
+    "reason_invalid_timezone": "रुका हुआ — अमान्य टाइमज़ोन",
+    "reason_unscheduled": "रुका हुआ — कोई मान्य शेड्यूल नहीं"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

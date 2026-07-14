@@ -11048,7 +11048,9 @@
     "missed_backfill_cta": "Susulkan",
     "missed_dismiss": "Tutup pemberitahuan run terlewat",
     "missed_offline": "Terlewat {count} saat offline",
-    "missed_offline_tooltip": "Jalankan terjadwal dilewati saat aplikasi tertutup. Backfill memutarnya ulang (dedup dan dibatasi), atau tutup untuk menghapus."
+    "missed_offline_tooltip": "Jalankan terjadwal dilewati saat aplikasi tertutup. Backfill memutarnya ulang (dedup dan dibatasi), atau tutup untuk menghapus.",
+    "reason_invalid_timezone": "Dijeda — zona waktu tidak valid",
+    "reason_unscheduled": "Dijeda — tidak ada jadwal valid"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

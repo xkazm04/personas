@@ -11221,6 +11221,8 @@ export type Translations = {
     missed_backfill_cta: string;
     missed_offline_tooltip: string;
     missed_dismiss: string;
+    reason_invalid_timezone: string;
+    reason_unscheduled: string;
     more_actions: string;
     advanced_actions_aria: string;
     skip_next_fire: string;

@@ -11215,6 +11215,8 @@
     "missed_backfill_cta": "Backfill",
     "missed_offline_tooltip": "Scheduled runs were skipped while the app was closed. Backfill replays them (deduped and capped), or dismiss to clear.",
     "missed_dismiss": "Dismiss missed-runs notice",
+    "reason_invalid_timezone": "Paused — invalid timezone",
+    "reason_unscheduled": "Paused — no valid schedule",
     "more_actions": "More actions",
     "advanced_actions_aria": "More schedule actions",
     "skip_next_fire": "Skip next fire",
