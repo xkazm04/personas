@@ -2289,13 +2289,46 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
 
+    /// `persona_prompt_versions.persona_id` carries a real FK (added by
+    /// `fk_hygiene::migrate_persona_prompt_versions`), so prompt-version
+    /// tests need an actual `personas` row to reference.
+    fn create_test_persona(pool: &DbPool, name: &str) -> String {
+        use crate::db::models::CreatePersonaInput;
+        use crate::db::repos::core::personas;
+        personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
     #[test]
     fn test_prompt_version_auto_increment() {
         let pool = init_test_db().unwrap();
+        let persona_1 = create_test_persona(&pool, "persona-1");
+        let persona_2 = create_test_persona(&pool, "persona-2");
 
         let v1 = create_prompt_version(
             &pool,
-            "persona-1",
+            &persona_1,
             None,
             Some("You are v1.".into()),
             Some("Initial version".into()),
@@ -2305,7 +2338,7 @@ mod tests {
 
         let v2 = create_prompt_version(
             &pool,
-            "persona-1",
+            &persona_1,
             None,
             Some("You are v2.".into()),
             Some("Updated prompt".into()),
@@ -2315,12 +2348,12 @@ mod tests {
 
         // Different persona starts at 1
         let other =
-            create_prompt_version(&pool, "persona-2", Some("structured".into()), None, None)
+            create_prompt_version(&pool, &persona_2, Some("structured".into()), None, None)
                 .unwrap();
         assert_eq!(other.version_number, 1);
 
         // List versions for persona-1
-        let versions = get_prompt_versions(&pool, "persona-1", None).unwrap();
+        let versions = get_prompt_versions(&pool, &persona_1, None).unwrap();
         assert_eq!(versions.len(), 2);
         assert_eq!(versions[0].version_number, 2); // DESC order
         assert_eq!(versions[1].version_number, 1);

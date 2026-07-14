@@ -3181,17 +3181,21 @@ mod tests {
 
     #[test]
     fn test_sanitize_strips_field_values() {
+        // Every non-empty field value is redacted regardless of length —
+        // a short-value exemption would let short secrets (PINs, short
+        // tokens) leak, so `sanitize_error` doesn't special-case length.
         let mut fields = HashMap::new();
         fields.insert(
             "api_key".to_string(),
             "sk-super-secret-key-12345".to_string(),
         );
-        fields.insert("port".to_string(), "5432".to_string()); // short -- should NOT be redacted
+        fields.insert("port".to_string(), "5432".to_string());
         let msg = "Failed with key sk-super-secret-key-12345 on port 5432";
         let result = sanitize_error(msg, &fields);
         assert!(!result.contains("sk-super-secret-key-12345"));
         assert!(result.contains("[REDACTED:api_key]"));
-        assert!(result.contains("5432")); // short value not redacted
+        assert!(!result.contains("5432"));
+        assert!(result.contains("[REDACTED:port]"));
     }
 
     #[test]

@@ -1701,13 +1701,18 @@ mod apply_progress_tests {
         assert_eq!(normalize_goal_status(&g.status), "in-progress");
         assert!(g.started_at.is_some());
 
-        // Finish the second → 100% → done.
+        // Finish the second → 100% → awaiting_acceptance (the human-acceptance
+        // queue), NOT straight to done.
         update_goal_item(&pool, &_i2.id, None, Some(true)).unwrap();
         let p2 = apply_resolved_goal_progress(&pool, &goal.id).unwrap();
         assert_eq!(p2, 100);
         let g2 = get_goal_by_id(&pool, &goal.id).unwrap();
-        assert_eq!(normalize_goal_status(&g2.status), "done");
+        assert_eq!(normalize_goal_status(&g2.status), "awaiting_acceptance");
         assert!(g2.completed_at.is_some());
+
+        // Explicit acceptance is what actually completes the goal.
+        let accepted = resolve_goal_acceptance(&pool, &goal.id, true, None).unwrap();
+        assert_eq!(normalize_goal_status(&accepted.status), "done");
     }
 
     #[test]
@@ -4465,11 +4470,15 @@ mod uat_gate_tests {
         // Eligibility: every non-verify to-do is complete → UAT may run.
         assert!(goal_todos_all_complete(&pool, &goal.id).unwrap());
 
-        // Passing the UAT closes the gate → goal reaches 100 / done.
+        // Passing the UAT closes the gate → goal reaches 100 / awaiting_acceptance
+        // (the human-acceptance queue) — accepting it is what completes it.
         let after = complete_goal_verification(&pool, &goal.id).unwrap();
         assert_eq!(after, 100, "closing the gate completes the goal");
         let g2 = get_goal_by_id(&pool, &goal.id).unwrap();
-        assert_eq!(normalize_goal_status(&g2.status), "done");
+        assert_eq!(normalize_goal_status(&g2.status), "awaiting_acceptance");
+
+        let accepted = resolve_goal_acceptance(&pool, &goal.id, true, None).unwrap();
+        assert_eq!(normalize_goal_status(&accepted.status), "done");
     }
 
     #[test]
@@ -4495,9 +4504,9 @@ mod uat_gate_tests {
                 .unwrap();
         let goal = create_goal(&pool, &project.id, "Feature", None, None, None, None, None).unwrap();
         set_goal_verification(&pool, &goal.id, "test it", None).unwrap();
-        // Pass the gate → goal done.
+        // Pass the gate → goal reaches the human-acceptance queue.
         complete_goal_verification(&pool, &goal.id).unwrap();
-        assert_eq!(normalize_goal_status(&get_goal_by_id(&pool, &goal.id).unwrap().status), "done");
+        assert_eq!(normalize_goal_status(&get_goal_by_id(&pool, &goal.id).unwrap().status), "awaiting_acceptance");
         // Re-open: new work invalidates the pass.
         let reopened = reopen_verification_if_passed(&pool, &goal.id).unwrap();
         assert!(reopened);

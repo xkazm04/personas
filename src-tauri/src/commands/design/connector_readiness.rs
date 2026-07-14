@@ -574,7 +574,8 @@ mod tests {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(
             "CREATE TABLE connector_definitions (name TEXT, metadata TEXT, category TEXT);
-             CREATE TABLE persona_credentials (id TEXT, service_type TEXT);
+             CREATE TABLE persona_credentials (id TEXT, service_type TEXT, metadata TEXT);
+             CREATE TABLE credential_fields (credential_id TEXT, encrypted_value TEXT, updated_at TEXT);
              CREATE TABLE dev_projects (id TEXT, status TEXT);
              CREATE TABLE twin_profiles (id TEXT);
              CREATE TABLE app_settings (key TEXT, value TEXT);",
@@ -609,6 +610,17 @@ mod tests {
         .unwrap();
     }
 
+    /// Give a vault credential row actual substance — a non-empty
+    /// `credential_fields` value — so `credential_is_usable` treats it as
+    /// ready rather than an empty shell.
+    fn field(conn: &Connection, credential_id: &str, value: &str) {
+        conn.execute(
+            "INSERT INTO credential_fields (credential_id, encrypted_value, updated_at) VALUES (?1, ?2, ?3)",
+            rusqlite::params![credential_id, value, "2026-01-01 00:00:00"],
+        )
+        .unwrap();
+    }
+
     #[test]
     fn zero_config_connector_is_ready() {
         let conn = test_db();
@@ -631,6 +643,7 @@ mod tests {
             other => panic!("expected NeedsSetup, got {other:?}"),
         }
         cred(&conn, "notion-cred-1", "notion");
+        field(&conn, "notion-cred-1", "secret-api-key");
         assert_eq!(connector_readiness(&conn, "notion"), Readiness::Ready);
     }
 

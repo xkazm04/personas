@@ -1467,8 +1467,14 @@ mod tests {
 
     #[test]
     fn sandbox_rejects_absolute_paths() {
+        // A leading `/` is virtual-drive notation (every caller passes
+        // frontend-style paths like `/folder/file.txt`), so it's stripped
+        // and treated as root-relative, not a real filesystem escape —
+        // `/etc/passwd` legitimately resolves to `root/etc/passwd`. The only
+        // form that still parses as `Path::is_absolute()` after that strip
+        // is a Windows drive-letter path, which this test exercises instead.
         let root = temp_root();
-        assert!(resolve_safe(&root, "/etc/passwd").is_err());
+        assert!(resolve_safe(&root, "C:\\Windows\\System32\\config").is_err());
     }
 
     #[test]

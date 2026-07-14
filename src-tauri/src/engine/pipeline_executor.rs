@@ -164,17 +164,24 @@ fn evaluate_condition(condition_json: &str, predecessor_output: Option<&str>) ->
     };
 
     // Try JSON field lookup first
-    let json_value = predecessor_output
-        .and_then(|o| serde_json::from_str::<serde_json::Value>(o).ok())
+    let parsed_output = predecessor_output.and_then(|o| serde_json::from_str::<serde_json::Value>(o).ok());
+    let json_value = parsed_output
+        .as_ref()
         .and_then(|v| v.get(&spec.field).cloned())
         .and_then(|v| match v {
             serde_json::Value::String(s) => Some(s),
             other => Some(other.to_string()),
         });
 
-    // If JSON lookup failed OR field is the special whole-output marker,
-    // fall back to the raw output string.
-    let output_value = if json_value.is_some() && spec.field != "*" && spec.field != "_output" {
+    // Raw-output fallback applies when the output isn't valid JSON at all,
+    // or the field is the whole-output marker — NOT merely when a field
+    // lookup inside otherwise-valid JSON comes up empty (that must resolve
+    // to "missing", so e.g. `exists` on an absent field is false, not
+    // trivially true because the raw blob happens to be non-empty).
+    let is_whole_output_marker = spec.field == "*" || spec.field == "_output";
+    let output_value = if is_whole_output_marker {
+        predecessor_output.map(|s| s.trim().to_string())
+    } else if parsed_output.is_some() {
         json_value
     } else {
         predecessor_output.map(|s| s.trim().to_string())

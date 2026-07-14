@@ -44,40 +44,74 @@ fn load_context_map() -> Option<serde_json::Value> {
     serde_json::from_str(&raw).ok()
 }
 
+/// Flatten `context-map.json` into `(context, group_name)` pairs. Supports
+/// both shapes seen in the wild: the legacy flat top-level `contexts` array
+/// (each carrying its own `group` field) and the current scan-tool shape,
+/// `groups[].contexts[]` (group name lives on the parent, not the context).
+fn iter_contexts(map: &serde_json::Value) -> Vec<(&serde_json::Value, String)> {
+    let mut out = Vec::new();
+    if let Some(contexts) = map.get("contexts").and_then(|v| v.as_array()) {
+        for c in contexts {
+            let group = c
+                .get("group")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            out.push((c, group));
+        }
+    }
+    if let Some(groups) = map.get("groups").and_then(|v| v.as_array()) {
+        for g in groups {
+            let group = g
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            if let Some(contexts) = g.get("contexts").and_then(|v| v.as_array()) {
+                for c in contexts {
+                    out.push((c, group.clone()));
+                }
+            }
+        }
+    }
+    out
+}
+
+/// A context's file list, under either the legacy snake_case key or the
+/// current scan tool's camelCase `filePaths`.
+fn context_file_paths(c: &serde_json::Value) -> Vec<String> {
+    c.get("file_paths")
+        .or_else(|| c.get("filePaths"))
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|p| p.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 /// Resolve a context slug (the `name` field, e.g. `agent-connectors`)
 /// to its file list + description. Used by the `dev_improve` executor so
 /// the dispatched coding session gets DETERMINISTIC paths from the map,
 /// never model-recalled ones. Slug matching is case-insensitive.
 pub fn resolve_context(slug: &str) -> Option<ResolvedContext> {
     let map = load_context_map()?;
-    let contexts = map.get("contexts")?.as_array()?;
     let want = slug.trim().to_ascii_lowercase();
-    contexts.iter().find_map(|c| {
+    iter_contexts(&map).into_iter().find_map(|(c, group)| {
         let name = c.get("name")?.as_str()?;
         if name.to_ascii_lowercase() != want {
             return None;
         }
         Some(ResolvedContext {
             name: name.to_string(),
-            group: c
-                .get("group")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
+            group,
             description: c
                 .get("description")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string(),
-            file_paths: c
-                .get("file_paths")
-                .and_then(|v| v.as_array())
-                .map(|arr| {
-                    arr.iter()
-                        .filter_map(|p| p.as_str().map(str::to_string))
-                        .collect()
-                })
-                .unwrap_or_default(),
+            file_paths: context_file_paths(c),
         })
     })
 }
@@ -88,13 +122,9 @@ pub fn resolve_context(slug: &str) -> Option<ResolvedContext> {
 /// gracefully — Athena can still dispatch with `files_hint` only).
 pub fn context_map_index() -> Option<String> {
     let map = load_context_map()?;
-    let contexts = map.get("contexts")?.as_array()?;
     let mut out = String::new();
-    for c in contexts {
-        let (Some(name), Some(group)) = (
-            c.get("name").and_then(|v| v.as_str()),
-            c.get("group").and_then(|v| v.as_str()),
-        ) else {
+    for (c, group) in iter_contexts(&map) {
+        let Some(name) = c.get("name").and_then(|v| v.as_str()) else {
             continue;
         };
         let desc = c
