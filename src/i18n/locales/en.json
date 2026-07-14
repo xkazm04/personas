@@ -11789,6 +11789,19 @@
       "low": "Low",
       "medium": "Medium",
       "high": "High"
+    },
+    "build": {
+      "initializing": "Initializing",
+      "analyzing": "Analyzing",
+      "awaiting_input": "Awaiting input",
+      "resolving": "Resolving",
+      "draft_ready": "Draft ready",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "testing": "Testing",
+      "test_complete": "Test complete",
+      "promoted": "Promoted"
     }
   },
   "project_overview": {
@@ -16149,7 +16162,11 @@
       "whats_new": "What's New",
       "back_to_plugins": "Plugins",
       "roadmap": "Roadmap",
-      "groups_label": "Groups"
+      "groups_label": "Groups",
+      "draft_agent_fallback": "Draft agent",
+      "draft_needs_answers_one": "{name} — needs 1 answer",
+      "draft_needs_answers_other": "{name} — needs {count} answers",
+      "draft_switch_title": "Switch to draft: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "Copy",

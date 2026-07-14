@@ -157,7 +157,11 @@
     "whats_new": "Что нового",
     "back_to_plugins": "Плагины",
     "roadmap": "Дорожная карта",
-    "groups_label": "Группы"
+    "groups_label": "Группы",
+    "draft_agent_fallback": "Черновик агента",
+    "draft_needs_answers_one": "{name} — нужен 1 ответ",
+    "draft_needs_answers_other": "{name} — нужно ответов: {count}",
+    "draft_switch_title": "Перейти к черновику: {name} ({phase})"
   },
   "execution_detail": {
     "copy": "Копировать",

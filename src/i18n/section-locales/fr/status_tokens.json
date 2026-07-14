@@ -161,5 +161,18 @@
     "quarantined": "Déclencheur en quarantaine",
     "healing_abandoned": "Réparation abandonnée",
     "healing_capped": "Tentatives de réparation épuisées"
+  },
+  "build": {
+    "analyzing": "Analyse en cours",
+    "awaiting_input": "En attente de saisie",
+    "cancelled": "Annulé",
+    "completed": "Terminé",
+    "draft_ready": "Brouillon prêt",
+    "failed": "Échec",
+    "initializing": "Initialisation",
+    "promoted": "Promu",
+    "resolving": "Résolution",
+    "test_complete": "Test terminé",
+    "testing": "Test en cours"
   }
 }

@@ -11526,6 +11526,19 @@
       "quarantined": "ট্রিগার কোয়ারেন্টাইন করা হয়েছে",
       "healing_abandoned": "নিরাময় থেমে গেছে",
       "healing_capped": "নিরাময়ের পুনঃচেষ্টা শেষ"
+    },
+    "build": {
+      "analyzing": "বিশ্লেষণ চলছে",
+      "awaiting_input": "ইনপুটের অপেক্ষায়",
+      "cancelled": "বাতিল",
+      "completed": "সম্পন্ন",
+      "draft_ready": "খসড়া প্রস্তুত",
+      "failed": "ব্যর্থ",
+      "initializing": "শুরু হচ্ছে",
+      "promoted": "উন্নীত",
+      "resolving": "সমাধান চলছে",
+      "test_complete": "পরীক্ষা সম্পন্ন",
+      "testing": "পরীক্ষা চলছে"
     }
   },
   "project_overview": {
@@ -15858,7 +15871,11 @@
       "whats_new": "নতুন কী আছে",
       "back_to_plugins": "প্লাগইন",
       "roadmap": "রোডম্যাপ",
-      "groups_label": "গ্রুপ"
+      "groups_label": "গ্রুপ",
+      "draft_agent_fallback": "খসড়া এজেন্ট",
+      "draft_needs_answers_one": "{name} — ১টি উত্তর প্রয়োজন",
+      "draft_needs_answers_other": "{name} — {count}টি উত্তর প্রয়োজন",
+      "draft_switch_title": "খসড়ায় যান: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "কপি করুন",

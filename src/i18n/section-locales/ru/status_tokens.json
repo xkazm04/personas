@@ -161,5 +161,18 @@
     "quarantined": "Триггер в карантине",
     "healing_abandoned": "Восстановление прекращено",
     "healing_capped": "Попытки восстановления исчерпаны"
+  },
+  "build": {
+    "analyzing": "Анализ",
+    "awaiting_input": "Ожидание ввода",
+    "cancelled": "Отменено",
+    "completed": "Завершено",
+    "draft_ready": "Черновик готов",
+    "failed": "Сбой",
+    "initializing": "Инициализация",
+    "promoted": "Повышено",
+    "resolving": "Разрешение",
+    "test_complete": "Тест завершён",
+    "testing": "Тестирование"
   }
 }

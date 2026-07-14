@@ -157,7 +157,11 @@
     "whats_new": "Nouveautés",
     "back_to_plugins": "Plugins",
     "roadmap": "Feuille de route",
-    "groups_label": "Groupes"
+    "groups_label": "Groupes",
+    "draft_agent_fallback": "Agent brouillon",
+    "draft_needs_answers_one": "{name} — 1 réponse requise",
+    "draft_needs_answers_other": "{name} — {count} réponses requises",
+    "draft_switch_title": "Passer au brouillon : {name} ({phase})"
   },
   "execution_detail": {
     "copy": "Copier",

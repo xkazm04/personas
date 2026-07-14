@@ -161,5 +161,18 @@
     "quarantined": "Trigger đã bị cách ly",
     "healing_abandoned": "Đã ngừng tự sửa",
     "healing_capped": "Hết lượt thử sửa lỗi"
+  },
+  "build": {
+    "analyzing": "Đang phân tích",
+    "awaiting_input": "Đang chờ nhập liệu",
+    "cancelled": "Đã hủy",
+    "completed": "Hoàn tất",
+    "draft_ready": "Bản nháp sẵn sàng",
+    "failed": "Thất bại",
+    "initializing": "Đang khởi tạo",
+    "promoted": "Đã thăng cấp",
+    "resolving": "Đang xử lý",
+    "test_complete": "Kiểm thử hoàn tất",
+    "testing": "Đang kiểm thử"
   }
 }

@@ -157,7 +157,11 @@
     "whats_new": "Co je nového",
     "back_to_plugins": "Pluginy",
     "roadmap": "Plán vývoje",
-    "groups_label": "Skupiny"
+    "groups_label": "Skupiny",
+    "draft_agent_fallback": "Koncept agenta",
+    "draft_needs_answers_one": "{name} — potřebuje 1 odpověď",
+    "draft_needs_answers_other": "{name} — potřebuje {count} odpovědí",
+    "draft_switch_title": "Přepnout na koncept: {name} ({phase})"
   },
   "execution_detail": {
     "copy": "Kopírovat",

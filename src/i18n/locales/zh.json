@@ -11526,6 +11526,19 @@
       "quarantined": "触发器已隔离",
       "healing_abandoned": "已放弃修复",
       "healing_capped": "修复重试已用尽"
+    },
+    "build": {
+      "analyzing": "分析中",
+      "awaiting_input": "等待输入",
+      "cancelled": "已取消",
+      "completed": "已完成",
+      "draft_ready": "草稿就绪",
+      "failed": "失败",
+      "initializing": "初始化中",
+      "promoted": "已晋升",
+      "resolving": "解析中",
+      "test_complete": "测试完成",
+      "testing": "测试中"
     }
   },
   "project_overview": {
@@ -15858,7 +15871,11 @@
       "whats_new": "新功能",
       "back_to_plugins": "插件",
       "roadmap": "路线图",
-      "groups_label": "分组"
+      "groups_label": "分组",
+      "draft_agent_fallback": "草稿智能体",
+      "draft_needs_answers_one": "{name} — 需要 1 个回答",
+      "draft_needs_answers_other": "{name} — 需要 {count} 个回答",
+      "draft_switch_title": "切换到草稿：{name}（{phase}）"
     },
     "execution_detail": {
       "copy": "复制",

@@ -161,5 +161,18 @@
     "quarantined": "ট্রিগার কোয়ারেন্টাইন করা হয়েছে",
     "healing_abandoned": "নিরাময় থেমে গেছে",
     "healing_capped": "নিরাময়ের পুনঃচেষ্টা শেষ"
+  },
+  "build": {
+    "analyzing": "বিশ্লেষণ চলছে",
+    "awaiting_input": "ইনপুটের অপেক্ষায়",
+    "cancelled": "বাতিল",
+    "completed": "সম্পন্ন",
+    "draft_ready": "খসড়া প্রস্তুত",
+    "failed": "ব্যর্থ",
+    "initializing": "শুরু হচ্ছে",
+    "promoted": "উন্নীত",
+    "resolving": "সমাধান চলছে",
+    "test_complete": "পরীক্ষা সম্পন্ন",
+    "testing": "পরীক্ষা চলছে"
   }
 }

@@ -157,7 +157,11 @@
     "whats_new": "Neuigkeiten",
     "back_to_plugins": "Plugins",
     "roadmap": "Roadmap",
-    "groups_label": "Gruppen"
+    "groups_label": "Gruppen",
+    "draft_agent_fallback": "Entwurfs-Agent",
+    "draft_needs_answers_one": "{name} — benötigt 1 Antwort",
+    "draft_needs_answers_other": "{name} — benötigt {count} Antworten",
+    "draft_switch_title": "Zum Entwurf wechseln: {name} ({phase})"
   },
   "execution_detail": {
     "copy": "Kopieren",

@@ -161,5 +161,18 @@
     "quarantined": "Spouštěč v karanténě",
     "healing_abandoned": "Opravy se vzdaly",
     "healing_capped": "Pokusy o opravu vyčerpány"
+  },
+  "build": {
+    "analyzing": "Analyzuje se",
+    "awaiting_input": "Čeká na vstup",
+    "cancelled": "Zrušeno",
+    "completed": "Dokončeno",
+    "draft_ready": "Koncept připraven",
+    "failed": "Selhalo",
+    "initializing": "Inicializace",
+    "promoted": "Povýšeno",
+    "resolving": "Řeší se",
+    "test_complete": "Test dokončen",
+    "testing": "Testování"
   }
 }

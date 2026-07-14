@@ -157,7 +157,11 @@
     "whats_new": "ما الجديد",
     "back_to_plugins": "الإضافات",
     "roadmap": "خارطة الطريق",
-    "groups_label": "المجموعات"
+    "groups_label": "المجموعات",
+    "draft_agent_fallback": "وكيل مسودة",
+    "draft_needs_answers_one": "{name} — يحتاج إجابة واحدة",
+    "draft_needs_answers_other": "{name} — يحتاج {count} إجابات",
+    "draft_switch_title": "التبديل إلى المسودة: {name} ({phase})"
   },
   "execution_detail": {
     "copy": "نسخ",

@@ -11526,6 +11526,19 @@
       "quarantined": "Activador en cuarentena",
       "healing_abandoned": "Reparación abandonada",
       "healing_capped": "Reintentos de reparación agotados"
+    },
+    "build": {
+      "analyzing": "Analizando",
+      "awaiting_input": "Esperando entrada",
+      "cancelled": "Cancelado",
+      "completed": "Completado",
+      "draft_ready": "Borrador listo",
+      "failed": "Fallido",
+      "initializing": "Inicializando",
+      "promoted": "Promovido",
+      "resolving": "Resolviendo",
+      "test_complete": "Prueba completada",
+      "testing": "Probando"
     }
   },
   "project_overview": {
@@ -15858,7 +15871,11 @@
       "whats_new": "Novedades",
       "back_to_plugins": "Plugins",
       "roadmap": "Hoja de ruta",
-      "groups_label": "Grupos"
+      "groups_label": "Grupos",
+      "draft_agent_fallback": "Agente en borrador",
+      "draft_needs_answers_one": "{name} — necesita 1 respuesta",
+      "draft_needs_answers_other": "{name} — necesita {count} respuestas",
+      "draft_switch_title": "Cambiar al borrador: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "Copiar",

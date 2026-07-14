@@ -161,5 +161,18 @@
     "quarantined": "Trigger in Quarantäne",
     "healing_abandoned": "Heilung aufgegeben",
     "healing_capped": "Heilungsversuche erschöpft"
+  },
+  "build": {
+    "analyzing": "Analysiere",
+    "awaiting_input": "Wartet auf Eingabe",
+    "cancelled": "Abgebrochen",
+    "completed": "Abgeschlossen",
+    "draft_ready": "Entwurf bereit",
+    "failed": "Fehlgeschlagen",
+    "initializing": "Initialisierung",
+    "promoted": "Befördert",
+    "resolving": "Wird aufgelöst",
+    "test_complete": "Test abgeschlossen",
+    "testing": "Wird getestet"
   }
 }

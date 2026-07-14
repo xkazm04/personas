@@ -161,5 +161,18 @@
     "quarantined": "Trigger dikarantina",
     "healing_abandoned": "Pemulihan menyerah",
     "healing_capped": "Percobaan pemulihan habis"
+  },
+  "build": {
+    "analyzing": "Menganalisis",
+    "awaiting_input": "Menunggu masukan",
+    "cancelled": "Dibatalkan",
+    "completed": "Selesai",
+    "draft_ready": "Draf siap",
+    "failed": "Gagal",
+    "initializing": "Menginisialisasi",
+    "promoted": "Dipromosikan",
+    "resolving": "Menyelesaikan",
+    "test_complete": "Pengujian selesai",
+    "testing": "Menguji"
   }
 }

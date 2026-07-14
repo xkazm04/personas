@@ -11796,6 +11796,19 @@ export type Translations = {
       medium: string;
       high: string;
     };
+    build: {
+      initializing: string;
+      analyzing: string;
+      awaiting_input: string;
+      resolving: string;
+      draft_ready: string;
+      completed: string;
+      failed: string;
+      cancelled: string;
+      testing: string;
+      test_complete: string;
+      promoted: string;
+    };
   };
   project_overview: {
     today_activity_heading: string;
@@ -16156,6 +16169,10 @@ export type Translations = {
       back_to_plugins: string;
       roadmap: string;
       groups_label: string;
+      draft_agent_fallback: string;
+      draft_needs_answers_one: string;
+      draft_needs_answers_other: string;
+      draft_switch_title: string;
     };
     execution_detail: {
       copy: string;

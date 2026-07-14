@@ -11526,6 +11526,19 @@
       "quarantined": "المُشغِّل معزول",
       "healing_abandoned": "توقّف الإصلاح",
       "healing_capped": "استُنفدت محاولات الإصلاح"
+    },
+    "build": {
+      "analyzing": "جارٍ التحليل",
+      "awaiting_input": "بانتظار الإدخال",
+      "cancelled": "أُلغي",
+      "completed": "اكتمل",
+      "draft_ready": "المسودة جاهزة",
+      "failed": "فشل",
+      "initializing": "جارٍ التهيئة",
+      "promoted": "تمت الترقية",
+      "resolving": "جارٍ الحل",
+      "test_complete": "اكتمل الاختبار",
+      "testing": "جارٍ الاختبار"
     }
   },
   "project_overview": {
@@ -15858,7 +15871,11 @@
       "whats_new": "ما الجديد",
       "back_to_plugins": "الإضافات",
       "roadmap": "خارطة الطريق",
-      "groups_label": "المجموعات"
+      "groups_label": "المجموعات",
+      "draft_agent_fallback": "وكيل مسودة",
+      "draft_needs_answers_one": "{name} — يحتاج إجابة واحدة",
+      "draft_needs_answers_other": "{name} — يحتاج {count} إجابات",
+      "draft_switch_title": "التبديل إلى المسودة: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "نسخ",

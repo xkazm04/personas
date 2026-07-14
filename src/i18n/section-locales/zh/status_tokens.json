@@ -161,5 +161,18 @@
     "quarantined": "触发器已隔离",
     "healing_abandoned": "已放弃修复",
     "healing_capped": "修复重试已用尽"
+  },
+  "build": {
+    "analyzing": "分析中",
+    "awaiting_input": "等待输入",
+    "cancelled": "已取消",
+    "completed": "已完成",
+    "draft_ready": "草稿就绪",
+    "failed": "失败",
+    "initializing": "初始化中",
+    "promoted": "已晋升",
+    "resolving": "解析中",
+    "test_complete": "测试完成",
+    "testing": "测试中"
   }
 }

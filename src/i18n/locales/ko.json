@@ -11526,6 +11526,19 @@
       "quarantined": "트리거 격리됨",
       "healing_abandoned": "자가 치유 중단",
       "healing_capped": "치유 재시도 소진"
+    },
+    "build": {
+      "analyzing": "분석 중",
+      "awaiting_input": "입력 대기 중",
+      "cancelled": "취소됨",
+      "completed": "완료됨",
+      "draft_ready": "초안 준비됨",
+      "failed": "실패",
+      "initializing": "초기화 중",
+      "promoted": "승격됨",
+      "resolving": "해결 중",
+      "test_complete": "테스트 완료",
+      "testing": "테스트 중"
     }
   },
   "project_overview": {
@@ -15858,7 +15871,11 @@
       "whats_new": "새 소식",
       "back_to_plugins": "플러그인",
       "roadmap": "로드맵",
-      "groups_label": "그룹"
+      "groups_label": "그룹",
+      "draft_agent_fallback": "초안 에이전트",
+      "draft_needs_answers_one": "{name} — 답변 1개 필요",
+      "draft_needs_answers_other": "{name} — 답변 {count}개 필요",
+      "draft_switch_title": "초안으로 전환: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "복사",

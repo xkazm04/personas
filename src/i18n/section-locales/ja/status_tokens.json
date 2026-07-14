@@ -161,5 +161,18 @@
     "quarantined": "トリガーを隔離",
     "healing_abandoned": "自己修復を中止",
     "healing_capped": "修復リトライ上限"
+  },
+  "build": {
+    "analyzing": "分析中",
+    "awaiting_input": "入力待ち",
+    "cancelled": "キャンセル済み",
+    "completed": "完了",
+    "draft_ready": "ドラフト準備完了",
+    "failed": "失敗",
+    "initializing": "初期化中",
+    "promoted": "昇格済み",
+    "resolving": "解決中",
+    "test_complete": "テスト完了",
+    "testing": "テスト中"
   }
 }

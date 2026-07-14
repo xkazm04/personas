@@ -11526,6 +11526,19 @@
       "quarantined": "Trigger đã bị cách ly",
       "healing_abandoned": "Đã ngừng tự sửa",
       "healing_capped": "Hết lượt thử sửa lỗi"
+    },
+    "build": {
+      "analyzing": "Đang phân tích",
+      "awaiting_input": "Đang chờ nhập liệu",
+      "cancelled": "Đã hủy",
+      "completed": "Hoàn tất",
+      "draft_ready": "Bản nháp sẵn sàng",
+      "failed": "Thất bại",
+      "initializing": "Đang khởi tạo",
+      "promoted": "Đã thăng cấp",
+      "resolving": "Đang xử lý",
+      "test_complete": "Kiểm thử hoàn tất",
+      "testing": "Đang kiểm thử"
     }
   },
   "project_overview": {
@@ -15858,7 +15871,11 @@
       "whats_new": "Có gì mới",
       "back_to_plugins": "Plugin",
       "roadmap": "Lộ trình",
-      "groups_label": "Nhóm"
+      "groups_label": "Nhóm",
+      "draft_agent_fallback": "Tác nhân nháp",
+      "draft_needs_answers_one": "{name} — cần 1 câu trả lời",
+      "draft_needs_answers_other": "{name} — cần {count} câu trả lời",
+      "draft_switch_title": "Chuyển sang bản nháp: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "Sao chép",
