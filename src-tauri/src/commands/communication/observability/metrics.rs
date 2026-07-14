@@ -342,8 +342,17 @@ pub fn get_health_bundle(
     // -- Per-persona reliability + daily series (the per-persona truth) ----
     let (persona_stats, persona_stats_err) =
         split(sla_repo::get_persona_reliability(pool, stats_window));
-    let (persona_daily, persona_daily_err) =
-        split(sla_repo::get_persona_daily_reliability(pool, stats_window));
+    // Day buckets follow the caller's local-day offset (falling back to the
+    // server's own offset — identical on a local-first desktop), matching the
+    // SLA rollup/trend definition.
+    let day_offset_min = utc_offset_minutes
+        .map(|m| (m as i64).clamp(-14 * 60, 14 * 60))
+        .unwrap_or_else(sla_repo::server_offset_minutes);
+    let (persona_daily, persona_daily_err) = split(sla_repo::get_persona_daily_reliability(
+        pool,
+        stats_window,
+        day_offset_min,
+    ));
 
     info!(
         duration_ms = start.elapsed().as_millis() as u64,

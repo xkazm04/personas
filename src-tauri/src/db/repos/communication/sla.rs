@@ -38,7 +38,8 @@ pub struct PersonaReliability {
 #[ts(export)]
 pub struct PersonaDailyReliability {
     pub persona_id: String,
-    // `YYYY-MM-DD` (UTC day bucket).
+    // `YYYY-MM-DD` — bucketed by the caller-supplied local-day offset (see
+    // `local_day_modifier`), the same definition the SLA rollups/trend use.
     pub date: String,
     // Measured success rate for the day as 0.0..=1.0.
     pub success_rate: f64,
@@ -87,25 +88,31 @@ pub fn get_persona_reliability(
 
 /// Per-persona daily success series over the last `days` (one row per persona
 /// per active day). Feeds the per-persona failure-trend regression.
+///
+/// `offset_min` selects the local-day bucket definition (see
+/// [`local_day_modifier`]) so this series agrees with the SLA rollups/trend on
+/// which calendar day a run belongs to.
 pub fn get_persona_daily_reliability(
     pool: &DbPool,
     days: i64,
+    offset_min: i64,
 ) -> Result<Vec<PersonaDailyReliability>, AppError> {
     timed_query!("sla", "sla::get_persona_daily_reliability", {
         let conn = pool.get()?;
         let date_filter = format!("-{} days", days);
+        let modifier = local_day_modifier(offset_min);
         let mut stmt = conn.prepare(
             "SELECT e.persona_id,
-                    DATE(e.created_at) AS day,
+                    DATE(e.created_at, ?2) AS day,
                     SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) AS successful,
                     SUM(CASE WHEN e.status = 'failed' THEN 1 ELSE 0 END) AS failed
              FROM persona_executions e
              WHERE e.created_at >= datetime('now', ?1)
                AND e.status IN ('completed', 'failed')
-             GROUP BY e.persona_id, DATE(e.created_at)
+             GROUP BY e.persona_id, DATE(e.created_at, ?2)
              ORDER BY e.persona_id, day ASC",
         )?;
-        let rows = stmt.query_map(params![date_filter], |row| {
+        let rows = stmt.query_map(params![date_filter, modifier], |row| {
             let successful: i64 = row.get(2)?;
             let failed: i64 = row.get(3)?;
             let decided = successful + failed;
@@ -1566,7 +1573,9 @@ mod tests {
         insert_execution(&pool, &p1, "completed", &format!("{day_b} 10:00:00"));
         insert_execution(&pool, &p1, "failed", &format!("{day_b} 11:00:00"));
 
-        let daily = get_persona_daily_reliability(&pool, 30).unwrap();
+        // Offset 0 keeps the fixture's UTC day strings authoritative regardless
+        // of the host timezone.
+        let daily = get_persona_daily_reliability(&pool, 30, 0).unwrap();
         let rows: Vec<&PersonaDailyReliability> =
             daily.iter().filter(|d| d.persona_id == p1).collect();
 
