@@ -299,7 +299,7 @@ let the user compose the loop in Studio.
 
 ### The op / event surface (what makes C–E composable)
 
-- **New system op `health_ingest`** — for a project: run the finding sweep **+** the
+- **New system op `health_ingest`** — ✅ **SHIPPED (`579e5e7ff`)**. For a project: run the finding sweep **+** the
   due verification probes. Registered like any other op: `OP_HEALTH_INGEST` const →
   `list_kinds()` → a `run_op` match arm (`engine/system_ops.rs`), plus a param branch
   in Studio's `SystemEventCommitModal` (params: `projectId`). Bound to a **weekly
@@ -333,6 +333,19 @@ let the user compose the loop in Studio.
   behaviour. Do not let it grow inside Phase 3. If any part lands early, it is the
   **read** tools (consume findings/scans); write-back waits until dispatch (C) exists,
   or she'd be mutating state for work nothing dispatched.
+
+### Implementation note — the op delegates to the frontend (decided while building)
+
+`run_op` is Rust, but the whole sweep is TypeScript (5 emitters, 4 telemetry adapters,
+verdict engine, passport derive). Reimplementing it in Rust would mean **two copies of
+the same thresholds and verdicts that can silently diverge** — exactly the bug class
+this feature exists to catch. So `health_ingest` emits `health-ingest-requested` and the
+app runs the sweep it already owns (`findings/healthIngest.ts`, headless — no hooks).
+
+**The cost, stated plainly:** the sweep only runs while the app is open. That is already
+true of the entire scheduler (an in-app background tick, not a daemon), so a schedule
+that comes due while the app is closed fires on next launch. If unattended-while-closed
+ever becomes a requirement, THAT is when a Rust port earns its keep — not before.
 
 ### Sequencing
 
