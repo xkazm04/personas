@@ -161,7 +161,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
             <ScoreBreakdown label="Latency (p95)" score={entry.latencyScore} detail={formatLatency(entry.p95LatencyMs)} />
             <ScoreBreakdown label="Cost Anomalies" score={entry.costAnomalyScore} detail={`${entry.costAnomalyCount} detected`} />
             <ScoreBreakdown label="Healing Issues" score={entry.healingScore} detail={`${entry.openHealingIssues} open`} />
-            <ScoreBreakdown label="SLA Compliance" score={entry.slaComplianceScore} detail={<Numeric value={entry.slaCompliance} unit="ratio" precision={1} />} />
+            <ScoreBreakdown label="Stability" score={entry.stabilityScore} detail={`${entry.consecutiveFailures} consecutive`} />
           </div>
           {entry.consecutiveFailures > 0 && (
             <div className="mt-2.5 flex items-center gap-1.5 typo-caption text-status-error">

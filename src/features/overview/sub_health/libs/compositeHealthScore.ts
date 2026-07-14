@@ -25,14 +25,19 @@ export interface CompositeHealthEntry {
   latencyScore: number;
   costAnomalyScore: number;
   healingScore: number;
-  slaComplianceScore: number;
+  /**
+   * Stability sub-score, derived from the CURRENT consecutive-failure streak —
+   * a signal genuinely independent of `successRate`. (Was `slaComplianceScore`,
+   * which re-scored the same `sla.success_rate` value that `successRateScore`
+   * already used; 55% of the composite was one metric double-counted.)
+   */
+  stabilityScore: number;
 
   /** Raw metrics for tooltip display */
   successRate: number;      // 0-1
   p95LatencyMs: number;
   costAnomalyCount: number;
   openHealingIssues: number;
-  slaCompliance: number;    // 0-1
   consecutiveFailures: number;
 
   /** 30-day uptime bar data */
@@ -54,13 +59,15 @@ export const WEIGHTS = {
   latency: 0.15,
   costAnomaly: 0.15,
   healing: 0.15,
-  slaCompliance: 0.25,
+  // Consecutive-failure streak — an independent signal, NOT a second read of
+  // success_rate (which is what the retired `slaCompliance` weight scored).
+  stability: 0.25,
 } as const;
 
 const WEIGHT_SUM_EPSILON = 1e-9;
 
 export function sumWeights(w: typeof WEIGHTS = WEIGHTS): number {
-  return w.successRate + w.latency + w.costAnomaly + w.healing + w.slaCompliance;
+  return w.successRate + w.latency + w.costAnomaly + w.healing + w.stability;
 }
 
 /**
@@ -186,9 +193,16 @@ function scoreHealing(openIssues: number): number {
   return clamp(100 - openIssues * 20, 0, 100);
 }
 
-/** SLA compliance (0-1) → 0-100. */
-function scoreSlaCompliance(rate: number): number {
-  return scoreSuccessRate(rate); // Same curve — SLA compliance has same semantics
+/**
+ * Consecutive-failure streak → 0-100. 0 = 100 (healthy), 5+ = 0. A genuinely
+ * INDEPENDENT signal from `successRate`: a persona at 92% success over the
+ * window can still be mid-outage right now with a live 6-failure streak.
+ * Replaces `scoreSlaCompliance`, which re-ran the success-rate curve on the
+ * same `sla.success_rate` value the success sub-score already scored.
+ * Horizon: point-in-time streak, capped at `consecutive_failure_lookback`.
+ */
+function scoreStability(consecutiveFailures: number): number {
+  return clamp(100 - consecutiveFailures * 20, 0, 100);
 }
 
 /**
@@ -324,15 +338,16 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
     // Raw metrics
     const successRate = sla ? sla.success_rate : 1;
     const p95LatencyMs = sla?.p95_duration_ms ?? 0;
-    const slaCompliance = sla ? sla.success_rate : 1; // SLA compliance ~ success rate
-    const consecutiveFailures = sla?.consecutive_failures ?? 0;
+    const consecutiveFailures = Number(sla?.consecutive_failures ?? 0);
 
-    // Component scores
+    // Component scores. `stabilityScore` reads the consecutive-failure streak —
+    // NOT a second copy of `success_rate` (the old `slaComplianceScore` did,
+    // double-counting one metric across 55% of the grade).
     const successRateScore = Math.round(scoreSuccessRate(successRate));
     const latencyScore = Math.round(scoreLatency(p95LatencyMs));
     const costAnomalyScore = Math.round(scoreCostAnomalies(anomalyCount));
     const healingScore = Math.round(scoreHealing(issues.length));
-    const slaComplianceScore = Math.round(scoreSlaCompliance(slaCompliance));
+    const stabilityScore = Math.round(scoreStability(consecutiveFailures));
 
     // Weighted composite
     const score = Math.round(
@@ -340,7 +355,7 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
       latencyScore * WEIGHTS.latency +
       costAnomalyScore * WEIGHTS.costAnomaly +
       healingScore * WEIGHTS.healing +
-      slaComplianceScore * WEIGHTS.slaCompliance,
+      stabilityScore * WEIGHTS.stability,
     );
 
     // 30-day daily statuses
@@ -386,13 +401,12 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
       latencyScore,
       costAnomalyScore,
       healingScore,
-      slaComplianceScore,
+      stabilityScore,
       successRate,
       p95LatencyMs,
       costAnomalyCount: anomalyCount,
       openHealingIssues: issues.length,
-      slaCompliance,
-      consecutiveFailures: Number(consecutiveFailures),
+      consecutiveFailures,
       dailyStatuses,
       trend,
       uptimePercent,

@@ -9,16 +9,48 @@ import {
   computeGrade,
   computeHeartbeatScore,
   scoreBudget,
+  computeCompositeHealth,
+  type CompositeScoreInput,
 } from './compositeHealthScore';
+import type { PersonaSlaStats } from '@/lib/bindings/PersonaSlaStats';
+
+function makeSla(overrides: Partial<PersonaSlaStats> & { persona_id: string }): PersonaSlaStats {
+  return {
+    persona_name: overrides.persona_id,
+    total_executions: 100n,
+    successful: 95n,
+    failed: 5n,
+    cancelled: 0n,
+    success_rate: 0.95,
+    avg_duration_ms: 1000,
+    p95_duration_ms: 1500,
+    total_cost_usd: 1,
+    mtbf_seconds: null,
+    consecutive_failures: 0n,
+    consecutive_failure_lookback: 20n,
+    auto_healed_count: 0n,
+    ...overrides,
+  };
+}
+
+function baseInput(sla: PersonaSlaStats[]): CompositeScoreInput {
+  return {
+    personas: [{ id: 'p1', name: 'P1', icon: null, color: null }],
+    slaStats: sla,
+    healingIssues: [],
+    costAnomalyCount: 0,
+    dailyPoints: [],
+  };
+}
 
 describe('compositeHealthScore weights', () => {
   it('WEIGHTS sum to exactly 1.0 (within floating-point epsilon)', () => {
     expect(Math.abs(sumWeights() - 1.0)).toBeLessThan(1e-9);
   });
 
-  it('exposes all five expected weight keys', () => {
+  it('exposes all five expected weight keys (stability replaced the double-counted slaCompliance)', () => {
     expect(Object.keys(WEIGHTS).sort()).toEqual(
-      ['costAnomaly', 'healing', 'latency', 'slaCompliance', 'successRate'],
+      ['costAnomaly', 'healing', 'latency', 'stability', 'successRate'],
     );
   });
 
@@ -101,6 +133,30 @@ describe('computeHeartbeatScore — pinned unified math', () => {
   it('over-budget zeroes only the budget slice, not the whole score', () => {
     // success=100→40; healing 0→20; rollback 0→20; budget 1.1→0 ⇒ 80
     expect(computeHeartbeatScore(100, 0, 0, 1.1)).toBe(80);
+  });
+});
+
+describe('computeCompositeHealth — stability replaces the double-counted SLA metric', () => {
+  it('pins the composite math for a healthy persona (no failure streak)', () => {
+    // success 0.95→70; latency 1500ms→100; cost 0→100; healing 0→100;
+    // stability streak 0→100 ⇒ 70*.30+100*.15+100*.15+100*.15+100*.25 = 91
+    const [entry] = computeCompositeHealth(baseInput([makeSla({ persona_id: 'p1' })]));
+    expect(entry!.stabilityScore).toBe(100);
+    expect(entry!.score).toBe(91);
+    expect(entry!.grade).toBe('healthy');
+    // The retired field must be gone.
+    expect((entry as unknown as Record<string, unknown>).slaComplianceScore).toBeUndefined();
+  });
+
+  it('stability moves independently of success rate — a live streak drags the grade down', () => {
+    // Identical 0.95 success rate, but 4 consecutive failures right now:
+    // stability 4→(100-80)=20. 70*.30+100*.15+100*.15+100*.15+20*.25 = 71
+    const [entry] = computeCompositeHealth(
+      baseInput([makeSla({ persona_id: 'p1', consecutive_failures: 4n })]),
+    );
+    expect(entry!.stabilityScore).toBe(20);
+    expect(entry!.score).toBe(71);
+    expect(entry!.grade).toBe('degraded');
   });
 });
 
