@@ -393,3 +393,46 @@ is in review.
   Observability Layer-1 assignment matrix is fleet-wide *configuration* and would
   sit naturally in Factory next to the connector improve-actions; Layer 2 stays
   in Dev Tools. Not required by anything above.
+
+---
+
+## 7. Execution plan — Phase 3 A+B (verify + learn)
+
+> Agreed 2026-07-14. A+B only: no dispatch, no new executor, no Studio/Athena.
+> The op/event surface (`health_ingest`, `signal`) and C/D/E follow this.
+
+### The simplification that makes verification nearly free
+
+**The sweep already re-runs every sensor, and an emitter only emits when a signal is
+OVER threshold.** So a fresh emit is itself the probe:
+
+- fresh drafts **do not contain** the finding's `dedup_key` → the signal is gone → **`cleared`**
+- fresh drafts **still contain** it → compare the primary metric against the stored
+  `evidence` → **`moved`** (materially better), **`regressed`** (worse), else **`unchanged`**
+
+No separate probe engine, no per-origin re-fetch logic — the five emitters ARE the
+five probes. This is exactly what the Phase-2 pre-commitments bought (verified still
+true on 2026-07-14: 5 emitters individually exported · every `evidence` blob carries
+its raw threshold numbers · dedup keys stable and self-describing).
+
+### Eligibility — what gets verified
+
+A finding is probed when it is `origin != NULL` **and** `status = 'accepted'` **and**
+its linked task (`dev_tasks.source_idea_id`) is `completed`. Anything else stays
+`pending` — we do not claim a verdict on work that never shipped.
+
+### Steps
+
+| # | Step | Files (primary) | Gate |
+|---|---|---|---|
+| 1 | **Schema**: `dev_ideas.verify_state` (`pending\|cleared\|moved\|unchanged\|regressed`), `verify_checked_at`, `verify_evidence` (the re-measured reading). Repo `set_verify_state` + `dev_tools_set_finding_verify_state` command; bindings + command names regenerated. | `incremental.rs`, `models/dev_tools.rs`, `repos/dev_tools.rs`, `commands/infrastructure/dev_tools.rs`, `lib.rs`, `src/lib/bindings/` | cargo check + `cargo test --lib`; **schema-sensitive → flag for human review** |
+| 2 | **Verdict engine** (pure): `findings/verify.ts` — `verdictFor(finding, freshDraft)` implementing the absent/better/worse rules + a per-origin `primaryMetric` extractor (cost → `costUsd`; sentry → `count`; kpi → `current` vs `target`; standards/passport → presence). Fixture tests incl. "absent ⇒ cleared", "worse ⇒ regressed", "no evidence ⇒ unchanged, never a false cleared". | `sub_triage/findings/verify.ts` + `__tests__` | vitest |
+| 3 | **Wire into the sweep**: `runFindingSweep` also returns `verdicts` — it already holds the fresh drafts. Persist each verdict. `SweepResult` gains `{ verified: {cleared, moved, unchanged, regressed} }`; the toast reports it. | `findings/sweep.ts`, `findings/SweepButton.tsx` | live: seeded LightTrack, accept a finding, complete its task, sweep → verdict lands |
+| 4 | **Verdict UI**: a verdict chip on the triage card next to the origin badge (`cleared` emerald / `moved` sky / `unchanged` slate / `regressed` red). `unchanged` and `regressed` must be as loud as `cleared` (A5). | `findings/FindingBadge.tsx` (or a sibling `VerdictChip`), `IdeaTriagePage.tsx` | live render |
+| 5 | **B1 — Scoreboard shifts axis**: today `computeAgentStats` groups by `scan_type` over `SCAN_AGENTS` only, so sensors are invisible. Add a **sensor scoreboard** keyed by `origin`: raised · accepted · **verify rate** (cleared+moved ÷ verdicted). Credit for SIGNAL MOVED, not PR merged. | `sub_scanner/` (new `SensorScoreboard.tsx` + stats fn), reuse the existing panel shell | vitest on the stats fn |
+| 6 | **B2/B3 — credibility + rejection learning**: surface an emitter whose findings never verify (low verify rate → "this sensor is emitting noise"); feed durable rejections into `triageRuleSuggestions` ("6 `llm_cost` rejections under $10 — raise the threshold?"). | `findings/findingConfig.ts` (advisory only — no auto-mutation yet), `sub_triage/triageRuleSuggestions.ts` | vitest |
+| 7 | **i18n + docs** | locales, `docs/features/plugins/dev tools/dev-tools.md` | `check:i18n:strict` green |
+
+**Deliberately NOT in this phase:** auto-throttling a threshold (B2 stays advisory —
+a sensor that silently retunes itself is hard to trust before we've seen real verify
+rates), and any scheduling (that's the `health_ingest` op, next).
