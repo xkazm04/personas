@@ -304,7 +304,8 @@ let the user compose the loop in Studio.
   `list_kinds()` → a `run_op` match arm (`engine/system_ops.rs`), plus a param branch
   in Studio's `SystemEventCommitModal` (params: `projectId`). Bound to a **weekly
   cron** through Studio's existing Schedule → System-event flow.
-- **New event type `signal`** — a finding raised, or a verdict landed, publishes to
+- **New event type `signal`** — ✅ **SHIPPED (`d799ced44`)** as `signal.raised` / `signal.verified`,
+  published from the REPO so no caller can forget. A finding raised, or a verdict landed, publishes to
   the event bus. It becomes routable like any other source and shows up in Live
   Stream for free (add to `sub_live_stream/eventTypeMeta.ts`).
 - **Two dispatch ops, deliberately parallel (the A/B):**
