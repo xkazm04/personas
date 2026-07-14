@@ -12419,7 +12419,11 @@
       "uc_highlight_hint": "Konteks yang disorot adalah konteks yang dicakup fitur ini.",
       "uc_scan_tooltip": "Biarkan agen mengusulkan fitur utama dari peta konteks Anda",
       "uc_source_backfill": "Label konteks",
-      "uc_title": "Fitur"
+      "uc_title": "Fitur",
+      "ctx_indicator_kpis": "KPI",
+      "llm_propose_aria": "Usulkan “{name}” sebagai fitur",
+      "llm_propose_done": "“{name}” diusulkan — terima di Context Map",
+      "llm_propose_tooltip": "Usulkan sebagai fitur"
     },
     "doc_signing": {
       "sign_heading": "Tandatangani Dokumen",

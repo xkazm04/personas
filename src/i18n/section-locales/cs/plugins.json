@@ -1049,7 +1049,11 @@
     "uc_highlight_hint": "Zvýrazněné kontexty jsou ty, které tato funkce pokrývá.",
     "uc_scan_tooltip": "Nechte agenta navrhnout klíčové funkce z vaší mapy kontextu",
     "uc_source_backfill": "Štítky kontextu",
-    "uc_title": "Funkce"
+    "uc_title": "Funkce",
+    "ctx_indicator_kpis": "KPI",
+    "llm_propose_aria": "Navrhnout „{name}“ jako funkci",
+    "llm_propose_done": "„{name}“ navrženo — přijměte to v Mapě kontextu",
+    "llm_propose_tooltip": "Navrhnout jako funkci"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",

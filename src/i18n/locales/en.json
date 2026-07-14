@@ -12684,7 +12684,11 @@
       "ctx_kpi_on_track": "On track",
       "ctx_kpi_off_track": "Off track",
       "ctx_kpi_unmeasured": "Not measured",
-      "ctx_kpi_none": "No KPIs"
+      "ctx_kpi_none": "No KPIs",
+      "llm_propose_tooltip": "Propose as a feature",
+      "llm_propose_aria": "Propose “{name}” as a feature",
+      "llm_propose_done": "“{name}” proposed — accept it on the Context Map",
+      "ctx_indicator_kpis": "KPIs"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

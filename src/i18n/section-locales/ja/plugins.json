@@ -1049,7 +1049,11 @@
     "uc_highlight_hint": "ハイライトされたコンテキストは、この機能が及ぶコンテキストです。",
     "uc_scan_tooltip": "エージェントにコンテキストマップから主要な機能を提案させます",
     "uc_source_backfill": "コンテキストラベル",
-    "uc_title": "機能"
+    "uc_title": "機能",
+    "ctx_indicator_kpis": "KPI",
+    "llm_propose_aria": "「{name}」を機能として提案",
+    "llm_propose_done": "「{name}」を提案しました — Context Mapで承認してください",
+    "llm_propose_tooltip": "機能として提案"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",

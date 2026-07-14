@@ -12419,7 +12419,11 @@
       "uc_highlight_hint": "Các ngữ cảnh được làm nổi bật là những ngữ cảnh mà tính năng này bao trùm.",
       "uc_scan_tooltip": "Để một agent đề xuất các tính năng chính từ bản đồ ngữ cảnh của bạn",
       "uc_source_backfill": "Nhãn ngữ cảnh",
-      "uc_title": "Tính năng"
+      "uc_title": "Tính năng",
+      "ctx_indicator_kpis": "KPI",
+      "llm_propose_aria": "Đề xuất “{name}” làm tính năng",
+      "llm_propose_done": "“{name}” đã được đề xuất — chấp nhận trên Context Map",
+      "llm_propose_tooltip": "Đề xuất làm tính năng"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

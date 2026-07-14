@@ -12419,7 +12419,11 @@
       "uc_highlight_hint": "高亮的上下文即此功能所跨越的上下文。",
       "uc_scan_tooltip": "让代理根据你的上下文地图提议关键功能",
       "uc_source_backfill": "上下文标签",
-      "uc_title": "功能"
+      "uc_title": "功能",
+      "ctx_indicator_kpis": "KPI",
+      "llm_propose_aria": "将“{name}”提议为功能",
+      "llm_propose_done": "“{name}”已提议 — 在 Context Map 中接受",
+      "llm_propose_tooltip": "提议为功能"
     },
     "doc_signing": {
       "sign_heading": "签署文档",

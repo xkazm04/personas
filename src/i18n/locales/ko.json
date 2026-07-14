@@ -12419,7 +12419,11 @@
       "uc_highlight_hint": "강조 표시된 컨텍스트는 이 기능이 포괄하는 컨텍스트입니다.",
       "uc_scan_tooltip": "에이전트가 컨텍스트 맵에서 핵심 기능을 제안하도록 합니다",
       "uc_source_backfill": "컨텍스트 레이블",
-      "uc_title": "기능"
+      "uc_title": "기능",
+      "ctx_indicator_kpis": "KPI",
+      "llm_propose_aria": "“{name}”을(를) 기능으로 제안",
+      "llm_propose_done": "“{name}”이(가) 제안되었습니다 — Context Map에서 수락하세요",
+      "llm_propose_tooltip": "기능으로 제안"
     },
     "doc_signing": {
       "sign_heading": "문서 서명하기",

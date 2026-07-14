@@ -12419,7 +12419,11 @@
       "uc_highlight_hint": "Les contextes mis en évidence sont ceux que couvre cette fonctionnalité.",
       "uc_scan_tooltip": "Laissez un agent proposer les fonctionnalités clés de votre carte de contexte",
       "uc_source_backfill": "Libellés de contexte",
-      "uc_title": "Fonctionnalités"
+      "uc_title": "Fonctionnalités",
+      "ctx_indicator_kpis": "KPI",
+      "llm_propose_aria": "Proposer « {name} » comme fonctionnalité",
+      "llm_propose_done": "« {name} » proposé — validez-le sur la Context Map",
+      "llm_propose_tooltip": "Proposer comme fonctionnalité"
     },
     "doc_signing": {
       "sign_heading": "Signer un document",

@@ -12419,7 +12419,11 @@
       "uc_highlight_hint": "Выделенные контексты — это те, которые охватывает эта функция.",
       "uc_scan_tooltip": "Позвольте агенту предложить ключевые функции на основе вашей карты контекста",
       "uc_source_backfill": "Метки контекста",
-      "uc_title": "Функции"
+      "uc_title": "Функции",
+      "ctx_indicator_kpis": "KPI",
+      "llm_propose_aria": "Предложить «{name}» как функцию",
+      "llm_propose_done": "«{name}» предложено — примите на Context Map",
+      "llm_propose_tooltip": "Предложить как функцию"
     },
     "doc_signing": {
       "sign_heading": "Подписать документ",

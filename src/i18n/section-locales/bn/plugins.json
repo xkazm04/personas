@@ -1049,7 +1049,11 @@
     "uc_highlight_hint": "হাইলাইট করা কনটেক্সটগুলোই এই ফিচারটি যে কনটেক্সট জুড়ে বিস্তৃত।",
     "uc_scan_tooltip": "আপনার কনটেক্সট ম্যাপ থেকে মূল ফিচারগুলো প্রস্তাব করতে একজন এজেন্টকে দিন",
     "uc_source_backfill": "কনটেক্সট লেবেল",
-    "uc_title": "ফিচার"
+    "uc_title": "ফিচার",
+    "ctx_indicator_kpis": "KPI",
+    "llm_propose_aria": "“{name}” কে ইউজ কেস হিসেবে প্রস্তাব করুন",
+    "llm_propose_done": "“{name}” প্রস্তাব করা হয়েছে — Context Map-এ গ্রহণ করুন",
+    "llm_propose_tooltip": "ইউজ কেস হিসেবে প্রস্তাব করুন"
   },
   "doc_signing": {
     "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

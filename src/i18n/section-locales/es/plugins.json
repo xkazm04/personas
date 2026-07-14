@@ -1049,7 +1049,11 @@
     "uc_highlight_hint": "Los contextos resaltados son los que abarca esta funcionalidad.",
     "uc_scan_tooltip": "Deja que un agente proponga las funcionalidades clave de tu mapa de contexto",
     "uc_source_backfill": "Etiquetas de contexto",
-    "uc_title": "Funcionalidades"
+    "uc_title": "Funcionalidades",
+    "ctx_indicator_kpis": "KPIs",
+    "llm_propose_aria": "Proponer “{name}” como funcionalidad",
+    "llm_propose_done": "“{name}” propuesto — acéptalo en el Context Map",
+    "llm_propose_tooltip": "Proponer como funcionalidad"
   },
   "doc_signing": {
     "sign_heading": "Firmar un Documento",

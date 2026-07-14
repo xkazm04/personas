@@ -12691,6 +12691,10 @@ export type Translations = {
       ctx_kpi_off_track: string;
       ctx_kpi_unmeasured: string;
       ctx_kpi_none: string;
+      llm_propose_tooltip: string;
+      llm_propose_aria: string;
+      llm_propose_done: string;
+      ctx_indicator_kpis: string;
     };
     doc_signing: {
       sign_heading: string;

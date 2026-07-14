@@ -1049,7 +1049,11 @@
     "uc_highlight_hint": "السياقات المبرزة هي تلك التي تمتد إليها هذه الميزة.",
     "uc_scan_tooltip": "دع وكيلاً يقترح الميزات الرئيسية من خريطة السياق الخاصة بك",
     "uc_source_backfill": "تصنيفات السياق",
-    "uc_title": "الميزات"
+    "uc_title": "الميزات",
+    "ctx_indicator_kpis": "مؤشرات الأداء",
+    "llm_propose_aria": "اقترح “{name}” كحالة استخدام",
+    "llm_propose_done": "تم اقتراح “{name}” — اقبله في خريطة السياق",
+    "llm_propose_tooltip": "اقترح كحالة استخدام"
   },
   "doc_signing": {
     "sign_heading": "توقيع مستند",

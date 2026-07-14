@@ -8,6 +8,7 @@
   "*:plugins.companion.voice_engine_elevenlabs",
   "*:plugins.companion.voice_engine_kokoro",
   "*:plugins.companion.voice_engine_piper",
+  "*:plugins.dev_tools.ctx_indicator_kpis",
   "*:templates.adopt_modal.persona_label",
   "ar:agents.connectors.auto_input_schema_placeholder",
   "ar:agents.connectors.platform_github_actions",

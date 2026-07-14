@@ -1049,7 +1049,11 @@
     "uc_highlight_hint": "हाइलाइट किए गए संदर्भ वही हैं जिनसे यह फ़ीचर जुड़ा है।",
     "uc_scan_tooltip": "एक एजेंट को अपने संदर्भ मैप से प्रमुख फ़ीचर सुझाने दें",
     "uc_source_backfill": "संदर्भ लेबल",
-    "uc_title": "फ़ीचर"
+    "uc_title": "फ़ीचर",
+    "ctx_indicator_kpis": "KPI",
+    "llm_propose_aria": "“{name}” को फीचर के रूप में प्रस्तावित करें",
+    "llm_propose_done": "“{name}” प्रस्तावित — इसे Context Map पर स्वीकार करें",
+    "llm_propose_tooltip": "फीचर के रूप में प्रस्तावित करें"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",
