@@ -508,6 +508,30 @@ export class CompanionBridge {
     return this.bridgeExec<TourStateSnapshot>('tourState');
   }
 
+  /**
+   * MOCK-BUILD SEAM. Drive the agentStore build session through the real
+   * phase sequence (analyzing → resolving → draft_ready → testing →
+   * test_complete → promoted) WITHOUT a Claude CLI / Opus build, so
+   * storeBusWiring emits the real `tour:persona-draft-ready` /
+   * `tour:persona-promoted` events and the getting-started tour's
+   * persona-creation step completes through its real `completeOn` contract.
+   * See `driveMockBuild` in src/test/automation/bridge.ts for the full
+   * rationale + what it does NOT cover (the real CLI/LLM leg).
+   */
+  driveMockBuild(): Promise<{ success: boolean; sessionId: string; personaId: string; phase: string; phasesDriven: string[] }> {
+    return this.bridgeExec('driveMockBuild', {}, 60);
+  }
+
+  /**
+   * Emit the real `execution:completed` storeBus event (the same one the
+   * frontend execution pipeline's frontend_complete stage emits) so the
+   * tour's first-execution step completes via `tour:execution-complete`.
+   * Call while the tour is on the first-execution step.
+   */
+  mockExecutionComplete(personaId?: string): Promise<{ success: boolean; personaId: string }> {
+    return this.bridgeExec('mockExecutionComplete', personaId ? { personaId } : {});
+  }
+
   // ── Athena guided-walkthrough helpers ──────────────────────────────
 
   /** Start a guided walkthrough by topic (e.g. 'persona_creation') deterministically. */

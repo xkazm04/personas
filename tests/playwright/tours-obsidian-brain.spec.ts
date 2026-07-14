@@ -32,7 +32,22 @@ import { CompanionBridge, bridge } from './companion-bridge';
 
 const TOUR_ID = 'obsidian-brain';
 
-/** Step id → the Brain tab panel anchor its nav must mount. */
+/**
+ * Step id → the Brain tab panel anchor its nav must mount.
+ *
+ * These are the PANEL anchors (`obsidian-<tab>-panel`) each step's nav mounts —
+ * the machine-agnostic thing this spec can assert on any host. They are NOT the
+ * steps' `highlightTestId` spotlight targets in tourSlice.ts: the anchor gate in
+ * src/stores/slices/system/__tests__/tourAnchors.test.ts already proves every
+ * `highlightTestId` renders somewhere in src/, so this spec doesn't re-check them.
+ *
+ * `obsidian-memory-dimensions` deliberately maps to `obsidian-setup-panel` (its
+ * `subTab: "setup"` nav target), NOT to its `highlightTestId`
+ * `obsidian-knowledge-mirror`: the knowledge-mirror block only renders when the
+ * Obsidian binary is installed (`availability?.available` in SetupPanel.tsx), so
+ * asserting on it would make this spec fail on hosts without Obsidian. The setup
+ * panel always mounts, so it's the robust anchor.
+ */
 const STEP_ANCHORS: Record<string, string> = {
   'obsidian-install': 'obsidian-setup-panel',
   'obsidian-vault-connect': 'obsidian-setup-panel',
