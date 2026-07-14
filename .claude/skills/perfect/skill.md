@@ -191,6 +191,7 @@ per direction → status (done|blocked|decision-needed), commits, files, verific
 - **`/perfect propose [context]`** — force a proposal pass (optionally jump the cursor to a named context).
 - **`/perfect build`** — build now with the current pool even if < 10.
 - **`/perfect status`** — read-only: queue, cursor, pool, in-flight builds, shipped ledger, last session. No agents.
+- **`/perfect smoke`** — live L2 verification pass over recent waves' shipped surfaces: drive the USER'S running instance via the :17320 bridge (verify a new-code marker first — never trust a stale port), read-mostly navigation, and use **read-only sqlite3 queries against the live DB** (`sqlite3 "file:<path>?mode=ro"`) as the primary diagnostic — one GROUP BY beats an hour of DOM archaeology. Record verified/not-driven/fixes in a `sessions/<date>-smoke` note; small fixes commit inline (gates BEFORE commit). Run after every ~2 waves; state-dependent surfaces that keep rolling over go to a fresh-DB harness session instead.
 - **`/perfect reflect`** — read `config.md → Skill improvement log` + last sessions and propose concrete edits to THIS skill file.
 
 ## Guardrails
