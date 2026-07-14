@@ -92,6 +92,12 @@ pub struct BackgroundJob {
     /// tied to a turn (scheduled curation, etc.).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_turn_id: Option<String>,
+    /// The conversation (thread) whose turn spawned this task (multiconv P1).
+    /// The orb/tray still aggregate ALL conversations' tasks — this tag exists
+    /// so in-chat pinning and per-thread affordances can attribute a task to
+    /// its thread. `None` for tasks not spawned from a conversation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conversation_id: Option<String>,
     pub created_at: String,
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
@@ -200,12 +206,13 @@ pub fn enqueue(
     params: &serde_json::Value,
     project_id: Option<&str>,
 ) -> Result<String, AppError> {
-    enqueue_task(pool, kind, params, project_id, None, None)
+    enqueue_task(pool, kind, params, project_id, None, None, None)
 }
 
 /// Enqueue a background task with optional `short_title` (the human one-liner
-/// shown in the in-chat task tag / activity tray) and `parent_turn_id` (the
-/// conversation turn that spawned it, for tag grouping). Athena async-UX.
+/// shown in the in-chat task tag / activity tray), `parent_turn_id` (the
+/// conversation turn that spawned it, for tag grouping) and `conversation_id`
+/// (the owning thread — multiconv P1). Athena async-UX.
 pub fn enqueue_task(
     pool: &UserDbPool,
     kind: &str,
@@ -213,6 +220,7 @@ pub fn enqueue_task(
     project_id: Option<&str>,
     short_title: Option<&str>,
     parent_turn_id: Option<&str>,
+    conversation_id: Option<&str>,
 ) -> Result<String, AppError> {
     let id = format!("job_{}", short_uuid());
     let now = Utc::now().to_rfc3339();
@@ -221,11 +229,11 @@ pub fn enqueue_task(
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO companion_background_job
-            (id, kind, status, params_json, project_id, short_title, parent_turn_id, created_at)
-         VALUES (?1, ?2, 'queued', ?3, ?4, ?5, ?6, ?7)",
-        params![id, kind, params_str, project_id, title, parent_turn_id, now],
+            (id, kind, status, params_json, project_id, short_title, parent_turn_id, conversation_id, created_at)
+         VALUES (?1, ?2, 'queued', ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![id, kind, params_str, project_id, title, parent_turn_id, conversation_id, now],
     )?;
-    tracing::info!(job_id = %id, kind, parent_turn = ?parent_turn_id, "background task enqueued");
+    tracing::info!(job_id = %id, kind, parent_turn = ?parent_turn_id, conversation = ?conversation_id, "background task enqueued");
     Ok(id)
 }
 
@@ -244,7 +252,7 @@ pub fn get(pool: &UserDbPool, id: &str) -> Result<Option<BackgroundJob>, AppErro
     let row = conn
         .query_row(
             "SELECT id, kind, status, params_json, result_text, error_text, project_id, short_title, parent_turn_id,
-                    created_at, started_at, completed_at
+                    created_at, started_at, completed_at, conversation_id
              FROM companion_background_job WHERE id = ?1",
             params![id],
             map_row,
@@ -266,7 +274,7 @@ pub fn list(
     };
     let sql = format!(
         "SELECT id, kind, status, params_json, result_text, error_text, project_id, short_title, parent_turn_id,
-                created_at, started_at, completed_at
+                created_at, started_at, completed_at, conversation_id
          FROM companion_background_job
          {where_clause}
          ORDER BY created_at DESC
@@ -285,7 +293,7 @@ fn pop_next_queued(pool: &UserDbPool) -> Result<Option<BackgroundJob>, AppError>
     let row = conn
         .query_row(
             "SELECT id, kind, status, params_json, result_text, error_text, project_id, short_title, parent_turn_id,
-                    created_at, started_at, completed_at
+                    created_at, started_at, completed_at, conversation_id
              FROM companion_background_job
              WHERE status = 'queued'
              ORDER BY created_at ASC
@@ -501,6 +509,7 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<BackgroundJob> {
         created_at: row.get(9)?,
         started_at: row.get(10)?,
         completed_at: row.get(11)?,
+        conversation_id: row.get(12)?,
         progress_text: None,
         progress_current: None,
         progress_total: None,
