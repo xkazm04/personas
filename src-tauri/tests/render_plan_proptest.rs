@@ -150,6 +150,7 @@ fn arb_image_item(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
                 scale,
                 fade_in: 0.0,
                 fade_out: 0.0,
+                enter: None,
             })
         })
 }

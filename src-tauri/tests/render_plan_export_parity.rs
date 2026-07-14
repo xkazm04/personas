@@ -134,6 +134,7 @@ fn image(id: &str, path: &str, start: f64, duration: f64) -> TimelineItem {
         scale: 1.0,
         fade_in: 0.0,
         fade_out: 0.0,
+        enter: None,
     })
 }
 
