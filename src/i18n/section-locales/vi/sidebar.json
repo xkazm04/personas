@@ -75,5 +75,9 @@
   "mission_control": "Trung tâm điều hành",
   "factory": "Factory",
   "kpis": "KPI",
-  "studio": "Studio"
+  "studio": "Studio",
+  "competition": "Cuộc thi",
+  "development": "Phát triển",
+  "lifecycle": "Vòng đời",
+  "manage": "Quản lý"
 }

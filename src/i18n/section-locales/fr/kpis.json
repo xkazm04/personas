@@ -183,5 +183,11 @@
     "scan": "Analyse"
   },
   "kpi_scope_label": "Portée",
-  "kpi_scope_this_context": "Ce contexte"
+  "kpi_scope_this_context": "Ce contexte",
+  "attn_days_left": "{days}j rest.",
+  "attn_off_count": "{count} hors piste",
+  "attn_overdue": "{days}j de retard",
+  "attn_reason_crit": "Critique",
+  "attn_reason_floor": "Plancher",
+  "attn_reason_pace": "En retard"
 }

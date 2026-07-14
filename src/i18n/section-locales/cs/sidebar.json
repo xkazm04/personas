@@ -75,5 +75,9 @@
   "mission_control": "Řídicí centrum",
   "factory": "Továrna",
   "kpis": "KPI",
-  "studio": "Studio"
+  "studio": "Studio",
+  "competition": "Soutěž",
+  "development": "Vývoj",
+  "lifecycle": "Životní cyklus",
+  "manage": "Správa"
 }

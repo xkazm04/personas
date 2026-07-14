@@ -7,7 +7,7 @@ import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
-import { usePersonaIndex } from '../sub_teamWorkspace/teamStudio/boardShared';
+import { PersonaChip, usePersonaIndex } from '../sub_teamWorkspace/teamStudio/boardShared';
 import { humanizePayload, type Artifact } from './payloadView';
 import { AUTHOR_KIND_META, authorName, itemAccent } from './collabRender';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
@@ -136,6 +136,28 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               <a href={detail.artifact.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-secondary/40 border border-primary/15 typo-body text-status-info hover:bg-secondary/60 transition-colors">
                 <ExternalLink className="w-4 h-4" /> {detail.artifact.label}
               </a>
+            )}
+            {/* Memory rows carry an importance (1-10, rendered as 5 dots in the
+                row). Absorbed from RedRoomDetailModal, which the Stream retires. */}
+            {item.kind === 'memory' && item.importance != null && (
+              <p className="typo-caption text-foreground">
+                {t.monitor.channel_importance}
+                <span className="ml-1 tabular-nums">{item.importance}</span>
+              </p>
+            )}
+            {/* "HEARD BY" — who is subscribed to this event_type. Nothing else in
+                the app shows who LISTENS to an event. It used to be a client-side
+                fan-out over every member's subscriptions; the read-model now joins
+                it server-side and hands us `consumers`. */}
+            {item.consumers && item.consumers.length > 0 && (
+              <div>
+                <p className="typo-label uppercase tracking-wider text-foreground mb-1.5">{t.monitor.channel_heard_by}</p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {item.consumers.map((pid) => (
+                    <PersonaChip key={pid} persona={personaIndex.get(pid)} />
+                  ))}
+                </div>
+              </div>
             )}
             {raw && (
               <details className="group">

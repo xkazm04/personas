@@ -20,16 +20,23 @@ export interface TaggedItem {
 /** Presence per persona-id, as reported by `useTeamChannel`. */
 export type PresenceMap = Map<string, 'working' | 'waiting'>;
 
-/** Noise filter for the merged stream. */
-export type FeedFilter = 'all' | 'signal' | 'alerts';
+/** A team in the Stream's channel facet — a FeedTeam plus its on/off state. */
+export interface StreamTeam extends FeedTeam {
+  selected: boolean;
+}
 
-/** Author filter — separate the human-in-the-loop decision-makers so an
- *  autonomous Athena post never reads as a user decision. */
-export type AuthorFilter = 'all' | 'you' | 'athena';
-
-/** Hard cap on the merged window — bounds memory + keeps the virtualizer cheap
- *  regardless of how many teams are selected. */
-export const MAX_MERGED_ROWS = 600;
+/**
+ * Bound on the LIVE POP-UP feed's window (`mergedFeed`, consumed only by
+ * LiveChannelOverlay).
+ *
+ * This was `MAX_MERGED_ROWS` — a hard cap on the Stream's history that made the
+ * log un-scrollable past 600 rows. The Stream no longer goes through this path
+ * at all: it reads the shared channel cache and pages a real k-way merge, so its
+ * history is unbounded. What's left here is the pop-up overlay, which only needs
+ * to diff RECENT arrivals to decide what to pop — for that, a bounded window is
+ * the correct design, not a limitation.
+ */
+export const LIVE_FEED_WINDOW = 600;
 
 /** Row height (px) the virtualizer estimates — keep in sync with the row's
  *  vertical padding/line-height so scroll math is exact. */

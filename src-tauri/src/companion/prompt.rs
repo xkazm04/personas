@@ -26,7 +26,9 @@ use crate::companion::brain::recall_synthesis::{
 };
 #[cfg(not(feature = "ml"))]
 use crate::companion::brain::recall_synthesis::Briefing;
-use crate::companion::brain::retrieval::{self, DoctrineHit, Recall};
+#[cfg(feature = "ml")]
+use crate::companion::brain::retrieval;
+use crate::companion::brain::retrieval::{DoctrineHit, Recall};
 use crate::companion::brain::semantic::Fact;
 use crate::companion::connectors;
 use crate::companion::disk;

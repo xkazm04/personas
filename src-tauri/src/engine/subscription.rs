@@ -535,8 +535,6 @@ impl ClipboardSubscription {
     /// Read the current clipboard text and run error detection + KB search.
     /// Sends an OS notification if a KB match is found, respecting a 30-second cooldown.
     async fn run_error_detection(&self) {
-        use std::time::Instant;
-
         // Cooldown check: 30 seconds between notifications
         {
             let last = self.last_notification.lock().await;

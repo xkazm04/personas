@@ -75,5 +75,9 @@
   "mission_control": "Mission Control",
   "factory": "Factory",
   "kpis": "KPIs",
-  "studio": "Studio"
+  "studio": "Studio",
+  "competition": "Wettbewerb",
+  "development": "Entwicklung",
+  "lifecycle": "Lebenszyklus",
+  "manage": "Verwalten"
 }

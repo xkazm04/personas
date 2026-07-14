@@ -25,10 +25,12 @@ use std::path::{Path, PathBuf};
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
+#[cfg(feature = "ml")]
 use chrono::Utc;
 use rusqlite::params;
 use sha2::{Digest, Sha256};
 
+#[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]

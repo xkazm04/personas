@@ -14,9 +14,7 @@ import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import { KPIDashboard } from './KPIDashboard';
 import { KPIProposalsQueue } from './KPIProposalsQueue';
-import { KPIDetailDrawer } from './KPIDetailDrawer';
-import { KPIExplainer } from './KPIExplainer';
-import { ContextKpiDashboard } from './ContextKpiDashboard';
+import { KpiDetailModal } from './KpiDetailModal';
 
 export default function KPIsPage() {
   const { t } = useTranslation();
@@ -99,11 +97,8 @@ export default function KPIsPage() {
         }
       />
       <ContentBody>
-        <KPIExplainer />
         {kpisTab === 'proposals' ? (
           <KPIProposalsQueue onRefresh={() => void fetchAllKpis()} />
-        ) : kpisTab === 'rollup' ? (
-          <ContextKpiDashboard onOpen={(id) => setOpenKpiId(id)} />
         ) : (
           <KPIDashboard
             loading={kpisLoading}
@@ -111,7 +106,7 @@ export default function KPIsPage() {
             onReviewProposals={() => setKpisTab('proposals')}
           />
         )}
-        {openKpi && <KPIDetailDrawer kpi={openKpi} onClose={() => setOpenKpiId(null)} />}
+        {openKpi && <KpiDetailModal kpi={openKpi} onClose={() => setOpenKpiId(null)} />}
       </ContentBody>
     </ContentBox>
   );

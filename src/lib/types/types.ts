@@ -396,9 +396,9 @@ export type SidebarSection = "home" | "overview" | "teams" | "personas" | "event
 /** L2 inside the Teams section: the team workspace (canvas/orchestration) or the Goals hub. */
 export type TeamsTab = "workspace" | "goals" | "kpis" | "factory" | "projects" | "lifecycle" | "competition";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
-export type GoalsTab = "board" | "timeline";
+export type GoalsTab = "board" | "timeline" | "progress" | "missions";
 /** Sub-view within the KPIs hub — surfaced as sidebar sub-items (mirrors GoalsTab). */
-export type KpisTab = "dashboard" | "rollup" | "proposals";
+export type KpisTab = "dashboard" | "proposals";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
 /** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing. */
 export type DesignSubTab = "use-cases" | "prompt" | "parameters" | "connectors" | "triggers" | "messaging" | "automations";

@@ -10,7 +10,7 @@ const STORAGE_PREFIX = 'personas.goals.explainer.';
  * first-run orientation for non-technical users. Dismiss persists per view,
  * so each of Board / Map / Timeline explains itself exactly once.
  */
-export function GoalViewExplainer({ view, text }: { view: 'board' | 'map' | 'timeline'; text: string }) {
+export function GoalViewExplainer({ view, text }: { view: 'board' | 'map' | 'timeline' | 'progress'; text: string }) {
   const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(() => {
     try {

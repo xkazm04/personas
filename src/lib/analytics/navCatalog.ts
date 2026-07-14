@@ -69,7 +69,7 @@ const HOME_TABS = ['welcome', 'cockpit', 'roadmap', 'system-check', 'learning'] 
 const OVERVIEW_TABS = ['home', 'incidents', 'executions', 'manual-review', 'messages', 'events', 'knowledge', 'sla', 'health', 'leaderboard', 'director', 'certification'] as const satisfies readonly OverviewTab[];
 // kpis + factory are live TeamsSidebarNav tabs with PersonasPage router cases.
 const TEAMS_TABS = ['workspace', 'goals', 'kpis', 'factory', 'projects', 'lifecycle', 'competition'] as const satisfies readonly TeamsTab[];
-const GOALS_TABS = ['board', 'timeline'] as const satisfies readonly GoalsTab[];
+const GOALS_TABS = ['board', 'timeline', 'progress'] as const satisfies readonly GoalsTab[];
 // explore is a live template sidebar tab (the gallery Explore view).
 const TEMPLATE_TABS = ['n8n', 'generated', 'explore', 'recipes', 'presets'] as const satisfies readonly TemplateTab[];
 const AGENT_TABS = ['all', 'create', 'groups', 'cloud'] as const satisfies readonly AgentTab[];

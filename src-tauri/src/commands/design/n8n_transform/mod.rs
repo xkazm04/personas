@@ -11,4 +11,4 @@ pub use cli_runner::{
     extract_first_json_object, extract_questions_output, parse_persona_output,
     run_claude_prompt_text, run_claude_prompt_text_inner,
 };
-pub use types::{normalize_n8n_persona_draft, N8nPersonaOutput};
+pub use types::N8nPersonaOutput;

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
   ChevronUp,
@@ -12,23 +13,26 @@ import {
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import Button from '@/features/shared/components/buttons/Button';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useStudioStore } from './studioStore';
 import StudioBuildSettings from './StudioBuildSettings';
 import StudioMessages from './StudioMessages';
+import StudioPlanDrawer from './StudioPlanDrawer';
 import StudioQuickActions from './StudioQuickActions';
-import StudioChecklistStepper from './StudioChecklistStepper';
 import { phaseProgress } from './studioBuildModel';
 
-// The Studio dock — Athena's conversation + plan + input, docked bottom-center
-// over the immersive preview. Collapsed by default (latest message + a compact
-// plan strip) so the preview + orb stay the star; expand to a readable, scrollable
-// panel with a Conversation | Plan tab switch. The response log + streaming live
-// in StudioMessages; the plan reuses StudioChecklistStepper.
-type DockView = null | 'chat' | 'plan';
+// The Studio dock — Athena's conversation + input, docked bottom-center over the
+// immersive preview. Collapsed by default (latest message only) so the preview +
+// orb stay the star; expand for a readable, scrollable conversation panel. The
+// build plan is NOT in the dock: it opens as a right-edge drawer from the plan
+// button in the input row, so you can read the plan while you keep steering. The
+// dock re-centres itself into the space the drawer leaves.
 
 export default function StudioChatInput() {
   const [input, setInput] = useState('');
-  const [view, setView] = useState<DockView>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
+  const { shouldAnimate } = useMotion();
   const activeId = useStudioStore((s) => s.activeId);
   const rt = useStudioStore((s) => (s.activeId ? s.runtimes[s.activeId] : undefined));
   const sendTurn = useStudioStore((s) => s.sendTurn);
@@ -39,9 +43,7 @@ export default function StudioChatInput() {
   if (!activeId || !rt) return null;
   const { busy, question, autonomous, name, phases } = rt;
   const working = busy || autonomous;
-  const expanded = view !== null;
   const { done, total } = phaseProgress(phases ?? []);
-  const activePhase = (phases ?? []).find((p) => p.status === 'active');
   const hasPlan = total > 0;
 
   // 2a — subtle inner glow that reads the input's state at a glance: purple when
@@ -76,185 +78,174 @@ export default function StudioChatInput() {
   };
 
   return (
-    <div
-      className={`absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 flex-col gap-2 ${
-        expanded ? 'w-[min(46rem,calc(100%-5rem))]' : 'w-[min(38rem,calc(100%-7rem))]'
-      }`}
-    >
-      {/* Expanded body — the full conversation or the full plan */}
-      {expanded && (
-        <div className="pointer-events-auto flex max-h-[56vh] flex-col overflow-hidden rounded-modal border border-border bg-background/95 shadow-elevation-4 backdrop-blur">
-          <header className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-1.5">
-            <DockTab active={view === 'chat'} onClick={() => setView('chat')} icon={MessageSquare}>
-              Conversation
-            </DockTab>
-            <DockTab active={view === 'plan'} onClick={() => setView('plan')} icon={ListChecks}>
-              Plan{hasPlan ? ` · ${done}/${total}` : ''}
-            </DockTab>
-            <div className="flex-1" />
+    <>
+      <StudioPlanDrawer
+        open={planOpen}
+        onClose={() => setPlanOpen(false)}
+        phases={phases ?? []}
+        done={done}
+        total={total}
+        busy={busy}
+      />
+
+      {/* Dock — full-width row so the column stays centred in whatever space the
+          plan drawer leaves behind (pure padding transition, no transform fight). */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-8 transition-[padding] duration-300 ease-out"
+        style={planOpen ? { paddingRight: 'calc(min(22rem, 45%) + 2rem)' } : undefined}
+      >
+        <div
+          className={`flex w-full flex-col gap-2 transition-[max-width] duration-200 ${
+            chatOpen ? 'max-w-[46rem]' : 'max-w-[38rem]'
+          }`}
+        >
+          {/* Expanded body — the full conversation */}
+          <AnimatePresence initial={false}>
+            {chatOpen && (
+              <motion.div
+                key="studio-conversation"
+                initial={shouldAnimate ? { opacity: 0, y: 8, scale: 0.985 } : { opacity: 0 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={shouldAnimate ? { opacity: 0, y: 8, scale: 0.985 } : { opacity: 0 }}
+                transition={{ duration: shouldAnimate ? 0.2 : 0.12, ease: [0.22, 1, 0.36, 1] }}
+                style={{ transformOrigin: 'bottom center' }}
+                className="pointer-events-auto flex max-h-[56vh] flex-col overflow-hidden rounded-modal border border-border bg-background shadow-elevation-4"
+              >
+                <header className="flex shrink-0 items-center gap-1.5 border-b border-border px-3 py-1.5">
+                  <MessageSquare className="h-3.5 w-3.5 text-primary/70" />
+                  <span className="text-xs font-medium text-foreground/80">Conversation</span>
+                  <div className="flex-1" />
+                  <button
+                    type="button"
+                    onClick={() => setChatOpen(false)}
+                    aria-label="Collapse"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </header>
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
+                  <StudioMessages expanded />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Collapsed — the latest message bubble (+ earlier-message reveal) */}
+          {!chatOpen && <StudioMessages />}
+
+          {!working && !question && !chatOpen && <StudioQuickActions id={activeId} />}
+
+          {/* Input row */}
+          <div
+            className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-background/90 py-1.5 pl-2 pr-1.5 shadow-elevation-3 backdrop-blur transition-shadow duration-300"
+            style={stateShadow ? { boxShadow: stateShadow } : undefined}
+          >
             <button
               type="button"
-              onClick={() => setView(null)}
-              aria-label="Collapse"
-              className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-foreground"
+              onClick={() => setChatOpen((v) => !v)}
+              aria-label={chatOpen ? 'Collapse conversation' : 'Expand conversation'}
+              aria-expanded={chatOpen}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary"
             >
-              <ChevronDown className="h-4 w-4" />
+              {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
             </button>
-          </header>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
-            {view === 'plan' ? (
-              hasPlan ? (
-                <StudioChecklistStepper phases={phases ?? []} />
-              ) : (
-                <p className="typo-caption px-1 py-6 text-center text-foreground/50">
-                  No plan yet — Athena will lay one out as you build.
-                </p>
-              )
+            <input
+              data-testid="studio-chat-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              placeholder={
+                question
+                  ? `Answer Athena · ${name}`
+                  : autonomous
+                    ? `Athena is building ${name} autonomously…`
+                    : `Tell Athena what to build in ${name}…`
+              }
+              disabled={working}
+              className="min-w-0 flex-1 bg-transparent text-md text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60"
+            />
+            <button
+              type="button"
+              onClick={() => void pickReference()}
+              disabled={working}
+              aria-label="Add a design reference image"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </button>
+            {/* Build plan — the drawer's one entry point, sitting with the other
+                input-row tools instead of floating above the dock. */}
+            <button
+              type="button"
+              onClick={() => setPlanOpen((v) => !v)}
+              data-testid="studio-plan-button"
+              aria-label={hasPlan ? `Build plan · ${done} of ${total} done` : 'Build plan'}
+              aria-expanded={planOpen}
+              className={`relative flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
+                planOpen
+                  ? 'bg-secondary/70 text-primary'
+                  : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
+              }`}
+            >
+              <ListChecks className="h-4 w-4" />
+              {hasPlan && (
+                <span className="font-mono text-[11px] leading-none tabular-nums">
+                  {done}/{total}
+                </span>
+              )}
+              {busy && (
+                <span className="absolute -right-0 -top-0 flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+                </span>
+              )}
+            </button>
+            <StudioBuildSettings id={activeId} />
+            {busy ? (
+              <button
+                type="button"
+                onClick={() => stopTurn(activeId)}
+                data-testid="studio-stop"
+                aria-label="Stop Athena"
+                className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 text-xs font-medium text-status-error transition-colors hover:bg-status-error/20"
+              >
+                <CircleStop className="h-4 w-4" />
+                Stop
+              </button>
             ) : (
-              <StudioMessages expanded />
+              <button
+                type="button"
+                onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
+                aria-label={autonomous ? 'Stop autonomous build' : 'Build autonomously'}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
+                  autonomous
+                    ? 'bg-primary/20 text-primary'
+                    : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
+                }`}
+              >
+                {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
+              </button>
             )}
+            <Button
+              variant="primary"
+              size="sm"
+              className="shrink-0 rounded-full"
+              icon={<Send className="h-4 w-4" />}
+              loading={busy && !autonomous}
+              disabled={!input.trim() || working}
+              onClick={send}
+            >
+              Send
+            </Button>
           </div>
         </div>
-      )}
-
-      {/* Collapsed — a compact plan strip + the latest message */}
-      {!expanded && (
-        <>
-          {hasPlan && (
-            <button
-              type="button"
-              onClick={() => setView('plan')}
-              data-testid="studio-plan-strip"
-              className="pointer-events-auto flex items-center gap-2 self-start rounded-full border border-border bg-background/85 py-1 pl-2.5 pr-3 shadow-elevation-2 backdrop-blur transition-colors hover:border-primary/40"
-            >
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                {busy && (
-                  <span className="absolute inline-flex h-4 w-4 animate-ping rounded-full bg-primary/30" />
-                )}
-              </span>
-              <span className="max-w-[16rem] truncate text-xs text-foreground/80">
-                {activePhase?.title ?? (done === total ? 'Plan complete' : 'Build plan')}
-              </span>
-              <span className="font-mono text-[11px] text-foreground/50">
-                {done}/{total}
-              </span>
-            </button>
-          )}
-          <StudioMessages />
-        </>
-      )}
-
-      {!working && !question && !expanded && <StudioQuickActions id={activeId} />}
-
-      {/* Input row */}
-      <div
-        className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-background/90 py-1.5 pl-2 pr-1.5 shadow-elevation-3 backdrop-blur transition-shadow duration-300"
-        style={stateShadow ? { boxShadow: stateShadow } : undefined}
-      >
-        <button
-          type="button"
-          onClick={() => setView((v) => (v ? null : 'chat'))}
-          aria-label={expanded ? 'Collapse conversation' : 'Expand conversation'}
-          aria-expanded={expanded}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary"
-        >
-          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </button>
-        <input
-          data-testid="studio-chat-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              send();
-            }
-          }}
-          placeholder={
-            question
-              ? `Answer Athena · ${name}`
-              : autonomous
-                ? `Athena is building ${name} autonomously…`
-                : `Tell Athena what to build in ${name}…`
-          }
-          disabled={working}
-          className="min-w-0 flex-1 bg-transparent text-md text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60"
-        />
-        <button
-          type="button"
-          onClick={() => void pickReference()}
-          disabled={working}
-          aria-label="Add a design reference image"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
-        >
-          <ImageIcon className="h-4 w-4" />
-        </button>
-        <StudioBuildSettings id={activeId} />
-        {busy ? (
-          <button
-            type="button"
-            onClick={() => stopTurn(activeId)}
-            data-testid="studio-stop"
-            aria-label="Stop Athena"
-            className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 text-xs font-medium text-status-error transition-colors hover:bg-status-error/20"
-          >
-            <CircleStop className="h-4 w-4" />
-            Stop
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
-            aria-label={autonomous ? 'Stop autonomous build' : 'Build autonomously'}
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
-              autonomous
-                ? 'bg-primary/20 text-primary'
-                : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
-            }`}
-          >
-            {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
-          </button>
-        )}
-        <Button
-          variant="primary"
-          size="sm"
-          className="shrink-0 rounded-full"
-          icon={<Send className="h-4 w-4" />}
-          loading={busy && !autonomous}
-          disabled={!input.trim() || working}
-          onClick={send}
-        >
-          Send
-        </Button>
       </div>
-    </div>
-  );
-}
-
-function DockTab({
-  active,
-  onClick,
-  icon: Icon,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: typeof MessageSquare;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-        active
-          ? 'bg-secondary/70 text-foreground'
-          : 'text-foreground/55 hover:bg-secondary/40 hover:text-foreground'
-      }`}
-    >
-      <Icon className="h-3.5 w-3.5" />
-      {children}
-    </button>
+    </>
   );
 }

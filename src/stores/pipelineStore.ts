@@ -8,6 +8,7 @@ import { createTriggerSlice } from "./slices/pipeline/triggerSlice";
 import { createTeamSlice } from "./slices/pipeline/teamSlice";
 import { createRecipeSlice } from "./slices/pipeline/recipeSlice";
 import { createAssignmentSlice } from "./slices/pipeline/assignmentSlice";
+import { createChannelSlice } from "./slices/pipeline/channelSlice";
 
 export const usePipelineStore = create<PipelineStore>()((...a) => ({
   error: null,
@@ -18,4 +19,5 @@ export const usePipelineStore = create<PipelineStore>()((...a) => ({
   ...createTeamSlice(...a),
   ...createRecipeSlice(...a),
   ...createAssignmentSlice(...a),
+  ...createChannelSlice(...a),
 }));

@@ -4,7 +4,7 @@ use tauri::State;
 use tokio_util::sync::CancellationToken;
 
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::background_job::BackgroundJobManager;
 use crate::db::repos::communication::reviews as reviews_repo;
@@ -15,8 +15,8 @@ use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use super::n8n_transform::{
-    extract_first_json_object, extract_questions_output, normalize_n8n_persona_draft,
-    parse_persona_output, run_claude_prompt_text_inner, N8nPersonaOutput,
+    extract_first_json_object, extract_questions_output, parse_persona_output,
+    run_claude_prompt_text_inner, N8nPersonaOutput,
 };
 
 // -- Template integrity helper -----------------------------------

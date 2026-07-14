@@ -38,16 +38,22 @@
 //! - Not a streaming surface. The synthesis call completes before the chat
 //!   turn starts; users don't see the briefing being generated.
 
+#[cfg(feature = "ml")]
 use std::process::Stdio;
+#[cfg(feature = "ml")]
 use std::sync::Arc;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "ml")]
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+#[cfg(feature = "ml")]
 use tokio::process::Command;
+#[cfg(feature = "ml")]
 use tokio::time::timeout;
 
 use crate::companion::brain::retrieval::Recall;
+#[cfg(feature = "ml")]
 use crate::companion::session::base_cli_invocation;
 use crate::error::AppError;
 

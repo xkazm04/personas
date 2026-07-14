@@ -29,7 +29,7 @@ use tokio::sync::Mutex;
 use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::event_registry::event_name;
 
-use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
+use crate::db::models::{Persona, PersonaToolDefinition};
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::communication::manual_reviews as manual_review_repo;
 use crate::db::repos::resources::team_memories as team_memory_repo;

@@ -1,28 +1,54 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useTeamChannel } from '@/features/teams/sub_collab/useTeamChannel';
-import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
-import { MAX_MERGED_ROWS, type FeedTeam, type TaggedItem, type PresenceMap } from './types';
+import { useMemo, type ReactNode } from 'react';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { derivePresence, useChannelSubscription } from '@/features/teams/sub_collab/useTeamChannel';
+import { LIVE_FEED_WINDOW, type FeedTeam, type TaggedItem, type PresenceMap } from './types';
 
 /* ----------------------------------------------------------------------------
  * Merge infrastructure for the combined cross-team channel views.
  *
- * `useTeamChannel` is a per-team hook, so a variable number of teams can't be
- * read in a loop. Instead each team gets a hidden `TeamFeed` feeder that calls
- * the hook and reports its items up; `MergedChannels` aggregates them and hands
- * the merged, team-tagged stream to a render-prop child. The combined views are
- * READ-ONLY (click a row → the shared detail modal); full per-team interaction
- * stays in the grid layout.
+ * P0: this used to mount one hidden `TeamFeed` component per team, each running
+ * `useTeamChannel` — its own 15s poll and its own TEAM_ASSIGNMENT_PROGRESS
+ * listener apiece. With the shared `channelSlice` the feeders are gone: we
+ * declare interest (refcounted) and read the merged result out of the store.
+ *
+ * P2: the Stream stopped using this entirely — it reads (team, kinds) cache
+ * entries and pages a real k-way merge. The ONLY consumer left is
+ * LiveChannelOverlay, which diffs recent arrivals into corner pop-ups.
  * -------------------------------------------------------------------------- */
 
-/** Hidden feeder — one per team — that reports its channel items + presence. */
-function TeamFeed({ team, onData }: { team: FeedTeam; onData: (teamId: string, items: TeamChannelItem[], presence: PresenceMap) => void }) {
-  const { items, presence } = useTeamChannel(team.teamId);
-  useEffect(() => {
-    onData(team.teamId, items, presence);
-  }, [items, presence, team.teamId, onData]);
-  return null;
+/** Merge every subscribed team's cached channel into one newest-first stream. */
+export function useMergedChannels(teams: FeedTeam[]): {
+  merged: TaggedItem[];
+  presenceByTeam: Map<string, PresenceMap>;
+  byTeam: Map<string, TaggedItem[]>;
+} {
+  useChannelSubscription(useMemo(() => teams.map((t) => t.teamId), [teams]));
+
+  const channels = usePipelineStore((s) => s.channels);
+
+  return useMemo(() => {
+    const flat: TaggedItem[] = [];
+    const byTeam = new Map<string, TaggedItem[]>();
+    const presenceByTeam = new Map<string, PresenceMap>();
+
+    for (const team of teams) {
+      const items = channels[team.teamId]?.items ?? [];
+      const rows = items.map((item) => ({ item, team }));
+      byTeam.set(team.teamId, rows);
+      presenceByTeam.set(team.teamId, derivePresence(items));
+      flat.push(...rows);
+    }
+
+    flat.sort((a, b) => b.item.at.localeCompare(a.item.at));
+    // The pop-up overlay only diffs RECENT arrivals to decide what to pop, so a
+    // bounded window is correct here. (The Stream's unbounded history lives in
+    // the shared channel cache + its k-way merge — it no longer uses this feed.)
+    const merged = flat.length > LIVE_FEED_WINDOW ? flat.slice(0, LIVE_FEED_WINDOW) : flat;
+    return { merged, presenceByTeam, byTeam };
+  }, [teams, channels]);
 }
 
+/** Render-prop wrapper — kept so existing callers didn't have to change. */
 export function MergedChannels({
   teams,
   children,
@@ -30,44 +56,6 @@ export function MergedChannels({
   teams: FeedTeam[];
   children: (merged: TaggedItem[], presenceByTeam: Map<string, PresenceMap>, byTeam: Map<string, TaggedItem[]>) => ReactNode;
 }) {
-  const [itemsByTeam, setItemsByTeam] = useState<Map<string, TeamChannelItem[]>>(new Map());
-  const [presenceByTeam, setPresenceByTeam] = useState<Map<string, PresenceMap>>(new Map());
-
-  const onData = useCallback((teamId: string, items: TeamChannelItem[], presence: PresenceMap) => {
-    setItemsByTeam((prev) => {
-      const next = new Map(prev);
-      next.set(teamId, items);
-      return next;
-    });
-    setPresenceByTeam((prev) => {
-      const next = new Map(prev);
-      next.set(teamId, presence);
-      return next;
-    });
-  }, []);
-
-  const { merged, byTeam } = useMemo(() => {
-    const flat: TaggedItem[] = [];
-    const grouped = new Map<string, TaggedItem[]>();
-    for (const team of teams) {
-      const rows = (itemsByTeam.get(team.teamId) ?? []).map((item) => ({ item, team }));
-      // `byTeam` is consumed only for per-team counts now — no per-team sort.
-      grouped.set(team.teamId, rows);
-      flat.push(...rows);
-    }
-    flat.sort((a, b) => b.item.at.localeCompare(a.item.at));
-    // Bound the merged window so memory + the virtualizer stay cheap no matter
-    // how many teams are selected. The newest MAX_MERGED_ROWS are kept; the
-    // virtualized list only ever mounts the visible slice of these.
-    return { merged: flat.length > MAX_MERGED_ROWS ? flat.slice(0, MAX_MERGED_ROWS) : flat, byTeam: grouped };
-  }, [teams, itemsByTeam]);
-
-  return (
-    <>
-      {teams.map((t) => (
-        <TeamFeed key={t.teamId} team={t} onData={onData} />
-      ))}
-      {children(merged, presenceByTeam, byTeam)}
-    </>
-  );
+  const { merged, presenceByTeam, byTeam } = useMergedChannels(teams);
+  return <>{children(merged, presenceByTeam, byTeam)}</>;
 }

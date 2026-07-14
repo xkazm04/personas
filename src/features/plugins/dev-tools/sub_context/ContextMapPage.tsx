@@ -22,13 +22,12 @@ import type { ContextGroup, ContextItem } from './contextMapTypes';
 import { parseJsonArray } from './contextMapTypes';
 import ScanOverlay from './ScanOverlay';
 import ContextDetail from './ContextDetail';
-import GroupList from './GroupList';
-import UseCasePanel from './UseCasePanel';
+import ContextLedger from './ContextLedger';
+import type { ContextLedgerProps } from './contextLedgerShared';
 import { useUseCases } from './useUseCases';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
-
 
 // ---------------------------------------------------------------------------
 // Completion handler — shared by event listener + resync polling.
@@ -166,7 +165,7 @@ export default function ContextMapPage() {
     }
   }, [activeProjectId, fetchGoals, fetchIdeas, fetchKpis]);
 
-  // contextId → { count, firstGoalId } so each ContextCard can show its
+  // contextId → { count, firstGoalId } so each ledger row can show its
   // goal-coverage badge and seed the spotlight handoff in one click.
   const goalCoverageByContext = useMemo(() => {
     const map = new Map<string, { count: number; firstGoalId: string }>();
@@ -179,7 +178,7 @@ export default function ContextMapPage() {
     return map;
   }, [storeGoals]);
 
-  // contextId → idea count, so each ContextCard shows how many ideas its
+  // contextId → idea count, so each ledger row shows how many ideas its
   // context has produced (mirrors the goal-coverage badge).
   const ideaCoverageByContext = useMemo(() => {
     const map = new Map<string, number>();
@@ -190,7 +189,7 @@ export default function ContextMapPage() {
     return map;
   }, [storeIdeas]);
 
-  // contextId → non-archived KPI count, so each ContextCard shows how many KPIs
+  // contextId → non-archived KPI count, so each ledger row shows how many KPIs
   // are scoped to it (Part 3 context-level KPIs; mirrors the goal/idea badges).
   const kpiCoverageByContext = useMemo(() => {
     const map = new Map<string, number>();
@@ -488,20 +487,8 @@ export default function ContextMapPage() {
   // on the board — the one interaction that makes the layer legible.
   const useCaseState = useUseCases(activeProjectId ?? null);
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
-  const highlightedContextIds = useMemo(() => {
-    const uc = useCaseState.useCases.find((u) => u.id === selectedUseCaseId);
-    return new Set(uc?.context_ids ?? []);
-  }, [useCaseState.useCases, selectedUseCaseId]);
-  const useCaseCoverageByContext = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const uc of useCaseState.useCases) {
-      if (uc.status === 'archived') continue;
-      for (const cid of uc.context_ids) map.set(cid, (map.get(cid) ?? 0) + 1);
-    }
-    return map;
-  }, [useCaseState.useCases]);
   // A selection that no longer exists (rejected, or the project switched) must
-  // not keep the board dimmed.
+  // not keep a column highlighted.
   useEffect(() => {
     if (selectedUseCaseId && !useCaseState.useCases.some((u) => u.id === selectedUseCaseId && u.status === 'active')) {
       setSelectedUseCaseId(null);
@@ -516,6 +503,28 @@ export default function ContextMapPage() {
     const times = storeGroups.map((g) => g.updated_at).filter(Boolean);
     return times.length ? times.reduce((a, b) => (a > b ? a : b)) : null;
   }, [storeGroups]);
+
+  // Everything the ledger renders from — bundled so the view stays pure and the
+  // page keeps owning the scan/store orchestration.
+  const ledgerProps: ContextLedgerProps = {
+    groups,
+    useCaseState,
+    selectedUseCaseId,
+    onSelectUseCase: setSelectedUseCaseId,
+    selectedCtxId,
+    onSelectCtx: setSelectedCtxId,
+    goalCoverageByContext,
+    ideaCoverageByContext,
+    kpiCoverageByContext,
+    hasMap: hasContexts,
+    onScanContext: handleScanContext,
+    scanningContextId,
+    scanBusy: scanPhase === 'running',
+    showNewGroup,
+    onShowNewGroup: setShowNewGroup,
+    onCreateGroup: handleCreateGroup,
+    onScan: handleScan,
+  };
 
   return (
     <ContentBox>
@@ -547,33 +556,8 @@ export default function ContextMapPage() {
           )}
         </ActionRow>
 
-        {hasContexts && (
-          <UseCasePanel
-            state={useCaseState}
-            selectedId={selectedUseCaseId}
-            onSelect={setSelectedUseCaseId}
-            hasMap={hasContexts}
-          />
-        )}
-
         <div className="flex gap-0 min-h-0 flex-1">
-          <GroupList
-            groups={groups}
-            selectedCtxId={selectedCtxId}
-            onSelectCtx={setSelectedCtxId}
-            showNewGroup={showNewGroup}
-            onShowNewGroup={setShowNewGroup}
-            onCreateGroup={handleCreateGroup}
-            onScan={handleScan}
-            goalCoverageByContext={goalCoverageByContext}
-            ideaCoverageByContext={ideaCoverageByContext}
-            kpiCoverageByContext={kpiCoverageByContext}
-            useCaseCoverageByContext={useCaseCoverageByContext}
-            highlightedContextIds={highlightedContextIds}
-            onScanContext={handleScanContext}
-            scanningContextId={scanningContextId}
-            scanBusy={scanPhase === 'running'}
-          />
+          <ContextLedger {...ledgerProps} />
 
           {selectedCtx && (
             <ContextDetail

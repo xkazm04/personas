@@ -75,5 +75,9 @@
   "mission_control": "মিশন কন্ট্রোল",
   "factory": "ফ্যাক্টরি",
   "kpis": "KPI",
-  "studio": "স্টুডিও"
+  "studio": "স্টুডিও",
+  "competition": "প্রতিযোগিতা",
+  "development": "ডেভেলপমেন্ট",
+  "lifecycle": "লাইফসাইকেল",
+  "manage": "পরিচালনা"
 }

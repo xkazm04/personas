@@ -1,12 +1,12 @@
-// KPI dashboard (P5 round 2) — a CHART-FIRST command center over ALL
-// projects' KPIs, built on the app's recharts stack (LazyChart wrapper).
-// Visual hierarchy: a needs-attention strip (off-track KPIs as destructive
-// chips), a summary stat row, then two charts — "Distance to target"
-// (horizontal pace-colored bars, one per KPI) and "Trend" (progress-vs-target
-// lines from the measurement series). Everything clicks through to the
-// detail drawer; prose lives THERE, not on the dashboard. Filter by project.
-import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Gauge, TrendingUp, type LucideIcon } from 'lucide-react';
+// KPI dashboard — a CHART-FIRST command center over ALL projects' KPIs, built
+// on the app's recharts stack (LazyChart wrapper). Visual hierarchy: a summary
+// stat row, then the KpiSignalBoard ("Distance to target" grouped BY PROJECT,
+// with each project's off-track alerts injected at the head of its card), then
+// "Trend" (progress-vs-target lines from the measurement series). Everything
+// clicks through to the KPI detail modal; prose lives THERE, not on the
+// dashboard. Filter by project.
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { TrendingUp, type LucideIcon } from 'lucide-react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useSystemStore } from '@/stores/systemStore';
@@ -16,22 +16,11 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { KPIS_GLYPH } from '@/features/shared/glyph/glyphs/kpisGlyph';
 import { StatCard } from '@/features/shared/components/display/StatCard';
 import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
-import { paceDescriptor, kpiProgressPct } from './kpiMath';
+import { paceDescriptor, kpiOffTrackReason, type PaceDescriptor } from './kpiMath';
 import { TRACK_COLOR } from './kpiMeta';
 import { AutopilotControl } from './AutopilotControl';
-
-const CHART_ROW_H = 38;
-
-/** Progress toward target as 0–115% (overshoot visible), direction-aware. */
-function distancePct(kpi: DevKpi): number | null {
-  const pct = kpiProgressPct(kpi);
-  if (pct != null) return Math.min(115, pct);
-  // No baseline: simple ratio against the target.
-  const { current_value: cur, target_value: target } = kpi;
-  if (cur == null || target == null || target === 0) return null;
-  const ratio = kpi.direction === 'down' ? target / Math.max(cur, 1e-9) : cur / target;
-  return Math.min(115, Math.round(ratio * 100));
-}
+import { distancePct, type DistanceGroup, type DistanceRow } from './kpiDistance';
+import { KpiSignalBoard } from './KpiSignalBoard';
 
 /** Normalize one measurement onto the same axis for the trend chart. */
 function normValue(kpi: DevKpi, v: number): number | null {
@@ -95,22 +84,40 @@ export function KPIDashboard({
   const met = paced.filter((p) => p.d.track === 'met').length;
 
   // --- chart models -----------------------------------------------------
-  const distanceData = useMemo(
-    () =>
-      paced
-        .map(({ kpi, d }) => ({
-          id: kpi.id,
-          name: kpi.name,
-          project: projectName(kpi.project_id),
-          pct: distancePct(kpi) ?? 0,
-          fill: TRACK_COLOR[d.track],
-          current: kpi.current_value,
-          target: kpi.target_value,
-          unit: kpi.unit,
-        }))
-        .sort((a, b) => a.pct - b.pct),
-    [paced, projectName],
+  /** One distance row per KPI — the shared model behind the grouping. */
+  const buildRow = useCallback(
+    (kpi: DevKpi, d: PaceDescriptor): DistanceRow => ({
+      id: kpi.id,
+      name: kpi.name,
+      projectId: kpi.project_id,
+      project: projectName(kpi.project_id),
+      pct: distancePct(kpi) ?? 0,
+      fill: TRACK_COLOR[d.track],
+      current: kpi.current_value,
+      target: kpi.target_value,
+      unit: kpi.unit,
+      track: d.track,
+      reason: kpiOffTrackReason(kpi),
+      category: kpi.category,
+    }),
+    [projectName],
   );
+
+  // Distance rows grouped BY PROJECT (name asc), so the off-track alerts can be
+  // injected inside each project's own card.
+  const projectGroups = useMemo<DistanceGroup[]>(() => {
+    const groups = new Map<string, DistanceGroup>();
+    for (const { kpi, d } of paced) {
+      const key = kpi.project_id;
+      let entry = groups.get(key);
+      if (!entry) { entry = { key, label: projectName(key), order: 0, rows: [] }; groups.set(key, entry); }
+      entry.rows.push(buildRow(kpi, d));
+    }
+    const arr = [...groups.values()];
+    for (const e of arr) e.rows.sort((a, b) => a.name.localeCompare(b.name));
+    arr.sort((a, b) => a.label.localeCompare(b.label));
+    return arr;
+  }, [paced, projectName, buildRow]);
 
   const trendModel = useMemo(() => {
     const series = filtered
@@ -182,26 +189,6 @@ export function KPIDashboard({
         <AutopilotControl projectId={autopilotProject} className="rounded-card border border-primary/15 bg-secondary/10 px-4 py-3" />
       )}
 
-      {/* Needs attention — the only loud element on the page */}
-      {offTrack.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap rounded-card border border-status-error/30 bg-status-error/5 px-3 py-2.5">
-          <AlertTriangle className="w-4 h-4 text-status-error flex-shrink-0" />
-          <span className="typo-overline text-status-error">{t.kpis.attention_label}</span>
-          {offTrack.map(({ kpi }) => (
-            <button
-              key={kpi.id}
-              type="button"
-              onClick={() => onOpen(kpi.id)}
-              className="typo-caption text-foreground rounded-interactive border border-status-error/40 bg-status-error/10 hover:bg-status-error/20 transition-colors px-2 py-0.5 tabular-nums"
-              data-testid={`kpi-attention-${kpi.id}`}
-            >
-              <span className="font-medium">{kpi.name}</span>{' '}
-              {kpi.current_value ?? '—'} / {kpi.target_value ?? '—'} {kpi.unit}
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Summary strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label={t.kpis.stat_active} value={filtered.length} />
@@ -214,73 +201,9 @@ export function KPIDashboard({
         <StatCard label={t.kpis.stat_met} value={met} tone={met ? 'success' : 'neutral'} />
       </div>
 
-      {/* Distance to target — pace-colored horizontal bars, click → drawer */}
-      <ChartPanel title={t.kpis.chart_distance_title} icon={Gauge}>
-        <LazyChart
-          fallback={<div className="h-24" />}
-          render={(R) => (
-            <R.ResponsiveContainer width="100%" height={distanceData.length * CHART_ROW_H + 30}>
-              <R.BarChart
-                accessibilityLayer={false}
-                data={distanceData}
-                layout="vertical"
-                margin={{ top: 0, right: 36, bottom: 0, left: 8 }}
-                onClick={(state) => {
-                  const payload = (
-                    state as unknown as { activePayload?: Array<{ payload?: { id?: string } }> }
-                  )?.activePayload?.[0]?.payload;
-                  if (payload?.id) onOpen(payload.id);
-                }}
-              >
-                <R.XAxis
-                  type="number"
-                  domain={[0, 115]}
-                  tickFormatter={(v: number) => `${v}%`}
-                  stroke="var(--muted-foreground)"
-                  fontSize={11}
-                />
-                <R.YAxis
-                  type="category"
-                  dataKey="name"
-                  width={210}
-                  stroke="var(--muted-foreground)"
-                  fontSize={12}
-                  tickLine={false}
-                />
-                <R.ReferenceLine x={100} stroke="var(--status-success)" strokeDasharray="4 3" />
-                <R.Tooltip
-                  cursor={{ fill: 'var(--secondary)', opacity: 0.3 }}
-                  contentStyle={{
-                    background: 'var(--background)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  formatter={((value: unknown, _n: unknown, item: unknown) => {
-                    const p = (
-                      item as { payload?: { current?: number | null; target?: number | null; unit?: string; project?: string } }
-                    )?.payload;
-                    const cur = p?.current ?? '—';
-                    const tgt = p?.target ?? '—';
-                    return [`${String(value)}% — ${cur} / ${tgt} ${p?.unit ?? ''}`, p?.project ?? ''];
-                  }) as never}
-                />
-                <R.Bar dataKey="pct" radius={[0, 4, 4, 0]} barSize={16} cursor="pointer">
-                  {distanceData.map((row) => (
-                    <R.Cell key={row.id} fill={row.fill} />
-                  ))}
-                  <R.LabelList
-                    dataKey="pct"
-                    position="right"
-                    formatter={((v: unknown) => `${String(v)}%`) as never}
-                    style={{ fill: 'var(--foreground)', fontSize: 11 }}
-                  />
-                </R.Bar>
-              </R.BarChart>
-            </R.ResponsiveContainer>
-          )}
-        />
-      </ChartPanel>
+      {/* Distance to target, grouped by project, with each project's off-track
+          alerts injected at the head of its card. */}
+      <KpiSignalBoard projectGroups={projectGroups} onOpen={onOpen} />
 
       {/* Trend — progress vs target over time */}
       {trendModel && (

@@ -75,5 +75,9 @@
   "mission_control": "ミッションコントロール",
   "factory": "ファクトリー",
   "kpis": "KPI",
-  "studio": "スタジオ"
+  "studio": "スタジオ",
+  "competition": "コンペティション",
+  "development": "開発",
+  "lifecycle": "ライフサイクル",
+  "manage": "管理"
 }

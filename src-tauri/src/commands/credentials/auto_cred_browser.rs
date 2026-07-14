@@ -20,7 +20,6 @@ use crate::engine::event_registry::event_name;
 use crate::engine::prompt::build_cli_args;
 use crate::engine::types::StreamLineType;
 use crate::AppState;
-use personas_macros::requires;
 
 /// Event names for auto-cred browser progress.
 const STATUS_EVENT: &str = event_name::AUTO_CRED_BROWSER_STATUS;

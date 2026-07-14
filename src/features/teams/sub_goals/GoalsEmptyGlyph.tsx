@@ -1,7 +1,7 @@
 /**
  * The traced goals glyph, isolated behind its own module so it can be lazy-loaded.
  * GoalsTimeline is imported by two separate lazy chunks (GoalsPage and the fleet
- * ChannelTimelineWorkspace); a static glyph import would hoist ~12KB gzipped of path
+ * Stream); a static glyph import would hoist ~12KB gzipped of path
  * data into the eager entry chunk. Loading it only when the empty state actually
  * renders keeps it out of the entry — the glyph animates itself in regardless, so the
  * one-frame Suspense gap is invisible.

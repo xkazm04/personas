@@ -2,7 +2,7 @@
 
 export type TeamChannelItem = { id: string, 
 /**
- * 'step' | 'event' | 'memory' | 'directive'
+ * 'step' | 'event' | 'memory' | 'directive' | 'persona' | 'athena' | 'director'
  */
 kind: string, 
 /**
@@ -11,6 +11,8 @@ kind: string,
 at: string, personaId: string | null, 
 /**
  * step kind / event type / memory category — the row's machine label.
+ * For `event` rows this IS the raw `event_type` (the Red Room family lens
+ * derives its 8 families from it client-side).
  */
 label: string, 
 /**
@@ -24,4 +26,24 @@ extra: string | null,
 /**
  * Channel messages only: the message id this one replies to (threading).
  */
-replyTo: string | null, };
+replyTo: string | null, 
+/**
+ * Channel messages only: the deliberation this turn belongs to. Non-null
+ * rows are deliberation turns and are EXCLUDED from the plain conversation
+ * unless `deliberation` is in `kinds` (they used to leak in as ordinary
+ * persona/athena posts — the column wasn't even exposed, so the frontend
+ * could not filter them out).
+ */
+deliberationId: string | null, 
+/**
+ * Memory rows only: 1-10 backing scale (the UI renders it as 5 dots).
+ * i32, not i64 — ts-rs maps i64 to `bigint`, and every other importance in
+ * the app (TeamMemory, PersonaMemory) is a plain `number`.
+ */
+importance: number | null, 
+/**
+ * Event rows only: team personas subscribed to this `event_type` — the
+ * Red Room's "Heard by". A server-side join; the old client fused this
+ * from an N-per-member subscription fan-out.
+ */
+consumers: Array<string> | null, };

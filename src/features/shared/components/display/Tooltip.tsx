@@ -293,25 +293,27 @@ export function Tooltip({
       >
         {children}
       </span>
-      {createPortal(
-        <>
-          {visible && (
-            <div
-              ref={tooltipRef}
-              id={tooltipId}
-              role="tooltip"
-              className="animate-fade-slide-in fixed z-[9999] pointer-events-none max-w-[480px] text-md font-normal text-foreground glass-sm rounded-lg px-2.5 py-1.5 shadow-elevation-3"
-              style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const, top: 0, left: 0 }}
-            >
-              {content}
-              {pos && arrowOffset !== null && (
-                <span aria-hidden="true" style={getArrowStyle(resolvedPlacement, arrowOffset)} />
-              )}
-            </div>
-          )}
-        </>,
-        document.body,
-      )}
+      {/* The portal is created only while the tooltip is actually shown. It used
+          to be created on every render (wrapping a conditional), which cost one
+          portal container per Tooltip instance whether or not it was visible —
+          a real mount tax on tooltip-dense lists (a 250-node grid paid for 250
+          idle portals). Hidden tooltips now cost nothing beyond the trigger. */}
+      {visible &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            id={tooltipId}
+            role="tooltip"
+            className="animate-fade-slide-in fixed z-[9999] pointer-events-none max-w-[480px] text-md font-normal text-foreground glass-sm rounded-lg px-2.5 py-1.5 shadow-elevation-3"
+            style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const, top: 0, left: 0 }}
+          >
+            {content}
+            {pos && arrowOffset !== null && (
+              <span aria-hidden="true" style={getArrowStyle(resolvedPlacement, arrowOffset)} />
+            )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

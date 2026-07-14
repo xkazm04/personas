@@ -1,33 +1,46 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Radio, Inbox, Pause, Play, History } from 'lucide-react';
-import { AssignmentReplay } from './AssignmentReplay';
-import { usePipelineStore } from '@/stores/pipelineStore';
+import { History, Inbox, Link2, Pause, Play, Radio } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { setTeamAssignmentGoal } from '@/api/pipeline/assignments';
+import { silentCatch } from '@/lib/silentCatch';
+import { AssignmentReplay } from '@/features/teams/sub_teamWorkspace/teamStudio/AssignmentReplay';
 import {
-  StepProgressStrip, StepRelay, GoalChip, PersonaStack,
-  usePersonaIndex, useAssignmentSteps, isLiveAssignmentStatus, useRefreshAssignments, stepMeta,
-} from './boardShared';
+  GoalChip, PersonaStack, StepProgressStrip, StepRelay,
+  isLiveAssignmentStatus, stepMeta, useAssignmentSteps, usePersonaIndex,
+} from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
+import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
 
-/**
- * FLIGHT DECK variant — "mission control".
+/* ----------------------------------------------------------------------------
+ * MISSIONS — the Assignment Board, folded into Goals (plan D3).
  *
- * Metaphor: an operations console. The left rail lists every assignment as a
- * mission row grouped by phase (Active → Needs review → Queued → Landed →
- * Stopped), each carrying a live step-progress strip. The main pane is the
- * selected mission's STEP RELAY — the full pipeline with per-step personas,
- * statuses, QA rework rounds, expandable outputs and inline review
- * intervention. One mission in deep focus at all times; the rail keeps the
- * fleet peripheral. Differs from baseline (kanban of bare cards, no step
- * visibility) by inverting the hierarchy: steps are the primary object.
- */
+ * The Teams "flight deck" was the only place an assignment's step relay, rework
+ * rounds, pause/resume and replay existed. Goals could show an assignment only
+ * through a goal it was linked to — and the Assign flow creates assignments with
+ * `goalId: null`. So deleting the board without this view would have made every
+ * ad-hoc mission INVISIBLE. That was the one genuinely lossy migration in the
+ * whole consolidation, and this is the fix.
+ *
+ * Two differences from the board it replaces:
+ *   • it is PROJECT-scoped, not team-scoped — missions from every team in the
+ *     project land in one rail, which is how you actually watch a project; and
+ *   • goal-less missions are first-class, and can be LINKED to a goal from here
+ *     (`set_team_assignment_goal` already existed; nothing could reach it).
+ * -------------------------------------------------------------------------- */
 
-const PHASES: Array<{ id: string; labelKey: 'deck_phase_active' | 'deck_phase_review' | 'deck_phase_queued' | 'deck_phase_paused' | 'deck_phase_landed' | 'deck_phase_stopped'; statuses: string[]; tone: string }> = [
+const PHASES: Array<{
+  id: string;
+  labelKey: 'deck_phase_active' | 'deck_phase_review' | 'deck_phase_paused' | 'deck_phase_queued' | 'deck_phase_landed' | 'deck_phase_stopped';
+  statuses: string[];
+  tone: string;
+}> = [
   { id: 'active', labelKey: 'deck_phase_active', statuses: ['running'], tone: 'text-blue-400' },
   { id: 'review', labelKey: 'deck_phase_review', statuses: ['awaiting_review'], tone: 'text-amber-400' },
   { id: 'paused', labelKey: 'deck_phase_paused', statuses: ['paused'], tone: 'text-amber-300' },
-  { id: 'queued', labelKey: 'deck_phase_queued', statuses: ['queued'], tone: 'text-foreground/60' },
+  { id: 'queued', labelKey: 'deck_phase_queued', statuses: ['queued'], tone: 'text-foreground' },
   { id: 'landed', labelKey: 'deck_phase_landed', statuses: ['done'], tone: 'text-emerald-400' },
   { id: 'stopped', labelKey: 'deck_phase_stopped', statuses: ['failed', 'aborted'], tone: 'text-red-400' },
 ];
@@ -38,23 +51,46 @@ function toIsoUtc(s: string): string {
   return `${s.replace(' ', 'T')}Z`;
 }
 
-export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
+export function GoalsMissions() {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
-  const assignmentsRaw = usePipelineStore((s) => s.assignmentsByTeam[teamId]);
-  const assignments = useMemo(() => assignmentsRaw ?? [], [assignmentsRaw]);
-  const refreshAssignments = useRefreshAssignments(teamId);
+  const dl = t.plugins.dev_lifecycle;
+
+  const teams = usePipelineStore((s) => s.teams);
+  const fetchTeams = usePipelineStore((s) => s.fetchTeams);
+  const assignmentsByTeam = usePipelineStore((s) => s.assignmentsByTeam);
+  const fetchTeamAssignments = usePipelineStore((s) => s.fetchTeamAssignments);
   const pauseAssignment = usePipelineStore((s) => s.pauseAssignment);
   const resumeAssignment = usePipelineStore((s) => s.resumeAssignment);
+  const goals = useSystemStore((s) => s.goals);
   const personaIndex = usePersonaIndex();
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [replaying, setReplaying] = useState(false);
+  const [linking, setLinking] = useState(false);
 
   useEffect(() => {
-    refreshAssignments();
-  }, [refreshAssignments]);
+    void fetchTeams();
+  }, [fetchTeams]);
 
-  // Default-select the most interesting mission: running > review > newest.
+  // Every team's missions — the board was single-team, which is not how you
+  // watch a project.
+  useEffect(() => {
+    for (const tm of teams) void fetchTeamAssignments(tm.id);
+  }, [teams, fetchTeamAssignments]);
+
+  const teamName = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const tm of teams) m.set(tm.id, tm.name.replace(/^SDLC[ —-]*/i, '') || tm.name);
+    return m;
+  }, [teams]);
+
+  const assignments = useMemo(() => {
+    const all: TeamAssignment[] = [];
+    for (const tm of teams) all.push(...(assignmentsByTeam[tm.id] ?? []));
+    return all.sort((a, b) => toIsoUtc(b.createdAt).localeCompare(toIsoUtc(a.createdAt)));
+  }, [teams, assignmentsByTeam]);
+
   useEffect(() => {
     if (selectedId && assignments.some((a) => a.id === selectedId)) return;
     const pick =
@@ -65,18 +101,13 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
     setSelectedId(pick?.id ?? null);
   }, [assignments, selectedId]);
 
+  useEffect(() => setReplaying(false), [selectedId]);
+
   const selected = assignments.find((a) => a.id === selectedId) ?? null;
   const { steps, refresh: refreshSteps } = useAssignmentSteps(
     selected?.id ?? null,
     selected ? isLiveAssignmentStatus(selected.status) : false,
   );
-
-  // Replay is a per-mission view state — leave it when the selection changes.
-  useEffect(() => {
-    setReplaying(false);
-  }, [selectedId]);
-
-  const isTerminal = selected ? ['done', 'failed', 'aborted'].includes(selected.status) : false;
 
   const grouped = useMemo(
     () =>
@@ -87,9 +118,20 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
     [assignments],
   );
 
+  const isTerminal = selected ? ['done', 'failed', 'aborted'].includes(selected.status) : false;
+
+  const link = (goalId: string) => {
+    if (!selected || !goalId) return;
+    setLinking(true);
+    setTeamAssignmentGoal(selected.id, goalId)
+      .then(() => fetchTeamAssignments(selected.teamId))
+      .catch(silentCatch('missions:link-goal'))
+      .finally(() => setLinking(false));
+  };
+
   if (assignments.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
+      <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
         <Inbox className="w-8 h-8 text-foreground" />
         <p className="typo-body text-foreground">{ts.deck_empty}</p>
       </div>
@@ -97,8 +139,8 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
   }
 
   return (
-    <div className="h-full flex gap-4 min-h-0" data-testid="board-flight-deck">
-      {/* Mission rail */}
+    <div className="flex gap-4 min-h-0 h-[calc(100vh-240px)]" data-testid="goals-missions">
+      {/* Mission rail — every phase, every team. */}
       <div className="w-72 flex-shrink-0 min-h-0 overflow-y-auto pr-1 space-y-4">
         {grouped.map((g) => (
           <div key={g.id}>
@@ -110,6 +152,7 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
                 <MissionRow
                   key={a.id}
                   assignment={a}
+                  team={teamName.get(a.teamId) ?? ''}
                   selected={a.id === selectedId}
                   onClick={() => setSelectedId(a.id)}
                 />
@@ -119,14 +162,37 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
         ))}
       </div>
 
-      {/* Focused mission — the step relay */}
+      {/* The focused mission — its step relay. */}
       <div className="flex-1 min-w-0 min-h-0 overflow-y-auto rounded-card border border-primary/10 bg-secondary/10 px-5 py-4">
         {selected ? (
           <>
             <div className="flex items-start justify-between gap-3 mb-1">
               <h3 className="typo-section-title text-foreground">{selected.title.replace(/^Advance: /, '')}</h3>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <GoalChip goalId={selected.goalId} />
+                {selected.goalId ? (
+                  <GoalChip goalId={selected.goalId} />
+                ) : (
+                  /* THE POINT OF THIS VIEW. An ad-hoc mission has no goal, so the
+                     old Goals hub could not show it at all. Here it is, and it can
+                     be adopted into a goal. */
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-primary/15 bg-secondary/30 typo-caption text-foreground">
+                      <Link2 className="w-3 h-3" /> {dl.mission_unlinked}
+                    </span>
+                    {goals.length > 0 && (
+                      <ThemedSelect
+                        filterable
+                        hideSearch={goals.length < 8}
+                        value=""
+                        onValueChange={link}
+                        disabled={linking}
+                        placeholder={dl.mission_link_goal}
+                        options={goals.map((g) => ({ value: g.id, label: g.title }))}
+                        wrapperClassName="w-44"
+                      />
+                    )}
+                  </span>
+                )}
                 {selected.status === 'running' && (
                   <span className="inline-flex items-center gap-1.5 typo-caption text-blue-300">
                     <Radio className="w-3.5 h-3.5" /> {ts.deck_live}
@@ -154,7 +220,7 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
                   <button
                     type="button"
                     onClick={() => setReplaying(true)}
-                    data-testid="deck-replay"
+                    data-testid="missions-replay"
                     className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-violet-500/30 bg-violet-500/10 typo-caption text-violet-300 hover:bg-violet-500/20 transition-colors"
                   >
                     <History className="w-3 h-3" /> {ts.deck_replay}
@@ -162,15 +228,28 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
                 )}
               </div>
             </div>
+
             <div className="flex items-center gap-3 mb-4">
-              <span className={`typo-caption ${stepMeta(selected.status === 'awaiting_review' ? 'awaiting_review' : selected.status === 'running' ? 'running' : 'pending').tone}`}>
+              <span
+                className={`typo-caption ${
+                  stepMeta(
+                    selected.status === 'awaiting_review'
+                      ? 'awaiting_review'
+                      : selected.status === 'running'
+                        ? 'running'
+                        : 'pending',
+                  ).tone
+                }`}
+              >
                 {selected.status.replace('_', ' ')}
               </span>
+              <span className="typo-caption text-foreground">{teamName.get(selected.teamId)}</span>
               <span className="typo-caption text-foreground">
                 <RelativeTime timestamp={toIsoUtc(selected.createdAt)} />
               </span>
               <PersonaStack ids={steps.map((s) => s.assignedPersonaId)} index={personaIndex} />
             </div>
+
             {steps.length > 0 && replaying ? (
               <AssignmentReplay steps={steps} personaIndex={personaIndex} onExit={() => setReplaying(false)} />
             ) : steps.length > 0 ? (
@@ -179,7 +258,7 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
                 personaIndex={personaIndex}
                 onIntervened={() => {
                   refreshSteps();
-                  refreshAssignments();
+                  void fetchTeamAssignments(selected.teamId);
                 }}
               />
             ) : (
@@ -195,16 +274,14 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
 }
 
 function MissionRow({
-  assignment,
-  selected,
-  onClick,
+  assignment, team, selected, onClick,
 }: {
   assignment: TeamAssignment;
+  team: string;
   selected: boolean;
   onClick: () => void;
 }) {
-  // The rail rows fetch their steps lazily for the progress strip; live rows
-  // poll so the strip tracks the orchestrator in near-real-time.
+  // Live rows poll so the strip tracks the orchestrator in near-real-time.
   const { steps } = useAssignmentSteps(assignment.id, isLiveAssignmentStatus(assignment.status));
   return (
     <button
@@ -212,16 +289,18 @@ function MissionRow({
       onClick={onClick}
       aria-current={selected ? 'true' : undefined}
       className={`w-full text-left rounded-card border px-3 py-2.5 transition-colors ${
-        selected
-          ? 'border-primary/40 bg-secondary/40'
-          : 'border-primary/10 bg-background/40 hover:bg-secondary/25'
+        selected ? 'border-primary/40 bg-secondary/40' : 'border-primary/10 bg-background/40 hover:bg-secondary/25'
       }`}
       data-testid="mission-row"
     >
       <h4 className="typo-card-label text-foreground line-clamp-2">
         {assignment.title.replace(/^Advance: /, '')}
       </h4>
-      <div className="mt-2 flex items-center justify-between gap-2">
+      <div className="mt-1 flex items-center gap-1.5">
+        <span className="typo-caption text-foreground opacity-55 truncate">{team}</span>
+        {!assignment.goalId && <Link2 className="w-3 h-3 flex-shrink-0 text-foreground opacity-35" />}
+      </div>
+      <div className="mt-1.5 flex items-center justify-between gap-2">
         <StepProgressStrip steps={steps} />
         <span className="typo-caption text-foreground flex-shrink-0">
           <RelativeTime timestamp={toIsoUtc(assignment.createdAt)} />
@@ -231,4 +310,4 @@ function MissionRow({
   );
 }
 
-export default TeamAssignmentBoardFlightDeck;
+export default GoalsMissions;

@@ -33,7 +33,7 @@ use super::events::{
 use super::gates::{
     ensure_capability_in_coverage_with_context, find_first_unopen_gate,
     gate_seed_for_intent_with_context, init_gates_from_enumeration_with_context, is_gated_field,
-    legacy_cell_to_v3_field, synthesize_gate_question, CapabilityGates, PendingGate,
+    legacy_cell_to_v3_field, CapabilityGates, PendingGate,
 };
 use super::parser::{
     extract_result_usage, map_capability_field_to_legacy_dimension,
