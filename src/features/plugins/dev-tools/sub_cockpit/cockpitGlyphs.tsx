@@ -80,3 +80,108 @@ export function tracePath(pts: number[], w: number, hgt: number): string {
     .map((p, i) => `${i === 0 ? 'M' : 'L'}${((i / (pts.length - 1)) * w).toFixed(1)},${((1 - p) * hgt).toFixed(1)}`)
     .join(' ');
 }
+
+// ============================================================================
+// R3 additions — the health-grid cell vocabulary (50–100 contexts on screen).
+// Colour + symbol carry ALL information at this density; names exist only in
+// tooltips. One glyph max per cell; priority: regressed > inflight > moved >
+// proposed (error/cost/kpi pressure is already the cell's colour).
+// ============================================================================
+
+import type { CellTone, LoopMark, MockContextGroup, MockProject } from './cockpitMock';
+import { dominantTone, gridSummary } from './cockpitMock';
+
+export const CELL_HEX: Record<CellTone, { fill: string; border: string }> = {
+  crit: { fill: 'rgba(248,113,113,.28)', border: 'rgba(248,113,113,.75)' },
+  warn: { fill: 'rgba(245,158,11,.22)', border: 'rgba(245,158,11,.55)' },
+  ok: { fill: 'rgba(52,211,153,.13)', border: 'rgba(52,211,153,.35)' },
+  unmeasured: { fill: 'rgba(148,163,184,.05)', border: 'rgba(148,163,184,.28)' },
+};
+
+export const MARK_LABEL: Record<Exclude<LoopMark, null>, string> = {
+  regressed: 'verdict: REGRESSED — shipped and the number got worse',
+  moved: 'verdict: moved — shipped and the number improved',
+  inflight: 'dispatched — work in flight',
+  proposed: 'finding proposed — awaiting triage',
+};
+
+/** The loop glyph inside a cell. Sized for ~20px cells. */
+export function MarkGlyph({ mark }: { mark: LoopMark }) {
+  if (!mark) return null;
+  if (mark === 'regressed') {
+    return <svg width="9" height="9" viewBox="0 0 10 10" className="shrink-0"><path d="M1 1 H9 L5 9 Z" fill={NEON.red} style={{ filter: `drop-shadow(0 0 3px ${NEON.red})` }} /></svg>;
+  }
+  if (mark === 'moved') {
+    return <svg width="9" height="9" viewBox="0 0 10 10" className="shrink-0"><path d="M1 9 L5 1 L9 9 Z" fill={NEON.sky} /></svg>;
+  }
+  if (mark === 'inflight') {
+    return <span className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0" style={{ background: NEON.violet, boxShadow: `0 0 4px ${NEON.violet}` }} />;
+  }
+  return <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ border: `1px solid ${NEON.teal}` }} />;
+}
+
+/** Shared skinny masthead: identity + wiring lamps + the first-sight count line. */
+export function GridMasthead({ project, groups }: { project: MockProject; groups: MockContextGroup[] }) {
+  const s = gridSummary(groups);
+  return (
+    <div className="mx-5 mt-4 flex items-end justify-between gap-4 flex-wrap relative">
+      <div className="min-w-0">
+        <h2 className="typo-heading-lg text-foreground tracking-tight">{project.name}</h2>
+        {s.total > 0 && (
+          <div className="typo-caption tabular-nums mt-0.5 flex items-center gap-2.5">
+            <span className="text-foreground/40">{s.total} contexts</span>
+            {s.crit > 0 && <span style={{ color: NEON.red }}>● {s.crit} critical</span>}
+            {s.warn > 0 && <span style={{ color: NEON.amber }}>● {s.warn} warning</span>}
+            <span style={{ color: NEON.emerald }}>● {s.ok} healthy</span>
+            {s.unmeasured > 0 && <span className="text-foreground/35">◌ {s.unmeasured} unmeasured</span>}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        {project.wiring.map((x) => (
+          <span key={x.key} className="flex items-center gap-1.5" title={x.wired ? `${x.label} — wired` : `${x.label} — NOT wired: ${x.unlocks} stays dark`}>
+            <span
+              className="w-2 h-2 rounded-full"
+              style={x.wired ? { background: NEON.teal, boxShadow: `0 0 5px ${NEON.teal}` } : { border: '1px dashed rgba(148,163,184,.45)' }}
+            />
+            <span className={`typo-label uppercase tracking-widest ${x.wired ? 'text-foreground/60' : 'text-foreground/30'}`}>{x.key}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Bare tier — a ghost grid: the map exists, nothing is measured yet. */
+export function GhostGrid({ project }: { project: MockProject }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center relative" data-testid="cockpit-establish">
+      <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(50% 50% at 50% 40%, ${NEON.violet}0d, transparent 70%)` }} />
+      <div className="grid grid-cols-10 gap-1 mb-6 opacity-50">
+        {Array.from({ length: 50 }).map((_, i) => (
+          <span key={i} className="w-4 h-4 rounded-[3px]" style={{ border: '1px dashed rgba(148,163,184,.3)' }} />
+        ))}
+      </div>
+      <p className="typo-section-title text-foreground relative">Nothing measured yet</p>
+      <p className="typo-caption text-foreground/50 mt-1 max-w-md text-center relative">
+        Fifty dark cells are waiting. Each connection below lights a dimension of
+        every one of them.
+      </p>
+      <div className="mt-5 w-full max-w-md space-y-1 relative">
+        {project.wiring.map((s2, i) => (
+          <button key={s2.key} type="button" className="w-full flex items-center gap-3 rounded-card border border-foreground/[0.08] bg-black/20 px-3.5 py-2.5 hover:border-foreground/25 transition-colors text-left">
+            <span className="typo-label tabular-nums text-foreground/30 w-4">{String(i + 1).padStart(2, '0')}</span>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ border: '1px dashed rgba(148,163,184,.5)' }} />
+            <span className="min-w-0 flex-1">
+              <span className="typo-caption font-medium text-foreground/85 uppercase tracking-wide block">{s2.label}</span>
+              <span className="typo-label text-foreground/40 block truncate">lights {s2.unlocks}</span>
+            </span>
+            <span className="typo-label uppercase tracking-widest" style={{ color: `${NEON.teal}99` }}>wire ▸</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export { dominantTone };

@@ -301,3 +301,147 @@ const comet: MockProject = {
 };
 
 export const MOCK_PROJECTS: MockProject[] = [nimbus, atlas, comet];
+
+// ============================================================================
+// R3 — the first-layer HEALTH GRID (50–100 contexts per solid project).
+//
+// Text cannot carry this density; colour + symbolics must. Each context cell
+// holds FOUR dimension states (errors · cost · kpi · loop) so variants can
+// compose them differently: dominant-signal cells (Floorplan) or per-dimension
+// quadrants (Spectrum). Deterministic seeded generation — stable renders, no
+// Math.random.
+// ============================================================================
+
+export type CellTone = 'crit' | 'warn' | 'ok' | 'unmeasured';
+export type LoopMark = 'regressed' | 'moved' | 'inflight' | 'proposed' | null;
+
+export interface MockContextCell {
+  id: string;
+  name: string;
+  dims: { errors: CellTone; cost: CellTone; kpi: CellTone; loop: CellTone };
+  /** The loop artifact on this context, if any (drawn as the cell's glyph). */
+  mark: LoopMark;
+}
+
+export interface MockContextGroup {
+  id: string;
+  name: string;
+  cells: MockContextCell[];
+}
+
+/** Worst-wins dominant tone across measured dimensions. */
+export function dominantTone(c: MockContextCell): CellTone {
+  const d = Object.values(c.dims);
+  if (d.every((t) => t === 'unmeasured')) return 'unmeasured';
+  if (d.includes('crit')) return 'crit';
+  if (d.includes('warn')) return 'warn';
+  return 'ok';
+}
+
+function hash(s: string): number {
+  let h = 2166136261;
+  for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+const rnd = (seed: string) => (hash(seed) % 1000) / 1000;
+
+const TOPICS = ['ingest', 'render', 'cache', 'sync', 'routing', 'schema', 'webhooks', 'sessions', 'billing', 'export', 'search', 'notify', 'audit', 'quota', 'themes', 'uploads'];
+
+interface GridProfile {
+  /** [pCrit, pWarn] per measured dimension. */
+  errors: [number, number]; cost: [number, number]; kpi: [number, number];
+  /** Dimensions that are entirely UNWIRED for this project (dark everywhere). */
+  unwired: ('errors' | 'cost')[];
+}
+
+function tone(seed: string, p: [number, number], unwired: boolean): CellTone {
+  if (unwired) return 'unmeasured';
+  const r = rnd(seed);
+  if (r < p[0]) return 'crit';
+  if (r < p[0] + p[1]) return 'warn';
+  if (r > 0.96) return 'unmeasured'; // the odd context nothing measures yet
+  return 'ok';
+}
+
+function genGrid(
+  projectSeed: string,
+  groups: { name: string; size: number }[],
+  profile: GridProfile,
+  marks: { group: number; cell: number; mark: Exclude<LoopMark, null>; crit?: boolean }[],
+): MockContextGroup[] {
+  return groups.map((g, gi) => ({
+    id: `${projectSeed}-g${gi}`,
+    name: g.name,
+    cells: Array.from({ length: g.size }, (_, ci) => {
+      const seed = `${projectSeed}/${gi}/${ci}`;
+      const cell: MockContextCell = {
+        id: `${seed}`,
+        name: `${g.name} · ${TOPICS[hash(seed) % TOPICS.length]}`,
+        dims: {
+          errors: tone(`${seed}e`, profile.errors, profile.unwired.includes('errors')),
+          cost: tone(`${seed}c`, profile.cost, profile.unwired.includes('cost')),
+          kpi: tone(`${seed}k`, profile.kpi, false),
+          loop: 'ok',
+        },
+        mark: null,
+      };
+      const m = marks.find((x) => x.group === gi && x.cell === ci);
+      if (m) {
+        cell.mark = m.mark;
+        cell.dims.loop = m.mark === 'regressed' ? 'crit' : m.mark === 'moved' ? 'ok' : 'warn';
+        if (m.crit) cell.dims.errors = 'crit';
+      }
+      return cell;
+    }),
+  }));
+}
+
+/** FULL — 72 contexts / 8 groups; one loud regression, a moved win, work in flight. */
+export const GRID_FULL: MockContextGroup[] = genGrid(
+  'nimbus',
+  [
+    { name: 'Auth & Identity', size: 9 }, { name: 'Checkout', size: 11 },
+    { name: 'Email intelligence', size: 8 }, { name: 'Search', size: 10 },
+    { name: 'Data platform', size: 12 }, { name: 'Notifications', size: 7 },
+    { name: 'Admin console', size: 9 }, { name: 'Integrations', size: 6 },
+  ],
+  { errors: [0.05, 0.13], cost: [0.04, 0.1], kpi: [0.06, 0.16], unwired: [] },
+  [
+    { group: 1, cell: 3, mark: 'regressed', crit: true }, // the one you cannot miss
+    { group: 2, cell: 1, mark: 'moved' },                 // the $120→$30 win
+    { group: 1, cell: 7, mark: 'inflight' },
+    { group: 4, cell: 5, mark: 'inflight' },
+    { group: 3, cell: 2, mark: 'proposed' },
+    { group: 6, cell: 4, mark: 'proposed' },
+    { group: 0, cell: 6, mark: 'proposed' },
+  ],
+);
+
+/** HALF — 48 contexts / 6 groups; monitoring + LLM tracking UNWIRED, so the
+ *  errors and cost dimensions are dark EVERYWHERE — the wiring argument, visual. */
+export const GRID_HALF: MockContextGroup[] = genGrid(
+  'atlas',
+  [
+    { name: 'Docs engine', size: 10 }, { name: 'AI search', size: 9 },
+    { name: 'Versioning', size: 8 }, { name: 'Publishing', size: 8 },
+    { name: 'Accounts', size: 7 }, { name: 'Theming', size: 6 },
+  ],
+  { errors: [0, 0], cost: [0, 0], kpi: [0.05, 0.2], unwired: ['errors', 'cost'] },
+  [
+    { group: 1, cell: 2, mark: 'moved' },
+    { group: 0, cell: 5, mark: 'proposed' },
+  ],
+);
+
+export function gridFor(project: MockProject): MockContextGroup[] {
+  if (project.tier === 'full') return GRID_FULL;
+  if (project.tier === 'half') return GRID_HALF;
+  return [];
+}
+
+/** Global first-sight summary across a grid. */
+export function gridSummary(groups: MockContextGroup[]) {
+  const s = { crit: 0, warn: 0, ok: 0, unmeasured: 0, total: 0 };
+  for (const g of groups) for (const c of g.cells) { s[dominantTone(c)] += 1; s.total += 1; }
+  return s;
+}

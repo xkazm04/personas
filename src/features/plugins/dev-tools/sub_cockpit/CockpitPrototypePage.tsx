@@ -1,37 +1,40 @@
 // Project Cockpit — /prototype lab bench (docs/plans/dev-tools-cx-redesign.md §3).
 //
-// ROUND 2. R1's variants (Dimension board / Strategy ledger) were rejected —
-// stitching existing module styles (passport seals, coverage chips, verdict
-// pills) together read as a collage, not a design. R2 starts from a blank
-// creative slate: custom component sets per variant, with Personas theming
-// (dark surface, neon accent discipline, typo-* scale, radii/elevation) as the
-// ONLY inherited frame. Mock data only; nothing touches stores or IPC.
+// ROUND 3. R1 (reuse-collage) and R2 (Pulse Monitor / Transit lines) both
+// rejected — R2's failure was informational, not stylistic: text labels
+// overflow and truncate at real scale. A solid project has 50–100 contexts;
+// the FIRST LAYER must read as health at a glance, which means COLOUR +
+// SYMBOLICS carry the information and names exist only on demand (tooltips).
+// Click-through to specific KPIs is a LATER round.
 //
-//   • Pulse Monitor — a flight/medical instrument panel: readiness meters, a
-//     wiring power-rail, the loop's week as an ECG strip, feature telemetry
-//     channels with live traces, an arc-gauge cluster. Unwired = unlit glass.
-//   • Transit lines — the strategy as a transit network: each goal a glowing
-//     line whose bright portion IS its progress, features as stations showing
-//     their headline number, findings as branch stubs ending in verdict glyphs,
-//     each line terminating in a dispatch platform.
+// The R3 grid: one cell per context, grouped into context groups. Variants
+// differ in how the grid is composed into dimensions and how group-level
+// status is indicated:
+//   • Floorplan — composed spatially BY GROUP (chip die-map); cell = dominant
+//     worst-wins colour + one loop glyph; group status = tinted frame + lamp.
+//     Answers "WHERE in my system is it unhealthy?"
+//   • Spectrum — composed BY DIMENSION inside each cell (2×2 quadrants:
+//     errors|cost / kpi|loop); rows + cells sort worst-first (triage order);
+//     group status = four per-dimension lamps on the rail. Answers "WHAT KIND
+//     of unhealthy?" — and an unwired sensor reads as a dark quadrant column.
 import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
 
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { MOCK_PROJECTS } from './cockpitMock';
-import CockpitPulseMonitor from './CockpitPulseMonitor';
-import CockpitTransitLines from './CockpitTransitLines';
+import CockpitFloorplan from './CockpitFloorplan';
+import CockpitSpectrum from './CockpitSpectrum';
 
-type VariantId = 'pulse' | 'transit';
+type VariantId = 'floorplan' | 'spectrum';
 
 const VARIANT_TABS: SegmentedTab<VariantId>[] = [
-  { id: 'pulse', label: 'Pulse Monitor' },
-  { id: 'transit', label: 'Transit lines' },
+  { id: 'floorplan', label: 'Floorplan' },
+  { id: 'spectrum', label: 'Spectrum' },
 ];
 
 export default function CockpitPrototypePage() {
-  const [variant, setVariant] = useState<VariantId>('pulse');
+  const [variant, setVariant] = useState<VariantId>('floorplan');
   const [projectId, setProjectId] = useState(MOCK_PROJECTS[0]!.id);
   const project = MOCK_PROJECTS.find((p) => p.id === projectId) ?? MOCK_PROJECTS[0]!;
 
@@ -45,8 +48,8 @@ export default function CockpitPrototypePage() {
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Project Cockpit — prototype R2"
-        subtitle="Mock data · custom component sets, theme frame only · dispatch + wiring CTAs are stubs"
+        title="Health grid — prototype R3"
+        subtitle="First layer · one cell per context (50–100) · colour + symbolics only, names on hover · KPI click-through is a later round"
         fitWidth
         actions={
           <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -66,14 +69,14 @@ export default function CockpitPrototypePage() {
               variant="segment"
               size="sm"
               fullWidth={false}
-              ariaLabel="Cockpit variant (prototype)"
+              ariaLabel="Grid variant (prototype)"
             />
           </div>
         }
       />
-      {variant === 'pulse'
-        ? <CockpitPulseMonitor project={project} />
-        : <CockpitTransitLines project={project} />}
+      {variant === 'floorplan'
+        ? <CockpitFloorplan project={project} />
+        : <CockpitSpectrum project={project} />}
     </ContentBox>
   );
 }
