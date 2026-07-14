@@ -424,7 +424,7 @@
       ]
     },
     {
-      "doc": "docs/features/fleet.md",
+      "doc": "docs/features/plugins/dev tools/fleet.md",
       "sourceGlobs": [
         "src/features/plugins/fleet/**",
         "src-tauri/src/commands/fleet/**",

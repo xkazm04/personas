@@ -2,6 +2,12 @@
 
 > An AI-guided development pipeline that turns any codebase into a managed project — scanned into semantic contexts, mined for improvement ideas by 21 specialized agents, triaged Tinder-style, executed as tasks, and shipped as draft pull requests with agent reasoning attached.
 
+> **Folder index:** [`README.md`](./README.md). For the cross-surface picture read
+> [`cx-map.md`](./cx-map.md) (the terrain for the 2026-07 CX/UX rethink); for the
+> shipped detect→verify→learn loop read [`findings-loop.md`](./findings-loop.md).
+> ⚠ The "Five development directions" section below predates the findings loop —
+> treat it as history, not a plan.
+
 The plugin lives at `src/features/plugins/dev-tools/` and is exposed through the **Plugins → Dev Tools** entry in the sidebar. The Rust surface lives at `src-tauri/src/commands/infrastructure/dev_tools.rs` plus sibling modules for the long-running operations (`context_generation.rs`, `idea_scanner.rs`, `task_executor.rs`).
 
 ---
