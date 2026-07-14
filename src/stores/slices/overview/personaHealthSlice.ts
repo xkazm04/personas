@@ -11,6 +11,7 @@ import { listHealingIssues } from "@/api/overview/healing";
 import { getHealthBundle } from "@/api/overview/health";
 import { log } from "@/lib/log";
 import { measureStoreAction } from "@/lib/utils/storePerf";
+import { computeGrade, computeHeartbeatScore } from "@/features/overview/sub_health/libs/compositeHealthScore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -123,32 +124,10 @@ export interface PersonaHealthSlice {
 // Analytics helpers
 // ---------------------------------------------------------------------------
 
-function computeGrade(score: number): HealthGrade {
-  if (score >= 80) return 'healthy';
-  if (score >= 50) return 'degraded';
-  if (score > 0) return 'critical';
-  return 'unknown';
-}
-
-function computeHeartbeatScore(
-  successRate: number,
-  healingFreq: number,
-  rollbackCount: number,
-  budgetRatio: number,
-): number {
-  // Weighted composite: success rate (40%), healing freq (20%), rollbacks (20%), budget (20%)
-  const successScore = successRate; // already 0-100
-  const healingScore = Math.max(0, 100 - healingFreq * 25); // 4+/day = 0
-  const rollbackScore = Math.max(0, 100 - rollbackCount * 33); // 3+ = 0
-  const budgetScore = budgetRatio > 1 ? 0 : budgetRatio > 0.8 ? 30 : (1 - budgetRatio) * 100;
-
-  return Math.round(
-    successScore * 0.4 +
-    healingScore * 0.2 +
-    rollbackScore * 0.2 +
-    budgetScore * 0.2
-  );
-}
+// `computeGrade` and `computeHeartbeatScore` are imported from the single
+// scoring module (`sub_health/libs/compositeHealthScore`) — they used to be
+// duplicated here (grade verbatim, heartbeat with a non-monotonic budget
+// sub-score). The shared budget curve is now strictly monotonic.
 
 function detectFailureTrend(
   personaDailyRates: number[],

@@ -6,6 +6,13 @@ import type {
   RoutingRecommendation,
 } from '@/stores/slices/overview/personaHealthSlice';
 import type { Translations } from '@/i18n/generated/types';
+import {
+  computeGrade,
+  scoreBudget,
+  scoreHeartbeatSuccess,
+  scoreHealingFrequency,
+  scoreRollback,
+} from '../../libs/compositeHealthScore';
 
 // ---------------------------------------------------------------------------
 // Shared model + design tokens for the Vitals Ledger heartbeats view.
@@ -38,12 +45,12 @@ export const GRADE_THEME: Record<HealthGrade, {
   },
 };
 
-export function gradeFromScore(score: number): HealthGrade {
-  if (score >= 80) return 'healthy';
-  if (score >= 50) return 'degraded';
-  if (score > 0) return 'critical';
-  return 'unknown';
-}
+/**
+ * Alias for the single `computeGrade` in the scoring module. Kept as a named
+ * export so existing callers (`primitives.tsx`, this file) don't churn, while
+ * the threshold logic lives in exactly one place.
+ */
+export const gradeFromScore = computeGrade;
 
 export type SegKey = 'success' | 'healing' | 'stability' | 'budget';
 export interface SubScore { key: SegKey; score: number; detail: string }
@@ -55,14 +62,15 @@ export interface SubScore { key: SegKey; score: number; detail: string }
  * stability 20, budget 20).
  */
 export function subScores(s: PersonaHealthSignal): SubScore[] {
-  const healingScore = Math.max(0, 100 - s.healingFrequency * 25);
-  const rollbackScore = Math.max(0, 100 - s.rollbackCount * 33);
-  const budgetScore = s.budgetRatio > 1 ? 0 : s.budgetRatio > 0.8 ? 30 : (1 - s.budgetRatio) * 100;
+  // Uses the SAME sub-score helpers as `computeHeartbeatScore`, so the
+  // segmented bar can never disagree with the composite it decomposes. The
+  // budget segment is now strictly monotonic (was: a >0.8 clamp to 30 that made
+  // the bar rise as the budget worsened).
   return [
-    { key: 'success', score: Math.round(s.successRate), detail: `${s.successRate.toFixed(0)}%` },
-    { key: 'healing', score: Math.round(healingScore), detail: `${s.healingFrequency.toFixed(1)}/d` },
-    { key: 'stability', score: Math.round(rollbackScore), detail: `${s.rollbackCount}` },
-    { key: 'budget', score: Math.round(budgetScore), detail: `${(s.budgetRatio * 100).toFixed(0)}%` },
+    { key: 'success', score: Math.round(scoreHeartbeatSuccess(s.successRate)), detail: `${s.successRate.toFixed(0)}%` },
+    { key: 'healing', score: Math.round(scoreHealingFrequency(s.healingFrequency)), detail: `${s.healingFrequency.toFixed(1)}/d` },
+    { key: 'stability', score: Math.round(scoreRollback(s.rollbackCount)), detail: `${s.rollbackCount}` },
+    { key: 'budget', score: Math.round(scoreBudget(s.budgetRatio)), detail: `${(s.budgetRatio * 100).toFixed(0)}%` },
   ];
 }
 

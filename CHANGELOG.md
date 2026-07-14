@@ -36,6 +36,7 @@ Until a stable **1.0** release, minor versions may contain breaking changes to I
 - `.editorconfig` and `.gitattributes` for cross-platform consistency.
 
 ### Changed
+- **One health formula** — the Health screen's three scoring paths (Heartbeats-tab score, Status-page composite, agents health digest) now resolve grades through a single `computeGrade` threshold (80/50) instead of four verbatim copies, and the heartbeat budget sub-score is strictly monotonic: a persona spending more of its budget can no longer *raise* its own health score (the old curve jumped a 79%-spent persona from 21 up to 30 at 81% spent). Some Heartbeats grades near the 80%-budget boundary shift as a result. Scoring is consolidated in one dev-weight-asserted module.
 - `README.md` restructured for a public audience: badges, quickstart-first, deep content moved to `/docs`.
 
 ### Fixed

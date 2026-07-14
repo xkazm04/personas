@@ -7,7 +7,7 @@ import type { LucideIcon } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useStatusPageData } from '../libs/useStatusPageData';
-import type { CompositeHealthEntry, DayStatus } from '../libs/compositeHealthScore';
+import { computeGrade, type CompositeHealthEntry, type DayStatus } from '../libs/compositeHealthScore';
 import type { HealthGrade } from '@/stores/slices/overview/personaHealthSlice';
 import { DebtText } from '@/i18n/DebtText';
 import { GRADE_THEME } from './heartbeats/model';
@@ -46,12 +46,7 @@ export function StatusPageView() {
     return `${Math.round(ago / 60)}m ago`;
   }, [lastRefreshedAt]);
 
-  const globalGrade = useMemo((): HealthGrade => {
-    if (globalScore >= 80) return 'healthy';
-    if (globalScore >= 50) return 'degraded';
-    if (globalScore > 0) return 'critical';
-    return 'unknown';
-  }, [globalScore]);
+  const globalGrade = useMemo((): HealthGrade => computeGrade(globalScore), [globalScore]);
 
   const meta = GRADE_META[globalGrade];
   const gth = GRADE_THEME[globalGrade];
