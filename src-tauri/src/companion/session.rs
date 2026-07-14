@@ -12,7 +12,6 @@
 
 use std::collections::{HashMap, HashSet};
 use std::process::Stdio;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
@@ -176,9 +175,11 @@ impl Drop for BuildTurnGuard {
 /// 2. The semantics from Q3 are "stop = next user input"; that's a
 ///    cooperative pause, not a process-kill. A flag the spawned task
 ///    checks before each potentially-blocking step is exactly that.
-/// Monotonic generation counter for autonomous continuation ticks. Each
-/// scheduled tick captures the current value; cancelling advances it. A tick
-/// aborts as soon as the global value no longer matches the one it captured.
+/// Monotonic generation counters for autonomous continuation ticks, **keyed by
+/// conversation** (multiconv P1): a user message in thread A must not cancel a
+/// pending tick in thread B. Each scheduled tick captures its conversation's
+/// current value; cancelling advances it. A tick aborts as soon as its
+/// conversation's value no longer matches the one it captured.
 ///
 /// This replaces a single `AtomicBool` that was *reset* on every new schedule:
 /// a user "stop" set the bool, but if that same turn's reply also emitted
@@ -186,23 +187,46 @@ impl Drop for BuildTurnGuard {
 /// originally-pending tick — still polling — saw `cancelled == false` and fired,
 /// so the loop the user halted kept running (bug-hunt 2026-06-07 companion #1).
 /// A generation token is never reset (only advanced), so a stale tick can never
-/// be revived by a later schedule.
-static AUTONOMOUS_GEN: AtomicU64 = AtomicU64::new(0);
+/// be revived by a later schedule. (The single global counter era ended with
+/// the conversation keying; same never-reset invariant per key.)
+static AUTONOMOUS_GENS: Mutex<Option<HashMap<String, u64>>> = Mutex::new(None);
 
-/// Cancel every pending continuation tick by advancing the generation. Any tick
-/// that captured an earlier generation aborts on its next check.
-pub fn cancel_pending_autonomy() {
-    AUTONOMOUS_GEN.fetch_add(1, Ordering::SeqCst);
+/// Read (and materialize) a conversation's current generation. Materializing on
+/// read means `cancel_all_pending_autonomy` can bump every conversation that
+/// ever scheduled or checked a tick.
+fn autonomy_gen_of(conversation_id: &str) -> u64 {
+    let mut guard = AUTONOMOUS_GENS.lock().expect("autonomy gen map poisoned");
+    *guard
+        .get_or_insert_with(HashMap::new)
+        .entry(conversation_id.to_string())
+        .or_insert(0)
 }
 
-/// Snapshot the current generation when scheduling a tick.
-fn current_autonomy_gen() -> u64 {
-    AUTONOMOUS_GEN.load(Ordering::SeqCst)
+/// Cancel this conversation's pending continuation tick(s) by advancing its
+/// generation. Other conversations' chains are untouched.
+pub fn cancel_pending_autonomy(conversation_id: &str) {
+    let mut guard = AUTONOMOUS_GENS.lock().expect("autonomy gen map poisoned");
+    *guard
+        .get_or_insert_with(HashMap::new)
+        .entry(conversation_id.to_string())
+        .or_insert(0) += 1;
 }
 
-/// Has a newer schedule or a cancel superseded the tick that captured `my_gen`?
-fn autonomous_superseded(my_gen: u64) -> bool {
-    AUTONOMOUS_GEN.load(Ordering::SeqCst) != my_gen
+/// Cancel pending continuation ticks in EVERY conversation — the explicit
+/// stop-button semantics (`companion_cancel_autonomy`).
+pub fn cancel_all_pending_autonomy() {
+    let mut guard = AUTONOMOUS_GENS.lock().expect("autonomy gen map poisoned");
+    if let Some(map) = guard.as_mut() {
+        for gen in map.values_mut() {
+            *gen += 1;
+        }
+    }
+}
+
+/// Has a newer schedule or a cancel superseded the tick that captured `my_gen`
+/// on this conversation?
+fn autonomous_superseded(conversation_id: &str, my_gen: u64) -> bool {
+    autonomy_gen_of(conversation_id) != my_gen
 }
 
 /// Tauri event channel that streams every CLI line to the frontend.
@@ -1090,23 +1114,25 @@ fn schedule_autonomous_tick(
     recall_synthesis_enabled: bool,
     conversation_id: String,
 ) {
-    // Capture the generation this tick belongs to. A user "stop" (or any newer
-    // schedule) advances the global generation, after which this tick aborts —
-    // and, unlike the old reset-the-bool scheme, it can never be revived.
-    let my_gen = current_autonomy_gen();
+    // Capture the generation this tick belongs to. A user "stop" in THIS
+    // conversation (or any newer schedule) advances its generation, after
+    // which this tick aborts — and, unlike the old reset-the-bool scheme, it
+    // can never be revived. Other conversations' ticks are independent.
+    let my_gen = autonomy_gen_of(&conversation_id);
+    let gen_conversation = conversation_id.clone();
     let _ = tauri::async_runtime::spawn_blocking(move || {
         // Poll the generation while waiting out the delay. A coarse
         // 200ms tick is plenty — the delay itself is 15s; finer polling
         // wouldn't change the user's experience.
         let started = Instant::now();
         while started.elapsed() < AUTONOMOUS_CONTINUATION_DELAY {
-            if autonomous_superseded(my_gen) {
+            if autonomous_superseded(&gen_conversation, my_gen) {
                 tracing::debug!("autonomous tick superseded during delay");
                 return;
             }
             std::thread::sleep(Duration::from_millis(200));
         }
-        if autonomous_superseded(my_gen) {
+        if autonomous_superseded(&gen_conversation, my_gen) {
             tracing::debug!("autonomous tick superseded at delay boundary");
             return;
         }
@@ -1238,8 +1264,9 @@ pub fn spawn_proactive_turn(
 
 /// The model every full companion turn runs on. Recorded into the turn ledger
 /// (`companion_turn.model`) and passed to the CLI `--model` flag — one source so
-/// the two never drift.
-const COMPANION_TURN_MODEL: &str = "claude-opus-4-8";
+/// the two never drift. Sourced from the P4 routing table
+/// (`model_routing::MAIN`), which also carries the default reasoning effort.
+const COMPANION_TURN_MODEL: &str = crate::companion::model_routing::MAIN.model;
 
 /// Reasoning effort for web-build (Studio) turns. Build sessions prefer quality
 /// over speed/cost — non-technical users can't specify the quality bars a dev
@@ -1644,9 +1671,12 @@ async fn run_cli(
         };
         argv.push("--effort".into());
         argv.push(effort.into());
-    } else if let Some(effort) = companion_effort_override() {
-        // Bench seam: chat turns normally run on the model's default effort;
-        // PERSONAS_ATHENA_EFFORT pins it for a measured run.
+    } else if let Some(effort) = companion_effort_override()
+        .or_else(|| crate::companion::model_routing::MAIN.effort.map(String::from))
+    {
+        // Chat turns run on the P4 routing tier's effort (Opus@low — bench:
+        // identical accuracy to the default, 16% lower p50 latency);
+        // PERSONAS_ATHENA_EFFORT pins a different level for a measured run.
         argv.push("--effort".into());
         argv.push(effort);
     }
@@ -1719,15 +1749,14 @@ async fn run_cli(
     // this the GUI app's `cmd /C claude.cmd` child drains the desktop heap
     // and eventually dies on spawn with 0xC0000142.
     apply_no_console_window(&mut cmd);
-    // H11 — for build turns, tie the CLI's lifetime to this future. On the
-    // backend TURN_TIMEOUT (or any future-drop/cancellation), dropping `run_cli`
+    // H11 — tie the CLI's lifetime to this future. On the backend
+    // TURN_TIMEOUT (or any future-drop/cancellation), dropping `run_cli`
     // drops `child`; without kill_on_drop tokio DETACHES it and claude keeps
-    // editing the project's files unattended (a real zombie seen live). With it,
-    // a timed-out/cancelled turn actually dies. Scoped to build turns
-    // (cwd_override) so companion-chat behavior is unchanged.
-    if cwd_override.is_some() {
-        cmd.kill_on_drop(true);
-    }
+    // running unattended (a real zombie seen live on build turns). Originally
+    // scoped to build turns; multiconv P1 extends it to chat turns too — with
+    // concurrent per-conversation turns, a dropped chat-turn future orphaning
+    // its claude child is no longer a tolerable edge.
+    cmd.kill_on_drop(true);
     let mut child = cmd
         .spawn()
         .map_err(|e| AppError::Internal(format!("spawn claude: {e}")))?;
@@ -2021,6 +2050,10 @@ pub fn clear_claude_session_id(pool: &UserDbPool, session_id: &str) -> Result<()
 
 /// Wipe the conversation transcript so Athena starts fresh.
 ///
+/// `conversation_id`: `Some(id)` wipes ONE thread's episodes (multiconv P1 —
+/// resetting the "auth bug" thread must not erase "Q3 planning"); `None`
+/// wipes every conversation (the pre-multiconv full reset).
+///
 /// Scope (deliberate):
 ///   - SQL: deletes episode rows from `companion_node`, plus their
 ///     companion_fts and companion_embedding entries. **Doctrine, identity,
@@ -2030,21 +2063,34 @@ pub fn clear_claude_session_id(pool: &UserDbPool, session_id: &str) -> Result<()
 ///   - Disk: renames `<brain>/episodes/` to `<brain>/episodes-archive-<ts>/`
 ///     so the markdown source-of-truth isn't actually destroyed (no-data-
 ///     loss principle), but the next turn sees an empty episodes dir.
-///     A fresh empty `episodes/` is recreated.
+///     A fresh empty `episodes/` is recreated. **Global-wipe only** — the
+///     markdown dir isn't partitioned by conversation, so a scoped wipe
+///     leaves disk untouched (SQL is what the UI binds to).
 ///   - Identity, constitution, doctrine, semantic facts: untouched.
-pub fn wipe_transcript(pool: &UserDbPool) -> Result<(), AppError> {
+pub fn wipe_transcript(
+    pool: &UserDbPool,
+    conversation_id: Option<&str>,
+) -> Result<(), AppError> {
     let conn = pool.get()?;
 
     // Collect episode IDs first; we need them for the FTS + vec0 deletes
     // before we drop the parent node rows.
-    let episode_ids: Vec<String> =
-        match conn.prepare("SELECT id FROM companion_node WHERE kind = 'episode'") {
+    let episode_ids: Vec<String> = {
+        let (sql, args): (&str, Vec<&dyn rusqlite::ToSql>) = match conversation_id.as_ref() {
+            Some(cid) => (
+                "SELECT id FROM companion_node WHERE kind = 'episode' AND session_id = ?1",
+                vec![cid as &dyn rusqlite::ToSql],
+            ),
+            None => ("SELECT id FROM companion_node WHERE kind = 'episode'", vec![]),
+        };
+        match conn.prepare(sql) {
             Ok(mut stmt) => stmt
-                .query_map([], |row| row.get::<_, String>(0))
+                .query_map(args.as_slice(), |row| row.get::<_, String>(0))
                 .map(|rows| rows.filter_map(Result::ok).collect())
                 .unwrap_or_default(),
             Err(_) => Vec::new(),
-        };
+        }
+    };
 
     if !episode_ids.is_empty() {
         let placeholders = episode_ids
@@ -2072,8 +2118,12 @@ pub fn wipe_transcript(pool: &UserDbPool) -> Result<(), AppError> {
         );
     }
 
-    // Archive the on-disk episodes folder. Failure here is non-fatal —
+    // Archive the on-disk episodes folder — global wipe only (the markdown
+    // dir isn't partitioned by conversation). Failure here is non-fatal —
     // SQL has already been wiped, which is what the UI binds to.
+    if conversation_id.is_some() {
+        return Ok(());
+    }
     if let Ok(root) = crate::companion::disk::brain_root() {
         let episodes = root.join("episodes");
         if episodes.exists() {

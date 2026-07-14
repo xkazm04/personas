@@ -97,6 +97,23 @@ export interface PendingPlayback {
  */
 export type FooterNoticeKind = 'analysis_complete' | 'proactive';
 
+/**
+ * Live-turn scratch state for ONE conversation — everything that only
+ * matters while (or right after) a turn streams in that thread. Keyed by
+ * conversation id in `liveTurns`; the flat fields on the store mirror the
+ * ACTIVE conversation's slice (see the mirror invariant at `liveTurns`).
+ */
+export type LiveTurn = {
+  turnId: string | null;
+  streaming: boolean;
+  streamingText: string;
+  streamingPhase: StreamPhase | null;
+  streamingBeat: string | null;
+};
+
+/** One message the user sent while that conversation's turn was streaming. */
+export type QueuedMessage = { id: string; text: string; mode: 'queue' | 'interrupt' };
+
 export interface FooterNotice {
   id: string;
   kind: FooterNoticeKind;
@@ -153,12 +170,43 @@ interface CompanionStore {
 
   setMessages: (msgs: CompanionMessage[]) => void;
   appendMessage: (msg: CompanionMessage) => void;
+  /**
+   * Legacy flat setters, kept as delegates onto the ACTIVE conversation's
+   * `liveTurns` slice (mirror invariant below) — so pre-partition call
+   * sites (test bridge, older effects) still route to the right thread.
+   */
   setStreaming: (value: boolean) => void;
   appendStreamingText: (chunk: string) => void;
   resetStreamingText: () => void;
   setStreamingPhase: (phase: StreamPhase | null) => void;
   setStreamingBeat: (beat: string | null) => void;
   setSendError: (err: string | null) => void;
+
+  /**
+   * ── Per-conversation live-turn state (multiconv P1) ──
+   *
+   * The backend runs turns CONCURRENTLY across conversations, so the live
+   * turn (streaming flag, accumulated text, phase, beat, turn id) is keyed
+   * by conversation id here.
+   *
+   * MIRROR INVARIANT: the flat `streaming` / `streamingText` /
+   * `streamingPhase` / `streamingBeat` fields above are a read-mirror of
+   * the ACTIVE conversation's slice. Every action below, when it targets
+   * the active conversation, also writes the flat fields in the SAME
+   * set() call; `setActiveConversationId` swaps the flat fields to the
+   * new conversation's snapshot atomically. Consumers that predate the
+   * partition (orb, footer icon, panel body, test bridge) therefore keep
+   * reading "the focused thread's turn" without knowing the map exists.
+   * Never write the flat fields directly — go through these actions or
+   * the delegating flat setters above.
+   */
+  liveTurns: Record<string, LiveTurn>;
+  /** Turn started: streaming on, text/phase/beat reset, turn id recorded. */
+  beginLiveTurn: (conversationId: string, turnId: string) => void;
+  patchLiveTurn: (conversationId: string, patch: Partial<LiveTurn>) => void;
+  appendLiveText: (conversationId: string, chunk: string) => void;
+  /** Turn over: streaming off, turn id cleared (text kept until the next begin). */
+  endLiveTurn: (conversationId: string) => void;
 
   // ── Conversations (multi-conversation threads) ──
   // The registry of threads + which one is active. The transcript above
@@ -372,17 +420,22 @@ interface CompanionStore {
 
   /**
    * Async-UX phase 4 — non-blocking conversation. Messages the user sent
-   * while a turn was still streaming. Each is queued (FIFO) and drained
+   * while a turn was still streaming, keyed by conversation id (each
+   * thread drains its own queue when ITS turn completes). FIFO; drained
    * one-per-turn-completion by CompanionPanel. `mode` records how the
    * message was classified at send time: an `interrupt` also stopped the
    * in-flight turn; a `queue` simply waits its turn. The composer is never
    * disabled — this is where mid-turn input lands instead of being blocked.
+   *
+   * `queuedMessages` is the ACTIVE conversation's mirror — same invariant
+   * as `liveTurns`.
    */
-  queuedMessages: { id: string; text: string; mode: 'queue' | 'interrupt' }[];
-  enqueueMessage: (text: string, mode: 'queue' | 'interrupt') => void;
-  shiftQueuedMessage: () => { id: string; text: string; mode: 'queue' | 'interrupt' } | null;
-  removeQueuedMessage: (id: string) => void;
-  clearQueuedMessages: () => void;
+  queuedByConversation: Record<string, QueuedMessage[]>;
+  queuedMessages: QueuedMessage[];
+  enqueueMessage: (conversationId: string, text: string, mode: 'queue' | 'interrupt') => void;
+  shiftQueuedMessage: (conversationId: string) => QueuedMessage | null;
+  removeQueuedMessage: (conversationId: string, id: string) => void;
+  clearQueuedMessages: (conversationId: string) => void;
 
   /**
    * The "operational thread": Athena's live TodoWrite plan, parsed from
@@ -566,6 +619,52 @@ export interface PendingPromptPayload {
  *  newer flash cancels the prior one's pending clear). */
 let flashTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** Idle snapshot for a conversation with no live turn on record. */
+const IDLE_LIVE_TURN: LiveTurn = {
+  turnId: null,
+  streaming: false,
+  streamingText: '',
+  streamingPhase: null,
+  streamingBeat: null,
+};
+
+/**
+ * Build the set() patch that writes one conversation's live-turn slice while
+ * upholding the mirror invariant: when the write targets the active
+ * conversation, the flat mirror fields ride in the same patch.
+ */
+function withLiveTurn(
+  s: CompanionStore,
+  conversationId: string,
+  next: LiveTurn,
+): Partial<CompanionStore> {
+  const patch: Partial<CompanionStore> = {
+    liveTurns: { ...s.liveTurns, [conversationId]: next },
+  };
+  if (conversationId === s.activeConversationId) {
+    patch.streaming = next.streaming;
+    patch.streamingText = next.streamingText;
+    patch.streamingPhase = next.streamingPhase;
+    patch.streamingBeat = next.streamingBeat;
+  }
+  return patch;
+}
+
+/** Same mirror-upholding patch builder for the per-conversation queue. */
+function withQueue(
+  s: CompanionStore,
+  conversationId: string,
+  next: QueuedMessage[],
+): Partial<CompanionStore> {
+  const patch: Partial<CompanionStore> = {
+    queuedByConversation: { ...s.queuedByConversation, [conversationId]: next },
+  };
+  if (conversationId === s.activeConversationId) {
+    patch.queuedMessages = next;
+  }
+  return patch;
+}
+
 export const useCompanionStore = create<CompanionStore>((set, get) => ({
   state: 'collapsed',
   brainPath: null,
@@ -586,13 +685,54 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   setMessages: (messages) => set({ messages }),
   appendMessage: (msg) =>
     set((s) => ({ messages: [...s.messages, msg] })),
-  setStreaming: (streaming) => set({ streaming }),
+  // Legacy flat setters — delegate to the active conversation's slice so
+  // any caller we haven't migrated still routes to the focused thread.
+  setStreaming: (value) =>
+    get().patchLiveTurn(get().activeConversationId, { streaming: value }),
   appendStreamingText: (chunk) =>
-    set((s) => ({ streamingText: s.streamingText + chunk })),
-  resetStreamingText: () => set({ streamingText: '' }),
-  setStreamingPhase: (streamingPhase) => set({ streamingPhase }),
-  setStreamingBeat: (streamingBeat) => set({ streamingBeat }),
+    get().appendLiveText(get().activeConversationId, chunk),
+  resetStreamingText: () =>
+    get().patchLiveTurn(get().activeConversationId, { streamingText: '' }),
+  setStreamingPhase: (streamingPhase) =>
+    get().patchLiveTurn(get().activeConversationId, { streamingPhase }),
+  setStreamingBeat: (streamingBeat) =>
+    get().patchLiveTurn(get().activeConversationId, { streamingBeat }),
   setSendError: (sendError) => set({ sendError }),
+
+  liveTurns: {},
+  beginLiveTurn: (conversationId, turnId) =>
+    set((s) =>
+      withLiveTurn(s, conversationId, {
+        turnId,
+        streaming: true,
+        streamingText: '',
+        streamingPhase: null,
+        streamingBeat: null,
+      }),
+    ),
+  patchLiveTurn: (conversationId, patch) =>
+    set((s) =>
+      withLiveTurn(s, conversationId, {
+        ...(s.liveTurns[conversationId] ?? IDLE_LIVE_TURN),
+        ...patch,
+      }),
+    ),
+  appendLiveText: (conversationId, chunk) =>
+    set((s) => {
+      const cur = s.liveTurns[conversationId] ?? IDLE_LIVE_TURN;
+      return withLiveTurn(s, conversationId, {
+        ...cur,
+        streamingText: cur.streamingText + chunk,
+      });
+    }),
+  endLiveTurn: (conversationId) =>
+    set((s) =>
+      withLiveTurn(s, conversationId, {
+        ...(s.liveTurns[conversationId] ?? IDLE_LIVE_TURN),
+        streaming: false,
+        turnId: null,
+      }),
+    ),
 
   approvals: [],
   setApprovals: (approvals) => set({ approvals }),
@@ -608,7 +748,21 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   conversations: [],
   activeConversationId: DEFAULT_CONVERSATION_ID,
   setConversations: (conversations) => set({ conversations }),
-  setActiveConversationId: (activeConversationId) => set({ activeConversationId }),
+  setActiveConversationId: (activeConversationId) =>
+    set((s) => {
+      // Mirror swap: switching threads atomically re-points the flat
+      // live-turn + queue mirrors at the new conversation's slices (idle /
+      // empty when it has none) so consumers never see a torn frame.
+      const live = s.liveTurns[activeConversationId] ?? IDLE_LIVE_TURN;
+      return {
+        activeConversationId,
+        streaming: live.streaming,
+        streamingText: live.streamingText,
+        streamingPhase: live.streamingPhase,
+        streamingBeat: live.streamingBeat,
+        queuedMessages: s.queuedByConversation[activeConversationId] ?? [],
+      };
+    }),
   upsertConversation: (row) =>
     set((s) => {
       const idx = s.conversations.findIndex((c) => c.id === row.id);
@@ -761,7 +915,14 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       // memory_curation_run, …) is pinned too and renders as the compact
       // TaskTag. Approval-click tasks fire while idle (streaming=false) →
       // they stay out of the transcript and surface only in the tray.
-      const shouldPin = job.kind === 'connector_use' || s.streaming;
+      // "Streaming" is judged against the job's OWN conversation when the
+      // backend stamped one (multiconv: a focused thread's idle state says
+      // nothing about the thread that spawned this job); legacy events
+      // without a conversation fall back to the active mirror.
+      const jobStreaming = job.conversationId
+        ? !!s.liveTurns[job.conversationId]?.streaming
+        : s.streaming;
+      const shouldPin = job.kind === 'connector_use' || jobStreaming;
       const alreadyAttached = Object.values(s.connectorJobIdsByEpisodeId).some(
         (ids) => ids.includes(job.id),
       );
@@ -777,7 +938,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
         const lastAssistant = [...s.messages]
           .reverse()
           .find((m) => m.role === 'assistant');
-        if (!s.streaming && job.kind === 'connector_use' && lastAssistant) {
+        if (!jobStreaming && job.kind === 'connector_use' && lastAssistant) {
           const existing = s.connectorJobIdsByEpisodeId[lastAssistant.id] ?? [];
           next.connectorJobIdsByEpisodeId = {
             ...s.connectorJobIdsByEpisodeId,
@@ -826,23 +987,30 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
     }),
   clearInTurnToolJobs: () => set({ inTurnToolJobs: {} }),
 
+  queuedByConversation: {},
   queuedMessages: [],
-  enqueueMessage: (text, mode) =>
-    set((s) => ({
-      queuedMessages: [
-        ...s.queuedMessages,
+  enqueueMessage: (conversationId, text, mode) =>
+    set((s) =>
+      withQueue(s, conversationId, [
+        ...(s.queuedByConversation[conversationId] ?? []),
         { id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, text, mode },
-      ],
-    })),
-  shiftQueuedMessage: () => {
-    const [first, ...rest] = get().queuedMessages;
+      ]),
+    ),
+  shiftQueuedMessage: (conversationId) => {
+    const [first, ...rest] = get().queuedByConversation[conversationId] ?? [];
     if (!first) return null;
-    set({ queuedMessages: rest });
+    set((s) => withQueue(s, conversationId, rest));
     return first;
   },
-  removeQueuedMessage: (id) =>
-    set((s) => ({ queuedMessages: s.queuedMessages.filter((m) => m.id !== id) })),
-  clearQueuedMessages: () => set({ queuedMessages: [] }),
+  removeQueuedMessage: (conversationId, id) =>
+    set((s) =>
+      withQueue(
+        s,
+        conversationId,
+        (s.queuedByConversation[conversationId] ?? []).filter((m) => m.id !== id),
+      ),
+    ),
+  clearQueuedMessages: (conversationId) => set((s) => withQueue(s, conversationId, [])),
 
   streamingSteps: [],
   stepsByEpisodeId: {},

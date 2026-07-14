@@ -77,12 +77,14 @@ pub async fn companion_send_message(
         Some(s) if !s.is_empty() => session::TurnOrigin::External { source: s.to_string() },
         _ => session::TurnOrigin::User,
     };
+    let conversation_id = conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string());
     // Genuine user input cancels any in-flight autonomous continuation
-    // scheduling ("Stop" semantics: user types anything → autonomy yields).
-    // A forwarded system request is not the user speaking, so it leaves an
-    // autonomous chain alone.
+    // scheduling in THIS conversation ("Stop" semantics: user types anything
+    // → this thread's autonomy yields; other threads' chains keep running —
+    // multiconv P1). A forwarded system request is not the user speaking, so
+    // it leaves the autonomous chain alone.
     if matches!(origin, session::TurnOrigin::User) {
-        session::cancel_pending_autonomy();
+        session::cancel_pending_autonomy(&conversation_id);
     }
     let turn = session::send_turn(
         &app,
@@ -95,7 +97,7 @@ pub async fn companion_send_message(
         voice_enabled.unwrap_or(false),
         recall_synthesis_enabled.unwrap_or(false),
         autonomous_mode.unwrap_or(false),
-        conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string()),
+        conversation_id,
     )
     .await?;
     Ok(SendTurnResult {
@@ -106,15 +108,17 @@ pub async fn companion_send_message(
     })
 }
 
-/// Cancel any pending autonomous-continuation tick. Idempotent: a no-
-/// op if no continuation is scheduled. Does NOT interrupt an in-flight
-/// stream — use `companion_interrupt_turn` for that.
+/// Cancel any pending autonomous-continuation tick — in every conversation
+/// (the explicit stop-button is a global brake, unlike the per-thread implicit
+/// cancel a user message performs). Idempotent: a no-op if no continuation is
+/// scheduled. Does NOT interrupt an in-flight stream — use
+/// `companion_interrupt_turn` for that.
 #[tauri::command]
 pub async fn companion_cancel_autonomy(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
-    session::cancel_pending_autonomy();
+    session::cancel_all_pending_autonomy();
     Ok(())
 }
 
@@ -380,11 +384,9 @@ pub fn companion_reset_conversation(
     let session_id = conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string());
     crate::companion::session::clear_claude_session_id(&state.user_db, &session_id)?;
     if wipe_transcript.unwrap_or(false) {
-        // TODO(multiconv Phase 1): scope the wipe to `session_id` (delete only
-        // this conversation's episode nodes). Today it still wipes the whole
-        // transcript — safe while the UI drives a single conversation; the
-        // per-conversation wipe lands with the frontend thread UI.
-        crate::companion::session::wipe_transcript(&state.user_db)?;
+        // Multiconv P1: the wipe is scoped to this conversation's episode
+        // nodes — resetting one thread never erases the others.
+        crate::companion::session::wipe_transcript(&state.user_db, Some(&session_id))?;
     }
     Ok(())
 }

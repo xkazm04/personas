@@ -17,6 +17,7 @@ pub mod disk;
 pub mod dispatcher;
 pub mod generated_anchors;
 pub mod jobs;
+pub mod model_routing;
 pub mod observability;
 pub mod orchestration;
 pub mod plugins;

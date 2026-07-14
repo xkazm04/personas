@@ -417,7 +417,8 @@ async fn cli_decide(
 /// that don't carry a user-db handle. Prefer [`cli_text_tracked`] for Athena's
 /// headless decision legs so the spend lands in the `companion_turn` ledger.
 pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
-    Ok(cli_text_inner(prompt_text, "claude-sonnet-4-6").await?.0)
+    let micro = &crate::companion::model_routing::MICRO;
+    Ok(cli_text_inner(prompt_text, micro.model, micro.effort).await?.0)
 }
 
 /// Like [`cli_text`], but also returns the parsed terminal `result` usage so an
@@ -428,7 +429,8 @@ pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
 pub(crate) async fn cli_text_with_usage(
     prompt_text: String,
 ) -> Result<(String, Option<crate::companion::turn_ledger::CliUsage>), AppError> {
-    cli_text_inner(prompt_text, "claude-sonnet-4-6").await
+    let micro = &crate::companion::model_routing::MICRO;
+    cli_text_inner(prompt_text, micro.model, micro.effort).await
 }
 
 /// Headless decision on an EXPLICIT model (Design D: the deliberation moderator
@@ -442,7 +444,7 @@ pub(crate) async fn cli_decision_with_model(
     trigger_kind: &'static str,
     model: &str,
 ) -> Result<(String, Option<f64>), AppError> {
-    let (text, usage) = cli_text_inner(prompt_text, model).await?;
+    let (text, usage) = cli_text_inner(prompt_text, model, None).await?;
     let cost = usage.as_ref().and_then(|u| u.cost_usd);
     let _ = crate::companion::turn_ledger::record_turn(
         user_db,
@@ -468,13 +470,14 @@ pub(crate) async fn cli_text_tracked(
     user_db: &crate::db::UserDbPool,
     trigger_kind: &'static str,
 ) -> Result<(String, Option<String>), AppError> {
-    let (text, usage) = cli_text_inner(prompt_text, "claude-sonnet-4-6").await?;
+    let micro = &crate::companion::model_routing::MICRO;
+    let (text, usage) = cli_text_inner(prompt_text, micro.model, micro.effort).await?;
     let turn_id = crate::companion::turn_ledger::record_turn(
         user_db,
         &crate::companion::turn_ledger::TurnRecord {
             origin: "headless".to_string(),
             trigger_kind: Some(trigger_kind.to_string()),
-            model: Some("claude-sonnet-4-6".to_string()),
+            model: Some(micro.model.to_string()),
             usage,
             ..Default::default()
         },
@@ -488,10 +491,15 @@ pub(crate) async fn cli_text_tracked(
 async fn cli_text_inner(
     prompt_text: String,
     model: &str,
+    effort: Option<&str>,
 ) -> Result<(String, Option<crate::companion::turn_ledger::CliUsage>), AppError> {
     let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push(model.to_string());
+    if let Some(effort) = effort {
+        cli_args.args.push("--effort".to_string());
+        cli_args.args.push(effort.to_string());
+    }
 
     // No repo access needed for a channel decision — run in a scratch cwd so we
     // never touch a project working tree.

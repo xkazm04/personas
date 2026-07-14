@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { classifyMidTurnIntent } from '../midTurnIntent';
-import { useCompanionStore } from '../companionStore';
+import { DEFAULT_CONVERSATION_ID, useCompanionStore } from '../companionStore';
 
 describe('classifyMidTurnIntent', () => {
   it('interrupts on clear redirect / stop openers', () => {
@@ -49,31 +49,33 @@ describe('classifyMidTurnIntent', () => {
 });
 
 describe('companionStore message queue', () => {
+  const CONV = DEFAULT_CONVERSATION_ID;
+
   beforeEach(() => {
-    useCompanionStore.getState().clearQueuedMessages();
+    useCompanionStore.getState().clearQueuedMessages(CONV);
   });
 
   it('enqueues and shifts FIFO with mode preserved', () => {
     const s = useCompanionStore.getState();
-    s.enqueueMessage('first', 'queue');
-    s.enqueueMessage('second', 'interrupt');
+    s.enqueueMessage(CONV, 'first', 'queue');
+    s.enqueueMessage(CONV, 'second', 'interrupt');
     expect(useCompanionStore.getState().queuedMessages).toHaveLength(2);
 
-    const a = useCompanionStore.getState().shiftQueuedMessage();
+    const a = useCompanionStore.getState().shiftQueuedMessage(CONV);
     expect(a?.text).toBe('first');
     expect(a?.mode).toBe('queue');
-    const b = useCompanionStore.getState().shiftQueuedMessage();
+    const b = useCompanionStore.getState().shiftQueuedMessage(CONV);
     expect(b?.text).toBe('second');
     expect(b?.mode).toBe('interrupt');
-    expect(useCompanionStore.getState().shiftQueuedMessage()).toBeNull();
+    expect(useCompanionStore.getState().shiftQueuedMessage(CONV)).toBeNull();
   });
 
   it('removes a specific queued message by id', () => {
     const s = useCompanionStore.getState();
-    s.enqueueMessage('keep', 'queue');
-    s.enqueueMessage('drop', 'queue');
+    s.enqueueMessage(CONV, 'keep', 'queue');
+    s.enqueueMessage(CONV, 'drop', 'queue');
     const drop = useCompanionStore.getState().queuedMessages.find((m) => m.text === 'drop')!;
-    s.removeQueuedMessage(drop.id);
+    s.removeQueuedMessage(CONV, drop.id);
     const left = useCompanionStore.getState().queuedMessages;
     expect(left).toHaveLength(1);
     expect(left[0].text).toBe('keep');

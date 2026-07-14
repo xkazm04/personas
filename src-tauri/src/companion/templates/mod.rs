@@ -327,4 +327,17 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// Personas codebase, so they must stay short and conversational and never
 /// contain internal names, code identifiers, file paths, IDs, op names, or
 /// version tags. Behavioral wording change only; no new op.
-pub const CONSTITUTION_VERSION: u32 = 43;
+/// v44 (bench-derived discipline) adds two rules proven by the 1,026-turn
+/// model/effort bench (`docs/plans/athena-model-bench-report.md`):
+/// (a) **multi-op completeness + one-line strictness** under Rule Zero — every
+/// distinct ask in a message gets its own single-line minified OP line (the
+/// bench's two-action scenario lost the second op, and one turn broke parsing
+/// with prose after the closing brace); (b) **memory honesty** under
+/// `write_fact` — never claim a fact is "already in your notes" unless this
+/// turn's injected context shows it (every Opus cell skipped a requested
+/// write_fact 3/3 by hallucinating that the fact was already stored; Sonnet
+/// never did). Doctrine-strength note: these act-decisively rules are for
+/// main/aside tiers (effort ≥ medium) — the bench showed aggressive
+/// act-doctrine at LOW effort regresses awareness (re-spawns in-flight work),
+/// which is why the micro tier (`model_routing::MICRO`) gets no constitution.
+pub const CONSTITUTION_VERSION: u32 = 44;
