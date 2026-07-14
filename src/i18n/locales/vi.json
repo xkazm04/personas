@@ -6163,7 +6163,8 @@
       "type_labels": {
         "sla_breach_opened": "Vi phạm SLA đã mở",
         "sla_breach_recovered": "Đã khắc phục vi phạm SLA",
-        "schedule_missed_offline": "Lần chạy theo lịch bị bỏ lỡ (ngoại tuyến)"
+        "schedule_missed_offline": "Lần chạy theo lịch bị bỏ lỡ (ngoại tuyến)",
+        "schedule_skipped_overlap": "Bỏ qua lịch (lần chạy trước đang hoạt động)"
       }
     },
     "health": {

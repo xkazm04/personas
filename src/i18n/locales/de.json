@@ -6163,7 +6163,8 @@
       "type_labels": {
         "sla_breach_opened": "SLA-Verstoß geöffnet",
         "sla_breach_recovered": "SLA-Verstoß behoben",
-        "schedule_missed_offline": "Verpasste geplante Ausführungen (offline)"
+        "schedule_missed_offline": "Verpasste geplante Ausführungen (offline)",
+        "schedule_skipped_overlap": "Zeitplan übersprungen (vorheriger Lauf aktiv)"
       }
     },
     "health": {

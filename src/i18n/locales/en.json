@@ -6403,7 +6403,8 @@
       "type_labels": {
         "sla_breach_opened": "SLA breach opened",
         "sla_breach_recovered": "SLA breach recovered",
-        "schedule_missed_offline": "Missed schedule runs (offline)"
+        "schedule_missed_offline": "Missed schedule runs (offline)",
+        "schedule_skipped_overlap": "Schedule skipped (previous run active)"
       },
       "load_older": "Load older events",
       "clear_filters": "Clear all filters",

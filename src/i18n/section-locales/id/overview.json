@@ -529,7 +529,8 @@
     "type_labels": {
       "sla_breach_opened": "Pelanggaran SLA dibuka",
       "sla_breach_recovered": "Pelanggaran SLA pulih",
-      "schedule_missed_offline": "Jadwal terlewat (offline)"
+      "schedule_missed_offline": "Jadwal terlewat (offline)",
+      "schedule_skipped_overlap": "Jadwal dilewati (run sebelumnya masih aktif)"
     }
   },
   "health": {

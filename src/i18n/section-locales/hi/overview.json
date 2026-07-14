@@ -529,7 +529,8 @@
     "type_labels": {
       "sla_breach_opened": "SLA उल्लंघन शुरू",
       "sla_breach_recovered": "SLA उल्लंघन से पुनर्प्राप्त",
-      "schedule_missed_offline": "छूटे हुए शेड्यूल रन (ऑफ़लाइन)"
+      "schedule_missed_offline": "छूटे हुए शेड्यूल रन (ऑफ़लाइन)",
+      "schedule_skipped_overlap": "शेड्यूल छोड़ा गया (पिछला रन सक्रिय)"
     }
   },
   "health": {

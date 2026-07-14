@@ -6163,7 +6163,8 @@
       "type_labels": {
         "sla_breach_opened": "SLA লঙ্ঘন শুরু হয়েছে",
         "sla_breach_recovered": "SLA লঙ্ঘন থেকে পুনরুদ্ধার",
-        "schedule_missed_offline": "মিস হওয়া নির্ধারিত রান (অফলাইন)"
+        "schedule_missed_offline": "মিস হওয়া নির্ধারিত রান (অফলাইন)",
+        "schedule_skipped_overlap": "শিডিউল এড়ানো হয়েছে (আগের রান চলছে)"
       }
     },
     "health": {

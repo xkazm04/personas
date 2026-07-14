@@ -116,6 +116,7 @@ const BUILTIN_EVENT_TYPES: &[(&str, &str)] = &[
     ("context_rule_match", "ingress"),
     // Scheduler reliability signals (never listener-matched — informational)
     ("schedule.missed.offline", "scheduler"),
+    ("schedule.skipped.overlap", "scheduler"),
 ];
 
 /// Lazily-built set of the *canonical* forms of every builtin type, for O(1)

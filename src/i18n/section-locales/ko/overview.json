@@ -529,7 +529,8 @@
     "type_labels": {
       "sla_breach_opened": "SLA 위반 발생",
       "sla_breach_recovered": "SLA 위반 복구됨",
-      "schedule_missed_offline": "놓친 예약 실행 (오프라인)"
+      "schedule_missed_offline": "놓친 예약 실행 (오프라인)",
+      "schedule_skipped_overlap": "예약 건너뜀 (이전 실행 진행 중)"
     }
   },
   "health": {

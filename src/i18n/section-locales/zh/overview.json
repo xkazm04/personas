@@ -529,7 +529,8 @@
     "type_labels": {
       "sla_breach_opened": "SLA 违规已开始",
       "sla_breach_recovered": "SLA 违规已恢复",
-      "schedule_missed_offline": "错过的计划运行（离线）"
+      "schedule_missed_offline": "错过的计划运行（离线）",
+      "schedule_skipped_overlap": "已跳过计划（上一次运行仍在进行）"
     }
   },
   "health": {

@@ -1666,6 +1666,106 @@ pub(crate) fn record_and_emit_missed_runs(
     }
 }
 
+/// Direction 2 (overlap policy): is a previous run from THIS schedule trigger
+/// still in flight?
+///
+/// Architectural note on why this is a bounded DB check and NOT an in-memory
+/// `InflightGuard`: the scheduler fire path only *publishes an event* and
+/// returns — the execution is created and run detached by a later
+/// `event_bus_tick` (a separate subscription tick). An in-memory guard acquired
+/// in the fire path would be released the instant the fire path returns, long
+/// before the execution even starts, so it cannot represent "still running".
+/// The durable signal is the execution row itself. Scheduler-spawned execution
+/// rows carry `trigger_id = NULL` (the event-bus path passes `None`), so the
+/// only correlation back to the trigger is `input_data._event.source_id`. We
+/// also treat an as-yet-undispatched fire (a pending/processing `persona_event`
+/// from this trigger) as "in flight" to close the publish→dispatch gap.
+pub(crate) fn schedule_overlap_active(pool: &DbPool, trigger_id: &str) -> bool {
+    let conn = match pool.get() {
+        Ok(c) => c,
+        Err(e) => {
+            // On a DB error, do NOT skip — better to risk a rare overlap than
+            // to silently drop a legitimate fire on a transient pool hiccup.
+            tracing::warn!(trigger_id, error = %e, "overlap check: pool error — allowing fire");
+            return false;
+        }
+    };
+    conn.query_row(
+        "SELECT
+            EXISTS(
+                SELECT 1 FROM persona_executions
+                WHERE status IN ('queued','running')
+                  AND json_extract(input_data, '$._event.source_id') = ?1
+            )
+            OR EXISTS(
+                SELECT 1 FROM persona_events
+                WHERE source_type = 'trigger'
+                  AND source_id = ?1
+                  AND status IN ('pending','processing')
+            )",
+        rusqlite::params![trigger_id],
+        |row| row.get::<_, bool>(0),
+    )
+    .unwrap_or_else(|e| {
+        tracing::warn!(trigger_id, error = %e, "overlap check query failed — allowing fire");
+        false
+    })
+}
+
+/// Build the `schedule.skipped.overlap` signal payload. Pure so the shape is
+/// unit-testable without a DB.
+fn synthesize_overlap_skip_payload(
+    trigger: &crate::db::models::PersonaTrigger,
+    skipped_at: &str,
+) -> String {
+    let mut meta = serde_json::Map::new();
+    meta.insert(
+        "trigger_id".into(),
+        serde_json::Value::String(trigger.id.clone()),
+    );
+    meta.insert(
+        "target_persona_id".into(),
+        serde_json::Value::String(trigger.persona_id.clone()),
+    );
+    meta.insert(
+        "reason".into(),
+        serde_json::Value::String("previous_run_active".into()),
+    );
+    meta.insert(
+        "skipped_at".into(),
+        serde_json::Value::String(skipped_at.to_string()),
+    );
+    serde_json::to_string(&serde_json::Value::Object(meta)).unwrap_or_default()
+}
+
+/// Direction 2: emit the visible "skipped — previous run still active" signal.
+/// `schedule.skipped.overlap` is informational (not listener-matched), so it
+/// never spawns an execution — it only records the skip in the event feed.
+fn emit_overlap_skip_signal(
+    pool: &DbPool,
+    trigger: &crate::db::models::PersonaTrigger,
+    skipped_at: &str,
+) {
+    let payload = Some(synthesize_overlap_skip_payload(trigger, skipped_at));
+    if let Err(e) = event_repo::publish(
+        pool,
+        CreatePersonaEventInput {
+            event_type: "schedule.skipped.overlap".into(),
+            source_type: "scheduler".into(),
+            source_id: Some(trigger.id.clone()),
+            target_persona_id: Some(trigger.persona_id.clone()),
+            project_id: None,
+            payload,
+            use_case_id: trigger.use_case_id.clone(),
+        },
+    ) {
+        tracing::warn!(
+            trigger_id = %trigger.id,
+            "failed to publish schedule.skipped.overlap signal: {}", e
+        );
+    }
+}
+
 /// Enumerate cron/interval slots that should have fired strictly between
 /// `last_fire` (exclusive) and `now` (inclusive), excluding the most-recent
 /// one (which the existing scheduler tick path will fire as the "current"
@@ -1911,6 +2011,42 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                 );
                 continue;
             }
+        }
+
+        // Direction 2 (overlap policy): default skip-with-signal. A slow persona
+        // must not stack concurrent executions up to the hourly cap while its
+        // previous run from THIS trigger is still active. Distinct schedules stay
+        // independent — the check is keyed per trigger, not per persona.
+        //
+        // We CONSUME the slot here (mark_triggered advances last_triggered_at +
+        // next + version) rather than using advance_schedule_pointer. Rationale:
+        // an overlap skip is an INTENTIONAL drop — the previous run is still
+        // doing the work — so the slot must be neither replayed by backfill nor
+        // counted as an offline miss (Direction 1). Preserving the fired-watermark
+        // (advance_schedule_pointer) would do both: the auto-backfill window and
+        // the missed-runs computation both key off (last_triggered_at, now]. The
+        // visible signal below ensures this is never a silent drop.
+        if trigger.trigger_type == "schedule" && schedule_overlap_active(pool, &trigger.id) {
+            let next = sched_logic::compute_next_trigger_at(&trigger, now);
+            match trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version) {
+                Ok(true) => {
+                    emit_overlap_skip_signal(pool, &trigger, &now_str);
+                    tracing::info!(
+                        trigger_id = %trigger.id,
+                        persona_id = %trigger.persona_id,
+                        "Scheduled fire skipped — previous run still active (overlap)"
+                    );
+                }
+                Ok(false) => tracing::debug!(
+                    trigger_id = %trigger.id,
+                    "Overlap skip: trigger already claimed by another tick"
+                ),
+                Err(e) => tracing::error!(
+                    trigger_id = %trigger.id,
+                    "Overlap skip: failed to advance schedule: {}", e
+                ),
+            }
+            continue;
         }
 
         // Direction 1 (missed-runs visibility): enumerate the full set of slots
@@ -2903,6 +3039,20 @@ mod tests {
         assert_eq!(v["fired_at"], "2026-05-01T10:00:00Z");
         assert_eq!(v["cron"], "0 * * * *");
         assert_eq!(v["trigger_id"], "t-bf-1");
+    }
+
+    #[test]
+    fn test_overlap_skip_payload_shape() {
+        // Direction 2: the overlap-skip signal must self-identify with the
+        // trigger, a machine-readable reason, and a timestamp so the event feed
+        // can render "skipped — previous run still active".
+        let trigger = make_trigger_for_test("t-ov-1", "p-y", "schedule");
+        let json = synthesize_overlap_skip_payload(&trigger, "2026-05-01T10:00:00Z");
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["trigger_id"], "t-ov-1");
+        assert_eq!(v["target_persona_id"], "p-y");
+        assert_eq!(v["reason"], "previous_run_active");
+        assert_eq!(v["skipped_at"], "2026-05-01T10:00:00Z");
     }
 
     #[test]

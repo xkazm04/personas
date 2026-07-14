@@ -18,6 +18,8 @@ export function eventTypeLabel(t: Translations, eventType: string): string {
       return labels.sla_breach_recovered;
     case 'schedule.missed.offline':
       return labels.schedule_missed_offline;
+    case 'schedule.skipped.overlap':
+      return labels.schedule_skipped_overlap;
     default:
       return eventType;
   }

@@ -529,7 +529,8 @@
     "type_labels": {
       "sla_breach_opened": "Incumplimiento de SLA iniciado",
       "sla_breach_recovered": "Incumplimiento de SLA recuperado",
-      "schedule_missed_offline": "Ejecuciones programadas perdidas (sin conexión)"
+      "schedule_missed_offline": "Ejecuciones programadas perdidas (sin conexión)",
+      "schedule_skipped_overlap": "Programación omitida (ejecución anterior activa)"
     }
   },
   "health": {

@@ -6410,6 +6410,7 @@ export type Translations = {
         sla_breach_opened: string;
         sla_breach_recovered: string;
         schedule_missed_offline: string;
+        schedule_skipped_overlap: string;
       };
       load_older: string;
       clear_filters: string;

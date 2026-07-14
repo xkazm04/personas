@@ -6163,7 +6163,8 @@
       "type_labels": {
         "sla_breach_opened": "Нарушение SLA открыто",
         "sla_breach_recovered": "Нарушение SLA устранено",
-        "schedule_missed_offline": "Пропущенные запланированные запуски (офлайн)"
+        "schedule_missed_offline": "Пропущенные запланированные запуски (офлайн)",
+        "schedule_skipped_overlap": "Расписание пропущено (предыдущий запуск активен)"
       }
     },
     "health": {

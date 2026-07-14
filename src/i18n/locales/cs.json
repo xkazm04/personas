@@ -6163,7 +6163,8 @@
       "type_labels": {
         "sla_breach_opened": "Porušení SLA zahájeno",
         "sla_breach_recovered": "Porušení SLA vyřešeno",
-        "schedule_missed_offline": "Zmeškané naplánované běhy (offline)"
+        "schedule_missed_offline": "Zmeškané naplánované běhy (offline)",
+        "schedule_skipped_overlap": "Plán přeskočen (předchozí běh aktivní)"
       }
     },
     "health": {

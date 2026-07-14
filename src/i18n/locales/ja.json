@@ -6163,7 +6163,8 @@
       "type_labels": {
         "sla_breach_opened": "SLA違反が発生",
         "sla_breach_recovered": "SLA違反から回復",
-        "schedule_missed_offline": "オフライン中に逃したスケジュール実行"
+        "schedule_missed_offline": "オフライン中に逃したスケジュール実行",
+        "schedule_skipped_overlap": "スケジュールをスキップ（前回の実行が実行中）"
       }
     },
     "health": {
