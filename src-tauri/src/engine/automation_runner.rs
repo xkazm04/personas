@@ -291,7 +291,13 @@ fn finalize_run(
                 None,
                 warnings_json.as_deref(),
             )?;
-            let _ = repo::record_trigger_result(pool, automation_id, "success", None);
+            if let Err(e) = repo::record_trigger_result(pool, automation_id, "success", None) {
+                tracing::warn!(
+                    automation_id,
+                    error = %e,
+                    "Failed to record automation trigger result (success) — run itself is unaffected"
+                );
+            }
             Ok(completed)
         }
         Err(error_msg) => {
@@ -306,7 +312,15 @@ fn finalize_run(
                 Some(&error_msg),
                 warnings_json.as_deref(),
             )?;
-            let _ = repo::record_trigger_result(pool, automation_id, "failed", Some(&error_msg));
+            if let Err(e) =
+                repo::record_trigger_result(pool, automation_id, "failed", Some(&error_msg))
+            {
+                tracing::warn!(
+                    automation_id,
+                    error = %e,
+                    "Failed to record automation trigger result (failed) — run itself is unaffected"
+                );
+            }
             Ok(completed)
         }
     }
@@ -429,9 +443,25 @@ pub fn automation_to_virtual_tool(
 ) -> crate::db::models::PersonaToolDefinition {
     let platform_label = auto.platform.label();
 
+    // Truthful timing contract for the LLM. An automation is a webhook /
+    // repository-dispatch call that BLOCKS for up to its configured
+    // `timeout_ms` per attempt and retries transient failures (up to
+    // `retry_count`, clamped 1..5) with exponential backoff. The old copy
+    // ("Runs instantly without using your tokens") was false on the timing
+    // axis and led the model to treat these as free/instant. Derive the real
+    // numbers from the automation's own config so the description never drifts.
+    let timeout_secs = (auto.timeout_ms.max(1000) as f64 / 1000.0).ceil() as i64;
+    let max_attempts = auto.retry_count.clamp(1, 5);
+    let timing = if max_attempts > 1 {
+        format!(
+            "May block up to ~{timeout_secs}s per attempt and retry up to {max_attempts}× on transient failure (so it can take noticeably longer before returning)"
+        )
+    } else {
+        format!("May block up to ~{timeout_secs}s before returning")
+    };
     let description = format!(
-        "{} [Automation -- {}. Runs instantly without using your tokens.]",
-        auto.description, platform_label
+        "{} [Automation -- {}. {}. Does not consume your token budget.]",
+        auto.description, platform_label, timing
     );
 
     let fallback_note = if auto.fallback_mode == AutomationFallbackMode::Connector {
