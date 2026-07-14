@@ -482,6 +482,167 @@ pub fn get_all_by_lifecycle(pool: &DbPool, stages: &[&str]) -> Result<Vec<Person
     })
 }
 
+// ---------------------------------------------------------------------------
+// Lean roster projection
+//
+// The roster/list view renders name, icon, health/lifecycle badges, trust,
+// timestamps, connector chips and workspace — it never reads the large
+// editor-only blobs. `get_all` shipped the FULL `system_prompt`,
+// `structured_prompt`, `last_test_report`, `notification_channels` and
+// `parameters` for every persona on every roster fetch (and held them in JS
+// memory for the whole list). The lean projection below selects only the
+// list-view columns and leaves those five heavy fields blank; the persona
+// EDITOR keeps its full-fidelity fetch via `get_persona_detail` → `get_by_id`.
+//
+// `design_context`, `model_profile` (redacted) and `last_design_result` are
+// intentionally KEPT: home widgets, the config panel, team studio, the trigger
+// studio and the roster's own connector chips read them off list rows. Trimming
+// those is a larger follow-up that must first route those consumers through the
+// detail fetch.
+//
+// Frontend safety model: `personaSlice` re-hydrates a row to full fidelity via
+// `getPersonaDetail` the moment a persona is opened/prefetched, so the blanked
+// fields are only ever absent on rows the user has not opened — and no roster
+// consumer reads them (audited 2026-07-13).
+// ---------------------------------------------------------------------------
+
+/// Columns the roster actually renders. Excludes the five heavy editor-only
+/// blobs (`system_prompt`, `structured_prompt`, `last_test_report`,
+/// `notification_channels`, `parameters`) so they are never read from SQLite
+/// nor serialized over IPC for the list view.
+const LEAN_LIST_COLUMNS: &str = "id, project_id, name, description, icon, color, \
+     enabled, sensitive, headless, starred, max_concurrent, timeout_ms, \
+     last_design_result, model_profile, max_budget_usd, max_turns, design_context, \
+     home_team_id, source_review_id, trust_level, trust_origin, trust_verified_at, \
+     trust_score, gateway_exposure, template_category, cli_awareness_enabled, \
+     setup_status, setup_detail, disabled_dims_json, lifecycle, created_at, updated_at";
+
+/// Map a lean roster row to a `Persona` with the five heavy editor-only fields
+/// left blank. `model_profile` is redacted (list view). Mirrors the light-field
+/// reads of `row_to_persona_with_mode` — keep the two in sync when adding a
+/// persona column that the roster needs.
+fn row_to_persona_lean(row: &Row) -> rusqlite::Result<Persona> {
+    let raw_profile: Option<String> = row.get("model_profile")?;
+    let model_profile = raw_profile.map(|json| redact_model_profile(&json));
+    Ok(Persona {
+        id: row.get("id")?,
+        project_id: row.get("project_id")?,
+        name: row.get("name")?,
+        description: row.get("description")?,
+        // Heavy editor-only fields — deliberately blank on roster rows.
+        system_prompt: String::new(),
+        structured_prompt: None,
+        icon: row.get("icon")?,
+        color: row.get("color")?,
+        enabled: row.get::<_, i32>("enabled")? != 0,
+        sensitive: row.get::<_, i32>("sensitive")? != 0,
+        headless: row.get::<_, i32>("headless").unwrap_or(0) != 0,
+        starred: row.get::<_, i32>("starred").unwrap_or(0) != 0,
+        max_concurrent: row.get("max_concurrent")?,
+        timeout_ms: row.get("timeout_ms")?,
+        notification_channels: None,
+        last_design_result: row.get("last_design_result")?,
+        last_test_report: None,
+        model_profile,
+        max_budget_usd: row.get("max_budget_usd")?,
+        max_turns: row.get("max_turns")?,
+        design_context: row.get("design_context")?,
+        home_team_id: row.get("home_team_id")?,
+        source_review_id: row
+            .get::<_, Option<String>>("source_review_id")
+            .unwrap_or(None),
+        trust_level: row
+            .get::<_, Option<String>>("trust_level")?
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(PersonaTrustLevel::Verified),
+        trust_origin: row
+            .get::<_, Option<String>>("trust_origin")?
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(PersonaTrustOrigin::Builtin),
+        trust_verified_at: row
+            .get::<_, Option<String>>("trust_verified_at")
+            .unwrap_or(None),
+        trust_score: row.get::<_, Option<f64>>("trust_score")?.unwrap_or(0.0),
+        parameters: None,
+        gateway_exposure: row
+            .get::<_, Option<String>>("gateway_exposure")
+            .ok()
+            .flatten()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(PersonaGatewayExposure::LocalOnly),
+        template_category: row
+            .get::<_, Option<String>>("template_category")
+            .unwrap_or(None),
+        cli_awareness_enabled: row
+            .get::<_, Option<i64>>("cli_awareness_enabled")
+            .ok()
+            .flatten()
+            .map(|v| v != 0)
+            .unwrap_or(false),
+        setup_status: row
+            .get::<_, Option<String>>("setup_status")
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| "ready".to_string()),
+        setup_detail: row
+            .get::<_, Option<String>>("setup_detail")
+            .ok()
+            .flatten(),
+        disabled_dims_json: row
+            .get::<_, Option<String>>("disabled_dims_json")
+            .ok()
+            .flatten(),
+        lifecycle: row
+            .get::<_, Option<String>>("lifecycle")
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| "active".to_string()),
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
+    })
+}
+
+/// Lean roster list: every persona, list-view columns only (heavy blobs blank).
+/// The scale-conscious replacement for `get_all` on the `list_personas` path.
+#[instrument(skip(pool))]
+pub fn get_all_lean(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
+    timed_query!("personas", "personas::get_all_lean", {
+        let conn = pool.get()?;
+        let sql = format!("SELECT {LEAN_LIST_COLUMNS} FROM personas ORDER BY created_at DESC");
+        let mut stmt = conn.prepare_cached(&sql)?;
+        let rows = stmt.query_map([], row_to_persona_lean)?;
+        Ok(collect_rows(rows, "personas::get_all_lean"))
+    })
+}
+
+/// Lean roster list filtered to a set of lifecycle stages (server-side).
+/// Empty `stages` == `get_all_lean`. The lean twin of `get_all_by_lifecycle`.
+#[instrument(skip(pool))]
+pub fn get_all_by_lifecycle_lean(
+    pool: &DbPool,
+    stages: &[&str],
+) -> Result<Vec<Persona>, AppError> {
+    if stages.is_empty() {
+        return get_all_lean(pool);
+    }
+    timed_query!("personas", "personas::get_all_by_lifecycle_lean", {
+        let conn = pool.get()?;
+        let placeholders: Vec<String> = (0..stages.len()).map(|i| format!("?{}", i + 1)).collect();
+        let sql = format!(
+            "SELECT {LEAN_LIST_COLUMNS} FROM personas \
+             WHERE COALESCE(lifecycle, 'active') IN ({}) ORDER BY created_at DESC",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = stages
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), row_to_persona_lean)?;
+        Ok(collect_rows(rows, "personas::get_all_by_lifecycle_lean"))
+    })
+}
+
 #[instrument(skip(pool))]
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
     timed_query!("personas", "personas::get_by_id", {
@@ -1393,18 +1554,42 @@ pub fn refresh_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppEr
     })
 }
 
+/// What a `duplicate` call actually did to the persona's wiring, so the copy
+/// flow can tell the user the honest blast radius of the duplication instead of
+/// silently producing an inert shell. `*_copied` are cloned onto the new
+/// persona (disabled); `*_skipped` / `*_shared` are intentionally NOT cloned —
+/// automations are workspace-scoped deployments, and tools/credential links are
+/// shared catalog references both personas resolve by name/type at run time.
+#[derive(Debug, Clone, Default)]
+pub struct DuplicationSummary {
+    pub triggers_copied: usize,
+    pub subscriptions_copied: usize,
+    pub automations_skipped: usize,
+    pub tools_shared: usize,
+    pub credential_links_shared: usize,
+}
+
 /// Duplicate a persona server-side, preserving the encrypted model_profile
 /// so the BYOM auth token is never exposed to (or lost by) the frontend.
+///
+/// Deep-copies the persona's own automation wiring — `persona_triggers` and
+/// `persona_event_subscriptions` — with fresh ids, the new `persona_id`, and
+/// every copied row **disabled** so the duplicate never double-fires alongside
+/// the original. Tools, credential links and automations are reported (see
+/// [`DuplicationSummary`]) but not cloned. Runs in a single transaction so a
+/// mid-copy failure never leaves a half-wired duplicate.
 #[instrument(skip(pool))]
-pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<Persona, AppError> {
+pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<(Persona, DuplicationSummary), AppError> {
     timed_query!("personas", "personas::duplicate", {
         let conn = pool.get()?;
         let new_id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
+        let tx = conn.unchecked_transaction()?;
+
         // Copy all fields from source, generating a new id/timestamps and appending " (Copy)" to name.
         // model_profile is copied as-is (already encrypted) so the auth token is preserved.
-        conn.execute(
+        let inserted = tx.execute(
             "INSERT INTO personas
              (id, project_id, name, description, system_prompt, structured_prompt,
               icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
@@ -1421,9 +1606,110 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<Persona, AppError> {
              FROM personas WHERE id = ?3",
             params![new_id, now, source_id],
         )?;
+        if inserted == 0 {
+            return Err(AppError::NotFound(format!("Persona {source_id}")));
+        }
 
-        get_by_id(pool, &new_id)
+        let mut summary = DuplicationSummary::default();
+
+        // ── Copy triggers (disabled on the copy) ──
+        let source_triggers: Vec<(String, Option<String>)> = {
+            let mut stmt = tx.prepare(
+                "SELECT trigger_type, config FROM persona_triggers WHERE persona_id = ?1",
+            )?;
+            let rows = stmt.query_map(params![source_id], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+            })?;
+            rows.filter_map(|r| r.ok()).collect()
+        };
+        for (trigger_type, config) in &source_triggers {
+            tx.execute(
+                "INSERT INTO persona_triggers
+                 (id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, 0, NULL, NULL, ?5, ?5)",
+                params![uuid::Uuid::new_v4().to_string(), new_id, trigger_type, config, now],
+            )?;
+            summary.triggers_copied += 1;
+        }
+
+        // ── Copy event subscriptions (disabled on the copy) ──
+        let source_subs: Vec<(String, Option<String>)> = {
+            let mut stmt = tx.prepare(
+                "SELECT event_type, source_filter FROM persona_event_subscriptions WHERE persona_id = ?1",
+            )?;
+            let rows = stmt.query_map(params![source_id], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+            })?;
+            rows.filter_map(|r| r.ok()).collect()
+        };
+        for (event_type, source_filter) in &source_subs {
+            tx.execute(
+                "INSERT INTO persona_event_subscriptions
+                 (id, persona_id, event_type, source_filter, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, 0, ?5, ?5)",
+                params![uuid::Uuid::new_v4().to_string(), new_id, event_type, source_filter, now],
+            )?;
+            summary.subscriptions_copied += 1;
+        }
+
+        // ── Report (don't clone) automations + shared tool/credential references ──
+        summary.automations_skipped = tx
+            .query_row(
+                "SELECT COUNT(*) FROM persona_automations WHERE persona_id = ?1",
+                params![source_id],
+                |r| r.get::<_, i64>(0),
+            )
+            .unwrap_or(0) as usize;
+        summary.tools_shared = tx
+            .query_row(
+                "SELECT COUNT(*) FROM persona_tools WHERE persona_id = ?1",
+                params![source_id],
+                |r| r.get::<_, i64>(0),
+            )
+            .unwrap_or(0) as usize;
+        summary.credential_links_shared = count_credential_links(&tx, source_id);
+
+        tx.commit()?;
+
+        let persona = get_by_id(pool, &new_id)?;
+        Ok((persona, summary))
     })
+}
+
+/// Count the distinct credential dependencies a persona declares: its
+/// `design_context.credentialLinks` entries plus the tool definitions it
+/// assigns that require a credential type. Used by both the duplicate summary
+/// (what's shared, not cloned) and the delete blast radius (what a delete
+/// leaves dangling). Best-effort — a NULL/corrupt `design_context` contributes 0.
+fn count_credential_links(conn: &rusqlite::Connection, persona_id: &str) -> usize {
+    let design_links: usize = conn
+        .query_row(
+            "SELECT design_context FROM personas WHERE id = ?1",
+            params![persona_id],
+            |r| r.get::<_, Option<String>>(0),
+        )
+        .ok()
+        .flatten()
+        .and_then(|json| serde_json::from_str::<serde_json::Value>(&json).ok())
+        .and_then(|v| {
+            v.get("credentialLinks")
+                .or_else(|| v.get("credential_links"))
+                .and_then(|c| c.as_object().map(|o| o.len()))
+        })
+        .unwrap_or(0);
+
+    let tool_creds: usize = conn
+        .query_row(
+            "SELECT COUNT(DISTINCT ptd.requires_credential_type)
+             FROM persona_tools pt
+             INNER JOIN persona_tool_definitions ptd ON ptd.id = pt.tool_id
+             WHERE pt.persona_id = ?1 AND ptd.requires_credential_type IS NOT NULL",
+            params![persona_id],
+            |r| r.get::<_, i64>(0),
+        )
+        .unwrap_or(0) as usize;
+
+    design_links + tool_creds
 }
 
 #[instrument(skip(pool))]
@@ -1603,20 +1889,20 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
             ));
         }
 
-        // Triggers
-        let triggers: Vec<(String, String)> = {
+        // Triggers. NOTE: this selects only `trigger_type` — the previous
+        // `SELECT trigger_type, name` referenced a `name` column that
+        // `persona_triggers` does not have (no migration ever added it), so
+        // the whole query errored at runtime and the delete dialog silently
+        // showed an empty blast radius. The fetched `name` was never used
+        // anyway (impacts are bucketed by type), so dropping it fixes the bug.
+        let triggers: Vec<String> = {
             let mut stmt = conn
-                .prepare("SELECT trigger_type, name FROM persona_triggers WHERE persona_id = ?1")?;
-            let rows = stmt.query_map(params![id], |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, Option<String>>(1)?.unwrap_or_default(),
-                ))
-            })?;
+                .prepare("SELECT trigger_type FROM persona_triggers WHERE persona_id = ?1")?;
+            let rows = stmt.query_map(params![id], |row| row.get::<_, String>(0))?;
             rows.filter_map(|r| r.ok()).collect()
         };
-        let scheduled = triggers.iter().filter(|(t, _)| t == "schedule").count();
-        let webhook = triggers.iter().filter(|(t, _)| t == "webhook").count();
+        let scheduled = triggers.iter().filter(|t| t.as_str() == "schedule").count();
+        let webhook = triggers.iter().filter(|t| t.as_str() == "webhook").count();
         let other = triggers.len() - scheduled - webhook;
         if scheduled > 0 {
             impacts.push((
@@ -1664,6 +1950,49 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
             impacts.push((
                 "execution".into(),
                 format!("{running} running/queued execution(s) will be cancelled"),
+            ));
+        }
+
+        // Learned memories — permanently destroyed by the cascade delete.
+        let memories: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_memories WHERE persona_id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        if memories > 0 {
+            impacts.push((
+                "memory".into(),
+                format!("{memories} learned memory item(s) will be permanently deleted"),
+            ));
+        }
+
+        // Emitted events — the polymorphic `source_id` rows are hard-deleted
+        // (they can't be FK-constrained). Events that merely *target* this
+        // persona are FK-set-null and survive, so only source events are lost.
+        let events: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_events WHERE source_id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        if events > 0 {
+            impacts.push((
+                "event".into(),
+                format!("{events} emitted event record(s) will be deleted from history"),
+            ));
+        }
+
+        // Credential dependencies — design_context.credentialLinks + tool
+        // requires_credential_type. The vault credentials themselves are shared
+        // and survive; this reports the bindings that go away with the persona.
+        let cred_links = count_credential_links(&conn, id);
+        if cred_links > 0 {
+            impacts.push((
+                "credential".into(),
+                format!("{cred_links} credential connection(s) will be unlinked"),
             ));
         }
 
@@ -1720,12 +2049,12 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
 
-    // NOTE: `blast_radius` is not unit-tested here — `init_test_db`'s reduced
-    // schema lacks columns the function queries (e.g. `persona_triggers.name`),
-    // so the call errors before reaching any new logic. The team-membership
-    // branch is a straight INNER JOIN mirroring the existing `chain_dependents`
-    // query and is covered by `cargo check`; verify end-to-end via the delete
-    // confirm modal.
+    // NOTE (updated 2026-07-13): `blast_radius` IS unit-tested now — see
+    // `test_blast_radius_reports_all_categories`. The old blocker was a bug, not
+    // a schema gap: the triggers query selected a `name` column that
+    // `persona_triggers` never had (no migration adds it), so the query errored
+    // at runtime in prod AND in tests. That column's value was never used, so it
+    // was dropped; the function now runs against `init_test_db`'s full schema.
 
     #[test]
     fn test_crud_persona() {
@@ -2592,6 +2921,266 @@ mod tests {
         let archived = get_all_by_lifecycle(&pool, &["archived"]).unwrap();
         assert_eq!(archived.len(), 1);
         assert_eq!(archived[0].id, arch.id);
+    }
+
+    #[test]
+    fn test_get_all_by_lifecycle_lean_filter() {
+        let pool = init_test_db().unwrap();
+        let a = create(&pool, lifecycle_input("LeanActive", "Real.")).unwrap();
+        let mut d_in = lifecycle_input("LeanDraft", "Real.");
+        d_in.lifecycle = Some("draft".into());
+        let d = create(&pool, d_in).unwrap();
+        let arch = create(&pool, lifecycle_input("LeanArch", "Real.")).unwrap();
+        archive_persona(&pool, &arch.id).unwrap();
+
+        let active_draft = get_all_by_lifecycle_lean(&pool, &["active", "draft"]).unwrap();
+        let ids: Vec<&str> = active_draft.iter().map(|p| p.id.as_str()).collect();
+        assert!(ids.contains(&a.id.as_str()));
+        assert!(ids.contains(&d.id.as_str()));
+        assert!(!ids.contains(&arch.id.as_str()));
+
+        let archived = get_all_by_lifecycle_lean(&pool, &["archived"]).unwrap();
+        assert_eq!(archived.len(), 1);
+        assert_eq!(archived[0].id, arch.id);
+
+        // Empty stages == full lean roster.
+        assert_eq!(get_all_by_lifecycle_lean(&pool, &[]).unwrap().len(), 3);
+    }
+
+    #[test]
+    fn test_duplicate_copies_triggers_and_subscriptions_disabled() {
+        let pool = init_test_db().unwrap();
+        let mut src_in = lifecycle_input("Source", "You are the source.");
+        src_in.design_context = Some(r#"{"summary":"src"}"#.into());
+        let src = create(&pool, src_in).unwrap();
+
+        // Seed two enabled triggers + one enabled subscription on the source.
+        {
+            let conn = pool.get().unwrap();
+            let now = chrono::Utc::now().to_rfc3339();
+            conn.execute(
+                "INSERT INTO persona_triggers (id, persona_id, trigger_type, config, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, 'schedule', '{\"cron\":\"* * * * *\"}', 1, ?3, ?3)",
+                params![uuid::Uuid::new_v4().to_string(), src.id, now],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO persona_triggers (id, persona_id, trigger_type, config, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, 'webhook', NULL, 1, ?3, ?3)",
+                params![uuid::Uuid::new_v4().to_string(), src.id, now],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO persona_event_subscriptions (id, persona_id, event_type, source_filter, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, 'file_changed', NULL, 1, ?3, ?3)",
+                params![uuid::Uuid::new_v4().to_string(), src.id, now],
+            )
+            .unwrap();
+        }
+
+        let (copy, summary) = duplicate(&pool, &src.id).unwrap();
+
+        assert_eq!(copy.name, "Source (Copy)");
+        assert_ne!(copy.id, src.id);
+        assert_eq!(copy.design_context.as_deref(), Some(r#"{"summary":"src"}"#));
+        assert_eq!(summary.triggers_copied, 2);
+        assert_eq!(summary.subscriptions_copied, 1);
+
+        let conn = pool.get().unwrap();
+        // Copied triggers carry the new persona_id and are DISABLED.
+        let (trig_count, enabled_count): (i64, i64) = conn
+            .query_row(
+                "SELECT COUNT(*), COALESCE(SUM(enabled), 0) FROM persona_triggers WHERE persona_id = ?1",
+                params![copy.id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(trig_count, 2, "both triggers copied");
+        assert_eq!(enabled_count, 0, "copied triggers must be disabled");
+
+        let (sub_count, sub_enabled): (i64, i64) = conn
+            .query_row(
+                "SELECT COUNT(*), COALESCE(SUM(enabled), 0) FROM persona_event_subscriptions WHERE persona_id = ?1",
+                params![copy.id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(sub_count, 1, "subscription copied");
+        assert_eq!(sub_enabled, 0, "copied subscription must be disabled");
+
+        // Source rows are untouched (still enabled).
+        let src_enabled: i64 = conn
+            .query_row(
+                "SELECT COALESCE(SUM(enabled), 0) FROM persona_triggers WHERE persona_id = ?1",
+                params![src.id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(src_enabled, 2, "source triggers stay enabled");
+    }
+
+    #[test]
+    fn test_duplicate_missing_source_errors() {
+        let pool = init_test_db().unwrap();
+        assert!(matches!(
+            duplicate(&pool, "no-such-id"),
+            Err(AppError::NotFound(_))
+        ));
+    }
+
+    #[test]
+    fn test_blast_radius_reports_all_categories() {
+        let pool = init_test_db().unwrap();
+        let mut p_in = lifecycle_input("Blast", "You are blast-tested.");
+        p_in.design_context = Some(
+            r#"{"credentialLinks":{"gmail":"cred-1","slack":"cred-2"}}"#.into(),
+        );
+        let p = create(&pool, p_in).unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "INSERT INTO persona_triggers (id, persona_id, trigger_type, config, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, 'schedule', NULL, 1, ?3, ?3)",
+                params![uuid::Uuid::new_v4().to_string(), p.id, now],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO persona_event_subscriptions (id, persona_id, event_type, source_filter, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, 'file_changed', NULL, 1, ?3, ?3)",
+                params![uuid::Uuid::new_v4().to_string(), p.id, now],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO persona_memories (id, persona_id, title, content, created_at, updated_at)
+                 VALUES (?1, ?2, 'm', 'c', ?3, ?3)",
+                params![uuid::Uuid::new_v4().to_string(), p.id, now],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO persona_events (id, event_type, source_type, source_id, created_at)
+                 VALUES (?1, 'x', 'persona', ?2, ?3)",
+                params![uuid::Uuid::new_v4().to_string(), p.id, now],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO persona_executions (id, persona_id, status, created_at)
+                 VALUES (?1, ?2, 'running', ?3)",
+                params![uuid::Uuid::new_v4().to_string(), p.id, now],
+            )
+            .unwrap();
+        }
+
+        let impacts = blast_radius(&pool, &p.id).unwrap();
+        let cats: std::collections::HashSet<&str> =
+            impacts.iter().map(|(c, _)| c.as_str()).collect();
+        assert!(cats.contains("trigger"), "trigger impact present");
+        assert!(cats.contains("subscription"), "subscription impact present");
+        assert!(cats.contains("execution"), "running execution impact present");
+        assert!(cats.contains("memory"), "NEW: memory impact present");
+        assert!(cats.contains("event"), "NEW: event impact present");
+        assert!(cats.contains("credential"), "NEW: credential impact present");
+
+        // The credential count = 2 design_context links (+0 tool creds here).
+        let cred = impacts
+            .iter()
+            .find(|(c, _)| c == "credential")
+            .map(|(_, d)| d.clone())
+            .unwrap();
+        assert!(cred.contains('2'), "two credential links reported: {cred}");
+    }
+
+    #[test]
+    fn test_lean_projection_blanks_heavy_fields_and_reports_reduction() {
+        let pool = init_test_db().unwrap();
+
+        // A representative persona with realistically large editor-only blobs.
+        let big_prompt = "You are a meticulous operations analyst. ".repeat(60); // ~2.4 KB
+        let structured = format!(
+            r#"{{"role":"analyst","sections":[{}]}}"#,
+            (0..40)
+                .map(|i| format!(r#"{{"id":"s{i}","body":"{}"}}"#, "detail ".repeat(20)))
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        let test_report = format!(
+            r#"{{"tools":[{}]}}"#,
+            (0..30)
+                .map(|i| format!(r#"{{"tool":"t{i}","passed":true,"log":"{}"}}"#, "x".repeat(80)))
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        let notif = r#"[{"type":"email","config":{"to":"ops@example.com","template":"long-body-here-repeated-many-times"}}]"#;
+        let params = r#"[{"id":"threshold","type":"number","default":42,"label":"Alert threshold"}]"#;
+        // Kept-on-roster blobs (connector chips / widgets read these).
+        let design_ctx = r#"{"summary":"kept","use_cases":[{"id":"u1","title":"Triage"}]}"#;
+        let design_result = r#"{"suggested_connectors":["gmail","slack"],"capabilities":["triage"]}"#;
+
+        let mut input = lifecycle_input("Heavy Persona", &big_prompt);
+        input.structured_prompt = Some(structured.clone());
+        input.notification_channels = Some(notif.to_string());
+        input.design_context = Some(design_ctx.to_string());
+        let p = create(&pool, input).unwrap();
+
+        // Set the fields CreatePersonaInput doesn't carry directly.
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET last_test_report = ?1, parameters = ?2, \
+                 last_design_result = ?3 WHERE id = ?4",
+                params![test_report, params, design_result, p.id],
+            )
+            .unwrap();
+        }
+
+        let full = get_by_id(&pool, &p.id).unwrap();
+        let lean = get_all_lean(&pool)
+            .unwrap()
+            .into_iter()
+            .find(|x| x.id == p.id)
+            .expect("persona present in lean roster");
+
+        // Heavy editor-only fields are blank on the lean row.
+        assert_eq!(lean.system_prompt, "", "system_prompt blanked");
+        assert_eq!(lean.structured_prompt, None, "structured_prompt blanked");
+        assert_eq!(lean.last_test_report, None, "last_test_report blanked");
+        assert_eq!(lean.notification_channels, None, "notification_channels blanked");
+        assert_eq!(lean.parameters, None, "parameters blanked");
+
+        // Kept fields survive on the lean row (roster consumers depend on them).
+        assert_eq!(lean.design_context.as_deref(), Some(design_ctx));
+        assert_eq!(lean.last_design_result.as_deref(), Some(design_result));
+
+        // Light fields round-trip.
+        assert_eq!(lean.name, "Heavy Persona");
+        assert_eq!(lean.lifecycle, "active");
+        assert!(lean.enabled);
+
+        // The full row still carries everything (editor path unchanged).
+        assert!(full.system_prompt.len() > 2000);
+        assert_eq!(full.structured_prompt.as_deref(), Some(structured.as_str()));
+        assert_eq!(full.last_test_report.as_deref(), Some(test_report.as_str()));
+
+        // Measure the serialized IPC-payload reduction for this persona.
+        let full_bytes = serde_json::to_string(&full).unwrap().len();
+        let lean_bytes = serde_json::to_string(&lean).unwrap().len();
+        assert!(
+            lean_bytes < full_bytes,
+            "lean row must serialize smaller ({lean_bytes} vs {full_bytes})"
+        );
+        let pct = 100.0 * (full_bytes - lean_bytes) as f64 / full_bytes as f64;
+        println!(
+            "[lean-projection] full={full_bytes}B lean={lean_bytes}B \
+             saved={}B ({pct:.1}%) per persona",
+            full_bytes - lean_bytes
+        );
+        // Sanity: the five blanked blobs are the bulk of the savings.
+        assert!(
+            full_bytes - lean_bytes > 3000,
+            "expected a multi-KB reduction, got {}B",
+            full_bytes - lean_bytes
+        );
     }
 
     #[test]
