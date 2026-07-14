@@ -229,6 +229,53 @@ export function splitSentrySlug(combined: string | null | undefined): [string | 
   return [combined.slice(0, idx), combined.slice(idx + 1)];
 }
 
+/** One unresolved Sentry issue. `culprit` is Sentry's guess at the code location —
+ *  often a file path, which is what lets a crash be matched onto a context. */
+export interface SentryUnresolvedIssue {
+  id: string;
+  shortId: string;
+  title: string;
+  culprit: string | null;
+  count: number;
+  lastSeen: string | null;
+}
+
+/**
+ * The project's loudest unresolved issues (docs/plans/dev-findings-loop.md 1A-ii).
+ * `fetchSentryStats` only returns COUNTS; the findings sweep and the context-map
+ * error chips need the issues themselves. Sorted by event count, worst first.
+ */
+export async function fetchSentryUnresolvedIssues(
+  credentialId: string,
+  orgSlug: string,
+  projectSlug: string,
+  limit = 25,
+): Promise<SentryUnresolvedIssue[]> {
+  const res = await executeApiRequest(
+    credentialId,
+    'GET',
+    `/api/0/projects/${orgSlug}/${projectSlug}/issues/?query=is:unresolved&statsPeriod=14d&limit=${limit}`,
+    {},
+  );
+  if (res.status >= 400) {
+    throw new Error(`Sentry issues request failed (${res.status}): ${res.body.slice(0, 200)}`);
+  }
+  const parsed: unknown = JSON.parse(res.body);
+  if (!Array.isArray(parsed)) return [];
+  return (parsed as Record<string, unknown>[])
+    .map((i) => ({
+      id: String(i.id ?? ''),
+      shortId: String(i.shortId ?? i.id ?? ''),
+      title: String(i.title ?? 'Unknown issue'),
+      culprit: typeof i.culprit === 'string' && i.culprit ? i.culprit : null,
+      // Sentry returns `count` as a string.
+      count: Number(i.count ?? 0) || 0,
+      lastSeen: typeof i.lastSeen === 'string' ? i.lastSeen : null,
+    }))
+    .filter((i) => i.shortId)
+    .sort((a, b) => b.count - a.count);
+}
+
 export async function fetchSentryStats(
   credentialId: string,
   orgSlug: string,

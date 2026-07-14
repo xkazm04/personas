@@ -247,3 +247,35 @@ export function groupKpis(g: MockGroup): MockKpi[] {
 export function projectKpis(p: MockProject): MockKpi[] {
   return p.groups.flatMap(groupKpis);
 }
+
+/** One off-track KPI. Shared shape so the Factory warning badge and the findings
+ *  sweep's `kpi_offtrack` emitter can never disagree on what "off track" means. */
+export interface KpiAttentionItem {
+  groupId: string;
+  kpiId: string;
+  name: string;
+  current: number | null;
+  target: number;
+  unit: string;
+}
+
+/** Every KPI on the project currently in `crit`. Extracted from ProjectsLayer so
+ *  the findings sweep reads the SAME set the wall badges (dev-findings-loop §3 2B, E5). */
+export function collectKpiAttention(p: MockProject): KpiAttentionItem[] {
+  const items: KpiAttentionItem[] = [];
+  for (const g of p.groups) {
+    for (const k of groupKpis(g)) {
+      if (kpiStatus(k) === 'crit') {
+        items.push({
+          groupId: g.id,
+          kpiId: k.id,
+          name: k.name,
+          current: k.current,
+          target: k.target,
+          unit: k.unit,
+        });
+      }
+    }
+  }
+  return items;
+}
