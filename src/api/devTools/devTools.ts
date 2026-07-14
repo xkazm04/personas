@@ -704,6 +704,21 @@ export const createFinding = (input: CreateFindingInput) =>
 export const listFindingDedupKeys = (projectId: string) =>
   safeInvoke<string[]>([], "dev_tools_list_finding_dedup_keys", { projectId });
 
+// -- verification (Phase 3A) --------------------------------------------------
+
+/** Did shipping the work move the signal? `unchanged`/`regressed` are real
+ *  outcomes — "merged" is not the same as "fixed". */
+export const VERIFY_STATES = ["pending", "cleared", "moved", "unchanged", "regressed"] as const;
+export type VerifyState = (typeof VERIFY_STATES)[number];
+
+/** Record a verdict. `verifyEvidence` is the RE-MEASURED reading (JSON string), so
+ *  the verdict can be audited against the finding's original `evidence`. */
+export const setFindingVerifyState = (
+  id: string,
+  verifyState: VerifyState,
+  verifyEvidence?: string,
+) => invoke<void>("dev_tools_set_finding_verify_state", { id, verifyState, verifyEvidence });
+
 export const updateIdea = (id: string, updates: { status?: string; title?: string; description?: string; category?: string; effort?: number; impact?: number; risk?: number; rejectionReason?: string }) =>
   invoke<DevIdea>("dev_tools_update_idea", {
     id,

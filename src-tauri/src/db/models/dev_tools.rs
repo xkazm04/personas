@@ -584,9 +584,20 @@ pub struct DevIdea {
     /// Stable key per underlying signal (`sentry:<shortId>`, …). A sweep never
     /// re-raises a finding already present in ANY status, `rejected` included.
     pub dedup_key: Option<String>,
+    /// Did shipping this actually move the signal? One of `VERIFY_STATES`.
+    /// `None`/`pending` = not judged yet. `unchanged` / `regressed` are real
+    /// outcomes, not errors — "merged" is not the same as "fixed".
+    pub verify_state: Option<String>,
+    pub verify_checked_at: Option<String>,
+    /// The RE-MEASURED reading (same shape as `evidence`) — lets a verdict be
+    /// audited before-vs-after rather than taken on trust.
+    pub verify_evidence: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
+
+/// The verdicts a verification pass can reach.
+pub const VERIFY_STATES: [&str; 5] = ["pending", "cleared", "moved", "unchanged", "regressed"];
 
 /// The sensors that can raise a finding. Kept as a validated allowlist so a typo
 /// in an emitter can't quietly create a new origin the triage UI won't render.

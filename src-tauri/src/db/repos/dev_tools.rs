@@ -150,6 +150,9 @@ fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
         use_case_id: row.get("use_case_id").unwrap_or(None),
         evidence: row.get("evidence").unwrap_or(None),
         dedup_key: row.get("dedup_key").unwrap_or(None),
+        verify_state: row.get("verify_state").unwrap_or(None),
+        verify_checked_at: row.get("verify_checked_at").unwrap_or(None),
+        verify_evidence: row.get("verify_evidence").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -2843,6 +2846,31 @@ pub fn create_finding(
     })
 }
 
+/// Record a verification verdict on a finding (Phase 3A). `verify_evidence` is the
+/// re-measured reading, so the verdict can be audited against the original
+/// `evidence` instead of taken on trust.
+pub fn set_finding_verify_state(
+    pool: &DbPool,
+    id: &str,
+    verify_state: &str,
+    verify_evidence: Option<&str>,
+) -> Result<(), AppError> {
+    if !crate::db::models::VERIFY_STATES.contains(&verify_state) {
+        return Err(AppError::Validation(format!(
+            "Unknown verify_state: {verify_state}"
+        )));
+    }
+    timed_query!("dev_ideas", "dev_ideas::set_verify_state", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE dev_ideas SET verify_state = ?1, verify_evidence = ?2, verify_checked_at = ?3, updated_at = ?3 WHERE id = ?4",
+            params![verify_state, verify_evidence, now, id],
+        )?;
+        Ok(())
+    })
+}
+
 /// Every dedup key already spoken for on this project — the sweep's pre-filter,
 /// so N drafts cost one query instead of N existence checks.
 pub fn list_finding_dedup_keys(pool: &DbPool, project_id: &str) -> Result<Vec<String>, AppError> {
@@ -3853,6 +3881,9 @@ pub fn bulk_create_ideas_cross_project(
                 use_case_id: None,
                 evidence: None,
                 dedup_key: None,
+                verify_state: None,
+                verify_checked_at: None,
+                verify_evidence: None,
                 created_at: now.clone(),
                 updated_at: now.clone(),
             });

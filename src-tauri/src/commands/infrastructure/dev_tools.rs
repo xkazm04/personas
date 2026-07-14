@@ -1136,6 +1136,19 @@ pub fn dev_tools_create_finding(
     )
 }
 
+/// Record a verification verdict on a finding (Phase 3A) — did shipping the work
+/// actually move the signal that raised it?
+#[tauri::command]
+pub fn dev_tools_set_finding_verify_state(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    verify_state: String,
+    verify_evidence: Option<String>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    repo::set_finding_verify_state(&state.db, &id, &verify_state, verify_evidence.as_deref())
+}
+
 /// Every dedup key already spoken for on this project — lets a sweep filter its
 /// drafts in one round-trip instead of one existence check per draft.
 #[tauri::command]

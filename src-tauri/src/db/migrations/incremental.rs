@@ -4047,6 +4047,22 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     )
     .ok();
 
+    // -- dev_ideas: VERIFICATION (docs/plans/dev-findings-loop.md §7, Phase 3A).
+    // Nothing in the app checked whether shipped work moved the number that raised
+    // the finding — "merged" was silently treated as "fixed". These close that:
+    //   verify_state     — 'pending' | 'cleared' | 'moved' | 'unchanged' | 'regressed'.
+    //                      NULL/pending = not yet judged. `unchanged` and `regressed`
+    //                      are first-class outcomes, surfaced as loudly as `cleared`.
+    //   verify_checked_at— when the last verdict was taken.
+    //   verify_evidence  — the RE-MEASURED reading (same shape as `evidence`), so a
+    //                      verdict can be audited: before vs after, side by side.
+    // The probe is the sweep itself: emitters only fire when a signal is OVER
+    // threshold, so a fresh emit that no longer carries the finding's dedup_key means
+    // the signal is gone (= cleared).
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN verify_state TEXT;").ok();
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN verify_checked_at TEXT;").ok();
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN verify_evidence TEXT;").ok();
+
     // -- GAP-W2 (double-advance TOCTOU): at most ONE active assignment per
     // goal, enforced at the DB level. advance_goal's guard reads, then spends
     // seconds in LLM decomposition, then creates — two near-simultaneous

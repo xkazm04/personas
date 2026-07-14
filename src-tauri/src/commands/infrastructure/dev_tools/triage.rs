@@ -85,6 +85,9 @@ mod tests {
             use_case_id: None,
             evidence: None,
             dedup_key: None,
+            verify_state: None,
+            verify_checked_at: None,
+            verify_evidence: None,
             created_at: "2026-05-02T00:00:00Z".into(),
             updated_at: "2026-05-02T00:00:00Z".into(),
         }

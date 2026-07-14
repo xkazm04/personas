@@ -26,4 +26,15 @@ evidence: string | null,
  * Stable key per underlying signal (`sentry:<shortId>`, …). A sweep never
  * re-raises a finding already present in ANY status, `rejected` included.
  */
-dedup_key: string | null, created_at: string, updated_at: string, };
+dedup_key: string | null, 
+/**
+ * Did shipping this actually move the signal? One of `VERIFY_STATES`.
+ * `None`/`pending` = not judged yet. `unchanged` / `regressed` are real
+ * outcomes, not errors — "merged" is not the same as "fixed".
+ */
+verify_state: string | null, verify_checked_at: string | null, 
+/**
+ * The RE-MEASURED reading (same shape as `evidence`) — lets a verdict be
+ * audited before-vs-after rather than taken on trust.
+ */
+verify_evidence: string | null, created_at: string, updated_at: string, };
