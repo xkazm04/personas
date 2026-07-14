@@ -129,6 +129,14 @@ materially edits the working tree should touch this file twice:
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
 
+### perfect-smoke3 — /perfect smoke: live L2 verification of waves 6-7 — session fable-5
+- Started: 2026-07-14. Status: COMPLETED (5c1e15b4d).
+- THE FIND: F6's true root cause — #[requires(privileged)] macro doesn't register commands in PRIVILEGED_COMMANDS; sync privileged commands not on the static list fail closed on EVERY IPC call. get_provider_usage_stats broken since it shipped (56 log hits today); wave-6's get_health_bundle hit the same trap (22). Fixed by registering the provider trio + bundle; VERIFIED live post-watcher-rebuild: banner gone, zero validation failures since restart. Round-8 candidate: macro⊆list static guarantee (~40 more unlisted).
+- Also verified live: stuck-session GC swept 42 real sessions (zero non-terminal on non-draft personas); sla_daily backfilled 41 rows to May; Status Page new composite live, SLA-Compliance column retired; Health tab clean. Honest empties: breach episodes 0, missed runs 0 (preconditions unmet). Not-driven list in vault sessions/2026-07-14-smoke3.
+- Ledger entry for round-7-propose superseded by perfect-round7 below (build completed within the same session chain).
+
+
+
 ### perfect-round7 — /perfect round 7: propose (3 contexts, 12 accepted) + build wave 7 (12/12 shipped, zero builder deaths) — session fable-5
 - Started: 2026-07-14. Status: COMPLETED.
 - Shipped on master: 986aa32e4 (stuck build-session GC) · be69cf29d (truthful automation tool contract + retry-aware reaper) · 942fdb71a + 3bdc01bfc + 5fdce2a36 (truthful cron preview; honest calendar history) · 716318fc9 + 382169803 + b0842058a + b3c97180a (missed-runs visible; overlap skip-with-signal; lost fires → healing + invalid-TZ reason) · 38f28e567 + 64216eb5c + 1f64c7d2a (obsidian anchors as literals; footer Replay/Resume setup; anchor-drift gate test) · e9498b093 + 853b56b84 (getting-started mock-build harness spec; modal→tour handoff offer).
