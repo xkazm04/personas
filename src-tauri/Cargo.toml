@@ -226,6 +226,14 @@ vt100 = "0.15"
 name = "personas-mcp"
 path = "src/mcp_bin.rs"
 
+# Deterministic scorer for the Athena model/effort bench (Track B of
+# docs/plans/athena-live-conversation-layer.md). Runs the REAL companion
+# dispatcher over raw turn text so the bench's op/param validation can never
+# drift from production. Consumed by scripts/test/athena-model-bench.mjs.
+[[bin]]
+name = "athena-bench-validate"
+path = "src/athena_bench_bin.rs"
+
 # Always-on daemon binary (Phase 0 scaffold). Opt-in via the `daemon` feature
 # so default builds and CI do not compile it. Boots without a Tauri window,
 # acquires the daemon lock file, and in future sessions will spawn the

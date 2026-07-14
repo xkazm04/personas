@@ -8,4 +8,5 @@
 //! Default DB location: `.planning/bench/personas_bench.db` (gitignored).
 //! The `personas-bench` binary (added in a later phase) consumes this.
 
+pub mod athena_validate;
 pub mod db;

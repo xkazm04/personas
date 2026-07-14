@@ -90,14 +90,16 @@ Two complementary mechanisms, both gated on P1 (routing) and P2 (state):
 
 **Question:** for Athena's real turns — real system prompt, real digests, real OP grammar — how do `claude-opus-4-8` and `claude-sonnet-5` at different reasoning efforts trade **speed vs decision ability**? Opus at today's default is the safety baseline; nothing ships below it without passing the gates.
 
-### B0 — Prerequisite seams (tiny)
+### B0 — Prerequisite seams (tiny) ✅ DONE
 
-1. **Model/effort override** on the spawn path (`session.rs` `run_cli`): env/args `PERSONAS_ATHENA_MODEL`, `PERSONAS_ATHENA_EFFORT` — bench-only at first, becomes the P4 routing knob. (Exact CLI flag for effort to be resolved at implementation; `--model` exists today.)
-2. **Prompt-dump seam** — a debug command (`companion_build_prompt_preview`) or `PERSONAS_DUMP_PROMPT=1` that emits the fully-composed system prompt (all digests included) for a given conversation + seeded state, so the harness replays *real* prompts, not approximations.
+1. **Model/effort override** — `PERSONAS_ATHENA_MODEL` / `PERSONAS_ATHENA_EFFORT` (validated: low|medium|high|xhigh), read per spawn in `run_cli`, scoped to companion-chat turns (build turns keep their pinned model + effort knob). The resolved model also feeds the `companion_turn.model` ledger column, preserving the one-source invariant. CLI support verified: `--effort` accepts low/medium/high/xhigh on both `claude-opus-4-8` and `claude-sonnet-5` (default **high** for both — so O-base ≡ Opus@high); `--model` works headless and overrides a `--resume`d session's model.
+2. **Prompt-dump seam** — `PERSONAS_DUMP_PROMPT=1` snapshots each turn's fully-composed system prompt + user message to `~/.personas/debug/prompts/<ts>-<conv>-<turn>.md` (`---USER-MESSAGE---` divider is the harness parse contract). Best-effort, never blocks the turn.
 
-### B1 — Harness + scenario corpus
+### B1 — Harness + scenario corpus ✅ SHIPPED (v1: 38 scenarios; judge pass deferred)
 
-**Harness:** `scripts/test/athena-model-bench.mjs` (follows the clarify-bench / onboarding-bench precedent; grading rubric method borrowed from the `/tiger` benchmark lens). Per scenario × cell × repetition it:
+Shipped shape: `scripts/test/athena-model-bench.mjs` (`--dry-run` / `--cell <id>` / `--cells all` / `--report`; per-run JSONL checkpointing so rate-limited runs resume) + `scripts/test/fixtures/athena-bench/scenarios.json` (38 scenarios, 6 classes) + `scripts/test/fixtures/athena-bench/system-prompt.md` (distilled fallback; `--prompt-file` replays real `PERSONAS_DUMP_PROMPT` snapshots). Deterministic scoring runs the **production dispatcher** via a new `athena-bench-validate` bin (`src-tauri/src/bench/athena_validate.rs` — throwaway fully-migrated user DB per validation, `--pinned` seeds `companion_active_connector` both ways). The LLM-judge prose pass is a follow-up; results.jsonl carries `turnText` so it can run offline.
+
+Original design (kept for reference) — per scenario × cell × repetition it:
 1. seeds fixture state (jobs, roster, goals/KPIs snapshot) → dumps the real system prompt (B0.2),
 2. spawns the `claude` CLI with the cell's model/effort and the scenario's user message, streaming JSONL captured,
 3. records timing: spawn→first token (felt latency), spawn→final, total output tokens,
