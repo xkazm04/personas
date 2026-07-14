@@ -23,11 +23,25 @@ import { parseJsonArray } from './contextMapTypes';
 import ScanOverlay from './ScanOverlay';
 import ContextDetail from './ContextDetail';
 import ContextLedger from './ContextLedger';
+import ContextGroupRowsPills from './ContextGroupRowsPills';
+import ContextGroupRowsCards from './ContextGroupRowsCards';
 import type { ContextLedgerProps } from './contextLedgerShared';
+import { buildKpiStatusByContext } from './contextKpiStatus';
 import { useUseCases } from './useUseCases';
+import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+
+// PROTOTYPE (/prototype round 2): the Context Map's layout A/B. `crosstab` is
+// the shipped ledger (contexts × features); the two group-row variants lay one
+// group per row with its contexts inline, tinted by KPI health.
+type ContextView = 'crosstab' | 'roster' | 'cards';
+const VIEW_TABS: SegmentedTab<ContextView>[] = [
+  { id: 'crosstab', label: 'Cross-tab' },
+  { id: 'roster', label: 'Roster' },
+  { id: 'cards', label: 'Cards' },
+];
 
 // ---------------------------------------------------------------------------
 // Completion handler — shared by event listener + resync polling.
@@ -487,6 +501,11 @@ export default function ContextMapPage() {
   // on the board — the one interaction that makes the layer legible.
   const useCaseState = useUseCases(activeProjectId ?? null);
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
+  const [contextView, setContextView] = useState<ContextView>('crosstab');
+
+  // contextId → worst-wins KPI health. "No KPIs" and "KPIs but unmeasured" both
+  // resolve to neutral — an unmeasured context has earned no colour.
+  const kpiStatusByContext = useMemo(() => buildKpiStatusByContext(storeKpis), [storeKpis]);
   // A selection that no longer exists (rejected, or the project switched) must
   // not keep a column highlighted.
   useEffect(() => {
@@ -516,6 +535,7 @@ export default function ContextMapPage() {
     goalCoverageByContext,
     ideaCoverageByContext,
     kpiCoverageByContext,
+    kpiStatusByContext,
     hasMap: hasContexts,
     onScanContext: handleScanContext,
     scanningContextId,
@@ -556,8 +576,29 @@ export default function ContextMapPage() {
           )}
         </ActionRow>
 
+        {/* PROTOTYPE switcher — Cross-tab (shipped) vs the two group-row layouts. */}
+        {hasContexts && (
+          <div className="mb-2">
+            <SegmentedTabs
+              tabs={VIEW_TABS}
+              activeTab={contextView}
+              onTabChange={setContextView}
+              variant="segment"
+              size="sm"
+              fullWidth={false}
+              ariaLabel="Context view"
+            />
+          </div>
+        )}
+
         <div className="flex gap-0 min-h-0 flex-1">
-          <ContextLedger {...ledgerProps} />
+          {contextView === 'crosstab' ? (
+            <ContextLedger {...ledgerProps} />
+          ) : contextView === 'roster' ? (
+            <ContextGroupRowsPills {...ledgerProps} />
+          ) : (
+            <ContextGroupRowsCards {...ledgerProps} />
+          )}
 
           {selectedCtx && (
             <ContextDetail

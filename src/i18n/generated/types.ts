@@ -12686,6 +12686,11 @@ export type Translations = {
       uc_source_scan: string;
       uc_source_backfill: string;
       uc_source_user: string;
+      ctx_kpi_met: string;
+      ctx_kpi_on_track: string;
+      ctx_kpi_off_track: string;
+      ctx_kpi_unmeasured: string;
+      ctx_kpi_none: string;
     };
     doc_signing: {
       sign_heading: string;

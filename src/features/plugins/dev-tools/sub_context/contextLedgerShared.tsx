@@ -18,6 +18,7 @@ import type { Translations } from '@/i18n/en';
 
 import UseCaseDetailModal from './UseCaseDetailModal';
 import { kindMeta, KIND_TEXT } from './useCaseKind';
+import type { ContextKpiStatus } from './contextKpiStatus';
 import type { ContextGroup } from './contextMapTypes';
 import type { UseCasesState } from './useUseCases';
 
@@ -38,6 +39,9 @@ export interface ContextLedgerProps {
   goalCoverageByContext: Map<string, GoalCoverage>;
   ideaCoverageByContext: Map<string, number>;
   kpiCoverageByContext: Map<string, number>;
+  /** contextId → worst-wins KPI health; absent = no KPIs (neutral). Drives the
+   *  group-row variants' tinting. */
+  kpiStatusByContext: Map<string, ContextKpiStatus>;
   hasMap: boolean;
   /** Run the idea scanner scoped to one context (the per-row ✨ action). */
   onScanContext: (contextId: string) => void;
