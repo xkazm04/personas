@@ -3098,11 +3098,8 @@ mod tests {
         // A representative persona with realistically large editor-only blobs.
         let big_prompt = "You are a meticulous operations analyst. ".repeat(60); // ~2.4 KB
         let structured = format!(
-            r#"{{"role":"analyst","sections":[{}]}}"#,
-            (0..40)
-                .map(|i| format!(r#"{{"id":"s{i}","body":"{}"}}"#, "detail ".repeat(20)))
-                .collect::<Vec<_>>()
-                .join(",")
+            r#"{{"identity":"You are a meticulous operations analyst.","instructions":"{}"}}"#,
+            "Follow the runbook step by step and report anomalies. ".repeat(60)
         );
         let test_report = format!(
             r#"{{"tools":[{}]}}"#,
@@ -3222,8 +3219,8 @@ mod tests {
             let conn = pool.get().unwrap();
             let now = chrono::Utc::now().to_rfc3339();
             conn.execute(
-                "INSERT INTO persona_executions (id, persona_id, status, created_at, updated_at)
-                 VALUES (?1, ?2, 'completed', ?3, ?3)",
+                "INSERT INTO persona_executions (id, persona_id, status, created_at)
+                 VALUES (?1, ?2, 'completed', ?3)",
                 params![uuid::Uuid::new_v4().to_string(), d.id, now],
             )
             .unwrap();

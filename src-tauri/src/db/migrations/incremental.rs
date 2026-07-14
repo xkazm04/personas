@@ -5326,11 +5326,18 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                 // Also treat a NULL/blank design_context as part of "never built"
                 // for defense in depth (a finished build writes design_context).
                 //
-                // trust_origin is itself an incrementally-added column and is
-                // ABSENT in the test-binary schema when this backfill runs
-                // (the known init_test_db divergence) — guard the system-persona
-                // exclusion clause on the column's existence.
-                let system_clause = if has_column(conn, "personas", "trust_origin")? {
+                // ORDERING FIX (2026-07-14): this migration lives in
+                // `ensure_composite_fires_table`, which `migrations::run()`
+                // executes BEFORE `run_incremental()` adds the trust columns.
+                // On a FRESH database `trust_origin` therefore does not exist
+                // yet and the previous unconditional reference to it errored
+                // ("no such column: trust_origin") — bricking init on every
+                // fresh install (and init_test_db). Guard the system-persona
+                // exclusion on column existence: a fresh DB has zero persona
+                // rows at this point (seeds run after migrations), so the
+                // clause is vacuously unnecessary there; on legacy DBs the
+                // column exists and the exclusion applies as designed.
+                let trust_clause = if has_column(conn, "personas", "trust_origin")? {
                     "AND COALESCE(trust_origin, 'builtin') != 'system'"
                 } else {
                     ""
@@ -5339,11 +5346,11 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                     conn,
                     &format!(
                         "UPDATE personas SET lifecycle = 'draft'
-                     WHERE (last_design_result IS NULL OR TRIM(last_design_result) = '')
-                       AND (design_context IS NULL OR TRIM(design_context) = '')
-                       AND (system_prompt = 'You are a helpful AI assistant.'
-                            OR TRIM(COALESCE(system_prompt, '')) = '')
-                       {system_clause};"
+                         WHERE (last_design_result IS NULL OR TRIM(last_design_result) = '')
+                           AND (design_context IS NULL OR TRIM(design_context) = '')
+                           AND (system_prompt = 'You are a helpful AI assistant.'
+                                OR TRIM(COALESCE(system_prompt, '')) = '')
+                           {trust_clause};"
                     ),
                 )?;
                 Ok(())
