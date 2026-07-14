@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Activity, RefreshCw, Shield, LayoutGrid, Rows3 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useAgentStore } from '@/stores/agentStore';
 import { useShallow } from 'zustand/react/shallow';
 import { HeartbeatsView } from './heartbeats';
 
@@ -32,20 +33,19 @@ export default function PersonaHealthDashboard() {
 
   const [healthView, setHealthView] = useState<HealthView>('heartbeats');
 
-  // Initial load — deferred to idle to avoid blocking the main thread
-  // during section navigation. The health computation is expensive (~400ms).
+  // Gate the initial load on readiness rather than a blind idle timer. The
+  // persona fetch is the app's canonical "IPC + session token are ready"
+  // signal — firing the bundle before it settled caused the cold-start
+  // token-race that surfaced as the "Incomplete health data" banner. Once the
+  // agents store has settled we compute on the next frame (no long blind wait).
+  const agentsLoading = useAgentStore((s) => s.isLoading);
   useEffect(() => {
     if (healthSignals.length > 0 || healthLoading) return;
+    if (agentsLoading) return;
 
-    const run = () => void refreshHealthDashboard();
-    if (typeof requestIdleCallback === 'function') {
-      const id = requestIdleCallback(run, { timeout: 2000 });
-      return () => cancelIdleCallback(id);
-    }
-
-    const t = setTimeout(run, 200);
-    return () => clearTimeout(t);
-  }, [healthSignals.length, healthLoading, refreshHealthDashboard]);
+    const id = requestAnimationFrame(() => void refreshHealthDashboard());
+    return () => cancelAnimationFrame(id);
+  }, [healthSignals.length, healthLoading, agentsLoading, refreshHealthDashboard]);
 
   const handleRefresh = useCallback(() => {
     void refreshHealthDashboard();

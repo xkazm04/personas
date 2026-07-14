@@ -6908,7 +6908,12 @@
       "loading_status_page": "Statusseite wird geladen…",
       "loading_reliability": "Zuverlässigkeitsdaten werden geladen…",
       "heartbeats_btn": "Herzschläge",
-      "reliability_btn": "Zuverlässigkeit"
+      "reliability_btn": "Zuverlässigkeit",
+      "source_byom_policy": "BYOM-Richtlinie",
+      "source_healing_issues": "Heilungsprobleme",
+      "source_monthly_spend": "Monatliche Ausgaben",
+      "source_provider_stats": "Anbieterstatistiken",
+      "sources_unavailable": "{sources} konnten nicht geladen werden — die Werte sind möglicherweise ungenau."
     },
     "popup_fields": {
       "sign_up_free_at": "Kostenlos registrieren auf",

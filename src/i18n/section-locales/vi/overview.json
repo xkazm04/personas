@@ -1274,7 +1274,12 @@
     "loading_status_page": "Đang tải trang trạng thái…",
     "loading_reliability": "Đang tải dữ liệu độ tin cậy…",
     "heartbeats_btn": "Nhịp tim",
-    "reliability_btn": "Độ tin cậy"
+    "reliability_btn": "Độ tin cậy",
+    "source_byom_policy": "Chính sách BYOM",
+    "source_healing_issues": "Sự cố khắc phục",
+    "source_monthly_spend": "Chi tiêu hàng tháng",
+    "source_provider_stats": "Thống kê nhà cung cấp",
+    "sources_unavailable": "Không thể tải {sources} — điểm số có thể không chính xác."
   },
   "popup_fields": {
     "sign_up_free_at": "Đăng ký miễn phí tại",

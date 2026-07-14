@@ -1274,7 +1274,12 @@
     "loading_status_page": "Memuat halaman status...",
     "loading_reliability": "Memuat data keandalan...",
     "heartbeats_btn": "Detak",
-    "reliability_btn": "Keandalan"
+    "reliability_btn": "Keandalan",
+    "source_byom_policy": "Kebijakan BYOM",
+    "source_healing_issues": "Masalah pemulihan",
+    "source_monthly_spend": "Pengeluaran bulanan",
+    "source_provider_stats": "Statistik penyedia",
+    "sources_unavailable": "{sources} tidak dapat dimuat — skor mungkin tidak akurat."
   },
   "popup_fields": {
     "sign_up_free_at": "Daftar gratis di",

@@ -6908,7 +6908,12 @@
       "loading_status_page": "Загрузка страницы статуса…",
       "loading_reliability": "Загрузка данных надёжности…",
       "heartbeats_btn": "Сигналы",
-      "reliability_btn": "Надёжность"
+      "reliability_btn": "Надёжность",
+      "source_byom_policy": "Политика BYOM",
+      "source_healing_issues": "Проблемы восстановления",
+      "source_monthly_spend": "Месячные расходы",
+      "source_provider_stats": "Статистика провайдера",
+      "sources_unavailable": "Не удалось загрузить {sources} — оценки могут быть неточными."
     },
     "popup_fields": {
       "sign_up_free_at": "Бесплатная регистрация на",

@@ -6908,7 +6908,12 @@
       "loading_status_page": "ステータスページを読み込み中…",
       "loading_reliability": "信頼性データを読み込み中…",
       "heartbeats_btn": "ハートビート",
-      "reliability_btn": "信頼性"
+      "reliability_btn": "信頼性",
+      "source_byom_policy": "BYOM ポリシー",
+      "source_healing_issues": "修復の問題",
+      "source_monthly_spend": "月間支出",
+      "source_provider_stats": "プロバイダー統計",
+      "sources_unavailable": "{sources} を読み込めませんでした。スコアが不正確な可能性があります。"
     },
     "popup_fields": {
       "sign_up_free_at": "無料で登録",

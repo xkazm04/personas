@@ -6908,7 +6908,12 @@
       "loading_status_page": "স্ট্যাটাস পেজ লোড হচ্ছে...",
       "loading_reliability": "নির্ভরযোগ্যতার ডেটা লোড হচ্ছে...",
       "heartbeats_btn": "হার্টবিট",
-      "reliability_btn": "নির্ভরযোগ্যতা"
+      "reliability_btn": "নির্ভরযোগ্যতা",
+      "source_byom_policy": "BYOM নীতি",
+      "source_healing_issues": "হিলিং সমস্যা",
+      "source_monthly_spend": "মাসিক খরচ",
+      "source_provider_stats": "প্রোভাইডার পরিসংখ্যান",
+      "sources_unavailable": "{sources} লোড করা যায়নি — স্কোর ভুল হতে পারে।"
     },
     "popup_fields": {
       "sign_up_free_at": "বিনামূল্যে সাইন আপ করুন",

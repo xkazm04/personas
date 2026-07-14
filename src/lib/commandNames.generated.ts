@@ -719,6 +719,7 @@ export type CommandName =
   | "get_healing_effectiveness"
   | "get_healing_issue"
   | "get_healing_timeline"
+  | "get_health_bundle"
   | "get_knowledge_base"
   | "get_knowledge_injection"
   | "get_knowledge_summary"

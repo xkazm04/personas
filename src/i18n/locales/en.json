@@ -7344,7 +7344,12 @@
       "loading_status_page": "Loading status page...",
       "loading_reliability": "Loading reliability data...",
       "heartbeats_btn": "Heartbeats",
-      "reliability_btn": "Reliability"
+      "reliability_btn": "Reliability",
+      "sources_unavailable": "{sources} could not be loaded — scores may be inaccurate.",
+      "source_monthly_spend": "Monthly spend",
+      "source_healing_issues": "Healing issues",
+      "source_byom_policy": "BYOM policy",
+      "source_provider_stats": "Provider stats"
     },
     "heartbeats": {
       "monitored": "monitored",

@@ -8,11 +8,14 @@ use ts_rs::TS;
 
 use crate::db::models::{
     AnomalyDrilldownData, ErrorCategoryBreakdown, ExecutionDashboardData, ExecutionHeatmapData,
-    MetricsChartData, MetricsSummary, ValueRollup,
+    MetricsChartData, MetricsSummary, PersonaHealingIssue, ValueRollup,
 };
+use crate::db::repos::execution::healing as healing_repo;
 use crate::db::repos::execution::metrics as repo;
+use crate::db::repos::execution::provider_audit::{self, ProviderUsageStats};
+use crate::engine::byom::ByomPolicy;
 use crate::error::AppError;
-use crate::ipc_auth::require_auth_sync;
+use crate::ipc_auth::{require_auth_sync, require_privileged_sync};
 use crate::AppState;
 
 #[derive(Debug, Serialize, TS)]
@@ -238,6 +241,119 @@ fn monthly_period_start_utc(utc_offset_minutes: Option<i32>) -> String {
         });
 
     period_start_utc.format("%Y-%m-%dT%H:%M:%S").to_string()
+}
+
+// =============================================================================
+// Health bundle
+// =============================================================================
+
+/// Per-source failure reasons for the health bundle. A `null` field means that
+/// source loaded cleanly; a `Some(reason)` means only that source failed, and
+/// the corresponding payload on `HealthBundle` is `null`. This lets the health
+/// dashboard degrade one source at a time instead of nuking the whole view when
+/// a single query fails (the live "Incomplete health data | Retry" banner
+/// class). It also disambiguates `byom_policy: None` — "no policy configured"
+/// (valid) is `byom_policy = null, errors.byom_policy = null`, whereas a load
+/// failure is `byom_policy = null, errors.byom_policy = Some(reason)`.
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct HealthBundleErrors {
+    pub monthly_spend: Option<String>,
+    pub healing_issues: Option<String>,
+    pub byom_policy: Option<String>,
+    pub provider_stats: Option<String>,
+}
+
+/// Server-side join of the four data sources the persona-health pipeline needs,
+/// replacing four independent frontend IPC round-trips (each with its own
+/// cold-start token-race failure surface) with one. Each payload is
+/// independently fail-able via the `errors` envelope.
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct HealthBundle {
+    pub monthly_spend: Option<MonthlySpendResult>,
+    pub healing_issues: Option<Vec<PersonaHealingIssue>>,
+    pub byom_policy: Option<ByomPolicy>,
+    pub provider_stats: Option<Vec<ProviderUsageStats>>,
+    pub errors: HealthBundleErrors,
+}
+
+/// One-shot health bundle: monthly spend + (bounded) healing issues + BYOM
+/// policy + provider usage stats, each independently fail-able.
+///
+/// `healing_window_days` (default 7) and `healing_limit` (default 1000) bound
+/// the healing scan — see `healing::get_for_health`. Provider stats stay behind
+/// the same privileged gate as the standalone `get_provider_usage_stats`
+/// command; if the caller isn't privileged that ONE source reports an error
+/// while the rest of the bundle still returns.
+#[tauri::command]
+#[instrument(skip(state), fields(healing_window_days, healing_limit, utc_offset_minutes))]
+pub fn get_health_bundle(
+    state: State<'_, Arc<AppState>>,
+    healing_window_days: Option<i64>,
+    healing_limit: Option<i64>,
+    utc_offset_minutes: Option<i32>,
+) -> Result<HealthBundle, AppError> {
+    require_auth_sync(&state)?;
+    let start = std::time::Instant::now();
+    let pool = &state.db;
+    let healing_window = healing_window_days.unwrap_or(7).clamp(1, 365);
+    let healing_limit = healing_limit.unwrap_or(1000).clamp(1, 5000);
+
+    // -- Monthly spend ----------------------------------------------------
+    let (monthly_spend, monthly_err) = split(
+        (|| {
+            let conn = pool.get()?;
+            get_all_monthly_spend_with_conn(&conn, utc_offset_minutes)
+        })(),
+    );
+
+    // -- Healing issues (bounded) -----------------------------------------
+    let (healing_issues, healing_err) =
+        split(healing_repo::get_for_health(pool, healing_window, healing_limit));
+
+    // -- BYOM policy (Ok(None) = no policy configured, which is valid) -----
+    let (byom_policy, byom_err) = match ByomPolicy::load(pool) {
+        Ok(policy) => (policy, None),
+        Err(e) => (None, Some(e.to_string())),
+    };
+
+    // -- Provider stats (privileged; degrade this source alone if not) ----
+    let (provider_stats, provider_err) =
+        match require_privileged_sync(&state, "get_health_bundle") {
+            Ok(()) => split(provider_audit::get_usage_stats(pool)),
+            Err(e) => (None, Some(e.to_string())),
+        };
+
+    info!(
+        duration_ms = start.elapsed().as_millis() as u64,
+        healing_window,
+        "cmd::get_health_bundle"
+    );
+
+    Ok(HealthBundle {
+        monthly_spend,
+        healing_issues,
+        byom_policy,
+        provider_stats,
+        errors: HealthBundleErrors {
+            monthly_spend: monthly_err,
+            healing_issues: healing_err,
+            byom_policy: byom_err,
+            provider_stats: provider_err,
+        },
+    })
+}
+
+/// Collapse a `Result<T, AppError>` into a `(Option<T>, Option<String>)`
+/// payload/error pair for the health bundle envelope.
+fn split<T>(r: Result<T, AppError>) -> (Option<T>, Option<String>) {
+    match r {
+        Ok(v) => (Some(v), None),
+        Err(e) => (None, Some(e.to_string())),
+    }
 }
 
 /// Returns aggregated prompt performance data for a single persona,

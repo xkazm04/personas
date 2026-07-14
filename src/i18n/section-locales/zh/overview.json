@@ -1274,7 +1274,12 @@
     "loading_status_page": "正在加载状态页面…",
     "loading_reliability": "正在加载可靠性数据…",
     "heartbeats_btn": "心跳",
-    "reliability_btn": "可靠性"
+    "reliability_btn": "可靠性",
+    "source_byom_policy": "BYOM 策略",
+    "source_healing_issues": "修复问题",
+    "source_monthly_spend": "每月支出",
+    "source_provider_stats": "提供方统计",
+    "sources_unavailable": "无法加载 {sources}，评分可能不准确。"
   },
   "popup_fields": {
     "sign_up_free_at": "免费注册于",

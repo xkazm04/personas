@@ -4,20 +4,12 @@ import type {
   PersonaHealthSignal,
   CascadeLink,
   RoutingRecommendation,
-  DataSourceName,
 } from '@/stores/slices/overview/personaHealthSlice';
 import type { Translations } from '@/i18n/generated/types';
 
 // ---------------------------------------------------------------------------
 // Shared model + design tokens for the Vitals Ledger heartbeats view.
 // ---------------------------------------------------------------------------
-
-export const DATA_SOURCE_LABELS: Record<DataSourceName, string> = {
-  monthlySpend: 'Monthly spend (local tz)',
-  healingIssues: 'Healing issues',
-  byomPolicy: 'BYOM policy',
-  providerStats: 'Provider stats',
-};
 
 /** Single source of truth for grade → semantic-token styling. */
 export const GRADE_THEME: Record<HealthGrade, {

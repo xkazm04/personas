@@ -6908,7 +6908,12 @@
       "loading_status_page": "स्थिति पृष्ठ लोड हो रहा है...",
       "loading_reliability": "विश्वसनीयता डेटा लोड हो रहा है...",
       "heartbeats_btn": "हार्टबीट",
-      "reliability_btn": "विश्वसनीयता"
+      "reliability_btn": "विश्वसनीयता",
+      "source_byom_policy": "BYOM नीति",
+      "source_healing_issues": "हीलिंग समस्याएँ",
+      "source_monthly_spend": "मासिक व्यय",
+      "source_provider_stats": "प्रदाता आँकड़े",
+      "sources_unavailable": "{sources} लोड नहीं हो सका — स्कोर गलत हो सकते हैं।"
     },
     "popup_fields": {
       "sign_up_free_at": "मुफ़्त में साइन अप करें",

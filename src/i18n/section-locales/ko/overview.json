@@ -1274,7 +1274,12 @@
     "loading_status_page": "상태 페이지 불러오는 중…",
     "loading_reliability": "신뢰성 데이터 불러오는 중…",
     "heartbeats_btn": "하트비트",
-    "reliability_btn": "신뢰성"
+    "reliability_btn": "신뢰성",
+    "source_byom_policy": "BYOM 정책",
+    "source_healing_issues": "복구 문제",
+    "source_monthly_spend": "월간 지출",
+    "source_provider_stats": "공급자 통계",
+    "sources_unavailable": "{sources}을(를) 불러오지 못했습니다. 점수가 정확하지 않을 수 있습니다."
   },
   "popup_fields": {
     "sign_up_free_at": "무료 가입 위치:",

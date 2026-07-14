@@ -9,6 +9,7 @@ import type { ByomPolicy, ProviderUsageStats } from "@/api/system/byom";
 import { getByomPolicy, getProviderUsageStats } from "@/api/system/byom";
 import { getOverviewBundle } from "@/api/overview/observability";
 import { listHealingIssues } from "@/api/overview/healing";
+import { getHealthBundle } from "@/api/overview/health";
 import { log } from "@/lib/log";
 import { measureStoreAction } from "@/lib/utils/storePerf";
 
@@ -84,7 +85,16 @@ export interface RoutingRecommendation {
 
 export type DataSourceName = 'monthlySpend' | 'healingIssues' | 'byomPolicy' | 'providerStats';
 export type DataSourceState = 'ok' | 'failed';
-export type DataSourceStatusMap = Record<DataSourceName, DataSourceState>;
+/**
+ * Per-source status for the health bundle. `reason` carries the server-side
+ * (or retry) failure message so the staleness banner can name *why* a source
+ * is unavailable, not just *that* it is. `null` reason ⇔ `state: 'ok'`.
+ */
+export interface DataSourceStatus {
+  state: DataSourceState;
+  reason: string | null;
+}
+export type DataSourceStatusMap = Record<DataSourceName, DataSourceStatus>;
 
 export interface PersonaHealthSlice {
   // State
@@ -93,6 +103,13 @@ export interface PersonaHealthSlice {
   routingRecommendations: RoutingRecommendation[];
   byomPolicy: ByomPolicy | null;
   providerStats: ProviderUsageStats[];
+  /**
+   * Healing issues fetched by the last `computePersonaHealth` (from the health
+   * bundle). Exposed on the store so other consumers (e.g. the agents
+   * `healthCheckSlice` digest) can reuse them instead of issuing a third
+   * `list_healing_issues` IPC of their own.
+   */
+  healthHealingIssues: PersonaHealingIssue[];
   healthLoading: boolean;
   healthError: string | null;
   healthLastRefreshedAt: number | null;
@@ -244,6 +261,7 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
   routingRecommendations: [],
   byomPolicy: null,
   providerStats: [],
+  healthHealingIssues: [],
   healthLoading: false,
   healthError: null,
   healthLastRefreshedAt: null,
@@ -257,34 +275,60 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
         const dashboard = get().executionDashboard;
         const dailyPoints = dashboard?.daily_points ?? [];
 
-        // Fetch supplementary data using allSettled to avoid mutating shared
-        // state inside concurrent catch handlers (race when called twice rapidly)
-        const settled = await Promise.allSettled([
-          getOverviewBundle(30).then((bundle) => bundle.monthlySpend),
-          listHealingIssues(),
-          getByomPolicy(),
-          getProviderUsageStats(),
-        ]);
+        // ONE server-side join instead of four independent IPC round-trips —
+        // each source is independently fail-able via `bundle.errors`, so a
+        // single failing query no longer nukes the whole health view (the live
+        // "Incomplete health data | Retry" banner class). Healing is bounded
+        // server-side (7d + open + circuit-breaker), matching what the scorers
+        // consume below.
+        const bundle = await getHealthBundle(7);
 
-        const monthlySpendResult = settled[0].status === 'fulfilled'
-          ? settled[0].value
-          : null;
-        const monthlySpend = monthlySpendResult?.items ?? [];
-        const healingIssues = settled[1].status === 'fulfilled'
-          ? settled[1].value
-          : [] as PersonaHealingIssue[];
-        const byomPolicy = settled[2].status === 'fulfilled'
-          ? settled[2].value
-          : null;
-        const providerStats = settled[3].status === 'fulfilled'
-          ? settled[3].value
-          : [] as ProviderUsageStats[];
+        const reasons: Record<DataSourceName, string | null> = {
+          monthlySpend: bundle.errors.monthlySpend,
+          healingIssues: bundle.errors.healingIssues,
+          byomPolicy: bundle.errors.byomPolicy,
+          providerStats: bundle.errors.providerStats,
+        };
+        let monthlySpend = bundle.monthlySpend?.items ?? [];
+        let healingIssues = bundle.healingIssues ?? ([] as PersonaHealingIssue[]);
+        let byomPolicy = bundle.byomPolicy ?? null;
+        let providerStats = bundle.providerStats ?? ([] as ProviderUsageStats[]);
+
+        // ONE automatic retry of ONLY the failed sources (via their individual
+        // endpoints) before we ever raise a staleness banner. Covers the
+        // cold-start IPC-token race where the first bundle call lands before
+        // the session token is ready.
+        const failedNames = (Object.keys(reasons) as DataSourceName[])
+          .filter((n) => reasons[n] !== null);
+        if (failedNames.length > 0) {
+          await Promise.allSettled(failedNames.map(async (name) => {
+            try {
+              switch (name) {
+                case 'monthlySpend':
+                  monthlySpend = (await getOverviewBundle(30)).monthlySpend.items ?? [];
+                  break;
+                case 'healingIssues':
+                  healingIssues = await listHealingIssues();
+                  break;
+                case 'byomPolicy':
+                  byomPolicy = await getByomPolicy();
+                  break;
+                case 'providerStats':
+                  providerStats = await getProviderUsageStats();
+                  break;
+              }
+              reasons[name] = null; // retry cleared it
+            } catch (e) {
+              reasons[name] = e instanceof Error ? e.message : String(e);
+            }
+          }));
+        }
 
         const sourceStatus: DataSourceStatusMap = {
-          monthlySpend: settled[0].status === 'fulfilled' ? 'ok' : 'failed',
-          healingIssues: settled[1].status === 'fulfilled' ? 'ok' : 'failed',
-          byomPolicy: settled[2].status === 'fulfilled' ? 'ok' : 'failed',
-          providerStats: settled[3].status === 'fulfilled' ? 'ok' : 'failed',
+          monthlySpend: { state: reasons.monthlySpend ? 'failed' : 'ok', reason: reasons.monthlySpend },
+          healingIssues: { state: reasons.healingIssues ? 'failed' : 'ok', reason: reasons.healingIssues },
+          byomPolicy: { state: reasons.byomPolicy ? 'failed' : 'ok', reason: reasons.byomPolicy },
+          providerStats: { state: reasons.providerStats ? 'failed' : 'ok', reason: reasons.providerStats },
         };
 
         const spendMap = new Map(monthlySpend.map(s => [s.id, s]));
@@ -431,6 +475,7 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
           routingRecommendations: recommendations,
           byomPolicy,
           providerStats,
+          healthHealingIssues: healingIssues,
           healthLoading: false,
           healthLastRefreshedAt: Date.now(),
           dataSourceStatus: sourceStatus,

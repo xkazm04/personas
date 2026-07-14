@@ -6908,7 +6908,12 @@
       "loading_status_page": "Chargement de la page de statut…",
       "loading_reliability": "Chargement des données de fiabilité…",
       "heartbeats_btn": "Battements",
-      "reliability_btn": "Fiabilité"
+      "reliability_btn": "Fiabilité",
+      "source_byom_policy": "Politique BYOM",
+      "source_healing_issues": "Problèmes de réparation",
+      "source_monthly_spend": "Dépenses mensuelles",
+      "source_provider_stats": "Statistiques du fournisseur",
+      "sources_unavailable": "Impossible de charger {sources} — les scores peuvent être inexacts."
     },
     "popup_fields": {
       "sign_up_free_at": "Inscrivez-vous gratuitement sur",

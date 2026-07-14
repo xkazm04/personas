@@ -6908,7 +6908,12 @@
       "loading_status_page": "Načítání stavové stránky…",
       "loading_reliability": "Načítání dat spolehlivosti…",
       "heartbeats_btn": "Signály",
-      "reliability_btn": "Spolehlivost"
+      "reliability_btn": "Spolehlivost",
+      "source_byom_policy": "Zásada BYOM",
+      "source_healing_issues": "Problémy s opravou",
+      "source_monthly_spend": "Měsíční útrata",
+      "source_provider_stats": "Statistiky poskytovatele",
+      "sources_unavailable": "{sources} se nepodařilo načíst — skóre může být nepřesné."
     },
     "popup_fields": {
       "sign_up_free_at": "Zaregistrujte se zdarma na",

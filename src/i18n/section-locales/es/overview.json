@@ -1274,7 +1274,12 @@
     "loading_status_page": "Cargando página de estado…",
     "loading_reliability": "Cargando datos de fiabilidad…",
     "heartbeats_btn": "Latidos",
-    "reliability_btn": "Fiabilidad"
+    "reliability_btn": "Fiabilidad",
+    "source_byom_policy": "Política BYOM",
+    "source_healing_issues": "Problemas de reparación",
+    "source_monthly_spend": "Gasto mensual",
+    "source_provider_stats": "Estadísticas del proveedor",
+    "sources_unavailable": "No se pudo cargar {sources}: las puntuaciones pueden ser inexactas."
   },
   "popup_fields": {
     "sign_up_free_at": "Regístrate gratis en",

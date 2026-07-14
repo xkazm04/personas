@@ -7351,6 +7351,11 @@ export type Translations = {
       loading_reliability: string;
       heartbeats_btn: string;
       reliability_btn: string;
+      sources_unavailable: string;
+      source_monthly_spend: string;
+      source_healing_issues: string;
+      source_byom_policy: string;
+      source_provider_stats: string;
     };
     heartbeats: {
       monitored: string;

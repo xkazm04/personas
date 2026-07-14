@@ -1274,7 +1274,12 @@
     "loading_status_page": "جارٍ تحميل صفحة الحالة...",
     "loading_reliability": "جارٍ تحميل بيانات الموثوقية...",
     "heartbeats_btn": "نبضات",
-    "reliability_btn": "الموثوقية"
+    "reliability_btn": "الموثوقية",
+    "source_byom_policy": "سياسة BYOM",
+    "source_healing_issues": "مشكلات الإصلاح",
+    "source_monthly_spend": "الإنفاق الشهري",
+    "source_provider_stats": "إحصاءات المزود",
+    "sources_unavailable": "تعذّر تحميل {sources} — قد تكون النتائج غير دقيقة."
   },
   "popup_fields": {
     "sign_up_free_at": "اشترك مجاناً على",
