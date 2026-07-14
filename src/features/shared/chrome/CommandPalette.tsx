@@ -114,11 +114,21 @@ export default function CommandPalette() {
     },
     onDuplicate: (id: string) => {
       duplicatePersona(id).then(
-        (p) => {
+        (r) => {
           storeFetchPersonas();
-          addToast(`Duplicated as "${p.name}"`, 'success');
+          const wiring = r.triggersCopied + r.subscriptionsCopied;
+          addToast(
+            wiring > 0
+              ? tx(t.agents.duplicate.done_with_wiring, {
+                  name: r.name,
+                  triggers: r.triggersCopied,
+                  subscriptions: r.subscriptionsCopied,
+                })
+              : tx(t.agents.duplicate.done, { name: r.name }),
+            'success',
+          );
         },
-        () => addToast('Failed to duplicate agent', 'error'),
+        () => addToast(t.agents.duplicate.failed, 'error'),
       );
     },
     onHealthCheck: () => {
@@ -138,7 +148,8 @@ export default function CommandPalette() {
       const p = personas.find(a => a.id === id);
       if (p) setEditingPersona(p);
     },
-  }), [addToast, storeUpdatePersona, storeFetchPersonas, setSidebarSection, selectPersona, personas]);
+  }), [addToast, storeUpdatePersona, storeFetchPersonas, setSidebarSection, selectPersona, personas,
+    tx, t.agents.duplicate.done, t.agents.duplicate.done_with_wiring, t.agents.duplicate.failed]);
 
   // Navigation destinations — derived from the single nav registry and
   // gate-filtered (tier + devOnly) at render time, so the palette can reach

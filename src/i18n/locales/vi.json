@@ -3464,6 +3464,11 @@
       "activate_agent": "Kích hoạt tác nhân",
       "create_agent": "Tạo tác nhân",
       "min_completeness": "Thêm chi tiết để đạt 40% hoàn chỉnh"
+    },
+    "duplicate": {
+      "done": "Đã nhân bản thành \"{name}\"",
+      "done_with_wiring": "Đã nhân bản thành \"{name}\" — đã sao chép {triggers} trình kích hoạt và {subscriptions} đăng ký, bị tắt trên bản sao",
+      "failed": "Không thể nhân bản tác nhân"
     }
   },
   "vault": {

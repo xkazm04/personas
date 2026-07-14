@@ -3464,6 +3464,11 @@
       "activate_agent": "Agenten aktivieren",
       "create_agent": "Agenten erstellen",
       "min_completeness": "Mehr Details hinzufügen, um 40% Vollständigkeit zu erreichen"
+    },
+    "duplicate": {
+      "done": "Dupliziert als „{name}“",
+      "done_with_wiring": "Dupliziert als „{name}“ — {triggers} Trigger und {subscriptions} Abonnement(s) kopiert, in der Kopie deaktiviert",
+      "failed": "Agent konnte nicht dupliziert werden"
     }
   },
   "vault": {

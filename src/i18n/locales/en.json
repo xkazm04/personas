@@ -2646,6 +2646,11 @@
       "archived_done": "Archived {count} persona(s)",
       "restored_done": "Restored {count} persona(s)"
     },
+    "duplicate": {
+      "done": "Duplicated as \"{name}\"",
+      "done_with_wiring": "Duplicated as \"{name}\" — copied {triggers} trigger(s) and {subscriptions} subscription(s), disabled on the copy",
+      "failed": "Failed to duplicate agent"
+    },
     "persona_list": {
       "all_personas": "All Personas",
       "render_cap_notice": "Showing {shown} of {total} — narrow with search or filters to see the rest.",

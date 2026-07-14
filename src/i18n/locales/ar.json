@@ -3464,6 +3464,11 @@
       "activate_agent": "تفعيل الوكيل",
       "create_agent": "إنشاء الوكيل",
       "min_completeness": "أضف مزيداً من التفاصيل للوصول إلى اكتمال 40%"
+    },
+    "duplicate": {
+      "done": "تم النسخ باسم \"{name}\"",
+      "done_with_wiring": "تم النسخ باسم \"{name}\" — تم نسخ {triggers} مُشغِّل و{subscriptions} اشتراك، معطّلة في النسخة",
+      "failed": "تعذّر تكرار الوكيل"
     }
   },
   "vault": {

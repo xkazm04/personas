@@ -3464,6 +3464,11 @@
       "activate_agent": "Aktifkan Agen",
       "create_agent": "Buat Agen",
       "min_completeness": "Tambahkan lebih banyak detail untuk mencapai kelengkapan 40%"
+    },
+    "duplicate": {
+      "done": "Diduplikasi sebagai \"{name}\"",
+      "done_with_wiring": "Diduplikasi sebagai \"{name}\" — menyalin {triggers} pemicu dan {subscriptions} langganan, dinonaktifkan pada salinan",
+      "failed": "Gagal menduplikasi agen"
     }
   },
   "vault": {

@@ -2652,6 +2652,11 @@ export type Translations = {
       archived_done: string;
       restored_done: string;
     };
+    duplicate: {
+      done: string;
+      done_with_wiring: string;
+      failed: string;
+    };
     persona_list: {
       all_personas: string;
       render_cap_notice: string;

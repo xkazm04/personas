@@ -2746,5 +2746,10 @@
     "activate_agent": "에이전트 활성화",
     "create_agent": "에이전트 생성",
     "min_completeness": "40% 완성도 달성을 위해 더 많은 세부정보 추가"
+  },
+  "duplicate": {
+    "done": "\"{name}\"(으)로 복제됨",
+    "done_with_wiring": "\"{name}\"(으)로 복제됨 — 트리거 {triggers}개와 구독 {subscriptions}개를 복사(사본에서는 비활성화)",
+    "failed": "에이전트를 복제하지 못했습니다"
   }
 }

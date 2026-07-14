@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Zap, Clock, Link2, Radio, Loader2, History, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, Zap, Clock, Link2, Radio, Loader2, History, Brain, KeyRound, type LucideIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BlastRadiusItem } from '@/api/agents/personas';
@@ -16,6 +16,8 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   status: AlertTriangle,
   run: Loader2,
   history: History,
+  memory: Brain,
+  credential: KeyRound,
 };
 
 interface BlastRadiusPanelProps {

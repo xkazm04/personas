@@ -3464,6 +3464,11 @@
       "activate_agent": "激活代理",
       "create_agent": "创建代理",
       "min_completeness": "添加更多详情以达到 40% 完整度"
+    },
+    "duplicate": {
+      "done": "已复制为“{name}”",
+      "done_with_wiring": "已复制为“{name}” — 已复制 {triggers} 个触发器和 {subscriptions} 个订阅（副本中已禁用）",
+      "failed": "无法复制代理"
     }
   },
   "vault": {

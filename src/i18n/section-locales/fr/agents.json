@@ -2746,5 +2746,10 @@
     "activate_agent": "Activer l'agent",
     "create_agent": "Créer l'agent",
     "min_completeness": "Ajoutez plus de détails pour atteindre 40% de complétude"
+  },
+  "duplicate": {
+    "done": "Dupliqué sous « {name} »",
+    "done_with_wiring": "Dupliqué sous « {name} » — {triggers} déclencheur(s) et {subscriptions} abonnement(s) copiés, désactivés sur la copie",
+    "failed": "Échec de la duplication de l'agent"
   }
 }

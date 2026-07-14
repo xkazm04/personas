@@ -2746,5 +2746,10 @@
     "activate_agent": "Aktivovat agenta",
     "create_agent": "Vytvořit agenta",
     "min_completeness": "Přidejte více detailů pro dosažení 40% úplnosti"
+  },
+  "duplicate": {
+    "done": "Duplikováno jako „{name}“",
+    "done_with_wiring": "Duplikováno jako „{name}“ — zkopírováno {triggers} spouštěčů a {subscriptions} odběrů, v kopii zakázáno",
+    "failed": "Nepodařilo se duplikovat agenta"
   }
 }

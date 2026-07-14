@@ -2746,5 +2746,10 @@
     "activate_agent": "エージェントを有効化",
     "create_agent": "エージェントを作成",
     "min_completeness": "40%の完成度に達するにはさらに詳細を追加"
+  },
+  "duplicate": {
+    "done": "「{name}」として複製しました",
+    "done_with_wiring": "「{name}」として複製しました — {triggers}件のトリガーと{subscriptions}件のサブスクリプションをコピー（コピー側は無効）",
+    "failed": "エージェントを複製できませんでした"
   }
 }
