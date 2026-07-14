@@ -11040,7 +11040,9 @@
     "last24h_failed_count": "{count} fehlgeschlagen",
     "last24h_show_all": "Alle anzeigen ({count})",
     "last24h_show_less": "Weniger anzeigen",
-    "last24h_retry_at": "Auto-Wiederholung {time}"
+    "last24h_retry_at": "Auto-Wiederholung {time}",
+    "unverified": "Unbestätigt",
+    "unverified_tooltip": "Kein Ausführungseintrag für diesen Slot — er wurde möglicherweise übersprungen, ratenbegrenzt, hat das Budget überschritten oder die App war geschlossen."
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

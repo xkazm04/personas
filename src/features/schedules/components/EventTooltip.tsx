@@ -45,9 +45,13 @@ export function EventTooltip({
         </div>
         <div className="flex items-center gap-1 capitalize">
           {event.kind === 'projected' && <span className="text-blue-400">{st.scheduled}</span>}
-          {event.kind === 'past-success' && <span className="text-emerald-400">Completed</span>}
-          {event.kind === 'past-failure' && <span className="text-red-400">Failed</span>}
+          {event.kind === 'past-success' && <span className="text-emerald-400">{st.success}</span>}
+          {event.kind === 'past-failure' && <span className="text-red-400">{st.failed}</span>}
+          {event.kind === 'past-unknown' && <span className="text-foreground">{st.unverified}</span>}
         </div>
+        {event.kind === 'past-unknown' && (
+          <div className="text-foreground leading-snug normal-case">{st.unverified_tooltip}</div>
+        )}
         {otherConflicts.length > 0 && (
           <div className="flex items-start gap-1 mt-1 pt-1 border-t border-primary/10 text-amber-400/90">
             <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />

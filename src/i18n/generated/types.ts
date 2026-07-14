@@ -11189,6 +11189,8 @@ export type Translations = {
     projected: string;
     success: string;
     failed: string;
+    unverified: string;
+    unverified_tooltip: string;
     overlap: string;
     filter_reset: string;
     filter_reset_aria: string;

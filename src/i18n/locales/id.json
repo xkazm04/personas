@@ -11040,7 +11040,9 @@
     "last24h_failed_count": "{count} gagal",
     "last24h_show_all": "Tampilkan semua ({count})",
     "last24h_show_less": "Tampilkan lebih sedikit",
-    "last24h_retry_at": "coba ulang otomatis {time}"
+    "last24h_retry_at": "coba ulang otomatis {time}",
+    "unverified": "Belum terverifikasi",
+    "unverified_tooltip": "Tidak ada catatan run untuk slot ini — mungkin dilewati, dibatasi rate, melebihi anggaran, atau aplikasi tertutup."
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

@@ -11040,7 +11040,9 @@
     "last24h_failed_count": "{count} विफल",
     "last24h_show_all": "सभी दिखाएं ({count})",
     "last24h_show_less": "कम दिखाएं",
-    "last24h_retry_at": "स्वतः-पुनः प्रयास {time}"
+    "last24h_retry_at": "स्वतः-पुनः प्रयास {time}",
+    "unverified": "असत्यापित",
+    "unverified_tooltip": "इस स्लॉट के लिए कोई रन रिकॉर्ड नहीं — इसे छोड़ा गया, दर-सीमित, बजट से अधिक हो सकता है, या ऐप बंद था।"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

@@ -11183,6 +11183,8 @@
     "projected": "Projected",
     "success": "Success",
     "failed": "Failed",
+    "unverified": "Unverified",
+    "unverified_tooltip": "No run record for this slot — it may have been skipped, rate-limited, over budget, or the app was closed.",
     "overlap": "Overlap",
     "filter_reset": "Show all",
     "filter_reset_aria": "Show all event kinds",

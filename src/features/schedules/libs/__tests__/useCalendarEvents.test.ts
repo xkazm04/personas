@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { resetInvokeMocks } from '@/test/tauriMock';
 import { generateIntervalFireTimes, useCalendarEvents } from '../useCronPreview';
@@ -103,5 +103,100 @@ describe('useCalendarEvents — preview seed matches the engine seed', () => {
     // hash the SAME id so the rendered minute equals the fired minute.
     expect((call![1] as { seed?: string }).seed).toBe('trig-xyz');
     expect(result.current.events).toHaveLength(1);
+  });
+});
+
+describe('useCalendarEvents — honest past history (real runs, not health)', () => {
+  beforeEach(() => {
+    resetInvokeMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-01T12:00:00Z'));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('labels a past cron slot from its real run and leaves a skipped slot unknown', async () => {
+    const { invoke } = await import('@tauri-apps/api/core');
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'cron_fire_times_in_range') {
+        // One past slot (09:00, has a run) + one skipped past slot (10:00) +
+        // one future slot (15:00).
+        return [
+          '2026-05-01T09:00:00Z',
+          '2026-05-01T10:00:00Z',
+          '2026-05-01T15:00:00Z',
+        ];
+      }
+      if (cmd === 'list_recent_schedule_runs') {
+        return [
+          {
+            execution_id: 'exec-1',
+            trigger_id: 'trig-cron',
+            status: 'completed',
+            created_at: '2026-05-01T09:00:04Z', // 4s tick lateness
+          },
+        ];
+      }
+      return undefined;
+    });
+
+    // health:'failing' would previously have painted BOTH past slots red.
+    const entry = parseScheduleEntry(
+      makeAgent({
+        trigger_id: 'trig-cron',
+        cron_expression: '0 * * * *',
+        timezone: 'UTC',
+        recent_executions: 5n,
+        recent_failures: 5n, // failing health — must NOT leak into slot outcomes
+      }),
+    );
+    const entries = [entry];
+    const start = new Date('2026-05-01T00:00:00Z');
+    const end = new Date('2026-05-02T00:00:00Z');
+
+    const { result } = renderHook(() => useCalendarEvents(entries, start, end));
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    const byTime = new Map(result.current.events.map((e) => [e.time.toISOString(), e.kind]));
+    expect(byTime.get('2026-05-01T09:00:00.000Z')).toBe('past-success'); // real run
+    expect(byTime.get('2026-05-01T10:00:00.000Z')).toBe('past-unknown'); // skipped, not fabricated
+    expect(byTime.get('2026-05-01T15:00:00.000Z')).toBe('projected');    // future
+  });
+
+  it('renders interval past activity from real runs (no fabricated nominal slots)', async () => {
+    const { invoke } = await import('@tauri-apps/api/core');
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'list_recent_schedule_runs') {
+        return [
+          { execution_id: 'exec-a', trigger_id: 'trig-int', status: 'failed', created_at: '2026-05-01T08:30:00Z' },
+          { execution_id: 'exec-b', trigger_id: 'trig-int', status: 'completed', created_at: '2026-05-01T11:00:00Z' },
+        ];
+      }
+      return undefined;
+    });
+
+    const entry = parseScheduleEntry(
+      makeAgent({
+        trigger_id: 'trig-int',
+        interval_seconds: 3600n,
+        next_trigger_at: '2026-05-01T13:00:00Z', // future → projects forward only
+        recent_executions: 3n,
+      }),
+    );
+    const entries = [entry];
+    const start = new Date('2026-05-01T00:00:00Z');
+    const end = new Date('2026-05-02T00:00:00Z');
+
+    const { result } = renderHook(() => useCalendarEvents(entries, start, end));
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    const kinds = result.current.events.map((e) => e.kind);
+    // Two past runs (failure + success) + at least one future projected fire.
+    expect(kinds).toContain('past-failure');
+    expect(kinds).toContain('past-success');
+    expect(kinds).toContain('projected');
+    // No fabricated 'past-unknown' walk for the interval trigger.
+    expect(kinds).not.toContain('past-unknown');
   });
 });

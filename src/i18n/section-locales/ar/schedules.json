@@ -112,5 +112,7 @@
   "last24h_failed_count": "{count} فاشل",
   "last24h_show_all": "عرض الكل ({count})",
   "last24h_show_less": "عرض أقل",
-  "last24h_retry_at": "إعادة محاولة تلقائية {time}"
+  "last24h_retry_at": "إعادة محاولة تلقائية {time}",
+  "unverified": "غير مؤكد",
+  "unverified_tooltip": "لا يوجد سجل تشغيل لهذه الفترة — ربما تم تخطيها أو تقييد معدلها أو تجاوزت الميزانية أو كان التطبيق مغلقًا."
 }

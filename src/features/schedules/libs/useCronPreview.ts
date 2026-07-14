@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { cronFireTimesInRange } from '@/api/pipeline/triggers';
+import { cronFireTimesInRange, listRecentScheduleRuns } from '@/api/pipeline/triggers';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
-import type { CalendarEvent } from './calendarHelpers';
+import { classifyRunOutcome, matchPastSlotsToRuns, type CalendarEvent, type RunPoint } from './calendarHelpers';
 import type { ScheduleEntry } from './scheduleHelpers';
+import { silentCatch } from '@/lib/silentCatch';
+
+// The recent-runs history command caps at 168h / 200 rows; a month view whose
+// past portion reaches further back simply gets no run records for the older
+// slots, which then render honestly as 'past-unknown'.
+const RECENT_RUNS_MAX_HOURS = 168;
 
 // NOTE: the former `useCronPreview` (next-N-from-now) and `useCronFireTimesInRange`
 // hooks were removed on 2026-07-14. They had no product consumers — only a unit
@@ -22,14 +28,31 @@ export interface CalendarEventsResult {
   loading: boolean;
 }
 
+interface EntrySlots {
+  /** Future projected fires (time >= now). Cron: from IPC. Interval: engine-anchored walk. */
+  future: Date[];
+  /** Past nominal cron slots (time < now) awaiting match to a real run. Interval
+   *  has none — its past comes from run records, not a fabricated walk. */
+  pastCron: Date[];
+}
+
 /**
- * Build calendar events for an array of schedule entries, fetching cron fire
- * times via IPC for each cron-driven agent and computing interval-driven fire
- * times locally (interval triggers are zone-agnostic so client-side computation
- * cannot drift — provided we anchor on the same field the engine does).
+ * Build calendar events for an array of schedule entries.
  *
- * Stale responses are discarded via a request-id ref so rapid window
- * navigation does not paint an older window's events.
+ * FUTURE fires are projected: cron via the `cron_fire_times_in_range` IPC
+ * (seeded with the trigger id so H-spread matches the engine), interval via an
+ * engine-anchored walk (`next_trigger_at`).
+ *
+ * PAST fires are grounded in reality, not health:
+ *  - Cron past slots are matched against real execution records
+ *    (`list_recent_schedule_runs`) within a tolerance window; matched slots show
+ *    the run's true outcome, unmatched slots render as 'past-unknown' (revealing
+ *    skips/rate-limits/downtime instead of faking a success).
+ *  - Interval triggers, whose past cadence can't be reconstructed after any
+ *    downtime drift, contribute their real runs directly as past events.
+ *
+ * Run history is fetched only when the window has a past portion, bounded to the
+ * command's 168h cap. Stale responses are discarded via a request-id ref.
  */
 export function useCalendarEvents(
   entries: ScheduleEntry[],
@@ -51,11 +74,13 @@ export function useCalendarEvents(
     const startD = new Date(startMs);
     const endD = new Date(endMs);
     const now = new Date();
+    const nowMs = now.getTime();
 
     (async () => {
-      const fireTimesPerEntry = await Promise.all(
-        entries.map(async (entry) => {
-          if (entry.health === 'paused') return [] as Date[];
+      // 1. Projected slots per entry (cron via IPC, interval via engine anchor).
+      const slotsPerEntry: EntrySlots[] = await Promise.all(
+        entries.map(async (entry): Promise<EntrySlots> => {
+          if (entry.health === 'paused') return { future: [], pastCron: [] };
           const { agent } = entry;
           if (agent.cron_expression) {
             try {
@@ -67,50 +92,94 @@ export function useCalendarEvents(
                 500,
                 agent.trigger_id,
               );
-              return isos.map((s) => new Date(s));
+              const future: Date[] = [];
+              const pastCron: Date[] = [];
+              for (const s of isos) {
+                const d = new Date(s);
+                (d.getTime() < nowMs ? pastCron : future).push(d);
+              }
+              return { future, pastCron };
             } catch {
-              return [] as Date[];
+              return { future: [], pastCron: [] };
             }
           }
           if (agent.interval_seconds) {
-            // Anchor on `next_trigger_at` — the SAME field the engine anchors
-            // interval re-schedules on (engine/scheduler.rs::compute_next_trigger_at).
-            // Anchoring on `last_triggered_at` (tick wall-clock, up to ~5s late
-            // and drifting after every skipped fire) painted a cadence the engine
-            // never runs. `next_trigger_at` is future, so this yields only the
-            // upcoming fires; past interval activity comes from real run records
-            // (see the calendar's history matching), never a fabricated walk.
-            return generateIntervalFireTimes(
+            const walk = generateIntervalFireTimes(
               Number(agent.interval_seconds),
               agent.next_trigger_at,
               startD,
               endD,
             );
+            // Engine-anchored walk is future by construction, but guard anyway.
+            return { future: walk.filter((d) => d.getTime() >= nowMs), pastCron: [] };
           }
-          return [] as Date[];
+          return { future: [], pastCron: [] };
         }),
       );
       if (myId !== reqIdRef.current) return;
 
+      // 2. Real run history — only when the window reaches into the past.
+      const runsByTrigger = new Map<string, { time: number; status: string; executionId: string }[]>();
+      if (startMs < nowMs) {
+        const hours = Math.min(
+          RECENT_RUNS_MAX_HOURS,
+          Math.max(1, Math.ceil((nowMs - startMs) / 3_600_000)),
+        );
+        try {
+          const runs = await listRecentScheduleRuns(hours);
+          if (myId !== reqIdRef.current) return;
+          for (const run of runs) {
+            const t = Date.parse(run.created_at);
+            if (Number.isNaN(t) || t < startMs || t > nowMs) continue;
+            const list = runsByTrigger.get(run.trigger_id) ?? [];
+            list.push({ time: t, status: run.status, executionId: run.execution_id });
+            runsByTrigger.set(run.trigger_id, list);
+          }
+        } catch (err) {
+          // History unavailable — past cron slots fall through to 'past-unknown',
+          // which is the honest state, not a fabricated outcome. Still leave a
+          // breadcrumb so a persistently-failing history command is diagnosable.
+          silentCatch('features/schedules/libs/useCronPreview:runHistory')(err);
+        }
+      }
+
+      // 3. Assemble events.
       const events: CalendarEvent[] = [];
       for (let i = 0; i < entries.length; i++) {
         const entry = entries[i]!;
-        const fireTimes = fireTimesPerEntry[i] ?? [];
         const { agent } = entry;
-        for (const time of fireTimes) {
-          const isPast = time.getTime() < now.getTime();
-          events.push({
-            id: `${agent.trigger_id}-${time.getTime()}`,
-            agentId: agent.persona_id,
-            agentName: agent.persona_name,
-            agentIcon: agent.persona_icon,
-            agentColor: agent.persona_color,
-            triggerId: agent.trigger_id,
-            time,
-            kind: isPast
-              ? (entry.health === 'failing' ? 'past-failure' : 'past-success')
-              : 'projected',
-          });
+        const slots = slotsPerEntry[i] ?? { future: [], pastCron: [] };
+        const base = {
+          agentId: agent.persona_id,
+          agentName: agent.persona_name,
+          agentIcon: agent.persona_icon,
+          agentColor: agent.persona_color,
+          triggerId: agent.trigger_id,
+        };
+
+        for (const time of slots.future) {
+          events.push({ ...base, id: `${agent.trigger_id}-${time.getTime()}`, time, kind: 'projected' });
+        }
+
+        if (agent.cron_expression && slots.pastCron.length > 0) {
+          // Match past cron slots to real runs (slots are ascending from the IPC).
+          const runPoints: RunPoint[] = (runsByTrigger.get(agent.trigger_id) ?? [])
+            .map((r) => ({ time: r.time, status: r.status }));
+          const outcomes = matchPastSlotsToRuns(slots.pastCron.map((d) => d.getTime()), runPoints);
+          for (let j = 0; j < slots.pastCron.length; j++) {
+            const time = slots.pastCron[j]!;
+            events.push({ ...base, id: `${agent.trigger_id}-${time.getTime()}`, time, kind: outcomes[j]! });
+          }
+        } else if (agent.interval_seconds) {
+          // Interval past = the real runs themselves (no fabricated nominal slots).
+          for (const run of runsByTrigger.get(agent.trigger_id) ?? []) {
+            events.push({
+              ...base,
+              id: `${agent.trigger_id}-run-${run.executionId}`,
+              time: new Date(run.time),
+              kind: classifyRunOutcome(run.status),
+            });
+          }
         }
       }
       events.sort((a, b) => a.time.getTime() - b.time.getTime());
