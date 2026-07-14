@@ -223,6 +223,13 @@ export function classifyError(error: string): ErrorCategory {
     }
   }
 
+  // Boot-recovery sweep message (mirrors Rust): orphaned running executions
+  // are failed with this exact text when the app restarts mid-run — an
+  // environmental interruption, not a provider/config error.
+  if (lower.includes('app restarted while execution was running')) {
+    return 'transient_process_failure';
+  }
+
   return 'unknown';
 }
 

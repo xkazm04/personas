@@ -54,6 +54,7 @@ const PARITY_FIXTURES: Array<[string, ErrorCategory]> = [
   ['socket hang up', 'network'],
   ['Execution failed (exit code 137): Killed', 'transient_process_failure'],
   ['Execution failed (exit code 1): ', 'transient_process_failure'],
+  ['App restarted while execution was running', 'transient_process_failure'],
   ['some entirely novel failure', 'unknown'],
 ];
 

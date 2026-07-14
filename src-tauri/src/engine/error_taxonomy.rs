@@ -291,6 +291,16 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
         }
     }
 
+    // Boot-recovery sweep: the engine marks orphaned running executions as
+    // failed with this exact message when the app restarts mid-run
+    // (engine/mod.rs `recover_orphaned_executions`). It is an environmental
+    // interruption, not a provider or config error — the 2026-07-14 live
+    // smoke found it as the single most common real failure message in a
+    // fleet (9/9 in the window), all landing in Unknown before this arm.
+    if lower.contains("app restarted while execution was running") {
+        return ErrorCategory::TransientProcessFailure;
+    }
+
     ErrorCategory::Unknown
 }
 
@@ -787,6 +797,10 @@ mod tests {
         ("prompt is too long: exceeds the model maximum", ErrorCategory::Validation),
         ("Request too large (413)", ErrorCategory::Validation),
         ("read ECONNRESET", ErrorCategory::Network),
+        (
+            "App restarted while execution was running",
+            ErrorCategory::TransientProcessFailure,
+        ),
         ("socket hang up", ErrorCategory::Network),
         ("Execution failed (exit code 137): Killed", ErrorCategory::TransientProcessFailure),
         ("Execution failed (exit code 1): ", ErrorCategory::TransientProcessFailure),
