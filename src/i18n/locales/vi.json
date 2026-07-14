@@ -10635,7 +10635,9 @@
     "local_tooling_label": "Công cụ tích hợp sẵn",
     "local_tooling_sentence": "Personas có sẵn công cụ cục bộ được kết nối ngay từ đầu — nhắn tin, cơ sở dữ liệu, vector, và nhiều hơn nữa — không cần thông tin xác thực.",
     "resume_continue_title": "Tiếp tục từ nơi bạn đã dừng",
-    "resume_continue_cta": "Tiếp tục hướng dẫn"
+    "resume_continue_cta": "Tiếp tục hướng dẫn",
+    "replay_setup": "Chạy lại thiết lập",
+    "resume_setup": "Tiếp tục thiết lập"
   },
   "system_health": {
     "install_all": "Cài đặt tất cả phụ thuộc",

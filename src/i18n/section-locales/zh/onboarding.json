@@ -166,5 +166,7 @@
   "local_tooling_label": "内置工具",
   "local_tooling_sentence": "Personas 从一开始就内置了本地工具——消息、数据库、向量等——无需凭据。",
   "resume_continue_title": "从上次中断处继续",
-  "resume_continue_cta": "继续导览"
+  "resume_continue_cta": "继续导览",
+  "replay_setup": "重新开始设置",
+  "resume_setup": "继续设置"
 }

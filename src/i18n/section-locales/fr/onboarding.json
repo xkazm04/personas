@@ -166,5 +166,7 @@
   "local_tooling_label": "Outils intégrés",
   "local_tooling_sentence": "Personas est livré dès le départ avec des outils locaux connectés — Messagerie, Base de données, Vecteur, et plus — aucun identifiant n'est nécessaire.",
   "resume_continue_title": "Reprenez là où vous vous étiez arrêté",
-  "resume_continue_cta": "Continuer la visite"
+  "resume_continue_cta": "Continuer la visite",
+  "replay_setup": "Revoir la configuration",
+  "resume_setup": "Reprendre la configuration"
 }

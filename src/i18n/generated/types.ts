@@ -10680,6 +10680,8 @@ export type Translations = {
     skip_tooltip: string;
     opening_wizard: string;
     skip_button: string;
+    replay_setup: string;
+    resume_setup: string;
     adopt_button: string;
     continue_button: string;
     done_button: string;

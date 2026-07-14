@@ -10674,6 +10674,8 @@
     "skip_tooltip": "Skip onboarding",
     "opening_wizard": "Setting up your agent...",
     "skip_button": "Skip",
+    "replay_setup": "Replay setup",
+    "resume_setup": "Resume setup",
     "adopt_button": "Set Up Agent",
     "continue_button": "Continue",
     "done_button": "Done",

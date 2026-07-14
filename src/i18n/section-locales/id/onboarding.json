@@ -166,5 +166,7 @@
   "local_tooling_label": "Alat bawaan",
   "local_tooling_sentence": "Personas sudah memiliki alat bawaan yang terhubung sejak awal — Messaging, Database, Vector, dan lainnya — tanpa memerlukan kredensial.",
   "resume_continue_title": "Lanjutkan dari posisi terakhir",
-  "resume_continue_cta": "Lanjutkan tur"
+  "resume_continue_cta": "Lanjutkan tur",
+  "replay_setup": "Ulangi penyiapan",
+  "resume_setup": "Lanjutkan penyiapan"
 }

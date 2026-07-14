@@ -166,5 +166,7 @@
   "local_tooling_label": "Vestavěné nástroje",
   "local_tooling_sentence": "Personas má od začátku připojené lokální nástroje — Zprávy, Databáze, Vektor a další — bez nutnosti přihlašovacích údajů.",
   "resume_continue_title": "Pokračujte tam, kde jste skončili",
-  "resume_continue_cta": "Pokračovat v prohlídce"
+  "resume_continue_cta": "Pokračovat v prohlídce",
+  "replay_setup": "Znovu spustit nastavení",
+  "resume_setup": "Pokračovat v nastavení"
 }

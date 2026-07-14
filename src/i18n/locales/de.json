@@ -10635,7 +10635,9 @@
     "local_tooling_label": "Integrierte Tools",
     "local_tooling_sentence": "Personas verbindet von Anfang an lokale Tools — Messaging, Database, Vector und mehr — ganz ohne Zugangsdaten.",
     "resume_continue_title": "Dort weitermachen, wo du aufgehört hast",
-    "resume_continue_cta": "Tour fortsetzen"
+    "resume_continue_cta": "Tour fortsetzen",
+    "replay_setup": "Einrichtung wiederholen",
+    "resume_setup": "Einrichtung fortsetzen"
   },
   "system_health": {
     "install_all": "Alle Abhängigkeiten installieren",

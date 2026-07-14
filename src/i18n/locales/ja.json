@@ -10635,7 +10635,9 @@
     "local_tooling_label": "組み込みツール",
     "local_tooling_sentence": "Personas には最初からローカルツールが接続されています — メッセージング、データベース、ベクターなど — 認証情報は不要です。",
     "resume_continue_title": "中断したところから再開",
-    "resume_continue_cta": "ツアーを続行"
+    "resume_continue_cta": "ツアーを続行",
+    "replay_setup": "セットアップを再生",
+    "resume_setup": "セットアップを再開"
   },
   "system_health": {
     "install_all": "全依存関係をインストール",

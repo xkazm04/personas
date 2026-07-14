@@ -10635,7 +10635,9 @@
     "local_tooling_label": "Herramientas integradas",
     "local_tooling_sentence": "Personas viene con herramientas locales conectadas desde el principio — mensajería, base de datos, búsqueda vectorial y más — sin necesidad de credenciales.",
     "resume_continue_title": "Retoma donde lo dejaste",
-    "resume_continue_cta": "Continuar recorrido"
+    "resume_continue_cta": "Continuar recorrido",
+    "replay_setup": "Repetir configuración",
+    "resume_setup": "Reanudar configuración"
   },
   "system_health": {
     "install_all": "Instalar todas las dependencias",

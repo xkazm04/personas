@@ -10635,7 +10635,9 @@
     "local_tooling_label": "बिल्ट-इन टूलिंग",
     "local_tooling_sentence": "Personas शुरू से ही लोकल टूलिंग से जुड़ा होता है — मैसेजिंग, डेटाबेस, वेक्टर, और भी बहुत कुछ — किसी क्रेडेंशियल की आवश्यकता नहीं।",
     "resume_continue_title": "जहां छोड़ा था वहीं से जारी रखें",
-    "resume_continue_cta": "टूर जारी रखें"
+    "resume_continue_cta": "टूर जारी रखें",
+    "replay_setup": "सेटअप फिर से चलाएँ",
+    "resume_setup": "सेटअप जारी रखें"
   },
   "system_health": {
     "install_all": "सभी डिपेंडेंसी इंस्टॉल करें",
