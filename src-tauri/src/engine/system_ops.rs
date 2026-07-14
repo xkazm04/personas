@@ -24,6 +24,21 @@ use super::event_registry::event_name;
 /// Registered op kinds.
 pub const OP_CONTEXT_SCAN: &str = "context_scan";
 pub const OP_MEMORY_REFLECTION: &str = "memory_reflection";
+pub const OP_HEALTH_INGEST: &str = "health_ingest";
+
+/// Tauri event that asks the frontend to run a findings sweep + verification pass.
+///
+/// WHY AN EVENT AND NOT A RUST IMPLEMENTATION: the sweep lives in TypeScript — the
+/// five emitters, the four telemetry adapters (LightTrack/Langfuse/LangSmith/Helicone,
+/// Sentry), the verdict engine and the passport derive are all frontend code. Porting
+/// them to Rust would mean maintaining TWO implementations of the same thresholds and
+/// verdicts, which could silently diverge — precisely the class of bug this feature
+/// exists to catch. So the op asks the app to run the sweep it already has.
+///
+/// The cost of that choice, stated plainly: the sweep only runs while the app is open.
+/// That is already true of the whole scheduler (it's an in-app background tick, not a
+/// daemon), so a schedule that comes due while the app is closed fires on next launch.
+pub const EVENT_HEALTH_INGEST_REQUESTED: &str = "health-ingest-requested";
 
 /// Catalog of available system operations (drives the Studio "System events" rail).
 pub fn list_kinds() -> Vec<SystemOpKindMeta> {
@@ -41,6 +56,13 @@ pub fn list_kinds() -> Vec<SystemOpKindMeta> {
             description: "Consolidate an agent's or team's memories into durable insights (proposal-gated).".to_string(),
             requires_project: false,
             requires_persona_or_team: true,
+        },
+        SystemOpKindMeta {
+            kind: OP_HEALTH_INGEST.to_string(),
+            label: "Project Health Ingest".to_string(),
+            description: "Sweep every sensor for new findings, and verify the ones already shipped (did the number move?).".to_string(),
+            requires_project: true,
+            requires_persona_or_team: false,
         },
     ]
 }
@@ -75,8 +97,32 @@ pub fn run_op(
     match op_kind {
         OP_CONTEXT_SCAN => run_context_scan(app, pool, params, source),
         OP_MEMORY_REFLECTION => run_memory_reflection_op(pool, params),
+        OP_HEALTH_INGEST => run_health_ingest(app, params, source),
         other => Err(AppError::Validation(format!("Unknown system op: {other}"))),
     }
+}
+
+/// Ask the frontend to sweep every sensor for new findings AND verify the findings
+/// that already shipped (docs/plans/dev-findings-loop.md §7). Params: `{"projectId": "…"}`.
+///
+/// See `EVENT_HEALTH_INGEST_REQUESTED` for why this delegates to the frontend rather
+/// than reimplementing the sweep in Rust.
+fn run_health_ingest(app: &AppHandle, params: &Value, source: &str) -> Result<String, AppError> {
+    use tauri::Emitter;
+
+    let project_id = params
+        .get("projectId")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .ok_or_else(|| AppError::Validation("health_ingest requires a projectId".into()))?;
+
+    app.emit(
+        EVENT_HEALTH_INGEST_REQUESTED,
+        serde_json::json!({ "projectId": project_id, "source": source }),
+    )
+    .map_err(|e| AppError::Internal(format!("failed to request health ingest: {e}")))?;
+
+    Ok(format!("health ingest requested for {project_id}"))
 }
 
 /// Enqueue a memory-reflection pass as a `persona_background_job` — the

@@ -46,6 +46,10 @@ export const EventName = {
   AUTH_STATE_CHANGED: 'auth-state-changed',
   AUTH_ERROR: 'auth-error',
 
+  // Findings loop — a scheduled `health_ingest` system op asks the app to sweep
+  // every sensor and verify what already shipped (docs/plans/dev-findings-loop.md).
+  HEALTH_INGEST_REQUESTED: 'health-ingest-requested',
+
   // Healing
   HEALING_EVENT: 'healing-event',
   HEALING_ISSUE_UPDATED: 'healing-issue-updated',
@@ -328,6 +332,13 @@ export interface ExecutionReviewRequestPayload {
 }
 
 /** Healing event (engine/types.rs HealingEventPayload). */
+/** The `health_ingest` system op fired (schedule / event / manual run-now). */
+export interface HealthIngestRequestedPayload {
+  projectId: string;
+  /** "schedule" | "event" | "manual" — diagnostics only. */
+  source: string;
+}
+
 export interface HealingEventPayload {
   issue_id: string;
   persona_id: string;
@@ -721,6 +732,9 @@ export interface EventPayloadMap {
   // Auth
   [EventName.AUTH_STATE_CHANGED]: AuthStateResponse;
   [EventName.AUTH_ERROR]: { error: string };
+
+  // Findings loop
+  [EventName.HEALTH_INGEST_REQUESTED]: HealthIngestRequestedPayload;
 
   // Healing
   [EventName.HEALING_EVENT]: HealingEventPayload;

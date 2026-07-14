@@ -19,7 +19,8 @@ import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import {
   createSystemOpAutomation, contextScanParamsJson, memoryReflectionParamsJson,
-  OP_CONTEXT_SCAN, OP_MEMORY_REFLECTION,
+  healthIngestParamsJson,
+  OP_CONTEXT_SCAN, OP_MEMORY_REFLECTION, OP_HEALTH_INGEST,
 } from '@/api/systemOps';
 
 interface CadenceOption { id: string; cron: string }
@@ -49,6 +50,10 @@ export function SystemEventCommitModal({
   const isSchedule = triggerType === 'schedule';
   const isContextScan = opKind === OP_CONTEXT_SCAN;
   const isReflection = opKind === OP_MEMORY_REFLECTION;
+  // Findings-loop sweep + verification. Project-scoped like the context scan, but it
+  // has no delta mode — a sweep always re-reads every sensor.
+  const isHealthIngest = opKind === OP_HEALTH_INGEST;
+  const needsProject = isContextScan || isHealthIngest;
 
   const personas = useAgentStore((s) => s.personas);
   const teams = usePipelineStore((s) => s.teams);
@@ -71,7 +76,7 @@ export function SystemEventCommitModal({
   }, [isSchedule, cadence, customCron]);
 
   const reflectTargetId = reflectScope === 'team' ? reflectTeamId : reflectPersonaId;
-  const canCreate = (!isContextScan || !!projectId)
+  const canCreate = (!needsProject || !!projectId)
     && (!isReflection || !!reflectTargetId)
     && (isSchedule ? !!cron : !!eventType.trim());
 
@@ -85,7 +90,9 @@ export function SystemEventCommitModal({
         opKind,
         paramsJson: isReflection
           ? memoryReflectionParamsJson(reflectScope === 'team' ? { teamId: reflectTeamId } : { personaId: reflectPersonaId })
-          : contextScanParamsJson(projectId, delta),
+          : isHealthIngest
+            ? healthIngestParamsJson(projectId)
+            : contextScanParamsJson(projectId, delta),
         triggerKind: isSchedule ? 'schedule' : 'event',
         cron: isSchedule ? cron : undefined,
         listenEventType: isSchedule ? undefined : eventType.trim(),
@@ -115,7 +122,7 @@ export function SystemEventCommitModal({
         </div>
 
         <div className="px-5 py-4 space-y-4">
-          {isContextScan && (
+          {needsProject && (
             <div className="space-y-1.5">
               <label className="typo-caption font-medium text-foreground">{st.commit_project_label}</label>
               {projects.length === 0 ? (
