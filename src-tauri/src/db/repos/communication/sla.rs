@@ -178,6 +178,9 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
     timed_query!("sla", "sla::get_sla_dashboard", {
         let conn = pool.get()?;
         let date_filter = format!("-{} days", days);
+        // Local-day offset for the trend's day buckets (see local_day_modifier).
+        // On a local-first desktop this is the user's own machine timezone.
+        let offset_min = server_offset_minutes();
 
         // -- Per-persona aggregates ------------------------------------------
         let mut stmt = conn.prepare(
@@ -248,6 +251,13 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
         )?;
 
         // -- Batch consecutive failures --------------------------------------
+        // Bounded to the displayed window (was windowless — it scanned every
+        // persona's ENTIRE execution history on every dashboard load). Two wins:
+        // the scan is now capped by `created_at >= window`, and the streak is
+        // definitionally consistent with the windowed counts rendered next to
+        // it (a "12 failing" badge can no longer reflect failures outside the
+        // 7d/30d card it sits on). The lookback cap still bounds it to the most
+        // recent N rows within that window.
         let consec_map = {
             let consec_sql = format!(
                 "SELECT persona_id, status FROM (
@@ -255,12 +265,13 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
                            ROW_NUMBER() OVER (PARTITION BY persona_id ORDER BY created_at DESC) AS rn
                     FROM persona_executions
                     WHERE persona_id IN ({{placeholders}})
+                      AND created_at >= datetime('now', {{date_param}})
                  ) WHERE rn <= {}
                  ORDER BY persona_id, rn ASC",
                 CONSECUTIVE_FAILURE_LOOKBACK,
             );
             let statuses_map =
-                batch_query_map_vec(&conn, &consec_sql, &persona_ids, None, |row| {
+                batch_query_map_vec(&conn, &consec_sql, &persona_ids, Some(&date_filter), |row| {
                     Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
                 })?;
             statuses_map
@@ -399,40 +410,10 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
             })?;
 
         // -- Daily trend -----------------------------------------------------
-        let mut daily_stmt = conn.prepare(
-            "SELECT
-                DATE(created_at) AS date,
-                COUNT(*) AS total,
-                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS successful,
-                SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
-                SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
-             FROM persona_executions
-             WHERE created_at >= datetime('now', ?1)
-               AND status IN ('completed', 'failed', 'cancelled')
-             GROUP BY DATE(created_at)
-             ORDER BY date ASC",
-        )?;
-
-        let daily_trend: Vec<SlaDailyPoint> = daily_stmt
-            .query_map(params![date_filter], |row| {
-                let successful: i64 = row.get(2)?;
-                let failed: i64 = row.get(3)?;
-                let cancelled: i64 = row.get(4)?;
-                let decided = successful + failed;
-                Ok(SlaDailyPoint {
-                    date: row.get(0)?,
-                    total: row.get(1)?,
-                    successful,
-                    failed,
-                    cancelled,
-                    success_rate: if decided > 0 {
-                        successful as f64 / decided as f64
-                    } else {
-                        0.0
-                    },
-                })
-            })?
-            .collect::<Result<Vec<_>, _>>()?;
+        // Served from persisted `sla_daily` rollups (durable past retention)
+        // merged with a windowed raw recompute for today/recent days. Buckets
+        // by local day so the trend does not break at a UTC boundary.
+        let daily_trend: Vec<SlaDailyPoint> = load_daily_trend(&conn, days, offset_min)?;
 
         Ok(SlaDashboardData {
             persona_stats,
@@ -441,6 +422,244 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
             daily_trend,
         })
     })
+}
+
+// ============================================================================
+// Local-day bucketing — THE shared definition
+// ============================================================================
+//
+// Both the persisted daily rollups (`sla_daily`) and the on-read daily trend
+// bucket executions by the user's *local* calendar day, not the UTC day. A
+// UTC-8 user's Tuesday runs from 08:00 UTC Tue to 08:00 UTC Wed; bucketing by
+// `DATE(created_at)` (UTC) would split that Tuesday across two chart columns
+// and break at 16:00 local. The single source of truth for "which day does
+// this UTC timestamp fall on" is `local_day_modifier`, applied identically by
+// the rollup writer, the migration backfill, and the trend reader so a stored
+// rollup and a live recompute always agree on day boundaries.
+
+/// SQLite `datetime()`/`DATE()` modifier that shifts a stored UTC timestamp
+/// into the user's wall-clock day. `offset_min` is minutes east of UTC
+/// (e.g. `-480` for UTC-8, `+330` for IST). SQLite normalises timestamps that
+/// carry an explicit `Z`/`±HH:MM` offset to UTC first, then this modifier is
+/// applied — so mixed timestamp shapes (naive-UTC and RFC3339) bucket
+/// consistently.
+pub(crate) fn local_day_modifier(offset_min: i64) -> String {
+    format!("{:+} minutes", offset_min)
+}
+
+/// The server's current UTC offset in minutes east of UTC. Personas is a
+/// local-first desktop app: the Rust backend shares the user's machine clock
+/// and timezone, so this equals the frontend's `-new Date().getTimezoneOffset()`.
+/// Used as the default day-bucket offset by the rollup writer (which runs in a
+/// background maintenance tick with no request context) and as the fallback for
+/// the dashboard read when the frontend does not pass an explicit offset.
+pub fn server_offset_minutes() -> i64 {
+    (chrono::Local::now().offset().local_minus_utc() / 60) as i64
+}
+
+// ============================================================================
+// Persisted daily rollups (`sla_daily`)
+// ============================================================================
+
+/// Recompute + upsert daily SLA rollups from raw `persona_executions` for every
+/// `(persona_id, local-day)` that currently has terminal rows.
+///
+/// **Idempotent by construction:** each call recomputes the full day from the
+/// source rows, so running it twice (or every maintenance tick) produces the
+/// same table state — it never double-counts. Days whose raw rows have since
+/// been pruned by execution retention are simply not re-selected, so their last
+/// written rollup is preserved (frozen). That is exactly why the maintenance
+/// tick must call this **before** `cleanup_old_executions`: the about-to-be-
+/// pruned day gets one final accurate rollup, and the trend survives beyond the
+/// raw-execution retention window.
+///
+/// `offset_min` selects the local-day definition (see `local_day_modifier`).
+pub fn upsert_sla_daily(pool: &DbPool, offset_min: i64) -> Result<usize, AppError> {
+    let conn = pool.get()?;
+    upsert_sla_daily_conn(&conn, offset_min)
+}
+
+/// Connection-scoped body of [`upsert_sla_daily`], also reused by the migration
+/// backfill (which only has a `&Connection`).
+pub(crate) fn upsert_sla_daily_conn(
+    conn: &rusqlite::Connection,
+    offset_min: i64,
+) -> Result<usize, AppError> {
+    let modifier = local_day_modifier(offset_min);
+    let n = conn.execute(
+        "INSERT INTO sla_daily
+            (persona_id, day, total, successful, failed, cancelled,
+             timed_count, duration_sum_ms, cost_sum_usd, updated_at)
+         SELECT
+            persona_id,
+            DATE(created_at, ?1) AS day,
+            COUNT(*),
+            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN duration_ms IS NOT NULL THEN 1 ELSE 0 END),
+            COALESCE(SUM(CASE WHEN duration_ms IS NOT NULL THEN duration_ms ELSE 0 END), 0),
+            COALESCE(SUM(cost_usd), 0.0),
+            datetime('now')
+         FROM persona_executions
+         WHERE status IN ('completed', 'failed', 'cancelled')
+         GROUP BY persona_id, DATE(created_at, ?1)
+         ON CONFLICT(persona_id, day) DO UPDATE SET
+            total           = excluded.total,
+            successful      = excluded.successful,
+            failed          = excluded.failed,
+            cancelled       = excluded.cancelled,
+            timed_count     = excluded.timed_count,
+            duration_sum_ms = excluded.duration_sum_ms,
+            cost_sum_usd    = excluded.cost_sum_usd,
+            updated_at      = excluded.updated_at",
+        params![modifier],
+    )?;
+    Ok(n)
+}
+
+/// One accumulated (persona-agnostic) day bucket for the trend.
+struct DayAcc {
+    total: i64,
+    successful: i64,
+    failed: i64,
+    cancelled: i64,
+}
+
+/// Load the fleet-wide daily success-rate trend for the window.
+///
+/// The trend is served from two sources merged per local day, keeping the
+/// higher-`total` source for each day:
+///
+/// - **Durable tail** — `sla_daily` rollups cover days whose raw executions have
+///   been pruned by retention (the reason the pre-rollup trend "died" past the
+///   execution window).
+/// - **Fresh head** — a windowed (never full-history) recompute of the retained
+///   raw rows, including today's still-growing partial day.
+///
+/// Because a sealed rollup is complete while a same-day raw recompute may be
+/// stale-low (rows added since the last tick) or prune-low, and vice-versa,
+/// max-by-total picks the more complete source for each day automatically:
+/// today and recent days resolve to the fresh raw recompute; pruned history
+/// resolves to the durable rollup.
+fn load_daily_trend(
+    conn: &rusqlite::Connection,
+    days: i64,
+    offset_min: i64,
+) -> Result<Vec<SlaDailyPoint>, AppError> {
+    use std::collections::BTreeMap;
+
+    let modifier = local_day_modifier(offset_min);
+    let date_filter = format!("-{} days", days);
+    let mut by_day: BTreeMap<String, DayAcc> = BTreeMap::new();
+
+    // Window boundary as a local day, and its UTC instant so the raw head can
+    // filter on `created_at` (index-friendly) while covering exactly the same
+    // local days as the rollup tail.
+    let start_day: String = conn.query_row(
+        "SELECT DATE('now', ?1, ?2)",
+        params![modifier, date_filter],
+        |r| r.get(0),
+    )?;
+    let inverse_modifier = local_day_modifier(-offset_min);
+    let raw_cutoff_utc: String = conn.query_row(
+        "SELECT datetime(?1, ?2)",
+        params![start_day, inverse_modifier],
+        |r| r.get(0),
+    )?;
+
+    let mut consider = |day: String, acc: DayAcc| match by_day.get(&day) {
+        Some(existing) if existing.total >= acc.total => {}
+        _ => {
+            by_day.insert(day, acc);
+        }
+    };
+
+    // Durable tail: persisted rollups within the window.
+    {
+        let mut stmt = conn.prepare(
+            "SELECT day, SUM(total), SUM(successful), SUM(failed), SUM(cancelled)
+             FROM sla_daily
+             WHERE day >= ?1
+             GROUP BY day",
+        )?;
+        let rows = stmt.query_map(params![start_day], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, i64>(2)?,
+                row.get::<_, i64>(3)?,
+                row.get::<_, i64>(4)?,
+            ))
+        })?;
+        for r in rows {
+            let (day, total, successful, failed, cancelled) = r?;
+            consider(
+                day,
+                DayAcc {
+                    total,
+                    successful,
+                    failed,
+                    cancelled,
+                },
+            );
+        }
+    }
+
+    // Fresh head: windowed raw recompute (retained days incl. today's partial).
+    {
+        let mut stmt = conn.prepare(
+            "SELECT DATE(created_at, ?1) AS day,
+                    COUNT(*),
+                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END)
+             FROM persona_executions
+             WHERE created_at >= ?2
+               AND status IN ('completed', 'failed', 'cancelled')
+             GROUP BY DATE(created_at, ?1)",
+        )?;
+        let rows = stmt.query_map(params![modifier, raw_cutoff_utc], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, i64>(2)?,
+                row.get::<_, i64>(3)?,
+                row.get::<_, i64>(4)?,
+            ))
+        })?;
+        for r in rows {
+            let (day, total, successful, failed, cancelled) = r?;
+            consider(
+                day,
+                DayAcc {
+                    total,
+                    successful,
+                    failed,
+                    cancelled,
+                },
+            );
+        }
+    }
+
+    Ok(by_day
+        .into_iter()
+        .map(|(date, a)| {
+            let decided = a.successful + a.failed;
+            SlaDailyPoint {
+                date,
+                total: a.total,
+                successful: a.successful,
+                failed: a.failed,
+                cancelled: a.cancelled,
+                success_rate: if decided > 0 {
+                    a.successful as f64 / decided as f64
+                } else {
+                    0.0
+                },
+            }
+        })
+        .collect())
 }
 
 // ============================================================================
@@ -689,7 +908,11 @@ mod tests {
         // Anchor on "now" (not a hardcoded date) so the 30-day dashboard
         // window this test exercises never ages the fixture out of range.
         let base = chrono::Utc::now() - chrono::Duration::hours(1);
-        let day = base.format("%Y-%m-%d").to_string();
+        // The trend now buckets by LOCAL day (server offset), so the expected
+        // trend key is the local wall-clock date of `base`, not its UTC date.
+        let day = (base + chrono::Duration::minutes(server_offset_minutes()))
+            .format("%Y-%m-%d")
+            .to_string();
         let ts = |minute: i64| (base + chrono::Duration::minutes(minute)).format("%Y-%m-%d %H:%M:%S").to_string();
 
         for i in 0..4 {
@@ -893,5 +1116,161 @@ mod tests {
             .find(|p| p.persona_id == persona_id)
             .expect("persona row missing");
         assert_eq!(row.success_rate, 0.0);
+    }
+
+    // -- Direction 1: persisted daily rollups + bounded queries --------------
+
+    /// The `sla_daily` rollup table must exist on a FRESH schema — i.e. the
+    /// migration step lives INSIDE `run_incremental` (not appended to the
+    /// `ensure_composite_fires_table` tail that `initial::run` invokes before
+    /// `run_incremental`). If it were misplaced, `init_test_db` (which builds a
+    /// fresh DB) would fail here.
+    #[test]
+    fn sla_daily_exists_on_fresh_schema() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sla_daily", [], |r| r.get(0))
+            .expect("sla_daily table must exist on a fresh schema");
+        assert_eq!(n, 0, "fresh backfill of an empty history is empty");
+        // Dashboard load must not error on an empty rollup table.
+        let dash = get_sla_dashboard(&pool, 30).unwrap();
+        assert!(dash.daily_trend.is_empty());
+    }
+
+    /// Recomputing rollups twice produces identical table state — never a
+    /// double count. This is the property that lets the maintenance tick call
+    /// it every pass unconditionally.
+    #[test]
+    fn upsert_sla_daily_is_idempotent() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "rollup-idem");
+        let base = chrono::Utc::now() - chrono::Duration::hours(2);
+        let ts = |m: i64| (base + chrono::Duration::minutes(m))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
+        for i in 0..3 {
+            insert_execution(&pool, &persona_id, "completed", &ts(i));
+        }
+        insert_execution(&pool, &persona_id, "failed", &ts(10));
+        insert_execution(&pool, &persona_id, "cancelled", &ts(20));
+
+        let off = server_offset_minutes();
+        upsert_sla_daily(&pool, off).unwrap();
+        let snapshot = |pool: &DbPool| -> (i64, i64, i64, i64, i64) {
+            let conn = pool.get().unwrap();
+            conn.query_row(
+                "SELECT COUNT(*), COALESCE(SUM(total),0), COALESCE(SUM(successful),0),
+                        COALESCE(SUM(failed),0), COALESCE(SUM(cancelled),0)
+                 FROM sla_daily WHERE persona_id = ?1",
+                params![persona_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
+            )
+            .unwrap()
+        };
+        let first = snapshot(&pool);
+        upsert_sla_daily(&pool, off).unwrap();
+        let second = snapshot(&pool);
+
+        assert_eq!(first, second, "second upsert must not change table state");
+        // Totals reflect the source rows regardless of how many local days they
+        // land on (5 terminal rows: 3 completed, 1 failed, 1 cancelled).
+        assert_eq!(first.1, 5);
+        assert_eq!(first.2, 3);
+        assert_eq!(first.3, 1);
+        assert_eq!(first.4, 1);
+    }
+
+    /// The consecutive-failure streak must only count failures WITHIN the
+    /// displayed window. Failures older than the window are excluded, so the
+    /// badge stays consistent with the windowed counts beside it.
+    #[test]
+    fn consecutive_failures_bounded_by_window() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "streak-window");
+
+        // 5 failures ~40 days ago (OUTSIDE a 30-day window).
+        let old = chrono::Utc::now() - chrono::Duration::days(40);
+        for i in 0..5 {
+            let ts = (old + chrono::Duration::minutes(i))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            insert_execution(&pool, &persona_id, "failed", &ts);
+        }
+        // 2 failures within the last hour (INSIDE the window).
+        let recent = chrono::Utc::now() - chrono::Duration::hours(1);
+        for i in 0..2 {
+            let ts = (recent + chrono::Duration::minutes(i))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            insert_execution(&pool, &persona_id, "failed", &ts);
+        }
+
+        let dash = get_sla_dashboard(&pool, 30).unwrap();
+        let row = dash
+            .persona_stats
+            .iter()
+            .find(|p| p.persona_id == persona_id)
+            .expect("persona row missing");
+        assert_eq!(
+            row.consecutive_failures, 2,
+            "streak must be bounded to the 30-day window (2 recent), not the 7 total failures",
+        );
+        assert_eq!(row.failed, 2, "windowed failure count excludes the 40-day-old rows");
+    }
+
+    /// The trend read from persisted rollups must match a raw recompute — and
+    /// must survive deletion of the raw executions (the retention scenario the
+    /// rollups exist for).
+    #[test]
+    fn daily_trend_parity_rollup_vs_raw() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "trend-parity");
+
+        let now = chrono::Utc::now();
+        let ins = |offset_days: i64, minute: i64, status: &str| {
+            let ts = (now - chrono::Duration::days(offset_days) + chrono::Duration::minutes(minute))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            insert_execution(&pool, &persona_id, status, &ts);
+        };
+        // Spread across three days, all inside a 30-day window.
+        for i in 0..3 { ins(2, i, "completed"); }
+        ins(2, 30, "failed");
+        for i in 0..2 { ins(1, i, "completed"); }
+        for i in 0..2 { ins(1, 30 + i, "failed"); }
+        for i in 0..4 { ins(0, -60 + i, "completed"); } // ~1h ago
+        ins(0, -30, "failed");
+
+        // Raw-path trend (no rollups written yet).
+        let raw_trend = get_sla_dashboard(&pool, 30).unwrap().daily_trend;
+        assert!(!raw_trend.is_empty(), "raw trend must have points");
+
+        // Persist rollups, then delete all raw executions to simulate retention.
+        upsert_sla_daily(&pool, server_offset_minutes()).unwrap();
+        {
+            let conn = pool.get().unwrap();
+            conn.execute("DELETE FROM persona_executions", []).unwrap();
+        }
+
+        // Rollup-path trend must match the raw-path trend exactly.
+        let rollup_trend = get_sla_dashboard(&pool, 30).unwrap().daily_trend;
+        assert_eq!(
+            raw_trend.len(),
+            rollup_trend.len(),
+            "rollup trend must have the same number of days as the raw trend",
+        );
+        for (a, b) in raw_trend.iter().zip(rollup_trend.iter()) {
+            assert_eq!(a.date, b.date, "day keys must match");
+            assert_eq!(a.total, b.total, "total must match for {}", a.date);
+            assert_eq!(a.successful, b.successful, "successful must match for {}", a.date);
+            assert_eq!(a.failed, b.failed, "failed must match for {}", a.date);
+            assert_eq!(a.cancelled, b.cancelled, "cancelled must match for {}", a.date);
+            assert!(
+                (a.success_rate - b.success_rate).abs() < 1e-9,
+                "success_rate must match for {} ({} vs {})",
+                a.date, a.success_rate, b.success_rate,
+            );
+        }
     }
 }

@@ -2211,6 +2211,18 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         }
     }
 
+    // SLA daily rollups: persist per-persona/day aggregates BEFORE execution
+    // retention prunes the raw rows below, so the SLA trend survives past the
+    // execution window. Idempotent recompute — safe to run every tick.
+    {
+        use crate::db::repos::communication::sla as sla_repo;
+        match sla_repo::upsert_sla_daily(pool, sla_repo::server_offset_minutes()) {
+            Ok(n) if n > 0 => tracing::debug!("SLA rollup: upserted {} persona-day row(s)", n),
+            Ok(_) => {}
+            Err(e) => tracing::error!("SLA rollup upsert error: {}", e),
+        }
+    }
+
     // Execution log: configurable retention (default 60 days / 2 months), keep at least 50 per persona
     let exec_retention_days = parse_retention_setting(
         pool,

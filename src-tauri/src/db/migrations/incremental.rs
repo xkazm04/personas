@@ -3795,6 +3795,51 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Persisted daily SLA rollups (per persona × local day). Lets the SLA
+    // dashboard serve its trend + aggregates from a bounded rollup table
+    // instead of re-scanning the full `persona_executions` history on every
+    // load, and lets the trend survive execution retention. Backfills from
+    // existing history using the server's local-day definition (the same one
+    // the runtime rollup writer in `cleanup_tick` uses). MUST stay INSIDE
+    // `run_incremental` (fresh DBs run this after the base schema exists) — the
+    // tail below belongs to `ensure_composite_fires_table`, which `initial::run`
+    // calls BEFORE `run_incremental`, so a step appended there would fail on a
+    // fresh DB.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "sla_daily_rollups",
+            description: "Persisted daily SLA rollups (per persona × local day) + backfill",
+            already_applied: |conn| has_table(conn, "sla_daily"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS sla_daily (
+                        persona_id      TEXT NOT NULL,
+                        day             TEXT NOT NULL,
+                        total           INTEGER NOT NULL DEFAULT 0,
+                        successful      INTEGER NOT NULL DEFAULT 0,
+                        failed          INTEGER NOT NULL DEFAULT 0,
+                        cancelled       INTEGER NOT NULL DEFAULT 0,
+                        timed_count     INTEGER NOT NULL DEFAULT 0,
+                        duration_sum_ms REAL NOT NULL DEFAULT 0,
+                        cost_sum_usd    REAL NOT NULL DEFAULT 0,
+                        updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (persona_id, day)
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_sla_daily_day ON sla_daily(day);",
+                )?;
+                // Backfill from existing execution history. Reuses the exact
+                // rollup writer the runtime path uses, so backfilled and
+                // live-written rows share one definition.
+                let offset_min =
+                    crate::db::repos::communication::sla::server_offset_minutes();
+                crate::db::repos::communication::sla::upsert_sla_daily_conn(conn, offset_min)?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
