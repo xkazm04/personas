@@ -1055,7 +1055,10 @@
     "llm_propose_done": "“{name}”이(가) 제안되었습니다 — Context Map에서 수락하세요",
     "llm_propose_tooltip": "기능으로 제안",
     "sidebar_source": "소스",
-    "sidebar_source_any": "전체"
+    "sidebar_source_any": "전체",
+    "ctx_cost_tooltip": "이 컨텍스트를 사용하는 기능들의 최근 30일 LLM 비용입니다. 기능의 전체 비용은 해당 기능이 관련된 모든 컨텍스트에 그대로 반영되므로, 이는 청구서의 지분이 아니라 흐름 수치입니다.",
+    "ctx_errors_label": "오류",
+    "ctx_errors_tooltip": "이 컨텍스트의 파일에서 발생한 미해결 Sentry 이벤트 — Overview 열기"
   },
   "doc_signing": {
     "sign_heading": "문서 서명하기",

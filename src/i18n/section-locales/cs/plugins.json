@@ -1055,7 +1055,10 @@
     "llm_propose_done": "„{name}“ navrženo — přijměte to v Mapě kontextu",
     "llm_propose_tooltip": "Navrhnout jako funkci",
     "sidebar_source": "Zdroj",
-    "sidebar_source_any": "Libovolný"
+    "sidebar_source_any": "Libovolný",
+    "ctx_cost_tooltip": "30denní útrata za LLM u funkcí, které protínají tento kontext. Celková cena funkce se počítá do každého kontextu, kterého se dotýká, takže jde o průtokové číslo, ne o podíl na účtu.",
+    "ctx_errors_label": "chyby",
+    "ctx_errors_tooltip": "Nevyřešené události Sentry týkající se souborů tohoto kontextu — otevřít Overview"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",

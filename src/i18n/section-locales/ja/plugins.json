@@ -1055,7 +1055,10 @@
     "llm_propose_done": "「{name}」を提案しました — Context Mapで承認してください",
     "llm_propose_tooltip": "機能として提案",
     "sidebar_source": "ソース",
-    "sidebar_source_any": "すべて"
+    "sidebar_source_any": "すべて",
+    "ctx_cost_tooltip": "このコンテキストを利用する機能の直近30日間のLLM費用。機能の全コストは、それが関わる各コンテキストにそのまま計上されるため、これは請求額の按分ではなくフロースルーの数値です。",
+    "ctx_errors_label": "エラー",
+    "ctx_errors_tooltip": "このコンテキストのファイルで発生している未解決のSentryイベント — Overviewを開く"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",

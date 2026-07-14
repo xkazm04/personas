@@ -12425,7 +12425,10 @@
       "llm_propose_done": "“{name}” đã được đề xuất — chấp nhận trên Context Map",
       "llm_propose_tooltip": "Đề xuất làm tính năng",
       "sidebar_source": "Nguồn",
-      "sidebar_source_any": "Bất kỳ"
+      "sidebar_source_any": "Bất kỳ",
+      "ctx_cost_tooltip": "Chi phí LLM trong 30 ngày của các tính năng sử dụng ngữ cảnh này. Chi phí đầy đủ của một tính năng được tính vào mọi ngữ cảnh mà nó chạm tới, vì vậy đây là con số dòng chảy, không phải phần chia của hóa đơn.",
+      "ctx_errors_label": "lỗi",
+      "ctx_errors_tooltip": "Các sự kiện Sentry chưa được giải quyết trên các tệp của ngữ cảnh này — mở Overview"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

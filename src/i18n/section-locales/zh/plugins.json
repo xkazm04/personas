@@ -1055,7 +1055,10 @@
     "llm_propose_done": "“{name}”已提议 — 在 Context Map 中接受",
     "llm_propose_tooltip": "提议为功能",
     "sidebar_source": "来源",
-    "sidebar_source_any": "全部"
+    "sidebar_source_any": "全部",
+    "ctx_cost_tooltip": "使用此上下文的功能在过去30天内的LLM花费。一个功能的全部成本会计入它涉及的每一个上下文，因此这是一个流经数值，而不是账单的分摊份额。",
+    "ctx_errors_label": "错误",
+    "ctx_errors_tooltip": "此上下文文件中未解决的Sentry事件 — 打开Overview"
   },
   "doc_signing": {
     "sign_heading": "签署文档",

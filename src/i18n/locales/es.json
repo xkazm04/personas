@@ -12425,7 +12425,10 @@
       "llm_propose_done": "“{name}” propuesto — acéptalo en el Context Map",
       "llm_propose_tooltip": "Proponer como funcionalidad",
       "sidebar_source": "Origen",
-      "sidebar_source_any": "Cualquiera"
+      "sidebar_source_any": "Cualquiera",
+      "ctx_cost_tooltip": "Gasto en LLM de 30 días de las features que atraviesan este contexto. El coste total de una feature se contabiliza en cada contexto que toca, así que es una cifra de flujo, no una parte de la factura.",
+      "ctx_errors_label": "errores",
+      "ctx_errors_tooltip": "Eventos de Sentry sin resolver que afectan a los archivos de este contexto — abrir Overview"
     },
     "doc_signing": {
       "sign_heading": "Firmar un Documento",

@@ -12690,7 +12690,10 @@
       "llm_propose_done": "“{name}” proposed — accept it on the Context Map",
       "ctx_indicator_kpis": "KPIs",
       "sidebar_source": "Source",
-      "sidebar_source_any": "Any"
+      "sidebar_source_any": "Any",
+      "ctx_cost_tooltip": "30-day LLM spend of the features slicing this context. A feature's full cost counts against every context it touches, so this is a flow-through figure, not a share of the bill.",
+      "ctx_errors_label": "errors",
+      "ctx_errors_tooltip": "Unresolved Sentry events landing on this context's files — open Overview"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

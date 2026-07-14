@@ -1055,7 +1055,10 @@
     "llm_propose_done": "“{name}” diusulkan — terima di Context Map",
     "llm_propose_tooltip": "Usulkan sebagai fitur",
     "sidebar_source": "Sumber",
-    "sidebar_source_any": "Semua"
+    "sidebar_source_any": "Semua",
+    "ctx_cost_tooltip": "Pengeluaran LLM 30 hari dari fitur yang mengiris konteks ini. Biaya penuh sebuah fitur dihitung terhadap setiap konteks yang disentuhnya, jadi ini adalah angka flow-through, bukan bagian dari tagihan.",
+    "ctx_errors_label": "error",
+    "ctx_errors_tooltip": "Event Sentry yang belum terselesaikan pada file konteks ini — buka Overview"
   },
   "doc_signing": {
     "sign_heading": "Tandatangani Dokumen",

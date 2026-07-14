@@ -24,6 +24,7 @@ import { parseJsonArray } from './contextMapTypes';
 import ScanOverlay from './ScanOverlay';
 import ContextDetail from './ContextDetail';
 import ContextLedger from './ContextLedger';
+import { useContextRuntime } from './useContextRuntime';
 import ContextGroupRowsStats from './ContextGroupRowsStats';
 import type { ContextLedgerProps } from './contextLedgerShared';
 import { buildKpiStatusByContext } from './contextKpiStatus';
@@ -525,6 +526,15 @@ export default function ContextMapPage() {
     return times.length ? times.reduce((a, b) => (a > b ? a : b)) : null;
   }, [storeGroups]);
 
+  // Runtime signal (findings loop 1A): LLM spend and unresolved Sentry errors,
+  // projected onto contexts. Lazy + failure-tolerant — an unwired project gets
+  // empty maps and the ledger renders exactly as it always did.
+  const flatContexts = useMemo(
+    () => groups.flatMap((g) => g.contexts.map((c) => ({ id: c.id, filePaths: c.filePaths }))),
+    [groups],
+  );
+  const runtime = useContextRuntime(activeProject, useCaseState.active, flatContexts);
+
   // Everything the ledger renders from — bundled so the view stays pure and the
   // page keeps owning the scan/store orchestration.
   const ledgerProps: ContextLedgerProps = {
@@ -538,6 +548,8 @@ export default function ContextMapPage() {
     ideaCoverageByContext,
     kpiCoverageByContext,
     kpiStatusByContext,
+    costByContext: runtime.costByContext,
+    errorsByContext: runtime.errorsByContext,
     hasMap: hasContexts,
     onScanContext: handleScanContext,
     scanningContextId,

@@ -1055,7 +1055,10 @@
     "llm_propose_done": "„{name}“ vorgeschlagen — auf der Context Map annehmen",
     "llm_propose_tooltip": "Als Use Case vorschlagen",
     "sidebar_source": "Quelle",
-    "sidebar_source_any": "Beliebig"
+    "sidebar_source_any": "Beliebig",
+    "ctx_cost_tooltip": "30-Tage-LLM-Ausgaben der Features, die diesen Kontext durchqueren. Die vollen Kosten eines Features werden jedem Kontext angerechnet, den es berührt – das ist also eine Durchlaufzahl, kein Anteil an der Rechnung.",
+    "ctx_errors_label": "Fehler",
+    "ctx_errors_tooltip": "Ungelöste Sentry-Ereignisse in den Dateien dieses Kontexts — Overview öffnen"
   },
   "doc_signing": {
     "sign_heading": "Dokument signieren",

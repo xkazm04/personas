@@ -12425,7 +12425,10 @@
       "llm_propose_done": "تم اقتراح “{name}” — اقبله في خريطة السياق",
       "llm_propose_tooltip": "اقترح كحالة استخدام",
       "sidebar_source": "المصدر",
-      "sidebar_source_any": "الكل"
+      "sidebar_source_any": "الكل",
+      "ctx_cost_tooltip": "الإنفاق على LLM خلال 30 يومًا للميزات التي تشكّل هذا السياق. تُحتسب التكلفة الكاملة للميزة على كل سياق تلمسه، لذا هذا رقم تدفق وليس حصة من الفاتورة.",
+      "ctx_errors_label": "أخطاء",
+      "ctx_errors_tooltip": "أحداث Sentry غير المحلولة الواردة في ملفات هذا السياق — افتح Overview"
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

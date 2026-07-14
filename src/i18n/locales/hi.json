@@ -12425,7 +12425,10 @@
       "llm_propose_done": "“{name}” प्रस्तावित — इसे Context Map पर स्वीकार करें",
       "llm_propose_tooltip": "फीचर के रूप में प्रस्तावित करें",
       "sidebar_source": "स्रोत",
-      "sidebar_source_any": "कोई भी"
+      "sidebar_source_any": "कोई भी",
+      "ctx_cost_tooltip": "इस कॉन्टेक्स्ट को छूने वाली फ़ीचर्स का 30-दिन का LLM खर्च। किसी फ़ीचर की पूरी लागत हर उस कॉन्टेक्स्ट पर गिनी जाती है जिसे वह छूती है, इसलिए यह एक फ्लो-थ्रू आंकड़ा है, बिल का हिस्सा नहीं।",
+      "ctx_errors_label": "एरर",
+      "ctx_errors_tooltip": "इस कॉन्टेक्स्ट की फ़ाइलों से जुड़ी अनसुलझी Sentry घटनाएं — Overview खोलें"
     },
     "doc_signing": {
       "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

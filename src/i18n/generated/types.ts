@@ -12697,6 +12697,9 @@ export type Translations = {
       ctx_indicator_kpis: string;
       sidebar_source: string;
       sidebar_source_any: string;
+      ctx_cost_tooltip: string;
+      ctx_errors_label: string;
+      ctx_errors_tooltip: string;
     };
     doc_signing: {
       sign_heading: string;

@@ -1055,7 +1055,10 @@
     "llm_propose_done": "“{name}” প্রস্তাব করা হয়েছে — Context Map-এ গ্রহণ করুন",
     "llm_propose_tooltip": "ইউজ কেস হিসেবে প্রস্তাব করুন",
     "sidebar_source": "উৎস",
-    "sidebar_source_any": "যেকোনো"
+    "sidebar_source_any": "যেকোনো",
+    "ctx_cost_tooltip": "এই কনটেক্সটকে বিভক্তকারী ফিচারগুলোর ৩০ দিনের LLM খরচ। একটি ফিচারের সম্পূর্ণ খরচ এটি স্পর্শ করা প্রতিটি কনটেক্সটের বিপরীতে গণনা করা হয়, তাই এটি একটি ফ্লো-থ্রু সংখ্যা, বিলের ভাগ নয়।",
+    "ctx_errors_label": "এরর",
+    "ctx_errors_tooltip": "এই কনটেক্সটের ফাইলগুলোতে আসা অমীমাংসিত Sentry ইভেন্ট — Overview খুলুন"
   },
   "doc_signing": {
     "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",
