@@ -1,33 +1,37 @@
-// Project Cockpit — /prototype R1 lab bench (docs/plans/dev-tools-cx-redesign.md §3).
+// Project Cockpit — /prototype lab bench (docs/plans/dev-tools-cx-redesign.md §3).
 //
-// MOCK DATA ONLY — nothing here touches stores or IPC. Mounted on the vestigial
-// `skills` DevToolsTab (which previously dead-ended into FleetPage), plus a
-// temporary "Cockpit (proto)" sidebar entry so it's reachable for review.
+// ROUND 2. R1's variants (Dimension board / Strategy ledger) were rejected —
+// stitching existing module styles (passport seals, coverage chips, verdict
+// pills) together read as a collage, not a design. R2 starts from a blank
+// creative slate: custom component sets per variant, with Personas theming
+// (dark surface, neon accent discipline, typo-* scale, radii/elevation) as the
+// ONLY inherited frame. Mock data only; nothing touches stores or IPC.
 //
-// Two directional variants over IDENTICAL props (the A/B is layout, not data):
-//   • Dimension board — mission-control measurement grid, dimensions as bands
-//   • Strategy ledger — goals as the spine; KPI/feature/finding as indented rows
-// Three projects at the three wiring tiers (full / half / bare) — switching tier
-// is the test of "measurement before opinion": a bare project must become an
-// establishment journey, never a broken dashboard.
+//   • Pulse Monitor — a flight/medical instrument panel: readiness meters, a
+//     wiring power-rail, the loop's week as an ECG strip, feature telemetry
+//     channels with live traces, an arc-gauge cluster. Unwired = unlit glass.
+//   • Transit lines — the strategy as a transit network: each goal a glowing
+//     line whose bright portion IS its progress, features as stations showing
+//     their headline number, findings as branch stubs ending in verdict glyphs,
+//     each line terminating in a dispatch platform.
 import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
 
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { MOCK_PROJECTS } from './cockpitMock';
-import CockpitDimensionBoard from './CockpitDimensionBoard';
-import CockpitStrategyLedger from './CockpitStrategyLedger';
+import CockpitPulseMonitor from './CockpitPulseMonitor';
+import CockpitTransitLines from './CockpitTransitLines';
 
-type VariantId = 'board' | 'ledger';
+type VariantId = 'pulse' | 'transit';
 
 const VARIANT_TABS: SegmentedTab<VariantId>[] = [
-  { id: 'board', label: 'Dimension board' },
-  { id: 'ledger', label: 'Strategy ledger' },
+  { id: 'pulse', label: 'Pulse Monitor' },
+  { id: 'transit', label: 'Transit lines' },
 ];
 
 export default function CockpitPrototypePage() {
-  const [variant, setVariant] = useState<VariantId>('board');
+  const [variant, setVariant] = useState<VariantId>('pulse');
   const [projectId, setProjectId] = useState(MOCK_PROJECTS[0]!.id);
   const project = MOCK_PROJECTS.find((p) => p.id === projectId) ?? MOCK_PROJECTS[0]!;
 
@@ -41,8 +45,8 @@ export default function CockpitPrototypePage() {
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Project Cockpit — prototype R1"
-        subtitle="Mock data · dimension-based KPI detail view · dispatch + wiring CTAs are stubs"
+        title="Project Cockpit — prototype R2"
+        subtitle="Mock data · custom component sets, theme frame only · dispatch + wiring CTAs are stubs"
         fitWidth
         actions={
           <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -67,9 +71,9 @@ export default function CockpitPrototypePage() {
           </div>
         }
       />
-      {variant === 'board'
-        ? <CockpitDimensionBoard project={project} />
-        : <CockpitStrategyLedger project={project} />}
+      {variant === 'pulse'
+        ? <CockpitPulseMonitor project={project} />
+        : <CockpitTransitLines project={project} />}
     </ContentBox>
   );
 }
