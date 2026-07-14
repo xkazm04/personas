@@ -824,7 +824,7 @@ pub async fn send_turn(
             &crate::companion::turn_ledger::TurnRecord {
                 origin: origin_str.to_string(),
                 trigger_kind,
-                model: Some(COMPANION_TURN_MODEL.to_string()),
+                model: Some(companion_turn_model()),
                 usage: cli_usage,
                 voice: voice_enabled,
                 assistant_episode_id: Some(assistant_ep_id.clone()),
@@ -1247,6 +1247,30 @@ const COMPANION_TURN_MODEL: &str = "claude-opus-4-8";
 /// turns (cwd_override present), not normal companion chat.
 const BUILD_TURN_EFFORT: &str = "xhigh";
 
+/// Bench/routing override seam (Track B of
+/// `docs/plans/athena-live-conversation-layer.md`). `PERSONAS_ATHENA_MODEL`
+/// replaces the pinned model for companion-chat turns; read per-spawn so a
+/// bench run can flip it without an app restart. Scoped to chat turns —
+/// build turns (cwd_override) always keep the pinned model. The resolved
+/// value feeds BOTH the `--model` flag and the `companion_turn.model` ledger
+/// column, preserving the one-source invariant under override.
+fn companion_turn_model() -> String {
+    match std::env::var("PERSONAS_ATHENA_MODEL") {
+        Ok(m) if !m.trim().is_empty() => m.trim().to_string(),
+        _ => COMPANION_TURN_MODEL.to_string(),
+    }
+}
+
+/// Companion-chat reasoning-effort override (`PERSONAS_ATHENA_EFFORT`).
+/// Validated against the known CLI levels so a typo can't inject an
+/// arbitrary flag value; `None` (unset/invalid) leaves the CLI on the
+/// model's default effort — exactly today's behavior.
+fn companion_effort_override() -> Option<String> {
+    let e = std::env::var("PERSONAS_ATHENA_EFFORT").ok()?;
+    let e = e.trim().to_ascii_lowercase();
+    matches!(e.as_str(), "low" | "medium" | "high" | "xhigh").then_some(e)
+}
+
 /// `run_cli`'s output: the display text plus the parsed terminal `result`
 /// usage (`None` when the CLI emitted no result event — older CLI, or the turn
 /// errored before the result line).
@@ -1567,6 +1591,14 @@ async fn run_cli(
     // The file is removed after the CLI exits.
     let prompt_file = write_temp_prompt(system_prompt)?;
 
+    // Bench seam (B0.2, docs/plans/athena-live-conversation-layer.md):
+    // PERSONAS_DUMP_PROMPT=1 snapshots the fully-composed system prompt +
+    // user message per turn under ~/.personas/debug/prompts/ so the model
+    // bench replays REAL prompts. Best-effort; never blocks the turn.
+    if std::env::var("PERSONAS_DUMP_PROMPT").is_ok_and(|v| v == "1") {
+        dump_prompt_snapshot(turn_id, session_id, system_prompt, user_message);
+    }
+
     // --system-prompt-file fully replaces Claude Code's default identity
     // prompt. We avoid `--bare` because it disables OAuth/keychain auth
     // and would force the user to set ANTHROPIC_API_KEY explicitly.
@@ -1591,7 +1623,13 @@ async fn run_cli(
         "--dangerously-skip-permissions".into(),
         "--exclude-dynamic-system-prompt-sections".into(),
         "--model".into(),
-        COMPANION_TURN_MODEL.into(),
+        // Chat turns honor the bench/routing override seam; build turns stay
+        // pinned to the canonical model regardless of env.
+        if cwd_override.is_none() {
+            companion_turn_model()
+        } else {
+            COMPANION_TURN_MODEL.to_string()
+        },
         "--system-prompt-file".into(),
         prompt_file.to_string_lossy().to_string(),
     ]);
@@ -1606,6 +1644,11 @@ async fn run_cli(
         };
         argv.push("--effort".into());
         argv.push(effort.into());
+    } else if let Some(effort) = companion_effort_override() {
+        // Bench seam: chat turns normally run on the model's default effort;
+        // PERSONAS_ATHENA_EFFORT pins it for a measured run.
+        argv.push("--effort".into());
+        argv.push(effort);
     }
 
     // Browser-test turns: hand this single CLI spawn browser tools via MCP —
@@ -2051,6 +2094,28 @@ fn write_temp_prompt(content: &str) -> Result<std::path::PathBuf, AppError> {
     std::fs::write(&path, content)
         .map_err(|e| AppError::Internal(format!("write prompt file: {e}")))?;
     Ok(path)
+}
+
+/// Bench seam (B0.2): persist one turn's fully-composed system prompt + user
+/// message under `~/.personas/debug/prompts/` for the model bench to replay.
+/// The `---USER-MESSAGE---` divider is the harness's parse contract
+/// (`scripts/test/athena-model-bench.mjs`). Best-effort: any failure is
+/// tracing-only and never blocks the turn.
+fn dump_prompt_snapshot(turn_id: &str, session_id: &str, system_prompt: &str, user_message: &str) {
+    let Some(home) = dirs::home_dir() else { return };
+    let dir = home.join(".personas").join("debug").join("prompts");
+    if let Err(e) = std::fs::create_dir_all(&dir) {
+        tracing::warn!(error = %e, "prompt dump: create dir failed");
+        return;
+    }
+    let stamp = chrono::Utc::now().format("%Y%m%dT%H%M%SZ");
+    let path = dir.join(format!("{stamp}-{session_id}-{turn_id}.md"));
+    let body = format!(
+        "<!-- athena prompt snapshot · turn {turn_id} · conversation {session_id} · {stamp} -->\n{system_prompt}\n\n---USER-MESSAGE---\n{user_message}\n"
+    );
+    if let Err(e) = std::fs::write(&path, body) {
+        tracing::warn!(error = %e, "prompt dump: write failed");
+    }
 }
 
 /// Resolve the platform-correct invocation for the Claude CLI.
