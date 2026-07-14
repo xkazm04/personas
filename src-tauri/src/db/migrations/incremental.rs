@@ -3870,6 +3870,43 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Durable SLA breach-episode state (one row per persona). Powers the
+    // reliability-breach bus events emitted on the execution-completion path:
+    // the row is what dedupes a breach to ONE enter-event (and one recovery)
+    // even across restarts — without it, every failing run after the first
+    // would re-emit. Zero-config: thresholds are code constants in
+    // `repos::communication::sla`, there is no `sla_targets` table by design.
+    // MUST stay INSIDE `run_incremental` for the same reason as `sla_daily`
+    // above (fresh DBs run this after the base schema; the tail belongs to
+    // `ensure_composite_fires_table`, which runs BEFORE `run_incremental`).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "sla_breach_episodes",
+            description: "Durable per-persona SLA breach-episode dedup state",
+            already_applied: |conn| has_table(conn, "sla_breach_episodes"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS sla_breach_episodes (
+                        persona_id           TEXT PRIMARY KEY,
+                        is_open              INTEGER NOT NULL DEFAULT 0,
+                        reason               TEXT,
+                        consecutive_failures INTEGER NOT NULL DEFAULT 0,
+                        success_rate         REAL NOT NULL DEFAULT 0,
+                        decided              INTEGER NOT NULL DEFAULT 0,
+                        opened_at            TEXT,
+                        recovered_at         TEXT,
+                        updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_sla_breach_episodes_open
+                        ON sla_breach_episodes(is_open);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

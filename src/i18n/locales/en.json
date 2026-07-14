@@ -6400,6 +6400,10 @@
       "source_scheduled": "Scheduled",
       "event_detail_title": "Event:",
       "event_detail_status": "Status:",
+      "type_labels": {
+        "sla_breach_opened": "SLA breach opened",
+        "sla_breach_recovered": "SLA breach recovered"
+      },
       "load_older": "Load older events",
       "clear_filters": "Clear all filters",
       "col_trigger": "Trigger",

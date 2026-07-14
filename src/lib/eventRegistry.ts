@@ -251,6 +251,11 @@ export const EventName = {
   // Persona health (push-based summary refresh signal from backend)
   PERSONA_HEALTH_CHANGED: 'persona-health-changed',
 
+  // SLA reliability breach (published to the persona-event bus on the
+  // execution-completion path; one enter-event + one recovery per episode)
+  SLA_BREACH_OPENED: 'sla.breach.opened',
+  SLA_BREACH_RECOVERED: 'sla.breach.recovered',
+
   // System trace (frontend-only, emitted by systemTrace module)
   SYSTEM_TRACE_UPDATED: 'system-trace-updated',
 
@@ -996,6 +1001,12 @@ export interface EventPayloadMap {
   [EventName.PERSONA_HEALTH_CHANGED]: {
     persona_id: string;
   };
+
+  // SLA reliability breach (payload shape mirrors Rust SlaBreachEventPayload,
+  // camelCase). Emitted on the persona-event bus, so consumers receive it inside
+  // a PersonaEvent whose `payload` is the JSON-stringified form of this shape.
+  [EventName.SLA_BREACH_OPENED]: import('./bindings/SlaBreachEventPayload').SlaBreachEventPayload;
+  [EventName.SLA_BREACH_RECOVERED]: import('./bindings/SlaBreachEventPayload').SlaBreachEventPayload;
 
   // System trace
   [EventName.SYSTEM_TRACE_UPDATED]: {

@@ -190,6 +190,7 @@ pub mod session_pool;
 pub mod share_link;
 pub mod shared_event_local_relay;
 pub mod shared_event_relay;
+pub mod sla_breach;
 pub mod slack_poller;
 pub mod smee_relay;
 pub mod ssrf_safe_dns;
@@ -2346,6 +2347,12 @@ async fn handle_execution_result(
     if let Err(e) = persona_repo::refresh_trust_score(pool, persona_id) {
         tracing::warn!(persona_id, error = %e, "Failed to refresh trust score");
     }
+
+    // SLA breach detection -- cheap bounded read of this persona's recent
+    // reliability; emits a typed bus event (once per episode) when it crosses
+    // into or back out of a breach. Runs HERE on the completion path, never at
+    // dashboard load. Best-effort: never fails the execution.
+    sla_breach::evaluate_on_completion(pool, app, persona_id);
 
     // Knowledge graph extraction -- learn from every execution
     {

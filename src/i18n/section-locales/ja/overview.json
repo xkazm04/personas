@@ -525,7 +525,11 @@
     "event_data": "イベントデータ",
     "error": "エラー",
     "skipped_stat_label": "{skipped} 件スキップ",
-    "skipped_stat_tooltip": "過去 7 日間で {total} 件中 {skipped} 件のイベントに購読者がなくスキップされました（{rate}）。この割合が高い場合、誰も購読していないトリガーがあることを示します。"
+    "skipped_stat_tooltip": "過去 7 日間で {total} 件中 {skipped} 件のイベントに購読者がなくスキップされました（{rate}）。この割合が高い場合、誰も購読していないトリガーがあることを示します。",
+    "type_labels": {
+      "sla_breach_opened": "SLA違反が発生",
+      "sla_breach_recovered": "SLA違反から回復"
+    }
   },
   "health": {
     "title": "エージェントヘルス",

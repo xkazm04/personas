@@ -525,7 +525,11 @@
     "event_data": "Datos del Evento",
     "error": "Error",
     "skipped_stat_label": "{skipped} omitidos",
-    "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha."
+    "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha.",
+    "type_labels": {
+      "sla_breach_opened": "Incumplimiento de SLA iniciado",
+      "sla_breach_recovered": "Incumplimiento de SLA recuperado"
+    }
   },
   "health": {
     "title": "Salud del Agente",

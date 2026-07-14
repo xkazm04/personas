@@ -118,6 +118,19 @@ Overview has three event-related tiers:
 
 New panels should pick the narrowest existing submodule. Do not render trace trees from realtime events; use the trace engine and `sub_observability` helpers.
 
+## SLA breach events (zero-config)
+
+SLA state is no longer a read-only island. Reliability breaches now **notify** through the event bus so users learn about a collapse from the Events feed / Incidents surfaces instead of only by opening the SLA dashboard.
+
+- **Where it runs.** Detection runs on the **execution-completion path** (`engine::sla_breach::evaluate_on_completion`, called from `handle_execution_result`), never at dashboard load. Each completion does one bounded query of the persona's most-recent runs (`sla::get_persona_breach_signal`, capped at `BREACH_LOOKBACK = 20`) — no history full-scan.
+- **Zero-config thresholds (fixed constants, no `sla_targets` table, no settings UI — by product decision).** Defined in `src-tauri/src/db/repos/communication/sla.rs`:
+  - **Consecutive failures ≥ 5** (`BREACH_CONSECUTIVE_FAILURES`) → breach, reason `consecutive_failures`.
+  - **Windowed success rate < 50%** (`BREACH_SUCCESS_RATE`) over **≥ 5 decided runs** (`BREACH_MIN_SAMPLE`) → breach, reason `low_success_rate`. The sample floor is the false-positive guard — "1 fail of 1" never opens a breach.
+  - **Recovery** requires no active failure streak **and** the success rate back above **75%** (`RECOVERY_SUCCESS_RATE`), or too little recent signal to judge. The gap between 50% and 75% is deliberate hysteresis so an episode never flaps at the boundary.
+- **Typed events.** `sla.breach.opened` (enter) and `sla.breach.recovered` (close), registered in `engine::event_registry` + `engine::event_vocabulary` (category `healing`) and mirrored on the TS side (`src/lib/eventRegistry.ts`). The payload (`SlaBreachEventPayload`) carries `personaId`, `reason`, `consecutiveFailures`, `successRate`, `decided` — enough for a healing recommendation without a second lookup. In the Events feed (`sub_events`) they render with a translated label and red / green colour.
+- **Episode de-duplication.** `sla_breach_episodes` (one durable row per persona) makes a breach emit exactly **one** enter-event and, on crossing back, **one** recovery — no re-emit on every subsequent failing run, and a restart mid-episode never re-announces.
+- **Healing hook-in.** The event payload is deliberately self-describing so a healing recommendation can be opened from it; wiring an automatic healing-issue open off the breach event is a tracked follow-up.
+
 ## Backend dependencies
 
 Overview reads from:

@@ -257,6 +257,12 @@ event_names! {
     // Persona health (push-based summary refresh signal)
     PERSONA_HEALTH_CHANGED     => "persona-health-changed",
 
+    // SLA reliability breach (published to the persona-event BUS by
+    // `engine::sla_breach` on the execution-completion path; zero-config
+    // thresholds, one enter-event + one recovery per episode).
+    SLA_BREACH_OPENED          => "sla.breach.opened",
+    SLA_BREACH_RECOVERED       => "sla.breach.recovered",
+
     // Process activity (unified lifecycle signal for background processes)
     PROCESS_ACTIVITY           => "process-activity",
 

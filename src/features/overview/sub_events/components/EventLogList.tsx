@@ -14,6 +14,7 @@ import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/disp
 import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { EVENT_STATUS_COLORS, getEventTypeColor } from '@/lib/utils/formatters';
+import { eventTypeLabel } from '../libs/eventTypeLabel';
 import { getEventStatusIcon } from '@/lib/design/eventTokens';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
@@ -223,7 +224,11 @@ export default function EventLogList() {
       onFilterChange: setTypeFilter,
       render: (event) => {
         const typeColor = getEventTypeColor(event.event_type).tailwind;
-        return <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>;
+        return (
+          <span className={`typo-heading truncate ${typeColor}`} title={event.event_type}>
+            {eventTypeLabel(t, event.event_type)}
+          </span>
+        );
       },
     },
     {

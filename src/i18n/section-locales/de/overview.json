@@ -525,7 +525,11 @@
     "event_data": "Ereignisdaten",
     "error": "Fehler",
     "skipped_stat_label": "{skipped} übersprungen",
-    "skipped_stat_tooltip": "{skipped} von {total} Ereignissen der letzten 7 Tage hatten keinen Abonnenten und wurden übersprungen ({rate}). Eine hohe Quote deutet auf einen Trigger hin, dem niemand zuhört."
+    "skipped_stat_tooltip": "{skipped} von {total} Ereignissen der letzten 7 Tage hatten keinen Abonnenten und wurden übersprungen ({rate}). Eine hohe Quote deutet auf einen Trigger hin, dem niemand zuhört.",
+    "type_labels": {
+      "sla_breach_opened": "SLA-Verstoß geöffnet",
+      "sla_breach_recovered": "SLA-Verstoß behoben"
+    }
   },
   "health": {
     "title": "Agentengesundheit",

@@ -85,6 +85,8 @@ const BUILTIN_EVENT_TYPES: &[(&str, &str)] = &[
     // Healing / reliability
     ("health_check_failed", "healing"),
     ("auto_rollback", "healing"),
+    ("sla.breach.opened", "healing"),
+    ("sla.breach.recovered", "healing"),
     ("circuit_breaker.global.opened", "healing"),
     ("circuit_breaker.global.closed", "healing"),
     ("circuit_breaker.provider.opened", "healing"),

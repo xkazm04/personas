@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -903,6 +903,266 @@ fn compute_mtbf(timestamps: &[String]) -> Option<f64> {
     Some(total_span / gaps)
 }
 
+// ============================================================================
+// Breach detection (zero-config reliability episodes)
+// ============================================================================
+//
+// SLA state used to be a read-only island: it computed rates and streaks for
+// the dashboard but never *notified*. Breach detection closes that gap by
+// running cheaply on the execution-completion path (NEVER at dashboard load)
+// and emitting a typed bus event when a persona crosses into — or back out of —
+// a reliability breach. The reads here are the detection half; the emission +
+// episode-dedup orchestration lives in `engine::sla_breach`.
+//
+// **Zero-config by product decision (2026-07-14):** there is deliberately NO
+// `sla_targets` table, no authoring UI, no new settings surface. The thresholds
+// below are fixed constants tuned to be conservative — the failure mode we
+// guard against is false-positive noise, not missed breaches. A user with a
+// genuinely flaky persona will cross these; a healthy persona having one bad
+// run will not.
+
+/// How many of a persona's most-recent terminal runs the breach signal
+/// inspects. Bounded so detection is O(1) per completion regardless of history
+/// size — it never full-scans `persona_executions`. Mirrors the spirit of
+/// [`CONSECUTIVE_FAILURE_LOOKBACK`] (the dashboard streak cap): once a persona
+/// is this deep into failures the operational meaning ("broken") no longer
+/// sharpens with more rows.
+pub const BREACH_LOOKBACK: i64 = 20;
+
+/// Consecutive-failure count at or above which a persona is in breach.
+/// Five back-to-back failures is well past "a transient blip" and past the
+/// value-delivery circuit breaker's 3-run window — by here the persona is
+/// reliably failing, not unlucky.
+pub const BREACH_CONSECUTIVE_FAILURES: i64 = 5;
+
+/// Minimum number of *decided* runs (completed + failed; cancelled excluded,
+/// same denominator rule as `success_rate`) required before the rate-based
+/// check can fire. Without a sample floor, "1 fail out of 1" reads as a 0%
+/// success rate and would open a breach on a single failure — exactly the
+/// false-positive we refuse to emit.
+pub const BREACH_MIN_SAMPLE: i64 = 5;
+
+/// Windowed success rate below which a persona is in breach (given at least
+/// [`BREACH_MIN_SAMPLE`] decided runs). Half the recent decided runs failing
+/// is a clear reliability collapse, not variance.
+pub const BREACH_SUCCESS_RATE: f64 = 0.5;
+
+/// Success rate a breached persona must climb back to (with no active failure
+/// streak) before the episode is considered recovered. Set ABOVE
+/// [`BREACH_SUCCESS_RATE`] on purpose: the hysteresis gap (0.5 → 0.75) stops an
+/// episode from flapping open/closed while a persona hovers right at the 50%
+/// boundary. Between the two thresholds the episode simply stays in its current
+/// state.
+pub const RECOVERY_SUCCESS_RATE: f64 = 0.75;
+
+/// Bounded per-persona reliability snapshot used for breach classification.
+/// Computed from the persona's most-recent [`BREACH_LOOKBACK`] terminal runs.
+#[derive(Debug, Clone)]
+pub struct BreachSignal {
+    /// Leading run of `failed` statuses from newest backward (a `completed` or
+    /// `cancelled` breaks the streak — same rule as the dashboard streak).
+    pub consecutive_failures: i64,
+    /// Decided runs in the window (`completed + failed`).
+    pub decided: i64,
+    /// Successful (`completed`) runs in the window.
+    pub successful: i64,
+    /// `successful / decided`, or `0.0` when there are no decided runs.
+    pub success_rate: f64,
+}
+
+/// Read the bounded breach signal for one persona. Single indexed query over
+/// the persona's most-recent terminal rows — cheap enough to call on every
+/// execution completion.
+pub fn get_persona_breach_signal(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<BreachSignal, AppError> {
+    timed_query!("sla", "sla::get_persona_breach_signal", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT status FROM persona_executions
+             WHERE persona_id = ?1 AND status IN ('completed', 'failed', 'cancelled')
+             ORDER BY created_at DESC
+             LIMIT ?2",
+        )?;
+        let statuses: Vec<String> = stmt
+            .query_map(params![persona_id, BREACH_LOOKBACK], |row| {
+                row.get::<_, String>(0)
+            })?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        let consecutive_failures = statuses
+            .iter()
+            .take_while(|s| s.as_str() == "failed")
+            .count() as i64;
+        let successful = statuses.iter().filter(|s| s.as_str() == "completed").count() as i64;
+        let failed = statuses.iter().filter(|s| s.as_str() == "failed").count() as i64;
+        let decided = successful + failed;
+        let success_rate = if decided > 0 {
+            successful as f64 / decided as f64
+        } else {
+            0.0
+        };
+
+        Ok(BreachSignal {
+            consecutive_failures,
+            decided,
+            successful,
+            success_rate,
+        })
+    })
+}
+
+/// Whether a signal meets a breach condition, and which reason token to emit.
+/// Consecutive-failure breach takes precedence over the rate breach (it's the
+/// sharper, more actionable signal). Returns `None` when the persona is not in
+/// breach. Pure function — no I/O — so the thresholds are unit-testable.
+pub fn classify_breach(sig: &BreachSignal) -> Option<&'static str> {
+    if sig.consecutive_failures >= BREACH_CONSECUTIVE_FAILURES {
+        return Some("consecutive_failures");
+    }
+    if sig.decided >= BREACH_MIN_SAMPLE && sig.success_rate < BREACH_SUCCESS_RATE {
+        return Some("low_success_rate");
+    }
+    None
+}
+
+/// Whether a currently-open episode should be closed: no active failure streak
+/// AND either too little recent signal to judge (the persona went quiet) or a
+/// success rate back above the hysteresis recovery bar.
+pub fn is_recovered(sig: &BreachSignal) -> bool {
+    sig.consecutive_failures == 0
+        && (sig.decided < BREACH_MIN_SAMPLE || sig.success_rate >= RECOVERY_SUCCESS_RATE)
+}
+
+/// The action a completion should take given the current episode state and the
+/// fresh signal. Encapsulates the enter-once / no-re-emit / recover-closes
+/// state machine as a pure function so it can be tested without an `AppHandle`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BreachDecision {
+    /// Nothing to emit (not breached, or already-open episode still breached,
+    /// or borderline inside the hysteresis band).
+    NoOp,
+    /// Cross into breach — emit the opened event once. Carries the reason token.
+    Open(&'static str),
+    /// Cross back out — emit the recovered event and close the episode.
+    Recover,
+}
+
+/// Pure decision function for the breach state machine. `episode_open` is the
+/// durable per-persona state (from `sla_breach_episodes`); `sig` is the fresh
+/// bounded signal. This is what guarantees ONE enter-event per episode and no
+/// re-emission on every subsequent failing run.
+pub fn decide(episode_open: bool, sig: &BreachSignal) -> BreachDecision {
+    if !episode_open {
+        match classify_breach(sig) {
+            Some(reason) => BreachDecision::Open(reason),
+            None => BreachDecision::NoOp,
+        }
+    } else if is_recovered(sig) {
+        BreachDecision::Recover
+    } else {
+        BreachDecision::NoOp
+    }
+}
+
+/// Durable per-persona breach-episode state. Persisted so a restart mid-episode
+/// does not re-emit an already-announced breach.
+#[derive(Debug, Clone, Default)]
+pub struct BreachEpisode {
+    /// True while the persona is in an announced (un-recovered) breach.
+    pub is_open: bool,
+    /// The reason token captured when the episode opened.
+    pub reason: Option<String>,
+    /// When the episode opened (RFC 3339), carried into the recovery event.
+    pub opened_at: Option<String>,
+}
+
+/// Load a persona's current episode state, or a default (closed) state when no
+/// row exists yet.
+pub fn get_breach_episode(pool: &DbPool, persona_id: &str) -> Result<BreachEpisode, AppError> {
+    let conn = pool.get()?;
+    let row = conn
+        .query_row(
+            "SELECT is_open, reason, opened_at FROM sla_breach_episodes WHERE persona_id = ?1",
+            params![persona_id],
+            |r| {
+                Ok(BreachEpisode {
+                    is_open: r.get::<_, i64>(0)? != 0,
+                    reason: r.get(1)?,
+                    opened_at: r.get(2)?,
+                })
+            },
+        )
+        .optional()?;
+    Ok(row.unwrap_or_default())
+}
+
+/// Open (or re-open) a persona's breach episode, stamping the reason + signal
+/// snapshot. Idempotent per persona (PK upsert).
+pub fn open_breach_episode(
+    pool: &DbPool,
+    persona_id: &str,
+    reason: &str,
+    sig: &BreachSignal,
+    at: &str,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO sla_breach_episodes
+            (persona_id, is_open, reason, consecutive_failures, success_rate, decided,
+             opened_at, recovered_at, updated_at)
+         VALUES (?1, 1, ?2, ?3, ?4, ?5, ?6, NULL, ?6)
+         ON CONFLICT(persona_id) DO UPDATE SET
+            is_open              = 1,
+            reason               = excluded.reason,
+            consecutive_failures = excluded.consecutive_failures,
+            success_rate         = excluded.success_rate,
+            decided              = excluded.decided,
+            opened_at            = excluded.opened_at,
+            recovered_at         = NULL,
+            updated_at           = excluded.updated_at",
+        params![
+            persona_id,
+            reason,
+            sig.consecutive_failures,
+            sig.success_rate,
+            sig.decided,
+            at,
+        ],
+    )?;
+    Ok(())
+}
+
+/// Close a persona's breach episode (recovery), stamping the recovery signal.
+pub fn close_breach_episode(
+    pool: &DbPool,
+    persona_id: &str,
+    sig: &BreachSignal,
+    at: &str,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE sla_breach_episodes
+         SET is_open              = 0,
+             consecutive_failures = ?2,
+             success_rate         = ?3,
+             decided              = ?4,
+             recovered_at         = ?5,
+             updated_at           = ?5
+         WHERE persona_id = ?1",
+        params![
+            persona_id,
+            sig.consecutive_failures,
+            sig.success_rate,
+            sig.decided,
+            at,
+        ],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1585,5 +1845,183 @@ mod tests {
         assert_eq!(rows[1].date, day_b);
         assert!((rows[1].success_rate - 0.5).abs() < 1e-9);
         assert_eq!(rows[1].decided, 2);
+    }
+
+    // -- Breach detection: threshold boundaries + episode dedup --------------
+
+    fn recent_ts(mins_ago: i64) -> String {
+        (chrono::Utc::now() - chrono::Duration::minutes(mins_ago))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string()
+    }
+
+    #[test]
+    fn classify_breach_boundaries() {
+        // Streak just below the threshold with plenty of successes → no breach.
+        let below = BreachSignal {
+            consecutive_failures: BREACH_CONSECUTIVE_FAILURES - 1,
+            decided: 10,
+            successful: 6,
+            success_rate: 0.6,
+        };
+        assert_eq!(classify_breach(&below), None);
+
+        // Streak exactly at the threshold → consecutive-failure breach.
+        let streak = BreachSignal {
+            consecutive_failures: BREACH_CONSECUTIVE_FAILURES,
+            decided: BREACH_CONSECUTIVE_FAILURES,
+            successful: 0,
+            success_rate: 0.0,
+        };
+        assert_eq!(classify_breach(&streak), Some("consecutive_failures"));
+
+        // Low rate but below the sample floor → NOT a breach (false-positive guard).
+        let thin = BreachSignal {
+            consecutive_failures: 0,
+            decided: BREACH_MIN_SAMPLE - 1,
+            successful: 0,
+            success_rate: 0.0,
+        };
+        assert_eq!(classify_breach(&thin), None);
+
+        // Low rate with enough sample and no streak → rate breach.
+        let rate = BreachSignal {
+            consecutive_failures: 0,
+            decided: 10,
+            successful: 4,
+            success_rate: 0.4,
+        };
+        assert_eq!(classify_breach(&rate), Some("low_success_rate"));
+
+        // Exactly at the rate boundary (0.5) is NOT below it → no breach.
+        let boundary = BreachSignal {
+            consecutive_failures: 0,
+            decided: 10,
+            successful: 5,
+            success_rate: 0.5,
+        };
+        assert_eq!(classify_breach(&boundary), None);
+    }
+
+    #[test]
+    fn recovery_has_hysteresis() {
+        // In the hysteresis band (rate between 0.5 and 0.75, no streak):
+        // not a breach, but also NOT recovered — an open episode stays open.
+        let band = BreachSignal {
+            consecutive_failures: 0,
+            decided: 10,
+            successful: 6,
+            success_rate: 0.6,
+        };
+        assert_eq!(classify_breach(&band), None);
+        assert!(!is_recovered(&band));
+        assert_eq!(decide(true, &band), BreachDecision::NoOp);
+
+        // Clearly healthy → recovered.
+        let healthy = BreachSignal {
+            consecutive_failures: 0,
+            decided: 10,
+            successful: 9,
+            success_rate: 0.9,
+        };
+        assert!(is_recovered(&healthy));
+
+        // Quiet persona (too little recent signal) with no streak → recovered.
+        let quiet = BreachSignal {
+            consecutive_failures: 0,
+            decided: 1,
+            successful: 1,
+            success_rate: 1.0,
+        };
+        assert!(is_recovered(&quiet));
+    }
+
+    #[test]
+    fn breach_signal_reads_bounded_streak_and_rate() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "breach-signal");
+
+        // 5 completed (older) then 3 failed (newest) → streak 3, rate 5/8.
+        for i in 0..5 {
+            insert_execution(&pool, &persona_id, "completed", &recent_ts(100 - i));
+        }
+        for i in 0..3 {
+            insert_execution(&pool, &persona_id, "failed", &recent_ts(10 - i));
+        }
+        let sig = get_persona_breach_signal(&pool, &persona_id).unwrap();
+        assert_eq!(sig.consecutive_failures, 3);
+        assert_eq!(sig.decided, 8);
+        assert_eq!(sig.successful, 5);
+        assert!((sig.success_rate - 5.0 / 8.0).abs() < 1e-9);
+
+        // A cancelled newest run breaks the streak but is excluded from the rate.
+        insert_execution(&pool, &persona_id, "cancelled", &recent_ts(1));
+        let sig2 = get_persona_breach_signal(&pool, &persona_id).unwrap();
+        assert_eq!(sig2.consecutive_failures, 0, "cancelled breaks the streak");
+        assert_eq!(sig2.decided, 8, "cancelled excluded from decided");
+    }
+
+    /// The full episode lifecycle: ENTER once when the persona crosses into
+    /// breach, NO re-emit while it stays breached, RECOVER when it climbs back,
+    /// and NO-OP once closed. This is the durable-dedup contract restarts rely
+    /// on (the episode row is what `decide` reads, not in-memory state).
+    #[test]
+    fn breach_episode_enter_once_then_recover() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "breach-cycle");
+        let now = || chrono::Utc::now().to_rfc3339();
+
+        // Fresh persona, no episode row yet.
+        let ep0 = get_breach_episode(&pool, &persona_id).unwrap();
+        assert!(!ep0.is_open);
+
+        // Cross into breach: 5 consecutive failures.
+        for i in 0..BREACH_CONSECUTIVE_FAILURES {
+            insert_execution(&pool, &persona_id, "failed", &recent_ts(50 - i));
+        }
+        let sig = get_persona_breach_signal(&pool, &persona_id).unwrap();
+        let d1 = decide(ep0.is_open, &sig);
+        assert_eq!(d1, BreachDecision::Open("consecutive_failures"));
+        open_breach_episode(&pool, &persona_id, "consecutive_failures", &sig, &now()).unwrap();
+
+        // Another failing run: episode already open → NO re-emit.
+        insert_execution(&pool, &persona_id, "failed", &recent_ts(2));
+        let ep1 = get_breach_episode(&pool, &persona_id).unwrap();
+        assert!(ep1.is_open);
+        assert_eq!(ep1.reason.as_deref(), Some("consecutive_failures"));
+        let sig2 = get_persona_breach_signal(&pool, &persona_id).unwrap();
+        assert_eq!(
+            decide(ep1.is_open, &sig2),
+            BreachDecision::NoOp,
+            "must not re-emit while the episode is open",
+        );
+
+        // Recover: enough fresh successes to clear the streak and beat the
+        // hysteresis bar.
+        for i in 0..12 {
+            insert_execution(&pool, &persona_id, "completed", &recent_ts(0 - i));
+        }
+        let sig3 = get_persona_breach_signal(&pool, &persona_id).unwrap();
+        let ep2 = get_breach_episode(&pool, &persona_id).unwrap();
+        assert_eq!(decide(ep2.is_open, &sig3), BreachDecision::Recover);
+        close_breach_episode(&pool, &persona_id, &sig3, &now()).unwrap();
+
+        // Closed + healthy → no-op (no duplicate recovery).
+        let ep3 = get_breach_episode(&pool, &persona_id).unwrap();
+        assert!(!ep3.is_open);
+        assert_eq!(decide(ep3.is_open, &sig3), BreachDecision::NoOp);
+    }
+
+    /// The `sla_breach_episodes` table must exist on a FRESH schema — the
+    /// migration step lives INSIDE `run_incremental`, so `init_test_db` builds
+    /// it. (Same guard as `sla_daily_exists_on_fresh_schema`.)
+    #[test]
+    fn sla_breach_episodes_exists_on_fresh_schema() {
+        let pool = init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sla_breach_episodes", [], |r| r.get(0))
+            .expect("sla_breach_episodes table must exist on a fresh schema");
+        assert_eq!(n, 0);
     }
 }

@@ -6159,7 +6159,11 @@
       "event_data": "Données de l'événement",
       "error": "Erreur",
       "skipped_stat_label": "{skipped} ignorés",
-      "skipped_stat_tooltip": "{skipped} des {total} événements des 7 derniers jours n'avaient aucun abonné et ont été ignorés ({rate}). Un taux élevé signale un déclencheur que personne n'écoute."
+      "skipped_stat_tooltip": "{skipped} des {total} événements des 7 derniers jours n'avaient aucun abonné et ont été ignorés ({rate}). Un taux élevé signale un déclencheur que personne n'écoute.",
+      "type_labels": {
+        "sla_breach_opened": "Violation de SLA ouverte",
+        "sla_breach_recovered": "Violation de SLA rétablie"
+      }
     },
     "health": {
       "title": "Santé des agents",

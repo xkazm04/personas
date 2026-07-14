@@ -6406,6 +6406,10 @@ export type Translations = {
       source_scheduled: string;
       event_detail_title: string;
       event_detail_status: string;
+      type_labels: {
+        sla_breach_opened: string;
+        sla_breach_recovered: string;
+      };
       load_older: string;
       clear_filters: string;
       col_trigger: string;
