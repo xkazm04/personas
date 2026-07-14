@@ -129,6 +129,14 @@ materially edits the working tree should touch this file twice:
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
 
+### perfect-round6 — /perfect round 6: propose (3 contexts, 11 accepted) + build wave 6 (11/11 shipped) — session fable-5
+- Started: 2026-07-14. Status: COMPLETED.
+- Shipped on master: 7b646125b (F5 sidebar draft rows inline) · 0e41225ba + b1eb01909 (SLA rollups + local-day) · picks of 515630be3/5f60e0059/1f11ea101 (editor: honest tab signals, live quick stats, persona change history) · picks of ae438d03c/d868fc146 (health bundle [F6 closed], per-persona truth) · 58a956086 (render-plan test compile fix, flagged by 2 builders) · 5788693d6 (local-day integration fix) · 9f3cbd16f/ed5c94daa/76ae07f61 (one formula, composite honesty, honest cascade) · aabdb3721 (SLA breach events; builder died pre-commit, Director recovered from WIP snapshot).
+- Gates: cargo check, tsc, vitest unions (5/5, 9/9, 19/19, 57/57, 37/37), i18n strict ×5. CAVEAT: Rust test EXECUTION blocked machine-wide (STATUS_ENTRYPOINT_NOT_FOUND loader issue) — wave Rust tests compile-verified; ts-rs bindings hand-written; CI backstop.
+- All 5 perfect-* worktrees removed (junction-first). Vault: Perfect/ round-6 records complete; next = propose round 7 at scheduler (scout banked).
+
+
+
 ### ship-loop-M5 — Ship Loop Milestone 5: Chain Studio commit path (session fable-5 fa9818da) — completed
 - 2026-07-04: commit 874628340 — signal-source routes commit via configure-&-commit modal hosting TriggerAddForm locked to the source type (additive lockedTriggerType prop); output_match commits as backend jsonpath condition via inline path+expected inputs; Save-all stays direct-only; 9 i18n keys ×14; 7 unit tests. Gate: vitest 2029/2029, tours 6/6, tsc/eslint/i18n-strict clean. Events feature doc updated.
 - Paths: sub_studio (studioCommit/studioDraftModel/useStudioComposer/StudioPatchbay/StudioTriggerCommitModal), sub_triggers/TriggerAddForm.tsx, locales ×14 + generated, docs/features/events/README.md.
