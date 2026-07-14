@@ -7112,7 +7112,9 @@
     },
     "cascade": {
       "title": "Chain Cascade Map",
-      "no_chains": "No chains detected -- all personas operating independently"
+      "no_chains": "No chains detected -- all personas operating independently",
+      "cofail_pct": "{pct}% co-fail",
+      "cofail_insufficient": "no co-failures"
     },
     "predictive_alerts_extra": {
       "title": "Predictive Alerts",

@@ -7119,6 +7119,8 @@ export type Translations = {
     cascade: {
       title: string;
       no_chains: string;
+      cofail_pct: string;
+      cofail_insufficient: string;
     };
     predictive_alerts_extra: {
       title: string;

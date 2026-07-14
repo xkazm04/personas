@@ -3,6 +3,7 @@ import type { OverviewStore } from "../../storeTypes";
 import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
+import type { PersonaDailyReliability } from "@/lib/bindings/PersonaDailyReliability";
 import type { PersonaCostEntry } from "@/lib/bindings/PersonaCostEntry";
 import type { ByomPolicy, ProviderUsageStats } from "@/api/system/byom";
 import { getByomPolicy, getProviderUsageStats } from "@/api/system/byom";
@@ -70,7 +71,14 @@ export interface CascadeLink {
   sourcePersonaId: string;
   targetPersonaId: string;
   triggerType: string;
-  strength: number; // 0-1, how often source triggers target
+  /**
+   * Empirical co-failure correlation over the two personas' shared active
+   * window: the Jaccard overlap of their failure days (|both failed| / |either
+   * failed|), 0..1. `0` means either never-correlated OR too little shared
+   * history to tell (see `COFAIL_MIN_SAMPLE`). Previously a hardcoded `0.7`
+   * that rendered as a computed-looking number but was never computed.
+   */
+  strength: number;
 }
 
 export interface RoutingRecommendation {
@@ -455,8 +463,10 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
         // Sort by health score ascending (worst first)
         signals.sort((a, b) => a.heartbeatScore - b.heartbeatScore);
 
-        // Generate cascade links from event subscriptions
-        const cascadeLinks = buildCascadeLinks(personas);
+        // Generate cascade links: team membership defines the chain, and each
+        // edge's strength is the EMPIRICAL co-failure correlation of the two
+        // personas over their shared daily history (no more hardcoded 0.7).
+        const cascadeLinks = buildCascadeLinks(personas, personaDaily);
 
         // Generate routing recommendations
         const recommendations = generateRoutingRecommendations(signals, providerStats, byomPolicy);
@@ -493,7 +503,45 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
 // Cascade link builder
 // ---------------------------------------------------------------------------
 
-function buildCascadeLinks(personas: Persona[]): CascadeLink[] {
+/**
+ * A day counts as a "failure day" for a persona when its success rate is at or
+ * below this (0-1). 0.70 = "degraded or worse", matching the status-page day
+ * bands (`dayStatusFromRate`).
+ */
+export const COFAIL_RATE_THRESHOLD = 0.70;
+/**
+ * Minimum number of shared days where EITHER persona failed before a co-failure
+ * correlation is claimed. Below the floor, strength is 0 (insufficient shared
+ * history) rather than a noisy 1.0 from a single coincident bad day.
+ */
+export const COFAIL_MIN_SAMPLE = 2;
+
+/**
+ * Empirical cascade strength between two personas: the Jaccard overlap of their
+ * failure days over their shared active window — |both failed| / |either
+ * failed|. 1.0 = they always fail on the same days; 0 = never, or too little
+ * shared history to tell. Replaces the hardcoded 0.7. Exported for unit tests.
+ */
+export function coFailureStrength(
+  aDaily: Array<{ date: string; success_rate: number }>,
+  bDaily: Array<{ date: string; success_rate: number }>,
+): number {
+  const bRate = new Map(bDaily.map(d => [d.date, d.success_rate]));
+  let coFail = 0;
+  let eitherFail = 0;
+  for (const a of aDaily) {
+    const rb = bRate.get(a.date);
+    if (rb === undefined) continue; // not a shared active day
+    const aFailed = a.success_rate <= COFAIL_RATE_THRESHOLD;
+    const bFailed = rb <= COFAIL_RATE_THRESHOLD;
+    if (aFailed || bFailed) eitherFail++;
+    if (aFailed && bFailed) coFail++;
+  }
+  if (eitherFail < COFAIL_MIN_SAMPLE) return 0;
+  return coFail / eitherFail;
+}
+
+function buildCascadeLinks(personas: Persona[], personaDaily: PersonaDailyReliability[]): CascadeLink[] {
   // Build links based on persona home-team (workspace) relationships
   const links: CascadeLink[] = [];
   const groupMap = new Map<string, Persona[]>();
@@ -506,14 +554,28 @@ function buildCascadeLinks(personas: Persona[]): CascadeLink[] {
     }
   }
 
-  // Within each home team, create chain links
+  // Index each persona's daily success series for O(1) co-failure lookup.
+  const dailyByPersona = new Map<string, PersonaDailyReliability[]>();
+  for (const d of personaDaily) {
+    const arr = dailyByPersona.get(d.persona_id) ?? [];
+    arr.push(d);
+    dailyByPersona.set(d.persona_id, arr);
+  }
+
+  // Within each home team, create chain links; each edge's strength is the
+  // measured co-failure correlation of the two personas.
   for (const members of groupMap.values()) {
     for (let i = 0; i < members.length - 1; i++) {
+      const src = members[i]!;
+      const tgt = members[i + 1]!;
       links.push({
-        sourcePersonaId: members[i]!.id,
-        targetPersonaId: members[i + 1]!.id,
+        sourcePersonaId: src.id,
+        targetPersonaId: tgt.id,
         triggerType: 'group-chain',
-        strength: 0.7,
+        strength: coFailureStrength(
+          dailyByPersona.get(src.id) ?? [],
+          dailyByPersona.get(tgt.id) ?? [],
+        ),
       });
     }
   }

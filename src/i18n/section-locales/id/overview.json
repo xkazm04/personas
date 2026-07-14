@@ -1042,7 +1042,9 @@
   },
   "cascade": {
     "title": "Peta Kaskade Rantai",
-    "no_chains": "Tidak ada rantai terdeteksi -- semua persona beroperasi secara independen"
+    "no_chains": "Tidak ada rantai terdeteksi -- semua persona beroperasi secara independen",
+    "cofail_insufficient": "tidak ada kegagalan bersama",
+    "cofail_pct": "{pct}% gagal bersama"
   },
   "predictive_alerts_extra": {
     "title": "Peringatan Prediktif",

@@ -6676,7 +6676,9 @@
     },
     "cascade": {
       "title": "Mapa de Cascada en Cadena",
-      "no_chains": "No se detectaron cadenas — todas las personas operan independientemente"
+      "no_chains": "No se detectaron cadenas — todas las personas operan independientemente",
+      "cofail_insufficient": "sin fallos simultáneos",
+      "cofail_pct": "{pct}% de fallos simultáneos"
     },
     "predictive_alerts_extra": {
       "title": "Alertas Predictivas",

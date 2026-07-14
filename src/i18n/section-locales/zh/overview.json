@@ -1042,7 +1042,9 @@
   },
   "cascade": {
     "title": "链式级联图",
-    "no_chains": "未检测到链 — 所有代理独立运行"
+    "no_chains": "未检测到链 — 所有代理独立运行",
+    "cofail_insufficient": "无共同故障",
+    "cofail_pct": "{pct}% 共同故障"
   },
   "predictive_alerts_extra": {
     "title": "预测告警",

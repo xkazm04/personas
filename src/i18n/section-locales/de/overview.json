@@ -1042,7 +1042,9 @@
   },
   "cascade": {
     "title": "Ketten-Kaskadenkarte",
-    "no_chains": "Keine Ketten erkannt -- alle Personas arbeiten unabhängig"
+    "no_chains": "Keine Ketten erkannt -- alle Personas arbeiten unabhängig",
+    "cofail_insufficient": "keine gemeinsamen Ausfälle",
+    "cofail_pct": "{pct}% gemeinsame Ausfälle"
   },
   "predictive_alerts_extra": {
     "title": "Prädiktive Warnungen",

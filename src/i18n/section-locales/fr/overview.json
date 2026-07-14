@@ -1042,7 +1042,9 @@
   },
   "cascade": {
     "title": "Carte de cascade en chaîne",
-    "no_chains": "Aucune chaîne détectée — tous les personas fonctionnent indépendamment"
+    "no_chains": "Aucune chaîne détectée — tous les personas fonctionnent indépendamment",
+    "cofail_insufficient": "aucune panne commune",
+    "cofail_pct": "{pct}% de pannes communes"
   },
   "predictive_alerts_extra": {
     "title": "Alertes prédictives",
