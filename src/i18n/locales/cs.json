@@ -14750,7 +14750,11 @@
     "source_filter_no_regex": "Podporována je pouze koncová hvězdička (žádný regex, žádné ? wildcardy)",
     "source_filter_no_source_id": "Pokud je source_filter nastaven, ale událost nemá source_id, filtr se neshoduje",
     "source_filter_allowed_chars": "Povolené znaky: písmena, čísla, _, -, :, . a *",
-    "source_filter_max_length": "Maximum 120 znaků, maximum 3 wildcard znaky"
+    "source_filter_max_length": "Maximum 120 znaků, maximum 3 wildcard znaky",
+    "signal_raised_description": "Senzor (standardy, připravenost, náklady na LLM, chyby, KPI) zaznamenal nové zjištění.",
+    "signal_raised_label": "Zjištění nahlášeno",
+    "signal_verified_description": "Nasazené zjištění bylo znovu změřeno — zlepšila se hodnota skutečně?",
+    "signal_verified_label": "Zjištění ověřeno"
   },
   "connector_roles": {
     "chat_messaging": "Chat a zprávy",

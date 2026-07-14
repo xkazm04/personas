@@ -79,5 +79,9 @@
   "source_filter_no_regex": "Seul le * de fin est supporté (pas de regex, pas de jokers ?)",
   "source_filter_no_source_id": "Si source_filter est défini mais que l'événement n'a pas de source_id, le filtre ne correspondra pas",
   "source_filter_allowed_chars": "Caractères autorisés : lettres, chiffres, _, -, :, . et *",
-  "source_filter_max_length": "Maximum 120 caractères, maximum 3 caractères jokers"
+  "source_filter_max_length": "Maximum 120 caractères, maximum 3 caractères jokers",
+  "signal_raised_description": "Un capteur (standards, préparation, coût LLM, erreurs, KPI) a signalé un nouveau constat.",
+  "signal_raised_label": "Constat signalé",
+  "signal_verified_description": "Un constat corrigé a été remesuré — le chiffre s'est-il vraiment amélioré ?",
+  "signal_verified_label": "Constat vérifié"
 }

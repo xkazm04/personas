@@ -166,6 +166,26 @@ export const EVENT_TYPE_REGISTRY: EventTypeEntry[] = [
     typicalSources: ['scheduler', 'runner'],
   },
 
+  // ── Findings loop (docs/plans/dev-findings-loop.md) ─────────────────────
+  // A sensor raised a finding, or a verdict landed on one that shipped. Emitted
+  // from the repo on every create_finding / set_finding_verify_state, so no code
+  // path can raise work without the bus hearing about it. These are the sources
+  // the dispatch routes (Task Runner vs Fleet) listen on.
+  {
+    type: 'signal.raised',
+    labelKey: 'signal_raised_label',
+    descriptionKey: 'signal_raised_description',
+    category: 'system',
+    typicalSources: ['findings'],
+  },
+  {
+    type: 'signal.verified',
+    labelKey: 'signal_verified_label',
+    descriptionKey: 'signal_verified_description',
+    category: 'system',
+    typicalSources: ['findings'],
+  },
+
   // ── System / persona events ─────────────────────────────────────────────
   {
     type: 'persona_action',

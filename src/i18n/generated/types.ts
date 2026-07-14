@@ -15020,6 +15020,10 @@ export type Translations = {
     source_filter_no_source_id: string;
     source_filter_allowed_chars: string;
     source_filter_max_length: string;
+    signal_raised_label: string;
+    signal_raised_description: string;
+    signal_verified_label: string;
+    signal_verified_description: string;
   };
   connector_roles: {
     chat_messaging: string;

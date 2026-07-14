@@ -14750,7 +14750,11 @@
     "source_filter_no_regex": "只支持尾部 *（不支持正则表达式，不支持 ? 通配符）",
     "source_filter_no_source_id": "如果设置了 source_filter 但事件没有 source_id，过滤器将不匹配",
     "source_filter_allowed_chars": "允许的字符：字母、数字、_、-、:、. 和 *",
-    "source_filter_max_length": "最多 120 个字符，最多 3 个通配符"
+    "source_filter_max_length": "最多 120 个字符，最多 3 个通配符",
+    "signal_raised_description": "传感器(标准、就绪度、LLM 成本、错误、KPI)提出了一个新发现。",
+    "signal_raised_label": "已提出发现",
+    "signal_verified_description": "已上线的发现被重新测量——指标是否真的有所改善?",
+    "signal_verified_label": "发现已验证"
   },
   "connector_roles": {
     "chat_messaging": "聊天和即时通讯",

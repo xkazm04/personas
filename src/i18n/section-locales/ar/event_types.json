@@ -79,5 +79,9 @@
   "source_filter_no_regex": "مدعوم * النهائي فقط (لا regex، لا ? حروف بدل)",
   "source_filter_no_source_id": "إذا كان source_filter مضبوطاً لكن الحدث ليس له source_id، لن يتطابق المرشح",
   "source_filter_allowed_chars": "الحروف المسموح بها: أحرف، أرقام، _، -، :، .، و*",
-  "source_filter_max_length": "الحد الأقصى 120 حرفاً، و3 حروف بدل"
+  "source_filter_max_length": "الحد الأقصى 120 حرفاً، و3 حروف بدل",
+  "signal_raised_description": "استشعر أحد الحساسات (المعايير، الجاهزية، تكلفة LLM، الأخطاء، KPI) ثغرة جديدة.",
+  "signal_raised_label": "ثغرة مكتشفة",
+  "signal_verified_description": "أُعيد قياس ثغرة تم إصلاحها — هل تحسّن الرقم فعلاً؟",
+  "signal_verified_label": "ثغرة مؤكدة"
 }

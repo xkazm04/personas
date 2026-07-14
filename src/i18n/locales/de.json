@@ -14750,7 +14750,11 @@
     "source_filter_no_regex": "Nur nachgestelltes * wird unterstützt (kein Regex, keine ? Platzhalter)",
     "source_filter_no_source_id": "Wenn source_filter gesetzt ist, aber das Ereignis keine source_id hat, stimmt der Filter nicht überein",
     "source_filter_allowed_chars": "Erlaubte Zeichen: Buchstaben, Zahlen, _, -, :, . und *",
-    "source_filter_max_length": "Maximal 120 Zeichen, maximal 3 Platzhalterzeichen"
+    "source_filter_max_length": "Maximal 120 Zeichen, maximal 3 Platzhalterzeichen",
+    "signal_raised_description": "Ein Sensor (Standards, Bereitschaft, LLM-Kosten, Fehler, KPI) hat einen neuen Befund gemeldet.",
+    "signal_raised_label": "Befund gemeldet",
+    "signal_verified_description": "Ein umgesetzter Befund wurde erneut gemessen — hat sich der Wert wirklich verbessert?",
+    "signal_verified_label": "Befund verifiziert"
   },
   "connector_roles": {
     "chat_messaging": "Chat & Nachrichten",

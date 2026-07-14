@@ -2842,8 +2842,54 @@ pub fn create_finding(
             ],
         )?;
 
-        get_idea_by_id(pool, &id).map(Some)
+        drop(conn);
+        let idea = get_idea_by_id(pool, &id)?;
+        // A sensor raised something — tell the bus. `signal.raised` is what the
+        // dispatch ops (Task Runner vs Fleet) will route off.
+        publish_signal_event(pool, &idea, crate::engine::event_registry::event_name::SIGNAL_RAISED);
+        Ok(Some(idea))
     })
+}
+
+/// Publish a findings-loop SIGNAL onto the persona-event bus.
+///
+/// Called from `create_finding` and `set_finding_verify_state` — i.e. from the repo,
+/// not from the sweep — so every path that raises a finding or lands a verdict emits,
+/// and no future caller can silently starve a route by forgetting to. These events are
+/// what the dispatch ops route off (`signal.raised` → run it; `signal.verified` → learn
+/// from it), and they surface in the Live Stream for free.
+///
+/// Best-effort: a bus failure must never fail the write that triggered it. The finding
+/// is the source of truth; the event is a notification.
+fn publish_signal_event(pool: &DbPool, idea: &DevIdea, event_type: &str) {
+    let payload = serde_json::json!({
+        "idea_id": idea.id,
+        "origin": idea.origin,
+        "dedup_key": idea.dedup_key,
+        "title": idea.title,
+        "project_id": idea.project_id,
+        "context_id": idea.context_id,
+        "use_case_id": idea.use_case_id,
+        "impact": idea.impact,
+        "effort": idea.effort,
+        "risk": idea.risk,
+        "verify_state": idea.verify_state,
+        "evidence": idea.evidence,
+    });
+    let input = crate::db::models::CreatePersonaEventInput {
+        event_type: event_type.to_string(),
+        source_type: "findings".into(),
+        source_id: Some(idea.id.clone()),
+        // No target persona: a signal is an observation, not an instruction. A trigger
+        // (or a dispatch op) decides who — if anyone — acts on it.
+        target_persona_id: None,
+        project_id: idea.project_id.clone(),
+        payload: Some(payload.to_string()),
+        use_case_id: idea.use_case_id.clone(),
+    };
+    if let Err(e) = crate::db::repos::communication::events::publish(pool, input) {
+        tracing::warn!(error = %e, event_type, "failed to publish findings signal event");
+    }
 }
 
 /// Record a verification verdict on a finding (Phase 3A). `verify_evidence` is the
@@ -2867,6 +2913,13 @@ pub fn set_finding_verify_state(
             "UPDATE dev_ideas SET verify_state = ?1, verify_evidence = ?2, verify_checked_at = ?3, updated_at = ?3 WHERE id = ?4",
             params![verify_state, verify_evidence, now, id],
         )?;
+        drop(conn);
+
+        // A verdict landed — tell the bus. This is the event B-side learning and any
+        // future "the fix regressed, re-open it" route hang off.
+        if let Ok(idea) = get_idea_by_id(pool, id) {
+            publish_signal_event(pool, &idea, crate::engine::event_registry::event_name::SIGNAL_VERIFIED);
+        }
         Ok(())
     })
 }

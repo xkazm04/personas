@@ -14750,7 +14750,11 @@
     "source_filter_no_regex": "শুধু শেষে * সমর্থিত (কোনো regex নয়, কোনো ? ওয়াইল্ডকার্ড নয়)",
     "source_filter_no_source_id": "source_filter সেট করা থাকলেও ইভেন্টে source_id না থাকলে ফিল্টার মিলবে না",
     "source_filter_allowed_chars": "অনুমোদিত অক্ষর: বর্ণ, সংখ্যা, _, -, :, ., এবং *",
-    "source_filter_max_length": "সর্বোচ্চ ১২০টি অক্ষর, সর্বোচ্চ ৩টি ওয়াইল্ডকার্ড অক্ষর"
+    "source_filter_max_length": "সর্বোচ্চ ১২০টি অক্ষর, সর্বোচ্চ ৩টি ওয়াইল্ডকার্ড অক্ষর",
+    "signal_raised_description": "একটি সেন্সর (স্ট্যান্ডার্ড, রেডিনেস, LLM খরচ, ত্রুটি, KPI) একটি নতুন সমস্যা শনাক্ত করেছে।",
+    "signal_raised_label": "সমস্যা শনাক্ত হয়েছে",
+    "signal_verified_description": "একটি সমাধান করা সমস্যা পুনরায় পরিমাপ করা হয়েছে — সংখ্যাটি কি সত্যিই উন্নত হয়েছে?",
+    "signal_verified_label": "সমস্যা যাচাই করা হয়েছে"
   },
   "connector_roles": {
     "chat_messaging": "চ্যাট ও মেসেজিং",

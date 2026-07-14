@@ -14750,7 +14750,11 @@
     "source_filter_no_regex": "Solo se admite * al final (sin regex, sin comodines ?)",
     "source_filter_no_source_id": "Si source_filter está establecido pero el evento no tiene source_id, el filtro no coincidirá",
     "source_filter_allowed_chars": "Caracteres permitidos: letras, números, _, -, :, . y *",
-    "source_filter_max_length": "Máximo 120 caracteres, máximo 3 caracteres comodín"
+    "source_filter_max_length": "Máximo 120 caracteres, máximo 3 caracteres comodín",
+    "signal_raised_description": "Un sensor (estándares, preparación, coste de LLM, errores, KPI) detectó un nuevo hallazgo.",
+    "signal_raised_label": "Hallazgo detectado",
+    "signal_verified_description": "Se volvió a medir un hallazgo ya solucionado — ¿realmente mejoró la métrica?",
+    "signal_verified_label": "Hallazgo verificado"
   },
   "connector_roles": {
     "chat_messaging": "Chat y Mensajería",

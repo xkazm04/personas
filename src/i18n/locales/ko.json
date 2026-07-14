@@ -14750,7 +14750,11 @@
     "source_filter_no_regex": "끝에 오는 *만 지원됩니다(regex 및 ? 와일드카드는 지원되지 않음).",
     "source_filter_no_source_id": "source_filter가 설정되어 있지만 이벤트에 source_id가 없으면 필터가 일치하지 않습니다.",
     "source_filter_allowed_chars": "허용되는 문자: 영문자, 숫자, _, -, :, ., *",
-    "source_filter_max_length": "최대 120자, 와일드카드 문자는 최대 3개까지 허용됩니다."
+    "source_filter_max_length": "최대 120자, 와일드카드 문자는 최대 3개까지 허용됩니다.",
+    "signal_raised_description": "센서(표준, 준비 상태, LLM 비용, 오류, KPI)가 새로운 발견 사항을 제기했습니다.",
+    "signal_raised_label": "발견 사항 제기됨",
+    "signal_verified_description": "배포된 발견 사항을 재측정함 — 실제로 수치가 개선되었는가?",
+    "signal_verified_label": "발견 사항 검증됨"
   },
   "connector_roles": {
     "chat_messaging": "채팅 & 메시징",

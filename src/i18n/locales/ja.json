@@ -14750,7 +14750,11 @@
     "source_filter_no_regex": "末尾の*のみサポート（正規表現や?ワイルドカードは不可）",
     "source_filter_no_source_id": "source_filterが設定されているがイベントにsource_idがない場合、フィルターは一致しません",
     "source_filter_allowed_chars": "使用可能な文字: 英字、数字、_、-、:、.、*",
-    "source_filter_max_length": "最大120文字、ワイルドカード文字は最大3個"
+    "source_filter_max_length": "最大120文字、ワイルドカード文字は最大3個",
+    "signal_raised_description": "センサー(標準、リリース準備、LLMコスト、エラー、KPI)が新しい所見を提起しました。",
+    "signal_raised_label": "所見を提起",
+    "signal_verified_description": "リリース済みの所見を再測定 — 実際に数値は改善したか?",
+    "signal_verified_label": "所見を検証済み"
   },
   "connector_roles": {
     "chat_messaging": "チャット・メッセージング",

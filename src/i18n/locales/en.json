@@ -15013,7 +15013,11 @@
     "source_filter_no_regex": "Only trailing * is supported (no regex, no ? wildcards)",
     "source_filter_no_source_id": "If source_filter is set but the event has no source_id, the filter will not match",
     "source_filter_allowed_chars": "Allowed characters: letters, numbers, _, -, :, ., and *",
-    "source_filter_max_length": "Maximum 120 characters, maximum 3 wildcard characters"
+    "source_filter_max_length": "Maximum 120 characters, maximum 3 wildcard characters",
+    "signal_raised_label": "Finding raised",
+    "signal_raised_description": "A sensor (standards, readiness, LLM cost, errors, KPI) raised a new finding.",
+    "signal_verified_label": "Finding verified",
+    "signal_verified_description": "A shipped finding was re-measured — did the number actually move?"
   },
   "connector_roles": {
     "chat_messaging": "Chat & Messaging",
