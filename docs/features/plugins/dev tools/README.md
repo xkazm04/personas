@@ -21,4 +21,9 @@ Related, deliberately **not** in this folder:
 - [`../../../plans/dev-findings-loop.md`](../../../plans/dev-findings-loop.md) —
   design history + phase plan for the findings loop (the feature doc above is
   the implemented-state view).
+- [`../../../plans/dev-tools-cx-redesign.md`](../../../plans/dev-tools-cx-redesign.md) —
+  **the chosen redesign direction**: four core dev channels + the Wall→Cockpit→Dispatch
+  decision layer, with the mock-first prototype plan.
+- [`../../teams/README.md`](../../teams/README.md) — channel 1's documentation home
+  (personas-driven development & orchestration).
 - **Deferred:** Studio/Athena involvement ("E") — its own future design session.

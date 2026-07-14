@@ -41,6 +41,18 @@ goal is what a team actually does — see [goals.md](./goals.md).
 - **[team-orchestration.md](./team-orchestration.md)** — the developer-facing
   *logic* underneath: the two orchestration modes, what shared state reaches a
   running persona, advancing a goal, and the observability/analysis layer.
+- **[deliberations.md](./deliberations.md)** — Team Deliberations ("Design D"):
+  a moderated, bounded multi-persona conversation that ends in an approved team
+  assignment. Consolidated here 2026-07 (was top-level; a tombstone points in) —
+  deliberation is the team's *decision* mode the way orchestration is its
+  *execution* mode.
+
+> **2026-07 channels note.** Personas-driven development & orchestration is one of
+> the four **core dev channels** identified in the Dev Tools CX redesign
+> ([`docs/plans/dev-tools-cx-redesign.md`](../../plans/dev-tools-cx-redesign.md));
+> this folder is that channel's documentation home. The others: Studio + Athena
+> (delegated dev for non-developers), Fleet + Athena (delegated dev for
+> developers), and the Dev Runner execution substrate.
 
 ## Source → docs
 

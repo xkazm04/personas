@@ -583,7 +583,7 @@
       ]
     },
     {
-      "doc": "docs/features/deliberations.md",
+      "doc": "docs/features/teams/deliberations.md",
       "sourceGlobs": [
         "src/features/teams/sub_deliberations/**",
         "src-tauri/src/commands/teams/deliberations.rs",

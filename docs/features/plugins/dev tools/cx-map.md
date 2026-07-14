@@ -5,6 +5,11 @@
 > fragmentation honestly** — with receipts. It deliberately proposes nothing:
 > the direction is an open product decision.
 >
+> **Direction chosen (2026-07-14):** four core dev channels + a two-level
+> monitoring→action hierarchy — see
+> [`docs/plans/dev-tools-cx-redesign.md`](../../../plans/dev-tools-cx-redesign.md).
+> This map remains the terrain reference underneath it.
+>
 > **Scope note:** Studio/Athena involvement (findings-loop "E") is explicitly
 > deferred to its own design session and appears here only as a touchpoint.
 >
