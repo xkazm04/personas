@@ -1578,7 +1578,11 @@
     "seg_healing": "치유",
     "seg_stability": "안정성",
     "seg_success": "성공",
-    "show_all": "모두 보기"
+    "show_all": "모두 보기",
+    "fleet_avg_badge": "플릿 평균",
+    "fleet_avg_tooltip": "이 기간에 이 페르소나의 실행 기록이 없습니다 — 페르소나별 측정값이 아니라 플릿 전체 평균 성공률을 표시합니다.",
+    "no_data_badge": "데이터 없음",
+    "no_data_tooltip": "이 기간에 이 페르소나의 완료 또는 실패한 실행이 없습니다 — 성공률은 측정값이 아니라 자리표시자입니다."
   },
   "provenance": {
     "sourced_tip": "{count}개의 출처를 추적하고 감사할 수 있습니다.",

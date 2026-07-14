@@ -7369,7 +7369,11 @@
       "seg_success": "Success",
       "seg_healing": "Healing",
       "seg_stability": "Stability",
-      "seg_budget": "Budget"
+      "seg_budget": "Budget",
+      "fleet_avg_badge": "fleet avg",
+      "fleet_avg_tooltip": "No runs recorded for this persona in the window — showing the fleet-wide average success rate, not a measured per-persona value.",
+      "no_data_badge": "no data",
+      "no_data_tooltip": "No completed or failed runs for this persona in the window — the success rate is a placeholder, not measured."
     },
     "popup_fields": {
       "sign_up_free_at": "Sign up free at",

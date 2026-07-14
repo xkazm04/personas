@@ -7212,7 +7212,11 @@
       "seg_healing": "自愈",
       "seg_stability": "稳定性",
       "seg_success": "成功率",
-      "show_all": "显示全部"
+      "show_all": "显示全部",
+      "fleet_avg_badge": "集群平均",
+      "fleet_avg_tooltip": "该周期内未记录此角色的任何运行——显示的是集群整体平均成功率，而非按角色测得的值。",
+      "no_data_badge": "无数据",
+      "no_data_tooltip": "该周期内此角色没有已完成或失败的运行——成功率为占位值，并非实测。"
     },
     "provenance": {
       "sourced_tip": "引用了 {count} 个可追溯和审计的来源。",

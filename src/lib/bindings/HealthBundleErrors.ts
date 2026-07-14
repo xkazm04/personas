@@ -10,4 +10,4 @@
  * (valid) is `byom_policy = null, errors.byom_policy = null`, whereas a load
  * failure is `byom_policy = null, errors.byom_policy = Some(reason)`.
  */
-export type HealthBundleErrors = { monthlySpend: string | null, healingIssues: string | null, byomPolicy: string | null, providerStats: string | null, };
+export type HealthBundleErrors = { monthlySpend: string | null, healingIssues: string | null, byomPolicy: string | null, providerStats: string | null, personaStats: string | null, personaDaily: string | null, };

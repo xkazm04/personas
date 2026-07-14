@@ -1578,7 +1578,11 @@
     "seg_healing": "回復",
     "seg_stability": "安定性",
     "seg_success": "成功",
-    "show_all": "すべて表示"
+    "show_all": "すべて表示",
+    "fleet_avg_badge": "フリート平均",
+    "fleet_avg_tooltip": "この期間にこのペルソナの実行記録がありません — ペルソナごとの実測値ではなく、フリート全体の平均成功率を表示しています。",
+    "no_data_badge": "データなし",
+    "no_data_tooltip": "この期間にこのペルソナの完了または失敗した実行がありません — 成功率は実測値ではなくプレースホルダーです。"
   },
   "provenance": {
     "sourced_tip": "{count}件のソースを参照しており、追跡・監査が可能です。",

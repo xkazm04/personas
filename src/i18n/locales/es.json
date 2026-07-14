@@ -7212,7 +7212,11 @@
       "seg_healing": "Recuperación",
       "seg_stability": "Estabilidad",
       "seg_success": "Éxito",
-      "show_all": "Mostrar todos"
+      "show_all": "Mostrar todos",
+      "fleet_avg_badge": "prom. de flota",
+      "fleet_avg_tooltip": "No se registraron ejecuciones para esta persona en el periodo — se muestra la tasa de éxito promedio de toda la flota, no un valor medido por persona.",
+      "no_data_badge": "sin datos",
+      "no_data_tooltip": "No hay ejecuciones completadas ni fallidas para esta persona en el periodo — la tasa de éxito es un marcador, no un valor medido."
     },
     "provenance": {
       "sourced_tip": "Cita {count} fuente(s) que puedes rastrear y auditar.",

@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { SegmentedVitalsBar } from './primitives';
+import { SuccessSourceBadge } from './SuccessSourceBadge';
 import { subScores, segLabels } from './model';
 
 // ---------------------------------------------------------------------------
@@ -38,7 +39,12 @@ export function RowDetail({ signal }: { signal: PersonaHealthSignal }) {
         <MetricCell
           icon={Heart}
           label={h.success}
-          value={<Numeric value={signal.successRate} unit="percent" precision={1} />}
+          value={
+            <span className="inline-flex items-center gap-1.5">
+              <Numeric value={signal.successRate} unit="percent" precision={1} />
+              <SuccessSourceBadge source={signal.successRateSource} />
+            </span>
+          }
           tone={signal.successRate >= 90 ? 'text-status-success' : signal.successRate >= 70 ? 'text-status-warning' : 'text-status-error'}
         />
         <MetricCell

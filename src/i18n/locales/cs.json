@@ -7212,7 +7212,11 @@
       "seg_healing": "Léčení",
       "seg_stability": "Stabilita",
       "seg_success": "Úspěch",
-      "show_all": "Zobrazit vše"
+      "show_all": "Zobrazit vše",
+      "fleet_avg_badge": "průměr flotily",
+      "fleet_avg_tooltip": "Pro tuto personu nebyly v okně zaznamenány žádné běhy — zobrazuje se průměrná úspěšnost napříč flotilou, nikoli změřená hodnota pro danou personu.",
+      "no_data_badge": "žádná data",
+      "no_data_tooltip": "Pro tuto personu nejsou v okně žádné dokončené ani neúspěšné běhy — míra úspěšnosti je zástupná hodnota, nikoli změřená."
     },
     "provenance": {
       "sourced_tip": "Cituje {count} zdroj(e), které lze dohledat a ověřit.",

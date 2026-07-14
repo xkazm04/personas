@@ -1578,7 +1578,11 @@
     "seg_healing": "Heilung",
     "seg_stability": "Stabilität",
     "seg_success": "Erfolg",
-    "show_all": "Alle anzeigen"
+    "show_all": "Alle anzeigen",
+    "fleet_avg_badge": "Flottendurchschnitt",
+    "fleet_avg_tooltip": "Für diese Persona wurden im Zeitraum keine Läufe erfasst — angezeigt wird die flottenweite durchschnittliche Erfolgsrate, kein gemessener Wert pro Persona.",
+    "no_data_badge": "keine Daten",
+    "no_data_tooltip": "Für diese Persona gibt es im Zeitraum keine abgeschlossenen oder fehlgeschlagenen Läufe — die Erfolgsrate ist ein Platzhalter, nicht gemessen."
   },
   "provenance": {
     "sourced_tip": "Zitiert {count} Quelle(n), die du nachverfolgen und prüfen kannst.",

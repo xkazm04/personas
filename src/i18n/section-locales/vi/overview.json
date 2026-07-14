@@ -1578,7 +1578,11 @@
     "seg_healing": "Phục hồi",
     "seg_stability": "Ổn định",
     "seg_success": "Thành công",
-    "show_all": "Hiện tất cả"
+    "show_all": "Hiện tất cả",
+    "fleet_avg_badge": "TB đội máy",
+    "fleet_avg_tooltip": "Không có lần chạy nào được ghi cho persona này trong khoảng thời gian — đang hiển thị tỷ lệ thành công trung bình toàn đội, không phải giá trị đo theo từng persona.",
+    "no_data_badge": "không có dữ liệu",
+    "no_data_tooltip": "Không có lần chạy hoàn tất hoặc thất bại nào cho persona này trong khoảng thời gian — tỷ lệ thành công là giá trị tạm, không phải đo được."
   },
   "provenance": {
     "sourced_tip": "Trích dẫn {count} nguồn bạn có thể truy vết và kiểm tra.",

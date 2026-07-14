@@ -7376,6 +7376,10 @@ export type Translations = {
       seg_healing: string;
       seg_stability: string;
       seg_budget: string;
+      fleet_avg_badge: string;
+      fleet_avg_tooltip: string;
+      no_data_badge: string;
+      no_data_tooltip: string;
     };
     popup_fields: {
       sign_up_free_at: string;

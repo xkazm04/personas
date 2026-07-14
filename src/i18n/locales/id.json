@@ -7212,7 +7212,11 @@
       "seg_healing": "Pemulihan",
       "seg_stability": "Stabilitas",
       "seg_success": "Keberhasilan",
-      "show_all": "Tampilkan semua"
+      "show_all": "Tampilkan semua",
+      "fleet_avg_badge": "rata-rata armada",
+      "fleet_avg_tooltip": "Tidak ada eksekusi tercatat untuk persona ini dalam rentang tersebut — menampilkan rata-rata tingkat keberhasilan seluruh armada, bukan nilai terukur per persona.",
+      "no_data_badge": "tidak ada data",
+      "no_data_tooltip": "Tidak ada eksekusi selesai atau gagal untuk persona ini dalam rentang tersebut — tingkat keberhasilan adalah placeholder, bukan hasil pengukuran."
     },
     "provenance": {
       "sourced_tip": "Mengutip {count} sumber yang dapat Anda lacak dan audit.",

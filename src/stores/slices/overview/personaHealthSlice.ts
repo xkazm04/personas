@@ -3,7 +3,6 @@ import type { OverviewStore } from "../../storeTypes";
 import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
-import type { DashboardDailyPoint } from "@/lib/bindings/DashboardDailyPoint";
 import type { PersonaCostEntry } from "@/lib/bindings/PersonaCostEntry";
 import type { ByomPolicy, ProviderUsageStats } from "@/api/system/byom";
 import { getByomPolicy, getProviderUsageStats } from "@/api/system/byom";
@@ -152,24 +151,12 @@ function computeHeartbeatScore(
 }
 
 function detectFailureTrend(
-  dailyPoints: DashboardDailyPoint[],
-  personaId: string,
-  costByDate: Map<string, Map<string, PersonaCostEntry>>,
+  personaDailyRates: number[],
 ): { trend: 'improving' | 'stable' | 'degrading'; predictedFailureDays: number | null } {
-  // Get per-persona daily success rates from the last 14 days
-  const recentPoints = dailyPoints.slice(-14);
-  if (recentPoints.length < 3) return { trend: 'stable', predictedFailureDays: null };
-
-  // Build daily success rates for this persona from persona_costs presence
-  const dailyRates: number[] = [];
-  for (const pt of recentPoints) {
-    const hasActivity = costByDate.get(pt.date)?.has(personaId) ?? false;
-    if (hasActivity) {
-      // Use global success rate as proxy since we don't have per-persona failure data per day
-      dailyRates.push(pt.success_rate);
-    }
-  }
-
+  // `personaDailyRates` is THIS persona's own daily success rate (0-100), one
+  // entry per active day, chronological. Regress the trailing 14 to detect a
+  // real per-persona slope instead of the fleet-wide noise the old proxy fed.
+  const dailyRates = personaDailyRates.slice(-14);
   if (dailyRates.length < 3) return { trend: 'stable', predictedFailureDays: null };
 
   // Simple linear regression on success rates
@@ -294,6 +281,23 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
         let byomPolicy = bundle.byomPolicy ?? null;
         let providerStats = bundle.providerStats ?? ([] as ProviderUsageStats[]);
 
+        // Per-persona truth (Direction 2). These enrich the fleet proxy with
+        // each persona's OWN measured success rate + latency + daily trend.
+        // They have no standalone retry endpoint — if they fail we simply fall
+        // back to the (labeled) fleet proxy, i.e. the old behaviour, so they're
+        // intentionally NOT part of the retry/banner surface above.
+        const personaReliability = bundle.personaStats ?? [];
+        const personaDaily = bundle.personaDaily ?? [];
+        const reliabilityMap = new Map(personaReliability.map(r => [r.persona_id, r]));
+        const dailyRatesByPersona = new Map<string, number[]>();
+        for (const d of personaDaily) {
+          // persona_daily is ordered day-ascending per persona server-side, so
+          // this preserves chronological order for the trend regression.
+          const arr = dailyRatesByPersona.get(d.persona_id) ?? [];
+          arr.push(d.success_rate * 100);
+          dailyRatesByPersona.set(d.persona_id, arr);
+        }
+
         // ONE automatic retry of ONLY the failed sources (via their individual
         // endpoints) before we ever raise a staleness banner. Covers the
         // cold-start IPC-token race where the first bundle call lands before
@@ -381,16 +385,20 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
             }
           }
 
-          // Success rate: today there is no per-persona-per-day failure data
-          // available, so for active personas we substitute the fleet-wide
-          // `overall_success_rate` and tag the source as 'proxy'. Inactive
-          // personas (or runs where the dashboard is missing) are tagged
-          // 'unknown' with a 100 default kept for `computeHeartbeatScore`
-          // numerical stability — UI consumers reading this signal SHOULD
-          // distinguish unknown from healthy via `successRateSource`.
+          // Success rate: prefer this persona's OWN measured rate (Direction 2)
+          // from per-persona execution stats. Only when a persona has zero
+          // decided runs in the window do we fall back to the fleet-wide
+          // `overall_success_rate` proxy (tagged 'proxy' so the UI can label
+          // it), and to 'unknown' (100 default for scoring stability) when even
+          // the fleet rate is unavailable. UI consumers MUST distinguish these
+          // via `successRateSource`.
+          const rel = reliabilityMap.get(persona.id);
           let successRate: number;
           let successRateSource: 'proxy' | 'measured' | 'unknown';
-          if (totalExecs > 0 && dashboard?.overall_success_rate !== undefined) {
+          if (rel && rel.total_decided > 0) {
+            successRate = rel.success_rate * 100;
+            successRateSource = 'measured';
+          } else if (totalExecs > 0 && dashboard?.overall_success_rate !== undefined) {
             successRate = dashboard.overall_success_rate;
             successRateSource = 'proxy';
           } else {
@@ -428,11 +436,16 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
             }
           }
 
-          // Failure trend
-          const { trend: failureTrend, predictedFailureDays } = detectFailureTrend(dailyPoints, persona.id, costByDate);
+          // Failure trend — fed by THIS persona's own daily success series
+          // (Direction 2), not the fleet-wide daily series that previously made
+          // every persona render an identical trend/prediction.
+          const { trend: failureTrend, predictedFailureDays } =
+            detectFailureTrend(dailyRatesByPersona.get(persona.id) ?? []);
 
-          // Avg latency
-          const avgLatencyMs = dashboard?.avg_latency_ms ?? 0;
+          // Avg latency — per-persona measured when available, else fleet avg.
+          const avgLatencyMs = rel && rel.total_decided > 0
+            ? rel.avg_duration_ms
+            : (dashboard?.avg_latency_ms ?? 0);
 
           // Heartbeat score
           const heartbeatScore = computeHeartbeatScore(successRate, healingFrequency, rollbackCount, budgetRatio);

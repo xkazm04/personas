@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use rusqlite::params;
+use serde::Serialize;
+use ts_rs::TS;
 
 use crate::db::models::{
     GlobalSlaStats, HealingSummary, PersonaSlaStats, SlaDailyPoint, SlaDashboardData,
@@ -8,6 +10,120 @@ use crate::db::models::{
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
+
+/// Per-persona reliability aggregate over the window — measured success rate and
+/// average latency from THIS persona's own executions, not the fleet-wide proxy
+/// the heartbeats pipeline used to substitute for every active persona. Reuses
+/// the `get_sla_dashboard` per-persona query shape trimmed to the two fields the
+/// heartbeats input layer needs.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct PersonaReliability {
+    pub persona_id: String,
+    // `completed + failed` in the window (cancelled excluded, same rule as
+    // PersonaSlaStats.success_rate). Zero => no measured basis; the frontend
+    // falls back to the labeled fleet proxy.
+    #[ts(type = "number")]
+    pub total_decided: i64,
+    // Measured success rate as 0.0..=1.0 (`successful / decided`).
+    pub success_rate: f64,
+    // Mean execution latency (ms) for this persona's timed runs in the window.
+    pub avg_duration_ms: f64,
+}
+
+/// Per-persona daily success series over the window. Feeds the per-persona
+/// failure-trend regression, replacing the fleet-wide daily success series that
+/// made every persona render an identical trend/prediction.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct PersonaDailyReliability {
+    pub persona_id: String,
+    // `YYYY-MM-DD` (UTC day bucket).
+    pub date: String,
+    // Measured success rate for the day as 0.0..=1.0.
+    pub success_rate: f64,
+    #[ts(type = "number")]
+    pub decided: i64,
+}
+
+/// Per-persona reliability aggregate (success rate + avg latency) over the last
+/// `days`. Mirrors the per-persona aggregate in `get_sla_dashboard`, trimmed.
+pub fn get_persona_reliability(
+    pool: &DbPool,
+    days: i64,
+) -> Result<Vec<PersonaReliability>, AppError> {
+    timed_query!("sla", "sla::get_persona_reliability", {
+        let conn = pool.get()?;
+        let date_filter = format!("-{} days", days);
+        let mut stmt = conn.prepare(
+            "SELECT e.persona_id,
+                    SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) AS successful,
+                    SUM(CASE WHEN e.status = 'failed' THEN 1 ELSE 0 END) AS failed,
+                    AVG(CASE WHEN e.duration_ms IS NOT NULL THEN e.duration_ms ELSE NULL END) AS avg_dur
+             FROM persona_executions e
+             WHERE e.created_at >= datetime('now', ?1)
+               AND e.status IN ('completed', 'failed')
+             GROUP BY e.persona_id",
+        )?;
+        let rows = stmt.query_map(params![date_filter], |row| {
+            let successful: i64 = row.get(1)?;
+            let failed: i64 = row.get(2)?;
+            let decided = successful + failed;
+            let success_rate = if decided > 0 {
+                successful as f64 / decided as f64
+            } else {
+                0.0
+            };
+            Ok(PersonaReliability {
+                persona_id: row.get(0)?,
+                total_decided: decided,
+                success_rate,
+                avg_duration_ms: row.get::<_, Option<f64>>(3)?.unwrap_or(0.0),
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    })
+}
+
+/// Per-persona daily success series over the last `days` (one row per persona
+/// per active day). Feeds the per-persona failure-trend regression.
+pub fn get_persona_daily_reliability(
+    pool: &DbPool,
+    days: i64,
+) -> Result<Vec<PersonaDailyReliability>, AppError> {
+    timed_query!("sla", "sla::get_persona_daily_reliability", {
+        let conn = pool.get()?;
+        let date_filter = format!("-{} days", days);
+        let mut stmt = conn.prepare(
+            "SELECT e.persona_id,
+                    DATE(e.created_at) AS day,
+                    SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) AS successful,
+                    SUM(CASE WHEN e.status = 'failed' THEN 1 ELSE 0 END) AS failed
+             FROM persona_executions e
+             WHERE e.created_at >= datetime('now', ?1)
+               AND e.status IN ('completed', 'failed')
+             GROUP BY e.persona_id, DATE(e.created_at)
+             ORDER BY e.persona_id, day ASC",
+        )?;
+        let rows = stmt.query_map(params![date_filter], |row| {
+            let successful: i64 = row.get(2)?;
+            let failed: i64 = row.get(3)?;
+            let decided = successful + failed;
+            let success_rate = if decided > 0 {
+                successful as f64 / decided as f64
+            } else {
+                0.0
+            };
+            Ok(PersonaDailyReliability {
+                persona_id: row.get(0)?,
+                date: row.get(1)?,
+                success_rate,
+                decided,
+            })
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    })
+}
 
 /// Maximum number of recent executions inspected when computing a
 /// persona's `consecutive_failures` streak.
@@ -1395,5 +1511,70 @@ mod tests {
             .find(|p| p.persona_id == persona_id)
             .expect("persona row missing");
         assert_eq!(row.p95_duration_ms, None, "no timed runs ⇒ p95 is N/A, not 0ms");
+    }
+
+    // -- Direction 2: per-persona reliability + daily series -----------------
+
+    #[test]
+    fn get_persona_reliability_is_measured_per_persona() {
+        let pool = init_test_db().unwrap();
+        let p1 = create_test_persona(&pool, "alpha");
+        let p2 = create_test_persona(&pool, "beta");
+        let now = chrono::Utc::now();
+        let ts = |mins: i64| {
+            (now - chrono::Duration::minutes(mins))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string()
+        };
+
+        // p1: 3 completed + 1 failed → 75%. p2: 1 completed + 3 failed → 25%.
+        insert_execution(&pool, &p1, "completed", &ts(10));
+        insert_execution(&pool, &p1, "completed", &ts(9));
+        insert_execution(&pool, &p1, "completed", &ts(8));
+        insert_execution(&pool, &p1, "failed", &ts(7));
+        insert_execution(&pool, &p2, "completed", &ts(6));
+        insert_execution(&pool, &p2, "failed", &ts(5));
+        insert_execution(&pool, &p2, "failed", &ts(4));
+        insert_execution(&pool, &p2, "failed", &ts(3));
+        // Cancelled is excluded from the decided denominator.
+        insert_execution(&pool, &p1, "cancelled", &ts(2));
+
+        let rel = get_persona_reliability(&pool, 30).unwrap();
+        let by: std::collections::HashMap<String, &PersonaReliability> =
+            rel.iter().map(|r| (r.persona_id.clone(), r)).collect();
+
+        let r1 = by.get(&p1).expect("p1 row");
+        assert_eq!(r1.total_decided, 4, "cancelled excluded");
+        assert!((r1.success_rate - 0.75).abs() < 1e-9);
+
+        let r2 = by.get(&p2).expect("p2 row");
+        assert_eq!(r2.total_decided, 4);
+        assert!((r2.success_rate - 0.25).abs() < 1e-9);
+    }
+
+    #[test]
+    fn get_persona_daily_reliability_buckets_by_day_ascending() {
+        let pool = init_test_db().unwrap();
+        let p1 = create_test_persona(&pool, "alpha");
+        let now = chrono::Utc::now();
+        let day_a = (now - chrono::Duration::days(3)).format("%Y-%m-%d").to_string();
+        let day_b = (now - chrono::Duration::days(1)).format("%Y-%m-%d").to_string();
+
+        // Day A: 2 completed → 100%. Day B: 1 completed + 1 failed → 50%.
+        insert_execution(&pool, &p1, "completed", &format!("{day_a} 10:00:00"));
+        insert_execution(&pool, &p1, "completed", &format!("{day_a} 11:00:00"));
+        insert_execution(&pool, &p1, "completed", &format!("{day_b} 10:00:00"));
+        insert_execution(&pool, &p1, "failed", &format!("{day_b} 11:00:00"));
+
+        let daily = get_persona_daily_reliability(&pool, 30).unwrap();
+        let rows: Vec<&PersonaDailyReliability> =
+            daily.iter().filter(|d| d.persona_id == p1).collect();
+
+        assert_eq!(rows.len(), 2, "one row per active day");
+        assert_eq!(rows[0].date, day_a, "ordered day-ascending");
+        assert!((rows[0].success_rate - 1.0).abs() < 1e-9);
+        assert_eq!(rows[1].date, day_b);
+        assert!((rows[1].success_rate - 0.5).abs() < 1e-9);
+        assert_eq!(rows[1].decided, 2);
     }
 }

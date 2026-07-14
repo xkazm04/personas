@@ -38,7 +38,12 @@ function okBundle(over: Partial<HealthBundle> = {}): HealthBundle {
     healingIssues: [],
     byomPolicy: null,
     providerStats: [],
-    errors: { monthlySpend: null, healingIssues: null, byomPolicy: null, providerStats: null },
+    personaStats: null,
+    personaDaily: null,
+    errors: {
+      monthlySpend: null, healingIssues: null, byomPolicy: null,
+      providerStats: null, personaStats: null, personaDaily: null,
+    },
     ...over,
   } as HealthBundle;
 }
@@ -104,6 +109,34 @@ describe('personaHealthSlice — health bundle', () => {
     expect(getOverviewBundle).not.toHaveBeenCalled();
     expect(s.dataSourceStatus!.providerStats).toEqual({ state: 'ok', reason: null });
     expect(s.providerStats).toHaveLength(1);
+  });
+
+  it('uses the per-persona measured rate when persona_stats is present', async () => {
+    getHealthBundle.mockResolvedValue(okBundle({
+      personaStats: [{ persona_id: 'p1', total_decided: 5, success_rate: 0.8, avg_duration_ms: 4200 }] as never,
+    }));
+
+    const store = makeStore();
+    await store.getState().computePersonaHealth();
+
+    const s = store.getState();
+    const sig = s.healthSignals[0];
+    expect(sig.successRateSource).toBe('measured');
+    expect(sig.successRate).toBeCloseTo(80);
+    expect(sig.avgLatencyMs).toBe(4200);
+  });
+
+  it('falls back to the labeled fleet proxy when no per-persona stats exist', async () => {
+    // top_personas gives p1 activity (10 execs) but persona_stats is absent,
+    // so the fleet overall_success_rate (92) is used and tagged 'proxy'.
+    getHealthBundle.mockResolvedValue(okBundle());
+
+    const store = makeStore();
+    await store.getState().computePersonaHealth();
+
+    const sig = store.getState().healthSignals[0];
+    expect(sig.successRateSource).toBe('proxy');
+    expect(sig.successRate).toBe(92);
   });
 
   it('surfaces the failure reason when the single retry also fails', async () => {

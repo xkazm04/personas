@@ -2,7 +2,9 @@
 import type { ByomPolicy } from "./ByomPolicy";
 import type { HealthBundleErrors } from "./HealthBundleErrors";
 import type { MonthlySpendResult } from "./MonthlySpendResult";
+import type { PersonaDailyReliability } from "./PersonaDailyReliability";
 import type { PersonaHealingIssue } from "./PersonaHealingIssue";
+import type { PersonaReliability } from "./PersonaReliability";
 import type { ProviderUsageStats } from "./ProviderUsageStats";
 
 /**
@@ -11,4 +13,4 @@ import type { ProviderUsageStats } from "./ProviderUsageStats";
  * cold-start token-race failure surface) with one. Each payload is
  * independently fail-able via the `errors` envelope.
  */
-export type HealthBundle = { monthlySpend: MonthlySpendResult | null, healingIssues: Array<PersonaHealingIssue> | null, byomPolicy: ByomPolicy | null, providerStats: Array<ProviderUsageStats> | null, errors: HealthBundleErrors, };
+export type HealthBundle = { monthlySpend: MonthlySpendResult | null, healingIssues: Array<PersonaHealingIssue> | null, byomPolicy: ByomPolicy | null, providerStats: Array<ProviderUsageStats> | null, personaStats: Array<PersonaReliability> | null, personaDaily: Array<PersonaDailyReliability> | null, errors: HealthBundleErrors, };

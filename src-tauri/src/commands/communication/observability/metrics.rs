@@ -10,6 +10,8 @@ use crate::db::models::{
     AnomalyDrilldownData, ErrorCategoryBreakdown, ExecutionDashboardData, ExecutionHeatmapData,
     MetricsChartData, MetricsSummary, PersonaHealingIssue, ValueRollup,
 };
+use crate::db::repos::communication::sla as sla_repo;
+use crate::db::repos::communication::sla::{PersonaDailyReliability, PersonaReliability};
 use crate::db::repos::execution::healing as healing_repo;
 use crate::db::repos::execution::metrics as repo;
 use crate::db::repos::execution::provider_audit::{self, ProviderUsageStats};
@@ -263,6 +265,8 @@ pub struct HealthBundleErrors {
     pub healing_issues: Option<String>,
     pub byom_policy: Option<String>,
     pub provider_stats: Option<String>,
+    pub persona_stats: Option<String>,
+    pub persona_daily: Option<String>,
 }
 
 /// Server-side join of the four data sources the persona-health pipeline needs,
@@ -277,6 +281,12 @@ pub struct HealthBundle {
     pub healing_issues: Option<Vec<PersonaHealingIssue>>,
     pub byom_policy: Option<ByomPolicy>,
     pub provider_stats: Option<Vec<ProviderUsageStats>>,
+    // Per-persona measured reliability (success rate + avg latency): the
+    // per-persona truth that replaces the fleet-wide overall_success_rate proxy
+    // previously stamped on every active persona.
+    pub persona_stats: Option<Vec<PersonaReliability>>,
+    // Per-persona daily success series: feeds the per-persona failure trend.
+    pub persona_daily: Option<Vec<PersonaDailyReliability>>,
     pub errors: HealthBundleErrors,
 }
 
@@ -289,11 +299,12 @@ pub struct HealthBundle {
 /// command; if the caller isn't privileged that ONE source reports an error
 /// while the rest of the bundle still returns.
 #[tauri::command]
-#[instrument(skip(state), fields(healing_window_days, healing_limit, utc_offset_minutes))]
+#[instrument(skip(state), fields(healing_window_days, healing_limit, stats_window_days, utc_offset_minutes))]
 pub fn get_health_bundle(
     state: State<'_, Arc<AppState>>,
     healing_window_days: Option<i64>,
     healing_limit: Option<i64>,
+    stats_window_days: Option<i64>,
     utc_offset_minutes: Option<i32>,
 ) -> Result<HealthBundle, AppError> {
     require_auth_sync(&state)?;
@@ -301,6 +312,7 @@ pub fn get_health_bundle(
     let pool = &state.db;
     let healing_window = healing_window_days.unwrap_or(7).clamp(1, 365);
     let healing_limit = healing_limit.unwrap_or(1000).clamp(1, 5000);
+    let stats_window = stats_window_days.unwrap_or(30).clamp(1, 365);
 
     // -- Monthly spend ----------------------------------------------------
     let (monthly_spend, monthly_err) = split(
@@ -327,10 +339,15 @@ pub fn get_health_bundle(
             Err(e) => (None, Some(e.to_string())),
         };
 
+    // -- Per-persona reliability + daily series (the per-persona truth) ----
+    let (persona_stats, persona_stats_err) =
+        split(sla_repo::get_persona_reliability(pool, stats_window));
+    let (persona_daily, persona_daily_err) =
+        split(sla_repo::get_persona_daily_reliability(pool, stats_window));
+
     info!(
         duration_ms = start.elapsed().as_millis() as u64,
-        healing_window,
-        "cmd::get_health_bundle"
+        healing_window, stats_window, "cmd::get_health_bundle"
     );
 
     Ok(HealthBundle {
@@ -338,11 +355,15 @@ pub fn get_health_bundle(
         healing_issues,
         byom_policy,
         provider_stats,
+        persona_stats,
+        persona_daily,
         errors: HealthBundleErrors {
             monthly_spend: monthly_err,
             healing_issues: healing_err,
             byom_policy: byom_err,
             provider_stats: provider_err,
+            persona_stats: persona_stats_err,
+            persona_daily: persona_daily_err,
         },
     })
 }

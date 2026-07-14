@@ -7212,7 +7212,11 @@
       "seg_healing": "Guérison",
       "seg_stability": "Stabilité",
       "seg_success": "Succès",
-      "show_all": "Tout afficher"
+      "show_all": "Tout afficher",
+      "fleet_avg_badge": "moy. de flotte",
+      "fleet_avg_tooltip": "Aucune exécution enregistrée pour cette persona sur la période — le taux de réussite moyen de la flotte est affiché, et non une valeur mesurée par persona.",
+      "no_data_badge": "aucune donnée",
+      "no_data_tooltip": "Aucune exécution terminée ou échouée pour cette persona sur la période — le taux de réussite est un espace réservé, non mesuré."
     },
     "provenance": {
       "sourced_tip": "Cite {count} source(s) que vous pouvez tracer et auditer.",
