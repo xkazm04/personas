@@ -152,6 +152,34 @@ describe("tourSlice tier-switch migration", () => {
     expect(h.state().tourStepCompleted["appearance-setup"]).toBe(true);
   });
 
+  it("modal_aware_start_carries_over_precompleted_steps_and_skips_them", () => {
+    // Simulates the onboarding modal → tour handoff: the modal created a live
+    // first agent, so persona-creation is genuinely done and must be carried
+    // over (not re-taught).
+    const h = makeHarness();
+    h.slice().startTour("getting-started", { preCompletedSteps: ["persona-creation"] });
+
+    const s = h.state();
+    expect(s.tourActive).toBe(true);
+    expect(s.tourActiveTourId).toBe("getting-started");
+    // The redundant "create your first agent" step is marked done.
+    expect(s.tourStepCompleted["persona-creation"]).toBe(true);
+    // The cursor lands on the first genuinely-unfinished step (appearance-setup,
+    // index 0) — NOT the pre-completed persona-creation (index 2).
+    expect(s.tourCurrentStepIndex).toBe(0);
+    // The carry-over is persisted so a refresh doesn't undo it.
+    const persisted = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+    expect(persisted?.tours["getting-started"].completedSteps["persona-creation"]).toBe(true);
+  });
+
+  it("modal_aware_start_ignores_step_ids_not_in_the_target_tour", () => {
+    const h = makeHarness();
+    // A bogus id must not pollute completion state.
+    h.slice().startTour("getting-started", { preCompletedSteps: ["not-a-real-step"] });
+    expect(h.state().tourStepCompleted["not-a-real-step"] ?? false).toBe(false);
+    expect(h.state().tourCurrentStepIndex).toBe(0);
+  });
+
   it("non_partner_tour_switch_does_not_mutate_completion", () => {
     seedPersistedTour("getting-started", {
       completedSteps: { "appearance-setup": true, "credentials-intro": true },

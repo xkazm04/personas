@@ -10637,7 +10637,11 @@
     "resume_continue_title": "Reprenez là où vous vous étiez arrêté",
     "resume_continue_cta": "Continuer la visite",
     "replay_setup": "Revoir la configuration",
-    "resume_setup": "Reprendre la configuration"
+    "resume_setup": "Reprendre la configuration",
+    "tour_handoff_accept": "Faire la visite",
+    "tour_handoff_body": "Votre premier agent est actif. Faites une visite guidée rapide du reste — connexions et exécution des agents — et nous passerons les étapes que vous venez de faire.",
+    "tour_handoff_dismiss": "Plus tard",
+    "tour_handoff_title": "Envie de la visite guidée ?"
   },
   "system_health": {
     "install_all": "Installer toutes les dépendances",

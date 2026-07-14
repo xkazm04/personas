@@ -82,7 +82,68 @@ describe("onboardingSlice — reversible skip escape hatch", () => {
       expect(h.state().onboardingStepCompleted.execute).toBe(false);
 
       const persisted = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
-      expect(persisted).toEqual({ completed: false, dismissedAtStep: null });
+      expect(persisted).toEqual({ completed: false, dismissedAtStep: null, tourHandoffOffered: false });
+    });
+  });
+
+  describe("tour handoff — one-time modal→tour offer", () => {
+    it("offerTourHandoff shows the card once, persists the flag, and never re-offers", () => {
+      const h = makeHarness();
+      // Modal produced a live first agent; tour not yet done.
+      h.set({ onboardingCreatedPersonaId: "p1", isTourCompleted: () => false });
+
+      h.state().offerTourHandoff();
+      expect(h.state().tourHandoffVisible).toBe(true);
+      expect(h.state().tourHandoffOffered).toBe(true);
+      const persisted = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+      expect(persisted.tourHandoffOffered).toBe(true);
+
+      // Dismiss, then a second offer must be a no-op (never re-offers).
+      h.state().dismissTourHandoff();
+      expect(h.state().tourHandoffVisible).toBe(false);
+      h.state().offerTourHandoff();
+      expect(h.state().tourHandoffVisible).toBe(false);
+    });
+
+    it("does not offer when the modal produced no agent", () => {
+      const h = makeHarness();
+      h.set({ onboardingCreatedPersonaId: null, isTourCompleted: () => false });
+      h.state().offerTourHandoff();
+      expect(h.state().tourHandoffVisible).toBe(false);
+      expect(h.state().tourHandoffOffered).toBe(false);
+    });
+
+    it("does not offer when the tour is already completed", () => {
+      const h = makeHarness();
+      h.set({ onboardingCreatedPersonaId: "p1", isTourCompleted: () => true });
+      h.state().offerTourHandoff();
+      expect(h.state().tourHandoffVisible).toBe(false);
+    });
+
+    it("finishOnboarding hands off to the offer when an agent was created", () => {
+      const h = makeHarness();
+      h.set({ onboardingCreatedPersonaId: "p1", isTourCompleted: () => false });
+      h.state().finishOnboarding();
+      expect(h.state().onboardingCompleted).toBe(true);
+      expect(h.state().tourHandoffVisible).toBe(true);
+    });
+
+    it("acceptTourHandoff hides the card and starts the tour modal-aware", () => {
+      const h = makeHarness();
+      const calls: Array<{ id: string | undefined; opts: unknown }> = [];
+      h.set({
+        onboardingCreatedPersonaId: "p1",
+        isTourCompleted: () => false,
+        startTour: (id?: string, opts?: unknown) => {
+          calls.push({ id, opts });
+        },
+      });
+      h.state().offerTourHandoff();
+      h.state().acceptTourHandoff("getting-started");
+      expect(h.state().tourHandoffVisible).toBe(false);
+      expect(calls).toEqual([
+        { id: "getting-started", opts: { preCompletedSteps: ["persona-creation"] } },
+      ]);
     });
   });
 

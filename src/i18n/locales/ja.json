@@ -10637,7 +10637,11 @@
     "resume_continue_title": "中断したところから再開",
     "resume_continue_cta": "ツアーを続行",
     "replay_setup": "セットアップを再生",
-    "resume_setup": "セットアップを再開"
+    "resume_setup": "セットアップを再開",
+    "tour_handoff_accept": "ツアーを始める",
+    "tour_handoff_body": "最初のエージェントが稼働中です。残りの機能——接続とエージェントの実行——を簡単なガイドツアーで確認しましょう。今行った部分はスキップします。",
+    "tour_handoff_dismiss": "後で",
+    "tour_handoff_title": "ガイドツアーを見ますか？"
   },
   "system_health": {
     "install_all": "全依存関係をインストール",

@@ -168,5 +168,9 @@
   "resume_continue_title": "Pokračujte tam, kde jste skončili",
   "resume_continue_cta": "Pokračovat v prohlídce",
   "replay_setup": "Znovu spustit nastavení",
-  "resume_setup": "Pokračovat v nastavení"
+  "resume_setup": "Pokračovat v nastavení",
+  "tour_handoff_accept": "Spustit prohlídku",
+  "tour_handoff_body": "Váš první agent běží. Projděte si rychlou průvodcovanou prohlídku zbytku — připojení a spouštění agentů — a části, které jste právě udělali, přeskočíme.",
+  "tour_handoff_dismiss": "Teď ne",
+  "tour_handoff_title": "Chcete průvodcovanou prohlídku?"
 }

@@ -1218,7 +1218,15 @@ export interface TourSlice {
   /** Per-tour completion tracking for Learning center */
   tourCompletionMap: Record<TourId, boolean>;
 
-  startTour: (tourId?: TourId) => void;
+  /**
+   * Start (or restart) a tour. `opts.preCompletedSteps` carries over steps a
+   * PRIOR first-run surface genuinely completed (e.g. the onboarding modal
+   * created a live first agent → `persona-creation`), so the tour doesn't
+   * re-teach work already done. The cursor still lands on the first genuinely
+   * unfinished step (existing firstUnfinished logic); completion stays honest
+   * because only genuinely-achieved outcomes are passed in.
+   */
+  startTour: (tourId?: TourId, opts?: { preCompletedSteps?: string[] }) => void;
   advanceTour: () => void;
   /** Jump directly to a step index, resetting sub-step + highlight. Out-of-range indices are ignored. */
   goToTourStep: (index: number) => void;
@@ -1312,7 +1320,7 @@ export const createTourSlice: StateCreator<
     tourCredentialInteractions: { categoriesBrowsed: [], connectorsViewed: 0 },
     tourCompletionMap: completionMap,
 
-    startTour: (tourId?: TourId) => {
+    startTour: (tourId?: TourId, opts?: { preCompletedSteps?: string[] }) => {
       const id = tourId ?? get().tourActiveTourId;
       const tours = getPersistedTours();
       const ts = tours[id] ?? getDefaultTourState();
@@ -1351,6 +1359,20 @@ export const createTourSlice: StateCreator<
             ts.completedSteps = merged;
           }
         }
+      }
+
+      // Modal-aware carry-over. When a prior first-run surface (the onboarding
+      // modal) genuinely completed a step's OUTCOME, mark it done here so the
+      // tour skips re-teaching it. Guarded to real step ids of THIS tour, and
+      // completion stays honest because the caller only passes genuinely-
+      // achieved steps (see acceptTourHandoff → ["persona-creation"]).
+      if (opts?.preCompletedSteps?.length) {
+        const validIds = new Set(getActiveTourSteps(id).map((s) => s.id));
+        const merged: Record<string, boolean> = { ...ts.completedSteps };
+        for (const stepId of opts.preCompletedSteps) {
+          if (validIds.has(stepId)) merged[stepId] = true;
+        }
+        ts.completedSteps = merged;
       }
 
       const hasProgress = Object.values(ts.completedSteps).some(Boolean);

@@ -10778,6 +10778,10 @@ export type Translations = {
     auto_complete_hint: string;
     tour_explore_to_continue: string;
     tour_acknowledge: string;
+    tour_handoff_title: string;
+    tour_handoff_body: string;
+    tour_handoff_accept: string;
+    tour_handoff_dismiss: string;
     start_tour: string;
     tour_storage_unavailable_toast: string;
     connector_count_stat: string;

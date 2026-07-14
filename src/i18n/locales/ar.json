@@ -10637,7 +10637,11 @@
     "resume_continue_title": "تابع من حيث توقفت",
     "resume_continue_cta": "متابعة الجولة",
     "replay_setup": "إعادة الإعداد",
-    "resume_setup": "متابعة الإعداد"
+    "resume_setup": "متابعة الإعداد",
+    "tour_handoff_accept": "ابدأ الجولة",
+    "tour_handoff_body": "أول وكيل لديك يعمل الآن. قم بجولة إرشادية سريعة على البقية — الاتصالات وتشغيل الوكلاء — وسنتخطى الأجزاء التي أنجزتها للتو.",
+    "tour_handoff_dismiss": "ليس الآن",
+    "tour_handoff_title": "هل تريد الجولة الإرشادية؟"
   },
   "system_health": {
     "install_all": "تثبيت جميع الاعتماديات",

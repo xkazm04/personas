@@ -10637,7 +10637,11 @@
     "resume_continue_title": "从上次中断处继续",
     "resume_continue_cta": "继续导览",
     "replay_setup": "重新开始设置",
-    "resume_setup": "继续设置"
+    "resume_setup": "继续设置",
+    "tour_handoff_accept": "开始导览",
+    "tour_handoff_body": "你的第一个智能体已上线。快速导览其余功能——连接与运行智能体——我们会跳过你刚完成的部分。",
+    "tour_handoff_dismiss": "暂不",
+    "tour_handoff_title": "想要引导式导览吗？"
   },
   "system_health": {
     "install_all": "安装所有依赖",

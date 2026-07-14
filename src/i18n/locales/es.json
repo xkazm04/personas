@@ -10637,7 +10637,11 @@
     "resume_continue_title": "Retoma donde lo dejaste",
     "resume_continue_cta": "Continuar recorrido",
     "replay_setup": "Repetir configuración",
-    "resume_setup": "Reanudar configuración"
+    "resume_setup": "Reanudar configuración",
+    "tour_handoff_accept": "Hacer el recorrido",
+    "tour_handoff_body": "Tu primer agente está activo. Haz un breve recorrido guiado por el resto — conexiones y ejecución de agentes — y omitiremos las partes que acabas de hacer.",
+    "tour_handoff_dismiss": "Ahora no",
+    "tour_handoff_title": "¿Quieres el recorrido guiado?"
   },
   "system_health": {
     "install_all": "Instalar todas las dependencias",

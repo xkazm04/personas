@@ -123,6 +123,9 @@ const AthenaGuideLayer = lazyRetry(() => import("@/features/plugins/companion/or
 // consented. Previously orphaned — built but never rendered (UAT L1
 // F-ONBOARDING-DEAD-CODE); the Welcome hero's Get-Started CTA now triggers it.
 const OnboardingOverlay = lazyRetry(() => import("@/features/onboarding/components/OnboardingOverlay"));
+// One-time modal→tour handoff card. Self-guards on `tourHandoffVisible`, so it's
+// safe to mount unconditionally alongside the onboarding overlay.
+const TourHandoffOffer = lazyRetry(() => import("@/features/onboarding/components/TourHandoffOffer"));
 // Idle-prefetch list: same modules as the lazy() declarations above. Hits the
 // V8 module cache so the corresponding lazy() resolves synchronously when the
 // overlays mount (or when the user triggers them via Cmd+K, the floating
@@ -134,6 +137,7 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/onboarding/components/GuidedTour"),
   () => import("@/features/onboarding/components/TourSpotlight"),
   () => import("@/features/onboarding/components/OnboardingOverlay"),
+  () => import("@/features/onboarding/components/TourHandoffOffer"),
   () => import("@/features/agents/executionPlayer/ExecutionMiniPlayer"),
   () => import("@/features/overview/components/feedback/HealingToast"),
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
@@ -359,6 +363,7 @@ export default function App() {
                   <GuidedTour />
                   <TourSpotlight />
                   <OnboardingOverlay />
+                  <TourHandoffOffer />
                   <ExecutionMiniPlayer />
                   <CommandPalette />
                   <NotificationCenter />

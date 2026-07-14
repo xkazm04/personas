@@ -10637,7 +10637,11 @@
     "resume_continue_title": "Lanjutkan dari posisi terakhir",
     "resume_continue_cta": "Lanjutkan tur",
     "replay_setup": "Ulangi penyiapan",
-    "resume_setup": "Lanjutkan penyiapan"
+    "resume_setup": "Lanjutkan penyiapan",
+    "tour_handoff_accept": "Mulai tur",
+    "tour_handoff_body": "Agen pertama Anda sudah aktif. Ikuti tur panduan singkat untuk selebihnya — koneksi dan menjalankan agen — dan kami akan melewati bagian yang baru saja Anda lakukan.",
+    "tour_handoff_dismiss": "Nanti saja",
+    "tour_handoff_title": "Ingin tur berpanduan?"
   },
   "system_health": {
     "install_all": "Instal Semua Dependensi",
