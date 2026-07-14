@@ -30,7 +30,11 @@ pub struct PersonaSlaStats {
     /// dashboard never mixes definitions.
     pub success_rate: f64,
     pub avg_duration_ms: f64,
-    pub p95_duration_ms: f64,
+    /// 95th-percentile duration in ms, or `null` when the window has no timed
+    /// executions to compute a percentile from. `null` renders as "N/A" rather
+    /// than a misleading "0ms".
+    #[ts(type = "number | null")]
+    pub p95_duration_ms: Option<f64>,
     pub total_cost_usd: f64,
     /// Mean time between failures in seconds (null if < 2 failures).
     #[ts(type = "number | null")]

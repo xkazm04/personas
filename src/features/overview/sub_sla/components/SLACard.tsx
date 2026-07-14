@@ -98,7 +98,7 @@ export function PersonaRow({ stats, expanded, onToggle }: {
           <MiniStat icon={<Activity className="w-3.5 h-3.5" />} label={t.overview.sla_card.successful} value={String(stats.successful)} />
           <MiniStat icon={<AlertTriangle className="w-3.5 h-3.5" />} label={t.overview.sla_card.failed} value={String(stats.failed)} />
           <MiniStat icon={<Clock className="w-3.5 h-3.5" />} label={t.overview.sla_card.avg_latency} value={formatDuration(stats.avg_duration_ms)} />
-          <MiniStat icon={<Zap className="w-3.5 h-3.5" />} label={t.overview.sla_card.p95_latency} value={formatDuration(stats.p95_duration_ms)} />
+          <MiniStat icon={<Zap className="w-3.5 h-3.5" />} label={t.overview.sla_card.p95_latency} value={stats.p95_duration_ms != null ? formatDuration(stats.p95_duration_ms) : 'N/A'} />
           <MiniStat icon={<TrendingUp className="w-3.5 h-3.5" />} label={t.overview.sla_card.cost} value={`$${stats.total_cost_usd.toFixed(2)}`} />
           <MiniStat icon={<TrendingDown className="w-3.5 h-3.5" />} label={t.overview.sla_card.mtbf} value={stats.mtbf_seconds != null ? formatMtbf(stats.mtbf_seconds) : 'N/A'} />
           <MiniStat icon={<Wrench className="w-3.5 h-3.5" />} label={t.overview.sla_card.auto_healed} value={String(stats.auto_healed_count)} />

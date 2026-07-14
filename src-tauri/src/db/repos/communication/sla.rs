@@ -175,12 +175,36 @@ struct RawPersona {
 /// not silently change the policy without updating both the badge and
 /// the test.
 pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, AppError> {
+    get_sla_dashboard_with_offset(pool, days, server_offset_minutes())
+}
+
+/// Offset-aware variant of [`get_sla_dashboard`]. `offset_min` (minutes east of
+/// UTC) selects the local-day definition used for the trend's day buckets AND
+/// the window boundary, so a UTC-8 user's "last 7 days" is seven full local
+/// days aligned to local midnight rather than a rolling 7×24h UTC slice. On a
+/// local-first desktop the frontend passes its own `-getTimezoneOffset()`; when
+/// omitted the caller falls back to `server_offset_minutes()`.
+pub fn get_sla_dashboard_with_offset(
+    pool: &DbPool,
+    days: i64,
+    offset_min: i64,
+) -> Result<SlaDashboardData, AppError> {
     timed_query!("sla", "sla::get_sla_dashboard", {
         let conn = pool.get()?;
-        let date_filter = format!("-{} days", days);
-        // Local-day offset for the trend's day buckets (see local_day_modifier).
-        // On a local-first desktop this is the user's own machine timezone.
-        let offset_min = server_offset_minutes();
+
+        // Local-day-aligned window lower bound, materialised as a UTC instant so
+        // the raw `created_at` filters stay index-friendly. This is the start of
+        // the local day `days` days before today: `now → local wall clock →
+        // back N days → local midnight → back to UTC`.
+        let window_cutoff: String = conn.query_row(
+            "SELECT datetime('now', ?1, ?2, 'start of day', ?3)",
+            params![
+                local_day_modifier(offset_min),
+                format!("-{} days", days),
+                local_day_modifier(-offset_min),
+            ],
+            |r| r.get(0),
+        )?;
 
         // -- Per-persona aggregates ------------------------------------------
         let mut stmt = conn.prepare(
@@ -196,14 +220,14 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
                 COALESCE(SUM(e.cost_usd), 0.0) AS total_cost
              FROM persona_executions e
              LEFT JOIN personas p ON p.id = e.persona_id
-             WHERE e.created_at >= datetime('now', ?1)
+             WHERE e.created_at >= ?1
                AND e.status IN ('completed', 'failed', 'cancelled')
              GROUP BY e.persona_id
              ORDER BY total DESC",
         )?;
 
         let raw_personas: Vec<RawPersona> = stmt
-            .query_map(params![date_filter], |row| {
+            .query_map(params![window_cutoff], |row| {
                 Ok(RawPersona {
                     persona_id: row.get(0)?,
                     persona_name: row.get(1)?,
@@ -228,12 +252,12 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
             &conn,
             "SELECT persona_id, duration_ms FROM persona_executions
              WHERE persona_id IN ({placeholders})
-               AND created_at >= datetime('now', {date_param})
+               AND created_at >= {date_param}
                AND status IN ('completed', 'failed')
                AND duration_ms IS NOT NULL
              ORDER BY persona_id, duration_ms ASC",
             &persona_ids,
-            Some(&date_filter),
+            Some(&window_cutoff),
             |row| Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?)),
         )?;
 
@@ -242,11 +266,11 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
             &conn,
             "SELECT persona_id, created_at FROM persona_executions
              WHERE persona_id IN ({placeholders})
-               AND created_at >= datetime('now', {date_param})
+               AND created_at >= {date_param}
                AND status = 'failed'
              ORDER BY persona_id, created_at ASC",
             &persona_ids,
-            Some(&date_filter),
+            Some(&window_cutoff),
             |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
         )?;
 
@@ -265,13 +289,13 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
                            ROW_NUMBER() OVER (PARTITION BY persona_id ORDER BY created_at DESC) AS rn
                     FROM persona_executions
                     WHERE persona_id IN ({{placeholders}})
-                      AND created_at >= datetime('now', {{date_param}})
+                      AND created_at >= {{date_param}}
                  ) WHERE rn <= {}
                  ORDER BY persona_id, rn ASC",
                 CONSECUTIVE_FAILURE_LOOKBACK,
             );
             let statuses_map =
-                batch_query_map_vec(&conn, &consec_sql, &persona_ids, Some(&date_filter), |row| {
+                batch_query_map_vec(&conn, &consec_sql, &persona_ids, Some(&window_cutoff), |row| {
                     Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
                 })?;
             statuses_map
@@ -666,14 +690,18 @@ fn load_daily_trend(
 // Helpers
 // ============================================================================
 
-fn percentile(values: &[f64], p: f64) -> f64 {
+/// The `p`-th percentile of `values`, or `None` when there is no data. Empty
+/// input returns `None` (surfaced as "N/A") rather than `0.0` — a real
+/// zero-latency execution is impossible, so "0ms" here only ever meant "no
+/// data" and read as a falsely precise number.
+fn percentile(values: &[f64], p: f64) -> Option<f64> {
     if values.is_empty() {
-        return 0.0;
+        return None;
     }
     let mut sorted: Vec<f64> = values.to_vec();
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let idx = (p / 100.0 * (sorted.len() as f64 - 1.0)).round() as usize;
-    sorted[idx.min(sorted.len() - 1)]
+    Some(sorted[idx.min(sorted.len() - 1)])
 }
 
 /// Try every timestamp shape we have ever written into
@@ -1272,5 +1300,100 @@ mod tests {
                 a.date, a.success_rate, b.success_rate,
             );
         }
+    }
+
+    // -- Direction 2: local-day correctness ----------------------------------
+
+    /// Day bucketing must respect the caller's local offset. Two executions
+    /// straddling a UTC midnight but on the SAME local day (for a UTC-8 user)
+    /// must land in ONE trend bucket keyed by the local date — not split across
+    /// two UTC days. The mirror UTC run proves they WOULD bucket on a DIFFERENT
+    /// date without the offset, so the test actually exercises the offset path.
+    #[test]
+    fn trend_buckets_by_local_day_not_utc() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "tz");
+
+        // UTC-8. Anchor on a recent UTC day (3 days ago) at 06:00 and 07:30 UTC
+        // — both before 08:00 UTC, so under UTC-8 they fall on the PREVIOUS
+        // local day (22:00 / 23:30). Same local day, same UTC day, but the two
+        // dates differ by one — the offset is the only thing that decides which.
+        let offset = -480_i64;
+        let utc_day = (chrono::Utc::now() - chrono::Duration::days(3)).date_naive();
+        let at = |h: u32, m: u32| {
+            utc_day
+                .and_hms_opt(h, m, 0)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string()
+        };
+        insert_execution(&pool, &persona_id, "completed", &at(6, 0));
+        insert_execution(&pool, &persona_id, "failed", &at(7, 30));
+
+        let utc_date = utc_day.format("%Y-%m-%d").to_string();
+        let local_date = (utc_day - chrono::Duration::days(1))
+            .format("%Y-%m-%d")
+            .to_string();
+        let window = 5_i64; // comfortably covers "3 days ago"
+
+        // Local-offset run: both executions collapse into a single LOCAL day
+        // (the day before the UTC day).
+        let local = get_sla_dashboard_with_offset(&pool, window, offset).unwrap();
+        let local_days: Vec<&str> = local
+            .daily_trend
+            .iter()
+            .filter(|p| p.total > 0)
+            .map(|p| p.date.as_str())
+            .collect();
+        assert_eq!(
+            local_days,
+            vec![local_date.as_str()],
+            "UTC-8 buckets both runs into the single local day {local_date}",
+        );
+        let point = local.daily_trend.iter().find(|p| p.total > 0).unwrap();
+        assert_eq!(point.total, 2);
+        assert_eq!(point.successful, 1);
+        assert_eq!(point.failed, 1);
+
+        // UTC run (offset 0): the SAME two rows bucket on the UTC date instead,
+        // proving the offset is what shifted the day above.
+        let utc = get_sla_dashboard_with_offset(&pool, window, 0).unwrap();
+        let utc_days: Vec<&str> = utc
+            .daily_trend
+            .iter()
+            .filter(|p| p.total > 0)
+            .map(|p| p.date.as_str())
+            .collect();
+        assert_eq!(
+            utc_days,
+            vec![utc_date.as_str()],
+            "under UTC both runs fall on the UTC day {utc_date}",
+        );
+        assert_ne!(local_date, utc_date, "the offset must actually shift the day");
+    }
+
+    /// Empty timed-execution set surfaces p95 as `None` (→ "N/A"), never 0.0.
+    #[test]
+    fn p95_is_none_without_timed_executions() {
+        assert_eq!(percentile(&[], 95.0), None);
+        assert_eq!(percentile(&[100.0, 200.0], 95.0), Some(200.0));
+
+        // End-to-end: a persona with only cancelled (untimed) runs has no p95.
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "no-timed");
+        let base = chrono::Utc::now() - chrono::Duration::hours(1);
+        for i in 0..3 {
+            let ts = (base + chrono::Duration::minutes(i))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            insert_execution(&pool, &persona_id, "cancelled", &ts);
+        }
+        let dash = get_sla_dashboard(&pool, 30).unwrap();
+        let row = dash
+            .persona_stats
+            .iter()
+            .find(|p| p.persona_id == persona_id)
+            .expect("persona row missing");
+        assert_eq!(row.p95_duration_ms, None, "no timed runs ⇒ p95 is N/A, not 0ms");
     }
 }

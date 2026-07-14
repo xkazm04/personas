@@ -8,7 +8,13 @@ export type PersonaSlaStats = { persona_id: string, persona_name: string, total_
  * rule is used for the global rate and the daily trend so a single
  * dashboard never mixes definitions.
  */
-success_rate: number, avg_duration_ms: number, p95_duration_ms: number, total_cost_usd: number, 
+success_rate: number, avg_duration_ms: number,
+/**
+ * 95th-percentile duration in ms, or `null` when the window has no timed
+ * executions to compute a percentile from. `null` renders as "N/A" rather
+ * than a misleading "0ms".
+ */
+p95_duration_ms: number | null, total_cost_usd: number,
 /**
  * Mean time between failures in seconds (null if < 2 failures).
  */
