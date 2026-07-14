@@ -42,6 +42,19 @@ export const memoryReflectionParamsJson = (scope: { personaId?: string; teamId?:
 /** Params builder for the health-ingest op. */
 export const healthIngestParamsJson = (projectId: string): string => JSON.stringify({ projectId });
 
+/**
+ * The two DISPATCH ops (docs/plans/dev-findings-loop.md §4 C/D). Bind either to a
+ * `signal.raised` event listener in Chain Studio; the finding comes from the event.
+ *
+ *   runner — autonomous: the Dev Task Runner builds and PRs it. "Let the app do it."
+ *   fleet  — interactive: a Claude Code session opens on the project seeded with the
+ *            finding, and you steer it. "I want to control it."
+ *
+ * Switching between them is a REWIRE, not a code change — which is the point.
+ */
+export const OP_SIGNAL_DISPATCH_RUNNER = 'signal_dispatch_runner';
+export const OP_SIGNAL_DISPATCH_FLEET = 'signal_dispatch_fleet';
+
 /** Catalog of available system operations (drives the Studio target rail). */
 export const listSystemOpKinds = () =>
   invoke<SystemOpKindMeta[]>('system_ops_list_kinds');

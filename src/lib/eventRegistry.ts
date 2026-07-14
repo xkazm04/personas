@@ -49,6 +49,8 @@ export const EventName = {
   // Findings loop — a scheduled `health_ingest` system op asks the app to sweep
   // every sensor and verify what already shipped (docs/plans/dev-findings-loop.md).
   HEALTH_INGEST_REQUESTED: 'health-ingest-requested',
+  /** A `signal_dispatch_*` op fired: get work started on a finding (runner | fleet). */
+  SIGNAL_DISPATCH_REQUESTED: 'signal-dispatch-requested',
 
   // Healing
   HEALING_EVENT: 'healing-event',
@@ -336,6 +338,13 @@ export interface ExecutionReviewRequestPayload {
 export interface HealthIngestRequestedPayload {
   projectId: string;
   /** "schedule" | "event" | "manual" — diagnostics only. */
+  source: string;
+}
+
+/** Dispatch a finding. `target` is the route's choice, not the engine's. */
+export interface SignalDispatchRequestedPayload {
+  ideaId: string;
+  target: 'runner' | 'fleet';
   source: string;
 }
 
@@ -735,6 +744,7 @@ export interface EventPayloadMap {
 
   // Findings loop
   [EventName.HEALTH_INGEST_REQUESTED]: HealthIngestRequestedPayload;
+  [EventName.SIGNAL_DISPATCH_REQUESTED]: SignalDispatchRequestedPayload;
 
   // Healing
   [EventName.HEALING_EVENT]: HealingEventPayload;

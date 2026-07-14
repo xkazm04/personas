@@ -21,6 +21,7 @@ import {
   createSystemOpAutomation, contextScanParamsJson, memoryReflectionParamsJson,
   healthIngestParamsJson,
   OP_CONTEXT_SCAN, OP_MEMORY_REFLECTION, OP_HEALTH_INGEST,
+  OP_SIGNAL_DISPATCH_RUNNER, OP_SIGNAL_DISPATCH_FLEET,
 } from '@/api/systemOps';
 
 interface CadenceOption { id: string; cron: string }
@@ -53,6 +54,9 @@ export function SystemEventCommitModal({
   // Findings-loop sweep + verification. Project-scoped like the context scan, but it
   // has no delta mode — a sweep always re-reads every sensor.
   const isHealthIngest = opKind === OP_HEALTH_INGEST;
+  // The dispatch ops are finding-scoped, not project-scoped: they take their target
+  // from the `signal.raised` event that fires them, so they configure nothing.
+  const isDispatch = opKind === OP_SIGNAL_DISPATCH_RUNNER || opKind === OP_SIGNAL_DISPATCH_FLEET;
   const needsProject = isContextScan || isHealthIngest;
 
   const personas = useAgentStore((s) => s.personas);
@@ -92,7 +96,11 @@ export function SystemEventCommitModal({
           ? memoryReflectionParamsJson(reflectScope === 'team' ? { teamId: reflectTeamId } : { personaId: reflectPersonaId })
           : isHealthIngest
             ? healthIngestParamsJson(projectId)
-            : contextScanParamsJson(projectId, delta),
+            : isDispatch
+              // The finding comes from the triggering `signal.raised` event (threaded
+              // into the op's params as `_event`), so there is nothing to configure.
+              ? '{}'
+              : contextScanParamsJson(projectId, delta),
         triggerKind: isSchedule ? 'schedule' : 'event',
         cron: isSchedule ? cron : undefined,
         listenEventType: isSchedule ? undefined : eventType.trim(),
