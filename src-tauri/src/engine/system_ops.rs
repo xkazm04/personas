@@ -38,7 +38,8 @@ pub const OP_HEALTH_INGEST: &str = "health_ingest";
 /// The cost of that choice, stated plainly: the sweep only runs while the app is open.
 /// That is already true of the whole scheduler (it's an in-app background tick, not a
 /// daemon), so a schedule that comes due while the app is closed fires on next launch.
-pub const EVENT_HEALTH_INGEST_REQUESTED: &str = "health-ingest-requested";
+pub const EVENT_HEALTH_INGEST_REQUESTED: &str =
+    crate::engine::event_registry::event_name::HEALTH_INGEST_REQUESTED;
 
 /// The two DISPATCH ops (docs/plans/dev-findings-loop.md §4 C/D). Both take a finding
 /// and get work started on it — they differ only in WHO does the work:
@@ -59,7 +60,8 @@ pub const OP_SIGNAL_DISPATCH_FLEET: &str = "signal_dispatch_fleet";
 /// `EVENT_HEALTH_INGEST_REQUESTED`: the task-execute path and the Fleet spawn path are
 /// both async frontend APIs, and reimplementing them here would duplicate logic that
 /// already works.
-pub const EVENT_SIGNAL_DISPATCH_REQUESTED: &str = "signal-dispatch-requested";
+pub const EVENT_SIGNAL_DISPATCH_REQUESTED: &str =
+    crate::engine::event_registry::event_name::SIGNAL_DISPATCH_REQUESTED;
 
 /// Catalog of available system operations (drives the Studio "System events" rail).
 pub fn list_kinds() -> Vec<SystemOpKindMeta> {

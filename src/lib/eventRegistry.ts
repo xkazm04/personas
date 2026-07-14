@@ -145,6 +145,11 @@ export const EventName = {
   // (not the direct context-gen channel) so it surfaces in the Live Stream.
   DEV_TOOLS_CONTEXT_SCAN_STARTED: 'dev_tools.context_scan_started',
   DEV_TOOLS_CONTEXT_SCAN_COMPLETED: 'dev_tools.context_scan_completed',
+  // Findings-loop SIGNAL events (docs/plans/dev-findings-loop.md) — published on
+  // the persona-event bus from the repo layer (create_finding / verify-state
+  // writes), so triggers and the dispatch ops can route off them.
+  SIGNAL_RAISED: 'signal.raised',
+  SIGNAL_VERIFIED: 'signal.verified',
   IDEA_SCAN_STATUS: 'idea-scan-status',
   IDEA_SCAN_OUTPUT: 'idea-scan-output',
   IDEA_SCAN_COMPLETE: 'idea-scan-complete',
@@ -844,6 +849,34 @@ export interface EventPayloadMap {
   // Bus events (Live Stream), not the direct context-gen channel.
   [EventName.DEV_TOOLS_CONTEXT_SCAN_STARTED]: DevToolsContextScanStartedPayload;
   [EventName.DEV_TOOLS_CONTEXT_SCAN_COMPLETED]: DevToolsContextScanCompletedPayload;
+  [EventName.SIGNAL_RAISED]: {
+    idea_id: string;
+    origin: string;
+    dedup_key: string | null;
+    title: string;
+    project_id: string | null;
+    context_id: string | null;
+    use_case_id: string | null;
+    impact: number | null;
+    effort: number | null;
+    risk: number | null;
+    verify_state: string | null;
+    evidence: unknown;
+  };
+  [EventName.SIGNAL_VERIFIED]: {
+    idea_id: string;
+    origin: string;
+    dedup_key: string | null;
+    title: string;
+    project_id: string | null;
+    context_id: string | null;
+    use_case_id: string | null;
+    impact: number | null;
+    effort: number | null;
+    risk: number | null;
+    verify_state: string | null;
+    evidence: unknown;
+  };
   [EventName.IDEA_SCAN_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.IDEA_SCAN_OUTPUT]: { job_id: string; line: string };
   [EventName.IDEA_SCAN_COMPLETE]: IdeaScanCompletePayload;

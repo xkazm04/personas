@@ -159,6 +159,11 @@ event_names! {
     // ops (Task Runner vs Fleet) route off.
     SIGNAL_RAISED                    => "signal.raised",
     SIGNAL_VERIFIED                  => "signal.verified",
+    // Findings-loop system-op requests (engine/system_ops.rs re-exports these):
+    // a scheduled `health_ingest` op asks the app to sweep sensors + verify
+    // shipped findings; a `signal_dispatch_*` op asks for work to start on one.
+    HEALTH_INGEST_REQUESTED          => "health-ingest-requested",
+    SIGNAL_DISPATCH_REQUESTED        => "signal-dispatch-requested",
     IDEA_SCAN_STATUS           => "idea-scan-status",
     IDEA_SCAN_OUTPUT           => "idea-scan-output",
     IDEA_SCAN_COMPLETE         => "idea-scan-complete",
