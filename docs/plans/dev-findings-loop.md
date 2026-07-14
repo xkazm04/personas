@@ -242,29 +242,104 @@ the same PRs; onboarding tour Dev Tools step mentions findings once 2C lands.
 
 ---
 
-## 4. Phase 3 — Close the loop (SKETCH ONLY — do not build yet)
+## 4. Phase 3 — Close the loop (SPEC — agreed 2026-07-14; Phases 1–2 are shipped)
 
-Deferred to a dedicated design session (Fable) that must weigh **Fleet**
-(`docs/features/fleet.md` — Claude Code session aggregation; the natural executor
-for dispatched findings) and **Studio** (`src/features/studio` — chains; a
-finding-verification chain op is plausible). Directional shape, recorded so
-Phases 1–2 don't paint us into a corner:
+> **Thesis.** Phases 1–2 gave us **detect → triage → act → ship**. Nothing yet
+> checks whether the shipped work moved the number that raised the finding.
+> Phase 3 closes it: **→ verify → learn**. Dispatch (C/D) and Athena (E) follow,
+> and are deliberately built as *composable ops*, not as a new engine.
 
-- `dev_ideas.verify_state` (`pending / cleared / moved / unchanged`) + probe that
-  re-runs the *emitting* sensor scoped by `dedupKey` after the linked task's PR
-  merges. The `dedupKey` design in 2B is what makes this scoping possible — keep
-  keys stable and self-describing.
-- Scoreboard credit shifts from "idea shipped" to "signal moved".
-- The goal-advancement tick (shipped, default-OFF) doubles as the sweep scheduler
-  + dispatcher: top finding per project → bound team / Fleet session, under
-  budget caps and the existing human-review resume loop.
-- Open questions parked for that session: who executes (dev_tasks vs persona team
-  vs Fleet CLI session)? does verification block scoreboard credit? Studio chain
-  op vs Rust-side probe?
+**The key architectural decision:** Phase 3 does **not** build a scheduler, a
+dispatcher, or a safety gate. All three already exist:
 
-**Phase 1–2 pre-commitments to keep Phase 3 viable:** stable dedup keys; evidence
-JSON always includes the raw numbers used for the threshold decision (so a probe
-can re-measure comparably); emitters exported individually (probe re-runs one).
+| Need | Existing machinery (reuse — do not rebuild) |
+| --- | --- |
+| Scheduling | `engine/system_ops.rs` — `SystemOpAutomation`, `run_op`, `run_due_schedule_automations`, `dispatch_event_automations` |
+| Composition UI | Chain Studio's switchboard: *Schedule / Event-listener source → System-event target* + commit modal (`sub_studio/system_ops/`) |
+| Kill switch / approval | `persona_triggers.unattended_mode` (`auto` / `dry_run` / `approval`) + `pending_trigger_fires`. **This IS the answer to the "acting on production signal unattended" risk** — an approval-mode automation holds its fire for a human. |
+
+So Phase 3's job is to **register findings as system ops and an event type**, and
+let the user compose the loop in Studio.
+
+### A. Verification — "did reality move?"
+
+- **A1.** `dev_ideas.verify_state`: `pending | cleared | moved | unchanged | regressed`.
+  Additive nullable column (same posture as 2A).
+- **A2. The probe** re-runs **only the emitting sensor**, scoped by `dedup_key`, and
+  diffs the fresh reading against the stored `evidence`. The three Phase-2
+  pre-commitments exist exactly for this — verify they survived before building:
+  stable self-describing dedup keys · `evidence` carries the raw threshold numbers ·
+  emitters individually exported.
+- **A3. Per-origin verdict rules** (each sensor means something different by "moved"):
+
+  | origin | `cleared` when |
+  | --- | --- |
+  | `standards_finding` | the rule re-scans as `present` |
+  | `passport_gap` | the dimension re-derives at/above target |
+  | `llm_cost` | cost re-measured over a **comparable window** drops below threshold |
+  | `sentry_spike` | the issue resolves, or its event count falls below threshold |
+  | `kpi_offtrack` | the KPI reading crosses its target |
+
+- **A4. Verification is a SCHEDULED re-check, not an event.** A standards fix
+  verifies in seconds; a cost or KPI change needs *days* of new telemetry. One
+  uniform **weekly** cadence for now (decided 2026-07-14) — deliberately simple, one
+  mental model. Because it lands in Chain Studio as an op, experimenting with other
+  triggers later costs nothing.
+- **A5. `unchanged` / `regressed` must be as loud as `cleared`.** The entire point is
+  destroying the illusion that *merged = fixed*.
+
+### B. Learning — verdicts feed back
+
+- **B1.** Agent Scoreboard shifts axis: credit for **signal moved**, not PR merged.
+  (Highest-value item in the phase; cheap once A exists.)
+- **B2. Sensor credibility** — an emitter whose findings never verify is emitting
+  noise. Surface that, and let it auto-throttle its own threshold in `findingConfig`.
+- **B3. Rejection learning** — durable "no"s feed `triageRuleSuggestions`
+  ("you've rejected 6 `llm_cost` findings under $10 — raise the threshold?").
+
+### The op / event surface (what makes C–E composable)
+
+- **New system op `health_ingest`** — for a project: run the finding sweep **+** the
+  due verification probes. Registered like any other op: `OP_HEALTH_INGEST` const →
+  `list_kinds()` → a `run_op` match arm (`engine/system_ops.rs`), plus a param branch
+  in Studio's `SystemEventCommitModal` (params: `projectId`). Bound to a **weekly
+  cron** through Studio's existing Schedule → System-event flow.
+- **New event type `signal`** — a finding raised, or a verdict landed, publishes to
+  the event bus. It becomes routable like any other source and shows up in Live
+  Stream for free (add to `sub_live_stream/eventTypeMeta.ts`).
+- **Two dispatch ops, deliberately parallel (the A/B):**
+  - `signal_dispatch_runner` — hand the finding to the **Dev Task Runner** (autonomous;
+    already builds + PRs). *"Let the app do it."*
+  - `signal_dispatch_fleet` — hand the finding to a **Fleet** CLI session
+    (interactive; human steers). *"I want to control it."*
+
+  The user switches between them **by rewiring the route in Studio** — no app-level
+  flag, no fork in the engine. This resolves the old "two executors" risk: it isn't a
+  fork, **it's the feature** (`docs/features/fleet.md`).
+
+### C/D/E — deferred, in this order
+
+- **C. Dispatch** (the two ops above) — build after A+B prove the core and the UX.
+- **D. Fleet** gains a *finding-aware session* (evidence + dedup key in context), so a
+  human at a live session can pick up unverified findings.
+- **E. Studio / Athena — SEPARATE DESIGN TOPIC (do not fold into this plan).**
+  Direction, recorded only: Studio is the "moment" layer where **Athena leads
+  development for a typically non-technical user** — she consumes scans/findings to
+  find gaps herself and speaks in **design proposals**, not findings tables; she will
+  need the findings toolset among her own tools, including **writing scan/verify state
+  back** after implementation.
+  **Risk acknowledged (2026-07-14): this is a much larger product than "verify
+  findings."** It gets its own design session covering Studio's UI direction + Athena's
+  behaviour. Do not let it grow inside Phase 3. If any part lands early, it is the
+  **read** tools (consume findings/scans); write-back waits until dispatch (C) exists,
+  or she'd be mutating state for work nothing dispatched.
+
+### Sequencing
+
+1. **A + B** — verification + learning. Proves the core loop and its UX. No new executor.
+2. **The op/event surface** — `health_ingest` (weekly) + `signal`. Cheap once A exists.
+3. **C + D** — the two dispatch ops, A/B'd from Studio.
+4. **E** — Studio/Athena, after its own design session.
 
 ---
 
@@ -287,6 +362,22 @@ anything works. Steps 1–3 are independent of 4–7 and can land while the migr
 is in review.
 
 ## 6. Risks & open questions
+
+**Resolved 2026-07-14 (were open in the first draft):**
+
+- ~~*Two executors (Task Runner vs Fleet) is a fork*~~ → **It's the feature.** Both
+  ship as parallel dispatch ops; the user picks per-route in Studio. Task Runner =
+  "let the app do it"; Fleet = "I want to steer it."
+- ~~*Auto-dispatch acts on production signal unattended — needs a kill switch*~~ →
+  **Already exists:** `unattended_mode` (`auto`/`dry_run`/`approval`) +
+  `pending_trigger_fires`.
+- ~~*Verification lag makes the loop feel unclosed; needs a scheduler*~~ → **Already
+  exists:** `system_ops.rs` + Chain Studio. Phase 3 registers an op; it builds no
+  scheduler. Weekly cadence for now; other triggers are then a Studio experiment.
+- ~~*Studio chain-op vs Rust probe?*~~ → Probe is Rust (deterministic re-measurement);
+  Studio composes *when* it runs. Athena's involvement is a **separate design topic**.
+
+**Still open:**
 
 - **Triage flooding** — mitigated by dedup + rejected-is-durable + sweep cap; if
   still noisy, add per-origin caps in `findingConfig.ts`.
