@@ -13,7 +13,7 @@ import {
 import { useTranslation, getActiveTranslations } from '@/i18n/useTranslation';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { useCompanionStore } from './companionStore';
+import { DEFAULT_CONVERSATION_ID, useCompanionStore } from './companionStore';
 import { Bubble } from './Bubble';
 import { Composer } from './Composer';
 import { QuickReplies } from './QuickReplies';
@@ -213,9 +213,6 @@ export default function CompanionPanel() {
 
   const setMessages = useCompanionStore((s) => s.setMessages);
   const appendMessage = useCompanionStore((s) => s.appendMessage);
-  const setStreaming = useCompanionStore((s) => s.setStreaming);
-  const appendStreamingText = useCompanionStore((s) => s.appendStreamingText);
-  const resetStreamingText = useCompanionStore((s) => s.resetStreamingText);
   const setSendError = useCompanionStore((s) => s.setSendError);
   const setApprovals = useCompanionStore((s) => s.setApprovals);
   const removeApproval = useCompanionStore((s) => s.removeApproval);
@@ -485,9 +482,6 @@ export default function CompanionPanel() {
             autonomousMode={autonomousMode}
             setMessages={setMessages}
             appendMessage={appendMessage}
-            setStreaming={setStreaming}
-            appendStreamingText={appendStreamingText}
-            resetStreamingText={resetStreamingText}
             setSendError={setSendError}
             setApprovals={setApprovals}
             removeApproval={removeApproval}
@@ -638,9 +632,6 @@ interface BodyProps {
   autonomousMode: boolean;
   setMessages: (m: BodyProps['messages']) => void;
   appendMessage: (m: BodyProps['messages'][number]) => void;
-  setStreaming: (v: boolean) => void;
-  appendStreamingText: (s: string) => void;
-  resetStreamingText: () => void;
   setSendError: (e: string | null) => void;
   setApprovals: (a: BodyProps['approvals']) => void;
   removeApproval: (id: string) => void;
@@ -680,9 +671,6 @@ function Body(props: BodyProps) {
     autonomousMode,
     setMessages,
     appendMessage,
-    setStreaming,
-    appendStreamingText,
-    resetStreamingText,
     setSendError,
     setApprovals,
     removeApproval,
@@ -757,36 +745,37 @@ function Body(props: BodyProps) {
       .catch(silentCatch('companion_list_proactive_messages'));
   }, [initialized, setMessages, setApprovals, setProactive]);
 
-  // Track the turn id of the currently-streaming turn so the Stop
-  // button knows what to interrupt. Captured from the `started`
-  // stream event, cleared on `finished`/`error`. Ref (not state) so
-  // the listener closure stays stable.
-  const currentTurnIdRef = useRef<string | null>(null);
+  // The live turn id lives in the store's per-conversation `liveTurns`
+  // slice (captured from the `started` event) — the Stop button reads the
+  // ACTIVE conversation's slice at click time.
 
-  // True while a turn THIS client didn't initiate is streaming — a
+  // Conversations whose in-flight turn THIS client didn't initiate — a
   // backend-initiated turn (proactive execution review, autonomous
-  // continuation). The user-send path owns its own streaming + refetch;
-  // for backend turns nothing else does, so the stream listener takes
-  // over: it flips `streaming` on at `started` and refetches the
-  // transcript at `finished` so the new assistant bubble actually
-  // appears in the panel instead of only landing in the brain.
-  const backendTurnActiveRef = useRef(false);
-  // Synchronous re-entrancy guard for `send`. `setStreaming(true)` updates the
+  // continuation, another surface's send). The user-send path owns its own
+  // conversation's lifecycle + refetch; for backend turns nothing else
+  // does, so the stream listener takes over: it begins the live turn at
+  // `started` and ends it (+ refetches the transcript when that thread is
+  // focused) at `finished`. A Set because turns run concurrently across
+  // threads.
+  const backendTurnConversationsRef = useRef<Set<string>>(new Set());
+  // Synchronous re-entrancy guard for `send`. The streaming flip updates the
   // store synchronously, but the `streaming` value captured in render closures
   // (e.g. sendOrQueue's gate) stays stale until React re-renders — so two sends
   // dispatched in the same tick can both pass `!streaming` and double-fire a
   // turn. This ref flips the instant a send starts, before any await.
   const sendingRef = useRef(false);
 
-  // Token-level streaming bookkeeping (--include-partial-messages).
-  // `sawDeltasRef` flips true the moment a `text_delta` arrives this turn;
-  // once set, we ignore the trailing whole `assistant` message text (it
-  // duplicates what the deltas already appended). `deltaBufferRef` +
-  // `deltaRafRef` coalesce a burst of tiny deltas into one store write per
-  // animation frame so the high-frequency `text_delta` stream can't thrash
-  // the Zustand store. Reset/flushed on `started` and `finished`.
-  const sawDeltasRef = useRef(false);
-  const deltaBufferRef = useRef('');
+  // Token-level streaming bookkeeping (--include-partial-messages), keyed
+  // by conversation id since turns stream concurrently across threads. A
+  // conversation joins `sawDeltasRef` the moment a `text_delta` arrives for
+  // its turn; once present, its trailing whole `assistant` message text is
+  // ignored (it duplicates what the deltas already appended).
+  // `deltaBuffersRef` + `deltaRafRef` coalesce a burst of tiny deltas into
+  // one store write per conversation per animation frame so the
+  // high-frequency `text_delta` stream can't thrash the Zustand store.
+  // Reset per conversation on its `started`, flushed on its `finished`.
+  const sawDeltasRef = useRef<Set<string>>(new Set());
+  const deltaBuffersRef = useRef<Map<string, string>>(new Map());
   const deltaRafRef = useRef<number | null>(null);
 
   // Async-UX phase 4b — timers for in-turn tool calls. A `tool_use` block in
@@ -879,20 +868,21 @@ function Body(props: BodyProps) {
     return () => clearInterval(id);
   }, [streaming]);
 
-  // Flush buffered token deltas into the store as one write. Stable
-  // (depends only on appendStreamingText) so the listener closure below
-  // stays stable across renders.
+  // Flush buffered token deltas into their conversations' slices, one
+  // store write per conversation. Stable (reads the store imperatively) so
+  // the listener closure below stays stable across renders.
   const flushDeltaBuffer = useCallback(() => {
     if (deltaRafRef.current !== null) {
       cancelAnimationFrame(deltaRafRef.current);
       deltaRafRef.current = null;
     }
-    if (deltaBufferRef.current) {
-      const chunk = deltaBufferRef.current;
-      deltaBufferRef.current = '';
-      appendStreamingText(chunk);
+    if (deltaBuffersRef.current.size === 0) return;
+    const { appendLiveText } = useCompanionStore.getState();
+    for (const [conversationId, chunk] of deltaBuffersRef.current) {
+      if (chunk) appendLiveText(conversationId, chunk);
     }
-  }, [appendStreamingText]);
+    deltaBuffersRef.current.clear();
+  }, []);
 
   // Subscribe to streaming events from the backend.
   useTauriEvent<CompanionStreamEvent>(
@@ -900,131 +890,150 @@ function Body(props: BodyProps) {
     useCallback(
       (event) => {
         const ev = event.payload;
-        // Every event resets the soft-progress clock — silence (no
-        // events arriving) is what we surface as "still working".
-        lastStreamEventAtRef.current = Date.now();
+        // Which thread this event belongs to — the backend stamps the
+        // conversation id (`sessionId` on the wire) on every stream event.
+        // Old events without one target the migrated default thread.
+        const evConversation = ev.sessionId ?? DEFAULT_CONVERSATION_ID;
+        // Focus is read at EVENT time (not closure time): the user can
+        // switch threads mid-turn, and only the focused thread may touch
+        // flat/visible state (transcript, steps, narration, tool tags,
+        // recall). Per-conversation live-turn writes below run for EVERY
+        // thread — the store's mirror invariant keeps the flat fields in
+        // sync when this event's thread is the focused one.
+        const store = useCompanionStore.getState();
+        const isActive = evConversation === store.activeConversationId;
+        // Every focused-thread event resets the soft-progress clock —
+        // silence (no events arriving) is what we surface as "still
+        // working". Background threads have no visible bubble to reassure.
+        if (isActive) lastStreamEventAtRef.current = Date.now();
         if (ev.kind === 'started') {
-          currentTurnIdRef.current = ev.turnId;
-          // Backend-initiated turn? The user-send path sets `streaming`
-          // true synchronously BEFORE the backend emits `started`, so if
-          // we see `started` while not streaming, no client send is in
-          // flight — this turn came from the proactive scheduler or an
-          // autonomous continuation. Flip streaming on so the thinking
-          // bubble shows; the `finished` handler refetches the transcript.
-          if (!useCompanionStore.getState().streaming) {
-            backendTurnActiveRef.current = true;
-            setStreaming(true);
+          // Backend-initiated turn? The user-send path flips its
+          // conversation's slice streaming BEFORE the backend emits
+          // `started`, so a `started` on a non-streaming conversation has
+          // no client send in flight — it came from the proactive scheduler
+          // or an autonomous continuation. The listener then owns that
+          // turn's lifecycle (see `finished`).
+          if (!store.liveTurns[evConversation]?.streaming) {
+            backendTurnConversationsRef.current.add(evConversation);
           }
-          // New turn — reset token-streaming bookkeeping and drop any
-          // unflushed deltas from a prior turn.
-          sawDeltasRef.current = false;
-          deltaBufferRef.current = '';
-          if (deltaRafRef.current !== null) {
-            cancelAnimationFrame(deltaRafRef.current);
-            deltaRafRef.current = null;
-          }
+          // Begin the per-conversation live turn: streaming on, text/phase/
+          // beat reset, turn id recorded (the Stop button reads it).
+          store.beginLiveTurn(evConversation, ev.turnId);
+          // New turn — reset this conversation's token-streaming
+          // bookkeeping and drop its unflushed deltas from a prior turn.
+          sawDeltasRef.current.delete(evConversation);
+          deltaBuffersRef.current.delete(evConversation);
+          if (!isActive) return;
+          // Everything below is flat/visible state owned by the focused
+          // thread — a background thread's turn must not clobber it.
           // New turn — drop any leftover in-flight recall strip; the
           // backend will re-emit `recall-preview` once the new prompt
           // is built.
-          useCompanionStore.getState().setStreamingRecall(null);
-          // Clear any stale phase from a prior turn so the new turn
-          // starts cleanly on the placeholder until the first CLI line
-          // arrives.
-          useCompanionStore.getState().setStreamingPhase(null);
+          store.setStreamingRecall(null);
           // Drop the prior turn's operational checklist; the new turn
           // rebuilds it from its own TodoWrite calls.
-          useCompanionStore.getState().setStreamingSteps([]);
+          store.setStreamingSteps([]);
           // Reset Variant B beat bookkeeping for the new turn.
-          useCompanionStore.getState().setStreamingBeat(null);
           beatFiredRef.current = false;
           progressFiredRef.current = 0;
           // Fresh narration timeline for this turn (D2).
-          useCompanionStore.getState().beginNarration();
+          store.beginNarration();
           // Drop any in-turn tool tasks/timers from a prior turn.
           clearToolTimers();
-          useCompanionStore.getState().clearInTurnToolJobs();
+          store.clearInTurnToolJobs();
         } else if (ev.kind === 'cli') {
-          // In-turn tool tasks: time every tool_use; promote a slow one
-          // (> threshold, still pending) to a visible task; complete it on
-          // its tool_result. This runs first and never returns — the line
-          // still flows through the phase/text handling below.
-          const toolEvents = extractToolEvents(ev.payload);
-          for (const ts of toolEvents.started) {
-            // TodoWrite is instant + has its own checklist UI — never a
-            // task and never a narration row (the checklist IS its surface).
-            if (ts.name === 'TodoWrite') continue;
-            // Narration timeline row (D2). The store dedupes by tool_use
-            // id, so a re-emitted block can't double-log.
-            useCompanionStore.getState().appendNarrationEntry({
-              id: ts.id,
-              kind: 'tool',
-              toolName: ts.name,
-              detail: ts.detail,
-              at: Date.now(),
-            });
-            if (toolTimersRef.current.has(ts.id)) continue;
-            const startedAt = new Date().toISOString();
-            const handle = window.setTimeout(() => {
-              toolTimersRef.current.delete(ts.id);
-              if (!useCompanionStore.getState().streaming) return;
-              useCompanionStore.getState().upsertInTurnToolJob({
+          // In-turn tool tasks + the narration timeline are flat/visible
+          // state — only the focused thread writes them (a background
+          // thread's activity surfaces through its roster unread/notice
+          // path instead). This block never returns — the line still flows
+          // through the phase/text handling below.
+          if (isActive) {
+            // Time every tool_use; promote a slow one (> threshold, still
+            // pending) to a visible task; complete it on its tool_result.
+            const toolEvents = extractToolEvents(ev.payload);
+            for (const ts of toolEvents.started) {
+              // TodoWrite is instant + has its own checklist UI — never a
+              // task and never a narration row (the checklist IS its surface).
+              if (ts.name === 'TodoWrite') continue;
+              // Narration timeline row (D2). The store dedupes by tool_use
+              // id, so a re-emitted block can't double-log.
+              useCompanionStore.getState().appendNarrationEntry({
                 id: ts.id,
-                kind: 'in_turn_tool',
-                status: 'running',
-                paramsJson: '{}',
-                resultText: null,
-                errorText: null,
-                projectId: null,
-                shortTitle: phaseLabel(t, tx, {
-                  kind: 'tool_use',
-                  toolName: ts.name,
-                  detail: ts.detail,
-                }),
-                parentTurnId: currentTurnIdRef.current,
-                progressText: null,
-                progressCurrent: null,
-                progressTotal: null,
-                createdAt: startedAt,
-                startedAt,
-                completedAt: null,
+                kind: 'tool',
+                toolName: ts.name,
+                detail: ts.detail,
+                at: Date.now(),
               });
-            }, IN_TURN_TOOL_THRESHOLD_MS);
-            toolTimersRef.current.set(ts.id, handle);
-          }
-          for (const doneId of toolEvents.finished) {
-            const h = toolTimersRef.current.get(doneId);
-            if (h != null) {
-              window.clearTimeout(h);
-              toolTimersRef.current.delete(doneId);
+              if (toolTimersRef.current.has(ts.id)) continue;
+              const startedAt = new Date().toISOString();
+              const handle = window.setTimeout(() => {
+                toolTimersRef.current.delete(ts.id);
+                if (!useCompanionStore.getState().streaming) return;
+                useCompanionStore.getState().upsertInTurnToolJob({
+                  id: ts.id,
+                  kind: 'in_turn_tool',
+                  status: 'running',
+                  paramsJson: '{}',
+                  resultText: null,
+                  errorText: null,
+                  projectId: null,
+                  shortTitle: phaseLabel(t, tx, {
+                    kind: 'tool_use',
+                    toolName: ts.name,
+                    detail: ts.detail,
+                  }),
+                  parentTurnId:
+                    useCompanionStore.getState().liveTurns[evConversation]?.turnId ?? null,
+                  progressText: null,
+                  progressCurrent: null,
+                  progressTotal: null,
+                  createdAt: startedAt,
+                  startedAt,
+                  completedAt: null,
+                });
+              }, IN_TURN_TOOL_THRESHOLD_MS);
+              toolTimersRef.current.set(ts.id, handle);
             }
-            useCompanionStore.getState().completeInTurnToolJob(doneId);
-            // Stamp the matching narration row's duration (no-op for ids
-            // we never logged, e.g. TodoWrite).
-            useCompanionStore.getState().completeNarrationTool(doneId);
+            for (const doneId of toolEvents.finished) {
+              const h = toolTimersRef.current.get(doneId);
+              if (h != null) {
+                window.clearTimeout(h);
+                toolTimersRef.current.delete(doneId);
+              }
+              useCompanionStore.getState().completeInTurnToolJob(doneId);
+              // Stamp the matching narration row's duration (no-op for ids
+              // we never logged, e.g. TodoWrite).
+              useCompanionStore.getState().completeNarrationTool(doneId);
+            }
           }
           // Operational thread: a TodoWrite tool call republishes Athena's
-          // full plan. Capture it (latest wins) so the inline checklist
-          // tracks progress; the checklist itself is the activity signal,
-          // so don't also surface a generic "Using TodoWrite…" phase.
+          // full plan. Capture it (latest wins, focused thread only) so the
+          // inline checklist tracks progress; the checklist itself is the
+          // activity signal, so don't also surface a generic "Using
+          // TodoWrite…" phase.
           const steps = extractTodoWrite(ev.payload);
           if (steps) {
-            useCompanionStore.getState().setStreamingSteps(steps);
+            if (isActive) useCompanionStore.getState().setStreamingSteps(steps);
             return;
           }
           // Token-level path: a `stream_event` text_delta. Append it live
-          // (coalesced per frame) and remember we're streaming deltas so
-          // the trailing whole `assistant` message doesn't double the text.
+          // to the event's conversation (coalesced per frame) and remember
+          // that conversation is streaming deltas so its trailing whole
+          // `assistant` message doesn't double the text.
           const delta = extractAssistantTextDelta(ev.payload);
           if (delta) {
             // First token of the reply — flip the status to "Composing
             // reply…" once (we no longer render the raw token stream, so
             // without this the bubble would sit on "Thinking…" through the
             // whole answer generation). Set once, not per-token.
-            if (!sawDeltasRef.current) {
-              useCompanionStore.getState().setStreamingPhase({ kind: 'responding' });
+            if (!sawDeltasRef.current.has(evConversation)) {
+              store.patchLiveTurn(evConversation, { streamingPhase: { kind: 'responding' } });
+              sawDeltasRef.current.add(evConversation);
             }
-            sawDeltasRef.current = true;
-            deltaBufferRef.current += delta;
+            deltaBuffersRef.current.set(
+              evConversation,
+              (deltaBuffersRef.current.get(evConversation) ?? '') + delta,
+            );
             if (deltaRafRef.current === null) {
               deltaRafRef.current = requestAnimationFrame(flushDeltaBuffer);
             }
@@ -1039,80 +1048,96 @@ function Body(props: BodyProps) {
           if (text) {
             // Prose is arriving — show "Composing reply…" (we no longer
             // render the partial text itself; the full reply lands whole).
-            useCompanionStore.getState().setStreamingPhase({ kind: 'responding' });
+            store.patchLiveTurn(evConversation, { streamingPhase: { kind: 'responding' } });
             // If deltas already streamed this turn, this whole-message text
             // is a duplicate of what we appended token-by-token — skip it.
-            if (!sawDeltasRef.current) appendStreamingText(text);
+            if (!sawDeltasRef.current.has(evConversation)) {
+              store.appendLiveText(evConversation, text);
+            }
           } else if (phase) {
-            useCompanionStore.getState().setStreamingPhase(phase);
+            store.patchLiveTurn(evConversation, { streamingPhase: phase });
           }
         } else if (ev.kind === 'finished') {
           // Land any deltas still buffered before the transcript refetch
           // swaps the streaming bubble for the persisted episode.
           flushDeltaBuffer();
-          sawDeltasRef.current = false;
-          // Promote the streaming recall AND any pending connector_use
-          // jobs onto the just-persisted assistant episode so they pin
-          // under the now-completed bubble. Payload is the
-          // assistant_episode_id.
-          if (ev.payload) {
-            useCompanionStore.getState().attachRecallToEpisode(ev.payload);
-            useCompanionStore
-              .getState()
-              .attachPendingJobsToEpisode(ev.payload);
-            // Pin the operational checklist under the completed bubble.
-            useCompanionStore.getState().attachStepsToEpisode(ev.payload);
-            // Pin the narration trail under the completed bubble (D2).
-            // Trivial trails are dropped inside the attach.
-            useCompanionStore.getState().attachNarrationToEpisode(ev.payload);
-          } else {
-            useCompanionStore.getState().setStreamingRecall(null);
-            useCompanionStore.getState().resetStreamingNarration();
+          sawDeltasRef.current.delete(evConversation);
+          if (isActive) {
+            // Promote the streaming recall AND any pending connector_use
+            // jobs onto the just-persisted assistant episode so they pin
+            // under the now-completed bubble. Payload is the
+            // assistant_episode_id. Focused thread only — these promotion
+            // targets all live in flat/visible state.
+            if (ev.payload) {
+              store.attachRecallToEpisode(ev.payload);
+              store.attachPendingJobsToEpisode(ev.payload);
+              // Pin the operational checklist under the completed bubble.
+              store.attachStepsToEpisode(ev.payload);
+              // Pin the narration trail under the completed bubble (D2).
+              // Trivial trails are dropped inside the attach.
+              store.attachNarrationToEpisode(ev.payload);
+            } else {
+              store.setStreamingRecall(null);
+              store.resetStreamingNarration();
+            }
+            // Clear any in-flight checklist not promoted to an episode.
+            store.setStreamingSteps([]);
+            // Turn done — drop any lingering in-turn tool tasks/timers.
+            clearToolTimers();
+            store.clearInTurnToolJobs();
           }
-          useCompanionStore.getState().setStreamingPhase(null);
-          // Clear any in-flight checklist not promoted to an episode.
-          useCompanionStore.getState().setStreamingSteps([]);
-          // Turn done — drop any lingering in-turn tool tasks/timers.
-          clearToolTimers();
-          useCompanionStore.getState().clearInTurnToolJobs();
-          currentTurnIdRef.current = null;
-          // Backend-initiated turn: nothing else will refetch the
-          // transcript (the user-send path isn't involved), so do it
-          // here and drop the streaming flag we raised at `started`.
-          if (backendTurnActiveRef.current) {
-            backendTurnActiveRef.current = false;
-            setStreaming(false);
-            companionListRecentMessages(50, useCompanionStore.getState().activeConversationId)
-              .then((msgs) => setMessages(msgs))
-              .catch(silentCatch('companion_list_recent_messages'));
+          store.patchLiveTurn(evConversation, { streamingPhase: null, turnId: null });
+          // Backend-owned turn (this client never sent it): nothing else
+          // ends it or refetches the transcript, so do both here. Client
+          // sends end their own conversation's turn in `send()`'s finally —
+          // AFTER the fresh transcript lands, so the streaming bubble never
+          // gaps. A background thread's finished turn must NOT append into
+          // the visible transcript — the roster unread/notice path surfaces
+          // it instead.
+          if (backendTurnConversationsRef.current.has(evConversation)) {
+            backendTurnConversationsRef.current.delete(evConversation);
+            store.endLiveTurn(evConversation);
+            if (isActive) {
+              companionListRecentMessages(50, evConversation)
+                .then((msgs) => {
+                  // Re-check focus — the user may have switched threads
+                  // while the refetch was in flight.
+                  if (useCompanionStore.getState().activeConversationId === evConversation) {
+                    setMessages(msgs);
+                  }
+                })
+                .catch(silentCatch('companion_list_recent_messages'));
+            }
           }
         } else if (ev.kind === 'error') {
           flushDeltaBuffer();
-          sawDeltasRef.current = false;
-          setSendError(ev.payload);
-          clearToolTimers();
-          useCompanionStore.getState().clearInTurnToolJobs();
-          useCompanionStore.getState().setStreamingRecall(null);
-          useCompanionStore.getState().setStreamingPhase(null);
-          useCompanionStore.getState().setStreamingSteps([]);
-          useCompanionStore.getState().resetStreamingNarration();
-          currentTurnIdRef.current = null;
-          // Backend-initiated turn that errored: clear the streaming flag
-          // we raised at `started` so the panel doesn't hang on a thinking
-          // bubble (no user-send `finally` runs for these).
-          if (backendTurnActiveRef.current) {
-            backendTurnActiveRef.current = false;
-            setStreaming(false);
+          sawDeltasRef.current.delete(evConversation);
+          if (isActive) {
+            // Error chip + flat scratch state belong to the focused thread;
+            // a background turn's failure stays in its own slice (its
+            // thread shows it on focus / via the roster).
+            setSendError(ev.payload);
+            clearToolTimers();
+            store.clearInTurnToolJobs();
+            store.setStreamingRecall(null);
+            store.setStreamingSteps([]);
+            store.resetStreamingNarration();
+          }
+          store.patchLiveTurn(evConversation, { streamingPhase: null, turnId: null });
+          // Backend-owned turn that errored: end it here so the panel
+          // doesn't hang on a thinking bubble (no user-send `finally` runs
+          // for these).
+          if (backendTurnConversationsRef.current.has(evConversation)) {
+            backendTurnConversationsRef.current.delete(evConversation);
+            store.endLiveTurn(evConversation);
           }
         }
       },
       [
-        appendStreamingText,
         setSendError,
         flushDeltaBuffer,
         clearToolTimers,
         setMessages,
-        setStreaming,
         t,
         tx,
       ],
@@ -1172,11 +1197,16 @@ function Body(props: BodyProps) {
   );
 
   const handleInterrupt = useCallback(() => {
-    const turnId = currentTurnIdRef.current;
+    // Interrupt targets the ACTIVE conversation's in-flight turn — the Stop
+    // button visually belongs to the focused thread, so it must never kill
+    // a background thread's stream.
+    const s = useCompanionStore.getState();
+    const conversationId = s.activeConversationId;
+    const turnId = s.liveTurns[conversationId]?.turnId ?? null;
     if (!turnId) return;
     // Optimistically clear so a second click doesn't double-fire while
     // the backend is finalizing the partial reply.
-    currentTurnIdRef.current = null;
+    s.patchLiveTurn(conversationId, { turnId: null });
     companionInterruptTurn(turnId).catch(silentCatch('companion_interrupt_turn'));
   }, []);
 
@@ -1478,6 +1508,11 @@ function Body(props: BodyProps) {
       // send() concurrently, producing duplicate turns. Cleared in finally.
       if (sendingRef.current) return;
       sendingRef.current = true;
+      // Pin the turn to the conversation focused at send time — the user
+      // can switch threads while the turn runs, and every lifecycle write
+      // below must keep targeting THIS thread's slice, not whatever thread
+      // happens to be focused when the promise settles.
+      const conversationId = useCompanionStore.getState().activeConversationId;
       setSendError(null);
       // Quick-replies + inline chat-cards are one-shot — clear before the
       // new turn so they don't linger if Athena's reply doesn't offer fresh
@@ -1492,14 +1527,19 @@ function Body(props: BodyProps) {
         createdAt: new Date().toISOString(),
       };
       appendMessage(optimistic);
-      setStreaming(true);
-      resetStreamingText();
+      // Raise this conversation's streaming flag before the IPC round-trip
+      // so the `started` handler can tell a client-owned turn from a
+      // backend-initiated one. Text + beat reset with it.
+      useCompanionStore.getState().patchLiveTurn(conversationId, {
+        streaming: true,
+        streamingText: '',
+        streamingBeat: null,
+      });
       // Fresh turn — reset spoken-progress tiers + beat bookkeeping and
       // silence any leftover progress clip.
       spokenTiersRef.current.clear();
       beatFiredRef.current = false;
       progressFiredRef.current = 0;
-      useCompanionStore.getState().setStreamingBeat(null);
       stopProgressAudio();
       // Seed the soft-progress clock so the chip-threshold effect
       // doesn't trip immediately based on a stale prior-turn timestamp.
@@ -1511,14 +1551,19 @@ function Body(props: BodyProps) {
           recallSynthesisEnabled,
           autonomousMode,
           undefined,
-          useCompanionStore.getState().activeConversationId,
+          conversationId,
         );
         // Refresh canonical transcript from backend (replaces the optimistic
         // user bubble with the persisted episode + adds the assistant turn).
-        const fresh = await companionListRecentMessages(50, useCompanionStore.getState().activeConversationId);
-        setMessages(fresh);
-        if (result.quickReplies && result.quickReplies.length > 0) {
-          setQuickReplies(result.quickReplies);
+        // Only when this thread is STILL the focused one — the visible
+        // transcript and quick-reply chips belong to whatever thread the
+        // user is looking at now.
+        const fresh = await companionListRecentMessages(50, conversationId);
+        if (useCompanionStore.getState().activeConversationId === conversationId) {
+          setMessages(fresh);
+          if (result.quickReplies && result.quickReplies.length > 0) {
+            setQuickReplies(result.quickReplies);
+          }
         }
         // Voice playback wiring — only when voice is on AND backend gave
         // us a spoken summary. Stash it for the footer Play button, then
@@ -1576,18 +1621,24 @@ function Body(props: BodyProps) {
         silentCatch('companion_send_message')(err);
       } finally {
         // Reset order matters for the streaming bubble's AnimatePresence
-        // exit: setStreaming(false) first unmounts the bubble, then we
-        // clear the in-flight scratch fields. If we wiped streamingText
-        // first the bubble would briefly show an empty body mid-exit.
-        setStreaming(false);
-        resetStreamingText();
-        // streamingPhase is owned by the store but cleaned up here too
-        // — the stream-event handler clears it on `finished`/`error`
-        // but the IPC rejection path skips the stream-event channel
-        // entirely (the backend never got far enough to emit one), so
-        // an explicit reset here is the safety net.
-        useCompanionStore.getState().setStreamingPhase(null);
-        useCompanionStore.getState().setStreamingBeat(null);
+        // exit: streaming:false first unmounts the bubble, then we clear
+        // the in-flight scratch fields. If we wiped streamingText first
+        // the bubble would briefly show an empty body mid-exit. Both
+        // patches target the send-time conversation — never whatever
+        // thread is focused now.
+        useCompanionStore.getState().patchLiveTurn(conversationId, {
+          streaming: false,
+          turnId: null,
+        });
+        // streamingPhase is owned by the stream-event handler on the
+        // `finished`/`error` paths, but the IPC rejection path skips the
+        // stream-event channel entirely (the backend never got far enough
+        // to emit one), so an explicit reset here is the safety net.
+        useCompanionStore.getState().patchLiveTurn(conversationId, {
+          streamingText: '',
+          streamingPhase: null,
+          streamingBeat: null,
+        });
         // Same safety net for in-turn tool tasks/timers: an IPC rejection skips
         // the stream-event channel, so the `finished`/`error` handlers that
         // normally clear these never run — leaving ghost "running" tasks
@@ -1598,7 +1649,7 @@ function Body(props: BodyProps) {
         sendingRef.current = false;
       }
     },
-    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, stopMainAudio, voiceActive, voice.engine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode, clearToolTimers],
+    [appendMessage, markPlaybackPlayed, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, stopProgressAudio, stopMainAudio, voiceActive, voice.engine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode, clearToolTimers],
   );
 
   // Async-UX phase 4 — non-blocking send. The composer is never disabled;
@@ -1610,14 +1661,18 @@ function Body(props: BodyProps) {
       const trimmed = text.trim();
       if (!trimmed) return;
       // Gate on the live store value (+ the in-flight ref), not the render
-      // closure `streaming`: the closure lags a render behind setStreaming(true),
-      // so two sends in one tick would both fall into the direct-send branch.
-      if (!useCompanionStore.getState().streaming && !sendingRef.current) {
+      // closure `streaming`: the closure lags a render behind the streaming
+      // flip, so two sends in one tick would both fall into the direct-send
+      // branch. The flat mirror IS the focused thread's streaming state.
+      const s = useCompanionStore.getState();
+      if (!s.streaming && !sendingRef.current) {
         void send(trimmed);
         return;
       }
       const mode = classifyMidTurnIntent(trimmed);
-      useCompanionStore.getState().enqueueMessage(trimmed, mode);
+      // Queue on the focused thread — the drain effect shifts from this
+      // same thread's queue when ITS turn completes.
+      s.enqueueMessage(s.activeConversationId, trimmed, mode);
       // A redirect stops the current turn now; the drain effect fires the
       // queued message the instant `streaming` flips false.
       if (mode === 'interrupt') handleInterrupt();
@@ -1626,19 +1681,25 @@ function Body(props: BodyProps) {
   );
 
   // Drain the queue one message per turn completion. Watches the streaming
-  // true→false edge; if anything is waiting (and we're not mid self-
-  // improve) it shifts the oldest and sends it. `send` sets streaming back
-  // to true, so this fires at most once per completed turn — preserving
-  // FIFO order without colliding with the autonomous-continuation chain.
+  // true→false edge on the flat mirror (= the ACTIVE conversation); if
+  // anything is waiting in THAT conversation's queue it shifts the oldest
+  // and sends it. `send` sets streaming back to true, so this fires at
+  // most once per completed turn — preserving FIFO order without colliding
+  // with the autonomous-continuation chain. Switching from a streaming
+  // thread to an idle one also flips the mirror false, but that's a view
+  // change, not a completed turn — the same-thread guard skips it.
   const prevStreamingForQueueRef = useRef(streaming);
+  const prevActiveForQueueRef = useRef(activeConversationId);
   useEffect(() => {
     const was = prevStreamingForQueueRef.current;
+    const wasConversation = prevActiveForQueueRef.current;
     prevStreamingForQueueRef.current = streaming;
-    if (was && !streaming) {
-      const next = useCompanionStore.getState().shiftQueuedMessage();
+    prevActiveForQueueRef.current = activeConversationId;
+    if (was && !streaming && wasConversation === activeConversationId) {
+      const next = useCompanionStore.getState().shiftQueuedMessage(activeConversationId);
       if (next) void send(next.text);
     }
-  }, [streaming, send]);
+  }, [streaming, activeConversationId, send]);
 
   // Spoken ack: ~2.5s into a still-running turn, say a short "one moment"
   // so a slow turn isn't dead silent. Fast turns (< the delay) never

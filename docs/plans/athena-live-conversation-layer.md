@@ -42,9 +42,11 @@ Cost note: every Athena spawn is subscription-auth (`force_subscription_auth`), 
 
 ## 3. Track A — the conversation layer
 
-### P1 — Partition the frontend per conversation (prerequisite)
+### P1 — Partition the frontend per conversation (prerequisite) ✅ CORE SHIPPED
 
-The biggest single diff, but mechanical; fixes misattribution bugs that exist today even before new features.
+Shipped (2026-07-14): per-conversation `liveTurns` slices with active-mirror flat fields + stream routing by `sessionId`; per-thread queue/interrupt; `AUTONOMOUS_GENS` keyed by conversation (explicit cancel stays global); `companion_background_job.conversation_id`; per-thread transcript reset; `kill_on_drop` on chat turns. **Deferred to a later pass:** full slice migration of messages/steps/narration/recall (they remain keyed by unique episode ids or active-only — collision-free but not yet browsable per background thread mid-stream), and per-thread scroll preservation.
+
+The original scope (kept for reference) — the biggest single diff, but mechanical; fixes misattribution bugs that exist today even before new features.
 
 - `companionStore.ts`: introduce `conversations: Record<convId, ConversationState>` slices holding `messages / streaming / streamingText / streamingPhase / streamingBeat / queuedMessages / quickReplies / chatCards / streamingSteps / narration / recall / scroll position / unread`. Registry (`ConversationRow[]`) and `activeConversationId` stay. Migration hook wraps existing flat state into `conversations['default']` — lossless.
 - `useActiveConversation()` becomes the resolver for the active slice; migrate the flat-field call sites in `CompanionPanel` / `Bubble` / orb (same consolidation move as the `useTtsVoiceSelection` refactor).
@@ -78,7 +80,11 @@ Two complementary mechanisms, both gated on P1 (routing) and P2 (state):
 - **P3b — Aside turns.** Substantive mid-turn questions spawn a parallel *ephemeral* turn: a headless `cli_text`-style call carrying the live-activity digest + a bounded transcript snapshot, which **never advances the thread's `--resume` pointer** (that pointer is exactly what the per-conversation lock protects — asides bypass the lock because they don't touch it). Renders as a visually distinct "aside" bubble; persisted as an episode marked `aside`; anything durable it wants to do becomes a queued follow-up for the main lane, never a direct op (asides get **no OP grammar** — decision authority stays in the serialized lane).
 - **Ship check:** while a long turn streams, a status ask answers <100ms from state; an aside answers in seconds without perturbing the main turn's stream or resume id; a redirect still interrupts.
 
-### P4 — Speed tiers (consumes Track B's verdicts)
+### P4 — Speed tiers (consumes Track B's verdicts) ✅ SHIPPED
+
+Shipped (2026-07-14): `companion/model_routing.rs` (MAIN = Opus@low; ASIDE = Sonnet-5@medium, awaiting P3; MICRO = Sonnet-5@low) wired into `session.rs` main turns and `athena_reaction::cli_text*` (upgraded from pinned Sonnet-4.6). Constitution **v44** folds in the bench-proven doctrine (multi-op completeness + one-line ops under Rule Zero; memory-honesty under `write_fact`); the delegation addendum gained the "a slow correct answer is still a failure" rule. The user-facing speed *toggle* is deferred until the routing has soaked.
+
+Original scope (reference):
 
 - Add the model/effort override seam in `run_cli` (also needed by B1): per-turn-class `model` + `effort`, defaulting to today's pinned Opus.
 - Apply Track B's promotion verdicts per turn class: asides (P3b), auto-titling, status-adjacent summaries adopt the cheapest cell that passed its gate; **main conversational turns stay on Opus until a cheaper cell reaches full parity** (§5 gates).

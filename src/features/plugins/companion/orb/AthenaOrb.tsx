@@ -56,6 +56,18 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   const { t, tx } = useTranslation();
   const setState = useCompanionStore((s) => s.setState);
   const streaming = useCompanionStore((s) => s.streaming);
+  // One Athena = aggregate presence. `streaming` mirrors the FOCUSED
+  // thread only; a turn running in a background conversation should keep
+  // her in the thinking posture too. Primitive-returning selector (same
+  // rule as runningTaskCount below) so the orb re-renders only when the
+  // aggregate posture actually flips.
+  const anyConversationStreaming = useCompanionStore((s) => {
+    if (s.streaming) return true;
+    for (const turn of Object.values(s.liveTurns)) {
+      if (turn.streaming) return true;
+    }
+    return false;
+  });
   const explainComposing = useCompanionStore((s) => s.explainComposing);
   const pendingPlayback = useCompanionStore((s) => s.pendingPlayback);
   // Async-UX phase 3: how many background tasks are in flight. Returns a
@@ -241,7 +253,7 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   // the presenting clip telegraphs "she's building it".
   const avatarState: AthenaState = explainComposing
     ? 'composing'
-    : talking || streaming || working
+    : talking || anyConversationStreaming || working
       ? 'thinking'
       : hasUnreadPlayback
         ? 'speaking'
