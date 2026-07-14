@@ -49,6 +49,17 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// A crashed run must say so in run.log, not die silently (bitten twice by
+// async EPIPE from killed children).
+process.on('uncaughtException', (e) => {
+  console.error('FATAL uncaught exception:', e);
+  process.exit(1);
+});
+process.on('unhandledRejection', (e) => {
+  console.error('FATAL unhandled rejection:', e);
+  process.exit(1);
+});
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(__dirname, '..', '..');
 const FIXTURES = path.join(__dirname, 'fixtures', 'athena-bench');
@@ -253,11 +264,27 @@ function spawnTurn(cell, systemPrompt, userMessage) {
 
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill();
+      // shell:true on Windows makes `child` the cmd shim — kill the whole
+      // tree or the real claude process keeps running as an orphan.
+      if (process.platform === 'win32') {
+        spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+      } else {
+        child.kill();
+      }
     }, TIMEOUT_MS);
 
-    child.stdin.write(userMessage);
-    child.stdin.end();
+    // A killed child's stdin raises async EPIPE — without a handler it
+    // crashes the whole run during the NEXT turn (seen live twice).
+    child.stdin.on('error', () => {});
+    child.on('error', () => {
+      isError = true;
+    });
+    try {
+      child.stdin.write(userMessage);
+      child.stdin.end();
+    } catch {
+      isError = true;
+    }
     child.stderr.on('data', (d) => (stderr += d));
     child.stdout.on('data', (d) => {
       buf += d;
@@ -382,7 +409,13 @@ async function runCells(cellIds) {
           cliError: turn.isError,
           stderr: turn.stderr,
         };
-        if (turn.timedOut || turn.isError || !turn.turnText) {
+        if (turn.timedOut && sc.class === 'delegate_vs_inline') {
+          // A timeout on a delegate scenario is a DECISION failure, not
+          // infra: the model held the turn open doing the work inline
+          // instead of delegating and replying in seconds. Score it.
+          row = { ...row, pass: false, checks: [{ name: 'delegated-promptly', pass: false, detail: `turn still running at ${TIMEOUT_MS / 1000}s — inlined instead of delegating` }] };
+          console.log('FAIL (timeout = inlined, not delegated)');
+        } else if (turn.timedOut || turn.isError || !turn.turnText) {
           // Infra failure (rate limit, CLI error, timeout) — recorded for
           // visibility but excluded from accuracy and NOT added to the done
           // set, so a later invocation retries it.
