@@ -88,6 +88,36 @@ let fetchDetailSeq = 0;
 let fetchSummariesSeq = 0;
 const prefetchInflight = new Map<string, Promise<void>>();
 
+/**
+ * `listPersonas` returns a LEAN roster projection — the heavy editor-only
+ * fields (`system_prompt`, `structured_prompt`, `last_test_report`,
+ * `notification_channels`, `parameters`) come back blank. A row is hydrated to
+ * full fidelity by `getPersonaDetail` when the persona is opened. So when a
+ * roster refetch lands while a persona is open (or was opened), we must NOT let
+ * the incoming blank fields clobber the fuller row already in the store —
+ * otherwise the editor's system prompt would blink to empty on a background
+ * refresh. A non-empty `system_prompt` on the previous row is the reliable
+ * "already hydrated" signal (every real persona has a non-empty prompt; lean
+ * rows always blank it).
+ */
+function mergeHeavyFields(prev: Persona[], incoming: Persona[]): Persona[] {
+  const prevById = new Map(prev.map((p) => [p.id, p]));
+  return incoming.map((lean) => {
+    const before = prevById.get(lean.id);
+    if (before && before.system_prompt) {
+      return {
+        ...lean,
+        system_prompt: before.system_prompt,
+        structured_prompt: before.structured_prompt,
+        last_test_report: before.last_test_report,
+        notification_channels: before.notification_channels,
+        parameters: before.parameters,
+      };
+    }
+    return lean;
+  });
+}
+
 export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> = (set, get) => ({
   personas: [],
   selectedPersonaId: null,
@@ -102,8 +132,10 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   fetchPersonas: async () => {
     set({ isLoading: true, error: null });
     try {
-      const personas = await listPersonas();
+      const leanPersonas = await listPersonas();
       set((state) => {
+        // Preserve heavy fields for rows already hydrated in the editor.
+        const personas = mergeHeavyFields(state.personas, leanPersonas);
         // Validate persisted selection -- clear if the persona was deleted
         const stillExists =
           state.selectedPersonaId == null ||
@@ -131,14 +163,17 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       // whether it actually persisted any assignments. Only re-fetch + replace
       // the store when it did — a no-op pass must not run listPersonas()+set(),
       // since that would overwrite decrypted/optimistic rows with redacted ones.
-      autoAssignPersonaIcons(personas).then(async (assigned) => {
+      autoAssignPersonaIcons(leanPersonas).then(async (assigned) => {
         if (!assigned) return;
         // Re-fetch to pick up newly assigned icons
-        const updated = await listPersonas();
-        set((s) => ({
-          personas: updated,
-          selectedPersona: deriveSelectedPersona(updated, s.selectedPersonaId, s.detailCache),
-        }));
+        const updatedLean = await listPersonas();
+        set((s) => {
+          const updated = mergeHeavyFields(s.personas, updatedLean);
+          return {
+            personas: updated,
+            selectedPersona: deriveSelectedPersona(updated, s.selectedPersonaId, s.detailCache),
+          };
+        });
       }).catch(() => { /* silent */ });
     } catch (err) {
       reportError(err, "Failed to fetch personas", set, { stateUpdates: { isLoading: false } });

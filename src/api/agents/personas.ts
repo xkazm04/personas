@@ -11,6 +11,8 @@ import type { DeletePersonaResult } from "@/lib/bindings/DeletePersonaResult";
 import type { EffectiveModelConfig } from "@/lib/bindings/EffectiveModelConfig";
 import type { UpdatePersonaInput } from "@/lib/bindings/UpdatePersonaInput";
 import type { BulkDeleteOutcome } from "@/lib/bindings/BulkDeleteOutcome";
+import type { DuplicatePersonaResult } from "@/lib/bindings/DuplicatePersonaResult";
+export type { DuplicatePersonaResult } from "@/lib/bindings/DuplicatePersonaResult";
 
 /** Batched persona detail returned by the single `get_persona_detail` IPC command. */
 export interface PersonaDetailResponse extends Persona {
@@ -26,8 +28,17 @@ export interface PersonaDetailResponse extends Persona {
 // Personas
 // ============================================================================
 
-export const listPersonas = () =>
-  invoke<Persona[]>("list_personas");
+/**
+ * List personas for the roster (LEAN projection: list-view fields only — the
+ * heavy editor-only blobs `system_prompt`, `structured_prompt`,
+ * `last_test_report`, `notification_channels` and `parameters` come back blank;
+ * they are re-hydrated per persona by `getPersonaDetail` when one is opened).
+ *
+ * `lifecycle` filters server-side to the given stages (e.g. `["active","draft"]`
+ * or `["archived"]`); omit it to return every lifecycle stage.
+ */
+export const listPersonas = (lifecycle?: string[]) =>
+  invoke<Persona[]>("list_personas", lifecycle && lifecycle.length ? { lifecycle } : undefined);
 
 export const getPersona = (id: string) =>
   invoke<Persona>("get_persona", { id });
@@ -38,8 +49,14 @@ export const createPersona = (input: CreatePersonaInput) =>
 export const updatePersona = (id: string, input: UpdatePersonaInput) =>
   invoke<Persona>("update_persona", { id, input });
 
+/**
+ * Deep-duplicate a persona. The copy clones the persona's `persona_triggers`
+ * and `persona_event_subscriptions` **disabled** (so it never double-fires);
+ * automations, tools and credential links are reported (not cloned). The result
+ * flattens the new persona with the copy summary counts.
+ */
 export const duplicatePersona = (sourceId: string) =>
-  invoke<Persona>("duplicate_persona", { sourceId });
+  invoke<DuplicatePersonaResult>("duplicate_persona", { sourceId });
 
 export const deletePersona = (id: string) =>
   invoke<DeletePersonaResult>("delete_persona", { id });
