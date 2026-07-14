@@ -144,6 +144,38 @@ export function relativeUpdated(updatedAt: string): string {
   return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+/**
+ * Trust-score → display percentage, guarded against double-scaling.
+ *
+ * `persona.trust_score` is a **0–1 ratio**, and the KPI renders it as
+ * `Math.round(score * 100)%`. A stale or Athena-composed spec (or a legacy
+ * DB row) that stored the score already-scaled as a percent — e.g. `83.11`
+ * instead of `0.8311` — then double-scaled to a nonsense "8311%". Fix at
+ * render time so old stored specs display sanely without touching the data:
+ *
+ * - `score <= 1` → genuine ratio → `score * 100`.
+ * - `score > 1`  → already a percent (the double-scale signature) → use as-is
+ *   instead of multiplying again.
+ * - The result is clamped to `[0, 100]`. `overflow` is set when the
+ *   interpreted percentage still exceeds 100 (i.e. the source value was
+ *   truly out of range), so the caller can show an explicit "clamped"
+ *   treatment + tooltip rather than a silently wrong number.
+ *
+ * Non-finite / negative inputs floor to 0.
+ */
+export interface TrustPercent {
+  /** Rounded, clamped percentage in [0, 100] — ready to render as `${pct}%`. */
+  pct: number;
+  /** True when the source value exceeded 100% after ratio interpretation. */
+  overflow: boolean;
+}
+
+export function trustPercent(score: number): TrustPercent {
+  if (!Number.isFinite(score) || score <= 0) return { pct: 0, overflow: false };
+  const asPercent = score <= 1 ? score * 100 : score;
+  return { pct: Math.round(Math.min(100, asPercent)), overflow: asPercent > 100 };
+}
+
 /** Budget label — handles null + 0 + sub-dollar cleanly. */
 export function budgetLabel(budget: number | null | undefined): string {
   if (budget == null) return '—';

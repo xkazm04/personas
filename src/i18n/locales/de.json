@@ -431,7 +431,10 @@
     "edge_count_other": "{count} Kanten",
     "adoption_count_one": "{count} Übernahme",
     "adoption_count_other": "{count} Übernahmen",
-    "selected": "ausgewählt"
+    "selected": "ausgewählt",
+    "command_palette_create_agent": "Neuen Agenten erstellen",
+    "command_palette_go_to": "Zu {label} gehen",
+    "command_palette_leaderboard": "Agenten-Bestenliste"
   },
   "chrome": {
     "app_title": "Personas",
@@ -483,7 +486,9 @@
       "nav_mode_review": "Manuelle Prüfung umschalten (im Nav-Modus)",
       "nav_mode_schedules": "Zeitpläne umschalten (im Nav-Modus)",
       "nav_mode_search": "Suche öffnen (im Nav-Modus)",
-      "open_title": "Tastenkürzel"
+      "open_title": "Tastenkürzel",
+      "nav_history_back": "Zurück",
+      "nav_history_forward": "Vorwärts"
     },
     "tray_schedules": "Zeitpläne",
     "tray_schedules_today": "{count} heute geplant",
@@ -586,6 +591,7 @@
     "mission_control": "Mission Control",
     "factory": "Factory",
     "kpis": "KPIs",
+    "studio": "Studio",
     "competition": "Wettbewerb",
     "development": "Entwicklung",
     "lifecycle": "Lebenszyklus",
@@ -781,6 +787,18 @@
       "personas_tab": "Personas (Animiert)",
       "lucide_footer": "lucide-react -- allgemeine Icon-Bibliothek -- statisch",
       "personas_footer": "9 benutzerdefinierte Icons -- neuronale/Schaltkreismotive -- CSS-animiert -- themenadaptiv"
+    },
+    "since_left": {
+      "alerts": "{count} Warnung ausgelöst",
+      "alerts_other": "{count} Warnungen ausgelöst",
+      "approvals": "{count} Freigabe ausstehend",
+      "approvals_other": "{count} Freigaben ausstehend",
+      "dismiss": "Schließen",
+      "failed": "{count} fehlgeschlagen",
+      "failed_other": "{count} fehlgeschlagen",
+      "runs": "{count} Lauf",
+      "runs_other": "{count} Läufe",
+      "title": "Seit Sie weg waren"
     }
   },
   "agents": {
@@ -1298,7 +1316,17 @@
       "tab_chain": "Kette",
       "thinking_tooltip": "Der von diesem Lauf verwendete Denkaufwand",
       "trace_empty_hint": "Detaillierte Traces werden für werkzeugnutzende und neuere Läufe erfasst. Für diesen Lauf sind keine vorhanden.",
-      "verdict_field": "Urteil"
+      "verdict_field": "Urteil",
+      "chain_ended_because": "Grund für Kettenende",
+      "chain_total_cost": "Kettenkosten",
+      "active_chains_agents_one": "{count} Agent",
+      "active_chains_agents_other": "{count} Agenten",
+      "active_chains_depth": "Tiefe {count}",
+      "active_chains_hops_one": "{count} Sprung",
+      "active_chains_hops_other": "{count} Sprünge",
+      "active_chains_one": "{count} Kette aktiv",
+      "active_chains_other": "{count} Ketten aktiv",
+      "active_chains_title": "Aktive Ketten"
     },
     "lab": {
       "mode_arena": "Arena",
@@ -1625,7 +1653,9 @@
       "eco_col_resolved": "Gelöst",
       "eco_empty": "Noch keine Auswertungsergebnisse — Lab ausführen, um Kosteneffizienz zu befüllen.",
       "eco_subtitle": "Wie oft jedes Modell eine Auswertung löst und was jeder Erfolg kostet.",
-      "eco_title": "Kosteneffizienz"
+      "eco_title": "Kosteneffizienz",
+      "vr_col_tokens": "Token",
+      "vr_tokens_tooltip": "Durchschnittlich {input} Eingabe / {output} Ausgabe pro Lauf"
     },
     "design": {
       "select_agent": "Agenten auswählen, um Designanalyse zu starten",
@@ -2621,7 +2651,12 @@
       "delete_agents_message": "{count} Agent(en) und ihre gesamte Konfiguration werden dauerhaft entfernt.",
       "delete_drafts": "{count} Entwurf/-würfe löschen",
       "delete_drafts_message": "{count} Entwurfs-Agent(en) werden dauerhaft entfernt.",
-      "system_persona_undeletable": "Der Director ist eine Systempersona und kann nicht gelöscht werden."
+      "system_persona_undeletable": "Der Director ist eine Systempersona und kann nicht gelöscht werden.",
+      "archived_done": "{count} Persona(s) archiviert",
+      "bulk_delete_done": "{deleted} Persona(s) gelöscht",
+      "bulk_delete_failed": "Personas konnten nicht gelöscht werden",
+      "bulk_delete_partial": "{deleted} gelöscht; {skipped} übersprungen",
+      "restored_done": "{count} Persona(s) wiederhergestellt"
     },
     "persona_list": {
       "all_personas": "Alle Personas",
@@ -2657,7 +2692,12 @@
       "batch_moved_partial": "{ok} nach {group} verschoben; {failed} fehlgeschlagen",
       "render_cap_notice": "Zeige {shown} von {total} — Suche oder Filter eingrenzen, um weitere zu sehen.",
       "star_director_add": "Markieren, um zum Coaching-Bereich des Directors hinzuzufügen",
-      "star_director_remove": "Markiert — im Coaching-Bereich des Directors. Klicken zum Entfernen."
+      "star_director_remove": "Markiert — im Coaching-Bereich des Directors. Klicken zum Entfernen.",
+      "badge_archived": "Archiviert",
+      "batch_archive": "Archivieren",
+      "batch_restore": "Wiederherstellen",
+      "show_active_personas": "Aktive Personas anzeigen",
+      "show_archived_personas": "Archivierte Personas anzeigen"
     },
     "editor_ui": {
       "max_budget_label": "Max. Budget (USD)",
@@ -3509,6 +3549,11 @@
       "activate_agent": "Agenten aktivieren",
       "create_agent": "Agenten erstellen",
       "min_completeness": "Mehr Details hinzufügen, um 40% Vollständigkeit zu erreichen"
+    },
+    "duplicate": {
+      "done": "Dupliziert als „{name}“",
+      "done_with_wiring": "Dupliziert als „{name}“ — {triggers} Trigger und {subscriptions} Abonnement(s) kopiert, in der Kopie deaktiviert",
+      "failed": "Agent konnte nicht dupliziert werden"
     }
   },
   "vault": {
@@ -4129,7 +4174,37 @@
       "tool_count_other": "{count} Tools",
       "tab_documents": "Dokumente",
       "tab_search": "Suche",
-      "tab_settings": "Einstellungen"
+      "tab_settings": "Einstellungen",
+      "page_label": "S. {page}",
+      "pages_label": "{count} Seiten",
+      "partial_text_badge": "Teilweiser Text",
+      "partial_text_tooltip": "Diese Passage wurde von einer überwiegend aus Bildern bestehenden Seite gelesen und ist daher möglicherweise unvollständig.",
+      "scanned_pages_tooltip": "Diese Seiten sind Bilder ohne Textebene, daher ist ihr Inhalt nicht durchsuchbar. Verwenden Sie eine OCR-verarbeitete Kopie, um sie einzuschließen.",
+      "scanned_pages_warning": "{count} gescannte Seite(n) unlesbar",
+      "extract_add_entity": "Typ hinzufügen",
+      "extract_add_field": "Feld hinzufügen",
+      "extract_col_attrs": "Attribute",
+      "extract_col_key": "Entität",
+      "extract_col_source": "Quelle",
+      "extract_col_type": "Typ",
+      "extract_empty_kb": "Fügen Sie Dokumente hinzu, bevor Sie strukturierte Daten extrahieren.",
+      "extract_entity_desc_ph": "was dieses Objekt ist",
+      "extract_entity_type_ph": "entity_type",
+      "extract_field_desc_ph": "was es enthält",
+      "extract_field_name_ph": "Feld",
+      "extract_infer_btn": "Schema vorschlagen",
+      "extract_inferring": "Korpus wird gelesen...",
+      "extract_intro": "Verwandeln Sie diese Wissensdatenbank in abfragbare Zeilen. Schlagen Sie zunächst ein Schema der Objekte vor, die Ihre Dokumente beschreiben, prüfen Sie es und extrahieren Sie dann.",
+      "extract_no_entities": "Noch keine Entitäten extrahiert. Schlagen Sie ein Schema vor, um zu beginnen.",
+      "extract_progress": "{done}/{total} Dokumente, {count} Entitäten gefunden",
+      "extract_remove": "Entfernen",
+      "extract_run_btn": "Entitäten extrahieren",
+      "extract_run_status": "{status} — {count} Entitäten",
+      "extract_running": "Wird extrahiert...",
+      "extract_runs_heading": "Extraktionsläufe",
+      "extract_schema_heading": "Vorgeschlagenes Schema",
+      "extract_schema_hint": "Vor dem Extrahieren bearbeiten — entfernen Sie unerwünschte Typen, den Rest füllt das Modell aus.",
+      "tab_extract": "Strukturierte Daten"
     },
     "manager": {
       "title": "Zugangsdaten",
@@ -6050,7 +6125,9 @@
       "source": "Quelle",
       "processed": "Verarbeitet",
       "event_data": "Ereignisdaten",
-      "error": "Fehler"
+      "error": "Fehler",
+      "skipped_stat_label": "{skipped} übersprungen",
+      "skipped_stat_tooltip": "{skipped} von {total} Ereignissen der letzten 7 Tage hatten keinen Abonnenten und wurden übersprungen ({rate}). Eine hohe Quote deutet auf einen Trigger hin, dem niemand zuhört."
     },
     "health": {
       "title": "Agentengesundheit",
@@ -6230,7 +6307,11 @@
       "all_statuses": "Alle Status",
       "col_status": "Status",
       "col_id": "ID",
-      "execution_label": "Ausführung"
+      "execution_label": "Ausführung",
+      "error_category_by_persona": "Häufigster Fehler pro Agent",
+      "error_category_prior_period": "vs. Vorperiode",
+      "error_category_section_title": "Fehler nach Kategorie",
+      "error_category_total_failures": "Fehler gesamt"
     },
     "analytics_dashboard": {
       "issues_found": "{count} Probleme gefunden",
@@ -6914,7 +6995,32 @@
       "comparison_recommended": "Empfohlen",
       "flow_title": "So läuft es ab",
       "timeline_title": "Zeitverlauf",
-      "log_title": "Belege"
+      "log_title": "Belege",
+      "default_attention_empty": "Alle Personas gesund — nichts erfordert Aufmerksamkeit.",
+      "default_attention_low_trust": "Geringes Vertrauen",
+      "default_attention_paused": "Pausiert",
+      "default_attention_setup": "Einrichtung erforderlich",
+      "default_attention_title": "Erfordert Aufmerksamkeit",
+      "default_callout_body": "Dies ist eine Startansicht auf Basis deines Flottenstatus. Bitte Athena, ein Cockpit nach deinen Bedürfnissen zusammenzustellen — sie ersetzt dies automatisch.",
+      "default_callout_title": "Start-Cockpit",
+      "default_roster_title": "Deine Personas",
+      "default_stat_active_personas": "Aktive Personas",
+      "default_stat_executions": "Ausführungen (7 T.)",
+      "default_stat_needs_attention": "Erfordert Aufmerksamkeit",
+      "default_stat_success_rate": "Erfolgsquote",
+      "default_subtitle": "Eine Startansicht, die Athena personalisieren kann — chatte, um deine eigene zu erstellen.",
+      "default_title": "Start-Cockpit",
+      "default_vitals_title": "Flotten-Vitalwerte",
+      "empty_example_attention": "\"was meine Aufmerksamkeit erfordert\"",
+      "empty_example_personas": "\"zeig mir meine Personas\"",
+      "empty_hint": "Bitte Athena, eine Cockpit-Ansicht zu erstellen — versuche {personas} oder {attention}.",
+      "empty_title": "Dein Cockpit ist leer",
+      "error_retry": "Erneut versuchen",
+      "error_title": "Cockpit konnte nicht geladen werden",
+      "subtitle_composed_prefix": "Zusammengestellt von Athena — aktualisiert",
+      "subtitle_default": "Dein von deinem Begleiter gesteuerter Arbeitsbereich",
+      "talk_to_athena": "Mit Athena sprechen",
+      "unknown_widget": "Unbekanntes Widget: {kind}"
     },
     "certification": {
       "title": "Zertifizierungs-Kommandozentrale",
@@ -7359,6 +7465,17 @@
     "day_range_picker": {
       "start_date": "Startdatum",
       "end_date": "Enddatum"
+    },
+    "healing_effectiveness": {
+      "attempted": "Versuche",
+      "confirmed": "bestätigt",
+      "loading": "Heilungsstatistik wird geladen…",
+      "no_data": "Noch keine Auto-Fix-Aktivität",
+      "recent_activity": "Letzte Aktivität",
+      "reverted": "zurückgesetzt",
+      "success_rate": "Erfolgsrate",
+      "title": "Selbstheilung",
+      "window_label": "Letzte"
     }
   },
   "matrix_v3": {
@@ -10126,7 +10243,20 @@
       "empty": "Bisher wurden keine Änderungen an den Einstellungen aufgezeichnet. Ab jetzt vorgenommene Änderungen erscheinen in dieser Liste.",
       "empty_filtered": "Keine Einträge entsprechen dem aktuellen Kategoriefilter.",
       "before": "Vorher",
-      "after": "Nachher"
+      "after": "Nachher",
+      "categories": {
+        "api_keys": "API-Schlüssel",
+        "autonomy": "Autonomie",
+        "byom": "BYOM",
+        "config": "Allgemein",
+        "engine": "Engine",
+        "integrations": "Integrationen",
+        "limits": "Limits",
+        "notifications": "Benachrichtigungen",
+        "quality_gates": "Qualitäts-Gates",
+        "retention": "Aufbewahrung",
+        "sync": "Cloud-Sync"
+      }
     },
     "api_keys": {
       "title": "API-Schlüssel",
@@ -10604,7 +10734,61 @@
     "usage_limit_weekly_message": "Das wöchentliche Nutzungslimit von Claude wurde erreicht.",
     "usage_limit_weekly_suggestion": "Läufe schlagen fehl, bis das wöchentliche Limit zurückgesetzt wird — Zeitpläne pausieren oder Plan upgraden.",
     "usage_limit_window_message": "Das Nutzungsfenster von Claude ist erschöpft.",
-    "usage_limit_window_suggestion": "Der Lauf wird automatisch wiederholt, wenn das Fenster zurückgesetzt wird — keine Aktion erforderlich."
+    "usage_limit_window_suggestion": "Der Lauf wird automatisch wiederholt, wenn das Fenster zurückgesetzt wird — keine Aktion erforderlich.",
+    "agent_ir_parse_message": "Die Build-Ausgabe kam fehlerhaft zurück.",
+    "agent_ir_parse_suggestion": "Klicken Sie auf Refine, um neu zu generieren, oder starten Sie einen neuen Build — Refine verfeinert das Ergebnis.",
+    "authorization_required_message": "Dieses Tool benötigt Ihre Autorisierung, bevor es ausgeführt werden kann.",
+    "authorization_required_suggestion": "Öffnen Sie die Autorisierungsseite, um die Zustimmung zu erteilen, und versuchen Sie es erneut.",
+    "budget_value_invalid_message": "Der Budgetwert ist ungültig.",
+    "budget_value_invalid_suggestion": "Verwenden Sie eine positive Zahl für das Dollarbudget (z. B. 5 für $5).",
+    "build_no_agent_ir_message": "Der Build ist noch nicht fertig generiert — der Plan des Agenten wird noch zusammengestellt.",
+    "build_no_agent_ir_suggestion": "Warten Sie ein paar Sekunden und versuchen Sie es erneut. Falls es länger als eine Minute anhält, starten Sie den Build mit einer präziseren Absicht neu.",
+    "build_nothing_to_promote_message": "Der Build hat noch nichts hervorgebracht, das befördert werden könnte.",
+    "build_nothing_to_promote_suggestion": "Warten Sie, bis der Build fertig generiert ist, oder klicken Sie auf Refine, um ihn anzustoßen. Falls der Assistent länger als eine Minute feststeckt, starten Sie neu.",
+    "build_session_disappeared_message": "Diese Build-Sitzung wurde gelöscht, bevor sie abgeschlossen war.",
+    "build_session_disappeared_suggestion": "Starten Sie einen neuen Build — der vorherige Entwurf ist nicht mehr wiederherstellbar.",
+    "build_session_gone_message": "Diese Build-Sitzung ist abgelaufen oder wurde gelöscht.",
+    "build_session_gone_suggestion": "Starten Sie einen neuen Build mit derselben Absicht.",
+    "design_result_parse_message": "Die gespeicherten Design-Daten der Persona konnten nicht verarbeitet werden.",
+    "design_result_parse_suggestion": "Führen Sie für diese Persona einen neuen Build aus — das zwischengespeicherte Design stammt aus einer älteren App-Version.",
+    "external_service_message": "Der externe Dienst konnte die Anfrage nicht abschließen.",
+    "external_service_suggestion": "Prüfen Sie den Dienststatus und Ihre Verbindung, und versuchen Sie es erneut.",
+    "importance_range_message": "Die Speicher-Wichtigkeit liegt außerhalb des zulässigen Bereichs.",
+    "importance_range_suggestion": "Wählen Sie für die Speicher-Wichtigkeit einen Wert zwischen 1 und 10.",
+    "interval_not_number_message": "Das Abfrageintervall ist keine gültige Zahl.",
+    "interval_not_number_suggestion": "Öffnen Sie Refine und fordern Sie ein numerisches Abfrageintervall an, z. B. \"alle 5 Minuten\".",
+    "interval_too_fast_message": "Die Abfrage kann nicht öfter als einmal pro Minute laufen.",
+    "interval_too_fast_suggestion": "Verwenden Sie ein Abfrageintervall von 60 Sekunden oder mehr (300 / 5 Min. ist ein sicherer Standardwert). Klicken Sie auf Refine und bitten Sie den Agenten, das Tempo zu verlangsamen.",
+    "invalid_trigger_type_message": "Der Build hat einen Trigger-Typ gewählt, den die Laufzeitumgebung nicht erkennt.",
+    "invalid_trigger_type_suggestion": "Klicken Sie auf Refine und fordern Sie einen konkreten Trigger an (\"nach Zeitplan\", \"bei Webhook\", \"wenn X passiert\"). Falls dies weiterhin auftritt, starten Sie den Build neu.",
+    "keyring_lost_message": "Der sichere Anmeldedatenspeicher ist nicht mehr verfügbar.",
+    "keyring_lost_suggestion": "Starten Sie die App neu. Falls das Problem weiterhin besteht, geben Sie die betroffenen Anmeldedaten im Vault erneut ein.",
+    "max_concurrent_range_message": "Das Nebenläufigkeitslimit liegt außerhalb des zulässigen Bereichs.",
+    "max_concurrent_range_suggestion": "Legen Sie für die maximal gleichzeitigen Ausführungen einen Wert zwischen 1 und der in den Einstellungen angezeigten Obergrenze der Engine fest.",
+    "max_turns_range_message": "Das Runden-Limit liegt außerhalb des zulässigen Bereichs.",
+    "max_turns_range_suggestion": "Legen Sie für die maximale Rundenzahl einen Wert zwischen 1 und 50 fest.",
+    "name_invalid_message": "Der Persona-Name muss überarbeitet werden.",
+    "name_invalid_suggestion": "Wählen Sie einen kurzen, aussagekräftigen Namen (1–40 Zeichen) und versuchen Sie es erneut.",
+    "oauth_revoked_message": "Die Autorisierung der Verbindung wurde widerrufen.",
+    "oauth_revoked_suggestion": "Verbinden Sie das Konto erneut, um den Zugriff wieder zu erteilen.",
+    "polling_url_blocked_message": "Die Abfrage-URL wurde aus Sicherheitsgründen abgelehnt.",
+    "polling_url_blocked_suggestion": "Die URL verweist auf eine interne/private Adresse. Verwenden Sie eine öffentlich erreichbare HTTPS-URL oder stellen Sie den Trigger auf Webhook + smee.io um.",
+    "prompt_too_large_message": "Der Prompt des Agenten ist zu lang.",
+    "prompt_too_large_suggestion": "Klicken Sie auf Refine und fordern Sie eine gekürzte Version an, oder entfernen Sie redundante Abschnitte.",
+    "retry_exhausted_message": "Dies ist nach mehreren automatischen Wiederholungsversuchen weiterhin fehlgeschlagen.",
+    "retry_exhausted_suggestion": "Warten Sie etwas und versuchen Sie es erneut — falls das Problem weiterhin besteht, prüfen Sie den Dienststatus oder die Konfiguration des Agenten.",
+    "schedule_missing_timing_message": "Geplante Trigger benötigen entweder einen Cron-Ausdruck oder ein Abfrageintervall.",
+    "schedule_missing_timing_suggestion": "Klicken Sie auf Refine und geben Sie an, wann der Agent laufen soll (z. B. \"jeden Werktag um 8 Uhr\" oder \"alle 30 Minuten\").",
+    "smee_url_invalid_message": "Die Webhook-Quell-URL muss von smee.io stammen.",
+    "smee_url_invalid_suggestion": "Öffnen Sie https://smee.io/new in einem Browser, kopieren Sie die Kanal-URL und fügen Sie sie in das Webhook-Quellfeld ein.",
+    "system_prompt_empty_message": "Der System-Prompt der Persona ist leer.",
+    "system_prompt_empty_suggestion": "Die Build-Pipeline füllt dies normalerweise automatisch aus. Verfeinern Sie den Build mit Refine, oder starten Sie einen neuen mit einer präziseren Absicht.",
+    "timeout_range_message": "Das Timeout liegt außerhalb des zulässigen Bereichs.",
+    "timeout_range_suggestion": "Wählen Sie ein Timeout zwischen 1 Sekunde und der Obergrenze der Engine (typischerweise 30 Minuten).",
+    "unknown_prompt_field_message": "Der Build hat ein Feld ausgegeben, das die Laufzeitumgebung nicht erkennt.",
+    "unknown_prompt_field_suggestion": "Klicken Sie auf Refine — der neue Build verwendet das aktuelle Schema.",
+    "webhook_missing_secret_message": "Diesem Webhook-Trigger fehlt sein Signatur-Geheimnis.",
+    "webhook_missing_secret_suggestion": "Führen Sie Promote erneut aus — die Pipeline generiert beim Absenden automatisch ein webhook_secret. Falls das Problem weiterhin besteht, starten Sie den Build neu."
   },
   "empty_states": {
     "credentials_title": "Ihre Agenten benötigen Zugangsdaten",
@@ -11314,6 +11498,34 @@
       "high": "Hoch",
       "low": "Niedrig",
       "medium": "Mittel"
+    },
+    "error_category": {
+      "api_error": "API-Fehler",
+      "credential_error": "Anmeldedatenfehler",
+      "network": "Netzwerk",
+      "provider_not_found": "Anbieter nicht gefunden",
+      "rate_limit": "Ratenlimit",
+      "session_limit": "Sitzungslimit",
+      "timeout": "Zeitüberschreitung",
+      "tool_error": "Werkzeugfehler",
+      "transient_process_failure": "Vorübergehender Prozessfehler",
+      "unknown": "Unbekannt",
+      "validation": "Validierung"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "Fan-out-Limit erreicht",
+      "budget_exceeded": "Kostenobergrenze erreicht",
+      "cas_lost": "Von anderem Lauf beansprucht",
+      "cycle_detected": "Zyklus erkannt",
+      "depth_limit": "Tiefenlimit",
+      "handoff_suppressed": "Übergabe unterdrückt",
+      "malformed_config": "Ungültige Konfiguration",
+      "outside_window": "Außerhalb Aktivfenster",
+      "predicate_unmet": "Bedingung nicht erfüllt",
+      "publish_failed": "Veröffentlichung fehlgeschlagen",
+      "quarantined": "Trigger in Quarantäne",
+      "healing_abandoned": "Heilung aufgegeben",
+      "healing_capped": "Heilungsversuche erschöpft"
     }
   },
   "project_overview": {
@@ -11559,7 +11771,16 @@
       "auto_hibernate_desc": "Sitzungen, die den Schwellenwert überschreiten, automatisch hibernieren — der Prozess wird freigegeben, auch wenn Fleet nicht im Fokus ist. Sie bleiben über „Aufwecken“ wiederherstellbar. Läuft, solange Personas geöffnet ist.",
       "auto_hibernate_toggle": "Auto-Hibernierung aktivieren",
       "auto_hibernate_after": "Nach",
-      "auto_hibernate_minutes_unit": "Min. Leerlauf"
+      "auto_hibernate_minutes_unit": "Min. Leerlauf",
+      "live_slots_desc": "Begrenzt, wie viele claude-Prozesse gleichzeitig laufen. Ist die Flotte am Limit, wird die älteste inaktive Sitzung in den Ruhezustand versetzt, um Platz zu schaffen — sie bleibt über Aufwecken fortsetzbar. Arbeitende Sitzungen werden nie unterbrochen.",
+      "live_slots_max_label": "Max.",
+      "live_slots_title": "Live-Sitzungen begrenzen",
+      "live_slots_toggle": "Sitzungslimit aktivieren",
+      "live_slots_unit": "aktive Sitzungen",
+      "headless_badge": "Hintergrund",
+      "headless_no_terminal": "Hintergrundsitzung — läuft ohne Terminal. Antworten über das „Braucht dich“-Banner; der Fortschritt erscheint unter Insights.",
+      "spawn_headless_hint": "Headless-Modus — kein Live-Terminal, deutlich weniger CPU- und RAM-Last. Antworten über das „Braucht dich“-Banner; Fortschritt unter Insights.",
+      "spawn_headless_toggle": "Im Hintergrund ausführen (ohne Terminal)"
     },
     "title": "Plugins",
     "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",
@@ -13525,7 +13746,8 @@
       "voice_pocket_upload_save": "Stimme hinzufügen",
       "voice_pocket_upload_title": "Deine Stimme hinzufügen",
       "voice_pocket_hf_gate_desc": "Zum Verwalten Ihrer eigenen geklonten Stimmen ist ein Hugging-Face-Zugriffstoken im Anmeldedaten-Tresor erforderlich — es verknüpft die Lizenz des Voice-Cloning-Modells mit Ihrem Konto. Fügen Sie eine Hugging-Face-Anmeldeinformation hinzu und kehren Sie dann hierher zurück.",
-      "voice_pocket_hf_gate_title": "Hugging-Face-Konto erforderlich"
+      "voice_pocket_hf_gate_title": "Hugging-Face-Konto erforderlich",
+      "persona_overview_kpi_trust_clamped": "Der Vertrauenswert lag außerhalb des Bereichs und wurde auf 100 % begrenzt."
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",
@@ -13775,7 +13997,9 @@
       "goal_scaffold_timeline_title": "Zeitachse",
       "goal_scaffold_timeline_sub": "Eine Zeitachsenansicht der Ziele nach Zieldatum, mit Abhängigkeitspfeilen und Verschiebungsmarkierungen. Demnächst verfügbar.",
       "goal_field_title": "Titel",
+      "goal_field_title_placeholder": "Welches Ergebnis verfolgen Sie?",
       "goal_field_description": "Beschreibung",
+      "goal_field_description_placeholder": "Optionaler Kontext, Umfang oder wie Erfolg aussieht…",
       "goal_field_status": "Status",
       "goal_field_target_date": "Zieldatum",
       "goal_target_asap": "So bald wie möglich",
@@ -14481,7 +14705,28 @@
     "beat_sidebar_collapse": "Beatliste einklappen",
     "beat_sidebar_expand": "Beatliste erweitern",
     "beat_sidebar_empty": "Noch keine Beats. Fügen Sie einen Text-Beat hinzu, um Meilensteine ​​auf der Zeitleiste zu markieren.",
-    "beat_sidebar_untitled": "(ohne Titel)"
+    "beat_sidebar_untitled": "(ohne Titel)",
+    "add_title": "Titel hinzufügen",
+    "entrance": "Einblendung",
+    "entrance_animate": "Einblenden",
+    "entrance_down": "Runter",
+    "entrance_duration": "Geschwindigkeit",
+    "entrance_left": "Links",
+    "entrance_none": "Keine",
+    "entrance_right": "Rechts",
+    "entrance_up": "Hoch",
+    "layer_title": "Titel",
+    "title_text": "Titeltext",
+    "title_text_placeholder": "Titel eingeben…",
+    "title_untitled": "(leerer Titel)",
+    "voiceover": "Voiceover",
+    "voiceover_added": "Voiceover zur Zeitleiste hinzugefügt",
+    "voiceover_generate": "Voiceover generieren",
+    "voiceover_generating": "Wird synthetisiert…",
+    "voiceover_not_installed": "Lokale Sprach-Engine nicht installiert — richten Sie sie zuerst in den Companion-Spracheinstellungen ein.",
+    "voiceover_text": "Erzähltext",
+    "voiceover_text_placeholder": "Geben Sie ein, was der Erzähler sagen soll…",
+    "voiceover_voice": "Stimme"
   },
   "research_lab": {
     "dashboard": "Dashboard",

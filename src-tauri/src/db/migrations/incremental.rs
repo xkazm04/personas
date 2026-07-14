@@ -5316,6 +5316,91 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "chain_stop_reasons.create",
+            description: "Chain stop reasons: structured record of why a chain relay did NOT continue at each non-continuation path (handoff suppression, cycle, depth/budget limit, predicate miss, quarantine) — queryable per chain_trace_id for the Chain tab's end-of-chain explanation",
+            already_applied: |conn| has_table(conn, "chain_stop_reasons"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS chain_stop_reasons (
+                        id                TEXT PRIMARY KEY,
+                        chain_trace_id    TEXT NOT NULL,
+                        link_execution_id TEXT NOT NULL,
+                        trigger_id        TEXT,
+                        target_persona_id TEXT,
+                        reason_token      TEXT NOT NULL,
+                        detail            TEXT,
+                        chain_depth       INTEGER NOT NULL DEFAULT 0,
+                        created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_csr_chain ON chain_stop_reasons(chain_trace_id);
+                    CREATE INDEX IF NOT EXISTS idx_csr_link  ON chain_stop_reasons(link_execution_id);
+                    CREATE INDEX IF NOT EXISTS idx_csr_created ON chain_stop_reasons(created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    // First-class persona lifecycle (Draft → Active → Archived). Replaces the
+    // frontend draft heuristic (`!last_design_result && prompt == default`) with
+    // a durable column. Default `active` so every existing real persona keeps
+    // routing to the editor. The one-time backfill infers `draft` from the SAME
+    // heuristic the frontend used — a persona that never finished a build (no
+    // design result / design context) AND still carries the placeholder/empty
+    // system_prompt. A completed build always populated `last_design_result`, so
+    // a real persona whose prompt merely LOOKS like the placeholder is NOT
+    // yanked into draft. Archiving lands only via the runtime archive command.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas.lifecycle",
+            description: "First-class persona lifecycle column (draft|active|archived) + draft backfill",
+            already_applied: |conn| has_column(conn, "personas", "lifecycle"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE personas ADD COLUMN lifecycle TEXT NOT NULL DEFAULT 'active';
+                     CREATE INDEX IF NOT EXISTS idx_personas_lifecycle ON personas(lifecycle);",
+                )?;
+                // Backfill drafts. Mirrors PersonaOverviewPage's isDraft():
+                //   !last_design_result && (system_prompt == placeholder || blank)
+                // Also treat a NULL/blank design_context as part of "never built"
+                // for defense in depth (a finished build writes design_context).
+                //
+                // ORDERING FIX (2026-07-14): this migration lives in
+                // `ensure_composite_fires_table`, which `migrations::run()`
+                // executes BEFORE `run_incremental()` adds the trust columns.
+                // On a FRESH database `trust_origin` therefore does not exist
+                // yet and the previous unconditional reference to it errored
+                // ("no such column: trust_origin") — bricking init on every
+                // fresh install (and init_test_db). Guard the system-persona
+                // exclusion on column existence: a fresh DB has zero persona
+                // rows at this point (seeds run after migrations), so the
+                // clause is vacuously unnecessary there; on legacy DBs the
+                // column exists and the exclusion applies as designed.
+                let trust_clause = if has_column(conn, "personas", "trust_origin")? {
+                    "AND COALESCE(trust_origin, 'builtin') != 'system'"
+                } else {
+                    ""
+                };
+                ddl_step(
+                    conn,
+                    &format!(
+                        "UPDATE personas SET lifecycle = 'draft'
+                         WHERE (last_design_result IS NULL OR TRIM(last_design_result) = '')
+                           AND (design_context IS NULL OR TRIM(design_context) = '')
+                           AND (system_prompt = 'You are a helpful AI assistant.'
+                                OR TRIM(COALESCE(system_prompt, '')) = '')
+                           {trust_clause};"
+                    ),
+                )?;
+                Ok(())
+            },
+        },
+    )?;
 
     Ok(())
 }

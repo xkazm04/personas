@@ -47,6 +47,22 @@ pub enum FleetSessionState {
     Exited,
 }
 
+/// How a Fleet session's `claude` process is driven.
+///
+/// `Interactive` = a PTY child (ConPTY on Windows) rendering the full TUI —
+/// what a human attaches an xterm to. `Headless` = `claude -p` with
+/// stream-json stdio: no PTY, no TUI redraw loop (idle CPU ≈ 0), structured
+/// events instead of escape sequences — the lane for Athena-driven background
+/// sessions. Both persist the same transcript, fire the same hooks, and share
+/// the state machine; a headless conversation can be Woken interactively.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum FleetSessionMode {
+    Interactive,
+    Headless,
+}
+
 /// A tracked Claude Code session.
 ///
 /// One per spawned PTY child. The `claude_session_id` is `None` until the
@@ -79,6 +95,11 @@ pub struct FleetSession {
     pub title: Option<String>,
     /// Extra CLI arguments passed to `claude` at spawn time. Empty by default.
     pub args: Vec<String>,
+    /// How the process is driven — interactive PTY or headless stream-json.
+    /// The UI never mounts an xterm for a headless session (there is no TTY);
+    /// it renders the status block / insights and replies via `write_input`,
+    /// which wraps text into a stream-json user message on this lane.
+    pub mode: FleetSessionMode,
     /// Current lifecycle state. See [`FleetSessionState`].
     pub state: FleetSessionState,
     /// Wall-clock ms since UNIX epoch of the most recent activity signal

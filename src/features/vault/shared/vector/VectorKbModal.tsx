@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('vector-kb-modal');
-import { X, FileText, Search, Settings, Brain, Pencil, Check } from 'lucide-react';
+import { X, FileText, Search, Settings, Brain, Pencil, Check, Table2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';
@@ -15,14 +15,16 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { DocumentsTab } from './tabs/DocumentsTab';
 import { SearchTab } from './tabs/SearchTab';
 import { SettingsTab } from './tabs/SettingsTab';
+import { ExtractTab } from './tabs/ExtractTab';
 import { silentCatch } from '@/lib/silentCatch';
 
 
-type VectorTab = 'documents' | 'search' | 'settings';
+type VectorTab = 'documents' | 'search' | 'extract' | 'settings';
 
-const TABS: { id: VectorTab; labelKey: 'tab_documents' | 'tab_search' | 'tab_settings'; icon: typeof FileText }[] = [
+const TABS: { id: VectorTab; labelKey: 'tab_documents' | 'tab_search' | 'tab_extract' | 'tab_settings'; icon: typeof FileText }[] = [
   { id: 'documents', labelKey: 'tab_documents', icon: FileText },
   { id: 'search', labelKey: 'tab_search', icon: Search },
+  { id: 'extract', labelKey: 'tab_extract', icon: Table2 },
   { id: 'settings', labelKey: 'tab_settings', icon: Settings },
 ];
 
@@ -214,6 +216,11 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
             {visited.has('search') && (
               <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'search' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
                 <SearchTab kb={kb} />
+              </div>
+            )}
+            {visited.has('extract') && (
+              <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'extract' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+                <ExtractTab kb={kb} />
               </div>
             )}
             {visited.has('settings') && (

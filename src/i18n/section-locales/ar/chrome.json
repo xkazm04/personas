@@ -48,7 +48,9 @@
     "nav_mode_review": "تبديل المراجعة البشرية (في وضع التنقل)",
     "nav_mode_schedules": "تبديل الجداول الزمنية (في وضع التنقل)",
     "nav_mode_search": "فتح البحث (في وضع التنقل)",
-    "open_title": "اختصارات لوحة المفاتيح"
+    "open_title": "اختصارات لوحة المفاتيح",
+    "nav_history_back": "رجوع",
+    "nav_history_forward": "تقدّم"
   },
   "tray_schedules": "الجداول الزمنية",
   "tray_schedules_today": "{count} مجدول اليوم",

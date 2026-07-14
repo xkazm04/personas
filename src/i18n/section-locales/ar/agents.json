@@ -513,7 +513,17 @@
     "tab_chain": "السلسلة",
     "thinking_tooltip": "جهد التفكير المستخدم في هذا التشغيل",
     "trace_empty_hint": "يتم التقاط الآثار التفصيلية لعمليات التشغيل التي تستخدم الأدوات والأحدث. لا يحتوي هذا التشغيل على أي منها لعرضه.",
-    "verdict_field": "الحكم"
+    "verdict_field": "الحكم",
+    "chain_ended_because": "سبب انتهاء السلسلة",
+    "chain_total_cost": "تكلفة السلسلة",
+    "active_chains_agents_one": "وكيل {count}",
+    "active_chains_agents_other": "{count} وكلاء",
+    "active_chains_depth": "العمق {count}",
+    "active_chains_hops_one": "قفزة {count}",
+    "active_chains_hops_other": "{count} قفزات",
+    "active_chains_one": "سلسلة {count} قيد التنفيذ",
+    "active_chains_other": "{count} سلاسل قيد التنفيذ",
+    "active_chains_title": "سلاسل قيد التنفيذ"
   },
   "lab": {
     "mode_arena": "الساحة",
@@ -840,7 +850,9 @@
     "eco_col_resolved": "محلول",
     "eco_empty": "لا توجد نتائج تقييم بعد — شغّل المختبر لملء كفاءة التكلفة.",
     "eco_subtitle": "مدى تكرار حل كل نموذج للتقييم وتكلفة كل نجاح.",
-    "eco_title": "كفاءة التكلفة"
+    "eco_title": "كفاءة التكلفة",
+    "vr_col_tokens": "الرموز",
+    "vr_tokens_tooltip": "{input} إدخال / {output} إخراج في المتوسط لكل تشغيل"
   },
   "design": {
     "select_agent": "اختر وكيلاً لبدء تحليل التصميم",
@@ -1836,7 +1848,12 @@
     "delete_agents_message": "سيُزال {count} وكيل/وكلاء وجميع إعداداتهم نهائياً.",
     "delete_drafts": "حذف {count} مسودة/مسودات",
     "delete_drafts_message": "سيُزال {count} مسودة وكيل نهائياً.",
-    "system_persona_undeletable": "المدير شخصية نظام ولا يمكن حذفه."
+    "system_persona_undeletable": "المدير شخصية نظام ولا يمكن حذفه.",
+    "archived_done": "تمت أرشفة {count} شخصية",
+    "bulk_delete_done": "تم حذف {deleted} شخصية",
+    "bulk_delete_failed": "فشل حذف الشخصيات",
+    "bulk_delete_partial": "تم حذف {deleted}؛ تم تخطي {skipped}",
+    "restored_done": "تمت استعادة {count} شخصية"
   },
   "persona_list": {
     "all_personas": "جميع الوكلاء",
@@ -1872,7 +1889,12 @@
     "batch_moved_partial": "تم نقل {ok} إلى {group}؛ {failed} فشل",
     "render_cap_notice": "عرض {shown} من {total} — قلّص النطاق بالبحث أو الفلاتر لرؤية الباقي.",
     "star_director_add": "ضع نجمة لإضافته إلى نطاق تدريب المدير",
-    "star_director_remove": "مُنجَّم — ضمن نطاق تدريب المدير. انقر للإزالة."
+    "star_director_remove": "مُنجَّم — ضمن نطاق تدريب المدير. انقر للإزالة.",
+    "badge_archived": "مؤرشفة",
+    "batch_archive": "أرشفة",
+    "batch_restore": "استعادة",
+    "show_active_personas": "عرض الشخصيات النشطة",
+    "show_archived_personas": "عرض الشخصيات المؤرشفة"
   },
   "editor_ui": {
     "max_budget_label": "الحد الأقصى للميزانية (دولار)",
@@ -2724,5 +2746,10 @@
     "activate_agent": "تفعيل الوكيل",
     "create_agent": "إنشاء الوكيل",
     "min_completeness": "أضف مزيداً من التفاصيل للوصول إلى اكتمال 40%"
+  },
+  "duplicate": {
+    "done": "تم النسخ باسم \"{name}\"",
+    "done_with_wiring": "تم النسخ باسم \"{name}\" — تم نسخ {triggers} مُشغِّل و{subscriptions} اشتراك، معطّلة في النسخة",
+    "failed": "تعذّر تكرار الوكيل"
   }
 }

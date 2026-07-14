@@ -1,6 +1,8 @@
 import * as Sentry from "@sentry/react";
 import { log } from "./log";
 import { useToastStore } from "@/stores/toastStore";
+import { classifyErrorFull } from "@/lib/errors/errorPipeline";
+import { recordSwallow } from "./silentFailureTelemetry";
 
 
 /**
@@ -79,6 +81,9 @@ export function silentCatch(context: string): (err: unknown) => void {
       level: "warning",
       data: stack ? { stack } : undefined,
     });
+    // Aggregate the swallow so the fleet-wide rate is measurable (rollup +
+    // sampled capture). No-op-cheap; never throws into the caller's catch.
+    recordSwallow(context, msg, err);
   };
 }
 
@@ -98,15 +103,28 @@ export function toastCatch(context: string, customMessage?: string): (err: unkno
   return (err: unknown) => {
     const msg = extractMessage(err);
     const stack = stackOf(err);
-    log.warn("toastCatch", `${context} failed`, { error: msg, stack });
+    // Breadcrumb-before-rewrite: the RAW error is logged first (operators
+    // reviewing tickets need the real string, not the friendly copy). The
+    // funnel classification is attached as structured data, not a substitution.
+    const classified = classifyErrorFull(msg);
+    log.warn("toastCatch", `${context} failed`, {
+      error: msg,
+      stack,
+      category: classified.category,
+    });
     Sentry.addBreadcrumb({
       category: "toastCatch",
       message: `${context} failed: ${msg}`,
       level: "warning",
-      data: stack ? { stack } : undefined,
+      data: { ...(stack ? { stack } : {}), errorCategory: classified.category },
     });
+    // Pass the raw error string (no "Failed to load data." prefix — it was
+    // always discarded by the renderer's friendly rewrite). The toast renderer
+    // runs the same (memoized) classification to show the friendly message,
+    // suggestion, and any navigation action. A caller-supplied `customMessage`
+    // still takes precedence.
     useToastStore.getState().addToast(
-      customMessage || `Failed to load data. ${msg}`,
+      customMessage || msg,
       'error',
       5000,
     );
@@ -124,6 +142,7 @@ export function silentCatchNull(context: string): (err: unknown) => null {
       level: "warning",
       data: stack ? { stack } : undefined,
     });
+    recordSwallow(context, msg, err);
     return null;
   };
 }

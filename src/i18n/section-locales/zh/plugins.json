@@ -189,7 +189,16 @@
     "auto_hibernate_desc": "自动休眠超过阈值时间的空闲会话 — 即使 Fleet 未处于焦点也会释放进程。通过唤醒仍可恢复。在 Personas 打开时运行。",
     "auto_hibernate_toggle": "启用自动休眠",
     "auto_hibernate_after": "超过",
-    "auto_hibernate_minutes_unit": "分钟空闲"
+    "auto_hibernate_minutes_unit": "分钟空闲",
+    "live_slots_desc": "限制同时运行的 claude 进程数量。当机队达到上限时，最久未活动的空闲会话将被休眠以腾出空间 — 随时可通过唤醒恢复。工作中的会话绝不会被中断。",
+    "live_slots_max_label": "上限",
+    "live_slots_title": "限制在线会话数",
+    "live_slots_toggle": "启用会话上限",
+    "live_slots_unit": "个在线会话",
+    "headless_badge": "后台",
+    "headless_no_terminal": "后台会话 — 无终端运行。通过“需要你”横幅回复；进度显示在 Insights 中。",
+    "spawn_headless_hint": "无头模式 — 没有实时终端，CPU 和内存占用大幅降低。通过“需要你”横幅回复；在 Insights 中查看进度。",
+    "spawn_headless_toggle": "在后台运行（无终端）"
   },
   "title": "插件",
   "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",
@@ -2155,7 +2164,8 @@
     "voice_pocket_upload_save": "添加声音",
     "voice_pocket_upload_title": "添加你的声音",
     "voice_pocket_hf_gate_desc": "管理你自己克隆的语音需要在凭据保险库中提供 Hugging Face 访问令牌 —— 它会将语音克隆模型的许可与你的账户绑定。请先添加 Hugging Face 凭据，然后回到这里。",
-    "voice_pocket_hf_gate_title": "需要 Hugging Face 账户"
+    "voice_pocket_hf_gate_title": "需要 Hugging Face 账户",
+    "persona_overview_kpi_trust_clamped": "信任分数超出范围，已限制为 100%。"
   },
   "artist_gallery": {
     "loading_viewer": "加载查看器中…",
@@ -2405,7 +2415,9 @@
     "goal_scaffold_timeline_title": "时间线",
     "goal_scaffold_timeline_sub": "按目标日期排列的时间轴视图，包含依赖关系箭头和延误标记。即将推出。",
     "goal_field_title": "标题",
+    "goal_field_title_placeholder": "你希望达成什么成果？",
     "goal_field_description": "描述",
+    "goal_field_description_placeholder": "可选：背景、范围或成功的定义…",
     "goal_field_status": "状态",
     "goal_field_target_date": "目标日期",
     "goal_target_asap": "尽快",

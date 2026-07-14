@@ -513,7 +513,17 @@
     "tab_chain": "Цепочка",
     "thinking_tooltip": "Уровень рассуждений, использованный в этом запуске",
     "trace_empty_hint": "Подробные трассировки собираются для запусков с инструментами и более новых. Для этого запуска их нет.",
-    "verdict_field": "Вердикт"
+    "verdict_field": "Вердикт",
+    "chain_ended_because": "Почему цепочка завершилась",
+    "chain_total_cost": "Стоимость цепочки",
+    "active_chains_agents_one": "{count} агент",
+    "active_chains_agents_other": "{count} агентов",
+    "active_chains_depth": "глубина {count}",
+    "active_chains_hops_one": "{count} переход",
+    "active_chains_hops_other": "{count} переходов",
+    "active_chains_one": "{count} цепочка в работе",
+    "active_chains_other": "{count} цепочек в работе",
+    "active_chains_title": "Цепочки в работе"
   },
   "lab": {
     "mode_arena": "Арена",
@@ -840,7 +850,9 @@
     "eco_col_resolved": "Решено",
     "eco_empty": "Нет результатов оценки — запустите лабораторию для расчёта эффективности.",
     "eco_subtitle": "Как часто каждая модель решает задачи и во сколько обходится каждый успех.",
-    "eco_title": "Экономичность"
+    "eco_title": "Экономичность",
+    "vr_col_tokens": "Токены",
+    "vr_tokens_tooltip": "В среднем {input} на входе / {output} на выходе за запуск"
   },
   "design": {
     "select_agent": "Выберите агента для анализа дизайна",
@@ -1836,7 +1848,12 @@
     "delete_agents_message": "{count} агент(ов) и вся их конфигурация будут удалены навсегда.",
     "delete_drafts": "Удалить {count} черновик(ов)",
     "delete_drafts_message": "{count} черновых агент(ов) будут удалены навсегда.",
-    "system_persona_undeletable": "Director — системная персона, её нельзя удалить."
+    "system_persona_undeletable": "Director — системная персона, её нельзя удалить.",
+    "archived_done": "Архивировано персон: {count}",
+    "bulk_delete_done": "Удалено персон: {deleted}",
+    "bulk_delete_failed": "Не удалось удалить персоны",
+    "bulk_delete_partial": "Удалено: {deleted}; пропущено: {skipped}",
+    "restored_done": "Восстановлено персон: {count}"
   },
   "persona_list": {
     "all_personas": "Все агенты",
@@ -1872,7 +1889,12 @@
     "batch_moved_partial": "Перемещено {ok} в {group}; {failed} не удалось",
     "render_cap_notice": "Показано {shown} из {total} — уточните поиск или фильтры, чтобы увидеть остальные.",
     "star_director_add": "Отметить звёздочкой, чтобы добавить в область коучинга Director",
-    "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать."
+    "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать.",
+    "badge_archived": "В архиве",
+    "batch_archive": "Архивировать",
+    "batch_restore": "Восстановить",
+    "show_active_personas": "Показать активные персоны",
+    "show_archived_personas": "Показать архивные персоны"
   },
   "editor_ui": {
     "max_budget_label": "Максимальный бюджет (USD)",
@@ -2724,5 +2746,10 @@
     "activate_agent": "Активировать агента",
     "create_agent": "Создать агента",
     "min_completeness": "Добавьте больше деталей для достижения 40% завершённости"
+  },
+  "duplicate": {
+    "done": "Дублировано как «{name}»",
+    "done_with_wiring": "Дублировано как «{name}» — скопировано триггеров: {triggers}, подписок: {subscriptions} (отключены в копии)",
+    "failed": "Не удалось дублировать агента"
   }
 }

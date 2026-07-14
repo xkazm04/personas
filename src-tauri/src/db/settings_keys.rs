@@ -75,11 +75,28 @@ pub const EVENT_RETENTION_DAYS: &str = "event_retention_days";
 /// Default retention in days for [`EVENT_RETENTION_DAYS`].
 pub const EVENT_RETENTION_DAYS_DEFAULT: i64 = 30;
 
+/// Hard ceiling on the number of *terminal* (completed/skipped/failed/discarded)
+/// events kept, independent of age. Bounds intra-window growth: a chatty source
+/// can emit far more than `EVENT_RETENTION_DAYS` worth of events inside a single
+/// day, so age-only cleanup lets the table balloon between daily sweeps. DLQ
+/// (`dead_letter`) and in-flight (`pending`/`processing`) rows are always exempt.
+pub const EVENT_RETENTION_MAX_COUNT: &str = "event_retention_max_count";
+/// Default terminal-event ceiling for [`EVENT_RETENTION_MAX_COUNT`].
+pub const EVENT_RETENTION_MAX_COUNT_DEFAULT: i64 = 10_000;
+
 /// Execution retention period in days. Executions older than this are purged
 /// by the background cleanup task.
 pub const EXECUTION_RETENTION_DAYS: &str = "execution_retention_days";
 /// Default retention in days for [`EXECUTION_RETENTION_DAYS`] (two months).
 pub const EXECUTION_RETENTION_DAYS_DEFAULT: i64 = 60;
+
+/// Draft-persona retention in days. Abandoned build drafts (lifecycle `draft`
+/// with no execution history) older than this are swept by the background
+/// cleanup task. `0` disables the sweep — deletion is destructive, so this is
+/// OPT-IN and defaults OFF. Stored as a non-negative integer string.
+pub const DRAFT_RETENTION_DAYS: &str = "draft_retention_days";
+/// Default draft retention in days. `0` means the sweep is disabled (opt-in).
+pub const DRAFT_RETENTION_DAYS_DEFAULT: i64 = 0;
 
 /// Per-persona ceiling for scheduled executions in a rolling hour.
 pub const SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR: &str = "schedule_executions_per_persona_hour";
@@ -251,8 +268,10 @@ pub const COMPANION_FLEET_BOLDNESS: &str = "companion_fleet_boldness";
 /// Default level for [`COMPANION_FLEET_BOLDNESS`] when the row is unset.
 pub const COMPANION_FLEET_BOLDNESS_DEFAULT: &str = "bold";
 
-/// LEGACY (no longer read): message triage stopped being an independent
-/// knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. When the master
+/// DEPRECATED / LEGACY (no longer read): message triage stopped being an
+/// independent knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. Setting it
+/// has no effect and emits a deprecation warning (see [`deprecated_replacement`]);
+/// the autonomy resolver ([`crate::engine::autonomy`]) never consults it. When the master
 /// autonomous toggle is ON, the proactive tick's message-triage leg runs
 /// (batched headless decision classifying each unread persona message as
 /// `done` / `digest` / `attention`; high/urgent priority can never be
@@ -358,8 +377,10 @@ pub const AUTONOMOUS_ASSIGNMENT_RETRY: &str = "autonomous_assignment_retry";
 /// Default for [`AUTONOMOUS_ASSIGNMENT_RETRY`] — off (opt-in autonomy).
 pub const AUTONOMOUS_ASSIGNMENT_RETRY_DEFAULT: bool = false;
 
-/// LEGACY (no longer read): review triage stopped being an independent
-/// knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. When the master
+/// DEPRECATED / LEGACY (no longer read): review triage stopped being an
+/// independent knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. Setting it
+/// has no effect and emits a deprecation warning (see [`deprecated_replacement`]);
+/// the autonomy resolver ([`crate::engine::autonomy`]) never consults it. When the master
 /// autonomous toggle is ON, `ManualReviewAutoTriageSubscription` resolves
 /// `persona_manual_reviews` pending past a grace window unattended
 /// (conservative policy: auto-approves only low/medium severity; leaves
@@ -534,6 +555,52 @@ pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
 /// fall back to the legacy global `autonomous_*` flags.
 pub const AUTOPILOT_MODE_PREFIX: &str = "autopilot_mode:";
 
+/// Durable mirror of the webview appearance preferences (JSON-encoded object:
+/// `themeId`, `textScale`, `brightness`, `density`, `timezone`, a11y toggles,
+/// `customTheme`). The render-path authority stays in webview localStorage
+/// (`persona-theme` Zustand persist) — reading it is synchronous and never
+/// blocks first paint — but localStorage is per-webview-profile, and a profile
+/// clear silently wiped every appearance choice: the exact loss mode that
+/// dropped [`OBSIDIAN_BRAIN_SAVED_VAULTS`] until its 2026-06 migration. The
+/// frontend writes through on change (debounced) and re-hydrates from this row
+/// on a fresh/cleared profile (`src/lib/appearanceMirror.ts`).
+///
+/// Value validation: must parse as a JSON object; the *stable* enum fields
+/// (`textScale` ∈ large|larger|xl, `brightness` ∈ low|mid|high, `density` ∈
+/// cozy|comfortable|compact) are checked when present. Theme ids and timezone
+/// are deliberately NOT validated here — the theme catalog lives in the
+/// frontend and a newly added theme id must not be rejected by a stale Rust
+/// validator (unknown values are coerced on read instead).
+pub const APPEARANCE_PREFERENCES: &str = "appearance_preferences";
+/// Chain cost ceiling in USD. Accumulated cost rides hop→hop in the chain event
+/// metadata (`_chain_cost_usd`); when a completing hop's running total reaches
+/// this ceiling, the cascade evaluator halts (records a `budget_exceeded` chain
+/// stop reason instead of publishing the next link). This is the ONLY brake on
+/// runaway chain COST — the depth-8 limit only bounds hop COUNT. Stored as a
+/// decimal string (e.g. `"5.00"`); the literal `"0"` / unset = no ceiling
+/// (disabled), matching [`MONTHLY_COST_CEILING_USD`]'s convention.
+pub const CHAIN_MAX_COST_USD: &str = "chain_max_cost_usd";
+/// Default chain cost ceiling in USD. `0.0` means no ceiling (disabled).
+pub const CHAIN_MAX_COST_USD_DEFAULT: f64 = 0.0;
+
+/// Chain fan-out BREADTH ceiling — the maximum number of links (executions) a
+/// single chain trace may spawn. The depth-8 limit bounds a chain's path
+/// LENGTH; this is the only brake on its WIDTH: one completion can match many
+/// triggers, each of which branches again, so without a breadth cap a fan-out
+/// grows unbounded across hops even when no single path is deep. Enforced in the
+/// cascade evaluator by counting `execution_traces` rows already sharing the
+/// chain's `chain_trace_id`; when that count reaches this ceiling, the cascade
+/// halts before firing further links (records a `breadth_exceeded` chain stop
+/// reason). Stored as a positive-integer string. The literal `"0"` disables the
+/// cap (matching [`CHAIN_MAX_COST_USD`]'s "0 = no ceiling" convention); UNSET
+/// falls back to [`CHAIN_MAX_LINKS_DEFAULT`] — a generous always-on safety net,
+/// since the whole point of this guard is that nothing else bounds breadth.
+pub const CHAIN_MAX_LINKS: &str = "chain_max_links";
+/// Default chain breadth ceiling (links per chain trace) when the row is unset.
+/// Generous enough that no legitimate chain reaches it (depth is capped at 8, so
+/// 50 links is already a pathological fan-out); set the row to `"0"` to disable.
+pub const CHAIN_MAX_LINKS_DEFAULT: u32 = 50;
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -548,7 +615,9 @@ const ALLOWED_KEYS: &[&str] = &[
     CLI_ENGINE,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
+    EVENT_RETENTION_MAX_COUNT,
     EXECUTION_RETENTION_DAYS,
+    DRAFT_RETENTION_DAYS,
     SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR,
     GLOBAL_MODEL_PROFILE,
     FILE_WATCHER_DEBOUNCE_MS,
@@ -606,6 +675,9 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,
     CLOUD_SYNC_TOTAL_ROWS,
+    APPEARANCE_PREFERENCES,
+    CHAIN_MAX_COST_USD,
+    CHAIN_MAX_LINKS,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -680,6 +752,14 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             )),
         };
     }
+    // Per-persona JSON-blob prefix keys (Direction 2). Their consumer structs
+    // (`AutoOptimizeConfig` / `HealthWatchConfig`) are private to
+    // `engine::management_api`, so we can't import the exact type — but we can
+    // still reject truncated/garbage JSON at write time instead of letting the
+    // Axum read handler fall back to defaults and silently drop the setting.
+    if key.starts_with(AUTO_OPTIMIZE_PREFIX) || key.starts_with(HEALTH_WATCH_PREFIX) {
+        return validate_json_wellformed(key, value);
+    }
     match key {
         COMPANION_FLEET_BOLDNESS => match value {
             "cautious" | "balanced" | "bold" => Ok(()),
@@ -687,11 +767,17 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 "value for '{key}' must be one of cautious|balanced|bold, got {value:?}"
             )),
         },
-        EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => {
+        EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS | DRAFT_RETENTION_DAYS => {
             value.parse::<u32>().map(|_| ()).map_err(|_| {
                 format!("value for '{key}' must be a non-negative integer (days), got {value:?}")
             })
         }
+        EVENT_RETENTION_MAX_COUNT => match value.parse::<u32>() {
+            Ok(n) if n > 0 => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be a positive integer (max events kept), got {value:?}"
+            )),
+        },
         SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR => match value.parse::<u32>() {
             Ok(n) if n > 0 => Ok(()),
             _ => Err(format!(
@@ -738,25 +824,283 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 )),
             }
         }
-        MONTHLY_COST_CEILING_USD => match value.parse::<f64>() {
+        MONTHLY_COST_CEILING_USD | CHAIN_MAX_COST_USD => match value.parse::<f64>() {
             Ok(n) if n.is_finite() && n >= 0.0 => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be a non-negative decimal USD amount, got {value:?}"
             )),
         },
+        // Non-negative integer link count; `0` disables the breadth cap.
+        CHAIN_MAX_LINKS => value.parse::<u32>().map(|_| ()).map_err(|_| {
+            format!("value for '{key}' must be a non-negative integer (max links per chain), got {value:?}")
+        }),
         COMPANION_DAILY_ROLLUP_HOUR => match value.parse::<u32>() {
             Ok(h) if h <= 23 => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be an hour 0–23, got {value:?}"
             )),
         },
+        APPEARANCE_PREFERENCES => validate_appearance_preferences(value),
+        // -------------------------------------------------------------------
+        // JSON-blob keys (Direction 2): validate against the ACTUAL consumer
+        // serde struct so a malformed blob is rejected at WRITE time instead
+        // of corrupting the store and surfacing as a parse failure at read.
+        // The consumer parses the SAME type, so any value we reject here would
+        // also fail to load — no valid write is newly blocked.
+        // -------------------------------------------------------------------
+        BYOM_POLICY => validate_json_as::<crate::engine::byom::ByomPolicy>(key, value),
+        QUALITY_GATE_CONFIG => {
+            validate_json_as::<crate::engine::quality_gate::QualityGateConfig>(key, value)
+        }
+        PERFORMANCE_DIGEST => validate_json_as::<crate::engine::digest::DigestConfig>(key, value),
+        GLOBAL_MODEL_PROFILE => {
+            validate_json_as::<crate::engine::types::ModelProfile>(key, value)
+        }
+        OBSIDIAN_BRAIN_CONFIG => {
+            validate_json_as::<crate::db::models::ObsidianVaultConfig>(key, value)
+        }
+        OBSIDIAN_MIRROR_CONFIG => {
+            validate_json_as::<crate::db::models::ObsidianMirrorConfig>(key, value)
+        }
+        OBSIDIAN_BRAIN_SAVED_VAULTS => {
+            validate_json_as::<Vec<crate::db::models::ObsidianVaultConfig>>(key, value)
+        }
+        // JSON blobs whose consumer type is private to another module
+        // (`NotificationPrefs`) or lives only in the frontend
+        // (`engine_capabilities`, `gitlab_pipeline_notification_prefs`) — we
+        // can't import the exact struct, but well-formed-JSON validation still
+        // rejects truncated/garbage writes. `notification_prefs` additionally
+        // accepts a legacy JSON-array form the consumer tolerates, so strict
+        // struct validation would be wrong here anyway.
+        NOTIFICATION_PREFS
+        | ENGINE_CAPABILITIES
+        | GITLAB_PIPELINE_NOTIFICATION_PREFS
+        | DEV_TOOLS_CROSS_PROJECT_METADATA
+        | ONBOARDING_QUEST_STATE => validate_json_wellformed(key, value),
         _ => Ok(()),
     }
+}
+
+/// Typed contract for [`APPEARANCE_PREFERENCES`]: a JSON object whose stable
+/// enum fields — when present — hold known values. Fields owned by the frontend
+/// catalog (theme id, timezone, customTheme) are accepted as-is; unknown values
+/// there are coerced on read by the frontend mirror instead of rejected here.
+fn validate_appearance_preferences(value: &str) -> Result<(), String> {
+    let parsed: serde_json::Value = serde_json::from_str(value)
+        .map_err(|e| format!("value for '{APPEARANCE_PREFERENCES}' must be valid JSON: {e}"))?;
+    let obj = parsed
+        .as_object()
+        .ok_or_else(|| format!("value for '{APPEARANCE_PREFERENCES}' must be a JSON object"))?;
+    let check_enum = |field: &str, allowed: &[&str]| -> Result<(), String> {
+        match obj.get(field) {
+            None | Some(serde_json::Value::Null) => Ok(()),
+            Some(serde_json::Value::String(s)) if allowed.contains(&s.as_str()) => Ok(()),
+            Some(other) => Err(format!(
+                "'{APPEARANCE_PREFERENCES}.{field}' must be one of {allowed:?}, got {other}"
+            )),
+        }
+    };
+    check_enum("textScale", &["large", "larger", "xl"])?;
+    check_enum("brightness", &["low", "mid", "high"])?;
+    check_enum("density", &["cozy", "comfortable", "compact"])?;
+    Ok(())
+}
+
+/// If `key` is a DEPRECATED settings key that is still allow-listed for
+/// backward-compat but no longer read by any consumer, returns a short human
+/// message naming what supersedes it. Returns `None` for live keys.
+///
+/// Used by [`crate::db::repos::core::settings::set`] to emit a `tracing::warn!`
+/// deprecation breadcrumb when something writes a quarantined key — so a stale
+/// UI toggle or external writer surfaces in observability instead of silently
+/// persisting an inert row. The autonomy model that superseded these keys lives
+/// in [`crate::engine::autonomy`].
+pub fn deprecated_replacement(key: &str) -> Option<&'static str> {
+    match key {
+        AUTONOMOUS_MESSAGE_TRIAGE | AUTONOMOUS_REVIEW_TRIAGE => {
+            Some("implied by companion_autonomous_mode (the master autonomy toggle); this key is no longer read")
+        }
+        _ => None,
+    }
+}
+
+/// Validate that `value` deserializes into the consumer type `T`. Used by
+/// [`validate_value`] for JSON-blob keys whose exact consumer struct we can
+/// import — a malformed blob is rejected at write instead of corrupting the
+/// store (Direction 2). Kept private; the concrete `T` per key is wired above.
+fn validate_json_as<T: serde::de::DeserializeOwned>(key: &str, value: &str) -> Result<(), String> {
+    serde_json::from_str::<T>(value)
+        .map(|_| ())
+        .map_err(|e| format!("value for '{key}' is not valid JSON for its schema: {e}"))
+}
+
+/// Validate that `value` is at least well-formed JSON. Used for JSON-blob keys
+/// whose consumer type is private to another module or lives only in the
+/// frontend — we can't import the exact struct, but this still rejects
+/// truncated / garbage JSON that would corrupt the store.
+fn validate_json_wellformed(key: &str, value: &str) -> Result<(), String> {
+    serde_json::from_str::<serde_json::Value>(value)
+        .map(|_| ())
+        .map_err(|e| format!("value for '{key}' is not well-formed JSON: {e}"))
+}
+
+// =============================================================================
+// Audit categorization (Direction 1: universal settings audit)
+// =============================================================================
+
+/// Internal bookkeeping keys written by ENGINE state machines (proactive-tick
+/// cursors, "last ran" timestamps, a minted device id, a monotonic row counter,
+/// a disk-content version stamp) — NOT by user action. These are EXCLUDED from
+/// the settings audit log: auditing them would flood the Settings → History tab
+/// with machine noise that no human ever changed.
+///
+/// Documented exclusion list (keep in sync with the `AUDIT_EXCLUDED_PREFIXES`
+/// families below):
+/// - companion proactive cursors / retry state,
+/// - `*_last` / `*_last_run` timestamps,
+/// - cloud-sync device id / watermark / row counter,
+/// - the companion constitution version stamp.
+const AUDIT_EXCLUDED_KEYS: &[&str] = &[
+    // Companion proactive-tick cursors + two-phase retry state.
+    COMPANION_EXEC_REVIEW_CURSOR,
+    COMPANION_EXEC_REVIEW_RETRY,
+    COMPANION_MSG_TRIAGE_CURSOR,
+    // "last ran / last fired" timestamps.
+    PERFORMANCE_DIGEST_LAST,
+    HEALTH_DIGEST_LAST_RUN,
+    CREDENTIAL_HEALTHCHECK_LAST,
+    COMPANION_DAILY_ROLLUP_LAST,
+    COMPANION_PROFILE_SYNTHESIS_LAST,
+    // Cloud-sync bookkeeping: minted device id, last-pass watermark, row counter.
+    CLOUD_SYNC_DEVICE_ID,
+    CLOUD_SYNC_LAST_AT,
+    CLOUD_SYNC_TOTAL_ROWS,
+    // Disk-content version stamp (engine-managed on app start, not user-set).
+    COMPANION_CONSTITUTION_VERSION,
+];
+
+/// Prefix families that are internal bookkeeping (per-table cloud-sync cursors).
+const AUDIT_EXCLUDED_PREFIXES: &[&str] = &[CLOUD_SYNC_CURSOR_PREFIX];
+
+/// Map a settings key to its audit CATEGORY, or `None` if the key is internal
+/// bookkeeping that must NOT be audited (see [`AUDIT_EXCLUDED_KEYS`] /
+/// [`AUDIT_EXCLUDED_PREFIXES`]).
+///
+/// Categories align with the Settings sub-modules that surface each knob so the
+/// History tab's category filter reads naturally. The active set is:
+/// `api_keys`, `engine`, `limits`, `retention`, `byom`, `notifications`,
+/// `autonomy`, `quality_gates`, `integrations`, `sync`, `config`. Any
+/// registered-but-uncategorized key falls back to `config` (still audited).
+pub fn audit_category(key: &str) -> Option<&'static str> {
+    // Excluded exact keys and prefix families come first.
+    if AUDIT_EXCLUDED_KEYS.contains(&key) {
+        return None;
+    }
+    for prefix in AUDIT_EXCLUDED_PREFIXES {
+        if key.starts_with(prefix) {
+            return None;
+        }
+    }
+
+    // Prefix-keyed families (per-persona / per-project dynamic keys).
+    if key.starts_with(AUTO_ROLLBACK_PREFIX)
+        || key.starts_with(AUTO_OPTIMIZE_PREFIX)
+        || key.starts_with(AUTOPILOT_MODE_PREFIX)
+    {
+        return Some("autonomy");
+    }
+    if key.starts_with(HEALTH_WATCH_PREFIX) {
+        return Some("notifications");
+    }
+    if key.starts_with(EXECUTION_RETENTION_MONTHS_PREFIX) {
+        return Some("retention");
+    }
+
+    let category = match key {
+        // Secrets / credentials.
+        OLLAMA_API_KEY | LITELLM_MASTER_KEY | BROWSER_BRIDGE_PAIRING_TOKEN => "api_keys",
+        // Engine wiring: which CLI/remote engine, routing, capabilities, concurrency.
+        CLI_ENGINE
+        | QWEN_BASE_URL
+        | QWEN_MODEL
+        | QWEN_CONNECTOR_TOOLS
+        | DELEGATE_MODEL
+        | DELEGATE_BASE_URL
+        | LITELLM_BASE_URL
+        | ENGINE_CAPABILITIES
+        | GLOBAL_MODEL_PROFILE
+        | SMART_SEARCH_MODEL
+        | SEMANTIC_LINT_MODEL
+        | MAX_PARALLEL_EXECUTIONS
+        | EXECUTION_WORKTREE_ISOLATION
+        | FILE_WATCHER_DEBOUNCE_MS => "engine",
+        // Numeric ceilings / rate limits.
+        MONTHLY_COST_CEILING_USD
+        | SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR
+        | EVENT_RETENTION_MAX_COUNT => "limits",
+        // Data-retention windows.
+        EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => "retention",
+        // Bring-your-own-model policy.
+        BYOM_POLICY => "byom",
+        // Notification / digest preferences.
+        NOTIFICATION_PREFS
+        | GITLAB_PIPELINE_NOTIFICATION_PREFS
+        | PERFORMANCE_DIGEST
+        | HEALTH_DIGEST_ENABLED => "notifications",
+        // Quality gates.
+        QUALITY_GATE_CONFIG => "quality_gates",
+        // Autonomy / companion behaviour toggles.
+        ATHENA_WAKE_WINDOW_MINUTES
+        | CLI_SESSION_AWARENESS_ENABLED
+        | COMPANION_AUTONOMOUS_MODE
+        | COMPANION_DEV_MODE
+        | COMPANION_FLEET_BOLDNESS
+        | AUTONOMOUS_MESSAGE_TRIAGE
+        | DIRECTOR_BRAIN_ENABLED
+        | AUTONOMOUS_GOAL_ADVANCEMENT
+        | AUTONOMOUS_DELIBERATION
+        | COMPANION_DAILY_ROLLUP
+        | COMPANION_DAILY_ROLLUP_HOUR
+        | COMPANION_PROFILE_SYNTHESIS
+        | AUTONOMOUS_ASSIGNMENT_RETRY
+        | AUTONOMOUS_REVIEW_TRIAGE
+        | AUTONOMOUS_REVIEW_TRIAGE_HIGH
+        | AUTONOMOUS_BACKLOG_TO_GOAL
+        | AUTONOMOUS_IDEA_SCAN
+        | AUTONOMOUS_BACKLOG_TRIAGE
+        | AUTONOMOUS_ATHENA_REACTIONS
+        | AUTONOMOUS_ATHENA_REVIEW_RESOLUTION
+        | AUTONOMOUS_KPI_GOAL_DERIVATION
+        | AUTONOMOUS_KPI_EVALUATION
+        | AUTONOMOUS_DIRECTOR_STORM => "autonomy",
+        // Obsidian brain / dev-tools integrations.
+        OBSIDIAN_BRAIN_CONFIG
+        | OBSIDIAN_MIRROR_CONFIG
+        | OBSIDIAN_BRAIN_SAVED_VAULTS
+        | DEV_TOOLS_CROSS_PROJECT_METADATA => "integrations",
+        // Cloud sync (user-facing toggle only; bookkeeping excluded above).
+        CLOUD_SYNC_ENABLED => "sync",
+        // UI / onboarding state.
+        ONBOARDING_QUEST_STATE => "config",
+        // Any registered-but-uncategorized key → generic bucket (still audited).
+        _ => "config",
+    };
+    Some(category)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn deprecated_keys_flagged_live_keys_not() {
+        assert!(deprecated_replacement(AUTONOMOUS_MESSAGE_TRIAGE).is_some());
+        assert!(deprecated_replacement(AUTONOMOUS_REVIEW_TRIAGE).is_some());
+        // Live keys and the still-active high-severity opt-in are NOT deprecated.
+        assert!(deprecated_replacement(COMPANION_AUTONOMOUS_MODE).is_none());
+        assert!(deprecated_replacement(AUTONOMOUS_REVIEW_TRIAGE_HIGH).is_none());
+        assert!(deprecated_replacement(AUTONOMOUS_GOAL_ADVANCEMENT).is_none());
+    }
 
     #[test]
     fn exact_key_accepted() {
@@ -840,7 +1184,66 @@ mod tests {
     fn unknown_keys_skip_value_validation() {
         // Keys without a typed contract accept any value shape.
         assert!(validate_value(CLI_ENGINE, "whatever").is_ok());
-        assert!(validate_value(BYOM_POLICY, "{malformed").is_ok());
+        // NOTE: BYOM_POLICY is now validated as JSON (Direction 2); its
+        // malformed-rejection case moved to `json_blob_keys_reject_malformed`.
+    }
+
+    #[test]
+    fn json_blob_keys_reject_malformed() {
+        // Direction 2: each JSON-blob key rejects a truncated/garbage blob that
+        // was previously accepted and only surfaced as corruption at read time.
+        let malformed = "{malformed";
+        for key in [
+            BYOM_POLICY,
+            QUALITY_GATE_CONFIG,
+            PERFORMANCE_DIGEST,
+            GLOBAL_MODEL_PROFILE,
+            OBSIDIAN_BRAIN_CONFIG,
+            OBSIDIAN_MIRROR_CONFIG,
+            OBSIDIAN_BRAIN_SAVED_VAULTS,
+            NOTIFICATION_PREFS,
+            ENGINE_CAPABILITIES,
+            GITLAB_PIPELINE_NOTIFICATION_PREFS,
+            DEV_TOOLS_CROSS_PROJECT_METADATA,
+            ONBOARDING_QUEST_STATE,
+        ] {
+            assert!(
+                validate_value(key, malformed).is_err(),
+                "key {key} must reject malformed JSON {malformed:?}"
+            );
+        }
+        // Prefix JSON-blob keys too.
+        assert!(validate_value("auto_optimize:persona-1", malformed).is_err());
+        assert!(validate_value("health_watch:persona-1", malformed).is_err());
+    }
+
+    #[test]
+    fn json_blob_keys_accept_valid() {
+        // Full serialized shapes (as the UI would write them) parse. The
+        // strict-struct keys require all their fields present — exactly the
+        // contract their consumers enforce at read — so we pass complete blobs.
+        assert!(validate_value(
+            BYOM_POLICY,
+            r#"{"enabled":false,"allowed_providers":[],"blocked_providers":[],"routing_rules":[],"compliance_rules":[]}"#
+        )
+        .is_ok());
+        assert!(validate_value(
+            QUALITY_GATE_CONFIG,
+            r#"{"memoryRules":[],"memoryRejectCategories":[],"reviewRules":[]}"#
+        )
+        .is_ok());
+        assert!(validate_value(PERFORMANCE_DIGEST, r#"{"enabled":false,"cadence":"weekly"}"#).is_ok());
+        // All-optional-field structs accept an empty object.
+        assert!(validate_value(GLOBAL_MODEL_PROFILE, "{}").is_ok());
+        assert!(validate_value(OBSIDIAN_MIRROR_CONFIG, "{}").is_ok());
+        assert!(validate_value(OBSIDIAN_BRAIN_SAVED_VAULTS, "[]").is_ok());
+        // Well-formed-JSON keys accept any valid JSON.
+        assert!(validate_value(NOTIFICATION_PREFS, "{}").is_ok());
+        assert!(validate_value(NOTIFICATION_PREFS, "[]").is_ok()); // legacy array form tolerated
+        assert!(validate_value(ENGINE_CAPABILITIES, "{}").is_ok());
+        assert!(validate_value(GITLAB_PIPELINE_NOTIFICATION_PREFS, "{}").is_ok());
+        assert!(validate_value("auto_optimize:persona-1", "{}").is_ok());
+        assert!(validate_value("health_watch:persona-1", "{}").is_ok());
     }
 
     #[test]
@@ -850,6 +1253,75 @@ mod tests {
         assert!(validate_value(MONTHLY_COST_CEILING_USD, "50").is_ok());
         assert!(validate_value(MONTHLY_COST_CEILING_USD, "50.00").is_ok());
         assert!(validate_value(MONTHLY_COST_CEILING_USD, "1234.56").is_ok());
+    }
+
+    #[test]
+    fn appearance_preferences_key_and_value_validation() {
+        assert!(validate_key(APPEARANCE_PREFERENCES).is_ok());
+        // Minimal and full valid objects accepted.
+        assert!(validate_value(APPEARANCE_PREFERENCES, "{}").is_ok());
+        assert!(validate_value(
+            APPEARANCE_PREFERENCES,
+            r#"{"themeId":"dark-bronze","textScale":"xl","brightness":"high","density":"compact","timezone":"America/New_York","dim":true,"customTheme":null}"#
+        )
+        .is_ok());
+        // Unknown theme id is ACCEPTED (frontend-owned catalog; coerced on read).
+        assert!(validate_value(
+            APPEARANCE_PREFERENCES,
+            r#"{"themeId":"some-future-theme"}"#
+        )
+        .is_ok());
+        // Stable enum fields ARE validated when present.
+        assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"textScale":"gigantic"}"#).is_err());
+        assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"brightness":"ultra"}"#).is_err());
+        assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"density":"spacious"}"#).is_err());
+        assert!(validate_value(APPEARANCE_PREFERENCES, r#"{"density":3}"#).is_err());
+        // Non-object / malformed JSON rejected.
+        assert!(validate_value(APPEARANCE_PREFERENCES, "not json").is_err());
+        assert!(validate_value(APPEARANCE_PREFERENCES, "[1,2]").is_err());
+        assert!(validate_value(APPEARANCE_PREFERENCES, "\"str\"").is_err());
+    }
+
+    #[test]
+    fn audit_category_excludes_internal_bookkeeping() {
+        // Cursors, last-run timestamps, cloud-sync bookkeeping, version stamp → None.
+        assert_eq!(audit_category(COMPANION_EXEC_REVIEW_CURSOR), None);
+        assert_eq!(audit_category(COMPANION_MSG_TRIAGE_CURSOR), None);
+        assert_eq!(audit_category(COMPANION_EXEC_REVIEW_RETRY), None);
+        assert_eq!(audit_category(PERFORMANCE_DIGEST_LAST), None);
+        assert_eq!(audit_category(HEALTH_DIGEST_LAST_RUN), None);
+        assert_eq!(audit_category(CREDENTIAL_HEALTHCHECK_LAST), None);
+        assert_eq!(audit_category(COMPANION_DAILY_ROLLUP_LAST), None);
+        assert_eq!(audit_category(COMPANION_PROFILE_SYNTHESIS_LAST), None);
+        assert_eq!(audit_category(CLOUD_SYNC_DEVICE_ID), None);
+        assert_eq!(audit_category(CLOUD_SYNC_LAST_AT), None);
+        assert_eq!(audit_category(CLOUD_SYNC_TOTAL_ROWS), None);
+        assert_eq!(audit_category(COMPANION_CONSTITUTION_VERSION), None);
+        // Per-table cloud-sync cursor prefix family → None.
+        assert_eq!(audit_category("cloud_sync_cursor:executions"), None);
+    }
+
+    #[test]
+    fn audit_category_maps_user_facing_keys() {
+        assert_eq!(audit_category(OLLAMA_API_KEY), Some("api_keys"));
+        assert_eq!(audit_category(CLI_ENGINE), Some("engine"));
+        assert_eq!(audit_category(MAX_PARALLEL_EXECUTIONS), Some("engine"));
+        assert_eq!(audit_category(MONTHLY_COST_CEILING_USD), Some("limits"));
+        assert_eq!(audit_category(EVENT_RETENTION_DAYS), Some("retention"));
+        assert_eq!(audit_category(BYOM_POLICY), Some("byom"));
+        assert_eq!(audit_category(NOTIFICATION_PREFS), Some("notifications"));
+        assert_eq!(audit_category(QUALITY_GATE_CONFIG), Some("quality_gates"));
+        assert_eq!(audit_category(COMPANION_AUTONOMOUS_MODE), Some("autonomy"));
+        assert_eq!(audit_category(OBSIDIAN_BRAIN_CONFIG), Some("integrations"));
+        assert_eq!(audit_category(CLOUD_SYNC_ENABLED), Some("sync"));
+        // Prefix families.
+        assert_eq!(audit_category("auto_rollback:persona-1"), Some("autonomy"));
+        assert_eq!(audit_category("autopilot_mode:proj-1"), Some("autonomy"));
+        assert_eq!(audit_category("health_watch:persona-2"), Some("notifications"));
+        assert_eq!(
+            audit_category("execution_retention_months:persona-3"),
+            Some("retention")
+        );
     }
 
     #[test]

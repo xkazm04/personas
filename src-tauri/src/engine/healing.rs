@@ -81,7 +81,11 @@ pub enum HealingAction {
 /// Full diagnosis produced by [`diagnose`].
 #[derive(Debug, Clone)]
 pub struct HealingDiagnosis {
-    #[allow(dead_code)]
+    /// The failure category this diagnosis was produced for. Load-bearing:
+    /// `engine::mod::retry_reason_for` matches on it to pick the
+    /// `scheduled_retries` reason tag (`api_error_resume` vs
+    /// `usage_limit_window`), which in turn drives the drain path's
+    /// resume-vs-fresh decision. Keep it populated on every construction.
     pub category: FailureCategory,
     pub action: HealingAction,
     pub title: String,
@@ -234,6 +238,40 @@ pub fn usage_limit_diagnosis(
                 },
             }
         }
+    }
+}
+
+/// Storm-guard terminal diagnosis: the persona has hit too many environmental
+/// provider failures (usage limit / API server error) within the storm window,
+/// so the orchestrator stops scheduling another durable `RetryAt` and folds the
+/// run into a manual issue instead.
+///
+/// Distinguishable from the ordinary `SessionLimit → CreateIssue` /
+/// `ApiError → CreateIssue` exhaustion diagnoses: the title/description name the
+/// *storm* (a cross-chain cap the persona circuit breaker cannot enforce because
+/// it excludes environmental failures), and carry the observed count so the
+/// resulting healing issue surfaces a real number to the health frequency alert.
+/// `action` is always [`HealingAction::CreateIssue`]; `category` is preserved so
+/// the issue is attributed correctly.
+pub fn storm_capped_diagnosis(
+    category: FailureCategory,
+    error: &str,
+    failures_in_window: u32,
+    window_minutes: u32,
+) -> HealingDiagnosis {
+    HealingDiagnosis {
+        category,
+        action: HealingAction::CreateIssue,
+        title: "Provider incident — automatic retries paused".into(),
+        description: format!(
+            "This agent hit {failures_in_window} environmental provider failures (usage limit / server error) in the last {window_minutes} minutes. Automatic retries are paused so the fleet stops hammering an ongoing provider incident. The persona circuit breaker excludes environmental failures by design, so this storm cap is the backstop that bounds the cross-chain retry count. Error: {}",
+            truncate(error, 200),
+        ),
+        severity: "high".into(),
+        db_category: "external".into(),
+        suggested_fix: Some(
+            "Pause this agent's schedules until the provider recovers, or reduce its run frequency / upgrade your plan. New failures retry automatically again once the storm subsides.".into(),
+        ),
     }
 }
 

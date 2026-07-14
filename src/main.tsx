@@ -23,6 +23,20 @@ import type { SidebarSection } from "./lib/types/types";
 import "./styles/globals.css";
 import { silentCatch } from '@/lib/silentCatch';
 import { ensureAppDataDir } from '@/lib/icons/customIconStore';
+import { bootstrapAppearanceMirror } from '@/lib/appearanceMirror';
+
+// Capture whether the webview profile already holds appearance prefs, BEFORE the
+// theme store (imported transitively via App) can write its key. On a fresh /
+// cleared profile this is false → the mirror hydrates from the backend after
+// mount. If localStorage is unreadable, assume `true` so we never clobber a live
+// store with backend data. See lib/appearanceMirror.ts.
+const appearanceHadLocal: boolean = (() => {
+  try {
+    return localStorage.getItem('persona-theme') != null;
+  } catch {
+    return true;
+  }
+})();
 
 
 const globalErrorLogger = createLogger("global-error");
@@ -240,6 +254,11 @@ function mountReact(root: HTMLElement) {
 // is synchronous (see customIconStore.ts). Fire-and-forget — failure just
 // means custom icons resolve a tick later.
 void ensureAppDataDir().catch(() => { /* resolved lazily on first use */ });
+
+// Durability mirror for appearance prefs (theme/density/text-scale/…): restores
+// from the backend on a fresh/cleared webview profile, and write-through-persists
+// every change. Fire-and-forget — localStorage remains the render-path authority.
+void bootstrapAppearanceMirror(appearanceHadLocal).catch(silentCatch('main:appearanceMirror'));
 
 if (root) {
   void preloadPersistedLocaleBeforeMount()

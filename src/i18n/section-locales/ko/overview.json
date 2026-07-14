@@ -523,7 +523,9 @@
     "source": "소스",
     "processed": "처리됨",
     "event_data": "이벤트 데이터",
-    "error": "오류"
+    "error": "오류",
+    "skipped_stat_label": "{skipped}건 건너뜀",
+    "skipped_stat_tooltip": "지난 7일 동안 {total}건 중 {skipped}건의 이벤트에 구독자가 없어 건너뛰었습니다({rate}). 비율이 높다면 아무도 수신하지 않는 트리거가 있다는 신호입니다."
   },
   "health": {
     "title": "에이전트 상태",
@@ -703,7 +705,11 @@
     "all_statuses": "전체 상태",
     "col_status": "상태",
     "col_id": "ID",
-    "execution_label": "실행"
+    "execution_label": "실행",
+    "error_category_by_persona": "에이전트별 주요 실패",
+    "error_category_prior_period": "이전 기간 대비",
+    "error_category_section_title": "카테고리별 실패",
+    "error_category_total_failures": "총 실패 수"
   },
   "analytics_dashboard": {
     "issues_found": "{count}개 이슈 발견",
@@ -1387,7 +1393,32 @@
     "comparison_recommended": "추천",
     "flow_title": "진행 방식",
     "timeline_title": "타임라인",
-    "log_title": "근거"
+    "log_title": "근거",
+    "default_attention_empty": "모든 페르소나 정상 — 주의가 필요한 항목이 없습니다.",
+    "default_attention_low_trust": "낮은 신뢰도",
+    "default_attention_paused": "일시중지됨",
+    "default_attention_setup": "설정 필요",
+    "default_attention_title": "주의 필요",
+    "default_callout_body": "이것은 플릿 상태를 기반으로 만든 시작 화면입니다. Athena에게 관심 있는 항목에 맞춘 콕핏을 구성해 달라고 요청하세요 — 자동으로 이 화면을 대체합니다.",
+    "default_callout_title": "시작 콕핏",
+    "default_roster_title": "내 페르소나",
+    "default_stat_active_personas": "활성 페르소나",
+    "default_stat_executions": "실행 (7일)",
+    "default_stat_needs_attention": "주의 필요",
+    "default_stat_success_rate": "성공률",
+    "default_subtitle": "Athena가 개인화할 수 있는 시작 화면 — 대화로 직접 구성하세요.",
+    "default_title": "시작 콕핏",
+    "default_vitals_title": "플릿 상태",
+    "empty_example_attention": "\"무엇이 내 주의를 필요로 하나요\"",
+    "empty_example_personas": "\"내 페르소나를 보여주세요\"",
+    "empty_hint": "Athena에게 콕핏 뷰를 구성해 달라고 요청하세요 — {personas} 또는 {attention}을 시도해 보세요.",
+    "empty_title": "콕핏이 비어 있습니다",
+    "error_retry": "다시 시도",
+    "error_title": "콕핏을 불러올 수 없습니다",
+    "subtitle_composed_prefix": "Athena가 구성함 — 업데이트됨",
+    "subtitle_default": "컴패니언 기반 워크스페이스",
+    "talk_to_athena": "Athena와 대화하기",
+    "unknown_widget": "알 수 없는 위젯: {kind}"
   },
   "certification": {
     "title": "인증 관리 센터",
@@ -1832,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "시작일",
     "end_date": "종료일"
+  },
+  "healing_effectiveness": {
+    "attempted": "시도",
+    "confirmed": "확정",
+    "loading": "치유 통계 로드 중…",
+    "no_data": "아직 자동 수정 활동이 없습니다",
+    "recent_activity": "최근 활동",
+    "reverted": "되돌림",
+    "success_rate": "성공률",
+    "title": "자가 치유",
+    "window_label": "최근"
   }
 }

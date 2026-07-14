@@ -280,6 +280,27 @@ This doc set covers pillar 3. For pillar 1 see
    the persona circuit breaker (5 consecutive) still wins, and the budget folds
    to a manual issue once spent.
 
+### Healing auditability & effectiveness ledger
+
+- **Chain-stop audit for healing exhaustion.** When a self-healing pathway gives
+  up on a *chained* execution — the AI-heal run failed, produced no actionable
+  fix, or a retry ladder exhausted its budget — the engine records a
+  `chain_stop_reasons` row (`healing_abandoned` / `healing_capped`), so the Chain
+  tab answers "why did this chain stop?" for healing exhaustion the same way it
+  does for depth/budget/predicate stops. Recorded only when the original run
+  carried a `chain_trace_id`; non-chain heals surface via the healing audit log.
+- **AI-heal prompt snapshot.** `apply_db_fixes` now snapshots the healed prompt
+  as a new `persona_prompt_versions` row and promotes it to `production`, so the
+  heal is a first-class version — auto-rollback's error-rate metrics attribute
+  post-heal runs to the healed version, and a rollback restores the healed prompt
+  rather than reverting to an older, pre-heal snapshot.
+- **Effectiveness ledger.** Every terminal auto-fix outcome (confirm on retry
+  success, revert on retry failure) is written to `healing_audit_log` under the
+  `healing_effectiveness` subsystem, making per-category confirm-vs-revert rates
+  aggregatable via `get_healing_effectiveness` (surfaced in the Overview → Health
+  tab). Previously reverts were invisible — a reverted issue drops back to `open`
+  and loses its `auto_fixed` flag.
+
 ## Common operations
 
 ### Fire an execution manually
@@ -347,7 +368,12 @@ subprocess, rolls back any in-progress DB updates.
    `db/models/memory.rs` (importance dominates; access weight fades with a
    ~7-day half-life; user-pinned `core` never decays). Shared retrieval
    primitives (vector distance floor, lane ranking) now live in
-   `src-tauri/src/retrieval/`.
+   `src-tauri/src/retrieval/`. On `ml` builds recall is additionally
+   **task-relevant** (MEMORY CONTRACT (7)): the run's input is embedded and
+   KNN'd against a `persona_memory_embedding` vec0 side-table, and each
+   memory's value score is blended as `value × (1 + 0.6 × similarity)` —
+   relevance reorders within value bands but never flips wide value gaps,
+   and non-`ml` builds keep the pure value ranking.
 
 3. **Don't poll executions tightly**. The frontend should subscribe
    to `execution-status` / `execution-output` Tauri events instead of

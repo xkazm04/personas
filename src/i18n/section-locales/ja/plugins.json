@@ -189,7 +189,16 @@
     "auto_hibernate_desc": "しきい値を超えてアイドル状態のセッションを自動的に休止し、Fleetがフォーカスされていない場合でもプロセスを解放します。「復帰」で再開可能な状態を維持します。Personasが開いている間に実行されます。",
     "auto_hibernate_toggle": "自動休止を有効にする",
     "auto_hibernate_after": "経過後",
-    "auto_hibernate_minutes_unit": "分アイドル"
+    "auto_hibernate_minutes_unit": "分アイドル",
+    "live_slots_desc": "同時に実行する claude プロセス数を制限します。フリートが上限に達すると、最も古いアイドル状態のセッションがハイバネートされて空きが作られます — ウェイクでいつでも再開できます。作業中のセッションが中断されることはありません。",
+    "live_slots_max_label": "最大",
+    "live_slots_title": "ライブセッション数を制限",
+    "live_slots_toggle": "セッション上限を有効化",
+    "live_slots_unit": "件のライブセッション",
+    "headless_badge": "バックグラウンド",
+    "headless_no_terminal": "バックグラウンドセッション — ターミナルなしで実行中。返信は「要対応」バナーから、進捗は Insights に表示されます。",
+    "spawn_headless_hint": "ヘッドレスモード — ライブターミナルなしで、CPU と RAM の負荷を大幅に軽減。返信は「要対応」バナーから、進捗は Insights で確認できます。",
+    "spawn_headless_toggle": "バックグラウンドで実行（ターミナルなし）"
   },
   "title": "プラグイン",
   "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",
@@ -2155,7 +2164,8 @@
     "voice_pocket_upload_save": "音声を追加",
     "voice_pocket_upload_title": "あなたの声を追加",
     "voice_pocket_hf_gate_desc": "自分のクローン音声を管理するには、Credential Vault（認証情報保管庫）に Hugging Face アクセストークンが必要です。これにより、音声クローンモデルのライセンスがあなたのアカウントに紐付けられます。Hugging Face の認証情報を追加してから、こちらに戻ってきてください。",
-    "voice_pocket_hf_gate_title": "Hugging Face アカウントが必要です"
+    "voice_pocket_hf_gate_title": "Hugging Face アカウントが必要です",
+    "persona_overview_kpi_trust_clamped": "信頼スコアが範囲外だったため、100% に制限されました。"
   },
   "artist_gallery": {
     "loading_viewer": "ビューアを読み込み中…",
@@ -2405,7 +2415,9 @@
     "goal_scaffold_timeline_title": "タイムライン",
     "goal_scaffold_timeline_sub": "目標日付別のゴールを時間軸で表示し、依存関係の矢印とずれマーカーを付けた表示。近日公開。",
     "goal_field_title": "タイトル",
+    "goal_field_title_placeholder": "どのような成果を目指していますか？",
     "goal_field_description": "説明",
+    "goal_field_description_placeholder": "コンテキスト、スコープ、または完了の基準（任意）…",
     "goal_field_status": "ステータス",
     "goal_field_target_date": "目標日",
     "goal_target_asap": "できるだけ早く",

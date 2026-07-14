@@ -166,5 +166,8 @@
   "edge_count_other": "{count} связей",
   "adoption_count_one": "{count} внедрение",
   "adoption_count_other": "{count} внедрений",
-  "selected": "выбрано"
+  "selected": "выбрано",
+  "command_palette_create_agent": "Создать нового агента",
+  "command_palette_go_to": "Перейти к {label}",
+  "command_palette_leaderboard": "Рейтинг агентов"
 }

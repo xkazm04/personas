@@ -23,6 +23,20 @@ export default function SettingsHistoryTab() {
   const { t } = useTranslation();
   const s = t.settings.history;
 
+  // Map a raw audit category token (e.g. "quality_gates") to its localized
+  // label. Unknown/future categories fall back to a humanized token so the
+  // filter never renders a raw snake_case string.
+  const categoryLabel = useCallback(
+    (cat: string): string => {
+      const labels = s.categories as Record<string, string | undefined>;
+      return (
+        labels?.[cat] ??
+        cat.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+      );
+    },
+    [s],
+  );
+
   const [entries, setEntries] = useState<SettingsAuditEntry[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +120,7 @@ export default function SettingsHistoryTab() {
               <option value="">{s.filter_all}</option>
               {categories.map((c) => (
                 <option key={c} value={c}>
-                  {c}
+                  {categoryLabel(c)}
                 </option>
               ))}
             </select>
@@ -152,7 +166,7 @@ export default function SettingsHistoryTab() {
                     {entry.action}
                   </span>
                   <span className="typo-caption text-foreground uppercase tracking-wider">
-                    {entry.category}
+                    {categoryLabel(entry.category)}
                   </span>
                   <span className="typo-body font-medium text-foreground truncate flex-1 text-left">
                     {entry.settingKey}

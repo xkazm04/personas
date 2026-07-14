@@ -533,6 +533,7 @@ impl EphemeralPersona {
             setup_status: "ready".to_string(),
             setup_detail: None,
             disabled_dims_json: None,
+            lifecycle: "draft".to_string(),
             created_at: now.clone(),
             updated_at: now,
         };

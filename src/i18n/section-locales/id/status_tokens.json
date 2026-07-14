@@ -133,5 +133,33 @@
     "high": "Tinggi",
     "low": "Rendah",
     "medium": "Sedang"
+  },
+  "error_category": {
+    "api_error": "Kesalahan API",
+    "credential_error": "Kesalahan kredensial",
+    "network": "Jaringan",
+    "provider_not_found": "Penyedia tidak ditemukan",
+    "rate_limit": "Batas laju",
+    "session_limit": "Batas sesi",
+    "timeout": "Waktu habis",
+    "tool_error": "Kesalahan alat",
+    "transient_process_failure": "Kegagalan proses sementara",
+    "unknown": "Tidak diketahui",
+    "validation": "Validasi"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Batas fan-out tercapai",
+    "budget_exceeded": "Batas biaya tercapai",
+    "cas_lost": "Diklaim oleh proses lain",
+    "cycle_detected": "Siklus terdeteksi",
+    "depth_limit": "Batas kedalaman",
+    "handoff_suppressed": "Penerusan ditahan",
+    "malformed_config": "Konfigurasi tidak valid",
+    "outside_window": "Di luar jendela aktif",
+    "predicate_unmet": "Kondisi tidak terpenuhi",
+    "publish_failed": "Publikasi gagal",
+    "quarantined": "Trigger dikarantina",
+    "healing_abandoned": "Pemulihan menyerah",
+    "healing_capped": "Percobaan pemulihan habis"
   }
 }

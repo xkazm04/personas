@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Zap, RefreshCw, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2, Bot, HardDrive, Webhook, CalendarClock, KeyRound, HeartPulse, CloudUpload, Brain, ClipboardCheck, UserCheck, User, Cog, FlaskConical, Workflow, HelpCircle } from 'lucide-react';
+import { Zap, RefreshCw, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2, Bot, HardDrive, Webhook, CalendarClock, KeyRound, HeartPulse, CloudUpload, Brain, ClipboardCheck, UserCheck, User, Cog, FlaskConical, Workflow, HelpCircle, BellOff } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -71,7 +72,7 @@ export default function EventLogList() {
     scheduler: t.overview.events.source_scheduled,
   }), [t.overview.events.source_event, t.overview.events.source_manual, t.overview.events.source_scheduled, t.overview.events.source_system]);
   const {
-    recentEvents, personas, availableTypes,
+    recentEvents, personas, availableTypes, skippedStats,
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
     sortDirection: _sortDirection, toggleSortDirection: _toggleSortDirection,
     selectedEvent, setSelectedEvent,
@@ -266,6 +267,22 @@ export default function EventLogList() {
         subtitle={tx(recentEvents.length === 1 ? t.overview.events.subtitle_one : t.overview.events.subtitle, { filtered: filteredEvents.length, total: `${recentEvents.length}${serverHasMore ? '+' : ''}` })}
         actions={
           <div className="flex items-center gap-2">
+            {/* Dead-trigger signal: events that fired but had no subscriber in
+                the last 7 days. Hidden when everything matched. */}
+            {skippedStats && Number(skippedStats.skipped) > 0 && (
+              <Tooltip
+                content={tx(t.overview.events.skipped_stat_tooltip, {
+                  skipped: Number(skippedStats.skipped),
+                  total: Number(skippedStats.total),
+                  rate: `${Math.round((Number(skippedStats.skipped) / Math.max(1, Number(skippedStats.total))) * 100)}%`,
+                })}
+              >
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption rounded-card bg-status-warning/10 text-status-warning border border-status-warning/20">
+                  <BellOff className="w-3 h-3" />
+                  {tx(t.overview.events.skipped_stat_label, { skipped: Number(skippedStats.skipped) })}
+                </span>
+              </Tooltip>
+            )}
             {import.meta.env.DEV && (
               <button onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.events.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.events.mock_event}

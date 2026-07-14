@@ -732,7 +732,42 @@ pub async fn run_execution(
                     // the cut is now decided by decayed value (importance ×
                     // category half-life × access boost) instead of raw sort
                     // order, and entries are packed whole — never mid-truncated.
+                    //
+                    // ml builds additionally blend TASK RELEVANCE (MEMORY
+                    // CONTRACT (7)): the run's input payload is flattened to
+                    // task text, embedded, KNN'd over persona_memory_embedding,
+                    // floored by the shared retrieval lane, and the resulting
+                    // similarity reorders memories WITHIN comparable value
+                    // bands. Core pinning, the budget, and packing semantics
+                    // are unchanged; with no registered embedder, no task
+                    // text, or any embedding failure this is exactly the
+                    // value-only pack below.
                     const ACTIVE_MEM_BUDGET_CHARS: usize = 6000;
+                    #[cfg(feature = "ml")]
+                    let packed = {
+                        let task_context = crate::engine::memory_recall::task_context_from_input(
+                            input_data.as_ref(),
+                        );
+                        match crate::engine::memory_recall::task_recall_runtime() {
+                            Some((vec_pool, embedder)) if !task_context.is_empty() => {
+                                crate::engine::memory_recall::pack_by_budget_task_aware(
+                                    std::mem::take(&mut tiered.active),
+                                    ACTIVE_MEM_BUDGET_CHARS,
+                                    chrono::Utc::now(),
+                                    &task_context,
+                                    &vec_pool,
+                                    &embedder,
+                                )
+                                .await
+                            }
+                            _ => crate::engine::memory_recall::pack_by_budget(
+                                std::mem::take(&mut tiered.active),
+                                ACTIVE_MEM_BUDGET_CHARS,
+                                chrono::Utc::now(),
+                            ),
+                        }
+                    };
+                    #[cfg(not(feature = "ml"))]
                     let packed = crate::engine::memory_recall::pack_by_budget(
                         std::mem::take(&mut tiered.active),
                         ACTIVE_MEM_BUDGET_CHARS,

@@ -431,7 +431,10 @@
     "edge_count_other": "엣지 {count}개",
     "adoption_count_one": "채택 {count}개",
     "adoption_count_other": "채택 {count}개",
-    "selected": "선택됨"
+    "selected": "선택됨",
+    "command_palette_create_agent": "새 에이전트 만들기",
+    "command_palette_go_to": "{label}(으)로 이동",
+    "command_palette_leaderboard": "에이전트 리더보드"
   },
   "chrome": {
     "app_title": "Personas",
@@ -483,7 +486,9 @@
       "nav_mode_review": "사람 검토 전환 (탐색 모드)",
       "nav_mode_schedules": "일정 전환 (탐색 모드)",
       "nav_mode_search": "검색 열기 (탐색 모드)",
-      "open_title": "키보드 단축키"
+      "open_title": "키보드 단축키",
+      "nav_history_back": "뒤로",
+      "nav_history_forward": "앞으로"
     },
     "tray_schedules": "일정",
     "tray_schedules_today": "오늘 {count}개 예약됨",
@@ -586,6 +591,7 @@
     "mission_control": "미션 컨트롤",
     "factory": "팩토리",
     "kpis": "KPI",
+    "studio": "스튜디오",
     "competition": "경쟁",
     "development": "개발",
     "lifecycle": "라이프사이클",
@@ -781,6 +787,18 @@
       "personas_tab": "Personas (애니메이션)",
       "lucide_footer": "lucide-react -- 일반 아이콘 라이브러리 -- 정적",
       "personas_footer": "커스텀 아이콘 9개 -- 신경/회로 모티프 -- CSS 애니메이션 -- 테마 적응형"
+    },
+    "since_left": {
+      "alerts": "{count}개 알림 발생",
+      "alerts_other": "{count}개 알림 발생",
+      "approvals": "{count}개 승인 대기",
+      "approvals_other": "{count}개 승인 대기",
+      "dismiss": "닫기",
+      "failed": "{count}회 실패",
+      "failed_other": "{count}회 실패",
+      "runs": "{count}회 실행",
+      "runs_other": "{count}회 실행",
+      "title": "떠난 이후"
     }
   },
   "agents": {
@@ -1298,7 +1316,17 @@
       "tab_chain": "체인",
       "thinking_tooltip": "이번 실행에 사용된 추론 강도",
       "trace_empty_hint": "상세 추적은 도구를 사용하는 최신 실행에서만 수집됩니다. 이 실행에는 표시할 추적이 없습니다.",
-      "verdict_field": "판정"
+      "verdict_field": "판정",
+      "chain_ended_because": "체인 종료 원인",
+      "chain_total_cost": "체인 비용",
+      "active_chains_agents_one": "에이전트 {count}개",
+      "active_chains_agents_other": "에이전트 {count}개",
+      "active_chains_depth": "깊이 {count}",
+      "active_chains_hops_one": "홉 {count}회",
+      "active_chains_hops_other": "홉 {count}회",
+      "active_chains_one": "실행 중인 체인 {count}개",
+      "active_chains_other": "실행 중인 체인 {count}개",
+      "active_chains_title": "실행 중인 체인"
     },
     "lab": {
       "mode_arena": "아레나",
@@ -1625,7 +1653,9 @@
       "eco_col_resolved": "해결됨",
       "eco_empty": "아직 평가 결과 없음 — Lab을 실행하여 비용 효율을 확인하세요.",
       "eco_subtitle": "각 모델이 평가를 해결하는 빈도와 성공당 비용입니다.",
-      "eco_title": "비용 효율"
+      "eco_title": "비용 효율",
+      "vr_col_tokens": "토큰",
+      "vr_tokens_tooltip": "실행당 평균 입력 {input} / 출력 {output}"
     },
     "design": {
       "select_agent": "디자인 분석을 시작할 에이전트를 선택하세요",
@@ -2621,7 +2651,12 @@
       "delete_agents_message": "{count}개 에이전트와 모든 구성이 영구적으로 제거됩니다.",
       "delete_drafts": "{count}개 초안 삭제",
       "delete_drafts_message": "{count}개 초안 에이전트가 영구적으로 제거됩니다.",
-      "system_persona_undeletable": "Director는 시스템 페르소나이므로 삭제할 수 없습니다."
+      "system_persona_undeletable": "Director는 시스템 페르소나이므로 삭제할 수 없습니다.",
+      "archived_done": "페르소나 {count}개를 보관했습니다",
+      "bulk_delete_done": "페르소나 {deleted}개를 삭제했습니다",
+      "bulk_delete_failed": "페르소나 삭제에 실패했습니다",
+      "bulk_delete_partial": "{deleted}개 삭제, {skipped}개 건너뜀",
+      "restored_done": "페르소나 {count}개를 복원했습니다"
     },
     "persona_list": {
       "all_personas": "전체 페르소나",
@@ -2657,7 +2692,12 @@
       "batch_moved_partial": "{ok}개를 {group}(으)로 이동했습니다; {failed}개 실패",
       "render_cap_notice": "{total}개 중 {shown}개 표시 — 검색이나 필터로 좁혀 나머지를 확인하세요.",
       "star_director_add": "별표를 눌러 Director의 코칭 범위에 추가",
-      "star_director_remove": "별표됨 — Director의 코칭 범위에 포함됨. 클릭하여 제거."
+      "star_director_remove": "별표됨 — Director의 코칭 범위에 포함됨. 클릭하여 제거.",
+      "badge_archived": "보관됨",
+      "batch_archive": "보관",
+      "batch_restore": "복원",
+      "show_active_personas": "활성 페르소나 표시",
+      "show_archived_personas": "보관된 페르소나 표시"
     },
     "editor_ui": {
       "max_budget_label": "최대 예산 (USD)",
@@ -3509,6 +3549,11 @@
       "activate_agent": "에이전트 활성화",
       "create_agent": "에이전트 생성",
       "min_completeness": "40% 완성도 달성을 위해 더 많은 세부정보 추가"
+    },
+    "duplicate": {
+      "done": "\"{name}\"(으)로 복제됨",
+      "done_with_wiring": "\"{name}\"(으)로 복제됨 — 트리거 {triggers}개와 구독 {subscriptions}개를 복사(사본에서는 비활성화)",
+      "failed": "에이전트를 복제하지 못했습니다"
     }
   },
   "vault": {
@@ -4129,7 +4174,37 @@
       "tool_count_other": "도구 {count}개",
       "tab_documents": "문서",
       "tab_search": "검색",
-      "tab_settings": "설정"
+      "tab_settings": "설정",
+      "page_label": "p. {page}",
+      "pages_label": "{count}페이지",
+      "partial_text_badge": "부분 텍스트",
+      "partial_text_tooltip": "이 구절은 대부분 이미지로 된 페이지에서 읽어온 것이므로 불완전할 수 있습니다.",
+      "scanned_pages_tooltip": "이 페이지들은 텍스트 레이어가 없는 이미지여서 내용을 검색할 수 없습니다. 포함하려면 OCR 처리된 사본을 사용하세요.",
+      "scanned_pages_warning": "스캔된 페이지 {count}개를 읽을 수 없음",
+      "extract_add_entity": "유형 추가",
+      "extract_add_field": "필드 추가",
+      "extract_col_attrs": "속성",
+      "extract_col_key": "엔티티",
+      "extract_col_source": "출처",
+      "extract_col_type": "유형",
+      "extract_empty_kb": "구조화된 데이터를 추출하기 전에 문서를 추가하세요.",
+      "extract_entity_desc_ph": "이 객체가 무엇인지",
+      "extract_entity_type_ph": "entity_type",
+      "extract_field_desc_ph": "무엇을 담는지",
+      "extract_field_name_ph": "필드",
+      "extract_infer_btn": "스키마 제안",
+      "extract_inferring": "코퍼스 읽는 중...",
+      "extract_intro": "이 지식 베이스를 조회 가능한 행으로 전환하세요. 먼저 문서가 설명하는 객체의 스키마를 제안하고 검토한 다음 추출하세요.",
+      "extract_no_entities": "아직 추출된 엔티티가 없습니다. 스키마를 제안하여 시작하세요.",
+      "extract_progress": "{done}/{total} 문서, {count} 엔티티 발견",
+      "extract_remove": "제거",
+      "extract_run_btn": "엔티티 추출",
+      "extract_run_status": "{status} — {count} 엔티티",
+      "extract_running": "추출 중...",
+      "extract_runs_heading": "추출 실행",
+      "extract_schema_heading": "제안된 스키마",
+      "extract_schema_hint": "추출 전에 편집하세요 — 원하지 않는 유형을 제거하면 모델이 나머지를 채웁니다.",
+      "tab_extract": "구조화된 데이터"
     },
     "manager": {
       "title": "자격 증명",
@@ -6050,7 +6125,9 @@
       "source": "소스",
       "processed": "처리됨",
       "event_data": "이벤트 데이터",
-      "error": "오류"
+      "error": "오류",
+      "skipped_stat_label": "{skipped}건 건너뜀",
+      "skipped_stat_tooltip": "지난 7일 동안 {total}건 중 {skipped}건의 이벤트에 구독자가 없어 건너뛰었습니다({rate}). 비율이 높다면 아무도 수신하지 않는 트리거가 있다는 신호입니다."
     },
     "health": {
       "title": "에이전트 상태",
@@ -6230,7 +6307,11 @@
       "all_statuses": "전체 상태",
       "col_status": "상태",
       "col_id": "ID",
-      "execution_label": "실행"
+      "execution_label": "실행",
+      "error_category_by_persona": "에이전트별 주요 실패",
+      "error_category_prior_period": "이전 기간 대비",
+      "error_category_section_title": "카테고리별 실패",
+      "error_category_total_failures": "총 실패 수"
     },
     "analytics_dashboard": {
       "issues_found": "{count}개 이슈 발견",
@@ -6914,7 +6995,32 @@
       "comparison_recommended": "추천",
       "flow_title": "진행 방식",
       "timeline_title": "타임라인",
-      "log_title": "근거"
+      "log_title": "근거",
+      "default_attention_empty": "모든 페르소나 정상 — 주의가 필요한 항목이 없습니다.",
+      "default_attention_low_trust": "낮은 신뢰도",
+      "default_attention_paused": "일시중지됨",
+      "default_attention_setup": "설정 필요",
+      "default_attention_title": "주의 필요",
+      "default_callout_body": "이것은 플릿 상태를 기반으로 만든 시작 화면입니다. Athena에게 관심 있는 항목에 맞춘 콕핏을 구성해 달라고 요청하세요 — 자동으로 이 화면을 대체합니다.",
+      "default_callout_title": "시작 콕핏",
+      "default_roster_title": "내 페르소나",
+      "default_stat_active_personas": "활성 페르소나",
+      "default_stat_executions": "실행 (7일)",
+      "default_stat_needs_attention": "주의 필요",
+      "default_stat_success_rate": "성공률",
+      "default_subtitle": "Athena가 개인화할 수 있는 시작 화면 — 대화로 직접 구성하세요.",
+      "default_title": "시작 콕핏",
+      "default_vitals_title": "플릿 상태",
+      "empty_example_attention": "\"무엇이 내 주의를 필요로 하나요\"",
+      "empty_example_personas": "\"내 페르소나를 보여주세요\"",
+      "empty_hint": "Athena에게 콕핏 뷰를 구성해 달라고 요청하세요 — {personas} 또는 {attention}을 시도해 보세요.",
+      "empty_title": "콕핏이 비어 있습니다",
+      "error_retry": "다시 시도",
+      "error_title": "콕핏을 불러올 수 없습니다",
+      "subtitle_composed_prefix": "Athena가 구성함 — 업데이트됨",
+      "subtitle_default": "컴패니언 기반 워크스페이스",
+      "talk_to_athena": "Athena와 대화하기",
+      "unknown_widget": "알 수 없는 위젯: {kind}"
     },
     "certification": {
       "title": "인증 관리 센터",
@@ -7359,6 +7465,17 @@
     "day_range_picker": {
       "start_date": "시작일",
       "end_date": "종료일"
+    },
+    "healing_effectiveness": {
+      "attempted": "시도",
+      "confirmed": "확정",
+      "loading": "치유 통계 로드 중…",
+      "no_data": "아직 자동 수정 활동이 없습니다",
+      "recent_activity": "최근 활동",
+      "reverted": "되돌림",
+      "success_rate": "성공률",
+      "title": "자가 치유",
+      "window_label": "최근"
     }
   },
   "matrix_v3": {
@@ -10126,7 +10243,20 @@
       "empty": "아직 기록된 설정 변경 사항이 없습니다. 이후 이루어지는 변경 사항이 이 목록에 표시됩니다.",
       "empty_filtered": "현재 카테고리 필터와 일치하는 항목이 없습니다.",
       "before": "변경 전",
-      "after": "변경 후"
+      "after": "변경 후",
+      "categories": {
+        "api_keys": "API 키",
+        "autonomy": "자율성",
+        "byom": "BYOM",
+        "config": "일반",
+        "engine": "엔진",
+        "integrations": "통합",
+        "limits": "한도",
+        "notifications": "알림",
+        "quality_gates": "품질 게이트",
+        "retention": "보존",
+        "sync": "클라우드 동기화"
+      }
     },
     "api_keys": {
       "title": "API 키",
@@ -10604,7 +10734,61 @@
     "usage_limit_weekly_message": "Claude의 주간 사용 한도에 도달했습니다.",
     "usage_limit_weekly_suggestion": "주간 한도가 초기화될 때까지 실행이 계속 실패합니다. 스케줄을 일시 중지하거나 플랜을 업그레이드하세요.",
     "usage_limit_window_message": "Claude의 사용 기간이 소진되었습니다.",
-    "usage_limit_window_suggestion": "기간이 초기화되면 실행이 자동으로 재시도됩니다. 별도 조치가 필요 없습니다."
+    "usage_limit_window_suggestion": "기간이 초기화되면 실행이 자동으로 재시도됩니다. 별도 조치가 필요 없습니다.",
+    "agent_ir_parse_message": "빌드 출력 결과가 손상되어 반환되었습니다.",
+    "agent_ir_parse_suggestion": "Refine을 클릭하여 다시 생성하거나 새 빌드를 시작하세요 — Refine은 결과를 더 정교하게 다듬어 줍니다.",
+    "authorization_required_message": "이 도구를 실행하려면 먼저 권한 부여가 필요합니다.",
+    "authorization_required_suggestion": "권한 부여 페이지를 열어 동의한 후 다시 시도하세요.",
+    "budget_value_invalid_message": "예산 값이 올바르지 않습니다.",
+    "budget_value_invalid_suggestion": "달러 예산에는 양수를 사용하세요 (예: $5의 경우 5).",
+    "build_no_agent_ir_message": "빌드가 아직 생성을 완료하지 않았습니다 — 에이전트의 계획이 아직 조립 중입니다.",
+    "build_no_agent_ir_suggestion": "몇 초 기다린 후 다시 시도하세요. 1분 이상 지속되면 더 구체적인 의도로 빌드를 다시 시작하세요.",
+    "build_nothing_to_promote_message": "아직 빌드에서 승격할 결과물이 생성되지 않았습니다.",
+    "build_nothing_to_promote_suggestion": "빌드가 생성을 완료할 때까지 기다리거나 Refine을 클릭해 진행을 유도하세요. 마법사가 1분 이상 멈춰 있으면 다시 시작하세요.",
+    "build_session_disappeared_message": "이 빌드 세션은 완료되기 전에 초기화되었습니다.",
+    "build_session_disappeared_suggestion": "새 빌드를 시작하세요 — 이전 초안은 더 이상 복구할 수 없습니다.",
+    "build_session_gone_message": "이 빌드 세션이 만료되었거나 초기화되었습니다.",
+    "build_session_gone_suggestion": "동일한 의도로 새 빌드를 시작하세요.",
+    "design_result_parse_message": "페르소나의 저장된 디자인 데이터를 파싱할 수 없습니다.",
+    "design_result_parse_suggestion": "이 페르소나에 대해 새로 빌드를 실행하세요 — 캐시된 디자인이 이전 앱 버전에서 생성된 것입니다.",
+    "external_service_message": "외부 서비스가 요청을 완료하지 못했습니다.",
+    "external_service_suggestion": "서비스 상태와 연결 상태를 확인한 후 다시 시도하세요.",
+    "importance_range_message": "메모리 중요도 값이 범위를 벗어났습니다.",
+    "importance_range_suggestion": "메모리 중요도는 1에서 10 사이의 값을 선택하세요.",
+    "interval_not_number_message": "폴링 간격이 유효한 숫자가 아닙니다.",
+    "interval_not_number_suggestion": "Refine을 열고 \"5분마다\"와 같이 숫자로 된 폴링 간격을 요청하세요.",
+    "interval_too_fast_message": "폴링은 1분에 한 번보다 자주 실행할 수 없습니다.",
+    "interval_too_fast_suggestion": "폴링 간격을 60초 이상으로 설정하세요 (300초/5분이 안전한 기본값입니다). Refine을 클릭하여 에이전트에게 주기를 늦추도록 지시하세요.",
+    "invalid_trigger_type_message": "빌드가 런타임에서 인식하지 못하는 트리거 유형을 선택했습니다.",
+    "invalid_trigger_type_suggestion": "Refine을 클릭하고 구체적인 트리거(\"일정에 따라\", \"webhook 발생 시\", \"X가 발생할 때\")를 요청하세요. 계속 발생하면 빌드를 다시 시작하세요.",
+    "keyring_lost_message": "보안 자격 증명 저장소를 더 이상 사용할 수 없습니다.",
+    "keyring_lost_suggestion": "앱을 재시작하세요. 문제가 계속되면 영향을 받은 자격 증명을 vault에 다시 입력하세요.",
+    "max_concurrent_range_message": "동시 실행 제한 값이 범위를 벗어났습니다.",
+    "max_concurrent_range_suggestion": "최대 동시 실행 수를 1부터 설정에 표시된 엔진 상한값 사이로 설정하세요.",
+    "max_turns_range_message": "턴 제한 값이 허용 범위를 벗어났습니다.",
+    "max_turns_range_suggestion": "최대 턴 수를 1에서 50 사이로 설정하세요.",
+    "name_invalid_message": "페르소나 이름을 수정해야 합니다.",
+    "name_invalid_suggestion": "짧고 명확한 이름(1–40자)을 선택한 후 다시 시도하세요.",
+    "oauth_revoked_message": "이 연결의 권한 부여가 취소되었습니다.",
+    "oauth_revoked_suggestion": "계정을 다시 연결하여 접근 권한을 다시 부여하세요.",
+    "polling_url_blocked_message": "안전상의 이유로 폴링 URL이 거부되었습니다.",
+    "polling_url_blocked_suggestion": "해당 URL은 내부/사설 주소를 가리키고 있습니다. 공개적으로 접근 가능한 HTTPS URL을 사용하거나 트리거를 webhook + smee.io로 전환하세요.",
+    "prompt_too_large_message": "에이전트의 프롬프트가 너무 깁니다.",
+    "prompt_too_large_suggestion": "Refine을 클릭하여 더 간결한 버전을 요청하거나 불필요한 부분을 제거하세요.",
+    "retry_exhausted_message": "여러 차례 자동 재시도 후에도 계속 실패했습니다.",
+    "retry_exhausted_suggestion": "잠시 후 다시 시도하세요 — 문제가 계속되면 서비스 상태나 에이전트 설정을 확인하세요.",
+    "schedule_missing_timing_message": "예약된 트리거에는 cron 표현식 또는 폴링 간격이 필요합니다.",
+    "schedule_missing_timing_suggestion": "Refine을 클릭하고 에이전트가 실행되어야 할 시점을 지정하세요 (예: \"평일 오전 8시마다\" 또는 \"30분마다\").",
+    "smee_url_invalid_message": "webhook 소스 URL은 smee.io에서 발급된 것이어야 합니다.",
+    "smee_url_invalid_suggestion": "브라우저에서 https://smee.io/new 를 열어 채널 URL을 복사한 후 webhook 소스 필드에 붙여넣으세요.",
+    "system_prompt_empty_message": "페르소나의 시스템 프롬프트가 비어 있습니다.",
+    "system_prompt_empty_suggestion": "일반적으로 빌드 파이프라인이 이 값을 자동으로 채웁니다. 빌드를 Refine하거나 더 구체적인 의도로 새 빌드를 시작하세요.",
+    "timeout_range_message": "제한 시간 값이 허용 범위를 벗어났습니다.",
+    "timeout_range_suggestion": "제한 시간을 1초에서 엔진 상한값(보통 30분) 사이로 설정하세요.",
+    "unknown_prompt_field_message": "빌드가 런타임에서 인식하지 못하는 필드를 생성했습니다.",
+    "unknown_prompt_field_suggestion": "Refine을 클릭하세요 — 새 빌드는 현재 스키마를 사용합니다.",
+    "webhook_missing_secret_message": "이 webhook 트리거에 서명용 secret이 없습니다.",
+    "webhook_missing_secret_suggestion": "Promote를 다시 실행하세요 — 파이프라인이 제출 시 webhook_secret을 자동으로 생성합니다. 문제가 계속되면 빌드를 다시 시작하세요."
   },
   "empty_states": {
     "credentials_title": "에이전트에 자격 증명이 필요합니다",
@@ -11314,6 +11498,34 @@
       "high": "높음",
       "low": "낮음",
       "medium": "중간"
+    },
+    "error_category": {
+      "api_error": "API 오류",
+      "credential_error": "자격 증명 오류",
+      "network": "네트워크",
+      "provider_not_found": "공급자를 찾을 수 없음",
+      "rate_limit": "속도 제한",
+      "session_limit": "세션 제한",
+      "timeout": "시간 초과",
+      "tool_error": "도구 오류",
+      "transient_process_failure": "일시적 프로세스 실패",
+      "unknown": "알 수 없음",
+      "validation": "유효성 검사"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "팬아웃 한도 도달",
+      "budget_exceeded": "비용 한도 도달",
+      "cas_lost": "다른 실행이 선점함",
+      "cycle_detected": "순환 감지됨",
+      "depth_limit": "깊이 한도",
+      "handoff_suppressed": "핸드오프 억제됨",
+      "malformed_config": "잘못된 구성",
+      "outside_window": "활성 창 범위 밖",
+      "predicate_unmet": "조건 미충족",
+      "publish_failed": "게시 실패",
+      "quarantined": "트리거 격리됨",
+      "healing_abandoned": "자가 치유 중단",
+      "healing_capped": "치유 재시도 소진"
     }
   },
   "project_overview": {
@@ -11559,7 +11771,16 @@
       "auto_hibernate_desc": "임계값을 초과해 유휴 상태인 세션을 자동으로 최대 절전 처리하여 Fleet에 포커스가 없을 때도 프로세스를 해제합니다. 깨우기로 재개할 수 있습니다. Personas가 열려 있는 동안 실행됩니다.",
       "auto_hibernate_toggle": "자동 최대 절전 활성화",
       "auto_hibernate_after": "이후",
-      "auto_hibernate_minutes_unit": "분 유휴"
+      "auto_hibernate_minutes_unit": "분 유휴",
+      "live_slots_desc": "동시에 실행되는 claude 프로세스 수를 제한합니다. 플릿이 한도에 도달하면 가장 오래 유휴 상태인 세션이 절전 모드로 전환되어 자리를 비웁니다 — 깨우기로 언제든 재개할 수 있습니다. 작업 중인 세션은 절대 중단되지 않습니다.",
+      "live_slots_max_label": "최대",
+      "live_slots_title": "라이브 세션 제한",
+      "live_slots_toggle": "세션 제한 사용",
+      "live_slots_unit": "개의 라이브 세션",
+      "headless_badge": "백그라운드",
+      "headless_no_terminal": "백그라운드 세션 — 터미널 없이 실행됩니다. \"도움 필요\" 배너에서 응답하고, 진행 상황은 Insights에 표시됩니다.",
+      "spawn_headless_hint": "헤드리스 모드 — 라이브 터미널 없이 CPU와 RAM 부담이 훨씬 적습니다. 응답은 \"도움 필요\" 배너에서, 진행 상황은 Insights에서 확인하세요.",
+      "spawn_headless_toggle": "백그라운드로 실행 (터미널 없음)"
     },
     "title": "플러그인",
     "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",
@@ -13525,7 +13746,8 @@
       "voice_pocket_upload_save": "목소리 추가",
       "voice_pocket_upload_title": "내 목소리 추가",
       "voice_pocket_hf_gate_desc": "직접 복제한 음성을 관리하려면 자격 증명 보관함(Credential Vault)에 Hugging Face 액세스 토큰이 필요합니다. 이 토큰은 음성 복제 모델 라이선스를 사용자 계정과 연결합니다. Hugging Face 자격 증명을 추가한 뒤 다시 돌아오세요.",
-      "voice_pocket_hf_gate_title": "Hugging Face 계정이 필요합니다"
+      "voice_pocket_hf_gate_title": "Hugging Face 계정이 필요합니다",
+      "persona_overview_kpi_trust_clamped": "신뢰 점수가 범위를 벗어나 100%로 제한되었습니다."
     },
     "artist_gallery": {
       "loading_viewer": "뷰어 로딩 중…",
@@ -13775,7 +13997,9 @@
       "goal_scaffold_timeline_title": "타임라인",
       "goal_scaffold_timeline_sub": "목표 날짜별 목표를 의존성 화살표와 지연 표시기로 나타내는 시간축 뷰입니다. 곧 출시 예정.",
       "goal_field_title": "제목",
+      "goal_field_title_placeholder": "어떤 결과를 향해 나아가고 있나요?",
       "goal_field_description": "설명",
+      "goal_field_description_placeholder": "선택적 맥락, 범위, 또는 성공 기준…",
       "goal_field_status": "상태",
       "goal_field_target_date": "목표 날짜",
       "goal_target_asap": "최대한 빨리",
@@ -14481,7 +14705,28 @@
     "beat_sidebar_collapse": "비트 목록 접기",
     "beat_sidebar_expand": "비트 목록 확장",
     "beat_sidebar_empty": "아직 비트가 없습니다. 타임라인에 이정표를 표시하려면 텍스트 비트를 추가하세요.",
-    "beat_sidebar_untitled": "(제목 없음)"
+    "beat_sidebar_untitled": "(제목 없음)",
+    "add_title": "제목 추가",
+    "entrance": "등장",
+    "entrance_animate": "등장 애니메이션",
+    "entrance_down": "아래",
+    "entrance_duration": "속도",
+    "entrance_left": "왼쪽",
+    "entrance_none": "없음",
+    "entrance_right": "오른쪽",
+    "entrance_up": "위",
+    "layer_title": "제목",
+    "title_text": "제목 텍스트",
+    "title_text_placeholder": "제목 입력…",
+    "title_untitled": "(제목 없음)",
+    "voiceover": "보이스오버",
+    "voiceover_added": "보이스오버가 타임라인에 추가되었습니다",
+    "voiceover_generate": "보이스오버 생성",
+    "voiceover_generating": "합성 중…",
+    "voiceover_not_installed": "로컬 음성 엔진이 설치되어 있지 않습니다 — 먼저 컴패니언의 음성 설정에서 설정하세요.",
+    "voiceover_text": "내레이션",
+    "voiceover_text_placeholder": "내레이터가 말할 내용을 입력하세요…",
+    "voiceover_voice": "음성"
   },
   "research_lab": {
     "dashboard": "대시보드",

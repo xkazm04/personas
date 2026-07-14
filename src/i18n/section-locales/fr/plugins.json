@@ -189,7 +189,16 @@
     "auto_hibernate_desc": "Hiberne automatiquement les sessions inactives au-delà du seuil défini — libère le processus même lorsque Fleet n'est pas au premier plan. Elles restent reprénables via Réveiller. Fonctionne pendant que Personas est ouvert.",
     "auto_hibernate_toggle": "Activer l'hibernation automatique",
     "auto_hibernate_after": "Après",
-    "auto_hibernate_minutes_unit": "min d'inactivité"
+    "auto_hibernate_minutes_unit": "min d'inactivité",
+    "live_slots_desc": "Limitez le nombre de processus claude exécutés simultanément. Quand la flotte atteint la limite, la session inactive la plus ancienne est mise en hibernation pour libérer de la place — elle reste reprenables via Réveiller. Les sessions en cours ne sont jamais interrompues.",
+    "live_slots_max_label": "Max",
+    "live_slots_title": "Limiter les sessions actives",
+    "live_slots_toggle": "Activer la limite de sessions",
+    "live_slots_unit": "sessions actives",
+    "headless_badge": "Arrière-plan",
+    "headless_no_terminal": "Session en arrière-plan — s'exécute sans terminal. Répondez depuis le bandeau « Besoin de vous » ; la progression s'affiche dans Insights.",
+    "spawn_headless_hint": "Mode headless — pas de terminal en direct, bien plus léger en CPU et RAM. Répondez depuis le bandeau « Besoin de vous » ; suivez la progression dans Insights.",
+    "spawn_headless_toggle": "Exécuter en arrière-plan (sans terminal)"
   },
   "title": "Extensions",
   "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",
@@ -2155,7 +2164,8 @@
     "voice_pocket_upload_save": "Ajouter la voix",
     "voice_pocket_upload_title": "Ajoutez votre voix",
     "voice_pocket_hf_gate_desc": "La gestion de vos propres voix clonées nécessite un token d'accès Hugging Face dans le Coffre-fort des identifiants — il rattache la licence du modèle de clonage vocal à votre compte. Ajoutez un identifiant Hugging Face, puis revenez ici.",
-    "voice_pocket_hf_gate_title": "Compte Hugging Face requis"
+    "voice_pocket_hf_gate_title": "Compte Hugging Face requis",
+    "persona_overview_kpi_trust_clamped": "Le score de confiance était hors limites et a été plafonné à 100 %."
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",
@@ -2405,7 +2415,9 @@
     "goal_scaffold_timeline_title": "Calendrier",
     "goal_scaffold_timeline_sub": "Vue temporelle des objectifs par date cible, avec flèches de dépendance et indicateurs de glissement. Bientôt disponible.",
     "goal_field_title": "Titre",
+    "goal_field_title_placeholder": "Quel résultat visez-vous ?",
     "goal_field_description": "Description",
+    "goal_field_description_placeholder": "Contexte optionnel, périmètre ou définition du succès…",
     "goal_field_status": "Statut",
     "goal_field_target_date": "Date cible",
     "goal_target_asap": "Dès que possible",

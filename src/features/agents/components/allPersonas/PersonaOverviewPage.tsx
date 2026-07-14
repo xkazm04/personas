@@ -52,8 +52,6 @@ function readPersistedLayout(): LayoutVariant {
   return 'baseline';
 }
 
-const DRAFT_PROMPT = 'You are a helpful AI assistant.';
-
 export default function PersonaOverviewPage() {
   const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
@@ -110,28 +108,27 @@ export default function PersonaOverviewPage() {
     try { localStorage.setItem(LAYOUT_STORAGE_KEY, layout); } catch (err) { silentCatch("features/agents/components/allPersonas/PersonaOverviewPage:catch2")(err); }
   }, [layout]);
 
-  // A persona is "draft" only if it never finished a build (no design result
-  // was ever saved) AND still carries the placeholder / empty system prompt.
-  // A completed build always populates last_design_result, so fully-built
-  // personas route to the editor even if their prompt coincidentally looks
-  // like the placeholder.
-  const isDraft = useCallback(
-    (p: Persona) =>
-      !p.last_design_result && (p.system_prompt === DRAFT_PROMPT || !p.system_prompt?.trim()),
-    [],
-  );
+  // Draft / archived are now first-class lifecycle columns (the old
+  // prompt-string heuristic is gone). A `draft` persona re-opens the build
+  // flow on click; an `archived` persona is hidden from the default roster.
+  const isDraft = useCallback((p: Persona) => p.lifecycle === 'draft', []);
+  const isArchived = useCallback((p: Persona) => p.lifecycle === 'archived', []);
   const isBuilding = useCallback(
     (id: string) => id === buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted',
     [buildPersonaId, buildPhase],
   );
 
   const { data: filteredData, connectorNamesMap, allConnectorNames } = usePersonaListFilters({
-    personas, view, search, triggerCounts, lastRunMap, healthMap, isBuilding, isDraft, isFavorite,
+    personas, view, search, triggerCounts, lastRunMap, healthMap, isBuilding, isDraft, isArchived, isFavorite,
     groupFilter,
   });
 
-  const { modal, handleBatchDelete, handleDeleteDrafts, draftIds } =
+  const { modal, handleBatchDelete, handleDeleteDrafts, handleBatchArchive, handleBatchRestore, draftIds } =
     usePersonaActions({ personas, selectedIds, setSelectedIds, deletePersona, selectPersona, isDraft });
+
+  // Whether the roster is currently showing the Archived view. Drives which
+  // bulk lifecycle action (archive vs restore) the batch bar offers.
+  const archivedView = view.statusFilter === 'archived';
 
   // Cycle 21 — bulk-set the home team of the selected personas (or null to
   // clear). Repointed from groups to home teams in the Groups→Teams
@@ -252,7 +249,9 @@ export default function PersonaOverviewPage() {
               count={selectedIds.size}
               onDelete={handleBatchDelete}
               onClear={() => setSelectedIds(new Set())}
-              onMoveToGroup={handleBatchMoveToGroup}
+              onMoveToGroup={archivedView ? undefined : handleBatchMoveToGroup}
+              onArchive={archivedView ? undefined : handleBatchArchive}
+              onRestore={archivedView ? handleBatchRestore : undefined}
             />
             {draftIds.length > 0 && (
               <Button

@@ -52,6 +52,10 @@ function fmtDuration(ms: number): string {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
 }
 
+function fmtTokens(tokens: number): string {
+  return tokens >= 1000 ? `${(tokens / 1000).toFixed(1)}k` : `${Math.round(tokens)}`;
+}
+
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleString();
 }
@@ -134,6 +138,7 @@ function arenaHtml(run: LabArenaRun, results: LabArenaResult[], personaName: str
       ${metricBar('Output Quality', agg.avgOutputQuality)}
       ${metricBar('Protocol Compliance', agg.avgProtocolCompliance)}
       <div class="metric-row" style="margin-top:0.5rem"><span class="metric-label">Cost</span><span>${fmtCost(agg.totalCost)}</span></div>
+      <div class="metric-row"><span class="metric-label">Tokens</span><span>${fmtTokens(agg.totalTokens)}</span></div>
       <div class="metric-row"><span class="metric-label">Avg Duration</span><span>${fmtDuration(agg.avgDuration)}</span></div>
     </div>`;
   }
@@ -167,6 +172,7 @@ function abHtml(run: LabAbRun, results: LabAbResult[], personaName: string): str
       ${metricBar('Output Quality', agg.avgOutputQuality)}
       ${metricBar('Protocol Compliance', agg.avgProtocolCompliance)}
       <div class="metric-row" style="margin-top:0.5rem"><span class="metric-label">Cost</span><span>${fmtCost(agg.totalCost)}</span></div>
+      <div class="metric-row"><span class="metric-label">Tokens</span><span>${fmtTokens(agg.totalTokens)}</span></div>
       <div class="metric-row"><span class="metric-label">Avg Duration</span><span>${fmtDuration(agg.avgDuration)}</span></div>
     </div>`;
   }
@@ -201,6 +207,7 @@ function evalHtml(run: LabEvalRun, results: LabEvalResult[], personaName: string
       ${metricBar('Output Quality', agg.avgOutputQuality)}
       ${metricBar('Protocol Compliance', agg.avgProtocolCompliance)}
       <div class="metric-row" style="margin-top:0.5rem"><span class="metric-label">Cost</span><span>${fmtCost(agg.totalCost)}</span></div>
+      <div class="metric-row"><span class="metric-label">Tokens</span><span>${fmtTokens(agg.totalTokens)}</span></div>
       <div class="metric-row"><span class="metric-label">Avg Duration</span><span>${fmtDuration(agg.avgDuration)}</span></div>
     </div>`;
   }
@@ -235,6 +242,7 @@ function matrixHtml(run: LabMatrixRun, results: LabMatrixResult[], personaName: 
       ${metricBar('Output Quality', agg.avgOutputQuality)}
       ${metricBar('Protocol Compliance', agg.avgProtocolCompliance)}
       <div class="metric-row" style="margin-top:0.5rem"><span class="metric-label">Cost</span><span>${fmtCost(agg.totalCost)}</span></div>
+      <div class="metric-row"><span class="metric-label">Tokens</span><span>${fmtTokens(agg.totalTokens)}</span></div>
       <div class="metric-row"><span class="metric-label">Avg Duration</span><span>${fmtDuration(agg.avgDuration)}</span></div>
     </div>`;
   }
@@ -393,6 +401,7 @@ interface AggRow {
   avgOutputQuality: number;
   avgProtocolCompliance: number;
   totalCost: number;
+  totalTokens: number;
   avgDuration: number;
 }
 
@@ -401,7 +410,7 @@ function markdownSummary(title: string, rows: AggRow[], scenarios: string[]): st
   md += `| | Composite | Tool Acc. | Output Q. | Protocol | Cost | Avg Duration |\n`;
   md += `|---|:---:|:---:|:---:|:---:|---:|---:|\n`;
   for (const r of rows) {
-    md += `| **${r.label}** | ${r.compositeScore} | ${r.avgToolAccuracy} | ${r.avgOutputQuality} | ${r.avgProtocolCompliance} | ${fmtCost(r.totalCost)} | ${fmtDuration(r.avgDuration)} |\n`;
+    md += `| **${r.label}** | ${r.compositeScore} | ${r.avgToolAccuracy} | ${r.avgOutputQuality} | ${r.avgProtocolCompliance} | ${fmtCost(r.totalCost)} | ${fmtTokens(r.totalTokens)} | ${fmtDuration(r.avgDuration)} |\n`;
   }
   md += `\n**Scenarios tested:** ${scenarios.length}\n`;
   return md;

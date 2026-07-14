@@ -523,7 +523,9 @@
     "source": "Origen",
     "processed": "Procesado",
     "event_data": "Datos del Evento",
-    "error": "Error"
+    "error": "Error",
+    "skipped_stat_label": "{skipped} omitidos",
+    "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha."
   },
   "health": {
     "title": "Salud del Agente",
@@ -703,7 +705,11 @@
     "all_statuses": "Todos los estados",
     "col_status": "Estado",
     "col_id": "ID",
-    "execution_label": "Ejecución"
+    "execution_label": "Ejecución",
+    "error_category_by_persona": "Mayor fallo por agente",
+    "error_category_prior_period": "vs. periodo anterior",
+    "error_category_section_title": "Fallos por categoría",
+    "error_category_total_failures": "Fallos totales"
   },
   "analytics_dashboard": {
     "issues_found": "{count} problemas encontrados",
@@ -1387,7 +1393,32 @@
     "comparison_recommended": "Recomendado",
     "flow_title": "Cómo se desarrolla",
     "timeline_title": "Cronología",
-    "log_title": "Evidencia"
+    "log_title": "Evidencia",
+    "default_attention_empty": "Todos los personas en buen estado — nada requiere atención.",
+    "default_attention_low_trust": "Confianza baja",
+    "default_attention_paused": "En pausa",
+    "default_attention_setup": "Requiere configuración",
+    "default_attention_title": "Requiere atención",
+    "default_callout_body": "Esta es una vista inicial creada a partir del estado de tu flota. Pídele a Athena que componga un cockpit adaptado a lo que te importa — lo reemplazará automáticamente.",
+    "default_callout_title": "Cockpit inicial",
+    "default_roster_title": "Tus personas",
+    "default_stat_active_personas": "Personas activos",
+    "default_stat_executions": "Ejecuciones (7d)",
+    "default_stat_needs_attention": "Requiere atención",
+    "default_stat_success_rate": "Tasa de éxito",
+    "default_subtitle": "Una vista inicial que Athena puede personalizar — chatea para componer la tuya.",
+    "default_title": "Cockpit inicial",
+    "default_vitals_title": "Constantes de la flota",
+    "empty_example_attention": "\"qué requiere mi atención\"",
+    "empty_example_personas": "\"muéstrame mis personas\"",
+    "empty_hint": "Pídele a Athena que componga una vista de cockpit — prueba {personas} o {attention}.",
+    "empty_title": "Tu cockpit está vacío",
+    "error_retry": "Reintentar",
+    "error_title": "No se pudo cargar tu cockpit",
+    "subtitle_composed_prefix": "Compuesto por Athena — actualizado",
+    "subtitle_default": "Tu espacio de trabajo impulsado por tu compañera",
+    "talk_to_athena": "Hablar con Athena",
+    "unknown_widget": "Widget desconocido: {kind}"
   },
   "certification": {
     "title": "Centro de mando de certificación",
@@ -1832,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "Fecha de inicio",
     "end_date": "Fecha de fin"
+  },
+  "healing_effectiveness": {
+    "attempted": "intentos",
+    "confirmed": "confirmados",
+    "loading": "Cargando estadísticas de reparación…",
+    "no_data": "Sin actividad de reparación automática",
+    "recent_activity": "Actividad reciente",
+    "reverted": "revertidos",
+    "success_rate": "tasa de éxito",
+    "title": "Autorreparación",
+    "window_label": "Últimos"
   }
 }

@@ -133,5 +133,33 @@
     "high": "Vysoká",
     "low": "Nízká",
     "medium": "Střední"
+  },
+  "error_category": {
+    "api_error": "Chyba API",
+    "credential_error": "Chyba přihlašovacích údajů",
+    "network": "Síť",
+    "provider_not_found": "Poskytovatel nenalezen",
+    "rate_limit": "Limit požadavků",
+    "session_limit": "Limit relace",
+    "timeout": "Vypršení času",
+    "tool_error": "Chyba nástroje",
+    "transient_process_failure": "Dočasné selhání procesu",
+    "unknown": "Neznámé",
+    "validation": "Validace"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "Dosažen limit větvení",
+    "budget_exceeded": "Dosažen strop nákladů",
+    "cas_lost": "Převzato jiným během",
+    "cycle_detected": "Zjištěn cyklus",
+    "depth_limit": "Limit hloubky",
+    "handoff_suppressed": "Předání potlačeno",
+    "malformed_config": "Neplatná konfigurace",
+    "outside_window": "Mimo aktivní okno",
+    "predicate_unmet": "Podmínka nesplněna",
+    "publish_failed": "Publikování selhalo",
+    "quarantined": "Spouštěč v karanténě",
+    "healing_abandoned": "Opravy se vzdaly",
+    "healing_capped": "Pokusy o opravu vyčerpány"
   }
 }

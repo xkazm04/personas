@@ -17,6 +17,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
 import { ExecutionListFilters } from './ExecutionListFilters';
 import { ExecutionListRow } from './ExecutionListRow';
+import { ActiveChainsBadge } from '../ActiveChainsBadge';
 import { TableSkeleton, type TableSkeletonColumn } from '@/features/shared/components/layout/TableSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
@@ -432,6 +433,10 @@ export function ExecutionList() {
           <DensityToggle density={density} onChange={setDensity} scopeId="execution-list" />
         </div>
       </div>
+
+      {/* Live "N chains in flight" operator badge — renders nothing when no
+          chain work is running (global, app-wide, not persona-scoped). */}
+      <ActiveChainsBadge />
 
       {(bulkRerun.phase === 'running' || (bulkRerun.phase === 'completed' && !showBulkReport)) && (
         <BulkRerunStrip

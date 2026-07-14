@@ -48,7 +48,9 @@
     "nav_mode_review": "Alihkan tinjauan manusia (mode nav)",
     "nav_mode_schedules": "Alihkan jadwal (mode nav)",
     "nav_mode_search": "Buka pencarian (mode nav)",
-    "open_title": "Pintasan keyboard"
+    "open_title": "Pintasan keyboard",
+    "nav_history_back": "Kembali",
+    "nav_history_forward": "Maju"
   },
   "tray_schedules": "Jadwal",
   "tray_schedules_today": "{count} terjadwal hari ini",

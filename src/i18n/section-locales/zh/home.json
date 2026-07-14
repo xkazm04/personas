@@ -188,5 +188,17 @@
     "personas_tab": "Personas（动画）",
     "lucide_footer": "lucide-react -- 通用图标库 -- 静态",
     "personas_footer": "9 个自定义图标 -- 神经/电路主题 -- CSS 动画 -- 主题自适应"
+  },
+  "since_left": {
+    "alerts": "{count} 条告警",
+    "alerts_other": "{count} 条告警",
+    "approvals": "{count} 项待审批",
+    "approvals_other": "{count} 项待审批",
+    "dismiss": "关闭",
+    "failed": "{count} 次失败",
+    "failed_other": "{count} 次失败",
+    "runs": "{count} 次运行",
+    "runs_other": "{count} 次运行",
+    "title": "自您离开后"
   }
 }

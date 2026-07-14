@@ -23,8 +23,11 @@ pub fn sanitize_secrets(text: &str) -> String {
     .unwrap();
     sanitized = re_auth.replace_all(&sanitized, "$1: [secret]").to_string();
 
-    // b. Generic key: value pairs
-    let re_pairs = Regex::new(r"(?i)\b(api[-_ ]?key|apikey|secret|token|password|passwd|credential|private[-_ ]?key|client[-_ ]?secret|access[-_ ]?key|access[-_ ]?token|refresh[-_ ]?token|dsn|connection[-_ ]?string|cookie|session[-_ ]?id)\b\s*([:= ]|is[: ]?)\s*(\S+)").unwrap();
+    // b. Generic key: value pairs. The key/value quotes are optional so this
+    // matches both plain-text log lines ("api key: 12345") AND JSON-quoted
+    // pairs ("token":"sk-...") — settings audit-log values are JSON blobs,
+    // and a JSON key is never adjacent to `:` without an intervening `"`.
+    let re_pairs = Regex::new(r#"(?i)\b(api[-_ ]?key|apikey|secret|token|password|passwd|credential|private[-_ ]?key|client[-_ ]?secret|access[-_ ]?key|access[-_ ]?token|refresh[-_ ]?token|dsn|connection[-_ ]?string|cookie|session[-_ ]?id)\b"?\s*([:= ]|is[: ]?)\s*"?([^"\s,}]+)"#).unwrap();
     sanitized = re_pairs
         .replace_all(&sanitized, |caps: &regex::Captures| {
             format!("{}: [secret]", &caps[1])

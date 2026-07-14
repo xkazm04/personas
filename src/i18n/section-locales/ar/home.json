@@ -188,5 +188,17 @@
     "personas_tab": "Personas (متحركة)",
     "lucide_footer": "lucide-react -- مكتبة أيقونات عامة -- ثابتة",
     "personas_footer": "9 أيقونات مخصصة -- تصميمات عصبية/دائرية -- CSS متحرك -- متكيف مع المظهر"
+  },
+  "since_left": {
+    "alerts": "{count} تنبيه صادر",
+    "alerts_other": "{count} تنبيهات صادرة",
+    "approvals": "{count} موافقة قيد الانتظار",
+    "approvals_other": "{count} موافقات قيد الانتظار",
+    "dismiss": "تجاهل",
+    "failed": "{count} فشل",
+    "failed_other": "{count} فشل",
+    "runs": "{count} تشغيل",
+    "runs_other": "{count} عمليات تشغيل",
+    "title": "منذ مغادرتك"
   }
 }

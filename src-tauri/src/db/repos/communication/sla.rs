@@ -575,6 +575,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap()
@@ -640,13 +641,19 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona_id = create_test_persona(&pool, "streak");
 
+        // Anchor on "now" (not a hardcoded date) so the 30-day dashboard
+        // window this test exercises never ages the fixture out of range.
+        let base = chrono::Utc::now() - chrono::Duration::hours(1);
+
         // 25 failures, oldest first; created_at is monotonic so ORDER BY DESC
         // walks newest-to-oldest deterministically.
         let cap = CONSECUTIVE_FAILURE_LOOKBACK as usize;
         let total = cap + 5;
         for i in 0..total {
             let minute = i + 1;
-            let ts = format!("2026-05-04 12:{:02}:00", minute);
+            let ts = (base + chrono::Duration::minutes(minute as i64))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
             insert_execution(&pool, &persona_id, "failed", &ts);
         }
 
@@ -679,22 +686,18 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona_id = create_test_persona(&pool, "rate");
 
+        // Anchor on "now" (not a hardcoded date) so the 30-day dashboard
+        // window this test exercises never ages the fixture out of range.
+        let base = chrono::Utc::now() - chrono::Duration::hours(1);
+        let day = base.format("%Y-%m-%d").to_string();
+        let ts = |minute: i64| (base + chrono::Duration::minutes(minute)).format("%Y-%m-%d %H:%M:%S").to_string();
+
         for i in 0..4 {
-            insert_execution(
-                &pool,
-                &persona_id,
-                "completed",
-                &format!("2026-05-04 12:{:02}:00", i),
-            );
+            insert_execution(&pool, &persona_id, "completed", &ts(i));
         }
-        insert_execution(&pool, &persona_id, "failed", "2026-05-04 12:10:00");
+        insert_execution(&pool, &persona_id, "failed", &ts(10));
         for i in 0..5 {
-            insert_execution(
-                &pool,
-                &persona_id,
-                "cancelled",
-                &format!("2026-05-04 12:{:02}:00", 20 + i),
-            );
+            insert_execution(&pool, &persona_id, "cancelled", &ts(20 + i));
         }
 
         let dash = get_sla_dashboard(&pool, 30).unwrap();
@@ -722,15 +725,15 @@ mod tests {
         );
 
         // Daily trend uses the same formula.
-        let day = dash
+        let day_point = dash
             .daily_trend
             .iter()
-            .find(|d| d.date == "2026-05-04")
+            .find(|d| d.date == day)
             .expect("daily point missing");
         assert!(
-            (day.success_rate - 0.8).abs() < 1e-9,
+            (day_point.success_rate - 0.8).abs() < 1e-9,
             "daily success_rate must follow the same denominator rule; got {}",
-            day.success_rate,
+            day_point.success_rate,
         );
     }
 
@@ -873,13 +876,14 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona_id = create_test_persona(&pool, "zero");
 
+        // Anchor on "now" (not a hardcoded date) so the 30-day dashboard
+        // window this test exercises never ages the fixture out of range.
+        let base = chrono::Utc::now() - chrono::Duration::hours(1);
         for i in 0..3 {
-            insert_execution(
-                &pool,
-                &persona_id,
-                "cancelled",
-                &format!("2026-05-04 12:{:02}:00", i),
-            );
+            let ts = (base + chrono::Duration::minutes(i))
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            insert_execution(&pool, &persona_id, "cancelled", &ts);
         }
 
         let dash = get_sla_dashboard(&pool, 30).unwrap();

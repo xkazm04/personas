@@ -513,7 +513,17 @@
     "tab_chain": "Chaîne",
     "thinking_tooltip": "Effort de raisonnement utilisé pour cette exécution",
     "trace_empty_hint": "Les traces détaillées sont capturées pour les exécutions utilisant des outils et les plus récentes. Cette exécution n'en a aucune à afficher.",
-    "verdict_field": "Verdict"
+    "verdict_field": "Verdict",
+    "chain_ended_because": "Motif de fin de la chaîne",
+    "chain_total_cost": "Coût de la chaîne",
+    "active_chains_agents_one": "{count} agent",
+    "active_chains_agents_other": "{count} agents",
+    "active_chains_depth": "profondeur {count}",
+    "active_chains_hops_one": "{count} saut",
+    "active_chains_hops_other": "{count} sauts",
+    "active_chains_one": "{count} chaîne en cours",
+    "active_chains_other": "{count} chaînes en cours",
+    "active_chains_title": "Chaînes en cours"
   },
   "lab": {
     "mode_arena": "Arène",
@@ -840,7 +850,9 @@
     "eco_col_resolved": "Résolu",
     "eco_empty": "Aucun résultat d'évaluation — lancez le Lab pour alimenter l'efficacité des coûts.",
     "eco_subtitle": "À quelle fréquence chaque modèle résout une évaluation et ce que coûte chaque succès.",
-    "eco_title": "Efficacité des coûts"
+    "eco_title": "Efficacité des coûts",
+    "vr_col_tokens": "Tokens",
+    "vr_tokens_tooltip": "{input} en entrée / {output} en sortie par exécution en moyenne"
   },
   "design": {
     "select_agent": "Sélectionnez un agent pour démarrer l'analyse de conception",
@@ -1836,7 +1848,12 @@
     "delete_agents_message": "{count} agent(s) et toute leur configuration seront définitivement supprimés.",
     "delete_drafts": "Supprimer {count} brouillon(s)",
     "delete_drafts_message": "{count} brouillon(s) d'agent seront définitivement supprimés.",
-    "system_persona_undeletable": "Le Director est un persona système et ne peut pas être supprimé."
+    "system_persona_undeletable": "Le Director est un persona système et ne peut pas être supprimé.",
+    "archived_done": "{count} persona(s) archivée(s)",
+    "bulk_delete_done": "{deleted} persona(s) supprimée(s)",
+    "bulk_delete_failed": "Échec de la suppression des personas",
+    "bulk_delete_partial": "{deleted} supprimée(s) ; {skipped} ignorée(s)",
+    "restored_done": "{count} persona(s) restaurée(s)"
   },
   "persona_list": {
     "all_personas": "Tous les agents",
@@ -1872,7 +1889,12 @@
     "batch_moved_partial": "{ok} déplacées vers {group} ; {failed} échouées",
     "render_cap_notice": "Affichage de {shown} sur {total} — affinez avec la recherche ou les filtres pour voir le reste.",
     "star_director_add": "Marquer pour ajouter au périmètre de coaching du Director",
-    "star_director_remove": "Marqué — dans le périmètre de coaching du Director. Cliquez pour retirer."
+    "star_director_remove": "Marqué — dans le périmètre de coaching du Director. Cliquez pour retirer.",
+    "badge_archived": "Archivée",
+    "batch_archive": "Archiver",
+    "batch_restore": "Restaurer",
+    "show_active_personas": "Afficher les personas actives",
+    "show_archived_personas": "Afficher les personas archivées"
   },
   "editor_ui": {
     "max_budget_label": "Budget max (USD)",
@@ -2724,5 +2746,10 @@
     "activate_agent": "Activer l'agent",
     "create_agent": "Créer l'agent",
     "min_completeness": "Ajoutez plus de détails pour atteindre 40% de complétude"
+  },
+  "duplicate": {
+    "done": "Dupliqué sous « {name} »",
+    "done_with_wiring": "Dupliqué sous « {name} » — {triggers} déclencheur(s) et {subscriptions} abonnement(s) copiés, désactivés sur la copie",
+    "failed": "Échec de la duplication de l'agent"
   }
 }

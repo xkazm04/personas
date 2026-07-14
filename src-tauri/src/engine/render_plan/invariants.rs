@@ -330,22 +330,38 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
                 Some(&id),
             );
         }
-        // OverlayStage is single-variant today; pattern stays for future variants.
-        #[allow(irrefutable_let_patterns)]
-        if let OverlayStage::Image(img) = o {
-            let src = source_by_id
-                .get(&img.source_id)
-                .ok_or_else(|| InvariantViolation {
-                    code: "I4",
-                    message: format!("image overlay {} references unknown sourceId", img.id),
-                    offending_id: Some(img.id.clone()),
-                })?;
-            if matches!(src, SourceEntry::Color { .. }) {
-                return violation(
-                    "I4",
-                    format!("image overlay {} must not reference a Color source", img.id),
-                    Some(&img.id),
-                );
+        match o {
+            OverlayStage::Image(img) => {
+                let src =
+                    source_by_id
+                        .get(&img.source_id)
+                        .ok_or_else(|| InvariantViolation {
+                            code: "I4",
+                            message: format!(
+                                "image overlay {} references unknown sourceId",
+                                img.id
+                            ),
+                            offending_id: Some(img.id.clone()),
+                        })?;
+                if matches!(src, SourceEntry::Color { .. }) {
+                    return violation(
+                        "I4",
+                        format!("image overlay {} must not reference a Color source", img.id),
+                        Some(&img.id),
+                    );
+                }
+            }
+            // I12: a title must be renderable — a zero font size draws nothing
+            // and is a compiler bug, not a user-authored state (the compiler
+            // clamps to >= 1).
+            OverlayStage::Text(txt) => {
+                if txt.font_size_px == 0 {
+                    return violation(
+                        "I12",
+                        format!("text overlay {} has a zero font size", txt.id),
+                        Some(&txt.id),
+                    );
+                }
             }
         }
     }
@@ -412,6 +428,17 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
                         "I10",
                         format!("warning references unknown sourceId {source_id}"),
                         None,
+                    );
+                }
+            }
+            super::CompileWarning::TextFontMissing { overlay_id, .. }
+            | super::CompileWarning::TextEmpty { overlay_id } => {
+                let known = plan.overlays.iter().any(|o| o.id() == overlay_id);
+                if !known {
+                    return violation(
+                        "I10",
+                        format!("warning references unknown overlayId {overlay_id}"),
+                        Some(overlay_id),
                     );
                 }
             }

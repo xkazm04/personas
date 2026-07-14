@@ -189,7 +189,16 @@
     "auto_hibernate_desc": "Tự động ngủ đông các phiên không hoạt động quá ngưỡng — giải phóng tiến trình ngay cả khi Fleet không được tập trung. Vẫn có thể tiếp tục qua Đánh thức. Chạy khi Personas đang mở.",
     "auto_hibernate_toggle": "Bật tự động ngủ đông",
     "auto_hibernate_after": "Sau",
-    "auto_hibernate_minutes_unit": "phút không hoạt động"
+    "auto_hibernate_minutes_unit": "phút không hoạt động",
+    "live_slots_desc": "Giới hạn số tiến trình claude chạy cùng lúc. Khi đội đạt giới hạn, phiên nhàn rỗi lâu nhất sẽ được ngủ đông để nhường chỗ — vẫn có thể tiếp tục qua Đánh thức. Các phiên đang làm việc không bao giờ bị gián đoạn.",
+    "live_slots_max_label": "Tối đa",
+    "live_slots_title": "Giới hạn phiên đang chạy",
+    "live_slots_toggle": "Bật giới hạn phiên",
+    "live_slots_unit": "phiên đang chạy",
+    "headless_badge": "Nền",
+    "headless_no_terminal": "Phiên chạy nền — không có terminal. Trả lời từ băng rôn \"Cần bạn\"; tiến độ hiển thị trong Insights.",
+    "spawn_headless_hint": "Chế độ headless — không có terminal trực tiếp, nhẹ hơn nhiều về CPU và RAM. Trả lời từ băng rôn \"Cần bạn\"; theo dõi tiến độ trong Insights.",
+    "spawn_headless_toggle": "Chạy nền (không có terminal)"
   },
   "title": "Plugin",
   "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",
@@ -2155,7 +2164,8 @@
     "voice_pocket_upload_save": "Thêm giọng nói",
     "voice_pocket_upload_title": "Thêm giọng nói của bạn",
     "voice_pocket_hf_gate_desc": "Để tự quản lý các giọng nói đã nhân bản của bạn, cần có mã truy cập Hugging Face trong Kho lưu trữ thông tin xác thực — mã này gắn giấy phép của mô hình nhân bản giọng nói với tài khoản của bạn. Hãy thêm thông tin xác thực Hugging Face, sau đó quay lại đây.",
-    "voice_pocket_hf_gate_title": "Yêu cầu tài khoản Hugging Face"
+    "voice_pocket_hf_gate_title": "Yêu cầu tài khoản Hugging Face",
+    "persona_overview_kpi_trust_clamped": "Điểm tin cậy nằm ngoài phạm vi và đã được giới hạn ở mức 100%."
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",
@@ -2405,7 +2415,9 @@
     "goal_scaffold_timeline_title": "Dòng thời gian",
     "goal_scaffold_timeline_sub": "Chế độ xem trục thời gian của các mục tiêu theo ngày đích, với mũi tên phụ thuộc và đánh dấu trượt. Sắp ra mắt.",
     "goal_field_title": "Tiêu đề",
+    "goal_field_title_placeholder": "Kết quả bạn đang hướng tới là gì?",
     "goal_field_description": "Mô tả",
+    "goal_field_description_placeholder": "Ngữ cảnh, phạm vi tùy chọn, hoặc thành công trông như thế nào…",
     "goal_field_status": "Trạng thái",
     "goal_field_target_date": "Ngày mục tiêu",
     "goal_target_asap": "Càng sớm càng tốt",

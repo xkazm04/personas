@@ -431,7 +431,10 @@
     "edge_count_other": "{count} связей",
     "adoption_count_one": "{count} внедрение",
     "adoption_count_other": "{count} внедрений",
-    "selected": "выбрано"
+    "selected": "выбрано",
+    "command_palette_create_agent": "Создать нового агента",
+    "command_palette_go_to": "Перейти к {label}",
+    "command_palette_leaderboard": "Рейтинг агентов"
   },
   "chrome": {
     "app_title": "Personas",
@@ -483,7 +486,9 @@
       "nav_mode_review": "Ручная проверка (в режиме навигации)",
       "nav_mode_schedules": "Расписания (в режиме навигации)",
       "nav_mode_search": "Поиск (в режиме навигации)",
-      "open_title": "Горячие клавиши"
+      "open_title": "Горячие клавиши",
+      "nav_history_back": "Назад",
+      "nav_history_forward": "Вперёд"
     },
     "tray_schedules": "Расписания",
     "tray_schedules_today": "{count} запланировано сегодня",
@@ -586,6 +591,7 @@
     "mission_control": "Центр управления",
     "factory": "Фабрика",
     "kpis": "KPI",
+    "studio": "Студия",
     "competition": "Соревнование",
     "development": "Разработка",
     "lifecycle": "Жизненный цикл",
@@ -781,6 +787,18 @@
       "personas_tab": "Personas (анимированные)",
       "lucide_footer": "lucide-react — универсальная библиотека иконок — статические",
       "personas_footer": "9 пользовательских иконок — нейронные/схемные мотивы — CSS-анимация — адаптивная тема"
+    },
+    "since_left": {
+      "alerts": "{count} оповещение",
+      "alerts_other": "{count} оповещений",
+      "approvals": "{count} ожидает подтверждения",
+      "approvals_other": "{count} ожидают подтверждения",
+      "dismiss": "Закрыть",
+      "failed": "{count} с ошибкой",
+      "failed_other": "{count} с ошибками",
+      "runs": "{count} запуск",
+      "runs_other": "{count} запусков",
+      "title": "С момента вашего ухода"
     }
   },
   "agents": {
@@ -1298,7 +1316,17 @@
       "tab_chain": "Цепочка",
       "thinking_tooltip": "Уровень рассуждений, использованный в этом запуске",
       "trace_empty_hint": "Подробные трассировки собираются для запусков с инструментами и более новых. Для этого запуска их нет.",
-      "verdict_field": "Вердикт"
+      "verdict_field": "Вердикт",
+      "chain_ended_because": "Почему цепочка завершилась",
+      "chain_total_cost": "Стоимость цепочки",
+      "active_chains_agents_one": "{count} агент",
+      "active_chains_agents_other": "{count} агентов",
+      "active_chains_depth": "глубина {count}",
+      "active_chains_hops_one": "{count} переход",
+      "active_chains_hops_other": "{count} переходов",
+      "active_chains_one": "{count} цепочка в работе",
+      "active_chains_other": "{count} цепочек в работе",
+      "active_chains_title": "Цепочки в работе"
     },
     "lab": {
       "mode_arena": "Арена",
@@ -1625,7 +1653,9 @@
       "eco_col_resolved": "Решено",
       "eco_empty": "Нет результатов оценки — запустите лабораторию для расчёта эффективности.",
       "eco_subtitle": "Как часто каждая модель решает задачи и во сколько обходится каждый успех.",
-      "eco_title": "Экономичность"
+      "eco_title": "Экономичность",
+      "vr_col_tokens": "Токены",
+      "vr_tokens_tooltip": "В среднем {input} на входе / {output} на выходе за запуск"
     },
     "design": {
       "select_agent": "Выберите агента для анализа дизайна",
@@ -2621,7 +2651,12 @@
       "delete_agents_message": "{count} агент(ов) и вся их конфигурация будут удалены навсегда.",
       "delete_drafts": "Удалить {count} черновик(ов)",
       "delete_drafts_message": "{count} черновых агент(ов) будут удалены навсегда.",
-      "system_persona_undeletable": "Director — системная персона, её нельзя удалить."
+      "system_persona_undeletable": "Director — системная персона, её нельзя удалить.",
+      "archived_done": "Архивировано персон: {count}",
+      "bulk_delete_done": "Удалено персон: {deleted}",
+      "bulk_delete_failed": "Не удалось удалить персоны",
+      "bulk_delete_partial": "Удалено: {deleted}; пропущено: {skipped}",
+      "restored_done": "Восстановлено персон: {count}"
     },
     "persona_list": {
       "all_personas": "Все агенты",
@@ -2657,7 +2692,12 @@
       "batch_moved_partial": "Перемещено {ok} в {group}; {failed} не удалось",
       "render_cap_notice": "Показано {shown} из {total} — уточните поиск или фильтры, чтобы увидеть остальные.",
       "star_director_add": "Отметить звёздочкой, чтобы добавить в область коучинга Director",
-      "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать."
+      "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать.",
+      "badge_archived": "В архиве",
+      "batch_archive": "Архивировать",
+      "batch_restore": "Восстановить",
+      "show_active_personas": "Показать активные персоны",
+      "show_archived_personas": "Показать архивные персоны"
     },
     "editor_ui": {
       "max_budget_label": "Максимальный бюджет (USD)",
@@ -3509,6 +3549,11 @@
       "activate_agent": "Активировать агента",
       "create_agent": "Создать агента",
       "min_completeness": "Добавьте больше деталей для достижения 40% завершённости"
+    },
+    "duplicate": {
+      "done": "Дублировано как «{name}»",
+      "done_with_wiring": "Дублировано как «{name}» — скопировано триггеров: {triggers}, подписок: {subscriptions} (отключены в копии)",
+      "failed": "Не удалось дублировать агента"
     }
   },
   "vault": {
@@ -4129,7 +4174,37 @@
       "tool_count_other": "{count} инструментов",
       "tab_documents": "Документы",
       "tab_search": "Поиск",
-      "tab_settings": "Настройки"
+      "tab_settings": "Настройки",
+      "page_label": "стр. {page}",
+      "pages_label": "{count} стр.",
+      "partial_text_badge": "Частичный текст",
+      "partial_text_tooltip": "Этот фрагмент прочитан со страницы, состоящей в основном из изображения, поэтому может быть неполным.",
+      "scanned_pages_tooltip": "Эти страницы являются изображениями без текстового слоя, поэтому их содержимое недоступно для поиска. Чтобы включить их, используйте копию, обработанную через OCR.",
+      "scanned_pages_warning": "Не удалось прочитать отсканированных страниц: {count}",
+      "extract_add_entity": "Добавить тип",
+      "extract_add_field": "Добавить поле",
+      "extract_col_attrs": "Атрибуты",
+      "extract_col_key": "Сущность",
+      "extract_col_source": "Источник",
+      "extract_col_type": "Тип",
+      "extract_empty_kb": "Добавьте документы перед извлечением структурированных данных.",
+      "extract_entity_desc_ph": "что это за объект",
+      "extract_entity_type_ph": "entity_type",
+      "extract_field_desc_ph": "что оно содержит",
+      "extract_field_name_ph": "поле",
+      "extract_infer_btn": "Предложить схему",
+      "extract_inferring": "Чтение корпуса...",
+      "extract_intro": "Превратите эту базу знаний в строки для запросов. Сначала предложите схему объектов, описанных в документах, проверьте её, затем извлеките данные.",
+      "extract_no_entities": "Сущности ещё не извлечены. Предложите схему, чтобы начать.",
+      "extract_progress": "{done}/{total} документов, найдено сущностей: {count}",
+      "extract_remove": "Удалить",
+      "extract_run_btn": "Извлечь сущности",
+      "extract_run_status": "{status} — сущностей: {count}",
+      "extract_running": "Извлечение...",
+      "extract_runs_heading": "Запуски извлечения",
+      "extract_schema_heading": "Предложенная схема",
+      "extract_schema_hint": "Отредактируйте перед извлечением — удалите ненужные типы, остальное заполнит модель.",
+      "tab_extract": "Структурированные данные"
     },
     "manager": {
       "title": "Учётные данные",
@@ -6050,7 +6125,9 @@
       "source": "Источник",
       "processed": "Обработано",
       "event_data": "Данные события",
-      "error": "Ошибка"
+      "error": "Ошибка",
+      "skipped_stat_label": "{skipped} пропущено",
+      "skipped_stat_tooltip": "{skipped} из {total} событий за последние 7 дней не имели подписчиков и были пропущены ({rate}). Высокая доля указывает на триггер, который никто не слушает."
     },
     "health": {
       "title": "Состояние агентов",
@@ -6230,7 +6307,11 @@
       "all_statuses": "Все статусы",
       "col_status": "Статус",
       "col_id": "ID",
-      "execution_label": "Запуск"
+      "execution_label": "Запуск",
+      "error_category_by_persona": "Основные сбои по агенту",
+      "error_category_prior_period": "к прошлому периоду",
+      "error_category_section_title": "Сбои по категориям",
+      "error_category_total_failures": "Всего сбоев"
     },
     "analytics_dashboard": {
       "issues_found": "Обнаружено {count} проблем",
@@ -6914,7 +6995,32 @@
       "comparison_recommended": "Рекомендуется",
       "flow_title": "Как это происходит",
       "timeline_title": "Хронология",
-      "log_title": "Доказательства"
+      "log_title": "Доказательства",
+      "default_attention_empty": "Все персоны в порядке — ничего не требует внимания.",
+      "default_attention_low_trust": "Низкое доверие",
+      "default_attention_paused": "Приостановлено",
+      "default_attention_setup": "Требуется настройка",
+      "default_attention_title": "Требует внимания",
+      "default_callout_body": "Это стартовое представление, построенное на основе состояния вашего флота. Попросите Athena собрать кокпит под ваши интересы — она заменит его автоматически.",
+      "default_callout_title": "Стартовый кокпит",
+      "default_roster_title": "Ваши персоны",
+      "default_stat_active_personas": "Активные персоны",
+      "default_stat_executions": "Запуски (7 дн.)",
+      "default_stat_needs_attention": "Требует внимания",
+      "default_stat_success_rate": "Доля успеха",
+      "default_subtitle": "Стартовое представление, которое Athena может персонализировать — напишите ей, чтобы собрать своё.",
+      "default_title": "Стартовый кокпит",
+      "default_vitals_title": "Показатели флота",
+      "empty_example_attention": "\"что требует моего внимания\"",
+      "empty_example_personas": "\"покажи мои персоны\"",
+      "empty_hint": "Попросите Athena собрать представление кокпита — попробуйте {personas} или {attention}.",
+      "empty_title": "Ваш кокпит пуст",
+      "error_retry": "Повторить",
+      "error_title": "Не удалось загрузить ваш кокпит",
+      "subtitle_composed_prefix": "Собрано Athena — обновлено",
+      "subtitle_default": "Ваше рабочее пространство под управлением компаньона",
+      "talk_to_athena": "Поговорить с Athena",
+      "unknown_widget": "Неизвестный виджет: {kind}"
     },
     "certification": {
       "title": "Центр управления сертификацией",
@@ -7359,6 +7465,17 @@
     "day_range_picker": {
       "start_date": "Дата начала",
       "end_date": "Дата окончания"
+    },
+    "healing_effectiveness": {
+      "attempted": "попыток",
+      "confirmed": "подтверждено",
+      "loading": "Загрузка статистики…",
+      "no_data": "Пока нет авто-исправлений",
+      "recent_activity": "Недавняя активность",
+      "reverted": "отменено",
+      "success_rate": "доля успеха",
+      "title": "Самовосстановление",
+      "window_label": "Последние"
     }
   },
   "matrix_v3": {
@@ -10126,7 +10243,20 @@
       "empty": "Изменения настроек ещё не зафиксированы. Изменения, внесённые отсюда, появятся в этом списке.",
       "empty_filtered": "Нет записей, соответствующих текущему фильтру категории.",
       "before": "До",
-      "after": "После"
+      "after": "После",
+      "categories": {
+        "api_keys": "Ключи API",
+        "autonomy": "Автономность",
+        "byom": "BYOM",
+        "config": "Общие",
+        "engine": "Движок",
+        "integrations": "Интеграции",
+        "limits": "Лимиты",
+        "notifications": "Уведомления",
+        "quality_gates": "Контроль качества",
+        "retention": "Хранение",
+        "sync": "Облачная синхронизация"
+      }
     },
     "api_keys": {
       "title": "API-ключи",
@@ -10604,7 +10734,61 @@
     "usage_limit_weekly_message": "Достигнут недельный лимит использования Claude.",
     "usage_limit_weekly_suggestion": "Запуски будут завершаться с ошибкой до сброса недельного лимита — приостановите расписания или обновите тарифный план.",
     "usage_limit_window_message": "Лимит использования Claude в текущем окне исчерпан.",
-    "usage_limit_window_suggestion": "Запуск автоматически повторится после сброса окна — действий не требуется."
+    "usage_limit_window_suggestion": "Запуск автоматически повторится после сброса окна — действий не требуется.",
+    "agent_ir_parse_message": "Результат сборки оказался повреждён.",
+    "agent_ir_parse_suggestion": "Нажмите «Refine», чтобы пересобрать, или начните новую сборку — уточнение улучшает результат.",
+    "authorization_required_message": "Этому инструменту нужна ваша авторизация перед запуском.",
+    "authorization_required_suggestion": "Откройте страницу авторизации, чтобы предоставить доступ, затем попробуйте снова.",
+    "budget_value_invalid_message": "Значение бюджета некорректно.",
+    "budget_value_invalid_suggestion": "Укажите положительное число для бюджета в долларах (например, 5 для $5).",
+    "build_no_agent_ir_message": "Сборка ещё не завершила генерацию — план агента всё ещё формируется.",
+    "build_no_agent_ir_suggestion": "Подождите несколько секунд и попробуйте снова. Если проблема сохраняется более минуты, перезапустите сборку с более конкретным намерением.",
+    "build_nothing_to_promote_message": "Сборка пока не создала ничего для продвижения.",
+    "build_nothing_to_promote_suggestion": "Дождитесь завершения генерации сборки или нажмите «Refine», чтобы подтолкнуть процесс. Если мастер завис более чем на минуту, перезапустите его.",
+    "build_session_disappeared_message": "Эта сессия сборки была очищена до завершения.",
+    "build_session_disappeared_suggestion": "Начните новую сборку — предыдущий черновик восстановить невозможно.",
+    "build_session_gone_message": "Срок действия этой сессии сборки истёк или она была очищена.",
+    "build_session_gone_suggestion": "Начните новую сборку с тем же намерением.",
+    "design_result_parse_message": "Не удалось разобрать сохранённые данные дизайна персоны.",
+    "design_result_parse_suggestion": "Запустите новую сборку для этой персоны — кэшированный дизайн относится к более старой версии приложения.",
+    "external_service_message": "Внешний сервис не смог обработать запрос.",
+    "external_service_suggestion": "Проверьте статус сервиса и своё подключение, затем попробуйте снова.",
+    "importance_range_message": "Значение важности памяти выходит за допустимый диапазон.",
+    "importance_range_suggestion": "Выберите значение от 1 до 10 для важности памяти.",
+    "interval_not_number_message": "Интервал опроса не является допустимым числом.",
+    "interval_not_number_suggestion": "Откройте «Refine» и укажите числовой интервал опроса, например «каждые 5 минут».",
+    "interval_too_fast_message": "Опрос не может выполняться чаще одного раза в минуту.",
+    "interval_too_fast_suggestion": "Установите интервал опроса от 60 секунд и выше (безопасное значение по умолчанию — 300 / 5 мин). Нажмите «Refine» и попросите агента снизить частоту.",
+    "invalid_trigger_type_message": "Сборка выбрала тип триггера, который среда выполнения не распознаёт.",
+    "invalid_trigger_type_suggestion": "Нажмите «Refine» и укажите конкретный триггер («по расписанию», «по webhook», «когда происходит X»). Если проблема повторяется, перезапустите сборку.",
+    "keyring_lost_message": "Защищённое хранилище учётных данных недоступно.",
+    "keyring_lost_suggestion": "Перезапустите приложение. Если проблема сохраняется, заново введите затронутые учётные данные в хранилище.",
+    "max_concurrent_range_message": "Лимит параллелизма выходит за допустимый диапазон.",
+    "max_concurrent_range_suggestion": "Установите максимальное число одновременных запусков в диапазоне от 1 до предела движка, указанного в настройках.",
+    "max_turns_range_message": "Лимит ходов выходит за допустимый диапазон.",
+    "max_turns_range_suggestion": "Установите максимальное число ходов от 1 до 50.",
+    "name_invalid_message": "Имя персоны нужно поправить.",
+    "name_invalid_suggestion": "Выберите короткое, описательное имя (1–40 символов) и попробуйте снова.",
+    "oauth_revoked_message": "Авторизация подключения была отозвана.",
+    "oauth_revoked_suggestion": "Переподключите аккаунт, чтобы снова предоставить доступ.",
+    "polling_url_blocked_message": "URL для опроса отклонён из соображений безопасности.",
+    "polling_url_blocked_suggestion": "URL указывает на внутренний/приватный адрес. Используйте публично доступный HTTPS-адрес или переключите триггер на webhook + smee.io.",
+    "prompt_too_large_message": "Промпт агента слишком длинный.",
+    "prompt_too_large_suggestion": "Нажмите «Refine» и попросите более сжатую версию, либо удалите избыточные разделы.",
+    "retry_exhausted_message": "Ошибка повторялась после нескольких автоматических попыток.",
+    "retry_exhausted_suggestion": "Подождите немного и попробуйте снова — если проблема не исчезает, проверьте статус сервиса или конфигурацию агента.",
+    "schedule_missing_timing_message": "Триггерам по расписанию нужно либо cron-выражение, либо интервал опроса.",
+    "schedule_missing_timing_suggestion": "Нажмите «Refine» и укажите, когда агент должен запускаться (например, «каждый будний день в 8am» или «каждые 30 минут»).",
+    "smee_url_invalid_message": "URL источника webhook должен быть получен с smee.io.",
+    "smee_url_invalid_suggestion": "Откройте https://smee.io/new в браузере, скопируйте URL канала и вставьте его в поле источника webhook.",
+    "system_prompt_empty_message": "Системный промпт персоны пуст.",
+    "system_prompt_empty_suggestion": "Обычно этот шаг заполняется конвейером сборки. Уточните сборку через «Refine» или начните новую с более конкретным намерением.",
+    "timeout_range_message": "Значение тайм-аута выходит за допустимый диапазон.",
+    "timeout_range_suggestion": "Выберите тайм-аут от 1 секунды до предела движка (обычно 30 минут).",
+    "unknown_prompt_field_message": "Сборка выдала поле, которое среда выполнения не распознаёт.",
+    "unknown_prompt_field_suggestion": "Нажмите «Refine» — новая сборка будет использовать актуальную схему.",
+    "webhook_missing_secret_message": "У этого webhook-триггера отсутствует секрет подписи.",
+    "webhook_missing_secret_suggestion": "Повторно нажмите «Promote» — конвейер автоматически генерирует webhook_secret при отправке. Если проблема сохраняется, перезапустите сборку."
   },
   "empty_states": {
     "credentials_title": "Вашим агентам нужны учётные данные для работы",
@@ -11314,6 +11498,34 @@
       "high": "Высокий",
       "low": "Низкий",
       "medium": "Средний"
+    },
+    "error_category": {
+      "api_error": "Ошибка API",
+      "credential_error": "Ошибка учётных данных",
+      "network": "Сеть",
+      "provider_not_found": "Провайдер не найден",
+      "rate_limit": "Лимит запросов",
+      "session_limit": "Лимит сессии",
+      "timeout": "Тайм-аут",
+      "tool_error": "Ошибка инструмента",
+      "transient_process_failure": "Временный сбой процесса",
+      "unknown": "Неизвестно",
+      "validation": "Валидация"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "Достигнут лимит ветвления",
+      "budget_exceeded": "Достигнут лимит стоимости",
+      "cas_lost": "Занято другим запуском",
+      "cycle_detected": "Обнаружен цикл",
+      "depth_limit": "Лимит глубины",
+      "handoff_suppressed": "Передача подавлена",
+      "malformed_config": "Неверная конфигурация",
+      "outside_window": "Вне активного окна",
+      "predicate_unmet": "Условие не выполнено",
+      "publish_failed": "Ошибка публикации",
+      "quarantined": "Триггер в карантине",
+      "healing_abandoned": "Восстановление прекращено",
+      "healing_capped": "Попытки восстановления исчерпаны"
     }
   },
   "project_overview": {
@@ -11559,7 +11771,16 @@
       "auto_hibernate_desc": "Автоматически переводить сессии в гибернацию по истечении порога неактивности — освобождая процесс, даже когда Fleet не в фокусе. Сессии остаются возобновляемыми через Пробудить. Работает, пока открыты Personas.",
       "auto_hibernate_toggle": "Включить автогибернацию",
       "auto_hibernate_after": "Через",
-      "auto_hibernate_minutes_unit": "мин. простоя"
+      "auto_hibernate_minutes_unit": "мин. простоя",
+      "live_slots_desc": "Ограничьте число одновременно работающих процессов claude. Когда флот достигает лимита, самая старая простаивающая сессия переводится в гибернацию, освобождая место — её можно возобновить через «Разбудить». Работающие сессии никогда не прерываются.",
+      "live_slots_max_label": "Макс.",
+      "live_slots_title": "Ограничить активные сессии",
+      "live_slots_toggle": "Включить лимит сессий",
+      "live_slots_unit": "активных сессий",
+      "headless_badge": "Фон",
+      "headless_no_terminal": "Фоновая сессия — работает без терминала. Отвечайте через баннер «Требуется ваше участие»; прогресс отображается в Insights.",
+      "spawn_headless_hint": "Безголовый режим — без живого терминала, заметно меньше нагрузки на CPU и RAM. Отвечайте через баннер «Требуется ваше участие»; прогресс — в Insights.",
+      "spawn_headless_toggle": "Запустить в фоне (без терминала)"
     },
     "title": "Плагины",
     "subtitle": "Расширьте рабочее пространство плагинами. Включите для отображения в боковой панели.",
@@ -13525,7 +13746,8 @@
       "voice_pocket_upload_save": "Добавить голос",
       "voice_pocket_upload_title": "Добавьте свой голос",
       "voice_pocket_hf_gate_desc": "Для управления собственными клонированными голосами требуется токен доступа Hugging Face в Хранилище учётных данных — он привязывает лицензию модели клонирования голоса к вашей учётной записи. Добавьте учётные данные Hugging Face, а затем вернитесь сюда.",
-      "voice_pocket_hf_gate_title": "Требуется аккаунт Hugging Face"
+      "voice_pocket_hf_gate_title": "Требуется аккаунт Hugging Face",
+      "persona_overview_kpi_trust_clamped": "Оценка доверия вышла за пределы диапазона и была ограничена 100 %."
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",
@@ -13775,7 +13997,9 @@
       "goal_scaffold_timeline_title": "Хронология",
       "goal_scaffold_timeline_sub": "Временная ось целей по целевым датам со стрелками зависимостей и маркерами сдвигов. Скоро.",
       "goal_field_title": "Заголовок",
+      "goal_field_title_placeholder": "К какому результату вы стремитесь?",
       "goal_field_description": "Описание",
+      "goal_field_description_placeholder": "Необязательный контекст, область охвата или описание успеха…",
       "goal_field_status": "Статус",
       "goal_field_target_date": "Целевая дата",
       "goal_target_asap": "Как можно скорее",
@@ -14481,7 +14705,28 @@
     "beat_sidebar_collapse": "Свернуть список битов",
     "beat_sidebar_expand": "Развернуть список битов",
     "beat_sidebar_empty": "Битов пока нет. Добавьте текстовый ритм, чтобы отмечать вехи на временной шкале.",
-    "beat_sidebar_untitled": "(без названия)"
+    "beat_sidebar_untitled": "(без названия)",
+    "add_title": "Добавить заголовок",
+    "entrance": "Появление",
+    "entrance_animate": "Анимация появления",
+    "entrance_down": "Вниз",
+    "entrance_duration": "Скорость",
+    "entrance_left": "Влево",
+    "entrance_none": "Нет",
+    "entrance_right": "Вправо",
+    "entrance_up": "Вверх",
+    "layer_title": "Заголовки",
+    "title_text": "Текст заголовка",
+    "title_text_placeholder": "Введите заголовок…",
+    "title_untitled": "(пустой заголовок)",
+    "voiceover": "Закадровый голос",
+    "voiceover_added": "Озвучка добавлена на таймлайн",
+    "voiceover_generate": "Создать озвучку",
+    "voiceover_generating": "Синтез…",
+    "voiceover_not_installed": "Локальный голосовой движок не установлен — сначала настройте его в настройках голоса компаньона.",
+    "voiceover_text": "Текст озвучки",
+    "voiceover_text_placeholder": "Введите, что должен сказать диктор…",
+    "voiceover_voice": "Голос"
   },
   "research_lab": {
     "dashboard": "Панель",

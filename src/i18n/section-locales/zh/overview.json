@@ -523,7 +523,9 @@
     "source": "来源",
     "processed": "已处理",
     "event_data": "事件数据",
-    "error": "错误"
+    "error": "错误",
+    "skipped_stat_label": "{skipped} 条被跳过",
+    "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。"
   },
   "health": {
     "title": "代理健康状况",
@@ -703,7 +705,11 @@
     "all_statuses": "所有状态",
     "col_status": "状态",
     "col_id": "ID",
-    "execution_label": "执行"
+    "execution_label": "执行",
+    "error_category_by_persona": "最常出错的智能体",
+    "error_category_prior_period": "较上一周期",
+    "error_category_section_title": "按类别统计失败",
+    "error_category_total_failures": "失败总数"
   },
   "analytics_dashboard": {
     "issues_found": "发现 {count} 个问题",
@@ -1387,7 +1393,32 @@
     "comparison_recommended": "推荐",
     "flow_title": "执行流程",
     "timeline_title": "时间轴",
-    "log_title": "依据"
+    "log_title": "依据",
+    "default_attention_empty": "所有 persona 运行正常——无需处理。",
+    "default_attention_low_trust": "信任度低",
+    "default_attention_paused": "已暂停",
+    "default_attention_setup": "需要设置",
+    "default_attention_title": "需要关注",
+    "default_callout_body": "这是根据你的舰队状态生成的入门视图。让 Athena 为你关心的内容量身打造一个驾驶舱——她会自动替换此视图。",
+    "default_callout_title": "入门驾驶舱",
+    "default_roster_title": "你的 personas",
+    "default_stat_active_personas": "活跃 personas",
+    "default_stat_executions": "执行次数（7 天）",
+    "default_stat_needs_attention": "需要关注",
+    "default_stat_success_rate": "成功率",
+    "default_subtitle": "Athena 可个性化定制的入门视图——聊天即可打造你自己的。",
+    "default_title": "入门驾驶舱",
+    "default_vitals_title": "舰队健康",
+    "empty_example_attention": "\"有什么需要我关注的\"",
+    "empty_example_personas": "\"显示我的 personas\"",
+    "empty_hint": "让 Athena 编排一个驾驶舱视图——试试 {personas} 或 {attention}。",
+    "empty_title": "你的驾驶舱是空的",
+    "error_retry": "重试",
+    "error_title": "无法加载你的驾驶舱",
+    "subtitle_composed_prefix": "由 Athena 编排——更新于",
+    "subtitle_default": "由伴侣驱动的工作区",
+    "talk_to_athena": "与 Athena 对话",
+    "unknown_widget": "未知组件：{kind}"
   },
   "certification": {
     "title": "认证指挥中心",
@@ -1832,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "开始日期",
     "end_date": "结束日期"
+  },
+  "healing_effectiveness": {
+    "attempted": "次尝试",
+    "confirmed": "已确认",
+    "loading": "正在加载修复统计…",
+    "no_data": "暂无自动修复活动",
+    "recent_activity": "近期活动",
+    "reverted": "已回退",
+    "success_rate": "成功率",
+    "title": "自我修复",
+    "window_label": "最近"
   }
 }

@@ -431,7 +431,10 @@
     "edge_count_other": "{count} aristas",
     "adoption_count_one": "{count} adopción",
     "adoption_count_other": "{count} adopciones",
-    "selected": "seleccionados"
+    "selected": "seleccionados",
+    "command_palette_create_agent": "Crear nuevo agente",
+    "command_palette_go_to": "Ir a {label}",
+    "command_palette_leaderboard": "Clasificación de agentes"
   },
   "chrome": {
     "app_title": "Personas",
@@ -483,7 +486,9 @@
       "nav_mode_review": "Alternar revisión humana (en modo navegación)",
       "nav_mode_schedules": "Alternar programaciones (en modo navegación)",
       "nav_mode_search": "Abrir búsqueda (en modo navegación)",
-      "open_title": "Atajos de teclado"
+      "open_title": "Atajos de teclado",
+      "nav_history_back": "Atrás",
+      "nav_history_forward": "Adelante"
     },
     "tray_schedules": "Programaciones",
     "tray_schedules_today": "{count} programadas hoy",
@@ -586,6 +591,7 @@
     "mission_control": "Centro de mando",
     "factory": "Fábrica",
     "kpis": "KPIs",
+    "studio": "Studio",
     "competition": "Competición",
     "development": "Desarrollo",
     "lifecycle": "Ciclo de vida",
@@ -781,6 +787,18 @@
       "personas_tab": "Personas (Animado)",
       "lucide_footer": "lucide-react -- biblioteca de íconos genérica -- estático",
       "personas_footer": "9 íconos personalizados -- motivos neurales/circuitos -- animados con CSS -- adaptativos al tema"
+    },
+    "since_left": {
+      "alerts": "{count} alerta generada",
+      "alerts_other": "{count} alertas generadas",
+      "approvals": "{count} aprobación pendiente",
+      "approvals_other": "{count} aprobaciones pendientes",
+      "dismiss": "Descartar",
+      "failed": "{count} fallida",
+      "failed_other": "{count} fallidas",
+      "runs": "{count} ejecución",
+      "runs_other": "{count} ejecuciones",
+      "title": "Desde que te fuiste"
     }
   },
   "agents": {
@@ -1298,7 +1316,17 @@
       "tab_chain": "Cadena",
       "thinking_tooltip": "Esfuerzo de razonamiento usado en esta ejecución",
       "trace_empty_hint": "Las trazas detalladas se capturan para ejecuciones que usan herramientas y las más recientes. Esta ejecución no tiene ninguna que mostrar.",
-      "verdict_field": "Veredicto"
+      "verdict_field": "Veredicto",
+      "chain_ended_because": "Por qué terminó la cadena",
+      "chain_total_cost": "Costo de la cadena",
+      "active_chains_agents_one": "{count} agente",
+      "active_chains_agents_other": "{count} agentes",
+      "active_chains_depth": "profundidad {count}",
+      "active_chains_hops_one": "{count} salto",
+      "active_chains_hops_other": "{count} saltos",
+      "active_chains_one": "{count} cadena en curso",
+      "active_chains_other": "{count} cadenas en curso",
+      "active_chains_title": "Cadenas en curso"
     },
     "lab": {
       "mode_arena": "Arena",
@@ -1625,7 +1653,9 @@
       "eco_col_resolved": "Resueltos",
       "eco_empty": "Sin resultados de evaluación — ejecuta el Lab para ver la eficiencia de costes.",
       "eco_subtitle": "Con qué frecuencia cada modelo resuelve una evaluación y cuánto cuesta cada éxito.",
-      "eco_title": "Eficiencia de costes"
+      "eco_title": "Eficiencia de costes",
+      "vr_col_tokens": "Tokens",
+      "vr_tokens_tooltip": "{input} de entrada / {output} de salida por ejecución de media"
     },
     "design": {
       "select_agent": "Selecciona un agente para iniciar el análisis de diseño",
@@ -2621,7 +2651,12 @@
       "delete_agents_message": "{count} agente(s) y toda su configuración serán eliminados permanentemente.",
       "delete_drafts": "Eliminar {count} borrador(es)",
       "delete_drafts_message": "{count} agente(s) borrador(es) serán eliminados permanentemente.",
-      "system_persona_undeletable": "El Director es un agente del sistema y no se puede eliminar."
+      "system_persona_undeletable": "El Director es un agente del sistema y no se puede eliminar.",
+      "archived_done": "Se archivaron {count} persona(s)",
+      "bulk_delete_done": "Se eliminaron {deleted} persona(s)",
+      "bulk_delete_failed": "No se pudieron eliminar las personas",
+      "bulk_delete_partial": "Se eliminaron {deleted}; se omitieron {skipped}",
+      "restored_done": "Se restauraron {count} persona(s)"
     },
     "persona_list": {
       "all_personas": "Todas las personas",
@@ -2657,7 +2692,12 @@
       "batch_moved_partial": "Movidas {ok} a {group}; {failed} fallidas",
       "render_cap_notice": "Mostrando {shown} de {total} — filtra con búsqueda o filtros para ver el resto.",
       "star_director_add": "Marcar como favorito para añadir al ámbito de coaching del Director",
-      "star_director_remove": "Marcado como favorito — en el ámbito de coaching del Director. Haz clic para quitar."
+      "star_director_remove": "Marcado como favorito — en el ámbito de coaching del Director. Haz clic para quitar.",
+      "badge_archived": "Archivada",
+      "batch_archive": "Archivar",
+      "batch_restore": "Restaurar",
+      "show_active_personas": "Mostrar personas activas",
+      "show_archived_personas": "Mostrar personas archivadas"
     },
     "editor_ui": {
       "max_budget_label": "Presupuesto máximo (USD)",
@@ -3509,6 +3549,11 @@
       "activate_agent": "Activar agente",
       "create_agent": "Crear agente",
       "min_completeness": "Agrega más detalles para alcanzar un 40% de completitud"
+    },
+    "duplicate": {
+      "done": "Duplicado como «{name}»",
+      "done_with_wiring": "Duplicado como «{name}»: se copiaron {triggers} activador(es) y {subscriptions} suscripción(es), desactivados en la copia",
+      "failed": "No se pudo duplicar el agente"
     }
   },
   "vault": {
@@ -4129,7 +4174,37 @@
       "tool_count_other": "{count} herramientas",
       "tab_documents": "Documentos",
       "tab_search": "Búsqueda",
-      "tab_settings": "Configuración"
+      "tab_settings": "Configuración",
+      "page_label": "pág. {page}",
+      "pages_label": "{count} páginas",
+      "partial_text_badge": "Texto parcial",
+      "partial_text_tooltip": "Este pasaje se leyó de una página que es casi toda imagen, por lo que puede estar incompleto.",
+      "scanned_pages_tooltip": "Estas páginas son imágenes sin capa de texto, por lo que su contenido no se puede buscar. Usa una copia procesada con OCR para incluirlas.",
+      "scanned_pages_warning": "{count} página(s) escaneada(s) ilegible(s)",
+      "extract_add_entity": "Añadir tipo",
+      "extract_add_field": "Añadir campo",
+      "extract_col_attrs": "Atributos",
+      "extract_col_key": "Entidad",
+      "extract_col_source": "Origen",
+      "extract_col_type": "Tipo",
+      "extract_empty_kb": "Añade documentos antes de extraer datos estructurados.",
+      "extract_entity_desc_ph": "qué es este objeto",
+      "extract_entity_type_ph": "entity_type",
+      "extract_field_desc_ph": "qué contiene",
+      "extract_field_name_ph": "campo",
+      "extract_infer_btn": "Sugerir un esquema",
+      "extract_inferring": "Leyendo el corpus...",
+      "extract_intro": "Convierte esta base de conocimiento en filas consultables. Primero sugiere un esquema de los objetos que describen tus documentos, revísalo y luego extrae.",
+      "extract_no_entities": "Aún no se han extraído entidades. Sugiere un esquema para empezar.",
+      "extract_progress": "{done}/{total} documentos, {count} entidades encontradas",
+      "extract_remove": "Quitar",
+      "extract_run_btn": "Extraer entidades",
+      "extract_run_status": "{status} — {count} entidades",
+      "extract_running": "Extrayendo...",
+      "extract_runs_heading": "Ejecuciones de extracción",
+      "extract_schema_heading": "Esquema propuesto",
+      "extract_schema_hint": "Edítalo antes de extraer — elimina los tipos que no quieras, el modelo completa el resto.",
+      "tab_extract": "Datos estructurados"
     },
     "manager": {
       "title": "Credenciales",
@@ -6050,7 +6125,9 @@
       "source": "Origen",
       "processed": "Procesado",
       "event_data": "Datos del Evento",
-      "error": "Error"
+      "error": "Error",
+      "skipped_stat_label": "{skipped} omitidos",
+      "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha."
     },
     "health": {
       "title": "Salud del Agente",
@@ -6230,7 +6307,11 @@
       "all_statuses": "Todos los estados",
       "col_status": "Estado",
       "col_id": "ID",
-      "execution_label": "Ejecución"
+      "execution_label": "Ejecución",
+      "error_category_by_persona": "Mayor fallo por agente",
+      "error_category_prior_period": "vs. periodo anterior",
+      "error_category_section_title": "Fallos por categoría",
+      "error_category_total_failures": "Fallos totales"
     },
     "analytics_dashboard": {
       "issues_found": "{count} problemas encontrados",
@@ -6914,7 +6995,32 @@
       "comparison_recommended": "Recomendado",
       "flow_title": "Cómo se desarrolla",
       "timeline_title": "Cronología",
-      "log_title": "Evidencia"
+      "log_title": "Evidencia",
+      "default_attention_empty": "Todos los personas en buen estado — nada requiere atención.",
+      "default_attention_low_trust": "Confianza baja",
+      "default_attention_paused": "En pausa",
+      "default_attention_setup": "Requiere configuración",
+      "default_attention_title": "Requiere atención",
+      "default_callout_body": "Esta es una vista inicial creada a partir del estado de tu flota. Pídele a Athena que componga un cockpit adaptado a lo que te importa — lo reemplazará automáticamente.",
+      "default_callout_title": "Cockpit inicial",
+      "default_roster_title": "Tus personas",
+      "default_stat_active_personas": "Personas activos",
+      "default_stat_executions": "Ejecuciones (7d)",
+      "default_stat_needs_attention": "Requiere atención",
+      "default_stat_success_rate": "Tasa de éxito",
+      "default_subtitle": "Una vista inicial que Athena puede personalizar — chatea para componer la tuya.",
+      "default_title": "Cockpit inicial",
+      "default_vitals_title": "Constantes de la flota",
+      "empty_example_attention": "\"qué requiere mi atención\"",
+      "empty_example_personas": "\"muéstrame mis personas\"",
+      "empty_hint": "Pídele a Athena que componga una vista de cockpit — prueba {personas} o {attention}.",
+      "empty_title": "Tu cockpit está vacío",
+      "error_retry": "Reintentar",
+      "error_title": "No se pudo cargar tu cockpit",
+      "subtitle_composed_prefix": "Compuesto por Athena — actualizado",
+      "subtitle_default": "Tu espacio de trabajo impulsado por tu compañera",
+      "talk_to_athena": "Hablar con Athena",
+      "unknown_widget": "Widget desconocido: {kind}"
     },
     "certification": {
       "title": "Centro de mando de certificación",
@@ -7359,6 +7465,17 @@
     "day_range_picker": {
       "start_date": "Fecha de inicio",
       "end_date": "Fecha de fin"
+    },
+    "healing_effectiveness": {
+      "attempted": "intentos",
+      "confirmed": "confirmados",
+      "loading": "Cargando estadísticas de reparación…",
+      "no_data": "Sin actividad de reparación automática",
+      "recent_activity": "Actividad reciente",
+      "reverted": "revertidos",
+      "success_rate": "tasa de éxito",
+      "title": "Autorreparación",
+      "window_label": "Últimos"
     }
   },
   "matrix_v3": {
@@ -10126,7 +10243,20 @@
       "empty": "Aún no se han registrado cambios de configuración. Las modificaciones realizadas a partir de ahora aparecerán en esta lista.",
       "empty_filtered": "Ninguna entrada coincide con el filtro de categoría actual.",
       "before": "Antes",
-      "after": "Después"
+      "after": "Después",
+      "categories": {
+        "api_keys": "Claves API",
+        "autonomy": "Autonomía",
+        "byom": "BYOM",
+        "config": "General",
+        "engine": "Motor",
+        "integrations": "Integraciones",
+        "limits": "Límites",
+        "notifications": "Notificaciones",
+        "quality_gates": "Controles de calidad",
+        "retention": "Retención",
+        "sync": "Sincronización en la nube"
+      }
     },
     "api_keys": {
       "title": "Claves de API",
@@ -10604,7 +10734,61 @@
     "usage_limit_weekly_message": "Se alcanzó el límite de uso semanal de Claude.",
     "usage_limit_weekly_suggestion": "Las ejecuciones seguirán fallando hasta que se restablezca el límite semanal: pausa los horarios o mejora tu plan.",
     "usage_limit_window_message": "La ventana de uso de Claude está agotada.",
-    "usage_limit_window_suggestion": "La ejecución se reintentará automáticamente cuando se restablezca la ventana; no se requiere ninguna acción."
+    "usage_limit_window_suggestion": "La ejecución se reintentará automáticamente cuando se restablezca la ventana; no se requiere ninguna acción.",
+    "agent_ir_parse_message": "El resultado de la build llegó con un formato incorrecto.",
+    "agent_ir_parse_suggestion": "Haz clic en Refine para regenerarlo, o inicia una build nueva; refinar ajusta el resultado.",
+    "authorization_required_message": "Esta herramienta necesita tu autorización antes de poder ejecutarse.",
+    "authorization_required_suggestion": "Abre la página de autorización para dar tu consentimiento y vuelve a intentarlo.",
+    "budget_value_invalid_message": "El valor del presupuesto no es válido.",
+    "budget_value_invalid_suggestion": "Usa un número positivo para el presupuesto en dólares (por ejemplo, 5 para $5).",
+    "build_no_agent_ir_message": "La build todavía no ha terminado de generarse; el plan del agente se sigue ensamblando.",
+    "build_no_agent_ir_suggestion": "Espera unos segundos y vuelve a intentarlo. Si persiste más de un minuto, reinicia la build con una intención más específica.",
+    "build_nothing_to_promote_message": "La build todavía no ha producido nada que se pueda promover.",
+    "build_nothing_to_promote_suggestion": "Espera a que la build termine de generarse, o haz clic en Refine para impulsarla. Si el asistente lleva más de un minuto atascado, reinícialo.",
+    "build_session_disappeared_message": "Esta sesión de build se borró antes de terminar.",
+    "build_session_disappeared_suggestion": "Inicia una build nueva; el borrador anterior ya no se puede recuperar.",
+    "build_session_gone_message": "Esta sesión de build ha caducado o se ha borrado.",
+    "build_session_gone_suggestion": "Inicia una nueva build con la misma intención.",
+    "design_result_parse_message": "No se pudieron leer los datos de diseño guardados de la persona.",
+    "design_result_parse_suggestion": "Ejecuta una build nueva para esta persona; el diseño en caché es de una versión anterior de la app.",
+    "external_service_message": "El servicio externo no pudo completar la solicitud.",
+    "external_service_suggestion": "Comprueba el estado del servicio y tu conexión, y vuelve a intentarlo.",
+    "importance_range_message": "La importancia de la memoria está fuera de rango.",
+    "importance_range_suggestion": "Elige un valor entre 1 y 10 para la importancia de la memoria.",
+    "interval_not_number_message": "El intervalo de sondeo no es un número válido.",
+    "interval_not_number_suggestion": "Abre Refine y pide un intervalo de sondeo numérico, como \"cada 5 minutos\".",
+    "interval_too_fast_message": "El sondeo no puede ejecutarse más de una vez por minuto.",
+    "interval_too_fast_suggestion": "Usa un intervalo de sondeo de 60 segundos o más (300 / 5 min es un valor predeterminado seguro). Haz clic en Refine y pide al agente que reduzca la frecuencia.",
+    "invalid_trigger_type_message": "La build eligió un tipo de disparador que el motor de ejecución no reconoce.",
+    "invalid_trigger_type_suggestion": "Haz clic en Refine y pide un disparador específico (\"según programación\", \"por webhook\", \"cuando ocurra X\"). Si sigue apareciendo, reinicia la build.",
+    "keyring_lost_message": "El almacén seguro de credenciales ya no está disponible.",
+    "keyring_lost_suggestion": "Reinicia la app. Si persiste, vuelve a introducir las credenciales afectadas en el vault.",
+    "max_concurrent_range_message": "El límite de concurrencia está fuera de rango.",
+    "max_concurrent_range_suggestion": "Configura el número máximo de ejecuciones simultáneas con un valor entre 1 y el límite del motor que se muestra en Configuración.",
+    "max_turns_range_message": "El límite de turnos está fuera del rango permitido.",
+    "max_turns_range_suggestion": "Configura el número máximo de turnos con un valor entre 1 y 50.",
+    "name_invalid_message": "El nombre de la persona necesita ajustes.",
+    "name_invalid_suggestion": "Elige un nombre corto y descriptivo (1–40 caracteres) y vuelve a intentarlo.",
+    "oauth_revoked_message": "Se ha revocado la autorización de la conexión.",
+    "oauth_revoked_suggestion": "Vuelve a conectar la cuenta para otorgar acceso de nuevo.",
+    "polling_url_blocked_message": "La URL de sondeo fue rechazada por motivos de seguridad.",
+    "polling_url_blocked_suggestion": "La URL apunta a una dirección interna o privada. Usa una URL HTTPS accesible públicamente, o cambia el disparador a webhook + smee.io.",
+    "prompt_too_large_message": "El prompt del agente es demasiado largo.",
+    "prompt_too_large_suggestion": "Haz clic en Refine y pide una versión más concisa, o elimina secciones redundantes.",
+    "retry_exhausted_message": "Esto siguió fallando tras varios reintentos automáticos.",
+    "retry_exhausted_suggestion": "Espera un poco y vuelve a intentarlo; si persiste, comprueba el estado del servicio o la configuración del agente.",
+    "schedule_missing_timing_message": "Los disparadores programados necesitan una expresión cron o un intervalo de sondeo.",
+    "schedule_missing_timing_suggestion": "Haz clic en Refine y especifica cuándo debe ejecutarse el agente (por ejemplo, \"cada día laborable a las 8am\" o \"cada 30 minutos\").",
+    "smee_url_invalid_message": "La URL de origen del webhook debe provenir de smee.io.",
+    "smee_url_invalid_suggestion": "Abre https://smee.io/new en un navegador, copia la URL del canal y pégala en el campo de origen del webhook.",
+    "system_prompt_empty_message": "El prompt de sistema de la persona está vacío.",
+    "system_prompt_empty_suggestion": "Normalmente el flujo de build lo rellena. Refina la build, o inicia una nueva con una intención más específica.",
+    "timeout_range_message": "El tiempo de espera está fuera del rango permitido.",
+    "timeout_range_suggestion": "Elige un tiempo de espera entre 1 segundo y el límite del motor (normalmente 30 minutos).",
+    "unknown_prompt_field_message": "La build generó un campo que el motor de ejecución no reconoce.",
+    "unknown_prompt_field_suggestion": "Haz clic en Refine; la nueva build usará el esquema actual.",
+    "webhook_missing_secret_message": "A este disparador de webhook le falta su secreto de firma.",
+    "webhook_missing_secret_suggestion": "Vuelve a ejecutar Promote; el flujo genera automáticamente un webhook_secret al enviarlo. Si persiste, reinicia la build."
   },
   "empty_states": {
     "credentials_title": "Tus agentes necesitan credenciales para ejecutarse",
@@ -11314,6 +11498,34 @@
       "high": "Alto",
       "low": "Bajo",
       "medium": "Medio"
+    },
+    "error_category": {
+      "api_error": "Error de API",
+      "credential_error": "Error de credencial",
+      "network": "Red",
+      "provider_not_found": "Proveedor no encontrado",
+      "rate_limit": "Límite de tasa",
+      "session_limit": "Límite de sesión",
+      "timeout": "Tiempo agotado",
+      "tool_error": "Error de herramienta",
+      "transient_process_failure": "Fallo transitorio del proceso",
+      "unknown": "Desconocido",
+      "validation": "Validación"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "Límite de ramificación alcanzado",
+      "budget_exceeded": "Límite de costo alcanzado",
+      "cas_lost": "Reclamado por otra ejecución",
+      "cycle_detected": "Ciclo detectado",
+      "depth_limit": "Límite de profundidad",
+      "handoff_suppressed": "Transferencia suprimida",
+      "malformed_config": "Configuración inválida",
+      "outside_window": "Fuera de la ventana activa",
+      "predicate_unmet": "Condición no cumplida",
+      "publish_failed": "Error al publicar",
+      "quarantined": "Activador en cuarentena",
+      "healing_abandoned": "Reparación abandonada",
+      "healing_capped": "Reintentos de reparación agotados"
     }
   },
   "project_overview": {
@@ -11559,7 +11771,16 @@
       "auto_hibernate_desc": "Hiberna automáticamente las sesiones inactivas que superen el umbral — liberando el proceso incluso cuando Fleet no está en primer plano. Siguen siendo reanudables con Despertar. Se ejecuta mientras Personas está abierto.",
       "auto_hibernate_toggle": "Activar hibernación automática",
       "auto_hibernate_after": "Después de",
-      "auto_hibernate_minutes_unit": "min inactivo"
+      "auto_hibernate_minutes_unit": "min inactivo",
+      "live_slots_desc": "Limita cuántos procesos de claude se ejecutan a la vez. Cuando la flota alcanza el límite, la sesión inactiva más antigua se hiberna para hacer sitio — sigue siendo reanudable con Despertar. Las sesiones en curso nunca se interrumpen.",
+      "live_slots_max_label": "Máx.",
+      "live_slots_title": "Limitar sesiones activas",
+      "live_slots_toggle": "Activar límite de sesiones",
+      "live_slots_unit": "sesiones activas",
+      "headless_badge": "Segundo plano",
+      "headless_no_terminal": "Sesión en segundo plano — se ejecuta sin terminal. Responde desde el banner «Te necesita»; el progreso se muestra en Insights.",
+      "spawn_headless_hint": "Modo headless: sin terminal en vivo, mucho más ligero en CPU y RAM. Responde desde el banner «Te necesita»; consulta el progreso en Insights.",
+      "spawn_headless_toggle": "Ejecutar en segundo plano (sin terminal)"
     },
     "title": "Plugins",
     "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",
@@ -13525,7 +13746,8 @@
       "voice_pocket_upload_save": "Añadir voz",
       "voice_pocket_upload_title": "Añade tu voz",
       "voice_pocket_hf_gate_desc": "Para gestionar tus propias voces clonadas se necesita un token de acceso de Hugging Face en la Bóveda de credenciales — así se vincula la licencia del modelo de clonación de voz a tu cuenta. Agrega una credencial de Hugging Face y luego vuelve aquí.",
-      "voice_pocket_hf_gate_title": "Se requiere una cuenta de Hugging Face"
+      "voice_pocket_hf_gate_title": "Se requiere una cuenta de Hugging Face",
+      "persona_overview_kpi_trust_clamped": "La puntuación de confianza estaba fuera de rango y se ha limitado al 100 %."
     },
     "artist_gallery": {
       "loading_viewer": "Cargando visor…",
@@ -13775,7 +13997,9 @@
       "goal_scaffold_timeline_title": "Cronología",
       "goal_scaffold_timeline_sub": "Vista de los objetivos por fecha límite en un eje temporal, con flechas de dependencia e indicadores de retraso. Próximamente.",
       "goal_field_title": "Título",
+      "goal_field_title_placeholder": "¿Qué resultado persigues?",
       "goal_field_description": "Descripción",
+      "goal_field_description_placeholder": "Contexto opcional, alcance o cómo se ve el éxito…",
       "goal_field_status": "Estado",
       "goal_field_target_date": "Fecha límite",
       "goal_target_asap": "Lo antes posible",
@@ -14481,7 +14705,28 @@
     "beat_sidebar_collapse": "Contraer lista de ritmos",
     "beat_sidebar_expand": "Ampliar lista de ritmos",
     "beat_sidebar_empty": "Aún no hay ritmos. Agregue un ritmo de texto para marcar hitos en la línea de tiempo.",
-    "beat_sidebar_untitled": "(intitulado)"
+    "beat_sidebar_untitled": "(intitulado)",
+    "add_title": "Añadir título",
+    "entrance": "Entrada",
+    "entrance_animate": "Animar entrada",
+    "entrance_down": "Abajo",
+    "entrance_duration": "Velocidad",
+    "entrance_left": "Izquierda",
+    "entrance_none": "Ninguna",
+    "entrance_right": "Derecha",
+    "entrance_up": "Arriba",
+    "layer_title": "Títulos",
+    "title_text": "Texto del título",
+    "title_text_placeholder": "Escribe el título…",
+    "title_untitled": "(título vacío)",
+    "voiceover": "Locución",
+    "voiceover_added": "Locución añadida a la línea de tiempo",
+    "voiceover_generate": "Generar locución",
+    "voiceover_generating": "Sintetizando…",
+    "voiceover_not_installed": "El motor de voz local no está instalado — configúralo primero en los ajustes de voz del companion.",
+    "voiceover_text": "Narración",
+    "voiceover_text_placeholder": "Escribe lo que debe decir el narrador…",
+    "voiceover_voice": "Voz"
   },
   "research_lab": {
     "dashboard": "Panel",

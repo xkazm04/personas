@@ -17,32 +17,31 @@ import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCo
 import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';
 import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestration/useOperativeMemoryBridge';
 import { lazyRetry } from '@/lib/lazyRetry';
+import { renderSectionRoute, isRoutableSection, isSectionGated } from '@/features/personas/sectionRouter';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 
-// Lazy-load all section content — only Sidebar stays eager (always visible).
+// Section PRIMARIES (Home, Overview, Teams canvas, Agents table, Events,
+// Connections, Templates, Plugins browse, Studio, Settings) are registry-driven
+// and lazy-loaded in `sectionRouter.tsx`, mounted here via `renderSectionRoute`.
+// Only the sub-tab / editor / build surfaces that compose AROUND those
+// primaries are declared below.
+//
 // lazyRetry (NOT raw React.lazy): raw lazy caches a rejected import promise
 // forever, so one failed chunk fetch (dev-server restart, post-deploy stale
 // chunk) bricked the section until a full page reload — the 2026-06-07
 // "infinite rendering" incident. lazyRetry swaps in a fresh lazy instance
 // after failure, so the next error-boundary reset / remount re-imports.
-const HomePage = lazyRetry(() => import('@/features/home/components/HomePage'));
 const PersonaEditor = lazyRetry(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
-const PersonaOverviewPage = lazyRetry(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
 const CreatePersonaEntry = lazyRetry(() => import('@/features/personas/sub_foundry').then(m => ({ default: m.CreatePersonaEntry })));
 // Mid-build resume renders the build progress surface directly (not the
 // create-mode chooser) — a session in flight already picked its path.
 const UnifiedBuildEntry = lazyRetry(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
-const OverviewPage = lazyRetry(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const GoalsPage = lazyRetry(() => import('@/features/teams/sub_goals/GoalsPage'));
 const KPIsPage = lazyRetry(() => import('@/features/teams/sub_kpis/KPIsPage'));
 const FactoryPage = lazyRetry(() => import('@/features/teams/sub_factory/FactoryPage'));
-const CredentialManager = lazyRetry(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
-const TeamCanvas = lazyRetry(() => import('@/features/teams/sub_teamWorkspace/TeamCanvas'));
 const ProjectManagerPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'));
 const LifecyclePage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'));
 const CompetitionPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage'));
-const DesignReviewsPage = lazyRetry(() => import('@/features/templates/components/DesignReviewsPage'));
-const SettingsPage = lazyRetry(() => import('@/features/settings/components/SettingsPage'));
-const TriggersPage = lazyRetry(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
 const CloudDeployPanel = lazyRetry(() => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel'));
 const GitLabPanel = lazyRetry(() => import('@/features/plugins/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazyRetry(() => import('@/features/agents/sub_deployment/components/UnifiedDeploymentDashboard'));
@@ -53,9 +52,6 @@ const ResearchLabPage = lazyRetry(() => import('@/features/plugins/research-lab/
 const DrivePage = lazyRetry(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazyRetry(() => import('@/features/plugins/twin/TwinPage'));
 const CompanionPluginPage = lazyRetry(() => import('@/features/plugins/companion/CompanionPluginPage'));
-const PluginBrowsePage = lazyRetry(() => import('@/features/plugins/PluginBrowsePage'));
-const SchedulesPage = lazyRetry(() => import('@/features/schedules/components/ScheduleTimeline'));
-const StudioPage = lazyRetry(() => import('@/features/studio/StudioPage'));
 const ScraperPage = lazyRetry(() => import('@/features/scraper/ScraperPage'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
@@ -105,6 +101,7 @@ export default function PersonasPage() {
   // Host-provided "Go to dashboard" recovery for section ErrorBoundaries (the
   // boundary itself is store-free; the shell wires navigation).
   const goHome = () => useSystemStore.getState().setSidebarSection('home');
+  const tier = useTier();
   const { selectedPersonaId, personas } = useAgentStore(
     useShallow((s) => ({ selectedPersonaId: s.selectedPersonaId, personas: s.personas }))
   );
@@ -200,6 +197,16 @@ export default function PersonasPage() {
   }, [sidebarSection, hasActiveBuild, isCreatingPersona]);
 
   const renderContent = () => {
+    // Uniform gate check (Direction 3) — the ONE place tier + dev gating is
+    // decided for the content router, mirroring the sidebar rail and command
+    // palette. A section whose gates fail (downgraded tier, non-dev build)
+    // renders Home immediately instead of briefly mounting a forbidden surface
+    // before the Sidebar redirect effect fires. Overlay-only sections have no
+    // router branch, so they fall through to the persona default below.
+    if (isSectionGated(sidebarSection, { isDev: import.meta.env.DEV, isTierVisible: tier.isVisible })) {
+      return renderSectionRoute('home', goHome);
+    }
+
     // Show unified wizard when no personas exist OR when explicitly creating
     if (sidebarSection === 'personas') {
       // Cloud sub-view (dev-only, gated in sidebar)
@@ -243,10 +250,6 @@ export default function PersonasPage() {
       }
     }
 
-    if (sidebarSection === 'home') return <ErrorBoundary onGoHome={goHome} name="Home"><Suspense fallback={SectionFallback}><HomePage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'overview') {
-      return <ErrorBoundary onGoHome={goHome} name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
-    }
     if (sidebarSection === 'teams') {
       // Teams 1st-level section: Workspace (canvas/Studio), Goals, KPIs, or Factory.
       if (teamsTab === 'factory') {
@@ -267,11 +270,8 @@ export default function PersonasPage() {
       if (teamsTab === 'competition') {
         return <ErrorBoundary onGoHome={goHome} name="Competition"><Suspense fallback={SectionFallback}><CompetitionPage /></Suspense></ErrorBoundary>;
       }
-      return <ErrorBoundary onGoHome={goHome} name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
+      return renderSectionRoute('teams', goHome);
     }
-    if (sidebarSection === 'credentials') return <ErrorBoundary onGoHome={goHome} name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'events') return <ErrorBoundary onGoHome={goHome} name="Triggers"><Suspense fallback={SectionFallback}><TriggersPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'design-reviews') return <ErrorBoundary onGoHome={goHome} name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'plugins') {
       if (pluginTab === 'dev-tools') {
         return <ErrorBoundary onGoHome={goHome} name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
@@ -298,17 +298,23 @@ export default function PersonasPage() {
         return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={SectionFallback}><ScraperPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
-      return <ErrorBoundary onGoHome={goHome} name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;
+      return renderSectionRoute('plugins', goHome);
     }
-    if (sidebarSection === 'studio' && import.meta.env.DEV) return <ErrorBoundary onGoHome={goHome} name="Studio"><Suspense fallback={SectionFallback}><StudioPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'schedules') return <ErrorBoundary onGoHome={goHome} name="Schedules"><Suspense fallback={SectionFallback}><SchedulesPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'settings') return <ErrorBoundary onGoHome={goHome} name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
+    // Leaf sections — registry-driven primary surface. Gates were already
+    // checked above; personas/teams/plugins are handled by their bespoke
+    // branches, so anything routable reaching here (home, overview,
+    // credentials, events, design-reviews, studio, settings) renders directly.
+    // `schedules` is overlay-only (no route) and falls through to the persona
+    // default below alongside the persona editor/build surfaces.
+    if (isRoutableSection(sidebarSection) && sidebarSection !== 'personas') {
+      return renderSectionRoute(sidebarSection, goHome);
+    }
     if (selectedPersonaId && buildPersonaId === selectedPersonaId && buildPhase && buildPhase !== 'promoted') {
       return <ErrorBoundary onGoHome={goHome} name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
     }
     if (selectedPersonaId) return <ErrorBoundary onGoHome={goHome} name="Agent Editor"><Suspense fallback={SectionFallback}><PersonaEditor /></Suspense></ErrorBoundary>;
-    // Default: All Agents table view
-    return <ErrorBoundary onGoHome={goHome} name="Agent Overview"><Suspense fallback={SectionFallback}><PersonaOverviewPage /></Suspense></ErrorBoundary>;
+    // Default: All Agents table view (registry primary for the personas section)
+    return renderSectionRoute('personas', goHome);
   };
 
   return (

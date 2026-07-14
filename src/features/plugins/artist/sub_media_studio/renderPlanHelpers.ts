@@ -9,6 +9,7 @@
 // ---------------------------------------------------------------------------
 
 import type { NormalizeDirective } from '@/lib/bindings/NormalizeDirective';
+import type { OverlayEnter } from '@/lib/bindings/OverlayEnter';
 
 /**
  * Linear gain multiplier for preview loudnorm. Matches the Rust `normalize`
@@ -41,4 +42,35 @@ export function fadeEnvelope(
     o = Math.min(o, Math.max(0, (duration - localTime) / fadeOut));
   }
   return Math.max(0, Math.min(1, o));
+}
+
+/**
+ * Remaining entrance offset (in frame-relative fraction units) at a given
+ * local time within the stage. Mirrors the ffmpeg `overlay_pos_expr` easing
+ * so preview and export animate identically: the overlay starts at
+ * `position + offset` and eases to `position` over `enter.duration`.
+ *
+ * Returns {dx, dy} to ADD to the base position fraction.
+ */
+export function enterOffset(
+  enter: OverlayEnter | null,
+  localTime: number,
+): { dx: number; dy: number } {
+  if (!enter || enter.duration <= 0) return { dx: 0, dy: 0 };
+  const p = Math.max(0, Math.min(1, localTime / enter.duration));
+  let eased: number;
+  switch (enter.easing) {
+    case 'linear':
+      eased = p;
+      break;
+    case 'easeInOut':
+      eased = (1 - Math.cos(Math.PI * p)) / 2;
+      break;
+    case 'easeOut':
+    default:
+      eased = 1 - Math.pow(1 - p, 2);
+      break;
+  }
+  const remaining = 1 - eased;
+  return { dx: enter.offsetX * remaining, dy: enter.offsetY * remaining };
 }

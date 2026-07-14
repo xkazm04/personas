@@ -17,6 +17,8 @@ interface ResultOverrides {
   pc?: number | null;
   cost?: number;
   duration?: number;
+  inTok?: number;
+  outTok?: number;
 }
 
 // Note: use `'key' in o ? o.key : default` rather than `o.key ?? default` so
@@ -38,8 +40,8 @@ function arenaResult(modelId: string, provider: string, o: ResultOverrides = {})
     toolAccuracyScore: pick(o, 'ta', 80),
     outputQualityScore: pick(o, 'oq', 70),
     protocolCompliance: pick(o, 'pc', 60),
-    inputTokens: 0,
-    outputTokens: 0,
+    inputTokens: pick(o, 'inTok', 0),
+    outputTokens: pick(o, 'outTok', 0),
     costUsd: pick(o, 'cost', 0.01),
     durationMs: pick(o, 'duration', 1000),
     rationale: null,
@@ -64,8 +66,8 @@ function abResult(versionId: string, versionNumber: number, o: ResultOverrides =
     toolAccuracyScore: pick(o, 'ta', 80),
     outputQualityScore: pick(o, 'oq', 70),
     protocolCompliance: pick(o, 'pc', 60),
-    inputTokens: 0,
-    outputTokens: 0,
+    inputTokens: pick(o, 'inTok', 0),
+    outputTokens: pick(o, 'outTok', 0),
     costUsd: pick(o, 'cost', 0.01),
     durationMs: pick(o, 'duration', 1000),
     rationale: null,
@@ -89,8 +91,8 @@ function matrixResult(variant: string, o: ResultOverrides = {}): LabMatrixResult
     toolAccuracyScore: pick(o, 'ta', 80),
     outputQualityScore: pick(o, 'oq', 70),
     protocolCompliance: pick(o, 'pc', 60),
-    inputTokens: 0,
-    outputTokens: 0,
+    inputTokens: pick(o, 'inTok', 0),
+    outputTokens: pick(o, 'outTok', 0),
     costUsd: pick(o, 'cost', 0.01),
     durationMs: pick(o, 'duration', 1000),
     rationale: null,
@@ -154,6 +156,16 @@ describe('aggregateArenaResults', () => {
     const r2 = arenaResult('haiku', 'p', { scenario: 's1', ta: 90 });
     const out = aggregateArenaResults([r1, r2]);
     expect(out.matrix['s1']!['haiku']).toBe(r2);
+  });
+
+  it('sums input + output tokens across the group', () => {
+    const out = aggregateArenaResults([
+      arenaResult('haiku', 'p', { inTok: 1000, outTok: 200 }),
+      arenaResult('haiku', 'p', { inTok: 3000, outTok: 800 }),
+    ]);
+    // Tokens are summed, not averaged — the question the column answers is
+    // 'how much did this variant read+write in total', not 'per run'.
+    expect(out.aggregates[0]!.totalTokens).toBe(5000);
   });
 
   it('sums cost and averages duration', () => {

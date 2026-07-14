@@ -18,6 +18,7 @@ pub mod app_focus;
 pub mod audit_incidents_promoter;
 pub mod auto_rollback;
 pub mod auto_triage;
+pub mod autonomy;
 pub mod autopilot;
 pub mod automation_runner;
 pub mod background;
@@ -86,6 +87,7 @@ pub mod enclave;
 pub mod error_taxonomy;
 pub mod eval;
 pub mod event_registry;
+pub mod event_vocabulary;
 pub mod events;
 pub mod evolution;
 mod execution_engine;
@@ -111,6 +113,8 @@ pub mod identity;
 pub mod inflight_guard;
 pub mod intent_compiler;
 pub mod kb_index;
+#[cfg(feature = "ml")]
+pub mod kb_extract;
 #[cfg(feature = "ml")]
 pub mod kb_ingest;
 pub mod knowledge;
@@ -1056,12 +1060,14 @@ impl ExecutionEngine {
         // Clone log_dir for potential healing retries (log_dir is moved into run_execution)
         let log_dir_for_retry = log_dir.clone();
 
-        // Extract chain_trace_id from input_data if present (chain trigger payloads embed it)
+        // Extract chain_trace_id from input_data if present (chain trigger payloads embed it).
+        // Tolerates BOTH the raw top-level shape and the event-bus wrapped
+        // `{_event, payload}` shape — the latter nests the id under `payload`,
+        // which a top-level-only read missed, orphaning every event-dispatched
+        // hop's trace (Chain tab showed 'partial' for real chains).
         let chain_trace_id = input_data
             .as_ref()
-            .and_then(|v| v.get("_chain_trace_id"))
-            .and_then(|t| t.as_str())
-            .map(String::from);
+            .and_then(chain::chain_trace_id_from_input);
 
         // Spawn background task.
         // The inner work is wrapped in catch_unwind so that a panic inside
@@ -1825,12 +1831,12 @@ fn drain_and_start_next(
                 let log_dir = std::env::temp_dir().join("personas").join("logs");
                 let log_dir_for_retry = log_dir.clone();
 
+                // See start_execution_with_priority: tolerate both the raw and
+                // the event-bus wrapped `{_event, payload}` input shapes.
                 let chain_trace_id = ctx
                     .input_data
                     .as_ref()
-                    .and_then(|v| v.get("_chain_trace_id"))
-                    .and_then(|t| t.as_str())
-                    .map(String::from);
+                    .and_then(chain::chain_trace_id_from_input);
 
                 let tracker_clone = tracker.clone();
                 let tasks_clone = tasks.clone();
@@ -2406,14 +2412,20 @@ async fn handle_execution_result(
     // team-handoff chain triggers so the connection graph doesn't double-drive
     // the same work the orchestrator already schedules.
     let source_is_assignment_step = chain::input_is_assignment_step(source_input.as_deref());
-    let (chain_depth, mut visited, existing_chain_trace_id) = source_input
+    let (chain_depth, mut visited, existing_chain_trace_id, chain_cost_in) = source_input
         .map(|input| chain::extract_chain_metadata(Some(&input)))
         .unwrap_or_default();
     visited.insert(persona_id.to_string());
 
+    // Whether this run is a downstream hop (inherited a chain id) or the ROOT of
+    // a fresh chain (mints one from its own trace_id below).
+    let is_downstream_hop = existing_chain_trace_id.is_some();
     // Use existing chain_trace_id if this execution is part of a chain,
     // otherwise use this execution's trace_id as the root of a new chain trace
     let chain_trace_id = existing_chain_trace_id.or_else(|| result.trace_id.clone());
+    // Direction 3: fold this hop's cost into the running chain total before
+    // evaluating the next links (so the ceiling sees spend-through-this-hop).
+    let chain_cost_total = chain_cost_in + result.cost_usd;
 
     let cascade_metrics = chain::evaluate_chain_triggers(
         pool,
@@ -2425,9 +2437,31 @@ async fn handle_execution_result(
         &visited,
         chain_trace_id.as_deref(),
         source_is_assignment_step,
+        chain_cost_total,
     );
     if let Some(ref sched) = scheduler {
         sched.record_chain_cascade(&cascade_metrics);
+    }
+
+    // Direction 1b: back-fill this run's trace row so it shares the chain id.
+    // Downstream hops already receive it via the stamper, but a fresh chain's
+    // ROOT saved its trace with chain_trace_id = NULL (it had no upstream id at
+    // spawn) — without this the root is absent from get_by_chain_trace_id and
+    // the Chain tab reads 'partial'. Only stamp genuine chain participants (a
+    // hop, or a root that actually fired ≥1 link) so standalone runs keep NULL.
+    if let Some(ctid) = chain_trace_id.as_deref() {
+        if is_downstream_hop || cascade_metrics.events_published > 0 {
+            if let Err(e) =
+                crate::db::repos::execution::traces::set_chain_trace_id(pool, exec_id, ctid)
+            {
+                tracing::warn!(
+                    execution_id = %exec_id,
+                    chain_trace_id = %ctid,
+                    error = %e,
+                    "Failed to back-fill chain_trace_id on trace row"
+                );
+            }
+        }
     }
 
     // Healing check for failed executions
@@ -2798,6 +2832,18 @@ fn evaluate_healing_and_retry(
     let consecutive = exec_repo::count_consecutive_real_failures(pool, persona_id)
         .unwrap_or(0);
 
+    // Storm guard signal: environmental provider failures (usage-limit /
+    // API-server-error) for this persona within the storm window. These bypass
+    // the `consecutive < 3` gate AND are excluded from the breaker above, so
+    // this is the ONLY count that bounds a sustained-incident retry storm across
+    // chains. The orchestrator caps the usage-limit / ApiError arms on it.
+    let environmental_failures_in_window = exec_repo::count_environmental_failures_in_window(
+        pool,
+        persona_id,
+        healing_orchestrator::STORM_WINDOW_MINUTES as i64,
+    )
+    .unwrap_or(0);
+
     let timeout_ms = if persona_timeout_ms > 0 {
         persona_timeout_ms as u64
     } else {
@@ -2848,15 +2894,19 @@ fn evaluate_healing_and_retry(
         .unwrap_or(0);
 
     // --- Decision tree (see healing_orchestrator module docs for precedence) ---
+    // `category` was classified once above (the single classification on the
+    // failure path) — thread it in so the orchestrator does NOT re-run the
+    // string ladder. `timed_out` / `session_limit_reached` already folded into
+    // `category` via `classify_error`, so they are not passed again.
     let ctx = healing_orchestrator::HealingContext {
         error: error_str,
-        timed_out,
-        session_limit_reached: result.session_limit_reached,
+        category,
         usage_limit: result.usage_limit.as_ref(),
         execution_state: exec_state_str,
         timeout_ms,
         consecutive_failures: consecutive,
         retry_count: current_retry_count,
+        environmental_failures_in_window,
         kb_hint: kb_hint.as_ref(),
         has_session_id: result.claude_session_id.is_some(),
         is_dev_mode,
@@ -3581,6 +3631,18 @@ fn spawn_healing_chain(
                         "healing_execution_id": exec_id,
                     }),
                 );
+                // Direction 2a: a cancelled heal is a user stop, not an
+                // abandonment — only surface the chain-stop when the heal run
+                // genuinely failed.
+                if !cancelled.load(Ordering::Acquire) {
+                    record_healing_chain_stop(
+                        &pool,
+                        &original_exec_id,
+                        &persona_id,
+                        chain::stop_reason::HEALING_ABANDONED,
+                        "AI-heal run did not succeed; no fix applied".to_string(),
+                    );
+                }
                 return;
             }
 
@@ -3648,6 +3710,18 @@ fn spawn_healing_chain(
                             // circuit_breaker was moved, create a fresh ref
                             Arc::new(failover::ProviderCircuitBreaker::new()),
                         );
+                    } else if heal_result.fixes_applied.is_empty() {
+                        // Direction 2a: the heal ran to completion but produced
+                        // no actionable fix, so the original (possibly chained)
+                        // link stays broken with no retry scheduled. Surface it
+                        // as a chain stop for chained runs.
+                        record_healing_chain_stop(
+                            &pool,
+                            &original_exec_id,
+                            &persona_id,
+                            chain::stop_reason::HEALING_ABANDONED,
+                            "AI-heal produced no actionable fix".to_string(),
+                        );
                     }
                 }
                 Err(e) => {
@@ -3659,6 +3733,15 @@ fn spawn_healing_chain(
                             "persona_id": persona_id,
                             "phase": "failed",
                         }),
+                    );
+                    // Direction 2a: applying the parsed fixes failed — the heal
+                    // did not repair the link.
+                    record_healing_chain_stop(
+                        &pool,
+                        &original_exec_id,
+                        &persona_id,
+                        chain::stop_reason::HEALING_ABANDONED,
+                        format!("AI-heal fix application failed: {e}"),
                     );
                 }
             }
@@ -3712,6 +3795,52 @@ fn spawn_healing_chain(
         #[cfg(feature = "desktop")]
         crate::tray::refresh_tray(&app_for_cleanup);
     });
+}
+
+/// Direction 2a: record a `chain_stop_reasons` row when a self-healing pathway
+/// abandons (or caps out on) a CHAINED execution, so the Chain tab can answer
+/// "why did this chain stop?" for healing exhaustion the same way it already
+/// does for depth/budget/predicate stops.
+///
+/// Best-effort and chain-scoped: it resolves the ORIGINAL execution's
+/// `chain_trace_id` from its `input_data` and records nothing when the run was
+/// not part of a chain (mirrors the wave-4 pattern — a non-chain healing
+/// abandonment surfaces via the healing audit log, not the chain audit). A lost
+/// audit row never affects control flow.
+fn record_healing_chain_stop(
+    pool: &DbPool,
+    original_exec_id: &str,
+    persona_id: &str,
+    reason_token: &str,
+    detail: String,
+) {
+    let meta = exec_repo::get_by_id(pool, original_exec_id)
+        .ok()
+        .and_then(|e| e.input_data)
+        .map(|input| chain::extract_chain_metadata(Some(&input)));
+    let (chain_depth, chain_trace_id) = match meta {
+        Some((depth, _visited, Some(ctid), _cost)) => (depth, ctid),
+        _ => return, // not a chain participant — nothing to surface here
+    };
+    if let Err(e) = crate::db::repos::execution::chain_stop_reasons::record(
+        pool,
+        crate::db::repos::execution::chain_stop_reasons::ChainStopReasonInput {
+            chain_trace_id: &chain_trace_id,
+            link_execution_id: original_exec_id,
+            trigger_id: None,
+            target_persona_id: Some(persona_id),
+            reason_token,
+            detail: Some(detail),
+            chain_depth,
+        },
+    ) {
+        tracing::warn!(
+            original_exec_id = %original_exec_id,
+            reason_token = %reason_token,
+            error = %e,
+            "Failed to record healing chain stop reason",
+        );
+    }
 }
 
 /// Reason tag stored on a `scheduled_retries` row. Drives the drain path's
@@ -3987,6 +4116,25 @@ fn spawn_delayed_retry(
                         let _ = healing_repo::revert_auto_fix_pending(&pool, &hi.id);
                         ("auto_fix_reverted", "open")
                     };
+                    // Direction 1: durably record the terminal auto-fix outcome
+                    // so per-strategy effectiveness (confirm vs revert rates) is
+                    // aggregatable. A reverted issue drops back to `open` and
+                    // loses its `auto_fixed` flag, so without this ledger row the
+                    // revert is invisible to any after-the-fact query. `detail`
+                    // carries the strategy (healing category).
+                    healing_repo::create_audit_entry(
+                        &pool,
+                        Some(&hi.persona_id),
+                        hi.execution_id.as_deref(),
+                        transition,
+                        healing_repo::EFFECTIVENESS_SUBSYSTEM,
+                        if result.success {
+                            "Auto-fix confirmed — retry succeeded"
+                        } else {
+                            "Auto-fix reverted — retry failed"
+                        },
+                        Some(hi.category.as_str()),
+                    );
                     let event_payload = types::HealingIssueUpdatedEvent {
                         issue_id: hi.id.clone(),
                         persona_id: hi.persona_id.clone(),
@@ -3999,6 +4147,21 @@ fn spawn_delayed_retry(
                         emit_event(&app, event_name::AUTO_FIX_COMPLETED, &event_payload);
                     }
                 }
+            }
+
+            // Direction 2a: a healing retry that failed again with its retry
+            // budget exhausted is a terminal healing exhaustion — record a chain
+            // stop so a chained cascade shows why it ended (mirrors wave-4). The
+            // per-issue revert above flips the issue back to `open`; this closes
+            // the chain-audit gap the retry ladder previously left silent.
+            if !result.success && retry_count >= healing::MAX_RETRY_COUNT {
+                record_healing_chain_stop(
+                    &pool,
+                    &original_exec_id,
+                    &persona_id,
+                    chain::stop_reason::HEALING_CAPPED,
+                    format!("healing retry #{retry_count} failed; retry budget exhausted"),
+                );
             }
 
             // Notification
@@ -4048,12 +4211,14 @@ fn spawn_delayed_retry(
             // on the retry path.
             let source_is_assignment_step =
                 chain::input_is_assignment_step(source_input.as_deref());
-            let (chain_depth, mut visited, existing_chain_trace_id) = source_input
+            let (chain_depth, mut visited, existing_chain_trace_id, chain_cost_in) = source_input
                 .map(|input| chain::extract_chain_metadata(Some(&input)))
                 .unwrap_or_default();
             visited.insert(persona_id.clone());
+            let is_downstream_hop = existing_chain_trace_id.is_some();
             let chain_trace_id =
                 existing_chain_trace_id.or_else(|| result.trace_id.clone());
+            let chain_cost_total = chain_cost_in + result.cost_usd;
 
             let cascade_metrics = chain::evaluate_chain_triggers(
                 &pool,
@@ -4065,11 +4230,30 @@ fn spawn_delayed_retry(
                 &visited,
                 chain_trace_id.as_deref(),
                 source_is_assignment_step,
+                chain_cost_total,
             );
             // Best-effort metrics recording — same as the regular path
             // (`handle_execution_result`) does when a scheduler is present.
             if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
                 state.scheduler.record_chain_cascade(&cascade_metrics);
+            }
+
+            // Direction 1b: back-fill the trace row's chain_trace_id (see
+            // handle_execution_result for the rationale). Same guard: only
+            // genuine chain participants get stamped.
+            if let Some(ctid) = chain_trace_id.as_deref() {
+                if is_downstream_hop || cascade_metrics.events_published > 0 {
+                    if let Err(e) = crate::db::repos::execution::traces::set_chain_trace_id(
+                        &pool, &exec_id, ctid,
+                    ) {
+                        tracing::warn!(
+                            execution_id = %exec_id,
+                            chain_trace_id = %ctid,
+                            error = %e,
+                            "Failed to back-fill chain_trace_id on trace row"
+                        );
+                    }
+                }
             }
         }
 

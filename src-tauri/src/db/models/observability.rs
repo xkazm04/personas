@@ -279,6 +279,67 @@ pub struct ModelValueShare {
 }
 
 // ============================================================================
+// Observability: Category-aware error analytics
+// ============================================================================
+
+/// Per-category failure counts over a window plus the immediately-prior window
+/// of equal length, so the dashboard can surface **category-grounded deltas**
+/// instead of a bare error rate (raw trends were deliberately dropped as noise).
+///
+/// Classification runs at aggregation time by feeding each stored
+/// `error_message` through the shared `engine::error_taxonomy::classify_error_str`
+/// — the SAME 11-category taxonomy used by healing and failover, not a fork.
+/// Simulations are excluded (their failures are stubbed, not real signal), the
+/// same way `get_value_rollup` excludes them.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorCategoryBreakdown {
+    #[ts(type = "number")]
+    pub period_days: i64,
+    /// Total classified failures in the current window.
+    #[ts(type = "number")]
+    pub total_failures: i64,
+    /// Total classified failures in the prior window of equal length.
+    #[ts(type = "number")]
+    pub prior_total_failures: i64,
+    /// Per-category counts, descending by current-window count.
+    pub categories: Vec<ErrorCategoryCount>,
+    /// Per-persona dominant failure category (descending by count), capped.
+    pub persona_top_categories: Vec<PersonaTopErrorCategory>,
+}
+
+/// One error category's failure count in the current window and the prior one.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorCategoryCount {
+    /// snake_case `ErrorCategory` token (`rate_limit`, `timeout`, …). Resolve to
+    /// a label via `status_tokens.error_category` on the frontend.
+    pub category: String,
+    #[ts(type = "number")]
+    pub count: i64,
+    #[ts(type = "number")]
+    pub prior_count: i64,
+    /// `count - prior_count` (can be negative) — the category-grounded delta.
+    #[ts(type = "number")]
+    pub delta: i64,
+}
+
+/// A persona's most frequent failure category over the current window.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PersonaTopErrorCategory {
+    pub persona_id: String,
+    pub persona_name: String,
+    /// snake_case `ErrorCategory` token of this persona's most common failure.
+    pub category: String,
+    #[ts(type = "number")]
+    pub count: i64,
+}
+
+// ============================================================================
 // Observability: Execution Heatmap (GitHub-style contribution graph)
 // ============================================================================
 

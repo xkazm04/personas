@@ -446,6 +446,12 @@ pub struct LabVersionRating {
     pub protocol_compliance: Option<f64>,
     pub cost_usd: f64,
     pub duration_ms: f64,
+    /// Mean prompt tokens per sample. Cost alone hides the token story when
+    /// models are priced differently — a cheaper model can still be the token
+    /// hog. Surfaced next to `cost_usd` in the Versions & Ratings table.
+    pub input_tokens: f64,
+    /// Mean completion tokens per sample.
+    pub output_tokens: f64,
     #[ts(type = "number")]
     pub sample_count: i64,
     pub last_measured_at: Option<String>,

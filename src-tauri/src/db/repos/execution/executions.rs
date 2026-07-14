@@ -1033,6 +1033,58 @@ pub fn count_consecutive_real_failures(
     )
 }
 
+/// Storm guard: count this persona's ENVIRONMENTAL provider failures (usage /
+/// rate / session limit, and API / server 5xx / overloaded) within a rolling
+/// window of `window_minutes`.
+///
+/// These are exactly the failures the persona circuit breaker EXCLUDES (see
+/// [`count_consecutive_real_failures`]) — so during a sustained provider
+/// incident nothing else bounds the *cross-chain* retry storm: each newly
+/// scheduled run starts a fresh healing chain (retry_count = 0) and schedules
+/// its own durable `RetryAt`, and the breaker never trips because it ignores
+/// environmental failures. The healing orchestrator reads this count and, past
+/// a documented cap, folds the auto-retry into a manual issue instead of piling
+/// on another scheduled retry. The window bounds RETRY COUNT, not wait time —
+/// a single legitimate usage-window wait (hours) still schedules normally.
+///
+/// The `LIKE` shapes mirror the environmental exclusion in
+/// `count_consecutive_real_failures` plus the API/server-error shapes classified
+/// as `ApiError` by `error_taxonomy` (500/502/503/529/overloaded/server error).
+pub fn count_environmental_failures_in_window(
+    pool: &DbPool,
+    persona_id: &str,
+    window_minutes: i64,
+) -> Result<u32, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::count_environmental_failures_in_window",
+        {
+            let conn = pool.get()?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM persona_executions
+                 WHERE persona_id = ?1 AND status = 'failed'
+                   AND datetime(created_at) > datetime('now', ?2)
+                   AND (
+                        LOWER(COALESCE(error_message,'')) LIKE '%rate limit%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%usage limit%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%session limit%'
+                     OR COALESCE(error_message,'') LIKE '%429%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%overloaded%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%server error%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%internal server%'
+                     OR COALESCE(error_message,'') LIKE '%500%'
+                     OR COALESCE(error_message,'') LIKE '%502%'
+                     OR COALESCE(error_message,'') LIKE '%503%'
+                     OR COALESCE(error_message,'') LIKE '%529%'
+                   )",
+                params![persona_id, format!("-{window_minutes} minutes")],
+                |r| r.get(0),
+            )?;
+            Ok(n.min(u32::MAX as i64) as u32)
+        }
+    )
+}
+
 pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     timed_query!("persona_executions", "persona_executions::get_running", {
         let conn = pool.get()?;
@@ -1043,6 +1095,157 @@ pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     })
+}
+
+// =============================================================================
+// In-flight chain observability (Direction 2)
+// =============================================================================
+
+/// A live summary of one chain that currently has in-flight work — the answer
+/// to "what chains are running right now?", which was otherwise unanswerable
+/// (CascadeMetrics is log-only and the Chain tab is retrospective per-run).
+///
+/// Grouped from the currently `running`/`queued` executions by the
+/// `chain_trace_id` carried in each run's `input_data`.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ActiveChain {
+    /// The distributed chain trace id shared by every hop of this chain.
+    pub chain_trace_id: String,
+    /// How many executions of this chain are in flight right now (running or
+    /// queued). This is a LIVE count, not the chain's lifetime hop total.
+    #[ts(type = "number")]
+    pub in_flight_count: u32,
+    /// The deepest hop reached so far (max `_chain_depth` across the in-flight
+    /// runs). Bounded by `MAX_CHAIN_DEPTH`.
+    #[ts(type = "number")]
+    pub max_depth: u32,
+    /// USD spent by the chain up to its most recent completed hop — the max of
+    /// the accumulated `_chain_cost_usd` propagated in the in-flight runs'
+    /// metadata. In-flight runs have not booked their own cost yet, so this is
+    /// spend-through-the-latest-hop, not including the running hops themselves.
+    pub accumulated_cost_usd: f64,
+    /// Distinct personas with in-flight work in this chain (first-seen order).
+    pub persona_ids: Vec<String>,
+    /// When the oldest in-flight run of this chain began (its `started_at`, or
+    /// `created_at` when not yet started) — the chain's live age anchor.
+    pub oldest_started_at: String,
+}
+
+/// Minimal per-run projection the grouping needs — kept separate from
+/// `PersonaExecution` so the grouping is a pure, DB-free unit under test.
+pub struct ActiveChainRow {
+    pub persona_id: String,
+    pub input_data: Option<String>,
+    /// `started_at` when present, else `created_at` (a queued run has no start).
+    pub started_at: String,
+}
+
+/// Extract `(chain_trace_id, chain_depth, chain_cost_usd)` from a run's runtime
+/// input, tolerating BOTH on-the-wire shapes: the RAW chain payload with the
+/// `_chain_*` fields at the top level, and the event-bus-WRAPPED
+/// `{"_event": …, "payload": <raw>}` shape where they live under `payload`.
+/// Mirrors `chain::chain_trace_id_from_input`'s dual-shape handling. Returns
+/// `None` for a non-chain run (no `_chain_trace_id` in either place).
+fn chain_meta_from_input(input: &str) -> Option<(String, u32, f64)> {
+    let v: serde_json::Value = serde_json::from_str(input).ok()?;
+    let meta = if v.get("_chain_trace_id").is_some() {
+        &v
+    } else if v
+        .get("payload")
+        .and_then(|p| p.get("_chain_trace_id"))
+        .is_some()
+    {
+        v.get("payload")?
+    } else {
+        return None;
+    };
+    let trace_id = meta.get("_chain_trace_id")?.as_str()?.to_string();
+    let depth = meta
+        .get("_chain_depth")
+        .and_then(|d| d.as_u64())
+        .unwrap_or(0) as u32;
+    let cost = meta
+        .get("_chain_cost_usd")
+        .and_then(|c| c.as_f64())
+        .filter(|c| c.is_finite() && *c >= 0.0)
+        .unwrap_or(0.0);
+    Some((trace_id, depth, cost))
+}
+
+/// Pure grouping of in-flight runs into per-chain summaries. Non-chain runs
+/// (no `chain_trace_id` in their input) are ignored. Ordered oldest-first so
+/// the longest-running chain surfaces at the top.
+pub fn group_active_chains(rows: &[ActiveChainRow]) -> Vec<ActiveChain> {
+    use std::collections::HashMap;
+
+    struct Acc {
+        in_flight: u32,
+        max_depth: u32,
+        cost: f64,
+        personas: Vec<String>,
+        oldest: String,
+    }
+
+    let mut map: HashMap<String, Acc> = HashMap::new();
+    for r in rows {
+        let Some(input) = r.input_data.as_deref() else {
+            continue;
+        };
+        let Some((ctid, depth, cost)) = chain_meta_from_input(input) else {
+            continue;
+        };
+        let acc = map.entry(ctid).or_insert_with(|| Acc {
+            in_flight: 0,
+            max_depth: 0,
+            cost: 0.0,
+            personas: Vec::new(),
+            oldest: r.started_at.clone(),
+        });
+        acc.in_flight += 1;
+        acc.max_depth = acc.max_depth.max(depth);
+        acc.cost = acc.cost.max(cost);
+        if !acc.personas.contains(&r.persona_id) {
+            acc.personas.push(r.persona_id.clone());
+        }
+        if r.started_at < acc.oldest {
+            acc.oldest = r.started_at.clone();
+        }
+    }
+
+    let mut out: Vec<ActiveChain> = map
+        .into_iter()
+        .map(|(chain_trace_id, a)| ActiveChain {
+            chain_trace_id,
+            in_flight_count: a.in_flight,
+            max_depth: a.max_depth,
+            accumulated_cost_usd: a.cost,
+            persona_ids: a.personas,
+            oldest_started_at: a.oldest,
+        })
+        .collect();
+    out.sort_by(|a, b| {
+        a.oldest_started_at
+            .cmp(&b.oldest_started_at)
+            .then_with(|| a.chain_trace_id.cmp(&b.chain_trace_id))
+    });
+    out
+}
+
+/// List the chains that currently have in-flight (running/queued) executions,
+/// grouped by `chain_trace_id`. An empty vec means no chain work is in flight.
+pub fn list_active_chains(pool: &DbPool) -> Result<Vec<ActiveChain>, AppError> {
+    let running = get_running(pool)?;
+    let rows: Vec<ActiveChainRow> = running
+        .into_iter()
+        .map(|e| ActiveChainRow {
+            persona_id: e.persona_id,
+            input_data: e.input_data,
+            started_at: e.started_at.unwrap_or(e.created_at),
+        })
+        .collect();
+    Ok(group_active_chains(&rows))
 }
 
 /// Only executions whose process was mid-RUN at shutdown (`status='running'`).
@@ -1734,6 +1937,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap()
@@ -1810,6 +2014,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -1948,5 +2153,82 @@ mod tests {
         .unwrap();
         assert_eq!(get_running_only(&pool).unwrap().len(), 0);
         assert_eq!(get_queued_only(&pool).unwrap().len(), 1);
+    }
+
+    // =====================================================================
+    // In-flight chain grouping (Direction 2) — pure, DB-free
+    // =====================================================================
+
+    fn row(persona: &str, input: Option<&str>, started: &str) -> ActiveChainRow {
+        ActiveChainRow {
+            persona_id: persona.into(),
+            input_data: input.map(String::from),
+            started_at: started.into(),
+        }
+    }
+
+    #[test]
+    fn group_active_chains_ignores_non_chain_and_null_input() {
+        // No input, and input without a chain trace id, both produce no chain.
+        let rows = vec![
+            row("p1", None, "2026-07-10T00:00:01Z"),
+            row("p2", Some(r#"{"foo":"bar"}"#), "2026-07-10T00:00:02Z"),
+        ];
+        assert!(group_active_chains(&rows).is_empty());
+    }
+
+    #[test]
+    fn group_active_chains_groups_by_trace_and_isolates_chains() {
+        // chain-A: two in-flight hops (raw + wrapped shapes) across two personas;
+        // chain-B: one hop. They must not bleed together.
+        let raw_a = r#"{"_chain_trace_id":"chain-A","_chain_depth":1,"_chain_cost_usd":0.20}"#;
+        let wrapped_a = r#"{"_event":{"event_type":"chain_triggered"},"payload":{"_chain_trace_id":"chain-A","_chain_depth":3,"_chain_cost_usd":0.50}}"#;
+        let raw_b = r#"{"_chain_trace_id":"chain-B","_chain_depth":0,"_chain_cost_usd":0.05}"#;
+        let rows = vec![
+            row("p-a", Some(raw_a), "2026-07-10T00:00:05Z"),
+            row("p-b", Some(wrapped_a), "2026-07-10T00:00:02Z"),
+            row("p-c", Some(raw_b), "2026-07-10T00:00:09Z"),
+        ];
+        let chains = group_active_chains(&rows);
+        assert_eq!(chains.len(), 2);
+        // Oldest-first ordering: chain-A's oldest hop (00:00:02) precedes chain-B.
+        let a = &chains[0];
+        assert_eq!(a.chain_trace_id, "chain-A");
+        assert_eq!(a.in_flight_count, 2);
+        // max depth across the two hops.
+        assert_eq!(a.max_depth, 3);
+        // Accumulated cost = max propagated _chain_cost_usd (deepest hop).
+        assert!((a.accumulated_cost_usd - 0.50).abs() < 1e-9);
+        // Both personas, first-seen order (wrapped hop parsed second in vec order
+        // but the raw hop for p-a appears first).
+        assert_eq!(a.persona_ids, vec!["p-a".to_string(), "p-b".to_string()]);
+        // Oldest across the group.
+        assert_eq!(a.oldest_started_at, "2026-07-10T00:00:02Z");
+
+        let b = &chains[1];
+        assert_eq!(b.chain_trace_id, "chain-B");
+        assert_eq!(b.in_flight_count, 1);
+        assert_eq!(b.max_depth, 0);
+    }
+
+    #[test]
+    fn group_active_chains_dedups_personas_within_a_chain() {
+        // Same persona twice in one chain → counted once in persona_ids but the
+        // in_flight_count still reflects both runs.
+        let one = r#"{"_chain_trace_id":"chain-X","_chain_depth":1,"_chain_cost_usd":0.1}"#;
+        let rows = vec![
+            row("p-dup", Some(one), "2026-07-10T00:00:01Z"),
+            row("p-dup", Some(one), "2026-07-10T00:00:02Z"),
+        ];
+        let chains = group_active_chains(&rows);
+        assert_eq!(chains.len(), 1);
+        assert_eq!(chains[0].in_flight_count, 2);
+        assert_eq!(chains[0].persona_ids, vec!["p-dup".to_string()]);
+    }
+
+    #[test]
+    fn list_active_chains_empty_when_nothing_running() {
+        let pool = init_test_db().unwrap();
+        assert!(list_active_chains(&pool).unwrap().is_empty());
     }
 }

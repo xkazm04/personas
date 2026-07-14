@@ -523,7 +523,9 @@
     "source": "Источник",
     "processed": "Обработано",
     "event_data": "Данные события",
-    "error": "Ошибка"
+    "error": "Ошибка",
+    "skipped_stat_label": "{skipped} пропущено",
+    "skipped_stat_tooltip": "{skipped} из {total} событий за последние 7 дней не имели подписчиков и были пропущены ({rate}). Высокая доля указывает на триггер, который никто не слушает."
   },
   "health": {
     "title": "Состояние агентов",
@@ -703,7 +705,11 @@
     "all_statuses": "Все статусы",
     "col_status": "Статус",
     "col_id": "ID",
-    "execution_label": "Запуск"
+    "execution_label": "Запуск",
+    "error_category_by_persona": "Основные сбои по агенту",
+    "error_category_prior_period": "к прошлому периоду",
+    "error_category_section_title": "Сбои по категориям",
+    "error_category_total_failures": "Всего сбоев"
   },
   "analytics_dashboard": {
     "issues_found": "Обнаружено {count} проблем",
@@ -1387,7 +1393,32 @@
     "comparison_recommended": "Рекомендуется",
     "flow_title": "Как это происходит",
     "timeline_title": "Хронология",
-    "log_title": "Доказательства"
+    "log_title": "Доказательства",
+    "default_attention_empty": "Все персоны в порядке — ничего не требует внимания.",
+    "default_attention_low_trust": "Низкое доверие",
+    "default_attention_paused": "Приостановлено",
+    "default_attention_setup": "Требуется настройка",
+    "default_attention_title": "Требует внимания",
+    "default_callout_body": "Это стартовое представление, построенное на основе состояния вашего флота. Попросите Athena собрать кокпит под ваши интересы — она заменит его автоматически.",
+    "default_callout_title": "Стартовый кокпит",
+    "default_roster_title": "Ваши персоны",
+    "default_stat_active_personas": "Активные персоны",
+    "default_stat_executions": "Запуски (7 дн.)",
+    "default_stat_needs_attention": "Требует внимания",
+    "default_stat_success_rate": "Доля успеха",
+    "default_subtitle": "Стартовое представление, которое Athena может персонализировать — напишите ей, чтобы собрать своё.",
+    "default_title": "Стартовый кокпит",
+    "default_vitals_title": "Показатели флота",
+    "empty_example_attention": "\"что требует моего внимания\"",
+    "empty_example_personas": "\"покажи мои персоны\"",
+    "empty_hint": "Попросите Athena собрать представление кокпита — попробуйте {personas} или {attention}.",
+    "empty_title": "Ваш кокпит пуст",
+    "error_retry": "Повторить",
+    "error_title": "Не удалось загрузить ваш кокпит",
+    "subtitle_composed_prefix": "Собрано Athena — обновлено",
+    "subtitle_default": "Ваше рабочее пространство под управлением компаньона",
+    "talk_to_athena": "Поговорить с Athena",
+    "unknown_widget": "Неизвестный виджет: {kind}"
   },
   "certification": {
     "title": "Центр управления сертификацией",
@@ -1832,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "Дата начала",
     "end_date": "Дата окончания"
+  },
+  "healing_effectiveness": {
+    "attempted": "попыток",
+    "confirmed": "подтверждено",
+    "loading": "Загрузка статистики…",
+    "no_data": "Пока нет авто-исправлений",
+    "recent_activity": "Недавняя активность",
+    "reverted": "отменено",
+    "success_rate": "доля успеха",
+    "title": "Самовосстановление",
+    "window_label": "Последние"
   }
 }

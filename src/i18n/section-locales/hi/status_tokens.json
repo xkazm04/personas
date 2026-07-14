@@ -133,5 +133,33 @@
     "high": "उच्च",
     "low": "निम्न",
     "medium": "मध्यम"
+  },
+  "error_category": {
+    "api_error": "API त्रुटि",
+    "credential_error": "क्रेडेंशियल त्रुटि",
+    "network": "नेटवर्क",
+    "provider_not_found": "प्रदाता नहीं मिला",
+    "rate_limit": "दर सीमा",
+    "session_limit": "सत्र सीमा",
+    "timeout": "समय समाप्त",
+    "tool_error": "टूल त्रुटि",
+    "transient_process_failure": "अस्थायी प्रक्रिया विफलता",
+    "unknown": "अज्ञात",
+    "validation": "सत्यापन"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "फैन-आउट सीमा पूरी",
+    "budget_exceeded": "लागत सीमा पूरी",
+    "cas_lost": "अन्य रन द्वारा लिया गया",
+    "cycle_detected": "चक्र पाया गया",
+    "depth_limit": "गहराई सीमा",
+    "handoff_suppressed": "हैंडऑफ़ रोका गया",
+    "malformed_config": "अमान्य कॉन्फ़िग",
+    "outside_window": "सक्रिय विंडो के बाहर",
+    "predicate_unmet": "शर्त पूरी नहीं हुई",
+    "publish_failed": "प्रकाशन विफल",
+    "quarantined": "ट्रिगर क्वारंटीन किया गया",
+    "healing_abandoned": "स्व-सुधार रुक गया",
+    "healing_capped": "सुधार के प्रयास समाप्त"
   }
 }

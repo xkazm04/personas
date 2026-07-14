@@ -33,12 +33,21 @@ export function StatusBadge({
   enabled,
   health,
   isDraft,
+  isArchived = false,
 }: {
   enabled: boolean;
   health?: PersonaHealth;
   isDraft: boolean;
+  isArchived?: boolean;
 }) {
   const { t } = useTranslation();
+  if (isArchived) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/15">
+        {t.agents.persona_list.badge_archived}
+      </span>
+    );
+  }
   if (isDraft) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/15">

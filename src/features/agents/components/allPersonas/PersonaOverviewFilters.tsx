@@ -24,6 +24,9 @@ interface UsePersonaListFiltersArgs {
   healthMap: Record<string, PersonaHealth | undefined>;
   isBuilding: (id: string) => boolean;
   isDraft: (p: Persona) => boolean;
+  /** Lifecycle `archived` predicate. Archived personas are hidden from the
+   *  default roster and shown only when `statusFilter === 'archived'`. */
+  isArchived: (p: Persona) => boolean;
   isFavorite: (id: string) => boolean;
   /**
    * Home-team filter from PersonaGroupDropRail (cycle 19; repointed to
@@ -58,6 +61,7 @@ export function usePersonaListFilters({
   healthMap,
   isBuilding,
   isDraft,
+  isArchived,
   isFavorite,
   groupFilter,
 }: UsePersonaListFiltersArgs): UsePersonaListFiltersResult {
@@ -127,6 +131,14 @@ export function usePersonaListFilters({
       );
     }
 
+    // Archived personas are hidden from every view EXCEPT the dedicated
+    // Archived view (`statusFilter === 'archived'`), which shows only them.
+    if (statusFilter === 'archived') {
+      result = result.filter((p) => isArchived(p));
+    } else {
+      result = result.filter((p) => !isArchived(p));
+    }
+
     // Status
     if (statusFilter === 'enabled') result = result.filter((p) => p.enabled && !isDraft(p));
     else if (statusFilter === 'disabled') result = result.filter((p) => !p.enabled);
@@ -163,6 +175,7 @@ export function usePersonaListFilters({
     favoriteOnly,
     isBuilding,
     isDraft,
+    isArchived,
     isFavorite,
     healthMap,
     connectorNamesMap,

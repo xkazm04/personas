@@ -2,6 +2,7 @@ pub mod ffmpeg;
 pub mod persistence;
 pub mod schema_policy;
 pub mod transcribe;
+pub mod voiceover;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

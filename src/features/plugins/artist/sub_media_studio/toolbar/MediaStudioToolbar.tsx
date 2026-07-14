@@ -37,12 +37,15 @@ import { useToastStore } from '@/stores/toastStore';
 import type { PlaybackEngine } from '../hooks/useTimelinePlayback';
 import type { MediaStudioPersistence } from '../hooks/useMediaStudioPersistence';
 import TransitionPicker from '../TransitionPicker';
+import VoiceoverButton from '../VoiceoverButton';
 import type {
   AudioClip,
   Composition,
   ImageItem,
   TextItem,
+  OverlayEntrance,
   TimelineItem,
+  TitleItem,
   TransitionType,
   VideoClip,
 } from '../types';
@@ -98,6 +101,7 @@ export default function MediaStudioToolbar({
   const isAudio = selectedItem?.type === 'audio';
   const isText = selectedItem?.type === 'text';
   const isImage = selectedItem?.type === 'image';
+  const isTitle = selectedItem?.type === 'title';
   const isMedia = isVideo || isAudio;
 
   const update = useCallback(
@@ -350,20 +354,107 @@ export default function MediaStudioToolbar({
           )}
         </IconPopover>
 
-        {/* Image scale */}
-        <IconPopover icon={SlidersHorizontal} title={debtText("auto_image_scale_f31fd127")} disabled={!isImage}>
+        {/* Image scale + entrance */}
+        <IconPopover icon={SlidersHorizontal} title={debtText("auto_image_scale_f31fd127")} disabled={!isImage} widthPx={260}>
           {isImage && selectedItem && (
-            <RangeField
-              label="Scale"
-              value={(selectedItem as ImageItem).scale}
-              min={0.1}
-              max={3}
-              step={0.05}
-              onChange={(v) => update({ scale: v } as Partial<TimelineItem>)}
-              format={(v) => `${Math.round(v * 100)}%`}
-            />
+            <div className="space-y-3">
+              <RangeField
+                label="Scale"
+                value={(selectedItem as ImageItem).scale}
+                min={0.1}
+                max={3}
+                step={0.05}
+                onChange={(v) => update({ scale: v } as Partial<TimelineItem>)}
+                format={(v) => `${Math.round(v * 100)}%`}
+              />
+              <EntranceControls
+                enter={(selectedItem as ImageItem).enter}
+                onChange={(next) => update({ enter: next } as Partial<TimelineItem>)}
+              />
+            </div>
           )}
         </IconPopover>
+
+        {/* Title properties — the text itself plus how it's drawn. */}
+        <IconPopover icon={Type} title={t.media_studio.layer_title} disabled={!isTitle} widthPx={260}>
+          {isTitle && selectedItem && (
+            <div className="space-y-3">
+              <label className="block space-y-1">
+                <span className="typo-label text-foreground">{t.media_studio.title_text}</span>
+                <textarea
+                  value={(selectedItem as TitleItem).text}
+                  onChange={(e) => update({ text: e.target.value } as Partial<TimelineItem>)}
+                  placeholder={t.media_studio.title_text_placeholder}
+                  rows={2}
+                  className="w-full px-2 py-1.5 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground placeholder:text-foreground/40 resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/30"
+                />
+              </label>
+
+              <RangeField
+                label={t.media_studio.font_size}
+                value={(selectedItem as TitleItem).fontSizePx}
+                min={12}
+                max={240}
+                step={2}
+                onChange={(v) => update({ fontSizePx: Math.round(v) } as Partial<TimelineItem>)}
+                format={(v) => `${Math.round(v)}px`}
+              />
+
+              <label className="flex items-center justify-between gap-2">
+                <span className="typo-label text-foreground">{t.media_studio.color}</span>
+                <input
+                  type="color"
+                  value={(selectedItem as TitleItem).colorHex}
+                  onChange={(e) => update({ colorHex: e.target.value } as Partial<TimelineItem>)}
+                  className="h-7 w-12 rounded-card border border-primary/10 bg-transparent cursor-pointer"
+                  aria-label={t.media_studio.color}
+                />
+              </label>
+
+              <RangeField
+                label={`${t.media_studio.position} X`}
+                value={(selectedItem as TitleItem).positionX}
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={(v) => update({ positionX: v } as Partial<TimelineItem>)}
+                format={(v) => `${Math.round(v * 100)}%`}
+              />
+              <RangeField
+                label={`${t.media_studio.position} Y`}
+                value={(selectedItem as TitleItem).positionY}
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={(v) => update({ positionY: v } as Partial<TimelineItem>)}
+                format={(v) => `${Math.round(v * 100)}%`}
+              />
+
+              <EntranceControls
+                enter={(selectedItem as TitleItem).enter}
+                onChange={(next) => update({ enter: next } as Partial<TimelineItem>)}
+              />
+            </div>
+          )}
+        </IconPopover>
+
+        {/* Voiceover — synthesize narration onto the timeline via local TTS. */}
+        <VoiceoverButton
+          onGenerated={({ filePath, duration, label }) =>
+            onAddItem({
+              id: crypto.randomUUID(),
+              type: 'audio',
+              label,
+              startTime: totalDuration,
+              duration,
+              filePath,
+              trimStart: 0,
+              trimEnd: 0,
+              mediaDuration: duration,
+              volume: 1,
+            })
+          }
+        />
 
         {/* Clip actions (split, extract, thumbnail, trim-to-file, transcribe) */}
         <IconPopover icon={Palette} title={debtText("auto_clip_actions_7fc4a490")} disabled={!selectedItem} widthPx={260}>
@@ -475,6 +566,95 @@ function WarningsRow({
   );
 }
 
+/** Map a direction choice to an entrance offset (frame-relative fraction). */
+const ENTRANCE_DIRECTIONS = {
+  up: { offsetX: 0, offsetY: 0.15 },
+  down: { offsetX: 0, offsetY: -0.15 },
+  left: { offsetX: 0.15, offsetY: 0 },
+  right: { offsetX: -0.15, offsetY: 0 },
+} as const;
+
+type EntranceDir = keyof typeof ENTRANCE_DIRECTIONS;
+
+/** Read the current direction from an entrance, or null if none/static. */
+function entranceDirOf(enter: OverlayEntrance | undefined): EntranceDir | null {
+  if (!enter) return null;
+  if (enter.offsetY > 0) return 'up';
+  if (enter.offsetY < 0) return 'down';
+  if (enter.offsetX > 0) return 'left';
+  if (enter.offsetX < 0) return 'right';
+  return null;
+}
+
+/**
+ * Entrance-animation controls shared by the title and image overlay popovers.
+ * A direction picker (or None) plus a speed slider. Position + easing only —
+ * the ffmpeg-native motion subset. `enter === undefined` means static.
+ */
+function EntranceControls({
+  enter,
+  onChange,
+}: {
+  enter: OverlayEntrance | undefined;
+  onChange: (next: OverlayEntrance | undefined) => void;
+}) {
+  const { t } = useTranslation();
+  const current = entranceDirOf(enter);
+  const duration = enter?.duration ?? 0.4;
+
+  const setDir = (dir: EntranceDir | null) => {
+    if (dir === null) {
+      onChange(undefined);
+      return;
+    }
+    onChange({ duration, easing: 'easeOut', ...ENTRANCE_DIRECTIONS[dir] });
+  };
+
+  const dirs: { key: EntranceDir | null; label: string }[] = [
+    { key: null, label: t.media_studio.entrance_none },
+    { key: 'up', label: t.media_studio.entrance_up },
+    { key: 'down', label: t.media_studio.entrance_down },
+    { key: 'left', label: t.media_studio.entrance_left },
+    { key: 'right', label: t.media_studio.entrance_right },
+  ];
+
+  return (
+    <div className="space-y-2 border-t border-primary/10 pt-3">
+      <span className="typo-label text-foreground">{t.media_studio.entrance}</span>
+      <div className="flex flex-wrap gap-1">
+        {dirs.map((d) => {
+          const active = current === d.key;
+          return (
+            <button
+              key={d.label}
+              type="button"
+              onClick={() => setDir(d.key)}
+              className={`px-2 py-1 text-md rounded-card border transition-colors ${
+                active
+                  ? 'bg-sky-500/25 border-sky-400 text-sky-100'
+                  : 'bg-secondary/40 border-primary/10 text-foreground hover:bg-secondary/60'
+              }`}
+            >
+              {d.label}
+            </button>
+          );
+        })}
+      </div>
+      {enter && (
+        <RangeField
+          label={t.media_studio.entrance_duration}
+          value={duration}
+          min={0.1}
+          max={1.5}
+          step={0.05}
+          onChange={(v) => onChange({ ...enter, duration: v })}
+          format={(v) => `${v.toFixed(2)}s`}
+        />
+      )}
+    </div>
+  );
+}
+
 function warningKey(w: CompileWarning): string {
   switch (w.kind) {
     case 'loudnormUnmeasured':
@@ -485,6 +665,10 @@ function warningKey(w: CompileWarning): string {
       return `proxyMissing:${w.sourceId}`;
     case 'audioSourceSilent':
       return `audioSourceSilent:${w.sourceId}`;
+    case 'textFontMissing':
+      return `textFontMissing:${w.overlayId}`;
+    case 'textEmpty':
+      return `textEmpty:${w.overlayId}`;
   }
 }
 
@@ -498,6 +682,10 @@ function warningMessage(w: CompileWarning): string {
       return `Preview proxy not used for source #${w.sourceId} on export (${w.originalPath.split(/[/\\]/).pop()}) — encoding from the original.`;
     case 'audioSourceSilent':
       return `Source #${w.sourceId} has no audio stream; the expected audio track will be silent.`;
+    case 'textFontMissing':
+      return `Title "${w.overlayId}" asked for font "${w.requested}", which isn't installed — falling back to ${w.fallback}.`;
+    case 'textEmpty':
+      return `Title "${w.overlayId}" has no text — nothing will be drawn for it.`;
   }
 }
 

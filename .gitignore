@@ -109,3 +109,4 @@ tools/athena-browser-extension/config.json
 
 # Deliberation soak run artifacts
 scripts/test/.soak/
+.rp-check-target/

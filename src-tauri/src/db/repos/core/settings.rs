@@ -2,9 +2,63 @@ use rusqlite::params;
 use rusqlite::params_from_iter;
 use std::collections::HashMap;
 
+use crate::db::repos::resources::settings_audit_log;
 use crate::db::settings_keys;
 use crate::db::DbPool;
 use crate::error::AppError;
+
+/// Best-effort settings-audit write for a user-facing settings mutation.
+///
+/// Direction 1 (universal settings audit): the audit is emitted here, at the
+/// REPO layer, so INTERNAL Rust callers (engine subscriptions, companion ticks
+/// that flip a toggle, the management HTTP API) are audited too — not only the
+/// Tauri command surface. It NO-OPS when:
+/// - the key is internal engine bookkeeping (see [`settings_keys::audit_category`]
+///   returns `None`) — cursors, `*_last` timestamps, cloud-sync watermarks; or
+/// - the value did not actually change (UI re-saving an identical value).
+///
+/// Secret sanitization is handled inside [`settings_audit_log::insert`] (shared
+/// with the credential audit log), so api-key/token values are redacted before
+/// they ever hit the table. Audit failures are logged but NEVER fail the
+/// underlying write — losing an audit row must not block a settings change.
+fn audit_setting_change(pool: &DbPool, key: &str, before: Option<&str>, after: Option<&str>) {
+    let Some(category) = settings_keys::audit_category(key) else {
+        return; // internal bookkeeping — never audited
+    };
+    // Skip no-op writes to keep the History tab signal-rich.
+    if before == after {
+        return;
+    }
+    let action = match (before, after) {
+        (None, Some(_)) => "create",
+        (Some(_), Some(_)) => "update",
+        (Some(_), None) => "delete",
+        (None, None) => return, // nothing happened
+    };
+    // Defense-in-depth for known-secret keys: the shared `sanitize_secrets`
+    // pass inside `settings_audit_log::insert` is PATTERN-based (key:value
+    // pairs, `sk_live_`/`AKIA`-style prefixed tokens) and cannot recognize a
+    // BARE token value (e.g. a raw Ollama key). For the api_keys category we
+    // know the value IS the secret, so redact it structurally — the History
+    // tab still shows that the key changed, never what it was.
+    let (before, after) = if category == "api_keys" {
+        (before.map(|_| "[redacted]"), after.map(|_| "[redacted]"))
+    } else {
+        (before, after)
+    };
+    // actor = None: the repo layer cannot attribute a caller surface (that
+    // distinction lives at the command/HTTP boundary). The trade-off is
+    // deliberate — auditing every internal caller is worth more than an
+    // origin tag the History tab renders only as an optional badge.
+    if let Err(e) = settings_audit_log::insert(pool, category, key, action, before, after, None) {
+        tracing::warn!(
+            key,
+            category,
+            error = %e,
+            "settings audit insert failed (the settings write itself succeeded)"
+        );
+    }
+}
 
 /// Get a setting value by key. Returns `None` if the row does not exist.
 ///
@@ -40,7 +94,19 @@ pub fn get(pool: &DbPool, key: &str) -> Result<Option<String>, AppError> {
 pub fn set(pool: &DbPool, key: &str, value: &str) -> Result<(), AppError> {
     settings_keys::validate_key(key).map_err(AppError::Validation)?;
     settings_keys::validate_value(key, value).map_err(AppError::Validation)?;
-    timed_query!("app_settings", "app_settings::set", {
+    // Quarantined-key breadcrumb: writing a DEPRECATED key still persists (the
+    // row stays harmless + allow-listed), but a warn surfaces the stale writer.
+    if let Some(superseded_by) = settings_keys::deprecated_replacement(key) {
+        tracing::warn!(
+            key = key,
+            superseded_by = superseded_by,
+            "settings::set called with a DEPRECATED key — value persisted but no consumer reads it"
+        );
+    }
+    // Capture the prior value BEFORE the upsert overwrites it, for the audit
+    // trail. `get` is a cache-hot single-row read; settings writes are rare.
+    let before = get(pool, key)?;
+    let write: Result<(), AppError> = timed_query!("app_settings", "app_settings::set", {
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
@@ -50,7 +116,10 @@ pub fn set(pool: &DbPool, key: &str, value: &str) -> Result<(), AppError> {
             params![key, value, now],
         )?;
         Ok(())
-    })
+    });
+    write?;
+    audit_setting_change(pool, key, before.as_deref(), Some(value));
+    Ok(())
 }
 
 /// Maximum number of keys accepted in a single [`get_batch`] call.
@@ -159,11 +228,19 @@ pub fn delete(pool: &DbPool, key: &str) -> Result<bool, AppError> {
     if let Err(msg) = settings_keys::validate_key(key) {
         tracing::warn!(key = key, reason = %msg, "settings::delete called with unknown key");
     }
-    timed_query!("app_settings", "app_settings::delete", {
+    // Capture the prior value BEFORE the delete, for the audit trail.
+    let before = get(pool, key)?;
+    let removed: Result<bool, AppError> = timed_query!("app_settings", "app_settings::delete", {
         let conn = pool.get()?;
         let rows = conn.execute("DELETE FROM app_settings WHERE key = ?1", params![key])?;
         Ok(rows > 0)
-    })
+    });
+    let removed = removed?;
+    // Only audit a delete that actually removed a row (idempotent no-op → silent).
+    if removed {
+        audit_setting_change(pool, key, before.as_deref(), None);
+    }
+    Ok(removed)
 }
 
 #[cfg(test)]
@@ -295,5 +372,124 @@ mod tests {
         let rows = get_by_prefix(&pool, "auto_rollback:").unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].0, "auto_rollback:abc");
+    }
+
+    // -----------------------------------------------------------------------
+    // Direction 1: universal settings audit (repo-layer, so internal callers
+    // are audited too). These use a fresh migrated pool because `init_test_db`
+    // drops `settings_audit_log` in the test binary.
+    // -----------------------------------------------------------------------
+
+    fn audit_pool() -> DbPool {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let uri = format!("file:settings_repo_audit_{id}?mode=memory&cache=shared");
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
+        let pool = r2d2::Pool::builder()
+            .max_size(4)
+            .build(manager)
+            .expect("build audit test pool");
+        {
+            let conn = pool.get().expect("conn");
+            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            crate::db::migrations::run(&conn).expect("migrations");
+            crate::db::migrations::run_incremental(&conn).expect("incremental migrations");
+        }
+        pool
+    }
+
+    #[test]
+    fn audit_on_set_create_then_update_then_noop() {
+        let pool = audit_pool();
+        // First write → "create" (no prior value).
+        set(&pool, settings_keys::CLI_ENGINE, "claude_code").unwrap();
+        let rows = settings_audit_log::list(&pool, 100, None).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].category, "engine");
+        assert_eq!(rows[0].setting_key, settings_keys::CLI_ENGINE);
+        assert_eq!(rows[0].action, "create");
+        assert!(rows[0].before_value.is_none());
+        assert_eq!(rows[0].after_value.as_deref(), Some("claude_code"));
+
+        // Changed value → "update" with before/after.
+        set(&pool, settings_keys::CLI_ENGINE, "codex_cli").unwrap();
+        let rows = settings_audit_log::list(&pool, 100, None).unwrap();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].action, "update");
+        assert_eq!(rows[0].before_value.as_deref(), Some("claude_code"));
+        assert_eq!(rows[0].after_value.as_deref(), Some("codex_cli"));
+
+        // Identical re-save → no new audit row (no-op suppression).
+        set(&pool, settings_keys::CLI_ENGINE, "codex_cli").unwrap();
+        let rows = settings_audit_log::list(&pool, 100, None).unwrap();
+        assert_eq!(rows.len(), 2, "identical re-save must not add an audit row");
+    }
+
+    #[test]
+    fn audit_on_delete_records_entry() {
+        let pool = audit_pool();
+        set(&pool, settings_keys::HEALTH_DIGEST_ENABLED, "true").unwrap();
+        assert!(delete(&pool, settings_keys::HEALTH_DIGEST_ENABLED).unwrap());
+        let rows = settings_audit_log::list(&pool, 100, None).unwrap();
+        // create + delete.
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].action, "delete");
+        assert_eq!(rows[0].category, "notifications");
+        assert_eq!(rows[0].before_value.as_deref(), Some("true"));
+        assert!(rows[0].after_value.is_none());
+
+        // Deleting an absent key is a no-op → no audit row.
+        assert!(!delete(&pool, settings_keys::HEALTH_DIGEST_ENABLED).unwrap());
+        let rows = settings_audit_log::list(&pool, 100, None).unwrap();
+        assert_eq!(rows.len(), 2, "idempotent no-op delete must not audit");
+    }
+
+    #[test]
+    fn audit_excludes_internal_bookkeeping_keys() {
+        let pool = audit_pool();
+        // Internal cursor — must NOT be audited (engine state, not a user action).
+        set(
+            &pool,
+            settings_keys::COMPANION_EXEC_REVIEW_CURSOR,
+            "2026-07-13T00:00:00Z",
+        )
+        .unwrap();
+        set(&pool, "cloud_sync_cursor:executions", "2026-07-13T00:00:00Z").unwrap();
+        let rows = settings_audit_log::list(&pool, 100, None).unwrap();
+        assert!(
+            rows.is_empty(),
+            "internal bookkeeping keys must not produce audit rows, got {rows:?}"
+        );
+    }
+
+    #[test]
+    fn audit_sanitizes_secret_values() {
+        let pool = audit_pool();
+        // OLLAMA_API_KEY is categorized as api_keys → its value IS the secret,
+        // so the audit layer redacts it STRUCTURALLY (pattern-based
+        // sanitize_secrets cannot recognize a bare token). A bare `ghp_…` token
+        // is exactly the shape the pattern pass misses.
+        let leaky = "ghp_0123456789abcdefghijABCDEFGHIJ0123";
+        set(&pool, settings_keys::OLLAMA_API_KEY, leaky).unwrap();
+        let rows = settings_audit_log::list(&pool, 100, None).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].category, "api_keys");
+        assert_eq!(rows[0].action, "create");
+        let stored = rows[0].after_value.as_deref().unwrap_or_default();
+        assert!(
+            !stored.contains(leaky),
+            "raw secret must not be stored in the audit log, got: {stored}"
+        );
+        assert_eq!(stored, "[redacted]");
+
+        // An update between two secrets still audits (raw values differ) but
+        // stores only redaction markers on both sides.
+        set(&pool, settings_keys::OLLAMA_API_KEY, "another-secret-value").unwrap();
+        let rows = settings_audit_log::list(&pool, 100, None).unwrap();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].action, "update");
+        assert_eq!(rows[0].before_value.as_deref(), Some("[redacted]"));
+        assert_eq!(rows[0].after_value.as_deref(), Some("[redacted]"));
     }
 }

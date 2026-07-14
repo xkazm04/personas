@@ -130,6 +130,7 @@ mod tests {
             let conn = pool.get().expect("conn");
             conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
             crate::db::migrations::run(&conn).expect("migrations");
+            crate::db::migrations::run_incremental(&conn).expect("incremental migrations");
         }
         pool
     }

@@ -872,7 +872,7 @@ mod tests {
     use crate::engine::types::ModelProfile;
 
     fn test_persona() -> Persona {
-        Persona {
+        Persona { lifecycle: "active".to_string(),
             id: "test-id".into(),
             project_id: "proj-1".into(),
             name: "Test Agent".into(),
@@ -1548,12 +1548,24 @@ mod tests {
         assert!(args.args.contains(&"--effort".to_string()));
         assert!(args.args.contains(&DEFAULT_EFFORT.to_string()));
 
-        // Platform-specific command
-        if cfg!(windows) {
-            assert_eq!(args.command, "cmd");
-            assert!(args.args.contains(&"/C".to_string()));
-            assert!(args.args.contains(&"claude.cmd".to_string()));
-        } else {
+        // Platform-specific command. On Windows, `claude_cli_invocation`
+        // prefers a directly-resolved `claude.exe` (immune to a missing/
+        // broken `claude.cmd` shim) and only falls back to the legacy
+        // `cmd /C claude.cmd` when no real exe is found on this machine —
+        // so the expectation has to branch on that same resolution rather
+        // than assume the legacy path is always taken.
+        #[cfg(windows)]
+        {
+            if let Some(exe) = crate::engine::cli_process::resolve_claude_exe_windows() {
+                assert_eq!(args.command, exe);
+            } else {
+                assert_eq!(args.command, "cmd");
+                assert!(args.args.contains(&"/C".to_string()));
+                assert!(args.args.contains(&"claude.cmd".to_string()));
+            }
+        }
+        #[cfg(not(windows))]
+        {
             assert_eq!(args.command, "claude");
         }
     }

@@ -188,5 +188,17 @@
     "personas_tab": "Personas（アニメーション）",
     "lucide_footer": "lucide-react -- 汎用アイコンライブラリ -- 静的",
     "personas_footer": "9つのカスタムアイコン -- ニューラル/サーキットモチーフ -- CSSアニメーション -- テーマ適応"
+  },
+  "since_left": {
+    "alerts": "{count} 件のアラート",
+    "alerts_other": "{count} 件のアラート",
+    "approvals": "{count} 件の承認待ち",
+    "approvals_other": "{count} 件の承認待ち",
+    "dismiss": "閉じる",
+    "failed": "{count} 件失敗",
+    "failed_other": "{count} 件失敗",
+    "runs": "{count} 件の実行",
+    "runs_other": "{count} 件の実行",
+    "title": "前回からの更新"
   }
 }

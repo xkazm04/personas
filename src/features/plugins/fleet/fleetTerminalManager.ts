@@ -7,10 +7,11 @@
  * re-rendered the surviving stream from scratch; sessions you weren't
  * looking at kept their PTY output in Rust but had no terminal to receive it.
  *
- * This manager flips that: it owns a `Terminal` (+ addons + the
- * `fleet-session-output` subscription) per `sessionId` that lives for as long
- * as the session exists, parked in a detached holder `<div>` when no pane is
- * showing it. The React component (`FleetTerminalPane`) becomes a thin
+ * This manager flips that: it owns a `Terminal` (+ addons) per `sessionId`,
+ * parked in a detached holder `<div>` when no pane is showing it (bounded by
+ * an LRU — see MAX_PARKED — so a 40-session fleet can't accumulate 40 idle
+ * xterms). One shared `fleet-session-output` listener dispatches chunks into
+ * the registry map. The React component (`FleetTerminalPane`) becomes a thin
  * *mount point* that attaches the holder into its container on mount and
  * detaches (NOT disposes) on unmount. Consequences:
  *
@@ -140,7 +141,6 @@ interface ManagedTerminal {
    *  between pane containers on attach/detach. */
   holder: HTMLDivElement;
   resizeObs: ResizeObserver;
-  unlistenOutput: (() => void) | null;
   disposables: IDisposable[];
   onMouseUp: () => void;
   onContextMenu: (e: MouseEvent) => void;
@@ -170,6 +170,57 @@ const registry: Map<string, ManagedTerminal> =
   (globalThis as Record<string, unknown>)[REGISTRY_KEY] as Map<string, ManagedTerminal> | undefined ??
   new Map<string, ManagedTerminal>();
 (globalThis as Record<string, unknown>)[REGISTRY_KEY] = registry;
+
+// Detached ("parked") terminals, oldest-detach first — the LRU that bounds
+// how many off-screen xterm instances (5000-line scrollback each) we retain.
+// Cycling focus through a 40-session fleet must not accumulate 40 terminals:
+// beyond MAX_PARKED the oldest parked one is disposed. Lossless in practice —
+// a re-attach re-subscribes and replays the backend ring snapshot anyway, so
+// the recreated terminal shows the same recent tail the parked one would have.
+const PARKED_KEY = '__fleetTerminalParked__';
+const parked: string[] =
+  ((globalThis as Record<string, unknown>)[PARKED_KEY] as string[] | undefined) ?? [];
+(globalThis as Record<string, unknown>)[PARKED_KEY] = parked;
+
+/** Max detached xterm instances kept alive for instant re-attach. */
+const MAX_PARKED = 6;
+
+function unpark(sessionId: string): void {
+  const i = parked.indexOf(sessionId);
+  if (i !== -1) parked.splice(i, 1);
+}
+
+/**
+ * ONE app-wide `fleet-session-output` listener dispatching into the registry
+ * map — O(1) per chunk regardless of how many terminals exist. The previous
+ * design registered one filtered listener per terminal, so every output chunk
+ * ran N callbacks with N terminals ever-created. The backend only emits for
+ * subscribed (attached) sessions, so chunks for unknown ids are simply dropped.
+ * HMR-safe: the unlisten survives on globalThis so a hot reload doesn't stack
+ * a second listener.
+ */
+const OUTPUT_LISTENER_KEY = '__fleetTerminalOutputListener__';
+function ensureSharedOutputListener(): void {
+  const g = globalThis as Record<string, unknown>;
+  if (g[OUTPUT_LISTENER_KEY]) return;
+  g[OUTPUT_LISTENER_KEY] = true; // set eagerly so a re-entrant call can't double-listen
+  listen<{ session_id: string; chunk: string }>(EventName.FLEET_SESSION_OUTPUT, (event) => {
+    const m = registry.get(event.payload.session_id);
+    if (!m) return;
+    if (m.hydrating) {
+      m.pendingLive.push(event.payload.chunk);
+      return;
+    }
+    m.term.write(event.payload.chunk);
+  })
+    .then((fn) => {
+      g[OUTPUT_LISTENER_KEY] = fn;
+    })
+    .catch((e) => {
+      g[OUTPUT_LISTENER_KEY] = undefined; // allow a retry on the next attach
+      silentCatch('fleetTerminal:listen')(e);
+    });
+}
 
 /** Open a web link from terminal output via the OS browser (sanitized). */
 function handleLink(_event: MouseEvent, uri: string): void {
@@ -287,7 +338,6 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     fit,
     holder,
     resizeObs: undefined as unknown as ResizeObserver, // set below
-    unlistenOutput: null,
     disposables,
     onMouseUp: () => {},
     onContextMenu: () => {},
@@ -347,24 +397,8 @@ function getOrCreate(sessionId: string): ManagedTerminal {
   managed.resizeObs = new ResizeObserver(() => scheduleFit(managed));
   managed.resizeObs.observe(holder);
 
-  // PTY stdout → terminal. The backend only emits for this session while it's
-  // subscribed (see attachTerminal). While hydrating — between issuing the
-  // subscribe and writing its ring snapshot — queue live chunks so they land
-  // strictly AFTER the snapshot instead of interleaving with it.
-  listen<{ session_id: string; chunk: string }>(EventName.FLEET_SESSION_OUTPUT, (event) => {
-    if (event.payload.session_id !== sessionId) return;
-    if (managed.hydrating) {
-      managed.pendingLive.push(event.payload.chunk);
-      return;
-    }
-    term.write(event.payload.chunk);
-  })
-    .then((fn) => {
-      // Guard against a dispose() that raced the listen() promise.
-      if (registry.get(sessionId) === managed) managed.unlistenOutput = fn;
-      else fn();
-    })
-    .catch(silentCatch('fleetTerminal:listen'));
+  // PTY stdout → terminal is delivered by the ONE shared listener (see
+  // ensureSharedOutputListener) — no per-terminal subscription here.
 
   registry.set(sessionId, managed);
   return managed;
@@ -372,6 +406,8 @@ function getOrCreate(sessionId: string): ManagedTerminal {
 
 /** Mount `sessionId`'s terminal into `container` (creating it if needed). */
 export function attachTerminal(sessionId: string, container: HTMLElement): void {
+  ensureSharedOutputListener();
+  unpark(sessionId);
   const m = getOrCreate(sessionId);
   if (m.holder.parentElement !== container) {
     container.appendChild(m.holder);
@@ -440,6 +476,22 @@ export function detachTerminal(sessionId: string): void {
   disposeWebgl(m);
   m.attached = false;
   m.holder.parentElement?.removeChild(m.holder);
+
+  // Park it in LRU order and bound the population of off-screen terminals.
+  // Beyond MAX_PARKED the oldest parked terminal is disposed — its next attach
+  // recreates the instance and hydrates from the backend ring, so nothing the
+  // switch-back model relies on is lost.
+  unpark(sessionId);
+  parked.push(sessionId);
+  while (parked.length > MAX_PARKED) {
+    const oldest = parked[0]!;
+    // disposeTerminal unparks it; guard against any inconsistent entry.
+    if (registry.get(oldest)?.attached) {
+      parked.shift();
+      continue;
+    }
+    disposeTerminal(oldest);
+  }
 }
 
 /** Fully tear down `sessionId`'s terminal — call when the session is gone. */
@@ -447,6 +499,7 @@ export function disposeTerminal(sessionId: string): void {
   const m = registry.get(sessionId);
   if (!m) return;
   registry.delete(sessionId);
+  unpark(sessionId);
   if (m.rafId !== null) cancelAnimationFrame(m.rafId);
   try {
     m.resizeObs.disconnect();
@@ -455,13 +508,6 @@ export function disposeTerminal(sessionId: string): void {
   }
   m.holder.removeEventListener('mouseup', m.onMouseUp);
   m.holder.removeEventListener('contextmenu', m.onContextMenu);
-  if (m.unlistenOutput) {
-    try {
-      m.unlistenOutput();
-    } catch (err) {
-      silentCatch('fleetTerminal:unlisten')(err);
-    }
-  }
   m.disposables.forEach((d) => {
     try {
       d.dispose();

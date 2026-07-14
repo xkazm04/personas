@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Play, ListTodo } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -18,14 +19,16 @@ interface Props {
   onClose: () => void;
   /** Root path the session will spawn at (shown so the target is unambiguous). */
   projectPath: string;
-  /** Spawn a session seeded with this first prompt. Resolves true on success
+  /** Spawn a session seeded with this first prompt. `headless` requests the
+   *  stream-json background lane (no terminal). Resolves true on success
    *  (errors are toasted by the caller; false keeps the draft for a retry). */
-  onSpawn: (prompt: string) => Promise<boolean>;
+  onSpawn: (prompt: string, headless: boolean) => Promise<boolean>;
 }
 
 export function FleetSpawnTaskModal({ open, onClose, projectPath, onSpawn }: Props) {
   const { t, tx } = useTranslation();
   const [prompt, setPrompt] = useState('');
+  const [headless, setHeadless] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -33,7 +36,7 @@ export function FleetSpawnTaskModal({ open, onClose, projectPath, onSpawn }: Pro
     if (!text || busy) return;
     setBusy(true);
     try {
-      const ok = await onSpawn(text);
+      const ok = await onSpawn(text, headless);
       if (ok) {
         setPrompt('');
         onClose();
@@ -76,7 +79,20 @@ export function FleetSpawnTaskModal({ open, onClose, projectPath, onSpawn }: Pro
           autoFocus
           className="w-full resize-y rounded-input border border-primary/10 bg-secondary/40 px-2.5 py-2 text-[14px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
         />
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <AccessibleToggle
+              checked={headless}
+              onChange={() => setHeadless((v) => !v)}
+              label={t.plugins.fleet.spawn_headless_toggle}
+              data-testid="fleet-spawn-task-headless"
+            />
+            {headless && (
+              <p className="mt-1 text-[12px] text-foreground opacity-70">
+                {t.plugins.fleet.spawn_headless_hint}
+              </p>
+            )}
+          </div>
           <Button
             data-testid="fleet-spawn-task-submit"
             variant="primary"

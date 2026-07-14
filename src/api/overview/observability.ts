@@ -45,6 +45,21 @@ export const getValueRollup = (days?: number, personaId?: string) =>
     personaId: personaId,
   });
 
+/**
+ * Category-aware error analytics. Returns per-category failure counts for the
+ * window and the prior window of equal length (category-grounded deltas) plus
+ * each persona's dominant failure category. Omit personaId for the all-personas
+ * rollup; pass one to scope to a single persona.
+ */
+export const getErrorCategoryBreakdown = (days?: number, personaId?: string) =>
+  invoke<import('@/lib/bindings/ErrorCategoryBreakdown').ErrorCategoryBreakdown>(
+    "get_error_category_breakdown",
+    {
+      days: days,
+      personaId: personaId,
+    },
+  );
+
 export const getPromptVersions = (personaId: string, limit?: number) =>
   invoke<PersonaPromptVersion[]>("get_prompt_versions", {
     personaId,

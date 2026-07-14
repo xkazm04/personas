@@ -713,6 +713,56 @@ pub fn get_chain_trace(
     Ok(owned)
 }
 
+/// Get the structured stop reasons for a chain trace — WHY the relay did not
+/// continue at each non-continuation link (suppressed handoff, cycle, depth or
+/// budget ceiling, unmet predicate, quarantine). Ordered oldest-first.
+///
+/// Ownership is verified the same way as [`get_chain_trace`]: the caller must
+/// own at least one trace in the chain, otherwise the chain (and its reasons)
+/// is not theirs to read.
+#[tauri::command]
+pub fn get_chain_stop_reasons(
+    state: State<'_, Arc<AppState>>,
+    chain_trace_id: String,
+    caller_persona_id: String,
+) -> Result<Vec<crate::db::repos::execution::chain_stop_reasons::ChainStopReason>, AppError> {
+    require_auth_sync(&state)?;
+    // Reuse the trace-ownership check: only surface reasons for a chain the
+    // caller participates in.
+    let traces =
+        crate::db::repos::execution::traces::get_by_chain_trace_id(&state.db, &chain_trace_id)?;
+    let owns_a_trace = traces.iter().any(|t| t.persona_id == caller_persona_id);
+    if !owns_a_trace {
+        return Err(AppError::Auth(
+            "Chain trace does not belong to the specified persona".into(),
+        ));
+    }
+    crate::db::repos::execution::chain_stop_reasons::get_by_chain_trace_id(
+        &state.db,
+        &chain_trace_id,
+    )
+}
+
+/// List the chains that currently have in-flight (running/queued) executions —
+/// the answer to "what chains are running right now?", which CascadeMetrics
+/// (log-only) and the retrospective per-run Chain tab could not give. Grouped by
+/// `chain_trace_id`; returns per chain the in-flight hop count, deepest depth,
+/// accumulated cost, personas involved, and the oldest in-flight start.
+///
+/// This is an aggregate OPERATOR/observability surface, not per-run detail —
+/// it returns chain-level counts and ids, no execution content (instructions,
+/// outputs, credentials) — so it is auth-gated but not persona-scoped the way
+/// [`get_chain_trace`] is (a chain spans personas; scoping it to one caller
+/// would defeat "what is in flight across the app"). An empty vec means nothing
+/// chain-shaped is running.
+#[tauri::command]
+pub fn list_active_chains(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<crate::db::repos::execution::executions::ActiveChain>, AppError> {
+    require_auth_sync(&state)?;
+    crate::db::repos::execution::executions::list_active_chains(&state.db)
+}
+
 /// Get current circuit breaker state for all providers.
 ///
 /// Returns per-provider status (consecutive failures, open/closed, cooldown)

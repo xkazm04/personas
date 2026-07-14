@@ -189,7 +189,16 @@
     "auto_hibernate_desc": "Hibernasi otomatis sesi yang tidak aktif melewati batas waktu — membebaskan proses meski Fleet tidak difokuskan. Tetap bisa dilanjutkan via Bangunkan. Berjalan selama Personas terbuka.",
     "auto_hibernate_toggle": "Aktifkan hibernasi otomatis",
     "auto_hibernate_after": "Setelah",
-    "auto_hibernate_minutes_unit": "menit tidak aktif"
+    "auto_hibernate_minutes_unit": "menit tidak aktif",
+    "live_slots_desc": "Batasi berapa banyak proses claude yang berjalan sekaligus. Saat armada mencapai batas, sesi idle terlama dihibernasi untuk memberi ruang — tetap dapat dilanjutkan lewat Bangunkan. Sesi yang sedang bekerja tidak pernah diganggu.",
+    "live_slots_max_label": "Maks",
+    "live_slots_title": "Batasi sesi aktif",
+    "live_slots_toggle": "Aktifkan batas sesi",
+    "live_slots_unit": "sesi aktif",
+    "headless_badge": "Latar belakang",
+    "headless_no_terminal": "Sesi latar belakang — berjalan tanpa terminal. Balas dari banner \"Butuh Anda\"; kemajuan tampil di Insights.",
+    "spawn_headless_hint": "Mode headless — tanpa terminal langsung, jauh lebih ringan di CPU dan RAM. Balas dari banner \"Butuh Anda\"; pantau kemajuan di Insights.",
+    "spawn_headless_toggle": "Jalankan di latar belakang (tanpa terminal)"
   },
   "title": "Plugin",
   "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",
@@ -2155,7 +2164,8 @@
     "voice_pocket_upload_save": "Tambah suara",
     "voice_pocket_upload_title": "Tambahkan suara Anda",
     "voice_pocket_hf_gate_desc": "Mengelola suara kloning Anda sendiri memerlukan token akses Hugging Face di Credential Vault — token ini mengaitkan lisensi model kloning suara dengan akun Anda. Tambahkan kredensial Hugging Face, lalu kembali ke sini.",
-    "voice_pocket_hf_gate_title": "Akun Hugging Face diperlukan"
+    "voice_pocket_hf_gate_title": "Akun Hugging Face diperlukan",
+    "persona_overview_kpi_trust_clamped": "Skor kepercayaan berada di luar rentang dan telah dibatasi hingga 100%."
   },
   "artist_gallery": {
     "loading_viewer": "Memuat penampil…",
@@ -2405,7 +2415,9 @@
     "goal_scaffold_timeline_title": "Linimasa",
     "goal_scaffold_timeline_sub": "Tampilan sumbu waktu dari tujuan berdasarkan tanggal target, dengan panah dependensi dan penanda keterlambatan. Segera hadir.",
     "goal_field_title": "Judul",
+    "goal_field_title_placeholder": "Hasil apa yang ingin Anda capai?",
     "goal_field_description": "Deskripsi",
+    "goal_field_description_placeholder": "Konteks opsional, cakupan, atau seperti apa keberhasilan itu…",
     "goal_field_status": "Status",
     "goal_field_target_date": "Tanggal target",
     "goal_target_asap": "Sesegera mungkin",

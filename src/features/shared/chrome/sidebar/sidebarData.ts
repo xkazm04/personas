@@ -1,12 +1,12 @@
 import {
-  BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare,
+  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare,
   FlaskConical, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
   List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu,
-  Network, Database, Home, Compass, Shield, ShieldCheck, HardDriveDownload, Heart,
+  Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
-  Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
+  Radio, Gauge, Unplug, Webhook, Store, Archive, Layers,
   GraduationCap, BookOpen, Trophy, AlertOctagon,
-  User, Users, Mic, Volume2, Sparkles, Headphones,
+  User, Mic, Volume2, Sparkles, Headphones,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
   Clapperboard, MoonStar,
@@ -15,6 +15,7 @@ import {
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
 import { type Tier, TIERS, isTierVisible } from '@/lib/constants/uiModes';
+import { SIDEBAR_SECTIONS } from '@/lib/navigation/registry';
 
 export interface SectionDef {
   id: SidebarSection;
@@ -32,20 +33,21 @@ export interface SectionDef {
   devModeOnly?: boolean;
 }
 
-export const sections: SectionDef[] = [
-  { id: 'home', icon: Home, label: 'Home' },
-  { id: 'overview', icon: BarChart3, label: 'Overview' },
-  { id: 'teams', icon: Users, label: 'Projects', minTier: TIERS.TEAM },
-  { id: 'personas', icon: Bot, label: 'Agents' },
-  { id: 'events', icon: Radio, label: 'Events', minTier: TIERS.TEAM },
-  { id: 'credentials', icon: Key, label: 'Connections' },
-  { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
-  { id: 'plugins', icon: Puzzle, label: 'Plugins', minTier: TIERS.TEAM },
-  // Studio — the Athena web-dev companion preview (scaffold + embedded dev
-  // server). Dev-only while in active development (P1).
-  { id: 'studio', icon: Globe, label: 'Studio', devOnly: true },
-  { id: 'settings', icon: Settings, label: 'Settings' },
-];
+/**
+ * Level-1 sidebar sections — DERIVED from the navigation registry
+ * (`@/lib/navigation/registry`) so the rail can never drift from the content
+ * router, command palette, or analytics catalog. Only `reachability: 'sidebar'`
+ * entries appear here (Schedules is an overlay-only section, so it is excluded).
+ * To add / remove / re-gate a top-level section, edit `NAV_SECTIONS` — every
+ * surface updates in lockstep.
+ */
+export const sections: SectionDef[] = SIDEBAR_SECTIONS.map((e) => ({
+  id: e.id,
+  icon: e.icon,
+  label: e.label,
+  minTier: e.gates.minTier,
+  devOnly: e.gates.devOnly,
+}));
 
 /** Filter any item array by tier visibility. */
 export function filterByTier<T extends { minTier?: Tier; simpleHidden?: boolean }>(
@@ -77,6 +79,10 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   { id: 'messages', icon: MessageSquare, label: 'Messages' },
   { id: 'events', icon: Zap, label: 'Events', minTier: TIERS.TEAM },
   { id: 'knowledge', icon: Brain, label: 'Knowledge', minTier: TIERS.TEAM },
+  // Reliability (SLA) dashboard — has a live OverviewPage router case
+  // (`overviewTab === 'sla'` → SLADashboard) and real content; surfaced in the
+  // rail alongside its TEAM-tier analytics neighbors.
+  { id: 'sla', icon: Gauge, label: 'Reliability', minTier: TIERS.TEAM },
 
   { id: 'health', icon: Heart, label: 'Health' },
   { id: 'director', icon: Clapperboard, label: 'Director', minTier: TIERS.TEAM },

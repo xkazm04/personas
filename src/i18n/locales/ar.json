@@ -431,7 +431,10 @@
     "edge_count_other": "{count} رابط",
     "adoption_count_one": "{count} اعتماد",
     "adoption_count_other": "{count} اعتماد",
-    "selected": "محدد"
+    "selected": "محدد",
+    "command_palette_create_agent": "إنشاء وكيل جديد",
+    "command_palette_go_to": "الانتقال إلى {label}",
+    "command_palette_leaderboard": "لوحة صدارة الوكلاء"
   },
   "chrome": {
     "app_title": "Personas",
@@ -483,7 +486,9 @@
       "nav_mode_review": "تبديل المراجعة البشرية (في وضع التنقل)",
       "nav_mode_schedules": "تبديل الجداول الزمنية (في وضع التنقل)",
       "nav_mode_search": "فتح البحث (في وضع التنقل)",
-      "open_title": "اختصارات لوحة المفاتيح"
+      "open_title": "اختصارات لوحة المفاتيح",
+      "nav_history_back": "رجوع",
+      "nav_history_forward": "تقدّم"
     },
     "tray_schedules": "الجداول الزمنية",
     "tray_schedules_today": "{count} مجدول اليوم",
@@ -586,6 +591,7 @@
     "mission_control": "مركز التحكم",
     "factory": "المصنع",
     "kpis": "KPI",
+    "studio": "استوديو",
     "competition": "المنافسة",
     "development": "التطوير",
     "lifecycle": "دورة الحياة",
@@ -781,6 +787,18 @@
       "personas_tab": "Personas (متحركة)",
       "lucide_footer": "lucide-react -- مكتبة أيقونات عامة -- ثابتة",
       "personas_footer": "9 أيقونات مخصصة -- تصميمات عصبية/دائرية -- CSS متحرك -- متكيف مع المظهر"
+    },
+    "since_left": {
+      "alerts": "{count} تنبيه صادر",
+      "alerts_other": "{count} تنبيهات صادرة",
+      "approvals": "{count} موافقة قيد الانتظار",
+      "approvals_other": "{count} موافقات قيد الانتظار",
+      "dismiss": "تجاهل",
+      "failed": "{count} فشل",
+      "failed_other": "{count} فشل",
+      "runs": "{count} تشغيل",
+      "runs_other": "{count} عمليات تشغيل",
+      "title": "منذ مغادرتك"
     }
   },
   "agents": {
@@ -1298,7 +1316,17 @@
       "tab_chain": "السلسلة",
       "thinking_tooltip": "جهد التفكير المستخدم في هذا التشغيل",
       "trace_empty_hint": "يتم التقاط الآثار التفصيلية لعمليات التشغيل التي تستخدم الأدوات والأحدث. لا يحتوي هذا التشغيل على أي منها لعرضه.",
-      "verdict_field": "الحكم"
+      "verdict_field": "الحكم",
+      "chain_ended_because": "سبب انتهاء السلسلة",
+      "chain_total_cost": "تكلفة السلسلة",
+      "active_chains_agents_one": "وكيل {count}",
+      "active_chains_agents_other": "{count} وكلاء",
+      "active_chains_depth": "العمق {count}",
+      "active_chains_hops_one": "قفزة {count}",
+      "active_chains_hops_other": "{count} قفزات",
+      "active_chains_one": "سلسلة {count} قيد التنفيذ",
+      "active_chains_other": "{count} سلاسل قيد التنفيذ",
+      "active_chains_title": "سلاسل قيد التنفيذ"
     },
     "lab": {
       "mode_arena": "الساحة",
@@ -1625,7 +1653,9 @@
       "eco_col_resolved": "محلول",
       "eco_empty": "لا توجد نتائج تقييم بعد — شغّل المختبر لملء كفاءة التكلفة.",
       "eco_subtitle": "مدى تكرار حل كل نموذج للتقييم وتكلفة كل نجاح.",
-      "eco_title": "كفاءة التكلفة"
+      "eco_title": "كفاءة التكلفة",
+      "vr_col_tokens": "الرموز",
+      "vr_tokens_tooltip": "{input} إدخال / {output} إخراج في المتوسط لكل تشغيل"
     },
     "design": {
       "select_agent": "اختر وكيلاً لبدء تحليل التصميم",
@@ -2621,7 +2651,12 @@
       "delete_agents_message": "سيُزال {count} وكيل/وكلاء وجميع إعداداتهم نهائياً.",
       "delete_drafts": "حذف {count} مسودة/مسودات",
       "delete_drafts_message": "سيُزال {count} مسودة وكيل نهائياً.",
-      "system_persona_undeletable": "المدير شخصية نظام ولا يمكن حذفه."
+      "system_persona_undeletable": "المدير شخصية نظام ولا يمكن حذفه.",
+      "archived_done": "تمت أرشفة {count} شخصية",
+      "bulk_delete_done": "تم حذف {deleted} شخصية",
+      "bulk_delete_failed": "فشل حذف الشخصيات",
+      "bulk_delete_partial": "تم حذف {deleted}؛ تم تخطي {skipped}",
+      "restored_done": "تمت استعادة {count} شخصية"
     },
     "persona_list": {
       "all_personas": "جميع الوكلاء",
@@ -2657,7 +2692,12 @@
       "batch_moved_partial": "تم نقل {ok} إلى {group}؛ {failed} فشل",
       "render_cap_notice": "عرض {shown} من {total} — قلّص النطاق بالبحث أو الفلاتر لرؤية الباقي.",
       "star_director_add": "ضع نجمة لإضافته إلى نطاق تدريب المدير",
-      "star_director_remove": "مُنجَّم — ضمن نطاق تدريب المدير. انقر للإزالة."
+      "star_director_remove": "مُنجَّم — ضمن نطاق تدريب المدير. انقر للإزالة.",
+      "badge_archived": "مؤرشفة",
+      "batch_archive": "أرشفة",
+      "batch_restore": "استعادة",
+      "show_active_personas": "عرض الشخصيات النشطة",
+      "show_archived_personas": "عرض الشخصيات المؤرشفة"
     },
     "editor_ui": {
       "max_budget_label": "الحد الأقصى للميزانية (دولار)",
@@ -3509,6 +3549,11 @@
       "activate_agent": "تفعيل الوكيل",
       "create_agent": "إنشاء الوكيل",
       "min_completeness": "أضف مزيداً من التفاصيل للوصول إلى اكتمال 40%"
+    },
+    "duplicate": {
+      "done": "تم النسخ باسم \"{name}\"",
+      "done_with_wiring": "تم النسخ باسم \"{name}\" — تم نسخ {triggers} مُشغِّل و{subscriptions} اشتراك، معطّلة في النسخة",
+      "failed": "تعذّر تكرار الوكيل"
     }
   },
   "vault": {
@@ -4129,7 +4174,37 @@
       "tool_count_other": "{count} أدوات",
       "tab_documents": "المستندات",
       "tab_search": "بحث",
-      "tab_settings": "الإعدادات"
+      "tab_settings": "الإعدادات",
+      "page_label": "ص. {page}",
+      "pages_label": "{count} صفحة",
+      "partial_text_badge": "نص جزئي",
+      "partial_text_tooltip": "قُرئ هذا المقطع من صفحة معظمها صور، لذا قد يكون غير مكتمل.",
+      "scanned_pages_tooltip": "هذه الصفحات صور بلا طبقة نص، لذا لا يمكن البحث في محتواها. استخدم نسخة معالجة بـ OCR لتضمينها.",
+      "scanned_pages_warning": "{count} صفحة ممسوحة ضوئيًا غير قابلة للقراءة",
+      "extract_add_entity": "إضافة نوع",
+      "extract_add_field": "إضافة حقل",
+      "extract_col_attrs": "السمات",
+      "extract_col_key": "الكيان",
+      "extract_col_source": "المصدر",
+      "extract_col_type": "النوع",
+      "extract_empty_kb": "أضف مستندات قبل استخراج البيانات المنظمة.",
+      "extract_entity_desc_ph": "ما هو هذا الكائن",
+      "extract_entity_type_ph": "entity_type",
+      "extract_field_desc_ph": "ما الذي يحتويه",
+      "extract_field_name_ph": "حقل",
+      "extract_infer_btn": "اقترح مخططًا",
+      "extract_inferring": "جارٍ قراءة المجموعة...",
+      "extract_intro": "حوّل قاعدة المعرفة هذه إلى صفوف قابلة للاستعلام. أولاً اقترح مخططًا للكائنات التي تصفها مستنداتك، راجعه، ثم استخرج.",
+      "extract_no_entities": "لم يتم استخراج أي كيانات بعد. اقترح مخططًا للبدء.",
+      "extract_progress": "{done}/{total} مستند، {count} كيان موجود",
+      "extract_remove": "إزالة",
+      "extract_run_btn": "استخراج الكيانات",
+      "extract_run_status": "{status} — {count} كيان",
+      "extract_running": "جارٍ الاستخراج...",
+      "extract_runs_heading": "عمليات الاستخراج",
+      "extract_schema_heading": "المخطط المقترح",
+      "extract_schema_hint": "حرّره قبل الاستخراج — احذف الأنواع التي لا تريدها، وسيملأ النموذج الباقي.",
+      "tab_extract": "البيانات المنظمة"
     },
     "manager": {
       "title": "بيانات الاعتماد",
@@ -6050,7 +6125,9 @@
       "source": "المصدر",
       "processed": "تمت المعالجة",
       "event_data": "بيانات الحدث",
-      "error": "خطأ"
+      "error": "خطأ",
+      "skipped_stat_label": "{skipped} متخطاة",
+      "skipped_stat_tooltip": "{skipped} من أصل {total} حدثًا خلال آخر 7 أيام لم يكن لها أي مشترك فتم تخطيها ({rate}). المعدل المرتفع يشير إلى مشغّل لا يستمع إليه أحد."
     },
     "health": {
       "title": "صحة الوكلاء",
@@ -6230,7 +6307,11 @@
       "all_statuses": "جميع الحالات",
       "col_status": "الحالة",
       "col_id": "المعرّف",
-      "execution_label": "التنفيذ"
+      "execution_label": "التنفيذ",
+      "error_category_by_persona": "أكثر الأخطاء حسب الوكيل",
+      "error_category_prior_period": "مقارنة بالفترة السابقة",
+      "error_category_section_title": "الأخطاء حسب الفئة",
+      "error_category_total_failures": "إجمالي الأخطاء"
     },
     "analytics_dashboard": {
       "issues_found": "تم اكتشاف {count} مشكلة",
@@ -6914,7 +6995,32 @@
       "comparison_recommended": "موصى به",
       "flow_title": "كيف يتكشف",
       "timeline_title": "الجدول الزمني",
-      "log_title": "الأدلة"
+      "log_title": "الأدلة",
+      "default_attention_empty": "جميع الشخصيات بحالة جيدة — لا شيء يحتاج إلى انتباه.",
+      "default_attention_low_trust": "ثقة منخفضة",
+      "default_attention_paused": "متوقف مؤقتاً",
+      "default_attention_setup": "الإعداد مطلوب",
+      "default_attention_title": "يحتاج إلى انتباه",
+      "default_callout_body": "هذه عرض ابتدائي مبني من حالة أسطولك. اطلب من Athena تكوين لوحة قيادة مخصصة لما يهمك — وستستبدل هذه تلقائياً.",
+      "default_callout_title": "لوحة قيادة ابتدائية",
+      "default_roster_title": "شخصياتك",
+      "default_stat_active_personas": "الشخصيات النشطة",
+      "default_stat_executions": "عمليات التنفيذ (7 أيام)",
+      "default_stat_needs_attention": "يحتاج إلى انتباه",
+      "default_stat_success_rate": "معدل النجاح",
+      "default_subtitle": "عرض ابتدائي يمكن لـ Athena تخصيصه — تحدّث لتكوين عرضك الخاص.",
+      "default_title": "لوحة قيادة ابتدائية",
+      "default_vitals_title": "المؤشرات الحيوية للأسطول",
+      "empty_example_attention": "\"ما الذي يحتاج إلى انتباهي\"",
+      "empty_example_personas": "\"أظهر لي شخصياتي\"",
+      "empty_hint": "اطلب من Athena تكوين عرض لوحة قيادة — جرّب {personas} أو {attention}.",
+      "empty_title": "لوحة القيادة فارغة",
+      "error_retry": "إعادة المحاولة",
+      "error_title": "تعذّر تحميل لوحة القيادة",
+      "subtitle_composed_prefix": "من تكوين Athena — تم التحديث",
+      "subtitle_default": "مساحة عملك المدعومة بالرفيق",
+      "talk_to_athena": "تحدّث إلى Athena",
+      "unknown_widget": "أداة غير معروفة: {kind}"
     },
     "certification": {
       "title": "مركز قيادة الشهادات",
@@ -7359,6 +7465,17 @@
     "day_range_picker": {
       "start_date": "تاريخ البدء",
       "end_date": "تاريخ الانتهاء"
+    },
+    "healing_effectiveness": {
+      "attempted": "محاولات",
+      "confirmed": "مؤكَّدة",
+      "loading": "جارٍ تحميل إحصاءات الإصلاح…",
+      "no_data": "لا يوجد نشاط إصلاح تلقائي بعد",
+      "recent_activity": "النشاط الأخير",
+      "reverted": "معكوسة",
+      "success_rate": "معدل النجاح",
+      "title": "الإصلاح الذاتي",
+      "window_label": "آخر"
     }
   },
   "matrix_v3": {
@@ -10100,7 +10217,20 @@
       "empty": "لم تُسجَّل أي تغييرات في الإعدادات بعد. ستظهر التعديلات المُجراة من الآن فصاعداً في هذه القائمة.",
       "empty_filtered": "لا توجد إدخالات تطابق مرشّح الفئة الحالي.",
       "before": "قبل",
-      "after": "بعد"
+      "after": "بعد",
+      "categories": {
+        "api_keys": "مفاتيح API",
+        "autonomy": "الاستقلالية",
+        "byom": "BYOM",
+        "config": "عام",
+        "engine": "المحرك",
+        "integrations": "التكاملات",
+        "limits": "الحدود",
+        "notifications": "الإشعارات",
+        "quality_gates": "بوابات الجودة",
+        "retention": "الاحتفاظ",
+        "sync": "المزامنة السحابية"
+      }
     },
     "api_keys": {
       "title": "مفاتيح API",
@@ -10604,7 +10734,61 @@
     "usage_limit_weekly_message": "تم بلوغ الحد الأسبوعي لاستخدام Claude.",
     "usage_limit_weekly_suggestion": "ستستمر عمليات التشغيل في الفشل حتى تتجدد الحصة الأسبوعية — أوقف الجداول الزمنية مؤقتًا أو قم بترقية خطتك.",
     "usage_limit_window_message": "تم استنفاد نافذة استخدام Claude.",
-    "usage_limit_window_suggestion": "ستُعاد محاولة التشغيل تلقائيًا عند تجديد النافذة — لا إجراء مطلوب."
+    "usage_limit_window_suggestion": "ستُعاد محاولة التشغيل تلقائيًا عند تجديد النافذة — لا إجراء مطلوب.",
+    "agent_ir_parse_message": "نتيجة البناء عادت بصيغة غير صحيحة.",
+    "agent_ir_parse_suggestion": "انقر على Refine لإعادة التوليد، أو ابدأ بناءً جديدًا — التحسين (Refine) يُحكم النتيجة.",
+    "authorization_required_message": "تحتاج هذه الأداة إلى إذنك قبل أن تعمل.",
+    "authorization_required_suggestion": "افتح صفحة التفويض لمنح الموافقة، ثم حاول مرة أخرى.",
+    "budget_value_invalid_message": "قيمة الميزانية غير صالحة.",
+    "budget_value_invalid_suggestion": "استخدم رقمًا موجبًا لميزانية الدولار (مثلاً 5 لمبلغ $5).",
+    "build_no_agent_ir_message": "لم يكتمل توليد البناء بعد — لا تزال خطة الوكيل قيد التجميع.",
+    "build_no_agent_ir_suggestion": "انتظر بضع ثوانٍ ثم حاول مرة أخرى. إذا استمر الأمر لأكثر من دقيقة، أعد تشغيل البناء بنية أكثر تحديدًا.",
+    "build_nothing_to_promote_message": "لم ينتج البناء بعد أي شيء يمكن ترقيته.",
+    "build_nothing_to_promote_suggestion": "انتظر حتى ينتهي البناء من التوليد، أو انقر على Refine لدفعه. إذا توقف المعالج لأكثر من دقيقة، أعد التشغيل.",
+    "build_session_disappeared_message": "تم مسح جلسة البناء هذه قبل أن تكتمل.",
+    "build_session_disappeared_suggestion": "ابدأ بناءً جديدًا — المسودة السابقة لم تعد قابلة للاسترداد.",
+    "build_session_gone_message": "انتهت صلاحية جلسة البناء هذه أو تم مسحها.",
+    "build_session_gone_suggestion": "ابدأ بناءً جديدًا بنفس النية.",
+    "design_result_parse_message": "تعذّر تحليل بيانات التصميم المحفوظة للشخصية.",
+    "design_result_parse_suggestion": "شغّل بناءً جديدًا لهذه الشخصية — التصميم المخزّن مؤقتًا من إصدار تطبيق أقدم.",
+    "external_service_message": "تعذّر على الخدمة الخارجية إكمال الطلب.",
+    "external_service_suggestion": "تحقق من حالة الخدمة واتصالك، ثم حاول مرة أخرى.",
+    "importance_range_message": "أهمية الذاكرة خارج النطاق المسموح.",
+    "importance_range_suggestion": "اختر قيمة بين 1 و10 لأهمية الذاكرة.",
+    "interval_not_number_message": "فاصل الاستطلاع (polling interval) ليس رقمًا صالحًا.",
+    "interval_not_number_suggestion": "افتح Refine واطلب فاصل استطلاع رقميًا مثل \"كل 5 دقائق\".",
+    "interval_too_fast_message": "لا يمكن أن يعمل الاستطلاع أكثر من مرة واحدة في الدقيقة.",
+    "interval_too_fast_suggestion": "استخدم فاصل استطلاع مدته 60 ثانية أو أكثر (300 / 5 دقائق هو الإعداد الافتراضي الآمن). انقر على Refine واطلب من الوكيل إبطاء الوتيرة.",
+    "invalid_trigger_type_message": "اختار البناء نوع محفّز (trigger) لا يتعرف عليه المحرك.",
+    "invalid_trigger_type_suggestion": "انقر على Refine واطلب محفّزًا محددًا (\"عند الجدولة\"، \"عند webhook\"، \"عند حدوث X\"). إذا تكرر ذلك، أعد تشغيل البناء.",
+    "keyring_lost_message": "مخزن بيانات الاعتماد الآمن لم يعد متاحًا.",
+    "keyring_lost_suggestion": "أعد تشغيل التطبيق. إذا استمرت المشكلة، أعد إدخال بيانات الاعتماد المتأثرة في الخزنة (vault).",
+    "max_concurrent_range_message": "حد التزامن خارج النطاق المسموح.",
+    "max_concurrent_range_suggestion": "اضبط الحد الأقصى للتشغيلات المتزامنة على قيمة بين 1 والحد الأقصى للمحرك الموضح في الإعدادات.",
+    "max_turns_range_message": "حد الأدوار (turns) خارج النطاق المسموح.",
+    "max_turns_range_suggestion": "اضبط الحد الأقصى للأدوار على قيمة بين 1 و50.",
+    "name_invalid_message": "اسم الشخصية يحتاج إلى تعديل.",
+    "name_invalid_suggestion": "اختر اسمًا قصيرًا ووصفيًا (1–40 حرفًا) وحاول مرة أخرى.",
+    "oauth_revoked_message": "تم إلغاء تفويض هذا الاتصال.",
+    "oauth_revoked_suggestion": "أعد ربط الحساب لمنح الوصول مرة أخرى.",
+    "polling_url_blocked_message": "تم رفض رابط الاستطلاع (URL) لأسباب أمنية.",
+    "polling_url_blocked_suggestion": "يشير الرابط إلى عنوان داخلي/خاص. استخدم رابط HTTPS يمكن الوصول إليه علنًا، أو بدّل المحفّز إلى webhook + smee.io.",
+    "prompt_too_large_message": "موجّه (prompt) الوكيل طويل جدًا.",
+    "prompt_too_large_suggestion": "انقر على Refine واطلب نسخة أكثر إيجازًا، أو احذف الأقسام الزائدة.",
+    "retry_exhausted_message": "استمر هذا في الفشل بعد عدة محاولات إعادة تلقائية.",
+    "retry_exhausted_suggestion": "انتظر قليلاً وحاول مرة أخرى — إذا استمرت المشكلة، تحقق من حالة الخدمة أو إعدادات الوكيل.",
+    "schedule_missing_timing_message": "تحتاج المحفّزات المجدولة إما إلى تعبير cron أو فاصل استطلاع.",
+    "schedule_missing_timing_suggestion": "انقر على Refine وحدّد متى يجب أن يعمل الوكيل (مثلاً \"كل يوم عمل الساعة 8 صباحًا\" أو \"كل 30 دقيقة\").",
+    "smee_url_invalid_message": "يجب أن يأتي رابط مصدر webhook من smee.io.",
+    "smee_url_invalid_suggestion": "افتح https://smee.io/new في المتصفح، وانسخ رابط القناة، والصقه في حقل مصدر webhook.",
+    "system_prompt_empty_message": "موجّه النظام (system prompt) الخاص بالشخصية فارغ.",
+    "system_prompt_empty_suggestion": "عادةً ما يملأ خط أنابيب البناء هذا تلقائيًا. حسّن البناء (Refine)، أو ابدأ بناءً جديدًا بنية أكثر تحديدًا.",
+    "timeout_range_message": "مهلة الانتظار (timeout) خارج النطاق المسموح.",
+    "timeout_range_suggestion": "اختر مهلة بين ثانية واحدة والحد الأقصى للمحرك (عادةً 30 دقيقة).",
+    "unknown_prompt_field_message": "أصدر البناء حقلاً لا يتعرف عليه المحرك.",
+    "unknown_prompt_field_suggestion": "انقر على Refine — سيستخدم البناء الجديد المخطط الحالي.",
+    "webhook_missing_secret_message": "يفتقد محفّز webhook هذا إلى سر التوقيع (signing secret) الخاص به.",
+    "webhook_missing_secret_suggestion": "أعد تشغيل Promote — يقوم خط الأنابيب تلقائيًا بتوليد webhook_secret عند الإرسال. إذا استمرت المشكلة، أعد تشغيل البناء."
   },
   "empty_states": {
     "credentials_title": "وكلاؤك يحتاجون بيانات اعتماد للعمل",
@@ -11314,6 +11498,34 @@
       "high": "مرتفع",
       "low": "منخفض",
       "medium": "متوسط"
+    },
+    "error_category": {
+      "api_error": "خطأ في API",
+      "credential_error": "خطأ في بيانات الاعتماد",
+      "network": "الشبكة",
+      "provider_not_found": "المزوّد غير موجود",
+      "rate_limit": "حد المعدل",
+      "session_limit": "حد الجلسة",
+      "timeout": "انتهاء المهلة",
+      "tool_error": "خطأ في الأداة",
+      "transient_process_failure": "فشل مؤقت في العملية",
+      "unknown": "غير معروف",
+      "validation": "التحقق"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "تم بلوغ حد التفرّع",
+      "budget_exceeded": "تم بلوغ سقف التكلفة",
+      "cas_lost": "استحوذ عليها تشغيل آخر",
+      "cycle_detected": "تم اكتشاف حلقة",
+      "depth_limit": "حد العمق",
+      "handoff_suppressed": "تم كبح التسليم",
+      "malformed_config": "إعداد غير صالح",
+      "outside_window": "خارج النافذة النشطة",
+      "predicate_unmet": "الشرط غير مستوفٍ",
+      "publish_failed": "فشل النشر",
+      "quarantined": "المُشغِّل معزول",
+      "healing_abandoned": "توقّف الإصلاح",
+      "healing_capped": "استُنفدت محاولات الإصلاح"
     }
   },
   "project_overview": {
@@ -11559,7 +11771,16 @@
       "auto_hibernate_desc": "يُسبت تلقائيًا الجلسات الخاملة التي تتجاوز الحد المحدد — محررًا العملية حتى عندما لا يكون Fleet في الواجهة. تبقى قابلة للاستئناف عبر الإيقاظ. يعمل طالما Personas مفتوح.",
       "auto_hibernate_toggle": "تفعيل الإسبات التلقائي",
       "auto_hibernate_after": "بعد",
-      "auto_hibernate_minutes_unit": "دقيقة خمول"
+      "auto_hibernate_minutes_unit": "دقيقة خمول",
+      "live_slots_desc": "حدِّد عدد عمليات claude التي تعمل في آنٍ واحد. عندما يبلغ الأسطول الحد، تُنقل أقدم جلسة خاملة إلى وضع الإسبات لإفساح المجال — وتظل قابلة للاستئناف عبر الإيقاظ. لا تُقاطع الجلسات العاملة أبدًا.",
+      "live_slots_max_label": "الحد الأقصى",
+      "live_slots_title": "تحديد الجلسات النشطة",
+      "live_slots_toggle": "تفعيل حد الجلسات",
+      "live_slots_unit": "جلسة نشطة",
+      "headless_badge": "خلفية",
+      "headless_no_terminal": "جلسة في الخلفية — تعمل بدون طرفية. أجب من شريط «يحتاج إليك»؛ ويظهر التقدم في Insights.",
+      "spawn_headless_hint": "الوضع بلا واجهة — دون طرفية مباشرة، وبحمل أقل بكثير على المعالج والذاكرة. أجب من شريط «يحتاج إليك»؛ وتابع التقدم في Insights.",
+      "spawn_headless_toggle": "التشغيل في الخلفية (بدون طرفية)"
     },
     "title": "الإضافات",
     "subtitle": "وسّع مساحة عملك بالإضافات. بدّل لإظهار أو إخفاء من الشريط الجانبي.",
@@ -13525,7 +13746,8 @@
       "voice_pocket_upload_save": "إضافة الصوت",
       "voice_pocket_upload_title": "أضف صوتك",
       "voice_pocket_hf_gate_desc": "لإدارة أصواتك المستنسخة الخاصة، يلزم توفر رمز وصول Hugging Face في خزنة بيانات الاعتماد — فهو يربط ترخيص نموذج استنساخ الصوت بحسابك. أضف بيانات اعتماد Hugging Face، ثم عد إلى هنا.",
-      "voice_pocket_hf_gate_title": "مطلوب حساب Hugging Face"
+      "voice_pocket_hf_gate_title": "مطلوب حساب Hugging Face",
+      "persona_overview_kpi_trust_clamped": "كانت درجة الثقة خارج النطاق وتم تحديدها عند 100%."
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",
@@ -13775,7 +13997,9 @@
       "goal_scaffold_timeline_title": "الجدول الزمني",
       "goal_scaffold_timeline_sub": "عرض على محور الوقت للأهداف حسب التاريخ المستهدف، مع أسهم التبعية ومؤشرات التأخير. قريباً.",
       "goal_field_title": "العنوان",
+      "goal_field_title_placeholder": "ما النتيجة التي تسعى إليها؟",
       "goal_field_description": "الوصف",
+      "goal_field_description_placeholder": "سياق أو نطاق أو معنى النجاح اختياري…",
       "goal_field_status": "الحالة",
       "goal_field_target_date": "التاريخ المستهدف",
       "goal_target_asap": "في أقرب وقت",
@@ -14481,7 +14705,28 @@
     "beat_sidebar_collapse": "طي قائمة الإيقاع",
     "beat_sidebar_expand": "قم بتوسيع قائمة الإيقاع",
     "beat_sidebar_empty": "لا يدق بعد. أضف نغمة نصية لتحديد المعالم الرئيسية على المخطط الزمني.",
-    "beat_sidebar_untitled": "(بدون عنوان)"
+    "beat_sidebar_untitled": "(بدون عنوان)",
+    "add_title": "إضافة عنوان",
+    "entrance": "الدخول",
+    "entrance_animate": "تحريك عند الدخول",
+    "entrance_down": "للأسفل",
+    "entrance_duration": "السرعة",
+    "entrance_left": "لليسار",
+    "entrance_none": "بدون",
+    "entrance_right": "لليمين",
+    "entrance_up": "للأعلى",
+    "layer_title": "العناوين",
+    "title_text": "نص العنوان",
+    "title_text_placeholder": "اكتب العنوان…",
+    "title_untitled": "(عنوان فارغ)",
+    "voiceover": "التعليق الصوتي",
+    "voiceover_added": "تمت إضافة التعليق الصوتي إلى الجدول الزمني",
+    "voiceover_generate": "إنشاء التعليق الصوتي",
+    "voiceover_generating": "جارٍ التوليف…",
+    "voiceover_not_installed": "محرك الصوت المحلي غير مثبت — قم بإعداده أولاً في إعدادات الصوت الخاصة بالمرافق.",
+    "voiceover_text": "السرد",
+    "voiceover_text_placeholder": "اكتب ما يجب أن يقوله الراوي…",
+    "voiceover_voice": "الصوت"
   },
   "research_lab": {
     "dashboard": "لوحة التحكم",

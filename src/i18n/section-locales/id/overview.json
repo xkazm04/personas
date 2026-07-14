@@ -523,7 +523,9 @@
     "source": "Sumber",
     "processed": "Diproses",
     "event_data": "Data Peristiwa",
-    "error": "Kesalahan"
+    "error": "Kesalahan",
+    "skipped_stat_label": "{skipped} dilewati",
+    "skipped_stat_tooltip": "{skipped} dari {total} event dalam 7 hari terakhir tidak memiliki pelanggan dan dilewati ({rate}). Tingkat yang tinggi menandakan ada pemicu yang tidak didengarkan siapa pun."
   },
   "health": {
     "title": "Kesehatan Agen",
@@ -703,7 +705,11 @@
     "all_statuses": "Semua status",
     "col_status": "Status",
     "col_id": "ID",
-    "execution_label": "Eksekusi"
+    "execution_label": "Eksekusi",
+    "error_category_by_persona": "Kegagalan terbanyak per agen",
+    "error_category_prior_period": "vs. periode sebelumnya",
+    "error_category_section_title": "Kegagalan menurut kategori",
+    "error_category_total_failures": "Total kegagalan"
   },
   "analytics_dashboard": {
     "issues_found": "{count} masalah ditemukan",
@@ -1387,7 +1393,32 @@
     "comparison_recommended": "Direkomendasikan",
     "flow_title": "Cara kerjanya",
     "timeline_title": "Linimasa",
-    "log_title": "Bukti"
+    "log_title": "Bukti",
+    "default_attention_empty": "Semua persona sehat — tidak ada yang perlu perhatian.",
+    "default_attention_low_trust": "Kepercayaan rendah",
+    "default_attention_paused": "Dijeda",
+    "default_attention_setup": "Perlu penyiapan",
+    "default_attention_title": "Perlu perhatian",
+    "default_callout_body": "Ini adalah tampilan awal yang dibangun dari status fleet Anda. Minta Athena menyusun cockpit yang disesuaikan dengan hal yang Anda pedulikan — dia akan menggantinya secara otomatis.",
+    "default_callout_title": "Cockpit awal",
+    "default_roster_title": "Persona Anda",
+    "default_stat_active_personas": "Persona aktif",
+    "default_stat_executions": "Eksekusi (7h)",
+    "default_stat_needs_attention": "Perlu perhatian",
+    "default_stat_success_rate": "Tingkat keberhasilan",
+    "default_subtitle": "Tampilan awal yang dapat dipersonalisasi Athena — mengobrol untuk menyusun milik Anda.",
+    "default_title": "Cockpit awal",
+    "default_vitals_title": "Vitalitas fleet",
+    "empty_example_attention": "\"apa yang perlu perhatian saya\"",
+    "empty_example_personas": "\"tampilkan persona saya\"",
+    "empty_hint": "Minta Athena menyusun tampilan cockpit — coba {personas} atau {attention}.",
+    "empty_title": "Cockpit Anda kosong",
+    "error_retry": "Coba lagi",
+    "error_title": "Tidak dapat memuat cockpit Anda",
+    "subtitle_composed_prefix": "Disusun oleh Athena — diperbarui",
+    "subtitle_default": "Ruang kerja Anda yang digerakkan pendamping",
+    "talk_to_athena": "Bicara dengan Athena",
+    "unknown_widget": "Widget tidak dikenal: {kind}"
   },
   "certification": {
     "title": "Pusat Komando Sertifikasi",
@@ -1832,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "Tanggal mulai",
     "end_date": "Tanggal selesai"
+  },
+  "healing_effectiveness": {
+    "attempted": "percobaan",
+    "confirmed": "dikonfirmasi",
+    "loading": "Memuat statistik pemulihan…",
+    "no_data": "Belum ada aktivitas perbaikan otomatis",
+    "recent_activity": "Aktivitas terbaru",
+    "reverted": "dikembalikan",
+    "success_rate": "tingkat keberhasilan",
+    "title": "Pemulihan otomatis",
+    "window_label": "Terakhir"
   }
 }

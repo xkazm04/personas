@@ -431,7 +431,10 @@
     "edge_count_other": "{count} 条边",
     "adoption_count_one": "{count} 次采用",
     "adoption_count_other": "{count} 次采用",
-    "selected": "已选择"
+    "selected": "已选择",
+    "command_palette_create_agent": "创建新智能体",
+    "command_palette_go_to": "前往 {label}",
+    "command_palette_leaderboard": "智能体排行榜"
   },
   "chrome": {
     "app_title": "Personas",
@@ -483,7 +486,9 @@
       "nav_mode_review": "切换人工审核（导航模式）",
       "nav_mode_schedules": "切换计划（导航模式）",
       "nav_mode_search": "打开搜索（导航模式）",
-      "open_title": "键盘快捷键"
+      "open_title": "键盘快捷键",
+      "nav_history_back": "后退",
+      "nav_history_forward": "前进"
     },
     "tray_schedules": "计划任务",
     "tray_schedules_today": "今日 {count} 个计划任务",
@@ -586,6 +591,7 @@
     "mission_control": "任务控制中心",
     "factory": "工厂",
     "kpis": "KPI",
+    "studio": "工作室",
     "competition": "竞赛",
     "development": "开发",
     "lifecycle": "生命周期",
@@ -781,6 +787,18 @@
       "personas_tab": "Personas（动画）",
       "lucide_footer": "lucide-react -- 通用图标库 -- 静态",
       "personas_footer": "9 个自定义图标 -- 神经/电路主题 -- CSS 动画 -- 主题自适应"
+    },
+    "since_left": {
+      "alerts": "{count} 条告警",
+      "alerts_other": "{count} 条告警",
+      "approvals": "{count} 项待审批",
+      "approvals_other": "{count} 项待审批",
+      "dismiss": "关闭",
+      "failed": "{count} 次失败",
+      "failed_other": "{count} 次失败",
+      "runs": "{count} 次运行",
+      "runs_other": "{count} 次运行",
+      "title": "自您离开后"
     }
   },
   "agents": {
@@ -1298,7 +1316,17 @@
       "tab_chain": "链",
       "thinking_tooltip": "本次运行使用的推理强度",
       "trace_empty_hint": "详细 trace 仅记录于使用工具及较新的运行中，本次运行没有可显示的 trace。",
-      "verdict_field": "判定结果"
+      "verdict_field": "判定结果",
+      "chain_ended_because": "链结束原因",
+      "chain_total_cost": "链成本",
+      "active_chains_agents_one": "{count} 个代理",
+      "active_chains_agents_other": "{count} 个代理",
+      "active_chains_depth": "深度 {count}",
+      "active_chains_hops_one": "{count} 跳",
+      "active_chains_hops_other": "{count} 跳",
+      "active_chains_one": "{count} 条链运行中",
+      "active_chains_other": "{count} 条链运行中",
+      "active_chains_title": "运行中的链"
     },
     "lab": {
       "mode_arena": "竞技场",
@@ -1625,7 +1653,9 @@
       "eco_col_resolved": "已解决",
       "eco_empty": "暂无评估结果 — 运行实验室以填充成本效益数据。",
       "eco_subtitle": "每个模型解决评估的频率及每次成功的成本。",
-      "eco_title": "成本效益"
+      "eco_title": "成本效益",
+      "vr_col_tokens": "令牌",
+      "vr_tokens_tooltip": "每次运行平均输入 {input} / 输出 {output}"
     },
     "design": {
       "select_agent": "选择代理以开始设计分析",
@@ -2621,7 +2651,12 @@
       "delete_agents_message": "{count} 个代理及其所有配置将被永久删除。",
       "delete_drafts": "删除 {count} 个草稿",
       "delete_drafts_message": "{count} 个草稿代理将被永久删除。",
-      "system_persona_undeletable": "Director 是系统角色，无法删除。"
+      "system_persona_undeletable": "Director 是系统角色，无法删除。",
+      "archived_done": "已归档 {count} 个角色",
+      "bulk_delete_done": "已删除 {deleted} 个角色",
+      "bulk_delete_failed": "删除角色失败",
+      "bulk_delete_partial": "已删除 {deleted} 个；跳过 {skipped} 个",
+      "restored_done": "已恢复 {count} 个角色"
     },
     "persona_list": {
       "all_personas": "所有代理",
@@ -2657,7 +2692,12 @@
       "batch_moved_partial": "已移动 {ok} 个到 {group}；{failed} 个失败",
       "render_cap_notice": "显示 {total} 中的 {shown} 个 — 通过搜索或筛选来查看其余内容。",
       "star_director_add": "收藏以加入 Director 的辅导范围",
-      "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。"
+      "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。",
+      "badge_archived": "已归档",
+      "batch_archive": "归档",
+      "batch_restore": "恢复",
+      "show_active_personas": "显示活跃角色",
+      "show_archived_personas": "显示已归档角色"
     },
     "editor_ui": {
       "max_budget_label": "最大预算（USD）",
@@ -3509,6 +3549,11 @@
       "activate_agent": "激活代理",
       "create_agent": "创建代理",
       "min_completeness": "添加更多详情以达到 40% 完整度"
+    },
+    "duplicate": {
+      "done": "已复制为“{name}”",
+      "done_with_wiring": "已复制为“{name}” — 已复制 {triggers} 个触发器和 {subscriptions} 个订阅（副本中已禁用）",
+      "failed": "无法复制代理"
     }
   },
   "vault": {
@@ -4129,7 +4174,37 @@
       "tool_count_other": "{count} 个工具",
       "tab_documents": "文档",
       "tab_search": "搜索",
-      "tab_settings": "设置"
+      "tab_settings": "设置",
+      "page_label": "第 {page} 页",
+      "pages_label": "{count} 页",
+      "partial_text_badge": "部分文本",
+      "partial_text_tooltip": "此段落读取自以图像为主的页面，因此可能不完整。",
+      "scanned_pages_tooltip": "这些页面是没有文本层的图像，因此其内容无法搜索。请使用经过 OCR 处理的副本以纳入它们。",
+      "scanned_pages_warning": "{count} 个扫描页无法读取",
+      "extract_add_entity": "添加类型",
+      "extract_add_field": "添加字段",
+      "extract_col_attrs": "属性",
+      "extract_col_key": "实体",
+      "extract_col_source": "来源",
+      "extract_col_type": "类型",
+      "extract_empty_kb": "请先添加文档，再提取结构化数据。",
+      "extract_entity_desc_ph": "该对象是什么",
+      "extract_entity_type_ph": "entity_type",
+      "extract_field_desc_ph": "它包含什么",
+      "extract_field_name_ph": "字段",
+      "extract_infer_btn": "建议架构",
+      "extract_inferring": "正在读取语料库…",
+      "extract_intro": "将此知识库转化为可查询的行。先为文档所描述的对象建议一个架构，审查后再进行提取。",
+      "extract_no_entities": "尚未提取任何实体。建议一个架构以开始。",
+      "extract_progress": "{done}/{total} 个文档，找到 {count} 个实体",
+      "extract_remove": "移除",
+      "extract_run_btn": "提取实体",
+      "extract_run_status": "{status} — {count} 个实体",
+      "extract_running": "正在提取…",
+      "extract_runs_heading": "提取运行",
+      "extract_schema_heading": "建议的架构",
+      "extract_schema_hint": "提取前请编辑——移除不需要的类型，其余由模型补全。",
+      "tab_extract": "结构化数据"
     },
     "manager": {
       "title": "凭据",
@@ -6050,7 +6125,9 @@
       "source": "来源",
       "processed": "已处理",
       "event_data": "事件数据",
-      "error": "错误"
+      "error": "错误",
+      "skipped_stat_label": "{skipped} 条被跳过",
+      "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。"
     },
     "health": {
       "title": "代理健康状况",
@@ -6230,7 +6307,11 @@
       "all_statuses": "所有状态",
       "col_status": "状态",
       "col_id": "ID",
-      "execution_label": "执行"
+      "execution_label": "执行",
+      "error_category_by_persona": "最常出错的智能体",
+      "error_category_prior_period": "较上一周期",
+      "error_category_section_title": "按类别统计失败",
+      "error_category_total_failures": "失败总数"
     },
     "analytics_dashboard": {
       "issues_found": "发现 {count} 个问题",
@@ -6914,7 +6995,32 @@
       "comparison_recommended": "推荐",
       "flow_title": "执行流程",
       "timeline_title": "时间轴",
-      "log_title": "依据"
+      "log_title": "依据",
+      "default_attention_empty": "所有 persona 运行正常——无需处理。",
+      "default_attention_low_trust": "信任度低",
+      "default_attention_paused": "已暂停",
+      "default_attention_setup": "需要设置",
+      "default_attention_title": "需要关注",
+      "default_callout_body": "这是根据你的舰队状态生成的入门视图。让 Athena 为你关心的内容量身打造一个驾驶舱——她会自动替换此视图。",
+      "default_callout_title": "入门驾驶舱",
+      "default_roster_title": "你的 personas",
+      "default_stat_active_personas": "活跃 personas",
+      "default_stat_executions": "执行次数（7 天）",
+      "default_stat_needs_attention": "需要关注",
+      "default_stat_success_rate": "成功率",
+      "default_subtitle": "Athena 可个性化定制的入门视图——聊天即可打造你自己的。",
+      "default_title": "入门驾驶舱",
+      "default_vitals_title": "舰队健康",
+      "empty_example_attention": "\"有什么需要我关注的\"",
+      "empty_example_personas": "\"显示我的 personas\"",
+      "empty_hint": "让 Athena 编排一个驾驶舱视图——试试 {personas} 或 {attention}。",
+      "empty_title": "你的驾驶舱是空的",
+      "error_retry": "重试",
+      "error_title": "无法加载你的驾驶舱",
+      "subtitle_composed_prefix": "由 Athena 编排——更新于",
+      "subtitle_default": "由伴侣驱动的工作区",
+      "talk_to_athena": "与 Athena 对话",
+      "unknown_widget": "未知组件：{kind}"
     },
     "certification": {
       "title": "认证指挥中心",
@@ -7359,6 +7465,17 @@
     "day_range_picker": {
       "start_date": "开始日期",
       "end_date": "结束日期"
+    },
+    "healing_effectiveness": {
+      "attempted": "次尝试",
+      "confirmed": "已确认",
+      "loading": "正在加载修复统计…",
+      "no_data": "暂无自动修复活动",
+      "recent_activity": "近期活动",
+      "reverted": "已回退",
+      "success_rate": "成功率",
+      "title": "自我修复",
+      "window_label": "最近"
     }
   },
   "matrix_v3": {
@@ -10100,7 +10217,20 @@
       "empty": "尚未记录任何设置变更。从此处起的修改将出现在此列表中。",
       "empty_filtered": "没有记录与当前类别筛选匹配。",
       "before": "变更前",
-      "after": "变更后"
+      "after": "变更后",
+      "categories": {
+        "api_keys": "API 密钥",
+        "autonomy": "自主运行",
+        "byom": "BYOM",
+        "config": "常规",
+        "engine": "引擎",
+        "integrations": "集成",
+        "limits": "限制",
+        "notifications": "通知",
+        "quality_gates": "质量门",
+        "retention": "保留",
+        "sync": "云同步"
+      }
     },
     "api_keys": {
       "title": "API 密钥",
@@ -10604,7 +10734,61 @@
     "usage_limit_weekly_message": "已达到 Claude 的每周使用上限。",
     "usage_limit_weekly_suggestion": "每周限制重置前，运行任务将持续失败——请暂停计划或升级套餐。",
     "usage_limit_window_message": "Claude 的使用窗口已耗尽。",
-    "usage_limit_window_suggestion": "窗口重置后将自动重试——无需任何操作。"
+    "usage_limit_window_suggestion": "窗口重置后将自动重试——无需任何操作。",
+    "agent_ir_parse_message": "构建输出的格式有误。",
+    "agent_ir_parse_suggestion": "点击“Refine”重新生成，或开始一次新的构建——重新细化会让结果更精确。",
+    "authorization_required_message": "该工具需要您先授权才能运行。",
+    "authorization_required_suggestion": "打开授权页面以授予许可，然后重试。",
+    "budget_value_invalid_message": "预算数值无效。",
+    "budget_value_invalid_suggestion": "请使用正数作为美元预算（例如用 5 表示 $5）。",
+    "build_no_agent_ir_message": "构建尚未生成完成——代理的方案仍在组装中。",
+    "build_no_agent_ir_suggestion": "请等待几秒后重试。如果超过一分钟仍未解决，请使用更明确的意图重新开始构建。",
+    "build_nothing_to_promote_message": "构建尚未生成任何可发布的内容。",
+    "build_nothing_to_promote_suggestion": "请等待构建完成生成，或点击“Refine”推动一下。如果向导卡住超过一分钟，请重新开始。",
+    "build_session_disappeared_message": "该构建会话在完成前已被清除。",
+    "build_session_disappeared_suggestion": "请开始一次新的构建——之前的草稿已无法恢复。",
+    "build_session_gone_message": "该构建会话已过期或已被清除。",
+    "build_session_gone_suggestion": "请使用相同的意图重新开始构建。",
+    "design_result_parse_message": "无法解析该角色已保存的设计数据。",
+    "design_result_parse_suggestion": "为该角色重新运行一次构建——缓存的设计来自较旧的应用版本。",
+    "external_service_message": "外部服务无法完成该请求。",
+    "external_service_suggestion": "请检查服务状态和您的网络连接，然后重试。",
+    "importance_range_message": "记忆重要度超出范围。",
+    "importance_range_suggestion": "请为记忆重要度选择一个 1 到 10 之间的值。",
+    "interval_not_number_message": "轮询间隔不是有效的数字。",
+    "interval_not_number_suggestion": "打开“Refine”，要求提供一个数字形式的轮询间隔，例如“每 5 分钟”。",
+    "interval_too_fast_message": "轮询间隔不能小于一分钟一次。",
+    "interval_too_fast_suggestion": "请使用 60 秒或更长的轮询间隔（300 秒／5 分钟是安全的默认值）。点击“Refine”并告知代理放慢频率。",
+    "invalid_trigger_type_message": "构建选择了运行时无法识别的触发器类型。",
+    "invalid_trigger_type_suggestion": "点击“Refine”并要求指定具体的触发方式（例如“按计划”“通过 webhook”“当 X 发生时”）。如果仍反复出现此问题，请重新开始构建。",
+    "keyring_lost_message": "安全凭据存储库已不可用。",
+    "keyring_lost_suggestion": "请重启应用。如果问题仍然存在，请在保险库中重新输入受影响的凭据。",
+    "max_concurrent_range_message": "并发限制超出范围。",
+    "max_concurrent_range_suggestion": "请将最大并发运行数设置为 1 到设置页面中显示的引擎上限之间的值。",
+    "max_turns_range_message": "轮次限制超出允许范围。",
+    "max_turns_range_suggestion": "请将最大轮次设置为 1 到 50 之间的值。",
+    "name_invalid_message": "该角色名称需要修改。",
+    "name_invalid_suggestion": "请选择一个简短且具描述性的名称（1–40 个字符）后重试。",
+    "oauth_revoked_message": "该连接的授权已被撤销。",
+    "oauth_revoked_suggestion": "请重新连接该账户以再次授予访问权限。",
+    "polling_url_blocked_message": "出于安全考虑，该轮询 URL 已被拒绝。",
+    "polling_url_blocked_suggestion": "该 URL 指向内部／私有地址。请使用可公开访问的 HTTPS URL，或将触发器切换为 webhook + smee.io。",
+    "prompt_too_large_message": "代理的提示词过长。",
+    "prompt_too_large_suggestion": "点击“Refine”要求生成更精简的版本，或删除冗余部分。",
+    "retry_exhausted_message": "经过多次自动重试后仍然失败。",
+    "retry_exhausted_suggestion": "请稍等后重试——如果问题持续存在，请检查服务状态或该代理的配置。",
+    "schedule_missing_timing_message": "计划触发器需要设置 cron 表达式或轮询间隔。",
+    "schedule_missing_timing_suggestion": "点击“Refine”并指定代理应在何时运行（例如“每个工作日 8am”或“每 30 分钟”）。",
+    "smee_url_invalid_message": "webhook 源 URL 必须来自 smee.io。",
+    "smee_url_invalid_suggestion": "在浏览器中打开 https://smee.io/new，复制频道 URL，然后粘贴到 webhook 源字段中。",
+    "system_prompt_empty_message": "该角色的系统提示词为空。",
+    "system_prompt_empty_suggestion": "构建流程通常会自动填充此内容。请细化该构建，或使用更明确的意图重新开始一次构建。",
+    "timeout_range_message": "超时时间超出允许范围。",
+    "timeout_range_suggestion": "请选择一个介于 1 秒到引擎上限（通常为 30 分钟）之间的超时时间。",
+    "unknown_prompt_field_message": "构建生成了一个运行时无法识别的字段。",
+    "unknown_prompt_field_suggestion": "点击“Refine”——新的构建将使用当前的架构。",
+    "webhook_missing_secret_message": "该 webhook 触发器缺少签名密钥。",
+    "webhook_missing_secret_suggestion": "请重新执行“Promote”——流程会在提交时自动生成 webhook_secret。如果问题仍然存在，请重新开始构建。"
   },
   "empty_states": {
     "credentials_title": "您的智能体需要凭证才能运行",
@@ -11314,6 +11498,34 @@
       "high": "高",
       "low": "低",
       "medium": "中"
+    },
+    "error_category": {
+      "api_error": "API 错误",
+      "credential_error": "凭据错误",
+      "network": "网络",
+      "provider_not_found": "未找到提供方",
+      "rate_limit": "速率限制",
+      "session_limit": "会话上限",
+      "timeout": "超时",
+      "tool_error": "工具错误",
+      "transient_process_failure": "临时进程故障",
+      "unknown": "未知",
+      "validation": "校验"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "已达扇出上限",
+      "budget_exceeded": "已达成本上限",
+      "cas_lost": "已被其他运行占用",
+      "cycle_detected": "检测到循环",
+      "depth_limit": "深度上限",
+      "handoff_suppressed": "交接已抑制",
+      "malformed_config": "配置无效",
+      "outside_window": "不在活动时段内",
+      "predicate_unmet": "条件未满足",
+      "publish_failed": "发布失败",
+      "quarantined": "触发器已隔离",
+      "healing_abandoned": "已放弃修复",
+      "healing_capped": "修复重试已用尽"
     }
   },
   "project_overview": {
@@ -11559,7 +11771,16 @@
       "auto_hibernate_desc": "自动休眠超过阈值时间的空闲会话 — 即使 Fleet 未处于焦点也会释放进程。通过唤醒仍可恢复。在 Personas 打开时运行。",
       "auto_hibernate_toggle": "启用自动休眠",
       "auto_hibernate_after": "超过",
-      "auto_hibernate_minutes_unit": "分钟空闲"
+      "auto_hibernate_minutes_unit": "分钟空闲",
+      "live_slots_desc": "限制同时运行的 claude 进程数量。当机队达到上限时，最久未活动的空闲会话将被休眠以腾出空间 — 随时可通过唤醒恢复。工作中的会话绝不会被中断。",
+      "live_slots_max_label": "上限",
+      "live_slots_title": "限制在线会话数",
+      "live_slots_toggle": "启用会话上限",
+      "live_slots_unit": "个在线会话",
+      "headless_badge": "后台",
+      "headless_no_terminal": "后台会话 — 无终端运行。通过“需要你”横幅回复；进度显示在 Insights 中。",
+      "spawn_headless_hint": "无头模式 — 没有实时终端，CPU 和内存占用大幅降低。通过“需要你”横幅回复；在 Insights 中查看进度。",
+      "spawn_headless_toggle": "在后台运行（无终端）"
     },
     "title": "插件",
     "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",
@@ -13525,7 +13746,8 @@
       "voice_pocket_upload_save": "添加声音",
       "voice_pocket_upload_title": "添加你的声音",
       "voice_pocket_hf_gate_desc": "管理你自己克隆的语音需要在凭据保险库中提供 Hugging Face 访问令牌 —— 它会将语音克隆模型的许可与你的账户绑定。请先添加 Hugging Face 凭据，然后回到这里。",
-      "voice_pocket_hf_gate_title": "需要 Hugging Face 账户"
+      "voice_pocket_hf_gate_title": "需要 Hugging Face 账户",
+      "persona_overview_kpi_trust_clamped": "信任分数超出范围，已限制为 100%。"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",
@@ -13775,7 +13997,9 @@
       "goal_scaffold_timeline_title": "时间线",
       "goal_scaffold_timeline_sub": "按目标日期排列的时间轴视图，包含依赖关系箭头和延误标记。即将推出。",
       "goal_field_title": "标题",
+      "goal_field_title_placeholder": "你希望达成什么成果？",
       "goal_field_description": "描述",
+      "goal_field_description_placeholder": "可选：背景、范围或成功的定义…",
       "goal_field_status": "状态",
       "goal_field_target_date": "目标日期",
       "goal_target_asap": "尽快",
@@ -14481,7 +14705,28 @@
     "beat_sidebar_collapse": "折叠节拍列表",
     "beat_sidebar_expand": "展开节拍列表",
     "beat_sidebar_empty": "还没有节拍。添加文本节拍以标记时间轴上的里程碑。",
-    "beat_sidebar_untitled": "（无标题）"
+    "beat_sidebar_untitled": "（无标题）",
+    "add_title": "添加标题",
+    "entrance": "入场",
+    "entrance_animate": "入场动画",
+    "entrance_down": "下",
+    "entrance_duration": "速度",
+    "entrance_left": "左",
+    "entrance_none": "无",
+    "entrance_right": "右",
+    "entrance_up": "上",
+    "layer_title": "标题",
+    "title_text": "标题文本",
+    "title_text_placeholder": "输入标题…",
+    "title_untitled": "(空标题)",
+    "voiceover": "配音",
+    "voiceover_added": "配音已添加到时间轴",
+    "voiceover_generate": "生成配音",
+    "voiceover_generating": "合成中…",
+    "voiceover_not_installed": "尚未安装本地语音引擎 — 请先在 Companion 的语音设置中进行配置。",
+    "voiceover_text": "旁白",
+    "voiceover_text_placeholder": "输入旁白应该说的内容…",
+    "voiceover_voice": "音色"
   },
   "research_lab": {
     "dashboard": "仪表盘",

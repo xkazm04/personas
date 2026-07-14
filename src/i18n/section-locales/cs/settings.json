@@ -640,7 +640,20 @@
     "empty": "Zatím nebyly zaznamenány žádné změny nastavení. Úpravy provedené odsud se objeví v tomto seznamu.",
     "empty_filtered": "Žádné záznamy neodpovídají aktuálnímu filtru kategorie.",
     "before": "Před",
-    "after": "Po"
+    "after": "Po",
+    "categories": {
+      "api_keys": "Klíče API",
+      "autonomy": "Autonomie",
+      "byom": "BYOM",
+      "config": "Obecné",
+      "engine": "Engine",
+      "integrations": "Integrace",
+      "limits": "Limity",
+      "notifications": "Oznámení",
+      "quality_gates": "Brány kvality",
+      "retention": "Uchovávání",
+      "sync": "Cloudová synchronizace"
+    }
   },
   "api_keys": {
     "title": "API klíče",

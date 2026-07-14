@@ -431,7 +431,10 @@
     "edge_count_other": "{count} hran",
     "adoption_count_one": "{count} adopce",
     "adoption_count_other": "{count} adopcí",
-    "selected": "vybráno"
+    "selected": "vybráno",
+    "command_palette_create_agent": "Vytvořit nového agenta",
+    "command_palette_go_to": "Přejít na {label}",
+    "command_palette_leaderboard": "Žebříček agentů"
   },
   "chrome": {
     "app_title": "Personas",
@@ -483,7 +486,9 @@
       "nav_mode_review": "Přepnout ruční kontrolu (v navigačním režimu)",
       "nav_mode_schedules": "Přepnout plány (v navigačním režimu)",
       "nav_mode_search": "Otevřít vyhledávání (v navigačním režimu)",
-      "open_title": "Klávesové zkratky"
+      "open_title": "Klávesové zkratky",
+      "nav_history_back": "Zpět",
+      "nav_history_forward": "Vpřed"
     },
     "tray_schedules": "Plány",
     "tray_schedules_today": "{count} naplánováno dnes",
@@ -586,6 +591,7 @@
     "mission_control": "Řídicí centrum",
     "factory": "Továrna",
     "kpis": "KPI",
+    "studio": "Studio",
     "competition": "Soutěž",
     "development": "Vývoj",
     "lifecycle": "Životní cyklus",
@@ -781,6 +787,18 @@
       "personas_tab": "Personas (Animované)",
       "lucide_footer": "lucide-react – univerzální knihovna ikon – statická",
       "personas_footer": "9 vlastních ikon – neuronové motivy – CSS animované – adaptivní téma"
+    },
+    "since_left": {
+      "alerts": "{count} upozornění",
+      "alerts_other": "{count} upozornění",
+      "approvals": "{count} čekající schválení",
+      "approvals_other": "{count} čekajících schválení",
+      "dismiss": "Zavřít",
+      "failed": "{count} selhalo",
+      "failed_other": "{count} selhalo",
+      "runs": "{count} běh",
+      "runs_other": "{count} běhů",
+      "title": "Od vašeho odchodu"
     }
   },
   "agents": {
@@ -1298,7 +1316,17 @@
       "tab_chain": "Řetězec",
       "thinking_tooltip": "Úroveň uvažování použitá při tomto běhu",
       "trace_empty_hint": "Podrobná trasování se zaznamenávají u běhů využívajících nástroje a u novějších běhů. Tento běh žádná nemá.",
-      "verdict_field": "Verdikt"
+      "verdict_field": "Verdikt",
+      "chain_ended_because": "Proč řetězec skončil",
+      "chain_total_cost": "Náklady řetězce",
+      "active_chains_agents_one": "{count} agent",
+      "active_chains_agents_other": "{count} agentů",
+      "active_chains_depth": "hloubka {count}",
+      "active_chains_hops_one": "{count} skok",
+      "active_chains_hops_other": "{count} skoků",
+      "active_chains_one": "{count} řetězec běží",
+      "active_chains_other": "{count} řetězců běží",
+      "active_chains_title": "Běžící řetězce"
     },
     "lab": {
       "mode_arena": "Aréna",
@@ -1625,7 +1653,9 @@
       "eco_col_resolved": "Vyřešeno",
       "eco_empty": "Zatím žádné výsledky — spusťte Lab a naplňte statistiky nákladové efektivity.",
       "eco_subtitle": "Jak často každý model vyřeší eval a co každý úspěch stojí.",
-      "eco_title": "Nákladová efektivita"
+      "eco_title": "Nákladová efektivita",
+      "vr_col_tokens": "Tokeny",
+      "vr_tokens_tooltip": "Průměrně {input} vstupních / {output} výstupních na běh"
     },
     "design": {
       "select_agent": "Vyberte agenta pro zahájení analýzy návrhu",
@@ -2621,7 +2651,12 @@
       "delete_agents_message": "{count} agent(y/ů) a veškerá jejich konfigurace budou trvale odstraněny.",
       "delete_drafts": "Smazat {count} návrh(y/ů)",
       "delete_drafts_message": "{count} rozpracovaných agentů bude trvale odstraněno.",
-      "system_persona_undeletable": "Director je systémová persona a nelze ji smazat."
+      "system_persona_undeletable": "Director je systémová persona a nelze ji smazat.",
+      "archived_done": "Archivováno {count} person",
+      "bulk_delete_done": "Smazáno {deleted} person",
+      "bulk_delete_failed": "Nepodařilo se smazat persony",
+      "bulk_delete_partial": "Smazáno {deleted}; přeskočeno {skipped}",
+      "restored_done": "Obnoveno {count} person"
     },
     "persona_list": {
       "all_personas": "Všechny persony",
@@ -2657,7 +2692,12 @@
       "batch_moved_partial": "{ok} přesunuto do {group}; {failed} selhalo",
       "render_cap_notice": "Zobrazeno {shown} z {total} — upřesněte vyhledáváním nebo filtry pro zobrazení zbytku.",
       "star_director_add": "Označit hvězdičkou pro přidání do rozsahu koučování Directora",
-      "star_director_remove": "Označeno hvězdičkou — v rozsahu koučování Directora. Kliknutím odeberete."
+      "star_director_remove": "Označeno hvězdičkou — v rozsahu koučování Directora. Kliknutím odeberete.",
+      "badge_archived": "Archivováno",
+      "batch_archive": "Archivovat",
+      "batch_restore": "Obnovit",
+      "show_active_personas": "Zobrazit aktivní persony",
+      "show_archived_personas": "Zobrazit archivované persony"
     },
     "editor_ui": {
       "max_budget_label": "Max. rozpočet (USD)",
@@ -3509,6 +3549,11 @@
       "activate_agent": "Aktivovat agenta",
       "create_agent": "Vytvořit agenta",
       "min_completeness": "Přidejte více detailů pro dosažení 40% úplnosti"
+    },
+    "duplicate": {
+      "done": "Duplikováno jako „{name}“",
+      "done_with_wiring": "Duplikováno jako „{name}“ — zkopírováno {triggers} spouštěčů a {subscriptions} odběrů, v kopii zakázáno",
+      "failed": "Nepodařilo se duplikovat agenta"
     }
   },
   "vault": {
@@ -4129,7 +4174,37 @@
       "tool_count_other": "{count} nástrojů",
       "tab_documents": "Dokumenty",
       "tab_search": "Hledat",
-      "tab_settings": "Nastavení"
+      "tab_settings": "Nastavení",
+      "page_label": "s. {page}",
+      "pages_label": "{count} stran",
+      "partial_text_badge": "Částečný text",
+      "partial_text_tooltip": "Tato pasáž byla načtena ze stránky tvořené převážně obrazem, takže může být neúplná.",
+      "scanned_pages_tooltip": "Tyto stránky jsou obrázky bez textové vrstvy, takže jejich obsah nelze prohledávat. Chcete-li je zahrnout, použijte kopii zpracovanou pomocí OCR.",
+      "scanned_pages_warning": "{count} naskenovaných stran nečitelných",
+      "extract_add_entity": "Přidat typ",
+      "extract_add_field": "Přidat pole",
+      "extract_col_attrs": "Atributy",
+      "extract_col_key": "Entita",
+      "extract_col_source": "Zdroj",
+      "extract_col_type": "Typ",
+      "extract_empty_kb": "Před extrakcí strukturovaných dat přidejte dokumenty.",
+      "extract_entity_desc_ph": "co tento objekt je",
+      "extract_entity_type_ph": "entity_type",
+      "extract_field_desc_ph": "co obsahuje",
+      "extract_field_name_ph": "pole",
+      "extract_infer_btn": "Navrhnout schéma",
+      "extract_inferring": "Načítání korpusu...",
+      "extract_intro": "Přeměňte tuto znalostní bázi na dotazovatelné řádky. Nejprve navrhněte schéma objektů, které vaše dokumenty popisují, zkontrolujte je a poté extrahujte.",
+      "extract_no_entities": "Zatím nebyly extrahovány žádné entity. Začněte navržením schématu.",
+      "extract_progress": "{done}/{total} dokumentů, nalezeno {count} entit",
+      "extract_remove": "Odebrat",
+      "extract_run_btn": "Extrahovat entity",
+      "extract_run_status": "{status} — {count} entit",
+      "extract_running": "Extrahování...",
+      "extract_runs_heading": "Běhy extrakce",
+      "extract_schema_heading": "Navržené schéma",
+      "extract_schema_hint": "Před extrakcí upravte — odeberte typy, které nechcete, zbytek doplní model.",
+      "tab_extract": "Strukturovaná data"
     },
     "manager": {
       "title": "Přihlašovací údaje",
@@ -6050,7 +6125,9 @@
       "source": "Zdroj",
       "processed": "Zpracováno",
       "event_data": "Data události",
-      "error": "Chyba"
+      "error": "Chyba",
+      "skipped_stat_label": "{skipped} přeskočeno",
+      "skipped_stat_tooltip": "{skipped} z {total} událostí za posledních 7 dní nemělo žádného odběratele a bylo přeskočeno ({rate}). Vysoký podíl signalizuje trigger, kterému nikdo nenaslouchá."
     },
     "health": {
       "title": "Zdraví agentů",
@@ -6230,7 +6307,11 @@
       "all_statuses": "Všechny stavy",
       "col_status": "Stav",
       "col_id": "ID",
-      "execution_label": "Spuštění"
+      "execution_label": "Spuštění",
+      "error_category_by_persona": "Nejčastější selhání dle agenta",
+      "error_category_prior_period": "oproti předchozímu období",
+      "error_category_section_title": "Selhání podle kategorie",
+      "error_category_total_failures": "Celkem selhání"
     },
     "analytics_dashboard": {
       "issues_found": "Nalezeno {count} problémů",
@@ -6914,7 +6995,32 @@
       "comparison_recommended": "Doporučeno",
       "flow_title": "Jak se vyvíjí",
       "timeline_title": "Časová osa",
-      "log_title": "Důkazy"
+      "log_title": "Důkazy",
+      "default_attention_empty": "Všechny persony jsou v pořádku — nic nevyžaduje pozornost.",
+      "default_attention_low_trust": "Nízká důvěra",
+      "default_attention_paused": "Pozastaveno",
+      "default_attention_setup": "Vyžaduje nastavení",
+      "default_attention_title": "Vyžaduje pozornost",
+      "default_callout_body": "Toto je výchozí pohled sestavený ze stavu vaší flotily. Požádejte Athenu, aby sestavila kokpit na míru tomu, co vás zajímá — automaticky jej nahradí.",
+      "default_callout_title": "Výchozí kokpit",
+      "default_roster_title": "Vaše persony",
+      "default_stat_active_personas": "Aktivní persony",
+      "default_stat_executions": "Spuštění (7 d)",
+      "default_stat_needs_attention": "Vyžaduje pozornost",
+      "default_stat_success_rate": "Míra úspěšnosti",
+      "default_subtitle": "Výchozí pohled, který Athena může přizpůsobit — sestavte si vlastní v chatu.",
+      "default_title": "Výchozí kokpit",
+      "default_vitals_title": "Vitální hodnoty flotily",
+      "empty_example_attention": "\"co vyžaduje mou pozornost\"",
+      "empty_example_personas": "\"ukaž mi mé persony\"",
+      "empty_hint": "Požádejte Athenu, aby sestavila pohled kokpitu — zkuste {personas} nebo {attention}.",
+      "empty_title": "Váš kokpit je prázdný",
+      "error_retry": "Zkusit znovu",
+      "error_title": "Nepodařilo se načíst váš kokpit",
+      "subtitle_composed_prefix": "Sestaveno Athenou — aktualizováno",
+      "subtitle_default": "Váš pracovní prostor řízený společníkem",
+      "talk_to_athena": "Mluvit s Athenou",
+      "unknown_widget": "Neznámý widget: {kind}"
     },
     "certification": {
       "title": "Centrum certifikací",
@@ -7359,6 +7465,17 @@
     "day_range_picker": {
       "start_date": "Datum začátku",
       "end_date": "Datum konce"
+    },
+    "healing_effectiveness": {
+      "attempted": "pokusů",
+      "confirmed": "potvrzeno",
+      "loading": "Načítání statistik oprav…",
+      "no_data": "Zatím žádná automatická oprava",
+      "recent_activity": "Nedávná aktivita",
+      "reverted": "vráceno",
+      "success_rate": "míra úspěšnosti",
+      "title": "Samoopravení",
+      "window_label": "Posledních"
     }
   },
   "matrix_v3": {
@@ -10126,7 +10243,20 @@
       "empty": "Zatím nebyly zaznamenány žádné změny nastavení. Úpravy provedené odsud se objeví v tomto seznamu.",
       "empty_filtered": "Žádné záznamy neodpovídají aktuálnímu filtru kategorie.",
       "before": "Před",
-      "after": "Po"
+      "after": "Po",
+      "categories": {
+        "api_keys": "Klíče API",
+        "autonomy": "Autonomie",
+        "byom": "BYOM",
+        "config": "Obecné",
+        "engine": "Engine",
+        "integrations": "Integrace",
+        "limits": "Limity",
+        "notifications": "Oznámení",
+        "quality_gates": "Brány kvality",
+        "retention": "Uchovávání",
+        "sync": "Cloudová synchronizace"
+      }
     },
     "api_keys": {
       "title": "API klíče",
@@ -10604,7 +10734,61 @@
     "usage_limit_weekly_message": "Týdenní limit využití Claude byl dosažen.",
     "usage_limit_weekly_suggestion": "Spuštění budou selhávat, dokud se týdenní limit neresetuje — pozastavte plány nebo upgradujte svůj plán.",
     "usage_limit_window_message": "Časové okno využití Claude je vyčerpáno.",
-    "usage_limit_window_suggestion": "Spuštění se automaticky opakuje po resetování okna — není třeba nic dělat."
+    "usage_limit_window_suggestion": "Spuštění se automaticky opakuje po resetování okna — není třeba nic dělat.",
+    "agent_ir_parse_message": "Výstup buildu se vrátil poškozený.",
+    "agent_ir_parse_suggestion": "Kliknutím na Refine jej znovu vygenerujte, nebo spusťte nový build — Refine výsledek zpřesní.",
+    "authorization_required_message": "Tento nástroj potřebuje před spuštěním vaši autorizaci.",
+    "authorization_required_suggestion": "Otevřete stránku autorizace, udělte souhlas a zkuste to znovu.",
+    "budget_value_invalid_message": "Hodnota rozpočtu není platná.",
+    "budget_value_invalid_suggestion": "Použijte kladné číslo pro rozpočet v dolarech (např. 5 pro $5).",
+    "build_no_agent_ir_message": "Build ještě nedokončil generování — plán agenta se stále sestavuje.",
+    "build_no_agent_ir_suggestion": "Počkejte pár sekund a zkuste to znovu. Pokud problém trvá déle než minutu, restartujte build s konkrétnějším záměrem.",
+    "build_nothing_to_promote_message": "Build zatím nevytvořil nic, co by šlo povýšit.",
+    "build_nothing_to_promote_suggestion": "Počkejte, až build dokončí generování, nebo jej kliknutím na Refine popožeňte. Pokud průvodce zůstane zaseknutý déle než minutu, restartujte jej.",
+    "build_session_disappeared_message": "Tato relace buildu byla vymazána dřív, než skončila.",
+    "build_session_disappeared_suggestion": "Spusťte nový build — předchozí koncept už nelze obnovit.",
+    "build_session_gone_message": "Platnost této relace buildu vypršela nebo byla vymazána.",
+    "build_session_gone_suggestion": "Spusťte nový build se stejným záměrem.",
+    "design_result_parse_message": "Uložená data návrhu persony se nepodařilo zpracovat.",
+    "design_result_parse_suggestion": "Spusťte pro tuto personu nový build — uložený návrh pochází ze starší verze aplikace.",
+    "external_service_message": "Externí službě se nepodařilo dokončit požadavek.",
+    "external_service_suggestion": "Zkontrolujte stav služby a své připojení a zkuste to znovu.",
+    "importance_range_message": "Důležitost paměti je mimo povolený rozsah.",
+    "importance_range_suggestion": "Zvolte hodnotu důležitosti paměti mezi 1 a 10.",
+    "interval_not_number_message": "Interval dotazování není platné číslo.",
+    "interval_not_number_suggestion": "Otevřete Refine a požádejte o číselný interval dotazování, například \"každých 5 minut\".",
+    "interval_too_fast_message": "Dotazování nelze spouštět častěji než jednou za minutu.",
+    "interval_too_fast_suggestion": "Nastavte interval dotazování na 60 sekund nebo více (bezpečná výchozí hodnota je 300 / 5 min). Klikněte na Refine a požádejte agenta, aby zpomalil tempo.",
+    "invalid_trigger_type_message": "Build zvolil typ triggeru, který runtime nerozpoznává.",
+    "invalid_trigger_type_suggestion": "Klikněte na Refine a požádejte o konkrétní trigger (\"podle plánu\", \"na webhook\", \"když nastane X\"). Pokud na tuto chybu narážíte opakovaně, restartujte build.",
+    "keyring_lost_message": "Bezpečné úložiště přihlašovacích údajů už není dostupné.",
+    "keyring_lost_suggestion": "Restartujte aplikaci. Pokud problém přetrvává, znovu zadejte dotčené přihlašovací údaje v trezoru.",
+    "max_concurrent_range_message": "Limit souběžnosti je mimo povolený rozsah.",
+    "max_concurrent_range_suggestion": "Nastavte maximální počet souběžných běhů na hodnotu mezi 1 a stropem enginu uvedeným v Nastavení.",
+    "max_turns_range_message": "Limit počtu kol je mimo povolený rozsah.",
+    "max_turns_range_suggestion": "Nastavte maximální počet kol na hodnotu mezi 1 a 50.",
+    "name_invalid_message": "Název persony potřebuje upravit.",
+    "name_invalid_suggestion": "Zvolte krátký a výstižný název (1–40 znaků) a zkuste to znovu.",
+    "oauth_revoked_message": "Autorizace tohoto propojení byla odvolána.",
+    "oauth_revoked_suggestion": "Znovu propojte účet a udělte přístup.",
+    "polling_url_blocked_message": "URL adresa pro dotazování byla z bezpečnostních důvodů odmítnuta.",
+    "polling_url_blocked_suggestion": "URL adresa směřuje na interní/soukromou adresu. Použijte veřejně dostupnou HTTPS URL, nebo přepněte trigger na webhook + smee.io.",
+    "prompt_too_large_message": "Prompt agenta je příliš dlouhý.",
+    "prompt_too_large_suggestion": "Klikněte na Refine a požádejte o stručnější verzi, nebo odstraňte nadbytečné části.",
+    "retry_exhausted_message": "Toto se po několika automatických opakováních stále nezdařilo.",
+    "retry_exhausted_suggestion": "Chvíli počkejte a zkuste to znovu — pokud problém přetrvává, zkontrolujte stav služby nebo konfiguraci agenta.",
+    "schedule_missing_timing_message": "Plánované triggery potřebují buď cron výraz, nebo interval dotazování.",
+    "schedule_missing_timing_suggestion": "Klikněte na Refine a upřesněte, kdy má agent běžet (např. \"každý všední den v 8 ráno\" nebo \"každých 30 minut\").",
+    "smee_url_invalid_message": "Zdrojová URL adresa webhooku musí pocházet ze smee.io.",
+    "smee_url_invalid_suggestion": "Otevřete https://smee.io/new v prohlížeči, zkopírujte URL kanálu a vložte ji do pole zdroje webhooku.",
+    "system_prompt_empty_message": "Systémový prompt persony je prázdný.",
+    "system_prompt_empty_suggestion": "Build pipeline jej běžně vyplní automaticky. Použijte Refine, nebo spusťte nový build s konkrétnějším záměrem.",
+    "timeout_range_message": "Časový limit je mimo povolený rozsah.",
+    "timeout_range_suggestion": "Zvolte časový limit mezi 1 sekundou a stropem enginu (obvykle 30 minut).",
+    "unknown_prompt_field_message": "Build vygeneroval pole, které runtime nerozpoznává.",
+    "unknown_prompt_field_suggestion": "Klikněte na Refine — nový build použije aktuální schéma.",
+    "webhook_missing_secret_message": "Tomuto webhook triggeru chybí podpisový secret.",
+    "webhook_missing_secret_suggestion": "Znovu spusťte Promote — pipeline při odeslání automaticky vygeneruje webhook_secret. Pokud problém přetrvává, restartujte build."
   },
   "empty_states": {
     "credentials_title": "Tvoji agenti potřebují ke spuštění přihlašovací údaje",
@@ -11314,6 +11498,34 @@
       "high": "Vysoká",
       "low": "Nízká",
       "medium": "Střední"
+    },
+    "error_category": {
+      "api_error": "Chyba API",
+      "credential_error": "Chyba přihlašovacích údajů",
+      "network": "Síť",
+      "provider_not_found": "Poskytovatel nenalezen",
+      "rate_limit": "Limit požadavků",
+      "session_limit": "Limit relace",
+      "timeout": "Vypršení času",
+      "tool_error": "Chyba nástroje",
+      "transient_process_failure": "Dočasné selhání procesu",
+      "unknown": "Neznámé",
+      "validation": "Validace"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "Dosažen limit větvení",
+      "budget_exceeded": "Dosažen strop nákladů",
+      "cas_lost": "Převzato jiným během",
+      "cycle_detected": "Zjištěn cyklus",
+      "depth_limit": "Limit hloubky",
+      "handoff_suppressed": "Předání potlačeno",
+      "malformed_config": "Neplatná konfigurace",
+      "outside_window": "Mimo aktivní okno",
+      "predicate_unmet": "Podmínka nesplněna",
+      "publish_failed": "Publikování selhalo",
+      "quarantined": "Spouštěč v karanténě",
+      "healing_abandoned": "Opravy se vzdaly",
+      "healing_capped": "Pokusy o opravu vyčerpány"
     }
   },
   "project_overview": {
@@ -11559,7 +11771,16 @@
       "auto_hibernate_desc": "Automaticky hibernuje relace, které jsou nečinné déle než nastavený limit — uvolní proces i když Fleet není v popředí. Relace zůstávají obnovitelné přes Probudit. Běží, dokud je Personas otevřené.",
       "auto_hibernate_toggle": "Povolit automatickou hibernaci",
       "auto_hibernate_after": "Po",
-      "auto_hibernate_minutes_unit": "min nečinnosti"
+      "auto_hibernate_minutes_unit": "min nečinnosti",
+      "live_slots_desc": "Omezte, kolik procesů claude běží najednou. Když flotila dosáhne limitu, nejstarší nečinná relace se hibernuje, aby uvolnila místo — zůstává obnovitelná přes Probudit. Pracující relace nejsou nikdy přerušeny.",
+      "live_slots_max_label": "Max",
+      "live_slots_title": "Omezit živé relace",
+      "live_slots_toggle": "Povolit limit relací",
+      "live_slots_unit": "živých relací",
+      "headless_badge": "Na pozadí",
+      "headless_no_terminal": "Relace na pozadí — běží bez terminálu. Odpovídejte z lišty „Potřebuje vás“; průběh se zobrazuje v Přehledech.",
+      "spawn_headless_hint": "Bezhlavý režim — bez živého terminálu, výrazně nižší nároky na CPU a RAM. Odpovídejte z lišty „Potřebuje vás“; průběh sledujte v Přehledech.",
+      "spawn_headless_toggle": "Spustit na pozadí (bez terminálu)"
     },
     "title": "Pluginy",
     "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",
@@ -13525,7 +13746,8 @@
       "voice_pocket_upload_save": "Přidat hlas",
       "voice_pocket_upload_title": "Přidejte svůj hlas",
       "voice_pocket_hf_gate_desc": "Správa vašich vlastních klonovaných hlasů vyžaduje přístupový token Hugging Face v Trezoru přihlašovacích údajů — ten propojuje licenci modelu pro klonování hlasu s vaším účtem. Přidejte přihlašovací údaje Hugging Face a poté se sem vraťte.",
-      "voice_pocket_hf_gate_title": "Vyžadován účet Hugging Face"
+      "voice_pocket_hf_gate_title": "Vyžadován účet Hugging Face",
+      "persona_overview_kpi_trust_clamped": "Skóre důvěry bylo mimo rozsah a bylo omezeno na 100 %."
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",
@@ -13775,7 +13997,9 @@
       "goal_scaffold_timeline_title": "Časová osa",
       "goal_scaffold_timeline_sub": "Pohled na cíle podle cílového data na časové ose s šipkami závislostí a markery zpoždění. Připravujeme.",
       "goal_field_title": "Název",
+      "goal_field_title_placeholder": "Jakého výsledku chcete dosáhnout?",
       "goal_field_description": "Popis",
+      "goal_field_description_placeholder": "Nepovinný kontext, rozsah nebo jak vypadá úspěch…",
       "goal_field_status": "Stav",
       "goal_field_target_date": "Cílové datum",
       "goal_target_asap": "Co nejdříve",
@@ -14481,7 +14705,28 @@
     "beat_sidebar_collapse": "Sbalit seznam beatů",
     "beat_sidebar_expand": "Rozbalte seznam beatů",
     "beat_sidebar_empty": "Zatím žádné údery. Chcete-li označit milníky na časové ose, přidejte rytmus textu.",
-    "beat_sidebar_untitled": "(bez názvu)"
+    "beat_sidebar_untitled": "(bez názvu)",
+    "add_title": "Přidat titulek",
+    "entrance": "Vstup",
+    "entrance_animate": "Animovat vstup",
+    "entrance_down": "Dolů",
+    "entrance_duration": "Rychlost",
+    "entrance_left": "Doleva",
+    "entrance_none": "Žádný",
+    "entrance_right": "Doprava",
+    "entrance_up": "Nahoru",
+    "layer_title": "Titulky",
+    "title_text": "Text titulku",
+    "title_text_placeholder": "Napište titulek…",
+    "title_untitled": "(prázdný titulek)",
+    "voiceover": "Namluvený komentář",
+    "voiceover_added": "Komentář byl přidán na časovou osu",
+    "voiceover_generate": "Vygenerovat komentář",
+    "voiceover_generating": "Syntetizuje se…",
+    "voiceover_not_installed": "Lokální hlasový engine není nainstalován — nejprve jej nastavte v nastavení hlasu společníka.",
+    "voiceover_text": "Text vyprávění",
+    "voiceover_text_placeholder": "Napište, co má vypravěč říct…",
+    "voiceover_voice": "Hlas"
   },
   "research_lab": {
     "dashboard": "Přehled",

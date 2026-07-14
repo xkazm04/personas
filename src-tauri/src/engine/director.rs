@@ -1470,7 +1470,7 @@ mod tests {
 
     fn dummy_persona(system_prompt: &str) -> Persona {
         use crate::db::models::{PersonaGatewayExposure, PersonaTrustLevel, PersonaTrustOrigin};
-        Persona {
+        Persona { lifecycle: "active".to_string(),
             id: "p-1".into(),
             project_id: "default".into(),
             name: "T".into(),

@@ -111,6 +111,33 @@ pub enum ErrorSeverity {
 ///
 /// Optional flags (`timed_out`, `session_limit`) take priority over string
 /// matching so callers can pass pre-parsed booleans.
+///
+/// The string ladder is tuned against the **real** failure templates this
+/// fleet produces. The dominant one by volume is the runner's
+/// `Execution failed (exit code {N}): {stderr}` (see `runner::mod`), whose
+/// stderr is raw Claude Code CLI / Anthropic API output — so the ladder
+/// carries the Anthropic wire shapes (`overloaded_error`/529,
+/// `not_found_error`/404 for a retired model, `authentication_error`/401,
+/// `permission_error`/403, oversized `prompt is too long`, "Credit balance is
+/// too low") alongside the generic ones. Patterns are message-SHAPE based —
+/// never persona- or id-specific — so `Unknown` stays an honest signal that a
+/// genuinely new template appeared.
+///
+/// **Tuning against your own fleet:** these patterns cover the repo's known
+/// producers, but every deployment sees its own long tail. To list the raw
+/// strings the ladder still buckets as `Unknown`, an operator can run:
+///
+/// ```sql
+/// SELECT error_message, COUNT(*) AS n
+/// FROM persona_executions
+/// WHERE status = 'failed' AND error_message IS NOT NULL AND error_message <> ''
+/// GROUP BY error_message
+/// ORDER BY n DESC
+/// LIMIT 50;
+/// ```
+///
+/// then add the dominant new SHAPES here (and mirror them into
+/// `src/lib/errorTaxonomy.ts` + both `PARITY_FIXTURES` lists).
 pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> ErrorCategory {
     if session_limit {
         return ErrorCategory::SessionLimit;
@@ -137,34 +164,66 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
     }
 
     // Timeout patterns
-    if lower.contains("timed out") || lower.contains("timeout") || lower.contains("deadline") {
+    // `etimedout` (Node's socket-timeout errno) is ported from the TS ladder —
+    // this file is the source of truth, so the match lives here and TS mirrors
+    // it. See PARITY_FIXTURES below and `errorTaxonomy.parity.test.ts`.
+    if lower.contains("timed out")
+        || lower.contains("timeout")
+        || lower.contains("deadline")
+        || lower.contains("etimedout")
+    {
         return ErrorCategory::Timeout;
     }
 
-    // Provider / CLI not found
+    // Provider / CLI / model not found. Includes Anthropic's `not_found_error`
+    // (404) for a retired or unknown model id — the 2026-06 retired-model
+    // failure the fleet actually hit — plus the raw CLI/spawn shapes.
     if lower.contains("not found")
         || lower.contains("enoent")
         || lower.contains("is not recognized")
+        || lower.contains("not_found_error")
+        || lower.contains("404")
+        || lower.contains("model not found")
+        || lower.contains("unknown model")
+        || lower.contains("no such model")
     {
         return ErrorCategory::ProviderNotFound;
     }
 
-    // Credential / auth errors
+    // Credential / auth / billing errors. Anthropic wire types
+    // (`authentication_error` 401, `permission_error` 403) plus the classic
+    // Claude Code "Credit balance is too low" billing block — all account-level,
+    // user-actionable, and not fixable by failover.
     if lower.contains("decrypt")
         || lower.contains("credential")
         || lower.contains("api key")
         || lower.contains("unauthorized")
         || lower.contains("401")
         || lower.contains("403")
+        || lower.contains("authentication_error")
+        || lower.contains("permission_error")
+        || lower.contains("forbidden")
+        || lower.contains("credit balance")
+        || lower.contains("billing_error")
+        || lower.contains("payment required")
     {
         return ErrorCategory::CredentialError;
     }
 
-    // Network errors
+    // Network errors — connection refused/reset, dropped sockets, DNS. The
+    // reset / hang-up / broken-pipe shapes are the transient TCP drops Claude
+    // Code CLI surfaces mid-stream (distinct from the runner's exit-code
+    // `TransientProcessFailure`, which carries no stderr).
     if lower.contains("network")
         || lower.contains("econnrefused")
+        || lower.contains("econnreset")
         || lower.contains("err_network")
         || lower.contains("connection refused")
+        || lower.contains("connection reset")
+        || lower.contains("reset by peer")
+        || lower.contains("socket hang up")
+        || lower.contains("epipe")
+        || lower.contains("broken pipe")
         || lower.contains("dns")
         || (lower.contains("fetch") && lower.contains("fail"))
     {
@@ -179,10 +238,13 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
         return ErrorCategory::ToolError;
     }
 
-    // API / server errors
+    // API / server errors — 5xx and Anthropic's `overloaded_error` (529), the
+    // dominant real failure when the provider is at capacity.
     if lower.contains("500")
         || lower.contains("502")
         || lower.contains("503")
+        || lower.contains("529")
+        || lower.contains("overloaded")
         || lower.contains("api error")
         || lower.contains("server error")
         || lower.contains("internal server")
@@ -190,11 +252,21 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
         return ErrorCategory::ApiError;
     }
 
-    // Validation errors
+    // Validation / oversized-input errors. Anthropic `invalid_request_error`
+    // already lands here via "invalid"; the phrasings below catch the
+    // human-readable oversize shapes ("prompt is too long", context-window
+    // overflow, 413 request-too-large) that carry no "invalid" token.
     if lower.contains("validation")
         || lower.contains("invalid")
         || lower.contains("malformed")
         || lower.contains("parse error")
+        || lower.contains("prompt is too long")
+        || lower.contains("context length")
+        || lower.contains("context window")
+        || lower.contains("request_too_large")
+        || lower.contains("request too large")
+        || lower.contains("payload too large")
+        || lower.contains("413")
     {
         return ErrorCategory::Validation;
     }
@@ -217,6 +289,16 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
             // Format without trailing message — treat as transient.
             return ErrorCategory::TransientProcessFailure;
         }
+    }
+
+    // Boot-recovery sweep: the engine marks orphaned running executions as
+    // failed with this exact message when the app restarts mid-run
+    // (engine/mod.rs `recover_orphaned_executions`). It is an environmental
+    // interruption, not a provider or config error — the 2026-07-14 live
+    // smoke found it as the single most common real failure message in a
+    // fleet (9/9 in the window), all landing in Unknown before this arm.
+    if lower.contains("app restarted while execution was running") {
+        return ErrorCategory::TransientProcessFailure;
     }
 
     ErrorCategory::Unknown
@@ -266,6 +348,18 @@ pub fn is_technical_failure(category: &ErrorCategory) -> bool {
 }
 
 /// Returns `true` for categories that should trigger provider failover.
+///
+/// This is the **guard on the failover/breaker layer entry**: only eligible
+/// categories cross into the provider circuit breaker. It is consumed in two
+/// load-bearing places, both keyed off this single predicate so the FFI never
+/// drifts from the engine:
+/// - [`super::failover::classify_error`] returns `Some(category)` iff eligible;
+///   the runner records a provider-circuit-breaker failure only when that is
+///   `Some` (see `runner::mod` — "Record circuit breaker outcome"). An
+///   ineligible category (credential/validation/tool/unknown) never counts
+///   toward the provider breaker.
+/// - `AppError`'s serializer emits a `failover_eligible` hint over IPC so the
+///   frontend can branch without re-running any classifier (`crate::error`).
 pub fn is_failover_eligible(category: &ErrorCategory) -> bool {
     matches!(
         category,
@@ -501,6 +595,75 @@ mod tests {
     }
 
     #[test]
+    fn test_classify_real_fleet_shapes() {
+        // Anthropic / Claude Code CLI stderr templates that previously fell
+        // through to Unknown on the failures-by-category dashboard. Each maps
+        // to an existing category by message SHAPE, never by id.
+
+        // 529 overloaded_error — provider at capacity (the dominant class).
+        assert_eq!(classify_error_str("Overloaded"), ErrorCategory::ApiError);
+        assert_eq!(
+            classify_error_str("API Error: 529 overloaded_error"),
+            ErrorCategory::ApiError
+        );
+
+        // 404 not_found_error for a retired/unknown model id.
+        assert_eq!(
+            classify_error_str("API Error: 404 not_found_error: model: claude-sonnet-4-20250514"),
+            ErrorCategory::ProviderNotFound
+        );
+        assert_eq!(
+            classify_error_str("unknown model requested"),
+            ErrorCategory::ProviderNotFound
+        );
+
+        // Billing / auth account blocks.
+        assert_eq!(
+            classify_error_str("Credit balance is too low"),
+            ErrorCategory::CredentialError
+        );
+        assert_eq!(
+            classify_error_str("permission_error: your API key does not have access"),
+            ErrorCategory::CredentialError
+        );
+        assert_eq!(
+            classify_error_str("authentication_error"),
+            ErrorCategory::CredentialError
+        );
+
+        // Oversized input (prompt/context/413).
+        assert_eq!(
+            classify_error_str("prompt is too long: 300000 tokens > 200000 maximum"),
+            ErrorCategory::Validation
+        );
+        assert_eq!(
+            classify_error_str("context length exceeded"),
+            ErrorCategory::Validation
+        );
+        assert_eq!(
+            classify_error_str("413 request too large"),
+            ErrorCategory::Validation
+        );
+
+        // Transient TCP drops (distinct from empty-stderr TransientProcessFailure).
+        assert_eq!(
+            classify_error_str("read ECONNRESET"),
+            ErrorCategory::Network
+        );
+        assert_eq!(
+            classify_error_str("socket hang up"),
+            ErrorCategory::Network
+        );
+
+        // A real fleet failure end-to-end: the runner wrapper carrying an
+        // overloaded stderr now classifies instead of burying as Unknown.
+        assert_eq!(
+            classify_error_str("Execution failed (exit code 1): API Error: 529 overloaded_error"),
+            ErrorCategory::ApiError
+        );
+    }
+
+    #[test]
     fn test_classify_transient_process_failure() {
         // Exact runner pattern with empty stderr after the colon.
         assert_eq!(
@@ -580,5 +743,78 @@ mod tests {
         assert_eq!(json, "\"rate_limit\"");
         let parsed: ErrorCategory = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed, cat);
+    }
+
+    // --- Cross-FFI parity fixtures -------------------------------------------
+    //
+    // MIRRORED PAIR — this list is kept byte-for-byte in sync with
+    // `src/lib/errors/__tests__/errorTaxonomy.parity.test.ts` (PARITY_FIXTURES).
+    // Both ladders (Rust `classify_error` and TS `classifyError`) must map every
+    // fixture string to the same category. When you add a case to one side, add
+    // the SAME case with the SAME expected category to the other file. The
+    // parity guarantee is what lets the frontend trust the Rust-computed
+    // `category` on the IPC envelope.
+    //
+    // `snake_case` here == the TS string-literal category on the other side.
+    const PARITY_FIXTURES: &[(&str, ErrorCategory)] = &[
+        ("Error: rate limit exceeded", ErrorCategory::RateLimit),
+        ("Too many requests", ErrorCategory::RateLimit),
+        ("HTTP 429 from provider", ErrorCategory::RateLimit),
+        ("quota exceeded for this key", ErrorCategory::RateLimit),
+        ("usage limit reached", ErrorCategory::RateLimit),
+        ("Session limit reached", ErrorCategory::SessionLimit),
+        ("Execution timed out after 600s", ErrorCategory::Timeout),
+        ("Request timeout", ErrorCategory::Timeout),
+        ("deadline exceeded", ErrorCategory::Timeout),
+        ("connect ETIMEDOUT 10.0.0.1:443", ErrorCategory::Timeout),
+        ("Claude CLI not found", ErrorCategory::ProviderNotFound),
+        ("spawn ENOENT", ErrorCategory::ProviderNotFound),
+        ("'claude' is not recognized", ErrorCategory::ProviderNotFound),
+        ("Failed to decrypt credential", ErrorCategory::CredentialError),
+        ("Invalid API key provided", ErrorCategory::CredentialError),
+        ("HTTP 401 Unauthorized", ErrorCategory::CredentialError),
+        ("403 returned", ErrorCategory::CredentialError),
+        ("ECONNREFUSED 127.0.0.1:3000", ErrorCategory::Network),
+        ("ERR_NETWORK while fetching", ErrorCategory::Network),
+        ("connection refused", ErrorCategory::Network),
+        ("fetch failed", ErrorCategory::Network),
+        ("tool_use failed", ErrorCategory::ToolError),
+        ("Tool call failed", ErrorCategory::ToolError),
+        ("HTTP 500 internal server error", ErrorCategory::ApiError),
+        ("502 Bad Gateway", ErrorCategory::ApiError),
+        ("validation failed: missing field", ErrorCategory::Validation),
+        ("malformed JSON in body", ErrorCategory::Validation),
+        // Real fleet shapes — Claude Code CLI / Anthropic API stderr as it lands
+        // inside `Execution failed (exit code N): <stderr>`. These are the
+        // templates the failures-by-category dashboard was burying under Unknown.
+        ("API Error: 529 {\"type\":\"overloaded_error\",\"message\":\"Overloaded\"}", ErrorCategory::ApiError),
+        ("Overloaded", ErrorCategory::ApiError),
+        ("API Error: 404 not_found_error: model: claude-sonnet-4-20250514", ErrorCategory::ProviderNotFound),
+        ("model not found", ErrorCategory::ProviderNotFound),
+        ("Credit balance is too low", ErrorCategory::CredentialError),
+        ("API Error: 403 permission_error", ErrorCategory::CredentialError),
+        ("authentication_error: invalid x-api-key", ErrorCategory::CredentialError),
+        ("prompt is too long: exceeds the model maximum", ErrorCategory::Validation),
+        ("Request too large (413)", ErrorCategory::Validation),
+        ("read ECONNRESET", ErrorCategory::Network),
+        (
+            "App restarted while execution was running",
+            ErrorCategory::TransientProcessFailure,
+        ),
+        ("socket hang up", ErrorCategory::Network),
+        ("Execution failed (exit code 137): Killed", ErrorCategory::TransientProcessFailure),
+        ("Execution failed (exit code 1): ", ErrorCategory::TransientProcessFailure),
+        ("some entirely novel failure", ErrorCategory::Unknown),
+    ];
+
+    #[test]
+    fn test_parity_fixtures_classify_consistently() {
+        for (input, expected) in PARITY_FIXTURES {
+            assert_eq!(
+                classify_error_str(input),
+                *expected,
+                "parity fixture {input:?} classified wrong"
+            );
+        }
     }
 }

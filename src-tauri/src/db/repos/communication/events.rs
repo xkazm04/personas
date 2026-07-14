@@ -570,6 +570,107 @@ pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppEr
     })
 }
 
+/// Enforce a hard count ceiling on terminal events, independent of age.
+///
+/// Age-only cleanup (`cleanup`) lets the table balloon inside a single
+/// retention window when a source is chatty. This trims the oldest terminal
+/// rows so at most `max_keep` remain. Only terminal *processed* rows are
+/// eligible — `dead_letter` (DLQ), `pending`, and `processing` (in-flight) rows
+/// are EXEMPT and never counted toward or deleted by the cap, mirroring the
+/// status set used by `cleanup`. Returns the number of rows deleted.
+pub fn enforce_count_cap(pool: &DbPool, max_keep: i64) -> Result<i64, AppError> {
+    timed_query!("persona_events", "persona_events::enforce_count_cap", {
+        let max_keep = max_keep.max(0);
+        let conn = pool.get()?;
+        // Delete terminal rows that are NOT among the newest `max_keep` terminal
+        // rows. The subquery is scoped to the same terminal status set so the
+        // ordering/limit is computed over eligible rows only — exempt rows never
+        // enter the window and so can neither be kept-slots nor deletion targets.
+        let mut stmt = conn.prepare_cached(
+            "DELETE FROM persona_events
+             WHERE status IN ('completed', 'skipped', 'failed', 'discarded')
+               AND id NOT IN (
+                 SELECT id FROM persona_events
+                 WHERE status IN ('completed', 'skipped', 'failed', 'discarded')
+                 ORDER BY created_at DESC, id DESC
+                 LIMIT ?1
+               )",
+        )?;
+        let rows = stmt.execute(params![max_keep])?;
+        Ok(rows as i64)
+    })
+}
+
+/// Per-event-type skipped-rate aggregation. A `skipped` event is an honest
+/// "no subscriber matched" marker (`background.rs`) — a persistently high
+/// skipped rate for a type signals a dead / misrouted trigger contract that
+/// nothing is listening to. Scoped to the last `since_days` days so the rate
+/// reflects current wiring, not ancient history. Only types with at least one
+/// skip are returned, ordered by skip count descending.
+pub fn skipped_rate_by_type(
+    pool: &DbPool,
+    since_days: i64,
+) -> Result<Vec<SkippedRateRow>, AppError> {
+    timed_query!("persona_events", "persona_events::skipped_rate_by_type", {
+        let since = (chrono::Utc::now() - chrono::Duration::days(since_days.max(0))).to_rfc3339();
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT event_type,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'skipped' THEN 1 ELSE 0 END) AS skipped
+             FROM persona_events
+             WHERE created_at >= ?1
+             GROUP BY event_type
+             HAVING skipped > 0
+             ORDER BY skipped DESC, total DESC",
+        )?;
+        let rows = stmt.query_map(params![since], |row| {
+            let event_type: String = row.get("event_type")?;
+            let total: i64 = row.get("total")?;
+            let skipped: i64 = row.get("skipped")?;
+            Ok(SkippedRateRow {
+                event_type,
+                total,
+                skipped,
+            })
+        })?;
+        Ok(collect_rows(rows, "skipped_rate_by_type"))
+    })
+}
+
+/// Overall skipped-vs-total counts across all event types in the window, used
+/// for the events-page header stat. `since_days` matches `skipped_rate_by_type`.
+pub fn skipped_totals(pool: &DbPool, since_days: i64) -> Result<(i64, i64), AppError> {
+    timed_query!("persona_events", "persona_events::skipped_totals", {
+        let since = (chrono::Utc::now() - chrono::Duration::days(since_days.max(0))).to_rfc3339();
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'skipped' THEN 1 ELSE 0 END) AS skipped
+             FROM persona_events
+             WHERE created_at >= ?1",
+        )?;
+        let (total, skipped) = stmt.query_row(params![since], |row| {
+            let total: i64 = row.get("total")?;
+            let skipped: Option<i64> = row.get("skipped")?;
+            Ok((total, skipped.unwrap_or(0)))
+        })?;
+        Ok((total, skipped))
+    })
+}
+
+/// One row of the per-type skipped-rate aggregation.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SkippedRateRow {
+    pub event_type: String,
+    /// Total events of this type in the window.
+    pub total: i64,
+    /// How many of them were skipped (no subscriber matched).
+    pub skipped: i64,
+}
+
 /// Delete every event whose `source_id` matches a specific id. Used when a
 /// trigger is deleted to purge its event history from persona_events. Returns
 /// the number of deleted rows.
@@ -1794,6 +1895,112 @@ mod tests {
 
         // Verify gone
         assert!(get_by_id(&pool, &event.id).is_err());
+    }
+
+    /// Helper: publish an event and immediately drive it to a terminal status.
+    fn publish_terminal(pool: &DbPool, event_type: &str, status: PersonaEventStatus) -> String {
+        let ev = publish(
+            pool,
+            CreatePersonaEventInput {
+                event_type: event_type.into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        update_status(pool, &ev.id, status, None).unwrap();
+        ev.id
+    }
+
+    #[test]
+    fn test_enforce_count_cap_trims_terminal_only() {
+        let pool = init_test_db().unwrap();
+
+        // 5 terminal (completed) events
+        for _ in 0..5 {
+            publish_terminal(&pool, "capped", PersonaEventStatus::Completed);
+        }
+        // 1 pending (in-flight) + 1 dead_letter — both EXEMPT
+        publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "still_pending".into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        publish_dead_letter(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "dlq".into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+            "boom".into(),
+        )
+        .unwrap();
+
+        // Keep only 2 terminal rows → 3 of the 5 completed get trimmed.
+        let deleted = enforce_count_cap(&pool, 2).unwrap();
+        assert_eq!(deleted, 3);
+
+        // Pending + dead_letter survive untouched; exactly 2 completed remain.
+        let recent = get_recent(&pool, Some(100), None).unwrap();
+        let completed = recent
+            .iter()
+            .filter(|e| e.status == PersonaEventStatus::Completed)
+            .count();
+        assert_eq!(completed, 2);
+        assert!(recent
+            .iter()
+            .any(|e| e.status == PersonaEventStatus::Pending));
+        assert!(recent
+            .iter()
+            .any(|e| e.status == PersonaEventStatus::DeadLetter));
+    }
+
+    #[test]
+    fn test_enforce_count_cap_noop_under_ceiling() {
+        let pool = init_test_db().unwrap();
+        publish_terminal(&pool, "a", PersonaEventStatus::Completed);
+        publish_terminal(&pool, "b", PersonaEventStatus::Skipped);
+        // Ceiling well above the 2 terminal rows → nothing deleted.
+        assert_eq!(enforce_count_cap(&pool, 100).unwrap(), 0);
+    }
+
+    #[test]
+    fn test_skipped_rate_by_type() {
+        let pool = init_test_db().unwrap();
+
+        // event_type "dead" → 2 skipped, 1 completed
+        publish_terminal(&pool, "dead", PersonaEventStatus::Skipped);
+        publish_terminal(&pool, "dead", PersonaEventStatus::Skipped);
+        publish_terminal(&pool, "dead", PersonaEventStatus::Completed);
+        // event_type "live" → 1 completed, 0 skipped (must NOT appear)
+        publish_terminal(&pool, "live", PersonaEventStatus::Completed);
+
+        let rows = skipped_rate_by_type(&pool, 7).unwrap();
+        assert_eq!(rows.len(), 1, "only types with a skip appear");
+        assert_eq!(rows[0].event_type, "dead");
+        assert_eq!(rows[0].skipped, 2);
+        assert_eq!(rows[0].total, 3);
+
+        let (total, skipped) = skipped_totals(&pool, 7).unwrap();
+        assert_eq!(total, 4);
+        assert_eq!(skipped, 2);
     }
 
     // ------------------------------------------------------------------

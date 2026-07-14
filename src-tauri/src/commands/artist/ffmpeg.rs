@@ -21,7 +21,8 @@ use crate::engine::render_plan::compile::{
     CompileDeps as RpCompileDeps, CompileOptions as RpCompileOptions, Composition as RpComposition,
 };
 use crate::engine::render_plan::{
-    compile as render_plan_compile, AudioStage, OverlayStage, RenderPlan, SourceEntry, VideoStage,
+    compile as render_plan_compile, AudioStage, Easing, OverlayEnter, OverlayStage, RenderPlan,
+    SourceEntry, TextOverlayStage, VideoStage,
 };
 use crate::error::AppError;
 use crate::AppState;
@@ -954,6 +955,8 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<St
         .iter()
         .filter_map(|o| match o {
             OverlayStage::Image(i) => Some(i.source_id),
+            // Text overlays are drawn by `drawtext` and consume no input slot.
+            OverlayStage::Text(_) => None,
         })
         .collect();
 
@@ -1014,9 +1017,8 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<St
     // sequentially; we preserve that ordering for byte-parity.
     let mut image_input_idx: HashMap<String, usize> = HashMap::new();
     for overlay in plan.overlays.iter() {
-        // Currently OverlayStage has only the Image variant; the `if let` is
-        // forward-compatible with future variants (e.g. Video, Text).
-        #[allow(irrefutable_let_patterns)]
+        // Only image overlays occupy an input slot. Text overlays are drawn
+        // by the `drawtext` filter and need no `-i`.
         if let OverlayStage::Image(img) = overlay {
             let Some(source) = plan.sources.iter().find(|s| s.id() == img.source_id) else {
                 continue;
@@ -1099,20 +1101,56 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<St
         bg_input_idx.map(|idx| format!("{idx}:v"))
     };
 
-    // ---- Step 4: image overlays ----
+    // ---- Step 4: overlays ----
+    //
+    // Images and titles are emitted in `plan.overlays` array order so the
+    // compositing stack the compiler decided on (titles last = on top) is the
+    // stack ffmpeg builds. Images chain through `overlay`; titles through
+    // `drawtext`.
+    //
+    // The system font is resolved once, and only when a title actually needs
+    // it. If no font is installed the titles are skipped rather than failing
+    // the whole export — a video missing its captions still beats no video.
+    let system_font: Option<String> = if plan
+        .overlays
+        .iter()
+        .any(|o| matches!(o, OverlayStage::Text(_)))
+    {
+        let f = resolve_system_font();
+        if f.is_none() {
+            tracing::warn!(
+                "no system font found for drawtext; title overlays will be skipped in this export"
+            );
+        }
+        f
+    } else {
+        None
+    };
+
     let mut overlay_counter = 0usize;
     for overlay in plan.overlays.iter() {
-        // Currently OverlayStage has only the Image variant; the `let...else`
-        // is forward-compatible with future variants.
-        #[allow(irrefutable_let_patterns)]
-        let OverlayStage::Image(img) = overlay
-        else {
-            continue;
-        };
-        let Some(&img_idx) = image_input_idx.get(&img.id) else {
-            continue;
-        };
         let Some(current_base) = base_video_label.clone() else {
+            continue;
+        };
+
+        let img = match overlay {
+            OverlayStage::Image(img) => img,
+            OverlayStage::Text(txt) => {
+                let Some(font) = system_font.as_deref() else {
+                    continue;
+                };
+                let next_label = format!("vt{overlay_counter}");
+                filters.push(format!(
+                    "[{current_base}]{}[{next_label}]",
+                    build_drawtext_filter(txt, font)
+                ));
+                base_video_label = Some(next_label);
+                overlay_counter += 1;
+                continue;
+            }
+        };
+
+        let Some(&img_idx) = image_input_idx.get(&img.id) else {
             continue;
         };
 
@@ -1146,10 +1184,24 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<St
         ));
 
         let next_label = format!("vo{overlay_counter}");
+        let x_expr = overlay_pos_expr(
+            "main_w",
+            "overlay_w",
+            img.position_x,
+            img.enter.as_ref().map(|e| e.offset_x).unwrap_or(0.0),
+            img.enter.as_ref(),
+            img.output_start,
+        );
+        let y_expr = overlay_pos_expr(
+            "main_h",
+            "overlay_h",
+            img.position_y,
+            img.enter.as_ref().map(|e| e.offset_y).unwrap_or(0.0),
+            img.enter.as_ref(),
+            img.output_start,
+        );
         filters.push(format!(
-            "[{current_base}][{img_label}]overlay=x='main_w*{px:.4}-overlay_w/2':y='main_h*{py:.4}-overlay_h/2':enable='between(t,{st:.3},{et:.3})'[{next_label}]",
-            px = img.position_x,
-            py = img.position_y,
+            "[{current_base}][{img_label}]overlay=x='{x_expr}':y='{y_expr}':enable='between(t,{st:.3},{et:.3})'[{next_label}]",
             st = img.output_start,
             et = img.output_end,
         ));
@@ -1217,6 +1269,159 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<St
 
     args.push(output_path.to_string_lossy().into_owned());
     Ok(args)
+}
+
+/// Resolve a platform-appropriate TTF path for `drawtext`. Returns None if no
+/// known font is installed — the caller skips title rendering rather than
+/// failing the export.
+///
+/// `drawtext` needs a concrete font FILE. The IR carries a CSS-ish family name
+/// (which the preview uses directly), so the two rasterizers can disagree on
+/// exact glyph metrics. That divergence is accepted and documented in the IR
+/// design doc under "what remains divergent".
+fn resolve_system_font() -> Option<String> {
+    #[cfg(target_os = "windows")]
+    let candidates: &[&str] = &[
+        r"C:\Windows\Fonts\segoeuib.ttf",
+        r"C:\Windows\Fonts\arialbd.ttf",
+        r"C:\Windows\Fonts\segoeui.ttf",
+        r"C:\Windows\Fonts\arial.ttf",
+    ];
+    #[cfg(target_os = "macos")]
+    let candidates: &[&str] = &[
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/Library/Fonts/Arial.ttf",
+    ];
+    #[cfg(target_os = "linux")]
+    let candidates: &[&str] = &[
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+    ];
+    // Android/iOS etc. never run the ffmpeg exporter, but the module still has
+    // to compile there.
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    let candidates: &[&str] = &[];
+
+    candidates
+        .iter()
+        .find(|c| Path::new(c).exists())
+        // ffmpeg's filter parser wants forward slashes even on Windows.
+        .map(|c| c.replace('\\', "/"))
+}
+
+/// Escape a user string for use inside an ffmpeg `drawtext=text='...'` clause.
+/// The filter graph uses `:` and `,` as separators and `\` as an escape, and
+/// the text itself is single-quoted, so `'` needs the full backslash dance.
+fn escape_drawtext(s: &str) -> String {
+    s.replace('\\', "\\\\")
+        .replace(':', "\\:")
+        .replace(',', "\\,")
+        .replace('\'', "\\\\\\'")
+        .replace('%', "\\%")
+}
+
+/// Build the position expression for one overlay axis, with an optional eased
+/// entrance. `dim` is the frame-dimension token (`main_w`/`main_h` for
+/// `overlay`, `w`/`h` for `drawtext`); `size` is the overlay-size token
+/// (`overlay_w`/`overlay_h` or `text_w`/`text_h`). Returns the full
+/// `dim*<fraction>-size/2` centering expression (caller wraps it in quotes).
+///
+/// With no entrance the fraction is the static `base`. With one, the overlay
+/// starts at `base + offset` and eases to `base` over the entrance duration —
+/// the "spring up, staggered" motion. `t` is ffmpeg's timeline timestamp;
+/// `st` is the stage's output start.
+fn overlay_pos_expr(
+    dim: &str,
+    size: &str,
+    base: f64,
+    offset: f64,
+    enter: Option<&OverlayEnter>,
+    st: f64,
+) -> String {
+    let Some(e) = enter else {
+        return format!("{dim}*{base:.4}-{size}/2");
+    };
+    // Progress in [0,1] across the entrance window.
+    let p = format!("clip((t-{st:.3})/{dur:.3},0,1)", dur = e.duration.max(1e-3));
+    let eased = match e.easing {
+        Easing::Linear => p.clone(),
+        Easing::EaseOut => format!("(1-pow(1-{p},2))"),
+        Easing::EaseInOut => format!("((1-cos(PI*{p}))/2)"),
+    };
+    // Remaining offset decays from `offset` to 0 as `eased` goes 0 → 1.
+    let fraction = format!("({base:.4}+({offset:.4})*(1-{eased}))");
+    format!("{dim}*{fraction}-{size}/2")
+}
+
+/// Build the `drawtext=...` clause for one title overlay.
+fn build_drawtext_filter(txt: &TextOverlayStage, font_file: &str) -> String {
+    let st = txt.output_start;
+    let et = txt.output_end;
+
+    let fontcolor = match txt.color_hex.strip_prefix('#') {
+        Some(hex) => format!("0x{hex}"),
+        None => txt.color_hex.clone(),
+    };
+
+    // Alpha fade envelope — the product of the in- and out-ramps. `enable`
+    // already gates rendering outside the window, so we only ramp inside it.
+    let alpha_expr = match (txt.fade_in > 0.01, txt.fade_out > 0.01) {
+        (true, true) => Some(format!(
+            "min(1\\,max(0\\,(t-{st:.3})/{fi:.3}))*min(1\\,max(0\\,({et:.3}-t)/{fo:.3}))",
+            fi = txt.fade_in,
+            fo = txt.fade_out,
+        )),
+        (true, false) => Some(format!(
+            "min(1\\,max(0\\,(t-{st:.3})/{fi:.3}))",
+            fi = txt.fade_in
+        )),
+        (false, true) => Some(format!(
+            "min(1\\,max(0\\,({et:.3}-t)/{fo:.3}))",
+            fo = txt.fade_out
+        )),
+        (false, false) => None,
+    };
+
+    let mut parts = vec![
+        format!("fontfile='{font_file}'"),
+        format!("text='{}'", escape_drawtext(&txt.text)),
+        format!("fontsize={}", txt.font_size_px),
+        format!("fontcolor={fontcolor}"),
+        format!(
+            "x='{}'",
+            overlay_pos_expr(
+                "w",
+                "text_w",
+                txt.position_x,
+                txt.enter.as_ref().map(|e| e.offset_x).unwrap_or(0.0),
+                txt.enter.as_ref(),
+                st,
+            )
+        ),
+        format!(
+            "y='{}'",
+            overlay_pos_expr(
+                "h",
+                "text_h",
+                txt.position_y,
+                txt.enter.as_ref().map(|e| e.offset_y).unwrap_or(0.0),
+                txt.enter.as_ref(),
+                st,
+            )
+        ),
+        format!("enable='between(t,{st:.3},{et:.3})'"),
+        // A subtle shadow keeps text legible on any background and matches
+        // the CSS drop-shadow the preview applies.
+        "shadowcolor=black@0.7".to_string(),
+        "shadowx=2".to_string(),
+        "shadowy=2".to_string(),
+    ];
+    if let Some(expr) = alpha_expr {
+        parts.push(format!("alpha='{expr}'"));
+    }
+
+    format!("drawtext={}", parts.join(":"))
 }
 
 fn build_video_stage_filter(input_idx: usize, label: &str, stage: &VideoStage) -> String {
@@ -1408,6 +1613,42 @@ fn parse_ffmpeg_time(line: &str) -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn overlay_pos_expr_static_has_no_time_dependence() {
+        let e = overlay_pos_expr("main_w", "overlay_w", 0.5, 0.0, None, 0.0);
+        assert_eq!(e, "main_w*0.5000-overlay_w/2");
+        assert!(!e.contains('t'), "static overlay must not reference time");
+    }
+
+    #[test]
+    fn overlay_pos_expr_entrance_is_time_varying_and_eased() {
+        let enter = OverlayEnter {
+            duration: 0.4,
+            offset_x: 0.0,
+            offset_y: 0.15,
+            easing: Easing::EaseOut,
+        };
+        let e = overlay_pos_expr("main_h", "overlay_h", 0.5, 0.15, Some(&enter), 1.0);
+        // References the timeline clock, the clamp window, and the base+offset.
+        assert!(e.contains("clip((t-1.000)/0.400"), "has progress window: {e}");
+        assert!(e.contains("pow(1-"), "easeOut uses a power curve: {e}");
+        assert!(e.contains("0.5000"), "carries the base fraction: {e}");
+        assert!(e.contains("0.1500"), "carries the offset: {e}");
+        assert!(e.ends_with("-overlay_h/2"), "still centers: {e}");
+    }
+
+    #[test]
+    fn overlay_pos_expr_easeinout_uses_cosine() {
+        let enter = OverlayEnter {
+            duration: 0.5,
+            offset_x: 0.2,
+            offset_y: 0.0,
+            easing: Easing::EaseInOut,
+        };
+        let e = overlay_pos_expr("main_w", "overlay_w", 0.5, 0.2, Some(&enter), 0.0);
+        assert!(e.contains("cos(PI*"), "easeInOut is cosine-based: {e}");
+    }
 
     /// Each pathological input must terminate AND emit at least one `atempo=`
     /// step — never return an empty Vec or hang the test runner. The exact

@@ -523,7 +523,9 @@
     "source": "Quelle",
     "processed": "Verarbeitet",
     "event_data": "Ereignisdaten",
-    "error": "Fehler"
+    "error": "Fehler",
+    "skipped_stat_label": "{skipped} übersprungen",
+    "skipped_stat_tooltip": "{skipped} von {total} Ereignissen der letzten 7 Tage hatten keinen Abonnenten und wurden übersprungen ({rate}). Eine hohe Quote deutet auf einen Trigger hin, dem niemand zuhört."
   },
   "health": {
     "title": "Agentengesundheit",
@@ -703,7 +705,11 @@
     "all_statuses": "Alle Status",
     "col_status": "Status",
     "col_id": "ID",
-    "execution_label": "Ausführung"
+    "execution_label": "Ausführung",
+    "error_category_by_persona": "Häufigster Fehler pro Agent",
+    "error_category_prior_period": "vs. Vorperiode",
+    "error_category_section_title": "Fehler nach Kategorie",
+    "error_category_total_failures": "Fehler gesamt"
   },
   "analytics_dashboard": {
     "issues_found": "{count} Probleme gefunden",
@@ -1387,7 +1393,32 @@
     "comparison_recommended": "Empfohlen",
     "flow_title": "So läuft es ab",
     "timeline_title": "Zeitverlauf",
-    "log_title": "Belege"
+    "log_title": "Belege",
+    "default_attention_empty": "Alle Personas gesund — nichts erfordert Aufmerksamkeit.",
+    "default_attention_low_trust": "Geringes Vertrauen",
+    "default_attention_paused": "Pausiert",
+    "default_attention_setup": "Einrichtung erforderlich",
+    "default_attention_title": "Erfordert Aufmerksamkeit",
+    "default_callout_body": "Dies ist eine Startansicht auf Basis deines Flottenstatus. Bitte Athena, ein Cockpit nach deinen Bedürfnissen zusammenzustellen — sie ersetzt dies automatisch.",
+    "default_callout_title": "Start-Cockpit",
+    "default_roster_title": "Deine Personas",
+    "default_stat_active_personas": "Aktive Personas",
+    "default_stat_executions": "Ausführungen (7 T.)",
+    "default_stat_needs_attention": "Erfordert Aufmerksamkeit",
+    "default_stat_success_rate": "Erfolgsquote",
+    "default_subtitle": "Eine Startansicht, die Athena personalisieren kann — chatte, um deine eigene zu erstellen.",
+    "default_title": "Start-Cockpit",
+    "default_vitals_title": "Flotten-Vitalwerte",
+    "empty_example_attention": "\"was meine Aufmerksamkeit erfordert\"",
+    "empty_example_personas": "\"zeig mir meine Personas\"",
+    "empty_hint": "Bitte Athena, eine Cockpit-Ansicht zu erstellen — versuche {personas} oder {attention}.",
+    "empty_title": "Dein Cockpit ist leer",
+    "error_retry": "Erneut versuchen",
+    "error_title": "Cockpit konnte nicht geladen werden",
+    "subtitle_composed_prefix": "Zusammengestellt von Athena — aktualisiert",
+    "subtitle_default": "Dein von deinem Begleiter gesteuerter Arbeitsbereich",
+    "talk_to_athena": "Mit Athena sprechen",
+    "unknown_widget": "Unbekanntes Widget: {kind}"
   },
   "certification": {
     "title": "Zertifizierungs-Kommandozentrale",
@@ -1832,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "Startdatum",
     "end_date": "Enddatum"
+  },
+  "healing_effectiveness": {
+    "attempted": "Versuche",
+    "confirmed": "bestätigt",
+    "loading": "Heilungsstatistik wird geladen…",
+    "no_data": "Noch keine Auto-Fix-Aktivität",
+    "recent_activity": "Letzte Aktivität",
+    "reverted": "zurückgesetzt",
+    "success_rate": "Erfolgsrate",
+    "title": "Selbstheilung",
+    "window_label": "Letzte"
   }
 }

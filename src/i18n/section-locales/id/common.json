@@ -166,5 +166,8 @@
   "edge_count_other": "{count} sisi",
   "adoption_count_one": "{count} adopsi",
   "adoption_count_other": "{count} adopsi",
-  "selected": "dipilih"
+  "selected": "dipilih",
+  "command_palette_create_agent": "Buat Agen Baru",
+  "command_palette_go_to": "Buka {label}",
+  "command_palette_leaderboard": "Papan Peringkat Agen"
 }

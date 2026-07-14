@@ -10,6 +10,9 @@ import type { CreatePersonaInput } from "@/lib/bindings/CreatePersonaInput";
 import type { DeletePersonaResult } from "@/lib/bindings/DeletePersonaResult";
 import type { EffectiveModelConfig } from "@/lib/bindings/EffectiveModelConfig";
 import type { UpdatePersonaInput } from "@/lib/bindings/UpdatePersonaInput";
+import type { BulkDeleteOutcome } from "@/lib/bindings/BulkDeleteOutcome";
+import type { DuplicatePersonaResult } from "@/lib/bindings/DuplicatePersonaResult";
+export type { DuplicatePersonaResult } from "@/lib/bindings/DuplicatePersonaResult";
 
 /** Batched persona detail returned by the single `get_persona_detail` IPC command. */
 export interface PersonaDetailResponse extends Persona {
@@ -25,8 +28,17 @@ export interface PersonaDetailResponse extends Persona {
 // Personas
 // ============================================================================
 
-export const listPersonas = () =>
-  invoke<Persona[]>("list_personas");
+/**
+ * List personas for the roster (LEAN projection: list-view fields only — the
+ * heavy editor-only blobs `system_prompt`, `structured_prompt`,
+ * `last_test_report`, `notification_channels` and `parameters` come back blank;
+ * they are re-hydrated per persona by `getPersonaDetail` when one is opened).
+ *
+ * `lifecycle` filters server-side to the given stages (e.g. `["active","draft"]`
+ * or `["archived"]`); omit it to return every lifecycle stage.
+ */
+export const listPersonas = (lifecycle?: string[]) =>
+  invoke<Persona[]>("list_personas", lifecycle && lifecycle.length ? { lifecycle } : undefined);
 
 export const getPersona = (id: string) =>
   invoke<Persona>("get_persona", { id });
@@ -37,11 +49,29 @@ export const createPersona = (input: CreatePersonaInput) =>
 export const updatePersona = (id: string, input: UpdatePersonaInput) =>
   invoke<Persona>("update_persona", { id, input });
 
+/**
+ * Deep-duplicate a persona. The copy clones the persona's `persona_triggers`
+ * and `persona_event_subscriptions` **disabled** (so it never double-fires);
+ * automations, tools and credential links are reported (not cloned). The result
+ * flattens the new persona with the copy summary counts.
+ */
 export const duplicatePersona = (sourceId: string) =>
-  invoke<Persona>("duplicate_persona", { sourceId });
+  invoke<DuplicatePersonaResult>("duplicate_persona", { sourceId });
 
 export const deletePersona = (id: string) =>
   invoke<DeletePersonaResult>("delete_persona", { id });
+
+/** Archive a persona (lifecycle → `archived`); preserves all history. */
+export const archivePersona = (id: string) =>
+  invoke<Persona>("archive_persona", { id });
+
+/** Restore an archived persona (lifecycle → `active`). */
+export const restorePersona = (id: string) =>
+  invoke<Persona>("restore_persona", { id });
+
+/** Bulk-delete personas in one IPC; returns a per-id outcome report. */
+export const bulkDeletePersonas = (ids: string[]) =>
+  invoke<BulkDeleteOutcome[]>("bulk_delete_personas", { ids });
 
 /** Star/unstar a persona (its membership in the Director's coaching scope). */
 export const setPersonaStarred = (id: string, starred: boolean) =>
@@ -189,6 +219,8 @@ export interface PartialPersonaUpdate {
    * this and skips actions for a capability whose dim is in its set.
    */
   disabled_dims_json?: string | null;
+  /** Lifecycle stage (`draft` | `active` | `archived`); omit to leave unchanged. */
+  lifecycle?: string | null;
 }
 
 // ============================================================================
@@ -349,5 +381,8 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     gateway_exposure: partial.gateway_exposure !== undefined ? partial.gateway_exposure : null,
     cli_awareness_enabled: partial.cli_awareness_enabled !== undefined ? partial.cli_awareness_enabled : null,
     disabled_dims_json: partial.disabled_dims_json !== undefined ? partial.disabled_dims_json : null,
+    // lifecycle is normally driven by the archive/restore/promote commands, not
+    // this generic builder; passing null = "leave unchanged".
+    lifecycle: partial.lifecycle ?? null,
   };
 }

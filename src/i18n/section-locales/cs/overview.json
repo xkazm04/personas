@@ -523,7 +523,9 @@
     "source": "Zdroj",
     "processed": "Zpracováno",
     "event_data": "Data události",
-    "error": "Chyba"
+    "error": "Chyba",
+    "skipped_stat_label": "{skipped} přeskočeno",
+    "skipped_stat_tooltip": "{skipped} z {total} událostí za posledních 7 dní nemělo žádného odběratele a bylo přeskočeno ({rate}). Vysoký podíl signalizuje trigger, kterému nikdo nenaslouchá."
   },
   "health": {
     "title": "Zdraví agentů",
@@ -703,7 +705,11 @@
     "all_statuses": "Všechny stavy",
     "col_status": "Stav",
     "col_id": "ID",
-    "execution_label": "Spuštění"
+    "execution_label": "Spuštění",
+    "error_category_by_persona": "Nejčastější selhání dle agenta",
+    "error_category_prior_period": "oproti předchozímu období",
+    "error_category_section_title": "Selhání podle kategorie",
+    "error_category_total_failures": "Celkem selhání"
   },
   "analytics_dashboard": {
     "issues_found": "Nalezeno {count} problémů",
@@ -1387,7 +1393,32 @@
     "comparison_recommended": "Doporučeno",
     "flow_title": "Jak se vyvíjí",
     "timeline_title": "Časová osa",
-    "log_title": "Důkazy"
+    "log_title": "Důkazy",
+    "default_attention_empty": "Všechny persony jsou v pořádku — nic nevyžaduje pozornost.",
+    "default_attention_low_trust": "Nízká důvěra",
+    "default_attention_paused": "Pozastaveno",
+    "default_attention_setup": "Vyžaduje nastavení",
+    "default_attention_title": "Vyžaduje pozornost",
+    "default_callout_body": "Toto je výchozí pohled sestavený ze stavu vaší flotily. Požádejte Athenu, aby sestavila kokpit na míru tomu, co vás zajímá — automaticky jej nahradí.",
+    "default_callout_title": "Výchozí kokpit",
+    "default_roster_title": "Vaše persony",
+    "default_stat_active_personas": "Aktivní persony",
+    "default_stat_executions": "Spuštění (7 d)",
+    "default_stat_needs_attention": "Vyžaduje pozornost",
+    "default_stat_success_rate": "Míra úspěšnosti",
+    "default_subtitle": "Výchozí pohled, který Athena může přizpůsobit — sestavte si vlastní v chatu.",
+    "default_title": "Výchozí kokpit",
+    "default_vitals_title": "Vitální hodnoty flotily",
+    "empty_example_attention": "\"co vyžaduje mou pozornost\"",
+    "empty_example_personas": "\"ukaž mi mé persony\"",
+    "empty_hint": "Požádejte Athenu, aby sestavila pohled kokpitu — zkuste {personas} nebo {attention}.",
+    "empty_title": "Váš kokpit je prázdný",
+    "error_retry": "Zkusit znovu",
+    "error_title": "Nepodařilo se načíst váš kokpit",
+    "subtitle_composed_prefix": "Sestaveno Athenou — aktualizováno",
+    "subtitle_default": "Váš pracovní prostor řízený společníkem",
+    "talk_to_athena": "Mluvit s Athenou",
+    "unknown_widget": "Neznámý widget: {kind}"
   },
   "certification": {
     "title": "Centrum certifikací",
@@ -1832,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "Datum začátku",
     "end_date": "Datum konce"
+  },
+  "healing_effectiveness": {
+    "attempted": "pokusů",
+    "confirmed": "potvrzeno",
+    "loading": "Načítání statistik oprav…",
+    "no_data": "Zatím žádná automatická oprava",
+    "recent_activity": "Nedávná aktivita",
+    "reverted": "vráceno",
+    "success_rate": "míra úspěšnosti",
+    "title": "Samoopravení",
+    "window_label": "Posledních"
   }
 }

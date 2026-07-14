@@ -58,6 +58,10 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     bindings: [
       { combos: [['mod', 'K']], describe: (t) => t.chrome.shortcuts.command_palette },
       { combos: [['?'], ['mod', '/']], describe: (t) => t.chrome.shortcuts.show_shortcuts },
+      // Always-on browser-style history (NavHistoryShortcuts). `back`/`forward`
+      // combos render Alt+arrow and the mouse's dedicated buttons.
+      { combos: [['alt', '←'], ['Mouse 3']], describe: (t) => t.chrome.shortcuts.nav_history_back },
+      { combos: [['alt', '→'], ['Mouse 4']], describe: (t) => t.chrome.shortcuts.nav_history_forward },
       { combos: [[';']], describe: (t) => t.chrome.shortcuts.nav_mode },
       { combos: [['←']], describe: (t) => t.chrome.shortcuts.nav_mode_back },
       // Title-bar dock hint keys — handled by TitleBarDock, only in nav mode.

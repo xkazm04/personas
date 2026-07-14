@@ -80,9 +80,58 @@ pub fn publish_event(
         )));
     }
 
+    // Known-vocabulary validation: an unknown event_type logs a warning with the
+    // nearest known type (never rejects). Catches typo'd types that would
+    // otherwise silently never match any listener.
+    crate::engine::event_vocabulary::validate_and_warn(&input.event_type);
+
     let event = repo::publish(&state.db, input)?;
     // CDC auto-emits on persona_events INSERT
     Ok(event)
+}
+
+/// List the known event-type vocabulary: the curated builtin seed merged with
+/// every distinct type actually observed in `persona_events`. Feeds the events
+/// UI type filter and trigger/listener creation so discovery isn't limited to
+/// the handful of types in the currently-loaded rows.
+#[tauri::command]
+pub fn list_known_event_types(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<crate::engine::event_vocabulary::EventVocabularyEntry>, AppError> {
+    require_auth_sync(&state)?;
+    crate::engine::event_vocabulary::list_vocabulary(&state.db)
+}
+
+/// Aggregated no-subscriber ("skipped") signal for the events page. A high
+/// skipped rate for a type means events are firing that nothing listens to —
+/// a dead or misrouted trigger contract. `sinceDays` bounds the window
+/// (defaults to 7).
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct EventSkippedStats {
+    /// Total events in the window (all statuses).
+    pub total: i64,
+    /// How many were skipped (no subscriber matched).
+    pub skipped: i64,
+    /// Per-type breakdown, only types with ≥1 skip, most-skipped first.
+    pub by_event_type: Vec<repo::SkippedRateRow>,
+}
+
+#[tauri::command]
+pub fn get_event_skipped_stats(
+    state: State<'_, Arc<AppState>>,
+    since_days: Option<i64>,
+) -> Result<EventSkippedStats, AppError> {
+    require_auth_sync(&state)?;
+    let since_days = since_days.unwrap_or(7);
+    let (total, skipped) = repo::skipped_totals(&state.db, since_days)?;
+    let by_event_type = repo::skipped_rate_by_type(&state.db, since_days)?;
+    Ok(EventSkippedStats {
+        total,
+        skipped,
+        by_event_type,
+    })
 }
 
 #[tauri::command]

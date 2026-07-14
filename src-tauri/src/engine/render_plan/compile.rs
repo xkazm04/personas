@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 
 use super::invariants::assert_invariants;
 use super::{
-    AudioStage, AudioTrack, CompileWarning, ImageOverlayStage, LoudnormMeasurements,
-    NormalizeDirective, OverlapKind, OverlapNext, OverlayStage, RenderPlan, SourceEntry,
-    VideoStage, RENDER_PLAN_SCHEMA_VERSION,
+    AudioStage, AudioTrack, CompileWarning, Easing, ImageOverlayStage, LoudnormMeasurements,
+    NormalizeDirective, OverlapKind, OverlapNext, OverlayEnter, OverlayStage, RenderPlan,
+    SourceEntry, TextOverlayStage, VideoStage, RENDER_PLAN_SCHEMA_VERSION,
 };
 
 // =============================================================================
@@ -50,6 +50,8 @@ pub enum TimelineItem {
     Text(TextItemInput),
     #[serde(rename = "image")]
     Image(ImageItemInput),
+    #[serde(rename = "title")]
+    Title(TitleItemInput),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -195,6 +197,99 @@ pub struct ImageItemInput {
     pub fade_in: f64,
     #[serde(default)]
     pub fade_out: f64,
+    #[serde(default)]
+    pub enter: Option<OverlayEnterInput>,
+}
+
+/// Authoring shape of an overlay entrance animation. Mirrors `OverlayEnter`
+/// in the IR; the compiler clamps and resolves it into the stage.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayEnterInput {
+    pub duration: f64,
+    #[serde(default)]
+    pub offset_x: f64,
+    #[serde(default)]
+    pub offset_y: f64,
+    #[serde(default)]
+    pub easing: Option<String>,
+}
+
+/// A burned-in title / caption / number. Distinct from `TextItemInput`, which
+/// is a beat (a timeline milestone that is never drawn). Titles are the
+/// visible typography — the "$116 a barrel" that pops onto the frame.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TitleItemInput {
+    #[serde(default)]
+    pub id: Option<String>,
+    #[serde(default)]
+    pub label: Option<String>,
+    pub start_time: f64,
+    pub duration: f64,
+    #[serde(default)]
+    pub text: String,
+    #[serde(default = "default_half")]
+    pub position_x: f64,
+    #[serde(default = "default_half")]
+    pub position_y: f64,
+    #[serde(default = "default_font_family")]
+    pub font_family: String,
+    #[serde(default = "default_font_weight")]
+    pub font_weight: u32,
+    #[serde(default = "default_font_size")]
+    pub font_size_px: u32,
+    #[serde(default = "default_color_hex")]
+    pub color_hex: String,
+    #[serde(default)]
+    pub fade_in: f64,
+    #[serde(default)]
+    pub fade_out: f64,
+    #[serde(default)]
+    pub enter: Option<OverlayEnterInput>,
+}
+
+/// The generic family every platform can rasterize. Also the fallback when a
+/// requested family fails the probe.
+pub const FALLBACK_FONT_FAMILY: &str = "sans-serif";
+
+fn default_font_family() -> String {
+    FALLBACK_FONT_FAMILY.to_string()
+}
+
+fn default_font_weight() -> u32 {
+    700
+}
+
+fn default_font_size() -> u32 {
+    64
+}
+
+fn default_color_hex() -> String {
+    "#ffffff".to_string()
+}
+
+/// Resolve an authoring entrance into the IR shape. `stage_duration` clamps the
+/// entrance so it can't run past the overlay's own life. A zero-or-negative
+/// duration, or a zero offset, collapses to None (nothing to animate).
+fn resolve_enter(input: &Option<OverlayEnterInput>, stage_duration: f64) -> Option<OverlayEnter> {
+    let e = input.as_ref()?;
+    let duration = e.duration.max(0.0).min(stage_duration);
+    if duration <= 0.0 || (e.offset_x == 0.0 && e.offset_y == 0.0) {
+        return None;
+    }
+    let easing = match e.easing.as_deref() {
+        Some("linear") => Easing::Linear,
+        Some("easeInOut") => Easing::EaseInOut,
+        // easeOut is the sensible default for an entrance (fast in, settle).
+        _ => Easing::EaseOut,
+    };
+    Some(OverlayEnter {
+        duration,
+        offset_x: e.offset_x,
+        offset_y: e.offset_y,
+        easing,
+    })
 }
 
 fn default_one() -> f64 {
@@ -390,6 +485,14 @@ pub fn compile(
         .iter()
         .filter_map(|(_, it)| match it {
             TimelineItem::Image(i) => Some(i),
+            _ => None,
+        })
+        .collect();
+
+    let sorted_title: Vec<&TitleItemInput> = items_indexed
+        .iter()
+        .filter_map(|(_, it)| match it {
+            TimelineItem::Title(t) => Some(t),
             _ => None,
         })
         .collect();
@@ -757,10 +860,6 @@ pub fn compile(
             return Err(CompileError::NegativeOrZeroDuration { stage_id: id });
         }
     }
-    // sorted_text kept in scope so the loop above is exercised; the font
-    // probe is no longer consulted for beats.
-    let _ = (&sorted_text, &deps.font_probe);
-
     for (ordinal, img) in sorted_image.iter().enumerate() {
         let id = img.id.clone().unwrap_or_else(|| format!("i{ordinal}"));
         if img.duration <= 0.0 {
@@ -781,8 +880,66 @@ pub fn compile(
             fade_out,
             position_x: img.position_x.clamp(0.0, 1.0),
             position_y: img.position_y.clamp(0.0, 1.0),
+            enter: resolve_enter(&img.enter, img.duration),
             source_id,
             scale: img.scale.max(0.0),
+        }));
+    }
+
+    // Titles, by contrast to beats, ARE drawn. They are pushed last so they
+    // composite on top of the image cutouts — in an explainer the typography
+    // is the top layer, never buried behind a prop.
+    for (ordinal, title) in sorted_title.iter().enumerate() {
+        let id = title.id.clone().unwrap_or_else(|| format!("t{ordinal}"));
+        if title.duration <= 0.0 {
+            return Err(CompileError::NegativeOrZeroDuration { stage_id: id });
+        }
+
+        if title.text.trim().is_empty() {
+            warnings.push(CompileWarning::TextEmpty {
+                overlay_id: id.clone(),
+            });
+        }
+
+        // A family the probe rejects falls back rather than vanishing — an
+        // invisible title is a much worse failure than a substituted font.
+        let requested = match title.font_family.trim() {
+            "" => FALLBACK_FONT_FAMILY,
+            f => f,
+        };
+        let font_family = match &deps.font_probe {
+            Some(probe) if !probe(requested) => {
+                warnings.push(CompileWarning::TextFontMissing {
+                    overlay_id: id.clone(),
+                    requested: requested.to_string(),
+                    fallback: FALLBACK_FONT_FAMILY.to_string(),
+                });
+                FALLBACK_FONT_FAMILY.to_string()
+            }
+            _ => requested.to_string(),
+        };
+
+        let fade_in = title.fade_in.max(0.0).min(title.duration);
+        let fade_out = title
+            .fade_out
+            .max(0.0)
+            .min(title.duration - fade_in)
+            .max(0.0);
+
+        overlays.push(OverlayStage::Text(TextOverlayStage {
+            id,
+            output_start: title.start_time,
+            output_end: title.start_time + title.duration,
+            fade_in,
+            fade_out,
+            position_x: title.position_x.clamp(0.0, 1.0),
+            position_y: title.position_y.clamp(0.0, 1.0),
+            text: title.text.clone(),
+            font_family,
+            font_weight: title.font_weight,
+            font_size_px: title.font_size_px.max(1),
+            color_hex: title.color_hex.clone(),
+            enter: resolve_enter(&title.enter, title.duration),
         }));
     }
 
@@ -851,6 +1008,16 @@ pub fn compile(
                         i.fade_out = (dur - i.fade_in).max(0.0);
                     }
                 }
+                OverlayStage::Text(t) => {
+                    t.output_start = snap(t.output_start);
+                    t.output_end = snap(t.output_end);
+                    t.fade_in = snap(t.fade_in);
+                    t.fade_out = snap(t.fade_out);
+                    let dur = (t.output_end - t.output_start).max(0.0);
+                    if t.fade_in + t.fade_out > dur {
+                        t.fade_out = (dur - t.fade_in).max(0.0);
+                    }
+                }
             }
         }
     }
@@ -898,6 +1065,7 @@ fn sort_key(item: &TimelineItem, original_index: usize) -> (u8, OrderedF64, Stri
         TimelineItem::Audio(_) => 1,
         TimelineItem::Text(_) => 2,
         TimelineItem::Image(_) => 3,
+        TimelineItem::Title(_) => 4,
     };
     let start = item_start_time(item);
     let id = item_id(item).unwrap_or_default();
@@ -910,6 +1078,7 @@ fn item_start_time(item: &TimelineItem) -> f64 {
         TimelineItem::Audio(a) => a.start_time,
         TimelineItem::Text(t) => t.start_time,
         TimelineItem::Image(i) => i.start_time,
+        TimelineItem::Title(t) => t.start_time,
     }
 }
 
@@ -919,6 +1088,7 @@ fn item_id(item: &TimelineItem) -> Option<String> {
         TimelineItem::Audio(a) => a.id.clone(),
         TimelineItem::Text(t) => t.id.clone(),
         TimelineItem::Image(i) => i.id.clone(),
+        TimelineItem::Title(t) => t.id.clone(),
     }
 }
 

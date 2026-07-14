@@ -133,5 +133,33 @@
     "high": "উচ্চ",
     "low": "নিম্ন",
     "medium": "মাঝারি"
+  },
+  "error_category": {
+    "api_error": "API ত্রুটি",
+    "credential_error": "শংসাপত্র ত্রুটি",
+    "network": "নেটওয়ার্ক",
+    "provider_not_found": "প্রদানকারী পাওয়া যায়নি",
+    "rate_limit": "রেট সীমা",
+    "session_limit": "সেশন সীমা",
+    "timeout": "সময় শেষ",
+    "tool_error": "টুল ত্রুটি",
+    "transient_process_failure": "সাময়িক প্রক্রিয়া ব্যর্থতা",
+    "unknown": "অজানা",
+    "validation": "যাচাইকরণ"
+  },
+  "chain_stop": {
+    "breadth_exceeded": "ফ্যান-আউট সীমা পৌঁছেছে",
+    "budget_exceeded": "খরচের সর্বোচ্চ সীমা পৌঁছেছে",
+    "cas_lost": "অন্য রান দাবি করেছে",
+    "cycle_detected": "চক্র শনাক্ত হয়েছে",
+    "depth_limit": "গভীরতার সীমা",
+    "handoff_suppressed": "হ্যান্ডঅফ দমন করা হয়েছে",
+    "malformed_config": "অবৈধ কনফিগ",
+    "outside_window": "সক্রিয় উইন্ডোর বাইরে",
+    "predicate_unmet": "শর্ত পূরণ হয়নি",
+    "publish_failed": "প্রকাশ ব্যর্থ হয়েছে",
+    "quarantined": "ট্রিগার কোয়ারেন্টাইন করা হয়েছে",
+    "healing_abandoned": "নিরাময় থেমে গেছে",
+    "healing_capped": "নিরাময়ের পুনঃচেষ্টা শেষ"
   }
 }

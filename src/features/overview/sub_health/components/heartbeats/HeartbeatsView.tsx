@@ -7,6 +7,7 @@ import type {
 } from '@/stores/slices/overview/personaHealthSlice';
 import { useHeartbeatsModel, DATA_SOURCE_LABELS } from './model';
 import { VitalsLedger } from './VitalsLedger';
+import { HealingEffectivenessPanel } from './HealingEffectivenessPanel';
 
 // ---------------------------------------------------------------------------
 // Heartbeats view — invariant safety banners + the Vitals Ledger. The ledger
@@ -47,6 +48,8 @@ export function HeartbeatsView({ signals, cascadeLinks, routingRecommendations, 
         cascadeLinks={cascadeLinks}
         routingRecommendations={routingRecommendations}
       />
+
+      <HealingEffectivenessPanel />
     </div>
   );
 }

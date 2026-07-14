@@ -845,6 +845,18 @@ pub(crate) async fn event_bus_tick(
         }
     };
 
+    // Push fan-out burst drain (Direction 3): a FULL batch means more events
+    // are likely still pending, but `Notify` permits coalesce — a 200-event
+    // burst fires many notifies that collapse into ~1 stored permit, so
+    // without re-arming, batches 3+ would wait a whole poll interval each
+    // (~2s per 50 events). Re-arm the wake signal so the scheduler loop runs
+    // the next tick back-to-back until an under-full batch signals the burst
+    // is drained. Claim atomicity (pending→processing above) makes redundant
+    // wakes harmless.
+    if events.len() == 50 {
+        crate::engine::subscription::event_bus_wake_signal().notify_one();
+    }
+
     if events.is_empty() {
         // No pending events — check if any executions are running to set idle mode.
         // This is a cheap query that lets subscriptions reduce their polling cadence.
@@ -2138,6 +2150,24 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         Err(e) => tracing::error!("Event cleanup error: {}", e),
     }
 
+    // Count cap: bound intra-window growth. Age-only cleanup lets a chatty
+    // source balloon the table between daily sweeps, so also trim the oldest
+    // terminal events beyond a hard ceiling. DLQ + in-flight rows are exempt.
+    let max_count = parse_retention_setting(
+        pool,
+        settings_keys::EVENT_RETENTION_MAX_COUNT,
+        settings_keys::EVENT_RETENTION_MAX_COUNT_DEFAULT,
+    );
+    match event_repo::enforce_count_cap(pool, max_count) {
+        Ok(n) if n > 0 => tracing::info!(
+            "Trimmed {} terminal event(s) over the count cap (max={})",
+            n,
+            max_count
+        ),
+        Ok(_) => {}
+        Err(e) => tracing::error!("Event count-cap cleanup error: {}", e),
+    }
+
     // DLQ auto-retry: re-queue failed events that haven't exhausted retries
     let max_retries = event_repo::DEFAULT_MAX_RETRIES;
     match event_repo::get_retry_eligible(pool, max_retries, 20) {
@@ -2239,6 +2269,28 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         ),
         Ok(_) => {}
         Err(e) => tracing::error!("Auto-listener backfill error: {}", e),
+    }
+
+    // Draft-persona TTL sweep: delete abandoned build stubs (lifecycle `draft`,
+    // no execution history) older than `draft_retention_days`. Default 0 =
+    // disabled (opt-in), because deletion is destructive. `sweep_stale_drafts`
+    // routes each candidate through the same `delete_draft_if_safe` guard the
+    // build cancel path uses, so a draft that produced work is never swept.
+    let draft_retention_days = parse_retention_setting(
+        pool,
+        settings_keys::DRAFT_RETENTION_DAYS,
+        settings_keys::DRAFT_RETENTION_DAYS_DEFAULT,
+    );
+    if draft_retention_days > 0 {
+        match crate::db::repos::core::personas::sweep_stale_drafts(pool, draft_retention_days) {
+            Ok(n) if n > 0 => tracing::info!(
+                "Draft sweep: deleted {} abandoned draft persona(s) (retention={}d)",
+                n,
+                draft_retention_days
+            ),
+            Ok(_) => {}
+            Err(e) => tracing::error!("Draft sweep error: {}", e),
+        }
     }
 }
 

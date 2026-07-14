@@ -431,7 +431,10 @@
     "edge_count_other": "{count}エッジ",
     "adoption_count_one": "{count}件の採用",
     "adoption_count_other": "{count}件の採用",
-    "selected": "選択済"
+    "selected": "選択済",
+    "command_palette_create_agent": "新しいエージェントを作成",
+    "command_palette_go_to": "{label}に移動",
+    "command_palette_leaderboard": "エージェントリーダーボード"
   },
   "chrome": {
     "app_title": "Personas",
@@ -483,7 +486,9 @@
       "nav_mode_review": "ヒューマンレビューを切り替え（ナビゲーションモード）",
       "nav_mode_schedules": "スケジュールを切り替え（ナビゲーションモード）",
       "nav_mode_search": "検索を開く（ナビゲーションモード）",
-      "open_title": "キーボードショートカット"
+      "open_title": "キーボードショートカット",
+      "nav_history_back": "戻る",
+      "nav_history_forward": "進む"
     },
     "tray_schedules": "スケジュール",
     "tray_schedules_today": "本日 {count} 件のスケジュール",
@@ -586,6 +591,7 @@
     "mission_control": "ミッションコントロール",
     "factory": "ファクトリー",
     "kpis": "KPI",
+    "studio": "スタジオ",
     "competition": "コンペティション",
     "development": "開発",
     "lifecycle": "ライフサイクル",
@@ -781,6 +787,18 @@
       "personas_tab": "Personas（アニメーション）",
       "lucide_footer": "lucide-react -- 汎用アイコンライブラリ -- 静的",
       "personas_footer": "9つのカスタムアイコン -- ニューラル/サーキットモチーフ -- CSSアニメーション -- テーマ適応"
+    },
+    "since_left": {
+      "alerts": "{count} 件のアラート",
+      "alerts_other": "{count} 件のアラート",
+      "approvals": "{count} 件の承認待ち",
+      "approvals_other": "{count} 件の承認待ち",
+      "dismiss": "閉じる",
+      "failed": "{count} 件失敗",
+      "failed_other": "{count} 件失敗",
+      "runs": "{count} 件の実行",
+      "runs_other": "{count} 件の実行",
+      "title": "前回からの更新"
     }
   },
   "agents": {
@@ -1298,7 +1316,17 @@
       "tab_chain": "チェーン",
       "thinking_tooltip": "この実行が使用した推論エフォート",
       "trace_empty_hint": "詳細なtraceは、ツールを使用する実行および新しい実行に対して記録されます。この実行には表示するtraceがありません。",
-      "verdict_field": "判定"
+      "verdict_field": "判定",
+      "chain_ended_because": "チェーン終了の理由",
+      "chain_total_cost": "チェーンのコスト",
+      "active_chains_agents_one": "{count} エージェント",
+      "active_chains_agents_other": "{count} エージェント",
+      "active_chains_depth": "深さ {count}",
+      "active_chains_hops_one": "{count} ホップ",
+      "active_chains_hops_other": "{count} ホップ",
+      "active_chains_one": "実行中のチェーン {count} 件",
+      "active_chains_other": "実行中のチェーン {count} 件",
+      "active_chains_title": "実行中のチェーン"
     },
     "lab": {
       "mode_arena": "アリーナ",
@@ -1625,7 +1653,9 @@
       "eco_col_resolved": "解決済み",
       "eco_empty": "まだ評価結果がありません — Lab を実行してコスト効率を確認してください。",
       "eco_subtitle": "各モデルが評価をどれだけ解決するか、および各成功のコスト。",
-      "eco_title": "コスト効率"
+      "eco_title": "コスト効率",
+      "vr_col_tokens": "トークン",
+      "vr_tokens_tooltip": "1回の実行あたり平均 入力 {input} / 出力 {output}"
     },
     "design": {
       "select_agent": "デザイン分析を開始するエージェントを選択",
@@ -2621,7 +2651,12 @@
       "delete_agents_message": "{count} 件のエージェントとすべての設定が完全に削除されます。",
       "delete_drafts": "{count} 件の下書きを削除",
       "delete_drafts_message": "{count} 件の下書きエージェントが完全に削除されます。",
-      "system_persona_undeletable": "Director はシステムペルソナであり削除できません。"
+      "system_persona_undeletable": "Director はシステムペルソナであり削除できません。",
+      "archived_done": "{count}件のペルソナをアーカイブしました",
+      "bulk_delete_done": "{deleted}件のペルソナを削除しました",
+      "bulk_delete_failed": "ペルソナの削除に失敗しました",
+      "bulk_delete_partial": "{deleted}件を削除、{skipped}件をスキップしました",
+      "restored_done": "{count}件のペルソナを復元しました"
     },
     "persona_list": {
       "all_personas": "すべてのペルソナ",
@@ -2657,7 +2692,12 @@
       "batch_moved_partial": "{ok} 件を {group} に移動; {failed} 件失敗",
       "render_cap_notice": "{total} 件中 {shown} 件を表示中 — 検索またはフィルタで絞り込んでください。",
       "star_director_add": "スターを付けて Director のコーチング対象に追加",
-      "star_director_remove": "スター付き — Director のコーチング対象です。クリックして解除。"
+      "star_director_remove": "スター付き — Director のコーチング対象です。クリックして解除。",
+      "badge_archived": "アーカイブ済み",
+      "batch_archive": "アーカイブ",
+      "batch_restore": "復元",
+      "show_active_personas": "アクティブなペルソナを表示",
+      "show_archived_personas": "アーカイブ済みのペルソナを表示"
     },
     "editor_ui": {
       "max_budget_label": "最大予算（USD）",
@@ -3509,6 +3549,11 @@
       "activate_agent": "エージェントを有効化",
       "create_agent": "エージェントを作成",
       "min_completeness": "40%の完成度に達するにはさらに詳細を追加"
+    },
+    "duplicate": {
+      "done": "「{name}」として複製しました",
+      "done_with_wiring": "「{name}」として複製しました — {triggers}件のトリガーと{subscriptions}件のサブスクリプションをコピー（コピー側は無効）",
+      "failed": "エージェントを複製できませんでした"
     }
   },
   "vault": {
@@ -4129,7 +4174,37 @@
       "tool_count_other": "{count}個のツール",
       "tab_documents": "ドキュメント",
       "tab_search": "検索",
-      "tab_settings": "設定"
+      "tab_settings": "設定",
+      "page_label": "p. {page}",
+      "pages_label": "{count} ページ",
+      "partial_text_badge": "部分テキスト",
+      "partial_text_tooltip": "この箇所はほぼ画像のページから読み取られたため、不完全な可能性があります。",
+      "scanned_pages_tooltip": "これらのページはテキストレイヤーのない画像のため、内容は検索できません。含めるには OCR 処理済みのコピーを使用してください。",
+      "scanned_pages_warning": "{count} 件のスキャンページが読み取り不可",
+      "extract_add_entity": "タイプを追加",
+      "extract_add_field": "フィールドを追加",
+      "extract_col_attrs": "属性",
+      "extract_col_key": "エンティティ",
+      "extract_col_source": "ソース",
+      "extract_col_type": "タイプ",
+      "extract_empty_kb": "構造化データを抽出する前にドキュメントを追加してください。",
+      "extract_entity_desc_ph": "このオブジェクトが何か",
+      "extract_entity_type_ph": "entity_type",
+      "extract_field_desc_ph": "何を保持するか",
+      "extract_field_name_ph": "フィールド",
+      "extract_infer_btn": "スキーマを提案",
+      "extract_inferring": "コーパスを読み込み中...",
+      "extract_intro": "このナレッジベースをクエリ可能な行に変換します。まずドキュメントが記述するオブジェクトのスキーマを提案し、確認してから抽出します。",
+      "extract_no_entities": "まだエンティティは抽出されていません。開始するにはスキーマを提案してください。",
+      "extract_progress": "{done}/{total} ドキュメント、{count} エンティティを検出",
+      "extract_remove": "削除",
+      "extract_run_btn": "エンティティを抽出",
+      "extract_run_status": "{status} — {count} エンティティ",
+      "extract_running": "抽出中...",
+      "extract_runs_heading": "抽出の実行",
+      "extract_schema_heading": "提案されたスキーマ",
+      "extract_schema_hint": "抽出する前に編集してください — 不要なタイプを削除すると、モデルが残りを補完します。",
+      "tab_extract": "構造化データ"
     },
     "manager": {
       "title": "認証情報",
@@ -6050,7 +6125,9 @@
       "source": "ソース",
       "processed": "処理済み",
       "event_data": "イベントデータ",
-      "error": "エラー"
+      "error": "エラー",
+      "skipped_stat_label": "{skipped} 件スキップ",
+      "skipped_stat_tooltip": "過去 7 日間で {total} 件中 {skipped} 件のイベントに購読者がなくスキップされました（{rate}）。この割合が高い場合、誰も購読していないトリガーがあることを示します。"
     },
     "health": {
       "title": "エージェントヘルス",
@@ -6230,7 +6307,11 @@
       "all_statuses": "すべてのステータス",
       "col_status": "ステータス",
       "col_id": "ID",
-      "execution_label": "実行"
+      "execution_label": "実行",
+      "error_category_by_persona": "エージェント別の主な失敗",
+      "error_category_prior_period": "前期間との比較",
+      "error_category_section_title": "カテゴリ別の失敗",
+      "error_category_total_failures": "失敗の合計"
     },
     "analytics_dashboard": {
       "issues_found": "{count}件の問題が見つかりました",
@@ -6914,7 +6995,32 @@
       "comparison_recommended": "推奨",
       "flow_title": "展開の流れ",
       "timeline_title": "タイムライン",
-      "log_title": "エビデンス"
+      "log_title": "エビデンス",
+      "default_attention_empty": "すべてのペルソナが正常です — 対応が必要なものはありません。",
+      "default_attention_low_trust": "信頼度が低い",
+      "default_attention_paused": "一時停止中",
+      "default_attention_setup": "セットアップが必要",
+      "default_attention_title": "要対応",
+      "default_callout_body": "これはフリートの状態から作成されたスターター表示です。Athena に、あなたが重視することに合わせたコックピットを構成するよう依頼してください — 自動的に置き換わります。",
+      "default_callout_title": "スターターコックピット",
+      "default_roster_title": "あなたのペルソナ",
+      "default_stat_active_personas": "アクティブなペルソナ",
+      "default_stat_executions": "実行数（7日間）",
+      "default_stat_needs_attention": "要対応",
+      "default_stat_success_rate": "成功率",
+      "default_subtitle": "Athena がパーソナライズできるスターター表示 — チャットで自分専用に構成できます。",
+      "default_title": "スターターコックピット",
+      "default_vitals_title": "フリートのバイタル",
+      "empty_example_attention": "「対応が必要なものは何か」",
+      "empty_example_personas": "「ペルソナを表示して」",
+      "empty_hint": "Athena にコックピット表示の構成を依頼してください — {personas} や {attention} をお試しください。",
+      "empty_title": "コックピットが空です",
+      "error_retry": "再試行",
+      "error_title": "コックピットを読み込めませんでした",
+      "subtitle_composed_prefix": "Athena が構成 — 更新",
+      "subtitle_default": "コンパニオン主導のワークスペース",
+      "talk_to_athena": "Athena に話しかける",
+      "unknown_widget": "不明なウィジェット: {kind}"
     },
     "certification": {
       "title": "認定コマンドセンター",
@@ -7359,6 +7465,17 @@
     "day_range_picker": {
       "start_date": "開始日",
       "end_date": "終了日"
+    },
+    "healing_effectiveness": {
+      "attempted": "試行",
+      "confirmed": "確定",
+      "loading": "修復統計を読み込み中…",
+      "no_data": "自動修復の活動はまだありません",
+      "recent_activity": "最近のアクティビティ",
+      "reverted": "取り消し",
+      "success_rate": "成功率",
+      "title": "自己修復",
+      "window_label": "直近"
     }
   },
   "matrix_v3": {
@@ -10126,7 +10243,20 @@
       "empty": "設定の変更はまだ記録されていません。今後の変更はこの一覧に表示されます。",
       "empty_filtered": "現在のカテゴリフィルターに一致するエントリはありません。",
       "before": "変更前",
-      "after": "変更後"
+      "after": "変更後",
+      "categories": {
+        "api_keys": "APIキー",
+        "autonomy": "自律動作",
+        "byom": "BYOM",
+        "config": "一般",
+        "engine": "エンジン",
+        "integrations": "連携",
+        "limits": "上限",
+        "notifications": "通知",
+        "quality_gates": "品質ゲート",
+        "retention": "保持期間",
+        "sync": "クラウド同期"
+      }
     },
     "api_keys": {
       "title": "APIキー",
@@ -10604,7 +10734,61 @@
     "usage_limit_weekly_message": "Claudeの週次使用量の上限に達しました。",
     "usage_limit_weekly_suggestion": "週次制限がリセットされるまで実行は失敗し続けます — スケジュールを一時停止するかプランをアップグレードしてください。",
     "usage_limit_window_message": "Claudeの使用ウィンドウが消費されました。",
-    "usage_limit_window_suggestion": "ウィンドウがリセットされると実行は自動的に再試行されます — 操作は不要です。"
+    "usage_limit_window_suggestion": "ウィンドウがリセットされると実行は自動的に再試行されます — 操作は不要です。",
+    "agent_ir_parse_message": "ビルド出力の形式が不正です。",
+    "agent_ir_parse_suggestion": "「Refine」をクリックして再生成するか、新しいビルドを開始してください。Refineは結果を絞り込みます。",
+    "authorization_required_message": "このツールを実行する前に、あなたの認可が必要です。",
+    "authorization_required_suggestion": "認可ページを開いて同意した後、もう一度お試しください。",
+    "budget_value_invalid_message": "予算の値が無効です。",
+    "budget_value_invalid_suggestion": "ドル予算には正の数を使用してください（例: $5なら5）。",
+    "build_no_agent_ir_message": "ビルドの生成がまだ完了していません。エージェントのプランを組み立て中です。",
+    "build_no_agent_ir_suggestion": "数秒待ってからもう一度お試しください。1分以上続く場合は、より具体的な意図でビルドを再起動してください。",
+    "build_nothing_to_promote_message": "このビルドはまだPromoteできるものを生成していません。",
+    "build_nothing_to_promote_suggestion": "ビルドの生成が終わるまで待つか、「Refine」をクリックして促してください。ウィザードが1分以上停止している場合は再起動してください。",
+    "build_session_disappeared_message": "このビルドセッションは完了前にクリアされました。",
+    "build_session_disappeared_suggestion": "新しいビルドを開始してください。以前の下書きは復元できません。",
+    "build_session_gone_message": "このビルドセッションは期限切れになったか、クリアされました。",
+    "build_session_gone_suggestion": "同じ意図で新しいビルドを開始してください。",
+    "design_result_parse_message": "このペルソナの保存済みデザインデータを解析できませんでした。",
+    "design_result_parse_suggestion": "このペルソナで新しくビルドを実行してください。キャッシュされたデザインは古いアプリバージョンのものです。",
+    "external_service_message": "外部サービスがリクエストを完了できませんでした。",
+    "external_service_suggestion": "サービスの状態と接続を確認してから、もう一度お試しください。",
+    "importance_range_message": "メモリの重要度が範囲外です。",
+    "importance_range_suggestion": "メモリの重要度には1から10までの値を選んでください。",
+    "interval_not_number_message": "ポーリング間隔が有効な数値ではありません。",
+    "interval_not_number_suggestion": "「Refine」を開き、「5分ごと」のような数値のポーリング間隔を指定してください。",
+    "interval_too_fast_message": "ポーリングは1分に1回より高頻度では実行できません。",
+    "interval_too_fast_suggestion": "60秒以上のポーリング間隔を使用してください（300秒/5分が安全なデフォルトです）。「Refine」をクリックして、エージェントに頻度を落とすよう伝えてください。",
+    "invalid_trigger_type_message": "ビルドがランタイムで認識されないトリガータイプを選択しました。",
+    "invalid_trigger_type_suggestion": "「Refine」をクリックし、具体的なトリガー（「スケジュールで」「webhookで」「Xが発生したとき」など）を指定してください。これが繰り返し発生する場合はビルドを再起動してください。",
+    "keyring_lost_message": "セキュアな認証情報ストアが利用できなくなりました。",
+    "keyring_lost_suggestion": "アプリを再起動してください。解決しない場合は、影響を受けた認証情報をVaultに再入力してください。",
+    "max_concurrent_range_message": "同時実行数の上限が範囲外です。",
+    "max_concurrent_range_suggestion": "最大同時実行数を1から、設定画面に表示されているエンジンの上限までの値に設定してください。",
+    "max_turns_range_message": "ターン数の上限が許容範囲外です。",
+    "max_turns_range_suggestion": "最大ターン数を1から50までの値に設定してください。",
+    "name_invalid_message": "ペルソナ名の見直しが必要です。",
+    "name_invalid_suggestion": "短くわかりやすい名前（1〜40文字）を選んで、もう一度お試しください。",
+    "oauth_revoked_message": "この接続の認可は取り消されました。",
+    "oauth_revoked_suggestion": "アカウントを再接続して、アクセス権を再度付与してください。",
+    "polling_url_blocked_message": "このポーリングURLは安全性の理由で拒否されました。",
+    "polling_url_blocked_suggestion": "このURLは内部/プライベートアドレスを指しています。公開到達可能なHTTPS URLを使用するか、トリガーをwebhook + smee.ioに切り替えてください。",
+    "prompt_too_large_message": "エージェントのプロンプトが長すぎます。",
+    "prompt_too_large_suggestion": "「Refine」をクリックしてより簡潔なバージョンを依頼するか、冗長なセクションを削除してください。",
+    "retry_exhausted_message": "複数回の自動リトライ後も失敗し続けました。",
+    "retry_exhausted_suggestion": "しばらく待ってからもう一度お試しください。解決しない場合は、サービスの状態またはエージェントの設定を確認してください。",
+    "schedule_missing_timing_message": "スケジュールトリガーには、cron式かポーリング間隔のいずれかが必要です。",
+    "schedule_missing_timing_suggestion": "「Refine」をクリックして、エージェントの実行タイミングを指定してください（例: 「平日の毎朝8amに」「30分ごとに」）。",
+    "smee_url_invalid_message": "webhookのソースURLはsmee.ioから取得したものである必要があります。",
+    "smee_url_invalid_suggestion": "ブラウザでhttps://smee.io/newを開き、チャンネルURLをコピーしてwebhookソースフィールドに貼り付けてください。",
+    "system_prompt_empty_message": "このペルソナのシステムプロンプトが空です。",
+    "system_prompt_empty_suggestion": "通常はビルドパイプラインがここを自動入力します。ビルドをRefineするか、より具体的な意図で新しいビルドを開始してください。",
+    "timeout_range_message": "タイムアウト値が許容範囲外です。",
+    "timeout_range_suggestion": "1秒からエンジンの上限（通常は30分）までのタイムアウトを選んでください。",
+    "unknown_prompt_field_message": "ビルドがランタイムで認識されないフィールドを出力しました。",
+    "unknown_prompt_field_suggestion": "「Refine」をクリックしてください。新しいビルドは現在のスキーマを使用します。",
+    "webhook_missing_secret_message": "このwebhookトリガーには署名用シークレットがありません。",
+    "webhook_missing_secret_suggestion": "「Promote」を再実行してください。送信時にパイプラインがwebhook_secretを自動生成します。解決しない場合はビルドを再起動してください。"
   },
   "empty_states": {
     "credentials_title": "エージェントの実行には認証情報が必要です",
@@ -11314,6 +11498,34 @@
       "high": "高",
       "low": "低",
       "medium": "中"
+    },
+    "error_category": {
+      "api_error": "APIエラー",
+      "credential_error": "認証情報エラー",
+      "network": "ネットワーク",
+      "provider_not_found": "プロバイダーが見つかりません",
+      "rate_limit": "レート制限",
+      "session_limit": "セッション制限",
+      "timeout": "タイムアウト",
+      "tool_error": "ツールエラー",
+      "transient_process_failure": "一時的なプロセス障害",
+      "unknown": "不明",
+      "validation": "検証"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "ファンアウト上限に到達",
+      "budget_exceeded": "コスト上限に到達",
+      "cas_lost": "別の実行が取得済み",
+      "cycle_detected": "循環を検出",
+      "depth_limit": "深さ上限",
+      "handoff_suppressed": "ハンドオフを抑制",
+      "malformed_config": "無効な設定",
+      "outside_window": "有効期間外",
+      "predicate_unmet": "条件を満たさない",
+      "publish_failed": "発行に失敗",
+      "quarantined": "トリガーを隔離",
+      "healing_abandoned": "自己修復を中止",
+      "healing_capped": "修復リトライ上限"
     }
   },
   "project_overview": {
@@ -11559,7 +11771,16 @@
       "auto_hibernate_desc": "しきい値を超えてアイドル状態のセッションを自動的に休止し、Fleetがフォーカスされていない場合でもプロセスを解放します。「復帰」で再開可能な状態を維持します。Personasが開いている間に実行されます。",
       "auto_hibernate_toggle": "自動休止を有効にする",
       "auto_hibernate_after": "経過後",
-      "auto_hibernate_minutes_unit": "分アイドル"
+      "auto_hibernate_minutes_unit": "分アイドル",
+      "live_slots_desc": "同時に実行する claude プロセス数を制限します。フリートが上限に達すると、最も古いアイドル状態のセッションがハイバネートされて空きが作られます — ウェイクでいつでも再開できます。作業中のセッションが中断されることはありません。",
+      "live_slots_max_label": "最大",
+      "live_slots_title": "ライブセッション数を制限",
+      "live_slots_toggle": "セッション上限を有効化",
+      "live_slots_unit": "件のライブセッション",
+      "headless_badge": "バックグラウンド",
+      "headless_no_terminal": "バックグラウンドセッション — ターミナルなしで実行中。返信は「要対応」バナーから、進捗は Insights に表示されます。",
+      "spawn_headless_hint": "ヘッドレスモード — ライブターミナルなしで、CPU と RAM の負荷を大幅に軽減。返信は「要対応」バナーから、進捗は Insights で確認できます。",
+      "spawn_headless_toggle": "バックグラウンドで実行（ターミナルなし）"
     },
     "title": "プラグイン",
     "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",
@@ -13525,7 +13746,8 @@
       "voice_pocket_upload_save": "音声を追加",
       "voice_pocket_upload_title": "あなたの声を追加",
       "voice_pocket_hf_gate_desc": "自分のクローン音声を管理するには、Credential Vault（認証情報保管庫）に Hugging Face アクセストークンが必要です。これにより、音声クローンモデルのライセンスがあなたのアカウントに紐付けられます。Hugging Face の認証情報を追加してから、こちらに戻ってきてください。",
-      "voice_pocket_hf_gate_title": "Hugging Face アカウントが必要です"
+      "voice_pocket_hf_gate_title": "Hugging Face アカウントが必要です",
+      "persona_overview_kpi_trust_clamped": "信頼スコアが範囲外だったため、100% に制限されました。"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",
@@ -13775,7 +13997,9 @@
       "goal_scaffold_timeline_title": "タイムライン",
       "goal_scaffold_timeline_sub": "目標日付別のゴールを時間軸で表示し、依存関係の矢印とずれマーカーを付けた表示。近日公開。",
       "goal_field_title": "タイトル",
+      "goal_field_title_placeholder": "どのような成果を目指していますか？",
       "goal_field_description": "説明",
+      "goal_field_description_placeholder": "コンテキスト、スコープ、または完了の基準（任意）…",
       "goal_field_status": "ステータス",
       "goal_field_target_date": "目標日",
       "goal_target_asap": "できるだけ早く",
@@ -14481,7 +14705,28 @@
     "beat_sidebar_collapse": "ビートリストを折りたたむ",
     "beat_sidebar_expand": "ビートリストを展開する",
     "beat_sidebar_empty": "まだビートはありません。テキストビートを追加して、タイムライン上のマイルストーンをマークします。",
-    "beat_sidebar_untitled": "(無題)"
+    "beat_sidebar_untitled": "(無題)",
+    "add_title": "タイトルを追加",
+    "entrance": "登場",
+    "entrance_animate": "登場アニメーション",
+    "entrance_down": "下",
+    "entrance_duration": "速度",
+    "entrance_left": "左",
+    "entrance_none": "なし",
+    "entrance_right": "右",
+    "entrance_up": "上",
+    "layer_title": "タイトル",
+    "title_text": "タイトルテキスト",
+    "title_text_placeholder": "タイトルを入力…",
+    "title_untitled": "(タイトルなし)",
+    "voiceover": "ボイスオーバー",
+    "voiceover_added": "ボイスオーバーをタイムラインに追加しました",
+    "voiceover_generate": "ボイスオーバーを生成",
+    "voiceover_generating": "合成中…",
+    "voiceover_not_installed": "ローカル音声エンジンが未インストールです — まずコンパニオンの音声設定でセットアップしてください。",
+    "voiceover_text": "ナレーション",
+    "voiceover_text_placeholder": "ナレーターに話させる内容を入力…",
+    "voiceover_voice": "音声"
   },
   "research_lab": {
     "dashboard": "ダッシュボード",

@@ -38,6 +38,51 @@ use crate::error::AppError;
 /// Prevents infinite cascades from A->B->A or longer cycles.
 const MAX_CHAIN_DEPTH: u32 = 8;
 
+/// Machine tokens for the *why did the chain relay not continue here* audit
+/// (`chain_stop_reasons.reason_token`). Kept open so sibling directions can add
+/// reasons (e.g. `breadth_exceeded` for a fan-out cap) without a schema change;
+/// the frontend resolves each to a label via `status_tokens.chain_stop`.
+pub mod stop_reason {
+    /// The depth ceiling ([`super::MAX_CHAIN_DEPTH`]) was reached.
+    pub const DEPTH_LIMIT: &str = "depth_limit";
+    /// A team-handoff edge was suppressed (DAG owns the flow, or handoffs are
+    /// single-hop and the source is already a chain execution).
+    pub const HANDOFF_SUPPRESSED: &str = "handoff_suppressed";
+    /// The target persona was already visited in this chain (runtime cycle).
+    pub const CYCLE_DETECTED: &str = "cycle_detected";
+    /// The trigger's condition predicate was not satisfied.
+    pub const PREDICATE_UNMET: &str = "predicate_unmet";
+    /// The trigger was outside its active time window.
+    pub const OUTSIDE_WINDOW: &str = "outside_window";
+    /// The trigger config was missing or malformed JSON.
+    pub const MALFORMED_CONFIG: &str = "malformed_config";
+    /// A concurrent evaluator already claimed this fire (CAS lost) — the relay
+    /// still continues via that evaluator, so this is informational.
+    pub const CAS_LOST: &str = "cas_lost";
+    /// mark_triggered failed twice; the trigger was quarantined + dead-lettered.
+    pub const QUARANTINED: &str = "quarantined";
+    /// The event failed to publish after the trigger was marked.
+    pub const PUBLISH_FAILED: &str = "publish_failed";
+    /// The accumulated chain cost hit the configured ceiling (Direction 3).
+    pub const BUDGET_EXCEEDED: &str = "budget_exceeded";
+    /// The chain's fan-out reached the configured link (breadth) ceiling — the
+    /// count of links already spawned under this chain trace hit
+    /// `CHAIN_MAX_LINKS`, so the whole cascade halts before firing further links.
+    pub const BREADTH_EXCEEDED: &str = "breadth_exceeded";
+    /// A self-healing pathway for a chained execution gave up without recovering
+    /// the link: the AI-heal run itself failed, produced no actionable fix, or a
+    /// healing retry failed again with retry budget still remaining. Recorded
+    /// from the engine's healing outcome paths (see `engine::mod`) only when the
+    /// original execution carried a `chain_trace_id`.
+    pub const HEALING_ABANDONED: &str = "healing_abandoned";
+    /// A self-healing retry ladder for a chained execution exhausted its retry
+    /// budget (`healing::MAX_RETRY_COUNT`) without recovering the link — the
+    /// capped counterpart of [`HEALING_ABANDONED`].
+    pub const HEALING_CAPPED: &str = "healing_capped";
+}
+
+use crate::db::repos::execution::chain_stop_reasons::{self, ChainStopReasonInput};
+
 /// Metrics collected during a single cascade evaluation at one hop.
 #[derive(Debug, Clone, Default)]
 pub struct CascadeMetrics {
@@ -96,6 +141,33 @@ pub fn input_is_assignment_step(input: Option<&str>) -> bool {
         .unwrap_or(false)
 }
 
+/// Read the configured chain cost ceiling (USD) from settings. Returns 0.0
+/// (disabled) when unset, empty, non-numeric, non-finite, or negative — so a
+/// malformed row can never accidentally choke every chain. Mirrors the
+/// monthly-ceiling convention where `0` means "no ceiling".
+fn read_chain_cost_ceiling(pool: &DbPool) -> f64 {
+    crate::db::repos::core::settings::get(pool, crate::db::settings_keys::CHAIN_MAX_COST_USD)
+        .ok()
+        .flatten()
+        .and_then(|raw| raw.trim().parse::<f64>().ok())
+        .filter(|c| c.is_finite() && *c >= 0.0)
+        .unwrap_or(crate::db::settings_keys::CHAIN_MAX_COST_USD_DEFAULT)
+}
+
+/// Read the configured chain BREADTH ceiling (max links per chain trace) from
+/// settings. Returns [`CHAIN_MAX_LINKS_DEFAULT`] (a generous always-on net) when
+/// unset, empty, or non-numeric; an explicit `"0"` disables the cap. Unlike the
+/// cost ceiling this defaults to a NON-zero value on purpose — the depth ceiling
+/// is a hard always-on constant, so breadth (the other unbounded axis) gets a
+/// generous default too rather than shipping the guard off.
+fn read_chain_link_ceiling(pool: &DbPool) -> u32 {
+    crate::db::repos::core::settings::get(pool, crate::db::settings_keys::CHAIN_MAX_LINKS)
+        .ok()
+        .flatten()
+        .and_then(|raw| raw.trim().parse::<u32>().ok())
+        .unwrap_or(crate::db::settings_keys::CHAIN_MAX_LINKS_DEFAULT)
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn evaluate_chain_triggers(
     pool: &DbPool,
@@ -107,11 +179,45 @@ pub fn evaluate_chain_triggers(
     visited_personas: &HashSet<String>,
     chain_trace_id: Option<&str>,
     source_is_assignment_step: bool,
+    // Direction 3: USD cost accumulated across every hop of this chain so far,
+    // INCLUDING the just-completed source execution. Rides hop→hop in the event
+    // metadata (`_chain_cost_usd`) and is enforced against `CHAIN_MAX_COST_USD`.
+    chain_cost_usd: f64,
 ) -> CascadeMetrics {
     let hop_start = Instant::now();
     let mut metrics = CascadeMetrics {
         chain_depth,
         ..Default::default()
+    };
+
+    // Best-effort recorder for the "why the relay did not continue here" audit
+    // (chain_stop_reasons). Only records when this hop belongs to a chain trace
+    // (chain_trace_id present) so every reason is queryable per trace. A failed
+    // write is logged and swallowed — an audit gap must never fail a cascade.
+    let record_stop = |trigger_id: Option<&str>,
+                       target_persona_id: Option<&str>,
+                       reason_token: &str,
+                       detail: Option<String>| {
+        if let Some(ctid) = chain_trace_id {
+            if let Err(e) = chain_stop_reasons::record(
+                pool,
+                ChainStopReasonInput {
+                    chain_trace_id: ctid,
+                    link_execution_id: execution_id,
+                    trigger_id,
+                    target_persona_id,
+                    reason_token,
+                    detail,
+                    chain_depth,
+                },
+            ) {
+                tracing::warn!(
+                    reason = reason_token,
+                    error = %e,
+                    "Failed to record chain stop reason (audit only; cascade unaffected)"
+                );
+            }
+        }
     };
 
     if chain_depth >= MAX_CHAIN_DEPTH {
@@ -120,6 +226,14 @@ pub fn evaluate_chain_triggers(
             chain_depth,
             "Chain trigger depth limit reached ({}), refusing to fire further triggers",
             MAX_CHAIN_DEPTH,
+        );
+        record_stop(
+            None,
+            None,
+            stop_reason::DEPTH_LIMIT,
+            Some(format!(
+                "chain depth {chain_depth} reached the limit of {MAX_CHAIN_DEPTH}"
+            )),
         );
         metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
         return metrics;
@@ -142,9 +256,95 @@ pub fn evaluate_chain_triggers(
 
     metrics.triggers_evaluated = chain_triggers.len() as u32;
 
+    // Direction 3: chain COST ceiling. The depth-8 limit bounds hop COUNT; this
+    // is the only brake on runaway SPEND. If the running total (which already
+    // includes the just-completed hop) has reached the configured ceiling, halt
+    // the whole cascade before firing any further link and record a single
+    // budget stop reason. 0 / unset = disabled (parity with monthly ceiling).
+    let cost_ceiling = read_chain_cost_ceiling(pool);
+    if cost_ceiling > 0.0 && chain_cost_usd >= cost_ceiling {
+        tracing::warn!(
+            source_persona_id = %source_persona_id,
+            chain_depth,
+            chain_cost_usd,
+            cost_ceiling,
+            "Chain cost ceiling reached (${:.4} >= ${:.4}); halting cascade",
+            chain_cost_usd,
+            cost_ceiling,
+        );
+        record_stop(
+            None,
+            None,
+            stop_reason::BUDGET_EXCEEDED,
+            Some(format!(
+                "chain cost ${chain_cost_usd:.4} reached the ceiling of ${cost_ceiling:.4}"
+            )),
+        );
+        metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
+        return metrics;
+    }
+
+    // Direction 1: chain fan-out BREADTH ceiling. The depth-8 limit bounds a
+    // chain's path LENGTH; this is the only brake on its WIDTH. One completion
+    // can match many triggers and each match branches again, so a fan-out grows
+    // unbounded across hops even when no single path is deep. We count the links
+    // already spawned under this chain trace (`execution_traces` rows sharing the
+    // `chain_trace_id`, an indexed COUNT) and, once that reaches the configured
+    // ceiling, halt the whole cascade before firing any further link — recording
+    // a single breadth stop reason. Only meaningful when this hop belongs to a
+    // chain trace (no id → nothing to count against, and a run with no trace id
+    // can't be part of a tracked fan-out). `0` / unset conventions live in
+    // [`read_chain_link_ceiling`].
+    if let Some(ctid) = chain_trace_id {
+        let link_ceiling = read_chain_link_ceiling(pool);
+        if link_ceiling > 0 {
+            match crate::db::repos::execution::traces::count_by_chain_trace_id(pool, ctid) {
+                Ok(links_so_far) if links_so_far >= link_ceiling => {
+                    tracing::warn!(
+                        source_persona_id = %source_persona_id,
+                        chain_depth,
+                        chain_trace_id = %ctid,
+                        links_so_far,
+                        link_ceiling,
+                        "Chain breadth ceiling reached ({} >= {}); halting cascade",
+                        links_so_far,
+                        link_ceiling,
+                    );
+                    record_stop(
+                        None,
+                        None,
+                        stop_reason::BREADTH_EXCEEDED,
+                        Some(format!(
+                            "chain already spawned {links_so_far} links, reaching the ceiling of {link_ceiling}"
+                        )),
+                    );
+                    metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
+                    return metrics;
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    // Best-effort: a failed count must never fail the cascade —
+                    // fall through and let the link fire (the depth/cost/cycle
+                    // guards still apply). Logged so a chronic failure surfaces.
+                    tracing::warn!(
+                        chain_trace_id = %ctid,
+                        error = %e,
+                        "Chain breadth count failed; skipping breadth guard for this hop"
+                    );
+                }
+            }
+        }
+    }
+
     for trigger in chain_triggers {
         if !trigger.is_within_active_window(chrono::Utc::now()) {
             tracing::debug!(trigger_id = %trigger.id, "Chain trigger outside active window, skipping");
+            record_stop(
+                Some(&trigger.id),
+                Some(&trigger.persona_id),
+                stop_reason::OUTSIDE_WINDOW,
+                None,
+            );
             continue;
         }
         let config: serde_json::Value = match trigger.config.as_deref() {
@@ -158,6 +358,12 @@ pub fn evaluate_chain_triggers(
                         error = %parse_err,
                         "Chain trigger skipped: config contains malformed JSON"
                     );
+                    record_stop(
+                        Some(&trigger.id),
+                        Some(&trigger.persona_id),
+                        stop_reason::MALFORMED_CONFIG,
+                        Some(format!("config is not valid JSON: {parse_err}")),
+                    );
                     continue;
                 }
             },
@@ -166,6 +372,12 @@ pub fn evaluate_chain_triggers(
                     trigger_id = %trigger.id,
                     persona_id = %trigger.persona_id,
                     "Chain trigger skipped: config is empty"
+                );
+                record_stop(
+                    Some(&trigger.id),
+                    Some(&trigger.persona_id),
+                    stop_reason::MALFORMED_CONFIG,
+                    Some("config is empty".into()),
                 );
                 continue;
             }
@@ -202,6 +414,19 @@ pub fn evaluate_chain_triggers(
                         "handoffs are single-hop — source is already a chain execution"
                     },
                 );
+                record_stop(
+                    Some(&trigger.id),
+                    Some(&trigger.persona_id),
+                    stop_reason::HANDOFF_SUPPRESSED,
+                    Some(
+                        if source_is_assignment_step {
+                            "source execution is an assignment step (the DAG owns multi-step flow)"
+                        } else {
+                            "handoffs are single-hop — source is already a chain execution"
+                        }
+                        .to_string(),
+                    ),
+                );
                 metrics.handoffs_suppressed += 1;
                 continue;
             }
@@ -217,6 +442,15 @@ pub fn evaluate_chain_triggers(
                 "Chain trigger cycle detected: {} already visited, skipping",
                 trigger.persona_id,
             );
+            record_stop(
+                Some(&trigger.id),
+                Some(&trigger.persona_id),
+                stop_reason::CYCLE_DETECTED,
+                Some(format!(
+                    "target persona {} already appeared in this chain",
+                    trigger.persona_id
+                )),
+            );
             metrics.cycles_detected += 1;
             continue;
         }
@@ -227,6 +461,14 @@ pub fn evaluate_chain_triggers(
             tracing::debug!(
                 trigger_id = %trigger.id,
                 "Chain trigger skipped: predicate not satisfied"
+            );
+            record_stop(
+                Some(&trigger.id),
+                Some(&trigger.persona_id),
+                stop_reason::PREDICATE_UNMET,
+                Some(format!(
+                    "condition predicate not satisfied for source status '{execution_status}'"
+                )),
             );
             continue;
         }
@@ -257,6 +499,8 @@ pub fn evaluate_chain_triggers(
                 if let Some(tid) = chain_trace_id {
                     val["_chain_trace_id"] = serde_json::Value::String(tid.to_string());
                 }
+                // Propagate the running chain cost so the next hop accumulates.
+                val["_chain_cost_usd"] = serde_json::json!(chain_cost_usd);
                 val.to_string()
             })
         } else {
@@ -270,6 +514,8 @@ pub fn evaluate_chain_triggers(
             if let Some(tid) = chain_trace_id {
                 val["_chain_trace_id"] = serde_json::Value::String(tid.to_string());
             }
+            // Propagate the running chain cost so the next hop accumulates.
+            val["_chain_cost_usd"] = serde_json::json!(chain_cost_usd);
             Some(val.to_string())
         };
 
@@ -299,6 +545,12 @@ pub fn evaluate_chain_triggers(
                     trigger_id = %trigger.id,
                     "Chain trigger already claimed by a concurrent evaluator (CAS lost); skipping publish"
                 );
+                record_stop(
+                    Some(&trigger.id),
+                    Some(&trigger.persona_id),
+                    stop_reason::CAS_LOST,
+                    Some("a concurrent evaluator already claimed this fire".into()),
+                );
                 continue;
             }
             Err(first_err) => {
@@ -315,6 +567,12 @@ pub fn evaluate_chain_triggers(
                         tracing::debug!(
                             trigger_id = %trigger.id,
                             "Chain trigger claimed by a concurrent evaluator during retry (CAS lost); skipping publish"
+                        );
+                        record_stop(
+                            Some(&trigger.id),
+                            Some(&trigger.persona_id),
+                            stop_reason::CAS_LOST,
+                            Some("a concurrent evaluator claimed this fire during retry".into()),
                         );
                         continue;
                     }
@@ -380,6 +638,15 @@ pub fn evaluate_chain_triggers(
                             );
                         }
 
+                        record_stop(
+                            Some(&trigger.id),
+                            Some(&trigger.persona_id),
+                            stop_reason::QUARANTINED,
+                            Some(format!(
+                                "trigger quarantined + dead-lettered ({error_ctx})"
+                            )),
+                        );
+
                         false
                     }
                 }
@@ -426,6 +693,12 @@ pub fn evaluate_chain_triggers(
                     trigger_id = %trigger.id,
                     "Chain trigger: failed to publish event: {}", e
                 );
+                record_stop(
+                    Some(&trigger.id),
+                    Some(&trigger.persona_id),
+                    stop_reason::PUBLISH_FAILED,
+                    Some(format!("event publish failed: {e}")),
+                );
                 metrics.events_failed += 1;
             }
         }
@@ -451,14 +724,50 @@ pub fn evaluate_chain_triggers(
     metrics
 }
 
+/// Extract the `chain_trace_id` from an execution's runtime *input* JSON,
+/// tolerating the two shapes that input can take on the wire:
+///
+///  1. the RAW chain payload with `_chain_trace_id` at the top level — this is
+///     what a chain event carries and what the `persona_executions` row stores,
+///     and
+///  2. the event-bus WRAPPED shape `{"_event": …, "payload": <raw>}` that
+///     `start_execution` receives from `background.rs` — here the id lives one
+///     level down at `payload._chain_trace_id`.
+///
+/// The trace stamper reads the runtime input (shape 2 for event-bus-dispatched
+/// runs), so a top-level-only read returned `NULL` and every downstream hop's
+/// trace was saved with no `chain_trace_id` — the chain never grouped and the
+/// Chain tab showed 'partial'. Checking both places closes that gap without
+/// touching the propagation path (`extract_chain_metadata` still reads the raw
+/// row at completion). Returns `None` when absent in both.
+pub fn chain_trace_id_from_input(input: &serde_json::Value) -> Option<String> {
+    input
+        .get("_chain_trace_id")
+        .and_then(|t| t.as_str())
+        .or_else(|| {
+            input
+                .get("payload")
+                .and_then(|p| p.get("_chain_trace_id"))
+                .and_then(|t| t.as_str())
+        })
+        .map(String::from)
+}
+
 /// Extract chain depth and visited set from a chain trigger payload.
 ///
 /// When a chain trigger fires, it embeds `_chain_depth` and `_chain_visited`
 /// in the event payload. This function extracts them so the next execution
 /// can propagate cycle-detection state.
-pub fn extract_chain_metadata(payload: Option<&str>) -> (u32, HashSet<String>, Option<String>) {
+///
+/// The returned tuple is `(chain_depth, visited_personas, chain_trace_id,
+/// chain_cost_usd)`. `chain_cost_usd` is the USD cost accumulated across every
+/// hop that has run so far in this chain (0.0 when absent — a fresh chain or a
+/// pre-budget-propagation payload).
+pub fn extract_chain_metadata(
+    payload: Option<&str>,
+) -> (u32, HashSet<String>, Option<String>, f64) {
     let Some(payload) = payload else {
-        return (0, HashSet::new(), None);
+        return (0, HashSet::new(), None, 0.0);
     };
     let Ok(val) = serde_json::from_str::<serde_json::Value>(payload) else {
         tracing::warn!(
@@ -467,7 +776,7 @@ pub fn extract_chain_metadata(payload: Option<&str>) -> (u32, HashSet<String>, O
             "Chain metadata extraction failed: payload is not valid JSON — \
              chain_trace_id will be lost and downstream executions will create orphaned trace roots"
         );
-        return (0, HashSet::new(), None);
+        return (0, HashSet::new(), None, 0.0);
     };
     let depth = val
         .get("_chain_depth")
@@ -486,7 +795,14 @@ pub fn extract_chain_metadata(payload: Option<&str>) -> (u32, HashSet<String>, O
         .get("_chain_trace_id")
         .and_then(|t| t.as_str())
         .map(String::from);
-    (depth, visited, chain_trace_id)
+    // Accumulated chain cost (Direction 3). Absent on fresh chains and on
+    // payloads minted before budget propagation shipped → treated as 0.0.
+    let chain_cost_usd = val
+        .get("_chain_cost_usd")
+        .and_then(|c| c.as_f64())
+        .filter(|c| c.is_finite() && *c >= 0.0)
+        .unwrap_or(0.0);
+    (depth, visited, chain_trace_id, chain_cost_usd)
 }
 
 // =============================================================================
@@ -909,19 +1225,21 @@ mod tests {
 
     #[test]
     fn test_extract_chain_metadata_none() {
-        let (depth, visited, trace_id) = extract_chain_metadata(None);
+        let (depth, visited, trace_id, cost) = extract_chain_metadata(None);
         assert_eq!(depth, 0);
         assert!(visited.is_empty());
         assert!(trace_id.is_none());
+        assert_eq!(cost, 0.0);
     }
 
     #[test]
     fn test_extract_chain_metadata_no_fields() {
         let payload = r#"{"source_persona_id": "abc"}"#;
-        let (depth, visited, trace_id) = extract_chain_metadata(Some(payload));
+        let (depth, visited, trace_id, cost) = extract_chain_metadata(Some(payload));
         assert_eq!(depth, 0);
         assert!(visited.is_empty());
         assert!(trace_id.is_none());
+        assert_eq!(cost, 0.0);
     }
 
     #[test]
@@ -930,24 +1248,55 @@ mod tests {
             "source_persona_id": "abc",
             "_chain_depth": 3,
             "_chain_visited": ["persona-a", "persona-b", "persona-c"],
-            "_chain_trace_id": "trace-abc-123"
+            "_chain_trace_id": "trace-abc-123",
+            "_chain_cost_usd": 0.42
         })
         .to_string();
-        let (depth, visited, trace_id) = extract_chain_metadata(Some(&payload));
+        let (depth, visited, trace_id, cost) = extract_chain_metadata(Some(&payload));
         assert_eq!(depth, 3);
         assert_eq!(visited.len(), 3);
         assert!(visited.contains("persona-a"));
         assert!(visited.contains("persona-b"));
         assert!(visited.contains("persona-c"));
         assert_eq!(trace_id.as_deref(), Some("trace-abc-123"));
+        assert_eq!(cost, 0.42);
     }
 
     #[test]
     fn test_extract_chain_metadata_invalid_json() {
-        let (depth, visited, trace_id) = extract_chain_metadata(Some("not json"));
+        let (depth, visited, trace_id, cost) = extract_chain_metadata(Some("not json"));
         assert_eq!(depth, 0);
         assert!(visited.is_empty());
         assert!(trace_id.is_none());
+        assert_eq!(cost, 0.0);
+    }
+
+    #[test]
+    fn test_chain_trace_id_from_input_raw_top_level() {
+        // Shape 1: raw chain payload with the id at the top level.
+        let raw = json!({ "_chain_trace_id": "trace-1", "source_persona_id": "p" });
+        assert_eq!(chain_trace_id_from_input(&raw).as_deref(), Some("trace-1"));
+    }
+
+    #[test]
+    fn test_chain_trace_id_from_input_wrapped() {
+        // Shape 2: event-bus wrapped `{_event, payload}` — the id is nested.
+        let wrapped = json!({
+            "_event": { "event_type": "chain_triggered", "source_type": "chain" },
+            "payload": { "_chain_trace_id": "trace-2", "_chain_depth": 1 }
+        });
+        assert_eq!(
+            chain_trace_id_from_input(&wrapped).as_deref(),
+            Some("trace-2")
+        );
+    }
+
+    #[test]
+    fn test_chain_trace_id_from_input_absent() {
+        let none = json!({ "_event": {}, "payload": { "foo": "bar" } });
+        assert!(chain_trace_id_from_input(&none).is_none());
+        let empty = json!({});
+        assert!(chain_trace_id_from_input(&empty).is_none());
     }
 
     // =========================================================================
@@ -977,6 +1326,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap()
@@ -1084,7 +1434,7 @@ mod tests {
 
         let visited = HashSet::new();
         let metrics =
-            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 0, &visited, None, false);
+            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 0, &visited, None, false, 0.0);
 
         assert_eq!(metrics.chain_depth, 0);
         assert_eq!(metrics.triggers_evaluated, 0);
@@ -1130,6 +1480,7 @@ mod tests {
             &visited,
             Some("trace-1"),
             false,
+            0.0,
         );
 
         assert_eq!(metrics.chain_depth, 0);
@@ -1191,7 +1542,7 @@ mod tests {
         // Source is an assignment step → handoff suppressed, normal fires.
         let visited = HashSet::new();
         let metrics = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-1", 0, &visited, None, true,
+            &pool, &a, "completed", None, "exec-1", 0, &visited, None, true, 0.0,
         );
         assert_eq!(metrics.triggers_evaluated, 2);
         assert_eq!(metrics.handoffs_suppressed, 1);
@@ -1199,7 +1550,7 @@ mod tests {
 
         // Source is NOT a step → both fire, nothing suppressed.
         let metrics2 = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-2", 0, &visited, None, false,
+            &pool, &a, "completed", None, "exec-2", 0, &visited, None, false, 0.0,
         );
         assert_eq!(metrics2.handoffs_suppressed, 0);
         assert_eq!(metrics2.events_published, 2);
@@ -1207,7 +1558,7 @@ mod tests {
         // T3: handoffs are single-hop — a chain execution (depth ≥ 1) does not
         // fire further handoffs, but normal chain triggers still cascade.
         let metrics3 = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-3", 1, &visited, None, false,
+            &pool, &a, "completed", None, "exec-3", 1, &visited, None, false, 0.0,
         );
         assert_eq!(metrics3.handoffs_suppressed, 1);
         assert_eq!(metrics3.events_published, 1);
@@ -1254,7 +1605,7 @@ mod tests {
         let visited = HashSet::new();
         // Execution failed, so predicate should not match
         let metrics =
-            evaluate_chain_triggers(&pool, &a, "failed", None, "exec-1", 0, &visited, None, false);
+            evaluate_chain_triggers(&pool, &a, "failed", None, "exec-1", 0, &visited, None, false, 0.0);
 
         assert_eq!(metrics.triggers_evaluated, 1);
         assert_eq!(metrics.predicates_matched, 0);
@@ -1289,7 +1640,7 @@ mod tests {
         let mut visited = HashSet::new();
         visited.insert(b.clone());
         let metrics =
-            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 1, &visited, None, false);
+            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 1, &visited, None, false, 0.0);
 
         assert_eq!(metrics.chain_depth, 1);
         assert_eq!(metrics.triggers_evaluated, 1);
@@ -1314,10 +1665,454 @@ mod tests {
             &visited,
             None,
             false,
+            0.0,
         );
 
         assert_eq!(metrics.chain_depth, MAX_CHAIN_DEPTH);
         assert_eq!(metrics.triggers_evaluated, 0);
         assert_eq!(metrics.events_published, 0);
+    }
+
+    // =========================================================================
+    // Stop-reason recording tests (Direction 2) — every non-continuation path
+    // writes a queryable chain_stop_reasons row when a chain_trace_id is set.
+    // =========================================================================
+
+    fn stop_tokens(pool: &crate::db::DbPool, chain_trace_id: &str) -> Vec<String> {
+        chain_stop_reasons::get_by_chain_trace_id(pool, chain_trace_id)
+            .unwrap()
+            .into_iter()
+            .map(|r| r.reason_token)
+            .collect()
+    }
+
+    #[test]
+    fn test_stop_reason_depth_limit_recorded() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let visited = HashSet::new();
+        evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            MAX_CHAIN_DEPTH,
+            &visited,
+            Some("trace-depth"),
+            false,
+            0.0,
+        );
+        assert_eq!(stop_tokens(&pool, "trace-depth"), vec![stop_reason::DEPTH_LIMIT]);
+    }
+
+    #[test]
+    fn test_stop_reason_none_recorded_without_trace_id() {
+        // No chain_trace_id → nothing is recorded (audit is per-trace only).
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let visited = HashSet::new();
+        evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            MAX_CHAIN_DEPTH,
+            &visited,
+            None,
+            false,
+            0.0,
+        );
+        // Nothing is queryable (there is no trace id to query by).
+        assert!(chain_stop_reasons::get_by_chain_trace_id(&pool, "trace-depth")
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
+    fn test_stop_reason_cycle_detected_recorded() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+
+        let mut visited = HashSet::new();
+        visited.insert(b.clone());
+        evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            1,
+            &visited,
+            Some("trace-cycle"),
+            false,
+            0.0,
+        );
+        assert_eq!(
+            stop_tokens(&pool, "trace-cycle"),
+            vec![stop_reason::CYCLE_DETECTED]
+        );
+    }
+
+    #[test]
+    fn test_stop_reason_predicate_unmet_recorded() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        let config = json!({
+            "source_persona_id": a,
+            "condition": { "type": "success" },
+        })
+        .to_string();
+        trigger_repo::create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: b.clone(),
+                trigger_type: "chain".into(),
+                config: Some(config),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let visited = HashSet::new();
+        // failed status → success predicate not met.
+        evaluate_chain_triggers(
+            &pool,
+            &a,
+            "failed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-pred"),
+            false,
+            0.0,
+        );
+        assert_eq!(
+            stop_tokens(&pool, "trace-pred"),
+            vec![stop_reason::PREDICATE_UNMET]
+        );
+    }
+
+    #[test]
+    fn test_stop_reason_handoff_suppressed_recorded() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        let handoff_config = json!({
+            "source_persona_id": a,
+            "event_type": format!("team_handoff.{b}"),
+            "condition": { "type": "success" },
+        })
+        .to_string();
+        trigger_repo::create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: b.clone(),
+                trigger_type: "chain".into(),
+                config: Some(handoff_config),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let visited = HashSet::new();
+        // Source is an assignment step → handoff suppressed.
+        evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-handoff"),
+            true,
+            0.0,
+        );
+        assert_eq!(
+            stop_tokens(&pool, "trace-handoff"),
+            vec![stop_reason::HANDOFF_SUPPRESSED]
+        );
+    }
+
+    #[test]
+    fn test_stop_reason_none_when_link_fires() {
+        // A trigger that actually fires records NO stop reason.
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        let config = json!({
+            "source_persona_id": a,
+            "condition": { "type": "success" },
+        })
+        .to_string();
+        trigger_repo::create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: b.clone(),
+                trigger_type: "chain".into(),
+                config: Some(config),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-fires"),
+            false,
+            0.0,
+        );
+        assert_eq!(metrics.events_published, 1);
+        assert!(stop_tokens(&pool, "trace-fires").is_empty());
+    }
+
+    // =========================================================================
+    // Chain budget propagation tests (Direction 3)
+    // =========================================================================
+
+    #[test]
+    fn test_chain_budget_disabled_by_default() {
+        // No CHAIN_MAX_COST_USD set → even a huge accumulated cost still fires.
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-b1"),
+            false,
+            999.0,
+        );
+        assert_eq!(metrics.events_published, 1);
+        assert!(stop_tokens(&pool, "trace-b1").is_empty());
+    }
+
+    #[test]
+    fn test_chain_budget_ceiling_halts_with_stop_reason() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        crate::db::repos::core::settings::set(
+            &pool,
+            crate::db::settings_keys::CHAIN_MAX_COST_USD,
+            "1.0",
+        )
+        .unwrap();
+        let visited = HashSet::new();
+        // Accumulated cost 2.0 >= ceiling 1.0 → halt before firing any link.
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-b2"),
+            false,
+            2.0,
+        );
+        assert_eq!(metrics.events_published, 0);
+        assert_eq!(metrics.triggers_evaluated, 1);
+        assert_eq!(
+            stop_tokens(&pool, "trace-b2"),
+            vec![stop_reason::BUDGET_EXCEEDED]
+        );
+    }
+
+    #[test]
+    fn test_chain_budget_under_ceiling_fires() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        crate::db::repos::core::settings::set(
+            &pool,
+            crate::db::settings_keys::CHAIN_MAX_COST_USD,
+            "10.0",
+        )
+        .unwrap();
+        let visited = HashSet::new();
+        // 2.0 < 10.0 → fires normally.
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-b2b"),
+            false,
+            2.0,
+        );
+        assert_eq!(metrics.events_published, 1);
+        assert!(stop_tokens(&pool, "trace-b2b").is_empty());
+    }
+
+    #[test]
+    fn test_chain_cost_embedded_in_published_payload() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-b3"),
+            false,
+            0.5,
+        );
+        assert_eq!(metrics.events_published, 1);
+        let events = event_repo::get_pending(&pool, Some(10), None).unwrap();
+        let ev = events
+            .iter()
+            .find(|e| e.target_persona_id.as_deref() == Some(b.as_str()))
+            .expect("the fired chain event should be pending");
+        let payload: serde_json::Value =
+            serde_json::from_str(ev.payload.as_deref().unwrap()).unwrap();
+        // Cost rides the metadata, alongside the chain trace id.
+        assert_eq!(
+            payload.get("_chain_cost_usd").and_then(|c| c.as_f64()),
+            Some(0.5)
+        );
+        assert_eq!(
+            payload.get("_chain_trace_id").and_then(|t| t.as_str()),
+            Some("trace-b3")
+        );
+    }
+
+    // =========================================================================
+    // Chain fan-out breadth guard tests (Direction 1)
+    // =========================================================================
+
+    /// Insert `n` execution_traces rows sharing `chain_trace_id` to simulate a
+    /// chain that has already spawned `n` links.
+    fn seed_chain_links(pool: &crate::db::DbPool, chain_trace_id: &str, n: usize) {
+        use crate::engine::trace::ExecutionTrace;
+        for i in 0..n {
+            let trace = ExecutionTrace {
+                trace_id: format!("t-{chain_trace_id}-{i}"),
+                execution_id: format!("e-{chain_trace_id}-{i}"),
+                persona_id: "p".into(),
+                chain_trace_id: Some(chain_trace_id.to_string()),
+                spans: Vec::new(),
+                total_duration_ms: Some(1),
+                evicted_span_count: 0,
+                created_at: format!("2026-07-10T00:00:{:02}Z", i % 60),
+            };
+            crate::db::repos::execution::traces::save(pool, &trace).unwrap();
+        }
+    }
+
+    fn set_max_links(pool: &crate::db::DbPool, value: &str) {
+        crate::db::repos::core::settings::set(
+            pool,
+            crate::db::settings_keys::CHAIN_MAX_LINKS,
+            value,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn test_chain_breadth_disabled_by_explicit_zero() {
+        // Explicit "0" disables the cap even with a huge number of prior links.
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        set_max_links(&pool, "0");
+        seed_chain_links(&pool, "trace-br0", 100);
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br0"), false, 0.0,
+        );
+        assert_eq!(metrics.events_published, 1);
+        assert!(stop_tokens(&pool, "trace-br0").is_empty());
+    }
+
+    #[test]
+    fn test_chain_breadth_ceiling_halts_with_stop_reason() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        set_max_links(&pool, "2");
+        // 2 links already spawned → at the ceiling → halt before firing.
+        seed_chain_links(&pool, "trace-br1", 2);
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br1"), false, 0.0,
+        );
+        assert_eq!(metrics.events_published, 0);
+        // Breadth is a whole-cascade halt evaluated right after the triggers are
+        // loaded/counted (co-located with the budget halt), so triggers_evaluated
+        // reflects the loaded set but nothing is published.
+        assert_eq!(metrics.triggers_evaluated, 1);
+        assert_eq!(
+            stop_tokens(&pool, "trace-br1"),
+            vec![stop_reason::BREADTH_EXCEEDED]
+        );
+    }
+
+    #[test]
+    fn test_chain_breadth_under_ceiling_fires() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        set_max_links(&pool, "5");
+        seed_chain_links(&pool, "trace-br2", 2); // 2 < 5 → fires
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br2"), false, 0.0,
+        );
+        assert_eq!(metrics.events_published, 1);
+        assert!(stop_tokens(&pool, "trace-br2").is_empty());
+    }
+
+    #[test]
+    fn test_chain_breadth_default_generous_does_not_trip_small_chains() {
+        // No CHAIN_MAX_LINKS row → default (50). A handful of links still fires.
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        seed_chain_links(&pool, "trace-br3", 3);
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-br3"), false, 0.0,
+        );
+        assert_eq!(metrics.events_published, 1);
+        assert!(stop_tokens(&pool, "trace-br3").is_empty());
     }
 }

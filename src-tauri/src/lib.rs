@@ -1005,6 +1005,46 @@ pub fn run() {
             #[cfg(feature = "ml")]
             st.checkpoint("vector_kb_init");
 
+            // Task-relevant memory recall (MEMORY CONTRACT (7)): register the
+            // embedder + vec-registered user-DB pool so the runner's recall
+            // path and the memory repo's embed-on-write hooks can reach them
+            // without threading new parameters through every execution entry
+            // point. Then run the idempotent embedding backfill in gentle
+            // batches (delayed past boot; loops until no un-embedded,
+            // recall-eligible memory remains — each batch is diffed against
+            // the vec table, so restarts/repeat runs are safe).
+            #[cfg(feature = "ml")]
+            {
+                engine::memory_recall::init_task_recall_runtime(
+                    user_db_pool.clone(),
+                    embedding_manager.clone(),
+                );
+                let bf_main = pool.clone();
+                let bf_vec = user_db_pool.clone();
+                let bf_emb = embedding_manager.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(90)).await;
+                    loop {
+                        match db::repos::core::memories::backfill_memory_embeddings(
+                            &bf_main, &bf_vec, &bf_emb, 64,
+                        )
+                        .await
+                        {
+                            Ok(0) => break,
+                            Ok(n) => {
+                                tracing::info!(embedded = n, "memory embedding backfill: batch done");
+                                tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+                            }
+                            Err(e) => {
+                                tracing::warn!(error = %e, "memory embedding backfill stopped (next launch retries)");
+                                break;
+                            }
+                        }
+                    }
+                });
+                st.checkpoint("memory_recall_runtime");
+            }
+
             // Reconcile orphaned KB records left by crashes during creation
             #[cfg(feature = "ml")]
             {
@@ -1640,6 +1680,9 @@ pub fn run() {
             commands::core::personas::duplicate_persona,
             commands::core::personas::persona_blast_radius,
             commands::core::personas::delete_persona,
+            commands::core::personas::archive_persona,
+            commands::core::personas::restore_persona,
+            commands::core::personas::bulk_delete_personas,
             commands::core::personas::get_persona_summaries,
             commands::core::personas::get_persona_detail,
             commands::core::personas::list_personas_using_connector,
@@ -1748,6 +1791,8 @@ pub fn run() {
             commands::execution::executions::get_execution_log_lines,
             commands::execution::executions::get_execution_trace,
             commands::execution::executions::get_chain_trace,
+            commands::execution::executions::get_chain_stop_reasons,
+            commands::execution::executions::list_active_chains,
             commands::execution::executions::get_dream_replay,
             commands::execution::executions::get_circuit_breaker_status,
             commands::execution::executions::preview_execution,
@@ -1861,6 +1906,7 @@ pub fn run() {
             commands::execution::healing::trigger_ai_healing,
             commands::execution::healing::get_healing_timeline,
             commands::execution::healing::list_healing_audit_log,
+            commands::execution::healing::get_healing_effectiveness,
             // Execution -- Knowledge Graph
             commands::execution::knowledge::list_execution_knowledge,
             commands::execution::knowledge::get_knowledge_injection,
@@ -2251,6 +2297,8 @@ pub fn run() {
             commands::communication::events::list_events_in_range,
             commands::communication::events::search_events,
             commands::communication::events::publish_event,
+            commands::communication::events::list_known_event_types,
+            commands::communication::events::get_event_skipped_stats,
             commands::communication::events::list_subscriptions,
             commands::communication::events::list_all_subscriptions,
             commands::communication::events::create_subscription,
@@ -2297,6 +2345,7 @@ pub fn run() {
             commands::communication::observability::metrics::get_metrics_summary,
             commands::communication::observability::metrics::get_metrics_chart_data,
             commands::communication::observability::metrics::get_value_rollup,
+            commands::communication::observability::metrics::get_error_category_breakdown,
             commands::communication::observability::metrics::get_all_monthly_spend,
             commands::communication::observability::metrics::get_overview_bundle,
             commands::communication::observability::metrics::get_prompt_performance,
@@ -2541,6 +2590,9 @@ pub fn run() {
             commands::artist::transcribe::artist_transcribe_media,
             commands::artist::transcribe::artist_transcribe_providers_available,
             commands::artist::transcribe::artist_check_local_whisper,
+            commands::artist::voiceover::artist_synthesize_voiceover,
+            commands::artist::voiceover::artist_list_voiceover_voices,
+            commands::artist::voiceover::artist_voiceover_status,
             commands::artist::transcribe::artist_load_transcript,
             // Dev Tools -- Skill Files (browser/editor)
             commands::infrastructure::skill_files::skill_files_list,
@@ -3306,6 +3358,16 @@ pub fn run() {
             #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_list_documents,
             #[cfg(feature = "ml")]
+            commands::credentials::vector_kb::kb_corpus_map,
+            #[cfg(feature = "ml")]
+            commands::credentials::vector_kb::kb_infer_schema,
+            #[cfg(feature = "ml")]
+            commands::credentials::vector_kb::kb_run_extraction,
+            #[cfg(feature = "ml")]
+            commands::credentials::vector_kb::kb_list_extraction_runs,
+            #[cfg(feature = "ml")]
+            commands::credentials::vector_kb::kb_list_entities,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_delete_document,
             // Radio
             commands::radio::radio_list_stations,
@@ -3336,7 +3398,9 @@ pub fn run() {
             commands::fleet::commands::fleet_rename_session,
             commands::fleet::commands::fleet_hibernate_session,
             commands::fleet::commands::fleet_wake_session,
+            commands::fleet::commands::fleet_spawn_headless_session,
             commands::fleet::commands::fleet_set_auto_hibernate,
+            commands::fleet::commands::fleet_set_live_slots,
             commands::fleet::commands::fleet_set_state_cutoffs,
             commands::fleet::transcript_read::fleet_read_transcript,
             commands::fleet::transcript_read::fleet_recent_transcripts,

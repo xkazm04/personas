@@ -29,6 +29,7 @@ import { AppKeyboardProvider, useAppKeyboard } from "@/lib/keyboard/AppKeyboardP
 import ShortcutCheatSheet from "@/lib/keyboard/ShortcutCheatSheet";
 import WorkspaceShortcuts from "@/lib/keyboard/WorkspaceShortcuts";
 import KeyboardNavMode from "@/lib/keyboard/KeyboardNavMode";
+import NavHistoryShortcuts from "@/lib/keyboard/NavHistoryShortcuts";
 import { ModalStackProvider } from "@/lib/ui/ModalStackContext";
 import { CARD_PADDING, TOOLS_BTN_COMPACT } from "@/lib/utils/designTokens";
 import { lazyRetry } from "@/lib/lazyRetry";
@@ -308,6 +309,7 @@ export default function App() {
         <ShortcutCheatSheet />
         <WorkspaceShortcuts />
         <KeyboardNavMode />
+        <NavHistoryShortcuts />
         <MotionConfig reducedMotion={isDocumentVisible ? "user" : "always"}>
           <AriaLiveProvider>
         <div

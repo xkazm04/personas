@@ -4,7 +4,7 @@ use tauri::{AppHandle, State};
 use ts_rs::TS;
 
 use crate::db::models::{
-    CreatePersonaInput, Persona, PersonaAutomation, PersonaEventSubscription,
+    BulkDeleteOutcome, CreatePersonaInput, Persona, PersonaAutomation, PersonaEventSubscription,
     PersonaSummary, PersonaTeam, PersonaToolDefinition, PersonaTrigger, UpdateExecutionStatus,
     UpdatePersonaInput,
 };
@@ -24,10 +24,51 @@ use personas_macros::requires;
 use crate::validation::persona as pv;
 use crate::AppState;
 
+/// List personas, optionally filtered to a set of lifecycle stages. `None`
+/// (the default, back-compat) returns every persona; the roster's Archived view
+/// passes `["archived"]`, the default view can pass `["active","draft"]`.
 #[tauri::command]
 #[requires(auth)]
-pub fn list_personas(state: State<'_, Arc<AppState>>) -> Result<Vec<Persona>, AppError> {
-    repo::get_all(&state.db)
+pub fn list_personas(
+    state: State<'_, Arc<AppState>>,
+    lifecycle: Option<Vec<String>>,
+) -> Result<Vec<Persona>, AppError> {
+    // Lean roster projection: list-view columns only (heavy editor-only blobs
+    // blank). The editor re-hydrates full fidelity via `get_persona_detail`.
+    match lifecycle {
+        Some(stages) if !stages.is_empty() => {
+            let refs: Vec<&str> = stages.iter().map(|s| s.as_str()).collect();
+            repo::get_all_by_lifecycle_lean(&state.db, &refs)
+        }
+        _ => repo::get_all_lean(&state.db),
+    }
+}
+
+/// Archive a persona: move it to lifecycle `archived` (preserving ALL history —
+/// no cascade). Blocked for system-origin personas. Returns the updated row.
+#[tauri::command]
+#[requires(auth)]
+pub fn archive_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Persona, AppError> {
+    repo::archive_persona(&state.db, &id)
+}
+
+/// Restore an archived persona back to lifecycle `active`. Returns the updated row.
+#[tauri::command]
+#[requires(auth)]
+pub fn restore_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Persona, AppError> {
+    repo::restore_persona(&state.db, &id)
+}
+
+/// Bulk-delete personas in one IPC, returning a per-id outcome
+/// (`deleted` | `protected` | `failed`). Replaces the frontend's N sequential
+/// `delete_persona` calls for the "delete drafts" / batch-delete paths.
+#[tauri::command]
+#[requires(auth)]
+pub fn bulk_delete_personas(
+    state: State<'_, Arc<AppState>>,
+    ids: Vec<String>,
+) -> Result<Vec<BulkDeleteOutcome>, AppError> {
+    repo::bulk_delete_personas(&state.db, &ids)
 }
 
 #[tauri::command]
@@ -404,30 +445,55 @@ pub fn sync_capability_parameters(
     Ok(result)
 }
 
+/// Result of duplicating a persona: the new persona plus an honest account of
+/// what its wiring copy did. `triggers`/`subscriptions` are cloned onto the
+/// copy **disabled**; `automations`/`tools`/`credentialLinks` are shared or
+/// skipped (reported, not cloned) so the duplicate flow can tell the user
+/// exactly what carried over.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DuplicatePersonaResult {
+    #[serde(flatten)]
+    pub persona: Persona,
+    pub triggers_copied: usize,
+    pub subscriptions_copied: usize,
+    pub automations_skipped: usize,
+    pub tools_shared: usize,
+    pub credential_links_shared: usize,
+}
+
 #[tauri::command]
 #[requires(auth)]
 pub fn duplicate_persona(
     state: State<'_, Arc<AppState>>,
     source_id: String,
-) -> Result<Persona, AppError> {
-    let result = repo::duplicate(&state.db, &source_id)?;
+) -> Result<DuplicatePersonaResult, AppError> {
+    let (persona, summary) = repo::duplicate(&state.db, &source_id)?;
 
     // Validate the duplicated persona against current rules. The source may
     // pre-date stricter validation, and the " (Copy)" suffix could push the
     // name beyond limits. Log warnings but don't fail the duplication.
     let mut warnings = Vec::new();
-    warnings.extend(pv::validate_name(&result.name));
-    warnings.extend(pv::validate_system_prompt(&result.system_prompt));
+    warnings.extend(pv::validate_name(&persona.name));
+    warnings.extend(pv::validate_system_prompt(&persona.system_prompt));
     if !warnings.is_empty() {
         tracing::warn!(
             source_id = %source_id,
-            new_id = %result.id,
+            new_id = %persona.id,
             warnings = ?warnings,
             "Duplicated persona has validation warnings against current rules"
         );
     }
 
-    Ok(result)
+    Ok(DuplicatePersonaResult {
+        persona,
+        triggers_copied: summary.triggers_copied,
+        subscriptions_copied: summary.subscriptions_copied,
+        automations_skipped: summary.automations_skipped,
+        tools_shared: summary.tools_shared,
+        credential_links_shared: summary.credential_links_shared,
+    })
 }
 
 #[tauri::command]
@@ -568,6 +634,22 @@ pub fn persona_blast_radius(
         .collect())
 }
 
+/// Reason a persona must not be deleted, or `None` when deletion is allowed.
+/// System-origin personas (e.g. the Director) are protected. Kept as a pure,
+/// side-effect-free function so the most safety-critical guard on the delete
+/// path is unit-testable without constructing the full `AppState`/`AppHandle`
+/// the `delete_persona` command otherwise requires.
+fn deletion_forbidden_reason(persona: &Persona) -> Option<String> {
+    if persona.trust_origin == crate::db::models::PersonaTrustOrigin::System {
+        Some(format!(
+            "'{}' is a system persona and cannot be deleted.",
+            persona.name
+        ))
+    } else {
+        None
+    }
+}
+
 /// Maximum time to wait for engine slots to clear during persona deletion.
 const DELETION_DRAIN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 /// Poll interval when waiting for engine slots to drain.
@@ -606,11 +688,8 @@ async fn delete_persona_inner(
     // orphaned icon file after the row is gone.
     let mut custom_icon_asset: Option<String> = None;
     if let Ok(persona) = repo::get_by_id(&state.db, id) {
-        if persona.trust_origin == crate::db::models::PersonaTrustOrigin::System {
-            return Err(AppError::Forbidden(format!(
-                "'{}' is a system persona and cannot be deleted.",
-                persona.name
-            )));
+        if let Some(reason) = deletion_forbidden_reason(&persona) {
+            return Err(AppError::Forbidden(reason));
         }
         custom_icon_asset = persona
             .icon
@@ -813,4 +892,253 @@ pub fn resolve_effective_config_bulk(
         ));
     }
     Ok(out)
+}
+
+// ===========================================================================
+// Delete-drain tests
+//
+// The `delete_persona` command owns the app's most safety-critical path: a
+// two-phase drain (mark_deleting → cancel running/queued → wait ≤15s for slots
+// to clear → force-cancel survivors → cascade delete). The full command wrapper
+// needs a real `AppState` + Tauri `AppHandle`, neither of which is constructible
+// in a unit test (AppState has ~30 live subsystems; no `tauri::test` harness is
+// wired in this crate). So we test the drain at the seams we CAN reach honestly:
+//   1. the pure system-persona protection guard (`deletion_forbidden_reason`),
+//   2. the engine drain primitives the command orchestrates
+//      (`mark_deleting` gate, `all_slots_cleared` wait condition,
+//      `force_cancel_all_for_persona` post-timeout sweep) on a real
+//      `ExecutionEngine` + temp DB,
+//   3. cascade completeness of the final `repo::delete` (memories/events gone,
+//      target events source-nulled).
+// The one piece NOT covered end-to-end is the command's own sequencing glue
+// (the loop + timeout arithmetic in `delete_persona_inner`), which is unreachable
+// without AppState — documented here rather than faked.
+// ===========================================================================
+#[cfg(test)]
+mod drain_tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use crate::db::models::PersonaTrustOrigin;
+    use crate::db::DbPool;
+    use crate::engine::background::SchedulerState;
+    use crate::engine::ExecutionEngine;
+
+    fn mk_persona(pool: &DbPool, name: &str) -> Persona {
+        repo::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "You are a helpful assistant.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+    }
+
+    fn mk_engine() -> ExecutionEngine {
+        let scheduler = std::sync::Arc::new(SchedulerState::new());
+        // pool = None → headless engine (no resource governor spawned); the drain
+        // primitives operate on the in-memory tracker + a pool passed per call.
+        ExecutionEngine::new(std::env::temp_dir(), scheduler, None)
+    }
+
+    fn insert_execution(pool: &DbPool, persona_id: &str, status: &str) -> String {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO persona_executions (id, persona_id, status, created_at) \
+                 VALUES (?1, ?2, ?3, ?4)",
+                rusqlite::params![id, persona_id, status, now],
+            )
+            .unwrap();
+        id
+    }
+
+    fn exec_status(pool: &DbPool, exec_id: &str) -> String {
+        pool.get()
+            .unwrap()
+            .query_row(
+                "SELECT status FROM persona_executions WHERE id = ?1",
+                rusqlite::params![exec_id],
+                |r| r.get::<_, String>(0),
+            )
+            .unwrap()
+    }
+
+    // ── Scenario 1: system-persona protection ──
+    #[test]
+    fn test_system_persona_is_deletion_protected() {
+        let pool = init_test_db().unwrap();
+        let p = mk_persona(&pool, "Ordinary");
+        assert!(
+            deletion_forbidden_reason(&p).is_none(),
+            "a normal persona must be deletable"
+        );
+
+        // Promote to system origin (the Director's classification).
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE personas SET trust_origin = 'system' WHERE id = ?1",
+                rusqlite::params![p.id],
+            )
+            .unwrap();
+        let sys = repo::get_by_id(&pool, &p.id).unwrap();
+        assert_eq!(sys.trust_origin, PersonaTrustOrigin::System);
+        let reason = deletion_forbidden_reason(&sys);
+        assert!(reason.is_some(), "system personas must be protected");
+        assert!(reason.unwrap().contains("system persona"));
+    }
+
+    // ── Scenario 2a: the drain wait condition + new-execution gate ──
+    #[tokio::test]
+    async fn test_drain_gate_and_wait_condition() {
+        let pool = init_test_db().unwrap();
+        let engine = mk_engine();
+        let p = mk_persona(&pool, "Drainable");
+
+        // Fresh persona: no slots tracked → the wait loop would exit immediately.
+        assert!(engine.all_slots_cleared(&p.id).await);
+        assert!(!engine.is_deleting(&p.id).await);
+
+        // Phase 1: mark_deleting blocks new executions; a running slot means the
+        // wait condition is NOT yet satisfied.
+        engine.mark_deleting(&p.id).await;
+        assert!(engine.is_deleting(&p.id).await);
+        let exec_id = insert_execution(&pool, &p.id, "running");
+        engine.tracker().lock().await.add_running(&p.id, &exec_id);
+        assert!(
+            !engine.all_slots_cleared(&p.id).await,
+            "a tracked running slot must keep the drain waiting"
+        );
+
+        // Cleanup marker is always removed (mirrors the command's guaranteed unmark).
+        engine.unmark_deleting(&p.id).await;
+        assert!(!engine.is_deleting(&p.id).await);
+    }
+
+    // ── Scenario 2b: force-cancel survivors after the drain timeout ──
+    #[tokio::test]
+    async fn test_force_cancel_after_timeout_sweep() {
+        let pool = init_test_db().unwrap();
+        let engine = mk_engine();
+        let p = mk_persona(&pool, "Stuck");
+
+        // Two running slots that never clear (simulating a wedged CLI process).
+        let e1 = insert_execution(&pool, &p.id, "running");
+        let e2 = insert_execution(&pool, &p.id, "running");
+        {
+            let mut t = engine.tracker().lock().await;
+            t.add_running(&p.id, &e1);
+            t.add_running(&p.id, &e2);
+        }
+        assert!(!engine.all_slots_cleared(&p.id).await);
+
+        // The post-timeout force-cancel sweep (Phase 2b of the command).
+        let forced = engine.force_cancel_all_for_persona(&p.id, &pool).await;
+        assert_eq!(forced, 2, "both wedged executions must be force-cancelled");
+
+        // Slots are cleared and DB rows are now terminal (won't write to a row
+        // about to be cascade-deleted).
+        assert!(engine.all_slots_cleared(&p.id).await);
+        assert_eq!(exec_status(&pool, &e1), "cancelled");
+        assert_eq!(exec_status(&pool, &e2), "cancelled");
+    }
+
+    // ── Scenario 3: cascade completeness of the final delete ──
+    #[test]
+    fn test_delete_cascade_is_complete() {
+        let pool = init_test_db().unwrap();
+        let victim = mk_persona(&pool, "Victim");
+        let bystander = mk_persona(&pool, "Bystander");
+        let now = chrono::Utc::now().to_rfc3339();
+
+        {
+            let conn = pool.get().unwrap();
+            // A learned memory (FK cascade on delete).
+            conn.execute(
+                "INSERT INTO persona_memories (id, persona_id, title, content, created_at, updated_at) \
+                 VALUES (?1, ?2, 'm', 'c', ?3, ?3)",
+                rusqlite::params![uuid::Uuid::new_v4().to_string(), victim.id, now],
+            )
+            .unwrap();
+            // An event the victim SOURCED (polymorphic source_id → hard-deleted).
+            conn.execute(
+                "INSERT INTO persona_events (id, event_type, source_type, source_id, created_at) \
+                 VALUES (?1, 'x', 'persona', ?2, ?3)",
+                rusqlite::params![uuid::Uuid::new_v4().to_string(), victim.id, now],
+            )
+            .unwrap();
+            // An event that merely TARGETS the victim (FK set-null → survives).
+            conn.execute(
+                "INSERT INTO persona_events (id, event_type, source_type, source_id, target_persona_id, created_at) \
+                 VALUES (?1, 'y', 'persona', ?2, ?3, ?4)",
+                rusqlite::params![
+                    uuid::Uuid::new_v4().to_string(),
+                    bystander.id,
+                    victim.id,
+                    now
+                ],
+            )
+            .unwrap();
+        }
+
+        assert!(repo::delete(&pool, &victim.id).unwrap());
+        assert!(repo::get_by_id(&pool, &victim.id).is_err(), "persona row gone");
+
+        let conn = pool.get().unwrap();
+        let memories: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_memories WHERE persona_id = ?1",
+                rusqlite::params![victim.id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(memories, 0, "memories must cascade-delete");
+
+        let sourced: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_events WHERE source_id = ?1",
+                rusqlite::params![victim.id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(sourced, 0, "events sourced by the persona are deleted");
+
+        let targeted_survivors: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_events WHERE target_persona_id = ?1",
+                rusqlite::params![victim.id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            targeted_survivors, 0,
+            "targeting FK must be set NULL, not left dangling"
+        );
+        // The bystander's event row still exists (only its target was nulled).
+        let bystander_events: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_events WHERE source_id = ?1",
+                rusqlite::params![bystander.id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(bystander_events, 1, "unrelated event history is preserved");
+    }
 }

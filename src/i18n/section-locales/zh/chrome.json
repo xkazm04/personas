@@ -48,7 +48,9 @@
     "nav_mode_review": "切换人工审核（导航模式）",
     "nav_mode_schedules": "切换计划（导航模式）",
     "nav_mode_search": "打开搜索（导航模式）",
-    "open_title": "键盘快捷键"
+    "open_title": "键盘快捷键",
+    "nav_history_back": "后退",
+    "nav_history_forward": "前进"
   },
   "tray_schedules": "计划任务",
   "tray_schedules_today": "今日 {count} 个计划任务",

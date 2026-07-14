@@ -188,5 +188,17 @@
     "personas_tab": "Personas (Animasi)",
     "lucide_footer": "lucide-react -- pustaka ikon generik -- statis",
     "personas_footer": "9 ikon kustom -- motif neural/sirkuit -- animasi CSS -- adaptif tema"
+  },
+  "since_left": {
+    "alerts": "{count} peringatan dipicu",
+    "alerts_other": "{count} peringatan dipicu",
+    "approvals": "{count} persetujuan menunggu",
+    "approvals_other": "{count} persetujuan menunggu",
+    "dismiss": "Tutup",
+    "failed": "{count} gagal",
+    "failed_other": "{count} gagal",
+    "runs": "{count} eksekusi",
+    "runs_other": "{count} eksekusi",
+    "title": "Sejak Anda pergi"
   }
 }

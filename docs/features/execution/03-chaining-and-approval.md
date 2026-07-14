@@ -108,6 +108,32 @@ Prevents infinite loops in A→B→A cascades. Events that miss the guard
 don't go to dead letter — they're dropped silently because the state
 didn't warrant a run.
 
+### Chain-scoped ceilings (depth · cost · breadth)
+
+The cascade guard above is **per-persona**. Three further ceilings are
+**chain-scoped** — enforced in `evaluate_chain_triggers` and evaluated
+against the whole distributed trace (`chain_trace_id`). When any of them
+trips, the cascade halts and a structured **stop reason** is recorded
+(queryable per chain via `get_chain_stop_reasons`; surfaced in the Chain
+tab):
+
+| Axis | Bounds | Control | Default | Stop reason |
+|---|---|---|---|---|
+| **Depth** | path LENGTH (hop count) | `MAX_CHAIN_DEPTH` const | 8 (always on) | `depth_limit` |
+| **Cost** | total SPEND (USD) | `chain_max_cost_usd` setting | `0` = disabled | `budget_exceeded` |
+| **Breadth** | total WIDTH (links spawned) | `chain_max_links` setting | `50` (set `0` to disable) | `breadth_exceeded` |
+
+**Breadth** is the newest and closes a real gap: depth only bounds how
+*long* a single path is, but one completion can match many triggers and
+each match branches again, so a fan-out grows unbounded across hops even
+when no path is deep. The evaluator counts the links already spawned under
+the chain trace (an indexed `COUNT(*)` over `execution_traces` sharing the
+`chain_trace_id`) and, once that reaches `chain_max_links`, halts before
+firing any further link. Unlike the cost ceiling it defaults to a generous
+NON-zero value (50) — the depth ceiling is an always-on constant, so
+breadth (the other unbounded axis) gets an always-on net too; a legitimate
+chain never reaches 50 links (depth is capped at 8).
+
 ### Dead-letter handling
 
 `persona_events` retry state machine:
@@ -134,7 +160,17 @@ SELECT * FROM execution_traces WHERE chain_trace_id = ?;
 ```
 
 The UI "Chain View" renders this as a tree: root execution at top,
-child executions nested under the events they spawned.
+child executions nested under the events they spawned — but it is
+**retrospective** (per finished run).
+
+**Live view — what's running right now**: the `list_active_chains` IPC
+groups the currently `running`/`queued` executions by the
+`chain_trace_id` in their `input_data`, returning per chain the in-flight
+hop count, deepest depth, accumulated cost, personas involved, and oldest
+start. The executions view surfaces it as a compact "N chains in flight"
+badge (expands to the per-chain list) — and renders nothing when no chain
+work is in flight. It answers "what chains are cascading right now?", which
+the log-only cascade metrics and the retrospective Chain tab could not.
 
 **Trace continuity break**: if the payload JSON fails to parse (so the
 `chain_trace_id` field can't be extracted), the `trace_continuity_breaks`

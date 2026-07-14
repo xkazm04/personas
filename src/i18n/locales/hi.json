@@ -431,7 +431,10 @@
     "edge_count_other": "{count} एज",
     "adoption_count_one": "{count} अपनाया गया",
     "adoption_count_other": "{count} अपनाए गए",
-    "selected": "चयनित"
+    "selected": "चयनित",
+    "command_palette_create_agent": "नया एजेंट बनाएँ",
+    "command_palette_go_to": "{label} पर जाएँ",
+    "command_palette_leaderboard": "एजेंट लीडरबोर्ड"
   },
   "chrome": {
     "app_title": "Personas",
@@ -483,7 +486,9 @@
       "nav_mode_review": "मानव समीक्षा टॉगल करें (नेव मोड में)",
       "nav_mode_schedules": "शेड्यूल टॉगल करें (नेव मोड में)",
       "nav_mode_search": "खोज खोलें (नेव मोड में)",
-      "open_title": "कीबोर्ड शॉर्टकट"
+      "open_title": "कीबोर्ड शॉर्टकट",
+      "nav_history_back": "पीछे जाएँ",
+      "nav_history_forward": "आगे जाएँ"
     },
     "tray_schedules": "शेड्यूल",
     "tray_schedules_today": "आज {count} शेड्यूल",
@@ -586,6 +591,7 @@
     "mission_control": "मिशन कंट्रोल",
     "factory": "फैक्टरी",
     "kpis": "KPI",
+    "studio": "स्टूडियो",
     "competition": "प्रतिस्पर्धा",
     "development": "डेवलपमेंट",
     "lifecycle": "लाइफसाइकल",
@@ -781,6 +787,18 @@
       "personas_tab": "Personas (एनिमेटेड)",
       "lucide_footer": "lucide-react -- जेनेरिक आइकन लाइब्रेरी -- स्टैटिक",
       "personas_footer": "9 कस्टम आइकन -- न्यूरल/सर्किट मोटिफ -- CSS-एनिमेटेड -- थीम-अनुकूली"
+    },
+    "since_left": {
+      "alerts": "{count} अलर्ट जारी",
+      "alerts_other": "{count} अलर्ट जारी",
+      "approvals": "{count} अनुमोदन लंबित",
+      "approvals_other": "{count} अनुमोदन लंबित",
+      "dismiss": "खारिज करें",
+      "failed": "{count} विफल",
+      "failed_other": "{count} विफल",
+      "runs": "{count} रन",
+      "runs_other": "{count} रन",
+      "title": "जब से आप गए"
     }
   },
   "agents": {
@@ -1298,7 +1316,17 @@
       "tab_chain": "चेन",
       "thinking_tooltip": "इस रन द्वारा उपयोग किया गया रीज़निंग एफर्ट",
       "trace_empty_hint": "विस्तृत ट्रेस टूल-उपयोग करने वाले और नए रन के लिए कैप्चर किए जाते हैं। इस रन के लिए दिखाने को कुछ नहीं है।",
-      "verdict_field": "निर्णय"
+      "verdict_field": "निर्णय",
+      "chain_ended_because": "श्रृंखला क्यों समाप्त हुई",
+      "chain_total_cost": "श्रृंखला लागत",
+      "active_chains_agents_one": "{count} एजेंट",
+      "active_chains_agents_other": "{count} एजेंट",
+      "active_chains_depth": "गहराई {count}",
+      "active_chains_hops_one": "{count} हॉप",
+      "active_chains_hops_other": "{count} हॉप",
+      "active_chains_one": "{count} चेन चल रही है",
+      "active_chains_other": "{count} चेन चल रही हैं",
+      "active_chains_title": "चल रही चेन"
     },
     "lab": {
       "mode_arena": "एरेना",
@@ -1625,7 +1653,9 @@
       "eco_col_resolved": "रिज़ॉल्व",
       "eco_empty": "अभी तक कोई eval परिणाम नहीं — लागत दक्षता देखने के लिए Lab चलाएं।",
       "eco_subtitle": "प्रत्येक मॉडल कितनी बार eval सुलझाता है, और प्रत्येक सफलता पर कितनी लागत आती है।",
-      "eco_title": "लागत दक्षता"
+      "eco_title": "लागत दक्षता",
+      "vr_col_tokens": "टोकन",
+      "vr_tokens_tooltip": "प्रति रन औसतन {input} इनपुट / {output} आउटपुट"
     },
     "design": {
       "select_agent": "डिज़ाइन विश्लेषण शुरू करने के लिए एक एजेंट चुनें",
@@ -2621,7 +2651,12 @@
       "delete_agents_message": "{count} एजेंट और उनकी सभी कॉन्फ़िगरेशन स्थायी रूप से हटाई जाएगी।",
       "delete_drafts": "{count} ड्राफ्ट हटाएं",
       "delete_drafts_message": "{count} ड्राफ्ट एजेंट स्थायी रूप से हटाए जाएंगे।",
-      "system_persona_undeletable": "Director एक सिस्टम persona है और इसे हटाया नहीं जा सकता।"
+      "system_persona_undeletable": "Director एक सिस्टम persona है और इसे हटाया नहीं जा सकता।",
+      "archived_done": "{count} पर्सोना आर्काइव किए गए",
+      "bulk_delete_done": "{deleted} पर्सोना हटाए गए",
+      "bulk_delete_failed": "पर्सोना हटाने में विफल",
+      "bulk_delete_partial": "{deleted} हटाए गए; {skipped} छोड़े गए",
+      "restored_done": "{count} पर्सोना पुनर्स्थापित किए गए"
     },
     "persona_list": {
       "all_personas": "सभी पर्सोना",
@@ -2657,7 +2692,12 @@
       "batch_moved_partial": "{ok} {group} में स्थानांतरित; {failed} विफल",
       "render_cap_notice": "{total} में से {shown} दिखाए जा रहे हैं — बाकी देखने के लिए खोज या फ़िल्टर का उपयोग करें।",
       "star_director_add": "Director की कोचिंग सूची में जोड़ने के लिए स्टार करें",
-      "star_director_remove": "स्टार किया — Director की कोचिंग सूची में है। हटाने के लिए क्लिक करें।"
+      "star_director_remove": "स्टार किया — Director की कोचिंग सूची में है। हटाने के लिए क्लिक करें।",
+      "badge_archived": "आर्काइव किया गया",
+      "batch_archive": "आर्काइव करें",
+      "batch_restore": "पुनर्स्थापित करें",
+      "show_active_personas": "सक्रिय पर्सोना दिखाएं",
+      "show_archived_personas": "आर्काइव किए गए पर्सोना दिखाएं"
     },
     "editor_ui": {
       "max_budget_label": "अधिकतम बजट (USD)",
@@ -3509,6 +3549,11 @@
       "activate_agent": "एजेंट सक्रिय करें",
       "create_agent": "एजेंट बनाएं",
       "min_completeness": "40% पूर्णता तक पहुंचने के लिए अधिक विवरण जोड़ें"
+    },
+    "duplicate": {
+      "done": "\"{name}\" के रूप में डुप्लिकेट किया गया",
+      "done_with_wiring": "\"{name}\" के रूप में डुप्लिकेट किया गया — {triggers} ट्रिगर और {subscriptions} सदस्यता कॉपी की गईं, कॉपी में अक्षम",
+      "failed": "एजेंट डुप्लिकेट करने में विफल"
     }
   },
   "vault": {
@@ -4129,7 +4174,37 @@
       "tool_count_other": "{count} टूल",
       "tab_documents": "दस्तावेज़",
       "tab_search": "खोज",
-      "tab_settings": "सेटिंग"
+      "tab_settings": "सेटिंग",
+      "page_label": "पृ. {page}",
+      "pages_label": "{count} पृष्ठ",
+      "partial_text_badge": "आंशिक टेक्स्ट",
+      "partial_text_tooltip": "यह अंश एक ऐसे पृष्ठ से पढ़ा गया जो ज्यादातर छवि है, इसलिए यह अधूरा हो सकता है।",
+      "scanned_pages_tooltip": "ये पृष्ठ बिना टेक्स्ट लेयर वाली छवियां हैं, इसलिए इनकी सामग्री खोजी नहीं जा सकती। इन्हें शामिल करने के लिए OCR-प्रोसेस्ड कॉपी का उपयोग करें।",
+      "scanned_pages_warning": "{count} स्कैन किया गया पृष्ठ अपठनीय",
+      "extract_add_entity": "प्रकार जोड़ें",
+      "extract_add_field": "फ़ील्ड जोड़ें",
+      "extract_col_attrs": "विशेषताएँ",
+      "extract_col_key": "इकाई",
+      "extract_col_source": "स्रोत",
+      "extract_col_type": "प्रकार",
+      "extract_empty_kb": "संरचित डेटा निकालने से पहले दस्तावेज़ जोड़ें।",
+      "extract_entity_desc_ph": "यह वस्तु क्या है",
+      "extract_entity_type_ph": "entity_type",
+      "extract_field_desc_ph": "इसमें क्या है",
+      "extract_field_name_ph": "फ़ील्ड",
+      "extract_infer_btn": "एक स्कीमा सुझाएँ",
+      "extract_inferring": "कॉर्पस पढ़ा जा रहा है...",
+      "extract_intro": "इस ज्ञान आधार को क्वेरी करने योग्य पंक्तियों में बदलें। पहले अपने दस्तावेज़ों द्वारा वर्णित वस्तुओं का एक स्कीमा सुझाएँ, उसकी समीक्षा करें, फिर निकालें।",
+      "extract_no_entities": "अभी तक कोई इकाई नहीं निकाली गई। शुरू करने के लिए एक स्कीमा सुझाएँ।",
+      "extract_progress": "{done}/{total} दस्तावेज़, {count} इकाइयाँ मिलीं",
+      "extract_remove": "हटाएँ",
+      "extract_run_btn": "इकाइयाँ निकालें",
+      "extract_run_status": "{status} — {count} इकाइयाँ",
+      "extract_running": "निकाला जा रहा है...",
+      "extract_runs_heading": "निष्कर्षण रन",
+      "extract_schema_heading": "प्रस्तावित स्कीमा",
+      "extract_schema_hint": "निकालने से पहले संपादित करें — जो प्रकार आप नहीं चाहते उन्हें हटाएँ, मॉडल बाकी भर देता है।",
+      "tab_extract": "संरचित डेटा"
     },
     "manager": {
       "title": "क्रेडेंशियल",
@@ -6050,7 +6125,9 @@
       "source": "स्रोत",
       "processed": "प्रोसेस किया",
       "event_data": "इवेंट डेटा",
-      "error": "त्रुटि"
+      "error": "त्रुटि",
+      "skipped_stat_label": "{skipped} छोड़े गए",
+      "skipped_stat_tooltip": "पिछले 7 दिनों में {total} में से {skipped} इवेंट्स का कोई सब्सक्राइबर नहीं था और वे छोड़ दिए गए ({rate})। उच्च दर का मतलब है कि कोई ट्रिगर ऐसा है जिसे कोई नहीं सुन रहा।"
     },
     "health": {
       "title": "एजेंट स्वास्थ्य",
@@ -6230,7 +6307,11 @@
       "all_statuses": "सभी स्थितियां",
       "col_status": "स्थिति",
       "col_id": "ID",
-      "execution_label": "निष्पादन"
+      "execution_label": "निष्पादन",
+      "error_category_by_persona": "एजेंट अनुसार शीर्ष विफलता",
+      "error_category_prior_period": "पिछली अवधि की तुलना में",
+      "error_category_section_title": "श्रेणी अनुसार विफलताएँ",
+      "error_category_total_failures": "कुल विफलताएँ"
     },
     "analytics_dashboard": {
       "issues_found": "{count} समस्याएं मिलीं",
@@ -6914,7 +6995,32 @@
       "comparison_recommended": "अनुशंसित",
       "flow_title": "यह कैसे सामने आता है",
       "timeline_title": "समयरेखा",
-      "log_title": "साक्ष्य"
+      "log_title": "साक्ष्य",
+      "default_attention_empty": "सभी पर्सोना स्वस्थ हैं — किसी को ध्यान की ज़रूरत नहीं।",
+      "default_attention_low_trust": "कम भरोसा",
+      "default_attention_paused": "रुका हुआ",
+      "default_attention_setup": "सेटअप आवश्यक",
+      "default_attention_title": "ध्यान चाहिए",
+      "default_callout_body": "यह आपकी फ़्लीट स्थिति से बनाया गया एक शुरुआती दृश्य है। Athena से कहें कि वह आपकी पसंद के अनुसार एक कॉकपिट तैयार करे — वह इसे अपने आप बदल देगी।",
+      "default_callout_title": "शुरुआती कॉकपिट",
+      "default_roster_title": "आपके पर्सोना",
+      "default_stat_active_personas": "सक्रिय पर्सोना",
+      "default_stat_executions": "एक्ज़ीक्यूशन (7दिन)",
+      "default_stat_needs_attention": "ध्यान चाहिए",
+      "default_stat_success_rate": "सफलता दर",
+      "default_subtitle": "एक शुरुआती दृश्य जिसे Athena निजी बना सकती है — अपना खुद का बनाने के लिए चैट करें।",
+      "default_title": "शुरुआती कॉकपिट",
+      "default_vitals_title": "फ़्लीट वाइटल्स",
+      "empty_example_attention": "\"किस पर मेरा ध्यान चाहिए\"",
+      "empty_example_personas": "\"मेरे पर्सोना दिखाएँ\"",
+      "empty_hint": "Athena से एक कॉकपिट दृश्य बनाने के लिए कहें — {personas} या {attention} आज़माएँ।",
+      "empty_title": "आपका कॉकपिट खाली है",
+      "error_retry": "पुनः प्रयास करें",
+      "error_title": "आपका कॉकपिट लोड नहीं हो सका",
+      "subtitle_composed_prefix": "Athena द्वारा तैयार किया गया — अपडेट किया गया",
+      "subtitle_default": "आपका साथी-संचालित कार्यक्षेत्र",
+      "talk_to_athena": "Athena से बात करें",
+      "unknown_widget": "अज्ञात विजेट: {kind}"
     },
     "certification": {
       "title": "प्रमाणन कमांड सेंटर",
@@ -7359,6 +7465,17 @@
     "day_range_picker": {
       "start_date": "शुरू होने की तारीख",
       "end_date": "समाप्ति तिथि"
+    },
+    "healing_effectiveness": {
+      "attempted": "प्रयास",
+      "confirmed": "पुष्ट",
+      "loading": "हीलिंग आँकड़े लोड हो रहे हैं…",
+      "no_data": "अभी तक कोई ऑटो-फिक्स गतिविधि नहीं",
+      "recent_activity": "हाल की गतिविधि",
+      "reverted": "वापस लिए गए",
+      "success_rate": "सफलता दर",
+      "title": "स्व-सुधार",
+      "window_label": "पिछले"
     }
   },
   "matrix_v3": {
@@ -10126,7 +10243,20 @@
       "empty": "अभी तक कोई सेटिंग्स परिवर्तन दर्ज नहीं किया गया। यहाँ से किए गए बदलाव इस सूची में दिखाई देंगे।",
       "empty_filtered": "वर्तमान श्रेणी फ़िल्टर से कोई प्रविष्टि मेल नहीं खाती।",
       "before": "पहले",
-      "after": "बाद"
+      "after": "बाद",
+      "categories": {
+        "api_keys": "API कुंजियाँ",
+        "autonomy": "स्वायत्तता",
+        "byom": "BYOM",
+        "config": "सामान्य",
+        "engine": "इंजन",
+        "integrations": "एकीकरण",
+        "limits": "सीमाएँ",
+        "notifications": "सूचनाएँ",
+        "quality_gates": "गुणवत्ता गेट",
+        "retention": "प्रतिधारण",
+        "sync": "क्लाउड सिंक"
+      }
     },
     "api_keys": {
       "title": "API कुंजियाँ",
@@ -10604,7 +10734,61 @@
     "usage_limit_weekly_message": "Claude की साप्ताहिक उपयोग सीमा पहुंच गई।",
     "usage_limit_weekly_suggestion": "साप्ताहिक सीमा रीसेट होने तक रन्स विफल होते रहेंगे — शेड्यूल रोकें या अपना प्लान अपग्रेड करें।",
     "usage_limit_window_message": "Claude की उपयोग विंडो समाप्त हो गई है।",
-    "usage_limit_window_suggestion": "विंडो रीसेट होने पर रन स्वतः पुनः प्रयास करेगा — कोई कार्रवाई आवश्यक नहीं।"
+    "usage_limit_window_suggestion": "विंडो रीसेट होने पर रन स्वतः पुनः प्रयास करेगा — कोई कार्रवाई आवश्यक नहीं।",
+    "agent_ir_parse_message": "बिल्ड आउटपुट गलत फ़ॉर्मेट में वापस आया।",
+    "agent_ir_parse_suggestion": "फिर से जनरेट करने के लिए Refine पर क्लिक करें, या नया बिल्ड शुरू करें — Refine करने से परिणाम बेहतर होता है।",
+    "authorization_required_message": "इस टूल को चलने से पहले आपकी अनुमति चाहिए।",
+    "authorization_required_suggestion": "सहमति देने के लिए अनुमति पृष्ठ खोलें, फिर दोबारा प्रयास करें।",
+    "budget_value_invalid_message": "बजट वैल्यू मान्य नहीं है।",
+    "budget_value_invalid_suggestion": "डॉलर बजट के लिए एक धनात्मक संख्या का उपयोग करें (उदाहरण के लिए $5 के लिए 5)।",
+    "build_no_agent_ir_message": "बिल्ड अभी जनरेट होकर पूरा नहीं हुआ है — एजेंट की योजना अभी भी तैयार की जा रही है।",
+    "build_no_agent_ir_suggestion": "कुछ सेकंड प्रतीक्षा करें और फिर से प्रयास करें। यदि यह एक मिनट से अधिक समय तक बना रहे, तो अधिक स्पष्ट इरादे के साथ बिल्ड को फिर से शुरू करें।",
+    "build_nothing_to_promote_message": "बिल्ड ने अभी तक प्रमोट करने लायक कुछ भी तैयार नहीं किया है।",
+    "build_nothing_to_promote_suggestion": "बिल्ड के जनरेट होकर पूरा होने की प्रतीक्षा करें, या इसे आगे बढ़ाने के लिए Refine पर क्लिक करें। अगर विज़ार्ड एक मिनट से अधिक समय तक अटका रहे, तो फिर से शुरू करें।",
+    "build_session_disappeared_message": "यह बिल्ड सेशन पूरा होने से पहले ही साफ़ कर दिया गया था।",
+    "build_session_disappeared_suggestion": "नया बिल्ड शुरू करें — पिछला ड्राफ्ट अब पुनर्प्राप्त नहीं किया जा सकता।",
+    "build_session_gone_message": "यह बिल्ड सेशन समाप्त हो चुका है या साफ़ कर दिया गया है।",
+    "build_session_gone_suggestion": "उसी इरादे के साथ नया बिल्ड शुरू करें।",
+    "design_result_parse_message": "पर्सोना का सहेजा गया डिज़ाइन डेटा पार्स नहीं किया जा सका।",
+    "design_result_parse_suggestion": "इस पर्सोना के लिए नया बिल्ड चलाएँ — कैश्ड डिज़ाइन ऐप के पुराने वर्शन का है।",
+    "external_service_message": "बाहरी सेवा अनुरोध पूरा नहीं कर सकी।",
+    "external_service_suggestion": "सेवा की स्थिति और अपना कनेक्शन जाँचें, फिर दोबारा प्रयास करें।",
+    "importance_range_message": "मेमोरी की महत्ता सीमा से बाहर है।",
+    "importance_range_suggestion": "मेमोरी की महत्ता के लिए 1 और 10 के बीच का मान चुनें।",
+    "interval_not_number_message": "पोलिंग इंटरवल एक मान्य संख्या नहीं है।",
+    "interval_not_number_suggestion": "Refine खोलें और एक संख्यात्मक पोलिंग इंटरवल माँगें, जैसे \"हर 5 मिनट पर\"।",
+    "interval_too_fast_message": "पोलिंग प्रति मिनट एक बार से अधिक नहीं चल सकती।",
+    "interval_too_fast_suggestion": "60 सेकंड या उससे अधिक का पोलिंग इंटरवल उपयोग करें (300 / 5 मिनट एक सुरक्षित डिफ़ॉल्ट है)। Refine पर क्लिक करें और एजेंट को गति धीमी करने के लिए कहें।",
+    "invalid_trigger_type_message": "बिल्ड ने एक ऐसा ट्रिगर प्रकार चुना जिसे रनटाइम नहीं पहचानता।",
+    "invalid_trigger_type_suggestion": "Refine पर क्लिक करें और एक स्पष्ट ट्रिगर माँगें (\"शेड्यूल पर\", \"वेबहुक पर\", \"जब X हो\")। अगर यह समस्या बार-बार आए, तो बिल्ड को फिर से शुरू करें।",
+    "keyring_lost_message": "सुरक्षित क्रेडेंशियल स्टोर अब उपलब्ध नहीं है।",
+    "keyring_lost_suggestion": "ऐप को पुनः आरंभ करें। यदि यह बना रहे, तो प्रभावित क्रेडेंशियल्स को वॉल्ट में फिर से दर्ज करें।",
+    "max_concurrent_range_message": "समवर्तीता सीमा दायरे से बाहर है।",
+    "max_concurrent_range_suggestion": "अधिकतम समवर्ती रन को 1 और सेटिंग्स में दिखाई गई इंजन सीमा के बीच के मान पर सेट करें।",
+    "max_turns_range_message": "टर्न सीमा अनुमत दायरे से बाहर है।",
+    "max_turns_range_suggestion": "अधिकतम टर्न को 1 और 50 के बीच के मान पर सेट करें।",
+    "name_invalid_message": "पर्सोना के नाम में सुधार की ज़रूरत है।",
+    "name_invalid_suggestion": "एक छोटा, वर्णनात्मक नाम चुनें (1–40 अक्षर) और दोबारा प्रयास करें।",
+    "oauth_revoked_message": "कनेक्शन की अनुमति रद्द कर दी गई थी।",
+    "oauth_revoked_suggestion": "फिर से एक्सेस देने के लिए खाते को दोबारा कनेक्ट करें।",
+    "polling_url_blocked_message": "सुरक्षा कारणों से पोलिंग URL अस्वीकार कर दिया गया।",
+    "polling_url_blocked_suggestion": "यह URL किसी आंतरिक/निजी पते की ओर इशारा करता है। सार्वजनिक रूप से पहुँच योग्य HTTPS URL का उपयोग करें, या ट्रिगर को वेबहुक + smee.io पर स्विच करें।",
+    "prompt_too_large_message": "एजेंट का प्रॉम्प्ट बहुत लंबा है।",
+    "prompt_too_large_suggestion": "Refine पर क्लिक करें और एक संक्षिप्त वर्शन माँगें, या अनावश्यक हिस्से हटाएँ।",
+    "retry_exhausted_message": "कई स्वचालित पुनः प्रयासों के बाद भी यह विफल होता रहा।",
+    "retry_exhausted_suggestion": "थोड़ी देर प्रतीक्षा करें और दोबारा प्रयास करें — यदि यह बना रहे, तो सेवा की स्थिति या एजेंट का कॉन्फ़िगरेशन जाँचें।",
+    "schedule_missing_timing_message": "शेड्यूल किए गए ट्रिगर्स के लिए या तो cron एक्सप्रेशन या पोलिंग इंटरवल चाहिए।",
+    "schedule_missing_timing_suggestion": "Refine पर क्लिक करें और बताएँ कि एजेंट को कब चलना चाहिए (उदाहरण के लिए \"हर कार्यदिवस सुबह 8am बजे\" या \"हर 30 मिनट पर\")।",
+    "smee_url_invalid_message": "वेबहुक स्रोत URL smee.io से आना चाहिए।",
+    "smee_url_invalid_suggestion": "ब्राउज़र में https://smee.io/new खोलें, चैनल URL कॉपी करें, और उसे वेबहुक स्रोत फ़ील्ड में पेस्ट करें।",
+    "system_prompt_empty_message": "पर्सोना का सिस्टम प्रॉम्प्ट खाली है।",
+    "system_prompt_empty_suggestion": "आमतौर पर बिल्ड पाइपलाइन इसे भर देती है। बिल्ड को Refine करें, या अधिक स्पष्ट इरादे के साथ नया बिल्ड शुरू करें।",
+    "timeout_range_message": "टाइमआउट अनुमत दायरे से बाहर है।",
+    "timeout_range_suggestion": "1 सेकंड और इंजन सीमा (आमतौर पर 30 मिनट) के बीच का टाइमआउट चुनें।",
+    "unknown_prompt_field_message": "बिल्ड ने एक ऐसा फ़ील्ड जनरेट किया जिसे रनटाइम नहीं पहचानता।",
+    "unknown_prompt_field_suggestion": "Refine पर क्लिक करें — नया बिल्ड मौजूदा स्कीमा का उपयोग करेगा।",
+    "webhook_missing_secret_message": "इस वेबहुक ट्रिगर में इसका साइनिंग सीक्रेट गायब है।",
+    "webhook_missing_secret_suggestion": "Promote को फिर से चलाएँ — सबमिट करने पर पाइपलाइन अपने आप एक webhook_secret जनरेट करती है। यदि यह बना रहे, तो बिल्ड को फिर से शुरू करें।"
   },
   "empty_states": {
     "credentials_title": "आपके एजेंटों को चलने के लिए क्रेडेंशियल चाहिए",
@@ -11314,6 +11498,34 @@
       "high": "उच्च",
       "low": "निम्न",
       "medium": "मध्यम"
+    },
+    "error_category": {
+      "api_error": "API त्रुटि",
+      "credential_error": "क्रेडेंशियल त्रुटि",
+      "network": "नेटवर्क",
+      "provider_not_found": "प्रदाता नहीं मिला",
+      "rate_limit": "दर सीमा",
+      "session_limit": "सत्र सीमा",
+      "timeout": "समय समाप्त",
+      "tool_error": "टूल त्रुटि",
+      "transient_process_failure": "अस्थायी प्रक्रिया विफलता",
+      "unknown": "अज्ञात",
+      "validation": "सत्यापन"
+    },
+    "chain_stop": {
+      "breadth_exceeded": "फैन-आउट सीमा पूरी",
+      "budget_exceeded": "लागत सीमा पूरी",
+      "cas_lost": "अन्य रन द्वारा लिया गया",
+      "cycle_detected": "चक्र पाया गया",
+      "depth_limit": "गहराई सीमा",
+      "handoff_suppressed": "हैंडऑफ़ रोका गया",
+      "malformed_config": "अमान्य कॉन्फ़िग",
+      "outside_window": "सक्रिय विंडो के बाहर",
+      "predicate_unmet": "शर्त पूरी नहीं हुई",
+      "publish_failed": "प्रकाशन विफल",
+      "quarantined": "ट्रिगर क्वारंटीन किया गया",
+      "healing_abandoned": "स्व-सुधार रुक गया",
+      "healing_capped": "सुधार के प्रयास समाप्त"
     }
   },
   "project_overview": {
@@ -11559,7 +11771,16 @@
       "auto_hibernate_desc": "थ्रेशोल्ड से अधिक समय तक निष्क्रिय रहने वाले सत्रों को स्वतः हाइबरनेट करें — Fleet फ़ोकस में न हो तब भी प्रक्रिया मुक्त करें। वे Wake के ज़रिए पुनः शुरू करने योग्य रहते हैं। Personas खुला रहने पर चलता है।",
       "auto_hibernate_toggle": "स्वतः हाइबरनेट सक्षम करें",
       "auto_hibernate_after": "बाद में",
-      "auto_hibernate_minutes_unit": "मिनट निष्क्रिय"
+      "auto_hibernate_minutes_unit": "मिनट निष्क्रिय",
+      "live_slots_desc": "एक साथ कितनी claude प्रक्रियाएँ चलें, इसे सीमित करें। फ़्लीट सीमा पर पहुँचने पर सबसे पुराना निष्क्रिय सत्र जगह बनाने के लिए हाइबरनेट कर दिया जाता है — जगाएँ से इसे फिर से शुरू किया जा सकता है। काम कर रहे सत्र कभी बाधित नहीं होते।",
+      "live_slots_max_label": "अधिकतम",
+      "live_slots_title": "लाइव सत्र सीमित करें",
+      "live_slots_toggle": "सत्र सीमा सक्षम करें",
+      "live_slots_unit": "लाइव सत्र",
+      "headless_badge": "पृष्ठभूमि",
+      "headless_no_terminal": "पृष्ठभूमि सत्र — टर्मिनल के बिना चल रहा है। \"आपकी ज़रूरत है\" बैनर से जवाब दें; प्रगति Insights में दिखती है।",
+      "spawn_headless_hint": "हेडलेस मोड — लाइव टर्मिनल नहीं, CPU और RAM पर काफ़ी कम भार। \"आपकी ज़रूरत है\" बैनर से जवाब दें; प्रगति Insights में देखें।",
+      "spawn_headless_toggle": "पृष्ठभूमि में चलाएँ (टर्मिनल के बिना)"
     },
     "title": "प्लगइन",
     "subtitle": "प्लगइन से अपने कार्यक्षेत्र को विस्तारित करें। साइडबार में दिखाने या छिपाने के लिए टॉगल करें।",
@@ -13525,7 +13746,8 @@
       "voice_pocket_upload_save": "आवाज़ जोड़ें",
       "voice_pocket_upload_title": "अपनी आवाज़ जोड़ें",
       "voice_pocket_hf_gate_desc": "अपनी क्लोन की गई आवाज़ों को स्वयं प्रबंधित करने के लिए क्रेडेंशियल वॉल्ट में Hugging Face एक्सेस टोकन आवश्यक है — यह वॉइस-क्लोनिंग मॉडल के लाइसेंस को आपके खाते से जोड़ता है। एक Hugging Face क्रेडेंशियल जोड़ें, फिर यहाँ वापस आएं।",
-      "voice_pocket_hf_gate_title": "Hugging Face खाता आवश्यक है"
+      "voice_pocket_hf_gate_title": "Hugging Face खाता आवश्यक है",
+      "persona_overview_kpi_trust_clamped": "ट्रस्ट स्कोर सीमा से बाहर था और इसे 100% पर सीमित कर दिया गया है।"
     },
     "artist_gallery": {
       "loading_viewer": "viewer लोड हो रहा है…",
@@ -13775,7 +13997,9 @@
       "goal_scaffold_timeline_title": "टाइमलाइन",
       "goal_scaffold_timeline_sub": "लक्ष्य तिथि के अनुसार लक्ष्यों का समय-अक्ष दृश्य, निर्भरता तीरों और स्लिप मार्करों के साथ। जल्द आ रहा है।",
       "goal_field_title": "शीर्षक",
+      "goal_field_title_placeholder": "आप किस परिणाम की ओर बढ़ रहे हैं?",
       "goal_field_description": "विवरण",
+      "goal_field_description_placeholder": "वैकल्पिक संदर्भ, दायरा, या सफलता कैसी दिखती है…",
       "goal_field_status": "स्थिति",
       "goal_field_target_date": "लक्ष्य तिथि",
       "goal_target_asap": "जल्द से जल्द",
@@ -14481,7 +14705,28 @@
     "beat_sidebar_collapse": "बीट सूची को संक्षिप्त करें",
     "beat_sidebar_expand": "बीट सूची का विस्तार करें",
     "beat_sidebar_empty": "अभी तक कोई धड़कन नहीं. टाइमलाइन पर मील के पत्थर चिह्नित करने के लिए एक टेक्स्ट बीट जोड़ें।",
-    "beat_sidebar_untitled": "(शीर्षक रहित)"
+    "beat_sidebar_untitled": "(शीर्षक रहित)",
+    "add_title": "शीर्षक जोड़ें",
+    "entrance": "प्रवेश",
+    "entrance_animate": "प्रवेश एनिमेट करें",
+    "entrance_down": "नीचे",
+    "entrance_duration": "गति",
+    "entrance_left": "बाएं",
+    "entrance_none": "कोई नहीं",
+    "entrance_right": "दाएं",
+    "entrance_up": "ऊपर",
+    "layer_title": "शीर्षक",
+    "title_text": "शीर्षक टेक्स्ट",
+    "title_text_placeholder": "शीर्षक लिखें…",
+    "title_untitled": "(खाली शीर्षक)",
+    "voiceover": "वॉयसओवर",
+    "voiceover_added": "वॉयसओवर टाइमलाइन में जोड़ा गया",
+    "voiceover_generate": "वॉयसओवर जनरेट करें",
+    "voiceover_generating": "संश्लेषण हो रहा है…",
+    "voiceover_not_installed": "लोकल वॉइस इंजन इंस्टॉल नहीं है — पहले इसे कंपैनियन की वॉइस सेटिंग्स में सेट करें।",
+    "voiceover_text": "नैरेशन",
+    "voiceover_text_placeholder": "टाइप करें कि नैरेटर को क्या कहना चाहिए…",
+    "voiceover_voice": "आवाज़"
   },
   "research_lab": {
     "dashboard": "डैशबोर्ड",

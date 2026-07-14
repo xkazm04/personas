@@ -45,15 +45,16 @@
 //!   releasing on every path. **Invariant: the two prompt writes can never
 //!   interleave for one persona.**
 //!
-//!   KNOWN GAP (follow-up): `apply_db_fixes` mutates the live prompt WITHOUT
-//!   snapshotting a new `persona_prompt_versions` row, so auto-rollback's
-//!   version-level error-rate metrics still attribute the persona's history to
-//!   the pre-heal production version. The slot above stops the concurrent
-//!   clobber, but a later tick can still roll a healed prompt back to an older
-//!   snapshot because the heal is invisible to the version metrics. Versioning
-//!   the heal (new production version + deployment marker) is the deeper fix and
-//!   is deliberately deferred — it needs a version-semantics decision, not a
-//!   guess.
+//!   RESOLVED: `apply_db_fixes` now snapshots the healed prompt as a new
+//!   `persona_prompt_versions` row and promotes it to `production` (see
+//!   `ai_healing::snapshot_healed_prompt`, called from `process_healing_result`
+//!   whenever a fix mutates a prompt column). The heal is therefore a
+//!   first-class version: auto-rollback's version-level error-rate metrics
+//!   attribute post-heal executions to the healed version, and a rollback
+//!   restores the healed prompt rather than reverting it to an older, pre-heal
+//!   snapshot. The `healing_personas` slot above still prevents the concurrent
+//!   prompt clobber; this closes the deferred version-visibility gap on top of
+//!   it.
 //!
 //! - **The `healing_personas` lock** prevents concurrent AI healing sessions
 //!   on the same persona — and now also blocks an auto-rollback prompt write
@@ -80,6 +81,28 @@ use super::healing::{
 /// Threshold of consecutive failures before the persona-level circuit breaker
 /// trips and disables the persona.
 pub const CIRCUIT_BREAKER_THRESHOLD: u32 = 5;
+
+/// Storm guard: the maximum number of **environmental** provider failures
+/// (usage-limit / API-server-error) a persona may accumulate within
+/// [`STORM_WINDOW_MINUTES`] before the usage-limit and ApiError arms stop
+/// scheduling another durable `RetryAt` and fold the run into a manual issue.
+///
+/// Why this exists: those two arms deliberately bypass the `consecutive < 3`
+/// gate because the failures are environmental (every run in the window fails),
+/// and the persona circuit breaker (`count_consecutive_real_failures`)
+/// *excludes* environmental failures by design — so during a sustained provider
+/// incident neither guard fires and a scheduled persona schedules a fresh
+/// `RetryAt` on every triggered run, across chains, unbounded. This cap is the
+/// backstop. It bounds the **retry COUNT within a window**, never the wait time
+/// — a single legitimate usage-window wait (which may be hours) still schedules
+/// normally; only a *storm* of many environmental failures trips it.
+pub const STORM_RETRY_CAP: u32 = 8;
+
+/// Rolling window (minutes) over which [`STORM_RETRY_CAP`] is counted. The
+/// caller (`engine::mod`) counts this persona's environmental failures over the
+/// same window via
+/// `executions::count_environmental_failures_in_window(_, _, STORM_WINDOW_MINUTES)`.
+pub const STORM_WINDOW_MINUTES: u32 = 60;
 
 /// The single healing strategy selected for a failure event.
 #[derive(Debug, Clone)]
@@ -115,12 +138,18 @@ impl HealingStrategy {
 
 /// Inputs to the decision tree.
 pub struct HealingContext<'a> {
-    /// Error string from the failed execution.
+    /// Error string from the failed execution. Retained for diagnosis text
+    /// (issue descriptions, suggested fixes) — NOT re-classified here.
     pub error: &'a str,
-    /// Whether the execution timed out (pre-parsed flag).
-    pub timed_out: bool,
-    /// Whether a session limit was hit (pre-parsed flag).
-    pub session_limit_reached: bool,
+    /// The failure category, classified **once** upstream on the failure path
+    /// (`evaluate_healing_and_retry` in `engine::mod`, via
+    /// [`healing::classify_error`] with the pre-parsed `timed_out` /
+    /// `session_limit_reached` flags). The decision tree consumes this instead
+    /// of re-running the string ladder — one classification, consumed
+    /// everywhere. The same value flows into the knowledge-base hint lookup and
+    /// the manual-review suppression check, so the whole healing path sees a
+    /// single, consistent category.
+    pub category: FailureCategory,
     /// Parsed usage-limit details (scope + reset time) when the failure was a
     /// provider usage cap. Enables the durable retry-at-reset path.
     pub usage_limit: Option<&'a UsageLimitInfo>,
@@ -130,6 +159,12 @@ pub struct HealingContext<'a> {
     pub timeout_ms: u64,
     /// Number of recent consecutive failures for this persona.
     pub consecutive_failures: u32,
+    /// Number of this persona's **environmental** provider failures
+    /// (usage-limit / API-server-error) within the last [`STORM_WINDOW_MINUTES`],
+    /// computed by the caller. Drives the storm guard on the usage-limit and
+    /// ApiError arms (see [`STORM_RETRY_CAP`]). Defaults to 0 in tests, so the
+    /// pre-existing decision outcomes are unaffected until a real storm builds.
+    pub environmental_failures_in_window: u32,
     /// Number of retries already attempted for this execution chain.
     pub retry_count: i64,
     /// Knowledge-base hint for this failure pattern.
@@ -145,8 +180,8 @@ pub struct HealingContext<'a> {
 /// This is a pure function with no side effects — callers are responsible for
 /// executing the chosen strategy (spawning retries, creating issues, etc.).
 pub fn evaluate(ctx: &HealingContext) -> HealingStrategy {
-    // Step 1: Classify the error.
-    let category = healing::classify_error(ctx.error, ctx.timed_out, ctx.session_limit_reached);
+    // Step 1: Consume the category classified once upstream (no re-parse here).
+    let category = ctx.category;
 
     // Step 2: Produce the rule-based diagnosis (always computed for issue creation).
     let diagnosis = healing::diagnose(
@@ -174,6 +209,23 @@ pub fn evaluate(ctx: &HealingContext) -> HealingStrategy {
     if let Some(ul) = ctx.usage_limit {
         let diagnosis = healing::usage_limit_diagnosis(ul, ctx.error, ctx.retry_count);
         return match diagnosis.action {
+            // Storm guard: a durable retry is the right call for a single
+            // window, but once this persona has stormed past the cap within the
+            // window we stop piling on and fold into a manual issue (the
+            // breaker can't catch environmental failures — see STORM_RETRY_CAP).
+            // The RetryAt durability of the uncapped path is untouched.
+            HealingAction::RetryAt { .. }
+                if ctx.environmental_failures_in_window >= STORM_RETRY_CAP =>
+            {
+                HealingStrategy::CreateIssue {
+                    diagnosis: healing::storm_capped_diagnosis(
+                        category,
+                        ctx.error,
+                        ctx.environmental_failures_in_window,
+                        STORM_WINDOW_MINUTES,
+                    ),
+                }
+            }
             HealingAction::RetryAt { .. } => HealingStrategy::RuleBasedRetry { diagnosis },
             _ => HealingStrategy::CreateIssue { diagnosis },
         };
@@ -188,6 +240,20 @@ pub fn evaluate(ctx: &HealingContext) -> HealingStrategy {
     // the safety valve that stops a persona hammering a sustained outage.
     if matches!(category, FailureCategory::ApiError) {
         return match diagnosis.action {
+            // Same storm guard as the usage-limit arm: cap the cross-chain
+            // RetryAt storm once environmental failures exceed the window cap.
+            HealingAction::RetryAt { .. }
+                if ctx.environmental_failures_in_window >= STORM_RETRY_CAP =>
+            {
+                HealingStrategy::CreateIssue {
+                    diagnosis: healing::storm_capped_diagnosis(
+                        category,
+                        ctx.error,
+                        ctx.environmental_failures_in_window,
+                        STORM_WINDOW_MINUTES,
+                    ),
+                }
+            }
             HealingAction::RetryAt { .. } => HealingStrategy::RuleBasedRetry { diagnosis },
             _ => HealingStrategy::CreateIssue { diagnosis },
         };
@@ -228,16 +294,20 @@ pub fn evaluate(ctx: &HealingContext) -> HealingStrategy {
 mod tests {
     use super::*;
 
+    /// Base context. `category` defaults to `Unknown`; tests that exercise a
+    /// specific category set it explicitly (mirroring how `mod::evaluate_healing_and_retry`
+    /// classifies once upstream and threads the result in). `error` is kept only
+    /// for the diagnosis text — the decision tree keys off `category`.
     fn base_ctx() -> HealingContext<'static> {
         HealingContext {
             error: "",
-            timed_out: false,
-            session_limit_reached: false,
+            category: FailureCategory::Unknown,
             usage_limit: None,
             execution_state: "failed",
             timeout_ms: 600_000,
             consecutive_failures: 0,
             retry_count: 0,
+            environmental_failures_in_window: 0,
             kb_hint: None,
             has_session_id: false,
             is_dev_mode: false,
@@ -250,6 +320,7 @@ mod tests {
     fn circuit_breaker_takes_priority_over_auto_fix() {
         let ctx = HealingContext {
             error: "rate limit exceeded",
+            category: FailureCategory::RateLimit,
             consecutive_failures: CIRCUIT_BREAKER_THRESHOLD,
             ..base_ctx()
         };
@@ -263,6 +334,7 @@ mod tests {
     fn circuit_breaker_takes_priority_over_ai_healing() {
         let ctx = HealingContext {
             error: "unknown error",
+            category: FailureCategory::Unknown,
             consecutive_failures: CIRCUIT_BREAKER_THRESHOLD,
             is_dev_mode: true,
             has_session_id: true,
@@ -280,6 +352,7 @@ mod tests {
     fn rate_limit_triggers_rule_based_retry() {
         let ctx = HealingContext {
             error: "rate limit exceeded",
+            category: FailureCategory::RateLimit,
             ..base_ctx()
         };
         assert!(matches!(
@@ -292,7 +365,7 @@ mod tests {
     fn timeout_triggers_rule_based_retry() {
         let ctx = HealingContext {
             error: "timed out",
-            timed_out: true,
+            category: FailureCategory::Timeout,
             ..base_ctx()
         };
         assert!(matches!(
@@ -305,6 +378,7 @@ mod tests {
     fn rate_limit_exhausted_retries_creates_issue() {
         let ctx = HealingContext {
             error: "rate limit exceeded",
+            category: FailureCategory::RateLimit,
             retry_count: MAX_RETRY_COUNT,
             ..base_ctx()
         };
@@ -319,6 +393,7 @@ mod tests {
         // consecutive_failures >= 3 disables auto_fixable
         let ctx = HealingContext {
             error: "rate limit exceeded",
+            category: FailureCategory::RateLimit,
             consecutive_failures: 3,
             ..base_ctx()
         };
@@ -335,6 +410,7 @@ mod tests {
     fn rule_based_retry_preempts_ai_healing() {
         let ctx = HealingContext {
             error: "rate limit exceeded",
+            category: FailureCategory::RateLimit,
             is_dev_mode: true,
             has_session_id: true,
             consecutive_failures: 2, // would trigger AI healing if not auto-fixable
@@ -353,6 +429,7 @@ mod tests {
     fn unknown_error_triggers_ai_healing_in_dev() {
         let ctx = HealingContext {
             error: "some random error",
+            category: FailureCategory::Unknown,
             is_dev_mode: true,
             has_session_id: true,
             ..base_ctx()
@@ -364,6 +441,7 @@ mod tests {
     fn credential_error_triggers_ai_healing_in_dev() {
         let ctx = HealingContext {
             error: "Invalid API key provided",
+            category: FailureCategory::CredentialError,
             is_dev_mode: true,
             has_session_id: true,
             ..base_ctx()
@@ -375,6 +453,7 @@ mod tests {
     fn incomplete_state_triggers_ai_healing_in_dev() {
         let ctx = HealingContext {
             error: "some error",
+            category: FailureCategory::Unknown,
             execution_state: "incomplete",
             is_dev_mode: true,
             has_session_id: true,
@@ -387,6 +466,7 @@ mod tests {
     fn consecutive_failures_trigger_ai_healing_in_dev() {
         let ctx = HealingContext {
             error: "network error happened",
+            category: FailureCategory::Network,
             consecutive_failures: 3, // >= 2 triggers AI healing for any category
             is_dev_mode: true,
             has_session_id: true,
@@ -399,6 +479,7 @@ mod tests {
     fn ai_healing_requires_session_id() {
         let ctx = HealingContext {
             error: "some random error",
+            category: FailureCategory::Unknown,
             is_dev_mode: true,
             has_session_id: false, // no session
             ..base_ctx()
@@ -414,6 +495,7 @@ mod tests {
     fn ai_healing_requires_dev_mode() {
         let ctx = HealingContext {
             error: "some random error",
+            category: FailureCategory::Unknown,
             is_dev_mode: false,
             has_session_id: true,
             ..base_ctx()
@@ -430,6 +512,7 @@ mod tests {
     fn non_fixable_error_in_prod_creates_issue() {
         let ctx = HealingContext {
             error: "Claude CLI not found",
+            category: FailureCategory::ProviderNotFound,
             ..base_ctx()
         };
         assert!(matches!(
@@ -442,7 +525,7 @@ mod tests {
     fn session_limit_creates_issue() {
         let ctx = HealingContext {
             error: "limit hit",
-            session_limit_reached: true,
+            category: FailureCategory::SessionLimit,
             ..base_ctx()
         };
         assert!(matches!(
@@ -457,6 +540,7 @@ mod tests {
     fn diagnosis_accessor_works() {
         let ctx = HealingContext {
             error: "rate limit exceeded",
+            category: FailureCategory::RateLimit,
             ..base_ctx()
         };
         let strategy = evaluate(&ctx);
@@ -467,15 +551,52 @@ mod tests {
     fn is_auto_action_correct() {
         let retry_ctx = HealingContext {
             error: "rate limit exceeded",
+            category: FailureCategory::RateLimit,
             ..base_ctx()
         };
         assert!(evaluate(&retry_ctx).is_auto_action());
 
         let issue_ctx = HealingContext {
             error: "Claude CLI not found",
+            category: FailureCategory::ProviderNotFound,
             ..base_ctx()
         };
         assert!(!evaluate(&issue_ctx).is_auto_action());
+    }
+
+    // --- Threading: the provided category drives the decision, not `error` ---
+
+    #[test]
+    fn provided_category_drives_decision_not_error_string() {
+        // The error string is opaque (would classify as `Unknown` → CreateIssue
+        // in prod), but the pre-computed category says RateLimit. If the
+        // orchestrator re-parsed `error` it would create an issue; because it
+        // consumes the threaded `category`, it schedules a rule-based retry.
+        // This is the guard that proves classification happens once upstream.
+        let ctx = HealingContext {
+            error: "an entirely opaque failure the ladder cannot bucket",
+            category: FailureCategory::RateLimit,
+            ..base_ctx()
+        };
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::RuleBasedRetry { .. }
+        ));
+
+        // And the inverse: a rate-limit-looking string but a Timeout category
+        // still follows the category (timeout → RetryWithTimeout, also a
+        // RuleBasedRetry) — proving the string is never consulted for the branch.
+        let ctx2 = HealingContext {
+            error: "rate limit exceeded",
+            category: FailureCategory::Timeout,
+            ..base_ctx()
+        };
+        let strategy = evaluate(&ctx2);
+        assert!(matches!(strategy, HealingStrategy::RuleBasedRetry { .. }));
+        assert!(matches!(
+            strategy.diagnosis().action,
+            HealingAction::RetryWithTimeout { .. }
+        ));
     }
 
     // --- Usage-limit override (step 3.5) ---
@@ -492,7 +613,7 @@ mod tests {
         // usage limits are environmental — the retry-at-reset still applies.
         let ctx = HealingContext {
             error: "Claude usage limit reached (rolling window)",
-            session_limit_reached: true,
+            category: FailureCategory::SessionLimit,
             usage_limit: Some(&ul),
             consecutive_failures: 3,
             ..base_ctx()
@@ -513,7 +634,7 @@ mod tests {
         };
         let ctx = HealingContext {
             error: "Claude weekly usage limit reached",
-            session_limit_reached: true,
+            category: FailureCategory::SessionLimit,
             usage_limit: Some(&ul),
             ..base_ctx()
         };
@@ -531,7 +652,7 @@ mod tests {
         };
         let ctx = HealingContext {
             error: "Claude usage limit reached (rolling window)",
-            session_limit_reached: true,
+            category: FailureCategory::SessionLimit,
             usage_limit: Some(&ul),
             consecutive_failures: CIRCUIT_BREAKER_THRESHOLD,
             ..base_ctx()
@@ -550,7 +671,7 @@ mod tests {
         };
         let ctx = HealingContext {
             error: "Claude usage limit reached (rolling window)",
-            session_limit_reached: true,
+            category: FailureCategory::SessionLimit,
             usage_limit: Some(&ul),
             retry_count: MAX_RETRY_COUNT,
             ..base_ctx()
@@ -567,6 +688,7 @@ mod tests {
     fn api_error_with_budget_schedules_resume_retry() {
         let ctx = HealingContext {
             error: "HTTP 500 internal server error",
+            category: FailureCategory::ApiError,
             ..base_ctx()
         };
         let strategy = evaluate(&ctx);
@@ -581,6 +703,7 @@ mod tests {
     fn api_error_exhausted_creates_issue() {
         let ctx = HealingContext {
             error: "503 service unavailable",
+            category: FailureCategory::ApiError,
             retry_count: MAX_RETRY_COUNT,
             ..base_ctx()
         };
@@ -593,6 +716,7 @@ mod tests {
         // circuit breaker at THRESHOLD still wins (covered separately).
         let ctx = HealingContext {
             error: "internal server error",
+            category: FailureCategory::ApiError,
             consecutive_failures: 3,
             ..base_ctx()
         };
@@ -606,6 +730,101 @@ mod tests {
     fn circuit_breaker_still_beats_api_error_retry() {
         let ctx = HealingContext {
             error: "HTTP 500 internal server error",
+            category: FailureCategory::ApiError,
+            consecutive_failures: CIRCUIT_BREAKER_THRESHOLD,
+            ..base_ctx()
+        };
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CircuitBreakerTripped { .. }
+        ));
+    }
+
+    // --- Storm guard (environmental cross-chain retry cap) ---------------
+
+    #[test]
+    fn usage_limit_below_storm_cap_still_schedules_retry() {
+        // One-below the cap: the durable RetryAt path is untouched.
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Window,
+            resets_at: None,
+        };
+        let ctx = HealingContext {
+            error: "Claude usage limit reached (rolling window)",
+            category: FailureCategory::SessionLimit,
+            usage_limit: Some(&ul),
+            environmental_failures_in_window: STORM_RETRY_CAP - 1,
+            ..base_ctx()
+        };
+        let strategy = evaluate(&ctx);
+        assert!(matches!(strategy, HealingStrategy::RuleBasedRetry { .. }));
+        // RetryAt durability preserved on the uncapped path.
+        assert!(matches!(
+            strategy.diagnosis().action,
+            HealingAction::RetryAt { .. }
+        ));
+    }
+
+    #[test]
+    fn usage_limit_storm_caps_into_issue() {
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Window,
+            resets_at: None,
+        };
+        let ctx = HealingContext {
+            error: "Claude usage limit reached (rolling window)",
+            category: FailureCategory::SessionLimit,
+            usage_limit: Some(&ul),
+            environmental_failures_in_window: STORM_RETRY_CAP,
+            ..base_ctx()
+        };
+        let strategy = evaluate(&ctx);
+        assert!(matches!(strategy, HealingStrategy::CreateIssue { .. }));
+        // Distinguishable from the ordinary usage-limit-exhausted issue.
+        let d = strategy.diagnosis();
+        assert!(d.title.contains("Provider incident"));
+        assert!(matches!(d.action, HealingAction::CreateIssue));
+        // Category preserved for correct attribution.
+        assert_eq!(d.category, FailureCategory::SessionLimit);
+    }
+
+    #[test]
+    fn api_error_storm_caps_into_issue() {
+        let ctx = HealingContext {
+            error: "HTTP 500 internal server error",
+            category: FailureCategory::ApiError,
+            environmental_failures_in_window: STORM_RETRY_CAP + 3,
+            ..base_ctx()
+        };
+        let strategy = evaluate(&ctx);
+        assert!(matches!(strategy, HealingStrategy::CreateIssue { .. }));
+        assert!(strategy.diagnosis().title.contains("Provider incident"));
+    }
+
+    #[test]
+    fn api_error_below_storm_cap_still_schedules_retry() {
+        let ctx = HealingContext {
+            error: "HTTP 500 internal server error",
+            category: FailureCategory::ApiError,
+            environmental_failures_in_window: STORM_RETRY_CAP - 1,
+            ..base_ctx()
+        };
+        let strategy = evaluate(&ctx);
+        assert!(matches!(strategy, HealingStrategy::RuleBasedRetry { .. }));
+        assert!(matches!(
+            strategy.diagnosis().action,
+            HealingAction::RetryAt { .. }
+        ));
+    }
+
+    #[test]
+    fn circuit_breaker_beats_storm_cap() {
+        // The persona breaker still has top precedence — a storm that also
+        // crossed the breaker threshold trips the breaker, not the storm issue.
+        let ctx = HealingContext {
+            error: "HTTP 500 internal server error",
+            category: FailureCategory::ApiError,
+            environmental_failures_in_window: STORM_RETRY_CAP + 10,
             consecutive_failures: CIRCUIT_BREAKER_THRESHOLD,
             ..base_ctx()
         };

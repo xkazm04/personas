@@ -2003,7 +2003,7 @@ mod tests {
         // Construct a minimal Persona for prefix-injection tests. The
         // prepend helper only reads/writes `system_prompt`; the rest
         // are filled with sensible defaults so the struct compiles.
-        crate::db::models::Persona {
+        crate::db::models::Persona { lifecycle: "active".to_string(),
             id: "p_test".into(),
             project_id: "proj_test".into(),
             name: "Test".into(),

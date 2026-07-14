@@ -316,7 +316,10 @@ mod tests {
         assert!(body.contains("## Gotchas"));
         assert!(body.contains("Pagination defaults to 30"));
         assert!(body.contains("## How to invoke"));
-        assert!(body.contains("$PERSONAS_PROXY_URL"));
+        // `$PERSONAS_PROXY_URL` was retired (prompt/mod.rs) — the proxy was
+        // never actually set, so the skill body points at the real
+        // direct-injected credential env vars instead.
+        assert!(body.contains("## Available Credentials"));
     }
 
     #[test]

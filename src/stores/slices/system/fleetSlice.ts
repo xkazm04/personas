@@ -54,6 +54,12 @@ export interface FleetSlice {
   fleetAutoHibernate: boolean;
   /** Inactivity minutes before auto-hibernate fires. Persisted; floored at 1. */
   fleetAutoHibernateMinutes: number;
+  /** Live-slot scheduler: cap concurrent process-backed claude sessions;
+   *  overflow Idle/Stale sessions are hibernated (resumable via Wake).
+   *  Persisted; pushed to Rust on change + on refresh. */
+  fleetLiveSlotsEnabled: boolean;
+  /** Max concurrent live sessions when the scheduler is on. Persisted; clamped 1–64. */
+  fleetMaxLiveSessions: number;
   /** Minutes of flat logs before a session flips Stale. Persisted; pushed to
    *  the Rust ticker on change + on refresh (clamped server-side too). */
   fleetStaleMinutes: number;
@@ -76,6 +82,8 @@ export interface FleetSlice {
   fleetSetNotifyAwaiting: (on: boolean) => void;
   fleetSetAutoHibernate: (on: boolean) => void;
   fleetSetAutoHibernateMinutes: (minutes: number) => void;
+  fleetSetLiveSlotsEnabled: (on: boolean) => void;
+  fleetSetMaxLiveSessions: (max: number) => void;
   fleetSetStaleMinutes: (minutes: number) => void;
   fleetSetFrozenMinutes: (minutes: number) => void;
   /** Set the terminal font size (clamped); pass a delta via fleetNudgeFont. */
@@ -102,6 +110,8 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetNotifyAwaiting: true,
   fleetAutoHibernate: false,
   fleetAutoHibernateMinutes: 30,
+  fleetLiveSlotsEnabled: false,
+  fleetMaxLiveSessions: 10,
   fleetStaleMinutes: 6,
   fleetFrozenMinutes: 2,
   fleetTransitions: {},
@@ -115,6 +125,7 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
     // a startup-side push is a tracked follow-up.)
     fleetApi.setAutoHibernate(get().fleetAutoHibernate, get().fleetAutoHibernateMinutes).catch(() => {});
     fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, get().fleetFrozenMinutes * 60).catch(() => {});
+    fleetApi.setLiveSlots(get().fleetLiveSlotsEnabled ? get().fleetMaxLiveSessions : 0).catch(() => {});
     set({ fleetSessionsLoading: true });
     try {
       const snapshot = await fleetApi.listSessions();
@@ -148,6 +159,16 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
     const m = Math.max(1, Math.round(minutes) || 1);
     set({ fleetAutoHibernateMinutes: m });
     fleetApi.setAutoHibernate(get().fleetAutoHibernate, m).catch(() => {});
+  },
+
+  fleetSetLiveSlotsEnabled: (on) => {
+    set({ fleetLiveSlotsEnabled: on });
+    fleetApi.setLiveSlots(on ? get().fleetMaxLiveSessions : 0).catch(() => {});
+  },
+  fleetSetMaxLiveSessions: (max) => {
+    const m = Math.min(64, Math.max(1, Math.round(max) || 1));
+    set({ fleetMaxLiveSessions: m });
+    fleetApi.setLiveSlots(get().fleetLiveSlotsEnabled ? m : 0).catch(() => {});
   },
 
   fleetSetStaleMinutes: (minutes) => {

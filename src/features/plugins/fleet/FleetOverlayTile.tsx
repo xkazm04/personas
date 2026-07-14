@@ -52,6 +52,14 @@ export function FleetOverlayTile({
       <div className="flex items-center gap-1.5 px-2 py-1 border-b border-primary/10 bg-secondary/20 shrink-0">
         <FleetStatusDots state={s.state} reason={s.stateReason} />
         <span className="typo-caption truncate flex-1 min-w-0 text-foreground">{s.name ?? s.title ?? s.projectLabel}</span>
+        {s.mode === 'headless' && (
+          <span
+            className="shrink-0 rounded-card border border-primary/15 bg-secondary/40 px-1.5 py-0.5 text-[10px] text-foreground opacity-80"
+            title={t.plugins.fleet.headless_no_terminal}
+          >
+            {t.plugins.fleet.headless_badge}
+          </span>
+        )}
         <button
           type="button"
           data-testid={`fleet-tile-view-${s.id}`}
@@ -79,11 +87,12 @@ export function FleetOverlayTile({
       <div className="flex-1 min-h-0">
         {showInsights ? (
           <FleetSessionInsights claudeSessionId={s.claudeSessionId} />
-        ) : live ? (
+        ) : live && s.mode !== 'headless' ? (
           // Live (subscribed) terminal — only the focused tile and sessions that
           // need the operator (awaiting_input). Everything else autonomous gets
           // the cheap status block below, so a 9-tile grid stays calm: Athena
           // triages the rest in the background. Click a tile to focus (peek) it.
+          // Headless sessions never mount an xterm (no TTY) — status block only.
           <FleetTerminalPane sessionId={s.id} autoFocus={false} />
         ) : (
           <FleetTileStatusBlock session={s} />

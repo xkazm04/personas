@@ -712,6 +712,7 @@ fn import_persona_from_value(pool: &DbPool, value: &serde_json::Value) -> Result
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
         notification_channels: None,
+        lifecycle: None,
     };
 
     let persona = persona_repo::create(pool, input)?;

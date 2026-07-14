@@ -2,6 +2,27 @@ import type { SidebarSection, CredentialMetadata } from '@/lib/types/types';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
+import type { Tier } from '@/lib/constants/uiModes';
+import { NAV_SECTIONS, passesGates, type NavSectionEntry } from '@/lib/navigation/registry';
+
+// -- Navigation destinations (registry-derived) ------------------------
+
+export interface PaletteNavContext {
+  isDev: boolean;
+  isTierVisible: (minTier: Tier) => boolean;
+}
+
+/**
+ * The navigation sections the command palette can reach, drawn from the single
+ * nav registry and gate-filtered (tier + devOnly) for the given context, in
+ * canonical nav order. `overlay-only` sections (e.g. Schedules) are included —
+ * the palette opens their title-bar overlay rather than navigating. `hidden`
+ * sections are excluded. Keeping this pure (no React, no stores) makes the
+ * palette's reachability contract unit-testable.
+ */
+export function reachablePaletteSections(ctx: PaletteNavContext): NavSectionEntry[] {
+  return NAV_SECTIONS.filter((e) => e.reachability !== 'hidden' && passesGates(e.gates, ctx));
+}
 
 // -- Types -------------------------------------------------------------
 

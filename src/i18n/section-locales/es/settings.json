@@ -640,7 +640,20 @@
     "empty": "Aún no se han registrado cambios de configuración. Las modificaciones realizadas a partir de ahora aparecerán en esta lista.",
     "empty_filtered": "Ninguna entrada coincide con el filtro de categoría actual.",
     "before": "Antes",
-    "after": "Después"
+    "after": "Después",
+    "categories": {
+      "api_keys": "Claves API",
+      "autonomy": "Autonomía",
+      "byom": "BYOM",
+      "config": "General",
+      "engine": "Motor",
+      "integrations": "Integraciones",
+      "limits": "Límites",
+      "notifications": "Notificaciones",
+      "quality_gates": "Controles de calidad",
+      "retention": "Retención",
+      "sync": "Sincronización en la nube"
+    }
   },
   "api_keys": {
     "title": "Claves de API",

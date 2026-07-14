@@ -8,7 +8,6 @@ use crate::cloud::client::CloudClient;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::{events as event_repo, shared_events as repo};
 use crate::db::DbPool;
-use crate::engine::event_registry::emit_event_bus;
 
 // ---------------------------------------------------------------------------
 // Relay state
@@ -111,14 +110,13 @@ pub async fn shared_event_relay_tick(
             Ok(firings) => {
                 let _ = repo::set_error(pool, &sub.id, None);
 
-                let mut sub_published = 0u32;
-                // Track the fired_at of the last CONTIGUOUSLY-published firing.
-                // The cursor may only advance through that prefix: if a publish
-                // fails, advancing past it (as the old code did, unconditionally
-                // to firings.last()) would skip the failed firing forever. On
-                // failure we stop the batch so ordering is preserved and the
-                // remainder re-polls next tick.
-                let mut last_published_at: Option<&str> = None;
+                // Record each firing's outcome in feed order; the cursor may
+                // only advance through the leading contiguous run of handled
+                // firings and must STOP at the first publish failure (advancing
+                // past it — as pre-2026 code did, unconditionally to
+                // firings.last() — would skip the failed firing forever). See
+                // `resolve_published_prefix`.
+                let mut outcomes: Vec<(FiringRelay, &str)> = Vec::with_capacity(firings.len());
                 for firing in &firings {
                     // Dedup: the feed cursor is a bare `fired_at` with no id
                     // tiebreaker, so a firing sharing a boundary timestamp can be
@@ -129,11 +127,16 @@ pub async fn shared_event_relay_tick(
                     // timestamp — needs a server-side composite cursor and can't
                     // be recovered here.)
                     if event_repo::exists_by_source_id(pool, &firing.id).unwrap_or(false) {
-                        last_published_at = Some(firing.fired_at.as_str());
+                        outcomes.push((FiringRelay::AlreadyRelayed, firing.fired_at.as_str()));
                         continue;
                     }
 
-                    // 3. Publish to local event bus
+                    // 3. Publish to the local event bus. We do NOT emit here:
+                    // `publish` INSERTs into persona_events, which fires the CDC
+                    // update hook — the single source of the `event-bus` emit
+                    // (db/cdc.rs). The old `emit_event_bus(app, &event)` ALSO
+                    // emitted, so every relayed firing reached the frontend
+                    // twice; only useEventLog's id-dedupe hid the duplicate.
                     let event_type = format!("shared:{}", sub.slug);
                     let input = CreatePersonaEventInput {
                         event_type,
@@ -146,24 +149,24 @@ pub async fn shared_event_relay_tick(
                     };
 
                     match event_repo::publish(pool, input) {
-                        Ok(event) => {
-                            emit_event_bus(app, &event);
+                        Ok(_event) => {
                             total_new += 1;
-                            sub_published += 1;
-                            last_published_at = Some(firing.fired_at.as_str());
+                            outcomes.push((FiringRelay::Published, firing.fired_at.as_str()));
                         }
                         Err(e) => {
                             tracing::warn!(
                                 sub_id = %sub.id,
                                 "SharedEventRelay: failed to publish event, holding cursor: {e}"
                             );
+                            outcomes.push((FiringRelay::Failed, firing.fired_at.as_str()));
                             break;
                         }
                     }
                 }
 
-                // 4. Advance the cursor only through the published prefix.
-                if let Some(fired_at) = last_published_at {
+                // 4. Advance the cursor only through the published/handled prefix.
+                let (cursor_fired_at, sub_published) = resolve_published_prefix(&outcomes);
+                if let Some(fired_at) = cursor_fired_at {
                     let _ = repo::update_cursor(pool, &sub.id, fired_at, sub_published);
                 }
             }
@@ -186,6 +189,48 @@ pub async fn shared_event_relay_tick(
     emit_status(app, &st);
 }
 
+// ---------------------------------------------------------------------------
+// Cursor advance rule (pure, testable)
+// ---------------------------------------------------------------------------
+
+/// Per-firing outcome, in feed order, used to compute how far the shared-event
+/// cursor may advance.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum FiringRelay {
+    /// Already relayed on a previous tick (dedup hit) — the cursor advances
+    /// through it, but nothing is re-published.
+    AlreadyRelayed,
+    /// Newly published this tick — the cursor advances and it counts toward the
+    /// published tally.
+    Published,
+    /// Publish failed — the cursor must STOP *before* this firing so it is
+    /// re-polled next tick rather than skipped forever.
+    Failed,
+}
+
+/// Compute `(cursor_fired_at, published_count)` from per-firing outcomes in feed
+/// order: the cursor advances through the leading contiguous run of *handled*
+/// firings (`AlreadyRelayed` | `Published`) and stops at the first `Failed`.
+/// `cursor_fired_at` is `None` when that prefix is empty (no firings, or the
+/// first firing failed) — leaving the stored cursor untouched.
+pub(crate) fn resolve_published_prefix<'a>(
+    outcomes: &[(FiringRelay, &'a str)],
+) -> (Option<&'a str>, u32) {
+    let mut cursor: Option<&'a str> = None;
+    let mut published = 0u32;
+    for (outcome, fired_at) in outcomes {
+        match outcome {
+            FiringRelay::AlreadyRelayed => cursor = Some(fired_at),
+            FiringRelay::Published => {
+                cursor = Some(fired_at);
+                published += 1;
+            }
+            FiringRelay::Failed => break,
+        }
+    }
+    (cursor, published)
+}
+
 fn emit_status(app: &AppHandle, st: &SharedEventRelayState) {
     let status = SharedEventRelayStatus {
         connected: true,
@@ -195,4 +240,69 @@ fn emit_status(app: &AppHandle, st: &SharedEventRelayState) {
         error: st.last_error.clone(),
     };
     let _ = app.emit("shared-event-relay-status", status);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{resolve_published_prefix, FiringRelay};
+
+    #[test]
+    fn empty_batch_leaves_cursor_untouched() {
+        assert_eq!(resolve_published_prefix(&[]), (None, 0));
+    }
+
+    #[test]
+    fn advances_through_all_published() {
+        let outcomes = [
+            (FiringRelay::Published, "t1"),
+            (FiringRelay::Published, "t2"),
+            (FiringRelay::Published, "t3"),
+        ];
+        assert_eq!(resolve_published_prefix(&outcomes), (Some("t3"), 3));
+    }
+
+    #[test]
+    fn already_relayed_advances_cursor_without_counting() {
+        // A batch of pure dedup hits still advances the cursor past them so the
+        // feed doesn't re-deliver the same boundary firings forever, but none
+        // count as newly published.
+        let outcomes = [
+            (FiringRelay::AlreadyRelayed, "t1"),
+            (FiringRelay::AlreadyRelayed, "t2"),
+        ];
+        assert_eq!(resolve_published_prefix(&outcomes), (Some("t2"), 0));
+    }
+
+    #[test]
+    fn mixed_dedup_and_published_counts_only_published() {
+        let outcomes = [
+            (FiringRelay::AlreadyRelayed, "t1"),
+            (FiringRelay::Published, "t2"),
+            (FiringRelay::AlreadyRelayed, "t3"),
+            (FiringRelay::Published, "t4"),
+        ];
+        assert_eq!(resolve_published_prefix(&outcomes), (Some("t4"), 2));
+    }
+
+    #[test]
+    fn stops_before_first_failure() {
+        // The cursor must hold at the last handled firing (t2); t3 failed and
+        // must be re-polled next tick, so anything at/after it is NOT skipped.
+        let outcomes = [
+            (FiringRelay::Published, "t1"),
+            (FiringRelay::Published, "t2"),
+            (FiringRelay::Failed, "t3"),
+        ];
+        assert_eq!(resolve_published_prefix(&outcomes), (Some("t2"), 2));
+    }
+
+    #[test]
+    fn first_firing_failure_leaves_cursor_untouched() {
+        let outcomes = [
+            (FiringRelay::Failed, "t1"),
+            (FiringRelay::Published, "t2"),
+        ];
+        // Never reached t2; cursor stays put so t1 is retried.
+        assert_eq!(resolve_published_prefix(&outcomes), (None, 0));
+    }
 }

@@ -52,6 +52,12 @@ Lifecycle of a CLI-sourced credential:
 
 `shared/vector` provides ML-gated knowledge-base creation, ingestion, search, document listing, and deletion through `credentials/vector_kb.rs`.
 
+**Ingestion accepts PDFs.** Alongside the text formats (md/txt/csv/json/yaml/html/source files), a `.pdf` is read one page at a time via its text layer, so every stored passage keeps the page it came from. Search results show that page as a citation, and each passage carries an *extraction confidence*: a passage read from a mostly-image page is flagged **Partial text** so an agent (or a reader) knows to hedge rather than assert. PDFs are text-layer only — there is no OCR — so a scanned document ingests with its image-only pages counted and surfaced ("N scanned pages unreadable" on the document row); a fully-scanned PDF fails ingestion with a message saying an OCR'd copy is needed, instead of silently indexing to nothing.
+
+**Corpus map.** `kb_corpus_map` renders a knowledge base as a compact Markdown overview — the documents in it, their page and passage counts, and which parts are unreadable scans — meant to be read *before* searching so an agent orients cheaply instead of guessing query terms. It is exposed both as a Tauri command and as a connector tool ("Corpus Map") on the built-in Local Vector DB connector.
+
+**Structured extraction (Structured Data tab).** Beyond search, a knowledge base can be turned into queryable typed rows. It runs in two passes with a review step between them: `kb_infer_schema` samples the corpus and proposes a schema of the objects the documents describe (entity types + fields); the user edits that schema; `kb_run_extraction` then processes each document against the approved schema in the background (progress on `kb-extraction-progress`) and writes `kb_entities` — each row keeping the document and page it came from and an extraction confidence. `kb_list_entities` reads them back. The rationale and data model live in `src/features/vault/shared/vector/DESIGN.md`. This is a UI-driven authoring flow; extraction is not yet exposed as an agent connector tool.
+
 ## Backend command families
 
 | Family | Modules |

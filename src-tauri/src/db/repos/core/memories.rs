@@ -352,6 +352,12 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
             ],
         )?;
 
+        // Embed-on-write (MEMORY CONTRACT (7)) — fire-and-forget, ml builds
+        // only, never blocks or fails the insert. The dedup early-return above
+        // deliberately does NOT re-embed: the survivor's vector either exists
+        // or the backfill pass will index it.
+        spawn_embed_memory(id.clone(), memory_embedding_text_parts(&title, &content));
+
         get_by_id(pool, &id)
     })
 }
@@ -450,6 +456,10 @@ pub fn batch_create(
         let now = chrono::Utc::now().to_rfc3339();
         let mut count: i64 = 0;
         let mut skipped: Vec<MemorySkipReason> = Vec::new();
+        // (id, embedding text) of rows actually inserted — embedded after the
+        // transaction commits so a rollback can't leave vectors for rows that
+        // never landed.
+        let mut to_embed: Vec<(String, String)> = Vec::new();
 
         // Preload existing normalized-content signatures for every persona in
         // this batch so write-path dedup costs ONE query per distinct persona
@@ -560,12 +570,17 @@ pub fn batch_create(
                     now,
                     input.use_case_id,
                 ])?;
+                to_embed.push((id, memory_embedding_text_parts(&title, &content)));
                 seen.insert(dedup_key);
                 count += 1;
             }
         }
 
         tx.commit()?;
+        // Embed-on-write for the committed rows (MEMORY CONTRACT (7)).
+        for (id, text) in to_embed {
+            spawn_embed_memory(id, text);
+        }
         Ok(BatchCreateMemoryResult {
             inserted: count,
             skipped,
@@ -759,6 +774,11 @@ pub fn update_content(
              WHERE id = ?6",
             params![title, content, importance, tags_json, now, id],
         )?;
+        if rows > 0 {
+            // Content changed → the stored vector is stale; re-embed
+            // (delete-then-insert, idempotent). MEMORY CONTRACT (7).
+            spawn_embed_memory(id.to_string(), memory_embedding_text_parts(title, content));
+        }
         Ok(rows > 0)
     })
 }
@@ -818,6 +838,8 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         }
 
         tx.commit()?;
+        // MEMORY CONTRACT (7): drop the deleted rows' vectors (best-effort).
+        spawn_delete_memory_embeddings(ids.to_vec());
         Ok(total_deleted)
     })
 }
@@ -1149,6 +1171,11 @@ pub fn merge(
         )?;
 
         tx.commit()?;
+        // MEMORY CONTRACT (7): index the merged row, drop the two retired
+        // vectors (both fire-and-forget; a miss is repaired by backfill /
+        // stays an inert orphan respectively).
+        spawn_embed_memory(id.clone(), memory_embedding_text_parts(&title, &content));
+        spawn_delete_memory_embeddings(vec![delete_id_a.to_string(), delete_id_b.to_string()]);
         get_by_id(pool, &id)
     })
 }
@@ -1472,6 +1499,308 @@ pub fn run_lifecycle(pool: &DbPool, persona_id: &str) -> Result<(i64, i64), AppE
     })
 }
 
+// ===========================================================================
+// Task-relevant recall: persona-memory embeddings (MEMORY CONTRACT (7))
+//
+// A vec0 side-table keyed by `memory_id`, 384-d AllMiniLML6V2Q — the SAME
+// model + `bytemuck` blob layout `companion::brain::embeddings` uses. Created
+// at RUNTIME (idempotent `CREATE VIRTUAL TABLE IF NOT EXISTS`), NOT via a
+// migration, so the sqlite-vec auto-extension registration — which
+// `db::init_user_db` performs BEFORE its pool is built — is guaranteed to have
+// run on every connection the table is touched from. The main `personas.db`
+// pool opens connections during `init_db` *before* that registration, so the
+// table deliberately lives in the vec-registered **user DB** pool
+// (`UserDbPool`); KNN returns bare `memory_id`s that the caller intersects with
+// the live candidate set it already loaded from the main DB, so no cross-DB
+// join is ever needed and an orphaned embedding (memory later deleted) is inert
+// noise a backfill/GC prunes.
+//
+// Everything here is `ml`-gated. The value-only recall path
+// (`engine::memory_recall::pack_by_budget` + `get_for_injection_v2`) is the
+// untouched non-ml fallback and gains nothing from this section.
+// ===========================================================================
+
+/// Embedding dimensionality for persona-memory vectors (AllMiniLML6V2Q).
+/// Mirrors `companion::brain::embeddings::COMPANION_VEC_DIMS`.
+#[cfg_attr(not(feature = "ml"), allow(dead_code))] // consumers are ml-gated
+pub const MEMORY_VEC_DIMS: usize = 384;
+
+/// Text embedded for a persona memory: `title` + `content`, the same fields
+/// the runner serializes into the prompt, so the vector reflects what the model
+/// actually reads. Used by BOTH the write-path embed and the backfill so the
+/// two index byte-identical strings.
+#[cfg_attr(not(feature = "ml"), allow(dead_code))] // callers (backfill / embed-on-create) are ml-gated
+pub fn memory_embedding_text(m: &PersonaMemory) -> String {
+    memory_embedding_text_parts(&m.title, &m.content)
+}
+
+/// [`memory_embedding_text`] for write paths that hold the parts before a
+/// `PersonaMemory` exists. Must stay in lockstep with it.
+pub fn memory_embedding_text_parts(title: &str, content: &str) -> String {
+    format!("{title}\n{content}")
+}
+
+/// Fire-and-forget embed for a just-written memory (embed-on-write). No-op
+/// unless app setup registered the recall runtime
+/// (`engine::memory_recall::init_task_recall_runtime`) AND we're inside a
+/// tokio runtime (unit tests aren't — they keep today's behavior
+/// byte-for-byte). Failures are logged and left for
+/// [`backfill_memory_embeddings`]: an embedding problem must never fail or
+/// slow a memory write, so the write path never awaits this.
+#[cfg(feature = "ml")]
+fn spawn_embed_memory(memory_id: String, text: String) {
+    let Some((vec_pool, embedder)) = crate::engine::memory_recall::task_recall_runtime() else {
+        return;
+    };
+    let Ok(handle) = tokio::runtime::Handle::try_current() else {
+        return;
+    };
+    handle.spawn(async move {
+        if let Err(e) = embed_and_store_memory(&vec_pool, &embedder, &memory_id, &text).await {
+            tracing::debug!(
+                memory_id = %memory_id,
+                error = %e,
+                "memory embed-on-write failed (row persisted; backfill will cover it)"
+            );
+        }
+    });
+}
+
+#[cfg(not(feature = "ml"))]
+fn spawn_embed_memory(_memory_id: String, _text: String) {}
+
+/// Fire-and-forget vector cleanup for hard-deleted memory ids. Same no-op
+/// conditions as [`spawn_embed_memory`]. A missed cleanup only leaves an
+/// orphan vector whose id never matches a live candidate — inert for recall.
+#[cfg(feature = "ml")]
+fn spawn_delete_memory_embeddings(ids: Vec<String>) {
+    if ids.is_empty() {
+        return;
+    }
+    let Some((vec_pool, _)) = crate::engine::memory_recall::task_recall_runtime() else {
+        return;
+    };
+    let Ok(handle) = tokio::runtime::Handle::try_current() else {
+        return;
+    };
+    handle.spawn(async move {
+        if let Err(e) = delete_memory_embeddings(&vec_pool, &ids) {
+            tracing::debug!(error = %e, "memory embedding cleanup failed (orphan vectors are inert)");
+        }
+    });
+}
+
+#[cfg(not(feature = "ml"))]
+fn spawn_delete_memory_embeddings(_ids: Vec<String>) {}
+
+/// Latched to `true` only after the vec table is created *successfully* this
+/// process — same rationale as companion's `VEC_TABLE_READY` (a `Once` would
+/// cache a transient first-call failure as "done" and strand the table absent
+/// for the whole process).
+#[cfg(feature = "ml")]
+static MEMORY_VEC_TABLE_READY: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Ensure the `persona_memory_embedding` vec0 table exists in `vec_pool` (the
+/// user DB pool where sqlite-vec is registered). Idempotent + latched.
+#[cfg(feature = "ml")]
+pub fn ensure_memory_vec_table(vec_pool: &crate::db::UserDbPool) -> Result<(), AppError> {
+    use std::sync::atomic::Ordering;
+    if MEMORY_VEC_TABLE_READY.load(Ordering::Acquire) {
+        return Ok(());
+    }
+    let conn = vec_pool.get()?;
+    conn.execute_batch(&format!(
+        "CREATE VIRTUAL TABLE IF NOT EXISTS persona_memory_embedding \
+         USING vec0(memory_id TEXT, embedding float[{MEMORY_VEC_DIMS}])"
+    ))?;
+    if !MEMORY_VEC_TABLE_READY.swap(true, Ordering::AcqRel) {
+        tracing::info!(dims = MEMORY_VEC_DIMS, "persona_memory_embedding table ready");
+    }
+    Ok(())
+}
+
+/// Embed `text` and (re)store the vector for `memory_id`. Best-effort at the
+/// call site: mirror `episodic::embed_and_store`'s log-and-continue — a failure
+/// here must NEVER fail the surrounding memory write. Delete-then-insert makes a
+/// re-embed (content edit / backfill re-run) idempotent instead of leaving two
+/// rows for one id that would both surface in KNN.
+#[cfg(feature = "ml")]
+pub async fn embed_and_store_memory(
+    vec_pool: &crate::db::UserDbPool,
+    embedder: &std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    memory_id: &str,
+    text: &str,
+) -> Result<(), AppError> {
+    ensure_memory_vec_table(vec_pool)?;
+    let vec = embedder.embed_query(text).await?;
+    if vec.len() != MEMORY_VEC_DIMS {
+        return Err(AppError::Internal(format!(
+            "embedder produced {} dims, expected {MEMORY_VEC_DIMS}",
+            vec.len()
+        )));
+    }
+    let blob: &[u8] = bytemuck::cast_slice(&vec);
+    let conn = vec_pool.get()?;
+    conn.execute(
+        "DELETE FROM persona_memory_embedding WHERE memory_id = ?1",
+        params![memory_id],
+    )?;
+    conn.execute(
+        "INSERT INTO persona_memory_embedding (memory_id, embedding) VALUES (?1, ?2)",
+        params![memory_id, blob],
+    )?;
+    Ok(())
+}
+
+/// KNN over `persona_memory_embedding`: returns `(memory_id, L2 distance)`
+/// nearest-first. Empty table → empty result (not an error), matching
+/// `companion::brain::embeddings::search_similar`. The caller applies
+/// `crate::retrieval::filter_by_distance_floor` +
+/// `crate::retrieval::MAX_VECTOR_DISTANCE` and converts distance to a
+/// similarity via `engine::memory_recall::similarity_from_distance`.
+#[cfg(feature = "ml")]
+pub async fn search_similar_memories(
+    vec_pool: &crate::db::UserDbPool,
+    embedder: &std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    query: &str,
+    k: usize,
+) -> Result<Vec<(String, f32)>, AppError> {
+    ensure_memory_vec_table(vec_pool)?;
+    let vec = embedder.embed_query(query).await?;
+    let blob: &[u8] = bytemuck::cast_slice(&vec);
+    let conn = vec_pool.get()?;
+    let count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM persona_memory_embedding", [], |r| {
+            r.get(0)
+        })
+        .unwrap_or(0);
+    if count == 0 {
+        return Ok(Vec::new());
+    }
+    let mut stmt = conn.prepare(
+        "SELECT memory_id, distance FROM persona_memory_embedding
+         WHERE embedding MATCH ?1 ORDER BY distance LIMIT ?2",
+    )?;
+    let rows = stmt
+        .query_map(params![blob, k as i64], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, f32>(1)?))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+/// Embed-on-create wrapper: [`create`] + best-effort [`embed_and_store_memory`].
+///
+/// The write path mirrors `companion::brain::episodic`'s log-and-continue
+/// posture: the memory row is ALWAYS persisted; a failed embedding is logged
+/// and left for [`backfill_memory_embeddings`] to repair — an embedding
+/// problem must never fail a memory write. Also correct on the dedup path:
+/// when [`create`] returns an existing survivor instead of inserting, the
+/// (idempotent, delete-then-insert) embed simply refreshes that survivor's
+/// vector. Callers that hold no embedder (non-ml builds, or an `AppState`
+/// without one) keep calling [`create`]; adoption is per-call-site.
+#[cfg(feature = "ml")]
+pub async fn create_with_embedding(
+    pool: &DbPool,
+    vec_pool: &crate::db::UserDbPool,
+    embedder: &std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    input: CreatePersonaMemoryInput,
+) -> Result<PersonaMemory, AppError> {
+    let created = create(pool, input)?;
+    let text = memory_embedding_text(&created);
+    if let Err(e) = embed_and_store_memory(vec_pool, embedder, &created.id, &text).await {
+        tracing::warn!(
+            memory_id = %created.id,
+            error = %e,
+            "memory embed-on-create failed (memory persisted; backfill will cover it)"
+        );
+    }
+    Ok(created)
+}
+
+/// Ids that already have an embedding (backfill diff source).
+#[cfg(feature = "ml")]
+pub fn embedded_memory_ids(
+    vec_pool: &crate::db::UserDbPool,
+) -> Result<std::collections::HashSet<String>, AppError> {
+    ensure_memory_vec_table(vec_pool)?;
+    let conn = vec_pool.get()?;
+    let mut stmt = conn.prepare("SELECT memory_id FROM persona_memory_embedding")?;
+    let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+    let mut set = std::collections::HashSet::new();
+    for r in rows {
+        set.insert(r?);
+    }
+    Ok(set)
+}
+
+/// Drop embeddings for `ids` (lifecycle cleanup when memories are hard-deleted).
+/// Chunked to stay under SQLite's variable limit; idempotent.
+#[cfg(feature = "ml")]
+pub fn delete_memory_embeddings(
+    vec_pool: &crate::db::UserDbPool,
+    ids: &[String],
+) -> Result<(), AppError> {
+    if ids.is_empty() {
+        return Ok(());
+    }
+    ensure_memory_vec_table(vec_pool)?;
+    let conn = vec_pool.get()?;
+    const CHUNK: usize = 400;
+    for chunk in ids.chunks(CHUNK) {
+        let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql =
+            format!("DELETE FROM persona_memory_embedding WHERE memory_id IN ({placeholders})");
+        let params: Vec<&dyn rusqlite::ToSql> =
+            chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+        conn.execute(&sql, params.as_slice())?;
+    }
+    Ok(())
+}
+
+/// Idempotent, batched backfill: embed every recall-eligible memory
+/// (`tier != 'archive'`) that lacks a vector, up to `batch_limit` this call.
+/// Reads candidates from the main DB (`main_pool`) and writes vectors to the
+/// user DB (`vec_pool`); the two DBs are joined in-memory by id. Best-effort
+/// per row — a single embedding failure is logged and skipped, never aborting
+/// the pass. Returns the number embedded this call, so a caller can loop until
+/// it returns 0. Wire it to a lifecycle tick or a maintenance command (that
+/// wiring lives outside this module — see the recall builder's report).
+#[cfg(feature = "ml")]
+pub async fn backfill_memory_embeddings(
+    main_pool: &DbPool,
+    vec_pool: &crate::db::UserDbPool,
+    embedder: &std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    batch_limit: usize,
+) -> Result<usize, AppError> {
+    ensure_memory_vec_table(vec_pool)?;
+    let already = embedded_memory_ids(vec_pool)?;
+    let candidates: Vec<PersonaMemory> = {
+        let conn = main_pool.get()?;
+        let mut stmt = conn.prepare("SELECT * FROM persona_memories WHERE tier != 'archive'")?;
+        let rows = stmt.query_map([], row_to_memory)?;
+        collect_rows(rows, "memories::backfill_memory_embeddings")
+    };
+    let mut embedded = 0usize;
+    for m in candidates {
+        if embedded >= batch_limit {
+            break;
+        }
+        if already.contains(&m.id) {
+            continue;
+        }
+        let text = memory_embedding_text(&m);
+        match embed_and_store_memory(vec_pool, embedder, &m.id, &text).await {
+            Ok(()) => embedded += 1,
+            Err(e) => {
+                tracing::warn!(memory_id = %m.id, error = %e, "memory embedding backfill: skipped one row")
+            }
+        }
+    }
+    Ok(embedded)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1532,6 +1861,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -1649,6 +1979,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -1707,6 +2038,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -1802,6 +2134,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap()
@@ -2056,6 +2389,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -2157,6 +2491,7 @@ mod tests {
                 max_turns: None,
                 design_context: None,
                 notification_channels: None,
+                lifecycle: None,
             },
         )
         .unwrap();
@@ -2589,5 +2924,120 @@ mod tests {
             vec![important.as_str(), busy.as_str()],
             "importance must dominate the decayed access term"
         );
+    }
+}
+
+#[cfg(all(test, feature = "ml"))]
+mod vec_tests {
+    //! Persona-memory embedding side-table (MEMORY CONTRACT (7)) — verifies
+    //! the vec0 mechanics without an embedder: table provisioning, KNN MATCH
+    //! ordering with the SAME SQL `search_similar_memories` issues,
+    //! delete-then-insert idempotence, the id/delete helpers, and that the
+    //! shared retrieval floor drops off-topic hits. Vectors are hand-crafted
+    //! 384-d unit vectors so distances are exact and deterministic.
+    use super::*;
+
+    fn vec_pool() -> crate::db::UserDbPool {
+        crate::engine::vector_store::ensure_vec_registered_pub();
+        let dir = std::env::temp_dir().join(format!("pm-vec-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(dir.join("vec-test.db"));
+        r2d2::Pool::builder().max_size(2).build(manager).unwrap()
+    }
+
+    fn unit_vec(axis: usize) -> Vec<f32> {
+        let mut v = vec![0.0f32; MEMORY_VEC_DIMS];
+        v[axis] = 1.0;
+        v
+    }
+
+    fn insert_vec(pool: &crate::db::UserDbPool, id: &str, v: &[f32]) {
+        let blob: &[u8] = bytemuck::cast_slice(v);
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO persona_memory_embedding (memory_id, embedding) VALUES (?1, ?2)",
+                params![id, blob],
+            )
+            .unwrap();
+    }
+
+    fn knn(pool: &crate::db::UserDbPool, q: &[f32], k: i64) -> Vec<(String, f32)> {
+        let blob: &[u8] = bytemuck::cast_slice(q);
+        let conn = pool.get().unwrap();
+        let mut stmt = conn
+            .prepare(
+                "SELECT memory_id, distance FROM persona_memory_embedding
+                 WHERE embedding MATCH ?1 ORDER BY distance LIMIT ?2",
+            )
+            .expect("vec0 MATCH must prepare (sqlite-vec registered)");
+        stmt.query_map(params![blob, k], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap()
+    }
+
+    #[test]
+    fn memory_vec_table_knn_floor_and_lifecycle() {
+        let pool = vec_pool();
+        ensure_memory_vec_table(&pool).expect("provision vec table");
+        // Latched fast-path must also succeed and be idempotent.
+        ensure_memory_vec_table(&pool).expect("second ensure is a no-op");
+
+        // on-topic: identical (d=0); related: mixed vector (0 < d < floor);
+        // off-topic: orthogonal unit vector (d = √2 ≈ 1.414 > 1.30 floor).
+        let query = unit_vec(0);
+        let mut related = vec![0.0f32; MEMORY_VEC_DIMS];
+        related[0] = 0.8;
+        related[1] = 0.6; // normalized: d² = (1-0.8)² + 0.6² = 0.4 → d ≈ 0.632
+        insert_vec(&pool, "on_topic", &unit_vec(0));
+        insert_vec(&pool, "related", &related);
+        insert_vec(&pool, "off_topic", &unit_vec(7));
+
+        let hits = knn(&pool, &query, 10);
+        let ids: Vec<&str> = hits.iter().map(|(id, _)| id.as_str()).collect();
+        assert_eq!(
+            ids,
+            vec!["on_topic", "related", "off_topic"],
+            "KNN must order nearest-first"
+        );
+
+        // The shared lane's floor drops the orthogonal hit entirely.
+        let (kept, dropped) = crate::retrieval::filter_by_distance_floor(
+            &hits,
+            crate::retrieval::MAX_VECTOR_DISTANCE,
+        );
+        assert_eq!(dropped, 1, "off-topic (√2) must fall past the 1.30 floor");
+        assert!(kept.iter().all(|(id, _)| id != "off_topic"));
+
+        // embedded_memory_ids sees all three.
+        let ids = embedded_memory_ids(&pool).unwrap();
+        assert_eq!(ids.len(), 3);
+
+        // Delete-then-insert idempotence: re-storing the same id leaves ONE row.
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "DELETE FROM persona_memory_embedding WHERE memory_id = ?1",
+            params!["on_topic"],
+        )
+        .unwrap();
+        drop(conn);
+        insert_vec(&pool, "on_topic", &unit_vec(0));
+        let n: i64 = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) FROM persona_memory_embedding WHERE memory_id = 'on_topic'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(n, 1);
+
+        // delete_memory_embeddings removes exactly the requested ids.
+        delete_memory_embeddings(&pool, &["on_topic".into(), "related".into()]).unwrap();
+        let rest = embedded_memory_ids(&pool).unwrap();
+        assert_eq!(rest.len(), 1);
+        assert!(rest.contains("off_topic"));
     }
 }

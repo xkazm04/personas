@@ -513,7 +513,17 @@
     "tab_chain": "链",
     "thinking_tooltip": "本次运行使用的推理强度",
     "trace_empty_hint": "详细 trace 仅记录于使用工具及较新的运行中，本次运行没有可显示的 trace。",
-    "verdict_field": "判定结果"
+    "verdict_field": "判定结果",
+    "chain_ended_because": "链结束原因",
+    "chain_total_cost": "链成本",
+    "active_chains_agents_one": "{count} 个代理",
+    "active_chains_agents_other": "{count} 个代理",
+    "active_chains_depth": "深度 {count}",
+    "active_chains_hops_one": "{count} 跳",
+    "active_chains_hops_other": "{count} 跳",
+    "active_chains_one": "{count} 条链运行中",
+    "active_chains_other": "{count} 条链运行中",
+    "active_chains_title": "运行中的链"
   },
   "lab": {
     "mode_arena": "竞技场",
@@ -840,7 +850,9 @@
     "eco_col_resolved": "已解决",
     "eco_empty": "暂无评估结果 — 运行实验室以填充成本效益数据。",
     "eco_subtitle": "每个模型解决评估的频率及每次成功的成本。",
-    "eco_title": "成本效益"
+    "eco_title": "成本效益",
+    "vr_col_tokens": "令牌",
+    "vr_tokens_tooltip": "每次运行平均输入 {input} / 输出 {output}"
   },
   "design": {
     "select_agent": "选择代理以开始设计分析",
@@ -1836,7 +1848,12 @@
     "delete_agents_message": "{count} 个代理及其所有配置将被永久删除。",
     "delete_drafts": "删除 {count} 个草稿",
     "delete_drafts_message": "{count} 个草稿代理将被永久删除。",
-    "system_persona_undeletable": "Director 是系统角色，无法删除。"
+    "system_persona_undeletable": "Director 是系统角色，无法删除。",
+    "archived_done": "已归档 {count} 个角色",
+    "bulk_delete_done": "已删除 {deleted} 个角色",
+    "bulk_delete_failed": "删除角色失败",
+    "bulk_delete_partial": "已删除 {deleted} 个；跳过 {skipped} 个",
+    "restored_done": "已恢复 {count} 个角色"
   },
   "persona_list": {
     "all_personas": "所有代理",
@@ -1872,7 +1889,12 @@
     "batch_moved_partial": "已移动 {ok} 个到 {group}；{failed} 个失败",
     "render_cap_notice": "显示 {total} 中的 {shown} 个 — 通过搜索或筛选来查看其余内容。",
     "star_director_add": "收藏以加入 Director 的辅导范围",
-    "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。"
+    "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。",
+    "badge_archived": "已归档",
+    "batch_archive": "归档",
+    "batch_restore": "恢复",
+    "show_active_personas": "显示活跃角色",
+    "show_archived_personas": "显示已归档角色"
   },
   "editor_ui": {
     "max_budget_label": "最大预算（USD）",
@@ -2724,5 +2746,10 @@
     "activate_agent": "激活代理",
     "create_agent": "创建代理",
     "min_completeness": "添加更多详情以达到 40% 完整度"
+  },
+  "duplicate": {
+    "done": "已复制为“{name}”",
+    "done_with_wiring": "已复制为“{name}” — 已复制 {triggers} 个触发器和 {subscriptions} 个订阅（副本中已禁用）",
+    "failed": "无法复制代理"
   }
 }

@@ -523,7 +523,9 @@
     "source": "উৎস",
     "processed": "প্রক্রিয়াকৃত",
     "event_data": "ইভেন্ট ডেটা",
-    "error": "ত্রুটি"
+    "error": "ত্রুটি",
+    "skipped_stat_label": "{skipped} এড়ানো হয়েছে",
+    "skipped_stat_tooltip": "গত ৭ দিনে {total}টির মধ্যে {skipped}টি ইভেন্টের কোনো সাবস্ক্রাইবার ছিল না এবং সেগুলি এড়িয়ে যাওয়া হয়েছে ({rate})। উচ্চ হার নির্দেশ করে যে এমন একটি ট্রিগার আছে যা কেউ শুনছে না।"
   },
   "health": {
     "title": "এজেন্ট স্বাস্থ্য",
@@ -703,7 +705,11 @@
     "all_statuses": "সব স্ট্যাটাস",
     "col_status": "স্ট্যাটাস",
     "col_id": "ID",
-    "execution_label": "এক্সিকিউশন"
+    "execution_label": "এক্সিকিউশন",
+    "error_category_by_persona": "এজেন্ট অনুযায়ী শীর্ষ ব্যর্থতা",
+    "error_category_prior_period": "পূর্ববর্তী সময়ের তুলনায়",
+    "error_category_section_title": "শ্রেণি অনুযায়ী ব্যর্থতা",
+    "error_category_total_failures": "মোট ব্যর্থতা"
   },
   "analytics_dashboard": {
     "issues_found": "{count}টি সমস্যা পাওয়া গেছে",
@@ -1387,7 +1393,32 @@
     "comparison_recommended": "প্রস্তাবিত",
     "flow_title": "এটি কীভাবে উন্মোচিত হয়",
     "timeline_title": "টাইমলাইন",
-    "log_title": "প্রমাণ"
+    "log_title": "প্রমাণ",
+    "default_attention_empty": "সব পার্সোনা সুস্থ — কোনো মনোযোগ দরকার নেই।",
+    "default_attention_low_trust": "কম আস্থা",
+    "default_attention_paused": "থামানো",
+    "default_attention_setup": "সেটআপ প্রয়োজন",
+    "default_attention_title": "মনোযোগ প্রয়োজন",
+    "default_callout_body": "এটি আপনার ফ্লিট অবস্থা থেকে তৈরি একটি শুরুর ভিউ। Athena-কে বলুন আপনার পছন্দ অনুযায়ী একটি ককপিট সাজাতে — সে এটি স্বয়ংক্রিয়ভাবে প্রতিস্থাপন করবে।",
+    "default_callout_title": "শুরুর ককপিট",
+    "default_roster_title": "আপনার পার্সোনা",
+    "default_stat_active_personas": "সক্রিয় পার্সোনা",
+    "default_stat_executions": "এক্সিকিউশন (৭ দিন)",
+    "default_stat_needs_attention": "মনোযোগ প্রয়োজন",
+    "default_stat_success_rate": "সাফল্যের হার",
+    "default_subtitle": "Athena যে শুরুর ভিউ ব্যক্তিগত করতে পারে — নিজের সাজাতে চ্যাট করুন।",
+    "default_title": "শুরুর ককপিট",
+    "default_vitals_title": "ফ্লিট ভাইটালস",
+    "empty_example_attention": "\"কী আমার মনোযোগ দরকার\"",
+    "empty_example_personas": "\"আমার পার্সোনাগুলো দেখাও\"",
+    "empty_hint": "Athena-কে একটি ককপিট ভিউ সাজাতে বলুন — {personas} বা {attention} চেষ্টা করুন।",
+    "empty_title": "আপনার ককপিট খালি",
+    "error_retry": "আবার চেষ্টা করুন",
+    "error_title": "আপনার ককপিট লোড করা যায়নি",
+    "subtitle_composed_prefix": "Athena সাজিয়েছে — আপডেট হয়েছে",
+    "subtitle_default": "আপনার সহচর-চালিত কর্মক্ষেত্র",
+    "talk_to_athena": "Athena-র সাথে কথা বলুন",
+    "unknown_widget": "অজানা উইজেট: {kind}"
   },
   "certification": {
     "title": "সার্টিফিকেশন কমান্ড সেন্টার",
@@ -1832,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "শুরুর তারিখ",
     "end_date": "শেষের তারিখ"
+  },
+  "healing_effectiveness": {
+    "attempted": "প্রচেষ্টা",
+    "confirmed": "নিশ্চিত",
+    "loading": "নিরাময় পরিসংখ্যান লোড হচ্ছে…",
+    "no_data": "এখনও কোনো অটো-ফিক্স কার্যকলাপ নেই",
+    "recent_activity": "সাম্প্রতিক কার্যকলাপ",
+    "reverted": "প্রত্যাবর্তিত",
+    "success_rate": "সাফল্যের হার",
+    "title": "স্ব-নিরাময়",
+    "window_label": "সর্বশেষ"
   }
 }

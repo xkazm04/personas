@@ -11,7 +11,7 @@ vi.mock('@sentry/react', () => ({
   addBreadcrumb: (...args: unknown[]) => addBreadcrumb(...args),
 }));
 
-import { resolveError, friendlySeverity } from '../errorRegistry';
+import { resolveError, friendlySeverity, extractAuthorizeUrl } from '../errorRegistry';
 
 describe('resolveError', () => {
   beforeEach(() => {
@@ -80,6 +80,41 @@ describe('resolveError', () => {
 
     resolveError('Session expired'); // different raw → new breadcrumb
     expect(addBreadcrumb).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('resolveError — structured AppError variants (gap closure)', () => {
+  beforeEach(() => addBreadcrumb.mockClear());
+
+  // The five variants that previously fell to GENERIC_FALLBACK. Each must now
+  // resolve to a specific, non-generic friendly message.
+  const VARIANTS: Array<{ raw: string; contains: string; category: string }> = [
+    { raw: 'OAuth grant revoked: credential c1', contains: 'authorization was revoked', category: 'user_action' },
+    { raw: 'Retry exhausted: 5 attempts failed', contains: 'automatic retries', category: 'recoverable' },
+    { raw: 'Identity keyring lost: backend unavailable', contains: 'credential store', category: 'system' },
+    { raw: "Authorization required for tool 'gmail' on credential 'c1' — open https://auth.example/grant to grant consent", contains: 'needs your authorization', category: 'user_action' },
+    { raw: 'Resource list returned HTTP 500: upstream boom', contains: 'external service', category: 'system' },
+  ];
+
+  it.each(VARIANTS)('resolves "$raw" to a non-generic friendly message', ({ raw, contains, category }) => {
+    const friendly = resolveError(raw);
+    expect(friendly.message).not.toBe('Something went wrong.');
+    expect(friendly.message.toLowerCase()).toContain(contains.toLowerCase());
+    expect(friendly.category).toBe(category);
+    expect(friendly.suggestion.length).toBeGreaterThan(0);
+  });
+
+  it('attaches an authorize action carrying the parsed consent URL', () => {
+    const friendly = resolveError(
+      "Authorization required for tool 'gmail' on credential 'c1' — open https://auth.example/grant?c=1 to grant consent",
+    );
+    expect(friendly.action).toEqual({ type: 'authorize', url: 'https://auth.example/grant?c=1' });
+  });
+
+  it('extractAuthorizeUrl pulls the first http(s) URL, else null', () => {
+    expect(extractAuthorizeUrl('open https://x.io/a?b=1 to grant consent')).toBe('https://x.io/a?b=1');
+    expect(extractAuthorizeUrl('Authorization required for tool x — no url here')).toBeNull();
+    expect(extractAuthorizeUrl(null)).toBeNull();
   });
 });
 

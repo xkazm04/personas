@@ -189,7 +189,16 @@
     "auto_hibernate_desc": "थ्रेशोल्ड से अधिक समय तक निष्क्रिय रहने वाले सत्रों को स्वतः हाइबरनेट करें — Fleet फ़ोकस में न हो तब भी प्रक्रिया मुक्त करें। वे Wake के ज़रिए पुनः शुरू करने योग्य रहते हैं। Personas खुला रहने पर चलता है।",
     "auto_hibernate_toggle": "स्वतः हाइबरनेट सक्षम करें",
     "auto_hibernate_after": "बाद में",
-    "auto_hibernate_minutes_unit": "मिनट निष्क्रिय"
+    "auto_hibernate_minutes_unit": "मिनट निष्क्रिय",
+    "live_slots_desc": "एक साथ कितनी claude प्रक्रियाएँ चलें, इसे सीमित करें। फ़्लीट सीमा पर पहुँचने पर सबसे पुराना निष्क्रिय सत्र जगह बनाने के लिए हाइबरनेट कर दिया जाता है — जगाएँ से इसे फिर से शुरू किया जा सकता है। काम कर रहे सत्र कभी बाधित नहीं होते।",
+    "live_slots_max_label": "अधिकतम",
+    "live_slots_title": "लाइव सत्र सीमित करें",
+    "live_slots_toggle": "सत्र सीमा सक्षम करें",
+    "live_slots_unit": "लाइव सत्र",
+    "headless_badge": "पृष्ठभूमि",
+    "headless_no_terminal": "पृष्ठभूमि सत्र — टर्मिनल के बिना चल रहा है। \"आपकी ज़रूरत है\" बैनर से जवाब दें; प्रगति Insights में दिखती है।",
+    "spawn_headless_hint": "हेडलेस मोड — लाइव टर्मिनल नहीं, CPU और RAM पर काफ़ी कम भार। \"आपकी ज़रूरत है\" बैनर से जवाब दें; प्रगति Insights में देखें।",
+    "spawn_headless_toggle": "पृष्ठभूमि में चलाएँ (टर्मिनल के बिना)"
   },
   "title": "प्लगइन",
   "subtitle": "प्लगइन से अपने कार्यक्षेत्र को विस्तारित करें। साइडबार में दिखाने या छिपाने के लिए टॉगल करें।",
@@ -2155,7 +2164,8 @@
     "voice_pocket_upload_save": "आवाज़ जोड़ें",
     "voice_pocket_upload_title": "अपनी आवाज़ जोड़ें",
     "voice_pocket_hf_gate_desc": "अपनी क्लोन की गई आवाज़ों को स्वयं प्रबंधित करने के लिए क्रेडेंशियल वॉल्ट में Hugging Face एक्सेस टोकन आवश्यक है — यह वॉइस-क्लोनिंग मॉडल के लाइसेंस को आपके खाते से जोड़ता है। एक Hugging Face क्रेडेंशियल जोड़ें, फिर यहाँ वापस आएं।",
-    "voice_pocket_hf_gate_title": "Hugging Face खाता आवश्यक है"
+    "voice_pocket_hf_gate_title": "Hugging Face खाता आवश्यक है",
+    "persona_overview_kpi_trust_clamped": "ट्रस्ट स्कोर सीमा से बाहर था और इसे 100% पर सीमित कर दिया गया है।"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",
@@ -2405,7 +2415,9 @@
     "goal_scaffold_timeline_title": "टाइमलाइन",
     "goal_scaffold_timeline_sub": "लक्ष्य तिथि के अनुसार लक्ष्यों का समय-अक्ष दृश्य, निर्भरता तीरों और स्लिप मार्करों के साथ। जल्द आ रहा है।",
     "goal_field_title": "शीर्षक",
+    "goal_field_title_placeholder": "आप किस परिणाम की ओर बढ़ रहे हैं?",
     "goal_field_description": "विवरण",
+    "goal_field_description_placeholder": "वैकल्पिक संदर्भ, दायरा, या सफलता कैसी दिखती है…",
     "goal_field_status": "स्थिति",
     "goal_field_target_date": "लक्ष्य तिथि",
     "goal_target_asap": "जल्द से जल्द",

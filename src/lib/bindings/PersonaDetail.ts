@@ -92,4 +92,11 @@ setup_detail: string | null,
  * re-build flows (seeds the build session's disabled_dims_json).
  * NULL = no disables; this is the default for fresh + legacy rows.
  */
-disabled_dims_json: string | null, created_at: string, updated_at: string, };
+disabled_dims_json: string | null, 
+/**
+ * First-class lifecycle stage (`draft` | `active` | `archived`). Replaces
+ * the old frontend draft heuristic. Defaults to `active`; the build-stub
+ * creation path stamps `draft`, promote stamps `active`, archive/restore
+ * move to/from `archived`. Stored as the lowercase string.
+ */
+lifecycle: string, created_at: string, updated_at: string, };

@@ -23,8 +23,6 @@ import { classifyUnknownError, categoryLabel } from "@/lib/errorTaxonomy";
 import { storeBus } from "@/lib/storeBus";
 import { autoAssignPersonaIcons } from "@/lib/icons/autoAssignIcons";
 
-const DEGRADATION_THRESHOLD = 3;
-
 /** Sub-resources fetched via getPersonaDetail, cached by persona ID. */
 export interface PersonaDetailExtras {
   tools: PersonaToolDefinition[];
@@ -62,9 +60,6 @@ export interface PersonaSlice {
   personaTriggerCounts: Record<string, number>;
   personaLastRun: Record<string, string | null>;
   personaHealthMap: Record<string, PersonaHealth>;
-  summaryConsecutiveFailures: number;
-  detailConsecutiveFailures: number;
-  degradationError: string | null;
   /** Whether the editor has unsaved changes -- set by EditorBody. */
   isEditorDirty: boolean;
   /** Persona ID the user tried to switch to while dirty. */
@@ -75,7 +70,7 @@ export interface PersonaSlice {
   fetchPersonaSummaries: () => Promise<void>;
   fetchDetail: (id: string) => Promise<void>;
   prefetchPersona: (id: string, signal?: AbortSignal) => Promise<void>;
-  createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string; structured_prompt?: string; design_context?: string }) => Promise<Persona>;
+  createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string; structured_prompt?: string; design_context?: string; lifecycle?: string }) => Promise<Persona>;
   duplicatePersona: (id: string) => Promise<Persona>;
   updatePersona: (id: string, input: PartialPersonaUpdate) => Promise<void>;
   applyPersonaOp: (id: string, op: PersonaOperation) => Promise<void>;
@@ -93,6 +88,36 @@ let fetchDetailSeq = 0;
 let fetchSummariesSeq = 0;
 const prefetchInflight = new Map<string, Promise<void>>();
 
+/**
+ * `listPersonas` returns a LEAN roster projection — the heavy editor-only
+ * fields (`system_prompt`, `structured_prompt`, `last_test_report`,
+ * `notification_channels`, `parameters`) come back blank. A row is hydrated to
+ * full fidelity by `getPersonaDetail` when the persona is opened. So when a
+ * roster refetch lands while a persona is open (or was opened), we must NOT let
+ * the incoming blank fields clobber the fuller row already in the store —
+ * otherwise the editor's system prompt would blink to empty on a background
+ * refresh. A non-empty `system_prompt` on the previous row is the reliable
+ * "already hydrated" signal (every real persona has a non-empty prompt; lean
+ * rows always blank it).
+ */
+function mergeHeavyFields(prev: Persona[], incoming: Persona[]): Persona[] {
+  const prevById = new Map(prev.map((p) => [p.id, p]));
+  return incoming.map((lean) => {
+    const before = prevById.get(lean.id);
+    if (before && before.system_prompt) {
+      return {
+        ...lean,
+        system_prompt: before.system_prompt,
+        structured_prompt: before.structured_prompt,
+        last_test_report: before.last_test_report,
+        notification_channels: before.notification_channels,
+        parameters: before.parameters,
+      };
+    }
+    return lean;
+  });
+}
+
 export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> = (set, get) => ({
   personas: [],
   selectedPersonaId: null,
@@ -101,17 +126,16 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   personaTriggerCounts: {},
   personaLastRun: {},
   personaHealthMap: {},
-  summaryConsecutiveFailures: 0,
-  detailConsecutiveFailures: 0,
-  degradationError: null,
   isEditorDirty: false,
   pendingSelectPersonaId: null,
 
   fetchPersonas: async () => {
     set({ isLoading: true, error: null });
     try {
-      const personas = await listPersonas();
+      const leanPersonas = await listPersonas();
       set((state) => {
+        // Preserve heavy fields for rows already hydrated in the editor.
+        const personas = mergeHeavyFields(state.personas, leanPersonas);
         // Validate persisted selection -- clear if the persona was deleted
         const stillExists =
           state.selectedPersonaId == null ||
@@ -139,14 +163,17 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       // whether it actually persisted any assignments. Only re-fetch + replace
       // the store when it did — a no-op pass must not run listPersonas()+set(),
       // since that would overwrite decrypted/optimistic rows with redacted ones.
-      autoAssignPersonaIcons(personas).then(async (assigned) => {
+      autoAssignPersonaIcons(leanPersonas).then(async (assigned) => {
         if (!assigned) return;
         // Re-fetch to pick up newly assigned icons
-        const updated = await listPersonas();
-        set((s) => ({
-          personas: updated,
-          selectedPersona: deriveSelectedPersona(updated, s.selectedPersonaId, s.detailCache),
-        }));
+        const updatedLean = await listPersonas();
+        set((s) => {
+          const updated = mergeHeavyFields(s.personas, updatedLean);
+          return {
+            personas: updated,
+            selectedPersona: deriveSelectedPersona(updated, s.selectedPersonaId, s.detailCache),
+          };
+        });
       }).catch(() => { /* silent */ });
     } catch (err) {
       reportError(err, "Failed to fetch personas", set, { stateUpdates: { isLoading: false } });
@@ -171,21 +198,11 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         personaTriggerCounts: triggerCounts,
         personaLastRun: lastRun,
         personaHealthMap: healthMap,
-        summaryConsecutiveFailures: 0,
-        degradationError: get().detailConsecutiveFailures >= DEGRADATION_THRESHOLD
-          ? get().degradationError : null,
       });
     } catch (err) {
       if (seq !== fetchSummariesSeq) return; // superseded by a newer request
-      const failures = get().summaryConsecutiveFailures + 1;
       const category = classifyUnknownError(err);
-      logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), attempt: failures, error: String(err) });
-      set({
-        summaryConsecutiveFailures: failures,
-        degradationError: failures >= DEGRADATION_THRESHOLD
-          ? `Sidebar data unavailable (${categoryLabel(category)} error, ${failures} consecutive failures)`
-          : get().degradationError,
-      });
+      logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), error: String(err) });
     }
   },
 
@@ -214,16 +231,12 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           detailCache: nextCache,
           selectedPersona: deriveSelectedPersona(nextPersonas, id, nextCache),
           isLoading: false,
-          detailConsecutiveFailures: 0,
-          degradationError: state.summaryConsecutiveFailures >= DEGRADATION_THRESHOLD
-            ? state.degradationError : null,
         };
       });
     } catch (err) {
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
-      const failures = get().detailConsecutiveFailures + 1;
       const category = classifyUnknownError(err);
-      logger.warn("fetchDetail failed", { personaId: id, category: categoryLabel(category), attempt: failures, error: String(err) });
+      logger.warn("fetchDetail failed", { personaId: id, category: categoryLabel(category), error: String(err) });
       // Clear stale selection so the editor doesn't render with missing data
       set((state) => {
         const nextCache = { ...state.detailCache };
@@ -234,10 +247,6 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           selectedPersonaId: null,
           detailCache: nextCache,
           selectedPersona: null,
-          detailConsecutiveFailures: failures,
-          degradationError: failures >= DEGRADATION_THRESHOLD
-            ? `Persona loading degraded (${categoryLabel(category)} error, ${failures} consecutive failures)`
-            : state.degradationError,
         };
       });
     }
@@ -337,6 +346,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         max_turns: null,
         design_context: input.design_context ?? null,
         notification_channels: null,
+        lifecycle: input.lifecycle ?? null,
       });
       set((state) => ({ personas: [persona, ...state.personas] }));
       void import("@/lib/analytics").then((a) => a.markActivation("persona_created"));

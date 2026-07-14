@@ -189,7 +189,16 @@
     "auto_hibernate_desc": "নির্ধারিত সময়ের বেশি নিষ্ক্রিয় সেশনগুলো স্বয়ংক্রিয়ভাবে হাইবারনেট করুন — Fleet ফোকাসে না থাকলেও প্রক্রিয়া মুক্ত হবে। Wake দিয়ে পুনরায় শুরু করা যাবে। Personas খোলা থাকলে চলে।",
     "auto_hibernate_toggle": "অটো-হাইবারনেট সক্রিয় করুন",
     "auto_hibernate_after": "পরে",
-    "auto_hibernate_minutes_unit": "মিনিট নিষ্ক্রিয়"
+    "auto_hibernate_minutes_unit": "মিনিট নিষ্ক্রিয়",
+    "live_slots_desc": "একসাথে কতগুলি claude প্রসেস চলবে তা সীমিত করুন। ফ্লিট সীমায় পৌঁছালে সবচেয়ে পুরোনো নিষ্ক্রিয় সেশনটি জায়গা করে দিতে হাইবারনেট করা হয় — জাগান দিয়ে যেকোনো সময় আবার চালু করা যায়। কর্মরত সেশন কখনও বাধাগ্রস্ত হয় না।",
+    "live_slots_max_label": "সর্বোচ্চ",
+    "live_slots_title": "লাইভ সেশন সীমিত করুন",
+    "live_slots_toggle": "সেশন সীমা চালু করুন",
+    "live_slots_unit": "লাইভ সেশন",
+    "headless_badge": "পটভূমি",
+    "headless_no_terminal": "পটভূমির সেশন — টার্মিনাল ছাড়া চলছে। \"আপনাকে দরকার\" ব্যানার থেকে উত্তর দিন; অগ্রগতি Insights-এ দেখা যায়।",
+    "spawn_headless_hint": "হেডলেস মোড — লাইভ টার্মিনাল ছাড়া, CPU ও RAM-এ অনেক কম চাপ। \"আপনাকে দরকার\" ব্যানার থেকে উত্তর দিন; অগ্রগতি Insights-এ দেখুন।",
+    "spawn_headless_toggle": "পটভূমিতে চালান (টার্মিনাল ছাড়া)"
   },
   "title": "প্লাগিন",
   "subtitle": "প্লাগিন দিয়ে আপনার ওয়ার্কস্পেস প্রসারিত করুন। সাইডবার থেকে দেখাতে বা লুকাতে টগল করুন।",
@@ -2155,7 +2164,8 @@
     "voice_pocket_upload_save": "ভয়েস যোগ করুন",
     "voice_pocket_upload_title": "আপনার ভয়েস যোগ করুন",
     "voice_pocket_hf_gate_desc": "নিজের ক্লোন করা ভয়েস পরিচালনা করতে ক্রেডেনশিয়াল ভল্টে একটি Hugging Face অ্যাক্সেস টোকেন প্রয়োজন — এটি ভয়েস-ক্লোনিং মডেলের লাইসেন্সকে আপনার অ্যাকাউন্টের সাথে সংযুক্ত করে। একটি Hugging Face ক্রেডেনশিয়াল যোগ করুন, তারপর এখানে ফিরে আসুন।",
-    "voice_pocket_hf_gate_title": "Hugging Face অ্যাকাউন্ট প্রয়োজন"
+    "voice_pocket_hf_gate_title": "Hugging Face অ্যাকাউন্ট প্রয়োজন",
+    "persona_overview_kpi_trust_clamped": "ট্রাস্ট স্কোর সীমার বাইরে ছিল এবং ১০০%-এ সীমাবদ্ধ করা হয়েছে।"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",
@@ -2405,7 +2415,9 @@
     "goal_scaffold_timeline_title": "টাইমলাইন",
     "goal_scaffold_timeline_sub": "লক্ষ্য তারিখ অনুযায়ী লক্ষ্যের সময়-অক্ষ ভিউ, নির্ভরতার তীর ও স্লিপ মার্কার সহ। শীঘ্রই আসছে।",
     "goal_field_title": "শিরোনাম",
+    "goal_field_title_placeholder": "আপনি কোন ফলাফলের দিকে এগিয়ে যাচ্ছেন?",
     "goal_field_description": "বিবরণ",
+    "goal_field_description_placeholder": "ঐচ্ছিক প্রসঙ্গ, পরিধি বা সাফল্যের মানদণ্ড…",
     "goal_field_status": "অবস্থা",
     "goal_field_target_date": "লক্ষ্য তারিখ",
     "goal_target_asap": "যত তাড়াতাড়ি সম্ভব",

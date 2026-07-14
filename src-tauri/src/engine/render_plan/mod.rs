@@ -275,6 +275,8 @@ pub struct LoudnormMeasurements {
 pub enum OverlayStage {
     #[serde(rename = "image")]
     Image(ImageOverlayStage),
+    #[serde(rename = "text")]
+    Text(TextOverlayStage),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -290,52 +292,137 @@ pub struct ImageOverlayStage {
     pub position_x: f64,
     pub position_y: f64,
 
+    /// Optional positional entrance — the overlay eases into `position_*` from
+    /// an offset. This is the "spring up, staggered" motion an explainer video
+    /// is built from. None = the overlay is static at `position_*`.
+    pub enter: Option<OverlayEnter>,
+
     /// Must reference a 'file' or 'proxy' source.
     pub source_id: u32,
     /// 1.0 = source's natural size within the frame.
     pub scale: f64,
 }
 
+/// A positional entrance animation. The overlay starts at
+/// `position + (offset_x, offset_y)` and eases to `position` over `duration`
+/// seconds from the stage's `output_start`.
+///
+/// Deliberately position + opacity only, NOT scale. ffmpeg's `overlay` filter
+/// takes time-varying `x`/`y` expressions, so position animates cleanly in a
+/// single filtergraph pass with no per-frame rasterizer. Scale is not
+/// time-varying in the `scale` filter, so a scale-spring would need a second
+/// render path — deferred. Opacity uses the existing fade envelope.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayEnter {
+    /// Seconds from `output_start` over which the entrance plays. Clamped to
+    /// the stage duration by the compiler.
+    pub duration: f64,
+    /// Starting offset in frame-relative units (fraction of width / height),
+    /// added to `position_*` at t=output_start and eased to 0 by
+    /// output_start + duration. Positive `offset_y` = rises up into place.
+    pub offset_x: f64,
+    pub offset_y: f64,
+    pub easing: Easing,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, TS, PartialEq, Eq)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub enum Easing {
+    Linear,
+    EaseOut,
+    EaseInOut,
+}
+
+/// A burned-in title / caption / number, composited over the video track and
+/// rendered into both the preview frame and the exported file.
+///
+/// This is NOT a beat. Beats (`TextItemInput`) are timeline milestones the
+/// user annotates and are never drawn. Titles are the visible typography an
+/// explainer video is made of. The two are deliberately separate item types
+/// so that adding a title cannot change the meaning of an existing beat.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TextOverlayStage {
+    pub id: String,
+    pub output_start: f64,
+    pub output_end: f64,
+    pub fade_in: f64,
+    pub fade_out: f64,
+
+    pub position_x: f64,
+    pub position_y: f64,
+
+    /// The glyphs to draw. Already resolved — renderers do not interpolate.
+    pub text: String,
+
+    /// CSS-ish family name. The preview feeds this straight to `font-family`;
+    /// the exporter maps it to a concrete TTF via its own platform lookup.
+    /// Glyph metrics therefore differ slightly between the two rasterizers —
+    /// an accepted divergence, documented in the IR design doc.
+    pub font_family: String,
+    pub font_weight: u32,
+
+    /// Pixels at the composition's native height. The preview scales by
+    /// (previewHeight / composition.height).
+    pub font_size_px: u32,
+    pub color_hex: String,
+
+    /// Optional positional entrance — see `OverlayEnter`. Same motion model as
+    /// image overlays so a title can slide/pop in alongside its cutouts.
+    pub enter: Option<OverlayEnter>,
+}
+
 impl OverlayStage {
     pub fn id(&self) -> &str {
         match self {
             OverlayStage::Image(i) => &i.id,
+            OverlayStage::Text(t) => &t.id,
         }
     }
 
     pub fn output_start(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.output_start,
+            OverlayStage::Text(t) => t.output_start,
         }
     }
 
     pub fn output_end(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.output_end,
+            OverlayStage::Text(t) => t.output_end,
         }
     }
 
     pub fn fade_in(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.fade_in,
+            OverlayStage::Text(t) => t.fade_in,
         }
     }
 
     pub fn fade_out(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.fade_out,
+            OverlayStage::Text(t) => t.fade_out,
         }
     }
 
     pub fn position_x(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.position_x,
+            OverlayStage::Text(t) => t.position_x,
         }
     }
 
     pub fn position_y(&self) -> f64 {
         match self {
             OverlayStage::Image(i) => i.position_y,
+            OverlayStage::Text(t) => t.position_y,
         }
     }
 }
@@ -363,4 +450,18 @@ pub enum CompileWarning {
     },
     #[serde(rename = "audioSourceSilent")]
     AudioSourceSilent { source_id: u32 },
+    /// A title asked for a font family the probe says isn't installed. The
+    /// overlay still renders — it falls back to the generic family rather
+    /// than silently vanishing from the frame.
+    #[serde(rename = "textFontMissing")]
+    TextFontMissing {
+        overlay_id: String,
+        requested: String,
+        fallback: String,
+    },
+    /// A title carries no glyphs. It compiles, but nothing will be drawn —
+    /// worth surfacing because an agent-authored composition can produce
+    /// these silently.
+    #[serde(rename = "textEmpty")]
+    TextEmpty { overlay_id: String },
 }

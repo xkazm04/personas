@@ -325,6 +325,165 @@ fn text_items_are_beats_and_produce_no_overlays() {
     assert_eq!(plan.overlays.len(), 0);
 }
 
+fn title_item(id: &str, start: f64, duration: f64, text: &str) -> TimelineItem {
+    TimelineItem::Title(TitleItemInput {
+        id: Some(id.into()),
+        label: Some("title".into()),
+        start_time: start,
+        duration,
+        text: text.into(),
+        position_x: 0.5,
+        position_y: 0.5,
+        font_family: "sans-serif".into(),
+        font_weight: 700,
+        font_size_px: 64,
+        color_hex: "#ffffff".into(),
+        fade_in: 0.0,
+        fade_out: 0.0,
+        enter: None,
+    })
+}
+
+#[test]
+fn title_items_produce_a_text_overlay() {
+    // Titles, unlike beats, ARE drawn — this is the whole point of the type.
+    let mut comp = empty_comp();
+    comp.items = vec![title_item("ti1", 1.0, 2.0, "$116 a barrel")];
+    let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
+
+    assert_eq!(plan.overlays.len(), 1);
+    let OverlayStage::Text(txt) = &plan.overlays[0] else {
+        panic!("expected a text overlay, got {:?}", plan.overlays[0]);
+    };
+    assert_eq!(txt.text, "$116 a barrel");
+    assert_eq!(txt.output_start, 1.0);
+    assert_eq!(txt.output_end, 3.0);
+    assert_eq!(txt.font_size_px, 64);
+    assert_invariants(&plan).expect("title plan is valid");
+}
+
+#[test]
+fn titles_composite_on_top_of_images() {
+    // Overlays render in array order (last = on top). Typography must never
+    // end up buried behind a cutout, regardless of item order in the file.
+    let mut comp = empty_comp();
+    comp.items = vec![
+        title_item("ti1", 0.0, 2.0, "on top"),
+        TimelineItem::Image(ImageItemInput {
+            id: Some("i1".into()),
+            label: None,
+            file_path: "/logo.png".into(),
+            start_time: 0.0,
+            duration: 2.0,
+            position_x: 0.5,
+            position_y: 0.5,
+            scale: 1.0,
+            fade_in: 0.0,
+            fade_out: 0.0,
+            enter: None,
+        }),
+    ];
+    let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
+
+    assert_eq!(plan.overlays.len(), 2);
+    assert!(matches!(plan.overlays[0], OverlayStage::Image(_)));
+    assert!(matches!(plan.overlays[1], OverlayStage::Text(_)));
+}
+
+#[test]
+fn empty_title_compiles_but_warns() {
+    // An agent-authored composition can easily produce a blank title; it
+    // should not be silently invisible.
+    let mut comp = empty_comp();
+    comp.items = vec![title_item("ti1", 0.0, 2.0, "   ")];
+    let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
+
+    assert_eq!(plan.overlays.len(), 1);
+    assert!(plan
+        .warnings
+        .iter()
+        .any(|w| matches!(w, CompileWarning::TextEmpty { .. })));
+}
+
+#[test]
+fn title_with_unavailable_font_falls_back_and_warns() {
+    // Falling back beats vanishing: a substituted font still communicates.
+    let mut comp = empty_comp();
+    comp.items = vec![title_item("ti1", 0.0, 2.0, "hello")];
+    if let TimelineItem::Title(t) = &mut comp.items[0] {
+        t.font_family = "Nonexistent Sans".into();
+    }
+
+    let probe = |_: &str| false;
+    let deps = CompileDeps {
+        proxy_lookup: None,
+        font_probe: Some(&probe),
+        media_probe: None,
+    };
+    let plan = compile(&comp, &CompileOptions::fold_default(), &deps).unwrap();
+
+    let OverlayStage::Text(txt) = &plan.overlays[0] else {
+        panic!("expected a text overlay");
+    };
+    assert_eq!(txt.font_family, FALLBACK_FONT_FAMILY);
+    assert!(plan
+        .warnings
+        .iter()
+        .any(|w| matches!(w, CompileWarning::TextFontMissing { .. })));
+}
+
+#[test]
+fn overlay_entrance_resolves_and_clamps() {
+    let mut comp = empty_comp();
+    // Entrance duration deliberately longer than the clip — must clamp.
+    comp.items = vec![TimelineItem::Image(ImageItemInput {
+        id: Some("i1".into()),
+        label: None,
+        file_path: "/logo.png".into(),
+        start_time: 0.0,
+        duration: 1.0,
+        position_x: 0.5,
+        position_y: 0.5,
+        scale: 1.0,
+        fade_in: 0.0,
+        fade_out: 0.0,
+        enter: Some(OverlayEnterInput {
+            duration: 5.0,
+            offset_x: 0.0,
+            offset_y: 0.2,
+            easing: Some("easeOut".into()),
+        }),
+    })];
+    let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
+
+    let OverlayStage::Image(img) = &plan.overlays[0] else {
+        panic!("expected image overlay");
+    };
+    let enter = img.enter.as_ref().expect("entrance resolved");
+    assert!(enter.duration <= 1.0, "entrance clamped to clip duration");
+    assert_eq!(enter.offset_y, 0.2);
+    assert_eq!(enter.easing, Easing::EaseOut);
+}
+
+#[test]
+fn zero_offset_entrance_collapses_to_none() {
+    let mut comp = empty_comp();
+    comp.items = vec![title_item("t1", 0.0, 2.0, "hi")];
+    if let TimelineItem::Title(t) = &mut comp.items[0] {
+        t.enter = Some(OverlayEnterInput {
+            duration: 0.5,
+            offset_x: 0.0,
+            offset_y: 0.0,
+            easing: None,
+        });
+    }
+    let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
+    let OverlayStage::Text(txt) = &plan.overlays[0] else {
+        panic!("expected text overlay");
+    };
+    assert!(txt.enter.is_none(), "a zero-offset entrance is nothing to animate");
+}
+
 #[test]
 fn determinism_same_input_produces_identical_json() {
     let mut comp = empty_comp();
@@ -424,6 +583,7 @@ fn baseline_plan() -> RenderPlan {
             scale: 1.0,
             fade_in: 0.0,
             fade_out: 0.0,
+            enter: None,
         }),
     ];
     compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap()

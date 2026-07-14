@@ -117,7 +117,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
             <BuildingBadge />
           ) : (
             <span className="inline-flex items-center gap-1.5 flex-wrap">
-              <StatusBadge enabled={p.enabled} health={healthMap[p.id]} isDraft={isDraft(p)} />
+              <StatusBadge enabled={p.enabled} health={healthMap[p.id]} isDraft={isDraft(p)} isArchived={p.lifecycle === 'archived'} />
               <SetupStatusBadge status={p.setup_status} setupDetail={p.setup_detail} />
             </span>
           ),

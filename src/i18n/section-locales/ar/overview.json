@@ -523,7 +523,9 @@
     "source": "المصدر",
     "processed": "تمت المعالجة",
     "event_data": "بيانات الحدث",
-    "error": "خطأ"
+    "error": "خطأ",
+    "skipped_stat_label": "{skipped} متخطاة",
+    "skipped_stat_tooltip": "{skipped} من أصل {total} حدثًا خلال آخر 7 أيام لم يكن لها أي مشترك فتم تخطيها ({rate}). المعدل المرتفع يشير إلى مشغّل لا يستمع إليه أحد."
   },
   "health": {
     "title": "صحة الوكلاء",
@@ -703,7 +705,11 @@
     "all_statuses": "جميع الحالات",
     "col_status": "الحالة",
     "col_id": "المعرّف",
-    "execution_label": "التنفيذ"
+    "execution_label": "التنفيذ",
+    "error_category_by_persona": "أكثر الأخطاء حسب الوكيل",
+    "error_category_prior_period": "مقارنة بالفترة السابقة",
+    "error_category_section_title": "الأخطاء حسب الفئة",
+    "error_category_total_failures": "إجمالي الأخطاء"
   },
   "analytics_dashboard": {
     "issues_found": "تم اكتشاف {count} مشكلة",
@@ -1387,7 +1393,32 @@
     "comparison_recommended": "موصى به",
     "flow_title": "كيف يتكشف",
     "timeline_title": "الجدول الزمني",
-    "log_title": "الأدلة"
+    "log_title": "الأدلة",
+    "default_attention_empty": "جميع الشخصيات بحالة جيدة — لا شيء يحتاج إلى انتباه.",
+    "default_attention_low_trust": "ثقة منخفضة",
+    "default_attention_paused": "متوقف مؤقتاً",
+    "default_attention_setup": "الإعداد مطلوب",
+    "default_attention_title": "يحتاج إلى انتباه",
+    "default_callout_body": "هذه عرض ابتدائي مبني من حالة أسطولك. اطلب من Athena تكوين لوحة قيادة مخصصة لما يهمك — وستستبدل هذه تلقائياً.",
+    "default_callout_title": "لوحة قيادة ابتدائية",
+    "default_roster_title": "شخصياتك",
+    "default_stat_active_personas": "الشخصيات النشطة",
+    "default_stat_executions": "عمليات التنفيذ (7 أيام)",
+    "default_stat_needs_attention": "يحتاج إلى انتباه",
+    "default_stat_success_rate": "معدل النجاح",
+    "default_subtitle": "عرض ابتدائي يمكن لـ Athena تخصيصه — تحدّث لتكوين عرضك الخاص.",
+    "default_title": "لوحة قيادة ابتدائية",
+    "default_vitals_title": "المؤشرات الحيوية للأسطول",
+    "empty_example_attention": "\"ما الذي يحتاج إلى انتباهي\"",
+    "empty_example_personas": "\"أظهر لي شخصياتي\"",
+    "empty_hint": "اطلب من Athena تكوين عرض لوحة قيادة — جرّب {personas} أو {attention}.",
+    "empty_title": "لوحة القيادة فارغة",
+    "error_retry": "إعادة المحاولة",
+    "error_title": "تعذّر تحميل لوحة القيادة",
+    "subtitle_composed_prefix": "من تكوين Athena — تم التحديث",
+    "subtitle_default": "مساحة عملك المدعومة بالرفيق",
+    "talk_to_athena": "تحدّث إلى Athena",
+    "unknown_widget": "أداة غير معروفة: {kind}"
   },
   "certification": {
     "title": "مركز قيادة الشهادات",
@@ -1832,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "تاريخ البدء",
     "end_date": "تاريخ الانتهاء"
+  },
+  "healing_effectiveness": {
+    "attempted": "محاولات",
+    "confirmed": "مؤكَّدة",
+    "loading": "جارٍ تحميل إحصاءات الإصلاح…",
+    "no_data": "لا يوجد نشاط إصلاح تلقائي بعد",
+    "recent_activity": "النشاط الأخير",
+    "reverted": "معكوسة",
+    "success_rate": "معدل النجاح",
+    "title": "الإصلاح الذاتي",
+    "window_label": "آخر"
   }
 }

@@ -189,7 +189,16 @@
     "auto_hibernate_desc": "임계값을 초과해 유휴 상태인 세션을 자동으로 최대 절전 처리하여 Fleet에 포커스가 없을 때도 프로세스를 해제합니다. 깨우기로 재개할 수 있습니다. Personas가 열려 있는 동안 실행됩니다.",
     "auto_hibernate_toggle": "자동 최대 절전 활성화",
     "auto_hibernate_after": "이후",
-    "auto_hibernate_minutes_unit": "분 유휴"
+    "auto_hibernate_minutes_unit": "분 유휴",
+    "live_slots_desc": "동시에 실행되는 claude 프로세스 수를 제한합니다. 플릿이 한도에 도달하면 가장 오래 유휴 상태인 세션이 절전 모드로 전환되어 자리를 비웁니다 — 깨우기로 언제든 재개할 수 있습니다. 작업 중인 세션은 절대 중단되지 않습니다.",
+    "live_slots_max_label": "최대",
+    "live_slots_title": "라이브 세션 제한",
+    "live_slots_toggle": "세션 제한 사용",
+    "live_slots_unit": "개의 라이브 세션",
+    "headless_badge": "백그라운드",
+    "headless_no_terminal": "백그라운드 세션 — 터미널 없이 실행됩니다. \"도움 필요\" 배너에서 응답하고, 진행 상황은 Insights에 표시됩니다.",
+    "spawn_headless_hint": "헤드리스 모드 — 라이브 터미널 없이 CPU와 RAM 부담이 훨씬 적습니다. 응답은 \"도움 필요\" 배너에서, 진행 상황은 Insights에서 확인하세요.",
+    "spawn_headless_toggle": "백그라운드로 실행 (터미널 없음)"
   },
   "title": "플러그인",
   "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",
@@ -2155,7 +2164,8 @@
     "voice_pocket_upload_save": "목소리 추가",
     "voice_pocket_upload_title": "내 목소리 추가",
     "voice_pocket_hf_gate_desc": "직접 복제한 음성을 관리하려면 자격 증명 보관함(Credential Vault)에 Hugging Face 액세스 토큰이 필요합니다. 이 토큰은 음성 복제 모델 라이선스를 사용자 계정과 연결합니다. Hugging Face 자격 증명을 추가한 뒤 다시 돌아오세요.",
-    "voice_pocket_hf_gate_title": "Hugging Face 계정이 필요합니다"
+    "voice_pocket_hf_gate_title": "Hugging Face 계정이 필요합니다",
+    "persona_overview_kpi_trust_clamped": "신뢰 점수가 범위를 벗어나 100%로 제한되었습니다."
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",
@@ -2405,7 +2415,9 @@
     "goal_scaffold_timeline_title": "타임라인",
     "goal_scaffold_timeline_sub": "목표 날짜별 목표를 의존성 화살표와 지연 표시기로 나타내는 시간축 뷰입니다. 곧 출시 예정.",
     "goal_field_title": "제목",
+    "goal_field_title_placeholder": "어떤 결과를 향해 나아가고 있나요?",
     "goal_field_description": "설명",
+    "goal_field_description_placeholder": "선택적 맥락, 범위, 또는 성공 기준…",
     "goal_field_status": "상태",
     "goal_field_target_date": "목표 날짜",
     "goal_target_asap": "최대한 빨리",

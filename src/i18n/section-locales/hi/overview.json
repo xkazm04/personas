@@ -523,7 +523,9 @@
     "source": "स्रोत",
     "processed": "प्रोसेस किया",
     "event_data": "इवेंट डेटा",
-    "error": "त्रुटि"
+    "error": "त्रुटि",
+    "skipped_stat_label": "{skipped} छोड़े गए",
+    "skipped_stat_tooltip": "पिछले 7 दिनों में {total} में से {skipped} इवेंट्स का कोई सब्सक्राइबर नहीं था और वे छोड़ दिए गए ({rate})। उच्च दर का मतलब है कि कोई ट्रिगर ऐसा है जिसे कोई नहीं सुन रहा।"
   },
   "health": {
     "title": "एजेंट स्वास्थ्य",
@@ -703,7 +705,11 @@
     "all_statuses": "सभी स्थितियां",
     "col_status": "स्थिति",
     "col_id": "ID",
-    "execution_label": "निष्पादन"
+    "execution_label": "निष्पादन",
+    "error_category_by_persona": "एजेंट अनुसार शीर्ष विफलता",
+    "error_category_prior_period": "पिछली अवधि की तुलना में",
+    "error_category_section_title": "श्रेणी अनुसार विफलताएँ",
+    "error_category_total_failures": "कुल विफलताएँ"
   },
   "analytics_dashboard": {
     "issues_found": "{count} समस्याएं मिलीं",
@@ -1387,7 +1393,32 @@
     "comparison_recommended": "अनुशंसित",
     "flow_title": "यह कैसे सामने आता है",
     "timeline_title": "समयरेखा",
-    "log_title": "साक्ष्य"
+    "log_title": "साक्ष्य",
+    "default_attention_empty": "सभी पर्सोना स्वस्थ हैं — किसी को ध्यान की ज़रूरत नहीं।",
+    "default_attention_low_trust": "कम भरोसा",
+    "default_attention_paused": "रुका हुआ",
+    "default_attention_setup": "सेटअप आवश्यक",
+    "default_attention_title": "ध्यान चाहिए",
+    "default_callout_body": "यह आपकी फ़्लीट स्थिति से बनाया गया एक शुरुआती दृश्य है। Athena से कहें कि वह आपकी पसंद के अनुसार एक कॉकपिट तैयार करे — वह इसे अपने आप बदल देगी।",
+    "default_callout_title": "शुरुआती कॉकपिट",
+    "default_roster_title": "आपके पर्सोना",
+    "default_stat_active_personas": "सक्रिय पर्सोना",
+    "default_stat_executions": "एक्ज़ीक्यूशन (7दिन)",
+    "default_stat_needs_attention": "ध्यान चाहिए",
+    "default_stat_success_rate": "सफलता दर",
+    "default_subtitle": "एक शुरुआती दृश्य जिसे Athena निजी बना सकती है — अपना खुद का बनाने के लिए चैट करें।",
+    "default_title": "शुरुआती कॉकपिट",
+    "default_vitals_title": "फ़्लीट वाइटल्स",
+    "empty_example_attention": "\"किस पर मेरा ध्यान चाहिए\"",
+    "empty_example_personas": "\"मेरे पर्सोना दिखाएँ\"",
+    "empty_hint": "Athena से एक कॉकपिट दृश्य बनाने के लिए कहें — {personas} या {attention} आज़माएँ।",
+    "empty_title": "आपका कॉकपिट खाली है",
+    "error_retry": "पुनः प्रयास करें",
+    "error_title": "आपका कॉकपिट लोड नहीं हो सका",
+    "subtitle_composed_prefix": "Athena द्वारा तैयार किया गया — अपडेट किया गया",
+    "subtitle_default": "आपका साथी-संचालित कार्यक्षेत्र",
+    "talk_to_athena": "Athena से बात करें",
+    "unknown_widget": "अज्ञात विजेट: {kind}"
   },
   "certification": {
     "title": "प्रमाणन कमांड सेंटर",
@@ -1832,5 +1863,16 @@
   "day_range_picker": {
     "start_date": "शुरू होने की तारीख",
     "end_date": "समाप्ति तिथि"
+  },
+  "healing_effectiveness": {
+    "attempted": "प्रयास",
+    "confirmed": "पुष्ट",
+    "loading": "हीलिंग आँकड़े लोड हो रहे हैं…",
+    "no_data": "अभी तक कोई ऑटो-फिक्स गतिविधि नहीं",
+    "recent_activity": "हाल की गतिविधि",
+    "reverted": "वापस लिए गए",
+    "success_rate": "सफलता दर",
+    "title": "स्व-सुधार",
+    "window_label": "पिछले"
   }
 }

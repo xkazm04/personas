@@ -7,6 +7,8 @@ import WelcomeGetStarted from './WelcomeGetStarted';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
 import type { NavStatChip } from './lib/useNavCardStatus';
 import ResumeBanner from './ResumeBanner';
+import SinceYouLeftBriefing from './SinceYouLeftBriefing';
+import FleetHealthStrip from './FleetHealthStrip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const LanguageCards = lazy(() => import('./LanguageSwitcher').then(m => ({ default: m.LanguageCardGrid })));
@@ -48,8 +50,14 @@ export default function WelcomeLayout({
       <HeroMesh preset="welcome" />
       <div className="flex-1 overflow-y-auto relative z-10">
         <div className="w-full px-6 py-4 space-y-4">
+          <SinceYouLeftBriefing />
           <ResumeBanner />
           <HeroHeader greeting={greeting} displayName={displayName} />
+          {/* Glanceable fleet vitals (runs today / success / agents / credentials).
+              Spine-fed + TTL-guarded, so mounting it above the fold costs no
+              extra IPC beyond the shared fetch. Was orphaned (never rendered)
+              until the 2026-07 live-smoke pass caught it. */}
+          <FleetHealthStrip />
           <WelcomeGetStarted />
 
           {/* Below-fold content deferred to keep initial DOM small. WebView2

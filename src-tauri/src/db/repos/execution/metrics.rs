@@ -6,9 +6,10 @@ use tracing::{info, instrument, warn};
 
 use crate::db::models::{
     AnomalyDrilldownData, CorrelatedEvent, DashboardCostAnomaly, DashboardDailyPoint,
-    DashboardTopPersona, ExecutionDashboardData, ExecutionHeatmapData, HeatmapDay, HeatmapInsights,
-    MetricAnomaly, MetricsChartData, MetricsChartPoint, MetricsPersonaBreakdown, ModelValueShare,
-    PersonaCostEntry, PersonaPromptVersion, PromptPerformanceData, PromptPerformancePoint,
+    DashboardTopPersona, ErrorCategoryBreakdown, ErrorCategoryCount, ExecutionDashboardData,
+    ExecutionHeatmapData, HeatmapDay, HeatmapInsights, MetricAnomaly, MetricsChartData,
+    MetricsChartPoint, MetricsPersonaBreakdown, ModelValueShare, PersonaCostEntry,
+    PersonaPromptVersion, PersonaTopErrorCategory, PromptPerformanceData, PromptPerformancePoint,
     RootCauseSuggestion, ValueRollup, VersionMarker,
 };
 use crate::db::query_builder::QueryBuilder;
@@ -562,6 +563,155 @@ pub fn get_value_rollup_with_conn(
         total_cost_usd: cost,
         cost_per_value_delivered,
         models,
+    })
+}
+
+// ============================================================================
+// Category-aware error analytics (error_taxonomy aggregation)
+// ============================================================================
+
+/// Classify each failed execution's stored `error_message` through the shared
+/// `engine::error_taxonomy` and aggregate per-category counts for the current
+/// window and the immediately-prior window of equal length, plus each persona's
+/// dominant failure category. Excludes simulations (their failures are stubbed).
+///
+/// The classification is intentionally done in Rust at aggregation time — SQL
+/// can't run the taxonomy's substring heuristics — but the row set is kept small
+/// by selecting only `status = 'failed'` non-simulation rows in the 2×window.
+pub fn get_error_category_breakdown(
+    pool: &DbPool,
+    days: Option<i64>,
+    persona_id: Option<&str>,
+) -> Result<ErrorCategoryBreakdown, AppError> {
+    let days = days.unwrap_or(30).clamp(1, 365);
+    let conn = pool.get()?;
+    get_error_category_breakdown_with_conn(&conn, days, persona_id)
+}
+
+/// Max personas surfaced in the per-persona top-category list.
+const PERSONA_TOP_CATEGORY_LIMIT: usize = 6;
+
+pub fn get_error_category_breakdown_with_conn(
+    conn: &Connection,
+    days: i64,
+    persona_id: Option<&str>,
+) -> Result<ErrorCategoryBreakdown, AppError> {
+    use crate::engine::error_taxonomy::classify_error_str;
+
+    let pid_clause = if persona_id.is_some() {
+        " AND persona_id = ?3"
+    } else {
+        ""
+    };
+
+    // Window boundaries: current = [now-days, now]; prior = [now-2*days, now-days].
+    let cur_lower = format!("-{days} days");
+    let prior_lower = format!("-{} days", days * 2);
+
+    // One pass over the 2×window pulls persona + message + a current-window flag.
+    // `is_current` splits current vs prior without a second query.
+    let sql = format!(
+        "SELECT
+            e.persona_id AS persona_id,
+            COALESCE(p.name, e.persona_id) AS persona_name,
+            COALESCE(e.error_message, '') AS error_message,
+            CASE WHEN e.created_at >= datetime('now', ?2) THEN 1 ELSE 0 END AS is_current
+         FROM persona_executions e
+         LEFT JOIN personas p ON p.id = e.persona_id
+         WHERE e.status = 'failed'
+           AND e.created_at >= datetime('now', ?1)
+           AND COALESCE(e.is_simulation, 0) = 0{pid_clause}"
+    );
+
+    let params_vec: Vec<String> = match persona_id {
+        Some(pid) => vec![prior_lower.clone(), cur_lower.clone(), pid.to_string()],
+        None => vec![prior_lower.clone(), cur_lower.clone()],
+    };
+    let param_refs: Vec<&dyn rusqlite::ToSql> =
+        params_vec.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+
+    // Accumulators keyed by the snake_case ErrorCategory serde token.
+    let mut cur_counts: HashMap<String, i64> = HashMap::new();
+    let mut prior_counts: HashMap<String, i64> = HashMap::new();
+    // persona_id → (persona_name, category → count) for the current window only.
+    let mut per_persona: HashMap<String, (String, HashMap<String, i64>)> = HashMap::new();
+
+    {
+        let mut stmt = conn.prepare(&sql)?;
+        let mut rows = stmt.query(param_refs.as_slice())?;
+        while let Some(row) = rows.next()? {
+            let persona_id: String = row.get("persona_id")?;
+            let persona_name: String = row.get("persona_name")?;
+            let error_message: String = row.get("error_message")?;
+            let is_current: i64 = row.get("is_current")?;
+
+            // Reuse the shared taxonomy — do NOT fork the classification.
+            let category = classify_error_str(&error_message);
+            let token = serde_json::to_value(category)
+                .ok()
+                .and_then(|v| v.as_str().map(str::to_string))
+                .unwrap_or_else(|| "unknown".to_string());
+
+            if is_current == 1 {
+                *cur_counts.entry(token.clone()).or_insert(0) += 1;
+                let entry = per_persona
+                    .entry(persona_id)
+                    .or_insert_with(|| (persona_name, HashMap::new()));
+                *entry.1.entry(token).or_insert(0) += 1;
+            } else {
+                *prior_counts.entry(token).or_insert(0) += 1;
+            }
+        }
+    }
+
+    // Merge current + prior category keys into ErrorCategoryCount rows.
+    let mut all_categories: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    all_categories.extend(cur_counts.keys().cloned());
+    all_categories.extend(prior_counts.keys().cloned());
+
+    let mut categories: Vec<ErrorCategoryCount> = all_categories
+        .into_iter()
+        .map(|category| {
+            let count = *cur_counts.get(&category).unwrap_or(&0);
+            let prior_count = *prior_counts.get(&category).unwrap_or(&0);
+            ErrorCategoryCount {
+                category,
+                count,
+                prior_count,
+                delta: count - prior_count,
+            }
+        })
+        .collect();
+    // Descending by current count, then by category token for a stable order.
+    categories.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.category.cmp(&b.category)));
+
+    // Per-persona dominant category (max count, tie broken by token).
+    let mut persona_top_categories: Vec<PersonaTopErrorCategory> = per_persona
+        .into_iter()
+        .filter_map(|(persona_id, (persona_name, cats))| {
+            cats.into_iter()
+                .max_by(|a, b| a.1.cmp(&b.1).then_with(|| b.0.cmp(&a.0)))
+                .map(|(category, count)| PersonaTopErrorCategory {
+                    persona_id,
+                    persona_name,
+                    category,
+                    count,
+                })
+        })
+        .collect();
+    persona_top_categories
+        .sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.persona_name.cmp(&b.persona_name)));
+    persona_top_categories.truncate(PERSONA_TOP_CATEGORY_LIMIT);
+
+    let total_failures: i64 = cur_counts.values().sum();
+    let prior_total_failures: i64 = prior_counts.values().sum();
+
+    Ok(ErrorCategoryBreakdown {
+        period_days: days,
+        total_failures,
+        prior_total_failures,
+        categories,
+        persona_top_categories,
     })
 }
 
@@ -2139,13 +2289,46 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
 
+    /// `persona_prompt_versions.persona_id` carries a real FK (added by
+    /// `fk_hygiene::migrate_persona_prompt_versions`), so prompt-version
+    /// tests need an actual `personas` row to reference.
+    fn create_test_persona(pool: &DbPool, name: &str) -> String {
+        use crate::db::models::CreatePersonaInput;
+        use crate::db::repos::core::personas;
+        personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
     #[test]
     fn test_prompt_version_auto_increment() {
         let pool = init_test_db().unwrap();
+        let persona_1 = create_test_persona(&pool, "persona-1");
+        let persona_2 = create_test_persona(&pool, "persona-2");
 
         let v1 = create_prompt_version(
             &pool,
-            "persona-1",
+            &persona_1,
             None,
             Some("You are v1.".into()),
             Some("Initial version".into()),
@@ -2155,7 +2338,7 @@ mod tests {
 
         let v2 = create_prompt_version(
             &pool,
-            "persona-1",
+            &persona_1,
             None,
             Some("You are v2.".into()),
             Some("Updated prompt".into()),
@@ -2165,12 +2348,12 @@ mod tests {
 
         // Different persona starts at 1
         let other =
-            create_prompt_version(&pool, "persona-2", Some("structured".into()), None, None)
+            create_prompt_version(&pool, &persona_2, Some("structured".into()), None, None)
                 .unwrap();
         assert_eq!(other.version_number, 1);
 
         // List versions for persona-1
-        let versions = get_prompt_versions(&pool, "persona-1", None).unwrap();
+        let versions = get_prompt_versions(&pool, &persona_1, None).unwrap();
         assert_eq!(versions.len(), 2);
         assert_eq!(versions[0].version_number, 2); // DESC order
         assert_eq!(versions[1].version_number, 1);

@@ -1,6 +1,15 @@
 import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import { storeBus, AccessorKey } from "@/lib/storeBus";
+import {
+  recordNavigation,
+  goBack,
+  goForward,
+  buildGateContext,
+  isDestinationGated,
+  NAV_HISTORY_CAP,
+  type GatePredicate,
+} from "@/lib/navigation/history";
 import type { SystemStore } from "../../storeTypes";
 import type { SidebarSection, HomeTab, GoalsTab, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
@@ -257,12 +266,26 @@ export interface UiSlice {
    * user was viewing inside the Agents module — not just across sidebar
    * sections. `setSidebarSection` pushes the outgoing location on a section
    * change; the `persona:selected` storeBus handler pushes it on a persona
-   * switch; `navigateBack` pops the head and restores both without re-pushing.
+   * switch; `navigateBack` restores the head and stashes the current location
+   * onto {@link navForwardHistory} for a symmetric Forward.
+   *
+   * The stack machinery lives in the pure, unit-tested
+   * `@/lib/navigation/history` module (dedupe, forward-truncation, cap, and
+   * gate-skipping); this slice just wires it to real state + the persona bus.
    */
   navigationHistory: NavEntry[];
+  /**
+   * The forward branch — locations you retraced *away from* by pressing Back,
+   * newest-first (`navForwardHistory[0]` = the next Forward target). Cleared
+   * the instant you navigate somewhere new (browser semantics). Session-only:
+   * deliberately absent from the persist whitelist, like {@link navigationHistory}.
+   */
+  navForwardHistory: NavEntry[];
   /** Append an outgoing location to the back stack (dedups the consecutive head). */
   pushNavEntry: (entry: NavEntry) => void;
   navigateBack: () => void;
+  /** Step forward to the next un-retraced location (mirror of {@link navigateBack}). */
+  navigateForward: () => void;
   /**
    * Optional top-most Back handler. When set, {@link navigateBack} (the
    * titlebar Back button) invokes it INSTEAD of closing a header overlay or
@@ -275,14 +298,22 @@ export interface UiSlice {
   setBackInterceptor: (fn: (() => void) | null) => void;
 }
 
-/** A single back-history location — section + which persona was selected there. */
+/**
+ * A single back/forward-history location — section + which persona was selected
+ * there. Structurally identical to `NavDestination` in `@/lib/navigation/history`
+ * (the pure model the store's stacks flow through).
+ */
 export interface NavEntry {
   section: SidebarSection;
   personaId: string | null;
 }
 
-/** Cap on the back-history depth. */
-export const NAV_HISTORY_MAX = 5;
+/**
+ * Cap on the back/forward-history depth. Aliased to `NAV_HISTORY_CAP` in
+ * `@/lib/navigation/history` (the value the stacks are actually capped at) so
+ * the two never drift.
+ */
+export const NAV_HISTORY_MAX = NAV_HISTORY_CAP;
 
 /**
  * True while {@link UiSlice.navigateBack} is restoring a location. The
@@ -401,12 +432,21 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
     // Notifications) — they float over content, so changing content closes them.
     // Idempotent — re-clicking the current section is a no-op for history.
     if (state.sidebarSection === section) return { sidebarSection: section, headerOverlay: 'none' };
-    // While restoring a back-step, swap the section without recording it.
+    // While restoring a back/forward step, swap the section without recording it.
     if (navRestoring) return { sidebarSection: section, headerOverlay: 'none' };
-    // Capture the full outgoing location (section + which persona was open).
-    const entry: NavEntry = { section: state.sidebarSection, personaId: currentSelectedPersonaId() };
-    const next = [entry, ...state.navigationHistory].slice(0, NAV_HISTORY_MAX);
-    return { sidebarSection: section, navigationHistory: next, headerOverlay: 'none' };
+    // Capture the full outgoing location (section + which persona was open) and
+    // record it — this also truncates the forward branch (browser semantics).
+    const outgoing: NavEntry = { section: state.sidebarSection, personaId: currentSelectedPersonaId() };
+    const stacks = recordNavigation(
+      { back: state.navigationHistory, forward: state.navForwardHistory },
+      outgoing,
+    );
+    return {
+      sidebarSection: section,
+      navigationHistory: stacks.back as NavEntry[],
+      navForwardHistory: stacks.forward as NavEntry[],
+      headerOverlay: 'none',
+    };
   })),
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
   setGoalsTab: (tab) => startTransition(() => set({ goalsTab: tab })),
@@ -478,18 +518,29 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setContextualCockpit: (contextualCockpit) => set({ contextualCockpit }),
 
   navigationHistory: [],
+  navForwardHistory: [],
 
   backInterceptor: null,
   setBackInterceptor: (fn) => set({ backInterceptor: fn }),
 
   pushNavEntry: (entry) => set((state) => {
     if (navRestoring) return state;
-    const head = state.navigationHistory[0];
-    // Dedup the consecutive head — repeated identical locations add no value.
-    if (head && head.section === entry.section && head.personaId === entry.personaId) {
-      return state;
+    // recordNavigation dedupes the consecutive head, caps depth, and truncates
+    // the forward branch — a persona switch is a fresh navigation.
+    const stacks = recordNavigation(
+      { back: state.navigationHistory, forward: state.navForwardHistory },
+      entry,
+    );
+    if (
+      stacks.back === state.navigationHistory &&
+      stacks.forward === state.navForwardHistory
+    ) {
+      return state; // pure no-op (dupe head, forward already empty)
     }
-    return { navigationHistory: [entry, ...state.navigationHistory].slice(0, NAV_HISTORY_MAX) };
+    return {
+      navigationHistory: stacks.back as NavEntry[],
+      navForwardHistory: stacks.forward as NavEntry[],
+    };
   }),
 
   navigateBack: () => startTransition(() => {
@@ -507,18 +558,63 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
       set({ headerOverlay: 'none' });
       return;
     }
-    const [head, ...rest] = get().navigationHistory;
-    if (!head) return;
+    const state = get();
+    const current: NavEntry = { section: state.sidebarSection, personaId: currentSelectedPersonaId() };
+    const res = goBack(
+      { back: state.navigationHistory, forward: state.navForwardHistory },
+      current,
+      gatePredicate(),
+    );
+    if (!res) return;
     navRestoring = true;
     try {
       // Restore persona selection first. selectPersona emits `persona:selected`,
       // which the storeBus handler turns into a section→personas swap; the
       // navRestoring guard keeps that from pushing a fresh entry. We then set
       // the section explicitly to the recorded one (which may not be personas).
-      storeBus.emit('nav:select-persona', { personaId: head.personaId });
-      set({ sidebarSection: head.section, navigationHistory: rest });
+      storeBus.emit('nav:select-persona', { personaId: res.dest.personaId });
+      set({
+        sidebarSection: res.dest.section,
+        navigationHistory: res.stacks.back as NavEntry[],
+        navForwardHistory: res.stacks.forward as NavEntry[],
+      });
+    } finally {
+      navRestoring = false;
+    }
+  }),
+
+  navigateForward: () => startTransition(() => {
+    const state = get();
+    // A fullscreen surface owns the screen — don't navigate underneath it.
+    if (state.backInterceptor) return;
+    const current: NavEntry = { section: state.sidebarSection, personaId: currentSelectedPersonaId() };
+    const res = goForward(
+      { back: state.navigationHistory, forward: state.navForwardHistory },
+      current,
+      gatePredicate(),
+    );
+    if (!res) return;
+    navRestoring = true;
+    try {
+      storeBus.emit('nav:select-persona', { personaId: res.dest.personaId });
+      set({
+        sidebarSection: res.dest.section,
+        navigationHistory: res.stacks.back as NavEntry[],
+        navForwardHistory: res.stacks.forward as NavEntry[],
+      });
     } finally {
       navRestoring = false;
     }
   }),
 });
+
+/**
+ * Gate predicate for back/forward: an entry whose registry gates now fail
+ * (tier dropped below its minTier, or a devOnly section in a prod build) is
+ * skipped so Back/Forward never land on an unreachable surface. Built from
+ * build-time constants, so every nav path (titlebar, keyboard, mouse) agrees.
+ */
+function gatePredicate(): GatePredicate {
+  const ctx = buildGateContext();
+  return (dest) => isDestinationGated(dest, ctx);
+}

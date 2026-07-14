@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useToastStore, MAX_VISIBLE_TOASTS } from '@/stores/toastStore';
 import type { StandardToast, HealingToast } from '@/stores/toastStore';
 import { classifyErrorFull } from '@/lib/errors/errorPipeline';
+import { applyErrorAction, isGlobalErrorAction } from '@/lib/errors/errorActionNav';
 import { friendlySeverity } from '@/lib/errors/errorRegistry';
 import { formatElapsed } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -55,9 +56,24 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
   const isPaused = paused || !isDocumentVisible;
   pausedRef.current = isPaused;
 
-  const classified = toast.type === 'error' ? classifyErrorFull(toast.message) : null;
+  // Classify once per message (memoized in the pipeline; useMemo also stops the
+  // per-second elapsed-label re-render from re-reading it). Error toasts flow
+  // through the full funnel → friendly copy + optional nav action.
+  const classified = useMemo(
+    () => (toast.type === 'error' ? classifyErrorFull(toast.message) : null),
+    [toast.type, toast.message],
+  );
   const friendly = classified?.friendly ?? null;
   const displayMessage = friendly?.message ?? toast.message;
+
+  // Surface the funnel's navigation action on the toast when it's executable
+  // without a persona context (Vault / Triggers). An explicit `toast.action`
+  // set by the caller always wins.
+  const explanationAction = classified?.explanation?.action ?? null;
+  const navAction =
+    !toast.action && explanationAction && isGlobalErrorAction(explanationAction)
+      ? explanationAction
+      : null;
 
   // Single RAF loop handles both dismiss countdown and elapsed label.
   // The progress bar is driven by CSS animation (smooth pause/resume); this
@@ -129,6 +145,16 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
               className="mt-1 typo-caption font-medium underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity"
             >
               {toast.action.label}
+            </button>
+          )}
+          {navAction && (
+            <button
+              type="button"
+              onClick={() => { applyErrorAction(navAction); onDismiss(toast.id); }}
+              className="mt-1 inline-flex items-center gap-1 typo-caption font-medium underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity"
+            >
+              <navAction.icon className="w-3 h-3" />
+              {navAction.label}
             </button>
           )}
         </div>

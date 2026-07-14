@@ -1,7 +1,10 @@
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
-import { Link2, AlertCircle } from 'lucide-react';
+import type { ChainStopReason } from '@/lib/bindings/ChainStopReason';
+import { Link2, AlertCircle, CircleSlash } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
+import { formatCost } from '@/lib/utils/formatters';
 import { ChainSpanRow } from './ChainSpanRow';
 
 interface ChainTraceViewProps {
@@ -9,6 +12,8 @@ interface ChainTraceViewProps {
   loading: boolean;
   error: string | null;
   partial: boolean;
+  stopReasons: ChainStopReason[];
+  chainCostUsd: number;
   currentExecutionId: string;
   onOpenExecution: (executionId: string) => void;
 }
@@ -16,10 +21,13 @@ interface ChainTraceViewProps {
 /**
  * Chain-trace viewer: ordered per-persona spans for every run sharing a
  * chain_trace_id, with status/cost/duration and click-through to each run's
- * detail. Handles loading, broken (error), empty, and partial-chain states.
+ * detail. Also surfaces the chain's total cost and the structured stop reasons
+ * that explain why the relay did not continue (suppressed handoff, cycle,
+ * depth/budget ceiling, unmet predicate, quarantine). Handles loading, broken
+ * (error), empty, and partial-chain states.
  */
-export function ChainTraceView({ traces, loading, error, partial, currentExecutionId, onOpenExecution }: ChainTraceViewProps) {
-  const { t, tx } = useTranslation();
+export function ChainTraceView({ traces, loading, error, partial, stopReasons, chainCostUsd, currentExecutionId, onOpenExecution }: ChainTraceViewProps) {
+  const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
 
   if (loading) {
@@ -51,11 +59,19 @@ export function ChainTraceView({ traces, loading, error, partial, currentExecuti
 
   return (
     <div className="space-y-3">
-      <div>
-        <p className="typo-heading text-foreground/90 flex items-center gap-2">
-          <Link2 className="w-4 h-4" />{e.chain_title}
-        </p>
-        <p className="typo-body text-foreground mt-0.5">{e.chain_subtitle}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="typo-heading text-foreground/90 flex items-center gap-2">
+            <Link2 className="w-4 h-4" />{e.chain_title}
+          </p>
+          <p className="typo-body text-foreground mt-0.5">{e.chain_subtitle}</p>
+        </div>
+        {chainCostUsd > 0 && (
+          <div className="text-right flex-shrink-0">
+            <p className="typo-caption text-foreground">{e.chain_total_cost}</p>
+            <p className="typo-code text-foreground tabular-nums">{formatCost(chainCostUsd, { precision: 4, language })}</p>
+          </div>
+        )}
       </div>
 
       <div className="rounded-modal border border-primary/20 bg-secondary/30 divide-y divide-primary/10 overflow-hidden">
@@ -69,6 +85,24 @@ export function ChainTraceView({ traces, loading, error, partial, currentExecuti
           />
         ))}
       </div>
+
+      {stopReasons.length > 0 && (
+        <div className="rounded-modal border border-primary/15 bg-secondary/20 p-3 space-y-2">
+          <p className="typo-caption text-foreground flex items-center gap-1.5">
+            <CircleSlash className="w-3.5 h-3.5" />{e.chain_ended_because}
+          </p>
+          <ul className="space-y-1.5">
+            {stopReasons.map((reason) => (
+              <li key={reason.id} className="flex items-start gap-2 typo-body text-foreground">
+                <span className="typo-code px-1.5 py-0.5 rounded-card bg-primary/10 text-foreground/90 border border-primary/15 whitespace-nowrap flex-shrink-0">
+                  {tokenLabel(t, 'chain_stop', reason.reason_token)}
+                </span>
+                {reason.detail && <span className="text-foreground/90">{reason.detail}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {partial && (
         <div className="flex items-center gap-2 p-2.5 bg-status-warning/10 border border-status-warning/25 rounded-modal typo-body text-status-warning">

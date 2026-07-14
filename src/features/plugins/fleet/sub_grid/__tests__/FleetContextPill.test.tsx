@@ -1,6 +1,7 @@
 /**
  * Unit tests for FleetContextPill (F2 conversation-size indicator).
- * readTranscript is mocked; useTranslation is real.
+ * sessionMetadata (preferred) + readTranscript (fallback) are mocked;
+ * useTranslation is real.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
@@ -9,7 +10,7 @@ import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSumma
 
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
 
-vi.mock('@/api/fleet/fleet', () => ({ readTranscript: vi.fn() }));
+vi.mock('@/api/fleet/fleet', () => ({ readTranscript: vi.fn(), sessionMetadata: vi.fn() }));
 
 import * as fleetApi from '@/api/fleet/fleet';
 import { FleetContextPill } from '../FleetContextPill';
@@ -19,18 +20,32 @@ function summary(lastContextTokens: number): FleetTranscriptSummary {
 }
 
 describe('FleetContextPill', () => {
-  beforeEach(() => vi.mocked(fleetApi.readTranscript).mockReset());
+  beforeEach(() => {
+    vi.mocked(fleetApi.readTranscript).mockReset();
+    // Default: the incremental rollup misses → the pill falls back to the
+    // whole-file read, which the existing assertions drive.
+    vi.mocked(fleetApi.sessionMetadata).mockReset().mockResolvedValue(null);
+  });
 
   it('renders the context size for the bound session', async () => {
     vi.mocked(fleetApi.readTranscript).mockResolvedValue(summary(42000));
     render(<FleetContextPill claudeSessionId="s1" />);
     await screen.findByTestId('fleet-context-pill');
+    expect(fleetApi.sessionMetadata).toHaveBeenCalledWith('s1');
     expect(fleetApi.readTranscript).toHaveBeenCalledWith('s1');
+  });
+
+  it('prefers the incremental rollup and skips the whole-file read on a hit', async () => {
+    vi.mocked(fleetApi.sessionMetadata).mockResolvedValue(summary(42000));
+    render(<FleetContextPill claudeSessionId="s1" />);
+    await screen.findByTestId('fleet-context-pill');
+    expect(fleetApi.readTranscript).not.toHaveBeenCalled();
   });
 
   it('renders nothing when unbound (and does not fetch)', () => {
     const { container } = render(<FleetContextPill claudeSessionId={null} />);
     expect(container).toBeEmptyDOMElement();
+    expect(fleetApi.sessionMetadata).not.toHaveBeenCalled();
     expect(fleetApi.readTranscript).not.toHaveBeenCalled();
   });
 

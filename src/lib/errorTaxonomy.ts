@@ -37,12 +37,24 @@ export type ErrorSeverity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 // Structured kind → ErrorCategory mapping
 // ---------------------------------------------------------------------------
 
-/** Maps Rust `AppError::kind` to the frontend `ErrorCategory`. */
+/**
+ * Maps Rust `AppError::kind` to the frontend `ErrorCategory`.
+ *
+ * This is the FALLBACK path only — prefer the backend-computed `category` on
+ * the IPC envelope (see {@link classifyUnknownError}). It mirrors the typed-
+ * variant arm of Rust `AppError::category()` so the two agree when a payload
+ * predates the `category` field. `internal` / `external` / `retry_exhausted`
+ * carry arbitrary messages backend-side (classified via the string ladder) —
+ * here they resolve to `unknown` because the raw string isn't on this path.
+ */
 const KIND_TO_CATEGORY: Partial<Record<TauriErrorKind, ErrorCategory>> = {
   rate_limited: 'rate_limit',
   not_found: 'provider_not_found',
   auth: 'credential_error',
   forbidden: 'credential_error',
+  oauth_revoked: 'credential_error',
+  keyring_lost: 'credential_error',
+  authorization_required: 'credential_error',
   network_offline: 'network',
   validation: 'validation',
   serde: 'validation',
@@ -54,6 +66,8 @@ const KIND_TO_CATEGORY: Partial<Record<TauriErrorKind, ErrorCategory>> = {
   execution: 'tool_error',
   process_spawn: 'tool_error',
   internal: 'unknown',
+  external: 'unknown',
+  retry_exhausted: 'unknown',
 };
 
 /** Classify a structured `TauriErrorKind` into an `ErrorCategory`. */
@@ -95,33 +109,55 @@ export function classifyError(error: string): ErrorCategory {
     return 'timeout';
   }
 
-  // Provider not found
+  // Provider / CLI / model not found. Includes Anthropic's `not_found_error`
+  // (404) for a retired or unknown model id, plus the raw CLI/spawn shapes.
   if (
     lower.includes('not found') ||
     lower.includes('enoent') ||
-    lower.includes('is not recognized')
+    lower.includes('is not recognized') ||
+    lower.includes('not_found_error') ||
+    lower.includes('404') ||
+    lower.includes('model not found') ||
+    lower.includes('unknown model') ||
+    lower.includes('no such model')
   ) {
     return 'provider_not_found';
   }
 
-  // Credential / auth
+  // Credential / auth / billing. Anthropic wire types (`authentication_error`
+  // 401, `permission_error` 403) plus the classic Claude Code "Credit balance
+  // is too low" billing block — all account-level and not failover-fixable.
   if (
     lower.includes('decrypt') ||
     lower.includes('credential') ||
     lower.includes('api key') ||
     lower.includes('unauthorized') ||
     lower.includes('401') ||
-    lower.includes('403')
+    lower.includes('403') ||
+    lower.includes('authentication_error') ||
+    lower.includes('permission_error') ||
+    lower.includes('forbidden') ||
+    lower.includes('credit balance') ||
+    lower.includes('billing_error') ||
+    lower.includes('payment required')
   ) {
     return 'credential_error';
   }
 
-  // Network
+  // Network — connection refused/reset, dropped sockets, DNS. The reset /
+  // hang-up / broken-pipe shapes are the transient TCP drops Claude Code CLI
+  // surfaces mid-stream (distinct from exit-code transient_process_failure).
   if (
     lower.includes('network') ||
     lower.includes('econnrefused') ||
+    lower.includes('econnreset') ||
     lower.includes('err_network') ||
     lower.includes('connection refused') ||
+    lower.includes('connection reset') ||
+    lower.includes('reset by peer') ||
+    lower.includes('socket hang up') ||
+    lower.includes('epipe') ||
+    lower.includes('broken pipe') ||
     lower.includes('dns') ||
     (lower.includes('fetch') && lower.includes('fail'))
   ) {
@@ -137,11 +173,14 @@ export function classifyError(error: string): ErrorCategory {
     return 'tool_error';
   }
 
-  // API / server errors
+  // API / server errors — 5xx and Anthropic's `overloaded_error` (529), the
+  // dominant real failure when the provider is at capacity.
   if (
     lower.includes('500') ||
     lower.includes('502') ||
     lower.includes('503') ||
+    lower.includes('529') ||
+    lower.includes('overloaded') ||
     lower.includes('api error') ||
     lower.includes('server error') ||
     lower.includes('internal server')
@@ -149,12 +188,21 @@ export function classifyError(error: string): ErrorCategory {
     return 'api_error';
   }
 
-  // Validation
+  // Validation / oversized-input errors. Anthropic `invalid_request_error`
+  // already lands here via 'invalid'; the phrasings below catch the
+  // human-readable oversize shapes (prompt/context too long, 413) that don't.
   if (
     lower.includes('validation') ||
     lower.includes('invalid') ||
     lower.includes('malformed') ||
-    lower.includes('parse error')
+    lower.includes('parse error') ||
+    lower.includes('prompt is too long') ||
+    lower.includes('context length') ||
+    lower.includes('context window') ||
+    lower.includes('request_too_large') ||
+    lower.includes('request too large') ||
+    lower.includes('payload too large') ||
+    lower.includes('413')
   ) {
     return 'validation';
   }
@@ -175,16 +223,29 @@ export function classifyError(error: string): ErrorCategory {
     }
   }
 
+  // Boot-recovery sweep message (mirrors Rust): orphaned running executions
+  // are failed with this exact text when the app restarts mid-run — an
+  // environmental interruption, not a provider/config error.
+  if (lower.includes('app restarted while execution was running')) {
+    return 'transient_process_failure';
+  }
+
   return 'unknown';
 }
 
 /**
  * Classify from an unknown error value (Error object, string, or other).
- * Uses structured `kind` from Tauri errors when available, otherwise falls
- * back to string-based classification.
+ *
+ * Resolution order for structured Tauri errors:
+ *   1. the backend-computed `category` on the envelope (canonical — the Rust
+ *      `error_taxonomy` classified it at the source, including the string
+ *      ladder for generic `internal`/`external` messages);
+ *   2. the `kind` → category fallback (payloads predating the `category` field);
+ * For non-IPC values (JS exceptions, fetch failures, plain strings) it falls
+ * back to the string ladder.
  */
 export function classifyUnknownError(err: unknown): ErrorCategory {
-  if (isTauriError(err)) return classifyKind(err.kind);
+  if (isTauriError(err)) return err.category ?? classifyKind(err.kind);
   const msg = err instanceof Error ? err.message : String(err);
   return classifyError(msg);
 }

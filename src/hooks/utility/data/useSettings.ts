@@ -1,8 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { getAppSettingsBulk } from '@/api/system/settings';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('use-settings');
+
+/**
+ * Tauri event the backend broadcasts (key only, never the value) whenever a
+ * settings row is written or deleted through the command layer. `useSettings`
+ * subscribes so a change made in one mounted panel refreshes every other
+ * mounted reader live, without polling. Must match `SETTINGS_CHANGED_EVENT`
+ * in `src-tauri/src/commands/infrastructure/settings.rs`.
+ */
+const SETTINGS_CHANGED_EVENT = 'settings-changed';
+
+interface SettingsChangedPayload {
+  key: string;
+}
 
 /**
  * Microtask-level coalescer for app-settings reads.
@@ -122,33 +136,60 @@ export function useSettings(keys: readonly string[]): UseSettingsResult {
       return;
     }
 
-    setLoaded(false);
-    setError(null);
-    getAppSettingsBulk(stableKeys)
-      .then((result) => {
+    const keySet = new Set(stableKeys);
+
+    const fetchAll = (markLoading: boolean) => {
+      if (markLoading) {
+        setLoaded(false);
+        setError(null);
+      }
+      getAppSettingsBulk(stableKeys)
+        .then((result) => {
+          if (cancelled) return;
+          // Ensure every requested key is present in the map (Rust guarantees
+          // this, but be defensive against shape drift).
+          const next: Record<string, string | null> = {};
+          for (const k of stableKeys) next[k] = result[k] ?? null;
+          setValues(next);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          const message = err instanceof Error ? err.message : String(err);
+          logger.error('useSettings bulk read failed', {
+            keyCount: stableKeys.length,
+            err: message,
+          });
+          setError(message);
+          // Surface a fully-populated map so consumers don't crash on undefined.
+          const next: Record<string, string | null> = {};
+          for (const k of stableKeys) next[k] = null;
+          setValues(next);
+        })
+        .finally(() => {
+          if (!cancelled) setLoaded(true);
+        });
+    };
+
+    // Initial load (shows the loading state).
+    fetchAll(true);
+
+    // Direction 3: refresh live when another mounted consumer writes/deletes
+    // one of our keys. The payload is key-only; we refetch (not patch) so the
+    // value always comes back through the auth-checked read path. A silent
+    // refresh (no loading-state flicker) keeps the UI stable.
+    const unlistenPromise = listen<SettingsChangedPayload>(
+      SETTINGS_CHANGED_EVENT,
+      (event) => {
         if (cancelled) return;
-        // Ensure every requested key is present in the map (Rust guarantees
-        // this, but be defensive against shape drift).
-        const next: Record<string, string | null> = {};
-        for (const k of stableKeys) next[k] = result[k] ?? null;
-        setValues(next);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        const message = err instanceof Error ? err.message : String(err);
-        logger.error('useSettings bulk read failed', { keyCount: stableKeys.length, err: message });
-        setError(message);
-        // Surface a fully-populated map so consumers don't crash on undefined.
-        const next: Record<string, string | null> = {};
-        for (const k of stableKeys) next[k] = null;
-        setValues(next);
-      })
-      .finally(() => {
-        if (!cancelled) setLoaded(true);
-      });
+        if (keySet.has(event.payload?.key)) {
+          fetchAll(false);
+        }
+      },
+    );
 
     return () => {
       cancelled = true;
+      void unlistenPromise.then((unlisten) => unlisten());
     };
   }, [stableKeys, stableSignature]);
 

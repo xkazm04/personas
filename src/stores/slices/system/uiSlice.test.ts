@@ -91,3 +91,34 @@ describe('uiSlice — headerOverlay controller', () => {
     expect(h.get().navigationHistory.length).toBe(0);
   });
 });
+
+describe('uiSlice — forward navigation', () => {
+  it('Back then Forward round-trips (browser semantics)', () => {
+    const h = makeHarness({ sidebarSection: 'home', navigationHistory: [], navForwardHistory: [] });
+    h.get().setSidebarSection('overview');   // home -> overview
+    h.get().navigateBack();                  // back to home; overview parked on forward
+    expect(h.get().sidebarSection).toBe('home');
+    expect(h.get().navForwardHistory.map((e) => e.section)).toEqual(['overview']);
+    h.get().navigateForward();               // forward to overview again
+    expect(h.get().sidebarSection).toBe('overview');
+    expect(h.get().navForwardHistory.length).toBe(0);
+    expect(h.get().navigationHistory.map((e) => e.section)).toEqual(['home']);
+  });
+
+  it('a new navigation truncates the forward branch', () => {
+    const h = makeHarness({ sidebarSection: 'home', navigationHistory: [], navForwardHistory: [] });
+    h.get().setSidebarSection('overview');   // home -> overview
+    h.get().navigateBack();                  // back to home; forward = [overview]
+    expect(h.get().navForwardHistory.length).toBe(1);
+    h.get().setSidebarSection('schedules');  // NEW nav wipes the forward branch
+    expect(h.get().navForwardHistory.length).toBe(0);
+    h.get().navigateForward();               // nothing to go forward to — no-op
+    expect(h.get().sidebarSection).toBe('schedules');
+  });
+
+  it('Forward is a no-op with an empty forward branch', () => {
+    const h = makeHarness({ sidebarSection: 'home', navigationHistory: [], navForwardHistory: [] });
+    h.get().navigateForward();
+    expect(h.get().sidebarSection).toBe('home');
+  });
+});

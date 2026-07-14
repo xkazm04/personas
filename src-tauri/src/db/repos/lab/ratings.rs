@@ -128,19 +128,20 @@ pub fn get_version_ratings(
                        r.model_id AS model_id, r.provider AS provider,
                        r.tool_accuracy_score AS ta, r.output_quality_score AS oq,
                        r.protocol_compliance AS pc, r.cost_usd AS cost, r.duration_ms AS dur,
+                       r.input_tokens AS in_tok, r.output_tokens AS out_tok,
                        r.created_at AS created_at
                 FROM lab_eval_results r JOIN lab_eval_runs run ON r.run_id = run.id
                 WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
                 UNION ALL
                 SELECT r.version_id, r.version_number, r.model_id, r.provider,
                        r.tool_accuracy_score, r.output_quality_score, r.protocol_compliance,
-                       r.cost_usd, r.duration_ms, r.created_at
+                       r.cost_usd, r.duration_ms, r.input_tokens, r.output_tokens, r.created_at
                 FROM lab_ab_results r JOIN lab_ab_runs run ON r.run_id = run.id
                 WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
                 UNION ALL
                 SELECT r.version_id, r.version_number, r.model_id, r.provider,
                        r.tool_accuracy_score, r.output_quality_score, r.protocol_compliance,
-                       r.cost_usd, r.duration_ms, r.created_at
+                       r.cost_usd, r.duration_ms, r.input_tokens, r.output_tokens, r.created_at
                 FROM lab_arena_results r JOIN lab_arena_runs run ON r.run_id = run.id
                 WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
             )
@@ -153,6 +154,8 @@ pub fn get_version_ratings(
                    AVG(CAST(pc AS REAL)) AS pc_avg,
                    AVG(cost) AS cost_avg,
                    AVG(CAST(dur AS REAL)) AS dur_avg,
+                   AVG(CAST(in_tok AS REAL)) AS in_tok_avg,
+                   AVG(CAST(out_tok AS REAL)) AS out_tok_avg,
                    COUNT(*) AS sample_count,
                    MAX(created_at) AS last_measured_at
             FROM measured
@@ -175,6 +178,8 @@ pub fn get_version_ratings(
                     protocol_compliance: pc,
                     cost_usd: row.get::<_, Option<f64>>("cost_avg")?.unwrap_or(0.0),
                     duration_ms: row.get::<_, Option<f64>>("dur_avg")?.unwrap_or(0.0),
+                    input_tokens: row.get::<_, Option<f64>>("in_tok_avg")?.unwrap_or(0.0),
+                    output_tokens: row.get::<_, Option<f64>>("out_tok_avg")?.unwrap_or(0.0),
                     sample_count: row.get("sample_count")?,
                     last_measured_at: row.get("last_measured_at")?,
                 })

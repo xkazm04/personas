@@ -1,5 +1,9 @@
 use serde::Serialize;
 
+use crate::engine::error_taxonomy::{
+    classify_error, is_auto_fixable, is_failover_eligible, ErrorCategory,
+};
+
 /// App-wide error type. Every fallible function returns `Result<T, AppError>`.
 /// Serializes cleanly for Tauri IPC so the frontend gets structured error messages.
 #[derive(Debug, thiserror::Error)]
@@ -81,6 +85,47 @@ pub enum AppError {
     External(String),
 }
 
+impl AppError {
+    /// Map this error to its canonical [`ErrorCategory`] for the IPC envelope.
+    ///
+    /// Typed variants map directly (authoritative — mirrors, and extends, the
+    /// TS `KIND_TO_CATEGORY` table). The two generic string-passthrough
+    /// variants (`Internal`, `External`) and `RetryExhausted` carry an
+    /// arbitrary provider message, so they run through the shared
+    /// [`classify_error`] string ladder — the same one the TS side mirrors —
+    /// falling back to a sensible typed default when nothing matches.
+    ///
+    /// This is what the frontend consumes as `envelope.category` (preferred
+    /// over re-deriving from `kind` on the TS side), so it must be a superset-
+    /// accurate value, not merely kind-shaped.
+    fn category(&self) -> ErrorCategory {
+        use ErrorCategory as C;
+        match self {
+            AppError::RateLimited(_) => C::RateLimit,
+            AppError::NotFound(_) => C::ProviderNotFound,
+            AppError::Auth(_)
+            | AppError::Forbidden(_)
+            | AppError::OAuthRevoked(_)
+            | AppError::KeyringLost(_)
+            | AppError::AuthorizationRequired { .. } => C::CredentialError,
+            AppError::NetworkOffline(_) => C::Network,
+            AppError::Validation(_) | AppError::Serde(_) => C::Validation,
+            AppError::Cloud(_)
+            | AppError::GitLab(_)
+            | AppError::Database(_)
+            | AppError::Pool(_)
+            | AppError::Io(_) => C::ApiError,
+            AppError::Execution(_) | AppError::ProcessSpawn(_) => C::ToolError,
+            // Generic string passthroughs — classify from the message so a
+            // wrapped "rate limit" / "timed out" / "ENOENT" still lands in the
+            // right bucket instead of Unknown.
+            AppError::Internal(_) | AppError::External(_) | AppError::RetryExhausted(_) => {
+                classify_error(&self.to_string(), false, false)
+            }
+        }
+    }
+}
+
 /// Sanitize error messages to avoid leaking internal file paths or system details
 /// to the frontend. Keeps the human-readable portion but strips OS-level detail.
 fn sanitize_error_message(msg: &str) -> String {
@@ -106,9 +151,11 @@ impl Serialize for AppError {
     {
         use serde::ser::SerializeStruct;
         // AuthorizationRequired carries structured metadata the frontend needs;
-        // every other variant uses the standard 2-field payload.
+        // every other variant uses the standard payload. Base fields:
+        //   error, kind, category, auto_fixable, failover_eligible  (5)
+        //   + details for AuthorizationRequired                     (6)
         let has_details = matches!(self, AppError::AuthorizationRequired { .. });
-        let mut s = serializer.serialize_struct("AppError", if has_details { 3 } else { 2 })?;
+        let mut s = serializer.serialize_struct("AppError", if has_details { 6 } else { 5 })?;
         // Sanitize error messages to prevent leaking file paths to frontend
         let message = match self {
             AppError::Database(_) | AppError::Io(_) | AppError::Internal(_) => {
@@ -142,6 +189,15 @@ impl Serialize for AppError {
                 AppError::External(_) => "external",
             },
         )?;
+        // Additive taxonomy fields (2026-07 — one taxonomy across the FFI).
+        // The frontend prefers `category` over re-deriving from `kind`; the two
+        // booleans let consumers branch on retryability / failover without
+        // re-running any classifier. Computed once via the canonical
+        // `error_taxonomy` helpers so Rust and TS never drift.
+        let category = self.category();
+        s.serialize_field("category", &category)?;
+        s.serialize_field("auto_fixable", &is_auto_fixable(&category))?;
+        s.serialize_field("failover_eligible", &is_failover_eligible(&category))?;
         if let AppError::AuthorizationRequired {
             credential_id,
             tool_name,

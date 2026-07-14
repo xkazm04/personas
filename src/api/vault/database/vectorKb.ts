@@ -5,7 +5,11 @@ import type { KbDocument } from "@/lib/bindings/KbDocument";
 import type { VectorSearchResult } from "@/lib/bindings/VectorSearchResult";
 import type { KbSearchQuery } from "@/lib/bindings/KbSearchQuery";
 import type { KbIngestProgress } from "@/lib/bindings/KbIngestProgress";
+import type { KbExtractionSchema } from "@/lib/bindings/KbExtractionSchema";
+import type { KbExtractionRun } from "@/lib/bindings/KbExtractionRun";
+import type { KbEntity } from "@/lib/bindings/KbEntity";
 export type { KnowledgeBase, KbDocument, VectorSearchResult, KbSearchQuery, KbIngestProgress };
+export type { KbExtractionSchema, KbExtractionRun, KbEntity };
 
 // ============================================================================
 // Knowledge Base CRUD
@@ -62,3 +66,22 @@ export const kbListDocuments = (kbId: string) =>
 
 export const kbDeleteDocument = (documentId: string) =>
   invoke<void>('kb_delete_document', { documentId });
+
+// ============================================================================
+// Structured Extraction (two-pass: infer schema -> review -> run)
+// ============================================================================
+
+/** Pass 1: propose an extraction schema by sampling the KB (one LLM call). */
+export const kbInferSchema = (kbId: string) =>
+  invoke<KbExtractionSchema>('kb_infer_schema', { kbId });
+
+/** Pass 2: run extraction against an approved schema. Returns the run id;
+ *  progress arrives on the `kb-extraction-progress` event. */
+export const kbRunExtraction = (kbId: string, schema: KbExtractionSchema) =>
+  invoke<string>('kb_run_extraction', { kbId, schema });
+
+export const kbListExtractionRuns = (kbId: string) =>
+  invoke<KbExtractionRun[]>('kb_list_extraction_runs', { kbId });
+
+export const kbListEntities = (kbId: string, entityType?: string) =>
+  invoke<KbEntity[]>('kb_list_entities', { kbId, entityType: entityType ?? null });

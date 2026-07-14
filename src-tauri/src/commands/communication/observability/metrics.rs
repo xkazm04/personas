@@ -7,8 +7,8 @@ use tracing::{info, instrument};
 use ts_rs::TS;
 
 use crate::db::models::{
-    AnomalyDrilldownData, ExecutionDashboardData, ExecutionHeatmapData, MetricsChartData,
-    MetricsSummary, ValueRollup,
+    AnomalyDrilldownData, ErrorCategoryBreakdown, ExecutionDashboardData, ExecutionHeatmapData,
+    MetricsChartData, MetricsSummary, ValueRollup,
 };
 use crate::db::repos::execution::metrics as repo;
 use crate::error::AppError;
@@ -83,6 +83,24 @@ pub fn get_value_rollup(
     require_auth_sync(&state)?;
     let days = days.map(|d| d.clamp(1, 365));
     repo::get_value_rollup(&state.db, days, persona_id.as_deref())
+}
+
+/// Category-aware error analytics over the window. Classifies each failed
+/// execution's stored `error_message` through the shared `error_taxonomy` at
+/// aggregation time and returns per-category failure counts for the current
+/// window and the prior window of equal length (category-grounded deltas, not a
+/// resurrected generic trend), plus each persona's dominant failure category.
+/// `persona_id = None` rolls up across all personas. Simulations are excluded.
+#[tauri::command]
+#[instrument(skip(state), fields(days, persona_id))]
+pub fn get_error_category_breakdown(
+    state: State<'_, Arc<AppState>>,
+    days: Option<i64>,
+    persona_id: Option<String>,
+) -> Result<ErrorCategoryBreakdown, AppError> {
+    require_auth_sync(&state)?;
+    let days = days.map(|d| d.clamp(1, 365));
+    repo::get_error_category_breakdown(&state.db, days, persona_id.as_deref())
 }
 
 /// Returns per-persona monthly spend for the budget UI.

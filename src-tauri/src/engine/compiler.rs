@@ -194,7 +194,7 @@ mod tests {
     use crate::engine::compilation_pipeline::CompilationStage;
 
     fn test_persona() -> Persona {
-        Persona {
+        Persona { lifecycle: "active".to_string(),
             id: "p-1".into(),
             project_id: "proj-1".into(),
             name: "Email Monitor".into(),

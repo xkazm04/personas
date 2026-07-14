@@ -48,7 +48,9 @@
     "nav_mode_review": "사람 검토 전환 (탐색 모드)",
     "nav_mode_schedules": "일정 전환 (탐색 모드)",
     "nav_mode_search": "검색 열기 (탐색 모드)",
-    "open_title": "키보드 단축키"
+    "open_title": "키보드 단축키",
+    "nav_history_back": "뒤로",
+    "nav_history_forward": "앞으로"
   },
   "tray_schedules": "일정",
   "tray_schedules_today": "오늘 {count}개 예약됨",

@@ -176,3 +176,14 @@ pub fn list_healing_audit_log(
     require_auth_sync(&state)?;
     repo::list_audit_log(&state.db, persona_id.as_deref(), limit.unwrap_or(100))
 }
+
+/// Windowed self-healing effectiveness ledger (overall + per-category confirm
+/// vs revert rates). `window_days` defaults to 30 when omitted.
+#[tauri::command]
+pub fn get_healing_effectiveness(
+    state: State<'_, Arc<AppState>>,
+    window_days: Option<i64>,
+) -> Result<repo::HealingEffectivenessReport, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_healing_effectiveness(&state.db, window_days)
+}

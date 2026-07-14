@@ -640,7 +640,29 @@ const CLAUDE_MODEL_CHAIN: &[&str] = &[
 /// Strategy:
 /// 1. Try the primary provider with the configured model
 /// 2. Try the primary provider with progressively smaller models (within-provider fallback)
-/// 3. Try alternate providers with their default models
+/// 3. Try alternate *providers* with their default models
+///
+/// # Honest shape today (single-provider era)
+///
+/// With Codex removed there is exactly one CLI provider ([`EngineKind::ClaudeCode`]),
+/// so step 3 contributes **zero cross-provider alternates** — the returned chain
+/// is Claude-only: the configured model followed by the Claude model-fallback
+/// ladder ([`CLAUDE_MODEL_CHAIN`]). In practice, when a persona pins a current
+/// model the ladder yields at most a couple of within-provider retries, and the
+/// runner's per-candidate [`ProviderCircuitBreaker`] gate means the whole thing
+/// often behaves as a **breaker-gated single-candidate probe**. This is not a
+/// bug — it is what "provider failover" degrades to when only one provider is
+/// installed. Callers must not assume a rich multi-provider chain.
+///
+/// # Extension point — cross-provider / BYOM alternates
+///
+/// The `alternates` match below is the single seam where additional providers
+/// re-enter the chain. Re-adding a CLI provider (or a BYOM/remote HTTP engine)
+/// is a matter of returning it there for the `ClaudeCode` arm; everything
+/// downstream (circuit breaker, per-candidate spawn loop in `runner::mod`) is
+/// already provider-generic. See `build_failover_chain_with_policy` for how a
+/// BYOM `PolicyDecision` can already override the primary and filter blocked
+/// providers on top of whatever this base chain returns.
 pub fn build_failover_chain(
     primary: EngineKind,
     model_profile: Option<&ModelProfile>,
@@ -683,8 +705,15 @@ pub fn build_failover_chain(
         }
     }
 
-    // 3. Cross-provider failover: add alternate providers
-    // Codex CLI removed — no cross-provider failover available currently.
+    // 3. Cross-provider failover: add alternate providers.
+    //
+    // EXTENSION POINT (cross-provider / BYOM alternates): this match is the one
+    // place a second provider re-enters the failover chain. Today Codex is
+    // removed, so `ClaudeCode` has no alternates and the chain stays Claude-only
+    // (see the fn doc "Honest shape today"). To restore multi-provider failover,
+    // return the alternate `EngineKind`(s) for the relevant arm here — the
+    // circuit breaker and the runner's per-candidate spawn loop are already
+    // provider-generic and need no other change.
     let alternates: Vec<EngineKind> = match primary {
         EngineKind::ClaudeCode => vec![],
     };
