@@ -9,7 +9,15 @@
 // Ordering is impact-per-effort, so when the cap bites, what survives is the work
 // most worth doing — and the drop count is REPORTED, because a silent truncation
 // reads as "nothing else to do".
-import { createFinding, listFindingDedupKeys, listStandards } from '@/api/devTools/devTools';
+import {
+  createFinding,
+  listFindingDedupKeys,
+  listStandards,
+  setFindingVerifyState,
+} from '@/api/devTools/devTools';
+import type { DevIdea } from '@/lib/bindings/DevIdea';
+import type { DevTask } from '@/lib/bindings/DevTask';
+import { verdictFor, verifiableFindings } from './verify';
 import { listUseCases } from '@/api/devTools/useCases';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import {
@@ -54,6 +62,10 @@ export interface SweepInputs {
   kpiAttention?: KpiAttention[];
   /** contextId lookup by a Sentry culprit string — supplied by the context map. */
   contextIdForCulprit?: (culprit: string | null) => string | undefined;
+  /** The project's ideas + tasks — enables VERIFICATION (Phase 3A). Omit to sweep
+   *  without judging (the emitters still run; nothing gets a verdict). */
+  ideas?: DevIdea[];
+  tasks?: DevTask[];
 }
 
 /** Rank drafts by impact-per-effort so the cap keeps the best work. */
@@ -116,6 +128,26 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
     drafts.push(...emitKpiFindings(kpiAttention));
   }
 
+  // -- VERIFY (Phase 3A) ------------------------------------------------------
+  // The drafts we just emitted ARE the probe: an emitter only fires when a signal
+  // is over threshold, so a finding whose dedup_key is missing from this fresh set
+  // has had its signal go away. Judge before dedup filtering — we need every fresh
+  // draft here, including the ones dedup is about to drop as "already known"
+  // (a still-known finding is exactly the `unchanged`/`regressed` case).
+  const verified = { cleared: 0, moved: 0, unchanged: 0, regressed: 0 };
+  if (inputs.ideas && inputs.tasks) {
+    const freshByKey = new Map(drafts.map((d) => [d.dedupKey, d]));
+    for (const f of verifiableFindings(inputs.ideas, inputs.tasks)) {
+      const verdict = verdictFor(f, freshByKey.get(f.dedup_key ?? ''));
+      try {
+        await setFindingVerifyState(f.id, verdict.state, JSON.stringify(verdict.evidence));
+        if (verdict.state !== 'pending') verified[verdict.state] += 1;
+      } catch (e) {
+        silentCatch('findings/sweep:setVerifyState')(e);
+      }
+    }
+  }
+
   // -- dedup against EVERY existing key (rejected included) --------------------
   const known = new Set(await listFindingDedupKeys(project.id));
   const fresh = drafts.filter((d) => !known.has(d.dedupKey));
@@ -158,5 +190,6 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
     duplicates: drafts.length - fresh.length,
     dropped,
     skippedSensors,
+    verified,
   };
 }

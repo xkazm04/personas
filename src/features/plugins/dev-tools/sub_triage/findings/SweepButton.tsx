@@ -30,6 +30,8 @@ export function SweepButton({
   const [busy, setBusy] = useState(false);
   const credentials = useVaultStore((s) => s.credentials);
   const projects = useSystemStore((s) => s.projects);
+  const ideas = useSystemStore((s) => s.ideas);
+  const tasks = useSystemStore((s) => s.tasks);
   const addToast = useToastStore((s) => s.addToast);
   const passport = usePassportForProject(projectId);
 
@@ -43,12 +45,30 @@ export function SweepButton({
         project,
         credentials,
         passport: passport ?? undefined,
+        // Enables verification: the same emit that raises new findings also judges
+        // the shipped ones (docs/plans/dev-findings-loop.md §7).
+        ideas,
+        tasks,
       });
       const parts = [`${res.created} raised`];
       if (res.duplicates > 0) parts.push(`${res.duplicates} already known`);
       if (res.dropped > 0) parts.push(`${res.dropped} over the cap`);
+
+      // Verdicts. `unchanged` / `regressed` are surfaced as loudly as `cleared` —
+      // the whole point of the phase is that "merged" is not "fixed".
+      const v = res.verified;
+      const verdicts: string[] = [];
+      if (v.cleared) verdicts.push(`${v.cleared} cleared`);
+      if (v.moved) verdicts.push(`${v.moved} moved`);
+      if (v.unchanged) verdicts.push(`${v.unchanged} unchanged`);
+      if (v.regressed) verdicts.push(`${v.regressed} REGRESSED`);
+      if (verdicts.length > 0) parts.push(`verified: ${verdicts.join(', ')}`);
+
       if (res.skippedSensors.length > 0) parts.push(`skipped: ${res.skippedSensors.join(', ')}`);
-      addToast(`Sweep — ${parts.join(' · ')}`, res.created > 0 ? 'success' : 'warning');
+
+      // A regression is bad news and must not wear a success colour.
+      const tone = v.regressed > 0 ? 'error' : res.created > 0 || verdicts.length > 0 ? 'success' : 'warning';
+      addToast(`Sweep — ${parts.join(' · ')}`, tone);
       onSwept();
     } catch (e) {
       toastCatch('features/plugins/dev-tools/sub_triage/findings/sweep')(e);

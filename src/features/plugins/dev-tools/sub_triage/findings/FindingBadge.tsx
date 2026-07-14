@@ -45,6 +45,50 @@ export function originMeta(origin: string) {
   return ORIGIN_META[origin as FindingOrigin];
 }
 
+// ---------------------------------------------------------------------------
+// Verdict chip (Phase 3A) — did shipping this move the number?
+// ---------------------------------------------------------------------------
+
+const VERDICT_META: Record<string, { label: string; tw: string; title: string }> = {
+  cleared: {
+    label: 'Cleared',
+    tw: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+    title: 'The sensor no longer reports this signal — it is gone.',
+  },
+  moved: {
+    label: 'Moved',
+    tw: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+    title: 'The signal is still there, but the number improved materially.',
+  },
+  // Deliberately NOT quiet. A shipped fix that changed nothing is the single most
+  // useful thing this loop can tell you, and the easiest to hide.
+  unchanged: {
+    label: 'Unchanged',
+    tw: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+    title: 'Shipped — but the number did not move. Merged is not fixed.',
+  },
+  regressed: {
+    label: 'Regressed',
+    tw: 'bg-red-500/20 text-red-300 border-red-500/40',
+    title: 'Shipped — and the number got WORSE.',
+  },
+};
+
+/** Renders nothing for `pending`/null: a finding that hasn't shipped makes no claim. */
+export function VerdictChip({ verifyState }: { verifyState: string | null | undefined }) {
+  if (!verifyState || verifyState === 'pending') return null;
+  const meta = VERDICT_META[verifyState];
+  if (!meta) return null;
+  return (
+    <span
+      title={meta.title}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-md font-medium border ${meta.tw}`}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
 /** Human-readable key: `costUsd` → "cost usd". Evidence keys are machine names; the
  *  user shouldn't have to read camelCase to judge a finding. */
 function humanize(key: string): string {

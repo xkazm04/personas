@@ -20,8 +20,9 @@ import { EffortRiskFilter } from './EffortRiskFilter';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { computeAgentStats } from '../sub_scanner/AgentScoreboard';
 import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
-import { FindingBadge, originMeta } from './findings/FindingBadge';
+import { FindingBadge, originMeta, VerdictChip } from './findings/FindingBadge';
 import { SweepButton } from './findings/SweepButton';
+import { SensorScoreboard } from './findings/SensorScoreboard';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,6 +48,8 @@ interface TriageIdea {
   origin: string | null;
   /** JSON evidence behind a finding — rendered in the badge's popover. */
   evidence: string | null;
+  /** Verdict once the work shipped and was judged (Phase 3A). */
+  verifyState: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +166,10 @@ function SwipeCard({
             its origin badge (and its evidence); a scanner idea leads with its agent. */}
         <div className="flex items-center gap-1.5 flex-wrap mb-4">
           {idea.origin ? (
-            <FindingBadge origin={idea.origin} evidence={idea.evidence} />
+            <>
+              <FindingBadge origin={idea.origin} evidence={idea.evidence} />
+              <VerdictChip verifyState={idea.verifyState} />
+            </>
           ) : (
             <span className="typo-heading-lg">{idea.agentEmoji}</span>
           )}
@@ -289,6 +295,7 @@ export default function IdeaTriagePage() {
         status: (i.status as TriageIdea['status']) || 'pending',
         origin: i.origin ?? null,
         evidence: i.evidence ?? null,
+        verifyState: i.verify_state ?? null,
       };
     }),
   [storeIdeas, agentRankByKey]);
@@ -438,6 +445,11 @@ export default function IdeaTriagePage() {
             <HelpCircle className="w-3.5 h-3.5 text-foreground" />
           </button>
         </ActionRow>
+        {/* Sensor scoreboard — renders itself away until a sensor has raised something */}
+        <div className="mb-4">
+          <SensorScoreboard />
+        </div>
+
         {/* Auto-Triage Rules Panel */}
         {activeProjectId && (
           <div className="mb-4">
