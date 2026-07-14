@@ -3,6 +3,7 @@ import { Map as MapIcon, Plus, Search, RefreshCw, CalendarClock } from 'lucide-r
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { planWeeklyContextScan } from '@/api/systemOps';
 import type { Event } from '@tauri-apps/api/event';
+import { AnimatePresence } from 'framer-motion';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { EventName } from '@/lib/eventRegistry';
@@ -23,7 +24,6 @@ import { parseJsonArray } from './contextMapTypes';
 import ScanOverlay from './ScanOverlay';
 import ContextDetail from './ContextDetail';
 import ContextLedger from './ContextLedger';
-import ContextGroupRowsPills from './ContextGroupRowsPills';
 import ContextGroupRowsStats from './ContextGroupRowsStats';
 import type { ContextLedgerProps } from './contextLedgerShared';
 import { buildKpiStatusByContext } from './contextKpiStatus';
@@ -36,10 +36,12 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 // PROTOTYPE (/prototype round 2): the Context Map's layout A/B. `crosstab` is
 // the shipped ledger (contexts × features); the two group-row variants lay one
 // group per row with its contexts inline, tinted by KPI health.
-type ContextView = 'crosstab' | 'roster' | 'roster-stats';
+// The two surviving layouts, kept side by side deliberately: Cross-tab reads the
+// map as contexts × features; Roster+ reads it as groups of contexts tinted by
+// KPI health. They answer different questions, so both stay.
+type ContextView = 'crosstab' | 'roster-stats';
 const VIEW_TABS: SegmentedTab<ContextView>[] = [
   { id: 'crosstab', label: 'Cross-tab' },
-  { id: 'roster', label: 'Roster' },
   { id: 'roster-stats', label: 'Roster+' },
 ];
 
@@ -576,7 +578,7 @@ export default function ContextMapPage() {
           )}
         </ActionRow>
 
-        {/* PROTOTYPE switcher — Cross-tab (shipped) vs the two group-row layouts. */}
+        {/* Layout switcher — the two views coexist; see VIEW_TABS. */}
         {hasContexts && (
           <div className="mb-2">
             <SegmentedTabs
@@ -594,21 +596,22 @@ export default function ContextMapPage() {
         <div className="flex gap-0 min-h-0 flex-1">
           {contextView === 'crosstab' ? (
             <ContextLedger {...ledgerProps} />
-          ) : contextView === 'roster' ? (
-            <ContextGroupRowsPills {...ledgerProps} />
           ) : (
             <ContextGroupRowsStats {...ledgerProps} />
           )}
 
-          {selectedCtx && (
-            <ContextDetail
-              ctx={selectedCtx}
-              onClose={() => setSelectedCtxId(null)}
-              useCases={useCaseState.useCases.filter(
-                (u) => u.status !== 'archived' && u.context_ids.includes(selectedCtx.id),
-              )}
-            />
-          )}
+          {/* AnimatePresence so the drawer can play an exit, not just vanish. */}
+          <AnimatePresence>
+            {selectedCtx && (
+              <ContextDetail
+                ctx={selectedCtx}
+                onClose={() => setSelectedCtxId(null)}
+                useCases={useCaseState.useCases.filter(
+                  (u) => u.status !== 'archived' && u.context_ids.includes(selectedCtx.id),
+                )}
+              />
+            )}
+          </AnimatePresence>
         </div>
       </ContentBody>
 

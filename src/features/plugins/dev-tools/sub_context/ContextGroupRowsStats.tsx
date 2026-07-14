@@ -19,11 +19,11 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import { colorDot } from './GroupColorPicker';
 import { LedgerActions, ProposalStrip, type ContextLedgerProps } from './contextLedgerShared';
-import { KpiLegend } from './ContextGroupRowsPills';
 import {
   KPI_STATUS_SURFACE,
   KPI_STATUS_DOT,
   KPI_STATUS_LABEL_KEY,
+  isNeutral,
   type ContextKpiStatus,
 } from './contextKpiStatus';
 
@@ -207,6 +207,22 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** The colour key — without it, a tinted board is a guessing game. */
+function KpiLegend({ t }: { t: ReturnType<typeof useTranslation>['t']['plugins']['dev_tools'] }) {
+  const shown: ContextKpiStatus[] = ['met', 'on-track', 'off-track', 'unmeasured'];
+  return (
+    <div className="hidden lg:flex items-center gap-2.5 shrink-0 mr-1">
+      {shown.map((s) => (
+        <span key={s} className="inline-flex items-center gap-1 typo-caption text-foreground/60">
+          <span className={`w-1.5 h-1.5 rounded-full ${KPI_STATUS_DOT[s]}`} />
+          {t[KPI_STATUS_LABEL_KEY[s]]}
+          {isNeutral(s) && <span className="sr-only">(neutral)</span>}
+        </span>
+      ))}
     </div>
   );
 }
