@@ -451,3 +451,30 @@ export function gridSummary(groups: MockContextGroup[]) {
   for (const g of groups) for (const c of g.cells) { s[dominantTone(c)] += 1; s.total += 1; }
   return s;
 }
+
+// -- R5: short numbers for the plate's second row + tooltips ----------------------
+// Deterministic pseudo-stats scaled by each dimension's tone, so the two R5
+// variants (and their tooltips) style the SAME numbers differently.
+
+export interface CellStats {
+  /** Unresolved error events (null = monitoring unwired). */
+  errs: number | null;
+  /** LLM cost /30d in USD (null = tracker unwired). */
+  costUsd: number | null;
+  /** KPI attainment vs target, 0–140% (null = no KPI measured). */
+  kpiPct: number | null;
+}
+
+function scaled(seed: string, tone: CellTone, ranges: Record<'crit' | 'warn' | 'ok', [number, number]>): number | null {
+  if (tone === 'unmeasured') return null;
+  const [lo, hi] = ranges[tone];
+  return Math.round(lo + rnd(seed) * (hi - lo));
+}
+
+export function cellStats(c: MockContextCell): CellStats {
+  return {
+    errs: scaled(`${c.id}#e`, c.dims.errors, { crit: [26, 90], warn: [4, 18], ok: [0, 2] }),
+    costUsd: scaled(`${c.id}#c`, c.dims.cost, { crit: [18, 60], warn: [6, 15], ok: [0, 4] }),
+    kpiPct: scaled(`${c.id}#k`, c.dims.kpi, { crit: [22, 55], warn: [60, 90], ok: [95, 140] }),
+  };
+}

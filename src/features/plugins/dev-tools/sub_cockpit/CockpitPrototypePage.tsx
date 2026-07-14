@@ -23,26 +23,26 @@ import { FlaskConical } from 'lucide-react';
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { MOCK_PROJECTS } from './cockpitMock';
-import CockpitFloorplan from './CockpitFloorplan';
 import CockpitPlates from './CockpitPlates';
-import CockpitWeighted from './CockpitWeighted';
+import CockpitConsole from './CockpitConsole';
+import CockpitCards from './CockpitCards';
 
-// R4: Floorplan won R3's composition; Spectrum deleted. The new A/B keeps the
-// group-block die-map but puts CONTEXT NAMES on the rectangles — state readable
-// at first sight, no tooltip required. Plates = uniform name-plates in
-// architectural order (spatial memory); Weighted = severity-sized tiles in
-// worst-first order (the layout itself triages). Floorplan stays as the R3
-// reference for glanceability comparison.
-type VariantId = 'plates' | 'weighted' | 'floorplan';
+// R5: Plates won R4 (uniform named rectangles). The new A/B gives each variant
+// its OWN design identity — typography, colour tone, plate anatomy (two rows
+// with a divider: name row + icons/statuses/short numbers) and a CUSTOM tooltip
+// built for larger formatted content later. Console = ops/terminal identity
+// (mono, sharp, colour rationed to state). Cards = soft editorial identity
+// (ink-carries-colour, rounded, spacious). Plates stays as the R4 reference.
+type VariantId = 'console' | 'cards' | 'plates';
 
 const VARIANT_TABS: SegmentedTab<VariantId>[] = [
-  { id: 'plates', label: 'Plates' },
-  { id: 'weighted', label: 'Weighted' },
-  { id: 'floorplan', label: 'Floorplan (R3 ref)' },
+  { id: 'console', label: 'Console' },
+  { id: 'cards', label: 'Cards' },
+  { id: 'plates', label: 'Plates (R4 ref)' },
 ];
 
 export default function CockpitPrototypePage() {
-  const [variant, setVariant] = useState<VariantId>('plates');
+  const [variant, setVariant] = useState<VariantId>('console');
   const [projectId, setProjectId] = useState(MOCK_PROJECTS[0]!.id);
   const project = MOCK_PROJECTS.find((p) => p.id === projectId) ?? MOCK_PROJECTS[0]!;
 
@@ -56,8 +56,8 @@ export default function CockpitPrototypePage() {
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Health grid — prototype R4"
-        subtitle="First layer · named context rectangles (50–100) · state at first sight, no tooltips needed · KPI click-through is a later round"
+        title="Health grid — prototype R5"
+        subtitle="First layer · two-row plates (name + icons/numbers) · custom rich tooltips on hover · KPI click-through is a later round"
         fitWidth
         actions={
           <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -82,9 +82,9 @@ export default function CockpitPrototypePage() {
           </div>
         }
       />
+      {variant === 'console' && <CockpitConsole project={project} />}
+      {variant === 'cards' && <CockpitCards project={project} />}
       {variant === 'plates' && <CockpitPlates project={project} />}
-      {variant === 'weighted' && <CockpitWeighted project={project} />}
-      {variant === 'floorplan' && <CockpitFloorplan project={project} />}
     </ContentBox>
   );
 }
