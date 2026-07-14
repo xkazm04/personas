@@ -285,6 +285,21 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "approve_pairing",
     "reject_pairing",
     "revoke_pairing",
+    // Provider usage audit + health bundle. These are SYNC commands whose
+    // bodies call `require_privileged_sync`, which hard-requires the wrapper's
+    // thread-local validation flag — and the wrapper only validates commands
+    // on THIS list. A sync `#[requires(privileged)]` command that is missing
+    // here fails closed on EVERY IPC call (observed live 2026-07-14: 78
+    // "without IPC validation flag" log entries for get_provider_usage_stats /
+    // get_health_bundle — provider stats never loaded in the health dashboard,
+    // the true root of the "Incomplete health data" banner). The async
+    // `require_privileged` tolerates absence (portability compromise below);
+    // the sync one does not. If you add a sync privileged command, ADD IT HERE.
+    "get_provider_usage_stats",
+    "get_provider_usage_timeseries",
+    "list_provider_audit_log",
+    "list_provider_audit_by_persona",
+    "get_health_bundle",
     // Signing
     "sign_document",
     "verify_document",
