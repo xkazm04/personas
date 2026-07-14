@@ -40,14 +40,15 @@ function dayKeyOf(at: string): string {
   return at.slice(0, 10);
 }
 
-/** Human day label for a separator. */
-export function dayLabel(at: string, now = Date.now()): string {
+/** Human day label for a separator. Pure — the caller supplies the words, so
+ *  this stays free of React and the i18n proxy. */
+export function dayLabel(at: string, labels: { today: string; yesterday: string }, now = Date.now()): string {
   const d = new Date(at);
   if (Number.isNaN(d.getTime())) return '';
   const today = new Date(now);
   const diff = Math.floor((today.setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / DAY_MS);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
+  if (diff === 0) return labels.today;
+  if (diff === 1) return labels.yesterday;
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 

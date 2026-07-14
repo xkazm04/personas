@@ -7,7 +7,7 @@ Goals give **high-level direction** to both development and teams, and are the c
 ## Where it lives
 
 - **Inside the top-level `Teams` section** — Teams was promoted to a 1st-level sidebar section (2026-06-05) and Goals consolidated under it as an L2 item (next to the team Workspace), in addition to the legacy Dev Tools › Goals tab (a contextual shortcut). Both render the same surface (`src/features/teams/sub_goals/`).
-- **View switcher** — three surfaces: **Board · Timeline · Progress**, switched via the Goals submenu nested under the Teams L2 sidebar (`TeamsSidebarNav` `GOAL_VIEWS`). The submenu is **always expanded** (not gated on the Goals tab being active), and clicking a view navigates into the Goals hub from anywhere in the Teams section. (The pan/zoom React Flow **Map** view was retired 2026-06-15 — the dependency graph is still authored in the detail drawer, just no longer visualised as a canvas. **Acceptance is not a sidebar view** — it's a TitleBar-summoned full-screen overlay; see *Accept goals* below.)
+- **View switcher** — four surfaces: **Board · Missions · Timeline · Progress**, switched via the Goals submenu nested under the Teams L2 sidebar (`TeamsSidebarNav` `GOAL_VIEWS`). The submenu is **always expanded** (not gated on the Goals tab being active), and clicking a view navigates into the Goals hub from anywhere in the Teams section. (The pan/zoom React Flow **Map** view was retired 2026-06-15 — the dependency graph is still authored in the detail drawer, just no longer visualised as a canvas. **Acceptance is not a sidebar view** — it's a TitleBar-summoned full-screen overlay; see *Accept goals* below.)
 - **Header** — the title/subtitle sit on the top row; all controls (scope switch, project picker, **+ New goal**) live on a thin **toolbar bar** below them (`ContentHeader`'s `toolbar` slot), so a long project path and the control cluster never collide.
 - **Scope switch (Board + Timeline)** — a header `SegmentedTabs` toggles **All projects** (cross-project, the default) vs **This project**. In cross-project scope the page loads every project's goals into the same store array (`fetchAllGoals` → `dev_tools_list_all_goals`), so drag-to-move and progress edits keep working unchanged, and each card/row carries a `GoalProjectBadge` naming its origin project. The `LifecycleProjectPicker` stays in the header in both scopes — it remains the new-goal / Obsidian-sync target, and selects the single project when narrowed. (This folds the cross-project overview the retired Portfolio surface once provided directly into Board + Timeline.)
 - **Persistence** — the active project is persisted (`systemStore` partialize), so goals re-fetch after a hard refresh.
@@ -20,6 +20,24 @@ All status handling funnels through `goalStatus.ts` — a `GoalStatus` type (`op
 
 ### Board (active project)
 - **Board** — a `your turn → agent's turn → done` kanban; lane membership derives from `GOAL_STATUS_META.lane`. The **Done lane is hidden by default** — "Your turn" / "Agent's turn" split the full content width — and toggles via a CheckCircle2 icon button next to *Sync to Obsidian* (board view only; preference persists in localStorage, and hidden done goals leave the item set so the fallback column can't re-bucket them). Each card surfaces its **checklist inline**: the first few to-dos render as checkboxes you toggle in place — ordered **open-first, newest-first** so the actionable items are on top — and the rest fold into a "+N more" link to the detail drawer. **When a goal has to-dos, they drive its completeness** — `done / total` is written back to the goal's `progress`; a goal with no to-dos keeps the manual ± progress nudge. Items are fetched in one batch query per project the visible goals span (`dev_tools_list_goal_items_for_project`) — one query in single-project scope, a small fan-out across projects in cross-project scope. Cards are **title-first**: the full title wraps (never truncated) and the description is deliberately absent — it lives in the detail drawer (open-details affordance / "+N more"). Lane backgrounds are transparent; colour lives on the cards and the lane border/icon. Status is carried entirely by the **status-tinted left edge** (no redundant status badge on the card), and cards also carry a date that turns red when an ongoing goal is overdue, plus (in cross-project scope) a project-origin chip.
+
+### Missions (project-scoped)
+`GoalsMissions` — every team assignment in the project, in one rail, phase-grouped
+**Active → Needs review → Paused → Queued → Landed → Stopped** with counts. Each row
+carries a live step-progress strip; selecting one opens its **step relay** — per-step
+persona, status, QA rework rounds, expandable markdown output, and inline review
+intervention — plus **pause / resume** and, for a finished mission, **replay**.
+
+This view exists because of a specific hole: the Teams *Assignment board* (retired
+2026-07) was the only place a mission's steps could be seen, and Goals could only ever
+show a mission **through a goal it was linked to** — while the Assign flow creates
+assignments with `goal_id = NULL`. An ad-hoc mission was therefore invisible: still
+running, still gating on human review, and unreachable. Missions shows goal-less
+missions as first-class rows (a **No goal** chip) and lets you adopt one into a goal
+in place (`set_team_assignment_goal`).
+
+Unlike the board it replaces, Missions is **project-scoped, not team-scoped** — every
+team's missions land in one rail, which is how you actually watch a project.
 
 ### Timeline (active project or cross-project)
 `GoalsTimeline` — ongoing goals on a vertical target-date rail, bucketed **Overdue → This week → This month → Later → No date**, each row showing the relative due date, status, and progress (plus a project-origin chip in cross-project scope). Opens the goal on click. Honors the same Board/Timeline scope switch.

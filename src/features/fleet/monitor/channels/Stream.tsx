@@ -1,7 +1,7 @@
-/* eslint-disable custom/no-hardcoded-jsx-text -- i18n for the Stream lands with the P6 sweep. */
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Radio, Search, X, Layers, Users, Signal, Brain } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailModal';
 import { memberColor, type EventFamily } from '@/lib/channel/eventModel';
@@ -46,12 +46,14 @@ const FAMILY_DOT: Record<string, string> = {
   failure: 'bg-red-400', build: 'bg-sky-400', note: 'bg-amber-300', other: 'bg-foreground/30',
 };
 
-const KIND_META: Record<ChannelKind, { label: string; icon: typeof Layers }> = {
-  step: { label: 'Steps', icon: Layers },
-  event: { label: 'Events', icon: Signal },
-  memory: { label: 'Memory', icon: Brain },
-  message: { label: 'Messages', icon: Users },
-  deliberation: { label: 'Deliberation', icon: Radio },
+/** Icons are static; the LABELS are i18n keys resolved at render (a module-scope
+ *  constant cannot call a hook). */
+const KIND_META: Record<ChannelKind, { labelKey: keyof Translations['monitor']; icon: typeof Layers }> = {
+  step: { labelKey: 'stream_kind_step', icon: Layers },
+  event: { labelKey: 'stream_kind_event', icon: Signal },
+  memory: { labelKey: 'stream_kind_memory', icon: Brain },
+  message: { labelKey: 'stream_kind_message', icon: Users },
+  deliberation: { labelKey: 'stream_kind_deliberation', icon: Radio },
 };
 
 const cleanName = (n: string) => n.replace(/^SDLC[ —-]*/i, '') || n;
@@ -114,7 +116,7 @@ export interface StreamProps {
 }
 
 export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: StreamProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
   const [lens, setLens] = useState<LensState>(EMPTY_LENS);
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
@@ -181,12 +183,12 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
         <div className="w-6 h-6 rounded-full bg-status-error/15 flex items-center justify-center flex-shrink-0">
           <Radio className="w-3.5 h-3.5 text-status-error" />
         </div>
-        <span className="typo-body font-semibold text-foreground">Stream</span>
+        <span className="typo-body font-semibold text-foreground">{t.monitor.stream_title}</span>
         <span className="typo-data text-foreground tabular-nums">
           {visible.length}
           {visible.length !== rows.length && <span className="opacity-40"> / {rows.length}</span>}
         </span>
-        {loading && <span className="typo-caption text-foreground opacity-45">loading…</span>}
+        {loading && <span className="typo-caption text-foreground opacity-45">{t.monitor.stream_loading}</span>}
 
         <div className="ml-auto flex items-center gap-2">
           <div className="relative">
@@ -194,7 +196,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
             <input
               value={lens.search}
               onChange={(e) => setLens((l) => ({ ...l, search: e.target.value }))}
-              placeholder="Search transmissions"
+              placeholder={t.monitor.stream_search}
               className="w-56 pl-7 pr-2 py-1 rounded-input bg-secondary/30 border border-border typo-caption text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
             />
           </div>
@@ -204,7 +206,8 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
               onClick={clearAll}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border bg-secondary/25 typo-caption text-foreground hover:bg-secondary/40 transition-colors"
             >
-              <X className="w-3 h-3" /> {active} lens{active > 1 ? 'es' : ''}
+              <X className="w-3 h-3" />{' '}
+              {tx(active === 1 ? t.monitor.stream_lens_one : t.monitor.stream_lens_other, { count: active })}
             </button>
           )}
           {layoutControl}
@@ -214,7 +217,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
       <div className="flex-1 min-h-0 flex">
         {/* THE TUNER — every lens dimension, with live counts. */}
         <div className="flex-shrink-0 w-[248px] border-r border-border bg-foreground/[0.012] overflow-y-auto p-2">
-          <FacetGroup title="Kind">
+          <FacetGroup title={t.monitor.stream_group_kind}>
             {ALL_KINDS.map((k) => {
               const Icon = KIND_META[k].icon;
               const on = lens.kinds.has(k);
@@ -231,7 +234,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
                 >
                   <Icon className={`w-3.5 h-3.5 flex-shrink-0 text-foreground ${on ? '' : 'opacity-50'}`} />
                   <span className={`typo-caption text-foreground ${on ? 'font-medium' : 'opacity-60'}`}>
-                    {KIND_META[k].label}
+                    {t.monitor[KIND_META[k].labelKey]}
                   </span>
                   <span className="ml-auto typo-caption tabular-nums text-foreground opacity-50">
                     {total ?? '·'}
@@ -243,7 +246,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
 
           {/* Memory's analytical modes — only coherent for ONE team's memories (D2/D8). */}
           {memoryModes && (
-            <FacetGroup title="Memory view">
+            <FacetGroup title={t.monitor.stream_group_memory_view}>
               {(['list', 'timeline', 'diff'] as MemoryMode[]).map((m) => (
                 <button
                   key={m}
@@ -254,7 +257,11 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
                     lens.memoryMode === m ? 'bg-primary/12 font-medium' : 'opacity-60 hover:bg-secondary/30'
                   }`}
                 >
-                  {m === 'diff' ? 'Run diff' : m}
+                  {m === 'diff'
+                    ? t.monitor.stream_memory_mode_diff
+                    : m === 'timeline'
+                      ? t.monitor.stream_memory_mode_timeline
+                      : t.monitor.stream_memory_mode_list}
                 </button>
               ))}
             </FacetGroup>
@@ -268,7 +275,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
             {t.monitor.stream_facet_scope_note}
           </p>
 
-          <FacetGroup title="Event family">
+          <FacetGroup title={t.monitor.stream_group_family}>
             {ALL_FAMILIES.map((fam: EventFamily) => {
               const f = facets.families.find((x) => x.key === fam)!;
               return (
@@ -284,9 +291,9 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
             })}
           </FacetGroup>
 
-          <FacetGroup title="Callsign">
+          <FacetGroup title={t.monitor.stream_group_callsign}>
             {facets.callsigns.length === 0 && (
-              <p className="px-2 typo-caption text-foreground opacity-40">No speakers</p>
+              <p className="px-2 typo-caption text-foreground opacity-40">{t.monitor.stream_no_speakers}</p>
             )}
             {facets.callsigns.slice(0, 12).map((f) => {
               const persona = personaIndex.get(f.key);
@@ -310,14 +317,14 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
             })}
           </FacetGroup>
 
-          <FacetGroup title="Channel">
+          <FacetGroup title={t.monitor.stream_group_channel}>
             {teams.length > 1 && (
               <button
                 type="button"
                 onClick={() => onSetAll(!allOn)}
                 className="w-full px-2 pb-1 text-left typo-caption text-foreground opacity-55 hover:opacity-100 transition-opacity"
               >
-                {allOn ? 'None' : 'All'}
+                {allOn ? t.monitor.stream_none : t.monitor.stream_all}
               </button>
             )}
             {teams.map((tm) => (
@@ -344,7 +351,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
             <LensStream
               rows={visible}
               onOpen={(r: TaggedItem) => setDetail(r.item)}
-              emptyLabel={active > 0 ? 'No transmissions match this lens.' : 'No transmissions in these channels yet.'}
+              emptyLabel={active > 0 ? t.monitor.stream_empty_filtered : t.monitor.stream_empty}
               hasMore={hasMore}
               onEndReached={loadMore}
             />

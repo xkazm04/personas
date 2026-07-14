@@ -1,6 +1,6 @@
-/* eslint-disable custom/no-hardcoded-jsx-text -- Conversations i18n lands with the P6 sweep. */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AlertCircle, MessagesSquare, Scale, Sparkles } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { QuickAnswerBody } from '@/features/agents/quick-answer/QuickAnswerBody';
 import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailModal';
 import { createTeamMemory } from '@/api/pipeline/teamMemories';
@@ -46,6 +46,7 @@ export function ConversationBriefing({
   teams: StreamTeam[];
   layoutControl?: ReactNode;
 }) {
+  const { t } = useTranslation();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
@@ -100,7 +101,7 @@ export function ConversationBriefing({
       } satisfies CreateTeamMemoryInput)
         .then(() => {
           setPinned((p) => new Set(p).add(item.id));
-          addToast('Pinned to team memory', 'success');
+          addToast(t.monitor.conv_pinned, 'success');
         })
         .catch(silentCatch('conversation:pin'));
     },
@@ -119,7 +120,7 @@ export function ConversationBriefing({
           return (
             <div className="flex items-center gap-2 py-2">
               <span className="flex-1 h-px bg-border" />
-              <span className="typo-caption text-foreground opacity-40">{dayLabel(row.at)}</span>
+              <span className="typo-caption text-foreground opacity-40">{dayLabel(row.at, dayWords)}</span>
               <span className="flex-1 h-px bg-border" />
             </div>
           );
@@ -157,6 +158,11 @@ export function ConversationBriefing({
     [expanded, toggle, conv, focusDeliberation],
   );
 
+  const dayWords = useMemo(
+    () => ({ today: t.monitor.conv_day_today, yesterday: t.monitor.conv_day_yesterday }),
+    [t],
+  );
+
   const tabClass = (on: boolean) =>
     `px-2 py-0.5 rounded-interactive typo-label uppercase tracking-wider transition-colors ${
       on ? 'text-foreground bg-secondary/40' : 'text-foreground opacity-45 hover:opacity-80'
@@ -169,7 +175,7 @@ export function ConversationBriefing({
           <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
             <MessagesSquare className="w-3.5 h-3.5 text-foreground" />
           </div>
-          <span className="typo-body font-semibold text-foreground">Conversations</span>
+          <span className="typo-body font-semibold text-foreground">{t.monitor.conv_title}</span>
           <div className="ml-auto">{layoutControl}</div>
         </div>
       )}
@@ -181,17 +187,15 @@ export function ConversationBriefing({
 
         <div className="flex-1 min-w-0 flex flex-col min-h-0">
           {!team ? (
-            <div className="flex-1 flex items-center justify-center typo-body text-foreground opacity-50">Pick a project</div>
+            <div className="flex-1 flex items-center justify-center typo-body text-foreground opacity-50">{t.monitor.conv_pick_project}</div>
           ) : conv.rows.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
               <div className="relative">
                 <div className="absolute inset-0 -m-6 rounded-full bg-primary/10 blur-2xl" />
                 <MessagesSquare className="relative w-8 h-8 text-foreground opacity-70" />
               </div>
-              <p className="typo-body text-foreground">Nothing here yet</p>
-              <p className="typo-caption text-foreground opacity-50 max-w-xs">
-                Say something to the team, or describe a piece of work and it'll be routed to whoever fits.
-              </p>
+              <p className="typo-body text-foreground">{t.monitor.conv_empty_title}</p>
+              <p className="typo-caption text-foreground opacity-50 max-w-xs">{t.monitor.conv_empty_body}</p>
             </div>
           ) : (
             <VirtualConversation
@@ -218,7 +222,7 @@ export function ConversationBriefing({
         <div className="flex-shrink-0 w-[320px] min-h-0 border-l border-border bg-foreground/[0.012] flex flex-col">
           <div className="flex-shrink-0 h-9 px-2 flex items-center gap-1 border-b border-border">
             <button type="button" onClick={() => setTab('reviews')} className={tabClass(tab === 'reviews')}>
-              <AlertCircle className="w-3 h-3 inline mr-1" />Reviews
+              <AlertCircle className="w-3 h-3 inline mr-1" />{t.monitor.conv_tab_reviews}
             </button>
             <button
               type="button"
@@ -226,10 +230,10 @@ export function ConversationBriefing({
               disabled={!focusDelib}
               className={`${tabClass(tab === 'focus')} disabled:opacity-25`}
             >
-              <Scale className="w-3 h-3 inline mr-1" />Deliberation
+              <Scale className="w-3 h-3 inline mr-1" />{t.monitor.conv_tab_deliberation}
             </button>
             <button type="button" onClick={() => setTab('quick')} className={tabClass(tab === 'quick')}>
-              <Sparkles className="w-3 h-3 inline mr-1" />Quick
+              <Sparkles className="w-3 h-3 inline mr-1" />{t.monitor.conv_tab_quick}
             </button>
           </div>
 
@@ -240,9 +244,7 @@ export function ConversationBriefing({
               <DeliberationRail teamId={team.teamId} deliberationId={focusDelib} />
             )}
             {tab === 'focus' && !focusDelib && (
-              <p className="typo-caption text-foreground opacity-45 p-2">
-                Focus a deliberation in the conversation to drive it from here.
-              </p>
+              <p className="typo-caption text-foreground opacity-45 p-2">{t.monitor.conv_focus_hint}</p>
             )}
           </div>
         </div>

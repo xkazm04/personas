@@ -17,26 +17,39 @@ is a concrete proposal you approve into a team assignment.
 
 ## Where it lives
 
-Open a team's workspace → the **Deliberate** tab (next to Collab). The surface:
+**TitleBar → Monitor → Channels → Conversations.** (The standalone *Deliberate*
+tab in the team workspace was retired in the 2026-07 Monitor consolidation —
+see [`docs/plans/monitor-consolidation.md`](../plans/monitor-consolidation.md).)
 
-- **Left** — a *Start a deliberation* form (topic + optional desired outcome +
-  an optional **budget** in USD) and the list of the team's deliberations with
-  their status.
-- **Right** — the selected deliberation:
-  - **Header** — status, the round counter, a **cost meter** (spend vs.
-    budget), a **Run a round** button (advances one moderated round on demand),
-    and a **Run to budget** toggle that auto-advances round after round until the
-    budget is spent, the team converges/escalates, or it hits an action gate
-    (then it stops on its own; press **Stop** to halt early). Both work whether or
-    not autonomous deliberation is enabled. There is deliberately *no turn meter*:
-    a deliberation is bounded by *progress* (its agenda and a stall limit) and by
-    hard cost / idle floors, not by a turn count.
+A deliberation is not a separate place any more. It happens **in the team's
+conversation**, alongside the assignments it competes with for attention — which
+is the point: capability work and improvement dialogue interleave in one
+chronology.
+
+- **In the conversation** — a deliberation renders as a violet **band**: topic,
+  status, round counter, and a **cost meter** (spend vs. budget). Expand it to
+  read the persona turns inline, each speaking from their authored *core* (a
+  distinct motivation + stance) and expected to push back when a proposal
+  conflicts with their point of view. Approved capability outputs are posted back
+  here (prefixed 🛠) so the next turns build on real results.
+
+  Deliberation turns are stored in `team_channel_messages` with a
+  `deliberation_id`, and the read-model **excludes them from the plain
+  conversation by default** — they are opt-in via `kinds: ['deliberation']`.
+  (Before 2026-07 they leaked into Collab as ordinary persona posts.)
+
+- **Drive → the right rail.** The band deliberately carries no machinery; press
+  **Drive** and the controls appear in the rail: **Advance** (one moderated round
+  on demand), **Run to budget** (auto-advance until the budget is spent, the team
+  converges/escalates, or it hits an action gate — then it stops on its own;
+  **Stop** halts early), **Split** / **Merge tracks**, the capability gate, the
+  escalation decision, the proposal, and the **agenda**. Both run buttons work
+  whether or not autonomous deliberation is enabled. There is deliberately *no
+  turn meter*: a deliberation is bounded by *progress* (its agenda and a stall
+  limit) and by hard cost / idle floors, not by a turn count.
+
   - **Agenda** — the open and resolved items. The agenda is the progress bar: the
     deliberation resolves when the agenda is settled (or the moderator converges).
-  - **Conversation** — the persona turns, each speaking from their authored
-    *core* (a distinct motivation + stance), expected to push back when a
-    proposal conflicts with their point of view. Approved capability outputs are
-    posted back here (prefixed 🛠) so the next turns build on real results.
   - **Capability action card** — when a persona decides an open point is better
     answered by *doing* than discussing, it requests one of its real capabilities
     and the deliberation parks at status **"Needs approval"** with an

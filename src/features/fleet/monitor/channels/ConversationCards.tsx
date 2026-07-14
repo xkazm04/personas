@@ -1,7 +1,7 @@
-/* eslint-disable custom/no-hardcoded-jsx-text -- prototype variant; i18n at consolidation (plan P6). */
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Pause, Play, Scale, Wand2, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
@@ -88,6 +88,7 @@ export function AssignmentCard({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
   const label = clusterStatus(items);
   const live = label === 'step_running' || label === 'created';
@@ -104,7 +105,7 @@ export function AssignmentCard({
   const pause = usePipelineStore((s) => s.pauseAssignment);
   const resume = usePipelineStore((s) => s.resumeAssignment);
 
-  const title = items[0]?.body ?? 'Assignment';
+  const title = items[0]?.body ?? t.monitor.conv_card_assignment;
   const personaIds = steps.map((s) => s.assignedPersonaId);
   const rework = steps.reduce((n, s) => n + (s.retryCount ?? 0), 0);
   const done = steps.filter((s) => s.status === 'done').length;
@@ -118,10 +119,10 @@ export function AssignmentCard({
           <span className="flex items-center gap-2 mt-0.5">
             <span className={`typo-caption ${meta.tone}`}>{meta.label}</span>
             <span className="typo-caption text-foreground opacity-40 tabular-nums">
-              {done}/{steps.length} steps
+              {tx(t.monitor.conv_steps, { done, total: steps.length })}
             </span>
             {rework > 0 && (
-              <span className="typo-caption text-amber-300">{rework} rework</span>
+              <span className="typo-caption text-amber-300">{tx(t.monitor.conv_rework, { count: rework })}</span>
             )}
             <span className="typo-caption text-foreground opacity-35">
               <RelativeTime timestamp={items[items.length - 1]!.at} />
@@ -175,14 +176,14 @@ export function AssignmentCard({
                   onClick={() => void pause(assignmentId).catch(silentCatch('conv:pause'))}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive border border-border typo-caption text-foreground hover:bg-secondary/40 transition-colors"
                 >
-                  <Pause className="w-3 h-3" /> Pause
+                  <Pause className="w-3 h-3" /> {t.monitor.conv_pause}
                 </button>
                 <button
                   type="button"
                   onClick={() => void resume(assignmentId).catch(silentCatch('conv:resume'))}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive border border-border typo-caption text-foreground hover:bg-secondary/40 transition-colors"
                 >
-                  <Play className="w-3 h-3" /> Resume
+                  <Play className="w-3 h-3" /> {t.monitor.conv_resume}
                 </button>
               </div>
             </div>
@@ -216,8 +217,9 @@ export function DeliberationCard({
    *  focusing is what lets you drive it — two different verbs on purpose. */
   onFocus: () => void;
 }) {
+  const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
-  const topic = deliberation?.topic ?? 'Deliberation';
+  const topic = deliberation?.topic ?? t.monitor.conv_card_deliberation;
   const status = deliberation?.status ?? 'open';
   const round = Number(deliberation?.round ?? 0);
   const spent = Number(deliberation?.costSpentUsd ?? 0);
@@ -252,7 +254,7 @@ export function DeliberationCard({
           onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onFocus(); } }}
           className="flex-shrink-0 px-2 py-0.5 rounded-interactive border border-violet-400/30 typo-caption text-violet-300 hover:bg-violet-400/15 transition-colors"
         >
-          Drive
+          {t.monitor.conv_drive}
         </span>
         <ChevronDown className={`w-4 h-4 flex-shrink-0 text-foreground opacity-40 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
@@ -295,6 +297,7 @@ export function ProposalCard({
   onConfirm: () => void;
   onDismiss: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
   const [open, setOpen] = useState(true);
 
@@ -306,8 +309,8 @@ export function ProposalCard({
           <span className="block typo-body font-medium text-foreground truncate">{proposal.goal}</span>
           <span className="typo-caption text-foreground opacity-50">
             {proposal.status === 'launched'
-              ? 'Running — the team has it'
-              : `${proposal.steps.length} steps routed · confirm to run`}
+              ? t.monitor.conv_proposal_running
+              : tx(t.monitor.conv_proposal_steps, { count: proposal.steps.length })}
           </span>
         </span>
         <button type="button" onClick={() => setOpen((v) => !v)} className="p-1 rounded-interactive text-foreground opacity-50 hover:opacity-100">
@@ -328,7 +331,7 @@ export function ProposalCard({
                     {persona.name.replace(/^T:\s*/, '')}
                   </span>
                 ) : (
-                  <span className="typo-caption text-status-warning flex-shrink-0">unrouted</span>
+                  <span className="typo-caption text-status-warning flex-shrink-0">{t.monitor.conv_unrouted}</span>
                 )}
               </div>
             );
@@ -343,14 +346,14 @@ export function ProposalCard({
             onClick={onConfirm}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-interactive border border-status-success/30 bg-status-success/10 typo-caption text-status-success hover:bg-status-success/20 transition-colors"
           >
-            <Check className="w-3 h-3" /> Run it
+            <Check className="w-3 h-3" /> {t.monitor.conv_proposal_run}
           </button>
           <button
             type="button"
             onClick={onDismiss}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-interactive border border-border typo-caption text-foreground hover:bg-secondary/40 transition-colors"
           >
-            <X className="w-3 h-3" /> Drop
+            <X className="w-3 h-3" /> {t.monitor.conv_proposal_drop}
           </button>
         </div>
       )}

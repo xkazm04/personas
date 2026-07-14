@@ -1,6 +1,6 @@
-/* eslint-disable custom/no-hardcoded-jsx-text -- prototype variant; i18n at consolidation (plan P6). */
 import { memo } from 'react';
 import { Radio } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { channelKey, countUnread, EMPTY_CHANNEL } from '@/stores/slices/pipeline/channelSlice';
@@ -33,12 +33,13 @@ export const ConversationSidebar = memo(function ConversationSidebar({
   activeId: string | null;
   onSelect: (teamId: string) => void;
 }) {
+  const { t, tx } = useTranslation();
   const channels = usePipelineStore((s) => s.channels);
 
   return (
     <div className="h-full flex flex-col min-h-0 border-r border-border bg-foreground/[0.012]">
       <div className="flex-shrink-0 h-9 px-3 flex items-center border-b border-border">
-        <span className="typo-label uppercase tracking-wider text-foreground opacity-60">Projects</span>
+        <span className="typo-label uppercase tracking-wider text-foreground opacity-60">{t.monitor.conv_projects}</span>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-1.5 space-y-0.5">
         {teams.map((tm) => {
@@ -75,7 +76,7 @@ export const ConversationSidebar = memo(function ConversationSidebar({
                     {cleanName(tm.teamName)}
                   </span>
                   {hasDeliberation && (
-                    <Radio className="w-3 h-3 flex-shrink-0 text-violet-300 animate-pulse" aria-label="deliberation active" />
+                    <Radio className="w-3 h-3 flex-shrink-0 text-violet-300 animate-pulse" aria-label={t.monitor.conv_deliberation_active} />
                   )}
                   {newest && (
                     <span className="ml-auto flex-shrink-0 typo-caption text-foreground opacity-45">
@@ -96,7 +97,7 @@ export const ConversationSidebar = memo(function ConversationSidebar({
                 {working > 0 && (
                   <span className="mt-1 inline-flex items-center gap-1 typo-caption text-status-info">
                     <span className="w-1.5 h-1.5 rounded-full bg-status-info animate-pulse" />
-                    {working} working
+                    {tx(t.monitor.conv_working, { count: working })}
                   </span>
                 )}
               </span>

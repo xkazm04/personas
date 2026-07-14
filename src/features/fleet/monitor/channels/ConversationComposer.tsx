@@ -1,6 +1,6 @@
-/* eslint-disable custom/no-hardcoded-jsx-text -- prototype variant; i18n at consolidation (plan P6). */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Send, Sparkles, Wand2, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { decomposeTeamAssignmentGoal } from '@/api/pipeline/assignments';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { silentCatch } from '@/lib/silentCatch';
@@ -38,6 +38,7 @@ export function ConversationComposer({
   onSend: (text: string) => void;
   onProposal: (p: AssignProposal) => void;
 }) {
+  const { t, tx } = useTranslation();
   const [draft, setDraft] = useState('');
   const [mentionAt, setMentionAt] = useState<number | null>(null);
   const [decomposing, setDecomposing] = useState(false);
@@ -180,12 +181,12 @@ export function ConversationComposer({
       {isGoal && (
         <div className="mb-1.5 flex items-center gap-1.5">
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-status-info/30 bg-status-info/10 typo-caption text-status-info">
-            <Wand2 className="w-3 h-3" /> This reads like work — Enter routes it to the team
+            <Wand2 className="w-3 h-3" /> {t.monitor.conv_composer_goal_hint}
           </span>
           <button
             type="button"
             onClick={() => setDraft((d) => `. ${d}`)}
-            title="Send as a plain message instead"
+            title={t.monitor.conv_composer_plain}
             className="p-0.5 rounded-full text-foreground opacity-40 hover:opacity-100 transition-opacity"
           >
             <X className="w-3 h-3" />
@@ -200,7 +201,7 @@ export function ConversationComposer({
           value={draft}
           onChange={onChange}
           onKeyDown={onKeyDown}
-          placeholder={`Message ${teamName} — or describe work to route it`}
+          placeholder={tx(t.monitor.conv_composer_placeholder, { team: teamName })}
           className="flex-1 resize-none px-3 py-2 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
         />
         <button
@@ -214,7 +215,7 @@ export function ConversationComposer({
           }`}
         >
           {isGoal ? <Wand2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-          {decomposing ? 'Routing…' : isGoal ? 'Route' : 'Send'}
+          {decomposing ? t.monitor.conv_composer_routing : isGoal ? t.monitor.conv_composer_route : t.monitor.conv_composer_send}
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ConversationRow } from './conversationModel';
 
 /* ----------------------------------------------------------------------------
@@ -33,6 +34,7 @@ export function VirtualConversation({
   onTopReached?: () => void;
   hasMore?: boolean;
 }) {
+  const { t, tx } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const prevCount = useRef(rows.length);
@@ -111,7 +113,7 @@ export function VirtualConversation({
           className="absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/25 bg-background/90 shadow-elevation-2 typo-caption text-foreground hover:bg-secondary/40 transition-colors"
         >
           <ArrowDown className="w-3.5 h-3.5" />
-          {unseen} new
+          {tx(t.monitor.conv_new, { count: unseen })}
         </button>
       )}
     </div>

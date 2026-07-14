@@ -1,5 +1,5 @@
-/* eslint-disable custom/no-hardcoded-jsx-text -- Conversations i18n lands with the P6 sweep. */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
 import { QuickAnswerReviewCard } from '@/features/agents/quick-answer/QuickAnswerReviewCard';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
@@ -26,6 +26,7 @@ import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 const POLL_MS = 30_000;
 
 export function ReviewsRail({ members }: { members: ChannelMember[] }) {
+  const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
   const [reviews, setReviews] = useState<ManualReviewItem[]>([]);
   const [busy, setBusy] = useState(false);
@@ -84,9 +85,7 @@ export function ReviewsRail({ members }: { members: ChannelMember[] }) {
 
   if (reviews.length === 0) {
     return (
-      <p className="typo-caption text-foreground opacity-45 p-2">
-        Nothing is waiting on you.
-      </p>
+      <p className="typo-caption text-foreground opacity-45 p-2">{t.monitor.reviews_empty}</p>
     );
   }
 

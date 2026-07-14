@@ -15,7 +15,7 @@ Pipeline is the visual workflow canvas for composing multi-persona teams. It ren
 | Surface | Behavior | Implementation |
 | --- | --- | --- |
 | Team list | The teams management table with create/edit. The create form (`CreateTeamForm.tsx`) checks the team name against existing teams inline as you type — a debounced spinner → emerald "Name available" → amber "Already in use, try X" via `useAsyncFieldValidation` + `FormField`'s `availability` prop — so collisions surface at type-time, not on save. The form also has a **Codebase repository** section (GitHub connector picker + repo selector + optional main branch); when a repo is set, submitting provisions a `Codebase — <team>` connector (`service_type: codebase`) carrying `team_id` + `github_url` (+ `main_branch`, `mode: 'team'`), giving the team a single source-control truth that Dev Tools' "Team" source mode consumes | `TeamList.tsx`, `CreateTeamForm.tsx` |
-| Team Studio | The per-team console (roster rail + mode panes) opened when a team is selected — orchestration, board, collab, red-room, memory, settings | `teamStudio/TeamStudioSplitVariant.tsx` (see [Team Studio](#team-studio--the-workspace-console-orchestration-lives-here)) |
+| Team Studio | The per-team **configuration** console (roster rail + mode panes) opened when a team is selected — member scope, team memory, settings. Watching/driving a team moved to the Monitor in 2026-07. | `teamStudio/TeamStudioSplitVariant.tsx` (see [Team Studio](#team-studio--configuration-only)) |
 | Auto-team | LLM-assisted team composition | `AutoTeamModal.tsx`, `useAutoTeam.ts` |
 | Preset team | "Preset Team" button (+ empty-state CTA) opens the in-app **`PresetStudio`** (full content area, routed by `pipelineStore.presetFlowOpen` in `TeamCanvas` — not a modal): a gallery of best-practice, pre-wired presets under `scripts/templates/_team_presets/` (e.g. the **Web Development Team**) → on pick, the **Blueprint** adoption process. Its connection graph (`PresetConnectionGraph`) is the hero and the include/exclude surface — tap a node to toggle a member; sequential vs feedback edges are distinguished, and edge event-labels reveal on hover. Adopts the selected subset in one pass. Shares the `usePresetAdoption` state machine with the Templates → Presets modal. See [templates/08-team-presets.md](../templates/08-team-presets.md) | `TeamList.tsx`, `TeamCanvas.tsx`, `presetStudio/` (`PresetStudio`, `PresetProcessHost`, `PresetProcessBlueprint`, `PresetConnectionGraph`, `PresetGalleryShowcase`), `sub_presets/usePresetAdoption.ts` |
 | Blueprint preview | Read-only render of a team blueprint | `BlueprintPreview.tsx` |
@@ -48,34 +48,63 @@ The barrel `sub_canvas/index.ts` exports `CanvasDragProvider`, the toolbar, and 
 | Timeline | `components/timeline/MemoryTimeline.tsx`, `TimelineItem.tsx`, `TimelineControls.tsx` |
 | Run diff | `components/diff/RunDiffView.tsx`, `DiffHeader.tsx`, `DiffContent.tsx` |
 
-## Team Studio — the workspace console (orchestration lives here)
+## Team Studio — configuration only
 
-Selecting a team opens the **Team Studio** (`sub_teamWorkspace/teamStudio/TeamStudioSplitVariant.tsx`) — a split console with a **roster rail** on the left and a **mode pane** on the right. The right pane is a discriminated union (`RightMode` in `TeamStudioSplitVariant.tsx`) with these modes:
+> **Changed 2026-07 (Monitor consolidation).** Teams used to be *both* where you
+> composed a team and where you watched and drove it. It is now only the first.
+> **Teams = who the team is and what it knows. Monitor = what's happening.**
+> See [`docs/plans/monitor-consolidation.md`](../../plans/monitor-consolidation.md).
+
+Selecting a team opens the **Team Studio** (`sub_teamWorkspace/teamStudio/TeamStudioSplitVariant.tsx`) — a split console with a **roster rail** on the left and a **mode pane** on the right (`RightMode`):
 
 | Mode | What it is | Renders |
 | --- | --- | --- |
-| `member` | Adjust one member's capability scope | member detail in the studio |
-| **`orchestrate`** | **Give the team a goal → decompose → assign & run** | `OrchestrationConsole` (`teamStudio/teamStudioShared.tsx`) |
-| `board` | Mission-control flight deck — live per-step checklist + relay | `TeamAssignmentBoard.tsx` → `TeamAssignmentBoardFlightDeck.tsx` |
-| `redroom` | Read-only comm log (see sub_redRoom below) | `RedRoomPane.tsx` |
-| `collab` | Living team chat + intervention (see sub_collab below) | `CollabPane.tsx` |
-| `memory` | Team memory timeline (see sub_teamMemory below) | `TeamMemoryPane.tsx` |
-| `workspace` | Team settings + disband (see sub_teamWorkspace below) | `TeamWorkspacePane.tsx` |
+| `member` | Adjust one member's capability scope (tier · trust · use-case toggles) | member detail in the studio |
+| `memory` | Team memory — the **authoring** surface (create / edit / delete, importance, revision history) | `TeamMemoryPane.tsx` |
+| `workspace` | Team settings + disband | `TeamWorkspacePane.tsx` |
 
-> The earlier model — a floating `AssignmentsPanel` badge on the xyflow canvas — has been retired. Assignment composition and the live checklist now live in the studio's **Orchestrate** and **Board** modes; `src/features/teams/sub_assignments/` is now **listener-only** (`useAssignmentProgressListener.ts` / `useGlobalAssignmentProgressListener.ts` listen to `TEAM_ASSIGNMENT_PROGRESS`; `useAssignmentNotificationDispatcher.ts` fires bell-icon notifications on `awaiting_review`).
+Nothing in the Studio watches or drives a team. Where the retired modes went:
 
-### Orchestrate mode — goal-driven assignments
+| Retired mode | Where it lives now |
+| --- | --- |
+| `orchestrate` (`OrchestrationConsole`) | **Monitor → Channels → Conversations → the composer.** Describe work and it decomposes into a **proposal card** — routed steps, suggested personas — that you Confirm. The console's only distinctive affordance was preview-before-commit, which *is* the proposal card. |
+| `board` (`TeamAssignmentBoardFlightDeck`) | **Goals → Missions** (see [goals.md](./goals.md)). Project-scoped, and goal-less missions are first-class. |
+| `collab` (`CollabPane` / `CollabLiveCorrespondence`) | **Monitor → Channels → Conversations.** A virtualized messenger with a sidebar of projects; assignments and deliberations render as bands in the conversation. |
+| `redroom` (`RedRoomPane`) | **Monitor → Channels → Stream.** Its 8 event families, callsign lens and "Heard by" survive as lenses over the shared channel read-model. |
+| `deliberations` (`DeliberationsPane`) | **Monitor → Channels → Conversations** — a band in the conversation; **Drive** opens its controls in the right rail. See [deliberations.md](../deliberations.md). |
 
-`OrchestrationConsole` (in `teamStudio/teamStudioShared.tsx`) is the assignment composer: the user gives the team a **goal**, the orchestrator decomposes it into a checklist of steps, matches each step to a persona, and runs them in a parallel DAG with human review on failure.
+Team memory is *read* in the Stream (as a lens, with the run-timeline and run-diff views) and *authored* here — the Stream is a read-only observatory by construction.
 
-- **Goal** — a single textarea (`data-testid="team-goal-input"`).
-- **Preview / decompose** (`data-testid="team-preview-button"`) — one Sonnet call (`decomposeTeamAssignmentGoal`) turns the goal into editable step proposals with suggested personas.
-- **Assign & Run** (`data-testid="team-assign-button"`) — creates + starts the assignment, then a live checklist renders inline (`data-testid="team-live-checklist"`).
-- **Matching strategy** is `llm_eval` (one Sonnet call per step, via the user's Anthropic subscription through the Claude provider, picks the best persona) and **`max_parallel_steps`** is `16` — both are **hardcoded defaults in the console today**, not user-facing knobs. (The engine still supports `manual` and `embedding` strategies and a configurable cap; they're just not exposed in this UI.)
+> `src/features/teams/sub_assignments/` is **listener-only** (`useAssignmentProgressListener.ts` / `useGlobalAssignmentProgressListener.ts` listen to `TEAM_ASSIGNMENT_PROGRESS`; `useAssignmentNotificationDispatcher.ts` fires bell-icon notifications on `awaiting_review`).
 
-### Board mode — flight deck (checklist + review)
+### Assigning work — the conversation composer
 
-`TeamAssignmentBoard` → `TeamAssignmentBoardFlightDeck` is the mission-control board for a running assignment:
+> Retired 2026-07: the Studio's **Orchestrate** mode (`OrchestrationConsole`). It was a
+> second place to type a goal, for a thing the team's conversation was already about.
+
+Assignment composition lives in **Monitor → Channels → Conversations**. Describe a piece
+of work in the composer and, instead of posting a remark, it **decomposes** the goal
+(`decomposeTeamAssignmentGoal` — one Sonnet call) and drops a **proposal card** into the
+conversation: the routed steps, each with its suggested persona (or an amber *unrouted*).
+**Run it** creates + starts the assignment; **Drop** discards it. The preview-before-commit
+the old console offered *is* the proposal card, so nothing was lost by deleting the pane.
+
+- **Matching strategy** is `llm_eval` (one Sonnet call per step, via the user's Anthropic
+  subscription through the Claude provider, picks the best persona) and
+  **`max_parallel_steps`** is `16` — both remain **hardcoded defaults**, not user-facing
+  knobs. (The engine still supports `manual` and `embedding` strategies and a configurable
+  cap; they are just not exposed in the UI.) The proposal's suggested persona is a routing
+  *hint*: personas are re-resolved at run time.
+
+Once running, the assignment speaks for itself in the conversation as a live **band** —
+step-progress strip, persona stack, rework badges, expandable per-step output, pause/resume.
+
+### Watching a running assignment — Goals ▸ Missions
+
+> Retired 2026-07: the Studio's **Board** mode (`TeamAssignmentBoardFlightDeck`).
+
+The mission-control view is now **Goals → Missions** (see [goals.md](./goals.md)), which is
+project-scoped rather than team-scoped and shows goal-less missions as first-class rows.
 
 - Each step renders a status (`pending → matching → running → done | failed | skipped | awaiting_review`), the matched persona, match confidence + rationale (auto modes), and the output snippet / error.
 - On failure the assignment pauses (only that assignment — siblings continue) and the step exposes inline **Edit requirement / Reassign / Skip** actions. A title-bar notification (`team_assignment_failed` / `team_assignment_unmatched` process types) deep-links here.
@@ -90,117 +119,29 @@ The assignment slice (`src/stores/slices/pipeline/assignmentSlice.ts`) and backe
 
 Athena (the companion) can create assignments from chat: "have the X team handle Y" → she emits an `assign_team` op → an approval card → on approval, `companion_assign_team` decomposes + creates + starts the assignment with `source='athena'`, tied to a companion `OperativeMemory` operation. Progress shows as inline cards in the chat panel (`CompanionAssignmentCards`). See [companion/README.md](../companion/README.md).
 
-## sub_redRoom — the team's communication log (Red room)
+## Retired: sub_redRoom + sub_collab (2026-07 Monitor consolidation)
 
-Studio workspace mode. A read-only comm log composed from existing data: the
-persona-event bus (what members emitted), event subscriptions (who listens =
-addressed-to), and team memories (pinned knowledge). Two views: **Transcript**
-(mission radio log — monospace rows, universal member colours, family + member
-filters, 20-item infinite batches, click → full-transmission modal with raw
-payload) and **Relay** (handoff edges emitter → event → consumers + a
-shared-memory rail). Feed: `useRedRoomFeed` (unscoped recent events filtered
-to member-or-project, 10s poll).
+Both folders are **deleted**. They were two of the five UIs that sat on one substrate —
+`list_team_channel`, a server-side union read-model over `team_assignment_events` ∪
+`persona_events` ∪ `team_memories` ∪ `team_channel_messages` — and the consolidation
+collapsed them into two surfaces under **Monitor → Channels**:
 
-## sub_collab — Collab, the living chat (Design B)
+| Was | Is now |
+| --- | --- |
+| `sub_redRoom/` — a read-only comm log, client-fused from four `list*` calls on a 10s timer pulling 500 unscoped `persona_events` | **Stream** (`fleet/monitor/channels/Stream.tsx`) — one virtualized log with composable lenses. Red Room's 8 event families, its callsign lens (personas ranked by traffic) and its "Heard by" chips all survive; "Heard by" is now a **server-side subscription join** (`consumers`) rather than an N-per-member client fan-out. |
+| `sub_collab/CollabPane` + `CollabLiveCorrespondence` — the living chat, unvirtualized and paging upward forever | **Conversations** (`fleet/monitor/channels/ConversationBriefing.tsx`) — a virtualized messenger (`measureElement`) with a sidebar of projects-as-conversations, unread badges, and assignments/deliberations rendered as bands. |
 
-Studio workspace mode; the production "watch the team cooperate + intervene"
-surface chosen from a three-way design comparison (A wire-only / B read-model
-/ C dialogue-native — C's mock is kept as a tab for the future
-Director/Athena orchestration discussion).
+What survives from `sub_collab/`: `useTeamChannel.ts` (now a thin selector over the shared
+`channelSlice`), `collabRender.tsx`, `payloadView.ts`, and `ChannelDetailModal.tsx` (which
+absorbed Red Room's richer detail — raw-payload inspector, "Heard by", memory importance).
+The event vocabulary (`eventFamily` / `memberColor` / `parsePayload` / `toEpochUtc`) moved to
+`src/lib/channel/eventModel.ts`.
 
-- **Read-model**: `list_team_channel` (commands/teams/team_channel.rs) unions
-  the authoritative step layer (`team_assignment_events`, noisy kinds
-  filtered), member bus traffic (`persona_events`, telemetry excluded) and
-  `team_memories` server-side, timestamps normalized to RFC3339, keyset-paged
-  (`before` cursor). Frontend: `useTeamChannel` — head refresh on
-  TEAM_ASSIGNMENT_PROGRESS push + 15s poll fallback, infinite history at the
-  top sentinel, presence derived from running steps.
-- **Directives & the channel table (C1)**: the composer posts via
-  `post_team_directive` → a `team_channel_messages` row (`author_kind='user'`,
-  `consumer='inject'`). This table is the authoritative multi-author store
-  (author kinds user/athena/director/persona — see
-  [`docs/architecture/team-channel-orchestration.md`](../../architecture/team-channel-orchestration.md)).
-  Delivery is at STEP BOUNDARIES: the orchestrator injects recent channel
-  messages addressed to the persona or whole team
-  (`team_channel::list_injectable_for_persona`, `consumer='inject'`) into every
-  step's input (`user_directives`) and prompt (TEAM CHANNEL block in
-  `team_context`), then writes a read-receipt into the message's `deliveries`
-  column (`[{step_id,persona_id,at}]`) — rendered as ✓✓ "seen by" chips.
-  Legacy `team_memories` directive rows are still read for display
-  (back-compat) but no longer written or injected.
-- **Persona posts (C1)**: gated roles (Implementer / QA / Architect) may
-  broadcast ONE short message per step by emitting a `CHANNEL_POST: <text>`
-  line — taught via the TEAM CHANNEL capability block in `team_context`,
-  parsed in the orchestrator's completed-step arm, role-gated + length-capped.
-  Posts land `author_kind='persona'`, `consumer='display'` (visible in Collab,
-  NOT injected into other personas' steps — no persona→persona prompt loop).
-- **Director bridge (C3)**: when the Director evaluates a persona that's on a
-  team, its coaching verdicts are ALSO posted into that team's channel
-  (`engine/director.rs::bridge_verdicts_to_channel`) — `author_kind='director'`,
-  `addressed_to=[persona]`, `consumer='inject'` — so the guidance reaches the
-  coached persona's next step (with a receipt) instead of dead-ending in the
-  Overview UI. Severity-ranked, capped at 3/run (the §5 rate guardrail). The
-  Director's evaluation payload also gains a recent-channel digest
-  (`render_persona_channel_digest`) so it can coach on cooperation, not only
-  solo output. **Storm trigger**: an opt-in autonomous loop
-  (`DirectorStormSubscription`, setting `autonomous_director_storm`, default
-  OFF) runs a focused Director evaluation on a persona whose recent team work
-  shows a burst (≥2 step failures / QA change-requests in 2h), rate-limited to
-  once per persona per 6h via the Director's own channel posts — complementing
-  the command-driven batch runs.
-- **Athena posts (C2)**: `companion_post_team_message` posts as
-  `author_kind='athena'`, `consumer='inject'` (whole-team or `addressed_to`).
-  Interactive use posts directly; autonomous use routes through the approval
-  executor's `post_team_message` op, which is on the `AUTOAPPROVE_ALLOWLIST` —
-  free under autonomous mode, gated otherwise (the §8 decision). `@athena` in
-  the Collab composer also summons her: the directive still posts to the
-  channel, and Athena opens with the message as context (`setPendingPrompt`).
-  (The LLM post-run reconciliation — Athena narrating finished assignments into
-  the channel — is a C2 follow-up; it needs a real async Athena turn rather
-  than a templated post under her name.)
-- **Multi-author UI**: `CollabLive` renders each author kind distinctly
-  (user directive / persona / Athena / Director). **Red Room** reads the same
-  channel-native rows via `listTeamChannel`, so both surfaces show identical
-  channel traffic (kept separate for now per the C-on-B plan).
-- **Soft-pause (C4)**: `pause_team_assignment` flips a running/queued
-  assignment to the `paused` status; the orchestrator tick loop sees it next
-  tick and exits, so **no new steps launch while in-flight steps finish on
-  their own** (detached tasks). `resume_team_assignment` re-spawns the tick
-  loop from the current step states. Surfaced as a Pause/Resume control + a
-  `paused` phase on the Flight Deck board — the C-mock's "pause at checkpoint",
-  made real. Honest interrupt semantics: there is no mid-step interrupt (a
-  running CLI turn can't take input); pause acts at step boundaries.
-- **Flagship channel (C5, `CollabLiveCorrespondence`)**: the demo-grade Collab
-  surface — a bordered card with a header BAND (crest · live presence with
-  status dots · a data glance), a uniform **two-row message** shape (Source +
-  Event on row 1, the Message in an accent-tinted container on row 2), inline
-  review/failure intervention, a designed empty state, and **reply threading**:
-  `list_team_channel` carries `replyTo` (the channel table's column), the
-  composer's per-message Reply affordance posts a directive with
-  `post_team_directive(reply_to)`, and replies render indented under a quoted
-  reference to their parent. The composer is a multiline autosizing textarea
-  (Enter sends, Shift+Enter breaks) with per-team draft persistence and an
-  @-mention autocomplete covering Athena and every roster member. A filter bar
-  (clicking a presence avatar in the header band also inserts the mention and
-  focuses the composer). A filter bar
-  (text search · Conversation/Activity kind toggle · author select) narrows
-  the feed; the kind + author filters persist per team across sessions (the
-  text query is deliberately ephemeral). Any conversational row (hover pin)
-  or system event (Pin action in the detail modal) can be **pinned as a team
-  memory** via `create_team_memory` — the channel read-model unions memories
-  back in, so the pin reappears as a memory row in the conversation. Messages
-  from different days are divided by Today/Yesterday/date separators, the
-  header crest wears the team's own icon and color, and teams holding an
-  unsent composer draft show a pen hint on the Teams table.
-- **Workspace settings guard**: the Team Studio's workspace pane (identity +
-  shared instructions + defaults) reports unsaved edits up to the studio
-  shell; switching modes, clicking a roster member, or navigating back while
-  dirty raises a Discard-changes/Keep-editing confirm instead of silently
-  dropping the edits. The studio header also wears the team's identity — the
-  icon and color editable in Workspace settings render in the header chip —
-  and the roster shows live presence: members mid-step get a pulsing
-  "Working…" dot, members at a review gate a "Waiting for review" one, from
-  the same step-layer derivation the channel header uses (`useTeamPresence`).
+The channel plumbing itself lives in `src/stores/slices/pipeline/channelSlice.ts`: a
+refcounted **(team, kinds)** cache with one poll loop and one `TEAM_ASSIGNMENT_PROGRESS`
+listener for the whole app (it was 3N of each), composite `(at, id)` keyset paging, and a
+k-way **merge horizon** so a cross-team stream never rewrites history above your scroll
+position. See [`docs/plans/monitor-consolidation.md`](../../plans/monitor-consolidation.md).
 
 ## sub_teamWorkspace — Settings (team workspace defaults + disband)
 
@@ -238,7 +179,7 @@ community preset. It records the `shared` activation milestone (growth F3).
 - Backend repos: `src-tauri/src/db/repos/core/{teams.rs,groups.rs}` + `src-tauri/src/db/repos/orchestration/team_assignments.rs`.
 - Orchestration engine: `src-tauri/src/engine/{team_assignment_orchestrator.rs,team_assignment_matching.rs}`. Tables: `team_assignments`, `team_assignment_steps`, `team_assignment_events`, `team_assignment_templates`.
 
-Composing a team (presets / auto-team) does not directly invoke executions — it produces a stored team graph, and execution happens when the assigned trigger fires (see [events/README.md](../events/README.md)) or the user runs the team manually (see [execution/README.md](../execution/README.md)). Assignments are the third path: the orchestrator drives persona executions step-by-step against a goal (the Studio's Orchestrate mode).
+Composing a team (presets / auto-team) does not directly invoke executions — it produces a stored team graph, and execution happens when the assigned trigger fires (see [events/README.md](../events/README.md)) or the user runs the team manually (see [execution/README.md](../execution/README.md)). Assignments are the third path: the orchestrator drives persona executions step-by-step against a goal (composed in the Conversations composer; watched in Goals → Missions).
 
 ## Known gaps
 
