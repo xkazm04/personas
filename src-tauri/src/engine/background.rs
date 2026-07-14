@@ -2304,6 +2304,28 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
             Err(e) => tracing::error!("Draft sweep error: {}", e),
         }
     }
+
+    // Stuck build-session GC: real, already-promoted personas (e.g. GitHub
+    // Issue Sentinel, Tech News Brief) were observed carrying build sessions
+    // parked forever at a non-terminal phase (draft_ready / testing / …). Those
+    // ghosts resurface anywhere sessions are listed. Reconcile them at the
+    // source: any non-terminal session on a persona whose lifecycle is NOT
+    // `draft` and that has had no activity for ≥24h is transitioned to
+    // `cancelled` (a legal transition from every non-terminal phase per
+    // `BuildPhase::validate_transition`). Draft personas' in-flight builds and
+    // recently-active sessions are never touched. Idempotent; always on (no
+    // opt-in gate, because this only cancels — it never deletes data).
+    {
+        use crate::db::repos::core::build_sessions as bs_repo;
+        match bs_repo::expire_stale_non_terminal(pool, bs_repo::STALE_SESSION_MIN_AGE_HOURS) {
+            Ok(n) if n > 0 => tracing::info!(
+                "Stuck build-session GC: cancelled {} stale non-terminal session(s) on non-draft personas",
+                n
+            ),
+            Ok(_) => {}
+            Err(e) => tracing::error!("Stuck build-session GC error: {}", e),
+        }
+    }
 }
 
 /// Emit event update to frontend for realtime visualization.
