@@ -161,7 +161,7 @@ export default function ScheduleTimeline() {
         onBackfill={async (startIso, endIso) => {
           await backfill(entry.agent, startIso, endIso);
         }}
-        onPreviewCron={previewCron}
+        onPreviewCron={(cron, tz) => previewCron(cron, tz, entry.agent.trigger_id)}
         onSkipNextFire={() => skipNextFire(entry.agent)}
         onRunIn={(delayMs) => runIn(entry.agent, delayMs)}
       />

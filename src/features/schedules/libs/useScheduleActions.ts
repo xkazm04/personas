@@ -248,9 +248,15 @@ export function useScheduleActions() {
 
   // -- Preview Cron --------------------------------------------------------
 
-  const previewCron = useCallback(async (expression: string, timezone?: string) => {
+  // `seed` is the trigger id: it's hashed into Jenkins `H` token expansion so
+  // the previewed fire minutes match the exact minutes the engine will fire
+  // (engine/cron.rs seeds on `seed_hash(trigger.id)`). Without it the backend
+  // defaults the seed to 0, previewing a spread the engine never uses. The only
+  // live caller (FrequencyEditor) always edits an EXISTING trigger, so the real
+  // id is always available; `seed` stays optional for syntax-only previews.
+  const previewCron = useCallback(async (expression: string, timezone?: string, seed?: string) => {
     try {
-      const preview = await previewCronSchedule(expression, 5, timezone);
+      const preview = await previewCronSchedule(expression, 5, timezone, seed);
       setState((s) => ({ ...s, cronPreview: preview }));
       return preview;
     } catch {

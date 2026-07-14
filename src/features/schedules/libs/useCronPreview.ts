@@ -1,140 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { previewCronSchedule, cronFireTimesInRange, type CronPreview } from '@/api/pipeline/triggers';
+import { cronFireTimesInRange } from '@/api/pipeline/triggers';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { CalendarEvent } from './calendarHelpers';
 import type { ScheduleEntry } from './scheduleHelpers';
 
-// -- next-N-from-now preview --------------------------------------------------
-
-export interface CronPreviewResult {
-  /** Parsed fire-time Dates from the backend, in ascending order. Always UTC-anchored
-   *  (Dates carry epoch ms, not zone) — render with explicit `timeZone` option. */
-  runs: Date[];
-  /** Backend-derived English description, e.g. "Every 5 minutes". */
-  description: string;
-  valid: boolean;
-  error: string | null;
-  loading: boolean;
-}
-
-const EMPTY: CronPreviewResult = {
-  runs: [],
-  description: '',
-  valid: false,
-  error: null,
-  loading: false,
-};
-
-/**
- * Backend-derived cron preview: next `count` fire times after now, evaluated
- * in `timezone` (IANA name) or system-local when undefined.
- *
- * Single source of truth: defers to `engine/cron.rs` via the
- * `preview_cron_schedule` IPC. The frontend never re-parses cron expressions.
- *
- * Set `cron` to null/empty to clear. Debounce defaults to 300ms.
- */
-export function useCronPreview(
-  cron: string | null | undefined,
-  timezone?: string,
-  count = 5,
-  debounceMs = 300,
-): CronPreviewResult {
-  const [result, setResult] = useState<CronPreviewResult>(EMPTY);
-  const reqIdRef = useRef(0);
-
-  useEffect(() => {
-    const trimmed = cron?.trim();
-    if (!trimmed) {
-      setResult(EMPTY);
-      return;
-    }
-    const myId = ++reqIdRef.current;
-    setResult((prev) => ({ ...prev, loading: true }));
-    const handle = setTimeout(async () => {
-      try {
-        const preview: CronPreview = await previewCronSchedule(trimmed, count, timezone);
-        if (myId !== reqIdRef.current) return; // stale
-        setResult({
-          runs: preview.next_runs.map((s) => new Date(s)),
-          description: preview.description,
-          valid: preview.valid,
-          error: preview.error,
-          loading: false,
-        });
-      } catch (err) {
-        if (myId !== reqIdRef.current) return;
-        setResult({
-          ...EMPTY,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
-    }, debounceMs);
-    return () => clearTimeout(handle);
-  }, [cron, timezone, count, debounceMs]);
-
-  return result;
-}
-
-// -- windowed fire-times for the calendar ------------------------------------
-
-export interface CronFireTimesResult {
-  runs: Date[];
-  loading: boolean;
-  error: string | null;
-}
-
-const EMPTY_RANGE: CronFireTimesResult = { runs: [], loading: false, error: null };
-
-/**
- * Backend-derived cron fire times within a half-open `[start, end)` window,
- * evaluated in the supplied IANA timezone. Used by the calendar.
- *
- * Stale responses are discarded via a request id ref, so rapid window
- * navigation (clicking through weeks) never paints an older window's events.
- */
-export function useCronFireTimesInRange(
-  cron: string | null | undefined,
-  timezone: string | undefined,
-  start: Date,
-  end: Date,
-  max?: number,
-): CronFireTimesResult {
-  const [result, setResult] = useState<CronFireTimesResult>(EMPTY_RANGE);
-  const reqIdRef = useRef(0);
-  const startMs = start.getTime();
-  const endMs = end.getTime();
-
-  useEffect(() => {
-    const trimmed = cron?.trim();
-    if (!trimmed || endMs <= startMs) {
-      setResult(EMPTY_RANGE);
-      return;
-    }
-    const myId = ++reqIdRef.current;
-    setResult((prev) => ({ ...prev, loading: true }));
-    (async () => {
-      try {
-        const isos = await cronFireTimesInRange(trimmed, timezone, new Date(startMs), new Date(endMs), max);
-        if (myId !== reqIdRef.current) return;
-        setResult({
-          runs: isos.map((s) => new Date(s)),
-          loading: false,
-          error: null,
-        });
-      } catch (err) {
-        if (myId !== reqIdRef.current) return;
-        setResult({
-          runs: [],
-          loading: false,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
-    })();
-  }, [cron, timezone, startMs, endMs, max]);
-
-  return result;
-}
+// NOTE: the former `useCronPreview` (next-N-from-now) and `useCronFireTimesInRange`
+// hooks were removed on 2026-07-14. They had no product consumers — only a unit
+// test kept them alive — and `useCronPreview` called `preview_cron_schedule`
+// WITHOUT a seed, so it modelled a fire minute the engine (which seeds H-token
+// spread on `seed_hash(trigger.id)`) would never actually use. The live
+// authoring preview goes through `previewCron` in `useScheduleActions.ts`, which
+// now forwards the trigger id as the seed; the calendar goes through
+// `useCalendarEvents` below, which already seeds `cron_fire_times_in_range` with
+// `agent.trigger_id`. Keeping a seedless preview hook around only invited a
+// future consumer to render a lie, so it's gone rather than "aligned".
 
 // -- calendar event orchestration --------------------------------------------
 
@@ -147,8 +26,10 @@ export interface CalendarEventsResult {
  * Build calendar events for an array of schedule entries, fetching cron fire
  * times via IPC for each cron-driven agent and computing interval-driven fire
  * times locally (interval triggers are zone-agnostic so client-side computation
- * cannot drift). Stale responses are discarded via a request-id ref so rapid
- * window navigation does not paint an older window's events.
+ * cannot drift — provided we anchor on the same field the engine does).
+ *
+ * Stale responses are discarded via a request-id ref so rapid window
+ * navigation does not paint an older window's events.
  */
 export function useCalendarEvents(
   entries: ScheduleEntry[],
@@ -192,9 +73,16 @@ export function useCalendarEvents(
             }
           }
           if (agent.interval_seconds) {
+            // Anchor on `next_trigger_at` — the SAME field the engine anchors
+            // interval re-schedules on (engine/scheduler.rs::compute_next_trigger_at).
+            // Anchoring on `last_triggered_at` (tick wall-clock, up to ~5s late
+            // and drifting after every skipped fire) painted a cadence the engine
+            // never runs. `next_trigger_at` is future, so this yields only the
+            // upcoming fires; past interval activity comes from real run records
+            // (see the calendar's history matching), never a fabricated walk.
             return generateIntervalFireTimes(
               Number(agent.interval_seconds),
-              agent.last_triggered_at,
+              agent.next_trigger_at,
               startD,
               endD,
             );
@@ -234,24 +122,35 @@ export function useCalendarEvents(
 }
 
 /**
- * Local interval-fire-time generator. Kept on the frontend because interval
- * triggers fire every N seconds regardless of timezone — there is no zone or
- * cron semantics for the backend to authoritatively own. Identical to the
- * (deprecated) generateIntervalFireTimes in calendarHelpers, included here so
- * the new hook does not depend on the about-to-be-removed legacy module.
+ * Local interval-fire-time generator. Interval triggers fire every N seconds
+ * regardless of timezone, so there is no cron/zone semantics for the backend to
+ * authoritatively own — but the *phase* still has to match the engine. The
+ * engine anchors interval re-schedules on the trigger's prior scheduled fire
+ * (`next_trigger_at`), never on `now` or `last_triggered_at`
+ * (engine/scheduler.rs::next_interval_at). We mirror that: walk forward from the
+ * anchor by whole intervals and emit the fires that fall in `[start, end)`.
+ *
+ * `anchorIso` is the trigger's `next_trigger_at`. When null (paused /
+ * unscheduled / brand-new) there is no engine-owned phase to project, so we
+ * return nothing rather than invent one. Conflict-preview passes an explicit
+ * `now + interval` anchor for a not-yet-saved candidate to match the engine's
+ * "first fire" for a fresh interval trigger.
  */
-function generateIntervalFireTimes(
+export function generateIntervalFireTimes(
   intervalSeconds: number,
   anchorIso: string | null,
   start: Date,
   end: Date,
   maxResults = 500,
 ): Date[] {
-  if (intervalSeconds <= 0) return [];
+  if (intervalSeconds <= 0 || !anchorIso) return [];
+  const anchorMs = new Date(anchorIso).getTime();
+  if (Number.isNaN(anchorMs)) return [];
   const intervalMs = intervalSeconds * 1000;
-  let cursor = anchorIso ? new Date(anchorIso).getTime() : start.getTime();
-  if (cursor < start.getTime()) {
-    const steps = Math.ceil((start.getTime() - cursor) / intervalMs);
+  let cursor = anchorMs;
+  const startMs = start.getTime();
+  if (cursor < startMs) {
+    const steps = Math.ceil((startMs - cursor) / intervalMs);
     cursor += steps * intervalMs;
   }
   const out: Date[] = [];
@@ -280,7 +179,9 @@ const CONFLICT_WINDOW_MS = 5 * 60_000;
  * Backend-driven: candidate + each existing cron is resolved via
  * cron_fire_times_in_range so the count matches what the engine actually
  * fires (timezone, DST, and step semantics all honored). Interval triggers
- * are computed locally because they are zone-agnostic.
+ * are computed locally because they are zone-agnostic — anchored on the same
+ * field the engine uses (`next_trigger_at`), or `now + interval` for the
+ * not-yet-saved candidate (the engine's first fire for a fresh interval).
  *
  * Returns 0 while the IPC fetches are in flight to avoid flashing a stale
  * value; the loading flag lets the caller render a spinner if desired.
@@ -300,7 +201,7 @@ export function useConflictPreview(
   // from health updates do not churn the IPC fetches.
   const sig = (existingEntries ?? [])
     .filter((e) => e.health !== 'paused' && e.agent.trigger_id !== excludeTriggerId)
-    .map((e) => `${e.agent.trigger_id}|${e.agent.cron_expression ?? ''}|${e.agent.interval_seconds ?? ''}|${e.agent.timezone ?? ''}|${e.agent.last_triggered_at ?? ''}`)
+    .map((e) => `${e.agent.trigger_id}|${e.agent.cron_expression ?? ''}|${e.agent.interval_seconds ?? ''}|${e.agent.timezone ?? ''}|${e.agent.next_trigger_at ?? ''}`)
     .join('::');
 
   useEffect(() => {
@@ -330,7 +231,10 @@ export function useConflictPreview(
           candidateTimes = [];
         }
       } else if (candidateIntervalSeconds && candidateIntervalSeconds > 0) {
-        candidateTimes = generateIntervalFireTimes(candidateIntervalSeconds, null, now, end);
+        // Fresh interval trigger: the engine's first fire is `now + interval`
+        // (next_interval_at with a None anchor), and the cadence flows from there.
+        const candidateAnchor = new Date(now.getTime() + candidateIntervalSeconds * 1000).toISOString();
+        candidateTimes = generateIntervalFireTimes(candidateIntervalSeconds, candidateAnchor, now, end);
       }
       if (candidateTimes.length === 0) {
         if (myId === reqIdRef.current) setResult({ count: 0, loading: false });
@@ -360,7 +264,7 @@ export function useConflictPreview(
             }
           }
           if (a.interval_seconds) {
-            return generateIntervalFireTimes(Number(a.interval_seconds), a.last_triggered_at, now, end);
+            return generateIntervalFireTimes(Number(a.interval_seconds), a.next_trigger_at, now, end);
           }
           return [] as Date[];
         }),
