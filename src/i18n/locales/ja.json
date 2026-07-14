@@ -14201,7 +14201,8 @@
       "add_condition": "+ 条件を追加",
       "action_label": "アクション:",
       "new_rule": "新規ルール",
-      "run_rules": "ルールを実行"
+      "run_rules": "ルールを実行",
+      "suggestion_name_reject_origin": "{origin}の検出結果を自動で却下"
     },
     "companion_label": "Companion",
     "companion_desc": "Athena — いつでも頼れる思考パートナーです。記憶を確認したり、外観を設定したり、音声を紐づけたりできます。",

@@ -170,6 +170,49 @@ behind the threshold decision), so the claim can be judged rather than trusted. 
 sidebar gains a **Source** filter, shown only once a sensor has actually raised
 something.
 
+#### Verification — did shipping it actually move the number?
+
+Until now nothing checked whether merged work changed anything: **"merged" was
+silently treated as "fixed".** It isn't. Every finding that ships now gets a verdict.
+
+**The sweep IS the probe.** An emitter only fires when a signal is *over* threshold,
+and the sweep already re-runs every emitter — so a fresh emit is the measurement:
+
+- the finding's `dedup_key` is **absent** from the fresh drafts → the signal is gone → **`cleared`**
+- it's **still there** → compare the primary metric against the stored `evidence` →
+  **`moved`** (materially better, ≥10%), **`regressed`** (worse), else **`unchanged`**
+
+Per-origin the "primary metric" is: `llm_cost` → cost (or unnamed-share) · `sentry_spike`
+→ event count · `kpi_offtrack` → the reading vs its target (direction-aware) ·
+`standards_finding` / `passport_gap` → presence-shaped, so absence is the whole verdict.
+Results are stored on `dev_ideas` (`verify_state`, `verify_checked_at`, `verify_evidence` —
+the *re-measured* reading, so a verdict is auditable before-vs-after, not taken on trust).
+
+**Honesty rules, enforced in code and tests:**
+- A finding is judged **only once the work shipped** (accepted + its task `completed`).
+  A verdict on work never done would be the most damaging lie the loop could tell.
+- We **never invent a `cleared`** — missing, unparseable or incomparable evidence
+  yields `unchanged`, the conservative answer.
+- A change below the material threshold is `unchanged`: **claiming a win on noise is
+  how a loop starts lying.**
+- `unchanged` and `regressed` are surfaced as loudly as `cleared` (a regression never
+  wears a success colour in the sweep toast).
+
+#### Sensor Scoreboard — credit for the number moving, not the PR merging
+
+The Agent Scoreboard can only score *accepted + merged*, which rewards **plausibility**:
+an agent whose ideas always merge and never change anything scores perfectly. A sensor
+measures a **number**, so it can be scored on **effect**. The headline is the **verify
+rate** — of the findings that shipped and were judged, how many cleared or improved.
+
+- `unchanged` / `regressed` get their own columns.
+- An unjudged sensor shows **"—", never 0%** (unknown ≠ bad), and a rate below a few
+  verdicts is labelled **"(low n)"**.
+- A *credible* sensor with a poor rate is flagged **noisy** — a finding about the finder.
+  Advisory only: the app never silently retunes a sensor's threshold. Likewise, a sensor
+  whose findings you keep rejecting produces an **"auto-reject &lt;sensor&gt;" rule
+  suggestion** rather than quietly re-tuning itself.
+
 ### 5. Task Runner — execute accepted ideas
 
 1. Open **Task Runner**. Click **Batch from Accepted** to materialize one `DevTask` per accepted idea (source-linked via `source_idea_id`), or **New Task** to create an ad-hoc task with a **Quick / Campaign / Deep Build** depth picker.

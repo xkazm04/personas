@@ -14201,7 +14201,8 @@
       "add_condition": "+ Thêm điều kiện",
       "action_label": "Hành động:",
       "new_rule": "Quy tắc mới",
-      "run_rules": "Chạy quy tắc"
+      "run_rules": "Chạy quy tắc",
+      "suggestion_name_reject_origin": "Tự động từ chối các phát hiện từ {origin}"
     },
     "companion_label": "Companion",
     "companion_desc": "Athena — người bạn đồng hành luôn sẵn sàng cùng bạn suy nghĩ. Xem bộ nhớ của cô ấy, tùy chỉnh giao diện, và gắn giọng nói cho cô ấy.",

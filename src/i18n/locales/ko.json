@@ -14201,7 +14201,8 @@
       "add_condition": "+ 조건 추가",
       "action_label": "작업:",
       "new_rule": "새 규칙",
-      "run_rules": "규칙 실행"
+      "run_rules": "규칙 실행",
+      "suggestion_name_reject_origin": "{origin} 결과 자동 거부"
     },
     "companion_label": "Companion",
     "companion_desc": "Athena — 언제나 곁에 있는 생각의 파트너입니다. 기억을 살펴보고, 표시 방식을 설정하고, 음성을 연결하세요.",

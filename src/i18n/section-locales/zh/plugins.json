@@ -2831,7 +2831,8 @@
     "add_condition": "+ 添加条件",
     "action_label": "操作：",
     "new_rule": "新规则",
-    "run_rules": "运行规则"
+    "run_rules": "运行规则",
+    "suggestion_name_reject_origin": "自动拒绝{origin}的检测结果"
   },
   "companion_label": "伴侣",
   "companion_desc": "Athena——您随时待命的思考伙伴。查看她的记忆、配置她的呈现方式，并绑定语音。",

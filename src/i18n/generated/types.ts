@@ -14473,6 +14473,7 @@ export type Translations = {
       action_label: string;
       new_rule: string;
       run_rules: string;
+      suggestion_name_reject_origin: string;
     };
     artist_label: string;
     artist_desc: string;

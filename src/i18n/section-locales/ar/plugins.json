@@ -2831,7 +2831,8 @@
     "add_condition": "+ إضافة شرط",
     "action_label": "الإجراء:",
     "new_rule": "قاعدة جديدة",
-    "run_rules": "تشغيل القواعد"
+    "run_rules": "تشغيل القواعد",
+    "suggestion_name_reject_origin": "رفض نتائج {origin} تلقائيًا"
   },
   "companion_label": "الرفيق",
   "companion_desc": "Athena — رفيقتك الفكرية المتاحة دائمًا. استكشف ذاكرتها، واضبط واجهتها، واربط لها صوتًا.",

@@ -14201,7 +14201,8 @@
       "add_condition": "+ Ajouter une condition",
       "action_label": "Action :",
       "new_rule": "Nouvelle règle",
-      "run_rules": "Exécuter les règles"
+      "run_rules": "Exécuter les règles",
+      "suggestion_name_reject_origin": "Rejeter automatiquement les résultats de {origin}"
     },
     "companion_label": "Compagnon",
     "companion_desc": "Athena — votre partenaire de réflexion toujours disponible. Consultez sa mémoire, configurez son interface et attribuez-lui une voix.",

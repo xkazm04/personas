@@ -2831,7 +2831,8 @@
     "add_condition": "+ शर्त जोड़ें",
     "action_label": "कार्य:",
     "new_rule": "नया नियम",
-    "run_rules": "नियम चलाएँ"
+    "run_rules": "नियम चलाएँ",
+    "suggestion_name_reject_origin": "{origin} निष्कर्षों को स्वतः अस्वीकार करें"
   },
   "companion_label": "कंपेनियन",
   "companion_desc": "Athena — आपकी हमेशा उपलब्ध विचार-साथी। उसकी मेमोरी देखें, उसका रूप-रंग सेट करें, और एक आवाज़ जोड़ें।",

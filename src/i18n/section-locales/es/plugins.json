@@ -2831,7 +2831,8 @@
     "add_condition": "+ Agregar condición",
     "action_label": "Acción:",
     "new_rule": "Nueva Regla",
-    "run_rules": "Ejecutar Reglas"
+    "run_rules": "Ejecutar Reglas",
+    "suggestion_name_reject_origin": "Rechazar automáticamente los hallazgos de {origin}"
   },
   "companion_label": "Compañera",
   "companion_desc": "Athena — su compañera de pensamiento siempre disponible. Inspeccione su memoria, configure su apariencia y vincule una voz.",

@@ -14466,7 +14466,8 @@
       "add_condition": "+ Add condition",
       "action_label": "Action:",
       "new_rule": "New Rule",
-      "run_rules": "Run Rules"
+      "run_rules": "Run Rules",
+      "suggestion_name_reject_origin": "Auto-reject {origin} findings"
     },
     "artist_label": "Artist",
     "artist_desc": "Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.",

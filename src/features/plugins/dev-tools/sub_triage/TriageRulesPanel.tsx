@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, Plus, Trash2, Zap, ToggleLeft, ToggleRight, 
 import { useSystemStore } from '@/stores/systemStore';
 import type { TriageRule } from '@/lib/bindings/TriageRule';
 import { suggestTriageRules, type RuleSuggestion } from './triageRuleSuggestions';
+import { originMeta } from './findings/FindingBadge';
 
 const FIELD_OPTIONS = [
   { value: 'effort', label: 'Effort' },
@@ -72,6 +73,10 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
       case 'accept_quick': return dtr.suggestion_name_accept_quick;
       case 'reject_risky': return dtr.suggestion_name_reject_risky;
       case 'reject_category': return tx(dtr.suggestion_name_reject_category, { category: s.category ?? '' });
+      // B3 — a sensor whose findings keep getting rejected is mis-thresholded.
+      case 'reject_origin': return tx(dtr.suggestion_name_reject_origin, {
+        origin: originMeta(s.origin ?? '')?.label ?? s.origin ?? '',
+      });
     }
   };
 

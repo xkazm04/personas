@@ -14201,7 +14201,8 @@
       "add_condition": "+ Přidat podmínku",
       "action_label": "Akce:",
       "new_rule": "Nové pravidlo",
-      "run_rules": "Spustit pravidla"
+      "run_rules": "Spustit pravidla",
+      "suggestion_name_reject_origin": "Automaticky odmítat nálezy z {origin}"
     },
     "companion_label": "Companion",
     "companion_desc": "Athena — váš vždy dostupný myšlenkový partner. Prohlédněte její paměť, nastavte její vzhled a přiřaďte hlas.",

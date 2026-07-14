@@ -14201,7 +14201,8 @@
       "add_condition": "+ Bedingung hinzufügen",
       "action_label": "Aktion:",
       "new_rule": "Neue Regel",
-      "run_rules": "Regeln ausführen"
+      "run_rules": "Regeln ausführen",
+      "suggestion_name_reject_origin": "{origin}-Befunde automatisch ablehnen"
     },
     "companion_label": "Begleiter",
     "companion_desc": "Athena — Ihr stets verfügbarer Denkpartner. Athenas Gedächtnis einsehen, ihr Erscheinungsbild konfigurieren und ihr eine Stimme zuweisen.",

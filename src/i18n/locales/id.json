@@ -14201,7 +14201,8 @@
       "add_condition": "+ Tambah kondisi",
       "action_label": "Tindakan:",
       "new_rule": "Aturan Baru",
-      "run_rules": "Jalankan Aturan"
+      "run_rules": "Jalankan Aturan",
+      "suggestion_name_reject_origin": "Tolak otomatis temuan {origin}"
     },
     "companion_label": "Pendamping",
     "companion_desc": "Athena — mitra berpikir Anda yang selalu siap. Periksa memorinya, konfigurasi chrome-nya, dan pasangkan suara.",
