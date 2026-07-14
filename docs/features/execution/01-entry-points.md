@@ -156,6 +156,31 @@ synthesised with both `backfill_slot: true` and `user_backfill: true`
 markers so the auto-backfill path and the user path remain
 distinguishable in event payloads.
 
+**Schedule reliability signals** (surfaced on each Schedules row):
+
+- **Missed while offline** — when the startup sweep / live tick fires the one
+  catch-up slot under the default `max_backfill` of 1, every OLDER missed slot
+  in the `(last_triggered_at, now]` gap is discarded. The discarded count is
+  persisted per trigger (`schedule_missed_runs` table) and a feed-visible
+  `schedule.missed.offline` event is emitted. The row shows a "missed N while
+  offline" banner with one-click Backfill (reuses `backfill_schedule`) and a
+  dismiss; the count clears after either. `list_schedule_missed_runs` /
+  `clear_schedule_missed_runs` commands back the UI.
+- **Overlap skip** — if a previous run from the SAME trigger is still active
+  (queued/running execution correlated via `input_data._event.source_id`, or an
+  as-yet-undispatched pending/processing event), the due fire is skipped instead
+  of stacking a concurrent run. The slot is consumed (not backfilled, not
+  counted as a miss) and a `schedule.skipped.overlap` event records the skip.
+  Keyed per trigger, so distinct schedules stay independent. No config surface.
+- **Lost fires** — a publish failure AFTER `mark_triggered` (the schedule
+  already advanced) is a permanently lost fire; it now opens a deduped
+  `schedule_lost_fire` healing issue (one per trigger episode) instead of only a
+  log line. Covered sites: live publish, backfill publish, approval-mode hold.
+- **Invalid timezone** — a schedule whose timezone won't parse has
+  `next_trigger_at` NULLed; the machine-readable reason (`invalid_timezone`) is
+  persisted on the trigger's `schedule_missed_runs` row and the schedules row
+  shows a "Paused — invalid timezone" chip. Cleared when the zone is corrected.
+
 ## Webhook
 
 **Trigger type**: `webhook`
