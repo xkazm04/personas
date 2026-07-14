@@ -280,12 +280,21 @@ function spawnTurn(cell, systemPrompt, userMessage) {
     let stderr = '';
     let buf = '';
 
-    const child = spawn(process.platform === 'win32' ? 'claude.cmd' : 'claude', args, {
-      cwd: os.homedir(),
-      env,
-      shell: process.platform === 'win32',
-      windowsHide: true,
-    });
+    // Isolation mode: CLAUDE_EXE points at the native claude.exe (the npm
+    // claude.cmd shim just execs it) — spawned directly with no cmd shell,
+    // so the turn subprocess is claude.exe, not a cmd/node wrapper. Pair
+    // with running THIS harness under a renamed node binary and the whole
+    // campaign is invisible to parallel sessions' stray-node cleanup sweeps
+    // (which killed three bench runs mid-campaign).
+    const claudeExe = process.env.CLAUDE_EXE;
+    const child = claudeExe
+      ? spawn(claudeExe, args, { cwd: os.homedir(), env, windowsHide: true })
+      : spawn(process.platform === 'win32' ? 'claude.cmd' : 'claude', args, {
+          cwd: os.homedir(),
+          env,
+          shell: process.platform === 'win32',
+          windowsHide: true,
+        });
 
     const timer = setTimeout(() => {
       timedOut = true;
