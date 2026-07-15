@@ -299,15 +299,153 @@ pub async fn invoke_tool_direct(
     Ok(invocation_result)
 }
 
+/// File extensions a script tool may carry. The script is executed with
+/// `npx tsx <path>`, i.e. it runs as arbitrary code — so we only accept the
+/// TypeScript/JavaScript source shapes tsx actually loads and reject anything
+/// else outright (a `.sh`, `.py`, or extension-less path is never a valid tool
+/// script and is almost certainly tampering or a mis-seed).
+const ALLOWED_SCRIPT_EXTENSIONS: &[&str] = &["ts", "tsx", "mts", "cts", "js", "mjs", "cjs"];
+
+/// Directories a tool script is allowed to resolve into. Script tools run
+/// `npx tsx <script_path>` — arbitrary code execution — so the resolved path
+/// MUST sit inside a known-good root before we ever spawn. Two roots reflect
+/// how legit script tools are addressed in this codebase:
+///
+/// - `<cwd>/tools/` — relative script paths (`tools/gmail_reader.ts`,
+///   `tools/file_reader.ts`, `run.ts`-style entries) canonicalize into the
+///   working-directory `tools/` folder; this is the convention every in-repo
+///   example / fixture uses.
+/// - `<data_dir>/com.personas.desktop/tool_scripts/` — the app-data managed
+///   scripts directory, the durable home for user/template-authored tool
+///   scripts (mirrors the `skill_scratchpads` / `local_drive` app-data pattern).
+///
+/// Both are returned even if they do not yet exist; the prefix check below
+/// canonicalizes each root that does exist and normalizes the rest textually.
+fn allowed_script_roots() -> Vec<std::path::PathBuf> {
+    let mut roots = Vec::new();
+    if let Ok(cwd) = std::env::current_dir() {
+        roots.push(cwd.join("tools"));
+    }
+    if let Some(data) = dirs::data_dir() {
+        roots.push(data.join("com.personas.desktop").join("tool_scripts"));
+    }
+    roots
+}
+
+/// Normalize a path to a forward-slash, lowercase string, stripping the Windows
+/// extended-length prefix (`\\?\`) that `canonicalize()` may prepend. Shared by
+/// the script-path validator so root/target comparison is separator- and
+/// case-insensitive (matching `engine::path_safety`).
+fn normalize_path_for_compare(p: &std::path::Path) -> String {
+    let mut s = p.to_string_lossy().replace('\\', "/").to_lowercase();
+    if let Some(stripped) = s.strip_prefix("//?/") {
+        s = stripped.to_string();
+    }
+    s
+}
+
+/// Validate a script tool's `script_path` against an explicit set of allowed
+/// roots. Split out from [`validate_script_path`] so tests can drive it with a
+/// temp-dir root without depending on the process CWD / app-data dir.
+///
+/// Rejects, in order: empty path, `..` traversal in the raw input, a
+/// non-script extension, a path that does not exist (distinct message), and a
+/// resolved path that escapes every allowed root (defeats symlink escape,
+/// because the check runs on the CANONICAL path). Returns the canonical path on
+/// success so the caller spawns the resolved target, not the textual input.
+fn validate_script_path_against(
+    script_path: &str,
+    tool_name: &str,
+    roots: &[std::path::PathBuf],
+) -> Result<std::path::PathBuf, String> {
+    let trimmed = script_path.trim();
+    if trimmed.is_empty() {
+        return Err(format!("Tool '{tool_name}' has an empty script_path"));
+    }
+
+    // Fast textual reject of obvious traversal before touching the filesystem.
+    let normalised = trimmed.replace('\\', "/");
+    if normalised.contains("/../")
+        || normalised.ends_with("/..")
+        || normalised.starts_with("../")
+        || normalised == ".."
+    {
+        return Err(format!(
+            "Tool '{tool_name}': script_path must not contain '..' path traversal: {trimmed}"
+        ));
+    }
+
+    // Extension allowlist — only tsx-loadable source shapes.
+    let ext_ok = std::path::Path::new(trimmed)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| ALLOWED_SCRIPT_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()))
+        .unwrap_or(false);
+    if !ext_ok {
+        return Err(format!(
+            "Tool '{tool_name}': script_path must be a script file ({}) — got: {trimmed}",
+            ALLOWED_SCRIPT_EXTENSIONS.join(", ")
+        ));
+    }
+
+    // Resolve the REAL path (symlinks + `..`). A non-existent path is a distinct,
+    // recognisable failure — not conflated with "escaped the sandbox".
+    let canonical = std::path::Path::new(trimmed).canonicalize().map_err(|_| {
+        format!("Tool '{tool_name}': script file does not exist or is inaccessible: {trimmed}")
+    })?;
+    let canon_str = normalize_path_for_compare(&canonical);
+
+    for root in roots {
+        let root_str = match root.canonicalize() {
+            Ok(c) => normalize_path_for_compare(&c),
+            Err(_) => normalize_path_for_compare(root),
+        };
+        if root_str.is_empty() {
+            continue;
+        }
+        if canon_str == root_str || canon_str.starts_with(&format!("{root_str}/")) {
+            return Ok(canonical);
+        }
+    }
+
+    Err(format!(
+        "Tool '{tool_name}': script_path resolves outside the allowed tool-script directories: {trimmed}"
+    ))
+}
+
+/// Validate a script tool's `script_path` against the real allowed roots
+/// ([`allowed_script_roots`]). Returns the canonical path to spawn on success.
+fn validate_script_path(
+    script_path: &str,
+    tool_name: &str,
+) -> Result<std::path::PathBuf, String> {
+    validate_script_path_against(script_path, tool_name, &allowed_script_roots())
+}
+
 /// Invoke a script-based tool via `npx tsx`.
 async fn invoke_script(
     tool: &PersonaToolDefinition,
     input_json: &str,
     env_map: &HashMap<&str, &str>,
 ) -> Result<(String, String), DirectInvokeError> {
+    // SECURITY: `script_path` is executed as arbitrary code (`npx tsx <path>`).
+    // Validate + canonicalize it against the allowed tool-script roots BEFORE
+    // spawning, so a DB-tampered or mis-seeded path (traversal, absolute path
+    // outside the sandbox, symlink escape, non-existent file) is rejected as a
+    // typed Misconfigured failure instead of running. Spawn the CANONICAL path
+    // to avoid any TOCTOU gap on the textual input.
+    let canonical_script = validate_script_path(&tool.script_path, &tool.name).map_err(|msg| {
+        DirectInvokeError::typed(
+            AppError::Validation(msg),
+            ToolErrorKind::Misconfigured,
+            None,
+            false,
+        )
+    })?;
+
     let mut cmd = tokio::process::Command::new("npx");
     cmd.arg("tsx")
-        .arg(&tool.script_path)
+        .arg(&canonical_script)
         .arg("--input")
         .arg(input_json);
 
@@ -1089,5 +1227,106 @@ mod api_outcome_tests {
         assert_eq!(err.kind, ToolErrorKind::Http);
         assert_eq!(err.http_status, Some(500));
         assert!(err.retryable);
+    }
+}
+
+#[cfg(test)]
+mod script_path_validation_tests {
+    use super::*;
+    use std::fs;
+
+    /// Create a `tools/` root inside a fresh temp dir and drop a valid script
+    /// into it. Returns `(tempdir, root, script_path)`.
+    fn tools_root_with_script(file: &str) -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("tools");
+        fs::create_dir_all(&root).unwrap();
+        let script = root.join(file);
+        fs::write(&script, "export {};\n").unwrap();
+        (dir, root, script)
+    }
+
+    #[test]
+    fn accepts_script_inside_allowed_root() {
+        let (_dir, root, script) = tools_root_with_script("gmail_reader.ts");
+        let roots = vec![root];
+        let ok = validate_script_path_against(&script.to_string_lossy(), "gmail_reader", &roots);
+        assert!(ok.is_ok(), "expected in-root script to be accepted: {ok:?}");
+    }
+
+    #[test]
+    fn rejects_empty_path() {
+        let err = validate_script_path_against("", "t", &[]).unwrap_err();
+        assert!(err.contains("empty script_path"), "{err}");
+    }
+
+    #[test]
+    fn rejects_traversal_in_raw_input() {
+        let (_dir, root, _script) = tools_root_with_script("ok.ts");
+        let roots = vec![root.clone()];
+        // `<root>/../evil.ts` textually escapes before we ever hit the FS.
+        let attack = root.join("..").join("evil.ts");
+        let err = validate_script_path_against(&attack.to_string_lossy(), "t", &roots)
+            .unwrap_err();
+        assert!(err.contains("traversal"), "{err}");
+    }
+
+    #[test]
+    fn rejects_absolute_path_outside_root() {
+        // A real file that exists but lives OUTSIDE the allowed root.
+        let outside = tempfile::tempdir().unwrap();
+        let evil = outside.path().join("evil.ts");
+        fs::write(&evil, "export {};\n").unwrap();
+        let (_dir, root, _script) = tools_root_with_script("ok.ts");
+        let roots = vec![root];
+        let err =
+            validate_script_path_against(&evil.to_string_lossy(), "t", &roots).unwrap_err();
+        assert!(err.contains("outside the allowed"), "{err}");
+    }
+
+    #[test]
+    fn rejects_nonexistent_path_with_distinct_message() {
+        let (_dir, root, _script) = tools_root_with_script("ok.ts");
+        let roots = vec![root.clone()];
+        let missing = root.join("does_not_exist.ts");
+        let err = validate_script_path_against(&missing.to_string_lossy(), "t", &roots)
+            .unwrap_err();
+        assert!(err.contains("does not exist"), "distinct not-found message: {err}");
+    }
+
+    #[test]
+    fn rejects_non_script_extension() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("tools");
+        fs::create_dir_all(&root).unwrap();
+        let sh = root.join("evil.sh");
+        fs::write(&sh, "#!/bin/sh\nrm -rf /\n").unwrap();
+        let roots = vec![root];
+        let err = validate_script_path_against(&sh.to_string_lossy(), "t", &roots)
+            .unwrap_err();
+        assert!(err.contains("must be a script file"), "{err}");
+    }
+
+    /// Symlink escape: a symlink INSIDE the allowed root that points at a file
+    /// OUTSIDE it must be rejected, because validation runs on the canonical
+    /// (symlink-resolved) path. Unix-only (Windows symlink creation needs
+    /// privilege); skips gracefully if the platform refuses the symlink.
+    #[cfg(unix)]
+    #[test]
+    fn rejects_symlink_escape() {
+        use std::os::unix::fs::symlink;
+        let outside = tempfile::tempdir().unwrap();
+        let real = outside.path().join("payload.ts");
+        fs::write(&real, "export {};\n").unwrap();
+
+        let (_dir, root, _script) = tools_root_with_script("ok.ts");
+        let link = root.join("shim.ts");
+        if symlink(&real, &link).is_err() {
+            return; // platform refused symlink — nothing to assert
+        }
+        let roots = vec![root];
+        let err = validate_script_path_against(&link.to_string_lossy(), "t", &roots)
+            .unwrap_err();
+        assert!(err.contains("outside the allowed"), "symlink escape not blocked: {err}");
     }
 }
