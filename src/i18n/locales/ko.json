@@ -15730,7 +15730,9 @@
       "collab_label": "협업",
       "deck_phase_paused": "일시 중지",
       "deck_pause": "일시 중지",
-      "deck_resume": "재개"
+      "deck_resume": "재개",
+      "readiness_chip_label": "설정 필요",
+      "readiness_chip_tooltip": "이 팀원의 커넥터를 아직 설정해야 합니다. 참여하고 논의할 수는 있지만 기능이 보류되어 있어 자격 증명을 추가하기 전까지는 작업을 수행하지 않습니다(사이드바의 연결 섹션을 여세요)."
     },
     "memory_created": "메모리가 팀 장부에 저장되었습니다",
     "memory_updated": "메모리가 업데이트되었습니다",

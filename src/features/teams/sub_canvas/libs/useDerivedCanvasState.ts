@@ -20,6 +20,8 @@ interface PersonaInfo {
   name: string;
   icon?: string | null;
   color?: string | null;
+  /** `setup_status` — surfaces the "Setup needed" readiness chip on the node. */
+  setup_status?: string | null;
 }
 
 /**
@@ -92,6 +94,10 @@ export function useDerivedCanvasState({
         role: m.role || 'worker',
         memberId: m.id,
         personaId: m.persona_id,
+        // Team-path honesty (Direction 2): carry readiness so the node can show
+        // a "Setup needed" chip. An unready persona still participates (advisory
+        // — capabilities stripped at run time); the chip makes that visible.
+        setupStatus: persona?.setup_status,
         edgeCount: nodeEdgeCounts.get(m.id) ?? 0,
       };
 

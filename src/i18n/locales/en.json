@@ -15860,7 +15860,9 @@
       "replay_duration": "{seconds}s",
       "deck_phase_paused": "Paused",
       "deck_pause": "Pause",
-      "deck_resume": "Resume"
+      "deck_resume": "Resume",
+      "readiness_chip_label": "Setup needed",
+      "readiness_chip_tooltip": "This teammate's connectors still need setup. It can join and discuss, but its capabilities are withheld — it won't take action until you add the credential (open the Connections section in the sidebar)."
     },
     "category_changes": "Category changes",
     "importance_shifts": "Importance shifts",

@@ -15730,7 +15730,9 @@
       "collab_label": "Kolaborasi",
       "deck_phase_paused": "Dijeda",
       "deck_pause": "Jeda",
-      "deck_resume": "Lanjutkan"
+      "deck_resume": "Lanjutkan",
+      "readiness_chip_label": "Perlu penyiapan",
+      "readiness_chip_tooltip": "Konektor rekan tim ini masih perlu disiapkan. Ia dapat bergabung dan berdiskusi, tetapi kemampuannya ditahan — ia tidak akan mengambil tindakan sampai Anda menambahkan kredensial (buka bagian Koneksi di bilah sisi)."
     },
     "memory_created": "Memori disimpan ke catatan tim",
     "memory_updated": "Memori diperbarui",

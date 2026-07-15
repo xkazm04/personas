@@ -346,7 +346,9 @@
     "collab_label": "Colaboración",
     "deck_phase_paused": "En pausa",
     "deck_pause": "Pausar",
-    "deck_resume": "Reanudar"
+    "deck_resume": "Reanudar",
+    "readiness_chip_label": "Requiere configuración",
+    "readiness_chip_tooltip": "Los conectores de este compañero aún necesitan configuración. Puede unirse y participar, pero sus capacidades están bloqueadas: no realizará ninguna acción hasta que añadas la credencial (abre la sección Conexiones en la barra lateral)."
   },
   "memory_created": "Memoria guardada en el registro del equipo",
   "memory_updated": "Memoria actualizada",

@@ -15867,6 +15867,8 @@ export type Translations = {
       deck_phase_paused: string;
       deck_pause: string;
       deck_resume: string;
+      readiness_chip_label: string;
+      readiness_chip_tooltip: string;
     };
     category_changes: string;
     importance_shifts: string;

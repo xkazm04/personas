@@ -16,6 +16,7 @@ import {
   AddMemberMenu,
 } from './teamStudioShared';
 import type { StudioMember } from './useTeamStudioData';
+import { TeamReadinessChip } from '../../components/TeamReadinessChip';
 
 /**
  * SPLIT variant — "console".
@@ -264,7 +265,10 @@ function RosterRow({
         )}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="typo-body font-medium text-foreground truncate">{member.name}</div>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="typo-body font-medium text-foreground truncate">{member.name}</span>
+          <TeamReadinessChip setupStatus={member.persona?.setup_status} />
+        </div>
         <div className="typo-caption text-foreground">
           {status
             ? (status === 'working' ? ts.presence_working : ts.presence_waiting)

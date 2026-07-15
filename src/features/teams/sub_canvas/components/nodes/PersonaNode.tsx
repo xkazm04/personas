@@ -3,6 +3,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Check, AlertTriangle, Sparkles, CircleDot, RefreshCw, Ban } from 'lucide-react';
 import { ROLE_COLORS, PersonaAvatar } from '../../libs/teamConstants';
 import { useTranslation } from '@/i18n/useTranslation';
+import { TeamReadinessChip } from '../../../components/TeamReadinessChip';
 
 interface PersonaNodeData {
   name: string;
@@ -11,6 +12,8 @@ interface PersonaNodeData {
   role: string;
   memberId: string;
   personaId: string;
+  /** `setup_status` — drives the "Setup needed" readiness chip. */
+  setupStatus?: string | null;
   pipelineStatus?: 'idle' | 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped';
   edgeCount?: number;
   [key: string]: unknown;
@@ -135,8 +138,11 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
           <div className="typo-heading font-semibold text-foreground/90 truncate max-w-[140px]" title={name}>
             {name}
           </div>
-          <div className={`inline-flex items-center mt-0.5 px-1.5 py-0.5 typo-code font-mono uppercase rounded-card border ${roleDef.bg} ${roleDef.text} ${roleDef.border}`}>
-            {role}
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <div className={`inline-flex items-center px-1.5 py-0.5 typo-code font-mono uppercase rounded-card border ${roleDef.bg} ${roleDef.text} ${roleDef.border}`}>
+              {role}
+            </div>
+            <TeamReadinessChip setupStatus={d.setupStatus} />
           </div>
         </div>
       </div>

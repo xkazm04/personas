@@ -346,7 +346,9 @@
     "collab_label": "Collaboration",
     "deck_phase_paused": "En pause",
     "deck_pause": "Pause",
-    "deck_resume": "Reprendre"
+    "deck_resume": "Reprendre",
+    "readiness_chip_label": "Configuration requise",
+    "readiness_chip_tooltip": "Les connecteurs de ce coéquipier doivent encore être configurés. Il peut participer et échanger, mais ses capacités sont suspendues — il n'agira pas tant que vous n'aurez pas ajouté l'identifiant (ouvrez la section Connexions dans la barre latérale)."
   },
   "memory_created": "Mémoire enregistrée dans le registre de l'équipe",
   "memory_updated": "Mémoire mise à jour",

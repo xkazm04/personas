@@ -15730,7 +15730,9 @@
       "collab_label": "Hợp tác",
       "deck_phase_paused": "Đã tạm dừng",
       "deck_pause": "Tạm dừng",
-      "deck_resume": "Tiếp tục"
+      "deck_resume": "Tiếp tục",
+      "readiness_chip_label": "Cần thiết lập",
+      "readiness_chip_tooltip": "Các trình kết nối của thành viên này vẫn cần được thiết lập. Thành viên có thể tham gia và thảo luận, nhưng các khả năng bị tạm giữ — sẽ không thực hiện hành động nào cho đến khi bạn thêm thông tin xác thực (mở mục Kết nối trong thanh bên)."
     },
     "memory_created": "Đã lưu ghi nhớ vào sổ của nhóm",
     "memory_updated": "Đã cập nhật ghi nhớ",
