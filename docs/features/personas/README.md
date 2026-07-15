@@ -364,7 +364,7 @@ Per-row **actions**:
 
 | Action | Effect |
 |---|---|
-| **Activate** | Rolls the version's prompt live + tags it `production`, **and** switches the persona's active model (`model_profile`) to the row's model. |
+| **Activate** | Atomically (one backend transaction, `lab_activate_version`) rolls the version's prompt live + tags it `production` **and** switches the persona's active model (`model_profile`) — a failure leaves the persona fully unchanged. If any use case still pins a different model via `model_override`, a post-activation dialog lists the diverging pins with per-use-case **Clear pin** (follow the new default) or keep-pin; dismissing changes nothing. |
 | **Measure** | Runs a version-scoped **Arena** across models — the only surviving panel from the old switcher; results populate the row's rating. |
 | **Improve** | Opens the **Athena** companion with a pre-filled improvement brief (persona + version + weakest measured metric) and waits for the user to specify the focus. |
 | **Diff** | Compares the version's prompt against the active version. |
@@ -382,9 +382,24 @@ What happened to the old modes:
   unchanged; Athena is now their only driver.
 
 Backend: `lab_start_arena` takes an optional `version_id` (snapshots which
-version it measured onto `lab_arena_runs` / `lab_arena_results`);
+version it measured onto `lab_arena_runs` / `lab_arena_results`); an
+**unscoped** arena launch (from inside the arena panel) now auto-attributes
+results to the persona's active version (`production` tag, else highest
+version number), so every match feeds the ratings table.
 `lab_get_version_ratings` aggregates the (version, model) rollup across the
 arena / eval / ab result tables.
+
+Rating honesty: each cell exposes how many of its measurements were scored by
+the degraded keyword-heuristic fallback rather than the LLM judge (amber
+triangle + tooltip), and whether the composite was computed on partial
+sub-score coverage. Models with no real cost signal (Ollama's hardcoded $0)
+show **n/a** cost and are excluded from the "best value" verdict rather than
+winning it for free.
+
+Engine bounds: arena cells run under a concurrency cap (4 concurrent CLI
+children); **Cancel** kills in-flight CLI processes within seconds and the
+run finalizes as `Cancelled` — no late results are recorded and a cancelled
+run is never re-classified as `Failed`.
 
 Wiring:
 
