@@ -12,7 +12,9 @@ use crate::engine::automation_runner::invoke_automation;
 use crate::engine::rate_limiter::{
     RateLimiter, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW,
 };
-use crate::engine::tool_outcome::{cap_output, classify_app_error, ToolErrorKind};
+use crate::engine::tool_outcome::{
+    cap_output, classify_app_error, classify_http_status, ToolErrorKind,
+};
 use crate::error::AppError;
 
 /// Default timeout for direct tool invocations (script and API calls).
@@ -180,7 +182,10 @@ pub async fn invoke_tool_direct(
                 Box::pin(async move {
                     let first = invoke_api(tool, guide, input_json, &env_map).await;
                     if let Err(ref err) = first {
-                        if is_oauth_auth_failure(&err.error.to_string()) {
+                        // Key the OAuth refresh-and-retry on the TYPED outcome
+                        // (auth kind, or a 401 status) that invoke_api now
+                        // produces — not a substring match on the error blob.
+                        if err.kind == ToolErrorKind::Auth || err.http_status == Some(401) {
                             let refreshed =
                                 super::runner::force_refresh_credentials_for_tool(pool, tool).await;
                             if refreshed > 0 {
@@ -410,10 +415,21 @@ async fn invoke_api(
     // Inject --proto to restrict to safe URL schemes (blocks file://, gopher://, etc.)
     let mut cmd = tokio::process::Command::new("curl");
     cmd.arg("--proto").arg("=https,http");
-    cmd.arg("--fail-with-body");
     for token in &resolved_tokens {
         cmd.arg(token);
     }
+    // Capture the HTTP status the same way the build-time test path
+    // (`execute_test_curl`) does: append `-w '\n%{http_code}'` so the code lands
+    // on the final stdout line for `extract_http_code_from_output`. Injected
+    // LAST so it wins over any `-w` the guide's `Curl:` line carried.
+    //
+    // We deliberately DROP `--fail-with-body` (the test path never used it
+    // either): with `--fail`, curl exits 22 on 4xx/5xx and the HTTP status is
+    // not recoverable from the process exit code — that is exactly why the live
+    // path used to return opaque "Curl exited with 22" blobs. Without it, curl
+    // exits 0 and we classify by the *parsed* code, giving a typed `http_status`
+    // for every response (2xx AND 4xx/5xx), matching the tester.
+    cmd.arg("-w").arg("\n%{http_code}");
 
     for (k, v) in env_map {
         cmd.env(k, v);
@@ -432,27 +448,53 @@ async fn invoke_api(
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
-    if output.status.success() {
-        Ok((stdout, "api".to_string()))
-    } else {
+    if !output.status.success() {
+        // curl itself failed (connect / DNS / TLS / timeout) — no HTTP exchange
+        // completed, so there is no status to type. Classify from the message
+        // (Transport / Timeout via the shared mapper).
         let msg = if stderr.is_empty() { &stdout } else { &stderr };
-        // Classified from the message here; Direction 3 makes the HTTP status
-        // typed via the shared classifier/extractor the test path already uses.
-        Err(DirectInvokeError::classify(AppError::Execution(format!(
-            "Curl exited with {}: {}",
-            output.status,
+        return Err(DirectInvokeError::classify(AppError::Execution(format!(
+            "Curl failed for tool '{}': {}",
+            tool.name,
             msg.trim()
-        ))))
+        ))));
+    }
+
+    // curl exited 0 — parse the appended `%{http_code}` and classify by it.
+    let (body, http_code) = extract_http_code_from_output(&stdout);
+    api_outcome_from_http(&tool.name, body, http_code)
+}
+
+/// Map a completed curl exchange (parsed body + optional HTTP code) into the
+/// direct-path result. Shared decision point so the 2xx/4xx/5xx contract is
+/// unit-testable without spawning curl, and so the live path agrees with the
+/// build-time tester (`execute_test_curl`): 2xx (or no code) is success; any
+/// other code is a typed failure carrying `http_status` + the classified kind.
+fn api_outcome_from_http(
+    tool_name: &str,
+    body: &str,
+    http_code: Option<u16>,
+) -> Result<(String, String), DirectInvokeError> {
+    match http_code {
+        Some(code) if (200..300).contains(&code) => Ok((body.to_string(), "api".to_string())),
+        Some(code) => {
+            let (kind, retryable) = classify_http_status(code);
+            let preview = crate::utils::text::truncate_on_char_boundary(body.trim(), 500);
+            Err(DirectInvokeError::typed(
+                AppError::Execution(format!(
+                    "API tool '{tool_name}' returned HTTP {code}: {preview}"
+                )),
+                kind,
+                Some(code),
+                retryable,
+            ))
+        }
+        // No `-w` code parsed but curl succeeded (e.g. empty body / no status
+        // line) — treat as success, mirroring the test path's `None => passed`.
+        None => Ok((body.to_string(), "api".to_string())),
     }
 }
 
-fn is_oauth_auth_failure(error_msg: &str) -> bool {
-    let lower = error_msg.to_ascii_lowercase();
-    lower.contains("401")
-        || lower.contains("unauthorized")
-        || lower.contains("expired_token")
-        || lower.contains("invalid_token")
-}
 
 /// Substitute `$VAR` and `${VAR}` placeholders in a single token with values
 /// from the environment map and input JSON. Returns the resolved string.
@@ -986,4 +1028,59 @@ fn extract_curl_line(guide: &str) -> Option<&str> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod api_outcome_tests {
+    use super::*;
+
+    #[test]
+    fn extract_http_code_reads_trailing_status_line() {
+        let (body, code) = extract_http_code_from_output("hello world\n200");
+        assert_eq!(body, "hello world");
+        assert_eq!(code, Some(200));
+
+        // Bare status (empty body).
+        let (body, code) = extract_http_code_from_output("404");
+        assert_eq!(body, "");
+        assert_eq!(code, Some(404));
+
+        // No -w code present.
+        let (body, code) = extract_http_code_from_output("just a body, no code");
+        assert_eq!(body, "just a body, no code");
+        assert_eq!(code, None);
+    }
+
+    #[test]
+    fn success_2xx_and_no_code_are_ok() {
+        let ok = api_outcome_from_http("gmail", "{\"ok\":true}", Some(200));
+        assert!(ok.is_ok());
+        let none = api_outcome_from_http("gmail", "raw body", None);
+        assert!(none.is_ok());
+    }
+
+    #[test]
+    fn http_401_is_typed_auth_terminal() {
+        let err = api_outcome_from_http("gmail", "unauthorized", Some(401)).unwrap_err();
+        assert_eq!(err.kind, ToolErrorKind::Auth);
+        assert_eq!(err.http_status, Some(401));
+        assert!(!err.retryable);
+        assert!(err.error.to_string().contains("HTTP 401"));
+    }
+
+    #[test]
+    fn http_429_is_typed_http_retryable() {
+        let err = api_outcome_from_http("gmail", "slow down", Some(429)).unwrap_err();
+        assert_eq!(err.kind, ToolErrorKind::Http);
+        assert_eq!(err.http_status, Some(429));
+        assert!(err.retryable);
+    }
+
+    #[test]
+    fn http_500_is_typed_http_retryable() {
+        let err = api_outcome_from_http("gmail", "boom", Some(500)).unwrap_err();
+        assert_eq!(err.kind, ToolErrorKind::Http);
+        assert_eq!(err.http_status, Some(500));
+        assert!(err.retryable);
+    }
 }

@@ -118,6 +118,22 @@ pub fn classify_app_error(err: &AppError) -> (ToolErrorKind, Option<u16>, bool) 
     }
 }
 
+/// Classify a concrete, numerically-known HTTP status into `(kind, retryable)`.
+/// Used by the API paths where the status came from `-w '%{http_code}'` (typed)
+/// rather than being sniffed from a message. Only call for non-2xx codes.
+///
+/// - 401/403 → auth (terminal — needs fresh credentials/consent).
+/// - 429 and 5xx → http, retryable (rate-limit / server-side, may clear).
+/// - other 4xx → http, terminal (bad request / not found won't fix on retry).
+pub fn classify_http_status(code: u16) -> (ToolErrorKind, bool) {
+    match code {
+        401 | 403 => (ToolErrorKind::Auth, false),
+        429 => (ToolErrorKind::Http, true),
+        500..=599 => (ToolErrorKind::Http, true),
+        _ => (ToolErrorKind::Http, false),
+    }
+}
+
 /// Heuristic classification for the free-form message variants. Kept in one
 /// place so `tool_runner`, `mcp_tools`, and `automation_runner` agree on how a
 /// timeout / connection failure / HTTP status reads.
@@ -246,6 +262,16 @@ mod tests {
             classify_app_error(&AppError::Execution("Script exited with exit status: 1: boom".into()));
         assert_eq!(k, ToolErrorKind::ToolError);
         assert!(!retry);
+    }
+
+    #[test]
+    fn http_status_classification() {
+        assert_eq!(classify_http_status(401), (ToolErrorKind::Auth, false));
+        assert_eq!(classify_http_status(403), (ToolErrorKind::Auth, false));
+        assert_eq!(classify_http_status(429), (ToolErrorKind::Http, true));
+        assert_eq!(classify_http_status(500), (ToolErrorKind::Http, true));
+        assert_eq!(classify_http_status(503), (ToolErrorKind::Http, true));
+        assert_eq!(classify_http_status(404), (ToolErrorKind::Http, false));
     }
 
     #[test]
