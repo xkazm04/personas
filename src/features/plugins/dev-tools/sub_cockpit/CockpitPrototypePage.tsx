@@ -1,87 +1,115 @@
 // Project Cockpit — /prototype lab bench (docs/plans/dev-tools-cx-redesign.md §3).
 //
-// ROUND 3. R1 (reuse-collage) and R2 (Pulse Monitor / Transit lines) both
-// rejected — R2's failure was informational, not stylistic: text labels
-// overflow and truncate at real scale. A solid project has 50–100 contexts;
-// the FIRST LAYER must read as health at a glance, which means COLOUR +
-// SYMBOLICS carry the information and names exist only on demand (tooltips).
-// Click-through to specific KPIs is a LATER round.
-//
-// The R3 grid: one cell per context, grouped into context groups. Variants
-// differ in how the grid is composed into dimensions and how group-level
-// status is indicated:
-//   • Floorplan — composed spatially BY GROUP (chip die-map); cell = dominant
-//     worst-wins colour + one loop glyph; group status = tinted frame + lamp.
-//     Answers "WHERE in my system is it unhealthy?"
-//   • Spectrum — composed BY DIMENSION inside each cell (2×2 quadrants:
-//     errors|cost / kpi|loop); rows + cells sort worst-first (triage order);
-//     group status = four per-dimension lamps on the rail. Answers "WHAT KIND
-//     of unhealthy?" — and an unwired sensor reads as a dark quadrant column.
+// ROUND 7. Focus WON R6 and is consolidated as the project-level cockpit (Cards
+// removed). The bench grows the layer ABOVE: the inter-project PORTFOLIO wall.
+// Three variants, all reading the SAME three mock passports through the SAME
+// row spec as Factory's production wall:
+//   • Passport (ref) — the production ProjectsPassportWall, unmodified: the
+//     baseline every restyle is judged against.
+//   • Ledger  — projects as stacked Focus row boxes (scan down the register).
+//   • Compare — the passport's side-by-side columns in Focus ink.
+// Navigation hierarchy: Portfolio → project cockpit. A project title in any
+// wall variant is the door into Focus; the new breadcrumb carries the way back
+// AND a sibling switcher on the leaf crumb (jump between projects in place).
 import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
 
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
-import { MOCK_PROJECTS } from './cockpitMock';
-import CockpitCards from './CockpitCards';
+
+import { CockpitBreadcrumb, NEON, SETUP_BLUE } from './cockpitGlyphs';
+import { MOCK_PROJECTS, type MockProject } from './cockpitMock';
+import { wallHealth } from './wallMock';
 import CockpitFocus from './CockpitFocus';
+import WallCompare from './WallCompare';
+import WallLedger from './WallLedger';
+import WallPassportRef from './WallPassportRef';
 
-// R6: Cards won R5 (editorial identity); Plates + Console removed. Focus fuses
-// Console's group boxes into Cards' skin with a focus-first content strategy:
-// the divider IS a thin KPI-progress line, all-green plates recede (title
-// readable, the rest faded on a green wash), and a new blue SETUP state marks
-// unconfigured contexts (KPI not defined / sensors unwired). Tooltips are now
-// ELEMENT-ANCHORED (the R5 cursor anchoring drifted near window edges).
-type VariantId = 'focus' | 'cards';
+type WallVariant = 'passport' | 'ledger' | 'compare';
 
-const VARIANT_TABS: SegmentedTab<VariantId>[] = [
-  { id: 'focus', label: 'Focus' },
-  { id: 'cards', label: 'Cards (R5 ref)' },
+const WALL_TABS: SegmentedTab<WallVariant>[] = [
+  { id: 'passport', label: 'Passport (ref)' },
+  { id: 'ledger', label: 'Ledger' },
+  { id: 'compare', label: 'Compare' },
 ];
 
-export default function CockpitPrototypePage() {
-  const [variant, setVariant] = useState<VariantId>('focus');
-  const [projectId, setProjectId] = useState(MOCK_PROJECTS[0]!.id);
-  const project = MOCK_PROJECTS.find((p) => p.id === projectId) ?? MOCK_PROJECTS[0]!;
+/** The project's worst-state hue — the breadcrumb/switcher dot. */
+function worstHue(project: MockProject): string {
+  const h = wallHealth(project);
+  if (h.crit > 0) return NEON.red;
+  if (h.warn > 0) return NEON.amber;
+  if (h.total === 0) return SETUP_BLUE;
+  return NEON.emerald;
+}
 
-  const projectTabs: SegmentedTab<string>[] = MOCK_PROJECTS.map((p) => ({
-    id: p.id,
-    label: `${p.name} (${p.tier})`,
-  }));
+function crumbNote(project: MockProject): string {
+  const h = wallHealth(project);
+  if (h.total === 0) return 'set up';
+  if (h.crit > 0) return `${h.crit} critical`;
+  if (h.warn > 0) return `${h.warn} warning`;
+  return 'healthy';
+}
+
+export default function CockpitPrototypePage() {
+  const [wallVariant, setWallVariant] = useState<WallVariant>('ledger');
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const project = projectId ? MOCK_PROJECTS.find((p) => p.id === projectId) ?? null : null;
 
   return (
     <ContentBox data-testid="cockpit-prototype">
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Health grid — prototype R6"
-        subtitle="First layer · KPI-progress dividers · greens recede, blue = setup needed · anchored tooltips · click-through is a later round"
+        title="Portfolio → Cockpit — prototype R7"
+        subtitle="Focus consolidated as the cockpit · new layer above: inter-project wall (3 variants) · titles open the cockpit · breadcrumb navigates back + switches siblings"
         fitWidth
         actions={
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+          project ? undefined : (
             <SegmentedTabs
-              tabs={projectTabs}
-              activeTab={project.id}
-              onTabChange={setProjectId}
-              variant="pill"
-              size="sm"
-              fullWidth={false}
-              ariaLabel="Mock project (wiring tier)"
-            />
-            <SegmentedTabs
-              tabs={VARIANT_TABS}
-              activeTab={variant}
-              onTabChange={setVariant}
+              tabs={WALL_TABS}
+              activeTab={wallVariant}
+              onTabChange={setWallVariant}
               variant="segment"
               size="sm"
               fullWidth={false}
-              ariaLabel="Grid variant (prototype)"
+              ariaLabel="Wall variant (prototype)"
             />
-          </div>
+          )
         }
       />
-      {variant === 'focus' && <CockpitFocus project={project} />}
-      {variant === 'cards' && <CockpitCards project={project} />}
+
+      <div className="mx-5 mt-3">
+        <CockpitBreadcrumb
+          root="Portfolio"
+          rootNote={project ? undefined : `${MOCK_PROJECTS.length} projects · mock`}
+          onRoot={project ? () => setProjectId(null) : undefined}
+          leaf={
+            project
+              ? {
+                  label: project.name,
+                  hue: worstHue(project),
+                  siblings: MOCK_PROJECTS.map((p) => ({
+                    id: p.id,
+                    label: p.name,
+                    note: crumbNote(p),
+                    hue: worstHue(p),
+                  })),
+                  onSelect: setProjectId,
+                }
+              : undefined
+          }
+        />
+      </div>
+
+      {project ? (
+        <CockpitFocus project={project} />
+      ) : (
+        <>
+          {wallVariant === 'passport' && <WallPassportRef onOpenProject={setProjectId} />}
+          {wallVariant === 'ledger' && <WallLedger onOpenProject={setProjectId} />}
+          {wallVariant === 'compare' && <WallCompare onOpenProject={setProjectId} />}
+        </>
+      )}
     </ContentBox>
   );
 }

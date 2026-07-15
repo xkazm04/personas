@@ -197,3 +197,282 @@ export function anchorTip(rect: DOMRect, w: number, h: number): { left: number; 
   if (top + h > window.innerHeight - 12) top = Math.max(12, rect.top - h - 8);
   return { left, top };
 }
+
+// ============================================================================
+// R7 additions — the PORTFOLIO vocabulary. The wall variants paint the passport
+// row spec (passportRows CellValue) in Focus ink: thin progress lines, colour
+// in text, greens recede, blue = setup. Plus the hierarchy breadcrumb.
+// ============================================================================
+
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { ChevronRight, ChevronsUpDown } from 'lucide-react';
+
+import type { CellValue } from '@/features/teams/sub_factory/passport/passportRows';
+import { AUTOMATION_LABEL, PROD_BAND_LABEL } from '@/features/teams/sub_factory/passport/passportModel';
+
+/** The Focus SETUP hue (R6): unconfigured ≠ sick ≠ fine — it's an invitation. */
+export const SETUP_BLUE = '#60A5FA';
+
+/** Score → ink (0–100 readiness axes). */
+export function scoreInk(score: number): string {
+  if (score >= 70) return NEON.emerald;
+  if (score >= 45) return NEON.amber;
+  return NEON.red;
+}
+
+/** Ordinal position (0..1 in its scale) → ink. */
+export function posInk(pos: number): string {
+  if (pos >= 0.65) return NEON.emerald;
+  if (pos >= 0.35) return NEON.amber;
+  return NEON.red;
+}
+
+/** The wall's thin progress line — same grammar as Focus's KPI divider.
+ *  pct null → dashed blue "nothing configured behind this line". */
+export function ScoreLine({ pct, hue, faded }: { pct: number | null; hue?: string; faded?: boolean }) {
+  if (pct === null) {
+    return <span className="block border-t border-dashed" style={{ borderColor: `${SETUP_BLUE}66` }} />;
+  }
+  const ink = hue ?? scoreInk(pct);
+  return (
+    <span className="block h-[2px] rounded-full relative" style={{ background: 'rgba(148,163,184,.10)' }}>
+      <span
+        className="absolute inset-y-0 left-0 rounded-full"
+        style={{ width: `${Math.min(100, Math.max(0, pct))}%`, background: ink, boxShadow: faded ? undefined : `0 0 4px ${ink}55` }}
+      />
+    </span>
+  );
+}
+
+/** How a normalized passport cell reads in the Focus vocabulary — drives both
+ *  ink and the recede rule (good/info fade so deficiencies stand alone). */
+export type InkKind = 'good' | 'warn' | 'bad' | 'setup' | 'info';
+
+export function inkKindOf(v: CellValue): InkKind {
+  switch (v.kind) {
+    case 'level':
+    case 'band':
+      return v.score >= 70 ? 'good' : v.score >= 45 ? 'warn' : 'bad';
+    case 'ordinal':
+      return v.pos >= 0.65 ? 'good' : v.pos >= 0.35 ? 'warn' : 'bad';
+    case 'present':
+      return v.label ? 'good' : 'setup';
+    case 'chips':
+      return v.items.length ? 'info' : 'setup';
+    case 'pips': {
+      const on = v.items.filter((i) => i.on).length;
+      return on === v.items.length ? 'good' : on === 0 ? 'bad' : 'warn';
+    }
+    case 'bool':
+      return v.on ? 'good' : 'warn';
+  }
+}
+
+const INK_KIND_HEX: Record<InkKind, string> = {
+  good: NEON.emerald, warn: NEON.amber, bad: NEON.red, setup: SETUP_BLUE, info: 'rgba(148,163,184,.85)',
+};
+
+/** Paints ONE normalized passport cell in Focus ink. Compact by design — the
+ *  wall shows ~20 of these per project. */
+export function InkCellValue({ value }: { value: CellValue }) {
+  const kind = inkKindOf(value);
+  const hue = INK_KIND_HEX[kind];
+  switch (value.kind) {
+    case 'level':
+    case 'band': {
+      const label = value.kind === 'level' ? `${value.level} · ${AUTOMATION_LABEL[value.level]}` : PROD_BAND_LABEL[value.band];
+      return (
+        <span className="block min-w-0">
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-[10.5px] font-medium truncate" style={{ color: hue }}>{label}</span>
+            <span className="text-[10px] tabular-nums text-foreground/40 shrink-0">{value.score}</span>
+          </span>
+          <span className="block mt-1"><ScoreLine pct={value.score} hue={hue} /></span>
+        </span>
+      );
+    }
+    case 'ordinal':
+      return (
+        <span className="block min-w-0">
+          <span className="flex items-baseline gap-1.5 min-w-0">
+            <span className="text-[10.5px] font-medium truncate" style={{ color: hue }}>{value.label}</span>
+            {value.sub && <span className="text-[10px] text-foreground/40 truncate">{value.sub}</span>}
+          </span>
+          <span className="block mt-1"><ScoreLine pct={value.pos * 100} hue={hue} /></span>
+        </span>
+      );
+    case 'present':
+      return value.label ? (
+        <span className="text-[10.5px] font-medium text-foreground/85 truncate block">{value.label}</span>
+      ) : (
+        <span className="text-[10.5px] font-medium" style={{ color: SETUP_BLUE }}>set up →</span>
+      );
+    case 'chips': {
+      if (value.items.length === 0) return <span className="text-[10.5px] font-medium" style={{ color: SETUP_BLUE }}>add →</span>;
+      const shown = value.items.slice(0, 2).join(' · ');
+      const more = value.items.length - 2;
+      return (
+        <span className="text-[10.5px] text-foreground/70 truncate block">
+          {shown}
+          {more > 0 && <span className="text-foreground/40"> +{more}</span>}
+        </span>
+      );
+    }
+    case 'pips':
+      return (
+        <span className="inline-flex items-center gap-1">
+          {value.items.map((p) => (
+            <span
+              key={p.label}
+              title={`${p.label}: ${p.on ? 'yes' : 'no'}`}
+              className="w-1.5 h-1.5 rounded-full"
+              style={p.on ? { background: NEON.emerald } : { border: '1px solid rgba(148,163,184,.5)' }}
+            />
+          ))}
+          <span className="text-[10px] tabular-nums ml-0.5" style={{ color: hue }}>
+            {value.items.filter((p) => p.on).length}/{value.items.length}
+          </span>
+        </span>
+      );
+    case 'bool':
+      return (
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={value.on ? { background: NEON.emerald } : { border: `1px solid ${NEON.amber}88` }}
+          />
+          <span className="text-[10.5px]" style={{ color: value.on ? 'rgba(148,163,184,.85)' : NEON.amber }}>{value.on ? 'yes' : 'no'}</span>
+        </span>
+      );
+  }
+}
+
+/** Editorial tab row — quiet uppercase labels, active = teal underline. The
+ *  wall variants' sort control (no borrowed pill/segment chrome). */
+export function InkTabs<T extends string>({ tabs, active, onChange, label }: {
+  tabs: Array<{ id: T; label: string }>;
+  active: T;
+  onChange: (id: T) => void;
+  label: string;
+}) {
+  return (
+    <div className="inline-flex items-center gap-3" role="tablist" aria-label={label}>
+      <span className="text-[10px] uppercase tracking-[0.14em] text-foreground/35">{label}</span>
+      {tabs.map((t) => {
+        const on = t.id === active;
+        return (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            onClick={() => onChange(t.id)}
+            className={`text-[10.5px] uppercase tracking-[0.1em] pb-0.5 border-b transition-colors focus-ring ${
+              on ? 'text-foreground font-semibold' : 'text-foreground/45 hover:text-foreground/75 border-transparent'
+            }`}
+            style={on ? { borderColor: NEON.teal } : undefined}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// -- the hierarchy breadcrumb ----------------------------------------------------
+// Portfolio ▸ Project [▾ sibling switcher]. Ancestors are quiet links; the leaf
+// carries its worst-state dot and doubles as a jump menu between siblings — the
+// breadcrumb IS the navigation manipulator, not just a location label.
+
+export interface CrumbSibling {
+  id: string;
+  label: string;
+  /** Short right-aligned note in the switcher (tier, counts…). */
+  note?: string;
+  hue: string;
+}
+
+export function CockpitBreadcrumb({ root, rootNote, onRoot, leaf }: {
+  root: string;
+  /** Shown after the root when it IS the current level ("3 projects"). */
+  rootNote?: string;
+  /** Present ⇒ root is an ancestor link back to the wall. */
+  onRoot?: () => void;
+  leaf?: {
+    label: string;
+    hue: string;
+    siblings: CrumbSibling[];
+    onSelect: (id: string) => void;
+  };
+}) {
+  const [menu, setMenu] = useState<DOMRect | null>(null);
+
+  return (
+    <nav aria-label="Cockpit hierarchy" data-testid="cockpit-breadcrumb" className="flex items-center gap-1 min-w-0">
+      {leaf && onRoot ? (
+        <button
+          type="button"
+          onClick={onRoot}
+          className="typo-caption text-foreground/50 hover:text-foreground transition-colors focus-ring rounded-interactive px-1 -mx-1"
+        >
+          {root}
+        </button>
+      ) : (
+        <span className="typo-caption font-semibold text-foreground px-1 -mx-1">
+          {root}
+          {rootNote && <span className="typo-label text-foreground/40 font-normal ml-2">{rootNote}</span>}
+        </span>
+      )}
+
+      {leaf && (
+        <>
+          <ChevronRight className="w-3 h-3 text-foreground/25 shrink-0" aria-hidden />
+          <button
+            type="button"
+            data-testid="crumb-leaf"
+            onClick={(e) => setMenu(menu ? null : e.currentTarget.getBoundingClientRect())}
+            className="inline-flex items-center gap-1.5 min-w-0 px-1.5 py-0.5 rounded-md border border-transparent hover:border-foreground/15 hover:bg-foreground/[0.04] transition-colors focus-ring"
+            title="Switch project"
+          >
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: leaf.hue, boxShadow: `0 0 5px ${leaf.hue}88` }} />
+            <span className="typo-caption font-semibold text-foreground truncate">{leaf.label}</span>
+            <ChevronsUpDown className="w-3 h-3 text-foreground/40 shrink-0" aria-hidden />
+          </button>
+          {menu && createPortal(
+            <div
+              data-testid="crumb-switcher"
+              className="fixed z-50 w-[240px] rounded-xl overflow-hidden py-1"
+              style={{
+                ...anchorTip(menu, 240, 40 + leaf.siblings.length * 34),
+                background: 'color-mix(in srgb, var(--background) 88%, #1e293b)',
+                border: '1px solid rgba(148,163,184,.22)',
+                boxShadow: '0 16px 40px rgba(0,0,0,.45)',
+              }}
+              onMouseLeave={() => setMenu(null)}
+            >
+              <div className="px-3 pt-1.5 pb-1 text-[10px] uppercase tracking-[0.14em] text-foreground/40">{root}</div>
+              {leaf.siblings.map((s) => {
+                const current = s.label === leaf.label;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => { setMenu(null); if (!current) leaf.onSelect(s.id); }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-foreground/[0.05] ${current ? 'bg-foreground/[0.03]' : ''}`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: s.hue, boxShadow: `0 0 4px ${s.hue}77` }} />
+                    <span className={`typo-caption truncate ${current ? 'font-semibold text-foreground' : 'text-foreground/80'}`}>{s.label}</span>
+                    {s.note && <span className="typo-label text-foreground/40 ml-auto shrink-0">{s.note}</span>}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )}
+        </>
+      )}
+    </nav>
+  );
+}

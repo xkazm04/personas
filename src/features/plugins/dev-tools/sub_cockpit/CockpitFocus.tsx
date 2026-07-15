@@ -20,13 +20,13 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, CircleDollarSign, Wrench } from 'lucide-react';
-import { GhostGrid, GridMasthead, NEON, anchorTip, dominantTone } from './cockpitGlyphs';
+import { GhostGrid, GridMasthead, NEON, SETUP_BLUE, anchorTip, dominantTone } from './cockpitGlyphs';
 import {
   cellStats, gridFor,
   type CellTone, type MockContextCell, type MockContextGroup, type MockProject,
 } from './cockpitMock';
 
-const BLUE = '#60A5FA';
+const BLUE = SETUP_BLUE;
 type InkKey = CellTone | 'setup';
 const INK: Record<InkKey, string> = {
   crit: NEON.red, warn: NEON.amber, ok: NEON.emerald, setup: BLUE, unmeasured: 'rgba(148,163,184,.45)',
