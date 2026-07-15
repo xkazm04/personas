@@ -27,6 +27,25 @@ const SCENARIO_CACHE_TTL_SECS: u64 = 600;
 /// `SYNTHESIS_MODEL` (tiger finding: lab tier rode account-default).
 const LAB_MODEL: &str = "claude-sonnet-4-6";
 
+/// Maximum number of lab cells (model × variant × scenario executions) allowed to
+/// run their CLI child concurrently within a single run. `run_lab_loop` used to
+/// `tokio::spawn` every model×variant pair for a scenario at once with no cap,
+/// so a wide roster (e.g. 6 models × 2 variants) launched a dozen Claude CLI
+/// children simultaneously — heavy on CPU, memory, and subscription rate limits.
+/// A small semaphore bounds the in-flight fan-out while keeping enough parallelism
+/// to hide per-cell latency. Tune here.
+const LAB_CELL_CONCURRENCY: usize = 4;
+
+/// Resolve when the shared cancellation flag flips to `true`, polling on a short
+/// interval. Used to race a running cell's CLI execution against cancellation so
+/// the in-flight child is dropped (and, via `kill_on_drop`, killed) within a
+/// second or two of cancel rather than blocking on the per-cell CLI timeout.
+async fn await_cancel(flag: &Arc<std::sync::atomic::AtomicBool>) {
+    while !flag.load(std::sync::atomic::Ordering::Acquire) {
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    }
+}
+
 /// Truncate `s` to at most `max_chars` characters without splitting a multibyte
 /// UTF-8 character. Byte-range slicing (`&s[..n]`) panics when `n` lands
 /// mid-glyph, which LLM output (emoji, smart quotes, em-dashes, CJK) routinely
@@ -1727,6 +1746,9 @@ async fn run_lab_loop(
     let mut tracker: HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>> =
         HashMap::new();
 
+    // Cap concurrent CLI children across the whole run (see LAB_CELL_CONCURRENCY).
+    let cell_semaphore = Arc::new(tokio::sync::Semaphore::new(LAB_CELL_CONCURRENCY));
+
     for scenario in &scenarios {
         if cancelled.load(std::sync::atomic::Ordering::Acquire) {
             (cb.update_status)(
@@ -1756,8 +1778,14 @@ async fn run_lab_loop(
                 let scenario_c = scenario.clone();
                 let model_c = model.clone();
                 let cancelled_c = cancelled.clone();
+                // Acquire the concurrency permit BEFORE spawning so the loop
+                // throttles the fan-out at the source; the task holds it for its
+                // lifetime. `acquire_owned` only errors if the semaphore is
+                // closed, which never happens here.
+                let permit = cell_semaphore.clone().acquire_owned().await.ok();
 
                 handles.push(tokio::spawn(async move {
+                    let _permit = permit;
                     if cancelled_c.load(std::sync::atomic::Ordering::Acquire) {
                         return (
                             mi,
@@ -1781,8 +1809,15 @@ async fn run_lab_loop(
                             },
                         );
                     }
-                    let result =
-                        execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
+                    // Race execution against cancellation. If cancel fires mid-run
+                    // the execute future (which owns the CLI driver) is dropped;
+                    // the driver's `kill_on_drop` terminates the child within the
+                    // 200ms poll window rather than blocking on the CLI timeout.
+                    let result = tokio::select! {
+                        biased;
+                        _ = await_cancel(&cancelled_c) => Err("Cancelled".to_string()),
+                        r = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c) => r,
+                    };
                     let (status, scores) = match &result {
                         Ok(r) => {
                             let s = score_result(r, &scenario_c, &persona_c, &pool_c).await;
@@ -1822,6 +1857,13 @@ async fn run_lab_loop(
                     continue;
                 }
             };
+            // Do not persist or count any cell once cancellation has been
+            // requested — its result is either a killed-mid-flight stub or a
+            // late arrival, and the run finalizes as Cancelled below. We still
+            // drain the remaining handles (the loop) so no task is detached.
+            if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                continue;
+            }
             current += 1;
             let model = &model_configs[mi];
             let variant = &variants[vi];
@@ -1864,6 +1906,26 @@ async fn run_lab_loop(
                 },
             );
         }
+    }
+
+    // Finalize as Cancelled if cancellation landed during the final scenario's
+    // collection (the per-scenario guard at the loop top only catches cancels
+    // between scenarios). Returning here keeps the status Cancelled and skips the
+    // (CLI-spawning) summary work — and the completeness gate below, so a
+    // cancelled run never mis-finalizes as Failed for having `current < total`.
+    if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+        let now = chrono::Utc::now().to_rfc3339();
+        (cb.update_status)(
+            pool,
+            run_id,
+            LabRunStatus::Cancelled,
+            None,
+            None,
+            None,
+            Some(&now),
+        );
+        emit_lab_status(app, cb.event_name, run_id, "cancelled", None);
+        return;
     }
 
     let summary = (cb.build_summary)(&tracker, model_configs);
@@ -3035,5 +3097,52 @@ mod tests {
         assert!(!provider_cost_is_known(super::super::types::providers::OLLAMA));
         assert!(provider_cost_is_known("anthropic"));
         assert!(provider_cost_is_known("qwen"));
+    }
+
+    // -- Direction 3: bounded engine / prompt cancellation ----------------------
+
+    /// The cell concurrency cap is a sane small positive number, not accidentally
+    /// zero (which would deadlock the semaphore) or unbounded.
+    #[test]
+    fn lab_cell_concurrency_is_bounded() {
+        assert!(LAB_CELL_CONCURRENCY >= 1 && LAB_CELL_CONCURRENCY <= 8);
+    }
+
+    /// `await_cancel` resolves promptly once the flag flips — this is what lets a
+    /// running cell notice cancellation within the poll window.
+    #[tokio::test]
+    async fn await_cancel_resolves_when_flag_set() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        let flag = std::sync::Arc::new(AtomicBool::new(false));
+        let f = flag.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            f.store(true, Ordering::Release);
+        });
+        tokio::time::timeout(std::time::Duration::from_secs(2), await_cancel(&flag))
+            .await
+            .expect("await_cancel should resolve shortly after the flag is set");
+    }
+
+    /// The biased cancel-race prefers cancellation over an in-flight execution,
+    /// so a cell is abandoned (and its CLI child dropped/killed) immediately on
+    /// cancel instead of blocking on the multi-minute CLI timeout.
+    #[tokio::test]
+    async fn cancel_race_wins_over_slow_execution() {
+        use std::sync::atomic::AtomicBool;
+        let flag = std::sync::Arc::new(AtomicBool::new(true)); // already cancelled
+        let result: Result<(), String> = tokio::time::timeout(
+            std::time::Duration::from_secs(2),
+            async {
+                tokio::select! {
+                    biased;
+                    _ = await_cancel(&flag) => Err("Cancelled".to_string()),
+                    _ = tokio::time::sleep(std::time::Duration::from_secs(30)) => Ok(()),
+                }
+            },
+        )
+        .await
+        .expect("cancel branch must win well before the 30s execution stub");
+        assert_eq!(result, Err("Cancelled".to_string()));
     }
 }
