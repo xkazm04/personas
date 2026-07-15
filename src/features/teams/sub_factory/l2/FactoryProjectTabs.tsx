@@ -21,11 +21,13 @@ import { FactoryOverviewTab } from './FactoryOverviewTab';
 
 type L2Tab = 'kpis' | 'context' | 'observability' | 'overview';
 
+// Overview leads — the health grid is the second-layer landing (Wall →
+// Cockpit); the working modules follow.
 const TABS: Array<{ id: L2Tab; label: string }> = [
+  { id: 'overview', label: 'Overview' },
   { id: 'kpis', label: 'KPIs' },
   { id: 'context', label: 'Context map' },
   { id: 'observability', label: 'Observability' },
-  { id: 'overview', label: 'Overview' },
 ];
 
 export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
@@ -36,7 +38,7 @@ export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
   /** Fired after a KPI decision so the host can reload the matrix data too. */
   onKpisChanged?: () => void;
 }) {
-  const [tab, setTab] = useState<L2Tab>('kpis');
+  const [tab, setTab] = useState<L2Tab>('overview');
   const raw = useFactoryL2Data(projectId);
   const data = onKpisChanged
     ? { ...raw, reloadKpis: () => { raw.reloadKpis(); onKpisChanged(); } }

@@ -16,7 +16,7 @@ import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/l
 import { CockpitBreadcrumb, NEON, SETUP_BLUE } from './cockpitGlyphs';
 import { MOCK_PROJECTS, type MockProject } from './cockpitMock';
 import { wallHealth } from './wallMock';
-import CockpitFocus from './CockpitFocus';
+import CockpitL2Tabs from './CockpitL2Tabs';
 import WallCompare from './WallCompare';
 import WallPassportRef from './WallPassportRef';
 
@@ -54,8 +54,8 @@ export default function CockpitPrototypePage() {
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Portfolio → Cockpit — prototype R8"
-        subtitle="Compare won R7 · Passport concepts absorbed: bigger type, tech icons, level bars, upgrade popovers on improvable rows · titles open the cockpit"
+        title="Portfolio → Cockpit — prototype R13"
+        subtitle="Project level synced to the real Factory L2: Module tabs (Overview default · KPIs · Context map · Observability) on populated mock data"
         fitWidth
         actions={
           project ? undefined : (
@@ -96,7 +96,7 @@ export default function CockpitPrototypePage() {
       </div>
 
       {project ? (
-        <CockpitFocus project={project} />
+        <CockpitL2Tabs project={project} />
       ) : (
         <>
           {wallVariant === 'passport' && <WallPassportRef onOpenProject={setProjectId} />}
