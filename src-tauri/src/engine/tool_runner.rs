@@ -672,6 +672,13 @@ async fn invoke_automation_tool(
         // retry-loop warnings), threaded into the Direction-1 contract instead
         // of a flat "Automation 'x' failed: <msg>".
         let info = super::automation_runner::classify_automation_failure(&automation, &run);
+        tracing::debug!(
+            automation_id = %automation.id,
+            attempts_used = info.attempts_used,
+            max_attempts = info.max_attempts,
+            kind = ?info.kind,
+            "automation tool invocation failed"
+        );
         Err(DirectInvokeError::typed(
             AppError::Execution(info.message),
             info.kind,
