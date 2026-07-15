@@ -1,6 +1,6 @@
 import {
   CheckCircle2, XCircle, AlertTriangle, Webhook, Cloud, Unplug,
-  FileEdit, Rocket, Clock, Link, Zap, ScanSearch,
+  FileEdit, Rocket, Clock, Link, Zap, ScanSearch, Radar, BadgeCheck,
 } from 'lucide-react';
 
 export const COMMON_EVENT_TYPES = [
@@ -48,6 +48,9 @@ export const EVENT_TYPE_META: Record<string, EventTypeMeta> = {
   // System ops -- dev-tools context-scan lifecycle (amber starting, emerald done)
   'dev_tools.context_scan_started':   { Icon: ScanSearch, text: 'text-amber-400',   bg: 'bg-amber-500/12',   border: 'border-amber-500/20' },
   'dev_tools.context_scan_completed': { Icon: ScanSearch, text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
+  // Findings loop — a sensor raised something / a verdict landed on shipped work.
+  'signal.raised':                    { Icon: Radar,      text: 'text-violet-400',  bg: 'bg-violet-500/12',  border: 'border-violet-500/20' },
+  'signal.verified':                  { Icon: BadgeCheck, text: 'text-sky-400',     bg: 'bg-sky-500/12',     border: 'border-sky-500/20' },
 };
 
 export const DEFAULT_EVENT_META: EventTypeMeta = {

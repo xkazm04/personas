@@ -44,6 +44,8 @@ export default function ContextLedger(props: ContextLedgerProps) {
     goalCoverageByContext,
     ideaCoverageByContext,
     kpiCoverageByContext,
+    costByContext,
+    errorsByContext,
     hasMap,
     onScanContext,
     scanningContextId,
@@ -256,6 +258,8 @@ export default function ContextLedger(props: ContextLedgerProps) {
                             firstGoalId={goalCoverageByContext.get(c.id)?.firstGoalId}
                             ideaCount={ideaCoverageByContext.get(c.id) ?? 0}
                             kpiCount={kpiCoverageByContext.get(c.id) ?? 0}
+                            costUsd={costByContext.get(c.id)}
+                            errorCount={errorsByContext.get(c.id)}
                             t={t}
                           />
                         </span>

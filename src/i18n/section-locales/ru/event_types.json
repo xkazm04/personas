@@ -79,5 +79,9 @@
   "source_filter_no_regex": "Поддерживается только завершающий * (без regex, без ? подстановок)",
   "source_filter_no_source_id": "Если source_filter задан, но у события нет source_id, фильтр не совпадёт",
   "source_filter_allowed_chars": "Разрешённые символы: буквы, цифры, _, -, :, . и *",
-  "source_filter_max_length": "Максимум 120 символов, максимум 3 символа подстановки"
+  "source_filter_max_length": "Максимум 120 символов, максимум 3 символа подстановки",
+  "signal_raised_description": "Сенсор (стандарты, готовность, стоимость LLM, ошибки, KPI) выявил новую находку.",
+  "signal_raised_label": "Находка выявлена",
+  "signal_verified_description": "Внедрённая находка была измерена повторно — изменился ли показатель на самом деле?",
+  "signal_verified_label": "Находка проверена"
 }

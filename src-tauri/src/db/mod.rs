@@ -422,6 +422,8 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // Athena async-UX milestone — Task model fields on background jobs.
             "ALTER TABLE companion_background_job ADD COLUMN short_title TEXT;",
             "ALTER TABLE companion_background_job ADD COLUMN parent_turn_id TEXT;",
+            // Multiconv P1 — which thread spawned the task (orb/tray stay global).
+            "ALTER TABLE companion_background_job ADD COLUMN conversation_id TEXT;",
             // Athena multi-conversation — see docs/features/companion/athena-multiconversation.md.
             // companion_session generalizes from the single 'default' row into the
             // conversation table (one row per user thread). Additive columns:
@@ -944,6 +946,7 @@ CREATE TABLE IF NOT EXISTS companion_background_job (
     project_id      TEXT,                            -- nullable: links scan jobs to known_project
     short_title     TEXT,                            -- human one-liner for the task tag/tray (e.g. "Scanning ai-paralegal")
     parent_turn_id  TEXT,                            -- the conversation turn/episode that spawned this task (for in-chat tag grouping)
+    conversation_id TEXT,                            -- the thread that spawned it (multiconv P1); orb/tray aggregate ALL threads
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     started_at      TEXT,
     completed_at    TEXT

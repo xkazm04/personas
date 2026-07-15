@@ -13000,6 +13000,20 @@ export type Translations = {
       uc_source_scan: string;
       uc_source_backfill: string;
       uc_source_user: string;
+      ctx_kpi_met: string;
+      ctx_kpi_on_track: string;
+      ctx_kpi_off_track: string;
+      ctx_kpi_unmeasured: string;
+      ctx_kpi_none: string;
+      llm_propose_tooltip: string;
+      llm_propose_aria: string;
+      llm_propose_done: string;
+      ctx_indicator_kpis: string;
+      sidebar_source: string;
+      sidebar_source_any: string;
+      ctx_cost_tooltip: string;
+      ctx_errors_label: string;
+      ctx_errors_tooltip: string;
     };
     doc_signing: {
       sign_heading: string;
@@ -14776,6 +14790,7 @@ export type Translations = {
       action_label: string;
       new_rule: string;
       run_rules: string;
+      suggestion_name_reject_origin: string;
     };
     artist_label: string;
     artist_desc: string;
@@ -15343,6 +15358,10 @@ export type Translations = {
     source_filter_no_source_id: string;
     source_filter_allowed_chars: string;
     source_filter_max_length: string;
+    signal_raised_label: string;
+    signal_raised_description: string;
+    signal_verified_label: string;
+    signal_verified_description: string;
   };
   connector_roles: {
     chat_messaging: string;

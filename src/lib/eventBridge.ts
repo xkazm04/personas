@@ -255,6 +255,37 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Health ingest (findings loop) ---------------------------------------
+  // A scheduled `health_ingest` system op asks the app to sweep every sensor and
+  // verify what already shipped. The sweep lives in TypeScript, so the Rust op
+  // delegates here rather than growing a second implementation that could diverge.
+  {
+    event: EventName.HEALTH_INGEST_REQUESTED,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.HEALTH_INGEST_REQUESTED, (payload) => {
+        void import('@/features/plugins/dev-tools/sub_triage/findings/healthIngest').then((m) =>
+          m.handleHealthIngestRequested(payload.projectId),
+        );
+      });
+      return [unlisten];
+    },
+  },
+
+  // -- Signal dispatch (findings loop C/D) ---------------------------------
+  // A `signal_dispatch_runner` / `_fleet` op fired. Same delegation as health
+  // ingest: the task-execute and Fleet-spawn paths are async frontend APIs.
+  {
+    event: EventName.SIGNAL_DISPATCH_REQUESTED,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.SIGNAL_DISPATCH_REQUESTED, (payload) => {
+        void import('@/features/plugins/dev-tools/sub_triage/findings/dispatch').then((m) =>
+          m.handleSignalDispatchRequested(payload.ideaId, payload.target),
+        );
+      });
+      return [unlisten];
+    },
+  },
+
   // -- Healing event -------------------------------------------------------
   {
     event: EventName.HEALING_EVENT,

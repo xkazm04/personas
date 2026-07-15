@@ -46,6 +46,12 @@ export const EventName = {
   AUTH_STATE_CHANGED: 'auth-state-changed',
   AUTH_ERROR: 'auth-error',
 
+  // Findings loop — a scheduled `health_ingest` system op asks the app to sweep
+  // every sensor and verify what already shipped (docs/plans/dev-findings-loop.md).
+  HEALTH_INGEST_REQUESTED: 'health-ingest-requested',
+  /** A `signal_dispatch_*` op fired: get work started on a finding (runner | fleet). */
+  SIGNAL_DISPATCH_REQUESTED: 'signal-dispatch-requested',
+
   // Healing
   HEALING_EVENT: 'healing-event',
   HEALING_ISSUE_UPDATED: 'healing-issue-updated',
@@ -139,6 +145,11 @@ export const EventName = {
   // (not the direct context-gen channel) so it surfaces in the Live Stream.
   DEV_TOOLS_CONTEXT_SCAN_STARTED: 'dev_tools.context_scan_started',
   DEV_TOOLS_CONTEXT_SCAN_COMPLETED: 'dev_tools.context_scan_completed',
+  // Findings-loop SIGNAL events (docs/plans/dev-findings-loop.md) — published on
+  // the persona-event bus from the repo layer (create_finding / verify-state
+  // writes), so triggers and the dispatch ops can route off them.
+  SIGNAL_RAISED: 'signal.raised',
+  SIGNAL_VERIFIED: 'signal.verified',
   IDEA_SCAN_STATUS: 'idea-scan-status',
   IDEA_SCAN_OUTPUT: 'idea-scan-output',
   IDEA_SCAN_COMPLETE: 'idea-scan-complete',
@@ -333,6 +344,20 @@ export interface ExecutionReviewRequestPayload {
 }
 
 /** Healing event (engine/types.rs HealingEventPayload). */
+/** The `health_ingest` system op fired (schedule / event / manual run-now). */
+export interface HealthIngestRequestedPayload {
+  projectId: string;
+  /** "schedule" | "event" | "manual" — diagnostics only. */
+  source: string;
+}
+
+/** Dispatch a finding. `target` is the route's choice, not the engine's. */
+export interface SignalDispatchRequestedPayload {
+  ideaId: string;
+  target: 'runner' | 'fleet';
+  source: string;
+}
+
 export interface HealingEventPayload {
   issue_id: string;
   persona_id: string;
@@ -727,6 +752,10 @@ export interface EventPayloadMap {
   [EventName.AUTH_STATE_CHANGED]: AuthStateResponse;
   [EventName.AUTH_ERROR]: { error: string };
 
+  // Findings loop
+  [EventName.HEALTH_INGEST_REQUESTED]: HealthIngestRequestedPayload;
+  [EventName.SIGNAL_DISPATCH_REQUESTED]: SignalDispatchRequestedPayload;
+
   // Healing
   [EventName.HEALING_EVENT]: HealingEventPayload;
   [EventName.HEALING_ISSUE_UPDATED]: HealingIssueUpdatedPayload;
@@ -825,6 +854,34 @@ export interface EventPayloadMap {
   // Bus events (Live Stream), not the direct context-gen channel.
   [EventName.DEV_TOOLS_CONTEXT_SCAN_STARTED]: DevToolsContextScanStartedPayload;
   [EventName.DEV_TOOLS_CONTEXT_SCAN_COMPLETED]: DevToolsContextScanCompletedPayload;
+  [EventName.SIGNAL_RAISED]: {
+    idea_id: string;
+    origin: string;
+    dedup_key: string | null;
+    title: string;
+    project_id: string | null;
+    context_id: string | null;
+    use_case_id: string | null;
+    impact: number | null;
+    effort: number | null;
+    risk: number | null;
+    verify_state: string | null;
+    evidence: unknown;
+  };
+  [EventName.SIGNAL_VERIFIED]: {
+    idea_id: string;
+    origin: string;
+    dedup_key: string | null;
+    title: string;
+    project_id: string | null;
+    context_id: string | null;
+    use_case_id: string | null;
+    impact: number | null;
+    effort: number | null;
+    risk: number | null;
+    verify_state: string | null;
+    evidence: unknown;
+  };
   [EventName.IDEA_SCAN_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.IDEA_SCAN_OUTPUT]: { job_id: string; line: string };
   [EventName.IDEA_SCAN_COMPLETE]: IdeaScanCompletePayload;

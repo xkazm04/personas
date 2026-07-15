@@ -4208,6 +4208,50 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // ideas first. Nullable — unranked ideas fall back to impact/effort order.
     ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN priority INTEGER;").ok();
 
+    // -- dev_ideas: the FINDINGS SPINE (docs/plans/dev-findings-loop.md §3 2A).
+    // An idea is no longer only a scanner proposal — every sensor (golden-standard
+    // scan, passport gap, LLM cost, Sentry spike, off-track KPI) emits into this
+    // table so the existing triage → task → PR → scoreboard machinery becomes
+    // multi-sensor. All four columns are additive and nullable; a NULL `origin`
+    // IS a classic Idea-Scanner idea, so every existing row and call site keeps
+    // working untouched.
+    //   origin      — 'standards_finding' | 'passport_gap' | 'llm_cost'
+    //                 | 'sentry_spike' | 'kpi_offtrack' (validated in Rust).
+    //   use_case_id — the emitting signal's use case. Orphan-tolerant, no FK
+    //                 (same rationale as dev_projects.team_id).
+    //   evidence    — JSON blob: the raw numbers that justified emission. Phase 3's
+    //                 verification probe re-measures against these, so they must
+    //                 stay comparable.
+    //   dedup_key   — stable per underlying signal ('sentry:<shortId>',
+    //                 'standards:<rule_key>', …). Idempotent emission: a sweep
+    //                 never re-raises a finding that already exists in ANY status,
+    //                 including `rejected` — a human "no" is durable.
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN origin TEXT;").ok();
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN use_case_id TEXT;").ok();
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN evidence TEXT;").ok();
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN dedup_key TEXT;").ok();
+    ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_dev_ideas_dedup ON dev_ideas(project_id, dedup_key);",
+    )
+    .ok();
+
+    // -- dev_ideas: VERIFICATION (docs/plans/dev-findings-loop.md §7, Phase 3A).
+    // Nothing in the app checked whether shipped work moved the number that raised
+    // the finding — "merged" was silently treated as "fixed". These close that:
+    //   verify_state     — 'pending' | 'cleared' | 'moved' | 'unchanged' | 'regressed'.
+    //                      NULL/pending = not yet judged. `unchanged` and `regressed`
+    //                      are first-class outcomes, surfaced as loudly as `cleared`.
+    //   verify_checked_at— when the last verdict was taken.
+    //   verify_evidence  — the RE-MEASURED reading (same shape as `evidence`), so a
+    //                      verdict can be audited: before vs after, side by side.
+    // The probe is the sweep itself: emitters only fire when a signal is OVER
+    // threshold, so a fresh emit that no longer carries the finding's dedup_key means
+    // the signal is gone (= cleared).
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN verify_state TEXT;").ok();
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN verify_checked_at TEXT;").ok();
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN verify_evidence TEXT;").ok();
+
     // -- GAP-W2 (double-advance TOCTOU): at most ONE active assignment per
     // goal, enforced at the DB level. advance_goal's guard reads, then spends
     // seconds in LLM decomposition, then creates — two near-simultaneous

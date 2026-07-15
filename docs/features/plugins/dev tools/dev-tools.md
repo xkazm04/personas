@@ -2,6 +2,12 @@
 
 > An AI-guided development pipeline that turns any codebase into a managed project — scanned into semantic contexts, mined for improvement ideas by 21 specialized agents, triaged Tinder-style, executed as tasks, and shipped as draft pull requests with agent reasoning attached.
 
+> **Folder index:** [`README.md`](./README.md). For the cross-surface picture read
+> [`cx-map.md`](./cx-map.md) (the terrain for the 2026-07 CX/UX rethink); for the
+> shipped detect→verify→learn loop read [`findings-loop.md`](./findings-loop.md).
+> ⚠ The "Five development directions" section below predates the findings loop —
+> treat it as history, not a plan.
+
 The plugin lives at `src/features/plugins/dev-tools/` and is exposed through the **Plugins → Dev Tools** entry in the sidebar. The Rust surface lives at `src-tauri/src/commands/infrastructure/dev_tools.rs` plus sibling modules for the long-running operations (`context_generation.rs`, `idea_scanner.rs`, `task_executor.rs`).
 
 ---
@@ -28,7 +34,7 @@ Dev Tools tabs today:
 | **Observability** (LLM + app-monitoring mapping) | External → App | Two sub-tabs sharing one assignment-matrix pattern: **LLM** (`dev_projects.llm_tracking_credential_id`; use-case rollups from Langfuse / LangSmith / Helicone / LightTrack) and **Monitoring** (`dev_projects.monitoring_credential_id`; Sentry unresolved-issues + events 24h/7d via the shared `fetchSentryStats`; Better Stack listed but pending an adapter) |
 | **Context Map** (semantic code domains) | App ↔ Codebase | `dev_context_groups` + `dev_contexts`, generated from a filesystem walk |
 | **Idea Scanner** (21 LLM agents) | App → LLM → App | `dev_ideas` rows tagged with `scan_type` + per-scan history |
-| **Idea Triage** (accept / reject / delete) | Human → App | Idea status transitions; optional auto-triage rules |
+| **Idea Triage** (accept / reject / delete) | Human → App | Idea status transitions; optional auto-triage rules. Also the landing point of the **findings spine** — Observability, the Factory passport, the golden-standard scan, and the KPI layer all emit into `dev_ideas` with `origin` / `evidence` / `dedup_key`, so every sensor feeds the same triage → task → PR loop |
 | **Task Runner** (batched execution) | App → LLM → App | `dev_tasks` rows + live output buffer + PR Bridge card |
 | **Fleet** (Claude Code session aggregator) | App ↔ CLIs | Per-session xterm terminals over the active project's cwd |
 
@@ -61,6 +67,10 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 
 1. Open **Context Map**. It renders as a single **ledger** (`ContextLedger.tsx`) — a cross-tab whose rows are contexts (grouped into colour-tagged group bands) and whose columns are the project's active **use cases**. See *Use cases* below for how to read it.
 2. Click **Scan Codebase**. The scan spawns a Claude CLI pass over the repo (not a structural file walk) and streams `ContextGroup`/`ContextItem` rows back; a **ScanOverlay** streams progress lines and can be cancelled mid-flight. Each ledger row carries that context's **coverage cluster** — files · use cases · goals · ideas · KPIs — where the goal count jumps to the **Goals** board (pre-selecting the first matching goal via the `pendingGoalSpotlightId` slot in `uiSlice`) and the idea count jumps to **Idea Triage**. Selecting a row opens the right-side **ContextDetail** pane, which lists the linked goals inline (title, progress %, and a "done / total tasks" summary per goal) plus the use cases covering that context.
+
+   **Runtime chips (findings loop 1A).** When the project has an LLM tracer and/or Sentry wired, each row also carries what that area actually *does* at runtime: a **30d LLM-spend** chip and an **unresolved-errors** chip (which jumps to Overview). The joins already existed in the data model — LLM pinpoints roll up per use-case slug, a use case slices N contexts (`context_ids`), and a Sentry issue's `culprit` is usually a path a context owns via `filePaths`. An unwired project renders exactly the chips it always did (`useContextRuntime` degrades to empty maps; telemetry being down can never break the ledger).
+
+   > **Read the cost chip correctly:** a use case's *full* cost is attributed to **every** context it slices — it is not split between them. The chip answers "how much LLM spend flows through this area", not "how much of the bill this area owns", so the column intentionally sums to more than the project total. Splitting would invent precision the data doesn't have.
 3. Scans survive navigation — a status-resync poll on mount reattaches to in-flight jobs via `dev_tools_get_scan_codebase_status`, so leaving the tab during a long scan and coming back picks up where you left off.
 4. Completion fires an **in-app notification** (TitleBar bell) with the counts — groups created, contexts created, files mapped — and a redirect link.
 5. **Re-scan + scheduling** — once a project has been mapped, the action row swaps the single "Scan Codebase" button for **Re-scan (incremental)** (passes `delta_mode=true` → `dev_tools_scan_codebase` diffs the live tree against `dev_context_file_hashes` and feeds the LLM only changed files, short-circuiting when nothing changed), a **Full re-scan** fallback, and a **Plan update** button. A "Last scan" relative-time tag shows recency. **Plan update** creates a weekly **system-op automation** (`planWeeklyContextScan` → `system_ops_create_automation`, `0 3 * * 1`) for the active project — the same `SystemOpAutomation` the Chain Studio commits; the background scheduler then re-derives the context map weekly and each run surfaces in the **Live Stream** via `dev_tools.context_scan_*` bus events. (Context scans are always scoped to one project.)
@@ -128,8 +138,86 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 
 1. Open **Idea Triage**. Pending ideas form a 3-card stack in the center; sidebar filters narrow by category, scan type, effort range, and risk range.
 2. Swipe right (or ➡ / Z) to accept, left (or ⬅ / A) to reject. The top card drags physically via Framer Motion; the border glows red/green based on drag direction. Each card surfaces the proposing agent's identity and Scoreboard rank inline below the title — "🔒 Security Auditor · rank #3 (81% accept)" — computed from the same `computeAgentStats` aggregation the Scoreboard uses, so the credibility signal travels with every triage decision.
-3. The optional **Auto-Triage Rules** panel above the stack lets you define conditional rules (e.g. "if effort ≤ 3 and impact ≥ 7 → accept") that are applied in bulk via `dev_tools_run_triage_rules`.
+3. The optional **Auto-Triage Rules** panel above the stack lets you define conditional rules (e.g. "if effort ≤ 3 and impact ≥ 7 → accept") that are applied in bulk via `dev_tools_run_triage_rules`. Conditions can target `effort` / `impact` / `risk` / `category` / `scan_type` and — since the findings spine — **`origin`**, the sensor that raised the idea (e.g. "auto-accept `passport_gap`"). A classic scanner idea has no origin, so an origin rule never sweeps it up.
 4. Progress bar + status badges (accepted / rejected / pending) update live. The help button (and the app-wide `?` shortcut) opens the global keyboard-shortcut cheat-sheet, which lists the triage accept/reject keys under its **Agents** section alongside every other discoverable binding.
+
+#### The findings spine — every sensor feeds triage
+
+> Design: [`docs/plans/dev-findings-loop.md`](../../../plans/dev-findings-loop.md).
+
+The Idea Scanner used to be the *only* thing that could put work in the backlog. It
+isn't any more: **a finding is an idea**. `dev_ideas` carries four additive columns —
+`origin`, `use_case_id`, `evidence` (JSON), `dedup_key` — so every scan surface can
+emit into the same triage → task → PR → scoreboard pipeline instead of growing its
+own private one. A `NULL` origin IS a classic scanner idea, so nothing about the
+existing deck changed.
+
+| `origin` | Sensor | Raised when |
+| --- | --- | --- |
+| `standards_finding` | Golden-standard scan (`DevStandard`) | a rule is not `present` — the recommendation becomes the fix prompt |
+| `passport_gap` | Factory improve plan | a readiness dimension is below target (effort tier ≤ 2 only; tier 3 = a full Claude deploy, still a human click on the passport) |
+| `llm_cost` | LLM observability | a use case burns > $5/30d, **or** > 30% of calls carry no use-case label (uninstrumented call sites blind every other join) |
+| `sentry_spike` | Sentry | an unresolved issue exceeds 25 events (top 3 per sweep), matched onto a context via its culprit path |
+| `kpi_offtrack` | KPI layer | a KPI is off track (shares `collectKpiAttention` with the Factory warning badge, so the two can't disagree) |
+
+**Sweeping.** The 🛰 button on the triage action row runs `runFindingSweep` for the
+active project: gather → emit → dedup → cap → persist. Every sensor is optional (a
+project with no tracer, no Sentry, or no scan still sweeps what it has), and the
+result toast **names the sensors it skipped** — a thin sweep must never read as a
+clean bill of health. Emission is idempotent on `dedup_key` across *every* status,
+**rejected included**: a human "no" is durable, and only deleting the idea frees the
+key. Findings are ranked impact-per-effort and capped at 10 per sweep, with the
+dropped count reported rather than silently truncated. Thresholds live in one file
+(`sub_triage/findings/findingConfig.ts`).
+
+**On the card.** A finding leads with its sensor badge instead of the scan agent's
+emoji; clicking the badge opens the **evidence** it was raised on (the raw numbers
+behind the threshold decision), so the claim can be judged rather than trusted. The
+sidebar gains a **Source** filter, shown only once a sensor has actually raised
+something.
+
+#### Verification — did shipping it actually move the number?
+
+Until now nothing checked whether merged work changed anything: **"merged" was
+silently treated as "fixed".** It isn't. Every finding that ships now gets a verdict.
+
+**The sweep IS the probe.** An emitter only fires when a signal is *over* threshold,
+and the sweep already re-runs every emitter — so a fresh emit is the measurement:
+
+- the finding's `dedup_key` is **absent** from the fresh drafts → the signal is gone → **`cleared`**
+- it's **still there** → compare the primary metric against the stored `evidence` →
+  **`moved`** (materially better, ≥10%), **`regressed`** (worse), else **`unchanged`**
+
+Per-origin the "primary metric" is: `llm_cost` → cost (or unnamed-share) · `sentry_spike`
+→ event count · `kpi_offtrack` → the reading vs its target (direction-aware) ·
+`standards_finding` / `passport_gap` → presence-shaped, so absence is the whole verdict.
+Results are stored on `dev_ideas` (`verify_state`, `verify_checked_at`, `verify_evidence` —
+the *re-measured* reading, so a verdict is auditable before-vs-after, not taken on trust).
+
+**Honesty rules, enforced in code and tests:**
+- A finding is judged **only once the work shipped** (accepted + its task `completed`).
+  A verdict on work never done would be the most damaging lie the loop could tell.
+- We **never invent a `cleared`** — missing, unparseable or incomparable evidence
+  yields `unchanged`, the conservative answer.
+- A change below the material threshold is `unchanged`: **claiming a win on noise is
+  how a loop starts lying.**
+- `unchanged` and `regressed` are surfaced as loudly as `cleared` (a regression never
+  wears a success colour in the sweep toast).
+
+#### Sensor Scoreboard — credit for the number moving, not the PR merging
+
+The Agent Scoreboard can only score *accepted + merged*, which rewards **plausibility**:
+an agent whose ideas always merge and never change anything scores perfectly. A sensor
+measures a **number**, so it can be scored on **effect**. The headline is the **verify
+rate** — of the findings that shipped and were judged, how many cleared or improved.
+
+- `unchanged` / `regressed` get their own columns.
+- An unjudged sensor shows **"—", never 0%** (unknown ≠ bad), and a rate below a few
+  verdicts is labelled **"(low n)"**.
+- A *credible* sensor with a poor rate is flagged **noisy** — a finding about the finder.
+  Advisory only: the app never silently retunes a sensor's threshold. Likewise, a sensor
+  whose findings you keep rejecting produces an **"auto-reject &lt;sensor&gt;" rule
+  suggestion** rather than quietly re-tuning itself.
 
 ### 5. Task Runner — execute accepted ideas
 

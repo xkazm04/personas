@@ -9,6 +9,9 @@ const IdeaScannerPage = lazy(() => import('./sub_scanner/IdeaScannerPage'));
 const IdeaTriagePage = lazy(() => import('./sub_triage/IdeaTriagePage'));
 const TaskRunnerPage = lazy(() => import('./sub_runner/TaskRunnerPage'));
 const FleetPage = lazy(() => import('@/features/plugins/fleet/FleetPage'));
+// /prototype R1 lab bench on the previously-vestigial `skills` tab (mock data only
+// — see docs/plans/dev-tools-cx-redesign.md §3). Removed at consolidation.
+const CockpitPrototypePage = lazy(() => import('./sub_cockpit/CockpitPrototypePage'));
 
 // ---------------------------------------------------------------------------
 // Main Page
@@ -34,7 +37,8 @@ export default function DevToolsPage() {
           {devToolsTab === 'idea-scanner' && <IdeaScannerPage />}
           {devToolsTab === 'idea-triage' && <IdeaTriagePage />}
           {devToolsTab === 'task-runner' && <TaskRunnerPage />}
-          {(devToolsTab === 'skills' || devToolsTab === 'fleet') && <FleetPage />}
+          {devToolsTab === 'fleet' && <FleetPage />}
+          {devToolsTab === 'skills' && <CockpitPrototypePage />}
         </Suspense>
       </div>
     </div>

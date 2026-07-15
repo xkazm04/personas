@@ -1520,6 +1520,7 @@ pub fn dispatch(
                     None,
                     Some(&task_title),
                     None, // parent_turn_id threaded in phase 2 (episode id not yet known here)
+                    Some(session_id), // owning conversation (multiconv P1)
                 ) {
                     let reason =
                         format!("background-job enqueue failed for `{connector_name}.{capability}`: {e}");

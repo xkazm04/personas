@@ -1611,6 +1611,14 @@ export interface BackgroundJob {
    * tasks (scheduled curation, etc.). Threaded in a later phase.
    */
   parentTurnId?: string | null;
+  /**
+   * Conversation (thread) whose turn spawned this job — lets the pin
+   * heuristic judge "was a turn streaming" against the job's own thread
+   * instead of whatever thread is focused (multiconv). Serde camelCase from
+   * Rust; only present when the backend stamped one — absent/`null` for
+   * untethered or pre-multiconv jobs.
+   */
+  conversationId?: string | null;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;

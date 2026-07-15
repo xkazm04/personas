@@ -79,5 +79,9 @@
   "source_filter_no_regex": "Chỉ hỗ trợ * ở cuối (không có regex, không có ký tự ? đại diện)",
   "source_filter_no_source_id": "Nếu source_filter được đặt nhưng sự kiện không có source_id, bộ lọc sẽ không khớp",
   "source_filter_allowed_chars": "Ký tự được phép: chữ cái, số, _, -, :, . và *",
-  "source_filter_max_length": "Tối đa 120 ký tự, tối đa 3 ký tự đại diện"
+  "source_filter_max_length": "Tối đa 120 ký tự, tối đa 3 ký tự đại diện",
+  "signal_raised_description": "Một cảm biến (tiêu chuẩn, mức độ sẵn sàng, chi phí LLM, lỗi, KPI) đã đưa ra một phát hiện mới.",
+  "signal_raised_label": "Phát hiện được đưa ra",
+  "signal_verified_description": "Một phát hiện đã triển khai được đo lại — chỉ số có thực sự cải thiện không?",
+  "signal_verified_label": "Phát hiện đã xác minh"
 }

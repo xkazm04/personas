@@ -27,6 +27,7 @@ import { ImproveCell } from './improve/ImproveCell';
 import { StandardsScan } from './improve/StandardsScan';
 import { GoldenGauge } from './improve/GoldenGauge';
 import { ReadinessTrend } from './ReadinessTrend';
+import { LlmTrackingCell } from './LlmTrackingCell';
 
 // Improvable cells. Tier-0 standards-config rows (CI / Self-verify) + every
 // code-requiring or connector-bindable row: context/CLAUDE.md/tests/evals/
@@ -169,15 +170,29 @@ export function ProjectsPassportWall({
                     <td className={`${rail} px-3 py-1.5 border-t border-primary/[0.06] align-top`}>
                       <span className="typo-caption text-foreground/65">{row.label}</span>
                     </td>
-                    {columns.map((p) => (
-                      <td key={p.identity.slug} className={`px-3 py-1.5 align-top border-t border-primary/[0.06] ${colChrome}`}>
-                        {IMPROVABLE_ROWS.has(row.key) ? (
-                          <ImproveCell slug={p.identity.slug} rowKey={row.key} passport={p}><WallCell value={row.get(p)} /></ImproveCell>
+                    {columns.map((p) => {
+                      const value = row.get(p);
+                      // `llmtracking` renders live wiring (bound connector + 30d
+                      // spend) instead of the scan's generic "connected".
+                      const cell =
+                        row.key === 'llmtracking' ? (
+                          <LlmTrackingCell
+                            slug={p.identity.slug}
+                            label={value.kind === 'present' ? value.label : null}
+                          />
                         ) : (
-                          <WallCell value={row.get(p)} />
-                        )}
-                      </td>
-                    ))}
+                          <WallCell value={value} />
+                        );
+                      return (
+                        <td key={p.identity.slug} className={`px-3 py-1.5 align-top border-t border-primary/[0.06] ${colChrome}`}>
+                          {IMPROVABLE_ROWS.has(row.key) ? (
+                            <ImproveCell slug={p.identity.slug} rowKey={row.key} passport={p}>{cell}</ImproveCell>
+                          ) : (
+                            cell
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </Fragment>

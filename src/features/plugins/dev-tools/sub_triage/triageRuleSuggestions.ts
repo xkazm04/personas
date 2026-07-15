@@ -18,9 +18,11 @@ export interface SuggestionCondition {
 
 export interface RuleSuggestion {
   /** i18n discriminator — resolved to dev_triage.suggestion_name_* */
-  kind: 'reject_heavy' | 'accept_quick' | 'reject_risky' | 'reject_category';
+  kind: 'reject_heavy' | 'accept_quick' | 'reject_risky' | 'reject_category' | 'reject_origin';
   /** Set only for reject_category. */
   category?: string;
+  /** Set only for reject_origin — the sensor whose findings keep getting rejected. */
+  origin?: string;
   conditions: SuggestionCondition[];
   action: 'accept' | 'reject';
   matched: number;
@@ -119,6 +121,31 @@ export function suggestTriageRules(ideas: DevIdea[], rules: TriageRule[]): RuleS
       kind: 'reject_category', action: 'reject', category: categoryHit[0],
       conditions: [{ field: 'category', op: 'eq', value: categoryHit[0] }],
       matched: categoryHit[1].rejected, total: categoryHit[1].total,
+    });
+  }
+
+  // B3 — rejection learning across the findings spine. A sensor whose findings the
+  // user keeps saying no to is mis-thresholded: it's raising work that isn't worth
+  // doing. Surfacing that as a rule ("auto-reject llm_cost") is the honest response —
+  // the alternative is the user silently swiping the same noise away forever.
+  // Deliberately advisory: we suggest, the user commits. We never retune a sensor's
+  // threshold behind their back.
+  const byOrigin = new Map<string, { total: number; rejected: number }>();
+  for (const i of decided) {
+    if (!i.origin) continue; // classic scanner ideas — covered by the rules above
+    const entry = byOrigin.get(i.origin) ?? { total: 0, rejected: 0 };
+    entry.total++;
+    if (i.status === 'rejected') entry.rejected++;
+    byOrigin.set(i.origin, entry);
+  }
+  const originHit = [...byOrigin.entries()]
+    .filter(([, v]) => v.total >= MIN_CATEGORY_SAMPLE && v.rejected / v.total >= MIN_CATEGORY_RATE)
+    .sort((a, b) => b[1].total - a[1].total)[0];
+  if (originHit) {
+    out.push({
+      kind: 'reject_origin', action: 'reject', origin: originHit[0],
+      conditions: [{ field: 'origin', op: 'eq', value: originHit[0] }],
+      matched: originHit[1].rejected, total: originHit[1].total,
     });
   }
 

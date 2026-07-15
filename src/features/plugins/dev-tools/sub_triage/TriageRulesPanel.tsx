@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, Plus, Trash2, Zap, ToggleLeft, ToggleRight, 
 import { useSystemStore } from '@/stores/systemStore';
 import type { TriageRule } from '@/lib/bindings/TriageRule';
 import { suggestTriageRules, type RuleSuggestion } from './triageRuleSuggestions';
+import { originMeta } from './findings/FindingBadge';
 
 const FIELD_OPTIONS = [
   { value: 'effort', label: 'Effort' },
@@ -11,6 +12,10 @@ const FIELD_OPTIONS = [
   { value: 'risk', label: 'Risk' },
   { value: 'category', label: 'Category' },
   { value: 'scan_type', label: 'Scan Type' },
+  // The findings spine — rules can target which SENSOR raised an idea, e.g.
+  // "auto-accept passport_gap" (values: standards_finding · passport_gap ·
+  // llm_cost · sentry_spike · kpi_offtrack). Never matches a scanner idea.
+  { value: 'origin', label: 'Source (sensor)' },
 ];
 
 const NUMERIC_OP_OPTIONS = [
@@ -68,6 +73,10 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
       case 'accept_quick': return dtr.suggestion_name_accept_quick;
       case 'reject_risky': return dtr.suggestion_name_reject_risky;
       case 'reject_category': return tx(dtr.suggestion_name_reject_category, { category: s.category ?? '' });
+      // B3 — a sensor whose findings keep getting rejected is mis-thresholded.
+      case 'reject_origin': return tx(dtr.suggestion_name_reject_origin, {
+        origin: originMeta(s.origin ?? '')?.label ?? s.origin ?? '',
+      });
     }
   };
 

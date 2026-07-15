@@ -21,7 +21,7 @@ import { ImproveProvider, type ImproveEngine } from './passport/improve/ImproveC
 import { ImprovePlanPanel } from './passport/improve/ImprovePlanPanel';
 import { usePassportData } from './passport/usePassportData';
 import { useFactoryData } from './factoryData';
-import { groupKpis, kpiStatus } from './factoryModel';
+import { collectKpiAttention } from './factoryModel';
 
 export function ProjectsLayer({
   onOpen,
@@ -105,14 +105,9 @@ export function ProjectsLayer({
   const attentionByProject = useMemo(() => {
     const m = new Map<string, WarningItem[]>();
     for (const p of factoryProjects) {
-      const items: WarningItem[] = [];
-      for (const g of p.groups) {
-        for (const k of groupKpis(g)) {
-          if (kpiStatus(k) === 'crit') {
-            items.push({ groupId: g.id, kpiId: k.id, name: k.name, current: k.current, target: k.target, unit: k.unit });
-          }
-        }
-      }
+      // `collectKpiAttention` is shared with the findings sweep's kpi_offtrack
+      // emitter — the badge and the finding must never disagree on "off track".
+      const items = collectKpiAttention(p);
       if (items.length > 0) m.set(p.id, items);
     }
     return m;

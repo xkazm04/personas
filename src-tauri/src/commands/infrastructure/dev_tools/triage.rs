@@ -23,6 +23,10 @@ pub(super) fn evaluate_conditions(conditions_json: &str, idea: &DevIdea) -> bool
             "risk" => compare_numeric(idea.risk.unwrap_or(0), op, value),
             "category" => compare_string(Some(&idea.category), op, value),
             "scan_type" => compare_string(Some(&idea.scan_type), op, value),
+            // The findings spine: rules can now target WHICH SENSOR raised an idea
+            // ("auto-accept passport_gap", "auto-reject llm_cost under $5"). A
+            // classic scanner idea has no origin, so such a rule never matches it.
+            "origin" => compare_string(idea.origin.as_deref(), op, value),
             _ => false,
         }
     })
@@ -77,6 +81,13 @@ mod tests {
             provider: None,
             model: None,
             rejection_reason: None,
+            origin: None,
+            use_case_id: None,
+            evidence: None,
+            dedup_key: None,
+            verify_state: None,
+            verify_checked_at: None,
+            verify_evidence: None,
             created_at: "2026-05-02T00:00:00Z".into(),
             updated_at: "2026-05-02T00:00:00Z".into(),
         }
@@ -98,5 +109,30 @@ mod tests {
     #[test]
     fn invalid_json_is_non_match() {
         assert!(!evaluate_conditions("{", &idea()));
+    }
+
+    #[test]
+    fn origin_condition_targets_the_emitting_sensor() {
+        let mut finding = idea();
+        finding.origin = Some("passport_gap".into());
+
+        let rule = r#"[{"field":"origin","op":"eq","value":"passport_gap"}]"#;
+        assert!(evaluate_conditions(rule, &finding));
+
+        let other = r#"[{"field":"origin","op":"eq","value":"llm_cost"}]"#;
+        assert!(!evaluate_conditions(other, &finding));
+
+        // A classic scanner idea carries no origin, so an origin rule must never
+        // sweep it up — otherwise "auto-accept passport gaps" would auto-accept
+        // the whole backlog.
+        assert!(!evaluate_conditions(rule, &idea()));
+    }
+
+    #[test]
+    fn origin_condition_supports_in() {
+        let mut finding = idea();
+        finding.origin = Some("sentry_spike".into());
+        let rule = r#"[{"field":"origin","op":"in","value":["sentry_spike","kpi_offtrack"]}]"#;
+        assert!(evaluate_conditions(rule, &finding));
     }
 }

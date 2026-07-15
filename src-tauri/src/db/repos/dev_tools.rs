@@ -144,6 +144,15 @@ fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
         provider: row.get("provider")?,
         model: row.get("model")?,
         rejection_reason: row.get("rejection_reason")?,
+        // Findings-spine columns — `unwrap_or(None)` so a row read through a
+        // pre-migration connection (or a SELECT that omits them) still maps.
+        origin: row.get("origin").unwrap_or(None),
+        use_case_id: row.get("use_case_id").unwrap_or(None),
+        evidence: row.get("evidence").unwrap_or(None),
+        dedup_key: row.get("dedup_key").unwrap_or(None),
+        verify_state: row.get("verify_state").unwrap_or(None),
+        verify_checked_at: row.get("verify_checked_at").unwrap_or(None),
+        verify_evidence: row.get("verify_evidence").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -2764,6 +2773,179 @@ pub fn create_idea(
     })
 }
 
+/// Create an idea raised by a SENSOR rather than the Idea Scanner — the findings
+/// spine (`docs/plans/dev-findings-loop.md`). Separate from `create_idea` so the
+/// scanner's 14-arg signature and every existing call site stay untouched.
+///
+/// `dedup_key` is the idempotency guard: if a non-deleted idea already carries it
+/// for this project, nothing is inserted and `Ok(None)` comes back. That includes
+/// `rejected` ideas — a human "no" is durable, and only deleting the idea frees
+/// the key for re-emission.
+#[allow(clippy::too_many_arguments)]
+pub fn create_finding(
+    pool: &DbPool,
+    project_id: &str,
+    origin: &str,
+    title: &str,
+    description: Option<&str>,
+    category: Option<&str>,
+    context_id: Option<&str>,
+    use_case_id: Option<&str>,
+    evidence: Option<&str>,
+    dedup_key: &str,
+    effort: Option<i32>,
+    impact: Option<i32>,
+    risk: Option<i32>,
+) -> Result<Option<DevIdea>, AppError> {
+    if title.trim().is_empty() {
+        return Err(AppError::Validation("Title cannot be empty".into()));
+    }
+    if !crate::db::models::FINDING_ORIGINS.contains(&origin) {
+        return Err(AppError::Validation(format!("Unknown finding origin: {origin}")));
+    }
+    if dedup_key.trim().is_empty() {
+        return Err(AppError::Validation("Finding dedup_key cannot be empty".into()));
+    }
+
+    timed_query!("dev_ideas", "dev_ideas::create_finding", {
+        let conn = pool.get()?;
+
+        let existing: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND dedup_key = ?2",
+            params![project_id, dedup_key],
+            |r| r.get(0),
+        )?;
+        if existing > 0 {
+            return Ok(None);
+        }
+
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let canonical_category = category
+            .and_then(crate::db::models::IdeaCategory::from_token)
+            .unwrap_or(crate::db::models::DEFAULT_IDEA_CATEGORY);
+
+        conn.execute(
+            "INSERT INTO dev_ideas (id, project_id, context_id, scan_type, category, title, description, status, effort, impact, risk, origin, use_case_id, evidence, dedup_key, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?15)",
+            params![
+                id,
+                project_id,
+                context_id,
+                origin, // scan_type doubles as the sensor tag, so the Scoreboard groups findings too
+                canonical_category.as_str(),
+                title,
+                description,
+                effort,
+                impact,
+                risk,
+                origin,
+                use_case_id,
+                evidence,
+                dedup_key,
+                now
+            ],
+        )?;
+
+        drop(conn);
+        let idea = get_idea_by_id(pool, &id)?;
+        // A sensor raised something — tell the bus. `signal.raised` is what the
+        // dispatch ops (Task Runner vs Fleet) will route off.
+        publish_signal_event(pool, &idea, crate::engine::event_registry::event_name::SIGNAL_RAISED);
+        Ok(Some(idea))
+    })
+}
+
+/// Publish a findings-loop SIGNAL onto the persona-event bus.
+///
+/// Called from `create_finding` and `set_finding_verify_state` — i.e. from the repo,
+/// not from the sweep — so every path that raises a finding or lands a verdict emits,
+/// and no future caller can silently starve a route by forgetting to. These events are
+/// what the dispatch ops route off (`signal.raised` → run it; `signal.verified` → learn
+/// from it), and they surface in the Live Stream for free.
+///
+/// Best-effort: a bus failure must never fail the write that triggered it. The finding
+/// is the source of truth; the event is a notification.
+fn publish_signal_event(pool: &DbPool, idea: &DevIdea, event_type: &str) {
+    let payload = serde_json::json!({
+        "idea_id": idea.id,
+        "origin": idea.origin,
+        "dedup_key": idea.dedup_key,
+        "title": idea.title,
+        "project_id": idea.project_id,
+        "context_id": idea.context_id,
+        "use_case_id": idea.use_case_id,
+        "impact": idea.impact,
+        "effort": idea.effort,
+        "risk": idea.risk,
+        "verify_state": idea.verify_state,
+        "evidence": idea.evidence,
+    });
+    let input = crate::db::models::CreatePersonaEventInput {
+        event_type: event_type.to_string(),
+        source_type: "findings".into(),
+        source_id: Some(idea.id.clone()),
+        // No target persona: a signal is an observation, not an instruction. A trigger
+        // (or a dispatch op) decides who — if anyone — acts on it.
+        target_persona_id: None,
+        project_id: idea.project_id.clone(),
+        payload: Some(payload.to_string()),
+        use_case_id: idea.use_case_id.clone(),
+    };
+    if let Err(e) = crate::db::repos::communication::events::publish(pool, input) {
+        tracing::warn!(error = %e, event_type, "failed to publish findings signal event");
+    }
+}
+
+/// Record a verification verdict on a finding (Phase 3A). `verify_evidence` is the
+/// re-measured reading, so the verdict can be audited against the original
+/// `evidence` instead of taken on trust.
+pub fn set_finding_verify_state(
+    pool: &DbPool,
+    id: &str,
+    verify_state: &str,
+    verify_evidence: Option<&str>,
+) -> Result<(), AppError> {
+    if !crate::db::models::VERIFY_STATES.contains(&verify_state) {
+        return Err(AppError::Validation(format!(
+            "Unknown verify_state: {verify_state}"
+        )));
+    }
+    timed_query!("dev_ideas", "dev_ideas::set_verify_state", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE dev_ideas SET verify_state = ?1, verify_evidence = ?2, verify_checked_at = ?3, updated_at = ?3 WHERE id = ?4",
+            params![verify_state, verify_evidence, now, id],
+        )?;
+        drop(conn);
+
+        // A verdict landed — tell the bus. This is the event B-side learning and any
+        // future "the fix regressed, re-open it" route hang off.
+        if let Ok(idea) = get_idea_by_id(pool, id) {
+            publish_signal_event(pool, &idea, crate::engine::event_registry::event_name::SIGNAL_VERIFIED);
+        }
+        Ok(())
+    })
+}
+
+/// Every dedup key already spoken for on this project — the sweep's pre-filter,
+/// so N drafts cost one query instead of N existence checks.
+pub fn list_finding_dedup_keys(pool: &DbPool, project_id: &str) -> Result<Vec<String>, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::list_dedup_keys", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT dedup_key FROM dev_ideas WHERE project_id = ?1 AND dedup_key IS NOT NULL",
+        )?;
+        let rows = stmt.query_map(params![project_id], |r| r.get::<_, String>(0))?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    })
+}
+
 #[allow(clippy::too_many_arguments)]
 /// Strategist triage: set (or clear) an idea's rank. 1 = do next.
 pub fn set_idea_priority(pool: &DbPool, id: &str, priority: Option<i32>) -> Result<(), AppError> {
@@ -3752,6 +3934,14 @@ pub fn bulk_create_ideas_cross_project(
                 provider: None,
                 model: None,
                 rejection_reason: None,
+                // Scanner batch — not a sensor finding.
+                origin: None,
+                use_case_id: None,
+                evidence: None,
+                dedup_key: None,
+                verify_state: None,
+                verify_checked_at: None,
+                verify_evidence: None,
                 created_at: now.clone(),
                 updated_at: now.clone(),
             });

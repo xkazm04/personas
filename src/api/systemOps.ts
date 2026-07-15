@@ -24,9 +24,36 @@ export const OP_CONTEXT_SCAN = 'context_scan';
  */
 export const OP_MEMORY_REFLECTION = 'memory_reflection';
 
+/**
+ * Op key for the findings-loop health ingest (docs/plans/dev-findings-loop.md):
+ * sweep every sensor for new findings AND verify the ones already shipped — "did
+ * the number actually move?". Params carry `projectId`.
+ *
+ * The Rust op emits an event and the app runs the sweep it already owns (the
+ * emitters, adapters and verdict engine are all TypeScript). It therefore only runs
+ * while the app is open — as does the whole scheduler, which is an in-app tick.
+ */
+export const OP_HEALTH_INGEST = 'health_ingest';
+
 /** Params builder for the memory-reflection op (exactly one id set). */
 export const memoryReflectionParamsJson = (scope: { personaId?: string; teamId?: string }): string =>
   JSON.stringify(scope.teamId ? { teamId: scope.teamId } : { personaId: scope.personaId });
+
+/** Params builder for the health-ingest op. */
+export const healthIngestParamsJson = (projectId: string): string => JSON.stringify({ projectId });
+
+/**
+ * The two DISPATCH ops (docs/plans/dev-findings-loop.md §4 C/D). Bind either to a
+ * `signal.raised` event listener in Chain Studio; the finding comes from the event.
+ *
+ *   runner — autonomous: the Dev Task Runner builds and PRs it. "Let the app do it."
+ *   fleet  — interactive: a Claude Code session opens on the project seeded with the
+ *            finding, and you steer it. "I want to control it."
+ *
+ * Switching between them is a REWIRE, not a code change — which is the point.
+ */
+export const OP_SIGNAL_DISPATCH_RUNNER = 'signal_dispatch_runner';
+export const OP_SIGNAL_DISPATCH_FLEET = 'signal_dispatch_fleet';
 
 /** Catalog of available system operations (drives the Studio target rail). */
 export const listSystemOpKinds = () =>

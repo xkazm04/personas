@@ -138,6 +138,9 @@ export const devToolsItems: SubNavItem[] = [
   // doesn't apply tier/dev filtering today; the underlying Rust module
   // always compiles so showing it is safe across builds.
   { id: 'fleet', label: 'Fleet', icon: Terminal },
+  // TEMPORARY — /prototype R1 lab bench (Project Cockpit, mock data) on the
+  // previously-vestigial `skills` id. Removed at consolidation.
+  { id: 'skills', label: 'Cockpit (proto)', icon: FlaskConical },
 ];
 
 export const twinItems: SubNavItem[] = [

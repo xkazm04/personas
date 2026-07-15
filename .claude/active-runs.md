@@ -2,6 +2,24 @@
 
 ## Active
 
+### cockpit-prototype-r1 — /prototype: Project Cockpit mock — session fable-5
+- Started: 2026-07-14. Status: **ROUND 6** (R1 collage✗ · R2 overflow✗ · R3 Floorplan✓ · R4 Plates✓ · R5 **Cards**✓ editorial identity, Console+Plates deleted. R6 415dc6290: **Focus** variant = Console group boxes in Cards skin + focus-first content strategy — divider IS a thin KPI-progress line; all-green plates RECEDE (title readable, rest 30% opacity on green wash); NEW blue SETUP state ("define KPI →"/"wire sensors →", setup counts on groups, Setup-needed pill in tooltip). TOOLTIP BUG FIXED, two causes: cursor→ELEMENT anchoring (anchorTip), and position:fixed hijacked by transformed ancestor (animate-fade-slide-in containing block) → createPortal(document.body). Measured live: gapY=8px alignX=0px. Cards kept as "R5 ref" tab.)
+- Paths: src/features/plugins/dev-tools/sub_cockpit/** (NEW — mock module + 2 variants + page), src/features/plugins/dev-tools/DevToolsPage.tsx (skills branch → cockpit lab bench), src/features/shared/chrome/sidebar/sidebarData.ts (temporary "Cockpit (proto)" nav entry). MOCK DATA ONLY — no store/IPC wiring. Design brief: docs/plans/dev-tools-cx-redesign.md §3 R1. Main checkout (must render live). Ledger NOT staged.
+- DISJOINT from context-grouprows-features (sub_context/**) — shared files touched are DevToolsPage.tsx + sidebarData.ts, single-line targeted edits outside their declared scope.
+
+### dev-findings-loop-p1p2 — execute Phases 1–2 of docs/plans/dev-findings-loop.md — session opus-4-8[1m]
+- Started: 2026-07-14. Status: COMPLETED steps 2–7 (a3c6c218b Phase-1 1B+1C; 098f58041 schema; 9c1e99182 emitters+sweep; c52a139c1 triage provenance+docs).
+- SHIPPED: telemetry→use-case proposals; passport live LLM wiring+spend; dev_ideas findings spine (origin/use_case_id/evidence/dedup_key + create_finding/list_finding_dedup_keys, idempotent, rejected-is-durable); 5 pure emitters + findingConfig + sweep (tolerant, capped, reports skipped sensors); FindingBadge+evidence popover, Source filter, SweepButton; TriageRule `origin` condition; dev-tools.md findings-spine section; i18n 5 keys × 13 locales.
+- Live-verified via :17320: create_finding + dedup (2nd call → null), origin/evidence persisted, badge+card+filter+sweep button render, sweep names skipped sensors. Test data deleted.
+- Step 1 (1A ledger runtime chips) NOW DONE TOO (a835abe0d + freeze fix 028329d07) — **PHASES 1–2 COMPLETE**. Live-verified against a seeded LightTrack: ai-curation $7.20, app-layout $8.30 (= full cost of every feature slicing the context, summed) — the documented attribution rule, proven.
+- GOTCHA WORTH REMEMBERING (028329d07): the hook's effects depended on the vault store's `credentials` ARRAY identity → refetch→setState→re-render→refetch loop that WEDGED the Context Map (app heartbeat + :17320 both died). Fix = resolve credential to primitives (id + serviceType) in a useMemo and depend on those. Unit tests were green throughout; only driving it live caught it.
+- Note: Vite (:1420) was found dead mid-session (both sessions on a stale bundle); restarted it. App later restarted via tauri:dev:test.
+
+### context-grouprows-features — /prototype round 2: group-per-row context variants + "Use cases"→"Features" rebrand — session fable-5
+- Started: 2026-07-14. Status: started.
+- Paths: src/features/plugins/dev-tools/sub_context/** (ContextGroupRows{Pills,Tiles}.tsx new, contextKpiStatus.ts new, ContextMapPage switcher, ContextLedger), src/i18n/locales/** (dev_tools uc_*/llm_usecase_* VALUE rebrand only — NOT agents.* persona use-cases, which are a different concept). Main checkout (variants must render in live dev app). Ledger NOT staged.
+- Note: concurrent session active on src/features/teams/sub_kpis/** — disjoint from my scope (I only read sub_kpis/kpiMath + kpiMeta).
+
 ### studio-dock-plan-drawer — Studio dock: plan button → right drawer, opaque history panel, /motionize polish — session opus-4-8[1m]
 - Started: 2026-07-13. Status: COMPLETED (3b51fec59 structure; ed7dd605f motionize).
 - Shipped: (1) plan strip pill + dock Plan tab retired → single plan button in the input row (done/total + busy pulse) opening StudioPlanDrawer (right-edge, progress bar, stepper); dock re-centres via padding on a full-width flex row (never fights Framer's transform). (2) earlier-messages panel bubbles fully opaque (were bg-background/95 + opacity-80 → preview bled through the text). (3) /motionize: PlanGlyph (traced build-plan glyph, dark+light palettes, centre-out reveal, SVG glow + fog) for the empty plan; travelling-dot + shimmer-skeleton wait state; spring/scale switch transitions; streaming perf — memoised message bodies (past turns no longer re-parse markdown on every stream tick), rAF chase at 45ms commits with word-boundary snapping (was 16ms char-by-char, re-parsing remark+rehype 60×/s).
@@ -1018,6 +1036,18 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### athena-p4-p1 — bench follow-through: constitution v44 + P4 routing + P1 partition core — session fable-5
+- Started+completed 2026-07-14. Merged to master `d6065177e` (ed443a4b3 constitution v44; 31c715589 P4 routing + P1 backend; f3b8db2bd P1 frontend partition). Bench campaign itself: corpus v2 a61dae780, isolation e32c0003f, report b93e98ed9 (s-high-r 96.5% > o-base 93.9%).
+- Shipped: constitution v44 (multi-op + one-line OP discipline; memory-honesty — Opus-only "already in your notes" hallucination); model_routing.rs (main=Opus@low, micro=Sonnet-5@low replacing pinned sonnet-4-6, aside=Sonnet-5@med reserved for P3); P1 backend (per-conversation AUTONOMOUS_GENS, job conversation_id, scoped transcript wipe, kill_on_drop on chat turns); P1 frontend (liveTurns slices + active-mirror flat fields, stream routing by sessionId, per-thread queue/interrupt, orb aggregate, 5 new store tests).
+- Gates: cargo check clean; companion Rust tests 246/247 (1 pre-existing dev_mode context-map failure — inputs unchanged by this diff), bench 6/6; tsc clean; vitest 2133/2137 (4 pre-existing/flaky: useDesignReviews+ReadinessGapPopover per prior ledger, webview2/observability load-sensitive under 3 parallel suites); eslint clean on touched files. NOT live-verified in the running app (needs dev restart; parallel sessions own the live instance).
+- Note: full-suite runs on this box while 3 sessions share it are noisy — filtered per-module runs + branch-point diffing is how the 19 unrelated Rust failures were triaged.
+
+### athena-bench-b0b1 — Live Conversation Layer Track B (B0 seams + B1 bench harness) — session fable-5
+- Started+completed 2026-07-14. Merged to master `d240f8fd2` (54f7e3607 B0 session seams; c0333c722 athena-bench-validate bin; 2a76eb20a harness + 38-scenario corpus). Plan doc committed earlier as 8106f913f.
+- Shipped: PERSONAS_ATHENA_MODEL/EFFORT per-spawn overrides (chat turns only; ledger stays in sync) + PERSONAS_DUMP_PROMPT=1 prompt snapshots; `bench::athena_validate` + `athena-bench-validate` bin (production dispatcher over throwaway migrated user DB, 4 unit tests); `scripts/test/athena-model-bench.mjs` (6-cell matrix, JSONL resume, --report with gate verdicts) + fixtures. Gates: cargo test green, clippy clean on new files, dry-run 38 schema-OK + 5/5 sample round-trips.
+- Gotchas: (1) `cargo <cmd> | tail` masks failures — pipeline exit code is tail's; check the real exit code. (2) default (no-feature) builds fail in tauri-build capability resolution — always `--features desktop`. (3) `git worktree remove` can fail on Windows "Filename too long" over cargo target dirs — `Remove-Item -LiteralPath '\\?\<abs path>' -Recurse -Force` then `git worktree prune`. (4) write_fact requires non-empty `sources` episode list — production validation caught the bench's own fixture.
+- Worktree removed, branch deleted. Next: run `--cell o-base` baseline (needs live subscription session), then remaining cells + report.
 
 ### monitor-consolidation — fold Teams' six panes into the TitleBar Monitor — session opus-4-8[1m]
 - **STATUS: COMPLETE (P0–P6).** Final commit 0cd6a145b. `docs/plans/monitor-consolidation.md` is marked COMPLETE.

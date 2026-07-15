@@ -79,5 +79,9 @@
   "source_filter_no_regex": "केवल अंत में * समर्थित है (कोई regex, कोई ? वाइल्डकार्ड नहीं)",
   "source_filter_no_source_id": "यदि source_filter सेट है लेकिन इवेंट में source_id नहीं है, तो फ़िल्टर मेल नहीं खाएगा",
   "source_filter_allowed_chars": "अनुमत वर्ण: अक्षर, संख्या, _, -, :, ., और *",
-  "source_filter_max_length": "अधिकतम 120 वर्ण, अधिकतम 3 वाइल्डकार्ड वर्ण"
+  "source_filter_max_length": "अधिकतम 120 वर्ण, अधिकतम 3 वाइल्डकार्ड वर्ण",
+  "signal_raised_description": "एक सेंसर (मानक, तत्परता, LLM लागत, त्रुटियाँ, KPI) ने एक नई खोज दर्ज की।",
+  "signal_raised_label": "खोज दर्ज हुई",
+  "signal_verified_description": "समाधान की गई खोज को फिर से मापा गया — क्या आंकड़ा वाकई बेहतर हुआ?",
+  "signal_verified_label": "खोज सत्यापित"
 }

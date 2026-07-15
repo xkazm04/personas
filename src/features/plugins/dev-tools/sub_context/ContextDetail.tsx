@@ -1,6 +1,8 @@
 import { useMemo, useState, type FormEvent } from 'react';
+import { motion } from 'framer-motion';
 import { X, File, ArrowUpRight, Target, ListChecks, Gauge, Plus, Pin, PinOff, Layers } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from '@/stores/systemStore';
 import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -21,6 +23,7 @@ export default function ContextDetail({
   useCases?: DevUseCase[];
 }) {
   const { t, tx } = useTranslation();
+  const reduced = useReducedMotion();
   const goals = useSystemStore((s) => s.goals);
   const tasks = useSystemStore((s) => s.tasks);
   const kpis = useSystemStore((s) => s.kpis);
@@ -97,11 +100,24 @@ export default function ContextDetail({
   };
 
   return (
-    <div
-      className="animate-fade-slide-in w-80 flex-shrink-0 border-l border-primary/10 pl-5 overflow-y-auto"
+    // `sticky top-0 self-start` is what keeps the panel's head in view. The page
+    // body (ContentLayout's ContentBody) is the scroll container, so a plain
+    // flex sibling scrolls away with the board — click a context near the bottom
+    // of a 260-row map and the panel's header ends up far above the fold. Pinned
+    // to the top of that scroller, the header is always where the user is
+    // looking, and the panel scrolls its own overflow instead of the page's.
+    <motion.aside
+      key="context-detail"
+      initial={reduced ? false : { opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={reduced ? { opacity: 0 } : { opacity: 0, x: 20 }}
+      transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34, mass: 0.7 }}
+      className="w-80 flex-shrink-0 self-start sticky top-0 max-h-[calc(100dvh-12rem)] flex flex-col border-l border-primary/10 pl-5"
+      aria-label={ctx.name}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="typo-section-title flex items-center gap-1.5">
+      {/* Header — outside the scroll area, so it never leaves. */}
+      <div className="flex items-center justify-between pb-3 shrink-0">
+        <h3 className="typo-section-title flex items-center gap-1.5 min-w-0">
           {ctx.pinned && <Pin className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30 shrink-0" />}
           <span className="truncate">{ctx.name}</span>
         </h3>
@@ -126,6 +142,15 @@ export default function ContextDetail({
         </div>
       </div>
 
+      {/* Body — the only thing that scrolls. Keyed on the context id so
+          switching selection cross-fades the contents instead of snapping. */}
+      <motion.div
+        key={ctx.id}
+        initial={reduced ? false : { opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={reduced ? { duration: 0 } : { duration: 0.18, ease: 'easeOut' }}
+        className="flex-1 min-h-0 overflow-y-auto pr-1"
+      >
       <p className="text-md text-foreground mb-4">{ctx.description}</p>
 
       {/* Use cases slicing through this context — the behavioral layer above the
@@ -348,6 +373,7 @@ export default function ContextDetail({
           </div>
         </div>
       )}
-    </div>
+      </motion.div>
+    </motion.aside>
   );
 }

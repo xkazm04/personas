@@ -3,6 +3,7 @@ import { Map as MapIcon, Plus, Search, RefreshCw, CalendarClock } from 'lucide-r
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { planWeeklyContextScan } from '@/api/systemOps';
 import type { Event } from '@tauri-apps/api/event';
+import { AnimatePresence } from 'framer-motion';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { EventName } from '@/lib/eventRegistry';
@@ -23,11 +24,27 @@ import { parseJsonArray } from './contextMapTypes';
 import ScanOverlay from './ScanOverlay';
 import ContextDetail from './ContextDetail';
 import ContextLedger from './ContextLedger';
+import { useContextRuntime } from './useContextRuntime';
+import ContextGroupRowsStats from './ContextGroupRowsStats';
 import type { ContextLedgerProps } from './contextLedgerShared';
+import { buildKpiStatusByContext } from './contextKpiStatus';
 import { useUseCases } from './useUseCases';
+import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+
+// PROTOTYPE (/prototype round 2): the Context Map's layout A/B. `crosstab` is
+// the shipped ledger (contexts × features); the two group-row variants lay one
+// group per row with its contexts inline, tinted by KPI health.
+// The two surviving layouts, kept side by side deliberately: Cross-tab reads the
+// map as contexts × features; Roster+ reads it as groups of contexts tinted by
+// KPI health. They answer different questions, so both stay.
+type ContextView = 'crosstab' | 'roster-stats';
+const VIEW_TABS: SegmentedTab<ContextView>[] = [
+  { id: 'crosstab', label: 'Cross-tab' },
+  { id: 'roster-stats', label: 'Roster+' },
+];
 
 // ---------------------------------------------------------------------------
 // Completion handler — shared by event listener + resync polling.
@@ -487,6 +504,11 @@ export default function ContextMapPage() {
   // on the board — the one interaction that makes the layer legible.
   const useCaseState = useUseCases(activeProjectId ?? null);
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
+  const [contextView, setContextView] = useState<ContextView>('crosstab');
+
+  // contextId → worst-wins KPI health. "No KPIs" and "KPIs but unmeasured" both
+  // resolve to neutral — an unmeasured context has earned no colour.
+  const kpiStatusByContext = useMemo(() => buildKpiStatusByContext(storeKpis), [storeKpis]);
   // A selection that no longer exists (rejected, or the project switched) must
   // not keep a column highlighted.
   useEffect(() => {
@@ -504,6 +526,15 @@ export default function ContextMapPage() {
     return times.length ? times.reduce((a, b) => (a > b ? a : b)) : null;
   }, [storeGroups]);
 
+  // Runtime signal (findings loop 1A): LLM spend and unresolved Sentry errors,
+  // projected onto contexts. Lazy + failure-tolerant — an unwired project gets
+  // empty maps and the ledger renders exactly as it always did.
+  const flatContexts = useMemo(
+    () => groups.flatMap((g) => g.contexts.map((c) => ({ id: c.id, filePaths: c.filePaths }))),
+    [groups],
+  );
+  const runtime = useContextRuntime(activeProject, useCaseState.active, flatContexts);
+
   // Everything the ledger renders from — bundled so the view stays pure and the
   // page keeps owning the scan/store orchestration.
   const ledgerProps: ContextLedgerProps = {
@@ -516,6 +547,9 @@ export default function ContextMapPage() {
     goalCoverageByContext,
     ideaCoverageByContext,
     kpiCoverageByContext,
+    kpiStatusByContext,
+    costByContext: runtime.costByContext,
+    errorsByContext: runtime.errorsByContext,
     hasMap: hasContexts,
     onScanContext: handleScanContext,
     scanningContextId,
@@ -556,18 +590,40 @@ export default function ContextMapPage() {
           )}
         </ActionRow>
 
-        <div className="flex gap-0 min-h-0 flex-1">
-          <ContextLedger {...ledgerProps} />
-
-          {selectedCtx && (
-            <ContextDetail
-              ctx={selectedCtx}
-              onClose={() => setSelectedCtxId(null)}
-              useCases={useCaseState.useCases.filter(
-                (u) => u.status !== 'archived' && u.context_ids.includes(selectedCtx.id),
-              )}
+        {/* Layout switcher — the two views coexist; see VIEW_TABS. */}
+        {hasContexts && (
+          <div className="mb-2">
+            <SegmentedTabs
+              tabs={VIEW_TABS}
+              activeTab={contextView}
+              onTabChange={setContextView}
+              variant="segment"
+              size="sm"
+              fullWidth={false}
+              ariaLabel="Context view"
             />
+          </div>
+        )}
+
+        <div className="flex gap-0 min-h-0 flex-1">
+          {contextView === 'crosstab' ? (
+            <ContextLedger {...ledgerProps} />
+          ) : (
+            <ContextGroupRowsStats {...ledgerProps} />
           )}
+
+          {/* AnimatePresence so the drawer can play an exit, not just vanish. */}
+          <AnimatePresence>
+            {selectedCtx && (
+              <ContextDetail
+                ctx={selectedCtx}
+                onClose={() => setSelectedCtxId(null)}
+                useCases={useCaseState.useCases.filter(
+                  (u) => u.status !== 'archived' && u.context_ids.includes(selectedCtx.id),
+                )}
+              />
+            )}
+          </AnimatePresence>
         </div>
       </ContentBody>
 

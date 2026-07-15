@@ -11,7 +11,10 @@ import { useCompanionStore } from './companionStore';
  */
 export function QueuedMessages() {
   const { t } = useTranslation();
+  // The flat mirror = the ACTIVE conversation's queue; removals target the
+  // same conversation the strip is showing.
   const queued = useCompanionStore((s) => s.queuedMessages);
+  const activeConversationId = useCompanionStore((s) => s.activeConversationId);
   const remove = useCompanionStore((s) => s.removeQueuedMessage);
   if (queued.length === 0) return null;
 
@@ -34,7 +37,7 @@ export function QueuedMessages() {
           <span className="shrink-0 text-foreground">{t.plugins.companion.queued_badge}</span>
           <button
             type="button"
-            onClick={() => remove(m.id)}
+            onClick={() => remove(activeConversationId, m.id)}
             className="shrink-0 text-foreground hover:text-foreground focus-ring rounded-interactive"
             aria-label={t.plugins.companion.queued_remove}
           >

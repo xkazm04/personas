@@ -11,13 +11,15 @@
  * All user-facing copy is i18n'd via `t.plugins.dev_tools.llm_*`.
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, RefreshCw, AlertCircle, Plug, Clock, Layers } from 'lucide-react';
+import { BarChart3, RefreshCw, AlertCircle, Plug, Clock, Layers, Plus } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 import { updateProject } from '@/api/devTools/devTools';
-import { listUseCases } from '@/api/devTools/useCases';
+import { listUseCases, createUseCase } from '@/api/devTools/useCases';
 import { slugifyUseCase } from '@/lib/useCaseSlug';
 import { silentCatch } from '@/lib/silentCatch';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
@@ -116,32 +118,75 @@ export default function LlmOverviewPage() {
   const data = useLlmPinpoints();
   const { activeProject, state, pinpoints, error, cred, timeWindow, setTimeWindow, reload } = data;
   const [obsTab, setObsTab] = useState<ObsTab>('llm');
+  const addToast = useToastStore((s) => s.addToast);
 
   // The declared use-case vocabulary for this project. `dev_use_cases.slug` is
   // the join key an observed call-site name normalizes to, so an instrumented
   // call site either maps to a use case the project has named, or it doesn't —
   // and that gap is worth seeing.
+  //
+  // `useCaseSlugs` holds the ACTIVE vocabulary (slug → name) and drives the link
+  // icon. `knownSlugs` holds EVERY slug regardless of status — a name that's
+  // already proposed or archived must not be proposable again (dedup, §2 1B).
   const [useCaseSlugs, setUseCaseSlugs] = useState<Map<string, string>>(new Map());
+  const [knownSlugs, setKnownSlugs] = useState<Set<string>>(new Set());
+  const [proposing, setProposing] = useState<Set<string>>(new Set());
+
+  const loadUseCases = useCallback((projectId: string) => {
+    void listUseCases(projectId)
+      .then((rows) => {
+        setUseCaseSlugs(new Map(rows.filter((u) => u.status === 'active').map((u) => [u.slug, u.name])));
+        setKnownSlugs(new Set(rows.map((u) => u.slug)));
+      })
+      .catch(silentCatch('LlmOverviewPage:listUseCases'));
+  }, []);
+
   useEffect(() => {
     if (!activeProject) {
       setUseCaseSlugs(new Map());
+      setKnownSlugs(new Set());
       return;
     }
-    let cancelled = false;
-    void listUseCases(activeProject.id, 'active')
-      .then((rows) => {
-        if (!cancelled) setUseCaseSlugs(new Map(rows.map((u) => [u.slug, u.name])));
-      })
-      .catch(silentCatch('LlmOverviewPage:listUseCases'));
-    return () => {
-      cancelled = true;
-    };
-  }, [activeProject]);
+    loadUseCases(activeProject.id);
+  }, [activeProject, loadUseCases]);
 
   const matchUseCase = useCallback(
     (name: string | null): string | null =>
       name ? (useCaseSlugs.get(slugifyUseCase(name)) ?? null) : null,
     [useCaseSlugs],
+  );
+
+  // Promote an observed-but-unmapped call site into a `proposed` use case. It
+  // lands in the Context Map's proposal strip, where accept/reject already
+  // works — runtime telemetry authoring the business map.
+  const projectId = activeProject?.id;
+  const proposeUseCase = useCallback(
+    async (name: string) => {
+      if (!projectId) return;
+      const slug = slugifyUseCase(name);
+      setProposing((s) => new Set(s).add(slug));
+      try {
+        await createUseCase({
+          projectId,
+          name,
+          kind: 'capability',
+          status: 'proposed',
+          createdBy: 'llm_telemetry',
+          rationale: `Observed as an LLM call-site label in ${cred?.serviceType ?? 'telemetry'} with no matching use case.`,
+        });
+        addToast(tx(dt.llm_propose_done, { name }), 'success');
+        loadUseCases(projectId);
+      } catch (e) {
+        toastCatch('features/plugins/dev-tools/sub_llm_overview/propose')(e);
+      } finally {
+        setProposing((s) => {
+          const n = new Set(s);
+          n.delete(slug);
+          return n;
+        });
+      }
+    },
+    [projectId, cred, dt, tx, loadUseCases, addToast],
   );
 
   const mappedCount = useMemo(
@@ -161,14 +206,33 @@ export default function LlmOverviewPage() {
           if (!r.useCaseName) {
             return <span className="text-foreground/40 italic">{dt.llm_unnamed}</span>;
           }
+          const name = r.useCaseName;
+          const slug = slugifyUseCase(name);
+          // Named, but no use case answers to it — offer to propose it. Already
+          // known in any status (proposed/archived) → no affordance, no dupes.
+          const proposable = !matched && !knownSlugs.has(slug);
+          const busy = proposing.has(slug);
           return (
             <span className="flex items-center gap-1.5 min-w-0">
-              <span className="text-foreground truncate">{r.useCaseName}</span>
+              <span className="text-foreground truncate">{name}</span>
               {matched && (
                 <Layers
                   className="w-3 h-3 shrink-0 text-sky-400/80"
                   aria-label={tx(dt.llm_usecase_linked, { name: matched })}
                 />
+              )}
+              {proposable && (
+                <Tooltip content={dt.llm_propose_tooltip}>
+                  <button
+                    type="button"
+                    onClick={() => void proposeUseCase(name)}
+                    disabled={busy}
+                    aria-label={tx(dt.llm_propose_aria, { name })}
+                    className="shrink-0 grid place-items-center w-4 h-4 rounded-full border border-primary/20 text-foreground/40 hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition disabled:opacity-40 focus-ring"
+                  >
+                    {busy ? <LoadingSpinner size="xs" /> : <Plus className="w-2.5 h-2.5" />}
+                  </button>
+                </Tooltip>
               )}
             </span>
           );
@@ -221,7 +285,7 @@ export default function LlmOverviewPage() {
         ),
       },
     ],
-    [dt, tx, matchUseCase],
+    [dt, tx, matchUseCase, knownSlugs, proposing, proposeUseCase],
   );
 
   return (

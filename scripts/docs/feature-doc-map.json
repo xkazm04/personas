@@ -424,7 +424,7 @@
       ]
     },
     {
-      "doc": "docs/features/fleet.md",
+      "doc": "docs/features/plugins/dev tools/fleet.md",
       "sourceGlobs": [
         "src/features/plugins/fleet/**",
         "src-tauri/src/commands/fleet/**",
@@ -583,7 +583,7 @@
       ]
     },
     {
-      "doc": "docs/features/deliberations.md",
+      "doc": "docs/features/teams/deliberations.md",
       "sourceGlobs": [
         "src/features/teams/sub_deliberations/**",
         "src-tauri/src/commands/teams/deliberations.rs",

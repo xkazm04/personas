@@ -6,7 +6,8 @@
 // the pending-proposal triage strip — kept out of the view so each is testable
 // and extractable on its own.
 import { useState, type ReactNode } from 'react';
-import { Check, FileCode2, Info, Layers, Lightbulb, Wrench, Gauge, Target, X } from 'lucide-react';
+import { AlertTriangle, Check, DollarSign, FileCode2, Info, Layers, Lightbulb, Wrench, Gauge, Target, X } from 'lucide-react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -18,6 +19,7 @@ import type { Translations } from '@/i18n/en';
 
 import UseCaseDetailModal from './UseCaseDetailModal';
 import { kindMeta, KIND_TEXT } from './useCaseKind';
+import type { ContextKpiStatus } from './contextKpiStatus';
 import type { ContextGroup } from './contextMapTypes';
 import type { UseCasesState } from './useUseCases';
 
@@ -38,6 +40,12 @@ export interface ContextLedgerProps {
   goalCoverageByContext: Map<string, GoalCoverage>;
   ideaCoverageByContext: Map<string, number>;
   kpiCoverageByContext: Map<string, number>;
+  /** Runtime joins (findings loop 1A) — empty maps when no tracer / Sentry wired. */
+  costByContext: Map<string, number>;
+  errorsByContext: Map<string, number>;
+  /** contextId → worst-wins KPI health; absent = no KPIs (neutral). Drives the
+   *  group-row variants' tinting. */
+  kpiStatusByContext: Map<string, ContextKpiStatus>;
   hasMap: boolean;
   /** Run the idea scanner scoped to one context (the per-row ✨ action). */
   onScanContext: (contextId: string) => void;
@@ -122,6 +130,8 @@ export function ContextCoverage({
   firstGoalId,
   ideaCount,
   kpiCount,
+  costUsd,
+  errorCount,
   t,
 }: {
   fileCount: number;
@@ -130,6 +140,10 @@ export function ContextCoverage({
   firstGoalId?: string;
   ideaCount: number;
   kpiCount: number;
+  /** 30d LLM spend flowing through this context. Undefined = no tracer wired. */
+  costUsd?: number;
+  /** Unresolved Sentry events landing on this context's files. */
+  errorCount?: number;
   t: TDevTools;
 }) {
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
@@ -140,6 +154,7 @@ export function ContextCoverage({
     openGoalsBoard();
   };
   const jumpToIdeas = () => setDevToolsTab('idea-triage');
+  const jumpToErrors = () => setDevToolsTab('overview');
 
   return (
     <span className="inline-flex items-center gap-2.5">
@@ -162,6 +177,28 @@ export function ContextCoverage({
         jumpTitle={t.context_idea_coverage_tooltip}
       />
       <CoverageChip icon={<Gauge className="w-3 h-3" />} count={kpiCount} label="KPIs" stem="rose" />
+
+      {/* Runtime (only when the sensor is actually wired — an unwired project
+          shows exactly the chips it always did). */}
+      {costUsd !== undefined && costUsd > 0 && (
+        <span
+          className="inline-flex items-center gap-1 tabular-nums typo-caption text-amber-300/90"
+          title={t.ctx_cost_tooltip}
+        >
+          <DollarSign className="w-3 h-3" />
+          <Numeric value={costUsd} precision={costUsd >= 1 ? 2 : 3} />
+        </span>
+      )}
+      {errorCount !== undefined && errorCount > 0 && (
+        <CoverageChip
+          icon={<AlertTriangle className="w-3 h-3" />}
+          count={errorCount}
+          label={t.ctx_errors_label}
+          stem="rose"
+          onJump={jumpToErrors}
+          jumpTitle={t.ctx_errors_tooltip}
+        />
+      )}
     </span>
   );
 }

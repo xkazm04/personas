@@ -79,5 +79,9 @@
   "source_filter_no_regex": "Hanya * di belakang yang didukung (tidak ada regex, tidak ada wildcard ?)",
   "source_filter_no_source_id": "Jika source_filter diatur tetapi peristiwa tidak memiliki source_id, filter tidak akan cocok",
   "source_filter_allowed_chars": "Karakter yang diizinkan: huruf, angka, _, -, :, ., dan *",
-  "source_filter_max_length": "Maksimal 120 karakter, maksimal 3 karakter wildcard"
+  "source_filter_max_length": "Maksimal 120 karakter, maksimal 3 karakter wildcard",
+  "signal_raised_description": "Sensor (standar, kesiapan, biaya LLM, error, KPI) mengangkat temuan baru.",
+  "signal_raised_label": "Temuan diangkat",
+  "signal_verified_description": "Temuan yang sudah dirilis diukur ulang — apakah angkanya benar-benar berubah?",
+  "signal_verified_label": "Temuan terverifikasi"
 }
