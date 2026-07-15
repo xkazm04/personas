@@ -139,6 +139,18 @@ features, KPIs (incl. a user-rating kind), findings with verdicts, costs.
 Then consolidate per `/prototype` rules; only after a winner exists do we
 discuss real-data wiring and the IA moves in §2.5.
 
+**Status (2026-07-15, R10):** the prototype rounds resolved the design —
+**Focus** won the project cockpit (R6), **Compare** won the portfolio wall
+(R7), R8 absorbed Passport readability (type up, brand icons, segmented level
+bars, upgrade popovers), R9 added the Overview cover-grid with motion
+recomposition + real Fleet dispatch (dedup-gated) from improve actions.
+**R10 migrated the wall design into the REAL Factory** (`ProjectsPassportWall`
+rewritten over `passportInk.tsx`; Overview = default first layer; all improve
+machinery preserved; feature-gap crosscheck in the commit). Still pending:
+wiring the second layer (per-project Focus context/KPI cockpit) to real data,
+fine-tuning the Overview tile's on-click quick function, and the dispatch-flow
+round (R3 in the table above).
+
 **Open questions the rounds must answer:** do goals live *inside* dimensions or
 above them? · is user rating a KPI kind or a separate signal (mock as KPI kind
 first)? · how does the half-done use-case→**Features** rename land in the
