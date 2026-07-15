@@ -1,16 +1,12 @@
 // Project Cockpit — /prototype lab bench (docs/plans/dev-tools-cx-redesign.md §3).
 //
-// ROUND 7. Focus WON R6 and is consolidated as the project-level cockpit (Cards
-// removed). The bench grows the layer ABOVE: the inter-project PORTFOLIO wall.
-// Three variants, all reading the SAME three mock passports through the SAME
-// row spec as Factory's production wall:
-//   • Passport (ref) — the production ProjectsPassportWall, unmodified: the
-//     baseline every restyle is judged against.
-//   • Ledger  — projects as stacked Focus row boxes (scan down the register).
-//   • Compare — the passport's side-by-side columns in Focus ink.
-// Navigation hierarchy: Portfolio → project cockpit. A project title in any
-// wall variant is the door into Focus; the new breadcrumb carries the way back
-// AND a sibling switcher on the leaf crumb (jump between projects in place).
+// ROUND 8. Compare WON R7 (Ledger removed). This round absorbs the production
+// Passport wall's readability concepts into Compare per the verdict: larger
+// typography, brand icons for tools/stack (techIcons resolver, names kept
+// visible), segmented level bars on level-based rows ("which level was
+// reached"), and the upgrade mechanism on the majority of rows (hover gear →
+// level-ladder popover with the row's action — write config / queue Claude
+// task / wire connector; mock, not wired). Passport (ref) stays as baseline.
 import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
 
@@ -22,14 +18,12 @@ import { MOCK_PROJECTS, type MockProject } from './cockpitMock';
 import { wallHealth } from './wallMock';
 import CockpitFocus from './CockpitFocus';
 import WallCompare from './WallCompare';
-import WallLedger from './WallLedger';
 import WallPassportRef from './WallPassportRef';
 
-type WallVariant = 'passport' | 'ledger' | 'compare';
+type WallVariant = 'passport' | 'compare';
 
 const WALL_TABS: SegmentedTab<WallVariant>[] = [
   { id: 'passport', label: 'Passport (ref)' },
-  { id: 'ledger', label: 'Ledger' },
   { id: 'compare', label: 'Compare' },
 ];
 
@@ -51,7 +45,7 @@ function crumbNote(project: MockProject): string {
 }
 
 export default function CockpitPrototypePage() {
-  const [wallVariant, setWallVariant] = useState<WallVariant>('ledger');
+  const [wallVariant, setWallVariant] = useState<WallVariant>('compare');
   const [projectId, setProjectId] = useState<string | null>(null);
   const project = projectId ? MOCK_PROJECTS.find((p) => p.id === projectId) ?? null : null;
 
@@ -60,8 +54,8 @@ export default function CockpitPrototypePage() {
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Portfolio → Cockpit — prototype R7"
-        subtitle="Focus consolidated as the cockpit · new layer above: inter-project wall (3 variants) · titles open the cockpit · breadcrumb navigates back + switches siblings"
+        title="Portfolio → Cockpit — prototype R8"
+        subtitle="Compare won R7 · Passport concepts absorbed: bigger type, tech icons, level bars, upgrade popovers on improvable rows · titles open the cockpit"
         fitWidth
         actions={
           project ? undefined : (
@@ -106,7 +100,6 @@ export default function CockpitPrototypePage() {
       ) : (
         <>
           {wallVariant === 'passport' && <WallPassportRef onOpenProject={setProjectId} />}
-          {wallVariant === 'ledger' && <WallLedger onOpenProject={setProjectId} />}
           {wallVariant === 'compare' && <WallCompare onOpenProject={setProjectId} />}
         </>
       )}

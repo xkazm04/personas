@@ -4,7 +4,12 @@
 // Wall all read THE SAME passports through THE SAME row spec (passportRows
 // SECTIONS) — identical functionality, different paint. Nothing here touches
 // the store or IPC.
-import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
+import {
+  CI_LABEL, CI_SCALE, EVALS_LABEL, EVALS_SCALE, GRAPH_LABEL, GRAPH_SCALE,
+  MIGRATIONS_LABEL, MIGRATIONS_SCALE, OBSERVABILITY_LABEL, OBSERVABILITY_SCALE,
+  SECURITY_LABEL, SECURITY_SCALE, TESTS_LABEL, TESTS_SCALE,
+  type AppPassport,
+} from '@/features/teams/sub_factory/passport/passportModel';
 
 import { MOCK_PROJECTS, gridFor, gridSummary, type MockProject } from './cockpitMock';
 
@@ -209,6 +214,51 @@ export function sortWall(entries: WallEntry[], sort: WallSort): WallEntry[] {
       return base.sort((a, b) => a.project.name.localeCompare(b.project.name));
   }
 }
+
+// -- R8: per-row metadata for the Focus wall — level ladders + upgrade kinds ------
+// Mirrors the production wall's IMPROVABLE_ROWS + its three action families
+// (standards config / Claude deploy task / connector wiring). A row with a
+// `ladder` renders a segmented level bar ("which level was reached"); a row
+// with `improve` grows the upgrade affordance (hover gear → ladder popover).
+
+export type ImproveKind = 'config' | 'task' | 'connector';
+
+export interface WallRowMeta {
+  /** Escalating level names, lowest first ("None" → …). */
+  ladder?: string[];
+  improve?: ImproveKind;
+}
+
+const WIRE_LADDER = ['Not wired', 'Wired'];
+
+export const ROW_META: Record<string, WallRowMeta> = {
+  // readiness for full automation
+  selfverify: { improve: 'config' },
+  context: { ladder: GRAPH_SCALE.map((l) => GRAPH_LABEL[l]), improve: 'task' },
+  instructions: { improve: 'task' },
+  skills: { improve: 'task' },
+  evals: { ladder: EVALS_SCALE.map((l) => EVALS_LABEL[l]), improve: 'task' },
+  aiflow: { improve: 'task' },
+  // production readiness
+  ci: { ladder: CI_SCALE.map((l) => CI_LABEL[l]), improve: 'config' },
+  tests: { ladder: TESTS_SCALE.map((l) => TESTS_LABEL[l]), improve: 'task' },
+  security: { ladder: SECURITY_SCALE.map((l) => SECURITY_LABEL[l]), improve: 'task' },
+  observability: { ladder: OBSERVABILITY_SCALE.map((l) => OBSERVABILITY_LABEL[l]), improve: 'task' },
+  migrations: { ladder: MIGRATIONS_SCALE.map((l) => MIGRATIONS_LABEL[l]), improve: 'task' },
+  // stack + tooling (connector wiring)
+  hosting: { ladder: WIRE_LADDER, improve: 'connector' },
+  errors: { ladder: WIRE_LADDER, improve: 'connector' },
+  logs: { ladder: WIRE_LADDER, improve: 'connector' },
+  metrics: { ladder: WIRE_LADDER, improve: 'connector' },
+  tracing: { ladder: WIRE_LADDER, improve: 'connector' },
+  llmtracking: { ladder: WIRE_LADDER, improve: 'connector' },
+};
+
+export const IMPROVE_ACTION_LABEL: Record<ImproveKind, string> = {
+  config: 'Write config',
+  task: 'Queue Claude task',
+  connector: 'Wire connector',
+};
 
 // -- the wall↔cockpit tie-in: each project's context-health digest ---------------
 

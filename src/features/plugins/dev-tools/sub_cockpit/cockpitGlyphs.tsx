@@ -210,6 +210,7 @@ import { ChevronRight, ChevronsUpDown } from 'lucide-react';
 
 import type { CellValue } from '@/features/teams/sub_factory/passport/passportRows';
 import { AUTOMATION_LABEL, PROD_BAND_LABEL } from '@/features/teams/sub_factory/passport/passportModel';
+import { resolveTechIcon } from '@/features/teams/sub_factory/passport/techIcons';
 
 /** The Focus SETUP hue (R6): unconfigured ≠ sick ≠ fine — it's an invitation. */
 export const SETUP_BLUE = '#60A5FA';
@@ -273,9 +274,55 @@ const INK_KIND_HEX: Record<InkKind, string> = {
   good: NEON.emerald, warn: NEON.amber, bad: NEON.red, setup: SETUP_BLUE, info: 'rgba(148,163,184,.85)',
 };
 
-/** Paints ONE normalized passport cell in Focus ink. Compact by design — the
- *  wall shows ~20 of these per project. */
-export function InkCellValue({ value }: { value: CellValue }) {
+/** R8 — the level bar (a Passport concept in Focus ink): one segment per step
+ *  ABOVE the floor level, filled to the level reached. "Which level" is visible
+ *  without reading — 3-of-5 lit reads instantly. */
+export function SegBar({ steps, reached, hue, faded }: {
+  /** Total climbable steps (scale length − 1). */
+  steps: number;
+  /** Steps already climbed (0 = floor / "None"). */
+  reached: number;
+  hue: string;
+  faded?: boolean;
+}) {
+  return (
+    <span className="flex gap-[3px]" role="img" aria-label={`level ${reached} of ${steps}`}>
+      {Array.from({ length: steps }, (_, i) => (
+        <span
+          key={i}
+          className="h-[4px] flex-1 rounded-full"
+          style={
+            i < reached
+              ? { background: hue, boxShadow: faded ? undefined : `0 0 4px ${hue}55` }
+              : { background: 'rgba(148,163,184,.14)' }
+          }
+        />
+      ))}
+    </span>
+  );
+}
+
+/** Tech label → official brand glyph (Passport's techIcons resolver) + the name
+ *  kept VISIBLE beside it — icons aid recognition, text keeps readability. */
+export function TechInk({ label, muted }: { label: string; muted?: boolean }) {
+  const match = resolveTechIcon(label);
+  return (
+    <span className="inline-flex items-center gap-1.5 min-w-0" title={label}>
+      {match && (
+        <svg width={15} height={15} viewBox="0 0 24 24" fill={match.icon.color ?? 'currentColor'} aria-hidden className="shrink-0">
+          <path d={match.icon.path} />
+        </svg>
+      )}
+      <span className={`typo-caption truncate ${muted ? 'text-foreground/70' : 'text-foreground/90'}`}>
+        {match?.residual ? `${match.icon.title} · ${match.residual}` : label}
+      </span>
+    </span>
+  );
+}
+
+/** Paints ONE normalized passport cell in Focus ink (R8: Passport's readability
+ *  concepts absorbed — larger type, brand icons, segmented level bars). */
+export function InkCellValue({ value, ladder }: { value: CellValue; ladder?: string[] }) {
   const kind = inkKindOf(value);
   const hue = INK_KIND_HEX[kind];
   switch (value.kind) {
@@ -284,53 +331,58 @@ export function InkCellValue({ value }: { value: CellValue }) {
       const label = value.kind === 'level' ? `${value.level} · ${AUTOMATION_LABEL[value.level]}` : PROD_BAND_LABEL[value.band];
       return (
         <span className="block min-w-0">
-          <span className="flex items-baseline gap-1.5">
-            <span className="text-[10.5px] font-medium truncate" style={{ color: hue }}>{label}</span>
-            <span className="text-[10px] tabular-nums text-foreground/40 shrink-0">{value.score}</span>
+          <span className="flex items-baseline gap-2">
+            <span className="typo-caption font-semibold truncate" style={{ color: hue }}>{label}</span>
+            <span className="text-[11px] tabular-nums text-foreground/45 shrink-0 ml-auto">{value.score}</span>
           </span>
-          <span className="block mt-1"><ScoreLine pct={value.score} hue={hue} /></span>
+          <span className="block mt-1.5"><ScoreLine pct={value.score} hue={hue} /></span>
         </span>
       );
     }
-    case 'ordinal':
+    case 'ordinal': {
+      const steps = ladder ? ladder.length - 1 : 0;
+      const reached = ladder ? Math.round(value.pos * steps) : 0;
       return (
         <span className="block min-w-0">
           <span className="flex items-baseline gap-1.5 min-w-0">
-            <span className="text-[10.5px] font-medium truncate" style={{ color: hue }}>{value.label}</span>
-            {value.sub && <span className="text-[10px] text-foreground/40 truncate">{value.sub}</span>}
+            <span className="typo-caption font-medium truncate" style={{ color: hue }}>{value.label}</span>
+            {value.sub && <span className="text-[11px] text-foreground/45 truncate">{value.sub}</span>}
+            {ladder && <span className="text-[11px] tabular-nums text-foreground/40 shrink-0 ml-auto">{reached}/{steps}</span>}
           </span>
-          <span className="block mt-1"><ScoreLine pct={value.pos * 100} hue={hue} /></span>
+          <span className="block mt-1.5">
+            {ladder
+              ? <SegBar steps={steps} reached={reached} hue={hue} />
+              : <ScoreLine pct={value.pos * 100} hue={hue} />}
+          </span>
         </span>
       );
+    }
     case 'present':
       return value.label ? (
-        <span className="text-[10.5px] font-medium text-foreground/85 truncate block">{value.label}</span>
+        <TechInk label={value.label} />
       ) : (
-        <span className="text-[10.5px] font-medium" style={{ color: SETUP_BLUE }}>set up →</span>
+        <span className="typo-caption font-medium" style={{ color: SETUP_BLUE }}>set up →</span>
       );
     case 'chips': {
-      if (value.items.length === 0) return <span className="text-[10.5px] font-medium" style={{ color: SETUP_BLUE }}>add →</span>;
-      const shown = value.items.slice(0, 2).join(' · ');
-      const more = value.items.length - 2;
+      if (value.items.length === 0) return <span className="typo-caption font-medium" style={{ color: SETUP_BLUE }}>add →</span>;
       return (
-        <span className="text-[10.5px] text-foreground/70 truncate block">
-          {shown}
-          {more > 0 && <span className="text-foreground/40"> +{more}</span>}
+        <span className="flex flex-wrap gap-x-3 gap-y-1 min-w-0">
+          {value.items.map((c) => <TechInk key={c} label={c} muted />)}
         </span>
       );
     }
     case 'pips':
       return (
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1.5">
           {value.items.map((p) => (
             <span
               key={p.label}
               title={`${p.label}: ${p.on ? 'yes' : 'no'}`}
-              className="w-1.5 h-1.5 rounded-full"
+              className="w-2 h-2 rounded-full"
               style={p.on ? { background: NEON.emerald } : { border: '1px solid rgba(148,163,184,.5)' }}
             />
           ))}
-          <span className="text-[10px] tabular-nums ml-0.5" style={{ color: hue }}>
+          <span className="text-[11px] tabular-nums ml-1" style={{ color: hue }}>
             {value.items.filter((p) => p.on).length}/{value.items.length}
           </span>
         </span>
@@ -339,10 +391,10 @@ export function InkCellValue({ value }: { value: CellValue }) {
       return (
         <span className="inline-flex items-center gap-1.5">
           <span
-            className="w-1.5 h-1.5 rounded-full"
+            className="w-2 h-2 rounded-full"
             style={value.on ? { background: NEON.emerald } : { border: `1px solid ${NEON.amber}88` }}
           />
-          <span className="text-[10.5px]" style={{ color: value.on ? 'rgba(148,163,184,.85)' : NEON.amber }}>{value.on ? 'yes' : 'no'}</span>
+          <span className="typo-caption" style={{ color: value.on ? 'rgba(148,163,184,.85)' : NEON.amber }}>{value.on ? 'yes' : 'no'}</span>
         </span>
       );
   }
