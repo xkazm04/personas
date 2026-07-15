@@ -4509,7 +4509,9 @@
       "filter_all_health": "جميع الحالات الصحية",
       "health_healthy": "سليم",
       "health_failing": "فاشل",
-      "health_untested": "غير مُختبر"
+      "health_untested": "غير مُختبر",
+      "health_unverifiable": "غير قابل للتحقق",
+      "health_unverifiable_tooltip": "لا يملك هذا الموصّل فحصًا مباشرًا — يتم تخزين بيانات الاعتماد لكن لا يمكن التحقق منها."
     },
     "foraging": {
       "no_credentials_found": "لم تُعثَر على بيانات اعتماد",

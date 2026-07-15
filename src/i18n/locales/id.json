@@ -4509,7 +4509,9 @@
       "filter_all_health": "Semua Kesehatan",
       "health_healthy": "Sehat",
       "health_failing": "Gagal",
-      "health_untested": "Belum Diuji"
+      "health_untested": "Belum Diuji",
+      "health_unverifiable": "Tidak dapat diverifikasi",
+      "health_unverifiable_tooltip": "Konektor ini tidak memiliki probe langsung — kredensial disimpan tetapi tidak dapat diverifikasi."
     },
     "foraging": {
       "no_credentials_found": "Tidak ada kredensial ditemukan",

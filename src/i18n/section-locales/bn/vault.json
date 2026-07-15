@@ -894,7 +894,9 @@
     "filter_all_health": "সব স্বাস্থ্য",
     "health_healthy": "সুস্থ",
     "health_failing": "ব্যর্থ",
-    "health_untested": "পরীক্ষিত নয়"
+    "health_untested": "পরীক্ষিত নয়",
+    "health_unverifiable": "যাচাই-অযোগ্য",
+    "health_unverifiable_tooltip": "এই সংযোগকারীর কোনো লাইভ প্রোব নেই — শংসাপত্র সংরক্ষণ করা হয়েছে কিন্তু যাচাই করা যায় না।"
   },
   "foraging": {
     "no_credentials_found": "কোনো ক্রেডেনশিয়াল পাওয়া যায়নি",

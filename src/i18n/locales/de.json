@@ -4509,7 +4509,9 @@
       "filter_all_health": "Alle Zustände",
       "health_healthy": "Gesund",
       "health_failing": "Fehlerhaft",
-      "health_untested": "Ungetestet"
+      "health_untested": "Ungetestet",
+      "health_unverifiable": "Nicht überprüfbar",
+      "health_unverifiable_tooltip": "Dieser Connector hat keine Live-Prüfung — die Anmeldedaten werden gespeichert, können aber nicht verifiziert werden."
     },
     "foraging": {
       "no_credentials_found": "Keine Zugangsdaten gefunden",

@@ -4754,6 +4754,8 @@ export type Translations = {
       filter_all: string;
       filter_all_health: string;
       health_healthy: string;
+      health_unverifiable: string;
+      health_unverifiable_tooltip: string;
       health_failing: string;
       health_untested: string;
     };

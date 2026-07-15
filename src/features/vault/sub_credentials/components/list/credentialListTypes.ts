@@ -1,12 +1,39 @@
 import { collectAllTags, getCredentialTags } from '@/features/vault/shared/utils/credentialTags';
 import { computeHealthScore } from '@/features/vault/shared/utils/credentialHealthScore';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 /** Well-known service names for quick-start buttons. Matched by connector `name`. */
 export const QUICK_START_SERVICES = ['openai', 'slack', 'github', 'linear'] as const;
 
-export type HealthFilter = 'all' | 'healthy' | 'failing' | 'untested';
+export type HealthFilter = 'all' | 'healthy' | 'unverifiable' | 'failing' | 'untested';
 export type SortKey = 'name' | 'type' | 'created' | 'last-used' | 'health';
+
+/**
+ * Three-valued health of a credential, mirroring the backend `HealthProbeState`
+ * (engine/healthcheck.rs):
+ * - `verified`     — a live probe ran and passed
+ * - `unverifiable` — the connector has no live probe; stored but not checkable
+ * - `failed`       — a live probe ran and failed
+ * - `untested`     — never probed
+ */
+export type HealthState = 'verified' | 'unverifiable' | 'failed' | 'untested';
+
+/**
+ * Read the typed health state from a credential. Prefers the persisted
+ * `healthcheck_last_state` token (written by the backend probe path); falls back
+ * to the legacy `healthcheck_last_success` boolean for credentials probed before
+ * the typed state landed. Both come from persisted metadata — no re-probe.
+ */
+export function readCredentialHealthState(cred: CredentialMetadata): HealthState {
+  const parsed = parseJsonOrDefault<Record<string, unknown> | null>(cred.metadata, null);
+  const token = parsed?.healthcheck_last_state;
+  if (token === 'verified' || token === 'unverifiable' || token === 'failed') {
+    return token;
+  }
+  if (cred.healthcheck_last_success === null) return 'untested';
+  return cred.healthcheck_last_success ? 'verified' : 'failed';
+}
 
 export function capitalize(s: string) {
   return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -16,6 +43,7 @@ export function healthFilterLabel(f: HealthFilter): string {
   switch (f) {
     case 'all': return 'All health';
     case 'healthy': return 'Healthy';
+    case 'unverifiable': return 'Unverifiable';
     case 'failing': return 'Failing';
     case 'untested': return 'Untested';
   }
@@ -103,12 +131,15 @@ export function filterAndSortCredentials(
     });
   }
 
-  // Health filter
+  // Health filter — three-valued so "Healthy" means genuinely verified, not
+  // merely "not failed" (which would sweep in unverifiable credentials).
   if (healthFilter !== 'all') {
     result = result.filter((cred) => {
-      if (healthFilter === 'untested') return cred.healthcheck_last_success === null;
-      if (healthFilter === 'healthy') return cred.healthcheck_last_success === true;
-      if (healthFilter === 'failing') return cred.healthcheck_last_success === false;
+      const state = readCredentialHealthState(cred);
+      if (healthFilter === 'untested') return state === 'untested';
+      if (healthFilter === 'healthy') return state === 'verified';
+      if (healthFilter === 'unverifiable') return state === 'unverifiable';
+      if (healthFilter === 'failing') return state === 'failed';
       return true;
     });
   }

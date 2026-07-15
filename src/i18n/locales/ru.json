@@ -4509,7 +4509,9 @@
       "filter_all_health": "Все состояния",
       "health_healthy": "В норме",
       "health_failing": "Ошибка",
-      "health_untested": "Не проверено"
+      "health_untested": "Не проверено",
+      "health_unverifiable": "Непроверяемо",
+      "health_unverifiable_tooltip": "У этого коннектора нет живой проверки — учётные данные сохранены, но их нельзя проверить."
     },
     "foraging": {
       "no_credentials_found": "Учётных данных не найдено",

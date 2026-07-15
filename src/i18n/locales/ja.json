@@ -4509,7 +4509,9 @@
       "filter_all_health": "すべてのヘルス",
       "health_healthy": "正常",
       "health_failing": "障害",
-      "health_untested": "未テスト"
+      "health_untested": "未テスト",
+      "health_unverifiable": "検証不可",
+      "health_unverifiable_tooltip": "このコネクタにはライブプローブがありません — 認証情報は保存されますが検証できません。"
     },
     "foraging": {
       "no_credentials_found": "認証情報が見つかりません",

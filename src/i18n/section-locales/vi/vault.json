@@ -894,7 +894,9 @@
     "filter_all_health": "Tất cả tình trạng",
     "health_healthy": "Tốt",
     "health_failing": "Lỗi",
-    "health_untested": "Chưa kiểm tra"
+    "health_untested": "Chưa kiểm tra",
+    "health_unverifiable": "Không thể xác minh",
+    "health_unverifiable_tooltip": "Trình kết nối này không có kiểm tra trực tiếp — thông tin xác thực được lưu nhưng không thể xác minh."
   },
   "foraging": {
     "no_credentials_found": "Không tìm thấy thông tin xác thực",

@@ -4509,7 +4509,9 @@
       "filter_all_health": "सभी स्वास्थ्य",
       "health_healthy": "स्वस्थ",
       "health_failing": "विफल",
-      "health_untested": "अपरीक्षित"
+      "health_untested": "अपरीक्षित",
+      "health_unverifiable": "असत्यापनीय",
+      "health_unverifiable_tooltip": "इस कनेक्टर में कोई लाइव प्रोब नहीं है — क्रेडेंशियल संग्रहीत हैं लेकिन सत्यापित नहीं किए जा सकते।"
     },
     "foraging": {
       "no_credentials_found": "कोई क्रेडेंशियल नहीं मिले",

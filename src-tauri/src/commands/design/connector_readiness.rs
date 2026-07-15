@@ -722,7 +722,20 @@ fn credential_is_usable(conn: &Connection, credential_id: &str) -> bool {
     if field_count == 0 {
         return false;
     }
-    // 2. The last healthcheck must not have failed.
+    // 2. The last healthcheck must not have FAILED.
+    //
+    // Gating semantics are deliberately three-valued (see `HealthProbeState` in
+    // engine/healthcheck.rs):
+    //   - failed        → `healthcheck_last_success == Some(false)` → BLOCKS (below)
+    //   - verified      → `Some(true)`  → allowed
+    //   - unverifiable  → `Some(true)`  → allowed  ← IMPORTANT
+    // "Unverifiable" (a connector with no live probe of any kind) is recorded as
+    // a non-error success, so it lands in the same `Some(true)` bucket as a
+    // genuinely verified probe and therefore does NOT block execution. The vault
+    // renders it distinctly (neutral, not a green check), but readiness must not
+    // treat "we couldn't probe it" as "it's broken" — that would wrongly gate
+    // every stored-only credential (SSH keys, connection strings, …). Only an
+    // explicit probe FAILURE demotes a credential here.
     let metadata: Option<String> = conn
         .query_row(
             "SELECT metadata FROM persona_credentials WHERE id = ?1",

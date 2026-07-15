@@ -4748,6 +4748,8 @@
       "filter_all": "All",
       "filter_all_health": "All Health",
       "health_healthy": "Healthy",
+      "health_unverifiable": "Unverifiable",
+      "health_unverifiable_tooltip": "This connector has no live probe — credentials are stored but can't be verified.",
       "health_failing": "Failing",
       "health_untested": "Untested"
     },

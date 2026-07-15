@@ -894,7 +894,9 @@
     "filter_all_health": "모든 건강 상태",
     "health_healthy": "정상",
     "health_failing": "오류",
-    "health_untested": "미테스트"
+    "health_untested": "미테스트",
+    "health_unverifiable": "검증 불가",
+    "health_unverifiable_tooltip": "이 커넥터에는 라이브 프로브가 없습니다 — 자격 증명은 저장되지만 검증할 수 없습니다."
   },
   "foraging": {
     "no_credentials_found": "자격 증명 없음",

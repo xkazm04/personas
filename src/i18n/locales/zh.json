@@ -4509,7 +4509,9 @@
       "filter_all_health": "所有健康状态",
       "health_healthy": "健康",
       "health_failing": "异常",
-      "health_untested": "未测试"
+      "health_untested": "未测试",
+      "health_unverifiable": "无法验证",
+      "health_unverifiable_tooltip": "此连接器没有实时探测 — 凭据已存储但无法验证。"
     },
     "foraging": {
       "no_credentials_found": "未找到凭据",

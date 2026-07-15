@@ -894,7 +894,9 @@
     "filter_all_health": "Vše — zdraví",
     "health_healthy": "Zdravé",
     "health_failing": "Selhávající",
-    "health_untested": "Netestované"
+    "health_untested": "Netestované",
+    "health_unverifiable": "Neověřitelné",
+    "health_unverifiable_tooltip": "Tento konektor nemá živou zkoušku — přihlašovací údaje jsou uloženy, ale nelze je ověřit."
   },
   "foraging": {
     "no_credentials_found": "Nenalezeny žádné přihlašovací údaje",

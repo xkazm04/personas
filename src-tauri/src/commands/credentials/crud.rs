@@ -104,6 +104,11 @@ pub fn create_credential(
                     ) {
                         tracing::warn!(credential_id = %credential_id, error = %e, "Failed to persist post-create healthcheck metadata");
                     }
+                    crate::engine::healthcheck::persist_probe_state(
+                        &pool,
+                        &credential_id,
+                        result.state,
+                    );
                 }
                 Err(e) => {
                     tracing::warn!(credential_id = %credential_id, error = %e, "Post-create healthcheck failed");
@@ -350,6 +355,9 @@ pub async fn healthcheck_credential(
         ) {
             tracing::warn!(credential_id = %credential_id, error = %e, "Failed to update healthcheck metadata");
         }
+        // Stamp the typed verified/unverifiable/failed distinction alongside the
+        // boolean so the vault list renders it without re-probing.
+        crate::engine::healthcheck::persist_probe_state(&state.db, &credential_id, result.state);
     }
 
     Ok(result)

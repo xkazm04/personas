@@ -894,7 +894,9 @@
     "filter_all_health": "Toda la salud",
     "health_healthy": "Saludable",
     "health_failing": "Con fallos",
-    "health_untested": "Sin probar"
+    "health_untested": "Sin probar",
+    "health_unverifiable": "No verificable",
+    "health_unverifiable_tooltip": "Este conector no tiene una prueba en vivo: las credenciales se almacenan pero no se pueden verificar."
   },
   "foraging": {
     "no_credentials_found": "No se encontraron credenciales",
