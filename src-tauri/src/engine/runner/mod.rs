@@ -2938,6 +2938,57 @@ pub async fn run_execution(
         });
     }
 
+    // -- Pipeline Stage: FinalizeStatus (runner owns its terminal status) ---
+    // Historically the SUCCESS-path terminal DB write happened ONLY in the
+    // caller (`engine::handle_execution_result`). `run_execution` is invoked
+    // non-blocking, so a drop/panic between this function returning and the
+    // caller persisting left the row `running` forever (the boot sweep only
+    // mops it up reactively at the next launch). The error/cancel/abort paths
+    // already write in-runner; this closes the last gap so the runner owns a
+    // terminal status on EVERY path.
+    //
+    // We write the same status the caller writes absent output assertions
+    // (success → Completed, CLI-failure → Failed) with all result fields, via
+    // the status-guarded `if_not_final` write so a concurrent cancel is never
+    // clobbered (its `WHERE status = 'running'` guard skips a `cancelled` row).
+    // The caller then either (a) refines Completed → Incomplete via a
+    // `completed`-guarded CAS when an output assertion downgrades the run, or
+    // (b) re-runs its `persist_status_if_not_final` as an idempotent
+    // confirmation. Best-effort single shot — mirrors the existing in-runner
+    // error/cancel writes; the caller's retrying persist is the backstop
+    // whenever this handler DOES run.
+    {
+        let runner_terminal_status = if success {
+            ExecutionState::Completed
+        } else {
+            ExecutionState::Failed
+        };
+        let _ = exec_repo::update_status_if_not_final(
+            &pool,
+            &execution_id,
+            crate::db::models::UpdateExecutionStatus {
+                status: runner_terminal_status,
+                output_data: if assistant_text.is_empty() {
+                    None
+                } else {
+                    Some(assistant_text.clone())
+                },
+                error_message: error.clone(),
+                duration_ms: Some(duration_ms as i64),
+                log_file_path: Some(log_file_path.clone()),
+                execution_flows: execution_flows.clone(),
+                input_tokens: Some(metrics.input_tokens as i64),
+                output_tokens: Some(metrics.output_tokens as i64),
+                cost_usd: Some(metrics.cost_usd),
+                tool_steps: tool_steps_json.clone(),
+                claude_session_id: metrics.session_id.clone(),
+                execution_config: execution_config_json.clone(),
+                log_truncated,
+                business_outcome: parsed_business_outcome.clone(),
+            },
+        );
+    }
+
     ExecutionResult {
         success,
         output: if assistant_text.is_empty() {
