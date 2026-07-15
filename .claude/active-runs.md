@@ -129,6 +129,14 @@ materially edits the working tree should touch this file twice:
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
 
+### perfect-round8 — /perfect round 8: propose (3 contexts, 11 accepted) + build wave 8 (11/11 shipped) — session fable-5
+- Started: 2026-07-14. Status: COMPLETED 2026-07-15.
+- Shipped on master: f3980e346 (failover chain on current models — retired-404 ladder closed) · 7f597dbe9 (BYOM routing fires; compliance validation Error→Warning RATIFIED) · f7bbfc793 (runner owns terminal status — zombie window closed at source) · cbb747843 + 115981490 + bc55cb55a + b306192a4 (readiness reacts to credential mutation; live run-gate + real remediation surface, verification-hardfail semantics shift RATIFIED; team degraded-run chips + deliberation note) · 2c949070f + a661b7f9b + 4577a50eb (typed tool-result contract w/ 256KiB cap + audit error_kind; automation failure fidelity; live API errors match tester) · 84d9243ac (script_path canonical-root validation — SECURITY-review flagged) · 88e14263d (tool-runner panel mounted) · Director fixes 9e3583dfa + lint + docs.
+- Gates: cargo 160-warning baseline held (2 excursions caught+fixed), tsc ×4, vitest unions to 46/46, i18n strict ×3 (16,902 keys). Rust tests compile-verified (host loader issue; CI backstop).
+- Vault: wave-8 records complete; next = propose round 9 (agent-lab / credential-vault / director-meta-persona); smoke after wave 9.
+
+
+
 ### perfect-smoke3 — /perfect smoke: live L2 verification of waves 6-7 — session fable-5
 - Started: 2026-07-14. Status: COMPLETED (5c1e15b4d).
 - THE FIND: F6's true root cause — #[requires(privileged)] macro doesn't register commands in PRIVILEGED_COMMANDS; sync privileged commands not on the static list fail closed on EVERY IPC call. get_provider_usage_stats broken since it shipped (56 log hits today); wave-6's get_health_bundle hit the same trap (22). Fixed by registering the provider trio + bundle; VERIFIED live post-watcher-rebuild: banner gone, zero validation failures since restart. Round-8 candidate: macro⊆list static guarantee (~40 more unlisted).
