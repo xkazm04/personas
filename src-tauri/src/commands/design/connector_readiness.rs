@@ -450,6 +450,25 @@ pub fn persona_declared_connectors(persona: &crate::db::models::Persona) -> Vec<
     names
 }
 
+/// Live readiness for the execution gate: the not-ready connectors a persona
+/// currently has, computed fresh from vault / probe state rather than trusting
+/// the cached `setup_status` column. Empty = safe to run.
+///
+/// The column is written only at adopt / promote / credential-mutation
+/// (Direction 1) — any future writer that forgets to recompute re-introduces
+/// staleness. Gating on this live check makes the run gate itself honest: a
+/// `ready` column with an actually-missing credential is blocked, and a
+/// `needs_credentials` column whose connectors are now fine is allowed.
+/// Bounded to this persona's declared connector set (one resolver pass; each
+/// Credential connector runs a handful of indexed local-SQLite lookups).
+pub fn persona_live_blockers(
+    conn: &Connection,
+    persona: &crate::db::models::Persona,
+) -> Vec<Readiness> {
+    let connectors = persona_declared_connectors(persona);
+    missing_connectors(conn, connectors.iter())
+}
+
 /// Recompute `setup_status` + `setup_detail` for ONE persona from CURRENT
 /// vault / credential / probe state and persist both columns.
 ///
@@ -1090,6 +1109,39 @@ mod tests {
     fn declared_connectors_empty_when_no_design_context() {
         let persona = crate::db::models::Persona::default();
         assert!(persona_declared_connectors(&persona).is_empty());
+    }
+
+    // --- Direction 3: gate on live readiness ---
+
+    #[test]
+    fn live_blockers_ignore_stale_column_and_reflect_actual_state() {
+        // A persona whose design_context declares `notion`. With no vault
+        // credential the live gate reports a blocker regardless of what the
+        // cached column says (stale-ready → blocked). Adding a usable
+        // credential clears it (stale-needs → allowed).
+        let conn = test_db();
+        def(&conn, "notion", r#"{"auth_type":"api_key"}"#);
+        let mut persona = crate::db::models::Persona::default();
+        persona.design_context =
+            Some(r#"{"useCases":[{"connectors":[{"name":"notion"}]}]}"#.to_string());
+
+        // Column claims ready, but the connector is actually missing → blocked.
+        persona.setup_status = "ready".to_string();
+        assert_eq!(persona_live_blockers(&conn, &persona).len(), 1);
+
+        // Column claims needs_credentials, but the connector is actually fine
+        // → no live blocker (the gate would allow the run).
+        cred(&conn, "notion-cred", "notion");
+        field(&conn, "notion-cred", "secret");
+        persona.setup_status = "needs_credentials".to_string();
+        assert!(persona_live_blockers(&conn, &persona).is_empty());
+    }
+
+    #[test]
+    fn live_blockers_empty_for_persona_with_no_connectors() {
+        let conn = test_db();
+        let persona = crate::db::models::Persona::default();
+        assert!(persona_live_blockers(&conn, &persona).is_empty());
     }
 
     #[test]

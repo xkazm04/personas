@@ -185,27 +185,49 @@ pub(crate) async fn execute_persona_inner(
     // 1. Get persona
     let mut persona = persona_repo::get_by_id(&state.db, &persona_id)?;
 
-    // 1a. Setup gate (2026-05-12). A persona whose adoption pre-flight flagged
-    // `setup_status='needs_credentials'` (C1) has unresolved connector
-    // bindings — running it produces misleading "value_delivered" output
-    // because the LLM falls back to free-form text generation from the
-    // prompt + inputData instead of actually calling the connector. Block
-    // the execution path so the gap surfaces as an explicit error instead
-    // of a false-positive run. Simulations bypass this gate so the user
-    // can still test a persona's prompt behavior before wiring creds.
-    if !is_simulation && persona.setup_status == "needs_credentials" {
-        // The remediation is connector-class-specific — a vault credential,
-        // a Dev Tools project, or an Obsidian vault — so the message points
-        // at the persona's Connections panel (which shows per-connector
-        // readiness) rather than asserting "Settings → Vault", which is
-        // wrong for builtin connectors like `codebase` or `obsidian_memory`.
-        return Err(AppError::Validation(format!(
-            "Persona '{}' is not ready to run — one or more of its connectors still need setup. \
-             Open the persona's Connections panel to see what each connector requires \
-             (an API credential, a Dev Tools project, or an Obsidian vault), then re-enable the persona. \
-             (You can run a simulation via `simulate_use_case` to test prompt behaviour without connectors configured.)",
-            persona.name
-        )));
+    // 1a. Setup gate (2026-05-12; Direction 3 2026-07-15 — gate on LIVE
+    // readiness). A persona with an unresolved connector binding produces
+    // misleading "value_delivered" output: the LLM falls back to free-form
+    // text generation from the prompt + inputData instead of actually calling
+    // the connector. Block the execution path so the gap surfaces as an
+    // explicit error instead of a false-positive run.
+    //
+    // The gate resolves readiness LIVE from vault/probe state rather than
+    // trusting the cached `setup_status` column — any writer that leaves the
+    // column stale (a deleted credential, a future code path) would otherwise
+    // let a blind run through, or block a persona whose connectors are now
+    // fine. The column stays for UI/team surfaces; the run gate is honest.
+    // Simulations bypass this gate so the user can still test prompt behaviour
+    // before wiring creds. Pool failure falls back to the cached column
+    // (fail-safe: never run blind because the DB was momentarily unavailable).
+    if !is_simulation {
+        let live_missing = match state.db.get() {
+            Ok(conn) => crate::commands::design::connector_readiness::persona_live_blockers(
+                &conn, &persona,
+            ),
+            Err(_) if persona.setup_status == "needs_credentials" => vec![
+                crate::commands::design::connector_readiness::Readiness::NeedsSetup {
+                    connector: String::new(),
+                    kind: crate::commands::design::connector_readiness::SetupKind::VaultCredential,
+                },
+            ],
+            Err(_) => Vec::new(),
+        };
+        if !live_missing.is_empty() {
+            // The remediation points at the global Connections section in the
+            // sidebar (Credentials / Catalog / Dependencies) — the real surface
+            // where credentials are managed. There is no per-persona
+            // "Connections panel". The class-specific hint (credential / Dev
+            // Tools project / Obsidian vault) covers builtin connectors like
+            // `codebase` or `obsidian_memory` that "Settings → Vault" misses.
+            return Err(AppError::Validation(format!(
+                "Persona '{}' is not ready to run — one or more of its connectors still need setup. \
+                 Open the Connections section in the sidebar to add the required API credential \
+                 (or configure a Dev Tools project / Obsidian vault for builtin connectors), then re-enable the persona. \
+                 (You can run a simulation via `simulate_use_case` to test prompt behaviour without connectors configured.)",
+                persona.name
+            )));
+        }
     }
 
     // 1b. Auto-expand use_case_id into input_data._use_case (Phase C1).
