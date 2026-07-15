@@ -1450,6 +1450,14 @@ export type Translations = {
       vr_metric_tool: string;
       vr_metric_quality: string;
       vr_metric_protocol: string;
+      vr_reconcile_title: string;
+      vr_reconcile_desc_one: string;
+      vr_reconcile_desc_other: string;
+      vr_reconcile_pinned_to: string;
+      vr_reconcile_now_follows: string;
+      vr_reconcile_clear_pin: string;
+      vr_reconcile_clear_all: string;
+      vr_reconcile_done: string;
       mode_arena: string;
       mode_arena_desc: string;
       mode_improve: string;

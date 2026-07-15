@@ -352,7 +352,8 @@ export interface LabSlice {
   fetchVersionEconomics: (personaId: string) => Promise<void>;
   /** Make (version, model) the persona's live config: roll the version's prompt
    *  in + tag it production, then switch the active model. */
-  activateVersion: (personaId: string, versionId: string, modelId: string, provider: string) => Promise<void>;
+  /** Returns true when the activation committed; false when it failed (error already reported/toasted). */
+  activateVersion: (personaId: string, versionId: string, modelId: string, provider: string) => Promise<boolean>;
 
   // Active progress hydration (restores progress after page refresh)
   hydrateActiveProgress: (personaId: string) => Promise<void>;
@@ -586,9 +587,11 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         await get().selectPersona(personaId);
         get().fetchVersions(personaId);
         get().fetchVersionRatings(personaId);
+        return true;
       } catch (err) {
         // Nothing was applied (transaction rolled back) — surface normally.
         reportError(err, "Failed to activate version", set, { action: "lab.activateVersion" });
+        return false;
       }
     },
 

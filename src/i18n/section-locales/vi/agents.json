@@ -852,7 +852,15 @@
     "eco_subtitle": "Mỗi model giải quyết eval bao nhiêu lần và mỗi lần thành công tốn bao nhiêu.",
     "eco_title": "Hiệu quả chi phí",
     "vr_col_tokens": "Token",
-    "vr_tokens_tooltip": "Trung bình {input} vào / {output} ra mỗi lần chạy"
+    "vr_tokens_tooltip": "Trung bình {input} vào / {output} ra mỗi lần chạy",
+    "vr_reconcile_clear_all": "Xóa tất cả ghim",
+    "vr_reconcile_clear_pin": "Xóa ghim",
+    "vr_reconcile_desc_one": "1 use case vẫn ghim một model khác với model bạn vừa đề bạt ({model}). Nó sẽ tiếp tục chạy trên model đã ghim cho đến khi bạn xóa ghim.",
+    "vr_reconcile_desc_other": "{count} use case vẫn ghim các model khác với model bạn vừa đề bạt ({model}). Chúng sẽ tiếp tục chạy trên các model đã ghim cho đến khi bạn xóa ghim.",
+    "vr_reconcile_done": "Xong",
+    "vr_reconcile_now_follows": "Hiện theo mặc định ({model})",
+    "vr_reconcile_pinned_to": "đã ghim vào {model}",
+    "vr_reconcile_title": "Điều chỉnh ghim model theo use case"
   },
   "design": {
     "select_agent": "Chọn tác nhân để bắt đầu phân tích thiết kế",

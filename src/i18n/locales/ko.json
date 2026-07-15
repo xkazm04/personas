@@ -1655,7 +1655,15 @@
       "eco_subtitle": "각 모델이 평가를 해결하는 빈도와 성공당 비용입니다.",
       "eco_title": "비용 효율",
       "vr_col_tokens": "토큰",
-      "vr_tokens_tooltip": "실행당 평균 입력 {input} / 출력 {output}"
+      "vr_tokens_tooltip": "실행당 평균 입력 {input} / 출력 {output}",
+      "vr_reconcile_clear_all": "핀 모두 해제",
+      "vr_reconcile_clear_pin": "핀 해제",
+      "vr_reconcile_desc_one": "1개의 사용 사례가 방금 승격한 모델({model})과 다른 모델을 여전히 핀으로 고정하고 있습니다. 핀을 해제할 때까지 해당 사용 사례는 고정된 모델로 계속 실행됩니다.",
+      "vr_reconcile_desc_other": "{count}개의 사용 사례가 방금 승격한 모델({model})과 다른 모델을 여전히 핀으로 고정하고 있습니다. 핀을 해제할 때까지 해당 사용 사례들은 고정된 모델로 계속 실행됩니다.",
+      "vr_reconcile_done": "완료",
+      "vr_reconcile_now_follows": "이제 기본값({model})을 따름",
+      "vr_reconcile_pinned_to": "{model}에 고정됨",
+      "vr_reconcile_title": "사용 사례 모델 핀 조정"
     },
     "design": {
       "select_agent": "디자인 분석을 시작할 에이전트를 선택하세요",

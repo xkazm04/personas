@@ -1655,7 +1655,15 @@
       "eco_subtitle": "Con qué frecuencia cada modelo resuelve una evaluación y cuánto cuesta cada éxito.",
       "eco_title": "Eficiencia de costes",
       "vr_col_tokens": "Tokens",
-      "vr_tokens_tooltip": "{input} de entrada / {output} de salida por ejecución de media"
+      "vr_tokens_tooltip": "{input} de entrada / {output} de salida por ejecución de media",
+      "vr_reconcile_clear_all": "Borrar todos los anclajes",
+      "vr_reconcile_clear_pin": "Borrar anclaje",
+      "vr_reconcile_desc_one": "1 caso de uso todavía ancla un modelo distinto del que acabas de promover ({model}). Seguirá ejecutándose con su modelo anclado hasta que borres el anclaje.",
+      "vr_reconcile_desc_other": "{count} casos de uso todavía anclan modelos distintos del que acabas de promover ({model}). Seguirán ejecutándose con sus modelos anclados hasta que borres los anclajes.",
+      "vr_reconcile_done": "Listo",
+      "vr_reconcile_now_follows": "Ahora sigue el predeterminado ({model})",
+      "vr_reconcile_pinned_to": "anclado a {model}",
+      "vr_reconcile_title": "Reconciliar anclajes de modelo por caso de uso"
     },
     "design": {
       "select_agent": "Selecciona un agente para iniciar el análisis de diseño",

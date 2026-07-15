@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GitBranch, Star, AlertTriangle } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { useTranslation } from '@/i18n/useTranslation';
-import { resolveEffectiveModel } from '@/features/agents/sub_use_cases/libs/useCaseDetailHelpers';
+import { resolveEffectiveModel, profileToLabel } from '@/features/agents/sub_use_cases/libs/useCaseDetailHelpers';
 import { ALL_MODELS } from '@/lib/models/modelCatalog';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -14,6 +15,7 @@ import { buildVersionRows, type VersionRow } from '../../libs/versionMatrixRows'
 import { VersionStatusBadge } from './VersionStatusBadge';
 import { VersionRatingCell } from './VersionRatingCell';
 import { VersionRowActions, type RowActionHandlers } from './VersionRowActions';
+import { PostActivationReconcileDialog, type OverrideConflict } from './PostActivationReconcileDialog';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
 /** Regression flag threshold — a drop of this many composite points vs baseline. */
@@ -64,11 +66,13 @@ export function LabVersionsTable() {
   const unpinBaseline = useAgentStore((s) => s.unpinBaseline);
   const isArenaRunning = useAgentStore((s) => s.isArenaRunning);
   const seedAthena = useSeedAthenaComposer();
+  const useCases = useSelectedUseCases();
 
   const personaId = selectedPersona?.id;
   const [measuringVersionId, setMeasuringVersionId] = useState<string | null>(null);
   const [measureRow, setMeasureRow] = useState<VersionRow | null>(null);
   const [diffRow, setDiffRow] = useState<VersionRow | null>(null);
+  const [reconcile, setReconcile] = useState<{ conflicts: OverrideConflict[]; promotedLabel: string } | null>(null);
 
   const [loading, setLoading] = useState(false);
   useEffect(() => {
@@ -122,9 +126,31 @@ export function LabVersionsTable() {
 
   const handlers: RowActionHandlers = useMemo(
     () => ({
-      onActivate: (row) => {
+      onActivate: async (row) => {
         if (!personaId || !row.modelId) return;
-        activateVersion(personaId, row.versionId, row.modelId, row.provider || 'anthropic');
+        const promotedProvider = row.provider || 'anthropic';
+        const ok = await activateVersion(personaId, row.versionId, row.modelId, promotedProvider);
+        // Activation failed (error already reported/toasted by the slice) —
+        // nothing was promoted, so there is nothing to reconcile.
+        if (!ok) return;
+        // After the persona default flips, surface any use case whose
+        // model_override still pins a DIFFERENT model — otherwise that use case
+        // silently keeps executing on its old pin. Let the user reconcile.
+        const conflicts: OverrideConflict[] = useCases
+          .filter((uc) => {
+            const o = uc.model_override;
+            if (!o) return false;
+            const oProvider = o.provider || 'anthropic';
+            return !(oProvider === promotedProvider && o.model === row.modelId);
+          })
+          .map((uc) => ({
+            useCaseId: uc.id,
+            title: uc.title,
+            pinnedLabel: profileToLabel(uc.model_override),
+          }));
+        if (conflicts.length > 0) {
+          setReconcile({ conflicts, promotedLabel: modelLabel(row.modelId) });
+        }
       },
       onMeasure: (row) => {
         // Open the Arena colosseum scoped to this version; it runs the sweep and
@@ -167,7 +193,7 @@ export function LabVersionsTable() {
       },
       onToggleArchive: (row) => tagVersion(row.versionId, row.isArchived ? 'experimental' : 'archived'),
     }),
-    [personaId, selectedPersona, activateVersion, tx, lab, seedAthena, unpinBaseline, pinBaseline, tagVersion],
+    [personaId, selectedPersona, activateVersion, tx, lab, seedAthena, unpinBaseline, pinBaseline, tagVersion, useCases],
   );
 
   const columns: TableColumn<VersionRow>[] = useMemo(
@@ -289,6 +315,15 @@ export function LabVersionsTable() {
           )}
         </div>
       </BaseModal>
+
+      {reconcile && (
+        <PostActivationReconcileDialog
+          isOpen={!!reconcile}
+          onClose={() => setReconcile(null)}
+          conflicts={reconcile.conflicts}
+          promotedLabel={reconcile.promotedLabel}
+        />
+      )}
     </div>
   );
 }

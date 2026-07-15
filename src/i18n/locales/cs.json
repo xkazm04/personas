@@ -1655,7 +1655,15 @@
       "eco_subtitle": "Jak často každý model vyřeší eval a co každý úspěch stojí.",
       "eco_title": "Nákladová efektivita",
       "vr_col_tokens": "Tokeny",
-      "vr_tokens_tooltip": "Průměrně {input} vstupních / {output} výstupních na běh"
+      "vr_tokens_tooltip": "Průměrně {input} vstupních / {output} výstupních na běh",
+      "vr_reconcile_clear_all": "Zrušit všechny přišpendlené",
+      "vr_reconcile_clear_pin": "Zrušit přišpendlení",
+      "vr_reconcile_desc_one": "1 použití stále přišpendluje model odlišný od toho, který jste právě povýšili ({model}). Poběží na svém přišpendleném modelu, dokud přišpendlení nezrušíte.",
+      "vr_reconcile_desc_other": "{count} použití stále přišpendluje modely odlišné od toho, který jste právě povýšili ({model}). Poběží na svých přišpendlených modelech, dokud přišpendlení nezrušíte.",
+      "vr_reconcile_done": "Hotovo",
+      "vr_reconcile_now_follows": "Nyní sleduje výchozí ({model})",
+      "vr_reconcile_pinned_to": "přišpendleno k {model}",
+      "vr_reconcile_title": "Sladit přišpendlené modely použití"
     },
     "design": {
       "select_agent": "Vyberte agenta pro zahájení analýzy návrhu",
