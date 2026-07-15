@@ -1,39 +1,32 @@
-// Factory L2 — the per-project surface, divided into FOUR TABS (2026-07
-// restructure; docs/plans/dev-tools-cx-redesign.md):
-//   a) KPIs         — proposals in the original review-queue structure (dense
-//                     table + detail modal) restyled in ink, plus the existing
-//                     context×KPI matrix keeping the L3/L4 drill alive.
-//   b) Context map  — the Dev Tools Context Map's content in ink (read-focused
-//                     during the dual-run; authoring stays in the original).
-//   c) Observability— the LLM + Monitoring mix: the technical dimension.
-//   d) Overview     — the cockpit prototype's Focus health grid wired to REAL
-//                     contexts / KPIs / runtime sensors.
-// The donor modules (Dev Tools tabs, Projects→KPIs) are NOT removed — dual-run
-// until the Factory version proves itself.
+// Factory L2 — the per-project surface (R15 consolidation: the R11 four-tab
+// split collapsed per the bench verdict):
+//   • Overview     — DEFAULT. The consolidated surface: Focus health grid +
+//                    context-map coverage indicators + KPI proposals in the
+//                    card tooltip (accept/reject inline) + the aggregated scan
+//                    toolbar (KPIs · features · re-scan · full).
+//   • KPI matrix   — the legacy context×KPI matrix, kept because it owns the
+//                    L3 table / L4 KpiConsole drill path (consolidation fate
+//                    to be decided with the dispatch concept).
+//   • Observability— LLM + Monitoring mix: the technical dimension.
+// The Dev Tools / Projects→KPIs originals still exist — dual-run continues.
 import { useState, type ReactNode } from 'react';
 
 import { InkTabs } from '../passport/passportInk';
 import { useFactoryL2Data } from './factoryL2Data';
-import { FactoryKpisTab } from './FactoryKpisTab';
-import { FactoryContextTab } from './FactoryContextTab';
-import { FactoryObservabilityTab } from './FactoryObservabilityTab';
 import { FactoryOverviewTab } from './FactoryOverviewTab';
+import { FactoryObservabilityTab } from './FactoryObservabilityTab';
 
-type L2Tab = 'kpis' | 'context' | 'observability' | 'overview';
+type L2Tab = 'overview' | 'matrix' | 'observability';
 
-// Overview leads — the health grid is the second-layer landing (Wall →
-// Cockpit); the working modules follow.
 const TABS: Array<{ id: L2Tab; label: string }> = [
   { id: 'overview', label: 'Overview' },
-  { id: 'kpis', label: 'KPIs' },
-  { id: 'context', label: 'Context map' },
+  { id: 'matrix', label: 'KPI matrix' },
   { id: 'observability', label: 'Observability' },
 ];
 
 export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
   projectId: string;
-  /** The existing context×KPI matrix (renderGroups) — hosted under the KPIs tab
-   *  so the L3 table / L4 console drill path keeps working. */
+  /** The legacy context×KPI matrix (renderGroups) — hosts the L3/L4 drill. */
   matrix: ReactNode;
   /** Fired after a KPI decision so the host can reload the matrix data too. */
   onKpisChanged?: () => void;
@@ -49,10 +42,9 @@ export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
       <div className="mb-3">
         <InkTabs tabs={TABS} active={tab} onChange={setTab} label="Module" />
       </div>
-      {tab === 'kpis' && <FactoryKpisTab data={data} matrix={matrix} />}
-      {tab === 'context' && <FactoryContextTab data={data} />}
-      {tab === 'observability' && <FactoryObservabilityTab data={data} />}
       {tab === 'overview' && <FactoryOverviewTab data={data} />}
+      {tab === 'matrix' && matrix}
+      {tab === 'observability' && <FactoryObservabilityTab data={data} />}
     </div>
   );
 }

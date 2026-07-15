@@ -6,7 +6,7 @@
 // and the Factory must not clobber another module's active-project state.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { listContextGroups, listContexts, listProjects } from '@/api/devTools/devTools';
+import { listContextGroups, listContexts, listGoals, listProjects } from '@/api/devTools/devTools';
 import { listKpis } from '@/api/devTools/kpis';
 import type { DevContext } from '@/lib/bindings/DevContext';
 import type { DevContextGroup } from '@/lib/bindings/DevContextGroup';
@@ -43,6 +43,12 @@ export interface FactoryL2Data {
   kpiStatusByContext: Map<string, ContextKpiStatus>;
   /** contextId → number of active use cases slicing it. */
   featureCountByContext: Map<string, number>;
+  /** contextId → number of goals attached (goal.context_id). */
+  goalCountByContext: Map<string, number>;
+  /** contextId → its PROPOSED KPIs (status='proposed', context-scoped). */
+  proposalsByContext: Map<string, DevKpi[]>;
+  /** Proposed KPIs with no context_id — invisible on cards, counted in the toolbar. */
+  unassignedProposals: DevKpi[];
   loading: boolean;
   reloadKpis: () => void;
   /** Re-fetch groups + contexts (after a context scan completes). */
@@ -109,6 +115,39 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
     return m;
   }, [useCaseState.active]);
 
+  const [goalCountByContext, setGoalCountByContext] = useState<Map<string, number>>(new Map());
+  useEffect(() => {
+    let alive = true;
+    void listGoals(projectId)
+      .then((goals) => {
+        if (!alive) return;
+        const m = new Map<string, number>();
+        for (const g of goals) {
+          if (!g.context_id) continue;
+          m.set(g.context_id, (m.get(g.context_id) ?? 0) + 1);
+        }
+        setGoalCountByContext(m);
+      })
+      .catch(silentCatch('factoryL2:goals'));
+    return () => { alive = false; };
+  }, [projectId]);
+
+  const { proposalsByContext, unassignedProposals } = useMemo(() => {
+    const byCtx = new Map<string, DevKpi[]>();
+    const unassigned: DevKpi[] = [];
+    for (const k of kpis) {
+      if (k.status !== 'proposed') continue;
+      if (k.context_id) {
+        const list = byCtx.get(k.context_id);
+        if (list) list.push(k);
+        else byCtx.set(k.context_id, [k]);
+      } else {
+        unassigned.push(k);
+      }
+    }
+    return { proposalsByContext: byCtx, unassignedProposals: unassigned };
+  }, [kpis]);
+
   return {
     project,
     groups,
@@ -118,6 +157,9 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
     runtime,
     kpiStatusByContext,
     featureCountByContext,
+    goalCountByContext,
+    proposalsByContext,
+    unassignedProposals,
     loading,
     reloadKpis,
     reloadMap,

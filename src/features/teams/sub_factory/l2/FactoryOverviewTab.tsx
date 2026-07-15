@@ -1,22 +1,34 @@
-// Factory L2 — tab (d) Overview. The cockpit prototype's FOCUS health grid
-// (R6 winner) wired to REAL data: one plate per context, grouped by context
-// group, four honest dimensions —
-//   • KPI    — worst-wins rollup of the context's real KPIs (contextKpiStatus);
-//              the divider IS the worst KPI's attainment line; no KPI = blue
-//              dashed "define KPI" invitation.
-//   • errors — unresolved Sentry events attributed to the context's files.
-//   • cost   — 30d LLM spend flowing through the context (full cost of every
-//              feature slicing it — see useContextRuntime ATTRIBUTION).
-//   • wiring — an unwired sensor renders '·', never a fake zero.
-// All-healthy plates RECEDE (title readable, the rest fades on a green wash);
-// what stands is the work. Tooltips are element-anchored + body-portaled.
-import { useMemo, useState } from 'react';
+// Factory L2 — the CONSOLIDATED Overview (R15: Overview + Context map + KPIs
+// merged per the bench verdict — Inline cards + Deck toolbar).
+//
+// The Focus health grid stays the base (real dims: KPI rollups, Sentry errors,
+// LLM cost). Folded in:
+//   • coverage indicators on every card's title row — Layers = features,
+//     Target = goals, Gauge = proposed KPIs whose hover tooltip is the as-is
+//     proposals table (KPI/Baseline/Target) WITH the review queue's
+//     accept/reject actions (real updateKpi, hover-persistent portal);
+//   • the per-context scan action (Sparkles — stub until the unified dispatch
+//     concept lands; the idea-scanner path lives in Dev Tools today);
+//   • the Deck toolbar aggregating every scan: Scan KPIs · Scan features ·
+//     Re-scan contexts (delta) · Full scan — all real, codebase scans register
+//     in the activity dock and refetch on CONTEXT_GEN_COMPLETE.
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, CircleDollarSign, Wrench } from 'lucide-react';
+import type { Event } from '@tauri-apps/api/event';
+import {
+  AlertTriangle, Cable, Check, CircleDollarSign, Gauge, Layers, Loader2,
+  RefreshCw, ScanSearch, Sparkles, Target, Wrench, X,
+} from 'lucide-react';
 
+import { scanCodebase } from '@/api/devTools/devTools';
+import { getKpiScanStatus, scanKpis, updateKpi } from '@/api/devTools/kpis';
 import type { DevContext } from '@/lib/bindings/DevContext';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
+import { EventName, type ContextGenCompletePayload } from '@/lib/eventRegistry';
+import { useOverviewStore } from '@/stores/overviewStore';
+import { toastCatch } from '@/lib/silentCatch';
 
 import { INK, anchorTip } from '../passport/passportInk';
 import type { FactoryL2Data } from './factoryL2Data';
@@ -30,20 +42,24 @@ const TONE_HUE: Record<Tone, string> = {
 const KIND_HUE: Record<FocusKind, string> = {
   crit: INK.red, warn: INK.amber, setup: INK.blue, ok: INK.emerald,
 };
+const CATEGORY_HUE: Record<string, string> = {
+  technical: INK.violet, traffic: INK.teal, value: INK.emerald, quality: INK.amber,
+};
 
-/** One context's real cell — the three dims + the numbers behind them. */
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// -- the real cell (unchanged R11 semantics) -----------------------------------------
+
 interface Cell {
   ctx: DevContext;
   errs: number | null;
   costUsd: number | null;
-  /** Worst KPI's attainment vs target (0–140), null = no measured KPI. */
   kpiPct: number | null;
   dims: { errors: Tone; cost: Tone; kpi: Tone };
   kind: FocusKind;
   kpiCount: number;
 }
 
-/** Attainment of one KPI vs its target, honest about direction. */
 function kpiAttainment(k: DevKpi): number | null {
   if (k.current_value == null || k.target_value == null) return null;
   if (k.target_value === 0 && k.direction !== 'down') return null;
@@ -59,7 +75,6 @@ function buildCell(ctx: DevContext, data: FactoryL2Data, kpisByCtx: Map<string, 
   const costUsd = data.llmWired ? data.runtime.costByContext.get(ctx.id) ?? 0 : null;
   const ctxKpis = kpisByCtx.get(ctx.id) ?? [];
 
-  // Worst-wins KPI dim from the real tracks; attainment from the worst KPI.
   let kpiTone: Tone = 'unmeasured';
   let kpiPct: number | null = null;
   const tracks = ctxKpis.map((k) => ({ k, track: kpiTrack(k) })).filter((t) => t.track !== 'unmeasured');
@@ -89,165 +104,358 @@ function buildCell(ctx: DevContext, data: FactoryL2Data, kpisByCtx: Map<string, 
   return { ctx, errs, costUsd, kpiPct, dims, kind, kpiCount: ctxKpis.length };
 }
 
-function setupAsk(c: Cell): string {
-  const noKpi = c.dims.kpi === 'unmeasured';
-  const noSensor = c.errs === null || c.costUsd === null;
-  if (noKpi && noSensor) return 'define KPI · wire sensors →';
-  if (noKpi) return c.kpiCount > 0 ? 'measure KPI →' : 'define KPI →';
-  return 'wire sensors →';
-}
+// -- KPI progress divider --------------------------------------------------------------
 
-// -- KPI progress divider ----------------------------------------------------
-
-function KpiLine({ c, faded }: { c: Cell; faded?: boolean }) {
+function KpiLine({ c }: { c: Cell }) {
   if (c.kpiPct === null) {
     return <span className="block my-1.5 border-t border-dashed" style={{ borderColor: `${INK.blue}66` }} title={c.kpiCount > 0 ? 'KPIs defined but not measured yet' : 'No KPI defined for this context'} />;
   }
   const hue = TONE_HUE[c.dims.kpi];
   return (
     <span className="block my-1.5 h-[2px] rounded-full relative" style={{ background: 'rgba(148,163,184,.10)' }} title={`Worst KPI at ${c.kpiPct}% of target`}>
-      <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.min(100, c.kpiPct)}%`, background: hue, boxShadow: faded ? undefined : `0 0 4px ${hue}66` }} />
+      <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.min(100, c.kpiPct)}%`, background: hue, boxShadow: `0 0 4px ${hue}66` }} />
     </span>
   );
 }
 
-// -- the element-anchored tooltip ---------------------------------------------
+// -- the interactive proposals tooltip ---------------------------------------------------
 
-interface TipState { cell: Cell; group: string; rect: DOMRect }
+interface KpiTipState { ctx: DevContext; proposals: DevKpi[]; rect: DOMRect }
 
-const FOCUS_SENTENCE: Record<FocusKind, (c: Cell) => string> = {
-  crit: () => 'Needs attention now — a dimension is critical.',
-  warn: () => 'Drifting — worth a look this week.',
-  setup: (c) => `Unconfigured — ${setupAsk(c).replace(' →', '')}.`,
-  ok: () => 'All clear. Nothing here needs you.',
-};
-
-function FocusTooltip({ tip }: { tip: TipState }) {
-  const { cell, group } = tip;
-  const hue = KIND_HUE[cell.kind];
-  const { left, top } = anchorTip(tip.rect, 280, 200);
-  const dim = (label: string, value: string | null, dimHue: string) => (
-    <div className="min-w-0">
-      <span className="block text-[10px] uppercase tracking-[0.12em] text-foreground/40">{label}</span>
-      <span className="block typo-caption font-medium tabular-nums" style={{ color: value === null ? INK.blue : dimHue }}>
-        {value ?? 'set up →'}
-      </span>
-    </div>
-  );
+function KpiProposalsTooltip({ tip, onDecide, onEnter, onLeave }: {
+  tip: KpiTipState;
+  onDecide: (k: DevKpi, status: 'active' | 'archived') => void;
+  onEnter: () => void;
+  onLeave: () => void;
+}) {
+  const { left, top } = anchorTip(tip.rect, 360, 90 + tip.proposals.length * 36);
+  const num = (v: number | null, unit: string) => (v != null ? `${v} ${unit}` : '—');
   return createPortal(
     <div
-      data-testid="factory-focus-tooltip"
-      className="fixed z-50 w-[280px] pointer-events-none rounded-xl overflow-hidden"
+      data-testid="factory-kpi-tooltip"
+      className="fixed z-50 w-[360px] rounded-xl overflow-hidden"
       style={{
         left, top,
         background: 'color-mix(in srgb, var(--background) 88%, #1e293b)',
-        border: `1px solid ${hue}44`,
+        border: `1px solid ${INK.teal}44`,
         boxShadow: '0 16px 40px rgba(0,0,0,.45)',
       }}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
     >
-      <div className="px-4 pt-3 pb-2">
-        <div className="text-[10px] uppercase tracking-[0.14em] text-foreground/40">{group}</div>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className="typo-body font-semibold text-foreground truncate">{cell.ctx.name}</span>
-          <span className="ml-auto shrink-0 rounded-full px-2 py-[2px] text-[10px] font-medium tracking-wide" style={{ color: hue, border: `1px solid ${hue}55`, background: `${hue}14` }}>
-            {cell.kind === 'setup' ? 'Setup needed' : cell.kind === 'ok' ? 'Healthy' : cell.kind === 'crit' ? 'Critical' : 'Warning'}
-          </span>
-        </div>
+      <div className="px-3.5 pt-2.5 pb-1.5">
+        <span className="text-[10px] uppercase tracking-[0.14em] text-foreground/40">Proposed KPIs — {tip.ctx.name}</span>
       </div>
-      <div className="mx-4"><KpiLine c={cell} /></div>
-      <div className="px-4 pb-2.5 pt-1 grid grid-cols-3 gap-x-3">
-        {dim('Errors', cell.errs === null ? null : `${cell.errs} unresolved`, TONE_HUE[cell.dims.errors])}
-        {dim('LLM cost', cell.costUsd === null ? null : `$${cell.costUsd.toFixed(0)} /30d`, TONE_HUE[cell.dims.cost])}
-        {dim('KPI', cell.kpiPct === null ? null : `${cell.kpiPct}%`, TONE_HUE[cell.dims.kpi])}
-      </div>
-      <div className="px-4 pb-3 typo-caption" style={{ color: hue }}>
-        {FOCUS_SENTENCE[cell.kind](cell)}
-      </div>
+      <table className="w-full border-collapse mb-1.5">
+        <thead>
+          <tr className="text-left border-b border-foreground/10">
+            <th className="text-[9.5px] uppercase tracking-[0.12em] text-foreground/45 font-medium px-3.5 py-1">KPI</th>
+            <th className="text-[9.5px] uppercase tracking-[0.12em] text-foreground/45 font-medium px-2 py-1 text-right">Baseline</th>
+            <th className="text-[9.5px] uppercase tracking-[0.12em] text-foreground/45 font-medium px-2 py-1 text-right">Target</th>
+            <th className="w-px px-2 py-1" aria-label="Actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {tip.proposals.map((k) => (
+            <tr key={k.id} className="border-b border-foreground/[0.05] last:border-0">
+              <td className="px-3.5 py-1.5">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: CATEGORY_HUE[k.category] ?? INK.teal }} />
+                  <span className="typo-caption text-foreground/90 truncate" title={k.name}>{k.name}</span>
+                  {k.needed_connector && (
+                    <span className="inline-flex items-center gap-0.5 text-[9.5px] shrink-0" style={{ color: INK.blue }}>
+                      <Cable className="w-2.5 h-2.5" aria-hidden />
+                      {k.needed_connector}
+                    </span>
+                  )}
+                </span>
+              </td>
+              <td className="px-2 py-1.5 typo-caption tabular-nums text-foreground/70 text-right whitespace-nowrap">{num(k.baseline_value, k.unit)}</td>
+              <td className="px-2 py-1.5 typo-caption tabular-nums text-foreground/70 text-right whitespace-nowrap">{num(k.target_value, k.unit)}</td>
+              <td className="px-2 py-1.5 whitespace-nowrap">
+                <span className="flex items-center gap-0.5 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => onDecide(k, 'archived')}
+                    aria-label="Reject"
+                    title="Reject"
+                    className="p-0.5 rounded-interactive hover:bg-red-400/15 transition-colors focus-ring"
+                    data-testid={`factory-tip-reject-${k.id}`}
+                  >
+                    <X className="w-3 h-3" style={{ color: INK.red }} aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDecide(k, 'active')}
+                    aria-label="Accept"
+                    title="Accept"
+                    className="p-0.5 rounded-interactive hover:bg-emerald-400/15 transition-colors focus-ring"
+                    data-testid={`factory-tip-accept-${k.id}`}
+                  >
+                    <Check className="w-3 h-3" style={{ color: INK.emerald }} aria-hidden />
+                  </button>
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>,
     document.body,
   );
 }
 
-// -- the plate -----------------------------------------------------------------
+// -- the card (Inline winner) --------------------------------------------------------------
 
-function Plate({ cell, group, onHover, onLeave }: {
-  cell: Cell; group: string;
-  onHover: (t: TipState) => void; onLeave: () => void;
+function Indicator({ icon: Icon, n, hue, title }: { icon: typeof Layers; n: number; hue: string; title: string }) {
+  const dim = n === 0;
+  return (
+    <span className="inline-flex items-center gap-0.5 tabular-nums text-[9.5px]" style={{ color: dim ? 'rgba(148,163,184,.35)' : hue }} title={title}>
+      <Icon className="w-2.5 h-2.5 shrink-0" aria-hidden />
+      {n}
+    </span>
+  );
+}
+
+function Card({ cell, data, onKpiHover, onKpiLeave, onNote }: {
+  cell: Cell;
+  data: FactoryL2Data;
+  onKpiHover: (t: KpiTipState) => void;
+  onKpiLeave: () => void;
+  onNote: (s: string) => void;
 }) {
-  const enter = (e: React.MouseEvent<HTMLDivElement>) =>
-    onHover({ cell, group, rect: e.currentTarget.getBoundingClientRect() });
+  const hue = KIND_HUE[cell.kind];
+  const receded = cell.kind === 'ok';
+  const features = data.featureCountByContext.get(cell.ctx.id) ?? 0;
+  const goals = data.goalCountByContext.get(cell.ctx.id) ?? 0;
+  const proposals = data.proposalsByContext.get(cell.ctx.id) ?? [];
+  const dimKpi = proposals.length === 0;
 
-  const pair = (Icon: typeof AlertTriangle, v: string | null, dimHue: string) => (
-    <span className="flex items-center gap-1 min-w-0" style={{ color: v === null ? INK.blue : dimHue }}>
+  const stat = (Icon: typeof AlertTriangle, v: string | null, statHue: string) => (
+    <span className="flex items-center gap-1 min-w-0" style={{ color: v === null ? INK.blue : statHue }}>
       <Icon className="w-3 h-3 shrink-0" aria-hidden />
       <span className="text-[10.5px] font-medium tabular-nums truncate">{v ?? '·'}</span>
     </span>
   );
 
-  if (cell.kind === 'ok') {
-    return (
-      <div
-        className="text-left min-w-0 px-2.5 pt-1.5 pb-2 rounded-card relative transition-all hover:-translate-y-[1px]"
-        style={{ background: 'rgba(52,211,153,.05)', border: '1px solid rgba(52,211,153,.10)' }}
-        onMouseEnter={enter} onMouseLeave={onLeave}
-      >
-        <span className="typo-caption font-medium text-foreground/85 truncate block">{cell.ctx.name}</span>
-        <span className="block opacity-30">
-          <KpiLine c={cell} faded />
-          <span className="flex items-center gap-2.5 min-w-0">
-            {pair(AlertTriangle, cell.errs === null ? null : String(cell.errs), INK.emerald)}
-            {pair(CircleDollarSign, cell.costUsd === null ? null : `$${cell.costUsd.toFixed(0)}`, INK.emerald)}
+  const frame =
+    cell.kind === 'setup'
+      ? { background: `${INK.blue}0a`, border: `1px dashed ${INK.blue}55` }
+      : receded
+        ? { background: 'rgba(52,211,153,.05)', border: '1px solid rgba(52,211,153,.10)' }
+        : { background: 'rgba(148,163,184,.045)', border: `1px solid ${hue}${cell.kind === 'crit' ? '66' : '3d'}` };
+
+  const setupAsk =
+    cell.dims.kpi === 'unmeasured' && (cell.errs === null || cell.costUsd === null)
+      ? 'define KPI · wire sensors →'
+      : cell.dims.kpi === 'unmeasured'
+        ? (cell.kpiCount > 0 ? 'measure KPI →' : 'define KPI →')
+        : 'wire sensors →';
+
+  return (
+    <div className="min-w-0 px-2.5 pt-1.5 pb-2 rounded-card transition-all hover:-translate-y-[1px]" style={frame} data-testid={`factory-cons-card-${cell.ctx.id}`}>
+      <span className="flex items-center gap-1.5 min-w-0">
+        {cell.kind === 'setup'
+          ? <Wrench className="w-3 h-3 shrink-0" style={{ color: INK.blue }} aria-hidden />
+          : <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: hue, boxShadow: receded ? undefined : `0 0 5px ${hue}88` }} />}
+        <span className="typo-caption font-medium text-foreground/90 truncate">{cell.ctx.name}</span>
+        <span className="ml-auto shrink-0 flex items-center gap-1.5">
+          <Indicator icon={Layers} n={features} hue="rgba(148,163,184,.8)" title={`${features} features slice this context`} />
+          <Indicator icon={Target} n={goals} hue="#38BDF8" title={`${goals} goals attached`} />
+          <span
+            className="inline-flex items-center gap-0.5 text-[9.5px] tabular-nums cursor-default"
+            style={{ color: dimKpi ? 'rgba(148,163,184,.35)' : INK.teal }}
+            title={dimKpi ? 'No proposed KPIs' : undefined}
+            onMouseEnter={(e) => {
+              if (!dimKpi) onKpiHover({ ctx: cell.ctx, proposals, rect: e.currentTarget.getBoundingClientRect() });
+            }}
+            onMouseLeave={onKpiLeave}
+            data-testid={dimKpi ? undefined : `factory-kpi-ind-${cell.ctx.id}`}
+          >
+            <Gauge className="w-2.5 h-2.5 shrink-0" aria-hidden />
+            {proposals.length}
           </span>
         </span>
-      </div>
-    );
-  }
-
-  if (cell.kind === 'setup') {
-    return (
-      <div
-        className="text-left min-w-0 px-2.5 pt-1.5 pb-2 rounded-card relative transition-all hover:-translate-y-[1px]"
-        style={{ background: `${INK.blue}0a`, border: `1px dashed ${INK.blue}55` }}
-        onMouseEnter={enter} onMouseLeave={onLeave}
-      >
-        <span className="flex items-center gap-1.5 min-w-0">
-          <Wrench className="w-3 h-3 shrink-0" style={{ color: INK.blue }} aria-hidden />
-          <span className="typo-caption font-medium text-foreground/90 truncate">{cell.ctx.name}</span>
-        </span>
-        <KpiLine c={cell} />
-        <span className="text-[10.5px] font-medium" style={{ color: INK.blue }}>{setupAsk(cell)}</span>
-      </div>
-    );
-  }
-
-  const hue = KIND_HUE[cell.kind];
-  return (
-    <div
-      className="text-left min-w-0 px-2.5 pt-1.5 pb-2 rounded-card relative transition-all hover:-translate-y-[1px]"
-      style={{
-        background: 'rgba(148,163,184,.045)',
-        border: `1px solid ${hue}${cell.kind === 'crit' ? '66' : '3d'}`,
-        boxShadow: cell.kind === 'crit' ? `0 0 8px ${INK.red}22` : undefined,
-      }}
-      onMouseEnter={enter} onMouseLeave={onLeave}
-    >
-      <span className="flex items-center gap-1.5 min-w-0">
-        <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: hue, boxShadow: `0 0 5px ${hue}88` }} />
-        <span className="typo-caption font-medium text-foreground/90 truncate">{cell.ctx.name}</span>
       </span>
-      <KpiLine c={cell} />
-      <span className="flex items-center gap-2.5 min-w-0">
-        {pair(AlertTriangle, cell.errs === null ? null : String(cell.errs), TONE_HUE[cell.dims.errors])}
-        {pair(CircleDollarSign, cell.costUsd === null ? null : `$${cell.costUsd.toFixed(0)}`, TONE_HUE[cell.dims.cost])}
+      <span className={`block ${receded ? 'opacity-30' : ''}`}>
+        <KpiLine c={cell} />
+        <span className="flex items-center gap-2.5 min-w-0">
+          {cell.kind === 'setup' ? (
+            <span className="text-[10.5px] font-medium truncate" style={{ color: INK.blue }}>{setupAsk}</span>
+          ) : (
+            <>
+              {stat(AlertTriangle, cell.errs === null ? null : String(cell.errs), TONE_HUE[cell.dims.errors])}
+              {stat(CircleDollarSign, cell.costUsd === null ? null : `$${cell.costUsd.toFixed(0)}`, TONE_HUE[cell.dims.cost])}
+            </>
+          )}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onNote(`Per-context scan for "${cell.ctx.name}" arrives with the unified dispatch concept — use Dev Tools → Idea Scanner meanwhile.`); }}
+            title={`Scan this context (${cell.ctx.name})`}
+            className="ml-auto inline-flex items-center p-0.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
+            style={{ color: INK.violet }}
+          >
+            <Sparkles className="w-2.5 h-2.5" aria-hidden />
+          </button>
+        </span>
       </span>
     </div>
   );
 }
 
-// -- the grid -------------------------------------------------------------------
+// -- the Deck toolbar (real scans) ------------------------------------------------------------
+
+function Toolbar({ data, summary, onNote }: { data: FactoryL2Data; summary: string; onNote: (s: string) => void }) {
+  const [kpiScanning, setKpiScanning] = useState(false);
+  const [ctxScanId, setCtxScanId] = useState<string | null>(null);
+
+  const scanKpisNow = useCallback(async () => {
+    if (!data.project) return;
+    setKpiScanning(true);
+    try {
+      const { scan_id } = await scanKpis(data.project.id);
+      for (let i = 0; i < 150; i++) {
+        await sleep(2000);
+        const st = await getKpiScanStatus(scan_id);
+        if (st.status === 'completed' || st.status === 'failed') {
+          onNote(st.status === 'completed' ? 'KPI scan complete — fresh proposals on the cards' : st.error ?? 'KPI scan failed');
+          break;
+        }
+      }
+      data.reloadKpis();
+    } catch (e) {
+      toastCatch('factory kpi scan')(e);
+    } finally {
+      setKpiScanning(false);
+    }
+  }, [data, onNote]);
+
+  const scanContexts = useCallback((delta: boolean) => {
+    const p = data.project;
+    if (!p) return;
+    void scanCodebase(p.id, p.root_path, delta)
+      .then(({ scan_id }) => {
+        setCtxScanId(scan_id);
+        useOverviewStore.getState().processStarted(
+          'factory_scan',
+          scan_id,
+          `Context scan: ${p.name}`,
+          { section: 'plugins', tab: 'context-map' },
+        );
+      })
+      .catch(toastCatch('factory context scan'));
+  }, [data.project]);
+
+  const onScanComplete = useCallback(
+    (event: Event<ContextGenCompletePayload>) => {
+      if (!ctxScanId || event.payload.scan_id !== ctxScanId) return;
+      setCtxScanId(null);
+      onNote(
+        event.payload.status === 'completed'
+          ? `Scan complete — ${event.payload.groups_created} groups · ${event.payload.contexts_created} contexts · ${event.payload.files_mapped} files mapped`
+          : event.payload.error ?? 'Scan failed',
+      );
+      data.reloadMap();
+    },
+    [ctxScanId, data, onNote],
+  );
+  useTauriEvent<ContextGenCompletePayload>(EventName.CONTEXT_GEN_COMPLETE, onScanComplete);
+
+  const featScanning = data.useCaseState.scanning;
+  const btn = (
+    label: string,
+    icon: React.ReactNode,
+    hue: string,
+    onClick: () => void,
+    disabled: boolean,
+    testid: string,
+  ) => (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 typo-caption font-medium transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-50"
+      style={{ color: hue, border: `1px solid ${hue}55` }}
+      data-testid={testid}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="flex items-center gap-3 flex-wrap" data-testid="factory-cons-toolbar">
+      <span className="typo-caption text-foreground/45 min-w-0">{summary}</span>
+      <span className="ml-auto inline-flex items-center gap-2 shrink-0 flex-wrap">
+        {btn(
+          kpiScanning ? 'Scanning…' : 'Scan KPIs',
+          kpiScanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <Gauge className="w-3.5 h-3.5" aria-hidden />,
+          INK.teal,
+          () => void scanKpisNow(),
+          kpiScanning || !data.project,
+          'factory-scan-kpis',
+        )}
+        {btn(
+          featScanning ? 'Proposing…' : 'Scan features',
+          featScanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <Sparkles className="w-3.5 h-3.5" aria-hidden />,
+          INK.violet,
+          () => void data.useCaseState.scan().catch(toastCatch('factory feature scan')),
+          featScanning || data.contexts.length === 0,
+          'factory-scan-features',
+        )}
+        {btn(
+          ctxScanId ? 'Scanning…' : 'Re-scan contexts',
+          ctxScanId ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <RefreshCw className="w-3.5 h-3.5" aria-hidden />,
+          INK.emerald,
+          () => scanContexts(true),
+          ctxScanId !== null || !data.project,
+          'factory-rescan-contexts',
+        )}
+        {btn(
+          ctxScanId ? 'Scanning…' : 'Full scan',
+          ctxScanId ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <ScanSearch className="w-3.5 h-3.5" aria-hidden />,
+          INK.amber,
+          () => scanContexts(false),
+          ctxScanId !== null || !data.project,
+          'factory-full-scan',
+        )}
+      </span>
+    </div>
+  );
+}
+
+// -- the consolidated tab -----------------------------------------------------------------------
 
 export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
-  const [tip, setTip] = useState<TipState | null>(null);
+  const [tip, setTip] = useState<KpiTipState | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openTip = (t: KpiTipState) => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
+    setTip(t);
+  };
+  const scheduleClose = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setTip(null), 150);
+  };
+  const cancelClose = () => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
+  };
+
+  const decide = (k: DevKpi, status: 'active' | 'archived') => {
+    void updateKpi(k.id, { status })
+      .then(() => {
+        setTip((t) => {
+          if (!t) return t;
+          const left = t.proposals.filter((x) => x.id !== k.id);
+          return left.length > 0 ? { ...t, proposals: left } : null;
+        });
+        setNote(`"${k.name}" ${status === 'active' ? 'accepted' : 'rejected'}`);
+        data.reloadKpis();
+      })
+      .catch(toastCatch('factory kpi decide'));
+  };
 
   const kpisByCtx = useMemo(() => {
     const m = new Map<string, DevKpi[]>();
@@ -277,28 +485,42 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
   }, [data, kpisByCtx]);
 
   const summary = useMemo(() => {
-    const s = { crit: 0, warn: 0, ok: 0, setup: 0, total: 0 };
-    for (const g of groups) for (const c of g.cells) { s[c.kind] += 1; s.total += 1; }
-    return s;
-  }, [groups]);
+    const feats = data.useCaseState.active.length;
+    const goals = [...data.goalCountByContext.values()].reduce((s, n) => s + n, 0);
+    const proposedCtx = [...data.proposalsByContext.values()].reduce((s, l) => s + l.length, 0);
+    const unassigned = data.unassignedProposals.length;
+    return `${feats} features · ${goals} goals · ${proposedCtx} proposed KPIs${unassigned > 0 ? ` (+${unassigned} unassigned)` : ''}`;
+  }, [data]);
 
-  if (!data.loading && summary.total === 0) {
+  const total = groups.reduce((s, g) => s + g.cells.length, 0);
+  if (!data.loading && total === 0) {
     return (
       <p className="typo-caption text-foreground/45 rounded-card border border-dashed border-foreground/15 px-3 py-5 text-center" data-testid="factory-overview-tab">
-        No contexts scanned yet — run a codebase scan from Dev Tools → Context Map to light this grid.
+        No contexts scanned yet — run a Full scan from the toolbar (or Dev Tools → Context Map) to light this grid.
       </p>
     );
   }
 
+  const summaryCounts = (() => {
+    const s = { crit: 0, warn: 0, ok: 0, setup: 0 };
+    for (const g of groups) for (const c of g.cells) s[c.kind] += 1;
+    return s;
+  })();
+
   return (
-    <div className="relative" data-testid="factory-overview-tab" onMouseLeave={() => setTip(null)}>
-      <div className="typo-caption tabular-nums mb-3 flex items-center gap-2.5">
-        <span className="text-foreground/40">{summary.total} contexts</span>
-        {summary.crit > 0 && <span style={{ color: INK.red }}>● {summary.crit} critical</span>}
-        {summary.warn > 0 && <span style={{ color: INK.amber }}>● {summary.warn} warning</span>}
-        {summary.setup > 0 && <span style={{ color: INK.blue }}>◌ {summary.setup} setup</span>}
-        <span style={{ color: INK.emerald }}>● {summary.ok} healthy</span>
-        {!data.llmWired && <span className="text-foreground/35 ml-auto">LLM tracking unwired — cost dim dark</span>}
+    <div className="relative" data-testid="factory-overview-tab">
+      <div className="flex items-center gap-3 flex-wrap mb-2">
+        <span className="typo-caption tabular-nums flex items-center gap-2.5">
+          <span className="text-foreground/40">{total} contexts</span>
+          {summaryCounts.crit > 0 && <span style={{ color: INK.red }}>● {summaryCounts.crit} critical</span>}
+          {summaryCounts.warn > 0 && <span style={{ color: INK.amber }}>● {summaryCounts.warn} warning</span>}
+          {summaryCounts.setup > 0 && <span style={{ color: INK.blue }}>◌ {summaryCounts.setup} setup</span>}
+          <span style={{ color: INK.emerald }}>● {summaryCounts.ok} healthy</span>
+        </span>
+      </div>
+      <div className="mb-3">
+        <Toolbar data={data} summary={summary} onNote={setNote} />
+        {note && <p className="typo-caption text-foreground/45 mt-1.5">{note}</p>}
       </div>
       <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
         {groups.map((g) => {
@@ -319,14 +541,16 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
                   <span className="text-foreground/30">{g.cells.length}</span>
                 </span>
               </div>
-              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))' }}>
-                {g.cells.map((c) => <Plate key={c.ctx.id} cell={c} group={g.name} onHover={setTip} onLeave={() => setTip(null)} />)}
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+                {g.cells.map((c) => (
+                  <Card key={c.ctx.id} cell={c} data={data} onKpiHover={openTip} onKpiLeave={scheduleClose} onNote={setNote} />
+                ))}
               </div>
             </div>
           );
         })}
       </div>
-      {tip && <FocusTooltip tip={tip} />}
+      {tip && <KpiProposalsTooltip tip={tip} onDecide={decide} onEnter={cancelClose} onLeave={scheduleClose} />}
     </div>
   );
 }

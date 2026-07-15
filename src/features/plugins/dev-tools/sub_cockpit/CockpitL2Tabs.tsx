@@ -1,17 +1,14 @@
-// R14 — CONSOLIDATION TRIAL. The R13 Module bar mirrored the real Factory L2
-// (Overview | KPIs | Context map | Observability); this round merges the first
-// THREE into one consolidated surface (CockpitConsolidated): the Focus grid
-// carries the context-map coverage and the KPI proposals as card indicators,
-// and the toolbar aggregates every scan. Two card/toolbar variants (Deck /
-// Inline) sit behind the bench switcher per /prototype. Observability stays a
-// separate tab — the technical dimension wasn't part of this consolidation.
+// R15 — the consolidation WINNER (R14 verdict: Inline cards + Deck toolbar,
+// accept/reject in the proposals tooltip). Module bar mirrors the real Factory
+// L2 1:1: Overview (the consolidated surface) | Observability. The mock is the
+// bench's payload; every composition matches FactoryConsolidated.
 import { useState } from 'react';
 import { Activity, AlertTriangle, CircleDollarSign } from 'lucide-react';
 
 import { InkTabs, NEON, SETUP_BLUE } from './cockpitGlyphs';
 import type { MockProject } from './cockpitMock';
 import { OBS_BY_PROJECT } from './cockpitL2Mock';
-import CockpitConsolidated, { type ConsolidatedVariant } from './CockpitConsolidated';
+import CockpitConsolidated from './CockpitConsolidated';
 
 type L2Tab = 'overview' | 'observability';
 
@@ -20,23 +17,14 @@ const TABS: Array<{ id: L2Tab; label: string }> = [
   { id: 'observability', label: 'Observability' },
 ];
 
-const VARIANTS: Array<{ id: ConsolidatedVariant; label: string }> = [
-  { id: 'deck', label: 'Deck' },
-  { id: 'inline', label: 'Inline' },
-];
-
 export default function CockpitL2Tabs({ project }: { project: MockProject }) {
   const [tab, setTab] = useState<L2Tab>('overview');
-  const [variant, setVariant] = useState<ConsolidatedVariant>('deck');
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="cockpit-l2-tabs">
-      <div className="mx-5 mt-3 flex items-center justify-between gap-4 flex-wrap">
+      <div className="mx-5 mt-3">
         <InkTabs tabs={TABS} active={tab} onChange={setTab} label="Module" />
-        {tab === 'overview' && (
-          <InkTabs tabs={VARIANTS} active={variant} onChange={setVariant} label="Variant" />
-        )}
       </div>
-      {tab === 'overview' && <CockpitConsolidated project={project} variant={variant} />}
+      {tab === 'overview' && <CockpitConsolidated project={project} />}
       {tab === 'observability' && <div className="mx-5 mt-3 pb-8 overflow-y-auto"><ObservabilityTab project={project} /></div>}
     </div>
   );
