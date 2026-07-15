@@ -29,8 +29,8 @@ import {
   type AppPassport,
 } from './passportModel';
 import { INK, InkTabs, SegBar, TechInk, inkKindOf, scoreInk } from './passportInk';
-import { Pips, BoolMark, Chip, SectionIcon } from './passportWidgets';
-import { GoldenGauge } from './improve/GoldenGauge';
+import { Pips, BoolMark, SectionIcon } from './passportWidgets';
+import { scoreAgainstRubric } from './improve/goldenStandard';
 import { ImproveCell } from './improve/ImproveCell';
 import { StandardsScan } from './improve/StandardsScan';
 import { ReadinessTrend } from './ReadinessTrend';
@@ -322,12 +322,13 @@ function CoverBody({
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
 }) {
   const critical = p.identity.criticality === 'mission-critical';
+  const worst = scoreInk(Math.min(p.automationReadiness.score, p.productionReadiness.score));
   const axis = (label: string, code: string, name: string, score: number, reached: number, steps: number) => {
     const hue = scoreInk(score);
     return (
       <div className="w-full">
         <div className="flex items-baseline gap-1.5 mb-1">
-          <span className="typo-label text-foreground/45">{label}</span>
+          <span className="text-[10px] uppercase tracking-[0.12em] text-foreground/45">{label}</span>
           <Tooltip content={`${name} — ${score}/100`}>
             <span className="inline-flex items-baseline gap-1 cursor-default ml-auto">
               <span className="typo-caption font-bold tabular-nums leading-none" style={{ color: hue }}>{code}</span>
@@ -342,15 +343,16 @@ function CoverBody({
 
   return (
     <>
-      {/* title + warning badge + scan + export */}
+      {/* worst-state dot + title + warning badge + scan + export */}
       <div className="flex items-center gap-1.5 min-w-0">
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} aria-hidden />
         {openable ? (
           <button type="button" onClick={() => onOpen!(p.identity.slug)} title={p.identity.purpose} className="group/cov inline-flex items-center gap-1 min-w-0 text-left">
-            <span className="typo-heading-lg truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
+            <span className="typo-heading-lg tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
             <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0 opacity-0 group-hover/cov:opacity-100 text-primary/70 transition-opacity" aria-hidden />
           </button>
         ) : (
-          <span title={p.identity.purpose} className="typo-heading-lg truncate block">{p.identity.name}</span>
+          <span title={p.identity.purpose} className="typo-heading-lg tracking-tight truncate block">{p.identity.name}</span>
         )}
         <WarningBadge projectName={p.identity.name} items={attention} onJump={(g, k) => onJumpKpi?.(p.identity.slug, g, k)} />
         <StandardsScan slug={p.identity.slug} projectName={p.identity.name} />
@@ -362,10 +364,10 @@ function CoverBody({
         />
       </div>
 
-      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-        <Chip label={ARCHETYPE_LABEL[p.identity.archetype]} />
-        <Chip label={LIFECYCLE_LABEL[p.identity.lifecycle]} />
-        <span className={`typo-label ${critical ? 'text-red-300' : 'text-foreground/40'}`}>{CRITICALITY_LABEL[p.identity.criticality]}</span>
+      {/* identity as quiet ink text — no pill chips */}
+      <div className="typo-label text-foreground/40 mt-1">
+        {ARCHETYPE_LABEL[p.identity.archetype]} · {LIFECYCLE_LABEL[p.identity.lifecycle]} ·{' '}
+        <span className={critical ? 'text-red-300' : undefined}>{CRITICALITY_LABEL[p.identity.criticality]}</span>
       </div>
 
       <div className="flex flex-col gap-2.5 mt-3">
@@ -385,10 +387,35 @@ function CoverBody({
           PROD_BAND_SCALE.indexOf(p.productionReadiness.band) + 1,
           PROD_BAND_SCALE.length,
         )}
-        <GoldenGauge passport={p} />
+        <GoldenInk p={p} />
         <ReadinessTrend slug={p.identity.slug} />
       </div>
     </>
+  );
+}
+
+/** The golden-standard line in ink — same rubric as the improve engine's gauge,
+ *  painted with the ink score ramp (the original scoreTint's blue-at-60 would
+ *  collide with ink's blue = SETUP vocabulary). */
+function GoldenInk({ p }: { p: AppPassport }) {
+  const r = scoreAgainstRubric(p);
+  const hue = scoreInk(r.goldenPct);
+  const tip = r.belowTarget.length
+    ? `Below the ${ARCHETYPE_LABEL[r.archetype]} golden standard on: ${r.belowTarget.map((d) => d.label).join(', ')}`
+    : `Meets the ${ARCHETYPE_LABEL[r.archetype]} golden standard`;
+  return (
+    <Tooltip content={tip}>
+      <span className="inline-flex items-center gap-1.5 w-full cursor-default">
+        <span className="text-[10px] uppercase tracking-[0.12em] text-foreground/45 flex-shrink-0">Golden</span>
+        <span className="relative flex-1 h-[2px] rounded-full" style={{ background: 'rgba(148,163,184,.10)' }}>
+          <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${r.goldenPct}%`, background: hue, boxShadow: `0 0 4px ${hue}55` }} />
+        </span>
+        <span className="typo-caption tabular-nums font-semibold leading-none flex-shrink-0" style={{ color: hue }}>{r.goldenPct}%</span>
+        {r.belowTarget.length > 0 && (
+          <span className="typo-label text-foreground/40 flex-shrink-0">· {r.belowTarget.length}&nbsp;below</span>
+        )}
+      </span>
+    </Tooltip>
   );
 }
 

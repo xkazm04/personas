@@ -1,14 +1,22 @@
 // Factory L2 — tab (b) Context map. The Dev Tools Context Map's CONTENT
 // (groups → contexts with KPI-health tinting, runtime cost/error chips, and
-// feature coverage) re-painted in the cockpit ink. Read-focused during the
-// dual-run: authoring (scans, group editing, use-case triage) stays in the
-// Dev Tools original until the Factory version proves itself.
-import { useMemo, useState } from 'react';
-import { AlertTriangle, CircleDollarSign, Layers } from 'lucide-react';
+// feature coverage) re-painted in the cockpit ink — WITH the original's scan
+// features: the codebase context scan (creates/refreshes groups + contexts;
+// registered in the global activity dock, completion via CONTEXT_GEN_COMPLETE)
+// and the feature (use-case) proposal scan. Group editing / use-case triage
+// stay in the Dev Tools original during the dual-run.
+import { useCallback, useMemo, useState } from 'react';
+import type { Event } from '@tauri-apps/api/event';
+import { AlertTriangle, CircleDollarSign, Layers, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 
+import { scanCodebase } from '@/api/devTools/devTools';
 import type { DevContext } from '@/lib/bindings/DevContext';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { ContextKpiStatus } from '@/features/plugins/dev-tools/sub_context/contextKpiStatus';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
+import { EventName, type ContextGenCompletePayload } from '@/lib/eventRegistry';
+import { useOverviewStore } from '@/stores/overviewStore';
+import { toastCatch } from '@/lib/silentCatch';
 
 import { INK } from '../passport/passportInk';
 import type { FactoryL2Data } from './factoryL2Data';
@@ -64,6 +72,43 @@ function ContextPlate({ ctx, data }: { ctx: DevContext; data: FactoryL2Data }) {
 
 export function FactoryContextTab({ data }: { data: FactoryL2Data }) {
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
+  const [scanId, setScanId] = useState<string | null>(null);
+  const [scanNote, setScanNote] = useState<string | null>(null);
+
+  // Kick the codebase context scan (same detached Rust job as the Dev Tools
+  // original) and register it in the global activity dock so it stays visible
+  // across modules. Completion arrives via CONTEXT_GEN_COMPLETE below.
+  const scan = useCallback(() => {
+    const p = data.project;
+    if (!p) return;
+    setScanNote(null);
+    void scanCodebase(p.id, p.root_path)
+      .then(({ scan_id }) => {
+        setScanId(scan_id);
+        useOverviewStore.getState().processStarted(
+          'factory_scan',
+          scan_id,
+          `Context scan: ${p.name}`,
+          { section: 'plugins', tab: 'context-map' },
+        );
+      })
+      .catch(toastCatch('factory context scan'));
+  }, [data.project]);
+
+  const onScanComplete = useCallback(
+    (event: Event<ContextGenCompletePayload>) => {
+      if (!scanId || event.payload.scan_id !== scanId) return;
+      setScanId(null);
+      setScanNote(
+        event.payload.status === 'completed'
+          ? `Scan complete — ${event.payload.groups_created} groups · ${event.payload.contexts_created} contexts · ${event.payload.files_mapped} files mapped`
+          : event.payload.error ?? 'Scan failed',
+      );
+      data.reloadMap();
+    },
+    [scanId, data],
+  );
+  useTauriEvent<ContextGenCompletePayload>(EventName.CONTEXT_GEN_COMPLETE, onScanComplete);
 
   const byGroup = useMemo(() => {
     const m = new Map<string | null, DevContext[]>();
@@ -76,11 +121,42 @@ export function FactoryContextTab({ data }: { data: FactoryL2Data }) {
     return m;
   }, [data.contexts]);
 
-  if (!data.loading && data.groups.length === 0 && data.contexts.length === 0) {
+  const hasMap = data.groups.length > 0 || data.contexts.length > 0;
+  const scanButtons = (
+    <span className="inline-flex items-center gap-2">
+      <button
+        type="button"
+        onClick={scan}
+        disabled={scanId !== null || !data.project}
+        className="inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 typo-caption font-medium transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-50"
+        style={{ color: INK.teal, border: `1px solid ${INK.teal}55` }}
+        data-testid="factory-context-scan"
+      >
+        {scanId ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <RefreshCw className="w-3.5 h-3.5" aria-hidden />}
+        {scanId ? 'Scanning…' : hasMap ? 'Rescan codebase' : 'Scan codebase'}
+      </button>
+      <button
+        type="button"
+        onClick={() => void data.useCaseState.scan().catch(toastCatch('factory feature scan'))}
+        disabled={data.useCaseState.scanning || !hasMap}
+        title={hasMap ? 'Propose features (use cases) from the context map' : 'Scan the codebase first'}
+        className="inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 typo-caption font-medium transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-50"
+        style={{ color: INK.violet, border: `1px solid ${INK.violet}55` }}
+        data-testid="factory-feature-scan"
+      >
+        {data.useCaseState.scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <Sparkles className="w-3.5 h-3.5" aria-hidden />}
+        {data.useCaseState.scanning ? 'Proposing…' : 'Scan features'}
+      </button>
+    </span>
+  );
+
+  if (!data.loading && !hasMap) {
     return (
-      <p className="typo-caption text-foreground/45 rounded-card border border-dashed border-foreground/15 px-3 py-5 text-center" data-testid="factory-context-tab">
-        No context map yet — run a codebase scan from Dev Tools → Context Map, then come back.
-      </p>
+      <div className="rounded-card border border-dashed border-foreground/15 px-3 py-5 text-center" data-testid="factory-context-tab">
+        <p className="typo-caption text-foreground/45 mb-3">No context map yet — scan the codebase to build it.</p>
+        {scanButtons}
+        {scanNote && <p className="typo-caption text-foreground/55 mt-2">{scanNote}</p>}
+      </div>
     );
   }
 
@@ -88,9 +164,16 @@ export function FactoryContextTab({ data }: { data: FactoryL2Data }) {
 
   return (
     <div data-testid="factory-context-tab">
-      <p className="typo-caption text-foreground/45 mb-2.5">
-        {data.contexts.length} contexts · {data.groups.length} groups · {data.useCaseState.active.length} features — tinted by KPI health; authoring stays in Dev Tools → Context Map for now.
-      </p>
+      <div className="flex items-center gap-3 flex-wrap mb-2.5">
+        <p className="typo-caption text-foreground/45 min-w-0">
+          {data.contexts.length} contexts · {data.groups.length} groups · {data.useCaseState.active.length} features — tinted by KPI health; group editing stays in Dev Tools → Context Map for now.
+        </p>
+        <span className="ml-auto shrink-0">{scanButtons}</span>
+      </div>
+      {scanNote && <p className="typo-caption mb-2" style={{ color: INK.emerald }}>{scanNote}</p>}
+      {data.useCaseState.scanLine && data.useCaseState.scanning && (
+        <p className="text-[10.5px] text-foreground/40 mb-2 truncate">{data.useCaseState.scanLine}</p>
+      )}
       <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
         {data.groups.map((g) => {
           const cells = byGroup.get(g.id) ?? [];

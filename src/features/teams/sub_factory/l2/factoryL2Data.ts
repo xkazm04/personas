@@ -45,6 +45,8 @@ export interface FactoryL2Data {
   featureCountByContext: Map<string, number>;
   loading: boolean;
   reloadKpis: () => void;
+  /** Re-fetch groups + contexts (after a context scan completes). */
+  reloadMap: () => void;
   /** True when the project has an LLM tracker / monitoring connector bound. */
   llmWired: boolean;
   monitoringWired: boolean;
@@ -57,6 +59,7 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
   const [kpis, setKpis] = useState<DevKpi[]>([]);
   const [loading, setLoading] = useState(true);
   const [kpiNonce, setKpiNonce] = useState(0);
+  const [mapNonce, setMapNonce] = useState(0);
 
   const useCaseState = useUseCases(projectId);
 
@@ -76,7 +79,9 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
         if (alive) setLoading(false);
       });
     return () => { alive = false; };
-  }, [projectId]);
+  }, [projectId, mapNonce]);
+
+  const reloadMap = useCallback(() => setMapNonce((n) => n + 1), []);
 
   useEffect(() => {
     let alive = true;
@@ -115,6 +120,7 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
     featureCountByContext,
     loading,
     reloadKpis,
+    reloadMap,
     llmWired: Boolean(project?.llm_tracking_credential_id),
     monitoringWired: Boolean(project?.monitoring_credential_id),
   };
