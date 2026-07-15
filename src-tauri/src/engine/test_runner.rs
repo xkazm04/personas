@@ -2036,6 +2036,27 @@ fn make_common_result_fields(
 // Lab: Arena
 // ============================================================================
 
+/// Resolve a persona's active production prompt version for result attribution.
+///
+/// Mirrors the frontend active-version rule (`LabVersionsTable`): the version
+/// tagged `production` wins; otherwise the highest `version_number`. Returns
+/// `None` when the persona has no prompt versions at all, so unscoped arena
+/// results correctly stay version-less rather than being attributed to an
+/// invented id. Read-only single-row query; a pool/query error degrades to
+/// `None` (attribution is best-effort, never a reason to fail the run).
+fn resolve_active_version(pool: &DbPool, persona_id: &str) -> Option<(String, i32)> {
+    let conn = pool.get().ok()?;
+    conn.query_row(
+        "SELECT id, version_number FROM persona_prompt_versions
+         WHERE persona_id = ?1
+         ORDER BY (tag = 'production') DESC, version_number DESC
+         LIMIT 1",
+        [persona_id],
+        |row| Ok((row.get::<_, String>(0)?, row.get::<_, i32>(1)?)),
+    )
+    .ok()
+}
+
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub async fn run_arena_test(
     app: AppHandle,
@@ -2055,6 +2076,11 @@ pub async fn run_arena_test(
 ) {
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
+    // `label` reflects the *explicit* version scope only: it keys the summary
+    // tracker, and build_arena_summary looks results up by `model.id` (empty
+    // label). Deriving it from the resolved attribution below would change the
+    // key to `vN:model` and make the arena summary miss every cell — so it must
+    // stay tied to the original `version` argument.
     let label = version
         .as_ref()
         .map(|(_, num)| format!("v{}", num))
@@ -2065,6 +2091,19 @@ pub async fn run_arena_test(
         tools: Vec::new(),
     }];
 
+    // Attribution version stamped onto every persisted result. When the arena
+    // was launched version-scoped, that scope wins. Otherwise (the arena
+    // chrome's own unscoped "Begin the Match") we resolve the persona's active
+    // production version — the same rule the frontend uses — so these results
+    // reach `get_version_ratings` (which filters `version_id IS NOT NULL`) and
+    // the champion tally and ratings table stay in agreement. A persona with no
+    // prompt versions at all keeps `None` (we never invent an id). Kept separate
+    // from `label` so summary keying is unchanged.
+    let attribution: Option<(String, i32)> = match &version {
+        Some(v) => Some(v.clone()),
+        None => resolve_active_version(&pool, &persona.id),
+    };
+
     let cb = LabCallbacks {
         event_name: "lab-arena-status",
         update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
@@ -2072,7 +2111,7 @@ pub async fn run_arena_test(
         }),
         persist_result: Box::new(move |pool, run_id, _variant, scenario, model, status, scores| {
             let base = make_common_result_fields(scenario, model, status, scores);
-            let (version_id, version_number) = match &version {
+            let (version_id, version_number) = match &attribution {
                 Some((vid, vnum)) => (Some(vid.clone()), Some(*vnum)),
                 None => (None, None),
             };
@@ -2875,5 +2914,61 @@ mod tests {
         // Smart quotes / em-dashes are multibyte too — must pass through intact.
         let mixed = "“café” — 你好 🚀";
         assert_eq!(truncate_chars(mixed, 2000), mixed);
+    }
+
+    // -- Direction 1: unscoped-arena attribution --------------------------------
+
+    fn insert_version(conn: &rusqlite::Connection, id: &str, persona_id: &str, num: i32, tag: &str) {
+        conn.execute(
+            "INSERT INTO persona_prompt_versions (id, persona_id, version_number, tag, created_at)
+             VALUES (?1, ?2, ?3, ?4, datetime('now'))",
+            rusqlite::params![id, persona_id, num, tag],
+        )
+        .unwrap();
+    }
+
+    /// The `production`-tagged version is the active one even when a later
+    /// version has a higher number — matching `LabVersionsTable`'s rule so
+    /// unscoped arena results attribute to the same version the UI calls live.
+    #[test]
+    fn resolve_active_version_prefers_production_then_highest_number() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        // Insert with FK checks off so we don't need to materialise a full persona.
+        conn.execute_batch("PRAGMA foreign_keys = OFF;").unwrap();
+        let pid = "persona-arena-attr";
+        insert_version(&conn, "v1", pid, 1, "experimental");
+        insert_version(&conn, "v2", pid, 2, "production");
+        insert_version(&conn, "v3", pid, 3, "experimental");
+        drop(conn);
+        assert_eq!(
+            resolve_active_version(&pool, pid),
+            Some(("v2".to_string(), 2))
+        );
+    }
+
+    /// With no production tag, the highest `version_number` wins.
+    #[test]
+    fn resolve_active_version_falls_back_to_highest_number() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = OFF;").unwrap();
+        let pid = "persona-no-prod";
+        insert_version(&conn, "a1", pid, 1, "experimental");
+        insert_version(&conn, "a2", pid, 5, "experimental");
+        insert_version(&conn, "a3", pid, 3, "archived");
+        drop(conn);
+        assert_eq!(
+            resolve_active_version(&pool, pid),
+            Some(("a2".to_string(), 5))
+        );
+    }
+
+    /// A persona with no prompt versions stays version-less — we never invent an
+    /// id (the acceptance's explicit NULL-preserving case).
+    #[test]
+    fn resolve_active_version_none_when_no_versions() {
+        let pool = crate::db::init_test_db().unwrap();
+        assert_eq!(resolve_active_version(&pool, "persona-empty"), None);
     }
 }
