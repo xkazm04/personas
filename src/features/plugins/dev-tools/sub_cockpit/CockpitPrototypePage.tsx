@@ -54,8 +54,8 @@ export default function CockpitPrototypePage() {
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Portfolio → Cockpit — prototype R15"
-        subtitle="Consolidation winner shipped: Inline cards + Deck scan toolbar + accept/reject in the proposals tooltip — 1:1 with the real Factory L2"
+        title="Portfolio → Cockpit — prototype R16"
+        subtitle="Passport header-card redesign: project-overall metadata (readiness tokens · trend · stack strip w/ grayed unwired slots · contexts · KPI pass rate) — variants: Tokens vs Statband"
         fitWidth
         actions={
           project ? undefined : (

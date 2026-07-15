@@ -274,3 +274,19 @@ export function wallHealth(project: MockProject): WallHealth {
   const s = gridSummary(gridFor(project));
   return { total: s.total, crit: s.crit, warn: s.warn, unmeasured: s.unmeasured };
 }
+
+// -- R16: header-card stats (the compact cover redesign) --------------------------
+
+export interface WallHeaderStats {
+  /** KPIs currently passing their target vs all measured KPIs. */
+  kpiPassed: number;
+  kpiTotal: number;
+  /** Golden-trend delta since the last recorded change (0 = flat/no history). */
+  trend: number;
+}
+
+export const HEADER_STATS: Record<string, WallHeaderStats> = {
+  'mock-nimbus': { kpiPassed: 5, kpiTotal: 8, trend: 15 },
+  'mock-atlas': { kpiPassed: 1, kpiTotal: 3, trend: -4 },
+  'mock-comet': { kpiPassed: 0, kpiTotal: 0, trend: 0 },
+};

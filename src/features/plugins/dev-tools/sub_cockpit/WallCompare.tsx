@@ -23,14 +23,11 @@ import { AlertTriangle, ArrowUpRight, CheckCircle2, Settings2, TerminalSquare, X
 
 import { useSystemStore } from '@/stores/systemStore';
 import { toastCatch } from '@/lib/silentCatch';
-import {
-  ARCHETYPE_LABEL, AUTOMATION_LABEL, AUTOMATION_SCALE, CRITICALITY_LABEL,
-  LIFECYCLE_LABEL, PROD_BAND_LABEL, PROD_BAND_SCALE,
-} from '@/features/teams/sub_factory/passport/passportModel';
 import { SECTIONS, type CellValue } from '@/features/teams/sub_factory/passport/passportRows';
 
 import { InkCellValue, InkTabs, NEON, SETUP_BLUE, SegBar, anchorTip, inkKindOf, scoreInk } from './cockpitGlyphs';
 import { buildDispatchPrompt, dispatchKey, dispatchToFleet, findRunningDispatch } from './wallDispatch';
+import { HeaderStatband, HeaderTokens, type HeaderVariant } from './wallHeaders';
 import {
   IMPROVE_ACTION_LABEL, ROW_META, WALL, sortWall, wallHealth,
   type WallEntry, type WallRowMeta, type WallSort,
@@ -47,6 +44,12 @@ type WallView = 'grid' | 'table';
 const VIEW_TABS: Array<{ id: WallView; label: string }> = [
   { id: 'table', label: 'Compare' },
   { id: 'grid', label: 'Overview' },
+];
+
+// R16 — the header-card prototype: two compact cover structures, switchable.
+const HEADER_TABS: Array<{ id: HeaderVariant; label: string }> = [
+  { id: 'tokens', label: 'Tokens' },
+  { id: 'statband', label: 'Statband' },
 ];
 
 const bodySections = SECTIONS.map((s) => ({ ...s, rows: s.rows.filter((r) => !r.headline) }));
@@ -235,73 +238,13 @@ function ImprovePopover({ st, onClose }: { st: ImproveState; onClose: () => void
   );
 }
 
-// -- covers (shared by both views; motion layoutId makes them morph) --------------
+// -- covers (R16: the compact header-card variants replace the axis-bar cover;
+//    the metadata the bars carried lives in the Compare rows below) ---------------
 
-function CoverBody({ entry, onOpen, identity }: { entry: WallEntry; onOpen: (id: string) => void; identity?: boolean }) {
-  const { project, passport } = entry;
-  const health = wallHealth(project);
-  const worst = worstHue(entry);
-  const axis = (label: string, sub: string, score: number, reached: number, steps: number) => {
-    const hue = scoreInk(score);
-    return (
-      <div>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[10px] uppercase tracking-[0.12em] text-foreground/45">{label}</span>
-          <span className="typo-caption font-semibold" style={{ color: hue }}>{sub}</span>
-          <span className="text-[11px] tabular-nums text-foreground/45 ml-auto">{score}</span>
-        </div>
-        <div className="mt-1.5"><SegBar steps={steps} reached={reached} hue={hue} /></div>
-      </div>
-    );
-  };
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => onOpen(project.id)}
-        title={`Open the ${project.name} cockpit`}
-        className="group/door inline-flex items-center gap-2 min-w-0 max-w-full text-left focus-ring rounded-interactive"
-      >
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} />
-        <span className="typo-heading-lg tracking-tight text-foreground group-hover/door:text-primary transition-colors truncate">
-          {project.name}
-        </span>
-        <ArrowUpRight className="w-4 h-4 shrink-0 text-primary/70 opacity-0 group-hover/door:opacity-100 transition-opacity" aria-hidden />
-      </button>
-      {identity && (
-        <div className="typo-label text-foreground/40 mt-0.5">
-          {ARCHETYPE_LABEL[passport.identity.archetype]} · {LIFECYCLE_LABEL[passport.identity.lifecycle]} · {CRITICALITY_LABEL[passport.identity.criticality]}
-        </div>
-      )}
-      <div className="text-[11.5px] tabular-nums mt-1 flex items-center gap-2.5">
-        {health.total === 0 ? (
-          <span style={{ color: SETUP_BLUE }}>no contexts scanned →</span>
-        ) : (
-          <>
-            {health.crit > 0 && <span style={{ color: NEON.red }}>{health.crit} critical</span>}
-            {health.warn > 0 && <span style={{ color: NEON.amber }}>{health.warn} warning</span>}
-            <span className="text-foreground/40">{health.total} contexts</span>
-          </>
-        )}
-      </div>
-      <div className="flex flex-col gap-2.5 mt-3">
-        {axis(
-          'Automation',
-          `${passport.automationReadiness.level} · ${AUTOMATION_LABEL[passport.automationReadiness.level]}`,
-          passport.automationReadiness.score,
-          AUTOMATION_SCALE.indexOf(passport.automationReadiness.level) + 1,
-          AUTOMATION_SCALE.length,
-        )}
-        {axis(
-          'Production',
-          PROD_BAND_LABEL[passport.productionReadiness.band],
-          passport.productionReadiness.score,
-          PROD_BAND_SCALE.indexOf(passport.productionReadiness.band) + 1,
-          PROD_BAND_SCALE.length,
-        )}
-      </div>
-    </>
-  );
+function CoverBody({ entry, onOpen, headerVariant }: { entry: WallEntry; onOpen: (id: string) => void; headerVariant: HeaderVariant }) {
+  return headerVariant === 'tokens'
+    ? <HeaderTokens entry={entry} onOpen={onOpen} />
+    : <HeaderStatband entry={entry} onOpen={onOpen} />;
 }
 
 // -- the wall ------------------------------------------------------------------------
@@ -310,6 +253,7 @@ export default function WallCompare({ onOpenProject }: { onOpenProject: (id: str
   const reduce = useReducedMotion();
   const [view, setView] = useState<WallView>('table');
   const [sort, setSort] = useState<WallSort>('name');
+  const [headerVariant, setHeaderVariant] = useState<HeaderVariant>('tokens');
   const [improve, setImprove] = useState<ImproveState | null>(null);
   const entries = useMemo(() => sortWall(WALL, sort), [sort]);
   const cols = { gridTemplateColumns: `170px repeat(${entries.length}, minmax(250px, 1fr))` };
@@ -320,7 +264,10 @@ export default function WallCompare({ onOpenProject }: { onOpenProject: (id: str
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-4 pb-8" data-testid="wall-compare">
       <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
-        <InkTabs tabs={VIEW_TABS} active={view} onChange={setView} label="View" />
+        <span className="inline-flex items-center gap-5 flex-wrap">
+          <InkTabs tabs={VIEW_TABS} active={view} onChange={setView} label="View" />
+          <InkTabs tabs={HEADER_TABS} active={headerVariant} onChange={setHeaderVariant} label="Header" />
+        </span>
         <InkTabs tabs={SORT_TABS} active={sort} onChange={setSort} label="Sort" />
       </div>
 
@@ -343,7 +290,7 @@ export default function WallCompare({ onOpenProject }: { onOpenProject: (id: str
                     background: 'rgba(148,163,184,.025)',
                   }}
                 >
-                  <CoverBody entry={e} onOpen={onOpenProject} identity />
+                  <CoverBody entry={e} onOpen={onOpenProject} headerVariant={headerVariant} />
                   <div className="mt-3 pt-2.5 border-t border-dashed border-foreground/10">
                     {blockers.length === 0 ? (
                       <span className="inline-flex items-center gap-1.5 typo-caption" style={{ color: NEON.emerald }}>
@@ -373,7 +320,7 @@ export default function WallCompare({ onOpenProject }: { onOpenProject: (id: str
                   className="px-4 py-3.5 border-b border-foreground/10 min-w-0"
                   style={{ borderTop: `2px solid ${worstHue(e)}55` }}
                 >
-                  <CoverBody entry={e} onOpen={onOpenProject} />
+                  <CoverBody entry={e} onOpen={onOpenProject} headerVariant={headerVariant} />
                 </motion.div>
               ))}
 
