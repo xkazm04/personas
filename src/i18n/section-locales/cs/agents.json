@@ -860,7 +860,12 @@
     "vr_reconcile_done": "Hotovo",
     "vr_reconcile_now_follows": "Nyní sleduje výchozí ({model})",
     "vr_reconcile_pinned_to": "přišpendleno k {model}",
-    "vr_reconcile_title": "Sladit přišpendlené modely použití"
+    "vr_reconcile_title": "Sladit přišpendlené modely použití",
+    "improve_failed": "Nepodařilo se připravit podklad pro zlepšení",
+    "improve_focus": "Zaměří se na {metric} (průměr {score}/100)",
+    "improve_run_seed_measured": "Vylepši personu „{name}“. Její poslední test označil {metric} jako nejslabší oblast (průměr {score}/100). Na co se mám zaměřit? ",
+    "improve_run_seed_plain": "Vylepši personu „{name}“ na základě výsledků jejího posledního testu. Na co se mám zaměřit? ",
+    "improve_seeded": "Podklad pro zlepšení otevřen v Athena"
   },
   "design": {
     "select_agent": "Vyberte agenta pro zahájení analýzy návrhu",

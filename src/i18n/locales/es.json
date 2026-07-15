@@ -1663,7 +1663,12 @@
       "vr_reconcile_done": "Listo",
       "vr_reconcile_now_follows": "Ahora sigue el predeterminado ({model})",
       "vr_reconcile_pinned_to": "anclado a {model}",
-      "vr_reconcile_title": "Reconciliar anclajes de modelo por caso de uso"
+      "vr_reconcile_title": "Reconciliar anclajes de modelo por caso de uso",
+      "improve_failed": "No se pudo preparar el resumen de mejora",
+      "improve_focus": "Se centrará en {metric} (promedio {score}/100)",
+      "improve_run_seed_measured": "Mejora la persona \"{name}\". Su última prueba marcó {metric} como el área más débil (promedio {score}/100). ¿En qué debería centrarme? ",
+      "improve_run_seed_plain": "Mejora la persona \"{name}\" según los resultados de su última prueba. ¿En qué debería centrarme? ",
+      "improve_seeded": "Resumen de mejora abierto en Athena"
     },
     "design": {
       "select_agent": "Selecciona un agente para iniciar el análisis de diseño",

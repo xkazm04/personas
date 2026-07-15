@@ -1663,7 +1663,12 @@
       "vr_reconcile_done": "完了",
       "vr_reconcile_now_follows": "デフォルトに従います（{model}）",
       "vr_reconcile_pinned_to": "{model} にピン留め済み",
-      "vr_reconcile_title": "ユースケースのモデルピンを調整"
+      "vr_reconcile_title": "ユースケースのモデルピンを調整",
+      "improve_failed": "改善ブリーフを準備できませんでした",
+      "improve_focus": "{metric}に注力します（平均{score}/100）",
+      "improve_run_seed_measured": "ペルソナ「{name}」を改善してください。最新のテストで{metric}が最も弱い領域として指摘されました（平均{score}/100）。何に注力すべきでしょうか？ ",
+      "improve_run_seed_plain": "最新のテスト結果に基づいてペルソナ「{name}」を改善してください。何に注力すべきでしょうか？ ",
+      "improve_seeded": "改善ブリーフをAthenaで開きました"
     },
     "design": {
       "select_agent": "デザイン分析を開始するエージェントを選択",

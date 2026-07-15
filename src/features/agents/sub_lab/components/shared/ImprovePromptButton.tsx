@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { Wand2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
-import { useToastStore } from '@/stores/toastStore';
 import { buildTestMetadataForDesignContext } from '../../libs/labFeedbackLoop';
 import { parseDesignContext, serializeDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
-import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { useSeedAthenaComposer } from '@/features/plugins/companion/useSeedAthenaComposer';
 import { useTranslation } from '@/i18n/useTranslation';
-import { DebtText } from '@/i18n/DebtText';
 
 
 interface ImprovePromptButtonProps {
@@ -43,26 +41,46 @@ function getModelsTested(runId: string, mode: string): string[] {
   return Array.isArray(run.modelsTested) ? run.modelsTested : [];
 }
 
+/** Average the three sub-scores across results; null when nothing was scored. */
+function avgScores(results: Array<Record<string, unknown>>) {
+  if (results.length === 0) return null;
+  const avg = (key: string) => {
+    const scored = results.filter((r) => (r[key] as number | null) != null);
+    return scored.length > 0
+      ? Math.round(scored.reduce((s, r) => s + (r[key] as number), 0) / scored.length)
+      : 0;
+  };
+  return { ta: avg('toolAccuracyScore'), oq: avg('outputQualityScore'), pc: avg('protocolCompliance') };
+}
+
 /**
- * Button that triggers a Matrix run to improve the persona's prompt
- * based on the results of the current lab run, and enriches the
- * persona's design_context with lab test metadata.
+ * "Improve" action for a completed lab run. It does two things — the SAME single
+ * improve mechanism the Versions table uses:
+ *  1. Enriches the persona's design_context with lab test metadata (the durable
+ *     feedback loop from testing back into building — fired straight from the
+ *     run's results, no separate matrix run required).
+ *  2. Seeds Athena's composer with an improvement brief and opens the panel,
+ *     letting the user specify the focus before sending.
+ *
+ * (Previously this fired a Matrix run whose results had no surface in the
+ * consolidated Lab, then toasted a pointer to a removed tab — both removed. The
+ * matrix/ab/eval slice machinery is untouched; only this button's usage of it.)
  */
 export function ImprovePromptButton({ personaId, runId, mode, disabled }: ImprovePromptButtonProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const lab = t.agents.lab;
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const startMatrix = useAgentStore((s) => s.startMatrix);
-  const updatePersona = useAgentStore((s) => s.updatePersona);
-  const addToast = useToastStore((s) => s.addToast);
+  const seedAthena = useSeedAthenaComposer();
 
   const handleClick = async () => {
     setState('loading');
     setErrorMsg(null);
     try {
-      // 1. Enrich design_context with lab test metadata
       const results = getResultsForRun(runId, mode);
       const modelsTested = getModelsTested(runId, mode);
+
+      // 1. Enrich design_context with lab test metadata (the feedback loop).
       if (results.length > 0) {
         const metadata = buildTestMetadataForDesignContext(
           mode,
@@ -77,31 +95,33 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
           })),
           modelsTested,
         );
-
-        // Read current design_context and merge in the metadata
         const persona = useAgentStore.getState().selectedPersona;
         const currentCtx = parseDesignContext(persona?.design_context);
         const enriched = serializeDesignContext({ ...currentCtx, labTestMetadata: metadata });
-        await updatePersona(personaId, { design_context: enriched });
+        await useAgentStore.getState().updatePersona(personaId, { design_context: enriched });
       }
 
-      // 2. Start a Matrix run to generate an improved prompt
-      const instruction = `Improve the prompt based on the ${mode} test results from run ${runId}. ` +
-        `Analyze weaknesses and low-scoring scenarios, then generate an improved version ` +
-        `that addresses the identified issues while preserving existing strengths.`;
-
-      const defaultModels = selectedModelsToConfigs(new Set(['haiku', 'sonnet']));
-      const newRunId = await startMatrix(personaId, instruction, defaultModels);
-      if (newRunId) {
-        setState('success');
-        addToast('{t.agents.lab.improvement_run_started}! Check the Matrix tab for results.', 'success');
+      // 2. Seed Athena's composer with an improvement brief (single improve path).
+      const persona = useAgentStore.getState().selectedPersona;
+      const name = persona?.name ?? '';
+      const scores = avgScores(results);
+      let seed: string;
+      if (scores) {
+        const metrics = [
+          { label: lab.vr_metric_tool, v: scores.ta },
+          { label: lab.vr_metric_quality, v: scores.oq },
+          { label: lab.vr_metric_protocol, v: scores.pc },
+        ];
+        const weakest = metrics.reduce((a, b) => (b.v < a.v ? b : a));
+        seed = tx(lab.improve_run_seed_measured, { name, metric: weakest.label, score: weakest.v });
       } else {
-        setState('error');
-        setErrorMsg('Failed to start improvement run');
+        seed = tx(lab.improve_run_seed_plain, { name });
       }
+      seedAthena(seed);
+      setState('success');
     } catch (err) {
       setState('error');
-      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
+      setErrorMsg(err instanceof Error ? err.message : lab.improve_failed);
     }
   };
 
@@ -109,7 +129,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-emerald-500/15 text-emerald-400">
         <CheckCircle2 className="w-3.5 h-3.5" />
-        <DebtText k="auto_improvement_run_started_d6215b76" />
+        {lab.improve_seeded}
       </span>
     );
   }
@@ -119,37 +139,26 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center gap-1.5 typo-caption text-red-400">
           <AlertCircle className="w-3.5 h-3.5" />
-          {errorMsg || 'Failed'}
+          {errorMsg || lab.improve_failed}
         </span>
         <button
           onClick={handleClick}
           className="px-3 py-1.5 rounded-card typo-caption font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
         >
-          Retry
+          {t.common.retry}
         </button>
       </div>
     );
   }
 
-  // Build a preview of what will be improved
-  const results = getResultsForRun(runId, mode);
-  const avgScores = results.length > 0 ? (() => {
-    const scoredTA = results.filter((r) => (r.toolAccuracyScore as number | null) != null);
-    const scoredOQ = results.filter((r) => (r.outputQualityScore as number | null) != null);
-    const scoredPC = results.filter((r) => (r.protocolCompliance as number | null) != null);
-    return {
-      ta: scoredTA.length > 0 ? Math.round(scoredTA.reduce((s, r) => s + (r.toolAccuracyScore as number), 0) / scoredTA.length) : 0,
-      oq: scoredOQ.length > 0 ? Math.round(scoredOQ.reduce((s, r) => s + (r.outputQualityScore as number), 0) / scoredOQ.length) : 0,
-      pc: scoredPC.length > 0 ? Math.round(scoredPC.reduce((s, r) => s + (r.protocolCompliance as number), 0) / scoredPC.length) : 0,
-    };
-  })() : null;
-
-  const weakest = avgScores
+  // Idle: show a preview of the weakest area the brief will target.
+  const scores = avgScores(getResultsForRun(runId, mode));
+  const weakest = scores
     ? [
-        { name: 'tool usage', score: avgScores.ta },
-        { name: 'output quality', score: avgScores.oq },
-        { name: 'protocol', score: avgScores.pc },
-      ].sort((a, b) => a.score - b.score)[0]
+        { label: lab.vr_metric_tool, v: scores.ta },
+        { label: lab.vr_metric_quality, v: scores.oq },
+        { label: lab.vr_metric_protocol, v: scores.pc },
+      ].reduce((a, b) => (b.v < a.v ? b : a))
     : null;
 
   return (
@@ -162,18 +171,18 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
         {state === 'loading' ? (
           <>
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            {t.agents.lab.analyzing_patching}
+            {lab.analyzing_patching}
           </>
         ) : (
           <>
             <Wand2 className="w-3.5 h-3.5" />
-            {t.agents.lab.auto_improve}
+            {lab.auto_improve}
           </>
         )}
       </button>
       {weakest && state === 'idle' && (
         <span className="typo-body text-foreground">
-          <DebtText k="auto_will_focus_on_422f7052" /> <strong className="text-foreground">{weakest.name}</strong> <DebtText k="auto_avg_6d5ae115" /> {weakest.score}/100)
+          {tx(lab.improve_focus, { metric: weakest.label, score: weakest.v })}
         </span>
       )}
     </div>

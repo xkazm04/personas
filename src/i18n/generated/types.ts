@@ -1666,6 +1666,11 @@ export type Translations = {
       improvement_run_started: string;
       analyzing_patching: string;
       auto_improve: string;
+      improve_run_seed_measured: string;
+      improve_run_seed_plain: string;
+      improve_seeded: string;
+      improve_failed: string;
+      improve_focus: string;
       no_prompt_changes: string;
       evaluation_notes: string;
       how_to_fix: string;

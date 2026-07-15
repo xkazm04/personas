@@ -860,7 +860,12 @@
     "vr_reconcile_done": "Selesai",
     "vr_reconcile_now_follows": "Kini mengikuti default ({model})",
     "vr_reconcile_pinned_to": "disematkan ke {model}",
-    "vr_reconcile_title": "Selaraskan pin model use case"
+    "vr_reconcile_title": "Selaraskan pin model use case",
+    "improve_failed": "Gagal menyiapkan ringkasan peningkatan",
+    "improve_focus": "Akan fokus pada {metric} (rata-rata {score}/100)",
+    "improve_run_seed_measured": "Tingkatkan persona \"{name}\". Uji terbarunya menandai {metric} sebagai area terlemah (rata-rata {score}/100). Apa yang harus saya fokuskan? ",
+    "improve_run_seed_plain": "Tingkatkan persona \"{name}\" berdasarkan hasil uji terbarunya. Apa yang harus saya fokuskan? ",
+    "improve_seeded": "Ringkasan peningkatan dibuka di Athena"
   },
   "design": {
     "select_agent": "Pilih agen untuk memulai analisis desain",

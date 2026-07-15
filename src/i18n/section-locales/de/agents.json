@@ -860,7 +860,12 @@
     "vr_reconcile_done": "Fertig",
     "vr_reconcile_now_follows": "Folgt jetzt der Standardeinstellung ({model})",
     "vr_reconcile_pinned_to": "gepinnt an {model}",
-    "vr_reconcile_title": "Modell-Pins der Anwendungsfälle abgleichen"
+    "vr_reconcile_title": "Modell-Pins der Anwendungsfälle abgleichen",
+    "improve_failed": "Verbesserungs-Briefing konnte nicht vorbereitet werden",
+    "improve_focus": "Fokus liegt auf {metric} (Ø {score}/100)",
+    "improve_run_seed_measured": "Persona \"{name}\" verbessern. Ihr letzter Test hat {metric} als schwächsten Bereich markiert (Ø {score}/100). Worauf soll ich mich konzentrieren? ",
+    "improve_run_seed_plain": "Persona \"{name}\" anhand der letzten Testergebnisse verbessern. Worauf soll ich mich konzentrieren? ",
+    "improve_seeded": "Verbesserungs-Briefing in Athena geöffnet"
   },
   "design": {
     "select_agent": "Agenten auswählen, um Designanalyse zu starten",

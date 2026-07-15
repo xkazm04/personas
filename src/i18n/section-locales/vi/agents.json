@@ -860,7 +860,12 @@
     "vr_reconcile_done": "Xong",
     "vr_reconcile_now_follows": "Hiện theo mặc định ({model})",
     "vr_reconcile_pinned_to": "đã ghim vào {model}",
-    "vr_reconcile_title": "Điều chỉnh ghim model theo use case"
+    "vr_reconcile_title": "Điều chỉnh ghim model theo use case",
+    "improve_failed": "Không thể chuẩn bị bản tóm tắt cải thiện",
+    "improve_focus": "Sẽ tập trung vào {metric} (trung bình {score}/100)",
+    "improve_run_seed_measured": "Cải thiện persona \"{name}\". Bài kiểm tra gần nhất cho thấy {metric} là điểm yếu nhất (trung bình {score}/100). Tôi nên tập trung vào điều gì? ",
+    "improve_run_seed_plain": "Cải thiện persona \"{name}\" dựa trên kết quả kiểm tra gần nhất. Tôi nên tập trung vào điều gì? ",
+    "improve_seeded": "Đã mở bản tóm tắt cải thiện trong Athena"
   },
   "design": {
     "select_agent": "Chọn tác nhân để bắt đầu phân tích thiết kế",

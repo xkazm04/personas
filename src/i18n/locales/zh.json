@@ -1663,7 +1663,12 @@
       "vr_reconcile_done": "完成",
       "vr_reconcile_now_follows": "现在跟随默认值（{model}）",
       "vr_reconcile_pinned_to": "已固定为 {model}",
-      "vr_reconcile_title": "协调用例模型固定"
+      "vr_reconcile_title": "协调用例模型固定",
+      "improve_failed": "无法准备改进方案",
+      "improve_focus": "将聚焦于 {metric}（平均 {score}/100）",
+      "improve_run_seed_measured": "改进角色\"{name}\"。它最近的测试将 {metric} 标记为最薄弱的部分（平均 {score}/100）。我应该重点关注什么？ ",
+      "improve_run_seed_plain": "根据角色\"{name}\"最近的测试结果改进它。我应该重点关注什么？ ",
+      "improve_seeded": "改进方案已在 Athena 中打开"
     },
     "design": {
       "select_agent": "选择代理以开始设计分析",

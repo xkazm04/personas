@@ -1663,7 +1663,12 @@
       "vr_reconcile_done": "완료",
       "vr_reconcile_now_follows": "이제 기본값({model})을 따름",
       "vr_reconcile_pinned_to": "{model}에 고정됨",
-      "vr_reconcile_title": "사용 사례 모델 핀 조정"
+      "vr_reconcile_title": "사용 사례 모델 핀 조정",
+      "improve_failed": "개선 브리핑을 준비하지 못했습니다",
+      "improve_focus": "{metric}에 집중합니다 (평균 {score}/100)",
+      "improve_run_seed_measured": "페르소나 \"{name}\"을(를) 개선합니다. 최근 테스트에서 {metric}이(가) 가장 취약한 영역으로 나타났습니다 (평균 {score}/100). 어디에 집중해야 할까요? ",
+      "improve_run_seed_plain": "최근 테스트 결과를 바탕으로 페르소나 \"{name}\"을(를) 개선합니다. 어디에 집중해야 할까요? ",
+      "improve_seeded": "개선 브리핑을 Athena에서 열었습니다"
     },
     "design": {
       "select_agent": "디자인 분석을 시작할 에이전트를 선택하세요",

@@ -860,7 +860,12 @@
     "vr_reconcile_done": "Terminé",
     "vr_reconcile_now_follows": "Suit désormais la valeur par défaut ({model})",
     "vr_reconcile_pinned_to": "épinglé sur {model}",
-    "vr_reconcile_title": "Réconcilier les modèles épinglés des cas d'usage"
+    "vr_reconcile_title": "Réconcilier les modèles épinglés des cas d'usage",
+    "improve_failed": "Impossible de préparer le brief d'amélioration",
+    "improve_focus": "Se concentrera sur {metric} (moy. {score}/100)",
+    "improve_run_seed_measured": "Améliore le persona « {name} ». Son dernier test a signalé {metric} comme le point faible (moy. {score}/100). Sur quoi dois-je me concentrer ? ",
+    "improve_run_seed_plain": "Améliore le persona « {name} » d'après ses derniers résultats de test. Sur quoi dois-je me concentrer ? ",
+    "improve_seeded": "Brief d'amélioration ouvert dans Athena"
   },
   "design": {
     "select_agent": "Sélectionnez un agent pour démarrer l'analyse de conception",

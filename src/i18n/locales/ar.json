@@ -1663,7 +1663,12 @@
       "vr_reconcile_done": "تم",
       "vr_reconcile_now_follows": "يتبع الآن الافتراضي ({model})",
       "vr_reconcile_pinned_to": "مثبّت على {model}",
-      "vr_reconcile_title": "التوفيق بين تثبيتات نماذج حالات الاستخدام"
+      "vr_reconcile_title": "التوفيق بين تثبيتات نماذج حالات الاستخدام",
+      "improve_failed": "تعذّر تجهيز موجز التحسين",
+      "improve_focus": "سيركّز على {metric} (المتوسط {score}/100)",
+      "improve_run_seed_measured": "حسّن الشخصية \"{name}\". أشار آخر اختبار لها إلى أن {metric} هو أضعف المجالات (المتوسط {score}/100). على ماذا ينبغي أن أركّز؟ ",
+      "improve_run_seed_plain": "حسّن الشخصية \"{name}\" بناءً على أحدث نتائج اختبارها. على ماذا ينبغي أن أركّز؟ ",
+      "improve_seeded": "تم فتح موجز التحسين في Athena"
     },
     "design": {
       "select_agent": "اختر وكيلاً لبدء تحليل التصميم",
