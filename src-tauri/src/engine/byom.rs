@@ -90,45 +90,39 @@ pub struct RoutingRule {
 ///
 /// # Canonical source
 ///
-/// **As of 2026-05-05, no caller of [`ByomPolicy::evaluate`] supplies an
-/// explicit complexity.** The only production call site lives in
-/// `engine/runner/mod.rs` (search for `byom_policy.*evaluate`) and passes
-/// `None`, which falls through to [`TaskComplexity::DEFAULT`] (`Standard`).
+/// **As of 2026-07-15 the production runner classifies complexity** via
+/// [`TaskComplexity::infer`] and passes it to [`ByomPolicy::evaluate`]. The
+/// single production call site lives in `engine/runner/mod.rs` (search for
+/// `byom_policy.*evaluate`). Before this, every call passed `None` → the
+/// evaluator fell through to [`TaskComplexity::DEFAULT`] (`Standard`), so
+/// `Simple`/`Critical` routing rules silently no-op'd. That is fixed: routing
+/// rules for all three bands can now fire.
 ///
-/// This means routing rules whose `task_complexity` is `Simple` or `Critical`
-/// **never fire today** — the matching loop in [`ByomPolicy::evaluate`] only
-/// finds `Standard` rules. Users who configure a `Simple` rule expecting cost
-/// savings will silently route through the `Standard` branch every time.
-///
-/// # Precedence (intended, when sources land)
-///
-/// When future work introduces classification, the resolution order at the
-/// runner call site MUST be:
+/// # Precedence (implemented order at the runner call site)
 ///
 /// 1. **Explicit per-execution override** — passed by an API caller, slash
 ///    command, or schedule. Highest priority because it is the most specific
-///    signal.
-/// 2. **Persona-level default** — a future field on `Persona` (e.g. derived
-///    from `template_category` or set explicitly in the editor). Applies to
-///    every execution of that persona unless overridden.
-/// 3. **Heuristic inference** — optional last-resort classification from the
-///    prompt body (e.g. token count, keyword presence). Should be feature-flagged
-///    so that an unexpected upgrade to "Critical" never silently increases cost.
-/// 4. **`TaskComplexity::DEFAULT` (`Standard`)** — terminal fallback when
-///    nothing above produced a value. Logged at the decision point so the
-///    fallback is observable rather than silent.
+///    signal. *(No such source exists yet; reserved for future work.)*
+/// 2. **Persona-level default** — a future field on `Persona` (e.g. set
+///    explicitly in the editor). *(Not yet wired.)*
+/// 3. **Heuristic inference** — [`TaskComplexity::infer`], a conservative,
+///    deterministic classifier over the composed-prompt size and tool count.
+///    **This is the layer the runner uses today.** Biased toward `Standard` so
+///    an unexpected upgrade to `Critical` never silently increases cost.
+/// 4. **`TaskComplexity::DEFAULT` (`Standard`)** — terminal fallback if a
+///    caller still passes `None`. Logged at the decision point so the fallback
+///    is observable rather than silent.
 ///
 /// Each layer narrows from "more specific" to "less specific"; never invert
-/// the order.
+/// the order. New sources slot in above the heuristic, not below it.
 ///
 /// # Why this matters
 ///
 /// BYOM cost routing exists for the `Simple` and `Critical` branches — that's
 /// the whole point. A routing rule for `Simple` is a contract with the user:
-/// "format-only edits will hit the cheap model." Until something wires up a
-/// real complexity source, that contract is unfulfilled. The doc comment here
-/// is the audit trail; the tracing breadcrumb in `evaluate` is the runtime
-/// signal that flags the fallback.
+/// "format-only edits will hit the cheap model." The runner now honors that
+/// contract via the heuristic; the tracing breadcrumb in `evaluate` records
+/// which source produced the band.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "lowercase")]
@@ -152,6 +146,38 @@ impl TaskComplexity {
     /// contract — this constant is the **terminal fallback** in that contract,
     /// not a recommendation for callers to bypass classification.
     pub const DEFAULT: Self = Self::Standard;
+
+    /// Heuristic layer 3 of the canonical precedence: infer complexity from two
+    /// cheap, always-available signals — the size of the fully-composed prompt
+    /// and the number of tools the persona can call.
+    ///
+    /// **Deliberately conservative.** The bands are wide and biased toward
+    /// [`Self::Standard`] (the safe middle tier): a task is only classified
+    /// `Simple` when it is genuinely tiny *and* tool-less (formatting /
+    /// extraction shaped), and only `Critical` when the prompt is very large
+    /// *or* the persona wields many tools (broad, high-surface work). Everything
+    /// in between stays `Standard`, so an unclassified task never silently jumps
+    /// a cost tier. This is the terminal classifier before the
+    /// [`Self::DEFAULT`] fallback; it is pure and deterministic so the same
+    /// inputs always resolve the same band (important for reproducible routing).
+    pub fn infer(prompt_chars: usize, tool_count: usize) -> Self {
+        // The composed prompt already carries the persona system prompt +
+        // memory + envelope, so "tiny" here means a near-empty task on top of a
+        // minimal persona.
+        const SIMPLE_PROMPT_CHARS_MAX: usize = 2_000;
+        const CRITICAL_PROMPT_CHARS_MIN: usize = 24_000;
+        const CRITICAL_TOOL_COUNT_MIN: usize = 12;
+
+        if prompt_chars <= SIMPLE_PROMPT_CHARS_MAX && tool_count == 0 {
+            Self::Simple
+        } else if prompt_chars >= CRITICAL_PROMPT_CHARS_MIN
+            || tool_count >= CRITICAL_TOOL_COUNT_MIN
+        {
+            Self::Critical
+        } else {
+            Self::Standard
+        }
+    }
 }
 
 /// A compliance rule that restricts providers for specific workflow tags.
@@ -281,12 +307,12 @@ impl ByomPolicy {
     ///
     /// **Severity assignment:**
     /// - `Error`: Provider is explicitly blocked — contradictory config that will never work.
-    /// - `Error`: An enabled compliance rule has non-empty `workflow_tags` — it can
-    ///   never match (no tag source feeds `evaluate`) so its restriction fails OPEN.
-    ///   Blocking, because saving a no-op security control is worse than rejecting it.
+    /// - `Warning`: An enabled compliance rule has non-empty `workflow_tags` — it now
+    ///   matches against the persona's `template_category` (wired 2026-07-15), but coverage
+    ///   is *partial*: personas without a category are not restricted, so the control still
+    ///   fails OPEN for those. Non-blocking (the rule does real work for categorized
+    ///   personas) but surfaced so an admin knows the coverage gap.
     /// - `Warning`: Provider is not in the allowed list — the rule has no effect currently.
-    /// - `Warning`: An enabled routing rule targets a `task_complexity` other than
-    ///   `TaskComplexity::DEFAULT` — the runner never produces it, so the rule is inert.
     /// - `Info`: References an unknown provider — may be a typo or future provider.
     ///
     /// **Precedence rule**: `allowed_providers` is the ceiling — compliance rules
@@ -347,25 +373,24 @@ impl ByomPolicy {
             if !rule.enabled {
                 continue;
             }
-            // SECURITY (fail-open guard): compliance rules only restrict providers
-            // when one of their `workflow_tags` matches a persona tag inside
-            // `evaluate`. No production caller supplies tags yet — the runner
-            // passes `&[]` (see `engine/runner/mod.rs`, the `evaluate(&[], None)`
-            // call) because `Persona` has no tag source wired up. A rule with a
-            // non-empty `workflow_tags` therefore NEVER matches, so its provider
-            // restriction is never enforced and the control fails OPEN — the worst
-            // direction for a security control. Emit a blocking error so an admin
-            // cannot save a policy that silently pretends to enforce compliance.
-            // Removing the runtime fail-open requires a real persona tag source
-            // (a product decision); until then this rule must not be saveable.
+            // SECURITY (partial-coverage guard): compliance rules restrict
+            // providers when one of their `workflow_tags` matches a persona tag
+            // inside `evaluate`. Since 2026-07-15 the runner passes the persona's
+            // `template_category` as the tag source (see `engine/runner/mod.rs`),
+            // so these rules DO enforce — but only for personas that carry a
+            // category. Manually-created / legacy personas pass `&[]`, so the
+            // restriction still fails OPEN for them. This is no longer a blocking
+            // Error (the rule does real work), but the coverage gap is a genuine
+            // security limitation, so surface it as a Warning rather than
+            // pretending full enforcement.
             if !rule.workflow_tags.is_empty() {
                 warnings.push(PolicyWarning {
-                    severity: PolicyWarningSeverity::Error,
+                    severity: PolicyWarningSeverity::Warning,
                     message: format!(
-                        "Compliance rule '{}' will never match: tag-based compliance routing \
-                         is not wired up (executions supply no workflow tags), so its provider \
-                         restriction is NOT enforced and fails open. Remove this rule until \
-                         tag-based compliance matching is implemented.",
+                        "Compliance rule '{}' matches on a persona's template category, so it only \
+                         restricts personas that have one. Personas without a category (manually \
+                         created or legacy) are NOT restricted and can use any allowed provider — \
+                         the control fails open for them.",
                         rule.name,
                     ),
                 });
@@ -408,30 +433,11 @@ impl ByomPolicy {
             if !rule.enabled {
                 continue;
             }
-            // Inert-rule guard: `evaluate` matches a routing rule only when its
-            // `task_complexity` equals the complexity it resolved for the
-            // execution. No production caller classifies complexity yet — the
-            // runner passes `None`, which `evaluate` resolves to
-            // `TaskComplexity::DEFAULT` (`Standard`). Any rule keyed to a
-            // different complexity (`Simple`/`Critical`) can therefore never
-            // fire today, so the configured routing silently no-ops. Surface a
-            // warning so the admin sees the rule is inert instead of trusting a
-            // routing contract the runner cannot honor. (Non-blocking: unlike the
-            // compliance fail-open, an inert cost-routing rule is a correctness/
-            // cost issue, not a security control, so it should not block saving.)
-            if rule.task_complexity != TaskComplexity::DEFAULT {
-                warnings.push(PolicyWarning {
-                    severity: PolicyWarningSeverity::Warning,
-                    message: format!(
-                        "Routing rule '{}' targets task complexity '{:?}', but the runner only \
-                         ever produces '{:?}' today (no task-complexity classifier is wired up), \
-                         so this rule never fires.",
-                        rule.name,
-                        rule.task_complexity,
-                        TaskComplexity::DEFAULT,
-                    ),
-                });
-            }
+            // Since 2026-07-15 the runner classifies task complexity via
+            // `TaskComplexity::infer` and passes it to `evaluate`, so routing
+            // rules for ALL three bands (`Simple`/`Standard`/`Critical`) can
+            // fire. The former "targets a non-Standard complexity, so it never
+            // fires" inert-rule warning is therefore obsolete and removed.
             if let Ok(kind) = rule.provider.parse() {
                 if blocked_set.contains(&kind) {
                     warnings.push(PolicyWarning {
@@ -484,16 +490,17 @@ impl ByomPolicy {
     /// # Arguments
     ///
     /// - `persona_tags`: tags/categories associated with the persona (for
-    ///   compliance matching). **Today the production runner passes `&[]`** —
-    ///   no source on `Persona` currently feeds tags through. Until that lands,
-    ///   compliance rules whose `workflow_tags` are non-empty will never match.
-    /// - `complexity`: the task complexity level (for cost routing). When
-    ///   `None`, defaults to [`TaskComplexity::DEFAULT`] (`Standard`) so that
-    ///   routing rules still apply. **Today every production call passes
-    ///   `None`** — see the canonical-source notes on [`TaskComplexity`] for
-    ///   the intended precedence (explicit > persona-default > heuristic >
-    ///   Standard) and why `Simple`/`Critical` rules silently no-op until that
-    ///   precedence is wired up.
+    ///   compliance matching). **The production runner now passes the persona's
+    ///   `template_category`** (a single lowercase category such as
+    ///   `"development"` / `"finance"` / `"healthcare"`, when present) as the
+    ///   tag source. Coverage is therefore *partial*: personas without a
+    ///   category (manually-created / legacy rows) still pass `&[]`, so a
+    ///   compliance rule only restricts categorized personas — see the
+    ///   fail-open note in [`ByomPolicy::validate`].
+    /// - `complexity`: the task complexity level (for cost routing). The runner
+    ///   now supplies `Some(TaskComplexity::infer(..))`. When `None`, defaults
+    ///   to [`TaskComplexity::DEFAULT`] (`Standard`) so routing rules still
+    ///   apply — see the canonical-source notes on [`TaskComplexity`].
     pub fn evaluate(
         &self,
         persona_tags: &[String],
@@ -653,6 +660,72 @@ mod tests {
         assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
         // With single provider in ALL, allowing it leaves nothing else to block
         assert!(decision.blocked_providers.is_empty());
+    }
+
+    #[test]
+    fn test_infer_complexity_bands() {
+        // Simple: tiny prompt AND no tools.
+        assert_eq!(TaskComplexity::infer(500, 0), TaskComplexity::Simple);
+        // Not Simple once any tool is present, even with a tiny prompt.
+        assert_eq!(TaskComplexity::infer(500, 1), TaskComplexity::Standard);
+        // Standard: the wide middle band.
+        assert_eq!(TaskComplexity::infer(8_000, 3), TaskComplexity::Standard);
+        // Critical via large prompt.
+        assert_eq!(TaskComplexity::infer(30_000, 0), TaskComplexity::Critical);
+        // Critical via many tools.
+        assert_eq!(TaskComplexity::infer(1_000, 20), TaskComplexity::Critical);
+    }
+
+    #[test]
+    fn test_infer_drives_routing_rule_pick() {
+        // End-to-end: a Simple-band task picks the Simple routing rule; a
+        // Critical-band task picks the Critical one — proving the heuristic feeds
+        // real routing decisions.
+        let policy = ByomPolicy {
+            enabled: true,
+            routing_rules: vec![
+                RoutingRule {
+                    name: "cheap".into(),
+                    task_complexity: TaskComplexity::Simple,
+                    provider: "claude_code".into(),
+                    model: Some("claude-haiku-4-5-20251001".into()),
+                    enabled: true,
+                },
+                RoutingRule {
+                    name: "premium".into(),
+                    task_complexity: TaskComplexity::Critical,
+                    provider: "claude_code".into(),
+                    model: Some("claude-opus-4-8".into()),
+                    enabled: true,
+                },
+            ],
+            ..Default::default()
+        };
+        let simple = policy.evaluate(&[], Some(TaskComplexity::infer(400, 0)));
+        assert_eq!(simple.routing_rule_name.as_deref(), Some("cheap"));
+        let critical = policy.evaluate(&[], Some(TaskComplexity::infer(40_000, 0)));
+        assert_eq!(critical.routing_rule_name.as_deref(), Some("premium"));
+    }
+
+    #[test]
+    fn test_template_category_tag_matches_compliance() {
+        // Direction 3: a persona's template_category, passed as the tag source,
+        // matches a compliance rule's workflow_tags.
+        let policy = ByomPolicy {
+            enabled: true,
+            compliance_rules: vec![ComplianceRule {
+                name: "Healthcare".into(),
+                workflow_tags: vec!["healthcare".into()],
+                allowed_providers: vec!["claude_code".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        // A healthcare-category persona matches; an unrelated category does not.
+        let matched = policy.evaluate(&["healthcare".into()], None);
+        assert_eq!(matched.compliance_rule_name.as_deref(), Some("Healthcare"));
+        let unmatched = policy.evaluate(&["finance".into()], None);
+        assert_eq!(unmatched.compliance_rule_name, None);
     }
 
     #[test]
@@ -859,14 +932,10 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        // Two warnings now: (1) Warning — the `Simple` rule is inert (runner only
-        // ever produces `Standard`); (2) Info — the unknown `other_provider`.
-        assert_eq!(warnings.len(), 2);
-        let inert = warnings
-            .iter()
-            .find(|w| w.severity == PolicyWarningSeverity::Warning)
-            .expect("inert-routing warning");
-        assert!(inert.message.contains("never fires"));
+        // One warning: Info — the unknown `other_provider`. The `Simple` rule is
+        // no longer inert (the runner now classifies complexity), so the former
+        // inert-routing warning is gone.
+        assert_eq!(warnings.len(), 1);
         let unknown = warnings
             .iter()
             .find(|w| w.severity == PolicyWarningSeverity::Info)
@@ -889,18 +958,14 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        // Two warnings now: (1) Error — provider explicitly blocked; (2) Warning —
-        // the `Simple` rule is inert (runner only ever produces `Standard`).
-        assert_eq!(warnings.len(), 2);
+        // One warning: Error — provider explicitly blocked. The `Simple` rule is
+        // no longer inert, so only the blocked-provider error remains.
+        assert_eq!(warnings.len(), 1);
         let blocked = warnings
             .iter()
             .find(|w| w.severity == PolicyWarningSeverity::Error)
             .expect("blocked-provider error");
         assert!(blocked.message.contains("explicitly blocked"));
-        assert!(warnings
-            .iter()
-            .any(|w| w.severity == PolicyWarningSeverity::Warning
-                && w.message.contains("never fires")));
     }
 
     #[test]
@@ -923,12 +988,13 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        // Four warnings now:
-        //   - Info  : routing rule references unknown `nonexistent_provider`
-        //   - Info  : compliance rule references unknown `also_unknown`
-        //   - Warning: the `Simple` routing rule is inert (runner only does Standard)
-        //   - Error : the tagged compliance rule is inert (no tag source = fails open)
-        assert_eq!(warnings.len(), 4);
+        // Three warnings now:
+        //   - Info   : routing rule references unknown `nonexistent_provider`
+        //   - Info   : compliance rule references unknown `also_unknown`
+        //   - Warning: the tagged compliance rule has partial coverage (fails open
+        //              for personas without a category)
+        // The `Simple` routing rule is no longer inert (complexity is classified).
+        assert_eq!(warnings.len(), 3);
         assert_eq!(
             warnings
                 .iter()
@@ -939,19 +1005,15 @@ mod tests {
         assert!(warnings
             .iter()
             .any(|w| w.severity == PolicyWarningSeverity::Warning
-                && w.message.contains("never fires")));
-        assert!(warnings
-            .iter()
-            .any(|w| w.severity == PolicyWarningSeverity::Error
-                && w.message.contains("never match")));
+                && w.message.contains("fails open")));
+        assert!(!policy.has_blocking_errors());
     }
 
     #[test]
     fn test_validate_clean_policy_no_warnings() {
-        // A genuinely clean policy: provider in the allowed set, and the only
-        // routing rule targets `Standard` (the one complexity the runner can
-        // actually produce). No compliance rule, because any rule with non-empty
-        // workflow_tags is currently inert and is flagged as a blocking error.
+        // A genuinely clean policy: provider in the allowed set with a routing
+        // rule. No compliance rule (a tagged one would add a partial-coverage
+        // Warning), so validate() returns no warnings at all.
         let policy = ByomPolicy {
             enabled: true,
             allowed_providers: vec!["claude_code".into()],
@@ -1192,9 +1254,11 @@ mod tests {
     // =========================================================================
 
     #[test]
-    fn test_validate_compliance_rule_with_tags_is_blocking_error() {
-        // The core fail-open finding: a tagged compliance rule never matches
-        // (runner passes no tags), so it must be flagged as a blocking error.
+    fn test_validate_compliance_rule_with_tags_is_partial_coverage_warning() {
+        // A tagged compliance rule now matches on the persona's template_category,
+        // so it does real work — but coverage is partial (personas without a
+        // category are not restricted). That is a non-blocking Warning, not a
+        // blocking Error.
         let policy = ByomPolicy {
             enabled: true,
             allowed_providers: vec!["claude_code".into()],
@@ -1208,16 +1272,15 @@ mod tests {
         };
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Error);
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Warning);
         assert!(warnings[0].message.contains("HIPAA"));
-        assert!(warnings[0].message.contains("never match"));
         assert!(warnings[0].message.contains("fails open"));
-        // Strong enough to block the save (mirrors the blocked-provider-typo case).
-        assert!(policy.has_blocking_errors());
+        // No longer blocking — the rule is saveable.
+        assert!(!policy.has_blocking_errors());
     }
 
     #[test]
-    fn test_validate_inert_compliance_rule_blocks_save() {
+    fn test_validate_tagged_compliance_rule_is_saveable() {
         let pool = crate::db::init_test_db().expect("test db");
         let policy = ByomPolicy {
             enabled: true,
@@ -1230,20 +1293,17 @@ mod tests {
             }],
             ..Default::default()
         };
-        let result = policy.save(&pool);
-        let err =
-            result.expect_err("save must refuse a policy with an inert (fail-open) compliance rule");
-        let msg = format!("{err:?}");
-        assert!(
-            msg.contains("blocking errors") && msg.contains("HIPAA"),
-            "expected validation error mentioning the inert HIPAA rule, got: {msg}"
-        );
+        // A tagged compliance rule now enforces (partially), so it must be
+        // saveable — only a Warning, no blocking Error.
+        policy
+            .save(&pool)
+            .expect("tagged compliance rule should save (warning-only, not blocking)");
     }
 
     #[test]
     fn test_validate_compliance_rule_without_tags_is_not_flagged() {
-        // A rule with empty workflow_tags can't fail open on the tag path (it
-        // simply never matches anything), so it is not flagged by the inert guard.
+        // A rule with empty workflow_tags can't match on the tag path (it
+        // simply never matches anything), so it is not flagged.
         let policy = ByomPolicy {
             enabled: true,
             allowed_providers: vec!["claude_code".into()],
@@ -1261,8 +1321,8 @@ mod tests {
 
     #[test]
     fn test_validate_routing_rule_standard_is_not_inert() {
-        // Standard is the one complexity the runner produces, so a Standard rule
-        // is NOT inert and must not be flagged.
+        // Routing rules for any complexity are honored now that the runner
+        // classifies complexity, so a Standard rule must not be flagged.
         let policy = ByomPolicy {
             enabled: true,
             allowed_providers: vec!["claude_code".into()],

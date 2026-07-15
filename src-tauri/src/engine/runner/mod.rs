@@ -1307,20 +1307,35 @@ pub async fn run_execution(
             };
         }
     };
-    // BYOM policy inputs are placeholders today:
-    //   - `&[]` for persona_tags: `Persona` has no tags/categories field that
-    //     feeds compliance matching yet. Compliance rules with non-empty
-    //     `workflow_tags` therefore never match.
-    //   - `None` for complexity: nothing classifies the task (no per-execution
-    //     override, no persona-default field, no heuristic). The evaluator
-    //     falls back to `TaskComplexity::DEFAULT` (`Standard`), which is why
-    //     `Simple` and `Critical` routing rules silently no-op. See the
-    //     canonical-source contract on `engine::byom::TaskComplexity` for the
-    //     intended precedence (explicit > persona-default > heuristic >
-    //     Standard) before adding a source here.
+    // BYOM policy inputs (wired 2026-07-15 — Direction 3):
+    //   - persona_tags: the persona's `template_category` (a single lowercase
+    //     category such as "development"/"finance"/"healthcare"), when present.
+    //     This is the real, durable persona-categorization field; compliance
+    //     rules match their `workflow_tags` against it. Coverage is partial:
+    //     personas without a category pass `&[]` (equivalent to the old
+    //     behavior), so their compliance rules still fail open — surfaced as a
+    //     Warning in `ByomPolicy::validate`.
+    //   - complexity: `TaskComplexity::infer` — a conservative, deterministic
+    //     heuristic over the fully-composed prompt size and tool count. Biased
+    //     toward `Standard` so unclassified tasks never silently jump cost
+    //     tiers. This is heuristic layer 3 of the precedence documented on
+    //     `engine::byom::TaskComplexity`; explicit / persona-default sources
+    //     slot in above it when they land.
+    //
+    // Both inputs only change behavior when a policy actually has matching
+    // rules configured; with no BYOM rules the returned decision is identical
+    // to the old `evaluate(&[], None)` fast path.
+    let persona_tags: Vec<String> = persona
+        .template_category
+        .as_deref()
+        .map(str::trim)
+        .filter(|c| !c.is_empty())
+        .map(|c| vec![c.to_string()])
+        .unwrap_or_default();
+    let task_complexity = super::byom::TaskComplexity::infer(prompt_text.len(), tools.len());
     let policy_decision = byom_policy
         .as_ref()
-        .map(|p| p.evaluate(&[], None))
+        .map(|p| p.evaluate(&persona_tags, Some(task_complexity)))
         .unwrap_or_else(|| super::byom::PolicyDecision {
             preferred_provider: None,
             preferred_model: None,
