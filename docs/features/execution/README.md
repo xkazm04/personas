@@ -196,7 +196,14 @@ This doc set covers pillar 3. For pillar 1 see
    event reports backpressure. Frontend polls via `get_execution` or subscribes
    to `execution-status` events. (`simulate_use_case` shares the same path but
    bypasses the `enabled` + `needs_credentials` gates and is excluded from
-   metrics.)
+   metrics.) The `needs_credentials` gate is resolved **live** at execution time
+   from current vault/probe state (`connector_readiness::persona_live_blockers`),
+   not from the cached `personas.setup_status` column — a stale-`ready` persona
+   whose bound credential was deleted is still blocked, and a stale-`needs`
+   persona whose connectors are now fine is allowed. Credential delete / field
+   edits also recompute the cached column for dependent personas so UI/team
+   surfaces stay honest. The block message points at the global **Connections**
+   sidebar section (there is no per-persona "Connections panel").
 2. **The scheduler tick runs every ~10s, the event bus tick every ~1s.**
    If your schedule trigger looks like it fires up to 10s late, that's
    why. Raise the frequency in `background.rs` if you need tighter

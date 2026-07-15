@@ -26,6 +26,15 @@ The credentials manager uses `useCredentialManagerState`, `CredentialNavContext`
 - Undo-delete support (`useUndoDelete`).
 - Post-save resource picker flow (`resourcePickerStore.ts`, `usePostSaveResourcePicker.tsx`).
 
+**Readiness recompute on mutation.** Deleting a credential, or editing its field
+values, recomputes `setup_status` + `setup_detail` for every persona that
+depends on it (union of the `credential_dependents` scan and personas whose
+`design_context.credentialLinks` reference the exact id). A persona left bound
+to a deleted/emptied credential flips from `ready` to `needs_credentials`, so it
+no longer passes the execution gate and runs blind — the recompute reuses the
+same `connector_readiness` resolver adopt/promote use (`crud.rs` → `commands::
+design::connector_readiness::recompute_setup_for_credential_dependents`).
+
 ### Credential healthchecks
 
 Healthchecks verify that a stored credential still authenticates against its provider (HTTP probe, CLI verify, or desktop-app presence — see `engine/healthcheck.rs`). They run on two paths:
