@@ -146,10 +146,15 @@ bars, upgrade popovers), R9 added the Overview cover-grid with motion
 recomposition + real Fleet dispatch (dedup-gated) from improve actions.
 **R10 migrated the wall design into the REAL Factory** (`ProjectsPassportWall`
 rewritten over `passportInk.tsx`; Overview = default first layer; all improve
-machinery preserved; feature-gap crosscheck in the commit). Still pending:
-wiring the second layer (per-project Focus context/KPI cockpit) to real data,
-fine-tuning the Overview tile's on-click quick function, and the dispatch-flow
-round (R3 in the table above).
+machinery preserved; feature-gap crosscheck in the commit). **R11 restructured
+Factory's second level into four ink tabs** (`sub_factory/l2/`): KPIs
+(proposals queue in the original review-table structure + the matrix drill),
+Context map (Dev Tools content, read-focused), Observability (LLM + Monitoring
+mix — the technical dimension), and Overview (the Focus health grid WIRED to
+real contexts/KPIs/runtime). Donor modules kept — dual-run until proven.
+Still pending: fine-tuning the wall tile's on-click quick function, tab
+consolidation decisions after the dual-run, and the dispatch-flow round
+(R3 in the table above).
 
 **Open questions the rounds must answer:** do goals live *inside* dimensions or
 above them? · is user rating a KPI kind or a separate signal (mock as KPI kind

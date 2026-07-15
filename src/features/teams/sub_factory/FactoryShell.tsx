@@ -9,11 +9,11 @@ import { saveKpiAssessment } from '@/api/devTools/kpis';
 
 import { projectKpis, applyEdit, type KpiEdit, type MockKpi, type MockProject } from './factoryModel';
 import { Breadcrumb } from './factoryPrimitives';
-import { KpiProposalsPanel } from './KpiProposalsPanel';
 import { ProjectsLayer } from './ProjectsLayer';
 import { GroupKpiLayer } from './GroupKpiLayer';
 import { KpiConsole } from './KpiConsole';
 import { useFactoryData } from './factoryData';
+import { FactoryProjectTabs } from './l2/FactoryProjectTabs';
 
 export interface GroupsRenderArgs {
   project: MockProject;
@@ -115,9 +115,15 @@ export function FactoryShell({
       <>
         <Breadcrumb trail={[{ label: 'Projects', onClick: () => setProjectId(null) }, { label: project.name }]} />
         <p className="typo-caption mb-3">{project.stack}</p>
-        {/* D5 — proposal on-ramp: scan + accept/adjust/reject; accepting reloads the matrix. */}
-        <KpiProposalsPanel projectId={project.id} onAccepted={reload} />
-        {renderGroups({ project, ed, openGroup, openKpi })}
+        {/* L2 restructure (2026-07): four ink tabs — KPIs (proposals queue +
+            the matrix, keeping the L3/L4 drill) · Context map · Observability ·
+            Overview (the Focus health grid on real data). The donor modules in
+            Dev Tools / Projects→KPIs stay — dual-run until proven. */}
+        <FactoryProjectTabs
+          projectId={project.id}
+          matrix={renderGroups({ project, ed, openGroup, openKpi })}
+          onKpisChanged={reload}
+        />
       </>
     );
   } else {

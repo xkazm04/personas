@@ -102,6 +102,18 @@ export function TechInk({ label, muted }: { label: string; muted?: boolean }) {
   );
 }
 
+/** Element-anchored tooltip/popover placement: below the anchor, left-aligned,
+ *  flipping above and clamping horizontally when out of room. Render the
+ *  positioned node through createPortal(document.body) — position:fixed
+ *  resolves against transformed ancestors otherwise. */
+export function anchorTip(rect: DOMRect, w: number, h: number): { left: number; top: number } {
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  if (left + w > window.innerWidth - 12) left = Math.max(12, window.innerWidth - w - 12);
+  if (top + h > window.innerHeight - 12) top = Math.max(12, rect.top - h - 8);
+  return { left, top };
+}
+
 /** Editorial tab row — quiet uppercase labels, active = teal underline. */
 export function InkTabs<T extends string>({ tabs, active, onChange, label }: {
   tabs: Array<{ id: T; label: string }>;
