@@ -125,12 +125,17 @@ pub async fn invoke_automation(
         &warnings,
     )?;
 
-    // Structured audit logging (best-effort)
+    // Structured audit logging (best-effort). On failure, classify the error
+    // into the shared ToolErrorKind so the audit row / incidents inbox carry a
+    // typed category instead of only the opaque webhook message.
     let (status, err_msg) = if completed_run.status == AutomationRunStatus::Completed {
         ("success", None)
     } else {
         ("error", completed_run.error_message.as_deref())
     };
+    let error_kind = err_msg.map(|m| {
+        crate::engine::tool_outcome::classify_app_error(&AppError::Execution(m.to_string())).0
+    });
     if let Err(log_err) = tool_audit_log::insert(
         pool,
         &automation.id,
@@ -142,6 +147,7 @@ pub async fn invoke_automation(
         status,
         Some(duration_ms as u64),
         err_msg,
+        error_kind.map(|k| k.as_str()),
     ) {
         tracing::warn!("Failed to write automation audit log: {log_err}");
     }

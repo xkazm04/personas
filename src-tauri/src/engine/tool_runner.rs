@@ -12,6 +12,7 @@ use crate::engine::automation_runner::invoke_automation;
 use crate::engine::rate_limiter::{
     RateLimiter, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW,
 };
+use crate::engine::tool_outcome::{cap_output, classify_app_error, ToolErrorKind};
 use crate::error::AppError;
 
 /// Default timeout for direct tool invocations (script and API calls).
@@ -21,16 +22,78 @@ const DIRECT_TOOL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(
 const TEST_TOOL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
 /// Result of a direct (no-LLM) tool invocation.
+///
+/// This is the direct-path half of the shared tool-result contract (see
+/// `engine::tool_outcome`). Success and failure both populate the typed
+/// contract fields — `error_kind` / `http_status` / `retryable` on failure, and
+/// `output` is always capped at `DIRECT_TOOL_OUTPUT_CAP_BYTES` with
+/// `output_truncated` surfacing any truncation (never silent).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct ToolInvocationResult {
     pub success: bool,
     pub output: String,
+    /// True when `output` was capped at the output byte limit.
+    pub output_truncated: bool,
     pub error: Option<String>,
+    /// Typed failure category (`None` on success).
+    pub error_kind: Option<ToolErrorKind>,
+    /// HTTP status when the failure came from an HTTP/API call (`None` otherwise).
+    pub http_status: Option<u16>,
+    /// Whether retrying the call could plausibly succeed (timeouts, transport,
+    /// 5xx, rate-limit). `false` on success and on terminal failures.
+    pub retryable: bool,
     pub duration_ms: u64,
     pub tool_name: String,
-    /// "script" | "api" | "unknown"
+    /// "script" | "api" | "automation"
     pub tool_type: String,
+}
+
+/// Internal typed error for the direct-path inner functions. Carries the shared
+/// contract fields so `invoke_tool_direct` can populate
+/// [`ToolInvocationResult`] without re-sniffing a stringified error. Any
+/// [`AppError`] converts via [`classify_app_error`]; the API/automation paths
+/// override the classification when they know a precise HTTP status / kind.
+struct DirectInvokeError {
+    error: AppError,
+    kind: ToolErrorKind,
+    http_status: Option<u16>,
+    retryable: bool,
+}
+
+impl DirectInvokeError {
+    /// Build from an [`AppError`] using the shared classifier.
+    fn classify(error: AppError) -> Self {
+        let (kind, http_status, retryable) = classify_app_error(&error);
+        Self {
+            error,
+            kind,
+            http_status,
+            retryable,
+        }
+    }
+
+    /// Build with an explicit classification (used where the caller knows the
+    /// precise kind/status, e.g. a script that exited non-zero = tool error).
+    fn typed(
+        error: AppError,
+        kind: ToolErrorKind,
+        http_status: Option<u16>,
+        retryable: bool,
+    ) -> Self {
+        Self {
+            error,
+            kind,
+            http_status,
+            retryable,
+        }
+    }
+}
+
+impl From<AppError> for DirectInvokeError {
+    fn from(error: AppError) -> Self {
+        Self::classify(error)
+    }
 }
 
 /// Invoke a tool directly without LLM orchestration.
@@ -97,10 +160,13 @@ pub async fn invoke_tool_direct(
 
     let kind = tool.tool_kind().map_err(AppError::Execution)?;
 
-    let result = {
+    let result: Result<(String, String), DirectInvokeError> = {
         #[allow(clippy::type_complexity)]
         let fut: std::pin::Pin<
-            Box<dyn std::future::Future<Output = Result<(String, String), AppError>> + Send>,
+            Box<
+                dyn std::future::Future<Output = Result<(String, String), DirectInvokeError>>
+                    + Send,
+            >,
         > = match kind {
             ToolKind::Automation => Box::pin(invoke_automation_tool(pool, tool, input_json)),
             ToolKind::Script => Box::pin(invoke_script(tool, input_json, &env_map)),
@@ -114,7 +180,7 @@ pub async fn invoke_tool_direct(
                 Box::pin(async move {
                     let first = invoke_api(tool, guide, input_json, &env_map).await;
                     if let Err(ref err) = first {
-                        if is_oauth_auth_failure(&err.to_string()) {
+                        if is_oauth_auth_failure(&err.error.to_string()) {
                             let refreshed =
                                 super::runner::force_refresh_credentials_for_tool(pool, tool).await;
                             if refreshed > 0 {
@@ -147,28 +213,42 @@ pub async fn invoke_tool_direct(
                 })
             }
         };
-        tokio::time::timeout(DIRECT_TOOL_TIMEOUT, fut)
-            .await
-            .map_err(|_| {
+        // A timeout is a structured, retryable failure — surface it as a
+        // success:false result with a typed Timeout kind rather than a hard
+        // Err out of this function.
+        match tokio::time::timeout(DIRECT_TOOL_TIMEOUT, fut).await {
+            Ok(inner) => inner,
+            Err(_) => Err(DirectInvokeError::typed(
                 AppError::Execution(format!(
                     "Tool '{}' timed out after {}s",
                     tool.name,
                     DIRECT_TOOL_TIMEOUT.as_secs()
-                ))
-            })?
+                )),
+                ToolErrorKind::Timeout,
+                None,
+                true,
+            )),
+        }
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
 
     let invocation_result = match result {
-        Ok((output, tool_type)) => ToolInvocationResult {
-            success: true,
-            output,
-            error: None,
-            duration_ms,
-            tool_name: tool.name.clone(),
-            tool_type,
-        },
+        Ok((output, tool_type)) => {
+            let (output, output_truncated) = cap_output(output);
+            ToolInvocationResult {
+                success: true,
+                output,
+                output_truncated,
+                error: None,
+                error_kind: None,
+                http_status: None,
+                retryable: false,
+                duration_ms,
+                tool_name: tool.name.clone(),
+                tool_type,
+            }
+        }
         Err(e) => {
             let tool_type = match kind {
                 ToolKind::Automation => "automation",
@@ -178,7 +258,11 @@ pub async fn invoke_tool_direct(
             ToolInvocationResult {
                 success: false,
                 output: String::new(),
-                error: Some(e.to_string()),
+                output_truncated: false,
+                error: Some(e.error.to_string()),
+                error_kind: Some(e.kind),
+                http_status: e.http_status,
+                retryable: e.retryable,
                 duration_ms,
                 tool_name: tool.name.clone(),
                 tool_type: tool_type.to_string(),
@@ -202,6 +286,7 @@ pub async fn invoke_tool_direct(
         },
         Some(duration_ms),
         invocation_result.error.as_deref(),
+        invocation_result.error_kind.map(|k| k.as_str()),
     ) {
         tracing::warn!("Failed to write tool audit log: {log_err}");
     }
@@ -214,7 +299,7 @@ async fn invoke_script(
     tool: &PersonaToolDefinition,
     input_json: &str,
     env_map: &HashMap<&str, &str>,
-) -> Result<(String, String), AppError> {
+) -> Result<(String, String), DirectInvokeError> {
     let mut cmd = tokio::process::Command::new("npx");
     cmd.arg("tsx")
         .arg(&tool.script_path)
@@ -228,6 +313,7 @@ async fn invoke_script(
     cmd.stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
+    // Spawn failure = transport (classified by the shared mapper).
     let output = cmd.output().await.map_err(|e| {
         AppError::Execution(format!(
             "Failed to spawn tool script '{}': {}",
@@ -242,11 +328,18 @@ async fn invoke_script(
         Ok((stdout, "script".to_string()))
     } else {
         let msg = if stderr.is_empty() { &stdout } else { &stderr };
-        Err(AppError::Execution(format!(
-            "Script exited with {}: {}",
-            output.status,
-            msg.trim()
-        )))
+        // The script ran but exited non-zero on its own terms — a tool error,
+        // not a transport/config problem, and not blindly retryable.
+        Err(DirectInvokeError::typed(
+            AppError::Execution(format!(
+                "Script exited with {}: {}",
+                output.status,
+                msg.trim()
+            )),
+            ToolErrorKind::ToolError,
+            None,
+            false,
+        ))
     }
 }
 
@@ -269,12 +362,17 @@ async fn invoke_api(
     guide: &str,
     input_json: &str,
     env_map: &HashMap<&str, &str>,
-) -> Result<(String, String), AppError> {
+) -> Result<(String, String), DirectInvokeError> {
     let curl_line = extract_curl_line(guide).ok_or_else(|| {
-        AppError::Execution(format!(
-            "Tool '{}' implementation_guide has no 'Curl:' line -- cannot invoke directly",
-            tool.name
-        ))
+        DirectInvokeError::typed(
+            AppError::Execution(format!(
+                "Tool '{}' implementation_guide has no 'Curl:' line -- cannot invoke directly",
+                tool.name
+            )),
+            ToolErrorKind::Misconfigured,
+            None,
+            false,
+        )
     })?;
 
     // Parse the curl command into shell-style tokens (respecting quotes)
@@ -282,11 +380,16 @@ async fn invoke_api(
 
     // The first token must be "curl"
     if raw_tokens.is_empty() || raw_tokens[0] != "curl" {
-        return Err(AppError::Execution(format!(
-            "Tool '{}' Curl: line must start with 'curl', got: {:?}",
-            tool.name,
-            raw_tokens.first()
-        )));
+        return Err(DirectInvokeError::typed(
+            AppError::Execution(format!(
+                "Tool '{}' Curl: line must start with 'curl', got: {:?}",
+                tool.name,
+                raw_tokens.first()
+            )),
+            ToolErrorKind::Misconfigured,
+            None,
+            false,
+        ));
     }
 
     // Pre-parse input JSON once instead of re-parsing per token.
@@ -333,11 +436,13 @@ async fn invoke_api(
         Ok((stdout, "api".to_string()))
     } else {
         let msg = if stderr.is_empty() { &stdout } else { &stderr };
-        Err(AppError::Execution(format!(
+        // Classified from the message here; Direction 3 makes the HTTP status
+        // typed via the shared classifier/extractor the test path already uses.
+        Err(DirectInvokeError::classify(AppError::Execution(format!(
             "Curl exited with {}: {}",
             output.status,
             msg.trim()
-        )))
+        ))))
     }
 }
 
@@ -495,14 +600,19 @@ async fn invoke_automation_tool(
     pool: &DbPool,
     tool: &PersonaToolDefinition,
     input_json: &str,
-) -> Result<(String, String), AppError> {
+) -> Result<(String, String), DirectInvokeError> {
     let vtid = VirtualToolId::parse(&tool.id).ok_or_else(|| {
-        AppError::Execution(format!(
-            "Automation tool '{}' has invalid ID format (expected {}<id>): {}",
-            tool.name,
-            VirtualToolId::PREFIX,
-            tool.id
-        ))
+        DirectInvokeError::typed(
+            AppError::Execution(format!(
+                "Automation tool '{}' has invalid ID format (expected {}<id>): {}",
+                tool.name,
+                VirtualToolId::PREFIX,
+                tool.id
+            )),
+            ToolErrorKind::Misconfigured,
+            None,
+            false,
+        )
     })?;
     let automation_id = vtid.automation_id();
 
@@ -515,11 +625,13 @@ async fn invoke_automation_tool(
             "automation".to_string(),
         ))
     } else {
-        Err(AppError::Execution(format!(
+        // Direction 2 replaces this flat message with the structured failure
+        // (attempts used / retryable / reason kind) that automation_runner knows.
+        Err(DirectInvokeError::classify(AppError::Execution(format!(
             "Automation '{}' failed: {}",
             tool.name,
             run.error_message.unwrap_or_else(|| "Unknown error".into())
-        )))
+        ))))
     }
 }
 

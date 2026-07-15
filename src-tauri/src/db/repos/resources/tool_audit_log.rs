@@ -17,6 +17,7 @@ pub fn insert(
     result_status: &str,
     duration_ms: Option<u64>,
     error_message: Option<&str>,
+    error_kind: Option<&str>,
 ) -> Result<(), AppError> {
     timed_query!("tool_audit_log", "tool_audit_log::insert", {
         let conn = pool.get()?;
@@ -25,8 +26,8 @@ pub fn insert(
 
         conn.execute(
             "INSERT INTO tool_execution_audit_log
-             (id, tool_id, tool_name, tool_type, persona_id, persona_name, credential_id, result_status, duration_ms, error_message, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+             (id, tool_id, tool_name, tool_type, persona_id, persona_name, credential_id, result_status, duration_ms, error_message, error_kind, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             params![
                 id,
                 tool_id,
@@ -38,6 +39,7 @@ pub fn insert(
                 result_status,
                 duration_ms.map(|d| d as i64),
                 error_message,
+                error_kind,
                 now,
             ],
         )?;
@@ -56,6 +58,7 @@ pub fn insert(
                 result_status: result_status.to_string(),
                 duration_ms: duration_ms.map(|d| d as i64),
                 error_message: error_message.map(|s| s.to_string()),
+                error_kind: error_kind.map(|s| s.to_string()),
                 created_at: now.clone(),
             };
             crate::engine::audit_incidents_promoter::promote_tool_audit(pool, &entry);
@@ -69,7 +72,7 @@ pub fn get_recent(pool: &DbPool, limit: u32) -> Result<Vec<ToolExecutionAuditEnt
     timed_query!("tool_audit_log", "tool_audit_log::get_recent", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, tool_id, tool_name, tool_type, persona_id, persona_name, credential_id, result_status, duration_ms, error_message, created_at
+            "SELECT id, tool_id, tool_name, tool_type, persona_id, persona_name, credential_id, result_status, duration_ms, error_message, error_kind, created_at
              FROM tool_execution_audit_log
              ORDER BY created_at DESC
              LIMIT ?1",
@@ -87,7 +90,8 @@ pub fn get_recent(pool: &DbPool, limit: u32) -> Result<Vec<ToolExecutionAuditEnt
                     result_status: row.get(7)?,
                     duration_ms: row.get(8)?,
                     error_message: row.get(9)?,
-                    created_at: row.get(10)?,
+                    error_kind: row.get(10)?,
+                    created_at: row.get(11)?,
                 })
             })?
             .filter_map(|r| r.ok())
@@ -171,7 +175,7 @@ pub fn get_by_persona(
     timed_query!("tool_audit_log", "tool_audit_log::get_by_persona", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, tool_id, tool_name, tool_type, persona_id, persona_name, credential_id, result_status, duration_ms, error_message, created_at
+            "SELECT id, tool_id, tool_name, tool_type, persona_id, persona_name, credential_id, result_status, duration_ms, error_message, error_kind, created_at
              FROM tool_execution_audit_log
              WHERE persona_id = ?1
              ORDER BY created_at DESC
@@ -190,7 +194,8 @@ pub fn get_by_persona(
                     result_status: row.get(7)?,
                     duration_ms: row.get(8)?,
                     error_message: row.get(9)?,
-                    created_at: row.get(10)?,
+                    error_kind: row.get(10)?,
+                    created_at: row.get(11)?,
                 })
             })?
             .filter_map(|r| r.ok())

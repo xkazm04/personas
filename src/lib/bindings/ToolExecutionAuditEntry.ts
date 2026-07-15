@@ -3,4 +3,10 @@
 /**
  * A single tool execution audit log entry.
  */
-export type ToolExecutionAuditEntry = { id: string, toolId: string, toolName: string, toolType: string, personaId: string | null, personaName: string | null, credentialId: string | null, resultStatus: string, durationMs: bigint | null, errorMessage: string | null, createdAt: string, };
+export type ToolExecutionAuditEntry = { id: string, toolId: string, toolName: string, toolType: string, personaId: string | null, personaName: string | null, credentialId: string | null, resultStatus: string, durationMs: bigint | null, errorMessage: string | null,
+/**
+ * Typed failure category (see `engine::tool_outcome::ToolErrorKind`).
+ * `None` on success rows; a machine token on error/tool_error rows so the
+ * incidents inbox carries structure instead of an opaque string.
+ */
+errorKind: string | null, createdAt: string, };

@@ -22,6 +22,7 @@ use crate::db::DbPool;
 use crate::engine::rate_limiter::{
     RateLimiter, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW,
 };
+use crate::engine::tool_outcome::{classify_app_error, ToolErrorKind};
 use crate::error::AppError;
 
 /// Maximum allowed MCP JSON-RPC response payload (10 MB).
@@ -870,11 +871,13 @@ async fn execute_tool_guarded(
 
     let duration_ms = start.elapsed().as_millis() as u64;
 
-    // Audit logging (best-effort, never fails the call)
-    let (status, error_msg) = match &result {
-        Ok(r) if r.is_error => ("tool_error", None),
-        Ok(_) => ("success", None),
-        Err(e) => ("error", Some(e.to_string())),
+    // Audit logging (best-effort, never fails the call). Both the transport
+    // error (Err) and the tool-reported error (isError) map into the shared
+    // ToolErrorKind so the audit row / incidents inbox carry a typed category.
+    let (status, error_msg, error_kind) = match &result {
+        Ok(r) if r.is_error => ("tool_error", None, Some(ToolErrorKind::ToolError)),
+        Ok(_) => ("success", None, None),
+        Err(e) => ("error", Some(e.to_string()), Some(classify_app_error(e).0)),
     };
     if let Err(log_err) = tool_audit_log::insert(
         pool,
@@ -887,6 +890,7 @@ async fn execute_tool_guarded(
         status,
         Some(duration_ms),
         error_msg.as_deref(),
+        error_kind.map(|k| k.as_str()),
     ) {
         tracing::warn!("Failed to write tool audit log: {log_err}");
     }

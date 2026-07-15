@@ -1112,6 +1112,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 result_status   TEXT NOT NULL,
                 duration_ms     INTEGER,
                 error_message   TEXT,
+                error_kind      TEXT,
                 created_at      TEXT NOT NULL DEFAULT (datetime('now'))
             );
             CREATE INDEX IF NOT EXISTS idx_teal_tool    ON tool_execution_audit_log(tool_id);
@@ -1120,6 +1121,30 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             CREATE INDEX IF NOT EXISTS idx_teal_created ON tool_execution_audit_log(created_at DESC);"
         )?;
         tracing::info!("Created tool_execution_audit_log table");
+    }
+
+    // -- tool_execution_audit_log: add typed error_kind column ------------
+    // Idempotent add-column guard for DBs created before the tool-result
+    // contract landed. Guarded on both table presence (fresh installs above
+    // already include the column) and column absence so it never double-applies.
+    let has_tool_audit_table: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tool_execution_audit_log'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if has_tool_audit_table {
+        let has_error_kind: bool = conn
+            .prepare("SELECT COUNT(*) FROM pragma_table_info('tool_execution_audit_log') WHERE name = 'error_kind'")?
+            .query_row([], |row| row.get::<_, i64>(0))
+            .map(|c| c > 0)
+            .unwrap_or(false);
+        if !has_error_kind {
+            ddl_step(
+                conn,
+                "ALTER TABLE tool_execution_audit_log ADD COLUMN error_kind TEXT;",
+            )?;
+            tracing::info!("Added error_kind column to tool_execution_audit_log");
+        }
     }
 
     // -- Encrypted event payloads: add payload_iv column -----------------

@@ -202,6 +202,7 @@ pub mod template_checksums;
 pub mod template_v3;
 pub mod test_runner;
 pub mod tier;
+pub mod tool_outcome;
 pub mod tool_runner;
 pub mod topology_graph;
 pub mod topology_heuristic;
