@@ -391,7 +391,7 @@ pub fn build_persona_setup(
 /// De-duplicated, trimmed, blanks dropped.
 pub fn persona_declared_connectors(persona: &crate::db::models::Persona) -> Vec<String> {
     let mut names: Vec<String> = Vec::new();
-    let mut push = |raw: &str, names: &mut Vec<String>| {
+    let push = |raw: &str, names: &mut Vec<String>| {
         let n = raw.trim();
         if !n.is_empty() && !names.iter().any(|e: &String| e.eq_ignore_ascii_case(n)) {
             names.push(n.to_string());
@@ -560,7 +560,7 @@ pub fn recompute_setup_for_credential_dependents(pool: &DbPool, credential_id: &
 /// (`audit_log::get_dependents` reads the credential's `service_type`).
 pub fn credential_dependent_persona_ids(pool: &DbPool, credential_id: &str) -> Vec<String> {
     let mut ids: Vec<String> = Vec::new();
-    let mut push = |id: String, ids: &mut Vec<String>| {
+    let push = |id: String, ids: &mut Vec<String>| {
         if !id.is_empty() && !ids.contains(&id) {
             ids.push(id);
         }
