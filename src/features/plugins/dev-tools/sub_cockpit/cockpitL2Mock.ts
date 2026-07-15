@@ -145,10 +145,31 @@ export const OBS_BY_PROJECT: Record<string, { features: MockObsFeature[] | null;
   'mock-comet': { features: null, issues: null },
 };
 
-// -- context-map extras (feature counts per context, seeded) ---------------------
+// -- context-map extras (per-context coverage, seeded + deterministic) -----------
+
+function hash(s: string): number {
+  let h = 2166136261;
+  for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
 
 export function mockFeatureCount(cellId: string): number {
-  let h = 2166136261;
-  for (const ch of cellId) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
-  return (h >>> 0) % 4;
+  return hash(cellId) % 4;
+}
+
+export function mockGoalCount(cellId: string): number {
+  return hash(`${cellId}#g`) % 3;
+}
+
+/** The proposed KPIs attached to one context — a deterministic slice of the
+ *  project's proposal pool (R14 consolidation: the KPIs tab folds into the
+ *  context card's indicator + tooltip). ~40% of contexts carry 1–2. */
+export function mockProposalsForCell(cellId: string, projectId: string): MockProposal[] {
+  const pool = PROPOSALS_BY_PROJECT[projectId] ?? [];
+  if (pool.length === 0) return [];
+  const h = hash(`${cellId}#k`);
+  const count = h % 5 >= 3 ? (h % 2) + 1 : 0; // 0,0,0,1|2 pattern
+  if (count === 0) return [];
+  const start = h % pool.length;
+  return Array.from({ length: Math.min(count, pool.length) }, (_, i) => pool[(start + i) % pool.length]!);
 }

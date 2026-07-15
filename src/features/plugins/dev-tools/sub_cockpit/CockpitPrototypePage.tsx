@@ -54,8 +54,8 @@ export default function CockpitPrototypePage() {
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Portfolio → Cockpit — prototype R13"
-        subtitle="Project level synced to the real Factory L2: Module tabs (Overview default · KPIs · Context map · Observability) on populated mock data"
+        title="Portfolio → Cockpit — prototype R14"
+        subtitle="Consolidation trial: Overview + Context map + KPIs merged — coverage + proposed-KPI indicators on cards (tooltip = as-is proposals table), aggregated scan toolbar · variants: Deck (extra card row) vs Inline (existing rows)"
         fitWidth
         actions={
           project ? undefined : (
