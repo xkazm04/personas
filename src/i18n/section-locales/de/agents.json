@@ -865,7 +865,12 @@
     "improve_focus": "Fokus liegt auf {metric} (Ø {score}/100)",
     "improve_run_seed_measured": "Persona \"{name}\" verbessern. Ihr letzter Test hat {metric} als schwächsten Bereich markiert (Ø {score}/100). Worauf soll ich mich konzentrieren? ",
     "improve_run_seed_plain": "Persona \"{name}\" anhand der letzten Testergebnisse verbessern. Worauf soll ich mich konzentrieren? ",
-    "improve_seeded": "Verbesserungs-Briefing in Athena geöffnet"
+    "improve_seeded": "Verbesserungs-Briefing in Athena geöffnet",
+    "vr_cost_unknown": "k.A.",
+    "vr_cost_unknown_tooltip": "Kosten werden für lokale Modelle nicht erfasst",
+    "vr_degraded_tooltip": "{count} von {total} Stichproben mit heuristischem Fallback bewertet (LLM-Bewerter nicht verfügbar)",
+    "vr_partial_tooltip": "Zusammengesetzt aus unvollständigen Teilwerten — nicht direkt vergleichbar",
+    "vr_score_caution": "Wert mit Vorsicht"
   },
   "design": {
     "select_agent": "Agenten auswählen, um Designanalyse zu starten",

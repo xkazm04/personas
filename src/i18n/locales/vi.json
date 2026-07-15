@@ -1668,7 +1668,12 @@
       "improve_focus": "Sẽ tập trung vào {metric} (trung bình {score}/100)",
       "improve_run_seed_measured": "Cải thiện persona \"{name}\". Bài kiểm tra gần nhất cho thấy {metric} là điểm yếu nhất (trung bình {score}/100). Tôi nên tập trung vào điều gì? ",
       "improve_run_seed_plain": "Cải thiện persona \"{name}\" dựa trên kết quả kiểm tra gần nhất. Tôi nên tập trung vào điều gì? ",
-      "improve_seeded": "Đã mở bản tóm tắt cải thiện trong Athena"
+      "improve_seeded": "Đã mở bản tóm tắt cải thiện trong Athena",
+      "vr_cost_unknown": "không áp dụng",
+      "vr_cost_unknown_tooltip": "Chi phí không được theo dõi cho mô hình cục bộ",
+      "vr_degraded_tooltip": "{count} trên {total} mẫu được chấm bằng phương pháp dự phòng (bộ đánh giá LLM không khả dụng)",
+      "vr_partial_tooltip": "Tổng hợp từ điểm thành phần chưa đầy đủ — không thể so sánh trực tiếp",
+      "vr_score_caution": "Điểm cần thận trọng"
     },
     "design": {
       "select_agent": "Chọn tác nhân để bắt đầu phân tích thiết kế",

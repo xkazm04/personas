@@ -865,7 +865,12 @@
     "improve_focus": "Zaměří se na {metric} (průměr {score}/100)",
     "improve_run_seed_measured": "Vylepši personu „{name}“. Její poslední test označil {metric} jako nejslabší oblast (průměr {score}/100). Na co se mám zaměřit? ",
     "improve_run_seed_plain": "Vylepši personu „{name}“ na základě výsledků jejího posledního testu. Na co se mám zaměřit? ",
-    "improve_seeded": "Podklad pro zlepšení otevřen v Athena"
+    "improve_seeded": "Podklad pro zlepšení otevřen v Athena",
+    "vr_cost_unknown": "nedostupné",
+    "vr_cost_unknown_tooltip": "Náklady se u lokálních modelů nesledují",
+    "vr_degraded_tooltip": "{count} z {total} vzorků ohodnoceno záložní heuristikou (hodnotitel LLM nedostupný)",
+    "vr_partial_tooltip": "Složené z dílčích skóre — nelze přímo porovnat",
+    "vr_score_caution": "Skóre vyžaduje opatrnost"
   },
   "design": {
     "select_agent": "Vyberte agenta pro zahájení analýzy návrhu",

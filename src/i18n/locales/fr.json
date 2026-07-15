@@ -1668,7 +1668,12 @@
       "improve_focus": "Se concentrera sur {metric} (moy. {score}/100)",
       "improve_run_seed_measured": "Améliore le persona « {name} ». Son dernier test a signalé {metric} comme le point faible (moy. {score}/100). Sur quoi dois-je me concentrer ? ",
       "improve_run_seed_plain": "Améliore le persona « {name} » d'après ses derniers résultats de test. Sur quoi dois-je me concentrer ? ",
-      "improve_seeded": "Brief d'amélioration ouvert dans Athena"
+      "improve_seeded": "Brief d'amélioration ouvert dans Athena",
+      "vr_cost_unknown": "n/d",
+      "vr_cost_unknown_tooltip": "Le coût n'est pas suivi pour les modèles locaux",
+      "vr_degraded_tooltip": "{count} échantillons sur {total} évalués par heuristique de secours (évaluateur LLM indisponible)",
+      "vr_partial_tooltip": "Composite à partir de sous-scores partiels — non directement comparable",
+      "vr_score_caution": "Score à interpréter avec prudence"
     },
     "design": {
       "select_agent": "Sélectionnez un agent pour démarrer l'analyse de conception",

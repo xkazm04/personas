@@ -1668,7 +1668,12 @@
       "improve_focus": "{metric}に注力します（平均{score}/100）",
       "improve_run_seed_measured": "ペルソナ「{name}」を改善してください。最新のテストで{metric}が最も弱い領域として指摘されました（平均{score}/100）。何に注力すべきでしょうか？ ",
       "improve_run_seed_plain": "最新のテスト結果に基づいてペルソナ「{name}」を改善してください。何に注力すべきでしょうか？ ",
-      "improve_seeded": "改善ブリーフをAthenaで開きました"
+      "improve_seeded": "改善ブリーフをAthenaで開きました",
+      "vr_cost_unknown": "該当なし",
+      "vr_cost_unknown_tooltip": "ローカルモデルではコストが記録されません",
+      "vr_degraded_tooltip": "{total} 件中 {count} 件はヒューリスティックのフォールバックで採点（LLM評価器が利用不可）",
+      "vr_partial_tooltip": "部分的なサブスコアからの合成値 — 直接比較はできません",
+      "vr_score_caution": "スコアは注意が必要"
     },
     "design": {
       "select_agent": "デザイン分析を開始するエージェントを選択",

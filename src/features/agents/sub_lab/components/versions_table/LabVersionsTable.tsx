@@ -222,7 +222,15 @@ export function LabVersionsTable() {
       { key: 'cost', label: lab.vr_col_cost, width: '90px', align: 'right',
         render: (row) => (
           <span className="typo-caption text-foreground tabular-nums">
-            {row.rating ? <>$<Numeric value={row.rating.costUsd} precision={3} /></> : '—'}
+            {!row.rating ? '—' : row.rating.costUnknown ? (
+              // Ollama et al. report a hardcoded $0 — surface "not tracked" rather
+              // than a misleading $0.000 that reads as "free".
+              <Tooltip content={lab.vr_cost_unknown_tooltip}>
+                <span className="text-foreground/70">{lab.vr_cost_unknown}</span>
+              </Tooltip>
+            ) : (
+              <>$<Numeric value={row.rating.costUsd} precision={3} /></>
+            )}
           </span>
         ) },
       // Cost is price-weighted, so it hides which pair is actually token-hungry —

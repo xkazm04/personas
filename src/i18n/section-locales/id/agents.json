@@ -865,7 +865,12 @@
     "improve_focus": "Akan fokus pada {metric} (rata-rata {score}/100)",
     "improve_run_seed_measured": "Tingkatkan persona \"{name}\". Uji terbarunya menandai {metric} sebagai area terlemah (rata-rata {score}/100). Apa yang harus saya fokuskan? ",
     "improve_run_seed_plain": "Tingkatkan persona \"{name}\" berdasarkan hasil uji terbarunya. Apa yang harus saya fokuskan? ",
-    "improve_seeded": "Ringkasan peningkatan dibuka di Athena"
+    "improve_seeded": "Ringkasan peningkatan dibuka di Athena",
+    "vr_cost_unknown": "t/a",
+    "vr_cost_unknown_tooltip": "Biaya tidak dilacak untuk model lokal",
+    "vr_degraded_tooltip": "{count} dari {total} sampel dinilai dengan heuristik cadangan (penilai LLM tidak tersedia)",
+    "vr_partial_tooltip": "Komposit dari sub-skor parsial — tidak dapat dibandingkan langsung",
+    "vr_score_caution": "Skor perlu kehati-hatian"
   },
   "design": {
     "select_agent": "Pilih agen untuk memulai analisis desain",

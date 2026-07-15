@@ -865,7 +865,12 @@
     "improve_focus": "سيركّز على {metric} (المتوسط {score}/100)",
     "improve_run_seed_measured": "حسّن الشخصية \"{name}\". أشار آخر اختبار لها إلى أن {metric} هو أضعف المجالات (المتوسط {score}/100). على ماذا ينبغي أن أركّز؟ ",
     "improve_run_seed_plain": "حسّن الشخصية \"{name}\" بناءً على أحدث نتائج اختبارها. على ماذا ينبغي أن أركّز؟ ",
-    "improve_seeded": "تم فتح موجز التحسين في Athena"
+    "improve_seeded": "تم فتح موجز التحسين في Athena",
+    "vr_cost_unknown": "غير متاح",
+    "vr_cost_unknown_tooltip": "لا يتم تتبّع التكلفة للنماذج المحلية",
+    "vr_degraded_tooltip": "تم تقييم {count} من أصل {total} عيّنات بالطريقة الاحتياطية (مقيّم LLM غير متاح)",
+    "vr_partial_tooltip": "مركّب من درجات فرعية جزئية — غير قابل للمقارنة المباشرة",
+    "vr_score_caution": "الدرجة تحتاج إلى حذر"
   },
   "design": {
     "select_agent": "اختر وكيلاً لبدء تحليل التصميم",

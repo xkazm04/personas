@@ -441,10 +441,28 @@ pub struct LabVersionRating {
     pub model_id: String,
     pub provider: String,
     pub composite_score: Option<f64>,
+    /// True when the composite was computed over an incomplete set of sub-scores
+    /// (one or two of tool_accuracy / output_quality / protocol_compliance were
+    /// missing and the weights were renormalised across the present ones). Such a
+    /// composite is NOT directly comparable to a full-coverage one — the flag
+    /// lets the UI annotate it instead of presenting the renormalised number as
+    /// equivalent. `false` when all three are present or none are.
+    pub partial_coverage: bool,
     pub tool_accuracy: Option<f64>,
     pub output_quality: Option<f64>,
     pub protocol_compliance: Option<f64>,
     pub cost_usd: f64,
+    /// True when `cost_usd` is not a real measurement (currently: Ollama local
+    /// models, whose per-call cost is hardcoded to 0.0). A zero here means
+    /// "unknown", not "free" — consumers must not award a best-value verdict on
+    /// it. `false` for providers that report real cost.
+    pub cost_unknown: bool,
+    /// Number of samples in this cell scored by the degraded heuristic fallback
+    /// (LLM judge failed or timed out) rather than the full LLM judge. A high
+    /// share means the composite mixes real judgements with keyword-match
+    /// approximations. `0` when every sample was LLM-scored.
+    #[ts(type = "number")]
+    pub degraded_count: i64,
     pub duration_ms: f64,
     /// Mean prompt tokens per sample. Cost alone hides the token story when
     /// models are priced differently — a cheaper model can still be the token

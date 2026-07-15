@@ -1101,18 +1101,42 @@ fn avg_scored(iter: impl Iterator<Item = Option<i32>>) -> Option<f64> {
     }
 }
 
+/// Cost-decay rate for the value-score efficiency curve, in units of 1/USD.
+///
+/// The efficiency multiplier is `exp(-total_cost * RATE)`, an exponential decay
+/// that starts at 1.0 for zero cost and halves roughly every `ln(2)/RATE ≈
+/// $0.069`. Concretely, at RATE = 10: $0.001 → ~0.99, $0.01 → ~0.90,
+/// $0.07 → ~0.50, $0.10 → ~0.37, $0.30 → ~0.05. The shape rewards near-free
+/// runs almost fully while punishing runs past a few cents steeply — chosen so
+/// a small quality edge can't justify a 10× cost blowout. Tune this single
+/// constant to move the whole curve; larger = harsher cost penalty.
+const VALUE_SCORE_COST_DECAY_RATE: f64 = 10.0;
+
 /// Compute value_score on a consistent 0-100 scale for both free and paid models.
 /// For paid models: composite * efficiency_factor, where efficiency_factor
 /// penalizes higher costs but stays in [0, 1].
 /// For free models: composite score directly (perfect efficiency).
+///
+/// NOTE: a caller must not pass a cost of 0.0 for a *cost-unknown* model (e.g.
+/// Ollama, whose cost is hardcoded 0.0) expecting a meaningful value — that
+/// would score it as a perfect-efficiency free model and let it win any
+/// best-value ranking. Cost-unknown models are excluded upstream in the summary
+/// builders instead.
 fn compute_value_score(composite: f64, total_cost: f64) -> f64 {
     if total_cost > 0.0 {
-        // Exponential decay: $0.001 → ~0.99, $0.01 → ~0.90, $0.10 → ~0.37
-        let efficiency = (-total_cost * 10.0).exp();
+        let efficiency = (-total_cost * VALUE_SCORE_COST_DECAY_RATE).exp();
         (composite * efficiency).clamp(0.0, 100.0)
     } else {
         composite // Free models get full composite as value
     }
+}
+
+/// Whether a provider reports a real per-call cost. Ollama's cost is hardcoded
+/// to 0.0 in the runner, so a zero there means "unknown", not "free" — such
+/// models must be excluded from the best-value verdict rather than treated as
+/// infinitely efficient.
+fn provider_cost_is_known(provider: &str) -> bool {
+    provider != super::types::providers::OLLAMA
 }
 
 #[allow(clippy::type_complexity)]
@@ -1145,6 +1169,7 @@ async fn build_summary(
             let composite = avg_ta * WEIGHT_TOOL_ACCURACY
                 + avg_oq * WEIGHT_OUTPUT_QUALITY
                 + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+            let cost_known = provider_cost_is_known(&model.provider);
             let value_score = compute_value_score(composite, total_cost);
 
             rankings.push(serde_json::json!({
@@ -1155,6 +1180,7 @@ async fn build_summary(
                 "avg_protocol_compliance": avg_pc.round() as i32,
                 "composite_score": composite.round() as i32,
                 "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
+                "cost_unknown": !cost_known,
                 "avg_duration_ms": avg_duration.round() as i64,
                 "value_score": value_score.round() as i32,
                 "scenarios_tested": count as i32,
@@ -1182,19 +1208,29 @@ async fn build_summary(
         .unwrap_or("unknown")
         .to_string();
 
-    let best_value = rankings
-        .iter()
-        .max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
-        .and_then(|r| r.get("model_id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("unknown")
-        .to_string();
+    let best_value = best_value_model(&rankings);
 
     serde_json::json!({
         "best_quality_model": best_model,
         "best_value_model": best_value,
         "rankings": rankings,
     })
+}
+
+/// Pick the best-value model from a set of ranking objects, considering ONLY
+/// cost-known models (`cost_unknown != true`). A cost-unknown model (Ollama)
+/// has a hardcoded-zero cost that would otherwise score as perfect efficiency
+/// and always win — so it can never be awarded the best-value verdict. Returns
+/// `"unknown"` when every candidate is cost-unknown.
+fn best_value_model(rankings: &[serde_json::Value]) -> String {
+    rankings
+        .iter()
+        .filter(|r| !r.get("cost_unknown").and_then(|v| v.as_bool()).unwrap_or(false))
+        .max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
+        .and_then(|r| r.get("model_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string()
 }
 
 // -- CLI helpers ------------------------------------------------
@@ -1954,6 +1990,7 @@ fn build_arena_summary(
             let composite = avg_ta * WEIGHT_TOOL_ACCURACY
                 + avg_oq * WEIGHT_OUTPUT_QUALITY
                 + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+            let cost_known = provider_cost_is_known(&model.provider);
             let value_score = compute_value_score(composite, total_cost);
             rankings.push(serde_json::json!({
                 "model_id": model.id,
@@ -1963,6 +2000,7 @@ fn build_arena_summary(
                 "avg_protocol_compliance": avg_pc.round() as i32,
                 "composite_score": composite.round() as i32,
                 "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
+                "cost_unknown": !cost_known,
                 "avg_duration_ms": avg_duration.round() as i64,
                 "value_score": value_score.round() as i32,
                 "scenarios_tested": count as i32,
@@ -1986,13 +2024,7 @@ fn build_arena_summary(
         .and_then(|v| v.as_str())
         .unwrap_or("unknown")
         .to_string();
-    let best_value = rankings
-        .iter()
-        .max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
-        .and_then(|r| r.get("model_id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("unknown")
-        .to_string();
+    let best_value = best_value_model(&rankings);
     serde_json::json!({
         "best_quality_model": best_model,
         "best_value_model": best_value,
@@ -2970,5 +3002,38 @@ mod tests {
     fn resolve_active_version_none_when_no_versions() {
         let pool = crate::db::init_test_db().unwrap();
         assert_eq!(resolve_active_version(&pool, "persona-empty"), None);
+    }
+
+    // -- Direction 2: best-value must not be awarded on hardcoded-zero cost -----
+
+    fn ranking(model: &str, value_score: i64, cost_unknown: bool) -> serde_json::Value {
+        serde_json::json!({ "model_id": model, "value_score": value_score, "cost_unknown": cost_unknown })
+    }
+
+    /// A cost-unknown model (Ollama, hardcoded-zero cost) posts the top raw
+    /// value_score but must never win best-value — the cost-known runner-up does.
+    #[test]
+    fn best_value_skips_cost_unknown_models() {
+        let rankings = vec![
+            ranking("ollama-local", 100, true),
+            ranking("sonnet", 72, false),
+            ranking("haiku", 88, false),
+        ];
+        assert_eq!(best_value_model(&rankings), "haiku");
+    }
+
+    /// When every candidate is cost-unknown there is no honest best-value winner.
+    #[test]
+    fn best_value_unknown_when_all_cost_unknown() {
+        let rankings = vec![ranking("ollama-a", 90, true), ranking("ollama-b", 95, true)];
+        assert_eq!(best_value_model(&rankings), "unknown");
+    }
+
+    /// Ollama is the documented cost-unknown provider; everything else is known.
+    #[test]
+    fn provider_cost_known_only_for_non_ollama() {
+        assert!(!provider_cost_is_known(super::super::types::providers::OLLAMA));
+        assert!(provider_cost_is_known("anthropic"));
+        assert!(provider_cost_is_known("qwen"));
     }
 }

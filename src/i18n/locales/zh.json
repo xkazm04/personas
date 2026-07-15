@@ -1668,7 +1668,12 @@
       "improve_focus": "将聚焦于 {metric}（平均 {score}/100）",
       "improve_run_seed_measured": "改进角色\"{name}\"。它最近的测试将 {metric} 标记为最薄弱的部分（平均 {score}/100）。我应该重点关注什么？ ",
       "improve_run_seed_plain": "根据角色\"{name}\"最近的测试结果改进它。我应该重点关注什么？ ",
-      "improve_seeded": "改进方案已在 Athena 中打开"
+      "improve_seeded": "改进方案已在 Athena 中打开",
+      "vr_cost_unknown": "不适用",
+      "vr_cost_unknown_tooltip": "本地模型不跟踪成本",
+      "vr_degraded_tooltip": "{total} 个样本中有 {count} 个由启发式回退评分（LLM 评审不可用）",
+      "vr_partial_tooltip": "由部分子分数合成 — 无法直接比较",
+      "vr_score_caution": "分数需谨慎看待"
     },
     "design": {
       "select_agent": "选择代理以开始设计分析",

@@ -865,7 +865,12 @@
     "improve_focus": "Se centrará en {metric} (promedio {score}/100)",
     "improve_run_seed_measured": "Mejora la persona \"{name}\". Su última prueba marcó {metric} como el área más débil (promedio {score}/100). ¿En qué debería centrarme? ",
     "improve_run_seed_plain": "Mejora la persona \"{name}\" según los resultados de su última prueba. ¿En qué debería centrarme? ",
-    "improve_seeded": "Resumen de mejora abierto en Athena"
+    "improve_seeded": "Resumen de mejora abierto en Athena",
+    "vr_cost_unknown": "n/d",
+    "vr_cost_unknown_tooltip": "El coste no se registra para modelos locales",
+    "vr_degraded_tooltip": "{count} de {total} muestras evaluadas con heurística de reserva (evaluador LLM no disponible)",
+    "vr_partial_tooltip": "Compuesto a partir de subpuntuaciones parciales — no comparable directamente",
+    "vr_score_caution": "La puntuación requiere cautela"
   },
   "design": {
     "select_agent": "Selecciona un agente para iniciar el análisis de diseño",

@@ -1436,6 +1436,11 @@ export type Translations = {
       vr_action_unpin_baseline: string;
       vr_unmeasured: string;
       vr_no_model: string;
+      vr_score_caution: string;
+      vr_degraded_tooltip: string;
+      vr_partial_tooltip: string;
+      vr_cost_unknown: string;
+      vr_cost_unknown_tooltip: string;
       vr_samples: string;
       vr_samples_other: string;
       vr_empty_title: string;
