@@ -625,13 +625,17 @@ async fn invoke_automation_tool(
             "automation".to_string(),
         ))
     } else {
-        // Direction 2 replaces this flat message with the structured failure
-        // (attempts used / retryable / reason kind) that automation_runner knows.
-        Err(DirectInvokeError::classify(AppError::Execution(format!(
-            "Automation '{}' failed: {}",
-            tool.name,
-            run.error_message.unwrap_or_else(|| "Unknown error".into())
-        ))))
+        // Structured failure: attempts used / retryable / typed reason kind that
+        // automation_runner already knows (parsed from the run's error message +
+        // retry-loop warnings), threaded into the Direction-1 contract instead
+        // of a flat "Automation 'x' failed: <msg>".
+        let info = super::automation_runner::classify_automation_failure(&automation, &run);
+        Err(DirectInvokeError::typed(
+            AppError::Execution(info.message),
+            info.kind,
+            info.http_status,
+            info.retryable,
+        ))
     }
 }
 

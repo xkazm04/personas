@@ -10,6 +10,7 @@ use crate::db::repos::resources::automations as repo;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
+use crate::engine::tool_outcome::{classify_app_error, ToolErrorKind};
 use crate::error::AppError;
 
 /// Invoke an automation by calling its webhook URL.
@@ -133,9 +134,8 @@ pub async fn invoke_automation(
     } else {
         ("error", completed_run.error_message.as_deref())
     };
-    let error_kind = err_msg.map(|m| {
-        crate::engine::tool_outcome::classify_app_error(&AppError::Execution(m.to_string())).0
-    });
+    let error_kind =
+        err_msg.map(|m| classify_app_error(&AppError::Execution(m.to_string())).0);
     if let Err(log_err) = tool_audit_log::insert(
         pool,
         &automation.id,
@@ -353,6 +353,145 @@ fn is_auth_failure(result: &Result<(String, u16, Vec<String>), AppError>) -> boo
     match result {
         Err(AppError::Execution(msg)) => msg.contains("HTTP 401"),
         _ => false,
+    }
+}
+
+/// Structured view of a FAILED [`AutomationRun`], for the shared tool-result
+/// contract (see `engine::tool_outcome`). Surfaces what the runner already
+/// knows — how many attempts were spent (parsed from the retry-loop warnings),
+/// the typed reason (`timeout` vs `http` vs `transport` vs `auth`), and whether
+/// a retry could plausibly help — so a tool-driven automation failure carries
+/// fidelity instead of a flat `Automation 'x' failed: <msg>`.
+pub struct AutomationFailureInfo {
+    pub kind: ToolErrorKind,
+    pub http_status: Option<u16>,
+    pub retryable: bool,
+    pub attempts_used: u32,
+    pub max_attempts: u32,
+    /// Human message including the attempt context, suitable for the contract
+    /// `error` field and the audit / incidents row.
+    pub message: String,
+}
+
+/// Classify a non-completed [`AutomationRun`] into structured failure info.
+/// Reuses the shared [`classify_app_error`] over the run's own `error_message`
+/// (which the webhook path writes as `Webhook returned HTTP {status}: …` /
+/// `Webhook timed out after …` / `Failed to connect to webhook: …`) and reads
+/// the attempt counter the retry loop stamps into `run.warnings`.
+pub fn classify_automation_failure(
+    automation: &PersonaAutomation,
+    run: &AutomationRun,
+) -> AutomationFailureInfo {
+    classify_failure_parts(
+        &automation.name,
+        automation.retry_count,
+        run.error_message.as_deref(),
+        run.warnings.as_deref(),
+    )
+}
+
+/// Field-level core of [`classify_automation_failure`], split out so it is
+/// testable without constructing a full `PersonaAutomation` / `AutomationRun`.
+fn classify_failure_parts(
+    name: &str,
+    retry_count: i32,
+    error_message: Option<&str>,
+    warnings_json: Option<&str>,
+) -> AutomationFailureInfo {
+    let max_attempts = retry_count.clamp(1, 5) as u32;
+    let raw_msg = error_message
+        .map(|m| m.to_string())
+        .unwrap_or_else(|| "Unknown error".into());
+    let (kind, http_status, retryable) =
+        classify_app_error(&AppError::Execution(raw_msg.clone()));
+    let attempts_used = parse_attempts_used(warnings_json)
+        .unwrap_or(1)
+        .clamp(1, max_attempts);
+    let attempt_note = if max_attempts > 1 {
+        format!(" (after {attempts_used}/{max_attempts} attempts)")
+    } else {
+        String::new()
+    };
+    let message = format!("Automation '{name}' failed{attempt_note}: {raw_msg}");
+    AutomationFailureInfo {
+        kind,
+        http_status,
+        retryable,
+        attempts_used,
+        max_attempts,
+        message,
+    }
+}
+
+/// Parse the attempt counter the retry loop stamps into `run.warnings`
+/// (`Failed after {attempt}/{max} attempts` or `Succeeded on attempt {a}/{m}`).
+/// Returns `None` when no such marker is present (single-attempt runs).
+fn parse_attempts_used(warnings_json: Option<&str>) -> Option<u32> {
+    let raw = warnings_json?;
+    let warnings: Vec<String> = serde_json::from_str(raw).ok()?;
+    for w in &warnings {
+        for marker in ["Failed after ", "Succeeded on attempt "] {
+            if let Some(rest) = w.strip_prefix(marker) {
+                if let Some(slash) = rest.find('/') {
+                    if let Ok(n) = rest[..slash].trim().parse::<u32>() {
+                        return Some(n);
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod automation_failure_tests {
+    use super::*;
+
+    #[test]
+    fn parses_attempts_from_retry_warning() {
+        let warnings = serde_json::to_string(&vec![
+            "Method fallback: ...".to_string(),
+            "Failed after 3/3 attempts".to_string(),
+        ])
+        .unwrap();
+        assert_eq!(parse_attempts_used(Some(&warnings)), Some(3));
+        assert_eq!(parse_attempts_used(None), None);
+        assert_eq!(parse_attempts_used(Some("not json")), None);
+    }
+
+    #[test]
+    fn timeout_run_is_retryable_with_attempt_context() {
+        let warnings =
+            serde_json::to_string(&vec!["Failed after 3/3 attempts".to_string()]).unwrap();
+        let info = classify_failure_parts(
+            "notify",
+            3,
+            Some("Webhook timed out after 5000ms: http://x"),
+            Some(&warnings),
+        );
+        assert_eq!(info.kind, ToolErrorKind::Timeout);
+        assert!(info.retryable);
+        assert_eq!(info.attempts_used, 3);
+        assert_eq!(info.max_attempts, 3);
+        assert!(info.message.contains("after 3/3 attempts"));
+    }
+
+    #[test]
+    fn http_401_run_is_auth_not_retryable() {
+        let info = classify_failure_parts("notify", 1, Some("Webhook returned HTTP 401: nope"), None);
+        assert_eq!(info.kind, ToolErrorKind::Auth);
+        assert_eq!(info.http_status, Some(401));
+        assert!(!info.retryable);
+        // Single-attempt automations omit the attempt note.
+        assert!(!info.message.contains("attempts"));
+    }
+
+    #[test]
+    fn http_503_run_is_retryable_http() {
+        let info = classify_failure_parts("notify", 2, Some("Webhook returned HTTP 503: down"), None);
+        assert_eq!(info.kind, ToolErrorKind::Http);
+        assert_eq!(info.http_status, Some(503));
+        assert!(info.retryable);
     }
 }
 
