@@ -174,5 +174,15 @@
     "resolving": "সমাধান চলছে",
     "test_complete": "পরীক্ষা সম্পন্ন",
     "testing": "পরীক্ষা চলছে"
+  },
+  "tool_error_kind": {
+    "auth": "প্রমাণীকরণ",
+    "http": "HTTP ত্রুটি",
+    "misconfigured": "ভুলভাবে কনফিগার করা",
+    "rate_limited": "রেট সীমিত",
+    "timeout": "সময় শেষ",
+    "tool_error": "টুল ব্যর্থ হয়েছে",
+    "transport": "সংযোগ ব্যর্থ",
+    "unknown": "অজানা ত্রুটি"
   }
 }

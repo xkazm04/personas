@@ -174,5 +174,15 @@
     "resolving": "해결 중",
     "test_complete": "테스트 완료",
     "testing": "테스트 중"
+  },
+  "tool_error_kind": {
+    "auth": "인증",
+    "http": "HTTP 오류",
+    "misconfigured": "설정 오류",
+    "rate_limited": "요청 한도 초과",
+    "timeout": "시간 초과",
+    "tool_error": "도구 실패",
+    "transport": "연결 실패",
+    "unknown": "알 수 없는 오류"
   }
 }

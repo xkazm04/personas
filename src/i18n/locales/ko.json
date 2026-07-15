@@ -2554,7 +2554,14 @@
       "failed": "실패",
       "error": "오류",
       "invalid_json": "JSON이 올바르지 않습니다. 실행하기 전에 수정하세요.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "실패",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "출력이 잘렸습니다 — 도구가 표시 한도를 초과하는 결과를 반환했습니다.",
+      "panel_subtitle": "이 페르소나의 자격 증명으로 도구를 직접 실행합니다.",
+      "panel_title": "도구 실행",
+      "retryable_hint": "다시 시도하면 성공할 수 있습니다.",
+      "run_tool": "도구 실행"
     },
     "health_check": {
       "title": "에이전트 상태 확인",
@@ -11602,6 +11609,16 @@
       "resolving": "해결 중",
       "test_complete": "테스트 완료",
       "testing": "테스트 중"
+    },
+    "tool_error_kind": {
+      "auth": "인증",
+      "http": "HTTP 오류",
+      "misconfigured": "설정 오류",
+      "rate_limited": "요청 한도 초과",
+      "timeout": "시간 초과",
+      "tool_error": "도구 실패",
+      "transport": "연결 실패",
+      "unknown": "알 수 없는 오류"
     }
   },
   "project_overview": {

@@ -1751,7 +1751,14 @@
     "failed": "Selhalo",
     "error": "Chyba",
     "invalid_json": "Neplatný JSON — opravte ho před spuštěním.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "Selhání",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "Výstup byl zkrácen — nástroj vrátil více, než je limit zobrazení.",
+    "panel_subtitle": "Spusťte nástroj přímo s přihlašovacími údaji této persony.",
+    "panel_title": "Spustit nástroj",
+    "retryable_hint": "Při opakování se to může podařit.",
+    "run_tool": "Spustit nástroj"
   },
   "health_check": {
     "title": "Kontrola zdraví agenta",

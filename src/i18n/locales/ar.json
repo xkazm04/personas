@@ -2554,7 +2554,14 @@
       "failed": "فشل",
       "error": "خطأ",
       "invalid_json": "JSON غير صالح — صحّحه قبل التشغيل.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "فشل",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "تم اقتطاع المخرجات — أعادت الأداة أكثر من حد العرض.",
+      "panel_subtitle": "استدعِ أداة مباشرةً باستخدام بيانات اعتماد هذه الشخصية.",
+      "panel_title": "تشغيل أداة",
+      "retryable_hint": "قد ينجح هذا عند إعادة المحاولة.",
+      "run_tool": "تشغيل الأداة"
     },
     "health_check": {
       "title": "فحص صحة الوكيل",
@@ -11602,6 +11609,16 @@
       "resolving": "جارٍ الحل",
       "test_complete": "اكتمل الاختبار",
       "testing": "جارٍ الاختبار"
+    },
+    "tool_error_kind": {
+      "auth": "المصادقة",
+      "http": "خطأ HTTP",
+      "misconfigured": "إعداد خاطئ",
+      "rate_limited": "تجاوز الحد المسموح",
+      "timeout": "انتهت المهلة",
+      "tool_error": "فشلت الأداة",
+      "transport": "فشل الاتصال",
+      "unknown": "خطأ غير معروف"
     }
   },
   "project_overview": {

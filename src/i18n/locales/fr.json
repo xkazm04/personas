@@ -2554,7 +2554,14 @@
       "failed": "Échec",
       "error": "Erreur",
       "invalid_json": "JSON invalide — corrigez avant l’exécution.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "Échec",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "Sortie tronquée — l'outil a renvoyé plus que la limite d'affichage.",
+      "panel_subtitle": "Invoquez un outil directement avec les identifiants de cette persona.",
+      "panel_title": "Exécuter un outil",
+      "retryable_hint": "Cela peut réussir en réessayant.",
+      "run_tool": "Exécuter l'outil"
     },
     "health_check": {
       "title": "Bilan de santé de l'agent",
@@ -11602,6 +11609,16 @@
       "resolving": "Résolution",
       "test_complete": "Test terminé",
       "testing": "Test en cours"
+    },
+    "tool_error_kind": {
+      "auth": "Authentification",
+      "http": "Erreur HTTP",
+      "misconfigured": "Mal configuré",
+      "rate_limited": "Limite de débit atteinte",
+      "timeout": "Délai dépassé",
+      "tool_error": "Échec de l'outil",
+      "transport": "Échec de la connexion",
+      "unknown": "Erreur inconnue"
     }
   },
   "project_overview": {

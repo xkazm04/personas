@@ -15,6 +15,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import type { ToolInvocationResult } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tToken } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
 import { debtText } from '@/i18n/DebtText';
 
@@ -139,7 +140,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
 }
 
 function ResultDisplay({ result, error }: { result: ToolInvocationResult | null; error: string | null }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   if (error) {
     return (
       <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-3 py-2 typo-body text-red-400">
@@ -175,10 +176,34 @@ function ResultDisplay({ result, error }: { result: ToolInvocationResult | null;
         </span>
       </div>
 
+      {/* Typed failure metadata: the shared tool-outcome contract carries a
+          machine `error_kind`, an optional HTTP status, and a retryable hint —
+          surface them so a failure reads as a category, not just a blob. */}
+      {!result.success && (result.error_kind || result.http_status != null) && (
+        <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+          {result.error_kind && (
+            <span className="inline-flex items-center px-1.5 py-0.5 typo-body rounded border border-red-500/25 bg-red-500/10 text-red-300">
+              {tToken(t, 'tool_error_kind', result.error_kind)}
+            </span>
+          )}
+          {result.http_status != null && (
+            <span className="inline-flex items-center px-1.5 py-0.5 typo-code font-mono rounded border border-primary/15 bg-secondary/30 text-foreground">
+              {tx(t.agents.tool_runner.http_status_label, { status: result.http_status })}
+            </span>
+          )}
+          {result.retryable && (
+            <span className="typo-body text-foreground/70">{t.agents.tool_runner.retryable_hint}</span>
+          )}
+        </div>
+      )}
+
       {result.output && (
         <pre className="typo-code font-mono text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
           {formatOutput(result.output)}
         </pre>
+      )}
+      {result.output_truncated && (
+        <p className="mt-1 typo-body text-amber-400/80">{t.agents.tool_runner.output_truncated}</p>
       )}
       {result.error && (
         <pre className="typo-code font-mono text-red-400/80 whitespace-pre-wrap break-all mt-1">

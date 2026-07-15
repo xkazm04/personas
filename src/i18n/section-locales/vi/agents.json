@@ -1751,7 +1751,14 @@
     "failed": "Thất bại",
     "error": "Lỗi",
     "invalid_json": "JSON không hợp lệ — hãy sửa trước khi chạy.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "Lỗi",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "Đầu ra đã bị cắt bớt — công cụ trả về nhiều hơn giới hạn hiển thị.",
+    "panel_subtitle": "Gọi trực tiếp một công cụ bằng thông tin xác thực của persona này.",
+    "panel_title": "Chạy công cụ",
+    "retryable_hint": "Có thể thành công khi thử lại.",
+    "run_tool": "Chạy công cụ"
   },
   "health_check": {
     "title": "Kiểm tra sức khỏe tác nhân",

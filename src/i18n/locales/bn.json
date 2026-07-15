@@ -2554,7 +2554,14 @@
       "failed": "ব্যর্থ",
       "error": "ত্রুটি",
       "invalid_json": "অবৈধ JSON — চালানোর আগে ঠিক করুন।",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "ব্যর্থতা",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "আউটপুট সংক্ষিপ্ত করা হয়েছে — টুলটি প্রদর্শন সীমার চেয়ে বেশি ফেরত দিয়েছে।",
+      "panel_subtitle": "এই পারসোনার শংসাপত্র দিয়ে সরাসরি একটি টুল চালান।",
+      "panel_title": "একটি টুল চালান",
+      "retryable_hint": "পুনরায় চেষ্টা করলে এটি সফল হতে পারে।",
+      "run_tool": "টুল চালান"
     },
     "health_check": {
       "title": "এজেন্ট স্বাস্থ্য পরীক্ষা",
@@ -11602,6 +11609,16 @@
       "resolving": "সমাধান চলছে",
       "test_complete": "পরীক্ষা সম্পন্ন",
       "testing": "পরীক্ষা চলছে"
+    },
+    "tool_error_kind": {
+      "auth": "প্রমাণীকরণ",
+      "http": "HTTP ত্রুটি",
+      "misconfigured": "ভুলভাবে কনফিগার করা",
+      "rate_limited": "রেট সীমিত",
+      "timeout": "সময় শেষ",
+      "tool_error": "টুল ব্যর্থ হয়েছে",
+      "transport": "সংযোগ ব্যর্থ",
+      "unknown": "অজানা ত্রুটি"
     }
   },
   "project_overview": {

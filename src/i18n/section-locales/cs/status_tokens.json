@@ -174,5 +174,15 @@
     "resolving": "Řeší se",
     "test_complete": "Test dokončen",
     "testing": "Testování"
+  },
+  "tool_error_kind": {
+    "auth": "Ověření",
+    "http": "Chyba HTTP",
+    "misconfigured": "Špatně nastaveno",
+    "rate_limited": "Překročen limit",
+    "timeout": "Vypršel čas",
+    "tool_error": "Nástroj selhal",
+    "transport": "Připojení selhalo",
+    "unknown": "Neznámá chyba"
   }
 }

@@ -2554,7 +2554,14 @@
       "failed": "Fehlgeschlagen",
       "error": "Fehler",
       "invalid_json": "Ungültiges JSON — vor dem Ausführen korrigieren.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "Fehler",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "Ausgabe gekürzt — das Tool hat mehr als das Anzeigelimit zurückgegeben.",
+      "panel_subtitle": "Rufen Sie ein Tool direkt mit den Zugangsdaten dieser Persona auf.",
+      "panel_title": "Tool ausführen",
+      "retryable_hint": "Beim erneuten Versuch könnte es klappen.",
+      "run_tool": "Tool ausführen"
     },
     "health_check": {
       "title": "Agenten-Gesundheitscheck",
@@ -11602,6 +11609,16 @@
       "resolving": "Wird aufgelöst",
       "test_complete": "Test abgeschlossen",
       "testing": "Wird getestet"
+    },
+    "tool_error_kind": {
+      "auth": "Authentifizierung",
+      "http": "HTTP-Fehler",
+      "misconfigured": "Fehlkonfiguriert",
+      "rate_limited": "Ratenbegrenzt",
+      "timeout": "Zeitüberschreitung",
+      "tool_error": "Tool fehlgeschlagen",
+      "transport": "Verbindung fehlgeschlagen",
+      "unknown": "Unbekannter Fehler"
     }
   },
   "project_overview": {

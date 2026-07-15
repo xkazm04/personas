@@ -174,5 +174,15 @@
     "resolving": "Résolution",
     "test_complete": "Test terminé",
     "testing": "Test en cours"
+  },
+  "tool_error_kind": {
+    "auth": "Authentification",
+    "http": "Erreur HTTP",
+    "misconfigured": "Mal configuré",
+    "rate_limited": "Limite de débit atteinte",
+    "timeout": "Délai dépassé",
+    "tool_error": "Échec de l'outil",
+    "transport": "Échec de la connexion",
+    "unknown": "Erreur inconnue"
   }
 }

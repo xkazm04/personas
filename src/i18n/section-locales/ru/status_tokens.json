@@ -174,5 +174,15 @@
     "resolving": "Разрешение",
     "test_complete": "Тест завершён",
     "testing": "Тестирование"
+  },
+  "tool_error_kind": {
+    "auth": "Аутентификация",
+    "http": "Ошибка HTTP",
+    "misconfigured": "Неверная настройка",
+    "rate_limited": "Превышен лимит запросов",
+    "timeout": "Тайм-аут",
+    "tool_error": "Сбой инструмента",
+    "transport": "Ошибка соединения",
+    "unknown": "Неизвестная ошибка"
   }
 }

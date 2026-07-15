@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Rocket } from 'lucide-react';
+import { Rocket, Wrench } from 'lucide-react';
 import { updatePersona, buildUpdateInput } from '@/api/agents/personas';
 import { executePersona } from '@/api/agents/executions';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
@@ -25,6 +25,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
 import { CapabilityDisableDialog } from '../core/CapabilityDisableDialog';
+import { ToolRunnerModal } from '@/features/agents/sub_tool_runner';
 import { UseCaseDetailExpanded } from '../recipes-prototype/shared/UseCaseDetailExpanded';
 import { TilePolicyToggles } from '../recipes-prototype/shared/TilePolicyToggles';
 import {
@@ -62,6 +63,8 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     historyRefreshKey,
     handleExecute,
     handleRerun,
+    toolRunnerOpen,
+    setToolRunnerOpen,
   } = useUseCasesTab();
   const {
     pendingUseCaseId,
@@ -380,6 +383,16 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
         >
           <Rocket className="w-3.5 h-3.5" /> {t.agents.use_cases.run_now}
         </button>
+        {(selectedPersona.tools?.length ?? 0) > 0 && (
+          <button
+            type="button"
+            data-testid="open-tool-runner"
+            onClick={() => setToolRunnerOpen(true)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium bg-secondary/30 border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
+          >
+            <Wrench className="w-3.5 h-3.5" /> {t.agents.tool_runner.run_tool}
+          </button>
+        )}
         <AddCapabilityRow onClick={openRecipeCatalog} />
       </div>
     </div>
@@ -489,6 +502,13 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
           onCancel={cancelDisable}
         />
       )}
+
+      <ToolRunnerModal
+        isOpen={toolRunnerOpen}
+        onClose={() => setToolRunnerOpen(false)}
+        tools={selectedPersona.tools ?? []}
+        personaId={personaId || undefined}
+      />
     </>
   );
 }

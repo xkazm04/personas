@@ -1751,7 +1751,14 @@
     "failed": "Gagal",
     "error": "Kesalahan",
     "invalid_json": "JSON tidak valid — perbaiki sebelum dijalankan.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "Gagal",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "Keluaran terpotong — alat mengembalikan lebih dari batas tampilan.",
+    "panel_subtitle": "Panggil alat langsung dengan kredensial persona ini.",
+    "panel_title": "Jalankan alat",
+    "retryable_hint": "Ini mungkin berhasil saat dicoba lagi.",
+    "run_tool": "Jalankan alat"
   },
   "health_check": {
     "title": "Pemeriksaan Kesehatan Agen",

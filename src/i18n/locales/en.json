@@ -2619,7 +2619,14 @@
       "failed": "Failed",
       "error": "Error",
       "invalid_json": "Invalid JSON — fix before running.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "run_tool": "Run tool",
+      "panel_title": "Run a tool",
+      "panel_subtitle": "Invoke a tool directly against this persona's credentials.",
+      "output_truncated": "Output truncated — the tool returned more than the display limit.",
+      "http_status_label": "HTTP {status}",
+      "retryable_hint": "This may succeed on retry.",
+      "failure_kind_label": "Failure"
     },
     "health_check": {
       "title": "Agent Health Check",
@@ -11723,6 +11730,16 @@
       "api_error": "API error",
       "transient_process_failure": "Transient process failure",
       "unknown": "Unknown"
+    },
+    "tool_error_kind": {
+      "auth": "Authentication",
+      "timeout": "Timed out",
+      "http": "HTTP error",
+      "transport": "Connection failed",
+      "tool_error": "Tool failed",
+      "rate_limited": "Rate limited",
+      "misconfigured": "Misconfigured",
+      "unknown": "Unknown error"
     },
     "execution": {
       "queued": "Queued",

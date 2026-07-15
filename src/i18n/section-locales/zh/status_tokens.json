@@ -174,5 +174,15 @@
     "resolving": "解析中",
     "test_complete": "测试完成",
     "testing": "测试中"
+  },
+  "tool_error_kind": {
+    "auth": "身份验证",
+    "http": "HTTP 错误",
+    "misconfigured": "配置错误",
+    "rate_limited": "速率受限",
+    "timeout": "超时",
+    "tool_error": "工具失败",
+    "transport": "连接失败",
+    "unknown": "未知错误"
   }
 }

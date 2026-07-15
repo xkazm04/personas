@@ -2554,7 +2554,14 @@
       "failed": "विफल",
       "error": "त्रुटि",
       "invalid_json": "अमान्य JSON — चलाने से पहले ठीक करें।",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "विफलता",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "आउटपुट काट दिया गया — टूल ने प्रदर्शन सीमा से अधिक लौटाया।",
+      "panel_subtitle": "इस पर्सोना की क्रेडेंशियल के साथ सीधे कोई टूल चलाएँ।",
+      "panel_title": "टूल चलाएँ",
+      "retryable_hint": "पुनः प्रयास करने पर यह सफल हो सकता है।",
+      "run_tool": "टूल चलाएँ"
     },
     "health_check": {
       "title": "एजेंट हेल्थ चेक",
@@ -11602,6 +11609,16 @@
       "resolving": "समाधान हो रहा है",
       "test_complete": "परीक्षण पूर्ण",
       "testing": "परीक्षण चल रहा है"
+    },
+    "tool_error_kind": {
+      "auth": "प्रमाणीकरण",
+      "http": "HTTP त्रुटि",
+      "misconfigured": "गलत कॉन्फ़िगरेशन",
+      "rate_limited": "दर सीमा पार",
+      "timeout": "समय समाप्त",
+      "tool_error": "टूल विफल",
+      "transport": "कनेक्शन विफल",
+      "unknown": "अज्ञात त्रुटि"
     }
   },
   "project_overview": {

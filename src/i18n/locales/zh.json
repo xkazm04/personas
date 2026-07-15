@@ -2554,7 +2554,14 @@
       "failed": "失败",
       "error": "错误",
       "invalid_json": "JSON 无效——请先修正后再运行。",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "失败",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "输出已截断——工具返回的内容超过了显示上限。",
+      "panel_subtitle": "使用此角色的凭据直接调用工具。",
+      "panel_title": "运行工具",
+      "retryable_hint": "重试后可能会成功。",
+      "run_tool": "运行工具"
     },
     "health_check": {
       "title": "代理健康检查",
@@ -11602,6 +11609,16 @@
       "resolving": "解析中",
       "test_complete": "测试完成",
       "testing": "测试中"
+    },
+    "tool_error_kind": {
+      "auth": "身份验证",
+      "http": "HTTP 错误",
+      "misconfigured": "配置错误",
+      "rate_limited": "速率受限",
+      "timeout": "超时",
+      "tool_error": "工具失败",
+      "transport": "连接失败",
+      "unknown": "未知错误"
     }
   },
   "project_overview": {

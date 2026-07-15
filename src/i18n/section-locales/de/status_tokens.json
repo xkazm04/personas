@@ -174,5 +174,15 @@
     "resolving": "Wird aufgelöst",
     "test_complete": "Test abgeschlossen",
     "testing": "Wird getestet"
+  },
+  "tool_error_kind": {
+    "auth": "Authentifizierung",
+    "http": "HTTP-Fehler",
+    "misconfigured": "Fehlkonfiguriert",
+    "rate_limited": "Ratenbegrenzt",
+    "timeout": "Zeitüberschreitung",
+    "tool_error": "Tool fehlgeschlagen",
+    "transport": "Verbindung fehlgeschlagen",
+    "unknown": "Unbekannter Fehler"
   }
 }

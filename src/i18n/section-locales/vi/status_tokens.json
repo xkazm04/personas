@@ -174,5 +174,15 @@
     "resolving": "Đang xử lý",
     "test_complete": "Kiểm thử hoàn tất",
     "testing": "Đang kiểm thử"
+  },
+  "tool_error_kind": {
+    "auth": "Xác thực",
+    "http": "Lỗi HTTP",
+    "misconfigured": "Cấu hình sai",
+    "rate_limited": "Bị giới hạn tần suất",
+    "timeout": "Hết thời gian chờ",
+    "tool_error": "Công cụ thất bại",
+    "transport": "Kết nối thất bại",
+    "unknown": "Lỗi không xác định"
   }
 }

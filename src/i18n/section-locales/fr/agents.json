@@ -1751,7 +1751,14 @@
     "failed": "Échec",
     "error": "Erreur",
     "invalid_json": "JSON invalide — corrigez avant l’exécution.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "Échec",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "Sortie tronquée — l'outil a renvoyé plus que la limite d'affichage.",
+    "panel_subtitle": "Invoquez un outil directement avec les identifiants de cette persona.",
+    "panel_title": "Exécuter un outil",
+    "retryable_hint": "Cela peut réussir en réessayant.",
+    "run_tool": "Exécuter l'outil"
   },
   "health_check": {
     "title": "Bilan de santé de l'agent",

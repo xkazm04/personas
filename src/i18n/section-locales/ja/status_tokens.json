@@ -174,5 +174,15 @@
     "resolving": "解決中",
     "test_complete": "テスト完了",
     "testing": "テスト中"
+  },
+  "tool_error_kind": {
+    "auth": "認証",
+    "http": "HTTP エラー",
+    "misconfigured": "設定エラー",
+    "rate_limited": "レート制限",
+    "timeout": "タイムアウト",
+    "tool_error": "ツール失敗",
+    "transport": "接続失敗",
+    "unknown": "不明なエラー"
   }
 }

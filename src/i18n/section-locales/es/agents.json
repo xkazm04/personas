@@ -1751,7 +1751,14 @@
     "failed": "Fallido",
     "error": "Error",
     "invalid_json": "JSON no válido — corríjalo antes de ejecutar.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "Error",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "Salida truncada — la herramienta devolvió más del límite de visualización.",
+    "panel_subtitle": "Invoca una herramienta directamente con las credenciales de esta persona.",
+    "panel_title": "Ejecutar una herramienta",
+    "retryable_hint": "Puede que funcione al reintentar.",
+    "run_tool": "Ejecutar herramienta"
   },
   "health_check": {
     "title": "Control de salud del agente",

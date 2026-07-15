@@ -1751,7 +1751,14 @@
     "failed": "विफल",
     "error": "त्रुटि",
     "invalid_json": "अमान्य JSON — चलाने से पहले ठीक करें।",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "विफलता",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "आउटपुट काट दिया गया — टूल ने प्रदर्शन सीमा से अधिक लौटाया।",
+    "panel_subtitle": "इस पर्सोना की क्रेडेंशियल के साथ सीधे कोई टूल चलाएँ।",
+    "panel_title": "टूल चलाएँ",
+    "retryable_hint": "पुनः प्रयास करने पर यह सफल हो सकता है।",
+    "run_tool": "टूल चलाएँ"
   },
   "health_check": {
     "title": "एजेंट हेल्थ चेक",

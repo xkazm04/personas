@@ -174,5 +174,15 @@
     "resolving": "جارٍ الحل",
     "test_complete": "اكتمل الاختبار",
     "testing": "جارٍ الاختبار"
+  },
+  "tool_error_kind": {
+    "auth": "المصادقة",
+    "http": "خطأ HTTP",
+    "misconfigured": "إعداد خاطئ",
+    "rate_limited": "تجاوز الحد المسموح",
+    "timeout": "انتهت المهلة",
+    "tool_error": "فشلت الأداة",
+    "transport": "فشل الاتصال",
+    "unknown": "خطأ غير معروف"
   }
 }

@@ -2626,6 +2626,13 @@ export type Translations = {
       error: string;
       invalid_json: string;
       input_json_placeholder: string;
+      run_tool: string;
+      panel_title: string;
+      panel_subtitle: string;
+      output_truncated: string;
+      http_status_label: string;
+      retryable_hint: string;
+      failure_kind_label: string;
     };
     health_check: {
       title: string;
@@ -11728,6 +11735,16 @@ export type Translations = {
       tool_error: string;
       api_error: string;
       transient_process_failure: string;
+      unknown: string;
+    };
+    tool_error_kind: {
+      auth: string;
+      timeout: string;
+      http: string;
+      transport: string;
+      tool_error: string;
+      rate_limited: string;
+      misconfigured: string;
       unknown: string;
     };
     execution: {

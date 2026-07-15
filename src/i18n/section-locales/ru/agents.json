@@ -1751,7 +1751,14 @@
     "failed": "Не удалось",
     "error": "Ошибка",
     "invalid_json": "Некорректный JSON — исправьте перед запуском.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "Ошибка",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "Вывод обрезан — инструмент вернул больше данных, чем лимит отображения.",
+    "panel_subtitle": "Вызовите инструмент напрямую, используя учётные данные этой персоны.",
+    "panel_title": "Запустить инструмент",
+    "retryable_hint": "Возможно, повторная попытка будет успешной.",
+    "run_tool": "Запустить инструмент"
   },
   "health_check": {
     "title": "Проверка состояния агента",
