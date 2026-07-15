@@ -770,15 +770,41 @@ pub(crate) async fn inject_credential(
         if let Some(refresh_ok) =
             try_refresh_oauth_token(&fields, connector_name, override_ref).await
         {
+            // Did the provider actually rotate the token? (Some providers
+            // return the same access_token while it's still fresh.)
+            let token_changed = fields
+                .get("access_token")
+                .map(|old| old != &refresh_ok.access_token)
+                .unwrap_or(true);
             // Scrub the previous (now-expired) access_token value we're
             // overwriting so it isn't left un-zeroized on the heap.
             if let Some(mut old) = fields.insert("access_token".to_string(), refresh_ok.access_token.clone())
             {
                 old.zeroize();
             }
-            // Persist the refreshed token back to field-level storage
-            if let Err(e) = cred_repo::save_fields(pool, &cred.id, &fields) {
-                tracing::error!(credential_id = %cred.id, credential_name = %cred.name, "Failed to persist refreshed OAuth token: {e}");
+            // Persist ONLY the rotated token via the targeted single-
+            // transaction upsert. The previous `save_fields` here rewrote
+            // EVERY field row (delete-all + reinsert) on each runtime
+            // refresh: write amplification, a rebuild window where a crash
+            // lost the whole credential, and re-classification that let
+            // ad-hoc token-shaped keys land plaintext. Non-token rows now
+            // keep their ids and updated_at untouched.
+            //
+            // Staleness note: connector_readiness::credential_is_usable
+            // demotes a credential when MAX(credential_fields.updated_at)
+            // postdates ledger.healthcheck_last_success_at. This write bumps
+            // only access_token's updated_at, and the metadata patch BELOW
+            // stamps healthcheck_last_success_at = now() AFTER it — so a
+            // refreshed credential is never falsely demoted. Keep that
+            // ordering (field write first, success stamp second).
+            if token_changed {
+                let changed = ZeroizingFields(HashMap::from([(
+                    "access_token".to_string(),
+                    refresh_ok.access_token.clone(),
+                )]));
+                if let Err(e) = cred_repo::update_fields_targeted(pool, &cred.id, &changed) {
+                    tracing::error!(credential_id = %cred.id, credential_name = %cred.name, "Failed to persist refreshed OAuth token: {e}");
+                }
             }
             // A-grade Phase 4 (2026-05-03): also patch the credential's
             // metadata with `oauth_token_expires_at` so the proactive
