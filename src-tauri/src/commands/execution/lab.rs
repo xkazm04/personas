@@ -928,6 +928,172 @@ pub fn lab_rollback_version(
     metrics_repo::get_prompt_version_by_id(&state.db, &version_id)
 }
 
+/// Merge a new `model` + `provider` into a raw (DB-stored) model_profile JSON
+/// string, preserving every other field — including the encrypted
+/// `auth_token_enc`/`auth_token_iv` pair and any `base_url` / cache policy. This
+/// operates on the RAW stored JSON (not the decrypted form), so the auth token
+/// ciphertext is carried through untouched — no decrypt/re-encrypt round-trip,
+/// and no risk of dropping the token. `None`/blank prior profile starts clean.
+fn merge_model_into_profile(prior_raw: Option<&str>, model_id: &str, provider: &str) -> String {
+    let mut val: serde_json::Value = prior_raw
+        .filter(|s| !s.trim().is_empty())
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or_else(|| serde_json::Value::Object(serde_json::Map::new()));
+    if !val.is_object() {
+        val = serde_json::Value::Object(serde_json::Map::new());
+    }
+    if let Some(obj) = val.as_object_mut() {
+        obj.insert("model".into(), serde_json::Value::String(model_id.to_string()));
+        obj.insert(
+            "provider".into(),
+            serde_json::Value::String(if provider.is_empty() { "anthropic" } else { provider }.to_string()),
+        );
+    }
+    serde_json::to_string(&val).unwrap_or_else(|_| "{}".to_string())
+}
+
+/// Transactional core of `lab_activate_version` — applies the version's prompt +
+/// model switch + production-tag swap to `personas`/`persona_prompt_versions`
+/// inside ONE transaction. Extracted so the atomicity guarantee is unit-testable
+/// without constructing `AppState`. Any error drops the tx before `commit`,
+/// rolling back every write.
+fn activate_version_atomic(
+    pool: &crate::db::DbPool,
+    version: &PersonaPromptVersion,
+    version_id: &str,
+    model_id: &str,
+    provider: &str,
+) -> Result<(), AppError> {
+    let mut conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
+    // Read the CURRENT raw model_profile inside the tx so the merge sees the
+    // committed state and the write is serialized with the prompt rollback.
+    let prior_profile: Option<String> = tx
+        .query_row(
+            "SELECT model_profile FROM personas WHERE id = ?1",
+            rusqlite::params![version.persona_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(AppError::Database)?
+        .flatten();
+
+    let merged_profile = merge_model_into_profile(prior_profile.as_deref(), model_id, provider);
+
+    // 1. Apply the version's prompt live + switch the model in a SINGLE UPDATE.
+    //    Core prompt fields are overwritten (validated by the caller); optional
+    //    snapshot fields use COALESCE to preserve current values when the
+    //    snapshot predates them (mirrors lab_rollback_version).
+    let rows = tx.execute(
+        "UPDATE personas SET
+         structured_prompt = ?1, system_prompt = COALESCE(?2, ''),
+         design_context = COALESCE(?5, design_context),
+         last_design_result = COALESCE(?6, last_design_result),
+         icon = COALESCE(?7, icon),
+         color = COALESCE(?8, color),
+         model_profile = ?9,
+         updated_at = ?3
+         WHERE id = ?4",
+        rusqlite::params![
+            version.structured_prompt,
+            version.system_prompt,
+            now,
+            version.persona_id,
+            version.design_context,
+            version.last_design_result,
+            version.icon,
+            version.color,
+            merged_profile,
+        ],
+    )?;
+    if rows == 0 {
+        return Err(AppError::NotFound(format!("Persona {}", version.persona_id)));
+    }
+
+    // 2. Demote the current production version (if different from the target).
+    let current_prod_id: Option<String> = tx
+        .query_row(
+            "SELECT id FROM persona_prompt_versions WHERE persona_id = ?1 AND tag = 'production' ORDER BY version_number DESC LIMIT 1",
+            rusqlite::params![version.persona_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(AppError::Database)?;
+    if let Some(ref prod_id) = current_prod_id {
+        if prod_id != version_id {
+            tx.execute(
+                "UPDATE persona_prompt_versions SET tag = 'experimental' WHERE id = ?1",
+                rusqlite::params![prod_id],
+            )?;
+        }
+    }
+
+    // 3. Promote the target version to production.
+    let promoted = tx.execute(
+        "UPDATE persona_prompt_versions SET tag = 'production' WHERE id = ?1",
+        rusqlite::params![version_id],
+    )?;
+    if promoted == 0 {
+        return Err(AppError::NotFound(format!("Prompt version {version_id}")));
+    }
+
+    tx.commit().map_err(AppError::Database)?;
+    Ok(())
+}
+
+/// Atomically activate a Lab-measured (version × model) cell: roll the version's
+/// prompt live + tag it `production`, AND switch the persona's active model —
+/// all inside ONE DB transaction. Replaces the former two-IPC frontend flow
+/// (`lab_rollback_version` then `update_persona`) which had no transaction: a
+/// failure between the two left the persona running the new prompt on the old
+/// model with the table falsely marking the (version, model) cell active. Here,
+/// any failure rolls the whole thing back — the persona is left fully unchanged.
+#[tauri::command]
+pub fn lab_activate_version(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    version_id: String,
+    model_id: String,
+    provider: Option<String>,
+) -> Result<Persona, AppError> {
+    require_auth_sync(&state)?;
+
+    let version = metrics_repo::get_prompt_version_by_id(&state.db, &version_id)?;
+    if version.persona_id != persona_id {
+        return Err(AppError::Validation(format!(
+            "Version {version_id} does not belong to persona {persona_id}"
+        )));
+    }
+
+    // Validate the version snapshot's structured prompt (if present) before
+    // applying it. Old snapshots may predate schema changes.
+    if let Some(ref sp) = version.structured_prompt {
+        let sp_errors = validation::persona::validate_structured_prompt(sp);
+        validation::contract::check(sp_errors)?;
+    }
+
+    // Reject an incomplete snapshot rather than producing a hybrid state that
+    // mixes old persona fields with the version's prompt (mirrors rollback).
+    if version.structured_prompt.is_none()
+        && version
+            .system_prompt
+            .as_deref()
+            .map_or(true, |s| s.trim().is_empty())
+    {
+        return Err(AppError::Validation(
+            "Version snapshot is incomplete: missing both structured_prompt and system_prompt. Cannot activate safely.".into(),
+        ));
+    }
+
+    let provider = provider.unwrap_or_default();
+    activate_version_atomic(&state.db, &version, &version_id, &model_id, &provider)?;
+
+    // Return the fully-updated persona (model_profile decrypted for the client).
+    persona_repo::get_by_id(&state.db, &persona_id)
+}
+
 #[tauri::command]
 pub fn lab_get_error_rate(
     state: State<'_, Arc<AppState>>,
@@ -1327,5 +1493,123 @@ mod tests {
     #[test]
     fn empty_input_yields_empty_entries() {
         assert!(build_active_progress_entries(Vec::new()).is_empty());
+    }
+
+    // -- lab_activate_version atomicity -------------------------------------
+
+    fn make_version(persona_id: &str, id: &str, prompt: &str) -> PersonaPromptVersion {
+        PersonaPromptVersion {
+            id: id.to_string(),
+            persona_id: persona_id.to_string(),
+            version_number: 2,
+            structured_prompt: Some(prompt.to_string()),
+            system_prompt: None,
+            change_summary: Some("test".to_string()),
+            tag: "experimental".to_string(),
+            created_at: chrono::Utc::now().to_rfc3339(),
+            design_context: None,
+            last_design_result: None,
+            resolved_cells: None,
+            icon: None,
+            color: None,
+        }
+    }
+
+    /// Seed a minimal persona + one experimental version. Returns the pool.
+    fn seed_persona_and_version(prompt_before: &str, profile_before: &str) -> crate::db::DbPool {
+        let pool = crate::db::init_test_db().expect("test db");
+        let conn = pool.get().expect("conn");
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, structured_prompt, model_profile, created_at, updated_at)
+             VALUES ('p1', 'Test', '', ?1, ?2, ?3, ?3)",
+            rusqlite::params![prompt_before, profile_before, now],
+        )
+        .expect("seed persona");
+        conn.execute(
+            "INSERT INTO persona_prompt_versions (id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, created_at)
+             VALUES ('v2', 'p1', 2, ?1, NULL, 'new', 'experimental', ?2)",
+            rusqlite::params![r#"{"steps":[]}"#, now],
+        )
+        .expect("seed version");
+        drop(conn);
+        pool
+    }
+
+    #[test]
+    fn merge_model_preserves_other_profile_fields() {
+        // Encrypted token fields + base_url survive; only model/provider change.
+        let prior = r#"{"model":"haiku","provider":"anthropic","base_url":"https://x","auth_token_enc":"CIPHER","auth_token_iv":"IV"}"#;
+        let merged = merge_model_into_profile(Some(prior), "opus", "anthropic");
+        let v: serde_json::Value = serde_json::from_str(&merged).unwrap();
+        assert_eq!(v["model"], "opus");
+        assert_eq!(v["provider"], "anthropic");
+        assert_eq!(v["base_url"], "https://x");
+        assert_eq!(v["auth_token_enc"], "CIPHER");
+        assert_eq!(v["auth_token_iv"], "IV");
+    }
+
+    #[test]
+    fn merge_model_defaults_provider_and_handles_empty() {
+        let merged = merge_model_into_profile(None, "sonnet", "");
+        let v: serde_json::Value = serde_json::from_str(&merged).unwrap();
+        assert_eq!(v["model"], "sonnet");
+        assert_eq!(v["provider"], "anthropic");
+    }
+
+    #[test]
+    fn activate_version_success_applies_prompt_and_model() {
+        let pool = seed_persona_and_version("OLD", r#"{"model":"haiku","provider":"anthropic"}"#);
+        let version = make_version("p1", "v2", r#"{"steps":[]}"#);
+
+        activate_version_atomic(&pool, &version, "v2", "opus", "anthropic").expect("activate");
+
+        let conn = pool.get().unwrap();
+        let (prompt, profile, updated_ver_tag): (String, String, String) = conn
+            .query_row(
+                "SELECT p.structured_prompt, p.model_profile,
+                        (SELECT tag FROM persona_prompt_versions WHERE id = 'v2')
+                 FROM personas p WHERE p.id = 'p1'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(prompt, r#"{"steps":[]}"#);
+        assert_eq!(updated_ver_tag, "production");
+        let v: serde_json::Value = serde_json::from_str(&profile).unwrap();
+        assert_eq!(v["model"], "opus");
+    }
+
+    #[test]
+    fn activate_version_rolls_back_fully_on_failure() {
+        // Prove atomicity: if the production-promote step fails (0 rows — e.g. a
+        // concurrent delete removed the version between load and write), the
+        // persona's prompt AND model_profile are left completely unchanged.
+        let pool = seed_persona_and_version("OLD", r#"{"model":"haiku","provider":"anthropic"}"#);
+        let version = make_version("p1", "v2", r#"{"steps":[]}"#);
+
+        // Simulate the concurrent delete: the caller already loaded `version`,
+        // but the row is gone by the time the transaction runs.
+        {
+            let conn = pool.get().unwrap();
+            conn.execute("DELETE FROM persona_prompt_versions WHERE id = 'v2'", [])
+                .unwrap();
+        }
+
+        let result = activate_version_atomic(&pool, &version, "v2", "opus", "anthropic");
+        assert!(result.is_err(), "activation must fail when promote affects 0 rows");
+
+        // The persona must be BYTE-for-BYTE what it was before the failed call.
+        let conn = pool.get().unwrap();
+        let (prompt, profile): (String, String) = conn
+            .query_row(
+                "SELECT structured_prompt, model_profile FROM personas WHERE id = 'p1'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(prompt, "OLD", "prompt must be rolled back");
+        let v: serde_json::Value = serde_json::from_str(&profile).unwrap();
+        assert_eq!(v["model"], "haiku", "model must be rolled back");
     }
 }

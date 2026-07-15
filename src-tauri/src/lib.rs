@@ -1870,6 +1870,7 @@ pub fn run() {
             commands::execution::lab::lab_get_versions,
             commands::execution::lab::lab_tag_version,
             commands::execution::lab::lab_rollback_version,
+            commands::execution::lab::lab_activate_version,
             commands::execution::lab::lab_get_error_rate,
             commands::execution::lab::lab_improve_prompt,
             commands::execution::lab::lab_get_active_progress,
