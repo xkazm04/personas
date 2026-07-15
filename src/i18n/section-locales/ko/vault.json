@@ -711,7 +711,9 @@
     "encrypt_now_other": "{count}개 암호화되지 않은 자격 증명 지금 암호화",
     "encrypt_done_one": "완료 -- {migrated}개 자격 증명 암호화됨.",
     "encrypt_done_other": "완료 -- {migrated}개 자격 증명 암호화됨.",
-    "encrypt_partial": "{migrated}개 암호화됨, {failed}개 실패. 다시 시도하거나 앱을 재시작하세요."
+    "encrypt_partial": "{migrated}개 암호화됨, {failed}개 실패. 다시 시도하거나 앱을 재시작하세요.",
+    "audit_gap_detail": "실행 이후 {count}개의 자격 증명 감사 기록을 기록하지 못했습니다. 자격 증명 접근이 차단된 적은 없지만 해당 접근 이벤트가 감사 로그에 누락되었습니다. 디스크 공간이나 데이터베이스 상태를 확인하세요.",
+    "audit_gap_title": "감사 기록 불완전"
   },
   "delete_dialog": {
     "title": "자격 증명 삭제",

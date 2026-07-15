@@ -413,6 +413,7 @@ pub fn vault_status(state: State<'_, Arc<AppState>>) -> Result<serde_json::Value
     let encrypted = total - plaintext;
     let source = crypto::key_source_label();
     let legacy_ipc_decrypt_calls = crypto::legacy_ipc_decrypt_calls();
+    let credential_audit_write_failures = crypto::credential_audit_write_failures();
 
     Ok(serde_json::json!({
         "key_source": source,
@@ -420,6 +421,7 @@ pub fn vault_status(state: State<'_, Arc<AppState>>) -> Result<serde_json::Value
         "encrypted": encrypted,
         "plaintext": plaintext,
         "legacy_ipc_decrypt_calls": legacy_ipc_decrypt_calls,
+        "credential_audit_write_failures": credential_audit_write_failures,
     }))
 }
 

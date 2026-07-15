@@ -711,7 +711,9 @@
     "encrypt_now_other": "Cifrar {count} credenciales sin cifrar ahora",
     "encrypt_done_one": "Listo — {migrated} credencial cifrada.",
     "encrypt_done_other": "Listo — {migrated} credenciales cifradas.",
-    "encrypt_partial": "Cifradas {migrated}, fallidas {failed}. Intenta de nuevo o reinicia la aplicación."
+    "encrypt_partial": "Cifradas {migrated}, fallidas {failed}. Intenta de nuevo o reinicia la aplicación.",
+    "audit_gap_detail": "No se pudieron escribir {count} registro(s) de auditoría de credenciales desde el inicio. El acceso a las credenciales nunca se bloqueó, pero esos eventos de acceso faltan en el registro de auditoría. Revisa el espacio en disco o el estado de la base de datos.",
+    "audit_gap_title": "Registro de auditoría incompleto"
   },
   "delete_dialog": {
     "title": "Eliminar credencial",

@@ -4321,7 +4321,9 @@
       "encrypt_now_other": "Zašifrovat {count} nešifrovaných údajů",
       "encrypt_done_one": "Hotovo – {migrated} údaj zašifrován.",
       "encrypt_done_other": "Hotovo – {migrated} údajů zašifrováno.",
-      "encrypt_partial": "Zašifrováno {migrated}, selhalo {failed}. Zkuste znovu nebo restartujte."
+      "encrypt_partial": "Zašifrováno {migrated}, selhalo {failed}. Zkuste znovu nebo restartujte.",
+      "audit_gap_detail": "Od spuštění se nepodařilo zapsat {count} auditních záznamů přihlašovacích údajů. Přístup k přihlašovacím údajům nebyl nikdy zablokován, ale tyto události přístupu v auditním logu chybí. Zkontrolujte místo na disku nebo stav databáze.",
+      "audit_gap_title": "Auditní stopa je neúplná"
     },
     "delete_dialog": {
       "title": "Smazat údaje",

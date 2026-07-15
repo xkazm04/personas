@@ -711,7 +711,9 @@
     "encrypt_now_other": "{count} unverschlüsselte Zugangsdaten jetzt verschlüsseln",
     "encrypt_done_one": "Fertig -- {migrated} Zugangsdaten verschlüsselt.",
     "encrypt_done_other": "Fertig -- {migrated} Zugangsdaten verschlüsselt.",
-    "encrypt_partial": "{migrated} verschlüsselt, {failed} fehlgeschlagen. Erneut versuchen oder App neu starten."
+    "encrypt_partial": "{migrated} verschlüsselt, {failed} fehlgeschlagen. Erneut versuchen oder App neu starten.",
+    "audit_gap_detail": "Seit dem Start konnten {count} Audit-Einträge für Zugangsdaten nicht geschrieben werden. Der Zugriff auf Zugangsdaten wurde nie blockiert, aber diese Zugriffsereignisse fehlen im Audit-Log. Prüfen Sie Speicherplatz oder Datenbankzustand.",
+    "audit_gap_title": "Audit-Trail unvollständig"
   },
   "delete_dialog": {
     "title": "Zugangsdaten löschen",

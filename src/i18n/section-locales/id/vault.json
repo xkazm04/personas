@@ -711,7 +711,9 @@
     "encrypt_now_other": "Enkripsi {count} kredensial yang tidak terenkripsi sekarang",
     "encrypt_done_one": "Selesai -- {migrated} kredensial terenkripsi.",
     "encrypt_done_other": "Selesai -- {migrated} kredensial terenkripsi.",
-    "encrypt_partial": "Terenkripsi {migrated}, gagal {failed}. Coba lagi atau mulai ulang aplikasi."
+    "encrypt_partial": "Terenkripsi {migrated}, gagal {failed}. Coba lagi atau mulai ulang aplikasi.",
+    "audit_gap_detail": "{count} catatan audit kredensial gagal ditulis sejak aplikasi dijalankan. Akses kredensial tidak pernah diblokir, tetapi peristiwa akses tersebut hilang dari log audit. Periksa ruang disk atau kondisi basis data.",
+    "audit_gap_title": "Jejak audit tidak lengkap"
   },
   "delete_dialog": {
     "title": "Hapus Kredensial",

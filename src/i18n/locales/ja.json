@@ -4321,7 +4321,9 @@
       "encrypt_now_other": "未暗号化の認証情報{count}件を今すぐ暗号化",
       "encrypt_done_one": "完了 -- {migrated}件の認証情報を暗号化しました。",
       "encrypt_done_other": "完了 -- {migrated}件の認証情報を暗号化しました。",
-      "encrypt_partial": "{migrated}件を暗号化、{failed}件が失敗。再試行するかアプリを再起動してください。"
+      "encrypt_partial": "{migrated}件を暗号化、{failed}件が失敗。再試行するかアプリを再起動してください。",
+      "audit_gap_detail": "起動以降、{count} 件の資格情報監査レコードを書き込めませんでした。資格情報へのアクセスがブロックされたことはありませんが、これらのアクセスイベントは監査ログに記録されていません。ディスク容量またはデータベースの状態を確認してください。",
+      "audit_gap_title": "監査証跡が不完全です"
     },
     "delete_dialog": {
       "title": "認証情報を削除",

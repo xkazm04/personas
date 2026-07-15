@@ -11,7 +11,47 @@ use crate::utils::sanitization::sanitize_secrets;
 // ---------------------------------------------------------------------------
 
 /// Append a new entry to the credential audit log.
+///
+/// This is the single chokepoint for ALL credential audit writes (decrypt at
+/// injection, healthcheck, CRUD ops). A failed write increments the
+/// process-wide `credential_audit_write_failures` counter (see
+/// `engine::crypto`) so a decrypt can never occur with a silently-missing
+/// audit trail — callers stay free to treat the returned error as
+/// non-blocking (availability over auditability), but the gap is COUNTED and
+/// surfaced on `vault_status`.
 pub fn insert(
+    pool: &DbPool,
+    credential_id: &str,
+    credential_name: &str,
+    operation: &str,
+    persona_id: Option<&str>,
+    persona_name: Option<&str>,
+    detail: Option<&str>,
+) -> Result<(), AppError> {
+    let result = insert_inner(
+        pool,
+        credential_id,
+        credential_name,
+        operation,
+        persona_id,
+        persona_name,
+        detail,
+    );
+    if let Err(ref e) = result {
+        let failures = crate::engine::crypto::record_credential_audit_write_failure();
+        tracing::warn!(
+            credential_id = %credential_id,
+            operation = %operation,
+            failures,
+            error = %e,
+            "credential audit-log write FAILED — operation proceeded without an audit trail (counted on vault_status)"
+        );
+    }
+    result
+}
+
+#[allow(clippy::too_many_arguments)]
+fn insert_inner(
     pool: &DbPool,
     credential_id: &str,
     credential_name: &str,

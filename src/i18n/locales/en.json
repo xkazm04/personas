@@ -4561,7 +4561,9 @@
       "encrypt_now_other": "Encrypt {count} unencrypted credentials now",
       "encrypt_done_one": "Done -- {migrated} credential encrypted.",
       "encrypt_done_other": "Done -- {migrated} credentials encrypted.",
-      "encrypt_partial": "Encrypted {migrated}, failed {failed}. Try again or restart the app."
+      "encrypt_partial": "Encrypted {migrated}, failed {failed}. Try again or restart the app.",
+      "audit_gap_title": "Audit trail incomplete",
+      "audit_gap_detail": "{count} credential audit record(s) could not be written since launch. Credential access was never blocked, but those access events are missing from the audit log. Check disk space or database health."
     },
     "delete_dialog": {
       "title": "Delete Credential",

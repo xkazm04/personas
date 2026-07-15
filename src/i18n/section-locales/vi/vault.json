@@ -711,7 +711,9 @@
     "encrypt_now_other": "Mã hóa {count} thông tin xác thực chưa mã hóa ngay",
     "encrypt_done_one": "Hoàn tất -- {migrated} thông tin xác thực đã mã hóa.",
     "encrypt_done_other": "Hoàn tất -- {migrated} thông tin xác thực đã mã hóa.",
-    "encrypt_partial": "Đã mã hóa {migrated}, thất bại {failed}. Hãy thử lại hoặc khởi động lại ứng dụng."
+    "encrypt_partial": "Đã mã hóa {migrated}, thất bại {failed}. Hãy thử lại hoặc khởi động lại ứng dụng.",
+    "audit_gap_detail": "{count} bản ghi kiểm toán thông tin đăng nhập không thể được ghi kể từ khi khởi động. Quyền truy cập thông tin đăng nhập chưa bao giờ bị chặn, nhưng các sự kiện truy cập đó bị thiếu trong nhật ký kiểm toán. Hãy kiểm tra dung lượng đĩa hoặc tình trạng cơ sở dữ liệu.",
+    "audit_gap_title": "Nhật ký kiểm toán chưa đầy đủ"
   },
   "delete_dialog": {
     "title": "Xóa thông tin xác thực",

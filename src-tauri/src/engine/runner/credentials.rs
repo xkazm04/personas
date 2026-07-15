@@ -890,7 +890,12 @@ pub(crate) async fn inject_credential(
     }
 
     let _ = cred_repo::record_usage(pool, &cred.id);
-    let _ = audit_log::insert(
+    // Deliberately non-blocking: a failed audit write must never abort an
+    // injection that already succeeded (availability preserved). The failure
+    // is NOT silent though — `audit_log::insert` counts it on the process-wide
+    // `credential_audit_write_failures` counter (surfaced via `vault_status`
+    // and VaultTrustBadge) and emits a warn with context.
+    let _counted_on_failure = audit_log::insert(
         pool,
         &cred.id,
         &cred.name,
@@ -1195,5 +1200,56 @@ mod tests {
             "no field of the undecryptable credential may reach the env map: {env:?}"
         );
         assert!(injected.is_empty());
+    }
+
+    /// Direction 2 (no-trail-less-decrypt): when the credential audit-log
+    /// insert FAILS, the decrypt/injection must still succeed (availability
+    /// preserved) AND the failure must be counted on the process-wide
+    /// `credential_audit_write_failures` counter surfaced by `vault_status`.
+    /// Simulates insert failure by dropping the audit table.
+    #[tokio::test]
+    async fn audit_write_failure_is_counted_and_never_blocks_injection() {
+        let pool = init_test_db().unwrap();
+        seed_connector(
+            &pool,
+            "audittrail_qq",
+            r#"[{"toolName": "audittrail_tool_qq"}]"#,
+        );
+        seed_credential(
+            &pool,
+            "audittrail_qq",
+            "Audit Cred",
+            &[("api_key", "sk-audit-fixture-1")], // gitleaks:allow — inert test fixture
+        );
+
+        // Force every audit insert to fail.
+        {
+            let conn = pool.get().unwrap();
+            conn.execute_batch("DROP TABLE credential_audit_log").unwrap();
+        }
+
+        let before = crate::engine::crypto::credential_audit_write_failures();
+
+        let tools = vec![make_tool("audittrail_tool_qq", None)];
+        let (env, _hints, failures, injected) =
+            resolve_credential_env_vars(&pool, &tools, "persona-audit", "Audit Persona").await;
+
+        // Availability preserved: the injection succeeded despite the audit gap.
+        assert!(failures.is_empty(), "unexpected failures: {failures:?}");
+        assert_eq!(
+            env_get(&env, "AUDITTRAIL_QQ_API_KEY"),
+            Some("sk-audit-fixture-1"),
+            "decrypt/injection must not be blocked by an audit-write failure"
+        );
+        assert_eq!(injected, vec!["audittrail_qq".to_string()]);
+
+        // Integrity gap counted: the counter is process-global (other parallel
+        // tests may also increment it), so assert strictly-greater rather than
+        // an exact delta.
+        let after = crate::engine::crypto::credential_audit_write_failures();
+        assert!(
+            after > before,
+            "failed audit insert must increment credential_audit_write_failures ({before} -> {after})"
+        );
     }
 }

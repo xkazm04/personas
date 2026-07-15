@@ -4321,7 +4321,9 @@
       "encrypt_now_other": "立即加密 {count} 个未加密凭据",
       "encrypt_done_one": "完成——{migrated} 个凭据已加密。",
       "encrypt_done_other": "完成——{migrated} 个凭据已加密。",
-      "encrypt_partial": "已加密 {migrated} 个，失败 {failed} 个。请重试或重启应用。"
+      "encrypt_partial": "已加密 {migrated} 个，失败 {failed} 个。请重试或重启应用。",
+      "audit_gap_detail": "自启动以来有 {count} 条凭据审计记录未能写入。凭据访问从未被阻止，但这些访问事件在审计日志中缺失。请检查磁盘空间或数据库状态。",
+      "audit_gap_title": "审计记录不完整"
     },
     "delete_dialog": {
       "title": "删除凭据",

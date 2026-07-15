@@ -4568,6 +4568,8 @@ export type Translations = {
       encrypt_done_one: string;
       encrypt_done_other: string;
       encrypt_partial: string;
+      audit_gap_title: string;
+      audit_gap_detail: string;
     };
     delete_dialog: {
       title: string;

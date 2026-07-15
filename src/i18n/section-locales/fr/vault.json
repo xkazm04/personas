@@ -711,7 +711,9 @@
     "encrypt_now_other": "Chiffrer {count} identifiants maintenant",
     "encrypt_done_one": "Terminé -- {migrated} identifiant chiffré.",
     "encrypt_done_other": "Terminé -- {migrated} identifiants chiffrés.",
-    "encrypt_partial": "{migrated} chiffré(s), {failed} échec(s). Réessayez ou redémarrez l’application."
+    "encrypt_partial": "{migrated} chiffré(s), {failed} échec(s). Réessayez ou redémarrez l’application.",
+    "audit_gap_detail": "{count} enregistrement(s) d'audit des identifiants n'ont pas pu être écrits depuis le lancement. L'accès aux identifiants n'a jamais été bloqué, mais ces événements d'accès manquent dans le journal d'audit. Vérifiez l'espace disque ou l'état de la base de données.",
+    "audit_gap_title": "Piste d'audit incomplète"
   },
   "delete_dialog": {
     "title": "Supprimer l'identifiant",
