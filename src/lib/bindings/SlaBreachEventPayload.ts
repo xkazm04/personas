@@ -6,34 +6,34 @@
  * Carries enough for a healing recommendation without a second lookup:
  * `persona_id`, the `reason` token, and the streak / rate that tripped it.
  */
-export type SlaBreachEventPayload = { personaId: string, personaName: string,
+export type SlaBreachEventPayload = { personaId: string, personaName: string, 
 /**
  * `"opened"` | `"recovered"`.
  */
-state: string,
+state: string, 
 /**
  * Reason token: `"consecutive_failures"` | `"low_success_rate"`. On a
  * recovery event this echoes the reason the episode originally opened with.
  */
-reason: string,
+reason: string, 
 /**
  * Leading consecutive-failure streak at the time of observation.
  */
-consecutiveFailures: number,
+consecutiveFailures: number, 
 /**
  * Windowed success rate (0.0..=1.0) at the time of observation.
  */
-successRate: number,
+successRate: number, 
 /**
  * Number of decided runs behind `success_rate` (the sample size).
  */
-decided: number,
+decided: number, 
 /**
  * When the episode opened (RFC 3339). Equals `observed_at` on the opened
  * event; on a recovery event it's the original open time (episode duration
  * = `observed_at - opened_at`).
  */
-openedAt: string,
+openedAt: string, 
 /**
  * When this event was observed (RFC 3339).
  */

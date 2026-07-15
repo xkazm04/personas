@@ -7,13 +7,13 @@
  * "missed N while offline" signal surfaced in the schedule UI. Cleared after
  * the user backfills or dismisses.
  */
-export type ScheduleMissedRuns = { triggerId: string, missedCount: number, firstMissedAt: string | null, lastMissedAt: string | null,
+export type ScheduleMissedRuns = { triggerId: string, missedCount: number, firstMissedAt: string | null, lastMissedAt: string | null, 
 /**
  * Direction 3: machine-readable reason the schedule is Paused/Unscheduled
  * (e.g. `invalid_timezone`). `None` when the schedule is healthy. Surfaced
  * in the schedule row next to the Paused/Unscheduled state.
  */
-statusReason: string | null,
+statusReason: string | null, 
 /**
  * Human-facing detail for `status_reason` (e.g. the offending timezone +
  * parser error). Not translated — a diagnostic string.

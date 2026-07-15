@@ -6,7 +6,7 @@
  * the corresponding payload on `HealthBundle` is `null`. This lets the health
  * dashboard degrade one source at a time instead of nuking the whole view when
  * a single query fails (the live "Incomplete health data | Retry" banner
- * class). It also disambiguates `byom_policy: None` -- "no policy configured"
+ * class). It also disambiguates `byom_policy: None` — "no policy configured"
  * (valid) is `byom_policy = null, errors.byom_policy = null`, whereas a load
  * failure is `byom_policy = null, errors.byom_policy = Some(reason)`.
  */

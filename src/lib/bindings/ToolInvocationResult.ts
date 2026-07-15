@@ -10,24 +10,24 @@ import type { ToolErrorKind } from "./ToolErrorKind";
  * `output` is always capped at `DIRECT_TOOL_OUTPUT_CAP_BYTES` with
  * `output_truncated` surfacing any truncation (never silent).
  */
-export type ToolInvocationResult = { success: boolean, output: string,
+export type ToolInvocationResult = { success: boolean, output: string, 
 /**
  * True when `output` was capped at the output byte limit.
  */
-output_truncated: boolean, error: string | null,
+output_truncated: boolean, error: string | null, 
 /**
  * Typed failure category (`None` on success).
  */
-error_kind: ToolErrorKind | null,
+error_kind: ToolErrorKind | null, 
 /**
  * HTTP status when the failure came from an HTTP/API call (`None` otherwise).
  */
-http_status: number | null,
+http_status: number | null, 
 /**
  * Whether retrying the call could plausibly succeed (timeouts, transport,
  * 5xx, rate-limit). `false` on success and on terminal failures.
  */
-retryable: boolean, duration_ms: bigint, tool_name: string,
+retryable: boolean, duration_ms: bigint, tool_name: string, 
 /**
  * "script" | "api" | "automation"
  */

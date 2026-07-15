@@ -1878,6 +1878,7 @@ pub fn set_status(
 #[serde(rename_all = "camelCase")]
 pub struct ScheduleMissedRuns {
     pub trigger_id: String,
+    #[ts(type = "number")]
     pub missed_count: i64,
     pub first_missed_at: Option<String>,
     pub last_missed_at: Option<String>,
