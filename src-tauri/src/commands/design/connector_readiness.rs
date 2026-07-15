@@ -25,6 +25,8 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::db::models::{classify_connector, ConnectorClass};
+use crate::db::DbPool;
+use crate::error::AppError;
 
 /// What kind of setup a not-ready connector needs — drives the remediation
 /// the UI routes the user to (which is NOT always "Settings → Vault").
@@ -379,6 +381,221 @@ pub fn build_persona_setup(
         triggers: trigger_types,
         preview,
     }
+}
+
+/// Extract the connector names a persona declares, from its `design_context`
+/// (`useCases[].connectors` + `summary.connectors`) and `last_design_result`
+/// (`required_connectors` / `suggested_connectors`). Mirrors the runtime
+/// extraction in `engine::runner::credentials::inject_design_context_credentials`
+/// so a recompute sees exactly the connector set the runner would inject for.
+/// De-duplicated, trimmed, blanks dropped.
+pub fn persona_declared_connectors(persona: &crate::db::models::Persona) -> Vec<String> {
+    let mut names: Vec<String> = Vec::new();
+    let mut push = |raw: &str, names: &mut Vec<String>| {
+        let n = raw.trim();
+        if !n.is_empty() && !names.iter().any(|e: &String| e.eq_ignore_ascii_case(n)) {
+            names.push(n.to_string());
+        }
+    };
+
+    if let Some(dc) = persona.design_context.as_deref() {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(dc) {
+            // useCases[].connectors (camelCase promote / snake_case dry-run).
+            if let Some(use_cases) = crate::engine::design_context::pick_use_cases_array(&parsed) {
+                for uc in use_cases {
+                    if let Some(conns) = uc.get("connectors").and_then(|v| v.as_array()) {
+                        for c in conns {
+                            if let Some(name) = c.as_str() {
+                                push(name, &mut names);
+                            } else if let Some(name) = c.get("name").and_then(|v| v.as_str()) {
+                                push(name, &mut names);
+                            }
+                        }
+                    }
+                }
+            }
+            // summary.connectors (alternate pattern).
+            if let Some(conns) = parsed
+                .get("summary")
+                .and_then(|s| s.get("connectors"))
+                .and_then(|v| v.as_array())
+            {
+                for c in conns {
+                    if let Some(name) = c.as_str() {
+                        push(name, &mut names);
+                    } else if let Some(name) = c.get("name").and_then(|v| v.as_str()) {
+                        push(name, &mut names);
+                    }
+                }
+            }
+        }
+    }
+
+    if let Some(ldr) = persona.last_design_result.as_deref() {
+        if let Ok(dr) = serde_json::from_str::<serde_json::Value>(ldr) {
+            for key in ["required_connectors", "suggested_connectors"] {
+                if let Some(conns) = dr.get(key).and_then(|v| v.as_array()) {
+                    for c in conns {
+                        if let Some(name) = c.as_str() {
+                            push(name, &mut names);
+                        } else if let Some(name) = c.get("name").and_then(|v| v.as_str()) {
+                            push(name, &mut names);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    names
+}
+
+/// Recompute `setup_status` + `setup_detail` for ONE persona from CURRENT
+/// vault / credential / probe state and persist both columns.
+///
+/// The persisted `setup_status`/`setup_detail` are otherwise written only at
+/// adopt and promote — so deleting or editing a bound credential AFTER promote
+/// left a persona stuck at `setup_status='ready'` with a `credentialLinks`
+/// entry pointing at a dead id: it passed the run gate then executed blind.
+/// This is the honest recompute the credential-mutation hooks call.
+///
+/// Bounded to one persona (one persona read + one triggers query + the
+/// per-connector resolver, all against the local SQLite). `setup_status` is a
+/// two-value gate (`ready` / `needs_credentials`); this flips it honestly.
+pub fn recompute_persona_setup(pool: &DbPool, persona_id: &str) -> Result<(), AppError> {
+    let persona = crate::db::repos::core::personas::get_by_id(pool, persona_id)?;
+    let connectors = persona_declared_connectors(&persona);
+
+    let conn = pool.get()?;
+    let missing = missing_connectors(&conn, connectors.iter());
+    let blockers: Vec<SetupBlocker> = missing.iter().filter_map(SetupBlocker::from_readiness).collect();
+
+    // Wired trigger types drive the `preview` / `has_autonomous_trigger`
+    // fields. A credential mutation never changes triggers, but recomputing
+    // them keeps `setup_detail` internally consistent and avoids depending on
+    // a possibly-NULL prior `setup_detail`.
+    let trigger_types: Vec<String> = {
+        let mut stmt =
+            conn.prepare("SELECT trigger_type FROM persona_triggers WHERE persona_id = ?1")?;
+        let rows = stmt.query_map([persona_id], |row| row.get::<_, String>(0))?;
+        rows.filter_map(|r| r.ok()).collect()
+    };
+
+    let new_status = if blockers.is_empty() {
+        "ready"
+    } else {
+        "needs_credentials"
+    };
+    let setup = build_persona_setup(blockers, trigger_types);
+    let setup_json = serde_json::to_string(&setup)
+        .map_err(|e| AppError::Internal(format!("serialize setup_detail: {e}")))?;
+
+    conn.execute(
+        "UPDATE personas SET setup_status = ?1, setup_detail = ?2, updated_at = ?3 WHERE id = ?4",
+        rusqlite::params![
+            new_status,
+            setup_json,
+            chrono::Utc::now().to_rfc3339(),
+            persona_id
+        ],
+    )?;
+    tracing::info!(
+        persona_id = %persona_id,
+        setup_status = %new_status,
+        "connector-readiness: recomputed persona setup after credential mutation"
+    );
+    Ok(())
+}
+
+/// Recompute `setup_status` for every persona whose readiness could have been
+/// affected by a mutation (delete / field-edit) to `credential_id`.
+///
+/// The affected set is the UNION of:
+///  - the existing dependents scan (`audit_log::get_dependents` — structural
+///    tool→connector→service_type links + observed audit-log usage), and
+///  - personas whose `design_context.credentialLinks` map references this exact
+///    credential id (the precise on-target set — a link pointing at the id
+///    that was just deleted/edited).
+///
+/// Best-effort and bounded: failures are logged, never propagated, so a
+/// credential mutation never fails because a downstream recompute hit a snag.
+/// Call AFTER the mutation is committed for edits; for a delete, capture the
+/// dependents BEFORE the row is gone (see `credential_dependent_persona_ids`).
+pub fn recompute_setup_for_credential_dependents(pool: &DbPool, credential_id: &str) {
+    let ids = credential_dependent_persona_ids(pool, credential_id);
+    for pid in ids {
+        if let Err(e) = recompute_persona_setup(pool, &pid) {
+            tracing::warn!(
+                persona_id = %pid,
+                credential_id = %credential_id,
+                error = %e,
+                "connector-readiness: failed to recompute persona setup after credential mutation"
+            );
+        }
+    }
+}
+
+/// Gather the ids of personas affected by a mutation to `credential_id` — the
+/// union described on `recompute_setup_for_credential_dependents`. Split out so
+/// the delete path can capture the set BEFORE the credential row is removed
+/// (`audit_log::get_dependents` reads the credential's `service_type`).
+pub fn credential_dependent_persona_ids(pool: &DbPool, credential_id: &str) -> Vec<String> {
+    let mut ids: Vec<String> = Vec::new();
+    let mut push = |id: String, ids: &mut Vec<String>| {
+        if !id.is_empty() && !ids.contains(&id) {
+            ids.push(id);
+        }
+    };
+
+    // Reuse the sanctioned dependents scan (structural + observed).
+    match crate::db::repos::resources::audit_log::get_dependents(pool, credential_id) {
+        Ok(deps) => {
+            for d in deps {
+                push(d.persona_id, &mut ids);
+            }
+        }
+        Err(e) => tracing::warn!(
+            credential_id = %credential_id,
+            error = %e,
+            "connector-readiness: get_dependents failed while gathering recompute set"
+        ),
+    }
+
+    // Precise on-target set: personas whose credentialLinks map references this
+    // exact credential id. A substring pre-filter narrows the row scan; the
+    // JSON parse confirms the id appears as a credentialLinks *value* (not an
+    // incidental substring elsewhere in design_context).
+    if let Ok(conn) = pool.get() {
+        let like = format!("%{credential_id}%");
+        if let Ok(mut stmt) = conn.prepare(
+            "SELECT id, design_context FROM personas \
+             WHERE design_context LIKE ?1",
+        ) {
+            if let Ok(rows) = stmt.query_map([&like], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+            }) {
+                for (pid, dc) in rows.flatten() {
+                    let references = dc
+                        .as_deref()
+                        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+                        .and_then(|v| {
+                            v.get("credentialLinks")
+                                .and_then(|l| l.as_object())
+                                .map(|obj| {
+                                    obj.values()
+                                        .any(|val| val.as_str() == Some(credential_id))
+                                })
+                        })
+                        .unwrap_or(false);
+                    if references {
+                        push(pid, &mut ids);
+                    }
+                }
+            }
+        }
+    }
+
+    ids
 }
 
 /// Find the single concrete vault credential a `Credential`-class connector
@@ -834,6 +1051,45 @@ mod tests {
                 other => panic!("expected NeedsSetup(Misconfigured) for blank name, got {other:?}"),
             }
         }
+    }
+
+    // --- Direction 1: readiness reacts to credential mutation ---
+
+    #[test]
+    fn declared_connectors_extracted_from_design_context_and_last_design_result() {
+        // useCases[].connectors (objects) + summary.connectors (strings) +
+        // last_design_result.required/suggested_connectors, de-duplicated
+        // case-insensitively.
+        let mut persona = crate::db::models::Persona::default();
+        persona.design_context = Some(
+            r#"{
+                "useCases":[{"connectors":[{"name":"notion"},{"name":"gmail"}]}],
+                "summary":{"connectors":["Notion","slack"]}
+            }"#
+            .to_string(),
+        );
+        persona.last_design_result = Some(
+            r#"{"required_connectors":["hubspot"],"suggested_connectors":[{"name":"gmail"}]}"#
+                .to_string(),
+        );
+        let names = persona_declared_connectors(&persona);
+        let lower: Vec<String> = names.iter().map(|n| n.to_ascii_lowercase()).collect();
+        assert!(lower.contains(&"notion".to_string()));
+        assert!(lower.contains(&"gmail".to_string()));
+        assert!(lower.contains(&"slack".to_string()));
+        assert!(lower.contains(&"hubspot".to_string()));
+        // `Notion` (summary) must not duplicate `notion` (useCases).
+        assert_eq!(
+            lower.iter().filter(|n| n.as_str() == "notion").count(),
+            1,
+            "connector names must de-duplicate case-insensitively"
+        );
+    }
+
+    #[test]
+    fn declared_connectors_empty_when_no_design_context() {
+        let persona = crate::db::models::Persona::default();
+        assert!(persona_declared_connectors(&persona).is_empty());
     }
 
     #[test]
