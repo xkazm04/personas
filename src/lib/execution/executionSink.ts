@@ -22,6 +22,8 @@ const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
 const TAIL_BUFFER_LINES = 200;
 /** Throttle interval (ms) for flushing tail output after truncation. */
 const TAIL_FLUSH_INTERVAL_MS = 500;
+/** Throttle interval (ms) for pushing normal-mode output to the store. */
+const NORMAL_FLUSH_INTERVAL_MS = 100;
 
 const OUTPUT_TRUNCATION_HEADER = "[SYSTEM] Output truncated — 10 MB limit reached. Showing most recent output below.";
 
@@ -111,6 +113,9 @@ export class ExecutionSink {
   private lastTailFlushTime = 0;
   private tailFlushScheduled = false;
   private tailVisibilityUnsubscribe: (() => void) | null = null;
+  private lastNormalFlushTime = 0;
+  private normalFlushScheduled = false;
+  private normalVisibilityUnsubscribe: (() => void) | null = null;
   private onFlush: SinkFlushCallback | null = null;
 
   /** Bind the flush callback. Called once when the slice is created. */
@@ -137,6 +142,12 @@ export class ExecutionSink {
   /** Force-flush any pending batch immediately (used before state reset). */
   forceFlush(): void {
     this.flush(this.generation);
+    // flush() only schedules a throttled store push in normal mode; emit the
+    // current ring snapshot synchronously so callers see the final output.
+    if (!this.truncated && this.normalFlushScheduled && this.onFlush) {
+      this.lastNormalFlushTime = Date.now();
+      this.onFlush(this.ring.toArray(), this.totalBytes);
+    }
   }
 
   /** Reset all state for a new execution. */
@@ -151,6 +162,10 @@ export class ExecutionSink {
     this.tailFlushScheduled = false;
     this.tailVisibilityUnsubscribe?.();
     this.tailVisibilityUnsubscribe = null;
+    this.lastNormalFlushTime = 0;
+    this.normalFlushScheduled = false;
+    this.normalVisibilityUnsubscribe?.();
+    this.normalVisibilityUnsubscribe = null;
     this.ring.clear();
     this.tailRing.clear();
   }
@@ -167,6 +182,10 @@ export class ExecutionSink {
     this.tailFlushScheduled = false;
     this.tailVisibilityUnsubscribe?.();
     this.tailVisibilityUnsubscribe = null;
+    this.lastNormalFlushTime = 0;
+    this.normalFlushScheduled = false;
+    this.normalVisibilityUnsubscribe?.();
+    this.normalVisibilityUnsubscribe = null;
     this.ring.clear();
     this.tailRing.clear();
   }
@@ -222,7 +241,54 @@ export class ExecutionSink {
       return;
     }
 
-    this.onFlush(this.ring.toArray(), this.totalBytes);
+    this.scheduleNormalFlush();
+  }
+
+  /**
+   * Schedule a throttled store push of the main ring. Tauri output events
+   * arrive as separate tasks, so the microtask batching in `append` coalesces
+   * only synchronous bursts — without this throttle every event rebuilds the
+   * (up to 10k-line) snapshot array and re-renders the terminal. The first
+   * flush after an idle period is immediate; subsequent flushes coalesce into
+   * one store push per NORMAL_FLUSH_INTERVAL_MS window.
+   */
+  private scheduleNormalFlush(): void {
+    if (this.normalFlushScheduled || !this.onFlush) return;
+    this.normalFlushScheduled = true;
+
+    const now = Date.now();
+    const elapsed = now - this.lastNormalFlushTime;
+    const delay = Math.max(0, NORMAL_FLUSH_INTERVAL_MS - elapsed);
+    const gen = this.generation;
+
+    const flushNormal = () => {
+      this.normalFlushScheduled = false;
+      if (gen !== this.generation || !this.onFlush) return;
+      // Tail mode took over while this flush was pending -- the truncation
+      // crossing already pushed the frozen ring snapshot.
+      if (this.truncated) return;
+
+      this.lastNormalFlushTime = Date.now();
+      this.onFlush(this.ring.toArray(), this.totalBytes);
+    };
+
+    if (delay === 0) {
+      flushNormal();
+      return;
+    }
+
+    if (!getDocumentVisible()) {
+      this.normalVisibilityUnsubscribe?.();
+      this.normalVisibilityUnsubscribe = subscribeDocumentVisibility((visible) => {
+        if (!visible) return;
+        this.normalVisibilityUnsubscribe?.();
+        this.normalVisibilityUnsubscribe = null;
+        flushNormal();
+      });
+      return;
+    }
+
+    setTimeout(flushNormal, delay);
   }
 
   /**

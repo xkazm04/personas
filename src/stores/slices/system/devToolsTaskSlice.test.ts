@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { createDevToolsTaskSlice } from './devToolsTaskSlice';
 import type { SystemStore } from '../../storeTypes';
@@ -28,11 +28,23 @@ function makeHarness(seed: Partial<SystemStore> = {}) {
 const CAP = 1000; // mirrors MAX_TASK_OUTPUT_LINES in devToolsTaskSlice.ts
 
 describe('devToolsTaskSlice — bounded output ring', () => {
+  // appendTaskOutput batches streamed lines and flushes to the store on a
+  // short timer (one set() per window instead of one per line), so tests
+  // advance fake timers to observe the flushed state.
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+  const flush = () => vi.runAllTimers();
+
   it('appends lines in order while under the cap', () => {
     const h = makeHarness();
     h.get().appendTaskOutput('t1', 'a');
     h.get().appendTaskOutput('t1', 'b');
     h.get().appendTaskOutput('t1', 'c');
+    flush();
     expect(h.buffer('t1')).toEqual(['a', 'b', 'c']);
   });
 
@@ -42,6 +54,7 @@ describe('devToolsTaskSlice — bounded output ring', () => {
     for (let i = 0; i < total; i++) {
       h.get().appendTaskOutput('verbose', `line-${i}`);
     }
+    flush();
     const buf = h.buffer('verbose');
     expect(buf.length).toBe(CAP);
     // The most recent CAP lines are retained; the oldest 500 are dropped.
@@ -52,8 +65,10 @@ describe('devToolsTaskSlice — bounded output ring', () => {
   it('never exceeds the cap exactly at the boundary', () => {
     const h = makeHarness();
     for (let i = 0; i < CAP; i++) h.get().appendTaskOutput('edge', `l${i}`);
+    flush();
     expect(h.buffer('edge').length).toBe(CAP);
     h.get().appendTaskOutput('edge', 'overflow');
+    flush();
     const buf = h.buffer('edge');
     expect(buf.length).toBe(CAP); // still capped
     expect(buf[buf.length - 1]).toBe('overflow');
@@ -64,6 +79,7 @@ describe('devToolsTaskSlice — bounded output ring', () => {
     const h = makeHarness();
     h.get().appendTaskOutput('t1', 'one');
     h.get().appendTaskOutput('t2', 'two');
+    flush();
     expect(h.buffer('t1')).toEqual(['one']);
     expect(h.buffer('t2')).toEqual(['two']);
   });
@@ -72,6 +88,7 @@ describe('devToolsTaskSlice — bounded output ring', () => {
     const h = makeHarness();
     h.get().appendTaskOutput('done', 'x');
     h.get().appendTaskOutput('done', 'y');
+    flush();
     expect(h.buffer('done')).toEqual(['x', 'y']);
     h.get().clearTaskOutput('done');
     // Read the raw map (not the buffer() helper, which coalesces undefined -> []):

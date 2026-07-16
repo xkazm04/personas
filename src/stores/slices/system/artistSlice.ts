@@ -113,7 +113,53 @@ const MAX_SESSIONS = 25;
 const MAX_SESSION_LINES = 300;
 const MAX_MEDIA_STUDIO_RECENTS = 5;
 
-export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> = (set, get) => ({
+/**
+ * Flush interval (ms) for batching streamed creative-session lines into the
+ * store. A running session streams many lines per second; a zustand `set()`
+ * per line copies the output array (and maps the whole sessions list) and
+ * notifies every subscriber per line. Buffering lines and flushing once per
+ * interval keeps the UI fresh (~12 Hz) with one store write per window.
+ */
+const OUTPUT_FLUSH_INTERVAL_MS = 80;
+
+export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> = (set, get) => {
+  // Pending streamed lines, buffered outside the store between flushes.
+  const pendingOutput: string[] = [];
+  const pendingSessionLines = new Map<string, string[]>();
+  let flushScheduled = false;
+
+  const flushPendingOutput = () => {
+    flushScheduled = false;
+    if (pendingOutput.length === 0 && pendingSessionLines.size === 0) return;
+    // Snapshot and clear before set() so the updater stays pure.
+    const outputBatch = pendingOutput.splice(0, pendingOutput.length);
+    const sessionBatches = new Map(pendingSessionLines);
+    pendingSessionLines.clear();
+    set((s) => {
+      const next: { creativeSessionOutput?: string[]; creativeSessions?: CreativeSessionRecord[] } = {};
+      if (outputBatch.length > 0) {
+        next.creativeSessionOutput =
+          [...s.creativeSessionOutput, ...outputBatch].slice(-MAX_OUTPUT_LINES);
+      }
+      if (sessionBatches.size > 0) {
+        next.creativeSessions = s.creativeSessions.map((sess) => {
+          const lines = sessionBatches.get(sess.id);
+          return lines
+            ? { ...sess, output: [...sess.output, ...lines].slice(-MAX_SESSION_LINES) }
+            : sess;
+        });
+      }
+      return next;
+    });
+  };
+
+  const scheduleFlush = () => {
+    if (flushScheduled) return;
+    flushScheduled = true;
+    setTimeout(flushPendingOutput, OUTPUT_FLUSH_INTERVAL_MS);
+  };
+
+  return {
   artistTab: "blender" as ArtistTab,
   galleryMode: "2d" as GalleryMode,
   blenderMcpState: "not-installed" as BlenderMcpState,
@@ -136,36 +182,54 @@ export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> =
     set({ cachedBlenderStatus: status, blenderStatusCheckedAt: Date.now() }),
   setCreativeSessionId: (id) => set({ creativeSessionId: id }),
   setCreativeSessionRunning: (running) => set({ creativeSessionRunning: running }),
-  appendCreativeOutput: (line) =>
-    set((s) => ({
-      creativeSessionOutput: [...s.creativeSessionOutput, line].slice(-MAX_OUTPUT_LINES),
-    })),
-  clearCreativeOutput: () => set({ creativeSessionOutput: [] }),
+  appendCreativeOutput: (line) => {
+    pendingOutput.push(line);
+    // Cap the pending buffer so a chatty burst between flushes never holds
+    // more than one window's worth of lines.
+    if (pendingOutput.length > MAX_OUTPUT_LINES) {
+      pendingOutput.splice(0, pendingOutput.length - MAX_OUTPUT_LINES);
+    }
+    scheduleFlush();
+  },
+  clearCreativeOutput: () => {
+    // Drop any not-yet-flushed lines so they don't resurrect the output.
+    pendingOutput.length = 0;
+    set({ creativeSessionOutput: [] });
+  },
   setCreativeConnectors: (connectors) => set({ creativeConnectors: connectors }),
 
   startCreativeSessionRecord: (record) =>
     set((s) => ({
       creativeSessions: [record, ...s.creativeSessions].slice(0, MAX_SESSIONS),
     })),
-  appendCreativeSessionLine: (id, line) =>
-    set((s) => ({
-      creativeSessions: s.creativeSessions.map((sess) =>
-        sess.id === id
-          ? { ...sess, output: [...sess.output, line].slice(-MAX_SESSION_LINES) }
-          : sess,
-      ),
-    })),
+  appendCreativeSessionLine: (id, line) => {
+    const buf = pendingSessionLines.get(id);
+    if (buf) {
+      buf.push(line);
+      if (buf.length > MAX_SESSION_LINES) {
+        buf.splice(0, buf.length - MAX_SESSION_LINES);
+      }
+    } else {
+      pendingSessionLines.set(id, [line]);
+    }
+    scheduleFlush();
+  },
   finalizeCreativeSession: (id, status) =>
     set((s) => ({
       creativeSessions: s.creativeSessions.map((sess) =>
         sess.id === id ? { ...sess, status } : sess,
       ),
     })),
-  deleteCreativeSessionRecord: (id) =>
+  deleteCreativeSessionRecord: (id) => {
+    pendingSessionLines.delete(id);
     set((s) => ({
       creativeSessions: s.creativeSessions.filter((sess) => sess.id !== id),
-    })),
+    }));
+  },
   loadCreativeSessionIntoOutput: (id) => {
+    // Flush buffered lines first so the loaded snapshot is not appended onto
+    // by lines that logically arrived before the load.
+    flushPendingOutput();
     const sess = get().creativeSessions.find((r) => r.id === id);
     if (!sess) return;
     set({ creativeSessionOutput: sess.output.slice() });
@@ -204,4 +268,5 @@ export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> =
     set((s) => ({
       mediaStudioRecents: s.mediaStudioRecents.filter((r) => r.path !== path),
     })),
-});
+  };
+};

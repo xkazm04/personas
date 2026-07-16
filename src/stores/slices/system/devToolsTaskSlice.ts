@@ -19,6 +19,16 @@ import * as devApi from "@/api/devTools/devTools";
  */
 const MAX_TASK_OUTPUT_LINES = 1000;
 
+/**
+ * Flush interval (ms) for batching streamed output lines into the store.
+ * A running task streams tens of lines per second; writing each line as its
+ * own zustand `set()` copies the ring array and notifies every subscriber
+ * per line. Buffering lines and flushing once per interval keeps the UI
+ * fresh (~12 Hz) while doing one store transaction per window instead of
+ * one per line.
+ */
+const OUTPUT_FLUSH_INTERVAL_MS = 80;
+
 export interface DevToolsTaskSlice {
   // -- Tasks -----------------------------------------------------------
   tasks: DevTask[];
@@ -39,7 +49,36 @@ export interface DevToolsTaskSlice {
   setMaxParallelTasks: (n: number) => void;
 }
 
-export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevToolsTaskSlice> = (set, get) => ({
+export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevToolsTaskSlice> = (set, get) => {
+  // Pending streamed lines, buffered outside the store between flushes.
+  // Kept in the creator closure (not module scope) so each store instance
+  // owns its own buffer.
+  const pendingLines = new Map<string, string[]>();
+  let flushScheduled = false;
+
+  const flushPendingOutput = () => {
+    flushScheduled = false;
+    if (pendingLines.size === 0) return;
+    // Snapshot and clear before set() so the updater stays pure.
+    const batches = new Map(pendingLines);
+    pendingLines.clear();
+    set((state) => {
+      const buffers = { ...state.taskOutputBuffers };
+      for (const [taskId, lines] of batches) {
+        const prev = buffers[taskId] ?? [];
+        // Bounded ring: keep at most MAX_TASK_OUTPUT_LINES, applying the cap
+        // once per flush instead of once per line.
+        const merged = [...prev, ...lines];
+        buffers[taskId] =
+          merged.length > MAX_TASK_OUTPUT_LINES
+            ? merged.slice(merged.length - MAX_TASK_OUTPUT_LINES)
+            : merged;
+      }
+      return { taskOutputBuffers: buffers };
+    });
+  };
+
+  return {
   // -- Tasks state -----------------------------------------------------
   tasks: [],
   tasksLoading: false,
@@ -127,25 +166,26 @@ export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevTools
   },
 
   appendTaskOutput: (taskId, line) => {
-    set((state) => {
-      const prev = state.taskOutputBuffers[taskId] ?? [];
-      // Bounded ring: once at capacity, drop the oldest line(s) so the buffer
-      // holds at most MAX_TASK_OUTPUT_LINES. slice() keeps the copy bounded to
-      // the cap, so append stays O(cap) instead of O(total lines streamed).
-      const next =
-        prev.length >= MAX_TASK_OUTPUT_LINES
-          ? [...prev.slice(prev.length - MAX_TASK_OUTPUT_LINES + 1), line]
-          : [...prev, line];
-      return {
-        taskOutputBuffers: {
-          ...state.taskOutputBuffers,
-          [taskId]: next,
-        },
-      };
-    });
+    const buf = pendingLines.get(taskId);
+    if (buf) {
+      buf.push(line);
+      // Cap the pending buffer too so a chatty task between flushes never
+      // holds more than one ring's worth of lines.
+      if (buf.length > MAX_TASK_OUTPUT_LINES) {
+        buf.splice(0, buf.length - MAX_TASK_OUTPUT_LINES);
+      }
+    } else {
+      pendingLines.set(taskId, [line]);
+    }
+    if (!flushScheduled) {
+      flushScheduled = true;
+      setTimeout(flushPendingOutput, OUTPUT_FLUSH_INTERVAL_MS);
+    }
   },
 
   clearTaskOutput: (taskId) => {
+    // Drop any not-yet-flushed lines so they don't resurrect the buffer.
+    pendingLines.delete(taskId);
     set((state) => {
       const { [taskId]: _, ...rest } = state.taskOutputBuffers;
       return { taskOutputBuffers: rest };
@@ -155,4 +195,5 @@ export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevTools
   setMaxParallelTasks: (n) => {
     set({ maxParallelTasks: n });
   },
-});
+  };
+};
