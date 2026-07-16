@@ -181,22 +181,44 @@ pub async fn poll_due_triggers(pool: &DbPool, scheduler: &SchedulerState, http: 
         }
     };
 
-    for trigger in triggers {
-        if trigger.trigger_type != "polling" {
-            continue; // Only process polling triggers in this loop
-        }
+    // Independent triggers polled with bounded concurrency: the serial loop
+    // awaited each 30s-timeout GET before starting the next, so one dead/slow
+    // endpoint delayed every trigger behind it by up to 30s per stall
+    // (compounding linearly across dead hosts). mark_triggered_with_hash's
+    // CAS already dedupes racing completions, so no new locking is needed.
+    use futures_util::StreamExt;
+    futures_util::stream::iter(
+        triggers
+            .into_iter()
+            .filter(|t| t.trigger_type == "polling"),
+    )
+    .for_each_concurrent(4, |trigger| poll_one_trigger(pool, scheduler, http, now, trigger))
+    .await;
+}
 
+/// Poll a single due trigger: active-window/backoff gates, SSRF check, HTTP
+/// GET, hash-compare, CAS-advance + event publish. Extracted from the former
+/// inline loop body of `poll_due_triggers` so independent triggers can run
+/// concurrently.
+async fn poll_one_trigger(
+    pool: &DbPool,
+    scheduler: &SchedulerState,
+    http: &reqwest::Client,
+    now: chrono::DateTime<chrono::Utc>,
+    trigger: crate::db::models::PersonaTrigger,
+) {
+    {
         // Active window gate: skip polling outside configured active hours,
         // but still advance the schedule so it doesn't pile up as overdue.
         if !trigger.is_within_active_window(now) {
             let next = sched_logic::compute_next_trigger_at(&trigger, now);
             let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
-            continue;
+            return;
         }
 
         // Skip triggers in backoff from prior mark_triggered failures
         if is_in_backoff(&trigger.id) {
-            continue;
+            return;
         }
 
         // Parse config once -- typed access replaces scattered json_extract calls
@@ -208,7 +230,7 @@ pub async fn poll_due_triggers(pool: &DbPool, scheduler: &SchedulerState, http: 
                 content_hash,
                 ..
             } => (url.clone(), headers.clone(), content_hash.clone()),
-            _ => continue,
+            _ => return,
         };
 
         let url = match cfg_url {
@@ -218,7 +240,7 @@ pub async fn poll_due_triggers(pool: &DbPool, scheduler: &SchedulerState, http: 
                 // Still mark triggered to advance next_trigger_at
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
                 try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
-                continue;
+                return;
             }
         };
 
@@ -231,7 +253,7 @@ pub async fn poll_due_triggers(pool: &DbPool, scheduler: &SchedulerState, http: 
             );
             let next = sched_logic::compute_next_trigger_at(&trigger, now);
             try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
-            continue;
+            return;
         }
 
         let headers: Vec<(String, String)> = cfg_headers.unwrap_or_default().into_iter().collect();
@@ -252,7 +274,7 @@ pub async fn poll_due_triggers(pool: &DbPool, scheduler: &SchedulerState, http: 
                 );
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
                 try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
-                continue;
+                return;
             }
         };
 
@@ -266,7 +288,7 @@ pub async fn poll_due_triggers(pool: &DbPool, scheduler: &SchedulerState, http: 
                 );
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
                 try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
-                continue;
+                return;
             }
         };
 
