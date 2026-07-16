@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslation, getActiveTranslations } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEFAULT_CONVERSATION_ID, useCompanionStore } from './companionStore';
@@ -2167,7 +2168,13 @@ function Body(props: BodyProps) {
           </div>
           {sendError && (
             <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400 flex items-start justify-between gap-3">
-              <span className="min-w-0 break-words">{sendError}</span>
+              {/* The store keeps the RAW error (retry/debug); render the
+                  registry-translated message so the scariest moment of the
+                  chat isn't hardcoded English on a non-English UI
+                  (2026-07-16 UAT F-MAJOR-10). */}
+              <span className="min-w-0 break-words">
+                {resolveErrorTranslated(t, sendError).message}
+              </span>
               {(() => {
                 // On a failed turn the optimistic user bubble stays in
                 // `messages`, so the last user message is what we re-send.

@@ -576,6 +576,14 @@ pub const AUTOPILOT_MODE_PREFIX: &str = "autopilot_mode:";
 /// frontend and a newly added theme id must not be rejected by a stale Rust
 /// validator (unknown values are coerced on read instead).
 pub const APPEARANCE_PREFERENCES: &str = "appearance_preferences";
+/// The app UI language (BCP-47-ish short code, e.g. `"en"`, `"es"`, `"ja"`).
+/// Mirrored from the frontend i18n store (write-through on language switch,
+/// same durability pattern as [`APPEARANCE_PREFERENCES`]) so BACKEND prompt
+/// builders — the companion turn first — can direct AI replies and generated
+/// content into the user's language instead of relying on the model inferring
+/// it from the message (which degrades after English tool-result injections;
+/// 2026-07-16 UAT finding F-MAJOR-9).
+pub const APP_LANGUAGE: &str = "app_language";
 /// Chain cost ceiling in USD. Accumulated cost rides hop→hop in the chain event
 /// metadata (`_chain_cost_usd`); when a completing hop's running total reaches
 /// this ceiling, the cascade evaluator halts (records a `budget_exceeded` chain
@@ -681,6 +689,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_LAST_AT,
     CLOUD_SYNC_TOTAL_ROWS,
     APPEARANCE_PREFERENCES,
+    APP_LANGUAGE,
     CHAIN_MAX_COST_USD,
     CHAIN_MAX_LINKS,
 ];

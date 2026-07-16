@@ -244,11 +244,14 @@ pub async fn build_system_prompt(
     let display_md = display_addendum_if_voice_active(voice_enabled);
     // Dev-mode self-model rides the same "mode addenda" prompt slot as
     // autonomous mode — both are header-toggle-gated blocks and compose()
-    // treats the slot as opaque markdown.
+    // treats the slot as opaque markdown. The reply-language directive rides
+    // the same opaque slot (non-English UI → explicit instruction; see
+    // `language_addendum`).
     let autonomous_md = format!(
-        "{}{}",
+        "{}{}{}",
         autonomous_addendum_if_enabled(autonomous_mode),
         crate::companion::dev_mode::addendum_if_enabled(sys_db),
+        language_addendum(sys_db),
     );
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
     let connectors_md = format_connectors(&connector_names);
@@ -343,11 +346,12 @@ pub async fn build_system_prompt(
     );
     let display_md = display_addendum_if_voice_active(voice_enabled);
     // Dev-mode self-model rides the "mode addenda" slot — see the ml
-    // variant above for rationale.
+    // variant above for rationale. Language directive rides the same slot.
     let autonomous_md = format!(
-        "{}{}",
+        "{}{}{}",
         autonomous_addendum_if_enabled(autonomous_mode),
         crate::companion::dev_mode::addendum_if_enabled(sys_db),
+        language_addendum(sys_db),
     );
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
     let connectors_md = format_connectors(&connector_names);
@@ -607,11 +611,35 @@ fn format_project_kpis(sys_db: &DbPool) -> String {
     )
 }
 
+/// Reply-language directive for non-English UIs.
+///
+/// Reads the `app_language` mirror (written through from the frontend i18n
+/// store — see `src/stores/i18nStore.ts`). Before this directive existed the
+/// reply language depended entirely on the model inferring it from the user's
+/// message, which holds for direct chat but degrades once English tool
+/// results / system context get woven into a turn (2026-07-16 UAT
+/// F-MAJOR-9). English or unset → empty (default behavior needs no rule).
+fn language_addendum(sys_db: &DbPool) -> String {
+    let lang = crate::db::repos::core::settings::get(sys_db, crate::db::settings_keys::APP_LANGUAGE)
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    let lang = lang.trim().to_string();
+    if lang.is_empty() || lang == "en" {
+        return String::new();
+    }
+    format!(
+        "\n\n# Reply language\n\nThe app UI language is `{lang}`. Reply in that language by default — \
+         including after tool results or system context arrive in English — unless the user \
+         writes to you in a different language (then mirror the user's language).\n"
+    )
+}
+
 fn format_goals(goals: &[Goal]) -> String {
     if goals.is_empty() {
         return String::new();
     }
-    let mut s = String::from("\n\n# Active goals (what Michal said he's working toward)\n\n");
+    let mut s = String::from("\n\n# Active goals (what the user said they're working toward)\n\n");
     for g in goals {
         let target = g
             .target_date
@@ -744,19 +772,19 @@ fn format_plugins(
         return String::new();
     }
     let mut s =
-        String::from("\n\n# Plugins enabled (capabilities Michal has turned on for you)\n\n");
+        String::from("\n\n# Plugins enabled (capabilities the user has turned on for you)\n\n");
     for name in enabled {
         match name.as_str() {
             "dev_tools" => {
                 s.push_str(
                     "## Dev Tools\n\n\
-                     Michal has the **Dev Tools plugin** enabled. He wants you to lead \
-                     the product-development lifecycle of his projects.\n\n\
+                     The user has the **Dev Tools plugin** enabled. They want you to lead \
+                     the product-development lifecycle of their projects.\n\n\
                      ### Registered projects\n\n",
                 );
                 if projects.is_empty() {
                     s.push_str(
-                        "_No projects registered yet._ If he asks you about a project, \
+                        "_No projects registered yet._ If they ask you about a project, \
                          offer to register it with `register_project` (you need a \
                          filesystem path + a short name). Registering also creates the \
                          Dev Tools project + codebase connector and kicks off a context \
@@ -787,7 +815,7 @@ fn format_plugins(
                     s.push_str(
                         "\n_These pulses are produced once an hour by the project-tracking \
                          consolidator (Sonnet 4.6) over git commits and the active-runs \
-                         ledger. When Michal asks 'what's happening on X' or 'what's drifting', \
+                         ledger. When the user asks 'what's happening on X' or 'what's drifting', \
                          lean on these directions and tensions; cite specifics, don't invent. \
                          For deeper drill-in (recent commits behind a direction), say so and \
                          offer to dig — don't fabricate hashes._\n\n",
@@ -799,7 +827,7 @@ fn format_plugins(
                      **Long-running scans run as background jobs** — you don't block the \
                      chat waiting for them. The worker picks queued jobs up within a few \
                      seconds, runs them, and appends a system episode with the result so \
-                     you see it on your next turn. Tell Michal that explicitly when you \
+                     you see it on your next turn. Tell the user that explicitly when you \
                      enqueue (\"I started the scan, will report back; what else?\").\n\n\
                      1. **Set up a project** — `register_project` with `name`, `path`, \
                         optional `description`. Idempotent on path. This creates the real \
@@ -812,7 +840,7 @@ fn format_plugins(
                         `kind: \"scan_codebase\"` and `project_id` (or `params.path` / \
                         `params.project_name`). This runs the REAL context scan: Claude maps \
                         the repo into business-domain groups + per-feature contexts \
-                        (dev_context_groups / dev_contexts). Use it whenever Michal says \
+                        (dev_context_groups / dev_contexts). Use it whenever the user says \
                         \"scan\", \"context scan\", \"map\", \"index\", or \"analyze the \
                         codebase\" — for a fresh repo OR to refresh one whose code changed.\n\
                      3. **Capture decisions** — `write_goal`, `write_backlog_item`, \
@@ -823,7 +851,7 @@ fn format_plugins(
                      NOTHING. Do NOT respond to a scan request with `build_oneshot`, \
                      `prefill_persona_create`, or by proposing a new reviewer/triage agent. \
                      `build_oneshot` is ONLY for an explicit \"build / create / spin up an \
-                     agent (or team) that …\" request. If Michal asks to scan a repo \"for \
+                     agent (or team) that …\" request. If the user asks to scan a repo \"for \
                      bugs and tests\", that is STILL a context scan (action #2) — the existing \
                      SDLC team's Code Reviewer / QA handles bug-and-test review, so mention \
                      that team rather than building a new agent.\n\n\
@@ -843,7 +871,7 @@ fn format_plugins(
             }
             other => {
                 // Forward-compat: an unknown plugin slug shouldn't break
-                // the prompt. Surface it minimally so Michal sees it's
+                // the prompt. Surface it minimally so the user sees it's
                 // pinned, even if Athena can't yet act on it.
                 s.push_str(&format!(
                     "## `{other}`\n\nThis plugin is enabled but its awareness block \
@@ -1006,7 +1034,7 @@ fn compose(
     // promise to follow up on something?"
     out.push_str(&backlog_md);
     out.push_str(&doctrine_md);
-    // Plugins block: capabilities Michal has toggled on for Athena
+    // Plugins block: capabilities the user has toggled on for Athena
     // (currently just dev_tools). Sits between doctrine and connectors
     // because plugins are *internal* app capabilities — closer to
     // Athena's own toolkit than to external services.
@@ -1457,7 +1485,7 @@ fn onboarding_addendum_if_needed(identity: &str, episodes: &[episodic::Episode])
 
 # ONBOARDING MODE — first conversation
 
-This is Michal's first conversation with you. His identity layer is still
+This is the user's first conversation with you. Their identity layer is still
 just placeholders. Your job in this conversation is to run a real intake
 interview that produces a foundation worth building on. Be present and
 warm — this is the start of a long working relationship, not a form to
