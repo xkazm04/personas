@@ -1,5 +1,5 @@
 import { silentCatch } from "@/lib/silentCatch";
-import { useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { EventName, typedListen } from '@/lib/eventRegistry';
 import { useElementVisible } from '@/hooks/utility/useElementVisible';
 import {
@@ -26,7 +26,18 @@ import ScheduleRecentRuns from './ScheduleRecentRuns';
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
 
 import type { ScheduleViewMode as ViewMode } from '@/lib/constants/uiModes';
+import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { useTranslation } from '@/i18n/useTranslation';
+
+/** Shallow field-equality for the flat generated CronAgent record. Used to
+ *  reuse previous ScheduleEntry objects across poll refreshes so memoized
+ *  ScheduleRows can skip re-rendering when their agent's data is unchanged. */
+function cronAgentEquals(a: CronAgent, b: CronAgent): boolean {
+  if (a === b) return true;
+  const keys = Object.keys(b) as (keyof CronAgent)[];
+  if (Object.keys(a).length !== keys.length) return false;
+  return keys.every((key) => a[key] === b[key]);
+}
 
 export default function ScheduleTimeline() {
   const { t, tx } = useTranslation();
@@ -123,12 +134,32 @@ export default function ScheduleTimeline() {
     };
   }, [fetchCronAgents, isVisible]);
 
-  // Parse all agents into schedule entries, applying the group filter
+  // Parse all agents into schedule entries, applying the group filter.
+  // Entries are cached per trigger_id and reused when the underlying agent
+  // row is unchanged — every 30s poll produces a brand-new cronAgents array,
+  // and without referentially stable entries the memoized ScheduleRows would
+  // re-render on every tick even though nothing changed.
+  const entryCacheRef = useRef(new Map<string, ScheduleEntry>());
   const entries = useMemo(() => {
-    const all = cronAgents.map(parseScheduleEntry);
+    const cache = entryCacheRef.current;
+    const nextCache = new Map<string, ScheduleEntry>();
+    const all = cronAgents.map((agent) => {
+      const prev = cache.get(agent.trigger_id);
+      const entry = prev && cronAgentEquals(prev.agent, agent) ? prev : parseScheduleEntry(agent);
+      nextCache.set(agent.trigger_id, entry);
+      return entry;
+    });
+    entryCacheRef.current = nextCache;
     if (!filter) return all;
     return all.filter((e) => filter.ids.has(e.agent.persona_id));
   }, [cronAgents, filter]);
+
+  // Latch the current entries behind a stable getter so ScheduleRow's
+  // `getExistingEntries` prop never changes identity (it is only consumed
+  // when the frequency editor opens).
+  const entriesRef = useRef(entries);
+  entriesRef.current = entries;
+  const getExistingEntries = useCallback(() => entriesRef.current, []);
 
   const sorted = useMemo(() => sortByNextRun(entries), [entries]);
   const grouped = useMemo(() => groupByTimeWindow(sorted), [sorted]);
@@ -145,25 +176,26 @@ export default function ScheduleTimeline() {
     } catch (err) { silentCatch("features/schedules/components/ScheduleTimeline:catch1")(err); }
   };
 
+  // Action props are the stable useCallback fns from useScheduleActions —
+  // ScheduleRow binds its own agent. Fresh per-row closures here would defeat
+  // the row's React.memo on every poll re-render.
   const renderEntries = (items: ScheduleEntry[]) =>
     items.map((entry) => (
       <ScheduleRow
         key={entry.agent.trigger_id}
         entry={entry}
-        existingEntries={entries}
+        getExistingEntries={getExistingEntries}
         isExecuting={actionState.executing === entry.agent.trigger_id}
         isEditing={actionState.editing === entry.agent.trigger_id}
         isBackfilling={actionState.backfilling === entry.agent.trigger_id}
         lastBackfill={actionState.lastBackfill[entry.agent.trigger_id] ?? null}
-        onManualExecute={() => manualExecute(entry.agent)}
-        onToggleEnabled={() => toggleEnabled(entry.agent)}
-        onUpdateFrequency={(cron, interval, tz) => updateFrequency(entry.agent, cron, interval, tz)}
-        onBackfill={async (startIso, endIso) => {
-          await backfill(entry.agent, startIso, endIso);
-        }}
+        onManualExecute={manualExecute}
+        onToggleEnabled={toggleEnabled}
+        onUpdateFrequency={updateFrequency}
+        onBackfill={backfill}
         onPreviewCron={previewCron}
-        onSkipNextFire={() => skipNextFire(entry.agent)}
-        onRunIn={(delayMs) => runIn(entry.agent, delayMs)}
+        onSkipNextFire={skipNextFire}
+        onRunIn={runIn}
       />
     ));
 

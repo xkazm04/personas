@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import {
   Play, Clock, Settings2, Pause, ToggleLeft, ToggleRight,
   CheckCircle2, AlertTriangle, XCircle, History, ChevronDown, SkipForward, Timer,
@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
 import { formatRelative } from '../libs/scheduleHelpers';
+import type { CronAgent } from '@/lib/bindings/CronAgent';
 import FrequencyEditor from './FrequencyEditor';
 import BackfillModal from './BackfillModal';
 import { ScheduleRowHistoryPanel } from './ScheduleRowHistoryPanel';
@@ -16,25 +17,32 @@ import { useThemeStore } from '@/stores/themeStore';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 
+// Action props take the agent explicitly (instead of per-row closures bound
+// in the parent) so ScheduleTimeline can pass the same stable useCallback
+// references to every row — a requirement for React.memo below to actually
+// skip re-renders on the 30s poll tick.
 interface ScheduleRowProps {
   entry: ScheduleEntry;
-  existingEntries?: ScheduleEntry[];
+  /** Stable getter for the current entry list (consumed only by the
+   *  frequency editor for conflict preview). A getter instead of the array
+   *  itself keeps this prop referentially stable across poll refreshes. */
+  getExistingEntries?: () => ScheduleEntry[];
   isExecuting: boolean;
   isEditing: boolean;
   isBackfilling: boolean;
   lastBackfill: BackfillResult | null;
-  onManualExecute: () => void;
-  onToggleEnabled: () => void;
-  onUpdateFrequency: (cron: string | null, intervalSeconds: number | null, timezone?: string) => void;
-  onBackfill: (startIso: string, endIso: string) => Promise<void>;
+  onManualExecute: (agent: CronAgent) => void;
+  onToggleEnabled: (agent: CronAgent) => void;
+  onUpdateFrequency: (agent: CronAgent, cron: string | null, intervalSeconds: number | null, timezone?: string) => void;
+  onBackfill: (agent: CronAgent, startIso: string, endIso: string) => Promise<BackfillResult | null>;
   onPreviewCron: (expression: string, timezone?: string) => Promise<import('@/api/pipeline/triggers').CronPreview | null>;
-  onSkipNextFire: () => void;
-  onRunIn: (delayMs: number) => void;
+  onSkipNextFire: (agent: CronAgent) => void;
+  onRunIn: (agent: CronAgent, delayMs: number) => void;
 }
 
-export default function ScheduleRow({
+function ScheduleRow({
   entry,
-  existingEntries,
+  getExistingEntries,
   isExecuting,
   isEditing,
   isBackfilling,
@@ -197,7 +205,7 @@ export default function ScheduleRow({
           {/* Manual execute + advanced-actions caret (segmented) */}
           <div className="relative inline-flex" ref={advancedRef}>
             <button
-              onClick={onManualExecute}
+              onClick={() => onManualExecute(agent)}
               disabled={isExecuting || disabled}
               className="p-2 rounded-l-card hover:bg-emerald-500/15 text-foreground hover:text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title={t.schedules.run_now}
@@ -228,7 +236,7 @@ export default function ScheduleRow({
               >
                 <button
                   role="menuitem"
-                  onClick={() => { setShowAdvanced(false); onSkipNextFire(); }}
+                  onClick={() => { setShowAdvanced(false); onSkipNextFire(agent); }}
                   disabled={!entry.nextRun || disabled}
                   className="w-full flex items-start gap-2 px-3 py-2 text-left typo-caption hover:bg-secondary/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
@@ -257,7 +265,7 @@ export default function ScheduleRow({
                     <button
                       key={opt.ms}
                       role="menuitem"
-                      onClick={() => { setShowAdvanced(false); onRunIn(opt.ms); }}
+                      onClick={() => { setShowAdvanced(false); onRunIn(agent, opt.ms); }}
                       disabled={disabled}
                       className="px-2 py-1.5 typo-caption rounded-card bg-secondary/40 hover:bg-emerald-500/15 hover:text-emerald-400 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
@@ -300,7 +308,7 @@ export default function ScheduleRow({
 
           {/* Toggle enabled */}
           <button
-            onClick={onToggleEnabled}
+            onClick={() => onToggleEnabled(agent)}
             className="p-2 rounded-card hover:bg-secondary/60 transition-colors"
             title={agent.trigger_enabled ? t.schedules.pause_schedule : t.schedules.resume_schedule}
           >
@@ -332,9 +340,9 @@ export default function ScheduleRow({
         <FrequencyEditor
           agent={agent}
           currentSchedule={schedule}
-          existingEntries={existingEntries}
+          existingEntries={getExistingEntries?.()}
           onSave={(cron, interval, tz) => {
-            onUpdateFrequency(cron, interval, tz);
+            onUpdateFrequency(agent, cron, interval, tz);
             setShowFreqEditor(false);
           }}
           onCancel={() => setShowFreqEditor(false)}
@@ -349,10 +357,18 @@ export default function ScheduleRow({
           currentSchedule={schedule}
           isRunning={isBackfilling}
           lastResult={lastBackfill}
-          onBackfill={onBackfill}
+          onBackfill={async (startIso, endIso) => {
+            await onBackfill(agent, startIso, endIso);
+          }}
           onCancel={() => setShowBackfill(false)}
         />
       )}
     </>
   );
 }
+
+// Memoized: the schedules list is unvirtualized and the parent re-renders on
+// every 30s poll tick. With stable action callbacks and cache-stabilized
+// `entry` references from ScheduleTimeline, memo lets unchanged rows skip
+// React reconciliation entirely (content-visibility only skips paint/layout).
+export default memo(ScheduleRow);
