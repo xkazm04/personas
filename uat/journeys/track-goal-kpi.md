@@ -17,7 +17,10 @@ relevant_characters: [enterprise-admin, finance-analyst, hobbyist-power, solo-fo
 ## What L1 must check
 - Goal/KPI define → measure → derive path; is it wired to executions, or a standalone form?
 - Reachability/tier; is this a power-user-only surface?
+- KPI dashboard is now a Project dossier view (Distance-to-target per project, off-track alerts inline) replacing the earlier separate "Needs attention"/"By context" views — does the journey's expected navigation still match?
+- A goal with no linked KPI now shows an "Activity, not a measured outcome" disclaimer — does this honestly distinguish activity from outcome, or get lost in the UI?
 
 ## What L2 must confirm (l2_priority)
 - A real measurement appears and is grounded in actual run data.
 - Whether the outcome framing reads as real or as a dashboard placebo.
+- KPI history provenance/evidence badges: do they resolve to real source data (a real execution/connector pull), or are they decorative?

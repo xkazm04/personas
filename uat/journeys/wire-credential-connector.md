@@ -18,7 +18,10 @@ relevant_characters: [software-developer, it-sysadmin, finance-analyst, enterpri
 - The add-credential type-picker → form/wizard/autopilot paths; does each reach a saved, usable credential?
 - Trust signals in the UI: is "credentials stay local / AES-256-GCM" actually surfaced, or only true in the README?
 - Reachability across credential types (API key, OAuth, DB, MCP, desktop).
+- Does the credential list distinguish a live health-checked ("Verified") connector from one that's simply never been probed ("Unverifiable"), rather than showing both as an equally-confident green?
+- Editing or deleting a bound credential: does the owning persona's readiness re-derive live, or stay stale-"ready" until some unrelated refresh?
 
 ## What L2 must confirm (l2_priority)
 - A real connector actually authenticates and a persona can call it (grounded run).
 - The trust claim is visible to a skeptical buyer at the moment they enter a secret.
+- A blocked run's remediation message points at a real, reachable surface (the Connections sidebar) rather than a per-persona panel that doesn't exist.

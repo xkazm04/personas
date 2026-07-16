@@ -46,3 +46,4 @@ A reconciliation/summary a senior analyst would defend — figures correct, sour
 3. [senior-quality] Numbers are correct and uncertainty is flagged, not smoothed over.
 4. [completion] She can put it on a recurring schedule and trust the run.
 5. [clarity] She can see what data was used for a given number.
+6. [trust] KPI history provenance/evidence badges resolve to real source data she can trace, not decoration — and a scheduled run always reaches a terminal Completed/Failed status.

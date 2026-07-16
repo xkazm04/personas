@@ -18,7 +18,9 @@ relevant_characters: [prospect-buyer, enterprise-admin, it-sysadmin]
 ## What L1 must check
 - Are the trust claims (local-first, AES-256-GCM, no cloud custody) actually surfaced in the UI, or only in code/README?
 - Governance reachability: admin controls, tier gates, network/P2P exposure manager, audit/incident surfaces.
+- Does the VaultTrustBadge ever surface an audit-gap warning (amber "Vault needs attention" + missed-entry count) when a decrypt's audit-log write fails, or can that failure vanish silently? Is Verified-vs-Unverifiable legible at the point a skeptical reviewer checks credential health?
 
 ## What L2 must confirm (l2_priority)
 - The trust claim is legible at the moment of entering a secret and at the network-exposure surface.
 - The credibility of the observability/audit surfaces under a skeptical eye.
+- Whether the Teams Monitor (Timeline/Conversations) now serves as the de facto audit trail for multi-agent work, and if so, whether it holds up to the same scrutiny as the credential audit log.

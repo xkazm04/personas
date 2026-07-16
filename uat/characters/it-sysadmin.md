@@ -46,3 +46,4 @@ A triage/digest a senior SRE would trust — correct severity, dedups noise, nev
 3. [senior-quality] Triage gets severity right and dedups, like a senior SRE.
 4. [completion] A trigger fires unattended and produces a real digest.
 5. [clarity] He can tell at a glance what's armed and what ran.
+6. [trust] He can distinguish a genuinely health-checked ("Verified") credential from one that's merely configured but never probed ("Unverifiable") — and a run always reaches a terminal Completed/Failed status rather than hanging indefinitely on "Running".

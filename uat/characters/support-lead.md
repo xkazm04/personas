@@ -46,3 +46,4 @@ A drafted reply a senior support agent would send after a quick read — correct
 3. [senior-quality] Drafts are send-ready with light edits.
 4. [clarity] She can see confidence + why a ticket was routed where it was.
 5. [time-saved] Net faster first-response across the queue.
+6. [trust] A triage run always reaches a terminal status (never silently stuck "Running"), and editing/removing a bound credential re-gates the persona's readiness immediately rather than leaving a stale "ready" state.

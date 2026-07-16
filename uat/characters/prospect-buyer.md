@@ -41,7 +41,7 @@ The example output he sees must be good enough that a senior on his team would r
 - NOT reachable: Dev Tools, Engine/BYOM/Admin.
 
 ## Scored acceptance criteria (applied IDENTICALLY every run)
-1. [trust] The data-locality / security story is verifiable in-product, not just claimed.
+1. [trust] The data-locality / security story is verifiable in-product, not just claimed — and he'd trust a vault badge more, not less, for having an honest amber "needs attention" / "unverifiable" state, rather than a credential list that's always uniformly green.
 2. [clarity] Pricing/tier model is findable and understandable in his short session.
 3. [completion] He can see a credible working example without building from zero.
 4. [senior-quality] That example clears the "my senior would respect this" bar.

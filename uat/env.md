@@ -42,6 +42,8 @@ A Character whose journey needs a fixture that doesn't exist is **untestable, no
 - [ ] A **goal / KPI** row for goal-tracking journeys.
 - [ ] A **template** in the gallery for adoption journeys.
 - [ ] Locale availability for non-English Characters (the section chunks load on demand — warm them).
+- [ ] A **persona with a script-backed tool** for the `test-a-tool` journey (Use Cases tab → Tool Runner), including one tool deliberately misconfigured (bad auth / wrong path) to exercise the typed error contract.
+- [ ] **Fleet** (`dev`-only, experimental): the dev build (`tauri:dev:test`) with at least 2 spawnable CLI sessions available for the `monitor-fleet` journey. Not reachable on a shipped-tier fixture account.
 
 ## Open questions (resolve before first full run)
 

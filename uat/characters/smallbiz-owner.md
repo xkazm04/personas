@@ -46,3 +46,4 @@ A customer follow-up message that sounds like a real, polite human from his busi
 3. [senior-quality] The output is something he'd actually send a customer.
 4. [effort] He never hits a dev-only or empty screen with no next step.
 5. [trust] He understands what it'll do before it does it.
+6. [effort] If he skips or bails out of setup partway, he can find his way back in later (a visible resume/replay path) instead of feeling like he has to start over or hunt for where he left off.
