@@ -7,7 +7,7 @@ members = [".", "macros"]
 
 [package]
 name = "personas-desktop"
-version = "1.0.0"
+version = "1.1.0"
 description = "Personas AI Agent Platform"
 authors = ["Personas"]
 license = "MIT"
