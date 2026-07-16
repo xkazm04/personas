@@ -6,12 +6,21 @@
  *  is the "Codex" design (won the /prototype round): an ordered, icon-forward
  *  3-column grid — Character · Configuration · Mentality.
  */
+import { Suspense } from "react";
 import { BaseModal } from "@/features/shared/components/modals";
 import { LoadingSpinner } from "@/features/shared/components/feedback/LoadingSpinner";
 import Button from "@/features/shared/components/buttons/Button";
 import { RotateCcw } from "lucide-react";
 import type { PersonaCore } from "./types";
-import { PersonaCoreCodex } from "./PersonaCoreCodex";
+import { lazyRetry } from "@/lib/lazyRetry";
+
+// Lazy at the modal boundary: PersonaCoreCodex statically pulls
+// archetypeGlyphData (~310KB of generated SVG path strings), which otherwise
+// rides in the compose-surface chunk and is parsed on every entry into the
+// build flow even though it renders only inside this explicitly-opened modal.
+const PersonaCoreCodex = lazyRetry(() =>
+  import("./PersonaCoreCodex").then((m) => ({ default: m.PersonaCoreCodex })),
+);
 
 export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore; isOpen: boolean; onClose: () => void }) {
   return (
@@ -25,7 +34,9 @@ export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore;
         {core.loading ? (
           <div className="py-16 flex justify-center"><LoadingSpinner label="Loading mentalities…" /></div>
         ) : (
-          <PersonaCoreCodex core={core} />
+          <Suspense fallback={<div className="py-16 flex justify-center"><LoadingSpinner label="Loading mentalities…" /></div>}>
+            <PersonaCoreCodex core={core} />
+          </Suspense>
         )}
 
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-card-border/50">
