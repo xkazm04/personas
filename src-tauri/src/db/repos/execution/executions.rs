@@ -874,11 +874,18 @@ pub fn claim_for_instance(
             let expires_at = (now + chrono::Duration::seconds(ttl_secs)).to_rfc3339();
             let conn = pool.get()?;
             let mut stmt = conn.prepare_cached(
+                // started_at is stamped UNCONDITIONALLY: a claim IS the start of a
+                // run attempt. Previously `COALESCE(started_at, ?4)` preserved the
+                // first attempt's timestamp across a running→queued→running re-claim
+                // (quota cooldown / crash-recovery re-queue), so `sweep_zombie_executions`
+                // — which reads started_at as "when the CURRENT attempt began" — would
+                // flag a freshly re-claimed, healthy run as a >30-min zombie and drop
+                // its real result via update_status_if_running.
                 "UPDATE persona_executions SET
                     status = 'running',
                     claimed_by_instance = ?2,
                     claim_expires_at = ?3,
-                    started_at = COALESCE(started_at, ?4)
+                    started_at = ?4
                  WHERE id = ?1
                    AND status = 'queued'
                    AND (claimed_by_instance IS NULL
