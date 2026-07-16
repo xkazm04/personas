@@ -13,7 +13,7 @@
  *   - `hero` pins a specific persona as the featured card; otherwise
  *     the picker prefers `setup_status === 'ready'` then most-recent.
  */
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowRight, Bot, Coins, Compass, Gauge, Shield, Sparkles } from 'lucide-react';
@@ -50,8 +50,12 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
   const { personas, fetchPersonas } = useAgentStore(
     useShallow((s) => ({ personas: s.personas, fetchPersonas: s.fetchPersonas })),
   );
+  // Fetch-if-empty exactly once: an empty fleet re-produces the guard state
+  // (fresh [] identity per fetch), which looped fetchPersonas indefinitely.
+  const personasRequestedRef = useRef(false);
   useEffect(() => {
-    if (!personas || personas.length === 0) {
+    if ((!personas || personas.length === 0) && !personasRequestedRef.current) {
+      personasRequestedRef.current = true;
       fetchPersonas().catch(() => {});
     }
   }, [personas, fetchPersonas]);
