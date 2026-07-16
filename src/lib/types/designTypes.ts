@@ -294,11 +294,14 @@ export interface DesignConversationMessage {
   timestamp: string;
 }
 
-/** Result of appending a message, indicating whether the conversation was truncated */
+/** Result of appending a message. Metadata only — the full conversation is
+ *  deliberately not echoed back (that made every append O(total history)
+ *  over IPC); callers apply the append to their local copy. */
 export interface AppendMessageResult {
-  conversation: DesignConversation;
   truncated: boolean;
   messageCount: number;
+  /** Server-side updated_at stamp for the conversation row */
+  updatedAt: string;
 }
 
 /** A persistent design conversation that accumulates multi-turn context */

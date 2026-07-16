@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   listDesignConversations,
+  getDesignConversation,
   getActiveDesignConversation,
   createDesignConversation,
   appendSingleDesignMessage,
@@ -134,7 +135,23 @@ export function useDesignConversation(personaId: string | null) {
           JSON.stringify(message),
           null,
         );
-        const updated = result.conversation;
+        // Apply the append locally — the server echo is metadata-only now
+        // (returning the whole conversation made every append O(total
+        // history) over IPC). Mirrors the offline fallback below.
+        let nextMessages: DesignConversationMessage[];
+        try {
+          nextMessages = JSON.parse(conv.messages) as DesignConversationMessage[];
+        } catch {
+          nextMessages = [];
+        }
+        nextMessages.push(message);
+        // Server trims the oldest message when at the cap — mirror it.
+        if (result.truncated && nextMessages.length > 1) nextMessages.shift();
+        const updated: DesignConversation = {
+          ...conv,
+          messages: JSON.stringify(nextMessages),
+          updatedAt: result.updatedAt,
+        };
         setActiveConversation(updated);
         setConversations((prev) =>
           prev.map((c) => (c.id === updated.id ? updated : c))
@@ -262,7 +279,15 @@ export function useDesignConversation(personaId: string | null) {
     // Re-activate the target conversation
     try {
       await updateDesignConversationStatus(conversation.id, 'active');
-      const updated = { ...conversation, status: 'active' as const };
+      // List rows carry an empty messages placeholder (payload trim in
+      // list_design_conversations) — fetch the full history before adopting.
+      let full = conversation;
+      try {
+        full = await getDesignConversation(conversation.id);
+      } catch (err) {
+        silentCatch("hooks/design/core/useDesignConversation:resume-fetch")(err);
+      }
+      const updated = { ...full, status: 'active' as const };
       setActiveConversation(updated);
       setConversations((prev) =>
         prev.map((c) => {
