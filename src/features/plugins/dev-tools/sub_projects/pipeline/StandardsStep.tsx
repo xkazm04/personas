@@ -67,7 +67,7 @@ export function StandardsStep({ config, onChange, mainBranch, testEnvBranch }: S
               <GitPullRequest className="w-3 h-3 text-amber-400/70" />
               {dp.standards_pr_base}
             </label>
-            <ThemedSelect value={config.branching.pr_base} onValueChange={(v) => setPrBase(v as BranchSel)}>
+            <ThemedSelect value={config.branching.pr_base ?? 'main'} onValueChange={(v) => setPrBase(v as BranchSel)}>
               <option value="main">{dp.standards_branch_main}{` (${branchLabel('main')})`}</option>
               <option value="test">{dp.standards_branch_test}{` (${branchLabel('test')})`}</option>
             </ThemedSelect>
@@ -85,7 +85,7 @@ export function StandardsStep({ config, onChange, mainBranch, testEnvBranch }: S
             {config.branching.automerge.enabled && (
               <div className="mt-2.5 pl-12">
                 <label className="typo-caption text-foreground mb-1 block">{dp.standards_automerge_target}</label>
-                <ThemedSelect value={config.branching.automerge.target} onValueChange={(v) => setAutomergeTarget(v as BranchSel)}>
+                <ThemedSelect value={config.branching.automerge.target ?? 'main'} onValueChange={(v) => setAutomergeTarget(v as BranchSel)}>
                   <option value="main">{dp.standards_branch_main}{` (${branchLabel('main')})`}</option>
                   <option value="test">{dp.standards_branch_test}{` (${branchLabel('test')})`}</option>
                 </ThemedSelect>

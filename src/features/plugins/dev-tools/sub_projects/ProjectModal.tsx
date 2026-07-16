@@ -120,7 +120,10 @@ export function ProjectModal({
       setTestEnvUrl(editProject.testEnvUrl ?? '');
       setTestEnvBranch(editProject.testEnvBranch ?? '');
       setMainBranch(editProject.mainBranch ?? '');
-      setStandards(parseStandards(editProject.standardsConfig));
+      // Read-time parse defaults to all-false (nothing actually enforced);
+      // for a project with no stored config yet, pre-fill the editor with
+      // sensible starting values instead of silently showing "everything off".
+      setStandards(editProject.standardsConfig ? parseStandards(editProject.standardsConfig) : defaultStandards());
       setSourceMode(editProject.teamId ? 'team' : 'standalone');
       setNameEdited(true);
       setStepIndex(0);
