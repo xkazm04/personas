@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties } from 'react';
+import { useCallback, useMemo, type CSSProperties } from 'react';
 import { CheckCircle2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useToastStore, MAX_VISIBLE_TOASTS } from '@/stores/toastStore';
@@ -6,9 +6,8 @@ import type { StandardToast, HealingToast } from '@/stores/toastStore';
 import { classifyErrorFull } from '@/lib/errors/errorPipeline';
 import { applyErrorAction, isGlobalErrorAction } from '@/lib/errors/errorActionNav';
 import { friendlySeverity } from '@/lib/errors/errorRegistry';
-import { formatElapsed } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
+import { useToastTimer } from './useToastTimer';
 
 // ---------------------------------------------------------------------------
 // Severity styles (healing toasts)
@@ -47,14 +46,7 @@ const SEVERITY_STYLES: Record<string, { border: string; icon: string; badge: str
 
 function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismiss: (id: string) => void }) {
   const { t } = useTranslation();
-  const [paused, setPaused] = useState(false);
-  const isDocumentVisible = useDocumentVisibility();
-  const [elapsedLabel, setElapsedLabel] = useState('');
-  const elapsedRef = useRef(0);
-  const lastTickRef = useRef(Date.now());
-  const pausedRef = useRef(false);
-  const isPaused = paused || !isDocumentVisible;
-  pausedRef.current = isPaused;
+  const { elapsedLabel, isPaused, onMouseEnter, onMouseLeave } = useToastTimer(toast, onDismiss);
 
   // Classify once per message (memoized in the pipeline; useMemo also stops the
   // per-second elapsed-label re-render from re-reading it). Error toasts flow
@@ -75,47 +67,10 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
       ? explanationAction
       : null;
 
-  // Single RAF loop handles both dismiss countdown and elapsed label.
-  // The progress bar is driven by CSS animation (smooth pause/resume); this
-  // loop only fires the dismiss callback once duration is exhausted.
-  useEffect(() => {
-    let rafId: number;
-    let lastLabelSec = -1;
-    lastTickRef.current = Date.now();
-
-    const tick = () => {
-      const now = Date.now();
-      if (!pausedRef.current) {
-        elapsedRef.current += now - lastTickRef.current;
-        if (elapsedRef.current >= toast.duration) {
-          onDismiss(toast.id);
-          return;
-        }
-      }
-      lastTickRef.current = now;
-
-      const sec = Math.floor((now - toast.timestamp) / 1000);
-      if (sec !== lastLabelSec) {
-        lastLabelSec = sec;
-        setElapsedLabel(formatElapsed(now - toast.timestamp));
-      }
-
-      rafId = requestAnimationFrame(tick);
-    };
-
-    setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
-    if (!isDocumentVisible) return;
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [toast.duration, toast.id, toast.timestamp, onDismiss, isDocumentVisible]);
-
   return (
     <div
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => {
-        lastTickRef.current = Date.now();
-        setPaused(false);
-      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       className={`rounded-xl border shadow-elevation-3 backdrop-blur-md overflow-hidden ${
         toast.type === 'success'
           ? 'bg-emerald-950/90 border-emerald-500/25 text-emerald-300'
@@ -193,45 +148,7 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
 function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss: (id: string) => void }) {
   const { t } = useTranslation();
   const styles = SEVERITY_STYLES[toast.severity] ?? SEVERITY_STYLES.medium!;
-  const [paused, setPaused] = useState(false);
-  const isDocumentVisible = useDocumentVisibility();
-  const [elapsedLabel, setElapsedLabel] = useState('');
-  const elapsedRef = useRef(0);
-  const lastTickRef = useRef(Date.now());
-  const pausedRef = useRef(false);
-  const isPaused = paused || !isDocumentVisible;
-  pausedRef.current = isPaused;
-
-  useEffect(() => {
-    let rafId: number;
-    let lastLabelSec = -1;
-    lastTickRef.current = Date.now();
-
-    const tick = () => {
-      const now = Date.now();
-      if (!pausedRef.current) {
-        elapsedRef.current += now - lastTickRef.current;
-        if (elapsedRef.current >= toast.duration) {
-          onDismiss(toast.id);
-          return;
-        }
-      }
-      lastTickRef.current = now;
-
-      const sec = Math.floor((now - toast.timestamp) / 1000);
-      if (sec !== lastLabelSec) {
-        lastLabelSec = sec;
-        setElapsedLabel(formatElapsed(now - toast.timestamp));
-      }
-
-      rafId = requestAnimationFrame(tick);
-    };
-
-    setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
-    if (!isDocumentVisible) return;
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [toast.duration, toast.id, toast.timestamp, onDismiss, isDocumentVisible]);
+  const { elapsedLabel, isPaused, onMouseEnter, onMouseLeave } = useToastTimer(toast, onDismiss);
 
   const handleResolve = useCallback(async () => {
     const { useOverviewStore } = await import("@/stores/overviewStore");
@@ -241,11 +158,8 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
 
   return (
     <div
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => {
-        lastTickRef.current = Date.now();
-        setPaused(false);
-      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       className={`rounded-xl border ${styles.border} bg-background/95 backdrop-blur-md shadow-elevation-3 overflow-hidden`}
     >
       <div className="px-3.5 py-3 space-y-2">
