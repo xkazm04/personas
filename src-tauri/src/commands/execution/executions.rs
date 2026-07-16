@@ -395,27 +395,17 @@ pub(crate) async fn execute_persona_inner(
         // stale capability awareness.
         //
         // See docs/concepts/persona-capabilities/03-runtime.md §3.
-        let config_hash = {
-            use std::hash::{Hash, Hasher};
-            let mut hasher = std::collections::hash_map::DefaultHasher::new();
-            persona.system_prompt.as_str().hash(&mut hasher);
-            persona
-                .structured_prompt
-                .as_deref()
-                .unwrap_or("")
-                .hash(&mut hasher);
-            persona
-                .model_profile
-                .as_deref()
-                .unwrap_or("")
-                .hash(&mut hasher);
-            tools.len().hash(&mut hasher);
-            crate::engine::prompt::active_capabilities_fingerprint(
+        // MUST be the same helper the engine's offer site uses — hand-rolled
+        // hashes over different field sets made take() miss on every run.
+        let config_hash = crate::engine::session_pool::compute_config_hash(
+            persona.system_prompt.as_str(),
+            persona.structured_prompt.as_deref(),
+            persona.model_profile.as_deref(),
+            tools.len(),
+            &crate::engine::prompt::active_capabilities_fingerprint(
                 persona.design_context.as_deref(),
-            )
-            .hash(&mut hasher);
-            hasher.finish()
-        };
+            ),
+        );
         match state.session_pool.take(&persona_id, config_hash).await {
             Some(session_id) => {
                 tracing::info!(persona_id = %persona_id, "Warm session reuse from pool");
