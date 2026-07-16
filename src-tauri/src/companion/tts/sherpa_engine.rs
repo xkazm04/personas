@@ -10,10 +10,180 @@
 //! silently break voice cloning (`--pocket-*` flags unrecognized).
 //!
 //! Rule: bump `ENGINE_VERSION` here and both engines move together.
+//!
+//! This module also hosts the install-progress plumbing shared by
+//! `kokoro_installer.rs` and `pocket_installer.rs` — `InstallPhase`,
+//! `InstallProgress`, `emit()`, `download_to_file()`, and `extract_selected()`
+//! (the generalized bzip2/tar selective-extract skeleton). Before this
+//! consolidation those two files carried ~180 line-for-line-identical lines
+//! copied from one another; only the event channel name, model archive URL /
+//! prefix, and per-file keep predicate are genuinely per-installer.
 
 use std::path::Path;
+use std::time::{Duration, Instant};
+
+use futures_util::StreamExt;
+use serde::Serialize;
+use tauri::{AppHandle, Emitter};
+use tokio::io::AsyncWriteExt;
 
 use crate::error::AppError;
+
+const PROGRESS_INTERVAL: Duration = Duration::from_millis(250);
+const PROGRESS_BYTE_INTERVAL: u64 = 1024 * 1024;
+
+/// Install-progress phase, shared by all TTS one-click installers.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InstallPhase {
+    DownloadingEngine,
+    DownloadingModel,
+    Extracting,
+    Completed,
+    Failed,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallProgress {
+    pub phase: InstallPhase,
+    pub bytes_downloaded: u64,
+    pub bytes_total: Option<u64>,
+    pub error: Option<String>,
+}
+
+/// Emit an `InstallProgress` event on `event_name`, warning (not failing) on
+/// a dead frontend channel.
+pub fn emit(app: &AppHandle, event_name: &str, payload: InstallProgress) {
+    if let Err(e) = app.emit(event_name, payload) {
+        tracing::warn!(error = %e, event = event_name, "tts install: progress event emit failed");
+    }
+}
+
+/// Stream `url` to `dest`, emitting throttled `InstallProgress` events on
+/// `event_name` tagged with `phase`.
+pub async fn download_to_file(
+    client: &reqwest::Client,
+    url: &str,
+    dest: &Path,
+    app: &AppHandle,
+    event_name: &str,
+    phase: InstallPhase,
+) -> Result<(), AppError> {
+    let resp = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("download {url}: {e}")))?;
+    if !resp.status().is_success() {
+        return Err(AppError::Internal(format!(
+            "download {url}: HTTP {}",
+            resp.status()
+        )));
+    }
+    let total = resp.content_length();
+    let mut file = tokio::fs::File::create(dest)
+        .await
+        .map_err(|e| AppError::Internal(format!("create {}: {e}", dest.display())))?;
+
+    let mut downloaded: u64 = 0;
+    let mut last_event = Instant::now();
+    let mut last_bytes: u64 = 0;
+    let mut stream = resp.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let bytes = chunk.map_err(|e| AppError::Internal(format!("download chunk: {e}")))?;
+        file.write_all(&bytes)
+            .await
+            .map_err(|e| AppError::Internal(format!("write chunk: {e}")))?;
+        downloaded += bytes.len() as u64;
+        if last_event.elapsed() >= PROGRESS_INTERVAL
+            || downloaded.saturating_sub(last_bytes) >= PROGRESS_BYTE_INTERVAL
+        {
+            emit(
+                app,
+                event_name,
+                InstallProgress {
+                    phase,
+                    bytes_downloaded: downloaded,
+                    bytes_total: total,
+                    error: None,
+                },
+            );
+            last_event = Instant::now();
+            last_bytes = downloaded;
+        }
+    }
+    file.flush()
+        .await
+        .map_err(|e| AppError::Internal(format!("flush {}: {e}", dest.display())))?;
+    Ok(())
+}
+
+/// Extract entries under `archive`'s `prefix/` top-level directory into
+/// `dest_dir`, stripping the prefix. `keep(first_path_component)` decides
+/// which top-level children to extract. `sentinel` is a substring checked
+/// against each unpacked file's first path component — if nothing unpacked
+/// matches it, the archive is treated as malformed and an error is returned
+/// (guards against silently reporting success on a truncated/renamed asset).
+pub fn extract_selected(
+    archive: &Path,
+    prefix: &str,
+    dest_dir: &Path,
+    keep: impl Fn(&str) -> bool,
+    sentinel: &str,
+) -> Result<(), AppError> {
+    let file = std::fs::File::open(archive)
+        .map_err(|e| AppError::Internal(format!("open archive: {e}")))?;
+    let decoder = bzip2::read::BzDecoder::new(file);
+    let mut ar = tar::Archive::new(decoder);
+    let mut found_sentinel = false;
+    for entry in ar
+        .entries()
+        .map_err(|e| AppError::Internal(format!("read archive: {e}")))?
+    {
+        let mut entry = entry.map_err(|e| AppError::Internal(format!("archive entry: {e}")))?;
+        let path = entry
+            .path()
+            .map_err(|e| AppError::Internal(format!("archive entry path: {e}")))?
+            .into_owned();
+        let Ok(rel) = path.strip_prefix(prefix) else {
+            continue; // unexpected top-level layout — skip
+        };
+        if rel.as_os_str().is_empty() {
+            continue;
+        }
+        let first = rel
+            .components()
+            .next()
+            .map(|c| c.as_os_str().to_string_lossy().into_owned())
+            .unwrap_or_default();
+        if !keep(&first) {
+            continue;
+        }
+        let dest = dest_dir.join(rel);
+        if entry.header().entry_type().is_dir() {
+            std::fs::create_dir_all(&dest)
+                .map_err(|e| AppError::Internal(format!("mkdir {}: {e}", dest.display())))?;
+        } else {
+            if let Some(parent) = dest.parent() {
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| AppError::Internal(format!("mkdir {}: {e}", parent.display())))?;
+            }
+            entry
+                .unpack(&dest)
+                .map_err(|e| AppError::Internal(format!("unpack {}: {e}", dest.display())))?;
+            if first.contains(sentinel) {
+                found_sentinel = true;
+            }
+        }
+    }
+    if !found_sentinel {
+        return Err(AppError::Internal(format!(
+            "archive did not contain expected file matching `{sentinel}`"
+        )));
+    }
+    Ok(())
+}
 
 /// Pinned sherpa-onnx release. **Minimum v1.13.4** — the first release line
 /// carrying Pocket TTS support. Never pin below this.
