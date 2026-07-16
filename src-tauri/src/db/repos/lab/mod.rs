@@ -186,3 +186,115 @@ pub fn recover_interrupted_lab_runs(pool: &DbPool) -> Result<usize, AppError> {
         Ok(total)
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Acceptance for the lab-run boot reaper. Mirrors the live orphan
+    /// `fd2c96c4` (an arena run left `status='running'` with 8 cells when the
+    /// app died mid-arena): a non-terminal lab run whose driving tokio task did
+    /// not survive the restart must be flipped to `failed` at boot so
+    /// `get_all_active_progress` stops re-hydrating it as a phantom active run
+    /// (which wedges `isArenaRunning`). Terminal rows and other personas'
+    /// completed runs must be untouched.
+    #[test]
+    fn recover_interrupted_lab_runs_reaps_only_orphans() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        // FK checks off so we don't have to materialise a full persona row.
+        conn.execute_batch("PRAGMA foreign_keys = OFF;").unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        // The orphan: an arena run wedged at `running` with populated progress
+        // (the fd2c96c4 equivalent). This is the row that must be reaped.
+        conn.execute(
+            "INSERT INTO lab_arena_runs (id, persona_id, status, models_tested, created_at, progress_json)
+             VALUES ('orphan-arena', 'p1', 'running', '[]', ?1, '{\"phase\":\"executing\"}')",
+            params![now],
+        )
+        .unwrap();
+        // A second orphan in a different run table (eval) at a non-`running`
+        // non-terminal phase — proves the sweep is not keyed to one status string.
+        conn.execute(
+            "INSERT INTO lab_eval_runs (id, persona_id, status, created_at, progress_json)
+             VALUES ('orphan-eval', 'p1', 'generating', ?1, '{\"phase\":\"generating\"}')",
+            params![now],
+        )
+        .unwrap();
+        // A control: an already-completed arena run must never be touched.
+        conn.execute(
+            "INSERT INTO lab_arena_runs (id, persona_id, status, models_tested, created_at, completed_at)
+             VALUES ('done-arena', 'p1', 'completed', '[]', ?1, ?1)",
+            params![now],
+        )
+        .unwrap();
+        drop(conn);
+
+        // Boot sweep flips both orphans, leaves the completed run alone.
+        let reaped = recover_interrupted_lab_runs(&pool).unwrap();
+        assert_eq!(reaped, 2, "both non-terminal orphans should be reaped");
+
+        let conn = pool.get().unwrap();
+        let (arena_status, arena_error): (String, Option<String>) = conn
+            .query_row(
+                "SELECT status, error FROM lab_arena_runs WHERE id = 'orphan-arena'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(arena_status, "failed", "orphan arena run must be failed");
+        assert_eq!(
+            arena_error.as_deref(),
+            Some("Interrupted by app restart"),
+            "reaped run must carry an explicit restart reason",
+        );
+
+        let eval_status: String = conn
+            .query_row(
+                "SELECT status FROM lab_eval_runs WHERE id = 'orphan-eval'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(eval_status, "failed", "orphan eval run must be failed");
+
+        let done_status: String = conn
+            .query_row(
+                "SELECT status FROM lab_arena_runs WHERE id = 'done-arena'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(done_status, "completed", "completed run must be untouched");
+        drop(conn);
+
+        // Hydration must no longer surface the reaped runs as active.
+        let active = get_all_active_progress(&pool, "p1").unwrap();
+        assert!(
+            active.is_empty(),
+            "reaped runs must not re-hydrate as active, got {active:?}",
+        );
+    }
+
+    /// A run that is *already* terminal is a no-op — the sweep is idempotent, so
+    /// a second boot (or a re-run within one boot) never re-touches it.
+    #[test]
+    fn recover_interrupted_lab_runs_is_idempotent() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = OFF;").unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO lab_arena_runs (id, persona_id, status, models_tested, created_at, progress_json)
+             VALUES ('orphan', 'p1', 'running', '[]', ?1, '{}')",
+            params![now],
+        )
+        .unwrap();
+        drop(conn);
+
+        assert_eq!(recover_interrupted_lab_runs(&pool).unwrap(), 1);
+        // Second pass finds nothing left non-terminal.
+        assert_eq!(recover_interrupted_lab_runs(&pool).unwrap(), 0);
+    }
+}
