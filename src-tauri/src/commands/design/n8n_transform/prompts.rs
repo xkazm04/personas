@@ -1,4 +1,4 @@
-use super::cli_runner::truncate_utf8;
+use crate::utils::text::truncate_on_char_boundary as truncate_utf8;
 use super::prompt_sanitizer::{
     canary_instruction, sanitize_free_text, sanitize_json_payload, sanitize_workflow_name,
     wrap_xml_boundary,

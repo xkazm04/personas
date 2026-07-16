@@ -207,14 +207,7 @@ fn body_after_frontmatter(md: &str) -> String {
 }
 
 fn excerpt_500(s: &str) -> String {
-    if s.len() <= 500 {
-        return s.to_string();
-    }
-    let mut end = 500;
-    while !s.is_char_boundary(end) && end > 0 {
-        end -= 1;
-    }
-    s[..end].to_string()
+    crate::utils::text::truncate_on_char_boundary(s, 500).to_string()
 }
 
 fn short_uuid() -> String {

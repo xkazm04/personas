@@ -683,7 +683,7 @@ fn snapshot_healed_prompt(
 // Helpers
 // ---------------------------------------------------------------------------
 
-use super::str_utils::truncate_str;
+use crate::utils::text::truncate_on_char_boundary as truncate_str;
 
 // ---------------------------------------------------------------------------
 // Tests

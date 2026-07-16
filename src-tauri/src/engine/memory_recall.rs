@@ -105,10 +105,7 @@ pub fn task_context_from_input(input: Option<&serde_json::Value>) -> String {
     }
     const CAP: usize = 2000;
     if out.len() > CAP {
-        let mut cut = CAP;
-        while cut > 0 && !out.is_char_boundary(cut) {
-            cut -= 1;
-        }
+        let cut = crate::utils::text::floor_char_boundary(&out, CAP);
         out.truncate(cut);
     }
     out.trim_end().to_string()

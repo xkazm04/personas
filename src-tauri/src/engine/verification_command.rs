@@ -141,10 +141,7 @@ fn tail(bytes: &[u8]) -> String {
     }
     let start = text.len() - MAX_TAIL_BYTES;
     // Advance to the next char boundary so we never split a multi-byte char.
-    let mut idx = start;
-    while idx < text.len() && !text.is_char_boundary(idx) {
-        idx += 1;
-    }
+    let idx = crate::utils::text::ceil_char_boundary(&text, start);
     format!("…{}", &text[idx..])
 }
 

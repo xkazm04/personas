@@ -860,19 +860,6 @@ pub async fn run_claude_prompt_text_inner(
     Ok((text_output, captured_session_id, accumulator))
 }
 
-/// Safely truncate a UTF-8 string to at most `max_bytes` bytes, always stopping
-/// at a character boundary so the slice is valid UTF-8.
-pub fn truncate_utf8(s: &str, max_bytes: usize) -> &str {
-    if s.len() <= max_bytes {
-        return s;
-    }
-    let mut end = max_bytes;
-    while end > 0 && !s.is_char_boundary(end) {
-        end -= 1;
-    }
-    &s[..end]
-}
-
 #[allow(clippy::needless_range_loop)]
 pub fn extract_first_json_object(input: &str) -> Option<String> {
     extract_first_json_object_matching(input, |_| true)

@@ -683,11 +683,10 @@ fn first_paragraph(s: &str, max_len: usize) -> String {
     if firstline.len() <= max_len {
         firstline.to_string()
     } else {
-        let mut end = max_len;
-        while !firstline.is_char_boundary(end) && end > 0 {
-            end -= 1;
-        }
-        format!("{}…", &firstline[..end])
+        format!(
+            "{}…",
+            crate::utils::text::truncate_on_char_boundary(firstline, max_len)
+        )
     }
 }
 

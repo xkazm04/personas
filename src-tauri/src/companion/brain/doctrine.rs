@@ -638,14 +638,7 @@ fn prune_orphans(pool: &UserDbPool, seen: &[String]) -> Result<usize, AppError> 
 }
 
 fn excerpt_500(content: &str) -> String {
-    if content.len() <= 500 {
-        return content.to_string();
-    }
-    let mut end = 500;
-    while !content.is_char_boundary(end) && end > 0 {
-        end -= 1;
-    }
-    content[..end].to_string()
+    crate::utils::text::truncate_on_char_boundary(content, 500).to_string()
 }
 
 fn short_random() -> String {

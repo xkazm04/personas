@@ -242,18 +242,10 @@ fn excerpt_500(content: &str) -> String {
     // Cap shared with the excerpt-vs-full-body decision
     // (`retrieval::excerpt_holds_full_body`) — the reader's completeness
     // guarantee depends on the writer's cap and boundary backoff staying
-    // exactly this shape.
+    // exactly this shape. `truncate_on_char_boundary` uses the identical
+    // backward-scan-to-boundary algorithm, so the invariant holds.
     const CAP: usize = crate::retrieval::EPISODE_EXCERPT_CAP;
-    if content.len() <= CAP {
-        content.to_string()
-    } else {
-        // char-boundary safe truncation
-        let mut end = CAP;
-        while !content.is_char_boundary(end) && end > 0 {
-            end -= 1;
-        }
-        content[..end].to_string()
-    }
+    crate::utils::text::truncate_on_char_boundary(content, CAP).to_string()
 }
 
 fn short_uuid() -> String {

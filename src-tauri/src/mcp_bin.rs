@@ -10,6 +10,19 @@
 
 mod mcp_server;
 
+// The standalone `personas-mcp` binary is a separate crate root from the
+// main `app_lib` (see src/lib.rs) and does not pull in the full `utils`
+// module tree (some of it, e.g. `sanitization`, has extra deps this sidecar
+// doesn't otherwise need). `mcp_server::vault` is compiled under both crate
+// roots though, and reaches for the shared, dependency-free char-boundary
+// helpers via `crate::utils::text::*` — so mirror just that leaf module here
+// under the same path so it resolves identically in both roots.
+#[allow(dead_code)] // only floor/ceil_char_boundary are exercised by this sidecar binary
+mod utils {
+    #[path = "text.rs"]
+    pub mod text;
+}
+
 use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
 
