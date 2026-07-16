@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Rocket, Wrench } from 'lucide-react';
 import { updatePersona, buildUpdateInput } from '@/api/agents/personas';
-import { executePersona } from '@/api/agents/executions';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { getMemoryCount } from '@/api/overview/memories';
@@ -19,11 +18,10 @@ import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
 import { useSystemStore } from '@/stores/systemStore';
-import { useAgentStore } from '@/stores/agentStore';
-import { useToastStore } from '@/stores/toastStore';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
+import { useManualPersonaRun } from '../../libs/useManualPersonaRun';
 import { CapabilityDisableDialog } from '../core/CapabilityDisableDialog';
 import { ToolRunnerModal } from '@/features/agents/sub_tool_runner';
 import { UseCaseDetailExpanded } from '../recipes-prototype/shared/UseCaseDetailExpanded';
@@ -33,9 +31,6 @@ import {
   getDimLabels,
   type DisplayUseCase,
 } from '../recipes-prototype/shared/displayUseCase';
-
-/** Rapid-repeat dedupe window for the manual "Run now" button (see handleRunActiveCapability). */
-const MANUAL_RUN_DEDUPE_MS = 1000;
 
 interface PersonaLayoutViewProps {
   credentials: CredentialMetadata[];
@@ -223,64 +218,24 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     : null;
 
   // Manual real-execution trigger for the ACTIVE capability (the tab-selected
-  // one). Mirrors useUseCaseDetail.handleManualRun: the production
-  // `execute_persona` IPC — real CLI spawn, real cost, and `emit_event`
-  // protocols fire downstream listeners (so chained UC1→UC2 / cross-persona
-  // flows run on demand without waiting for a schedule tick). Lives on the
-  // always-visible capability tab bar because the per-capability detail (which
-  // also carries a run-now) isn't reachable in view mode.
-  const [isManualRunning, setIsManualRunning] = useState(false);
-  // Synchronous reentrancy guard: `isManualRunning` is async React state, so two
-  // clicks in the same render commit both read `false` and each spawn a real,
-  // paid CLI run. The ref is claimed before the first await. Mirrors
-  // useUseCaseDetail.handleManualRun (this button is its view-mode twin).
-  const runInFlightRef = useRef(false);
-  const lastRunRef = useRef<{ at: number; key: string } | null>(null);
+  // one). Shares its implementation — reentrancy guard, stale-persona
+  // re-check, budget gate, idempotency-key dedupe, and the production
+  // `execute_persona` IPC call — with useUseCaseDetail.handleManualRun via
+  // useManualPersonaRun. Lives on the always-visible capability tab bar
+  // because the per-capability detail (which also carries a run-now) isn't
+  // reachable in view mode.
+  const { isManualRunning, run: runManualPersonaRun } = useManualPersonaRun();
   const handleRunActiveCapability = useCallback(async () => {
-    if (!personaId || !activeCapability || runInFlightRef.current || isManualRunning || isExecuting)
-      return;
-    const expectedPersonaId = personaId;
-    // Budget gate: this calls the raw execute_persona IPC directly (real cost),
-    // bypassing the store action where the pause lives, so a budget-exceeded
-    // persona could keep spending through this button. Mirror the other sites.
-    if (useAgentStore.getState().isBudgetBlocked(expectedPersonaId)) {
-      useToastStore
-        .getState()
-        .addToast(
-          `Budget enforcement for "${selectedPersona?.name ?? 'persona'}" — execution blocked (budget exceeded or data unavailable)`,
-          'error',
-        );
-      return;
-    }
-    // Idempotency key: a repeat within the dedupe window reuses the prior key so
-    // the server collapses accidental double-fires into one execution; a later
-    // deliberate re-run mints a fresh key.
-    const now = Date.now();
-    const prev = lastRunRef.current;
-    const idempotencyKey =
-      prev && now - prev.at < MANUAL_RUN_DEDUPE_MS ? prev.key : crypto.randomUUID();
-    lastRunRef.current = { at: now, key: idempotencyKey };
-    runInFlightRef.current = true;
-    setIsManualRunning(true);
-    try {
-      const inputs = activeCapability.raw?.sample_input;
-      const inputData =
-        inputs && Object.keys(inputs).length > 0 ? JSON.stringify(inputs) : undefined;
-      await executePersona(
-        expectedPersonaId,
-        undefined,
-        inputData,
-        activeCapability.id,
-        undefined,
-        idempotencyKey,
-      );
-    } catch (err) {
-      toastCatch('PersonaLayoutView:runActiveCapability')(err);
-    } finally {
-      runInFlightRef.current = false;
-      setIsManualRunning(false);
-    }
-  }, [personaId, activeCapability, isManualRunning, isExecuting, selectedPersona?.name]);
+    if (!personaId || !activeCapability || isManualRunning || isExecuting) return;
+    const inputs = activeCapability.raw?.sample_input;
+    await runManualPersonaRun({
+      personaId,
+      personaName: selectedPersona?.name,
+      useCaseId: activeCapability.id,
+      inputs,
+      errorContext: 'PersonaLayoutView:runActiveCapability',
+    });
+  }, [personaId, activeCapability, isManualRunning, isExecuting, selectedPersona?.name, runManualPersonaRun]);
 
   // Summary sidebar — derived from the ACTIVE capability only, not
   // aggregated across the persona. Each row shows the saved value for
