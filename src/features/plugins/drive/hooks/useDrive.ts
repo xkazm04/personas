@@ -671,6 +671,32 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     [refresh, refreshTree, refreshRecent, flashWrite],
   );
 
+  /**
+   * Bulk move: raw driveMove per pair via runBulk (concurrency 8), then ONE
+   * cache clear + refresh at the end — mirroring pasteHere/remove. `move()`
+   * bundles its own refresh cascade (drive_list + 4-level drive_list_tree +
+   * drive_recent), so the bulk callers that looped over it issued ~4 IPC
+   * round-trips per item and re-rendered the whole Finder N times mid-drag.
+   */
+  const moveMany = useCallback(
+    async (pairs: Array<{ src: string; dst: string }>) => {
+      if (pairs.length === 0) return;
+      await runBulk(pairs, async ({ src, dst }) => {
+        try {
+          const entry = await driveMove(src, dst);
+          flashWrite(entry.path);
+        } catch (e) {
+          toastCatch("drive:move")(e);
+        }
+      });
+      pathCacheRef.current.clear();
+      refresh();
+      refreshTree();
+      refreshRecent();
+    },
+    [refresh, refreshTree, refreshRecent, flashWrite],
+  );
+
   // Derived flags
   const canGoBack = historyIndex > 0;
   const canGoForward = historyIndex < history.length - 1;
@@ -723,6 +749,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     rename,
     remove,
     move,
+    moveMany,
 
     storage,
     refreshStorage,

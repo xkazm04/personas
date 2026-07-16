@@ -116,14 +116,17 @@ export function DriveToolbar({
       if (!raw) return;
       try {
         const { paths } = JSON.parse(raw) as { paths: string[] };
+        const pairs: Array<{ src: string; dst: string }> = [];
         for (const p of paths) {
           if (p === targetPath) continue;
           // Refuse ancestor → descendant moves (would orphan the subtree).
           if (targetPath !== "" && targetPath.startsWith(`${p}/`)) continue;
           const name = p.split("/").pop() ?? p;
           const dst = targetPath ? `${targetPath}/${name}` : name;
-          await drive.move(p, dst);
+          pairs.push({ src: p, dst });
         }
+        // One bulk move + single refresh instead of a cascade per item.
+        await drive.moveMany(pairs);
       } catch (err) {
         silentCatch("drive:breadcrumb-drop")(err);
       }

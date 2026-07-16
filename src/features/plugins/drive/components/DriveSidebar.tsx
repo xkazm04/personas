@@ -411,6 +411,7 @@ function TreeNode({
       if (!raw) return;
       try {
         const { paths } = JSON.parse(raw) as { paths: string[] };
+        const pairs: Array<{ src: string; dst: string }> = [];
         for (const p of paths) {
           if (p === node.path) continue;
           // Refuse moving an ancestor folder into its own descendant — it
@@ -419,8 +420,10 @@ function TreeNode({
           if (node.path !== "" && node.path.startsWith(`${p}/`)) continue;
           const name = p.split("/").pop() ?? p;
           const dst = node.path ? `${node.path}/${name}` : name;
-          await drive.move(p, dst);
+          pairs.push({ src: p, dst });
         }
+        // One bulk move + single refresh instead of a cascade per item.
+        await drive.moveMany(pairs);
         // Expand the destination after a successful drop so the user can
         // see where their files landed without re-clicking.
         if (hasChildren && !expanded) setExpanded(true);
