@@ -13,6 +13,11 @@ use chrono::{DateTime, Utc};
 use crate::db::models::{BrokenWikilink, OrphanNote, StaleNote, VaultLintReport};
 use crate::error::AppError;
 
+use super::vault_fs::{
+    extract_wikilinks, relative_path, strip_alias_and_section, walk_markdown_files, ErrorPolicy,
+    WalkOptions,
+};
+
 /// A note older than this many days with no recent edits is considered stale.
 /// Configurable by the caller; this is the default the IPC command exposes.
 pub const DEFAULT_STALE_DAYS: i64 = 180;
@@ -86,15 +91,7 @@ pub fn lint_vault(vault_path: &Path, stale_days: i64) -> Result<VaultLintReport,
             for link in extract_wikilinks(line) {
                 // Strip aliases (`[[Target|Alias]]` → `Target`) and
                 // section refs (`[[Target#Heading]]` → `Target`).
-                let target = link
-                    .split('|')
-                    .next()
-                    .unwrap_or(&link)
-                    .split('#')
-                    .next()
-                    .unwrap_or(&link)
-                    .trim()
-                    .to_string();
+                let target = strip_alias_and_section(&link);
 
                 if target.is_empty() {
                     continue;
@@ -138,78 +135,18 @@ pub fn lint_vault(vault_path: &Path, stale_days: i64) -> Result<VaultLintReport,
 }
 
 /// Recursively collect every `.md` file under `root`, skipping `.obsidian/`,
-/// `.trash/`, and any dot-directory.
+/// `.trash/`, and any dot-directory. Aborts the whole lint on the first
+/// unreadable directory (matches the pre-extraction behavior — a lint pass
+/// that silently skipped part of the vault would report a false-clean
+/// result, so this walker fails loudly instead).
 fn collect_markdown_files(root: &Path) -> Result<Vec<PathBuf>, AppError> {
-    let mut out = Vec::new();
-    walk(root, &mut out)?;
-    Ok(out)
-}
-
-fn walk(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), AppError> {
-    let entries = std::fs::read_dir(dir)
-        .map_err(|e| AppError::Internal(format!("read_dir failed for {}: {e}", dir.display())))?;
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            // Skip dot-directories (.obsidian, .trash, .git, etc.)
-            if path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .map(|n| n.starts_with('.'))
-                .unwrap_or(false)
-            {
-                continue;
-            }
-            walk(&path, out)?;
-        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
-            out.push(path);
-        }
-    }
-    Ok(())
-}
-
-/// Pull every `[[link target]]` out of a line. Tolerates aliases (`[[A|B]]`)
-/// and section refs (`[[A#Heading]]`); the caller normalizes those.
-fn extract_wikilinks(line: &str) -> Vec<String> {
-    let mut links = Vec::new();
-    let bytes = line.as_bytes();
-    let mut i = 0;
-    while i + 1 < bytes.len() {
-        if bytes[i] == b'[' && bytes[i + 1] == b'[' {
-            // Find the matching `]]`.
-            let start = i + 2;
-            let mut j = start;
-            while j + 1 < bytes.len() {
-                if bytes[j] == b']' && bytes[j + 1] == b']' {
-                    if let Ok(s) = std::str::from_utf8(&bytes[start..j]) {
-                        // Skip embed/transclude markers (`![[…]]`) — Obsidian
-                        // treats them as references too, which is what we want;
-                        // no special handling needed beyond the bracket scan.
-                        if !s.is_empty() {
-                            links.push(s.to_string());
-                        }
-                    }
-                    i = j + 2;
-                    break;
-                }
-                j += 1;
-            }
-            if j + 1 >= bytes.len() {
-                break;
-            }
-        } else {
-            i += 1;
-        }
-    }
-    links
-}
-
-fn relative_path(root: &Path, path: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .display()
-        .to_string()
-        .replace('\\', "/")
+    let opts = WalkOptions {
+        max_depth: WalkOptions::UNBOUNDED_DEPTH,
+        on_error: ErrorPolicy::Abort,
+        skip_hidden_files: false,
+    };
+    walk_markdown_files(root, &opts)
+        .map_err(|e| AppError::Internal(format!("read_dir failed while walking {}: {e}", root.display())))
 }
 
 /// Heuristic for "this note is probably an entry point and shouldn't be
@@ -247,29 +184,8 @@ mod tests {
         f.write_all(content.as_bytes()).unwrap();
     }
 
-    #[test]
-    fn extract_basic_wikilink() {
-        let links = extract_wikilinks("see [[Target]] for details");
-        assert_eq!(links, vec!["Target".to_string()]);
-    }
-
-    #[test]
-    fn extract_wikilink_with_alias_and_section() {
-        let links = extract_wikilinks("[[Foo|bar]] and [[Baz#Section]]");
-        assert_eq!(
-            links,
-            vec!["Foo|bar".to_string(), "Baz#Section".to_string()]
-        );
-    }
-
-    #[test]
-    fn extract_multiple_wikilinks_one_line() {
-        let links = extract_wikilinks("[[A]] [[B]] [[C]]");
-        assert_eq!(
-            links,
-            vec!["A".to_string(), "B".to_string(), "C".to_string()]
-        );
-    }
+    // extract_wikilinks unit tests moved to vault_fs.rs's test module — they
+    // now exercise the shared `extract_wikilinks` function directly.
 
     #[test]
     fn lint_detects_broken_wikilink() {

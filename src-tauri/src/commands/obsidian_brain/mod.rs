@@ -5,6 +5,7 @@ pub mod lint;
 pub mod markdown;
 pub mod revitalize;
 pub mod semantic_lint;
+pub mod vault_fs;
 
 #[cfg(test)]
 mod mirror_tests;

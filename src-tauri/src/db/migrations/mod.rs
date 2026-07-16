@@ -15,8 +15,11 @@
 //   schema.rs      — SCHEMA const (1,517 lines of CREATE TABLE / INDEX SQL)
 //   initial.rs     — run() body: pre-schema ALTER TABLEs + SCHEMA + post-schema tables
 //   incremental.rs — run_incremental() + ensure_composite_fires_table() bodies
-//   helpers.rs     — migrate_blob_credentials_to_fields(), normalize_credential_field_keys(),
-//                    classify_field_type() (all pub(super))
+//   helpers.rs     — migrate_blob_credentials_to_fields(), normalize_credential_field_keys()
+//                    (both pub(super)). classify_field_type()/NON_SENSITIVE_KEYS/
+//                    FIELD_KEY_RENAMES now live in db::credential_fields (shared
+//                    with db::repos::resources::credentials and
+//                    commands::core::data_portability to avoid classification drift).
 
 mod fk_hygiene;
 mod helpers;

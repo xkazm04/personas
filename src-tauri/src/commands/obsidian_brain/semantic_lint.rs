@@ -27,6 +27,11 @@ use crate::db::settings_keys;
 use crate::engine::prompt;
 use crate::error::AppError;
 
+use super::vault_fs::{
+    extract_wikilinks, relative_path, strip_alias_and_section, walk_markdown_files, ErrorPolicy,
+    WalkOptions,
+};
+
 /// Default model — sourced from the central `settings_keys` registry so the
 /// fallback stays in sync with the key's documented default.
 pub const DEFAULT_SEMANTIC_LINT_MODEL: &str = settings_keys::SEMANTIC_LINT_MODEL_DEFAULT;
@@ -122,8 +127,21 @@ pub fn build_vault_summary(vault_path: &Path) -> Result<(Vec<NoteSummary>, i64),
         )));
     }
 
-    let mut notes: Vec<std::path::PathBuf> = Vec::new();
-    walk_vault(vault_path, &mut notes)?;
+    // Aborts on the first unreadable directory (matches the pre-extraction
+    // behavior — same rationale as lint.rs: a semantic lint that silently
+    // skipped part of the vault would produce a misleadingly clean report).
+    let walk_opts = WalkOptions {
+        max_depth: WalkOptions::UNBOUNDED_DEPTH,
+        on_error: ErrorPolicy::Abort,
+        skip_hidden_files: false,
+    };
+    let mut notes: Vec<std::path::PathBuf> = walk_markdown_files(vault_path, &walk_opts)
+        .map_err(|e| {
+            AppError::Internal(format!(
+                "read_dir failed while walking {}: {e}",
+                vault_path.display()
+            ))
+        })?;
 
     let total_scanned = notes.len() as i64;
     notes.sort();
@@ -154,37 +172,6 @@ pub fn build_vault_summary(vault_path: &Path) -> Result<(Vec<NoteSummary>, i64),
     }
 
     Ok((summaries, total_scanned))
-}
-
-fn walk_vault(dir: &Path, out: &mut Vec<std::path::PathBuf>) -> Result<(), AppError> {
-    let entries = std::fs::read_dir(dir)
-        .map_err(|e| AppError::Internal(format!("read_dir failed for {}: {e}", dir.display())))?;
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            // Skip dot-directories (.obsidian, .trash, .git, etc.)
-            if path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .map(|n| n.starts_with('.'))
-                .unwrap_or(false)
-            {
-                continue;
-            }
-            walk_vault(&path, out)?;
-        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
-            out.push(path);
-        }
-    }
-    Ok(())
-}
-
-fn relative_path(root: &Path, path: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .display()
-        .to_string()
-        .replace('\\', "/")
 }
 
 /// First markdown H1 wins, otherwise the file basename.
@@ -248,41 +235,17 @@ fn extract_snippet(content: &str) -> String {
     }
 }
 
-/// Extract `[[Target]]` targets (without aliases or section refs).
+/// Extract `[[Target]]` targets (without aliases or section refs), deduped
+/// in first-seen order. Thin wrapper over the shared byte-scan extractor +
+/// normalizer — the dedup behavior is specific to this caller (the vault
+/// summary sent to the LLM has no use for duplicate targets), so it stays
+/// here rather than in the shared primitive.
 fn extract_wikilink_targets(content: &str) -> Vec<String> {
     let mut out = Vec::new();
-    let bytes = content.as_bytes();
-    let mut i = 0;
-    while i + 1 < bytes.len() {
-        if bytes[i] == b'[' && bytes[i + 1] == b'[' {
-            let start = i + 2;
-            let mut j = start;
-            while j + 1 < bytes.len() {
-                if bytes[j] == b']' && bytes[j + 1] == b']' {
-                    if let Ok(s) = std::str::from_utf8(&bytes[start..j]) {
-                        let target = s
-                            .split('|')
-                            .next()
-                            .unwrap_or(s)
-                            .split('#')
-                            .next()
-                            .unwrap_or(s)
-                            .trim()
-                            .to_string();
-                        if !target.is_empty() && !out.contains(&target) {
-                            out.push(target);
-                        }
-                    }
-                    i = j + 2;
-                    break;
-                }
-                j += 1;
-            }
-            if j + 1 >= bytes.len() {
-                break;
-            }
-        } else {
-            i += 1;
+    for raw in extract_wikilinks(content) {
+        let target = strip_alias_and_section(&raw);
+        if !target.is_empty() && !out.contains(&target) {
+            out.push(target);
         }
     }
     out
