@@ -16,18 +16,20 @@
 //   one live terminal: while a session with this dispatch key is alive the
 //   button is replaced by "View in Fleet →" and re-dispatch is refused until
 //   that terminal is killed.
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LayoutGroup, motion, useReducedMotion } from 'framer-motion';
-import { AlertTriangle, ArrowUpRight, CheckCircle2, Settings2, TerminalSquare, X } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, BadgeCheck, CheckCircle2, Lock, PlugZap, Settings2, TerminalSquare, X } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { SECTIONS, type CellValue } from '@/features/teams/sub_factory/passport/passportRows';
 
-import { InkCellValue, InkTabs, NEON, SETUP_BLUE, SegBar, anchorTip, inkKindOf, scoreInk } from './cockpitGlyphs';
-import { buildDispatchPrompt, dispatchKey, dispatchToFleet, findRunningDispatch } from './wallDispatch';
-import { HeaderStatband, HeaderTokens, type HeaderVariant } from './wallHeaders';
+import { InkCellValue, InkTabs, NEON, SETUP_BLUE, anchorTip, inkKindOf } from './cockpitGlyphs';
+import { listSessions } from '@/api/fleet/fleet';
+import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
+import { dispatchKey, dispatchToFleet } from './wallDispatch';
+import { HeaderStatband } from './wallHeaders';
 import {
   IMPROVE_ACTION_LABEL, ROW_META, WALL, sortWall, wallHealth,
   type WallEntry, type WallRowMeta, type WallSort,
@@ -46,11 +48,6 @@ const VIEW_TABS: Array<{ id: WallView; label: string }> = [
   { id: 'grid', label: 'Overview' },
 ];
 
-// R16 — the header-card prototype: two compact cover structures, switchable.
-const HEADER_TABS: Array<{ id: HeaderVariant; label: string }> = [
-  { id: 'tokens', label: 'Tokens' },
-  { id: 'statband', label: 'Statband' },
-];
 
 const bodySections = SECTIONS.map((s) => ({ ...s, rows: s.rows.filter((r) => !r.headline) }));
 
@@ -83,12 +80,98 @@ function reachedStep(value: CellValue, ladder: string[]): number {
   return 0;
 }
 
-type DispatchPhase = 'checking' | 'idle' | 'dispatching' | 'running';
+// R17 — fleet-state exchange: one poll covers every dispatch key on the wall.
+const FLEET_STATE_HUE: Record<string, string> = {
+  spawning: NEON.violet, running: NEON.violet, awaiting_input: NEON.amber,
+  idle: NEON.teal, stale: 'rgba(148,163,184,.6)', hibernated: 'rgba(148,163,184,.45)',
+};
 
-function ImprovePopover({ st, onClose }: { st: ImproveState; onClose: () => void }) {
+export interface FleetLink { id: string; state: FleetSessionState }
+
+function useFleetDispatchStates(): Map<string, FleetLink> {
+  const [map, setMap] = useState<Map<string, FleetLink>>(new Map());
+  useEffect(() => {
+    let alive = true;
+    const poll = () => {
+      listSessions()
+        .then((snap) => {
+          if (!alive) return;
+          const m = new Map<string, FleetLink>();
+          for (const sess of snap.sessions) {
+            if (sess.name && sess.name.startsWith('cockpit:') && sess.state !== 'exited') {
+              m.set(sess.name, { id: sess.id, state: sess.state });
+            }
+          }
+          setMap(m);
+        })
+        .catch(() => {});
+    };
+    poll();
+    const t = setInterval(poll, 5000);
+    return () => { alive = false; clearInterval(t); };
+  }, []);
+  return map;
+}
+
+// The two-step pair->verify catalog (mock; null = no catalog connectors yet).
+const CATALOG: Record<string, string[] | null> = {
+  persistence: ['PostgreSQL', 'MongoDB', 'SQLite'],
+  hosting: ['Vercel', 'Fly.io', 'Railway'],
+  auth: null,
+  memory: null,
+  errors: ['Sentry', 'Better Stack'],
+  logs: ['Better Stack', 'Axiom'],
+  metrics: ['Prometheus', 'Grafana Cloud'],
+  tracing: ['Langfuse', 'OpenTelemetry'],
+  llmtracking: ['LightTrack', 'Langfuse', 'Helicone'],
+};
+
+/** One short sentence: current state + what the next step achieves. */
+function stateSummary(st: ImproveState, ladder: string[] | undefined, reached: number): string {
+  const v = st.value;
+  const cur =
+    ladder ? ladder[reached]
+    : v.kind === 'bool' ? (v.on ? 'yes' : 'no')
+    : v.kind === 'present' ? (v.label ?? 'not wired')
+    : v.kind === 'chips' ? (v.items.length ? v.items.join(', ') : 'none')
+    : '';
+  const next = ladder && reached < ladder.length - 1 ? ladder[reached + 1] : null;
+  const SPECIFIC: Record<string, string> = {
+    aiflow: v.kind === 'bool' && v.on
+      ? 'Agents already commit here — the scan found AI-authored changes; codifying an agent lane in CI is the next step.'
+      : 'No AI in the workflow yet — a dispatch adds the agent lane (CLAUDE.md conventions + a CI hook).',
+    memory: 'Persistent agent memory lets follow-up sessions reuse decisions instead of rediscovering them.',
+    selfverify: 'Each locally-runnable gate (build/test/lint/types) shortens the agent loop before a push.',
+    instructions: 'Agent instructions anchor every dispatch — richer files mean fewer wrong turns.',
+    skills: 'Reusable skills let dispatches standardize recurring work instead of improvising it.',
+  };
+  if (SPECIFIC[st.rowKey]) return SPECIFIC[st.rowKey]!;
+  if (next) return `Currently at “${cur}” — the selected steps move it toward “${next}”.`;
+  return `Currently at “${cur}” — the top of this ladder.`;
+}
+
+type PairState = { connector: string; status: 'unverified' | 'verifying' };
+
+/** R17 — the setup popover: state summary, scope sidebar (locked implemented
+ *  steps), custom dispatch instructions, two-step pair->verify for connector
+ *  rows, and the live fleet link when a terminal already owns the task. */
+function SetupPopover({ st, pair, onPair, fleet, onClose }: {
+  st: ImproveState;
+  pair: PairState | null;
+  onPair: (p: PairState) => void;
+  fleet: FleetLink | null;
+  onClose: () => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
-  const [phase, setPhase] = useState<DispatchPhase>('checking');
   const key = dispatchKey(st.projectId, st.rowKey);
+  const ladder = st.meta.ladder;
+  const isConnector = st.meta.improve === 'connector';
+  const reached = ladder ? reachedStep(st.value, ladder) : 0;
+  const wired = isConnector && st.value.kind === 'present' && Boolean(st.value.label);
+
+  const [scope, setScope] = useState<Set<number>>(() => new Set(ladder && reached < ladder.length - 1 ? [reached + 1] : []));
+  const [instruction, setInstruction] = useState('');
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     const away = (e: PointerEvent) => {
@@ -98,139 +181,174 @@ function ImprovePopover({ st, onClose }: { st: ImproveState; onClose: () => void
     return () => document.removeEventListener('pointerdown', away);
   }, [onClose]);
 
-  // Dedup gate: is a terminal already working this exact task?
-  useEffect(() => {
-    let alive = true;
-    findRunningDispatch(key)
-      .then((s) => { if (alive) setPhase(s ? 'running' : 'idle'); })
-      .catch(() => { if (alive) setPhase('idle'); });
-    return () => { alive = false; };
-  }, [key]);
+  const W = 360; // R17: +20% over the previous 300px
+  const estH = 200 + (ladder ? ladder.length * 26 : 40);
+  const { left, top } = anchorTip(st.rect, W, estH);
 
-  const ladder = st.meta.ladder;
-  const reached = ladder ? reachedStep(st.value, ladder) : 0;
-  const estH = 92 + (ladder ? ladder.length * 28 : 34) + 96;
-  const { left, top } = anchorTip(st.rect, 300, estH);
-  const action = st.meta.improve ? IMPROVE_ACTION_LABEL[st.meta.improve] : null;
-
-  const dispatch = () => {
-    if (!st.meta.improve) return;
-    setPhase('dispatching');
-    const prompt = buildDispatchPrompt({
-      kind: st.meta.improve,
-      projectName: st.projectName,
-      rowLabel: st.rowLabel,
-      current: ladder?.[reached],
-      next: ladder?.[Math.min(reached + 1, ladder.length - 1)],
-    });
+  const dispatch = useCallback((prompt: string) => {
+    setBusy(true);
     dispatchToFleet(key, prompt)
-      .then(() => setPhase('running'))
-      .catch((e) => {
-        setPhase('idle');
-        toastCatch('cockpit fleet dispatch')(e);
-      });
-  };
+      .then(() => {
+        setBusy(false);
+        if (isConnector) {
+          onPair({ connector: pair?.connector ?? (st.value.kind === 'present' ? st.value.label ?? 'connector' : 'connector'), status: 'verifying' });
+        }
+      })
+      .catch((e) => { setBusy(false); toastCatch('wall dispatch')(e); });
+  }, [key, isConnector, onPair, pair, st.value]);
 
-  const viewInFleet = () => {
-    onClose();
-    useSystemStore.getState().setDevToolsTab('fleet');
-  };
+  const scopeList = ladder ? [...scope].sort((a, b) => a - b).map((i) => ladder[i]).join(', ') : '';
+  const basePrompt = `[Personas Cockpit dispatch — prototype] Project “${st.projectName}” (mock). Task: raise “${st.rowLabel}”.` +
+    (scopeList ? ` Scope (user-selected steps): ${scopeList}.` : '') +
+    (instruction.trim() ? ` Additional instructions: ${instruction.trim()}.` : '') +
+    ' Do NOT run commands or modify files; reply with a plan and wait.';
+  const verifyPrompt = `[Personas Cockpit dispatch — prototype] Project “${st.projectName}” (mock). Verify the “${pair?.connector ?? ''}” connector for “${st.rowLabel}”: confirm it is wired (or wire it) and report evidence.` +
+    (instruction.trim() ? ` Additional instructions: ${instruction.trim()}.` : '') +
+    ' Do NOT run commands or modify files; reply with a plan and wait.';
+
+  const fleetHue = fleet ? (FLEET_STATE_HUE[fleet.state] ?? NEON.violet) : null;
 
   return createPortal(
     <div
       ref={ref}
-      data-testid="wall-improve-popover"
-      className="fixed z-50 w-[300px] rounded-xl overflow-hidden"
+      data-testid="wall-setup-popover"
+      className="fixed z-50 rounded-xl overflow-hidden"
       style={{
-        left, top,
+        left, top, width: W,
         background: 'color-mix(in srgb, var(--background) 88%, #1e293b)',
         border: '1px solid rgba(148,163,184,.25)',
         boxShadow: '0 16px 40px rgba(0,0,0,.45)',
       }}
     >
-      <div className="px-4 pt-3 pb-2 flex items-start gap-2">
+      <div className="px-4 pt-3 pb-1.5 flex items-start gap-2">
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-[0.14em] text-foreground/40">{st.projectName}</div>
           <div className="typo-body font-semibold text-foreground mt-0.5">{st.rowLabel}</div>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/45 hover:text-foreground hover:bg-foreground/[0.06] transition-colors focus-ring"
-        >
+        <button type="button" onClick={onClose} aria-label="Close" className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/45 hover:text-foreground hover:bg-foreground/[0.06] transition-colors focus-ring">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {ladder ? (
-        <div className="px-4 pb-3">
-          <SegBar steps={ladder.length - 1} reached={reached} hue={reached === 0 ? SETUP_BLUE : scoreInk((reached / (ladder.length - 1)) * 100)} />
-          <ol className="mt-2.5 space-y-1">
-            {ladder.map((name, i) => {
-              const isCurrent = i === reached;
-              const isNext = i === reached + 1;
-              return (
-                <li key={name} className="flex items-center gap-2.5">
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={
-                      i <= reached
-                        ? { background: isCurrent ? NEON.teal : 'rgba(148,163,184,.55)', boxShadow: isCurrent ? `0 0 5px ${NEON.teal}88` : undefined }
-                        : { border: `1px solid ${isNext ? SETUP_BLUE : 'rgba(148,163,184,.35)'}` }
-                    }
-                  />
-                  <span className={`typo-caption ${isCurrent ? 'font-semibold text-foreground' : i < reached ? 'text-foreground/60' : 'text-foreground/45'}`} style={isNext ? { color: SETUP_BLUE } : undefined}>
-                    {name}
-                  </span>
-                  {isCurrent && <span className="text-[10px] uppercase tracking-[0.1em] text-foreground/40 ml-auto">current</span>}
-                  {isNext && <span className="text-[10px] uppercase tracking-[0.1em] ml-auto" style={{ color: SETUP_BLUE }}>next</span>}
-                </li>
-              );
-            })}
-          </ol>
+      <p className="px-4 pb-2 typo-caption text-foreground/60" data-testid="setup-summary">
+        {isConnector && wired
+          ? `“${st.value.kind === 'present' ? st.value.label : ''}” is wired — dispatch only to re-verify.`
+          : stateSummary(st, ladder, reached)}
+      </p>
+
+      {isConnector ? (
+        <div className="px-4 pb-3" data-testid="setup-two-step">
+          {wired || pair ? (
+            <div className="flex items-center gap-1.5 mb-2">
+              <BadgeCheck className="w-3.5 h-3.5" style={{ color: pair?.status === 'verifying' ? NEON.violet : wired ? NEON.emerald : NEON.amber }} aria-hidden />
+              <span className="typo-caption font-medium" style={{ color: pair?.status === 'verifying' ? NEON.violet : wired ? NEON.emerald : NEON.amber }}>
+                {wired ? 'wired' : pair?.status === 'verifying' ? `verifying — ${pair?.connector}` : `unverified — ${pair?.connector}`}
+              </span>
+            </div>
+          ) : CATALOG[st.rowKey] ? (
+            <div className="mb-2">
+              <span className="text-[10px] uppercase tracking-[0.12em] text-foreground/40 block mb-1.5">1 · Pair a connector from the catalog</span>
+              <span className="flex flex-wrap gap-1.5">
+                {(CATALOG[st.rowKey] ?? []).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => onPair({ connector: c, status: 'unverified' })}
+                    className="inline-flex items-center gap-1 rounded-card px-2 py-0.5 typo-caption transition-colors hover:bg-foreground/[0.06] focus-ring"
+                    style={{ color: NEON.teal, border: `1px solid ${NEON.teal}44` }}
+                    data-testid={`pair-${c}`}
+                  >
+                    <PlugZap className="w-3 h-3" aria-hidden />{c}
+                  </button>
+                ))}
+              </span>
+            </div>
+          ) : (
+            <p className="typo-caption mb-2" style={{ color: SETUP_BLUE }}>No catalog connectors for this slot yet — coming later.</p>
+          )}
+
+          <textarea
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            rows={2}
+            placeholder="Additional instructions for the dispatch…"
+            className="w-full bg-transparent border rounded-input px-2 py-1 typo-caption text-foreground focus-ring resize-none mb-2"
+            style={{ borderColor: 'rgba(148,163,184,.25)' }}
+            data-testid="setup-instruction"
+          />
+
+          {fleet ? (
+            <FleetRow fleet={fleet} hue={fleetHue!} onClose={onClose} />
+          ) : (
+            <button
+              type="button"
+              disabled={busy || (!wired && !pair)}
+              onClick={() => dispatch(verifyPrompt)}
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-card px-3 py-2 typo-caption font-semibold transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-40"
+              style={{ color: NEON.teal, border: `1px solid ${NEON.teal}55` }}
+              data-testid="setup-verify-dispatch"
+            >
+              2 · {busy ? 'Dispatching…' : wired ? 'Dispatch to re-verify' : 'Dispatch to wire & verify'}
+              <ArrowUpRight className="w-3.5 h-3.5" aria-hidden />
+            </button>
+          )}
         </div>
       ) : (
-        <div className="px-4 pb-3"><InkCellValue value={st.value} /></div>
-      )}
-
-      {action && (
-        <div className="px-4 pb-3.5 pt-2.5 border-t border-foreground/[0.08]" data-testid="dispatch-zone" data-phase={phase}>
-          {phase === 'running' ? (
-            <>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: NEON.violet, boxShadow: `0 0 6px ${NEON.violet}` }} />
-                <span className="typo-caption font-medium" style={{ color: NEON.violet }}>Running in Fleet</span>
-              </div>
+        <div className="flex px-4 pb-3 gap-3">
+          {ladder && (
+            <div className="w-[132px] shrink-0 border-r border-foreground/[0.08] pr-2.5" data-testid="setup-scope">
+              <span className="text-[10px] uppercase tracking-[0.12em] text-foreground/40 block mb-1.5">Scope</span>
+              <ol className="space-y-1">
+                {ladder.map((name, i) => {
+                  const locked = i <= reached;
+                  const on = scope.has(i);
+                  return (
+                    <li key={name}>
+                      <button
+                        type="button"
+                        disabled={locked}
+                        onClick={() => setScope((prev) => { const n = new Set(prev); if (n.has(i)) n.delete(i); else n.add(i); return n; })}
+                        className="flex items-center gap-1.5 w-full text-left disabled:cursor-default focus-ring rounded-interactive"
+                        title={locked ? 'Already implemented — locked' : on ? 'In scope — click to exclude' : 'Click to include in the dispatch scope'}
+                        data-testid={`scope-${i}`}
+                      >
+                        {locked
+                          ? <Lock className="w-2.5 h-2.5 shrink-0 text-foreground/30" aria-hidden />
+                          : <span className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={on ? { background: NEON.teal } : { border: '1px solid rgba(148,163,184,.45)' }} />}
+                        <span className={`text-[10.5px] truncate ${locked ? 'text-foreground/35' : on ? 'text-foreground/90 font-medium' : 'text-foreground/55'}`}>{name}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <textarea
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              rows={3}
+              placeholder="Additional instructions for the dispatch…"
+              className="w-full bg-transparent border rounded-input px-2 py-1 typo-caption text-foreground focus-ring resize-none mb-2"
+              style={{ borderColor: 'rgba(148,163,184,.25)' }}
+              data-testid="setup-instruction"
+            />
+            {fleet ? (
+              <FleetRow fleet={fleet} hue={fleetHue!} onClose={onClose} />
+            ) : (
               <button
                 type="button"
-                data-testid="view-in-fleet"
-                onClick={viewInFleet}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-card px-3 py-2 typo-caption font-semibold transition-colors focus-ring hover:bg-foreground/[0.05]"
-                style={{ color: NEON.violet, border: `1px solid ${NEON.violet}55` }}
+                disabled={busy || (ladder != null && scope.size === 0)}
+                onClick={() => dispatch(basePrompt)}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-card px-3 py-2 typo-caption font-semibold transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-40"
+                style={{ color: NEON.teal, border: `1px solid ${NEON.teal}55` }}
+                data-testid="setup-dispatch"
               >
-                <TerminalSquare className="w-3.5 h-3.5" aria-hidden />
-                View in Fleet
+                {busy ? 'Dispatching…' : st.meta.improve ? IMPROVE_ACTION_LABEL[st.meta.improve] : 'Queue'}
                 <ArrowUpRight className="w-3.5 h-3.5" aria-hidden />
               </button>
-              <p className="text-[10px] text-foreground/35 text-center mt-1.5">one terminal per task — kill it in Fleet to dispatch again</p>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                data-testid="dispatch-action"
-                disabled={phase !== 'idle'}
-                onClick={dispatch}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-card px-3 py-2 typo-caption font-semibold transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ color: NEON.teal, border: `1px solid ${NEON.teal}55` }}
-              >
-                {phase === 'dispatching' ? 'Dispatching…' : phase === 'checking' ? 'Checking Fleet…' : action}
-                {phase === 'idle' && <ArrowUpRight className="w-3.5 h-3.5" aria-hidden />}
-              </button>
-              <p className="text-[10px] text-foreground/35 text-center mt-1.5">opens a Fleet terminal seeded with the task prompt</p>
-            </>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>,
@@ -238,13 +356,27 @@ function ImprovePopover({ st, onClose }: { st: ImproveState; onClose: () => void
   );
 }
 
+function FleetRow({ fleet, hue, onClose }: { fleet: FleetLink; hue: string; onClose: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => { onClose(); useSystemStore.getState().setDevToolsTab('fleet'); }}
+      className="w-full inline-flex items-center justify-center gap-1.5 rounded-card px-3 py-2 typo-caption font-semibold transition-colors focus-ring hover:bg-foreground/[0.05]"
+      style={{ color: hue, border: `1px solid ${hue}55` }}
+      data-testid="setup-fleet-link"
+    >
+      <TerminalSquare className={`w-3.5 h-3.5 ${fleet.state === 'running' || fleet.state === 'spawning' ? 'animate-pulse' : ''}`} aria-hidden />
+      In Fleet — {String(fleet.state).replace('_', ' ')}
+      <ArrowUpRight className="w-3.5 h-3.5" aria-hidden />
+    </button>
+  );
+}
+
 // -- covers (R16: the compact header-card variants replace the axis-bar cover;
 //    the metadata the bars carried lives in the Compare rows below) ---------------
 
-function CoverBody({ entry, onOpen, headerVariant }: { entry: WallEntry; onOpen: (id: string) => void; headerVariant: HeaderVariant }) {
-  return headerVariant === 'tokens'
-    ? <HeaderTokens entry={entry} onOpen={onOpen} />
-    : <HeaderStatband entry={entry} onOpen={onOpen} />;
+function CoverBody({ entry, onOpen }: { entry: WallEntry; onOpen: (id: string) => void }) {
+  return <HeaderStatband entry={entry} onOpen={onOpen} />;
 }
 
 // -- the wall ------------------------------------------------------------------------
@@ -253,8 +385,9 @@ export default function WallCompare({ onOpenProject }: { onOpenProject: (id: str
   const reduce = useReducedMotion();
   const [view, setView] = useState<WallView>('table');
   const [sort, setSort] = useState<WallSort>('name');
-  const [headerVariant, setHeaderVariant] = useState<HeaderVariant>('tokens');
   const [improve, setImprove] = useState<ImproveState | null>(null);
+  const [pairs, setPairs] = useState<Record<string, PairState>>({});
+  const fleetMap = useFleetDispatchStates();
   const entries = useMemo(() => sortWall(WALL, sort), [sort]);
   const cols = { gridTemplateColumns: `170px repeat(${entries.length}, minmax(250px, 1fr))` };
   const rail = 'sticky left-0 z-10 bg-background';
@@ -264,10 +397,7 @@ export default function WallCompare({ onOpenProject }: { onOpenProject: (id: str
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-4 pb-8" data-testid="wall-compare">
       <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
-        <span className="inline-flex items-center gap-5 flex-wrap">
-          <InkTabs tabs={VIEW_TABS} active={view} onChange={setView} label="View" />
-          <InkTabs tabs={HEADER_TABS} active={headerVariant} onChange={setHeaderVariant} label="Header" />
-        </span>
+        <InkTabs tabs={VIEW_TABS} active={view} onChange={setView} label="View" />
         <InkTabs tabs={SORT_TABS} active={sort} onChange={setSort} label="Sort" />
       </div>
 
@@ -290,7 +420,7 @@ export default function WallCompare({ onOpenProject }: { onOpenProject: (id: str
                     background: 'rgba(148,163,184,.025)',
                   }}
                 >
-                  <CoverBody entry={e} onOpen={onOpenProject} headerVariant={headerVariant} />
+                  <CoverBody entry={e} onOpen={onOpenProject} />
                   <div className="mt-3 pt-2.5 border-t border-dashed border-foreground/10">
                     {blockers.length === 0 ? (
                       <span className="inline-flex items-center gap-1.5 typo-caption" style={{ color: NEON.emerald }}>
@@ -320,7 +450,7 @@ export default function WallCompare({ onOpenProject }: { onOpenProject: (id: str
                   className="px-4 py-3.5 border-b border-foreground/10 min-w-0"
                   style={{ borderTop: `2px solid ${worstHue(e)}55` }}
                 >
-                  <CoverBody entry={e} onOpen={onOpenProject} headerVariant={headerVariant} />
+                  <CoverBody entry={e} onOpen={onOpenProject} />
                 </motion.div>
               ))}
 
@@ -371,11 +501,35 @@ export default function WallCompare({ onOpenProject }: { onOpenProject: (id: str
                                       title={`${IMPROVE_ACTION_LABEL[meta.improve]} — ${row.label}`}
                                     >
                                       {cell}
-                                      <Settings2
-                                        className="w-3.5 h-3.5 absolute top-2 right-2.5 opacity-0 group-hover/imp:opacity-100 transition-opacity"
-                                        style={{ color: NEON.teal }}
-                                        aria-hidden
-                                      />
+                                      {(() => {
+                                        const fl = fleetMap.get(dispatchKey(e.project.id, row.key));
+                                        if (fl) {
+                                          return (
+                                            <span
+                                              role="link"
+                                              tabIndex={0}
+                                              onClick={(ev) => { ev.stopPropagation(); useSystemStore.getState().setDevToolsTab('fleet'); }}
+                                              onKeyDown={(ev) => { if (ev.key === 'Enter') { ev.stopPropagation(); useSystemStore.getState().setDevToolsTab('fleet'); } }}
+                                              title={`In Fleet — ${String(fl.state).replace('_', ' ')} (click to open)`}
+                                              className="absolute top-2 right-2.5 cursor-pointer"
+                                              data-testid={`fleet-cell-${row.key}-${e.project.id}`}
+                                            >
+                                              <TerminalSquare
+                                                className={`w-3.5 h-3.5 ${fl.state === 'running' || fl.state === 'spawning' ? 'animate-pulse' : ''}`}
+                                                style={{ color: FLEET_STATE_HUE[String(fl.state)] ?? NEON.violet }}
+                                                aria-hidden
+                                              />
+                                            </span>
+                                          );
+                                        }
+                                        return (
+                                          <Settings2
+                                            className="w-3.5 h-3.5 absolute top-2 right-2.5 opacity-[0.10] group-hover/imp:opacity-100 transition-opacity"
+                                            style={{ color: NEON.teal }}
+                                            aria-hidden
+                                          />
+                                        );
+                                      })()}
                                     </button>
                                   ) : (
                                     <div className="px-4 py-2.5">{cell}</div>
@@ -422,7 +576,15 @@ export default function WallCompare({ onOpenProject }: { onOpenProject: (id: str
         )}
       </LayoutGroup>
 
-      {improve && <ImprovePopover st={improve} onClose={() => setImprove(null)} />}
+      {improve && (
+        <SetupPopover
+          st={improve}
+          pair={pairs[dispatchKey(improve.projectId, improve.rowKey)] ?? null}
+          onPair={(p) => setPairs((prev) => ({ ...prev, [dispatchKey(improve.projectId, improve.rowKey)]: p }))}
+          fleet={fleetMap.get(dispatchKey(improve.projectId, improve.rowKey)) ?? null}
+          onClose={() => setImprove(null)}
+        />
+      )}
     </div>
   );
 }

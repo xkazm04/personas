@@ -14,9 +14,7 @@
 //   • Statband — title+stack up top, then a labeled mini-scoreboard band
 //     (value over 9px uppercase label, five cells).
 import type { LucideIcon } from 'lucide-react';
-import {
-  Activity, Bot, Boxes, Database, Gauge, KeyRound, LayoutGrid, Server, ShieldCheck,
-} from 'lucide-react';
+import { Activity, Boxes, Database, KeyRound, Server } from 'lucide-react';
 
 import { resolveTechIcon } from '@/features/teams/sub_factory/passport/techIcons';
 import {
@@ -25,8 +23,6 @@ import {
 
 import { NEON, SETUP_BLUE, scoreInk } from './cockpitGlyphs';
 import { HEADER_STATS, wallHealth, type WallEntry, type WallHeaderStats } from './wallMock';
-
-export type HeaderVariant = 'tokens' | 'statband';
 
 const BAND_CODE: Record<ProdBand, string> = {
   prototype: 'PT', internal: 'IN', beta: 'BE', production: 'PR', hardened: 'HD',
@@ -115,50 +111,7 @@ function worstHue(entry: WallEntry): string {
   return NEON.emerald;
 }
 
-// -- Variant A — "Tokens" -------------------------------------------------------------
-
-export function HeaderTokens({ entry, onOpen }: { entry: WallEntry; onOpen: (id: string) => void }) {
-  const { project, passport } = entry;
-  const stats = HEADER_STATS[project.id] ?? { kpiPassed: 0, kpiTotal: 0, trend: 0 };
-  const health = wallHealth(entry.project);
-  const worst = worstHue(entry);
-  const autoHue = scoreInk(passport.automationReadiness.score);
-  const prodHue = scoreInk(passport.productionReadiness.score);
-
-  const token = (Icon: LucideIcon, value: string, hue: string, title: string) => (
-    <span className="inline-flex items-center gap-1 shrink-0" style={{ color: hue }} title={title}>
-      <Icon className="w-3.5 h-3.5" aria-hidden />
-      <span className="text-[11px] font-semibold tabular-nums leading-none">{value}</span>
-    </span>
-  );
-
-  return (
-    <div data-testid={`header-tokens-${project.id}`}>
-      {/* line 1 — identity + trend */}
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} />
-        <button type="button" onClick={() => onOpen(project.id)} title={project.purpose} className="group/hd inline-flex min-w-0 text-left">
-          <span className="typo-body font-semibold tracking-tight text-foreground truncate group-hover/hd:text-primary transition-colors">{project.name}</span>
-        </button>
-        <span className="ml-auto shrink-0"><Trend trend={stats.trend} /></span>
-      </div>
-      {/* line 2 — readiness + volume tokens */}
-      <div className="flex items-center gap-3 mt-2 min-w-0 flex-wrap">
-        {token(Bot, passport.automationReadiness.level, autoHue, `Automation: ${AUTOMATION_LABEL[passport.automationReadiness.level]} — ${passport.automationReadiness.score}/100`)}
-        {token(ShieldCheck, BAND_CODE[passport.productionReadiness.band], prodHue, `Production: ${PROD_BAND_LABEL[passport.productionReadiness.band]} — ${passport.productionReadiness.score}/100`)}
-        <span className="w-px h-3.5 bg-foreground/15 shrink-0" aria-hidden />
-        {token(LayoutGrid, String(health.total), health.total === 0 ? SETUP_BLUE : 'rgba(148,163,184,.8)', `${health.total} contexts mapped`)}
-        {token(Gauge, `${stats.kpiPassed}/${stats.kpiTotal}`, kpiHue(stats), `${stats.kpiPassed} of ${stats.kpiTotal} KPIs passing`)}
-      </div>
-      {/* line 3 — the stack strip */}
-      <div className="mt-2.5">
-        <StackStrip p={passport} />
-      </div>
-    </div>
-  );
-}
-
-// -- Variant B — "Statband" ------------------------------------------------------------
+// -- the winning header (R16 verdict: Statband) ------------------------------------------------------------
 
 export function HeaderStatband({ entry, onOpen }: { entry: WallEntry; onOpen: (id: string) => void }) {
   const { project, passport } = entry;

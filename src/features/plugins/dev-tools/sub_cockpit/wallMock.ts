@@ -245,7 +245,11 @@ export const ROW_META: Record<string, WallRowMeta> = {
   security: { ladder: SECURITY_SCALE.map((l) => SECURITY_LABEL[l]), improve: 'task' },
   observability: { ladder: OBSERVABILITY_SCALE.map((l) => OBSERVABILITY_LABEL[l]), improve: 'task' },
   migrations: { ladder: MIGRATIONS_SCALE.map((l) => MIGRATIONS_LABEL[l]), improve: 'task' },
-  // stack + tooling (connector wiring)
+  // stack + tooling (connector wiring; R17 — persistence/auth/memory join the
+  // two-step pair→verify flow, auth+memory pending catalog connectors)
+  persistence: { ladder: WIRE_LADDER, improve: 'connector' },
+  auth: { ladder: WIRE_LADDER, improve: 'connector' },
+  memory: { ladder: WIRE_LADDER, improve: 'connector' },
   hosting: { ladder: WIRE_LADDER, improve: 'connector' },
   errors: { ladder: WIRE_LADDER, improve: 'connector' },
   logs: { ladder: WIRE_LADDER, improve: 'connector' },
