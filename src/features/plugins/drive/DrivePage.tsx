@@ -480,17 +480,9 @@ export default function DrivePage() {
 
   const handleMoveSelection = useCallback(
     async (dst: string) => {
-      const pairs: Array<{ src: string; dst: string }> = [];
-      for (const p of Array.from(drive.selection)) {
-        if (p === dst) continue;
-        // Refuse moving an ancestor folder into its own descendant — would
-        // orphan the subtree. Same guard the sidebar drop applies.
-        if (dst !== "" && dst.startsWith(`${p}/`)) continue;
-        const name = p.split("/").pop() ?? p;
-        pairs.push({ src: p, dst: dst ? `${dst}/${name}` : name });
-      }
-      // One bulk move + single refresh instead of a cascade per item.
-      await drive.moveMany(pairs);
+      // Shared self-skip + ancestor-guard + single-refresh bulk move — see
+      // useDrive.moveManyInto.
+      await drive.moveManyInto(Array.from(drive.selection), dst);
     },
     [drive],
   );

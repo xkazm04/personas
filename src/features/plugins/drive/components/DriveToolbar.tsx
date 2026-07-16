@@ -24,6 +24,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DriveTreeNode } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, ViewMode } from "../hooks/useDrive";
+import { parseDriveMovePayload } from "../hooks/useDrive";
 import { useScrollShadows } from "../hooks/useScrollShadows";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DropCountChip } from "./DropCountChip";
@@ -112,21 +113,12 @@ export function DriveToolbar({
       e.preventDefault();
       e.stopPropagation();
       setBreadcrumbDropOver(null);
-      const raw = e.dataTransfer.getData("application/x-drive-move");
-      if (!raw) return;
+      const paths = parseDriveMovePayload(e);
+      if (!paths) return;
       try {
-        const { paths } = JSON.parse(raw) as { paths: string[] };
-        const pairs: Array<{ src: string; dst: string }> = [];
-        for (const p of paths) {
-          if (p === targetPath) continue;
-          // Refuse ancestor → descendant moves (would orphan the subtree).
-          if (targetPath !== "" && targetPath.startsWith(`${p}/`)) continue;
-          const name = p.split("/").pop() ?? p;
-          const dst = targetPath ? `${targetPath}/${name}` : name;
-          pairs.push({ src: p, dst });
-        }
-        // One bulk move + single refresh instead of a cascade per item.
-        await drive.moveMany(pairs);
+        // Shared self-skip + ancestor-guard + single-refresh bulk move —
+        // see useDrive.moveManyInto.
+        await drive.moveManyInto(paths, targetPath);
       } catch (err) {
         silentCatch("drive:breadcrumb-drop")(err);
       }
