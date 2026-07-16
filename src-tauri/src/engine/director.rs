@@ -571,6 +571,23 @@ fn build_director_payload(pool: &DbPool, ctx: &PersonaEvaluationContext, rollup:
     }
     s.push('\n');
 
+    // 4b. Calibration signal — how the user has responded to the Director's OWN
+    // past coaching on this persona. This is the accept/reject taste the rubric
+    // promises to learn from; surface it explicitly (not only in the past-verdict
+    // list below) so the score + coaching calibrate to it.
+    s.push_str("## Your coaching calibration on this persona\n");
+    s.push_str(&format!(
+        "- Accepted {} of your past coaching notes; rejected {}.\n",
+        ctx.feedback_accepts, ctx.feedback_rejects,
+    ));
+    if ctx.feedback_rejects > 0 {
+        s.push_str(
+            "Weigh the rejections heavily: do not re-emit coaching shaped like what the user \
+             already rejected unless the situation has materially changed.\n",
+        );
+    }
+    s.push('\n');
+
     // 5. Past Director verdicts + their disposition
     let past = list_verdicts(pool, Some(p.id.as_str())).unwrap_or_default();
     s.push_str("## Your past verdicts on this persona\n");
@@ -767,9 +784,46 @@ pub fn get_director_persona_id(pool: &DbPool) -> Result<String, AppError> {
 // Context gathering
 // ---------------------------------------------------------------------------
 
-const DIRECTOR_FEEDBACK_CATEGORY: &str = "director_feedback";
 const CONTEXT_EXECUTION_WINDOW: i64 = 20;
 const CONTEXT_MEMORY_WINDOW: i64 = 50;
+
+/// Real calibration signal: how many of the Director's OWN past coaching notes
+/// this persona's owner accepted vs rejected. Read straight from the disposition
+/// of Director-sourced `persona_manual_reviews` rows (status `approved` /
+/// `rejected`) — the same rows `list_verdicts` surfaces. This is the accept/reject
+/// taste the rubric promises the Director learns from.
+///
+/// The earlier tally read `persona_memories` rows of category `director_feedback`
+/// with an `{"outcome":...}` shape, but the approve/reject loop
+/// (`manual_reviews::update_status`) writes categories `learned` / `decision` /
+/// `constraint` — never `director_feedback` — so the tally was permanently
+/// `(0, 0)` dead code. Reading the review dispositions directly is the fix.
+fn director_disposition_tally(pool: &DbPool, persona_id: &str) -> (usize, usize) {
+    let run = || -> Result<(usize, usize), AppError> {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT status, COUNT(*) FROM persona_manual_reviews
+             WHERE persona_id = ?1
+               AND context_data LIKE '%\"source\":\"director\"%'
+               AND status IN ('approved', 'rejected')
+             GROUP BY status",
+        )?;
+        let rows = stmt.query_map(params![persona_id], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
+        })?;
+        let (mut accepts, mut rejects) = (0usize, 0usize);
+        for row in rows {
+            let (status, n) = row?;
+            match status.as_str() {
+                "approved" => accepts = n.max(0) as usize,
+                "rejected" => rejects = n.max(0) as usize,
+                _ => {}
+            }
+        }
+        Ok((accepts, rejects))
+    };
+    run().unwrap_or((0, 0))
+}
 
 /// Assemble the evaluation context for a single target persona.
 pub fn gather_context(
@@ -819,23 +873,10 @@ pub fn gather_context(
     let memories = memories::get_by_persona(pool, target_persona_id, Some(CONTEXT_MEMORY_WINDOW))?;
     let memory_count = memories.len();
 
-    // Past Director feedback memories — tallied for Phase 2 few-shot, but also
-    // informs the deterministic evaluator's "should we repeat this verdict?"
-    // check once that lands.
-    let (feedback_accepts, feedback_rejects) =
-        memories.iter().fold((0usize, 0usize), |(a, r), m| {
-            if m.category != DIRECTOR_FEEDBACK_CATEGORY {
-                return (a, r);
-            }
-            let content_lower = m.content.to_lowercase();
-            if content_lower.contains("\"outcome\":\"accepted\"") {
-                (a + 1, r)
-            } else if content_lower.contains("\"outcome\":\"rejected\"") {
-                (a, r + 1)
-            } else {
-                (a, r)
-            }
-        });
+    // Real calibration signal — accept/reject dispositions of the Director's own
+    // past coaching on this persona, read from the review table (see
+    // `director_disposition_tally`).
+    let (feedback_accepts, feedback_rejects) = director_disposition_tally(pool, target_persona_id);
 
     Ok(PersonaEvaluationContext {
         persona,
@@ -1638,5 +1679,89 @@ DIRECTOR_WIN: {\"category\":\"health\",\"note\":\"Open healing issues went to ze
         assert!(payload.contains("Value-delivered rate"));
         assert!(payload.contains("claude-opus-4-7"));
         assert!(payload.contains("DIRECTOR_VERDICT"));
+    }
+
+    /// Direction 1 (real-calibration-tally): the accept/reject tally must be read
+    /// from Director-sourced review dispositions, not the dead `director_feedback`
+    /// memory category — and it must reach the payload the Director actually reads.
+    #[test]
+    fn calibration_tally_reads_director_review_dispositions() {
+        use crate::db::models::{
+            CreateManualReviewInput, CreatePersonaInput, ManualReviewStatus,
+        };
+        use crate::db::repos::communication::manual_reviews;
+        use crate::db::repos::core::personas;
+        use crate::db::repos::execution::executions;
+
+        let pool = crate::db::init_test_db().expect("init test db");
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Calibration Target".into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+        let exec = executions::create(&pool, &persona.id, None, None, None, None).unwrap();
+
+        let mk = |title: &str, source: &str| {
+            manual_reviews::create(
+                &pool,
+                CreateManualReviewInput {
+                    execution_id: exec.id.clone(),
+                    persona_id: persona.id.clone(),
+                    title: title.into(),
+                    description: None,
+                    severity: None,
+                    context_data: Some(format!("{{\"source\":\"{source}\",\"category\":\"prompt\"}}")),
+                    suggested_actions: None,
+                    use_case_id: None,
+                    assignment_id: None,
+                    step_id: None,
+                },
+            )
+            .unwrap()
+        };
+
+        // Two Director reviews: one approved, one rejected → tally (1, 1).
+        let approved = mk("Keep doing this", "director");
+        let rejected = mk("Stop doing this", "director");
+        manual_reviews::update_status(&pool, &approved.id, ManualReviewStatus::Approved, None)
+            .unwrap();
+        manual_reviews::update_status(&pool, &rejected.id, ManualReviewStatus::Rejected, None)
+            .unwrap();
+
+        // A non-Director review, approved — must NOT be counted.
+        let other = mk("Unrelated healing note", "healing");
+        manual_reviews::update_status(&pool, &other.id, ManualReviewStatus::Approved, None).unwrap();
+
+        // A still-pending Director review — must NOT be counted (no disposition yet).
+        let _pending = mk("Not yet actioned", "director");
+
+        let ctx = gather_context(&pool, &persona.id).unwrap();
+        assert_eq!(ctx.feedback_accepts, 1, "one approved Director review");
+        assert_eq!(ctx.feedback_rejects, 1, "one rejected Director review");
+
+        let rollup = metrics::get_value_rollup(&pool, Some(30), Some(persona.id.as_str())).unwrap();
+        let payload = build_director_payload(&pool, &ctx, &rollup);
+        assert!(
+            payload.contains("Your coaching calibration on this persona"),
+            "calibration section present in payload"
+        );
+        assert!(payload.contains("Accepted 1 of your past coaching notes; rejected 1."));
     }
 }
