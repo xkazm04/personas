@@ -540,11 +540,9 @@ fn build_llm_eval_prompt(
         .expected_tools
         .map(|t| t.join(", "))
         .unwrap_or_else(|| "(none specified)".to_string());
-    let output_preview = if input.output.len() > 3000 {
-        &input.output[..3000]
-    } else {
-        input.output
-    };
+    // Char-boundary-safe: a raw &output[..3000] panics on multi-byte UTF-8
+    // (emoji/CJK in LLM output), killing the eval instead of truncating.
+    let output_preview = crate::utils::text::truncate_on_char_boundary(input.output, 3000);
     let expected_behavior = input.expected_behavior.unwrap_or("(not specified)");
 
     format!(
@@ -689,7 +687,7 @@ fn parse_llm_eval_response(raw: &str) -> Result<LlmEvalResult, String> {
 
     Err(format!(
         "Failed to parse LLM eval response. Raw (first 500 chars): {}",
-        &trimmed[..trimmed.len().min(500)]
+        crate::utils::text::truncate_on_char_boundary(trimmed, 500)
     ))
 }
 
