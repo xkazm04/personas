@@ -42,7 +42,7 @@ export interface DevToolsProjectSlice {
    *  Writes the same `goals` array, so updateGoal/drag/progress all still work. */
   fetchAllGoals: () => Promise<void>;
   createGoal: (projectId: string, title: string, description?: string, contextId?: string, targetDate?: string, parentGoalId?: string) => Promise<DevGoal>;
-  updateGoal: (id: string, updates: { title?: string; description?: string; status?: string; progress?: number; targetDate?: string; contextId?: string }) => Promise<void>;
+  updateGoal: (id: string, updates: { title?: string; description?: string; status?: string; progress?: number; targetDate?: string; contextId?: string; kpiId?: string | null }) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   reorderGoals: (projectId: string, goalIds: string[]) => Promise<void>;
   recordGoalSignal: (goalId: string, signalType: string, delta?: number, message?: string, sourceId?: string) => Promise<DevGoalSignal>;

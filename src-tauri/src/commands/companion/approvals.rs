@@ -1315,7 +1315,7 @@ fn execute_update_dev_goal(
         ));
     }
     dt::update_goal(
-        &state.db, goal_id, None, None, status, progress, None, None, None, None,
+        &state.db, goal_id, None, None, status, progress, None, None, None, None, None,
     )?;
     let summary = note.map(str::to_string).unwrap_or_else(|| {
         let mut parts = Vec::new();

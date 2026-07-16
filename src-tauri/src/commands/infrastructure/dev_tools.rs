@@ -337,6 +337,9 @@ pub fn dev_tools_update_goal(
     context_id: Option<Option<String>>,
     started_at: Option<Option<String>>,
     completed_at: Option<Option<String>>,
+    // Manual goal↔KPI link (UAT F-MAJOR-15). Some(Some) links, Some(None)
+    // unlinks, None leaves untouched.
+    kpi_id: Option<Option<String>>,
 ) -> Result<DevGoal, AppError> {
     require_auth_sync(&state)?;
     repo::update_goal(
@@ -350,6 +353,7 @@ pub fn dev_tools_update_goal(
         context_id.as_ref().map(|o| o.as_deref()),
         started_at.as_ref().map(|o| o.as_deref()),
         completed_at.as_ref().map(|o| o.as_deref()),
+        kpi_id.as_ref().map(|o| o.as_deref()),
     )
 }
 

@@ -44,13 +44,20 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
   const createGoal = useSystemStore((s) => s.createGoal);
   const updateGoal = useSystemStore((s) => s.updateGoal);
   const deleteGoal = useSystemStore((s) => s.deleteGoal);
+  // KPIs for the goal's project — the manual link target (UAT F-MAJOR-15).
+  const kpis = useSystemStore((s) => s.kpis);
+  const fetchAllKpis = useSystemStore((s) => s.fetchAllKpis);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<string>('open');
   const [targetChoice, setTargetChoice] = useState<TargetChoice | null>(null);
+  const [kpiId, setKpiId] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // KPIs measured for THIS project are the only sensible link targets.
+  const projectKpis = kpis.filter((k) => k.project_id === projectId);
 
   // Reset/prefill whenever the modal opens or the edit target changes.
   useEffect(() => {
@@ -58,11 +65,14 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
     setTitle(editGoal?.title ?? '');
     setDescription(editGoal?.description ?? '');
     setStatus(editGoal?.status ?? 'open');
+    setKpiId(editGoal?.kpi_id ?? '');
     // Presets aren't reverse-mappable from a stored date; leave unselected so an
     // edit only changes the target when the user explicitly picks one.
     setTargetChoice(null);
     setConfirmDelete(false);
-  }, [isOpen, editGoal]);
+    // Ensure the KPI list is populated (cross-project fetch; filtered above).
+    void fetchAllKpis();
+  }, [isOpen, editGoal, fetchAllKpis]);
 
   const handleClose = () => {
     setConfirmDelete(false);
@@ -74,18 +84,21 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
     setSaving(true);
     try {
       const targetIso = targetChoiceToIso(targetChoice);
+      // undefined → leave untouched; null → unlink; string → link.
+      const kpiLink = kpiId ? kpiId : null;
       if (isEdit && editGoal) {
         await updateGoal(editGoal.id, {
           title: title.trim(),
           description: description.trim() || undefined,
           status,
           targetDate: targetIso,
+          kpiId: kpiLink,
         });
       } else {
         const goal = await createGoal(projectId, title.trim(), description.trim() || undefined, undefined, targetIso);
-        // createGoal defaults status to 'open'; apply a non-default pick.
-        if (status !== 'open') {
-          await updateGoal(goal.id, { status });
+        // createGoal defaults status to 'open' + no KPI; apply non-default picks.
+        if (status !== 'open' || kpiLink) {
+          await updateGoal(goal.id, { status, kpiId: kpiLink });
         }
       }
       handleClose();
@@ -206,6 +219,26 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
             </div>
           </div>
         </div>
+
+        {/* Linked KPI — the manual goal↔KPI link (UAT F-MAJOR-15). Before this,
+            only the autonomous derivation engine could connect a goal to a KPI;
+            now a user can draw the "this goal moves that number" line by hand.
+            Only shown when the project has measurable KPIs. */}
+        {projectKpis.length > 0 && (
+          <div>
+            <label className="typo-caption font-medium text-foreground mb-1.5 block">
+              {dl.goal_field_kpi}
+            </label>
+            <ThemedSelect value={kpiId} onValueChange={setKpiId} data-testid="goal-kpi-select">
+              <option value="">{dl.goal_kpi_none}</option>
+              {projectKpis.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.name}
+                </option>
+              ))}
+            </ThemedSelect>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-primary/10">

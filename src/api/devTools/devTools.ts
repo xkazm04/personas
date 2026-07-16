@@ -145,7 +145,7 @@ export const createGoal = (projectId: string, title: string, description?: strin
     parentGoalId: parentGoalId,
   });
 
-export const updateGoal = (id: string, updates: { title?: string; description?: string; status?: string; progress?: number; targetDate?: string; contextId?: string }) =>
+export const updateGoal = (id: string, updates: { title?: string; description?: string; status?: string; progress?: number; targetDate?: string; contextId?: string; kpiId?: string | null }) =>
   invoke<DevGoal>("dev_tools_update_goal", {
     id,
     title: updates.title,
@@ -154,6 +154,10 @@ export const updateGoal = (id: string, updates: { title?: string; description?: 
     progress: updates.progress,
     targetDate: updates.targetDate,
     contextId: updates.contextId,
+    // `undefined` → leave untouched; `null` → unlink; string → link.
+    // The Rust side reads Option<Option<String>>, so a present-but-null value
+    // clears kpi_id while an absent key leaves it as-is.
+    kpiId: updates.kpiId,
   });
 
 export const deleteGoal = (id: string) =>

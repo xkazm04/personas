@@ -639,6 +639,11 @@ pub fn update_goal(
     context_id: Option<Option<&str>>,
     started_at: Option<Option<&str>>,
     completed_at: Option<Option<&str>>,
+    // Manual goal↔KPI link (UAT F-MAJOR-15: previously ONLY the autonomous
+    // kpi_derivation engine could write kpi_id — a user could not draw the
+    // connection by hand). `Some(Some(id))` links, `Some(None)` unlinks,
+    // `None` leaves it untouched.
+    kpi_id: Option<Option<&str>>,
 ) -> Result<DevGoal, AppError> {
     timed_query!("dev_goals", "dev_goals::update_goal", {
         get_goal_by_id(pool, id)?;
@@ -656,6 +661,7 @@ pub fn update_goal(
         push_field!(context_id, "context_id", sets, param_idx);
         push_field!(started_at, "started_at", sets, param_idx);
         push_field!(completed_at, "completed_at", sets, param_idx);
+        push_field!(kpi_id, "kpi_id", sets, param_idx);
 
         let sql = format!(
             "UPDATE dev_goals SET {} WHERE id = ?{}",
@@ -686,6 +692,9 @@ pub fn update_goal(
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         if let Some(v) = completed_at {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = kpi_id {
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         param_values.push(Box::new(id.to_string()));
@@ -1155,14 +1164,14 @@ pub fn resolve_goal_acceptance(
     }
     if accept {
         let updated = update_goal(
-            pool, goal_id, None, None, Some("done"), None, None, None, None, None,
+            pool, goal_id, None, None, Some("done"), None, None, None, None, None, None,
         )?;
         let _ = create_goal_signal(pool, goal_id, "goal_accepted", None, None, Some("Accepted by the user."));
         Ok(updated)
     } else {
         // Reject → back to the team; clear the completion stamp.
         let updated = update_goal(
-            pool, goal_id, None, None, Some("in-progress"), None, None, None, None, Some(None),
+            pool, goal_id, None, None, Some("in-progress"), None, None, None, None, Some(None), None,
         )?;
         let msg = comment
             .map(|c| format!("Sent back: {c}"))
@@ -1660,6 +1669,7 @@ pub fn apply_resolved_goal_progress(pool: &DbPool, goal_id: &str) -> Result<i32,
         None,                  // context_id
         started_at,            // started_at
         completed_at,          // completed_at
+        None,                  // kpi_id (unchanged)
     )?;
 
     Ok(new_progress)
@@ -1681,7 +1691,7 @@ pub fn mark_goal_in_progress(pool: &DbPool, goal_id: &str) -> Result<(), AppErro
         None
     };
     update_goal(
-        pool, goal_id, None, None, Some("in-progress"), None, None, None, started_at, None,
+        pool, goal_id, None, None, Some("in-progress"), None, None, None, started_at, None, None,
     )?;
     Ok(())
 }
@@ -1730,7 +1740,7 @@ mod apply_progress_tests {
         let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
         let goal = create_goal(&pool, &project.id, "G", None, None, None, None, None).unwrap();
         // Hand-set 80%, no items/steps → resolver would suggest fallback(current)=80; never below.
-        update_goal(&pool, &goal.id, None, None, None, Some(80), None, None, None, None).unwrap();
+        update_goal(&pool, &goal.id, None, None, None, Some(80), None, None, None, None, None).unwrap();
         let p = apply_resolved_goal_progress(&pool, &goal.id).unwrap();
         assert_eq!(p, 80);
     }
