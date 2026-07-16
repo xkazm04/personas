@@ -17,6 +17,14 @@ use crate::error::AppError;
 
 /// Maximum messages stored per persona in the ring buffer.
 const MAX_MESSAGES_PER_PERSONA: usize = 100;
+/// Cap on distinct persona keys in the inbox. Peers control
+/// `target_persona_id`, so without this a peer could mint unlimited fabricated
+/// ids (each parking up to MAX_MESSAGES_PER_PERSONA payloads) for the process
+/// lifetime. When full, messages for NEW keys are dropped — preferable to LRU,
+/// which would let a flood of fake ids evict real personas' queues.
+const MAX_INBOX_PERSONAS: usize = 256;
+/// Per-envelope payload cap, well below the 16 MB protocol frame limit.
+const MAX_AGENT_PAYLOAD_BYTES: usize = 1024 * 1024;
 
 /// Rate limit: max messages per second per peer.
 const MAX_MESSAGES_PER_SECOND: u32 = 10;
@@ -148,9 +156,30 @@ impl MessageRouter {
             )));
         }
 
+        if envelope.payload.len() > MAX_AGENT_PAYLOAD_BYTES {
+            self.counters
+                .messages_dropped_buffer_full
+                .fetch_add(1, Ordering::Relaxed);
+            return Err(AppError::Validation(format!(
+                "Agent message payload exceeds {MAX_AGENT_PAYLOAD_BYTES} bytes"
+            )));
+        }
+
         let payload_bytes = envelope.payload.len() as u64;
         let target = &envelope.target_persona_id;
         let mut inbox = self.inbox.write().await;
+        if !inbox.contains_key(target) && inbox.len() >= MAX_INBOX_PERSONAS {
+            self.counters
+                .messages_dropped_buffer_full
+                .fetch_add(1, Ordering::Relaxed);
+            tracing::warn!(
+                target_persona = %target,
+                "Inbox persona-key cap reached — message for new key dropped"
+            );
+            return Err(AppError::RateLimited(
+                "Inbox persona-key capacity exceeded".into(),
+            ));
+        }
         let queue = inbox.entry(target.clone()).or_insert_with(VecDeque::new);
 
         // Ring buffer: evict oldest if at capacity
