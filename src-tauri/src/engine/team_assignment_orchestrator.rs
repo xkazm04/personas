@@ -1014,7 +1014,22 @@ async fn run_step(
         }
     }
 
-    // Timed out.
+    // Timed out. Cancel the underlying execution BEFORE marking the step failed:
+    // otherwise the execution keeps running while the step enters awaiting_review,
+    // and a retry (manual or AssignmentAutoResumeSubscription) spawns a SECOND
+    // concurrent execution of the same work — two personas implementing the same
+    // step against the same repo (conflicting PRs/pushes, doubled spend), with the
+    // orphan's eventual result silently discarded.
+    let cancelled = engine
+        .cancel_execution(&exec.id, pool, Some(&persona_id))
+        .await;
+    if !cancelled {
+        tracing::warn!(
+            execution_id = %exec.id,
+            step_id = %step.id,
+            "Step timeout: execution was not found in the cancel registry (may have already finished)"
+        );
+    }
     assignment_repo::update_step_status(
         pool,
         &step.id,
