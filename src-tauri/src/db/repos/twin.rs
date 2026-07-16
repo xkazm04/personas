@@ -176,41 +176,62 @@ pub fn update_profile(
     let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
     let mut idx = 2u32;
 
-    if let Some(v) = name {
-        sets.push(format!("name = ?{idx}"));
-        param_values.push(Box::new(v.to_string()));
-        idx += 1;
-    }
-    if let Some(v) = bio {
-        sets.push(format!("bio = ?{idx}"));
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-        idx += 1;
-    }
-    if let Some(v) = role {
-        sets.push(format!("role = ?{idx}"));
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-        idx += 1;
-    }
-    if let Some(v) = languages {
-        sets.push(format!("languages = ?{idx}"));
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-        idx += 1;
-    }
-    if let Some(v) = pronouns {
-        sets.push(format!("pronouns = ?{idx}"));
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-        idx += 1;
-    }
-    if let Some(v) = obsidian_subpath {
-        sets.push(format!("obsidian_subpath = ?{idx}"));
-        param_values.push(Box::new(v.to_string()));
-        idx += 1;
-    }
-    if let Some(v) = training_directives {
-        sets.push(format!("training_directives = ?{idx}"));
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-        idx += 1;
-    }
+    push_field_param!(
+        name.map(|s| s.to_string()),
+        "name",
+        sets,
+        idx,
+        param_values,
+        clone
+    );
+    push_field_param!(
+        bio.map(|o| o.map(|s| s.to_string())),
+        "bio",
+        sets,
+        idx,
+        param_values,
+        clone
+    );
+    push_field_param!(
+        role.map(|o| o.map(|s| s.to_string())),
+        "role",
+        sets,
+        idx,
+        param_values,
+        clone
+    );
+    push_field_param!(
+        languages.map(|o| o.map(|s| s.to_string())),
+        "languages",
+        sets,
+        idx,
+        param_values,
+        clone
+    );
+    push_field_param!(
+        pronouns.map(|o| o.map(|s| s.to_string())),
+        "pronouns",
+        sets,
+        idx,
+        param_values,
+        clone
+    );
+    push_field_param!(
+        obsidian_subpath.map(|s| s.to_string()),
+        "obsidian_subpath",
+        sets,
+        idx,
+        param_values,
+        clone
+    );
+    push_field_param!(
+        training_directives.map(|o| o.map(|s| s.to_string())),
+        "training_directives",
+        sets,
+        idx,
+        param_values,
+        clone
+    );
 
     let sql = format!(
         "UPDATE twin_profiles SET {} WHERE id = ?{}",
@@ -765,21 +786,23 @@ pub fn update_channel(
     let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
     let mut idx = 2u32;
 
-    if let Some(v) = persona_id {
-        sets.push(format!("persona_id = ?{idx}"));
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-        idx += 1;
-    }
-    if let Some(v) = label {
-        sets.push(format!("label = ?{idx}"));
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-        idx += 1;
-    }
-    if let Some(v) = is_active {
-        sets.push(format!("is_active = ?{idx}"));
-        param_values.push(Box::new(v as i32));
-        idx += 1;
-    }
+    push_field_param!(
+        persona_id.map(|o| o.map(|s| s.to_string())),
+        "persona_id",
+        sets,
+        idx,
+        param_values,
+        clone
+    );
+    push_field_param!(
+        label.map(|o| o.map(|s| s.to_string())),
+        "label",
+        sets,
+        idx,
+        param_values,
+        clone
+    );
+    push_field_param!(is_active, "is_active", sets, idx, param_values, bool);
 
     let sql = format!(
         "UPDATE twin_channels SET {} WHERE id = ?{}",

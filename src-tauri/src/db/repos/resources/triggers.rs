@@ -372,12 +372,48 @@ pub fn update(
         // Build dynamic SET clause
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-        push_field!(input.trigger_type, "trigger_type", sets, param_idx);
-        push_field!(encrypted_config, "config", sets, param_idx);
-        push_field!(input.enabled, "enabled", sets, param_idx);
-        push_field!(derived_status, "status", sets, param_idx);
-        push_field!(input.next_trigger_at, "next_trigger_at", sets, param_idx);
+        push_field_param!(
+            input.trigger_type,
+            "trigger_type",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            encrypted_config,
+            "config",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.enabled,
+            "enabled",
+            sets,
+            param_idx,
+            param_values,
+            bool
+        );
+        push_field_param!(
+            derived_status,
+            "status",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.next_trigger_at,
+            "next_trigger_at",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
 
         let sql = format!(
             "UPDATE persona_triggers SET {} WHERE id = ?{}",
@@ -385,23 +421,6 @@ pub fn update(
             param_idx
         );
 
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-
-        if let Some(ref v) = input.trigger_type {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = encrypted_config {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(v) = input.enabled {
-            param_values.push(Box::new(v as i32));
-        }
-        if let Some(ref v) = derived_status {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.next_trigger_at {
-            param_values.push(Box::new(v.clone()));
-        }
         param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =

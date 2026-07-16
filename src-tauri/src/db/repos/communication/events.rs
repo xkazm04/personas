@@ -1561,10 +1561,33 @@ pub fn update_subscription(
             // 1) Update the subscription row
             let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
             let mut param_idx = 2u32;
+            let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> =
+                vec![Box::new(now.clone())];
 
-            push_field!(input.event_type, "event_type", sets, param_idx);
-            push_field!(input.source_filter, "source_filter", sets, param_idx);
-            push_field!(input.enabled, "enabled", sets, param_idx);
+            push_field_param!(
+                input.event_type,
+                "event_type",
+                sets,
+                param_idx,
+                param_values,
+                clone
+            );
+            push_field_param!(
+                input.source_filter,
+                "source_filter",
+                sets,
+                param_idx,
+                param_values,
+                clone
+            );
+            push_field_param!(
+                input.enabled,
+                "enabled",
+                sets,
+                param_idx,
+                param_values,
+                bool
+            );
 
             let sql = format!(
                 "UPDATE persona_event_subscriptions SET {} WHERE id = ?{}",
@@ -1572,18 +1595,6 @@ pub fn update_subscription(
                 param_idx
             );
 
-            let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> =
-                vec![Box::new(now.clone())];
-
-            if let Some(ref v) = input.event_type {
-                param_values.push(Box::new(v.clone()));
-            }
-            if let Some(ref v) = input.source_filter {
-                param_values.push(Box::new(v.clone()));
-            }
-            if let Some(v) = input.enabled {
-                param_values.push(Box::new(v as i32));
-            }
             param_values.push(Box::new(id.to_string()));
 
             let params_ref: Vec<&dyn rusqlite::types::ToSql> =
