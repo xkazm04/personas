@@ -561,7 +561,23 @@ Memories to review:
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
-        if score < threshold {
+        // MEMORY CONTRACT (1): a user-pinned `core` memory is never auto-modified
+        // by any batch path — and deletion is the most destructive one. The LLM
+        // never even sees the tier, so a low score on a pinned identity/principle
+        // memory must NOT delete it. Every sibling batch path (delete_all, merge,
+        // archive_by_ids) already refuses core; the review-delete branch was the
+        // one gap. Treat a low-scoring core memory as kept/skipped instead.
+        let (_existing_importance, tier) = meta_map.get(id).copied().unwrap_or((0, "active"));
+        if score < threshold && tier == "core" {
+            details.push(MemoryReviewDetail {
+                id: id.to_string(),
+                title,
+                score,
+                reason,
+                action: "kept".to_string(),
+                error: None,
+            });
+        } else if score < threshold {
             ids_to_delete.push(id.to_string());
             details.push(MemoryReviewDetail {
                 id: id.to_string(),
@@ -800,14 +816,15 @@ pub async fn review_memories_with_cli(
     // etc.) without losing partial-success reporting.
     let mut deleted_count: usize = 0;
     for id in &ids_to_delete {
-        match repo::delete(&db, id) {
+        match repo::delete_non_core(&db, id) {
             Ok(true) => {
                 deleted_count += 1;
             }
             Ok(false) => {
                 if let Some(d) = details.iter_mut().find(|d| d.id == *id) {
                     d.action = "error".to_string();
-                    d.error = Some("Memory not found (already deleted?)".to_string());
+                    d.error =
+                        Some("Memory not found or protected (core-pinned)".to_string());
                 }
             }
             Err(e) => {
@@ -920,10 +937,10 @@ pub fn apply_persona_memory_review_proposal(
 
     for entry in &proposal.entries {
         match entry.action.as_str() {
-            "delete" => match repo::delete(&state.db, &entry.memory_id) {
+            "delete" => match repo::delete_non_core(&state.db, &entry.memory_id) {
                 Ok(true) => deleted += 1,
                 Ok(false) => errors.push(format!(
-                    "memory `{}` not found (already deleted?)",
+                    "memory `{}` not found or protected (core-pinned)",
                     entry.memory_id
                 )),
                 Err(e) => errors.push(format!("memory `{}` delete: {}", entry.memory_id, e)),

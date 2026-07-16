@@ -1024,6 +1024,23 @@ pub fn get_archivable_candidates(
 
 crud_delete!("persona_memories");
 
+/// Delete a memory only if it is NOT user-pinned `core`. Defence-in-depth
+/// backstop to MEMORY CONTRACT (1) for LLM/batch apply paths (memory review,
+/// curation proposals): even if a stale proposal names a since-pinned memory,
+/// it cannot be hard-deleted. The generic `delete` above is retained for
+/// explicit user-initiated deletion, which is allowed to remove core rows.
+/// Returns `Ok(false)` when nothing was deleted (row absent OR core-protected).
+pub fn delete_non_core(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("persona_memories", "persona_memories::delete_non_core", {
+        let conn = pool.get()?;
+        let affected = conn.execute(
+            "DELETE FROM persona_memories WHERE id = ?1 AND tier != 'core'",
+            params![id],
+        )?;
+        Ok(affected > 0)
+    })
+}
+
 /// Clear all NON-`core` memories (hard delete). **Preserves the user-pinned
 /// `core` tier**, which the MEMORY CONTRACT treats as authoritative and which
 /// every other batch path (`archive_by_ids`, run-lifecycle GC) deliberately
