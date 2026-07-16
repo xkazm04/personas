@@ -16,13 +16,23 @@ const BLOCKED_HOSTNAME_RE =
   /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+|0\.0\.0\.0|\[::1?\]|.*\.local)$/i;
 
 /**
+ * Check whether a hostname resolves to a private/local network address.
+ * Exported so other sanitizers (e.g. `variableSanitizer.ts`'s URL-type
+ * variable validation) can share this single blocklist instead of
+ * maintaining their own copy.
+ */
+export function isBlockedHostname(hostname: string): boolean {
+  return BLOCKED_HOSTNAME_RE.test(hostname);
+}
+
+/**
  * Reject codepoints that must never appear in a URL passed to the OS shell:
  * C0/C1 control chars, zero-width joiners, bidi overrides, BOM. These are
  * frequently used in phishing payloads to visually disguise a `javascript:`
  * or `data:` scheme as `https://`, or to hide the real destination host
  * behind a right-to-left override.
  */
-function hasUnsafeCodepoints(input: string): boolean {
+export function hasUnsafeCodepoints(input: string): boolean {
   for (let i = 0; i < input.length; i++) {
     const c = input.charCodeAt(i);
     // C0 controls + DEL
@@ -65,7 +75,7 @@ export function sanitizeIconUrl(url: string | null | undefined): string | null {
   }
 
   if (parsed.protocol !== 'https:') return null;
-  if (BLOCKED_HOSTNAME_RE.test(parsed.hostname)) return null;
+  if (isBlockedHostname(parsed.hostname)) return null;
   if (parsed.username || parsed.password) return null;
 
   return parsed.href;
