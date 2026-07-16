@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { BlastRadiusPanel, useBlastRadius } from '@/features/overview/components/BlastRadiusPanel';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { getCredentialBlastRadius } from '@/api/vault/credentials';
@@ -24,8 +24,12 @@ export function CredentialDeleteDialog({
 }: CredentialDeleteDialogProps) {
   const { t } = useTranslation();
   const credentialId = deleteConfirm?.credential?.id ?? '';
+  // Memoized: useBlastRadius keys its fetch effect on the fetcher identity, so
+  // an inline arrow here refetched the blast radius in an infinite IPC loop for
+  // as long as the dialog stayed open.
+  const fetchBlastRadius = useCallback(() => getCredentialBlastRadius(credentialId), [credentialId]);
   const { items: blastItems, loading: blastLoading } = useBlastRadius(
-    () => getCredentialBlastRadius(credentialId),
+    fetchBlastRadius,
     !!deleteConfirm && !!credentialId,
   );
 
