@@ -303,28 +303,26 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
     let teams = team_repo::get_all(pool)?;
     let credentials = cred_repo::get_all(pool)?;
 
-    let mut memory_count: u32 = 0;
-    let mut test_suite_count: u32 = 0;
-    for p in &personas {
-        memory_count += memory_repo::get_total_count(pool, Some(&p.id), None, None, None)? as u32;
-        test_suite_count += suite_repo::list_by_persona(pool, &p.id)?.len() as u32;
-    }
-
-    let mut team_memory_count: u32 = 0;
-    for t in &teams {
-        team_memory_count +=
-            team_memory_repo::get_total_count(pool, &t.id, None, None, None)? as u32;
-    }
-
+    // Scalar COUNTs for the preview numbers. The previous per-persona loops
+    // ran 2 queries per persona (200+ sequential queries on a big workspace)
+    // and list_by_persona hydrated full test_suites rows — including the
+    // up-to-500KB scenarios blob — just to .len() them. The stats are
+    // workspace-wide, so plain aggregates are both correct and O(1) queries.
+    let conn = pool.get()?;
+    let scalar_count = |sql: &str| -> Result<u32, AppError> {
+        Ok(conn
+            .query_row(sql, [], |r| r.get::<_, i64>(0))
+            .map_err(crate::error::AppError::Database)? as u32)
+    };
+    let memory_count = scalar_count("SELECT COUNT(*) FROM persona_memories")?;
+    let test_suite_count = scalar_count("SELECT COUNT(*) FROM test_suites")?;
+    let team_memory_count = scalar_count("SELECT COUNT(*) FROM team_memories")?;
     // KPIs that are part of a live "setup" — active or paused (proposed = review
-    // queue, archived = retired; neither travels). Matches the export filter.
-    let kpi_count = dev_tools_repo::list_all_kpis(pool)
-        .map(|kpis| {
-            kpis.iter()
-                .filter(|k| is_exportable_kpi(&k.status))
-                .count() as u32
-        })
-        .unwrap_or(0);
+    // queue, archived = retired; neither travels). Matches the export filter
+    // (is_exportable_kpi).
+    let kpi_count =
+        scalar_count("SELECT COUNT(*) FROM dev_kpis WHERE status IN ('active', 'paused')")
+            .unwrap_or(0);
 
     Ok(ExportStats {
         persona_count: personas.len() as u32,
