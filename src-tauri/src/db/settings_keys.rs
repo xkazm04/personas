@@ -184,6 +184,10 @@ pub const ENGINE_CAPABILITIES: &str = "engine_capabilities";
 /// BYOM (Bring Your Own Model) policy configuration (JSON-encoded ByomPolicy).
 pub const BYOM_POLICY: &str = "byom_policy";
 
+/// Model-routing rules (JSON-encoded Vec<ModelRoutingRule>, wave-8 F10).
+/// Must match `engine::model_routing::MODEL_ROUTING_RULES_KEY` — asserted by test.
+pub const MODEL_ROUTING_RULES: &str = "model_routing_rules";
+
 /// GitLab pipeline notification preferences (JSON-encoded).
 pub const GITLAB_PIPELINE_NOTIFICATION_PREFS: &str = "gitlab_pipeline_notification_prefs";
 
@@ -632,6 +636,7 @@ const ALLOWED_KEYS: &[&str] = &[
     NOTIFICATION_PREFS,
     ENGINE_CAPABILITIES,
     BYOM_POLICY,
+    MODEL_ROUTING_RULES,
     GITLAB_PIPELINE_NOTIFICATION_PREFS,
     OBSIDIAN_BRAIN_CONFIG,
     OBSIDIAN_MIRROR_CONFIG,
@@ -849,6 +854,9 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         // also fail to load — no valid write is newly blocked.
         // -------------------------------------------------------------------
         BYOM_POLICY => validate_json_as::<crate::engine::byom::ByomPolicy>(key, value),
+        MODEL_ROUTING_RULES => {
+            validate_json_as::<Vec<crate::engine::model_routing::ModelRoutingRule>>(key, value)
+        }
         QUALITY_GATE_CONFIG => {
             validate_json_as::<crate::engine::quality_gate::QualityGateConfig>(key, value)
         }
@@ -1040,8 +1048,8 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => "retention",
-        // Bring-your-own-model policy.
-        BYOM_POLICY => "byom",
+        // Bring-your-own-model policy + routing rules.
+        BYOM_POLICY | MODEL_ROUTING_RULES => "byom",
         // Notification / digest preferences.
         NOTIFICATION_PREFS
         | GITLAB_PIPELINE_NOTIFICATION_PREFS
@@ -1189,12 +1197,28 @@ mod tests {
     }
 
     #[test]
+    fn model_routing_rules_key_registered_and_matches_engine_constant() {
+        // Wave-9 smoke finding: the engine read/wrote "model_routing_rules"
+        // but the allowlist never registered it — reads warned every boot and
+        // set_model_routing_rules was REJECTED by validate_key, so BYOM
+        // routing rules could never be saved. Pin the cross-module constant
+        // equality and the allowlist membership so this can't regress.
+        assert_eq!(
+            MODEL_ROUTING_RULES,
+            crate::engine::model_routing::MODEL_ROUTING_RULES_KEY
+        );
+        assert!(validate_key(MODEL_ROUTING_RULES).is_ok());
+        assert!(validate_value(MODEL_ROUTING_RULES, "[]").is_ok());
+    }
+
+    #[test]
     fn json_blob_keys_reject_malformed() {
         // Direction 2: each JSON-blob key rejects a truncated/garbage blob that
         // was previously accepted and only surfaced as corruption at read time.
         let malformed = "{malformed";
         for key in [
             BYOM_POLICY,
+            MODEL_ROUTING_RULES,
             QUALITY_GATE_CONFIG,
             PERFORMANCE_DIGEST,
             GLOBAL_MODEL_PROFILE,
