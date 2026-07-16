@@ -10,8 +10,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command;
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
 use super::cli_stderr::{push_stderr_line, snapshot_stderr};
@@ -21,7 +20,6 @@ use crate::db::repos::dev_tools as repo;
 use crate::engine::event_registry::event_name;
 use crate::engine::inflight_guard::InflightGuard;
 use crate::engine::parser::parse_stream_line;
-use crate::engine::prompt;
 use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -837,68 +835,22 @@ async fn run_context_generation(
         briefing.as_ref(),
     );
 
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
-
-    // Spawn CLI in the project root so Claude can explore it
+    // Spawn CLI in the project root so Claude can explore it. Subscription
+    // auth is enforced unconditionally by spawn_headless_claude.
     let exec_dir = std::path::PathBuf::from(root_path);
-    let mut cmd = Command::new(&cli_args.command);
-    cmd.args(&cli_args.args)
-        .current_dir(&exec_dir)
-        .kill_on_drop(true)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
-
-    for key in &cli_args.env_removals {
-        cmd.env_remove(key);
-    }
-    for (key, val) in &cli_args.env_overrides {
-        cmd.env(key, val);
-    }
-    // Force monthly-subscription auth (strip ANTHROPIC_API_KEY etc.) so the scan
-    // never falls back to pay-as-you-go API billing — parity with every other
-    // headless Claude spawn (e.g. athena_reaction).
-    crate::engine::cli_process::force_subscription_auth(&mut cmd);
-
-    let mut child = cmd.spawn().map_err(|e| {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            AppError::Internal(
-                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
-                    .into(),
-            )
-        } else {
-            AppError::Internal(format!("Failed to spawn Claude CLI: {e}"))
-        }
-    })?;
+    let mut child = crate::engine::cli_process::spawn_headless_claude(
+        prompt_text,
+        "claude-sonnet-4-6",
+        &[],
+        Some(&exec_dir),
+        true,
+    )?;
 
     CONTEXT_GEN_JOBS.emit_line(
         app,
         scan_id,
         "[Milestone] Claude CLI started. Analyzing codebase...",
     );
-
-    // --- FIX: Write prompt in a separate task to prevent pipe deadlock ---
-    // The stdin write MUST happen concurrently with stdout reads. If we await
-    // stdin.write_all inline, large prompts can fill the pipe buffer and block
-    // because the child is waiting to write stdout (which nobody is reading yet).
-    // Spawning the write in a separate task allows both pipes to drain concurrently.
-    if let Some(mut stdin) = child.stdin.take() {
-        let prompt_bytes = prompt_text.into_bytes();
-        tokio::spawn(async move {
-            let _ = stdin.write_all(&prompt_bytes).await;
-            let _ = stdin.shutdown().await;
-            // stdin is dropped here, signalling EOF to the child process
-        });
-    }
 
     // Capture stderr into a bounded ring buffer AND tee it to the live log
     // panel so the user can see auth errors / rate-limit notices / missing

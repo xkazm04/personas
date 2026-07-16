@@ -3,8 +3,6 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
-use tokio::io::AsyncWriteExt;
-use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
@@ -15,7 +13,6 @@ use crate::db::models::{
 };
 use crate::db::repos::twin as repo;
 use crate::engine::event_registry::event_name;
-use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -687,62 +684,10 @@ pub async fn twin_generate_bio(
         ),
     };
 
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
-
-    let mut cmd = Command::new(&cli_args.command);
-    cmd.args(&cli_args.args)
-        .kill_on_drop(true)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null());
-
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
-
-    for key in &cli_args.env_removals {
-        cmd.env_remove(key);
-    }
-    for (key, val) in &cli_args.env_overrides {
-        cmd.env(key, val);
-    }
-
-    let mut child = cmd.spawn().map_err(|e| {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            AppError::Internal(
-                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
-                    .into(),
-            )
-        } else {
-            AppError::Internal(format!("Failed to spawn Claude CLI: {e}"))
-        }
-    })?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        let bytes = prompt_text.into_bytes();
-        tokio::spawn(async move {
-            let _ = stdin.write_all(&bytes).await;
-            let _ = stdin.shutdown().await;
-        });
-    }
-
-    let output = child
-        .wait_with_output()
-        .await
-        .map_err(|e| AppError::Internal(format!("CLI execution failed: {e}")))?;
-
-    if !output.status.success() {
-        return Err(AppError::Internal(
-            "Claude CLI returned non-zero exit code".into(),
-        ));
-    }
-
-    let raw = String::from_utf8_lossy(&output.stdout).to_string();
+    // Shared spawn envelope (also used by twin_compile_wiki / twin_audit_wiki) —
+    // owns CLI arg building, --model, Windows creation flags, env handling, and
+    // mandatory subscription-auth enforcement.
+    let raw = spawn_claude_with_prompt(prompt_text).await?;
     // Strip any JSON wrapper if the CLI outputs structured content
     let bio = raw.trim().trim_matches('"').to_string();
     Ok(bio)
@@ -1501,49 +1446,13 @@ fn strip_html_to_text(html: &str) -> String {
 /// but factored out so both new commands can reuse it without duplicating the
 /// Windows creation_flags / env_overrides / stdin-pipe boilerplate.
 async fn spawn_claude_with_prompt(prompt_text: String) -> Result<String, AppError> {
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
-
-    let mut cmd = Command::new(&cli_args.command);
-    cmd.args(&cli_args.args)
-        .kill_on_drop(true)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null());
-
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
-
-    for key in &cli_args.env_removals {
-        cmd.env_remove(key);
-    }
-    for (key, val) in &cli_args.env_overrides {
-        cmd.env(key, val);
-    }
-
-    let mut child = cmd.spawn().map_err(|e| {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            AppError::Internal(
-                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
-                    .into(),
-            )
-        } else {
-            AppError::Internal(format!("Failed to spawn Claude CLI: {e}"))
-        }
-    })?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        let bytes = prompt_text.into_bytes();
-        tokio::spawn(async move {
-            let _ = stdin.write_all(&bytes).await;
-            let _ = stdin.shutdown().await;
-        });
-    }
+    let mut child = crate::engine::cli_process::spawn_headless_claude(
+        prompt_text,
+        "claude-sonnet-4-6",
+        &[],
+        None,
+        false,
+    )?;
 
     let output = child
         .wait_with_output()
@@ -1591,7 +1500,7 @@ pub async fn twin_ingest_url(
         .timeout(std::time::Duration::from_secs(30))
         .user_agent("Mozilla/5.0 (compatible; PersonasTwinIngest/1.0)")
         .dns_resolver(std::sync::Arc::new(
-            crate::engine::url_safety::SsrfSafeResolver,
+            crate::engine::url_safety::SsrfSafeDnsResolver,
         ))
         .redirect(reqwest::redirect::Policy::custom(|attempt| {
             // Re-check each redirect target. The DNS resolver above blocks

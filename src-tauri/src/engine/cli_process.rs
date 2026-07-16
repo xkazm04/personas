@@ -240,6 +240,99 @@ pub(crate) async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
 }
 
 // =============================================================================
+// spawn_headless_claude -- shared envelope for one-shot headless LLM calls
+// =============================================================================
+
+/// Spawn a one-shot headless Claude CLI process for the "scan/compose/generate"
+/// family of commands (idea scans, task execution, twin bio/wiki generation,
+/// context/KPI/use-case scans). Owns the entire spawn envelope that used to be
+/// hand-rolled at each call site: `build_cli_args` + `--model` override,
+/// Windows `CREATE_NO_WINDOW`, the env_removals/env_overrides loops, the spawn
+/// error mapping, and a detached stdin-writer task that streams `prompt_text`
+/// to the child off the calling task (avoids the classic pipe deadlock where a
+/// full stdout buffer blocks the child while the caller is still writing
+/// stdin).
+///
+/// `force_subscription_auth` is baked in unconditionally. Before this helper,
+/// some call sites called it explicitly ("parity with every other headless
+/// spawn") and some forgot to — meaning idea scans, task executions, and twin
+/// generations could silently fall back to pay-as-you-go API billing instead
+/// of the user's Claude subscription. Folding it into the shared spawn path
+/// closes that gap for every caller, with no opt-out.
+///
+/// `exec_dir` sets the child's working directory (`None` inherits the
+/// caller's cwd — used by twin's one-shot bio/wiki helpers, which don't need
+/// a project root). `capture_stderr` pipes stderr for the caller to consume
+/// (e.g. into a ring buffer + live-log tee); pass `false` to discard it via
+/// `Stdio::null()`. `extra_args` appends any caller-specific CLI flags after
+/// `--model` (e.g. task_executor's `--worktree <name>`); pass `&[]` when none.
+pub fn spawn_headless_claude(
+    prompt_text: String,
+    model: &str,
+    extra_args: &[String],
+    exec_dir: Option<&std::path::Path>,
+    capture_stderr: bool,
+) -> Result<tokio::process::Child, crate::error::AppError> {
+    let mut cli_args = super::prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(model.to_string());
+    cli_args.args.extend(extra_args.iter().cloned());
+
+    let mut cmd = Command::new(&cli_args.command);
+    cmd.args(&cli_args.args)
+        .kill_on_drop(true)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(if capture_stderr {
+            std::process::Stdio::piped()
+        } else {
+            std::process::Stdio::null()
+        });
+
+    if let Some(dir) = exec_dir {
+        cmd.current_dir(dir);
+    }
+
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    for key in &cli_args.env_removals {
+        cmd.env_remove(key);
+    }
+    for (key, val) in &cli_args.env_overrides {
+        cmd.env(key, val);
+    }
+    // Mandatory — see doc comment above. No caller may opt out.
+    force_subscription_auth(&mut cmd);
+
+    let mut child = cmd.spawn().map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            crate::error::AppError::Internal(
+                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
+                    .into(),
+            )
+        } else {
+            crate::error::AppError::Internal(format!("Failed to spawn Claude CLI: {e}"))
+        }
+    })?;
+
+    // Write prompt to stdin in a detached task to prevent pipe deadlock.
+    if let Some(mut stdin) = child.stdin.take() {
+        let prompt_bytes = prompt_text.into_bytes();
+        tokio::spawn(async move {
+            let _ = stdin.write_all(&prompt_bytes).await;
+            let _ = stdin.shutdown().await;
+        });
+    }
+
+    Ok(child)
+}
+
+// =============================================================================
 // CliProcessDriver -- unified CLI subprocess lifecycle
 // =============================================================================
 
