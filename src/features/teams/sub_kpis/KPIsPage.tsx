@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Activity, ScanSearch } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -17,7 +18,7 @@ import { KPIProposalsQueue } from './KPIProposalsQueue';
 import { KpiDetailModal } from './KpiDetailModal';
 
 export default function KPIsPage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const kpis = useSystemStore((s) => s.kpis);
   const kpisLoading = useSystemStore((s) => s.kpisLoading);
@@ -55,10 +56,32 @@ export default function KPIsPage() {
     if (!activeProjectId) return;
     try {
       const results = await evaluateDueKpis(activeProjectId);
-      const n = Object.keys(results).length;
-      // Surface as page hint via store error path is wrong for success — keep silent;
-      // the dashboard re-renders with fresh values, which IS the feedback.
-      void n;
+      // The results map carries a per-KPI outcome: a number (measured) or an
+      // "error: …" string. Discarding it silently (the old `void n`) meant an
+      // accepted KPI could be permanently unmeasurable — e.g. "Derived KPIs
+      // need the project linked to a team" — with the user never told why
+      // (2026-07-16 UAT major). Summarize both halves in one toast.
+      const entries = Object.entries(results);
+      const failures = entries.filter(([, v]) => typeof v === 'string' && v.startsWith('error'));
+      const measured = entries.length - failures.length;
+      if (failures.length > 0) {
+        const detail = failures
+          .map(([name, v]) => `${name}: ${String(v).replace(/^error:\s*/, '')}`)
+          .join(' · ');
+        useToastStore.getState().addToast(
+          `${tx(t.kpis.evaluate_partial, { measured, failed: failures.length })} — ${detail}`,
+          'error',
+          8000,
+        );
+      } else if (measured > 0) {
+        useToastStore.getState().addToast(
+          tx(t.kpis.evaluate_measured, { count: measured }),
+          'success',
+          4000,
+        );
+      } else {
+        useToastStore.getState().addToast(t.kpis.evaluate_none_due, 'success', 4000);
+      }
     } catch (err) {
       toastCatch('kpi evaluate-due', t.kpis.evaluate_failed)(err);
     }
