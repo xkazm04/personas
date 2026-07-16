@@ -58,37 +58,50 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
   const [action, setAction] = useState<RenameConsumerAction>('update');
   const [saving, setSaving] = useState(false);
 
-  // Whenever the user finishes typing in either column, query consumer counts
-  // for the FROM (existing-alias breakage) and for the TO (will-it-route).
+  // Query consumer counts for the FROM (existing-alias breakage) and the TO
+  // (will-it-route). Debounced 300ms: this effect keys on every keystroke and
+  // used to fire countEventListeners (an SQLite-scanning IPC) for BOTH
+  // columns of every non-empty row per keystroke (~2N queries per key).
+  // Late responses are discarded per row by comparing the queried text
+  // against the row's current text at resolve time — the counts feed the
+  // destructive "N consumers will be affected" warning, so stale numbers
+  // are worse than late ones.
   useEffect(() => {
     let cancelled = false;
-    const queries = rows
-      .map((r, i) => ({ row: r, index: i }))
-      .filter(({ row }) => row.from.trim().length > 0);
-    Promise.all(
-      queries.flatMap(({ row, index }) => [
-        countEventListeners(row.from.trim(), personaId).then((c) => ({ index, kind: 'from' as const, c })),
-        row.to.trim().length > 0
-          ? countEventListeners(row.to.trim(), personaId).then((c) => ({ index, kind: 'to' as const, c }))
-          : Promise.resolve(null),
-      ]),
-    )
-      .then((results) => {
-        if (cancelled) return;
-        setRows((prev) => {
-          const next: Row[] = prev.map((r) => ({ ...r }));
-          for (const r of results) {
-            if (!r) continue;
-            const target = next[r.index];
-            if (!target) continue;
-            if (r.kind === 'from') next[r.index] = { ...target, existingCounts: r.c };
-            if (r.kind === 'to') next[r.index] = { ...target, consumerCounts: r.c };
-          }
-          return next;
-        });
-      })
-      .catch(() => { /* silent — counts are advisory */ });
-    return () => { cancelled = true; };
+    const handle = setTimeout(() => {
+      const queries = rows
+        .map((r, i) => ({ row: r, index: i }))
+        .filter(({ row }) => row.from.trim().length > 0);
+      Promise.all(
+        queries.flatMap(({ row, index }) => [
+          countEventListeners(row.from.trim(), personaId)
+            .then((c) => ({ index, kind: 'from' as const, text: row.from.trim(), c })),
+          row.to.trim().length > 0
+            ? countEventListeners(row.to.trim(), personaId)
+              .then((c) => ({ index, kind: 'to' as const, text: row.to.trim(), c }))
+            : Promise.resolve(null),
+        ]),
+      )
+        .then((results) => {
+          if (cancelled) return;
+          setRows((prev) => {
+            const next: Row[] = prev.map((r) => ({ ...r }));
+            for (const r of results) {
+              if (!r) continue;
+              const target = next[r.index];
+              if (!target) continue;
+              // Discard counts for text the user has since edited.
+              const current = (r.kind === 'from' ? target.from : target.to).trim();
+              if (current !== r.text) continue;
+              if (r.kind === 'from') next[r.index] = { ...target, existingCounts: r.c };
+              if (r.kind === 'to') next[r.index] = { ...target, consumerCounts: r.c };
+            }
+            return next;
+          });
+        })
+        .catch(() => { /* silent — counts are advisory */ });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(handle); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows.map((r) => `${r.from}|${r.to}`).join(','), personaId]);
 
