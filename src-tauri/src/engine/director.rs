@@ -63,6 +63,24 @@ const DIRECTOR_DESCRIPTION: &str = "Watches every persona and suggests practical
 const DIRECTOR_ICON: &str = "agent-icon:director";
 const DIRECTOR_COLOR: &str = "#8b5cf6";
 
+/// Model the Director is pinned to. Mirrors the eval judge's deliberate pin
+/// (`engine::eval::LLM_EVAL_MODEL` — the 2026 tiger finding that a scoring
+/// judge riding the undeclared account default, typically opus-4-8[1m], makes
+/// its scores drift). The Director is the same kind of surface: a coaching /
+/// 0-5 scoring meta-persona whose verdicts must stay comparable across time,
+/// so its model must be STABLE, not "whatever the CLI account defaults to
+/// this month". Same family/tier as the eval judge (sonnet) for the same
+/// reason — a capable-but-consistent judge beats a top-tier-but-moving one.
+const DIRECTOR_MODEL: &str = "claude-sonnet-4-6";
+
+/// The Director's pinned `model_profile` JSON (see [`DIRECTOR_MODEL`]). Stored
+/// verbatim on the persona row; it carries no `auth_token`, so the persona
+/// repo's encrypt/decrypt passes are both no-ops and the engine reads the
+/// `{ "model": … }` shape directly via `prompt::parse_model_profile`.
+fn director_model_profile() -> String {
+    format!(r#"{{"model":"{DIRECTOR_MODEL}"}}"#)
+}
+
 /// Locked best-practice rubric. Consumed by the Phase 2 LLM evaluator as the
 /// Director persona's `system_prompt`. Phase 1 keeps this as a constant so
 /// the shape is fixed when Phase 2 arrives; the deterministic evaluator does
@@ -901,20 +919,31 @@ pub fn ensure_director_persona(pool: &DbPool) -> Result<String, AppError> {
             "UPDATE personas SET icon = ?1 WHERE id = ?2 AND (icon IS NULL OR icon = 'compass')",
             params![DIRECTOR_ICON, id],
         );
+        // Pin the Director's model on installs seeded before the pin landed —
+        // but ONLY when the user has not chosen one. A user-customized
+        // `model_profile` (set via the Lab / persona editor) always wins; we
+        // backfill the pin exclusively into the NULL/empty gap the old seed
+        // left, so this is idempotent and never overrides an explicit choice.
+        let _ = conn.execute(
+            "UPDATE personas SET model_profile = ?1 \
+             WHERE id = ?2 AND (model_profile IS NULL OR TRIM(model_profile) = '')",
+            params![director_model_profile(), id],
+        );
         return Ok(id);
     }
 
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
+    let model_profile = director_model_profile();
 
     conn.execute(
         "INSERT INTO personas
          (id, project_id, name, description, system_prompt, icon, color,
           enabled, sensitive, headless, max_concurrent, timeout_ms,
-          trust_level, trust_origin, trust_score, created_at, updated_at)
+          trust_level, trust_origin, trust_score, model_profile, created_at, updated_at)
          VALUES (?1, 'default', ?2, ?3, ?4, ?5, ?6,
                  1, 0, 0, 1, 300000,
-                 'verified', 'system', 1.0, ?7, ?7)",
+                 'verified', 'system', 1.0, ?7, ?8, ?8)",
         params![
             id,
             DIRECTOR_NAME,
@@ -922,6 +951,7 @@ pub fn ensure_director_persona(pool: &DbPool) -> Result<String, AppError> {
             DIRECTOR_RUBRIC,
             DIRECTOR_ICON,
             DIRECTOR_COLOR,
+            model_profile,
             now,
         ],
     )?;
@@ -1709,6 +1739,74 @@ pub fn director_portfolio(pool: &DbPool, days: i64) -> Result<DirectorPortfolio,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::init_test_db;
+
+    /// Direction 3 (pinned-judge-consistency): a fresh seed pins the Director's
+    /// model, and re-seeding backfills the pin ONLY into a NULL/empty
+    /// `model_profile` — a user-customized model always survives.
+    #[test]
+    fn director_seed_pins_model_and_backfills_only_when_empty() {
+        let pool = init_test_db().unwrap();
+
+        // Fresh seed → pinned model.
+        let id = ensure_director_persona(&pool).unwrap();
+        let seeded = personas::get_by_id(&pool, &id).unwrap();
+        assert!(
+            seeded
+                .model_profile
+                .as_deref()
+                .unwrap_or_default()
+                .contains(DIRECTOR_MODEL),
+            "fresh Director seed must pin {DIRECTOR_MODEL}, got {:?}",
+            seeded.model_profile,
+        );
+
+        // Idempotent: re-seed returns the same persona, pin unchanged.
+        let id2 = ensure_director_persona(&pool).unwrap();
+        assert_eq!(id, id2, "ensure_director_persona must be idempotent");
+
+        // User override wins: a custom model must NOT be clobbered by re-seed.
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET model_profile = ?1 WHERE id = ?2",
+                params![r#"{"model":"claude-opus-4-8"}"#, id],
+            )
+            .unwrap();
+        }
+        ensure_director_persona(&pool).unwrap();
+        let overridden = personas::get_by_id(&pool, &id).unwrap();
+        assert!(
+            overridden
+                .model_profile
+                .as_deref()
+                .unwrap_or_default()
+                .contains("claude-opus-4-8"),
+            "a user-customized model must survive re-seed, got {:?}",
+            overridden.model_profile,
+        );
+
+        // Backfill fills the gap: NULL profile is re-pinned on next ensure().
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET model_profile = NULL WHERE id = ?1",
+                params![id],
+            )
+            .unwrap();
+        }
+        ensure_director_persona(&pool).unwrap();
+        let backfilled = personas::get_by_id(&pool, &id).unwrap();
+        assert!(
+            backfilled
+                .model_profile
+                .as_deref()
+                .unwrap_or_default()
+                .contains(DIRECTOR_MODEL),
+            "a NULL model_profile must be backfilled with the pin, got {:?}",
+            backfilled.model_profile,
+        );
+    }
 
     fn ctx_baseline(persona: Persona) -> PersonaEvaluationContext {
         PersonaEvaluationContext {
