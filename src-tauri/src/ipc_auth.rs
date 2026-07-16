@@ -161,7 +161,6 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "list_oauth_providers",
     "start_oauth",
     "get_oauth_status",
-    "refresh_oauth_token",
     // Credentials -- Auto-Credential Browser
     "start_auto_cred_browser",
     "save_playwright_procedure",

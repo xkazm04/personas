@@ -2156,7 +2156,9 @@ pub fn run() {
             commands::credentials::oauth::list_oauth_providers,
             commands::credentials::oauth::start_oauth,
             commands::credentials::oauth::get_oauth_status,
-            commands::credentials::oauth::refresh_oauth_token,
+            // NOTE(token-hygiene 2026-07-16): refresh_oauth_token retired — it was
+            // the only OAuth command taking a raw refresh_token over IPC and had no
+            // live caller (runtime refresh is server-side in engine/runner).
             // Credentials -- Auto-Credential Browser
             commands::credentials::auto_cred_browser::start_auto_cred_browser,
             commands::credentials::auto_cred_browser::save_playwright_procedure,

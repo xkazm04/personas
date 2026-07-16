@@ -6,9 +6,8 @@ import type { OAuthProvider } from "@/lib/bindings/OAuthProvider";
 import type { OAuthProviderListResult } from "@/lib/bindings/OAuthProviderListResult";
 import type { OAuthStartResult } from "@/lib/bindings/OAuthStartResult";
 import type { OAuthStatusResult } from "@/lib/bindings/OAuthStatusResult";
-import type { OAuthRefreshResult } from "@/lib/bindings/OAuthRefreshResult";
 import type { StartOAuthParams } from "@/lib/bindings/StartOAuthParams";
-export type { GoogleCredentialOAuthStartResult, GoogleCredentialOAuthStatusResult, OAuthProvider, OAuthProviderListResult, OAuthStartResult, OAuthStatusResult, OAuthRefreshResult, StartOAuthParams };
+export type { GoogleCredentialOAuthStartResult, GoogleCredentialOAuthStatusResult, OAuthProvider, OAuthProviderListResult, OAuthStartResult, OAuthStatusResult, StartOAuthParams };
 
 // ============================================================================
 // Google OAuth
@@ -56,19 +55,9 @@ export const startOAuth = (params: StartOAuthParams) =>
 export const getOAuthStatus = (sessionId: string) =>
   invoke<OAuthStatusResult>("get_oauth_status", { sessionId });
 
-export const refreshOAuthToken = (params: {
-  providerId: string;
-  clientId: string;
-  clientSecret?: string;
-  refreshToken: string;
-  tokenUrl?: string;
-  oidcIssuer?: string;
-}) =>
-  invoke<OAuthRefreshResult>("refresh_oauth_token", {
-    providerId: params.providerId,
-    clientId: params.clientId,
-    clientSecret: params.clientSecret,
-    refreshToken: params.refreshToken,
-    tokenUrl: params.tokenUrl,
-    oidcIssuer: params.oidcIssuer,
-  });
+// NOTE(token-hygiene 2026-07-16): refreshOAuthToken / the refresh_oauth_token
+// command were retired — the command was the only OAuth IPC surface that
+// accepted a raw refresh_token (and returned raw tokens), and it had no caller.
+// OAuth token refresh happens entirely server-side in the runtime credential
+// path (engine/runner). If a UI-driven refresh is ever needed, add a
+// credential-id-based command that loads the token backend-side.

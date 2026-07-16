@@ -19,6 +19,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 use crate::db::repos::resources::audit_log;
 use crate::engine::crypto::{EncryptedToken, SecureString};
 use crate::error::AppError;
+use crate::utils::sanitization::sanitize_secrets;
 
 use crate::AppState;
 use personas_macros::requires;
@@ -68,6 +69,28 @@ impl std::fmt::Display for TokenEndpointError {
     }
 }
 
+/// Build a `TokenEndpointError` for a non-2xx token-endpoint response, with the
+/// raw response body routed through `sanitize_secrets` first.
+///
+/// A failed token-endpoint response can echo back the submitted `client_secret`
+/// / `refresh_token`, or issue fresh token material inside an error envelope.
+/// Both `message` and `body` flow into error strings, the session `error` field
+/// surfaced over IPC, and (via the caller) audit logs — so the body must be
+/// sanitized at this single chokepoint before any of them see it. This mirrors
+/// the wave-9 provider-body sanitization in engine/runner/credentials.rs.
+fn token_endpoint_error(
+    label: &str,
+    status: reqwest::StatusCode,
+    raw_body: &str,
+) -> TokenEndpointError {
+    let body = sanitize_secrets(raw_body);
+    TokenEndpointError {
+        message: format!("{label} failed ({status}): {body}"),
+        status: Some(status),
+        body: Some(body),
+    }
+}
+
 /// Unified helper that POSTs form-encoded params to an OAuth token endpoint,
 /// checks the HTTP status, and parses the JSON response.
 ///
@@ -97,12 +120,8 @@ pub(crate) async fn token_endpoint_request(
 
     if !response.status().is_success() {
         let status = response.status();
-        let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
-        return Err(TokenEndpointError {
-            message: format!("{label} failed ({status}): {body}"),
-            status: Some(status),
-            body: Some(body),
-        });
+        let raw_body = response.text().await.unwrap_or_else(|_| "<no body>".into());
+        return Err(token_endpoint_error(label, status, &raw_body));
     }
 
     response
@@ -1839,80 +1858,17 @@ pub fn get_oauth_status(
     Ok(get_session_status(&session_id))
 }
 
-/// Refresh an access token using a refresh token.
-#[tauri::command]
-#[requires(privileged)]
-pub async fn refresh_oauth_token(
-    state: State<'_, Arc<AppState>>,
-    provider_id: String,
-    client_id: String,
-    client_secret: Option<String>,
-    refresh_token: String,
-    token_url: Option<String>,
-    oidc_issuer: Option<String>,
-) -> Result<serde_json::Value, AppError> {
-    // Wrap secrets immediately so bare Strings are dropped
-    let client_secret = client_secret.map(SecureString::new);
-    let refresh_token = SecureString::new(refresh_token);
-
-    let resolved_token_url = if let Some(provider) = find_provider(&provider_id) {
-        provider.token_url.to_string()
-    } else if let Some(url) = token_url.filter(|s| !s.is_empty()) {
-        url
-    } else if let Some(issuer) = oidc_issuer.filter(|s| !s.is_empty()) {
-        let discovery = discover_oidc(&issuer).await.map_err(AppError::Internal)?;
-        discovery.token_endpoint
-    } else {
-        return Err(AppError::Validation(
-            "Cannot resolve token URL. Provide provider_id, token_url, or oidc_issuer.".into(),
-        ));
-    };
-
-    let mut params: Vec<(&str, String)> = vec![
-        ("client_id", client_id),
-        ("grant_type", "refresh_token".to_string()),
-        ("refresh_token", refresh_token.expose_secret().to_string()),
-    ];
-    if let Some(ref secret) = client_secret {
-        params.push(("client_secret", secret.expose_secret().to_string()));
-    }
-
-    let value = match token_endpoint_request(&resolved_token_url, &params, "Token refresh").await {
-        Ok(v) => v,
-        Err(e) => {
-            if let Some(status) = e.status {
-                let _ = audit_log::insert(
-                    &state.db,
-                    &provider_id,
-                    &provider_id,
-                    "token_refresh_failed",
-                    None,
-                    None,
-                    Some(&format!("HTTP {status}")),
-                );
-            }
-            return Err(AppError::Internal(e.message));
-        }
-    };
-
-    let _ = audit_log::insert(
-        &state.db,
-        &provider_id,
-        &provider_id,
-        "token_refreshed",
-        None,
-        None,
-        Some(&format!("provider '{provider_id}'")),
-    );
-
-    Ok(json!({
-        "access_token": value.get("access_token").and_then(|v| v.as_str()),
-        "refresh_token": value.get("refresh_token").and_then(|v| v.as_str()),
-        "expires_in": parse_expires_in(&value),
-        "token_type": value.get("token_type").and_then(|v| v.as_str()),
-        "scope": value.get("scope").and_then(|v| v.as_str()),
-    }))
-}
+// NOTE(token-hygiene 2026-07-16): the former `refresh_oauth_token` Tauri command
+// was retired here. It was the ONLY OAuth command that accepted a RAW
+// refresh_token (and returned raw access/refresh tokens) across the IPC
+// boundary, and it had no live caller — the frontend wrapper was never invoked
+// and the runtime refresh path is entirely server-side
+// (engine/runner/credentials.rs::try_refresh_oauth_token, which loads the stored
+// credential itself and never crosses IPC with token material). Removing the
+// command eliminates the raw-token IPC surface with no behavior change. If a
+// UI-driven manual refresh is ever needed, reintroduce it as a
+// credential-id-based command that loads the token backend-side, never one that
+// accepts the token as a parameter.
 
 // -- Universal Token Exchange -------------------------------------
 
@@ -2280,6 +2236,34 @@ mod tests {
             ),
             now
         ));
+    }
+
+    #[test]
+    fn token_endpoint_error_body_is_sanitized() {
+        // A token endpoint can echo the submitted refresh_token / client_secret
+        // (or issue fresh material) in an error envelope. Neither the message nor
+        // the body field may carry the raw secret onward to logs/audit/IPC.
+        let raw = r#"{"error":"invalid_grant","refresh_token":"rt-super-secret-value","client_secret":"cs-leak-abcdef"}"#;
+        let err =
+            super::token_endpoint_error("Token refresh", reqwest::StatusCode::BAD_REQUEST, raw);
+
+        assert!(
+            !err.message.contains("rt-super-secret-value"),
+            "message leaked refresh_token"
+        );
+        assert!(
+            !err.message.contains("cs-leak-abcdef"),
+            "message leaked client_secret"
+        );
+        let body = err.body.expect("body is populated");
+        assert!(
+            !body.contains("rt-super-secret-value") && !body.contains("cs-leak-abcdef"),
+            "body leaked a secret"
+        );
+        assert!(body.contains("[secret]"), "secrets should be masked as [secret]");
+        // Non-secret context is preserved so the error stays diagnosable.
+        assert!(err.message.contains("invalid_grant"));
+        assert_eq!(err.status, Some(reqwest::StatusCode::BAD_REQUEST));
     }
 
     #[test]
