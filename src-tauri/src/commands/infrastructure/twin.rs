@@ -764,6 +764,156 @@ pub async fn twin_generate_bio(
 /// grounding window the training session previously read client-side.
 const SIMULATE_ANSWER_FACTS_LIMIT: i32 = 12;
 
+// ----------------------------------------------------------------------------
+// Bound knowledge-base retrieval for twin generation (D3: twin-retrieval-fires)
+//
+// `twin_bind_knowledge_base` + `twin_ingest_doctrine_docs` let a twin carry a
+// RAG brain, but `twin_simulate_answer` / `twin_draft_reply` never searched it —
+// the bound KB was write-only. These helpers wire retrieval into both: embed the
+// incoming message, KNN over the bound KB, distance-filter, and inject the top
+// chunks (token-budgeted, with doc provenance) into the grounding block.
+//
+// Retrieval is a deliberately SIMPLER path than `kb_search`'s BM25 + RRF hybrid
+// pipeline (`commands/credentials/vector_kb.rs`, owned by a sibling branch and
+// off-limits here): a plain vector KNN + a distance floor, no lexical lane. That
+// is an intentional trade-off — the twin path never needs exact-keyword recall
+// the way a document search box does, and duplicating the hybrid pipeline would
+// fork load-bearing ranking logic. It reuses the same engine primitive the
+// clipboard/subscription KB search already uses (`SqliteVectorStore::search`),
+// so no ranking machinery is re-implemented.
+// ----------------------------------------------------------------------------
+
+/// Top-k KB chunks to consider when grounding a twin generation on its bound KB.
+#[cfg(feature = "ml")]
+const TWIN_KB_TOP_K: usize = 6;
+
+/// Character budget for the injected KB grounding block. A proxy for a token
+/// budget (~4 chars/token → ~1k tokens): chunks are added nearest-first until it
+/// is exhausted, so the closest evidence always wins the space. Keeps the RAG
+/// context from crowding out the bio/tone/facts the twin voice depends on.
+#[cfg(feature = "ml")]
+const TWIN_KB_CHAR_BUDGET: usize = 4000;
+
+/// Format distance-filtered, nearest-first `(content, source_path)` chunks into
+/// the twin grounding block, clamped to [`TWIN_KB_CHAR_BUDGET`]. Pure + testable
+/// (no DB, no embedder): the retrieval side seeds these rows. Returns `None` when
+/// nothing usable survives so callers emit a byte-identical prompt to the
+/// pre-D3 behavior.
+#[cfg(feature = "ml")]
+fn format_kb_grounding(chunks: &[(String, Option<String>)]) -> Option<String> {
+    let mut used = 0usize;
+    let mut lines: Vec<String> = Vec::new();
+    for (content, source) in chunks {
+        let content = content.trim();
+        if content.is_empty() {
+            continue;
+        }
+        let cost = content.len();
+        // Always admit the first (closest) chunk even if it alone exceeds the
+        // budget; stop once the budget is met thereafter.
+        if used + cost > TWIN_KB_CHAR_BUDGET && !lines.is_empty() {
+            break;
+        }
+        used += cost;
+        let src = source
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .unwrap_or("knowledge base");
+        lines.push(format!("- ({src}) {content}"));
+    }
+    if lines.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "\n\nFrom your knowledge base (grounded facts — prefer these and stay consistent; never contradict them):\n{}",
+        lines.join("\n")
+    ))
+}
+
+/// Retrieve grounding from a twin's bound knowledge base for `query`.
+///
+/// Clean-skip contract: returns `None` (→ empty grounding block, byte-identical
+/// prior prompt) whenever the ml feature is off, the embedder/vector store is
+/// unavailable, the query is empty, the KB has no near chunks, or every hit
+/// falls past the distance floor. Never errors into the caller — a KB miss must
+/// not fail a twin generation.
+#[cfg(feature = "ml")]
+async fn retrieve_bound_kb_context(
+    embedder: &Arc<crate::engine::embedder::EmbeddingManager>,
+    vector_store: &Arc<crate::engine::vector_store::SqliteVectorStore>,
+    user_db: &crate::db::UserDbPool,
+    kb_id: &str,
+    query: &str,
+) -> Option<String> {
+    let query = query.trim();
+    if query.is_empty() {
+        return None;
+    }
+    let query_vec = embedder.embed_query(query).await.ok()?;
+    let hits = vector_store.search(kb_id, &query_vec, TWIN_KB_TOP_K).ok()?;
+    if hits.is_empty() {
+        return None;
+    }
+    // Same relevance floor the companion + persona-memory recall lanes use, so an
+    // off-topic message injects NOTHING rather than the least-irrelevant chunk.
+    let (kept, _dropped) =
+        crate::retrieval::filter_by_distance_floor(&hits, crate::retrieval::MAX_VECTOR_DISTANCE);
+    if kept.is_empty() {
+        return None;
+    }
+    let conn = user_db.get().ok()?;
+    let mut rows: Vec<(String, Option<String>)> = Vec::with_capacity(kept.len());
+    for (chunk_id, _dist) in &kept {
+        let row = conn
+            .prepare(
+                "SELECT c.content, d.source_path
+                 FROM kb_chunks c
+                 LEFT JOIN kb_documents d ON d.id = c.document_id
+                 WHERE c.id = ?1",
+            )
+            .and_then(|mut stmt| {
+                stmt.query_row(rusqlite::params![chunk_id], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+                })
+            })
+            .ok();
+        if let Some(r) = row {
+            rows.push(r);
+        }
+    }
+    format_kb_grounding(&rows)
+}
+
+/// Resolve the bound-KB grounding block for a twin generation, or an empty
+/// string when there is nothing to inject (unbound, ml-off, or a clean miss).
+/// Centralizes the "unbound → byte-identical prior behavior" guard shared by
+/// `twin_simulate_answer` and `twin_draft_reply`.
+#[cfg(feature = "ml")]
+async fn twin_kb_block(state: &AppState, profile: &TwinProfile, query: &str) -> String {
+    let Some(kb_id) = profile
+        .knowledge_base_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return String::new();
+    };
+    let (Some(embedder), Some(vector_store)) =
+        (state.embedding_manager.as_ref(), state.vector_store.as_ref())
+    else {
+        return String::new();
+    };
+    retrieve_bound_kb_context(embedder, vector_store, &state.user_db, kb_id, query)
+        .await
+        .unwrap_or_default()
+}
+
+#[cfg(not(feature = "ml"))]
+async fn twin_kb_block(_state: &AppState, _profile: &TwinProfile, _query: &str) -> String {
+    String::new()
+}
+
 #[tauri::command]
 pub async fn twin_simulate_answer(
     state: State<'_, Arc<AppState>>,
@@ -785,8 +935,19 @@ pub async fn twin_simulate_answer(
     let facts =
         repo::top_distilled_facts_for_recall(&state.db, &twin_id, None, SIMULATE_ANSWER_FACTS_LIMIT)?;
 
+    // D3: ground the answer in the twin's bound knowledge base (empty string —
+    // byte-identical prior prompt — when unbound, ml-off, or a clean miss).
+    let kb_block = twin_kb_block(&state, &profile, question).await;
+
     let effective = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
-    let prompt_text = build_answer_prompt(&profile, tone.as_ref(), &facts, question, effective.as_deref());
+    let prompt_text = build_answer_prompt(
+        &profile,
+        tone.as_ref(),
+        &facts,
+        question,
+        effective.as_deref(),
+        &kb_block,
+    );
     let raw = spawn_claude_with_prompt(prompt_text).await?;
     Ok(raw.trim().trim_matches('"').trim().to_string())
 }
@@ -865,6 +1026,19 @@ pub async fn twin_draft_reply(
         .map(str::trim)
         .filter(|s| !s.is_empty());
 
+    // D3: retrieve bound-KB grounding for the message we're replying to (fall
+    // back to the newest thread turn when there's no explicit inbound). Empty —
+    // byte-identical prior prompt — when unbound, ml-off, or a clean miss.
+    let kb_query = inbound
+        .or_else(|| {
+            recent
+                .first()
+                .map(|c| c.content.trim())
+                .filter(|s| !s.is_empty())
+        })
+        .unwrap_or("");
+    let kb_block = twin_kb_block(&state, &profile, kb_query).await;
+
     let effective = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
     let prompt_text = build_reply_prompt(
         &profile,
@@ -875,6 +1049,7 @@ pub async fn twin_draft_reply(
         filter_ref,
         inbound,
         effective.as_deref(),
+        &kb_block,
     );
     let raw = spawn_claude_with_prompt(prompt_text).await?;
     Ok(raw.trim().trim_matches('"').trim().to_string())
@@ -894,6 +1069,7 @@ fn build_reply_prompt(
     contact_handle: Option<&str>,
     inbound_message: Option<&str>,
     directions: Option<&str>,
+    kb_block: &str,
 ) -> String {
     let role_part = profile
         .role
@@ -973,7 +1149,7 @@ fn build_reply_prompt(
         "You are \"{name}\"{role_part}. Draft the next reply to send on the {channel} channel, in {name}'s own first-person voice — concrete, personal, and natural, the way {name} actually writes on {channel}. \
          Continue the conversation naturally; do not restate what was already said. \
          Draw on the material below; where it doesn't cover something, reply plausibly and stay consistent, but never invent verifiable specifics (named dates, numbers, places, people) that aren't grounded here. \
-         Output ONLY the reply message itself — no preamble, no surrounding quotes, no \"As {name}, ...\" framing, no subject line unless this is an email channel.{bio_block}{tone_block}{contact_block}{facts_block}{thread_block}{inbound_block}{directions_block}",
+         Output ONLY the reply message itself — no preamble, no surrounding quotes, no \"As {name}, ...\" framing, no subject line unless this is an email channel.{bio_block}{tone_block}{contact_block}{facts_block}{kb_block}{thread_block}{inbound_block}{directions_block}",
         name = profile.name,
     )
 }
@@ -987,6 +1163,7 @@ fn build_answer_prompt(
     facts: &[TwinDistilledFact],
     question: &str,
     directions: Option<&str>,
+    kb_block: &str,
 ) -> String {
     let role_part = profile
         .role
@@ -1037,7 +1214,7 @@ fn build_answer_prompt(
          Answer in the FIRST PERSON, in {name}'s own voice — concrete, personal, and specific rather than generic. \
          Draw on the material below; where it doesn't cover something, answer plausibly and stay consistent, but never invent verifiable specifics (named dates, numbers, places, people) that aren't grounded here. \
          Keep it to 2-5 sentences unless the voice guidance says otherwise. \
-         Output ONLY the answer prose — no preamble, no surrounding quotes, no \"As {name}, ...\" framing.{bio_block}{tone_block}{facts_block}{directions_block}\n\nInterview question:\n{question}",
+         Output ONLY the answer prose — no preamble, no surrounding quotes, no \"As {name}, ...\" framing.{bio_block}{tone_block}{facts_block}{kb_block}{directions_block}\n\nInterview question:\n{question}",
         name = profile.name,
         question = question.trim(),
     )
@@ -1375,12 +1552,17 @@ pub async fn twin_studio_generate_answers(
                 cancelled = true;
                 break;
             }
+            // D3 wires bound-KB retrieval into the two interactive twin commands
+            // (`twin_simulate_answer` / `twin_draft_reply`); the Studio batch job
+            // stays on its prior grounding (bio + tone + facts) — an empty KB
+            // block keeps this prompt byte-identical.
             let prompt = build_answer_prompt(
                 &profile,
                 tone.as_ref(),
                 &facts,
                 &seed.question,
                 directions_owned.as_deref(),
+                "",
             );
             let answer = tokio::select! {
                 _ = cancel_token.cancelled() => { cancelled = true; break; }
@@ -2313,4 +2495,112 @@ pub async fn twin_ingest_doctrine_docs(
         "Twin docs ingest requires the ml feature (vector search is not built into this binary)."
             .into(),
     ))
+}
+
+#[cfg(all(test, feature = "ml"))]
+mod kb_grounding_tests {
+    //! D3 (twin-retrieval-fires): the bound-KB grounding block is budget-clamped,
+    //! carries doc provenance, and reaches BOTH generation prompts. The vector
+    //! search + DB fetch are exercised by the shared `SqliteVectorStore::search`
+    //! path (clipboard/subscription); here we seed the surviving chunks directly
+    //! (no live embedder, no CLI) and prove they land in the prompt.
+    use super::*;
+
+    fn test_profile() -> TwinProfile {
+        TwinProfile {
+            id: "twin-1".into(),
+            name: "Kazimi".into(),
+            slug: "kazimi".into(),
+            bio: Some("Indie founder".into()),
+            role: Some("Founder".into()),
+            languages: None,
+            pronouns: None,
+            obsidian_subpath: "personas/twins/kazimi".into(),
+            is_active: true,
+            knowledge_base_id: Some("kb-1".into()),
+            training_directives: None,
+            created_at: "2026-07-16T00:00:00Z".into(),
+            updated_at: "2026-07-16T00:00:00Z".into(),
+        }
+    }
+
+    #[test]
+    fn grounding_carries_provenance_and_skips_empty() {
+        let block = format_kb_grounding(&[
+            (
+                "The recall guard shipped in July 2026.".into(),
+                Some("notes/recall.md".into()),
+            ),
+            ("   ".into(), None), // whitespace-only → skipped
+        ])
+        .expect("a non-empty chunk must produce a grounding block");
+        assert!(block.contains("recall guard shipped"), "fact text present");
+        assert!(block.contains("notes/recall.md"), "doc provenance present");
+        // Falls back to a generic label when no source_path is recorded.
+        let no_src = format_kb_grounding(&[("A fact with no source.".into(), None)]).unwrap();
+        assert!(no_src.contains("(knowledge base)"));
+    }
+
+    #[test]
+    fn grounding_returns_none_when_nothing_usable() {
+        assert!(format_kb_grounding(&[]).is_none());
+        assert!(format_kb_grounding(&[("".into(), None), ("   ".into(), Some("x".into()))]).is_none());
+    }
+
+    #[test]
+    fn grounding_respects_the_char_budget() {
+        // Three chunks each ~half the budget: the first admits, the second fills
+        // it, the third is clamped out. The closest evidence always wins space.
+        let chunk = "x".repeat(TWIN_KB_CHAR_BUDGET / 2 + 10);
+        let block = format_kb_grounding(&[
+            (format!("FIRST {chunk}"), Some("a.md".into())),
+            (format!("SECOND {chunk}"), Some("b.md".into())),
+            (format!("THIRD {chunk}"), Some("c.md".into())),
+        ])
+        .unwrap();
+        assert!(block.contains("FIRST"), "nearest chunk always admitted");
+        assert!(!block.contains("THIRD"), "over-budget chunk clamped out");
+    }
+
+    #[test]
+    fn bound_kb_fact_reaches_both_generation_prompts() {
+        let profile = test_profile();
+        let kb_block = format_kb_grounding(&[(
+            "Kazimi ships Rust desktop apps with Tauri.".into(),
+            Some("stack.md".into()),
+        )])
+        .unwrap();
+
+        let answer = build_answer_prompt(&profile, None, &[], "What do you build?", None, &kb_block);
+        assert!(
+            answer.contains("Kazimi ships Rust desktop apps"),
+            "bound-KB fact must reach the simulate-answer prompt"
+        );
+        assert!(answer.contains("stack.md"), "provenance reaches the prompt");
+
+        let reply = build_reply_prompt(
+            &profile,
+            None,
+            &[],
+            &[],
+            "email",
+            Some("alice@x.com"),
+            Some("What's your stack?"),
+            None,
+            &kb_block,
+        );
+        assert!(
+            reply.contains("Kazimi ships Rust desktop apps"),
+            "bound-KB fact must reach the draft-reply prompt"
+        );
+    }
+
+    #[test]
+    fn empty_kb_block_yields_prior_prompt_shape() {
+        // Unbound / clean-miss path passes an empty block: the prompt must be
+        // byte-identical to what it was before D3 (no dangling KB header).
+        let profile = test_profile();
+        let with = build_answer_prompt(&profile, None, &[], "q", None, "");
+        assert!(!with.contains("From your knowledge base"));
+    }
 }
