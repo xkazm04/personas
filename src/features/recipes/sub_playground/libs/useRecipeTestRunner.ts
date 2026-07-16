@@ -26,7 +26,8 @@ export function useRecipeTestRunner(recipe: RecipeDefinition) {
   // has been started since).
   useEffect(() => {
     if (execution.phase === 'done' && execution.output && result &&
-        resultRunIdRef.current === runCountRef.current) {
+        resultRunIdRef.current === runCountRef.current &&
+        result.llm_output !== execution.output) {
       const updated = { ...result, llm_output: execution.output };
       setResult(updated);
       setHistory((prev) => {
