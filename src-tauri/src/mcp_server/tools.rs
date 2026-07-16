@@ -2116,8 +2116,11 @@ fn handle_arena_get_results(args: &Value, pool: &McpDbPool) -> Result<String, St
     let conn = pool.get()?;
     let mut stmt = conn
         .prepare(
+            // tool_calls_expected/actual were dropped by the lab_tool_calls
+            // child-table migration (incremental.rs drop_legacy_tool_calls_columns);
+            // per-call data lives in lab_tool_calls keyed by result_id.
             "SELECT id, run_id, scenario_name, model_id, provider, status, output_preview,
-                    tool_calls_expected, tool_calls_actual, tool_accuracy_score,
+                    tool_accuracy_score,
                     output_quality_score, protocol_compliance, input_tokens, output_tokens,
                     cost_usd, duration_ms, error_message, created_at
              FROM lab_arena_results
@@ -2136,17 +2139,15 @@ fn handle_arena_get_results(args: &Value, pool: &McpDbPool) -> Result<String, St
                 "provider": row.get::<_, String>(4)?,
                 "status": row.get::<_, String>(5)?,
                 "output_preview": row.get::<_, Option<String>>(6)?,
-                "tool_calls_expected": row.get::<_, Option<String>>(7)?,
-                "tool_calls_actual": row.get::<_, Option<String>>(8)?,
-                "tool_accuracy_score": row.get::<_, Option<i64>>(9)?,
-                "output_quality_score": row.get::<_, Option<i64>>(10)?,
-                "protocol_compliance": row.get::<_, Option<i64>>(11)?,
-                "input_tokens": row.get::<_, i64>(12)?,
-                "output_tokens": row.get::<_, i64>(13)?,
-                "cost_usd": row.get::<_, f64>(14)?,
-                "duration_ms": row.get::<_, i64>(15)?,
-                "error_message": row.get::<_, Option<String>>(16)?,
-                "created_at": row.get::<_, String>(17)?,
+                "tool_accuracy_score": row.get::<_, Option<i64>>(7)?,
+                "output_quality_score": row.get::<_, Option<i64>>(8)?,
+                "protocol_compliance": row.get::<_, Option<i64>>(9)?,
+                "input_tokens": row.get::<_, i64>(10)?,
+                "output_tokens": row.get::<_, i64>(11)?,
+                "cost_usd": row.get::<_, f64>(12)?,
+                "duration_ms": row.get::<_, i64>(13)?,
+                "error_message": row.get::<_, Option<String>>(14)?,
+                "created_at": row.get::<_, String>(15)?,
             }))
         })
         .map_err(|e| format!("Query error: {e}"))?;
