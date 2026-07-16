@@ -145,6 +145,8 @@ export interface UseDriveResult {
   rename: (path: string, newName: string) => Promise<void>;
   remove: (paths: string[]) => Promise<void>;
   move: (src: string, dst: string) => Promise<void>;
+  /** Bulk move with ONE refresh at the end — use for every multi-item path. */
+  moveMany: (pairs: Array<{ src: string; dst: string }>) => Promise<void>;
 
   // Storage meter
   storage: DriveStorageInfo | null;
