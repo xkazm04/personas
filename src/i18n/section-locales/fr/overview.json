@@ -141,7 +141,9 @@
     "empty_open_title": "Tout est en ordre",
     "empty_filtered_title": "Aucun incident correspondant",
     "col_days": "Jours",
-    "col_incident": "Incident"
+    "col_incident": "Incident",
+    "guidance_mcp_sidecar": "L'agent s'est exécuté sans ses outils MCP intégrés car le binaire personas-mcp était manquant. Réinstallez ou réparez l'application pour qu'il soit livré avec elle.",
+    "source_mcp_sidecar": "Boîte à outils MCP"
   },
   "observability": {
     "title": "Observabilité",

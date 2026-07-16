@@ -5927,6 +5927,7 @@ export type Translations = {
       guidance_policy: string;
       guidance_alert: string;
       guidance_execution: string;
+      guidance_mcp_sidecar: string;
       guidance_default: string;
       groups_collapse_all: string;
       groups_expand_all: string;
@@ -6013,6 +6014,7 @@ export type Translations = {
       source_policy: string;
       source_healing_issue: string;
       source_execution_error: string;
+      source_mcp_sidecar: string;
     };
     observability: {
       title: string;

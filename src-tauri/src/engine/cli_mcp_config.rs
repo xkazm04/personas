@@ -24,7 +24,10 @@
 //! `--mcp-config` file, and `settings.json` is left untouched so any
 //! `hooks_sidecar` entries stay intact.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::{LazyLock, Mutex};
+use std::time::{Duration, Instant};
 
 use crate::error::AppError;
 
@@ -67,6 +70,52 @@ fn find_mcp_binary() -> Option<PathBuf> {
             .unwrap_or_default(),
     ];
     candidates.into_iter().find(|p| p.is_file())
+}
+
+/// Whether the bundled `personas-mcp` binary is present.
+///
+/// The runner uses this to give a specific "sidecar binary not found" reason
+/// when [`install_mcp_sidecar`] returns `Ok(false)` — distinguishing a broken
+/// install (missing binary) from the benign transient skips (db not yet
+/// initialised, mkdir failure). A missing binary means the persona ran without
+/// its `drive_*`/`personas_*`/`obsidian_vault_*` toolbelt, which otherwise looks
+/// identical to a healthy run.
+pub fn mcp_binary_available() -> bool {
+    find_mcp_binary().is_some()
+}
+
+/// How many missing-binary skips (same persona, within [`SIDECAR_MISSING_WINDOW`])
+/// escalate from a soft per-run log line to a deduped incident.
+pub const SIDECAR_MISSING_INCIDENT_THRESHOLD: usize = 3;
+
+/// Trailing window over which repeated missing-binary skips are counted.
+const SIDECAR_MISSING_WINDOW: Duration = Duration::from_secs(30 * 60);
+
+/// In-memory, per-persona occurrence log of `personas-mcp` binary-missing install
+/// skips. Purely in-process (a `Mutex<HashMap>`), so it survives across a session's
+/// runs but resets on app restart — the right scope: a *repeated* pattern within
+/// one app session is what signals "this install is broken / mis-packaged",
+/// whereas a single skip after an upgrade-in-progress is noise. There is no
+/// occurrence counter on the incident spine itself, so we count here and let the
+/// spine's `dedup_key` collapse the repeated promotions into one open incident.
+static SIDECAR_MISSING_LOG: LazyLock<Mutex<HashMap<String, Vec<Instant>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Record a `personas-mcp` binary-missing skip for `persona_id` and return how
+/// many have occurred within the trailing [`SIDECAR_MISSING_WINDOW`] (including
+/// this one). The runner promotes a deduped incident once the count reaches
+/// [`SIDECAR_MISSING_INCIDENT_THRESHOLD`]. Old entries are pruned on each call so
+/// the map can't grow without bound.
+pub fn note_sidecar_missing(persona_id: &str) -> usize {
+    let now = Instant::now();
+    let mut log = match SIDECAR_MISSING_LOG.lock() {
+        Ok(g) => g,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+    let entries = log.entry(persona_id.to_string()).or_default();
+    entries.retain(|t| now.duration_since(*t) <= SIDECAR_MISSING_WINDOW);
+    entries.push(now);
+    entries.len()
 }
 
 /// Install the `personas-mcp` entry into the `--mcp-config` file
@@ -461,6 +510,21 @@ mod tests {
         scrub_mcp_sidecar(exec_dir);
 
         assert!(!config.exists(), "scrub must delete the --mcp-config file");
+    }
+
+    #[test]
+    fn note_sidecar_missing_counts_within_window_per_persona() {
+        // Fixed, test-unique persona ids so the shared static doesn't bleed
+        // across tests (each test owns its own key).
+        let p = "test-persona-note-sidecar-A";
+        assert_eq!(note_sidecar_missing(p), 1);
+        assert_eq!(note_sidecar_missing(p), 2);
+        assert_eq!(note_sidecar_missing(p), 3);
+        assert!(3 >= SIDECAR_MISSING_INCIDENT_THRESHOLD);
+
+        // A different persona is tracked independently.
+        let other = "test-persona-note-sidecar-B";
+        assert_eq!(note_sidecar_missing(other), 1);
     }
 
     #[test]

@@ -5814,7 +5814,9 @@
       "empty_open_title": "सब ठीक है",
       "empty_filtered_title": "कोई मिलती घटना नहीं",
       "col_days": "दिन",
-      "col_incident": "घटना"
+      "col_incident": "घटना",
+      "guidance_mcp_sidecar": "एजेंट अपने बिल्ट-इन MCP टूल के बिना चला क्योंकि personas-mcp बाइनरी गायब थी। ऐप को फिर से इंस्टॉल या रिपेयर करें ताकि यह डेस्कटॉप ऐप के साथ शामिल हो।",
+      "source_mcp_sidecar": "MCP टूलबेल्ट"
     },
     "observability": {
       "title": "अवलोकनशीलता",

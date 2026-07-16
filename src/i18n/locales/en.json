@@ -5921,6 +5921,7 @@
       "guidance_policy": "A policy blocked this. Adjust the policy in Settings if it should be allowed.",
       "guidance_alert": "An alert rule fired. Review the metric that crossed its threshold.",
       "guidance_execution": "The agent run failed. Open the execution to see the error, then re-run.",
+      "guidance_mcp_sidecar": "The agent ran without its built-in MCP tools because the personas-mcp binary was missing. Reinstall or repair the app so it ships alongside the desktop app.",
       "guidance_default": "Review the details below, then resolve or dismiss it.",
       "groups_collapse_all": "Collapse all",
       "groups_expand_all": "Expand all",
@@ -6006,7 +6007,8 @@
       "source_provider": "Provider",
       "source_policy": "Policy",
       "source_healing_issue": "Healing issue",
-      "source_execution_error": "Execution error"
+      "source_execution_error": "Execution error",
+      "source_mcp_sidecar": "MCP toolbelt"
     },
     "observability": {
       "title": "Observability",

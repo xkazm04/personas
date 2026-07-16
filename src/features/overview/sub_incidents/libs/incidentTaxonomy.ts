@@ -1,4 +1,4 @@
-import { AlertTriangle, Bell, Database, KeyRound, Stethoscope, ShieldAlert, Wrench, Zap } from 'lucide-react';
+import { AlertTriangle, Bell, Database, KeyRound, Stethoscope, ShieldAlert, Unplug, Wrench, Zap } from 'lucide-react';
 import { SEVERITY_COLORS } from '@/lib/utils/formatters';
 import type { StatusKey } from '@/lib/design/statusTokens';
 import type { Translations } from '@/i18n/en';
@@ -18,7 +18,8 @@ export type IncidentSourceTable =
   | 'provider_audit_log'
   | 'policy_events'
   | 'persona_healing_issues'
-  | 'execution_error';
+  | 'execution_error'
+  | 'mcp_sidecar';
 
 export const INCIDENT_SOURCE_ICONS: Record<IncidentSourceTable, typeof Bell> = {
   fired_alerts: Bell,
@@ -29,6 +30,7 @@ export const INCIDENT_SOURCE_ICONS: Record<IncidentSourceTable, typeof Bell> = {
   policy_events: ShieldAlert,
   persona_healing_issues: AlertTriangle,
   execution_error: AlertTriangle,
+  mcp_sidecar: Unplug,
 };
 
 export function sourceTableIcon(source: string): typeof Bell {
@@ -45,6 +47,7 @@ export function sourceTableLabel(t: Translations, source: string): string {
     case 'policy_events': return t.overview.incidents.source_policy;
     case 'persona_healing_issues': return t.overview.incidents.source_healing_issue;
     case 'execution_error': return t.overview.incidents.source_execution_error;
+    case 'mcp_sidecar': return t.overview.incidents.source_mcp_sidecar;
     default: return source;
   }
 }
@@ -110,6 +113,7 @@ export function incidentGuidance(t: Translations, sourceTable: string): string {
     case 'policy_events': return t.overview.incidents.guidance_policy;
     case 'fired_alerts': return t.overview.incidents.guidance_alert;
     case 'execution_error': return t.overview.incidents.guidance_execution;
+    case 'mcp_sidecar': return t.overview.incidents.guidance_mcp_sidecar;
     default: return t.overview.incidents.guidance_default;
   }
 }

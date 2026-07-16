@@ -5814,7 +5814,9 @@
       "empty_open_title": "Semua beres",
       "empty_filtered_title": "Tidak ada insiden yang sesuai",
       "col_days": "Hari",
-      "col_incident": "Insiden"
+      "col_incident": "Insiden",
+      "guidance_mcp_sidecar": "Agen berjalan tanpa alat MCP bawaannya karena biner personas-mcp hilang. Instal ulang atau perbaiki aplikasi agar tersedia bersama aplikasi desktop.",
+      "source_mcp_sidecar": "Perangkat alat MCP"
     },
     "observability": {
       "title": "Observabilitas",

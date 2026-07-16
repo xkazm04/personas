@@ -141,7 +141,9 @@
     "empty_open_title": "Vše v pořádku",
     "empty_filtered_title": "Žádné odpovídající incidenty",
     "col_days": "Dny",
-    "col_incident": "Incident"
+    "col_incident": "Incident",
+    "guidance_mcp_sidecar": "Agent běžel bez svých vestavěných nástrojů MCP, protože chyběl binární soubor personas-mcp. Přeinstalujte nebo opravte aplikaci, aby byl součástí instalace.",
+    "source_mcp_sidecar": "Sada nástrojů MCP"
   },
   "observability": {
     "title": "Pozorovatelnost",

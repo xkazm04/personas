@@ -5814,7 +5814,9 @@
       "empty_open_title": "모두 정상",
       "empty_filtered_title": "일치하는 인시던트 없음",
       "col_days": "일수",
-      "col_incident": "인시던트"
+      "col_incident": "인시던트",
+      "guidance_mcp_sidecar": "personas-mcp 바이너리가 없어서 에이전트가 내장 MCP 도구 없이 실행되었습니다. 앱과 함께 제공되도록 앱을 다시 설치하거나 복구하세요.",
+      "source_mcp_sidecar": "MCP 툴벨트"
     },
     "observability": {
       "title": "관측성",

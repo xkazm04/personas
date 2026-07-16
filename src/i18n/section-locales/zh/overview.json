@@ -141,7 +141,9 @@
     "empty_open_title": "一切正常",
     "empty_filtered_title": "无匹配事故",
     "col_days": "天数",
-    "col_incident": "事件"
+    "col_incident": "事件",
+    "guidance_mcp_sidecar": "由于缺少 personas-mcp 二进制文件,代理在没有内置 MCP 工具的情况下运行。请重新安装或修复应用,确保其随桌面应用一起提供。",
+    "source_mcp_sidecar": "MCP 工具集"
   },
   "observability": {
     "title": "可观测性",

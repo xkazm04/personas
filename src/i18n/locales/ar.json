@@ -5814,7 +5814,9 @@
       "empty_open_title": "كل شيء على ما يرام",
       "empty_filtered_title": "لا توجد حوادث مطابقة",
       "col_days": "الأيام",
-      "col_incident": "الحادثة"
+      "col_incident": "الحادثة",
+      "guidance_mcp_sidecar": "تعذّر تشغيل الوكيل بأدواته المدمجة عبر MCP لأن ملف personas-mcp التنفيذي كان مفقودًا. أعد تثبيت أو إصلاح التطبيق للتأكد من تضمينه مع التطبيق.",
+      "source_mcp_sidecar": "أدوات MCP"
     },
     "observability": {
       "title": "المراقبة",

@@ -141,7 +141,9 @@
     "empty_open_title": "問題なし",
     "empty_filtered_title": "該当するインシデントはありません",
     "col_days": "日数",
-    "col_incident": "インシデント"
+    "col_incident": "インシデント",
+    "guidance_mcp_sidecar": "personas-mcp バイナリが見つからなかったため、エージェントは組み込みの MCP ツールなしで実行されました。デスクトップアプリに同梱されるよう、アプリを再インストールまたは修復してください。",
+    "source_mcp_sidecar": "MCP ツールベルト"
   },
   "observability": {
     "title": "オブザーバビリティ",

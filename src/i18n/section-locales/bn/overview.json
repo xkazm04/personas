@@ -141,7 +141,9 @@
     "empty_open_title": "সব পরিষ্কার",
     "empty_filtered_title": "কোনো মিলসই ঘটনা নেই",
     "col_days": "দিন",
-    "col_incident": "ঘটনা"
+    "col_incident": "ঘটনা",
+    "guidance_mcp_sidecar": "এজেন্টটি তার বিল্ট-ইন MCP টুল ছাড়াই চলেছে কারণ personas-mcp বাইনারিটি অনুপস্থিত ছিল। অ্যাপটি যাতে এটির সাথেই আসে তা নিশ্চিত করতে অ্যাপটি পুনরায় ইনস্টল বা মেরামত করুন।",
+    "source_mcp_sidecar": "MCP টুলবেল্ট"
   },
   "observability": {
     "title": "অবজার্ভেবিলিটি",

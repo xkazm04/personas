@@ -5814,7 +5814,9 @@
       "empty_open_title": "Không có sự cố nào",
       "empty_filtered_title": "Không có sự cố phù hợp",
       "col_days": "Ngày",
-      "col_incident": "Sự cố"
+      "col_incident": "Sự cố",
+      "guidance_mcp_sidecar": "Agent đã chạy mà không có các công cụ MCP tích hợp sẵn vì thiếu tệp nhị phân personas-mcp. Hãy cài đặt lại hoặc sửa chữa ứng dụng để đảm bảo nó đi kèm với ứng dụng desktop.",
+      "source_mcp_sidecar": "Bộ công cụ MCP"
     },
     "observability": {
       "title": "Khả năng quan sát",

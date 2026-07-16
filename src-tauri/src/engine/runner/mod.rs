@@ -1264,7 +1264,52 @@ pub async fn run_execution(
             logger.log("[mcp] wrote personas-mcp --mcp-config (drive_*, personas_*, obsidian_vault_* tools)");
             true
         }
-        Ok(false) => false,
+        Ok(false) => {
+            // install_mcp_sidecar returns Ok(false) for several reasons; only a
+            // MISSING BINARY means a broken install where the persona silently
+            // ran without its toolbelt. Distinguish it so the marker is honest
+            // and only the persistent condition escalates to an incident.
+            if super::cli_mcp_config::mcp_binary_available() {
+                logger.log("[mcp] personas-mcp sidecar skipped (db/config not ready) — personas-mcp tools unavailable for this run");
+            } else {
+                // Visible marker in the execution log/trace with the reason.
+                logger.log("[mcp] personas-mcp binary not found — sidecar skipped; drive_*, personas_*, obsidian_vault_* tools are UNAVAILABLE for this run");
+                // Repeat occurrences (same persona, N in window) → one deduped,
+                // provenance-tagged incident via the existing spine. source_table
+                // "mcp_sidecar" + source_id = persona.id makes dedup_key
+                // "mcp_sidecar:<persona_id>", collapsing repeats into a single
+                // open incident while the pattern persists.
+                let occurrences = super::cli_mcp_config::note_sidecar_missing(&persona.id);
+                if occurrences >= super::cli_mcp_config::SIDECAR_MISSING_INCIDENT_THRESHOLD {
+                    let detail = format!(
+                        "The bundled personas-mcp binary was not found on {occurrences} recent runs of this persona. \
+                         drive_*, personas_*, and obsidian_vault_* tools were unavailable — the run looked healthy but ran without its toolbelt. \
+                         Reinstall or repair the app so the bundled personas-mcp binary ships alongside the desktop executable."
+                    );
+                    match crate::db::repos::execution::audit_incidents::promote(
+                        &pool,
+                        crate::db::models::CreateAuditIncidentInput {
+                            source_table: "mcp_sidecar".to_string(),
+                            source_id: persona.id.clone(),
+                            persona_id: Some(persona.id.clone()),
+                            persona_name: Some(persona.name.clone()),
+                            execution_id: Some(execution_id.clone()),
+                            severity: "medium".to_string(),
+                            kind: "mcp_sidecar_missing".to_string(),
+                            title: "MCP toolbelt unavailable — persona ran without its personas-mcp tools".to_string(),
+                            detail: Some(detail),
+                        },
+                    ) {
+                        Ok(Some(id)) => logger.log(&format!(
+                            "[mcp] raised incident {id} for repeated personas-mcp binary-missing skips"
+                        )),
+                        Ok(None) => {} // already an open incident for this persona — deduped
+                        Err(e) => tracing::warn!(persona_id = %persona.id, error = %e, "failed to promote mcp_sidecar_missing incident"),
+                    }
+                }
+            }
+            false
+        }
         Err(e) => {
             logger.log(&format!("[mcp] sidecar install failed (non-fatal): {e}"));
             false
