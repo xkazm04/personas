@@ -75,6 +75,40 @@ pub fn filter_by_distance_floor(
     (kept, dropped)
 }
 
+/// Exclude KNN hits whose recorded embedding model is incompatible with the
+/// currently-loaded embedder. `model_of` maps a hit id to the model name its
+/// vector was written under; an id ABSENT from the map (legacy / unstamped) is
+/// treated as current-compatible and KEPT.
+///
+/// The grandfathering is deliberate and load-bearing for "zero behavior change
+/// at the current model": every pre-stamp vector was produced by whatever model
+/// was current when it was written, and the app has only ever shipped one
+/// embedder (`AllMiniLML6V2Q`), so an unstamped row IS a current-model row. A
+/// STAMPED id whose model != `current_model` is dropped — a future embedder swap
+/// leaves the old rows semantically incompatible even though they still share
+/// the physical vec0 dimension (same 384-d width, different vector space), which
+/// silent mixing would answer from the wrong neighbours rather than error.
+///
+/// Preserves the input rank order of the survivors. Returns
+/// `(kept, excluded_count)`; the caller surfaces `excluded_count` (log + a
+/// process counter) rather than hiding it.
+#[cfg_attr(not(feature = "ml"), allow(dead_code))] // runtime callers (companion + memory KNN) are ml-gated; non-ml exercises via tests
+pub fn filter_by_model(
+    hits: &[(String, f32)],
+    current_model: &str,
+    model_of: &HashMap<String, String>,
+) -> (Vec<(String, f32)>, usize) {
+    let mut kept = Vec::with_capacity(hits.len());
+    let mut excluded = 0usize;
+    for (id, dist) in hits {
+        match model_of.get(id) {
+            Some(m) if m != current_model => excluded += 1,
+            _ => kept.push((id.clone(), *dist)),
+        }
+    }
+    (kept, excluded)
+}
+
 /// One per-kind selection lane for [`rank_into_lanes`]: collect up to `cap`
 /// ids of `kind`, skipping anything already present in `exclude` (e.g. ids
 /// surfaced by a recency query or an always-include list) and never selecting
@@ -222,6 +256,49 @@ mod tests {
         let (kept, dropped) = filter_by_distance_floor(&input, MAX_VECTOR_DISTANCE);
         assert!(kept.is_empty());
         assert_eq!(dropped, 2);
+    }
+
+    // ── model guard (shared-corpus mismatch) ────────────────────────────
+
+    fn model_map(pairs: &[(&str, &str)]) -> HashMap<String, String> {
+        pairs
+            .iter()
+            .map(|(id, m)| (id.to_string(), m.to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn model_guard_is_inert_when_all_stamps_match_or_are_absent() {
+        // Every hit is either stamped with the current model or unstamped
+        // (legacy). Nothing is excluded — this is the "zero behavior change at
+        // the current model" guarantee.
+        let input = hits(&[("a", 0.1), ("b", 0.2), ("c", 0.3)]);
+        let stamps = model_map(&[("a", "AllMiniLML6V2Q"), ("b", "AllMiniLML6V2Q")]);
+        // "c" is absent → grandfathered as current.
+        let (kept, excluded) = filter_by_model(&input, "AllMiniLML6V2Q", &stamps);
+        assert_eq!(excluded, 0);
+        assert_eq!(
+            kept.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>(),
+            vec!["a", "b", "c"]
+        );
+    }
+
+    #[test]
+    fn model_guard_excludes_mismatched_and_counts_them() {
+        let input = hits(&[("a", 0.1), ("stale", 0.2), ("c", 0.3)]);
+        // "stale" was embedded with a since-swapped model.
+        let stamps = model_map(&[
+            ("a", "AllMiniLML6V2Q"),
+            ("stale", "BGESmallENV15"),
+            ("c", "AllMiniLML6V2Q"),
+        ]);
+        let (kept, excluded) = filter_by_model(&input, "AllMiniLML6V2Q", &stamps);
+        assert_eq!(excluded, 1);
+        assert_eq!(
+            kept.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>(),
+            vec!["a", "c"],
+            "mismatched vector dropped; survivors keep rank order"
+        );
     }
 
     // ── hybrid lane ranking ─────────────────────────────────────────────

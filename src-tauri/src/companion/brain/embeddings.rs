@@ -39,6 +39,66 @@ pub const COMPANION_VEC_DIMS: usize = 384;
 #[cfg(feature = "ml")]
 static VEC_TABLE_READY: AtomicBool = AtomicBool::new(false);
 
+/// Process-cumulative count of companion recall hits excluded by the
+/// shared-corpus model guard — vectors recorded under an embedding model
+/// different from the one now loaded. Queryable diagnostic stat (also surfaced
+/// via `tracing::warn` at the moment of exclusion). Stays `0` unless the
+/// embedder model has changed since some vectors were written, in which case a
+/// brain re-embed clears it back to producing zero exclusions.
+#[cfg(feature = "ml")]
+static MODEL_GUARD_EXCLUDED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Read the cumulative companion model-guard exclusion counter. Reserved
+/// queryable diagnostic — the active surface today is the `tracing::warn` at
+/// exclusion time; this reader lets a future recall-stats command expose the
+/// running total without re-plumbing the counter.
+#[cfg(feature = "ml")]
+#[allow(dead_code)]
+pub fn model_guard_excluded_total() -> u64 {
+    MODEL_GUARD_EXCLUDED.load(Ordering::Relaxed)
+}
+
+/// Drop hits whose `companion_node.embedding_model` differs from the currently
+/// loaded embedder. Rows with a NULL stamp (legacy episodic writes that predate
+/// stamping) are omitted from the lookup map and therefore grandfathered as
+/// current-model by [`crate::retrieval::filter_by_model`] — so at the current
+/// model this is a no-op and recall is byte-identical. Exclusions are counted
+/// and logged, never silently swallowed.
+#[cfg(feature = "ml")]
+fn apply_model_guard(
+    conn: &rusqlite::Connection,
+    hits: Vec<(String, f32)>,
+    current_model: &str,
+) -> Result<Vec<(String, f32)>, AppError> {
+    if hits.is_empty() {
+        return Ok(hits);
+    }
+    let ids_json = serde_json::to_string(&hits.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>())
+        .map_err(|e| AppError::Internal(format!("model guard id serialize: {e}")))?;
+    let mut stmt = conn.prepare(
+        "SELECT id, embedding_model FROM companion_node
+         WHERE id IN (SELECT value FROM json_each(?1)) AND embedding_model IS NOT NULL",
+    )?;
+    let mut model_of = std::collections::HashMap::new();
+    let rows = stmt.query_map(params![ids_json], |r| {
+        Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+    })?;
+    for row in rows {
+        let (id, model) = row?;
+        model_of.insert(id, model);
+    }
+    let (kept, excluded) = crate::retrieval::filter_by_model(&hits, current_model, &model_of);
+    if excluded > 0 {
+        MODEL_GUARD_EXCLUDED.fetch_add(excluded as u64, Ordering::Relaxed);
+        tracing::warn!(
+            excluded,
+            current_model,
+            "companion recall: excluded embeddings recorded under a different model (re-embed the brain to restore them)"
+        );
+    }
+    Ok(kept)
+}
+
 #[cfg(feature = "ml")]
 pub fn ensure_vec_table(pool: &UserDbPool) -> Result<(), AppError> {
     // Fast path: already created successfully this process.
@@ -87,6 +147,14 @@ pub async fn embed_and_store(
         "INSERT INTO companion_embedding (node_id, embedding) VALUES (?1, ?2)",
         params![node_id, blob],
     )?;
+    // Stamp the model on the owning node so the recall-side model guard can tell
+    // which embedder a vector was written under. Doctrine already stamps at
+    // insert; episodic did not — stamping here covers ALL callers uniformly and
+    // is an idempotent no-op when the node was already stamped with this model.
+    conn.execute(
+        "UPDATE companion_node SET embedding_model = ?1, embedding_dims = ?2 WHERE id = ?3",
+        params![embedder.model_name(), embedder.dimensions() as i64, node_id],
+    )?;
     Ok(())
 }
 
@@ -128,7 +196,7 @@ pub async fn search_similar(
             Ok((row.get::<_, String>(0)?, row.get::<_, f32>(1)?))
         })?
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(rows)
+    apply_model_guard(&conn, rows, embedder.model_name())
 }
 
 #[cfg(not(feature = "ml"))]
@@ -249,5 +317,43 @@ mod tests {
         assert_eq!(rows[0].0, "d1", "nearest doctrine first");
         assert_eq!(rows[1].0, "d2");
         assert!(rows[0].1 < rows[1].1, "distances strictly ordered");
+    }
+
+    #[test]
+    fn model_guard_excludes_foreign_model_but_keeps_null_and_current() {
+        let conn = Connection::open_in_memory().expect("open");
+        conn.execute_batch(
+            "CREATE TABLE companion_node (id TEXT PRIMARY KEY, embedding_model TEXT);",
+        )
+        .expect("schema");
+        // cur = current model, old = swapped-away model, leg = legacy NULL stamp.
+        for (id, model) in [
+            ("cur", Some("AllMiniLML6V2Q")),
+            ("old", Some("BGESmallENV15")),
+            ("leg", None),
+        ] {
+            conn.execute(
+                "INSERT INTO companion_node (id, embedding_model) VALUES (?1, ?2)",
+                params![id, model],
+            )
+            .unwrap();
+        }
+        let hits = vec![
+            ("cur".to_string(), 0.1_f32),
+            ("old".to_string(), 0.2_f32),
+            ("leg".to_string(), 0.3_f32),
+        ];
+        let before = super::model_guard_excluded_total();
+        let kept = super::apply_model_guard(&conn, hits, "AllMiniLML6V2Q").expect("guard");
+        assert_eq!(
+            kept.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>(),
+            vec!["cur", "leg"],
+            "foreign-model vector dropped; current + legacy-NULL kept"
+        );
+        assert_eq!(
+            super::model_guard_excluded_total() - before,
+            1,
+            "exactly one exclusion counted and surfaced"
+        );
     }
 }

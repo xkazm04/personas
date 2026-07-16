@@ -1610,9 +1610,21 @@ pub fn ensure_memory_vec_table(vec_pool: &crate::db::UserDbPool) -> Result<(), A
         return Ok(());
     }
     let conn = vec_pool.get()?;
+    // The vec0 table cannot carry an auxiliary model-stamp column without a
+    // destructive recreate, so the stamp lives in a plain sidecar keyed 1:1 by
+    // memory_id. Created at runtime alongside the vec table (mirroring how the
+    // vec0 table itself is provisioned post-sqlite-vec-registration rather than
+    // at migration time) — this sidesteps a cross-DB ALTER (the memories row is
+    // in the main DB; the embedding + stamp are in the user DB) and the
+    // run_incremental placement gotcha entirely.
     conn.execute_batch(&format!(
         "CREATE VIRTUAL TABLE IF NOT EXISTS persona_memory_embedding \
-         USING vec0(memory_id TEXT, embedding float[{MEMORY_VEC_DIMS}])"
+         USING vec0(memory_id TEXT, embedding float[{MEMORY_VEC_DIMS}]);
+         CREATE TABLE IF NOT EXISTS persona_memory_embedding_meta (
+             memory_id       TEXT PRIMARY KEY,
+             embedding_model TEXT NOT NULL,
+             embedding_dims  INTEGER NOT NULL
+         );"
     ))?;
     if !MEMORY_VEC_TABLE_READY.swap(true, Ordering::AcqRel) {
         tracing::info!(dims = MEMORY_VEC_DIMS, "persona_memory_embedding table ready");
@@ -1649,6 +1661,18 @@ pub async fn embed_and_store_memory(
     conn.execute(
         "INSERT INTO persona_memory_embedding (memory_id, embedding) VALUES (?1, ?2)",
         params![memory_id, blob],
+    )?;
+    // Stamp the model this vector was written under (delete-then-insert keeps
+    // the 1:1 mapping idempotent on re-embed) so the recall-side model guard can
+    // exclude vectors from a since-swapped embedder.
+    conn.execute(
+        "DELETE FROM persona_memory_embedding_meta WHERE memory_id = ?1",
+        params![memory_id],
+    )?;
+    conn.execute(
+        "INSERT INTO persona_memory_embedding_meta (memory_id, embedding_model, embedding_dims) \
+         VALUES (?1, ?2, ?3)",
+        params![memory_id, embedder.model_name(), embedder.dimensions() as i64],
     )?;
     Ok(())
 }
@@ -1687,7 +1711,63 @@ pub async fn search_similar_memories(
             Ok((row.get::<_, String>(0)?, row.get::<_, f32>(1)?))
         })?
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(rows)
+    apply_memory_model_guard(&conn, rows, embedder.model_name())
+}
+
+/// Process-cumulative count of persona-memory recall hits excluded by the
+/// shared-corpus model guard — vectors whose recorded model differs from the
+/// loaded embedder. Queryable diagnostic stat; also surfaced via `tracing::warn`
+/// at exclusion time. Stays `0` at the current model.
+#[cfg(feature = "ml")]
+static MEMORY_MODEL_GUARD_EXCLUDED: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
+
+/// Read the cumulative persona-memory model-guard exclusion counter.
+#[cfg(feature = "ml")]
+pub fn memory_model_guard_excluded_total() -> u64 {
+    MEMORY_MODEL_GUARD_EXCLUDED.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// Drop KNN hits whose `persona_memory_embedding_meta.embedding_model` differs
+/// from the loaded embedder. Ids with no meta row (embedded before the stamp
+/// shipped) are grandfathered as current-model by
+/// [`crate::retrieval::filter_by_model`], so at the current model this is a
+/// no-op and recall is byte-identical. Exclusions are counted + logged.
+#[cfg(feature = "ml")]
+fn apply_memory_model_guard(
+    conn: &rusqlite::Connection,
+    hits: Vec<(String, f32)>,
+    current_model: &str,
+) -> Result<Vec<(String, f32)>, AppError> {
+    if hits.is_empty() {
+        return Ok(hits);
+    }
+    let ids_json =
+        serde_json::to_string(&hits.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>())
+            .map_err(|e| AppError::Internal(format!("memory model guard id serialize: {e}")))?;
+    let mut stmt = conn.prepare(
+        "SELECT memory_id, embedding_model FROM persona_memory_embedding_meta
+         WHERE memory_id IN (SELECT value FROM json_each(?1))",
+    )?;
+    let mut model_of = std::collections::HashMap::new();
+    let rows = stmt.query_map(params![ids_json], |r| {
+        Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+    })?;
+    for row in rows {
+        let (id, model) = row?;
+        model_of.insert(id, model);
+    }
+    let (kept, excluded) = crate::retrieval::filter_by_model(&hits, current_model, &model_of);
+    if excluded > 0 {
+        MEMORY_MODEL_GUARD_EXCLUDED
+            .fetch_add(excluded as u64, std::sync::atomic::Ordering::Relaxed);
+        tracing::warn!(
+            excluded,
+            current_model,
+            "persona-memory recall: excluded embeddings recorded under a different model (re-embed to restore them)"
+        );
+    }
+    Ok(kept)
 }
 
 /// Embed-on-create wrapper: [`create`] + best-effort [`embed_and_store_memory`].
@@ -1750,11 +1830,19 @@ pub fn delete_memory_embeddings(
     const CHUNK: usize = 400;
     for chunk in ids.chunks(CHUNK) {
         let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-        let sql =
-            format!("DELETE FROM persona_memory_embedding WHERE memory_id IN ({placeholders})");
         let params: Vec<&dyn rusqlite::ToSql> =
             chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
-        conn.execute(&sql, params.as_slice())?;
+        conn.execute(
+            &format!("DELETE FROM persona_memory_embedding WHERE memory_id IN ({placeholders})"),
+            params.as_slice(),
+        )?;
+        // Keep the model-stamp sidecar in lockstep with the vectors it describes.
+        conn.execute(
+            &format!(
+                "DELETE FROM persona_memory_embedding_meta WHERE memory_id IN ({placeholders})"
+            ),
+            params.as_slice(),
+        )?;
     }
     Ok(())
 }
@@ -3039,5 +3127,58 @@ mod vec_tests {
         let rest = embedded_memory_ids(&pool).unwrap();
         assert_eq!(rest.len(), 1);
         assert!(rest.contains("off_topic"));
+    }
+
+    #[test]
+    fn model_guard_excludes_foreign_stamp_and_grandfathers_unstamped() {
+        let pool = vec_pool();
+        ensure_memory_vec_table(&pool).expect("provision vec + meta table");
+        let conn = pool.get().unwrap();
+        // cur = current model, old = swapped-away model, leg = no meta row.
+        for (id, model) in [("cur", "AllMiniLML6V2Q"), ("old", "BGESmallENV15")] {
+            conn.execute(
+                "INSERT INTO persona_memory_embedding_meta (memory_id, embedding_model, embedding_dims) VALUES (?1, ?2, 384)",
+                params![id, model],
+            )
+            .unwrap();
+        }
+        let hits = vec![
+            ("cur".to_string(), 0.1_f32),
+            ("old".to_string(), 0.2_f32),
+            ("leg".to_string(), 0.3_f32),
+        ];
+        let before = memory_model_guard_excluded_total();
+        let kept = apply_memory_model_guard(&conn, hits, "AllMiniLML6V2Q").expect("guard");
+        assert_eq!(
+            kept.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>(),
+            vec!["cur", "leg"],
+            "foreign-model vector dropped; current + unstamped-legacy kept"
+        );
+        assert_eq!(memory_model_guard_excluded_total() - before, 1);
+    }
+
+    #[test]
+    fn embed_stamp_written_and_guard_inert_at_current_model() {
+        // Zero behavior change at the current model: all stamps match, nothing
+        // excluded. Uses the meta table the way embed_and_store_memory writes it.
+        let pool = vec_pool();
+        ensure_memory_vec_table(&pool).expect("provision");
+        let conn = pool.get().unwrap();
+        for id in ["a", "b", "c"] {
+            conn.execute(
+                "INSERT INTO persona_memory_embedding_meta (memory_id, embedding_model, embedding_dims) VALUES (?1, 'AllMiniLML6V2Q', 384)",
+                params![id],
+            )
+            .unwrap();
+        }
+        let hits = vec![
+            ("a".to_string(), 0.1_f32),
+            ("b".to_string(), 0.2_f32),
+            ("c".to_string(), 0.3_f32),
+        ];
+        let before = memory_model_guard_excluded_total();
+        let kept = apply_memory_model_guard(&conn, hits.clone(), "AllMiniLML6V2Q").unwrap();
+        assert_eq!(kept, hits, "inert when every stamp matches the current model");
+        assert_eq!(memory_model_guard_excluded_total(), before);
     }
 }
