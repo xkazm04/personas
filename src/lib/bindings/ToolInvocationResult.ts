@@ -29,6 +29,8 @@ http_status: number | null,
  */
 retryable: boolean, duration_ms: bigint, tool_name: string, 
 /**
- * "script" | "api" | "automation"
+ * "script" | "api" | "automation" — plus "builtin" for `builtin://` tools
+ * (which only run inside persona executions) and "unknown" when the tool
+ * row has no resolvable execution strategy.
  */
 tool_type: string, };
