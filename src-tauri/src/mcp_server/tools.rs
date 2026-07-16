@@ -706,8 +706,7 @@ pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "enabled_only": { "type": "boolean", "description": "Only return enabled personas (default: false)" },
-                    "group_id": { "type": "string", "description": "Filter by group/folder ID" }
+                    "enabled_only": { "type": "boolean", "description": "Only return enabled personas (default: false)" }
                 }
             }
         }),
@@ -1591,7 +1590,16 @@ fn handle_personas_list(args: &Value, pool: &McpDbPool) -> Result<String, String
         .get("enabled_only")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    let group_id = args.get("group_id").and_then(|v| v.as_str());
+    // `group_id` filtering was retired with the Groups→Teams consolidation:
+    // personas no longer carry a group_id column. Reject it explicitly rather
+    // than silently returning an empty list to stale clients.
+    if args.get("group_id").is_some() {
+        return Err(
+            "'group_id' is no longer supported: persona groups were retired in favor of teams. \
+             Call personas_list without 'group_id'."
+                .to_string(),
+        );
+    }
 
     let sql = if enabled_only {
         "SELECT id, name, description, enabled, trust_level, trust_origin, icon, color FROM personas WHERE enabled = 1 ORDER BY name"
@@ -1613,11 +1621,7 @@ fn handle_personas_list(args: &Value, pool: &McpDbPool) -> Result<String, String
         }))
     }).map_err(|e| format!("Query error: {e}"))?;
 
-    let mut personas: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
-
-    if let Some(gid) = group_id {
-        personas.retain(|p| p.get("group_id").and_then(|g| g.as_str()) == Some(gid));
-    }
+    let personas: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
 
     serde_json::to_string_pretty(&personas).map_err(|e| format!("Serialize error: {e}"))
 }
