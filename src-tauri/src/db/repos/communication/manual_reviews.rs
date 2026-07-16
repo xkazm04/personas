@@ -402,31 +402,100 @@ pub fn update_status(
                     }
                 }
             } else {
-                // Solo persona (no team) — keep the per-persona learned memory.
-                let learned_title = format!("Human {verdict}: {}", current.title);
-                let mem = CreatePersonaMemoryInput {
-                    persona_id: current.persona_id.clone(),
-                    title: learned_title.clone(),
-                    content,
-                    category: Some("learned".to_string()),
-                    source_execution_id: Some(current.execution_id.clone()),
-                    importance: Some(5),
-                    tags: Some(Json(vec!["human-review".to_string(), verdict.to_string()])),
-                    use_case_id: current.use_case_id.clone(),
-                };
-                match memories::create(pool, mem) {
-                    Ok(m) => {
-                        learned = Some(LearnedMemoryRef {
-                            id: m.id,
-                            scope: "persona".into(),
-                            category: "learned".into(),
-                            title: learned_title,
-                            team_id: None,
+                // Solo persona (no team). Release the pooled connection this
+                // function has held since the atomic status flip: the memory
+                // writers below acquire their own, and create_synthesized needs
+                // several at once — keeping this one pinned can exhaust a small
+                // pool (and needlessly holds a connection across sub-calls under
+                // production load). The team branch above still uses `conn`.
+                drop(conn);
+                //
+                // Director coaching gets its own path. The Director's verdicts
+                // ARE manual reviews tagged source="director" (see
+                // engine::director::route_verdicts). For a solo persona these
+                // used to dead-end in the Overview UI — approving one changed
+                // nothing the persona could ever see. Route an APPROVED director
+                // verdict through the sanctioned runtime memory writer
+                // (`create_synthesized` — MEMORY CONTRACT (5)) so the persona's
+                // next run injects it, tagged director-sourced. A REJECTED
+                // director verdict writes NOTHING: the user said no, so the
+                // persona must not internalize coaching it was told to drop.
+                // (Re-approval is impossible — the atomic status CAS above
+                // rejects an Approved→Approved transition — so this can't double.)
+                let is_director = current
+                    .context_data
+                    .as_deref()
+                    .map(|c| c.contains("\"source\":\"director\""))
+                    .unwrap_or(false);
+
+                if is_director {
+                    if matches!(status, ManualReviewStatus::Approved) {
+                        let learned_title = format!("Director coaching: {}", current.title);
+                        let input = CreatePersonaMemoryInput {
                             persona_id: current.persona_id.clone(),
-                        });
+                            title: learned_title.clone(),
+                            content,
+                            category: Some("learned".to_string()),
+                            source_execution_id: Some(current.execution_id.clone()),
+                            // MEMORY CONTRACT (4): importance is 1..=5. Approved
+                            // director coaching is a deliberate, user-endorsed
+                            // signal, so pin it at the top of the band.
+                            importance: Some(5),
+                            tags: Some(Json(vec![
+                                "director".to_string(),
+                                "coaching".to_string(),
+                                "human-approved".to_string(),
+                            ])),
+                            use_case_id: current.use_case_id.clone(),
+                        };
+                        // Empty derived_from + no team ⇒ create_synthesized is the
+                        // sanctioned entry point; director provenance rides in the
+                        // tags/title (a review has no memory-id lineage to stamp).
+                        match memories::create_synthesized(pool, input, &[], None) {
+                            Ok(m) => {
+                                learned = Some(LearnedMemoryRef {
+                                    id: m.id,
+                                    scope: "persona".into(),
+                                    category: "learned".into(),
+                                    title: learned_title,
+                                    team_id: None,
+                                    persona_id: current.persona_id.clone(),
+                                });
+                            }
+                            Err(e) => {
+                                tracing::warn!(review_id = %id, error = %e, "learning loop: failed to write director coaching memory");
+                            }
+                        }
                     }
-                    Err(e) => {
-                        tracing::warn!(review_id = %id, error = %e, "learning loop: failed to synthesize learned memory from resolved review");
+                    // Rejected director coaching intentionally writes nothing.
+                } else {
+                    // Non-director review — keep the per-persona learned memory
+                    // for BOTH approve and reject (unchanged behaviour).
+                    let learned_title = format!("Human {verdict}: {}", current.title);
+                    let mem = CreatePersonaMemoryInput {
+                        persona_id: current.persona_id.clone(),
+                        title: learned_title.clone(),
+                        content,
+                        category: Some("learned".to_string()),
+                        source_execution_id: Some(current.execution_id.clone()),
+                        importance: Some(5),
+                        tags: Some(Json(vec!["human-review".to_string(), verdict.to_string()])),
+                        use_case_id: current.use_case_id.clone(),
+                    };
+                    match memories::create(pool, mem) {
+                        Ok(m) => {
+                            learned = Some(LearnedMemoryRef {
+                                id: m.id,
+                                scope: "persona".into(),
+                                category: "learned".into(),
+                                title: learned_title,
+                                team_id: None,
+                                persona_id: current.persona_id.clone(),
+                            });
+                        }
+                        Err(e) => {
+                            tracing::warn!(review_id = %id, error = %e, "learning loop: failed to synthesize learned memory from resolved review");
+                        }
                     }
                 }
             }
@@ -933,6 +1002,92 @@ mod tests {
             "terminal row with NULL resolved_at should fall back to created_at"
         );
         assert_eq!(within[0].id, id);
+    }
+
+    /// Build a director-sourced review (context_data carries the
+    /// `"source":"director"` marker route_verdicts stamps).
+    fn create_director_review(pool: &DbPool, persona_id: &str, execution_id: &str) -> String {
+        create(
+            pool,
+            CreateManualReviewInput {
+                execution_id: execution_id.to_string(),
+                persona_id: persona_id.to_string(),
+                title: "Add a precondition check".into(),
+                description: Some("Most runs report no_input_available.".into()),
+                severity: Some("warning".into()),
+                context_data: Some(r#"{"source":"director","category":"usefulness"}"#.into()),
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    /// Direction 2: approving a Director review on a SOLO persona produces a
+    /// persona-visible memory (via the sanctioned create_synthesized writer),
+    /// marked director-sourced.
+    #[test]
+    fn director_solo_approval_writes_provenance_memory() {
+        use crate::db::repos::core::memories;
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+        let id = create_director_review(&pool, &persona_id, &execution_id);
+
+        let learned = update_status(&pool, &id, ManualReviewStatus::Approved, None).unwrap();
+        assert!(learned.is_some(), "approval must surface a learned-memory ref");
+
+        let mems = memories::get_by_persona(&pool, &persona_id, None).unwrap();
+        assert_eq!(mems.len(), 1, "exactly one director coaching memory");
+        let m = &mems[0];
+        assert!(
+            m.title.starts_with("Director coaching:"),
+            "title must mark director provenance, got {:?}",
+            m.title
+        );
+        let tags = m.tags.as_ref().map(|t| t.0.clone()).unwrap_or_default();
+        assert!(
+            tags.iter().any(|t| t == "director"),
+            "memory must be tagged director-sourced, got {tags:?}"
+        );
+    }
+
+    /// Direction 2: rejecting Director coaching on a solo persona writes NOTHING
+    /// — the persona must not internalize coaching the user dismissed.
+    #[test]
+    fn director_solo_rejection_writes_no_memory() {
+        use crate::db::repos::core::memories;
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+        let id = create_director_review(&pool, &persona_id, &execution_id);
+
+        let learned = update_status(&pool, &id, ManualReviewStatus::Rejected, None).unwrap();
+        assert!(learned.is_none(), "rejected director coaching writes nothing");
+
+        let mems = memories::get_by_persona(&pool, &persona_id, None).unwrap();
+        assert!(
+            mems.is_empty(),
+            "no memory may be written for rejected director coaching, got {}",
+            mems.len()
+        );
+    }
+
+    /// Direction 2 guard: a NON-director solo review still writes its learned
+    /// memory for both approve and reject (the generic path is untouched).
+    #[test]
+    fn non_director_solo_approval_still_writes_learned_memory() {
+        use crate::db::repos::core::memories;
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+        let id = create_pending_review(&pool, &persona_id, &execution_id);
+
+        update_status(&pool, &id, ManualReviewStatus::Approved, None).unwrap();
+
+        let mems = memories::get_by_persona(&pool, &persona_id, None).unwrap();
+        assert_eq!(mems.len(), 1, "generic learned-memory path must still fire");
+        assert!(mems[0].title.starts_with("Human approved:"));
     }
 
     #[test]
