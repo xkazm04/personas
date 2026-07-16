@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Trophy, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -17,9 +17,14 @@ export default function LeaderboardPage() {
   const { t } = useTranslation();
   const { leaderboard, loading, isEmpty, fleetAvgScore, fleetBenchmark, refresh } = useLeaderboardData();
 
-  // Auto-load health data on first visit if empty
+  // Auto-load health data on first visit if empty. One-shot: an empty fleet
+  // (or a persistently failing health compute) still ends with isEmpty true
+  // after the refresh completes, so without the attempted-guard this effect
+  // re-scheduled refresh() every ~200ms-2s for as long as the tab was open.
+  const autoLoadAttemptedRef = useRef(false);
   useEffect(() => {
-    if (!isEmpty || loading) return;
+    if (!isEmpty || loading || autoLoadAttemptedRef.current) return;
+    autoLoadAttemptedRef.current = true;
 
     const run = () => void refresh();
     if (typeof requestIdleCallback === 'function') {
