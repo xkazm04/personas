@@ -3,7 +3,9 @@ import type { McpTool } from "@/lib/bindings/McpTool";
 import type { McpToolResult } from "@/lib/bindings/McpToolResult";
 import type { McpPingResult } from "@/lib/bindings/McpPingResult";
 import type { StdioPoolMetrics } from "@/lib/bindings/StdioPoolMetrics";
+import type { McpServerLiveness } from "@/lib/bindings/McpServerLiveness";
 
+export type { McpServerLiveness } from "@/lib/bindings/McpServerLiveness";
 export type { McpTool } from "@/lib/bindings/McpTool";
 export type { McpToolContent } from "@/lib/bindings/McpToolContent";
 export type { McpToolResult } from "@/lib/bindings/McpToolResult";
@@ -33,3 +35,9 @@ export const executeMcpTool = (
 
 export const getMcpPoolMetrics = () =>
   invoke<StdioPoolMetrics>('get_mcp_pool_metrics');
+
+// -- MCP Server Liveness --------------------------------------------------
+
+/** Live `/health` probe of the local management (":9420") server. */
+export const probeMcpServer = () =>
+  invoke<McpServerLiveness>('probe_mcp_server');

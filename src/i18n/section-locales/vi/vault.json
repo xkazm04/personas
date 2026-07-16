@@ -1239,7 +1239,11 @@
     "display_name": "Tên hiển thị (tiền tố công cụ)",
     "display_name_placeholder": "vd: arcade, research_tools, docs",
     "adding": "Đang thêm…",
-    "add_member": "Thêm thành viên"
+    "add_member": "Thêm thành viên",
+    "member_checked_label": "Đã kiểm tra",
+    "member_health_failed": "Không thể kết nối",
+    "member_health_ok": "Hoạt động tốt",
+    "member_health_unknown": "Chưa kiểm tra"
   },
   "pending_auth": {
     "title": "Yêu cầu xác thực",

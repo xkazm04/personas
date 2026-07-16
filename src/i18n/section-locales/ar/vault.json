@@ -1239,7 +1239,11 @@
     "display_name": "اسم العرض (بادئة الأداة)",
     "display_name_placeholder": "مثال: arcade، research_tools، docs",
     "adding": "جارٍ الإضافة...",
-    "add_member": "إضافة عضو"
+    "add_member": "إضافة عضو",
+    "member_checked_label": "تم الفحص",
+    "member_health_failed": "غير متاح",
+    "member_health_ok": "سليم",
+    "member_health_unknown": "لم يُفحص بعد"
   },
   "pending_auth": {
     "title": "التفويض مطلوب",

@@ -5185,6 +5185,10 @@ export type Translations = {
       display_name_placeholder: string;
       adding: string;
       add_member: string;
+      member_health_ok: string;
+      member_health_failed: string;
+      member_health_unknown: string;
+      member_checked_label: string;
     };
     pending_auth: {
       title: string;
@@ -10662,6 +10666,8 @@ export type Translations = {
       created_done: string;
       server_panel_title: string;
       server_status_running: string;
+      server_status_checking: string;
+      server_status_down: string;
       server_panel_description: string;
       endpoints_disclosure: string;
       endpoint_health: string;

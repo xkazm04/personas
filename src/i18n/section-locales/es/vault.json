@@ -1239,7 +1239,11 @@
     "display_name": "Nombre de visualización (prefijo de herramienta)",
     "display_name_placeholder": "p. ej. arcade, herramientas_investigacion, docs",
     "adding": "Agregando…",
-    "add_member": "Agregar miembro"
+    "add_member": "Agregar miembro",
+    "member_checked_label": "Comprobado",
+    "member_health_failed": "Inaccesible",
+    "member_health_ok": "Saludable",
+    "member_health_unknown": "Aún no comprobado"
   },
   "pending_auth": {
     "title": "Se requiere autorización",

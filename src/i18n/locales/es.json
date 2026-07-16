@@ -4855,7 +4855,11 @@
       "display_name": "Nombre de visualización (prefijo de herramienta)",
       "display_name_placeholder": "p. ej. arcade, herramientas_investigacion, docs",
       "adding": "Agregando…",
-      "add_member": "Agregar miembro"
+      "add_member": "Agregar miembro",
+      "member_checked_label": "Comprobado",
+      "member_health_failed": "Inaccesible",
+      "member_health_ok": "Saludable",
+      "member_health_unknown": "Aún no comprobado"
     },
     "pending_auth": {
       "title": "Se requiere autorización",
@@ -10438,7 +10442,9 @@
       "pair_reject": "Rechazar",
       "pair_safety_note": "La clave está vinculada a este origen, expira y es completamente auditable. Desconéctala en cualquier momento en Apps conectadas.",
       "pair_scopes_label": "Acceso solicitado",
-      "pair_title": "Conectar una app en la nube"
+      "pair_title": "Conectar una app en la nube",
+      "server_status_checking": "Comprobando…",
+      "server_status_down": "Caído"
     },
     "search": {
       "placeholder": "Buscar configuración…",

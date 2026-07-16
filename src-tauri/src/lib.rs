@@ -2229,6 +2229,7 @@ pub fn run() {
             commands::credentials::mcp_tools::execute_mcp_tool,
             commands::credentials::mcp_tools::healthcheck_mcp_preview,
             commands::credentials::mcp_tools::get_mcp_pool_metrics,
+            commands::credentials::mcp_tools::probe_mcp_server,
             // Credentials -- MCP Gateway membership (bundles multiple MCP servers under one credential)
             commands::credentials::mcp_gateways::add_mcp_gateway_member,
             commands::credentials::mcp_gateways::remove_mcp_gateway_member,

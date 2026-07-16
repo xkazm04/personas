@@ -5178,7 +5178,11 @@
       "display_name": "Display name (tool prefix)",
       "display_name_placeholder": "e.g. arcade, research_tools, docs",
       "adding": "Adding…",
-      "add_member": "Add member"
+      "add_member": "Add member",
+      "member_health_ok": "Healthy",
+      "member_health_failed": "Unreachable",
+      "member_health_unknown": "Not checked yet",
+      "member_checked_label": "Checked"
     },
     "pending_auth": {
       "title": "Authorization required",
@@ -10656,6 +10660,8 @@
       "created_done": "Done",
       "server_panel_title": "MCP server",
       "server_status_running": "Running",
+      "server_status_checking": "Checking…",
+      "server_status_down": "Down",
       "server_panel_description": "Always-on local HTTP server on 127.0.0.1. Auth-gated by the keys below — revoking a key is the kill switch.",
       "endpoints_disclosure": "Available endpoints",
       "endpoint_health": "Liveness probe (no auth required)",

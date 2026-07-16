@@ -30,6 +30,16 @@ pub struct GatewayMember {
     pub enabled: bool,
     pub sort_order: i32,
     pub created_at: String,
+    /// Last recorded healthcheck state of the member credential
+    /// (`"verified"` / `"failed"` / `"unverifiable"`), read from the member
+    /// credential's metadata ring buffer. `None` = never probed yet. Written by
+    /// the periodic `McpHealthcheckSubscription` sweep; lets the members modal
+    /// show a live ok/failed badge instead of only surfacing a dead member as
+    /// silently-missing tools.
+    pub last_health_state: Option<String>,
+    /// RFC3339 timestamp of the last healthcheck probe of this member, or `None`
+    /// if never probed.
+    pub last_checked_at: Option<String>,
 }
 
 /// Add a credential as a member of a gateway. Idempotent on the
@@ -86,10 +96,18 @@ pub fn list_members(
     gateway_credential_id: &str,
 ) -> Result<Vec<GatewayMember>, AppError> {
     let conn = pool.get()?;
+    // The member health columns (`last_health_state` / `last_checked_at`) are
+    // read from the member credential's metadata ring buffer, populated by the
+    // periodic MCP gateway healthcheck sweep. `healthcheck_last_state` is a
+    // top-level key (written via patch_metadata_atomic) and
+    // `healthcheck_last_tested_at` is flattened from the ledger `custom` map, so
+    // both resolve via json_extract at the top level.
     let mut stmt = conn.prepare(
         "SELECT m.id, m.gateway_credential_id, m.member_credential_id,
                 c.service_type, c.name,
-                m.display_name, m.enabled, m.sort_order, m.created_at
+                m.display_name, m.enabled, m.sort_order, m.created_at,
+                json_extract(c.metadata, '$.healthcheck_last_state'),
+                json_extract(c.metadata, '$.healthcheck_last_tested_at')
          FROM mcp_gateway_members m
          INNER JOIN credentials c ON c.id = m.member_credential_id
          WHERE m.gateway_credential_id = ?1
@@ -108,6 +126,8 @@ pub fn list_members(
                 enabled: row.get::<_, i64>(6)? != 0,
                 sort_order: row.get(7)?,
                 created_at: row.get(8)?,
+                last_health_state: row.get(9)?,
+                last_checked_at: row.get(10)?,
             })
         })?
         .collect::<Result<Vec<_>, rusqlite::Error>>()?;

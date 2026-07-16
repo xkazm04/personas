@@ -1239,7 +1239,11 @@
     "display_name": "डिस्प्ले नाम (टूल प्रीफ़िक्स)",
     "display_name_placeholder": "जैसे arcade, research_tools, docs",
     "adding": "जोड़ा जा रहा है…",
-    "add_member": "सदस्य जोड़ें"
+    "add_member": "सदस्य जोड़ें",
+    "member_checked_label": "जाँचा गया",
+    "member_health_failed": "अनुपलब्ध",
+    "member_health_ok": "स्वस्थ",
+    "member_health_unknown": "अभी तक जाँचा नहीं गया"
   },
   "pending_auth": {
     "title": "प्राधिकरण आवश्यक",

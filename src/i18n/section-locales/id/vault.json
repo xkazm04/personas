@@ -1239,7 +1239,11 @@
     "display_name": "Nama tampilan (awalan alat)",
     "display_name_placeholder": "misal arcade, research_tools, docs",
     "adding": "Menambahkan…",
-    "add_member": "Tambah anggota"
+    "add_member": "Tambah anggota",
+    "member_checked_label": "Diperiksa",
+    "member_health_failed": "Tidak dapat dijangkau",
+    "member_health_ok": "Sehat",
+    "member_health_unknown": "Belum diperiksa"
   },
   "pending_auth": {
     "title": "Otorisasi diperlukan",

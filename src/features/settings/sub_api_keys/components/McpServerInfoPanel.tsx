@@ -7,15 +7,19 @@
  * switch. This panel just surfaces the URL + endpoint reference so
  * users know what to configure their MCP client with.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Copy, Check, ExternalLink, Server } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { probeMcpServer, type McpServerLiveness } from '@/api/agents/mcpTools';
 
 
 const MCP_BASE_URL = 'http://127.0.0.1:9420';
+
+/** How often the panel re-probes the local server's live state. */
+const PROBE_INTERVAL_MS = 30_000;
 
 const ENDPOINTS = [
   { method: 'GET', path: '/health', descriptionKey: 'endpoint_health' as const },
@@ -42,6 +46,9 @@ export function McpServerInfoPanel() {
   const { t } = useTranslation();
   const s = t.settings.api_keys;
   const [urlCopied, setUrlCopied] = useState(false);
+  // null = probe in flight / not yet resolved (Checking…); otherwise the live result.
+  const [liveness, setLiveness] = useState<McpServerLiveness | null>(null);
+  const mounted = useRef(true);
 
   const copyUrl = useCallback(async () => {
     try {
@@ -51,18 +58,57 @@ export function McpServerInfoPanel() {
     } catch (err) { silentCatch("features/settings/sub_api_keys/components/McpServerInfoPanel:catch1")(err); }
   }, []);
 
+  useEffect(() => {
+    mounted.current = true;
+    const probe = async () => {
+      try {
+        const result = await probeMcpServer();
+        if (mounted.current) setLiveness(result);
+      } catch (err) {
+        // A failed probe IS the down signal — render Down, not a crash.
+        if (mounted.current) setLiveness({ live: false, port: 9420 });
+        silentCatch('features/settings/sub_api_keys/components/McpServerInfoPanel:probe')(err);
+      }
+    };
+    probe();
+    const timer = setInterval(probe, PROBE_INTERVAL_MS);
+    return () => {
+      mounted.current = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  // Three honest states: checking (probe in flight), running (live), down.
+  const statusKey = liveness === null ? 'checking' : liveness.live ? 'running' : 'down';
+  const statusLabel =
+    statusKey === 'checking'
+      ? s.server_status_checking
+      : statusKey === 'running'
+        ? s.server_status_running
+        : s.server_status_down;
+  const statusClass =
+    statusKey === 'running'
+      ? 'text-emerald-400 bg-emerald-400/10'
+      : statusKey === 'down'
+        ? 'text-red-400 bg-red-400/10'
+        : 'text-amber-400 bg-amber-400/10';
+
   return (
     <SectionCard
       title={s.server_panel_title}
       icon={<Server className="w-4 h-4 text-fuchsia-400" />}
       titleClassName="text-primary"
       action={
-        <span className="typo-caption text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
-          {s.server_status_running}
+        <span
+          data-testid="mcp-server-status-chip"
+          data-status={statusKey}
+          className={`typo-caption px-1.5 py-0.5 rounded ${statusClass}`}
+        >
+          {statusLabel}
         </span>
       }
     >
-      <div className="space-y-3">
+      <div className="space-y-3" data-testid="mcp-server-info-panel">
       <p className="typo-caption text-foreground leading-relaxed">{s.server_panel_description}</p>
 
       <div className="flex items-center gap-2">

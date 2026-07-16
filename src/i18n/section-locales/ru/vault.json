@@ -1239,7 +1239,11 @@
     "display_name": "Отображаемое имя (префикс инструмента)",
     "display_name_placeholder": "например, arcade, research_tools, docs",
     "adding": "Добавление…",
-    "add_member": "Добавить участника"
+    "add_member": "Добавить участника",
+    "member_checked_label": "Проверено",
+    "member_health_failed": "Недоступен",
+    "member_health_ok": "Исправен",
+    "member_health_unknown": "Ещё не проверено"
   },
   "pending_auth": {
     "title": "Требуется авторизация",

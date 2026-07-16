@@ -743,7 +743,9 @@
     "pair_reject": "Odmítnout",
     "pair_safety_note": "Klíč je vázán na tento původ, vyprší a je plně auditovatelný. Kdykoli ho odpojte v části Připojené aplikace.",
     "pair_scopes_label": "Požadovaný přístup",
-    "pair_title": "Připojit cloudovou aplikaci"
+    "pair_title": "Připojit cloudovou aplikaci",
+    "server_status_checking": "Kontroluje se…",
+    "server_status_down": "Nedostupný"
   },
   "search": {
     "placeholder": "Hledat nastavení…",

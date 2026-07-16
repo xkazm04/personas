@@ -25,6 +25,14 @@ export interface GatewayMember {
   enabled: boolean;
   sortOrder: number;
   createdAt: string;
+  /**
+   * Last recorded healthcheck state of the member credential
+   * ('verified' | 'failed' | 'unverifiable'), or null if never probed. Written
+   * by the periodic MCP gateway healthcheck sweep.
+   */
+  lastHealthState: string | null;
+  /** RFC3339 timestamp of the last member healthcheck, or null if never probed. */
+  lastCheckedAt: string | null;
 }
 
 /**

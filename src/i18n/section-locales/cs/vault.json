@@ -1239,7 +1239,11 @@
     "display_name": "Zobrazovaný název (prefix nástroje)",
     "display_name_placeholder": "např. arcade, research_tools, docs",
     "adding": "Přidávání\\u2026",
-    "add_member": "Přidat člena"
+    "add_member": "Přidat člena",
+    "member_checked_label": "Zkontrolováno",
+    "member_health_failed": "Nedosažitelný",
+    "member_health_ok": "V pořádku",
+    "member_health_unknown": "Zatím nezkontrolováno"
   },
   "pending_auth": {
     "title": "Vyžadována autorizace",

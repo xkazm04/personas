@@ -743,7 +743,9 @@
     "pair_reject": "拒否",
     "pair_safety_note": "キーはこのオリジンに紐付けられ、有効期限があり、完全に監査可能です。接続済みアプリからいつでも切断できます。",
     "pair_scopes_label": "要求されたアクセス",
-    "pair_title": "クラウドアプリを接続"
+    "pair_title": "クラウドアプリを接続",
+    "server_status_checking": "確認中…",
+    "server_status_down": "停止中"
   },
   "search": {
     "placeholder": "設定を検索…",

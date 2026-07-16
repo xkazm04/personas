@@ -4855,7 +4855,11 @@
       "display_name": "Nama tampilan (awalan alat)",
       "display_name_placeholder": "misal arcade, research_tools, docs",
       "adding": "Menambahkan…",
-      "add_member": "Tambah anggota"
+      "add_member": "Tambah anggota",
+      "member_checked_label": "Diperiksa",
+      "member_health_failed": "Tidak dapat dijangkau",
+      "member_health_ok": "Sehat",
+      "member_health_unknown": "Belum diperiksa"
     },
     "pending_auth": {
       "title": "Otorisasi diperlukan",
@@ -10438,7 +10442,9 @@
       "pair_reject": "Tolak",
       "pair_safety_note": "Kunci terikat pada origin ini, akan kedaluwarsa, dan dapat diaudit sepenuhnya. Putuskan kapan saja di Aplikasi terhubung.",
       "pair_scopes_label": "Akses yang diminta",
-      "pair_title": "Hubungkan aplikasi cloud"
+      "pair_title": "Hubungkan aplikasi cloud",
+      "server_status_checking": "Memeriksa…",
+      "server_status_down": "Tidak aktif"
     },
     "search": {
       "placeholder": "Cari pengaturan…",

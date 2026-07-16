@@ -1239,7 +1239,11 @@
     "display_name": "ডিসপ্লে নাম (টুল প্রিফিক্স)",
     "display_name_placeholder": "যেমন arcade, research_tools, docs",
     "adding": "যোগ হচ্ছে…",
-    "add_member": "সদস্য যোগ করুন"
+    "add_member": "সদস্য যোগ করুন",
+    "member_checked_label": "পরীক্ষিত",
+    "member_health_failed": "অপ্রাপ্য",
+    "member_health_ok": "সুস্থ",
+    "member_health_unknown": "এখনও পরীক্ষা করা হয়নি"
   },
   "pending_auth": {
     "title": "অনুমোদন প্রয়োজন",

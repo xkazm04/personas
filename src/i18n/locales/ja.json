@@ -4855,7 +4855,11 @@
       "display_name": "表示名（ツールのプレフィックス）",
       "display_name_placeholder": "例: arcade、research_tools、docs",
       "adding": "追加中…",
-      "add_member": "メンバーを追加"
+      "add_member": "メンバーを追加",
+      "member_checked_label": "確認済み",
+      "member_health_failed": "到達不能",
+      "member_health_ok": "正常",
+      "member_health_unknown": "未確認"
     },
     "pending_auth": {
       "title": "認証が必要です",
@@ -10438,7 +10442,9 @@
       "pair_reject": "拒否",
       "pair_safety_note": "キーはこのオリジンに紐付けられ、有効期限があり、完全に監査可能です。接続済みアプリからいつでも切断できます。",
       "pair_scopes_label": "要求されたアクセス",
-      "pair_title": "クラウドアプリを接続"
+      "pair_title": "クラウドアプリを接続",
+      "server_status_checking": "確認中…",
+      "server_status_down": "停止中"
     },
     "search": {
       "placeholder": "設定を検索…",

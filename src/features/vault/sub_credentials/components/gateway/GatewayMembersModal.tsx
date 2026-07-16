@@ -42,6 +42,30 @@ import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+
+/** Small ok/failed/unknown badge for a gateway member's last healthcheck. */
+function MemberHealthBadge({ state }: { state: string | null }) {
+  const { t } = useTranslation();
+  const gw = t.vault.gateway;
+  const map = {
+    ok: { label: gw.member_health_ok, cls: 'text-emerald-400 bg-emerald-400/10', dot: 'bg-emerald-400' },
+    failed: { label: gw.member_health_failed, cls: 'text-red-400 bg-red-400/10', dot: 'bg-red-400' },
+    unknown: { label: gw.member_health_unknown, cls: 'text-muted-foreground bg-secondary/40', dot: 'bg-muted-foreground' },
+  } as const;
+  const key = state === 'verified' ? 'ok' : state === 'failed' ? 'failed' : 'unknown';
+  const cfg = map[key];
+  return (
+    <span
+      data-testid="gateway-member-health"
+      data-health={key}
+      className={`inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded ${cfg.cls}`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  );
+}
 
 interface GatewayMembersModalProps {
   credential: CredentialMetadata;
@@ -214,6 +238,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                       return (
                         <li
                           key={m.id}
+                          data-testid="gateway-member-row"
                           className="flex items-center gap-3 rounded-interactive border border-primary/10 bg-background/50 p-3"
                         >
                           <div className="flex-1 min-w-0">
@@ -222,10 +247,19 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                               <span className="text-foreground">{' → '}</span>
                               <span>{m.memberLabel}</span>
                             </p>
-                            <p className="typo-caption text-foreground">
-                              {m.memberServiceType}
-                              {!m.enabled && gw.disabled_suffix}
-                            </p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="typo-caption text-foreground">
+                                {m.memberServiceType}
+                                {!m.enabled && gw.disabled_suffix}
+                              </p>
+                              <MemberHealthBadge state={m.lastHealthState} />
+                              {m.lastCheckedAt && (
+                                <span className="typo-caption text-foreground">
+                                  {gw.member_checked_label}{' '}
+                                  <RelativeTime timestamp={m.lastCheckedAt} />
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <Button
                             variant="ghost"

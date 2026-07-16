@@ -280,6 +280,18 @@ pub struct CredentialHealthcheckSubscription {
     pub pool: DbPool,
 }
 
+/// Periodic MCP gateway-member healthcheck subscription: probes every enabled
+/// member of every MCP gateway and persists per-member status (ok / failed /
+/// last-checked) into the member credential's metadata ring buffer.
+///
+/// Closes the "dead gateway member is invisible" gap: without this a member
+/// that stops responding just silently drops its tools from `list_tools`
+/// (`mcp_tools` gateway fan-out), with no status anywhere. The tick skips
+/// entirely when no MCP gateways exist, so this is free for the common case.
+pub struct McpHealthcheckSubscription {
+    pub pool: DbPool,
+}
+
 /// Periodic sweep for zombie executions stuck in 'running' state.
 pub struct ZombieExecutionSubscription {
     pub pool: DbPool,
@@ -939,6 +951,30 @@ impl ReactiveSubscription for CredentialHealthcheckSubscription {
 
     async fn tick(&self) {
         super::healthcheck::daily_healthcheck_tick(&self.pool).await;
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for McpHealthcheckSubscription {
+    fn name(&self) -> &'static str {
+        "mcp_healthcheck"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(900) // 15 min — member health can change between runs
+    }
+
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800) // 30 min when idle
+    }
+
+    fn initial_delay(&self) -> Duration {
+        // Let the app + credential subsystem settle before the first sweep.
+        Duration::from_secs(90)
+    }
+
+    async fn tick(&self) {
+        super::mcp_tools::mcp_gateway_healthcheck_tick(&self.pool).await;
     }
 }
 

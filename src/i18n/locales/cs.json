@@ -4855,7 +4855,11 @@
       "display_name": "Zobrazovaný název (prefix nástroje)",
       "display_name_placeholder": "např. arcade, research_tools, docs",
       "adding": "Přidávání\\u2026",
-      "add_member": "Přidat člena"
+      "add_member": "Přidat člena",
+      "member_checked_label": "Zkontrolováno",
+      "member_health_failed": "Nedosažitelný",
+      "member_health_ok": "V pořádku",
+      "member_health_unknown": "Zatím nezkontrolováno"
     },
     "pending_auth": {
       "title": "Vyžadována autorizace",
@@ -10438,7 +10442,9 @@
       "pair_reject": "Odmítnout",
       "pair_safety_note": "Klíč je vázán na tento původ, vyprší a je plně auditovatelný. Kdykoli ho odpojte v části Připojené aplikace.",
       "pair_scopes_label": "Požadovaný přístup",
-      "pair_title": "Připojit cloudovou aplikaci"
+      "pair_title": "Připojit cloudovou aplikaci",
+      "server_status_checking": "Kontroluje se…",
+      "server_status_down": "Nedostupný"
     },
     "search": {
       "placeholder": "Hledat nastavení…",

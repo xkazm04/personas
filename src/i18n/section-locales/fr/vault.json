@@ -1239,7 +1239,11 @@
     "display_name": "Nom d'affichage (préfixe d'outil)",
     "display_name_placeholder": "ex. arcade, research_tools, docs",
     "adding": "Ajout…",
-    "add_member": "Ajouter un membre"
+    "add_member": "Ajouter un membre",
+    "member_checked_label": "Vérifié",
+    "member_health_failed": "Inaccessible",
+    "member_health_ok": "Sain",
+    "member_health_unknown": "Pas encore vérifié"
   },
   "pending_auth": {
     "title": "Autorisation requise",

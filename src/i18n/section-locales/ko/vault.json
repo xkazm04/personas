@@ -1239,7 +1239,11 @@
     "display_name": "표시 이름 (도구 접두사)",
     "display_name_placeholder": "예: arcade, research_tools, docs",
     "adding": "추가 중…",
-    "add_member": "멤버 추가"
+    "add_member": "멤버 추가",
+    "member_checked_label": "확인됨",
+    "member_health_failed": "연결 불가",
+    "member_health_ok": "정상",
+    "member_health_unknown": "아직 확인 안 됨"
   },
   "pending_auth": {
     "title": "인증 필요",

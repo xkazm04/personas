@@ -4855,7 +4855,11 @@
       "display_name": "Отображаемое имя (префикс инструмента)",
       "display_name_placeholder": "например, arcade, research_tools, docs",
       "adding": "Добавление…",
-      "add_member": "Добавить участника"
+      "add_member": "Добавить участника",
+      "member_checked_label": "Проверено",
+      "member_health_failed": "Недоступен",
+      "member_health_ok": "Исправен",
+      "member_health_unknown": "Ещё не проверено"
     },
     "pending_auth": {
       "title": "Требуется авторизация",
@@ -10438,7 +10442,9 @@
       "pair_reject": "Отклонить",
       "pair_safety_note": "Ключ привязан к этому источнику, имеет срок действия и полностью отслеживается. Отключите его в любой момент в разделе «Подключённые приложения».",
       "pair_scopes_label": "Запрошенный доступ",
-      "pair_title": "Подключить облачное приложение"
+      "pair_title": "Подключить облачное приложение",
+      "server_status_checking": "Проверка…",
+      "server_status_down": "Не работает"
     },
     "search": {
       "placeholder": "Поиск в настройках…",

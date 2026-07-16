@@ -717,7 +717,9 @@
     "pair_reject": "Refuser",
     "pair_safety_note": "La clé est liée à cette origine, expire et est entièrement auditable. Déconnectez-la à tout moment depuis Applications connectées.",
     "pair_scopes_label": "Accès demandé",
-    "pair_title": "Connecter une application cloud"
+    "pair_title": "Connecter une application cloud",
+    "server_status_checking": "Vérification…",
+    "server_status_down": "Indisponible"
   },
   "limits": {
     "title": "Limites de dépense",

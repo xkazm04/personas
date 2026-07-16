@@ -743,7 +743,9 @@
     "pair_reject": "Ablehnen",
     "pair_safety_note": "Der Schlüssel ist an diesen Ursprung gebunden, läuft ab und ist vollständig nachvollziehbar. Jederzeit unter Verbundene Apps trennen.",
     "pair_scopes_label": "Angeforderter Zugriff",
-    "pair_title": "Cloud-App verbinden"
+    "pair_title": "Cloud-App verbinden",
+    "server_status_checking": "Wird geprüft…",
+    "server_status_down": "Nicht erreichbar"
   },
   "search": {
     "placeholder": "Einstellungen suchen…",

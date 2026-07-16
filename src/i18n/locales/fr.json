@@ -4855,7 +4855,11 @@
       "display_name": "Nom d'affichage (préfixe d'outil)",
       "display_name_placeholder": "ex. arcade, research_tools, docs",
       "adding": "Ajout…",
-      "add_member": "Ajouter un membre"
+      "add_member": "Ajouter un membre",
+      "member_checked_label": "Vérifié",
+      "member_health_failed": "Inaccessible",
+      "member_health_ok": "Sain",
+      "member_health_unknown": "Pas encore vérifié"
     },
     "pending_auth": {
       "title": "Autorisation requise",
@@ -10412,7 +10416,9 @@
       "pair_reject": "Refuser",
       "pair_safety_note": "La clé est liée à cette origine, expire et est entièrement auditable. Déconnectez-la à tout moment depuis Applications connectées.",
       "pair_scopes_label": "Accès demandé",
-      "pair_title": "Connecter une application cloud"
+      "pair_title": "Connecter une application cloud",
+      "server_status_checking": "Vérification…",
+      "server_status_down": "Indisponible"
     },
     "limits": {
       "title": "Limites de dépense",

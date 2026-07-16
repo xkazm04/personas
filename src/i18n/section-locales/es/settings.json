@@ -743,7 +743,9 @@
     "pair_reject": "Rechazar",
     "pair_safety_note": "La clave está vinculada a este origen, expira y es completamente auditable. Desconéctala en cualquier momento en Apps conectadas.",
     "pair_scopes_label": "Acceso solicitado",
-    "pair_title": "Conectar una app en la nube"
+    "pair_title": "Conectar una app en la nube",
+    "server_status_checking": "Comprobando…",
+    "server_status_down": "Caído"
   },
   "search": {
     "placeholder": "Buscar configuración…",

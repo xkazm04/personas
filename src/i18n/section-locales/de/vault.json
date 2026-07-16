@@ -1239,7 +1239,11 @@
     "display_name": "Anzeigename (Tool-Präfix)",
     "display_name_placeholder": "z. B. arcade, research_tools, docs",
     "adding": "Wird hinzugefügt…",
-    "add_member": "Mitglied hinzufügen"
+    "add_member": "Mitglied hinzufügen",
+    "member_checked_label": "Geprüft",
+    "member_health_failed": "Nicht erreichbar",
+    "member_health_ok": "Gesund",
+    "member_health_unknown": "Noch nicht geprüft"
   },
   "pending_auth": {
     "title": "Autorisierung erforderlich",

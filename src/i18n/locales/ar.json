@@ -4855,7 +4855,11 @@
       "display_name": "اسم العرض (بادئة الأداة)",
       "display_name_placeholder": "مثال: arcade، research_tools، docs",
       "adding": "جارٍ الإضافة...",
-      "add_member": "إضافة عضو"
+      "add_member": "إضافة عضو",
+      "member_checked_label": "تم الفحص",
+      "member_health_failed": "غير متاح",
+      "member_health_ok": "سليم",
+      "member_health_unknown": "لم يُفحص بعد"
     },
     "pending_auth": {
       "title": "التفويض مطلوب",
@@ -10412,7 +10416,9 @@
       "pair_reject": "رفض",
       "pair_safety_note": "المفتاح مرتبط بهذا المصدر، وله تاريخ انتهاء، وقابل للتدقيق الكامل. يمكنك قطع اتصاله في أي وقت من التطبيقات المتصلة.",
       "pair_scopes_label": "الصلاحيات المطلوبة",
-      "pair_title": "ربط تطبيق سحابي"
+      "pair_title": "ربط تطبيق سحابي",
+      "server_status_checking": "جارٍ التحقق…",
+      "server_status_down": "متوقف"
     },
     "limits": {
       "title": "حدود الإنفاق",

@@ -458,6 +458,11 @@ pub fn start_loops(
         // whose concurrent privileged-IPC stampede produced false "degraded"
         // cards (x-ipc-token race in ipc_auth.rs).
         Box::new(CredentialHealthcheckSubscription { pool: pool.clone() }),
+        // Periodic MCP gateway-member healthcheck: probes each enabled gateway
+        // member and records per-member status into its credential metadata so a
+        // dead member surfaces as an explicit "failed" instead of just silently
+        // missing tools. No-op when no MCP gateways exist.
+        Box::new(subscription::McpHealthcheckSubscription { pool: pool.clone() }),
         Box::new(subscription::ZombieExecutionSubscription {
             pool: pool.clone(),
             app: app.clone(),

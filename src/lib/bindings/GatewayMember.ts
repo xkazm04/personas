@@ -4,4 +4,18 @@
  * A single member of an MCP gateway -- joins the `mcp_gateway_members` row
  * with enough credential metadata for the UI and the engine resolver.
  */
-export type GatewayMember = { id: string, gatewayCredentialId: string, memberCredentialId: string, memberServiceType: string, memberLabel: string, displayName: string, enabled: boolean, sortOrder: number, createdAt: string, };
+export type GatewayMember = { id: string, gatewayCredentialId: string, memberCredentialId: string, memberServiceType: string, memberLabel: string, displayName: string, enabled: boolean, sortOrder: number, createdAt: string, 
+/**
+ * Last recorded healthcheck state of the member credential
+ * (`"verified"` / `"failed"` / `"unverifiable"`), read from the member
+ * credential's metadata ring buffer. `None` = never probed yet. Written by
+ * the periodic `McpHealthcheckSubscription` sweep; lets the members modal
+ * show a live ok/failed badge instead of only surfacing a dead member as
+ * silently-missing tools.
+ */
+lastHealthState: string | null, 
+/**
+ * RFC3339 timestamp of the last healthcheck probe of this member, or `None`
+ * if never probed.
+ */
+lastCheckedAt: string | null, };

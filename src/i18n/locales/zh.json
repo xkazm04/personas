@@ -4855,7 +4855,11 @@
       "display_name": "显示名称（工具前缀）",
       "display_name_placeholder": "例如 arcade、research_tools、docs",
       "adding": "添加中…",
-      "add_member": "添加成员"
+      "add_member": "添加成员",
+      "member_checked_label": "已检查",
+      "member_health_failed": "无法访问",
+      "member_health_ok": "健康",
+      "member_health_unknown": "尚未检查"
     },
     "pending_auth": {
       "title": "需要授权",
@@ -10412,7 +10416,9 @@
       "pair_reject": "拒绝",
       "pair_safety_note": "密钥绑定到此来源，有过期时间，且完全可审计。随时可在“已连接的应用”中断开连接。",
       "pair_scopes_label": "请求的访问权限",
-      "pair_title": "连接云端应用"
+      "pair_title": "连接云端应用",
+      "server_status_checking": "检查中…",
+      "server_status_down": "已停止"
     },
     "limits": {
       "title": "Spending Limits",

@@ -743,7 +743,9 @@
     "pair_reject": "Tolak",
     "pair_safety_note": "Kunci terikat pada origin ini, akan kedaluwarsa, dan dapat diaudit sepenuhnya. Putuskan kapan saja di Aplikasi terhubung.",
     "pair_scopes_label": "Akses yang diminta",
-    "pair_title": "Hubungkan aplikasi cloud"
+    "pair_title": "Hubungkan aplikasi cloud",
+    "server_status_checking": "Memeriksa…",
+    "server_status_down": "Tidak aktif"
   },
   "search": {
     "placeholder": "Cari pengaturan…",

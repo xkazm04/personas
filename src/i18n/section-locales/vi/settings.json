@@ -743,7 +743,9 @@
     "pair_reject": "Từ chối",
     "pair_safety_note": "Khóa được gắn với origin này, có thời hạn và có thể kiểm tra đầy đủ. Ngắt kết nối bất kỳ lúc nào trong mục Ứng dụng đã kết nối.",
     "pair_scopes_label": "Quyền truy cập được yêu cầu",
-    "pair_title": "Kết nối ứng dụng đám mây"
+    "pair_title": "Kết nối ứng dụng đám mây",
+    "server_status_checking": "Đang kiểm tra…",
+    "server_status_down": "Ngừng hoạt động"
   },
   "search": {
     "placeholder": "Tìm kiếm cài đặt…",

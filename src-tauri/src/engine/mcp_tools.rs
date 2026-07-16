@@ -2039,3 +2039,113 @@ fn parse_tool_result(resp: &serde_json::Value) -> Result<McpToolResult, AppError
         duration_ms: 0,
     })
 }
+
+// ============================================================================
+// Gateway-member healthcheck scheduling (honest-mcp-status)
+// ============================================================================
+
+/// Bounded concurrency for the gateway-member healthcheck sweep — mirrors the
+/// credential sweep (3) so probing many members that share a host doesn't trip
+/// provider rate limits.
+const GATEWAY_HEALTHCHECK_CONCURRENCY: usize = 3;
+
+/// Periodically probe every enabled MCP gateway member and persist the result
+/// into that member credential's metadata ring buffer.
+///
+/// Before this, a dead gateway member was invisible: `list_tools` skips a member
+/// that fails `tools/list` (see the gateway fan-out above) and the member's tools
+/// simply never appear — the user has no signal a member is down until they
+/// notice missing tools. This sweep turns that lazy, silent failure into an
+/// eagerly recorded per-member status (ok / failed / last-checked) that the
+/// GatewayMembersModal renders.
+///
+/// Reuses the SAME persistence the per-credential healthcheck uses
+/// (`append_healthcheck_metadata` + `persist_probe_state` on the member
+/// credential), so a member's status surfaces wherever credential health is
+/// read. Scheduled by `McpHealthcheckSubscription`; the subscription/tick skip
+/// entirely when no MCP gateways exist. Never errors — best-effort, logged.
+pub async fn mcp_gateway_healthcheck_tick(pool: &DbPool) {
+    use futures_util::stream::{self, StreamExt};
+
+    let gateways = match cred_repo::get_by_service_type(pool, MCP_GATEWAY_CONNECTOR) {
+        Ok(g) => g,
+        Err(e) => {
+            tracing::warn!(error = %e, "mcp gateway healthcheck: failed to list gateways");
+            return;
+        }
+    };
+    if gateways.is_empty() {
+        return; // no MCP gateways — nothing to probe
+    }
+
+    // Collect enabled members across all gateways, de-duplicated by member
+    // credential id (a credential may belong to multiple gateways — probe once).
+    let mut member_ids: Vec<String> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    for gw in &gateways {
+        let members = match crate::db::repos::resources::mcp_gateways::list_members(pool, &gw.id) {
+            Ok(m) => m,
+            Err(e) => {
+                tracing::warn!(gateway = %gw.id, error = %e, "mcp gateway healthcheck: failed to list members");
+                continue;
+            }
+        };
+        for m in members.into_iter().filter(|m| m.enabled) {
+            if seen.insert(m.member_credential_id.clone()) {
+                member_ids.push(m.member_credential_id);
+            }
+        }
+    }
+    if member_ids.is_empty() {
+        return;
+    }
+
+    let member_count = member_ids.len();
+    let gateway_count = gateways.len();
+    stream::iter(member_ids)
+        .for_each_concurrent(GATEWAY_HEALTHCHECK_CONCURRENCY, |member_id| async move {
+            probe_and_persist_member(pool, &member_id).await;
+        })
+        .await;
+
+    tracing::debug!(
+        members = member_count,
+        gateways = gateway_count,
+        "mcp gateway member healthcheck sweep complete"
+    );
+}
+
+/// Probe a single gateway member credential and persist the outcome into its
+/// metadata ring buffer (the same shape the Vault + GatewayMembersModal read).
+async fn probe_and_persist_member(pool: &DbPool, member_credential_id: &str) {
+    use crate::engine::healthcheck::{persist_probe_state, HealthProbeState};
+
+    let (success, message) = match cred_repo::get_by_id(pool, member_credential_id) {
+        Ok(cred) => match cred_repo::get_decrypted_fields(pool, &cred) {
+            Ok(fields) => match ping(&fields).await {
+                Ok(p) => (p.success, p.message),
+                Err(e) => (false, e.to_string()),
+            },
+            Err(e) => (false, format!("could not decrypt member credential: {e}")),
+        },
+        Err(e) => {
+            tracing::warn!(member = %member_credential_id, error = %e, "mcp gateway healthcheck: member credential not found");
+            return;
+        }
+    };
+
+    if let Err(e) =
+        cred_repo::append_healthcheck_metadata(pool, member_credential_id, success, &message)
+    {
+        tracing::warn!(member = %member_credential_id, error = %e, "mcp gateway healthcheck: failed to persist metadata");
+    }
+    persist_probe_state(
+        pool,
+        member_credential_id,
+        if success {
+            HealthProbeState::Verified
+        } else {
+            HealthProbeState::Failed
+        },
+    );
+}

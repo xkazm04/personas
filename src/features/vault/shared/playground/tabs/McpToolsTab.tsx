@@ -80,9 +80,13 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
   );
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" data-testid="mcp-tools-tab">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
-        <span className="typo-body font-medium text-foreground">
+        <span
+          className="typo-body font-medium text-foreground"
+          data-testid="mcp-tools-count"
+          data-count={hasLoaded ? tools.length : undefined}
+        >
           {hasLoaded
             ? tx(tools.length === 1 ? sh.tool_count_one : sh.tool_count_other, { count: tools.length })
             : sh.mcp_tools_label}
@@ -105,7 +109,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
         <ToolEmptyList hasLoaded={hasLoaded} toolCount={tools.length} loading={loading} />
 
         {tools.length > 0 && (
-          <div className="space-y-1">
+          <div className="space-y-1" data-testid="mcp-tools-list">
             {tools.map((tool) => (
               <ToolRow
                 key={tool.name}

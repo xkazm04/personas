@@ -4855,7 +4855,11 @@
       "display_name": "Tên hiển thị (tiền tố công cụ)",
       "display_name_placeholder": "vd: arcade, research_tools, docs",
       "adding": "Đang thêm…",
-      "add_member": "Thêm thành viên"
+      "add_member": "Thêm thành viên",
+      "member_checked_label": "Đã kiểm tra",
+      "member_health_failed": "Không thể kết nối",
+      "member_health_ok": "Hoạt động tốt",
+      "member_health_unknown": "Chưa kiểm tra"
     },
     "pending_auth": {
       "title": "Yêu cầu xác thực",
@@ -10438,7 +10442,9 @@
       "pair_reject": "Từ chối",
       "pair_safety_note": "Khóa được gắn với origin này, có thời hạn và có thể kiểm tra đầy đủ. Ngắt kết nối bất kỳ lúc nào trong mục Ứng dụng đã kết nối.",
       "pair_scopes_label": "Quyền truy cập được yêu cầu",
-      "pair_title": "Kết nối ứng dụng đám mây"
+      "pair_title": "Kết nối ứng dụng đám mây",
+      "server_status_checking": "Đang kiểm tra…",
+      "server_status_down": "Ngừng hoạt động"
     },
     "search": {
       "placeholder": "Tìm kiếm cài đặt…",
