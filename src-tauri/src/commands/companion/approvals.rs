@@ -29,6 +29,7 @@ use crate::error::AppError;
 use crate::ipc_auth;
 use crate::AppState;
 
+const APPROVAL_STATUS_PENDING: &str = "pending";
 const APPROVAL_STATUS_APPROVED: &str = "approved";
 const APPROVAL_STATUS_APPROVED_FAILED: &str = "approved_failed";
 const APPROVAL_STATUS_RUNNING: &str = "running";
@@ -731,6 +732,28 @@ fn finalize_approval(
         )));
     }
     Ok(())
+}
+
+/// Recover approvals left `running` by an unclean shutdown.
+///
+/// `companion_approve_action` flips the row `pending` → `running` before it
+/// awaits the executor; a crash / force-quit / kill (or an error between load
+/// and finalize) between there and `finalize_approval` leaves it stuck at
+/// `running` forever. `companion_list_pending_approvals` only shows `pending`,
+/// so the user's consent decision silently vanishes with no card and no way to
+/// retry — and no zombie sweep existed for this table (unlike executions/jobs).
+///
+/// Reset such rows back to `pending`: the action never actually ran, so it is
+/// safe to re-surface, and the existing consent-freshness window still gates
+/// whether it can be acted on (a long-stale one shows but can't fire). Called
+/// once at startup. Returns the number of rows reset.
+pub fn recover_interrupted_approvals(user_db: &crate::db::UserDbPool) -> Result<usize, AppError> {
+    let conn = user_db.get()?;
+    let reset = conn.execute(
+        "UPDATE companion_approval SET status = ?1 WHERE status = ?2",
+        params![APPROVAL_STATUS_PENDING, APPROVAL_STATUS_RUNNING],
+    )?;
+    Ok(reset)
 }
 
 /// Persist an action outcome as a system-role episode so future turns'

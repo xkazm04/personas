@@ -841,6 +841,28 @@ pub fn run() {
             }
             st.checkpoint("pipeline_run_recovery");
 
+            // Fail lab_*_runs (arena/ab/matrix/eval) left non-terminal by a crash
+            // so they stop re-hydrating as phantom active runs that pin the UI's
+            // launch/cancel/orbit state.
+            match db::repos::lab::recover_interrupted_lab_runs(&pool) {
+                Ok(n) if n > 0 => tracing::info!("Startup: failed {} interrupted lab run(s)", n),
+                Err(e) => tracing::warn!("Failed to recover interrupted lab runs: {}", e),
+                _ => {}
+            }
+            st.checkpoint("lab_run_recovery");
+
+            // Reset companion approvals left `running` by a crash back to
+            // `pending` so the user's un-run consent decision resurfaces (still
+            // consent-freshness gated) instead of silently vanishing.
+            match commands::companion::approvals::recover_interrupted_approvals(&user_db_pool) {
+                Ok(n) if n > 0 => {
+                    tracing::info!("Startup: reset {} interrupted approval(s) to pending", n)
+                }
+                Err(e) => tracing::warn!("Failed to recover interrupted approvals: {}", e),
+                _ => {}
+            }
+            st.checkpoint("approval_recovery");
+
             // Purge old completed/failed events to prevent unbounded table growth
             match db::repos::communication::events::cleanup(&pool, Some(7)) {
                 Ok(n) if n > 0 => tracing::info!("Startup: cleaned up {} old events", n),

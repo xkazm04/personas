@@ -152,3 +152,37 @@ pub fn get_all_active_progress(
             .map_err(AppError::Database)
     })
 }
+
+/// Fail any lab run left non-terminal by an unclean shutdown.
+///
+/// The four `lab_*_runs` tables are driven by tokio tasks that die with the
+/// process, but their rows keep `status='running'` with populated
+/// `progress_json`. On next launch `get_all_active_progress` re-hydrates them as
+/// phantom active runs — launch buttons disabled, cancel shown, orbit dot lit —
+/// and the 30-min frontend timeout only resets in-memory flags, never the row,
+/// so every re-selection re-hydrates the phantom. No lab task survives a
+/// restart, so it is always safe to fail these at startup (mirrors
+/// `recover_stale_executions`). Returns the total number of runs reset.
+pub fn recover_interrupted_lab_runs(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("lab_runs", "lab_runs::recover_interrupted_lab_runs", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut total = 0usize;
+        for table in [
+            "lab_arena_runs",
+            "lab_ab_runs",
+            "lab_matrix_runs",
+            "lab_eval_runs",
+        ] {
+            let sql = format!(
+                "UPDATE {table}
+                    SET status = 'failed',
+                        error = 'Interrupted by app restart',
+                        completed_at = ?1
+                  WHERE status NOT IN ('completed', 'failed', 'cancelled')"
+            );
+            total += conn.execute(&sql, params![now])?;
+        }
+        Ok(total)
+    })
+}
