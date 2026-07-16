@@ -53,6 +53,16 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
   );
   useTypedTauriEvent(EventName.CREDENTIAL_REAUTH_REQUIRED, handleReauthRequired);
 
+  // Grant restored (successful OAuth reconnect or CLI recapture) — drop the
+  // matching entry so the banner resolves itself without a manual dismiss.
+  const handleReauthResolved = useCallback(
+    (payload: EventPayloadMap[typeof EventName.CREDENTIAL_REAUTH_RESOLVED]) => {
+      setEntries((prev) => prev.filter((e) => e.credentialId !== payload.credentialId));
+    },
+    [],
+  );
+  useTypedTauriEvent(EventName.CREDENTIAL_REAUTH_RESOLVED, handleReauthResolved);
+
   // Lazily fetch CLI specs the first time a CLI-sourced entry appears, so we
   // can show the spec's login instruction (e.g. "Run `gcloud auth login`...").
   const hasCliEntry = entries.some((e) => e.source === 'cli');
@@ -118,6 +128,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
               ) : onNavigate && (
                 <button
                   onClick={() => onNavigate(entry.credentialId)}
+                  data-testid="reauth-reconnect"
                   className={`flex items-center gap-1 ${WARNING.text} hover:opacity-80 typo-caption font-medium shrink-0 focus-ring rounded-card`}
                 >
                   <ExternalLink className="w-3 h-3" />

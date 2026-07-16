@@ -248,6 +248,9 @@ event_names! {
     // Credential reauth (OAuth grant revoked)
     CREDENTIAL_REAUTH_REQUIRED => "credential-reauth-required",
 
+    // Credential reauth resolved (grant restored via successful re-auth/recapture)
+    CREDENTIAL_REAUTH_RESOLVED => "credential-reauth-resolved",
+
     // Share link (deep link received from OS)
     SHARE_LINK_RECEIVED        => "share-link-received",
 

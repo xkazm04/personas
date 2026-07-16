@@ -240,6 +240,8 @@ export const EventName = {
 
   // Credential reauth (OAuth grant revoked)
   CREDENTIAL_REAUTH_REQUIRED: 'credential-reauth-required',
+  // Credential reauth resolved (grant restored via successful re-auth/recapture)
+  CREDENTIAL_REAUTH_RESOLVED: 'credential-reauth-resolved',
 
   // Share link (deep link received from OS)
   SHARE_LINK_RECEIVED: 'share-link-received',
@@ -1027,6 +1029,12 @@ export interface EventPayloadMap {
     reason: string;
     /** Credential metadata.source (e.g. "cli") — picks the re-auth action. */
     source: string | null;
+  };
+
+  // Credential reauth resolved — the grant was restored (successful OAuth
+  // reconnect or CLI recapture). Lets the re-auth banner clear the entry.
+  [EventName.CREDENTIAL_REAUTH_RESOLVED]: {
+    credentialId: string;
   };
 
   // Share link

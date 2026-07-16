@@ -34,6 +34,7 @@ pub fn get_session_public_key(state: State<'_, Arc<AppState>>) -> String {
 #[requires(privileged)]
 pub fn create_credential(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     mut input: CreateCredentialInput,
 ) -> Result<PersonaCredential, AppError> {
     // Decrypt session-encrypted data if provided (asymmetric IPC protection)
@@ -125,7 +126,7 @@ pub fn create_credential(
     // proactive refresh engine's staleness guard skips the credential and the
     // 1-hour access token dies un-refreshed (the daily-401).
     if crate::engine::rotation::is_oauth_credential(&state.db, &cred) {
-        crate::engine::oauth_refresh::spawn_connect_seed(state.db.clone(), cred.clone());
+        crate::engine::oauth_refresh::spawn_connect_seed(state.db.clone(), cred.clone(), Some(app));
     }
 
     Ok(cred)
@@ -135,6 +136,7 @@ pub fn create_credential(
 #[requires(privileged)]
 pub fn update_credential(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     id: String,
     mut input: UpdateCredentialInput,
 ) -> Result<PersonaCredential, AppError> {
@@ -205,7 +207,7 @@ pub fn update_credential(
         // refresh_token). Otherwise the stale expiry keeps the proactive engine
         // skipping this credential — the reconnect "works" but 401s within ~1h.
         if crate::engine::rotation::is_oauth_credential(&state.db, &cred) {
-            crate::engine::oauth_refresh::spawn_connect_seed(state.db.clone(), cred.clone());
+            crate::engine::oauth_refresh::spawn_connect_seed(state.db.clone(), cred.clone(), Some(app));
         }
     }
 

@@ -16,6 +16,7 @@ export function useCredentialManagerState() {
   const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
   const createCredential = useVaultStore((s) => s.createCredential);
   const deleteCredential = useVaultStore((s) => s.deleteCredential);
+  const setFocusCredentialId = useVaultStore((s) => s.setFocusCredentialId);
   const globalError = useSystemStore((s) => s.error);
   const setGlobalError = useSystemStore((s) => s.setError);
 
@@ -123,6 +124,7 @@ export function useCredentialManagerState() {
     // Re-exports
     fetchCredentials,
     fetchConnectorDefinitions,
+    setFocusCredentialId,
     IS_DESKTOP,
   };
 }

@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect } from 'react';
 import { useVaultStore } from '@/stores/vaultStore';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { useTier } from '@/hooks/utility/interaction/useTier';
@@ -25,6 +25,8 @@ export function CredentialList({
   const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
   const pendingDeleteIds = useVaultStore((s) => s.pendingDeleteCredentialIds);
+  const focusCredentialId = useVaultStore((s) => s.focusCredentialId);
+  const setFocusCredentialId = useVaultStore((s) => s.setFocusCredentialId);
   const {
     setSelectedId,
     selectedCredential,
@@ -41,6 +43,18 @@ export function CredentialList({
     sortDirection,
     setSortDirection,
   } = useCredentialListFilters(credentials, connectorDefinitions, searchTerm);
+
+  // External focus request (e.g. the re-auth banner's Reconnect button): open
+  // the requested credential's detail modal — whose Authentication section is
+  // the OAuth re-consent surface — then clear the one-shot focus id so a later
+  // manual close doesn't re-open it. Only acts once the credential is present.
+  useEffect(() => {
+    if (!focusCredentialId) return;
+    if (credentials.some((c) => c.id === focusCredentialId)) {
+      setSelectedId(focusCredentialId);
+      setFocusCredentialId(null);
+    }
+  }, [focusCredentialId, credentials, setSelectedId, setFocusCredentialId]);
 
   // Build rows from the hook's already-filtered+sorted credentials list.
   const displayRows: CredRow[] = useMemo(

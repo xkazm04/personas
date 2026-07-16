@@ -32,7 +32,17 @@ export function CredentialManager() {
     undoDelete,
     dispatch,
     breadcrumbs,
+    setFocusCredentialId,
   } = state;
+
+  // Re-auth banner "Reconnect": drive the list to open the revoked credential's
+  // detail modal (its Authentication section is the re-consent surface). We flip
+  // to the list view and hand the list the credential id to focus — the list
+  // owns selection, so it consumes `focusCredentialId` and opens the modal.
+  const handleReauthNavigate = (credentialId: string) => {
+    dispatch({ type: 'GO_LIST' });
+    setFocusCredentialId(credentialId);
+  };
 
   if (loading) {
     return (
@@ -74,7 +84,7 @@ export function CredentialManager() {
       )}
 
       <ContentBody>
-        <ReauthBanner />
+        <ReauthBanner onNavigate={handleReauthNavigate} />
 
         {bannerError && (
           <VaultErrorBanner

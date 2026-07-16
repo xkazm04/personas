@@ -63,9 +63,18 @@ export interface CredentialSlice {
    * delete).
    */
   recentlyDeletedCredentialIds: Set<string>;
+  /**
+   * Credential the UI should focus/open next — set by cross-component triggers
+   * that live outside the credential list (e.g. the re-auth banner's Reconnect
+   * button) so they can drive the list to open a specific credential's detail
+   * modal without owning the list's local selection state. The list consumes
+   * this once and clears it back to `null`.
+   */
+  focusCredentialId: string | null;
 
   // Actions
   fetchCredentials: () => Promise<void>;
+  setFocusCredentialId: (id: string | null) => void;
   createCredential: (input: { name: string; service_type: string; data: object; healthcheck_passed?: boolean }) => Promise<string>;
   updateCredential: (id: string, input: { name?: string; service_type?: string; data?: object }) => Promise<void>;
   deleteCredential: (id: string) => Promise<void>;
@@ -99,6 +108,9 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
   pendingDeleteCredentialIds: new Set<string>(),
   pendingDeleteEventIds: new Set<string>(),
   recentlyDeletedCredentialIds: new Set<string>(),
+  focusCredentialId: null,
+
+  setFocusCredentialId: (id) => set({ focusCredentialId: id }),
 
   fetchCredentials: async () =>
     credentialsFetch.run("credentials", async () => {

@@ -399,14 +399,30 @@ pub async fn persist_resolved_token(
 /// Forcing one refresh here stamps a current expiry; the proactive path takes
 /// over from there. Errors are logged, not fatal: a revoked/expired refresh token
 /// surfaces via the normal needs-reauth flow on the next tick.
-pub fn spawn_connect_seed(pool: DbPool, cred: crate::db::models::PersonaCredential) {
+pub fn spawn_connect_seed(
+    pool: DbPool,
+    cred: crate::db::models::PersonaCredential,
+    app: Option<AppHandle>,
+) {
+    // Was this credential flagged `needs_reauth` before the (re)connect? If so, a
+    // successful connect-seed IS the re-authorization the user just performed —
+    // emit a resolved event so the re-auth banner clears its entry, and let the
+    // refresh success path (which clears the flag + resolves the healing issue)
+    // do the durable side. Read from the snapshot handed to us: on reconnect the
+    // flag is still set here; the refresh clears it moments later.
+    let was_needs_reauth = parse_ledger(&cred).needs_reauth == Some(true);
     tauri::async_runtime::spawn(async move {
         match force_refresh_single_credential(&pool, &cred).await {
-            Ok(_) => tracing::info!(
-                credential_id = %cred.id,
-                service_type = %cred.service_type,
-                "OAuth connect-seed: stamped fresh token expiry on (re)connect"
-            ),
+            Ok(_) => {
+                tracing::info!(
+                    credential_id = %cred.id,
+                    service_type = %cred.service_type,
+                    "OAuth connect-seed: stamped fresh token expiry on (re)connect"
+                );
+                if was_needs_reauth {
+                    emit_reauth_resolved(app.as_ref(), &cred.id);
+                }
+            }
             Err(e) => tracing::warn!(
                 credential_id = %cred.id,
                 service_type = %cred.service_type,
@@ -801,6 +817,25 @@ pub struct CredentialReauthRequiredEvent {
     /// offer the right re-auth action: CLI credentials need a terminal
     /// re-login + recapture, not an OAuth reconnect.
     pub source: Option<String>,
+}
+
+/// Payload emitted when a credential's OAuth grant has been restored (the user
+/// completed a re-authorization or CLI recapture). The re-auth banner listens
+/// for this to drop its entry without a manual dismiss.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CredentialReauthResolvedEvent {
+    pub credential_id: String,
+}
+
+/// Emit a Tauri event when a previously-revoked credential is re-authorized.
+fn emit_reauth_resolved(app: Option<&AppHandle>, credential_id: &str) {
+    let Some(app) = app else { return };
+    use crate::engine::event_registry::{emit_event, event_name};
+    let payload = CredentialReauthResolvedEvent {
+        credential_id: credential_id.to_string(),
+    };
+    emit_event(app, event_name::CREDENTIAL_REAUTH_RESOLVED, &payload);
 }
 
 /// Mark a credential's metadata with `needs_reauth: true` so the frontend can
