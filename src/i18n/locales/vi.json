@@ -4269,7 +4269,9 @@
       "reindex_confirm_cta": "Dựng lại",
       "reindex_confirm_title": "Dựng lại chỉ mục tìm kiếm?",
       "reindex_hint": "Nhúng lại mọi đoạn trong cơ sở tri thức này bằng mô hình nhúng hiện tại. Dùng thao tác này sau khi mô hình nhúng thay đổi để các tài liệu cũ có thể tìm kiếm lại được, hoặc để dựng lại chỉ mục mà bạn nghi ngờ đã bị sai lệch.",
-      "reindex_title": "Bảo trì"
+      "reindex_title": "Bảo trì",
+      "no_results_floor_hint": "Đã tìm thấy {count} đoạn nhưng không đoạn nào đủ liên quan để hiển thị. Hãy thử cách diễn đạt khác, hoặc xem tab Tài liệu để biết cơ sở tri thức này thực sự chứa gì.",
+      "search_floor_filtered": "Đã ẩn {count} đoạn ít liên quan"
     },
     "manager": {
       "title": "Thông tin xác thực",

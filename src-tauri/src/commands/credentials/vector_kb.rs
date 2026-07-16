@@ -7,8 +7,8 @@ use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::db::models::{
-    KbDocument, KbEntity, KbExtractionRun, KbExtractionSchema, KbSearchQuery, KnowledgeBase,
-    VectorSearchResult,
+    KbDocument, KbEntity, KbExtractionRun, KbExtractionSchema, KbSearchQuery, KbSearchResponse,
+    KnowledgeBase, VectorSearchResult,
 };
 use crate::db::repos::resources::audit_log;
 use crate::db::{DbPool, UserDbPool};
@@ -766,12 +766,45 @@ fn build_fts5_query(query: &str) -> String {
     tokens.join(" OR ")
 }
 
+/// Reciprocal rank fusion over (vector_rank, fts_rank). The constant 60.0
+/// follows the standard RRF recipe — small enough that top-ranked items
+/// dominate, large enough that a chunk appearing only in the vector pool
+/// still gets a non-trivial score even if BM25 ignores it.
+///
+/// Input order IS the vector ranking (rank = index + 1); `fts_ranks` maps
+/// chunk_id → 1-based BM25 rank. Pure — extracted from `kb_search` so the
+/// floor→RRF interaction is unit-testable.
+fn rrf_rerank(
+    matches: &[(String, f32)],
+    fts_ranks: &std::collections::HashMap<String, usize>,
+) -> Vec<(String, f32)> {
+    const RRF_K: f32 = 60.0;
+    let mut scored: Vec<(usize, f32)> = matches
+        .iter()
+        .enumerate()
+        .map(|(idx, (cid, _))| {
+            let v_rank = (idx + 1) as f32;
+            let mut s = 1.0 / (RRF_K + v_rank);
+            if let Some(fr) = fts_ranks.get(cid) {
+                s += 1.0 / (RRF_K + (*fr as f32));
+            }
+            (idx, s)
+        })
+        .collect();
+    scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+    scored
+        .into_iter()
+        .map(|(idx, _)| matches[idx].clone())
+        .collect()
+}
+
 #[tauri::command]
 #[tracing::instrument(skip(state))]
 pub async fn kb_search(
     state: State<'_, Arc<AppState>>,
     query: KbSearchQuery,
-) -> Result<Vec<VectorSearchResult>, AppError> {
+) -> Result<KbSearchResponse, AppError> {
     require_auth(&state).await?;
 
     let embedder = state
@@ -836,8 +869,24 @@ pub async fn kb_search(
         .clamp(top_k, MAX_TOP_K);
     let mut matches = vector_store.search(&query.kb_id, &query_vec, pool_size)?;
 
+    // Shared relevance floor — the same primitive (and threshold) the
+    // companion brain uses (`retrieval::MAX_VECTOR_DISTANCE`, L2 over
+    // MiniLM-normalized vectors; both stores embed with the same family).
+    // Applied to the vector pool BEFORE RRF so BM25 can't resurrect a
+    // semantically-unrelated chunk, and BEFORE truncation so the caller
+    // learns how much noise was cut. Without this floor, small corpora
+    // returned pure top-K-by-rank garbage: the least-irrelevant chunks padded
+    // every result set because `min_score` is rarely set. `min_score` still
+    // applies afterward (in the hydration loop) when it is stricter.
+    let (kept, floor_filtered) =
+        crate::retrieval::filter_by_distance_floor(&matches, crate::retrieval::MAX_VECTOR_DISTANCE);
+    matches = kept;
+
     if matches.is_empty() {
-        return Ok(Vec::new());
+        return Ok(KbSearchResponse {
+            results: Vec::new(),
+            floor_filtered,
+        });
     }
 
     // BM25 re-rank within the vector candidate pool. Vector candidates always
@@ -894,31 +943,7 @@ pub async fn kb_search(
             };
 
             if !fts_ranks.is_empty() {
-                // Reciprocal rank fusion over (vector_rank, fts_rank). The
-                // constant 60.0 follows the standard RRF recipe — small enough
-                // that top-ranked items dominate, large enough that a chunk
-                // appearing only in the vector pool still gets a non-trivial
-                // score even if BM25 ignores it.
-                const RRF_K: f32 = 60.0;
-                let mut scored: Vec<(usize, f32)> = matches
-                    .iter()
-                    .enumerate()
-                    .map(|(idx, (cid, _))| {
-                        let v_rank = (idx + 1) as f32;
-                        let mut s = 1.0 / (RRF_K + v_rank);
-                        if let Some(fr) = fts_ranks.get(cid) {
-                            s += 1.0 / (RRF_K + (*fr as f32));
-                        }
-                        (idx, s)
-                    })
-                    .collect();
-                scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-
-                let reordered: Vec<(String, f32)> = scored
-                    .into_iter()
-                    .map(|(idx, _)| matches[idx].clone())
-                    .collect();
-                matches = reordered;
+                matches = rrf_rerank(&matches, &fts_ranks);
             }
         }
     }
@@ -1040,7 +1065,10 @@ pub async fn kb_search(
         });
     }
 
-    Ok(results)
+    Ok(KbSearchResponse {
+        results,
+        floor_filtered,
+    })
 }
 
 // ============================================================================
@@ -1344,5 +1372,82 @@ pub fn reconcile_orphaned_kb_records(
 
     if cleaned > 0 {
         tracing::info!("KB reconciliation: cleaned up {cleaned} orphaned record(s)");
+    }
+}
+
+#[cfg(test)]
+mod search_floor_tests {
+    use super::*;
+    use crate::engine::vector_store::SqliteVectorStore;
+    use crate::retrieval::{filter_by_distance_floor, MAX_VECTOR_DISTANCE};
+    use r2d2_sqlite::SqliteConnectionManager;
+
+    const KB_ID: &str = "cccccccc-1111-2222-3333-444444444444";
+
+    fn vec_pool() -> crate::db::UserDbPool {
+        crate::engine::vector_store::ensure_vec_registered_pub();
+        let tmp = std::env::temp_dir().join(format!("kb_floor_test_{}.db", uuid::Uuid::new_v4()));
+        let manager = SqliteConnectionManager::file(&tmp);
+        r2d2::Pool::builder().max_size(2).build(manager).unwrap()
+    }
+
+    /// Seeded-vector proof of the kb_search floor pipeline: vectors beyond the
+    /// shared MAX_VECTOR_DISTANCE floor are dropped (and counted) BEFORE RRF,
+    /// and the hits inside the floor keep an IDENTICAL RRF ranking to what
+    /// they'd have had if the far vectors never existed.
+    #[test]
+    fn floor_drops_far_seeded_vectors_and_preserves_rrf_ranking() {
+        let pool = vec_pool();
+        let vs = SqliteVectorStore::new(pool.clone());
+        vs.create_index(KB_ID, 4).unwrap();
+
+        // Unit query vector; L2 distance to a unit vector at angle θ is
+        // sqrt(2(1-cosθ)). Near vectors are well inside the 1.30 floor; the
+        // two "far" ones are orthogonal / opposite (distance √2 / 2.0).
+        let query = [1.0f32, 0.0, 0.0, 0.0];
+        let seeds: &[(&str, [f32; 4])] = &[
+            ("near-a", [1.0, 0.0, 0.0, 0.0]),        // d = 0
+            ("near-b", [0.9, 0.435_889_9, 0.0, 0.0]), // unit, d ≈ 0.447
+            ("near-c", [0.6, 0.8, 0.0, 0.0]),        // unit, d ≈ 0.894
+            ("far-x", [0.0, 1.0, 0.0, 0.0]),         // orthogonal, d ≈ 1.414
+            ("far-y", [-1.0, 0.0, 0.0, 0.0]),        // opposite,  d = 2
+        ];
+        let entries: Vec<(String, Vec<f32>)> = seeds
+            .iter()
+            .map(|(id, v)| (id.to_string(), v.to_vec()))
+            .collect();
+        vs.insert_vectors(KB_ID, &entries).unwrap();
+
+        let matches = vs.search(KB_ID, &query, 10).unwrap();
+        assert_eq!(matches.len(), 5);
+
+        // Floor BEFORE RRF — exactly what kb_search does.
+        let (kept, dropped) = filter_by_distance_floor(&matches, MAX_VECTOR_DISTANCE);
+        assert_eq!(dropped, 2, "both far vectors must be floor-filtered");
+        let kept_ids: Vec<&str> = kept.iter().map(|(id, _)| id.as_str()).collect();
+        assert_eq!(kept_ids, vec!["near-a", "near-b", "near-c"]);
+
+        // RRF over the floored pool, with an FTS signal boosting near-c.
+        let mut fts_ranks = std::collections::HashMap::new();
+        fts_ranks.insert("near-c".to_string(), 1usize);
+        let ranked = rrf_rerank(&kept, &fts_ranks);
+
+        // Same RRF over a pool that NEVER contained the far vectors: the
+        // in-floor hits' ranking must be identical — the floor removes noise
+        // without perturbing how the surviving hits order among themselves.
+        let clean: Vec<(String, f32)> = matches
+            .iter()
+            .filter(|(id, _)| id.starts_with("near"))
+            .cloned()
+            .collect();
+        let ranked_clean = rrf_rerank(&clean, &fts_ranks);
+        assert_eq!(ranked, ranked_clean, "floor must not perturb RRF ranking");
+
+        // And the FTS boost actually reordered within the floored pool —
+        // proving RRF ran on the floored pool, not on raw vector order:
+        // near-c fuses 1/(60+3) + 1/(60+1) ≈ 0.0323, beating near-a's
+        // vector-only 1/(60+1) ≈ 0.0164.
+        let ranked_ids: Vec<&str> = ranked.iter().map(|(id, _)| id.as_str()).collect();
+        assert_eq!(ranked_ids, vec!["near-c", "near-a", "near-b"]);
     }
 }

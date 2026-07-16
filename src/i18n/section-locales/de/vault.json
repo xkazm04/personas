@@ -653,7 +653,9 @@
     "reindex_confirm_cta": "Neu aufbauen",
     "reindex_confirm_title": "Suchindex neu aufbauen?",
     "reindex_hint": "Bettet jede Passage in dieser Wissensdatenbank mit dem aktuellen Embedding-Modell neu ein. Verwenden Sie dies nach einem Wechsel des Embedding-Modells, damit ältere Dokumente wieder durchsuchbar werden, oder um einen Index neu aufzubauen, bei dem Sie eine Abweichung vermuten.",
-    "reindex_title": "Wartung"
+    "reindex_title": "Wartung",
+    "no_results_floor_hint": "{count} Passage(n) gefunden, aber keine war relevant genug zur Anzeige. Versuchen Sie eine andere Formulierung oder prüfen Sie im Tab „Dokumente“, was diese Wissensdatenbank tatsächlich enthält.",
+    "search_floor_filtered": "{count} wenig relevante Passage(n) ausgeblendet"
   },
   "manager": {
     "title": "Zugangsdaten",

@@ -653,7 +653,9 @@
     "reindex_confirm_cta": "Reconstruire",
     "reindex_confirm_title": "Reconstruire l'index de recherche ?",
     "reindex_hint": "Réintègre chaque passage de cette base de connaissances avec le modèle d'embedding actuel. Utilisez ceci après un changement de modèle d'embedding pour rendre les anciens documents à nouveau consultables, ou pour reconstruire un index que vous soupçonnez d'avoir dérivé.",
-    "reindex_title": "Entretien"
+    "reindex_title": "Entretien",
+    "no_results_floor_hint": "{count} passage(s) trouvé(s), mais aucun n'était assez pertinent pour être affiché. Essayez une autre formulation ou consultez l'onglet Documents pour voir ce que contient réellement cette base de connaissances.",
+    "search_floor_filtered": "{count} passage(s) peu pertinent(s) masqué(s)"
   },
   "manager": {
     "title": "Coffre-fort",

@@ -653,7 +653,9 @@
     "reindex_confirm_cta": "重建",
     "reindex_confirm_title": "重建搜索索引？",
     "reindex_hint": "使用当前嵌入模型重新嵌入此知识库中的每个段落。在嵌入模型更改后使用此功能，可让较旧的文档重新可被搜索，或用于重建你怀疑已发生偏移的索引。",
-    "reindex_title": "维护"
+    "reindex_title": "维护",
+    "no_results_floor_hint": "找到 {count} 个段落，但没有一个相关性足以显示。请尝试其他措辞，或查看“文档”标签页了解此知识库的实际内容。",
+    "search_floor_filtered": "已隐藏 {count} 个低相关性段落"
   },
   "manager": {
     "title": "凭据",

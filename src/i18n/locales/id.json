@@ -4269,7 +4269,9 @@
       "reindex_confirm_cta": "Bangun ulang",
       "reindex_confirm_title": "Bangun ulang indeks pencarian?",
       "reindex_hint": "Sematkan ulang setiap bagian dalam basis pengetahuan ini dengan model embedding saat ini. Gunakan ini setelah model embedding berubah agar dokumen lama dapat dicari kembali, atau untuk membangun ulang indeks yang Anda duga telah menyimpang.",
-      "reindex_title": "Pemeliharaan"
+      "reindex_title": "Pemeliharaan",
+      "no_results_floor_hint": "{count} bagian ditemukan, tetapi tidak ada yang cukup relevan untuk ditampilkan. Coba kata-kata lain, atau periksa tab Dokumen untuk melihat isi sebenarnya basis pengetahuan ini.",
+      "search_floor_filtered": "{count} bagian berelevansi rendah disembunyikan"
     },
     "manager": {
       "title": "Kredensial",

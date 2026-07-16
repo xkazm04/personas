@@ -653,7 +653,9 @@
     "reindex_confirm_cta": "Sestavit",
     "reindex_confirm_title": "Znovu sestavit index vyhledávání?",
     "reindex_hint": "Znovu zaindexuje každou pasáž v této znalostní bázi pomocí aktuálního embedding modelu. Použijte po změně embedding modelu, aby byly starší dokumenty opět vyhledatelné, nebo k přestavbě indexu, u kterého máte podezření na odchylku.",
-    "reindex_title": "Údržba"
+    "reindex_title": "Údržba",
+    "no_results_floor_hint": "Nalezeno {count} pasáží, ale žádná nebyla dostatečně relevantní k zobrazení. Zkuste jinou formulaci, nebo se podívejte na kartu Dokumenty, co tato znalostní báze skutečně obsahuje.",
+    "search_floor_filtered": "Skryto {count} málo relevantních pasáží"
   },
   "manager": {
     "title": "Přihlašovací údaje",

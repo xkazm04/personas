@@ -117,6 +117,8 @@ pub mod kb_index;
 pub mod kb_extract;
 #[cfg(feature = "ml")]
 pub mod kb_ingest;
+#[cfg(feature = "ml")]
+pub mod kb_scan;
 pub mod knowledge;
 pub mod lifecycle;
 pub mod limits;

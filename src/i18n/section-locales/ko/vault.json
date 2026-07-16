@@ -653,7 +653,9 @@
     "reindex_confirm_cta": "재구축",
     "reindex_confirm_title": "검색 인덱스를 재구축하시겠습니까?",
     "reindex_hint": "현재 임베딩 모델로 이 지식 베이스의 모든 구절을 다시 임베딩합니다. 임베딩 모델을 변경한 후 오래된 문서를 다시 검색할 수 있도록 하거나, 편차가 의심되는 인덱스를 재구축할 때 사용하세요.",
-    "reindex_title": "유지 관리"
+    "reindex_title": "유지 관리",
+    "no_results_floor_hint": "{count}개의 구절을 찾았지만 표시할 만큼 관련성이 높은 것이 없습니다. 다른 표현으로 시도하거나 문서 탭에서 이 지식 베이스에 실제로 무엇이 있는지 확인하세요.",
+    "search_floor_filtered": "관련성 낮은 구절 {count}개 숨김"
   },
   "manager": {
     "title": "자격 증명",

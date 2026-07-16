@@ -624,14 +624,16 @@ impl ClipboardSubscription {
         }
     }
 
-    /// Search all KBs for the given query. Wraps the command module's logic
-    /// with direct field access to avoid needing the full AppState.
+    /// Search all KBs for the given query. Delegates to the SHARED all-KB
+    /// scan in [`crate::engine::kb_scan`] — this used to be a drifted
+    /// copy-paste twin of `clipboard_intel::search_kb_for_error`; both call
+    /// sites now route through the single implementation (ready-only KBs,
+    /// similarity-desc, truncate to limit).
     #[cfg(feature = "ml")]
     fn search_kb(
         &self,
         query: &str,
-    ) -> Result<Vec<crate::commands::execution::clipboard_intel::KbMatch>, crate::error::AppError>
-    {
+    ) -> Result<Vec<crate::engine::kb_scan::KbMatch>, crate::error::AppError> {
         let embedding_manager = self.embedding_manager.as_ref().ok_or_else(|| {
             crate::error::AppError::Internal("Embedding manager not available".into())
         })?;
@@ -640,68 +642,13 @@ impl ClipboardSubscription {
             .as_ref()
             .ok_or_else(|| crate::error::AppError::Internal("Vector store not available".into()))?;
 
-        let query_text = query.to_string();
-        let em = embedding_manager.clone();
-        let query_vec = tokio::task::block_in_place(|| {
-            tokio::runtime::Handle::current().block_on(em.embed_query(&query_text))
-        })?;
-
-        let user_conn = self.user_db.get()?;
-
-        // List all ready KBs
-        let mut kb_stmt = user_conn.prepare(
-            "SELECT id, name FROM knowledge_bases WHERE status = 'ready' ORDER BY created_at DESC",
-        )?;
-        let kb_list: Vec<(String, String)> = kb_stmt
-            .query_map([], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-            })?
-            .collect::<Result<Vec<_>, _>>()?;
-
-        let mut all_matches = Vec::new();
-        let limit = 3usize;
-
-        for (kb_id, kb_name) in &kb_list {
-            let results = match vector_store.search(kb_id, &query_vec, limit) {
-                Ok(r) => r,
-                Err(_) => continue,
-            };
-            for (chunk_id, distance) in results {
-                let similarity = 1.0 / (1.0 + distance);
-                let (chunk_text, source_file) = user_conn
-                    .prepare(
-                        "SELECT c.content, d.source_path
-                         FROM kb_chunks c
-                         LEFT JOIN kb_documents d ON d.id = c.document_id
-                         WHERE c.id = ?1",
-                    )
-                    .and_then(|mut stmt| {
-                        stmt.query_row(rusqlite::params![chunk_id], |row| {
-                            Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
-                        })
-                    })
-                    .unwrap_or_default();
-
-                if chunk_text.is_empty() {
-                    continue;
-                }
-
-                all_matches.push(crate::commands::execution::clipboard_intel::KbMatch {
-                    kb_name: kb_name.clone(),
-                    chunk_text,
-                    similarity,
-                    source_file,
-                });
-            }
-        }
-
-        all_matches.sort_by(|a, b| {
-            b.similarity
-                .partial_cmp(&a.similarity)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        all_matches.truncate(limit);
-        Ok(all_matches)
+        crate::engine::kb_scan::search_all_kbs(
+            &self.user_db,
+            embedding_manager,
+            vector_store,
+            query,
+            3,
+        )
     }
 }
 

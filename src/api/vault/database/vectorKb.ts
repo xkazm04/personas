@@ -4,11 +4,12 @@ import type { KnowledgeBase } from "@/lib/bindings/KnowledgeBase";
 import type { KbDocument } from "@/lib/bindings/KbDocument";
 import type { VectorSearchResult } from "@/lib/bindings/VectorSearchResult";
 import type { KbSearchQuery } from "@/lib/bindings/KbSearchQuery";
+import type { KbSearchResponse } from "@/lib/bindings/KbSearchResponse";
 import type { KbIngestProgress } from "@/lib/bindings/KbIngestProgress";
 import type { KbExtractionSchema } from "@/lib/bindings/KbExtractionSchema";
 import type { KbExtractionRun } from "@/lib/bindings/KbExtractionRun";
 import type { KbEntity } from "@/lib/bindings/KbEntity";
-export type { KnowledgeBase, KbDocument, VectorSearchResult, KbSearchQuery, KbIngestProgress };
+export type { KnowledgeBase, KbDocument, VectorSearchResult, KbSearchQuery, KbSearchResponse, KbIngestProgress };
 export type { KbExtractionSchema, KbExtractionRun, KbEntity };
 
 // ============================================================================
@@ -63,8 +64,14 @@ export const kbReindex = (kbId: string) =>
 // Search
 // ============================================================================
 
+/**
+ * Semantic search over one knowledge base. The response carries the ranked
+ * hits plus `floorFiltered` — how many vector candidates the shared relevance
+ * floor removed before ranking (a high count means the corpus has little that
+ * is actually close to the query).
+ */
 export const kbSearch = (query: KbSearchQuery) =>
-  invoke<VectorSearchResult[]>('kb_search', { query });
+  invoke<KbSearchResponse>('kb_search', { query });
 
 // ============================================================================
 // Document Management

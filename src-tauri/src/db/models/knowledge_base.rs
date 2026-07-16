@@ -115,6 +115,24 @@ pub struct VectorSearchResult {
     pub metadata: Option<serde_json::Value>,
 }
 
+/// Full result payload of `kb_search`. Wraps the ranked hits together with
+/// retrieval-quality metadata so the caller can see what the pipeline
+/// *removed*, not just what survived.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct KbSearchResponse {
+    /// Ranked hits (RRF over vector + BM25, floor- and filter-applied).
+    pub results: Vec<VectorSearchResult>,
+    /// How many vector candidates the shared relevance floor
+    /// (`retrieval::MAX_VECTOR_DISTANCE`) dropped before ranking. A large
+    /// number relative to `results.len()` means the corpus has little that is
+    /// actually close to this query — the honest signal that used to be
+    /// hidden when small corpora padded results with far-away noise.
+    #[ts(type = "number")]
+    pub floor_filtered: usize,
+}
+
 // ============================================================================
 // Ingest Request
 // ============================================================================

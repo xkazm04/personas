@@ -4520,6 +4520,8 @@ export type Translations = {
       send: string;
       search_results_one: string;
       search_results_other: string;
+      search_floor_filtered: string;
+      no_results_floor_hint: string;
     };
     manager: {
       title: string;

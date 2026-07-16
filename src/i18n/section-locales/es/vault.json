@@ -653,7 +653,9 @@
     "reindex_confirm_cta": "Reconstruir",
     "reindex_confirm_title": "¿Reconstruir el índice de búsqueda?",
     "reindex_hint": "Vuelve a incrustar cada fragmento de esta base de conocimiento con el modelo de incrustación actual. Úsalo después de cambiar el modelo de incrustación para que los documentos antiguos vuelvan a ser buscables, o para reconstruir un índice que sospechas que se ha desviado.",
-    "reindex_title": "Mantenimiento"
+    "reindex_title": "Mantenimiento",
+    "no_results_floor_hint": "Se encontraron {count} pasaje(s), pero ninguno fue lo bastante relevante para mostrarse. Prueba con otra redacción o revisa la pestaña Documentos para ver qué contiene realmente esta base de conocimiento.",
+    "search_floor_filtered": "{count} pasaje(s) de baja relevancia ocultos"
   },
   "manager": {
     "title": "Credenciales",

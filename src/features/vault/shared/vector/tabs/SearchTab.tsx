@@ -16,6 +16,7 @@ export function SearchTab({ kb }: SearchTabProps) {
   const [query, setQuery] = useState('');
   const [topK, setTopK] = useState(10);
   const [results, setResults] = useState<VectorSearchResult[] | null>(null);
+  const [floorFiltered, setFloorFiltered] = useState(0);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastQuery, setLastQuery] = useState<string | null>(null);
@@ -41,7 +42,8 @@ export function SearchTab({ kb }: SearchTabProps) {
         topK: topK,
       });
       if (!mountedRef.current) return;
-      setResults(res);
+      setResults(res.results);
+      setFloorFiltered(res.floorFiltered);
       setLastQuery(trimmed);
       setDurationMs(Math.round(performance.now() - t0));
     } catch (err) {
@@ -129,7 +131,9 @@ export function SearchTab({ kb }: SearchTabProps) {
           <EmptyIllustration
             icon={FileText}
             heading={sh.no_results}
-            description={sh.no_results_hint}
+            description={floorFiltered > 0
+              ? tx(sh.no_results_floor_hint, { count: floorFiltered })
+              : sh.no_results_hint}
             className="py-20"
           />
         )}
@@ -143,6 +147,9 @@ export function SearchTab({ kb }: SearchTabProps) {
                 {durationMs}ms
               </span>
               <span>{tx(results.length === 1 ? sh.search_results_one : sh.search_results_other, { count: results.length, query: lastQuery ?? '' })}</span>
+              {floorFiltered > 0 && (
+                <span>{tx(sh.search_floor_filtered, { count: floorFiltered })}</span>
+              )}
             </div>
 
             {results.map((result, i) => (
