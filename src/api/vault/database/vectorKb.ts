@@ -50,6 +50,15 @@ export const kbIngestText = (kbId: string, title: string, text: string) =>
 export const kbIngestDirectory = (kbId: string, dirPath: string, patterns: string[] = []) =>
   invoke<string>('kb_ingest_directory', { kbId, dirPath, patterns });
 
+/**
+ * Re-embed the entire knowledge base with the current embedding model
+ * (drops + recreates the vector index, re-embeds every stored chunk).
+ * Returns the job id; progress arrives on the same `kb:ingest_progress` /
+ * `kb:ingest_complete` events as ingestion.
+ */
+export const kbReindex = (kbId: string) =>
+  invoke<string>('kb_reindex', { kbId });
+
 // ============================================================================
 // Search
 // ============================================================================

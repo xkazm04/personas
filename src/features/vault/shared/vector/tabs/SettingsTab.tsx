@@ -1,15 +1,42 @@
-import { Brain, Cpu, Layers, Hash, Calendar } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Brain, Cpu, Layers, Hash, Calendar, RefreshCw, Wrench } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import Button from '@/features/shared/components/buttons/Button';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { createLogger } from '@/lib/log';
 import type { KnowledgeBase } from '@/api/vault/database/vectorKb';
+import { kbReindex } from '@/api/vault/database/vectorKb';
+import { IngestProgressBar } from '../ingest/IngestProgressBar';
+
+const logger = createLogger('vector-kb-settings');
 
 interface SettingsTabProps {
   kb: KnowledgeBase;
+  onRefresh?: () => void;
 }
 
-export function SettingsTab({ kb }: SettingsTabProps) {
+export function SettingsTab({ kb, onRefresh }: SettingsTabProps) {
   const { t, tx } = useTranslation();
   const sh = t.vault.shared;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [reindexJobId, setReindexJobId] = useState<string | null>(null);
+
+  const startReindex = useCallback(async () => {
+    setConfirmOpen(false);
+    try {
+      const jobId = await kbReindex(kb.id);
+      setReindexJobId(jobId);
+    } catch (err) {
+      logger.error('Reindex failed to start', { error: String(err) });
+    }
+  }, [kb.id]);
+
+  const handleReindexComplete = useCallback(() => {
+    setReindexJobId(null);
+    onRefresh?.();
+  }, [onRefresh]);
+
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       {/* Info card */}
@@ -50,6 +77,39 @@ export function SettingsTab({ kb }: SettingsTabProps) {
           {tx(sh.local_embedding_hint, { model: kb.embeddingModel, dims: kb.embeddingDims })}
         </p>
       </div>
+
+      {/* Maintenance */}
+      <div className="rounded-modal border border-primary/10 bg-secondary/20 p-5 space-y-4">
+        <h3 className="typo-heading font-semibold text-foreground/90 flex items-center gap-2">
+          <Wrench className="w-4 h-4 text-violet-400" />
+          {sh.reindex_title}
+        </h3>
+        <p className="typo-caption text-foreground leading-relaxed">{sh.reindex_hint}</p>
+
+        {reindexJobId ? (
+          <IngestProgressBar kbId={kb.id} jobId={reindexJobId} onComplete={handleReindexComplete} />
+        ) : (
+          <Button
+            variant="accent"
+            accentColor="violet"
+            size="sm"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
+            onClick={() => setConfirmOpen(true)}
+          >
+            {sh.reindex_button}
+          </Button>
+        )}
+      </div>
+
+      {confirmOpen && (
+        <ConfirmDialog
+          title={sh.reindex_confirm_title}
+          body={tx(sh.reindex_confirm_body, { chunks: kb.chunkCount })}
+          confirmLabel={sh.reindex_confirm_cta}
+          onConfirm={startReindex}
+          onCancel={() => setConfirmOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -646,7 +646,14 @@
     "extract_runs_heading": "Extraktionsläufe",
     "extract_schema_heading": "Vorgeschlagenes Schema",
     "extract_schema_hint": "Vor dem Extrahieren bearbeiten — entfernen Sie unerwünschte Typen, den Rest füllt das Modell aus.",
-    "tab_extract": "Strukturierte Daten"
+    "tab_extract": "Strukturierte Daten",
+    "reindex": "Index neu aufbauen",
+    "reindex_button": "Index neu aufbauen",
+    "reindex_confirm_body": "Dabei werden alle {chunks} Passagen von Grund auf neu eingebettet. Bestehende Dokumente bleiben erhalten — nur der Vektorindex wird neu aufgebaut. Die Wissensdatenbank kann bis zum Abschluss nicht durchsucht werden.",
+    "reindex_confirm_cta": "Neu aufbauen",
+    "reindex_confirm_title": "Suchindex neu aufbauen?",
+    "reindex_hint": "Bettet jede Passage in dieser Wissensdatenbank mit dem aktuellen Embedding-Modell neu ein. Verwenden Sie dies nach einem Wechsel des Embedding-Modells, damit ältere Dokumente wieder durchsuchbar werden, oder um einen Index neu aufzubauen, bei dem Sie eine Abweichung vermuten.",
+    "reindex_title": "Wartung"
   },
   "manager": {
     "title": "Zugangsdaten",

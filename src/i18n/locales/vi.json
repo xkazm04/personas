@@ -4262,7 +4262,14 @@
       "extract_runs_heading": "Các lần trích xuất",
       "extract_schema_heading": "Lược đồ đề xuất",
       "extract_schema_hint": "Chỉnh sửa trước khi trích xuất — xóa các loại bạn không muốn, mô hình sẽ điền phần còn lại.",
-      "tab_extract": "Dữ liệu có cấu trúc"
+      "tab_extract": "Dữ liệu có cấu trúc",
+      "reindex": "Dựng lại chỉ mục",
+      "reindex_button": "Dựng lại chỉ mục",
+      "reindex_confirm_body": "Thao tác này nhúng lại toàn bộ {chunks} đoạn từ đầu. Các tài liệu hiện có được giữ nguyên — chỉ chỉ mục vectơ được dựng lại. Không thể tìm kiếm trong cơ sở tri thức cho đến khi hoàn tất.",
+      "reindex_confirm_cta": "Dựng lại",
+      "reindex_confirm_title": "Dựng lại chỉ mục tìm kiếm?",
+      "reindex_hint": "Nhúng lại mọi đoạn trong cơ sở tri thức này bằng mô hình nhúng hiện tại. Dùng thao tác này sau khi mô hình nhúng thay đổi để các tài liệu cũ có thể tìm kiếm lại được, hoặc để dựng lại chỉ mục mà bạn nghi ngờ đã bị sai lệch.",
+      "reindex_title": "Bảo trì"
     },
     "manager": {
       "title": "Thông tin xác thực",

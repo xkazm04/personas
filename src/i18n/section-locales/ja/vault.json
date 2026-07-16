@@ -646,7 +646,14 @@
     "extract_runs_heading": "抽出の実行",
     "extract_schema_heading": "提案されたスキーマ",
     "extract_schema_hint": "抽出する前に編集してください — 不要なタイプを削除すると、モデルが残りを補完します。",
-    "tab_extract": "構造化データ"
+    "tab_extract": "構造化データ",
+    "reindex": "インデックスを再構築",
+    "reindex_button": "インデックスを再構築",
+    "reindex_confirm_body": "すべての {chunks} 個のパッセージを最初から再埋め込みします。既存のドキュメントは保持され、ベクトルインデックスのみが再構築されます。完了するまでナレッジベースは検索できません。",
+    "reindex_confirm_cta": "再構築",
+    "reindex_confirm_title": "検索インデックスを再構築しますか？",
+    "reindex_hint": "現在の埋め込みモデルでこのナレッジベースのすべてのパッセージを再埋め込みします。埋め込みモデルを変更した後に古いドキュメントを再び検索可能にする場合や、ずれが疑われるインデックスを再構築する場合に使用します。",
+    "reindex_title": "メンテナンス"
   },
   "manager": {
     "title": "認証情報",

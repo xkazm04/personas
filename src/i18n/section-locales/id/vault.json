@@ -646,7 +646,14 @@
     "extract_runs_heading": "Proses ekstraksi",
     "extract_schema_heading": "Skema yang diusulkan",
     "extract_schema_hint": "Edit sebelum mengekstrak — hapus tipe yang tidak Anda inginkan, model mengisi sisanya.",
-    "tab_extract": "Data Terstruktur"
+    "tab_extract": "Data Terstruktur",
+    "reindex": "Bangun ulang indeks",
+    "reindex_button": "Bangun ulang indeks",
+    "reindex_confirm_body": "Ini menyematkan ulang seluruh {chunks} bagian dari awal. Dokumen yang ada tetap disimpan — hanya indeks vektor yang dibangun ulang. Basis pengetahuan tidak dapat dicari sampai proses selesai.",
+    "reindex_confirm_cta": "Bangun ulang",
+    "reindex_confirm_title": "Bangun ulang indeks pencarian?",
+    "reindex_hint": "Sematkan ulang setiap bagian dalam basis pengetahuan ini dengan model embedding saat ini. Gunakan ini setelah model embedding berubah agar dokumen lama dapat dicari kembali, atau untuk membangun ulang indeks yang Anda duga telah menyimpang.",
+    "reindex_title": "Pemeliharaan"
   },
   "manager": {
     "title": "Kredensial",

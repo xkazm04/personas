@@ -646,7 +646,14 @@
     "extract_runs_heading": "提取运行",
     "extract_schema_heading": "建议的架构",
     "extract_schema_hint": "提取前请编辑——移除不需要的类型，其余由模型补全。",
-    "tab_extract": "结构化数据"
+    "tab_extract": "结构化数据",
+    "reindex": "重建索引",
+    "reindex_button": "重建索引",
+    "reindex_confirm_body": "此操作将从头重新嵌入全部 {chunks} 个段落。现有文档会保留——仅重建向量索引。在完成之前无法搜索知识库。",
+    "reindex_confirm_cta": "重建",
+    "reindex_confirm_title": "重建搜索索引？",
+    "reindex_hint": "使用当前嵌入模型重新嵌入此知识库中的每个段落。在嵌入模型更改后使用此功能，可让较旧的文档重新可被搜索，或用于重建你怀疑已发生偏移的索引。",
+    "reindex_title": "维护"
   },
   "manager": {
     "title": "凭据",

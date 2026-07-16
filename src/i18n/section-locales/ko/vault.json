@@ -646,7 +646,14 @@
     "extract_runs_heading": "추출 실행",
     "extract_schema_heading": "제안된 스키마",
     "extract_schema_hint": "추출 전에 편집하세요 — 원하지 않는 유형을 제거하면 모델이 나머지를 채웁니다.",
-    "tab_extract": "구조화된 데이터"
+    "tab_extract": "구조화된 데이터",
+    "reindex": "인덱스 재구축",
+    "reindex_button": "인덱스 재구축",
+    "reindex_confirm_body": "모든 {chunks}개의 구절을 처음부터 다시 임베딩합니다. 기존 문서는 유지되며 벡터 인덱스만 재구축됩니다. 완료될 때까지 지식 베이스를 검색할 수 없습니다.",
+    "reindex_confirm_cta": "재구축",
+    "reindex_confirm_title": "검색 인덱스를 재구축하시겠습니까?",
+    "reindex_hint": "현재 임베딩 모델로 이 지식 베이스의 모든 구절을 다시 임베딩합니다. 임베딩 모델을 변경한 후 오래된 문서를 다시 검색할 수 있도록 하거나, 편차가 의심되는 인덱스를 재구축할 때 사용하세요.",
+    "reindex_title": "유지 관리"
   },
   "manager": {
     "title": "자격 증명",

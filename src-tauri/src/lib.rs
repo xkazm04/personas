@@ -3359,6 +3359,8 @@ pub fn run() {
             #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_ingest_directory,
             #[cfg(feature = "ml")]
+            commands::credentials::vector_kb::kb_reindex,
+            #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_search,
             #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_list_documents,

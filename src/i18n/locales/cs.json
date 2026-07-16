@@ -4262,7 +4262,14 @@
       "extract_runs_heading": "Běhy extrakce",
       "extract_schema_heading": "Navržené schéma",
       "extract_schema_hint": "Před extrakcí upravte — odeberte typy, které nechcete, zbytek doplní model.",
-      "tab_extract": "Strukturovaná data"
+      "tab_extract": "Strukturovaná data",
+      "reindex": "Znovu sestavit index",
+      "reindex_button": "Znovu sestavit index",
+      "reindex_confirm_body": "Tímto se od začátku znovu zaindexuje všech {chunks} pasáží. Stávající dokumenty zůstanou zachovány — přestaví se pouze vektorový index. Ve znalostní bázi nelze vyhledávat, dokud proces neskončí.",
+      "reindex_confirm_cta": "Sestavit",
+      "reindex_confirm_title": "Znovu sestavit index vyhledávání?",
+      "reindex_hint": "Znovu zaindexuje každou pasáž v této znalostní bázi pomocí aktuálního embedding modelu. Použijte po změně embedding modelu, aby byly starší dokumenty opět vyhledatelné, nebo k přestavbě indexu, u kterého máte podezření na odchylku.",
+      "reindex_title": "Údržba"
     },
     "manager": {
       "title": "Přihlašovací údaje",

@@ -646,7 +646,14 @@
     "extract_runs_heading": "Ejecuciones de extracción",
     "extract_schema_heading": "Esquema propuesto",
     "extract_schema_hint": "Edítalo antes de extraer — elimina los tipos que no quieras, el modelo completa el resto.",
-    "tab_extract": "Datos estructurados"
+    "tab_extract": "Datos estructurados",
+    "reindex": "Reconstruir índice",
+    "reindex_button": "Reconstruir índice",
+    "reindex_confirm_body": "Esto vuelve a incrustar todos los {chunks} fragmentos desde cero. Los documentos existentes se conservan — solo se reconstruye el índice vectorial. No se puede buscar en la base de conocimiento hasta que termine.",
+    "reindex_confirm_cta": "Reconstruir",
+    "reindex_confirm_title": "¿Reconstruir el índice de búsqueda?",
+    "reindex_hint": "Vuelve a incrustar cada fragmento de esta base de conocimiento con el modelo de incrustación actual. Úsalo después de cambiar el modelo de incrustación para que los documentos antiguos vuelvan a ser buscables, o para reconstruir un índice que sospechas que se ha desviado.",
+    "reindex_title": "Mantenimiento"
   },
   "manager": {
     "title": "Credenciales",

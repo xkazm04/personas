@@ -646,7 +646,14 @@
     "extract_runs_heading": "Exécutions d'extraction",
     "extract_schema_heading": "Schéma proposé",
     "extract_schema_hint": "Modifiez avant d'extraire — retirez les types que vous ne voulez pas, le modèle complète le reste.",
-    "tab_extract": "Données structurées"
+    "tab_extract": "Données structurées",
+    "reindex": "Reconstruire l'index",
+    "reindex_button": "Reconstruire l'index",
+    "reindex_confirm_body": "Cela réintègre les {chunks} passages depuis le début. Les documents existants sont conservés — seul l'index vectoriel est reconstruit. La base de connaissances ne peut pas être interrogée tant que ce n'est pas terminé.",
+    "reindex_confirm_cta": "Reconstruire",
+    "reindex_confirm_title": "Reconstruire l'index de recherche ?",
+    "reindex_hint": "Réintègre chaque passage de cette base de connaissances avec le modèle d'embedding actuel. Utilisez ceci après un changement de modèle d'embedding pour rendre les anciens documents à nouveau consultables, ou pour reconstruire un index que vous soupçonnez d'avoir dérivé.",
+    "reindex_title": "Entretien"
   },
   "manager": {
     "title": "Coffre-fort",

@@ -225,7 +225,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
             )}
             {visited.has('settings') && (
               <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'settings' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-                <SettingsTab kb={kb} />
+                <SettingsTab kb={kb} onRefresh={refreshKb} />
               </div>
             )}
           </>

@@ -636,6 +636,110 @@ fn collect_files_recursive(
     Ok(())
 }
 
+/// Re-embed an entire knowledge base end-to-end: drop + recreate the vec table
+/// and re-embed every stored chunk with the current embedding model. Runs as a
+/// background job with progress on the same `kb:ingest_progress` /
+/// `kb:ingest_complete` events as ingestion (returns the job id immediately).
+///
+/// Use it after the default embedding model changes (so a KB indexed with an
+/// older model becomes searchable again) or to rebuild an index suspected of
+/// drift. The job registers its CancellationToken under the KB id, so
+/// `delete_knowledge_base` cancels an in-flight reindex just as it does an
+/// ingest.
+#[tauri::command]
+#[tracing::instrument(skip(app, state))]
+pub async fn kb_reindex(
+    app: tauri::AppHandle,
+    state: State<'_, Arc<AppState>>,
+    kb_id: String,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    let kb = kb_ingest::get_kb(&state.user_db, &kb_id)?;
+
+    let embedder = state
+        .embedding_manager
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Embedding manager not initialized".into()))?
+        .clone();
+    let vector_store = state
+        .vector_store
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Vector store not initialized".into()))?
+        .clone();
+
+    let job_id = uuid::Uuid::new_v4().to_string();
+    let user_db = state.user_db.clone();
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let job_id_clone = job_id.clone();
+    let audit_pool = state.db.clone();
+    let kb_cred_id = kb.credential_id.clone();
+    let kb_name = kb.name.clone();
+    let kb_id_task = kb.id.clone();
+    let app_task = app.clone();
+    let ingest_jobs = state.kb_ingest_jobs.clone();
+
+    // Register the cancellation token so delete_knowledge_base can cancel us.
+    {
+        let mut jobs = ingest_jobs.lock().await;
+        jobs.insert(kb_id_task.clone(), cancel.clone());
+    }
+
+    audit_log::insert_warn(&audit_pool, &kb_cred_id, &kb_name, "kb_reindex", None);
+
+    tokio::spawn(async move {
+        let result = kb_ingest::reindex_kb(
+            app_task.clone(),
+            user_db,
+            embedder,
+            vector_store,
+            kb,
+            job_id_clone.clone(),
+            cancel,
+        )
+        .await;
+
+        // Unregister the job now that reindex is done.
+        {
+            let mut jobs = ingest_jobs.lock().await;
+            jobs.remove(&kb_id_task);
+        }
+
+        match &result {
+            Ok(_) => {
+                audit_log::insert_warn(
+                    &audit_pool,
+                    &kb_cred_id,
+                    &kb_name,
+                    "kb_reindex_complete",
+                    None,
+                );
+            }
+            Err(e) => {
+                tracing::error!(error = %e, "Reindex failed");
+                let _ = audit_log::insert(
+                    &audit_pool,
+                    &kb_cred_id,
+                    &kb_name,
+                    "kb_reindex_failed",
+                    None,
+                    None,
+                    Some(&e.to_string()),
+                );
+                let _ = app_task.emit(
+                    event_name::KB_INGEST_ERROR,
+                    serde_json::json!({
+                        "jobId": job_id_clone,
+                        "error": e.to_string()
+                    }),
+                );
+            }
+        }
+    });
+
+    Ok(job_id)
+}
+
 // ============================================================================
 // Search
 // ============================================================================

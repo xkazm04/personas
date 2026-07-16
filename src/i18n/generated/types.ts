@@ -4507,6 +4507,13 @@ export type Translations = {
       request_body: string;
       add_tag_title: string;
       local_embedding_hint: string;
+      reindex: string;
+      reindex_title: string;
+      reindex_hint: string;
+      reindex_button: string;
+      reindex_confirm_title: string;
+      reindex_confirm_body: string;
+      reindex_confirm_cta: string;
       api_path_placeholder: string;
       json_body_placeholder: string;
       sending: string;
