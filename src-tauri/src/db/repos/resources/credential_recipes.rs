@@ -66,19 +66,28 @@ pub fn upsert(
                 connector_label = excluded.connector_label,
                 category = excluded.category,
                 color = excluded.color,
-                oauth_type = excluded.oauth_type,
-                fields_json = excluded.fields_json,
-                healthcheck_json = excluded.healthcheck_json,
-                -- Enrichment columns: MERGE, never clobber. The negotiator
-                -- caches a stub on session start with empty instructions/summary
-                -- (mapped to NULL), and its ON CONFLICT update would otherwise
-                -- wipe a richer Design recipe setup_instructions/summary/docs_url
-                -- and downgrade a verified recipe to a stub. Keep the existing
-                -- value when the incoming one is NULL or empty.
+                -- MERGE, never clobber. The negotiator caches a STUB on session
+                -- start (empty instructions/summary, and often a NULL
+                -- healthcheck_json / oauth_type when built from a catalog/picker
+                -- shape). Its ON CONFLICT update must not wipe a richer, verified
+                -- Design recipe. Keep the existing value whenever the incoming one
+                -- is NULL/empty:
+                --   * healthcheck_json NULL  → verification would be silently skipped
+                --   * oauth_type NULL        → an OAuth recipe demoted to plain fields
+                --   * fields_json empty      → configured fields lost
+                oauth_type = COALESCE(excluded.oauth_type, oauth_type),
+                fields_json = COALESCE(NULLIF(excluded.fields_json, ''), fields_json),
+                healthcheck_json = COALESCE(excluded.healthcheck_json, healthcheck_json),
                 setup_instructions = COALESCE(NULLIF(excluded.setup_instructions, ''), setup_instructions),
                 summary = COALESCE(NULLIF(excluded.summary, ''), summary),
                 docs_url = COALESCE(NULLIF(excluded.docs_url, ''), docs_url),
-                source = excluded.source,
+                -- Only re-stamp provenance when the incoming row actually enriches
+                -- (has real instructions/summary); a bare stub keeps the existing
+                -- source so a 'design'-verified recipe isn't mislabeled 'negotiator'.
+                source = CASE
+                    WHEN NULLIF(excluded.setup_instructions, '') IS NOT NULL
+                      OR NULLIF(excluded.summary, '') IS NOT NULL
+                    THEN excluded.source ELSE source END,
                 updated_at = excluded.updated_at
              RETURNING *",
             params![
