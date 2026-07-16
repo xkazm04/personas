@@ -38,23 +38,14 @@
 //! - Not a streaming surface. The synthesis call completes before the chat
 //!   turn starts; users don't see the briefing being generated.
 
-#[cfg(feature = "ml")]
-use std::process::Stdio;
-#[cfg(feature = "ml")]
-use std::sync::Arc;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "ml")]
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-#[cfg(feature = "ml")]
-use tokio::process::Command;
-#[cfg(feature = "ml")]
-use tokio::time::timeout;
 
-use crate::companion::brain::retrieval::Recall;
 #[cfg(feature = "ml")]
-use crate::companion::session::base_cli_invocation;
+use crate::companion::brain::oneshot::call_claude_text;
+use crate::companion::brain::oneshot::{extract_json_span, preview};
+use crate::companion::brain::retrieval::Recall;
 use crate::error::AppError;
 
 /// Token estimate above which synthesis is preferred over raw injection.
@@ -266,160 +257,28 @@ fn build_synthesis_prompt(recall: &Recall, query: &str) -> String {
     p
 }
 
+/// Spawn/stream/timeout plumbing lives in
+/// [`oneshot::call_claude_text`](crate::companion::brain::oneshot::call_claude_text);
+/// this wrapper owns only the synthesis-specific model choice and typed
+/// envelope parsing.
+///
+/// Default to opus for synthesis quality; the call is rare (only fires
+/// above the budget threshold) and a poor synthesis worse than raw
+/// chunks. If costs are a concern, swap to sonnet here.
 #[cfg(feature = "ml")]
 async fn call_claude_oneshot(prompt: &str) -> Result<Briefing, AppError> {
-    let cwd = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
-    let (cmd_program, mut argv) = base_cli_invocation();
-    argv.extend([
-        "-p".into(),
-        "-".into(),
-        "--output-format".into(),
-        "stream-json".into(),
-        "--verbose".into(),
-        "--dangerously-skip-permissions".into(),
-        "--exclude-dynamic-system-prompt-sections".into(),
-        // Default to opus for synthesis quality; the call is rare (only
-        // fires above the budget threshold) and a poor synthesis worse
-        // than raw chunks. If costs are a concern, swap to sonnet here.
-        "--model".into(),
-        "claude-opus-4-8".into(),
-    ]);
-
-    let mut cmd = Command::new(&cmd_program);
-    cmd.args(&argv)
-        .current_dir(&cwd)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
-    // Subscription-only — never the API account.
-    crate::engine::cli_process::force_subscription_auth(&mut cmd);
-    // No console window on Windows (desktop-heap / 0xC0000142 guard).
-    crate::companion::session::apply_no_console_window(&mut cmd);
-    // Tokio does NOT kill children on drop by default: the timeout branch
-    // ?-returns before wait(), dropping the Child and leaking a live
-    // claude.exe (plus its model call) per timed-out invocation.
-    cmd.kill_on_drop(true);
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| AppError::Internal(format!("spawn claude (recall synthesis): {e}")))?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(prompt.as_bytes())
-            .await
-            .map_err(|e| AppError::Internal(format!("write stdin (recall synthesis): {e}")))?;
-        drop(stdin);
-    }
-
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| AppError::Internal("recall synthesis: claude stdout missing".into()))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| AppError::Internal("recall synthesis: claude stderr missing".into()))?;
-
-    let stderr_buf = Arc::new(tokio::sync::Mutex::new(String::new()));
-    let stderr_handle = {
-        let buf = stderr_buf.clone();
-        tokio::spawn(async move {
-            let mut lines = BufReader::new(stderr).lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                let mut g = buf.lock().await;
-                if !g.is_empty() {
-                    g.push('\n');
-                }
-                g.push_str(&line);
-            }
-        })
-    };
-
-    let mut assistant_text = String::new();
-    let mut reader = BufReader::new(stdout).lines();
-    let collect = async {
-        while let Some(line) = reader
-            .next_line()
-            .await
-            .map_err(|e| AppError::Internal(format!("read stdout (recall synthesis): {e}")))?
-        {
-            if let Some(delta) = extract_assistant_text(&line) {
-                assistant_text.push_str(&delta);
-            }
-        }
-        Ok::<(), AppError>(())
-    };
-
-    timeout(SYNTHESIS_TIMEOUT, collect)
-        .await
-        .map_err(|_| {
-            AppError::Internal(format!(
-                "recall synthesis timed out after {:?}",
-                SYNTHESIS_TIMEOUT
-            ))
-        })??;
-
-    let _ = stderr_handle.await;
-    let status = child
-        .wait()
-        .await
-        .map_err(|e| AppError::Internal(format!("await claude (recall synthesis): {e}")))?;
-    if !status.success() {
-        let err = stderr_buf.lock().await.clone();
-        return Err(AppError::Internal(format!(
-            "claude (recall synthesis) exited {}: {}",
-            status.code().map(|c| c.to_string()).unwrap_or("?".into()),
-            err
-        )));
-    }
-
-    parse_envelope(&assistant_text)
-}
-
-fn extract_assistant_text(line: &str) -> Option<String> {
-    let v: serde_json::Value = serde_json::from_str(line).ok()?;
-    if v.get("type")?.as_str()? != "assistant" {
-        return None;
-    }
-    let blocks = v.get("message")?.get("content")?.as_array()?;
-    let mut out = String::new();
-    for b in blocks {
-        if b.get("type").and_then(|x| x.as_str()) == Some("text") {
-            if let Some(t) = b.get("text").and_then(|x| x.as_str()) {
-                out.push_str(t);
-            }
-        }
-    }
-    if out.is_empty() {
-        None
-    } else {
-        Some(out)
-    }
+    let text = call_claude_text(
+        prompt,
+        "claude-opus-4-8",
+        "recall synthesis",
+        SYNTHESIS_TIMEOUT,
+    )
+    .await?;
+    parse_envelope(&text)
 }
 
 fn parse_envelope(text: &str) -> Result<Briefing, AppError> {
-    let trimmed = text.trim();
-    let raw = strip_code_fence(trimmed).unwrap_or(trimmed);
-    let start = raw.find('{').ok_or_else(|| {
-        AppError::Internal(format!(
-            "recall synthesis reply missing JSON object; got: {}",
-            preview(raw, 200)
-        ))
-    })?;
-    let end = raw.rfind('}').ok_or_else(|| {
-        AppError::Internal(format!(
-            "recall synthesis reply missing closing `}}`; got: {}",
-            preview(raw, 200)
-        ))
-    })?;
-    if end <= start {
-        return Err(AppError::Internal(format!(
-            "recall synthesis reply has no valid JSON span; got: {}",
-            preview(raw, 200)
-        )));
-    }
-    let json = &raw[start..=end];
+    let json = extract_json_span(text, "recall synthesis reply")?;
     let envelope: BriefingEnvelope = serde_json::from_str(json).map_err(|e| {
         AppError::Internal(format!(
             "recall synthesis JSON parse failed: {e}; got: {}",
@@ -427,22 +286,6 @@ fn parse_envelope(text: &str) -> Result<Briefing, AppError> {
         ))
     })?;
     Ok(envelope.briefing)
-}
-
-fn strip_code_fence(s: &str) -> Option<&str> {
-    let t = s.trim();
-    let stripped = t.strip_prefix("```json")
-        .or_else(|| t.strip_prefix("```"))?
-        .trim_start();
-    stripped.strip_suffix("```").map(|x| x.trim())
-}
-
-fn preview(s: &str, n: usize) -> String {
-    if s.len() <= n {
-        s.to_string()
-    } else {
-        format!("{}…", &s[..n])
-    }
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────

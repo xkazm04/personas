@@ -12,21 +12,17 @@
 //! No sidecar table — reflections have no typed metadata to query on.
 
 use std::fs;
-use std::process::Stdio;
-use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::Utc;
 use rusqlite::params;
 use sha2::{Digest, Sha256};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command;
-use tokio::time::timeout;
 use uuid::Uuid;
 
 use crate::companion::brain::episodic;
+use crate::companion::brain::oneshot::call_claude_text;
 use crate::companion::disk;
-use crate::companion::session::{base_cli_invocation, DEFAULT_SESSION_ID};
+use crate::companion::session::DEFAULT_SESSION_ID;
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
@@ -182,131 +178,23 @@ fn build_reflection_prompt(episodes: &[episodic::Episode], instructions: Option<
     p
 }
 
+/// Spawn/stream/timeout plumbing lives in
+/// [`oneshot::call_claude_text`](crate::companion::brain::oneshot::call_claude_text);
+/// this wrapper owns only the reflection-specific model choice and the
+/// empty-output guard (reflection returns free-form prose, not JSON, so
+/// there's no envelope to parse).
 async fn call_claude_oneshot(prompt: &str) -> Result<String, AppError> {
-    let cwd = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
-    let (cmd_program, mut argv) = base_cli_invocation();
-    argv.extend([
-        "-p".into(),
-        "-".into(),
-        "--output-format".into(),
-        "stream-json".into(),
-        "--verbose".into(),
-        "--dangerously-skip-permissions".into(),
-        "--exclude-dynamic-system-prompt-sections".into(),
-        "--model".into(),
-        "claude-opus-4-8".into(),
-    ]);
-    let mut cmd = Command::new(&cmd_program);
-    cmd.args(&argv)
-        .current_dir(&cwd)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
-    // Subscription-only — never the API account.
-    crate::engine::cli_process::force_subscription_auth(&mut cmd);
-    // No console window on Windows (desktop-heap / 0xC0000142 guard).
-    crate::companion::session::apply_no_console_window(&mut cmd);
-    // Tokio does NOT kill children on drop by default: the timeout branch
-    // ?-returns before wait(), dropping the Child and leaking a live
-    // claude.exe (plus its model call) per timed-out invocation.
-    cmd.kill_on_drop(true);
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| AppError::Internal(format!("spawn claude (reflection): {e}")))?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(prompt.as_bytes())
-            .await
-            .map_err(|e| AppError::Internal(format!("write stdin: {e}")))?;
-        drop(stdin);
-    }
-
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| AppError::Internal("claude stdout missing".into()))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| AppError::Internal("claude stderr missing".into()))?;
-
-    let stderr_buf = Arc::new(tokio::sync::Mutex::new(String::new()));
-    let stderr_handle = {
-        let buf = stderr_buf.clone();
-        tokio::spawn(async move {
-            let mut lines = BufReader::new(stderr).lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                let mut g = buf.lock().await;
-                if !g.is_empty() {
-                    g.push('\n');
-                }
-                g.push_str(&line);
-            }
-        })
-    };
-
-    let mut text = String::new();
-    let mut reader = BufReader::new(stdout).lines();
-    let collect = async {
-        while let Some(line) = reader
-            .next_line()
-            .await
-            .map_err(|e| AppError::Internal(format!("read stdout: {e}")))?
-        {
-            if let Some(delta) = extract_assistant_text(&line) {
-                text.push_str(&delta);
-            }
-        }
-        Ok::<(), AppError>(())
-    };
-
-    timeout(REFLECTION_TIMEOUT, collect).await.map_err(|_| {
-        AppError::Internal(format!(
-            "reflection timed out after {:?}",
-            REFLECTION_TIMEOUT
-        ))
-    })??;
-
-    let _ = stderr_handle.await;
-    let status = child
-        .wait()
-        .await
-        .map_err(|e| AppError::Internal(format!("await claude: {e}")))?;
-    if !status.success() {
-        let err = stderr_buf.lock().await.clone();
-        return Err(AppError::Internal(format!(
-            "claude reflection exited {}: {}",
-            status.code().map(|c| c.to_string()).unwrap_or("?".into()),
-            err
-        )));
-    }
+    let text = call_claude_text(
+        prompt,
+        "claude-opus-4-8",
+        "reflection",
+        REFLECTION_TIMEOUT,
+    )
+    .await?;
     if text.trim().is_empty() {
         return Err(AppError::Internal("reflection output was empty".into()));
     }
     Ok(text)
-}
-
-fn extract_assistant_text(line: &str) -> Option<String> {
-    let v: serde_json::Value = serde_json::from_str(line).ok()?;
-    if v.get("type")?.as_str()? != "assistant" {
-        return None;
-    }
-    let blocks = v.get("message")?.get("content")?.as_array()?;
-    let mut out = String::new();
-    for b in blocks {
-        if b.get("type").and_then(|x| x.as_str()) == Some("text") {
-            if let Some(t) = b.get("text").and_then(|x| x.as_str()) {
-                out.push_str(t);
-            }
-        }
-    }
-    if out.is_empty() {
-        None
-    } else {
-        Some(out)
-    }
 }
 
 fn body_after_frontmatter(md: &str) -> String {

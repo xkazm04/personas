@@ -16,20 +16,19 @@
 //! bad fact distillation can poison every future retrieval. We make
 //! reviewing fast, not silent.
 
-use std::process::Stdio;
 use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command;
-use tokio::time::timeout;
 use uuid::Uuid;
 
+use crate::companion::brain::oneshot::{
+    call_claude_text, extract_json_span, preview,
+};
 use crate::companion::brain::{episodic, semantic};
-use crate::companion::session::{base_cli_invocation, DEFAULT_SESSION_ID};
+use crate::companion::session::DEFAULT_SESSION_ID;
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
@@ -818,203 +817,33 @@ fn build_consolidation_prompt(
 /// stdout, parse the JSON envelope. No `--resume`, no system-prompt
 /// file (we put everything in the user prompt for total control), no
 /// stream events to the UI — this is a backend computation.
+///
+/// Spawn/stream/timeout plumbing lives in
+/// [`oneshot::call_claude_text`](crate::companion::brain::oneshot::call_claude_text);
+/// this wrapper owns only the consolidation-specific model choice and
+/// typed envelope parsing.
 async fn call_claude_oneshot(prompt: &str) -> Result<ProposalEnvelope, AppError> {
-    let cwd = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
-    let (cmd_program, mut argv) = base_cli_invocation();
-    argv.extend([
-        "-p".into(),
-        "-".into(),
-        "--output-format".into(),
-        "stream-json".into(),
-        "--verbose".into(),
-        "--dangerously-skip-permissions".into(),
-        "--exclude-dynamic-system-prompt-sections".into(),
-        "--model".into(),
-        "claude-opus-4-8".into(),
-    ]);
-
-    let mut cmd = Command::new(&cmd_program);
-    cmd.args(&argv)
-        .current_dir(&cwd)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
-    // Subscription-only — never the API account.
-    crate::engine::cli_process::force_subscription_auth(&mut cmd);
-    // No console window on Windows (desktop-heap / 0xC0000142 guard).
-    crate::companion::session::apply_no_console_window(&mut cmd);
-    // Tokio does NOT kill children on drop by default: the timeout branch
-    // ?-returns before wait(), dropping the Child and leaking a live
-    // claude.exe (plus its model call) per timed-out invocation.
-    cmd.kill_on_drop(true);
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| AppError::Internal(format!("spawn claude (consolidation): {e}")))?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(prompt.as_bytes())
-            .await
-            .map_err(|e| AppError::Internal(format!("write stdin: {e}")))?;
-        drop(stdin);
-    }
-
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| AppError::Internal("claude stdout missing".into()))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| AppError::Internal("claude stderr missing".into()))?;
-
-    let stderr_buf = Arc::new(tokio::sync::Mutex::new(String::new()));
-    let stderr_handle = {
-        let buf = stderr_buf.clone();
-        tokio::spawn(async move {
-            let mut lines = BufReader::new(stderr).lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                let mut g = buf.lock().await;
-                if !g.is_empty() {
-                    g.push('\n');
-                }
-                g.push_str(&line);
-            }
-        })
-    };
-
-    // Reuse the streaming JSON parser to extract assistant text deltas.
-    let mut assistant_text = String::new();
-    let mut reader = BufReader::new(stdout).lines();
-
-    let collect = async {
-        while let Some(line) = reader
-            .next_line()
-            .await
-            .map_err(|e| AppError::Internal(format!("read stdout: {e}")))?
-        {
-            if let Some(delta) = extract_assistant_text(&line) {
-                assistant_text.push_str(&delta);
-            }
-        }
-        Ok::<(), AppError>(())
-    };
-
-    timeout(CONSOLIDATION_TIMEOUT, collect)
-        .await
-        .map_err(|_| {
-            AppError::Internal(format!(
-                "consolidation timed out after {:?}",
-                CONSOLIDATION_TIMEOUT
-            ))
-        })??;
-
-    let _ = stderr_handle.await;
-    let status = child
-        .wait()
-        .await
-        .map_err(|e| AppError::Internal(format!("await claude: {e}")))?;
-    if !status.success() {
-        let err = stderr_buf.lock().await.clone();
-        return Err(AppError::Internal(format!(
-            "claude consolidation exited {}: {}",
-            status.code().map(|c| c.to_string()).unwrap_or("?".into()),
-            err
-        )));
-    }
-
-    parse_envelope(&assistant_text)
-}
-
-/// Strip stream-json wrapping and pull text deltas. Matches the
-/// extractor on the frontend (extractAssistantText in CompanionPanel).
-fn extract_assistant_text(line: &str) -> Option<String> {
-    let v: serde_json::Value = serde_json::from_str(line).ok()?;
-    if v.get("type")?.as_str()? != "assistant" {
-        return None;
-    }
-    let blocks = v.get("message")?.get("content")?.as_array()?;
-    let mut out = String::new();
-    for b in blocks {
-        if b.get("type").and_then(|x| x.as_str()) == Some("text") {
-            if let Some(t) = b.get("text").and_then(|x| x.as_str()) {
-                out.push_str(t);
-            }
-        }
-    }
-    if out.is_empty() {
-        None
-    } else {
-        Some(out)
-    }
+    let text = call_claude_text(
+        prompt,
+        "claude-opus-4-8",
+        "consolidation",
+        CONSOLIDATION_TIMEOUT,
+    )
+    .await?;
+    parse_envelope(&text)
 }
 
 /// Parse the assembled assistant text. Tolerant of code-fenced replies
 /// (Claude sometimes wraps despite explicit instructions) and trailing
 /// commentary — find the first `{` and the matching last `}`.
 fn parse_envelope(text: &str) -> Result<ProposalEnvelope, AppError> {
-    let trimmed = text.trim();
-    let raw = if let Some(stripped) = strip_code_fence(trimmed) {
-        stripped
-    } else {
-        trimmed
-    };
-    // Find the first '{' and last '}' to be tolerant of preface/suffix.
-    let start = raw.find('{').ok_or_else(|| {
-        AppError::Internal(format!(
-            "consolidation reply missing JSON object; got: {}",
-            preview(raw, 200)
-        ))
-    })?;
-    let end = raw.rfind('}').ok_or_else(|| {
-        AppError::Internal(format!(
-            "consolidation reply missing closing `}}`; got: {}",
-            preview(raw, 200)
-        ))
-    })?;
-    if end <= start {
-        return Err(AppError::Internal(format!(
-            "consolidation reply has no valid JSON span; got: {}",
-            preview(raw, 200)
-        )));
-    }
-    let json = &raw[start..=end];
+    let json = extract_json_span(text, "consolidation reply")?;
     serde_json::from_str(json).map_err(|e| {
         AppError::Internal(format!(
             "consolidation reply not valid JSON: {e}; got: {}",
             preview(json, 400)
         ))
     })
-}
-
-fn strip_code_fence(s: &str) -> Option<&str> {
-    let mut s = s;
-    if let Some(rest) = s.strip_prefix("```json") {
-        s = rest;
-    } else if let Some(rest) = s.strip_prefix("```") {
-        s = rest;
-    } else {
-        return None;
-    }
-    let s = s.trim_start_matches('\n');
-    if let Some(end) = s.rfind("```") {
-        Some(s[..end].trim())
-    } else {
-        Some(s.trim())
-    }
-}
-
-fn preview(s: &str, n: usize) -> String {
-    if s.len() <= n {
-        s.to_string()
-    } else {
-        let mut end = n;
-        while !s.is_char_boundary(end) && end > 0 {
-            end -= 1;
-        }
-        format!("{}…", &s[..end])
-    }
 }
 
 fn short_uuid() -> String {

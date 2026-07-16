@@ -18,6 +18,7 @@ pub mod fleet_patterns;
 pub mod goals;
 pub mod graph;
 pub mod identity;
+pub mod oneshot;
 pub mod procedural;
 pub mod profile_synthesis;
 pub mod recall_synthesis;
