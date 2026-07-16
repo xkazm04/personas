@@ -124,8 +124,13 @@ export const driveSearch = (query: string, maxResults?: number) =>
 export const driveRecent = (limit?: number) =>
   invoke<DriveEntry[]>("drive_recent", { limit: limit ?? null });
 
+// Raw-byte IPC: the command returns tauri::ipc::Response, so invoke resolves
+// to an ArrayBuffer instead of a JSON number array (~3-4x smaller transfer,
+// no boxed-number intermediate). Callers wrap it in new Uint8Array(...).
+// NOTE: drive_write still ships Array.from(content) JSON — raw-body upload is
+// a follow-up (uploads are far colder than the per-thumbnail read path).
 export const driveRead = (relPath: string) =>
-  invoke<number[]>("drive_read", { relPath: validateRelPath(relPath) });
+  invoke<ArrayBuffer>("drive_read", { relPath: validateRelPath(relPath) });
 
 export const driveReadText = (relPath: string) =>
   invoke<string>("drive_read_text", { relPath: validateRelPath(relPath) });
