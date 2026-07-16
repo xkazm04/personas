@@ -67,7 +67,7 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
           <span className="min-w-0 flex-1">{children}</span>
           <Cog
             className={`w-3.5 h-3.5 flex-shrink-0 ml-1 text-primary transition-opacity ${
-              busy ? 'opacity-100 animate-spin' : 'opacity-50 group-hover/imp:opacity-100'
+              busy ? 'opacity-100 animate-spin' : 'opacity-[0.10] group-hover/imp:opacity-100'
             }`}
             aria-hidden
           />
