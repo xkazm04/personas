@@ -55,6 +55,11 @@ pub enum ToolErrorKind {
     /// The tool definition / arguments are invalid (missing guide, bad ID,
     /// schema-validation failure) — a configuration problem, not a runtime one.
     Misconfigured,
+    /// The tool is valid but cannot be invoked through THIS surface — e.g. a
+    /// `builtin://` tool that only executes inside a persona run (via the
+    /// personas-mcp sidecar), not from the manual Tool Runner. Distinct from
+    /// `Misconfigured` so a perfectly healthy builtin never reads as broken.
+    Unsupported,
     /// Failure that does not map cleanly to a more specific kind.
     Unknown,
 }
@@ -70,6 +75,7 @@ impl ToolErrorKind {
             ToolErrorKind::ToolError => "tool_error",
             ToolErrorKind::RateLimited => "rate_limited",
             ToolErrorKind::Misconfigured => "misconfigured",
+            ToolErrorKind::Unsupported => "unsupported",
             ToolErrorKind::Unknown => "unknown",
         }
     }

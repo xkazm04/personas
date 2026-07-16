@@ -47,7 +47,9 @@ pub struct ToolInvocationResult {
     pub retryable: bool,
     pub duration_ms: u64,
     pub tool_name: String,
-    /// "script" | "api" | "automation"
+    /// "script" | "api" | "automation" — plus "builtin" for `builtin://` tools
+    /// (which only run inside persona executions) and "unknown" when the tool
+    /// row has no resolvable execution strategy.
     pub tool_type: String,
 }
 
@@ -115,6 +117,70 @@ pub async fn invoke_tool_direct(
     input_json: &str,
     rate_limiter: Option<&RateLimiter>,
 ) -> Result<ToolInvocationResult, AppError> {
+    let start = Instant::now();
+
+    // Pre-flight failures below return a TYPED `ToolInvocationResult` — never
+    // a raw `Err(AppError)`. A raw Err reaches the webview as a plain object
+    // that the panel used to render as "[object Object]" (2026-07-16 UAT
+    // blocker), and it skipped the audit log entirely. This helper keeps the
+    // contract + audit trail uniform with the post-dispatch failure path.
+    let early_failure = |kind: ToolErrorKind, message: String, retryable: bool| {
+        let tool_type = if tool.script_path.starts_with("builtin://") {
+            "builtin".to_string()
+        } else {
+            match tool.tool_kind() {
+                Ok(ToolKind::Automation) => "automation".to_string(),
+                Ok(ToolKind::Script) => "script".to_string(),
+                Ok(ToolKind::Api) => "api".to_string(),
+                Err(_) => "unknown".to_string(),
+            }
+        };
+        let result = ToolInvocationResult {
+            success: false,
+            output: String::new(),
+            output_truncated: false,
+            error: Some(message),
+            error_kind: Some(kind),
+            http_status: None,
+            retryable,
+            duration_ms: start.elapsed().as_millis() as u64,
+            tool_name: tool.name.clone(),
+            tool_type,
+        };
+        if let Err(log_err) = tool_audit_log::insert(
+            pool,
+            &tool.id,
+            &tool.name,
+            &result.tool_type,
+            Some(persona_id),
+            Some(persona_name),
+            None,
+            "error",
+            Some(result.duration_ms),
+            result.error.as_deref(),
+            result.error_kind.map(|k| k.as_str()),
+        ) {
+            tracing::warn!("Failed to write tool audit log: {log_err}");
+        }
+        result
+    };
+
+    // Builtin tools (`builtin://…`) execute inside persona runs via the
+    // personas-mcp sidecar + the :9420 credential bridge — there is no direct
+    // invocation path here. Say so honestly: before this check they fell into
+    // the script-path validator and read as "misconfigured", which told users
+    // a perfectly healthy template tool was broken (2026-07-16 UAT blocker).
+    if tool.script_path.starts_with("builtin://") {
+        return Ok(early_failure(
+            ToolErrorKind::Unsupported,
+            format!(
+                "Built-in tool '{}' runs inside persona executions (via the personas-mcp sidecar) and can't be invoked manually from the Tool Runner. Run one of the persona's capabilities to exercise it.",
+                tool.name
+            ),
+            false,
+        ));
+    }
+
     // Per-tool rate limiting
     if let Some(rl) = rate_limiter {
         let rate_key = format!("tool:{}", tool.id);
@@ -129,14 +195,13 @@ pub async fn invoke_tool_direct(
                 retry_after_secs = retry_after,
                 "Direct tool execution rate limited"
             );
-            return Err(AppError::RateLimited(format!(
-                "Tool '{}' rate limited. Retry after {retry_after}s.",
-                tool.name
-            )));
+            return Ok(early_failure(
+                ToolErrorKind::RateLimited,
+                format!("Tool '{}' rate limited. Retry after {retry_after}s.", tool.name),
+                true,
+            ));
         }
     }
-
-    let start = Instant::now();
 
     // Resolve credential env vars using the existing runner infrastructure
     let (env_vars, _hints, cred_failures, _injected_connectors) =
@@ -149,10 +214,14 @@ pub async fn invoke_tool_direct(
         .await;
 
     if !cred_failures.is_empty() {
-        return Err(AppError::Execution(format!(
-            "Credential decryption failed for: {}. Re-enter or rotate these credentials before retrying.",
-            cred_failures.join(", ")
-        )));
+        return Ok(early_failure(
+            ToolErrorKind::Auth,
+            format!(
+                "Credential decryption failed for: {}. Re-enter or rotate these credentials before retrying.",
+                cred_failures.join(", ")
+            ),
+            false,
+        ));
     }
 
     let env_map: HashMap<&str, &str> = env_vars
@@ -160,7 +229,12 @@ pub async fn invoke_tool_direct(
         .map(|(k, v)| (k.as_str(), v.as_str()))
         .collect();
 
-    let kind = tool.tool_kind().map_err(AppError::Execution)?;
+    // Zero or conflicting execution strategies is a configuration fact about
+    // the tool row — surface it typed (misconfigured), not as a raw Err.
+    let kind = match tool.tool_kind() {
+        Ok(k) => k,
+        Err(msg) => return Ok(early_failure(ToolErrorKind::Misconfigured, msg, false)),
+    };
 
     let result: Result<(String, String), DirectInvokeError> = {
         #[allow(clippy::type_complexity)]
@@ -173,12 +247,18 @@ pub async fn invoke_tool_direct(
             ToolKind::Automation => Box::pin(invoke_automation_tool(pool, tool, input_json)),
             ToolKind::Script => Box::pin(invoke_script(tool, input_json, &env_map)),
             ToolKind::Api => {
-                let guide = tool.implementation_guide.as_ref().ok_or_else(|| {
-                    AppError::Execution(format!(
-                        "Tool '{}' is categorized as API but has no implementation_guide",
-                        tool.name
-                    ))
-                })?;
+                // Defensive: tool_kind() == Api guarantees a non-empty guide,
+                // but if the invariant ever breaks, fail typed, not raw.
+                let Some(guide) = tool.implementation_guide.as_ref() else {
+                    return Ok(early_failure(
+                        ToolErrorKind::Misconfigured,
+                        format!(
+                            "Tool '{}' is categorized as API but has no implementation_guide",
+                            tool.name
+                        ),
+                        false,
+                    ));
+                };
                 Box::pin(async move {
                     let first = invoke_api(tool, guide, input_json, &env_map).await;
                     if let Err(ref err) = first {
@@ -1328,5 +1408,84 @@ mod script_path_validation_tests {
         let err = validate_script_path_against(&link.to_string_lossy(), "t", &roots)
             .unwrap_err();
         assert!(err.contains("outside the allowed"), "symlink escape not blocked: {err}");
+    }
+}
+
+#[cfg(test)]
+mod direct_invoke_contract_tests {
+    //! The 2026-07-16 UAT pass proved three pre-flight failures escaped the
+    //! typed `ToolInvocationResult` contract as raw `Err(AppError)` — which the
+    //! webview rendered as literally "[object Object]" — and that `builtin://`
+    //! tools were mislabeled "misconfigured". These tests pin the contract:
+    //! every pre-flight failure comes back `Ok(result)` with the right kind.
+    use super::*;
+    use crate::db::init_test_db;
+
+    fn tool(script_path: &str, guide: Option<&str>, category: &str) -> PersonaToolDefinition {
+        PersonaToolDefinition {
+            id: "tool-under-test".into(),
+            name: "tool_under_test".into(),
+            category: category.into(),
+            description: String::new(),
+            script_path: script_path.into(),
+            input_schema: None,
+            output_schema: None,
+            requires_credential_type: None,
+            implementation_guide: guide.map(|g| g.to_string()),
+            is_builtin: script_path.starts_with("builtin://"),
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    #[tokio::test]
+    async fn builtin_tool_is_typed_unsupported_not_misconfigured() {
+        let pool = init_test_db().unwrap();
+        let t = tool("builtin://gmail_read", None, "email");
+        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", None)
+            .await
+            .expect("must be Ok(typed result), never a raw Err");
+        assert!(!r.success);
+        assert_eq!(r.error_kind, Some(ToolErrorKind::Unsupported));
+        assert_eq!(r.tool_type, "builtin");
+        let msg = r.error.unwrap();
+        assert!(
+            msg.contains("persona executions"),
+            "message must say where builtins DO run: {msg}"
+        );
+    }
+
+    #[tokio::test]
+    async fn no_execution_strategy_is_typed_misconfigured() {
+        let pool = init_test_db().unwrap();
+        // No script, no guide, not automation — tool_kind() is Err.
+        let t = tool("", None, "api");
+        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", None)
+            .await
+            .expect("must be Ok(typed result), never a raw Err");
+        assert!(!r.success);
+        assert_eq!(r.error_kind, Some(ToolErrorKind::Misconfigured));
+        assert_eq!(r.tool_type, "unknown");
+        assert!(r.error.unwrap().contains("no execution strategy"));
+    }
+
+    #[tokio::test]
+    async fn rate_limited_is_typed_retryable() {
+        let pool = init_test_db().unwrap();
+        let t = tool("", None, "api");
+        let rl = RateLimiter::new();
+        // Exhaust the per-tool budget so the next check trips.
+        let key = format!("tool:{}", t.id);
+        while rl
+            .check(&key, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW)
+            .is_ok()
+        {}
+        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", Some(&rl))
+            .await
+            .expect("must be Ok(typed result), never a raw Err");
+        assert!(!r.success);
+        assert_eq!(r.error_kind, Some(ToolErrorKind::RateLimited));
+        assert!(r.retryable, "rate-limit failures are retryable");
+        assert!(r.error.unwrap().contains("rate limited"));
     }
 }

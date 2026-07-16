@@ -8,4 +8,4 @@
  * Serialized `snake_case` so the wire value doubles as the DB `error_kind`
  * column value (see [`ToolErrorKind::as_str`]).
  */
-export type ToolErrorKind = "auth" | "timeout" | "http" | "transport" | "tool_error" | "rate_limited" | "misconfigured" | "unknown";
+export type ToolErrorKind = "auth" | "timeout" | "http" | "transport" | "tool_error" | "rate_limited" | "misconfigured" | "unsupported" | "unknown";
