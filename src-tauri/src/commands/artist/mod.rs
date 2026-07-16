@@ -747,13 +747,20 @@ async fn run_creative_cli(
     })
     .await;
 
-    let _ = child.wait().await;
-
+    // On timeout the child (Claude CLI + its blender-mcp subprocess) may be
+    // wedged — e.g. blocked on a Blender socket that never answers — so an
+    // unconditional `wait()` here would block forever and the timeout error
+    // would never be returned (status stuck "running", subprocesses leaked).
+    // Kill first on the timeout path, then reap.
     if stream_result.is_err() {
+        let _ = child.kill().await;
+        let _ = child.wait().await;
         return Err(AppError::Internal(
             "Creative session timed out after 10 minutes".into(),
         ));
     }
+
+    let _ = child.wait().await;
 
     CREATIVE_JOBS.emit_line(
         app,
