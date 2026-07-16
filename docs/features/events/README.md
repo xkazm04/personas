@@ -54,19 +54,25 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 
 > **Destructive-action gate (`unattended_mode`).** Each trigger has a
 > `persona_triggers.unattended_mode` — `auto` (default), `dry_run`, or `approval`
-> — controlling what happens when it fires UNATTENDED on schedule (UAT P5
-> F-NO-DESTRUCTIVE-GATE; the gate is scoped to scheduler-fired schedule/polling
-> triggers). **`dry_run`:** at the event-bus execution-creation point
+> — controlling what happens when it fires UNATTENDED (UAT P5
+> F-NO-DESTRUCTIVE-GATE + F-MAJOR-11). The gate covers the trigger types that
+> fire a run autonomously on **external** input: scheduler-fired
+> (`schedule`/`polling`) **and** externally-fired `webhook` triggers. It does
+> NOT cover `event_listener` triggers (internal chain steps reacting to persona
+> events), where surfacing a control the run-gate can't honor would be a worse,
+> lying signal. **`dry_run`:** at the event-bus execution-creation point
 > (`engine/background.rs`) the launched run is flagged `is_simulation`, so
 > dispatch suppresses real outbound notification/connector delivery — the run is
-> observable but inert. **`approval`:** at the scheduler fire
-> (`engine/background.rs`) the event is NOT published; a `pending_trigger_fires`
-> row is recorded and the fire is held until a human resolves it
-> (`resolve_pending_trigger_fire` republishes the held event on approve, discards
-> on reject). The trigger detail drawer exposes the mode
-> (`UnattendedModeSection`), the trigger list surfaces held fires
-> (`PendingTriggerApprovals`) + a per-row mode badge. Commands:
-> `set_trigger_unattended_mode` / `list_pending_trigger_fires` /
+> observable but inert (both scheduler and webhook fires). **`approval`:** a
+> scheduler trigger holds at its tick (the event is never published); a webhook
+> trigger publishes its event directly, so its hold happens at dispatch
+> (`engine/background.rs`, once per event before any match). Either way a
+> `pending_trigger_fires` row is recorded and the fire is held until a human
+> resolves it (`resolve_pending_trigger_fire` republishes the held event on
+> approve, discards on reject). The trigger detail drawer exposes the mode
+> (`UnattendedModeSection`, shown for schedule/polling/webhook), the trigger list
+> surfaces held fires (`PendingTriggerApprovals`) + a per-row mode badge.
+> Commands: `set_trigger_unattended_mode` / `list_pending_trigger_fires` /
 > `resolve_pending_trigger_fire`.
 
 > **Row blast-radius cues (`triggerArmState.ts`).** A trigger row reports a

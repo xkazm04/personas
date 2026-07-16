@@ -1017,6 +1017,46 @@ pub(crate) async fn event_bus_tick(
     for (idx, matches) in &event_matches {
         let event = &events[*idx];
         let mut any_failed = false;
+
+        // Destructive-action gate for WEBHOOK-fired triggers (UAT F-MAJOR-11:
+        // the approval/dry_run gate only covered scheduler triggers, leaving
+        // exactly the external-ingress type an alert/ticket automation uses
+        // ungated). Scheduler triggers hold at their tick (pre-publish); a
+        // webhook publishes its event directly, so the `approval` hold happens
+        // here — once per event, before any match dispatches. On approval,
+        // `resolve_pending_trigger_fire` re-publishes as source_type "trigger",
+        // which flows through normally (and never re-enters this webhook branch).
+        if event.source_type == "webhook" {
+            if let Some(trig) = event
+                .source_id
+                .as_deref()
+                .and_then(|sid| trigger_repo::get_by_id(pool, sid).ok())
+            {
+                if trig.unattended_mode == "approval" {
+                    match trigger_repo::insert_pending_fire(
+                        pool,
+                        &trig.id,
+                        &trig.persona_id,
+                        &event.event_type,
+                        event.payload.as_deref(),
+                        trig.use_case_id.as_deref(),
+                    ) {
+                        Ok(pf) => tracing::info!(
+                            trigger_id = %trig.id,
+                            persona_id = %trig.persona_id,
+                            pending_id = %pf.id,
+                            "Webhook trigger in approval mode — fire held for human approval (no execution)"
+                        ),
+                        Err(e) => tracing::error!(
+                            trigger_id = %trig.id,
+                            "Failed to hold webhook fire for approval: {}", e
+                        ),
+                    }
+                    continue;
+                }
+            }
+        }
+
         // Breadcrumb: set when a handoff EXPLICITLY targeted at a persona is
         // dropped because that persona is disabled. The bus marks the event
         // `delivered` either way, so without this a stalled cascade is invisible
@@ -1119,14 +1159,15 @@ pub(crate) async fn event_bus_tick(
                 continue;
             }
 
-            // Destructive-action gate (UAT P5): when a SCHEDULER-fired trigger
-            // (source_type == "trigger") is in `dry_run` mode, launch the run as
-            // a SIMULATION so outbound side-effects are suppressed (dispatch skips
-            // real notification/connector delivery for is_simulation runs). Only
-            // schedule/polling triggers publish source_type=="trigger" events;
-            // chain/event_listener triggers react to persona events, so this
-            // cleanly scopes to the unattended scheduler path.
-            let dry_run = event.source_type == "trigger"
+            // Destructive-action gate (UAT P5 + F-MAJOR-11): a trigger in
+            // `dry_run` mode launches the run as a SIMULATION so outbound
+            // side-effects are suppressed (dispatch skips real notification/
+            // connector delivery for is_simulation runs). Covers BOTH the
+            // scheduler path (source_type == "trigger") and external webhook
+            // fires (source_type == "webhook") — each carries the firing
+            // trigger id in source_id. (`approval` for webhook is held above,
+            // before this point; for the scheduler it's held at tick time.)
+            let dry_run = matches!(event.source_type.as_str(), "trigger" | "webhook")
                 && event
                     .source_id
                     .as_deref()
