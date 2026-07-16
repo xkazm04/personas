@@ -68,15 +68,25 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     // Deduplicate any pre-existing rows that share (run_id, scenario_name, result_id),
     // keeping the most recent row, then enforce uniqueness via an expression index.
     // COALESCE(result_id, '') makes NULL result_ids collide as the existing repo logic intends.
-    conn.execute_batch(
-        "DELETE FROM lab_user_ratings
-         WHERE rowid NOT IN (
-             SELECT MAX(rowid) FROM lab_user_ratings
-             GROUP BY run_id, scenario_name, COALESCE(result_id, '')
-         );
-         CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_ratings_unique
-            ON lab_user_ratings(run_id, scenario_name, COALESCE(result_id, ''));",
-    )?;
+    // Once the unique index exists it enforces uniqueness going forward, so the
+    // dedup full-table scan only needs to run on the boot that creates it —
+    // previously it re-ran on every launch.
+    let ratings_unique_exists: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_lab_ratings_unique'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !ratings_unique_exists {
+        conn.execute_batch(
+            "DELETE FROM lab_user_ratings
+             WHERE rowid NOT IN (
+                 SELECT MAX(rowid) FROM lab_user_ratings
+                 GROUP BY run_id, scenario_name, COALESCE(result_id, '')
+             );
+             CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_ratings_unique
+                ON lab_user_ratings(run_id, scenario_name, COALESCE(result_id, ''));",
+        )?;
+    }
 
     // -- Extend persona_prompt_versions with full persona snapshot fields ------
     for col in &[

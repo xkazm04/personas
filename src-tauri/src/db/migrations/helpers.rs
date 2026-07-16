@@ -405,6 +405,22 @@ pub(super) fn install_persona_memory_invariants(conn: &Connection) -> Result<(),
         return Ok(());
     }
 
+    // Skip the DROP+CREATE when both triggers already exist — the re-create
+    // was an unconditional sqlite_master/journal WRITE on every app boot.
+    // NOTE: if you change the trigger bodies below, also change the trigger
+    // names (or delete this guard for one release) so existing DBs pick up
+    // the new definition.
+    let triggers_present: i64 = conn
+        .prepare(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name IN
+             ('persona_memories_importance_insert', 'persona_memories_importance_update')",
+        )?
+        .query_row([], |row| row.get(0))
+        .unwrap_or(0);
+    if triggers_present == 2 {
+        return Ok(());
+    }
+
     conn.execute_batch(
         r#"
         DROP TRIGGER IF EXISTS persona_memories_importance_insert;
