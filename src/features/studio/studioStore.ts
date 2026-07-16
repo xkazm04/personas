@@ -109,6 +109,12 @@ const pollTimers = new Map<string, number>();
 const autoTimers = new Map<string, number>();
 let streamUnlisten: (() => void) | null = null;
 
+// Stream deltas arrive many times per second during a build turn; committing a
+// store `set` per chunk re-renders every `stream` subscriber per chunk. Buffer
+// deltas per project and flush them in ONE `set` per animation frame instead.
+const pendingStream = new Map<string, string>();
+let streamFlushHandle: number | null = null;
+
 interface StudioStore {
   runtimes: Record<string, ProjectRuntime>;
   tabOrder: string[];
@@ -144,6 +150,29 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       if (!rt) return s;
       return { runtimes: { ...s.runtimes, [id]: { ...rt, ...p } } };
     });
+
+  // Flush all buffered stream deltas in a single store commit (see pendingStream).
+  const flushStream = () => {
+    streamFlushHandle = null;
+    if (pendingStream.size === 0) return;
+    const entries = Array.from(pendingStream);
+    pendingStream.clear();
+    set((s) => {
+      let changed = false;
+      const runtimes = { ...s.runtimes };
+      for (const [id, delta] of entries) {
+        const rt = runtimes[id];
+        if (!rt) continue;
+        runtimes[id] = { ...rt, stream: rt.stream + delta };
+        changed = true;
+      }
+      return changed ? { runtimes } : s;
+    });
+  };
+  const queueStreamDelta = (id: string, delta: string) => {
+    pendingStream.set(id, (pendingStream.get(id) ?? '') + delta);
+    if (streamFlushHandle === null) streamFlushHandle = window.requestAnimationFrame(flushStream);
+  };
 
   // H10 — mirror the open-tab set into persisted history so a WebView reload can
   // re-hydrate them. Called after every tab add/remove/activate.
@@ -336,6 +365,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     const rt = get().runtimes[id];
     const text = raw.trim();
     if (!rt || rt.busy || !text) return;
+    pendingStream.delete(id); // fresh turn — drop any unflushed tail
     patch(id, {
       busy: true,
       reply: null,
@@ -422,12 +452,13 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         const ev = e.payload;
         const id = /^webbuild:(.+)$/.exec(ev.sessionId)?.[1];
         if (!id) return;
-        const cur = get().runtimes[id];
-        if (!cur) return;
-        if (ev.kind === 'started') patch(id, { stream: '' });
-        else if (ev.kind === 'cli') {
+        if (!get().runtimes[id]) return;
+        if (ev.kind === 'started') {
+          pendingStream.delete(id); // drop any tail buffered from the prior turn
+          patch(id, { stream: '' });
+        } else if (ev.kind === 'cli') {
           const delta = extractAssistantTextDelta(ev.payload);
-          if (delta) patch(id, { stream: cur.stream + delta });
+          if (delta) queueStreamDelta(id, delta);
         }
       }).then((un) => {
         streamUnlisten = un;
@@ -472,6 +503,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       stopPoll(id);
       stopLiveness(id);
       stopAuto(id);
+      pendingStream.delete(id);
       void webbuildDevStop(id).catch(() => {});
       set((s) => {
         const { [id]: _gone, ...rest } = s.runtimes;
