@@ -278,6 +278,25 @@ pub fn init_db(
     Ok(pool)
 }
 
+/// Open a pooled connection to an **already-initialized** database file, WITHOUT
+/// running migrations or seeds. This is for out-of-process companions (e.g. the
+/// `personas-mcp` stdio binary) that attach to the DB the windowed app created —
+/// they must not migrate or seed, only read/write through the same repo layer.
+///
+/// Uses the shared [`SqlitePragmaCustomizer`] so every pooled connection gets the
+/// same `foreign_keys`/`busy_timeout` posture as the main app pool — important
+/// for cross-process WAL contention. The caller is expected to have verified the
+/// schema already exists (the windowed app has been launched at least once).
+pub fn open_pool_at(db_path: &Path) -> Result<DbPool, AppError> {
+    let manager = SqliteConnectionManager::file(db_path);
+    let pool = Pool::builder()
+        .max_size(4)
+        .connection_timeout(POOL_ACQUIRE_TIMEOUT)
+        .connection_customizer(Box::new(SqlitePragmaCustomizer))
+        .build(manager)?;
+    Ok(pool)
+}
+
 fn ensure_executions_fts(conn: &rusqlite::Connection) -> Result<(), AppError> {
     let execution_count: i64 = conn
         .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| r.get(0))

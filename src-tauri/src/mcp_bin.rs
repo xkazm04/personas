@@ -5,10 +5,18 @@
 //! orchestrate the personas agent fleet programmatically.
 //!
 //! Usage:
-//!   personas-mcp --db-path <path-to-personas.db>
+//!   personas-mcp --db-path <path-to-personas.db> [--token pk_...]
 //!   personas-mcp install --target claude-code
+//!
+//! **Authentication:** tool calls require a `pk_` capability token, supplied via
+//! the `PERSONAS_MCP_TOKEN` env var (the MCP client's `env` block) or `--token`.
+//! `install` provisions one and writes it into the generated `mcp.json`. The
+//! module re-declaration that used to compile `mcp_server` a second time here was
+//! removed — this binary now uses the single `app_lib::mcp_server` copy (mirrors
+//! how `daemon_bin.rs` uses `app_lib::daemon`), so the server has direct access
+//! to the app's repository + auth layer instead of a forked lightweight copy.
 
-mod mcp_server;
+use app_lib::mcp_server;
 
 use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
@@ -51,6 +59,17 @@ fn main() {
         std::process::exit(1);
     }
 
+    // Resolve the capability token: `--token <val>` takes precedence over the
+    // PERSONAS_MCP_TOKEN env var. Never logged. Tool calls without a valid token
+    // are rejected by the server's auth gate (handshake methods stay open).
+    let token = args
+        .iter()
+        .position(|a| a == "--token")
+        .and_then(|i| args.get(i + 1))
+        .cloned()
+        .or_else(|| std::env::var("PERSONAS_MCP_TOKEN").ok())
+        .filter(|t| !t.trim().is_empty());
+
     // Open DB connection
     let pool = match mcp_server::db::open_pool(&db_path) {
         Ok(p) => p,
@@ -76,7 +95,7 @@ fn main() {
             continue;
         }
 
-        let response = mcp_server::handle_jsonrpc(trimmed, &pool);
+        let response = mcp_server::handle_jsonrpc(trimmed, &pool, token.as_deref());
 
         if let Some(resp) = response {
             let json = serde_json::to_string(&resp).unwrap_or_else(|_| {

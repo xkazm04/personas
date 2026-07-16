@@ -1,6 +1,14 @@
 //! MCP config installation for Claude Code and Cursor.
+//!
+//! Provisions a `pk_` capability token in the app's `external_api_keys` registry
+//! and writes it into the generated `mcp.json` `env` block so the stdio server
+//! can authenticate tool calls. The plaintext token is returned exactly once by
+//! [`crate::db::repos::resources::external_api_keys::create`] and is written ONLY
+//! into the client config — never logged, never persisted elsewhere.
 
 use std::path::PathBuf;
+
+use super::auth::MCP_REQUIRED_SCOPE;
 
 /// Install MCP configuration for the specified target.
 pub fn install_mcp_config(target: &str) {
@@ -30,9 +38,45 @@ pub fn install_mcp_config(target: &str) {
         .join("com.personas.desktop")
         .join("personas.db");
 
+    if !db_path.exists() {
+        eprintln!(
+            "Database not found at: {}\n\
+             Launch the Personas desktop app at least once before installing the \
+             MCP server, so the token registry exists.",
+            db_path.display()
+        );
+        std::process::exit(1);
+    }
+
+    // Provision a capability token in the shared registry. The stdio server
+    // validates tool calls against this exact registry (no parallel auth).
+    let pool = match crate::db::open_pool_at(&db_path) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("Failed to open database at {}: {e}", db_path.display());
+            std::process::exit(1);
+        }
+    };
+    let key_name = format!("personas-mcp ({target})");
+    let token = match crate::db::repos::resources::external_api_keys::create(
+        &pool,
+        &key_name,
+        vec![MCP_REQUIRED_SCOPE.to_string()],
+        None,
+        None,
+        Some("MCP stdio server".to_string()),
+    ) {
+        Ok(resp) => resp.plaintext_token,
+        Err(e) => {
+            eprintln!("Failed to provision MCP token: {e}");
+            std::process::exit(1);
+        }
+    };
+
     let server_config = serde_json::json!({
         "command": binary_path,
         "args": ["--db-path", db_path.to_string_lossy()],
+        "env": { "PERSONAS_MCP_TOKEN": token },
         "transport": "stdio"
     });
 
@@ -68,5 +112,6 @@ pub fn install_mcp_config(target: &str) {
     println!("MCP config installed at: {}", config_path.display());
     println!("Personas MCP server registered as 'personas'");
     println!("DB path: {}", db_path.display());
-    println!("\nRestart {} to activate.", target);
+    println!("Capability token provisioned (scope: {MCP_REQUIRED_SCOPE}) and written to the config env block.");
+    println!("\nRestart {target} to activate.");
 }
