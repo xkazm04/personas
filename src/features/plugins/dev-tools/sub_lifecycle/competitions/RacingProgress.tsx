@@ -12,6 +12,26 @@ interface SlotProgress {
   progressPct: number;
 }
 
+// Static class maps for the milestone colors (see strategyPresets MILESTONES).
+// Tailwind's JIT only sees literal class strings — the previous
+// `bg-${m.color}-400` interpolation produced never-generated classes, so
+// milestone dots, bars, and labels silently rendered unstyled.
+const MILESTONE_DOT: Record<string, string> = {
+  blue: 'bg-blue-400', indigo: 'bg-indigo-400', violet: 'bg-violet-400',
+  amber: 'bg-amber-400', emerald: 'bg-emerald-400',
+};
+const MILESTONE_BAR: Record<string, string> = {
+  blue: 'bg-gradient-to-r from-blue-500 to-blue-400',
+  indigo: 'bg-gradient-to-r from-indigo-500 to-indigo-400',
+  violet: 'bg-gradient-to-r from-violet-500 to-violet-400',
+  amber: 'bg-gradient-to-r from-amber-500 to-amber-400',
+  emerald: 'bg-gradient-to-r from-emerald-500 to-emerald-400',
+};
+const MILESTONE_TEXT: Record<string, string> = {
+  blue: 'text-blue-400', indigo: 'text-indigo-400', violet: 'text-violet-400',
+  amber: 'text-amber-400', emerald: 'text-emerald-400',
+};
+
 /**
  * Parse the latest milestone from a task's output.
  * The task executor emits lines like:
@@ -68,7 +88,7 @@ export function RacingProgress({ slots }: RacingProgressProps) {
         {MILESTONES.map((m, i) => (
           <span key={m.id} className="flex items-center gap-1 shrink-0">
             {i > 0 && <span className="text-foreground">→</span>}
-            <span className={`w-1.5 h-1.5 rounded-full bg-${m.color}-400`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${MILESTONE_DOT[m.color] ?? 'bg-blue-400'}`} />
             {m.label}
           </span>
         ))}
@@ -97,7 +117,7 @@ export function RacingProgress({ slots }: RacingProgressProps) {
                   className={`h-full rounded-full transition-all duration-700 ${
                     isDone ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
                     : isFailed ? 'bg-red-400'
-                    : `bg-gradient-to-r from-${currentMilestone.color}-500 to-${currentMilestone.color}-400`
+                    : (MILESTONE_BAR[currentMilestone.color] ?? MILESTONE_BAR.blue)
                   }`}
                   style={{ width: `${progressPct}%` }}
                 />
@@ -115,7 +135,7 @@ export function RacingProgress({ slots }: RacingProgressProps) {
               </span>
             </div>
             <div className="flex items-center gap-3 typo-caption">
-              <span className={`text-${currentMilestone.color}-400 shrink-0`}>
+              <span className={`${MILESTONE_TEXT[currentMilestone.color] ?? MILESTONE_TEXT.blue} shrink-0`}>
                 {currentMilestone.label}
               </span>
               <span className="text-foreground truncate flex-1">{detail}</span>
