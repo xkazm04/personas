@@ -73,27 +73,33 @@ export function useDesignTabState() {
     // multi-minute LLM compilation against whichever persona happened to be
     // captured in the closure even if the user navigated away.
     const startedForPersonaId = selectedPersona.id;
-    let cancelled = false;
+    // Cancellation is checked against the LIVE store, not a cleanup-set closure
+    // flag: this effect nulls autoStartDesignInstruction (one of its own deps)
+    // mid-flight, so a cleanup flag fires on our own trigger consumption and
+    // aborted the chain before compile() ever ran (auto-start silently no-oped,
+    // leaving an orphaned conversation row per attempt). A live persona-id check
+    // at each async hop still guards the real hazard — the user switching
+    // personas — without being tripped by the dep churn we cause ourselves.
+    const personaUnchanged = () =>
+      useAgentStore.getState().selectedPersona?.id === startedForPersonaId;
     const startAutoDesign = async () => {
       setInstruction(instructionText);
       setAutoStartDesignInstruction(null);
       const hasContext = designContext.files.length > 0 || designContext.references.length > 0;
       if (hasContext) await mutateDesignFiles(startedForPersonaId, () => designContext);
-      if (cancelled) return;
+      if (!personaUnchanged()) return;
       const conv = await startConversation(instructionText);
-      if (cancelled) return;
+      if (!personaUnchanged()) {
+        // Don't leave an empty conversation row behind for the old persona.
+        if (conv?.id) void removeConversation(conv.id);
+        return;
+      }
       const convId = conv?.id ?? null;
       setConversationId(convId);
-      // Re-check cancelled before the expensive compile dispatch — without
-      // this, a persona switch between startConversation resolving and the
-      // synchronous compile call still fires the LLM run for the wrong
-      // persona (cost burned, result lands in the original persona's history).
-      if (cancelled) return;
       compile(startedForPersonaId, instructionText, convId);
     };
     void startAutoDesign();
-    return () => { cancelled = true; };
-  }, [autoStartDesignInstruction, selectedPersona, phase, setAutoStartDesignInstruction, designContext, startConversation, setConversationId, compile]);
+  }, [autoStartDesignInstruction, selectedPersona, phase, setAutoStartDesignInstruction, designContext, startConversation, removeConversation, setConversationId, compile]);
 
   const savedDesignResult = useSavedDesignResult(selectedPersona);
   useDesignContextSync(selectedPersona, setDesignContext);
