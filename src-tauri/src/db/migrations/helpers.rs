@@ -1,5 +1,6 @@
 use rusqlite::Connection;
 
+use crate::db::credential_fields::{classify_field_type, NON_SENSITIVE_KEYS};
 use crate::error::AppError;
 
 /// Split existing monolithic encrypted_data blobs into per-field rows.
@@ -35,27 +36,6 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
 
     let mut total_fields = 0usize;
     let mut migrated_creds = 0usize;
-
-    // Classify which field keys are typically non-sensitive (queryable)
-    const NON_SENSITIVE_KEYS: &[&str] = &[
-        "base_url",
-        "url",
-        "host",
-        "hostname",
-        "server",
-        "port",
-        "database",
-        "project",
-        "organization",
-        "org",
-        "workspace",
-        "team",
-        "region",
-        "scope",
-        "scopes",
-        "oauth_client_mode",
-        "token_type",
-    ];
 
     for (cred_id, encrypted_data, iv) in &rows {
         // Decrypt the blob to get the JSON fields. On failure we skip this
@@ -288,16 +268,9 @@ pub(super) fn assert_credential_blob_invariant(conn: &Connection) -> Result<(), 
 /// This migration renames them so all code paths can use the canonical snake_case
 /// key without dual-convention checks.
 pub(super) fn normalize_credential_field_keys(conn: &Connection) -> Result<(), AppError> {
-    // Map of camelCase → snake_case field keys to normalize.
-    let renames: &[(&str, &str)] = &[
-        ("refreshToken", "refresh_token"),
-        ("accessToken", "access_token"),
-        ("clientId", "client_id"),
-        ("clientSecret", "client_secret"),
-        ("tokenType", "token_type"),
-    ];
+    use crate::db::credential_fields::FIELD_KEY_RENAMES;
 
-    for &(old_key, new_key) in renames {
+    for &(old_key, new_key) in FIELD_KEY_RENAMES {
         // Only rename if there isn't already a row with the canonical key for
         // the same credential (avoid unique-constraint violations).
         let updated = conn.execute(
@@ -444,24 +417,4 @@ pub(super) fn install_persona_memory_invariants(conn: &Connection) -> Result<(),
         "#,
     )?;
     Ok(())
-}
-
-/// Classify a credential field key into a type hint.
-pub(super) fn classify_field_type(key: &str) -> &'static str {
-    let lower = key.to_lowercase();
-    if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
-        "url"
-    } else if lower.contains("token")
-        || lower.contains("key")
-        || lower.contains("secret")
-        || lower.contains("password")
-    {
-        "secret"
-    } else if lower == "port" {
-        "number"
-    } else if lower.contains("email") || lower.contains("username") || lower.contains("user") {
-        "identity"
-    } else {
-        "text"
-    }
 }

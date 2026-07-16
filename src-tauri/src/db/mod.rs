@@ -4,6 +4,7 @@ mod backup;
 pub(crate) mod builtin_connectors;
 pub(crate) mod builtin_shared_events;
 pub mod cdc;
+pub(crate) mod credential_fields;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
 #[allow(dead_code)]
