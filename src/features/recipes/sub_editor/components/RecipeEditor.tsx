@@ -37,6 +37,7 @@ function parseSchemaString(raw: string | null | undefined): SchemaField[] {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed.map((f: Record<string, unknown>) => ({
+      id: crypto.randomUUID(),
       key: String(f.key ?? ''),
       type: String(f.type ?? 'text'),
       label: String(f.label ?? ''),

@@ -54,6 +54,7 @@ export default function MediaStudioPage() {
     replaceComposition,
     addItem,
     updateItem,
+    applyDerived,
     removeItem,
     duplicateItem,
     splitItemAt,
@@ -102,10 +103,11 @@ export default function MediaStudioPage() {
   // -- Anchor-word resolution: for any beat with a BeatAnchor, recompute
   // startTime from the referenced clip's word-level transcript. Runs after
   // the transcript cache loads and whenever clip trims or start times
-  // change. Writes back via updateItem; the mutation is skipped when the
-  // resolved time matches the beat's current startTime so we don't churn
-  // history entries.
+  // change. Writes back via `applyDerived` — one batched, history-less
+  // update — so mechanical anchor nudges never create undo frames or extra
+  // render passes; a no-op patch set is skipped entirely.
   useEffect(() => {
+    const patches: Array<{ id: string; patch: Partial<TimelineItem> }> = [];
     for (const item of composition.items) {
       if (item.type !== 'text') continue;
       const beat = item as TextItem;
@@ -113,9 +115,10 @@ export default function MediaStudioPage() {
       const resolved = resolveAnchor(beat.anchor, composition.items);
       if (resolved === null) continue;
       if (Math.abs(resolved - beat.startTime) < 0.01) continue;
-      updateItem(beat.id, { startTime: resolved } as Partial<TimelineItem>);
+      patches.push({ id: beat.id, patch: { startTime: resolved } });
     }
-  }, [composition.items, resolveAnchor, updateItem]);
+    if (patches.length > 0) applyDerived(patches);
+  }, [composition.items, resolveAnchor, applyDerived]);
 
   const { exportState, startExport, cancelExport, dismissExport } = useMediaExport(composition);
 
