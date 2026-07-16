@@ -62,24 +62,39 @@ pub async fn run_verification(dir: &Path, command: &str, timeout: Duration) -> V
         Err(e) => return VerificationResult::failure(format!("failed to spawn verification command: {e}")),
     };
 
-    // Drain stdout+stderr concurrently with the wait so a chatty command can't
-    // deadlock on a full pipe buffer.
+    // Drain stdout+stderr CONCURRENTLY with the wait so a chatty command can't
+    // deadlock on a full pipe buffer. (The previous code awaited wait() first
+    // and only then read the pipes — a command emitting more than the ~64KB
+    // pipe buffer blocked on write, wait() never returned, and every chatty
+    // verification ran to its full timeout.)
     let mut stdout = child.stdout.take();
     let mut stderr = child.stderr.take();
-    let mut combined = Vec::new();
+    let mut out_buf = Vec::new();
+    let mut err_buf = Vec::new();
 
     let run = async {
-        let status = child.wait().await;
-        if let Some(mut out) = stdout.take() {
-            let _ = out.read_to_end(&mut combined).await;
-        }
-        if let Some(mut err) = stderr.take() {
-            let _ = err.read_to_end(&mut combined).await;
-        }
+        let (status, (), ()) = tokio::join!(
+            child.wait(),
+            async {
+                if let Some(mut out) = stdout.take() {
+                    let _ = out.read_to_end(&mut out_buf).await;
+                }
+            },
+            async {
+                if let Some(mut err) = stderr.take() {
+                    let _ = err.read_to_end(&mut err_buf).await;
+                }
+            },
+        );
         status
     };
 
-    match tokio::time::timeout(timeout, run).await {
+    let outcome = tokio::time::timeout(timeout, run).await;
+    // `run` is dropped either way — safe to reclaim the (possibly partial) buffers.
+    let mut combined = out_buf;
+    combined.extend_from_slice(&err_buf);
+
+    match outcome {
         Ok(Ok(status)) => {
             let code = status.code();
             VerificationResult {
