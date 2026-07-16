@@ -183,6 +183,7 @@
     "timeout": "Zeitüberschreitung",
     "tool_error": "Tool fehlgeschlagen",
     "transport": "Verbindung fehlgeschlagen",
-    "unknown": "Unbekannter Fehler"
+    "unknown": "Unbekannter Fehler",
+    "unsupported": "Hier nicht ausführbar"
   }
 }

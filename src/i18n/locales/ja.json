@@ -2579,7 +2579,8 @@
       "panel_subtitle": "このペルソナの認証情報を使ってツールを直接実行します。",
       "panel_title": "ツールを実行",
       "retryable_hint": "再試行すると成功する可能性があります。",
-      "run_tool": "ツールを実行"
+      "run_tool": "ツールを実行",
+      "builtin_note": "組み込みツール — ペルソナの実行内で動作します（ここから手動では実行できません）。試すにはペルソナの機能のいずれかを実行してください。"
     },
     "health_check": {
       "title": "エージェントヘルスチェック",
@@ -11640,7 +11641,8 @@
       "timeout": "タイムアウト",
       "tool_error": "ツール失敗",
       "transport": "接続失敗",
-      "unknown": "不明なエラー"
+      "unknown": "不明なエラー",
+      "unsupported": "ここでは実行できません"
     }
   },
   "project_overview": {
@@ -11895,7 +11897,8 @@
       "headless_badge": "バックグラウンド",
       "headless_no_terminal": "バックグラウンドセッション — ターミナルなしで実行中。返信は「要対応」バナーから、進捗は Insights に表示されます。",
       "spawn_headless_hint": "ヘッドレスモード — ライブターミナルなしで、CPU と RAM の負荷を大幅に軽減。返信は「要対応」バナーから、進捗は Insights で確認できます。",
-      "spawn_headless_toggle": "バックグラウンドで実行（ターミナルなし）"
+      "spawn_headless_toggle": "バックグラウンドで実行（ターミナルなし）",
+      "live_slot_hibernated_toast": "アクティブセッション上限を超えないよう {name} をハイバネートしました。会話は保存されています。再開するにはウェイクしてください。"
     },
     "title": "プラグイン",
     "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",
@@ -14228,7 +14231,9 @@
       "progress_past": "過去",
       "goal_view_missions": "ミッション",
       "mission_link_goal": "ゴールに紐づける…",
-      "mission_unlinked": "ゴールなし"
+      "mission_unlinked": "ゴールなし",
+      "goal_field_kpi": "リンクされた KPI",
+      "goal_kpi_none": "リンクされた KPI なし"
     },
     "dev_projects": {
       "active_goals": "アクティブなゴール",
@@ -17372,7 +17377,10 @@
     "attn_overdue": "{days}日超過",
     "attn_reason_crit": "危機的",
     "attn_reason_floor": "下限",
-    "attn_reason_pace": "遅延"
+    "attn_reason_pace": "遅延",
+    "evaluate_measured": "{count} 件の KPI を測定しました。",
+    "evaluate_none_due": "測定対象の KPI はありませんでした。",
+    "evaluate_partial": "{measured} 件測定、{failed} 件失敗"
   },
   "deliberation": {
     "agenda": "議題",

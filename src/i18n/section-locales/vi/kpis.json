@@ -189,5 +189,8 @@
   "attn_overdue": "trễ {days}n",
   "attn_reason_crit": "Nghiêm trọng",
   "attn_reason_floor": "Sàn",
-  "attn_reason_pace": "Chậm"
+  "attn_reason_pace": "Chậm",
+  "evaluate_measured": "Đã đo {count} KPI.",
+  "evaluate_none_due": "Không có KPI nào đến hạn đo.",
+  "evaluate_partial": "Đã đo {measured}, {failed} thất bại"
 }

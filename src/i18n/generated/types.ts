@@ -2651,6 +2651,7 @@ export type Translations = {
       http_status_label: string;
       retryable_hint: string;
       failure_kind_label: string;
+      builtin_note: string;
     };
     health_check: {
       title: string;
@@ -3621,8 +3622,6 @@ export type Translations = {
   };
   director: {
     panel_title: string;
-    healing_source_badge: string;
-    healing_source_hint: string;
     scope_summary: string;
     scope_empty: string;
     last_review: string;
@@ -3656,8 +3655,6 @@ export type Translations = {
     roster_review_now: string;
     roster_remove: string;
     roster_never: string;
-    roster_unscored: string;
-    roster_unscored_hint: string;
     roster_add_title: string;
     roster_add_placeholder: string;
     run_all: string;
@@ -3757,6 +3754,10 @@ export type Translations = {
     group_low_scores: string;
     group_declining: string;
     group_stale: string;
+    roster_unscored: string;
+    roster_unscored_hint: string;
+    healing_source_badge: string;
+    healing_source_hint: string;
   };
   vault: {
     workspace_connect: string;
@@ -11772,6 +11773,7 @@ export type Translations = {
       rate_limited: string;
       misconfigured: string;
       unknown: string;
+      unsupported: string;
     };
     execution: {
       queued: string;
@@ -12169,6 +12171,7 @@ export type Translations = {
       spawn_headless_hint: string;
       headless_badge: string;
       headless_no_terminal: string;
+      live_slot_hibernated_toast: string;
     };
     title: string;
     subtitle: string;
@@ -14504,6 +14507,8 @@ export type Translations = {
       goal_view_missions: string;
       mission_unlinked: string;
       mission_link_goal: string;
+      goal_field_kpi: string;
+      goal_kpi_none: string;
     };
     dev_projects: {
       bulk_selected_one: string;
@@ -17484,6 +17489,9 @@ export type Translations = {
     source_verified: string;
     kpi_scope_label: string;
     kpi_scope_this_context: string;
+    evaluate_measured: string;
+    evaluate_partial: string;
+    evaluate_none_due: string;
   };
   planner: {
     nav_label: string;

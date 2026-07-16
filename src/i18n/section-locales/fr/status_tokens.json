@@ -183,6 +183,7 @@
     "timeout": "Délai dépassé",
     "tool_error": "Échec de l'outil",
     "transport": "Échec de la connexion",
-    "unknown": "Erreur inconnue"
+    "unknown": "Erreur inconnue",
+    "unsupported": "Non exécutable ici"
   }
 }

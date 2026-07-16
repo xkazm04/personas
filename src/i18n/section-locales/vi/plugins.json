@@ -198,7 +198,8 @@
     "headless_badge": "Nền",
     "headless_no_terminal": "Phiên chạy nền — không có terminal. Trả lời từ băng rôn \"Cần bạn\"; tiến độ hiển thị trong Insights.",
     "spawn_headless_hint": "Chế độ headless — không có terminal trực tiếp, nhẹ hơn nhiều về CPU và RAM. Trả lời từ băng rôn \"Cần bạn\"; theo dõi tiến độ trong Insights.",
-    "spawn_headless_toggle": "Chạy nền (không có terminal)"
+    "spawn_headless_toggle": "Chạy nền (không có terminal)",
+    "live_slot_hibernated_toast": "{name} đã được ngủ đông để giữ trong giới hạn phiên hoạt động — cuộc trò chuyện được lưu; đánh thức để tiếp tục."
   },
   "title": "Plugin",
   "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",
@@ -2531,7 +2532,9 @@
     "progress_past": "Quá khứ",
     "goal_view_missions": "Nhiệm vụ",
     "mission_link_goal": "Liên kết với mục tiêu…",
-    "mission_unlinked": "Chưa có mục tiêu"
+    "mission_unlinked": "Chưa có mục tiêu",
+    "goal_field_kpi": "KPI được liên kết",
+    "goal_kpi_none": "Không có KPI liên kết"
   },
   "dev_projects": {
     "active_goals": "mục tiêu đang hoạt động",

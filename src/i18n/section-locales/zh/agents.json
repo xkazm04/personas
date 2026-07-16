@@ -1776,7 +1776,8 @@
     "panel_subtitle": "使用此角色的凭据直接调用工具。",
     "panel_title": "运行工具",
     "retryable_hint": "重试后可能会成功。",
-    "run_tool": "运行工具"
+    "run_tool": "运行工具",
+    "builtin_note": "内置工具——它在角色执行内部运行（无法从此处手动运行）。运行该角色的某项能力来试用它。"
   },
   "health_check": {
     "title": "代理健康检查",

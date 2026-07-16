@@ -189,5 +189,8 @@
   "attn_overdue": "{days}d po termínu",
   "attn_reason_crit": "Kritické",
   "attn_reason_floor": "Dno",
-  "attn_reason_pace": "Pozadu"
+  "attn_reason_pace": "Pozadu",
+  "evaluate_measured": "Změřeno {count} KPI.",
+  "evaluate_none_due": "Žádné KPI nebylo ke změření.",
+  "evaluate_partial": "Změřeno {measured}, {failed} selhalo"
 }

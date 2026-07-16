@@ -198,7 +198,8 @@
     "headless_badge": "Hintergrund",
     "headless_no_terminal": "Hintergrundsitzung — läuft ohne Terminal. Antworten über das „Braucht dich“-Banner; der Fortschritt erscheint unter Insights.",
     "spawn_headless_hint": "Headless-Modus — kein Live-Terminal, deutlich weniger CPU- und RAM-Last. Antworten über das „Braucht dich“-Banner; Fortschritt unter Insights.",
-    "spawn_headless_toggle": "Im Hintergrund ausführen (ohne Terminal)"
+    "spawn_headless_toggle": "Im Hintergrund ausführen (ohne Terminal)",
+    "live_slot_hibernated_toast": "{name} wurde in den Ruhezustand versetzt, um das Limit aktiver Sitzungen einzuhalten — die Konversation ist gespeichert; zum Fortsetzen aufwecken."
   },
   "title": "Plugins",
   "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",
@@ -2531,7 +2532,9 @@
     "progress_past": "Vergangenheit",
     "goal_view_missions": "Missionen",
     "mission_link_goal": "Mit Ziel verknüpfen…",
-    "mission_unlinked": "Kein Ziel"
+    "mission_unlinked": "Kein Ziel",
+    "goal_field_kpi": "Verknüpftes KPI",
+    "goal_kpi_none": "Kein verknüpftes KPI"
   },
   "dev_projects": {
     "active_goals": "aktive Ziele",

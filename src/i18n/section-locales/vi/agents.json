@@ -1776,7 +1776,8 @@
     "panel_subtitle": "Gọi trực tiếp một công cụ bằng thông tin xác thực của persona này.",
     "panel_title": "Chạy công cụ",
     "retryable_hint": "Có thể thành công khi thử lại.",
-    "run_tool": "Chạy công cụ"
+    "run_tool": "Chạy công cụ",
+    "builtin_note": "Công cụ tích hợp — chạy bên trong các lần thực thi persona (không chạy thủ công từ đây). Hãy chạy một trong các khả năng của persona để thử nghiệm."
   },
   "health_check": {
     "title": "Kiểm tra sức khỏe tác nhân",

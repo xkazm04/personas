@@ -189,5 +189,8 @@
   "attn_overdue": "{days}দি বিলম্বিত",
   "attn_reason_crit": "সংকটজনক",
   "attn_reason_floor": "ফ্লোর",
-  "attn_reason_pace": "পিছিয়ে"
+  "attn_reason_pace": "পিছিয়ে",
+  "evaluate_measured": "{count}টি KPI পরিমাপ করা হয়েছে।",
+  "evaluate_none_due": "পরিমাপের জন্য কোনো KPI নির্ধারিত ছিল না।",
+  "evaluate_partial": "{measured}টি পরিমাপ করা হয়েছে, {failed}টি ব্যর্থ"
 }

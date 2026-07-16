@@ -183,6 +183,7 @@
     "timeout": "시간 초과",
     "tool_error": "도구 실패",
     "transport": "연결 실패",
-    "unknown": "알 수 없는 오류"
+    "unknown": "알 수 없는 오류",
+    "unsupported": "여기서 실행 불가"
   }
 }

@@ -106,8 +106,8 @@
     "channels_none": "None",
     "channels_no_teams": "No teams with a channel yet",
     "channels_select_prompt": "Select teams above to watch their channels",
-    "channels_layout_grid": "Grid",
-    "channels_layout_grid_hint": "Separate channels side by side",
+    "channels_layout_grid": "Conversations",
+    "channels_layout_grid_hint": "One project's conversation with its reviews and quick actions",
     "channels_layout_timeline": "Timeline",
     "channels_layout_timeline_hint": "All teams merged into one chronological stream",
     "channels_combined_title": "All teams",
@@ -2644,7 +2644,8 @@
       "output_truncated": "Output truncated — the tool returned more than the display limit.",
       "http_status_label": "HTTP {status}",
       "retryable_hint": "This may succeed on retry.",
-      "failure_kind_label": "Failure"
+      "failure_kind_label": "Failure",
+      "builtin_note": "Built-in tool — it runs inside persona executions (not manually from here). Trigger one of the persona's capabilities to exercise it."
     },
     "health_check": {
       "title": "Agent Health Check",
@@ -3615,8 +3616,6 @@
   },
   "director": {
     "panel_title": "Director",
-    "healing_source_badge": "Director",
-    "healing_source_hint": "Raised by the Director's coaching review — approve or resolve it like any other issue.",
     "scope_summary": "Coaching {count} starred personas",
     "scope_empty": "No personas starred — star one to put it in scope",
     "last_review": "Last review",
@@ -3650,8 +3649,6 @@
     "roster_review_now": "Review now",
     "roster_remove": "Remove from scope",
     "roster_never": "Never",
-    "roster_unscored": "Unscored",
-    "roster_unscored_hint": "The Director reviewed this agent but did not return a score; open the review to see its coaching.",
     "roster_add_title": "Add agents to scope",
     "roster_add_placeholder": "Star an agent to add it",
     "run_all": "Review all in scope",
@@ -3750,7 +3747,11 @@
     "group_needs_review": "Awaiting first review",
     "group_low_scores": "Low scores",
     "group_declining": "Declining trend",
-    "group_stale": "Stale reviews"
+    "group_stale": "Stale reviews",
+    "roster_unscored": "Unscored",
+    "roster_unscored_hint": "The Director reviewed this agent but did not return a score; open the review to see its coaching.",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Raised by the Director's coaching review — approve or resolve it like any other issue."
   },
   "vault": {
     "workspace_connect": "Workspace Connect",
@@ -11765,7 +11766,8 @@
       "tool_error": "Tool failed",
       "rate_limited": "Rate limited",
       "misconfigured": "Misconfigured",
-      "unknown": "Unknown error"
+      "unknown": "Unknown error",
+      "unsupported": "Not runnable here"
     },
     "execution": {
       "queued": "Queued",
@@ -12162,7 +12164,8 @@
       "spawn_headless_toggle": "Run in background (no terminal)",
       "spawn_headless_hint": "Headless mode — no live terminal, much lighter on CPU and RAM. Reply from the \"Needs you\" banner; inspect progress in Insights.",
       "headless_badge": "Background",
-      "headless_no_terminal": "Background session — runs without a terminal. Reply from the \"Needs you\" banner; progress shows in Insights."
+      "headless_no_terminal": "Background session — runs without a terminal. Reply from the \"Needs you\" banner; progress shows in Insights.",
+      "live_slot_hibernated_toast": "{name} was hibernated to stay within the live-session limit — its conversation is saved; wake it to resume."
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",
@@ -14497,7 +14500,9 @@
       "goal_view_accept": "Accept",
       "goal_view_missions": "Missions",
       "mission_unlinked": "No goal",
-      "mission_link_goal": "Link to a goal…"
+      "mission_link_goal": "Link to a goal…",
+      "goal_field_kpi": "Linked KPI",
+      "goal_kpi_none": "No linked KPI"
     },
     "dev_projects": {
       "bulk_selected_one": "project selected",
@@ -17477,7 +17482,10 @@
     "source_reconnect": "Reconnect",
     "source_verified": "verified",
     "kpi_scope_label": "Scope",
-    "kpi_scope_this_context": "This context"
+    "kpi_scope_this_context": "This context",
+    "evaluate_measured": "Measured {count} KPI(s).",
+    "evaluate_partial": "Measured {measured}, {failed} failed",
+    "evaluate_none_due": "No KPIs were due for measurement."
   },
   "planner": {
     "nav_label": "Plan",

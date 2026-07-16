@@ -2579,7 +2579,8 @@
       "panel_subtitle": "Invoquez un outil directement avec les identifiants de cette persona.",
       "panel_title": "Exécuter un outil",
       "retryable_hint": "Cela peut réussir en réessayant.",
-      "run_tool": "Exécuter l'outil"
+      "run_tool": "Exécuter l'outil",
+      "builtin_note": "Outil intégré — il s'exécute au sein des exécutions de la persona (pas manuellement d'ici). Lancez l'une des capacités de la persona pour le tester."
     },
     "health_check": {
       "title": "Bilan de santé de l'agent",
@@ -11640,7 +11641,8 @@
       "timeout": "Délai dépassé",
       "tool_error": "Échec de l'outil",
       "transport": "Échec de la connexion",
-      "unknown": "Erreur inconnue"
+      "unknown": "Erreur inconnue",
+      "unsupported": "Non exécutable ici"
     }
   },
   "project_overview": {
@@ -11895,7 +11897,8 @@
       "headless_badge": "Arrière-plan",
       "headless_no_terminal": "Session en arrière-plan — s'exécute sans terminal. Répondez depuis le bandeau « Besoin de vous » ; la progression s'affiche dans Insights.",
       "spawn_headless_hint": "Mode headless — pas de terminal en direct, bien plus léger en CPU et RAM. Répondez depuis le bandeau « Besoin de vous » ; suivez la progression dans Insights.",
-      "spawn_headless_toggle": "Exécuter en arrière-plan (sans terminal)"
+      "spawn_headless_toggle": "Exécuter en arrière-plan (sans terminal)",
+      "live_slot_hibernated_toast": "{name} a été mise en veille pour respecter la limite de sessions actives — sa conversation est enregistrée ; réveillez-la pour reprendre."
     },
     "title": "Extensions",
     "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",
@@ -14228,7 +14231,9 @@
       "progress_past": "Passé",
       "goal_view_missions": "Missions",
       "mission_link_goal": "Lier à un objectif…",
-      "mission_unlinked": "Sans objectif"
+      "mission_unlinked": "Sans objectif",
+      "goal_field_kpi": "KPI lié",
+      "goal_kpi_none": "Aucun KPI lié"
     },
     "dev_projects": {
       "active_goals": "objectifs actifs",
@@ -17372,7 +17377,10 @@
     "attn_overdue": "{days}j de retard",
     "attn_reason_crit": "Critique",
     "attn_reason_floor": "Plancher",
-    "attn_reason_pace": "En retard"
+    "attn_reason_pace": "En retard",
+    "evaluate_measured": "{count} KPI mesurés.",
+    "evaluate_none_due": "Aucun KPI à mesurer.",
+    "evaluate_partial": "{measured} mesurés, {failed} en échec"
   },
   "deliberation": {
     "agenda": "Ordre du jour",

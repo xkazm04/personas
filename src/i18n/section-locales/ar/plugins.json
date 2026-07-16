@@ -198,7 +198,8 @@
     "headless_badge": "خلفية",
     "headless_no_terminal": "جلسة في الخلفية — تعمل بدون طرفية. أجب من شريط «يحتاج إليك»؛ ويظهر التقدم في Insights.",
     "spawn_headless_hint": "الوضع بلا واجهة — دون طرفية مباشرة، وبحمل أقل بكثير على المعالج والذاكرة. أجب من شريط «يحتاج إليك»؛ وتابع التقدم في Insights.",
-    "spawn_headless_toggle": "التشغيل في الخلفية (بدون طرفية)"
+    "spawn_headless_toggle": "التشغيل في الخلفية (بدون طرفية)",
+    "live_slot_hibernated_toast": "تم تعليق {name} للبقاء ضمن حد الجلسات النشطة — محادثته محفوظة؛ أيقظه للمتابعة."
   },
   "title": "الإضافات",
   "subtitle": "وسّع مساحة عملك بالإضافات. بدّل لإظهار أو إخفاء من الشريط الجانبي.",
@@ -2531,7 +2532,9 @@
     "progress_past": "الماضي",
     "goal_view_missions": "المهام",
     "mission_link_goal": "اربط بهدف…",
-    "mission_unlinked": "بلا هدف"
+    "mission_unlinked": "بلا هدف",
+    "goal_field_kpi": "مؤشر KPI المرتبط",
+    "goal_kpi_none": "لا يوجد مؤشر KPI مرتبط"
   },
   "dev_projects": {
     "active_goals": "الأهداف النشطة",

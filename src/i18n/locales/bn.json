@@ -2579,7 +2579,8 @@
       "panel_subtitle": "এই পারসোনার শংসাপত্র দিয়ে সরাসরি একটি টুল চালান।",
       "panel_title": "একটি টুল চালান",
       "retryable_hint": "পুনরায় চেষ্টা করলে এটি সফল হতে পারে।",
-      "run_tool": "টুল চালান"
+      "run_tool": "টুল চালান",
+      "builtin_note": "বিল্ট-ইন টুল — এটি পারসোনা এক্সিকিউশনের ভেতরে চলে (এখান থেকে ম্যানুয়ালি নয়)। এটি পরীক্ষা করতে পারসোনার একটি ক্ষমতা চালান।"
     },
     "health_check": {
       "title": "এজেন্ট স্বাস্থ্য পরীক্ষা",
@@ -11640,7 +11641,8 @@
       "timeout": "সময় শেষ",
       "tool_error": "টুল ব্যর্থ হয়েছে",
       "transport": "সংযোগ ব্যর্থ",
-      "unknown": "অজানা ত্রুটি"
+      "unknown": "অজানা ত্রুটি",
+      "unsupported": "এখানে চালানো যাবে না"
     }
   },
   "project_overview": {
@@ -11895,7 +11897,8 @@
       "headless_badge": "পটভূমি",
       "headless_no_terminal": "পটভূমির সেশন — টার্মিনাল ছাড়া চলছে। \"আপনাকে দরকার\" ব্যানার থেকে উত্তর দিন; অগ্রগতি Insights-এ দেখা যায়।",
       "spawn_headless_hint": "হেডলেস মোড — লাইভ টার্মিনাল ছাড়া, CPU ও RAM-এ অনেক কম চাপ। \"আপনাকে দরকার\" ব্যানার থেকে উত্তর দিন; অগ্রগতি Insights-এ দেখুন।",
-      "spawn_headless_toggle": "পটভূমিতে চালান (টার্মিনাল ছাড়া)"
+      "spawn_headless_toggle": "পটভূমিতে চালান (টার্মিনাল ছাড়া)",
+      "live_slot_hibernated_toast": "লাইভ-সেশন সীমার মধ্যে থাকতে {name} হাইবারনেট করা হয়েছে — এর কথোপকথন সংরক্ষিত; চালিয়ে যেতে এটি জাগান।"
     },
     "title": "প্লাগিন",
     "subtitle": "প্লাগিন দিয়ে আপনার ওয়ার্কস্পেস প্রসারিত করুন। সাইডবার থেকে দেখাতে বা লুকাতে টগল করুন।",
@@ -14228,7 +14231,9 @@
       "progress_past": "অতীত",
       "goal_view_missions": "মিশন",
       "mission_link_goal": "একটি লক্ষ্যের সাথে যুক্ত করুন…",
-      "mission_unlinked": "কোনো লক্ষ্য নেই"
+      "mission_unlinked": "কোনো লক্ষ্য নেই",
+      "goal_field_kpi": "সংযুক্ত KPI",
+      "goal_kpi_none": "কোনো সংযুক্ত KPI নেই"
     },
     "dev_projects": {
       "active_goals": "সক্রিয় লক্ষ্য",
@@ -17372,7 +17377,10 @@
     "attn_overdue": "{days}দি বিলম্বিত",
     "attn_reason_crit": "সংকটজনক",
     "attn_reason_floor": "ফ্লোর",
-    "attn_reason_pace": "পিছিয়ে"
+    "attn_reason_pace": "পিছিয়ে",
+    "evaluate_measured": "{count}টি KPI পরিমাপ করা হয়েছে।",
+    "evaluate_none_due": "পরিমাপের জন্য কোনো KPI নির্ধারিত ছিল না।",
+    "evaluate_partial": "{measured}টি পরিমাপ করা হয়েছে, {failed}টি ব্যর্থ"
   },
   "deliberation": {
     "agenda": "এজেন্ডা",

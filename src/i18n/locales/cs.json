@@ -2579,7 +2579,8 @@
       "panel_subtitle": "Spusťte nástroj přímo s přihlašovacími údaji této persony.",
       "panel_title": "Spustit nástroj",
       "retryable_hint": "Při opakování se to může podařit.",
-      "run_tool": "Spustit nástroj"
+      "run_tool": "Spustit nástroj",
+      "builtin_note": "Vestavěný nástroj — běží uvnitř spuštění persony (ne ručně odsud). Vyzkoušejte jej spuštěním některé ze schopností persony."
     },
     "health_check": {
       "title": "Kontrola zdraví agenta",
@@ -11640,7 +11641,8 @@
       "timeout": "Vypršel čas",
       "tool_error": "Nástroj selhal",
       "transport": "Připojení selhalo",
-      "unknown": "Neznámá chyba"
+      "unknown": "Neznámá chyba",
+      "unsupported": "Zde nelze spustit"
     }
   },
   "project_overview": {
@@ -11895,7 +11897,8 @@
       "headless_badge": "Na pozadí",
       "headless_no_terminal": "Relace na pozadí — běží bez terminálu. Odpovídejte z lišty „Potřebuje vás“; průběh se zobrazuje v Přehledech.",
       "spawn_headless_hint": "Bezhlavý režim — bez živého terminálu, výrazně nižší nároky na CPU a RAM. Odpovídejte z lišty „Potřebuje vás“; průběh sledujte v Přehledech.",
-      "spawn_headless_toggle": "Spustit na pozadí (bez terminálu)"
+      "spawn_headless_toggle": "Spustit na pozadí (bez terminálu)",
+      "live_slot_hibernated_toast": "{name} byla uspána, aby se dodržel limit aktivních relací — konverzace je uložena; probuďte ji pro pokračování."
     },
     "title": "Pluginy",
     "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",
@@ -14228,7 +14231,9 @@
       "progress_past": "Minulost",
       "goal_view_missions": "Mise",
       "mission_link_goal": "Připojit k cíli…",
-      "mission_unlinked": "Bez cíle"
+      "mission_unlinked": "Bez cíle",
+      "goal_field_kpi": "Propojené KPI",
+      "goal_kpi_none": "Žádné propojené KPI"
     },
     "dev_projects": {
       "active_goals": "aktivních cílů",
@@ -17372,7 +17377,10 @@
     "attn_overdue": "{days}d po termínu",
     "attn_reason_crit": "Kritické",
     "attn_reason_floor": "Dno",
-    "attn_reason_pace": "Pozadu"
+    "attn_reason_pace": "Pozadu",
+    "evaluate_measured": "Změřeno {count} KPI.",
+    "evaluate_none_due": "Žádné KPI nebylo ke změření.",
+    "evaluate_partial": "Změřeno {measured}, {failed} selhalo"
   },
   "deliberation": {
     "agenda": "Agenda",

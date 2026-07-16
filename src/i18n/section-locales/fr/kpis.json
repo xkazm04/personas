@@ -189,5 +189,8 @@
   "attn_overdue": "{days}j de retard",
   "attn_reason_crit": "Critique",
   "attn_reason_floor": "Plancher",
-  "attn_reason_pace": "En retard"
+  "attn_reason_pace": "En retard",
+  "evaluate_measured": "{count} KPI mesurés.",
+  "evaluate_none_due": "Aucun KPI à mesurer.",
+  "evaluate_partial": "{measured} mesurés, {failed} en échec"
 }

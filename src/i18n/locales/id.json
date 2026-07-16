@@ -2579,7 +2579,8 @@
       "panel_subtitle": "Panggil alat langsung dengan kredensial persona ini.",
       "panel_title": "Jalankan alat",
       "retryable_hint": "Ini mungkin berhasil saat dicoba lagi.",
-      "run_tool": "Jalankan alat"
+      "run_tool": "Jalankan alat",
+      "builtin_note": "Alat bawaan — berjalan di dalam eksekusi persona (bukan secara manual dari sini). Jalankan salah satu kemampuan persona untuk mengujinya."
     },
     "health_check": {
       "title": "Pemeriksaan Kesehatan Agen",
@@ -11640,7 +11641,8 @@
       "timeout": "Waktu habis",
       "tool_error": "Alat gagal",
       "transport": "Koneksi gagal",
-      "unknown": "Kesalahan tidak dikenal"
+      "unknown": "Kesalahan tidak dikenal",
+      "unsupported": "Tidak dapat dijalankan di sini"
     }
   },
   "project_overview": {
@@ -11895,7 +11897,8 @@
       "headless_badge": "Latar belakang",
       "headless_no_terminal": "Sesi latar belakang — berjalan tanpa terminal. Balas dari banner \"Butuh Anda\"; kemajuan tampil di Insights.",
       "spawn_headless_hint": "Mode headless — tanpa terminal langsung, jauh lebih ringan di CPU dan RAM. Balas dari banner \"Butuh Anda\"; pantau kemajuan di Insights.",
-      "spawn_headless_toggle": "Jalankan di latar belakang (tanpa terminal)"
+      "spawn_headless_toggle": "Jalankan di latar belakang (tanpa terminal)",
+      "live_slot_hibernated_toast": "{name} dihibernasi agar tetap dalam batas sesi aktif — percakapannya tersimpan; bangunkan untuk melanjutkan."
     },
     "title": "Plugin",
     "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",
@@ -14228,7 +14231,9 @@
       "progress_past": "Lampau",
       "goal_view_missions": "Misi",
       "mission_link_goal": "Tautkan ke sasaran…",
-      "mission_unlinked": "Tanpa sasaran"
+      "mission_unlinked": "Tanpa sasaran",
+      "goal_field_kpi": "KPI tertaut",
+      "goal_kpi_none": "Tidak ada KPI tertaut"
     },
     "dev_projects": {
       "active_goals": "tujuan aktif",
@@ -17372,7 +17377,10 @@
     "attn_overdue": "telat {days}h",
     "attn_reason_crit": "Kritis",
     "attn_reason_floor": "Batas",
-    "attn_reason_pace": "Tertinggal"
+    "attn_reason_pace": "Tertinggal",
+    "evaluate_measured": "{count} KPI diukur.",
+    "evaluate_none_due": "Tidak ada KPI yang jatuh tempo untuk diukur.",
+    "evaluate_partial": "{measured} diukur, {failed} gagal"
   },
   "deliberation": {
     "agenda": "Agenda",

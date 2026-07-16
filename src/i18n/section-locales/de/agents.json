@@ -1776,7 +1776,8 @@
     "panel_subtitle": "Rufen Sie ein Tool direkt mit den Zugangsdaten dieser Persona auf.",
     "panel_title": "Tool ausführen",
     "retryable_hint": "Beim erneuten Versuch könnte es klappen.",
-    "run_tool": "Tool ausführen"
+    "run_tool": "Tool ausführen",
+    "builtin_note": "Integriertes Tool — es läuft innerhalb von Persona-Ausführungen (nicht manuell von hier). Führen Sie eine der Fähigkeiten der Persona aus, um es zu testen."
   },
   "health_check": {
     "title": "Agenten-Gesundheitscheck",

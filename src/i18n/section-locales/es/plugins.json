@@ -198,7 +198,8 @@
     "headless_badge": "Segundo plano",
     "headless_no_terminal": "Sesión en segundo plano — se ejecuta sin terminal. Responde desde el banner «Te necesita»; el progreso se muestra en Insights.",
     "spawn_headless_hint": "Modo headless: sin terminal en vivo, mucho más ligero en CPU y RAM. Responde desde el banner «Te necesita»; consulta el progreso en Insights.",
-    "spawn_headless_toggle": "Ejecutar en segundo plano (sin terminal)"
+    "spawn_headless_toggle": "Ejecutar en segundo plano (sin terminal)",
+    "live_slot_hibernated_toast": "{name} se hibernó para no superar el límite de sesiones activas; su conversación está guardada, reactívala para continuar."
   },
   "title": "Plugins",
   "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",
@@ -2531,7 +2532,9 @@
     "progress_past": "Pasado",
     "goal_view_missions": "Misiones",
     "mission_link_goal": "Vincular a un objetivo…",
-    "mission_unlinked": "Sin objetivo"
+    "mission_unlinked": "Sin objetivo",
+    "goal_field_kpi": "KPI vinculado",
+    "goal_kpi_none": "Sin KPI vinculado"
   },
   "dev_projects": {
     "active_goals": "objetivos activos",

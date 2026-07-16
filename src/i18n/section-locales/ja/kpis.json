@@ -189,5 +189,8 @@
   "attn_overdue": "{days}日超過",
   "attn_reason_crit": "危機的",
   "attn_reason_floor": "下限",
-  "attn_reason_pace": "遅延"
+  "attn_reason_pace": "遅延",
+  "evaluate_measured": "{count} 件の KPI を測定しました。",
+  "evaluate_none_due": "測定対象の KPI はありませんでした。",
+  "evaluate_partial": "{measured} 件測定、{failed} 件失敗"
 }

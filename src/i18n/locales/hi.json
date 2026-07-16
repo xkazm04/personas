@@ -2579,7 +2579,8 @@
       "panel_subtitle": "इस पर्सोना की क्रेडेंशियल के साथ सीधे कोई टूल चलाएँ।",
       "panel_title": "टूल चलाएँ",
       "retryable_hint": "पुनः प्रयास करने पर यह सफल हो सकता है।",
-      "run_tool": "टूल चलाएँ"
+      "run_tool": "टूल चलाएँ",
+      "builtin_note": "बिल्ट-इन टूल — यह पर्सोना एक्ज़ीक्यूशन के भीतर चलता है (यहाँ से मैन्युअल रूप से नहीं)। इसे आज़माने के लिए पर्सोना की कोई क्षमता चलाएँ।"
     },
     "health_check": {
       "title": "एजेंट हेल्थ चेक",
@@ -11640,7 +11641,8 @@
       "timeout": "समय समाप्त",
       "tool_error": "टूल विफल",
       "transport": "कनेक्शन विफल",
-      "unknown": "अज्ञात त्रुटि"
+      "unknown": "अज्ञात त्रुटि",
+      "unsupported": "यहाँ चलाने योग्य नहीं"
     }
   },
   "project_overview": {
@@ -11895,7 +11897,8 @@
       "headless_badge": "पृष्ठभूमि",
       "headless_no_terminal": "पृष्ठभूमि सत्र — टर्मिनल के बिना चल रहा है। \"आपकी ज़रूरत है\" बैनर से जवाब दें; प्रगति Insights में दिखती है।",
       "spawn_headless_hint": "हेडलेस मोड — लाइव टर्मिनल नहीं, CPU और RAM पर काफ़ी कम भार। \"आपकी ज़रूरत है\" बैनर से जवाब दें; प्रगति Insights में देखें।",
-      "spawn_headless_toggle": "पृष्ठभूमि में चलाएँ (टर्मिनल के बिना)"
+      "spawn_headless_toggle": "पृष्ठभूमि में चलाएँ (टर्मिनल के बिना)",
+      "live_slot_hibernated_toast": "सक्रिय-सत्र सीमा के भीतर रहने के लिए {name} को हाइबरनेट किया गया — इसकी बातचीत सहेजी गई है; जारी रखने के लिए इसे जगाएँ।"
     },
     "title": "प्लगइन",
     "subtitle": "प्लगइन से अपने कार्यक्षेत्र को विस्तारित करें। साइडबार में दिखाने या छिपाने के लिए टॉगल करें।",
@@ -14228,7 +14231,9 @@
       "progress_past": "अतीत",
       "goal_view_missions": "मिशन",
       "mission_link_goal": "किसी लक्ष्य से जोड़ें…",
-      "mission_unlinked": "कोई लक्ष्य नहीं"
+      "mission_unlinked": "कोई लक्ष्य नहीं",
+      "goal_field_kpi": "लिंक किया गया KPI",
+      "goal_kpi_none": "कोई लिंक किया गया KPI नहीं"
     },
     "dev_projects": {
       "active_goals": "सक्रिय goals",
@@ -17372,7 +17377,10 @@
     "attn_overdue": "{days}दि विलंबित",
     "attn_reason_crit": "गंभीर",
     "attn_reason_floor": "न्यूनतम",
-    "attn_reason_pace": "पीछे"
+    "attn_reason_pace": "पीछे",
+    "evaluate_measured": "{count} KPI मापे गए।",
+    "evaluate_none_due": "मापने के लिए कोई KPI देय नहीं था।",
+    "evaluate_partial": "{measured} मापे गए, {failed} विफल"
   },
   "deliberation": {
     "agenda": "एजेंडा",

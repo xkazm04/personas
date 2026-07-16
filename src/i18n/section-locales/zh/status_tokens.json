@@ -183,6 +183,7 @@
     "timeout": "超时",
     "tool_error": "工具失败",
     "transport": "连接失败",
-    "unknown": "未知错误"
+    "unknown": "未知错误",
+    "unsupported": "此处无法运行"
   }
 }

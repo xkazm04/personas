@@ -189,5 +189,8 @@
   "attn_overdue": "{days}d de retraso",
   "attn_reason_crit": "Crítico",
   "attn_reason_floor": "Mínimo",
-  "attn_reason_pace": "Atrasado"
+  "attn_reason_pace": "Atrasado",
+  "evaluate_measured": "{count} KPI medidos.",
+  "evaluate_none_due": "No había KPIs pendientes de medición.",
+  "evaluate_partial": "{measured} medidos, {failed} con error"
 }

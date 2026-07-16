@@ -1776,7 +1776,8 @@
     "panel_subtitle": "Invoca una herramienta directamente con las credenciales de esta persona.",
     "panel_title": "Ejecutar una herramienta",
     "retryable_hint": "Puede que funcione al reintentar.",
-    "run_tool": "Ejecutar herramienta"
+    "run_tool": "Ejecutar herramienta",
+    "builtin_note": "Herramienta integrada: se ejecuta dentro de las ejecuciones de la persona (no manualmente desde aquí). Ejecuta una de las capacidades de la persona para probarla."
   },
   "health_check": {
     "title": "Control de salud del agente",

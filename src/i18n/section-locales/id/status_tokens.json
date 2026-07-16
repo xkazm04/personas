@@ -183,6 +183,7 @@
     "timeout": "Waktu habis",
     "tool_error": "Alat gagal",
     "transport": "Koneksi gagal",
-    "unknown": "Kesalahan tidak dikenal"
+    "unknown": "Kesalahan tidak dikenal",
+    "unsupported": "Tidak dapat dijalankan di sini"
   }
 }

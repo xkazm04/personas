@@ -2579,7 +2579,8 @@
       "panel_subtitle": "使用此角色的凭据直接调用工具。",
       "panel_title": "运行工具",
       "retryable_hint": "重试后可能会成功。",
-      "run_tool": "运行工具"
+      "run_tool": "运行工具",
+      "builtin_note": "内置工具——它在角色执行内部运行（无法从此处手动运行）。运行该角色的某项能力来试用它。"
     },
     "health_check": {
       "title": "代理健康检查",
@@ -11640,7 +11641,8 @@
       "timeout": "超时",
       "tool_error": "工具失败",
       "transport": "连接失败",
-      "unknown": "未知错误"
+      "unknown": "未知错误",
+      "unsupported": "此处无法运行"
     }
   },
   "project_overview": {
@@ -11895,7 +11897,8 @@
       "headless_badge": "后台",
       "headless_no_terminal": "后台会话 — 无终端运行。通过“需要你”横幅回复；进度显示在 Insights 中。",
       "spawn_headless_hint": "无头模式 — 没有实时终端，CPU 和内存占用大幅降低。通过“需要你”横幅回复；在 Insights 中查看进度。",
-      "spawn_headless_toggle": "在后台运行（无终端）"
+      "spawn_headless_toggle": "在后台运行（无终端）",
+      "live_slot_hibernated_toast": "{name} 已休眠以保持在活动会话上限内——其对话已保存；唤醒它即可继续。"
     },
     "title": "插件",
     "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",
@@ -14228,7 +14231,9 @@
       "progress_past": "过去",
       "goal_view_missions": "任务",
       "mission_link_goal": "关联到目标…",
-      "mission_unlinked": "无目标"
+      "mission_unlinked": "无目标",
+      "goal_field_kpi": "关联的 KPI",
+      "goal_kpi_none": "无关联的 KPI"
     },
     "dev_projects": {
       "active_goals": "活跃目标",
@@ -17372,7 +17377,10 @@
     "attn_overdue": "逾期{days}天",
     "attn_reason_crit": "严重",
     "attn_reason_floor": "下限",
-    "attn_reason_pace": "落后"
+    "attn_reason_pace": "落后",
+    "evaluate_measured": "已测量 {count} 个 KPI。",
+    "evaluate_none_due": "没有到期需要测量的 KPI。",
+    "evaluate_partial": "已测量 {measured} 个，{failed} 个失败"
   },
   "deliberation": {
     "agenda": "议程",

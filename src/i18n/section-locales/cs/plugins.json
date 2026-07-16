@@ -198,7 +198,8 @@
     "headless_badge": "Na pozadí",
     "headless_no_terminal": "Relace na pozadí — běží bez terminálu. Odpovídejte z lišty „Potřebuje vás“; průběh se zobrazuje v Přehledech.",
     "spawn_headless_hint": "Bezhlavý režim — bez živého terminálu, výrazně nižší nároky na CPU a RAM. Odpovídejte z lišty „Potřebuje vás“; průběh sledujte v Přehledech.",
-    "spawn_headless_toggle": "Spustit na pozadí (bez terminálu)"
+    "spawn_headless_toggle": "Spustit na pozadí (bez terminálu)",
+    "live_slot_hibernated_toast": "{name} byla uspána, aby se dodržel limit aktivních relací — konverzace je uložena; probuďte ji pro pokračování."
   },
   "title": "Pluginy",
   "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",
@@ -2531,7 +2532,9 @@
     "progress_past": "Minulost",
     "goal_view_missions": "Mise",
     "mission_link_goal": "Připojit k cíli…",
-    "mission_unlinked": "Bez cíle"
+    "mission_unlinked": "Bez cíle",
+    "goal_field_kpi": "Propojené KPI",
+    "goal_kpi_none": "Žádné propojené KPI"
   },
   "dev_projects": {
     "active_goals": "aktivních cílů",

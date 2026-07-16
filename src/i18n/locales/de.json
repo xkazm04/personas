@@ -2579,7 +2579,8 @@
       "panel_subtitle": "Rufen Sie ein Tool direkt mit den Zugangsdaten dieser Persona auf.",
       "panel_title": "Tool ausführen",
       "retryable_hint": "Beim erneuten Versuch könnte es klappen.",
-      "run_tool": "Tool ausführen"
+      "run_tool": "Tool ausführen",
+      "builtin_note": "Integriertes Tool — es läuft innerhalb von Persona-Ausführungen (nicht manuell von hier). Führen Sie eine der Fähigkeiten der Persona aus, um es zu testen."
     },
     "health_check": {
       "title": "Agenten-Gesundheitscheck",
@@ -11640,7 +11641,8 @@
       "timeout": "Zeitüberschreitung",
       "tool_error": "Tool fehlgeschlagen",
       "transport": "Verbindung fehlgeschlagen",
-      "unknown": "Unbekannter Fehler"
+      "unknown": "Unbekannter Fehler",
+      "unsupported": "Hier nicht ausführbar"
     }
   },
   "project_overview": {
@@ -11895,7 +11897,8 @@
       "headless_badge": "Hintergrund",
       "headless_no_terminal": "Hintergrundsitzung — läuft ohne Terminal. Antworten über das „Braucht dich“-Banner; der Fortschritt erscheint unter Insights.",
       "spawn_headless_hint": "Headless-Modus — kein Live-Terminal, deutlich weniger CPU- und RAM-Last. Antworten über das „Braucht dich“-Banner; Fortschritt unter Insights.",
-      "spawn_headless_toggle": "Im Hintergrund ausführen (ohne Terminal)"
+      "spawn_headless_toggle": "Im Hintergrund ausführen (ohne Terminal)",
+      "live_slot_hibernated_toast": "{name} wurde in den Ruhezustand versetzt, um das Limit aktiver Sitzungen einzuhalten — die Konversation ist gespeichert; zum Fortsetzen aufwecken."
     },
     "title": "Plugins",
     "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",
@@ -14228,7 +14231,9 @@
       "progress_past": "Vergangenheit",
       "goal_view_missions": "Missionen",
       "mission_link_goal": "Mit Ziel verknüpfen…",
-      "mission_unlinked": "Kein Ziel"
+      "mission_unlinked": "Kein Ziel",
+      "goal_field_kpi": "Verknüpftes KPI",
+      "goal_kpi_none": "Kein verknüpftes KPI"
     },
     "dev_projects": {
       "active_goals": "aktive Ziele",
@@ -17372,7 +17377,10 @@
     "attn_overdue": "{days}T überfällig",
     "attn_reason_crit": "Kritisch",
     "attn_reason_floor": "Untergrenze",
-    "attn_reason_pace": "Im Rückstand"
+    "attn_reason_pace": "Im Rückstand",
+    "evaluate_measured": "{count} KPI(s) gemessen.",
+    "evaluate_none_due": "Keine KPIs zur Messung fällig.",
+    "evaluate_partial": "{measured} gemessen, {failed} fehlgeschlagen"
   },
   "deliberation": {
     "agenda": "Tagesordnung",

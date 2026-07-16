@@ -183,6 +183,7 @@
     "timeout": "Hết thời gian chờ",
     "tool_error": "Công cụ thất bại",
     "transport": "Kết nối thất bại",
-    "unknown": "Lỗi không xác định"
+    "unknown": "Lỗi không xác định",
+    "unsupported": "Không thể chạy ở đây"
   }
 }

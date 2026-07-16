@@ -183,6 +183,7 @@
     "timeout": "Vypršel čas",
     "tool_error": "Nástroj selhal",
     "transport": "Připojení selhalo",
-    "unknown": "Neznámá chyba"
+    "unknown": "Neznámá chyba",
+    "unsupported": "Zde nelze spustit"
   }
 }

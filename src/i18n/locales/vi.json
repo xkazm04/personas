@@ -2579,7 +2579,8 @@
       "panel_subtitle": "Gọi trực tiếp một công cụ bằng thông tin xác thực của persona này.",
       "panel_title": "Chạy công cụ",
       "retryable_hint": "Có thể thành công khi thử lại.",
-      "run_tool": "Chạy công cụ"
+      "run_tool": "Chạy công cụ",
+      "builtin_note": "Công cụ tích hợp — chạy bên trong các lần thực thi persona (không chạy thủ công từ đây). Hãy chạy một trong các khả năng của persona để thử nghiệm."
     },
     "health_check": {
       "title": "Kiểm tra sức khỏe tác nhân",
@@ -11640,7 +11641,8 @@
       "timeout": "Hết thời gian chờ",
       "tool_error": "Công cụ thất bại",
       "transport": "Kết nối thất bại",
-      "unknown": "Lỗi không xác định"
+      "unknown": "Lỗi không xác định",
+      "unsupported": "Không thể chạy ở đây"
     }
   },
   "project_overview": {
@@ -11895,7 +11897,8 @@
       "headless_badge": "Nền",
       "headless_no_terminal": "Phiên chạy nền — không có terminal. Trả lời từ băng rôn \"Cần bạn\"; tiến độ hiển thị trong Insights.",
       "spawn_headless_hint": "Chế độ headless — không có terminal trực tiếp, nhẹ hơn nhiều về CPU và RAM. Trả lời từ băng rôn \"Cần bạn\"; theo dõi tiến độ trong Insights.",
-      "spawn_headless_toggle": "Chạy nền (không có terminal)"
+      "spawn_headless_toggle": "Chạy nền (không có terminal)",
+      "live_slot_hibernated_toast": "{name} đã được ngủ đông để giữ trong giới hạn phiên hoạt động — cuộc trò chuyện được lưu; đánh thức để tiếp tục."
     },
     "title": "Plugin",
     "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",
@@ -14228,7 +14231,9 @@
       "progress_past": "Quá khứ",
       "goal_view_missions": "Nhiệm vụ",
       "mission_link_goal": "Liên kết với mục tiêu…",
-      "mission_unlinked": "Chưa có mục tiêu"
+      "mission_unlinked": "Chưa có mục tiêu",
+      "goal_field_kpi": "KPI được liên kết",
+      "goal_kpi_none": "Không có KPI liên kết"
     },
     "dev_projects": {
       "active_goals": "mục tiêu đang hoạt động",
@@ -17372,7 +17377,10 @@
     "attn_overdue": "trễ {days}n",
     "attn_reason_crit": "Nghiêm trọng",
     "attn_reason_floor": "Sàn",
-    "attn_reason_pace": "Chậm"
+    "attn_reason_pace": "Chậm",
+    "evaluate_measured": "Đã đo {count} KPI.",
+    "evaluate_none_due": "Không có KPI nào đến hạn đo.",
+    "evaluate_partial": "Đã đo {measured}, {failed} thất bại"
   },
   "deliberation": {
     "agenda": "Chương trình nghị sự",

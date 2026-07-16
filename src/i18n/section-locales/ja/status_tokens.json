@@ -183,6 +183,7 @@
     "timeout": "タイムアウト",
     "tool_error": "ツール失敗",
     "transport": "接続失敗",
-    "unknown": "不明なエラー"
+    "unknown": "不明なエラー",
+    "unsupported": "ここでは実行できません"
   }
 }

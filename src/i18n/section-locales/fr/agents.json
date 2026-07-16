@@ -1776,7 +1776,8 @@
     "panel_subtitle": "Invoquez un outil directement avec les identifiants de cette persona.",
     "panel_title": "Exécuter un outil",
     "retryable_hint": "Cela peut réussir en réessayant.",
-    "run_tool": "Exécuter l'outil"
+    "run_tool": "Exécuter l'outil",
+    "builtin_note": "Outil intégré — il s'exécute au sein des exécutions de la persona (pas manuellement d'ici). Lancez l'une des capacités de la persona pour le tester."
   },
   "health_check": {
     "title": "Bilan de santé de l'agent",

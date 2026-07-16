@@ -183,6 +183,7 @@
     "timeout": "Tiempo agotado",
     "tool_error": "Falló la herramienta",
     "transport": "Falló la conexión",
-    "unknown": "Error desconocido"
+    "unknown": "Error desconocido",
+    "unsupported": "No ejecutable aquí"
   }
 }

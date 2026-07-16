@@ -1776,7 +1776,8 @@
     "panel_subtitle": "Panggil alat langsung dengan kredensial persona ini.",
     "panel_title": "Jalankan alat",
     "retryable_hint": "Ini mungkin berhasil saat dicoba lagi.",
-    "run_tool": "Jalankan alat"
+    "run_tool": "Jalankan alat",
+    "builtin_note": "Alat bawaan — berjalan di dalam eksekusi persona (bukan secara manual dari sini). Jalankan salah satu kemampuan persona untuk mengujinya."
   },
   "health_check": {
     "title": "Pemeriksaan Kesehatan Agen",

@@ -1776,7 +1776,8 @@
     "panel_subtitle": "Spusťte nástroj přímo s přihlašovacími údaji této persony.",
     "panel_title": "Spustit nástroj",
     "retryable_hint": "Při opakování se to může podařit.",
-    "run_tool": "Spustit nástroj"
+    "run_tool": "Spustit nástroj",
+    "builtin_note": "Vestavěný nástroj — běží uvnitř spuštění persony (ne ručně odsud). Vyzkoušejte jej spuštěním některé ze schopností persony."
   },
   "health_check": {
     "title": "Kontrola zdraví agenta",

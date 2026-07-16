@@ -2579,7 +2579,8 @@
       "panel_subtitle": "Invoca una herramienta directamente con las credenciales de esta persona.",
       "panel_title": "Ejecutar una herramienta",
       "retryable_hint": "Puede que funcione al reintentar.",
-      "run_tool": "Ejecutar herramienta"
+      "run_tool": "Ejecutar herramienta",
+      "builtin_note": "Herramienta integrada: se ejecuta dentro de las ejecuciones de la persona (no manualmente desde aquí). Ejecuta una de las capacidades de la persona para probarla."
     },
     "health_check": {
       "title": "Control de salud del agente",
@@ -11640,7 +11641,8 @@
       "timeout": "Tiempo agotado",
       "tool_error": "Falló la herramienta",
       "transport": "Falló la conexión",
-      "unknown": "Error desconocido"
+      "unknown": "Error desconocido",
+      "unsupported": "No ejecutable aquí"
     }
   },
   "project_overview": {
@@ -11895,7 +11897,8 @@
       "headless_badge": "Segundo plano",
       "headless_no_terminal": "Sesión en segundo plano — se ejecuta sin terminal. Responde desde el banner «Te necesita»; el progreso se muestra en Insights.",
       "spawn_headless_hint": "Modo headless: sin terminal en vivo, mucho más ligero en CPU y RAM. Responde desde el banner «Te necesita»; consulta el progreso en Insights.",
-      "spawn_headless_toggle": "Ejecutar en segundo plano (sin terminal)"
+      "spawn_headless_toggle": "Ejecutar en segundo plano (sin terminal)",
+      "live_slot_hibernated_toast": "{name} se hibernó para no superar el límite de sesiones activas; su conversación está guardada, reactívala para continuar."
     },
     "title": "Plugins",
     "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",
@@ -14228,7 +14231,9 @@
       "progress_past": "Pasado",
       "goal_view_missions": "Misiones",
       "mission_link_goal": "Vincular a un objetivo…",
-      "mission_unlinked": "Sin objetivo"
+      "mission_unlinked": "Sin objetivo",
+      "goal_field_kpi": "KPI vinculado",
+      "goal_kpi_none": "Sin KPI vinculado"
     },
     "dev_projects": {
       "active_goals": "objetivos activos",
@@ -17372,7 +17377,10 @@
     "attn_overdue": "{days}d de retraso",
     "attn_reason_crit": "Crítico",
     "attn_reason_floor": "Mínimo",
-    "attn_reason_pace": "Atrasado"
+    "attn_reason_pace": "Atrasado",
+    "evaluate_measured": "{count} KPI medidos.",
+    "evaluate_none_due": "No había KPIs pendientes de medición.",
+    "evaluate_partial": "{measured} medidos, {failed} con error"
   },
   "deliberation": {
     "agenda": "Agenda",
