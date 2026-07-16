@@ -17162,7 +17162,9 @@
     "group_needs_review": "初回レビュー待ち",
     "group_low_scores": "低スコア",
     "group_declining": "低下傾向",
-    "group_stale": "古いレビュー"
+    "group_stale": "古いレビュー",
+    "roster_unscored": "スコアなし",
+    "roster_unscored_hint": "Director はこのエージェントをレビューしましたが、スコアを返しませんでした。コーチングを見るにはレビューを開いてください。"
   },
   "remote_approval": {
     "title": "リモート実行リクエスト",

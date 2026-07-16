@@ -3654,6 +3654,8 @@ export type Translations = {
     roster_review_now: string;
     roster_remove: string;
     roster_never: string;
+    roster_unscored: string;
+    roster_unscored_hint: string;
     roster_add_title: string;
     roster_add_placeholder: string;
     run_all: string;

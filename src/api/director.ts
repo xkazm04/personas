@@ -60,6 +60,8 @@ export interface DirectorRosterEntry {
   valueDeliveredRate: number;
   totalExecutions: number;
   lastReviewedAt: string | null;
+  /** Most recent review has markdown but no score (salvage double-failed). */
+  latestReviewUnscored: boolean;
 }
 
 export interface DirectorScoreBand {

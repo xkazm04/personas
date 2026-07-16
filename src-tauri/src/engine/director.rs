@@ -361,6 +361,19 @@ fn parse_score(output: &str) -> Option<(i64, String)> {
     None
 }
 
+/// Resolve the mandatory score from the primary run output, falling back to the
+/// output of a single salvage re-prompt when the primary omitted the score line.
+/// Pure + synchronous so both outcomes are unit-testable without spawning a CLI:
+/// the async caller performs at most ONE salvage run and passes its output here.
+///
+/// - primary has a score → that score wins; salvage output (if any) is ignored.
+/// - primary missing, salvage has a score → salvaged score.
+/// - primary missing, salvage missing/absent → `None` ⇒ caller writes an
+///   explicit unscored marker (never silent).
+fn score_after_salvage(primary_output: &str, salvage_output: Option<&str>) -> Option<(i64, String)> {
+    parse_score(primary_output).or_else(|| salvage_output.and_then(parse_score))
+}
+
 /// The literal prefix for each optional "what's working" line the rubric may
 /// emit (v2: wins channel alongside coaching verdicts).
 const WIN_MARKER: &str = "DIRECTOR_WIN:";
@@ -443,6 +456,56 @@ fn render_review_md(
             md.push_str("_No coaching notes — the persona looks healthy._\n");
         } else {
             md.push_str("_No coaching needed beyond the wins above._\n");
+        }
+    } else {
+        md.push_str("### Coaching\n\n");
+        for v in verdicts {
+            md.push_str(&format!(
+                "#### {} _({} · {})_\n\n",
+                v.title,
+                v.severity.as_str(),
+                v.category.as_str()
+            ));
+            if !v.description.is_empty() {
+                md.push_str(&v.description);
+                md.push_str("\n\n");
+            }
+            if let Some(r) = &v.rationale {
+                md.push_str(&format!("**Evidence:** {r}\n\n"));
+            }
+            if !v.suggested_actions.is_empty() {
+                md.push_str("**Suggested actions:**\n");
+                for a in &v.suggested_actions {
+                    md.push_str(&format!("- {a}\n"));
+                }
+                md.push('\n');
+            }
+        }
+    }
+    md
+}
+
+/// Render an *unscored* Director review: the model omitted the mandatory
+/// DIRECTOR_SCORE line and a bounded salvage re-prompt still failed to recover
+/// it. We keep the wins + coaching the run DID produce and mark the score
+/// explicitly unavailable, so the coaching table shows "unscored review" rather
+/// than a silent "—". Stored via `set_director_review_unscored` (score stays NULL).
+fn render_unscored_review_md(wins: &[DirectorWin], verdicts: &[DirectorVerdict]) -> String {
+    let mut md = String::from("## Director review — unscored\n\n");
+    md.push_str(
+        "_The Director did not return a score for this review (the mandatory score line was \
+         missing and a re-prompt could not recover it). The coaching below still stands._\n\n",
+    );
+    if !wins.is_empty() {
+        md.push_str("### What's working\n\n");
+        for w in wins {
+            md.push_str(&format!("- _({})_ {}\n", w.category.as_str(), w.note));
+        }
+        md.push('\n');
+    }
+    if verdicts.is_empty() {
+        if wins.is_empty() {
+            md.push_str("_No coaching notes were emitted._\n");
         }
     } else {
         md.push_str("### Coaching\n\n");
@@ -646,7 +709,7 @@ async fn evaluate_with_llm(
 
     let spawned = crate::commands::execution::executions::execute_persona_inner(
         state,
-        app,
+        app.clone(),
         director_id.to_string(),
         /* trigger_id */ None,
         Some(payload),
@@ -682,21 +745,114 @@ async fn evaluate_with_llm(
     // execution so the activity Verdict column + Director tab can read it.
     // Coaching verdicts continue to route to manual_reviews (the caller does
     // that). Wins are reinforcement-only — they live in the rendered markdown,
-    // not in the review queue. Only write when a score line was actually emitted.
-    if let (Some(exec_id), Some((score, summary))) =
-        (ctx.latest_execution_id.as_deref(), parse_score(&output))
-    {
-        let md = render_review_md(score, &summary, &wins, &verdicts);
-        if let Err(e) = executions::set_director_review(&state.db, exec_id, score, &md) {
-            tracing::warn!(error = %e, execution = %exec_id, "Director: failed to persist review score");
-        }
-        // Write the review into the Brain vault as durable long-term memory.
-        if brain_on {
-            write_brain_note(&state.db, &ctx.persona.id, &ctx.persona.name, &md);
+    // not in the review queue.
+    if let Some(exec_id) = ctx.latest_execution_id.as_deref() {
+        // Resolve the mandatory score. If the model omitted the DIRECTOR_SCORE
+        // line, issue exactly ONE bounded salvage re-prompt asking only for that
+        // line (grounded in the review we just rendered). Still missing → persist
+        // an explicit unscored marker so the coaching table shows "unscored
+        // review", never a silent "—".
+        let score = match parse_score(&output) {
+            Some(s) => Some(s),
+            None => {
+                let preview_md = render_review_md(0, "", &wins, &verdicts);
+                let salvage_out =
+                    salvage_missing_score(state, app.clone(), director_id, &preview_md).await;
+                score_after_salvage(&output, salvage_out.as_deref())
+            }
+        };
+
+        match score {
+            Some((score, summary)) => {
+                let md = render_review_md(score, &summary, &wins, &verdicts);
+                if let Err(e) = executions::set_director_review(&state.db, exec_id, score, &md) {
+                    tracing::warn!(error = %e, execution = %exec_id, "Director: failed to persist review score");
+                }
+                // Write the review into the Brain vault as durable long-term memory.
+                if brain_on {
+                    write_brain_note(&state.db, &ctx.persona.id, &ctx.persona.name, &md);
+                }
+            }
+            None => {
+                // Salvage failed twice — persist an explicit unscored marker
+                // (visible in the coaching table) rather than dropping the review.
+                let md = render_unscored_review_md(&wins, &verdicts);
+                if let Err(e) = executions::set_director_review_unscored(&state.db, exec_id, &md) {
+                    tracing::warn!(error = %e, execution = %exec_id, "Director: failed to persist unscored review marker");
+                }
+                if brain_on {
+                    write_brain_note(&state.db, &ctx.persona.id, &ctx.persona.name, &md);
+                }
+                tracing::warn!(
+                    target = %ctx.persona.id,
+                    execution = %exec_id,
+                    "Director: review persisted WITHOUT a score (salvage failed) — marked unscored",
+                );
+            }
         }
     }
 
     Ok(verdicts)
+}
+
+/// Bounded ceiling for the missing-score salvage re-prompt. Deliberately shorter
+/// than the full review timeout — the re-prompt asks for a single line.
+const DIRECTOR_SALVAGE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(90);
+
+/// Issue exactly ONE bounded salvage re-prompt for a review whose primary run
+/// omitted the mandatory DIRECTOR_SCORE line. Asks the Director for ONLY the
+/// score line, grounded in the review it just produced. Returns the run's raw
+/// output (parsed by the caller via `score_after_salvage`) — or `None` if the
+/// run failed to spawn / reach a terminal state / produce output. Never loops.
+async fn salvage_missing_score(
+    state: &Arc<AppState>,
+    app: tauri::AppHandle,
+    director_id: &str,
+    review_md: &str,
+) -> Option<String> {
+    let payload = format!(
+        "MISSING SCORE SALVAGE\n\nYour previous review of this persona omitted the mandatory \
+         DIRECTOR_SCORE line. Reply with ONLY that one line and nothing else — no wins, no \
+         verdicts, no prose:\n\n\
+         DIRECTOR_SCORE: {{\"score\":0-5,\"summary\":\"<=140 chars\"}}\n\n\
+         --- the review you just produced ---\n{}\n",
+        truncate(review_md, 3000),
+    );
+
+    let spawned = crate::commands::execution::executions::execute_persona_inner(
+        state,
+        app,
+        director_id.to_string(),
+        /* trigger_id */ None,
+        Some(payload),
+        /* use_case_id */ None,
+        /* continuation */ None,
+        /* idempotency_key */ None,
+        /* is_simulation */ false,
+    )
+    .await
+    .ok()?;
+
+    // Bounded poll — mirrors `await_execution_terminal` but with the shorter
+    // salvage ceiling. Single-shot: no retry beyond this one run.
+    let start = std::time::Instant::now();
+    let exec = loop {
+        match executions::get_by_id(&state.db, &spawned.id) {
+            Ok(ex) if ex.state().is_terminal() => break Some(ex),
+            Ok(ex) if start.elapsed() >= DIRECTOR_SALVAGE_TIMEOUT => break Some(ex),
+            Err(_) if start.elapsed() >= DIRECTOR_SALVAGE_TIMEOUT => break None,
+            _ => {}
+        }
+        tokio::time::sleep(DIRECTOR_POLL_INTERVAL).await;
+    }?;
+
+    let out = exec.output_data.unwrap_or_default();
+    if out.trim().is_empty() {
+        tracing::warn!(director_run = %exec.id, "Director: salvage re-prompt produced no output");
+        None
+    } else {
+        Some(out)
+    }
 }
 
 // Brain long-term-memory helpers live in `super::director_brain` since v2 —
@@ -1397,8 +1553,13 @@ pub struct DirectorRosterEntry {
     pub value_delivered_rate: f64,
     #[ts(type = "number")]
     pub total_executions: i64,
-    /// ISO timestamp of the most recent scored review; `None` when never reviewed.
+    /// ISO timestamp of the most recent review (scored OR unscored); `None` when
+    /// never reviewed.
     pub last_reviewed_at: Option<String>,
+    /// True when the most recent review carries markdown but NO score (the
+    /// missing-score salvage double-failed). Lets the coaching table render an
+    /// explicit "unscored review" instead of a silent "—".
+    pub latest_review_unscored: bool,
 }
 
 /// Count of in-scope personas whose latest score falls in this 0-5 band. Always
@@ -1458,9 +1619,18 @@ pub fn director_portfolio(pool: &DbPool, days: i64) -> Result<DirectorPortfolio,
     let trends = list_score_trends(pool, &ids, 12)?;
 
     let conn = pool.get()?;
+    // "Reviewed" keys on director_review_md (scored OR unscored) so an unscored
+    // review still counts as a review and surfaces its timestamp.
     let mut last_reviewed_stmt = conn.prepare(
         "SELECT MAX(created_at) FROM persona_executions \
-         WHERE persona_id = ?1 AND director_score IS NOT NULL",
+         WHERE persona_id = ?1 AND director_review_md IS NOT NULL",
+    )?;
+    // Whether the persona's MOST RECENT reviewed execution has no score (the
+    // missing-score salvage double-failed) → render "unscored review", not "—".
+    let mut latest_unscored_stmt = conn.prepare(
+        "SELECT director_score IS NULL FROM persona_executions \
+         WHERE persona_id = ?1 AND director_review_md IS NOT NULL \
+         ORDER BY created_at DESC LIMIT 1",
     )?;
 
     let mut roster: Vec<DirectorRosterEntry> = Vec::with_capacity(starred.len());
@@ -1470,6 +1640,9 @@ pub fn director_portfolio(pool: &DbPool, days: i64) -> Result<DirectorPortfolio,
         let last_reviewed_at: Option<String> = last_reviewed_stmt
             .query_row(params![p.id], |row| row.get::<_, Option<String>>(0))
             .unwrap_or(None);
+        let latest_review_unscored: bool = latest_unscored_stmt
+            .query_row(params![p.id], |row| row.get::<_, bool>(0))
+            .unwrap_or(false);
         // Per-persona value signal; degrade to zeros if the rollup query fails.
         let (value_delivered_rate, total_executions) =
             match metrics::get_value_rollup(pool, Some(days), Some(&p.id)) {
@@ -1486,6 +1659,7 @@ pub fn director_portfolio(pool: &DbPool, days: i64) -> Result<DirectorPortfolio,
             value_delivered_rate,
             total_executions,
             last_reviewed_at,
+            latest_review_unscored,
         });
     }
 
@@ -1861,5 +2035,61 @@ DIRECTOR_WIN: {\"category\":\"health\",\"note\":\"Open healing issues went to ze
             execution_reviewed(&pool, &exec.id),
             "a reviewed anchor must be detected so the next batch skips the persona"
         );
+    }
+
+    /// Direction 3 (missing-score-salvage): `score_after_salvage` is the pure
+    /// boundary the async caller uses — it mocks the re-prompt via the second
+    /// argument, so both outcomes are covered without spawning a CLI.
+    #[test]
+    fn score_after_salvage_covers_both_outcomes() {
+        // Primary already has a score → salvage is NOT consulted (primary wins
+        // even when a conflicting salvage output is supplied).
+        let s = score_after_salvage(
+            "DIRECTOR_SCORE: {\"score\":5,\"summary\":\"great\"}",
+            Some("DIRECTOR_SCORE: {\"score\":0}"),
+        );
+        assert_eq!(s.unwrap().0, 5, "primary score wins; salvage ignored");
+
+        // Primary missing, salvage recovers the score → scored.
+        let s = score_after_salvage(
+            "no score line here",
+            Some("DIRECTOR_SCORE: {\"score\":3,\"summary\":\"ok\"}"),
+        );
+        assert_eq!(s.unwrap().0, 3, "salvage re-prompt recovers the score");
+
+        // Primary missing, salvage also missing → None ⇒ caller marks unscored.
+        assert!(
+            score_after_salvage("no score", Some("still nothing")).is_none(),
+            "double failure yields no score"
+        );
+        // Primary missing, salvage run failed (None) → None ⇒ unscored.
+        assert!(
+            score_after_salvage("no score", None).is_none(),
+            "failed salvage run yields no score"
+        );
+    }
+
+    /// The unscored marker markdown is explicit (never blank) and preserves any
+    /// coaching the run produced.
+    #[test]
+    fn render_unscored_review_md_is_explicit() {
+        let verdicts = vec![DirectorVerdict {
+            target_persona_id: "p-1".into(),
+            severity: DirectorSeverity::Warning,
+            category: DirectorCategory::Usefulness,
+            title: "Tighten scope".into(),
+            description: "Most runs report no input.".into(),
+            rationale: Some("12/20 no_input".into()),
+            suggested_actions: vec!["Add a precondition".into()],
+        }];
+        let md = render_unscored_review_md(&[], &verdicts);
+        assert!(md.contains("Director review — unscored"));
+        assert!(md.contains("did not return a score"));
+        assert!(md.contains("Tighten scope"), "coaching is preserved");
+
+        // Empty run still yields explicit prose, never a blank body.
+        let empty = render_unscored_review_md(&[], &[]);
+        assert!(empty.contains("unscored"));
+        assert!(empty.contains("No coaching notes were emitted."));
     }
 }

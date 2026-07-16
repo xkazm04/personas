@@ -17162,7 +17162,9 @@
     "group_needs_review": "Čeká na první recenzi",
     "group_low_scores": "Nízká skóre",
     "group_declining": "Klesající trend",
-    "group_stale": "Zastaralé recenze"
+    "group_stale": "Zastaralé recenze",
+    "roster_unscored": "Bez hodnocení",
+    "roster_unscored_hint": "Director tohoto agenta zkontroloval, ale nevrátil skóre; otevřete kontrolu a zobrazte jeho doporučení."
   },
   "remote_approval": {
     "title": "Požadavek na vzdálené spuštění",

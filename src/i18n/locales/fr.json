@@ -17162,7 +17162,9 @@
     "group_needs_review": "En attente de première révision",
     "group_low_scores": "Scores faibles",
     "group_declining": "Tendance à la baisse",
-    "group_stale": "Révisions obsolètes"
+    "group_stale": "Révisions obsolètes",
+    "roster_unscored": "Sans note",
+    "roster_unscored_hint": "Le Director a examiné cet agent mais n'a pas renvoyé de note ; ouvrez l'évaluation pour voir ses conseils."
   },
   "remote_approval": {
     "title": "Demande d'exécution à distance",

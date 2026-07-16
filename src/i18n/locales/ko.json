@@ -17162,7 +17162,9 @@
     "group_needs_review": "첫 번째 검토 대기 중",
     "group_low_scores": "낮은 점수",
     "group_declining": "하락 추세",
-    "group_stale": "오래된 검토"
+    "group_stale": "오래된 검토",
+    "roster_unscored": "점수 없음",
+    "roster_unscored_hint": "Director가 이 에이전트를 검토했지만 점수를 반환하지 않았습니다. 코칭을 보려면 검토를 여세요."
   },
   "remote_approval": {
     "title": "원격 실행 요청",

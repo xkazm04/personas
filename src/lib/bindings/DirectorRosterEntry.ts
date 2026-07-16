@@ -19,6 +19,13 @@ scoreTrend: number[],
  */
 valueDeliveredRate: number, totalExecutions: number, 
 /**
- * ISO timestamp of the most recent scored review; `None` when never reviewed.
+ * ISO timestamp of the most recent review (scored OR unscored); `None` when
+ * never reviewed.
  */
-lastReviewedAt: string | null, };
+lastReviewedAt: string | null, 
+/**
+ * True when the most recent review carries markdown but NO score (the
+ * missing-score salvage double-failed). Lets the coaching table render an
+ * explicit "unscored review" instead of a silent "—".
+ */
+latestReviewUnscored: boolean, };

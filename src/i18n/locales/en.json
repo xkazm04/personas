@@ -3648,6 +3648,8 @@
     "roster_review_now": "Review now",
     "roster_remove": "Remove from scope",
     "roster_never": "Never",
+    "roster_unscored": "Unscored",
+    "roster_unscored_hint": "The Director reviewed this agent but did not return a score; open the review to see its coaching.",
     "roster_add_title": "Add agents to scope",
     "roster_add_placeholder": "Star an agent to add it",
     "run_all": "Review all in scope",

@@ -157,6 +157,17 @@ export function PersonaCoachingTable({
                   >
                     {r.latestScore}
                   </span>
+                ) : r.latestReviewUnscored ? (
+                  // Reviewed, but the Director returned no score (salvage
+                  // double-failed) — surface it explicitly, never as a bare "—".
+                  <Tooltip content={t.director.roster_unscored_hint}>
+                    <span
+                      className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-medium"
+                      style={{ color: 'var(--status-warning)', backgroundColor: toneFill('var(--status-warning)', 14) }}
+                    >
+                      {t.director.roster_unscored}
+                    </span>
+                  </Tooltip>
                 ) : (
                   <span className="typo-caption text-foreground">—</span>
                 )}

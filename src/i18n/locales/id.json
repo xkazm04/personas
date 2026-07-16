@@ -17162,7 +17162,9 @@
     "group_needs_review": "Menunggu ulasan pertama",
     "group_low_scores": "Skor rendah",
     "group_declining": "Tren menurun",
-    "group_stale": "Ulasan usang"
+    "group_stale": "Ulasan usang",
+    "roster_unscored": "Tanpa skor",
+    "roster_unscored_hint": "Director meninjau agen ini tetapi tidak memberikan skor; buka tinjauan untuk melihat pembinaannya."
   },
   "remote_approval": {
     "title": "Permintaan jalankan jarak jauh",
