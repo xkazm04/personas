@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   History, ChevronDown, ChevronRight, AlertTriangle,
   RefreshCw, RotateCcw, CheckCircle2, XCircle,
@@ -148,12 +148,18 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
   const history = useTriggerHistory(triggerId, personaId);
   const [open, setOpen] = useState(defaultOpen);
 
-  // Auto-fetch on first open
+  // Auto-fetch once per (open, trigger). Guarding on executions.length === 0
+  // with the whole history object in deps treated an empty result as "never
+  // fetched", so a trigger that never fired refetched in an infinite IPC loop
+  // while its section was open.
+  const fetchedForRef = useRef<string | null>(null);
+  const { fetch: fetchHistory } = history;
   useEffect(() => {
-    if (open && history.executions.length === 0 && !history.loading) {
-      void history.fetch();
+    if (open && fetchedForRef.current !== triggerId) {
+      fetchedForRef.current = triggerId;
+      void fetchHistory();
     }
-  }, [history, open]);
+  }, [open, triggerId, fetchHistory]);
 
   const toggle = () => setOpen((v) => !v);
 
