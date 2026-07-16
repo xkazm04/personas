@@ -1271,6 +1271,15 @@ pub async fn run_execution(
         }
     };
 
+    // Secret hygiene: the sidecar config file embeds the run's plaintext bridge
+    // and delegate keys, and the default exec_dir is a stable, reused temp dir the
+    // runner never deletes. This guard scrubs the config on EVERY exit path from
+    // here on (normal, error, cancel, timeout, panic-unwind) via Drop. The
+    // worktree-isolation case additionally scrubs explicitly before the finalize
+    // commit below, so secrets never land on the review branch.
+    let _sidecar_scrub_guard =
+        super::cli_mcp_config::SidecarScrubGuard::new(exec_dir.clone());
+
     // =========================================================================
     // Provider failover: build candidate chain and try each until one succeeds
     // =========================================================================
@@ -2868,6 +2877,14 @@ pub async fn run_execution(
             cost_usd: Some(metrics.cost_usd),
         },
     );
+
+    // Scrub the sidecar config BEFORE the worktree finalize below: finalize runs
+    // `git add -A` + commit onto the review branch, which would otherwise capture
+    // the plaintext bridge/delegate keys in `.claude/personas-mcp-config.json`.
+    // The Drop guard also scrubs at function exit, but that fires AFTER the commit
+    // — too late for the worktree case — so this explicit call is load-bearing.
+    // Idempotent with the guard.
+    super::cli_mcp_config::scrub_mcp_sidecar(&exec_dir);
 
     // Finalize the per-execution worktree (Slice C). Auto-commits any dirty
     // work onto branch `personas/exec/<id>` and removes the worktree dir; the

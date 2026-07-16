@@ -1,14 +1,28 @@
-//! Claude Code `.claude/settings.json` MCP-server sidecar.
+//! Claude Code `personas-mcp` sidecar config (`--mcp-config` file).
 //!
 //! Writes an `mcpServers` entry for `personas-mcp` (the stdio MCP binary
-//! built alongside the desktop app) into `exec_dir/.claude/settings.json`
-//! before the runner spawns the Claude CLI. The CLI picks the entry up,
-//! spawns `personas-mcp --db-path <personas.db>` as a child process, and
-//! exposes the MCP tools (`drive_write_text`, `drive_read_text`, `drive_list`,
-//! plus the existing `personas_*` tools) to the running persona.
+//! built alongside the desktop app) into `exec_dir/.claude/personas-mcp-config.json`
+//! before the runner spawns the Claude CLI. The runner passes this file to
+//! `claude -p` via `--mcp-config <file>`; the CLI spawns
+//! `personas-mcp --db-path <personas.db>` as a child process and exposes the
+//! MCP tools (`drive_write_text`, `drive_read_text`, `drive_list`, plus the
+//! existing `personas_*` tools) to the running persona.
 //!
-//! The sidecar merges with any existing settings.json so the `hooks_sidecar`
-//! entries stay intact.
+//! Secret hygiene: this config file embeds short-lived secrets for the run —
+//! the `PERSONAS_API_KEY` bridge key and any delegate API key — in plaintext.
+//! The default `exec_dir` is a *stable, reused* per-persona temp dir that the
+//! runner never deletes, so the file MUST be scrubbed at run termination via
+//! [`scrub_mcp_sidecar`] on every exit path (normal, error, cancel, timeout,
+//! kill). [`install_mcp_sidecar`] also sweeps a stale config from a prior,
+//! possibly app-killed run before writing, as belt-and-suspenders.
+//!
+//! Historical note: earlier versions also wrote `mcpServers.personas` into
+//! `exec_dir/.claude/settings.json`. Claude Code ignores `mcpServers` in
+//! `settings.json` (only `--mcp-config` / `.mcp.json` are honored), so that
+//! write was dead — a second plaintext copy of the same secrets for no
+//! behavioral gain. It has been removed; the sidecar now writes ONLY the
+//! `--mcp-config` file, and `settings.json` is left untouched so any
+//! `hooks_sidecar` entries stay intact.
 
 use std::path::{Path, PathBuf};
 
@@ -55,17 +69,17 @@ fn find_mcp_binary() -> Option<PathBuf> {
     candidates.into_iter().find(|p| p.is_file())
 }
 
-/// Install the MCP servers entry into `exec_dir/.claude/settings.json`.
+/// Install the `personas-mcp` entry into the `--mcp-config` file
+/// (`exec_dir/.claude/personas-mcp-config.json`).
 ///
-/// Returns `Ok(true)` when the entry was written (or updated), `Ok(false)`
-/// when the MCP binary or DB path is unavailable and the sidecar is
-/// intentionally skipped. Never errors the execution — a missing MCP just
-/// means the persona runs without the drive tools, which is the status
-/// quo anyway.
+/// Returns `Ok(true)` when the entry was written, `Ok(false)` when the MCP
+/// binary or DB path is unavailable and the sidecar is intentionally skipped.
+/// Never errors the execution — a missing MCP just means the persona runs
+/// without the drive tools, which is the status quo anyway.
 ///
 /// When `project_root` is `Some`, also reads
 /// `<project_root>/.claude/settings.json` and merges its `mcpServers.*`
-/// entries into the exec_dir settings. This surfaces any project-local MCP
+/// entries into the `--mcp-config` file. This surfaces any project-local MCP
 /// servers the user has registered (e.g. via `npx gitnexus setup` for
 /// codebase-aware tools, or by hand for project-specific helpers) without
 /// requiring the user to configure each one through the credential-managed
@@ -98,20 +112,12 @@ pub fn install_mcp_sidecar(
         );
         return Ok(false);
     }
-    let settings_path = claude_dir.join("settings.json");
 
-    // Preserve existing settings (hooks_sidecar may have written hooks).
-    let mut existing: serde_json::Value = if settings_path.exists() {
-        std::fs::read_to_string(&settings_path)
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or_else(|| serde_json::json!({}))
-    } else {
-        serde_json::json!({})
-    };
-    if !existing.is_object() {
-        existing = serde_json::json!({});
-    }
+    // Belt-and-suspenders hygiene: the default exec_dir is a stable, reused
+    // per-persona dir. If a previous run's teardown scrub never fired (e.g. the
+    // whole desktop app was force-killed mid-run), a stale secret-bearing config
+    // could linger here. Sweep it before writing the fresh one for this run.
+    scrub_mcp_sidecar(exec_dir);
 
     // Build the server entry. PERSONAS_DRIVE_ROOT is passed through env so the
     // child MCP process resolves the same sandbox as the parent runner.
@@ -195,60 +201,115 @@ pub fn install_mcp_sidecar(
     // CRITICAL: Claude Code does NOT load `mcpServers` from `.claude/settings.json`
     // (that key is ignored there). For a headless `claude -p` run, MCP servers must
     // come from `.mcp.json` (needs approval) or, deterministically, from a config
-    // file passed via `--mcp-config <file>`. We write that file here; the runner
-    // appends `--mcp-config <mcp_config_path(exec_dir)>` to the spawn so personas-mcp
-    // tools (drive_*, personas_*, obsidian_vault_*) actually load. (The settings.json
-    // mcpServers write below is kept harmless for forward-compat but is not relied on.)
+    // file passed via `--mcp-config <file>`. This `--mcp-config` file is the ONLY
+    // MCP config the sidecar writes; the runner appends
+    // `--mcp-config <mcp_config_path(exec_dir)>` to the spawn so personas-mcp tools
+    // (drive_*, personas_*, obsidian_vault_*) actually load.
     let mut servers_obj = serde_json::Map::new();
-    servers_obj.insert(MCP_SERVER_NAME.to_string(), server_entry.clone());
-    let mcp_config = serde_json::json!({ "mcpServers": serde_json::Value::Object(servers_obj) });
-    let mcp_config_file = mcp_config_path(exec_dir);
-    if let Err(e) = std::fs::write(
-        &mcp_config_file,
-        serde_json::to_string_pretty(&mcp_config).unwrap_or_default(),
-    ) {
-        tracing::warn!(error = %e, path = %mcp_config_file.display(), "cli_mcp_config: failed to write --mcp-config file — skipping sidecar");
-        return Ok(false);
-    }
-
-    // Merge (or create) `mcpServers.personas`.
-    let root_obj = existing
-        .as_object_mut()
-        .expect("existing was just set to object");
-    let servers = root_obj
-        .entry("mcpServers")
-        .or_insert_with(|| serde_json::json!({}));
-    if !servers.is_object() {
-        *servers = serde_json::json!({});
-    }
-    let servers_map = servers
-        .as_object_mut()
-        .expect("mcpServers was just set to object");
 
     // Merge project-local MCP servers BEFORE inserting personas-mcp, so the
     // personas entry overwrites any project-local entry under the same name.
+    // These land in the `--mcp-config` file (the one the CLI actually reads),
+    // not the ignored settings.json.
     if let Some(root) = project_root {
-        merge_project_local_mcp_servers(root, servers_map);
+        merge_project_local_mcp_servers(root, &mut servers_obj);
     }
 
-    servers_map.insert(MCP_SERVER_NAME.to_string(), server_entry);
+    servers_obj.insert(MCP_SERVER_NAME.to_string(), server_entry);
 
-    let serialized = serde_json::to_string_pretty(&existing)
-        .map_err(|e| AppError::Internal(format!("serialize MCP sidecar settings: {e}")))?;
-    if let Err(e) = std::fs::write(&settings_path, serialized) {
-        tracing::warn!(
-            error = %e,
-            path = %settings_path.display(),
-            "cli_mcp_config: failed to write settings.json — skipping sidecar"
-        );
+    let mcp_config = serde_json::json!({ "mcpServers": serde_json::Value::Object(servers_obj) });
+    let mcp_config_file = mcp_config_path(exec_dir);
+    let serialized = serde_json::to_string_pretty(&mcp_config)
+        .map_err(|e| AppError::Internal(format!("serialize MCP sidecar config: {e}")))?;
+    if let Err(e) = std::fs::write(&mcp_config_file, serialized) {
+        tracing::warn!(error = %e, path = %mcp_config_file.display(), "cli_mcp_config: failed to write --mcp-config file — skipping sidecar");
         return Ok(false);
     }
     tracing::debug!(
-        path = %settings_path.display(),
-        "cli_mcp_config: wrote mcpServers entry for '{}'",
+        path = %mcp_config_file.display(),
+        "cli_mcp_config: wrote --mcp-config entry for '{}'",
         MCP_SERVER_NAME
     );
     Ok(true)
+}
+
+/// Scrub the run's `personas-mcp` sidecar config from `exec_dir`.
+///
+/// Deletes `exec_dir/.claude/personas-mcp-config.json`, which embeds the run's
+/// plaintext `PERSONAS_API_KEY` bridge key and any delegate API key. The runner
+/// calls this on every execution exit path (normal, error, cancel, timeout,
+/// kill) so secrets don't sit in the reused per-persona temp dir between runs.
+///
+/// Also strips a stale `mcpServers.personas` entry from any pre-existing
+/// `settings.json` (written by older builds that dual-wrote the config there).
+/// Never fails: a missing file or unwritable dir is a no-op — this is
+/// best-effort hygiene, never a gate on execution teardown. Never logs key
+/// values.
+pub fn scrub_mcp_sidecar(exec_dir: &Path) {
+    let config_file = mcp_config_path(exec_dir);
+    match std::fs::remove_file(&config_file) {
+        Ok(()) => tracing::debug!(
+            path = %config_file.display(),
+            "cli_mcp_config: scrubbed --mcp-config file at teardown"
+        ),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => tracing::warn!(
+            error = %e,
+            path = %config_file.display(),
+            "cli_mcp_config: failed to scrub --mcp-config file"
+        ),
+    }
+
+    // Legacy cleanup: older builds wrote a second plaintext secret copy into
+    // settings.json under mcpServers.personas. If such a file exists, drop just
+    // that key (preserving hooks and anything else) so no stale secret lingers.
+    let settings_path = exec_dir.join(".claude").join("settings.json");
+    let Ok(text) = std::fs::read_to_string(&settings_path) else {
+        return;
+    };
+    let Ok(mut value) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return;
+    };
+    let removed = value
+        .get_mut("mcpServers")
+        .and_then(|s| s.as_object_mut())
+        .map(|m| m.remove(MCP_SERVER_NAME).is_some())
+        .unwrap_or(false);
+    if removed {
+        if let Ok(serialized) = serde_json::to_string_pretty(&value) {
+            let _ = std::fs::write(&settings_path, serialized);
+            tracing::debug!(
+                path = %settings_path.display(),
+                "cli_mcp_config: stripped legacy mcpServers.personas from settings.json"
+            );
+        }
+    }
+}
+
+/// RAII guard that scrubs the run's `personas-mcp` sidecar config on drop.
+///
+/// The runner holds one of these for the duration of an execution. Because it
+/// scrubs in `Drop`, secrets are cleaned up on EVERY exit path the runner can
+/// take — normal completion, error early-returns, cancel, timeout, and a
+/// panic-unwind — without threading a scrub call through each site. The default
+/// `exec_dir` is a reused per-persona temp dir that is never deleted, so this is
+/// what actually keeps the plaintext bridge/delegate keys from lingering between
+/// runs. Idempotent with any explicit [`scrub_mcp_sidecar`] call (e.g. the
+/// pre-worktree-commit scrub); a second scrub of an already-gone file is a no-op.
+pub struct SidecarScrubGuard {
+    exec_dir: PathBuf,
+}
+
+impl SidecarScrubGuard {
+    pub fn new(exec_dir: PathBuf) -> Self {
+        SidecarScrubGuard { exec_dir }
+    }
+}
+
+impl Drop for SidecarScrubGuard {
+    fn drop(&mut self) {
+        scrub_mcp_sidecar(&self.exec_dir);
+    }
 }
 
 /// Read `<project_root>/.claude/settings.json` and copy any `mcpServers.*`
@@ -385,6 +446,63 @@ mod tests {
             "merge must skip the reserved personas server name"
         );
         assert!(target.contains_key("harmless"));
+    }
+
+    #[test]
+    fn scrub_removes_the_mcp_config_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let exec_dir = dir.path();
+        std::fs::create_dir_all(exec_dir.join(".claude")).unwrap();
+        let config = mcp_config_path(exec_dir);
+        std::fs::write(&config, r#"{"mcpServers":{"personas":{"env":{"PERSONAS_API_KEY":"sekret"}}}}"#)
+            .unwrap();
+        assert!(config.exists(), "precondition: config file present");
+
+        scrub_mcp_sidecar(exec_dir);
+
+        assert!(!config.exists(), "scrub must delete the --mcp-config file");
+    }
+
+    #[test]
+    fn scrub_is_a_noop_when_config_missing() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // No .claude/, no config file — scrub must not panic or error.
+        scrub_mcp_sidecar(dir.path());
+    }
+
+    #[test]
+    fn scrub_strips_legacy_personas_entry_from_settings_json() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let exec_dir = dir.path();
+        std::fs::create_dir_all(exec_dir.join(".claude")).unwrap();
+        let settings_path = exec_dir.join(".claude").join("settings.json");
+        std::fs::write(
+            &settings_path,
+            json!({
+                "hooks": { "keep": "me" },
+                "mcpServers": {
+                    MCP_SERVER_NAME: { "env": { "PERSONAS_API_KEY": "sekret" } },
+                    "other": { "command": "keep" }
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+
+        scrub_mcp_sidecar(exec_dir);
+
+        let after: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&settings_path).unwrap()).unwrap();
+        // personas stripped, everything else preserved.
+        assert!(after
+            .get("mcpServers")
+            .and_then(|m| m.as_object())
+            .map(|m| !m.contains_key(MCP_SERVER_NAME) && m.contains_key("other"))
+            .unwrap_or(false));
+        assert_eq!(
+            after.get("hooks").and_then(|h| h.get("keep")).and_then(|v| v.as_str()),
+            Some("me")
+        );
     }
 }
 
