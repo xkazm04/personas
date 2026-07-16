@@ -18,8 +18,11 @@ export type CellValue =
   | { kind: 'level'; level: AutomationLevel; score: number }
   /** Production band + 0–100 score — a headline. */
   | { kind: 'band'; band: ProdBand; score: number }
-  /** An escalating enum, positioned 0..1 in its scale, with an optional detail. */
-  | { kind: 'ordinal'; pos: number; label: string; sub?: string }
+  /** An escalating enum, positioned 0..1 in its scale, with an optional detail.
+   *  `steps`/`reached` carry the scale geometry (climbable steps above the
+   *  floor / steps already climbed) so variants can render a segmented level
+   *  bar without re-deriving the scale from the row key. */
+  | { kind: 'ordinal'; pos: number; label: string; sub?: string; steps?: number; reached?: number }
   /** A named value where `null` is a MEANINGFUL gap (absent monitoring, etc.). */
   | { kind: 'present'; label: string | null; sub?: string }
   /** A set of named tokens (languages, frameworks, integrations). */
@@ -54,6 +57,17 @@ function testsSub(p: AppPassport): string | undefined {
   return bits.length ? bits.join(' · ') : undefined;
 }
 
+/** Ordinal cell with the scale geometry attached (for segmented level bars). */
+function ordinalCell<T extends string>(
+  scale: T[],
+  value: T,
+  label: string,
+  sub?: string,
+): CellValue {
+  const idx = Math.max(0, scale.indexOf(value));
+  return { kind: 'ordinal', pos: scalePos(scale, value), label, sub, steps: scale.length - 1, reached: idx };
+}
+
 function persistenceChips(p: AppPassport): string[] {
   if (p.stack.persistence.length === 0) return [];
   return p.stack.persistence.map((d) => {
@@ -82,11 +96,11 @@ export const SECTIONS: SectionSpec[] = [
         { label: 'lint', on: p.automationReadiness.selfVerify.lint },
         { label: 'types', on: p.automationReadiness.selfVerify.typecheck },
       ] }) },
-      { key: 'context', label: 'Context graph', get: (p) => ({ kind: 'ordinal', pos: scalePos(GRAPH_SCALE, p.automationReadiness.artifacts.contextGraph), label: GRAPH_LABEL[p.automationReadiness.artifacts.contextGraph] }) },
+      { key: 'context', label: 'Context graph', get: (p) => (ordinalCell(GRAPH_SCALE, p.automationReadiness.artifacts.contextGraph, GRAPH_LABEL[p.automationReadiness.artifacts.contextGraph])) },
       { key: 'instructions', label: 'Agent instructions', get: (p) => ({ kind: 'chips', items: p.automationReadiness.artifacts.agentInstructions }) },
       { key: 'memory', label: 'Agent memory', get: (p) => ({ kind: 'bool', on: p.automationReadiness.artifacts.memory }) },
       { key: 'skills', label: 'Reusable skills', get: (p) => ({ kind: 'bool', on: p.automationReadiness.artifacts.skills }) },
-      { key: 'evals', label: 'Evals', get: (p) => ({ kind: 'ordinal', pos: scalePos(EVALS_SCALE, p.automationReadiness.artifacts.evals), label: EVALS_LABEL[p.automationReadiness.artifacts.evals] }) },
+      { key: 'evals', label: 'Evals', get: (p) => (ordinalCell(EVALS_SCALE, p.automationReadiness.artifacts.evals, EVALS_LABEL[p.automationReadiness.artifacts.evals])) },
       { key: 'aiflow', label: 'AI in workflow', get: (p) => ({ kind: 'bool', on: p.automationReadiness.aiInWorkflow }) },
     ],
   },
@@ -96,11 +110,11 @@ export const SECTIONS: SectionSpec[] = [
     icon: 'shield-check',
     rows: [
       { key: 'band', label: 'Production band', headline: true, get: (p) => ({ kind: 'band', band: p.productionReadiness.band, score: p.productionReadiness.score }) },
-      { key: 'ci', label: 'CI', get: (p) => ({ kind: 'ordinal', pos: scalePos(CI_SCALE, p.productionReadiness.ci.level), label: CI_LABEL[p.productionReadiness.ci.level], sub: p.productionReadiness.ci.provider ?? undefined }) },
-      { key: 'tests', label: 'Tests', get: (p) => ({ kind: 'ordinal', pos: scalePos(TESTS_SCALE, p.productionReadiness.tests.level), label: TESTS_LABEL[p.productionReadiness.tests.level], sub: testsSub(p) }) },
-      { key: 'security', label: 'Security', get: (p) => ({ kind: 'ordinal', pos: scalePos(SECURITY_SCALE, p.productionReadiness.security.level), label: SECURITY_LABEL[p.productionReadiness.security.level], sub: p.productionReadiness.security.tools?.join(' · ') }) },
-      { key: 'observability', label: 'Observability', get: (p) => ({ kind: 'ordinal', pos: scalePos(OBSERVABILITY_SCALE, p.productionReadiness.observability.level), label: OBSERVABILITY_LABEL[p.productionReadiness.observability.level] }) },
-      { key: 'migrations', label: 'Migrations', get: (p) => ({ kind: 'ordinal', pos: scalePos(MIGRATIONS_SCALE, p.productionReadiness.delivery.migrations), label: MIGRATIONS_LABEL[p.productionReadiness.delivery.migrations] }) },
+      { key: 'ci', label: 'CI', get: (p) => (ordinalCell(CI_SCALE, p.productionReadiness.ci.level, CI_LABEL[p.productionReadiness.ci.level], p.productionReadiness.ci.provider ?? undefined)) },
+      { key: 'tests', label: 'Tests', get: (p) => (ordinalCell(TESTS_SCALE, p.productionReadiness.tests.level, TESTS_LABEL[p.productionReadiness.tests.level], testsSub(p))) },
+      { key: 'security', label: 'Security', get: (p) => (ordinalCell(SECURITY_SCALE, p.productionReadiness.security.level, SECURITY_LABEL[p.productionReadiness.security.level], p.productionReadiness.security.tools?.join(' · '))) },
+      { key: 'observability', label: 'Observability', get: (p) => (ordinalCell(OBSERVABILITY_SCALE, p.productionReadiness.observability.level, OBSERVABILITY_LABEL[p.productionReadiness.observability.level])) },
+      { key: 'migrations', label: 'Migrations', get: (p) => (ordinalCell(MIGRATIONS_SCALE, p.productionReadiness.delivery.migrations, MIGRATIONS_LABEL[p.productionReadiness.delivery.migrations])) },
     ],
   },
   {

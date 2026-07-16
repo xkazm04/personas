@@ -245,7 +245,11 @@ export const ROW_META: Record<string, WallRowMeta> = {
   security: { ladder: SECURITY_SCALE.map((l) => SECURITY_LABEL[l]), improve: 'task' },
   observability: { ladder: OBSERVABILITY_SCALE.map((l) => OBSERVABILITY_LABEL[l]), improve: 'task' },
   migrations: { ladder: MIGRATIONS_SCALE.map((l) => MIGRATIONS_LABEL[l]), improve: 'task' },
-  // stack + tooling (connector wiring)
+  // stack + tooling (connector wiring; R17 — persistence/auth/memory join the
+  // two-step pair→verify flow, auth+memory pending catalog connectors)
+  persistence: { ladder: WIRE_LADDER, improve: 'connector' },
+  auth: { ladder: WIRE_LADDER, improve: 'connector' },
+  memory: { ladder: WIRE_LADDER, improve: 'connector' },
   hosting: { ladder: WIRE_LADDER, improve: 'connector' },
   errors: { ladder: WIRE_LADDER, improve: 'connector' },
   logs: { ladder: WIRE_LADDER, improve: 'connector' },
@@ -274,3 +278,19 @@ export function wallHealth(project: MockProject): WallHealth {
   const s = gridSummary(gridFor(project));
   return { total: s.total, crit: s.crit, warn: s.warn, unmeasured: s.unmeasured };
 }
+
+// -- R16: header-card stats (the compact cover redesign) --------------------------
+
+export interface WallHeaderStats {
+  /** KPIs currently passing their target vs all measured KPIs. */
+  kpiPassed: number;
+  kpiTotal: number;
+  /** Golden-trend delta since the last recorded change (0 = flat/no history). */
+  trend: number;
+}
+
+export const HEADER_STATS: Record<string, WallHeaderStats> = {
+  'mock-nimbus': { kpiPassed: 5, kpiTotal: 8, trend: 15 },
+  'mock-atlas': { kpiPassed: 1, kpiTotal: 3, trend: -4 },
+  'mock-comet': { kpiPassed: 0, kpiTotal: 0, trend: 0 },
+};
