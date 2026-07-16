@@ -78,8 +78,7 @@ function topicOverlap(a: string, b: string): number {
 
 const MIN_TIME_DIFF_MS = SUPERSEDED_MIN_TIME_DIFF_MS;
 // Thresholds (DUPLICATE_THRESHOLD / CONTRADICTION_TOPIC_THRESHOLD /
-// SUPERSEDED_TOPIC_THRESHOLD) are imported from `@/lib/memoryLimits` —
-// changing them in one place updates both this lib and the parallel hook copy.
+// SUPERSEDED_TOPIC_THRESHOLD) are imported from `@/lib/memoryLimits`.
 
 export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
   const conflicts: MemoryConflict[] = [];
