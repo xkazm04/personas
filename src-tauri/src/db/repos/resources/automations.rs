@@ -487,6 +487,33 @@ pub fn get_runs_by_automation(
     )
 }
 
+/// Count pending/running runs for an automation that are recent enough to be
+/// genuinely in-flight, ignoring crash-orphaned rows older than `stale_secs`.
+///
+/// Used by `delete_automation` in place of the old bounded 50-row snapshot,
+/// which (a) missed a long-running run older than the 50 most recent rows and
+/// (b) had no staleness handling, so a `running` row orphaned by a crash blocked
+/// deletion forever. Uses `julianday` math to stay agnostic to the
+/// `datetime('now')` storage format (same approach as `reap_stale_runs`).
+pub fn count_active_runs(
+    pool: &DbPool,
+    automation_id: &str,
+    stale_secs: i64,
+) -> Result<i64, AppError> {
+    timed_query!("persona_automations", "persona_automations::count_active_runs", {
+        let conn = pool.get()?;
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM automation_runs
+              WHERE automation_id = ?1
+                AND status IN ('pending', 'running')
+                AND (julianday('now') - julianday(started_at)) * 86400.0 < ?2",
+            params![automation_id, stale_secs as f64],
+            |row| row.get(0),
+        )?;
+        Ok(count)
+    })
+}
+
 /// Additive safety grace (ms) added on top of a run's computed worst-case
 /// budget before the reaper will touch it. Guards against clock skew and the
 /// small window between a webhook returning and `finalize_run` writing the

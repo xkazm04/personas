@@ -113,18 +113,34 @@ pub fn automation_blast_radius(
         .collect())
 }
 
+/// A pending/running automation run older than this is treated as crash-orphaned
+/// and no longer blocks deletion. Well beyond any legitimate run's worst-case
+/// retry+backoff budget (~165s in the reaper's example), so a genuinely live run
+/// still blocks delete while a dead `running` row can't wedge it forever.
+const DELETE_STALE_RUN_TTL_SECS: i64 = 30 * 60;
+
 #[tauri::command]
 pub fn delete_automation(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
-    let active_runs = repo::get_runs_by_automation(&state.db, &id, Some(50))?;
-    let in_flight = active_runs.iter().any(|r| {
-        matches!(
-            r.status,
-            crate::db::models::AutomationRunStatus::Pending
-                | crate::db::models::AutomationRunStatus::Running
+
+    // Serialize deletion against live triggers on the SAME primitive
+    // `trigger_automation`/`test_automation_webhook` hold: without this, a delete
+    // could slip through the check→delete window while a trigger fires an outbound
+    // webhook, deleting the parent under a live run. If a trigger holds the guard
+    // right now, refuse rather than race it.
+    let _handle = INFLIGHT_TRIGGERS.guard(&id).ok_or_else(|| {
+        AppError::Validation(
+            "Cannot delete automation while it is being triggered. \
+             Wait for the current run to complete."
+                .into(),
         )
-    });
-    if in_flight {
+    })?;
+
+    // Count active runs directly (no 50-row snapshot that could miss an older
+    // long-running run) and ignore crash-orphaned rows past the staleness TTL so
+    // a dead `running` row can't block deletion forever.
+    let active = repo::count_active_runs(&state.db, &id, DELETE_STALE_RUN_TTL_SECS)?;
+    if active > 0 {
         return Err(AppError::Validation(
             "Cannot delete automation while it has pending or running executions. \
              Wait for them to complete or cancel them first."
