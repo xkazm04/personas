@@ -1478,7 +1478,22 @@ const GOAL_ADVANCE_MAX_PER_TICK: usize = 3;
 /// limit). Cheap recency probe over recent failed executions; the self-heal
 /// still retries the work once the window clears.
 const QUOTA_COOLDOWN_LOOKBACK_MINUTES: i64 = 15;
+/// ~10 autonomy loops call this independently every tick; a 30s shared memo
+/// turns that into at most one probe per window. The datetime(created_at)
+/// predicate is deliberate (mixed 'T'/' ' timestamp formats — a raw compare
+/// wedged the gate for whole days) and is index-backed since the
+/// idx_persona_executions_sync_watermark expression index landed, so the
+/// blob LIKEs only touch the last 15 minutes of rows.
+const QUOTA_PROBE_TTL: std::time::Duration = std::time::Duration::from_secs(30);
+static QUOTA_PROBE_CACHE: std::sync::Mutex<Option<(std::time::Instant, bool)>> =
+    std::sync::Mutex::new(None);
+
 pub(crate) fn quota_cooldown_active(pool: &DbPool) -> bool {
+    if let Some((at, cached)) = *QUOTA_PROBE_CACHE.lock().expect("quota probe cache poisoned") {
+        if at.elapsed() < QUOTA_PROBE_TTL {
+            return cached;
+        }
+    }
     let Ok(conn) = pool.get() else { return false };
     let n: i64 = conn
         .query_row(
@@ -1497,7 +1512,10 @@ pub(crate) fn quota_cooldown_active(pool: &DbPool) -> bool {
             |r| r.get(0),
         )
         .unwrap_or(0);
-    n > 0
+    let active = n > 0;
+    *QUOTA_PROBE_CACHE.lock().expect("quota probe cache poisoned") =
+        Some((std::time::Instant::now(), active));
+    active
 }
 
 /// Goal-linked teams with an active, unworked goal and no recent assignment.
