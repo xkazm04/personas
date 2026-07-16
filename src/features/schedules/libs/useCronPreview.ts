@@ -303,23 +303,36 @@ export function useConflictPreview(
     .map((e) => `${e.agent.trigger_id}|${e.agent.cron_expression ?? ''}|${e.agent.interval_seconds ?? ''}|${e.agent.timezone ?? ''}|${e.agent.last_triggered_at ?? ''}`)
     .join('::');
 
+  // Entries are read through a ref so the effect keys on `sig` alone — having
+  // the raw array in the dep list defeated sig's whole purpose (health-update
+  // re-renders churned the IPC fetches, exactly what the comment above says
+  // sig prevents).
+  const entriesRef = useRef(existingEntries);
+  entriesRef.current = existingEntries;
+
   useEffect(() => {
     const trimmedCandidateCron = candidateCron?.trim() ?? '';
     if (!trimmedCandidateCron && (!candidateIntervalSeconds || candidateIntervalSeconds <= 0)) {
       setResult({ count: 0, loading: false });
       return;
     }
-    if (!existingEntries || existingEntries.length === 0) {
+    if (!entriesRef.current || entriesRef.current.length === 0) {
       setResult({ count: 0, loading: false });
       return;
     }
     const myId = ++reqIdRef.current;
     setResult({ count: 0, loading: true });
 
+    // Debounced like useCronPreview above: without this, every keystroke in
+    // the custom-cron field fired 1+N cron_fire_times_in_range IPC calls
+    // (500 fire times each) — ~150 round-trips for a 15-char expression
+    // against 10 schedules.
+    const debounce = setTimeout(() => {
+    const existingEntries = entriesRef.current ?? [];
     const now = new Date();
     const end = new Date(now.getTime() + 7 * 24 * 3_600_000);
 
-    (async () => {
+    void (async () => {
       // Candidate fire times.
       let candidateTimes: Date[] = [];
       if (trimmedCandidateCron) {
@@ -384,7 +397,9 @@ export function useConflictPreview(
       }
       setResult({ count: conflicts, loading: false });
     })();
-  }, [sig, candidateCron, candidateIntervalSeconds, candidateTimezone, excludeTriggerId, existingEntries]);
+    }, 300);
+    return () => clearTimeout(debounce);
+  }, [sig, candidateCron, candidateIntervalSeconds, candidateTimezone, excludeTriggerId]);
 
   return result;
 }
