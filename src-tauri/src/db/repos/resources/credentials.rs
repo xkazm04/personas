@@ -639,6 +639,22 @@ pub fn set_scoped_resources(pool: &DbPool, id: &str, blob: Option<&str>) -> Resu
 /// secrets never live in this column (they're in `credential_fields`), so the
 /// redaction is redundant here — keep it only when it leaves the JSON intact,
 /// otherwise persist the original so a write can never destroy the ledger.
+/// Build the error a read-modify-write path returns when the stored metadata is
+/// present but unreadable. Aborting the write (rolling back the transaction)
+/// keeps the corrupt-but-possibly-recoverable original instead of laundering a
+/// `Default` ledger back over it — which would permanently destroy OAuth
+/// expiry/backoff, healthcheck history, usage counters and custom keys.
+fn refuse_corrupt_metadata(credential_id: &str, e: serde_json::Error) -> AppError {
+    tracing::error!(
+        credential_id,
+        error = %e,
+        "Refusing to overwrite unreadable credential metadata; aborting write to avoid destroying the ledger"
+    );
+    AppError::Internal(format!(
+        "Credential {credential_id} has unreadable metadata; refusing to overwrite it (needs manual repair): {e}"
+    ))
+}
+
 fn sanitize_ledger_json(meta: &str) -> String {
     let sanitized = sanitize_secrets(meta);
     if serde_json::from_str::<serde_json::Value>(&sanitized).is_ok() {
@@ -795,7 +811,8 @@ pub fn increment_refresh_backoff_atomic(
                 }
             }
 
-            let mut ledger = CredentialLedger::parse(current_raw.as_deref());
+            let mut ledger = CredentialLedger::try_parse(current_raw.as_deref())
+                .map_err(|e| refuse_corrupt_metadata(id, e))?;
             let (new_fail_count, backoff_secs) = ledger.increment_refresh_backoff(backoff_steps);
 
             let next_meta_str = ledger.to_json_string()?;
@@ -839,7 +856,8 @@ pub fn append_healthcheck_metadata(
                 .optional()?
                 .flatten();
 
-            let mut ledger = CredentialLedger::parse(current_raw.as_deref());
+            let mut ledger = CredentialLedger::try_parse(current_raw.as_deref())
+                .map_err(|e| refuse_corrupt_metadata(credential_id, e))?;
 
             // Delegate to rotation engine for ring-buffer append logic (entry
             // construction, FIFO overflow, error classification).
@@ -995,7 +1013,8 @@ where
                 }
             }
 
-            let mut ledger = CredentialLedger::parse(current_raw.as_deref());
+            let mut ledger = CredentialLedger::try_parse(current_raw.as_deref())
+                .map_err(|e| refuse_corrupt_metadata(id, e))?;
             mutator(&mut ledger);
 
             let next_meta_str = ledger.to_json_string()?;

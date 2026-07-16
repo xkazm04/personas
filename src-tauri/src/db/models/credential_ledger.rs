@@ -120,9 +120,36 @@ pub struct CredentialLedger {
 impl CredentialLedger {
     /// Parse a ledger from the raw `metadata` column (`Option<String>`).
     /// Returns `Default` if the column is `None` or contains invalid JSON.
+    ///
+    /// This lossy form is for READ-ONLY callers. Read-modify-write callers MUST
+    /// use [`try_parse`](Self::try_parse) instead: swallowing a parse failure to
+    /// `Default` here and then serializing that back over the column silently
+    /// destroys the entire ledger (OAuth expiry/backoff, healthcheck history,
+    /// usage, custom keys) on one bad read.
     pub fn parse(raw: Option<&str>) -> Self {
-        raw.and_then(|s| serde_json::from_str(s).ok())
-            .unwrap_or_default()
+        match Self::try_parse(raw) {
+            Ok(l) => l,
+            Err(e) => {
+                tracing::error!(
+                    error = %e,
+                    "CredentialLedger::parse: metadata is unreadable JSON; \
+                     falling back to Default (read-only path). A read-modify-write \
+                     on this credential would destroy the ledger — see try_parse."
+                );
+                Self::default()
+            }
+        }
+    }
+
+    /// Fallible parse: `Ok(Default)` when the column is `None`, `Ok(parsed)` when
+    /// it holds valid JSON, and `Err` when it holds present-but-unreadable JSON.
+    /// Read-modify-write callers use this so a corrupt read aborts the write
+    /// instead of laundering `Default` back over the column.
+    pub fn try_parse(raw: Option<&str>) -> Result<Self, serde_json::Error> {
+        match raw {
+            None => Ok(Self::default()),
+            Some(s) => serde_json::from_str(s),
+        }
     }
 
     /// Serialize the ledger back to a JSON string for persistence.
