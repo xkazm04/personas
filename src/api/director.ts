@@ -89,11 +89,28 @@ export async function getDirectorPortfolio(days?: number): Promise<DirectorPortf
   return invoke<DirectorPortfolio>('get_director_portfolio', { days: days ?? null });
 }
 
-// Phase 2 runs the Director persona through the execution runner and polls it
-// to completion, so a single evaluation can take minutes (backend ceiling is
-// 360s). Use generous timeouts well above the default 90s.
-const DIRECTOR_RUN_TIMEOUT_MS = 420_000; // 7 min — one target
-const DIRECTOR_BATCH_TIMEOUT_MS = 1_800_000; // 30 min — sequential over many
+// A single Director target runs TWO sequential LLM executions through the
+// execution runner — the evaluation (polled up to 360s) AND the per-persona
+// memory-cleanup pass (another up to 360s) — plus queue/finalize latency, so the
+// real worst case is ~2×360s + overhead. The old 420s ceiling rejected mid-run
+// while the backend kept evaluating and writing verdicts; a user retry then
+// spawned a duplicate concurrent cycle (doubled verdicts + LLM spend). Size for
+// the double run.
+const DIRECTOR_RUN_TIMEOUT_MS = 900_000; // 15 min — one target (eval + cleanup)
+// The batch runs that same single-target cycle sequentially per starred persona,
+// so its budget must scale with the count instead of a fixed 30 min (which N≥3
+// slow personas blew, causing the same premature-reject → duplicate-run problem).
+const DIRECTOR_PER_PERSONA_TIMEOUT_MS = DIRECTOR_RUN_TIMEOUT_MS;
+const DIRECTOR_BATCH_MIN_TIMEOUT_MS = 1_800_000; // 30 min floor
+// When maxPersonas is null the backend evaluates every starred persona, so we
+// can't know N up front; assume a generous upper bound rather than reject a
+// legitimate long run (the batch is rate-limited by nature on the backend).
+const DIRECTOR_BATCH_ASSUMED_MAX = 20;
+
+function directorBatchTimeoutMs(maxPersonas?: number): number {
+  const n = maxPersonas ?? DIRECTOR_BATCH_ASSUMED_MAX;
+  return Math.max(DIRECTOR_BATCH_MIN_TIMEOUT_MS, n * DIRECTOR_PER_PERSONA_TIMEOUT_MS);
+}
 
 export async function runDirectorOnPersona(personaId: string): Promise<number> {
   return invoke<number>('run_director_on_persona', { personaId }, { timeoutMs: DIRECTOR_RUN_TIMEOUT_MS });
@@ -128,7 +145,7 @@ export async function runDirectorBatch(maxPersonas?: number): Promise<DirectorRe
   return invoke<DirectorReport>(
     'run_director_batch',
     { maxPersonas: maxPersonas ?? null },
-    { timeoutMs: DIRECTOR_BATCH_TIMEOUT_MS },
+    { timeoutMs: directorBatchTimeoutMs(maxPersonas) },
   );
 }
 
