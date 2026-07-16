@@ -698,6 +698,32 @@ pub fn delete_connection(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 // Pipeline Runs
 // ============================================================================
 
+/// Fail any pipeline run left non-terminal by an unclean shutdown.
+///
+/// `run_pipeline` is a plain tokio task, so a crash / force-quit / sleep-kill
+/// mid-run leaves the row at `status='running'` (or `'awaiting_approval'`)
+/// forever. Two hard guards key off that state — `execute_team` refuses a new
+/// run and `delete_team` refuses deletion — and `cancel_pipeline` only flips an
+/// in-memory registry flag whose key is gone after restart. The result is a
+/// team permanently unable to run pipelines or be deleted with no in-app remedy.
+/// Called once at startup, mirroring `recover_stale_executions`. Returns the
+/// number of runs reset.
+pub fn recover_interrupted_pipeline_runs(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("teams", "teams::recover_interrupted_pipeline_runs", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let affected = conn.execute(
+            "UPDATE pipeline_runs
+                SET status = 'failed',
+                    error_message = 'Interrupted by app restart',
+                    completed_at = ?1
+              WHERE status IN ('running', 'awaiting_approval')",
+            params![now],
+        )?;
+        Ok(affected)
+    })
+}
+
 /// Returns `true` if the team has any pipeline run currently in "running" status.
 pub fn has_running_pipeline(pool: &DbPool, team_id: &str) -> Result<bool, AppError> {
     timed_query!("teams", "teams::has_running_pipeline", {

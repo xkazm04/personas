@@ -828,6 +828,19 @@ pub fn run() {
                 _ => {}
             }
 
+            // Mark team pipeline runs left in running/awaiting_approval by an
+            // unclean shutdown as failed. Without this the team is permanently
+            // blocked from new pipeline runs and from deletion (both guard on the
+            // stale `running` row), and cancel_pipeline can't help post-restart.
+            match db::repos::resources::teams::recover_interrupted_pipeline_runs(&pool) {
+                Ok(n) if n > 0 => {
+                    tracing::info!("Startup: failed {} interrupted pipeline run(s)", n)
+                }
+                Err(e) => tracing::warn!("Failed to recover interrupted pipeline runs: {}", e),
+                _ => {}
+            }
+            st.checkpoint("pipeline_run_recovery");
+
             // Purge old completed/failed events to prevent unbounded table growth
             match db::repos::communication::events::cleanup(&pool, Some(7)) {
                 Ok(n) if n > 0 => tracing::info!("Startup: cleaned up {} old events", n),
