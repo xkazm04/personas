@@ -115,9 +115,3 @@ export function itemAccent(item: TeamChannelItem, persona: Persona | undefined):
   if (item.kind === 'directive') return 'rgb(52 211 153)'; // user / emerald
   return memberColor(persona, item.personaId);
 }
-
-/** Day bucket key for chapter dividers. */
-export function dayKey(at: string): string {
-  const d = new Date(at);
-  return Number.isNaN(d.getTime()) ? at : d.toDateString();
-}

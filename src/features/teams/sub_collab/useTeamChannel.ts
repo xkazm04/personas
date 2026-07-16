@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { channelKey, countUnread, EMPTY_CHANNEL, type ChannelTeamState } from '@/stores/slices/pipeline/channelSlice';
+import { channelKey, EMPTY_CHANNEL, type ChannelTeamState } from '@/stores/slices/pipeline/channelSlice';
 import type { ChannelKind } from '@/api/pipeline/teamChannel';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
@@ -11,18 +11,17 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
  * Server read-model (`list_team_channel`: step layer ∪ bus ∪ memories, keyset
  * pagination) + push: the orchestrator's TEAM_ASSIGNMENT_PROGRESS emit triggers
  * a head refresh the moment any step moves, with a poll fallback for the
- * non-step sources. Directives post optimistically and accumulate step-boundary
- * delivery receipts (parsed from `extra.deliveries`).
+ * non-step sources.
  *
  * P0 (monitor consolidation): the state, the fetching, the poll and the push
  * listener all moved into `channelSlice` + `useChannelService`. What's left here
- * is the *view* of that store — a per-team selector keeping this hook's original
- * shape, so its callers (CollabLiveCorrespondence, the studio roster) didn't
- * have to change. Subscribing is refcounted: N surfaces watching the same team
- * now share one fetch instead of each running its own poll + listener.
+ * are the shared view helpers consumed by the monitor channels (Stream,
+ * Conversation), the studio roster and TeamList. Subscribing is refcounted:
+ * N surfaces watching the same team share one fetch instead of each running
+ * its own poll + listener.
  * -------------------------------------------------------------------------- */
 
-/** Per-team composer-draft storage key prefix (see CollabLiveCorrespondence). */
+/** Per-team composer-draft storage key prefix. */
 export const CHANNEL_DRAFT_PREFIX = 'personas.channel.draft.';
 
 /** Whether a team has an unsent channel draft persisted locally. */
@@ -31,24 +30,6 @@ export function hasUnsentDraft(teamId: string): boolean {
     return !!localStorage.getItem(CHANNEL_DRAFT_PREFIX + teamId)?.trim();
   } catch {
     return false;
-  }
-}
-
-export interface DirectiveDelivery {
-  step_id: string;
-  persona_id: string;
-  at: string;
-}
-
-/** Parse a directive item's receipts out of its `extra` (tags JSON). */
-export function parseDeliveries(item: TeamChannelItem): DirectiveDelivery[] {
-  if (item.kind !== 'directive' || !item.extra) return [];
-  try {
-    const root: unknown = JSON.parse(item.extra);
-    const arr = (root as { deliveries?: unknown }).deliveries;
-    return Array.isArray(arr) ? (arr as DirectiveDelivery[]) : [];
-  } catch {
-    return [];
   }
 }
 
@@ -107,29 +88,4 @@ export function useTeamPresence(teamId: string): Map<string, PresenceStatus> {
   useChannelSubscription(useMemo(() => [teamId], [teamId]));
   const { items } = useChannelState(teamId);
   return useMemo(() => derivePresence(items), [items]);
-}
-
-export function useTeamChannel(teamId: string) {
-  useChannelSubscription(useMemo(() => [teamId], [teamId]));
-
-  const state = useChannelState(teamId);
-  const { items, loaded, exhausted, posting } = state;
-
-  const refreshChannel = usePipelineStore((s) => s.refreshChannel);
-  const loadOlderChannel = usePipelineStore((s) => s.loadOlderChannel);
-  const sendChannelDirective = usePipelineStore((s) => s.sendChannelDirective);
-  const markChannelSeen = usePipelineStore((s) => s.markChannelSeen);
-
-  const refreshHead = useCallback(() => void refreshChannel(channelKey(teamId)), [refreshChannel, teamId]);
-  const loadOlder = useCallback(() => void loadOlderChannel(channelKey(teamId)), [loadOlderChannel, teamId]);
-  const markSeen = useCallback(() => markChannelSeen(teamId), [markChannelSeen, teamId]);
-  const sendDirective = useCallback(
-    (content: string, replyTo?: string) => sendChannelDirective(teamId, content, replyTo),
-    [sendChannelDirective, teamId],
-  );
-
-  const presence = useMemo(() => derivePresence(items), [items]);
-  const unread = useMemo(() => countUnread(state), [state]);
-
-  return { items, loaded, exhausted, posting, presence, unread, refreshHead, loadOlder, markSeen, sendDirective };
 }

@@ -1,5 +1,5 @@
 import type { MutableRefObject } from 'react';
-import type { ConfirmResult } from '../steps/confirm/N8nConfirmStep';
+import type { ConfirmResult } from '../steps/confirm/n8nConfirmTypes';
 import type { N8nImportAction, N8nImportState } from './useN8nImportReducer';
 
 export interface WizardDeps {

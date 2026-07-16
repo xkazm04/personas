@@ -3389,7 +3389,6 @@ pub fn run() {
             commands::fleet::commands::fleet_resize_session,
             commands::fleet::commands::fleet_subscribe_terminal,
             commands::fleet::commands::fleet_unsubscribe_terminal,
-            commands::fleet::commands::fleet_terminal_previews,
             commands::fleet::commands::fleet_kill_session,
             commands::fleet::commands::fleet_list_sessions,
             commands::fleet::commands::fleet_remove_session,
