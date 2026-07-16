@@ -40,6 +40,16 @@ const OAUTH_SESSION_REDEEMED_GRACE_SECS: u64 = 120;
 /// sessions are evicted to prevent unbounded memory growth from abandoned flows.
 const MAX_OAUTH_SESSIONS: usize = 50;
 
+/// Maximum number of callback connections `run_oauth_callback_server` will
+/// answer-and-reject before giving up while waiting for one bearing a valid,
+/// this-session state. The loopback callback port is discoverable, so a stray
+/// or hostile hit (a port scanner, a stale browser tab, a forged request) must
+/// NOT consume the single accept and let the legitimate consent time out. Each
+/// such hit gets the error page and is counted here; a genuine callback (valid
+/// HMAC state) terminates the loop immediately, so in practice the budget is
+/// only spent by junk. Bounded so a flood cannot keep the task alive forever.
+const MAX_OAUTH_CALLBACK_ATTEMPTS: u32 = 32;
+
 // -- Shared token endpoint request helper -------------------------
 
 /// Error from `token_endpoint_request`, carrying enough context for callers
@@ -138,6 +148,14 @@ struct OAuthCallbackTokens {
 ///
 /// `expected_state` is validated against the `state` query parameter in the
 /// callback to prevent CSRF attacks (RFC 6749 §10.12).
+///
+/// The loopback callback port is discoverable, so the server does NOT die on the
+/// first connection: hits that lack a valid, this-session state (port scanners,
+/// stale tabs, forged requests) are answered with the failure page and skipped
+/// without consuming the flow. The loop continues until a callback bearing an
+/// authentic state arrives (first valid state wins — single-success semantics),
+/// the `MAX_OAUTH_CALLBACK_ATTEMPTS` budget of invalid hits is spent, or the
+/// `timeout_secs` session window elapses.
 async fn run_oauth_callback_server<F, Fut>(
     listener: TcpListener,
     timeout_secs: u64,
@@ -153,138 +171,185 @@ where
         listener.local_addr().map(|a| a.port()).unwrap_or(0)
     );
 
-    let accept_result = tokio::time::timeout(
-        std::time::Duration::from_secs(timeout_secs),
-        listener.accept(),
-    )
-    .await;
+    // Absolute session deadline. Each `accept()` is bounded by the time still
+    // remaining, so junk hits cannot extend the total wait past `timeout_secs`.
+    let deadline = Instant::now() + Duration::from_secs(timeout_secs);
+    let mut invalid_attempts: u32 = 0;
 
-    match accept_result {
-        Ok(Ok((mut socket, _addr))) => {
-            let mut buffer = [0_u8; 32768]; // 32KB to handle long OAuth callbacks (enterprise Azure AD, etc.)
-            let mut total_read = 0_usize;
-
-            // Read in a loop until we find the HTTP header terminator (\r\n\r\n)
-            // or the buffer is full. A single read() is not guaranteed to return
-            // the complete HTTP request because TCP is a stream protocol.
-            loop {
-                if total_read >= buffer.len() {
-                    return OAuthCallbackOutcome::Error(
-                        "OAuth callback URL exceeded maximum buffer size (32KB). This may indicate an unusually long authorization response.".into(),
-                    );
-                }
-                let n = socket.read(&mut buffer[total_read..]).await.unwrap_or(0);
-                if n == 0 {
-                    break; // connection closed
-                }
-                total_read += n;
-
-                // Check for end-of-headers marker in the data read so far.
-                // Only need to scan from where the new data could complete the pattern.
-                let search_start = total_read.saturating_sub(n + 3);
-                if buffer[search_start..total_read]
-                    .windows(4)
-                    .any(|w| w == b"\r\n\r\n")
-                {
-                    break;
-                }
-            }
-
-            let request_text = String::from_utf8_lossy(&buffer[..total_read]).to_string();
-            let first_line = request_text.lines().next().unwrap_or("");
-            let path_part = first_line.split_whitespace().nth(1).unwrap_or("/");
-
-            let parsed_url = Url::parse(&format!("http://127.0.0.1{path_part}"));
-
-            let outcome = match parsed_url {
-                Ok(url) => {
-                    let code = url
-                        .query_pairs()
-                        .find_map(|(k, v)| (k == "code").then(|| v.into_owned()));
-                    let oauth_error = url
-                        .query_pairs()
-                        .find_map(|(k, v)| (k == "error").then(|| v.into_owned()));
-                    let error_desc = url
-                        .query_pairs()
-                        .find_map(|(k, v)| (k == "error_description").then(|| v.into_owned()));
-                    let callback_state = url
-                        .query_pairs()
-                        .find_map(|(k, v)| (k == "state").then(|| v.into_owned()));
-
-                    // Validate the *callback* state — this is the untrusted value
-                    // the browser echoed back, so it (not the server-generated
-                    // value) is what must be checked:
-                    //   1. It must equal the per-session value we generated
-                    //      (anti-CSRF state echo, RFC 6749 §10.12).
-                    //   2. Its HMAC must verify against this instance's secret
-                    //      (anti cross-instance replay / forgery).
-                    // A genuine-but-stale state is reported as an expired session
-                    // rather than a CSRF attack, so a slow enterprise SSO + MFA
-                    // login does not surface an alarming, misleading error.
-                    let strings_match = callback_state.as_deref() == Some(&expected_state);
-                    let state_check = verify_oauth_state(callback_state.as_deref().unwrap_or(""));
-                    let csrf_failure =
-                        !strings_match || matches!(state_check, OAuthStateVerification::Invalid);
-
-                    if csrf_failure {
-                        tracing::warn!(
-                            strings_match,
-                            state_check = ?state_check,
-                            expected_state_len = expected_state.len(),
-                            callback_state_len = callback_state.as_ref().map(|s| s.len()),
-                            "OAuth state validation failed — rejecting callback as possible CSRF/forgery"
-                        );
-                        OAuthCallbackOutcome::Error(
-                            "OAuth state mismatch -- possible CSRF attack. Please retry the authorization.".into(),
-                        )
-                    } else if let OAuthStateVerification::Expired { age_secs } = state_check {
-                        tracing::warn!(
-                            age_secs,
-                            max_age_secs = OAUTH_STATE_MAX_AGE_SECS,
-                            "OAuth state authentic but expired — authorization took longer than the freshness window"
-                        );
-                        OAuthCallbackOutcome::Error(
-                            "Authorization took too long and the sign-in session expired. Please retry the authorization.".into(),
-                        )
-                    } else if let Some(err) = oauth_error {
-                        let msg = if let Some(desc) = error_desc {
-                            format!("OAuth error: {err} {desc}").trim().to_string()
-                        } else {
-                            format!("OAuth error: {err}")
-                        };
-                        OAuthCallbackOutcome::Error(msg)
-                    } else if let Some(code_value) = code {
-                        match exchange(code_value, redirect_uri).await {
-                            Ok(tokens) => OAuthCallbackOutcome::Success(tokens),
-                            Err(e) => OAuthCallbackOutcome::Error(e),
-                        }
-                    } else {
-                        OAuthCallbackOutcome::Error("No authorization code returned".into())
-                    }
-                }
-                Err(e) => OAuthCallbackOutcome::Error(format!("Failed parsing callback URL: {e}")),
-            };
-
-            let is_success = matches!(outcome, OAuthCallbackOutcome::Success(_));
-            let html = if is_success {
-                "<html><body style=\"font-family: sans-serif; padding: 24px;\"><h2>Authorization successful</h2><p>You can close this tab and return to Personas.</p></body></html>"
-            } else {
-                "<html><body style=\"font-family: sans-serif; padding: 24px;\"><h2>Authorization failed</h2><p>Please return to Personas and retry.</p></body></html>"
-            };
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                html.len(), html
+    // Wait for a callback bearing an authentic (this-session) state. Break out
+    // of the loop with the parsed, trusted callback fields; only then do we run
+    // the (single-shot `FnOnce`) token exchange.
+    let (mut socket, state_check, oauth_error, error_desc, code) = loop {
+        if invalid_attempts >= MAX_OAUTH_CALLBACK_ATTEMPTS {
+            tracing::warn!(
+                attempts = invalid_attempts,
+                "OAuth callback server exhausted its invalid-attempt budget before a valid authorization arrived"
             );
-            let _ = socket.write_all(response.as_bytes()).await;
-            let _ = socket.shutdown().await;
+            return OAuthCallbackOutcome::Error(
+                "OAuth callback server received too many invalid requests before a valid authorization arrived. Please retry the authorization.".into(),
+            );
+        }
 
-            outcome
+        let remaining = match deadline.checked_duration_since(Instant::now()) {
+            Some(d) if !d.is_zero() => d,
+            _ => return OAuthCallbackOutcome::Timeout,
+        };
+
+        let accept_result = tokio::time::timeout(remaining, listener.accept()).await;
+        let mut socket = match accept_result {
+            Ok(Ok((socket, _addr))) => socket,
+            Ok(Err(e)) => {
+                return OAuthCallbackOutcome::AcceptFailed(format!(
+                    "OAuth callback server failed: {e}"
+                ))
+            }
+            Err(_) => return OAuthCallbackOutcome::Timeout,
+        };
+
+        // Read the HTTP request. An oversized/unreadable request is treated as an
+        // abusive hit: answer with the failure page and keep waiting.
+        let request_text = match read_callback_request(&mut socket).await {
+            Some(t) => t,
+            None => {
+                write_callback_response(&mut socket, false).await;
+                invalid_attempts += 1;
+                continue;
+            }
+        };
+
+        let first_line = request_text.lines().next().unwrap_or("");
+        let path_part = first_line.split_whitespace().nth(1).unwrap_or("/");
+        let url = match Url::parse(&format!("http://127.0.0.1{path_part}")) {
+            Ok(u) => u,
+            Err(_) => {
+                write_callback_response(&mut socket, false).await;
+                invalid_attempts += 1;
+                continue;
+            }
+        };
+
+        let code = url
+            .query_pairs()
+            .find_map(|(k, v)| (k == "code").then(|| v.into_owned()));
+        let oauth_error = url
+            .query_pairs()
+            .find_map(|(k, v)| (k == "error").then(|| v.into_owned()));
+        let error_desc = url
+            .query_pairs()
+            .find_map(|(k, v)| (k == "error_description").then(|| v.into_owned()));
+        let callback_state = url
+            .query_pairs()
+            .find_map(|(k, v)| (k == "state").then(|| v.into_owned()));
+
+        // Validate the *callback* state — the untrusted value the browser echoed
+        // back — against (1) the per-session value we generated (anti-CSRF echo,
+        // RFC 6749 §10.12) and (2) this instance's HMAC (anti cross-instance
+        // replay/forgery). A missing or forged state is a stray/hostile hit: it
+        // does NOT consume the flow — we answer the failure page and loop for the
+        // real callback. A genuine-but-stale state is a real (slow) completion
+        // and is handled as a terminal outcome below.
+        let strings_match = callback_state.as_deref() == Some(&expected_state);
+        let state_check = verify_oauth_state(callback_state.as_deref().unwrap_or(""));
+        let csrf_failure =
+            !strings_match || matches!(state_check, OAuthStateVerification::Invalid);
+
+        if csrf_failure {
+            tracing::warn!(
+                strings_match,
+                state_check = ?state_check,
+                expected_state_len = expected_state.len(),
+                callback_state_len = callback_state.as_ref().map(|s| s.len()),
+                invalid_attempts,
+                "OAuth state validation failed — ignoring stray/forged callback, awaiting a valid one"
+            );
+            write_callback_response(&mut socket, false).await;
+            invalid_attempts += 1;
+            continue;
         }
-        Ok(Err(e)) => {
-            OAuthCallbackOutcome::AcceptFailed(format!("OAuth callback server failed: {e}"))
+
+        // Authentic, this-session state. First valid state wins: we stop
+        // accepting, so a later valid hit cannot race this one.
+        break (socket, state_check, oauth_error, error_desc, code);
+    };
+
+    let outcome = if let OAuthStateVerification::Expired { age_secs } = state_check {
+        tracing::warn!(
+            age_secs,
+            max_age_secs = OAUTH_STATE_MAX_AGE_SECS,
+            "OAuth state authentic but expired — authorization took longer than the freshness window"
+        );
+        OAuthCallbackOutcome::Error(
+            "Authorization took too long and the sign-in session expired. Please retry the authorization.".into(),
+        )
+    } else if let Some(err) = oauth_error {
+        let msg = if let Some(desc) = error_desc {
+            format!("OAuth error: {err} {desc}").trim().to_string()
+        } else {
+            format!("OAuth error: {err}")
+        };
+        OAuthCallbackOutcome::Error(msg)
+    } else if let Some(code_value) = code {
+        match exchange(code_value, redirect_uri).await {
+            Ok(tokens) => OAuthCallbackOutcome::Success(tokens),
+            Err(e) => OAuthCallbackOutcome::Error(e),
         }
-        Err(_) => OAuthCallbackOutcome::Timeout,
+    } else {
+        OAuthCallbackOutcome::Error("No authorization code returned".into())
+    };
+
+    let is_success = matches!(outcome, OAuthCallbackOutcome::Success(_));
+    write_callback_response(&mut socket, is_success).await;
+    outcome
+}
+
+/// Read an HTTP request from `socket` until the header terminator (`\r\n\r\n`)
+/// or EOF. Returns `None` if the request exceeds the fixed 32KB buffer (an
+/// abusive or malformed hit) so the caller can reject it without consuming the
+/// OAuth flow. 32KB accommodates long legitimate callbacks (enterprise Azure AD).
+async fn read_callback_request(socket: &mut tokio::net::TcpStream) -> Option<String> {
+    let mut buffer = [0_u8; 32768];
+    let mut total_read = 0_usize;
+
+    // TCP is a stream: a single read() may not return the whole request, so loop
+    // until the end-of-headers marker or the connection closes.
+    loop {
+        if total_read >= buffer.len() {
+            return None;
+        }
+        let n = socket.read(&mut buffer[total_read..]).await.unwrap_or(0);
+        if n == 0 {
+            break; // connection closed
+        }
+        total_read += n;
+
+        // Only scan the region where the new data could complete the pattern.
+        let search_start = total_read.saturating_sub(n + 3);
+        if buffer[search_start..total_read]
+            .windows(4)
+            .any(|w| w == b"\r\n\r\n")
+        {
+            break;
+        }
     }
+
+    Some(String::from_utf8_lossy(&buffer[..total_read]).to_string())
+}
+
+/// Write the terminal HTML page to `socket` and close it. Used both for the
+/// final (success/failure) response and for the failure page served to stray
+/// callbacks the loop rejects.
+async fn write_callback_response(socket: &mut tokio::net::TcpStream, is_success: bool) {
+    let html = if is_success {
+        "<html><body style=\"font-family: sans-serif; padding: 24px;\"><h2>Authorization successful</h2><p>You can close this tab and return to Personas.</p></body></html>"
+    } else {
+        "<html><body style=\"font-family: sans-serif; padding: 24px;\"><h2>Authorization failed</h2><p>Please return to Personas and retry.</p></body></html>"
+    };
+    let response = format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+        html.len(), html
+    );
+    let _ = socket.write_all(response.as_bytes()).await;
+    let _ = socket.shutdown().await;
 }
 
 /// Identity scopes required in every Google OAuth request.
@@ -2238,6 +2303,104 @@ mod tests {
                 "expected Invalid for {bad:?}"
             );
         }
+    }
+
+    /// Connect to the loopback callback port, send one GET request, and drain
+    /// the server's HTTP response to EOF. Draining guarantees the server has
+    /// finished processing this connection before the next request is sent, so
+    /// the single-accept-per-iteration server sees requests in a deterministic
+    /// order.
+    async fn send_callback(port: u16, path: &str) {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
+            .await
+            .expect("connect to callback server");
+        let req =
+            format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
+        stream.write_all(req.as_bytes()).await.expect("write request");
+        let mut buf = Vec::new();
+        let _ = stream.read_to_end(&mut buf).await;
+    }
+
+    fn ok_tokens() -> super::OAuthCallbackTokens {
+        super::OAuthCallbackTokens {
+            access_token: Some(SecureString::new("at".into())),
+            refresh_token: Some(SecureString::new("rt".into())),
+            scope: None,
+            token_type: None,
+            expires_in: None,
+            extra: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn callback_server_survives_junk_hit_then_succeeds() {
+        // A stray/hostile hit on the discoverable loopback port must NOT consume
+        // the single accept — the legitimate callback that follows must still win.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind listener");
+        let port = listener.local_addr().unwrap().port();
+
+        let state = super::generate_oauth_state();
+        let state_for_client = state.clone();
+
+        let server = tokio::spawn(async move {
+            super::run_oauth_callback_server(listener, 30, state, |code, _redir| async move {
+                assert_eq!(code, "the-real-code");
+                Ok(ok_tokens())
+            })
+            .await
+        });
+
+        // 1) Junk hit: missing state entirely — must be rejected, flow survives.
+        send_callback(port, "/?code=stray").await;
+        // 2) Junk hit: forged/invalid state — same.
+        send_callback(port, "/?code=stray2&state=not-a-valid-state").await;
+        // 3) The genuine callback with an authentic state wins.
+        send_callback(
+            port,
+            &format!("/?code=the-real-code&state={state_for_client}"),
+        )
+        .await;
+
+        let outcome = server.await.expect("server task joins");
+        assert!(
+            matches!(outcome, super::OAuthCallbackOutcome::Success(_)),
+            "expected Success after junk hits, got a non-success outcome"
+        );
+    }
+
+    #[tokio::test]
+    async fn callback_server_terminates_after_attempt_budget() {
+        // A sustained flood of invalid callbacks must terminate the server rather
+        // than keeping the task alive indefinitely.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind listener");
+        let port = listener.local_addr().unwrap().port();
+
+        // A valid state exists but is never sent by the client.
+        let state = super::generate_oauth_state();
+
+        let server = tokio::spawn(async move {
+            super::run_oauth_callback_server(listener, 30, state, |_code, _redir| async move {
+                Ok(ok_tokens())
+            })
+            .await
+        });
+
+        // Spend the entire invalid-attempt budget; the loop then bails before
+        // accepting again.
+        for _ in 0..super::MAX_OAUTH_CALLBACK_ATTEMPTS {
+            send_callback(port, "/?code=x&state=bogus").await;
+        }
+
+        let outcome = server.await.expect("server task joins");
+        assert!(
+            matches!(outcome, super::OAuthCallbackOutcome::Error(_)),
+            "expected an Error outcome once the invalid-attempt budget is exhausted"
+        );
     }
 
     #[test]
