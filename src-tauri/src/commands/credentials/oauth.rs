@@ -505,6 +505,21 @@ pub async fn start_google_credential_oauth(
     let (resolved_client_id, resolved_client_secret, credential_source) =
         resolve_google_oauth_client_credentials(client_id, client_secret)?;
 
+    // Trust-boundary pre-flight parity with the universal gateway (`start_oauth`):
+    // the token exchange can only authenticate with PKCE and/or a client_secret.
+    // The Google flow now always does both — it generates a PKCE pair below and
+    // `resolve_google_oauth_client_credentials` guarantees a non-empty secret
+    // (erroring otherwise) — so this guard is defensive belt-and-suspenders that
+    // matches the universal flow's stance rather than a reachable failure today.
+    let has_client_secret = !resolved_client_secret.expose_secret().trim().is_empty();
+    let google_uses_pkce = true;
+    if !google_uses_pkce && !has_client_secret {
+        return Err(AppError::Validation(
+            "Google OAuth requires PKCE or a client secret to complete the token exchange."
+                .into(),
+        ));
+    }
+
     cleanup_oauth_sessions();
 
     let session_id = format!("goauth_{}_{}", now_unix_secs(), uuid::Uuid::new_v4());
@@ -558,6 +573,11 @@ pub async fn start_google_credential_oauth(
     ensure_valid_clock()?;
     let oauth_state = generate_oauth_state();
 
+    // Generate a PKCE (S256) pair. The verifier stays server-side and is sent to
+    // the token endpoint on code exchange; only the challenge goes in the browser
+    // authorize URL.
+    let (code_verifier, code_challenge) = generate_pkce_pair();
+
     let mut auth_url = Url::parse("https://accounts.google.com/o/oauth2/v2/auth")
         .map_err(|e| AppError::Internal(format!("Failed to build auth URL: {e}")))?;
     {
@@ -569,6 +589,8 @@ pub async fn start_google_credential_oauth(
         query.append_pair("access_type", "offline");
         query.append_pair("prompt", "consent");
         query.append_pair("state", &oauth_state);
+        query.append_pair("code_challenge", &code_challenge);
+        query.append_pair("code_challenge_method", "S256");
     }
 
     let _ = audit_log::insert(
@@ -584,6 +606,7 @@ pub async fn start_google_credential_oauth(
     let session_id_clone = session_id.clone();
     let client_id_clone = resolved_client_id.clone();
     let client_secret_clone = resolved_client_secret.duplicate();
+    let code_verifier_task = code_verifier;
     let db_pool = state.db.clone();
     let auth_detect_cache = state.auth_detect_cache.clone();
     let audit_connector = connector_name.clone();
@@ -599,6 +622,7 @@ pub async fn start_google_credential_oauth(
                     client_secret_clone.expose_secret(),
                     &code_value,
                     &redir_uri,
+                    Some(code_verifier_task.expose_secret()),
                 )
                 .await?;
                 if tokens.refresh_token.is_none() {
@@ -730,22 +754,28 @@ async fn exchange_google_oauth_code_for_tokens(
     client_secret: &str,
     code: &str,
     redirect_uri: &str,
+    code_verifier: Option<&str>,
 ) -> Result<OAuthTokenResult, String> {
     tracing::debug!(
         code_len = code.len(),
         redirect_uri = %redirect_uri,
         client_id_len = client_id.len(),
         client_secret_len = client_secret.len(),
+        pkce = code_verifier.is_some(),
         "Exchanging Google OAuth code for tokens"
     );
 
+    // Google's Desktop-app token endpoint accepts a PKCE code_verifier alongside
+    // the client_secret; sending both is additive hardening (a Desktop
+    // client_secret is not truly confidential, so PKCE binds the code to this
+    // client instance). See start_google_credential_oauth.
     exchange_oauth_code(
         "https://oauth2.googleapis.com/token",
         client_id,
         Some(client_secret),
         code,
         redirect_uri,
-        None,
+        code_verifier,
     )
     .await
 }
@@ -1895,15 +1925,20 @@ struct OAuthTokenResult {
     extra: Option<serde_json::Value>,
 }
 
-async fn exchange_oauth_code(
-    token_url: &str,
+/// Build the form parameters for an `authorization_code` token exchange.
+///
+/// `code_verifier` is appended only when present, so a PKCE flow sends it and a
+/// non-PKCE flow omits it. The Google flow now always supplies a verifier
+/// **alongside** the client_secret — Google's token endpoint accepts PKCE next
+/// to a Desktop client_secret, so PKCE is additive hardening, not a replacement.
+fn oauth_code_exchange_params(
     client_id: &str,
     client_secret: Option<&str>,
     code: &str,
     redirect_uri: &str,
     code_verifier: Option<&str>,
-) -> Result<OAuthTokenResult, String> {
-    let mut params: Vec<(&str, String)> = vec![
+) -> Vec<(&'static str, String)> {
+    let mut params: Vec<(&'static str, String)> = vec![
         ("client_id", client_id.to_string()),
         ("code", code.to_string()),
         ("grant_type", "authorization_code".to_string()),
@@ -1916,6 +1951,19 @@ async fn exchange_oauth_code(
     if let Some(verifier) = code_verifier {
         params.push(("code_verifier", verifier.to_string()));
     }
+    params
+}
+
+async fn exchange_oauth_code(
+    token_url: &str,
+    client_id: &str,
+    client_secret: Option<&str>,
+    code: &str,
+    redirect_uri: &str,
+    code_verifier: Option<&str>,
+) -> Result<OAuthTokenResult, String> {
+    let params =
+        oauth_code_exchange_params(client_id, client_secret, code, redirect_uri, code_verifier);
 
     let value = token_endpoint_request(token_url, &params, "Token exchange")
         .await
@@ -2232,6 +2280,62 @@ mod tests {
             ),
             now
         ));
+    }
+
+    #[test]
+    fn pkce_pair_challenge_is_s256_of_verifier() {
+        use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+
+        let (verifier, challenge) = super::generate_pkce_pair();
+        let mut hasher = Sha256::new();
+        hasher.update(verifier.expose_secret().as_bytes());
+        let expected = URL_SAFE_NO_PAD.encode(hasher.finalize());
+        assert_eq!(
+            challenge, expected,
+            "PKCE challenge must be the S256 (base64url) hash of the verifier"
+        );
+        // A fresh pair each call — verifiers must not be reused across flows.
+        let (v2, c2) = super::generate_pkce_pair();
+        assert_ne!(verifier.expose_secret(), v2.expose_secret());
+        assert_ne!(challenge, c2);
+    }
+
+    #[test]
+    fn google_exchange_sends_pkce_verifier_and_secret() {
+        // The Google flow now supplies BOTH a client_secret and a code_verifier;
+        // the token endpoint accepts them together for Desktop apps.
+        let params = super::oauth_code_exchange_params(
+            "client-id",
+            Some("client-secret-value"),
+            "auth-code",
+            "http://127.0.0.1:1234",
+            Some("the-code-verifier"),
+        );
+        let has = |k: &str| params.iter().any(|(pk, _)| *pk == k);
+        assert!(has("client_secret"), "Google exchange must still send the secret");
+        assert!(has("code_verifier"), "Google exchange must send the PKCE verifier");
+        assert_eq!(
+            params
+                .iter()
+                .find(|(k, _)| *k == "code_verifier")
+                .map(|(_, v)| v.as_str()),
+            Some("the-code-verifier")
+        );
+        assert_eq!(
+            params.iter().find(|(k, _)| *k == "grant_type").map(|(_, v)| v.as_str()),
+            Some("authorization_code")
+        );
+    }
+
+    #[test]
+    fn exchange_params_omit_verifier_and_secret_when_absent() {
+        // A pure public-client (no secret, no PKCE) sends neither optional param.
+        let params =
+            super::oauth_code_exchange_params("client-id", None, "auth-code", "http://x", None);
+        assert!(!params.iter().any(|(k, _)| *k == "client_secret"));
+        assert!(!params.iter().any(|(k, _)| *k == "code_verifier"));
     }
 
     #[test]
