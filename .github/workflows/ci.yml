@@ -27,8 +27,17 @@ jobs:
         run: |
           PATTERN='^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\(.+\))?(!)?\: .+'
 
-          # Get all commits in this PR that are not on the base branch
-          COMMITS=$(git log --oneline origin/${{ github.base_ref }}..HEAD --format="%s")
+          # Get all commits in this PR that are not on the base branch.
+          # --no-merges excludes merge commits: GitHub's own synthetic PR
+          # test-merge commit ("Merge <sha> into <sha>", auto-generated fresh
+          # on every push for the mergeability check) is included in this
+          # range whenever the base branch has moved since the PR branch was
+          # created, and its message is not author-editable — it can never
+          # satisfy PATTERN. Real merge commits (e.g. merging base into a
+          # long-lived feature branch) are conventionally exempt from commit
+          # message linting for the same reason: their message isn't a
+          # deliberate description of a change, it's structural.
+          COMMITS=$(git log --oneline --no-merges origin/${{ github.base_ref }}..HEAD --format="%s")
 
           FAILED=0
           while IFS= read -r MSG; do
