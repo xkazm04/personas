@@ -316,9 +316,13 @@ fn list_episodes(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>,
     for (id, rel_path, excerpt, created_at) in rows {
         // Pull the role from disk frontmatter so the row label is
         // accurate even if older rows pre-date a body_excerpt write.
+        // Head-only read: this loop used to read_to_string up to 200 FULL
+        // episode bodies (long chat turns) inside a sync IPC command on
+        // every viewer open — hundreds of ms of blocking I/O for one
+        // frontmatter line that always sits in the first few bytes.
         let role = root
             .as_ref()
-            .and_then(|r| std::fs::read_to_string(r.join(&rel_path)).ok())
+            .and_then(|r| read_file_head(&r.join(&rel_path), 512))
             .as_deref()
             .map(role_from_frontmatter)
             .unwrap_or_else(|| "episode".to_string());
@@ -332,6 +336,17 @@ fn list_episodes(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>,
         });
     }
     Ok(out)
+}
+
+/// Read at most `max_bytes` from the start of a file (lossy UTF-8). Enough
+/// for frontmatter extraction without materializing whole episode bodies.
+fn read_file_head(path: &std::path::Path, max_bytes: usize) -> Option<String> {
+    use std::io::Read;
+    let mut file = std::fs::File::open(path).ok()?;
+    let mut buf = vec![0u8; max_bytes];
+    let n = file.read(&mut buf).ok()?;
+    buf.truncate(n);
+    Some(String::from_utf8_lossy(&buf).into_owned())
 }
 
 fn get_episode(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetail, AppError> {
