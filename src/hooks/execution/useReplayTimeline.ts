@@ -84,6 +84,21 @@ function buildTimelineLines(logContent: string | null, totalMs: number): Timelin
   }));
 }
 
+/** Upper-bound binary search: count of lines with timestamp_ms <= cutoffMs (lines are sorted). */
+function countVisibleLines(lines: TimelineLogLine[], cutoffMs: number): number {
+  let lo = 0;
+  let hi = lines.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (lines[mid]!.timestamp_ms <= cutoffMs) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+/** Throttle playback state flushes to ~12/sec so derived line lists don't recompute at 60fps. */
+const PLAYBACK_FLUSH_MS = 80;
+
 export function useReplayTimeline(
   toolStepsJson: ToolCallStep[] | null,
   logContent: string | null,
@@ -108,10 +123,17 @@ export function useReplayTimeline(
     setForkPoint(null);
   }, [toolStepsJson, logContent, totalMs]);
 
-  // Derive visible lines at current position
-  const visibleLines = useMemo(
-    () => allLines.filter((l) => l.timestamp_ms <= currentMs),
+  // Derive visible lines at current position. allLines is sorted by
+  // timestamp_ms, so binary-search the cutoff index (O(log n) per scrub)
+  // and only allocate a new array when the visible count actually changes.
+  const visibleCount = useMemo(
+    () => countVisibleLines(allLines, currentMs),
     [allLines, currentMs],
+  );
+
+  const visibleLines = useMemo(
+    () => allLines.slice(0, visibleCount),
+    [allLines, visibleCount],
   );
 
   // Derive tool step states at current position
@@ -142,28 +164,36 @@ export function useReplayTimeline(
     return (completedFraction + activeFraction) * totalCost;
   }, [totalMs, totalCost, toolSteps, completedSteps, activeStep, currentMs]);
 
-  // Playback animation loop
+  // Playback animation loop. Time is accumulated per rAF for accuracy, but
+  // state flushes are throttled (PLAYBACK_FLUSH_MS) so the replay view does
+  // not re-render and re-derive line lists at 60fps.
   useEffect(() => {
     if (!isPlaying) return;
     lastTickRef.current = performance.now();
+    let lastFlush = performance.now();
+    let pendingDelta = 0;
 
     const tick = (now: number) => {
-      const delta = (now - lastTickRef.current) * speed;
+      pendingDelta += (now - lastTickRef.current) * speed;
       lastTickRef.current = now;
-      setCurrentMs((prev) => {
-        const next = prev + delta;
-        if (next >= totalMs) {
-          setIsPlaying(false);
-          return totalMs;
-        }
-        return next;
-      });
+      if (now - lastFlush >= PLAYBACK_FLUSH_MS) {
+        lastFlush = now;
+        const delta = pendingDelta;
+        pendingDelta = 0;
+        setCurrentMs((prev) => Math.min(prev + delta, totalMs));
+      }
       animFrameRef.current = requestAnimationFrame(tick);
     };
 
     animFrameRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animFrameRef.current);
   }, [isPlaying, speed, totalMs]);
+
+  // Stop playback once the scrub position reaches the end (kept outside the
+  // setCurrentMs updater so state updaters stay pure).
+  useEffect(() => {
+    if (isPlaying && currentMs >= totalMs) setIsPlaying(false);
+  }, [isPlaying, currentMs, totalMs]);
 
   // Tool step boundaries for stepping
   const boundaries = useMemo(() => {
