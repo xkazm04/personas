@@ -189,5 +189,8 @@
   "attn_overdue": "{days}दि विलंबित",
   "attn_reason_crit": "गंभीर",
   "attn_reason_floor": "न्यूनतम",
-  "attn_reason_pace": "पीछे"
+  "attn_reason_pace": "पीछे",
+  "evaluate_measured": "{count} KPI मापे गए।",
+  "evaluate_none_due": "मापने के लिए कोई KPI देय नहीं था।",
+  "evaluate_partial": "{measured} मापे गए, {failed} विफल"
 }

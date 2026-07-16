@@ -189,5 +189,8 @@
   "attn_overdue": "逾期{days}天",
   "attn_reason_crit": "严重",
   "attn_reason_floor": "下限",
-  "attn_reason_pace": "落后"
+  "attn_reason_pace": "落后",
+  "evaluate_measured": "已测量 {count} 个 KPI。",
+  "evaluate_none_due": "没有到期需要测量的 KPI。",
+  "evaluate_partial": "已测量 {measured} 个，{failed} 个失败"
 }

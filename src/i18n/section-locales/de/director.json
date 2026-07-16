@@ -131,5 +131,9 @@
   "group_needs_review": "Wartet auf erste Prüfung",
   "group_low_scores": "Niedrige Bewertungen",
   "group_declining": "Sinkender Trend",
-  "group_stale": "Veraltete Prüfungen"
+  "group_stale": "Veraltete Prüfungen",
+  "roster_unscored": "Ohne Bewertung",
+  "roster_unscored_hint": "Der Director hat diesen Agenten überprüft, aber keine Bewertung zurückgegeben; öffnen Sie die Überprüfung, um das Coaching zu sehen.",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "Aus der Coaching-Prüfung des Directors hervorgegangen — genehmige oder löse es wie jedes andere Problem."
 }

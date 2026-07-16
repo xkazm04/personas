@@ -550,7 +550,7 @@ pub struct PersonaParameter {
 // Persona
 // ============================================================================
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct Persona {
     pub id: String,
@@ -899,4 +899,10 @@ pub struct UpdatePersonaInput {
     /// `None` = leave unchanged. Promote/archive/restore drive this; the repo
     /// validates the value against `PersonaLifecycle`.
     pub lifecycle: Option<String>,
+    /// Change-log attribution only — NOT a persisted persona column. Tags each
+    /// `update_persona` with its origin (`"editor" | "header" | "fanout" |
+    /// "other"`) so the persona change history can say where an edit came from.
+    /// `None` defaults to `"other"`. Excluded from the SQL SET clause.
+    #[serde(default)]
+    pub source: Option<String>,
 }

@@ -525,7 +525,13 @@
     "event_data": "Données de l'événement",
     "error": "Erreur",
     "skipped_stat_label": "{skipped} ignorés",
-    "skipped_stat_tooltip": "{skipped} des {total} événements des 7 derniers jours n'avaient aucun abonné et ont été ignorés ({rate}). Un taux élevé signale un déclencheur que personne n'écoute."
+    "skipped_stat_tooltip": "{skipped} des {total} événements des 7 derniers jours n'avaient aucun abonné et ont été ignorés ({rate}). Un taux élevé signale un déclencheur que personne n'écoute.",
+    "type_labels": {
+      "sla_breach_opened": "Violation de SLA ouverte",
+      "sla_breach_recovered": "Violation de SLA rétablie",
+      "schedule_missed_offline": "Exécutions planifiées manquées (hors ligne)",
+      "schedule_skipped_overlap": "Planification ignorée (exécution précédente active)"
+    }
   },
   "health": {
     "title": "Santé des agents",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "Carte de cascade en chaîne",
-    "no_chains": "Aucune chaîne détectée — tous les personas fonctionnent indépendamment"
+    "no_chains": "Aucune chaîne détectée — tous les personas fonctionnent indépendamment",
+    "cofail_insufficient": "aucune panne commune",
+    "cofail_pct": "{pct}% de pannes communes"
   },
   "predictive_alerts_extra": {
     "title": "Alertes prédictives",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "Chargement de la page de statut…",
     "loading_reliability": "Chargement des données de fiabilité…",
     "heartbeats_btn": "Battements",
-    "reliability_btn": "Fiabilité"
+    "reliability_btn": "Fiabilité",
+    "source_byom_policy": "Politique BYOM",
+    "source_healing_issues": "Problèmes de réparation",
+    "source_monthly_spend": "Dépenses mensuelles",
+    "source_provider_stats": "Statistiques du fournisseur",
+    "sources_unavailable": "Impossible de charger {sources} — les scores peuvent être inexacts."
   },
   "popup_fields": {
     "sign_up_free_at": "Inscrivez-vous gratuitement sur",
@@ -1573,7 +1586,11 @@
     "seg_healing": "Guérison",
     "seg_stability": "Stabilité",
     "seg_success": "Succès",
-    "show_all": "Tout afficher"
+    "show_all": "Tout afficher",
+    "fleet_avg_badge": "moy. de flotte",
+    "fleet_avg_tooltip": "Aucune exécution enregistrée pour cette persona sur la période — le taux de réussite moyen de la flotte est affiché, et non une valeur mesurée par persona.",
+    "no_data_badge": "aucune donnée",
+    "no_data_tooltip": "Aucune exécution terminée ou échouée pour cette persona sur la période — le taux de réussite est un espace réservé, non mesuré."
   },
   "provenance": {
     "sourced_tip": "Cite {count} source(s) que vous pouvez tracer et auditer.",

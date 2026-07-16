@@ -1,7 +1,9 @@
 /**
- * Read-only walkthrough of the five non-getting-started guided tours:
+ * Read-only walkthrough of the six non-getting-started guided tours:
  * execution-observability, orchestration-events, plugins-explorer,
- * schedules-mastery, templates-recipes.
+ * schedules-mastery, templates-recipes, teams-orchestration.
+ * (obsidian-brain has its own live spec, tours-obsidian-brain.spec.ts,
+ * because it drives a real vault connect.)
  *
  * These tours are EXPLORATION tours — every step completes via the panel's
  * "I've explored this" acknowledge button (their `completeOn` events are in
@@ -11,7 +13,8 @@
  * persona creation, no DB writes beyond what merely viewing a route does.
  *
  * That makes it the safe counterpart to getting-started-tour.spec.ts (which
- * does a real build). Run it when the single test shell is free:
+ * does a real build) and getting-started-tour-mock.spec.ts (mocked build). Run
+ * it when the single test shell is free:
  *   1. npm run tauri:dev:test   (from the main checkout)
  *   2. npm run test:playwright:tours
  *

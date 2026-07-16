@@ -147,6 +147,39 @@ materially edits the working tree should touch this file twice:
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
 
+### perfect-round8 — /perfect round 8: propose (3 contexts, 11 accepted) + build wave 8 (11/11 shipped) — session fable-5
+- Started: 2026-07-14. Status: COMPLETED 2026-07-15.
+- Shipped on master: f3980e346 (failover chain on current models — retired-404 ladder closed) · 7f597dbe9 (BYOM routing fires; compliance validation Error→Warning RATIFIED) · f7bbfc793 (runner owns terminal status — zombie window closed at source) · cbb747843 + 115981490 + bc55cb55a + b306192a4 (readiness reacts to credential mutation; live run-gate + real remediation surface, verification-hardfail semantics shift RATIFIED; team degraded-run chips + deliberation note) · 2c949070f + a661b7f9b + 4577a50eb (typed tool-result contract w/ 256KiB cap + audit error_kind; automation failure fidelity; live API errors match tester) · 84d9243ac (script_path canonical-root validation — SECURITY-review flagged) · 88e14263d (tool-runner panel mounted) · Director fixes 9e3583dfa + lint + docs.
+- Gates: cargo 160-warning baseline held (2 excursions caught+fixed), tsc ×4, vitest unions to 46/46, i18n strict ×3 (16,902 keys). Rust tests compile-verified (host loader issue; CI backstop).
+- Vault: wave-8 records complete; next = propose round 9 (agent-lab / credential-vault / director-meta-persona); smoke after wave 9.
+
+
+
+### perfect-smoke3 — /perfect smoke: live L2 verification of waves 6-7 — session fable-5
+- Started: 2026-07-14. Status: COMPLETED (5c1e15b4d).
+- THE FIND: F6's true root cause — #[requires(privileged)] macro doesn't register commands in PRIVILEGED_COMMANDS; sync privileged commands not on the static list fail closed on EVERY IPC call. get_provider_usage_stats broken since it shipped (56 log hits today); wave-6's get_health_bundle hit the same trap (22). Fixed by registering the provider trio + bundle; VERIFIED live post-watcher-rebuild: banner gone, zero validation failures since restart. Round-8 candidate: macro⊆list static guarantee (~40 more unlisted).
+- Also verified live: stuck-session GC swept 42 real sessions (zero non-terminal on non-draft personas); sla_daily backfilled 41 rows to May; Status Page new composite live, SLA-Compliance column retired; Health tab clean. Honest empties: breach episodes 0, missed runs 0 (preconditions unmet). Not-driven list in vault sessions/2026-07-14-smoke3.
+- Ledger entry for round-7-propose superseded by perfect-round7 below (build completed within the same session chain).
+
+
+
+### perfect-round7 — /perfect round 7: propose (3 contexts, 12 accepted) + build wave 7 (12/12 shipped, zero builder deaths) — session fable-5
+- Started: 2026-07-14. Status: COMPLETED.
+- Shipped on master: 986aa32e4 (stuck build-session GC) · be69cf29d (truthful automation tool contract + retry-aware reaper) · 942fdb71a + 3bdc01bfc + 5fdce2a36 (truthful cron preview; honest calendar history) · 716318fc9 + 382169803 + b0842058a + b3c97180a (missed-runs visible; overlap skip-with-signal; lost fires → healing + invalid-TZ reason) · 38f28e567 + 64216eb5c + 1f64c7d2a (obsidian anchors as literals; footer Replay/Resume setup; anchor-drift gate test) · e9498b093 + 853b56b84 (getting-started mock-build harness spec; modal→tour handoff offer).
+- Gates: cargo check ×4, tsc ×6, vitest up to 240/240 union, i18n strict ×4 (16,885 keys ×13). Rust tests compile-verified only (host loader issue; CI backstop).
+- Notables: builder refuted scout premise w/ evidence (template-literal testids); locale both-add conflict resolved by merge-locale-keys recipe; overlap-policy decision ratified (durable DB signal over InflightGuard for detached lifecycle).
+- All 5 perfect-* worktrees removed. Vault current; next = /perfect smoke (waves 6-7 debt) then round 8.
+
+
+
+### perfect-round6 — /perfect round 6: propose (3 contexts, 11 accepted) + build wave 6 (11/11 shipped) — session fable-5
+- Started: 2026-07-14. Status: COMPLETED.
+- Shipped on master: 7b646125b (F5 sidebar draft rows inline) · 0e41225ba + b1eb01909 (SLA rollups + local-day) · picks of 515630be3/5f60e0059/1f11ea101 (editor: honest tab signals, live quick stats, persona change history) · picks of ae438d03c/d868fc146 (health bundle [F6 closed], per-persona truth) · 58a956086 (render-plan test compile fix, flagged by 2 builders) · 5788693d6 (local-day integration fix) · 9f3cbd16f/ed5c94daa/76ae07f61 (one formula, composite honesty, honest cascade) · aabdb3721 (SLA breach events; builder died pre-commit, Director recovered from WIP snapshot).
+- Gates: cargo check, tsc, vitest unions (5/5, 9/9, 19/19, 57/57, 37/37), i18n strict ×5. CAVEAT: Rust test EXECUTION blocked machine-wide (STATUS_ENTRYPOINT_NOT_FOUND loader issue) — wave Rust tests compile-verified; ts-rs bindings hand-written; CI backstop.
+- All 5 perfect-* worktrees removed (junction-first). Vault: Perfect/ round-6 records complete; next = propose round 7 at scheduler (scout banked).
+
+
+
 ### ship-loop-M5 — Ship Loop Milestone 5: Chain Studio commit path (session fable-5 fa9818da) — completed
 - 2026-07-04: commit 874628340 — signal-source routes commit via configure-&-commit modal hosting TriggerAddForm locked to the source type (additive lockedTriggerType prop); output_match commits as backend jsonpath condition via inline path+expected inputs; Save-all stays direct-only; 9 i18n keys ×14; 7 unit tests. Gate: vitest 2029/2029, tours 6/6, tsc/eslint/i18n-strict clean. Events feature doc updated.
 - Paths: sub_studio (studioCommit/studioDraftModel/useStudioComposer/StudioPatchbay/StudioTriggerCommitModal), sub_triggers/TriggerAddForm.tsx, locales ×14 + generated, docs/features/events/README.md.

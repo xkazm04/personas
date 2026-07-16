@@ -166,5 +166,11 @@
   "local_tooling_label": "বিল্ট-ইন টুলস",
   "local_tooling_sentence": "Personas শুরু থেকেই স্থানীয় টুলস সংযুক্ত রাখে — Messaging, Database, Vector এবং আরও অনেক কিছু — কোনো ক্রেডেনশিয়াল প্রয়োজন নেই।",
   "resume_continue_title": "যেখান থেকে থেমেছিলেন সেখান থেকে শুরু করুন",
-  "resume_continue_cta": "ট্যুর চালিয়ে যান"
+  "resume_continue_cta": "ট্যুর চালিয়ে যান",
+  "replay_setup": "সেটআপ পুনরায় চালান",
+  "resume_setup": "সেটআপ চালিয়ে যান",
+  "tour_handoff_accept": "ট্যুর শুরু করুন",
+  "tour_handoff_body": "আপনার প্রথম এজেন্ট চালু হয়েছে। বাকিটার একটি দ্রুত নির্দেশিত ট্যুর নিন — সংযোগ এবং এজেন্ট চালানো — আর আপনি এইমাত্র যা করেছেন সেই অংশগুলো আমরা এড়িয়ে যাব।",
+  "tour_handoff_dismiss": "এখন নয়",
+  "tour_handoff_title": "নির্দেশিত ট্যুর চান?"
 }

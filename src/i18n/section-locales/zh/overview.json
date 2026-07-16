@@ -525,7 +525,13 @@
     "event_data": "事件数据",
     "error": "错误",
     "skipped_stat_label": "{skipped} 条被跳过",
-    "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。"
+    "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。",
+    "type_labels": {
+      "sla_breach_opened": "SLA 违规已开始",
+      "sla_breach_recovered": "SLA 违规已恢复",
+      "schedule_missed_offline": "错过的计划运行（离线）",
+      "schedule_skipped_overlap": "已跳过计划（上一次运行仍在进行）"
+    }
   },
   "health": {
     "title": "代理健康状况",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "链式级联图",
-    "no_chains": "未检测到链 — 所有代理独立运行"
+    "no_chains": "未检测到链 — 所有代理独立运行",
+    "cofail_insufficient": "无共同故障",
+    "cofail_pct": "{pct}% 共同故障"
   },
   "predictive_alerts_extra": {
     "title": "预测告警",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "正在加载状态页面…",
     "loading_reliability": "正在加载可靠性数据…",
     "heartbeats_btn": "心跳",
-    "reliability_btn": "可靠性"
+    "reliability_btn": "可靠性",
+    "source_byom_policy": "BYOM 策略",
+    "source_healing_issues": "修复问题",
+    "source_monthly_spend": "每月支出",
+    "source_provider_stats": "提供方统计",
+    "sources_unavailable": "无法加载 {sources}，评分可能不准确。"
   },
   "popup_fields": {
     "sign_up_free_at": "免费注册于",
@@ -1573,7 +1586,11 @@
     "seg_healing": "自愈",
     "seg_stability": "稳定性",
     "seg_success": "成功率",
-    "show_all": "显示全部"
+    "show_all": "显示全部",
+    "fleet_avg_badge": "集群平均",
+    "fleet_avg_tooltip": "该周期内未记录此角色的任何运行——显示的是集群整体平均成功率，而非按角色测得的值。",
+    "no_data_badge": "无数据",
+    "no_data_tooltip": "该周期内此角色没有已完成或失败的运行——成功率为占位值，并非实测。"
   },
   "provenance": {
     "sourced_tip": "引用了 {count} 个可追溯和审计的来源。",

@@ -852,7 +852,25 @@
     "eco_subtitle": "Seberapa sering setiap model menyelesaikan evaluasi, dan berapa biaya per keberhasilan.",
     "eco_title": "Efisiensi Biaya",
     "vr_col_tokens": "Token",
-    "vr_tokens_tooltip": "Rata-rata {input} masuk / {output} keluar per proses"
+    "vr_tokens_tooltip": "Rata-rata {input} masuk / {output} keluar per proses",
+    "vr_reconcile_clear_all": "Hapus semua pin",
+    "vr_reconcile_clear_pin": "Hapus pin",
+    "vr_reconcile_desc_one": "1 use case masih menyematkan model yang berbeda dari yang baru saja Anda promosikan ({model}). Use case itu akan terus berjalan pada model yang disematkan sampai Anda menghapus pin.",
+    "vr_reconcile_desc_other": "{count} use case masih menyematkan model yang berbeda dari yang baru saja Anda promosikan ({model}). Semuanya akan terus berjalan pada model yang disematkan sampai Anda menghapus pin.",
+    "vr_reconcile_done": "Selesai",
+    "vr_reconcile_now_follows": "Kini mengikuti default ({model})",
+    "vr_reconcile_pinned_to": "disematkan ke {model}",
+    "vr_reconcile_title": "Selaraskan pin model use case",
+    "improve_failed": "Gagal menyiapkan ringkasan peningkatan",
+    "improve_focus": "Akan fokus pada {metric} (rata-rata {score}/100)",
+    "improve_run_seed_measured": "Tingkatkan persona \"{name}\". Uji terbarunya menandai {metric} sebagai area terlemah (rata-rata {score}/100). Apa yang harus saya fokuskan? ",
+    "improve_run_seed_plain": "Tingkatkan persona \"{name}\" berdasarkan hasil uji terbarunya. Apa yang harus saya fokuskan? ",
+    "improve_seeded": "Ringkasan peningkatan dibuka di Athena",
+    "vr_cost_unknown": "t/a",
+    "vr_cost_unknown_tooltip": "Biaya tidak dilacak untuk model lokal",
+    "vr_degraded_tooltip": "{count} dari {total} sampel dinilai dengan heuristik cadangan (penilai LLM tidak tersedia)",
+    "vr_partial_tooltip": "Komposit dari sub-skor parsial — tidak dapat dibandingkan langsung",
+    "vr_score_caution": "Skor perlu kehati-hatian"
   },
   "design": {
     "select_agent": "Pilih agen untuk memulai analisis desain",
@@ -1729,7 +1747,15 @@
     "failed": "Gagal",
     "error": "Kesalahan",
     "invalid_json": "JSON tidak valid — perbaiki sebelum dijalankan.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "Gagal",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "Keluaran terpotong — alat mengembalikan lebih dari batas tampilan.",
+    "panel_subtitle": "Panggil alat langsung dengan kredensial persona ini.",
+    "panel_title": "Jalankan alat",
+    "retryable_hint": "Ini mungkin berhasil saat dicoba lagi.",
+    "run_tool": "Jalankan alat",
+    "builtin_note": "Alat bawaan — berjalan di dalam eksekusi persona (bukan secara manual dari sini). Jalankan salah satu kemampuan persona untuk mengujinya."
   },
   "health_check": {
     "title": "Pemeriksaan Kesehatan Agen",
@@ -2729,5 +2755,37 @@
     "done": "Diduplikasi sebagai \"{name}\"",
     "done_with_wiring": "Diduplikasi sebagai \"{name}\" — menyalin {triggers} pemicu dan {subscriptions} langganan, dinonaktifkan pada salinan",
     "failed": "Gagal menduplikasi agen"
+  },
+  "change_history": {
+    "empty": "Belum ada perubahan tercatat",
+    "empty_value": "(kosong)",
+    "fields": {
+      "cli_awareness_enabled": "Kesadaran CLI",
+      "color": "Warna",
+      "description": "Deskripsi",
+      "design_context": "Konteks desain",
+      "enabled": "Diaktifkan",
+      "headless": "Headless",
+      "icon": "Ikon",
+      "lifecycle": "Siklus hidup",
+      "max_budget_usd": "Anggaran",
+      "max_concurrent": "Maks bersamaan",
+      "max_turns": "Maks giliran",
+      "model_profile": "Model",
+      "name": "Nama",
+      "notification_channels": "Notifikasi",
+      "parameters": "Parameter",
+      "sensitive": "Pratinjau sensitif",
+      "structured_prompt": "Prompt",
+      "system_prompt": "Prompt sistem",
+      "timeout_ms": "Batas waktu"
+    },
+    "sources": {
+      "editor": "Editor",
+      "fanout": "Fan-out",
+      "header": "Header",
+      "other": "Lainnya"
+    },
+    "title": "Riwayat perubahan"
   }
 }

@@ -525,7 +525,13 @@
     "event_data": "بيانات الحدث",
     "error": "خطأ",
     "skipped_stat_label": "{skipped} متخطاة",
-    "skipped_stat_tooltip": "{skipped} من أصل {total} حدثًا خلال آخر 7 أيام لم يكن لها أي مشترك فتم تخطيها ({rate}). المعدل المرتفع يشير إلى مشغّل لا يستمع إليه أحد."
+    "skipped_stat_tooltip": "{skipped} من أصل {total} حدثًا خلال آخر 7 أيام لم يكن لها أي مشترك فتم تخطيها ({rate}). المعدل المرتفع يشير إلى مشغّل لا يستمع إليه أحد.",
+    "type_labels": {
+      "sla_breach_opened": "بدء خرق اتفاقية مستوى الخدمة (SLA)",
+      "sla_breach_recovered": "التعافي من خرق اتفاقية مستوى الخدمة (SLA)",
+      "schedule_missed_offline": "تشغيلات مجدولة فائتة (دون اتصال)",
+      "schedule_skipped_overlap": "تم تخطّي الجدولة (التشغيل السابق نشط)"
+    }
   },
   "health": {
     "title": "صحة الوكلاء",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "خريطة التسلسل المتتالي",
-    "no_chains": "لم يتم اكتشاف سلاسل — جميع الوكلاء تعمل باستقلالية"
+    "no_chains": "لم يتم اكتشاف سلاسل — جميع الوكلاء تعمل باستقلالية",
+    "cofail_insufficient": "لا إخفاقات مشتركة",
+    "cofail_pct": "{pct}% إخفاق مشترك"
   },
   "predictive_alerts_extra": {
     "title": "التنبيهات التنبؤية",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "جارٍ تحميل صفحة الحالة...",
     "loading_reliability": "جارٍ تحميل بيانات الموثوقية...",
     "heartbeats_btn": "نبضات",
-    "reliability_btn": "الموثوقية"
+    "reliability_btn": "الموثوقية",
+    "source_byom_policy": "سياسة BYOM",
+    "source_healing_issues": "مشكلات الإصلاح",
+    "source_monthly_spend": "الإنفاق الشهري",
+    "source_provider_stats": "إحصاءات المزود",
+    "sources_unavailable": "تعذّر تحميل {sources} — قد تكون النتائج غير دقيقة."
   },
   "popup_fields": {
     "sign_up_free_at": "اشترك مجاناً على",
@@ -1573,7 +1586,11 @@
     "seg_healing": "الإصلاح",
     "seg_stability": "الاستقرار",
     "seg_success": "النجاح",
-    "show_all": "عرض الكل"
+    "show_all": "عرض الكل",
+    "fleet_avg_badge": "متوسط الأسطول",
+    "fleet_avg_tooltip": "لم تُسجَّل أي عمليات لهذه الشخصية في النافذة — يُعرض متوسط النجاح على مستوى الأسطول، وليس قيمة مقيسة لكل شخصية.",
+    "no_data_badge": "لا توجد بيانات",
+    "no_data_tooltip": "لا توجد عمليات مكتملة أو فاشلة لهذه الشخصية في النافذة — معدل النجاح قيمة افتراضية وليست مقيسة."
   },
   "provenance": {
     "sourced_tip": "يستشهد بـ {count} مصدر يمكنك تتبعه والتحقق منه.",

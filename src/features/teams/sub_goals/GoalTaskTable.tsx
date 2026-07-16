@@ -24,6 +24,7 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { Persona } from '@/lib/bindings/Persona';
+import { TeamReadinessChip } from '../components/TeamReadinessChip';
 
 interface Props {
   steps: TeamAssignmentStep[];
@@ -124,7 +125,7 @@ function OwnerCell({ persona, fallback }: { persona: Persona | null; fallback: s
   }
   return (
     <span
-      className="justify-self-end inline-flex items-center gap-1 max-w-[120px] typo-caption text-foreground"
+      className="justify-self-end inline-flex items-center gap-1 max-w-[160px] typo-caption text-foreground"
       title={persona.name}
     >
       <span
@@ -133,6 +134,7 @@ function OwnerCell({ persona, fallback }: { persona: Persona | null; fallback: s
         aria-hidden
       />
       <span className="truncate">{persona.name}</span>
+      <TeamReadinessChip setupStatus={persona.setup_status} />
     </span>
   );
 }

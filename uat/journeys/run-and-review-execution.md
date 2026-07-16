@@ -17,8 +17,12 @@ relevant_characters: [support-lead, finance-analyst, it-sysadmin, software-devel
 ## What L1 must check
 - Execute → output → history → manual-review path; is the output legible and trustworthy?
 - Does an accept/reject decision actually feed memory / resume a loop, or dead-end?
+- Does the runner always reach a terminal status (Completed/Failed) on every path, including a drop/panic mid-flight, or can a run get stuck "Running" forever?
+- Does failover route to a currently-served model id, or can it retry against a retired id and 404 again?
 
 ## What L2 must confirm (l2_priority)
 - The *actual output quality* of a real run against the senior bar.
 - Latency reality (30–215s) and whether the UI communicates progress vs. hangs.
 - That a manual-review decision visibly closes the loop.
+- BYOM/complexity-based routing rules actually fire on real inputs (not hardcoded placeholders) — a run tagged for a specific model profile actually uses it.
+- On a team-path run: a disabled/stripped member surfaces a visible degraded-run signal (TeamReadinessChip / transcript note), not a silent dead-end.

@@ -525,7 +525,13 @@
     "event_data": "이벤트 데이터",
     "error": "오류",
     "skipped_stat_label": "{skipped}건 건너뜀",
-    "skipped_stat_tooltip": "지난 7일 동안 {total}건 중 {skipped}건의 이벤트에 구독자가 없어 건너뛰었습니다({rate}). 비율이 높다면 아무도 수신하지 않는 트리거가 있다는 신호입니다."
+    "skipped_stat_tooltip": "지난 7일 동안 {total}건 중 {skipped}건의 이벤트에 구독자가 없어 건너뛰었습니다({rate}). 비율이 높다면 아무도 수신하지 않는 트리거가 있다는 신호입니다.",
+    "type_labels": {
+      "sla_breach_opened": "SLA 위반 발생",
+      "sla_breach_recovered": "SLA 위반 복구됨",
+      "schedule_missed_offline": "놓친 예약 실행 (오프라인)",
+      "schedule_skipped_overlap": "예약 건너뜀 (이전 실행 진행 중)"
+    }
   },
   "health": {
     "title": "에이전트 상태",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "체인 연쇄 맵",
-    "no_chains": "감지된 체인 없음 -- 모든 페르소나가 독립 작동 중"
+    "no_chains": "감지된 체인 없음 -- 모든 페르소나가 독립 작동 중",
+    "cofail_insufficient": "동시 실패 없음",
+    "cofail_pct": "{pct}% 동시 실패"
   },
   "predictive_alerts_extra": {
     "title": "예측 알림",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "상태 페이지 불러오는 중…",
     "loading_reliability": "신뢰성 데이터 불러오는 중…",
     "heartbeats_btn": "하트비트",
-    "reliability_btn": "신뢰성"
+    "reliability_btn": "신뢰성",
+    "source_byom_policy": "BYOM 정책",
+    "source_healing_issues": "복구 문제",
+    "source_monthly_spend": "월간 지출",
+    "source_provider_stats": "공급자 통계",
+    "sources_unavailable": "{sources}을(를) 불러오지 못했습니다. 점수가 정확하지 않을 수 있습니다."
   },
   "popup_fields": {
     "sign_up_free_at": "무료 가입 위치:",
@@ -1573,7 +1586,11 @@
     "seg_healing": "치유",
     "seg_stability": "안정성",
     "seg_success": "성공",
-    "show_all": "모두 보기"
+    "show_all": "모두 보기",
+    "fleet_avg_badge": "플릿 평균",
+    "fleet_avg_tooltip": "이 기간에 이 페르소나의 실행 기록이 없습니다 — 페르소나별 측정값이 아니라 플릿 전체 평균 성공률을 표시합니다.",
+    "no_data_badge": "데이터 없음",
+    "no_data_tooltip": "이 기간에 이 페르소나의 완료 또는 실패한 실행이 없습니다 — 성공률은 측정값이 아니라 자리표시자입니다."
   },
   "provenance": {
     "sourced_tip": "{count}개의 출처를 추적하고 감사할 수 있습니다.",

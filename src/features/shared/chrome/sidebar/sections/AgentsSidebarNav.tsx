@@ -11,6 +11,14 @@ import { useSidebarAgentActivity, type AgentActivityType } from '@/hooks/sidebar
 import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
 import { cloudItems } from '@/features/shared/chrome/sidebar/sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
+
+// Build-session phases that must NOT appear in the sidebar's Draft builds
+// section: never-started (initializing) and every terminal phase. Terminal
+// sessions (failed/cancelled/completed) previously lingered here forever with
+// a spinner — e.g. a promoted persona whose stale session was parked at a
+// terminal state kept a phantom "draft" row.
+const HIDDEN_DRAFT_PHASES = new Set(['initializing', 'promoted', 'completed', 'failed', 'cancelled']);
 
 // Color classes per activity type — mirror the SidebarLevel1 orbit dots so
 // users see the same signal at both hierarchy levels.
@@ -46,7 +54,7 @@ function rowStatusTitle(grade: string | undefined, isRunning: boolean): string |
 }
 
 export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const personas = useAgentStore((s) => s.personas);
   const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
@@ -83,7 +91,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   const draftPersonaIds = useMemo(() => {
     const ids = new Set<string>();
     for (const sess of Object.values(buildSessions)) {
-      if (sess.phase === 'initializing' || sess.phase === 'promoted') continue;
+      if (HIDDEN_DRAFT_PHASES.has(sess.phase)) continue;
       ids.add(sess.personaId);
     }
     return ids;
@@ -158,7 +166,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   const activeDrafts = useMemo(() => {
     const byPersona = new Map<string, (typeof buildSessions)[string]>();
     for (const sess of Object.values(buildSessions)) {
-      if (sess.phase === 'initializing' || sess.phase === 'promoted') continue;
+      if (HIDDEN_DRAFT_PHASES.has(sess.phase)) continue;
       const existing = byPersona.get(sess.personaId);
       if (!existing || sess.createdAt > existing.createdAt) {
         byPersona.set(sess.personaId, sess);
@@ -260,8 +268,9 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
             </div>
             {activeDrafts.map((draft) => {
               const isActive = isCreatingPersona && draft.sessionId === activeBuildSessionId;
-              const displayName = draft.persona?.name ?? 'Draft agent';
+              const displayName = draft.persona?.name ?? t.shared.sidebar_extra.draft_agent_fallback;
               const needsAnswers = draft.pendingCount > 0 || draft.phase === 'awaiting_input';
+              const phaseLabel = tokenLabel(t, 'build', draft.phase);
               return (
                 <button
                   key={draft.sessionId}
@@ -280,8 +289,13 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   }`}
                   title={
                     needsAnswers
-                      ? `${displayName} — needs ${draft.pendingCount || 1} answer${(draft.pendingCount || 1) === 1 ? '' : 's'}`
-                      : `Switch to draft: ${displayName} (${draft.phase})`
+                      ? tx(
+                          (draft.pendingCount || 1) === 1
+                            ? t.shared.sidebar_extra.draft_needs_answers_one
+                            : t.shared.sidebar_extra.draft_needs_answers_other,
+                          { name: displayName, count: draft.pendingCount || 1 },
+                        )
+                      : tx(t.shared.sidebar_extra.draft_switch_title, { name: displayName, phase: phaseLabel })
                   }
                 >
                   <LoadingSpinner className={`flex-shrink-0 ${needsAnswers ? 'text-amber-400' : 'text-violet-400'}`} />
@@ -292,7 +306,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                       {draft.pendingCount > 0 ? draft.pendingCount : ''}
                     </span>
                   ) : (
-                    <span className="ml-auto text-[10px] text-violet-400/60 capitalize">{draft.phase}</span>
+                    <span className="ml-auto text-[10px] text-violet-400/60">{phaseLabel}</span>
                   )}
                 </button>
               );

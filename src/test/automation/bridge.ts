@@ -10,6 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useSystemStore } from "@/stores/systemStore";
 import { getActiveTourSteps } from "@/stores/slices/system/tourSlice";
 import { useAgentStore } from "@/stores/agentStore";
+import { storeBus } from "@/lib/storeBus";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useCompanionStore } from "@/features/plugins/companion/companionStore";
@@ -127,6 +128,9 @@ interface TestBridge {
     stepCompleted: Array<{ id: string; done: boolean }>;
     allCompleted: boolean;
   };
+  // -- Mock-build seam (getting-started tour in the fresh-DB harness) --
+  driveMockBuild(): Promise<{ success: boolean; sessionId: string; personaId: string; phase: string; phasesDriven: string[] }>;
+  mockExecutionComplete(personaId?: string): { success: boolean; personaId: string };
   [key: string]: unknown;
 }
 
@@ -2613,6 +2617,88 @@ const bridge: TestBridge = {
       stepCompleted: steps.map((st) => ({ id: st.id, done: !!s.tourStepCompleted[st.id] })),
       allCompleted: steps.length > 0 && steps.every((st) => !!s.tourStepCompleted[st.id]),
     };
+  },
+
+  // -- Mock-build seam (getting-started tour, fresh-DB harness) -------------
+  //
+  // WHY THIS EXISTS. The getting-started tour's `persona-creation` step
+  // completes on the `tour:persona-promoted` event, which storeBusWiring
+  // derives from the REAL `build:phase-changed` storeBus event (see
+  // src/lib/storeBusWiring.ts). The live getting-started-tour.spec.ts drives
+  // that by running an actual Opus build → smoke test → promote — which needs
+  // a signed-in Claude CLI, takes minutes, and is too flaky to belong in the
+  // fresh-DB regression harness (npm run test:tours:fresh).
+  //
+  // `driveMockBuild` reproduces the EXACT store transitions the CLI event
+  // stream produces — createBuildSession → handleBuildSessionStatus(phase) for
+  // analyzing/resolving/draft_ready → handleStartTest → handleTestComplete →
+  // handleBuildSessionStatus('promoted') — so `handleBuildSessionStatus` /
+  // `handleTestComplete` emit the SAME `build:phase-changed` events the live
+  // build does, and storeBusWiring turns them into the SAME
+  // `tour:persona-draft-ready` / `tour:persona-promoted` tour events. The
+  // tour's `completeOn` contract is honored: the step completes because the
+  // real tour event fired through storeBus, NOT because a spec called
+  // `tourEmit` to force it.
+  //
+  // WHAT IT DOES NOT COVER: the real CLI/LLM leg. No prompt resolution, no
+  // clarifying questions, no real smoke test, no promoted DB persona. It
+  // proves the TOUR wiring (build phase token → storeBus → tour event → step
+  // completion), NOT the build engine. The end-to-end build path stays guarded
+  // by the nightly/on-demand getting-started-tour.spec.ts.
+  async driveMockBuild() {
+    const sessionId = `mock-build-${Date.now()}`;
+    const personaId = `mock-persona-${Date.now()}`;
+    const nap = () => new Promise((r) => setTimeout(r, 120));
+    // Clean slate — drop any leftover session from a prior scenario so the
+    // scalars mirror this mock session.
+    useAgentStore.getState().resetBuildSession();
+    useAgentStore.getState().createBuildSession(personaId, sessionId);
+
+    // handleBuildSessionStatus emits `build:phase-changed` for each phase,
+    // exactly as the live CLI stream does when the backend advances the build.
+    const status = (phase: string, resolved: number, total: number) =>
+      useAgentStore.getState().handleBuildSessionStatus({
+        type: "session_status",
+        session_id: sessionId,
+        phase,
+        resolved_count: resolved,
+        total_count: total,
+      });
+
+    const phasesDriven: string[] = [];
+    // analyzing → resolving → draft_ready (the real ordering).
+    status("analyzing", 0, 8); phasesDriven.push("analyzing"); await nap();
+    status("resolving", 4, 8); phasesDriven.push("resolving"); await nap();
+    // draft_ready → storeBusWiring → tour:persona-draft-ready
+    status("draft_ready", 8, 8); phasesDriven.push("draft_ready"); await nap();
+    // testing → test_complete (handleTestComplete emits build:phase-changed too)
+    useAgentStore.getState().handleStartTest(`mock-test-${Date.now()}`);
+    phasesDriven.push("testing"); await nap();
+    useAgentStore.getState().handleTestComplete(true, "Mock smoke test passed.");
+    phasesDriven.push("test_complete"); await nap();
+    // promoted → storeBusWiring → tour:persona-promoted (completes the step)
+    status("promoted", 8, 8); phasesDriven.push("promoted");
+
+    return {
+      success: true,
+      sessionId,
+      personaId,
+      phase: useAgentStore.getState().buildPhase,
+      phasesDriven,
+    };
+  },
+
+  // Emit the SAME `execution:completed` storeBus event the real frontend
+  // execution pipeline's frontend_complete stage emits (storeBusWiring
+  // subscribes to it and fires `tour:execution-complete` — see
+  // src/lib/storeBusWiring.ts). This is the mock counterpart of clicking
+  // capability Run Now on a freshly-built agent: it proves the tour's
+  // first-execution wiring without a real CLI run. Call it while the tour is on
+  // the `first-execution` step so `emitTourEvent` matches the current step.
+  mockExecutionComplete(personaId?: string) {
+    const pid = personaId ?? "mock-persona";
+    storeBus.emit("execution:completed", { personaId: pid });
+    return { success: true, personaId: pid };
   },
 
   // -- Athena guided-walkthrough helpers (E2E) -----------------------------

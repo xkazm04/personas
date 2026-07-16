@@ -16,6 +16,10 @@ pub struct ToolExecutionAuditEntry {
     pub result_status: String,
     pub duration_ms: Option<i64>,
     pub error_message: Option<String>,
+    /// Typed failure category (see `engine::tool_outcome::ToolErrorKind`).
+    /// `None` on success rows; a machine token on error/tool_error rows so the
+    /// incidents inbox carries structure instead of an opaque string.
+    pub error_kind: Option<String>,
     pub created_at: String,
 }
 

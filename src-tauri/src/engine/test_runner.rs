@@ -27,6 +27,25 @@ const SCENARIO_CACHE_TTL_SECS: u64 = 600;
 /// `SYNTHESIS_MODEL` (tiger finding: lab tier rode account-default).
 const LAB_MODEL: &str = "claude-sonnet-4-6";
 
+/// Maximum number of lab cells (model × variant × scenario executions) allowed to
+/// run their CLI child concurrently within a single run. `run_lab_loop` used to
+/// `tokio::spawn` every model×variant pair for a scenario at once with no cap,
+/// so a wide roster (e.g. 6 models × 2 variants) launched a dozen Claude CLI
+/// children simultaneously — heavy on CPU, memory, and subscription rate limits.
+/// A small semaphore bounds the in-flight fan-out while keeping enough parallelism
+/// to hide per-cell latency. Tune here.
+const LAB_CELL_CONCURRENCY: usize = 4;
+
+/// Resolve when the shared cancellation flag flips to `true`, polling on a short
+/// interval. Used to race a running cell's CLI execution against cancellation so
+/// the in-flight child is dropped (and, via `kill_on_drop`, killed) within a
+/// second or two of cancel rather than blocking on the per-cell CLI timeout.
+async fn await_cancel(flag: &Arc<std::sync::atomic::AtomicBool>) {
+    while !flag.load(std::sync::atomic::Ordering::Acquire) {
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    }
+}
+
 /// Truncate `s` to at most `max_chars` characters without splitting a multibyte
 /// UTF-8 character. Byte-range slicing (`&s[..n]`) panics when `n` lands
 /// mid-glyph, which LLM output (emoji, smart quotes, em-dashes, CJK) routinely
@@ -1101,18 +1120,42 @@ fn avg_scored(iter: impl Iterator<Item = Option<i32>>) -> Option<f64> {
     }
 }
 
+/// Cost-decay rate for the value-score efficiency curve, in units of 1/USD.
+///
+/// The efficiency multiplier is `exp(-total_cost * RATE)`, an exponential decay
+/// that starts at 1.0 for zero cost and halves roughly every `ln(2)/RATE ≈
+/// $0.069`. Concretely, at RATE = 10: $0.001 → ~0.99, $0.01 → ~0.90,
+/// $0.07 → ~0.50, $0.10 → ~0.37, $0.30 → ~0.05. The shape rewards near-free
+/// runs almost fully while punishing runs past a few cents steeply — chosen so
+/// a small quality edge can't justify a 10× cost blowout. Tune this single
+/// constant to move the whole curve; larger = harsher cost penalty.
+const VALUE_SCORE_COST_DECAY_RATE: f64 = 10.0;
+
 /// Compute value_score on a consistent 0-100 scale for both free and paid models.
 /// For paid models: composite * efficiency_factor, where efficiency_factor
 /// penalizes higher costs but stays in [0, 1].
 /// For free models: composite score directly (perfect efficiency).
+///
+/// NOTE: a caller must not pass a cost of 0.0 for a *cost-unknown* model (e.g.
+/// Ollama, whose cost is hardcoded 0.0) expecting a meaningful value — that
+/// would score it as a perfect-efficiency free model and let it win any
+/// best-value ranking. Cost-unknown models are excluded upstream in the summary
+/// builders instead.
 fn compute_value_score(composite: f64, total_cost: f64) -> f64 {
     if total_cost > 0.0 {
-        // Exponential decay: $0.001 → ~0.99, $0.01 → ~0.90, $0.10 → ~0.37
-        let efficiency = (-total_cost * 10.0).exp();
+        let efficiency = (-total_cost * VALUE_SCORE_COST_DECAY_RATE).exp();
         (composite * efficiency).clamp(0.0, 100.0)
     } else {
         composite // Free models get full composite as value
     }
+}
+
+/// Whether a provider reports a real per-call cost. Ollama's cost is hardcoded
+/// to 0.0 in the runner, so a zero there means "unknown", not "free" — such
+/// models must be excluded from the best-value verdict rather than treated as
+/// infinitely efficient.
+fn provider_cost_is_known(provider: &str) -> bool {
+    provider != super::types::providers::OLLAMA
 }
 
 #[allow(clippy::type_complexity)]
@@ -1145,6 +1188,7 @@ async fn build_summary(
             let composite = avg_ta * WEIGHT_TOOL_ACCURACY
                 + avg_oq * WEIGHT_OUTPUT_QUALITY
                 + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+            let cost_known = provider_cost_is_known(&model.provider);
             let value_score = compute_value_score(composite, total_cost);
 
             rankings.push(serde_json::json!({
@@ -1155,6 +1199,7 @@ async fn build_summary(
                 "avg_protocol_compliance": avg_pc.round() as i32,
                 "composite_score": composite.round() as i32,
                 "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
+                "cost_unknown": !cost_known,
                 "avg_duration_ms": avg_duration.round() as i64,
                 "value_score": value_score.round() as i32,
                 "scenarios_tested": count as i32,
@@ -1182,19 +1227,29 @@ async fn build_summary(
         .unwrap_or("unknown")
         .to_string();
 
-    let best_value = rankings
-        .iter()
-        .max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
-        .and_then(|r| r.get("model_id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("unknown")
-        .to_string();
+    let best_value = best_value_model(&rankings);
 
     serde_json::json!({
         "best_quality_model": best_model,
         "best_value_model": best_value,
         "rankings": rankings,
     })
+}
+
+/// Pick the best-value model from a set of ranking objects, considering ONLY
+/// cost-known models (`cost_unknown != true`). A cost-unknown model (Ollama)
+/// has a hardcoded-zero cost that would otherwise score as perfect efficiency
+/// and always win — so it can never be awarded the best-value verdict. Returns
+/// `"unknown"` when every candidate is cost-unknown.
+fn best_value_model(rankings: &[serde_json::Value]) -> String {
+    rankings
+        .iter()
+        .filter(|r| !r.get("cost_unknown").and_then(|v| v.as_bool()).unwrap_or(false))
+        .max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
+        .and_then(|r| r.get("model_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string()
 }
 
 // -- CLI helpers ------------------------------------------------
@@ -1691,6 +1746,9 @@ async fn run_lab_loop(
     let mut tracker: HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>> =
         HashMap::new();
 
+    // Cap concurrent CLI children across the whole run (see LAB_CELL_CONCURRENCY).
+    let cell_semaphore = Arc::new(tokio::sync::Semaphore::new(LAB_CELL_CONCURRENCY));
+
     for scenario in &scenarios {
         if cancelled.load(std::sync::atomic::Ordering::Acquire) {
             (cb.update_status)(
@@ -1720,8 +1778,14 @@ async fn run_lab_loop(
                 let scenario_c = scenario.clone();
                 let model_c = model.clone();
                 let cancelled_c = cancelled.clone();
+                // Acquire the concurrency permit BEFORE spawning so the loop
+                // throttles the fan-out at the source; the task holds it for its
+                // lifetime. `acquire_owned` only errors if the semaphore is
+                // closed, which never happens here.
+                let permit = cell_semaphore.clone().acquire_owned().await.ok();
 
                 handles.push(tokio::spawn(async move {
+                    let _permit = permit;
                     if cancelled_c.load(std::sync::atomic::Ordering::Acquire) {
                         return (
                             mi,
@@ -1745,8 +1809,15 @@ async fn run_lab_loop(
                             },
                         );
                     }
-                    let result =
-                        execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
+                    // Race execution against cancellation. If cancel fires mid-run
+                    // the execute future (which owns the CLI driver) is dropped;
+                    // the driver's `kill_on_drop` terminates the child within the
+                    // 200ms poll window rather than blocking on the CLI timeout.
+                    let result = tokio::select! {
+                        biased;
+                        _ = await_cancel(&cancelled_c) => Err("Cancelled".to_string()),
+                        r = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c) => r,
+                    };
                     let (status, scores) = match &result {
                         Ok(r) => {
                             let s = score_result(r, &scenario_c, &persona_c, &pool_c).await;
@@ -1786,6 +1857,13 @@ async fn run_lab_loop(
                     continue;
                 }
             };
+            // Do not persist or count any cell once cancellation has been
+            // requested — its result is either a killed-mid-flight stub or a
+            // late arrival, and the run finalizes as Cancelled below. We still
+            // drain the remaining handles (the loop) so no task is detached.
+            if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                continue;
+            }
             current += 1;
             let model = &model_configs[mi];
             let variant = &variants[vi];
@@ -1828,6 +1906,26 @@ async fn run_lab_loop(
                 },
             );
         }
+    }
+
+    // Finalize as Cancelled if cancellation landed during the final scenario's
+    // collection (the per-scenario guard at the loop top only catches cancels
+    // between scenarios). Returning here keeps the status Cancelled and skips the
+    // (CLI-spawning) summary work — and the completeness gate below, so a
+    // cancelled run never mis-finalizes as Failed for having `current < total`.
+    if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+        let now = chrono::Utc::now().to_rfc3339();
+        (cb.update_status)(
+            pool,
+            run_id,
+            LabRunStatus::Cancelled,
+            None,
+            None,
+            None,
+            Some(&now),
+        );
+        emit_lab_status(app, cb.event_name, run_id, "cancelled", None);
+        return;
     }
 
     let summary = (cb.build_summary)(&tracker, model_configs);
@@ -1954,6 +2052,7 @@ fn build_arena_summary(
             let composite = avg_ta * WEIGHT_TOOL_ACCURACY
                 + avg_oq * WEIGHT_OUTPUT_QUALITY
                 + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+            let cost_known = provider_cost_is_known(&model.provider);
             let value_score = compute_value_score(composite, total_cost);
             rankings.push(serde_json::json!({
                 "model_id": model.id,
@@ -1963,6 +2062,7 @@ fn build_arena_summary(
                 "avg_protocol_compliance": avg_pc.round() as i32,
                 "composite_score": composite.round() as i32,
                 "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
+                "cost_unknown": !cost_known,
                 "avg_duration_ms": avg_duration.round() as i64,
                 "value_score": value_score.round() as i32,
                 "scenarios_tested": count as i32,
@@ -1986,13 +2086,7 @@ fn build_arena_summary(
         .and_then(|v| v.as_str())
         .unwrap_or("unknown")
         .to_string();
-    let best_value = rankings
-        .iter()
-        .max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
-        .and_then(|r| r.get("model_id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("unknown")
-        .to_string();
+    let best_value = best_value_model(&rankings);
     serde_json::json!({
         "best_quality_model": best_model,
         "best_value_model": best_value,
@@ -2036,6 +2130,27 @@ fn make_common_result_fields(
 // Lab: Arena
 // ============================================================================
 
+/// Resolve a persona's active production prompt version for result attribution.
+///
+/// Mirrors the frontend active-version rule (`LabVersionsTable`): the version
+/// tagged `production` wins; otherwise the highest `version_number`. Returns
+/// `None` when the persona has no prompt versions at all, so unscoped arena
+/// results correctly stay version-less rather than being attributed to an
+/// invented id. Read-only single-row query; a pool/query error degrades to
+/// `None` (attribution is best-effort, never a reason to fail the run).
+fn resolve_active_version(pool: &DbPool, persona_id: &str) -> Option<(String, i32)> {
+    let conn = pool.get().ok()?;
+    conn.query_row(
+        "SELECT id, version_number FROM persona_prompt_versions
+         WHERE persona_id = ?1
+         ORDER BY (tag = 'production') DESC, version_number DESC
+         LIMIT 1",
+        [persona_id],
+        |row| Ok((row.get::<_, String>(0)?, row.get::<_, i32>(1)?)),
+    )
+    .ok()
+}
+
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub async fn run_arena_test(
     app: AppHandle,
@@ -2055,6 +2170,11 @@ pub async fn run_arena_test(
 ) {
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
+    // `label` reflects the *explicit* version scope only: it keys the summary
+    // tracker, and build_arena_summary looks results up by `model.id` (empty
+    // label). Deriving it from the resolved attribution below would change the
+    // key to `vN:model` and make the arena summary miss every cell — so it must
+    // stay tied to the original `version` argument.
     let label = version
         .as_ref()
         .map(|(_, num)| format!("v{}", num))
@@ -2065,6 +2185,19 @@ pub async fn run_arena_test(
         tools: Vec::new(),
     }];
 
+    // Attribution version stamped onto every persisted result. When the arena
+    // was launched version-scoped, that scope wins. Otherwise (the arena
+    // chrome's own unscoped "Begin the Match") we resolve the persona's active
+    // production version — the same rule the frontend uses — so these results
+    // reach `get_version_ratings` (which filters `version_id IS NOT NULL`) and
+    // the champion tally and ratings table stay in agreement. A persona with no
+    // prompt versions at all keeps `None` (we never invent an id). Kept separate
+    // from `label` so summary keying is unchanged.
+    let attribution: Option<(String, i32)> = match &version {
+        Some(v) => Some(v.clone()),
+        None => resolve_active_version(&pool, &persona.id),
+    };
+
     let cb = LabCallbacks {
         event_name: "lab-arena-status",
         update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
@@ -2072,7 +2205,7 @@ pub async fn run_arena_test(
         }),
         persist_result: Box::new(move |pool, run_id, _variant, scenario, model, status, scores| {
             let base = make_common_result_fields(scenario, model, status, scores);
-            let (version_id, version_number) = match &version {
+            let (version_id, version_number) = match &attribution {
                 Some((vid, vnum)) => (Some(vid.clone()), Some(*vnum)),
                 None => (None, None),
             };
@@ -2875,5 +3008,141 @@ mod tests {
         // Smart quotes / em-dashes are multibyte too — must pass through intact.
         let mixed = "“café” — 你好 🚀";
         assert_eq!(truncate_chars(mixed, 2000), mixed);
+    }
+
+    // -- Direction 1: unscoped-arena attribution --------------------------------
+
+    fn insert_version(conn: &rusqlite::Connection, id: &str, persona_id: &str, num: i32, tag: &str) {
+        conn.execute(
+            "INSERT INTO persona_prompt_versions (id, persona_id, version_number, tag, created_at)
+             VALUES (?1, ?2, ?3, ?4, datetime('now'))",
+            rusqlite::params![id, persona_id, num, tag],
+        )
+        .unwrap();
+    }
+
+    /// The `production`-tagged version is the active one even when a later
+    /// version has a higher number — matching `LabVersionsTable`'s rule so
+    /// unscoped arena results attribute to the same version the UI calls live.
+    #[test]
+    fn resolve_active_version_prefers_production_then_highest_number() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        // Insert with FK checks off so we don't need to materialise a full persona.
+        conn.execute_batch("PRAGMA foreign_keys = OFF;").unwrap();
+        let pid = "persona-arena-attr";
+        insert_version(&conn, "v1", pid, 1, "experimental");
+        insert_version(&conn, "v2", pid, 2, "production");
+        insert_version(&conn, "v3", pid, 3, "experimental");
+        drop(conn);
+        assert_eq!(
+            resolve_active_version(&pool, pid),
+            Some(("v2".to_string(), 2))
+        );
+    }
+
+    /// With no production tag, the highest `version_number` wins.
+    #[test]
+    fn resolve_active_version_falls_back_to_highest_number() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = OFF;").unwrap();
+        let pid = "persona-no-prod";
+        insert_version(&conn, "a1", pid, 1, "experimental");
+        insert_version(&conn, "a2", pid, 5, "experimental");
+        insert_version(&conn, "a3", pid, 3, "archived");
+        drop(conn);
+        assert_eq!(
+            resolve_active_version(&pool, pid),
+            Some(("a2".to_string(), 5))
+        );
+    }
+
+    /// A persona with no prompt versions stays version-less — we never invent an
+    /// id (the acceptance's explicit NULL-preserving case).
+    #[test]
+    fn resolve_active_version_none_when_no_versions() {
+        let pool = crate::db::init_test_db().unwrap();
+        assert_eq!(resolve_active_version(&pool, "persona-empty"), None);
+    }
+
+    // -- Direction 2: best-value must not be awarded on hardcoded-zero cost -----
+
+    fn ranking(model: &str, value_score: i64, cost_unknown: bool) -> serde_json::Value {
+        serde_json::json!({ "model_id": model, "value_score": value_score, "cost_unknown": cost_unknown })
+    }
+
+    /// A cost-unknown model (Ollama, hardcoded-zero cost) posts the top raw
+    /// value_score but must never win best-value — the cost-known runner-up does.
+    #[test]
+    fn best_value_skips_cost_unknown_models() {
+        let rankings = vec![
+            ranking("ollama-local", 100, true),
+            ranking("sonnet", 72, false),
+            ranking("haiku", 88, false),
+        ];
+        assert_eq!(best_value_model(&rankings), "haiku");
+    }
+
+    /// When every candidate is cost-unknown there is no honest best-value winner.
+    #[test]
+    fn best_value_unknown_when_all_cost_unknown() {
+        let rankings = vec![ranking("ollama-a", 90, true), ranking("ollama-b", 95, true)];
+        assert_eq!(best_value_model(&rankings), "unknown");
+    }
+
+    /// Ollama is the documented cost-unknown provider; everything else is known.
+    #[test]
+    fn provider_cost_known_only_for_non_ollama() {
+        assert!(!provider_cost_is_known(super::super::types::providers::OLLAMA));
+        assert!(provider_cost_is_known("anthropic"));
+        assert!(provider_cost_is_known("qwen"));
+    }
+
+    // -- Direction 3: bounded engine / prompt cancellation ----------------------
+
+    /// The cell concurrency cap is a sane small positive number, not accidentally
+    /// zero (which would deadlock the semaphore) or unbounded.
+    #[test]
+    fn lab_cell_concurrency_is_bounded() {
+        assert!(LAB_CELL_CONCURRENCY >= 1 && LAB_CELL_CONCURRENCY <= 8);
+    }
+
+    /// `await_cancel` resolves promptly once the flag flips — this is what lets a
+    /// running cell notice cancellation within the poll window.
+    #[tokio::test]
+    async fn await_cancel_resolves_when_flag_set() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        let flag = std::sync::Arc::new(AtomicBool::new(false));
+        let f = flag.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            f.store(true, Ordering::Release);
+        });
+        tokio::time::timeout(std::time::Duration::from_secs(2), await_cancel(&flag))
+            .await
+            .expect("await_cancel should resolve shortly after the flag is set");
+    }
+
+    /// The biased cancel-race prefers cancellation over an in-flight execution,
+    /// so a cell is abandoned (and its CLI child dropped/killed) immediately on
+    /// cancel instead of blocking on the multi-minute CLI timeout.
+    #[tokio::test]
+    async fn cancel_race_wins_over_slow_execution() {
+        use std::sync::atomic::AtomicBool;
+        let flag = std::sync::Arc::new(AtomicBool::new(true)); // already cancelled
+        let result: Result<(), String> = tokio::time::timeout(
+            std::time::Duration::from_secs(2),
+            async {
+                tokio::select! {
+                    biased;
+                    _ = await_cancel(&flag) => Err("Cancelled".to_string()),
+                    _ = tokio::time::sleep(std::time::Duration::from_secs(30)) => Ok(()),
+                }
+            },
+        )
+        .await
+        .expect("cancel branch must win well before the 30s execution stub");
+        assert_eq!(result, Err("Cancelled".to_string()));
     }
 }

@@ -157,7 +157,11 @@
     "whats_new": "नया क्या है",
     "back_to_plugins": "प्लगइन",
     "roadmap": "रोडमैप",
-    "groups_label": "समूह"
+    "groups_label": "समूह",
+    "draft_agent_fallback": "ड्राफ़्ट एजेंट",
+    "draft_needs_answers_one": "{name} — 1 उत्तर चाहिए",
+    "draft_needs_answers_other": "{name} — {count} उत्तर चाहिए",
+    "draft_switch_title": "ड्राफ़्ट पर जाएँ: {name} ({phase})"
   },
   "execution_detail": {
     "copy": "कॉपी करें",

@@ -131,5 +131,9 @@
   "group_needs_review": "待首次审查",
   "group_low_scores": "低分",
   "group_declining": "下降趋势",
-  "group_stale": "审查过期"
+  "group_stale": "审查过期",
+  "roster_unscored": "未评分",
+  "roster_unscored_hint": "Director 审查了此代理但未返回评分；打开审查以查看其指导。",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "由 Director 的辅导审查提出——像处理其他问题一样批准或解决它。"
 }

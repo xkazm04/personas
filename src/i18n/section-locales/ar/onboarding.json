@@ -166,5 +166,11 @@
   "local_tooling_label": "أدوات مدمجة",
   "local_tooling_sentence": "لدى Personas أدوات محلية متصلة منذ البداية — المراسلة (Messaging)، قاعدة البيانات (Database)، المتجهات (Vector)، والمزيد — دون الحاجة إلى أي بيانات اعتماد.",
   "resume_continue_title": "تابع من حيث توقفت",
-  "resume_continue_cta": "متابعة الجولة"
+  "resume_continue_cta": "متابعة الجولة",
+  "replay_setup": "إعادة الإعداد",
+  "resume_setup": "متابعة الإعداد",
+  "tour_handoff_accept": "ابدأ الجولة",
+  "tour_handoff_body": "أول وكيل لديك يعمل الآن. قم بجولة إرشادية سريعة على البقية — الاتصالات وتشغيل الوكلاء — وسنتخطى الأجزاء التي أنجزتها للتو.",
+  "tour_handoff_dismiss": "ليس الآن",
+  "tour_handoff_title": "هل تريد الجولة الإرشادية؟"
 }

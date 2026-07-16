@@ -9,6 +9,7 @@ import { HeartbeatIndicator } from '../HeartbeatIndicator';
 import { InsightBand } from './insights';
 import { CompositeHealthBar, GradeDot, TrendBadge, MiniStat } from './primitives';
 import { RowDetail } from './RowDetail';
+import { SuccessSourceBadge } from './SuccessSourceBadge';
 import {
   GRADE_THEME, capitalize, type HeartbeatsVariantProps, type HeartbeatsModel,
 } from './model';
@@ -153,7 +154,10 @@ function LedgerRow({ signal, expanded, onToggle }: { signal: PersonaHealthSignal
 
         <div className="hidden md:flex items-center justify-end gap-3 shrink-0 w-[200px]">
           <TrendBadge trend={signal.failureTrend} />
-          <MiniStat icon={Heart} value={<Numeric value={signal.successRate} unit="percent" precision={0} />} tone={successTone} />
+          <span className="inline-flex items-center gap-1">
+            <MiniStat icon={Heart} value={<Numeric value={signal.successRate} unit="percent" precision={0} />} tone={successTone} />
+            <SuccessSourceBadge source={signal.successRateSource} />
+          </span>
           <MiniStat icon={DollarSign} value={<Numeric value={signal.dailyBurnRate} unit="usd" />} tone={burnTone} />
         </div>
 

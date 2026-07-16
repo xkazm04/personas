@@ -46,3 +46,4 @@ The governance surfaces (audit, exposure manager, tiers, observability) must be 
 3. [completion] Team/access control + tier enforcement actually gate as claimed.
 4. [missing] An audit/observability trail exists for what agents did.
 5. [clarity] She could walk a security reviewer through it without hand-waving.
+6. [trust] The vault never silently drops an audit-log entry — a failed decrypt-audit write surfaces as a visible "Vault needs attention" warning with a count, not a permanently-green badge. The Teams Monitor (Timeline/Conversations) holds up as a credible audit trail for what multi-agent work actually did.

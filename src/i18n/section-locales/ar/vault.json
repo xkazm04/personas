@@ -711,7 +711,9 @@
     "encrypt_now_other": "تشفير {count} بيانات اعتماد غير مشفّرة الآن",
     "encrypt_done_one": "تم -- تم تشفير {migrated} بيانات اعتماد.",
     "encrypt_done_other": "تم -- تم تشفير {migrated} بيانات اعتماد.",
-    "encrypt_partial": "تم تشفير {migrated}، فشل {failed}. حاول مجدداً أو أعد تشغيل التطبيق."
+    "encrypt_partial": "تم تشفير {migrated}، فشل {failed}. حاول مجدداً أو أعد تشغيل التطبيق.",
+    "audit_gap_detail": "تعذّرت كتابة {count} من سجلات تدقيق بيانات الاعتماد منذ بدء التشغيل. لم يتم حظر الوصول إلى بيانات الاعتماد مطلقًا، لكن أحداث الوصول هذه مفقودة من سجل التدقيق. تحقّق من مساحة القرص أو سلامة قاعدة البيانات.",
+    "audit_gap_title": "سجل التدقيق غير مكتمل"
   },
   "delete_dialog": {
     "title": "حذف بيانات الاعتماد",
@@ -892,7 +894,9 @@
     "filter_all_health": "جميع الحالات الصحية",
     "health_healthy": "سليم",
     "health_failing": "فاشل",
-    "health_untested": "غير مُختبر"
+    "health_untested": "غير مُختبر",
+    "health_unverifiable": "غير قابل للتحقق",
+    "health_unverifiable_tooltip": "لا يملك هذا الموصّل فحصًا مباشرًا — يتم تخزين بيانات الاعتماد لكن لا يمكن التحقق منها."
   },
   "foraging": {
     "no_credentials_found": "لم تُعثَر على بيانات اعتماد",

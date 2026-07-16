@@ -525,7 +525,13 @@
     "event_data": "イベントデータ",
     "error": "エラー",
     "skipped_stat_label": "{skipped} 件スキップ",
-    "skipped_stat_tooltip": "過去 7 日間で {total} 件中 {skipped} 件のイベントに購読者がなくスキップされました（{rate}）。この割合が高い場合、誰も購読していないトリガーがあることを示します。"
+    "skipped_stat_tooltip": "過去 7 日間で {total} 件中 {skipped} 件のイベントに購読者がなくスキップされました（{rate}）。この割合が高い場合、誰も購読していないトリガーがあることを示します。",
+    "type_labels": {
+      "sla_breach_opened": "SLA違反が発生",
+      "sla_breach_recovered": "SLA違反から回復",
+      "schedule_missed_offline": "オフライン中に逃したスケジュール実行",
+      "schedule_skipped_overlap": "スケジュールをスキップ（前回の実行が実行中）"
+    }
   },
   "health": {
     "title": "エージェントヘルス",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "チェーンカスケードマップ",
-    "no_chains": "チェーンが検出されません — すべてのペルソナが独立して動作しています"
+    "no_chains": "チェーンが検出されません — すべてのペルソナが独立して動作しています",
+    "cofail_insufficient": "同時障害なし",
+    "cofail_pct": "{pct}% 同時障害"
   },
   "predictive_alerts_extra": {
     "title": "予測アラート",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "ステータスページを読み込み中…",
     "loading_reliability": "信頼性データを読み込み中…",
     "heartbeats_btn": "ハートビート",
-    "reliability_btn": "信頼性"
+    "reliability_btn": "信頼性",
+    "source_byom_policy": "BYOM ポリシー",
+    "source_healing_issues": "修復の問題",
+    "source_monthly_spend": "月間支出",
+    "source_provider_stats": "プロバイダー統計",
+    "sources_unavailable": "{sources} を読み込めませんでした。スコアが不正確な可能性があります。"
   },
   "popup_fields": {
     "sign_up_free_at": "無料で登録",
@@ -1573,7 +1586,11 @@
     "seg_healing": "回復",
     "seg_stability": "安定性",
     "seg_success": "成功",
-    "show_all": "すべて表示"
+    "show_all": "すべて表示",
+    "fleet_avg_badge": "フリート平均",
+    "fleet_avg_tooltip": "この期間にこのペルソナの実行記録がありません — ペルソナごとの実測値ではなく、フリート全体の平均成功率を表示しています。",
+    "no_data_badge": "データなし",
+    "no_data_tooltip": "この期間にこのペルソナの完了または失敗した実行がありません — 成功率は実測値ではなくプレースホルダーです。"
   },
   "provenance": {
     "sourced_tip": "{count}件のソースを参照しており、追跡・監査が可能です。",

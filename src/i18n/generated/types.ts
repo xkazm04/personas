@@ -1436,6 +1436,11 @@ export type Translations = {
       vr_action_unpin_baseline: string;
       vr_unmeasured: string;
       vr_no_model: string;
+      vr_score_caution: string;
+      vr_degraded_tooltip: string;
+      vr_partial_tooltip: string;
+      vr_cost_unknown: string;
+      vr_cost_unknown_tooltip: string;
       vr_samples: string;
       vr_samples_other: string;
       vr_empty_title: string;
@@ -1450,6 +1455,14 @@ export type Translations = {
       vr_metric_tool: string;
       vr_metric_quality: string;
       vr_metric_protocol: string;
+      vr_reconcile_title: string;
+      vr_reconcile_desc_one: string;
+      vr_reconcile_desc_other: string;
+      vr_reconcile_pinned_to: string;
+      vr_reconcile_now_follows: string;
+      vr_reconcile_clear_pin: string;
+      vr_reconcile_clear_all: string;
+      vr_reconcile_done: string;
       mode_arena: string;
       mode_arena_desc: string;
       mode_improve: string;
@@ -1658,6 +1671,11 @@ export type Translations = {
       improvement_run_started: string;
       analyzing_patching: string;
       auto_improve: string;
+      improve_run_seed_measured: string;
+      improve_run_seed_plain: string;
+      improve_seeded: string;
+      improve_failed: string;
+      improve_focus: string;
       no_prompt_changes: string;
       evaluation_notes: string;
       how_to_fix: string;
@@ -2604,6 +2622,14 @@ export type Translations = {
       error: string;
       invalid_json: string;
       input_json_placeholder: string;
+      run_tool: string;
+      panel_title: string;
+      panel_subtitle: string;
+      output_truncated: string;
+      http_status_label: string;
+      retryable_hint: string;
+      failure_kind_label: string;
+      builtin_note: string;
     };
     health_check: {
       title: string;
@@ -3539,6 +3565,38 @@ export type Translations = {
       create_agent: string;
       min_completeness: string;
     };
+    change_history: {
+      title: string;
+      empty: string;
+      empty_value: string;
+      sources: {
+        editor: string;
+        header: string;
+        fanout: string;
+        other: string;
+      };
+      fields: {
+        name: string;
+        description: string;
+        system_prompt: string;
+        structured_prompt: string;
+        icon: string;
+        color: string;
+        enabled: string;
+        sensitive: string;
+        headless: string;
+        max_concurrent: string;
+        timeout_ms: string;
+        max_budget_usd: string;
+        max_turns: string;
+        design_context: string;
+        parameters: string;
+        lifecycle: string;
+        cli_awareness_enabled: string;
+        model_profile: string;
+        notification_channels: string;
+      };
+    };
   };
   director: {
     panel_title: string;
@@ -3674,6 +3732,10 @@ export type Translations = {
     group_low_scores: string;
     group_declining: string;
     group_stale: string;
+    roster_unscored: string;
+    roster_unscored_hint: string;
+    healing_source_badge: string;
+    healing_source_hint: string;
   };
   vault: {
     workspace_connect: string;
@@ -4494,6 +4556,8 @@ export type Translations = {
       encrypt_done_one: string;
       encrypt_done_other: string;
       encrypt_partial: string;
+      audit_gap_title: string;
+      audit_gap_detail: string;
     };
     delete_dialog: {
       title: string;
@@ -4673,6 +4737,8 @@ export type Translations = {
       filter_all: string;
       filter_all_health: string;
       health_healthy: string;
+      health_unverifiable: string;
+      health_unverifiable_tooltip: string;
       health_failing: string;
       health_untested: string;
     };
@@ -6352,6 +6418,12 @@ export type Translations = {
       source_scheduled: string;
       event_detail_title: string;
       event_detail_status: string;
+      type_labels: {
+        sla_breach_opened: string;
+        sla_breach_recovered: string;
+        schedule_missed_offline: string;
+        schedule_skipped_overlap: string;
+      };
       load_older: string;
       clear_filters: string;
       col_trigger: string;
@@ -7065,6 +7137,8 @@ export type Translations = {
     cascade: {
       title: string;
       no_chains: string;
+      cofail_pct: string;
+      cofail_insufficient: string;
     };
     predictive_alerts_extra: {
       title: string;
@@ -7297,6 +7371,11 @@ export type Translations = {
       loading_reliability: string;
       heartbeats_btn: string;
       reliability_btn: string;
+      sources_unavailable: string;
+      source_monthly_spend: string;
+      source_healing_issues: string;
+      source_byom_policy: string;
+      source_provider_stats: string;
     };
     heartbeats: {
       monitored: string;
@@ -7317,6 +7396,10 @@ export type Translations = {
       seg_healing: string;
       seg_stability: string;
       seg_budget: string;
+      fleet_avg_badge: string;
+      fleet_avg_tooltip: string;
+      no_data_badge: string;
+      no_data_tooltip: string;
     };
     popup_fields: {
       sign_up_free_at: string;
@@ -10609,6 +10692,8 @@ export type Translations = {
     skip_tooltip: string;
     opening_wizard: string;
     skip_button: string;
+    replay_setup: string;
+    resume_setup: string;
     adopt_button: string;
     continue_button: string;
     done_button: string;
@@ -10705,6 +10790,10 @@ export type Translations = {
     auto_complete_hint: string;
     tour_explore_to_continue: string;
     tour_acknowledge: string;
+    tour_handoff_title: string;
+    tour_handoff_body: string;
+    tour_handoff_accept: string;
+    tour_handoff_dismiss: string;
     start_tour: string;
     tour_storage_unavailable_toast: string;
     connector_count_stat: string;
@@ -11120,6 +11209,8 @@ export type Translations = {
     projected: string;
     success: string;
     failed: string;
+    unverified: string;
+    unverified_tooltip: string;
     overlap: string;
     filter_reset: string;
     filter_reset_aria: string;
@@ -11144,6 +11235,12 @@ export type Translations = {
     backfill_result_capped: string;
     backfill_result_show_slots: string;
     backfill_inline_tooltip: string;
+    missed_offline: string;
+    missed_backfill_cta: string;
+    missed_offline_tooltip: string;
+    missed_dismiss: string;
+    reason_invalid_timezone: string;
+    reason_unscheduled: string;
     more_actions: string;
     advanced_actions_aria: string;
     skip_next_fire: string;
@@ -11645,6 +11742,17 @@ export type Translations = {
       transient_process_failure: string;
       unknown: string;
     };
+    tool_error_kind: {
+      auth: string;
+      timeout: string;
+      http: string;
+      transport: string;
+      tool_error: string;
+      rate_limited: string;
+      misconfigured: string;
+      unknown: string;
+      unsupported: string;
+    };
     execution: {
       queued: string;
       running: string;
@@ -11773,6 +11881,19 @@ export type Translations = {
       low: string;
       medium: string;
       high: string;
+    };
+    build: {
+      initializing: string;
+      analyzing: string;
+      awaiting_input: string;
+      resolving: string;
+      draft_ready: string;
+      completed: string;
+      failed: string;
+      cancelled: string;
+      testing: string;
+      test_complete: string;
+      promoted: string;
     };
   };
   project_overview: {
@@ -12028,6 +12149,7 @@ export type Translations = {
       spawn_headless_hint: string;
       headless_badge: string;
       headless_no_terminal: string;
+      live_slot_hibernated_toast: string;
     };
     title: string;
     subtitle: string;
@@ -14363,6 +14485,8 @@ export type Translations = {
       goal_view_missions: string;
       mission_unlinked: string;
       mission_link_goal: string;
+      goal_field_kpi: string;
+      goal_kpi_none: string;
     };
     dev_projects: {
       bulk_selected_one: string;
@@ -15788,6 +15912,8 @@ export type Translations = {
       deck_phase_paused: string;
       deck_pause: string;
       deck_resume: string;
+      readiness_chip_label: string;
+      readiness_chip_tooltip: string;
     };
     category_changes: string;
     importance_shifts: string;
@@ -16153,6 +16279,10 @@ export type Translations = {
       back_to_plugins: string;
       roadmap: string;
       groups_label: string;
+      draft_agent_fallback: string;
+      draft_needs_answers_one: string;
+      draft_needs_answers_other: string;
+      draft_switch_title: string;
     };
     execution_detail: {
       copy: string;
@@ -17337,6 +17467,9 @@ export type Translations = {
     source_verified: string;
     kpi_scope_label: string;
     kpi_scope_this_context: string;
+    evaluate_measured: string;
+    evaluate_partial: string;
+    evaluate_none_due: string;
   };
   planner: {
     nav_label: string;

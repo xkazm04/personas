@@ -41,7 +41,7 @@ Parity: the keyboard/SR path completes the same job at the same quality as the m
 
 ## Scored acceptance criteria (applied IDENTICALLY every run)
 1. [completion] The core path is completable keyboard-only, no focus trap.
-2. [clarity] Interactive controls have accessible names + states (the shared primitives, e.g. AccessibleToggle, help here).
+2. [clarity] Interactive controls have accessible names + states (the shared primitives, e.g. AccessibleToggle, help here) — including newer controls like the persistent onboarding footer "Resume/Replay setup" icon.
 3. [trust] Modals are escapable and return focus correctly.
 4. [missing] No critical action is mouse-only (canvas/team surfaces especially).
 5. [senior-quality] Output/result is perceivable via screen reader, not just visually.

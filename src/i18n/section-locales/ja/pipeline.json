@@ -346,7 +346,9 @@
     "collab_label": "コラボ",
     "deck_phase_paused": "一時停止",
     "deck_pause": "一時停止",
-    "deck_resume": "再開"
+    "deck_resume": "再開",
+    "readiness_chip_label": "セットアップが必要",
+    "readiness_chip_tooltip": "このメンバーのコネクタはまだセットアップが必要です。参加して議論はできますが、機能は保留されています — 認証情報を追加するまでアクションは実行されません（サイドバーの「接続」セクションを開いてください）。"
   },
   "memory_created": "メモリーをチーム台帳に保存しました",
   "memory_updated": "メモリーを更新しました",

@@ -190,6 +190,7 @@ pub mod session_pool;
 pub mod share_link;
 pub mod shared_event_local_relay;
 pub mod shared_event_relay;
+pub mod sla_breach;
 pub mod slack_poller;
 pub mod smee_relay;
 pub mod ssrf_safe_dns;
@@ -201,6 +202,7 @@ pub mod template_checksums;
 pub mod template_v3;
 pub mod test_runner;
 pub mod tier;
+pub mod tool_outcome;
 pub mod tool_runner;
 pub mod topology_graph;
 pub mod topology_heuristic;
@@ -2227,8 +2229,45 @@ async fn handle_execution_result(
         (None, err) => err.clone(),
     };
 
+    // Direction 2 (runner owns its terminal status): the runner now writes a
+    // provisional terminal status before returning (success → Completed,
+    // CLI-failure → Failed) with all result fields, so the row is never left
+    // `running` even if this handler never runs. This handler's job is now
+    // confirmation/refinement rather than the primary write.
+    //
+    // When an output assertion downgrades a successful run, the runner's
+    // provisional `completed` must become `incomplete`. `persist_status_if_not_final`
+    // below cannot perform that move (`completed` is terminal, its guard is
+    // `status = 'running'`), so first apply a compare-and-set guarded on the
+    // current `completed` status. This never clobbers a concurrent cancel — a
+    // cancel leaves the row `cancelled`, not `completed`, so the CAS no-ops. And
+    // if the runner's provisional write was skipped (row still `running`), this
+    // CAS also no-ops and the `persist_status_if_not_final` call below advances
+    // running → incomplete instead, so the final state is Incomplete either way.
+    if status == ExecutionState::Incomplete && result.success {
+        if let Ok(conn) = pool.get() {
+            if let Err(e) = conn.execute(
+                "UPDATE persona_executions SET status = 'incomplete', \
+                 error_message = COALESCE(?1, error_message) \
+                 WHERE id = ?2 AND status = 'completed'",
+                rusqlite::params![effective_error.clone(), exec_id],
+            ) {
+                tracing::warn!(
+                    execution_id = %exec_id,
+                    error = %e,
+                    "assertion downgrade CAS (completed → incomplete) failed; \
+                     persist_status_if_not_final will retry running → incomplete"
+                );
+            }
+        }
+    }
+
     // Write final status to DB. Use conditional write to avoid overwriting
     // a terminal status if a concurrent cancel already finalized the execution.
+    // With the runner's provisional write in place this is idempotent when the
+    // row is already terminal, and remains the retrying safety net (dead-letter
+    // + healing event) for the case where the runner's single-shot write was
+    // skipped and the row is still `running`.
     persist_status_if_not_final(
         pool,
         Some(app),
@@ -2366,6 +2405,12 @@ async fn handle_execution_result(
     if let Err(e) = persona_repo::refresh_trust_score(pool, persona_id) {
         tracing::warn!(persona_id, error = %e, "Failed to refresh trust score");
     }
+
+    // SLA breach detection -- cheap bounded read of this persona's recent
+    // reliability; emits a typed bus event (once per episode) when it crosses
+    // into or back out of a breach. Runs HERE on the completion path, never at
+    // dashboard load. Best-effort: never fails the execution.
+    sla_breach::evaluate_on_completion(pool, app, persona_id);
 
     // Knowledge graph extraction -- learn from every execution
     {

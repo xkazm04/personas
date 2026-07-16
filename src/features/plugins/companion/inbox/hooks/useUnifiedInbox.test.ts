@@ -83,6 +83,7 @@ function healingRecord(o: Partial<PersonaHealingIssue> = {}): PersonaHealingIssu
     status: 'open',
     created_at: '2026-04-20T09:00:00.000Z',
     resolved_at: null,
+    source: null,
     ...o,
   };
 }

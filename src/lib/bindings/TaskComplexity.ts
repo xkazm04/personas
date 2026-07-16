@@ -5,44 +5,38 @@
  *
  * # Canonical source
  *
- * **As of 2026-05-05, no caller of [`ByomPolicy::evaluate`] supplies an
- * explicit complexity.** The only production call site lives in
- * `engine/runner/mod.rs` (search for `byom_policy.*evaluate`) and passes
- * `None`, which falls through to [`TaskComplexity::DEFAULT`] (`Standard`).
+ * **As of 2026-07-15 the production runner classifies complexity** via
+ * [`TaskComplexity::infer`] and passes it to [`ByomPolicy::evaluate`]. The
+ * single production call site lives in `engine/runner/mod.rs` (search for
+ * `byom_policy.*evaluate`). Before this, every call passed `None` → the
+ * evaluator fell through to [`TaskComplexity::DEFAULT`] (`Standard`), so
+ * `Simple`/`Critical` routing rules silently no-op'd. That is fixed: routing
+ * rules for all three bands can now fire.
  *
- * This means routing rules whose `task_complexity` is `Simple` or `Critical`
- * **never fire today** — the matching loop in [`ByomPolicy::evaluate`] only
- * finds `Standard` rules. Users who configure a `Simple` rule expecting cost
- * savings will silently route through the `Standard` branch every time.
- *
- * # Precedence (intended, when sources land)
- *
- * When future work introduces classification, the resolution order at the
- * runner call site MUST be:
+ * # Precedence (implemented order at the runner call site)
  *
  * 1. **Explicit per-execution override** — passed by an API caller, slash
  *    command, or schedule. Highest priority because it is the most specific
- *    signal.
- * 2. **Persona-level default** — a future field on `Persona` (e.g. derived
- *    from `template_category` or set explicitly in the editor). Applies to
- *    every execution of that persona unless overridden.
- * 3. **Heuristic inference** — optional last-resort classification from the
- *    prompt body (e.g. token count, keyword presence). Should be feature-flagged
- *    so that an unexpected upgrade to "Critical" never silently increases cost.
- * 4. **`TaskComplexity::DEFAULT` (`Standard`)** — terminal fallback when
- *    nothing above produced a value. Logged at the decision point so the
- *    fallback is observable rather than silent.
+ *    signal. *(No such source exists yet; reserved for future work.)*
+ * 2. **Persona-level default** — a future field on `Persona` (e.g. set
+ *    explicitly in the editor). *(Not yet wired.)*
+ * 3. **Heuristic inference** — [`TaskComplexity::infer`], a conservative,
+ *    deterministic classifier over the composed-prompt size and tool count.
+ *    **This is the layer the runner uses today.** Biased toward `Standard` so
+ *    an unexpected upgrade to `Critical` never silently increases cost.
+ * 4. **`TaskComplexity::DEFAULT` (`Standard`)** — terminal fallback if a
+ *    caller still passes `None`. Logged at the decision point so the fallback
+ *    is observable rather than silent.
  *
  * Each layer narrows from "more specific" to "less specific"; never invert
- * the order.
+ * the order. New sources slot in above the heuristic, not below it.
  *
  * # Why this matters
  *
  * BYOM cost routing exists for the `Simple` and `Critical` branches — that's
  * the whole point. A routing rule for `Simple` is a contract with the user:
- * "format-only edits will hit the cheap model." Until something wires up a
- * real complexity source, that contract is unfulfilled. The doc comment here
- * is the audit trail; the tracing breadcrumb in `evaluate` is the runtime
- * signal that flags the fallback.
+ * "format-only edits will hit the cheap model." The runner now honors that
+ * contract via the heuristic; the tracing breadcrumb in `evaluate` records
+ * which source produced the band.
  */
 export type TaskComplexity = "simple" | "standard" | "critical";

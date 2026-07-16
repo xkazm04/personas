@@ -271,6 +271,73 @@ pub fn list_non_terminal(
     })
 }
 
+/// Minimum age (hours since last update) before a non-terminal build session on
+/// a non-draft persona is considered abandoned and swept to a terminal phase.
+///
+/// Conservative on purpose: an interactive build parked at `awaiting_input`
+/// legitimately waits on the user, and a one-shot build's resolution turns can
+/// span many minutes. 24h is far past any legal in-flight window, so a session
+/// still non-terminal after it — on a persona that has already been promoted to
+/// `active` (or later `archived`) — is genuinely stuck data, not live work.
+pub const STALE_SESSION_MIN_AGE_HOURS: i64 = 24;
+
+/// Reconcile stuck build sessions: transition any build session that is still in
+/// a NON-terminal phase to `cancelled` when BOTH hold:
+///   * its owning persona's lifecycle is NOT `draft` (i.e. `active`/`archived`,
+///     or a legacy NULL which `COALESCE` treats as `active`) — the persona has
+///     already been promoted/adopted, so its build session is orphaned data; and
+///   * the session has had no activity for at least `min_age_hours`.
+///
+/// Real, promoted personas (e.g. GitHub Issue Sentinel, Tech News Brief) were
+/// observed carrying build sessions parked forever at `draft_ready`/`testing`;
+/// those ghosts resurface anywhere sessions are listed. This closes them at the
+/// source.
+///
+/// `cancelled` is used deliberately: `BuildPhase::validate_transition` allows
+/// EVERY non-terminal phase to move to `Cancelled` (the "any phase can
+/// transition to Failed or Cancelled" rule), so this bulk sweep follows a legal
+/// transition path for every row it touches — no bypass required. Reusing
+/// `cancelled` (rather than a new `expired` phase) keeps the terminal set and
+/// all existing `phase NOT IN (...terminal...)` filters unchanged.
+///
+/// NEVER touches: sessions of personas still `lifecycle = 'draft'` (a draft's
+/// in-flight build IS live work), and sessions updated within `min_age_hours`.
+/// Idempotent: once a row is `cancelled` it is terminal and no longer matches.
+///
+/// Returns the number of sessions swept.
+pub fn expire_stale_non_terminal(
+    pool: &DbPool,
+    min_age_hours: i64,
+) -> Result<usize, AppError> {
+    timed_query!(
+        "build_sessions",
+        "build_sessions::expire_stale_non_terminal",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            // julianday() parses the RFC3339 timestamps this codebase stores
+            // (same pattern as automation_runs::reap_stale_runs). The elapsed
+            // hours = (julianday(now) - julianday(updated_at)) * 24.
+            let changed = conn.execute(
+                "UPDATE build_sessions
+                 SET phase = 'cancelled',
+                     error_message = COALESCE(
+                         error_message,
+                         'Auto-cancelled: build session left in a non-terminal phase on an active/archived persona with no activity for over 24h'
+                     ),
+                     updated_at = ?1
+                 WHERE phase NOT IN ('completed', 'failed', 'cancelled', 'promoted')
+                   AND (julianday(?1) - julianday(updated_at)) * 24.0 >= ?2
+                   AND persona_id IN (
+                       SELECT id FROM personas WHERE COALESCE(lifecycle, 'active') != 'draft'
+                   )",
+                params![now, min_age_hours],
+            )?;
+            Ok(changed)
+        }
+    )
+}
+
 /// Delete a build session by ID.
 pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("build_sessions", "build_sessions::delete", {
@@ -279,4 +346,148 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
         stmt.execute(params![id])?;
         Ok(())
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use crate::db::models::{CreatePersonaInput, PersonaLifecycle};
+    use crate::db::repos::core::personas;
+
+    fn make_persona(pool: &DbPool, name: &str, lifecycle: Option<&str>) -> String {
+        let input = CreatePersonaInput {
+            name: name.into(),
+            system_prompt: "A real, fully-built system prompt for this persona.".into(),
+            project_id: None,
+            description: None,
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: Some(true),
+            max_concurrent: None,
+            timeout_ms: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: None,
+            notification_channels: None,
+            lifecycle: lifecycle.map(|s| s.to_string()),
+        };
+        personas::create(pool, input).unwrap().id
+    }
+
+    fn insert_session(
+        pool: &DbPool,
+        persona_id: &str,
+        phase: BuildPhase,
+        updated_at: &str,
+    ) -> String {
+        let id = uuid::Uuid::new_v4().to_string();
+        let session = BuildSession {
+            id: id.clone(),
+            persona_id: persona_id.to_string(),
+            phase,
+            resolved_cells: "{}".into(),
+            pending_question: None,
+            agent_ir: None,
+            adoption_answers: None,
+            intent: "test intent".into(),
+            error_message: None,
+            cli_pid: None,
+            workflow_json: None,
+            parser_result_json: None,
+            mode: Some("interactive".into()),
+            companion_session_id: None,
+            disabled_dims_json: None,
+            phase_timings_json: None,
+            total_cost_usd: None,
+            input_tokens: None,
+            output_tokens: None,
+            num_turns: None,
+            created_at: updated_at.to_string(),
+            updated_at: updated_at.to_string(),
+        };
+        create(pool, &session).unwrap();
+        // `create` does not stamp updated_at from the struct's own field via the
+        // UPDATE path, but the INSERT above uses the struct value directly, so
+        // the row carries `updated_at`. Confirm.
+        assert_eq!(
+            get_by_id(pool, &id).unwrap().unwrap().updated_at,
+            updated_at
+        );
+        id
+    }
+
+    fn hours_ago(h: i64) -> String {
+        (chrono::Utc::now() - chrono::Duration::hours(h)).to_rfc3339()
+    }
+
+    #[test]
+    fn sweeps_stuck_session_on_promoted_persona() {
+        let pool = init_test_db().unwrap();
+        // Promoted (active) persona with a session parked at draft_ready 48h ago.
+        let persona_id = make_persona(&pool, "Promoted Sentinel", None);
+        assert_eq!(personas::get_by_id(&pool, &persona_id).unwrap().lifecycle, "active");
+        let sid = insert_session(&pool, &persona_id, BuildPhase::DraftReady, &hours_ago(48));
+
+        let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
+        assert_eq!(swept, 1, "the stuck session on a promoted persona must be swept");
+
+        let after = get_by_id(&pool, &sid).unwrap().unwrap();
+        assert_eq!(after.phase, BuildPhase::Cancelled);
+        assert!(after.error_message.is_some());
+
+        // Idempotent: a second sweep is a no-op.
+        assert_eq!(expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap(), 0);
+    }
+
+    #[test]
+    fn never_sweeps_draft_lifecycle_persona() {
+        let pool = init_test_db().unwrap();
+        // Draft persona: its in-flight build is live work — must be left alone
+        // even when old.
+        let persona_id = make_persona(&pool, "Still Drafting", Some("draft"));
+        let sid = insert_session(&pool, &persona_id, BuildPhase::DraftReady, &hours_ago(72));
+
+        let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
+        assert_eq!(swept, 0, "draft-lifecycle personas must never be swept");
+        assert_eq!(get_by_id(&pool, &sid).unwrap().unwrap().phase, BuildPhase::DraftReady);
+    }
+
+    #[test]
+    fn never_sweeps_recent_session() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Fresh Build", None);
+        // Updated 1h ago — inside the conservative window.
+        let sid = insert_session(&pool, &persona_id, BuildPhase::Testing, &hours_ago(1));
+
+        let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
+        assert_eq!(swept, 0, "recently-active sessions must never be swept");
+        assert_eq!(get_by_id(&pool, &sid).unwrap().unwrap().phase, BuildPhase::Testing);
+    }
+
+    #[test]
+    fn leaves_terminal_sessions_untouched() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Done", None);
+        // Already promoted/terminal, old — not a candidate.
+        let sid = insert_session(&pool, &persona_id, BuildPhase::Promoted, &hours_ago(96));
+
+        let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
+        assert_eq!(swept, 0);
+        assert_eq!(get_by_id(&pool, &sid).unwrap().unwrap().phase, BuildPhase::Promoted);
+    }
+
+    #[test]
+    fn sweeps_archived_persona_session() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Archived One", None);
+        personas::set_lifecycle(&pool, &persona_id, PersonaLifecycle::Archived).unwrap();
+        let sid = insert_session(&pool, &persona_id, BuildPhase::Resolving, &hours_ago(30));
+
+        let swept = expire_stale_non_terminal(&pool, STALE_SESSION_MIN_AGE_HOURS).unwrap();
+        assert_eq!(swept, 1, "archived personas' stuck sessions are swept too");
+        assert_eq!(get_by_id(&pool, &sid).unwrap().unwrap().phase, BuildPhase::Cancelled);
+    }
 }

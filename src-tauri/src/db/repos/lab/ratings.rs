@@ -87,6 +87,11 @@ pub fn delete_ratings_for_run(pool: &DbPool, run_id: &str) -> Result<bool, AppEr
 /// Weighted composite (0-100) over whichever sub-scores are present, renormalising
 /// the canonical `SCORE_WEIGHTS` across the available components. `None` when no
 /// component has a value (e.g. every sample for the pair errored before scoring).
+///
+/// When only some sub-scores are present the renormalisation makes the result
+/// **not** directly comparable to a full-coverage composite. That partiality is
+/// no longer silent — [`composite_and_coverage`] pairs this value with a
+/// `partial_coverage` flag surfaced on the rating row so the UI can annotate it.
 fn composite_from_parts(ta: Option<f64>, oq: Option<f64>, pc: Option<f64>) -> Option<f64> {
     use crate::engine::eval::{
         WEIGHT_OUTPUT_QUALITY, WEIGHT_PROTOCOL_COMPLIANCE, WEIGHT_TOOL_ACCURACY,
@@ -111,6 +116,22 @@ fn composite_from_parts(ta: Option<f64>, oq: Option<f64>, pc: Option<f64>) -> Op
     }
 }
 
+/// Composite plus a `partial_coverage` flag. Coverage is partial when the
+/// composite exists but at least one of the three sub-scores was missing (so the
+/// weight base was renormalised). Full coverage (all three present) or an empty
+/// cell (none present) are both `false` — only the renormalised-and-therefore-
+/// incomparable case is flagged.
+fn composite_and_coverage(
+    ta: Option<f64>,
+    oq: Option<f64>,
+    pc: Option<f64>,
+) -> (Option<f64>, bool) {
+    let present = [ta, oq, pc].iter().filter(|v| v.is_some()).count();
+    let composite = composite_from_parts(ta, oq, pc);
+    let partial = composite.is_some() && present < 3;
+    (composite, partial)
+}
+
 /// Aggregate measured scores per (prompt version, model) for one persona across
 /// every version-attributed lab result (Arena / Eval / A-B). Powers the
 /// consolidated Lab "Versions & Ratings" table. Only `completed` results carrying
@@ -129,19 +150,22 @@ pub fn get_version_ratings(
                        r.tool_accuracy_score AS ta, r.output_quality_score AS oq,
                        r.protocol_compliance AS pc, r.cost_usd AS cost, r.duration_ms AS dur,
                        r.input_tokens AS in_tok, r.output_tokens AS out_tok,
+                       r.eval_method AS eval_method,
                        r.created_at AS created_at
                 FROM lab_eval_results r JOIN lab_eval_runs run ON r.run_id = run.id
                 WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
                 UNION ALL
                 SELECT r.version_id, r.version_number, r.model_id, r.provider,
                        r.tool_accuracy_score, r.output_quality_score, r.protocol_compliance,
-                       r.cost_usd, r.duration_ms, r.input_tokens, r.output_tokens, r.created_at
+                       r.cost_usd, r.duration_ms, r.input_tokens, r.output_tokens,
+                       r.eval_method, r.created_at
                 FROM lab_ab_results r JOIN lab_ab_runs run ON r.run_id = run.id
                 WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
                 UNION ALL
                 SELECT r.version_id, r.version_number, r.model_id, r.provider,
                        r.tool_accuracy_score, r.output_quality_score, r.protocol_compliance,
-                       r.cost_usd, r.duration_ms, r.input_tokens, r.output_tokens, r.created_at
+                       r.cost_usd, r.duration_ms, r.input_tokens, r.output_tokens,
+                       r.eval_method, r.created_at
                 FROM lab_arena_results r JOIN lab_arena_runs run ON r.run_id = run.id
                 WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
             )
@@ -156,6 +180,8 @@ pub fn get_version_ratings(
                    AVG(CAST(dur AS REAL)) AS dur_avg,
                    AVG(CAST(in_tok AS REAL)) AS in_tok_avg,
                    AVG(CAST(out_tok AS REAL)) AS out_tok_avg,
+                   SUM(CASE WHEN eval_method IN ('heuristic_fallback', 'timeout')
+                            THEN 1 ELSE 0 END) AS degraded_count,
                    COUNT(*) AS sample_count,
                    MAX(created_at) AS last_measured_at
             FROM measured
@@ -167,16 +193,24 @@ pub fn get_version_ratings(
                 let ta: Option<f64> = row.get("ta_avg")?;
                 let oq: Option<f64> = row.get("oq_avg")?;
                 let pc: Option<f64> = row.get("pc_avg")?;
+                let provider = row.get::<_, Option<String>>("provider")?.unwrap_or_default();
+                let (composite_score, partial_coverage) = composite_and_coverage(ta, oq, pc);
+                // Ollama's per-call cost is hardcoded 0.0 in the runner — a zero
+                // here is "unknown", not "free". Flag it so the value verdict skips it.
+                let cost_unknown = provider == crate::engine::types::providers::OLLAMA;
                 Ok(LabVersionRating {
                     version_id: row.get("version_id")?,
                     version_number: row.get::<_, Option<i32>>("version_number")?.unwrap_or(0),
                     model_id: row.get("model_id")?,
-                    provider: row.get::<_, Option<String>>("provider")?.unwrap_or_default(),
-                    composite_score: composite_from_parts(ta, oq, pc),
+                    provider,
+                    composite_score,
+                    partial_coverage,
                     tool_accuracy: ta,
                     output_quality: oq,
                     protocol_compliance: pc,
                     cost_usd: row.get::<_, Option<f64>>("cost_avg")?.unwrap_or(0.0),
+                    cost_unknown,
+                    degraded_count: row.get::<_, Option<i64>>("degraded_count")?.unwrap_or(0),
                     duration_ms: row.get::<_, Option<f64>>("dur_avg")?.unwrap_or(0.0),
                     input_tokens: row.get::<_, Option<f64>>("in_tok_avg")?.unwrap_or(0.0),
                     output_tokens: row.get::<_, Option<f64>>("out_tok_avg")?.unwrap_or(0.0),
@@ -233,4 +267,39 @@ pub fn get_version_economics(
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Full coverage (all three sub-scores present) is never flagged partial and
+    /// applies the canonical weights directly (0.4/0.4/0.2 sum to 1.0).
+    #[test]
+    fn composite_full_coverage_not_partial() {
+        let (c, partial) = composite_and_coverage(Some(80.0), Some(90.0), Some(50.0));
+        assert!(!partial, "all three present must not be flagged partial");
+        // 80*0.4 + 90*0.4 + 50*0.2 = 32 + 36 + 10 = 78
+        assert_eq!(c, Some(78.0));
+    }
+
+    /// Missing a sub-score renormalises the weight base — flagged so the UI knows
+    /// the number is not directly comparable to a full-coverage composite.
+    #[test]
+    fn composite_partial_coverage_is_flagged() {
+        // Only tool_accuracy + output_quality present: base renormalises to 0.4+0.4.
+        let (c, partial) = composite_and_coverage(Some(80.0), Some(90.0), None);
+        assert!(partial, "one missing sub-score must flag partial coverage");
+        // (80*0.4 + 90*0.4) / 0.8 = 85
+        assert_eq!(c, Some(85.0));
+    }
+
+    /// An empty cell (no sub-scores) yields no composite and is not "partial" —
+    /// there is nothing renormalised to warn about.
+    #[test]
+    fn composite_empty_is_none_not_partial() {
+        let (c, partial) = composite_and_coverage(None, None, None);
+        assert_eq!(c, None);
+        assert!(!partial);
+    }
 }

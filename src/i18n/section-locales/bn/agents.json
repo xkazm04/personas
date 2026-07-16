@@ -852,7 +852,25 @@
     "eco_subtitle": "প্রতিটি মডেল কত ঘন ঘন ইভাল সমাধান করে এবং প্রতিটি সাফল্যের খরচ কত।",
     "eco_title": "খরচ দক্ষতা",
     "vr_col_tokens": "টোকেন",
-    "vr_tokens_tooltip": "প্রতি রানে গড়ে {input} ইনপুট / {output} আউটপুট"
+    "vr_tokens_tooltip": "প্রতি রানে গড়ে {input} ইনপুট / {output} আউটপুট",
+    "vr_reconcile_clear_all": "সব পিন সরান",
+    "vr_reconcile_clear_pin": "পিন সরান",
+    "vr_reconcile_desc_one": "১টি ব্যবহার-কেস এখনও এমন একটি মডেল পিন করে রেখেছে যা আপনি এইমাত্র প্রমোট করা মডেল ({model}) থেকে ভিন্ন। পিন না সরানো পর্যন্ত এটি তার পিন করা মডেলেই চলতে থাকবে।",
+    "vr_reconcile_desc_other": "{count}টি ব্যবহার-কেস এখনও এমন মডেল পিন করে রেখেছে যা আপনি এইমাত্র প্রমোট করা মডেল ({model}) থেকে ভিন্ন। পিন না সরানো পর্যন্ত এগুলো তাদের পিন করা মডেলেই চলতে থাকবে।",
+    "vr_reconcile_done": "সম্পন্ন",
+    "vr_reconcile_now_follows": "এখন ডিফল্ট ({model}) অনুসরণ করে",
+    "vr_reconcile_pinned_to": "{model}-এ পিন করা",
+    "vr_reconcile_title": "ব্যবহার-কেস মডেল পিন সমন্বয় করুন",
+    "improve_failed": "উন্নতির ব্রিফ তৈরি করা যায়নি",
+    "improve_focus": "{metric} এর উপর ফোকাস করা হবে (গড় {score}/100)",
+    "improve_run_seed_measured": "\"{name}\" পার্সোনাটি উন্নত করুন। এর সর্বশেষ পরীক্ষায় {metric} সবচেয়ে দুর্বল ক্ষেত্র হিসেবে চিহ্নিত হয়েছে (গড় {score}/100)। আমার কীসের উপর ফোকাস করা উচিত? ",
+    "improve_run_seed_plain": "\"{name}\" পার্সোনাটিকে এর সর্বশেষ পরীক্ষার ফলাফলের ভিত্তিতে উন্নত করুন। আমার কীসের উপর ফোকাস করা উচিত? ",
+    "improve_seeded": "উন্নতির ব্রিফ Athena-তে খোলা হয়েছে",
+    "vr_cost_unknown": "প্রযোজ্য নয়",
+    "vr_cost_unknown_tooltip": "স্থানীয় মডেলের জন্য খরচ ট্র্যাক করা হয় না",
+    "vr_degraded_tooltip": "{total}টির মধ্যে {count}টি নমুনা হিউরিস্টিক ফলব্যাক দিয়ে স্কোর করা হয়েছে (LLM মূল্যায়নকারী অনুপলব্ধ)",
+    "vr_partial_tooltip": "আংশিক সাব-স্কোর থেকে সমন্বিত — সরাসরি তুলনাযোগ্য নয়",
+    "vr_score_caution": "স্কোর সতর্কতা দাবি করে"
   },
   "design": {
     "select_agent": "ডিজাইন বিশ্লেষণ শুরু করতে একটি এজেন্ট নির্বাচন করুন",
@@ -1729,7 +1747,15 @@
     "failed": "ব্যর্থ",
     "error": "ত্রুটি",
     "invalid_json": "অবৈধ JSON — চালানোর আগে ঠিক করুন।",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "ব্যর্থতা",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "আউটপুট সংক্ষিপ্ত করা হয়েছে — টুলটি প্রদর্শন সীমার চেয়ে বেশি ফেরত দিয়েছে।",
+    "panel_subtitle": "এই পারসোনার শংসাপত্র দিয়ে সরাসরি একটি টুল চালান।",
+    "panel_title": "একটি টুল চালান",
+    "retryable_hint": "পুনরায় চেষ্টা করলে এটি সফল হতে পারে।",
+    "run_tool": "টুল চালান",
+    "builtin_note": "বিল্ট-ইন টুল — এটি পারসোনা এক্সিকিউশনের ভেতরে চলে (এখান থেকে ম্যানুয়ালি নয়)। এটি পরীক্ষা করতে পারসোনার একটি ক্ষমতা চালান।"
   },
   "health_check": {
     "title": "এজেন্ট স্বাস্থ্য পরীক্ষা",
@@ -2729,5 +2755,37 @@
     "done": "\"{name}\" হিসেবে ডুপ্লিকেট করা হয়েছে",
     "done_with_wiring": "\"{name}\" হিসেবে ডুপ্লিকেট করা হয়েছে — {triggers}টি ট্রিগার এবং {subscriptions}টি সাবস্ক্রিপশন কপি করা হয়েছে, কপিতে নিষ্ক্রিয়",
     "failed": "এজেন্ট ডুপ্লিকেট করা যায়নি"
+  },
+  "change_history": {
+    "empty": "এখনও কোনো পরিবর্তন রেকর্ড করা হয়নি",
+    "empty_value": "(empty)",
+    "fields": {
+      "cli_awareness_enabled": "CLI সচেতনতা",
+      "color": "রং",
+      "description": "বিবরণ",
+      "design_context": "ডিজাইন প্রসঙ্গ",
+      "enabled": "সক্রিয়",
+      "headless": "হেডলেস",
+      "icon": "আইকন",
+      "lifecycle": "লাইফসাইকেল",
+      "max_budget_usd": "বাজেট",
+      "max_concurrent": "সর্বোচ্চ একযোগে",
+      "max_turns": "সর্বোচ্চ টার্ন",
+      "model_profile": "Model",
+      "name": "নাম",
+      "notification_channels": "বিজ্ঞপ্তি",
+      "parameters": "প্যারামিটার",
+      "sensitive": "সংবেদনশীল প্রিভিউ",
+      "structured_prompt": "প্রম্পট",
+      "system_prompt": "সিস্টেম প্রম্পট",
+      "timeout_ms": "টাইমআউট"
+    },
+    "sources": {
+      "editor": "এডিটর",
+      "fanout": "ফ্যান-আউট",
+      "header": "হেডার",
+      "other": "অন্যান্য"
+    },
+    "title": "পরিবর্তনের ইতিহাস"
   }
 }

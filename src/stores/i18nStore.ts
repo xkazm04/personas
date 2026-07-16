@@ -70,6 +70,24 @@ function applyLangAttributes(lang: Language) {
   loadFontForLanguage(lang);
 }
 
+/**
+ * Mirror the language into the backend `app_settings` store (key
+ * `app_language`) so Rust-side prompt builders — the companion turn first —
+ * can direct AI replies into the user's language instead of hoping the model
+ * infers it (2026-07-16 UAT F-MAJOR-9). Fire-and-forget: localStorage stays
+ * the render authority; a dropped write self-heals on the next switch or the
+ * next boot echo below. Lazy import keeps IPC out of the store's module graph
+ * (this store is imported before Tauri is ready).
+ */
+function mirrorLanguageToBackend(language: Language): void {
+  void import('@/api/system/settings')
+    .then(({ setAppSetting }) => setAppSetting('app_language', language))
+    .catch(() => {
+      // Pre-auth/boot writes may fail; the post-boot echo retries. Silent by
+      // design — never block or toast a language switch on a mirror write.
+    });
+}
+
 export const useI18nStore = create<I18nState>()(
   persist(
     (set) => ({
@@ -78,6 +96,7 @@ export const useI18nStore = create<I18nState>()(
       setLanguage: (language) => {
         applyLangAttributes(language);
         set({ language });
+        mirrorLanguageToBackend(language);
       },
     }),
     {
@@ -89,3 +108,12 @@ export const useI18nStore = create<I18nState>()(
     }
   )
 );
+
+/**
+ * One-shot post-boot echo of the persisted language into the backend mirror —
+ * covers users who set their language before this mirror existed and never
+ * switch again. Called from App bootstrap (after Tauri IPC + auth are up).
+ */
+export function echoLanguageMirrorOnce(): void {
+  mirrorLanguageToBackend(useI18nStore.getState().language);
+}

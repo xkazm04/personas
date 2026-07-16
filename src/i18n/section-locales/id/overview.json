@@ -525,7 +525,13 @@
     "event_data": "Data Peristiwa",
     "error": "Kesalahan",
     "skipped_stat_label": "{skipped} dilewati",
-    "skipped_stat_tooltip": "{skipped} dari {total} event dalam 7 hari terakhir tidak memiliki pelanggan dan dilewati ({rate}). Tingkat yang tinggi menandakan ada pemicu yang tidak didengarkan siapa pun."
+    "skipped_stat_tooltip": "{skipped} dari {total} event dalam 7 hari terakhir tidak memiliki pelanggan dan dilewati ({rate}). Tingkat yang tinggi menandakan ada pemicu yang tidak didengarkan siapa pun.",
+    "type_labels": {
+      "sla_breach_opened": "Pelanggaran SLA dibuka",
+      "sla_breach_recovered": "Pelanggaran SLA pulih",
+      "schedule_missed_offline": "Jadwal terlewat (offline)",
+      "schedule_skipped_overlap": "Jadwal dilewati (run sebelumnya masih aktif)"
+    }
   },
   "health": {
     "title": "Kesehatan Agen",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "Peta Kaskade Rantai",
-    "no_chains": "Tidak ada rantai terdeteksi -- semua persona beroperasi secara independen"
+    "no_chains": "Tidak ada rantai terdeteksi -- semua persona beroperasi secara independen",
+    "cofail_insufficient": "tidak ada kegagalan bersama",
+    "cofail_pct": "{pct}% gagal bersama"
   },
   "predictive_alerts_extra": {
     "title": "Peringatan Prediktif",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "Memuat halaman status...",
     "loading_reliability": "Memuat data keandalan...",
     "heartbeats_btn": "Detak",
-    "reliability_btn": "Keandalan"
+    "reliability_btn": "Keandalan",
+    "source_byom_policy": "Kebijakan BYOM",
+    "source_healing_issues": "Masalah pemulihan",
+    "source_monthly_spend": "Pengeluaran bulanan",
+    "source_provider_stats": "Statistik penyedia",
+    "sources_unavailable": "{sources} tidak dapat dimuat — skor mungkin tidak akurat."
   },
   "popup_fields": {
     "sign_up_free_at": "Daftar gratis di",
@@ -1573,7 +1586,11 @@
     "seg_healing": "Pemulihan",
     "seg_stability": "Stabilitas",
     "seg_success": "Keberhasilan",
-    "show_all": "Tampilkan semua"
+    "show_all": "Tampilkan semua",
+    "fleet_avg_badge": "rata-rata armada",
+    "fleet_avg_tooltip": "Tidak ada eksekusi tercatat untuk persona ini dalam rentang tersebut — menampilkan rata-rata tingkat keberhasilan seluruh armada, bukan nilai terukur per persona.",
+    "no_data_badge": "tidak ada data",
+    "no_data_tooltip": "Tidak ada eksekusi selesai atau gagal untuk persona ini dalam rentang tersebut — tingkat keberhasilan adalah placeholder, bukan hasil pengukuran."
   },
   "provenance": {
     "sourced_tip": "Mengutip {count} sumber yang dapat Anda lacak dan audit.",

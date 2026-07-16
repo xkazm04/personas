@@ -525,7 +525,13 @@
     "event_data": "इवेंट डेटा",
     "error": "त्रुटि",
     "skipped_stat_label": "{skipped} छोड़े गए",
-    "skipped_stat_tooltip": "पिछले 7 दिनों में {total} में से {skipped} इवेंट्स का कोई सब्सक्राइबर नहीं था और वे छोड़ दिए गए ({rate})। उच्च दर का मतलब है कि कोई ट्रिगर ऐसा है जिसे कोई नहीं सुन रहा।"
+    "skipped_stat_tooltip": "पिछले 7 दिनों में {total} में से {skipped} इवेंट्स का कोई सब्सक्राइबर नहीं था और वे छोड़ दिए गए ({rate})। उच्च दर का मतलब है कि कोई ट्रिगर ऐसा है जिसे कोई नहीं सुन रहा।",
+    "type_labels": {
+      "sla_breach_opened": "SLA उल्लंघन शुरू",
+      "sla_breach_recovered": "SLA उल्लंघन से पुनर्प्राप्त",
+      "schedule_missed_offline": "छूटे हुए शेड्यूल रन (ऑफ़लाइन)",
+      "schedule_skipped_overlap": "शेड्यूल छोड़ा गया (पिछला रन सक्रिय)"
+    }
   },
   "health": {
     "title": "एजेंट स्वास्थ्य",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "चेन कैस्केड मानचित्र",
-    "no_chains": "कोई चेन नहीं पाई गई -- सभी एजेंट स्वतंत्र रूप से काम कर रहे हैं"
+    "no_chains": "कोई चेन नहीं पाई गई -- सभी एजेंट स्वतंत्र रूप से काम कर रहे हैं",
+    "cofail_insufficient": "कोई संयुक्त विफलता नहीं",
+    "cofail_pct": "{pct}% संयुक्त विफलता"
   },
   "predictive_alerts_extra": {
     "title": "पूर्वानुमानित अलर्ट",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "स्थिति पृष्ठ लोड हो रहा है...",
     "loading_reliability": "विश्वसनीयता डेटा लोड हो रहा है...",
     "heartbeats_btn": "हार्टबीट",
-    "reliability_btn": "विश्वसनीयता"
+    "reliability_btn": "विश्वसनीयता",
+    "source_byom_policy": "BYOM नीति",
+    "source_healing_issues": "हीलिंग समस्याएँ",
+    "source_monthly_spend": "मासिक व्यय",
+    "source_provider_stats": "प्रदाता आँकड़े",
+    "sources_unavailable": "{sources} लोड नहीं हो सका — स्कोर गलत हो सकते हैं।"
   },
   "popup_fields": {
     "sign_up_free_at": "मुफ़्त में साइन अप करें",
@@ -1573,7 +1586,11 @@
     "seg_healing": "हीलिंग",
     "seg_stability": "स्थिरता",
     "seg_success": "सफलता",
-    "show_all": "सब दिखाएं"
+    "show_all": "सब दिखाएं",
+    "fleet_avg_badge": "फ़्लीट औसत",
+    "fleet_avg_tooltip": "इस पर्सोना के लिए विंडो में कोई रन दर्ज नहीं हुआ — प्रति-पर्सोना मापा गया मान नहीं, बल्कि फ़्लीट-व्यापी औसत सफलता दिखाई जा रही है।",
+    "no_data_badge": "कोई डेटा नहीं",
+    "no_data_tooltip": "इस पर्सोना के लिए विंडो में कोई पूर्ण या विफल रन नहीं — सफलता दर एक प्लेसहोल्डर है, मापी गई नहीं।"
   },
   "provenance": {
     "sourced_tip": "{count} स्रोत(ों) का उद्धरण जिन्हें आप ट्रेस और ऑडिट कर सकते हैं।",

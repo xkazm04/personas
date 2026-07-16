@@ -852,7 +852,25 @@
     "eco_subtitle": "Mỗi model giải quyết eval bao nhiêu lần và mỗi lần thành công tốn bao nhiêu.",
     "eco_title": "Hiệu quả chi phí",
     "vr_col_tokens": "Token",
-    "vr_tokens_tooltip": "Trung bình {input} vào / {output} ra mỗi lần chạy"
+    "vr_tokens_tooltip": "Trung bình {input} vào / {output} ra mỗi lần chạy",
+    "vr_reconcile_clear_all": "Xóa tất cả ghim",
+    "vr_reconcile_clear_pin": "Xóa ghim",
+    "vr_reconcile_desc_one": "1 use case vẫn ghim một model khác với model bạn vừa đề bạt ({model}). Nó sẽ tiếp tục chạy trên model đã ghim cho đến khi bạn xóa ghim.",
+    "vr_reconcile_desc_other": "{count} use case vẫn ghim các model khác với model bạn vừa đề bạt ({model}). Chúng sẽ tiếp tục chạy trên các model đã ghim cho đến khi bạn xóa ghim.",
+    "vr_reconcile_done": "Xong",
+    "vr_reconcile_now_follows": "Hiện theo mặc định ({model})",
+    "vr_reconcile_pinned_to": "đã ghim vào {model}",
+    "vr_reconcile_title": "Điều chỉnh ghim model theo use case",
+    "improve_failed": "Không thể chuẩn bị bản tóm tắt cải thiện",
+    "improve_focus": "Sẽ tập trung vào {metric} (trung bình {score}/100)",
+    "improve_run_seed_measured": "Cải thiện persona \"{name}\". Bài kiểm tra gần nhất cho thấy {metric} là điểm yếu nhất (trung bình {score}/100). Tôi nên tập trung vào điều gì? ",
+    "improve_run_seed_plain": "Cải thiện persona \"{name}\" dựa trên kết quả kiểm tra gần nhất. Tôi nên tập trung vào điều gì? ",
+    "improve_seeded": "Đã mở bản tóm tắt cải thiện trong Athena",
+    "vr_cost_unknown": "không áp dụng",
+    "vr_cost_unknown_tooltip": "Chi phí không được theo dõi cho mô hình cục bộ",
+    "vr_degraded_tooltip": "{count} trên {total} mẫu được chấm bằng phương pháp dự phòng (bộ đánh giá LLM không khả dụng)",
+    "vr_partial_tooltip": "Tổng hợp từ điểm thành phần chưa đầy đủ — không thể so sánh trực tiếp",
+    "vr_score_caution": "Điểm cần thận trọng"
   },
   "design": {
     "select_agent": "Chọn tác nhân để bắt đầu phân tích thiết kế",
@@ -1729,7 +1747,15 @@
     "failed": "Thất bại",
     "error": "Lỗi",
     "invalid_json": "JSON không hợp lệ — hãy sửa trước khi chạy.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "Lỗi",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "Đầu ra đã bị cắt bớt — công cụ trả về nhiều hơn giới hạn hiển thị.",
+    "panel_subtitle": "Gọi trực tiếp một công cụ bằng thông tin xác thực của persona này.",
+    "panel_title": "Chạy công cụ",
+    "retryable_hint": "Có thể thành công khi thử lại.",
+    "run_tool": "Chạy công cụ",
+    "builtin_note": "Công cụ tích hợp — chạy bên trong các lần thực thi persona (không chạy thủ công từ đây). Hãy chạy một trong các khả năng của persona để thử nghiệm."
   },
   "health_check": {
     "title": "Kiểm tra sức khỏe tác nhân",
@@ -2729,5 +2755,37 @@
     "done": "Đã nhân bản thành \"{name}\"",
     "done_with_wiring": "Đã nhân bản thành \"{name}\" — đã sao chép {triggers} trình kích hoạt và {subscriptions} đăng ký, bị tắt trên bản sao",
     "failed": "Không thể nhân bản tác nhân"
+  },
+  "change_history": {
+    "empty": "Chưa có thay đổi nào được ghi lại",
+    "empty_value": "(trống)",
+    "fields": {
+      "cli_awareness_enabled": "Nhận biết CLI",
+      "color": "Màu sắc",
+      "description": "Mô tả",
+      "design_context": "Ngữ cảnh thiết kế",
+      "enabled": "Đã bật",
+      "headless": "Chế độ headless",
+      "icon": "Biểu tượng",
+      "lifecycle": "Vòng đời",
+      "max_budget_usd": "Ngân sách",
+      "max_concurrent": "Số lượng đồng thời tối đa",
+      "max_turns": "Số lượt tối đa",
+      "model_profile": "Model",
+      "name": "Tên",
+      "notification_channels": "Kênh thông báo",
+      "parameters": "Tham số",
+      "sensitive": "Xem trước dữ liệu nhạy cảm",
+      "structured_prompt": "Prompt",
+      "system_prompt": "Prompt hệ thống",
+      "timeout_ms": "Thời gian chờ"
+    },
+    "sources": {
+      "editor": "Trình chỉnh sửa",
+      "fanout": "Phân tán",
+      "header": "Tiêu đề",
+      "other": "Khác"
+    },
+    "title": "Lịch sử thay đổi"
   }
 }

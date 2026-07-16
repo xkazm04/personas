@@ -112,5 +112,13 @@
   "last24h_failed_count": "{count} échouée(s)",
   "last24h_show_all": "Tout afficher ({count})",
   "last24h_show_less": "Afficher moins",
-  "last24h_retry_at": "nouvelle tentative {time}"
+  "last24h_retry_at": "nouvelle tentative {time}",
+  "unverified": "Non vérifié",
+  "unverified_tooltip": "Aucun enregistrement d'exécution pour ce créneau — il a pu être ignoré, limité en fréquence, dépasser le budget ou l'application était fermée.",
+  "missed_backfill_cta": "Rattraper",
+  "missed_dismiss": "Ignorer l’avis d’exécutions manquées",
+  "missed_offline": "{count} manquée(s) hors ligne",
+  "missed_offline_tooltip": "Des exécutions planifiées ont été ignorées pendant que l’app était fermée. Le rattrapage les rejoue (dédupliqué et plafonné), ou ignorez pour effacer.",
+  "reason_invalid_timezone": "En pause — fuseau horaire invalide",
+  "reason_unscheduled": "En pause — aucune planification valide"
 }

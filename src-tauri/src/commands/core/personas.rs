@@ -4,14 +4,15 @@ use tauri::{AppHandle, State};
 use ts_rs::TS;
 
 use crate::db::models::{
-    BulkDeleteOutcome, CreatePersonaInput, Persona, PersonaAutomation, PersonaEventSubscription,
-    PersonaSummary, PersonaTeam, PersonaToolDefinition, PersonaTrigger, UpdateExecutionStatus,
-    UpdatePersonaInput,
+    BulkDeleteOutcome, CreatePersonaInput, Persona, PersonaAutomation, PersonaChangeEntry,
+    PersonaEventSubscription, PersonaSummary, PersonaTeam, PersonaToolDefinition, PersonaTrigger,
+    UpdateExecutionStatus, UpdatePersonaInput,
 };
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::personas as repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::resources::automations as automation_repo;
+use crate::db::repos::resources::persona_change_log as change_log_repo;
 use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
@@ -232,6 +233,18 @@ pub fn update_persona(
     });
 
     Ok(result)
+}
+
+/// Newest-first field-level change history for a persona. Powers the editor
+/// Settings → Change history list. `limit` is clamped to `[1, 500]` server-side.
+#[tauri::command]
+#[requires(auth)]
+pub fn list_persona_change_log(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    limit: Option<u32>,
+) -> Result<Vec<PersonaChangeEntry>, AppError> {
+    change_log_repo::list_for_persona(&state.db, &persona_id, limit.unwrap_or(50))
 }
 
 /// Maximum allowed size for the parameters JSON field (64 KB).

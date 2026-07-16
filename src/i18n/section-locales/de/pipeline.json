@@ -346,7 +346,9 @@
     "collab_label": "Zusammenarbeit",
     "deck_phase_paused": "Pausiert",
     "deck_pause": "Pausieren",
-    "deck_resume": "Fortsetzen"
+    "deck_resume": "Fortsetzen",
+    "readiness_chip_label": "Einrichtung nötig",
+    "readiness_chip_tooltip": "Die Konnektoren dieses Teammitglieds müssen noch eingerichtet werden. Es kann teilnehmen und mitdiskutieren, aber seine Fähigkeiten sind gesperrt — es wird erst aktiv, wenn Sie die Zugangsdaten hinzufügen (öffnen Sie den Bereich „Verbindungen“ in der Seitenleiste)."
   },
   "memory_created": "Eintrag im Team-Gedächtnis gespeichert",
   "memory_updated": "Eintrag aktualisiert",

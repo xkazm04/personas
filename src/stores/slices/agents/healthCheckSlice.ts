@@ -2,7 +2,6 @@ import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
 import { useOverviewStore } from "@/stores/overviewStore";
-import { listHealingIssues } from "@/api/overview/healing";
 import {
   computeHealthScore,
   makeIssueId,
@@ -215,19 +214,17 @@ export const createHealthCheckSlice: StateCreator<AgentStore, [], [], HealthChec
 
     try {
       // Pull real telemetry: refresh the overview health pipeline (heartbeat,
-      // burn rate, failure trend per persona) and fetch open healing issues
-      // for surfacing per-persona titles in the modal.
+      // burn rate, failure trend per persona). The refresh fetches the healing
+      // bundle server-side and stashes the (bounded) healing issues on the
+      // overview store, so we reuse THOSE for the per-persona modal titles
+      // instead of issuing a third `list_healing_issues` IPC of our own.
       const overview = useOverviewStore.getState();
-      const [, healingIssuesResult] = await Promise.allSettled([
-        overview.refreshHealthDashboard(),
-        listHealingIssues(),
-      ]);
+      await overview.refreshHealthDashboard();
 
-      const healingIssues: PersonaHealingIssue[] = healingIssuesResult.status === 'fulfilled'
-        ? healingIssuesResult.value
-        : [];
+      const overviewState = useOverviewStore.getState();
+      const healingIssues: PersonaHealingIssue[] = overviewState.healthHealingIssues;
 
-      const signals = useOverviewStore.getState().healthSignals;
+      const signals = overviewState.healthSignals;
       const signalById = new Map(signals.map((s) => [s.personaId, s] as const));
       const healingByPersona = new Map<string, PersonaHealingIssue[]>();
       for (const h of healingIssues) {

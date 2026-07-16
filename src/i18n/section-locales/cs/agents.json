@@ -852,7 +852,25 @@
     "eco_subtitle": "Jak často každý model vyřeší eval a co každý úspěch stojí.",
     "eco_title": "Nákladová efektivita",
     "vr_col_tokens": "Tokeny",
-    "vr_tokens_tooltip": "Průměrně {input} vstupních / {output} výstupních na běh"
+    "vr_tokens_tooltip": "Průměrně {input} vstupních / {output} výstupních na běh",
+    "vr_reconcile_clear_all": "Zrušit všechny přišpendlené",
+    "vr_reconcile_clear_pin": "Zrušit přišpendlení",
+    "vr_reconcile_desc_one": "1 použití stále přišpendluje model odlišný od toho, který jste právě povýšili ({model}). Poběží na svém přišpendleném modelu, dokud přišpendlení nezrušíte.",
+    "vr_reconcile_desc_other": "{count} použití stále přišpendluje modely odlišné od toho, který jste právě povýšili ({model}). Poběží na svých přišpendlených modelech, dokud přišpendlení nezrušíte.",
+    "vr_reconcile_done": "Hotovo",
+    "vr_reconcile_now_follows": "Nyní sleduje výchozí ({model})",
+    "vr_reconcile_pinned_to": "přišpendleno k {model}",
+    "vr_reconcile_title": "Sladit přišpendlené modely použití",
+    "improve_failed": "Nepodařilo se připravit podklad pro zlepšení",
+    "improve_focus": "Zaměří se na {metric} (průměr {score}/100)",
+    "improve_run_seed_measured": "Vylepši personu „{name}“. Její poslední test označil {metric} jako nejslabší oblast (průměr {score}/100). Na co se mám zaměřit? ",
+    "improve_run_seed_plain": "Vylepši personu „{name}“ na základě výsledků jejího posledního testu. Na co se mám zaměřit? ",
+    "improve_seeded": "Podklad pro zlepšení otevřen v Athena",
+    "vr_cost_unknown": "nedostupné",
+    "vr_cost_unknown_tooltip": "Náklady se u lokálních modelů nesledují",
+    "vr_degraded_tooltip": "{count} z {total} vzorků ohodnoceno záložní heuristikou (hodnotitel LLM nedostupný)",
+    "vr_partial_tooltip": "Složené z dílčích skóre — nelze přímo porovnat",
+    "vr_score_caution": "Skóre vyžaduje opatrnost"
   },
   "design": {
     "select_agent": "Vyberte agenta pro zahájení analýzy návrhu",
@@ -1729,7 +1747,15 @@
     "failed": "Selhalo",
     "error": "Chyba",
     "invalid_json": "Neplatný JSON — opravte ho před spuštěním.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "Selhání",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "Výstup byl zkrácen — nástroj vrátil více, než je limit zobrazení.",
+    "panel_subtitle": "Spusťte nástroj přímo s přihlašovacími údaji této persony.",
+    "panel_title": "Spustit nástroj",
+    "retryable_hint": "Při opakování se to může podařit.",
+    "run_tool": "Spustit nástroj",
+    "builtin_note": "Vestavěný nástroj — běží uvnitř spuštění persony (ne ručně odsud). Vyzkoušejte jej spuštěním některé ze schopností persony."
   },
   "health_check": {
     "title": "Kontrola zdraví agenta",
@@ -2729,5 +2755,37 @@
     "done": "Duplikováno jako „{name}“",
     "done_with_wiring": "Duplikováno jako „{name}“ — zkopírováno {triggers} spouštěčů a {subscriptions} odběrů, v kopii zakázáno",
     "failed": "Nepodařilo se duplikovat agenta"
+  },
+  "change_history": {
+    "empty": "Zatím nejsou zaznamenány žádné změny",
+    "empty_value": "(prázdné)",
+    "fields": {
+      "cli_awareness_enabled": "Povědomí o CLI",
+      "color": "Barva",
+      "description": "Popis",
+      "design_context": "Kontext návrhu",
+      "enabled": "Povoleno",
+      "headless": "Bez uživatelského rozhraní",
+      "icon": "Ikona",
+      "lifecycle": "Životní cyklus",
+      "max_budget_usd": "Rozpočet",
+      "max_concurrent": "Max. souběžných",
+      "max_turns": "Max. kol",
+      "model_profile": "Model",
+      "name": "Název",
+      "notification_channels": "Oznámení",
+      "parameters": "Parametry",
+      "sensitive": "Náhled citlivých údajů",
+      "structured_prompt": "Prompt",
+      "system_prompt": "Systémový prompt",
+      "timeout_ms": "Časový limit"
+    },
+    "sources": {
+      "editor": "Editor",
+      "fanout": "Rozvětvení",
+      "header": "Záhlaví",
+      "other": "Ostatní"
+    },
+    "title": "Historie změn"
   }
 }

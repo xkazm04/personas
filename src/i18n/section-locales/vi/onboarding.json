@@ -166,5 +166,11 @@
   "local_tooling_label": "Công cụ tích hợp sẵn",
   "local_tooling_sentence": "Personas có sẵn công cụ cục bộ được kết nối ngay từ đầu — nhắn tin, cơ sở dữ liệu, vector, và nhiều hơn nữa — không cần thông tin xác thực.",
   "resume_continue_title": "Tiếp tục từ nơi bạn đã dừng",
-  "resume_continue_cta": "Tiếp tục hướng dẫn"
+  "resume_continue_cta": "Tiếp tục hướng dẫn",
+  "replay_setup": "Chạy lại thiết lập",
+  "resume_setup": "Tiếp tục thiết lập",
+  "tour_handoff_accept": "Bắt đầu tham quan",
+  "tour_handoff_body": "Tác nhân đầu tiên của bạn đã hoạt động. Hãy tham quan nhanh phần còn lại — kết nối và chạy tác nhân — và chúng tôi sẽ bỏ qua những phần bạn vừa làm.",
+  "tour_handoff_dismiss": "Để sau",
+  "tour_handoff_title": "Bạn muốn tham quan có hướng dẫn?"
 }

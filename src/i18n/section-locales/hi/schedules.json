@@ -112,5 +112,13 @@
   "last24h_failed_count": "{count} विफल",
   "last24h_show_all": "सभी दिखाएं ({count})",
   "last24h_show_less": "कम दिखाएं",
-  "last24h_retry_at": "स्वतः-पुनः प्रयास {time}"
+  "last24h_retry_at": "स्वतः-पुनः प्रयास {time}",
+  "unverified": "असत्यापित",
+  "unverified_tooltip": "इस स्लॉट के लिए कोई रन रिकॉर्ड नहीं — इसे छोड़ा गया, दर-सीमित, बजट से अधिक हो सकता है, या ऐप बंद था।",
+  "missed_backfill_cta": "बैकफ़िल",
+  "missed_dismiss": "छूटे रन की सूचना खारिज करें",
+  "missed_offline": "ऑफ़लाइन के दौरान {count} छूट गए",
+  "missed_offline_tooltip": "ऐप बंद रहने के दौरान शेड्यूल किए गए रन छोड़ दिए गए। बैकफ़िल उन्हें फिर से चलाता है (डुप्लिकेट हटाकर और सीमा के साथ), या साफ़ करने के लिए खारिज करें।",
+  "reason_invalid_timezone": "रुका हुआ — अमान्य टाइमज़ोन",
+  "reason_unscheduled": "रुका हुआ — कोई मान्य शेड्यूल नहीं"
 }

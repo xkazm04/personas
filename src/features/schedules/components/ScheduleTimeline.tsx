@@ -18,8 +18,8 @@ import {
   type TimeGroup,
 } from '../libs/scheduleHelpers';
 import { useScheduleActions } from '../libs/useScheduleActions';
-import { getSchedulerStatus, startScheduler, stopScheduler } from '@/api/pipeline/scheduler';
-import type { SchedulerStats } from '@/api/pipeline/scheduler';
+import { getSchedulerStatus, startScheduler, stopScheduler, listScheduleMissedRuns, clearScheduleMissedRuns } from '@/api/pipeline/scheduler';
+import type { SchedulerStats, ScheduleMissedRuns } from '@/api/pipeline/scheduler';
 import ScheduleRow from './ScheduleRow';
 import ScheduleRecentRuns from './ScheduleRecentRuns';
 
@@ -49,6 +49,10 @@ export default function ScheduleTimeline() {
 
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
   const [schedulerStats, setSchedulerStats] = useState<SchedulerStats | null>(null);
+  // Direction 1 (missed-runs visibility): per-trigger count of scheduled slots
+  // discarded while the app was offline. Fetched alongside the schedule list
+  // and rendered as a "missed N while offline" badge on each row.
+  const [missedMap, setMissedMap] = useState<Map<string, ScheduleMissedRuns>>(new Map());
   // Sidebar filter is now group-scoped (a team or the "No team" bucket), so it
   // carries a SET of persona ids plus a display label. `null` = show all.
   const [filter, setFilter] = useState<{ ids: Set<string>; label: string } | null>(null);
@@ -95,6 +99,9 @@ export default function ScheduleTimeline() {
             getSchedulerStatus()
               .then((d) => { if (!cancelled) setSchedulerStats(d); })
               .catch(silentCatch("ScheduleTimeline:refresh")),
+            listScheduleMissedRuns()
+              .then((rows) => { if (!cancelled) setMissedMap(new Map(rows.map((r) => [r.triggerId, r]))); })
+              .catch(silentCatch("ScheduleTimeline:missed")),
           ]);
         } finally {
           inFlight = null;
@@ -179,6 +186,33 @@ export default function ScheduleTimeline() {
   // Action props are the stable useCallback fns from useScheduleActions —
   // ScheduleRow binds its own agent. Fresh per-row closures here would defeat
   // the row's React.memo on every poll re-render.
+
+  // Clear a trigger's missed-while-offline badge (after backfill or dismiss)
+  // and drop it from the local map so the badge disappears immediately.
+  const dismissMissed = async (triggerId: string) => {
+    try {
+      await clearScheduleMissedRuns(triggerId);
+      setMissedMap((prev) => {
+        if (!prev.has(triggerId)) return prev;
+        const next = new Map(prev);
+        next.delete(triggerId);
+        return next;
+      });
+    } catch (err) { silentCatch("ScheduleTimeline:dismissMissed")(err); }
+  };
+  // Stable per-trigger dismiss callbacks (Map keeps identity across renders
+  // for unchanged trigger ids) so passing them into memoized rows doesn't
+  // defeat the memo either.
+  const dismissMissedByTrigger = useRef(new Map<string, () => void>());
+  const getDismissMissed = (triggerId: string) => {
+    let fn = dismissMissedByTrigger.current.get(triggerId);
+    if (!fn) {
+      fn = () => { void dismissMissed(triggerId); };
+      dismissMissedByTrigger.current.set(triggerId, fn);
+    }
+    return fn;
+  };
+
   const renderEntries = (items: ScheduleEntry[]) =>
     items.map((entry) => (
       <ScheduleRow
@@ -189,11 +223,13 @@ export default function ScheduleTimeline() {
         isEditing={actionState.editing === entry.agent.trigger_id}
         isBackfilling={actionState.backfilling === entry.agent.trigger_id}
         lastBackfill={actionState.lastBackfill[entry.agent.trigger_id] ?? null}
+        missed={missedMap.get(entry.agent.trigger_id) ?? null}
         onManualExecute={manualExecute}
         onToggleEnabled={toggleEnabled}
         onUpdateFrequency={updateFrequency}
         onBackfill={backfill}
-        onPreviewCron={previewCron}
+        onDismissMissed={getDismissMissed(entry.agent.trigger_id)}
+        onPreviewCron={(agent, cron, tz) => previewCron(cron, tz, agent.trigger_id)}
         onSkipNextFire={skipNextFire}
         onRunIn={runIn}
       />

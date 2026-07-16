@@ -69,6 +69,7 @@ row_mapper!(row_to_healing_issue -> PersonaHealingIssue {
     is_circuit_breaker [bool], severity, category,
     suggested_fix, auto_fixed [bool], status,
     created_at, resolved_at,
+    source [opt],
 });
 
 crud_get_by_id!(
@@ -106,6 +107,43 @@ pub fn get_all(
     })
 }
 
+/// Bounded fetch for the health dashboard bundle.
+///
+/// The unbounded `get_all` scans the entire `persona_healing_issues` table,
+/// which grows without limit as the healing engine records resolved issues.
+/// The health scorers only consume three slices of that data:
+///   - **7d healing frequency** — issues created inside the trailing window.
+///   - **rollback count** — every circuit-breaker issue.
+///   - **open-issue count** — every issue still `open`.
+///
+/// So this query keeps exactly those rows (recent OR open OR circuit-breaker)
+/// and drops the long tail of old, resolved, non-circuit-breaker issues that no
+/// scorer reads — plus a hard `LIMIT` backstop. `window_days` defaults are
+/// applied by the caller; both bounds are clamped there.
+pub fn get_for_health(
+    pool: &DbPool,
+    window_days: i64,
+    limit: i64,
+) -> Result<Vec<PersonaHealingIssue>, AppError> {
+    timed_query!("healing_events", "healing_events::get_for_health", {
+        let conn = pool.get()?;
+        let window = format!("-{} days", window_days);
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_healing_issues
+             WHERE created_at >= datetime('now', ?1)
+                OR status = 'open'
+                OR is_circuit_breaker = 1
+             ORDER BY created_at DESC
+             LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![window, limit], row_to_healing_issue)?;
+        Ok(crate::db::repos::utils::collect_rows(
+            rows,
+            "healing_issues_for_health",
+        ))
+    })
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn create(
     pool: &DbPool,
@@ -117,6 +155,44 @@ pub fn create(
     category: Option<&str>,
     execution_id: Option<&str>,
     suggested_fix: Option<&str>,
+) -> Result<Option<PersonaHealingIssue>, AppError> {
+    // The historical entry point (self-healing pipeline). Provenance stays NULL
+    // so the health UI treats it as engine-sourced — the default it always was.
+    create_with_source(
+        pool,
+        persona_id,
+        title,
+        description,
+        is_circuit_breaker,
+        severity,
+        category,
+        execution_id,
+        suggested_fix,
+        None,
+    )
+}
+
+/// Create a healing issue with an explicit provenance `source`.
+///
+/// The self-healing pipeline calls [`create`] (source = `None`). The Director
+/// routes auto-fixable coaching verdicts here with `source = Some("director")`
+/// so the health UI can badge the origin and the Director can dedup against its
+/// own open issues. `source` is the ONLY behavioural difference — dedup on the
+/// `(persona_id, execution_id)` unique index, the `open` status, and the inbox
+/// promotion are all identical. No auto-apply: the issue lands `open` and flows
+/// through healing's normal approval path exactly like an engine-raised one.
+#[allow(clippy::too_many_arguments)]
+pub fn create_with_source(
+    pool: &DbPool,
+    persona_id: &str,
+    title: &str,
+    description: &str,
+    is_circuit_breaker: bool,
+    severity: Option<&str>,
+    category: Option<&str>,
+    execution_id: Option<&str>,
+    suggested_fix: Option<&str>,
+    source: Option<&str>,
 ) -> Result<Option<PersonaHealingIssue>, AppError> {
     timed_query!("healing_events", "healing_events::create", {
         if title.trim().is_empty() {
@@ -135,8 +211,8 @@ pub fn create(
         let conn = pool.get()?;
         let rows = conn.execute(
             "INSERT OR IGNORE INTO persona_healing_issues
-             (id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, 'open', ?10)",
+             (id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at, source)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, 'open', ?10, ?11)",
             params![
                 id,
                 persona_id,
@@ -148,6 +224,7 @@ pub fn create(
                 category,
                 suggested_fix,
                 now,
+                source,
             ],
         )?;
 
@@ -1394,5 +1471,85 @@ mod tests {
         assert_eq!(report.attempted, 0);
         assert_eq!(report.success_rate, 0.0);
         assert!(report.by_category.is_empty());
+    }
+
+    #[test]
+    fn get_for_health_keeps_recent_open_and_circuit_breaker_only() {
+        let pool = init_test_db().unwrap();
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Bound".into(),
+                system_prompt: "x".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+
+        // Backdate rows 60 days so only the "recent OR open OR circuit-breaker"
+        // predicate keeps them.
+        let insert_old = |title: &str, is_cb: i64, status: &str| {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "INSERT INTO persona_healing_issues
+                 (id, persona_id, execution_id, title, description, is_circuit_breaker,
+                  severity, category, suggested_fix, auto_fixed, status, created_at)
+                 VALUES (?1, ?2, NULL, ?3, 'd', ?4, 'low', 'config', NULL, 0, ?5,
+                         datetime('now', '-60 days'))",
+                params![
+                    uuid::Uuid::new_v4().to_string(),
+                    persona.id,
+                    title,
+                    is_cb,
+                    status
+                ],
+            )
+            .unwrap();
+        };
+
+        insert_old("old resolved", 0, "resolved"); // dropped
+        insert_old("old open", 0, "open"); // kept (open)
+        insert_old("old cb", 1, "resolved"); // kept (circuit-breaker)
+
+        // Recent row (stamped now) → kept (inside window).
+        create(
+            &pool,
+            &persona.id,
+            "recent",
+            "desc",
+            false,
+            Some("low"),
+            Some("config"),
+            None,
+            None,
+        )
+        .unwrap()
+        .unwrap();
+
+        let rows = get_for_health(&pool, 7, 1000).unwrap();
+        let titles: std::collections::HashSet<&str> =
+            rows.iter().map(|r| r.title.as_str()).collect();
+        assert_eq!(rows.len(), 3, "old resolved non-circuit-breaker row must be dropped");
+        assert!(titles.contains("old open"));
+        assert!(titles.contains("old cb"));
+        assert!(titles.contains("recent"));
+        assert!(!titles.contains("old resolved"));
+
+        // LIMIT backstop is honored.
+        let limited = get_for_health(&pool, 7, 1).unwrap();
+        assert_eq!(limited.len(), 1);
     }
 }

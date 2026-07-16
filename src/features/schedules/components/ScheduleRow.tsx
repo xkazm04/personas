@@ -7,12 +7,12 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
-import { formatRelative } from '../libs/scheduleHelpers';
+import { formatRelative, scheduleReasonLabel } from '../libs/scheduleHelpers';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import FrequencyEditor from './FrequencyEditor';
 import BackfillModal from './BackfillModal';
 import { ScheduleRowHistoryPanel } from './ScheduleRowHistoryPanel';
-import type { BackfillResult } from '@/api/pipeline/scheduler';
+import type { BackfillResult, ScheduleMissedRuns } from '@/api/pipeline/scheduler';
 import { useThemeStore } from '@/stores/themeStore';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -31,11 +31,15 @@ interface ScheduleRowProps {
   isEditing: boolean;
   isBackfilling: boolean;
   lastBackfill: BackfillResult | null;
+  /** Scheduled slots discarded while the app was offline (Direction 1). */
+  missed?: ScheduleMissedRuns | null;
   onManualExecute: (agent: CronAgent) => void;
   onToggleEnabled: (agent: CronAgent) => void;
   onUpdateFrequency: (agent: CronAgent, cron: string | null, intervalSeconds: number | null, timezone?: string) => void;
   onBackfill: (agent: CronAgent, startIso: string, endIso: string) => Promise<BackfillResult | null>;
-  onPreviewCron: (expression: string, timezone?: string) => Promise<import('@/api/pipeline/triggers').CronPreview | null>;
+  /** Clear the missed-while-offline badge (after backfill or explicit dismiss). */
+  onDismissMissed?: () => void;
+  onPreviewCron: (agent: CronAgent, expression: string, timezone?: string) => Promise<import('@/api/pipeline/triggers').CronPreview | null>;
   onSkipNextFire: (agent: CronAgent) => void;
   onRunIn: (agent: CronAgent, delayMs: number) => void;
 }
@@ -47,15 +51,17 @@ function ScheduleRow({
   isEditing,
   isBackfilling,
   lastBackfill,
+  missed,
   onManualExecute,
   onToggleEnabled,
   onUpdateFrequency,
   onBackfill,
+  onDismissMissed,
   onPreviewCron,
   onSkipNextFire,
   onRunIn,
 }: ScheduleRowProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
 
   const HEALTH_CONFIG = {
     healthy: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', accent: 'border-l-emerald-500/60', label: t.schedules.healthy },
@@ -96,6 +102,21 @@ function ScheduleRow({
   const canBackfill = !!agent.cron_expression || !!agent.interval_seconds;
   const disabled = health === 'paused';
 
+  // Direction 1 (missed-runs visibility): one-click backfill of the offline gap
+  // reuses the existing backfill_schedule command (deduped + capped), then
+  // clears the badge. Falls back to a 24h window if timestamps are absent.
+  const missedCount = missed?.missedCount ?? 0;
+  const handleBackfillMissed = async () => {
+    if (!missed) return;
+    const startIso = missed.firstMissedAt ?? missed.lastMissedAt
+      ?? new Date(Date.now() - 24 * 3_600_000).toISOString();
+    try {
+      await onBackfill(agent, startIso, new Date().toISOString());
+    } finally {
+      onDismissMissed?.();
+    }
+  };
+
   const { icon: HealthIcon, color: healthColor, accent: healthAccent, label: healthLabel } = HEALTH_CONFIG[health];
 
   return (
@@ -134,6 +155,14 @@ function ScheduleRow({
             <span className="font-mono typo-code text-foreground">{schedule}</span>
             {agent.cron_expression && (
               <span className="text-amber-400/50 text-[10px] font-medium">{tzLabel}</span>
+            )}
+            {missed?.statusReason && (
+              <span
+                className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-red-500/10 text-red-400 border border-red-500/20"
+                title={missed.statusReasonDetail ?? undefined}
+              >
+                {scheduleReasonLabel(t, missed.statusReason)}
+              </span>
             )}
             {agent.description && (
               <>
@@ -321,6 +350,35 @@ function ScheduleRow({
         </div>
       </div>
 
+      {/* Missed-while-offline banner (Direction 1) */}
+      {missedCount > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2 border-t border-amber-500/20 bg-amber-500/[0.06]">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+          <span className="typo-caption text-amber-400/90 flex-1 min-w-0 truncate">
+            {tx(t.schedules.missed_offline, { count: missedCount })}
+          </span>
+          {canBackfill && (
+            <button
+              type="button"
+              onClick={handleBackfillMissed}
+              disabled={isBackfilling}
+              className="px-2 py-1 text-[11px] font-medium rounded-card bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors disabled:opacity-40"
+              title={t.schedules.missed_offline_tooltip}
+            >
+              {isBackfilling ? <LoadingSpinner size="sm" /> : t.schedules.missed_backfill_cta}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onDismissMissed?.()}
+            aria-label={t.schedules.missed_dismiss}
+            className="p-1 rounded-card text-foreground hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
+          >
+            <XCircle className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Inline run-history peek (Stage 1) */}
       {showHistory && (
         <div role="region" aria-label={t.schedules.recent_runs} className="border-t border-primary/10 bg-primary/[0.015]">
@@ -346,7 +404,7 @@ function ScheduleRow({
             setShowFreqEditor(false);
           }}
           onCancel={() => setShowFreqEditor(false)}
-          onPreviewCron={onPreviewCron}
+          onPreviewCron={(expression, timezone) => onPreviewCron(agent, expression, timezone)}
         />
       )}
 

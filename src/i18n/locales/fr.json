@@ -1655,7 +1655,25 @@
       "eco_subtitle": "À quelle fréquence chaque modèle résout une évaluation et ce que coûte chaque succès.",
       "eco_title": "Efficacité des coûts",
       "vr_col_tokens": "Tokens",
-      "vr_tokens_tooltip": "{input} en entrée / {output} en sortie par exécution en moyenne"
+      "vr_tokens_tooltip": "{input} en entrée / {output} en sortie par exécution en moyenne",
+      "vr_reconcile_clear_all": "Effacer tous les épinglages",
+      "vr_reconcile_clear_pin": "Effacer l'épinglage",
+      "vr_reconcile_desc_one": "1 cas d'usage épingle encore un modèle différent de celui que vous venez de promouvoir ({model}). Il continuera à s'exécuter sur son modèle épinglé jusqu'à ce que vous effaciez l'épinglage.",
+      "vr_reconcile_desc_other": "{count} cas d'usage épinglent encore des modèles différents de celui que vous venez de promouvoir ({model}). Ils continueront à s'exécuter sur leurs modèles épinglés jusqu'à ce que vous effaciez les épinglages.",
+      "vr_reconcile_done": "Terminé",
+      "vr_reconcile_now_follows": "Suit désormais la valeur par défaut ({model})",
+      "vr_reconcile_pinned_to": "épinglé sur {model}",
+      "vr_reconcile_title": "Réconcilier les modèles épinglés des cas d'usage",
+      "improve_failed": "Impossible de préparer le brief d'amélioration",
+      "improve_focus": "Se concentrera sur {metric} (moy. {score}/100)",
+      "improve_run_seed_measured": "Améliore le persona « {name} ». Son dernier test a signalé {metric} comme le point faible (moy. {score}/100). Sur quoi dois-je me concentrer ? ",
+      "improve_run_seed_plain": "Améliore le persona « {name} » d'après ses derniers résultats de test. Sur quoi dois-je me concentrer ? ",
+      "improve_seeded": "Brief d'amélioration ouvert dans Athena",
+      "vr_cost_unknown": "n/d",
+      "vr_cost_unknown_tooltip": "Le coût n'est pas suivi pour les modèles locaux",
+      "vr_degraded_tooltip": "{count} échantillons sur {total} évalués par heuristique de secours (évaluateur LLM indisponible)",
+      "vr_partial_tooltip": "Composite à partir de sous-scores partiels — non directement comparable",
+      "vr_score_caution": "Score à interpréter avec prudence"
     },
     "design": {
       "select_agent": "Sélectionnez un agent pour démarrer l'analyse de conception",
@@ -2532,7 +2550,15 @@
       "failed": "Échec",
       "error": "Erreur",
       "invalid_json": "JSON invalide — corrigez avant l’exécution.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "Échec",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "Sortie tronquée — l'outil a renvoyé plus que la limite d'affichage.",
+      "panel_subtitle": "Invoquez un outil directement avec les identifiants de cette persona.",
+      "panel_title": "Exécuter un outil",
+      "retryable_hint": "Cela peut réussir en réessayant.",
+      "run_tool": "Exécuter l'outil",
+      "builtin_note": "Outil intégré — il s'exécute au sein des exécutions de la persona (pas manuellement d'ici). Lancez l'une des capacités de la persona pour le tester."
     },
     "health_check": {
       "title": "Bilan de santé de l'agent",
@@ -3532,6 +3558,38 @@
       "done": "Dupliqué sous « {name} »",
       "done_with_wiring": "Dupliqué sous « {name} » — {triggers} déclencheur(s) et {subscriptions} abonnement(s) copiés, désactivés sur la copie",
       "failed": "Échec de la duplication de l'agent"
+    },
+    "change_history": {
+      "empty": "Aucune modification enregistrée",
+      "empty_value": "(vide)",
+      "fields": {
+        "cli_awareness_enabled": "Conscience CLI",
+        "color": "Couleur",
+        "description": "Description",
+        "design_context": "Contexte de conception",
+        "enabled": "Activé",
+        "headless": "Sans interface",
+        "icon": "Icône",
+        "lifecycle": "Cycle de vie",
+        "max_budget_usd": "Budget",
+        "max_concurrent": "Concurrence max",
+        "max_turns": "Tours max",
+        "model_profile": "Modèle",
+        "name": "Nom",
+        "notification_channels": "Notifications",
+        "parameters": "Paramètres",
+        "sensitive": "Aperçu sensible",
+        "structured_prompt": "Invite",
+        "system_prompt": "Invite système",
+        "timeout_ms": "Délai d'expiration"
+      },
+      "sources": {
+        "editor": "Éditeur",
+        "fanout": "Répartition",
+        "header": "En-tête",
+        "other": "Autre"
+      },
+      "title": "Historique des modifications"
     }
   },
   "vault": {
@@ -4247,7 +4305,9 @@
       "encrypt_now_other": "Chiffrer {count} identifiants maintenant",
       "encrypt_done_one": "Terminé -- {migrated} identifiant chiffré.",
       "encrypt_done_other": "Terminé -- {migrated} identifiants chiffrés.",
-      "encrypt_partial": "{migrated} chiffré(s), {failed} échec(s). Réessayez ou redémarrez l’application."
+      "encrypt_partial": "{migrated} chiffré(s), {failed} échec(s). Réessayez ou redémarrez l’application.",
+      "audit_gap_detail": "{count} enregistrement(s) d'audit des identifiants n'ont pas pu être écrits depuis le lancement. L'accès aux identifiants n'a jamais été bloqué, mais ces événements d'accès manquent dans le journal d'audit. Vérifiez l'espace disque ou l'état de la base de données.",
+      "audit_gap_title": "Piste d'audit incomplète"
     },
     "delete_dialog": {
       "title": "Supprimer l'identifiant",
@@ -4428,7 +4488,9 @@
       "filter_all_health": "Toute santé",
       "health_healthy": "Saine",
       "health_failing": "Défaillante",
-      "health_untested": "Non testée"
+      "health_untested": "Non testée",
+      "health_unverifiable": "Non vérifiable",
+      "health_unverifiable_tooltip": "Ce connecteur n'a pas de sonde en direct — les identifiants sont stockés mais ne peuvent pas être vérifiés."
     },
     "foraging": {
       "no_credentials_found": "Aucun identifiant trouvé",
@@ -6105,7 +6167,13 @@
       "event_data": "Données de l'événement",
       "error": "Erreur",
       "skipped_stat_label": "{skipped} ignorés",
-      "skipped_stat_tooltip": "{skipped} des {total} événements des 7 derniers jours n'avaient aucun abonné et ont été ignorés ({rate}). Un taux élevé signale un déclencheur que personne n'écoute."
+      "skipped_stat_tooltip": "{skipped} des {total} événements des 7 derniers jours n'avaient aucun abonné et ont été ignorés ({rate}). Un taux élevé signale un déclencheur que personne n'écoute.",
+      "type_labels": {
+        "sla_breach_opened": "Violation de SLA ouverte",
+        "sla_breach_recovered": "Violation de SLA rétablie",
+        "schedule_missed_offline": "Exécutions planifiées manquées (hors ligne)",
+        "schedule_skipped_overlap": "Planification ignorée (exécution précédente active)"
+      }
     },
     "health": {
       "title": "Santé des agents",
@@ -6622,7 +6690,9 @@
     },
     "cascade": {
       "title": "Carte de cascade en chaîne",
-      "no_chains": "Aucune chaîne détectée — tous les personas fonctionnent indépendamment"
+      "no_chains": "Aucune chaîne détectée — tous les personas fonctionnent indépendamment",
+      "cofail_insufficient": "aucune panne commune",
+      "cofail_pct": "{pct}% de pannes communes"
     },
     "predictive_alerts_extra": {
       "title": "Alertes prédictives",
@@ -6854,7 +6924,12 @@
       "loading_status_page": "Chargement de la page de statut…",
       "loading_reliability": "Chargement des données de fiabilité…",
       "heartbeats_btn": "Battements",
-      "reliability_btn": "Fiabilité"
+      "reliability_btn": "Fiabilité",
+      "source_byom_policy": "Politique BYOM",
+      "source_healing_issues": "Problèmes de réparation",
+      "source_monthly_spend": "Dépenses mensuelles",
+      "source_provider_stats": "Statistiques du fournisseur",
+      "sources_unavailable": "Impossible de charger {sources} — les scores peuvent être inexacts."
     },
     "popup_fields": {
       "sign_up_free_at": "Inscrivez-vous gratuitement sur",
@@ -7153,7 +7228,11 @@
       "seg_healing": "Guérison",
       "seg_stability": "Stabilité",
       "seg_success": "Succès",
-      "show_all": "Tout afficher"
+      "show_all": "Tout afficher",
+      "fleet_avg_badge": "moy. de flotte",
+      "fleet_avg_tooltip": "Aucune exécution enregistrée pour cette persona sur la période — le taux de réussite moyen de la flotte est affiché, et non une valeur mesurée par persona.",
+      "no_data_badge": "aucune donnée",
+      "no_data_tooltip": "Aucune exécution terminée ou échouée pour cette persona sur la période — le taux de réussite est un espace réservé, non mesuré."
     },
     "provenance": {
       "sourced_tip": "Cite {count} source(s) que vous pouvez tracer et auditer.",
@@ -10564,7 +10643,13 @@
     "local_tooling_label": "Outils intégrés",
     "local_tooling_sentence": "Personas est livré dès le départ avec des outils locaux connectés — Messagerie, Base de données, Vecteur, et plus — aucun identifiant n'est nécessaire.",
     "resume_continue_title": "Reprenez là où vous vous étiez arrêté",
-    "resume_continue_cta": "Continuer la visite"
+    "resume_continue_cta": "Continuer la visite",
+    "replay_setup": "Revoir la configuration",
+    "resume_setup": "Reprendre la configuration",
+    "tour_handoff_accept": "Faire la visite",
+    "tour_handoff_body": "Votre premier agent est actif. Faites une visite guidée rapide du reste — connexions et exécution des agents — et nous passerons les étapes que vous venez de faire.",
+    "tour_handoff_dismiss": "Plus tard",
+    "tour_handoff_title": "Envie de la visite guidée ?"
   },
   "system_health": {
     "install_all": "Installer toutes les dépendances",
@@ -10971,7 +11056,15 @@
     "last24h_failed_count": "{count} échouée(s)",
     "last24h_show_all": "Tout afficher ({count})",
     "last24h_show_less": "Afficher moins",
-    "last24h_retry_at": "nouvelle tentative {time}"
+    "last24h_retry_at": "nouvelle tentative {time}",
+    "unverified": "Non vérifié",
+    "unverified_tooltip": "Aucun enregistrement d'exécution pour ce créneau — il a pu être ignoré, limité en fréquence, dépasser le budget ou l'application était fermée.",
+    "missed_backfill_cta": "Rattraper",
+    "missed_dismiss": "Ignorer l’avis d’exécutions manquées",
+    "missed_offline": "{count} manquée(s) hors ligne",
+    "missed_offline_tooltip": "Des exécutions planifiées ont été ignorées pendant que l’app était fermée. Le rattrapage les rejoue (dédupliqué et plafonné), ou ignorez pour effacer.",
+    "reason_invalid_timezone": "En pause — fuseau horaire invalide",
+    "reason_unscheduled": "En pause — aucune planification valide"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
@@ -11504,6 +11597,30 @@
       "quarantined": "Déclencheur en quarantaine",
       "healing_abandoned": "Réparation abandonnée",
       "healing_capped": "Tentatives de réparation épuisées"
+    },
+    "build": {
+      "analyzing": "Analyse en cours",
+      "awaiting_input": "En attente de saisie",
+      "cancelled": "Annulé",
+      "completed": "Terminé",
+      "draft_ready": "Brouillon prêt",
+      "failed": "Échec",
+      "initializing": "Initialisation",
+      "promoted": "Promu",
+      "resolving": "Résolution",
+      "test_complete": "Test terminé",
+      "testing": "Test en cours"
+    },
+    "tool_error_kind": {
+      "auth": "Authentification",
+      "http": "Erreur HTTP",
+      "misconfigured": "Mal configuré",
+      "rate_limited": "Limite de débit atteinte",
+      "timeout": "Délai dépassé",
+      "tool_error": "Échec de l'outil",
+      "transport": "Échec de la connexion",
+      "unknown": "Erreur inconnue",
+      "unsupported": "Non exécutable ici"
     }
   },
   "project_overview": {
@@ -11758,7 +11875,8 @@
       "headless_badge": "Arrière-plan",
       "headless_no_terminal": "Session en arrière-plan — s'exécute sans terminal. Répondez depuis le bandeau « Besoin de vous » ; la progression s'affiche dans Insights.",
       "spawn_headless_hint": "Mode headless — pas de terminal en direct, bien plus léger en CPU et RAM. Répondez depuis le bandeau « Besoin de vous » ; suivez la progression dans Insights.",
-      "spawn_headless_toggle": "Exécuter en arrière-plan (sans terminal)"
+      "spawn_headless_toggle": "Exécuter en arrière-plan (sans terminal)",
+      "live_slot_hibernated_toast": "{name} a été mise en veille pour respecter la limite de sessions actives — sa conversation est enregistrée ; réveillez-la pour reprendre."
     },
     "title": "Extensions",
     "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",
@@ -14091,7 +14209,9 @@
       "progress_past": "Passé",
       "goal_view_missions": "Missions",
       "mission_link_goal": "Lier à un objectif…",
-      "mission_unlinked": "Sans objectif"
+      "mission_unlinked": "Sans objectif",
+      "goal_field_kpi": "KPI lié",
+      "goal_kpi_none": "Aucun KPI lié"
     },
     "dev_projects": {
       "active_goals": "objectifs actifs",
@@ -15651,7 +15771,9 @@
       "collab_label": "Collaboration",
       "deck_phase_paused": "En pause",
       "deck_pause": "Pause",
-      "deck_resume": "Reprendre"
+      "deck_resume": "Reprendre",
+      "readiness_chip_label": "Configuration requise",
+      "readiness_chip_tooltip": "Les connecteurs de ce coéquipier doivent encore être configurés. Il peut participer et échanger, mais ses capacités sont suspendues — il n'agira pas tant que vous n'aurez pas ajouté l'identifiant (ouvrez la section Connexions dans la barre latérale)."
     },
     "memory_created": "Mémoire enregistrée dans le registre de l'équipe",
     "memory_updated": "Mémoire mise à jour",
@@ -15855,7 +15977,11 @@
       "whats_new": "Nouveautés",
       "back_to_plugins": "Plugins",
       "roadmap": "Feuille de route",
-      "groups_label": "Groupes"
+      "groups_label": "Groupes",
+      "draft_agent_fallback": "Agent brouillon",
+      "draft_needs_answers_one": "{name} — 1 réponse requise",
+      "draft_needs_answers_other": "{name} — {count} réponses requises",
+      "draft_switch_title": "Passer au brouillon : {name} ({phase})"
     },
     "execution_detail": {
       "copy": "Copier",
@@ -17019,7 +17145,11 @@
     "group_needs_review": "En attente de première révision",
     "group_low_scores": "Scores faibles",
     "group_declining": "Tendance à la baisse",
-    "group_stale": "Révisions obsolètes"
+    "group_stale": "Révisions obsolètes",
+    "roster_unscored": "Sans note",
+    "roster_unscored_hint": "Le Director a examiné cet agent mais n'a pas renvoyé de note ; ouvrez l'évaluation pour voir ses conseils.",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Issu de la revue de coaching du Director — approuvez-le ou résolvez-le comme tout autre problème."
   },
   "remote_approval": {
     "title": "Demande d'exécution à distance",
@@ -17225,7 +17355,10 @@
     "attn_overdue": "{days}j de retard",
     "attn_reason_crit": "Critique",
     "attn_reason_floor": "Plancher",
-    "attn_reason_pace": "En retard"
+    "attn_reason_pace": "En retard",
+    "evaluate_measured": "{count} KPI mesurés.",
+    "evaluate_none_due": "Aucun KPI à mesurer.",
+    "evaluate_partial": "{measured} mesurés, {failed} en échec"
   },
   "deliberation": {
     "agenda": "Ordre du jour",

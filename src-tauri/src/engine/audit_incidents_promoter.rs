@@ -109,11 +109,14 @@ pub fn promote_tool_audit(pool: &DbPool, entry: &ToolExecutionAuditEntry) {
         return;
     }
     let title = format!("Tool '{}' returned an error", entry.tool_name);
-    let detail = entry.error_message.clone().or_else(|| {
-        Some(format!(
-            "tool_id={}, type={}",
-            entry.tool_id, entry.tool_type
-        ))
+    let base_detail = entry.error_message.clone().unwrap_or_else(|| {
+        format!("tool_id={}, type={}", entry.tool_id, entry.tool_type)
+    });
+    // Prefix the typed failure category so the inbox reads the machine token
+    // (auth/timeout/http/…) instead of only the opaque message.
+    let detail = Some(match &entry.error_kind {
+        Some(kind) => format!("[{kind}] {base_detail}"),
+        None => base_detail,
     });
     try_promote(
         pool,
@@ -341,6 +344,7 @@ mod tests {
             result_status: status.into(),
             duration_ms: Some(120),
             error_message: Some("403 Forbidden".into()),
+            error_kind: Some("auth".into()),
             created_at: "2026-04-30T12:00:00Z".into(),
         }
     }

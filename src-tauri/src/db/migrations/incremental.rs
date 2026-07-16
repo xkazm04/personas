@@ -1061,6 +1061,36 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created settings_audit_log table");
     }
 
+    // -- Persona Change Log (append-only field-level edit trail) ---------
+    // "Who changed my agent's model / budget / prompt and when." One row per
+    // changed field per update_persona call. Secret-bearing fields
+    // (model_profile, notification_channels) are logged with values redacted
+    // to "(changed)". Bounded per-persona retention is enforced in the repo.
+    let has_persona_change_log: bool = conn
+        .prepare(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_change_log'",
+        )?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_persona_change_log {
+        ddl_step(
+            conn,
+            "CREATE TABLE IF NOT EXISTS persona_change_log (
+                id           TEXT PRIMARY KEY,
+                persona_id   TEXT NOT NULL,
+                field        TEXT NOT NULL,
+                before_value TEXT,
+                after_value  TEXT,
+                source       TEXT,
+                created_at   TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_pcl_persona ON persona_change_log(persona_id, created_at DESC);",
+        )?;
+        tracing::info!("Created persona_change_log table");
+    }
+
     // -- Tool Execution Audit Log (append-only) --------------------------
     let has_tool_audit_log: bool = conn
         .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tool_execution_audit_log'")?
@@ -1082,6 +1112,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 result_status   TEXT NOT NULL,
                 duration_ms     INTEGER,
                 error_message   TEXT,
+                error_kind      TEXT,
                 created_at      TEXT NOT NULL DEFAULT (datetime('now'))
             );
             CREATE INDEX IF NOT EXISTS idx_teal_tool    ON tool_execution_audit_log(tool_id);
@@ -1090,6 +1121,30 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             CREATE INDEX IF NOT EXISTS idx_teal_created ON tool_execution_audit_log(created_at DESC);"
         )?;
         tracing::info!("Created tool_execution_audit_log table");
+    }
+
+    // -- tool_execution_audit_log: add typed error_kind column ------------
+    // Idempotent add-column guard for DBs created before the tool-result
+    // contract landed. Guarded on both table presence (fresh installs above
+    // already include the column) and column absence so it never double-applies.
+    let has_tool_audit_table: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tool_execution_audit_log'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if has_tool_audit_table {
+        let has_error_kind: bool = conn
+            .prepare("SELECT COUNT(*) FROM pragma_table_info('tool_execution_audit_log') WHERE name = 'error_kind'")?
+            .query_row([], |row| row.get::<_, i64>(0))
+            .map(|c| c > 0)
+            .unwrap_or(false);
+        if !has_error_kind {
+            ddl_step(
+                conn,
+                "ALTER TABLE tool_execution_audit_log ADD COLUMN error_kind TEXT;",
+            )?;
+            tracing::info!("Added error_kind column to tool_execution_audit_log");
+        }
     }
 
     // -- Encrypted event payloads: add payload_iv column -----------------
@@ -3795,6 +3850,140 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Persisted daily SLA rollups (per persona × local day). Lets the SLA
+    // dashboard serve its trend + aggregates from a bounded rollup table
+    // instead of re-scanning the full `persona_executions` history on every
+    // load, and lets the trend survive execution retention. Backfills from
+    // existing history using the server's local-day definition (the same one
+    // the runtime rollup writer in `cleanup_tick` uses). MUST stay INSIDE
+    // `run_incremental` (fresh DBs run this after the base schema exists) — the
+    // tail below belongs to `ensure_composite_fires_table`, which `initial::run`
+    // calls BEFORE `run_incremental`, so a step appended there would fail on a
+    // fresh DB.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "sla_daily_rollups",
+            description: "Persisted daily SLA rollups (per persona × local day) + backfill",
+            already_applied: |conn| has_table(conn, "sla_daily"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS sla_daily (
+                        persona_id      TEXT NOT NULL,
+                        day             TEXT NOT NULL,
+                        total           INTEGER NOT NULL DEFAULT 0,
+                        successful      INTEGER NOT NULL DEFAULT 0,
+                        failed          INTEGER NOT NULL DEFAULT 0,
+                        cancelled       INTEGER NOT NULL DEFAULT 0,
+                        timed_count     INTEGER NOT NULL DEFAULT 0,
+                        duration_sum_ms REAL NOT NULL DEFAULT 0,
+                        cost_sum_usd    REAL NOT NULL DEFAULT 0,
+                        updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (persona_id, day)
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_sla_daily_day ON sla_daily(day);",
+                )?;
+                // Backfill from existing execution history. Reuses the exact
+                // rollup writer the runtime path uses, so backfilled and
+                // live-written rows share one definition.
+                let offset_min =
+                    crate::db::repos::communication::sla::server_offset_minutes();
+                crate::db::repos::communication::sla::upsert_sla_daily_conn(conn, offset_min)?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Durable SLA breach-episode state (one row per persona). Powers the
+    // reliability-breach bus events emitted on the execution-completion path:
+    // the row is what dedupes a breach to ONE enter-event (and one recovery)
+    // even across restarts — without it, every failing run after the first
+    // would re-emit. Zero-config: thresholds are code constants in
+    // `repos::communication::sla`, there is no `sla_targets` table by design.
+    // MUST stay INSIDE `run_incremental` for the same reason as `sla_daily`
+    // above (fresh DBs run this after the base schema; the tail belongs to
+    // `ensure_composite_fires_table`, which runs BEFORE `run_incremental`).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "sla_breach_episodes",
+            description: "Durable per-persona SLA breach-episode dedup state",
+            already_applied: |conn| has_table(conn, "sla_breach_episodes"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS sla_breach_episodes (
+                        persona_id           TEXT PRIMARY KEY,
+                        is_open              INTEGER NOT NULL DEFAULT 0,
+                        reason               TEXT,
+                        consecutive_failures INTEGER NOT NULL DEFAULT 0,
+                        success_rate         REAL NOT NULL DEFAULT 0,
+                        decided              INTEGER NOT NULL DEFAULT 0,
+                        opened_at            TEXT,
+                        recovered_at         TEXT,
+                        updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_sla_breach_episodes_open
+                        ON sla_breach_episodes(is_open);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Durable per-trigger schedule side-state: the count of scheduled slots
+    // that were DISCARDED while the app was offline (the startup overdue sweep
+    // fires ONE catch-up and drops the rest under the default backfill cap of
+    // 1), so a daily-job user gets a visible "missed N while offline" record
+    // instead of silent loss. One row per schedule trigger; cleared after the
+    // user backfills or dismisses. MUST stay INSIDE `run_incremental` (fresh
+    // DBs run this after the base schema; the tail belongs to
+    // `ensure_composite_fires_table`, which runs BEFORE `run_incremental`).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "schedule_missed_runs",
+            description: "Per-trigger discarded-while-offline slot count for schedule visibility",
+            already_applied: |conn| has_table(conn, "schedule_missed_runs"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS schedule_missed_runs (
+                        trigger_id      TEXT PRIMARY KEY,
+                        missed_count    INTEGER NOT NULL DEFAULT 0,
+                        first_missed_at TEXT,
+                        last_missed_at  TEXT,
+                        updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Direction 3 (lost fires get a home): machine-readable reason a schedule is
+    // Paused/Unscheduled (e.g. `invalid_timezone`), stored on the same per-trigger
+    // side-state row so the schedule row can explain WHY next_trigger_at is NULL
+    // instead of just showing "Paused/Unscheduled". Guarded ALTER — reuses the
+    // Direction 1 table so a trigger can carry both a missed count and a reason.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "schedule_missed_runs.status_reason",
+            description: "Machine-readable schedule pause reason (e.g. invalid_timezone)",
+            already_applied: |conn| has_column(conn, "schedule_missed_runs", "status_reason"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE schedule_missed_runs ADD COLUMN status_reason TEXT;
+                     ALTER TABLE schedule_missed_runs ADD COLUMN status_reason_detail TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
@@ -5396,6 +5585,21 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                                 OR TRIM(COALESCE(system_prompt, '')) = '')
                            {trust_clause};"
                     ),
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_healing_issues.source",
+            description: "Provenance of a healing issue: NULL/'engine' for the self-healing pipeline (legacy default), 'director' for issues routed from a Director coaching verdict. Lets the health UI badge the origin and lets the Director dedup its own open issues without a schema-less title hack.",
+            already_applied: |conn| has_column(conn, "persona_healing_issues", "source"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_healing_issues ADD COLUMN source TEXT;",
                 )?;
                 Ok(())
             },

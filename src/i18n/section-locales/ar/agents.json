@@ -852,7 +852,25 @@
     "eco_subtitle": "مدى تكرار حل كل نموذج للتقييم وتكلفة كل نجاح.",
     "eco_title": "كفاءة التكلفة",
     "vr_col_tokens": "الرموز",
-    "vr_tokens_tooltip": "{input} إدخال / {output} إخراج في المتوسط لكل تشغيل"
+    "vr_tokens_tooltip": "{input} إدخال / {output} إخراج في المتوسط لكل تشغيل",
+    "vr_reconcile_clear_all": "مسح كل التثبيتات",
+    "vr_reconcile_clear_pin": "مسح التثبيت",
+    "vr_reconcile_desc_one": "لا تزال حالة استخدام واحدة تثبّت نموذجًا يختلف عن النموذج الذي رقّيته للتو ({model}). ستظل تعمل على نموذجها المثبّت حتى تمسح التثبيت.",
+    "vr_reconcile_desc_other": "لا تزال {count} حالات استخدام تثبّت نماذج تختلف عن النموذج الذي رقّيته للتو ({model}). ستظل تعمل على نماذجها المثبّتة حتى تمسح التثبيتات.",
+    "vr_reconcile_done": "تم",
+    "vr_reconcile_now_follows": "يتبع الآن الافتراضي ({model})",
+    "vr_reconcile_pinned_to": "مثبّت على {model}",
+    "vr_reconcile_title": "التوفيق بين تثبيتات نماذج حالات الاستخدام",
+    "improve_failed": "تعذّر تجهيز موجز التحسين",
+    "improve_focus": "سيركّز على {metric} (المتوسط {score}/100)",
+    "improve_run_seed_measured": "حسّن الشخصية \"{name}\". أشار آخر اختبار لها إلى أن {metric} هو أضعف المجالات (المتوسط {score}/100). على ماذا ينبغي أن أركّز؟ ",
+    "improve_run_seed_plain": "حسّن الشخصية \"{name}\" بناءً على أحدث نتائج اختبارها. على ماذا ينبغي أن أركّز؟ ",
+    "improve_seeded": "تم فتح موجز التحسين في Athena",
+    "vr_cost_unknown": "غير متاح",
+    "vr_cost_unknown_tooltip": "لا يتم تتبّع التكلفة للنماذج المحلية",
+    "vr_degraded_tooltip": "تم تقييم {count} من أصل {total} عيّنات بالطريقة الاحتياطية (مقيّم LLM غير متاح)",
+    "vr_partial_tooltip": "مركّب من درجات فرعية جزئية — غير قابل للمقارنة المباشرة",
+    "vr_score_caution": "الدرجة تحتاج إلى حذر"
   },
   "design": {
     "select_agent": "اختر وكيلاً لبدء تحليل التصميم",
@@ -1729,7 +1747,15 @@
     "failed": "فشل",
     "error": "خطأ",
     "invalid_json": "JSON غير صالح — صحّحه قبل التشغيل.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "فشل",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "تم اقتطاع المخرجات — أعادت الأداة أكثر من حد العرض.",
+    "panel_subtitle": "استدعِ أداة مباشرةً باستخدام بيانات اعتماد هذه الشخصية.",
+    "panel_title": "تشغيل أداة",
+    "retryable_hint": "قد ينجح هذا عند إعادة المحاولة.",
+    "run_tool": "تشغيل الأداة",
+    "builtin_note": "أداة مدمجة — تعمل داخل تنفيذات الشخصية (وليس يدويًا من هنا). شغّل إحدى قدرات الشخصية لتجربتها."
   },
   "health_check": {
     "title": "فحص صحة الوكيل",
@@ -2729,5 +2755,37 @@
     "done": "تم النسخ باسم \"{name}\"",
     "done_with_wiring": "تم النسخ باسم \"{name}\" — تم نسخ {triggers} مُشغِّل و{subscriptions} اشتراك، معطّلة في النسخة",
     "failed": "تعذّر تكرار الوكيل"
+  },
+  "change_history": {
+    "empty": "لا توجد تغييرات مسجلة بعد",
+    "empty_value": "(فارغ)",
+    "fields": {
+      "cli_awareness_enabled": "وعي CLI",
+      "color": "اللون",
+      "description": "الوصف",
+      "design_context": "سياق التصميم",
+      "enabled": "مفعّل",
+      "headless": "بدون واجهة",
+      "icon": "الأيقونة",
+      "lifecycle": "دورة الحياة",
+      "max_budget_usd": "الميزانية",
+      "max_concurrent": "الحد الأقصى المتزامن",
+      "max_turns": "الحد الأقصى للأدوار",
+      "model_profile": "Model",
+      "name": "الاسم",
+      "notification_channels": "الإشعارات",
+      "parameters": "المعاملات",
+      "sensitive": "معاينة حساسة",
+      "structured_prompt": "التوجيه",
+      "system_prompt": "توجيه النظام",
+      "timeout_ms": "المهلة"
+    },
+    "sources": {
+      "editor": "المحرر",
+      "fanout": "التوزيع المتفرع",
+      "header": "الرأس",
+      "other": "أخرى"
+    },
+    "title": "سجل التغييرات"
   }
 }

@@ -1,13 +1,26 @@
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { CircuitBreakerIndicator } from '@/features/agents/sub_executions/components/CircuitBreakerIndicator';
 import { debtText } from '@/i18n/DebtText';
+import { useTranslation, interpolate } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 import type {
   PersonaHealthSignal, CascadeLink, RoutingRecommendation,
   DataSourceStatusMap, DataSourceName,
 } from '@/stores/slices/overview/personaHealthSlice';
-import { useHeartbeatsModel, DATA_SOURCE_LABELS } from './model';
+import { useHeartbeatsModel } from './model';
 import { VitalsLedger } from './VitalsLedger';
 import { HealingEffectivenessPanel } from './HealingEffectivenessPanel';
+
+/** Resolve a data-source name to its localized label. */
+function sourceLabel(t: Translations, name: DataSourceName): string {
+  const h = t.overview.health_dashboard;
+  switch (name) {
+    case 'monthlySpend': return h.source_monthly_spend;
+    case 'healingIssues': return h.source_healing_issues;
+    case 'byomPolicy': return h.source_byom_policy;
+    case 'providerStats': return h.source_provider_stats;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Heartbeats view — invariant safety banners + the Vitals Ledger. The ledger
@@ -55,13 +68,14 @@ export function HeartbeatsView({ signals, cascadeLinks, routingRecommendations, 
 }
 
 function StalenessBanner({ status, onRetry }: { status: DataSourceStatusMap; onRetry: () => void }) {
-  const failedSources = (Object.entries(status) as [DataSourceName, string][])
-    .filter(([, state]) => state === 'failed')
-    .map(([name]) => DATA_SOURCE_LABELS[name]);
+  const { t } = useTranslation();
+  const failed = (Object.entries(status) as [DataSourceName, DataSourceStatusMap[DataSourceName]][])
+    .filter(([, s]) => s.state === 'failed');
 
-  if (failedSources.length === 0) return null;
+  if (failed.length === 0) return null;
 
-  const detail = `${failedSources.join(', ')} could not be loaded — scores may be inaccurate.`;
+  const names = failed.map(([name]) => sourceLabel(t, name)).join(', ');
+  const detail = interpolate(t.overview.health_dashboard.sources_unavailable, { sources: names });
 
   return (
     <InlineErrorBanner

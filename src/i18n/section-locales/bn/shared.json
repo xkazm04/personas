@@ -157,7 +157,11 @@
     "whats_new": "নতুন কী আছে",
     "back_to_plugins": "প্লাগইন",
     "roadmap": "রোডম্যাপ",
-    "groups_label": "গ্রুপ"
+    "groups_label": "গ্রুপ",
+    "draft_agent_fallback": "খসড়া এজেন্ট",
+    "draft_needs_answers_one": "{name} — ১টি উত্তর প্রয়োজন",
+    "draft_needs_answers_other": "{name} — {count}টি উত্তর প্রয়োজন",
+    "draft_switch_title": "খসড়ায় যান: {name} ({phase})"
   },
   "execution_detail": {
     "copy": "কপি করুন",

@@ -305,7 +305,7 @@ the inline health badge in `EditorTabBar`):
 
 | Sub-tab | Component | Notes |
 |---|---|---|
-| Use Cases | `PersonaUseCasesTab` | the per-capability surface. The capability detail (`UseCaseDetailExpanded`) header has a **Save as recipe** action that promotes the capability into a reusable [recipe](../recipes/README.md) via `promote_use_case_to_recipe` (UAT F-CLIENT-OPERATOR-VIEW — build-once → reusable-recipe loop). |
+| Use Cases | `PersonaUseCasesTab` | the per-capability surface. The capability detail (`UseCaseDetailExpanded`) header has a **Save as recipe** action that promotes the capability into a reusable [recipe](../recipes/README.md) via `promote_use_case_to_recipe` (UAT F-CLIENT-OPERATOR-VIEW — build-once → reusable-recipe loop). When the persona has assigned tools, the tab-bar actions also expose **Run tool** — a modal (`ToolRunnerModal` wrapping `ToolRunnerPanel`) that invokes a single tool directly via `invoke_tool_direct` (no LLM), rendering the typed outcome contract: failure category, HTTP status when present, a retryable hint, and an output-truncated notice. |
 | Properties | `DesignTab` (wizard / intent / phases / apply) | the design wizard + saved prompt/summary/feasibility (was "Prompt") |
 | Parameters | `PersonaParametersCard` (via `DesignParametersPanel`) | the persona's live tunable `{{param.*}}` values |
 | Connectors | `ConnectorsSection` (via `DesignConnectorsPanel`) | read-only view of the saved design's connectors + tools |
@@ -364,7 +364,7 @@ Per-row **actions**:
 
 | Action | Effect |
 |---|---|
-| **Activate** | Rolls the version's prompt live + tags it `production`, **and** switches the persona's active model (`model_profile`) to the row's model. |
+| **Activate** | Atomically (one backend transaction, `lab_activate_version`) rolls the version's prompt live + tags it `production` **and** switches the persona's active model (`model_profile`) — a failure leaves the persona fully unchanged. If any use case still pins a different model via `model_override`, a post-activation dialog lists the diverging pins with per-use-case **Clear pin** (follow the new default) or keep-pin; dismissing changes nothing. |
 | **Measure** | Runs a version-scoped **Arena** across models — the only surviving panel from the old switcher; results populate the row's rating. |
 | **Improve** | Opens the **Athena** companion with a pre-filled improvement brief (persona + version + weakest measured metric) and waits for the user to specify the focus. |
 | **Diff** | Compares the version's prompt against the active version. |
@@ -382,9 +382,24 @@ What happened to the old modes:
   unchanged; Athena is now their only driver.
 
 Backend: `lab_start_arena` takes an optional `version_id` (snapshots which
-version it measured onto `lab_arena_runs` / `lab_arena_results`);
+version it measured onto `lab_arena_runs` / `lab_arena_results`); an
+**unscoped** arena launch (from inside the arena panel) now auto-attributes
+results to the persona's active version (`production` tag, else highest
+version number), so every match feeds the ratings table.
 `lab_get_version_ratings` aggregates the (version, model) rollup across the
 arena / eval / ab result tables.
+
+Rating honesty: each cell exposes how many of its measurements were scored by
+the degraded keyword-heuristic fallback rather than the LLM judge (amber
+triangle + tooltip), and whether the composite was computed on partial
+sub-score coverage. Models with no real cost signal (Ollama's hardcoded $0)
+show **n/a** cost and are excluded from the "best value" verdict rather than
+winning it for free.
+
+Engine bounds: arena cells run under a concurrency cap (4 concurrent CLI
+children); **Cancel** kills in-flight CLI processes within seconds and the
+run finalizes as `Cancelled` — no late results are recorded and a cancelled
+run is never re-classified as `Failed`.
 
 Wiring:
 
@@ -436,6 +451,25 @@ Custom icons are **local-only**. At every export boundary
 to a built-in `agent-icon:` inferred from the persona's `template_category`,
 so a shared persona arrives with a sensible catalog icon rather than a dead
 reference.
+
+### Change history — who changed what, when
+
+The Settings tab shows a read-only **Change history** list (`PersonaChangeHistory`,
+`src/features/agents/sub_editor/components/`) answering "who changed my agent's
+model / budget / prompt, and when". Every `update_persona` writes one row per
+*changed* field to the append-only `persona_change_log` table
+(`src-tauri/src/db/repos/resources/persona_change_log.rs`), computed from the
+already-loaded persona row inside the same UPDATE transaction — no extra SELECT
+on the autosave path. Each row carries the field name, truncated before→after
+values, a `source` tag (`editor` · `header` · `fanout` · `other`, derived from
+the optional `UpdatePersonaInput.source`), and a timestamp.
+
+- **Secrets are never stored.** `model_profile` and `notification_channels`
+  carry `auth_token`s; their values are redacted to `"(changed)"`.
+- **Noise control.** Same-field edits within 30s coalesce into the prior row
+  (keeping the original before-value); per-persona history is capped at 200 rows.
+- Read via the `list_persona_change_log` IPC command. Restore/rollback is out of
+  scope — this is an inspection surface only.
 
 ## Home team — workspace anchor
 

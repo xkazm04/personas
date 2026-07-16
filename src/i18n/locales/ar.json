@@ -1655,7 +1655,25 @@
       "eco_subtitle": "مدى تكرار حل كل نموذج للتقييم وتكلفة كل نجاح.",
       "eco_title": "كفاءة التكلفة",
       "vr_col_tokens": "الرموز",
-      "vr_tokens_tooltip": "{input} إدخال / {output} إخراج في المتوسط لكل تشغيل"
+      "vr_tokens_tooltip": "{input} إدخال / {output} إخراج في المتوسط لكل تشغيل",
+      "vr_reconcile_clear_all": "مسح كل التثبيتات",
+      "vr_reconcile_clear_pin": "مسح التثبيت",
+      "vr_reconcile_desc_one": "لا تزال حالة استخدام واحدة تثبّت نموذجًا يختلف عن النموذج الذي رقّيته للتو ({model}). ستظل تعمل على نموذجها المثبّت حتى تمسح التثبيت.",
+      "vr_reconcile_desc_other": "لا تزال {count} حالات استخدام تثبّت نماذج تختلف عن النموذج الذي رقّيته للتو ({model}). ستظل تعمل على نماذجها المثبّتة حتى تمسح التثبيتات.",
+      "vr_reconcile_done": "تم",
+      "vr_reconcile_now_follows": "يتبع الآن الافتراضي ({model})",
+      "vr_reconcile_pinned_to": "مثبّت على {model}",
+      "vr_reconcile_title": "التوفيق بين تثبيتات نماذج حالات الاستخدام",
+      "improve_failed": "تعذّر تجهيز موجز التحسين",
+      "improve_focus": "سيركّز على {metric} (المتوسط {score}/100)",
+      "improve_run_seed_measured": "حسّن الشخصية \"{name}\". أشار آخر اختبار لها إلى أن {metric} هو أضعف المجالات (المتوسط {score}/100). على ماذا ينبغي أن أركّز؟ ",
+      "improve_run_seed_plain": "حسّن الشخصية \"{name}\" بناءً على أحدث نتائج اختبارها. على ماذا ينبغي أن أركّز؟ ",
+      "improve_seeded": "تم فتح موجز التحسين في Athena",
+      "vr_cost_unknown": "غير متاح",
+      "vr_cost_unknown_tooltip": "لا يتم تتبّع التكلفة للنماذج المحلية",
+      "vr_degraded_tooltip": "تم تقييم {count} من أصل {total} عيّنات بالطريقة الاحتياطية (مقيّم LLM غير متاح)",
+      "vr_partial_tooltip": "مركّب من درجات فرعية جزئية — غير قابل للمقارنة المباشرة",
+      "vr_score_caution": "الدرجة تحتاج إلى حذر"
     },
     "design": {
       "select_agent": "اختر وكيلاً لبدء تحليل التصميم",
@@ -2532,7 +2550,15 @@
       "failed": "فشل",
       "error": "خطأ",
       "invalid_json": "JSON غير صالح — صحّحه قبل التشغيل.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "فشل",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "تم اقتطاع المخرجات — أعادت الأداة أكثر من حد العرض.",
+      "panel_subtitle": "استدعِ أداة مباشرةً باستخدام بيانات اعتماد هذه الشخصية.",
+      "panel_title": "تشغيل أداة",
+      "retryable_hint": "قد ينجح هذا عند إعادة المحاولة.",
+      "run_tool": "تشغيل الأداة",
+      "builtin_note": "أداة مدمجة — تعمل داخل تنفيذات الشخصية (وليس يدويًا من هنا). شغّل إحدى قدرات الشخصية لتجربتها."
     },
     "health_check": {
       "title": "فحص صحة الوكيل",
@@ -3532,6 +3558,38 @@
       "done": "تم النسخ باسم \"{name}\"",
       "done_with_wiring": "تم النسخ باسم \"{name}\" — تم نسخ {triggers} مُشغِّل و{subscriptions} اشتراك، معطّلة في النسخة",
       "failed": "تعذّر تكرار الوكيل"
+    },
+    "change_history": {
+      "empty": "لا توجد تغييرات مسجلة بعد",
+      "empty_value": "(فارغ)",
+      "fields": {
+        "cli_awareness_enabled": "وعي CLI",
+        "color": "اللون",
+        "description": "الوصف",
+        "design_context": "سياق التصميم",
+        "enabled": "مفعّل",
+        "headless": "بدون واجهة",
+        "icon": "الأيقونة",
+        "lifecycle": "دورة الحياة",
+        "max_budget_usd": "الميزانية",
+        "max_concurrent": "الحد الأقصى المتزامن",
+        "max_turns": "الحد الأقصى للأدوار",
+        "model_profile": "Model",
+        "name": "الاسم",
+        "notification_channels": "الإشعارات",
+        "parameters": "المعاملات",
+        "sensitive": "معاينة حساسة",
+        "structured_prompt": "التوجيه",
+        "system_prompt": "توجيه النظام",
+        "timeout_ms": "المهلة"
+      },
+      "sources": {
+        "editor": "المحرر",
+        "fanout": "التوزيع المتفرع",
+        "header": "الرأس",
+        "other": "أخرى"
+      },
+      "title": "سجل التغييرات"
     }
   },
   "vault": {
@@ -4247,7 +4305,9 @@
       "encrypt_now_other": "تشفير {count} بيانات اعتماد غير مشفّرة الآن",
       "encrypt_done_one": "تم -- تم تشفير {migrated} بيانات اعتماد.",
       "encrypt_done_other": "تم -- تم تشفير {migrated} بيانات اعتماد.",
-      "encrypt_partial": "تم تشفير {migrated}، فشل {failed}. حاول مجدداً أو أعد تشغيل التطبيق."
+      "encrypt_partial": "تم تشفير {migrated}، فشل {failed}. حاول مجدداً أو أعد تشغيل التطبيق.",
+      "audit_gap_detail": "تعذّرت كتابة {count} من سجلات تدقيق بيانات الاعتماد منذ بدء التشغيل. لم يتم حظر الوصول إلى بيانات الاعتماد مطلقًا، لكن أحداث الوصول هذه مفقودة من سجل التدقيق. تحقّق من مساحة القرص أو سلامة قاعدة البيانات.",
+      "audit_gap_title": "سجل التدقيق غير مكتمل"
     },
     "delete_dialog": {
       "title": "حذف بيانات الاعتماد",
@@ -4428,7 +4488,9 @@
       "filter_all_health": "جميع الحالات الصحية",
       "health_healthy": "سليم",
       "health_failing": "فاشل",
-      "health_untested": "غير مُختبر"
+      "health_untested": "غير مُختبر",
+      "health_unverifiable": "غير قابل للتحقق",
+      "health_unverifiable_tooltip": "لا يملك هذا الموصّل فحصًا مباشرًا — يتم تخزين بيانات الاعتماد لكن لا يمكن التحقق منها."
     },
     "foraging": {
       "no_credentials_found": "لم تُعثَر على بيانات اعتماد",
@@ -6105,7 +6167,13 @@
       "event_data": "بيانات الحدث",
       "error": "خطأ",
       "skipped_stat_label": "{skipped} متخطاة",
-      "skipped_stat_tooltip": "{skipped} من أصل {total} حدثًا خلال آخر 7 أيام لم يكن لها أي مشترك فتم تخطيها ({rate}). المعدل المرتفع يشير إلى مشغّل لا يستمع إليه أحد."
+      "skipped_stat_tooltip": "{skipped} من أصل {total} حدثًا خلال آخر 7 أيام لم يكن لها أي مشترك فتم تخطيها ({rate}). المعدل المرتفع يشير إلى مشغّل لا يستمع إليه أحد.",
+      "type_labels": {
+        "sla_breach_opened": "بدء خرق اتفاقية مستوى الخدمة (SLA)",
+        "sla_breach_recovered": "التعافي من خرق اتفاقية مستوى الخدمة (SLA)",
+        "schedule_missed_offline": "تشغيلات مجدولة فائتة (دون اتصال)",
+        "schedule_skipped_overlap": "تم تخطّي الجدولة (التشغيل السابق نشط)"
+      }
     },
     "health": {
       "title": "صحة الوكلاء",
@@ -6622,7 +6690,9 @@
     },
     "cascade": {
       "title": "خريطة التسلسل المتتالي",
-      "no_chains": "لم يتم اكتشاف سلاسل — جميع الوكلاء تعمل باستقلالية"
+      "no_chains": "لم يتم اكتشاف سلاسل — جميع الوكلاء تعمل باستقلالية",
+      "cofail_insufficient": "لا إخفاقات مشتركة",
+      "cofail_pct": "{pct}% إخفاق مشترك"
     },
     "predictive_alerts_extra": {
       "title": "التنبيهات التنبؤية",
@@ -6854,7 +6924,12 @@
       "loading_status_page": "جارٍ تحميل صفحة الحالة...",
       "loading_reliability": "جارٍ تحميل بيانات الموثوقية...",
       "heartbeats_btn": "نبضات",
-      "reliability_btn": "الموثوقية"
+      "reliability_btn": "الموثوقية",
+      "source_byom_policy": "سياسة BYOM",
+      "source_healing_issues": "مشكلات الإصلاح",
+      "source_monthly_spend": "الإنفاق الشهري",
+      "source_provider_stats": "إحصاءات المزود",
+      "sources_unavailable": "تعذّر تحميل {sources} — قد تكون النتائج غير دقيقة."
     },
     "popup_fields": {
       "sign_up_free_at": "اشترك مجاناً على",
@@ -7153,7 +7228,11 @@
       "seg_healing": "الإصلاح",
       "seg_stability": "الاستقرار",
       "seg_success": "النجاح",
-      "show_all": "عرض الكل"
+      "show_all": "عرض الكل",
+      "fleet_avg_badge": "متوسط الأسطول",
+      "fleet_avg_tooltip": "لم تُسجَّل أي عمليات لهذه الشخصية في النافذة — يُعرض متوسط النجاح على مستوى الأسطول، وليس قيمة مقيسة لكل شخصية.",
+      "no_data_badge": "لا توجد بيانات",
+      "no_data_tooltip": "لا توجد عمليات مكتملة أو فاشلة لهذه الشخصية في النافذة — معدل النجاح قيمة افتراضية وليست مقيسة."
     },
     "provenance": {
       "sourced_tip": "يستشهد بـ {count} مصدر يمكنك تتبعه والتحقق منه.",
@@ -10564,7 +10643,13 @@
     "local_tooling_label": "أدوات مدمجة",
     "local_tooling_sentence": "لدى Personas أدوات محلية متصلة منذ البداية — المراسلة (Messaging)، قاعدة البيانات (Database)، المتجهات (Vector)، والمزيد — دون الحاجة إلى أي بيانات اعتماد.",
     "resume_continue_title": "تابع من حيث توقفت",
-    "resume_continue_cta": "متابعة الجولة"
+    "resume_continue_cta": "متابعة الجولة",
+    "replay_setup": "إعادة الإعداد",
+    "resume_setup": "متابعة الإعداد",
+    "tour_handoff_accept": "ابدأ الجولة",
+    "tour_handoff_body": "أول وكيل لديك يعمل الآن. قم بجولة إرشادية سريعة على البقية — الاتصالات وتشغيل الوكلاء — وسنتخطى الأجزاء التي أنجزتها للتو.",
+    "tour_handoff_dismiss": "ليس الآن",
+    "tour_handoff_title": "هل تريد الجولة الإرشادية؟"
   },
   "system_health": {
     "install_all": "تثبيت جميع الاعتماديات",
@@ -10971,7 +11056,15 @@
     "last24h_failed_count": "{count} فاشل",
     "last24h_show_all": "عرض الكل ({count})",
     "last24h_show_less": "عرض أقل",
-    "last24h_retry_at": "إعادة محاولة تلقائية {time}"
+    "last24h_retry_at": "إعادة محاولة تلقائية {time}",
+    "unverified": "غير مؤكد",
+    "unverified_tooltip": "لا يوجد سجل تشغيل لهذه الفترة — ربما تم تخطيها أو تقييد معدلها أو تجاوزت الميزانية أو كان التطبيق مغلقًا.",
+    "missed_backfill_cta": "تعويض",
+    "missed_dismiss": "تجاهل إشعار التشغيلات الفائتة",
+    "missed_offline": "فات {count} أثناء عدم الاتصال",
+    "missed_offline_tooltip": "تم تخطّي عمليات التشغيل المجدولة أثناء إغلاق التطبيق. التعويض يعيد تشغيلها (مع إزالة التكرار وحد أقصى)، أو تجاهل للمسح.",
+    "reason_invalid_timezone": "متوقف — منطقة زمنية غير صالحة",
+    "reason_unscheduled": "متوقف — لا يوجد جدول صالح"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
@@ -11504,6 +11597,30 @@
       "quarantined": "المُشغِّل معزول",
       "healing_abandoned": "توقّف الإصلاح",
       "healing_capped": "استُنفدت محاولات الإصلاح"
+    },
+    "build": {
+      "analyzing": "جارٍ التحليل",
+      "awaiting_input": "بانتظار الإدخال",
+      "cancelled": "أُلغي",
+      "completed": "اكتمل",
+      "draft_ready": "المسودة جاهزة",
+      "failed": "فشل",
+      "initializing": "جارٍ التهيئة",
+      "promoted": "تمت الترقية",
+      "resolving": "جارٍ الحل",
+      "test_complete": "اكتمل الاختبار",
+      "testing": "جارٍ الاختبار"
+    },
+    "tool_error_kind": {
+      "auth": "المصادقة",
+      "http": "خطأ HTTP",
+      "misconfigured": "إعداد خاطئ",
+      "rate_limited": "تجاوز الحد المسموح",
+      "timeout": "انتهت المهلة",
+      "tool_error": "فشلت الأداة",
+      "transport": "فشل الاتصال",
+      "unknown": "خطأ غير معروف",
+      "unsupported": "غير قابل للتشغيل هنا"
     }
   },
   "project_overview": {
@@ -11758,7 +11875,8 @@
       "headless_badge": "خلفية",
       "headless_no_terminal": "جلسة في الخلفية — تعمل بدون طرفية. أجب من شريط «يحتاج إليك»؛ ويظهر التقدم في Insights.",
       "spawn_headless_hint": "الوضع بلا واجهة — دون طرفية مباشرة، وبحمل أقل بكثير على المعالج والذاكرة. أجب من شريط «يحتاج إليك»؛ وتابع التقدم في Insights.",
-      "spawn_headless_toggle": "التشغيل في الخلفية (بدون طرفية)"
+      "spawn_headless_toggle": "التشغيل في الخلفية (بدون طرفية)",
+      "live_slot_hibernated_toast": "تم تعليق {name} للبقاء ضمن حد الجلسات النشطة — محادثته محفوظة؛ أيقظه للمتابعة."
     },
     "title": "الإضافات",
     "subtitle": "وسّع مساحة عملك بالإضافات. بدّل لإظهار أو إخفاء من الشريط الجانبي.",
@@ -14091,7 +14209,9 @@
       "progress_past": "الماضي",
       "goal_view_missions": "المهام",
       "mission_link_goal": "اربط بهدف…",
-      "mission_unlinked": "بلا هدف"
+      "mission_unlinked": "بلا هدف",
+      "goal_field_kpi": "مؤشر KPI المرتبط",
+      "goal_kpi_none": "لا يوجد مؤشر KPI مرتبط"
     },
     "dev_projects": {
       "active_goals": "الأهداف النشطة",
@@ -15651,7 +15771,9 @@
       "collab_label": "تعاون",
       "deck_phase_paused": "متوقف مؤقتاً",
       "deck_pause": "إيقاف مؤقت",
-      "deck_resume": "استئناف"
+      "deck_resume": "استئناف",
+      "readiness_chip_label": "يلزم الإعداد",
+      "readiness_chip_tooltip": "لا تزال موصلات هذا الزميل بحاجة إلى إعداد. يمكنه الانضمام والمناقشة، لكن قدراته محجوبة — لن يتخذ أي إجراء حتى تضيف بيانات الاعتماد (افتح قسم الاتصالات في الشريط الجانبي)."
     },
     "memory_created": "تم حفظ الذاكرة في سجل الفريق",
     "memory_updated": "تم تحديث الذاكرة",
@@ -15855,7 +15977,11 @@
       "whats_new": "ما الجديد",
       "back_to_plugins": "الإضافات",
       "roadmap": "خارطة الطريق",
-      "groups_label": "المجموعات"
+      "groups_label": "المجموعات",
+      "draft_agent_fallback": "وكيل مسودة",
+      "draft_needs_answers_one": "{name} — يحتاج إجابة واحدة",
+      "draft_needs_answers_other": "{name} — يحتاج {count} إجابات",
+      "draft_switch_title": "التبديل إلى المسودة: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "نسخ",
@@ -17019,7 +17145,11 @@
     "group_needs_review": "بانتظار المراجعة الأولى",
     "group_low_scores": "درجات منخفضة",
     "group_declining": "اتجاه تراجعي",
-    "group_stale": "مراجعات متقادمة"
+    "group_stale": "مراجعات متقادمة",
+    "roster_unscored": "بدون تقييم",
+    "roster_unscored_hint": "راجع Director هذا الوكيل لكنه لم يُرجع درجة؛ افتح المراجعة لعرض توجيهاته.",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "تم رفعها من مراجعة التوجيه الخاصة بـ Director — وافق عليها أو قم بحلها مثل أي مشكلة أخرى."
   },
   "remote_approval": {
     "title": "طلب تشغيل عن بُعد",
@@ -17225,7 +17355,10 @@
     "attn_overdue": "متأخر {days}ي",
     "attn_reason_crit": "حرِج",
     "attn_reason_floor": "الحد الأدنى",
-    "attn_reason_pace": "متأخر"
+    "attn_reason_pace": "متأخر",
+    "evaluate_measured": "تم قياس {count} من مؤشرات KPI.",
+    "evaluate_none_due": "لا توجد مؤشرات KPI مستحقة للقياس.",
+    "evaluate_partial": "تم قياس {measured}، وفشل {failed}"
   },
   "deliberation": {
     "agenda": "جدول الأعمال",

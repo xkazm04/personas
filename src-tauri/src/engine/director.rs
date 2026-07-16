@@ -63,6 +63,24 @@ const DIRECTOR_DESCRIPTION: &str = "Watches every persona and suggests practical
 const DIRECTOR_ICON: &str = "agent-icon:director";
 const DIRECTOR_COLOR: &str = "#8b5cf6";
 
+/// Model the Director is pinned to. Mirrors the eval judge's deliberate pin
+/// (`engine::eval::LLM_EVAL_MODEL` — the 2026 tiger finding that a scoring
+/// judge riding the undeclared account default, typically opus-4-8[1m], makes
+/// its scores drift). The Director is the same kind of surface: a coaching /
+/// 0-5 scoring meta-persona whose verdicts must stay comparable across time,
+/// so its model must be STABLE, not "whatever the CLI account defaults to
+/// this month". Same family/tier as the eval judge (sonnet) for the same
+/// reason — a capable-but-consistent judge beats a top-tier-but-moving one.
+const DIRECTOR_MODEL: &str = "claude-sonnet-4-6";
+
+/// The Director's pinned `model_profile` JSON (see [`DIRECTOR_MODEL`]). Stored
+/// verbatim on the persona row; it carries no `auth_token`, so the persona
+/// repo's encrypt/decrypt passes are both no-ops and the engine reads the
+/// `{ "model": … }` shape directly via `prompt::parse_model_profile`.
+fn director_model_profile() -> String {
+    format!(r#"{{"model":"{DIRECTOR_MODEL}"}}"#)
+}
+
 /// Locked best-practice rubric. Consumed by the Phase 2 LLM evaluator as the
 /// Director persona's `system_prompt`. Phase 1 keeps this as a constant so
 /// the shape is fixed when Phase 2 arrives; the deterministic evaluator does
@@ -226,6 +244,13 @@ pub struct DirectorReport {
     pub verdicts_emitted: i64,
     #[ts(type = "number")]
     pub personas_skipped_no_executions: i64,
+    /// Personas skipped because they had ZERO new executions since their last
+    /// Director review (freshness dedup) — nothing happened to re-review.
+    #[ts(type = "number")]
+    pub personas_skipped_unchanged: i64,
+    /// Names of the freshness-skipped personas, so the batch outcome names them
+    /// (not just a count).
+    pub skipped_unchanged_personas: Vec<String>,
     pub generated_at: String,
 }
 
@@ -354,6 +379,19 @@ fn parse_score(output: &str) -> Option<(i64, String)> {
     None
 }
 
+/// Resolve the mandatory score from the primary run output, falling back to the
+/// output of a single salvage re-prompt when the primary omitted the score line.
+/// Pure + synchronous so both outcomes are unit-testable without spawning a CLI:
+/// the async caller performs at most ONE salvage run and passes its output here.
+///
+/// - primary has a score → that score wins; salvage output (if any) is ignored.
+/// - primary missing, salvage has a score → salvaged score.
+/// - primary missing, salvage missing/absent → `None` ⇒ caller writes an
+///   explicit unscored marker (never silent).
+fn score_after_salvage(primary_output: &str, salvage_output: Option<&str>) -> Option<(i64, String)> {
+    parse_score(primary_output).or_else(|| salvage_output.and_then(parse_score))
+}
+
 /// The literal prefix for each optional "what's working" line the rubric may
 /// emit (v2: wins channel alongside coaching verdicts).
 const WIN_MARKER: &str = "DIRECTOR_WIN:";
@@ -436,6 +474,56 @@ fn render_review_md(
             md.push_str("_No coaching notes — the persona looks healthy._\n");
         } else {
             md.push_str("_No coaching needed beyond the wins above._\n");
+        }
+    } else {
+        md.push_str("### Coaching\n\n");
+        for v in verdicts {
+            md.push_str(&format!(
+                "#### {} _({} · {})_\n\n",
+                v.title,
+                v.severity.as_str(),
+                v.category.as_str()
+            ));
+            if !v.description.is_empty() {
+                md.push_str(&v.description);
+                md.push_str("\n\n");
+            }
+            if let Some(r) = &v.rationale {
+                md.push_str(&format!("**Evidence:** {r}\n\n"));
+            }
+            if !v.suggested_actions.is_empty() {
+                md.push_str("**Suggested actions:**\n");
+                for a in &v.suggested_actions {
+                    md.push_str(&format!("- {a}\n"));
+                }
+                md.push('\n');
+            }
+        }
+    }
+    md
+}
+
+/// Render an *unscored* Director review: the model omitted the mandatory
+/// DIRECTOR_SCORE line and a bounded salvage re-prompt still failed to recover
+/// it. We keep the wins + coaching the run DID produce and mark the score
+/// explicitly unavailable, so the coaching table shows "unscored review" rather
+/// than a silent "—". Stored via `set_director_review_unscored` (score stays NULL).
+fn render_unscored_review_md(wins: &[DirectorWin], verdicts: &[DirectorVerdict]) -> String {
+    let mut md = String::from("## Director review — unscored\n\n");
+    md.push_str(
+        "_The Director did not return a score for this review (the mandatory score line was \
+         missing and a re-prompt could not recover it). The coaching below still stands._\n\n",
+    );
+    if !wins.is_empty() {
+        md.push_str("### What's working\n\n");
+        for w in wins {
+            md.push_str(&format!("- _({})_ {}\n", w.category.as_str(), w.note));
+        }
+        md.push('\n');
+    }
+    if verdicts.is_empty() {
+        if wins.is_empty() {
+            md.push_str("_No coaching notes were emitted._\n");
         }
     } else {
         md.push_str("### Coaching\n\n");
@@ -571,6 +659,23 @@ fn build_director_payload(pool: &DbPool, ctx: &PersonaEvaluationContext, rollup:
     }
     s.push('\n');
 
+    // 4b. Calibration signal — how the user has responded to the Director's OWN
+    // past coaching on this persona. This is the accept/reject taste the rubric
+    // promises to learn from; surface it explicitly (not only in the past-verdict
+    // list below) so the score + coaching calibrate to it.
+    s.push_str("## Your coaching calibration on this persona\n");
+    s.push_str(&format!(
+        "- Accepted {} of your past coaching notes; rejected {}.\n",
+        ctx.feedback_accepts, ctx.feedback_rejects,
+    ));
+    if ctx.feedback_rejects > 0 {
+        s.push_str(
+            "Weigh the rejections heavily: do not re-emit coaching shaped like what the user \
+             already rejected unless the situation has materially changed.\n",
+        );
+    }
+    s.push('\n');
+
     // 5. Past Director verdicts + their disposition
     let past = list_verdicts(pool, Some(p.id.as_str())).unwrap_or_default();
     s.push_str("## Your past verdicts on this persona\n");
@@ -622,7 +727,7 @@ async fn evaluate_with_llm(
 
     let spawned = crate::commands::execution::executions::execute_persona_inner(
         state,
-        app,
+        app.clone(),
         director_id.to_string(),
         /* trigger_id */ None,
         Some(payload),
@@ -658,21 +763,114 @@ async fn evaluate_with_llm(
     // execution so the activity Verdict column + Director tab can read it.
     // Coaching verdicts continue to route to manual_reviews (the caller does
     // that). Wins are reinforcement-only — they live in the rendered markdown,
-    // not in the review queue. Only write when a score line was actually emitted.
-    if let (Some(exec_id), Some((score, summary))) =
-        (ctx.latest_execution_id.as_deref(), parse_score(&output))
-    {
-        let md = render_review_md(score, &summary, &wins, &verdicts);
-        if let Err(e) = executions::set_director_review(&state.db, exec_id, score, &md) {
-            tracing::warn!(error = %e, execution = %exec_id, "Director: failed to persist review score");
-        }
-        // Write the review into the Brain vault as durable long-term memory.
-        if brain_on {
-            write_brain_note(&state.db, &ctx.persona.id, &ctx.persona.name, &md);
+    // not in the review queue.
+    if let Some(exec_id) = ctx.latest_execution_id.as_deref() {
+        // Resolve the mandatory score. If the model omitted the DIRECTOR_SCORE
+        // line, issue exactly ONE bounded salvage re-prompt asking only for that
+        // line (grounded in the review we just rendered). Still missing → persist
+        // an explicit unscored marker so the coaching table shows "unscored
+        // review", never a silent "—".
+        let score = match parse_score(&output) {
+            Some(s) => Some(s),
+            None => {
+                let preview_md = render_review_md(0, "", &wins, &verdicts);
+                let salvage_out =
+                    salvage_missing_score(state, app.clone(), director_id, &preview_md).await;
+                score_after_salvage(&output, salvage_out.as_deref())
+            }
+        };
+
+        match score {
+            Some((score, summary)) => {
+                let md = render_review_md(score, &summary, &wins, &verdicts);
+                if let Err(e) = executions::set_director_review(&state.db, exec_id, score, &md) {
+                    tracing::warn!(error = %e, execution = %exec_id, "Director: failed to persist review score");
+                }
+                // Write the review into the Brain vault as durable long-term memory.
+                if brain_on {
+                    write_brain_note(&state.db, &ctx.persona.id, &ctx.persona.name, &md);
+                }
+            }
+            None => {
+                // Salvage failed twice — persist an explicit unscored marker
+                // (visible in the coaching table) rather than dropping the review.
+                let md = render_unscored_review_md(&wins, &verdicts);
+                if let Err(e) = executions::set_director_review_unscored(&state.db, exec_id, &md) {
+                    tracing::warn!(error = %e, execution = %exec_id, "Director: failed to persist unscored review marker");
+                }
+                if brain_on {
+                    write_brain_note(&state.db, &ctx.persona.id, &ctx.persona.name, &md);
+                }
+                tracing::warn!(
+                    target = %ctx.persona.id,
+                    execution = %exec_id,
+                    "Director: review persisted WITHOUT a score (salvage failed) — marked unscored",
+                );
+            }
         }
     }
 
     Ok(verdicts)
+}
+
+/// Bounded ceiling for the missing-score salvage re-prompt. Deliberately shorter
+/// than the full review timeout — the re-prompt asks for a single line.
+const DIRECTOR_SALVAGE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(90);
+
+/// Issue exactly ONE bounded salvage re-prompt for a review whose primary run
+/// omitted the mandatory DIRECTOR_SCORE line. Asks the Director for ONLY the
+/// score line, grounded in the review it just produced. Returns the run's raw
+/// output (parsed by the caller via `score_after_salvage`) — or `None` if the
+/// run failed to spawn / reach a terminal state / produce output. Never loops.
+async fn salvage_missing_score(
+    state: &Arc<AppState>,
+    app: tauri::AppHandle,
+    director_id: &str,
+    review_md: &str,
+) -> Option<String> {
+    let payload = format!(
+        "MISSING SCORE SALVAGE\n\nYour previous review of this persona omitted the mandatory \
+         DIRECTOR_SCORE line. Reply with ONLY that one line and nothing else — no wins, no \
+         verdicts, no prose:\n\n\
+         DIRECTOR_SCORE: {{\"score\":0-5,\"summary\":\"<=140 chars\"}}\n\n\
+         --- the review you just produced ---\n{}\n",
+        truncate(review_md, 3000),
+    );
+
+    let spawned = crate::commands::execution::executions::execute_persona_inner(
+        state,
+        app,
+        director_id.to_string(),
+        /* trigger_id */ None,
+        Some(payload),
+        /* use_case_id */ None,
+        /* continuation */ None,
+        /* idempotency_key */ None,
+        /* is_simulation */ false,
+    )
+    .await
+    .ok()?;
+
+    // Bounded poll — mirrors `await_execution_terminal` but with the shorter
+    // salvage ceiling. Single-shot: no retry beyond this one run.
+    let start = std::time::Instant::now();
+    let exec = loop {
+        match executions::get_by_id(&state.db, &spawned.id) {
+            Ok(ex) if ex.state().is_terminal() => break Some(ex),
+            Ok(ex) if start.elapsed() >= DIRECTOR_SALVAGE_TIMEOUT => break Some(ex),
+            Err(_) if start.elapsed() >= DIRECTOR_SALVAGE_TIMEOUT => break None,
+            _ => {}
+        }
+        tokio::time::sleep(DIRECTOR_POLL_INTERVAL).await;
+    }?;
+
+    let out = exec.output_data.unwrap_or_default();
+    if out.trim().is_empty() {
+        tracing::warn!(director_run = %exec.id, "Director: salvage re-prompt produced no output");
+        None
+    } else {
+        Some(out)
+    }
 }
 
 // Brain long-term-memory helpers live in `super::director_brain` since v2 —
@@ -721,20 +919,31 @@ pub fn ensure_director_persona(pool: &DbPool) -> Result<String, AppError> {
             "UPDATE personas SET icon = ?1 WHERE id = ?2 AND (icon IS NULL OR icon = 'compass')",
             params![DIRECTOR_ICON, id],
         );
+        // Pin the Director's model on installs seeded before the pin landed —
+        // but ONLY when the user has not chosen one. A user-customized
+        // `model_profile` (set via the Lab / persona editor) always wins; we
+        // backfill the pin exclusively into the NULL/empty gap the old seed
+        // left, so this is idempotent and never overrides an explicit choice.
+        let _ = conn.execute(
+            "UPDATE personas SET model_profile = ?1 \
+             WHERE id = ?2 AND (model_profile IS NULL OR TRIM(model_profile) = '')",
+            params![director_model_profile(), id],
+        );
         return Ok(id);
     }
 
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
+    let model_profile = director_model_profile();
 
     conn.execute(
         "INSERT INTO personas
          (id, project_id, name, description, system_prompt, icon, color,
           enabled, sensitive, headless, max_concurrent, timeout_ms,
-          trust_level, trust_origin, trust_score, created_at, updated_at)
+          trust_level, trust_origin, trust_score, model_profile, created_at, updated_at)
          VALUES (?1, 'default', ?2, ?3, ?4, ?5, ?6,
                  1, 0, 0, 1, 300000,
-                 'verified', 'system', 1.0, ?7, ?7)",
+                 'verified', 'system', 1.0, ?7, ?8, ?8)",
         params![
             id,
             DIRECTOR_NAME,
@@ -742,6 +951,7 @@ pub fn ensure_director_persona(pool: &DbPool) -> Result<String, AppError> {
             DIRECTOR_RUBRIC,
             DIRECTOR_ICON,
             DIRECTOR_COLOR,
+            model_profile,
             now,
         ],
     )?;
@@ -767,9 +977,46 @@ pub fn get_director_persona_id(pool: &DbPool) -> Result<String, AppError> {
 // Context gathering
 // ---------------------------------------------------------------------------
 
-const DIRECTOR_FEEDBACK_CATEGORY: &str = "director_feedback";
 const CONTEXT_EXECUTION_WINDOW: i64 = 20;
 const CONTEXT_MEMORY_WINDOW: i64 = 50;
+
+/// Real calibration signal: how many of the Director's OWN past coaching notes
+/// this persona's owner accepted vs rejected. Read straight from the disposition
+/// of Director-sourced `persona_manual_reviews` rows (status `approved` /
+/// `rejected`) — the same rows `list_verdicts` surfaces. This is the accept/reject
+/// taste the rubric promises the Director learns from.
+///
+/// The earlier tally read `persona_memories` rows of category `director_feedback`
+/// with an `{"outcome":...}` shape, but the approve/reject loop
+/// (`manual_reviews::update_status`) writes categories `learned` / `decision` /
+/// `constraint` — never `director_feedback` — so the tally was permanently
+/// `(0, 0)` dead code. Reading the review dispositions directly is the fix.
+fn director_disposition_tally(pool: &DbPool, persona_id: &str) -> (usize, usize) {
+    let run = || -> Result<(usize, usize), AppError> {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT status, COUNT(*) FROM persona_manual_reviews
+             WHERE persona_id = ?1
+               AND context_data LIKE '%\"source\":\"director\"%'
+               AND status IN ('approved', 'rejected')
+             GROUP BY status",
+        )?;
+        let rows = stmt.query_map(params![persona_id], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
+        })?;
+        let (mut accepts, mut rejects) = (0usize, 0usize);
+        for row in rows {
+            let (status, n) = row?;
+            match status.as_str() {
+                "approved" => accepts = n.max(0) as usize,
+                "rejected" => rejects = n.max(0) as usize,
+                _ => {}
+            }
+        }
+        Ok((accepts, rejects))
+    };
+    run().unwrap_or((0, 0))
+}
 
 /// Assemble the evaluation context for a single target persona.
 pub fn gather_context(
@@ -819,23 +1066,10 @@ pub fn gather_context(
     let memories = memories::get_by_persona(pool, target_persona_id, Some(CONTEXT_MEMORY_WINDOW))?;
     let memory_count = memories.len();
 
-    // Past Director feedback memories — tallied for Phase 2 few-shot, but also
-    // informs the deterministic evaluator's "should we repeat this verdict?"
-    // check once that lands.
-    let (feedback_accepts, feedback_rejects) =
-        memories.iter().fold((0usize, 0usize), |(a, r), m| {
-            if m.category != DIRECTOR_FEEDBACK_CATEGORY {
-                return (a, r);
-            }
-            let content_lower = m.content.to_lowercase();
-            if content_lower.contains("\"outcome\":\"accepted\"") {
-                (a + 1, r)
-            } else if content_lower.contains("\"outcome\":\"rejected\"") {
-                (a, r + 1)
-            } else {
-                (a, r)
-            }
-        });
+    // Real calibration signal — accept/reject dispositions of the Director's own
+    // past coaching on this persona, read from the review table (see
+    // `director_disposition_tally`).
+    let (feedback_accepts, feedback_rejects) = director_disposition_tally(pool, target_persona_id);
 
     Ok(PersonaEvaluationContext {
         persona,
@@ -901,10 +1135,28 @@ pub async fn run_director_cycle_for(
     Ok(verdicts.len() as i64)
 }
 
+/// Whether an execution already carries a Director review — i.e. its
+/// `director_review_md` is set (by a scored review or the unscored-marker
+/// salvage path). This is the robust "last Director review" signal the batch
+/// freshness gate keys on: reviews always anchor onto the persona's newest
+/// execution, so if that newest execution is already reviewed there have been
+/// ZERO new executions since — nothing to re-review. The manual single-persona
+/// run deliberately does NOT consult this and always forces a fresh review.
+fn execution_reviewed(pool: &DbPool, execution_id: &str) -> bool {
+    executions::get_by_id(pool, execution_id)
+        .map(|e| e.director_review_md.is_some())
+        .unwrap_or(false)
+}
+
 /// Batch cycle. Iterates enabled user personas (skipping the Director itself),
 /// evaluates each via the LLM evaluator, returns an aggregate report. Runs are
 /// sequential — each Director evaluation is a real persona run, so this is
 /// rate-limited by nature.
+///
+/// Freshness dedup: a persona whose newest execution was already reviewed (zero
+/// new executions since) is skipped — re-reviewing it would burn up to two real
+/// LLM runs to restate the same verdict. Skips are surfaced (report + log), not
+/// silent. The manual single-persona path (`run_director_cycle_for`) forces.
 pub async fn run_director_cycle_batch(
     state: &Arc<AppState>,
     app: tauri::AppHandle,
@@ -918,6 +1170,8 @@ pub async fn run_director_cycle_batch(
     let mut evaluated = 0i64;
     let mut emitted = 0i64;
     let mut skipped = 0i64;
+    let mut skipped_unchanged = 0i64;
+    let mut skipped_unchanged_names: Vec<String> = Vec::new();
 
     for (idx, p) in enabled.iter().enumerate() {
         if let Some(cap) = max_personas {
@@ -945,6 +1199,23 @@ pub async fn run_director_cycle_batch(
             continue;
         }
 
+        // Freshness dedup: if the persona's newest execution (the anchor a review
+        // stamps onto) was already reviewed, nothing has run since — skip both the
+        // re-review AND the memory-cleanup pass below. Surfaced in the report + log.
+        if let Some(anchor) = ctx.latest_execution_id.as_deref() {
+            if execution_reviewed(&state.db, anchor) {
+                skipped_unchanged += 1;
+                skipped_unchanged_names.push(p.name.clone());
+                tracing::info!(
+                    persona_id = %p.id,
+                    persona = %p.name,
+                    anchor_execution = %anchor,
+                    "Director: skipping — no new executions since last review",
+                );
+                continue;
+            }
+        }
+
         match evaluate_with_llm(state, app.clone(), &director_id, &ctx).await {
             Ok(verdicts) => {
                 route_verdicts(&state.db, &ctx, &verdicts)?;
@@ -969,6 +1240,8 @@ pub async fn run_director_cycle_batch(
         evaluated_personas: evaluated,
         verdicts_emitted: emitted,
         personas_skipped_no_executions: skipped,
+        personas_skipped_unchanged: skipped_unchanged,
+        skipped_unchanged_personas: skipped_unchanged_names,
         generated_at: chrono::Utc::now().to_rfc3339(),
     })
 }
@@ -1107,6 +1380,105 @@ fn bridge_verdicts_to_channel(
     }
 }
 
+/// Provenance stamp on healing issues the Director routes (Phase 3). Read back
+/// for dedup + surfaced in the health UI as an origin badge.
+const DIRECTOR_HEALING_SOURCE: &str = "director";
+
+/// Map a Director verdict category onto a healing issue `category` — but ONLY
+/// for the conservative, auto-fixable subset. Phase-3 routing (see the module
+/// header) sends these into `persona_healing_issues`; everything else stays
+/// coaching-only in the review queue.
+///
+/// The vocabulary split is deliberate:
+/// - `health` → an operational fault (failing/looping runs) the self-healing
+///   pipeline already reasons about → healing category `health`.
+/// - `credentials` → a missing/misconfigured connection → healing `config`.
+/// - `triggers` → a misconfigured schedule/event wiring → healing `config`.
+/// - `prompt` / `memory` / `usefulness` → subjective, author-driven coaching
+///   (the user rewrites the prompt, curates memories, retargets the persona);
+///   there is nothing for an automated fix to apply, so these NEVER route.
+fn healing_category_for(category: DirectorCategory) -> Option<&'static str> {
+    match category {
+        DirectorCategory::Health => Some("health"),
+        DirectorCategory::Credentials => Some("config"),
+        DirectorCategory::Triggers => Some("config"),
+        DirectorCategory::Prompt | DirectorCategory::Memory | DirectorCategory::Usefulness => None,
+    }
+}
+
+/// Map Director severity onto the healing severity vocabulary
+/// (`low|medium|high|critical`). `info` never reaches here — it is not a fault.
+fn healing_severity_for(severity: DirectorSeverity) -> &'static str {
+    match severity {
+        DirectorSeverity::Error => "high",
+        DirectorSeverity::Warning => "medium",
+        DirectorSeverity::Info => "low",
+    }
+}
+
+/// Phase-3 side-channel: for a qualifying verdict, ALSO open a
+/// `persona_healing_issues` row (source-tagged `director`) so a bad review
+/// actually causes something — it enters healing's existing approval flow
+/// instead of dead-ending in the review queue. Conservative + non-destructive:
+///
+/// - Only `severity ∈ {warning, error}` AND an auto-fixable `category` route
+///   (see [`healing_category_for`]); `info` and subjective categories never do.
+/// - NO auto-apply: the issue lands `open` via the sanctioned repo entry point
+///   [`healing::create_with_source`] — never raw SQL — and flows through the
+///   same human/auto approval path as an engine-raised one.
+/// - Deduped against the persona's OPEN director-sourced issues by title, so a
+///   re-review of an unchanged problem doesn't spam duplicates.
+///
+/// Best-effort: a healing-routing failure is logged, never fails the review.
+fn route_verdict_to_healing(pool: &DbPool, v: &DirectorVerdict) {
+    // Gate 1: info is informational, not a fault — never a healing issue.
+    if v.severity == DirectorSeverity::Info {
+        return;
+    }
+    // Gate 2: only auto-fixable categories route.
+    let Some(healing_cat) = healing_category_for(v.category) else {
+        return;
+    };
+
+    // Dedup: skip if an OPEN director-sourced issue with the same title already
+    // exists for this persona (re-reviews shouldn't pile up duplicates).
+    let already_open = healing::get_all(pool, Some(&v.target_persona_id), Some("open"))
+        .unwrap_or_default()
+        .into_iter()
+        .any(|h| {
+            h.source.as_deref() == Some(DIRECTOR_HEALING_SOURCE) && h.title == v.title
+        });
+    if already_open {
+        return;
+    }
+
+    // Healing requires a non-empty description; fall back to the title.
+    let description = if v.description.trim().is_empty() {
+        v.title.as_str()
+    } else {
+        v.description.as_str()
+    };
+    let suggested_fix = v.suggested_actions.first().map(String::as_str);
+
+    match healing::create_with_source(
+        pool,
+        &v.target_persona_id,
+        &v.title,
+        description,
+        /* is_circuit_breaker */ false,
+        Some(healing_severity_for(v.severity)),
+        Some(healing_cat),
+        /* execution_id */ None,
+        suggested_fix,
+        Some(DIRECTOR_HEALING_SOURCE),
+    ) {
+        Ok(_) => {}
+        Err(e) => {
+            tracing::warn!(persona_id = %v.target_persona_id, error = %e, "Director: failed to route verdict to healing");
+        }
+    }
+}
+
 fn route_verdicts(
     pool: &DbPool,
     ctx: &PersonaEvaluationContext,
@@ -1148,6 +1520,12 @@ fn route_verdicts(
         if let Err(e) = manual_reviews::create(pool, input) {
             tracing::warn!(persona_id = %v.target_persona_id, error = %e, "Director: failed to create review");
         }
+
+        // Phase 3: a qualifying verdict ALSO opens a healing issue (source-
+        // tagged, deduped, NO auto-apply) so a bad review reaches the healing
+        // approval flow instead of dead-ending in the review queue. The manual
+        // review above is unchanged — this is a side-channel, not a replacement.
+        route_verdict_to_healing(pool, v);
     }
 
     Ok(())
@@ -1310,8 +1688,13 @@ pub struct DirectorRosterEntry {
     pub value_delivered_rate: f64,
     #[ts(type = "number")]
     pub total_executions: i64,
-    /// ISO timestamp of the most recent scored review; `None` when never reviewed.
+    /// ISO timestamp of the most recent review (scored OR unscored); `None` when
+    /// never reviewed.
     pub last_reviewed_at: Option<String>,
+    /// True when the most recent review carries markdown but NO score (the
+    /// missing-score salvage double-failed). Lets the coaching table render an
+    /// explicit "unscored review" instead of a silent "—".
+    pub latest_review_unscored: bool,
 }
 
 /// Count of in-scope personas whose latest score falls in this 0-5 band. Always
@@ -1371,9 +1754,18 @@ pub fn director_portfolio(pool: &DbPool, days: i64) -> Result<DirectorPortfolio,
     let trends = list_score_trends(pool, &ids, 12)?;
 
     let conn = pool.get()?;
+    // "Reviewed" keys on director_review_md (scored OR unscored) so an unscored
+    // review still counts as a review and surfaces its timestamp.
     let mut last_reviewed_stmt = conn.prepare(
         "SELECT MAX(created_at) FROM persona_executions \
-         WHERE persona_id = ?1 AND director_score IS NOT NULL",
+         WHERE persona_id = ?1 AND director_review_md IS NOT NULL",
+    )?;
+    // Whether the persona's MOST RECENT reviewed execution has no score (the
+    // missing-score salvage double-failed) → render "unscored review", not "—".
+    let mut latest_unscored_stmt = conn.prepare(
+        "SELECT director_score IS NULL FROM persona_executions \
+         WHERE persona_id = ?1 AND director_review_md IS NOT NULL \
+         ORDER BY created_at DESC LIMIT 1",
     )?;
 
     let mut roster: Vec<DirectorRosterEntry> = Vec::with_capacity(starred.len());
@@ -1383,6 +1775,9 @@ pub fn director_portfolio(pool: &DbPool, days: i64) -> Result<DirectorPortfolio,
         let last_reviewed_at: Option<String> = last_reviewed_stmt
             .query_row(params![p.id], |row| row.get::<_, Option<String>>(0))
             .unwrap_or(None);
+        let latest_review_unscored: bool = latest_unscored_stmt
+            .query_row(params![p.id], |row| row.get::<_, bool>(0))
+            .unwrap_or(false);
         // Per-persona value signal; degrade to zeros if the rollup query fails.
         let (value_delivered_rate, total_executions) =
             match metrics::get_value_rollup(pool, Some(days), Some(&p.id)) {
@@ -1399,6 +1794,7 @@ pub fn director_portfolio(pool: &DbPool, days: i64) -> Result<DirectorPortfolio,
             value_delivered_rate,
             total_executions,
             last_reviewed_at,
+            latest_review_unscored,
         });
     }
 
@@ -1448,6 +1844,193 @@ pub fn director_portfolio(pool: &DbPool, days: i64) -> Result<DirectorPortfolio,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::init_test_db;
+
+    /// Direction 3 (pinned-judge-consistency): a fresh seed pins the Director's
+    /// model, and re-seeding backfills the pin ONLY into a NULL/empty
+    /// `model_profile` — a user-customized model always survives.
+    #[test]
+    fn director_seed_pins_model_and_backfills_only_when_empty() {
+        let pool = init_test_db().unwrap();
+
+        // Fresh seed → pinned model.
+        let id = ensure_director_persona(&pool).unwrap();
+        let seeded = personas::get_by_id(&pool, &id).unwrap();
+        assert!(
+            seeded
+                .model_profile
+                .as_deref()
+                .unwrap_or_default()
+                .contains(DIRECTOR_MODEL),
+            "fresh Director seed must pin {DIRECTOR_MODEL}, got {:?}",
+            seeded.model_profile,
+        );
+
+        // Idempotent: re-seed returns the same persona, pin unchanged.
+        let id2 = ensure_director_persona(&pool).unwrap();
+        assert_eq!(id, id2, "ensure_director_persona must be idempotent");
+
+        // User override wins: a custom model must NOT be clobbered by re-seed.
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET model_profile = ?1 WHERE id = ?2",
+                params![r#"{"model":"claude-opus-4-8"}"#, id],
+            )
+            .unwrap();
+        }
+        ensure_director_persona(&pool).unwrap();
+        let overridden = personas::get_by_id(&pool, &id).unwrap();
+        assert!(
+            overridden
+                .model_profile
+                .as_deref()
+                .unwrap_or_default()
+                .contains("claude-opus-4-8"),
+            "a user-customized model must survive re-seed, got {:?}",
+            overridden.model_profile,
+        );
+
+        // Backfill fills the gap: NULL profile is re-pinned on next ensure().
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET model_profile = NULL WHERE id = ?1",
+                params![id],
+            )
+            .unwrap();
+        }
+        ensure_director_persona(&pool).unwrap();
+        let backfilled = personas::get_by_id(&pool, &id).unwrap();
+        assert!(
+            backfilled
+                .model_profile
+                .as_deref()
+                .unwrap_or_default()
+                .contains(DIRECTOR_MODEL),
+            "a NULL model_profile must be backfilled with the pin, got {:?}",
+            backfilled.model_profile,
+        );
+    }
+
+    fn mk_persona(pool: &DbPool, name: &str) -> String {
+        use crate::db::models::CreatePersonaInput;
+        crate::db::repos::core::personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn verdict(
+        persona_id: &str,
+        severity: DirectorSeverity,
+        category: DirectorCategory,
+        title: &str,
+    ) -> DirectorVerdict {
+        DirectorVerdict {
+            target_persona_id: persona_id.to_string(),
+            severity,
+            category,
+            title: title.to_string(),
+            description: "Concrete evidence of a fault worth fixing.".into(),
+            rationale: Some("12/20 runs failed on a missing credential".into()),
+            suggested_actions: vec!["Re-bind the connector credential".into()],
+        }
+    }
+
+    /// Direction 1: a qualifying verdict (warning/health) opens exactly one
+    /// director-sourced healing issue, severity- and category-mapped.
+    #[test]
+    fn qualifying_verdict_opens_a_director_healing_issue() {
+        let pool = init_test_db().unwrap();
+        let pid = mk_persona(&pool, "Router A");
+
+        route_verdict_to_healing(
+            &pool,
+            &verdict(&pid, DirectorSeverity::Warning, DirectorCategory::Health, "Runs are failing"),
+        );
+
+        let open = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
+        assert_eq!(open.len(), 1, "one healing issue must be opened");
+        let issue = &open[0];
+        assert_eq!(issue.source.as_deref(), Some("director"));
+        assert_eq!(issue.category, "health");
+        assert_eq!(issue.severity, "medium"); // warning → medium
+        assert_eq!(issue.status, "open");
+        assert!(!issue.auto_fixed, "must NOT auto-apply");
+        assert_eq!(issue.title, "Runs are failing");
+    }
+
+    /// Direction 1: re-reviewing the same problem must NOT spam duplicates —
+    /// the second identical verdict is deduped against the open issue.
+    #[test]
+    fn re_review_dedups_against_open_director_issue() {
+        let pool = init_test_db().unwrap();
+        let pid = mk_persona(&pool, "Router B");
+
+        let v = verdict(
+            &pid,
+            DirectorSeverity::Error,
+            DirectorCategory::Credentials,
+            "Missing Slack credential",
+        );
+        route_verdict_to_healing(&pool, &v);
+        route_verdict_to_healing(&pool, &v); // re-review
+
+        let open = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
+        assert_eq!(open.len(), 1, "duplicate director verdict must be deduped");
+        assert_eq!(open[0].severity, "high"); // error → high
+        assert_eq!(open[0].category, "config"); // credentials → config
+    }
+
+    /// Direction 1: non-qualifying verdicts (subjective categories, or `info`
+    /// severity) never open a healing issue — they stay coaching-only.
+    #[test]
+    fn non_qualifying_verdicts_open_no_healing_issue() {
+        let pool = init_test_db().unwrap();
+        let pid = mk_persona(&pool, "Router C");
+
+        // Subjective categories never route, regardless of severity.
+        route_verdict_to_healing(
+            &pool,
+            &verdict(&pid, DirectorSeverity::Error, DirectorCategory::Prompt, "Tighten the prompt"),
+        );
+        route_verdict_to_healing(
+            &pool,
+            &verdict(&pid, DirectorSeverity::Warning, DirectorCategory::Usefulness, "Low value"),
+        );
+        route_verdict_to_healing(
+            &pool,
+            &verdict(&pid, DirectorSeverity::Warning, DirectorCategory::Memory, "Prune memories"),
+        );
+        // Info is not a fault even in an auto-fixable category.
+        route_verdict_to_healing(
+            &pool,
+            &verdict(&pid, DirectorSeverity::Info, DirectorCategory::Health, "FYI health note"),
+        );
+
+        let open = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
+        assert!(open.is_empty(), "no healing issues for non-qualifying verdicts, got {}", open.len());
+    }
 
     fn ctx_baseline(persona: Persona) -> PersonaEvaluationContext {
         PersonaEvaluationContext {
@@ -1638,5 +2221,197 @@ DIRECTOR_WIN: {\"category\":\"health\",\"note\":\"Open healing issues went to ze
         assert!(payload.contains("Value-delivered rate"));
         assert!(payload.contains("claude-opus-4-7"));
         assert!(payload.contains("DIRECTOR_VERDICT"));
+    }
+
+    /// Direction 1 (real-calibration-tally): the accept/reject tally must be read
+    /// from Director-sourced review dispositions, not the dead `director_feedback`
+    /// memory category — and it must reach the payload the Director actually reads.
+    #[test]
+    fn calibration_tally_reads_director_review_dispositions() {
+        use crate::db::models::{
+            CreateManualReviewInput, CreatePersonaInput, ManualReviewStatus,
+        };
+        use crate::db::repos::communication::manual_reviews;
+        use crate::db::repos::core::personas;
+        use crate::db::repos::execution::executions;
+
+        let pool = crate::db::init_test_db().expect("init test db");
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Calibration Target".into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+        let exec = executions::create(&pool, &persona.id, None, None, None, None).unwrap();
+
+        let mk = |title: &str, source: &str| {
+            manual_reviews::create(
+                &pool,
+                CreateManualReviewInput {
+                    execution_id: exec.id.clone(),
+                    persona_id: persona.id.clone(),
+                    title: title.into(),
+                    description: None,
+                    severity: None,
+                    context_data: Some(format!("{{\"source\":\"{source}\",\"category\":\"prompt\"}}")),
+                    suggested_actions: None,
+                    use_case_id: None,
+                    assignment_id: None,
+                    step_id: None,
+                },
+            )
+            .unwrap()
+        };
+
+        // Two Director reviews: one approved, one rejected → tally (1, 1).
+        let approved = mk("Keep doing this", "director");
+        let rejected = mk("Stop doing this", "director");
+        manual_reviews::update_status(&pool, &approved.id, ManualReviewStatus::Approved, None)
+            .unwrap();
+        manual_reviews::update_status(&pool, &rejected.id, ManualReviewStatus::Rejected, None)
+            .unwrap();
+
+        // A non-Director review, approved — must NOT be counted.
+        let other = mk("Unrelated healing note", "healing");
+        manual_reviews::update_status(&pool, &other.id, ManualReviewStatus::Approved, None).unwrap();
+
+        // A still-pending Director review — must NOT be counted (no disposition yet).
+        let _pending = mk("Not yet actioned", "director");
+
+        let ctx = gather_context(&pool, &persona.id).unwrap();
+        assert_eq!(ctx.feedback_accepts, 1, "one approved Director review");
+        assert_eq!(ctx.feedback_rejects, 1, "one rejected Director review");
+
+        let rollup = metrics::get_value_rollup(&pool, Some(30), Some(persona.id.as_str())).unwrap();
+        let payload = build_director_payload(&pool, &ctx, &rollup);
+        assert!(
+            payload.contains("Your coaching calibration on this persona"),
+            "calibration section present in payload"
+        );
+        assert!(payload.contains("Accepted 1 of your past coaching notes; rejected 1."));
+    }
+
+    /// Direction 2 (review-freshness-dedup): the batch freshness gate keys on
+    /// `execution_reviewed`. An execution the Director already stamped is treated
+    /// as reviewed, so a second batch immediately after the first skips it; a
+    /// fresh (unreviewed) execution is not skipped.
+    #[test]
+    fn freshness_gate_detects_already_reviewed_anchor() {
+        use crate::db::models::CreatePersonaInput;
+        use crate::db::repos::core::personas;
+        use crate::db::repos::execution::executions;
+
+        let pool = crate::db::init_test_db().expect("init test db");
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Freshness Target".into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+        let exec = executions::create(&pool, &persona.id, None, None, None, None).unwrap();
+
+        // Before any review the anchor is fresh → the batch would evaluate it.
+        assert!(
+            !execution_reviewed(&pool, &exec.id),
+            "unreviewed execution must not be treated as reviewed"
+        );
+
+        // Stamp a Director review onto the anchor (as a first batch would).
+        executions::set_director_review(&pool, &exec.id, 4, "## Director review — ★★★★☆ (4/5)")
+            .unwrap();
+
+        // A second batch immediately after sees the anchor already reviewed → skip.
+        assert!(
+            execution_reviewed(&pool, &exec.id),
+            "a reviewed anchor must be detected so the next batch skips the persona"
+        );
+    }
+
+    /// Direction 3 (missing-score-salvage): `score_after_salvage` is the pure
+    /// boundary the async caller uses — it mocks the re-prompt via the second
+    /// argument, so both outcomes are covered without spawning a CLI.
+    #[test]
+    fn score_after_salvage_covers_both_outcomes() {
+        // Primary already has a score → salvage is NOT consulted (primary wins
+        // even when a conflicting salvage output is supplied).
+        let s = score_after_salvage(
+            "DIRECTOR_SCORE: {\"score\":5,\"summary\":\"great\"}",
+            Some("DIRECTOR_SCORE: {\"score\":0}"),
+        );
+        assert_eq!(s.unwrap().0, 5, "primary score wins; salvage ignored");
+
+        // Primary missing, salvage recovers the score → scored.
+        let s = score_after_salvage(
+            "no score line here",
+            Some("DIRECTOR_SCORE: {\"score\":3,\"summary\":\"ok\"}"),
+        );
+        assert_eq!(s.unwrap().0, 3, "salvage re-prompt recovers the score");
+
+        // Primary missing, salvage also missing → None ⇒ caller marks unscored.
+        assert!(
+            score_after_salvage("no score", Some("still nothing")).is_none(),
+            "double failure yields no score"
+        );
+        // Primary missing, salvage run failed (None) → None ⇒ unscored.
+        assert!(
+            score_after_salvage("no score", None).is_none(),
+            "failed salvage run yields no score"
+        );
+    }
+
+    /// The unscored marker markdown is explicit (never blank) and preserves any
+    /// coaching the run produced.
+    #[test]
+    fn render_unscored_review_md_is_explicit() {
+        let verdicts = vec![DirectorVerdict {
+            target_persona_id: "p-1".into(),
+            severity: DirectorSeverity::Warning,
+            category: DirectorCategory::Usefulness,
+            title: "Tighten scope".into(),
+            description: "Most runs report no input.".into(),
+            rationale: Some("12/20 no_input".into()),
+            suggested_actions: vec!["Add a precondition".into()],
+        }];
+        let md = render_unscored_review_md(&[], &verdicts);
+        assert!(md.contains("Director review — unscored"));
+        assert!(md.contains("did not return a score"));
+        assert!(md.contains("Tighten scope"), "coaching is preserved");
+
+        // Empty run still yields explicit prose, never a blank body.
+        let empty = render_unscored_review_md(&[], &[]);
+        assert!(empty.contains("unscored"));
+        assert!(empty.contains("No coaching notes were emitted."));
     }
 }

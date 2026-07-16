@@ -36,12 +36,14 @@ The advanced surfaces are deep, composable, and don't fall over when stressed �
 The advanced machinery must hold under composition like a senior automation engineer would expect — no silent deadlocks, real diagnostics.
 
 ## Surface binding (what THEY actually reach)
-- Sections: everything — Events (chains/triggers), Teams, Goals/KPI, Cloud, Dev Tools, Overview.
-- Reaches all dev/builder surfaces.
+- Sections: everything — Events (chains/triggers), Teams (Timeline/Conversations Monitor, Missions), Goals/KPI, Cloud, Dev Tools, Fleet, Overview.
+- Reaches all dev/builder surfaces, including experimental `dev`-only ones like Fleet.
+- Note (2026-07 Teams consolidation): Collab and Red Room panes are retired — he no longer looks for them; Monitor (Timeline/Conversations) is the one place to watch live handoffs now.
 
 ## Scored acceptance criteria (applied IDENTICALLY every run)
 1. [completion] Chains/triggers/teams compose and actually run end-to-end (no second-hop break).
 2. [missing] The advanced surfaces have real depth, not facade.
-3. [trust] When something stalls, there are diagnostics (not a silent deadlock).
+3. [trust] When something stalls, there are diagnostics (not a silent deadlock) — including a Lab Arena Cancel actually killing in-flight CLI children within seconds, not just quieting the UI, and the Fleet live-slot cap queuing/signaling rather than silently killing in-progress sessions.
 4. [senior-quality] KPI/goal tracking reflects real run data, not a placebo dashboard.
 5. [clarity] He can reason about what's wired to what.
+6. [missing] He can dry-run a single tool via the Tool Runner outside a full execution, with real diagnostics on failure — and can spawn/broadcast/hibernate across multiple concurrent Fleet sessions without babysitting each terminal.

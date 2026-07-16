@@ -852,7 +852,25 @@
     "eco_subtitle": "प्रत्येक मॉडल कितनी बार eval सुलझाता है, और प्रत्येक सफलता पर कितनी लागत आती है।",
     "eco_title": "लागत दक्षता",
     "vr_col_tokens": "टोकन",
-    "vr_tokens_tooltip": "प्रति रन औसतन {input} इनपुट / {output} आउटपुट"
+    "vr_tokens_tooltip": "प्रति रन औसतन {input} इनपुट / {output} आउटपुट",
+    "vr_reconcile_clear_all": "सभी पिन हटाएँ",
+    "vr_reconcile_clear_pin": "पिन हटाएँ",
+    "vr_reconcile_desc_one": "1 उपयोग-मामला अभी भी उस मॉडल को पिन करता है जो आपके अभी प्रमोट किए गए मॉडल ({model}) से अलग है। जब तक आप पिन नहीं हटाते, यह अपने पिन किए गए मॉडल पर ही चलता रहेगा।",
+    "vr_reconcile_desc_other": "{count} उपयोग-मामले अभी भी ऐसे मॉडल पिन करते हैं जो आपके अभी प्रमोट किए गए मॉडल ({model}) से अलग हैं। जब तक आप पिन नहीं हटाते, वे अपने पिन किए गए मॉडलों पर ही चलते रहेंगे।",
+    "vr_reconcile_done": "पूर्ण",
+    "vr_reconcile_now_follows": "अब डिफ़ॉल्ट का अनुसरण करता है ({model})",
+    "vr_reconcile_pinned_to": "{model} पर पिन किया गया",
+    "vr_reconcile_title": "उपयोग-मामला मॉडल पिन समाधान करें",
+    "improve_failed": "सुधार ब्रीफ तैयार नहीं किया जा सका",
+    "improve_focus": "{metric} पर ध्यान देंगे (औसत {score}/100)",
+    "improve_run_seed_measured": "पर्सोना \"{name}\" को बेहतर बनाएं। इसके नवीनतम परीक्षण में {metric} को सबसे कमजोर क्षेत्र के रूप में चिह्नित किया गया (औसत {score}/100)। मुझे किस पर ध्यान देना चाहिए? ",
+    "improve_run_seed_plain": "पर्सोना \"{name}\" को इसके नवीनतम परीक्षण परिणामों के आधार पर बेहतर बनाएं। मुझे किस पर ध्यान देना चाहिए? ",
+    "improve_seeded": "सुधार ब्रीफ Athena में खोला गया",
+    "vr_cost_unknown": "लागू नहीं",
+    "vr_cost_unknown_tooltip": "स्थानीय मॉडल के लिए लागत ट्रैक नहीं की जाती",
+    "vr_degraded_tooltip": "{total} में से {count} नमूने ह्यूरिस्टिक फ़ॉलबैक से आँके गए (LLM मूल्यांकनकर्ता अनुपलब्ध)",
+    "vr_partial_tooltip": "आंशिक उप-स्कोर से संयोजित — सीधे तुलना योग्य नहीं",
+    "vr_score_caution": "स्कोर सावधानी माँगता है"
   },
   "design": {
     "select_agent": "डिज़ाइन विश्लेषण शुरू करने के लिए एक एजेंट चुनें",
@@ -1729,7 +1747,15 @@
     "failed": "विफल",
     "error": "त्रुटि",
     "invalid_json": "अमान्य JSON — चलाने से पहले ठीक करें।",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "विफलता",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "आउटपुट काट दिया गया — टूल ने प्रदर्शन सीमा से अधिक लौटाया।",
+    "panel_subtitle": "इस पर्सोना की क्रेडेंशियल के साथ सीधे कोई टूल चलाएँ।",
+    "panel_title": "टूल चलाएँ",
+    "retryable_hint": "पुनः प्रयास करने पर यह सफल हो सकता है।",
+    "run_tool": "टूल चलाएँ",
+    "builtin_note": "बिल्ट-इन टूल — यह पर्सोना एक्ज़ीक्यूशन के भीतर चलता है (यहाँ से मैन्युअल रूप से नहीं)। इसे आज़माने के लिए पर्सोना की कोई क्षमता चलाएँ।"
   },
   "health_check": {
     "title": "एजेंट हेल्थ चेक",
@@ -2729,5 +2755,37 @@
     "done": "\"{name}\" के रूप में डुप्लिकेट किया गया",
     "done_with_wiring": "\"{name}\" के रूप में डुप्लिकेट किया गया — {triggers} ट्रिगर और {subscriptions} सदस्यता कॉपी की गईं, कॉपी में अक्षम",
     "failed": "एजेंट डुप्लिकेट करने में विफल"
+  },
+  "change_history": {
+    "empty": "अभी तक कोई परिवर्तन दर्ज नहीं हुआ",
+    "empty_value": "(खाली)",
+    "fields": {
+      "cli_awareness_enabled": "CLI जागरूकता",
+      "color": "रंग",
+      "description": "विवरण",
+      "design_context": "डिज़ाइन संदर्भ",
+      "enabled": "सक्षम",
+      "headless": "हेडलेस",
+      "icon": "आइकन",
+      "lifecycle": "जीवनचक्र",
+      "max_budget_usd": "बजट",
+      "max_concurrent": "अधिकतम समवर्ती",
+      "max_turns": "अधिकतम टर्न",
+      "model_profile": "Model",
+      "name": "नाम",
+      "notification_channels": "सूचनाएं",
+      "parameters": "पैरामीटर",
+      "sensitive": "संवेदनशील पूर्वावलोकन",
+      "structured_prompt": "प्रॉम्प्ट",
+      "system_prompt": "सिस्टम प्रॉम्प्ट",
+      "timeout_ms": "टाइमआउट"
+    },
+    "sources": {
+      "editor": "एडिटर",
+      "fanout": "फैन-आउट",
+      "header": "हेडर",
+      "other": "अन्य"
+    },
+    "title": "परिवर्तन इतिहास"
   }
 }

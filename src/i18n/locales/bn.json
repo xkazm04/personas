@@ -1655,7 +1655,25 @@
       "eco_subtitle": "প্রতিটি মডেল কত ঘন ঘন ইভাল সমাধান করে এবং প্রতিটি সাফল্যের খরচ কত।",
       "eco_title": "খরচ দক্ষতা",
       "vr_col_tokens": "টোকেন",
-      "vr_tokens_tooltip": "প্রতি রানে গড়ে {input} ইনপুট / {output} আউটপুট"
+      "vr_tokens_tooltip": "প্রতি রানে গড়ে {input} ইনপুট / {output} আউটপুট",
+      "vr_reconcile_clear_all": "সব পিন সরান",
+      "vr_reconcile_clear_pin": "পিন সরান",
+      "vr_reconcile_desc_one": "১টি ব্যবহার-কেস এখনও এমন একটি মডেল পিন করে রেখেছে যা আপনি এইমাত্র প্রমোট করা মডেল ({model}) থেকে ভিন্ন। পিন না সরানো পর্যন্ত এটি তার পিন করা মডেলেই চলতে থাকবে।",
+      "vr_reconcile_desc_other": "{count}টি ব্যবহার-কেস এখনও এমন মডেল পিন করে রেখেছে যা আপনি এইমাত্র প্রমোট করা মডেল ({model}) থেকে ভিন্ন। পিন না সরানো পর্যন্ত এগুলো তাদের পিন করা মডেলেই চলতে থাকবে।",
+      "vr_reconcile_done": "সম্পন্ন",
+      "vr_reconcile_now_follows": "এখন ডিফল্ট ({model}) অনুসরণ করে",
+      "vr_reconcile_pinned_to": "{model}-এ পিন করা",
+      "vr_reconcile_title": "ব্যবহার-কেস মডেল পিন সমন্বয় করুন",
+      "improve_failed": "উন্নতির ব্রিফ তৈরি করা যায়নি",
+      "improve_focus": "{metric} এর উপর ফোকাস করা হবে (গড় {score}/100)",
+      "improve_run_seed_measured": "\"{name}\" পার্সোনাটি উন্নত করুন। এর সর্বশেষ পরীক্ষায় {metric} সবচেয়ে দুর্বল ক্ষেত্র হিসেবে চিহ্নিত হয়েছে (গড় {score}/100)। আমার কীসের উপর ফোকাস করা উচিত? ",
+      "improve_run_seed_plain": "\"{name}\" পার্সোনাটিকে এর সর্বশেষ পরীক্ষার ফলাফলের ভিত্তিতে উন্নত করুন। আমার কীসের উপর ফোকাস করা উচিত? ",
+      "improve_seeded": "উন্নতির ব্রিফ Athena-তে খোলা হয়েছে",
+      "vr_cost_unknown": "প্রযোজ্য নয়",
+      "vr_cost_unknown_tooltip": "স্থানীয় মডেলের জন্য খরচ ট্র্যাক করা হয় না",
+      "vr_degraded_tooltip": "{total}টির মধ্যে {count}টি নমুনা হিউরিস্টিক ফলব্যাক দিয়ে স্কোর করা হয়েছে (LLM মূল্যায়নকারী অনুপলব্ধ)",
+      "vr_partial_tooltip": "আংশিক সাব-স্কোর থেকে সমন্বিত — সরাসরি তুলনাযোগ্য নয়",
+      "vr_score_caution": "স্কোর সতর্কতা দাবি করে"
     },
     "design": {
       "select_agent": "ডিজাইন বিশ্লেষণ শুরু করতে একটি এজেন্ট নির্বাচন করুন",
@@ -2532,7 +2550,15 @@
       "failed": "ব্যর্থ",
       "error": "ত্রুটি",
       "invalid_json": "অবৈধ JSON — চালানোর আগে ঠিক করুন।",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "ব্যর্থতা",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "আউটপুট সংক্ষিপ্ত করা হয়েছে — টুলটি প্রদর্শন সীমার চেয়ে বেশি ফেরত দিয়েছে।",
+      "panel_subtitle": "এই পারসোনার শংসাপত্র দিয়ে সরাসরি একটি টুল চালান।",
+      "panel_title": "একটি টুল চালান",
+      "retryable_hint": "পুনরায় চেষ্টা করলে এটি সফল হতে পারে।",
+      "run_tool": "টুল চালান",
+      "builtin_note": "বিল্ট-ইন টুল — এটি পারসোনা এক্সিকিউশনের ভেতরে চলে (এখান থেকে ম্যানুয়ালি নয়)। এটি পরীক্ষা করতে পারসোনার একটি ক্ষমতা চালান।"
     },
     "health_check": {
       "title": "এজেন্ট স্বাস্থ্য পরীক্ষা",
@@ -3532,6 +3558,38 @@
       "done": "\"{name}\" হিসেবে ডুপ্লিকেট করা হয়েছে",
       "done_with_wiring": "\"{name}\" হিসেবে ডুপ্লিকেট করা হয়েছে — {triggers}টি ট্রিগার এবং {subscriptions}টি সাবস্ক্রিপশন কপি করা হয়েছে, কপিতে নিষ্ক্রিয়",
       "failed": "এজেন্ট ডুপ্লিকেট করা যায়নি"
+    },
+    "change_history": {
+      "empty": "এখনও কোনো পরিবর্তন রেকর্ড করা হয়নি",
+      "empty_value": "(empty)",
+      "fields": {
+        "cli_awareness_enabled": "CLI সচেতনতা",
+        "color": "রং",
+        "description": "বিবরণ",
+        "design_context": "ডিজাইন প্রসঙ্গ",
+        "enabled": "সক্রিয়",
+        "headless": "হেডলেস",
+        "icon": "আইকন",
+        "lifecycle": "লাইফসাইকেল",
+        "max_budget_usd": "বাজেট",
+        "max_concurrent": "সর্বোচ্চ একযোগে",
+        "max_turns": "সর্বোচ্চ টার্ন",
+        "model_profile": "Model",
+        "name": "নাম",
+        "notification_channels": "বিজ্ঞপ্তি",
+        "parameters": "প্যারামিটার",
+        "sensitive": "সংবেদনশীল প্রিভিউ",
+        "structured_prompt": "প্রম্পট",
+        "system_prompt": "সিস্টেম প্রম্পট",
+        "timeout_ms": "টাইমআউট"
+      },
+      "sources": {
+        "editor": "এডিটর",
+        "fanout": "ফ্যান-আউট",
+        "header": "হেডার",
+        "other": "অন্যান্য"
+      },
+      "title": "পরিবর্তনের ইতিহাস"
     }
   },
   "vault": {
@@ -4247,7 +4305,9 @@
       "encrypt_now_other": "এখন {count}টি অ-এনক্রিপ্টেড ক্রেডেনশিয়াল এনক্রিপ্ট করুন",
       "encrypt_done_one": "সম্পন্ন -- {migrated}টি ক্রেডেনশিয়াল এনক্রিপ্ট করা হয়েছে।",
       "encrypt_done_other": "সম্পন্ন -- {migrated}টি ক্রেডেনশিয়াল এনক্রিপ্ট করা হয়েছে।",
-      "encrypt_partial": "{migrated}টি এনক্রিপ্ট করা হয়েছে, {failed}টি ব্যর্থ হয়েছে। আবার চেষ্টা করুন বা অ্যাপ রিস্টার্ট করুন।"
+      "encrypt_partial": "{migrated}টি এনক্রিপ্ট করা হয়েছে, {failed}টি ব্যর্থ হয়েছে। আবার চেষ্টা করুন বা অ্যাপ রিস্টার্ট করুন।",
+      "audit_gap_detail": "চালুর পর থেকে {count}টি ক্রেডেনশিয়াল অডিট রেকর্ড লেখা যায়নি। ক্রেডেনশিয়াল অ্যাক্সেস কখনও ব্লক হয়নি, তবে সেই অ্যাক্সেস ইভেন্টগুলি অডিট লগে অনুপস্থিত। ডিস্কের জায়গা বা ডেটাবেসের অবস্থা পরীক্ষা করুন।",
+      "audit_gap_title": "অডিট ট্রেইল অসম্পূর্ণ"
     },
     "delete_dialog": {
       "title": "ক্রেডেনশিয়াল মুছুন",
@@ -4428,7 +4488,9 @@
       "filter_all_health": "সব স্বাস্থ্য",
       "health_healthy": "সুস্থ",
       "health_failing": "ব্যর্থ",
-      "health_untested": "পরীক্ষিত নয়"
+      "health_untested": "পরীক্ষিত নয়",
+      "health_unverifiable": "যাচাই-অযোগ্য",
+      "health_unverifiable_tooltip": "এই সংযোগকারীর কোনো লাইভ প্রোব নেই — শংসাপত্র সংরক্ষণ করা হয়েছে কিন্তু যাচাই করা যায় না।"
     },
     "foraging": {
       "no_credentials_found": "কোনো ক্রেডেনশিয়াল পাওয়া যায়নি",
@@ -6105,7 +6167,13 @@
       "event_data": "ইভেন্ট ডেটা",
       "error": "ত্রুটি",
       "skipped_stat_label": "{skipped} এড়ানো হয়েছে",
-      "skipped_stat_tooltip": "গত ৭ দিনে {total}টির মধ্যে {skipped}টি ইভেন্টের কোনো সাবস্ক্রাইবার ছিল না এবং সেগুলি এড়িয়ে যাওয়া হয়েছে ({rate})। উচ্চ হার নির্দেশ করে যে এমন একটি ট্রিগার আছে যা কেউ শুনছে না।"
+      "skipped_stat_tooltip": "গত ৭ দিনে {total}টির মধ্যে {skipped}টি ইভেন্টের কোনো সাবস্ক্রাইবার ছিল না এবং সেগুলি এড়িয়ে যাওয়া হয়েছে ({rate})। উচ্চ হার নির্দেশ করে যে এমন একটি ট্রিগার আছে যা কেউ শুনছে না।",
+      "type_labels": {
+        "sla_breach_opened": "SLA লঙ্ঘন শুরু হয়েছে",
+        "sla_breach_recovered": "SLA লঙ্ঘন থেকে পুনরুদ্ধার",
+        "schedule_missed_offline": "মিস হওয়া নির্ধারিত রান (অফলাইন)",
+        "schedule_skipped_overlap": "শিডিউল এড়ানো হয়েছে (আগের রান চলছে)"
+      }
     },
     "health": {
       "title": "এজেন্ট স্বাস্থ্য",
@@ -6622,7 +6690,9 @@
     },
     "cascade": {
       "title": "চেইন ক্যাসকেড ম্যাপ",
-      "no_chains": "কোনো চেইন সনাক্ত হয়নি -- সব পার্সোনা স্বাধীনভাবে কাজ করছে"
+      "no_chains": "কোনো চেইন সনাক্ত হয়নি -- সব পার্সোনা স্বাধীনভাবে কাজ করছে",
+      "cofail_insufficient": "কোনো যৌথ ব্যর্থতা নেই",
+      "cofail_pct": "{pct}% যৌথ ব্যর্থতা"
     },
     "predictive_alerts_extra": {
       "title": "পূর্বানুমানমূলক সতর্কতা",
@@ -6854,7 +6924,12 @@
       "loading_status_page": "স্ট্যাটাস পেজ লোড হচ্ছে...",
       "loading_reliability": "নির্ভরযোগ্যতার ডেটা লোড হচ্ছে...",
       "heartbeats_btn": "হার্টবিট",
-      "reliability_btn": "নির্ভরযোগ্যতা"
+      "reliability_btn": "নির্ভরযোগ্যতা",
+      "source_byom_policy": "BYOM নীতি",
+      "source_healing_issues": "হিলিং সমস্যা",
+      "source_monthly_spend": "মাসিক খরচ",
+      "source_provider_stats": "প্রোভাইডার পরিসংখ্যান",
+      "sources_unavailable": "{sources} লোড করা যায়নি — স্কোর ভুল হতে পারে।"
     },
     "popup_fields": {
       "sign_up_free_at": "বিনামূল্যে সাইন আপ করুন",
@@ -7153,7 +7228,11 @@
       "seg_healing": "হিলিং",
       "seg_stability": "স্থিতিশীলতা",
       "seg_success": "সাফল্য",
-      "show_all": "সব দেখান"
+      "show_all": "সব দেখান",
+      "fleet_avg_badge": "ফ্লিট গড়",
+      "fleet_avg_tooltip": "এই পার্সোনার জন্য উইন্ডোতে কোনো রান রেকর্ড হয়নি — প্রতি-পার্সোনা পরিমাপকৃত মান নয়, ফ্লিট-ব্যাপী গড় সাফল্য দেখানো হচ্ছে।",
+      "no_data_badge": "ডেটা নেই",
+      "no_data_tooltip": "এই পার্সোনার জন্য উইন্ডোতে কোনো সম্পন্ন বা ব্যর্থ রান নেই — সাফল্যের হার একটি প্লেসহোল্ডার, পরিমাপকৃত নয়।"
     },
     "provenance": {
       "sourced_tip": "{count}টি উৎস উদ্ধৃত করে যা আপনি ট্রেস ও অডিট করতে পারবেন।",
@@ -10564,7 +10643,13 @@
     "local_tooling_label": "বিল্ট-ইন টুলস",
     "local_tooling_sentence": "Personas শুরু থেকেই স্থানীয় টুলস সংযুক্ত রাখে — Messaging, Database, Vector এবং আরও অনেক কিছু — কোনো ক্রেডেনশিয়াল প্রয়োজন নেই।",
     "resume_continue_title": "যেখান থেকে থেমেছিলেন সেখান থেকে শুরু করুন",
-    "resume_continue_cta": "ট্যুর চালিয়ে যান"
+    "resume_continue_cta": "ট্যুর চালিয়ে যান",
+    "replay_setup": "সেটআপ পুনরায় চালান",
+    "resume_setup": "সেটআপ চালিয়ে যান",
+    "tour_handoff_accept": "ট্যুর শুরু করুন",
+    "tour_handoff_body": "আপনার প্রথম এজেন্ট চালু হয়েছে। বাকিটার একটি দ্রুত নির্দেশিত ট্যুর নিন — সংযোগ এবং এজেন্ট চালানো — আর আপনি এইমাত্র যা করেছেন সেই অংশগুলো আমরা এড়িয়ে যাব।",
+    "tour_handoff_dismiss": "এখন নয়",
+    "tour_handoff_title": "নির্দেশিত ট্যুর চান?"
   },
   "system_health": {
     "install_all": "সব ডিপেন্ডেন্সি ইনস্টল",
@@ -10971,7 +11056,15 @@
     "last24h_failed_count": "{count} টি ব্যর্থ",
     "last24h_show_all": "সব দেখুন ({count})",
     "last24h_show_less": "কম দেখুন",
-    "last24h_retry_at": "স্বয়ংক্রিয় পুনরায় চেষ্টা {time}"
+    "last24h_retry_at": "স্বয়ংক্রিয় পুনরায় চেষ্টা {time}",
+    "unverified": "যাচাই করা হয়নি",
+    "unverified_tooltip": "এই স্লটের জন্য কোনো রান রেকর্ড নেই — এটি এড়িয়ে যাওয়া, রেট-সীমিত, বাজেট ছাড়িয়ে যাওয়া হতে পারে, বা অ্যাপ বন্ধ ছিল।",
+    "missed_backfill_cta": "ব্যাকফিল",
+    "missed_dismiss": "মিস হওয়া রানের বিজ্ঞপ্তি বাতিল করুন",
+    "missed_offline": "অফলাইনে থাকাকালীন {count}টি মিস হয়েছে",
+    "missed_offline_tooltip": "অ্যাপ বন্ধ থাকাকালীন নির্ধারিত রানগুলো এড়িয়ে যাওয়া হয়েছে। ব্যাকফিল সেগুলো পুনরায় চালায় (ডুপ্লিকেট বাদ দিয়ে ও সীমাসহ), অথবা মুছতে বাতিল করুন।",
+    "reason_invalid_timezone": "থামানো — অবৈধ টাইমজোন",
+    "reason_unscheduled": "থামানো — কোনো বৈধ শিডিউল নেই"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
@@ -11504,6 +11597,30 @@
       "quarantined": "ট্রিগার কোয়ারেন্টাইন করা হয়েছে",
       "healing_abandoned": "নিরাময় থেমে গেছে",
       "healing_capped": "নিরাময়ের পুনঃচেষ্টা শেষ"
+    },
+    "build": {
+      "analyzing": "বিশ্লেষণ চলছে",
+      "awaiting_input": "ইনপুটের অপেক্ষায়",
+      "cancelled": "বাতিল",
+      "completed": "সম্পন্ন",
+      "draft_ready": "খসড়া প্রস্তুত",
+      "failed": "ব্যর্থ",
+      "initializing": "শুরু হচ্ছে",
+      "promoted": "উন্নীত",
+      "resolving": "সমাধান চলছে",
+      "test_complete": "পরীক্ষা সম্পন্ন",
+      "testing": "পরীক্ষা চলছে"
+    },
+    "tool_error_kind": {
+      "auth": "প্রমাণীকরণ",
+      "http": "HTTP ত্রুটি",
+      "misconfigured": "ভুলভাবে কনফিগার করা",
+      "rate_limited": "রেট সীমিত",
+      "timeout": "সময় শেষ",
+      "tool_error": "টুল ব্যর্থ হয়েছে",
+      "transport": "সংযোগ ব্যর্থ",
+      "unknown": "অজানা ত্রুটি",
+      "unsupported": "এখানে চালানো যাবে না"
     }
   },
   "project_overview": {
@@ -11758,7 +11875,8 @@
       "headless_badge": "পটভূমি",
       "headless_no_terminal": "পটভূমির সেশন — টার্মিনাল ছাড়া চলছে। \"আপনাকে দরকার\" ব্যানার থেকে উত্তর দিন; অগ্রগতি Insights-এ দেখা যায়।",
       "spawn_headless_hint": "হেডলেস মোড — লাইভ টার্মিনাল ছাড়া, CPU ও RAM-এ অনেক কম চাপ। \"আপনাকে দরকার\" ব্যানার থেকে উত্তর দিন; অগ্রগতি Insights-এ দেখুন।",
-      "spawn_headless_toggle": "পটভূমিতে চালান (টার্মিনাল ছাড়া)"
+      "spawn_headless_toggle": "পটভূমিতে চালান (টার্মিনাল ছাড়া)",
+      "live_slot_hibernated_toast": "লাইভ-সেশন সীমার মধ্যে থাকতে {name} হাইবারনেট করা হয়েছে — এর কথোপকথন সংরক্ষিত; চালিয়ে যেতে এটি জাগান।"
     },
     "title": "প্লাগিন",
     "subtitle": "প্লাগিন দিয়ে আপনার ওয়ার্কস্পেস প্রসারিত করুন। সাইডবার থেকে দেখাতে বা লুকাতে টগল করুন।",
@@ -14091,7 +14209,9 @@
       "progress_past": "অতীত",
       "goal_view_missions": "মিশন",
       "mission_link_goal": "একটি লক্ষ্যের সাথে যুক্ত করুন…",
-      "mission_unlinked": "কোনো লক্ষ্য নেই"
+      "mission_unlinked": "কোনো লক্ষ্য নেই",
+      "goal_field_kpi": "সংযুক্ত KPI",
+      "goal_kpi_none": "কোনো সংযুক্ত KPI নেই"
     },
     "dev_projects": {
       "active_goals": "সক্রিয় লক্ষ্য",
@@ -15651,7 +15771,9 @@
       "collab_label": "সহযোগিতা",
       "deck_phase_paused": "বিরতিতে",
       "deck_pause": "বিরতি দিন",
-      "deck_resume": "পুনরায় শুরু করুন"
+      "deck_resume": "পুনরায় শুরু করুন",
+      "readiness_chip_label": "সেটআপ প্রয়োজন",
+      "readiness_chip_tooltip": "এই সতীর্থের কানেক্টরগুলি এখনও সেটআপ করা প্রয়োজন। এটি যোগ দিতে ও আলোচনা করতে পারে, কিন্তু এর সক্ষমতা আটকে রাখা হয়েছে — আপনি ক্রেডেনশিয়াল যোগ না করা পর্যন্ত এটি কোনো পদক্ষেপ নেবে না (সাইডবারে সংযোগ বিভাগটি খুলুন)।"
     },
     "memory_created": "স্মৃতি টিম লেজারে সংরক্ষিত হয়েছে",
     "memory_updated": "স্মৃতি আপডেট হয়েছে",
@@ -15855,7 +15977,11 @@
       "whats_new": "নতুন কী আছে",
       "back_to_plugins": "প্লাগইন",
       "roadmap": "রোডম্যাপ",
-      "groups_label": "গ্রুপ"
+      "groups_label": "গ্রুপ",
+      "draft_agent_fallback": "খসড়া এজেন্ট",
+      "draft_needs_answers_one": "{name} — ১টি উত্তর প্রয়োজন",
+      "draft_needs_answers_other": "{name} — {count}টি উত্তর প্রয়োজন",
+      "draft_switch_title": "খসড়ায় যান: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "কপি করুন",
@@ -17019,7 +17145,11 @@
     "group_needs_review": "প্রথম পর্যালোচনার অপেক্ষায়",
     "group_low_scores": "কম স্কোর",
     "group_declining": "হ্রাসমান প্রবণতা",
-    "group_stale": "পুরনো পর্যালোচনা"
+    "group_stale": "পুরনো পর্যালোচনা",
+    "roster_unscored": "স্কোরবিহীন",
+    "roster_unscored_hint": "Director এই এজেন্টটি পর্যালোচনা করেছে কিন্তু কোনো স্কোর দেয়নি; কোচিং দেখতে পর্যালোচনাটি খুলুন।",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Director-এর কোচিং পর্যালোচনা থেকে উত্থাপিত — অন্য যেকোনো সমস্যার মতো এটি অনুমোদন বা সমাধান করুন।"
   },
   "remote_approval": {
     "title": "রিমোট রান অনুরোধ",
@@ -17225,7 +17355,10 @@
     "attn_overdue": "{days}দি বিলম্বিত",
     "attn_reason_crit": "সংকটজনক",
     "attn_reason_floor": "ফ্লোর",
-    "attn_reason_pace": "পিছিয়ে"
+    "attn_reason_pace": "পিছিয়ে",
+    "evaluate_measured": "{count}টি KPI পরিমাপ করা হয়েছে।",
+    "evaluate_none_due": "পরিমাপের জন্য কোনো KPI নির্ধারিত ছিল না।",
+    "evaluate_partial": "{measured}টি পরিমাপ করা হয়েছে, {failed}টি ব্যর্থ"
   },
   "deliberation": {
     "agenda": "এজেন্ডা",

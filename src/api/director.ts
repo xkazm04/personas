@@ -18,6 +18,10 @@ export interface DirectorReport {
   evaluatedPersonas: number;
   verdictsEmitted: number;
   personasSkippedNoExecutions: number;
+  /** Personas skipped for having no new executions since their last review. */
+  personasSkippedUnchanged: number;
+  /** Names of the freshness-skipped personas. */
+  skippedUnchangedPersonas: string[];
   generatedAt: string;
 }
 
@@ -56,6 +60,8 @@ export interface DirectorRosterEntry {
   valueDeliveredRate: number;
   totalExecutions: number;
   lastReviewedAt: string | null;
+  /** Most recent review has markdown but no score (salvage double-failed). */
+  latestReviewUnscored: boolean;
 }
 
 export interface DirectorScoreBand {

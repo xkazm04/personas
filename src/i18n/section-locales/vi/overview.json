@@ -525,7 +525,13 @@
     "event_data": "Dữ liệu sự kiện",
     "error": "Lỗi",
     "skipped_stat_label": "{skipped} bị bỏ qua",
-    "skipped_stat_tooltip": "{skipped} trong số {total} sự kiện trong 7 ngày qua không có người đăng ký nào và đã bị bỏ qua ({rate}). Tỷ lệ cao cho thấy có một trình kích hoạt mà không ai lắng nghe."
+    "skipped_stat_tooltip": "{skipped} trong số {total} sự kiện trong 7 ngày qua không có người đăng ký nào và đã bị bỏ qua ({rate}). Tỷ lệ cao cho thấy có một trình kích hoạt mà không ai lắng nghe.",
+    "type_labels": {
+      "sla_breach_opened": "Vi phạm SLA đã mở",
+      "sla_breach_recovered": "Đã khắc phục vi phạm SLA",
+      "schedule_missed_offline": "Lần chạy theo lịch bị bỏ lỡ (ngoại tuyến)",
+      "schedule_skipped_overlap": "Bỏ qua lịch (lần chạy trước đang hoạt động)"
+    }
   },
   "health": {
     "title": "Sức khỏe tác nhân",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "Bản đồ tầng chuỗi",
-    "no_chains": "Không phát hiện chuỗi -- tất cả personas hoạt động độc lập"
+    "no_chains": "Không phát hiện chuỗi -- tất cả personas hoạt động độc lập",
+    "cofail_insufficient": "không có lỗi đồng thời",
+    "cofail_pct": "{pct}% lỗi đồng thời"
   },
   "predictive_alerts_extra": {
     "title": "Cảnh báo dự đoán",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "Đang tải trang trạng thái…",
     "loading_reliability": "Đang tải dữ liệu độ tin cậy…",
     "heartbeats_btn": "Nhịp tim",
-    "reliability_btn": "Độ tin cậy"
+    "reliability_btn": "Độ tin cậy",
+    "source_byom_policy": "Chính sách BYOM",
+    "source_healing_issues": "Sự cố khắc phục",
+    "source_monthly_spend": "Chi tiêu hàng tháng",
+    "source_provider_stats": "Thống kê nhà cung cấp",
+    "sources_unavailable": "Không thể tải {sources} — điểm số có thể không chính xác."
   },
   "popup_fields": {
     "sign_up_free_at": "Đăng ký miễn phí tại",
@@ -1573,7 +1586,11 @@
     "seg_healing": "Phục hồi",
     "seg_stability": "Ổn định",
     "seg_success": "Thành công",
-    "show_all": "Hiện tất cả"
+    "show_all": "Hiện tất cả",
+    "fleet_avg_badge": "TB đội máy",
+    "fleet_avg_tooltip": "Không có lần chạy nào được ghi cho persona này trong khoảng thời gian — đang hiển thị tỷ lệ thành công trung bình toàn đội, không phải giá trị đo theo từng persona.",
+    "no_data_badge": "không có dữ liệu",
+    "no_data_tooltip": "Không có lần chạy hoàn tất hoặc thất bại nào cho persona này trong khoảng thời gian — tỷ lệ thành công là giá trị tạm, không phải đo được."
   },
   "provenance": {
     "sourced_tip": "Trích dẫn {count} nguồn bạn có thể truy vết và kiểm tra.",

@@ -157,7 +157,11 @@
     "whats_new": "新功能",
     "back_to_plugins": "插件",
     "roadmap": "路线图",
-    "groups_label": "分组"
+    "groups_label": "分组",
+    "draft_agent_fallback": "草稿智能体",
+    "draft_needs_answers_one": "{name} — 需要 1 个回答",
+    "draft_needs_answers_other": "{name} — 需要 {count} 个回答",
+    "draft_switch_title": "切换到草稿：{name}（{phase}）"
   },
   "execution_detail": {
     "copy": "复制",

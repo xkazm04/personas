@@ -17,11 +17,72 @@ use super::connector_strategy;
 #[cfg(feature = "desktop")]
 use super::desktop_discovery;
 
+/// Typed outcome of a credential healthcheck.
+///
+/// Splits the old boolean `success` into three states so the vault can tell a
+/// live-verified credential apart from one it simply *cannot* probe:
+/// - [`Verified`](HealthProbeState::Verified) — a live probe (HTTP / CLI /
+///   desktop / OAuth) actually ran and passed.
+/// - [`Unverifiable`](HealthProbeState::Unverifiable) — the connector exposes no
+///   probe of any kind, so the stored credential can never be live-checked. This
+///   is NOT a failure — it renders neutral/muted, never a green "healthy" check.
+/// - [`Failed`](HealthProbeState::Failed) — a live probe ran and failed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub enum HealthProbeState {
+    Verified,
+    Unverifiable,
+    Failed,
+}
+
+impl HealthProbeState {
+    /// Stable machine token persisted into credential metadata
+    /// (`healthcheck_last_state`) and matched by the frontend. MUST stay in sync
+    /// with the serde `rename_all = "camelCase"` wire form above.
+    pub fn token(self) -> &'static str {
+        match self {
+            HealthProbeState::Verified => "verified",
+            HealthProbeState::Unverifiable => "unverifiable",
+            HealthProbeState::Failed => "failed",
+        }
+    }
+}
+
 /// Result of a credential healthcheck.
 #[derive(Debug, serde::Serialize)]
 pub struct HealthcheckResult {
     pub success: bool,
     pub message: String,
+    /// Typed classification of this outcome. `success` is retained for
+    /// back-compat (it equals `state != Failed`); new callers should read
+    /// `state` to distinguish verified from unverifiable.
+    pub state: HealthProbeState,
+}
+
+impl HealthcheckResult {
+    /// A live probe ran: `success` decides Verified vs Failed.
+    pub fn probed(success: bool, message: impl Into<String>) -> Self {
+        HealthcheckResult {
+            success,
+            message: message.into(),
+            state: if success {
+                HealthProbeState::Verified
+            } else {
+                HealthProbeState::Failed
+            },
+        }
+    }
+
+    /// No probe exists for this connector — credentials are stored but cannot be
+    /// live-verified. Counts as a (non-error) success for gating purposes.
+    pub fn unverifiable(message: impl Into<String>) -> Self {
+        HealthcheckResult {
+            success: true,
+            message: message.into(),
+            state: HealthProbeState::Unverifiable,
+        }
+    }
 }
 
 /// Inspect a credential's stored metadata JSON for `source == "cli"` so the
@@ -167,13 +228,13 @@ async fn run_cli_probe(probe: &CliHealthProbe, deadline: Duration) -> Option<Hea
         Ok(c) => c,
         Err(_) => {
             // spawn() failed -- command not found on PATH
-            return Some(HealthcheckResult {
-                success: false,
-                message: format!(
+            return Some(HealthcheckResult::probed(
+                false,
+                format!(
                     "{} is not installed — install it and try again",
                     probe.tool_name
                 ),
-            });
+            ));
         }
     };
 
@@ -211,31 +272,31 @@ async fn run_cli_probe(probe: &CliHealthProbe, deadline: Duration) -> Option<Hea
             let combined = format!("{}\n{}", stdout, stderr).trim().to_string();
 
             if status.success() && !combined.is_empty() {
-                Some(HealthcheckResult {
-                    success: true,
-                    message: format!("{} is installed and authenticated", probe.tool_name),
-                })
+                Some(HealthcheckResult::probed(
+                    true,
+                    format!("{} is installed and authenticated", probe.tool_name),
+                ))
             } else {
                 // Either non-zero exit, or zero exit with no output. Both
                 // indicate the CLI ran but isn't authenticated.
-                Some(HealthcheckResult {
-                    success: false,
-                    message: format!(
+                Some(HealthcheckResult::probed(
+                    false,
+                    format!(
                         "{} is installed but not authenticated — run `{} auth` or equivalent",
                         probe.tool_name, probe.cmd,
                     ),
-                })
+                ))
             }
         }
         Ok(None) => {
             // wait() failed -- treat as command unusable. Drop will reap.
-            Some(HealthcheckResult {
-                success: false,
-                message: format!(
+            Some(HealthcheckResult::probed(
+                false,
+                format!(
                     "{} is not installed — install it and try again",
                     probe.tool_name
                 ),
-            })
+            ))
         }
         Err(_) => {
             tracing::warn!(
@@ -244,13 +305,13 @@ async fn run_cli_probe(probe: &CliHealthProbe, deadline: Duration) -> Option<Hea
                 "CLI healthcheck probe timed out — killing child to avoid zombie",
             );
             let _ = child.kill().await;
-            Some(HealthcheckResult {
-                success: false,
-                message: format!(
+            Some(HealthcheckResult::probed(
+                false,
+                format!(
                     "{} timed out — the tool may be unresponsive",
                     probe.tool_name
                 ),
-            })
+            ))
         }
     }
 }
@@ -285,15 +346,15 @@ fn try_desktop_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
 
     if installed {
         let path_info = binary_path.map(|p| format!(" ({})", p)).unwrap_or_default();
-        Some(HealthcheckResult {
-            success: true,
-            message: format!("{label} is installed{path_info}"),
-        })
+        Some(HealthcheckResult::probed(
+            true,
+            format!("{label} is installed{path_info}"),
+        ))
     } else {
-        Some(HealthcheckResult {
-            success: false,
-            message: format!("{label} is not installed — install it and try again"),
-        })
+        Some(HealthcheckResult::probed(
+            false,
+            format!("{label} is not installed — install it and try again"),
+        ))
     }
 }
 
@@ -361,10 +422,10 @@ pub async fn run_healthcheck(
     if is_cli_sourced(&cred.metadata) {
         let verify =
             crate::commands::credentials::cli_capture::run_verify(&cred.service_type).await;
-        return Ok(HealthcheckResult {
-            success: verify.authenticated,
-            message: verify.message,
-        });
+        return Ok(HealthcheckResult::probed(
+            verify.authenticated,
+            verify.message,
+        ));
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &cred)?;
@@ -394,11 +455,12 @@ pub async fn run_healthcheck(
             service_type = %cred.service_type,
             "healthcheck skipped: no HTTP, CLI, or desktop healthcheck available"
         );
-        return Ok(HealthcheckResult {
-            success: true,
-            message: "Connection type does not support HTTP healthcheck -- credentials stored"
-                .into(),
-        });
+        // No HTTP config and no local (CLI/desktop) probe fired: this connector
+        // has no way to be live-verified. Report Unverifiable — NOT a green
+        // "healthy" — so the vault can render it distinctly.
+        return Ok(HealthcheckResult::unverifiable(
+            "Connection type does not support HTTP healthcheck -- credentials stored",
+        ));
     }
 
     // Resolve auth token via connector strategy.
@@ -469,11 +531,12 @@ pub async fn run_healthcheck_with_fields(
             service_type = %service_type,
             "healthcheck skipped: no HTTP, CLI, or desktop healthcheck available"
         );
-        return Ok(HealthcheckResult {
-            success: true,
-            message: "Connection type does not support HTTP healthcheck -- credentials stored"
-                .into(),
-        });
+        // No HTTP config and no local (CLI/desktop) probe fired: this connector
+        // has no way to be live-verified. Report Unverifiable — NOT a green
+        // "healthy" — so the vault can render it distinctly.
+        return Ok(HealthcheckResult::unverifiable(
+            "Connection type does not support HTTP healthcheck -- credentials stored",
+        ));
     }
 
     let strategy = connector_strategy::registry()?.get(service_type, connector.metadata.as_deref());
@@ -508,6 +571,9 @@ pub struct CredentialHealthcheckOutcome {
     pub credential_id: String,
     pub credential_name: String,
     pub success: bool,
+    /// Typed classification (verified / unverifiable / failed). A sweep entry
+    /// that errored before a probe could run is reported as `Failed`.
+    pub state: HealthProbeState,
     pub message: String,
     pub duration_ms: u32,
 }
@@ -531,6 +597,24 @@ const HEALTHCHECK_SWEEP_CONCURRENCY: usize = 3;
 
 /// 24h cadence for the daily credential healthcheck sweep.
 const CREDENTIAL_HEALTHCHECK_INTERVAL_HOURS: i64 = 24;
+
+/// Persist the typed verified/unverifiable/failed distinction into the
+/// credential's metadata (`healthcheck_last_state`) so the vault list can render
+/// it without re-probing. Layered on top of `append_healthcheck_metadata` (which
+/// only records the boolean `healthcheck_last_success`) via the existing atomic
+/// metadata-patch — the key lands in the ledger's flattened `custom` map and
+/// survives subsequent ring-buffer appends. Best-effort: a write failure only
+/// costs the extra typed hint (the boolean is already persisted).
+pub(crate) fn persist_probe_state(pool: &DbPool, credential_id: &str, state: HealthProbeState) {
+    let mut patch = serde_json::Map::new();
+    patch.insert(
+        "healthcheck_last_state".to_string(),
+        serde_json::Value::String(state.token().to_string()),
+    );
+    if let Err(e) = cred_repo::patch_metadata_atomic(pool, credential_id, patch) {
+        tracing::warn!(credential_id = %credential_id, error = %e, "failed to persist healthcheck probe state");
+    }
+}
 
 /// Run a healthcheck for every credential whose `service_type` maps to a known
 /// connector, persist each result, and return a summary.
@@ -564,17 +648,20 @@ pub async fn run_all_healthchecks(pool: &DbPool) -> Result<BulkHealthcheckSummar
     let results: Vec<CredentialHealthcheckOutcome> = stream::iter(targets)
         .map(move |(id, name)| async move {
             let start = std::time::Instant::now();
-            let (success, message) = match run_healthcheck(pool, &id).await {
-                Ok(r) => (r.success, r.message),
-                Err(e) => (false, e.to_string()),
+            let (success, state, message) = match run_healthcheck(pool, &id).await {
+                Ok(r) => (r.success, r.state, r.message),
+                Err(e) => (false, HealthProbeState::Failed, e.to_string()),
             };
             let duration_ms = start.elapsed().as_millis() as u32;
 
             // Persist exactly like the per-credential IPC command: ring-buffer
-            // append + last_success/message/tested_at, then record usage.
+            // append + last_success/message/tested_at, then record usage, then
+            // stamp the typed verified/unverifiable/failed distinction so the
+            // vault list can render it without re-probing.
             if let Err(e) = cred_repo::append_healthcheck_metadata(pool, &id, success, &message) {
                 tracing::warn!(credential_id = %id, error = %e, "sweep: failed to persist healthcheck metadata");
             }
+            persist_probe_state(pool, &id, state);
             if let Err(e) = cred_repo::record_usage(pool, &id) {
                 tracing::warn!(credential_id = %id, error = %e, "sweep: failed to record credential usage");
             }
@@ -583,6 +670,7 @@ pub async fn run_all_healthchecks(pool: &DbPool) -> Result<BulkHealthcheckSummar
                 credential_id: id,
                 credential_name: name,
                 success,
+                state,
                 message,
                 duration_ms,
             }
@@ -1001,10 +1089,10 @@ async fn execute_healthcheck_request_with_strategy(
                     success = true,
                     "healthcheck passed"
                 );
-                Ok(HealthcheckResult {
-                    success: true,
-                    message: format!("Connection successful (HTTP {})", status.as_u16()),
-                })
+                Ok(HealthcheckResult::probed(
+                    true,
+                    format!("Connection successful (HTTP {})", status.as_u16()),
+                ))
             } else {
                 tracing::warn!(
                     credential_id = %credential_id,
@@ -1015,10 +1103,7 @@ async fn execute_healthcheck_request_with_strategy(
                     "healthcheck failed: HTTP error"
                 );
                 let msg = format!("Service returned HTTP {}", status.as_u16());
-                Ok(HealthcheckResult {
-                    success: false,
-                    message: sanitize_secrets(&msg),
-                })
+                Ok(HealthcheckResult::probed(false, sanitize_secrets(&msg)))
             }
         }
         Err(e) => {
@@ -1032,10 +1117,7 @@ async fn execute_healthcheck_request_with_strategy(
                 "healthcheck failed: connection error"
             );
             let msg = format!("Connection failed: {e}");
-            Ok(HealthcheckResult {
-                success: false,
-                message: sanitize_secrets(&msg),
-            })
+            Ok(HealthcheckResult::probed(false, sanitize_secrets(&msg)))
         }
     }
 }
@@ -1698,6 +1780,50 @@ mod tests {
         fields.insert("pooler_url".into(), "postgresql://xxx".into());
         let hc = resolve_variant_healthcheck(meta, &fields).unwrap();
         assert!(hc.skip);
+    }
+
+    // ---- HealthProbeState classification (verified / unverifiable / failed) ----
+
+    #[test]
+    fn probe_state_config_pass_is_verified() {
+        // A connector with a probe config that passed → Verified.
+        let r = HealthcheckResult::probed(true, "Connection successful (HTTP 200)");
+        assert_eq!(r.state, HealthProbeState::Verified);
+        assert!(r.success);
+    }
+
+    #[test]
+    fn probe_state_config_fail_is_failed() {
+        // A connector with a probe config that failed → Failed.
+        let r = HealthcheckResult::probed(false, "Service returned HTTP 401");
+        assert_eq!(r.state, HealthProbeState::Failed);
+        assert!(!r.success);
+    }
+
+    #[test]
+    fn probe_state_no_config_is_unverifiable() {
+        // A connector with no probe of any kind → Unverifiable, and it must NOT
+        // read as a failure (success stays true so readiness does not gate it).
+        let r = HealthcheckResult::unverifiable(
+            "Connection type does not support HTTP healthcheck -- credentials stored",
+        );
+        assert_eq!(r.state, HealthProbeState::Unverifiable);
+        assert!(r.success);
+    }
+
+    #[test]
+    fn probe_state_tokens_match_serde_wire_form() {
+        // The persisted metadata token MUST equal the serde camelCase wire form
+        // (the frontend matches these exact strings).
+        for (state, tok) in [
+            (HealthProbeState::Verified, "verified"),
+            (HealthProbeState::Unverifiable, "unverifiable"),
+            (HealthProbeState::Failed, "failed"),
+        ] {
+            assert_eq!(state.token(), tok);
+            let json = serde_json::to_string(&state).unwrap();
+            assert_eq!(json, format!("\"{tok}\""));
+        }
     }
 
     #[test]

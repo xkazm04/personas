@@ -1017,6 +1017,46 @@ pub(crate) async fn event_bus_tick(
     for (idx, matches) in &event_matches {
         let event = &events[*idx];
         let mut any_failed = false;
+
+        // Destructive-action gate for WEBHOOK-fired triggers (UAT F-MAJOR-11:
+        // the approval/dry_run gate only covered scheduler triggers, leaving
+        // exactly the external-ingress type an alert/ticket automation uses
+        // ungated). Scheduler triggers hold at their tick (pre-publish); a
+        // webhook publishes its event directly, so the `approval` hold happens
+        // here — once per event, before any match dispatches. On approval,
+        // `resolve_pending_trigger_fire` re-publishes as source_type "trigger",
+        // which flows through normally (and never re-enters this webhook branch).
+        if event.source_type == "webhook" {
+            if let Some(trig) = event
+                .source_id
+                .as_deref()
+                .and_then(|sid| trigger_repo::get_by_id(pool, sid).ok())
+            {
+                if trig.unattended_mode == "approval" {
+                    match trigger_repo::insert_pending_fire(
+                        pool,
+                        &trig.id,
+                        &trig.persona_id,
+                        &event.event_type,
+                        event.payload.as_deref(),
+                        trig.use_case_id.as_deref(),
+                    ) {
+                        Ok(pf) => tracing::info!(
+                            trigger_id = %trig.id,
+                            persona_id = %trig.persona_id,
+                            pending_id = %pf.id,
+                            "Webhook trigger in approval mode — fire held for human approval (no execution)"
+                        ),
+                        Err(e) => tracing::error!(
+                            trigger_id = %trig.id,
+                            "Failed to hold webhook fire for approval: {}", e
+                        ),
+                    }
+                    continue;
+                }
+            }
+        }
+
         // Breadcrumb: set when a handoff EXPLICITLY targeted at a persona is
         // dropped because that persona is disabled. The bus marks the event
         // `delivered` either way, so without this a stalled cascade is invisible
@@ -1119,14 +1159,15 @@ pub(crate) async fn event_bus_tick(
                 continue;
             }
 
-            // Destructive-action gate (UAT P5): when a SCHEDULER-fired trigger
-            // (source_type == "trigger") is in `dry_run` mode, launch the run as
-            // a SIMULATION so outbound side-effects are suppressed (dispatch skips
-            // real notification/connector delivery for is_simulation runs). Only
-            // schedule/polling triggers publish source_type=="trigger" events;
-            // chain/event_listener triggers react to persona events, so this
-            // cleanly scopes to the unattended scheduler path.
-            let dry_run = event.source_type == "trigger"
+            // Destructive-action gate (UAT P5 + F-MAJOR-11): a trigger in
+            // `dry_run` mode launches the run as a SIMULATION so outbound
+            // side-effects are suppressed (dispatch skips real notification/
+            // connector delivery for is_simulation runs). Covers BOTH the
+            // scheduler path (source_type == "trigger") and external webhook
+            // fires (source_type == "webhook") — each carries the firing
+            // trigger id in source_id. (`approval` for webhook is held above,
+            // before this point; for the scheduler it's held at tick time.)
+            let dry_run = matches!(event.source_type.as_str(), "trigger" | "webhook")
                 && event
                     .source_id
                     .as_deref()
@@ -1522,6 +1563,77 @@ pub(crate) fn schedule_hourly_cap_exceeded(
     recent + pending >= ceiling
 }
 
+/// Direction 3 (lost fires get a home): a publish failure AFTER `mark_triggered`
+/// has advanced the schedule is a PERMANENTLY LOST fire — the slot is gone and
+/// was previously recorded only in a `tracing::error!`. Reuse the existing
+/// healing-issue mechanism (mirrors `log_schedule_rate_limit_issue`) so the loss
+/// becomes an actionable, user-visible issue. Deduped to one open issue per
+/// trigger episode: while an issue is open, further lost fires for the same
+/// trigger fold into it instead of spamming a new row per failed publish.
+pub(crate) fn log_schedule_lost_fire_issue(
+    pool: &DbPool,
+    trigger: &crate::db::models::PersonaTrigger,
+    slot_iso: &str,
+    error: &str,
+) {
+    let title = "Scheduled fire lost after schedule advanced";
+    let category = "schedule_lost_fire";
+    let already_open = match pool.get() {
+        Ok(conn) => conn
+            .query_row(
+                "SELECT EXISTS(
+                    SELECT 1 FROM persona_healing_issues
+                    WHERE persona_id = ?1
+                      AND status = 'open'
+                      AND category = ?2
+                      AND title = ?3
+                )",
+                rusqlite::params![trigger.persona_id, category, title],
+                |row| row.get::<_, bool>(0),
+            )
+            .unwrap_or(false),
+        Err(err) => {
+            tracing::warn!(
+                trigger_id = %trigger.id,
+                persona_id = %trigger.persona_id,
+                error = %err,
+                "failed to check existing schedule lost-fire healing issue"
+            );
+            false
+        }
+    };
+    if already_open {
+        return;
+    }
+
+    let description = format!(
+        "Schedule trigger {} advanced its schedule but the event publish failed for the fire due at {}, so that run was lost ({}). The schedule pointer already moved, so it will not retry on its own.",
+        trigger.id, slot_iso, error
+    );
+    let suggested_fix = format!(
+        "Replay the lost run with Backfill on trigger {}, then check the event bus / database health if this recurs.",
+        trigger.id
+    );
+    if let Err(err) = healing_repo::create(
+        pool,
+        &trigger.persona_id,
+        title,
+        &description,
+        false,
+        Some("high"),
+        Some(category),
+        None,
+        Some(&suggested_fix),
+    ) {
+        tracing::warn!(
+            trigger_id = %trigger.id,
+            persona_id = %trigger.persona_id,
+            error = %err,
+            "failed to create schedule lost-fire healing issue"
+        );
+    }
+}
+
 /// Decide whether a scheduled persona is over its monthly budget.
 ///
 /// This is the canonical decision shared with the manual/preview gate in
@@ -1596,6 +1708,172 @@ pub(crate) fn log_schedule_rate_limit_issue(
             persona_id = %trigger.persona_id,
             error = %err,
             "failed to create schedule rate-limit healing issue"
+        );
+    }
+}
+
+/// Direction 1 (missed-runs visibility): persist `discarded` dropped slots for
+/// a trigger and publish a feed-visible `schedule.missed.offline` event so the
+/// schedule UI can surface "missed N while offline". The count accumulates
+/// across gaps and is cleared when the user backfills or dismisses. The event
+/// carries no side-effect: `schedule.missed.offline` is not a listener-matched
+/// type, so it never spawns an execution — it is purely informational.
+pub(crate) fn record_and_emit_missed_runs(
+    pool: &DbPool,
+    trigger: &crate::db::models::PersonaTrigger,
+    discarded: i64,
+    now_str: &str,
+) {
+    if let Err(err) = trigger_repo::record_missed_runs(pool, &trigger.id, discarded, now_str) {
+        tracing::warn!(
+            trigger_id = %trigger.id,
+            persona_id = %trigger.persona_id,
+            error = %err,
+            "failed to persist discarded-while-offline slot count"
+        );
+        return;
+    }
+
+    let mut meta = serde_json::Map::new();
+    meta.insert(
+        "trigger_id".into(),
+        serde_json::Value::String(trigger.id.clone()),
+    );
+    meta.insert(
+        "target_persona_id".into(),
+        serde_json::Value::String(trigger.persona_id.clone()),
+    );
+    meta.insert(
+        "missed_count".into(),
+        serde_json::Value::Number(discarded.into()),
+    );
+    meta.insert(
+        "detected_at".into(),
+        serde_json::Value::String(now_str.to_string()),
+    );
+    let payload = serde_json::to_string(&serde_json::Value::Object(meta)).ok();
+
+    match event_repo::publish(
+        pool,
+        CreatePersonaEventInput {
+            event_type: "schedule.missed.offline".into(),
+            source_type: "scheduler".into(),
+            source_id: Some(trigger.id.clone()),
+            target_persona_id: Some(trigger.persona_id.clone()),
+            project_id: None,
+            payload,
+            use_case_id: trigger.use_case_id.clone(),
+        },
+    ) {
+        Ok(_) => tracing::info!(
+            trigger_id = %trigger.id,
+            persona_id = %trigger.persona_id,
+            discarded,
+            "Scheduled slots discarded while offline — recorded + signalled"
+        ),
+        Err(e) => tracing::warn!(
+            trigger_id = %trigger.id,
+            "failed to publish schedule.missed.offline event: {}", e
+        ),
+    }
+}
+
+/// Direction 2 (overlap policy): is a previous run from THIS schedule trigger
+/// still in flight?
+///
+/// Architectural note on why this is a bounded DB check and NOT an in-memory
+/// `InflightGuard`: the scheduler fire path only *publishes an event* and
+/// returns — the execution is created and run detached by a later
+/// `event_bus_tick` (a separate subscription tick). An in-memory guard acquired
+/// in the fire path would be released the instant the fire path returns, long
+/// before the execution even starts, so it cannot represent "still running".
+/// The durable signal is the execution row itself. Scheduler-spawned execution
+/// rows carry `trigger_id = NULL` (the event-bus path passes `None`), so the
+/// only correlation back to the trigger is `input_data._event.source_id`. We
+/// also treat an as-yet-undispatched fire (a pending/processing `persona_event`
+/// from this trigger) as "in flight" to close the publish→dispatch gap.
+pub(crate) fn schedule_overlap_active(pool: &DbPool, trigger_id: &str) -> bool {
+    let conn = match pool.get() {
+        Ok(c) => c,
+        Err(e) => {
+            // On a DB error, do NOT skip — better to risk a rare overlap than
+            // to silently drop a legitimate fire on a transient pool hiccup.
+            tracing::warn!(trigger_id, error = %e, "overlap check: pool error — allowing fire");
+            return false;
+        }
+    };
+    conn.query_row(
+        "SELECT
+            EXISTS(
+                SELECT 1 FROM persona_executions
+                WHERE status IN ('queued','running')
+                  AND json_extract(input_data, '$._event.source_id') = ?1
+            )
+            OR EXISTS(
+                SELECT 1 FROM persona_events
+                WHERE source_type = 'trigger'
+                  AND source_id = ?1
+                  AND status IN ('pending','processing')
+            )",
+        rusqlite::params![trigger_id],
+        |row| row.get::<_, bool>(0),
+    )
+    .unwrap_or_else(|e| {
+        tracing::warn!(trigger_id, error = %e, "overlap check query failed — allowing fire");
+        false
+    })
+}
+
+/// Build the `schedule.skipped.overlap` signal payload. Pure so the shape is
+/// unit-testable without a DB.
+fn synthesize_overlap_skip_payload(
+    trigger: &crate::db::models::PersonaTrigger,
+    skipped_at: &str,
+) -> String {
+    let mut meta = serde_json::Map::new();
+    meta.insert(
+        "trigger_id".into(),
+        serde_json::Value::String(trigger.id.clone()),
+    );
+    meta.insert(
+        "target_persona_id".into(),
+        serde_json::Value::String(trigger.persona_id.clone()),
+    );
+    meta.insert(
+        "reason".into(),
+        serde_json::Value::String("previous_run_active".into()),
+    );
+    meta.insert(
+        "skipped_at".into(),
+        serde_json::Value::String(skipped_at.to_string()),
+    );
+    serde_json::to_string(&serde_json::Value::Object(meta)).unwrap_or_default()
+}
+
+/// Direction 2: emit the visible "skipped — previous run still active" signal.
+/// `schedule.skipped.overlap` is informational (not listener-matched), so it
+/// never spawns an execution — it only records the skip in the event feed.
+fn emit_overlap_skip_signal(
+    pool: &DbPool,
+    trigger: &crate::db::models::PersonaTrigger,
+    skipped_at: &str,
+) {
+    let payload = Some(synthesize_overlap_skip_payload(trigger, skipped_at));
+    if let Err(e) = event_repo::publish(
+        pool,
+        CreatePersonaEventInput {
+            event_type: "schedule.skipped.overlap".into(),
+            source_type: "scheduler".into(),
+            source_id: Some(trigger.id.clone()),
+            target_persona_id: Some(trigger.persona_id.clone()),
+            project_id: None,
+            payload,
+            use_case_id: trigger.use_case_id.clone(),
+        },
+    ) {
+        tracing::warn!(
+            trigger_id = %trigger.id,
+            "failed to publish schedule.skipped.overlap signal: {}", e
         );
     }
 }
@@ -1847,6 +2125,72 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             }
         }
 
+        // Direction 2 (overlap policy): default skip-with-signal. A slow persona
+        // must not stack concurrent executions up to the hourly cap while its
+        // previous run from THIS trigger is still active. Distinct schedules stay
+        // independent — the check is keyed per trigger, not per persona.
+        //
+        // We CONSUME the slot here (mark_triggered advances last_triggered_at +
+        // next + version) rather than using advance_schedule_pointer. Rationale:
+        // an overlap skip is an INTENTIONAL drop — the previous run is still
+        // doing the work — so the slot must be neither replayed by backfill nor
+        // counted as an offline miss (Direction 1). Preserving the fired-watermark
+        // (advance_schedule_pointer) would do both: the auto-backfill window and
+        // the missed-runs computation both key off (last_triggered_at, now]. The
+        // visible signal below ensures this is never a silent drop.
+        if trigger.trigger_type == "schedule" && schedule_overlap_active(pool, &trigger.id) {
+            let next = sched_logic::compute_next_trigger_at(&trigger, now);
+            match trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version) {
+                Ok(true) => {
+                    emit_overlap_skip_signal(pool, &trigger, &now_str);
+                    tracing::info!(
+                        trigger_id = %trigger.id,
+                        persona_id = %trigger.persona_id,
+                        "Scheduled fire skipped — previous run still active (overlap)"
+                    );
+                }
+                Ok(false) => tracing::debug!(
+                    trigger_id = %trigger.id,
+                    "Overlap skip: trigger already claimed by another tick"
+                ),
+                Err(e) => tracing::error!(
+                    trigger_id = %trigger.id,
+                    "Overlap skip: failed to advance schedule: {}", e
+                ),
+            }
+            continue;
+        }
+
+        // Direction 1 (missed-runs visibility): enumerate the full set of slots
+        // missed strictly between (last_triggered_at, now], independent of the
+        // backfill policy. In the DEFAULT single-catch-up case (backfill_cap ==
+        // 1) EVERY one of these older slots is silently discarded; we count them
+        // so a daily-job user who closed the app for N days gets a visible
+        // "missed N while offline" record instead of silent loss. Bounded by
+        // BACKFILL_HARD_CAP (100) — a longer gap reports the cap.
+        let missed_total: usize = if trigger.trigger_type == "schedule" {
+            trigger
+                .last_triggered_at
+                .as_deref()
+                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                .map(|last_dt| {
+                    compute_missed_backfill_slots(
+                        &cfg,
+                        last_dt.with_timezone(&chrono::Utc),
+                        now,
+                        crate::engine::cron::seed_hash(&trigger.id),
+                    )
+                    .len()
+                })
+                .unwrap_or(0)
+        } else {
+            0
+        };
+        // Count of missed slots this tick actually replayed via backfill for
+        // THIS trigger — subtracted from missed_total so the "discarded" figure
+        // reflects only slots that were genuinely dropped.
+        let mut backfill_emitted_for_trigger: usize = 0;
+
         // 2.5. Backfill catch-up: when max_backfill > 1 AND the trigger has
         // an explicit last_triggered_at, emit catch-up events for any older
         // missed slots strictly between (last_triggered_at, now]. The
@@ -1965,11 +2309,20 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                                     .or_default() += 1;
                                 fired += 1;
                                 backfill_emitted_this_tick += 1;
+                                backfill_emitted_for_trigger += 1;
                             }
                             Err(e) => {
                                 tracing::error!(
                                     trigger_id = %trigger.id,
                                     "Backfill publish failed: {}", e
+                                );
+                                // Direction 3: a dropped backfill slot is a lost
+                                // fire too — give it a home instead of only a log.
+                                log_schedule_lost_fire_issue(
+                                    pool,
+                                    &trigger,
+                                    &slot_iso,
+                                    &e.to_string(),
                                 );
                             }
                         }
@@ -2035,6 +2388,18 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             }
         }
 
+        // Direction 1 (missed-runs visibility): the live slot just fired via
+        // mark_triggered. Any older missed slots NOT replayed by the backfill
+        // path above were discarded (the default single-catch-up drops them).
+        // Persist the count and emit a feed-visible event so an offline gap is
+        // visible instead of silently lost. Only fires after a real multi-slot
+        // gap (missed_total > emitted); a continuously-running scheduler sees
+        // missed_total == 0 and records nothing.
+        let discarded_missed = missed_total.saturating_sub(backfill_emitted_for_trigger);
+        if discarded_missed > 0 {
+            record_and_emit_missed_runs(pool, &trigger, discarded_missed as i64, &now_str);
+        }
+
         // 5. Schedule advanced -- now safe to publish the event
         let event_type = cfg.event_type().to_string();
 
@@ -2068,10 +2433,15 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                     pending_id = %pf.id,
                     "Trigger in approval mode — fire held for human approval (event not published)"
                 ),
-                Err(e) => tracing::error!(
-                    trigger_id = %trigger.id,
-                    "Failed to hold trigger fire for approval: {}", e
-                ),
+                Err(e) => {
+                    tracing::error!(
+                        trigger_id = %trigger.id,
+                        "Failed to hold trigger fire for approval: {}", e
+                    );
+                    // Direction 3: the schedule advanced but the approval hold
+                    // failed to persist, so this fire is lost — give it a home.
+                    log_schedule_lost_fire_issue(pool, &trigger, &now_str, &e.to_string());
+                }
             }
             continue;
         }
@@ -2100,6 +2470,10 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             }
             Err(e) => {
                 tracing::error!(trigger_id = %trigger.id, "Failed to publish trigger event: {}", e);
+                // Direction 3 (lost fires get a home): the schedule already
+                // advanced via mark_triggered, so this fire is permanently lost.
+                // Record a deduped healing issue instead of only a log line.
+                log_schedule_lost_fire_issue(pool, &trigger, &now_str, &e.to_string());
             }
         }
     }
@@ -2211,6 +2585,18 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         }
     }
 
+    // SLA daily rollups: persist per-persona/day aggregates BEFORE execution
+    // retention prunes the raw rows below, so the SLA trend survives past the
+    // execution window. Idempotent recompute — safe to run every tick.
+    {
+        use crate::db::repos::communication::sla as sla_repo;
+        match sla_repo::upsert_sla_daily(pool, sla_repo::server_offset_minutes()) {
+            Ok(n) if n > 0 => tracing::debug!("SLA rollup: upserted {} persona-day row(s)", n),
+            Ok(_) => {}
+            Err(e) => tracing::error!("SLA rollup upsert error: {}", e),
+        }
+    }
+
     // Execution log: configurable retention (default 60 days / 2 months), keep at least 50 per persona
     let exec_retention_days = parse_retention_setting(
         pool,
@@ -2290,6 +2676,28 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
             ),
             Ok(_) => {}
             Err(e) => tracing::error!("Draft sweep error: {}", e),
+        }
+    }
+
+    // Stuck build-session GC: real, already-promoted personas (e.g. GitHub
+    // Issue Sentinel, Tech News Brief) were observed carrying build sessions
+    // parked forever at a non-terminal phase (draft_ready / testing / …). Those
+    // ghosts resurface anywhere sessions are listed. Reconcile them at the
+    // source: any non-terminal session on a persona whose lifecycle is NOT
+    // `draft` and that has had no activity for ≥24h is transitioned to
+    // `cancelled` (a legal transition from every non-terminal phase per
+    // `BuildPhase::validate_transition`). Draft personas' in-flight builds and
+    // recently-active sessions are never touched. Idempotent; always on (no
+    // opt-in gate, because this only cancels — it never deletes data).
+    {
+        use crate::db::repos::core::build_sessions as bs_repo;
+        match bs_repo::expire_stale_non_terminal(pool, bs_repo::STALE_SESSION_MIN_AGE_HOURS) {
+            Ok(n) if n > 0 => tracing::info!(
+                "Stuck build-session GC: cancelled {} stale non-terminal session(s) on non-draft personas",
+                n
+            ),
+            Ok(_) => {}
+            Err(e) => tracing::error!("Stuck build-session GC error: {}", e),
         }
     }
 }
@@ -2625,6 +3033,83 @@ mod tests {
         assert_eq!(slots[1].hour(), 11);
     }
 
+    // ========================================================================
+    // Direction 1: discarded-while-offline count. The tick fires ONE live slot
+    // and (optionally) some backfill extras; every OTHER missed slot in the gap
+    // is discarded. `discarded = missed_total - backfill_emitted_for_trigger`,
+    // where `missed_total = compute_missed_backfill_slots(...).len()`.
+    // ========================================================================
+
+    #[test]
+    fn test_discarded_default_cap_drops_all_older_slots() {
+        // DEFAULT single-catch-up (backfill_cap == 1 → 0 extras emitted). A
+        // daily job whose app was closed across an 8-hour gap of an hourly cron:
+        // 8 slots after 04:00 up to 12:30 → compute drops the live (12:00) → 7
+        // older slots. With 0 backfill extras all 7 are discarded.
+        use crate::db::models::TriggerConfig;
+        use chrono::TimeZone;
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("0 * * * *".into()),
+            interval_seconds: None,
+            timezone: Some("UTC".into()),
+            max_backfill: None, // default → cap 1 → 0 extras
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 4, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
+        let missed_total = compute_missed_backfill_slots(&cfg, last, now, 0).len();
+        assert_eq!(missed_total, 7, "05:00..=11:00 older slots (12:00 is live)");
+        let backfill_emitted_for_trigger = 0usize; // cap == 1
+        let discarded = missed_total.saturating_sub(backfill_emitted_for_trigger);
+        assert_eq!(discarded, 7);
+    }
+
+    #[test]
+    fn test_discarded_partial_cap_reduces_count() {
+        // With max_backfill = 4 the tick replays up to (cap-1)=3 extras; the
+        // remaining older slots are discarded. Same 7-slot gap → 3 replayed,
+        // 4 discarded.
+        use crate::db::models::TriggerConfig;
+        use chrono::TimeZone;
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("0 * * * *".into()),
+            interval_seconds: None,
+            timezone: Some("UTC".into()),
+            max_backfill: Some(4),
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 4, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
+        let missed_total = compute_missed_backfill_slots(&cfg, last, now, 0).len();
+        assert_eq!(missed_total, 7);
+        let backfill_emitted_for_trigger = 3usize; // (cap - 1), budget permitting
+        let discarded = missed_total.saturating_sub(backfill_emitted_for_trigger);
+        assert_eq!(discarded, 4);
+    }
+
+    #[test]
+    fn test_discarded_none_when_no_gap() {
+        // Continuously-running scheduler: last fire is the previous slot, so
+        // there is no older gap → 0 missed → 0 discarded (no record/emit).
+        use crate::db::models::TriggerConfig;
+        use chrono::TimeZone;
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("0 * * * *".into()),
+            interval_seconds: None,
+            timezone: Some("UTC".into()),
+            max_backfill: None,
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
+        let missed_total = compute_missed_backfill_slots(&cfg, last, now, 0).len();
+        assert_eq!(missed_total, 0);
+        assert_eq!(missed_total.saturating_sub(0), 0);
+    }
+
     #[test]
     fn test_backfill_hard_cap_protects_against_amplification() {
         // Interval 60s (every minute). 4 hours of downtime = 240 missed
@@ -2683,6 +3168,20 @@ mod tests {
         assert_eq!(v["fired_at"], "2026-05-01T10:00:00Z");
         assert_eq!(v["cron"], "0 * * * *");
         assert_eq!(v["trigger_id"], "t-bf-1");
+    }
+
+    #[test]
+    fn test_overlap_skip_payload_shape() {
+        // Direction 2: the overlap-skip signal must self-identify with the
+        // trigger, a machine-readable reason, and a timestamp so the event feed
+        // can render "skipped — previous run still active".
+        let trigger = make_trigger_for_test("t-ov-1", "p-y", "schedule");
+        let json = synthesize_overlap_skip_payload(&trigger, "2026-05-01T10:00:00Z");
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["trigger_id"], "t-ov-1");
+        assert_eq!(v["target_persona_id"], "p-y");
+        assert_eq!(v["reason"], "previous_run_active");
+        assert_eq!(v["skipped_at"], "2026-05-01T10:00:00Z");
     }
 
     #[test]

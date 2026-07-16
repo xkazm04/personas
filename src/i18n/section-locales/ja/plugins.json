@@ -198,7 +198,8 @@
     "headless_badge": "バックグラウンド",
     "headless_no_terminal": "バックグラウンドセッション — ターミナルなしで実行中。返信は「要対応」バナーから、進捗は Insights に表示されます。",
     "spawn_headless_hint": "ヘッドレスモード — ライブターミナルなしで、CPU と RAM の負荷を大幅に軽減。返信は「要対応」バナーから、進捗は Insights で確認できます。",
-    "spawn_headless_toggle": "バックグラウンドで実行（ターミナルなし）"
+    "spawn_headless_toggle": "バックグラウンドで実行（ターミナルなし）",
+    "live_slot_hibernated_toast": "アクティブセッション上限を超えないよう {name} をハイバネートしました。会話は保存されています。再開するにはウェイクしてください。"
   },
   "title": "プラグイン",
   "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",
@@ -2531,7 +2532,9 @@
     "progress_past": "過去",
     "goal_view_missions": "ミッション",
     "mission_link_goal": "ゴールに紐づける…",
-    "mission_unlinked": "ゴールなし"
+    "mission_unlinked": "ゴールなし",
+    "goal_field_kpi": "リンクされた KPI",
+    "goal_kpi_none": "リンクされた KPI なし"
   },
   "dev_projects": {
     "active_goals": "アクティブなゴール",

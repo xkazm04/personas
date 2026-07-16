@@ -5,10 +5,15 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaTrigger } from '@/lib/types/types';
 
-// The destructive-action gate (UAT P5) intercepts only SCHEDULER-fired triggers
-// — schedule + polling — so the control is shown only for those (where it has
-// effect). Event-driven triggers react to persona events, a different path.
-const GATED_TYPES = new Set(['schedule', 'polling']);
+// The destructive-action gate intercepts triggers that fire a run autonomously
+// on external input: SCHEDULER-fired (schedule + polling, held at scheduler
+// tick) and WEBHOOK (held at dispatch — UAT F-MAJOR-11, an alert/ticket
+// webhook was the one external-ingress type left ungated). The control shows
+// only for those, where it has real effect. `event_listener` triggers react to
+// internal persona events (chain steps) and are not gated here — the run gate
+// would need subscription→trigger resolution that isn't plumbed, and surfacing
+// a control the backend doesn't honor would be a worse (lying) signal.
+const GATED_TYPES = new Set(['schedule', 'polling', 'webhook']);
 
 /**
  * Per-trigger "what happens when this fires unattended" control: run normally

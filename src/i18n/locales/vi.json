@@ -1655,7 +1655,25 @@
       "eco_subtitle": "Mỗi model giải quyết eval bao nhiêu lần và mỗi lần thành công tốn bao nhiêu.",
       "eco_title": "Hiệu quả chi phí",
       "vr_col_tokens": "Token",
-      "vr_tokens_tooltip": "Trung bình {input} vào / {output} ra mỗi lần chạy"
+      "vr_tokens_tooltip": "Trung bình {input} vào / {output} ra mỗi lần chạy",
+      "vr_reconcile_clear_all": "Xóa tất cả ghim",
+      "vr_reconcile_clear_pin": "Xóa ghim",
+      "vr_reconcile_desc_one": "1 use case vẫn ghim một model khác với model bạn vừa đề bạt ({model}). Nó sẽ tiếp tục chạy trên model đã ghim cho đến khi bạn xóa ghim.",
+      "vr_reconcile_desc_other": "{count} use case vẫn ghim các model khác với model bạn vừa đề bạt ({model}). Chúng sẽ tiếp tục chạy trên các model đã ghim cho đến khi bạn xóa ghim.",
+      "vr_reconcile_done": "Xong",
+      "vr_reconcile_now_follows": "Hiện theo mặc định ({model})",
+      "vr_reconcile_pinned_to": "đã ghim vào {model}",
+      "vr_reconcile_title": "Điều chỉnh ghim model theo use case",
+      "improve_failed": "Không thể chuẩn bị bản tóm tắt cải thiện",
+      "improve_focus": "Sẽ tập trung vào {metric} (trung bình {score}/100)",
+      "improve_run_seed_measured": "Cải thiện persona \"{name}\". Bài kiểm tra gần nhất cho thấy {metric} là điểm yếu nhất (trung bình {score}/100). Tôi nên tập trung vào điều gì? ",
+      "improve_run_seed_plain": "Cải thiện persona \"{name}\" dựa trên kết quả kiểm tra gần nhất. Tôi nên tập trung vào điều gì? ",
+      "improve_seeded": "Đã mở bản tóm tắt cải thiện trong Athena",
+      "vr_cost_unknown": "không áp dụng",
+      "vr_cost_unknown_tooltip": "Chi phí không được theo dõi cho mô hình cục bộ",
+      "vr_degraded_tooltip": "{count} trên {total} mẫu được chấm bằng phương pháp dự phòng (bộ đánh giá LLM không khả dụng)",
+      "vr_partial_tooltip": "Tổng hợp từ điểm thành phần chưa đầy đủ — không thể so sánh trực tiếp",
+      "vr_score_caution": "Điểm cần thận trọng"
     },
     "design": {
       "select_agent": "Chọn tác nhân để bắt đầu phân tích thiết kế",
@@ -2532,7 +2550,15 @@
       "failed": "Thất bại",
       "error": "Lỗi",
       "invalid_json": "JSON không hợp lệ — hãy sửa trước khi chạy.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "Lỗi",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "Đầu ra đã bị cắt bớt — công cụ trả về nhiều hơn giới hạn hiển thị.",
+      "panel_subtitle": "Gọi trực tiếp một công cụ bằng thông tin xác thực của persona này.",
+      "panel_title": "Chạy công cụ",
+      "retryable_hint": "Có thể thành công khi thử lại.",
+      "run_tool": "Chạy công cụ",
+      "builtin_note": "Công cụ tích hợp — chạy bên trong các lần thực thi persona (không chạy thủ công từ đây). Hãy chạy một trong các khả năng của persona để thử nghiệm."
     },
     "health_check": {
       "title": "Kiểm tra sức khỏe tác nhân",
@@ -3532,6 +3558,38 @@
       "done": "Đã nhân bản thành \"{name}\"",
       "done_with_wiring": "Đã nhân bản thành \"{name}\" — đã sao chép {triggers} trình kích hoạt và {subscriptions} đăng ký, bị tắt trên bản sao",
       "failed": "Không thể nhân bản tác nhân"
+    },
+    "change_history": {
+      "empty": "Chưa có thay đổi nào được ghi lại",
+      "empty_value": "(trống)",
+      "fields": {
+        "cli_awareness_enabled": "Nhận biết CLI",
+        "color": "Màu sắc",
+        "description": "Mô tả",
+        "design_context": "Ngữ cảnh thiết kế",
+        "enabled": "Đã bật",
+        "headless": "Chế độ headless",
+        "icon": "Biểu tượng",
+        "lifecycle": "Vòng đời",
+        "max_budget_usd": "Ngân sách",
+        "max_concurrent": "Số lượng đồng thời tối đa",
+        "max_turns": "Số lượt tối đa",
+        "model_profile": "Model",
+        "name": "Tên",
+        "notification_channels": "Kênh thông báo",
+        "parameters": "Tham số",
+        "sensitive": "Xem trước dữ liệu nhạy cảm",
+        "structured_prompt": "Prompt",
+        "system_prompt": "Prompt hệ thống",
+        "timeout_ms": "Thời gian chờ"
+      },
+      "sources": {
+        "editor": "Trình chỉnh sửa",
+        "fanout": "Phân tán",
+        "header": "Tiêu đề",
+        "other": "Khác"
+      },
+      "title": "Lịch sử thay đổi"
     }
   },
   "vault": {
@@ -4247,7 +4305,9 @@
       "encrypt_now_other": "Mã hóa {count} thông tin xác thực chưa mã hóa ngay",
       "encrypt_done_one": "Hoàn tất -- {migrated} thông tin xác thực đã mã hóa.",
       "encrypt_done_other": "Hoàn tất -- {migrated} thông tin xác thực đã mã hóa.",
-      "encrypt_partial": "Đã mã hóa {migrated}, thất bại {failed}. Hãy thử lại hoặc khởi động lại ứng dụng."
+      "encrypt_partial": "Đã mã hóa {migrated}, thất bại {failed}. Hãy thử lại hoặc khởi động lại ứng dụng.",
+      "audit_gap_detail": "{count} bản ghi kiểm toán thông tin đăng nhập không thể được ghi kể từ khi khởi động. Quyền truy cập thông tin đăng nhập chưa bao giờ bị chặn, nhưng các sự kiện truy cập đó bị thiếu trong nhật ký kiểm toán. Hãy kiểm tra dung lượng đĩa hoặc tình trạng cơ sở dữ liệu.",
+      "audit_gap_title": "Nhật ký kiểm toán chưa đầy đủ"
     },
     "delete_dialog": {
       "title": "Xóa thông tin xác thực",
@@ -4428,7 +4488,9 @@
       "filter_all_health": "Tất cả tình trạng",
       "health_healthy": "Tốt",
       "health_failing": "Lỗi",
-      "health_untested": "Chưa kiểm tra"
+      "health_untested": "Chưa kiểm tra",
+      "health_unverifiable": "Không thể xác minh",
+      "health_unverifiable_tooltip": "Trình kết nối này không có kiểm tra trực tiếp — thông tin xác thực được lưu nhưng không thể xác minh."
     },
     "foraging": {
       "no_credentials_found": "Không tìm thấy thông tin xác thực",
@@ -6105,7 +6167,13 @@
       "event_data": "Dữ liệu sự kiện",
       "error": "Lỗi",
       "skipped_stat_label": "{skipped} bị bỏ qua",
-      "skipped_stat_tooltip": "{skipped} trong số {total} sự kiện trong 7 ngày qua không có người đăng ký nào và đã bị bỏ qua ({rate}). Tỷ lệ cao cho thấy có một trình kích hoạt mà không ai lắng nghe."
+      "skipped_stat_tooltip": "{skipped} trong số {total} sự kiện trong 7 ngày qua không có người đăng ký nào và đã bị bỏ qua ({rate}). Tỷ lệ cao cho thấy có một trình kích hoạt mà không ai lắng nghe.",
+      "type_labels": {
+        "sla_breach_opened": "Vi phạm SLA đã mở",
+        "sla_breach_recovered": "Đã khắc phục vi phạm SLA",
+        "schedule_missed_offline": "Lần chạy theo lịch bị bỏ lỡ (ngoại tuyến)",
+        "schedule_skipped_overlap": "Bỏ qua lịch (lần chạy trước đang hoạt động)"
+      }
     },
     "health": {
       "title": "Sức khỏe tác nhân",
@@ -6622,7 +6690,9 @@
     },
     "cascade": {
       "title": "Bản đồ tầng chuỗi",
-      "no_chains": "Không phát hiện chuỗi -- tất cả personas hoạt động độc lập"
+      "no_chains": "Không phát hiện chuỗi -- tất cả personas hoạt động độc lập",
+      "cofail_insufficient": "không có lỗi đồng thời",
+      "cofail_pct": "{pct}% lỗi đồng thời"
     },
     "predictive_alerts_extra": {
       "title": "Cảnh báo dự đoán",
@@ -6854,7 +6924,12 @@
       "loading_status_page": "Đang tải trang trạng thái…",
       "loading_reliability": "Đang tải dữ liệu độ tin cậy…",
       "heartbeats_btn": "Nhịp tim",
-      "reliability_btn": "Độ tin cậy"
+      "reliability_btn": "Độ tin cậy",
+      "source_byom_policy": "Chính sách BYOM",
+      "source_healing_issues": "Sự cố khắc phục",
+      "source_monthly_spend": "Chi tiêu hàng tháng",
+      "source_provider_stats": "Thống kê nhà cung cấp",
+      "sources_unavailable": "Không thể tải {sources} — điểm số có thể không chính xác."
     },
     "popup_fields": {
       "sign_up_free_at": "Đăng ký miễn phí tại",
@@ -7153,7 +7228,11 @@
       "seg_healing": "Phục hồi",
       "seg_stability": "Ổn định",
       "seg_success": "Thành công",
-      "show_all": "Hiện tất cả"
+      "show_all": "Hiện tất cả",
+      "fleet_avg_badge": "TB đội máy",
+      "fleet_avg_tooltip": "Không có lần chạy nào được ghi cho persona này trong khoảng thời gian — đang hiển thị tỷ lệ thành công trung bình toàn đội, không phải giá trị đo theo từng persona.",
+      "no_data_badge": "không có dữ liệu",
+      "no_data_tooltip": "Không có lần chạy hoàn tất hoặc thất bại nào cho persona này trong khoảng thời gian — tỷ lệ thành công là giá trị tạm, không phải đo được."
     },
     "provenance": {
       "sourced_tip": "Trích dẫn {count} nguồn bạn có thể truy vết và kiểm tra.",
@@ -10564,7 +10643,13 @@
     "local_tooling_label": "Công cụ tích hợp sẵn",
     "local_tooling_sentence": "Personas có sẵn công cụ cục bộ được kết nối ngay từ đầu — nhắn tin, cơ sở dữ liệu, vector, và nhiều hơn nữa — không cần thông tin xác thực.",
     "resume_continue_title": "Tiếp tục từ nơi bạn đã dừng",
-    "resume_continue_cta": "Tiếp tục hướng dẫn"
+    "resume_continue_cta": "Tiếp tục hướng dẫn",
+    "replay_setup": "Chạy lại thiết lập",
+    "resume_setup": "Tiếp tục thiết lập",
+    "tour_handoff_accept": "Bắt đầu tham quan",
+    "tour_handoff_body": "Tác nhân đầu tiên của bạn đã hoạt động. Hãy tham quan nhanh phần còn lại — kết nối và chạy tác nhân — và chúng tôi sẽ bỏ qua những phần bạn vừa làm.",
+    "tour_handoff_dismiss": "Để sau",
+    "tour_handoff_title": "Bạn muốn tham quan có hướng dẫn?"
   },
   "system_health": {
     "install_all": "Cài đặt tất cả phụ thuộc",
@@ -10971,7 +11056,15 @@
     "last24h_failed_count": "{count} thất bại",
     "last24h_show_all": "Hiện tất cả ({count})",
     "last24h_show_less": "Hiển thị ít hơn",
-    "last24h_retry_at": "tự động thử lại {time}"
+    "last24h_retry_at": "tự động thử lại {time}",
+    "unverified": "Chưa xác minh",
+    "unverified_tooltip": "Không có bản ghi chạy cho khung giờ này — có thể đã bị bỏ qua, giới hạn tốc độ, vượt ngân sách hoặc ứng dụng đã đóng.",
+    "missed_backfill_cta": "Chạy bù",
+    "missed_dismiss": "Bỏ qua thông báo lần chạy bị lỡ",
+    "missed_offline": "Đã bỏ lỡ {count} khi ngoại tuyến",
+    "missed_offline_tooltip": "Các lần chạy theo lịch đã bị bỏ qua khi ứng dụng đóng. Chạy bù sẽ phát lại chúng (đã khử trùng lặp và giới hạn), hoặc bỏ qua để xóa.",
+    "reason_invalid_timezone": "Tạm dừng — múi giờ không hợp lệ",
+    "reason_unscheduled": "Tạm dừng — không có lịch hợp lệ"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
@@ -11504,6 +11597,30 @@
       "quarantined": "Trigger đã bị cách ly",
       "healing_abandoned": "Đã ngừng tự sửa",
       "healing_capped": "Hết lượt thử sửa lỗi"
+    },
+    "build": {
+      "analyzing": "Đang phân tích",
+      "awaiting_input": "Đang chờ nhập liệu",
+      "cancelled": "Đã hủy",
+      "completed": "Hoàn tất",
+      "draft_ready": "Bản nháp sẵn sàng",
+      "failed": "Thất bại",
+      "initializing": "Đang khởi tạo",
+      "promoted": "Đã thăng cấp",
+      "resolving": "Đang xử lý",
+      "test_complete": "Kiểm thử hoàn tất",
+      "testing": "Đang kiểm thử"
+    },
+    "tool_error_kind": {
+      "auth": "Xác thực",
+      "http": "Lỗi HTTP",
+      "misconfigured": "Cấu hình sai",
+      "rate_limited": "Bị giới hạn tần suất",
+      "timeout": "Hết thời gian chờ",
+      "tool_error": "Công cụ thất bại",
+      "transport": "Kết nối thất bại",
+      "unknown": "Lỗi không xác định",
+      "unsupported": "Không thể chạy ở đây"
     }
   },
   "project_overview": {
@@ -11758,7 +11875,8 @@
       "headless_badge": "Nền",
       "headless_no_terminal": "Phiên chạy nền — không có terminal. Trả lời từ băng rôn \"Cần bạn\"; tiến độ hiển thị trong Insights.",
       "spawn_headless_hint": "Chế độ headless — không có terminal trực tiếp, nhẹ hơn nhiều về CPU và RAM. Trả lời từ băng rôn \"Cần bạn\"; theo dõi tiến độ trong Insights.",
-      "spawn_headless_toggle": "Chạy nền (không có terminal)"
+      "spawn_headless_toggle": "Chạy nền (không có terminal)",
+      "live_slot_hibernated_toast": "{name} đã được ngủ đông để giữ trong giới hạn phiên hoạt động — cuộc trò chuyện được lưu; đánh thức để tiếp tục."
     },
     "title": "Plugin",
     "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",
@@ -14091,7 +14209,9 @@
       "progress_past": "Quá khứ",
       "goal_view_missions": "Nhiệm vụ",
       "mission_link_goal": "Liên kết với mục tiêu…",
-      "mission_unlinked": "Chưa có mục tiêu"
+      "mission_unlinked": "Chưa có mục tiêu",
+      "goal_field_kpi": "KPI được liên kết",
+      "goal_kpi_none": "Không có KPI liên kết"
     },
     "dev_projects": {
       "active_goals": "mục tiêu đang hoạt động",
@@ -15651,7 +15771,9 @@
       "collab_label": "Hợp tác",
       "deck_phase_paused": "Đã tạm dừng",
       "deck_pause": "Tạm dừng",
-      "deck_resume": "Tiếp tục"
+      "deck_resume": "Tiếp tục",
+      "readiness_chip_label": "Cần thiết lập",
+      "readiness_chip_tooltip": "Các trình kết nối của thành viên này vẫn cần được thiết lập. Thành viên có thể tham gia và thảo luận, nhưng các khả năng bị tạm giữ — sẽ không thực hiện hành động nào cho đến khi bạn thêm thông tin xác thực (mở mục Kết nối trong thanh bên)."
     },
     "memory_created": "Đã lưu ghi nhớ vào sổ của nhóm",
     "memory_updated": "Đã cập nhật ghi nhớ",
@@ -15855,7 +15977,11 @@
       "whats_new": "Có gì mới",
       "back_to_plugins": "Plugin",
       "roadmap": "Lộ trình",
-      "groups_label": "Nhóm"
+      "groups_label": "Nhóm",
+      "draft_agent_fallback": "Tác nhân nháp",
+      "draft_needs_answers_one": "{name} — cần 1 câu trả lời",
+      "draft_needs_answers_other": "{name} — cần {count} câu trả lời",
+      "draft_switch_title": "Chuyển sang bản nháp: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "Sao chép",
@@ -17019,7 +17145,11 @@
     "group_needs_review": "Chờ đánh giá đầu tiên",
     "group_low_scores": "Điểm thấp",
     "group_declining": "Xu hướng giảm",
-    "group_stale": "Đánh giá đã cũ"
+    "group_stale": "Đánh giá đã cũ",
+    "roster_unscored": "Chưa chấm điểm",
+    "roster_unscored_hint": "Director đã đánh giá tác nhân này nhưng không trả về điểm số; mở bản đánh giá để xem hướng dẫn.",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Được tạo từ đánh giá huấn luyện của Director — phê duyệt hoặc xử lý như bất kỳ vấn đề nào khác."
   },
   "remote_approval": {
     "title": "Yêu cầu chạy từ xa",
@@ -17225,7 +17355,10 @@
     "attn_overdue": "trễ {days}n",
     "attn_reason_crit": "Nghiêm trọng",
     "attn_reason_floor": "Sàn",
-    "attn_reason_pace": "Chậm"
+    "attn_reason_pace": "Chậm",
+    "evaluate_measured": "Đã đo {count} KPI.",
+    "evaluate_none_due": "Không có KPI nào đến hạn đo.",
+    "evaluate_partial": "Đã đo {measured}, {failed} thất bại"
   },
   "deliberation": {
     "agenda": "Chương trình nghị sự",

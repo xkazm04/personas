@@ -189,5 +189,8 @@
   "attn_overdue": "просрочено {days}д",
   "attn_reason_crit": "Критично",
   "attn_reason_floor": "Порог",
-  "attn_reason_pace": "Отстаёт"
+  "attn_reason_pace": "Отстаёт",
+  "evaluate_measured": "Измерено KPI: {count}.",
+  "evaluate_none_due": "Нет KPI, готовых к измерению.",
+  "evaluate_partial": "Измерено {measured}, не удалось {failed}"
 }

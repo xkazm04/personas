@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
-import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
+import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle, ShieldQuestion } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime, timeAgo } from '@/lib/utils/formatters';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
-import { capitalize } from './credentialListTypes';
+import { capitalize, readCredentialHealthState, type HealthState } from './credentialListTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export interface CredRow {
@@ -14,16 +15,27 @@ export interface CredRow {
   connector: ConnectorDefinition | undefined;
 }
 
-export function HealthBadge({ success }: { success: boolean | null }) {
+export function HealthBadge({ state }: { state: HealthState }) {
   const { t } = useTranslation();
-  if (success === null) {
+  if (state === 'untested') {
     return (
       <StatusBadge variant="neutral" icon={<HelpCircle className="w-3 h-3" />}>
         {t.vault.credential_list.health_untested}
       </StatusBadge>
     );
   }
-  if (success) {
+  if (state === 'unverifiable') {
+    // Neutral/muted — this connector has no live probe, so it is NOT a green
+    // "healthy" check. The tooltip explains why it can't be verified.
+    return (
+      <Tooltip content={t.vault.credential_list.health_unverifiable_tooltip}>
+        <StatusBadge variant="neutral" icon={<ShieldQuestion className="w-3 h-3" />}>
+          {t.vault.credential_list.health_unverifiable}
+        </StatusBadge>
+      </Tooltip>
+    );
+  }
+  if (state === 'verified') {
     return (
       <StatusBadge variant="success" icon={<CheckCircle2 className="w-3 h-3" />}>
         {t.vault.credential_list.health_healthy}
@@ -104,7 +116,7 @@ export function useCredentialColumns({
           key: 'health',
           label: t.vault.credential_list.col_status,
           width: '100px',
-          render: (row: CredRow) => <HealthBadge success={row.credential.healthcheck_last_success} />,
+          render: (row: CredRow) => <HealthBadge state={readCredentialHealthState(row.credential)} />,
         },
       ];
     }
@@ -137,7 +149,7 @@ export function useCredentialColumns({
         filterOptions: healthOptions,
         filterValue: healthFilter,
         onFilterChange: setHealthFilter,
-        render: (row: CredRow) => <HealthBadge success={row.credential.healthcheck_last_success} />,
+        render: (row: CredRow) => <HealthBadge state={readCredentialHealthState(row.credential)} />,
       },
       {
         key: 'last-used',

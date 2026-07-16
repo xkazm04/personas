@@ -852,7 +852,25 @@
     "eco_subtitle": "Con qué frecuencia cada modelo resuelve una evaluación y cuánto cuesta cada éxito.",
     "eco_title": "Eficiencia de costes",
     "vr_col_tokens": "Tokens",
-    "vr_tokens_tooltip": "{input} de entrada / {output} de salida por ejecución de media"
+    "vr_tokens_tooltip": "{input} de entrada / {output} de salida por ejecución de media",
+    "vr_reconcile_clear_all": "Borrar todos los anclajes",
+    "vr_reconcile_clear_pin": "Borrar anclaje",
+    "vr_reconcile_desc_one": "1 caso de uso todavía ancla un modelo distinto del que acabas de promover ({model}). Seguirá ejecutándose con su modelo anclado hasta que borres el anclaje.",
+    "vr_reconcile_desc_other": "{count} casos de uso todavía anclan modelos distintos del que acabas de promover ({model}). Seguirán ejecutándose con sus modelos anclados hasta que borres los anclajes.",
+    "vr_reconcile_done": "Listo",
+    "vr_reconcile_now_follows": "Ahora sigue el predeterminado ({model})",
+    "vr_reconcile_pinned_to": "anclado a {model}",
+    "vr_reconcile_title": "Reconciliar anclajes de modelo por caso de uso",
+    "improve_failed": "No se pudo preparar el resumen de mejora",
+    "improve_focus": "Se centrará en {metric} (promedio {score}/100)",
+    "improve_run_seed_measured": "Mejora la persona \"{name}\". Su última prueba marcó {metric} como el área más débil (promedio {score}/100). ¿En qué debería centrarme? ",
+    "improve_run_seed_plain": "Mejora la persona \"{name}\" según los resultados de su última prueba. ¿En qué debería centrarme? ",
+    "improve_seeded": "Resumen de mejora abierto en Athena",
+    "vr_cost_unknown": "n/d",
+    "vr_cost_unknown_tooltip": "El coste no se registra para modelos locales",
+    "vr_degraded_tooltip": "{count} de {total} muestras evaluadas con heurística de reserva (evaluador LLM no disponible)",
+    "vr_partial_tooltip": "Compuesto a partir de subpuntuaciones parciales — no comparable directamente",
+    "vr_score_caution": "La puntuación requiere cautela"
   },
   "design": {
     "select_agent": "Selecciona un agente para iniciar el análisis de diseño",
@@ -1729,7 +1747,15 @@
     "failed": "Fallido",
     "error": "Error",
     "invalid_json": "JSON no válido — corríjalo antes de ejecutar.",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "Error",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "Salida truncada — la herramienta devolvió más del límite de visualización.",
+    "panel_subtitle": "Invoca una herramienta directamente con las credenciales de esta persona.",
+    "panel_title": "Ejecutar una herramienta",
+    "retryable_hint": "Puede que funcione al reintentar.",
+    "run_tool": "Ejecutar herramienta",
+    "builtin_note": "Herramienta integrada: se ejecuta dentro de las ejecuciones de la persona (no manualmente desde aquí). Ejecuta una de las capacidades de la persona para probarla."
   },
   "health_check": {
     "title": "Control de salud del agente",
@@ -2729,5 +2755,37 @@
     "done": "Duplicado como «{name}»",
     "done_with_wiring": "Duplicado como «{name}»: se copiaron {triggers} activador(es) y {subscriptions} suscripción(es), desactivados en la copia",
     "failed": "No se pudo duplicar el agente"
+  },
+  "change_history": {
+    "empty": "Aún no hay cambios registrados",
+    "empty_value": "(vacío)",
+    "fields": {
+      "cli_awareness_enabled": "Conciencia de CLI",
+      "color": "Color",
+      "description": "Descripción",
+      "design_context": "Contexto de diseño",
+      "enabled": "Habilitado",
+      "headless": "Sin interfaz",
+      "icon": "Icono",
+      "lifecycle": "Ciclo de vida",
+      "max_budget_usd": "Presupuesto",
+      "max_concurrent": "Máx. concurrentes",
+      "max_turns": "Máx. turnos",
+      "model_profile": "Model",
+      "name": "Nombre",
+      "notification_channels": "Notificaciones",
+      "parameters": "Parámetros",
+      "sensitive": "Vista previa sensible",
+      "structured_prompt": "Prompt",
+      "system_prompt": "Prompt del sistema",
+      "timeout_ms": "Tiempo de espera"
+    },
+    "sources": {
+      "editor": "Editor",
+      "fanout": "Distribución",
+      "header": "Encabezado",
+      "other": "Otro"
+    },
+    "title": "Historial de cambios"
   }
 }

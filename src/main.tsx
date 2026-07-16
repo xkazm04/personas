@@ -24,6 +24,7 @@ import "./styles/globals.css";
 import { silentCatch } from '@/lib/silentCatch';
 import { ensureAppDataDir } from '@/lib/icons/customIconStore';
 import { bootstrapAppearanceMirror } from '@/lib/appearanceMirror';
+import { echoLanguageMirrorOnce } from '@/stores/i18nStore';
 
 // Capture whether the webview profile already holds appearance prefs, BEFORE the
 // theme store (imported transitively via App) can write its key. On a fresh /
@@ -259,6 +260,11 @@ void ensureAppDataDir().catch(() => { /* resolved lazily on first use */ });
 // from the backend on a fresh/cleared webview profile, and write-through-persists
 // every change. Fire-and-forget — localStorage remains the render-path authority.
 void bootstrapAppearanceMirror(appearanceHadLocal).catch(silentCatch('main:appearanceMirror'));
+
+// Echo the persisted UI language into the backend `app_language` mirror so
+// Rust prompt builders (companion turns) know the reply language even for
+// users who picked their language long ago and never switch again.
+echoLanguageMirrorOnce();
 
 if (root) {
   void preloadPersistedLocaleBeforeMount()

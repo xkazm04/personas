@@ -526,6 +526,58 @@ fn author_label(author_kind: &str) -> &'static str {
     }
 }
 
+/// Team-path honesty (Direction 2): post a one-time transcript note when a
+/// persona joins a deliberation with its capabilities stripped because its
+/// connectors still need setup. The stripping is advisory (the persona still
+/// speaks), but it was previously invisible — the team "ran" the persona with
+/// zero capabilities while its badge said it couldn't run. Deduped per
+/// (deliberation, persona) via `author_id`, so repeated turns don't spam.
+fn note_stripped_capabilities(
+    pool: &DbPool,
+    delib: &TeamDeliberation,
+    persona_id: &str,
+    persona_name: &str,
+    stripped_count: usize,
+) {
+    // Dedup: this is the ONLY system note we author with author_id = persona_id
+    // in a deliberation, so its presence is a clean once-guard.
+    let already = pool
+        .get()
+        .ok()
+        .and_then(|conn| {
+            conn.query_row(
+                "SELECT 1 FROM team_channel_messages \
+                 WHERE deliberation_id = ?1 AND author_kind = 'system' AND author_id = ?2 LIMIT 1",
+                params![delib.id, persona_id],
+                |_| Ok(true),
+            )
+            .optional()
+            .ok()
+            .flatten()
+        })
+        .unwrap_or(false);
+    if already {
+        return;
+    }
+    let caps = if stripped_count == 1 {
+        "1 capability is".to_string()
+    } else {
+        format!("{stripped_count} capabilities are")
+    };
+    let note = format!(
+        "⚠️ {persona_name}'s {caps} unavailable in this deliberation — its connectors still need setup. \
+         It can discuss but cannot take action until that's fixed (open the Connections section in the sidebar).",
+    );
+    let _ = team_channel_repo::post_deliberation_turn(
+        pool,
+        &delib.id,
+        &delib.team_id,
+        "system",
+        Some(persona_id),
+        &note,
+    );
+}
+
 /// Design D — the deliberation tick. Advances each open team deliberation by a
 /// bounded number of persona turns (rate-shaping); the Haiku moderator routes
 /// the key personas + curates the agenda; progress/stall + cost/idle floors
@@ -1231,7 +1283,18 @@ pub async fn run_persona_deliberation_turn(
     // Pre-flight (Fix 2/3): a persona whose connectors aren't set up can't run
     // capabilities — the executor's needs_credentials gate would reject them — so
     // don't offer any; it discusses instead of requesting unrunnable work.
+    //
+    // Team-path honesty (Direction 2): this stripping is ADVISORY and stays —
+    // the persona still participates — but it used to be INVISIBLE. Post a
+    // one-time system note into the transcript the user reads so the degraded
+    // participation is explicit: the badge says "can't run", and here the team
+    // silently ran it with zero capabilities. Deduped per (deliberation,
+    // persona) so it never spams across rounds.
     let capabilities = if setup_status.as_deref() == Some("needs_credentials") {
+        let would_have = parse_capabilities(design_context.as_deref());
+        if !would_have.is_empty() {
+            note_stripped_capabilities(pool, delib, persona_id, &name, would_have.len());
+        }
         Vec::new()
     } else {
         parse_capabilities(design_context.as_deref())

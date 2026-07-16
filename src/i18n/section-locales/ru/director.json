@@ -131,5 +131,9 @@
   "group_needs_review": "Ожидает первой проверки",
   "group_low_scores": "Низкие оценки",
   "group_declining": "Снижающаяся тенденция",
-  "group_stale": "Устаревшие проверки"
+  "group_stale": "Устаревшие проверки",
+  "roster_unscored": "Без оценки",
+  "roster_unscored_hint": "Director проверил этого агента, но не вернул оценку; откройте обзор, чтобы увидеть его рекомендации.",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "Создано в ходе коучингового обзора Director — одобрите или устраните, как любую другую проблему."
 }

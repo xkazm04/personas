@@ -161,5 +161,29 @@
     "quarantined": "Activador en cuarentena",
     "healing_abandoned": "Reparación abandonada",
     "healing_capped": "Reintentos de reparación agotados"
+  },
+  "build": {
+    "analyzing": "Analizando",
+    "awaiting_input": "Esperando entrada",
+    "cancelled": "Cancelado",
+    "completed": "Completado",
+    "draft_ready": "Borrador listo",
+    "failed": "Fallido",
+    "initializing": "Inicializando",
+    "promoted": "Promovido",
+    "resolving": "Resolviendo",
+    "test_complete": "Prueba completada",
+    "testing": "Probando"
+  },
+  "tool_error_kind": {
+    "auth": "Autenticación",
+    "http": "Error HTTP",
+    "misconfigured": "Mal configurado",
+    "rate_limited": "Límite de tasa alcanzado",
+    "timeout": "Tiempo agotado",
+    "tool_error": "Falló la herramienta",
+    "transport": "Falló la conexión",
+    "unknown": "Error desconocido",
+    "unsupported": "No ejecutable aquí"
   }
 }

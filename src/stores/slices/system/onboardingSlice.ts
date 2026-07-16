@@ -1,5 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
+import type { TourId } from "./tourSlice";
 import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { Persona } from "@/lib/types/types";
 import * as Sentry from "@sentry/react";
@@ -33,6 +34,14 @@ export interface OnboardingSlice {
   onboardingCreatedPersonaId: string | null;
   /** Non-null when onboarding was dismissed mid-flow — stores the step where the user left off. */
   onboardingDismissedAtStep: OnboardingStep | null;
+  /**
+   * True once the one-time "take the guided tour" handoff has been shown after
+   * a completed modal. Persisted so the offer NEVER re-appears — the modal and
+   * the tour are two parallel first-runs; the handoff bridges them exactly once.
+   */
+  tourHandoffOffered: boolean;
+  /** In-memory: the handoff offer card is currently on screen. */
+  tourHandoffVisible: boolean;
 
   // Actions
   startOnboarding: () => void;
@@ -61,6 +70,23 @@ export interface OnboardingSlice {
    * This is the escape hatch that makes Skip a reversible decision.
    */
   reopenOnboarding: () => void;
+  /**
+   * Show the one-time getting-started-tour offer. No-op if already offered, if
+   * the modal didn't produce a first agent, or if the tour is already done.
+   * Called from `finishOnboarding` — the modal-completion → tour handoff point.
+   */
+  offerTourHandoff: () => void;
+  /**
+   * Accept the handoff: hide the card and start the tour modal-aware. Because
+   * the completed modal already created a live first agent, the tour's
+   * "create your first agent" step is carried over as genuinely-done (honest
+   * completion — the outcome the step checks is satisfied) rather than
+   * re-taught. `tourId` is the tier-appropriate flavor (getting-started vs
+   * getting-started-simple), chosen by the caller.
+   */
+  acceptTourHandoff: (tourId: TourId) => void;
+  /** Decline the handoff: hide the card. The footer launcher still offers the tour. */
+  dismissTourHandoff: () => void;
 }
 
 // -- Sentry metrics helper ----------------------------------------------
@@ -85,10 +111,11 @@ const ONBOARDING_STORAGE_KEY = "onboarding-state-v1";
 interface PersistedOnboarding {
   completed: boolean;
   dismissedAtStep: OnboardingStep | null;
+  tourHandoffOffered: boolean;
 }
 
 function loadPersistedOnboarding(): PersistedOnboarding {
-  const empty: PersistedOnboarding = { completed: false, dismissedAtStep: null };
+  const empty: PersistedOnboarding = { completed: false, dismissedAtStep: null, tourHandoffOffered: false };
   try {
     if (typeof localStorage === "undefined") return empty;
     const raw = localStorage.getItem(ONBOARDING_STORAGE_KEY);
@@ -97,6 +124,7 @@ function loadPersistedOnboarding(): PersistedOnboarding {
     return {
       completed: parsed.completed === true,
       dismissedAtStep: isOnboardingStep(parsed.dismissedAtStep) ? parsed.dismissedAtStep : null,
+      tourHandoffOffered: parsed.tourHandoffOffered === true,
     };
   } catch (err) {
     silentCatch("stores/slices/system/onboardingSlice:load")(err);
@@ -139,6 +167,8 @@ export const createOnboardingSlice: StateCreator<
   onboardingSelectedReviewId: null,
   onboardingCreatedPersonaId: null,
   onboardingDismissedAtStep: loadPersistedOnboarding().dismissedAtStep,
+  tourHandoffOffered: loadPersistedOnboarding().tourHandoffOffered,
+  tourHandoffVisible: false,
 
   startOnboarding: () => {
     // Don't start if already completed or if user has personas already
@@ -191,7 +221,11 @@ export const createOnboardingSlice: StateCreator<
       onboardingStep: "appearance",
       onboardingDismissedAtStep: null,
     });
-    persistOnboarding({ completed: true, dismissedAtStep: null });
+    persistOnboarding({ completed: true, dismissedAtStep: null, tourHandoffOffered: get().tourHandoffOffered });
+    // The modal just completed with a live first agent — offer the guided tour
+    // once so the two first-runs hand off instead of teaching agent creation
+    // twice. offerTourHandoff self-guards (one-time + only if a persona exists).
+    get().offerTourHandoff();
   },
 
   dismissOnboarding: () => {
@@ -201,7 +235,7 @@ export const createOnboardingSlice: StateCreator<
       onboardingActive: false,
       onboardingDismissedAtStep: currentStep,
     });
-    persistOnboarding({ completed: get().onboardingCompleted, dismissedAtStep: currentStep });
+    persistOnboarding({ completed: get().onboardingCompleted, dismissedAtStep: currentStep, tourHandoffOffered: get().tourHandoffOffered });
   },
 
   reopenOnboarding: () => {
@@ -215,6 +249,41 @@ export const createOnboardingSlice: StateCreator<
       onboardingCreatedPersonaId: null,
       onboardingDismissedAtStep: null,
     });
-    persistOnboarding({ completed: false, dismissedAtStep: null });
+    persistOnboarding({ completed: false, dismissedAtStep: null, tourHandoffOffered: get().tourHandoffOffered });
+  },
+
+  offerTourHandoff: () => {
+    const s = get();
+    // One-time — never re-offer once shown (persisted flag).
+    if (s.tourHandoffOffered) return;
+    // Only a genuine modal completion (a created, live agent) hands off — a
+    // half-finished modal has nothing to hand off from.
+    if (!s.onboardingCreatedPersonaId) return;
+    // If the user already finished the tour some other way, don't nag.
+    const alreadyToured =
+      s.isTourCompleted?.("getting-started") || s.isTourCompleted?.("getting-started-simple");
+    if (alreadyToured) return;
+    trackMetric("onboarding.tour_offer_shown");
+    set({ tourHandoffVisible: true, tourHandoffOffered: true });
+    persistOnboarding({
+      completed: s.onboardingCompleted,
+      dismissedAtStep: s.onboardingDismissedAtStep,
+      tourHandoffOffered: true,
+    });
+  },
+
+  acceptTourHandoff: (tourId) => {
+    trackMetric("onboarding.tour_offer_accepted", { tour: tourId });
+    set({ tourHandoffVisible: false });
+    // Modal-aware start: carry over `persona-creation` as done (the modal
+    // adopted a template = a live first agent), so the tour skips re-teaching
+    // agent creation. Honest — the step's outcome is genuinely satisfied — and
+    // startTour's own firstUnfinished cursor lands the user on the next real step.
+    get().startTour(tourId, { preCompletedSteps: ["persona-creation"] });
+  },
+
+  dismissTourHandoff: () => {
+    trackMetric("onboarding.tour_offer_dismissed");
+    set({ tourHandoffVisible: false });
   },
 });

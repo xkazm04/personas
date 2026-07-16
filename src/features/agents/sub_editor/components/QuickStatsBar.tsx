@@ -57,22 +57,25 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
           color={stats.healthGrade === 'healthy' ? 'emerald' : stats.healthGrade === 'degraded' ? 'amber' : 'red'}
         />
       )}
-      {stats.avgLatencyMs > 0 && (
-        <StatChip
-          icon={<Clock className="w-3 h-3" />}
-          label={t.agents.editor_ui.latency}
-          value={stats.avgLatencyMs >= 1000 ? `${(stats.avgLatencyMs / 1000).toFixed(1)}s` : `${stats.avgLatencyMs}ms`}
-          color="blue"
-        />
-      )}
-      {stats.avgCostPerRun > 0 && (
-        <StatChip
-          icon={<DollarSign className="w-3 h-3" />}
-          label={t.agents.editor_ui.cost_per_run}
-          value={`$${stats.avgCostPerRun < 0.01 ? stats.avgCostPerRun.toFixed(4) : stats.avgCostPerRun.toFixed(3)}`}
-          color="violet"
-        />
-      )}
+      {/* Latency + cost are shown even at 0 (a genuinely instant / free run is
+          real data). "No timing/cost data at all" renders a muted em-dash so a
+          real $0/0ms never reads as missing. */}
+      <StatChip
+        icon={<Clock className="w-3 h-3" />}
+        label={t.agents.editor_ui.latency}
+        value={stats.hasLatencyData
+          ? (stats.avgLatencyMs >= 1000 ? `${(stats.avgLatencyMs / 1000).toFixed(1)}s` : `${stats.avgLatencyMs}ms`)
+          : '—'}
+        color={!stats.hasLatencyData || stats.avgLatencyMs === 0 ? 'slate' : 'blue'}
+      />
+      <StatChip
+        icon={<DollarSign className="w-3 h-3" />}
+        label={t.agents.editor_ui.cost_per_run}
+        value={stats.hasCostData
+          ? `$${stats.avgCostPerRun < 0.01 ? stats.avgCostPerRun.toFixed(4) : stats.avgCostPerRun.toFixed(3)}`
+          : '—'}
+        color={!stats.hasCostData || stats.avgCostPerRun === 0 ? 'slate' : 'violet'}
+      />
       {stats.lastRunAt && (
         <StatChip
           icon={<Activity className="w-3 h-3" />}

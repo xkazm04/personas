@@ -4,4 +4,14 @@
  * One cycle's aggregate outcome, returned to the caller so the UI can show
  * "evaluated N personas, emitted M verdicts".
  */
-export type DirectorReport = { evaluatedPersonas: number, verdictsEmitted: number, personasSkippedNoExecutions: number, generatedAt: string, };
+export type DirectorReport = { evaluatedPersonas: number, verdictsEmitted: number, personasSkippedNoExecutions: number, 
+/**
+ * Personas skipped because they had ZERO new executions since their last
+ * Director review (freshness dedup) — nothing happened to re-review.
+ */
+personasSkippedUnchanged: number, 
+/**
+ * Names of the freshness-skipped personas, so the batch outcome names them
+ * (not just a count).
+ */
+skippedUnchangedPersonas: Array<string>, generatedAt: string, };

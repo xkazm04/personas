@@ -54,19 +54,25 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 
 > **Destructive-action gate (`unattended_mode`).** Each trigger has a
 > `persona_triggers.unattended_mode` — `auto` (default), `dry_run`, or `approval`
-> — controlling what happens when it fires UNATTENDED on schedule (UAT P5
-> F-NO-DESTRUCTIVE-GATE; the gate is scoped to scheduler-fired schedule/polling
-> triggers). **`dry_run`:** at the event-bus execution-creation point
+> — controlling what happens when it fires UNATTENDED (UAT P5
+> F-NO-DESTRUCTIVE-GATE + F-MAJOR-11). The gate covers the trigger types that
+> fire a run autonomously on **external** input: scheduler-fired
+> (`schedule`/`polling`) **and** externally-fired `webhook` triggers. It does
+> NOT cover `event_listener` triggers (internal chain steps reacting to persona
+> events), where surfacing a control the run-gate can't honor would be a worse,
+> lying signal. **`dry_run`:** at the event-bus execution-creation point
 > (`engine/background.rs`) the launched run is flagged `is_simulation`, so
 > dispatch suppresses real outbound notification/connector delivery — the run is
-> observable but inert. **`approval`:** at the scheduler fire
-> (`engine/background.rs`) the event is NOT published; a `pending_trigger_fires`
-> row is recorded and the fire is held until a human resolves it
-> (`resolve_pending_trigger_fire` republishes the held event on approve, discards
-> on reject). The trigger detail drawer exposes the mode
-> (`UnattendedModeSection`), the trigger list surfaces held fires
-> (`PendingTriggerApprovals`) + a per-row mode badge. Commands:
-> `set_trigger_unattended_mode` / `list_pending_trigger_fires` /
+> observable but inert (both scheduler and webhook fires). **`approval`:** a
+> scheduler trigger holds at its tick (the event is never published); a webhook
+> trigger publishes its event directly, so its hold happens at dispatch
+> (`engine/background.rs`, once per event before any match). Either way a
+> `pending_trigger_fires` row is recorded and the fire is held until a human
+> resolves it (`resolve_pending_trigger_fire` republishes the held event on
+> approve, discards on reject). The trigger detail drawer exposes the mode
+> (`UnattendedModeSection`, shown for schedule/polling/webhook), the trigger list
+> surfaces held fires (`PendingTriggerApprovals`) + a per-row mode badge.
+> Commands: `set_trigger_unattended_mode` / `list_pending_trigger_fires` /
 > `resolve_pending_trigger_fire`.
 
 > **Row blast-radius cues (`triggerArmState.ts`).** A trigger row reports a
@@ -168,6 +174,9 @@ Design: [`docs/plans/pumper-inbuilt-feasibility.md`](../../plans/pumper-inbuilt-
 - **Push dispatch:** a CDC insert on `persona_events` wakes the event→execution dispatch loop immediately (`engine/subscription.rs` wake signal); the 2s/10s poll remains only as a degraded-mode heartbeat, so trigger latency is sub-second and bursts drain without the old 50-events-per-tick ceiling. CDC delivery itself counts drops observably and replays rows written during the startup warm-up window (and now decrypts encrypted payloads before emitting).
 - **Event-type vocabulary:** `publish_event` validates the free-form `event_type` against a known-type registry (`engine/event_vocabulary.rs`) — unknown types log a warning with the nearest canonical suggestion (never rejected), and the Events page type filter is fed from the registry (`list_known_event_types`) instead of only the loaded rows.
 - **Retention & dead triggers:** cleanup is count-bounded (`event_retention_max_count`, default 10,000 — terminal rows only; DLQ and pending rows exempt) on top of the 30-day age sweep, and the Events header shows an "N skipped" pill (from `get_event_skipped_stats`) so events that fire with no matching subscriber — dead triggers — are visible instead of silently marked Skipped.
+- **SLA breach events:** the reliability monitor (`engine/sla_breach.rs`) publishes `sla.breach.opened` / `sla.breach.recovered` onto the bus from the execution-completion path (`source_type = "sla_monitor"`, broadcast — not targeted at a persona). Zero-config, conservative fixed thresholds (≥ 5 consecutive failures, or < 50% success over ≥ 5 decided runs; recovery at 75% with hysteresis); durable per-persona episode dedup (`sla_breach_episodes`) means exactly one enter-event and one recovery per episode. See [overview → SLA breach events](../overview/README.md#sla-breach-events-zero-config). The payload (`SlaBreachEventPayload`) carries `personaId` + reason + streak/rate for healing.
+
+- **Scheduler reliability events:** the scheduler emits two informational (never listener-matched, so they never spawn an execution) bus events, both registered in the vocabulary and given feed labels: `schedule.missed.offline` (scheduled slots discarded while the app was offline — carries `missed_count`) and `schedule.skipped.overlap` (a due fire skipped because a previous run from the same trigger was still active). See [execution → entry points](../execution/01-entry-points.md#schedule-cron) for the full schedule-reliability behaviour (missed-runs badge, overlap skip, lost-fire healing issues, invalid-timezone reason).
 
 ## Backend command surface
 

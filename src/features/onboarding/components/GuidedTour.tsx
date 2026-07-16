@@ -281,7 +281,7 @@ export default function GuidedTour() {
               </div>
               <h3 className="typo-heading text-foreground/90 leading-tight">{tourDef.title}</h3>
             </div>
-            <Button variant="ghost" size="icon-sm" onClick={() => handleFinishTour()} title={t.onboarding.end_tour} data-testid="tour-completion-dismiss">
+            <Button variant="ghost" size="icon-sm" onClick={() => handleFinishTour()} title={t.onboarding.end_tour} aria-label={t.onboarding.end_tour} data-testid="tour-completion-dismiss">
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>
@@ -458,10 +458,10 @@ export default function GuidedTour() {
           </div>
           <div className="flex items-center gap-1">
             <TourNarrationButton control={narration} accentTextClass={colors.text} />
-            <Button variant="ghost" size="icon-sm" onClick={() => setIsMinimized(true)} title={t.onboarding.minimize} data-testid="tour-panel-minimize">
+            <Button variant="ghost" size="icon-sm" onClick={() => setIsMinimized(true)} title={t.onboarding.minimize} aria-label={t.onboarding.minimize} data-testid="tour-panel-minimize">
               <ChevronRight className="w-3.5 h-3.5" />
             </Button>
-            <Button variant="ghost" size="icon-sm" onClick={dismissTour} title={t.onboarding.end_tour} data-testid="tour-panel-dismiss">
+            <Button variant="ghost" size="icon-sm" onClick={dismissTour} title={t.onboarding.end_tour} aria-label={t.onboarding.end_tour} data-testid="tour-panel-dismiss">
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>

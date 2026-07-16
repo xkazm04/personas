@@ -44,6 +44,9 @@ export const EVENT_TYPE_COLORS = {
   trigger_fired:           { tailwind: 'text-indigo-400',  hex: '#818cf8' },
   credential_rotated:      { tailwind: 'text-amber-400',   hex: '#fbbf24' },
   health_check_failed:     { tailwind: 'text-red-400',     hex: '#f87171' },
+  // SLA reliability breach lifecycle (bus events from engine::sla_breach)
+  'sla.breach.opened':     { tailwind: 'text-red-400',     hex: '#f87171' },
+  'sla.breach.recovered':  { tailwind: 'text-green-400',   hex: '#4ade80' },
   deployment_started:      { tailwind: 'text-sky-400',     hex: '#38bdf8' },
   memory_created:          { tailwind: 'text-violet-400',  hex: '#a78bfa' },
   review_submitted:        { tailwind: 'text-teal-400',    hex: '#2dd4bf' },

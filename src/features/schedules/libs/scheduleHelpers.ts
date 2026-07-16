@@ -1,4 +1,5 @@
 import type { CronAgent } from '@/lib/bindings/CronAgent';
+import type { Translations } from '@/i18n/en';
 import { formatInterval, formatRelative } from '@/features/overview/sub_cron_agents/libs/cronHelpers';
 import { CRON_PRESETS } from '@/lib/utils/cronPresets';
 
@@ -47,6 +48,23 @@ export function parseScheduleEntry(agent: CronAgent): ScheduleEntry {
     health,
     failureRate: Number(failureRate),
   };
+}
+
+// -- Schedule pause reason (Direction 3) -------------------------------------
+
+/**
+ * Human-readable, translated label for a machine-readable schedule pause reason
+ * (from `ScheduleMissedRuns.statusReason`). Explains WHY a schedule shows as
+ * Paused/Unscheduled (next_trigger_at NULL) instead of leaving it a mystery.
+ * Unknown reasons fall back to a generic label.
+ */
+export function scheduleReasonLabel(t: Translations, reason: string): string {
+  switch (reason) {
+    case 'invalid_timezone':
+      return t.schedules.reason_invalid_timezone;
+    default:
+      return t.schedules.reason_unscheduled;
+  }
 }
 
 // -- Sorting -----------------------------------------------------------------

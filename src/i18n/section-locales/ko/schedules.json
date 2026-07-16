@@ -112,5 +112,13 @@
   "last24h_failed_count": "{count}개 실패",
   "last24h_show_all": "전체 보기 ({count})",
   "last24h_show_less": "간략히 보기",
-  "last24h_retry_at": "{time}에 자동 재시도"
+  "last24h_retry_at": "{time}에 자동 재시도",
+  "unverified": "미확인",
+  "unverified_tooltip": "이 슬롯에 대한 실행 기록이 없습니다 — 건너뛰었거나, 속도 제한, 예산 초과이거나 앱이 닫혀 있었을 수 있습니다.",
+  "missed_backfill_cta": "백필",
+  "missed_dismiss": "놓친 실행 알림 닫기",
+  "missed_offline": "오프라인 중 {count}회 놓침",
+  "missed_offline_tooltip": "앱이 닫혀 있는 동안 예약 실행이 건너뛰어졌습니다. 백필은 이를 다시 실행합니다(중복 제거 및 상한 적용). 닫으면 지워집니다.",
+  "reason_invalid_timezone": "일시중지 — 잘못된 시간대",
+  "reason_unscheduled": "일시중지 — 유효한 예약 없음"
 }

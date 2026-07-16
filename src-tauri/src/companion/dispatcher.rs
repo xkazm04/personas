@@ -182,10 +182,16 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // `compose_dashboard` is auto-fire — handled below alongside
     // `open_route` / `open_lab`. No approval card; the user already
     // asked for the dashboard, the click is friction.
-    // `use_connector` is intentionally NOT here — it auto-fires
-    // through the background-job worker (no approval card) so
-    // connector calls don't block the chat. See the special-case
-    // match arm below alongside `open_route` / `compose_dashboard`.
+    // `use_connector` is intentionally NOT in this always-approve list —
+    // it is gated PER CAPABILITY in the special-case match arm below:
+    // write/mutation capabilities (`ConnectorCapability::requires_approval`
+    // = true — send_message, post_message, delete_page, write_text_file,
+    // execute_mutation, …) route through an approval card; read-only ones
+    // (list_*, get_*, count_*) auto-fire through the background-job worker so
+    // they don't block the chat. (UAT F-MAJOR-7 mis-read the old "auto-fires,
+    // no approval card" wording here as "writes fire unattended" — they do
+    // not; the invariant is locked by `every_write_capability_requires_approval`
+    // in connectors.rs.)
     // Phase G — project registry + background jobs.
     "register_project",
     "enqueue_dev_job",
@@ -1350,12 +1356,14 @@ pub fn dispatch(
                 out.lab_opens
                     .push((persona_id.to_string(), mode.to_string()));
             }
-            // Phase F/G: `use_connector` auto-fires through the
-            // background-job worker. No approval card — friction the
-            // user explicitly rejected. Validation happens here so a
-            // hallucinated connector/capability surfaces as a system
-            // episode (Athena reads it next turn) instead of a wasted
-            // job queue slot.
+            // Phase F/G: `use_connector` is gated PER CAPABILITY (see the
+            // `cap.requires_approval` branch near the end of this arm):
+            // read-only capabilities auto-fire through the background-job
+            // worker (no approval card — friction the user explicitly
+            // rejected for list/get calls); write/mutation capabilities route
+            // through an approval card instead. Validation happens here so a
+            // hallucinated connector/capability surfaces as a system episode
+            // (Athena reads it next turn) instead of a wasted job queue slot.
             //
             // Rejection visibility: every rejection path below also
             // writes a System episode via `note_dispatcher_rejection`

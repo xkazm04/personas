@@ -160,6 +160,25 @@ export const labTagVersion = (id: string, tag: string) =>
 export const labRollbackVersion = (versionId: string) =>
   invoke<PersonaPromptVersion>("lab_rollback_version", { versionId });
 
+/**
+ * Atomically activate a Lab winner: rolls the version's prompt live (tagged
+ * production) AND switches the persona's active model in a SINGLE backend
+ * transaction. Replaces the former two-IPC dance (labRollbackVersion +
+ * updatePersona) which could partially apply. Returns the updated persona.
+ */
+export const labActivateVersion = (
+  personaId: string,
+  versionId: string,
+  modelId: string,
+  provider?: string,
+) =>
+  invoke<Persona>("lab_activate_version", {
+    personaId,
+    versionId,
+    modelId,
+    provider: provider,
+  });
+
 export const labGetErrorRate = (personaId: string, window?: number) =>
   invoke<number>("lab_get_error_rate", { personaId, window: window });
 

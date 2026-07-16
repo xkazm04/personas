@@ -1655,7 +1655,25 @@
       "eco_subtitle": "每个模型解决评估的频率及每次成功的成本。",
       "eco_title": "成本效益",
       "vr_col_tokens": "令牌",
-      "vr_tokens_tooltip": "每次运行平均输入 {input} / 输出 {output}"
+      "vr_tokens_tooltip": "每次运行平均输入 {input} / 输出 {output}",
+      "vr_reconcile_clear_all": "清除所有固定",
+      "vr_reconcile_clear_pin": "清除固定",
+      "vr_reconcile_desc_one": "仍有 1 个用例固定使用与你刚提升的模型（{model}）不同的模型。在你清除该固定之前，它将继续使用其固定的模型运行。",
+      "vr_reconcile_desc_other": "仍有 {count} 个用例固定使用与你刚提升的模型（{model}）不同的模型。在你清除这些固定之前，它们将继续使用各自固定的模型运行。",
+      "vr_reconcile_done": "完成",
+      "vr_reconcile_now_follows": "现在跟随默认值（{model}）",
+      "vr_reconcile_pinned_to": "已固定为 {model}",
+      "vr_reconcile_title": "协调用例模型固定",
+      "improve_failed": "无法准备改进方案",
+      "improve_focus": "将聚焦于 {metric}（平均 {score}/100）",
+      "improve_run_seed_measured": "改进角色\"{name}\"。它最近的测试将 {metric} 标记为最薄弱的部分（平均 {score}/100）。我应该重点关注什么？ ",
+      "improve_run_seed_plain": "根据角色\"{name}\"最近的测试结果改进它。我应该重点关注什么？ ",
+      "improve_seeded": "改进方案已在 Athena 中打开",
+      "vr_cost_unknown": "不适用",
+      "vr_cost_unknown_tooltip": "本地模型不跟踪成本",
+      "vr_degraded_tooltip": "{total} 个样本中有 {count} 个由启发式回退评分（LLM 评审不可用）",
+      "vr_partial_tooltip": "由部分子分数合成 — 无法直接比较",
+      "vr_score_caution": "分数需谨慎看待"
     },
     "design": {
       "select_agent": "选择代理以开始设计分析",
@@ -2532,7 +2550,15 @@
       "failed": "失败",
       "error": "错误",
       "invalid_json": "JSON 无效——请先修正后再运行。",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "失败",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "输出已截断——工具返回的内容超过了显示上限。",
+      "panel_subtitle": "使用此角色的凭据直接调用工具。",
+      "panel_title": "运行工具",
+      "retryable_hint": "重试后可能会成功。",
+      "run_tool": "运行工具",
+      "builtin_note": "内置工具——它在角色执行内部运行（无法从此处手动运行）。运行该角色的某项能力来试用它。"
     },
     "health_check": {
       "title": "代理健康检查",
@@ -3532,6 +3558,38 @@
       "done": "已复制为“{name}”",
       "done_with_wiring": "已复制为“{name}” — 已复制 {triggers} 个触发器和 {subscriptions} 个订阅（副本中已禁用）",
       "failed": "无法复制代理"
+    },
+    "change_history": {
+      "empty": "暂无变更记录",
+      "empty_value": "(空)",
+      "fields": {
+        "cli_awareness_enabled": "CLI 感知",
+        "color": "颜色",
+        "description": "描述",
+        "design_context": "设计上下文",
+        "enabled": "已启用",
+        "headless": "无头模式",
+        "icon": "图标",
+        "lifecycle": "生命周期",
+        "max_budget_usd": "预算",
+        "max_concurrent": "最大并发数",
+        "max_turns": "最大轮数",
+        "model_profile": "模型",
+        "name": "名称",
+        "notification_channels": "通知",
+        "parameters": "参数",
+        "sensitive": "敏感预览",
+        "structured_prompt": "提示词",
+        "system_prompt": "系统提示词",
+        "timeout_ms": "超时时间"
+      },
+      "sources": {
+        "editor": "编辑器",
+        "fanout": "扇出",
+        "header": "标题栏",
+        "other": "其他"
+      },
+      "title": "变更历史"
     }
   },
   "vault": {
@@ -4247,7 +4305,9 @@
       "encrypt_now_other": "立即加密 {count} 个未加密凭据",
       "encrypt_done_one": "完成——{migrated} 个凭据已加密。",
       "encrypt_done_other": "完成——{migrated} 个凭据已加密。",
-      "encrypt_partial": "已加密 {migrated} 个，失败 {failed} 个。请重试或重启应用。"
+      "encrypt_partial": "已加密 {migrated} 个，失败 {failed} 个。请重试或重启应用。",
+      "audit_gap_detail": "自启动以来有 {count} 条凭据审计记录未能写入。凭据访问从未被阻止，但这些访问事件在审计日志中缺失。请检查磁盘空间或数据库状态。",
+      "audit_gap_title": "审计记录不完整"
     },
     "delete_dialog": {
       "title": "删除凭据",
@@ -4428,7 +4488,9 @@
       "filter_all_health": "所有健康状态",
       "health_healthy": "健康",
       "health_failing": "异常",
-      "health_untested": "未测试"
+      "health_untested": "未测试",
+      "health_unverifiable": "无法验证",
+      "health_unverifiable_tooltip": "此连接器没有实时探测 — 凭据已存储但无法验证。"
     },
     "foraging": {
       "no_credentials_found": "未找到凭据",
@@ -6105,7 +6167,13 @@
       "event_data": "事件数据",
       "error": "错误",
       "skipped_stat_label": "{skipped} 条被跳过",
-      "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。"
+      "skipped_stat_tooltip": "过去 7 天内有 {skipped}/{total} 个事件没有任何订阅者而被跳过（{rate}）。跳过率过高意味着某个触发器没有任何监听者。",
+      "type_labels": {
+        "sla_breach_opened": "SLA 违规已开始",
+        "sla_breach_recovered": "SLA 违规已恢复",
+        "schedule_missed_offline": "错过的计划运行（离线）",
+        "schedule_skipped_overlap": "已跳过计划（上一次运行仍在进行）"
+      }
     },
     "health": {
       "title": "代理健康状况",
@@ -6622,7 +6690,9 @@
     },
     "cascade": {
       "title": "链式级联图",
-      "no_chains": "未检测到链 — 所有代理独立运行"
+      "no_chains": "未检测到链 — 所有代理独立运行",
+      "cofail_insufficient": "无共同故障",
+      "cofail_pct": "{pct}% 共同故障"
     },
     "predictive_alerts_extra": {
       "title": "预测告警",
@@ -6854,7 +6924,12 @@
       "loading_status_page": "正在加载状态页面…",
       "loading_reliability": "正在加载可靠性数据…",
       "heartbeats_btn": "心跳",
-      "reliability_btn": "可靠性"
+      "reliability_btn": "可靠性",
+      "source_byom_policy": "BYOM 策略",
+      "source_healing_issues": "修复问题",
+      "source_monthly_spend": "每月支出",
+      "source_provider_stats": "提供方统计",
+      "sources_unavailable": "无法加载 {sources}，评分可能不准确。"
     },
     "popup_fields": {
       "sign_up_free_at": "免费注册于",
@@ -7153,7 +7228,11 @@
       "seg_healing": "自愈",
       "seg_stability": "稳定性",
       "seg_success": "成功率",
-      "show_all": "显示全部"
+      "show_all": "显示全部",
+      "fleet_avg_badge": "集群平均",
+      "fleet_avg_tooltip": "该周期内未记录此角色的任何运行——显示的是集群整体平均成功率，而非按角色测得的值。",
+      "no_data_badge": "无数据",
+      "no_data_tooltip": "该周期内此角色没有已完成或失败的运行——成功率为占位值，并非实测。"
     },
     "provenance": {
       "sourced_tip": "引用了 {count} 个可追溯和审计的来源。",
@@ -10564,7 +10643,13 @@
     "local_tooling_label": "内置工具",
     "local_tooling_sentence": "Personas 从一开始就内置了本地工具——消息、数据库、向量等——无需凭据。",
     "resume_continue_title": "从上次中断处继续",
-    "resume_continue_cta": "继续导览"
+    "resume_continue_cta": "继续导览",
+    "replay_setup": "重新开始设置",
+    "resume_setup": "继续设置",
+    "tour_handoff_accept": "开始导览",
+    "tour_handoff_body": "你的第一个智能体已上线。快速导览其余功能——连接与运行智能体——我们会跳过你刚完成的部分。",
+    "tour_handoff_dismiss": "暂不",
+    "tour_handoff_title": "想要引导式导览吗？"
   },
   "system_health": {
     "install_all": "安装所有依赖",
@@ -10971,7 +11056,15 @@
     "last24h_failed_count": "{count} 次失败",
     "last24h_show_all": "显示全部（{count}）",
     "last24h_show_less": "收起",
-    "last24h_retry_at": "自动重试于 {time}"
+    "last24h_retry_at": "自动重试于 {time}",
+    "unverified": "未验证",
+    "unverified_tooltip": "此时段没有运行记录 — 可能被跳过、受速率限制、超出预算，或应用已关闭。",
+    "missed_backfill_cta": "补运行",
+    "missed_dismiss": "忽略错过运行提示",
+    "missed_offline": "离线期间错过 {count} 次",
+    "missed_offline_tooltip": "应用关闭期间跳过了计划运行。补运行会重放它们（去重并有上限），或忽略以清除。",
+    "reason_invalid_timezone": "已暂停 — 时区无效",
+    "reason_unscheduled": "已暂停 — 无有效计划"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
@@ -11504,6 +11597,30 @@
       "quarantined": "触发器已隔离",
       "healing_abandoned": "已放弃修复",
       "healing_capped": "修复重试已用尽"
+    },
+    "build": {
+      "analyzing": "分析中",
+      "awaiting_input": "等待输入",
+      "cancelled": "已取消",
+      "completed": "已完成",
+      "draft_ready": "草稿就绪",
+      "failed": "失败",
+      "initializing": "初始化中",
+      "promoted": "已晋升",
+      "resolving": "解析中",
+      "test_complete": "测试完成",
+      "testing": "测试中"
+    },
+    "tool_error_kind": {
+      "auth": "身份验证",
+      "http": "HTTP 错误",
+      "misconfigured": "配置错误",
+      "rate_limited": "速率受限",
+      "timeout": "超时",
+      "tool_error": "工具失败",
+      "transport": "连接失败",
+      "unknown": "未知错误",
+      "unsupported": "此处无法运行"
     }
   },
   "project_overview": {
@@ -11758,7 +11875,8 @@
       "headless_badge": "后台",
       "headless_no_terminal": "后台会话 — 无终端运行。通过“需要你”横幅回复；进度显示在 Insights 中。",
       "spawn_headless_hint": "无头模式 — 没有实时终端，CPU 和内存占用大幅降低。通过“需要你”横幅回复；在 Insights 中查看进度。",
-      "spawn_headless_toggle": "在后台运行（无终端）"
+      "spawn_headless_toggle": "在后台运行（无终端）",
+      "live_slot_hibernated_toast": "{name} 已休眠以保持在活动会话上限内——其对话已保存；唤醒它即可继续。"
     },
     "title": "插件",
     "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",
@@ -14091,7 +14209,9 @@
       "progress_past": "过去",
       "goal_view_missions": "任务",
       "mission_link_goal": "关联到目标…",
-      "mission_unlinked": "无目标"
+      "mission_unlinked": "无目标",
+      "goal_field_kpi": "关联的 KPI",
+      "goal_kpi_none": "无关联的 KPI"
     },
     "dev_projects": {
       "active_goals": "活跃目标",
@@ -15651,7 +15771,9 @@
       "collab_label": "协作",
       "deck_phase_paused": "已暂停",
       "deck_pause": "暂停",
-      "deck_resume": "继续"
+      "deck_resume": "继续",
+      "readiness_chip_label": "需要设置",
+      "readiness_chip_tooltip": "该成员的连接器仍需设置。它可以加入并参与讨论，但其能力被暂时保留——在你添加凭据之前不会执行任何操作（请打开侧边栏中的“连接”部分）。"
     },
     "memory_created": "记忆已保存到团队记录",
     "memory_updated": "记忆已更新",
@@ -15855,7 +15977,11 @@
       "whats_new": "新功能",
       "back_to_plugins": "插件",
       "roadmap": "路线图",
-      "groups_label": "分组"
+      "groups_label": "分组",
+      "draft_agent_fallback": "草稿智能体",
+      "draft_needs_answers_one": "{name} — 需要 1 个回答",
+      "draft_needs_answers_other": "{name} — 需要 {count} 个回答",
+      "draft_switch_title": "切换到草稿：{name}（{phase}）"
     },
     "execution_detail": {
       "copy": "复制",
@@ -17019,7 +17145,11 @@
     "group_needs_review": "待首次审查",
     "group_low_scores": "低分",
     "group_declining": "下降趋势",
-    "group_stale": "审查过期"
+    "group_stale": "审查过期",
+    "roster_unscored": "未评分",
+    "roster_unscored_hint": "Director 审查了此代理但未返回评分；打开审查以查看其指导。",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "由 Director 的辅导审查提出——像处理其他问题一样批准或解决它。"
   },
   "remote_approval": {
     "title": "远程运行请求",
@@ -17225,7 +17355,10 @@
     "attn_overdue": "逾期{days}天",
     "attn_reason_crit": "严重",
     "attn_reason_floor": "下限",
-    "attn_reason_pace": "落后"
+    "attn_reason_pace": "落后",
+    "evaluate_measured": "已测量 {count} 个 KPI。",
+    "evaluate_none_due": "没有到期需要测量的 KPI。",
+    "evaluate_partial": "已测量 {measured} 个，{failed} 个失败"
   },
   "deliberation": {
     "agenda": "议程",

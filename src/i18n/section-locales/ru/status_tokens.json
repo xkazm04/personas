@@ -161,5 +161,29 @@
     "quarantined": "Триггер в карантине",
     "healing_abandoned": "Восстановление прекращено",
     "healing_capped": "Попытки восстановления исчерпаны"
+  },
+  "build": {
+    "analyzing": "Анализ",
+    "awaiting_input": "Ожидание ввода",
+    "cancelled": "Отменено",
+    "completed": "Завершено",
+    "draft_ready": "Черновик готов",
+    "failed": "Сбой",
+    "initializing": "Инициализация",
+    "promoted": "Повышено",
+    "resolving": "Разрешение",
+    "test_complete": "Тест завершён",
+    "testing": "Тестирование"
+  },
+  "tool_error_kind": {
+    "auth": "Аутентификация",
+    "http": "Ошибка HTTP",
+    "misconfigured": "Неверная настройка",
+    "rate_limited": "Превышен лимит запросов",
+    "timeout": "Тайм-аут",
+    "tool_error": "Сбой инструмента",
+    "transport": "Ошибка соединения",
+    "unknown": "Неизвестная ошибка",
+    "unsupported": "Здесь запуск невозможен"
   }
 }

@@ -180,6 +180,27 @@ pub fn legacy_ipc_decrypt_calls() -> u64 {
     LEGACY_IPC_DECRYPT_CALLS.load(Ordering::Relaxed)
 }
 
+/// Cumulative count of FAILED credential-audit-log writes this process.
+///
+/// Mirrors the `LEGACY_IPC_DECRYPT_CALLS` pattern: decrypt/audit operations
+/// must never block on audit failure (availability preserved), but a decrypt
+/// that happened with no audit trail is a silent integrity gap — this counter
+/// makes the gap visible. Incremented by `audit_log::insert`'s error path and
+/// surfaced via `vault_status` as `credential_audit_write_failures`, rendered
+/// by `VaultTrustBadge`.
+static CREDENTIAL_AUDIT_WRITE_FAILURES: AtomicU64 = AtomicU64::new(0);
+
+/// Record one failed credential-audit write. Returns the new cumulative count.
+pub fn record_credential_audit_write_failure() -> u64 {
+    CREDENTIAL_AUDIT_WRITE_FAILURES.fetch_add(1, Ordering::Relaxed) + 1
+}
+
+/// Read the current failed-credential-audit-write counter.
+/// See `CREDENTIAL_AUDIT_WRITE_FAILURES`.
+pub fn credential_audit_write_failures() -> u64 {
+    CREDENTIAL_AUDIT_WRITE_FAILURES.load(Ordering::Relaxed)
+}
+
 // ---------------------------------------------------------------------------
 // SecureString -- zeroize-on-drop wrapper for in-memory secrets
 // ---------------------------------------------------------------------------

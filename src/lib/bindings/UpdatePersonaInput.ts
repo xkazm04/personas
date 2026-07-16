@@ -18,4 +18,11 @@ disabled_dims_json: string | null | null,
  * `None` = leave unchanged. Promote/archive/restore drive this; the repo
  * validates the value against `PersonaLifecycle`.
  */
-lifecycle: string | null, };
+lifecycle: string | null, 
+/**
+ * Change-log attribution only — NOT a persisted persona column. Tags each
+ * `update_persona` with its origin (`"editor" | "header" | "fanout" |
+ * "other"`) so the persona change history can say where an edit came from.
+ * `None` defaults to `"other"`. Excluded from the SQL SET clause.
+ */
+source: string | null, };

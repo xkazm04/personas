@@ -487,32 +487,63 @@ pub fn get_runs_by_automation(
     )
 }
 
-/// Mark automation runs stuck in 'running' as 'failed' when they exceed
-/// 2× their automation's configured timeout_ms without completion.
+/// Additive safety grace (ms) added on top of a run's computed worst-case
+/// budget before the reaper will touch it. Guards against clock skew and the
+/// small window between a webhook returning and `finalize_run` writing the
+/// terminal status, so a run that is genuinely about to complete is never
+/// reaped out from under itself.
+const REAP_SAFETY_GRACE_MS: i64 = 5_000;
+
+/// Mark automation runs stuck in 'running' as 'failed' once they exceed their
+/// **worst-case retry+backoff budget** without completing.
+///
+/// The previous heuristic (2× `timeout_ms`) could reap a run that was still
+/// legitimately inside its retry-backoff budget: `invoke_automation` makes up
+/// to `retry_count` (clamped 1..5) attempts, each allowed a full `timeout_ms`,
+/// separated by exponential backoff (1s, 2s, 4s, 8s — none hit the 30s cap
+/// within the 1..5 clamp). A 5-attempt / 30s-timeout automation can therefore
+/// legitimately run for 5×30s + (1+2+4+8)s = 165s, yet 2×30s = 60s would reap
+/// it mid-retry. The worst-case budget below is computed per-automation so the
+/// reaper only ever fires on runs that truly cannot still be in flight.
+///
+/// `worst_case_ms = max_attempts × timeout_ms + backoff_sum(max_attempts)`,
+/// where `max_attempts = clamp(retry_count, 1, 5)` and the backoff sum is the
+/// closed-form total for that attempt count (0 / 1000 / 3000 / 7000 / 15000).
+/// A `REAP_SAFETY_GRACE_MS` cushion is added on top. Falls back to a 30s-timeout
+/// single-attempt automation's budget (+grace) when the automation row is gone.
 ///
 /// Returns the number of runs reaped.
 pub fn reap_stale_runs(pool: &DbPool) -> Result<usize, AppError> {
     timed_query!("automation_runs", "automation_runs::reap_stale_runs", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
-        // Find runs stuck in 'running' whose elapsed time exceeds 2× the
-        // automation's timeout_ms (converted from ms to seconds for SQLite).
-        // Falls back to 60s (2×30s default) when the automation is missing.
-        let changed = conn.execute(
+        // Elapsed is compared in MILLISECONDS: julianday() diff is in days,
+        // ×86_400_000 → ms. `ma` = clamped attempt count; the CASE is the
+        // exact backoff sum for ma ∈ 1..5. `86400000.0` keeps the arithmetic
+        // in floating point to match the fractional julianday delta.
+        let sql = format!(
             "UPDATE automation_runs
              SET status = 'failed',
-                 error_message = 'Reaped: exceeded maximum expected duration without completion',
+                 error_message = 'Reaped: exceeded worst-case retry + backoff budget without completion',
                  completed_at = ?1
              WHERE status = 'running'
-               AND (julianday(?1) - julianday(started_at)) * 86400.0
+               AND (julianday(?1) - julianday(started_at)) * 86400000.0
                    > COALESCE(
-                       (SELECT 2.0 * pa.timeout_ms / 1000.0
+                       (SELECT
+                          max(min(COALESCE(pa.retry_count, 1), 5), 1) * COALESCE(pa.timeout_ms, 30000)
+                          + CASE max(min(COALESCE(pa.retry_count, 1), 5), 1)
+                              WHEN 1 THEN 0
+                              WHEN 2 THEN 1000
+                              WHEN 3 THEN 3000
+                              WHEN 4 THEN 7000
+                              ELSE 15000
+                            END
                         FROM persona_automations pa
                         WHERE pa.id = automation_runs.automation_id),
-                       60.0
-                     )",
-            params![now],
-        )?;
+                       30000
+                     ) + {REAP_SAFETY_GRACE_MS}"
+        );
+        let changed = conn.execute(&sql, params![now])?;
         Ok(changed)
     })
 }
@@ -536,4 +567,147 @@ pub fn get_runs_by_execution(
             Ok(items)
         }
     )
+}
+
+#[cfg(test)]
+mod reaper_tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use crate::db::models::CreatePersonaInput;
+    use crate::db::repos::core::personas;
+
+    fn make_persona(pool: &DbPool) -> String {
+        personas::create(
+            pool,
+            CreatePersonaInput {
+                name: "Automation Owner".into(),
+                system_prompt: "A real system prompt.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn make_automation(pool: &DbPool, persona_id: &str, timeout_ms: i64, retry_count: i32) -> String {
+        create(
+            pool,
+            CreateAutomationInput {
+                persona_id: persona_id.to_string(),
+                use_case_id: None,
+                name: "A".into(),
+                description: None,
+                platform: AutomationPlatform::Custom,
+                platform_workflow_id: None,
+                platform_url: None,
+                webhook_url: Some("https://example.com/hook".into()),
+                webhook_method: Some("POST".into()),
+                platform_credential_id: None,
+                credential_mapping: None,
+                input_schema: None,
+                output_schema: None,
+                timeout_ms: Some(timeout_ms),
+                retry_count: Some(retry_count),
+                fallback_mode: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    /// Create a `running` run and backdate its `started_at` by `secs_ago`.
+    fn running_run_started_secs_ago(pool: &DbPool, automation_id: &str, secs_ago: i64) -> String {
+        let run = create_run(pool, automation_id, None, None).unwrap();
+        let backdated = (chrono::Utc::now() - chrono::Duration::seconds(secs_ago)).to_rfc3339();
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "UPDATE automation_runs SET started_at = ?1 WHERE id = ?2",
+            params![backdated, run.id],
+        )
+        .unwrap();
+        run.id
+    }
+
+    fn status_of(pool: &DbPool, run_id: &str) -> String {
+        get_run_by_id(pool, run_id).unwrap().status.as_str().to_string()
+    }
+
+    #[test]
+    fn does_not_reap_run_inside_worst_case_budget() {
+        // timeout=1000ms, retry=3 → max_attempts=3, budget = 3*1000 + 3000
+        // backoff = 6000ms, + 5000ms grace = 11000ms (~11s).
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let auto_id = make_automation(&pool, &persona_id, 1000, 3);
+        // 8s < 11s → must NOT be reaped (legitimately mid retry-backoff).
+        let run_id = running_run_started_secs_ago(&pool, &auto_id, 8);
+
+        let reaped = reap_stale_runs(&pool).unwrap();
+        assert_eq!(reaped, 0, "run inside its worst-case budget must not be reaped");
+        assert_eq!(status_of(&pool, &run_id), "running");
+    }
+
+    #[test]
+    fn reaps_run_past_worst_case_budget() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let auto_id = make_automation(&pool, &persona_id, 1000, 3);
+        // 20s > 11s → genuinely stuck, reaped.
+        let run_id = running_run_started_secs_ago(&pool, &auto_id, 20);
+
+        let reaped = reap_stale_runs(&pool).unwrap();
+        assert_eq!(reaped, 1);
+        assert_eq!(status_of(&pool, &run_id), "failed");
+    }
+
+    #[test]
+    fn does_not_reap_high_retry_run_the_old_2x_heuristic_would_have() {
+        // The exact regression the change fixes: timeout=1000ms, retry=5.
+        // Old rule (2× timeout = 2s) would reap a 20s-old run mid-retry.
+        // New worst-case = 5*1000 + 15000 + 5000 grace = 25000ms (25s).
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let auto_id = make_automation(&pool, &persona_id, 1000, 5);
+        let run_id = running_run_started_secs_ago(&pool, &auto_id, 20);
+
+        let reaped = reap_stale_runs(&pool).unwrap();
+        assert_eq!(reaped, 0, "a run still inside its 5-attempt budget must survive");
+        assert_eq!(status_of(&pool, &run_id), "running");
+    }
+
+    #[test]
+    fn leaves_completed_runs_untouched() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool);
+        let auto_id = make_automation(&pool, &persona_id, 1000, 1);
+        let run_id = running_run_started_secs_ago(&pool, &auto_id, 999);
+        complete_run(
+            &pool,
+            &run_id,
+            AutomationRunStatus::Completed,
+            Some("ok"),
+            Some(10),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(reap_stale_runs(&pool).unwrap(), 0);
+        assert_eq!(status_of(&pool, &run_id), "completed");
+    }
 }

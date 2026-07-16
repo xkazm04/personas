@@ -1,4 +1,4 @@
-import { XCircle, CheckCircle2 } from 'lucide-react';
+import { XCircle, CheckCircle2, HelpCircle } from 'lucide-react';
 import type { CalendarEvent } from '../libs/calendarHelpers';
 
 export function EventBlock({
@@ -18,19 +18,26 @@ export function EventBlock({
     projected: { borderStyle: '2px solid', opacity: 0.7 },
     'past-success': { borderStyle: '2px solid', opacity: 1 },
     'past-failure': { borderStyle: '2px solid', opacity: 1 },
+    // Unverified past slot: dashed + dimmed so it reads as "we don't know what
+    // happened here", visually distinct from a confident success/failure.
+    'past-unknown': { borderStyle: '1.5px dashed', opacity: 0.55 },
   };
 
   const bgColor = event.kind === 'past-failure'
     ? 'rgba(239, 68, 68, 0.15)'
-    : hasConflict
-      ? 'rgba(245, 158, 11, 0.12)'
-      : `${color}20`;
+    : event.kind === 'past-unknown'
+      ? 'rgba(148, 163, 184, 0.10)'
+      : hasConflict
+        ? 'rgba(245, 158, 11, 0.12)'
+        : `${color}20`;
 
   const borderColor = event.kind === 'past-failure'
     ? 'rgba(239, 68, 68, 0.4)'
-    : hasConflict
-      ? 'rgba(245, 158, 11, 0.5)'
-      : `${color}50`;
+    : event.kind === 'past-unknown'
+      ? 'rgba(148, 163, 184, 0.45)'
+      : hasConflict
+        ? 'rgba(245, 158, 11, 0.5)'
+        : `${color}50`;
 
   return (
     <button
@@ -50,6 +57,11 @@ export function EventBlock({
       )}
       {event.kind === 'past-success' && (
         <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400/60 shrink-0" />
+      )}
+      {event.kind === 'past-unknown' && (
+        // The whole block already renders at 0.55 opacity for this kind, so a
+        // bare foreground icon reads as muted without a low-contrast class.
+        <HelpCircle className="w-2.5 h-2.5 text-foreground shrink-0" />
       )}
     </button>
   );

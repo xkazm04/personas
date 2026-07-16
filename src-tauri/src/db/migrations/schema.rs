@@ -698,6 +698,11 @@ CREATE TABLE IF NOT EXISTS tool_execution_audit_log (
     result_status   TEXT NOT NULL,
     duration_ms     INTEGER,
     error_message   TEXT,
+    -- Typed failure category (see engine::tool_outcome::ToolErrorKind). NULL on
+    -- success rows; a machine token (auth|timeout|http|transport|tool_error|
+    -- rate_limited|misconfigured|unknown) on error/tool_error rows so the
+    -- incidents inbox carries structure instead of an opaque string.
+    error_kind      TEXT,
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_teal_tool      ON tool_execution_audit_log(tool_id);

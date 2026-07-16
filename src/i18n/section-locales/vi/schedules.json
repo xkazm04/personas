@@ -112,5 +112,13 @@
   "last24h_failed_count": "{count} thất bại",
   "last24h_show_all": "Hiện tất cả ({count})",
   "last24h_show_less": "Hiển thị ít hơn",
-  "last24h_retry_at": "tự động thử lại {time}"
+  "last24h_retry_at": "tự động thử lại {time}",
+  "unverified": "Chưa xác minh",
+  "unverified_tooltip": "Không có bản ghi chạy cho khung giờ này — có thể đã bị bỏ qua, giới hạn tốc độ, vượt ngân sách hoặc ứng dụng đã đóng.",
+  "missed_backfill_cta": "Chạy bù",
+  "missed_dismiss": "Bỏ qua thông báo lần chạy bị lỡ",
+  "missed_offline": "Đã bỏ lỡ {count} khi ngoại tuyến",
+  "missed_offline_tooltip": "Các lần chạy theo lịch đã bị bỏ qua khi ứng dụng đóng. Chạy bù sẽ phát lại chúng (đã khử trùng lặp và giới hạn), hoặc bỏ qua để xóa.",
+  "reason_invalid_timezone": "Tạm dừng — múi giờ không hợp lệ",
+  "reason_unscheduled": "Tạm dừng — không có lịch hợp lệ"
 }

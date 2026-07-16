@@ -13,12 +13,17 @@ relevant_characters: [smallbiz-owner, content-marketer, non-english-user, a11y-u
 ## Definition of done
 - From a cold launch I reached a first successful automation (or a crisp "here's your next step") without dead time or jargon walls.
 - I never felt lost or talked-down-to; I knew what the app was for within the first minute.
+- If I skip or complete setup, I can find my way back in later without starting from zero — there's a visible, reversible path back into onboarding.
+- Adopting a template mid-tour doesn't re-teach me a step I already did.
 
 ## What L1 must check
 - Launch → home → first-action path; jargon load, dead-ends, where a first-timer stalls.
 - Locale-correctness for a non-English first launch; keyboard/screen-reader reachability for the a11y user.
+- Does the template-adopt handoff (TourHandoffOffer) fire once and correctly pre-complete the matching tour step, or can it double-teach / never appear?
+- Is the persistent footer "Resume setup / Replay setup" icon reachable only when appropriate (onboarding inactive but incomplete), and — for the a11y Character — keyboard-reachable with an accessible name?
 
 ## What L2 must confirm (l2_priority)
 - Real time-to-first-value (the patience clock).
 - Whether the onboarding tour helps or interrupts; localized first-paint (no English flash) for non-English.
-- Keyboard-only / screen-reader traversal of the core path.
+- Keyboard-only / screen-reader traversal of the core path, including the new footer resume/replay control.
+- Skip mid-flow, then use "Resume setup" — does it actually land at the right step? Complete or fully skip, then use "Replay setup" — does it restart cleanly from the top?

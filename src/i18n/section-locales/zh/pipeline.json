@@ -346,7 +346,9 @@
     "collab_label": "协作",
     "deck_phase_paused": "已暂停",
     "deck_pause": "暂停",
-    "deck_resume": "继续"
+    "deck_resume": "继续",
+    "readiness_chip_label": "需要设置",
+    "readiness_chip_tooltip": "该成员的连接器仍需设置。它可以加入并参与讨论，但其能力被暂时保留——在你添加凭据之前不会执行任何操作（请打开侧边栏中的“连接”部分）。"
   },
   "memory_created": "记忆已保存到团队记录",
   "memory_updated": "记忆已更新",

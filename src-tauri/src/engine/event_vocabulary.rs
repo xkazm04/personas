@@ -85,6 +85,8 @@ const BUILTIN_EVENT_TYPES: &[(&str, &str)] = &[
     // Healing / reliability
     ("health_check_failed", "healing"),
     ("auto_rollback", "healing"),
+    ("sla.breach.opened", "healing"),
+    ("sla.breach.recovered", "healing"),
     ("circuit_breaker.global.opened", "healing"),
     ("circuit_breaker.global.closed", "healing"),
     ("circuit_breaker.provider.opened", "healing"),
@@ -112,6 +114,9 @@ const BUILTIN_EVENT_TYPES: &[(&str, &str)] = &[
     ("trigger_fired", "ingress"),
     ("file_changed", "ingress"),
     ("context_rule_match", "ingress"),
+    // Scheduler reliability signals (never listener-matched — informational)
+    ("schedule.missed.offline", "scheduler"),
+    ("schedule.skipped.overlap", "scheduler"),
 ];
 
 /// Lazily-built set of the *canonical* forms of every builtin type, for O(1)

@@ -10,7 +10,7 @@ import { CredentialDetailModals } from './CredentialDetailModals';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const SORT_KEYS: ReadonlySet<string> = new Set(['name', 'type', 'created', 'last-used', 'health']);
-const HEALTH_FILTERS: ReadonlySet<string> = new Set(['', 'healthy', 'failing', 'untested']);
+const HEALTH_FILTERS: ReadonlySet<string> = new Set(['', 'healthy', 'unverifiable', 'failing', 'untested']);
 
 export function CredentialList({
   credentials,
@@ -70,9 +70,10 @@ export function CredentialList({
   const healthOptions = useMemo(() => [
     { value: '', label: t.vault.credential_list.filter_all_health },
     { value: 'healthy', label: t.vault.credential_list.health_healthy },
+    { value: 'unverifiable', label: t.vault.credential_list.health_unverifiable },
     { value: 'failing', label: t.vault.credential_list.health_failing },
     { value: 'untested', label: t.vault.credential_list.health_untested },
-  ], [t.vault.credential_list.filter_all_health, t.vault.credential_list.health_healthy, t.vault.credential_list.health_failing, t.vault.credential_list.health_untested]);
+  ], [t.vault.credential_list.filter_all_health, t.vault.credential_list.health_healthy, t.vault.credential_list.health_unverifiable, t.vault.credential_list.health_failing, t.vault.credential_list.health_untested]);
 
   // The DataGrid's column-filter controls expose plain string state. Convert
   // the empty-string "all" sentinel to/from the hook's HealthFilter union.

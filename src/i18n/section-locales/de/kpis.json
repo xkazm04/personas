@@ -189,5 +189,8 @@
   "attn_overdue": "{days}T überfällig",
   "attn_reason_crit": "Kritisch",
   "attn_reason_floor": "Untergrenze",
-  "attn_reason_pace": "Im Rückstand"
+  "attn_reason_pace": "Im Rückstand",
+  "evaluate_measured": "{count} KPI(s) gemessen.",
+  "evaluate_none_due": "Keine KPIs zur Messung fällig.",
+  "evaluate_partial": "{measured} gemessen, {failed} fehlgeschlagen"
 }

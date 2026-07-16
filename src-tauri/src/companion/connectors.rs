@@ -403,3 +403,88 @@ pub fn has_any_enabled(pool: &UserDbPool) -> Result<bool, AppError> {
         .optional()?;
     Ok(row.is_some())
 }
+
+#[cfg(test)]
+mod approval_gating_tests {
+    //! Locks the companion connector write-gate invariant (UAT F-MAJOR-7): a
+    //! capability whose slug reads as a write/mutation/side-effect MUST carry
+    //! `requires_approval: true` so the dispatcher routes it through an
+    //! approval card instead of auto-firing against the user's real accounts.
+    //! Read-only capabilities (list_*, get_*, count_*, describe_*) auto-fire.
+    //!
+    //! This is the enforcement the dispatcher comment points at: add a new
+    //! write capability without the flag and this test fails, rather than the
+    //! gap only surfacing in a live UAT months later.
+    use super::*;
+
+    /// Every service_type with a capability registry. Keep in sync with the
+    /// match arms in `capabilities_for` (a missing entry just means that
+    /// connector's caps aren't checked — harmless, but add it).
+    const SERVICE_TYPES: &[&str] = &[
+        "sentry",
+        "github",
+        "gmail",
+        "google_workspace",
+        "slack",
+        "discord",
+        "notion",
+        "local_drive",
+        "elevenlabs",
+        "personas_database",
+        "operations_database",
+    ];
+
+    /// Slug prefixes that denote a read-only capability (safe to auto-fire).
+    const READ_PREFIXES: &[&str] = &[
+        "list_", "get_", "count_", "describe_", "read_", "query_", "search_", "fetch_",
+    ];
+
+    fn looks_read_only(slug: &str) -> bool {
+        READ_PREFIXES.iter().any(|p| slug.starts_with(p))
+    }
+
+    #[test]
+    fn every_write_capability_requires_approval() {
+        let mut offenders = Vec::new();
+        for st in SERVICE_TYPES {
+            let Some(caps) = capabilities_for(st) else {
+                continue;
+            };
+            for cap in caps {
+                // A non-read-only capability that auto-fires is the gap.
+                if !looks_read_only(cap.slug) && !cap.requires_approval {
+                    offenders.push(format!("{st}.{}", cap.slug));
+                }
+            }
+        }
+        assert!(
+            offenders.is_empty(),
+            "these non-read-only connector capabilities auto-fire without an approval card \
+             (add `requires_approval: true`, or rename to a read-only prefix if truly read-only): {offenders:?}"
+        );
+    }
+
+    #[test]
+    fn read_only_capabilities_do_not_require_approval() {
+        // Guard the other direction lightly: a clearly read-only call that got
+        // flagged for approval would add pointless friction. Not a hard rule
+        // (a costed read like a paid search could legitimately gate), so this
+        // only checks the obvious list_/get_ shapes.
+        for st in SERVICE_TYPES {
+            let Some(caps) = capabilities_for(st) else {
+                continue;
+            };
+            for cap in caps {
+                if (cap.slug.starts_with("list_") || cap.slug.starts_with("get_"))
+                    && cap.requires_approval
+                {
+                    panic!(
+                        "{st}.{} is a plain list_/get_ read but requires approval — \
+                         intended? If costed, ignore; otherwise drop the flag.",
+                        cap.slug
+                    );
+                }
+            }
+        }
+    }
+}

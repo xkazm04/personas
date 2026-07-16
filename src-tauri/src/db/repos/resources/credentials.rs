@@ -1259,6 +1259,69 @@ pub fn save_fields(
     })
 }
 
+/// Targeted field update: upsert ONLY the given fields in one transaction,
+/// leaving every other field row untouched (stable row ids, stable
+/// `updated_at`). This is the runtime-OAuth-refresh write path — the previous
+/// delete-all + reinsert (`save_fields`) amplified a single-token rotation
+/// into a full rebuild of every field row, opened a window where a crash
+/// between DELETE and INSERT lost the whole credential, and re-classified
+/// every field on each refresh.
+///
+/// Legacy camelCase alias rows (e.g. `accessToken` when writing
+/// `access_token`) are deleted in the same transaction: `get_decrypted_fields`
+/// normalizes keys on read, so an un-deleted alias row would linger with the
+/// STALE token ciphertext forever (the old delete-all path incidentally
+/// cleaned these up).
+pub fn update_fields_targeted(
+    pool: &DbPool,
+    credential_id: &str,
+    fields: &HashMap<String, String>,
+) -> Result<usize, AppError> {
+    timed_query!(
+        "persona_credentials",
+        "persona_credentials::update_fields_targeted",
+        {
+            let cred = get_by_id(pool, credential_id)?;
+            let sens_map = sensitivity_map_for_connector(pool, &cred.service_type);
+
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
+
+            let mut count = 0usize;
+            for (key, value) in fields {
+                let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
+                upsert_field_on_conn(&tx, credential_id, key, value, is_sensitive)?;
+                // Remove any legacy camelCase alias of this canonical key so a
+                // stale duplicate can't shadow (or survive alongside) the row
+                // we just wrote.
+                if let Some(alias) = legacy_alias_for(key) {
+                    tx.execute(
+                        "DELETE FROM credential_fields WHERE credential_id = ?1 AND field_key = ?2",
+                        params![credential_id, alias],
+                    )?;
+                }
+                count += 1;
+            }
+
+            tx.commit().map_err(AppError::Database)?;
+            Ok(count)
+        }
+    )
+}
+
+/// Inverse of `normalize_field_key`: the legacy camelCase spelling a canonical
+/// snake_case key may still be stored under in old rows.
+fn legacy_alias_for(key: &str) -> Option<&'static str> {
+    match key {
+        "refresh_token" => Some("refreshToken"),
+        "access_token" => Some("accessToken"),
+        "client_id" => Some("clientId"),
+        "client_secret" => Some("clientSecret"),
+        "token_type" => Some("tokenType"),
+        _ => None,
+    }
+}
+
 /// Update a single credential field on an existing connection (for use inside
 /// an outer transaction).  If the field doesn't exist, inserts it.
 pub fn upsert_field_on_conn(
@@ -1410,6 +1473,17 @@ fn normalize_field_key(key: &str) -> String {
 }
 
 /// Classify a credential field key into a type hint.
+///
+/// The `"secret"` classification doubles as the non-negotiable name backstop
+/// in `is_field_sensitive`: a secret-typed, non-allowlisted key is ALWAYS
+/// encrypted regardless of what the (user/AI-authorable) connector schema
+/// declares. The match list is therefore deliberately broad — ad-hoc
+/// token-shaped keys written by the OAuth refresh path or hand-authored
+/// connector schemas (`jwt`, `bearer`, `passphrase`, `pwd`, `credential`,
+/// plus any `*token*`/`*key*`/`*secret*`/`*password*` variant) must never be
+/// classifiable as plain text. Widening this list only ever upgrades a field
+/// to encrypted-at-rest; the `NON_SENSITIVE_KEYS` allowlist still exempts
+/// legitimately public names like `token_type`.
 fn classify_field_type(key: &str) -> &'static str {
     let lower = key.to_lowercase();
     if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
@@ -1418,6 +1492,12 @@ fn classify_field_type(key: &str) -> &'static str {
         || lower.contains("key")
         || lower.contains("secret")
         || lower.contains("password")
+        || lower.contains("passphrase")
+        || lower.contains("credential")
+        || lower.contains("jwt")
+        || lower.contains("bearer")
+        || lower == "pwd"
+        || lower.ends_with("_pwd")
     {
         "secret"
     } else if lower == "port" {
@@ -1433,6 +1513,151 @@ fn classify_field_type(key: &str) -> &'static str {
 mod tests {
     use super::*;
     use crate::db::init_test_db;
+
+    /// Direction 3 (oauth-field-surgery): the runtime-refresh write path.
+    ///
+    /// Proves BOTH acceptance points on the exact function the runner's OAuth
+    /// refresh calls (`update_fields_targeted`):
+    ///  1. Targeted update — only the rotated token row changes; every other
+    ///     field row keeps its id, updated_at, and ciphertext byte-for-byte
+    ///     (the old `save_fields` delete-all + reinsert rebuilt everything).
+    ///  2. Sensitivity name-backstop — a token-shaped key is encrypted even
+    ///     when the (user/AI-authorable) connector schema mis-declares it
+    ///     `sensitive: false`, including ad-hoc keys like `jwt` that the
+    ///     widened `classify_field_type` now catches.
+    #[test]
+    fn refresh_write_path_updates_only_token_field_and_forces_encryption() {
+        use crate::db::models::{CreateConnectorDefinitionInput, CreateCredentialInput};
+        use crate::db::repos::resources::connectors;
+
+        let pool = init_test_db().unwrap();
+
+        // Connector schema DOWNGRADES the token fields to non-sensitive —
+        // the backstop must override this.
+        connectors::create(
+            &pool,
+            CreateConnectorDefinitionInput {
+                name: "oauthsurgery_qq".into(),
+                label: "OAuth Surgery".into(),
+                icon_url: None,
+                color: None,
+                category: None,
+                fields: r#"[
+                    {"key":"access_token","sensitive":false},
+                    {"key":"jwt","sensitive":false},
+                    {"key":"workspace","sensitive":false}
+                ]"#
+                .into(),
+                healthcheck_config: None,
+                services: Some("[]".into()),
+                events: None,
+                metadata: None,
+                is_builtin: Some(false),
+            },
+        )
+        .unwrap();
+
+        let fields: HashMap<String, String> = [
+            ("access_token", "old-token-value"),
+            ("refresh_token", "refresh-fixture-1"), // gitleaks:allow — inert test fixture
+            ("workspace", "acme-corp"),
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
+        let cred = create_with_fields(
+            &pool,
+            CreateCredentialInput {
+                name: "Surgery Cred".into(),
+                service_type: "oauthsurgery_qq".into(),
+                encrypted_data: String::new(),
+                iv: String::new(),
+                metadata: None,
+                session_encrypted_data: None,
+                healthcheck_passed: None,
+                oauth_session_ref: None,
+            },
+            &fields,
+        )
+        .unwrap();
+
+        // Seed a legacy camelCase alias row for access_token: the targeted
+        // write must clean it up (the old delete-all path did incidentally).
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "INSERT INTO credential_fields
+                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+                 VALUES ('legacy-row-qq', ?1, 'accessToken', 'stale-cipher', 'stale-iv', 'secret', 1, '2020-01-01T00:00:00Z', '2020-01-01T00:00:00Z')",
+                params![cred.id],
+            )
+            .unwrap();
+        }
+
+        let before: HashMap<String, (String, String, String)> = get_fields(&pool, &cred.id)
+            .unwrap()
+            .into_iter()
+            .map(|f| (f.field_key.clone(), (f.id, f.updated_at, f.encrypted_value)))
+            .collect();
+
+        // -- The refresh write: rotate access_token, add an ad-hoc jwt --
+        let changed: HashMap<String, String> = [
+            ("access_token", "new-token-value"),
+            ("jwt", "adhoc-jwt-value"),
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
+        update_fields_targeted(&pool, &cred.id, &changed).unwrap();
+
+        let after = get_fields(&pool, &cred.id).unwrap();
+        let by_key: HashMap<String, &CredentialField> =
+            after.iter().map(|f| (f.field_key.clone(), f)).collect();
+
+        // 1a. The rotated token kept its ROW ID (upsert, not delete+insert)
+        //     and round-trips to the new value.
+        let tok = by_key["access_token"];
+        assert_eq!(
+            tok.id, before["access_token"].0,
+            "access_token row id must be stable across a refresh write"
+        );
+        assert_eq!(
+            crypto::decrypt_field(&tok.encrypted_value, &tok.iv).unwrap(),
+            "new-token-value"
+        );
+
+        // 1b. Untouched rows are byte-for-byte identical (id, updated_at,
+        //     ciphertext) — no rebuild, no re-encryption churn.
+        for key in ["refresh_token", "workspace"] {
+            let row = by_key[key];
+            let (ref id, ref updated_at, ref cipher) = before[key];
+            assert_eq!(&row.id, id, "{key} row id must be untouched");
+            assert_eq!(&row.updated_at, updated_at, "{key} updated_at must be untouched");
+            assert_eq!(&row.encrypted_value, cipher, "{key} ciphertext must be untouched");
+        }
+
+        // 1c. The legacy camelCase alias row was removed in the same tx.
+        assert!(
+            !by_key.contains_key("accessToken"),
+            "stale camelCase alias row must not survive a targeted token write"
+        );
+
+        // 2. Name backstop beats the schema's `sensitive: false` for BOTH the
+        //    declared token field and the ad-hoc jwt key: encrypted at rest.
+        for key in ["access_token", "jwt"] {
+            let row = by_key[key];
+            assert!(row.is_sensitive, "{key} must be classified sensitive");
+            assert!(
+                !row.iv.is_empty(),
+                "{key} must be encrypted (non-empty iv), never plaintext-at-rest"
+            );
+            assert_ne!(
+                row.encrypted_value,
+                changed[key],
+                "{key} ciphertext must not equal the plaintext value"
+            );
+        }
+    }
 
     #[test]
     fn test_credential_crud() {

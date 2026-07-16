@@ -3,6 +3,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::commands::core::personas::BlastRadiusItem;
+use crate::commands::design::connector_readiness;
 use crate::db::models::{
     CreateCredentialEventInput, CreateCredentialInput, CredentialEvent, PersonaCredential,
     UpdateCredentialEventInput, UpdateCredentialInput,
@@ -103,6 +104,11 @@ pub fn create_credential(
                     ) {
                         tracing::warn!(credential_id = %credential_id, error = %e, "Failed to persist post-create healthcheck metadata");
                     }
+                    crate::engine::healthcheck::persist_probe_state(
+                        &pool,
+                        &credential_id,
+                        result.state,
+                    );
                 }
                 Err(e) => {
                     tracing::warn!(credential_id = %credential_id, error = %e, "Post-create healthcheck failed");
@@ -184,6 +190,13 @@ pub fn update_credential(
     };
     audit_log::insert_warn(&state.db, &id, &cred.name, "update", Some(detail));
 
+    // Editing field values can turn a usable credential into an empty / stale
+    // one (or vice versa) — recompute readiness for personas bound to it so
+    // `setup_status` stays honest. Only when field data actually changed.
+    if has_data_change {
+        connector_readiness::recompute_setup_for_credential_dependents(&state.db, &id);
+    }
+
     // Auto-provision a keepalive rotation policy if this is now an OAuth credential
     if has_data_change {
         crate::engine::rotation::auto_provision_single(&state.db, &id);
@@ -241,9 +254,20 @@ pub fn delete_credential(state: State<'_, Arc<AppState>>, id: String) -> Result<
         Err(AppError::NotFound(_)) => return Ok(false),
         Err(e) => return Err(e),
     };
+    // Capture the affected persona set BEFORE the row is gone — the dependents
+    // scan reads the credential's `service_type`, which vanishes on delete.
+    let affected = connector_readiness::credential_dependent_persona_ids(&state.db, &id);
     let result = repo::delete(&state.db, &id)?;
     if result {
         audit_log::insert_warn(&state.db, &id, &name, "delete", None);
+        // Deleting a bound credential leaves any persona linked to it with a
+        // dead `credentialLinks` id — recompute so `setup_status` flips to
+        // `needs_credentials` and the run gate blocks instead of executing blind.
+        for pid in &affected {
+            if let Err(e) = connector_readiness::recompute_persona_setup(&state.db, pid) {
+                tracing::warn!(persona_id = %pid, credential_id = %id, error = %e, "delete_credential: setup recompute failed");
+            }
+        }
     }
     Ok(result)
 }
@@ -331,6 +355,9 @@ pub async fn healthcheck_credential(
         ) {
             tracing::warn!(credential_id = %credential_id, error = %e, "Failed to update healthcheck metadata");
         }
+        // Stamp the typed verified/unverifiable/failed distinction alongside the
+        // boolean so the vault list renders it without re-probing.
+        crate::engine::healthcheck::persist_probe_state(&state.db, &credential_id, result.state);
     }
 
     Ok(result)
@@ -394,6 +421,7 @@ pub fn vault_status(state: State<'_, Arc<AppState>>) -> Result<serde_json::Value
     let encrypted = total - plaintext;
     let source = crypto::key_source_label();
     let legacy_ipc_decrypt_calls = crypto::legacy_ipc_decrypt_calls();
+    let credential_audit_write_failures = crypto::credential_audit_write_failures();
 
     Ok(serde_json::json!({
         "key_source": source,
@@ -401,6 +429,7 @@ pub fn vault_status(state: State<'_, Arc<AppState>>) -> Result<serde_json::Value
         "encrypted": encrypted,
         "plaintext": plaintext,
         "legacy_ipc_decrypt_calls": legacy_ipc_decrypt_calls,
+        "credential_audit_write_failures": credential_audit_write_failures,
     }))
 }
 
@@ -480,6 +509,10 @@ pub fn update_credential_field(
         "field_update",
         Some(&format!("field '{field_key}' updated")),
     );
+
+    // A field edit can change credential usability (empty/stale ↔ ready) —
+    // recompute readiness for personas bound to this credential.
+    connector_readiness::recompute_setup_for_credential_dependents(&state.db, &credential_id);
     Ok(true)
 }
 

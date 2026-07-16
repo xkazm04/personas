@@ -157,7 +157,11 @@
     "whats_new": "Yang baru",
     "back_to_plugins": "Plugin",
     "roadmap": "Peta Jalan",
-    "groups_label": "Grup"
+    "groups_label": "Grup",
+    "draft_agent_fallback": "Agen draf",
+    "draft_needs_answers_one": "{name} — perlu 1 jawaban",
+    "draft_needs_answers_other": "{name} — perlu {count} jawaban",
+    "draft_switch_title": "Beralih ke draf: {name} ({phase})"
   },
   "execution_detail": {
     "copy": "Salin",

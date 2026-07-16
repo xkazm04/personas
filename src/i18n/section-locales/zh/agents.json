@@ -852,7 +852,25 @@
     "eco_subtitle": "每个模型解决评估的频率及每次成功的成本。",
     "eco_title": "成本效益",
     "vr_col_tokens": "令牌",
-    "vr_tokens_tooltip": "每次运行平均输入 {input} / 输出 {output}"
+    "vr_tokens_tooltip": "每次运行平均输入 {input} / 输出 {output}",
+    "vr_reconcile_clear_all": "清除所有固定",
+    "vr_reconcile_clear_pin": "清除固定",
+    "vr_reconcile_desc_one": "仍有 1 个用例固定使用与你刚提升的模型（{model}）不同的模型。在你清除该固定之前，它将继续使用其固定的模型运行。",
+    "vr_reconcile_desc_other": "仍有 {count} 个用例固定使用与你刚提升的模型（{model}）不同的模型。在你清除这些固定之前，它们将继续使用各自固定的模型运行。",
+    "vr_reconcile_done": "完成",
+    "vr_reconcile_now_follows": "现在跟随默认值（{model}）",
+    "vr_reconcile_pinned_to": "已固定为 {model}",
+    "vr_reconcile_title": "协调用例模型固定",
+    "improve_failed": "无法准备改进方案",
+    "improve_focus": "将聚焦于 {metric}（平均 {score}/100）",
+    "improve_run_seed_measured": "改进角色\"{name}\"。它最近的测试将 {metric} 标记为最薄弱的部分（平均 {score}/100）。我应该重点关注什么？ ",
+    "improve_run_seed_plain": "根据角色\"{name}\"最近的测试结果改进它。我应该重点关注什么？ ",
+    "improve_seeded": "改进方案已在 Athena 中打开",
+    "vr_cost_unknown": "不适用",
+    "vr_cost_unknown_tooltip": "本地模型不跟踪成本",
+    "vr_degraded_tooltip": "{total} 个样本中有 {count} 个由启发式回退评分（LLM 评审不可用）",
+    "vr_partial_tooltip": "由部分子分数合成 — 无法直接比较",
+    "vr_score_caution": "分数需谨慎看待"
   },
   "design": {
     "select_agent": "选择代理以开始设计分析",
@@ -1729,7 +1747,15 @@
     "failed": "失败",
     "error": "错误",
     "invalid_json": "JSON 无效——请先修正后再运行。",
-    "input_json_placeholder": "{ \"key\": \"value\" }"
+    "input_json_placeholder": "{ \"key\": \"value\" }",
+    "failure_kind_label": "失败",
+    "http_status_label": "HTTP {status}",
+    "output_truncated": "输出已截断——工具返回的内容超过了显示上限。",
+    "panel_subtitle": "使用此角色的凭据直接调用工具。",
+    "panel_title": "运行工具",
+    "retryable_hint": "重试后可能会成功。",
+    "run_tool": "运行工具",
+    "builtin_note": "内置工具——它在角色执行内部运行（无法从此处手动运行）。运行该角色的某项能力来试用它。"
   },
   "health_check": {
     "title": "代理健康检查",
@@ -2729,5 +2755,37 @@
     "done": "已复制为“{name}”",
     "done_with_wiring": "已复制为“{name}” — 已复制 {triggers} 个触发器和 {subscriptions} 个订阅（副本中已禁用）",
     "failed": "无法复制代理"
+  },
+  "change_history": {
+    "empty": "暂无变更记录",
+    "empty_value": "(空)",
+    "fields": {
+      "cli_awareness_enabled": "CLI 感知",
+      "color": "颜色",
+      "description": "描述",
+      "design_context": "设计上下文",
+      "enabled": "已启用",
+      "headless": "无头模式",
+      "icon": "图标",
+      "lifecycle": "生命周期",
+      "max_budget_usd": "预算",
+      "max_concurrent": "最大并发数",
+      "max_turns": "最大轮数",
+      "model_profile": "模型",
+      "name": "名称",
+      "notification_channels": "通知",
+      "parameters": "参数",
+      "sensitive": "敏感预览",
+      "structured_prompt": "提示词",
+      "system_prompt": "系统提示词",
+      "timeout_ms": "超时时间"
+    },
+    "sources": {
+      "editor": "编辑器",
+      "fanout": "扇出",
+      "header": "标题栏",
+      "other": "其他"
+    },
+    "title": "变更历史"
   }
 }

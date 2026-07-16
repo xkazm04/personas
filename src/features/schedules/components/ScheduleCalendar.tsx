@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import {
   ChevronLeft, ChevronRight,
-  CheckCircle2, XCircle, AlertTriangle, RotateCcw,
+  CheckCircle2, XCircle, AlertTriangle, RotateCcw, HelpCircle,
 } from 'lucide-react';
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
 import {
@@ -22,8 +22,8 @@ import { MonthView } from './MonthView';
 // group. Combining toggles lets the user isolate (e.g. only failures, only
 // overlapping projecteds). Default state has all four on so a fresh calendar
 // shows everything.
-type LegendKind = 'projected' | 'past-success' | 'past-failure' | 'overlap';
-const ALL_KINDS: LegendKind[] = ['projected', 'past-success', 'past-failure', 'overlap'];
+type LegendKind = 'projected' | 'past-success' | 'past-failure' | 'past-unknown' | 'overlap';
+const ALL_KINDS: LegendKind[] = ['projected', 'past-success', 'past-failure', 'past-unknown', 'overlap'];
 interface ScheduleCalendarProps {
   entries: ScheduleEntry[];
   onNavigateToExecution?: (agentId: string) => void;
@@ -103,7 +103,9 @@ export default function ScheduleCalendar({
   const goToday = useCallback(() => setAnchor(new Date()), []);
 
   const handleEventClick = useCallback((ev: CalendarEvent) => {
-    if (ev.kind === 'projected') {
+    // Only matched past runs (success/failure) have an execution to open;
+    // projected and unverified slots have none, so route them to the trigger.
+    if (ev.kind === 'projected' || ev.kind === 'past-unknown') {
       onNavigateToTrigger?.(ev.triggerId);
     } else {
       onNavigateToExecution?.(ev.agentId);
@@ -169,6 +171,13 @@ export default function ScheduleCalendar({
               ariaLabel={t.schedules.failed}
             >
               <XCircle className="w-3 h-3 text-red-400/80" /> {t.schedules.failed}
+            </LegendToggle>
+            <LegendToggle
+              active={activeKinds.has('past-unknown')}
+              onClick={() => toggleKind('past-unknown')}
+              ariaLabel={t.schedules.unverified}
+            >
+              <HelpCircle className="w-3 h-3 text-foreground" /> {t.schedules.unverified}
             </LegendToggle>
             {totalConflicts > 0 && (
               <LegendToggle

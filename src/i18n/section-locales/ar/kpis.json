@@ -189,5 +189,8 @@
   "attn_overdue": "متأخر {days}ي",
   "attn_reason_crit": "حرِج",
   "attn_reason_floor": "الحد الأدنى",
-  "attn_reason_pace": "متأخر"
+  "attn_reason_pace": "متأخر",
+  "evaluate_measured": "تم قياس {count} من مؤشرات KPI.",
+  "evaluate_none_due": "لا توجد مؤشرات KPI مستحقة للقياس.",
+  "evaluate_partial": "تم قياس {measured}، وفشل {failed}"
 }

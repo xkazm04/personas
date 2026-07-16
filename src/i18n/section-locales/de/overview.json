@@ -525,7 +525,13 @@
     "event_data": "Ereignisdaten",
     "error": "Fehler",
     "skipped_stat_label": "{skipped} übersprungen",
-    "skipped_stat_tooltip": "{skipped} von {total} Ereignissen der letzten 7 Tage hatten keinen Abonnenten und wurden übersprungen ({rate}). Eine hohe Quote deutet auf einen Trigger hin, dem niemand zuhört."
+    "skipped_stat_tooltip": "{skipped} von {total} Ereignissen der letzten 7 Tage hatten keinen Abonnenten und wurden übersprungen ({rate}). Eine hohe Quote deutet auf einen Trigger hin, dem niemand zuhört.",
+    "type_labels": {
+      "sla_breach_opened": "SLA-Verstoß geöffnet",
+      "sla_breach_recovered": "SLA-Verstoß behoben",
+      "schedule_missed_offline": "Verpasste geplante Ausführungen (offline)",
+      "schedule_skipped_overlap": "Zeitplan übersprungen (vorheriger Lauf aktiv)"
+    }
   },
   "health": {
     "title": "Agentengesundheit",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "Ketten-Kaskadenkarte",
-    "no_chains": "Keine Ketten erkannt -- alle Personas arbeiten unabhängig"
+    "no_chains": "Keine Ketten erkannt -- alle Personas arbeiten unabhängig",
+    "cofail_insufficient": "keine gemeinsamen Ausfälle",
+    "cofail_pct": "{pct}% gemeinsame Ausfälle"
   },
   "predictive_alerts_extra": {
     "title": "Prädiktive Warnungen",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "Statusseite wird geladen…",
     "loading_reliability": "Zuverlässigkeitsdaten werden geladen…",
     "heartbeats_btn": "Herzschläge",
-    "reliability_btn": "Zuverlässigkeit"
+    "reliability_btn": "Zuverlässigkeit",
+    "source_byom_policy": "BYOM-Richtlinie",
+    "source_healing_issues": "Heilungsprobleme",
+    "source_monthly_spend": "Monatliche Ausgaben",
+    "source_provider_stats": "Anbieterstatistiken",
+    "sources_unavailable": "{sources} konnten nicht geladen werden — die Werte sind möglicherweise ungenau."
   },
   "popup_fields": {
     "sign_up_free_at": "Kostenlos registrieren auf",
@@ -1573,7 +1586,11 @@
     "seg_healing": "Heilung",
     "seg_stability": "Stabilität",
     "seg_success": "Erfolg",
-    "show_all": "Alle anzeigen"
+    "show_all": "Alle anzeigen",
+    "fleet_avg_badge": "Flottendurchschnitt",
+    "fleet_avg_tooltip": "Für diese Persona wurden im Zeitraum keine Läufe erfasst — angezeigt wird die flottenweite durchschnittliche Erfolgsrate, kein gemessener Wert pro Persona.",
+    "no_data_badge": "keine Daten",
+    "no_data_tooltip": "Für diese Persona gibt es im Zeitraum keine abgeschlossenen oder fehlgeschlagenen Läufe — die Erfolgsrate ist ein Platzhalter, nicht gemessen."
   },
   "provenance": {
     "sourced_tip": "Zitiert {count} Quelle(n), die du nachverfolgen und prüfen kannst.",

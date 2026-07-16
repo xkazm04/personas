@@ -10,6 +10,7 @@ import type { CreatePersonaInput } from "@/lib/bindings/CreatePersonaInput";
 import type { DeletePersonaResult } from "@/lib/bindings/DeletePersonaResult";
 import type { EffectiveModelConfig } from "@/lib/bindings/EffectiveModelConfig";
 import type { UpdatePersonaInput } from "@/lib/bindings/UpdatePersonaInput";
+import type { PersonaChangeEntry } from "@/lib/bindings/PersonaChangeEntry";
 import type { BulkDeleteOutcome } from "@/lib/bindings/BulkDeleteOutcome";
 import type { DuplicatePersonaResult } from "@/lib/bindings/DuplicatePersonaResult";
 export type { DuplicatePersonaResult } from "@/lib/bindings/DuplicatePersonaResult";
@@ -48,6 +49,10 @@ export const createPersona = (input: CreatePersonaInput) =>
 
 export const updatePersona = (id: string, input: UpdatePersonaInput) =>
   invoke<Persona>("update_persona", { id, input });
+
+/** Newest-first field-level change history for a persona (editor Settings tab). */
+export const listPersonaChangeLog = (personaId: string, limit = 50) =>
+  invoke<PersonaChangeEntry[]>("list_persona_change_log", { personaId, limit });
 
 /**
  * Deep-duplicate a persona. The copy clones the persona's `persona_triggers`
@@ -221,6 +226,9 @@ export interface PartialPersonaUpdate {
   disabled_dims_json?: string | null;
   /** Lifecycle stage (`draft` | `active` | `archived`); omit to leave unchanged. */
   lifecycle?: string | null;
+  /** Change-log attribution — where this edit originated. Defaults to `editor`
+   *  (the generic builder is the editor autosave path). Not a persisted column. */
+  source?: 'editor' | 'header' | 'fanout' | 'other';
 }
 
 // ============================================================================
@@ -384,5 +392,8 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     // lifecycle is normally driven by the archive/restore/promote commands, not
     // this generic builder; passing null = "leave unchanged".
     lifecycle: partial.lifecycle ?? null,
+    // Change-log attribution — the generic builder serves the editor autosave
+    // path; header/model-switch ops override this explicitly.
+    source: partial.source ?? 'editor',
   };
 }

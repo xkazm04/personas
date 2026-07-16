@@ -394,7 +394,9 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   },
 
   applyPersonaOp: async (id, op) => {
-    await get().updatePersona(id, operationToPartial(op));
+    // Header governance controls (Active toggle, model switch, home team) flow
+    // through here — tag the change history with the "header" source.
+    await get().updatePersona(id, { ...operationToPartial(op), source: 'header' });
   },
 
   deletePersona: async (id) => {

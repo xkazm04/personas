@@ -12,6 +12,9 @@ use crate::engine::automation_runner::invoke_automation;
 use crate::engine::rate_limiter::{
     RateLimiter, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW,
 };
+use crate::engine::tool_outcome::{
+    cap_output, classify_app_error, classify_http_status, ToolErrorKind,
+};
 use crate::error::AppError;
 
 /// Default timeout for direct tool invocations (script and API calls).
@@ -21,16 +24,80 @@ const DIRECT_TOOL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(
 const TEST_TOOL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
 /// Result of a direct (no-LLM) tool invocation.
+///
+/// This is the direct-path half of the shared tool-result contract (see
+/// `engine::tool_outcome`). Success and failure both populate the typed
+/// contract fields — `error_kind` / `http_status` / `retryable` on failure, and
+/// `output` is always capped at `DIRECT_TOOL_OUTPUT_CAP_BYTES` with
+/// `output_truncated` surfacing any truncation (never silent).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct ToolInvocationResult {
     pub success: bool,
     pub output: String,
+    /// True when `output` was capped at the output byte limit.
+    pub output_truncated: bool,
     pub error: Option<String>,
+    /// Typed failure category (`None` on success).
+    pub error_kind: Option<ToolErrorKind>,
+    /// HTTP status when the failure came from an HTTP/API call (`None` otherwise).
+    pub http_status: Option<u16>,
+    /// Whether retrying the call could plausibly succeed (timeouts, transport,
+    /// 5xx, rate-limit). `false` on success and on terminal failures.
+    pub retryable: bool,
     pub duration_ms: u64,
     pub tool_name: String,
-    /// "script" | "api" | "unknown"
+    /// "script" | "api" | "automation" — plus "builtin" for `builtin://` tools
+    /// (which only run inside persona executions) and "unknown" when the tool
+    /// row has no resolvable execution strategy.
     pub tool_type: String,
+}
+
+/// Internal typed error for the direct-path inner functions. Carries the shared
+/// contract fields so `invoke_tool_direct` can populate
+/// [`ToolInvocationResult`] without re-sniffing a stringified error. Any
+/// [`AppError`] converts via [`classify_app_error`]; the API/automation paths
+/// override the classification when they know a precise HTTP status / kind.
+struct DirectInvokeError {
+    error: AppError,
+    kind: ToolErrorKind,
+    http_status: Option<u16>,
+    retryable: bool,
+}
+
+impl DirectInvokeError {
+    /// Build from an [`AppError`] using the shared classifier.
+    fn classify(error: AppError) -> Self {
+        let (kind, http_status, retryable) = classify_app_error(&error);
+        Self {
+            error,
+            kind,
+            http_status,
+            retryable,
+        }
+    }
+
+    /// Build with an explicit classification (used where the caller knows the
+    /// precise kind/status, e.g. a script that exited non-zero = tool error).
+    fn typed(
+        error: AppError,
+        kind: ToolErrorKind,
+        http_status: Option<u16>,
+        retryable: bool,
+    ) -> Self {
+        Self {
+            error,
+            kind,
+            http_status,
+            retryable,
+        }
+    }
+}
+
+impl From<AppError> for DirectInvokeError {
+    fn from(error: AppError) -> Self {
+        Self::classify(error)
+    }
 }
 
 /// Invoke a tool directly without LLM orchestration.
@@ -50,6 +117,70 @@ pub async fn invoke_tool_direct(
     input_json: &str,
     rate_limiter: Option<&RateLimiter>,
 ) -> Result<ToolInvocationResult, AppError> {
+    let start = Instant::now();
+
+    // Pre-flight failures below return a TYPED `ToolInvocationResult` — never
+    // a raw `Err(AppError)`. A raw Err reaches the webview as a plain object
+    // that the panel used to render as "[object Object]" (2026-07-16 UAT
+    // blocker), and it skipped the audit log entirely. This helper keeps the
+    // contract + audit trail uniform with the post-dispatch failure path.
+    let early_failure = |kind: ToolErrorKind, message: String, retryable: bool| {
+        let tool_type = if tool.script_path.starts_with("builtin://") {
+            "builtin".to_string()
+        } else {
+            match tool.tool_kind() {
+                Ok(ToolKind::Automation) => "automation".to_string(),
+                Ok(ToolKind::Script) => "script".to_string(),
+                Ok(ToolKind::Api) => "api".to_string(),
+                Err(_) => "unknown".to_string(),
+            }
+        };
+        let result = ToolInvocationResult {
+            success: false,
+            output: String::new(),
+            output_truncated: false,
+            error: Some(message),
+            error_kind: Some(kind),
+            http_status: None,
+            retryable,
+            duration_ms: start.elapsed().as_millis() as u64,
+            tool_name: tool.name.clone(),
+            tool_type,
+        };
+        if let Err(log_err) = tool_audit_log::insert(
+            pool,
+            &tool.id,
+            &tool.name,
+            &result.tool_type,
+            Some(persona_id),
+            Some(persona_name),
+            None,
+            "error",
+            Some(result.duration_ms),
+            result.error.as_deref(),
+            result.error_kind.map(|k| k.as_str()),
+        ) {
+            tracing::warn!("Failed to write tool audit log: {log_err}");
+        }
+        result
+    };
+
+    // Builtin tools (`builtin://…`) execute inside persona runs via the
+    // personas-mcp sidecar + the :9420 credential bridge — there is no direct
+    // invocation path here. Say so honestly: before this check they fell into
+    // the script-path validator and read as "misconfigured", which told users
+    // a perfectly healthy template tool was broken (2026-07-16 UAT blocker).
+    if tool.script_path.starts_with("builtin://") {
+        return Ok(early_failure(
+            ToolErrorKind::Unsupported,
+            format!(
+                "Built-in tool '{}' runs inside persona executions (via the personas-mcp sidecar) and can't be invoked manually from the Tool Runner. Run one of the persona's capabilities to exercise it.",
+                tool.name
+            ),
+            false,
+        ));
+    }
+
     // Per-tool rate limiting
     if let Some(rl) = rate_limiter {
         let rate_key = format!("tool:{}", tool.id);
@@ -64,14 +195,13 @@ pub async fn invoke_tool_direct(
                 retry_after_secs = retry_after,
                 "Direct tool execution rate limited"
             );
-            return Err(AppError::RateLimited(format!(
-                "Tool '{}' rate limited. Retry after {retry_after}s.",
-                tool.name
-            )));
+            return Ok(early_failure(
+                ToolErrorKind::RateLimited,
+                format!("Tool '{}' rate limited. Retry after {retry_after}s.", tool.name),
+                true,
+            ));
         }
     }
-
-    let start = Instant::now();
 
     // Resolve credential env vars using the existing runner infrastructure
     let (env_vars, _hints, cred_failures, _injected_connectors) =
@@ -84,10 +214,14 @@ pub async fn invoke_tool_direct(
         .await;
 
     if !cred_failures.is_empty() {
-        return Err(AppError::Execution(format!(
-            "Credential decryption failed for: {}. Re-enter or rotate these credentials before retrying.",
-            cred_failures.join(", ")
-        )));
+        return Ok(early_failure(
+            ToolErrorKind::Auth,
+            format!(
+                "Credential decryption failed for: {}. Re-enter or rotate these credentials before retrying.",
+                cred_failures.join(", ")
+            ),
+            false,
+        ));
     }
 
     let env_map: HashMap<&str, &str> = env_vars
@@ -95,26 +229,43 @@ pub async fn invoke_tool_direct(
         .map(|(k, v)| (k.as_str(), v.as_str()))
         .collect();
 
-    let kind = tool.tool_kind().map_err(AppError::Execution)?;
+    // Zero or conflicting execution strategies is a configuration fact about
+    // the tool row — surface it typed (misconfigured), not as a raw Err.
+    let kind = match tool.tool_kind() {
+        Ok(k) => k,
+        Err(msg) => return Ok(early_failure(ToolErrorKind::Misconfigured, msg, false)),
+    };
 
-    let result = {
+    let result: Result<(String, String), DirectInvokeError> = {
         #[allow(clippy::type_complexity)]
         let fut: std::pin::Pin<
-            Box<dyn std::future::Future<Output = Result<(String, String), AppError>> + Send>,
+            Box<
+                dyn std::future::Future<Output = Result<(String, String), DirectInvokeError>>
+                    + Send,
+            >,
         > = match kind {
             ToolKind::Automation => Box::pin(invoke_automation_tool(pool, tool, input_json)),
             ToolKind::Script => Box::pin(invoke_script(tool, input_json, &env_map)),
             ToolKind::Api => {
-                let guide = tool.implementation_guide.as_ref().ok_or_else(|| {
-                    AppError::Execution(format!(
-                        "Tool '{}' is categorized as API but has no implementation_guide",
-                        tool.name
-                    ))
-                })?;
+                // Defensive: tool_kind() == Api guarantees a non-empty guide,
+                // but if the invariant ever breaks, fail typed, not raw.
+                let Some(guide) = tool.implementation_guide.as_ref() else {
+                    return Ok(early_failure(
+                        ToolErrorKind::Misconfigured,
+                        format!(
+                            "Tool '{}' is categorized as API but has no implementation_guide",
+                            tool.name
+                        ),
+                        false,
+                    ));
+                };
                 Box::pin(async move {
                     let first = invoke_api(tool, guide, input_json, &env_map).await;
                     if let Err(ref err) = first {
-                        if is_oauth_auth_failure(&err.to_string()) {
+                        // Key the OAuth refresh-and-retry on the TYPED outcome
+                        // (auth kind, or a 401 status) that invoke_api now
+                        // produces — not a substring match on the error blob.
+                        if err.kind == ToolErrorKind::Auth || err.http_status == Some(401) {
                             let refreshed =
                                 super::runner::force_refresh_credentials_for_tool(pool, tool).await;
                             if refreshed > 0 {
@@ -147,28 +298,42 @@ pub async fn invoke_tool_direct(
                 })
             }
         };
-        tokio::time::timeout(DIRECT_TOOL_TIMEOUT, fut)
-            .await
-            .map_err(|_| {
+        // A timeout is a structured, retryable failure — surface it as a
+        // success:false result with a typed Timeout kind rather than a hard
+        // Err out of this function.
+        match tokio::time::timeout(DIRECT_TOOL_TIMEOUT, fut).await {
+            Ok(inner) => inner,
+            Err(_) => Err(DirectInvokeError::typed(
                 AppError::Execution(format!(
                     "Tool '{}' timed out after {}s",
                     tool.name,
                     DIRECT_TOOL_TIMEOUT.as_secs()
-                ))
-            })?
+                )),
+                ToolErrorKind::Timeout,
+                None,
+                true,
+            )),
+        }
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
 
     let invocation_result = match result {
-        Ok((output, tool_type)) => ToolInvocationResult {
-            success: true,
-            output,
-            error: None,
-            duration_ms,
-            tool_name: tool.name.clone(),
-            tool_type,
-        },
+        Ok((output, tool_type)) => {
+            let (output, output_truncated) = cap_output(output);
+            ToolInvocationResult {
+                success: true,
+                output,
+                output_truncated,
+                error: None,
+                error_kind: None,
+                http_status: None,
+                retryable: false,
+                duration_ms,
+                tool_name: tool.name.clone(),
+                tool_type,
+            }
+        }
         Err(e) => {
             let tool_type = match kind {
                 ToolKind::Automation => "automation",
@@ -178,7 +343,11 @@ pub async fn invoke_tool_direct(
             ToolInvocationResult {
                 success: false,
                 output: String::new(),
-                error: Some(e.to_string()),
+                output_truncated: false,
+                error: Some(e.error.to_string()),
+                error_kind: Some(e.kind),
+                http_status: e.http_status,
+                retryable: e.retryable,
                 duration_ms,
                 tool_name: tool.name.clone(),
                 tool_type: tool_type.to_string(),
@@ -202,6 +371,7 @@ pub async fn invoke_tool_direct(
         },
         Some(duration_ms),
         invocation_result.error.as_deref(),
+        invocation_result.error_kind.map(|k| k.as_str()),
     ) {
         tracing::warn!("Failed to write tool audit log: {log_err}");
     }
@@ -209,15 +379,153 @@ pub async fn invoke_tool_direct(
     Ok(invocation_result)
 }
 
+/// File extensions a script tool may carry. The script is executed with
+/// `npx tsx <path>`, i.e. it runs as arbitrary code — so we only accept the
+/// TypeScript/JavaScript source shapes tsx actually loads and reject anything
+/// else outright (a `.sh`, `.py`, or extension-less path is never a valid tool
+/// script and is almost certainly tampering or a mis-seed).
+const ALLOWED_SCRIPT_EXTENSIONS: &[&str] = &["ts", "tsx", "mts", "cts", "js", "mjs", "cjs"];
+
+/// Directories a tool script is allowed to resolve into. Script tools run
+/// `npx tsx <script_path>` — arbitrary code execution — so the resolved path
+/// MUST sit inside a known-good root before we ever spawn. Two roots reflect
+/// how legit script tools are addressed in this codebase:
+///
+/// - `<cwd>/tools/` — relative script paths (`tools/gmail_reader.ts`,
+///   `tools/file_reader.ts`, `run.ts`-style entries) canonicalize into the
+///   working-directory `tools/` folder; this is the convention every in-repo
+///   example / fixture uses.
+/// - `<data_dir>/com.personas.desktop/tool_scripts/` — the app-data managed
+///   scripts directory, the durable home for user/template-authored tool
+///   scripts (mirrors the `skill_scratchpads` / `local_drive` app-data pattern).
+///
+/// Both are returned even if they do not yet exist; the prefix check below
+/// canonicalizes each root that does exist and normalizes the rest textually.
+fn allowed_script_roots() -> Vec<std::path::PathBuf> {
+    let mut roots = Vec::new();
+    if let Ok(cwd) = std::env::current_dir() {
+        roots.push(cwd.join("tools"));
+    }
+    if let Some(data) = dirs::data_dir() {
+        roots.push(data.join("com.personas.desktop").join("tool_scripts"));
+    }
+    roots
+}
+
+/// Normalize a path to a forward-slash, lowercase string, stripping the Windows
+/// extended-length prefix (`\\?\`) that `canonicalize()` may prepend. Shared by
+/// the script-path validator so root/target comparison is separator- and
+/// case-insensitive (matching `engine::path_safety`).
+fn normalize_path_for_compare(p: &std::path::Path) -> String {
+    let mut s = p.to_string_lossy().replace('\\', "/").to_lowercase();
+    if let Some(stripped) = s.strip_prefix("//?/") {
+        s = stripped.to_string();
+    }
+    s
+}
+
+/// Validate a script tool's `script_path` against an explicit set of allowed
+/// roots. Split out from [`validate_script_path`] so tests can drive it with a
+/// temp-dir root without depending on the process CWD / app-data dir.
+///
+/// Rejects, in order: empty path, `..` traversal in the raw input, a
+/// non-script extension, a path that does not exist (distinct message), and a
+/// resolved path that escapes every allowed root (defeats symlink escape,
+/// because the check runs on the CANONICAL path). Returns the canonical path on
+/// success so the caller spawns the resolved target, not the textual input.
+fn validate_script_path_against(
+    script_path: &str,
+    tool_name: &str,
+    roots: &[std::path::PathBuf],
+) -> Result<std::path::PathBuf, String> {
+    let trimmed = script_path.trim();
+    if trimmed.is_empty() {
+        return Err(format!("Tool '{tool_name}' has an empty script_path"));
+    }
+
+    // Fast textual reject of obvious traversal before touching the filesystem.
+    let normalised = trimmed.replace('\\', "/");
+    if normalised.contains("/../")
+        || normalised.ends_with("/..")
+        || normalised.starts_with("../")
+        || normalised == ".."
+    {
+        return Err(format!(
+            "Tool '{tool_name}': script_path must not contain '..' path traversal: {trimmed}"
+        ));
+    }
+
+    // Extension allowlist — only tsx-loadable source shapes.
+    let ext_ok = std::path::Path::new(trimmed)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| ALLOWED_SCRIPT_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()))
+        .unwrap_or(false);
+    if !ext_ok {
+        return Err(format!(
+            "Tool '{tool_name}': script_path must be a script file ({}) — got: {trimmed}",
+            ALLOWED_SCRIPT_EXTENSIONS.join(", ")
+        ));
+    }
+
+    // Resolve the REAL path (symlinks + `..`). A non-existent path is a distinct,
+    // recognisable failure — not conflated with "escaped the sandbox".
+    let canonical = std::path::Path::new(trimmed).canonicalize().map_err(|_| {
+        format!("Tool '{tool_name}': script file does not exist or is inaccessible: {trimmed}")
+    })?;
+    let canon_str = normalize_path_for_compare(&canonical);
+
+    for root in roots {
+        let root_str = match root.canonicalize() {
+            Ok(c) => normalize_path_for_compare(&c),
+            Err(_) => normalize_path_for_compare(root),
+        };
+        if root_str.is_empty() {
+            continue;
+        }
+        if canon_str == root_str || canon_str.starts_with(&format!("{root_str}/")) {
+            return Ok(canonical);
+        }
+    }
+
+    Err(format!(
+        "Tool '{tool_name}': script_path resolves outside the allowed tool-script directories: {trimmed}"
+    ))
+}
+
+/// Validate a script tool's `script_path` against the real allowed roots
+/// ([`allowed_script_roots`]). Returns the canonical path to spawn on success.
+fn validate_script_path(
+    script_path: &str,
+    tool_name: &str,
+) -> Result<std::path::PathBuf, String> {
+    validate_script_path_against(script_path, tool_name, &allowed_script_roots())
+}
+
 /// Invoke a script-based tool via `npx tsx`.
 async fn invoke_script(
     tool: &PersonaToolDefinition,
     input_json: &str,
     env_map: &HashMap<&str, &str>,
-) -> Result<(String, String), AppError> {
+) -> Result<(String, String), DirectInvokeError> {
+    // SECURITY: `script_path` is executed as arbitrary code (`npx tsx <path>`).
+    // Validate + canonicalize it against the allowed tool-script roots BEFORE
+    // spawning, so a DB-tampered or mis-seeded path (traversal, absolute path
+    // outside the sandbox, symlink escape, non-existent file) is rejected as a
+    // typed Misconfigured failure instead of running. Spawn the CANONICAL path
+    // to avoid any TOCTOU gap on the textual input.
+    let canonical_script = validate_script_path(&tool.script_path, &tool.name).map_err(|msg| {
+        DirectInvokeError::typed(
+            AppError::Validation(msg),
+            ToolErrorKind::Misconfigured,
+            None,
+            false,
+        )
+    })?;
+
     let mut cmd = tokio::process::Command::new("npx");
     cmd.arg("tsx")
-        .arg(&tool.script_path)
+        .arg(&canonical_script)
         .arg("--input")
         .arg(input_json);
 
@@ -228,6 +536,7 @@ async fn invoke_script(
     cmd.stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
+    // Spawn failure = transport (classified by the shared mapper).
     let output = cmd.output().await.map_err(|e| {
         AppError::Execution(format!(
             "Failed to spawn tool script '{}': {}",
@@ -242,11 +551,18 @@ async fn invoke_script(
         Ok((stdout, "script".to_string()))
     } else {
         let msg = if stderr.is_empty() { &stdout } else { &stderr };
-        Err(AppError::Execution(format!(
-            "Script exited with {}: {}",
-            output.status,
-            msg.trim()
-        )))
+        // The script ran but exited non-zero on its own terms — a tool error,
+        // not a transport/config problem, and not blindly retryable.
+        Err(DirectInvokeError::typed(
+            AppError::Execution(format!(
+                "Script exited with {}: {}",
+                output.status,
+                msg.trim()
+            )),
+            ToolErrorKind::ToolError,
+            None,
+            false,
+        ))
     }
 }
 
@@ -269,12 +585,17 @@ async fn invoke_api(
     guide: &str,
     input_json: &str,
     env_map: &HashMap<&str, &str>,
-) -> Result<(String, String), AppError> {
+) -> Result<(String, String), DirectInvokeError> {
     let curl_line = extract_curl_line(guide).ok_or_else(|| {
-        AppError::Execution(format!(
-            "Tool '{}' implementation_guide has no 'Curl:' line -- cannot invoke directly",
-            tool.name
-        ))
+        DirectInvokeError::typed(
+            AppError::Execution(format!(
+                "Tool '{}' implementation_guide has no 'Curl:' line -- cannot invoke directly",
+                tool.name
+            )),
+            ToolErrorKind::Misconfigured,
+            None,
+            false,
+        )
     })?;
 
     // Parse the curl command into shell-style tokens (respecting quotes)
@@ -282,11 +603,16 @@ async fn invoke_api(
 
     // The first token must be "curl"
     if raw_tokens.is_empty() || raw_tokens[0] != "curl" {
-        return Err(AppError::Execution(format!(
-            "Tool '{}' Curl: line must start with 'curl', got: {:?}",
-            tool.name,
-            raw_tokens.first()
-        )));
+        return Err(DirectInvokeError::typed(
+            AppError::Execution(format!(
+                "Tool '{}' Curl: line must start with 'curl', got: {:?}",
+                tool.name,
+                raw_tokens.first()
+            )),
+            ToolErrorKind::Misconfigured,
+            None,
+            false,
+        ));
     }
 
     // Pre-parse input JSON once instead of re-parsing per token.
@@ -307,10 +633,21 @@ async fn invoke_api(
     // Inject --proto to restrict to safe URL schemes (blocks file://, gopher://, etc.)
     let mut cmd = tokio::process::Command::new("curl");
     cmd.arg("--proto").arg("=https,http");
-    cmd.arg("--fail-with-body");
     for token in &resolved_tokens {
         cmd.arg(token);
     }
+    // Capture the HTTP status the same way the build-time test path
+    // (`execute_test_curl`) does: append `-w '\n%{http_code}'` so the code lands
+    // on the final stdout line for `extract_http_code_from_output`. Injected
+    // LAST so it wins over any `-w` the guide's `Curl:` line carried.
+    //
+    // We deliberately DROP `--fail-with-body` (the test path never used it
+    // either): with `--fail`, curl exits 22 on 4xx/5xx and the HTTP status is
+    // not recoverable from the process exit code — that is exactly why the live
+    // path used to return opaque "Curl exited with 22" blobs. Without it, curl
+    // exits 0 and we classify by the *parsed* code, giving a typed `http_status`
+    // for every response (2xx AND 4xx/5xx), matching the tester.
+    cmd.arg("-w").arg("\n%{http_code}");
 
     for (k, v) in env_map {
         cmd.env(k, v);
@@ -329,25 +666,53 @@ async fn invoke_api(
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
-    if output.status.success() {
-        Ok((stdout, "api".to_string()))
-    } else {
+    if !output.status.success() {
+        // curl itself failed (connect / DNS / TLS / timeout) — no HTTP exchange
+        // completed, so there is no status to type. Classify from the message
+        // (Transport / Timeout via the shared mapper).
         let msg = if stderr.is_empty() { &stdout } else { &stderr };
-        Err(AppError::Execution(format!(
-            "Curl exited with {}: {}",
-            output.status,
+        return Err(DirectInvokeError::classify(AppError::Execution(format!(
+            "Curl failed for tool '{}': {}",
+            tool.name,
             msg.trim()
-        )))
+        ))));
+    }
+
+    // curl exited 0 — parse the appended `%{http_code}` and classify by it.
+    let (body, http_code) = extract_http_code_from_output(&stdout);
+    api_outcome_from_http(&tool.name, body, http_code)
+}
+
+/// Map a completed curl exchange (parsed body + optional HTTP code) into the
+/// direct-path result. Shared decision point so the 2xx/4xx/5xx contract is
+/// unit-testable without spawning curl, and so the live path agrees with the
+/// build-time tester (`execute_test_curl`): 2xx (or no code) is success; any
+/// other code is a typed failure carrying `http_status` + the classified kind.
+fn api_outcome_from_http(
+    tool_name: &str,
+    body: &str,
+    http_code: Option<u16>,
+) -> Result<(String, String), DirectInvokeError> {
+    match http_code {
+        Some(code) if (200..300).contains(&code) => Ok((body.to_string(), "api".to_string())),
+        Some(code) => {
+            let (kind, retryable) = classify_http_status(code);
+            let preview = crate::utils::text::truncate_on_char_boundary(body.trim(), 500);
+            Err(DirectInvokeError::typed(
+                AppError::Execution(format!(
+                    "API tool '{tool_name}' returned HTTP {code}: {preview}"
+                )),
+                kind,
+                Some(code),
+                retryable,
+            ))
+        }
+        // No `-w` code parsed but curl succeeded (e.g. empty body / no status
+        // line) — treat as success, mirroring the test path's `None => passed`.
+        None => Ok((body.to_string(), "api".to_string())),
     }
 }
 
-fn is_oauth_auth_failure(error_msg: &str) -> bool {
-    let lower = error_msg.to_ascii_lowercase();
-    lower.contains("401")
-        || lower.contains("unauthorized")
-        || lower.contains("expired_token")
-        || lower.contains("invalid_token")
-}
 
 /// Substitute `$VAR` and `${VAR}` placeholders in a single token with values
 /// from the environment map and input JSON. Returns the resolved string.
@@ -495,14 +860,19 @@ async fn invoke_automation_tool(
     pool: &DbPool,
     tool: &PersonaToolDefinition,
     input_json: &str,
-) -> Result<(String, String), AppError> {
+) -> Result<(String, String), DirectInvokeError> {
     let vtid = VirtualToolId::parse(&tool.id).ok_or_else(|| {
-        AppError::Execution(format!(
-            "Automation tool '{}' has invalid ID format (expected {}<id>): {}",
-            tool.name,
-            VirtualToolId::PREFIX,
-            tool.id
-        ))
+        DirectInvokeError::typed(
+            AppError::Execution(format!(
+                "Automation tool '{}' has invalid ID format (expected {}<id>): {}",
+                tool.name,
+                VirtualToolId::PREFIX,
+                tool.id
+            )),
+            ToolErrorKind::Misconfigured,
+            None,
+            false,
+        )
     })?;
     let automation_id = vtid.automation_id();
 
@@ -515,11 +885,24 @@ async fn invoke_automation_tool(
             "automation".to_string(),
         ))
     } else {
-        Err(AppError::Execution(format!(
-            "Automation '{}' failed: {}",
-            tool.name,
-            run.error_message.unwrap_or_else(|| "Unknown error".into())
-        )))
+        // Structured failure: attempts used / retryable / typed reason kind that
+        // automation_runner already knows (parsed from the run's error message +
+        // retry-loop warnings), threaded into the Direction-1 contract instead
+        // of a flat "Automation 'x' failed: <msg>".
+        let info = super::automation_runner::classify_automation_failure(&automation, &run);
+        tracing::debug!(
+            automation_id = %automation.id,
+            attempts_used = info.attempts_used,
+            max_attempts = info.max_attempts,
+            kind = ?info.kind,
+            "automation tool invocation failed"
+        );
+        Err(DirectInvokeError::typed(
+            AppError::Execution(info.message),
+            info.kind,
+            info.http_status,
+            info.retryable,
+        ))
     }
 }
 
@@ -870,4 +1253,239 @@ fn extract_curl_line(guide: &str) -> Option<&str> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod api_outcome_tests {
+    use super::*;
+
+    #[test]
+    fn extract_http_code_reads_trailing_status_line() {
+        let (body, code) = extract_http_code_from_output("hello world\n200");
+        assert_eq!(body, "hello world");
+        assert_eq!(code, Some(200));
+
+        // Bare status (empty body).
+        let (body, code) = extract_http_code_from_output("404");
+        assert_eq!(body, "");
+        assert_eq!(code, Some(404));
+
+        // No -w code present.
+        let (body, code) = extract_http_code_from_output("just a body, no code");
+        assert_eq!(body, "just a body, no code");
+        assert_eq!(code, None);
+    }
+
+    #[test]
+    fn success_2xx_and_no_code_are_ok() {
+        let ok = api_outcome_from_http("gmail", "{\"ok\":true}", Some(200));
+        assert!(ok.is_ok());
+        let none = api_outcome_from_http("gmail", "raw body", None);
+        assert!(none.is_ok());
+    }
+
+    #[test]
+    fn http_401_is_typed_auth_terminal() {
+        let err = api_outcome_from_http("gmail", "unauthorized", Some(401)).unwrap_err();
+        assert_eq!(err.kind, ToolErrorKind::Auth);
+        assert_eq!(err.http_status, Some(401));
+        assert!(!err.retryable);
+        assert!(err.error.to_string().contains("HTTP 401"));
+    }
+
+    #[test]
+    fn http_429_is_typed_http_retryable() {
+        let err = api_outcome_from_http("gmail", "slow down", Some(429)).unwrap_err();
+        assert_eq!(err.kind, ToolErrorKind::Http);
+        assert_eq!(err.http_status, Some(429));
+        assert!(err.retryable);
+    }
+
+    #[test]
+    fn http_500_is_typed_http_retryable() {
+        let err = api_outcome_from_http("gmail", "boom", Some(500)).unwrap_err();
+        assert_eq!(err.kind, ToolErrorKind::Http);
+        assert_eq!(err.http_status, Some(500));
+        assert!(err.retryable);
+    }
+}
+
+#[cfg(test)]
+mod script_path_validation_tests {
+    use super::*;
+    use std::fs;
+
+    /// Create a `tools/` root inside a fresh temp dir and drop a valid script
+    /// into it. Returns `(tempdir, root, script_path)`.
+    fn tools_root_with_script(file: &str) -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("tools");
+        fs::create_dir_all(&root).unwrap();
+        let script = root.join(file);
+        fs::write(&script, "export {};\n").unwrap();
+        (dir, root, script)
+    }
+
+    #[test]
+    fn accepts_script_inside_allowed_root() {
+        let (_dir, root, script) = tools_root_with_script("gmail_reader.ts");
+        let roots = vec![root];
+        let ok = validate_script_path_against(&script.to_string_lossy(), "gmail_reader", &roots);
+        assert!(ok.is_ok(), "expected in-root script to be accepted: {ok:?}");
+    }
+
+    #[test]
+    fn rejects_empty_path() {
+        let err = validate_script_path_against("", "t", &[]).unwrap_err();
+        assert!(err.contains("empty script_path"), "{err}");
+    }
+
+    #[test]
+    fn rejects_traversal_in_raw_input() {
+        let (_dir, root, _script) = tools_root_with_script("ok.ts");
+        let roots = vec![root.clone()];
+        // `<root>/../evil.ts` textually escapes before we ever hit the FS.
+        let attack = root.join("..").join("evil.ts");
+        let err = validate_script_path_against(&attack.to_string_lossy(), "t", &roots)
+            .unwrap_err();
+        assert!(err.contains("traversal"), "{err}");
+    }
+
+    #[test]
+    fn rejects_absolute_path_outside_root() {
+        // A real file that exists but lives OUTSIDE the allowed root.
+        let outside = tempfile::tempdir().unwrap();
+        let evil = outside.path().join("evil.ts");
+        fs::write(&evil, "export {};\n").unwrap();
+        let (_dir, root, _script) = tools_root_with_script("ok.ts");
+        let roots = vec![root];
+        let err =
+            validate_script_path_against(&evil.to_string_lossy(), "t", &roots).unwrap_err();
+        assert!(err.contains("outside the allowed"), "{err}");
+    }
+
+    #[test]
+    fn rejects_nonexistent_path_with_distinct_message() {
+        let (_dir, root, _script) = tools_root_with_script("ok.ts");
+        let roots = vec![root.clone()];
+        let missing = root.join("does_not_exist.ts");
+        let err = validate_script_path_against(&missing.to_string_lossy(), "t", &roots)
+            .unwrap_err();
+        assert!(err.contains("does not exist"), "distinct not-found message: {err}");
+    }
+
+    #[test]
+    fn rejects_non_script_extension() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("tools");
+        fs::create_dir_all(&root).unwrap();
+        let sh = root.join("evil.sh");
+        fs::write(&sh, "#!/bin/sh\nrm -rf /\n").unwrap();
+        let roots = vec![root];
+        let err = validate_script_path_against(&sh.to_string_lossy(), "t", &roots)
+            .unwrap_err();
+        assert!(err.contains("must be a script file"), "{err}");
+    }
+
+    /// Symlink escape: a symlink INSIDE the allowed root that points at a file
+    /// OUTSIDE it must be rejected, because validation runs on the canonical
+    /// (symlink-resolved) path. Unix-only (Windows symlink creation needs
+    /// privilege); skips gracefully if the platform refuses the symlink.
+    #[cfg(unix)]
+    #[test]
+    fn rejects_symlink_escape() {
+        use std::os::unix::fs::symlink;
+        let outside = tempfile::tempdir().unwrap();
+        let real = outside.path().join("payload.ts");
+        fs::write(&real, "export {};\n").unwrap();
+
+        let (_dir, root, _script) = tools_root_with_script("ok.ts");
+        let link = root.join("shim.ts");
+        if symlink(&real, &link).is_err() {
+            return; // platform refused symlink — nothing to assert
+        }
+        let roots = vec![root];
+        let err = validate_script_path_against(&link.to_string_lossy(), "t", &roots)
+            .unwrap_err();
+        assert!(err.contains("outside the allowed"), "symlink escape not blocked: {err}");
+    }
+}
+
+#[cfg(test)]
+mod direct_invoke_contract_tests {
+    //! The 2026-07-16 UAT pass proved three pre-flight failures escaped the
+    //! typed `ToolInvocationResult` contract as raw `Err(AppError)` — which the
+    //! webview rendered as literally "[object Object]" — and that `builtin://`
+    //! tools were mislabeled "misconfigured". These tests pin the contract:
+    //! every pre-flight failure comes back `Ok(result)` with the right kind.
+    use super::*;
+    use crate::db::init_test_db;
+
+    fn tool(script_path: &str, guide: Option<&str>, category: &str) -> PersonaToolDefinition {
+        PersonaToolDefinition {
+            id: "tool-under-test".into(),
+            name: "tool_under_test".into(),
+            category: category.into(),
+            description: String::new(),
+            script_path: script_path.into(),
+            input_schema: None,
+            output_schema: None,
+            requires_credential_type: None,
+            implementation_guide: guide.map(|g| g.to_string()),
+            is_builtin: script_path.starts_with("builtin://"),
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    #[tokio::test]
+    async fn builtin_tool_is_typed_unsupported_not_misconfigured() {
+        let pool = init_test_db().unwrap();
+        let t = tool("builtin://gmail_read", None, "email");
+        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", None)
+            .await
+            .expect("must be Ok(typed result), never a raw Err");
+        assert!(!r.success);
+        assert_eq!(r.error_kind, Some(ToolErrorKind::Unsupported));
+        assert_eq!(r.tool_type, "builtin");
+        let msg = r.error.unwrap();
+        assert!(
+            msg.contains("persona executions"),
+            "message must say where builtins DO run: {msg}"
+        );
+    }
+
+    #[tokio::test]
+    async fn no_execution_strategy_is_typed_misconfigured() {
+        let pool = init_test_db().unwrap();
+        // No script, no guide, not automation — tool_kind() is Err.
+        let t = tool("", None, "api");
+        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", None)
+            .await
+            .expect("must be Ok(typed result), never a raw Err");
+        assert!(!r.success);
+        assert_eq!(r.error_kind, Some(ToolErrorKind::Misconfigured));
+        assert_eq!(r.tool_type, "unknown");
+        assert!(r.error.unwrap().contains("no execution strategy"));
+    }
+
+    #[tokio::test]
+    async fn rate_limited_is_typed_retryable() {
+        let pool = init_test_db().unwrap();
+        let t = tool("", None, "api");
+        let rl = RateLimiter::new();
+        // Exhaust the per-tool budget so the next check trips.
+        let key = format!("tool:{}", t.id);
+        while rl
+            .check(&key, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW)
+            .is_ok()
+        {}
+        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", Some(&rl))
+            .await
+            .expect("must be Ok(typed result), never a raw Err");
+        assert!(!r.success);
+        assert_eq!(r.error_kind, Some(ToolErrorKind::RateLimited));
+        assert!(r.retryable, "rate-limit failures are retryable");
+        assert!(r.error.unwrap().contains("rate limited"));
+    }
 }

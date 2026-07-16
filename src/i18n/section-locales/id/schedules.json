@@ -112,5 +112,13 @@
   "last24h_failed_count": "{count} gagal",
   "last24h_show_all": "Tampilkan semua ({count})",
   "last24h_show_less": "Tampilkan lebih sedikit",
-  "last24h_retry_at": "coba ulang otomatis {time}"
+  "last24h_retry_at": "coba ulang otomatis {time}",
+  "unverified": "Belum terverifikasi",
+  "unverified_tooltip": "Tidak ada catatan run untuk slot ini — mungkin dilewati, dibatasi rate, melebihi anggaran, atau aplikasi tertutup.",
+  "missed_backfill_cta": "Susulkan",
+  "missed_dismiss": "Tutup pemberitahuan run terlewat",
+  "missed_offline": "Terlewat {count} saat offline",
+  "missed_offline_tooltip": "Jalankan terjadwal dilewati saat aplikasi tertutup. Backfill memutarnya ulang (dedup dan dibatasi), atau tutup untuk menghapus.",
+  "reason_invalid_timezone": "Dijeda — zona waktu tidak valid",
+  "reason_unscheduled": "Dijeda — tidak ada jadwal valid"
 }

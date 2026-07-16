@@ -980,7 +980,7 @@ pub(crate) async fn gate_setup_status_on_verification(
             ),
             suggested_actions: Some(
                 serde_json::json!([
-                    "Open the persona's Connections panel to see which connector or data source needs setup.",
+                    "Open the Connections section in the sidebar to see which connector or data source needs setup.",
                     "Provide the missing credential or register the missing source, then re-run the persona to confirm it delivers value."
                 ])
                 .to_string(),

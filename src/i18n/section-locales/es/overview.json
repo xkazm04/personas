@@ -525,7 +525,13 @@
     "event_data": "Datos del Evento",
     "error": "Error",
     "skipped_stat_label": "{skipped} omitidos",
-    "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha."
+    "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha.",
+    "type_labels": {
+      "sla_breach_opened": "Incumplimiento de SLA iniciado",
+      "sla_breach_recovered": "Incumplimiento de SLA recuperado",
+      "schedule_missed_offline": "Ejecuciones programadas perdidas (sin conexión)",
+      "schedule_skipped_overlap": "Programación omitida (ejecución anterior activa)"
+    }
   },
   "health": {
     "title": "Salud del Agente",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "Mapa de Cascada en Cadena",
-    "no_chains": "No se detectaron cadenas — todas las personas operan independientemente"
+    "no_chains": "No se detectaron cadenas — todas las personas operan independientemente",
+    "cofail_insufficient": "sin fallos simultáneos",
+    "cofail_pct": "{pct}% de fallos simultáneos"
   },
   "predictive_alerts_extra": {
     "title": "Alertas Predictivas",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "Cargando página de estado…",
     "loading_reliability": "Cargando datos de fiabilidad…",
     "heartbeats_btn": "Latidos",
-    "reliability_btn": "Fiabilidad"
+    "reliability_btn": "Fiabilidad",
+    "source_byom_policy": "Política BYOM",
+    "source_healing_issues": "Problemas de reparación",
+    "source_monthly_spend": "Gasto mensual",
+    "source_provider_stats": "Estadísticas del proveedor",
+    "sources_unavailable": "No se pudo cargar {sources}: las puntuaciones pueden ser inexactas."
   },
   "popup_fields": {
     "sign_up_free_at": "Regístrate gratis en",
@@ -1573,7 +1586,11 @@
     "seg_healing": "Recuperación",
     "seg_stability": "Estabilidad",
     "seg_success": "Éxito",
-    "show_all": "Mostrar todos"
+    "show_all": "Mostrar todos",
+    "fleet_avg_badge": "prom. de flota",
+    "fleet_avg_tooltip": "No se registraron ejecuciones para esta persona en el periodo — se muestra la tasa de éxito promedio de toda la flota, no un valor medido por persona.",
+    "no_data_badge": "sin datos",
+    "no_data_tooltip": "No hay ejecuciones completadas ni fallidas para esta persona en el periodo — la tasa de éxito es un marcador, no un valor medido."
   },
   "provenance": {
     "sourced_tip": "Cita {count} fuente(s) que puedes rastrear y auditar.",

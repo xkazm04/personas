@@ -102,7 +102,12 @@ user resolved them), polls it to completion, and parses its output:
 - One mandatory `DIRECTOR_SCORE: {"score":0-5,"summary":"…"}` line → the
   overall verdict. The score + a rendered markdown of the full assessment are
   written onto the **reviewed execution** (`persona_executions.director_score`
-  / `director_review_md`).
+  / `director_review_md`). If the model forgets the mandatory score line, the
+  engine issues **one bounded salvage re-prompt** asking only for that line; if
+  that still fails, the review is persisted as an explicit **unscored marker**
+  (`director_review_md` set, `director_score` NULL) and the coaching table shows
+  an amber "Unscored" chip instead of a silent "—" — the review is never
+  dropped.
 - Zero-to-three `DIRECTOR_WIN: {"category":"…","note":"…"}` lines → things the
   persona is **doing well** in that category. Rendered as a "What's working"
   section at the top of the review markdown so coaching isn't purely
@@ -114,6 +119,19 @@ user resolved them), polls it to completion, and parses its output:
 
 Because the score lives on the execution (not a review row), healthy personas
 get a high score with **no** review-queue spam.
+
+**Calibration to your taste.** Each review payload includes a running tally of
+how many of the Director's own past coaching notes on that persona you have
+**accepted vs rejected** — read directly from the disposition of its
+Director-sourced review rows (`persona_manual_reviews`, status
+approved/rejected) — so the score and coaching calibrate to what you've valued.
+
+**Freshness dedup.** The batch cycle (`run_director_batch`) skips any starred
+persona whose newest execution was **already reviewed** (zero new runs since the
+last review) — re-reviewing it would burn LLM runs to restate the same verdict.
+Skips are surfaced in the batch report (`personasSkippedUnchanged` + the names)
+and the log, not silent. The **single-persona** run (`run_director_on_persona`)
+has no such gate and always forces a fresh review.
 
 ## Long-term memory (Obsidian Brain)
 

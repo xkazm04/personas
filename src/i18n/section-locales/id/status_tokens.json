@@ -161,5 +161,29 @@
     "quarantined": "Trigger dikarantina",
     "healing_abandoned": "Pemulihan menyerah",
     "healing_capped": "Percobaan pemulihan habis"
+  },
+  "build": {
+    "analyzing": "Menganalisis",
+    "awaiting_input": "Menunggu masukan",
+    "cancelled": "Dibatalkan",
+    "completed": "Selesai",
+    "draft_ready": "Draf siap",
+    "failed": "Gagal",
+    "initializing": "Menginisialisasi",
+    "promoted": "Dipromosikan",
+    "resolving": "Menyelesaikan",
+    "test_complete": "Pengujian selesai",
+    "testing": "Menguji"
+  },
+  "tool_error_kind": {
+    "auth": "Autentikasi",
+    "http": "Kesalahan HTTP",
+    "misconfigured": "Salah konfigurasi",
+    "rate_limited": "Batas laju tercapai",
+    "timeout": "Waktu habis",
+    "tool_error": "Alat gagal",
+    "transport": "Koneksi gagal",
+    "unknown": "Kesalahan tidak dikenal",
+    "unsupported": "Tidak dapat dijalankan di sini"
   }
 }

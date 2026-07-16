@@ -157,7 +157,11 @@
     "whats_new": "新着情報",
     "back_to_plugins": "プラグイン",
     "roadmap": "ロードマップ",
-    "groups_label": "グループ"
+    "groups_label": "グループ",
+    "draft_agent_fallback": "ドラフトエージェント",
+    "draft_needs_answers_one": "{name} — 回答が1件必要",
+    "draft_needs_answers_other": "{name} — 回答が{count}件必要",
+    "draft_switch_title": "ドラフトに切り替え: {name}（{phase}）"
   },
   "execution_detail": {
     "copy": "コピー",

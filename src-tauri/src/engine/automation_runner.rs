@@ -10,6 +10,7 @@ use crate::db::repos::resources::automations as repo;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
+use crate::engine::tool_outcome::{classify_app_error, ToolErrorKind};
 use crate::error::AppError;
 
 /// Invoke an automation by calling its webhook URL.
@@ -125,12 +126,16 @@ pub async fn invoke_automation(
         &warnings,
     )?;
 
-    // Structured audit logging (best-effort)
+    // Structured audit logging (best-effort). On failure, classify the error
+    // into the shared ToolErrorKind so the audit row / incidents inbox carry a
+    // typed category instead of only the opaque webhook message.
     let (status, err_msg) = if completed_run.status == AutomationRunStatus::Completed {
         ("success", None)
     } else {
         ("error", completed_run.error_message.as_deref())
     };
+    let error_kind =
+        err_msg.map(|m| classify_app_error(&AppError::Execution(m.to_string())).0);
     if let Err(log_err) = tool_audit_log::insert(
         pool,
         &automation.id,
@@ -142,6 +147,7 @@ pub async fn invoke_automation(
         status,
         Some(duration_ms as u64),
         err_msg,
+        error_kind.map(|k| k.as_str()),
     ) {
         tracing::warn!("Failed to write automation audit log: {log_err}");
     }
@@ -291,7 +297,13 @@ fn finalize_run(
                 None,
                 warnings_json.as_deref(),
             )?;
-            let _ = repo::record_trigger_result(pool, automation_id, "success", None);
+            if let Err(e) = repo::record_trigger_result(pool, automation_id, "success", None) {
+                tracing::warn!(
+                    automation_id,
+                    error = %e,
+                    "Failed to record automation trigger result (success) — run itself is unaffected"
+                );
+            }
             Ok(completed)
         }
         Err(error_msg) => {
@@ -306,7 +318,15 @@ fn finalize_run(
                 Some(&error_msg),
                 warnings_json.as_deref(),
             )?;
-            let _ = repo::record_trigger_result(pool, automation_id, "failed", Some(&error_msg));
+            if let Err(e) =
+                repo::record_trigger_result(pool, automation_id, "failed", Some(&error_msg))
+            {
+                tracing::warn!(
+                    automation_id,
+                    error = %e,
+                    "Failed to record automation trigger result (failed) — run itself is unaffected"
+                );
+            }
             Ok(completed)
         }
     }
@@ -333,6 +353,145 @@ fn is_auth_failure(result: &Result<(String, u16, Vec<String>), AppError>) -> boo
     match result {
         Err(AppError::Execution(msg)) => msg.contains("HTTP 401"),
         _ => false,
+    }
+}
+
+/// Structured view of a FAILED [`AutomationRun`], for the shared tool-result
+/// contract (see `engine::tool_outcome`). Surfaces what the runner already
+/// knows — how many attempts were spent (parsed from the retry-loop warnings),
+/// the typed reason (`timeout` vs `http` vs `transport` vs `auth`), and whether
+/// a retry could plausibly help — so a tool-driven automation failure carries
+/// fidelity instead of a flat `Automation 'x' failed: <msg>`.
+pub struct AutomationFailureInfo {
+    pub kind: ToolErrorKind,
+    pub http_status: Option<u16>,
+    pub retryable: bool,
+    pub attempts_used: u32,
+    pub max_attempts: u32,
+    /// Human message including the attempt context, suitable for the contract
+    /// `error` field and the audit / incidents row.
+    pub message: String,
+}
+
+/// Classify a non-completed [`AutomationRun`] into structured failure info.
+/// Reuses the shared [`classify_app_error`] over the run's own `error_message`
+/// (which the webhook path writes as `Webhook returned HTTP {status}: …` /
+/// `Webhook timed out after …` / `Failed to connect to webhook: …`) and reads
+/// the attempt counter the retry loop stamps into `run.warnings`.
+pub fn classify_automation_failure(
+    automation: &PersonaAutomation,
+    run: &AutomationRun,
+) -> AutomationFailureInfo {
+    classify_failure_parts(
+        &automation.name,
+        automation.retry_count,
+        run.error_message.as_deref(),
+        run.warnings.as_deref(),
+    )
+}
+
+/// Field-level core of [`classify_automation_failure`], split out so it is
+/// testable without constructing a full `PersonaAutomation` / `AutomationRun`.
+fn classify_failure_parts(
+    name: &str,
+    retry_count: i32,
+    error_message: Option<&str>,
+    warnings_json: Option<&str>,
+) -> AutomationFailureInfo {
+    let max_attempts = retry_count.clamp(1, 5) as u32;
+    let raw_msg = error_message
+        .map(|m| m.to_string())
+        .unwrap_or_else(|| "Unknown error".into());
+    let (kind, http_status, retryable) =
+        classify_app_error(&AppError::Execution(raw_msg.clone()));
+    let attempts_used = parse_attempts_used(warnings_json)
+        .unwrap_or(1)
+        .clamp(1, max_attempts);
+    let attempt_note = if max_attempts > 1 {
+        format!(" (after {attempts_used}/{max_attempts} attempts)")
+    } else {
+        String::new()
+    };
+    let message = format!("Automation '{name}' failed{attempt_note}: {raw_msg}");
+    AutomationFailureInfo {
+        kind,
+        http_status,
+        retryable,
+        attempts_used,
+        max_attempts,
+        message,
+    }
+}
+
+/// Parse the attempt counter the retry loop stamps into `run.warnings`
+/// (`Failed after {attempt}/{max} attempts` or `Succeeded on attempt {a}/{m}`).
+/// Returns `None` when no such marker is present (single-attempt runs).
+fn parse_attempts_used(warnings_json: Option<&str>) -> Option<u32> {
+    let raw = warnings_json?;
+    let warnings: Vec<String> = serde_json::from_str(raw).ok()?;
+    for w in &warnings {
+        for marker in ["Failed after ", "Succeeded on attempt "] {
+            if let Some(rest) = w.strip_prefix(marker) {
+                if let Some(slash) = rest.find('/') {
+                    if let Ok(n) = rest[..slash].trim().parse::<u32>() {
+                        return Some(n);
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod automation_failure_tests {
+    use super::*;
+
+    #[test]
+    fn parses_attempts_from_retry_warning() {
+        let warnings = serde_json::to_string(&vec![
+            "Method fallback: ...".to_string(),
+            "Failed after 3/3 attempts".to_string(),
+        ])
+        .unwrap();
+        assert_eq!(parse_attempts_used(Some(&warnings)), Some(3));
+        assert_eq!(parse_attempts_used(None), None);
+        assert_eq!(parse_attempts_used(Some("not json")), None);
+    }
+
+    #[test]
+    fn timeout_run_is_retryable_with_attempt_context() {
+        let warnings =
+            serde_json::to_string(&vec!["Failed after 3/3 attempts".to_string()]).unwrap();
+        let info = classify_failure_parts(
+            "notify",
+            3,
+            Some("Webhook timed out after 5000ms: http://x"),
+            Some(&warnings),
+        );
+        assert_eq!(info.kind, ToolErrorKind::Timeout);
+        assert!(info.retryable);
+        assert_eq!(info.attempts_used, 3);
+        assert_eq!(info.max_attempts, 3);
+        assert!(info.message.contains("after 3/3 attempts"));
+    }
+
+    #[test]
+    fn http_401_run_is_auth_not_retryable() {
+        let info = classify_failure_parts("notify", 1, Some("Webhook returned HTTP 401: nope"), None);
+        assert_eq!(info.kind, ToolErrorKind::Auth);
+        assert_eq!(info.http_status, Some(401));
+        assert!(!info.retryable);
+        // Single-attempt automations omit the attempt note.
+        assert!(!info.message.contains("attempts"));
+    }
+
+    #[test]
+    fn http_503_run_is_retryable_http() {
+        let info = classify_failure_parts("notify", 2, Some("Webhook returned HTTP 503: down"), None);
+        assert_eq!(info.kind, ToolErrorKind::Http);
+        assert_eq!(info.http_status, Some(503));
+        assert!(info.retryable);
     }
 }
 
@@ -429,9 +588,25 @@ pub fn automation_to_virtual_tool(
 ) -> crate::db::models::PersonaToolDefinition {
     let platform_label = auto.platform.label();
 
+    // Truthful timing contract for the LLM. An automation is a webhook /
+    // repository-dispatch call that BLOCKS for up to its configured
+    // `timeout_ms` per attempt and retries transient failures (up to
+    // `retry_count`, clamped 1..5) with exponential backoff. The old copy
+    // ("Runs instantly without using your tokens") was false on the timing
+    // axis and led the model to treat these as free/instant. Derive the real
+    // numbers from the automation's own config so the description never drifts.
+    let timeout_secs = (auto.timeout_ms.max(1000) as f64 / 1000.0).ceil() as i64;
+    let max_attempts = auto.retry_count.clamp(1, 5);
+    let timing = if max_attempts > 1 {
+        format!(
+            "May block up to ~{timeout_secs}s per attempt and retry up to {max_attempts}× on transient failure (so it can take noticeably longer before returning)"
+        )
+    } else {
+        format!("May block up to ~{timeout_secs}s before returning")
+    };
     let description = format!(
-        "{} [Automation -- {}. Runs instantly without using your tokens.]",
-        auto.description, platform_label
+        "{} [Automation -- {}. {}. Does not consume your token budget.]",
+        auto.description, platform_label, timing
     );
 
     let fallback_note = if auto.fallback_mode == AutomationFallbackMode::Connector {

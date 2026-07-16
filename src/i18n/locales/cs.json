@@ -1655,7 +1655,25 @@
       "eco_subtitle": "Jak často každý model vyřeší eval a co každý úspěch stojí.",
       "eco_title": "Nákladová efektivita",
       "vr_col_tokens": "Tokeny",
-      "vr_tokens_tooltip": "Průměrně {input} vstupních / {output} výstupních na běh"
+      "vr_tokens_tooltip": "Průměrně {input} vstupních / {output} výstupních na běh",
+      "vr_reconcile_clear_all": "Zrušit všechny přišpendlené",
+      "vr_reconcile_clear_pin": "Zrušit přišpendlení",
+      "vr_reconcile_desc_one": "1 použití stále přišpendluje model odlišný od toho, který jste právě povýšili ({model}). Poběží na svém přišpendleném modelu, dokud přišpendlení nezrušíte.",
+      "vr_reconcile_desc_other": "{count} použití stále přišpendluje modely odlišné od toho, který jste právě povýšili ({model}). Poběží na svých přišpendlených modelech, dokud přišpendlení nezrušíte.",
+      "vr_reconcile_done": "Hotovo",
+      "vr_reconcile_now_follows": "Nyní sleduje výchozí ({model})",
+      "vr_reconcile_pinned_to": "přišpendleno k {model}",
+      "vr_reconcile_title": "Sladit přišpendlené modely použití",
+      "improve_failed": "Nepodařilo se připravit podklad pro zlepšení",
+      "improve_focus": "Zaměří se na {metric} (průměr {score}/100)",
+      "improve_run_seed_measured": "Vylepši personu „{name}“. Její poslední test označil {metric} jako nejslabší oblast (průměr {score}/100). Na co se mám zaměřit? ",
+      "improve_run_seed_plain": "Vylepši personu „{name}“ na základě výsledků jejího posledního testu. Na co se mám zaměřit? ",
+      "improve_seeded": "Podklad pro zlepšení otevřen v Athena",
+      "vr_cost_unknown": "nedostupné",
+      "vr_cost_unknown_tooltip": "Náklady se u lokálních modelů nesledují",
+      "vr_degraded_tooltip": "{count} z {total} vzorků ohodnoceno záložní heuristikou (hodnotitel LLM nedostupný)",
+      "vr_partial_tooltip": "Složené z dílčích skóre — nelze přímo porovnat",
+      "vr_score_caution": "Skóre vyžaduje opatrnost"
     },
     "design": {
       "select_agent": "Vyberte agenta pro zahájení analýzy návrhu",
@@ -2532,7 +2550,15 @@
       "failed": "Selhalo",
       "error": "Chyba",
       "invalid_json": "Neplatný JSON — opravte ho před spuštěním.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "Selhání",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "Výstup byl zkrácen — nástroj vrátil více, než je limit zobrazení.",
+      "panel_subtitle": "Spusťte nástroj přímo s přihlašovacími údaji této persony.",
+      "panel_title": "Spustit nástroj",
+      "retryable_hint": "Při opakování se to může podařit.",
+      "run_tool": "Spustit nástroj",
+      "builtin_note": "Vestavěný nástroj — běží uvnitř spuštění persony (ne ručně odsud). Vyzkoušejte jej spuštěním některé ze schopností persony."
     },
     "health_check": {
       "title": "Kontrola zdraví agenta",
@@ -3532,6 +3558,38 @@
       "done": "Duplikováno jako „{name}“",
       "done_with_wiring": "Duplikováno jako „{name}“ — zkopírováno {triggers} spouštěčů a {subscriptions} odběrů, v kopii zakázáno",
       "failed": "Nepodařilo se duplikovat agenta"
+    },
+    "change_history": {
+      "empty": "Zatím nejsou zaznamenány žádné změny",
+      "empty_value": "(prázdné)",
+      "fields": {
+        "cli_awareness_enabled": "Povědomí o CLI",
+        "color": "Barva",
+        "description": "Popis",
+        "design_context": "Kontext návrhu",
+        "enabled": "Povoleno",
+        "headless": "Bez uživatelského rozhraní",
+        "icon": "Ikona",
+        "lifecycle": "Životní cyklus",
+        "max_budget_usd": "Rozpočet",
+        "max_concurrent": "Max. souběžných",
+        "max_turns": "Max. kol",
+        "model_profile": "Model",
+        "name": "Název",
+        "notification_channels": "Oznámení",
+        "parameters": "Parametry",
+        "sensitive": "Náhled citlivých údajů",
+        "structured_prompt": "Prompt",
+        "system_prompt": "Systémový prompt",
+        "timeout_ms": "Časový limit"
+      },
+      "sources": {
+        "editor": "Editor",
+        "fanout": "Rozvětvení",
+        "header": "Záhlaví",
+        "other": "Ostatní"
+      },
+      "title": "Historie změn"
     }
   },
   "vault": {
@@ -4247,7 +4305,9 @@
       "encrypt_now_other": "Zašifrovat {count} nešifrovaných údajů",
       "encrypt_done_one": "Hotovo – {migrated} údaj zašifrován.",
       "encrypt_done_other": "Hotovo – {migrated} údajů zašifrováno.",
-      "encrypt_partial": "Zašifrováno {migrated}, selhalo {failed}. Zkuste znovu nebo restartujte."
+      "encrypt_partial": "Zašifrováno {migrated}, selhalo {failed}. Zkuste znovu nebo restartujte.",
+      "audit_gap_detail": "Od spuštění se nepodařilo zapsat {count} auditních záznamů přihlašovacích údajů. Přístup k přihlašovacím údajům nebyl nikdy zablokován, ale tyto události přístupu v auditním logu chybí. Zkontrolujte místo na disku nebo stav databáze.",
+      "audit_gap_title": "Auditní stopa je neúplná"
     },
     "delete_dialog": {
       "title": "Smazat údaje",
@@ -4428,7 +4488,9 @@
       "filter_all_health": "Vše — zdraví",
       "health_healthy": "Zdravé",
       "health_failing": "Selhávající",
-      "health_untested": "Netestované"
+      "health_untested": "Netestované",
+      "health_unverifiable": "Neověřitelné",
+      "health_unverifiable_tooltip": "Tento konektor nemá živou zkoušku — přihlašovací údaje jsou uloženy, ale nelze je ověřit."
     },
     "foraging": {
       "no_credentials_found": "Nenalezeny žádné přihlašovací údaje",
@@ -6105,7 +6167,13 @@
       "event_data": "Data události",
       "error": "Chyba",
       "skipped_stat_label": "{skipped} přeskočeno",
-      "skipped_stat_tooltip": "{skipped} z {total} událostí za posledních 7 dní nemělo žádného odběratele a bylo přeskočeno ({rate}). Vysoký podíl signalizuje trigger, kterému nikdo nenaslouchá."
+      "skipped_stat_tooltip": "{skipped} z {total} událostí za posledních 7 dní nemělo žádného odběratele a bylo přeskočeno ({rate}). Vysoký podíl signalizuje trigger, kterému nikdo nenaslouchá.",
+      "type_labels": {
+        "sla_breach_opened": "Porušení SLA zahájeno",
+        "sla_breach_recovered": "Porušení SLA vyřešeno",
+        "schedule_missed_offline": "Zmeškané naplánované běhy (offline)",
+        "schedule_skipped_overlap": "Plán přeskočen (předchozí běh aktivní)"
+      }
     },
     "health": {
       "title": "Zdraví agentů",
@@ -6622,7 +6690,9 @@
     },
     "cascade": {
       "title": "Mapa kaskády řetězců",
-      "no_chains": "Žádné řetězce nezjištěny — všechny persony pracují nezávisle"
+      "no_chains": "Žádné řetězce nezjištěny — všechny persony pracují nezávisle",
+      "cofail_insufficient": "žádná souběžná selhání",
+      "cofail_pct": "{pct}% souběžných selhání"
     },
     "predictive_alerts_extra": {
       "title": "Prediktivní upozornění",
@@ -6854,7 +6924,12 @@
       "loading_status_page": "Načítání stavové stránky…",
       "loading_reliability": "Načítání dat spolehlivosti…",
       "heartbeats_btn": "Signály",
-      "reliability_btn": "Spolehlivost"
+      "reliability_btn": "Spolehlivost",
+      "source_byom_policy": "Zásada BYOM",
+      "source_healing_issues": "Problémy s opravou",
+      "source_monthly_spend": "Měsíční útrata",
+      "source_provider_stats": "Statistiky poskytovatele",
+      "sources_unavailable": "{sources} se nepodařilo načíst — skóre může být nepřesné."
     },
     "popup_fields": {
       "sign_up_free_at": "Zaregistrujte se zdarma na",
@@ -7153,7 +7228,11 @@
       "seg_healing": "Léčení",
       "seg_stability": "Stabilita",
       "seg_success": "Úspěch",
-      "show_all": "Zobrazit vše"
+      "show_all": "Zobrazit vše",
+      "fleet_avg_badge": "průměr flotily",
+      "fleet_avg_tooltip": "Pro tuto personu nebyly v okně zaznamenány žádné běhy — zobrazuje se průměrná úspěšnost napříč flotilou, nikoli změřená hodnota pro danou personu.",
+      "no_data_badge": "žádná data",
+      "no_data_tooltip": "Pro tuto personu nejsou v okně žádné dokončené ani neúspěšné běhy — míra úspěšnosti je zástupná hodnota, nikoli změřená."
     },
     "provenance": {
       "sourced_tip": "Cituje {count} zdroj(e), které lze dohledat a ověřit.",
@@ -10564,7 +10643,13 @@
     "local_tooling_label": "Vestavěné nástroje",
     "local_tooling_sentence": "Personas má od začátku připojené lokální nástroje — Zprávy, Databáze, Vektor a další — bez nutnosti přihlašovacích údajů.",
     "resume_continue_title": "Pokračujte tam, kde jste skončili",
-    "resume_continue_cta": "Pokračovat v prohlídce"
+    "resume_continue_cta": "Pokračovat v prohlídce",
+    "replay_setup": "Znovu spustit nastavení",
+    "resume_setup": "Pokračovat v nastavení",
+    "tour_handoff_accept": "Spustit prohlídku",
+    "tour_handoff_body": "Váš první agent běží. Projděte si rychlou průvodcovanou prohlídku zbytku — připojení a spouštění agentů — a části, které jste právě udělali, přeskočíme.",
+    "tour_handoff_dismiss": "Teď ne",
+    "tour_handoff_title": "Chcete průvodcovanou prohlídku?"
   },
   "system_health": {
     "install_all": "Nainstalovat všechny závislosti",
@@ -10971,7 +11056,15 @@
     "last24h_failed_count": "{count} selhalo",
     "last24h_show_all": "Zobrazit vše ({count})",
     "last24h_show_less": "Zobrazit méně",
-    "last24h_retry_at": "automatický opakování {time}"
+    "last24h_retry_at": "automatický opakování {time}",
+    "unverified": "Neověřeno",
+    "unverified_tooltip": "Pro tento slot není žádný záznam běhu — mohl být přeskočen, omezen limitem, překročit rozpočet nebo byla aplikace zavřená.",
+    "missed_backfill_cta": "Doplnit",
+    "missed_dismiss": "Zavřít upozornění na zmeškané běhy",
+    "missed_offline": "Zmeškáno {count} během offline",
+    "missed_offline_tooltip": "Naplánované běhy byly přeskočeny, když byla aplikace zavřená. Doplnění je znovu přehraje (bez duplicit a s limitem), nebo zavřete pro vymazání.",
+    "reason_invalid_timezone": "Pozastaveno — neplatné časové pásmo",
+    "reason_unscheduled": "Pozastaveno — žádný platný plán"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
@@ -11504,6 +11597,30 @@
       "quarantined": "Spouštěč v karanténě",
       "healing_abandoned": "Opravy se vzdaly",
       "healing_capped": "Pokusy o opravu vyčerpány"
+    },
+    "build": {
+      "analyzing": "Analyzuje se",
+      "awaiting_input": "Čeká na vstup",
+      "cancelled": "Zrušeno",
+      "completed": "Dokončeno",
+      "draft_ready": "Koncept připraven",
+      "failed": "Selhalo",
+      "initializing": "Inicializace",
+      "promoted": "Povýšeno",
+      "resolving": "Řeší se",
+      "test_complete": "Test dokončen",
+      "testing": "Testování"
+    },
+    "tool_error_kind": {
+      "auth": "Ověření",
+      "http": "Chyba HTTP",
+      "misconfigured": "Špatně nastaveno",
+      "rate_limited": "Překročen limit",
+      "timeout": "Vypršel čas",
+      "tool_error": "Nástroj selhal",
+      "transport": "Připojení selhalo",
+      "unknown": "Neznámá chyba",
+      "unsupported": "Zde nelze spustit"
     }
   },
   "project_overview": {
@@ -11758,7 +11875,8 @@
       "headless_badge": "Na pozadí",
       "headless_no_terminal": "Relace na pozadí — běží bez terminálu. Odpovídejte z lišty „Potřebuje vás“; průběh se zobrazuje v Přehledech.",
       "spawn_headless_hint": "Bezhlavý režim — bez živého terminálu, výrazně nižší nároky na CPU a RAM. Odpovídejte z lišty „Potřebuje vás“; průběh sledujte v Přehledech.",
-      "spawn_headless_toggle": "Spustit na pozadí (bez terminálu)"
+      "spawn_headless_toggle": "Spustit na pozadí (bez terminálu)",
+      "live_slot_hibernated_toast": "{name} byla uspána, aby se dodržel limit aktivních relací — konverzace je uložena; probuďte ji pro pokračování."
     },
     "title": "Pluginy",
     "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",
@@ -14091,7 +14209,9 @@
       "progress_past": "Minulost",
       "goal_view_missions": "Mise",
       "mission_link_goal": "Připojit k cíli…",
-      "mission_unlinked": "Bez cíle"
+      "mission_unlinked": "Bez cíle",
+      "goal_field_kpi": "Propojené KPI",
+      "goal_kpi_none": "Žádné propojené KPI"
     },
     "dev_projects": {
       "active_goals": "aktivních cílů",
@@ -15651,7 +15771,9 @@
       "collab_label": "Spolupráce",
       "deck_phase_paused": "Pozastaveno",
       "deck_pause": "Pozastavit",
-      "deck_resume": "Obnovit"
+      "deck_resume": "Obnovit",
+      "readiness_chip_label": "Vyžaduje nastavení",
+      "readiness_chip_tooltip": "Konektory tohoto člena týmu je stále potřeba nastavit. Může se připojit a diskutovat, ale jeho schopnosti jsou pozastaveny — nepodnikne žádnou akci, dokud nepřidáte přihlašovací údaje (otevřete sekci Připojení v bočním panelu)."
     },
     "memory_created": "Záznam uložen do týmové paměti",
     "memory_updated": "Záznam aktualizován",
@@ -15855,7 +15977,11 @@
       "whats_new": "Co je nového",
       "back_to_plugins": "Pluginy",
       "roadmap": "Plán vývoje",
-      "groups_label": "Skupiny"
+      "groups_label": "Skupiny",
+      "draft_agent_fallback": "Koncept agenta",
+      "draft_needs_answers_one": "{name} — potřebuje 1 odpověď",
+      "draft_needs_answers_other": "{name} — potřebuje {count} odpovědí",
+      "draft_switch_title": "Přepnout na koncept: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "Kopírovat",
@@ -17019,7 +17145,11 @@
     "group_needs_review": "Čeká na první recenzi",
     "group_low_scores": "Nízká skóre",
     "group_declining": "Klesající trend",
-    "group_stale": "Zastaralé recenze"
+    "group_stale": "Zastaralé recenze",
+    "roster_unscored": "Bez hodnocení",
+    "roster_unscored_hint": "Director tohoto agenta zkontroloval, ale nevrátil skóre; otevřete kontrolu a zobrazte jeho doporučení.",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Vyvoláno koučovací kontrolou Directora — schvalte nebo vyřešte jako jakýkoli jiný problém."
   },
   "remote_approval": {
     "title": "Požadavek na vzdálené spuštění",
@@ -17225,7 +17355,10 @@
     "attn_overdue": "{days}d po termínu",
     "attn_reason_crit": "Kritické",
     "attn_reason_floor": "Dno",
-    "attn_reason_pace": "Pozadu"
+    "attn_reason_pace": "Pozadu",
+    "evaluate_measured": "Změřeno {count} KPI.",
+    "evaluate_none_due": "Žádné KPI nebylo ke změření.",
+    "evaluate_partial": "Změřeno {measured}, {failed} selhalo"
   },
   "deliberation": {
     "agenda": "Agenda",

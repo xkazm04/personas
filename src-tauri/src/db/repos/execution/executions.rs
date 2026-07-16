@@ -95,6 +95,25 @@ pub fn set_director_review(
     Ok(())
 }
 
+/// Write an *unscored* Director review marker onto an execution row: the rendered
+/// markdown is stored but `director_score` is left NULL. Used by the Director's
+/// missing-score salvage path when the model omits the mandatory DIRECTOR_SCORE
+/// line and a bounded re-prompt still fails to recover it — so the review is
+/// visible ("unscored review") rather than silently dropped. Never overwrites an
+/// existing score.
+pub fn set_director_review_unscored(
+    pool: &DbPool,
+    execution_id: &str,
+    review_md: &str,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_executions SET director_review_md = ?1 WHERE id = ?2",
+        rusqlite::params![review_md, execution_id],
+    )?;
+    Ok(())
+}
+
 fn build_fts5_query(query: &str) -> String {
     query
         .split(|c: char| !c.is_alphanumeric())

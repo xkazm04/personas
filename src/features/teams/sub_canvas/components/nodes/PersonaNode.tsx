@@ -1,0 +1,163 @@
+import { memo } from 'react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Check, AlertTriangle, Sparkles, CircleDot, RefreshCw, Ban } from 'lucide-react';
+import { ROLE_COLORS, PersonaAvatar } from '../../libs/teamConstants';
+import { useTranslation } from '@/i18n/useTranslation';
+import { TeamReadinessChip } from '../../../components/TeamReadinessChip';
+
+interface PersonaNodeData {
+  name: string;
+  icon: string;
+  color: string;
+  role: string;
+  memberId: string;
+  personaId: string;
+  /** `setup_status` — drives the "Setup needed" readiness chip. */
+  setupStatus?: string | null;
+  pipelineStatus?: 'idle' | 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped';
+  edgeCount?: number;
+  [key: string]: unknown;
+}
+
+function getPipelineStyles(status?: string, selected?: boolean): string {
+  switch (status) {
+    case 'queued':
+      return 'border-amber-500/50 shadow-[0_0_16px_rgba(245,158,11,0.3)] animate-pulse';
+    case 'running':
+      return 'border-cyan-500/50 shadow-[0_0_16px_rgba(6,182,212,0.3)]';
+    case 'completed':
+      return 'border-emerald-500/50 shadow-[0_0_16px_rgba(16,185,129,0.4)]';
+    case 'failed':
+      return 'border-red-500/50 border-dashed shadow-[0_0_16px_rgba(239,68,68,0.3)]';
+    case 'cancelled':
+    case 'skipped':
+      return 'border-zinc-500/40 opacity-60';
+    default:
+      return selected
+        ? 'border-indigo-500/50 shadow-[0_0_16px_rgba(99,102,241,0.15)]'
+        : 'border-primary/15 hover:border-primary/25';
+  }
+}
+
+function PersonaNodeComponent({ data, selected }: NodeProps) {
+  const { t } = useTranslation();
+  const d = data as PersonaNodeData;
+  const name = d.name || t.pipeline.default_agent_name;
+  const icon = d.icon || '';
+  const color = d.color || '#6366f1';
+  const role = d.role || 'worker';
+  const pipelineStatus = d.pipelineStatus;
+  const dryRunStatus = d.dryRunStatus as string | undefined;
+  const hasBreakpoint = d.hasBreakpoint as boolean | undefined;
+  const hasOptimizerSuggestion = d.hasOptimizerSuggestion as boolean | undefined;
+  const isCycleNode = d.isCycleNode as boolean | undefined;
+  const isGhost = d.isGhost as boolean | undefined;
+  const defaultRole = { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25' };
+  const roleDef = ROLE_COLORS[role] ?? defaultRole;
+
+  // Dry-run status takes priority when active
+  const effectiveStatus = dryRunStatus ?? pipelineStatus;
+  const borderStyles = getPipelineStyles(effectiveStatus, selected);
+
+  return (
+    <div
+      className={`group relative px-4 py-3 rounded-modal bg-secondary/60 backdrop-blur-sm border transition-all min-w-[160px] ${
+        isGhost
+          ? 'opacity-40 border-dashed border-indigo-500/40 pointer-events-none'
+          : `cursor-grab active:cursor-grabbing hover:shadow-elevation-3 hover:shadow-indigo-500/10 ${borderStyles}`
+      }`}
+    >
+      {/* Running spin-ring overlay */}
+      {effectiveStatus === 'running' && (
+        <div
+          className="absolute inset-[-3px] rounded-modal border-2 border-transparent border-t-blue-400 pointer-events-none"
+          style={{ animation: 'spin-ring 1.5s linear infinite' }}
+        />
+      )}
+
+      {/* Completed checkmark */}
+      {effectiveStatus === 'completed' && (
+        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center z-10">
+          <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
+        </div>
+      )}
+
+      {/* Failed warning */}
+      {effectiveStatus === 'failed' && (
+        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center z-10">
+          <AlertTriangle className="w-3 h-3 text-foreground" strokeWidth={3} />
+        </div>
+      )}
+
+      {/* Cancelled / skipped indicator */}
+      {(effectiveStatus === 'cancelled' || effectiveStatus === 'skipped') && (
+        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-zinc-500 flex items-center justify-center z-10">
+          <Ban className="w-3 h-3 text-foreground" strokeWidth={3} />
+        </div>
+      )}
+
+      {/* Breakpoint indicator */}
+      {hasBreakpoint && (
+        <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-red-600 flex items-center justify-center z-10">
+          <CircleDot className="w-3 h-3 text-red-200" strokeWidth={3} />
+        </div>
+      )}
+
+      {/* Optimizer suggestion indicator */}
+      {hasOptimizerSuggestion && !effectiveStatus && (
+        <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-indigo-500/90 flex items-center justify-center z-10 animate-pulse">
+          <Sparkles className="w-2.5 h-2.5 text-foreground" strokeWidth={2.5} />
+        </div>
+      )}
+
+      {/* Cycle warning indicator */}
+      {isCycleNode && (
+        <div
+          className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500/90 flex items-center justify-center z-10"
+          title={t.pipeline.cycle_tooltip}
+        >
+          <RefreshCw className="w-2.5 h-2.5 text-foreground" strokeWidth={2.5} />
+        </div>
+      )}
+
+      <div
+        className="animate-fade-in absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
+      >
+        <Handle
+          type="target"
+          position={Position.Top}
+          className="!w-3.5 !h-3.5 !rounded-full !border-2 !border-indigo-500/40 !bg-background group-hover:!scale-150 group-hover:!border-indigo-400 !transition-transform"
+        />
+      </div>
+
+      <div className="flex items-center gap-2.5">
+        <PersonaAvatar icon={icon} color={color} />
+
+        {/* Info */}
+        <div className="min-w-0">
+          <div className="typo-heading font-semibold text-foreground/90 truncate max-w-[140px]" title={name}>
+            {name}
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <div className={`inline-flex items-center px-1.5 py-0.5 typo-code font-mono uppercase rounded-card border ${roleDef.bg} ${roleDef.text} ${roleDef.border}`}>
+              {role}
+            </div>
+            <TeamReadinessChip setupStatus={d.setupStatus} />
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="animate-fade-in absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 rounded-full"
+      >
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          className="!w-3.5 !h-3.5 !rounded-full !border-2 !border-indigo-500/40 !bg-background group-hover:!scale-150 group-hover:!border-indigo-400 !transition-transform"
+        />
+      </div>
+    </div>
+  );
+}
+
+export default memo(PersonaNodeComponent);

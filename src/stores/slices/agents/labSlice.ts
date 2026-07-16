@@ -352,7 +352,8 @@ export interface LabSlice {
   fetchVersionEconomics: (personaId: string) => Promise<void>;
   /** Make (version, model) the persona's live config: roll the version's prompt
    *  in + tag it production, then switch the active model. */
-  activateVersion: (personaId: string, versionId: string, modelId: string, provider: string) => Promise<void>;
+  /** Returns true when the activation committed; false when it failed (error already reported/toasted). */
+  activateVersion: (personaId: string, versionId: string, modelId: string, provider: string) => Promise<boolean>;
 
   // Active progress hydration (restores progress after page refresh)
   hydrateActiveProgress: (personaId: string) => Promise<void>;
@@ -575,87 +576,22 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
       }
     },
     activateVersion: async (personaId, versionId, modelId, provider) => {
-      // Capture the prior live state BEFORE any mutation. activateVersion is two
-      // independent IPC calls (prompt rollback, then model switch); if step 2
-      // fails there is no DB transaction to undo step 1, so the persona would be
-      // left running version V's prompt (tagged production) on the OLD model
-      // while the table falsely marks the new (version, model) cell active. We
-      // snapshot enough to compensate that partial-activation TS-side.
-      const priorProfile = get().personas.find((p) => p.id === personaId)?.model_profile ?? null;
-      const priorProductionVersionId = get().promptVersions.find(
-        (v) => v.persona_id === personaId && v.tag === "production",
-      )?.id ?? null;
-
-      let rolledBack = false;
+      // Single atomic backend IPC: the version's prompt rollback (tagged
+      // production) AND the model_profile switch happen in ONE DB transaction
+      // server-side (lab_activate_version). On any failure the persona is left
+      // fully unchanged — no partial-activation window, so no TS-side
+      // compensating rollback is needed. See src-tauri/.../commands/execution/lab.rs.
       try {
-        // 1. Roll the version's prompt live + tag it production (same path as
-        //    the legacy Versions panel's rollback).
-        await api.labRollbackVersion(versionId);
-        rolledBack = true;
-        // 2. Switch the active model, preserving any other model_profile fields
-        //    (base_url / auth_token / cache policy) the persona already carries —
-        //    only the model + provider change. Reuses the encrypted-profile
-        //    write path via updatePersona (model_profile = JSON string).
-        //    Source the existing profile from the EXPLICIT target persona (by
-        //    id), NOT the ambient `selectedPersona`: they can differ (deep-link,
-        //    multi-tab, a concurrent selectPersona, or a ratings row whose
-        //    persona != the sidebar selection), and merging another persona's
-        //    profile would cross-contaminate its base_url/auth_token onto this
-        //    one. If the target isn't in the loaded list, start clean rather than
-        //    inherit the wrong profile.
-        let profile: Record<string, unknown> = {};
-        if (priorProfile) {
-          try {
-            profile = JSON.parse(priorProfile) as Record<string, unknown>;
-          } catch {
-            profile = {};
-          }
-        }
-        profile.model = modelId;
-        profile.provider = provider || "anthropic";
-        await get().updatePersona(personaId, { model_profile: JSON.stringify(profile) });
-        // 3. Refresh derived state so the table re-marks the active row.
+        await api.labActivateVersion(personaId, versionId, modelId, provider || "anthropic");
+        // Refresh derived state so the table re-marks the active (version, model) row.
         await get().selectPersona(personaId);
         get().fetchVersions(personaId);
         get().fetchVersionRatings(personaId);
+        return true;
       } catch (err) {
-        if (rolledBack) {
-          // Partial activation: step 1 (prompt rollback) committed but step 2
-          // (model switch) failed. Compensate by rolling the PRIOR production
-          // version's prompt back, so the live state matches what the user had
-          // before (prompt + model both prior) instead of a half-applied mix.
-          let reverted = false;
-          if (priorProductionVersionId && priorProductionVersionId !== versionId) {
-            try {
-              await api.labRollbackVersion(priorProductionVersionId);
-              reverted = true;
-            } catch (compErr) {
-              logger.warn("activateVersion compensation (prompt revert) failed", {
-                personaId,
-                versionId,
-                priorProductionVersionId,
-                err: compErr instanceof Error ? compErr.message : String(compErr),
-              });
-            }
-          }
-          // Re-sync derived state so the UI reflects ACTUAL state, never the
-          // optimistic "activated" claim.
-          try { await get().selectPersona(personaId); } catch { /* best-effort refresh */ }
-          get().fetchVersions(personaId);
-          get().fetchVersionRatings(personaId);
-          useToastStore.getState().addToast(
-            reverted
-              ? "Activation failed: the model couldn't be switched, so the version change was reverted. No changes were applied — please retry."
-              : "Partial activation: the version is now live but the model did NOT switch (still the previous model). Re-activate to finish — a fully atomic fix requires a backend change.",
-            "error",
-            8000,
-          );
-          // Record the error in state/Sentry without a second (generic) toast.
-          reportError(err, "Failed to activate version", set, { action: "lab.activateVersion", severity: "state" });
-        } else {
-          // Step 1 itself failed — nothing was applied, surface normally.
-          reportError(err, "Failed to activate version", set, { action: "lab.activateVersion" });
-        }
+        // Nothing was applied (transaction rolled back) — surface normally.
+        reportError(err, "Failed to activate version", set, { action: "lab.activateVersion" });
+        return false;
       }
     },
 

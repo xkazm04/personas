@@ -44,6 +44,12 @@ pub struct PersonaHealingIssue {
     pub status: String,
     pub created_at: String,
     pub resolved_at: Option<String>,
+    /// Provenance of the issue. `None`/`"engine"` = the self-healing pipeline
+    /// (the historical default). `"director"` = routed from a Director coaching
+    /// verdict in an auto-fixable category. Drives the health-UI origin badge
+    /// and the Director's own dedup against its open issues.
+    #[serde(default)]
+    pub source: Option<String>,
 }
 
 // ============================================================================

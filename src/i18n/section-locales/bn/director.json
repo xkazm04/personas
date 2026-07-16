@@ -131,5 +131,9 @@
   "group_needs_review": "প্রথম পর্যালোচনার অপেক্ষায়",
   "group_low_scores": "কম স্কোর",
   "group_declining": "হ্রাসমান প্রবণতা",
-  "group_stale": "পুরনো পর্যালোচনা"
+  "group_stale": "পুরনো পর্যালোচনা",
+  "roster_unscored": "স্কোরবিহীন",
+  "roster_unscored_hint": "Director এই এজেন্টটি পর্যালোচনা করেছে কিন্তু কোনো স্কোর দেয়নি; কোচিং দেখতে পর্যালোচনাটি খুলুন।",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "Director-এর কোচিং পর্যালোচনা থেকে উত্থাপিত — অন্য যেকোনো সমস্যার মতো এটি অনুমোদন বা সমাধান করুন।"
 }

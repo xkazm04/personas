@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { invokeToolDirect, type ToolInvocationResult } from '@/api/agents/tools';
+import { extractMessage } from '@/lib/silentCatch';
 
 interface ToolRunState {
   /** The persona whose tool run produced this entry. Results for any other
@@ -111,7 +112,10 @@ export function useToolRunner(personaId: string | undefined) {
           };
         });
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
+        // Tauri rejects with structured AppError objects, not Error instances —
+        // `String(err)` on those renders "[object Object]" (2026-07-16 UAT
+        // blocker). extractMessage probes .message/.error/JSON before giving up.
+        const msg = extractMessage(err) || 'Tool invocation failed';
         setStates((prev) => {
           if (runPersonaId !== personaIdRef.current) return prev;
           return {

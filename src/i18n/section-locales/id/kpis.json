@@ -189,5 +189,8 @@
   "attn_overdue": "telat {days}h",
   "attn_reason_crit": "Kritis",
   "attn_reason_floor": "Batas",
-  "attn_reason_pace": "Tertinggal"
+  "attn_reason_pace": "Tertinggal",
+  "evaluate_measured": "{count} KPI diukur.",
+  "evaluate_none_due": "Tidak ada KPI yang jatuh tempo untuk diukur.",
+  "evaluate_partial": "{measured} diukur, {failed} gagal"
 }

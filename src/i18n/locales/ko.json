@@ -1655,7 +1655,25 @@
       "eco_subtitle": "각 모델이 평가를 해결하는 빈도와 성공당 비용입니다.",
       "eco_title": "비용 효율",
       "vr_col_tokens": "토큰",
-      "vr_tokens_tooltip": "실행당 평균 입력 {input} / 출력 {output}"
+      "vr_tokens_tooltip": "실행당 평균 입력 {input} / 출력 {output}",
+      "vr_reconcile_clear_all": "핀 모두 해제",
+      "vr_reconcile_clear_pin": "핀 해제",
+      "vr_reconcile_desc_one": "1개의 사용 사례가 방금 승격한 모델({model})과 다른 모델을 여전히 핀으로 고정하고 있습니다. 핀을 해제할 때까지 해당 사용 사례는 고정된 모델로 계속 실행됩니다.",
+      "vr_reconcile_desc_other": "{count}개의 사용 사례가 방금 승격한 모델({model})과 다른 모델을 여전히 핀으로 고정하고 있습니다. 핀을 해제할 때까지 해당 사용 사례들은 고정된 모델로 계속 실행됩니다.",
+      "vr_reconcile_done": "완료",
+      "vr_reconcile_now_follows": "이제 기본값({model})을 따름",
+      "vr_reconcile_pinned_to": "{model}에 고정됨",
+      "vr_reconcile_title": "사용 사례 모델 핀 조정",
+      "improve_failed": "개선 브리핑을 준비하지 못했습니다",
+      "improve_focus": "{metric}에 집중합니다 (평균 {score}/100)",
+      "improve_run_seed_measured": "페르소나 \"{name}\"을(를) 개선합니다. 최근 테스트에서 {metric}이(가) 가장 취약한 영역으로 나타났습니다 (평균 {score}/100). 어디에 집중해야 할까요? ",
+      "improve_run_seed_plain": "최근 테스트 결과를 바탕으로 페르소나 \"{name}\"을(를) 개선합니다. 어디에 집중해야 할까요? ",
+      "improve_seeded": "개선 브리핑을 Athena에서 열었습니다",
+      "vr_cost_unknown": "해당 없음",
+      "vr_cost_unknown_tooltip": "로컬 모델은 비용이 추적되지 않습니다",
+      "vr_degraded_tooltip": "{total}개 중 {count}개 샘플이 휴리스틱 대체 방식으로 채점됨 (LLM 평가기 사용 불가)",
+      "vr_partial_tooltip": "부분 하위 점수로 계산된 종합값 — 직접 비교 불가",
+      "vr_score_caution": "점수 해석에 주의 필요"
     },
     "design": {
       "select_agent": "디자인 분석을 시작할 에이전트를 선택하세요",
@@ -2532,7 +2550,15 @@
       "failed": "실패",
       "error": "오류",
       "invalid_json": "JSON이 올바르지 않습니다. 실행하기 전에 수정하세요.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "실패",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "출력이 잘렸습니다 — 도구가 표시 한도를 초과하는 결과를 반환했습니다.",
+      "panel_subtitle": "이 페르소나의 자격 증명으로 도구를 직접 실행합니다.",
+      "panel_title": "도구 실행",
+      "retryable_hint": "다시 시도하면 성공할 수 있습니다.",
+      "run_tool": "도구 실행",
+      "builtin_note": "내장 도구 — 페르소나 실행 내부에서 동작합니다(여기서 수동 실행 불가). 테스트하려면 페르소나의 기능 중 하나를 실행하세요."
     },
     "health_check": {
       "title": "에이전트 상태 확인",
@@ -3532,6 +3558,38 @@
       "done": "\"{name}\"(으)로 복제됨",
       "done_with_wiring": "\"{name}\"(으)로 복제됨 — 트리거 {triggers}개와 구독 {subscriptions}개를 복사(사본에서는 비활성화)",
       "failed": "에이전트를 복제하지 못했습니다"
+    },
+    "change_history": {
+      "empty": "기록된 변경 사항이 없습니다",
+      "empty_value": "(비어 있음)",
+      "fields": {
+        "cli_awareness_enabled": "CLI 인식",
+        "color": "색상",
+        "description": "설명",
+        "design_context": "디자인 컨텍스트",
+        "enabled": "활성화",
+        "headless": "헤드리스",
+        "icon": "아이콘",
+        "lifecycle": "라이프사이클",
+        "max_budget_usd": "예산",
+        "max_concurrent": "최대 동시 실행 수",
+        "max_turns": "최대 턴 수",
+        "model_profile": "모델",
+        "name": "이름",
+        "notification_channels": "알림",
+        "parameters": "매개변수",
+        "sensitive": "민감 정보 미리보기",
+        "structured_prompt": "프롬프트",
+        "system_prompt": "시스템 프롬프트",
+        "timeout_ms": "제한 시간"
+      },
+      "sources": {
+        "editor": "편집기",
+        "fanout": "팬아웃",
+        "header": "헤더",
+        "other": "기타"
+      },
+      "title": "변경 이력"
     }
   },
   "vault": {
@@ -4247,7 +4305,9 @@
       "encrypt_now_other": "{count}개 암호화되지 않은 자격 증명 지금 암호화",
       "encrypt_done_one": "완료 -- {migrated}개 자격 증명 암호화됨.",
       "encrypt_done_other": "완료 -- {migrated}개 자격 증명 암호화됨.",
-      "encrypt_partial": "{migrated}개 암호화됨, {failed}개 실패. 다시 시도하거나 앱을 재시작하세요."
+      "encrypt_partial": "{migrated}개 암호화됨, {failed}개 실패. 다시 시도하거나 앱을 재시작하세요.",
+      "audit_gap_detail": "실행 이후 {count}개의 자격 증명 감사 기록을 기록하지 못했습니다. 자격 증명 접근이 차단된 적은 없지만 해당 접근 이벤트가 감사 로그에 누락되었습니다. 디스크 공간이나 데이터베이스 상태를 확인하세요.",
+      "audit_gap_title": "감사 기록 불완전"
     },
     "delete_dialog": {
       "title": "자격 증명 삭제",
@@ -4428,7 +4488,9 @@
       "filter_all_health": "모든 건강 상태",
       "health_healthy": "정상",
       "health_failing": "오류",
-      "health_untested": "미테스트"
+      "health_untested": "미테스트",
+      "health_unverifiable": "검증 불가",
+      "health_unverifiable_tooltip": "이 커넥터에는 라이브 프로브가 없습니다 — 자격 증명은 저장되지만 검증할 수 없습니다."
     },
     "foraging": {
       "no_credentials_found": "자격 증명 없음",
@@ -6105,7 +6167,13 @@
       "event_data": "이벤트 데이터",
       "error": "오류",
       "skipped_stat_label": "{skipped}건 건너뜀",
-      "skipped_stat_tooltip": "지난 7일 동안 {total}건 중 {skipped}건의 이벤트에 구독자가 없어 건너뛰었습니다({rate}). 비율이 높다면 아무도 수신하지 않는 트리거가 있다는 신호입니다."
+      "skipped_stat_tooltip": "지난 7일 동안 {total}건 중 {skipped}건의 이벤트에 구독자가 없어 건너뛰었습니다({rate}). 비율이 높다면 아무도 수신하지 않는 트리거가 있다는 신호입니다.",
+      "type_labels": {
+        "sla_breach_opened": "SLA 위반 발생",
+        "sla_breach_recovered": "SLA 위반 복구됨",
+        "schedule_missed_offline": "놓친 예약 실행 (오프라인)",
+        "schedule_skipped_overlap": "예약 건너뜀 (이전 실행 진행 중)"
+      }
     },
     "health": {
       "title": "에이전트 상태",
@@ -6622,7 +6690,9 @@
     },
     "cascade": {
       "title": "체인 연쇄 맵",
-      "no_chains": "감지된 체인 없음 -- 모든 페르소나가 독립 작동 중"
+      "no_chains": "감지된 체인 없음 -- 모든 페르소나가 독립 작동 중",
+      "cofail_insufficient": "동시 실패 없음",
+      "cofail_pct": "{pct}% 동시 실패"
     },
     "predictive_alerts_extra": {
       "title": "예측 알림",
@@ -6854,7 +6924,12 @@
       "loading_status_page": "상태 페이지 불러오는 중…",
       "loading_reliability": "신뢰성 데이터 불러오는 중…",
       "heartbeats_btn": "하트비트",
-      "reliability_btn": "신뢰성"
+      "reliability_btn": "신뢰성",
+      "source_byom_policy": "BYOM 정책",
+      "source_healing_issues": "복구 문제",
+      "source_monthly_spend": "월간 지출",
+      "source_provider_stats": "공급자 통계",
+      "sources_unavailable": "{sources}을(를) 불러오지 못했습니다. 점수가 정확하지 않을 수 있습니다."
     },
     "popup_fields": {
       "sign_up_free_at": "무료 가입 위치:",
@@ -7153,7 +7228,11 @@
       "seg_healing": "치유",
       "seg_stability": "안정성",
       "seg_success": "성공",
-      "show_all": "모두 보기"
+      "show_all": "모두 보기",
+      "fleet_avg_badge": "플릿 평균",
+      "fleet_avg_tooltip": "이 기간에 이 페르소나의 실행 기록이 없습니다 — 페르소나별 측정값이 아니라 플릿 전체 평균 성공률을 표시합니다.",
+      "no_data_badge": "데이터 없음",
+      "no_data_tooltip": "이 기간에 이 페르소나의 완료 또는 실패한 실행이 없습니다 — 성공률은 측정값이 아니라 자리표시자입니다."
     },
     "provenance": {
       "sourced_tip": "{count}개의 출처를 추적하고 감사할 수 있습니다.",
@@ -10564,7 +10643,13 @@
     "local_tooling_label": "내장 도구",
     "local_tooling_sentence": "Personas는 메시징, 데이터베이스, 벡터 등 로컬 도구가 처음부터 연결되어 있어 별도의 자격 증명이 필요하지 않습니다.",
     "resume_continue_title": "중단한 위치에서 계속",
-    "resume_continue_cta": "투어 계속"
+    "resume_continue_cta": "투어 계속",
+    "replay_setup": "설정 다시 보기",
+    "resume_setup": "설정 계속하기",
+    "tour_handoff_accept": "둘러보기 시작",
+    "tour_handoff_body": "첫 에이전트가 실행 중입니다. 나머지 부분 — 연결과 에이전트 실행 — 을 빠른 가이드 투어로 살펴보세요. 방금 하신 부분은 건너뛰겠습니다.",
+    "tour_handoff_dismiss": "나중에",
+    "tour_handoff_title": "가이드 투어를 볼까요?"
   },
   "system_health": {
     "install_all": "모든 종속성 설치",
@@ -10971,7 +11056,15 @@
     "last24h_failed_count": "{count}개 실패",
     "last24h_show_all": "전체 보기 ({count})",
     "last24h_show_less": "간략히 보기",
-    "last24h_retry_at": "{time}에 자동 재시도"
+    "last24h_retry_at": "{time}에 자동 재시도",
+    "unverified": "미확인",
+    "unverified_tooltip": "이 슬롯에 대한 실행 기록이 없습니다 — 건너뛰었거나, 속도 제한, 예산 초과이거나 앱이 닫혀 있었을 수 있습니다.",
+    "missed_backfill_cta": "백필",
+    "missed_dismiss": "놓친 실행 알림 닫기",
+    "missed_offline": "오프라인 중 {count}회 놓침",
+    "missed_offline_tooltip": "앱이 닫혀 있는 동안 예약 실행이 건너뛰어졌습니다. 백필은 이를 다시 실행합니다(중복 제거 및 상한 적용). 닫으면 지워집니다.",
+    "reason_invalid_timezone": "일시중지 — 잘못된 시간대",
+    "reason_unscheduled": "일시중지 — 유효한 예약 없음"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
@@ -11504,6 +11597,30 @@
       "quarantined": "트리거 격리됨",
       "healing_abandoned": "자가 치유 중단",
       "healing_capped": "치유 재시도 소진"
+    },
+    "build": {
+      "analyzing": "분석 중",
+      "awaiting_input": "입력 대기 중",
+      "cancelled": "취소됨",
+      "completed": "완료됨",
+      "draft_ready": "초안 준비됨",
+      "failed": "실패",
+      "initializing": "초기화 중",
+      "promoted": "승격됨",
+      "resolving": "해결 중",
+      "test_complete": "테스트 완료",
+      "testing": "테스트 중"
+    },
+    "tool_error_kind": {
+      "auth": "인증",
+      "http": "HTTP 오류",
+      "misconfigured": "설정 오류",
+      "rate_limited": "요청 한도 초과",
+      "timeout": "시간 초과",
+      "tool_error": "도구 실패",
+      "transport": "연결 실패",
+      "unknown": "알 수 없는 오류",
+      "unsupported": "여기서 실행 불가"
     }
   },
   "project_overview": {
@@ -11758,7 +11875,8 @@
       "headless_badge": "백그라운드",
       "headless_no_terminal": "백그라운드 세션 — 터미널 없이 실행됩니다. \"도움 필요\" 배너에서 응답하고, 진행 상황은 Insights에 표시됩니다.",
       "spawn_headless_hint": "헤드리스 모드 — 라이브 터미널 없이 CPU와 RAM 부담이 훨씬 적습니다. 응답은 \"도움 필요\" 배너에서, 진행 상황은 Insights에서 확인하세요.",
-      "spawn_headless_toggle": "백그라운드로 실행 (터미널 없음)"
+      "spawn_headless_toggle": "백그라운드로 실행 (터미널 없음)",
+      "live_slot_hibernated_toast": "활성 세션 한도를 유지하기 위해 {name}을(를) 최대 절전 모드로 전환했습니다 — 대화는 저장되어 있으며, 계속하려면 깨우세요."
     },
     "title": "플러그인",
     "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",
@@ -14091,7 +14209,9 @@
       "progress_past": "과거",
       "goal_view_missions": "미션",
       "mission_link_goal": "목표에 연결…",
-      "mission_unlinked": "목표 없음"
+      "mission_unlinked": "목표 없음",
+      "goal_field_kpi": "연결된 KPI",
+      "goal_kpi_none": "연결된 KPI 없음"
     },
     "dev_projects": {
       "active_goals": "활성 목표",
@@ -15651,7 +15771,9 @@
       "collab_label": "협업",
       "deck_phase_paused": "일시 중지",
       "deck_pause": "일시 중지",
-      "deck_resume": "재개"
+      "deck_resume": "재개",
+      "readiness_chip_label": "설정 필요",
+      "readiness_chip_tooltip": "이 팀원의 커넥터를 아직 설정해야 합니다. 참여하고 논의할 수는 있지만 기능이 보류되어 있어 자격 증명을 추가하기 전까지는 작업을 수행하지 않습니다(사이드바의 연결 섹션을 여세요)."
     },
     "memory_created": "메모리가 팀 장부에 저장되었습니다",
     "memory_updated": "메모리가 업데이트되었습니다",
@@ -15855,7 +15977,11 @@
       "whats_new": "새 소식",
       "back_to_plugins": "플러그인",
       "roadmap": "로드맵",
-      "groups_label": "그룹"
+      "groups_label": "그룹",
+      "draft_agent_fallback": "초안 에이전트",
+      "draft_needs_answers_one": "{name} — 답변 1개 필요",
+      "draft_needs_answers_other": "{name} — 답변 {count}개 필요",
+      "draft_switch_title": "초안으로 전환: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "복사",
@@ -17019,7 +17145,11 @@
     "group_needs_review": "첫 번째 검토 대기 중",
     "group_low_scores": "낮은 점수",
     "group_declining": "하락 추세",
-    "group_stale": "오래된 검토"
+    "group_stale": "오래된 검토",
+    "roster_unscored": "점수 없음",
+    "roster_unscored_hint": "Director가 이 에이전트를 검토했지만 점수를 반환하지 않았습니다. 코칭을 보려면 검토를 여세요.",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Director의 코칭 검토에서 생성됨 — 다른 문제와 마찬가지로 승인하거나 해결하세요."
   },
   "remote_approval": {
     "title": "원격 실행 요청",
@@ -17225,7 +17355,10 @@
     "attn_overdue": "{days}일 초과",
     "attn_reason_crit": "심각",
     "attn_reason_floor": "하한",
-    "attn_reason_pace": "지연"
+    "attn_reason_pace": "지연",
+    "evaluate_measured": "KPI {count}개를 측정했습니다.",
+    "evaluate_none_due": "측정 대상 KPI가 없습니다.",
+    "evaluate_partial": "{measured}개 측정, {failed}개 실패"
   },
   "deliberation": {
     "agenda": "안건",

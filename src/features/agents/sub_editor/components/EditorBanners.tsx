@@ -1,7 +1,5 @@
-import { AlertTriangle, Cloud, LogIn, X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useSystemStore } from "@/stores/systemStore";
-import { useAuthStore } from '@/stores/authStore';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -105,50 +103,6 @@ export function PartialLoadBanner({ warnings, onDismiss }: PartialLoadBannerProp
       icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
       message={`${t.agents.editor_ui.partial_load} ${warnings.join('; ')}`}
       onDismiss={onDismiss}
-    />
-  );
-}
-
-export function CloudNudgeBanner() {
-  const { t } = useTranslation();
-  const showCloudNudge = useSystemStore((s) => s.showCloudNudge);
-  const setShowCloudNudge = useSystemStore((s) => s.setShowCloudNudge);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
-  return (
-    <BannerPrimitive
-      visible={showCloudNudge}
-      colorScheme="sky"
-      icon={<Cloud className="w-4 h-4 text-sky-400 flex-shrink-0" />}
-      message={isAuthenticated
-        ? t.agents.editor_ui.cloud_connect
-        : t.agents.editor_ui.cloud_signin}
-      actions={[
-        ...(!isAuthenticated ? [
-          <Button
-            key="signin"
-            variant="accent"
-            accentColor="sky"
-            size="sm"
-            icon={<LogIn className="w-3 h-3" />}
-            onClick={() => { setSidebarSection('settings'); setShowCloudNudge(false); }}
-          >
-            {t.agents.editor.sign_in}
-          </Button>,
-        ] : []),
-        <Button
-          key="cloud"
-          variant="accent"
-          accentColor="sky"
-          size="sm"
-          icon={<Cloud className="w-3 h-3" />}
-          onClick={() => { setSidebarSection('personas'); useSystemStore.getState().setAgentTab('cloud'); setShowCloudNudge(false); }}
-        >
-          {t.agents.editor.set_up_cloud}
-        </Button>,
-      ]}
-      onDismiss={() => setShowCloudNudge(false)}
     />
   );
 }

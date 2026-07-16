@@ -1655,7 +1655,25 @@
       "eco_subtitle": "Con qué frecuencia cada modelo resuelve una evaluación y cuánto cuesta cada éxito.",
       "eco_title": "Eficiencia de costes",
       "vr_col_tokens": "Tokens",
-      "vr_tokens_tooltip": "{input} de entrada / {output} de salida por ejecución de media"
+      "vr_tokens_tooltip": "{input} de entrada / {output} de salida por ejecución de media",
+      "vr_reconcile_clear_all": "Borrar todos los anclajes",
+      "vr_reconcile_clear_pin": "Borrar anclaje",
+      "vr_reconcile_desc_one": "1 caso de uso todavía ancla un modelo distinto del que acabas de promover ({model}). Seguirá ejecutándose con su modelo anclado hasta que borres el anclaje.",
+      "vr_reconcile_desc_other": "{count} casos de uso todavía anclan modelos distintos del que acabas de promover ({model}). Seguirán ejecutándose con sus modelos anclados hasta que borres los anclajes.",
+      "vr_reconcile_done": "Listo",
+      "vr_reconcile_now_follows": "Ahora sigue el predeterminado ({model})",
+      "vr_reconcile_pinned_to": "anclado a {model}",
+      "vr_reconcile_title": "Reconciliar anclajes de modelo por caso de uso",
+      "improve_failed": "No se pudo preparar el resumen de mejora",
+      "improve_focus": "Se centrará en {metric} (promedio {score}/100)",
+      "improve_run_seed_measured": "Mejora la persona \"{name}\". Su última prueba marcó {metric} como el área más débil (promedio {score}/100). ¿En qué debería centrarme? ",
+      "improve_run_seed_plain": "Mejora la persona \"{name}\" según los resultados de su última prueba. ¿En qué debería centrarme? ",
+      "improve_seeded": "Resumen de mejora abierto en Athena",
+      "vr_cost_unknown": "n/d",
+      "vr_cost_unknown_tooltip": "El coste no se registra para modelos locales",
+      "vr_degraded_tooltip": "{count} de {total} muestras evaluadas con heurística de reserva (evaluador LLM no disponible)",
+      "vr_partial_tooltip": "Compuesto a partir de subpuntuaciones parciales — no comparable directamente",
+      "vr_score_caution": "La puntuación requiere cautela"
     },
     "design": {
       "select_agent": "Selecciona un agente para iniciar el análisis de diseño",
@@ -2532,7 +2550,15 @@
       "failed": "Fallido",
       "error": "Error",
       "invalid_json": "JSON no válido — corríjalo antes de ejecutar.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "Error",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "Salida truncada — la herramienta devolvió más del límite de visualización.",
+      "panel_subtitle": "Invoca una herramienta directamente con las credenciales de esta persona.",
+      "panel_title": "Ejecutar una herramienta",
+      "retryable_hint": "Puede que funcione al reintentar.",
+      "run_tool": "Ejecutar herramienta",
+      "builtin_note": "Herramienta integrada: se ejecuta dentro de las ejecuciones de la persona (no manualmente desde aquí). Ejecuta una de las capacidades de la persona para probarla."
     },
     "health_check": {
       "title": "Control de salud del agente",
@@ -3532,6 +3558,38 @@
       "done": "Duplicado como «{name}»",
       "done_with_wiring": "Duplicado como «{name}»: se copiaron {triggers} activador(es) y {subscriptions} suscripción(es), desactivados en la copia",
       "failed": "No se pudo duplicar el agente"
+    },
+    "change_history": {
+      "empty": "Aún no hay cambios registrados",
+      "empty_value": "(vacío)",
+      "fields": {
+        "cli_awareness_enabled": "Conciencia de CLI",
+        "color": "Color",
+        "description": "Descripción",
+        "design_context": "Contexto de diseño",
+        "enabled": "Habilitado",
+        "headless": "Sin interfaz",
+        "icon": "Icono",
+        "lifecycle": "Ciclo de vida",
+        "max_budget_usd": "Presupuesto",
+        "max_concurrent": "Máx. concurrentes",
+        "max_turns": "Máx. turnos",
+        "model_profile": "Model",
+        "name": "Nombre",
+        "notification_channels": "Notificaciones",
+        "parameters": "Parámetros",
+        "sensitive": "Vista previa sensible",
+        "structured_prompt": "Prompt",
+        "system_prompt": "Prompt del sistema",
+        "timeout_ms": "Tiempo de espera"
+      },
+      "sources": {
+        "editor": "Editor",
+        "fanout": "Distribución",
+        "header": "Encabezado",
+        "other": "Otro"
+      },
+      "title": "Historial de cambios"
     }
   },
   "vault": {
@@ -4247,7 +4305,9 @@
       "encrypt_now_other": "Cifrar {count} credenciales sin cifrar ahora",
       "encrypt_done_one": "Listo — {migrated} credencial cifrada.",
       "encrypt_done_other": "Listo — {migrated} credenciales cifradas.",
-      "encrypt_partial": "Cifradas {migrated}, fallidas {failed}. Intenta de nuevo o reinicia la aplicación."
+      "encrypt_partial": "Cifradas {migrated}, fallidas {failed}. Intenta de nuevo o reinicia la aplicación.",
+      "audit_gap_detail": "No se pudieron escribir {count} registro(s) de auditoría de credenciales desde el inicio. El acceso a las credenciales nunca se bloqueó, pero esos eventos de acceso faltan en el registro de auditoría. Revisa el espacio en disco o el estado de la base de datos.",
+      "audit_gap_title": "Registro de auditoría incompleto"
     },
     "delete_dialog": {
       "title": "Eliminar credencial",
@@ -4428,7 +4488,9 @@
       "filter_all_health": "Toda la salud",
       "health_healthy": "Saludable",
       "health_failing": "Con fallos",
-      "health_untested": "Sin probar"
+      "health_untested": "Sin probar",
+      "health_unverifiable": "No verificable",
+      "health_unverifiable_tooltip": "Este conector no tiene una prueba en vivo: las credenciales se almacenan pero no se pueden verificar."
     },
     "foraging": {
       "no_credentials_found": "No se encontraron credenciales",
@@ -6105,7 +6167,13 @@
       "event_data": "Datos del Evento",
       "error": "Error",
       "skipped_stat_label": "{skipped} omitidos",
-      "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha."
+      "skipped_stat_tooltip": "{skipped} de {total} eventos en los últimos 7 días no tenían suscriptor y se omitieron ({rate}). Una tasa alta señala un disparador que nadie escucha.",
+      "type_labels": {
+        "sla_breach_opened": "Incumplimiento de SLA iniciado",
+        "sla_breach_recovered": "Incumplimiento de SLA recuperado",
+        "schedule_missed_offline": "Ejecuciones programadas perdidas (sin conexión)",
+        "schedule_skipped_overlap": "Programación omitida (ejecución anterior activa)"
+      }
     },
     "health": {
       "title": "Salud del Agente",
@@ -6622,7 +6690,9 @@
     },
     "cascade": {
       "title": "Mapa de Cascada en Cadena",
-      "no_chains": "No se detectaron cadenas — todas las personas operan independientemente"
+      "no_chains": "No se detectaron cadenas — todas las personas operan independientemente",
+      "cofail_insufficient": "sin fallos simultáneos",
+      "cofail_pct": "{pct}% de fallos simultáneos"
     },
     "predictive_alerts_extra": {
       "title": "Alertas Predictivas",
@@ -6854,7 +6924,12 @@
       "loading_status_page": "Cargando página de estado…",
       "loading_reliability": "Cargando datos de fiabilidad…",
       "heartbeats_btn": "Latidos",
-      "reliability_btn": "Fiabilidad"
+      "reliability_btn": "Fiabilidad",
+      "source_byom_policy": "Política BYOM",
+      "source_healing_issues": "Problemas de reparación",
+      "source_monthly_spend": "Gasto mensual",
+      "source_provider_stats": "Estadísticas del proveedor",
+      "sources_unavailable": "No se pudo cargar {sources}: las puntuaciones pueden ser inexactas."
     },
     "popup_fields": {
       "sign_up_free_at": "Regístrate gratis en",
@@ -7153,7 +7228,11 @@
       "seg_healing": "Recuperación",
       "seg_stability": "Estabilidad",
       "seg_success": "Éxito",
-      "show_all": "Mostrar todos"
+      "show_all": "Mostrar todos",
+      "fleet_avg_badge": "prom. de flota",
+      "fleet_avg_tooltip": "No se registraron ejecuciones para esta persona en el periodo — se muestra la tasa de éxito promedio de toda la flota, no un valor medido por persona.",
+      "no_data_badge": "sin datos",
+      "no_data_tooltip": "No hay ejecuciones completadas ni fallidas para esta persona en el periodo — la tasa de éxito es un marcador, no un valor medido."
     },
     "provenance": {
       "sourced_tip": "Cita {count} fuente(s) que puedes rastrear y auditar.",
@@ -10564,7 +10643,13 @@
     "local_tooling_label": "Herramientas integradas",
     "local_tooling_sentence": "Personas viene con herramientas locales conectadas desde el principio — mensajería, base de datos, búsqueda vectorial y más — sin necesidad de credenciales.",
     "resume_continue_title": "Retoma donde lo dejaste",
-    "resume_continue_cta": "Continuar recorrido"
+    "resume_continue_cta": "Continuar recorrido",
+    "replay_setup": "Repetir configuración",
+    "resume_setup": "Reanudar configuración",
+    "tour_handoff_accept": "Hacer el recorrido",
+    "tour_handoff_body": "Tu primer agente está activo. Haz un breve recorrido guiado por el resto — conexiones y ejecución de agentes — y omitiremos las partes que acabas de hacer.",
+    "tour_handoff_dismiss": "Ahora no",
+    "tour_handoff_title": "¿Quieres el recorrido guiado?"
   },
   "system_health": {
     "install_all": "Instalar todas las dependencias",
@@ -10971,7 +11056,15 @@
     "last24h_failed_count": "{count} fallidas",
     "last24h_show_all": "Ver todas ({count})",
     "last24h_show_less": "Ver menos",
-    "last24h_retry_at": "reintento automático {time}"
+    "last24h_retry_at": "reintento automático {time}",
+    "unverified": "Sin verificar",
+    "unverified_tooltip": "No hay registro de ejecución para este intervalo: pudo omitirse, limitarse por tasa, superar el presupuesto o la app estaba cerrada.",
+    "missed_backfill_cta": "Recuperar",
+    "missed_dismiss": "Descartar aviso de ejecuciones perdidas",
+    "missed_offline": "Se perdieron {count} sin conexión",
+    "missed_offline_tooltip": "Se omitieron ejecuciones programadas mientras la app estaba cerrada. Recuperar las repite (sin duplicados y con límite), o descártalo para borrar.",
+    "reason_invalid_timezone": "En pausa — zona horaria no válida",
+    "reason_unscheduled": "En pausa — sin programación válida"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
@@ -11504,6 +11597,30 @@
       "quarantined": "Activador en cuarentena",
       "healing_abandoned": "Reparación abandonada",
       "healing_capped": "Reintentos de reparación agotados"
+    },
+    "build": {
+      "analyzing": "Analizando",
+      "awaiting_input": "Esperando entrada",
+      "cancelled": "Cancelado",
+      "completed": "Completado",
+      "draft_ready": "Borrador listo",
+      "failed": "Fallido",
+      "initializing": "Inicializando",
+      "promoted": "Promovido",
+      "resolving": "Resolviendo",
+      "test_complete": "Prueba completada",
+      "testing": "Probando"
+    },
+    "tool_error_kind": {
+      "auth": "Autenticación",
+      "http": "Error HTTP",
+      "misconfigured": "Mal configurado",
+      "rate_limited": "Límite de tasa alcanzado",
+      "timeout": "Tiempo agotado",
+      "tool_error": "Falló la herramienta",
+      "transport": "Falló la conexión",
+      "unknown": "Error desconocido",
+      "unsupported": "No ejecutable aquí"
     }
   },
   "project_overview": {
@@ -11758,7 +11875,8 @@
       "headless_badge": "Segundo plano",
       "headless_no_terminal": "Sesión en segundo plano — se ejecuta sin terminal. Responde desde el banner «Te necesita»; el progreso se muestra en Insights.",
       "spawn_headless_hint": "Modo headless: sin terminal en vivo, mucho más ligero en CPU y RAM. Responde desde el banner «Te necesita»; consulta el progreso en Insights.",
-      "spawn_headless_toggle": "Ejecutar en segundo plano (sin terminal)"
+      "spawn_headless_toggle": "Ejecutar en segundo plano (sin terminal)",
+      "live_slot_hibernated_toast": "{name} se hibernó para no superar el límite de sesiones activas; su conversación está guardada, reactívala para continuar."
     },
     "title": "Plugins",
     "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",
@@ -14091,7 +14209,9 @@
       "progress_past": "Pasado",
       "goal_view_missions": "Misiones",
       "mission_link_goal": "Vincular a un objetivo…",
-      "mission_unlinked": "Sin objetivo"
+      "mission_unlinked": "Sin objetivo",
+      "goal_field_kpi": "KPI vinculado",
+      "goal_kpi_none": "Sin KPI vinculado"
     },
     "dev_projects": {
       "active_goals": "objetivos activos",
@@ -15651,7 +15771,9 @@
       "collab_label": "Colaboración",
       "deck_phase_paused": "En pausa",
       "deck_pause": "Pausar",
-      "deck_resume": "Reanudar"
+      "deck_resume": "Reanudar",
+      "readiness_chip_label": "Requiere configuración",
+      "readiness_chip_tooltip": "Los conectores de este compañero aún necesitan configuración. Puede unirse y participar, pero sus capacidades están bloqueadas: no realizará ninguna acción hasta que añadas la credencial (abre la sección Conexiones en la barra lateral)."
     },
     "memory_created": "Memoria guardada en el registro del equipo",
     "memory_updated": "Memoria actualizada",
@@ -15855,7 +15977,11 @@
       "whats_new": "Novedades",
       "back_to_plugins": "Plugins",
       "roadmap": "Hoja de ruta",
-      "groups_label": "Grupos"
+      "groups_label": "Grupos",
+      "draft_agent_fallback": "Agente en borrador",
+      "draft_needs_answers_one": "{name} — necesita 1 respuesta",
+      "draft_needs_answers_other": "{name} — necesita {count} respuestas",
+      "draft_switch_title": "Cambiar al borrador: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "Copiar",
@@ -17019,7 +17145,11 @@
     "group_needs_review": "Pendiente de primera revisión",
     "group_low_scores": "Puntuaciones bajas",
     "group_declining": "Tendencia a la baja",
-    "group_stale": "Revisiones desactualizadas"
+    "group_stale": "Revisiones desactualizadas",
+    "roster_unscored": "Sin puntuación",
+    "roster_unscored_hint": "El Director revisó este agente pero no devolvió una puntuación; abre la revisión para ver su orientación.",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Generado por la revisión de coaching del Director: apruébalo o resuélvelo como cualquier otro problema."
   },
   "remote_approval": {
     "title": "Solicitud de ejecución remota",
@@ -17225,7 +17355,10 @@
     "attn_overdue": "{days}d de retraso",
     "attn_reason_crit": "Crítico",
     "attn_reason_floor": "Mínimo",
-    "attn_reason_pace": "Atrasado"
+    "attn_reason_pace": "Atrasado",
+    "evaluate_measured": "{count} KPI medidos.",
+    "evaluate_none_due": "No había KPIs pendientes de medición.",
+    "evaluate_partial": "{measured} medidos, {failed} con error"
   },
   "deliberation": {
     "agenda": "Agenda",

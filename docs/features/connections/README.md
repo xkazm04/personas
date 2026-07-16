@@ -26,6 +26,15 @@ The credentials manager uses `useCredentialManagerState`, `CredentialNavContext`
 - Undo-delete support (`useUndoDelete`).
 - Post-save resource picker flow (`resourcePickerStore.ts`, `usePostSaveResourcePicker.tsx`).
 
+**Readiness recompute on mutation.** Deleting a credential, or editing its field
+values, recomputes `setup_status` + `setup_detail` for every persona that
+depends on it (union of the `credential_dependents` scan and personas whose
+`design_context.credentialLinks` reference the exact id). A persona left bound
+to a deleted/emptied credential flips from `ready` to `needs_credentials`, so it
+no longer passes the execution gate and runs blind — the recompute reuses the
+same `connector_readiness` resolver adopt/promote use (`crud.rs` → `commands::
+design::connector_readiness::recompute_setup_for_credential_dependents`).
+
 ### Credential healthchecks
 
 Healthchecks verify that a stored credential still authenticates against its provider (HTTP probe, CLI verify, or desktop-app presence — see `engine/healthcheck.rs`). They run on two paths:
@@ -34,6 +43,8 @@ Healthchecks verify that a stored credential still authenticates against its pro
 - **Manual "Test all" button.** Calls the single `healthcheck_all_credentials` command (`credentials/crud.rs`), which runs the *same* in-process sweep server-side and returns a `BulkHealthcheckSummary`. `useBulkHealthcheck` maps the result into the per-card health cache and refreshes the store.
 
 This replaced an earlier client-side fan-out that fired ~24 concurrent privileged `healthcheck_credential` IPC calls on every Vault visit. That stampede raced the `x-ipc-token` injection (`ipc_auth.rs`) — rejected calls surfaced as false **"degraded"** cards even though the stored keys were valid and the probe never ran. Routing the loop through the engine (daily sweep) or a single privileged call (manual button) eliminates the race; per-credential `healthcheck_credential` remains for one-off "Test connection" actions in the detail modal.
+
+**Verified vs unverifiable (three-valued health).** Not every connector *can* be live-probed. A connector with no HTTP healthcheck config, no CLI verify probe, and no desktop-presence check (e.g. a raw connection string or an SSH key) returns a non-error "skip" — so a green "Healthy" check on such a credential would be a lie: nothing was actually verified. The probe result is therefore a typed `HealthProbeState` (`engine/healthcheck.rs`): **`verified`** (a live probe ran and passed), **`unverifiable`** (no probe of any kind exists — stored but not checkable), or **`failed`** (a live probe ran and failed). The distinction is persisted alongside `healthcheck_last_success` as a `healthcheck_last_state` metadata token (written via `persist_probe_state`), so the credentials list renders it without re-probing. The list's Health column shows `unverifiable` as a neutral/muted badge (never a green check) with a tooltip explaining the connector has no live probe, and the health filter offers it as its own option. **Gating is unchanged:** `unverifiable` is *not* a failure — `credential_is_usable` (`commands/design/connector_readiness.rs`) only demotes an explicit probe *failure*, so stored-only credentials still count as ready and never block execution.
 
 ### CLI-captured credentials (gcloud and friends)
 
@@ -81,6 +92,6 @@ Credentials are stored and read through backend commands; decrypted secrets shou
 
 **Encryption at rest is automatic and not a user-facing control.** Sensitive credential fields are AES-256-GCM encrypted at write time (`crypto::encrypt_field`). At startup the app silently assures the whole vault is encrypted: `crypto::migrate_plaintext_credentials` converts any legacy plaintext blob, and `crypto::assure_sensitive_fields_encrypted` re-encrypts any sensitive field still stored as plaintext. Both passes **exclude built-in personas-local connectors** (the bundled SQLite database, in-app messaging, the managed drive, …) which carry no external secret. There is no "encrypt now" button or unencrypted-count badge in the UI — the former `VaultStatusBadge` (a *control* + count) was removed in favour of this silent assurance, and that decision stands.
 
-**`VaultTrustBadge` is a read-only trust *display*, not a control.** A calm, collapsible panel on the credentials list (`sub_credentials/manager/VaultTrustBadge.tsx`) surfaces the reviewer-grade `vault.vault_badge` reassurance copy — AES-256-GCM, the OS-keychain (vs machine-fallback) master key, and credentials-never-leave-device — which was authored in all 14 locales but previously rendered by zero components. It carries **no** encrypt-now action and **no** unencrypted/plaintext count (those would contradict the silent-assurance model above); it only consumes `vault_status.key_source` to show the keychain-vs-fallback line accurately. The credential-entry form (`FormActions.tsx`) shows the same reassurance inline for every credential type. Both exist so a buyer / security reviewer can *see* the local-first crypto story, not to expose a control.
+**`VaultTrustBadge` is a read-only trust *display*, not a control.** A calm, collapsible panel on the credentials list (`sub_credentials/manager/VaultTrustBadge.tsx`) surfaces the reviewer-grade `vault.vault_badge` reassurance copy — AES-256-GCM, the OS-keychain (vs machine-fallback) master key, and credentials-never-leave-device — which was authored in all 14 locales but previously rendered by zero components. It carries **no** encrypt-now action and **no** unencrypted/plaintext count (those would contradict the silent-assurance model above); it consumes `vault_status.key_source` to show the keychain-vs-fallback line accurately, and `vault_status.credential_audit_write_failures` — when any credential audit-log write has failed this session (a decrypt happened without a trail), the badge flips from the green shield to an amber "Vault needs attention" state with a row counting the missed audit entries. Decrypts are never blocked by audit failures; the gap is surfaced, not silently swallowed. The credential-entry form (`FormActions.tsx`) shows the same reassurance inline for every credential type. Both exist so a buyer / security reviewer can *see* the local-first crypto story, not to expose a control.
 
 Resource scoping is a cross-cutting contract. See [../../architecture/resource-scoping.md](../../architecture/resource-scoping.md).

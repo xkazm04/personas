@@ -629,9 +629,16 @@ pub struct FailoverCandidate {
 // =============================================================================
 
 /// Claude model fallback chain (higher capability -> lower).
+///
+/// These MUST be currently-served model ids. The previous chain pinned
+/// `claude-opus-4-20250514` and `claude-sonnet-4-20250514`, both retired
+/// 2026-06-15 and now returning 404 — so a healthy opus-4-8 persona whose
+/// primary hiccuped was actively failed *over into a guaranteed 404*. Canonical
+/// ids are the same ones `engine::prompt::capabilities::tier_slug_to_model_id`
+/// bakes into recipes/templates (opus→`claude-opus-4-8`, sonnet→`claude-sonnet-4-6`).
 const CLAUDE_MODEL_CHAIN: &[&str] = &[
-    "claude-opus-4-20250514",
-    "claude-sonnet-4-20250514",
+    "claude-opus-4-8",
+    "claude-sonnet-4-6",
     "claude-haiku-4-5-20251001",
 ];
 
@@ -975,18 +982,42 @@ mod tests {
     #[test]
     fn test_failover_chain_skips_configured_model() {
         let profile = ModelProfile {
-            model: Some("claude-sonnet-4-20250514".into()),
+            model: Some("claude-sonnet-4-6".into()),
             ..Default::default()
         };
         let chain = build_failover_chain(EngineKind::ClaudeCode, Some(&profile));
         // First should be configured (sonnet), then haiku, then alternates
-        assert_eq!(chain[0].model.as_deref(), Some("claude-sonnet-4-20250514"));
+        assert_eq!(chain[0].model.as_deref(), Some("claude-sonnet-4-6"));
         // Should not have sonnet duplicated
         let sonnet_count = chain
             .iter()
-            .filter(|c| c.model.as_deref() == Some("claude-sonnet-4-20250514"))
+            .filter(|c| c.model.as_deref() == Some("claude-sonnet-4-6"))
             .count();
         assert_eq!(sonnet_count, 1);
+    }
+
+    /// Regression for the 2026-06-15 model retirement: an opus-4-8 persona whose
+    /// primary fails must ladder down onto *currently-served* ids only. Before
+    /// the chain fix, the ladder handed back `claude-opus-4-20250514` /
+    /// `claude-sonnet-4-20250514`, both 404 — failover degraded a healthy run
+    /// into a guaranteed failure.
+    #[test]
+    fn test_failover_chain_never_reaches_retired_ids() {
+        let profile = ModelProfile {
+            model: Some("claude-opus-4-8".into()),
+            ..Default::default()
+        };
+        let chain = build_failover_chain(EngineKind::ClaudeCode, Some(&profile));
+        // Configured opus stays first; ladder falls to current sonnet then haiku.
+        assert_eq!(chain[0].model.as_deref(), Some("claude-opus-4-8"));
+        for c in &chain {
+            if let Some(m) = c.model.as_deref() {
+                assert_ne!(m, "claude-opus-4-20250514", "retired opus reachable");
+                assert_ne!(m, "claude-sonnet-4-20250514", "retired sonnet reachable");
+            }
+        }
+        // The ladder must still yield at least one real downgrade candidate.
+        assert!(chain.iter().any(|c| c.model.as_deref() == Some("claude-sonnet-4-6")));
     }
 
     #[test]

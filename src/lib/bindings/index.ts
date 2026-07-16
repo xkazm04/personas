@@ -198,3 +198,4 @@ export type { UpdateTeamInput } from "./UpdateTeamInput";
 export type { UpdateToolDefinitionInput } from "./UpdateToolDefinitionInput";
 export type { UpdateTriggerInput } from "./UpdateTriggerInput";
 export type { WebhookStatus } from "./WebhookStatus";
+export type { SlaBreachEventPayload } from "./SlaBreachEventPayload";

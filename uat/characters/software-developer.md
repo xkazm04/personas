@@ -37,7 +37,7 @@ An agent whose prompt he can read and tune, connectors that work against real AP
 A PR summary / triage as good as a senior engineer's — names the real risk, no hallucinated APIs, actionable.
 
 ## Surface binding (what THEY actually reach)
-- Sections: Personas (incl. prompt + connectors tabs, Lab), Connectors/Keys, Dev Tools, Teams, Events.
+- Sections: Personas (incl. prompt + connectors tabs, Lab, Use Cases/Tool Runner), Connectors/Keys, Dev Tools, Teams, Events.
 - Reaches dev-only surfaces (he runs builder tier / dev build).
 
 ## Scored acceptance criteria (applied IDENTICALLY every run)
@@ -46,3 +46,4 @@ A PR summary / triage as good as a senior engineer's — names the real risk, no
 3. [senior-quality] Code-aware output is correct — no invented APIs, real risk named.
 4. [missing] Orchestration/monitoring gives him something he wouldn't trivially script himself.
 5. [effort] Tuning a prompt / swapping a model doesn't require fighting the UI.
+6. [trust] He can tell a real, LLM-judged Lab rating from a degraded/partial-coverage one, and Activate never leaves a persona half-switched between versions. He can hand-test a single tool via the Tool Runner and get a typed, diagnosable failure kind (not an opaque string) when it breaks.

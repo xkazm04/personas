@@ -131,5 +131,9 @@
   "group_needs_review": "Chờ đánh giá đầu tiên",
   "group_low_scores": "Điểm thấp",
   "group_declining": "Xu hướng giảm",
-  "group_stale": "Đánh giá đã cũ"
+  "group_stale": "Đánh giá đã cũ",
+  "roster_unscored": "Chưa chấm điểm",
+  "roster_unscored_hint": "Director đã đánh giá tác nhân này nhưng không trả về điểm số; mở bản đánh giá để xem hướng dẫn.",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "Được tạo từ đánh giá huấn luyện của Director — phê duyệt hoặc xử lý như bất kỳ vấn đề nào khác."
 }

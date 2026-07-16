@@ -1655,7 +1655,25 @@
       "eco_subtitle": "各モデルが評価をどれだけ解決するか、および各成功のコスト。",
       "eco_title": "コスト効率",
       "vr_col_tokens": "トークン",
-      "vr_tokens_tooltip": "1回の実行あたり平均 入力 {input} / 出力 {output}"
+      "vr_tokens_tooltip": "1回の実行あたり平均 入力 {input} / 出力 {output}",
+      "vr_reconcile_clear_all": "すべてのピンを解除",
+      "vr_reconcile_clear_pin": "ピンを解除",
+      "vr_reconcile_desc_one": "1件のユースケースが、昇格したばかりのモデル（{model}）とは異なるモデルにピン留めされています。ピンを解除するまで、そのユースケースはピン留めされたモデルで実行され続けます。",
+      "vr_reconcile_desc_other": "{count}件のユースケースが、昇格したばかりのモデル（{model}）とは異なるモデルにピン留めされています。ピンを解除するまで、それらはピン留めされたモデルで実行され続けます。",
+      "vr_reconcile_done": "完了",
+      "vr_reconcile_now_follows": "デフォルトに従います（{model}）",
+      "vr_reconcile_pinned_to": "{model} にピン留め済み",
+      "vr_reconcile_title": "ユースケースのモデルピンを調整",
+      "improve_failed": "改善ブリーフを準備できませんでした",
+      "improve_focus": "{metric}に注力します（平均{score}/100）",
+      "improve_run_seed_measured": "ペルソナ「{name}」を改善してください。最新のテストで{metric}が最も弱い領域として指摘されました（平均{score}/100）。何に注力すべきでしょうか？ ",
+      "improve_run_seed_plain": "最新のテスト結果に基づいてペルソナ「{name}」を改善してください。何に注力すべきでしょうか？ ",
+      "improve_seeded": "改善ブリーフをAthenaで開きました",
+      "vr_cost_unknown": "該当なし",
+      "vr_cost_unknown_tooltip": "ローカルモデルではコストが記録されません",
+      "vr_degraded_tooltip": "{total} 件中 {count} 件はヒューリスティックのフォールバックで採点（LLM評価器が利用不可）",
+      "vr_partial_tooltip": "部分的なサブスコアからの合成値 — 直接比較はできません",
+      "vr_score_caution": "スコアは注意が必要"
     },
     "design": {
       "select_agent": "デザイン分析を開始するエージェントを選択",
@@ -2532,7 +2550,15 @@
       "failed": "失敗",
       "error": "エラー",
       "invalid_json": "JSON が無効です — 実行前に修正してください。",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "失敗",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "出力は切り詰められました — ツールが表示上限を超える結果を返しました。",
+      "panel_subtitle": "このペルソナの認証情報を使ってツールを直接実行します。",
+      "panel_title": "ツールを実行",
+      "retryable_hint": "再試行すると成功する可能性があります。",
+      "run_tool": "ツールを実行",
+      "builtin_note": "組み込みツール — ペルソナの実行内で動作します（ここから手動では実行できません）。試すにはペルソナの機能のいずれかを実行してください。"
     },
     "health_check": {
       "title": "エージェントヘルスチェック",
@@ -3532,6 +3558,38 @@
       "done": "「{name}」として複製しました",
       "done_with_wiring": "「{name}」として複製しました — {triggers}件のトリガーと{subscriptions}件のサブスクリプションをコピー（コピー側は無効）",
       "failed": "エージェントを複製できませんでした"
+    },
+    "change_history": {
+      "empty": "変更履歴はまだありません",
+      "empty_value": "(空)",
+      "fields": {
+        "cli_awareness_enabled": "CLI認識",
+        "color": "カラー",
+        "description": "説明",
+        "design_context": "デザインコンテキスト",
+        "enabled": "有効",
+        "headless": "ヘッドレス",
+        "icon": "アイコン",
+        "lifecycle": "ライフサイクル",
+        "max_budget_usd": "予算",
+        "max_concurrent": "最大同時実行数",
+        "max_turns": "最大ターン数",
+        "model_profile": "モデル",
+        "name": "名前",
+        "notification_channels": "通知",
+        "parameters": "パラメータ",
+        "sensitive": "機密情報プレビュー",
+        "structured_prompt": "プロンプト",
+        "system_prompt": "システムプロンプト",
+        "timeout_ms": "タイムアウト"
+      },
+      "sources": {
+        "editor": "エディタ",
+        "fanout": "ファンアウト",
+        "header": "ヘッダー",
+        "other": "その他"
+      },
+      "title": "変更履歴"
     }
   },
   "vault": {
@@ -4247,7 +4305,9 @@
       "encrypt_now_other": "未暗号化の認証情報{count}件を今すぐ暗号化",
       "encrypt_done_one": "完了 -- {migrated}件の認証情報を暗号化しました。",
       "encrypt_done_other": "完了 -- {migrated}件の認証情報を暗号化しました。",
-      "encrypt_partial": "{migrated}件を暗号化、{failed}件が失敗。再試行するかアプリを再起動してください。"
+      "encrypt_partial": "{migrated}件を暗号化、{failed}件が失敗。再試行するかアプリを再起動してください。",
+      "audit_gap_detail": "起動以降、{count} 件の資格情報監査レコードを書き込めませんでした。資格情報へのアクセスがブロックされたことはありませんが、これらのアクセスイベントは監査ログに記録されていません。ディスク容量またはデータベースの状態を確認してください。",
+      "audit_gap_title": "監査証跡が不完全です"
     },
     "delete_dialog": {
       "title": "認証情報を削除",
@@ -4428,7 +4488,9 @@
       "filter_all_health": "すべてのヘルス",
       "health_healthy": "正常",
       "health_failing": "障害",
-      "health_untested": "未テスト"
+      "health_untested": "未テスト",
+      "health_unverifiable": "検証不可",
+      "health_unverifiable_tooltip": "このコネクタにはライブプローブがありません — 認証情報は保存されますが検証できません。"
     },
     "foraging": {
       "no_credentials_found": "認証情報が見つかりません",
@@ -6105,7 +6167,13 @@
       "event_data": "イベントデータ",
       "error": "エラー",
       "skipped_stat_label": "{skipped} 件スキップ",
-      "skipped_stat_tooltip": "過去 7 日間で {total} 件中 {skipped} 件のイベントに購読者がなくスキップされました（{rate}）。この割合が高い場合、誰も購読していないトリガーがあることを示します。"
+      "skipped_stat_tooltip": "過去 7 日間で {total} 件中 {skipped} 件のイベントに購読者がなくスキップされました（{rate}）。この割合が高い場合、誰も購読していないトリガーがあることを示します。",
+      "type_labels": {
+        "sla_breach_opened": "SLA違反が発生",
+        "sla_breach_recovered": "SLA違反から回復",
+        "schedule_missed_offline": "オフライン中に逃したスケジュール実行",
+        "schedule_skipped_overlap": "スケジュールをスキップ（前回の実行が実行中）"
+      }
     },
     "health": {
       "title": "エージェントヘルス",
@@ -6622,7 +6690,9 @@
     },
     "cascade": {
       "title": "チェーンカスケードマップ",
-      "no_chains": "チェーンが検出されません — すべてのペルソナが独立して動作しています"
+      "no_chains": "チェーンが検出されません — すべてのペルソナが独立して動作しています",
+      "cofail_insufficient": "同時障害なし",
+      "cofail_pct": "{pct}% 同時障害"
     },
     "predictive_alerts_extra": {
       "title": "予測アラート",
@@ -6854,7 +6924,12 @@
       "loading_status_page": "ステータスページを読み込み中…",
       "loading_reliability": "信頼性データを読み込み中…",
       "heartbeats_btn": "ハートビート",
-      "reliability_btn": "信頼性"
+      "reliability_btn": "信頼性",
+      "source_byom_policy": "BYOM ポリシー",
+      "source_healing_issues": "修復の問題",
+      "source_monthly_spend": "月間支出",
+      "source_provider_stats": "プロバイダー統計",
+      "sources_unavailable": "{sources} を読み込めませんでした。スコアが不正確な可能性があります。"
     },
     "popup_fields": {
       "sign_up_free_at": "無料で登録",
@@ -7153,7 +7228,11 @@
       "seg_healing": "回復",
       "seg_stability": "安定性",
       "seg_success": "成功",
-      "show_all": "すべて表示"
+      "show_all": "すべて表示",
+      "fleet_avg_badge": "フリート平均",
+      "fleet_avg_tooltip": "この期間にこのペルソナの実行記録がありません — ペルソナごとの実測値ではなく、フリート全体の平均成功率を表示しています。",
+      "no_data_badge": "データなし",
+      "no_data_tooltip": "この期間にこのペルソナの完了または失敗した実行がありません — 成功率は実測値ではなくプレースホルダーです。"
     },
     "provenance": {
       "sourced_tip": "{count}件のソースを参照しており、追跡・監査が可能です。",
@@ -10564,7 +10643,13 @@
     "local_tooling_label": "組み込みツール",
     "local_tooling_sentence": "Personas には最初からローカルツールが接続されています — メッセージング、データベース、ベクターなど — 認証情報は不要です。",
     "resume_continue_title": "中断したところから再開",
-    "resume_continue_cta": "ツアーを続行"
+    "resume_continue_cta": "ツアーを続行",
+    "replay_setup": "セットアップを再生",
+    "resume_setup": "セットアップを再開",
+    "tour_handoff_accept": "ツアーを始める",
+    "tour_handoff_body": "最初のエージェントが稼働中です。残りの機能——接続とエージェントの実行——を簡単なガイドツアーで確認しましょう。今行った部分はスキップします。",
+    "tour_handoff_dismiss": "後で",
+    "tour_handoff_title": "ガイドツアーを見ますか？"
   },
   "system_health": {
     "install_all": "全依存関係をインストール",
@@ -10971,7 +11056,15 @@
     "last24h_failed_count": "{count}件失敗",
     "last24h_show_all": "すべて表示 ({count})",
     "last24h_show_less": "表示を減らす",
-    "last24h_retry_at": "自動再試行 {time}"
+    "last24h_retry_at": "自動再試行 {time}",
+    "unverified": "未確認",
+    "unverified_tooltip": "このスロットの実行記録がありません — スキップ、レート制限、予算超過、またはアプリが閉じていた可能性があります。",
+    "missed_backfill_cta": "バックフィル",
+    "missed_dismiss": "未実行の通知を閉じる",
+    "missed_offline": "オフライン中に{count}件を逃しました",
+    "missed_offline_tooltip": "アプリが閉じている間、スケジュール実行がスキップされました。バックフィルで再実行します（重複排除・上限あり）。閉じると消去します。",
+    "reason_invalid_timezone": "一時停止 — 無効なタイムゾーン",
+    "reason_unscheduled": "一時停止 — 有効なスケジュールなし"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
@@ -11504,6 +11597,30 @@
       "quarantined": "トリガーを隔離",
       "healing_abandoned": "自己修復を中止",
       "healing_capped": "修復リトライ上限"
+    },
+    "build": {
+      "analyzing": "分析中",
+      "awaiting_input": "入力待ち",
+      "cancelled": "キャンセル済み",
+      "completed": "完了",
+      "draft_ready": "ドラフト準備完了",
+      "failed": "失敗",
+      "initializing": "初期化中",
+      "promoted": "昇格済み",
+      "resolving": "解決中",
+      "test_complete": "テスト完了",
+      "testing": "テスト中"
+    },
+    "tool_error_kind": {
+      "auth": "認証",
+      "http": "HTTP エラー",
+      "misconfigured": "設定エラー",
+      "rate_limited": "レート制限",
+      "timeout": "タイムアウト",
+      "tool_error": "ツール失敗",
+      "transport": "接続失敗",
+      "unknown": "不明なエラー",
+      "unsupported": "ここでは実行できません"
     }
   },
   "project_overview": {
@@ -11758,7 +11875,8 @@
       "headless_badge": "バックグラウンド",
       "headless_no_terminal": "バックグラウンドセッション — ターミナルなしで実行中。返信は「要対応」バナーから、進捗は Insights に表示されます。",
       "spawn_headless_hint": "ヘッドレスモード — ライブターミナルなしで、CPU と RAM の負荷を大幅に軽減。返信は「要対応」バナーから、進捗は Insights で確認できます。",
-      "spawn_headless_toggle": "バックグラウンドで実行（ターミナルなし）"
+      "spawn_headless_toggle": "バックグラウンドで実行（ターミナルなし）",
+      "live_slot_hibernated_toast": "アクティブセッション上限を超えないよう {name} をハイバネートしました。会話は保存されています。再開するにはウェイクしてください。"
     },
     "title": "プラグイン",
     "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",
@@ -14091,7 +14209,9 @@
       "progress_past": "過去",
       "goal_view_missions": "ミッション",
       "mission_link_goal": "ゴールに紐づける…",
-      "mission_unlinked": "ゴールなし"
+      "mission_unlinked": "ゴールなし",
+      "goal_field_kpi": "リンクされた KPI",
+      "goal_kpi_none": "リンクされた KPI なし"
     },
     "dev_projects": {
       "active_goals": "アクティブなゴール",
@@ -15651,7 +15771,9 @@
       "collab_label": "コラボ",
       "deck_phase_paused": "一時停止",
       "deck_pause": "一時停止",
-      "deck_resume": "再開"
+      "deck_resume": "再開",
+      "readiness_chip_label": "セットアップが必要",
+      "readiness_chip_tooltip": "このメンバーのコネクタはまだセットアップが必要です。参加して議論はできますが、機能は保留されています — 認証情報を追加するまでアクションは実行されません（サイドバーの「接続」セクションを開いてください）。"
     },
     "memory_created": "メモリーをチーム台帳に保存しました",
     "memory_updated": "メモリーを更新しました",
@@ -15855,7 +15977,11 @@
       "whats_new": "新着情報",
       "back_to_plugins": "プラグイン",
       "roadmap": "ロードマップ",
-      "groups_label": "グループ"
+      "groups_label": "グループ",
+      "draft_agent_fallback": "ドラフトエージェント",
+      "draft_needs_answers_one": "{name} — 回答が1件必要",
+      "draft_needs_answers_other": "{name} — 回答が{count}件必要",
+      "draft_switch_title": "ドラフトに切り替え: {name}（{phase}）"
     },
     "execution_detail": {
       "copy": "コピー",
@@ -17019,7 +17145,11 @@
     "group_needs_review": "初回レビュー待ち",
     "group_low_scores": "低スコア",
     "group_declining": "低下傾向",
-    "group_stale": "古いレビュー"
+    "group_stale": "古いレビュー",
+    "roster_unscored": "スコアなし",
+    "roster_unscored_hint": "Director はこのエージェントをレビューしましたが、スコアを返しませんでした。コーチングを見るにはレビューを開いてください。",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Director のコーチングレビューによって作成されました。他の問題と同様に承認または解決してください。"
   },
   "remote_approval": {
     "title": "リモート実行リクエスト",
@@ -17225,7 +17355,10 @@
     "attn_overdue": "{days}日超過",
     "attn_reason_crit": "危機的",
     "attn_reason_floor": "下限",
-    "attn_reason_pace": "遅延"
+    "attn_reason_pace": "遅延",
+    "evaluate_measured": "{count} 件の KPI を測定しました。",
+    "evaluate_none_due": "測定対象の KPI はありませんでした。",
+    "evaluate_partial": "{measured} 件測定、{failed} 件失敗"
   },
   "deliberation": {
     "agenda": "議題",

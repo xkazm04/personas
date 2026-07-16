@@ -198,7 +198,8 @@
     "headless_badge": "Latar belakang",
     "headless_no_terminal": "Sesi latar belakang — berjalan tanpa terminal. Balas dari banner \"Butuh Anda\"; kemajuan tampil di Insights.",
     "spawn_headless_hint": "Mode headless — tanpa terminal langsung, jauh lebih ringan di CPU dan RAM. Balas dari banner \"Butuh Anda\"; pantau kemajuan di Insights.",
-    "spawn_headless_toggle": "Jalankan di latar belakang (tanpa terminal)"
+    "spawn_headless_toggle": "Jalankan di latar belakang (tanpa terminal)",
+    "live_slot_hibernated_toast": "{name} dihibernasi agar tetap dalam batas sesi aktif — percakapannya tersimpan; bangunkan untuk melanjutkan."
   },
   "title": "Plugin",
   "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",
@@ -2531,7 +2532,9 @@
     "progress_past": "Lampau",
     "goal_view_missions": "Misi",
     "mission_link_goal": "Tautkan ke sasaran…",
-    "mission_unlinked": "Tanpa sasaran"
+    "mission_unlinked": "Tanpa sasaran",
+    "goal_field_kpi": "KPI tertaut",
+    "goal_kpi_none": "Tidak ada KPI tertaut"
   },
   "dev_projects": {
     "active_goals": "tujuan aktif",

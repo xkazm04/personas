@@ -1655,7 +1655,25 @@
       "eco_subtitle": "Seberapa sering setiap model menyelesaikan evaluasi, dan berapa biaya per keberhasilan.",
       "eco_title": "Efisiensi Biaya",
       "vr_col_tokens": "Token",
-      "vr_tokens_tooltip": "Rata-rata {input} masuk / {output} keluar per proses"
+      "vr_tokens_tooltip": "Rata-rata {input} masuk / {output} keluar per proses",
+      "vr_reconcile_clear_all": "Hapus semua pin",
+      "vr_reconcile_clear_pin": "Hapus pin",
+      "vr_reconcile_desc_one": "1 use case masih menyematkan model yang berbeda dari yang baru saja Anda promosikan ({model}). Use case itu akan terus berjalan pada model yang disematkan sampai Anda menghapus pin.",
+      "vr_reconcile_desc_other": "{count} use case masih menyematkan model yang berbeda dari yang baru saja Anda promosikan ({model}). Semuanya akan terus berjalan pada model yang disematkan sampai Anda menghapus pin.",
+      "vr_reconcile_done": "Selesai",
+      "vr_reconcile_now_follows": "Kini mengikuti default ({model})",
+      "vr_reconcile_pinned_to": "disematkan ke {model}",
+      "vr_reconcile_title": "Selaraskan pin model use case",
+      "improve_failed": "Gagal menyiapkan ringkasan peningkatan",
+      "improve_focus": "Akan fokus pada {metric} (rata-rata {score}/100)",
+      "improve_run_seed_measured": "Tingkatkan persona \"{name}\". Uji terbarunya menandai {metric} sebagai area terlemah (rata-rata {score}/100). Apa yang harus saya fokuskan? ",
+      "improve_run_seed_plain": "Tingkatkan persona \"{name}\" berdasarkan hasil uji terbarunya. Apa yang harus saya fokuskan? ",
+      "improve_seeded": "Ringkasan peningkatan dibuka di Athena",
+      "vr_cost_unknown": "t/a",
+      "vr_cost_unknown_tooltip": "Biaya tidak dilacak untuk model lokal",
+      "vr_degraded_tooltip": "{count} dari {total} sampel dinilai dengan heuristik cadangan (penilai LLM tidak tersedia)",
+      "vr_partial_tooltip": "Komposit dari sub-skor parsial — tidak dapat dibandingkan langsung",
+      "vr_score_caution": "Skor perlu kehati-hatian"
     },
     "design": {
       "select_agent": "Pilih agen untuk memulai analisis desain",
@@ -2532,7 +2550,15 @@
       "failed": "Gagal",
       "error": "Kesalahan",
       "invalid_json": "JSON tidak valid — perbaiki sebelum dijalankan.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "failure_kind_label": "Gagal",
+      "http_status_label": "HTTP {status}",
+      "output_truncated": "Keluaran terpotong — alat mengembalikan lebih dari batas tampilan.",
+      "panel_subtitle": "Panggil alat langsung dengan kredensial persona ini.",
+      "panel_title": "Jalankan alat",
+      "retryable_hint": "Ini mungkin berhasil saat dicoba lagi.",
+      "run_tool": "Jalankan alat",
+      "builtin_note": "Alat bawaan — berjalan di dalam eksekusi persona (bukan secara manual dari sini). Jalankan salah satu kemampuan persona untuk mengujinya."
     },
     "health_check": {
       "title": "Pemeriksaan Kesehatan Agen",
@@ -3532,6 +3558,38 @@
       "done": "Diduplikasi sebagai \"{name}\"",
       "done_with_wiring": "Diduplikasi sebagai \"{name}\" — menyalin {triggers} pemicu dan {subscriptions} langganan, dinonaktifkan pada salinan",
       "failed": "Gagal menduplikasi agen"
+    },
+    "change_history": {
+      "empty": "Belum ada perubahan tercatat",
+      "empty_value": "(kosong)",
+      "fields": {
+        "cli_awareness_enabled": "Kesadaran CLI",
+        "color": "Warna",
+        "description": "Deskripsi",
+        "design_context": "Konteks desain",
+        "enabled": "Diaktifkan",
+        "headless": "Headless",
+        "icon": "Ikon",
+        "lifecycle": "Siklus hidup",
+        "max_budget_usd": "Anggaran",
+        "max_concurrent": "Maks bersamaan",
+        "max_turns": "Maks giliran",
+        "model_profile": "Model",
+        "name": "Nama",
+        "notification_channels": "Notifikasi",
+        "parameters": "Parameter",
+        "sensitive": "Pratinjau sensitif",
+        "structured_prompt": "Prompt",
+        "system_prompt": "Prompt sistem",
+        "timeout_ms": "Batas waktu"
+      },
+      "sources": {
+        "editor": "Editor",
+        "fanout": "Fan-out",
+        "header": "Header",
+        "other": "Lainnya"
+      },
+      "title": "Riwayat perubahan"
     }
   },
   "vault": {
@@ -4247,7 +4305,9 @@
       "encrypt_now_other": "Enkripsi {count} kredensial yang tidak terenkripsi sekarang",
       "encrypt_done_one": "Selesai -- {migrated} kredensial terenkripsi.",
       "encrypt_done_other": "Selesai -- {migrated} kredensial terenkripsi.",
-      "encrypt_partial": "Terenkripsi {migrated}, gagal {failed}. Coba lagi atau mulai ulang aplikasi."
+      "encrypt_partial": "Terenkripsi {migrated}, gagal {failed}. Coba lagi atau mulai ulang aplikasi.",
+      "audit_gap_detail": "{count} catatan audit kredensial gagal ditulis sejak aplikasi dijalankan. Akses kredensial tidak pernah diblokir, tetapi peristiwa akses tersebut hilang dari log audit. Periksa ruang disk atau kondisi basis data.",
+      "audit_gap_title": "Jejak audit tidak lengkap"
     },
     "delete_dialog": {
       "title": "Hapus Kredensial",
@@ -4428,7 +4488,9 @@
       "filter_all_health": "Semua Kesehatan",
       "health_healthy": "Sehat",
       "health_failing": "Gagal",
-      "health_untested": "Belum Diuji"
+      "health_untested": "Belum Diuji",
+      "health_unverifiable": "Tidak dapat diverifikasi",
+      "health_unverifiable_tooltip": "Konektor ini tidak memiliki probe langsung — kredensial disimpan tetapi tidak dapat diverifikasi."
     },
     "foraging": {
       "no_credentials_found": "Tidak ada kredensial ditemukan",
@@ -6105,7 +6167,13 @@
       "event_data": "Data Peristiwa",
       "error": "Kesalahan",
       "skipped_stat_label": "{skipped} dilewati",
-      "skipped_stat_tooltip": "{skipped} dari {total} event dalam 7 hari terakhir tidak memiliki pelanggan dan dilewati ({rate}). Tingkat yang tinggi menandakan ada pemicu yang tidak didengarkan siapa pun."
+      "skipped_stat_tooltip": "{skipped} dari {total} event dalam 7 hari terakhir tidak memiliki pelanggan dan dilewati ({rate}). Tingkat yang tinggi menandakan ada pemicu yang tidak didengarkan siapa pun.",
+      "type_labels": {
+        "sla_breach_opened": "Pelanggaran SLA dibuka",
+        "sla_breach_recovered": "Pelanggaran SLA pulih",
+        "schedule_missed_offline": "Jadwal terlewat (offline)",
+        "schedule_skipped_overlap": "Jadwal dilewati (run sebelumnya masih aktif)"
+      }
     },
     "health": {
       "title": "Kesehatan Agen",
@@ -6622,7 +6690,9 @@
     },
     "cascade": {
       "title": "Peta Kaskade Rantai",
-      "no_chains": "Tidak ada rantai terdeteksi -- semua persona beroperasi secara independen"
+      "no_chains": "Tidak ada rantai terdeteksi -- semua persona beroperasi secara independen",
+      "cofail_insufficient": "tidak ada kegagalan bersama",
+      "cofail_pct": "{pct}% gagal bersama"
     },
     "predictive_alerts_extra": {
       "title": "Peringatan Prediktif",
@@ -6854,7 +6924,12 @@
       "loading_status_page": "Memuat halaman status...",
       "loading_reliability": "Memuat data keandalan...",
       "heartbeats_btn": "Detak",
-      "reliability_btn": "Keandalan"
+      "reliability_btn": "Keandalan",
+      "source_byom_policy": "Kebijakan BYOM",
+      "source_healing_issues": "Masalah pemulihan",
+      "source_monthly_spend": "Pengeluaran bulanan",
+      "source_provider_stats": "Statistik penyedia",
+      "sources_unavailable": "{sources} tidak dapat dimuat — skor mungkin tidak akurat."
     },
     "popup_fields": {
       "sign_up_free_at": "Daftar gratis di",
@@ -7153,7 +7228,11 @@
       "seg_healing": "Pemulihan",
       "seg_stability": "Stabilitas",
       "seg_success": "Keberhasilan",
-      "show_all": "Tampilkan semua"
+      "show_all": "Tampilkan semua",
+      "fleet_avg_badge": "rata-rata armada",
+      "fleet_avg_tooltip": "Tidak ada eksekusi tercatat untuk persona ini dalam rentang tersebut — menampilkan rata-rata tingkat keberhasilan seluruh armada, bukan nilai terukur per persona.",
+      "no_data_badge": "tidak ada data",
+      "no_data_tooltip": "Tidak ada eksekusi selesai atau gagal untuk persona ini dalam rentang tersebut — tingkat keberhasilan adalah placeholder, bukan hasil pengukuran."
     },
     "provenance": {
       "sourced_tip": "Mengutip {count} sumber yang dapat Anda lacak dan audit.",
@@ -10564,7 +10643,13 @@
     "local_tooling_label": "Alat bawaan",
     "local_tooling_sentence": "Personas sudah memiliki alat bawaan yang terhubung sejak awal — Messaging, Database, Vector, dan lainnya — tanpa memerlukan kredensial.",
     "resume_continue_title": "Lanjutkan dari posisi terakhir",
-    "resume_continue_cta": "Lanjutkan tur"
+    "resume_continue_cta": "Lanjutkan tur",
+    "replay_setup": "Ulangi penyiapan",
+    "resume_setup": "Lanjutkan penyiapan",
+    "tour_handoff_accept": "Mulai tur",
+    "tour_handoff_body": "Agen pertama Anda sudah aktif. Ikuti tur panduan singkat untuk selebihnya — koneksi dan menjalankan agen — dan kami akan melewati bagian yang baru saja Anda lakukan.",
+    "tour_handoff_dismiss": "Nanti saja",
+    "tour_handoff_title": "Ingin tur berpanduan?"
   },
   "system_health": {
     "install_all": "Instal Semua Dependensi",
@@ -10971,7 +11056,15 @@
     "last24h_failed_count": "{count} gagal",
     "last24h_show_all": "Tampilkan semua ({count})",
     "last24h_show_less": "Tampilkan lebih sedikit",
-    "last24h_retry_at": "coba ulang otomatis {time}"
+    "last24h_retry_at": "coba ulang otomatis {time}",
+    "unverified": "Belum terverifikasi",
+    "unverified_tooltip": "Tidak ada catatan run untuk slot ini — mungkin dilewati, dibatasi rate, melebihi anggaran, atau aplikasi tertutup.",
+    "missed_backfill_cta": "Susulkan",
+    "missed_dismiss": "Tutup pemberitahuan run terlewat",
+    "missed_offline": "Terlewat {count} saat offline",
+    "missed_offline_tooltip": "Jalankan terjadwal dilewati saat aplikasi tertutup. Backfill memutarnya ulang (dedup dan dibatasi), atau tutup untuk menghapus.",
+    "reason_invalid_timezone": "Dijeda — zona waktu tidak valid",
+    "reason_unscheduled": "Dijeda — tidak ada jadwal valid"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
@@ -11504,6 +11597,30 @@
       "quarantined": "Trigger dikarantina",
       "healing_abandoned": "Pemulihan menyerah",
       "healing_capped": "Percobaan pemulihan habis"
+    },
+    "build": {
+      "analyzing": "Menganalisis",
+      "awaiting_input": "Menunggu masukan",
+      "cancelled": "Dibatalkan",
+      "completed": "Selesai",
+      "draft_ready": "Draf siap",
+      "failed": "Gagal",
+      "initializing": "Menginisialisasi",
+      "promoted": "Dipromosikan",
+      "resolving": "Menyelesaikan",
+      "test_complete": "Pengujian selesai",
+      "testing": "Menguji"
+    },
+    "tool_error_kind": {
+      "auth": "Autentikasi",
+      "http": "Kesalahan HTTP",
+      "misconfigured": "Salah konfigurasi",
+      "rate_limited": "Batas laju tercapai",
+      "timeout": "Waktu habis",
+      "tool_error": "Alat gagal",
+      "transport": "Koneksi gagal",
+      "unknown": "Kesalahan tidak dikenal",
+      "unsupported": "Tidak dapat dijalankan di sini"
     }
   },
   "project_overview": {
@@ -11758,7 +11875,8 @@
       "headless_badge": "Latar belakang",
       "headless_no_terminal": "Sesi latar belakang — berjalan tanpa terminal. Balas dari banner \"Butuh Anda\"; kemajuan tampil di Insights.",
       "spawn_headless_hint": "Mode headless — tanpa terminal langsung, jauh lebih ringan di CPU dan RAM. Balas dari banner \"Butuh Anda\"; pantau kemajuan di Insights.",
-      "spawn_headless_toggle": "Jalankan di latar belakang (tanpa terminal)"
+      "spawn_headless_toggle": "Jalankan di latar belakang (tanpa terminal)",
+      "live_slot_hibernated_toast": "{name} dihibernasi agar tetap dalam batas sesi aktif — percakapannya tersimpan; bangunkan untuk melanjutkan."
     },
     "title": "Plugin",
     "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",
@@ -14091,7 +14209,9 @@
       "progress_past": "Lampau",
       "goal_view_missions": "Misi",
       "mission_link_goal": "Tautkan ke sasaran…",
-      "mission_unlinked": "Tanpa sasaran"
+      "mission_unlinked": "Tanpa sasaran",
+      "goal_field_kpi": "KPI tertaut",
+      "goal_kpi_none": "Tidak ada KPI tertaut"
     },
     "dev_projects": {
       "active_goals": "tujuan aktif",
@@ -15651,7 +15771,9 @@
       "collab_label": "Kolaborasi",
       "deck_phase_paused": "Dijeda",
       "deck_pause": "Jeda",
-      "deck_resume": "Lanjutkan"
+      "deck_resume": "Lanjutkan",
+      "readiness_chip_label": "Perlu penyiapan",
+      "readiness_chip_tooltip": "Konektor rekan tim ini masih perlu disiapkan. Ia dapat bergabung dan berdiskusi, tetapi kemampuannya ditahan — ia tidak akan mengambil tindakan sampai Anda menambahkan kredensial (buka bagian Koneksi di bilah sisi)."
     },
     "memory_created": "Memori disimpan ke catatan tim",
     "memory_updated": "Memori diperbarui",
@@ -15855,7 +15977,11 @@
       "whats_new": "Yang baru",
       "back_to_plugins": "Plugin",
       "roadmap": "Peta Jalan",
-      "groups_label": "Grup"
+      "groups_label": "Grup",
+      "draft_agent_fallback": "Agen draf",
+      "draft_needs_answers_one": "{name} — perlu 1 jawaban",
+      "draft_needs_answers_other": "{name} — perlu {count} jawaban",
+      "draft_switch_title": "Beralih ke draf: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "Salin",
@@ -17019,7 +17145,11 @@
     "group_needs_review": "Menunggu ulasan pertama",
     "group_low_scores": "Skor rendah",
     "group_declining": "Tren menurun",
-    "group_stale": "Ulasan usang"
+    "group_stale": "Ulasan usang",
+    "roster_unscored": "Tanpa skor",
+    "roster_unscored_hint": "Director meninjau agen ini tetapi tidak memberikan skor; buka tinjauan untuk melihat pembinaannya.",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Muncul dari tinjauan pembinaan Director — setujui atau selesaikan seperti masalah lainnya."
   },
   "remote_approval": {
     "title": "Permintaan jalankan jarak jauh",
@@ -17225,7 +17355,10 @@
     "attn_overdue": "telat {days}h",
     "attn_reason_crit": "Kritis",
     "attn_reason_floor": "Batas",
-    "attn_reason_pace": "Tertinggal"
+    "attn_reason_pace": "Tertinggal",
+    "evaluate_measured": "{count} KPI diukur.",
+    "evaluate_none_due": "Tidak ada KPI yang jatuh tempo untuk diukur.",
+    "evaluate_partial": "{measured} diukur, {failed} gagal"
   },
   "deliberation": {
     "agenda": "Agenda",

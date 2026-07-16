@@ -525,7 +525,13 @@
     "event_data": "Data události",
     "error": "Chyba",
     "skipped_stat_label": "{skipped} přeskočeno",
-    "skipped_stat_tooltip": "{skipped} z {total} událostí za posledních 7 dní nemělo žádného odběratele a bylo přeskočeno ({rate}). Vysoký podíl signalizuje trigger, kterému nikdo nenaslouchá."
+    "skipped_stat_tooltip": "{skipped} z {total} událostí za posledních 7 dní nemělo žádného odběratele a bylo přeskočeno ({rate}). Vysoký podíl signalizuje trigger, kterému nikdo nenaslouchá.",
+    "type_labels": {
+      "sla_breach_opened": "Porušení SLA zahájeno",
+      "sla_breach_recovered": "Porušení SLA vyřešeno",
+      "schedule_missed_offline": "Zmeškané naplánované běhy (offline)",
+      "schedule_skipped_overlap": "Plán přeskočen (předchozí běh aktivní)"
+    }
   },
   "health": {
     "title": "Zdraví agentů",
@@ -1042,7 +1048,9 @@
   },
   "cascade": {
     "title": "Mapa kaskády řetězců",
-    "no_chains": "Žádné řetězce nezjištěny — všechny persony pracují nezávisle"
+    "no_chains": "Žádné řetězce nezjištěny — všechny persony pracují nezávisle",
+    "cofail_insufficient": "žádná souběžná selhání",
+    "cofail_pct": "{pct}% souběžných selhání"
   },
   "predictive_alerts_extra": {
     "title": "Prediktivní upozornění",
@@ -1274,7 +1282,12 @@
     "loading_status_page": "Načítání stavové stránky…",
     "loading_reliability": "Načítání dat spolehlivosti…",
     "heartbeats_btn": "Signály",
-    "reliability_btn": "Spolehlivost"
+    "reliability_btn": "Spolehlivost",
+    "source_byom_policy": "Zásada BYOM",
+    "source_healing_issues": "Problémy s opravou",
+    "source_monthly_spend": "Měsíční útrata",
+    "source_provider_stats": "Statistiky poskytovatele",
+    "sources_unavailable": "{sources} se nepodařilo načíst — skóre může být nepřesné."
   },
   "popup_fields": {
     "sign_up_free_at": "Zaregistrujte se zdarma na",
@@ -1573,7 +1586,11 @@
     "seg_healing": "Léčení",
     "seg_stability": "Stabilita",
     "seg_success": "Úspěch",
-    "show_all": "Zobrazit vše"
+    "show_all": "Zobrazit vše",
+    "fleet_avg_badge": "průměr flotily",
+    "fleet_avg_tooltip": "Pro tuto personu nebyly v okně zaznamenány žádné běhy — zobrazuje se průměrná úspěšnost napříč flotilou, nikoli změřená hodnota pro danou personu.",
+    "no_data_badge": "žádná data",
+    "no_data_tooltip": "Pro tuto personu nejsou v okně žádné dokončené ani neúspěšné běhy — míra úspěšnosti je zástupná hodnota, nikoli změřená."
   },
   "provenance": {
     "sourced_tip": "Cituje {count} zdroj(e), které lze dohledat a ověřit.",

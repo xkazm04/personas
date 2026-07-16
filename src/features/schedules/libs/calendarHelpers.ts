@@ -12,8 +12,16 @@ export interface CalendarEvent {
   agentColor: string | null;
   triggerId: string;
   time: Date;
-  /** Whether this is a projected future fire or a past execution */
-  kind: 'projected' | 'past-success' | 'past-failure';
+  /**
+   * projected      — a future fire the engine will run.
+   * past-success   — a past slot matched to a real completed run.
+   * past-failure   — a past slot matched to a real failed/errored/cancelled run.
+   * past-unknown   — a past slot with NO matching run record (skipped,
+   *                  rate-limited, out-of-window, over budget, or the app was
+   *                  closed) OR a matched run that hasn't resolved yet. Never a
+   *                  fabricated outcome — it means "we can't assert what happened".
+   */
+  kind: 'projected' | 'past-success' | 'past-failure' | 'past-unknown';
 }
 
 export interface CalendarDay {
@@ -269,3 +277,87 @@ export function detectConflicts(events: CalendarEvent[]): {
 // cron parser. Callers (FrequencyEditor) now use the `useConflictPreview`
 // hook in `useCronPreview.ts` which fetches fire times via the
 // `cron_fire_times_in_range` IPC.
+
+// -- Past-slot ↔ real-run matching -------------------------------------------
+//
+// The calendar used to colour every past projected slot green/red from the
+// trigger's OVERALL health, so a slot the engine SKIPPED (rate-limited,
+// out-of-window, app closed, over budget) rendered as a confident past-success.
+// It was asserting history it didn't have. These helpers bind past slots to the
+// real execution records the engine actually produced, and leave everything
+// else honestly "unknown".
+
+export type PastOutcome = 'past-success' | 'past-failure' | 'past-unknown';
+
+/**
+ * Base tolerance for binding a nominal slot to a real run: 90s comfortably
+ * covers the scheduler tick firing up to ~5s after the nominal minute plus
+ * poll-loop jitter, while staying tight enough that (after the half-gap cap in
+ * `matchPastSlotsToRuns`) it never binds an adjacent slot.
+ */
+export const SLOT_RUN_TOLERANCE_MS = 90_000;
+
+/**
+ * Map an execution status token to a past-slot outcome. Terminal success →
+ * success; terminal failure (failed / error / cancelled) → failure; anything
+ * non-terminal (queued / running) → unknown — a run exists but hasn't resolved,
+ * so we don't claim an outcome.
+ */
+export function classifyRunOutcome(status: string): PastOutcome {
+  const s = status.toLowerCase();
+  if (s === 'completed') return 'past-success';
+  if (s === 'failed' || s === 'error' || s === 'cancelled') return 'past-failure';
+  return 'past-unknown';
+}
+
+export interface RunPoint {
+  /** Effective run time in epoch ms (execution created_at — the scheduler-tick
+   *  stamp, which is the closest available marker to the nominal slot). */
+  time: number;
+  status: string;
+}
+
+/**
+ * Bind each past nominal slot (ascending epoch-ms, a SINGLE trigger) to at most
+ * one real run within a tolerance window, returning the resolved outcome per
+ * slot. A slot with no run in range stays 'past-unknown' — never a fabricated
+ * success. Each run binds at most one slot (nearest wins).
+ *
+ * The per-slot tolerance is capped at half the gap to the nearest neighbouring
+ * slot, so a fast (sub-3-min) schedule can't have a single run satisfy two
+ * slots. Backfilled runs stamp their created_at at backfill time (far from any
+ * nominal slot) so they simply don't match — the genuinely-missed slots then
+ * correctly read as unknown rather than borrowing the backfill's outcome.
+ */
+export function matchPastSlotsToRuns(
+  slotTimes: number[],
+  runs: RunPoint[],
+  baseToleranceMs = SLOT_RUN_TOLERANCE_MS,
+): PastOutcome[] {
+  const outcomes: PastOutcome[] = new Array(slotTimes.length).fill('past-unknown');
+  if (slotTimes.length === 0 || runs.length === 0) return outcomes;
+  const consumed = new Array(runs.length).fill(false);
+
+  for (let i = 0; i < slotTimes.length; i++) {
+    const slot = slotTimes[i]!;
+    let tol = baseToleranceMs;
+    if (i > 0) tol = Math.min(tol, (slot - slotTimes[i - 1]!) / 2);
+    if (i < slotTimes.length - 1) tol = Math.min(tol, (slotTimes[i + 1]! - slot) / 2);
+
+    let bestRun = -1;
+    let bestDist = Infinity;
+    for (let r = 0; r < runs.length; r++) {
+      if (consumed[r]) continue;
+      const dist = Math.abs(runs[r]!.time - slot);
+      if (dist <= tol && dist < bestDist) {
+        bestDist = dist;
+        bestRun = r;
+      }
+    }
+    if (bestRun >= 0) {
+      consumed[bestRun] = true;
+      outcomes[i] = classifyRunOutcome(runs[bestRun]!.status);
+    }
+  }
+  return outcomes;
+}

@@ -24,13 +24,63 @@
 
 use std::collections::HashMap;
 
+use zeroize::Zeroize;
+
 use crate::db::models::PersonaToolDefinition;
 use crate::db::repos::resources::{
     audit_log, connectors as connector_repo, credentials as cred_repo,
 };
 use crate::db::DbPool;
+use crate::utils::sanitization::sanitize_secrets;
 
 use super::env::{credential_refresh_lock, sanitize_env_name};
+
+/// Owns a decrypted credential field map and zeroizes every secret value on
+/// drop.
+///
+/// `cred_repo::get_decrypted_fields` returns a plain `HashMap<String, String>`
+/// whose signature is shared with the healthcheck / connector_strategy read
+/// paths, so it is deliberately left unchanged. This wrapper is applied only on
+/// the execution hot path (`inject_credential`) to shrink the in-memory
+/// plaintext lifetime from "the whole execution" down to the span of a single
+/// injection: the moment the wrapper drops, every decrypted value is scrubbed.
+///
+/// Only the VALUES are zeroized — the keys are field names (`access_token`,
+/// `client_secret`, …), not secrets.
+struct ZeroizingFields(HashMap<String, String>);
+
+impl ZeroizingFields {
+    /// Replace the inner map, scrubbing the outgoing values first so a
+    /// re-read inside the refresh lock never leaves a stale decrypted copy
+    /// un-zeroized on the heap.
+    fn replace(&mut self, new: HashMap<String, String>) {
+        for v in self.0.values_mut() {
+            v.zeroize();
+        }
+        self.0 = new;
+    }
+}
+
+impl std::ops::Deref for ZeroizingFields {
+    type Target = HashMap<String, String>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for ZeroizingFields {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl Drop for ZeroizingFields {
+    fn drop(&mut self) {
+        for v in self.0.values_mut() {
+            v.zeroize();
+        }
+    }
+}
 
 /// Resolve credentials for a persona's tools and return env var mappings + prompt hints.
 ///
@@ -521,15 +571,25 @@ async fn try_refresh_oauth_token(
         return None;
     };
 
-    // Resolve client credentials: prefer fields, then override, then fail
-    let (cid, csec) = if let (Some(id), Some(secret)) = (
-        fields.get("client_id").filter(|v| !v.is_empty()),
-        fields.get("client_secret").filter(|v| !v.is_empty()),
-    ) {
-        (id.clone(), secret.clone())
-    } else if let Some((id, secret)) = override_client {
-        (id.to_string(), secret.to_string())
-    } else {
+    // Resolve client credentials: prefer fields, then override, then fail.
+    // Both the client_id and client_secret clones are wrapped in `Zeroizing`
+    // so the duplicated secret material is scrubbed the moment this function
+    // returns — it must not outlive the single refresh HTTP round-trip.
+    let (cid, csec): (zeroize::Zeroizing<String>, zeroize::Zeroizing<String>) =
+        if let (Some(id), Some(secret)) = (
+            fields.get("client_id").filter(|v| !v.is_empty()),
+            fields.get("client_secret").filter(|v| !v.is_empty()),
+        ) {
+            (
+                zeroize::Zeroizing::new(id.clone()),
+                zeroize::Zeroizing::new(secret.clone()),
+            )
+        } else if let Some((id, secret)) = override_client {
+            (
+                zeroize::Zeroizing::new(id.to_string()),
+                zeroize::Zeroizing::new(secret.to_string()),
+            )
+        } else {
         // Upgraded from `debug!` to `warn!`. This is the most common silent
         // failure for app-managed Google credentials in dev builds: the
         // credential stores no client_id (app_managed=true) and the dev
@@ -612,7 +672,11 @@ async fn try_refresh_oauth_token(
 
     if !response.status().is_success() {
         let status = response.status();
-        let body = response.text().await.unwrap_or_default();
+        // Route the provider's response body through `sanitize_secrets` before
+        // it reaches the logs. A failed token-endpoint response can echo back
+        // the submitted `client_secret` / `refresh_token` (or issue a fresh
+        // token in an error envelope), so the raw body must never be logged.
+        let body = sanitize_secrets(&response.text().await.unwrap_or_default());
         tracing::warn!(
             "OAuth token refresh failed for '{}' ({}): {}",
             connector_name,
@@ -651,13 +715,17 @@ pub(crate) async fn inject_credential(
     persona_id: &str,
     persona_name: &str,
 ) -> Result<(), String> {
-    let mut fields: HashMap<String, String> = match cred_repo::get_decrypted_fields(pool, cred) {
+    // Wrap the decrypted field map so every plaintext value is scrubbed the
+    // moment this function returns, rather than lingering on the heap for the
+    // whole execution. `ZeroizingFields` derefs to the underlying HashMap, so
+    // the rest of this function reads/mutates it exactly as before.
+    let mut fields = ZeroizingFields(match cred_repo::get_decrypted_fields(pool, cred) {
         Ok(f) => f,
         Err(e) => {
             tracing::error!("Failed to decrypt credential '{}': {}", cred.name, e);
             return Err(cred.name.clone());
         }
-    };
+    });
     let prefix = connector_name.to_uppercase().replace('-', "_");
 
     // Auto-refresh OAuth token if refresh_token is present.
@@ -671,7 +739,9 @@ pub(crate) async fn inject_credential(
         // by a concurrent execution that held the lock before us.
         if let Ok(re_read_cred) = cred_repo::get_by_id(pool, &cred.id) {
             if let Ok(fresh_fields) = cred_repo::get_decrypted_fields(pool, &re_read_cred) {
-                fields = fresh_fields;
+                // `replace` scrubs the values we are discarding before swapping
+                // in the freshly-decrypted map.
+                fields.replace(fresh_fields);
             }
         }
 
@@ -700,10 +770,41 @@ pub(crate) async fn inject_credential(
         if let Some(refresh_ok) =
             try_refresh_oauth_token(&fields, connector_name, override_ref).await
         {
-            fields.insert("access_token".to_string(), refresh_ok.access_token.clone());
-            // Persist the refreshed token back to field-level storage
-            if let Err(e) = cred_repo::save_fields(pool, &cred.id, &fields) {
-                tracing::error!(credential_id = %cred.id, credential_name = %cred.name, "Failed to persist refreshed OAuth token: {e}");
+            // Did the provider actually rotate the token? (Some providers
+            // return the same access_token while it's still fresh.)
+            let token_changed = fields
+                .get("access_token")
+                .map(|old| old != &refresh_ok.access_token)
+                .unwrap_or(true);
+            // Scrub the previous (now-expired) access_token value we're
+            // overwriting so it isn't left un-zeroized on the heap.
+            if let Some(mut old) = fields.insert("access_token".to_string(), refresh_ok.access_token.clone())
+            {
+                old.zeroize();
+            }
+            // Persist ONLY the rotated token via the targeted single-
+            // transaction upsert. The previous `save_fields` here rewrote
+            // EVERY field row (delete-all + reinsert) on each runtime
+            // refresh: write amplification, a rebuild window where a crash
+            // lost the whole credential, and re-classification that let
+            // ad-hoc token-shaped keys land plaintext. Non-token rows now
+            // keep their ids and updated_at untouched.
+            //
+            // Staleness note: connector_readiness::credential_is_usable
+            // demotes a credential when MAX(credential_fields.updated_at)
+            // postdates ledger.healthcheck_last_success_at. This write bumps
+            // only access_token's updated_at, and the metadata patch BELOW
+            // stamps healthcheck_last_success_at = now() AFTER it — so a
+            // refreshed credential is never falsely demoted. Keep that
+            // ordering (field write first, success stamp second).
+            if token_changed {
+                let changed = ZeroizingFields(HashMap::from([(
+                    "access_token".to_string(),
+                    refresh_ok.access_token.clone(),
+                )]));
+                if let Err(e) = cred_repo::update_fields_targeted(pool, &cred.id, &changed) {
+                    tracing::error!(credential_id = %cred.id, credential_name = %cred.name, "Failed to persist refreshed OAuth token: {e}");
+                }
             }
             // A-grade Phase 4 (2026-05-03): also patch the credential's
             // metadata with `oauth_token_expires_at` so the proactive
@@ -766,7 +867,7 @@ pub(crate) async fn inject_credential(
         "expires_in",
     ];
 
-    for (field_key, field_val) in &fields {
+    for (field_key, field_val) in fields.iter() {
         if SKIP_FIELDS.contains(&field_key.as_str()) || field_val.is_empty() {
             continue;
         }
@@ -815,7 +916,12 @@ pub(crate) async fn inject_credential(
     }
 
     let _ = cred_repo::record_usage(pool, &cred.id);
-    let _ = audit_log::insert(
+    // Deliberately non-blocking: a failed audit write must never abort an
+    // injection that already succeeded (availability preserved). The failure
+    // is NOT silent though — `audit_log::insert` counts it on the process-wide
+    // `credential_audit_write_failures` counter (surfaced via `vault_status`
+    // and VaultTrustBadge) and emits a warn with context.
+    let _counted_on_failure = audit_log::insert(
         pool,
         &cred.id,
         &cred.name,
@@ -1120,5 +1226,56 @@ mod tests {
             "no field of the undecryptable credential may reach the env map: {env:?}"
         );
         assert!(injected.is_empty());
+    }
+
+    /// Direction 2 (no-trail-less-decrypt): when the credential audit-log
+    /// insert FAILS, the decrypt/injection must still succeed (availability
+    /// preserved) AND the failure must be counted on the process-wide
+    /// `credential_audit_write_failures` counter surfaced by `vault_status`.
+    /// Simulates insert failure by dropping the audit table.
+    #[tokio::test]
+    async fn audit_write_failure_is_counted_and_never_blocks_injection() {
+        let pool = init_test_db().unwrap();
+        seed_connector(
+            &pool,
+            "audittrail_qq",
+            r#"[{"toolName": "audittrail_tool_qq"}]"#,
+        );
+        seed_credential(
+            &pool,
+            "audittrail_qq",
+            "Audit Cred",
+            &[("api_key", "sk-audit-fixture-1")], // gitleaks:allow — inert test fixture
+        );
+
+        // Force every audit insert to fail.
+        {
+            let conn = pool.get().unwrap();
+            conn.execute_batch("DROP TABLE credential_audit_log").unwrap();
+        }
+
+        let before = crate::engine::crypto::credential_audit_write_failures();
+
+        let tools = vec![make_tool("audittrail_tool_qq", None)];
+        let (env, _hints, failures, injected) =
+            resolve_credential_env_vars(&pool, &tools, "persona-audit", "Audit Persona").await;
+
+        // Availability preserved: the injection succeeded despite the audit gap.
+        assert!(failures.is_empty(), "unexpected failures: {failures:?}");
+        assert_eq!(
+            env_get(&env, "AUDITTRAIL_QQ_API_KEY"),
+            Some("sk-audit-fixture-1"),
+            "decrypt/injection must not be blocked by an audit-write failure"
+        );
+        assert_eq!(injected, vec!["audittrail_qq".to_string()]);
+
+        // Integrity gap counted: the counter is process-global (other parallel
+        // tests may also increment it), so assert strictly-greater rather than
+        // an exact delta.
+        let after = crate::engine::crypto::credential_audit_write_failures();
+        assert!(
+            after > before,
+            "failed audit insert must increment credential_audit_write_failures ({before} -> {after})"
+        );
     }
 }

@@ -161,5 +161,29 @@
     "quarantined": "트리거 격리됨",
     "healing_abandoned": "자가 치유 중단",
     "healing_capped": "치유 재시도 소진"
+  },
+  "build": {
+    "analyzing": "분석 중",
+    "awaiting_input": "입력 대기 중",
+    "cancelled": "취소됨",
+    "completed": "완료됨",
+    "draft_ready": "초안 준비됨",
+    "failed": "실패",
+    "initializing": "초기화 중",
+    "promoted": "승격됨",
+    "resolving": "해결 중",
+    "test_complete": "테스트 완료",
+    "testing": "테스트 중"
+  },
+  "tool_error_kind": {
+    "auth": "인증",
+    "http": "HTTP 오류",
+    "misconfigured": "설정 오류",
+    "rate_limited": "요청 한도 초과",
+    "timeout": "시간 초과",
+    "tool_error": "도구 실패",
+    "transport": "연결 실패",
+    "unknown": "알 수 없는 오류",
+    "unsupported": "여기서 실행 불가"
   }
 }

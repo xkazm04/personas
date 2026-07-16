@@ -157,7 +157,11 @@
     "whats_new": "새 소식",
     "back_to_plugins": "플러그인",
     "roadmap": "로드맵",
-    "groups_label": "그룹"
+    "groups_label": "그룹",
+    "draft_agent_fallback": "초안 에이전트",
+    "draft_needs_answers_one": "{name} — 답변 1개 필요",
+    "draft_needs_answers_other": "{name} — 답변 {count}개 필요",
+    "draft_switch_title": "초안으로 전환: {name} ({phase})"
   },
   "execution_detail": {
     "copy": "복사",

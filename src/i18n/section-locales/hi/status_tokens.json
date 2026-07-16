@@ -161,5 +161,29 @@
     "quarantined": "ट्रिगर क्वारंटीन किया गया",
     "healing_abandoned": "स्व-सुधार रुक गया",
     "healing_capped": "सुधार के प्रयास समाप्त"
+  },
+  "build": {
+    "analyzing": "विश्लेषण हो रहा है",
+    "awaiting_input": "इनपुट की प्रतीक्षा",
+    "cancelled": "रद्द",
+    "completed": "पूर्ण",
+    "draft_ready": "ड्राफ़्ट तैयार",
+    "failed": "विफल",
+    "initializing": "आरंभ हो रहा है",
+    "promoted": "प्रमोट किया गया",
+    "resolving": "समाधान हो रहा है",
+    "test_complete": "परीक्षण पूर्ण",
+    "testing": "परीक्षण चल रहा है"
+  },
+  "tool_error_kind": {
+    "auth": "प्रमाणीकरण",
+    "http": "HTTP त्रुटि",
+    "misconfigured": "गलत कॉन्फ़िगरेशन",
+    "rate_limited": "दर सीमा पार",
+    "timeout": "समय समाप्त",
+    "tool_error": "टूल विफल",
+    "transport": "कनेक्शन विफल",
+    "unknown": "अज्ञात त्रुटि",
+    "unsupported": "यहाँ चलाने योग्य नहीं"
   }
 }

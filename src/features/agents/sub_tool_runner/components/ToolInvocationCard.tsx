@@ -15,6 +15,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import type { ToolInvocationResult } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tToken } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
 import { debtText } from '@/i18n/DebtText';
 
@@ -33,8 +34,14 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
   const [inputJson, setInputJson] = useState(() => buildDefaultInput(tool));
   const [expanded, setExpanded] = useState(false);
 
-  const toolType = tool.category === 'automation' ? 'automation' : tool.script_path ? 'script' : 'api';
-  const TypeIcon = toolType === 'automation' ? Zap : toolType === 'script' ? Terminal : Globe;
+  // builtin:// tools execute only inside persona runs (personas-mcp sidecar);
+  // offering Run here produced a false "misconfigured" failure that read as
+  // "my persona is broken" (2026-07-16 UAT). Show an honest note instead.
+  const isBuiltin = tool.script_path?.startsWith('builtin://') ?? false;
+  const toolType = isBuiltin
+    ? 'builtin'
+    : tool.category === 'automation' ? 'automation' : tool.script_path ? 'script' : 'api';
+  const TypeIcon = toolType === 'automation' ? Zap : toolType === 'script' || toolType === 'builtin' ? Terminal : Globe;
 
   // Pre-flight JSON validation. Previously, malformed JSON (trailing comma,
   // unquoted key, smart quotes from paste) was forwarded to the Rust tool
@@ -59,9 +66,13 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
   };
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
+    <div
+      data-testid={`tool-card-${tool.name}`}
+      className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden"
+    >
       {/* Header */}
       <button
+        data-testid={`tool-card-toggle-${tool.name}`}
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors"
       >
@@ -94,7 +105,19 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                 <p className="typo-body text-foreground">{tool.description}</p>
               )}
 
+              {/* builtin:// tools have no direct-invoke path — explain instead
+                  of offering a Run that can only fail. */}
+              {isBuiltin && (
+                <p
+                  data-testid={`tool-builtin-note-${tool.name}`}
+                  className="typo-body text-foreground rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2"
+                >
+                  {t.agents.tool_runner.builtin_note}
+                </p>
+              )}
+
               {/* Input */}
+              {!isBuiltin && (
               <div>
                 <label className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-1 block">
                   {t.agents.tool_runner.input_json}
@@ -118,9 +141,12 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                   </p>
                 )}
               </div>
+              )}
 
               {/* Run button */}
+              {!isBuiltin && (
               <button
+                data-testid={`tool-run-${tool.name}`}
                 onClick={handleRun}
                 disabled={!canRun}
                 className="flex items-center gap-1.5 px-4 py-1.5 typo-body font-medium rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors disabled:opacity-40"
@@ -128,9 +154,10 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                 {isRunning ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
                 {isRunning ? t.agents.tool_runner.running : t.agents.tool_runner.run}
               </button>
+              )}
 
               {/* Result */}
-              <ResultDisplay result={result} error={error} />
+              <ResultDisplay result={result} error={error} toolName={tool.name} />
             </div>
           </div>
         )}
@@ -138,11 +165,14 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
   );
 }
 
-function ResultDisplay({ result, error }: { result: ToolInvocationResult | null; error: string | null }) {
-  const { t } = useTranslation();
+function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResult | null; error: string | null; toolName: string }) {
+  const { t, tx } = useTranslation();
   if (error) {
     return (
-      <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-3 py-2 typo-body text-red-400">
+      <div
+        data-testid={`tool-result-${toolName}`}
+        className="rounded-modal border border-red-500/15 bg-red-500/5 px-3 py-2 typo-body text-red-400"
+      >
         <div className="flex items-center gap-1.5 mb-1">
           <XCircle className="w-3 h-3 flex-shrink-0" />
           <span className="font-medium">{t.agents.tool_runner.error}</span>
@@ -155,7 +185,9 @@ function ResultDisplay({ result, error }: { result: ToolInvocationResult | null;
   if (!result) return null;
 
   return (
-    <div className={`rounded-modal border px-3 py-2 typo-body ${
+    <div
+      data-testid={`tool-result-${toolName}`}
+      className={`rounded-modal border px-3 py-2 typo-body ${
       result.success
         ? 'border-emerald-500/15 bg-emerald-500/5'
         : 'border-red-500/15 bg-red-500/5'
@@ -175,10 +207,34 @@ function ResultDisplay({ result, error }: { result: ToolInvocationResult | null;
         </span>
       </div>
 
+      {/* Typed failure metadata: the shared tool-outcome contract carries a
+          machine `error_kind`, an optional HTTP status, and a retryable hint —
+          surface them so a failure reads as a category, not just a blob. */}
+      {!result.success && (result.error_kind || result.http_status != null) && (
+        <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+          {result.error_kind && (
+            <span className="inline-flex items-center px-1.5 py-0.5 typo-body rounded border border-red-500/25 bg-red-500/10 text-red-300">
+              {tToken(t, 'tool_error_kind', result.error_kind)}
+            </span>
+          )}
+          {result.http_status != null && (
+            <span className="inline-flex items-center px-1.5 py-0.5 typo-code font-mono rounded border border-primary/15 bg-secondary/30 text-foreground">
+              {tx(t.agents.tool_runner.http_status_label, { status: result.http_status })}
+            </span>
+          )}
+          {result.retryable && (
+            <span className="typo-body text-foreground/70">{t.agents.tool_runner.retryable_hint}</span>
+          )}
+        </div>
+      )}
+
       {result.output && (
         <pre className="typo-code font-mono text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
           {formatOutput(result.output)}
         </pre>
+      )}
+      {result.output_truncated && (
+        <p className="mt-1 typo-body text-amber-400/80">{t.agents.tool_runner.output_truncated}</p>
       )}
       {result.error && (
         <pre className="typo-code font-mono text-red-400/80 whitespace-pre-wrap break-all mt-1">

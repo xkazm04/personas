@@ -346,7 +346,9 @@
     "collab_label": "Spolupráce",
     "deck_phase_paused": "Pozastaveno",
     "deck_pause": "Pozastavit",
-    "deck_resume": "Obnovit"
+    "deck_resume": "Obnovit",
+    "readiness_chip_label": "Vyžaduje nastavení",
+    "readiness_chip_tooltip": "Konektory tohoto člena týmu je stále potřeba nastavit. Může se připojit a diskutovat, ale jeho schopnosti jsou pozastaveny — nepodnikne žádnou akci, dokud nepřidáte přihlašovací údaje (otevřete sekci Připojení v bočním panelu)."
   },
   "memory_created": "Záznam uložen do týmové paměti",
   "memory_updated": "Záznam aktualizován",

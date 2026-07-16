@@ -106,8 +106,8 @@
     "channels_none": "None",
     "channels_no_teams": "No teams with a channel yet",
     "channels_select_prompt": "Select teams above to watch their channels",
-    "channels_layout_grid": "Grid",
-    "channels_layout_grid_hint": "Separate channels side by side",
+    "channels_layout_grid": "Conversations",
+    "channels_layout_grid_hint": "One project's conversation with its reviews and quick actions",
     "channels_layout_timeline": "Timeline",
     "channels_layout_timeline_hint": "All teams merged into one chronological stream",
     "channels_combined_title": "All teams",
@@ -1430,6 +1430,11 @@
       "vr_action_unpin_baseline": "Unpin baseline",
       "vr_unmeasured": "—",
       "vr_no_model": "—",
+      "vr_score_caution": "Score needs caution",
+      "vr_degraded_tooltip": "{count} of {total} samples scored by heuristic fallback (LLM judge unavailable)",
+      "vr_partial_tooltip": "Composite from partial sub-scores — not directly comparable",
+      "vr_cost_unknown": "n/a",
+      "vr_cost_unknown_tooltip": "Cost is not tracked for local models",
       "vr_samples": "{count} sample",
       "vr_samples_other": "{count} samples",
       "vr_empty_title": "No versions yet",
@@ -1444,6 +1449,14 @@
       "vr_metric_tool": "tool accuracy",
       "vr_metric_quality": "output quality",
       "vr_metric_protocol": "protocol compliance",
+      "vr_reconcile_title": "Reconcile use-case model pins",
+      "vr_reconcile_desc_one": "1 use case still pins a model that differs from the one you just promoted ({model}). It will keep running on its pinned model until you clear the pin.",
+      "vr_reconcile_desc_other": "{count} use cases still pin models that differ from the one you just promoted ({model}). They will keep running on their pinned models until you clear the pins.",
+      "vr_reconcile_pinned_to": "pinned to {model}",
+      "vr_reconcile_now_follows": "Now follows default ({model})",
+      "vr_reconcile_clear_pin": "Clear pin",
+      "vr_reconcile_clear_all": "Clear all pins",
+      "vr_reconcile_done": "Done",
       "mode_arena": "Arena",
       "mode_arena_desc": "Compare models head-to-head",
       "mode_improve": "Improve",
@@ -1652,6 +1665,11 @@
       "improvement_run_started": "Improvement run started",
       "analyzing_patching": "Analyzing and patching prompt...",
       "auto_improve": "Auto-Improve Prompt",
+      "improve_run_seed_measured": "Improve persona \"{name}\". Its latest test flagged {metric} as the weakest area (avg {score}/100). What should I focus on? ",
+      "improve_run_seed_plain": "Improve persona \"{name}\" based on its latest test results. What should I focus on? ",
+      "improve_seeded": "Improvement brief opened in Athena",
+      "improve_failed": "Couldn't prepare the improvement brief",
+      "improve_focus": "Will focus on {metric} (avg {score}/100)",
       "no_prompt_changes": "No prompt changes",
       "evaluation_notes": "Evaluation Notes",
       "how_to_fix": "How to Fix This",
@@ -2597,7 +2615,15 @@
       "failed": "Failed",
       "error": "Error",
       "invalid_json": "Invalid JSON — fix before running.",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "run_tool": "Run tool",
+      "panel_title": "Run a tool",
+      "panel_subtitle": "Invoke a tool directly against this persona's credentials.",
+      "output_truncated": "Output truncated — the tool returned more than the display limit.",
+      "http_status_label": "HTTP {status}",
+      "retryable_hint": "This may succeed on retry.",
+      "failure_kind_label": "Failure",
+      "builtin_note": "Built-in tool — it runs inside persona executions (not manually from here). Trigger one of the persona's capabilities to exercise it."
     },
     "health_check": {
       "title": "Agent Health Check",
@@ -3532,6 +3558,38 @@
       "activate_agent": "Activate Agent",
       "create_agent": "Create Agent",
       "min_completeness": "Add more detail to reach 40% completeness"
+    },
+    "change_history": {
+      "title": "Change history",
+      "empty": "No changes recorded yet",
+      "empty_value": "(empty)",
+      "sources": {
+        "editor": "Editor",
+        "header": "Header",
+        "fanout": "Fan-out",
+        "other": "Other"
+      },
+      "fields": {
+        "name": "Name",
+        "description": "Description",
+        "system_prompt": "System prompt",
+        "structured_prompt": "Prompt",
+        "icon": "Icon",
+        "color": "Color",
+        "enabled": "Enabled",
+        "sensitive": "Sensitive preview",
+        "headless": "Headless",
+        "max_concurrent": "Max concurrent",
+        "timeout_ms": "Timeout",
+        "max_budget_usd": "Budget",
+        "max_turns": "Max turns",
+        "design_context": "Design context",
+        "parameters": "Parameters",
+        "lifecycle": "Lifecycle",
+        "cli_awareness_enabled": "CLI awareness",
+        "model_profile": "Model",
+        "notification_channels": "Notifications"
+      }
     }
   },
   "director": {
@@ -3667,7 +3725,11 @@
     "group_needs_review": "Awaiting first review",
     "group_low_scores": "Low scores",
     "group_declining": "Declining trend",
-    "group_stale": "Stale reviews"
+    "group_stale": "Stale reviews",
+    "roster_unscored": "Unscored",
+    "roster_unscored_hint": "The Director reviewed this agent but did not return a score; open the review to see its coaching.",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Raised by the Director's coaching review — approve or resolve it like any other issue."
   },
   "vault": {
     "workspace_connect": "Workspace Connect",
@@ -4487,7 +4549,9 @@
       "encrypt_now_other": "Encrypt {count} unencrypted credentials now",
       "encrypt_done_one": "Done -- {migrated} credential encrypted.",
       "encrypt_done_other": "Done -- {migrated} credentials encrypted.",
-      "encrypt_partial": "Encrypted {migrated}, failed {failed}. Try again or restart the app."
+      "encrypt_partial": "Encrypted {migrated}, failed {failed}. Try again or restart the app.",
+      "audit_gap_title": "Audit trail incomplete",
+      "audit_gap_detail": "{count} credential audit record(s) could not be written since launch. Credential access was never blocked, but those access events are missing from the audit log. Check disk space or database health."
     },
     "delete_dialog": {
       "title": "Delete Credential",
@@ -4667,6 +4731,8 @@
       "filter_all": "All",
       "filter_all_health": "All Health",
       "health_healthy": "Healthy",
+      "health_unverifiable": "Unverifiable",
+      "health_unverifiable_tooltip": "This connector has no live probe — credentials are stored but can't be verified.",
       "health_failing": "Failing",
       "health_untested": "Untested"
     },
@@ -6346,6 +6412,12 @@
       "source_scheduled": "Scheduled",
       "event_detail_title": "Event:",
       "event_detail_status": "Status:",
+      "type_labels": {
+        "sla_breach_opened": "SLA breach opened",
+        "sla_breach_recovered": "SLA breach recovered",
+        "schedule_missed_offline": "Missed schedule runs (offline)",
+        "schedule_skipped_overlap": "Schedule skipped (previous run active)"
+      },
       "load_older": "Load older events",
       "clear_filters": "Clear all filters",
       "col_trigger": "Trigger",
@@ -7058,7 +7130,9 @@
     },
     "cascade": {
       "title": "Chain Cascade Map",
-      "no_chains": "No chains detected -- all personas operating independently"
+      "no_chains": "No chains detected -- all personas operating independently",
+      "cofail_pct": "{pct}% co-fail",
+      "cofail_insufficient": "no co-failures"
     },
     "predictive_alerts_extra": {
       "title": "Predictive Alerts",
@@ -7290,7 +7364,12 @@
       "loading_status_page": "Loading status page...",
       "loading_reliability": "Loading reliability data...",
       "heartbeats_btn": "Heartbeats",
-      "reliability_btn": "Reliability"
+      "reliability_btn": "Reliability",
+      "sources_unavailable": "{sources} could not be loaded — scores may be inaccurate.",
+      "source_monthly_spend": "Monthly spend",
+      "source_healing_issues": "Healing issues",
+      "source_byom_policy": "BYOM policy",
+      "source_provider_stats": "Provider stats"
     },
     "heartbeats": {
       "monitored": "monitored",
@@ -7310,7 +7389,11 @@
       "seg_success": "Success",
       "seg_healing": "Healing",
       "seg_stability": "Stability",
-      "seg_budget": "Budget"
+      "seg_budget": "Budget",
+      "fleet_avg_badge": "fleet avg",
+      "fleet_avg_tooltip": "No runs recorded for this persona in the window — showing the fleet-wide average success rate, not a measured per-persona value.",
+      "no_data_badge": "no data",
+      "no_data_tooltip": "No completed or failed runs for this persona in the window — the success rate is a placeholder, not measured."
     },
     "popup_fields": {
       "sign_up_free_at": "Sign up free at",
@@ -10603,6 +10686,8 @@
     "skip_tooltip": "Skip onboarding",
     "opening_wizard": "Setting up your agent...",
     "skip_button": "Skip",
+    "replay_setup": "Replay setup",
+    "resume_setup": "Resume setup",
     "adopt_button": "Set Up Agent",
     "continue_button": "Continue",
     "done_button": "Done",
@@ -10699,6 +10784,10 @@
     "auto_complete_hint": "This step completes once you've performed the suggested action above.",
     "tour_explore_to_continue": "Take your time. Click below when you've explored this section.",
     "tour_acknowledge": "I've explored this",
+    "tour_handoff_title": "Want the guided tour?",
+    "tour_handoff_body": "Your first agent is live. Take a quick guided tour of the rest — connections and running agents — and we'll skip the parts you just did.",
+    "tour_handoff_accept": "Take the tour",
+    "tour_handoff_dismiss": "Not now",
     "start_tour": "Start Tour",
     "tour_storage_unavailable_toast": "Your browser blocked our local storage, so the tour will restart each session. Try clearing site data or leaving private browsing.",
     "connector_count_stat": "200+ Built-in Connectors",
@@ -11114,6 +11203,8 @@
     "projected": "Projected",
     "success": "Success",
     "failed": "Failed",
+    "unverified": "Unverified",
+    "unverified_tooltip": "No run record for this slot — it may have been skipped, rate-limited, over budget, or the app was closed.",
     "overlap": "Overlap",
     "filter_reset": "Show all",
     "filter_reset_aria": "Show all event kinds",
@@ -11138,6 +11229,12 @@
     "backfill_result_capped": "Result was capped — narrow the window or run again from the last slot to continue.",
     "backfill_result_show_slots": "Show enqueued fire times",
     "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit.",
+    "missed_offline": "Missed {count} while offline",
+    "missed_backfill_cta": "Backfill",
+    "missed_offline_tooltip": "Scheduled runs were skipped while the app was closed. Backfill replays them (deduped and capped), or dismiss to clear.",
+    "missed_dismiss": "Dismiss missed-runs notice",
+    "reason_invalid_timezone": "Paused — invalid timezone",
+    "reason_unscheduled": "Paused — no valid schedule",
     "more_actions": "More actions",
     "advanced_actions_aria": "More schedule actions",
     "skip_next_fire": "Skip next fire",
@@ -11639,6 +11736,17 @@
       "transient_process_failure": "Transient process failure",
       "unknown": "Unknown"
     },
+    "tool_error_kind": {
+      "auth": "Authentication",
+      "timeout": "Timed out",
+      "http": "HTTP error",
+      "transport": "Connection failed",
+      "tool_error": "Tool failed",
+      "rate_limited": "Rate limited",
+      "misconfigured": "Misconfigured",
+      "unknown": "Unknown error",
+      "unsupported": "Not runnable here"
+    },
     "execution": {
       "queued": "Queued",
       "running": "Running",
@@ -11767,6 +11875,19 @@
       "low": "Low",
       "medium": "Medium",
       "high": "High"
+    },
+    "build": {
+      "initializing": "Initializing",
+      "analyzing": "Analyzing",
+      "awaiting_input": "Awaiting input",
+      "resolving": "Resolving",
+      "draft_ready": "Draft ready",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "testing": "Testing",
+      "test_complete": "Test complete",
+      "promoted": "Promoted"
     }
   },
   "project_overview": {
@@ -12021,7 +12142,8 @@
       "spawn_headless_toggle": "Run in background (no terminal)",
       "spawn_headless_hint": "Headless mode — no live terminal, much lighter on CPU and RAM. Reply from the \"Needs you\" banner; inspect progress in Insights.",
       "headless_badge": "Background",
-      "headless_no_terminal": "Background session — runs without a terminal. Reply from the \"Needs you\" banner; progress shows in Insights."
+      "headless_no_terminal": "Background session — runs without a terminal. Reply from the \"Needs you\" banner; progress shows in Insights.",
+      "live_slot_hibernated_toast": "{name} was hibernated to stay within the live-session limit — its conversation is saved; wake it to resume."
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",
@@ -14356,7 +14478,9 @@
       "goal_view_accept": "Accept",
       "goal_view_missions": "Missions",
       "mission_unlinked": "No goal",
-      "mission_link_goal": "Link to a goal…"
+      "mission_link_goal": "Link to a goal…",
+      "goal_field_kpi": "Linked KPI",
+      "goal_kpi_none": "No linked KPI"
     },
     "dev_projects": {
       "bulk_selected_one": "project selected",
@@ -15781,7 +15905,9 @@
       "replay_duration": "{seconds}s",
       "deck_phase_paused": "Paused",
       "deck_pause": "Pause",
-      "deck_resume": "Resume"
+      "deck_resume": "Resume",
+      "readiness_chip_label": "Setup needed",
+      "readiness_chip_tooltip": "This teammate's connectors still need setup. It can join and discuss, but its capabilities are withheld — it won't take action until you add the credential (open the Connections section in the sidebar)."
     },
     "category_changes": "Category changes",
     "importance_shifts": "Importance shifts",
@@ -16146,7 +16272,11 @@
       "whats_new": "What's New",
       "back_to_plugins": "Plugins",
       "roadmap": "Roadmap",
-      "groups_label": "Groups"
+      "groups_label": "Groups",
+      "draft_agent_fallback": "Draft agent",
+      "draft_needs_answers_one": "{name} — needs 1 answer",
+      "draft_needs_answers_other": "{name} — needs {count} answers",
+      "draft_switch_title": "Switch to draft: {name} ({phase})"
     },
     "execution_detail": {
       "copy": "Copy",
@@ -17330,7 +17460,10 @@
     "source_reconnect": "Reconnect",
     "source_verified": "verified",
     "kpi_scope_label": "Scope",
-    "kpi_scope_this_context": "This context"
+    "kpi_scope_this_context": "This context",
+    "evaluate_measured": "Measured {count} KPI(s).",
+    "evaluate_partial": "Measured {measured}, {failed} failed",
+    "evaluate_none_due": "No KPIs were due for measurement."
   },
   "planner": {
     "nav_label": "Plan",

@@ -45,9 +45,18 @@ This view does not own a dedicated backend module — it composes existing engin
 | --- | --- |
 | `@/api/pipeline/scheduler` (`getSchedulerStatus`, `startScheduler`, `stopScheduler`) | `engine/scheduler.rs` |
 | Calendar fire times | `cron_fire_times_in_range` IPC backed by `engine/cron.rs` |
+| Past-run history | `list_recent_schedule_runs` IPC (168h / 200-row cap) — grounds past calendar slots in real executions |
 | Cron agent list | `useOverviewStore().fetchCronAgents()` (overview store fetches the full cron-agent set used both here and in Overview) |
 
 For cron parsing, DST handling, scheduler tick semantics, and incident-driven regression tests, see [execution/README.md](execution/README.md) and `engine/cron.rs`.
+
+## Truthful preview & honest history
+
+The preview and calendar are engineered to show the minute the engine will *actually* fire, and to never assert a past outcome it can't back with a record:
+
+- **Seeded preview.** Cron `H`-token spread is seeded on `seed_hash(trigger.id)` in the engine, so both the authoring preview (`previewCron` in `useScheduleActions.ts`) and the calendar (`useCalendarEvents`) pass the trigger id as the seed — the previewed minute equals the fired minute. Without the seed the backend defaults to `0`, previewing a spread the engine never uses.
+- **Engine-anchored intervals.** Interval fire times are projected from `next_trigger_at` (the same field `engine/scheduler.rs` anchors interval re-schedules on), not the drifting `last_triggered_at` tick stamp.
+- **Real past outcomes.** Past cron slots are matched to real `list_recent_schedule_runs` records within a tolerance window (`matchPastSlotsToRuns` in `calendarHelpers.ts`); a slot with no matching run renders as a distinct **Unverified** kind (`past-unknown`) rather than a fabricated success — revealing skips, rate-limits, out-of-window, over-budget, or app-closed gaps. Interval triggers contribute their real runs directly (their past cadence can't be reconstructed after downtime drift).
 
 ## Live updates
 
