@@ -122,6 +122,15 @@ pub async fn trigger_ai_healing(
     let pool = &state.db;
     let execution = exec_repo::get_by_id(pool, &execution_id)?;
 
+    // Validate everything fallible BEFORE acquiring the healing slot. The slot is
+    // an in-memory Arc<Mutex<HashSet>> released only by the spawned healing chain;
+    // any early `?`-return AFTER acquiring it (this session_id check formerly sat
+    // below the acquire) leaks the slot permanently, locking the persona out of
+    // both AI healing AND auto-rollback until app restart.
+    let session_id = execution.claude_session_id.clone().ok_or_else(|| {
+        AppError::Internal("Cannot heal: no Claude session ID on this execution".into())
+    })?;
+
     // Per-persona concurrency guard: atomically acquire the healing slot before
     // returning "started" to avoid TOCTOU where two callers both see is_healing=false.
     if !state.engine.try_start_healing(&execution.persona_id).await {
@@ -129,10 +138,6 @@ pub async fn trigger_ai_healing(
             "A healing session is already in progress for this persona".into(),
         ));
     }
-
-    let session_id = execution.claude_session_id.ok_or_else(|| {
-        AppError::Internal("Cannot heal: no Claude session ID on this execution".into())
-    })?;
 
     let error_str = execution
         .error_message
