@@ -54,6 +54,28 @@ export function formatRelativeTime(
 export const timeAgo = (iso: string | null): string => formatRelativeTime(iso, 'Never');
 
 /**
+ * Module-scope `Intl.NumberFormat` cache. Construction is one of the most
+ * expensive stdlib constructors (locale data resolution, options validation),
+ * and the formatters below run on hot paths — `<AnimatedCounter>` invokes its
+ * formatFn on every rAF tick, and dashboards format dozens of cells per pass.
+ * Instances are immutable and reusable, so cache them keyed by the locale +
+ * option fields we actually vary; the cache is naturally bounded by the
+ * handful of distinct (locale, precision) combos the app uses.
+ */
+const numberFormatCache = new Map<string, Intl.NumberFormat>();
+
+function getNumberFormat(locale: string, options?: Intl.NumberFormatOptions): Intl.NumberFormat {
+  const o = options ?? {};
+  const key = `${locale}|${o.style ?? ''}|${o.currency ?? ''}|${o.notation ?? ''}|${o.minimumFractionDigits ?? ''}|${o.maximumFractionDigits ?? ''}`;
+  let fmt = numberFormatCache.get(key);
+  if (!fmt) {
+    fmt = new Intl.NumberFormat(locale, options);
+    numberFormatCache.set(key, fmt);
+  }
+  return fmt;
+}
+
+/**
  * Format a USD cost with configurable precision.
  *
  * @param usd        The cost in US dollars.
@@ -73,7 +95,7 @@ export function formatCost(
   // should pass `language` from useTranslation() so non-English locales
   // see e.g. "0,0042 $" in fr-FR instead of "$0.0042".
   const fmt = (amount: number, digits: number) =>
-    new Intl.NumberFormat(language, {
+    getNumberFormat(language, {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: digits,
@@ -261,7 +283,7 @@ export function formatPercent(
   if (value == null || Number.isNaN(value)) return '—';
   const { fromRatio = false, precision = 1, language = 'en' } = opts ?? {};
   const ratio = fromRatio ? value : value / 100;
-  return new Intl.NumberFormat(language, {
+  return getNumberFormat(language, {
     style: 'percent',
     minimumFractionDigits: precision,
     maximumFractionDigits: precision,
@@ -278,7 +300,7 @@ export function formatCount(
 ): string {
   if (value == null || Number.isNaN(value)) return '—';
   const { language = 'en', precision } = opts ?? {};
-  return new Intl.NumberFormat(language, {
+  return getNumberFormat(language, {
     minimumFractionDigits: precision,
     maximumFractionDigits: precision ?? 2,
   }).format(value);
@@ -308,9 +330,9 @@ export function formatCompactNumber(
   if (value == null || Number.isNaN(value)) return '—';
   const { language = 'en', precision = 1, threshold = 10_000 } = opts ?? {};
   if (Math.abs(value) < threshold) {
-    return new Intl.NumberFormat(language, { maximumFractionDigits: 0 }).format(value);
+    return getNumberFormat(language, { maximumFractionDigits: 0 }).format(value);
   }
-  return new Intl.NumberFormat(language, {
+  return getNumberFormat(language, {
     notation: 'compact',
     maximumFractionDigits: precision,
   }).format(value);
