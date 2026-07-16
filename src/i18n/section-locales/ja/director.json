@@ -133,5 +133,7 @@
   "group_declining": "低下傾向",
   "group_stale": "古いレビュー",
   "roster_unscored": "スコアなし",
-  "roster_unscored_hint": "Director はこのエージェントをレビューしましたが、スコアを返しませんでした。コーチングを見るにはレビューを開いてください。"
+  "roster_unscored_hint": "Director はこのエージェントをレビューしましたが、スコアを返しませんでした。コーチングを見るにはレビューを開いてください。",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "Director のコーチングレビューによって作成されました。他の問題と同様に承認または解決してください。"
 }

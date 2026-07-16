@@ -133,5 +133,7 @@
   "group_declining": "Tren menurun",
   "group_stale": "Ulasan usang",
   "roster_unscored": "Tanpa skor",
-  "roster_unscored_hint": "Director meninjau agen ini tetapi tidak memberikan skor; buka tinjauan untuk melihat pembinaannya."
+  "roster_unscored_hint": "Director meninjau agen ini tetapi tidak memberikan skor; buka tinjauan untuk melihat pembinaannya.",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "Muncul dari tinjauan pembinaan Director — setujui atau selesaikan seperti masalah lainnya."
 }

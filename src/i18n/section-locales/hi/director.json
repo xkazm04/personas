@@ -133,5 +133,7 @@
   "group_declining": "गिरता रुझान",
   "group_stale": "पुरानी समीक्षाएं",
   "roster_unscored": "बिना स्कोर",
-  "roster_unscored_hint": "Director ने इस एजेंट की समीक्षा की लेकिन कोई स्कोर नहीं दिया; इसके सुझाव देखने के लिए समीक्षा खोलें।"
+  "roster_unscored_hint": "Director ने इस एजेंट की समीक्षा की लेकिन कोई स्कोर नहीं दिया; इसके सुझाव देखने के लिए समीक्षा खोलें।",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "Director की कोचिंग समीक्षा से उठाया गया — इसे किसी भी अन्य समस्या की तरह स्वीकृत करें या हल करें।"
 }

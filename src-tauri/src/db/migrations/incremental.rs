@@ -5590,6 +5590,21 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_healing_issues.source",
+            description: "Provenance of a healing issue: NULL/'engine' for the self-healing pipeline (legacy default), 'director' for issues routed from a Director coaching verdict. Lets the health UI badge the origin and lets the Director dedup its own open issues without a schema-less title hack.",
+            already_applied: |conn| has_column(conn, "persona_healing_issues", "source"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_healing_issues ADD COLUMN source TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
 
     Ok(())
 }

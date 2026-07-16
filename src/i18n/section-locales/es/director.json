@@ -133,5 +133,7 @@
   "group_declining": "Tendencia a la baja",
   "group_stale": "Revisiones desactualizadas",
   "roster_unscored": "Sin puntuación",
-  "roster_unscored_hint": "El Director revisó este agente pero no devolvió una puntuación; abre la revisión para ver su orientación."
+  "roster_unscored_hint": "El Director revisó este agente pero no devolvió una puntuación; abre la revisión para ver su orientación.",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "Generado por la revisión de coaching del Director: apruébalo o resuélvelo como cualquier otro problema."
 }

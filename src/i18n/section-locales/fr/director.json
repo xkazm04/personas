@@ -133,5 +133,7 @@
   "group_declining": "Tendance à la baisse",
   "group_stale": "Révisions obsolètes",
   "roster_unscored": "Sans note",
-  "roster_unscored_hint": "Le Director a examiné cet agent mais n'a pas renvoyé de note ; ouvrez l'évaluation pour voir ses conseils."
+  "roster_unscored_hint": "Le Director a examiné cet agent mais n'a pas renvoyé de note ; ouvrez l'évaluation pour voir ses conseils.",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "Issu de la revue de coaching du Director — approuvez-le ou résolvez-le comme tout autre problème."
 }

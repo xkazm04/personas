@@ -69,6 +69,7 @@ row_mapper!(row_to_healing_issue -> PersonaHealingIssue {
     is_circuit_breaker [bool], severity, category,
     suggested_fix, auto_fixed [bool], status,
     created_at, resolved_at,
+    source [opt],
 });
 
 crud_get_by_id!(
@@ -155,6 +156,44 @@ pub fn create(
     execution_id: Option<&str>,
     suggested_fix: Option<&str>,
 ) -> Result<Option<PersonaHealingIssue>, AppError> {
+    // The historical entry point (self-healing pipeline). Provenance stays NULL
+    // so the health UI treats it as engine-sourced — the default it always was.
+    create_with_source(
+        pool,
+        persona_id,
+        title,
+        description,
+        is_circuit_breaker,
+        severity,
+        category,
+        execution_id,
+        suggested_fix,
+        None,
+    )
+}
+
+/// Create a healing issue with an explicit provenance `source`.
+///
+/// The self-healing pipeline calls [`create`] (source = `None`). The Director
+/// routes auto-fixable coaching verdicts here with `source = Some("director")`
+/// so the health UI can badge the origin and the Director can dedup against its
+/// own open issues. `source` is the ONLY behavioural difference — dedup on the
+/// `(persona_id, execution_id)` unique index, the `open` status, and the inbox
+/// promotion are all identical. No auto-apply: the issue lands `open` and flows
+/// through healing's normal approval path exactly like an engine-raised one.
+#[allow(clippy::too_many_arguments)]
+pub fn create_with_source(
+    pool: &DbPool,
+    persona_id: &str,
+    title: &str,
+    description: &str,
+    is_circuit_breaker: bool,
+    severity: Option<&str>,
+    category: Option<&str>,
+    execution_id: Option<&str>,
+    suggested_fix: Option<&str>,
+    source: Option<&str>,
+) -> Result<Option<PersonaHealingIssue>, AppError> {
     timed_query!("healing_events", "healing_events::create", {
         if title.trim().is_empty() {
             return Err(AppError::Validation("Title cannot be empty".into()));
@@ -172,8 +211,8 @@ pub fn create(
         let conn = pool.get()?;
         let rows = conn.execute(
             "INSERT OR IGNORE INTO persona_healing_issues
-             (id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, 'open', ?10)",
+             (id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at, source)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, 'open', ?10, ?11)",
             params![
                 id,
                 persona_id,
@@ -185,6 +224,7 @@ pub fn create(
                 category,
                 suggested_fix,
                 now,
+                source,
             ],
         )?;
 

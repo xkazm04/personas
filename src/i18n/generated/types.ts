@@ -3621,6 +3621,8 @@ export type Translations = {
   };
   director: {
     panel_title: string;
+    healing_source_badge: string;
+    healing_source_hint: string;
     scope_summary: string;
     scope_empty: string;
     last_review: string;

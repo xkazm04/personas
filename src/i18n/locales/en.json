@@ -3615,6 +3615,8 @@
   },
   "director": {
     "panel_title": "Director",
+    "healing_source_badge": "Director",
+    "healing_source_hint": "Raised by the Director's coaching review — approve or resolve it like any other issue.",
     "scope_summary": "Coaching {count} starred personas",
     "scope_empty": "No personas starred — star one to put it in scope",
     "last_review": "Last review",

@@ -1,4 +1,5 @@
 [
+  "*:director.healing_source_badge",
   "*:agents.build_webhook_source.filter_placeholder",
   "*:agents.build_webhook_source.url_placeholder",
   "*:agents.change_history.fields.model_profile",

@@ -1380,6 +1380,105 @@ fn bridge_verdicts_to_channel(
     }
 }
 
+/// Provenance stamp on healing issues the Director routes (Phase 3). Read back
+/// for dedup + surfaced in the health UI as an origin badge.
+const DIRECTOR_HEALING_SOURCE: &str = "director";
+
+/// Map a Director verdict category onto a healing issue `category` — but ONLY
+/// for the conservative, auto-fixable subset. Phase-3 routing (see the module
+/// header) sends these into `persona_healing_issues`; everything else stays
+/// coaching-only in the review queue.
+///
+/// The vocabulary split is deliberate:
+/// - `health` → an operational fault (failing/looping runs) the self-healing
+///   pipeline already reasons about → healing category `health`.
+/// - `credentials` → a missing/misconfigured connection → healing `config`.
+/// - `triggers` → a misconfigured schedule/event wiring → healing `config`.
+/// - `prompt` / `memory` / `usefulness` → subjective, author-driven coaching
+///   (the user rewrites the prompt, curates memories, retargets the persona);
+///   there is nothing for an automated fix to apply, so these NEVER route.
+fn healing_category_for(category: DirectorCategory) -> Option<&'static str> {
+    match category {
+        DirectorCategory::Health => Some("health"),
+        DirectorCategory::Credentials => Some("config"),
+        DirectorCategory::Triggers => Some("config"),
+        DirectorCategory::Prompt | DirectorCategory::Memory | DirectorCategory::Usefulness => None,
+    }
+}
+
+/// Map Director severity onto the healing severity vocabulary
+/// (`low|medium|high|critical`). `info` never reaches here — it is not a fault.
+fn healing_severity_for(severity: DirectorSeverity) -> &'static str {
+    match severity {
+        DirectorSeverity::Error => "high",
+        DirectorSeverity::Warning => "medium",
+        DirectorSeverity::Info => "low",
+    }
+}
+
+/// Phase-3 side-channel: for a qualifying verdict, ALSO open a
+/// `persona_healing_issues` row (source-tagged `director`) so a bad review
+/// actually causes something — it enters healing's existing approval flow
+/// instead of dead-ending in the review queue. Conservative + non-destructive:
+///
+/// - Only `severity ∈ {warning, error}` AND an auto-fixable `category` route
+///   (see [`healing_category_for`]); `info` and subjective categories never do.
+/// - NO auto-apply: the issue lands `open` via the sanctioned repo entry point
+///   [`healing::create_with_source`] — never raw SQL — and flows through the
+///   same human/auto approval path as an engine-raised one.
+/// - Deduped against the persona's OPEN director-sourced issues by title, so a
+///   re-review of an unchanged problem doesn't spam duplicates.
+///
+/// Best-effort: a healing-routing failure is logged, never fails the review.
+fn route_verdict_to_healing(pool: &DbPool, v: &DirectorVerdict) {
+    // Gate 1: info is informational, not a fault — never a healing issue.
+    if v.severity == DirectorSeverity::Info {
+        return;
+    }
+    // Gate 2: only auto-fixable categories route.
+    let Some(healing_cat) = healing_category_for(v.category) else {
+        return;
+    };
+
+    // Dedup: skip if an OPEN director-sourced issue with the same title already
+    // exists for this persona (re-reviews shouldn't pile up duplicates).
+    let already_open = healing::get_all(pool, Some(&v.target_persona_id), Some("open"))
+        .unwrap_or_default()
+        .into_iter()
+        .any(|h| {
+            h.source.as_deref() == Some(DIRECTOR_HEALING_SOURCE) && h.title == v.title
+        });
+    if already_open {
+        return;
+    }
+
+    // Healing requires a non-empty description; fall back to the title.
+    let description = if v.description.trim().is_empty() {
+        v.title.as_str()
+    } else {
+        v.description.as_str()
+    };
+    let suggested_fix = v.suggested_actions.first().map(String::as_str);
+
+    match healing::create_with_source(
+        pool,
+        &v.target_persona_id,
+        &v.title,
+        description,
+        /* is_circuit_breaker */ false,
+        Some(healing_severity_for(v.severity)),
+        Some(healing_cat),
+        /* execution_id */ None,
+        suggested_fix,
+        Some(DIRECTOR_HEALING_SOURCE),
+    ) {
+        Ok(_) => {}
+        Err(e) => {
+            tracing::warn!(persona_id = %v.target_persona_id, error = %e, "Director: failed to route verdict to healing");
+        }
+    }
+}
+
 fn route_verdicts(
     pool: &DbPool,
     ctx: &PersonaEvaluationContext,
@@ -1421,6 +1520,12 @@ fn route_verdicts(
         if let Err(e) = manual_reviews::create(pool, input) {
             tracing::warn!(persona_id = %v.target_persona_id, error = %e, "Director: failed to create review");
         }
+
+        // Phase 3: a qualifying verdict ALSO opens a healing issue (source-
+        // tagged, deduped, NO auto-apply) so a bad review reaches the healing
+        // approval flow instead of dead-ending in the review queue. The manual
+        // review above is unchanged — this is a side-channel, not a replacement.
+        route_verdict_to_healing(pool, v);
     }
 
     Ok(())
@@ -1806,6 +1911,125 @@ mod tests {
             "a NULL model_profile must be backfilled with the pin, got {:?}",
             backfilled.model_profile,
         );
+    }
+
+    fn mk_persona(pool: &DbPool, name: &str) -> String {
+        use crate::db::models::CreatePersonaInput;
+        crate::db::repos::core::personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn verdict(
+        persona_id: &str,
+        severity: DirectorSeverity,
+        category: DirectorCategory,
+        title: &str,
+    ) -> DirectorVerdict {
+        DirectorVerdict {
+            target_persona_id: persona_id.to_string(),
+            severity,
+            category,
+            title: title.to_string(),
+            description: "Concrete evidence of a fault worth fixing.".into(),
+            rationale: Some("12/20 runs failed on a missing credential".into()),
+            suggested_actions: vec!["Re-bind the connector credential".into()],
+        }
+    }
+
+    /// Direction 1: a qualifying verdict (warning/health) opens exactly one
+    /// director-sourced healing issue, severity- and category-mapped.
+    #[test]
+    fn qualifying_verdict_opens_a_director_healing_issue() {
+        let pool = init_test_db().unwrap();
+        let pid = mk_persona(&pool, "Router A");
+
+        route_verdict_to_healing(
+            &pool,
+            &verdict(&pid, DirectorSeverity::Warning, DirectorCategory::Health, "Runs are failing"),
+        );
+
+        let open = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
+        assert_eq!(open.len(), 1, "one healing issue must be opened");
+        let issue = &open[0];
+        assert_eq!(issue.source.as_deref(), Some("director"));
+        assert_eq!(issue.category, "health");
+        assert_eq!(issue.severity, "medium"); // warning → medium
+        assert_eq!(issue.status, "open");
+        assert!(!issue.auto_fixed, "must NOT auto-apply");
+        assert_eq!(issue.title, "Runs are failing");
+    }
+
+    /// Direction 1: re-reviewing the same problem must NOT spam duplicates —
+    /// the second identical verdict is deduped against the open issue.
+    #[test]
+    fn re_review_dedups_against_open_director_issue() {
+        let pool = init_test_db().unwrap();
+        let pid = mk_persona(&pool, "Router B");
+
+        let v = verdict(
+            &pid,
+            DirectorSeverity::Error,
+            DirectorCategory::Credentials,
+            "Missing Slack credential",
+        );
+        route_verdict_to_healing(&pool, &v);
+        route_verdict_to_healing(&pool, &v); // re-review
+
+        let open = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
+        assert_eq!(open.len(), 1, "duplicate director verdict must be deduped");
+        assert_eq!(open[0].severity, "high"); // error → high
+        assert_eq!(open[0].category, "config"); // credentials → config
+    }
+
+    /// Direction 1: non-qualifying verdicts (subjective categories, or `info`
+    /// severity) never open a healing issue — they stay coaching-only.
+    #[test]
+    fn non_qualifying_verdicts_open_no_healing_issue() {
+        let pool = init_test_db().unwrap();
+        let pid = mk_persona(&pool, "Router C");
+
+        // Subjective categories never route, regardless of severity.
+        route_verdict_to_healing(
+            &pool,
+            &verdict(&pid, DirectorSeverity::Error, DirectorCategory::Prompt, "Tighten the prompt"),
+        );
+        route_verdict_to_healing(
+            &pool,
+            &verdict(&pid, DirectorSeverity::Warning, DirectorCategory::Usefulness, "Low value"),
+        );
+        route_verdict_to_healing(
+            &pool,
+            &verdict(&pid, DirectorSeverity::Warning, DirectorCategory::Memory, "Prune memories"),
+        );
+        // Info is not a fault even in an auto-fixable category.
+        route_verdict_to_healing(
+            &pool,
+            &verdict(&pid, DirectorSeverity::Info, DirectorCategory::Health, "FYI health note"),
+        );
+
+        let open = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
+        assert!(open.is_empty(), "no healing issues for non-qualifying verdicts, got {}", open.len());
     }
 
     fn ctx_baseline(persona: Persona) -> PersonaEvaluationContext {

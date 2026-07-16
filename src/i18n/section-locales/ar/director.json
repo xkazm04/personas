@@ -133,5 +133,7 @@
   "group_declining": "اتجاه تراجعي",
   "group_stale": "مراجعات متقادمة",
   "roster_unscored": "بدون تقييم",
-  "roster_unscored_hint": "راجع Director هذا الوكيل لكنه لم يُرجع درجة؛ افتح المراجعة لعرض توجيهاته."
+  "roster_unscored_hint": "راجع Director هذا الوكيل لكنه لم يُرجع درجة؛ افتح المراجعة لعرض توجيهاته.",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "تم رفعها من مراجعة التوجيه الخاصة بـ Director — وافق عليها أو قم بحلها مثل أي مشكلة أخرى."
 }

@@ -133,5 +133,7 @@
   "group_declining": "하락 추세",
   "group_stale": "오래된 검토",
   "roster_unscored": "점수 없음",
-  "roster_unscored_hint": "Director가 이 에이전트를 검토했지만 점수를 반환하지 않았습니다. 코칭을 보려면 검토를 여세요."
+  "roster_unscored_hint": "Director가 이 에이전트를 검토했지만 점수를 반환하지 않았습니다. 코칭을 보려면 검토를 여세요.",
+  "healing_source_badge": "Director",
+  "healing_source_hint": "Director의 코칭 검토에서 생성됨 — 다른 문제와 마찬가지로 승인하거나 해결하세요."
 }
