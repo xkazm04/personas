@@ -94,7 +94,9 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
       const newRunId = await startMatrix(personaId, instruction, defaultModels);
       if (newRunId) {
         setState('success');
-        addToast('{t.agents.lab.improvement_run_started}! Check the Matrix tab for results.', 'success');
+        // Real catalog lookup — this was a plain string literal containing
+        // '{t.agents.lab...}', so users saw the raw braces untranslated.
+        addToast(t.agents.lab.improvement_run_started, 'success');
       } else {
         setState('error');
         setErrorMsg('Failed to start improvement run');
