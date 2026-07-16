@@ -436,7 +436,7 @@ pub async fn validate_trigger(
                                     .timeout(std::time::Duration::from_secs(5))
                                     .redirect(reqwest::redirect::Policy::none())
                                     .dns_resolver(std::sync::Arc::new(
-                                        crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+                                        crate::engine::url_safety::SsrfSafeDnsResolver,
                                     ))
                                     .build()
                                     .unwrap_or_default();

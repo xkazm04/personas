@@ -193,7 +193,6 @@ pub mod shared_event_relay;
 pub mod sla_breach;
 pub mod slack_poller;
 pub mod smee_relay;
-pub mod ssrf_safe_dns;
 pub mod str_utils;
 pub mod subscription;
 pub mod team_preset_adopter;

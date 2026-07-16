@@ -64,8 +64,9 @@ pub(crate) static SHARED_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
 /// HTTP client with SSRF-safe DNS resolver that rejects private/internal IPs
 /// at connection time.  Used by the API proxy and any other path where the
 /// target URL is influenced by user-supplied credential data.
-pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> =
-    LazyLock::new(|| engine::ssrf_safe_dns::build_ssrf_safe_client());
+pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    engine::url_safety::build_ssrf_safe_client(std::time::Duration::from_secs(30))
+});
 
 /// HTTP client WITHOUT the SSRF-safe DNS resolver — it can reach private/loopback
 /// targets by design. Used ONLY for connector requests whose connector metadata

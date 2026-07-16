@@ -281,7 +281,7 @@ async fn fetch_all_pages(
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(15))
         .dns_resolver(std::sync::Arc::new(
-            crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+            crate::engine::url_safety::SsrfSafeDnsResolver,
         ))
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;

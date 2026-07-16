@@ -1022,7 +1022,7 @@ async fn execute_healthcheck_request_with_strategy(
         reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .dns_resolver(std::sync::Arc::new(
-                crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+                crate::engine::url_safety::SsrfSafeDnsResolver,
             ))
             .build()
             .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?
@@ -1394,7 +1394,7 @@ pub(crate) fn validate_healthcheck_url(url: &str) -> Result<(), AppError> {
 /// the three historical copies cannot drift. That predicate additionally blocks
 /// CGNAT (`100.64.0.0/10`, e.g. Tailscale) and IPv4-mapped-IPv6 private
 /// addresses — the gaps this local copy used to miss, which were an SSRF bypass
-/// on the live API-proxy resolver (`ssrf_safe_dns`, which filters via this fn).
+/// on the live API-proxy resolver (`url_safety::SsrfSafeDnsResolver`, which filters via this fn).
 pub(crate) fn is_private_ip(ip: &IpAddr) -> bool {
     super::url_safety::is_private_ip(*ip)
 }
