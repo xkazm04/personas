@@ -31,6 +31,17 @@ export function VaultTrustBadge() {
 
   useEffect(() => {
     refresh();
+    // Mount-only fetch left the badge permanently green while the tab stayed
+    // open — an audit-write failure during a live run never flipped it amber
+    // until a remount (2026-07-16 UAT T-1). A slow poll keeps the honesty
+    // signal live without meaningful cost; refresh-on-focus covers the
+    // "left it open overnight" case.
+    const interval = setInterval(refresh, 60_000);
+    window.addEventListener('focus', refresh);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+    };
   }, [refresh]);
 
   if (!status) return null;

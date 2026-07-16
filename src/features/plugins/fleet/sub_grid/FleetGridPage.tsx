@@ -170,6 +170,8 @@ export default function FleetGridPage() {
   const sessionsRef = useRef(sessions);
   sessionsRef.current = sessions;
   const awaitingSeenRef = useRef<Set<string>>(new Set());
+  const addToastRef = useRef(addToast);
+  addToastRef.current = addToast;
 
   useEffect(() => {
     actionsRef.current.refresh();
@@ -185,6 +187,21 @@ export default function FleetGridPage() {
           lastActivityMs: BigInt(Date.now()),
         });
         actionsRef.current.recordTransition(session_id, state as FleetSessionState);
+
+        // Live-slot cap eviction is safe (Idle/Stale only, resumable) but was
+        // SILENT: the tile just vanished from the live grid with the reason
+        // only findable on hover / in the summary count (2026-07-16 UAT
+        // F-MAJOR-14). Announce it so the operator knows the session was
+        // parked, not killed.
+        if (state === 'hibernated' && reason?.includes('live-session limit')) {
+          const sess = sessionsRef.current.find((s) => s.id === session_id);
+          const name = sess?.name ?? sess?.projectLabel ?? session_id.slice(0, 8);
+          addToastRef.current(
+            tx(t.plugins.fleet.live_slot_hibernated_toast, { name }),
+            'warning',
+            8000,
+          );
+        }
 
         // Desktop "push" alert on entering awaiting_input — once per entry.
         const seen = awaitingSeenRef.current;
