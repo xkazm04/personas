@@ -72,8 +72,12 @@ async fn consume_headless_events(
     circuit_breaker: &Arc<ProviderCircuitBreaker>,
     child_pids: &Arc<Mutex<HashMap<String, u32>>>,
 ) -> u32 {
-    // Atomically claim up to 5 pending events
-    let events = match event_repo::claim_pending(pool, 5) {
+    // Atomically claim up to 5 pending events the daemon actually owns
+    // (headless target or no target). The SQL-side filter replaces the old
+    // claim-everything-then-release-non-headless dance, which re-claimed the
+    // same rows every 5s tick and could starve headless events behind a
+    // window of non-headless ones.
+    let events = match event_repo::claim_pending_headless(pool, 5) {
         Ok(e) => e,
         Err(e) => {
             tracing::error!(error = %e, "daemon: failed to claim pending events");
