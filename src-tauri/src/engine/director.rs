@@ -226,6 +226,13 @@ pub struct DirectorReport {
     pub verdicts_emitted: i64,
     #[ts(type = "number")]
     pub personas_skipped_no_executions: i64,
+    /// Personas skipped because they had ZERO new executions since their last
+    /// Director review (freshness dedup) — nothing happened to re-review.
+    #[ts(type = "number")]
+    pub personas_skipped_unchanged: i64,
+    /// Names of the freshness-skipped personas, so the batch outcome names them
+    /// (not just a count).
+    pub skipped_unchanged_personas: Vec<String>,
     pub generated_at: String,
 }
 
@@ -942,10 +949,28 @@ pub async fn run_director_cycle_for(
     Ok(verdicts.len() as i64)
 }
 
+/// Whether an execution already carries a Director review — i.e. its
+/// `director_review_md` is set (by a scored review or the unscored-marker
+/// salvage path). This is the robust "last Director review" signal the batch
+/// freshness gate keys on: reviews always anchor onto the persona's newest
+/// execution, so if that newest execution is already reviewed there have been
+/// ZERO new executions since — nothing to re-review. The manual single-persona
+/// run deliberately does NOT consult this and always forces a fresh review.
+fn execution_reviewed(pool: &DbPool, execution_id: &str) -> bool {
+    executions::get_by_id(pool, execution_id)
+        .map(|e| e.director_review_md.is_some())
+        .unwrap_or(false)
+}
+
 /// Batch cycle. Iterates enabled user personas (skipping the Director itself),
 /// evaluates each via the LLM evaluator, returns an aggregate report. Runs are
 /// sequential — each Director evaluation is a real persona run, so this is
 /// rate-limited by nature.
+///
+/// Freshness dedup: a persona whose newest execution was already reviewed (zero
+/// new executions since) is skipped — re-reviewing it would burn up to two real
+/// LLM runs to restate the same verdict. Skips are surfaced (report + log), not
+/// silent. The manual single-persona path (`run_director_cycle_for`) forces.
 pub async fn run_director_cycle_batch(
     state: &Arc<AppState>,
     app: tauri::AppHandle,
@@ -959,6 +984,8 @@ pub async fn run_director_cycle_batch(
     let mut evaluated = 0i64;
     let mut emitted = 0i64;
     let mut skipped = 0i64;
+    let mut skipped_unchanged = 0i64;
+    let mut skipped_unchanged_names: Vec<String> = Vec::new();
 
     for (idx, p) in enabled.iter().enumerate() {
         if let Some(cap) = max_personas {
@@ -986,6 +1013,23 @@ pub async fn run_director_cycle_batch(
             continue;
         }
 
+        // Freshness dedup: if the persona's newest execution (the anchor a review
+        // stamps onto) was already reviewed, nothing has run since — skip both the
+        // re-review AND the memory-cleanup pass below. Surfaced in the report + log.
+        if let Some(anchor) = ctx.latest_execution_id.as_deref() {
+            if execution_reviewed(&state.db, anchor) {
+                skipped_unchanged += 1;
+                skipped_unchanged_names.push(p.name.clone());
+                tracing::info!(
+                    persona_id = %p.id,
+                    persona = %p.name,
+                    anchor_execution = %anchor,
+                    "Director: skipping — no new executions since last review",
+                );
+                continue;
+            }
+        }
+
         match evaluate_with_llm(state, app.clone(), &director_id, &ctx).await {
             Ok(verdicts) => {
                 route_verdicts(&state.db, &ctx, &verdicts)?;
@@ -1010,6 +1054,8 @@ pub async fn run_director_cycle_batch(
         evaluated_personas: evaluated,
         verdicts_emitted: emitted,
         personas_skipped_no_executions: skipped,
+        personas_skipped_unchanged: skipped_unchanged,
+        skipped_unchanged_personas: skipped_unchanged_names,
         generated_at: chrono::Utc::now().to_rfc3339(),
     })
 }
@@ -1763,5 +1809,57 @@ DIRECTOR_WIN: {\"category\":\"health\",\"note\":\"Open healing issues went to ze
             "calibration section present in payload"
         );
         assert!(payload.contains("Accepted 1 of your past coaching notes; rejected 1."));
+    }
+
+    /// Direction 2 (review-freshness-dedup): the batch freshness gate keys on
+    /// `execution_reviewed`. An execution the Director already stamped is treated
+    /// as reviewed, so a second batch immediately after the first skips it; a
+    /// fresh (unreviewed) execution is not skipped.
+    #[test]
+    fn freshness_gate_detects_already_reviewed_anchor() {
+        use crate::db::models::CreatePersonaInput;
+        use crate::db::repos::core::personas;
+        use crate::db::repos::execution::executions;
+
+        let pool = crate::db::init_test_db().expect("init test db");
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Freshness Target".into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+        let exec = executions::create(&pool, &persona.id, None, None, None, None).unwrap();
+
+        // Before any review the anchor is fresh → the batch would evaluate it.
+        assert!(
+            !execution_reviewed(&pool, &exec.id),
+            "unreviewed execution must not be treated as reviewed"
+        );
+
+        // Stamp a Director review onto the anchor (as a first batch would).
+        executions::set_director_review(&pool, &exec.id, 4, "## Director review — ★★★★☆ (4/5)")
+            .unwrap();
+
+        // A second batch immediately after sees the anchor already reviewed → skip.
+        assert!(
+            execution_reviewed(&pool, &exec.id),
+            "a reviewed anchor must be detected so the next batch skips the persona"
+        );
     }
 }

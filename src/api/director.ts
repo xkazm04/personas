@@ -18,6 +18,10 @@ export interface DirectorReport {
   evaluatedPersonas: number;
   verdictsEmitted: number;
   personasSkippedNoExecutions: number;
+  /** Personas skipped for having no new executions since their last review. */
+  personasSkippedUnchanged: number;
+  /** Names of the freshness-skipped personas. */
+  skippedUnchangedPersonas: string[];
   generatedAt: string;
 }
 
