@@ -138,7 +138,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     : null;
 
   const activeCount = relays.filter((r) => r.status === 'active').length;
-  const totalRelayed = relays.reduce((sum, r) => sum + r.eventsRelayed, 0);
+  const totalRelayed = relays.reduce((sum, r) => sum + Number(r.eventsRelayed), 0);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -384,7 +384,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                       <div className="flex items-center gap-3 flex-wrap">
                         {relay.eventsRelayed > 0 && (
                           <span className="typo-caption text-purple-400/60">
-                            {relay.eventsRelayed} event{relay.eventsRelayed !== 1 ? 's' : ''}
+                            {Number(relay.eventsRelayed)} event{Number(relay.eventsRelayed) !== 1 ? 's' : ''}
                           </span>
                         )}
                         {relay.lastEventAt && (

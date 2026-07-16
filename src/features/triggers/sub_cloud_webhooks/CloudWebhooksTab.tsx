@@ -148,21 +148,21 @@ export function CloudWebhooksTab() {
             <span className="typo-body text-foreground">
               {relay.connected ? t.triggers.cloud_relay_active : t.common.connecting}
             </span>
-            {relay.active_webhook_triggers > 0 && (
+            {relay.activeWebhookTriggers > 0 && (
               <span className="typo-caption text-foreground">
-                {relay.active_webhook_triggers} webhook{relay.active_webhook_triggers !== 1 ? 's' : ''}
+                {relay.activeWebhookTriggers} webhook{relay.activeWebhookTriggers !== 1 ? 's' : ''}
               </span>
             )}
-            {relay.total_relayed > 0 && (
+            {relay.totalRelayed > 0 && (
               <span className="typo-caption text-blue-400/70">
-                {relay.total_relayed} relayed
+                {Number(relay.totalRelayed)} relayed
               </span>
             )}
           </div>
           <div className="flex items-center gap-2">
-            {relay.last_poll_at && (
+            {relay.lastPollAt && (
               <span className="typo-caption text-foreground">
-                {t.triggers.last_poll_label} <RelativeTime timestamp={relay.last_poll_at} />
+                {t.triggers.last_poll_label} <RelativeTime timestamp={relay.lastPollAt} />
               </span>
             )}
             <button
