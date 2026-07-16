@@ -216,10 +216,21 @@ pub fn cancel_design_analysis(
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     if let Some(id) = design_id {
-        state.process_registry.cancel_run("design", &id);
-        if let Some(pid) = state.process_registry.take_run_pid("design", &id) {
-            tracing::info!(pid = pid, design_id = %id, "Killing design analysis CLI child process (scoped)");
-            engine::kill_process(pid);
+        // spawn_design_run registers via the SINGLE-PROCESS domain API
+        // (begin_run/set_pid keyed by "design"), so cancel must use the same API.
+        // The old scoped branch used the multi-run map (cancel_run/take_run_pid,
+        // keyed "design:{id}") which spawn never populated — so cancel was a
+        // complete no-op: the flag stayed false and run_design_analysis went on to
+        // overwrite persona.last_design_result with the discarded result, and the
+        // CLI kept burning tokens. Guard on the active id so a stale design_id from
+        // the UI can't cancel a newer run.
+        if state.process_registry.get_id("design").as_deref() == Some(id.as_str()) {
+            if let Some(pid) = state.process_registry.cancel("design") {
+                tracing::info!(pid = pid, design_id = %id, "Killing design analysis CLI child process (scoped)");
+                engine::kill_process(pid);
+            }
+        } else {
+            tracing::info!(design_id = %id, "cancel_design_analysis: id is no longer the active run; nothing to cancel");
         }
     } else if let Some(pid) = state.process_registry.cancel("design") {
         tracing::info!(pid = pid, "Killing design analysis CLI child process");
