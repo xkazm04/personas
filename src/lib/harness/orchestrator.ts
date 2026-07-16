@@ -170,13 +170,18 @@ export function createHarnessOrchestrator(
       // Parse result
       const parsed = parseAreaResult(execResult.assistantOutput);
 
-      // Verify
-      const gates = [...config.gates];
+      // Verify — REQUIRED gates only per iteration. Non-required gates (the
+      // 3-minute vite build, informational grep audits) don't affect area
+      // completion (only requiredFailures gates it below), yet the full suite
+      // used to rerun serially after every one of up to ~70 area iterations —
+      // hours of wall-clock on gates whose result only decorated the report.
+      // The full suite runs once after the loop instead.
+      const gates = config.gates.filter((g) => g.required);
       emit({
         type: 'harness:verifying',
         iteration: plan.iteration,
         areaId: area.id,
-        message: `Verifying: ${gates.length} gates`,
+        message: `Verifying: ${gates.length} required gates`,
       });
 
       const report = verify(gates, config.projectPath, plan.iteration, area.id);
@@ -297,6 +302,25 @@ export function createHarnessOrchestrator(
         type: 'harness:paused',
         iteration: plan.iteration,
         message: 'Harness paused — state saved, safe to resume later',
+      });
+    }
+
+    // One full-suite pass (including non-required gates skipped per
+    // iteration) so the final report still carries build/audit results.
+    const optionalGates = config.gates.filter((g) => !g.required);
+    if (!paused && optionalGates.length > 0) {
+      emit({
+        type: 'harness:verifying',
+        iteration: plan.iteration,
+        areaId: 'final',
+        message: `Final verification: ${optionalGates.length} non-required gates`,
+      });
+      const finalReport = verify(optionalGates, config.projectPath, plan.iteration, 'final');
+      emit({
+        type: 'harness:progress',
+        iteration: plan.iteration,
+        message: `Final gates: ${finalReport.gates.filter((g) => g.passed).length}/${finalReport.gates.length} passed`,
+        data: { finalGates: finalReport.gates.map((g) => ({ gate: g.gate, passed: g.passed })) },
       });
     }
 
