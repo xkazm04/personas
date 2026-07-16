@@ -813,11 +813,51 @@ fn parse_scenarios_from_output(output: &str) -> Result<Vec<TestScenario>, String
 /// (tool*0.4 + quality*0.4 + protocol*0.2). Mirrors eval.rs's `>= 50` verdict.
 const SCENARIO_PASS_THRESHOLD: f64 = 50.0;
 
+/// Weighted composite (0-100) renormalised over whichever sub-scores are
+/// present, mirroring `db::repos::lab::ratings::composite_from_parts` (which does
+/// the same at the aggregate rating level). `None` only when every sub-score is
+/// absent.
+///
+/// This is what makes **sandbox cells** scorable. A sandbox scenario instructs
+/// the agent NOT to call real tools (see [`build_sandbox_section`]), so its
+/// `tool_accuracy` is deliberately absent (`score_result` stores NULL). Treating
+/// that absence as a literal `0` — the old `unwrap_or(0)` — sank an
+/// otherwise-passing cell (e.g. output_quality 80 / protocol 80 gave a composite
+/// of 48, below the 50 threshold, so it "failed"). Renormalising over the
+/// present weights instead scores it on its own terms (→ 80). Cells with all
+/// three sub-scores present (every real-tool cell) renormalise over the full
+/// weight base, so the result is identical to the previous weighted sum — real
+/// scoring is unchanged.
+fn renormalized_composite(ta: Option<f64>, oq: Option<f64>, pc: Option<f64>) -> Option<f64> {
+    let mut sum = 0.0;
+    let mut wsum = 0.0;
+    for (val, w) in [
+        (ta, WEIGHT_TOOL_ACCURACY),
+        (oq, WEIGHT_OUTPUT_QUALITY),
+        (pc, WEIGHT_PROTOCOL_COMPLIANCE),
+    ] {
+        if let Some(v) = val {
+            sum += v * w;
+            wsum += w;
+        }
+    }
+    if wsum > 0.0 {
+        Some(sum / wsum)
+    } else {
+        None
+    }
+}
+
 /// Derive a real pass/fail verdict from the scores instead of conflating "the
 /// CLI returned Ok" with "the scenario passed". A scenario whose evaluation did
 /// not actually run — LLM eval timed out / fell back to heuristics, which return
 /// optimistic "nothing-expected = 100" sentinels — is reported "inconclusive",
 /// never "passed", so a total eval outage can't masquerade as green.
+///
+/// The composite renormalises over the *present* sub-scores (see
+/// [`renormalized_composite`]): a sandbox cell carries no `tool_accuracy`, so it
+/// must not be counted as a zero. A cell with no sub-scores at all is
+/// "inconclusive" rather than a spurious "failed".
 fn verdict_status(s: &ScoreResult) -> String {
     if matches!(
         s.eval_method.as_deref(),
@@ -825,13 +865,14 @@ fn verdict_status(s: &ScoreResult) -> String {
     ) {
         return "inconclusive".to_string();
     }
-    let composite = s.tool_accuracy.unwrap_or(0) as f64 * 0.4
-        + s.output_quality.unwrap_or(0) as f64 * 0.4
-        + s.protocol_compliance.unwrap_or(0) as f64 * 0.2;
-    if composite >= SCENARIO_PASS_THRESHOLD {
-        "passed".to_string()
-    } else {
-        "failed".to_string()
+    match renormalized_composite(
+        s.tool_accuracy.map(|v| v as f64),
+        s.output_quality.map(|v| v as f64),
+        s.protocol_compliance.map(|v| v as f64),
+    ) {
+        Some(composite) if composite >= SCENARIO_PASS_THRESHOLD => "passed".to_string(),
+        Some(_) => "failed".to_string(),
+        None => "inconclusive".to_string(),
     }
 }
 
@@ -1040,6 +1081,12 @@ pub(crate) async fn score_result(
     let expected_tools = scenario.expected_tool_sequence.as_deref();
     let expected_protocols = scenario.expected_protocols.as_deref();
 
+    // A scenario with mock tools ran in sandbox mode: the agent was told NOT to
+    // call real tools (see `build_sandbox_section`), so its real-tool-call
+    // channel is empty by construction and `tool_accuracy` measured as
+    // expected-vs-actual real calls is degenerate.
+    let is_sandbox = !scenario.mock_tools.is_empty();
+
     let eval_input = EvalInput {
         output: &output.assistant_text,
         expected_behavior: Some(&scenario.expected_behavior),
@@ -1068,6 +1115,7 @@ pub(crate) async fn score_result(
         persona.description.as_deref().unwrap_or(""),
         &scenario.name,
         &scenario.description,
+        is_sandbox,
         pool,
         Some(persona.id.as_str()),
     )
@@ -1084,7 +1132,16 @@ pub(crate) async fn score_result(
         "protocol": llm_result.protocol_rationale,
     });
 
-    let tool_accuracy = Some(llm_result.tool_accuracy.clamp(0, 100));
+    // Exclude tool_accuracy from sandbox cells: store NULL so the composite
+    // renormalises over output_quality + protocol_compliance (see
+    // `renormalized_composite`) and the ratings rollup flags `partial_coverage`
+    // instead of auto-failing the cell on a degenerate zero. The judge's
+    // tool-usage rationale is still preserved in `rationale_json` above.
+    let tool_accuracy = if is_sandbox {
+        None
+    } else {
+        Some(llm_result.tool_accuracy.clamp(0, 100))
+    };
     let output_quality = Some(llm_result.output_quality.clamp(0, 100));
     let protocol_compliance = Some(llm_result.protocol_compliance.clamp(0, 100));
 
@@ -1185,9 +1242,15 @@ async fn build_summary(
             let total_cost: f64 = results.iter().map(|r| r.3).sum();
             let avg_duration = results.iter().map(|r| r.4 as f64).sum::<f64>() / count;
 
-            let composite = avg_ta * WEIGHT_TOOL_ACCURACY
-                + avg_oq * WEIGHT_OUTPUT_QUALITY
-                + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+            // Renormalise over present sub-scores so an all-sandbox run (no
+            // tool_accuracy) isn't dragged down by a phantom zero — mirrors the
+            // per-cell `verdict_status`.
+            let composite = renormalized_composite(
+                avg_scored(results.iter().map(|r| r.0)),
+                avg_scored(results.iter().map(|r| r.1)),
+                avg_scored(results.iter().map(|r| r.2)),
+            )
+            .unwrap_or(0.0);
             let cost_known = provider_cost_is_known(&model.provider);
             let value_score = compute_value_score(composite, total_cost);
 
@@ -1601,7 +1664,14 @@ async fn generate_llm_run_summary(
         let avg_oq = avg_scored(entries.iter().map(|r| r.1)).unwrap_or(0.0);
         let avg_pc = avg_scored(entries.iter().map(|r| r.2)).unwrap_or(0.0);
         let total_cost = entries.iter().map(|r| r.3).sum::<f64>();
-        let composite = avg_ta * 0.4 + avg_oq * 0.4 + avg_pc * 0.2;
+        // Renormalise over present sub-scores (sandbox runs omit tool_accuracy)
+        // — mirrors `verdict_status`.
+        let composite = renormalized_composite(
+            avg_scored(entries.iter().map(|r| r.0)),
+            avg_scored(entries.iter().map(|r| r.1)),
+            avg_scored(entries.iter().map(|r| r.2)),
+        )
+        .unwrap_or(0.0);
         results_text.push_str(&format!(
             "- {key}: composite={:.0}/100 (tool_accuracy={:.0}, output_quality={:.0}, protocol={:.0}), cost=${:.4}, {:.0} scenarios\n",
             composite, avg_ta, avg_oq, avg_pc, total_cost, n
@@ -2016,9 +2086,14 @@ fn build_keyed_summary(
         let avg_oq = avg_scored(results.iter().map(|r| r.1)).unwrap_or(0.0);
         let avg_pc = avg_scored(results.iter().map(|r| r.2)).unwrap_or(0.0);
         let total_cost: f64 = results.iter().map(|r| r.3).sum();
-        let composite = avg_ta * WEIGHT_TOOL_ACCURACY
-            + avg_oq * WEIGHT_OUTPUT_QUALITY
-            + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+        // Renormalise over present sub-scores (sandbox runs omit tool_accuracy)
+        // — mirrors `verdict_status`.
+        let composite = renormalized_composite(
+            avg_scored(results.iter().map(|r| r.0)),
+            avg_scored(results.iter().map(|r| r.1)),
+            avg_scored(results.iter().map(|r| r.2)),
+        )
+        .unwrap_or(0.0);
         summary_obj.insert(
             key.clone(),
             serde_json::json!({
@@ -2049,9 +2124,14 @@ fn build_arena_summary(
             let avg_pc = avg_scored(results.iter().map(|r| r.2)).unwrap_or(0.0);
             let total_cost: f64 = results.iter().map(|r| r.3).sum();
             let avg_duration = results.iter().map(|r| r.4 as f64).sum::<f64>() / count;
-            let composite = avg_ta * WEIGHT_TOOL_ACCURACY
-                + avg_oq * WEIGHT_OUTPUT_QUALITY
-                + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+            // Renormalise over present sub-scores (sandbox runs omit
+            // tool_accuracy) — mirrors `verdict_status`.
+            let composite = renormalized_composite(
+                avg_scored(results.iter().map(|r| r.0)),
+                avg_scored(results.iter().map(|r| r.1)),
+                avg_scored(results.iter().map(|r| r.2)),
+            )
+            .unwrap_or(0.0);
             let cost_known = provider_cost_is_known(&model.provider);
             let value_score = compute_value_score(composite, total_cost);
             rankings.push(serde_json::json!({
@@ -3144,5 +3224,102 @@ mod tests {
         .await
         .expect("cancel branch must win well before the 30s execution stub");
         assert_eq!(result, Err("Cancelled".to_string()));
+    }
+
+    // -- Direction 2: sandbox-aware scoring -------------------------------------
+
+    /// Build a `ScoreResult` from just the three sub-scores + eval method; the
+    /// rest is irrelevant to the verdict/composite paths under test.
+    fn score(
+        ta: Option<i32>,
+        oq: Option<i32>,
+        pc: Option<i32>,
+        method: &str,
+    ) -> ScoreResult {
+        ScoreResult {
+            tool_accuracy: ta,
+            output_quality: oq,
+            protocol_compliance: pc,
+            output_preview: None,
+            tool_calls_actual: None,
+            input_tokens: 0,
+            output_tokens: 0,
+            cost_usd: 0.0,
+            duration_ms: 0,
+            error_message: None,
+            rationale: None,
+            suggestions: None,
+            eval_method: Some(method.to_string()),
+            events: Vec::new(),
+        }
+    }
+
+    /// The regression this direction fixes: a sandbox cell carries no
+    /// `tool_accuracy` (the agent was told not to call real tools), so the old
+    /// `unwrap_or(0)` composite scored output_quality 80 / protocol 80 as
+    /// `0*0.4 + 80*0.4 + 80*0.2 = 48` → below the 50 threshold → a spurious
+    /// "failed". Renormalising over the present weights scores it 80 → "passed".
+    #[test]
+    fn verdict_status_sandbox_cell_not_auto_failed_on_missing_tool_accuracy() {
+        let s = score(None, Some(80), Some(80), "llm");
+        assert_eq!(
+            verdict_status(&s),
+            "passed",
+            "a strong sandbox cell must not fail just because tool_accuracy is absent",
+        );
+    }
+
+    /// Real-tool cells (all three sub-scores present) are unchanged: the
+    /// renormalised composite over the full weight base equals the previous
+    /// weighted sum, so the pass/fail boundary is identical.
+    #[test]
+    fn verdict_status_real_cell_scoring_unchanged() {
+        // 40*0.4 + 40*0.4 + 40*0.2 = 40 → below 50 → failed (was failed before).
+        assert_eq!(verdict_status(&score(Some(40), Some(40), Some(40), "llm")), "failed");
+        // 60*0.4 + 60*0.4 + 60*0.2 = 60 → passed (was passed before).
+        assert_eq!(verdict_status(&score(Some(60), Some(60), Some(60), "llm")), "passed");
+        // Mixed real cell straddling the boundary: 0*0.4 + 90*0.4 + 90*0.2 = 54
+        // → passed; the zero here is a real judged tool_accuracy, not an absence.
+        assert_eq!(verdict_status(&score(Some(0), Some(90), Some(90), "llm")), "passed");
+    }
+
+    /// A degraded evaluation (timeout / heuristic fallback) is still
+    /// "inconclusive" regardless of the sub-scores — the sandbox change does not
+    /// weaken that guard.
+    #[test]
+    fn verdict_status_degraded_eval_still_inconclusive() {
+        assert_eq!(
+            verdict_status(&score(None, Some(80), Some(80), "heuristic_fallback")),
+            "inconclusive",
+        );
+        assert_eq!(
+            verdict_status(&score(Some(90), Some(90), Some(90), "timeout")),
+            "inconclusive",
+        );
+    }
+
+    /// A cell with no sub-scores at all is inconclusive, never a spurious
+    /// "failed".
+    #[test]
+    fn verdict_status_no_subscores_is_inconclusive() {
+        assert_eq!(verdict_status(&score(None, None, None, "llm")), "inconclusive");
+    }
+
+    /// The renormalisation math: absent tool_accuracy reweights output_quality
+    /// and protocol over their own base (0.4 + 0.2), so 80/80 → 80, while
+    /// full-coverage renormalises to the same value as the plain weighted sum.
+    #[test]
+    fn renormalized_composite_reweights_present_scores() {
+        // Sandbox: ta absent → (80*0.4 + 80*0.2) / 0.6 = 80.
+        let sandbox = renormalized_composite(None, Some(80.0), Some(80.0)).unwrap();
+        assert!((sandbox - 80.0).abs() < 1e-9, "got {sandbox}");
+        // Full coverage equals the canonical weighted sum.
+        let full = renormalized_composite(Some(50.0), Some(80.0), Some(90.0)).unwrap();
+        let expected = 50.0 * WEIGHT_TOOL_ACCURACY
+            + 80.0 * WEIGHT_OUTPUT_QUALITY
+            + 90.0 * WEIGHT_PROTOCOL_COMPLIANCE;
+        assert!((full - expected).abs() < 1e-9, "got {full}, expected {expected}");
+        // Nothing present → None.
+        assert_eq!(renormalized_composite(None, None, None), None);
     }
 }

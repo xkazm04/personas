@@ -485,6 +485,7 @@ pub async fn eval_with_llm(
     persona_description: &str,
     scenario_name: &str,
     scenario_description: &str,
+    sandbox: bool,
     pool: &DbPool,
     persona_id: Option<&str>,
 ) -> LlmEvalResult {
@@ -494,6 +495,7 @@ pub async fn eval_with_llm(
         persona_description,
         scenario_name,
         scenario_description,
+        sandbox,
     );
 
     // Try LLM eval up to 2 times before falling back to heuristic
@@ -531,6 +533,7 @@ fn build_llm_eval_prompt(
     persona_description: &str,
     scenario_name: &str,
     scenario_description: &str,
+    sandbox: bool,
 ) -> String {
     let tool_calls_actual = input
         .actual_tools
@@ -547,10 +550,25 @@ fn build_llm_eval_prompt(
     };
     let expected_behavior = input.expected_behavior.unwrap_or("(not specified)");
 
+    // In a sandbox cell the agent is explicitly instructed NOT to call real
+    // tools and to reason over simulated tool responses instead (see
+    // `build_sandbox_section` in test_runner.rs). The real-tool-call channel is
+    // therefore empty by construction, so `tool_accuracy` measured as
+    // expected-vs-actual real calls is degenerate. Tell the judge so its
+    // rationale isn't misleading; the numeric `tool_accuracy` it returns is
+    // recorded for reference but EXCLUDED from the pass/fail composite upstream
+    // (score_result stores NULL for sandbox cells, and the composite
+    // renormalises over output_quality + protocol_compliance).
+    let sandbox_note = if sandbox {
+        "\n\n## SANDBOX CELL\nThe agent ran in **sandbox mode**: it was explicitly told NOT to call real tools and to reason over *simulated* tool responses instead. Do NOT penalize the absence of real tool calls — an empty \"Tool calls made\" list is expected and correct here. Score `tool_accuracy` on whether the agent correctly USED the simulated tool results in its reasoning (its intended protocol), and note in the rationale that this was a simulated run. This `tool_accuracy` is recorded for reference only and is EXCLUDED from the pass/fail composite, which uses output_quality and protocol_compliance."
+    } else {
+        ""
+    };
+
     format!(
         r#"# Persona Test Evaluation
 
-You are an expert AI persona evaluator. Analyze this test result and provide scores WITH clear explanations a human can act on.
+You are an expert AI persona evaluator. Analyze this test result and provide scores WITH clear explanations a human can act on.{sandbox_note}
 
 ## Persona Under Test
 - **Name**: {persona_name}
