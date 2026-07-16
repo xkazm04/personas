@@ -7,8 +7,8 @@ import type { CredentialMetadata, ConnectorDefinition, PersonaWithDetails } from
 
 // Hex fallbacks for unknown / placeholder entries. Consumed by callers
 // that pass `connectorColor` / `personaColor` into inline styles, so we
-// keep raw hex values rather than Tailwind classes (mirrors dependencyGraph's
-// NODE_COLOR convention). Tweak in one place if theme work touches these.
+// keep raw hex values rather than Tailwind classes.
+// Tweak in one place if theme work touches these.
 const FALLBACK_COLOR = {
   unknownConnector: '#8b5cf6',  // violet — connector with no catalog entry
   unknownPersona: '#3b82f6',    // blue   — persona with no `color` set

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
-import type { AgentListViewConfig } from './ViewPresetBar';
+import type { AgentListViewConfig } from './viewConfig';
 
 const connectorNamesCache = new WeakMap<Persona, string[]>();
 

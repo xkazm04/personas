@@ -7,8 +7,8 @@ import { useDesignConversation } from '@/hooks/design/core/useDesignConversation
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
 import { mutateDesignFiles } from '@/hooks/design/core/useDesignContextMutator';
 import { parseConversationMessages } from '@/lib/types/designTypes';
-import type { ExamplePair } from '../wizard/ExamplePairCollector';
-import { formatExamplePairsAsIntent } from '../wizard/ExamplePairCollector';
+import type { ExamplePair } from './examplePairs';
+import { formatExamplePairsAsIntent } from './examplePairs';
 import {
   useSavedDesignResult, useDesignContextSync, useSelectionState,
   useResultSelectionSync, useChangeSummary, useDriftEventsForPersona,

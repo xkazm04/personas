@@ -10,7 +10,7 @@ import type { AgentIR, IntentCompilationResult, DesignQuestion } from '@/lib/typ
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
 import type { PersonaWithDetails, PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { FailedOperation } from '@/hooks/design/credential/applyDesignResult';
-import type { ExamplePair } from '../wizard/ExamplePairCollector';
+import type { ExamplePair } from '../libs/examplePairs';
 import type { DesignInputMode } from '../libs/useDesignTabState';
 
 export interface PhaseRenderProps {
