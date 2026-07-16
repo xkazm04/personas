@@ -470,7 +470,7 @@ pub async fn send_turn(
     }
     #[cfg(not(feature = "ml"))]
     {
-        let _ = crate::companion::dev_session::recover_orphan_improvements(&user_db).await;
+        let _ = crate::companion::dev_session::recover_orphan_improvements(&user_db, None).await;
     }
 
     // Persist the turn-opening episode. User turns land as `User`;
@@ -595,6 +595,7 @@ pub async fn send_turn(
             prompt::build_system_prompt(
                 &user_db,
                 &sys_db,
+                None,
                 &session_id,
                 &effective_user_message,
                 voice_enabled,
