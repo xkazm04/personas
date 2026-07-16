@@ -76,6 +76,23 @@ pub fn public_key_to_peer_id(public_key: &VerifyingKey) -> String {
     bs58::encode(hash).into_string()
 }
 
+/// Derive a PeerId from a base64-encoded Ed25519 public key.
+///
+/// Returns `Err` if the string is not a valid Ed25519 public key. Callers that
+/// receive a `(peer_id, public_key)` pair from an untrusted source MUST check
+/// that this derivation matches the claimed peer_id before trusting either —
+/// peer_id is `base58(sha256(public_key))`, so binding one to the other is what
+/// stops a signer from claiming someone else's identity while signing with
+/// their own key.
+pub fn peer_id_from_public_key_b64(public_key_b64: &str) -> Result<String, AppError> {
+    let pk_bytes = B64
+        .decode(public_key_b64)
+        .map_err(|e| AppError::Validation(format!("Invalid public key base64: {e}")))?;
+    let verifying_key = VerifyingKey::try_from(pk_bytes.as_slice())
+        .map_err(|e| AppError::Validation(format!("Invalid Ed25519 public key: {e}")))?;
+    Ok(public_key_to_peer_id(&verifying_key))
+}
+
 // -- Keypair lifecycle ---------------------------------------------------
 
 /// Get or create the local identity.

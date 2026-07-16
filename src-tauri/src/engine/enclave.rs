@@ -216,21 +216,38 @@ pub fn verify(pool: &DbPool, enclave_bytes: &[u8]) -> Result<EnclaveVerifyResult
     // to_string_pretty (indented): the byte strings differ, so every honest
     // enclave failed verification, and verifying a round-tripped struct silently
     // dropped any unsigned/extra fields the on-disk manifest carried.
-    let signature_valid = identity::verify_signature(
-        &sig.signer_public_key_b64,
-        manifest_json.as_bytes(),
-        &sig.signature_b64,
-    )
-    .unwrap_or(false);
+    // Bind the archive-embedded public key to the claimed peer_id BEFORE using
+    // it. peer_id is base58(sha256(public_key)); without this check verify()
+    // trusted `signer_public_key_b64` for the signature while separately trusting
+    // `signer_peer_id` for the trust lookup, so an attacker could sign with their
+    // own key but claim a trusted peer's id and read as signed-and-trusted. The
+    // sibling `bundle.rs::verify_against_trusted_key` already binds key↔peer;
+    // parse_identity_card does the same check for cards.
+    let key_binds_to_peer_id =
+        identity::peer_id_from_public_key_b64(&sig.signer_public_key_b64)
+            .map(|derived| derived == sig.signer_peer_id)
+            .unwrap_or(false);
+
+    let signature_valid = key_binds_to_peer_id
+        && identity::verify_signature(
+            &sig.signer_public_key_b64,
+            manifest_json.as_bytes(),
+            &sig.signature_b64,
+        )
+        .unwrap_or(false);
 
     // Verify content integrity
     let actual_hash = hex::encode(Sha256::digest(persona_json.as_bytes()));
     let content_intact = actual_hash == manifest.content_hash;
 
-    // Check trust status
-    let creator_trusted =
-        crate::db::repos::resources::identity::get_trusted_peer(pool, &sig.signer_peer_id)
-            .map(|p| !p.trust_level.is_revoked())
+    // Trust requires a signature that is valid AND bound to the claimed peer_id,
+    // then that peer_id being a non-revoked trusted peer whose STORED key matches
+    // the embedded key (belt-and-braces if peer_id derivation ever changes).
+    let creator_trusted = signature_valid
+        && crate::db::repos::resources::identity::get_trusted_peer(pool, &sig.signer_peer_id)
+            .map(|p| {
+                !p.trust_level.is_revoked() && p.public_key_b64 == sig.signer_public_key_b64
+            })
             .unwrap_or(false);
 
     Ok(EnclaveVerifyResult {
