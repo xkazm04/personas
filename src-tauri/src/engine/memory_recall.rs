@@ -447,6 +447,11 @@ pub fn run_decay_forgetting(pool: &DbPool, persona_id: &str) -> Result<i64, AppE
             "memory decay-forgetting archived stale active memories"
         );
     }
+    // D2: `archive_by_ids` drops the just-archived rows' vectors incrementally;
+    // this bounded, idempotent sweep additionally drains any pre-existing
+    // leftover vectors for rows archived before that path shipped. No-op on a
+    // clean corpus and off the ml build.
+    repo::spawn_gc_archived_memory_embeddings(pool);
     Ok(archived)
 }
 

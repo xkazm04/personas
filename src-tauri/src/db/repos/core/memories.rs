@@ -928,6 +928,30 @@ pub fn archive_by_ids(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
             total += tx.execute(&sql, qb.params_ref().as_slice())? as i64;
         }
         tx.commit()?;
+        // D2 (archived-vectors-leave-recall): a decayed/curated row keeps its
+        // main-DB record (archive is reversible) but must NOT keep a live KNN
+        // vector, or it re-surfaces in task-aware recall. Drop the embeddings of
+        // exactly the ids that are now archived — the core-guarded ids are
+        // excluded by the `tier = 'archive'` filter, so a user-pinned memory's
+        // vector is never touched. Fire-and-forget + best-effort (a missed drop
+        // is caught by the periodic GC sweep); re-tiering to a live tier
+        // re-embeds (see `update_tier`).
+        if total > 0 {
+            let mut now_archived: Vec<String> = Vec::new();
+            for chunk in ids.chunks(CHUNK_SIZE) {
+                let ph = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+                let ps: Vec<&dyn rusqlite::ToSql> =
+                    chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+                let mut stmt = conn.prepare(&format!(
+                    "SELECT id FROM persona_memories WHERE tier = 'archive' AND id IN ({ph})"
+                ))?;
+                let rows = stmt.query_map(ps.as_slice(), |r| r.get::<_, String>(0))?;
+                for r in rows {
+                    now_archived.push(r?);
+                }
+            }
+            spawn_delete_memory_embeddings(now_archived);
+        }
         Ok(total)
     })
 }
@@ -1193,12 +1217,36 @@ pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError
         }
     }
     timed_query!("persona_memories", "persona_memories::update_tier", {
+        use rusqlite::OptionalExtension;
         let conn = pool.get()?;
+        // Snapshot the prior tier BEFORE the update so we can detect an
+        // unarchive transition (archive → live tier). Archiving drops the KNN
+        // vector (see `archive_by_ids`); un-archiving must restore it or the
+        // resurfaced memory would be invisible to task-aware recall.
+        let prev_tier: Option<String> = conn
+            .query_row(
+                "SELECT tier FROM persona_memories WHERE id = ?1",
+                params![id],
+                |r| r.get::<_, String>(0),
+            )
+            .optional()?;
         let now = chrono::Utc::now().to_rfc3339();
         let rows = conn.execute(
             "UPDATE persona_memories SET tier = ?1, updated_at = ?2 WHERE id = ?3",
             params![tier, now, id],
         )?;
+        // D2 (archived-vectors-leave-recall): re-embed on un-archive. Only when
+        // the row actually left the archive tier for a live one — a no-op for
+        // every other tier move, so byte-identical behavior outside unarchive.
+        if rows > 0 && prev_tier.as_deref() == Some("archive") && tier != "archive" {
+            if let Ok((title, content)) = conn.query_row(
+                "SELECT title, content FROM persona_memories WHERE id = ?1",
+                params![id],
+                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            ) {
+                spawn_embed_memory(id.to_string(), memory_embedding_text_parts(&title, &content));
+            }
+        }
         Ok(rows > 0)
     })
 }
@@ -1846,6 +1894,89 @@ pub fn delete_memory_embeddings(
     }
     Ok(())
 }
+
+/// Bounded, idempotent GC sweep for archived-memory embedding leftovers.
+///
+/// The incremental path ([`archive_by_ids`] + [`update_tier`]) keeps vectors in
+/// lockstep with the archive tier going forward, but rows archived BEFORE that
+/// shipped still carry a live KNN vector. This sweeps them: enumerate up to
+/// `limit` `tier = 'archive'` rows from the main DB, intersect with the vectors
+/// actually present in the user DB, and drop those. Returns the number of
+/// leftover embeddings cleaned this call — 0 on a clean corpus, so it is safe to
+/// call on every decay tick (idempotent) and never scans the whole table
+/// (bounded). Hard-delete is unaffected — it still drops vectors via
+/// [`batch_delete`] → [`spawn_delete_memory_embeddings`].
+#[cfg(feature = "ml")]
+pub fn gc_archived_memory_embeddings(
+    main_pool: &DbPool,
+    vec_pool: &crate::db::UserDbPool,
+    limit: usize,
+) -> Result<usize, AppError> {
+    ensure_memory_vec_table(vec_pool)?;
+    let archived_ids: Vec<String> = {
+        let conn = main_pool.get()?;
+        let mut stmt =
+            conn.prepare("SELECT id FROM persona_memories WHERE tier = 'archive' LIMIT ?1")?;
+        let ids = stmt
+            .query_map(params![limit as i64], |r| r.get::<_, String>(0))?
+            .collect::<Result<Vec<_>, _>>()?;
+        ids
+    };
+    if archived_ids.is_empty() {
+        return Ok(0);
+    }
+    // Only the ids that actually have a vector count as "leftovers" — this keeps
+    // the return value honest (already-clean archived rows return 0) and the
+    // sweep idempotent across repeated ticks.
+    let ids_json = serde_json::to_string(&archived_ids)
+        .map_err(|e| AppError::Internal(format!("gc archived ids serialize: {e}")))?;
+    let present: Vec<String> = {
+        let conn = vec_pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT memory_id FROM persona_memory_embedding
+             WHERE memory_id IN (SELECT value FROM json_each(?1))",
+        )?;
+        let ids = stmt
+            .query_map(params![ids_json], |r| r.get::<_, String>(0))?
+            .collect::<Result<Vec<_>, _>>()?;
+        ids
+    };
+    if present.is_empty() {
+        return Ok(0);
+    }
+    delete_memory_embeddings(vec_pool, &present)?;
+    tracing::info!(
+        cleaned = present.len(),
+        "archived-memory embedding GC swept leftover vectors"
+    );
+    Ok(present.len())
+}
+
+/// Fire-and-forget bounded GC of archived-memory embedding leftovers. No-op
+/// unless the recall runtime is registered AND we're inside a tokio runtime
+/// (unit tests aren't — they call [`gc_archived_memory_embeddings`] directly).
+/// Runs on the blocking pool since it issues synchronous rusqlite queries.
+#[cfg(feature = "ml")]
+pub fn spawn_gc_archived_memory_embeddings(main_pool: &DbPool) {
+    /// Per-tick sweep bound — small enough to be cheap, large enough to drain a
+    /// backlog over a handful of decay ticks.
+    const GC_BATCH: usize = 256;
+    let Some((vec_pool, _)) = crate::engine::memory_recall::task_recall_runtime() else {
+        return;
+    };
+    let Ok(handle) = tokio::runtime::Handle::try_current() else {
+        return;
+    };
+    let main_pool = main_pool.clone();
+    handle.spawn_blocking(move || {
+        if let Err(e) = gc_archived_memory_embeddings(&main_pool, &vec_pool, GC_BATCH) {
+            tracing::debug!(error = %e, "archived-embedding GC sweep failed (leftovers are inert)");
+        }
+    });
+}
+
+#[cfg(not(feature = "ml"))]
+pub fn spawn_gc_archived_memory_embeddings(_main_pool: &DbPool) {}
 
 /// Idempotent, batched backfill: embed every recall-eligible memory
 /// (`tier != 'archive'`) that lacks a vector, up to `batch_limit` this call.
@@ -3180,5 +3311,83 @@ mod vec_tests {
         let kept = apply_memory_model_guard(&conn, hits.clone(), "AllMiniLML6V2Q").unwrap();
         assert_eq!(kept, hits, "inert when every stamp matches the current model");
         assert_eq!(memory_model_guard_excluded_total(), before);
+    }
+
+    // ── D2: archived vectors leave recall (GC sweep) ────────────────────────
+
+    #[test]
+    fn gc_sweeps_only_archived_leftover_vectors_and_is_idempotent() {
+        use crate::db::init_test_db;
+        use crate::db::models::{CreatePersonaInput, CreatePersonaMemoryInput};
+        use crate::db::repos::core::personas;
+
+        let main = init_test_db().unwrap();
+        let vp = vec_pool();
+        ensure_memory_vec_table(&vp).expect("provision vec + meta");
+
+        let persona = personas::create(
+            &main,
+            CreatePersonaInput {
+                name: "Recall Agent".into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+
+        let mk = |title: &str| {
+            create(
+                &main,
+                CreatePersonaMemoryInput {
+                    persona_id: persona.id.clone(),
+                    title: title.into(),
+                    content: format!("{title} content"),
+                    category: None,
+                    source_execution_id: None,
+                    importance: Some(3),
+                    tags: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap()
+        };
+        let archived = mk("archived one");
+        let live = mk("live one");
+
+        // Archive one; both keep a hand-seeded vector (the test stands in for the
+        // fire-and-forget drop that a tokio runtime would have done on archive).
+        update_tier(&main, &archived.id, "archive").unwrap();
+        insert_vec(&vp, &archived.id, &unit_vec(0));
+        insert_vec(&vp, &live.id, &unit_vec(1));
+
+        // Sweep: exactly the archived row's leftover vector is cleaned.
+        let cleaned = gc_archived_memory_embeddings(&main, &vp, 100).unwrap();
+        assert_eq!(cleaned, 1, "only the archived row's leftover vector is swept");
+
+        let remaining = embedded_memory_ids(&vp).unwrap();
+        assert!(
+            !remaining.contains(&archived.id),
+            "archived memory's vector removed → it can no longer surface in KNN recall"
+        );
+        assert!(
+            remaining.contains(&live.id),
+            "a live memory's vector is never touched by the archive GC"
+        );
+
+        // Idempotent: a second sweep on the now-clean corpus cleans nothing.
+        assert_eq!(gc_archived_memory_embeddings(&main, &vp, 100).unwrap(), 0);
     }
 }
