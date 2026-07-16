@@ -140,7 +140,11 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
     testFlowTimeoutsRef.current = [];
   }, []);
 
-  const stats = useMemo(() => statsRef.current, []);
+  // Keyed on `events` identity (as the comment above describes) — with empty
+  // deps this memo froze at computeStats([]) forever and the stats panel
+  // showed 0 events / 100% success regardless of traffic.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stats = useMemo(() => statsRef.current, [events]);
 
   // Helper: push events and recompute stats in one batch.
   // This is the ONLY way events should be added — it ensures stats stay in sync
