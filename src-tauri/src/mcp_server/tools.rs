@@ -1,4 +1,25 @@
 //! MCP tool definitions and handlers for the Personas MCP server.
+//!
+//! # Repo-routing status (drift ledger)
+//!
+//! Now that this module compiles as part of `app_lib` (not a standalone copy in
+//! the binary), state-mutating handlers should route through the shared
+//! repository layer rather than hand-rolling SQL, so validation / encryption /
+//! uniqueness stay in one place.
+//!
+//! - `personas_create`  → `crate::db::repos::core::personas::create` (routed).
+//!   Adopts the repo's name-uniqueness *suffixing* (was: hard error on dup) and
+//!   the repo's model_profile encryption path (was: hand-built plaintext JSON).
+//! - `personas_execute` → `crate::db::repos::execution::executions::create`
+//!   for the queued row + `communication::events::publish` for the pickup event
+//!   (was: two hand-rolled INSERTs).
+//!
+//! Still forked over raw rusqlite against `McpDbPool::get()` (read-only or
+//! niche-write; acceptable — no command-layer equivalent worth the coupling):
+//! `personas_list`, `personas_get`, `personas_status`, `personas_result`,
+//! `personas_set_model`, `post_message`, `knowledge_search`, `annotate`,
+//! `health`, `list_templates`, `search_executions`, `arena_*`, `context_*`,
+//! `obsidian_vault_*`, `gmail_*`/`gdrive_*`/`gcalendar_*` (bridge proxies).
 
 use std::path::{Component, Path, PathBuf};
 
@@ -1175,8 +1196,11 @@ fn handle_personas_create(args: &Value, pool: &McpDbPool) -> Result<String, Stri
     let enabled = args.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
     let project_id = args.get("project_id").and_then(|v| v.as_str()).unwrap_or("default");
 
-    // model_profile is plaintext JSON (no auth_token → the engine reads it as-is;
-    // encrypt_model_profile no-ops without a secret). Only set when provider/model given.
+    // Assemble the model_profile from provider/model, then let the shared repo
+    // own storage (encrypt_input_profile no-ops without an auth_token; here
+    // there is none). No hand-rolled INSERT — routes through the same create()
+    // the command layer uses, so name/system_prompt validation, name-uniqueness
+    // suffixing, and lifecycle defaulting are all applied consistently.
     let model_profile: Option<String> = if provider.is_some() || model.is_some() {
         let mut obj = serde_json::Map::new();
         if let Some(p) = provider {
@@ -1190,30 +1214,36 @@ fn handle_personas_create(args: &Value, pool: &McpDbPool) -> Result<String, Stri
         None
     };
 
-    let conn = pool.get()?;
-    let exists: bool = conn
-        .query_row(
-            "SELECT 1 FROM personas WHERE project_id = ?1 AND name = ?2 LIMIT 1",
-            rusqlite::params![project_id, name],
-            |_| Ok(()),
-        )
-        .is_ok();
-    if exists {
-        return Err(format!("A persona named '{name}' already exists in project '{project_id}'"));
-    }
+    let input = crate::db::models::CreatePersonaInput {
+        name: name.to_string(),
+        system_prompt: system_prompt.to_string(),
+        project_id: Some(project_id.to_string()),
+        description: description.map(|s| s.to_string()),
+        structured_prompt: None,
+        icon: None,
+        color: None,
+        enabled: Some(enabled),
+        max_concurrent: None,
+        timeout_ms: None,
+        model_profile,
+        max_budget_usd: None,
+        max_turns: None,
+        design_context: None,
+        notification_channels: None,
+        lifecycle: None,
+    };
 
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    conn.execute(
-        "INSERT INTO personas
-            (id, project_id, name, description, system_prompt, enabled, sensitive,
-             max_concurrent, timeout_ms, model_profile, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 4, 600000, ?7, ?8, ?8)",
-        rusqlite::params![id, project_id, name, description, system_prompt, enabled as i32, model_profile, now],
-    )
-    .map_err(|e| format!("Failed to create persona: {e}"))?;
+    let persona = crate::db::repos::core::personas::create(pool.pool(), input)
+        .map_err(|e| format!("Failed to create persona: {e}"))?;
 
-    Ok(json!({ "id": id, "name": name, "enabled": enabled, "provider": provider, "model": model }).to_string())
+    Ok(json!({
+        "id": persona.id,
+        "name": persona.name,
+        "enabled": persona.enabled,
+        "provider": provider,
+        "model": model,
+    })
+    .to_string())
 }
 
 fn handle_personas_set_model(args: &Value, pool: &McpDbPool) -> Result<String, String> {
@@ -1682,42 +1712,55 @@ fn handle_personas_execute(args: &Value, pool: &McpDbPool) -> Result<String, Str
         .and_then(|v| v.as_str())
         .ok_or("persona_id is required")?;
     let input = args.get("input").cloned().unwrap_or(json!({}));
-    let conn = pool.get()?;
 
-    // Verify persona exists and is enabled
-    let enabled: bool = conn
-        .query_row(
-            "SELECT enabled FROM personas WHERE id = ?1",
-            rusqlite::params![persona_id],
-            |row| Ok(row.get::<_, i32>(0)? != 0),
-        )
-        .map_err(|e| format!("Persona not found: {e}"))?;
-
-    if !enabled {
-        return Err("Persona is disabled".to_string());
+    // Verify persona exists and is enabled (fast reject before touching repos).
+    {
+        let conn = pool.get()?;
+        let enabled: bool = conn
+            .query_row(
+                "SELECT enabled FROM personas WHERE id = ?1",
+                rusqlite::params![persona_id],
+                |row| Ok(row.get::<_, i32>(0)? != 0),
+            )
+            .map_err(|e| format!("Persona not found: {e}"))?;
+        if !enabled {
+            return Err("Persona is disabled".to_string());
+        }
     }
 
-    // Create a queued execution record
-    let exec_id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
     let input_json = serde_json::to_string(&input).unwrap_or_else(|_| "{}".to_string());
 
-    conn.execute(
-        "INSERT INTO persona_executions (id, persona_id, input_data, status, created_at, updated_at)
-         VALUES (?1, ?2, ?3, 'queued', ?4, ?4)",
-        rusqlite::params![exec_id, persona_id, input_json, now],
-    ).map_err(|e| format!("Failed to queue execution: {e}"))?;
+    // Create the queued execution via the shared repo (identical row shape +
+    // token/tokens/cost defaults as every other execution source), then publish
+    // the pickup event through the shared events repo so the main app's
+    // background loop consumes it exactly like any other pending event.
+    let execution =
+        crate::db::repos::execution::executions::create(
+            pool.pool(),
+            persona_id,
+            None,
+            Some(input_json),
+            None,
+            None,
+        )
+        .map_err(|e| format!("Failed to queue execution: {e}"))?;
 
-    // Publish an event so the main app's background loop picks it up
-    let event_id = uuid::Uuid::new_v4().to_string();
-    conn.execute(
-        "INSERT INTO persona_events (id, project_id, event_type, source_type, source_id, target_persona_id, payload, status, created_at)
-         VALUES (?1, 'default', 'mcp_execute', 'mcp', 'personas-mcp', ?2, ?3, 'pending', ?4)",
-        rusqlite::params![event_id, persona_id, json!({"execution_id": exec_id}).to_string(), now],
-    ).map_err(|e| format!("Failed to publish event: {e}"))?;
+    crate::db::repos::communication::events::publish(
+        pool.pool(),
+        crate::db::models::CreatePersonaEventInput {
+            event_type: "mcp_execute".to_string(),
+            source_type: "mcp".to_string(),
+            project_id: None,
+            source_id: Some("personas-mcp".to_string()),
+            target_persona_id: Some(persona_id.to_string()),
+            payload: Some(json!({ "execution_id": execution.id }).to_string()),
+            use_case_id: None,
+        },
+    )
+    .map_err(|e| format!("Failed to publish event: {e}"))?;
 
     Ok(json!({
-        "execution_id": exec_id,
+        "execution_id": execution.id,
         "status": "queued",
         "message": "Execution queued. Use personas_status to poll for completion."
     })
@@ -2228,32 +2271,22 @@ fn handle_search_executions(args: &Value, pool: &McpDbPool) -> Result<String, St
 #[cfg(test)]
 mod driver_tool_tests {
     use super::call_tool;
+    use super::McpDbPool;
     use serde_json::{json, Value};
 
-    /// Build a throwaway DB with the minimal schema the driver tools touch, then
-    /// exercise create → set_model(qwen) → post_message end to end (no daemon/net).
+    /// Back the MCP tools with the REAL migrated schema so create/execute exercise
+    /// the same repository layer (and columns) the app uses — no hand-rolled
+    /// minimal schema that could silently diverge from `personas::create`.
+    fn real_pool() -> McpDbPool {
+        McpDbPool::from_pool(crate::db::init_test_db().expect("init_test_db"))
+    }
+
+    /// create → set_model(qwen) → post_message end to end (no daemon/net). Create
+    /// now routes through `personas::create`, so this also pins that the repo
+    /// path produces a usable persona row through the MCP surface.
     #[test]
     fn create_set_model_and_post_message() {
-        let path = std::env::temp_dir().join(format!("personas-mcp-test-{}.db", uuid::Uuid::new_v4()));
-        {
-            let c = rusqlite::Connection::open(&path).expect("open temp db");
-            c.execute_batch(
-                "CREATE TABLE personas (
-                    id TEXT PRIMARY KEY, project_id TEXT NOT NULL DEFAULT 'default', name TEXT NOT NULL,
-                    description TEXT, system_prompt TEXT NOT NULL, structured_prompt TEXT, icon TEXT, color TEXT,
-                    enabled INTEGER NOT NULL DEFAULT 1, sensitive INTEGER NOT NULL DEFAULT 0,
-                    max_concurrent INTEGER NOT NULL DEFAULT 1, timeout_ms INTEGER NOT NULL DEFAULT 300000,
-                    notification_channels TEXT, model_profile TEXT, max_budget_usd REAL, max_turns INTEGER,
-                    design_context TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
-                 CREATE TABLE persona_messages (
-                    id TEXT PRIMARY KEY, persona_id TEXT NOT NULL, execution_id TEXT, title TEXT,
-                    content TEXT NOT NULL, content_type TEXT NOT NULL DEFAULT 'text',
-                    priority TEXT NOT NULL DEFAULT 'normal', is_read INTEGER NOT NULL DEFAULT 0,
-                    metadata TEXT, created_at TEXT NOT NULL, read_at TEXT, thread_id TEXT);",
-            )
-            .expect("create schema");
-        }
-        let pool = super::super::db::open_pool(&path).expect("open_pool");
+        let pool = real_pool();
 
         let created = call_tool(
             "personas_create",
@@ -2299,7 +2332,71 @@ mod driver_tool_tests {
             )
             .unwrap();
         assert_eq!(count, 1, "expected 1 message");
+    }
 
-        let _ = std::fs::remove_file(&path);
+    /// Invalid input is rejected consistently with the command layer: an empty
+    /// `system_prompt` fails `personas::create`'s validation (was: the old
+    /// hand-rolled INSERT accepted anything).
+    #[test]
+    fn create_rejects_invalid_input() {
+        let pool = real_pool();
+        let out = call_tool(
+            "personas_create",
+            &json!({ "name": "X", "system_prompt": "" }),
+            &pool,
+        );
+        assert_eq!(out["isError"], json!(true), "empty system_prompt must be rejected: {out}");
+    }
+
+    /// execute routes through `executions::create` + `events::publish`: the row
+    /// lands `queued` and a matching `mcp_execute` pickup event is published for
+    /// the app's background loop — identical to the pre-refactor behavior.
+    #[test]
+    fn execute_queues_and_publishes_event() {
+        let pool = real_pool();
+
+        let created = call_tool(
+            "personas_create",
+            &json!({ "name": "Runner", "system_prompt": "do the thing" }),
+            &pool,
+        );
+        let created_obj: Value =
+            serde_json::from_str(created["content"][0]["text"].as_str().unwrap()).unwrap();
+        let pid = created_obj["id"].as_str().unwrap().to_string();
+
+        let exec = call_tool(
+            "personas_execute",
+            &json!({ "persona_id": pid, "input": { "q": "hello" } }),
+            &pool,
+        );
+        assert_eq!(exec["isError"], json!(false), "execute failed: {exec}");
+        let exec_obj: Value =
+            serde_json::from_str(exec["content"][0]["text"].as_str().unwrap()).unwrap();
+        let exec_id = exec_obj["execution_id"].as_str().unwrap().to_string();
+        assert_eq!(exec_obj["status"], json!("queued"));
+
+        let conn = pool.get().unwrap();
+        // The execution row exists and is queued for `pid`.
+        let (status, epid): (String, String) = conn
+            .query_row(
+                "SELECT status, persona_id FROM persona_executions WHERE id = ?1",
+                rusqlite::params![exec_id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(status, "queued");
+        assert_eq!(epid, pid);
+
+        // A pending mcp_execute event names this execution so the app picks it up.
+        let events: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_events
+                 WHERE event_type = 'mcp_execute' AND source_type = 'mcp'
+                   AND target_persona_id = ?1 AND status = 'pending'",
+                rusqlite::params![pid],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(events, 1, "expected one pending mcp_execute event");
     }
 }

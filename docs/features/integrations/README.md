@@ -93,12 +93,26 @@ uses permissive CORS (nonce + user approval are the gate). Paired origins persis
 
 ## 5. MCP server (`personas-mcp`)
 
-A standalone Rust binary (`src-tauri/src/mcp_bin.rs`, tools in
-`src-tauri/src/mcp_server/`) exposing ~30 tools (personas CRUD/execute, knowledge,
-lab, drive sandbox, codebase context, vault-backed Gmail/Drive/Calendar/Obsidian)
-over **stdio** to Claude Desktop / Cursor / Claude Code. Reads `personas.db`
-directly (works app-closed); writes/execution proxy to `:9420`. **No network
-transport** — same-machine only. See [`../../architecture/mcp-desktop-integration.md`].
+A Rust binary (`src-tauri/src/mcp_bin.rs`, server in `src-tauri/src/mcp_server/`,
+compiled from the single `app_lib::mcp_server` copy) exposing ~30 tools (personas
+CRUD/execute, knowledge, lab, drive sandbox, codebase context, vault-backed
+Gmail/Drive/Calendar/Obsidian) over **stdio** to Claude Desktop / Cursor / Claude
+Code. It attaches to `personas.db` through the app's own repository layer
+(`personas::create`, `executions::create`, `events::publish`), so **persona
+create + execute are direct DB writes** — a persona execute queues an execution
+row and publishes an `mcp_execute` event that the app's background loop picks up;
+this works app-closed and does **not** proxy to `:9420`. Only the **secret-bearing
+connector tools** (Gmail/Drive/Calendar/Obsidian bridge reads) proxy to `:9420`,
+where the credential proxy injects stored secrets server-side.
+
+**Auth:** tool calls require a `pk_` capability token (env `PERSONAS_MCP_TOKEN`
+or `--token`), validated against the same `external_api_keys` registry as the
+HTTP surface (scope `personas:execute`, audited per key). `personas-mcp install`
+provisions one and writes it into the generated `mcp.json` env block. `initialize`
+/ `tools/list` stay open so the client can render an auth error.
+
+**No network transport** — same-machine only.
+See [`../../architecture/mcp-desktop-integration.md`].
 
 Personas is also an MCP *client* (consumes external MCP servers as "MCP gateway"
 credentials — that's an outbound/vault concern).
