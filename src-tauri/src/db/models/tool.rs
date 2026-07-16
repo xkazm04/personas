@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::db::models::serde_util::double_option;
+
 // ============================================================================
 // Virtual Tool ID
 // ============================================================================
@@ -146,9 +148,13 @@ pub struct UpdateToolDefinitionInput {
     pub category: Option<String>,
     pub description: Option<String>,
     pub script_path: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub input_schema: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub output_schema: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub requires_credential_type: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub implementation_guide: Option<Option<String>>,
 }
 

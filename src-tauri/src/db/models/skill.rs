@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::db::models::serde_util::double_option;
+
 // ============================================================================
 // Skill Component Type
 // ============================================================================
@@ -68,7 +70,9 @@ pub struct CreateSkillInput {
 pub struct UpdateSkillInput {
     pub name: Option<String>,
     pub version: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub description: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub category: Option<Option<String>>,
 }
 

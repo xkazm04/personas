@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::db::models::serde_util::double_option;
+
 // ============================================================================
 // Connector Definitions
 // ============================================================================
@@ -83,13 +85,16 @@ pub struct CreateConnectorDefinitionInput {
 pub struct UpdateConnectorDefinitionInput {
     pub name: Option<String>,
     pub label: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub icon_url: Option<Option<String>>,
     pub color: Option<String>,
     pub category: Option<String>,
     pub fields: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub healthcheck_config: Option<Option<String>>,
     pub services: Option<String>,
     pub events: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub metadata: Option<Option<String>>,
 }
 

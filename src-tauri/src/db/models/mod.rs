@@ -51,6 +51,7 @@ mod research_lab;
 mod review;
 mod rotation;
 mod saved_views;
+pub(crate) mod serde_util;
 mod settings_audit_log;
 mod shared_event;
 #[cfg(feature = "p2p")]

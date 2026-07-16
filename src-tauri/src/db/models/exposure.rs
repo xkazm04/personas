@@ -4,6 +4,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::db::models::serde_util::double_option;
 use crate::error::AppError;
 
 // -- Enums ---------------------------------------------------------------
@@ -129,11 +130,13 @@ pub struct CreateExposedResourceInput {
 #[ts(export)]
 pub struct UpdateExposedResourceInput {
     pub display_name: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub description: Option<Option<String>>,
     pub fields_exposed: Option<Vec<String>>,
     pub access_level: Option<AccessLevel>,
     pub requires_auth: Option<bool>,
     pub tags: Option<Vec<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub expires_at: Option<Option<String>>,
 }
 

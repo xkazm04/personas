@@ -5,6 +5,7 @@ use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::db::models::serde_util::double_option;
 use crate::engine::lifecycle::TriggerStatus;
 
 // ============================================================================
@@ -497,6 +498,7 @@ pub struct UpdateTriggerInput {
     pub trigger_type: Option<String>,
     pub config: Option<String>,
     pub enabled: Option<bool>,
+    #[serde(default, deserialize_with = "double_option")]
     pub next_trigger_at: Option<Option<String>>,
 }
 
