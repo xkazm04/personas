@@ -253,6 +253,35 @@ pub fn claim_pending(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, App
     })
 }
 
+/// Like [`claim_pending`], but claims only events the DAEMON owns: events
+/// whose target persona is headless, or events with no target persona (the
+/// daemon marks those Delivered immediately). Filtering in SQL prevents the
+/// former claim-then-release ping-pong — non-headless events kept their
+/// created_at when released back to pending, so the same 5 rows were
+/// re-claimed every 5s tick (~11 wasted statements + WAL churn per tick) —
+/// and the starvation where a full window of non-headless events blocked
+/// headless ones indefinitely while the windowed app was closed.
+pub fn claim_pending_headless(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, AppError> {
+    timed_query!("persona_events", "persona_events::claim_pending_headless", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "UPDATE persona_events
+             SET status = 'processing'
+             WHERE id IN (
+                 SELECT e.id FROM persona_events e
+                 LEFT JOIN personas p ON p.id = e.target_persona_id
+                 WHERE e.status = 'pending'
+                   AND (e.target_persona_id IS NULL OR p.headless = 1)
+                 ORDER BY e.created_at ASC, e.id ASC
+                 LIMIT ?1
+             )
+             RETURNING *",
+        )?;
+        let rows = stmt.query_map(params![limit], row_to_event)?;
+        Ok(collect_rows(rows, "claim_pending_headless"))
+    })
+}
+
 pub fn update_status(
     pool: &DbPool,
     id: &str,

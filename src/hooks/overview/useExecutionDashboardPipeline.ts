@@ -134,13 +134,16 @@ export function useExecutionDashboardPipeline() {
   // Skipped when a previous mount fetched it within the TTL window.
   useEffect(() => {
     if (Date.now() - alertsLoadedAt < PIPELINE_TTL_MS) return;
-    const signal = mountedRef.current;
+    // Own per-run token — sharing the pipeline's mount token tied this
+    // effect's liveness to unrelated filter changes.
+    const signal = { cancelled: false };
     void settleAndReport([
       { name: 'alertRules', fn: fetchAlertRules },
       { name: 'alertHistory', fn: fetchAlertHistory },
     ], 'DashboardPipeline', signal).then((ok) => {
       if (ok && !signal.cancelled) alertsLoadedAt = Date.now();
     });
+    return () => { signal.cancelled = true; };
   }, [fetchAlertRules, fetchAlertHistory]);
 
   // ── Filter-dependent refresh (re-runs when days/persona/compare change) ──
@@ -182,12 +185,17 @@ export function useExecutionDashboardPipeline() {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    // Fresh cancellation token per effect run. Cleanup fires on every dep
+    // change (not just unmount), so cancelling a shared per-mount object
+    // permanently killed the pipeline after the first filter change: wave-2
+    // fetches never ran again and lastPipelineRun was never written.
+    const token = { cancelled: false };
+    mountedRef.current = token;
     debounceRef.current = setTimeout(() => { void refresh(); }, 250);
     const debounce = debounceRef;
-    const mounted = mountedRef;
     return () => {
       if (debounce.current) clearTimeout(debounce.current);
-      mounted.current.cancelled = true;
+      token.cancelled = true;
     };
   }, [refresh]);
 

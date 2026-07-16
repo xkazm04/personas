@@ -4,7 +4,6 @@ import { HelpCircle, Send, X } from "lucide-react";
 import { DIM_META } from "@/features/shared/glyph";
 import type { BuildQuestion } from "@/lib/types/buildTypes";
 import { VaultConnectorPicker } from "@/features/vault/components/VaultConnectorPicker";
-import { useSystemStore } from "@/stores/systemStore";
 import { CELL_KEY_TO_DIM, DIM_LABEL } from "./glyphLayoutHelpers";
 import { useTranslation } from "@/i18n/useTranslation";
 
@@ -92,7 +91,6 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
           category={category}
           value=""
           onChange={(serviceType) => submit(serviceType)}
-          onAddFromCatalog={() => useSystemStore.getState().setSidebarSection("credentials")}
           suggested={question.suggested}
         />
       ) : (

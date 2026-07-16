@@ -141,10 +141,6 @@ pub fn dev_tools_start_competition(
     // Verify project exists
     let project = repo::get_project_by_id(&state.db, &project_id)?;
 
-    // Baseline capture — measure project health BEFORE competitors run.
-    // Non-blocking: if any check fails, we still create the competition.
-    let baseline = capture_project_baseline(&project.root_path);
-
     // Apply worktree.baseRef into <project_root>/.claude/settings.json if
     // requested. Best-effort: a failure here logs and falls through so the
     // competition still runs with whatever settings.json (if any) already
@@ -175,13 +171,27 @@ pub fn dev_tools_start_competition(
         worktree_base_ref.as_deref(),
     )?;
 
-    // Persist the baseline on the competition record (best-effort update)
-    if let Ok(baseline_str) = serde_json::to_string(&baseline) {
-        let _ = state.db.get().map(|conn| {
-            conn.execute(
-                "UPDATE dev_competitions SET baseline_json = ?1 WHERE id = ?2",
-                rusqlite::params![baseline_str, competition.id],
-            )
+    // Baseline capture — measure project health BEFORE competitors run.
+    // Runs off-thread: it spawns `npx tsc --noEmit` and `cargo check`
+    // (tens of seconds to minutes on real projects), which used to execute
+    // inline in this sync command, freezing the Start-competition click for
+    // the whole build. The baseline is only READ at review time, so it can
+    // land on the row after the command returns. Kicked off before the
+    // competitor slots spawn so it measures pre-competition state.
+    {
+        let db = state.db.clone();
+        let competition_id = competition.id.clone();
+        let root_path = project.root_path.clone();
+        std::thread::spawn(move || {
+            let baseline = capture_project_baseline(&root_path);
+            if let Ok(baseline_str) = serde_json::to_string(&baseline) {
+                let _ = db.get().map(|conn| {
+                    conn.execute(
+                        "UPDATE dev_competitions SET baseline_json = ?1 WHERE id = ?2",
+                        rusqlite::params![baseline_str, competition_id],
+                    )
+                });
+            }
         });
     }
 

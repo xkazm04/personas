@@ -128,12 +128,13 @@ export default function IncidentsInbox() {
   const gridTemplate = colWidths.template(INCIDENT_COLUMNS);
 
   const { incidents, summary, loading, error, refresh } = useIncidentsData(filters);
-  const actions = useIncidentActions({
-    onAfterChange: async () => {
-      clearedByActionRef.current = true;
-      await refresh();
-    },
-  });
+  // Stable identity so `useIncidentActions`'s useCallback chain (and everything
+  // downstream that depends on `actions`) survives unrelated re-renders.
+  const onAfterChange = useCallback(async () => {
+    clearedByActionRef.current = true;
+    await refresh();
+  }, [refresh]);
+  const actions = useIncidentActions({ onAfterChange });
 
   // Keep the latest loaded incidents in a ref so the deep-link resolver can
   // prefer the in-memory list without making the storeBus subscription depend
@@ -362,21 +363,33 @@ export default function IncidentsInbox() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Stable per-row handlers so the memoized IncidentRow can skip re-renders
+  // during keyboard triage (the focus cursor is threaded through
+  // IncidentAgentGroup as a per-row boolean instead of a renderRow dep).
+  // Depend on the individual callbacks — the `actions` container object gets a
+  // fresh identity each render even though its members are stable.
+  const { acknowledge, resolve, dismiss, reopen } = actions;
+  const handleAcknowledge = useCallback((id: string) => void acknowledge(id), [acknowledge]);
+  const handleResolve = useCallback((id: string) => void resolve(id), [resolve]);
+  const handleDismiss = useCallback((id: string) => void dismiss(id), [dismiss]);
+  const handleReopen = useCallback((id: string) => void reopen(id), [reopen]);
+  const openDetail = useCallback((incident: AuditIncident) => setDetailIncident(incident), []);
+
   const renderRow = useCallback(
-    (incident: AuditIncident) => (
+    (incident: AuditIncident, focused: boolean) => (
       <IncidentRow
         key={incident.id}
         incident={incident}
         gridTemplate={gridTemplate}
-        focused={focusedId === incident.id}
-        onAcknowledge={() => void actions.acknowledge(incident.id)}
-        onResolve={() => void actions.resolve(incident.id)}
-        onDismiss={() => void actions.dismiss(incident.id)}
-        onReopen={() => void actions.reopen(incident.id)}
-        onOpenDetail={() => setDetailIncident(incident)}
+        focused={focused}
+        onAcknowledge={handleAcknowledge}
+        onResolve={handleResolve}
+        onDismiss={handleDismiss}
+        onReopen={handleReopen}
+        onOpenDetail={openDetail}
       />
     ),
-    [focusedId, actions, gridTemplate],
+    [gridTemplate, handleAcknowledge, handleResolve, handleDismiss, handleReopen, openDetail],
   );
 
   // "Narrowed" = the user moved beyond the default open-only inbox view. The
@@ -529,6 +542,7 @@ export default function IncidentsInbox() {
                 group={group}
                 collapsed={collapsedGroups.has(group.key)}
                 onToggle={() => toggleGroup(group.key)}
+                focusedId={focusedId}
                 renderRow={renderRow}
               />
             ))}

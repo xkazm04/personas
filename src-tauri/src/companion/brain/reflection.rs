@@ -207,6 +207,10 @@ async fn call_claude_oneshot(prompt: &str) -> Result<String, AppError> {
     crate::engine::cli_process::force_subscription_auth(&mut cmd);
     // No console window on Windows (desktop-heap / 0xC0000142 guard).
     crate::companion::session::apply_no_console_window(&mut cmd);
+    // Tokio does NOT kill children on drop by default: the timeout branch
+    // ?-returns before wait(), dropping the Child and leaking a live
+    // claude.exe (plus its model call) per timed-out invocation.
+    cmd.kill_on_drop(true);
     let mut child = cmd
         .spawn()
         .map_err(|e| AppError::Internal(format!("spawn claude (reflection): {e}")))?;

@@ -64,41 +64,52 @@ export function useDebugger(
       return upstream;
     }, [connections]);
 
+  // Step transition computed OUTSIDE the updaters: React requires setState
+  // updaters to be pure, and the previous version nested setNodeData /
+  // setCompletedEdges / setActiveEdge calls inside setStepIndex's updater —
+  // under StrictMode's double-invocation the edge/inspection writes applied
+  // twice per step, and batching changes could reorder them.
   const executeStep = useCallback(() => {
-    setStepIndex((prev) => {
-      const nextIdx = prev + 1;
-      if (nextIdx >= executionOrder.length) return prev;
-      const nodeId = executionOrder[nextIdx]!;
-      const role = agentRoles[nodeId] || 'worker';
-      const name = agentNames[nodeId] || 'Agent';
+    const prev = stepIndex;
+    const nextIdx = prev + 1;
+    if (nextIdx >= executionOrder.length) return;
+    const nodeId = executionOrder[nextIdx]!;
+    const role = agentRoles[nodeId] || 'worker';
+    const name = agentNames[nodeId] || 'Agent';
 
-      setNodeData((prevData) => {
-        const updated = new Map(prevData);
-        if (prev >= 0 && prev < executionOrder.length) {
-          const prevId = executionOrder[prev]!;
-          const prevNode = updated.get(prevId);
-          if (prevNode) updated.set(prevId, { ...prevNode, status: 'completed' });
-          for (const c of connections) {
-            if (c.source_member_id === prevId && c.connection_type !== 'feedback')
-              setCompletedEdges((s) => new Set([...s, `${c.source_member_id}->${c.target_member_id}`]));
-          }
-        }
-        const upOuts = getUpstreamOutputs(nodeId, updated);
-        updated.set(nodeId, { memberId: nodeId, status: 'running', input: generateMockInput(role, name, upOuts), output: generateMockOutput(role, name) });
-        const inc = connections.find((c) => c.target_member_id === nodeId && c.connection_type !== 'feedback');
-        setActiveEdge(inc ? `${inc.source_member_id}->${inc.target_member_id}` : null);
-        for (let i = nextIdx + 1; i < executionOrder.length; i++) {
-          const fId = executionOrder[i]!;
-          const fn = updated.get(fId);
-          if (fn && fn.status === 'idle') updated.set(fId, { ...fn, status: 'queued' });
-        }
-        return updated;
-      });
-      if (breakpoints.has(nodeId)) setPaused(true);
-      setInspectedNode(nodeId);
-      return nextIdx;
+    setNodeData((prevData) => {
+      const updated = new Map(prevData);
+      if (prev >= 0 && prev < executionOrder.length) {
+        const prevId = executionOrder[prev]!;
+        const prevNode = updated.get(prevId);
+        if (prevNode) updated.set(prevId, { ...prevNode, status: 'completed' });
+      }
+      const upOuts = getUpstreamOutputs(nodeId, updated);
+      updated.set(nodeId, { memberId: nodeId, status: 'running', input: generateMockInput(role, name, upOuts), output: generateMockOutput(role, name) });
+      for (let i = nextIdx + 1; i < executionOrder.length; i++) {
+        const fId = executionOrder[i]!;
+        const fn = updated.get(fId);
+        if (fn && fn.status === 'idle') updated.set(fId, { ...fn, status: 'queued' });
+      }
+      return updated;
     });
-  }, [executionOrder, agentRoles, agentNames, connections, breakpoints, getUpstreamOutputs]);
+    if (prev >= 0 && prev < executionOrder.length) {
+      const prevId = executionOrder[prev]!;
+      setCompletedEdges((s) => {
+        const next = new Set(s);
+        for (const c of connections) {
+          if (c.source_member_id === prevId && c.connection_type !== 'feedback')
+            next.add(`${c.source_member_id}->${c.target_member_id}`);
+        }
+        return next;
+      });
+    }
+    const inc = connections.find((c) => c.target_member_id === nodeId && c.connection_type !== 'feedback');
+    setActiveEdge(inc ? `${inc.source_member_id}->${inc.target_member_id}` : null);
+    if (breakpoints.has(nodeId)) setPaused(true);
+    setInspectedNode(nodeId);
+    setStepIndex(nextIdx);
+  }, [stepIndex, executionOrder, agentRoles, agentNames, connections, breakpoints, getUpstreamOutputs]);
 
   const finalize = useCallback(() => {
     if (stepIndex >= 0 && stepIndex < executionOrder.length) {

@@ -18,14 +18,17 @@ pub struct DesignConversationMessage {
     pub timestamp: String,
 }
 
-/// Result of appending a message, indicating whether the conversation was truncated.
+/// Result of appending a message. Metadata only — the full conversation is
+/// deliberately NOT echoed back (that made every append O(total history)
+/// over IPC); the frontend applies the append to its local copy.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AppendMessageResult {
-    pub conversation: DesignConversation,
     pub truncated: bool,
     pub message_count: u32,
+    /// Server-side updated_at stamp for the conversation row.
+    pub updated_at: String,
 }
 
 /// A persistent design conversation that accumulates multi-turn context.

@@ -12,7 +12,7 @@ import { SetupStatusBadge } from '@/features/vault/components/SetupStatusBadge';
 import { PersonaOverviewFilterHeader, type FilterOption } from './PersonaOverviewFilterHeader';
 import { ConnectorsCell, FavoriteCell, NameCell, SelectCell } from './PersonaOverviewCells';
 import { VerdictTrendCell } from './VerdictTrendCell';
-import type { AgentListViewConfig } from './ViewPresetBar';
+import type { AgentListViewConfig } from './viewConfig';
 
 interface UsePersonaColumnsArgs {
   view: AgentListViewConfig;

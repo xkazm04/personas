@@ -135,6 +135,32 @@ export function useMediaStudio() {
     }));
   }, [commit]);
 
+  /**
+   * Apply mechanical/derived item patches (e.g. beat-anchor resolution)
+   * WITHOUT creating undo frames. Only `present` changes — `past`, `future`,
+   * and the coalescing bookkeeping stay untouched, so Ctrl+Z still reverses
+   * the last *user* action instead of stepping through machine writes. All
+   * patches land in a single state update (one render pass).
+   */
+  const applyDerived = useCallback(
+    (patches: Array<{ id: string; patch: Partial<TimelineItem> }>) => {
+      if (patches.length === 0) return;
+      setHistory((h) => {
+        const byId = new Map(patches.map((p) => [p.id, p.patch]));
+        let changed = false;
+        const items = h.present.items.map((it) => {
+          const patch = byId.get(it.id);
+          if (!patch) return it;
+          changed = true;
+          return { ...it, ...patch } as TimelineItem;
+        });
+        if (!changed) return h;
+        return { ...h, present: { ...h.present, items } };
+      });
+    },
+    [],
+  );
+
   const removeItem = useCallback(
     (id: string) => {
       commit('removeItem', (prev) => ({
@@ -315,6 +341,7 @@ export function useMediaStudio() {
     replaceComposition,
     addItem,
     updateItem,
+    applyDerived,
     removeItem,
     duplicateItem,
     splitItemAt,

@@ -50,7 +50,19 @@ interface ComplexitySignals {
   hasPolling: boolean;
 }
 
+/**
+ * Per-review signal cache: gallery filter passes call computeDifficulty /
+ * computeSetupLevel per template per memo re-run, and each extraction
+ * JSON.parses four fields (including the multi-KB design_result blob).
+ * Review objects are identity-stable across memo re-runs, so a WeakMap
+ * keyed on the review makes repeat extraction free.
+ */
+const signalsCache = new WeakMap<PersonaDesignReview, ComplexitySignals>();
+
 function extractSignals(review: PersonaDesignReview): ComplexitySignals {
+  const cached = signalsCache.get(review);
+  if (cached) return cached;
+
   const connectors: string[] = parseJsonSafe(review.connectors_used, []);
   const flows: UseCaseFlow[] = parseJsonSafe(review.use_case_flows, []);
   const triggerTypes: string[] = parseJsonSafe(review.trigger_types, []);
@@ -60,7 +72,7 @@ function extractSignals(review: PersonaDesignReview): ComplexitySignals {
   const requirements: AdoptionRequirement[] = designResult?.adoption_requirements ?? [];
   const questions: AdoptionQuestion[] = designResult?.adoption_questions ?? [];
 
-  return {
+  const signals: ComplexitySignals = {
     connectorCount: connectors.length,
     flowCount: flows.length,
     triggerCount: triggerTypes.length,
@@ -71,6 +83,8 @@ function extractSignals(review: PersonaDesignReview): ComplexitySignals {
     hasWebhook: triggerTypes.includes('webhook'),
     hasPolling: triggerTypes.includes('polling'),
   };
+  signalsCache.set(review, signals);
+  return signals;
 }
 
 /**
@@ -117,7 +131,7 @@ export function computeDifficulty(review: PersonaDesignReview): DifficultyLevel 
  */
 export function computeSetupLevel(review: PersonaDesignReview): SetupLevel {
   const s = extractSignals(review);
-  const minutes = estimateSetupMinutes(review);
+  const minutes = estimateFromSignals(s);
 
   // Also check structural complexity for the level
   const hasComplexTriggers = s.hasWebhook || s.hasPolling;
@@ -133,8 +147,10 @@ export function computeSetupLevel(review: PersonaDesignReview): SetupLevel {
 
 /** Estimate setup time in minutes from template attributes. */
 export function estimateSetupMinutes(review: PersonaDesignReview): number {
-  const s = extractSignals(review);
+  return estimateFromSignals(extractSignals(review));
+}
 
+function estimateFromSignals(s: ComplexitySignals): number {
   let minutes = 2; // base overhead
   minutes += s.connectorCount * 3;
   minutes += s.requiredVariableCount * 1;

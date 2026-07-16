@@ -93,7 +93,34 @@ fn wikilink_re() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"\[\[([^\]\|#]+)(?:[#\|][^\]]*)?\]\]").expect("wikilink regex"))
 }
 
-fn walk_vault(vault_root: &Path) -> Vec<NoteEntry> {
+/// Short-TTL vault-index cache keyed by vault root. `walk_vault` reads the
+/// FULL body of every `.md` note; every graph command (search per keystroke,
+/// backlinks, orphans, MOCs, stats) called it per invocation — O(vault bytes)
+/// disk I/O each time. The file watcher (obsidian_graph_start_watcher) clears
+/// the cache on any .md change; the 30s TTL bounds staleness for vaults
+/// edited outside the app while the watcher isn't running.
+static VAULT_INDEX_CACHE: OnceLock<Mutex<HashMap<PathBuf, (Instant, Arc<Vec<NoteEntry>>)>>> =
+    OnceLock::new();
+const VAULT_INDEX_TTL: Duration = Duration::from_secs(30);
+
+fn vault_index_cache() -> &'static Mutex<HashMap<PathBuf, (Instant, Arc<Vec<NoteEntry>>)>> {
+    VAULT_INDEX_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn invalidate_vault_index_cache() {
+    if let Ok(mut map) = vault_index_cache().lock() {
+        map.clear();
+    }
+}
+
+fn walk_vault(vault_root: &Path) -> Arc<Vec<NoteEntry>> {
+    if let Ok(map) = vault_index_cache().lock() {
+        if let Some((at, notes)) = map.get(vault_root) {
+            if at.elapsed() < VAULT_INDEX_TTL {
+                return notes.clone();
+            }
+        }
+    }
     fn walk(dir: &Path, out: &mut Vec<NoteEntry>, depth: u32) {
         if depth > 12 {
             return;
@@ -136,7 +163,11 @@ fn walk_vault(vault_root: &Path) -> Vec<NoteEntry> {
     }
     let mut out = Vec::new();
     walk(vault_root, &mut out, 0);
-    out
+    let notes = Arc::new(out);
+    if let Ok(mut map) = vault_index_cache().lock() {
+        map.insert(vault_root.to_path_buf(), (Instant::now(), notes.clone()));
+    }
+    notes
 }
 
 fn build_backlink_map(notes: &[NoteEntry]) -> HashMap<String, Vec<usize>> {
@@ -714,6 +745,9 @@ pub fn obsidian_graph_start_watcher(
         if md_paths.is_empty() {
             return;
         }
+        // A note changed — drop the graph-command index cache so the next
+        // search/backlinks call re-reads fresh content.
+        invalidate_vault_index_cache();
         let mut state = pending_for_callback.lock().expect("pending mutex");
         for p in md_paths {
             if !state.0.contains(&p) {

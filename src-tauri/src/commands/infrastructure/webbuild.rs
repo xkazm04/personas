@@ -151,22 +151,33 @@ pub fn webbuild_bun_status(state: State<'_, Arc<AppState>>) -> Result<Option<Str
 }
 
 /// Live status of a project's dev server, or `None` when not running.
+///
+/// Async + spawn_blocking: status() runs the blocking http_responds probe
+/// (up to ~2s while a dev server is compiling), and as a sync command each
+/// frontend poll froze the whole webview for that long during boot polling.
 #[tauri::command]
-pub fn webbuild_status(
+pub async fn webbuild_status(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<Option<DevServerStatus>, AppError> {
     require_auth_sync(&state)?;
-    Ok(state.webbuild_servers.status(&project_id))
+    let app_state = state.inner().clone();
+    tokio::task::spawn_blocking(move || app_state.webbuild_servers.status(&project_id))
+        .await
+        .map_err(|e| AppError::Internal(format!("webbuild status probe join: {e}")))
 }
 
-/// Status of every running dev server.
+/// Status of every running dev server. Async + spawn_blocking for the same
+/// reason as [`webbuild_status`] (N sequential probes compound the stall).
 #[tauri::command]
-pub fn webbuild_list_servers(
+pub async fn webbuild_list_servers(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<DevServerStatus>, AppError> {
     require_auth_sync(&state)?;
-    Ok(state.webbuild_servers.list())
+    let app_state = state.inner().clone();
+    tokio::task::spawn_blocking(move || app_state.webbuild_servers.list())
+        .await
+        .map_err(|e| AppError::Internal(format!("webbuild list probe join: {e}")))
 }
 
 /// List a generated project's app-router routes (for the Studio preview's

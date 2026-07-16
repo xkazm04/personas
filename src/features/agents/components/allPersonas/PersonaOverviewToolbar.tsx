@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Archive, Search, Star, X } from 'lucide-react';
 import { HEALTH_STYLES } from './PersonaOverviewBadges';
-import type { AgentListViewConfig } from './ViewPresetBar';
+import type { AgentListViewConfig } from './viewConfig';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const STATUS_LABELS: Record<string, string> = {

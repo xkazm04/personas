@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, memo } from 'react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { RunningIcon } from '../components/ExecutionLifecycleIcons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -88,6 +88,23 @@ function JsonHighlight({ json }: { json: string }) {
   );
 }
 
+/**
+ * Single terminal line. Memoized so scrub/playback ticks — which only append
+ * lines to `visibleLines` — don't re-run classifyLine + highlightLine (JSON
+ * parse/stringify + regex) for every already-rendered line. `text` is
+ * immutable per line index, so memo makes prior lines free on each tick.
+ */
+const TerminalLine = memo(function TerminalLine({ text }: { text: string }) {
+  const style = classifyLine(text);
+  const cls = TERMINAL_STYLE_MAP[style];
+  const content = highlightLine(text);
+  return (
+    <div className={cls || 'text-foreground/90'}>
+      {content || ' '}
+    </div>
+  );
+});
+
 /** Replay terminal panel -- shows log lines up to current scrub position. */
 export function ReplayTerminalPanel({
   visibleLines,
@@ -119,16 +136,9 @@ export function ReplayTerminalPanel({
         ref={containerRef}
         className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 typo-code leading-relaxed"
       >
-        {visibleLines.map((line) => {
-          const style = classifyLine(line.text);
-          const cls = TERMINAL_STYLE_MAP[style];
-          const content = highlightLine(line.text);
-          return (
-            <div key={line.index} className={cls || 'text-foreground/90'}>
-              {content || '\u00A0'}
-            </div>
-          );
-        })}
+        {visibleLines.map((line) => (
+          <TerminalLine key={line.index} text={line.text} />
+        ))}
         {visibleLines.length === 0 && (
           <div className="flex flex-col items-center justify-center py-6">
             <svg width="120" height="80" viewBox="0 0 120 80" fill="none" className="mb-3">

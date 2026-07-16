@@ -85,7 +85,24 @@ static MEDIA_EXPORT_JOBS: BackgroundJobManager<MediaExportExtra> = BackgroundJob
 // FFmpeg detection
 // =============================================================================
 
+/// Process-lifetime cache for the resolved ffmpeg path. Discovery walks the
+/// WinGet package tree, stats ~10 candidates, walks PATH, and can spawn
+/// `where`/`ffmpeg -version` — and it used to re-run on EVERY artist command
+/// (7 call sites; probing N clips paid it N+ times). `artist_check_ffmpeg`
+/// re-scans and refreshes the cache so a mid-session install is picked up.
+/// Outer Option = "have we discovered yet", inner = the discovery result.
+static FFMPEG_PATH_CACHE: std::sync::Mutex<Option<Option<PathBuf>>> = std::sync::Mutex::new(None);
+
 async fn find_ffmpeg_path() -> Option<PathBuf> {
+    if let Some(cached) = FFMPEG_PATH_CACHE.lock().expect("ffmpeg cache poisoned").clone() {
+        return cached;
+    }
+    let discovered = discover_ffmpeg_path().await;
+    *FFMPEG_PATH_CACHE.lock().expect("ffmpeg cache poisoned") = Some(discovered.clone());
+    discovered
+}
+
+async fn discover_ffmpeg_path() -> Option<PathBuf> {
     #[cfg(target_os = "windows")]
     {
         // 1. Common system-wide install locations.
@@ -351,7 +368,12 @@ fn validate_ffmpeg_input(path: &str) -> Result<(), AppError> {
 pub async fn artist_check_ffmpeg(
     state: State<'_, Arc<AppState>>,
 ) -> Result<FfmpegStatus, AppError> {
-    match find_ffmpeg_path().await {
+    // Fresh discovery + cache refresh: this is the explicit "is ffmpeg
+    // installed?" probe, so a user who installs ffmpeg mid-session gets a
+    // correct answer and subsequent commands use the new path.
+    let fresh = discover_ffmpeg_path().await;
+    *FFMPEG_PATH_CACHE.lock().expect("ffmpeg cache poisoned") = Some(fresh.clone());
+    match fresh {
         Some(p) => {
             let version = get_ffmpeg_version_async(&p).await.ok();
             Ok(FfmpegStatus {

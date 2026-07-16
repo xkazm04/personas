@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
-import { Check, FolderOpen, Video, Music, ImagePlus, Type, Upload, Film, Play, X } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
+import { Check, FolderOpen, Video, Music, ImagePlus, Type, Film, Play, X } from 'lucide-react';
 import { save as saveDialog } from '@tauri-apps/plugin-dialog';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -18,7 +18,6 @@ import { useMediaFilePicker } from './hooks/useMediaFilePicker';
 import { useTimelineKeyboard } from './hooks/useTimelineKeyboard';
 import MediaStudioToolbar from './toolbar/MediaStudioToolbar';
 import { artistProbeMedia } from '@/api/artist/index';
-import { VIDEO_EXTENSIONS, AUDIO_EXTENSIONS, IMAGE_EXTENSIONS } from './constants';
 import type { VideoClip, AudioClip, TextItem, ImageItem, TitleItem, TimelineItem } from './types';
 import { TITLE_DEFAULTS } from './types';
 import BeatSidebar from './BeatSidebar';
@@ -55,6 +54,7 @@ export default function MediaStudioPage() {
     replaceComposition,
     addItem,
     updateItem,
+    applyDerived,
     removeItem,
     duplicateItem,
     splitItemAt,
@@ -103,10 +103,11 @@ export default function MediaStudioPage() {
   // -- Anchor-word resolution: for any beat with a BeatAnchor, recompute
   // startTime from the referenced clip's word-level transcript. Runs after
   // the transcript cache loads and whenever clip trims or start times
-  // change. Writes back via updateItem; the mutation is skipped when the
-  // resolved time matches the beat's current startTime so we don't churn
-  // history entries.
+  // change. Writes back via `applyDerived` — one batched, history-less
+  // update — so mechanical anchor nudges never create undo frames or extra
+  // render passes; a no-op patch set is skipped entirely.
   useEffect(() => {
+    const patches: Array<{ id: string; patch: Partial<TimelineItem> }> = [];
     for (const item of composition.items) {
       if (item.type !== 'text') continue;
       const beat = item as TextItem;
@@ -114,9 +115,10 @@ export default function MediaStudioPage() {
       const resolved = resolveAnchor(beat.anchor, composition.items);
       if (resolved === null) continue;
       if (Math.abs(resolved - beat.startTime) < 0.01) continue;
-      updateItem(beat.id, { startTime: resolved } as Partial<TimelineItem>);
+      patches.push({ id: beat.id, patch: { startTime: resolved } });
     }
-  }, [composition.items, resolveAnchor, updateItem]);
+    if (patches.length > 0) applyDerived(patches);
+  }, [composition.items, resolveAnchor, applyDerived]);
 
   const { exportState, startExport, cancelExport, dismissExport } = useMediaExport(composition);
 
@@ -196,83 +198,6 @@ export default function MediaStudioPage() {
       }
     })();
   }, [pendingAssets, consumeMediaStudioAssets, addItem]);
-
-  // -- Drag-and-drop import ---------------------------------------------------
-
-  const [dragOver, setDragOver] = useState(false);
-
-  const handleDrop = useCallback(
-    async (e: DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setDragOver(false);
-      const files = Array.from(e.dataTransfer.files);
-      for (const file of files) {
-        const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-        const filePath = (file as unknown as { path?: string }).path;
-        if (!filePath) continue;
-
-        try {
-          const probe = await artistProbeMedia(filePath);
-          const label = file.name;
-
-          if (VIDEO_EXTENSIONS.includes(ext)) {
-            addItem({
-              id: crypto.randomUUID(),
-              type: 'video',
-              label,
-              startTime: nextStartTime(videoItems),
-              duration: probe.duration,
-              filePath,
-              trimStart: 0,
-              trimEnd: 0,
-              mediaDuration: probe.duration,
-              width: probe.width,
-              height: probe.height,
-              transition: 'cut',
-              transitionDuration: 0,
-            });
-          } else if (AUDIO_EXTENSIONS.includes(ext)) {
-            addItem({
-              id: crypto.randomUUID(),
-              type: 'audio',
-              label,
-              startTime: nextStartTime(audioItems),
-              duration: probe.duration,
-              filePath,
-              trimStart: 0,
-              trimEnd: 0,
-              mediaDuration: probe.duration,
-              volume: 1,
-            });
-          } else if (IMAGE_EXTENSIONS.includes(ext)) {
-            addItem({
-              id: crypto.randomUUID(),
-              type: 'image',
-              label,
-              startTime: nextStartTime(imageItems),
-              duration: 5,
-              filePath,
-              width: probe.width,
-              height: probe.height,
-              scale: 1,
-              positionX: 0.5,
-              positionY: 0.5,
-            });
-          }
-        } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/MediaStudioPage:catch2")(err); }
-      }
-    },
-    [addItem, videoItems, audioItems, imageItems],
-  );
-
-  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setDragOver(false);
-  }, []);
 
   // -- Import handlers --------------------------------------------------------
 
@@ -369,21 +294,7 @@ export default function MediaStudioPage() {
   // -- Render -----------------------------------------------------------------
 
   return (
-    <div
-      className={`flex-1 flex flex-col min-h-0 relative ${dragOver ? 'ring-2 ring-rose-400/40 ring-inset' : ''}`}
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-    >
-      {dragOver && (
-        <div className="absolute inset-0 z-50 bg-rose-500/10 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3 pointer-events-none">
-          <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border-2 border-dashed border-rose-400/50 flex items-center justify-center">
-            <Upload className="w-8 h-8 text-rose-400" />
-          </div>
-          <p className="typo-heading text-rose-400">{t.media_studio.import_media}</p>
-        </div>
-      )}
-
+    <div className="flex-1 flex flex-col min-h-0 relative">
       <MediaStudioToolbar
         composition={composition}
         totalDuration={totalDuration}
@@ -442,9 +353,6 @@ export default function MediaStudioPage() {
               {t.media_studio.add_text_beat}
             </Button>
           </div>
-          <p className="text-md text-foreground">
-            {t.media_studio.import_media} {t.plugins.artist_media_studio.drag_drop_hint}
-          </p>
         </div>
       )}
 

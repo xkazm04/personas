@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Zap, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -88,8 +88,12 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
   };
 
   const [deleteTarget, setDeleteTarget] = useState<PersonaAutomation | null>(null);
+  // Memoized: useBlastRadius keys its fetch effect on the fetcher identity; an
+  // inline arrow refetches in a loop for as long as the delete dialog is open.
+  const deleteTargetId = deleteTarget?.id ?? '';
+  const fetchBlastRadius = useCallback(() => getAutomationBlastRadius(deleteTargetId), [deleteTargetId]);
   const { items: blastItems, loading: blastLoading } = useBlastRadius(
-    () => getAutomationBlastRadius(deleteTarget!.id),
+    fetchBlastRadius,
     !!deleteTarget,
   );
 

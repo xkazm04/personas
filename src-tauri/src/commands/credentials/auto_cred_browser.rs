@@ -714,7 +714,7 @@ pub async fn start_auto_cred_browser(
     let mode = if force_guided {
         tracing::info!(session_id = %session_id, "Guided mode forced by request");
         AutoCredMode::Guided
-    } else if check_playwright_available() {
+    } else if check_playwright_available_async().await {
         AutoCredMode::Playwright
     } else {
         tracing::info!(session_id = %session_id, "Playwright MCP not available, falling back to guided mode");
@@ -1402,6 +1402,34 @@ fn cleanup_orphaned_browsers() {
     }
 }
 
+/// Cached result of the Playwright probe (answer rarely changes in-session).
+static PLAYWRIGHT_PROBE: std::sync::Mutex<Option<(std::time::Instant, bool)>> =
+    std::sync::Mutex::new(None);
+
+/// Async wrapper around the npx probe. The raw probe runs `npx --yes
+/// @playwright/mcp@latest --help`, which can hit the npm registry and take
+/// seconds-to-minutes on a cold cache — running it inline pinned a tokio
+/// worker and froze the auto-cred UI. Off-thread with a 15s ceiling and a
+/// 5-minute cache shared by session start and the upfront UI check.
+async fn check_playwright_available_async() -> bool {
+    const TTL: std::time::Duration = std::time::Duration::from_secs(300);
+    if let Some((at, ok)) = *PLAYWRIGHT_PROBE.lock().expect("probe cache poisoned") {
+        if at.elapsed() < TTL {
+            return ok;
+        }
+    }
+    let ok = tokio::time::timeout(
+        std::time::Duration::from_secs(15),
+        tokio::task::spawn_blocking(check_playwright_available),
+    )
+    .await
+    .ok()
+    .and_then(|joined| joined.ok())
+    .unwrap_or(false);
+    *PLAYWRIGHT_PROBE.lock().expect("probe cache poisoned") = Some((std::time::Instant::now(), ok));
+    ok
+}
+
 /// Check if Playwright MCP is likely to work (npx and @playwright/mcp available).
 fn check_playwright_available() -> bool {
     let npx_cmd = if cfg!(windows) { "cmd" } else { "npx" };
@@ -1495,7 +1523,7 @@ pub async fn cancel_auto_cred_browser(state: State<'_, Arc<AppState>>) -> Result
 /// so the frontend can decide the UI mode upfront.
 #[tauri::command]
 pub async fn check_auto_cred_playwright_available() -> Result<bool, String> {
-    Ok(check_playwright_available())
+    Ok(check_playwright_available_async().await)
 }
 
 /// Best-effort partial extraction: scan text for any field values even without

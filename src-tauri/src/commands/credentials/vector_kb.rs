@@ -389,7 +389,7 @@ pub async fn kb_pick_directory(
 /// Shared helper that resolves embedder/vector_store from AppState, creates a
 /// background ingestion job, and handles audit logging + error emission
 /// consistently for both file and directory ingestion paths.
-fn spawn_ingest_job(
+async fn spawn_ingest_job(
     app: &tauri::AppHandle,
     state: &AppState,
     kb: KnowledgeBase,
@@ -420,8 +420,10 @@ fn spawn_ingest_job(
     let ingest_jobs = state.kb_ingest_jobs.clone();
 
     // Register the cancellation token so delete_knowledge_base can cancel us.
+    // (async lock — kb_ingest_jobs is a tokio Mutex and this runs on the
+    // runtime; blocking_lock() here is a documented panic.)
     {
-        let mut jobs = ingest_jobs.blocking_lock();
+        let mut jobs = ingest_jobs.lock().await;
         jobs.insert(kb_id.clone(), cancel.clone());
     }
 
@@ -510,7 +512,7 @@ pub async fn kb_ingest_files(
         .collect::<Result<_, AppError>>()?;
 
     let kb = kb_ingest::get_kb(&state.user_db, &kb_id)?;
-    spawn_ingest_job(&app, &state, kb, canonical_paths, "kb_ingest_files")
+    spawn_ingest_job(&app, &state, kb, canonical_paths, "kb_ingest_files").await
 }
 
 #[tauri::command]
@@ -589,7 +591,7 @@ pub async fn kb_ingest_directory(
     }
 
     let kb = kb_ingest::get_kb(&state.user_db, &kb_id)?;
-    spawn_ingest_job(&app, &state, kb, file_paths, "kb_ingest_directory")
+    spawn_ingest_job(&app, &state, kb, file_paths, "kb_ingest_directory").await
 }
 
 fn collect_files_recursive(

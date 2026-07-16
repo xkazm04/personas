@@ -218,37 +218,57 @@ export function detectConflicts(events: CalendarEvent[]): {
   // Sort by time (events from buildCalendarEvents are already sorted, but be safe)
   const sorted = [...events].sort((a, b) => a.time.getTime() - b.time.getTime());
 
-  // Sweep: collect windows of events within CONFLICT_WINDOW_MS
+  // Sweep: chain overlapping CONFLICT_WINDOW_MS windows into maximal ranges
+  // and finalize each range exactly once. The previous version emitted a
+  // group per event index, so an event in a k-event window was re-sliced and
+  // re-counted up to k-1 times — O(k²) work and inflated byHourCell/byDayCell
+  // badge counts. Now each event is sliced/counted once: O(n) total.
+  const finalizeGroup = (start: number, end: number) => {
+    const windowEvents = sorted.slice(start, end + 1);
+    const uniqueAgents = new Set(windowEvents.map((e) => e.triggerId));
+    if (uniqueAgents.size < 2) return;
+    const group: ConflictGroup = {
+      events: windowEvents,
+      windowStart: sorted[start]!.time,
+    };
+    for (const ev of windowEvents) {
+      byEventId.set(ev.id, group);
+
+      // Aggregate into hour cells
+      const hKey = `${dayKey(ev.time)}-${ev.time.getHours()}`;
+      byHourCell.set(hKey, (byHourCell.get(hKey) ?? 0) + 1);
+
+      // Aggregate into day cells
+      const dKey = dayKey(ev.time);
+      byDayCell.set(dKey, (byDayCell.get(dKey) ?? 0) + 1);
+    }
+  };
+
   let windowStart = 0;
+  let groupStart = -1; // start index of the current accumulated range
+  let groupEnd = -1; // end index (inclusive) of the current accumulated range
   for (let i = 0; i < sorted.length; i++) {
     // Move window start forward
     while (sorted[windowStart]!.time.getTime() + CONFLICT_WINDOW_MS <= sorted[i]!.time.getTime()) {
       windowStart++;
     }
 
-    // Collect all events in [windowStart..i] that span multiple agents
+    // Window [windowStart..i] holds 2+ events within CONFLICT_WINDOW_MS
     if (i > windowStart) {
-      const windowEvents = sorted.slice(windowStart, i + 1);
-      const uniqueAgents = new Set(windowEvents.map((e) => e.triggerId));
-      if (uniqueAgents.size >= 2) {
-        const group: ConflictGroup = {
-          events: windowEvents,
-          windowStart: sorted[windowStart]!.time,
-        };
-        for (const ev of windowEvents) {
-          byEventId.set(ev.id, group);
-
-          // Aggregate into hour cells
-          const hKey = `${dayKey(ev.time)}-${ev.time.getHours()}`;
-          byHourCell.set(hKey, (byHourCell.get(hKey) ?? 0) + 1);
-
-          // Aggregate into day cells
-          const dKey = dayKey(ev.time);
-          byDayCell.set(dKey, (byDayCell.get(dKey) ?? 0) + 1);
-        }
+      if (groupStart === -1) {
+        groupStart = windowStart;
+        groupEnd = i;
+      } else if (windowStart <= groupEnd) {
+        // Overlaps the accumulated range — extend it
+        groupEnd = i;
+      } else {
+        finalizeGroup(groupStart, groupEnd);
+        groupStart = windowStart;
+        groupEnd = i;
       }
     }
   }
+  if (groupStart !== -1) finalizeGroup(groupStart, groupEnd);
 
   return { byEventId, byHourCell, byDayCell };
 }

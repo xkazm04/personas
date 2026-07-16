@@ -1,7 +1,12 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { lazyRetry } from '@/lib/lazyRetry';
 
-const UnifiedBuildEntry = lazy(() =>
+// lazyRetry, not raw lazy: raw lazy caches a rejected chunk import forever
+// (the 2026-06-07 "bricked section" incident) — one failed fetch would brick
+// the create flow until a full reload, defeating the outer ErrorBoundary
+// retry that PersonasPage's lazyRetry declarations exist to make work.
+const UnifiedBuildEntry = lazyRetry(() =>
   import('@/features/agents/components/matrix/UnifiedBuildEntry').then((m) => ({ default: m.UnifiedBuildEntry })),
 );
 

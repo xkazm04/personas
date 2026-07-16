@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Check, CheckCheck, X, RotateCcw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -20,11 +21,13 @@ interface Props {
   gridTemplate: string;
   /** Keyboard-triage focus — renders a focus ring and is the j/k cursor. */
   focused?: boolean;
-  onAcknowledge: () => void;
-  onResolve: () => void;
-  onDismiss: () => void;
-  onReopen: () => void;
-  onOpenDetail: () => void;
+  // Id/incident-taking callbacks so the parent can pass stable references and
+  // React.memo can skip untouched rows during keyboard triage.
+  onAcknowledge: (id: string) => void;
+  onResolve: (id: string) => void;
+  onDismiss: (id: string) => void;
+  onReopen: (id: string) => void;
+  onOpenDetail: (incident: AuditIncident) => void;
 }
 
 // Colour-blind users still get the StatusShape + gutter accent for severity;
@@ -42,8 +45,11 @@ const STATE_DOT: Record<string, string> = {
  * gutter accent + the shape/colored source glyph in the Incident cell (no text
  * priority tag); Persona / State / Days / Actions each get their own column so
  * they align and can be filtered/sorted from the header.
+ *
+ * Memoized: during keyboard triage only the rows whose `focused` flag flips
+ * re-render (all other props are stable references from the parent).
  */
-export function IncidentRow({
+export const IncidentRow = memo(function IncidentRow({
   incident,
   gridTemplate,
   focused = false,
@@ -74,7 +80,7 @@ export function IncidentRow({
       id={`incident-row-${incident.id}`}
       data-testid="incident-row"
       role="row"
-      onClick={onOpenDetail}
+      onClick={() => onOpenDetail(incident)}
       style={{ gridTemplateColumns: gridTemplate }}
       className={`grid items-center border-l-2 ${accent} cursor-pointer transition-colors ${
         focused ? 'bg-secondary/30 ring-1 ring-inset ring-primary/40' : 'hover:bg-secondary/20'
@@ -120,14 +126,14 @@ export function IncidentRow({
 
       {/* Actions — clicks here must not open the detail modal */}
       <div className="flex shrink-0 items-center justify-end gap-1 px-4" onClick={(e) => e.stopPropagation()}>
-        {isOpen && <IconAction icon={Check} label={t.overview.incidents.action_acknowledge} onClick={onAcknowledge} />}
-        {(isOpen || isAcknowledged) && <IconAction icon={CheckCheck} label={t.overview.incidents.action_resolve} onClick={onResolve} />}
-        {(isOpen || isAcknowledged) && <IconAction icon={X} label={t.overview.incidents.action_dismiss} onClick={onDismiss} />}
-        {isClosed && <IconAction icon={RotateCcw} label={t.overview.incidents.action_reopen} onClick={onReopen} />}
+        {isOpen && <IconAction icon={Check} label={t.overview.incidents.action_acknowledge} onClick={() => onAcknowledge(incident.id)} />}
+        {(isOpen || isAcknowledged) && <IconAction icon={CheckCheck} label={t.overview.incidents.action_resolve} onClick={() => onResolve(incident.id)} />}
+        {(isOpen || isAcknowledged) && <IconAction icon={X} label={t.overview.incidents.action_dismiss} onClick={() => onDismiss(incident.id)} />}
+        {isClosed && <IconAction icon={RotateCcw} label={t.overview.incidents.action_reopen} onClick={() => onReopen(incident.id)} />}
       </div>
     </div>
   );
-}
+});
 
 function IconAction({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick: () => void }) {
   return (

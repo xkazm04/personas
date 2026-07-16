@@ -1071,6 +1071,17 @@ impl ExecutionEngine {
             .as_ref()
             .and_then(chain::chain_trace_id_from_input);
 
+        // Canonical session-pool hash for the config this run uses — computed
+        // here (before `persona`/`tools` move into the task) with the SAME
+        // helper the warm-reuse take() site uses.
+        let session_config_hash = session_pool::compute_config_hash(
+            persona.system_prompt.as_str(),
+            persona.structured_prompt.as_deref(),
+            persona.model_profile.as_deref(),
+            tools.len(),
+            &prompt::active_capabilities_fingerprint(persona.design_context.as_deref()),
+        );
+
         // Spawn background task.
         // The inner work is wrapped in catch_unwind so that a panic inside
         // run_execution (credential failure, spawn failure, etc.) does NOT
@@ -1135,6 +1146,7 @@ impl ExecutionEngine {
                         &persona_id,
                         persona_timeout_ms,
                         &result,
+                        session_config_hash,
                         tracker.clone(),
                         child_pids.clone(),
                         cancelled_flags.clone(),
@@ -1853,6 +1865,15 @@ fn drain_and_start_next(
                 let exec_id_cleanup = exec_id.clone();
                 let persona_id_cleanup = persona_id_owned.clone();
 
+                // Canonical session-pool hash — same helper as the take() site.
+                let session_config_hash = session_pool::compute_config_hash(
+                    persona.system_prompt.as_str(),
+                    persona.structured_prompt.as_deref(),
+                    persona.model_profile.as_deref(),
+                    ctx.tools.len(),
+                    &prompt::active_capabilities_fingerprint(persona.design_context.as_deref()),
+                );
+
                 let handle = tokio::spawn(async move {
                     let work = AssertUnwindSafe(async {
                         let result = run_execution_with_ceiling(
@@ -1905,6 +1926,7 @@ fn drain_and_start_next(
                                 &persona_id_owned,
                                 persona_timeout_ms,
                                 &result,
+                                session_config_hash,
                                 tracker_clone.clone(),
                                 child_pids.clone(),
                                 cancelled_flags.clone(),
@@ -2157,6 +2179,10 @@ async fn handle_execution_result(
     persona_id: &str,
     persona_timeout_ms: i32,
     result: &ExecutionResult,
+    // Canonical session-pool config hash computed at spawn time from the
+    // persona/tools THIS run used (session_pool::compute_config_hash) — the
+    // same helper the take() site uses, so offer/take actually match.
+    session_config_hash: u64,
     tracker: Arc<Mutex<ConcurrencyTracker>>,
     child_pids: Arc<Mutex<HashMap<String, u32>>>,
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
@@ -2347,17 +2373,11 @@ async fn handle_execution_result(
     if result.success {
         if let Some(ref session_id) = result.claude_session_id {
             if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
-                // Compute config hash from the execution config snapshot
-                let config_hash = {
-                    use std::hash::{Hash, Hasher};
-                    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-                    result
-                        .execution_config
-                        .as_deref()
-                        .unwrap_or("")
-                        .hash(&mut hasher);
-                    hasher.finish()
-                };
+                // Canonical hash computed at spawn from the persona/tools this
+                // run used. Previously this site hashed execution_config JSON
+                // while take() hashed persona fields — they never matched, so
+                // warm session reuse was a permanent no-op.
+                let config_hash = session_config_hash;
                 let pool_ref = state.session_pool.clone();
                 let pid = persona_id.to_string();
                 let sid = session_id.clone();

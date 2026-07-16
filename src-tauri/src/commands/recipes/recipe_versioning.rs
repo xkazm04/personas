@@ -54,13 +54,13 @@ Your task:
 Return ONLY a JSON object (in a ```json fenced block) with these exact fields:
 
 ```json
-{{{{
-  "prompt_template": "The updated prompt template with {{{{{{{{variable}}}}}}}} placeholders",
-  "input_schema": "[{{{{\"key\":\"var_name\",\"type\":\"text\",\"label\":\"Human Label\",\"default\":\"\"}}}}]",
-  "sample_inputs": "{{{{\"var_name\": \"realistic test value\"}}}}",
+{{
+  "prompt_template": "The updated prompt template with {{{{variable}}}} placeholders",
+  "input_schema": "[{{\"key\":\"var_name\",\"type\":\"text\",\"label\":\"Human Label\",\"default\":\"\"}}]",
+  "sample_inputs": "{{\"var_name\": \"realistic test value\"}}",
   "description": "Brief description of what this version does",
   "changes_summary": "What was changed and why"
-}}}}
+}}
 ```
 
 Important:

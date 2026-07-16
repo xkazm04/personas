@@ -52,9 +52,14 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
     loadVersions();
   }, [loadVersions]);
 
+  // Reset the versioning stream on unmount/recipe change. Depend on the
+  // stable `reset` function, NOT the `versioning` memo object — its identity
+  // changes on every phase transition and streamed progress line, which
+  // would fire this cleanup and tear down the in-flight stream.
+  const resetVersioning = versioning.reset;
   useEffect(() => {
-    return () => versioning.reset();
-  }, [recipe.id, versioning]);
+    return () => resetVersioning();
+  }, [recipe.id, resetVersioning]);
 
   const handleGenerate = useCallback(async () => {
     if (!requirements.trim()) return;

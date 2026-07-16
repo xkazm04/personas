@@ -28,6 +28,18 @@ const reducedItemVariants: Variants = {
   exit: { opacity: 0, transition: { duration: 0.01 } },
 };
 
+/**
+ * Prebuilt motion components, hoisted to module scope so element-type
+ * identity is stable across renders (creating them during render remounts
+ * the whole list on every parent re-render).
+ */
+const MOTION_TAGS = {
+  div: motion.div,
+  ul: motion.ul,
+  ol: motion.ol,
+  li: motion.li,
+} as const;
+
 interface AnimatedListProps extends Pick<HTMLAttributes<HTMLElement>, 'role' | 'aria-label' | 'id'> {
   /** Rendered children — each direct child becomes an animated item. */
   children: ReactNode[];
@@ -87,8 +99,8 @@ export function AnimatedList({
     [effectiveDelay],
   );
 
-  const MotionContainer = motion.create(Container);
-  const MotionItem = motion.create(ItemTag);
+  const MotionContainer = MOTION_TAGS[Container];
+  const MotionItem = MOTION_TAGS[ItemTag];
 
   const items = Array.isArray(children) ? children : [children];
 

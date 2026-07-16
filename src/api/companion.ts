@@ -1120,6 +1120,14 @@ export async function companionListBrainItems(
   return invoke<BrainListItem[]>('companion_list_brain_items', { kind });
 }
 
+/** Single-IPC per-kind counts for the Brain Viewer type picker — replaces
+ *  13 parallel list calls whose full row payloads were discarded. */
+export async function companionCountBrainItems(
+  kinds: BrainKind[],
+): Promise<Partial<Record<BrainKind, number>>> {
+  return invoke<Partial<Record<BrainKind, number>>>('companion_count_brain_items', { kinds });
+}
+
 export async function companionGetBrainItem(
   kind: BrainKind,
   id: string,

@@ -929,9 +929,19 @@ pub fn drive_stat(app: AppHandle, rel_path: String) -> Result<DriveEntry, AppErr
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn drive_read(app: AppHandle, rel_path: String) -> Result<Vec<u8>, AppError> {
-    let root = managed_root(&app)?;
-    let abs = resolve_safe(&root, &rel_path)?;
+pub fn drive_read(app: AppHandle, rel_path: String) -> Result<tauri::ipc::Response, AppError> {
+    // Raw-byte IPC response (frontend receives an ArrayBuffer). Returning
+    // Vec<u8> serialized every byte as a JSON number — a 3MB image became
+    // ~10-12MB of JSON that WebView2 stringified/parsed on every thumbnail,
+    // lightbox navigation, and preview.
+    Ok(tauri::ipc::Response::new(read_bytes_capped(
+        &app, &rel_path,
+    )?))
+}
+
+fn read_bytes_capped(app: &AppHandle, rel_path: &str) -> Result<Vec<u8>, AppError> {
+    let root = managed_root(app)?;
+    let abs = resolve_safe(&root, rel_path)?;
     let meta = std::fs::metadata(&abs)?;
     if meta.len() > MAX_READ_BYTES {
         return Err(AppError::Validation(format!(
@@ -945,7 +955,7 @@ pub fn drive_read(app: AppHandle, rel_path: String) -> Result<Vec<u8>, AppError>
 
 #[tauri::command]
 pub fn drive_read_text(app: AppHandle, rel_path: String) -> Result<String, AppError> {
-    let bytes = drive_read(app, rel_path)?;
+    let bytes = read_bytes_capped(&app, &rel_path)?;
     String::from_utf8(bytes)
         .map_err(|e| AppError::Validation(format!("File is not valid UTF-8: {e}")))
 }

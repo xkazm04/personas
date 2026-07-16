@@ -85,11 +85,16 @@ pub fn list_for_team(
     timed_query!("team_channel", "team_channel::list_for_team", {
         let cursor = before.unwrap_or("9999-12-31T23:59:59Z");
         let conn = pool.get()?;
+        // Sargable form: created_at is stored as datetime('now') text
+        // (lexically sortable), so compare/order on the RAW column and
+        // normalize the RFC3339 cursor on the parameter side. Wrapping the
+        // column in strftime()/datetime() defeated idx_team_channel_messages_team
+        // and forced a full materialize+sort of the team's whole history.
         let mut stmt = conn.prepare(
             "SELECT * FROM team_channel_messages
              WHERE team_id = ?1
-               AND strftime('%Y-%m-%dT%H:%M:%SZ', datetime(created_at)) < ?2
-             ORDER BY datetime(created_at) DESC, id DESC LIMIT ?3",
+               AND created_at < datetime(?2)
+             ORDER BY created_at DESC, id DESC LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![team_id, cursor, limit], |r| row_to_message(r))?;
         Ok(rows
@@ -111,7 +116,7 @@ pub fn list_for_deliberation(
         let mut stmt = conn.prepare(
             "SELECT * FROM team_channel_messages
              WHERE deliberation_id = ?1
-             ORDER BY datetime(created_at) DESC, id DESC LIMIT ?2",
+             ORDER BY created_at DESC, id DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![deliberation_id, limit], |r| row_to_message(r))?;
         Ok(rows
@@ -170,9 +175,9 @@ pub fn list_injectable_for_persona(
             "SELECT * FROM team_channel_messages
              WHERE team_id = ?1
                AND consumer = 'inject'
-               AND datetime(created_at) > datetime('now', '-14 days')
+               AND created_at > datetime('now', '-14 days')
                AND (addressed_to IS NULL OR addressed_to LIKE ?2)
-             ORDER BY datetime(created_at) DESC LIMIT ?3",
+             ORDER BY created_at DESC LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![team_id, needle, limit], |r| row_to_message(r))?;
         Ok(rows

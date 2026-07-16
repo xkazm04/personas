@@ -8,7 +8,7 @@ import { useN8nTest } from './useN8nTest';
 import { useWorkflowImport } from './useWorkflowImport';
 import { createWizardHandlers } from './useN8nWizardHandlers';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
-import type { ConfirmResult } from '../steps/confirm/N8nConfirmStep';
+import type { ConfirmResult } from '../steps/confirm/n8nConfirmTypes';
 
 /**
  * Orchestrator hook for the n8n import wizard.

@@ -706,8 +706,7 @@ pub fn list_tools(pool: &McpDbPool) -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "enabled_only": { "type": "boolean", "description": "Only return enabled personas (default: false)" },
-                    "group_id": { "type": "string", "description": "Filter by group/folder ID" }
+                    "enabled_only": { "type": "boolean", "description": "Only return enabled personas (default: false)" }
                 }
             }
         }),
@@ -1591,7 +1590,16 @@ fn handle_personas_list(args: &Value, pool: &McpDbPool) -> Result<String, String
         .get("enabled_only")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    let group_id = args.get("group_id").and_then(|v| v.as_str());
+    // `group_id` filtering was retired with the Groups→Teams consolidation:
+    // personas no longer carry a group_id column. Reject it explicitly rather
+    // than silently returning an empty list to stale clients.
+    if args.get("group_id").is_some() {
+        return Err(
+            "'group_id' is no longer supported: persona groups were retired in favor of teams. \
+             Call personas_list without 'group_id'."
+                .to_string(),
+        );
+    }
 
     let sql = if enabled_only {
         "SELECT id, name, description, enabled, trust_level, trust_origin, icon, color FROM personas WHERE enabled = 1 ORDER BY name"
@@ -1613,11 +1621,7 @@ fn handle_personas_list(args: &Value, pool: &McpDbPool) -> Result<String, String
         }))
     }).map_err(|e| format!("Query error: {e}"))?;
 
-    let mut personas: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
-
-    if let Some(gid) = group_id {
-        personas.retain(|p| p.get("group_id").and_then(|g| g.as_str()) == Some(gid));
-    }
+    let personas: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
 
     serde_json::to_string_pretty(&personas).map_err(|e| format!("Serialize error: {e}"))
 }
@@ -2116,8 +2120,11 @@ fn handle_arena_get_results(args: &Value, pool: &McpDbPool) -> Result<String, St
     let conn = pool.get()?;
     let mut stmt = conn
         .prepare(
+            // tool_calls_expected/actual were dropped by the lab_tool_calls
+            // child-table migration (incremental.rs drop_legacy_tool_calls_columns);
+            // per-call data lives in lab_tool_calls keyed by result_id.
             "SELECT id, run_id, scenario_name, model_id, provider, status, output_preview,
-                    tool_calls_expected, tool_calls_actual, tool_accuracy_score,
+                    tool_accuracy_score,
                     output_quality_score, protocol_compliance, input_tokens, output_tokens,
                     cost_usd, duration_ms, error_message, created_at
              FROM lab_arena_results
@@ -2136,17 +2143,15 @@ fn handle_arena_get_results(args: &Value, pool: &McpDbPool) -> Result<String, St
                 "provider": row.get::<_, String>(4)?,
                 "status": row.get::<_, String>(5)?,
                 "output_preview": row.get::<_, Option<String>>(6)?,
-                "tool_calls_expected": row.get::<_, Option<String>>(7)?,
-                "tool_calls_actual": row.get::<_, Option<String>>(8)?,
-                "tool_accuracy_score": row.get::<_, Option<i64>>(9)?,
-                "output_quality_score": row.get::<_, Option<i64>>(10)?,
-                "protocol_compliance": row.get::<_, Option<i64>>(11)?,
-                "input_tokens": row.get::<_, i64>(12)?,
-                "output_tokens": row.get::<_, i64>(13)?,
-                "cost_usd": row.get::<_, f64>(14)?,
-                "duration_ms": row.get::<_, i64>(15)?,
-                "error_message": row.get::<_, Option<String>>(16)?,
-                "created_at": row.get::<_, String>(17)?,
+                "tool_accuracy_score": row.get::<_, Option<i64>>(7)?,
+                "output_quality_score": row.get::<_, Option<i64>>(8)?,
+                "protocol_compliance": row.get::<_, Option<i64>>(9)?,
+                "input_tokens": row.get::<_, i64>(10)?,
+                "output_tokens": row.get::<_, i64>(11)?,
+                "cost_usd": row.get::<_, f64>(12)?,
+                "duration_ms": row.get::<_, i64>(13)?,
+                "error_message": row.get::<_, Option<String>>(14)?,
+                "created_at": row.get::<_, String>(15)?,
             }))
         })
         .map_err(|e| format!("Query error: {e}"))?;

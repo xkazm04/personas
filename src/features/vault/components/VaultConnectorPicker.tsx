@@ -11,9 +11,9 @@
  *     `connectorCategoryTags` on each credential's service_type.
  *   - `value` / `onChange` — the chosen service_type. Single-select only;
  *     from-scratch builds always fill one slot per clarifying_question.
- *   - Empty state shows an "Add credential from Catalog" CTA that deep-links
- *     into the Vault catalog. The host is responsible for restoring focus
- *     after the CTA — we just surface the intent.
+ *   - A trailing "Add a different credential" sentinel card (always rendered,
+ *     even with an empty vault) opens `QuickAddCredentialModal` so the user
+ *     can add the missing credential inline.
  *
  * Shared between template adoption (QuestionnaireFormGridParts) and the
  * from-scratch build surface. Keeping it vault-store-driven means the picker
@@ -21,14 +21,12 @@
  * without a reload.
  */
 import { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from '@/stores/vaultStore';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 import type { DiscoveredItem } from '@/api/discovery/discovery';
 import { CredentialPickerCards } from '@/features/vault/components/CredentialPickerCards';
 import { QuickAddCredentialModal } from '@/features/templates/sub_generated/adoption/QuickAddCredentialModal';
-import { DebtText } from '@/i18n/DebtText';
 
 
 /** Sentinel value emitted when the user picks the "Use a different credential"
@@ -41,11 +39,6 @@ export interface VaultConnectorPickerProps {
   /** Currently-selected service_type, or "" for none. */
   value: string;
   onChange: (serviceType: string) => void;
-  /** Called when the user hits the empty-state "Add from Catalog" CTA.
-   *  Host should navigate to the Vault catalog (and ideally pre-filter to
-   *  `category`). After the credential lands, `useVaultStore` updates and
-   *  the picker re-renders without re-mounting. */
-  onAddFromCatalog?: (category: string) => void;
   /** Ambient Context Fusion (Case 1) — connector keywords implied by ambient
    *  desktop signals. Eligible credentials whose service_type matches one of
    *  these float to the top and get a "Suggested" pill. Purely a pre-rank
@@ -63,7 +56,6 @@ export function VaultConnectorPicker({
   category,
   value,
   onChange,
-  onAddFromCatalog,
   suggested,
 }: VaultConnectorPickerProps) {
   const { t } = useTranslation();
@@ -119,59 +111,6 @@ export function VaultConnectorPicker({
     });
     return out;
   }, [credentials, category, suggested, t]);
-
-  if (items.length === 0) {
-    return (
-      <>
-        <div
-          className="flex flex-col items-start gap-2 rounded-card border border-dashed border-border bg-foreground/[0.02] p-4"
-          data-testid="vault-connector-picker-empty"
-        >
-          <span className="typo-body text-foreground">
-            {/* intentionally un-i18n'd pending translation key approval; see handoff */}
-            No <strong>{category}</strong> <DebtText k="auto_connector_in_your_vault_yet_852a324e" />
-          </span>
-          <span className="typo-caption text-foreground">
-            <DebtText k="auto_add_one_inline_or_open_the_full_catalog_fc0bb46a" />
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowQuickAdd(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-primary/15 hover:bg-primary/25 border border-primary/30 typo-body text-primary cursor-pointer transition-colors"
-              data-testid="vault-connector-picker-empty-add"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add {category} connector
-            </button>
-            {onAddFromCatalog && (
-              <button
-                type="button"
-                onClick={() => onAddFromCatalog(category)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-secondary/30 hover:bg-secondary/40 border border-border/40 typo-caption text-foreground cursor-pointer transition-colors"
-                data-testid="vault-connector-picker-add"
-              >
-                <DebtText k="auto_open_catalog_1e8f5a54" />
-              </button>
-            )}
-          </div>
-        </div>
-        {showQuickAdd && (
-          <QuickAddCredentialModal
-            category={category}
-            onCredentialAdded={(serviceType) => {
-              setShowQuickAdd(false);
-              // Auto-fill the picker's value so the user doesn't have to click
-              // the freshly-added card. The vault store's reactive update
-              // re-renders the populated state on the next tick.
-              onChange(serviceType);
-            }}
-            onClose={() => setShowQuickAdd(false)}
-          />
-        )}
-      </>
-    );
-  }
 
   return (
     <div data-testid={`vault-connector-picker-${category}`}>

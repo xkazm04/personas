@@ -1173,10 +1173,8 @@
           "businessFeature": null,
           "category": "ui",
           "filePaths": [
-            "src/features/plugins/PluginAccentLayer.tsx",
             "src/features/plugins/PluginBrowsePage.tsx",
-            "src/features/plugins/PluginIcons.tsx",
-            "src/features/plugins/pluginTheme.ts"
+            "src/features/plugins/PluginIcons.tsx"
           ],
           "target": null,
           "apiRoutes": []
@@ -1194,7 +1192,6 @@
             "src/features/plugins/fleet/relativeAgo.ts",
             "src/features/plugins/fleet/FleetAttentionLegend.tsx",
             "src/features/plugins/fleet/useFleetTerminalConfig.ts",
-            "src/features/plugins/fleet/FleetTilePreview.tsx",
             "src/features/plugins/fleet/fleetGridLayout.ts"
           ],
           "target": null,
@@ -1529,7 +1526,6 @@
             "src/features/plugins/fleet/FleetMobilePreview.tsx",
             "src/features/plugins/fleet/FleetPage.tsx",
             "src/features/plugins/fleet/FleetTileAthenaBar.tsx",
-            "src/features/plugins/fleet/useFleetTilePreviews.ts",
             "src/features/plugins/fleet/FleetOverlayTile.tsx",
             "src/features/plugins/fleet/FleetStatusDots.tsx",
             "src/features/plugins/fleet/sub_grid/FleetTokenSummaryBar.tsx",

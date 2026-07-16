@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import {
@@ -195,11 +195,16 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
     }
   }, [triggerId]);
 
+  // Fetch once per (open, trigger). Guarding on logs.length === 0 treated an
+  // empty result as "never fetched", so a webhook with zero logs refetched in
+  // an infinite IPC loop for as long as the section was open.
+  const fetchedForRef = useRef<string | null>(null);
   useEffect(() => {
-    if (open && logs.length === 0 && !loading) {
+    if (open && fetchedForRef.current !== triggerId) {
+      fetchedForRef.current = triggerId;
       void fetch();
     }
-  }, [fetch, loading, logs.length, open]);
+  }, [open, triggerId, fetch]);
 
   const handleReplay = async (logId: string) => {
     setReplayingId(logId);

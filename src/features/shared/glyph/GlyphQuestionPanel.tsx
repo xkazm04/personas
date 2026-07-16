@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { HelpCircle, Send, Hash } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useSystemStore } from '@/stores/systemStore';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import { VaultConnectorPicker } from '@/features/vault/components/VaultConnectorPicker';
 import { DIM_META } from './dimMeta';
@@ -41,12 +40,6 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
     setFreeText('');
   };
 
-  // Route "Add from Catalog" to the Vault catalog so the user can create the
-  // missing connector without losing the build session.
-  const openVaultCatalog = () => {
-    useSystemStore.getState().setSidebarSection('credentials');
-  };
-
   return (
     <div
       className="relative rounded-modal bg-card-bg border border-card-border p-4 flex flex-col gap-3 shadow-elevation-2"
@@ -71,7 +64,6 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
           category={connectorCategory}
           value=""
           onChange={(serviceType) => submit(serviceType)}
-          onAddFromCatalog={openVaultCatalog}
           suggested={question.suggested}
         />
       ) : (

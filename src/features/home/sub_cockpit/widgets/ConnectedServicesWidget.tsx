@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Key, CheckCircle2, AlertCircle, CircleHelp } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -28,8 +28,12 @@ export function ConnectedServicesWidget({ config, title }: CockpitWidgetProps) {
   );
   const personas = useAgentStore((s) => s.personas);
 
+  // Fetch-if-empty exactly once: an empty vault re-produces the guard state
+  // (fresh [] identity per fetch), which looped fetchCredentials indefinitely.
+  const credentialsRequestedRef = useRef(false);
   useEffect(() => {
-    if (!credentials || credentials.length === 0) {
+    if ((!credentials || credentials.length === 0) && !credentialsRequestedRef.current) {
+      credentialsRequestedRef.current = true;
       fetchCredentials().catch(() => {});
     }
   }, [credentials, fetchCredentials]);

@@ -10,7 +10,10 @@ interface Props {
   group: IncidentGroup;
   collapsed: boolean;
   onToggle: () => void;
-  renderRow: (incident: AuditIncident) => React.ReactNode;
+  /** Keyboard-triage cursor — resolved to a per-row `focused` flag here so the
+   * parent's `renderRow` callback can stay referentially stable across moves. */
+  focusedId: string | null;
+  renderRow: (incident: AuditIncident, focused: boolean) => React.ReactNode;
 }
 
 /**
@@ -20,14 +23,14 @@ interface Props {
  * worst severity. In flat ("none") mode there is no header — the rows render
  * directly.
  */
-export function IncidentAgentGroup({ group, collapsed, onToggle, renderRow }: Props) {
+export function IncidentAgentGroup({ group, collapsed, onToggle, focusedId, renderRow }: Props) {
   const { t } = useTranslation();
 
   // Flat mode has a single group with no meaningful header — render rows directly.
   if (group.mode === 'none') {
     return (
       <div className="divide-y divide-primary/5">
-        {group.incidents.map((incident) => renderRow(incident))}
+        {group.incidents.map((incident) => renderRow(incident, focusedId === incident.id))}
       </div>
     );
   }
@@ -67,7 +70,7 @@ export function IncidentAgentGroup({ group, collapsed, onToggle, renderRow }: Pr
 
       {!collapsed && (
         <div className="divide-y divide-primary/5">
-          {group.incidents.map((incident) => renderRow(incident))}
+          {group.incidents.map((incident) => renderRow(incident, focusedId === incident.id))}
         </div>
       )}
     </div>
