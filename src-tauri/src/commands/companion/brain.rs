@@ -61,6 +61,34 @@ pub fn companion_list_brain_items(
     kind: String,
 ) -> Result<Vec<BrainListItem>, AppError> {
     ipc_auth::require_auth_sync(&state)?;
+    list_brain_items_impl(&state, &kind)
+}
+
+/// Single-IPC counts for the Brain Viewer type picker. Reuses the exact list
+/// dispatch (no second dispatch to drift) but ships only the lengths — the
+/// picker used to fire 13 parallel list IPCs and discard every row it paid
+/// to serialize (episodes/reflections payloads grow with the whole history).
+/// Kinds that error count as 0, matching the picker's old silent-catch.
+#[tauri::command]
+pub fn companion_count_brain_items(
+    state: State<'_, Arc<AppState>>,
+    kinds: Vec<String>,
+) -> Result<std::collections::HashMap<String, i64>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let mut out = std::collections::HashMap::with_capacity(kinds.len());
+    for kind in kinds {
+        let count = list_brain_items_impl(&state, &kind)
+            .map(|items| items.len() as i64)
+            .unwrap_or(0);
+        out.insert(kind, count);
+    }
+    Ok(out)
+}
+
+fn list_brain_items_impl(
+    state: &State<'_, Arc<AppState>>,
+    kind: &str,
+) -> Result<Vec<BrainListItem>, AppError> {
     // Recognize scoped fact kinds: `fact:user`, `fact:project`, `fact:world`,
     // and bare `fact` (= all scopes flattened). The viewer renders one
     // scope per row group, so we keep the dispatch shape generic.
@@ -76,7 +104,7 @@ pub fn companion_list_brain_items(
                 )))
             }
         };
-        return list_facts(&state, scope);
+        return list_facts(state, scope);
     }
     // Phase D scoped kinds.
     if let Some(rest) = kind.strip_prefix("procedural") {
@@ -92,25 +120,25 @@ pub fn companion_list_brain_items(
                 )))
             }
         };
-        return list_procedurals(&state, scope);
+        return list_procedurals(state, scope);
     }
     if kind == "goal" || kind.starts_with("goal:") {
         let status_filter = kind.strip_prefix("goal:");
-        return list_goals(&state, status_filter);
+        return list_goals(state, status_filter);
     }
     if kind == "ritual" || kind.starts_with("ritual:") {
         let kind_filter = kind.strip_prefix("ritual:");
-        return list_rituals(&state, kind_filter);
+        return list_rituals(state, kind_filter);
     }
     if kind == "backlog" || kind.starts_with("backlog:") {
         let kind_filter = kind.strip_prefix("backlog:");
-        return list_backlog(&state, kind_filter);
+        return list_backlog(state, kind_filter);
     }
-    match kind.as_str() {
-        "episode" => list_episodes(&state),
-        "doctrine" => list_doctrine(&state),
-        "reflection" => list_reflections(&state),
-        "design_decision" => list_design_decisions(&state),
+    match kind {
+        "episode" => list_episodes(state),
+        "doctrine" => list_doctrine(state),
+        "reflection" => list_reflections(state),
+        "design_decision" => list_design_decisions(state),
         "identity" => Ok(single_file_list(
             "identity",
             "Identity",

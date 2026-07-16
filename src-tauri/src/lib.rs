@@ -2711,6 +2711,7 @@ pub fn run() {
             commands::companion::browser_test::browser_bridge_regenerate_token,
             commands::companion::browser_test::companion_file_browser_defects,
             commands::companion::brain::companion_list_brain_items,
+            commands::companion::brain::companion_count_brain_items,
             commands::companion::brain::companion_get_brain_item,
             commands::companion::brain::companion_delete_brain_item,
             commands::companion::brain::companion_save_identity,
