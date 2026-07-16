@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { Zap, RefreshCw, Compass } from 'lucide-react';
+import { Zap, RefreshCw, Compass, KeyRound } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
@@ -101,6 +101,14 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code uppercase rounded-card border bg-violet-500/15 text-violet-300 border-violet-500/25"
               >
                 <Compass className="w-3 h-3" /> {t.director.healing_source_badge}
+              </span>
+            )}
+            {issue.source === 'oauth' && (
+              <span
+                title={t.overview.healing_issues_panel.oauth_source_hint}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code uppercase rounded-card border bg-amber-500/15 text-amber-300 border-amber-500/25"
+              >
+                <KeyRound className="w-3 h-3" /> {t.overview.healing_issues_panel.oauth_source_badge}
               </span>
             )}
             <span className={`typo-code min-w-[90px] text-right ${HEALING_CATEGORY_COLORS[issue.category]?.text || 'text-foreground'}`}>

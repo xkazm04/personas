@@ -1209,7 +1209,9 @@
     "execution_label": "التنفيذ:",
     "issue_marked_as": "تم وسم هذه المشكلة كـ",
     "retry_in_progress": "إعادة المحاولة قيد التنفيذ — ستُحدَّث الحالة عند الاكتمال.",
-    "resolve_issue_title": "وسم المشكلة كمحلولة"
+    "resolve_issue_title": "وسم المشكلة كمحلولة",
+    "oauth_source_badge": "بيانات الاعتماد",
+    "oauth_source_hint": "أُنشئ لأن صلاحية وصول بيانات الاعتماد هذه أُلغِيت — أعد الاتصال بها في الـ Vault لإزالة المشكلة."
   },
   "healing_timeline": {
     "loading": "جارٍ تحميل الجدول الزمني...",

@@ -1209,7 +1209,9 @@
     "execution_label": "Thực thi:",
     "issue_marked_as": "Vấn đề này được đánh dấu là",
     "retry_in_progress": "Đang thử lại — trạng thái sẽ cập nhật khi hoàn tất.",
-    "resolve_issue_title": "Đánh dấu vấn đề đã giải quyết"
+    "resolve_issue_title": "Đánh dấu vấn đề đã giải quyết",
+    "oauth_source_badge": "Thông tin xác thực",
+    "oauth_source_hint": "Được tạo vì quyền truy cập của thông tin xác thực này đã bị thu hồi — hãy kết nối lại trong Vault để xóa vấn đề."
   },
   "healing_timeline": {
     "loading": "Đang tải dòng thời gian...",

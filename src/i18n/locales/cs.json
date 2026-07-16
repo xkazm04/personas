@@ -6882,7 +6882,9 @@
       "execution_label": "Spuštění:",
       "issue_marked_as": "Tento problém je označen jako",
       "retry_in_progress": "Probíhá opakování — stav se aktualizuje po dokončení.",
-      "resolve_issue_title": "Označit problém jako vyřešený"
+      "resolve_issue_title": "Označit problém jako vyřešený",
+      "oauth_source_badge": "Přihlašovací údaje",
+      "oauth_source_hint": "Vytvořeno, protože přístup těchto přihlašovacích údajů byl odvolán — znovu je připojte ve Vaultu, abyste problém odstranili."
     },
     "healing_timeline": {
       "loading": "Načítání časové osy...",

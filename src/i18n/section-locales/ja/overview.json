@@ -1209,7 +1209,9 @@
     "execution_label": "実行:",
     "issue_marked_as": "この問題は次のようにマークされています",
     "retry_in_progress": "再試行中 — 完了時にステータスが更新されます。",
-    "resolve_issue_title": "問題を解決済みとしてマーク"
+    "resolve_issue_title": "問題を解決済みとしてマーク",
+    "oauth_source_badge": "認証情報",
+    "oauth_source_hint": "この認証情報のアクセスが取り消されたため作成されました。問題を解消するには Vault で再接続してください。"
   },
   "healing_timeline": {
     "loading": "タイムラインを読み込み中...",

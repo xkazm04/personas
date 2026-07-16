@@ -1209,7 +1209,9 @@
     "execution_label": "실행:",
     "issue_marked_as": "이 문제는 다음으로 표시됨",
     "retry_in_progress": "재시도 진행 중 — 완료 시 상태가 업데이트됩니다.",
-    "resolve_issue_title": "문제를 해결됨으로 표시"
+    "resolve_issue_title": "문제를 해결됨으로 표시",
+    "oauth_source_badge": "자격 증명",
+    "oauth_source_hint": "이 자격 증명의 액세스가 취소되어 생성되었습니다. 문제를 해결하려면 Vault에서 다시 연결하세요."
   },
   "healing_timeline": {
     "loading": "타임라인 불러오는 중...",

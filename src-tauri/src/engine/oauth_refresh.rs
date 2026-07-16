@@ -124,6 +124,7 @@ pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32
                         "Startup OAuth sweep: grant revoked — needs re-authorization"
                     );
                     mark_needs_reauth(pool, &cred.id);
+                    route_revocation_to_healing(pool, &cred.id, &cred.name, &cred.service_type);
                     emit_reauth_required(app, cred, &e.to_string());
                 } else {
                     tracing::warn!(
@@ -231,6 +232,7 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
                         "OAuth grant revoked — credential needs re-authorization"
                     );
                     mark_needs_reauth(pool, &cred.id);
+                    route_revocation_to_healing(pool, &cred.id, &cred.name, &cred.service_type);
                     emit_reauth_required(app, cred, &e.to_string());
                 } else {
                     tracing::warn!(
@@ -486,6 +488,11 @@ async fn refresh_single_credential_inner(
         .await;
     }
 
+    // Was the credential flagged `needs_reauth` before this refresh? If so, a
+    // successful refresh IS the recovery — auto-resolve its healing issue below.
+    let was_needs_reauth =
+        parse_ledger(maybe_fresh.as_ref().unwrap_or(cred)).needs_reauth == Some(true);
+
     let mut fields = cred_repo::get_decrypted_fields(pool, cred)?;
     if let Err(e) = audit_log::log_decrypt(pool, &cred.id, &cred.name, "oauth_refresh", None, None)
     {
@@ -679,6 +686,12 @@ async fn refresh_single_credential_inner(
     }
     // ---- End atomic persist block --------------------------------------------
 
+    // The persist above cleared `needs_reauth`; if the credential had been
+    // flagged, this refresh is the recovery — auto-resolve its healing issue.
+    if was_needs_reauth {
+        resolve_revocation_healing(pool, &cred.id);
+    }
+
     if let Some(ref _new_refresh_token) = resolved.refresh_token {
         tracing::info!(
             credential_id = %cred.id,
@@ -828,6 +841,101 @@ pub struct CredentialReauthResolvedEvent {
     pub credential_id: String,
 }
 
+/// Stable per-credential marker embedded in an oauth healing issue's
+/// description, so dedup + auto-resolve can key issues to one credential
+/// (`persona_healing_issues` has no credential_id column).
+fn oauth_healing_marker(credential_id: &str) -> String {
+    format!("[credential:{credential_id}]")
+}
+
+/// Open a durable healing issue for each persona that depends on a revoked
+/// credential — mirroring the Director's verdict→healing routing so a
+/// revocation stops being purely transient (event + banner) and enters the
+/// same attention/approval surface as any other issue.
+///
+/// - Severity from the dependent-persona count (see
+///   [`healing::oauth_reauth_severity`]): `high` with ≥1 dependent.
+/// - Deduped against the persona's OPEN oauth-sourced issues for THIS
+///   credential, so repeated refresh ticks don't spam duplicates.
+/// - No dependents → no row (the table is persona-scoped; the `needs_reauth`
+///   flag + banner remain the surface). Best-effort: failures are logged.
+fn route_revocation_to_healing(
+    pool: &DbPool,
+    credential_id: &str,
+    credential_name: &str,
+    service_type: &str,
+) {
+    use crate::db::repos::execution::healing;
+
+    let dependents = crate::commands::design::connector_readiness::credential_dependent_persona_ids(
+        pool,
+        credential_id,
+    );
+    if dependents.is_empty() {
+        return;
+    }
+
+    let severity = healing::oauth_reauth_severity(dependents.len());
+    let marker = oauth_healing_marker(credential_id);
+    let title = format!("Reconnect {credential_name} — access revoked");
+    let description = format!(
+        "The OAuth grant for '{credential_name}' ({service_type}) was revoked by the provider. \
+         Reconnect it in the Vault to restore access. {marker}"
+    );
+    let suggested_fix = "Open the Vault, select this credential, and re-authorize it.";
+
+    for persona_id in &dependents {
+        // Dedup: skip if this persona already has an OPEN oauth issue for this
+        // exact credential.
+        let already_open = healing::get_all(pool, Some(persona_id), Some("open"))
+            .unwrap_or_default()
+            .into_iter()
+            .any(|h| {
+                h.source.as_deref() == Some(healing::OAUTH_HEALING_SOURCE)
+                    && h.description.contains(&marker)
+            });
+        if already_open {
+            continue;
+        }
+
+        if let Err(e) = healing::create_with_source(
+            pool,
+            persona_id,
+            &title,
+            &description,
+            /* is_circuit_breaker */ false,
+            Some(severity),
+            Some("config"),
+            /* execution_id */ None,
+            Some(suggested_fix),
+            Some(healing::OAUTH_HEALING_SOURCE),
+        ) {
+            tracing::warn!(
+                persona_id = %persona_id,
+                credential_id = %credential_id,
+                error = %e,
+                "revocation→healing routing failed",
+            );
+        }
+    }
+}
+
+/// Auto-resolve any OPEN oauth-sourced healing issues for a credential whose
+/// grant was just restored (successful OAuth reconnect or CLI recapture).
+pub fn resolve_revocation_healing(pool: &DbPool, credential_id: &str) {
+    use crate::db::repos::execution::healing;
+    let marker = oauth_healing_marker(credential_id);
+    let resolved =
+        healing::resolve_open_by_source_marker(pool, healing::OAUTH_HEALING_SOURCE, &marker);
+    if resolved > 0 {
+        tracing::info!(
+            credential_id = %credential_id,
+            resolved,
+            "OAuth re-auth: auto-resolved healing issue(s)",
+        );
+    }
+}
+
 /// Emit a Tauri event when a previously-revoked credential is re-authorized.
 fn emit_reauth_resolved(app: Option<&AppHandle>, credential_id: &str) {
     let Some(app) = app else { return };
@@ -928,4 +1036,114 @@ fn get_connector_metadata(pool: &DbPool, service_type: &str) -> Option<String> {
     )
     .ok()
     .flatten()
+}
+
+#[cfg(test)]
+mod revocation_healing_tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use crate::db::models::CreatePersonaInput;
+    use crate::db::repos::core::personas;
+    use crate::db::repos::execution::healing;
+
+    fn mk_persona(pool: &DbPool, name: &str, design_context: Option<String>) -> String {
+        personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "x".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    #[test]
+    fn severity_maps_by_dependent_count() {
+        assert_eq!(healing::oauth_reauth_severity(0), "medium");
+        assert_eq!(healing::oauth_reauth_severity(1), "high");
+        assert_eq!(healing::oauth_reauth_severity(5), "high");
+    }
+
+    #[test]
+    fn revocation_creates_deduped_issue_then_reauth_resolves_it() {
+        let pool = init_test_db().unwrap();
+        let cred_id = "cred-oauth-1";
+        // Persona depends on the credential via its credentialLinks map.
+        let dc = format!(r#"{{"credentialLinks":{{"gmail":"{cred_id}"}}}}"#);
+        let pid = mk_persona(&pool, "Mailer", Some(dc));
+
+        // Revoke → exactly one OPEN oauth issue for the dependent persona, high sev.
+        route_revocation_to_healing(&pool, cred_id, "Gmail", "gmail");
+        let open = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
+        let oauth: Vec<_> = open
+            .iter()
+            .filter(|h| h.source.as_deref() == Some("oauth"))
+            .collect();
+        assert_eq!(oauth.len(), 1, "one oauth issue created for the dependent");
+        assert_eq!(oauth[0].severity, "high");
+        assert!(oauth[0].description.contains(cred_id), "credential marker embedded");
+
+        // Tick-tick: a second revocation pass must NOT create a duplicate.
+        route_revocation_to_healing(&pool, cred_id, "Gmail", "gmail");
+        let open2 = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
+        assert_eq!(
+            open2
+                .iter()
+                .filter(|h| h.source.as_deref() == Some("oauth"))
+                .count(),
+            1,
+            "no duplicate across refresh ticks",
+        );
+
+        // Re-auth: auto-resolve clears the open issue.
+        resolve_revocation_healing(&pool, cred_id);
+        let still_open = healing::get_all(&pool, Some(&pid), Some("open")).unwrap();
+        assert_eq!(
+            still_open
+                .iter()
+                .filter(|h| h.source.as_deref() == Some("oauth"))
+                .count(),
+            0,
+            "issue resolved after re-auth",
+        );
+        let resolved = healing::get_all(&pool, Some(&pid), Some("resolved")).unwrap();
+        assert_eq!(
+            resolved
+                .iter()
+                .filter(|h| h.source.as_deref() == Some("oauth"))
+                .count(),
+            1,
+            "the oauth issue moved to resolved",
+        );
+    }
+
+    #[test]
+    fn no_dependents_creates_no_issue() {
+        let pool = init_test_db().unwrap();
+        // A revoked credential nobody depends on must not create a persona-scoped
+        // row (the table is persona-scoped; banner + metadata remain its surface).
+        route_revocation_to_healing(&pool, "cred-orphan", "Orphan", "gmail");
+        let all = healing::get_all(&pool, None, None).unwrap();
+        assert_eq!(
+            all.iter()
+                .filter(|h| h.source.as_deref() == Some("oauth"))
+                .count(),
+            0,
+        );
+    }
 }

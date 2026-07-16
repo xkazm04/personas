@@ -7322,7 +7322,9 @@
       "execution_label": "Execution:",
       "issue_marked_as": "This issue is marked as",
       "retry_in_progress": "Retry in progress — status will update when complete.",
-      "resolve_issue_title": "Mark issue resolved"
+      "resolve_issue_title": "Mark issue resolved",
+      "oauth_source_badge": "Credential",
+      "oauth_source_hint": "Raised because this credential's access was revoked — reconnect it in the Vault to clear the issue."
     },
     "healing_timeline": {
       "loading": "Loading timeline...",

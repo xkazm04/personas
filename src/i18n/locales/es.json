@@ -6882,7 +6882,9 @@
       "execution_label": "Ejecución:",
       "issue_marked_as": "Este problema está marcado como",
       "retry_in_progress": "Reintento en progreso — el estado se actualizará al completarse.",
-      "resolve_issue_title": "Marcar problema como resuelto"
+      "resolve_issue_title": "Marcar problema como resuelto",
+      "oauth_source_badge": "Credencial",
+      "oauth_source_hint": "Generado porque se revocó el acceso de esta credencial: vuelve a conectarla en el Vault para resolver el problema."
     },
     "healing_timeline": {
       "loading": "Cargando línea de tiempo...",

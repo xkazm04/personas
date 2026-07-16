@@ -1209,7 +1209,9 @@
     "execution_label": "Eksekusi:",
     "issue_marked_as": "Masalah ini ditandai sebagai",
     "retry_in_progress": "Percobaan ulang sedang berlangsung",
-    "resolve_issue_title": "Selesaikan masalah"
+    "resolve_issue_title": "Selesaikan masalah",
+    "oauth_source_badge": "Kredensial",
+    "oauth_source_hint": "Dibuat karena akses kredensial ini dicabut — hubungkan kembali di Vault untuk menghapus masalah ini."
   },
   "healing_timeline": {
     "loading": "Memuat linimasa...",

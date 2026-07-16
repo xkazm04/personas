@@ -872,7 +872,15 @@ pub async fn recapture_for_credential(
         "oauth_refresh_backoff_until".into(),
         serde_json::Value::Null,
     );
+    // A successful recapture clears any prior revocation flag (the CLI session
+    // was re-established), mirroring the OAuth HTTP refresh success path.
+    patch.insert("needs_reauth".into(), serde_json::Value::Null);
+    patch.insert("needs_reauth_at".into(), serde_json::Value::Null);
     cred_repo::patch_metadata_atomic(pool, &cred.id, patch)?;
+
+    // Auto-resolve any open oauth-sourced healing issue for this credential —
+    // the recapture is the recovery.
+    crate::engine::oauth_refresh::resolve_revocation_healing(pool, &cred.id);
 
     Ok(format!(
         "CLI recapture succeeded ({} fields, ttl={:?}s)",

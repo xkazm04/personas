@@ -6882,7 +6882,9 @@
       "execution_label": "Exécution :",
       "issue_marked_as": "Ce problème est marqué comme",
       "retry_in_progress": "Tentative en cours — le statut sera mis à jour quand c'est terminé.",
-      "resolve_issue_title": "Marquer le problème comme résolu"
+      "resolve_issue_title": "Marquer le problème comme résolu",
+      "oauth_source_badge": "Identifiant",
+      "oauth_source_hint": "Créé car l'accès de cet identifiant a été révoqué — reconnectez-le dans le Vault pour résoudre le problème."
     },
     "healing_timeline": {
       "loading": "Chargement de la chronologie...",

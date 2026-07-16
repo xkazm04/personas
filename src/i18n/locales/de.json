@@ -6882,7 +6882,9 @@
       "execution_label": "Ausführung:",
       "issue_marked_as": "Dieses Problem ist markiert als",
       "retry_in_progress": "Wiederholung läuft — Status wird nach Abschluss aktualisiert.",
-      "resolve_issue_title": "Problem als behoben markieren"
+      "resolve_issue_title": "Problem als behoben markieren",
+      "oauth_source_badge": "Anmeldedaten",
+      "oauth_source_hint": "Erstellt, weil der Zugriff dieser Anmeldedaten widerrufen wurde — verbinden Sie sie im Vault erneut, um das Problem zu beheben."
     },
     "healing_timeline": {
       "loading": "Zeitlinie wird geladen...",

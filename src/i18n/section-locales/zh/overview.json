@@ -1209,7 +1209,9 @@
     "execution_label": "执行：",
     "issue_marked_as": "此问题已标记为",
     "retry_in_progress": "重试进行中——完成后将更新状态。",
-    "resolve_issue_title": "将问题标记为已解决"
+    "resolve_issue_title": "将问题标记为已解决",
+    "oauth_source_badge": "凭据",
+    "oauth_source_hint": "因为此凭据的访问权限已被撤销而创建 —— 请在 Vault 中重新连接以清除该问题。"
   },
   "healing_timeline": {
     "loading": "加载时间线中...",

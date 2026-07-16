@@ -245,6 +245,60 @@ pub fn create_with_source(
     })
 }
 
+/// Provenance tag for healing issues raised when a credential's OAuth grant is
+/// revoked and it needs re-authorization (mirrors the Director's `"director"`
+/// source). Drives the health-UI origin badge and keys the auto-resolve on a
+/// successful reconnect.
+pub const OAUTH_HEALING_SOURCE: &str = "oauth";
+
+/// Severity for a revoked-credential healing issue, given how many personas
+/// depend on the credential.
+///
+/// A revoked credential hard-breaks every persona bound to it, so any dependent
+/// makes it `high`; with zero dependents the revocation is real but currently
+/// inconsequential (nothing runs against it), so `medium`.
+///
+/// NOTE — `persona_healing_issues.persona_id` is `NOT NULL`, so the
+/// zero-dependent case produces NO row (there is no persona to attach it to);
+/// the `needs_reauth` metadata flag + re-auth banner remain its surface. The
+/// routing therefore only creates issues when there is ≥1 dependent, and the
+/// persisted severity is consequently always `high`. This mapping documents the
+/// intended tiering and is the single point that decides it.
+pub fn oauth_reauth_severity(dependent_count: usize) -> &'static str {
+    if dependent_count >= 1 {
+        "high"
+    } else {
+        "medium"
+    }
+}
+
+/// Resolve every OPEN healing issue with the given `source` whose `description`
+/// contains `marker`. Used to auto-resolve the oauth-sourced issues keyed to a
+/// credential id (the row has no credential_id column, so the id is embedded in
+/// the description as a stable marker). Returns the number resolved.
+/// Best-effort: individual failures are logged, never propagated.
+pub fn resolve_open_by_source_marker(pool: &DbPool, source: &str, marker: &str) -> usize {
+    let open = match get_all(pool, None, Some("open")) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::warn!(error = %e, "resolve_open_by_source_marker: list failed");
+            return 0;
+        }
+    };
+    let mut resolved = 0;
+    for issue in open {
+        if issue.source.as_deref() == Some(source) && issue.description.contains(marker) {
+            match update_status(pool, &issue.id, "resolved") {
+                Ok(()) => resolved += 1,
+                Err(e) => {
+                    tracing::warn!(issue_id = %issue.id, error = %e, "resolve_open_by_source_marker: resolve failed")
+                }
+            }
+        }
+    }
+    resolved
+}
+
 /// TTL after which an `auto_fix_pending` issue is reverted back to `open` if
 /// no terminal transition (`confirm_auto_fix` or `revert_auto_fix_pending`)
 /// has fired. Bound by the worst-case retry latency the user is willing to

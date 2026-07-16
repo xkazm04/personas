@@ -7329,6 +7329,8 @@ export type Translations = {
       issue_marked_as: string;
       retry_in_progress: string;
       resolve_issue_title: string;
+      oauth_source_badge: string;
+      oauth_source_hint: string;
     };
     healing_timeline: {
       loading: string;
