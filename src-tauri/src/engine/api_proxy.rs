@@ -800,10 +800,17 @@ pub async fn execute_api_request(
     } else {
         (None, fields)
     };
-    let mut token = strategy
+    // resolve_auth_token can perform a real OAuth refresh exchange for a locally
+    // expired token; if the provider rotated the refresh_token we MUST persist it
+    // (we hold the oauth_refresh_lock here) or the old, now-revoked token bricks
+    // the credential on the next refresh. See persist_resolved_token.
+    let resolved = strategy
         .resolve_auth_token(connector_metadata, &fields)
-        .await?
-        .map(|r| r.token);
+        .await?;
+    if let Some(ref r) = resolved {
+        super::oauth_refresh::persist_resolved_token(pool, &credential, r).await?;
+    }
+    let mut token = resolved.map(|r| r.token);
 
     // Validate header names + body size once, up front (independent of retries).
     for k in custom_headers.keys() {

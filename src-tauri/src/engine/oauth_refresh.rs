@@ -284,6 +284,111 @@ pub async fn force_refresh_single_credential(
     refresh_single_credential_inner(pool, cred, true).await
 }
 
+/// Persist a token captured from a `resolve_auth_token` call made on an
+/// expired OAuth credential.
+///
+/// `resolve_auth_token` is NOT read-only for a locally-expired OAuth token: it
+/// performs a real refresh exchange, and the provider may rotate the
+/// refresh_token (RFC 6749 §6), invalidating the old one server-side the moment
+/// it returns the new one. Callers that only take `.token` throw the rotation
+/// (and the fresh access_token/expiry) away, so the DB keeps a dead refresh_token
+/// → next refresh gets `invalid_grant` → the credential is bricked until manual
+/// re-auth. Call this whenever a resolve carries a rotated refresh_token or fresh
+/// expiry so the rotation lands durably.
+///
+/// The caller MUST already hold the per-credential `oauth_refresh_lock` (both
+/// current callers — api_proxy and healthcheck — resolve under it), so this
+/// writes without re-acquiring it. Atomic transaction with commit-retry mirrors
+/// the main refresh persist block: the provider already invalidated the old
+/// token, so a transient local write failure must not silently drop the rotation.
+pub async fn persist_resolved_token(
+    pool: &DbPool,
+    cred: &crate::db::models::PersonaCredential,
+    resolved: &crate::engine::connector_strategy::ResolvedToken,
+) -> Result<(), AppError> {
+    // A plain API-key (or already-fresh) resolve carries neither → nothing to do.
+    if resolved.refresh_token.is_none() && resolved.expires_in_secs.is_none() {
+        return Ok(());
+    }
+    let expires_at_rfc3339 = resolved
+        .expires_in_secs
+        .map(|secs| (chrono::Utc::now() + chrono::Duration::seconds(secs as i64)).to_rfc3339());
+
+    const MAX_PERSIST_ATTEMPTS: u32 = 3;
+    let mut attempt: u32 = 0;
+    loop {
+        attempt += 1;
+        let persist = (|| -> Result<(), AppError> {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction()?;
+            cred_repo::upsert_field_on_conn(&tx, &cred.id, "access_token", &resolved.token, true)?;
+            cred_repo::verify_field_roundtrip_on_conn(
+                &tx,
+                &cred.id,
+                "access_token",
+                &resolved.token,
+            )?;
+            if let Some(ref exp) = expires_at_rfc3339 {
+                cred_repo::upsert_field_on_conn(
+                    &tx,
+                    &cred.id,
+                    "oauth_token_expires_at",
+                    exp,
+                    false,
+                )?;
+            }
+            if let Some(ref new_refresh_token) = resolved.refresh_token {
+                cred_repo::upsert_field_on_conn(
+                    &tx,
+                    &cred.id,
+                    "refresh_token",
+                    new_refresh_token,
+                    true,
+                )?;
+                cred_repo::verify_field_roundtrip_on_conn(
+                    &tx,
+                    &cred.id,
+                    "refresh_token",
+                    new_refresh_token,
+                )?;
+            }
+            tx.commit()?;
+            Ok(())
+        })();
+
+        match persist {
+            Ok(()) => break,
+            Err(e) if attempt < MAX_PERSIST_ATTEMPTS => {
+                tracing::warn!(
+                    credential_id = %cred.id,
+                    attempt,
+                    error = %e,
+                    "persist_resolved_token failed; retrying so the provider-rotated refresh_token is not dropped"
+                );
+                tokio::time::sleep(std::time::Duration::from_millis(150 * attempt as u64)).await;
+            }
+            Err(e) => {
+                tracing::error!(
+                    credential_id = %cred.id,
+                    attempts = attempt,
+                    error = %e,
+                    "persist_resolved_token failed after retries; rotated refresh_token could not be saved — credential may need re-authorization"
+                );
+                return Err(e);
+            }
+        }
+    }
+
+    if resolved.refresh_token.is_some() {
+        tracing::info!(
+            credential_id = %cred.id,
+            service_type = %cred.service_type,
+            "Rotated refresh_token persisted (resolve path)"
+        );
+    }
+    Ok(())
+}
+
 /// Fire-and-forget: immediately refresh a just-(re)connected OAuth credential so
 /// its `oauth_token_expires_at` metadata is CURRENT.
 ///

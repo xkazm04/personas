@@ -483,10 +483,17 @@ pub async fn run_healthcheck(
         ) {
             tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
         }
-        let token = strategy
+        // resolve_auth_token may perform a real OAuth exchange for an expired
+        // token and receive a rotated refresh_token; persist it (we hold the
+        // oauth_refresh_lock) so we don't keep the now-revoked old one and brick
+        // the credential on the next refresh.
+        let resolved = strategy
             .resolve_auth_token(connector.metadata.as_deref(), &fresh_fields)
-            .await?
-            .map(|r| r.token);
+            .await?;
+        if let Some(ref r) = resolved {
+            super::oauth_refresh::persist_resolved_token(pool, &cred, r).await?;
+        }
+        let token = resolved.map(|r| r.token);
         (token, fresh_fields)
     } else {
         let token = strategy
