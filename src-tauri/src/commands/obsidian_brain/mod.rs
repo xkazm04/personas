@@ -1262,8 +1262,30 @@ pub fn obsidian_brain_resolve_conflict(
 
     match resolution.as_str() {
         "use_app" => {
-            // Overwrite vault file with app content
-            let file_path = vault_base.join(&conflict.file_path);
+            // Overwrite vault file with app content. `conflict` is caller-supplied
+            // over IPC, so `file_path` MUST go through the containment guard — a
+            // `..` segment or (on Windows) an absolute path would otherwise let
+            // Path::join escape the vault into an arbitrary-file-overwrite. The
+            // file exists (it's a conflict), so canonicalize succeeds.
+            let file_path = resolve_vault_subpath(vault_base, Some(&conflict.file_path))?;
+            // TOCTOU guard: the conflict snapshot may be stale if the vault file
+            // changed while the dialog was open. Re-hash the current bytes and
+            // refuse to clobber a newer edit rather than silently destroying it.
+            match std::fs::read_to_string(&file_path) {
+                Ok(current) => {
+                    if compute_content_hash(&current) != conflict.vault_hash {
+                        return Err(AppError::Validation(
+                            "The vault file changed since this conflict was detected; \
+                             re-sync and resolve again.".into(),
+                        ));
+                    }
+                }
+                Err(e) => {
+                    return Err(AppError::Internal(format!(
+                        "Failed to read current vault file: {e}"
+                    )));
+                }
+            }
             atomic_write(&file_path, conflict.app_content.as_bytes())
                 .map_err(|e| AppError::Internal(format!("Failed to write: {e}")))?;
             let new_hash = compute_content_hash(&conflict.app_content);
