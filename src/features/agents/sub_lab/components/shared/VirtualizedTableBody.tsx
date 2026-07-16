@@ -20,7 +20,11 @@ export function VirtualizedTableBody<T>({ items, renderRow, rowKey }: Props<T>) 
 
   const virtualizer = useVirtualizer({
     count: items.length,
-    getScrollElement: () => parentRef.current?.closest('.overflow-x-auto') as HTMLElement | null,
+    // The vertical scroll container must be opted in explicitly by the caller
+    // (max-height + overflow-y-auto + data-virtual-scroll); the old
+    // '.overflow-x-auto' target only scrolled horizontally, so scrollTop
+    // stayed 0 and rows past the first viewport never materialized.
+    getScrollElement: () => parentRef.current?.closest('[data-virtual-scroll]') as HTMLElement | null,
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
     enabled: shouldVirtualize,
@@ -42,27 +46,36 @@ export function VirtualizedTableBody<T>({ items, renderRow, rowKey }: Props<T>) 
   const virtualItems = virtualizer.getVirtualItems();
   const totalSize = virtualizer.getTotalSize();
 
+  // Keep <tr>s in normal table flow (absolute positioning breaks <td>/<thead>
+  // column alignment); simulate the off-screen rows with spacer rows instead.
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0]!.start : 0;
+  const paddingBottom = virtualItems.length > 0 ? totalSize - virtualItems[virtualItems.length - 1]!.end : 0;
+
   return (
-    <tbody ref={parentRef} style={{ height: `${totalSize}px`, position: 'relative' }}>
+    <tbody ref={parentRef}>
+      {paddingTop > 0 && (
+        <tr aria-hidden="true">
+          <td style={{ height: `${paddingTop}px`, padding: 0, border: 0 }} />
+        </tr>
+      )}
       {virtualItems.map((virtualRow) => {
         const item = items[virtualRow.index]!;
         return (
           <tr
             key={rowKey(item)}
+            data-index={virtualRow.index}
+            ref={virtualizer.measureElement}
             className="border-b border-primary/10 hover:bg-secondary/10 transition-colors"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: `${virtualRow.size}px`,
-              transform: `translateY(${virtualRow.start}px)`,
-            }}
           >
             {renderRow(item, virtualRow.index)}
           </tr>
         );
       })}
+      {paddingBottom > 0 && (
+        <tr aria-hidden="true">
+          <td style={{ height: `${paddingBottom}px`, padding: 0, border: 0 }} />
+        </tr>
+      )}
     </tbody>
   );
 }
