@@ -11922,7 +11922,12 @@
       "headless_no_terminal": "后台会话 — 无终端运行。通过“需要你”横幅回复；进度显示在 Insights 中。",
       "spawn_headless_hint": "无头模式 — 没有实时终端，CPU 和内存占用大幅降低。通过“需要你”横幅回复；在 Insights 中查看进度。",
       "spawn_headless_toggle": "在后台运行（无终端）",
-      "live_slot_hibernated_toast": "{name} 已休眠以保持在活动会话上限内——其对话已保存；唤醒它即可继续。"
+      "live_slot_hibernated_toast": "{name} 已休眠以保持在活动会话上限内——其对话已保存；唤醒它即可继续。",
+      "skill_install_diff_summary": "{changed} 项更改 · {added} 项新增 · {removed} 项移除",
+      "skill_sync_diverged": "已偏离",
+      "skill_sync_diverged_hint": "此副本已与其安装来源不一致——副本或其来源已更改。",
+      "skill_sync_in_sync": "已同步",
+      "skill_sync_in_sync_hint": "此已安装的副本仍与其安装来源保持一致。"
     },
     "title": "插件",
     "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",

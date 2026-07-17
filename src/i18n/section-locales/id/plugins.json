@@ -199,7 +199,12 @@
     "headless_no_terminal": "Sesi latar belakang — berjalan tanpa terminal. Balas dari banner \"Butuh Anda\"; kemajuan tampil di Insights.",
     "spawn_headless_hint": "Mode headless — tanpa terminal langsung, jauh lebih ringan di CPU dan RAM. Balas dari banner \"Butuh Anda\"; pantau kemajuan di Insights.",
     "spawn_headless_toggle": "Jalankan di latar belakang (tanpa terminal)",
-    "live_slot_hibernated_toast": "{name} dihibernasi agar tetap dalam batas sesi aktif — percakapannya tersimpan; bangunkan untuk melanjutkan."
+    "live_slot_hibernated_toast": "{name} dihibernasi agar tetap dalam batas sesi aktif — percakapannya tersimpan; bangunkan untuk melanjutkan.",
+    "skill_install_diff_summary": "{changed} diubah · {added} ditambah · {removed} dihapus",
+    "skill_sync_diverged": "Menyimpang",
+    "skill_sync_diverged_hint": "Salinan ini tidak lagi cocok dengan sumber terpasangnya — salinan atau sumbernya berubah.",
+    "skill_sync_in_sync": "Tersinkron",
+    "skill_sync_in_sync_hint": "Salinan terpasang ini masih cocok dengan sumber tempat ia dipasang."
   },
   "title": "Plugin",
   "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",

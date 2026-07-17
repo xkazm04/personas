@@ -30,6 +30,23 @@ export function SkillLibraryRow({ skill, canApply, onLoad, onInstall }: Props) {
         <div className="flex items-center gap-1.5">
           <Terminal className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
           <span className="typo-card-label truncate">{skill.name}</span>
+          {skill.syncState === 'diverged' && (
+            <span
+              data-testid={`fleet-drawer-drift-${skill.name}`}
+              className="shrink-0 rounded-full bg-status-warning/15 px-1.5 py-px text-[10px] font-medium text-status-warning"
+              title={f.skill_sync_diverged_hint}
+            >
+              {f.skill_sync_diverged}
+            </span>
+          )}
+          {skill.syncState === 'in_sync' && (
+            <span
+              className="shrink-0 rounded-full bg-status-success/15 px-1.5 py-px text-[10px] font-medium text-status-success"
+              title={f.skill_sync_in_sync_hint}
+            >
+              {f.skill_sync_in_sync}
+            </span>
+          )}
         </div>
         {skill.description && (
           <p className="text-[12px] text-foreground opacity-60 truncate mt-0.5 pl-4.5">{skill.description}</p>

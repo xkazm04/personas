@@ -199,7 +199,12 @@
     "headless_no_terminal": "Sesión en segundo plano — se ejecuta sin terminal. Responde desde el banner «Te necesita»; el progreso se muestra en Insights.",
     "spawn_headless_hint": "Modo headless: sin terminal en vivo, mucho más ligero en CPU y RAM. Responde desde el banner «Te necesita»; consulta el progreso en Insights.",
     "spawn_headless_toggle": "Ejecutar en segundo plano (sin terminal)",
-    "live_slot_hibernated_toast": "{name} se hibernó para no superar el límite de sesiones activas; su conversación está guardada, reactívala para continuar."
+    "live_slot_hibernated_toast": "{name} se hibernó para no superar el límite de sesiones activas; su conversación está guardada, reactívala para continuar.",
+    "skill_install_diff_summary": "{changed} modificado · {added} añadido · {removed} eliminado",
+    "skill_sync_diverged": "Divergido",
+    "skill_sync_diverged_hint": "Esta copia ya no coincide con su fuente instalada: la copia o su fuente cambió.",
+    "skill_sync_in_sync": "Sincronizado",
+    "skill_sync_in_sync_hint": "Esta copia instalada aún coincide con la fuente desde la que se instaló."
   },
   "title": "Plugins",
   "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",

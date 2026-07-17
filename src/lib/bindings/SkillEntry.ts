@@ -20,4 +20,17 @@ referenceFileCount: number,
 /**
  * Names of reference files
  */
-referenceFiles: Array<string>, };
+referenceFiles: Array<string>, 
+/**
+ * Provenance-derived sync state vs the source the skill was installed from:
+ * `"in_sync"` (installed copy still matches its source), `"diverged"`
+ * (hashes differ — the copy or its source changed), or `"local_only"`
+ * (no provenance sidecar — hand-authored or installed before tracking).
+ */
+syncState: string, 
+/**
+ * Where this skill was installed from, when provenance exists:
+ * `"global"` (the user-global library) or `"project"`. `None` for
+ * local-only skills.
+ */
+sourceKind: string | null, };

@@ -8,6 +8,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import type { SkillInstallResult } from '@/lib/bindings/SkillInstallResult';
+import type { SkillInstallPreview } from '@/api/devTools/devTools';
 
 interface Props {
   open: boolean;
@@ -17,6 +18,9 @@ interface Props {
   /** Copies the skill into the chosen project; resolves with the backend
    *  result (or null on error, which is toasted upstream). */
   onInstall: (targetProjectId: string, overwrite: boolean) => Promise<SkillInstallResult | null>;
+  /** Previews what a (re-)install would change at the chosen target, without
+   *  writing. Resolves null on error (the summary is simply hidden). */
+  onPreview: (targetProjectId: string) => Promise<SkillInstallPreview | null>;
 }
 
 /**
@@ -25,7 +29,7 @@ interface Props {
  * On an "already exists" result it primes the overwrite toggle so a second
  * click replaces in place.
  */
-export function SkillInstallModal({ open, onClose, skillName, onInstall }: Props) {
+export function SkillInstallModal({ open, onClose, skillName, onInstall, onPreview }: Props) {
   const { t, tx } = useTranslation();
   const fleet = t.plugins.fleet;
   const projects = useSystemStore(useShallow((s) => s.projects));
@@ -35,6 +39,7 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall }: Props
   const [targetId, setTargetId] = useState('');
   const [overwrite, setOverwrite] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const [preview, setPreview] = useState<SkillInstallPreview | null>(null);
 
   // Reset transient state when the modal opens, default the target to the
   // first project, and refresh the project list. Deps are intentionally just
@@ -44,10 +49,29 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall }: Props
     if (!open) return;
     setOverwrite(false);
     setInstalling(false);
+    setPreview(null);
     setTargetId((cur) => cur || projects[0]?.id || '');
     fetchProjects().catch(silentCatch('SkillInstallModal:fetchProjects'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Fetch a diff preview whenever the target changes so the user sees what a
+  // re-install would overwrite BEFORE committing. Ignored for a fresh install
+  // (targetExists === false → nothing to overwrite).
+  useEffect(() => {
+    if (!open || !skillName || !targetId) {
+      setPreview(null);
+      return;
+    }
+    let cancelled = false;
+    onPreview(targetId).then((p) => {
+      if (!cancelled) setPreview(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, skillName, targetId]);
 
   const handleConfirm = async () => {
     if (!skillName || !targetId || installing) return;
@@ -115,6 +139,35 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall }: Props
                 </button>
               ))}
             </div>
+
+            {preview?.targetExists && (
+              <div
+                data-testid="skill-install-diff"
+                className="mb-3 rounded-modal border border-status-warning/25 bg-status-warning/10 p-2.5"
+              >
+                <p className="typo-caption font-medium text-status-warning mb-1">
+                  {tx(fleet.skill_install_diff_summary, {
+                    changed: preview.changedCount,
+                    added: preview.addedCount,
+                    removed: preview.removedCount,
+                  })}
+                </p>
+                {preview.deltas.length > 0 && (
+                  <ul className="max-h-[110px] overflow-y-auto space-y-0.5 font-mono text-[11px] text-foreground">
+                    {preview.deltas.map((d) => (
+                      <li key={`${d.status}:${d.file}`} className="truncate">
+                        <span
+                          className={`font-semibold ${d.status === 'added' ? 'text-status-success' : d.status === 'removed' ? 'text-status-warning' : 'text-primary'}`}
+                        >
+                          {d.status === 'added' ? '+' : d.status === 'removed' ? '−' : '~'}
+                        </span>{' '}
+                        {d.file}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             <label className="flex items-center gap-2 typo-caption text-foreground cursor-pointer mb-4">
               <input

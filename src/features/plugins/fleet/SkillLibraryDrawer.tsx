@@ -29,7 +29,7 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
   const { t, tx } = useTranslation();
   const f = t.plugins.fleet;
   // Default to the shared (global) library — the cross-repo source.
-  const { filtered, loading, search, setSearch, source, setSource, fetchSkills, installSkill } =
+  const { filtered, loading, search, setSearch, source, setSource, fetchSkills, installSkill, previewInstall } =
     useSkillData('global');
   const [installName, setInstallName] = useState<string | null>(null);
   // Editable command composer — clicking a skill loads `/skill ` here so args
@@ -178,6 +178,9 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
         skillName={installName}
         onInstall={(targetProjectId, overwrite) =>
           installName ? installSkill(installName, targetProjectId, overwrite) : Promise.resolve(null)
+        }
+        onPreview={(targetProjectId) =>
+          installName ? previewInstall(installName, targetProjectId) : Promise.resolve(null)
         }
       />
     </div>,

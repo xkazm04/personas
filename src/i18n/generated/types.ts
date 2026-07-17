@@ -12118,6 +12118,11 @@ export type Translations = {
       skill_install_success: string;
       skill_install_exists: string;
       skill_install_failed: string;
+      skill_install_diff_summary: string;
+      skill_sync_in_sync: string;
+      skill_sync_in_sync_hint: string;
+      skill_sync_diverged: string;
+      skill_sync_diverged_hint: string;
       athena_ask: string;
       athena_never_attached: string;
       athena_never_attached_hint: string;

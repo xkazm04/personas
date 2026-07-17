@@ -199,7 +199,12 @@
     "headless_no_terminal": "Relace na pozadí — běží bez terminálu. Odpovídejte z lišty „Potřebuje vás“; průběh se zobrazuje v Přehledech.",
     "spawn_headless_hint": "Bezhlavý režim — bez živého terminálu, výrazně nižší nároky na CPU a RAM. Odpovídejte z lišty „Potřebuje vás“; průběh sledujte v Přehledech.",
     "spawn_headless_toggle": "Spustit na pozadí (bez terminálu)",
-    "live_slot_hibernated_toast": "{name} byla uspána, aby se dodržel limit aktivních relací — konverzace je uložena; probuďte ji pro pokračování."
+    "live_slot_hibernated_toast": "{name} byla uspána, aby se dodržel limit aktivních relací — konverzace je uložena; probuďte ji pro pokračování.",
+    "skill_install_diff_summary": "{changed} změněno · {added} přidáno · {removed} odebráno",
+    "skill_sync_diverged": "Odchýleno",
+    "skill_sync_diverged_hint": "Tato kopie již neodpovídá svému nainstalovanému zdroji — kopie nebo její zdroj se změnily.",
+    "skill_sync_in_sync": "Synchronizováno",
+    "skill_sync_in_sync_hint": "Tato nainstalovaná kopie stále odpovídá zdroji, ze kterého byla nainstalována."
   },
   "title": "Pluginy",
   "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",

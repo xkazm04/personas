@@ -11922,7 +11922,12 @@
       "headless_no_terminal": "Phiên chạy nền — không có terminal. Trả lời từ băng rôn \"Cần bạn\"; tiến độ hiển thị trong Insights.",
       "spawn_headless_hint": "Chế độ headless — không có terminal trực tiếp, nhẹ hơn nhiều về CPU và RAM. Trả lời từ băng rôn \"Cần bạn\"; theo dõi tiến độ trong Insights.",
       "spawn_headless_toggle": "Chạy nền (không có terminal)",
-      "live_slot_hibernated_toast": "{name} đã được ngủ đông để giữ trong giới hạn phiên hoạt động — cuộc trò chuyện được lưu; đánh thức để tiếp tục."
+      "live_slot_hibernated_toast": "{name} đã được ngủ đông để giữ trong giới hạn phiên hoạt động — cuộc trò chuyện được lưu; đánh thức để tiếp tục.",
+      "skill_install_diff_summary": "{changed} thay đổi · {added} thêm · {removed} xóa",
+      "skill_sync_diverged": "Khác biệt",
+      "skill_sync_diverged_hint": "Bản sao này không còn khớp với nguồn đã cài đặt — bản sao hoặc nguồn của nó đã thay đổi.",
+      "skill_sync_in_sync": "Đã đồng bộ",
+      "skill_sync_in_sync_hint": "Bản sao đã cài đặt này vẫn khớp với nguồn mà nó được cài đặt từ đó."
     },
     "title": "Plugin",
     "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",

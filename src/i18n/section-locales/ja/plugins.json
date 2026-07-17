@@ -199,7 +199,12 @@
     "headless_no_terminal": "バックグラウンドセッション — ターミナルなしで実行中。返信は「要対応」バナーから、進捗は Insights に表示されます。",
     "spawn_headless_hint": "ヘッドレスモード — ライブターミナルなしで、CPU と RAM の負荷を大幅に軽減。返信は「要対応」バナーから、進捗は Insights で確認できます。",
     "spawn_headless_toggle": "バックグラウンドで実行（ターミナルなし）",
-    "live_slot_hibernated_toast": "アクティブセッション上限を超えないよう {name} をハイバネートしました。会話は保存されています。再開するにはウェイクしてください。"
+    "live_slot_hibernated_toast": "アクティブセッション上限を超えないよう {name} をハイバネートしました。会話は保存されています。再開するにはウェイクしてください。",
+    "skill_install_diff_summary": "{changed} 件変更 · {added} 件追加 · {removed} 件削除",
+    "skill_sync_diverged": "乖離",
+    "skill_sync_diverged_hint": "このコピーはインストール元のソースと一致しなくなりました — コピーまたはソースが変更されています。",
+    "skill_sync_in_sync": "同期済み",
+    "skill_sync_in_sync_hint": "このインストール済みのコピーは、インストール元のソースと一致しています。"
   },
   "title": "プラグイン",
   "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",

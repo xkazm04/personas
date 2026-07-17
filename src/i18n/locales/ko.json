@@ -11922,7 +11922,12 @@
       "headless_no_terminal": "백그라운드 세션 — 터미널 없이 실행됩니다. \"도움 필요\" 배너에서 응답하고, 진행 상황은 Insights에 표시됩니다.",
       "spawn_headless_hint": "헤드리스 모드 — 라이브 터미널 없이 CPU와 RAM 부담이 훨씬 적습니다. 응답은 \"도움 필요\" 배너에서, 진행 상황은 Insights에서 확인하세요.",
       "spawn_headless_toggle": "백그라운드로 실행 (터미널 없음)",
-      "live_slot_hibernated_toast": "활성 세션 한도를 유지하기 위해 {name}을(를) 최대 절전 모드로 전환했습니다 — 대화는 저장되어 있으며, 계속하려면 깨우세요."
+      "live_slot_hibernated_toast": "활성 세션 한도를 유지하기 위해 {name}을(를) 최대 절전 모드로 전환했습니다 — 대화는 저장되어 있으며, 계속하려면 깨우세요.",
+      "skill_install_diff_summary": "{changed}개 변경 · {added}개 추가 · {removed}개 제거",
+      "skill_sync_diverged": "불일치",
+      "skill_sync_diverged_hint": "이 사본은 더 이상 설치 원본과 일치하지 않습니다 — 사본 또는 원본이 변경되었습니다.",
+      "skill_sync_in_sync": "동기화됨",
+      "skill_sync_in_sync_hint": "이 설치된 사본은 설치 원본과 여전히 일치합니다."
     },
     "title": "플러그인",
     "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",

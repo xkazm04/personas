@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import * as devApi from '@/api/devTools/devTools';
-import type { SkillEntry } from '@/api/devTools/devTools';
+import type { SkillEntry, SkillInstallPreview } from '@/api/devTools/devTools';
 import type { SkillInstallResult } from '@/lib/bindings/SkillInstallResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -113,6 +113,21 @@ export function useSkillData(initialSource: SkillSource = 'project') {
     [source, activeProjectId, addToast, t],
   );
 
+  // Preview a (re-)install diff before overwriting. Returns null on error (the
+  // caller degrades gracefully — a missing preview just hides the summary).
+  const previewInstall = useCallback(
+    async (skillName: string, targetProjectId: string): Promise<SkillInstallPreview | null> => {
+      try {
+        const sourceProjectId = source === 'global' ? null : (activeProjectId ?? null);
+        return await devApi.previewInstallSkill(skillName, sourceProjectId, targetProjectId);
+      } catch (err) {
+        silentCatch('features/plugins/fleet/sub_skills/useSkillData:previewInstall')(err);
+        return null;
+      }
+    },
+    [source, activeProjectId],
+  );
+
   // Reset selection + reload when the active project changes — skills come
   // from the new project's .claude/skills directory, so the previous
   // selection is unlikely to still be valid.
@@ -221,7 +236,7 @@ export function useSkillData(initialSource: SkillSource = 'project') {
     editing, setEditing, saving, fileLoading, loadFailed,
     skillFiles,
     fetchSkills, selectSkill, switchFile, save, cancelEdit, clearSelection,
-    toggleFavorite, isFavorite, installSkill,
+    toggleFavorite, isFavorite, installSkill, previewInstall,
   };
 }
 

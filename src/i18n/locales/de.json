@@ -11922,7 +11922,12 @@
       "headless_no_terminal": "Hintergrundsitzung — läuft ohne Terminal. Antworten über das „Braucht dich“-Banner; der Fortschritt erscheint unter Insights.",
       "spawn_headless_hint": "Headless-Modus — kein Live-Terminal, deutlich weniger CPU- und RAM-Last. Antworten über das „Braucht dich“-Banner; Fortschritt unter Insights.",
       "spawn_headless_toggle": "Im Hintergrund ausführen (ohne Terminal)",
-      "live_slot_hibernated_toast": "{name} wurde in den Ruhezustand versetzt, um das Limit aktiver Sitzungen einzuhalten — die Konversation ist gespeichert; zum Fortsetzen aufwecken."
+      "live_slot_hibernated_toast": "{name} wurde in den Ruhezustand versetzt, um das Limit aktiver Sitzungen einzuhalten — die Konversation ist gespeichert; zum Fortsetzen aufwecken.",
+      "skill_install_diff_summary": "{changed} geändert · {added} hinzugefügt · {removed} entfernt",
+      "skill_sync_diverged": "Abweichend",
+      "skill_sync_diverged_hint": "Diese Kopie stimmt nicht mehr mit ihrer installierten Quelle überein – die Kopie oder ihre Quelle wurde geändert.",
+      "skill_sync_in_sync": "Synchron",
+      "skill_sync_in_sync_hint": "Diese installierte Kopie stimmt weiterhin mit der Quelle überein, aus der sie installiert wurde."
     },
     "title": "Plugins",
     "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",

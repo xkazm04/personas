@@ -1118,12 +1118,34 @@ export interface SkillEntry {
   description: string | null;
   referenceFileCount: number;
   referenceFiles: string[];
+  /** Provenance-derived drift state: 'in_sync' | 'diverged' | 'local_only'. */
+  syncState: string;
+  /** Where the skill was installed from ('global' | 'project'), or null. */
+  sourceKind: string | null;
 }
 
 export interface SkillFileContent {
   skillName: string;
   fileName: string;
   content: string;
+}
+
+export interface SkillFileDelta {
+  file: string;
+  /** 'changed' | 'added' | 'removed'. */
+  status: string;
+  sourceBytes: number;
+  targetBytes: number;
+}
+
+export interface SkillInstallPreview {
+  skillName: string;
+  targetPath: string;
+  targetExists: boolean;
+  changedCount: number;
+  addedCount: number;
+  removedCount: number;
+  deltas: SkillFileDelta[];
 }
 
 export const listSkills = (projectId?: string | null) =>
@@ -1150,6 +1172,22 @@ export const installSkill = (
     sourceProjectId,
     targetProjectId,
     overwrite,
+  });
+
+/**
+ * Preview what a (re-)install would change at the target, without writing.
+ * Returns per-file deltas + counts so the UI can summarize an overwrite before
+ * committing it.
+ */
+export const previewInstallSkill = (
+  skillName: string,
+  sourceProjectId: string | null,
+  targetProjectId: string,
+) =>
+  invoke<SkillInstallPreview>("skill_files_install_preview", {
+    skillName,
+    sourceProjectId,
+    targetProjectId,
   });
 
 export const readSkillFile = (skillName: string, fileName: string, projectId?: string | null) =>
