@@ -503,21 +503,7 @@ fn get_claude_config_paths() -> Vec<PathBuf> {
 
 /// Turn an MCP server name into a human-readable label.
 fn humanize_mcp_name(name: &str) -> String {
-    name.replace(['-', '_'], " ")
-        .split_whitespace()
-        .map(|word| {
-            let mut chars = word.chars();
-            match chars.next() {
-                None => String::new(),
-                Some(first) => {
-                    let mut s = first.to_uppercase().to_string();
-                    s.extend(chars);
-                    s
-                }
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
+    crate::utils::text::humanize_identifier(name, true)
 }
 
 #[cfg(test)]

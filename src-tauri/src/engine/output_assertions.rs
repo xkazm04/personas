@@ -236,39 +236,32 @@ fn eval_not_contains(config_json: &str, output: &str) -> (bool, String, Option<S
     )
 }
 
+/// Coerce assertion `output` into a JSON `Value`, tolerating output that
+/// wraps a JSON object in surrounding prose (via the shared brace-balanced
+/// extractor). Returns `None` when neither a strict parse nor an embedded
+/// object parse succeeds. Shared by `eval_json_path` and `eval_json_schema`
+/// (see refactor-bughunt-2026-07-10, tauri-engine-3-10 #7/#8).
+fn parse_output_json(output: &str) -> Option<serde_json::Value> {
+    serde_json::from_str(output).ok().or_else(|| {
+        let obj = super::safe_json::extract_balanced_object(output.trim())?;
+        serde_json::from_str(obj).ok()
+    })
+}
+
 fn eval_json_path(config_json: &str, output: &str) -> (bool, String, Option<String>) {
     let config: JsonPathConfig = match serde_json::from_str(config_json) {
         Ok(c) => c,
         Err(e) => return (false, format!("Invalid json_path config: {e}"), None),
     };
 
-    // Try to parse the output as JSON
-    let json_val: serde_json::Value = match serde_json::from_str(output) {
-        Ok(v) => v,
-        Err(_) => {
-            // Try to find JSON embedded in the output (between first { and last })
-            let trimmed = output.trim();
-            let json_start = trimmed.find('{');
-            let json_end = trimmed.rfind('}');
-            match (json_start, json_end) {
-                (Some(s), Some(e)) if s < e => match serde_json::from_str(&trimmed[s..=e]) {
-                    Ok(v) => v,
-                    Err(_) => {
-                        return (
-                            false,
-                            "Output is not valid JSON; cannot evaluate JSONPath".into(),
-                            None,
-                        )
-                    }
-                },
-                _ => {
-                    return (
-                        false,
-                        "Output is not valid JSON; cannot evaluate JSONPath".into(),
-                        None,
-                    )
-                }
-            }
+    let json_val = match parse_output_json(output) {
+        Some(v) => v,
+        None => {
+            return (
+                false,
+                "Output is not valid JSON; cannot evaluate JSONPath".into(),
+                None,
+            )
         }
     };
 
@@ -330,31 +323,14 @@ fn eval_json_schema(config_json: &str, output: &str) -> (bool, String, Option<St
         Err(e) => return (false, format!("Invalid json_schema config: {e}"), None),
     };
 
-    let json_val: serde_json::Value = match serde_json::from_str(output) {
-        Ok(v) => v,
-        Err(_) => {
-            let trimmed = output.trim();
-            let json_start = trimmed.find('{');
-            let json_end = trimmed.rfind('}');
-            match (json_start, json_end) {
-                (Some(s), Some(e)) if s < e => match serde_json::from_str(&trimmed[s..=e]) {
-                    Ok(v) => v,
-                    Err(_) => {
-                        return (
-                            false,
-                            "Output is not valid JSON; cannot validate schema".into(),
-                            None,
-                        )
-                    }
-                },
-                _ => {
-                    return (
-                        false,
-                        "Output is not valid JSON; cannot validate schema".into(),
-                        None,
-                    )
-                }
-            }
+    let json_val = match parse_output_json(output) {
+        Some(v) => v,
+        None => {
+            return (
+                false,
+                "Output is not valid JSON; cannot validate schema".into(),
+                None,
+            )
         }
     };
 

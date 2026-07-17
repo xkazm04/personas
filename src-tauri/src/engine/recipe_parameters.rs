@@ -59,12 +59,7 @@ fn map_param_type(t: &str) -> Option<&'static str> {
 
 /// `snake_case_name` → `Snake case name` for the editor label.
 fn humanize(name: &str) -> String {
-    let spaced = name.replace(['_', '-'], " ");
-    let mut chars = spaced.chars();
-    match chars.next() {
-        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-        None => spaced,
-    }
+    crate::utils::text::humanize_identifier(name, false)
 }
 
 /// Parse an `input_schema` array (`[{name,type,default,options,min,max,description}]`)

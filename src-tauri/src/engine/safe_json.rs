@@ -92,6 +92,73 @@ pub fn from_str_as<T: serde::de::DeserializeOwned>(input: &str) -> Result<T, App
 }
 
 // ============================================================================
+// Balanced-brace extraction — shared across engine LLM-JSON parsers
+// ============================================================================
+
+/// Extract the outermost brace-balanced `{...}` JSON object from text that
+/// may carry surrounding prose or markdown fences (e.g. raw LLM output).
+/// String- and escape-aware: a `}` inside a string value does not close the
+/// object early, unlike a naive `find('{')`/`rfind('}')` slice. Returns a
+/// borrowed slice of `s` on success.
+///
+/// This is the canonical brace-matcher for engine modules that need to pull
+/// one JSON object out of noisy LLM prose — consolidated from several
+/// independent copies (memory_reflection, auto_triage, output_assertions;
+/// see refactor-bughunt-2026-07-10, tauri-engine-3-10 #8).
+pub fn extract_balanced_object(s: &str) -> Option<&str> {
+    let start = s.find('{')?;
+    let bytes = s.as_bytes();
+    let mut depth = 0i32;
+    let mut in_string = false;
+    let mut escaped = false;
+    for (i, &b) in bytes.iter().enumerate().skip(start) {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if b == b'\\' {
+                escaped = true;
+            } else if b == b'"' {
+                in_string = false;
+            }
+            continue;
+        }
+        match b {
+            b'"' => in_string = true,
+            b'{' => depth += 1,
+            b'}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(&s[start..=i]);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Parse LLM output that may wrap valid JSON in prose: try a strict parse of
+/// the trimmed input first, then fall back to extracting the first balanced
+/// `{...}` object via [`extract_balanced_object`]. Shared by call sites that
+/// tolerate "Claude wraps JSON in prose" chatter despite being told to
+/// respond with ONLY JSON (see refactor-bughunt-2026-07-10, tauri-engine-4-10 #7).
+pub fn parse_lenient_json<T: serde::de::DeserializeOwned>(raw: &str) -> Result<T, AppError> {
+    let trimmed = raw.trim();
+    if let Ok(parsed) = serde_json::from_str::<T>(trimmed) {
+        return Ok(parsed);
+    }
+    if let Some(obj) = extract_balanced_object(trimmed) {
+        if let Ok(parsed) = serde_json::from_str::<T>(obj) {
+            return Ok(parsed);
+        }
+    }
+    let head = crate::utils::text::truncate_on_char_boundary(trimmed, 300);
+    Err(AppError::Internal(format!(
+        "Unparseable LLM JSON response. Head (\u{2264}300 chars): {head}"
+    )))
+}
+
+// ============================================================================
 // Lenient parsing — for LLM-generated JSON
 // ============================================================================
 

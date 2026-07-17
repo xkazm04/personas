@@ -194,12 +194,8 @@ pub fn parse_verdict_response(raw: &str) -> Result<AutoTriageDecision, String> {
 
     let trimmed = raw.trim();
     let parsed: Option<Verdict> = serde_json::from_str(trimmed).ok().or_else(|| {
-        let start = trimmed.find('{')?;
-        let end = trimmed.rfind('}')?;
-        if end <= start {
-            return None;
-        }
-        serde_json::from_str(&trimmed[start..=end]).ok()
+        let obj = super::safe_json::extract_balanced_object(trimmed)?;
+        serde_json::from_str(obj).ok()
     });
 
     let Some(v) = parsed else {

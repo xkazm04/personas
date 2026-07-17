@@ -45,6 +45,42 @@ pub fn truncate_on_char_boundary(s: &str, max_bytes: usize) -> &str {
     &s[..floor_char_boundary(s, max_bytes)]
 }
 
+/// Convert a `snake_case`/`kebab-case` identifier into a human-readable
+/// label: replace `_`/`-` with spaces, then either title-case every word
+/// (`per_word = true`) or capitalize only the first character of the whole
+/// string (`per_word = false`).
+///
+/// Consolidates two independently-written `humanize` helpers that diverged on
+/// exactly this per-word-vs-first-word behavior (`desktop_discovery::
+/// humanize_mcp_name` and `recipe_parameters::humanize`; see
+/// refactor-bughunt-2026-07-10, tauri-engine-4-10 #9).
+pub fn humanize_identifier(name: &str, per_word: bool) -> String {
+    let spaced = name.replace(['-', '_'], " ");
+    if per_word {
+        spaced
+            .split_whitespace()
+            .map(|word| {
+                let mut chars = word.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(first) => {
+                        let mut s = first.to_uppercase().to_string();
+                        s.extend(chars);
+                        s
+                    }
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    } else {
+        let mut chars = spaced.chars();
+        match chars.next() {
+            Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+            None => spaced,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{ceil_char_boundary, floor_char_boundary, truncate_on_char_boundary};

@@ -457,48 +457,13 @@ impl CliProcessDriver {
 
     /// Build and spawn with stderr discarded (piped to null).
     /// Useful for test/lab runners that don't need stderr.
+    ///
+    /// `build_and_spawn_core` (used by [`spawn_temp`]) already defaults stderr
+    /// to `Stdio::null()`, so this variant is now behaviorally identical to
+    /// `spawn_temp` — kept as a thin alias for call-site stability (see
+    /// refactor-bughunt-2026-07-10, tauri-engine-3-10 #6).
     pub fn spawn_temp_no_stderr(cli_args: &CliArgs, temp_prefix: &str) -> Result<Self, String> {
-        let exec_dir =
-            std::env::temp_dir().join(format!("{}-{}", temp_prefix, uuid::Uuid::new_v4()));
-        std::fs::create_dir_all(&exec_dir)
-            .map_err(|e| format!("Failed to create temp dir: {e}"))?;
-
-        let mut cmd = Command::new(&cli_args.command);
-        cmd.args(&cli_args.args)
-            .current_dir(&exec_dir)
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::null())
-            // Same orphan-prevention guarantee as build_and_spawn_core: if the
-            // owning future is dropped (cancel/panic/timeout) the CLI dies with
-            // it instead of running on and consuming API credits.
-            .kill_on_drop(true);
-
-        #[cfg(windows)]
-        {
-            #[allow(unused_imports)]
-            use std::os::windows::process::CommandExt;
-            cmd.creation_flags(0x08000000);
-        }
-
-        for key in &cli_args.env_removals {
-            cmd.env_remove(key);
-        }
-        for (key, val) in &cli_args.env_overrides {
-            cmd.env(key, val);
-        }
-        force_subscription_auth(&mut cmd);
-
-        let child = cmd
-            .spawn()
-            .map_err(|e| format!("Failed to spawn CLI: {e}"))?;
-        let pid = child.id();
-        Ok(Self {
-            child,
-            exec_dir,
-            owns_exec_dir: true,
-            pid,
-        })
+        Self::spawn_temp(cli_args, temp_prefix)
     }
 
     /// Returns the PID of the child process (if available).

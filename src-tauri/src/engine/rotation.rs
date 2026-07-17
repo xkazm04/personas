@@ -177,15 +177,13 @@ fn extract_http_status(msg: &str) -> Option<u16> {
 // ---------------------------------------------------------------------------
 
 /// A single healthcheck result stored in the ring buffer.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
-#[ts(export)]
-pub struct HealthcheckEntry {
-    pub success: bool,
-    pub status_code: Option<u16>,
-    pub error_class: Option<String>,
-    pub message: String,
-    pub timestamp: String,
-}
+///
+/// This is the same shape as the model-layer `LedgerHealthEntry` used for
+/// persisted credential metadata -- the two used to be independently defined
+/// structs bridged by hand-written field-for-field mappers
+/// (`ledger_entries_to_engine` / `engine_entries_to_ledger`). Aliased to a
+/// single type so there is one definition to keep in sync.
+pub type HealthcheckEntry = crate::db::models::LedgerHealthEntry;
 
 // ---------------------------------------------------------------------------
 // Anomaly score summary
@@ -379,39 +377,6 @@ pub fn resolve_tolerance(metadata: &serde_json::Value) -> f64 {
         };
     }
     DEFAULT_PERMANENT_FAILURE_THRESHOLD
-}
-
-/// Convert model-layer `LedgerHealthEntry` values to engine-layer `HealthcheckEntry`
-/// so they can be fed into `append_healthcheck_entry` and `compute_anomaly_score`.
-pub fn ledger_entries_to_engine(
-    entries: &[crate::db::models::LedgerHealthEntry],
-) -> Vec<HealthcheckEntry> {
-    entries
-        .iter()
-        .map(|e| HealthcheckEntry {
-            success: e.success,
-            status_code: e.status_code,
-            error_class: e.error_class.clone(),
-            message: e.message.clone(),
-            timestamp: e.timestamp.clone(),
-        })
-        .collect()
-}
-
-/// Convert engine-layer `HealthcheckEntry` values to model-layer `LedgerHealthEntry`.
-pub fn engine_entries_to_ledger(
-    entries: &[HealthcheckEntry],
-) -> Vec<crate::db::models::LedgerHealthEntry> {
-    entries
-        .iter()
-        .map(|e| crate::db::models::LedgerHealthEntry {
-            success: e.success,
-            status_code: e.status_code,
-            error_class: e.error_class.clone(),
-            message: e.message.clone(),
-            timestamp: e.timestamp.clone(),
-        })
-        .collect()
 }
 
 /// Build a `LedgerAnomalyScore` from an engine-layer `AnomalyScore`.
@@ -621,10 +586,9 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                 // overwritten by this write (both paths read-modify-write metadata).
                 let detail_c = detail.clone();
                 let _ = cred_repo::update_ledger(pool, &policy.credential_id, |l| {
-                    let existing = ledger_entries_to_engine(&l.healthcheck_results);
-                    let updated = append_healthcheck_entry(&existing, true, &detail_c);
+                    let updated = append_healthcheck_entry(&l.healthcheck_results, true, &detail_c);
                     let score = compute_anomaly_score(&updated, None);
-                    l.healthcheck_results = engine_entries_to_ledger(&updated);
+                    l.healthcheck_results = updated;
                     l.anomaly_score = Some(score_to_ledger(&score));
                 });
 
@@ -661,11 +625,10 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                 let mut tolerance_out: f64 = DEFAULT_PERMANENT_FAILURE_THRESHOLD;
                 let msg_c = msg.clone();
                 let _ = cred_repo::update_ledger(pool, &policy.credential_id, |l| {
-                    let existing = ledger_entries_to_engine(&l.healthcheck_results);
-                    let updated = append_healthcheck_entry(&existing, false, &msg_c);
+                    let updated = append_healthcheck_entry(&l.healthcheck_results, false, &msg_c);
                     let tolerance = l.resolve_tolerance();
                     let score = compute_anomaly_score(&updated, Some(tolerance));
-                    l.healthcheck_results = engine_entries_to_ledger(&updated);
+                    l.healthcheck_results = updated;
                     l.anomaly_score = Some(score_to_ledger(&score));
                     tolerance_out = tolerance;
                     score_out = Some(score);

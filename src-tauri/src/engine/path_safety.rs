@@ -168,6 +168,89 @@ fn is_under_user_home(normalised: &str) -> bool {
 #[allow(dead_code)]
 const ALLOWED_SAVE_EXTENSIONS: &[&str] = &["persona", "enclave"];
 
+/// Shared core of `validate_save_path` / `validate_file_access_path`: resolve
+/// `raw` to its canonical (symlink-free) form and block system directories,
+/// the app data directory, and anything outside the user's home tree.
+///
+/// `canonicalize_file` controls whether the file itself is canonicalized when
+/// it already exists (`validate_file_access_path`'s behavior — read/write of
+/// an existing file) or whether only the parent is resolved and the filename
+/// re-appended (`validate_save_path`'s behavior — the file doesn't exist yet).
+/// `op_verb` / `boundary_label` customize the error wording per caller (e.g.
+/// "Writing to" / "Save path" vs "Access to" / "File path").
+///
+/// Consolidated from two ~80%-identical copies (see refactor-bughunt-2026-07-10,
+/// tauri-engine-4-10 #8).
+fn resolve_and_guard(
+    raw: &std::path::Path,
+    trimmed: &str,
+    canonicalize_file: bool,
+    op_verb: &str,
+    boundary_label: &str,
+) -> Result<std::path::PathBuf, String> {
+    let canonical_path = if canonicalize_file {
+        match raw.canonicalize() {
+            Ok(canon) => canon,
+            Err(_) => resolve_parent(raw, trimmed)?,
+        }
+    } else {
+        resolve_parent(raw, trimmed)?
+    };
+
+    let mut canonical_str = canonical_path
+        .to_string_lossy()
+        .replace('\\', "/")
+        .to_lowercase();
+
+    // Strip Windows extended-path prefix (\\?\) that canonicalize() may add
+    if canonical_str.starts_with("//?/") {
+        canonical_str = canonical_str[4..].to_string();
+    }
+
+    // Block system directories
+    for prefix in BLOCKED_PREFIXES_UNIX.iter().chain(BLOCKED_PREFIXES_WINDOWS) {
+        if canonical_str == *prefix || canonical_str.starts_with(&format!("{prefix}/")) {
+            return Err(format!(
+                "{op_verb} system directory is not allowed: {trimmed}"
+            ));
+        }
+    }
+
+    // Block the app data directory
+    if let Some(app_data) = app_data_dir_normalised() {
+        if canonical_str == app_data || canonical_str.starts_with(&format!("{app_data}/")) {
+            return Err(format!(
+                "{op_verb} the application data directory is not allowed: {trimmed}"
+            ));
+        }
+    }
+
+    // Must be under user home
+    if !is_under_user_home(&canonical_str) {
+        return Err(format!(
+            "{boundary_label} must be under your home directory: {trimmed}"
+        ));
+    }
+
+    Ok(canonical_path)
+}
+
+/// Canonicalize the parent directory (which must already exist) and re-append
+/// the filename — used when the target file itself doesn't exist yet, or as
+/// the fallback when `raw.canonicalize()` fails.
+fn resolve_parent(raw: &std::path::Path, trimmed: &str) -> Result<std::path::PathBuf, String> {
+    let parent = raw
+        .parent()
+        .ok_or_else(|| format!("Cannot determine parent directory for: {trimmed}"))?;
+    let file_name = raw
+        .file_name()
+        .ok_or_else(|| format!("Cannot determine file name for: {trimmed}"))?;
+    let canonical_parent = parent
+        .canonicalize()
+        .map_err(|e| format!("Parent directory does not exist or is inaccessible: {e}"))?;
+    Ok(canonical_parent.join(file_name))
+}
+
 /// Validate a save path for write operations (bundle export, enclave seal).
 ///
 /// Ensures:
@@ -216,65 +299,7 @@ pub fn validate_save_path(path: &str) -> Result<std::path::PathBuf, String> {
         }
     }
 
-    // The parent directory must exist so we can canonicalize it and detect
-    // symlink escapes. We canonicalize the parent (not the file itself,
-    // since the file doesn't exist yet) and then re-append the filename.
-    let parent = raw
-        .parent()
-        .ok_or_else(|| format!("Cannot determine parent directory for: {trimmed}"))?;
-
-    let file_name = raw
-        .file_name()
-        .ok_or_else(|| format!("Cannot determine file name for: {trimmed}"))?;
-
-    let canonical_parent = parent
-        .canonicalize()
-        .map_err(|e| format!("Parent directory does not exist or is inaccessible: {e}"))?;
-
-    let canonical_path = canonical_parent.join(file_name);
-    let mut canonical_str = canonical_path
-        .to_string_lossy()
-        .replace('\\', "/")
-        .to_lowercase();
-
-    // Strip Windows extended-path prefix (\\?\) that canonicalize() may add
-    if canonical_str.starts_with("//?/") {
-        canonical_str = canonical_str[4..].to_string();
-    }
-
-    // Block system directories
-    for prefix in BLOCKED_PREFIXES_UNIX {
-        if canonical_str == *prefix || canonical_str.starts_with(&format!("{prefix}/")) {
-            return Err(format!(
-                "Writing to system directory is not allowed: {trimmed}"
-            ));
-        }
-    }
-    for prefix in BLOCKED_PREFIXES_WINDOWS {
-        if canonical_str == *prefix || canonical_str.starts_with(&format!("{prefix}/")) {
-            return Err(format!(
-                "Writing to system directory is not allowed: {trimmed}"
-            ));
-        }
-    }
-
-    // Block the app data directory
-    if let Some(app_data) = app_data_dir_normalised() {
-        if canonical_str == app_data || canonical_str.starts_with(&format!("{app_data}/")) {
-            return Err(format!(
-                "Writing to the application data directory is not allowed: {trimmed}"
-            ));
-        }
-    }
-
-    // Must be under user home
-    if !is_under_user_home(&canonical_str) {
-        return Err(format!(
-            "Save path must be under your home directory: {trimmed}"
-        ));
-    }
-
-    Ok(canonical_path)
+    resolve_and_guard(raw, trimmed, false, "Writing to", "Save path")
 }
 
 // -- General file-access validation --------------------------------------
@@ -342,66 +367,8 @@ pub fn validate_file_access_path(
     // escapes (e.g. a home-anchored symlink `~/notes -> /etc` would let
     // `~/notes/shadow` pass every textual gate yet open `/etc/shadow`).
     // Canonicalize the file when it exists; otherwise canonicalize the parent
-    // (which must exist) and re-append the file name. This mirrors
-    // `validate_save_path`, which already canonicalizes for exactly this reason
-    // — the previous string-only checks here were asymmetric and unsafe.
-    let canonical_path = match raw.canonicalize() {
-        Ok(canon) => canon,
-        Err(_) => {
-            let parent = raw
-                .parent()
-                .ok_or_else(|| format!("Cannot determine parent directory for: {trimmed}"))?;
-            let file_name = raw
-                .file_name()
-                .ok_or_else(|| format!("Cannot determine file name for: {trimmed}"))?;
-            let canonical_parent = parent.canonicalize().map_err(|e| {
-                format!("Parent directory does not exist or is inaccessible: {e}")
-            })?;
-            canonical_parent.join(file_name)
-        }
-    };
-    let mut canonical_str = canonical_path
-        .to_string_lossy()
-        .replace('\\', "/")
-        .to_lowercase();
-    // Strip the Windows extended-path prefix (\\?\) canonicalize() may add.
-    if canonical_str.starts_with("//?/") {
-        canonical_str = canonical_str[4..].to_string();
-    }
-
-    // Block system directories (checked against the RESOLVED path).
-    for prefix in BLOCKED_PREFIXES_UNIX {
-        if canonical_str == *prefix || canonical_str.starts_with(&format!("{prefix}/")) {
-            return Err(format!(
-                "Access to system directory is not allowed: {trimmed}"
-            ));
-        }
-    }
-    for prefix in BLOCKED_PREFIXES_WINDOWS {
-        if canonical_str == *prefix || canonical_str.starts_with(&format!("{prefix}/")) {
-            return Err(format!(
-                "Access to system directory is not allowed: {trimmed}"
-            ));
-        }
-    }
-
-    // Block the app data directory
-    if let Some(app_data) = app_data_dir_normalised() {
-        if canonical_str == app_data || canonical_str.starts_with(&format!("{app_data}/")) {
-            return Err(format!(
-                "Access to the application data directory is not allowed: {trimmed}"
-            ));
-        }
-    }
-
-    // Must be under user home (checked against the RESOLVED path).
-    if !is_under_user_home(&canonical_str) {
-        return Err(format!(
-            "File path must be under your home directory: {trimmed}"
-        ));
-    }
-
-    Ok(canonical_path)
+    // (which must exist) and re-append the file name.
+    resolve_and_guard(raw, trimmed, true, "Access to", "File path")
 }
 
 #[cfg(test)]
