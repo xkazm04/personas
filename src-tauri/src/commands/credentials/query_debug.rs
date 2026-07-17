@@ -193,10 +193,14 @@ pub async fn start_query_debug(
     QUERY_DEBUG_JOBS.insert_running(debug_id.clone(), cancel_token.clone(), ())?;
     QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "running", None);
 
-    // Gather schema context (best-effort -- don't fail if introspection errors)
-    let schema_context = ai_helpers::build_schema_context(&state.db, &credential_id, None).await;
+    // Gather schema context (best-effort -- don't fail if introspection errors).
+    // Thread the user database pool so schema context works for the built-in
+    // `personas_database` connector (SQLite introspection needs it).
+    let schema_context =
+        ai_helpers::build_schema_context(&state.db, &credential_id, Some(&state.user_db)).await;
 
     let pool = state.db.clone();
+    let user_db = state.user_db.clone();
     let cred_id = credential_id.clone();
     let allow_mutations = allow_mutations.unwrap_or(false);
 
@@ -204,6 +208,7 @@ pub async fn start_query_debug(
         run_query_debug(RunParams {
             app,
             pool,
+            user_db,
             credential_id: cred_id,
             query_text,
             error_context,
@@ -234,6 +239,7 @@ pub async fn cancel_query_debug(
 struct RunParams {
     app: tauri::AppHandle,
     pool: crate::db::DbPool,
+    user_db: crate::db::UserDbPool,
     credential_id: String,
     query_text: String,
     error_context: Option<String>,
@@ -248,6 +254,7 @@ async fn run_query_debug(params: RunParams) {
     let RunParams {
         app,
         pool,
+        user_db,
         credential_id,
         query_text,
         error_context,
@@ -384,7 +391,7 @@ async fn run_query_debug(params: RunParams) {
             &pool,
             &credential_id,
             &query_to_run,
-            None,
+            Some(&user_db),
             allow_mutations,
             false,
         )
