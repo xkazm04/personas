@@ -4787,6 +4787,23 @@ export type Translations = {
       health_untested: string;
     };
     foraging: {
+      consent_heading: string;
+      consent_body: string;
+      consent_what_scanned: string;
+      consent_readonly: string;
+      consent_privacy_title: string;
+      consent_privacy_body: string;
+      consent_src_env: string;
+      consent_src_aws: string;
+      consent_src_kube: string;
+      consent_src_dotenv: string;
+      consent_src_npmrc: string;
+      consent_src_docker: string;
+      consent_src_github: string;
+      consent_src_ssh: string;
+      select_high_confidence: string;
+      read_errors_title: string;
+      read_error_item: string;
       idle_heading: string;
       foraged_suffix: string;
       partial_import_error: string;

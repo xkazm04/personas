@@ -47,13 +47,9 @@ export function useCredentialForaging() {
     try {
       const result = await scanCredentialSources();
       setScanResult(result);
-      // Auto-select non-imported, high-confidence credentials
-      const autoSelected = new Set(
-        result.credentials
-          .filter((c) => !c.already_imported && c.confidence === "high")
-          .map((c) => c.id),
-      );
-      setSelected(autoSelected);
+      // Nothing is pre-selected: importing a credential is an explicit, informed
+      // choice. The user opts in per-row or via "select all high-confidence".
+      setSelected(new Set());
       setPhase("results");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -86,6 +82,17 @@ export function useCredentialForaging() {
   const selectNone = useCallback(() => {
     setSelected(new Set());
   }, []);
+
+  const selectAllHighConfidence = useCallback(() => {
+    if (!scanResult) return;
+    setSelected(
+      new Set(
+        scanResult.credentials
+          .filter((c) => !c.already_imported && c.confidence === "high")
+          .map((c) => c.id),
+      ),
+    );
+  }, [scanResult]);
 
   const importSelected = useCallback(
     async (nameSuffix: string, onImported?: () => void) => {
@@ -138,6 +145,7 @@ export function useCredentialForaging() {
     scan,
     toggleSelect,
     selectAll,
+    selectAllHighConfidence,
     selectNone,
     importSelected,
   };

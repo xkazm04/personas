@@ -3,8 +3,8 @@ import { ArrowLeft } from "lucide-react";
 import { useCredentialForaging } from "@/hooks/design/credential/useCredentialForaging";
 import { ForagingStepIndicator } from "./ForagingStepIndicator";
 import { ForagingResults } from "./ForagingResults";
+import { ForagingConsent } from "./ForagingConsent";
 import {
-  ForagingIdle,
   ForagingScanning,
   ForagingImporting,
   ForagingDone,
@@ -60,7 +60,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
       {/* Step indicator */}
       <ForagingStepIndicator phase={forage.phase} />
 
-      {forage.phase === "idle" && <ForagingIdle onScan={forage.scan} />}
+      {forage.phase === "idle" && <ForagingConsent onScan={forage.scan} />}
 
       {forage.phase === "scanning" && <ForagingScanning />}
 

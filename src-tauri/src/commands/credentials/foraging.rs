@@ -64,6 +64,11 @@ pub struct ForagingScanResult {
     pub credentials: Vec<ForagedCredential>,
     pub scanned_sources: Vec<String>,
     pub scan_duration_ms: u64,
+    /// Source-class tokens (matching `ForageSource` serde names) whose backing
+    /// file EXISTS but could not be read (permissions, I/O). Absent files are
+    /// NOT reported — only real read failures, so the UI can say "couldn't read
+    /// X" instead of silently omitting a source the user expected to see.
+    pub read_errors: Vec<String>,
 }
 
 // -- Known env-var patterns ---------------------------------------------
@@ -139,6 +144,26 @@ fn home_dir() -> Option<PathBuf> {
         .map(PathBuf::from)
 }
 
+/// Read a file that may legitimately be absent, distinguishing "not there" from
+/// "there but unreadable". Returns `Some(content)` when read, `None` when the
+/// file simply does not exist (silent — an absent source is normal), and pushes
+/// `source_token` onto `errors` when the file exists but the read failed
+/// (permissions, I/O), so the scan can surface "couldn't read X" to the user.
+fn read_if_present(
+    path: &std::path::Path,
+    source_token: &str,
+    errors: &mut Vec<String>,
+) -> Option<String> {
+    match std::fs::read_to_string(path) {
+        Ok(content) => Some(content),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+        Err(_) => {
+            errors.push(source_token.to_string());
+            None
+        }
+    }
+}
+
 /// Mask a credential value for safe display (show first 4 and last 4 chars).
 fn mask_value(val: &str) -> String {
     let char_count = val.chars().count();
@@ -206,16 +231,15 @@ fn scan_env_vars() -> Vec<ForagedCredential> {
 /// Scan ~/.aws/credentials for AWS profiles.
 ///
 /// Values are masked immediately on parse — raw secrets are never stored.
-fn scan_aws_credentials() -> Vec<ForagedCredential> {
+fn scan_aws_credentials(errors: &mut Vec<String>) -> Vec<ForagedCredential> {
     let mut results = Vec::new();
     let Some(home) = home_dir() else {
         return results;
     };
     let path = home.join(".aws").join("credentials");
 
-    let content = match std::fs::read_to_string(&path) {
-        Ok(c) => c,
-        Err(_) => return results,
+    let Some(content) = read_if_present(&path, "aws_credentials", errors) else {
+        return results;
     };
 
     let mut current_profile: Option<String> = None;
@@ -266,16 +290,15 @@ fn scan_aws_credentials() -> Vec<ForagedCredential> {
 }
 
 /// Scan ~/.kube/config for Kubernetes contexts.
-fn scan_kube_config() -> Vec<ForagedCredential> {
+fn scan_kube_config(errors: &mut Vec<String>) -> Vec<ForagedCredential> {
     let mut results = Vec::new();
     let Some(home) = home_dir() else {
         return results;
     };
     let path = home.join(".kube").join("config");
 
-    let content = match std::fs::read_to_string(&path) {
-        Ok(c) => c,
-        Err(_) => return results,
+    let Some(content) = read_if_present(&path, "kube_config", errors) else {
+        return results;
     };
 
     // Simple YAML context extraction -- look for `- name:` under `contexts:`
@@ -320,19 +343,19 @@ fn scan_kube_config() -> Vec<ForagedCredential> {
 }
 
 /// Scan .env files in common project locations.
-fn scan_dotenv_files() -> Vec<ForagedCredential> {
+fn scan_dotenv_files(errors: &mut Vec<String>) -> Vec<ForagedCredential> {
     let mut results = Vec::new();
 
     // Check current working directory
     let cwd_env = PathBuf::from(".env");
-    if let Ok(content) = std::fs::read_to_string(&cwd_env) {
+    if let Some(content) = read_if_present(&cwd_env, "dot_env", errors) {
         results.extend(parse_dotenv_content(&content, ".env (cwd)"));
     }
 
     // Also check ~/.env if it exists
     if let Some(home) = home_dir() {
         let home_env = home.join(".env");
-        if let Ok(content) = std::fs::read_to_string(&home_env) {
+        if let Some(content) = read_if_present(&home_env, "dot_env", errors) {
             results.extend(parse_dotenv_content(&content, "~/.env"));
         }
     }
@@ -384,16 +407,15 @@ fn parse_dotenv_content(content: &str, source_label: &str) -> Vec<ForagedCredent
 }
 
 /// Scan ~/.npmrc for auth tokens.
-fn scan_npmrc() -> Vec<ForagedCredential> {
+fn scan_npmrc(errors: &mut Vec<String>) -> Vec<ForagedCredential> {
     let mut results = Vec::new();
     let Some(home) = home_dir() else {
         return results;
     };
     let path = home.join(".npmrc");
 
-    let content = match std::fs::read_to_string(&path) {
-        Ok(c) => c,
-        Err(_) => return results,
+    let Some(content) = read_if_present(&path, "npmrc", errors) else {
+        return results;
     };
 
     for line in content.lines() {
@@ -418,16 +440,15 @@ fn scan_npmrc() -> Vec<ForagedCredential> {
 }
 
 /// Scan ~/.docker/config.json for registry credentials.
-fn scan_docker_config() -> Vec<ForagedCredential> {
+fn scan_docker_config(errors: &mut Vec<String>) -> Vec<ForagedCredential> {
     let mut results = Vec::new();
     let Some(home) = home_dir() else {
         return results;
     };
     let path = home.join(".docker").join("config.json");
 
-    let content = match std::fs::read_to_string(&path) {
-        Ok(c) => c,
-        Err(_) => return results,
+    let Some(content) = read_if_present(&path, "docker_config", errors) else {
+        return results;
     };
 
     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
@@ -452,7 +473,7 @@ fn scan_docker_config() -> Vec<ForagedCredential> {
 }
 
 /// Scan ~/.config/gh/hosts.yml for GitHub CLI tokens.
-fn scan_github_cli() -> Vec<ForagedCredential> {
+fn scan_github_cli(errors: &mut Vec<String>) -> Vec<ForagedCredential> {
     let mut results = Vec::new();
     let Some(home) = home_dir() else {
         return results;
@@ -466,11 +487,13 @@ fn scan_github_cli() -> Vec<ForagedCredential> {
         .join("GitHub CLI")
         .join("hosts.yml");
 
-    let content = match std::fs::read_to_string(&path) {
-        Ok(c) => c,
-        Err(_) => match std::fs::read_to_string(&win_path) {
-            Ok(c) => c,
-            Err(_) => return results,
+    // Try the XDG path first, then the Windows AppData path. An error on either
+    // (permissions) is surfaced; a plain absence falls through to the next.
+    let content = match read_if_present(&path, "git_hub_cli", errors) {
+        Some(c) => c,
+        None => match read_if_present(&win_path, "git_hub_cli", errors) {
+            Some(c) => c,
+            None => return results,
         },
     };
 
@@ -505,7 +528,7 @@ fn scan_github_cli() -> Vec<ForagedCredential> {
 }
 
 /// Scan ~/.ssh/ for SSH key files (detection only, no secret import).
-fn scan_ssh_keys() -> Vec<ForagedCredential> {
+fn scan_ssh_keys(errors: &mut Vec<String>) -> Vec<ForagedCredential> {
     let mut results = Vec::new();
     let Some(home) = home_dir() else {
         return results;
@@ -514,7 +537,11 @@ fn scan_ssh_keys() -> Vec<ForagedCredential> {
 
     let entries = match std::fs::read_dir(&ssh_dir) {
         Ok(e) => e,
-        Err(_) => return results,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return results,
+        Err(_) => {
+            errors.push("ssh_key".to_string());
+            return results;
+        }
     };
 
     for entry in entries.flatten() {
@@ -599,41 +626,64 @@ pub fn scan_credential_sources(
 
     let mut scanned_sources = Vec::new();
     let mut all_results = Vec::new();
+    // Source-class tokens whose file existed but could not be read.
+    let mut read_errors: Vec<String> = Vec::new();
 
     // Scan each source
     scanned_sources.push("Environment variables".to_string());
     all_results.extend(scan_env_vars());
 
     scanned_sources.push("~/.aws/credentials".to_string());
-    all_results.extend(scan_aws_credentials());
+    all_results.extend(scan_aws_credentials(&mut read_errors));
 
     scanned_sources.push("~/.kube/config".to_string());
-    all_results.extend(scan_kube_config());
+    all_results.extend(scan_kube_config(&mut read_errors));
 
     scanned_sources.push(".env files".to_string());
-    all_results.extend(scan_dotenv_files());
+    all_results.extend(scan_dotenv_files(&mut read_errors));
 
     scanned_sources.push("~/.npmrc".to_string());
-    all_results.extend(scan_npmrc());
+    all_results.extend(scan_npmrc(&mut read_errors));
 
     scanned_sources.push("~/.docker/config.json".to_string());
-    all_results.extend(scan_docker_config());
+    all_results.extend(scan_docker_config(&mut read_errors));
 
     scanned_sources.push("GitHub CLI config".to_string());
-    all_results.extend(scan_github_cli());
+    all_results.extend(scan_github_cli(&mut read_errors));
 
     scanned_sources.push("~/.ssh/".to_string());
-    all_results.extend(scan_ssh_keys());
+    all_results.extend(scan_ssh_keys(&mut read_errors));
 
     mark_existing(&mut all_results, &existing_types);
     let credentials = deduplicate(all_results);
 
+    // Collapse duplicate source-class tokens (e.g. two .env read failures).
+    read_errors.sort();
+    read_errors.dedup();
+
     let duration = start.elapsed();
+
+    // Best-effort audit trail: record THAT a filesystem scan ran and its shape
+    // (source count, finds, read-error count) — never any discovered value.
+    // Mirrors the append-only credential audit-log pattern.
+    crate::db::repos::resources::audit_log::insert_warn(
+        &state.db,
+        "__foraging_scan__",
+        "credential_foraging",
+        "foraging_scan",
+        Some(&format!(
+            "sources_scanned={}; credentials_found={}; read_errors={}",
+            scanned_sources.len(),
+            credentials.len(),
+            read_errors.len()
+        )),
+    );
 
     Ok(ForagingScanResult {
         credentials,
         scanned_sources,
         scan_duration_ms: duration.as_millis() as u64,
+        read_errors,
     })
 }
 

@@ -1,12 +1,28 @@
-import { Download } from 'lucide-react';
+import { Download, AlertTriangle } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Radar } from 'lucide-react';
 import { ForagingResultCard } from './ForagingResultCard';
 import { Button } from '@/features/shared/components/buttons';
 import type { useCredentialForaging } from '@/hooks/design/credential/useCredentialForaging';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
 
 type Forage = ReturnType<typeof useCredentialForaging>;
+
+type ForagingLabelKey = keyof Translations['vault']['foraging'];
+
+// Backend read-error tokens (ForageSource serde names) → translated source label.
+const READ_ERROR_LABEL: Record<string, ForagingLabelKey> = {
+  aws_credentials: 'source_aws_credentials',
+  aws_config: 'source_aws_config',
+  kube_config: 'source_kube_config',
+  env_var: 'source_env_var',
+  dot_env: 'source_dot_env',
+  npmrc: 'source_npmrc',
+  docker_config: 'source_docker_config',
+  git_hub_cli: 'source_git_hub_cli',
+  ssh_key: 'source_ssh_key',
+};
 
 interface ForagingResultsProps {
   forage: Forage;
@@ -20,6 +36,10 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
   if (!forage.scanResult) return null;
 
   const credCount = forage.scanResult.credentials.length;
+  const readErrors = forage.scanResult.read_errors ?? [];
+  const hasHighConfidence = forage.scanResult.credentials.some(
+    (c) => !c.already_imported && c.confidence === 'high',
+  );
 
   return (
     <div
@@ -40,6 +60,20 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
         </div>
         {importableCount > 0 && (
           <div className="flex items-center gap-2">
+            {hasHighConfidence && (
+              <>
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={forage.selectAllHighConfidence}
+                  data-testid="vault-foraging-select-high-confidence"
+                  className="text-emerald-400/80 hover:text-emerald-400"
+                >
+                  {fg.select_high_confidence}
+                </Button>
+                <span className="text-foreground">|</span>
+              </>
+            )}
             <Button
               variant="link"
               size="sm"
@@ -60,6 +94,30 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
           </div>
         )}
       </div>
+
+      {/* Per-source read failures — surfaced, never swallowed */}
+      {readErrors.length > 0 && (
+        <div
+          data-testid="vault-foraging-read-errors"
+          className="rounded-modal border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 space-y-1"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="typo-body font-medium text-amber-300/80">{fg.read_errors_title}</span>
+          </div>
+          <ul className="space-y-0.5 pl-5">
+            {readErrors.map((token) => {
+              const labelKey = READ_ERROR_LABEL[token];
+              const source = labelKey ? fg[labelKey] : token;
+              return (
+                <li key={token} className="typo-body text-amber-200/70">
+                  {tx(fg.read_error_item, { source })}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* Empty state */}
       {forage.scanResult.credentials.length === 0 && (

@@ -1,10 +1,7 @@
 import {
-  Radar,
   CheckCircle2,
   AlertTriangle,
-  Sparkles,
 } from 'lucide-react';
-import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ForagingResultCard } from './ForagingResultCard';
 import { Button } from '@/features/shared/components/buttons';
@@ -13,42 +10,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 type Forage = ReturnType<typeof useCredentialForaging>;
-
-interface ForagingIdleProps {
-  onScan: () => void;
-}
-
-export function ForagingIdle({ onScan }: ForagingIdleProps) {
-  const { t } = useTranslation();
-  const forg = t.vault.foraging;
-  return (
-    <div
-      key="idle"
-      className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/25 p-6 text-center space-y-4"
-    >
-      <EmptyIllustration
-        icon={Radar}
-        heading={forg.idle_heading}
-        description={forg.scan_description}
-      />
-      <Button
-        variant="accent"
-        size="sm"
-        icon={<Sparkles className="w-3.5 h-3.5" />}
-        onClick={onScan}
-        accentColor="violet"
-        data-testid="vault-foraging-scan"
-        className="bg-violet-500/15 text-violet-400 border-violet-500/25 hover:bg-violet-500/25"
-      >
-        {forg.start_scan}
-      </Button>
-      <div className="typo-body text-foreground space-y-0.5">
-        <p>{forg.scan_locations}</p>
-        <p>{forg.scan_privacy}</p>
-      </div>
-    </div>
-  );
-}
 
 export function ForagingScanning() {
   const { t } = useTranslation();
