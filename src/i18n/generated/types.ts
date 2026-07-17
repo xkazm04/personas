@@ -5965,6 +5965,7 @@ export type Translations = {
       siblings_none: string;
       view_all_from_agent: string;
       action_failed_prefix: string;
+      action_refused: string;
       bulk_acknowledge_count: string;
       bulk_resolve_count: string;
       bulk_clear_selection: string;
@@ -5976,6 +5977,7 @@ export type Translations = {
       load_failed: string;
       refresh: string;
       new_since_last_visit: string;
+      list_truncated: string;
       mark_seen: string;
       just_now: string;
       resolved_at_label: string;

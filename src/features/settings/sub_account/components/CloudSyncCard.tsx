@@ -37,12 +37,18 @@ export default function CloudSyncCard() {
   const [syncing, setSyncing] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Monotonic counter bumped on every refresh() call — forces the polling
+  // effect below to re-arm even when the resolved status's primitive fields
+  // (syncing/lastSyncAt) are unchanged between ticks.
+  const [pollTick, setPollTick] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
       setStatus(await getCloudSyncStatus());
     } catch (e) {
       toastCatch('CloudSyncCard:status')(e);
+    } finally {
+      setPollTick((tick) => tick + 1);
     }
   }, []);
 
@@ -63,7 +69,7 @@ export default function CloudSyncCard() {
     return () => {
       if (pollTimer.current) clearTimeout(pollTimer.current);
     };
-  }, [status?.syncing, status?.lastSyncAt, refresh]);
+  }, [status?.syncing, status?.lastSyncAt, pollTick, refresh]);
 
   const enabled = status?.enabled ?? false;
   const state = connState(status);
