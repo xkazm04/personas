@@ -24,14 +24,7 @@ import { IncidentDetailModal } from './IncidentDetailModal';
 import { groupIncidents, type IncidentGroupMode } from '../libs/groupIncidents';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
-
-const DEFAULT_FILTERS: IncidentFilters = {
-  statuses: ['open'], // default to open-only — the inbox's primary use case
-  severities: null,
-  source_tables: null,
-  persona_id: null,
-  since: null,
-};
+import { OPEN_ONLY_FILTERS as DEFAULT_FILTERS, isNarrowedFilters } from '../libs/incidentFilterDefaults';
 
 const COLLAPSED_GROUPS_KEY = 'incidents:collapsed-groups';
 const GROUP_MODE_KEY = 'incidents:group-mode';
@@ -396,14 +389,7 @@ export default function IncidentsInbox() {
   // default (statuses: ['open'], nothing else) is NOT narrowed, so reaching
   // zero there reads as a healthy "all clear" rather than a no-match result —
   // and only that path earns the inbox-zero celebration.
-  const statusesAreDefaultOpen =
-    !filters.statuses || (filters.statuses.length === 1 && filters.statuses[0] === 'open');
-  const isNarrowed =
-    !statusesAreDefaultOpen ||
-    (filters.severities?.length ?? 0) > 0 ||
-    (filters.source_tables?.length ?? 0) > 0 ||
-    !!filters.persona_id ||
-    !!filters.since;
+  const isNarrowed = isNarrowedFilters(filters);
 
   // Detect an action-driven drain to zero. Evaluated once the refresh settles;
   // a non-action path (filter change) leaves the ref unarmed, so no pop fires.
