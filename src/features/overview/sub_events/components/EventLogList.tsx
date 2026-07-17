@@ -3,7 +3,7 @@ import { Zap, RefreshCw, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useSystemStore } from '@/stores/systemStore';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';

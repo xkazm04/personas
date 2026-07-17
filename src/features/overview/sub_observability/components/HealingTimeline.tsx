@@ -6,7 +6,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
-import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
+import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass, formatRelativeTime } from '@/lib/utils/formatters';
 import { outcomeToHealth, healthScale } from '@/lib/design/statusTokens';
 import { HEALING_EVENT_COLORS, resolveHealingEventVisual } from '@/features/overview/shared/eventVisuals';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -28,14 +28,6 @@ interface ChainGroup {
 function getOutcomeColors(status: string | null) {
   const scale = healthScale(outcomeToHealth(status));
   return { dot: scale.dot, bg: scale.bg, text: scale.text };
-}
-
-function formatTimestamp(ts: string) {
-  const d = new Date(ts);
-  const age = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60));
-  if (age < 1) return 'just now';
-  if (age < 24) return `${age}h ago`;
-  return `${Math.floor(age / 24)}d ago`;
 }
 
 function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?: (id: string) => void }) {
@@ -91,7 +83,7 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
             </span>
           )}
           <span className="text-[10px] text-foreground ml-1">
-            {group.trigger ? formatTimestamp(group.trigger.timestamp) : ''}
+            {group.trigger ? formatRelativeTime(group.trigger.timestamp) : ''}
           </span>
         </div>
       </button>
@@ -134,7 +126,7 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
                         {event.eventType.replace('_', ' ')}
                       </span>
                       <span className="text-[10px] text-foreground ml-auto">
-                        {formatTimestamp(event.timestamp)}
+                        {formatRelativeTime(event.timestamp)}
                       </span>
                     </div>
                     <p className="typo-body text-foreground leading-relaxed">{event.title}</p>
@@ -200,7 +192,7 @@ function KnowledgeCard({ events }: { events: HealingTimelineEvent[] }) {
                 )}
               </div>
               <span className="text-[10px] text-foreground flex-shrink-0">
-                {formatTimestamp(event.timestamp)}
+                {formatRelativeTime(event.timestamp)}
               </span>
             </div>
           ))}

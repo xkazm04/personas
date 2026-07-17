@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, RefreshCw } from 'lucide-react';
+import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
-import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS } from '@/lib/utils/formatters';
+import { HEALING_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { HealingIssueStatusBadge, HealingRetryChip } from './HealingIssueStatusBadge';
 
 
 
@@ -23,9 +23,7 @@ interface HealingIssueModalProps {
 export default function HealingIssueModal({ issue, onResolve, onClose }: HealingIssueModalProps) {
   const [resolved, setResolved] = useState(false);
   const [resolving, setResolving] = useState(false);
-  const defaultSev = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
   const defaultCat = { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' };
-  const sev = SEVERITY_COLORS[issue.severity] ?? defaultSev;
   const cat = HEALING_CATEGORY_COLORS[issue.category] ?? defaultCat;
   const isAutoFixed = issue.auto_fixed && issue.status === 'resolved';
   const isAutoFixPending = issue.status === 'auto_fix_pending';
@@ -68,7 +66,6 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
         ) : (
           <ModalContent
             issue={issue}
-            sev={sev}
             cat={cat}
             isAutoFixed={isAutoFixed}
             isAutoFixPending={isAutoFixPending}
@@ -114,9 +111,8 @@ function ResolvedAnimation() {
   );
 }
 
-function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircuitBreaker, copied, resolving, onClose, onResolve, onCopyFix }: {
+function ModalContent({ issue, cat, isAutoFixed, isAutoFixPending, isCircuitBreaker, copied, resolving, onClose, onResolve, onCopyFix }: {
   issue: PersonaHealingIssue;
-  sev: { bg: string; text: string; border: string };
   cat: { bg: string; text: string; border: string };
   isAutoFixed: boolean;
   isAutoFixPending: boolean;
@@ -135,28 +131,8 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
         <div className="flex-1 min-w-0 pr-4">
           <h3 id="healing-issue-title" className="typo-heading text-foreground/90 mb-2">{issue.title}</h3>
           <div className="flex items-center gap-2 flex-wrap">
-            {isCircuitBreaker ? (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text} ${SEVERITY_STYLES.error.border}`}>
-                <Zap className="w-3 h-3" /> <DebtText k="auto_circuit_breaker_e76dce35" />
-              </span>
-            ) : isAutoFixPending ? (
-              <StatusBadge variant="warning" icon={<LoadingSpinner size="xs" />} className="text-sm font-mono uppercase rounded-card">
-                retrying
-              </StatusBadge>
-            ) : isAutoFixed ? (
-              <StatusBadge variant="success" icon={<CheckCircle className="w-3 h-3" />} className="text-sm font-mono uppercase rounded-card">
-                auto-fixed
-              </StatusBadge>
-            ) : (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border ${sev.bg} ${sev.text} ${sev.border}`}>
-                <AlertTriangle className="w-3 h-3" /> {issue.severity}
-              </span>
-            )}
-            {(isAutoFixed || isAutoFixPending) && issue.execution_id && (
-              <StatusBadge accent="cyan" icon={<RefreshCw className={`w-2.5 h-2.5 ${isAutoFixPending ? 'animate-spin' : ''}`} />} className="text-sm font-mono rounded-card">
-                {isAutoFixPending ? 'retry in progress' : 'healed via retry'}
-              </StatusBadge>
-            )}
+            <HealingIssueStatusBadge issue={issue} variant="detailed" breakerLabel={<DebtText k="auto_circuit_breaker_e76dce35" />} />
+            <HealingRetryChip issue={issue} variant="detailed" />
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border ${cat.bg} ${cat.text} ${cat.border}`}>
               {issue.category}
             </span>

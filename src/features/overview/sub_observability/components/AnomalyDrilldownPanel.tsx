@@ -10,6 +10,7 @@ import type { RootCauseSuggestion } from '@/lib/bindings/RootCauseSuggestion';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import { formatSignedOffset } from '@/lib/utils/formatters';
 
 
 interface AnomalyDrilldownPanelProps {
@@ -34,14 +35,6 @@ const METRIC_LABELS: Record<string, string> = {
   error_rate: 'Error Rate',
   latency: 'Latency (P95)',
 };
-
-function formatOffset(seconds: number): string {
-  const abs = Math.abs(seconds);
-  const direction = seconds < 0 ? 'before' : 'after';
-  if (abs < 60) return `${Math.round(abs)}s ${direction}`;
-  if (abs < 3600) return `${Math.round(abs / 60)}m ${direction}`;
-  return `${(abs / 3600).toFixed(1)}h ${direction}`;
-}
 
 function confidenceBar(confidence: number) {
   const pct = Math.round(confidence * 100);
@@ -72,7 +65,7 @@ const CorrelatedEventRow = memo(function CorrelatedEventRow({ event }: { event: 
         <div className="flex items-center gap-2">
           <span className="typo-body font-medium text-foreground/90 truncate">{event.label}</span>
           <span className="text-[10px] text-foreground flex-shrink-0">
-            {formatOffset(event.offsetSeconds)}
+            {formatSignedOffset(event.offsetSeconds)}
           </span>
         </div>
         {event.detail && (

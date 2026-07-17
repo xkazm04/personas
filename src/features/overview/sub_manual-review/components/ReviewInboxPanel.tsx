@@ -8,7 +8,7 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { InboxItem } from './ReviewListItem';
 import { ConversationThread } from './ReviewDetailPanel';
 import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';

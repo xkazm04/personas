@@ -54,6 +54,21 @@ export function formatRelativeTime(
 export const timeAgo = (iso: string | null): string => formatRelativeTime(iso, 'Never');
 
 /**
+ * Format a signed offset in seconds relative to a reference point (e.g. an
+ * anomaly timestamp) as "Ns before" / "Ns after". Distinct from
+ * {@link formatRelativeTime}, which is always relative to `Date.now()` — this
+ * formats an already-computed delta, so callers pass the offset directly
+ * rather than two timestamps.
+ */
+export function formatSignedOffset(seconds: number): string {
+  const abs = Math.abs(seconds);
+  const direction = seconds < 0 ? 'before' : 'after';
+  if (abs < 60) return `${Math.round(abs)}s ${direction}`;
+  if (abs < 3600) return `${Math.round(abs / 60)}m ${direction}`;
+  return `${(abs / 3600).toFixed(1)}h ${direction}`;
+}
+
+/**
  * Module-scope `Intl.NumberFormat` cache. Construction is one of the most
  * expensive stdlib constructors (locale data resolution, options validation),
  * and the formatters below run on hot paths — `<AnimatedCounter>` invokes its

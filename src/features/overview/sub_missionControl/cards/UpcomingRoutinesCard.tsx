@@ -4,35 +4,19 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { listAllTriggers } from '@/api/pipeline/triggers';
 import { silentCatch } from '@/lib/silentCatch';
-import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { IllustratedEmptyState as EmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
+import { formatRelativeShort, type RelativeShortResult } from '@/features/overview/libs/formatRelativeShort';
+import { PaneHeader } from '../PaneHeader';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 
 const MAX_ROWS = 5;
 const SCHEDULE_TRIGGER_TYPES = new Set(['schedule', 'cron', 'polling']);
 
-function formatRelative(iso: string | null, nowMs: number): { label: string; overdue: boolean } | null {
-  if (!iso) return null;
-  const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return null;
-  const diffMs = t - nowMs;
-  const overdue = diffMs < 0;
-  const abs = Math.abs(diffMs);
-  const mins = Math.round(abs / 60_000);
-  const hours = Math.round(abs / 3_600_000);
-  const days = Math.round(abs / 86_400_000);
-  let label: string;
-  if (mins < 1) label = 'now';
-  else if (mins < 60) label = `${mins}m`;
-  else if (hours < 48) label = `${hours}h`;
-  else label = `${days}d`;
-  return { label: overdue ? `-${label}` : label, overdue };
-}
-
 interface UpcomingRow {
   trigger: PersonaTrigger;
   personaName: string;
   nextAt: string | null;
-  rel: { label: string; overdue: boolean } | null;
+  rel: RelativeShortResult | null;
 }
 
 export default function UpcomingRoutinesCard() {
@@ -98,7 +82,7 @@ export default function UpcomingRoutinesCard() {
         trigger: tr,
         personaName: nameById.get(tr.persona_id) ?? tr.persona_id.slice(0, 8),
         nextAt: tr.next_trigger_at,
-        rel: formatRelative(tr.next_trigger_at, now),
+        rel: formatRelativeShort(tr.next_trigger_at, { now, signed: true, hourCutoff: 48 }),
       }))
       // Only genuinely-upcoming runs: a next-run time in the future, or a
       // schedule still pending its first computed run (null). A next-run time
@@ -118,10 +102,12 @@ export default function UpcomingRoutinesCard() {
   if (rows.length === 0) {
     return (
       <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
-        <CardHeader
+        <PaneHeader
           label={t.overview.upcoming_routines.title}
           subtitle={t.overview.upcoming_routines.subtitle}
-        />
+        >
+          <ArrowRight className="w-3 h-3 text-foreground" />
+        </PaneHeader>
         <EmptyState variant="routines" heading={t.overview.upcoming_routines.empty} dominant className="py-6" />
       </div>
     );
@@ -129,10 +115,12 @@ export default function UpcomingRoutinesCard() {
 
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
-      <CardHeader
+      <PaneHeader
         label={t.overview.upcoming_routines.title}
         subtitle={t.overview.upcoming_routines.subtitle}
-      />
+      >
+        <ArrowRight className="w-3 h-3 text-foreground" />
+      </PaneHeader>
       <div className="divide-y divide-primary/5">
         {rows.map((row) => (
           <div
@@ -158,22 +146,6 @@ export default function UpcomingRoutinesCard() {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function CardHeader({ label, subtitle }: { label: string; subtitle?: string }) {
-  return (
-    <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
-      <div className="flex items-baseline gap-2">
-        <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground">
-          {label}
-        </span>
-        {subtitle && (
-          <span className="typo-caption text-foreground">{subtitle}</span>
-        )}
-      </div>
-      <ArrowRight className="w-3 h-3 text-foreground" />
     </div>
   );
 }

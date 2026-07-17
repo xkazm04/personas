@@ -2,7 +2,7 @@ import { memo, type ReactElement, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { LazyChart, type RechartsModule } from '@/features/shared/charts/RechartsWrapper';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
-import { EmptyState, type EmptyStateVariant } from '@/features/shared/components/display/EmptyState';
+import { IllustratedEmptyState as EmptyState, type IllustratedEmptyStateVariant as EmptyStateVariant } from '@/features/shared/components/display/IllustratedEmptyState';
 import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
 
 /**

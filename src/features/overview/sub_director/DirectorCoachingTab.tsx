@@ -9,7 +9,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { StatCard } from '@/features/shared/components/display/StatCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { COACHING_GLYPH } from '@/features/shared/glyph/glyphs/coachingGlyph';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';

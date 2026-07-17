@@ -3,18 +3,31 @@ import { AlertTriangle, Info, XCircle, X } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import type { FiredAlert } from '@/lib/bindings/FiredAlert';
+import { STATUS_PALETTE } from '@/lib/design/statusTokens';
 
-const SEVERITY_STYLES: Record<string, { border: string; bg: string; icon: typeof Info; iconColor: string }> = {
-  info: { border: 'border-blue-500/30', bg: 'bg-blue-500/10', icon: Info, iconColor: 'text-blue-400' },
-  warning: { border: 'border-amber-500/30', bg: 'bg-amber-500/10', icon: AlertTriangle, iconColor: 'text-amber-400' },
-  critical: { border: 'border-red-500/30', bg: 'bg-red-500/10', icon: XCircle, iconColor: 'text-red-400' },
+// Border/bg accents are derived from the central STATUS_PALETTE (single
+// source of truth for the blue/amber/red severity palette used across the
+// app) — only the icon/icon-color association is genuinely local to the
+// toast. `alert.severity` uses 'critical' where the token map uses 'error';
+// normalize here instead of hand-rolling a second color map.
+const SEVERITY_ICONS: Record<string, { icon: typeof Info; iconColor: string }> = {
+  info: { icon: Info, iconColor: STATUS_PALETTE.info.text },
+  warning: { icon: AlertTriangle, iconColor: STATUS_PALETTE.warning.text },
+  critical: { icon: XCircle, iconColor: STATUS_PALETTE.error.text },
+};
+
+const SEVERITY_TOKEN_KEY: Record<string, keyof typeof STATUS_PALETTE> = {
+  info: 'info',
+  warning: 'warning',
+  critical: 'error',
 };
 
 const AUTO_DISMISS_MS = 8000;
 
 function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => void }) {
-  const style = SEVERITY_STYLES[alert.severity] ?? SEVERITY_STYLES.info!;
-  const Icon = style.icon;
+  const tokenKey = SEVERITY_TOKEN_KEY[alert.severity] ?? 'info';
+  const token = STATUS_PALETTE[tokenKey];
+  const { icon: Icon, iconColor } = SEVERITY_ICONS[alert.severity] ?? SEVERITY_ICONS.info!;
 
   // Keep the latest onDismiss in a ref so the auto-dismiss timer keys only on
   // the alert id. The container passes a fresh inline `() => dismissToast(id)`
@@ -29,10 +42,10 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
 
   return (
     <div
-      className={`animate-fade-slide-in pointer-events-auto w-80 rounded-modal border ${style.border} ${style.bg} backdrop-blur-sm shadow-elevation-3 p-3`}
+      className={`animate-fade-slide-in pointer-events-auto w-80 rounded-modal border ${token.border} ${token.bg} backdrop-blur-sm shadow-elevation-3 p-3`}
     >
       <div className="flex items-start gap-2.5">
-        <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.iconColor}`} />
+        <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${iconColor}`} />
         <div className="flex-1 min-w-0">
           <p className="typo-heading text-foreground truncate">{alert.rule_name}</p>
           <p className="typo-caption text-foreground mt-0.5">{alert.message}</p>

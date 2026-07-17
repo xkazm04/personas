@@ -3,7 +3,7 @@ import { RefreshCw, Inbox, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import EmptyState, { InboxZero } from '@/features/shared/components/feedback/EmptyState';
+import EmptyState, { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { storeBus } from '@/lib/storeBus';

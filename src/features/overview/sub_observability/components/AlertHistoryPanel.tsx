@@ -2,7 +2,7 @@ import { CheckCircle2, Trash2 } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import type { FiredAlert } from '@/lib/bindings/FiredAlert';
-import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { IllustratedEmptyState as EmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { StatusDot, type SeverityState } from '@/features/shared/components/display/StatusDot';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
