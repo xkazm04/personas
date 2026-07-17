@@ -41,7 +41,7 @@ describe('SkillInstallModal', () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
 
-    render(<SkillInstallModal open skillName="research" onClose={onClose} onInstall={onInstall} />);
+    render(<SkillInstallModal open skillName="research" onClose={onClose} onInstall={onInstall} onPreview={vi.fn().mockResolvedValue(null)} />);
 
     await user.click(screen.getByTestId('skill-install-target-p2'));
     await user.click(screen.getByTestId('skill-install-confirm'));
@@ -56,7 +56,7 @@ describe('SkillInstallModal', () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
 
-    render(<SkillInstallModal open skillName="research" onClose={onClose} onInstall={onInstall} />);
+    render(<SkillInstallModal open skillName="research" onClose={onClose} onInstall={onInstall} onPreview={vi.fn().mockResolvedValue(null)} />);
 
     await user.click(screen.getByTestId('skill-install-target-p1'));
     await user.click(screen.getByTestId('skill-install-confirm'));
