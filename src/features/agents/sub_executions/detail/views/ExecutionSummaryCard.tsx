@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Timer, DollarSign, Wrench, FileText, ChevronDown, ChevronRight, Coins, RotateCw } from 'lucide-react';
+import { Timer, DollarSign, Wrench, FileText, ChevronDown, ChevronRight, Coins } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getStatusEntry } from '@/lib/utils/formatters';
 import { STATUS_PALETTE, STATUS_PALETTE_EXTENDED } from '@/lib/design/statusTokens';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { StatusIcon } from '../../runnerTypes';
+import { CancelledResumeFooter } from '../../components/CancelledResumeFooter';
 
 // Semantic marker colors for tool-call / file-change rows, sourced from the
 // status token map rather than raw green/orange/blue literals.
@@ -91,7 +92,6 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
 }
 
 export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSummaryCardProps) {
-  const { t } = useTranslation();
   const presentation = getStatusEntry(summary.status);
 
   return (
@@ -146,24 +146,10 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
 
       {/* Cancelled-specific: last tool + resume */}
       {summary.status === 'cancelled' && onResume && (
-        <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">
-          {summary.toolCalls.length > 0 && (
-            <div className="flex items-center gap-2 typo-body text-foreground">
-              <Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
-              <span>{t.agents.executions.stopped_while_running}</span>
-              <code className="px-1.5 py-0.5 rounded-card bg-amber-500/10 text-amber-300/80 typo-code">
-                {summary.toolCalls[summary.toolCalls.length - 1]?.name}
-              </code>
-            </div>
-          )}
-          <button
-            onClick={onResume}
-            className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-modal bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"
-          >
-            <RotateCw className="w-3.5 h-3.5" />
-            {t.agents.executions.resume_from_here}
-          </button>
-        </div>
+        <CancelledResumeFooter
+          lastTool={summary.toolCalls.length > 0 ? summary.toolCalls[summary.toolCalls.length - 1]?.name : undefined}
+          onResume={onResume}
+        />
       )}
     </div>
   );

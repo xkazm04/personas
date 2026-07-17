@@ -13,6 +13,7 @@ import { BulkRerunStrip } from './BulkRerunStrip';
 import { BulkRerunReport } from './BulkRerunReport';
 import { BulkRerunToolbar } from './BulkRerunToolbar';
 import { useBulkRerun } from '../../libs/useBulkRerun';
+import { isFailedExecutionStatus } from '../../libs/executionStatus';
 import { useToastStore } from '@/stores/toastStore';
 import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
 import { ExecutionListFilters } from './ExecutionListFilters';
@@ -286,7 +287,7 @@ export function ExecutionList() {
 
   const handleSelectAllFailed = useCallback(() => {
     const failedIds = executions
-      .filter((row) => row.status === 'failed' || row.status === 'cancelled' || row.status === 'timeout')
+      .filter((row) => isFailedExecutionStatus(row.status))
       .map((row) => row.id);
     setBulkSelected(new Set(failedIds));
   }, [executions]);
@@ -294,8 +295,7 @@ export function ExecutionList() {
   const handleSelectSinceTimestamp = useCallback((isoTimestamp: string) => {
     const failedIds = executions
       .filter((row) => {
-        const isFailed = row.status === 'failed' || row.status === 'cancelled' || row.status === 'timeout';
-        if (!isFailed) return false;
+        if (!isFailedExecutionStatus(row.status)) return false;
         const ts = row.started_at ?? row.created_at;
         return ts >= isoTimestamp;
       })

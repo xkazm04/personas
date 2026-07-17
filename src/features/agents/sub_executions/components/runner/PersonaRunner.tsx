@@ -3,7 +3,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Monitor, AlertTriangle, RefreshCw, X, FlaskConical } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, Monitor, AlertTriangle, RefreshCw, X, FlaskConical } from 'lucide-react';
 import { BudgetRecoveryCard } from './BudgetRecoveryCard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -19,6 +19,7 @@ import { MiniPlayerPinButton, StatusIcon } from './RunnerHeader';
 import { HealingCard, AiHealingCounters } from './RunnerToolCalls';
 import { RunnerPhaseTimeline } from './RunnerStreamView';
 import { StuckExecutionGuidance } from './StuckExecutionGuidance';
+import { CancelledResumeFooter } from '../CancelledResumeFooter';
 import { silentCatch } from '@/lib/silentCatch';
 import { debtText } from '@/i18n/DebtText';
 
@@ -194,10 +195,7 @@ export function PersonaRunner() {
             {state.executionSummary.cost_usd != null && <div className="flex items-center gap-1.5 text-foreground"><DollarSign className="w-3.5 h-3.5" /><span className="typo-code">$<Numeric value={state.executionSummary.cost_usd} precision={4} /></span></div>}
           </div>
           {state.executionSummary.status === 'cancelled' && (
-            <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">
-              {state.executionSummary.last_tool && <div className="flex items-center gap-2 typo-body text-foreground"><Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" /><span>{t.agents.executions.stopped_while_running}</span><code className="px-1.5 py-0.5 rounded-card bg-amber-500/10 text-amber-300/80 typo-code">{state.executionSummary.last_tool}</code></div>}
-              <button onClick={exec.handleResume} className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-modal bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"><RotateCw className="w-3.5 h-3.5" />{t.agents.executions.resume_from_here}</button>
-            </div>
+            <CancelledResumeFooter lastTool={state.executionSummary.last_tool} onResume={exec.handleResume} />
           )}
         </div>
       )}

@@ -29,6 +29,7 @@ import { usePersonaCore, PersonaCoreModal } from "./personaCore";
 import { useComposeConfig } from "./useComposeConfig";
 import { useRecipeStarters } from "./useRecipeStarters";
 import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
+import { CINEMA_FORMS, CINEMA_PALETTE, CinemaSilhouette, dedupeConnectorNames, capabilityTitles } from "./cinemaShared";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const ACCENT = "#60A5FA";
@@ -146,25 +147,17 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
 }
 
 /* ─── Cinema reel (the below-content animated addition) ──────────────── */
+/* (FORMS/PALETTE/Silhouette live in ./cinemaShared, shared with the
+   GlyphCinemaLayout fullscreen crowd variant. The reel uses a shorter
+   palette slice and a slightly lighter "dead" opacity than the crowd.) */
 
-const FORMS = [
-  { hr: 7, hy: 12, tw: 14 }, { hr: 6.4, hy: 11, tw: 12 }, { hr: 7.6, hy: 13, tw: 16 },
-  { hr: 6, hy: 11, tw: 13 }, { hr: 8, hy: 13.5, tw: 15 },
-] as const;
-const PALETTE = ["#60A5FA", "#818CF8", "#22D3EE", "#34D399", "#FBBF24", "#FB7185", "#2DD4BF", "#A78BFA"];
+const FORMS = CINEMA_FORMS;
+const PALETTE = CINEMA_PALETTE.slice(0, 8);
 
 interface Cand { id: string; form: number; color: string; }
 
-function Silhouette({ form, color, size, dead }: { form: number; color: string; size: number; dead?: boolean }) {
-  const f = FORMS[form] ?? FORMS[0]!;
-  const c = dead ? "var(--muted-foreground)" : color;
-  const shoulder = f.hy + f.hr;
-  return (
-    <svg viewBox="0 0 44 48" width={size} height={size} aria-hidden style={{ opacity: dead ? 0.45 : 1 }}>
-      <circle cx={22} cy={f.hy} r={f.hr} fill={c} />
-      <path d={`M ${22 - f.tw} 48 C ${22 - f.tw} ${shoulder + 5}, ${22 - f.tw + 2} ${shoulder}, 22 ${shoulder} C ${22 + f.tw - 2} ${shoulder}, ${22 + f.tw} ${shoulder + 5}, ${22 + f.tw} 48 Z`} fill={c} />
-    </svg>
-  );
+function Silhouette(props: { form: number; color: string; size: number; dead?: boolean }) {
+  return <CinemaSilhouette {...props} deadOpacity={0.45} />;
 }
 
 /** Narrow to REEL_FINALISTS over REEL_CAST_MS, hold at the finalists, then crown.
@@ -217,20 +210,13 @@ function CinemaReel({ fastForward }: { fastForward: boolean }) {
   const winnerCand = cands.find((c) => c.id === winner) ?? cands[0]!;
 
   const capTitles = useMemo(
-    () => capabilityOrder.map((id) => capabilities[id]?.title).filter((x): x is string => !!x),
+    () => capabilityTitles(capabilityOrder, capabilities),
     [capabilityOrder, capabilities],
   );
-  const connectors = useMemo(() => {
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const c of personaResolution.connectors ?? []) {
-      const key = (c.service_type || c.name || "").toLowerCase();
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      out.push(c.service_type || c.name);
-    }
-    return out;
-  }, [personaResolution]);
+  const connectors = useMemo(
+    () => dedupeConnectorNames(personaResolution.connectors),
+    [personaResolution],
+  );
 
   return (
     <div

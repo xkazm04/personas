@@ -19,13 +19,18 @@ export function fmtPct(v: number): string {
   return `${sign}${v.toFixed(0)}%`;
 }
 
-export function fmtTokens(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+export function fmtTokens(n: number, opts?: { withMillions?: boolean }): string {
+  if (opts?.withMillions && n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}${opts?.withMillions ? 'K' : 'k'}`;
   return String(n);
 }
 
-export function fmtCost(v: number): string {
-  return v < 0.001 ? '<$0.001' : `$${v.toFixed(4)}`;
+export function fmtCost(v: number, opts?: { precision?: 4 | 'auto' }): string {
+  if (v < 0.001) return '<$0.001';
+  if (opts?.precision === 'auto') {
+    return v < 0.01 ? `$${v.toFixed(3)}` : `$${v.toFixed(2)}`;
+  }
+  return `$${v.toFixed(4)}`;
 }
 
 export function deltaColor(pct: number, lowerIsBetter = true): string {

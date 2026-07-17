@@ -34,6 +34,7 @@ import { GlyphTopBar } from "./GlyphTopBar";
 import { GlyphFullLayout } from "./GlyphFullLayout";
 import { GlyphStageSurface } from "./GlyphStageSurface";
 import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
+import { CINEMA_FORMS, CINEMA_PALETTE, CinemaSilhouette, dedupeConnectorNames, capabilityTitles } from "./cinemaShared";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const CANDIDATE_COUNT = 30;
@@ -94,16 +95,11 @@ export function GlyphCinemaLayout(props: GlyphFullLayoutProps) {
 }
 
 /* ─── Persona silhouettes ───────────────────────────────────────────── */
+/* (FORMS/PALETTE/Silhouette live in ./cinemaShared, shared with the
+   GlyphDialogueCinemaLayout reel variant.) */
 
-const FORMS = [
-  { hr: 7, hy: 12, tw: 14 },
-  { hr: 6.4, hy: 11, tw: 12 },
-  { hr: 7.6, hy: 13, tw: 16 },
-  { hr: 6, hy: 11, tw: 13 },
-  { hr: 8, hy: 13.5, tw: 15 },
-] as const;
-
-const PALETTE = ["#60A5FA", "#818CF8", "#22D3EE", "#34D399", "#FBBF24", "#FB7185", "#2DD4BF", "#FB923C", "#A78BFA", "#F472B6"];
+const FORMS = CINEMA_FORMS;
+const PALETTE = CINEMA_PALETTE;
 
 interface Candidate { id: string; form: number; color: string; }
 
@@ -111,20 +107,7 @@ function makeCandidates(n: number): Candidate[] {
   return Array.from({ length: n }, (_, i) => ({ id: `p-${i}`, form: i % FORMS.length, color: PALETTE[i % PALETTE.length]! }));
 }
 
-function Silhouette({ form, color, size, dead }: { form: number; color: string; size: number; dead?: boolean }) {
-  const f = FORMS[form] ?? FORMS[0]!;
-  const c = dead ? "var(--muted-foreground)" : color;
-  const shoulder = f.hy + f.hr;
-  return (
-    <svg viewBox="0 0 44 48" width={size} height={size} aria-hidden style={{ opacity: dead ? 0.5 : 1 }}>
-      <circle cx={22} cy={f.hy} r={f.hr} fill={c} />
-      <path
-        d={`M ${22 - f.tw} 48 C ${22 - f.tw} ${shoulder + 5}, ${22 - f.tw + 2} ${shoulder}, 22 ${shoulder} C ${22 + f.tw - 2} ${shoulder}, ${22 + f.tw} ${shoulder + 5}, ${22 + f.tw} 48 Z`}
-        fill={c}
-      />
-    </svg>
-  );
-}
+const Silhouette = CinemaSilhouette;
 
 /* ─── Casting choreography ──────────────────────────────────────────── */
 
@@ -189,20 +172,13 @@ function CinemaStage({ agentName, fastForward }: { agentName: string; fastForwar
   const role = behaviorCore?.identity?.role ?? null;
   const mission = behaviorCore?.mission ?? null;
   const capTitles = useMemo(
-    () => capabilityOrder.map((id) => capabilities[id]?.title).filter((x): x is string => !!x),
+    () => capabilityTitles(capabilityOrder, capabilities),
     [capabilityOrder, capabilities],
   );
-  const connectorNames = useMemo(() => {
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const c of personaResolution.connectors ?? []) {
-      const key = (c.service_type || c.name || "").toLowerCase();
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      out.push(c.service_type || c.name);
-    }
-    return out;
-  }, [personaResolution]);
+  const connectorNames = useMemo(
+    () => dedupeConnectorNames(personaResolution.connectors),
+    [personaResolution],
+  );
 
   const crowned = phase === "crowned";
   const headline = crowned ? "Meet your persona" : phase === "deliberation" ? "Weighing the final candidates" : "Casting your persona";

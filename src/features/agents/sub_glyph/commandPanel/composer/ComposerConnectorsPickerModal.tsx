@@ -54,8 +54,8 @@ export function ComposerConnectorsPickerModal({
     setQuery("");
     setCategory("__all__");
     setFiltersOpen(false);
-    const t = setTimeout(() => inputRef.current?.focus(), 80);
-    return () => clearTimeout(t);
+    const focusTimer = setTimeout(() => inputRef.current?.focus(), 80);
+    return () => clearTimeout(focusTimer);
   }, [open, selected, tables]);
 
   const categories = useMemo(() => {

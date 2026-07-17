@@ -3,6 +3,7 @@ import { executePersona, getExecution } from '@/api/agents/executions';
 import { createLogger } from '@/lib/log';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
+import { isFailedExecutionStatus } from './executionStatus';
 
 const logger = createLogger('bulk-rerun');
 
@@ -66,10 +67,6 @@ function emptyCohort(): BulkRunCohort {
   };
 }
 
-function isFailedStatus(status: string): boolean {
-  return status === 'failed' || status === 'cancelled' || status === 'timeout';
-}
-
 function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
   const total = items.length;
   let finished = 0;
@@ -100,8 +97,8 @@ function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
       durDeltaN += 1;
     }
     if (it.newStatus !== null) {
-      const wasFail = isFailedStatus(it.origStatus);
-      const nowFail = isFailedStatus(it.newStatus);
+      const wasFail = isFailedExecutionStatus(it.origStatus);
+      const nowFail = isFailedExecutionStatus(it.newStatus);
       if (wasFail && !nowFail) recoveredCount += 1;
       if (!wasFail && nowFail) regressionCount += 1;
     }
@@ -163,7 +160,7 @@ export function useBulkRerun(): UseBulkRerun {
         undefined,
         idempotencyKey,
       );
-      const successful = !isFailedStatus(result.status);
+      const successful = !isFailedExecutionStatus(result.status);
       updateItem(row.id, {
         status: successful ? 'success' : 'failed',
         newExecutionId: result.id,

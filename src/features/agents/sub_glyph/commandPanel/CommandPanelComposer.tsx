@@ -33,17 +33,7 @@ import { ComposerConnectorsPickerModal } from "./composer/ComposerConnectorsPick
 import { ComposerEventPickerModal } from "./composer/ComposerEventPickerModal";
 import { ComposerMessagingPickerModal } from "./composer/ComposerMessagingPickerModal";
 import { ComposerRecipeSuggestion } from "./composer/ComposerRecipeSuggestion";
-
-// Built-in inbox is always present in notificationChannels; the picker can't
-// remove it but a fresh persona starts with just this entry.
-const BUILT_IN_INBOX: ChannelSpecV2 = {
-  type: "built-in",
-  enabled: true,
-  credential_id: null,
-  use_case_ids: "*",
-  event_filter: null,
-  config: null,
-};
+import { BUILT_IN_INBOX } from "./messagingChannelDefaults";
 
 export function CommandPanelComposer({
   intentText, onIntentChange, onLaunch, launchDisabled, onKeyDown, onQuickConfigChange,
