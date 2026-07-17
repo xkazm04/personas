@@ -90,6 +90,7 @@ pub fn search_all_kbs_with_vec(
     }
 
     let mut all_matches: Vec<KbMatch> = Vec::new();
+    let mut floor_filtered = 0usize;
 
     for (kb_id, kb_name) in &kb_list {
         // Skip KBs whose vector index doesn't exist yet (never ingested).
@@ -97,6 +98,17 @@ pub fn search_all_kbs_with_vec(
             Ok(r) => r,
             Err(_) => continue,
         };
+
+        // Shared relevance floor — the same primitive (and threshold) `kb_search`
+        // and the companion brain apply (`retrieval::MAX_VECTOR_DISTANCE`, L2 over
+        // MiniLM-normalized vectors). An ambient scan (clipboard-error notifications)
+        // must NOT surface arbitrarily-far chunks: without this floor a query with
+        // nothing close still got padded with the least-irrelevant passages of every
+        // KB. Applied per-KB before similarity conversion so an off-topic clipboard
+        // event notifies with NOTHING rather than noise.
+        let (results, dropped) =
+            crate::retrieval::filter_by_distance_floor(&results, crate::retrieval::MAX_VECTOR_DISTANCE);
+        floor_filtered += dropped;
 
         for (chunk_id, distance) in results {
             // L2 distance → 0..1 similarity (1 = identical).
@@ -123,6 +135,16 @@ pub fn search_all_kbs_with_vec(
             .unwrap_or(std::cmp::Ordering::Equal)
     });
     all_matches.truncate(limit);
+
+    // Annotate how much noise the floor removed, mirroring `kb_search`'s
+    // `floor_filtered` response field. This lane has no UI count surface (an
+    // ambient clipboard notification), so — like the companion's `dropped_far`
+    // — it is recorded as a tracing field rather than a return value.
+    tracing::debug!(
+        floor_filtered,
+        kept = all_matches.len(),
+        "search_all_kbs: applied shared relevance floor"
+    );
 
     Ok(all_matches)
 }
@@ -212,14 +234,18 @@ mod tests {
 
     /// The parity test for the shared lane: both former call sites (command +
     /// subscription) now route through `search_all_kbs_with_vec`, so this test
-    /// pins the semantics they share — ready-only KB filter, similarity-desc
-    /// ordering across KBs, source path hydration, and truncation to `limit`.
+    /// pins the semantics they share — ready-only KB filter, the shared relevance
+    /// floor, similarity-desc ordering across KBs, source path hydration, and
+    /// truncation to `limit`.
     #[test]
     fn shared_scan_filters_ready_ranks_by_similarity_and_truncates() {
         let pool = test_pool();
         let vs = SqliteVectorStore::new(pool.clone());
 
-        // Ready KB: one near chunk, one far chunk.
+        // Ready KB: one near chunk (in-floor), one moderately-near chunk (in-floor),
+        // and one far chunk (past MAX_VECTOR_DISTANCE — the floor must drop it).
+        // `[1,0.5,0,0]` is L2 √0.25 = 0.5 from the query — well inside the 1.30
+        // floor; `[0,10,0,0]` is ~10 away — well past it.
         seed_kb(
             &pool,
             &vs,
@@ -228,6 +254,7 @@ mod tests {
             "ready",
             &[
                 ("near match", [1.0, 0.0, 0.0, 0.0]),
+                ("mid match", [1.0, 0.5, 0.0, 0.0]),
                 ("far match", [0.0, 10.0, 0.0, 0.0]),
             ],
         );
@@ -244,9 +271,14 @@ mod tests {
         let query = [1.0f32, 0.0, 0.0, 0.0];
         let matches = search_all_kbs_with_vec(&pool, &vs, &query, 10).unwrap();
 
-        // Only the ready KB's chunks; best-first by similarity.
+        // Only the ready KB's in-floor chunks; the far chunk is dropped by the
+        // relevance floor, so exactly the two near/mid chunks survive.
         assert_eq!(matches.len(), 2);
         assert!(matches.iter().all(|m| m.kb_name == "Ready KB"));
+        assert!(
+            matches.iter().all(|m| m.chunk_text != "far match"),
+            "the far chunk must be dropped by the shared relevance floor"
+        );
         assert_eq!(matches[0].chunk_text, "near match");
         assert!(matches[0].similarity > matches[1].similarity);
         assert_eq!(matches[0].source_file.as_deref(), Some("/src/doc.md"));
