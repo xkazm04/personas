@@ -14,6 +14,7 @@
 import { useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import type { UseCaseFlow, FlowNode, FlowEdge } from '@/lib/types/frontendTypes';
+import { normalizeTriggerType } from '../useCasePickerShared';
 
 export type DimensionPresence = 'linked' | 'shared' | 'none';
 
@@ -96,23 +97,6 @@ function extractRecommendedModel(modelOverride: unknown): string | null {
     if (typeof m === 'string' && m.trim().length > 0) return m.trim();
   }
   return null;
-}
-
-const TRIGGER_TYPE_ALIASES: Record<string, string> = {
-  event: 'event_listener',
-  event_bus: 'event_listener',
-  event_sub: 'event_listener',
-  event_subscription: 'event_listener',
-  cron: 'schedule',
-  scheduled: 'schedule',
-  timer: 'schedule',
-  poll: 'polling',
-  hook: 'webhook',
-  http: 'webhook',
-};
-
-function normalizeTriggerType(raw: string): string {
-  return TRIGGER_TYPE_ALIASES[raw] ?? raw;
 }
 
 function asStr(v: unknown, fallback = ''): string {

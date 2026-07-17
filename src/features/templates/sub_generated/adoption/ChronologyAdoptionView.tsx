@@ -35,7 +35,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 import { BUILTIN_CONNECTORS, connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
-import type { TriggerSelection } from "./useCasePickerShared";
+import { normalizeTriggerType, type TriggerSelection } from "./useCasePickerShared";
 import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { UseCaseErrorPolicy } from "@/lib/types/frontendTypes";
@@ -52,18 +52,6 @@ interface ChronologyAdoptionViewProps {
 }
 
 type CellDataMap = Record<string, { items?: string[]; summary?: string; raw?: Record<string, unknown> }>;
-
-/** Normalize trigger type aliases to the canonical enum values the backend expects. */
-const TRIGGER_TYPE_ALIASES: Record<string, string> = {
-  event: "event_listener", event_bus: "event_listener", event_sub: "event_listener", event_subscription: "event_listener",
-  cron: "schedule", scheduled: "schedule", timer: "schedule",
-  poll: "polling", hook: "webhook", http: "webhook", web_hook: "webhook",
-  watcher: "file_watcher", fs_watcher: "file_watcher", watch: "file_watcher",
-  focus: "app_focus", window_focus: "app_focus",
-};
-function normalizeTriggerType(raw: string): string {
-  return TRIGGER_TYPE_ALIASES[raw] ?? raw;
-}
 
 /**
  * Humanize a snake_case use_case identifier into a readable label.
