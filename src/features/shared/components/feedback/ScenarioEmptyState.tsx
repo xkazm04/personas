@@ -6,7 +6,7 @@ import { MotionizedGlyph, type TracedGlyph } from '@/features/shared/components/
 
 // -- Scenario Variants --------------------------------------------
 
-export type EmptyStateVariant =
+export type ScenarioEmptyStateVariant =
   | 'credentials-need-agents'
   | 'triggers-manual-only'
   | 'dashboard-no-executions'
@@ -31,7 +31,7 @@ interface ScenarioConfig {
 }
 
 /** Style config per scenario (icons + colors only -- text comes from translations). */
-const SCENARIO_STYLES: Record<EmptyStateVariant, Omit<ScenarioConfig, 'title' | 'subtitle' | 'steps'> & { hasSteps?: boolean }> = {
+const SCENARIO_STYLES: Record<ScenarioEmptyStateVariant, Omit<ScenarioConfig, 'title' | 'subtitle' | 'steps'> & { hasSteps?: boolean }> = {
   'credentials-need-agents': { icon: Key, iconColor: 'text-emerald-400/80', iconContainerClassName: 'bg-emerald-500/10 border-emerald-500/20' },
   'triggers-manual-only': { icon: Zap, iconColor: 'text-amber-400/80', iconContainerClassName: 'bg-amber-500/10 border-amber-500/20' },
   'dashboard-no-executions': { icon: Play, iconColor: 'text-primary/70', iconContainerClassName: 'bg-primary/10 border-primary/20', hasSteps: true },
@@ -43,7 +43,7 @@ const SCENARIO_STYLES: Record<EmptyStateVariant, Omit<ScenarioConfig, 'title' | 
   'no-results': { icon: SearchX, iconColor: 'text-foreground', iconContainerClassName: 'bg-secondary/40 border-primary/10' },
 };
 
-function useScenarioConfigs(): Record<EmptyStateVariant, ScenarioConfig> {
+function useScenarioConfigs(): Record<ScenarioEmptyStateVariant, ScenarioConfig> {
   const { t } = useTranslation();
   const es = t.empty_states;
   return {
@@ -74,7 +74,7 @@ interface EmptyStateAction {
   icon?: LucideIcon;
 }
 
-interface EmptyStateProps {
+interface ScenarioEmptyStateProps {
   icon?: LucideIcon;
   /**
    * A traced, self-drawing glyph (see .claude/skills/motionize) rendered instead of
@@ -95,10 +95,10 @@ interface EmptyStateProps {
   className?: string;
   children?: ReactNode;
   /** Select a predefined scenario template. Explicit props override scenario defaults. */
-  variant?: EmptyStateVariant;
+  variant?: ScenarioEmptyStateVariant;
 }
 
-export default function EmptyState({
+export default function ScenarioEmptyState({
   icon,
   glyph,
   title,
@@ -111,7 +111,7 @@ export default function EmptyState({
   className,
   children,
   variant,
-}: EmptyStateProps) {
+}: ScenarioEmptyStateProps) {
   const scenarioConfigs = useScenarioConfigs();
   const scenario = variant ? scenarioConfigs[variant] : null;
 
@@ -203,7 +203,7 @@ interface NoResultsProps {
 export function NoResults({ onReset, title, subtitle, resetLabel, className }: NoResultsProps) {
   const { t } = useTranslation();
   return (
-    <EmptyState
+    <ScenarioEmptyState
       variant="no-results"
       title={title}
       subtitle={subtitle}
@@ -239,7 +239,7 @@ export function InboxZero({ title, subtitle, celebrate = false, className }: Inb
   const reduceMotion = useReducedMotion();
   const animate = celebrate && !reduceMotion;
   return (
-    <EmptyState
+    <ScenarioEmptyState
       icon={CheckCircle2}
       title={title}
       subtitle={subtitle}

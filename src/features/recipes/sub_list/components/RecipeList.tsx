@@ -6,7 +6,7 @@ import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult
 import { RecipeCard } from './RecipeCard';
 import { useToastStore } from '@/stores/toastStore';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RecipeBookIllustration } from '../../shared/RecipeBookIllustration';
 import * as recipeApi from '@/api/recipes/recipes';
 import { useTranslation } from '@/i18n/useTranslation';

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Bot, Plus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useAgentStore } from '@/stores/agentStore';

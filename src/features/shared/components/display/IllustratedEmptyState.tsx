@@ -189,11 +189,11 @@ function HeatmapGridSvg() {
   );
 }
 
-export type EmptyStateVariant =
+export type IllustratedEmptyStateVariant =
   | 'chart' | 'activity' | 'alerts' | 'metrics'
   | 'todos' | 'stream' | 'routines' | 'heatmap';
 
-const VARIANT_SVG: Record<EmptyStateVariant, () => ReactNode> = {
+const VARIANT_SVG: Record<IllustratedEmptyStateVariant, () => ReactNode> = {
   chart: ChartWaveSvg,
   activity: ActivityPulseSvg,
   alerts: AllClearSvg,
@@ -204,7 +204,7 @@ const VARIANT_SVG: Record<EmptyStateVariant, () => ReactNode> = {
   heatmap: HeatmapGridSvg,
 };
 
-function useVariantMap(): Record<EmptyStateVariant, { Svg: () => ReactNode; heading: string; description: string }> {
+function useVariantMap(): Record<IllustratedEmptyStateVariant, { Svg: () => ReactNode; heading: string; description: string }> {
   const { t } = useTranslation();
   return {
     chart: { Svg: VARIANT_SVG.chart, heading: t.shared.empty_chart_heading, description: t.shared.empty_chart_description },
@@ -218,9 +218,9 @@ function useVariantMap(): Record<EmptyStateVariant, { Svg: () => ReactNode; head
   };
 }
 
-interface EmptyStateProps {
+interface IllustratedEmptyStateProps {
   /** Predefined variant with built-in illustration, heading, and description. */
-  variant?: EmptyStateVariant;
+  variant?: IllustratedEmptyStateVariant;
   /** Override the heading text. */
   heading?: string;
   /** Override the description text. */
@@ -237,7 +237,7 @@ interface EmptyStateProps {
   dominant?: boolean;
 }
 
-export function EmptyState({ variant = 'chart', heading, description, className = '', dominant = false }: EmptyStateProps) {
+export function IllustratedEmptyState({ variant = 'chart', heading, description, className = '', dominant = false }: IllustratedEmptyStateProps) {
   const variantMap = useVariantMap();
   const preset = variantMap[variant];
   const { Svg } = preset;

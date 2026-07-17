@@ -7,6 +7,7 @@ import ActivityDiagramModal from '@/features/templates/sub_diagrams/ActivityDiag
 import type { GlyphRow, GlyphDimension } from './types';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { DIM_META } from './dimMeta';
+import { useGlyphDimText } from './persona-sigil';
 import { parseChannels } from './channels';
 import { triggerIcon, prettyTriggerType, triggerDetail } from './triggers';
 import { InteractiveSigil } from './InteractiveSigil';
@@ -49,6 +50,7 @@ export function GlyphCard({
 }: GlyphCardProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
+  const dimText = useGlyphDimText();
   const motion_ = useMotion();
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
   const [activeDim, setActiveDim] = useState<GlyphDimension | null>(null);
@@ -60,7 +62,7 @@ export function GlyphCard({
     : c.manual_only;
 
   const channels = parseChannels(row.messageSummary);
-  const hoveredLabel = hoveredDim ? c[DIM_META[hoveredDim].labelKey] : null;
+  const hoveredLabel = hoveredDim ? dimText.label[hoveredDim] : null;
   const hoveredColor = hoveredDim ? DIM_META[hoveredDim].color : null;
 
   return (

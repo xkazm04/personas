@@ -16,7 +16,7 @@ import { DEPLOYMENT_ACCENTS } from './deploymentTokens';
 import { useDeploymentHealth } from '../hooks/useDeploymentHealth';
 import { useDeploymentTest } from '../hooks/useDeploymentTest';
 import { useTranslation } from '@/i18n/useTranslation';
-import EmptyState, { NoResults } from '@/features/shared/components/feedback/EmptyState';
+import EmptyState, { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
 export function UnifiedDeploymentDashboard() {

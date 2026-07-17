@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from "@/stores/agentStore";
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ToolsSection } from './ToolsSection';
 import { AutomationsSection } from '../automation/AutomationsSection';
 import { AutomationSetupModal } from '../automation/AutomationSetupModal';

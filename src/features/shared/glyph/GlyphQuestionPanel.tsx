@@ -4,21 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import { VaultConnectorPicker } from '@/features/vault/components/VaultConnectorPicker';
 import { DIM_META } from './dimMeta';
-import type { GlyphDimension } from './types';
-
-
-/** Maps the backend cell keys to our 8-dimension vocabulary. Used so the
- *  question card can tint itself with the right dim colour. */
-const CELL_KEY_TO_DIM: Record<string, GlyphDimension> = {
-  'use-cases': 'task',
-  'connectors': 'connector',
-  'triggers': 'trigger',
-  'human-review': 'review',
-  'messages': 'message',
-  'memory': 'memory',
-  'error-handling': 'error',
-  'events': 'event',
-};
+import { CELL_KEY_TO_DIM } from './persona-sigil/cellDimMap';
 
 interface GlyphQuestionCardProps {
   question: BuildQuestion;

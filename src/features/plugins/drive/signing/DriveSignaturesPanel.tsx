@@ -17,7 +17,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
 import { BaseModal } from "@/features/shared/components/modals";
-import EmptyState from "@/features/shared/components/feedback/EmptyState";
+import EmptyState from "@/features/shared/components/feedback/ScenarioEmptyState";
 import type { DocumentSignature, VerifyDocumentResult } from "@/api/signing";
 
 import type { useSigning } from "./useSigning";

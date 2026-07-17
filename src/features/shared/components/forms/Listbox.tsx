@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
 import { createPortal } from 'react-dom';
 import { Search } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+import { useAnchoredPortalPosition } from '@/features/shared/components/forms/useAnchoredPortalPosition';
 
 /** Props handed to the `children` render-prop on every render. */
 interface ListboxChildProps {
@@ -82,7 +83,6 @@ export function Listbox({
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const close = useCallback(() => setOpen(false), []);
   const toggle = useCallback(() => setOpen((prev) => !prev), []);
@@ -105,20 +105,9 @@ export function Listbox({
   useClickOutside(containerRef, open && !portal, close);
 
   // Portal positioning — anchor under the trigger, track scroll/resize.
-  useEffect(() => {
-    if (!open || !portal || !containerRef.current) return;
-    const update = () => {
-      const rect = containerRef.current!.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
-    };
-    update();
-    window.addEventListener('scroll', update, true);
-    window.addEventListener('resize', update);
-    return () => {
-      window.removeEventListener('scroll', update, true);
-      window.removeEventListener('resize', update);
-    };
-  }, [open, portal]);
+  // No flip-up: Listbox's portal mode has never needed it (ThemedSelect does).
+  const anchoredPos = useAnchoredPortalPosition(containerRef, open && portal, { gap: 4 });
+  const menuPos = anchoredPos ? { top: anchoredPos.top, left: anchoredPos.left, width: anchoredPos.width } : null;
 
   // Reset focus index + search query when opening
   useEffect(() => {

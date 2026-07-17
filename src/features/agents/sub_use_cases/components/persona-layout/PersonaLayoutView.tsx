@@ -3,7 +3,7 @@ import { Rocket, Wrench } from 'lucide-react';
 import { updatePersona, buildUpdateInput } from '@/api/agents/personas';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { getMemoryCount } from '@/api/overview/memories';
 import { listManualReviews } from '@/api/overview/reviews';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
