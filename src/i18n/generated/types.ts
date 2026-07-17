@@ -1046,6 +1046,7 @@ export type Translations = {
       compare_with_original: string;
       execution_log: string;
       copy_log_tooltip: string;
+      copy_log_failed: string;
       loading_log: string;
       log_empty: string;
       failed_to_load_log: string;
@@ -2582,6 +2583,7 @@ export type Translations = {
       annotation_tag_placeholder: string;
       annotation_note_placeholder: string;
       annotation_save: string;
+      annotation_saving: string;
       annotation_saved: string;
       annotation_delete: string;
       annotation_section_title: string;
@@ -9491,6 +9493,7 @@ export type Translations = {
       watch_path_required: string;
       composite_min_conditions: string;
       composite_window_minimum: string;
+      endpoint_required: string;
     };
     simulated_event: string;
     matched_subscriptions_title: string;
@@ -9523,6 +9526,7 @@ export type Translations = {
     manual_label: string;
     pending_label: string;
     fire_label: string;
+    overdue_label: string;
     webhook_label: string;
     chain_label: string;
     poll_interval_label: string;
@@ -9777,6 +9781,7 @@ export type Translations = {
     meta_source: string;
     relay_last_event: string;
     relay_delete_title: string;
+    relay_delete_failed: string;
     setup_guide_step1: string;
     clipboard_pattern_placeholder: string;
     composite_event_type_placeholder: string;

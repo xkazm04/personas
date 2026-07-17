@@ -330,6 +330,7 @@
   "manual_label": "Thủ công",
   "pending_label": "Đang chờ",
   "fire_label": "Kích hoạt",
+  "overdue_label": "Quá hạn",
   "webhook_label": "Webhook",
   "chain_label": "Chuỗi",
   "poll_interval_label": "Khoảng polling (giây)",
@@ -574,6 +575,7 @@
   "meta_source": "Nguồn",
   "relay_last_event": "Cuối:",
   "relay_delete_title": "Xóa relay",
+  "relay_delete_failed": "Xóa relay thất bại — vui lòng thử lại",
   "setup_guide_step1": "Tạo kênh tại smee.io/new",
   "clipboard_pattern_placeholder": "ví dụ: https?://.* hoặc error|exception",
   "composite_event_type_placeholder": "Loại sự kiện (ví dụ: file_changed)",
@@ -592,7 +594,8 @@
     "event_type_required": "Cần chỉ định loại sự kiện cần theo dõi.",
     "watch_path_required": "Cần ít nhất một đường dẫn theo dõi.",
     "composite_min_conditions": "Trình kích hoạt tổng hợp cần ít nhất 2 điều kiện.",
-    "composite_window_minimum": "Khung thời gian phải tối thiểu 5 giây."
+    "composite_window_minimum": "Khung thời gian phải tối thiểu 5 giây.",
+    "endpoint_required": "Cần có URL endpoint hoặc sự kiện."
   },
   "dead_letter_select_all": "Chọn all",
   "dead_letter_select_visible": "Chọn visible",

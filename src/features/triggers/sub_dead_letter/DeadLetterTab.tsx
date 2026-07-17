@@ -200,7 +200,9 @@ export function DeadLetterTab() {
       if (src && !e.source_type.toLowerCase().includes(src)) return false;
       if (err && !(e.error_message ?? '').toLowerCase().includes(err)) return false;
       if (cutoff !== null) {
-        const age = now - new Date(e.created_at).getTime();
+        const createdAt = new Date(e.created_at).getTime();
+        if (Number.isNaN(createdAt)) return false;
+        const age = now - createdAt;
         if (cutoff === -1) {
           if (age <= 24 * 60 * 60_000) return false;
         } else if (age > cutoff) {
@@ -242,10 +244,10 @@ export function DeadLetterTab() {
   const selectVisible = useCallback(() => {
     setSelected((prev) => {
       const next = new Set(prev);
-      for (const id of filtered.map((e) => e.id)) next.add(id);
+      for (const id of selectableFilteredIds) next.add(id);
       return next;
     });
-  }, [filtered]);
+  }, [selectableFilteredIds]);
 
   const clearSelection = useCallback(() => setSelected(new Set()), []);
 
@@ -267,7 +269,6 @@ export function DeadLetterTab() {
       const next = new Set(prev);
       for (const evt of group.events) {
         if (evt.retry_count < maxManualRetries) next.add(evt.id);
-        else next.add(evt.id);
       }
       return next;
     });

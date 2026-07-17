@@ -53,19 +53,19 @@ export function useSharedEvents() {
   }, [load]);
 
   const refresh = useCallback(async () => {
+    // `refreshCatalog` is filter-less and returns the full catalog — re-run
+    // `load()` afterward so the active category/search filter is reapplied
+    // instead of the unfiltered result silently overwriting it.
     setLoading(true);
     try {
-      const entries = await api.refreshCatalog();
-      setCatalog(entries);
-      const [subs, act] = await Promise.all([api.listSubscriptions(), api.changeActivity()]);
-      setSubscriptions(subs);
-      setActivity(act);
+      await api.refreshCatalog();
     } catch (err) {
       silentCatch('features/triggers/sub_shared/useSharedEvents:refresh')(err);
-    } finally {
       setLoading(false);
+      return;
     }
-  }, []);
+    await load();
+  }, [load]);
 
   const subscribe = useCallback(async (entryId: string) => {
     try {

@@ -23,6 +23,7 @@ import { openExternalUrl } from '@/api/system/system';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import { useToastStore } from '@/stores/toastStore';
 
 
 interface SmeeRelayTabProps {
@@ -31,6 +32,7 @@ interface SmeeRelayTabProps {
 
 export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
   const { t } = useTranslation();
+  const addToast = useToastStore((s) => s.addToast);
   const globalStatus = useSmeeRelayStatus();
   const personas = useAgentStore((s) => s.personas);
 
@@ -118,7 +120,11 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         setExitingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
       }, 300);
       setConfirmDeleteId(null);
-    } catch (err) { silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch3")(err); }
+    } catch (err) {
+      silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch3")(err);
+      setConfirmDeleteId(null);
+      addToast(t.triggers.relay_delete_failed, 'error');
+    }
   };
 
   const markTouched = (field: string) =>

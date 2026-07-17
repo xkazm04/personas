@@ -330,6 +330,7 @@
   "manual_label": "Manual",
   "pending_label": "Tertunda",
   "fire_label": "Tembak",
+  "overdue_label": "Terlambat",
   "webhook_label": "Webhook",
   "chain_label": "Rantai",
   "poll_interval_label": "Interval Poll (detik)",
@@ -574,6 +575,7 @@
   "meta_source": "Sumber",
   "relay_last_event": "Terakhir:",
   "relay_delete_title": "Hapus relai",
+  "relay_delete_failed": "Gagal menghapus relai — silakan coba lagi",
   "setup_guide_step1": "Buat kanal di smee.io/new",
   "clipboard_pattern_placeholder": "mis. https?://.* atau error|exception",
   "composite_event_type_placeholder": "Tipe peristiwa (mis. file_changed)",
@@ -592,7 +594,8 @@
     "event_type_required": "Jenis peristiwa yang akan didengarkan wajib diisi.",
     "watch_path_required": "Setidaknya satu jalur pemantauan diperlukan.",
     "composite_min_conditions": "Pemicu komposit memerlukan minimal 2 kondisi.",
-    "composite_window_minimum": "Jendela waktu harus minimal 5 detik."
+    "composite_window_minimum": "Jendela waktu harus minimal 5 detik.",
+    "endpoint_required": "URL endpoint atau event diperlukan."
   },
   "dead_letter_select_all": "Pilih all",
   "dead_letter_select_visible": "Pilih visible",

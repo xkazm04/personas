@@ -95,10 +95,21 @@ export function TriggerCountdown({ trigger, accentColorClass }: { trigger: Perso
   const total = getTotalIntervalSeconds(trigger);
   const accentColor = TRIGGER_RING_COLORS[accentColorClass] ?? '#c084fc';
 
-  if (firing || remaining <= 0) {
+  if (firing) {
     return (
       <RadialCountdownRing remaining={0} total={total} firing accentColor={accentColor}>
         <span className="typo-heading font-semibold text-emerald-400 leading-none">{t.triggers.fire_label}</span>
+      </RadialCountdownRing>
+    );
+  }
+
+  // Past the brief firing window but still <= 0: the backend hasn't advanced
+  // next_trigger_at (paused scheduler, stale fallback, etc). Show an overdue
+  // state instead of a perpetual "FIRE" label.
+  if (remaining <= 0) {
+    return (
+      <RadialCountdownRing remaining={0} total={total} firing={false} accentColor={accentColor}>
+        <span className="typo-code font-mono font-semibold text-foreground leading-none">{t.triggers.overdue_label}</span>
       </RadialCountdownRing>
     );
   }

@@ -330,6 +330,7 @@
   "manual_label": "Вручную",
   "pending_label": "Ожидание",
   "fire_label": "Запустить",
+  "overdue_label": "Просрочено",
   "webhook_label": "Webhook",
   "chain_label": "Цепочка",
   "poll_interval_label": "Интервал опроса (секунды)",
@@ -574,6 +575,7 @@
   "meta_source": "Источник",
   "relay_last_event": "Последний:",
   "relay_delete_title": "Удалить ретранслятор",
+  "relay_delete_failed": "Не удалось удалить ретранслятор — попробуйте снова",
   "setup_guide_step1": "Создайте канал на smee.io/new",
   "clipboard_pattern_placeholder": "напр. https?://.* или error|exception",
   "composite_event_type_placeholder": "Тип события (напр. file_changed)",
@@ -592,7 +594,8 @@
     "event_type_required": "Необходимо указать тип отслеживаемого события.",
     "watch_path_required": "Необходимо указать хотя бы один отслеживаемый путь.",
     "composite_min_conditions": "Составным триггерам нужно как минимум 2 условия.",
-    "composite_window_minimum": "Временное окно должно быть не менее 5 секунд."
+    "composite_window_minimum": "Временное окно должно быть не менее 5 секунд.",
+    "endpoint_required": "Требуется URL конечной точки или событие."
   },
   "dead_letter_select_all": "Выбрать all",
   "dead_letter_select_visible": "Выбрать visible",

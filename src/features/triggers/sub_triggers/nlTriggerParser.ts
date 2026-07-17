@@ -56,25 +56,25 @@ function parseInterval(input: string, ctx: ParseContext): number | null {
   if (!m || !m[1] || !m[2]) return null;
   const n = parseInt(m[1]);
   const unit = m[2].toLowerCase().replace(/s$/, '');
-  switch (unit) {
-    case 'second':
-    case 'sec': {
-      if (n < MIN_INTERVAL_SECONDS) {
-        ctx.warnings.push({
-          code: 'interval_clamped',
-          message: `Sub-minute intervals are not supported. Clamped "every ${n} second${n === 1 ? '' : 's'}" to ${MIN_INTERVAL_SECONDS}s — the minimum schedule interval.`,
-        });
-        return MIN_INTERVAL_SECONDS;
-      }
-      return n;
-    }
-    case 'minute':
-    case 'min': return n * 60;
-    case 'hour':
-    case 'hr': return n * 3600;
-    case 'day': return n * 86400;
-    default: return null;
+  const multiplier =
+    unit === 'second' || unit === 'sec' ? 1 :
+    unit === 'minute' || unit === 'min' ? 60 :
+    unit === 'hour' || unit === 'hr' ? 3600 :
+    unit === 'day' ? 86400 : null;
+  if (multiplier === null) return null;
+
+  const seconds = n * multiplier;
+  // Covers both sub-minute values ("every 5 seconds") and non-positive values
+  // ("every 0 minutes") — both would otherwise silently produce a falsy/invalid
+  // interval that callers mistake for "no interval parsed".
+  if (seconds < MIN_INTERVAL_SECONDS) {
+    ctx.warnings.push({
+      code: 'interval_clamped',
+      message: `Intervals below ${MIN_INTERVAL_SECONDS}s are not supported. Clamped "every ${n} ${unit}${n === 1 ? '' : 's'}" to ${MIN_INTERVAL_SECONDS}s — the minimum schedule interval.`,
+    });
+    return MIN_INTERVAL_SECONDS;
   }
+  return seconds;
 }
 
 /** Try to extract a cron expression from common time-of-day phrases. */
@@ -335,7 +335,7 @@ const RULES: ParseRule[] = [
         };
       }
       const interval = parseInterval(input, ctx);
-      if (interval) {
+      if (interval !== null) {
         return {
           triggerType: 'schedule',
           scheduleMode: 'interval' as const,
@@ -351,7 +351,7 @@ const RULES: ParseRule[] = [
       // clamp warning has already been appended to ctx by that point — we
       // pass ctx here only for symmetry and future extensions.
       const interval = parseInterval(input, ctx);
-      if (interval) {
+      if (interval !== null) {
         if (interval >= 86400) return `Every ${interval / 86400} day(s)`;
         if (interval >= 3600) return `Every ${interval / 3600} hour(s)`;
         return `Every ${interval / 60} minute(s)`;

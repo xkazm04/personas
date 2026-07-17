@@ -198,7 +198,7 @@ export function CloudWebhooksTab() {
               >
                 <option value="">{t.triggers.select_persona}</option>
                 {personas
-                  .filter((p) => !deployedPersonaIds.has(p.id) || true)
+                  .filter((p) => !deployedPersonaIds.has(p.id))
                   .map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}

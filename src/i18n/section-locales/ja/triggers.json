@@ -330,6 +330,7 @@
   "manual_label": "手動",
   "pending_label": "保留中",
   "fire_label": "発火",
+  "overdue_label": "期限超過",
   "webhook_label": "Webhook",
   "chain_label": "チェーン",
   "poll_interval_label": "ポーリング間隔（秒）",
@@ -574,6 +575,7 @@
   "meta_source": "ソース",
   "relay_last_event": "最終:",
   "relay_delete_title": "リレーを削除",
+  "relay_delete_failed": "リレーの削除に失敗しました — もう一度お試しください",
   "setup_guide_step1": "smee.io/new でチャネルを作成",
   "clipboard_pattern_placeholder": "例: https?://.* または error|exception",
   "composite_event_type_placeholder": "イベントタイプ (例: file_changed)",
@@ -592,7 +594,8 @@
     "event_type_required": "リッスンするイベントタイプは必須です。",
     "watch_path_required": "監視パスを少なくとも1つ指定してください。",
     "composite_min_conditions": "コンポジットトリガーには少なくとも2つの条件が必要です。",
-    "composite_window_minimum": "時間枠は5秒以上にする必要があります。"
+    "composite_window_minimum": "時間枠は5秒以上にする必要があります。",
+    "endpoint_required": "エンドポイントURLまたはイベントが必要です。"
   },
   "dead_letter_select_all": "選択 all",
   "dead_letter_select_visible": "選択 visible",

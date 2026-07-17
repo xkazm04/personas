@@ -330,6 +330,7 @@
   "manual_label": "수동",
   "pending_label": "대기 중",
   "fire_label": "발사",
+  "overdue_label": "기한 초과",
   "webhook_label": "웹훅",
   "chain_label": "체인",
   "poll_interval_label": "폴링 간격 (초)",
@@ -574,6 +575,7 @@
   "meta_source": "소스",
   "relay_last_event": "마지막:",
   "relay_delete_title": "릴레이 삭제",
+  "relay_delete_failed": "릴레이 삭제 실패 — 다시 시도해 주세요",
   "setup_guide_step1": "smee.io/new에서 채널 생성",
   "clipboard_pattern_placeholder": "예: https?://.* 또는 error|exception",
   "composite_event_type_placeholder": "이벤트 유형 (예: file_changed)",
@@ -592,7 +594,8 @@
     "event_type_required": "수신할 이벤트 유형이 필요합니다.",
     "watch_path_required": "감시 경로가 하나 이상 필요합니다.",
     "composite_min_conditions": "복합 트리거는 조건이 2개 이상 필요합니다.",
-    "composite_window_minimum": "시간 윈도우는 5초 이상이어야 합니다."
+    "composite_window_minimum": "시간 윈도우는 5초 이상이어야 합니다.",
+    "endpoint_required": "엔드포인트 URL 또는 이벤트가 필요합니다."
   },
   "dead_letter_select_all": "선택 all",
   "dead_letter_select_visible": "선택 visible",

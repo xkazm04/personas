@@ -330,6 +330,7 @@
   "manual_label": "मैन्युअल",
   "pending_label": "लंबित",
   "fire_label": "फायर",
+  "overdue_label": "अतिदेय",
   "webhook_label": "Webhook",
   "chain_label": "चेन",
   "poll_interval_label": "पोल अंतराल (सेकंड)",
@@ -574,6 +575,7 @@
   "meta_source": "स्रोत",
   "relay_last_event": "अंतिम:",
   "relay_delete_title": "relay हटाएँ",
+  "relay_delete_failed": "relay हटाने में विफल — कृपया पुनः प्रयास करें",
   "setup_guide_step1": "smee.io/new पर एक चैनल बनाएँ",
   "clipboard_pattern_placeholder": "उदा. https?://.* या error|exception",
   "composite_event_type_placeholder": "इवेंट प्रकार (उदा. file_changed)",
@@ -592,7 +594,8 @@
     "event_type_required": "सुनने के लिए इवेंट प्रकार आवश्यक है।",
     "watch_path_required": "कम से कम एक निगरानी पथ आवश्यक है।",
     "composite_min_conditions": "कंपोज़िट ट्रिगर के लिए कम से कम 2 शर्तें आवश्यक हैं।",
-    "composite_window_minimum": "समय विंडो कम से कम 5 सेकंड की होनी चाहिए।"
+    "composite_window_minimum": "समय विंडो कम से कम 5 सेकंड की होनी चाहिए।",
+    "endpoint_required": "एंडपॉइंट URL या इवेंट आवश्यक है।"
   },
   "dead_letter_select_all": "चुनें all",
   "dead_letter_select_visible": "चुनें visible",

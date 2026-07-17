@@ -330,6 +330,7 @@
   "manual_label": "Ruční",
   "pending_label": "Čeká",
   "fire_label": "Spustit",
+  "overdue_label": "Po termínu",
   "webhook_label": "Webhook",
   "chain_label": "Řetězec",
   "poll_interval_label": "Interval pollování (sekundy)",
@@ -574,6 +575,7 @@
   "meta_source": "Zdroj",
   "relay_last_event": "Poslední:",
   "relay_delete_title": "Smazat relé",
+  "relay_delete_failed": "Relé se nepodařilo smazat — zkuste to prosím znovu",
   "setup_guide_step1": "Vytvoř kanál na smee.io/new",
   "clipboard_pattern_placeholder": "např. https?://.* nebo error|exception",
   "composite_event_type_placeholder": "Typ události (např. file_changed)",
@@ -592,7 +594,8 @@
     "event_type_required": "Vyžadován typ události k naslouchání.",
     "watch_path_required": "Vyžadována alespoň jedna sledovaná cesta.",
     "composite_min_conditions": "Kombinované spouštěče vyžadují alespoň 2 podmínky.",
-    "composite_window_minimum": "Časové okno musí být alespoň 5 sekund."
+    "composite_window_minimum": "Časové okno musí být alespoň 5 sekund.",
+    "endpoint_required": "Je vyžadována URL koncového bodu nebo událost."
   },
   "dead_letter_select_all": "Vybrat all",
   "dead_letter_select_visible": "Vybrat visible",

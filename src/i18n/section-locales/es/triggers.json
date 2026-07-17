@@ -330,6 +330,7 @@
   "manual_label": "Manual",
   "pending_label": "Pendiente",
   "fire_label": "Disparar",
+  "overdue_label": "Atrasado",
   "webhook_label": "Webhook",
   "chain_label": "Cadena",
   "poll_interval_label": "Intervalo de Sondeo (segundos)",
@@ -574,6 +575,7 @@
   "meta_source": "Origen",
   "relay_last_event": "Último:",
   "relay_delete_title": "Eliminar relay",
+  "relay_delete_failed": "No se pudo eliminar el relay — inténtalo de nuevo",
   "setup_guide_step1": "Crea un canal en smee.io/new",
   "clipboard_pattern_placeholder": "p. ej. https?://.* o error|exception",
   "composite_event_type_placeholder": "Tipo de evento (p. ej. file_changed)",
@@ -592,7 +594,8 @@
     "event_type_required": "Se requiere el tipo de evento a escuchar.",
     "watch_path_required": "Se requiere al menos una ruta a vigilar.",
     "composite_min_conditions": "Los disparadores compuestos necesitan al menos 2 condiciones.",
-    "composite_window_minimum": "La ventana de tiempo debe ser de al menos 5 segundos."
+    "composite_window_minimum": "La ventana de tiempo debe ser de al menos 5 segundos.",
+    "endpoint_required": "Se requiere una URL de endpoint o un evento."
   },
   "dead_letter_select_all": "Seleccionar all",
   "dead_letter_select_visible": "Seleccionar visible",

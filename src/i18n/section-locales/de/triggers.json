@@ -330,6 +330,7 @@
   "manual_label": "Manuell",
   "pending_label": "Ausstehend",
   "fire_label": "Auslösen",
+  "overdue_label": "Überfällig",
   "webhook_label": "Webhook",
   "chain_label": "Kette",
   "poll_interval_label": "Abfrageintervall (Sekunden)",
@@ -574,6 +575,7 @@
   "meta_source": "Quelle",
   "relay_last_event": "Zuletzt:",
   "relay_delete_title": "Relay löschen",
+  "relay_delete_failed": "Relay konnte nicht gelöscht werden — bitte erneut versuchen",
   "setup_guide_step1": "Einen Kanal unter smee.io/new erstellen",
   "clipboard_pattern_placeholder": "z. B. https?://.* oder error|exception",
   "composite_event_type_placeholder": "Ereignistyp (z. B. file_changed)",
@@ -592,7 +594,8 @@
     "event_type_required": "Der zu überwachende Ereignistyp ist erforderlich.",
     "watch_path_required": "Mindestens ein Überwachungspfad ist erforderlich.",
     "composite_min_conditions": "Zusammengesetzte Trigger benötigen mindestens 2 Bedingungen.",
-    "composite_window_minimum": "Das Zeitfenster muss mindestens 5 Sekunden betragen."
+    "composite_window_minimum": "Das Zeitfenster muss mindestens 5 Sekunden betragen.",
+    "endpoint_required": "Endpoint-URL oder Ereignis ist erforderlich."
   },
   "dead_letter_select_all": "Auswählen all",
   "dead_letter_select_visible": "Auswählen visible",

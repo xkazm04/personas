@@ -330,6 +330,7 @@
   "manual_label": "手动",
   "pending_label": "待处理",
   "fire_label": "触发",
+  "overdue_label": "已逾期",
   "webhook_label": "Webhook",
   "chain_label": "链式",
   "poll_interval_label": "轮询间隔（秒）",
@@ -574,6 +575,7 @@
   "meta_source": "来源",
   "relay_last_event": "最后：",
   "relay_delete_title": "删除中继",
+  "relay_delete_failed": "删除中继失败 — 请重试",
   "setup_guide_step1": "在 smee.io/new 创建频道",
   "clipboard_pattern_placeholder": "例如 https?://.* 或 error|exception",
   "composite_event_type_placeholder": "事件类型（例如 file_changed）",
@@ -592,7 +594,8 @@
     "event_type_required": "需要提供要监听的事件类型。",
     "watch_path_required": "至少需要提供一个监视路径。",
     "composite_min_conditions": "组合触发器至少需要 2 个条件。",
-    "composite_window_minimum": "时间窗口至少需要 5 秒。"
+    "composite_window_minimum": "时间窗口至少需要 5 秒。",
+    "endpoint_required": "需要端点URL或事件。"
   },
   "dead_letter_select_all": "选择 all",
   "dead_letter_select_visible": "选择 visible",

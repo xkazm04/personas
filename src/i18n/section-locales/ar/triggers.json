@@ -330,6 +330,7 @@
   "manual_label": "يدوي",
   "pending_label": "معلّق",
   "fire_label": "أطلق",
+  "overdue_label": "متأخر",
   "webhook_label": "Webhook",
   "chain_label": "سلسلة",
   "poll_interval_label": "فترة الاستطلاع (ثانية)",
@@ -574,6 +575,7 @@
   "meta_source": "المصدر",
   "relay_last_event": "الأخير:",
   "relay_delete_title": "حذف الترحيل",
+  "relay_delete_failed": "فشل حذف الترحيل — يرجى المحاولة مرة أخرى",
   "setup_guide_step1": "أنشئ قناة على smee.io/new",
   "clipboard_pattern_placeholder": "مثال: https?://.* أو error|exception",
   "composite_event_type_placeholder": "نوع الحدث (مثل: file_changed)",
@@ -592,7 +594,8 @@
     "event_type_required": "يجب تحديد نوع الحدث المطلوب الاستماع إليه.",
     "watch_path_required": "يجب تحديد مسار مراقبة واحد على الأقل.",
     "composite_min_conditions": "تحتاج المُشغِّلات المركّبة إلى شرطين على الأقل.",
-    "composite_window_minimum": "يجب أن تكون النافذة الزمنية 5 ثوانٍ على الأقل."
+    "composite_window_minimum": "يجب أن تكون النافذة الزمنية 5 ثوانٍ على الأقل.",
+    "endpoint_required": "رابط نقطة النهاية أو الحدث مطلوب."
   },
   "dead_letter_select_all": "تحديد all",
   "dead_letter_select_visible": "تحديد visible",

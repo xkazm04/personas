@@ -32,6 +32,12 @@ export function TestTab() {
   const [testResult, setTestResult] = useState<PersonaEvent | null>(null);
   const [isTesting, setIsTesting] = useState(false);
 
+  // Id of the event most recently appended to `recentEvents` by our own test
+  // fire. The prefill effect below reruns whenever `recentEvents` changes so
+  // it can pick up freshly-loaded history — but a self-inflicted append
+  // shouldn't reset the editor and clobber payload edits made after firing.
+  const lastFiredIdRef = useRef<string | null>(null);
+
   // Load recent events + subscriptions once. Subsequent test fires append locally.
   useEffect(() => {
     let stale = false;
@@ -147,6 +153,11 @@ export function TestTab() {
   // Re-run prefill whenever the (persona, event) tuple changes, including
   // when recent events finish loading and the auto-pick lands.
   useEffect(() => {
+    // Skip the reset triggered by our own test-fire appending to recentEvents.
+    if (lastFiredIdRef.current && recentEvents[0]?.id === lastFiredIdRef.current) {
+      lastFiredIdRef.current = null;
+      return;
+    }
     refreshPrefill(selectedPersonaId, activeEventType);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPersonaId, activeEventType, recentEvents]);
@@ -200,6 +211,7 @@ export function TestTab() {
       const result = await testEventFlow(activeEventType, normalised);
       setTestResult(result);
       // Append the new event so the next prefill refresh sees it as history.
+      lastFiredIdRef.current = result.id;
       setRecentEvents(prev => [result, ...prev]);
     } catch (err) { silentCatch("features/triggers/sub_test/TestTab:catch1")(err); } finally {
       setIsTesting(false);

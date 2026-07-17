@@ -197,6 +197,7 @@ export function LiveStreamTab() {
     eventIdIndex.current.clear();
     newEventIds.current.clear();
     pausedQueueRef.current = [];
+    pendingEventsRef.current = [];
     setPausedQueueCount(0);
     setTotalReceived(0);
     pendingReceivedRef.current = 0;

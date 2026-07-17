@@ -200,7 +200,9 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                       value={timeToInput(aw.start_hour, aw.start_minute)}
                       onChange={(e) => {
                         const [h, m] = e.target.value.split(':').map(Number);
-                        update({ start_hour: h, start_minute: m });
+                        if (Number.isFinite(h) && Number.isFinite(m)) {
+                          update({ start_hour: h, start_minute: m });
+                        }
                       }}
                       className="px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
                     />
@@ -210,7 +212,9 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                       value={timeToInput(aw.end_hour, aw.end_minute)}
                       onChange={(e) => {
                         const [h, m] = e.target.value.split(':').map(Number);
-                        update({ end_hour: h, end_minute: m });
+                        if (Number.isFinite(h) && Number.isFinite(m)) {
+                          update({ end_hour: h, end_minute: m });
+                        }
                       }}
                       className="px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
                     />
