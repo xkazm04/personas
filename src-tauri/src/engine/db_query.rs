@@ -1203,6 +1203,52 @@ async fn execute_neon_parameterized(
 // Upstash -- Redis REST API
 // ============================================================================
 
+/// Split a Redis command string into RESP arguments, respecting
+/// double-quoted substrings (with `\"` / `\\` escapes) so a single key or
+/// value containing whitespace is not silently torn into multiple array
+/// elements — e.g. `TYPE "my key"` -> `["TYPE", "my key"]`, not
+/// `["TYPE", "\"my", "key\""]`. Callers building a command string for a
+/// literal key should wrap it in double quotes.
+fn split_redis_command(query_text: &str) -> Result<Vec<String>, AppError> {
+    let mut parts = Vec::new();
+    let mut current = String::new();
+    let mut has_current = false;
+    let mut in_quotes = false;
+    let mut chars = query_text.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        match c {
+            '"' if in_quotes => in_quotes = false,
+            '"' => {
+                in_quotes = true;
+                has_current = true;
+            }
+            '\\' if in_quotes && matches!(chars.peek(), Some('"') | Some('\\')) => {
+                current.push(chars.next().expect("peeked Some"));
+            }
+            c if c.is_whitespace() && !in_quotes => {
+                if has_current {
+                    parts.push(std::mem::take(&mut current));
+                    has_current = false;
+                }
+            }
+            c => {
+                current.push(c);
+                has_current = true;
+            }
+        }
+    }
+    if in_quotes {
+        return Err(AppError::Validation(
+            "Unterminated \" in Redis command".into(),
+        ));
+    }
+    if has_current {
+        parts.push(current);
+    }
+    Ok(parts)
+}
+
 pub(crate) async fn execute_upstash(
     fields: &HashMap<String, String>,
     query_text: &str,
@@ -1219,8 +1265,10 @@ pub(crate) async fn execute_upstash(
         .or_else(|| fields.get("password"))
         .ok_or_else(|| AppError::Validation("Missing redis_rest_token field for Upstash".into()))?;
 
-    // Split the query into command parts (e.g., "GET mykey" -> ["GET", "mykey"])
-    let parts: Vec<&str> = query_text.split_whitespace().collect();
+    // Split the query into command parts (e.g., "GET mykey" -> ["GET", "mykey"]).
+    // Quote-aware so a key containing whitespace (passed as `GET "my key"`)
+    // survives as one argument instead of silently splitting into two.
+    let parts = split_redis_command(query_text)?;
     if parts.is_empty() {
         return Err(AppError::Validation("Empty Redis command".into()));
     }
@@ -3070,6 +3118,54 @@ mod tests {
         assert!(result.is_err());
         let err_msg = format!("{}", result.unwrap_err());
         assert!(err_msg.contains("Empty Redis command"));
+    }
+
+    #[test]
+    fn test_split_redis_command_simple() {
+        assert_eq!(
+            split_redis_command("GET mykey").unwrap(),
+            vec!["GET".to_string(), "mykey".to_string()]
+        );
+    }
+
+    #[test]
+    fn test_split_redis_command_quoted_key_with_spaces() {
+        assert_eq!(
+            split_redis_command(r#"TYPE "my key""#).unwrap(),
+            vec!["TYPE".to_string(), "my key".to_string()]
+        );
+    }
+
+    #[test]
+    fn test_split_redis_command_quoted_escapes() {
+        assert_eq!(
+            split_redis_command(r#"SET "a\"b" "c\\d""#).unwrap(),
+            vec!["SET".to_string(), "a\"b".to_string(), "c\\d".to_string()]
+        );
+    }
+
+    #[test]
+    fn test_split_redis_command_mixed_quoted_and_bare() {
+        assert_eq!(
+            split_redis_command(r#"HSET h "field one" value"#).unwrap(),
+            vec![
+                "HSET".to_string(),
+                "h".to_string(),
+                "field one".to_string(),
+                "value".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_split_redis_command_unterminated_quote_errors() {
+        assert!(split_redis_command(r#"GET "unterminated"#).is_err());
+    }
+
+    #[test]
+    fn test_split_redis_command_empty_returns_empty() {
+        assert!(split_redis_command("").unwrap().is_empty());
+        assert!(split_redis_command("   ").unwrap().is_empty());
     }
 
     // -- PostgREST parser tests --

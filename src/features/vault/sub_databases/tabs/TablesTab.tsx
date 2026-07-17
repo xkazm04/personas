@@ -34,7 +34,10 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
 
   const fetchKeyType = useCallback(async (key: string) => {
     try {
-      const result = await executeDbQuery(credentialId, `TYPE ${key}`);
+      // Quoted so the backend's Redis command tokenizer treats a key
+      // containing whitespace as one argument, not several.
+      const escapedKey = key.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const result = await executeDbQuery(credentialId, `TYPE "${escapedKey}"`);
       const val = result.rows[0]?.[0];
       setKeyTypeResult(val != null ? String(val) : 'unknown');
     } catch { setKeyTypeResult('error'); }
