@@ -6,6 +6,7 @@ import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { N8nWizardStep, TransformQuestion, TransformSubPhase, SessionLoadedPayload } from '../hooks/useN8nImportReducer';
 import { STEP_META, WIZARD_STEPS } from '../hooks/useN8nImportReducer';
+import { fallbackStepForData } from '../reducers/navigationReducer';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SESSION_STATUS_STYLES } from '../colorTokens';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -185,13 +186,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       // Smart step routing for interrupted/failed sessions
       let targetStep: N8nWizardStep;
       if (full.status === 'failed' || full.status === 'interrupted' || full.status === 'transforming') {
-        if (draft) {
-          targetStep = 'edit';
-        } else if (parsedResult) {
-          targetStep = 'analyze';
-        } else {
-          targetStep = 'upload';
-        }
+        targetStep = fallbackStepForData({ draft, parsedResult });
       } else if (full.status === 'awaiting_answers') {
         targetStep = 'transform';
       } else {

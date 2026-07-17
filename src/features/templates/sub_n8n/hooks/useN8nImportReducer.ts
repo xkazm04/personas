@@ -6,6 +6,7 @@ import type { WorkflowPlatform } from '@/lib/personas/parsers/workflowDetector';
 import {
   navigationReducer,
   checkStepPrecondition,
+  fallbackStepForData,
   INITIAL_NAVIGATION,
 } from '../reducers/navigationReducer';
 import {
@@ -226,9 +227,7 @@ function handleSessionLoaded(p: SessionLoadedPayload): N8nImportState {
   let safeStep = p.step;
   const restoredState = { parsedResult: p.parsedResult, draft: p.draft, draftJsonError: null };
   if (checkStepPrecondition(safeStep, restoredState)) {
-    if (p.draft) safeStep = 'edit';
-    else if (p.parsedResult) safeStep = 'analyze';
-    else safeStep = 'upload';
+    safeStep = fallbackStepForData(restoredState);
   }
 
   return {
