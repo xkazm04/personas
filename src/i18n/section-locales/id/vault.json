@@ -655,7 +655,12 @@
     "reindex_hint": "Sematkan ulang setiap bagian dalam basis pengetahuan ini dengan model embedding saat ini. Gunakan ini setelah model embedding berubah agar dokumen lama dapat dicari kembali, atau untuk membangun ulang indeks yang Anda duga telah menyimpang.",
     "reindex_title": "Pemeliharaan",
     "no_results_floor_hint": "{count} bagian ditemukan, tetapi tidak ada yang cukup relevan untuk ditampilkan. Coba kata-kata lain, atau periksa tab Dokumen untuk melihat isi sebenarnya basis pengetahuan ini.",
-    "search_floor_filtered": "{count} bagian berelevansi rendah disembunyikan"
+    "search_floor_filtered": "{count} bagian berelevansi rendah disembunyikan",
+    "corpus_overview_error": "Tidak dapat memuat ikhtisar korpus.",
+    "corpus_overview_hide": "Sembunyikan ikhtisar korpus",
+    "corpus_overview_show": "Tampilkan ikhtisar korpus",
+    "corpus_overview_subtitle": "Apa isi basis pengetahuan ini, dan bagian mana yang tidak terbaca.",
+    "corpus_overview_title": "Ikhtisar korpus"
   },
   "manager": {
     "title": "Kredensial",

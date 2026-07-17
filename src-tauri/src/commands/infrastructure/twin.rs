@@ -801,7 +801,41 @@ const TWIN_KB_CHAR_BUDGET: usize = 4000;
 /// pre-D3 behavior.
 #[cfg(feature = "ml")]
 fn format_kb_grounding(chunks: &[(String, Option<String>)]) -> Option<String> {
-    let mut used = 0usize;
+    format_kb_grounding_with_map(chunks, None)
+}
+
+/// As [`format_kb_grounding`], but optionally prepends the KB **corpus map**
+/// (the `kb_corpus_map` overview — what the corpus contains, how big each doc
+/// is, which parts are unreadable) so the twin knows the *shape* of what it
+/// knows before the matched passages. The map is clamped to at most half the
+/// shared [`TWIN_KB_CHAR_BUDGET`] and counts against it, so it can never starve
+/// the actual evidence chunks — the closest passage is always admitted. Returns
+/// `None` only when neither a map nor a usable chunk survives (the clean-skip
+/// contract: unbound / ml-off / clean-miss → byte-identical prior prompt).
+#[cfg(feature = "ml")]
+fn format_kb_grounding_with_map(
+    chunks: &[(String, Option<String>)],
+    corpus_map: Option<&str>,
+) -> Option<String> {
+    // Clamp the corpus map to half the budget on a char boundary so it orients
+    // without crowding out evidence.
+    let map_clamped: Option<String> = corpus_map
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|m| {
+            let cap = TWIN_KB_CHAR_BUDGET / 2;
+            if m.len() <= cap {
+                return m.to_string();
+            }
+            let mut end = cap;
+            while end > 0 && !m.is_char_boundary(end) {
+                end -= 1;
+            }
+            format!("{}…", &m[..end])
+        });
+
+    // The map's bytes are already spent against the budget the chunks share.
+    let mut used = map_clamped.as_ref().map(String::len).unwrap_or(0);
     let mut lines: Vec<String> = Vec::new();
     for (content, source) in chunks {
         let content = content.trim();
@@ -822,13 +856,25 @@ fn format_kb_grounding(chunks: &[(String, Option<String>)]) -> Option<String> {
             .unwrap_or("knowledge base");
         lines.push(format!("- ({src}) {content}"));
     }
-    if lines.is_empty() {
+
+    if lines.is_empty() && map_clamped.is_none() {
         return None;
     }
-    Some(format!(
-        "\n\nFrom your knowledge base (grounded facts — prefer these and stay consistent; never contradict them):\n{}",
-        lines.join("\n")
-    ))
+
+    let mut out = String::new();
+    if let Some(map) = &map_clamped {
+        out.push_str(
+            "\n\nYour knowledge base at a glance (the shape of what you know — orient by it, and don't claim anything it lists as missing or unreadable is known):\n",
+        );
+        out.push_str(map);
+    }
+    if !lines.is_empty() {
+        out.push_str(
+            "\n\nFrom your knowledge base (grounded facts — prefer these and stay consistent; never contradict them):\n",
+        );
+        out.push_str(&lines.join("\n"));
+    }
+    Some(out)
 }
 
 /// Retrieve grounding from a twin's bound knowledge base for `query`.
@@ -882,7 +928,14 @@ async fn retrieve_bound_kb_context(
             rows.push(r);
         }
     }
-    format_kb_grounding(&rows)
+    // Prepend the corpus map (reusing the SAME `kb_corpus_map` overview the
+    // Documents tab renders — no new generation logic) so the twin knows the
+    // shape of its corpus, not just the matched passages. Best-effort: a map
+    // failure degrades to passages-only. It only rides along when there IS
+    // grounding (this fn already returned None on a clean miss), so an
+    // off-topic message still injects nothing.
+    let corpus_map = crate::engine::kb_ingest::kb_corpus_map(user_db, kb_id).ok();
+    format_kb_grounding_with_map(&rows, corpus_map.as_deref())
 }
 
 /// Resolve the bound-KB grounding block for a twin generation, or an empty
@@ -2610,6 +2663,37 @@ mod kb_grounding_tests {
             reply.contains("Kazimi ships Rust desktop apps"),
             "bound-KB fact must reach the draft-reply prompt"
         );
+    }
+
+    #[test]
+    fn corpus_map_is_prepended_within_budget() {
+        // The map orients before the passages; both reach the block, map first.
+        let block = format_kb_grounding_with_map(
+            &[("A grounded passage.".into(), Some("notes.md".into()))],
+            Some("# Knowledge base: Handbook\n\n2 document(s) indexed."),
+        )
+        .unwrap();
+        let map_at = block.find("Handbook").expect("corpus map present");
+        let passage_at = block.find("A grounded passage").expect("passage present");
+        assert!(map_at < passage_at, "corpus map is prepended before passages");
+        assert!(block.contains("at a glance"), "map carries its orienting header");
+
+        // Map alone (no chunks) still yields a block — a bound KB with nothing
+        // near the query is filtered upstream, but the formatter must not panic
+        // or drop a lone map.
+        let map_only =
+            format_kb_grounding_with_map(&[], Some("# KB\n\nsome shape")).unwrap();
+        assert!(map_only.contains("some shape"));
+
+        // Oversized map is clamped to <= half the budget (plus the ellipsis),
+        // so evidence chunks always keep room.
+        let huge = "m".repeat(TWIN_KB_CHAR_BUDGET);
+        let clamped = format_kb_grounding_with_map(
+            &[("FIRST evidence".into(), None)],
+            Some(&huge),
+        )
+        .unwrap();
+        assert!(clamped.contains("FIRST evidence"), "closest chunk still admitted");
     }
 
     #[test]

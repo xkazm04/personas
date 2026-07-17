@@ -655,7 +655,12 @@
     "reindex_hint": "Znovu zaindexuje každou pasáž v této znalostní bázi pomocí aktuálního embedding modelu. Použijte po změně embedding modelu, aby byly starší dokumenty opět vyhledatelné, nebo k přestavbě indexu, u kterého máte podezření na odchylku.",
     "reindex_title": "Údržba",
     "no_results_floor_hint": "Nalezeno {count} pasáží, ale žádná nebyla dostatečně relevantní k zobrazení. Zkuste jinou formulaci, nebo se podívejte na kartu Dokumenty, co tato znalostní báze skutečně obsahuje.",
-    "search_floor_filtered": "Skryto {count} málo relevantních pasáží"
+    "search_floor_filtered": "Skryto {count} málo relevantních pasáží",
+    "corpus_overview_error": "Přehled korpusu se nepodařilo načíst.",
+    "corpus_overview_hide": "Skrýt přehled korpusu",
+    "corpus_overview_show": "Zobrazit přehled korpusu",
+    "corpus_overview_subtitle": "Co tato znalostní báze obsahuje a které části jsou nečitelné.",
+    "corpus_overview_title": "Přehled korpusu"
   },
   "manager": {
     "title": "Přihlašovací údaje",

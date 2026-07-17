@@ -655,7 +655,12 @@
     "reindex_hint": "使用当前嵌入模型重新嵌入此知识库中的每个段落。在嵌入模型更改后使用此功能，可让较旧的文档重新可被搜索，或用于重建你怀疑已发生偏移的索引。",
     "reindex_title": "维护",
     "no_results_floor_hint": "找到 {count} 个段落，但没有一个相关性足以显示。请尝试其他措辞，或查看“文档”标签页了解此知识库的实际内容。",
-    "search_floor_filtered": "已隐藏 {count} 个低相关性段落"
+    "search_floor_filtered": "已隐藏 {count} 个低相关性段落",
+    "corpus_overview_error": "无法加载语料库概览。",
+    "corpus_overview_hide": "隐藏语料库概览",
+    "corpus_overview_show": "显示语料库概览",
+    "corpus_overview_subtitle": "此知识库包含哪些内容，以及哪些部分无法读取。",
+    "corpus_overview_title": "语料库概览"
   },
   "manager": {
     "title": "凭据",

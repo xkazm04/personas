@@ -68,6 +68,8 @@ The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, 
 3. Once bound, the panel shows document count, chunk count, and status (ready / pending). **Refresh** re-fetches stats, **Unbind** detaches without deleting the KB.
 4. The "How the brain grows" card explains the 5-step lifecycle: personas record interactions → pending memories appear in Knowledge → you approve → indexed into KB → next recall finds them.
 
+When a bound-KB retrieval grounds a generation (Draft-as-twin, reply drafting, or the Training Studio batch), the injected context now **leads with a compact corpus map** — the same `kb_corpus_map` overview the Knowledge/Documents surface renders — before the matched passages, so the twin knows the *shape* of its corpus (what it contains, which parts are unreadable scans) and won't claim something the map lists as missing. The map is clamped to half the retrieval token budget so it never crowds out the actual evidence; it only rides along when there is grounding to begin with (an off-topic message still injects nothing).
+
 ### 5. Knowledge — review what the twin remembers
 
 A **Contacts** panel sits at the top of the tab — every external handle this twin has interacted with (auto-populated from `twin_communications` on each list call, no background job). Each row shows the handle (or its operator-supplied alias), last-seen relative time, and message count. Inline edit attaches an alias + free-text notes that persist per `(twin_id, handle)` and become the scope key for the future per-contact memory + nudge work.

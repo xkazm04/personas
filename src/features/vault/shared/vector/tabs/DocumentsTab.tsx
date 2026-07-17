@@ -8,6 +8,7 @@ const logger = createLogger('vector-kb-documents');
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import type { KnowledgeBase, KbDocument } from '@/api/vault/database/vectorKb';
 import { kbListDocuments, kbDeleteDocument, kbPickFiles, kbIngestFiles } from '@/api/vault/database/vectorKb';
+import { CorpusOverview } from './CorpusOverview';
 import { IngestDropZone } from '../ingest/IngestDropZone';
 import { IngestTextModal } from '../ingest/IngestTextModal';
 import { IngestDirectoryPicker } from '../ingest/IngestDirectoryPicker';
@@ -118,6 +119,8 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
             />
           </IngestDropZone>
         )}
+
+        {documents.length > 0 && <CorpusOverview kbId={kb.id} />}
 
         {documents.length > 0 && (
           <IngestDropZone kbId={kb.id} onIngestStarted={handleIngestStarted}>

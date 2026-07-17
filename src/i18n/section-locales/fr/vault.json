@@ -655,7 +655,12 @@
     "reindex_hint": "Réintègre chaque passage de cette base de connaissances avec le modèle d'embedding actuel. Utilisez ceci après un changement de modèle d'embedding pour rendre les anciens documents à nouveau consultables, ou pour reconstruire un index que vous soupçonnez d'avoir dérivé.",
     "reindex_title": "Entretien",
     "no_results_floor_hint": "{count} passage(s) trouvé(s), mais aucun n'était assez pertinent pour être affiché. Essayez une autre formulation ou consultez l'onglet Documents pour voir ce que contient réellement cette base de connaissances.",
-    "search_floor_filtered": "{count} passage(s) peu pertinent(s) masqué(s)"
+    "search_floor_filtered": "{count} passage(s) peu pertinent(s) masqué(s)",
+    "corpus_overview_error": "Impossible de charger l'aperçu du corpus.",
+    "corpus_overview_hide": "Masquer l'aperçu du corpus",
+    "corpus_overview_show": "Afficher l'aperçu du corpus",
+    "corpus_overview_subtitle": "Ce que contient cette base de connaissances et quelles parties sont illisibles.",
+    "corpus_overview_title": "Aperçu du corpus"
   },
   "manager": {
     "title": "Coffre-fort",

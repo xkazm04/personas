@@ -80,6 +80,15 @@ export const kbSearch = (query: KbSearchQuery) =>
 export const kbListDocuments = (kbId: string) =>
   invoke<KbDocument[]>('kb_list_documents', { kbId });
 
+/**
+ * A compact Markdown overview of the knowledge base — what documents it holds,
+ * how large each is, and which parts are unreadable scans. The same map the
+ * twin retrieval context prepends when a KB is bound; here it backs the
+ * Documents tab's collapsible "corpus overview".
+ */
+export const kbCorpusMap = (kbId: string) =>
+  invoke<string>('kb_corpus_map', { kbId });
+
 export const kbDeleteDocument = (documentId: string) =>
   invoke<void>('kb_delete_document', { documentId });
 

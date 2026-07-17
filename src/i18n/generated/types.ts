@@ -4500,6 +4500,11 @@ export type Translations = {
       add_pattern_placeholder: string;
       distance_label: string;
       chunk_label: string;
+      corpus_overview_title: string;
+      corpus_overview_subtitle: string;
+      corpus_overview_show: string;
+      corpus_overview_hide: string;
+      corpus_overview_error: string;
       page_label: string;
       partial_text_badge: string;
       partial_text_tooltip: string;

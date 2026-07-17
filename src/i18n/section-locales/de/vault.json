@@ -655,7 +655,12 @@
     "reindex_hint": "Bettet jede Passage in dieser Wissensdatenbank mit dem aktuellen Embedding-Modell neu ein. Verwenden Sie dies nach einem Wechsel des Embedding-Modells, damit ältere Dokumente wieder durchsuchbar werden, oder um einen Index neu aufzubauen, bei dem Sie eine Abweichung vermuten.",
     "reindex_title": "Wartung",
     "no_results_floor_hint": "{count} Passage(n) gefunden, aber keine war relevant genug zur Anzeige. Versuchen Sie eine andere Formulierung oder prüfen Sie im Tab „Dokumente“, was diese Wissensdatenbank tatsächlich enthält.",
-    "search_floor_filtered": "{count} wenig relevante Passage(n) ausgeblendet"
+    "search_floor_filtered": "{count} wenig relevante Passage(n) ausgeblendet",
+    "corpus_overview_error": "Korpus-Übersicht konnte nicht geladen werden.",
+    "corpus_overview_hide": "Korpus-Übersicht ausblenden",
+    "corpus_overview_show": "Korpus-Übersicht anzeigen",
+    "corpus_overview_subtitle": "Was diese Wissensdatenbank enthält und welche Teile unlesbar sind.",
+    "corpus_overview_title": "Korpus-Übersicht"
   },
   "manager": {
     "title": "Zugangsdaten",

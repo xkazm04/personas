@@ -655,7 +655,12 @@
     "reindex_hint": "現在の埋め込みモデルでこのナレッジベースのすべてのパッセージを再埋め込みします。埋め込みモデルを変更した後に古いドキュメントを再び検索可能にする場合や、ずれが疑われるインデックスを再構築する場合に使用します。",
     "reindex_title": "メンテナンス",
     "no_results_floor_hint": "{count}件のパッセージが見つかりましたが、表示できるほど関連性の高いものはありませんでした。別の言い回しを試すか、ドキュメントタブでこのナレッジベースの実際の内容を確認してください。",
-    "search_floor_filtered": "関連性の低いパッセージを{count}件非表示"
+    "search_floor_filtered": "関連性の低いパッセージを{count}件非表示",
+    "corpus_overview_error": "コーパスの概要を読み込めませんでした。",
+    "corpus_overview_hide": "コーパスの概要を非表示",
+    "corpus_overview_show": "コーパスの概要を表示",
+    "corpus_overview_subtitle": "このナレッジベースに含まれる内容と、読み取れない部分。",
+    "corpus_overview_title": "コーパスの概要"
   },
   "manager": {
     "title": "認証情報",
