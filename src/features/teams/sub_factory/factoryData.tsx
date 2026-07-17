@@ -37,9 +37,16 @@ const TIERS: KpiTier[] = ['north_star', 'primary', 'supporting'];
 const KINDS: MeasureKind[] = ['codebase', 'connector', 'manual', 'derived'];
 const DOMAINS: GroupDomain[] = ['feature', 'infrastructure', 'shared', 'integration', 'data'];
 
+/** Normalize a bare `YYYY-MM-DD HH:MM:SS` (SQLite `CURRENT_TIMESTAMP`, UTC) into
+ *  an ISO string JS parses as UTC. Leaves already-offset strings untouched. */
+function toUtcIso(iso: string): string {
+  const t = iso.replace(' ', 'T');
+  return /[Zz]|[+-]\d\d:?\d\d$/.test(t) ? t : `${t}Z`;
+}
+
 function rel(iso: string | null): string {
   if (!iso) return 'never';
-  const t = new Date(iso.replace(' ', 'T')).getTime();
+  const t = new Date(toUtcIso(iso)).getTime();
   if (!Number.isFinite(t)) return '—';
   const mins = Math.max(0, (Date.now() - t) / 60000);
   if (mins < 60) return `${Math.round(mins)}m ago`;

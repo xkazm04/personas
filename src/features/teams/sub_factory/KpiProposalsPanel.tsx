@@ -7,7 +7,7 @@
 //
 // Wired to LIVE commands (the Factory uses real dev_tools data); on accept it
 // calls onAccepted() so the parent reloads the matrix.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Sparkles, Check, X, SlidersHorizontal, Loader2, Lightbulb } from 'lucide-react';
 
 import { listKpis, updateKpi, scanKpis, getKpiScanStatus } from '@/api/devTools/kpis';
@@ -31,12 +31,18 @@ export function KpiProposalsPanel({
   const [proposals, setProposals] = useState<DevKpi[]>([]);
   const [scanning, setScanning] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  // Guards the long-lived scan poll loop (up to ~120s) against setState after
+  // unmount/navigation — the mount-fetch effect already had its own `alive`
+  // flag, but the scan loop below runs outside any effect's lifecycle.
+  const aliveRef = useRef(true);
+  useEffect(() => () => { aliveRef.current = false; }, []);
 
   const refetch = useCallback(async () => {
     try {
-      setProposals(await listKpis(projectId, 'proposed'));
+      const p = await listKpis(projectId, 'proposed');
+      if (aliveRef.current) setProposals(p);
     } catch {
-      setProposals([]);
+      if (aliveRef.current) setProposals([]);
     }
   }, [projectId]);
 
@@ -47,24 +53,26 @@ export function KpiProposalsPanel({
   }, [projectId]);
 
   const scan = async () => {
+    if (scanning) return;
     setScanning(true);
     setMsg(null);
     try {
       const { scan_id } = await scanKpis(projectId);
       // Proposals stream in as the scan runs; poll its status, refetching as we
       // go, until it leaves 'running' (or we hit the cap — manual reopen still
-      // picks up late arrivals).
-      for (let i = 0; i < 40; i++) {
+      // picks up late arrivals). Bail early if the panel was unmounted.
+      for (let i = 0; i < 40 && aliveRef.current; i++) {
         await sleep(3000);
+        if (!aliveRef.current) break;
         await refetch();
         const st = await getKpiScanStatus(scan_id).catch(() => null);
         if (!st || st.status !== 'running') break;
       }
-      await refetch();
+      if (aliveRef.current) await refetch();
     } catch (e) {
-      setMsg(errMsg(e));
+      if (aliveRef.current) setMsg(errMsg(e));
     } finally {
-      setScanning(false);
+      if (aliveRef.current) setScanning(false);
     }
   };
 

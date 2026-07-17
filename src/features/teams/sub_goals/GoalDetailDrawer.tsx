@@ -11,7 +11,7 @@
  * Read paths are drawer-local (ephemeral, refetched on open + after each
  * mutation) rather than in the global store, since this is modal-scoped.
  */
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Target, X, Plus, Trash2, Check, Circle, CheckCircle2,
   Users, ListChecks, Activity, Pencil, GitMerge, ArrowRight,
@@ -103,6 +103,17 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
   const [uatUrl, setUatUrl] = useState('');
   const [uatRunning, setUatRunning] = useState(false);
   const [showUatForm, setShowUatForm] = useState(false);
+  // Handle for the one-shot "refresh shortly after starting UAT" timer, so it
+  // can be cancelled if the drawer closes / the goal switches before it fires.
+  const uatRefreshTimer = useRef<number | null>(null);
+  const clearUatRefreshTimer = useCallback(() => {
+    if (uatRefreshTimer.current != null) {
+      window.clearTimeout(uatRefreshTimer.current);
+      uatRefreshTimer.current = null;
+    }
+  }, []);
+  useEffect(() => clearUatRefreshTimer, [clearUatRefreshTimer]);
+  useEffect(() => { clearUatRefreshTimer(); }, [goalId, isOpen, clearUatRefreshTimer]);
 
   const refresh = useCallback(async () => {
     if (!goalId) return;
@@ -251,7 +262,13 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
       // gate on a clean pass. Refresh shortly after so the "verifying" state
       // and any same-turn completion reflect.
       await devApi.runGoalUat(goalId);
-      setTimeout(() => void refresh(), 4000);
+      clearUatRefreshTimer();
+      // Cancelled by the effect above if the drawer closes or the goal
+      // changes before this fires (see uatRefreshTimer).
+      uatRefreshTimer.current = window.setTimeout(() => {
+        uatRefreshTimer.current = null;
+        void refresh();
+      }, 4000);
     } catch (err) {
       toastCatch('Failed to start UAT')(err);
     } finally {
@@ -313,9 +330,13 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
   const goalById = useMemo(() => new Map(allGoals.map((g) => [g.id, g])), [allGoals]);
   const blocksDeps = deps.filter((d) => d.dependency_type !== DEP_FOLLOWS);
   const followsDeps = deps.filter((d) => d.dependency_type === DEP_FOLLOWS);
-  // Candidate goals to link: same project, not self, not already linked.
+  // Candidate goals to link: same project, not self, not already linked. The
+  // store can hold every project's goals (cross-project board scope), so this
+  // must be scoped explicitly or the picker offers unrelated-project goals.
   const linkedIds = new Set(deps.map((d) => d.depends_on_id));
-  const candidates = allGoals.filter((g) => g.id !== goalId && !linkedIds.has(g.id));
+  const candidates = allGoals.filter(
+    (g) => g.id !== goalId && !linkedIds.has(g.id) && g.project_id === goal?.project_id,
+  );
 
   if (!goal) return null;
   const showNudge = progress && progress.total_count > 0 && progress.suggested !== goal.progress;

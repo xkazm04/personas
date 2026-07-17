@@ -13,7 +13,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import * as devApi from '@/api/devTools/devTools';
 import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
 
-import { adaptPendingAcceptance } from './goalAcceptanceMock';
+import { adaptPendingAcceptance } from './goalAcceptanceModel';
 import { AcceptanceTriagePolished } from './AcceptanceTriagePolished';
 
 export function GoalAcceptanceView() {
@@ -41,6 +41,13 @@ export function GoalAcceptanceView() {
     await refetch();
   }, [acceptGoal, refetch]);
 
+  // "Accept all" — accepts every id concurrently, then a single refetch,
+  // instead of firing N concurrent accept+refetch cycles that race to setRows.
+  const onAcceptAll = useCallback(async (ids: string[]) => {
+    await Promise.all(ids.map((id) => acceptGoal(id)));
+    await refetch();
+  }, [acceptGoal, refetch]);
+
   const onReject = useCallback(async (id: string, comment: string) => {
     await rejectGoal(id, comment);
     await refetch();
@@ -62,6 +69,7 @@ export function GoalAcceptanceView() {
       projects={data.projects}
       onAccept={onAccept}
       onReject={onReject}
+      onAcceptAll={onAcceptAll}
     />
   );
 }

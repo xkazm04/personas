@@ -1,8 +1,8 @@
 // Goal Acceptance — domain model + the live adapter that maps the backend's
 // flat `PendingAcceptanceGoal` rows into the grouped view-model the variant
 // consumes (team → KPI → goal). (Prototyping is over; the MOCK_* fixtures were
-// removed when the view went live — the filename is retained only to avoid
-// churn on the importers.)
+// removed when the view went live; this file — formerly goalAcceptanceMock.ts —
+// was renamed once it held only live domain code.)
 import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
 
 export interface PendingTeam {

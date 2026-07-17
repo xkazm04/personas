@@ -2773,7 +2773,7 @@
             "src/features/teams/sub_goals/GoalsPage.tsx",
             "src/features/teams/sub_goals/GoalEditorModal.tsx",
             "src/features/teams/sub_goals/GoalTaskTable.tsx",
-            "src/features/teams/sub_goals/goalAcceptanceMock.ts",
+            "src/features/teams/sub_goals/goalAcceptanceModel.ts",
             "src/features/teams/sub_goals/GoalsTimeline.tsx",
             "src/features/teams/sub_goals/acceptancePrimitives.tsx",
             "src/features/teams/sub_goals/GoalKanban.tsx",
