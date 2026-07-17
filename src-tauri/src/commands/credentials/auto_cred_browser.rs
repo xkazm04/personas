@@ -271,8 +271,10 @@ impl StreamDedup {
 
 /// Write a subprocess crash/error report to the crash_logs directory so it
 /// appears in System Checks -> Crash Logs alongside Rust panics.
+#[allow(clippy::too_many_arguments)]
 fn write_subprocess_crash_report(
     app: &tauri::AppHandle,
+    pool: &crate::db::DbPool,
     session_id: &str,
     connector: &str,
     mode: &AutoCredMode,
@@ -325,8 +327,62 @@ fn write_subprocess_crash_report(
         }
     }
 
-    let _ = std::fs::write(&path, &report);
+    // Final chokepoint: no crash-log file is ever written without the shared
+    // secret sanitizer running over the ENTIRE report. `last_assistant_text` and
+    // the raw output tail are already scrubbed at capture, but a session may put
+    // a credential anywhere in this report — pattern-scrub the whole thing.
+    let report = scrub_secrets(&report, &[]);
+
+    let write_ok = std::fs::write(&path, &report).is_ok();
     tracing::debug!(path = %path.display(), "Auto-cred crash report written");
+
+    // Best-effort audit trail: record THAT a crash log was written (never its
+    // contents — detail carries only the connector + error kind, and
+    // `insert_warn` sanitizes it again). Mirrors the append-only credential
+    // audit-log pattern used across the vault.
+    if write_ok {
+        crate::db::repos::resources::audit_log::insert_warn(
+            pool,
+            "__autocred_session__",
+            connector,
+            "autocred_crash_report",
+            Some(&format!("kind={error_kind}; session={session_id}")),
+        );
+    }
+}
+
+/// Redact known secret literals from `text`, then run the shared secret-pattern
+/// sanitizer. `known` holds exact credential values we already hold in memory at
+/// write time (e.g. the values just extracted) — those are replaced verbatim
+/// BEFORE the pattern pass, so even a high-entropy token the regex cannot
+/// recognize never reaches a plaintext crash log, a UI narration frame, or a
+/// persisted procedure row. Callers that have no held literals pass `&[]` and
+/// still get the pattern-based `sanitize_secrets` pass.
+fn scrub_secrets(text: &str, known: &[String]) -> String {
+    let mut out = text.to_string();
+    for secret in known {
+        let s = secret.trim();
+        // Skip trivially short values to avoid over-redacting common substrings.
+        if s.chars().count() >= 6 {
+            out = out.replace(s, "[redacted]");
+        }
+    }
+    crate::utils::sanitization::sanitize_secrets(&out)
+}
+
+/// Collect the string leaf values of an `extracted_values` JSON object so they
+/// can be redacted as literals from any text we are about to persist/emit.
+fn collect_secret_literals(values: &serde_json::Value) -> Vec<String> {
+    values
+        .as_object()
+        .map(|m| {
+            m.values()
+                .filter_map(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 fn structured_error(
@@ -854,7 +910,10 @@ pub async fn start_auto_cred_browser(
                             } else {
                                 trimmed_full
                             };
-                            ctx.last_assistant_text = Some(snippet.to_string());
+                            // Sanitize before storing: this text feeds the crash
+                            // report AND the user-facing failure guidance, and may
+                            // echo a credential the page just displayed.
+                            ctx.last_assistant_text = Some(scrub_secrets(snippet, &[]));
                         }
                     }
 
@@ -915,7 +974,7 @@ pub async fn start_auto_cred_browser(
                                                 AutoCredProgressFrame::new(
                                                     sid.clone(),
                                                     "action",
-                                                    prefix_text,
+                                                    scrub_secrets(prefix_text, &[]),
                                                 ),
                                             );
                                         }
@@ -930,7 +989,11 @@ pub async fn start_auto_cred_browser(
                                 }
                                 queue_progress(
                                     &progress_tx_ref,
-                                    AutoCredProgressFrame::new(sid.clone(), "warning", trimmed),
+                                    AutoCredProgressFrame::new(
+                                        sid.clone(),
+                                        "warning",
+                                        scrub_secrets(trimmed, &[]),
+                                    ),
                                 );
                             } else if trimmed.starts_with(USER_INPUT_PREFIX) {
                                 queue_progress(
@@ -938,13 +1001,20 @@ pub async fn start_auto_cred_browser(
                                     AutoCredProgressFrame::new(
                                         sid.clone(),
                                         "input_request",
-                                        trimmed.strip_prefix(USER_INPUT_PREFIX).unwrap().trim(),
+                                        scrub_secrets(
+                                            trimmed.strip_prefix(USER_INPUT_PREFIX).unwrap().trim(),
+                                            &[],
+                                        ),
                                     ),
                                 );
                             } else {
                                 queue_progress(
                                     &progress_tx_ref,
-                                    AutoCredProgressFrame::new(sid.clone(), "action", trimmed),
+                                    AutoCredProgressFrame::new(
+                                        sid.clone(),
+                                        "action",
+                                        scrub_secrets(trimmed, &[]),
+                                    ),
                                 );
 
                                 // Extract any inline URLs and emit open-url events (auto_open for these)
@@ -1113,6 +1183,7 @@ pub async fn start_auto_cred_browser(
             // Write crash report for System Checks
             write_subprocess_crash_report(
                 &app,
+                &state.db,
                 &session_id,
                 &request.connector_name,
                 &mode,
@@ -1143,6 +1214,13 @@ pub async fn start_auto_cred_browser(
                             "status": "completed",
                         }),
                     );
+                    // We HOLD the just-extracted values here — redact them as
+                    // literals from the procedure log before it can be persisted
+                    // (save_playwright_procedure), then run the pattern pass. The
+                    // extracted_values map itself is returned intact so the user
+                    // can review/save it; only the free-text log is scrubbed.
+                    let secret_literals = collect_secret_literals(&values);
+                    let procedure_log = scrub_secrets(&procedure_log, &secret_literals);
                     Ok(AutoCredBrowserResult {
                         session_id,
                         extracted_values: values,
@@ -1211,13 +1289,17 @@ pub async fn start_auto_cred_browser(
                         } else {
                             &spawn_result.text_output
                         };
+                        // Sanitize the raw output tail before it enters the crash
+                        // report — it is verbatim CLI stdout and routinely
+                        // contains the credential the session was extracting.
                         let extraction_detail = format!(
                             "Failed to extract credential values.\nOutput length: {} bytes\n\nLast output:\n{}",
                             spawn_result.text_output.len(),
-                            output_tail,
+                            scrub_secrets(output_tail, &[]),
                         );
                         write_subprocess_crash_report(
                             &app,
+                            &state.db,
                             &session_id,
                             &request.connector_name,
                             &mode,
@@ -1266,6 +1348,10 @@ pub async fn save_playwright_procedure(
     crate::ipc_auth::require_privileged(&state, "save_playwright_procedure")
         .await
         .map_err(|e| e.to_string())?;
+    // Defense-in-depth: the procedure body is meant to be replay STEPS, not
+    // values, but it is persisted UNENCRYPTED — pattern-scrub it before write so
+    // a stray token that leaked into the step text never lands in the table.
+    let procedure_json = scrub_secrets(&procedure_json, &[]);
     let proc = crate::db::repos::resources::playwright_procedures::save(
         &state.db,
         &connector_name,
@@ -1718,5 +1804,69 @@ mod tests {
     fn test_extract_urls_strips_trailing_punct() {
         let urls = extract_urls("Check https://example.com/api.");
         assert_eq!(urls[0], "https://example.com/api");
+    }
+
+    // -- Log-hygiene tests -----------------------------------------------------
+
+    /// A high-entropy token we HOLD as an extracted value must be redacted as a
+    /// literal even though `sanitize_secrets` alone would not recognize it.
+    #[test]
+    fn test_scrub_secrets_redacts_held_literal() {
+        let seeded = "Zx9Qw7Rt2Vk8Ln4Mp0Bd6Yh3Sf1Gc5".to_string();
+        let procedure = format!(
+            "Step 3: created key and copied {seeded} into the field, then saved."
+        );
+        let scrubbed = scrub_secrets(&procedure, std::slice::from_ref(&seeded));
+        assert!(
+            !scrubbed.contains(&seeded),
+            "held literal must never survive: {scrubbed}"
+        );
+        assert!(scrubbed.contains("[redacted]"));
+    }
+
+    /// Pattern pass catches a keyed/prefixed token even with no held literals —
+    /// this is the protection for streaming frames and the crash-log tail, which
+    /// run before the final extracted-values map exists.
+    #[test]
+    fn test_scrub_secrets_pattern_pass_catches_keyed_token() {
+        // Assembled at runtime so the contiguous provider-shaped token never
+        // appears verbatim in source (keeps the secret scanner quiet) while
+        // still exercising the real `sk_live_` pattern.
+        let token = concat!("sk_live", "_ABCDEFGHIJKLMNOP0000");
+        let frame = format!(r#"Extracted "api_key": "{token}""#);
+        let scrubbed = scrub_secrets(&frame, &[]);
+        assert!(!scrubbed.contains(token));
+        assert!(scrubbed.contains("[secret]"));
+    }
+
+    /// The extracted-values → literal collection helper only surfaces non-empty
+    /// string leaves (the material we must redact from persisted logs).
+    #[test]
+    fn test_collect_secret_literals() {
+        // Split prefix so the token isn't contiguous in source (secret scanner).
+        let ghp = concat!("ghp", "_seededTokenValue123456");
+        let values = serde_json::json!({
+            "api_key": ghp,
+            "region": "us-east-1",
+            "empty": "",
+            "count": 3,
+        });
+        let literals = collect_secret_literals(&values);
+        assert!(literals.contains(&ghp.to_string()));
+        assert!(literals.contains(&"us-east-1".to_string()));
+        assert!(!literals.iter().any(|s| s.is_empty()));
+        assert_eq!(literals.len(), 2);
+    }
+
+    /// End-to-end: a seeded token present in BOTH the free-text log and the
+    /// extracted map is gone from the persisted-shape procedure log.
+    #[test]
+    fn test_procedure_log_scrub_removes_seeded_token() {
+        let seeded = "aB3dE6fG9hJ2kL5mN8pQ1rS4tU7vW0x".to_string();
+        let values = serde_json::json!({ "token": seeded });
+        let log = format!("Navigated, generated token {seeded}, pasted into form.");
+        let literals = collect_secret_literals(&values);
+        let scrubbed = scrub_secrets(&log, &literals);
+        assert!(!scrubbed.contains(&seeded));
     }
 }
