@@ -16,7 +16,7 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { primaryDrawerSection, healthSegments, HEALTH_TONE_CLASS, type PersonaCardModel, type DrawerSection } from '../monitorModel';
 import { PersonaGlyph } from './PersonaGlyph';
 import {
-  actionBadges, isActionable, actionWeight, COPY,
+  actionBadges, isActionable, actionWeight,
   type ActionBadge, type MockGoal,
 } from './triageModel';
 
@@ -117,15 +117,15 @@ function MonitorProjectColumnsImpl({ cards, personas, teams, selectedPersonaId, 
       .map((tm) => ({ id: tm.id, name: tm.name, color: tm.color, cards: attentionByTeam.get(tm.id) ?? [], goals: [] as MockGoal[] }))
       .sort((a, b) => sumWeight(b.cards) - sumWeight(a.cards) || a.name.localeCompare(b.name));
     const ungrouped = attentionByTeam.get('__ungrouped__') ?? [];
-    if (ungrouped.length > 0) cols.push({ id: '__ungrouped__', name: COPY.noTeam, color: '#6b7280', cards: ungrouped, goals: [] });
+    if (ungrouped.length > 0) cols.push({ id: '__ungrouped__', name: t.monitor.columns_no_team, color: '#6b7280', cards: ungrouped, goals: [] });
     return cols;
-  }, [cards, personas, teams]);
+  }, [cards, personas, teams, t]);
 
   if (columns.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
         <Layers className="h-8 w-8 text-foreground" />
-        <span className="typo-body text-foreground">{COPY.actionEmpty}</span>
+        <span className="typo-body text-foreground">{t.monitor.columns_action_empty}</span>
       </div>
     );
   }
@@ -149,7 +149,7 @@ function MonitorProjectColumnsImpl({ cards, personas, teams, selectedPersonaId, 
             {col.goals.length > 0 && (
               <div className="space-y-1.5">
                 <div className="flex items-center gap-1.5 px-0.5">
-                  <span className="typo-caption font-semibold uppercase tracking-wider text-primary">{COPY.activeGoals}</span>
+                  <span className="typo-caption font-semibold uppercase tracking-wider text-primary">{t.monitor.columns_active_goals}</span>
                 </div>
                 {col.goals.map((g, i) => (
                   <div key={i} className="rounded-interactive border border-primary/8 bg-background/40 px-2 py-1.5">
@@ -171,12 +171,12 @@ function MonitorProjectColumnsImpl({ cards, personas, teams, selectedPersonaId, 
             {/* Needs attention */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 px-0.5">
-                <span className="typo-caption font-semibold uppercase tracking-wider text-primary">{COPY.needsAttention}</span>
+                <span className="typo-caption font-semibold uppercase tracking-wider text-primary">{t.monitor.columns_needs_attention}</span>
               </div>
               {col.cards.length === 0 ? (
                 <div className="flex items-center gap-1.5 rounded-interactive border border-primary/8 px-2 py-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 text-status-success/70" />
-                  <span className="typo-caption text-foreground">{COPY.allClear}</span>
+                  <span className="typo-caption text-foreground">{t.monitor.columns_all_clear}</span>
                 </div>
               ) : (
                 col.cards.map((card) => (

@@ -128,6 +128,11 @@ export type Translations = {
     grid_state_failed: string;
     grid_state_idle: string;
     grid_ungrouped: string;
+    columns_action_empty: string;
+    columns_needs_attention: string;
+    columns_active_goals: string;
+    columns_no_team: string;
+    columns_all_clear: string;
     live_open_timeline: string;
     live_dismiss: string;
     live_clear_all: string;

@@ -4,15 +4,6 @@
 import { AlertOctagon, Mail, MessageSquareDot, FileText, type LucideIcon } from 'lucide-react';
 import { SEVERITY_META, type PersonaCardModel } from '../monitorModel';
 
-/** Prototype copy. Promote to `t.monitor.*` at consolidation. */
-export const COPY = {
-  actionEmpty: 'Nothing needs you right now',
-  needsAttention: 'Needs attention',
-  activeGoals: 'Active goals',
-  noTeam: 'No team',
-  allClear: 'All clear',
-} as const;
-
 /**
  * A card is "actionable" when it needs the human: a pending review, an unread
  * message, an input gate, a ready draft, or a failed last run. Running or

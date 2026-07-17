@@ -3,10 +3,11 @@ import { ExternalLink, AlertCircle, Pin, User } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
-import { eventFamily } from '@/lib/channel/eventModel';
+import { eventFamily, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import { payloadSummary } from '@/features/teams/sub_collab/payloadView';
-import { STEP_VERB, STEP_TONE, FAMILY_TEXT, AUTHOR_KIND_META, authorName, itemAccent } from '@/features/teams/sub_collab/collabRender';
+import { STEP_VERB, STEP_TONE, AUTHOR_KIND_META, authorName, itemAccent, avatarBgFor } from '@/features/teams/sub_collab/collabRender';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
+import { cleanName } from '../grid/fleetGridModel';
 import { MERGED_ROW_HEIGHT, type TaggedItem } from './types';
 
 /* The compact one-line row used by the combined Timeline. */
@@ -66,11 +67,7 @@ export const MergedRow = memo(function MergedRow({
   // Author differentiation — Athena (autonomous) and your directives must NOT
   // read as the same actor. Each non-persona author gets its own avatar + tint.
   const authorMeta = item.kind === 'athena' || item.kind === 'director' ? AUTHOR_KIND_META[item.kind] : null;
-  const avatarBg =
-    item.kind === 'athena' ? 'bg-violet-500/15'
-    : item.kind === 'director' ? 'bg-sky-500/15'
-    : item.kind === 'directive' ? 'bg-emerald-500/15'
-    : 'bg-secondary/60';
+  const avatarBg = avatarBgFor(item.kind);
   const rowTint = item.kind === 'athena' ? 'bg-violet-500/[0.05]' : item.kind === 'directive' ? 'bg-emerald-500/[0.04]' : '';
 
   return (
@@ -83,7 +80,7 @@ export const MergedRow = memo(function MergedRow({
       {showTeam && (
         <span className="inline-flex items-center gap-1 flex-shrink-0 typo-caption text-foreground" title={team.teamName}>
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: team.teamColor }} />
-          <span className="max-w-[88px] truncate">{team.teamName.replace(/^SDLC[ —-]*/i, '') || team.teamName}</span>
+          <span className="max-w-[88px] truncate">{cleanName(team.teamName)}</span>
         </span>
       )}
       <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full flex-shrink-0 ${avatarBg}`}>

@@ -37,6 +37,22 @@ export function eventFamily(eventType: string): Exclude<EventFamily, 'note'> {
   return 'other';
 }
 
+/** Event-family text tone — one hue per family, shared by every channel surface
+ *  (Collab, the monitor's Stream, the merged Timeline). Previously copy-pasted
+ *  per surface and already divergent (design tokens here vs hardcoded Tailwind
+ *  colours elsewhere); this is the single reconciled source, favouring the
+ *  semantic `text-status-*` tokens per the design system over hardcoded hues. */
+export const FAMILY_TEXT: Record<EventFamily, string> = {
+  handoff: 'text-violet-300',
+  pr: 'text-status-info',
+  qa: 'text-status-warning',
+  release: 'text-status-success',
+  failure: 'text-status-error',
+  build: 'text-sky-300',
+  note: 'text-amber-200/90',
+  other: 'text-foreground/60',
+};
+
 export interface ParsedPayload {
   summary: string | null;
   artifact: { url: string; label: string } | null;
