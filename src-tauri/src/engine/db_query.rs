@@ -25,6 +25,90 @@ use crate::error::AppError;
 /// Maximum rows returned per query to prevent memory exhaustion.
 const MAX_ROWS: usize = 500;
 
+/// Hard ceiling on a connector's raw HTTP response body before it is parsed.
+/// The pass-through connectors (Neon, PlanetScale) stream the full result set
+/// into memory as a single `String`, then deserialize it, *before* the
+/// post-parse [`MAX_ROWS`] cap can apply. A pathological query (a huge table
+/// with no usable `LIMIT`, or very wide rows) could therefore OOM the process
+/// during download/parse. Reject any body larger than this with a clean error
+/// instead. 8 MB comfortably holds a full `MAX_ROWS`-row page of normal rows
+/// while still bounding worst-case memory.
+const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
+
+/// Reject an over-large connector response body before it is deserialized.
+///
+/// Called after `resp.text()` (the download is already bounded by the HTTP
+/// client's own limits, but a compliant server can still legitimately return a
+/// multi-hundred-MB JSON array). Erroring here turns an OOM into a friendly,
+/// actionable message.
+fn ensure_response_within_ceiling(body: &str) -> Result<(), AppError> {
+    if body.len() > MAX_RESPONSE_BYTES {
+        return Err(AppError::Validation(format!(
+            "Query result too large ({} MB, limit {} MB) — narrow the query \
+             (add a WHERE clause or a smaller LIMIT).",
+            body.len() / (1024 * 1024),
+            MAX_RESPONSE_BYTES / (1024 * 1024),
+        )));
+    }
+    Ok(())
+}
+
+/// Append a defensive `LIMIT` to a raw read statement that lacks its own, so the
+/// pass-through connectors (Neon, PlanetScale) cannot download an unbounded
+/// result set into memory before the post-parse [`MAX_ROWS`] cap applies.
+///
+/// Injects `LIMIT MAX_ROWS + 1`. The `+1` is load-bearing: the response parsers
+/// detect truncation via `rows.len() > MAX_ROWS`, so a full page must still
+/// yield one extra row for the `truncated` flag to fire.
+///
+/// **Append-only — this never rewrites the caller's SQL.** Injection is skipped
+/// (statement returned verbatim) when any of these hold, leaving the post-parse
+/// row cap + response-size ceiling as the backstop:
+///  - the statement is not `SELECT`/read-`WITH`-shaped (mutations are never touched);
+///  - it already carries a top-level `LIMIT` (scanned with literals stripped);
+///  - it contains more than one statement (ambiguous where to append);
+///  - it contains a line comment (`--`), which would swallow the appended clause.
+///
+/// Known limits of the append approach: a compound `UNION` select receives a
+/// single trailing `LIMIT` bounding the whole union (acceptable as a safety
+/// cap, not per-branch); statements whose trailing token is inside a block
+/// comment `/* … */` are still appended-to but that is syntactically valid SQL.
+/// Anything not confidently a single bare read is left untouched by design.
+fn inject_row_limit(query_text: &str) -> String {
+    // Multiple statements: never guess where the LIMIT belongs.
+    if has_multiple_statements(query_text) {
+        return query_text.to_string();
+    }
+
+    let trimmed = query_text.trim().trim_end_matches(';');
+    let trimmed_end = trimmed.trim_end();
+
+    // Only bare read statements are eligible.
+    let is_read = match extract_first_keyword(trimmed_end) {
+        Some(ref kw) if kw == "SELECT" => true,
+        Some(ref kw) if kw == "WITH" => !cte_body_has_mutation(trimmed_end),
+        _ => false,
+    };
+    if !is_read {
+        return query_text.to_string();
+    }
+
+    // Scan for an existing top-level LIMIT and for line comments, with string
+    // literals stripped so a value like '... limit ...' never false-matches.
+    let stripped_upper = strip_sql_literals(trimmed_end).to_ascii_uppercase();
+    if stripped_upper.contains("--") {
+        return query_text.to_string();
+    }
+    let already_limited = stripped_upper
+        .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
+        .any(|tok| tok == "LIMIT");
+    if already_limited {
+        return query_text.to_string();
+    }
+
+    format!("{trimmed_end} LIMIT {}", MAX_ROWS + 1)
+}
+
 /// Return the SSRF-safe HTTP client (30-second timeout, connection pooling, and
 /// a DNS resolver that rejects private/internal/metadata IPs at connect time).
 ///
@@ -973,6 +1057,7 @@ pub(crate) async fn execute_supabase(
         )));
     }
 
+    ensure_response_within_ceiling(&body)?;
     parse_postgres_json_response(&body)
 }
 
@@ -1248,12 +1333,16 @@ pub(crate) async fn execute_neon(
 
     let sql_url = format!("https://{host}/sql");
 
+    // Bound raw reads with a defensive LIMIT so an unbounded SELECT can't stream
+    // the whole table into memory before the post-parse row cap applies.
+    let bounded_query = inject_row_limit(query_text);
+
     let client = http_client();
     let resp = client
         .post(&sql_url)
         .header("Neon-Connection-String", connection_string)
         .header("Content-Type", "application/json")
-        .json(&serde_json::json!({ "query": query_text, "params": [] }))
+        .json(&serde_json::json!({ "query": bounded_query, "params": [] }))
         .send()
         .await
         .map_err(|e| AppError::Internal(format!("Neon request failed: {e}")))?;
@@ -1270,6 +1359,7 @@ pub(crate) async fn execute_neon(
         )));
     }
 
+    ensure_response_within_ceiling(&body)?;
     parse_neon_response(&body)
 }
 
@@ -1391,13 +1481,16 @@ pub(crate) async fn execute_planetscale(
 
     let url = format!("https://{host}/psdb.v1alpha1.Database/Execute");
 
+    // Bound raw reads with a defensive LIMIT (see `inject_row_limit`).
+    let bounded_query = inject_row_limit(query_text);
+
     let client = http_client();
     let resp = client
         .post(&url)
         .basic_auth(username, Some(password))
         .header("Content-Type", "application/json")
         .json(&serde_json::json!({
-            "query": query_text
+            "query": bounded_query
         }))
         .send()
         .await
@@ -1415,6 +1508,7 @@ pub(crate) async fn execute_planetscale(
         )));
     }
 
+    ensure_response_within_ceiling(&body)?;
     parse_planetscale_response(&body)
 }
 
@@ -2937,6 +3031,89 @@ mod tests {
         let body = "not json at all";
         let result = parse_postgres_json_response(body);
         assert!(result.is_err());
+    }
+
+    // -- Bounded results (LIMIT injection + response ceiling) --------------
+
+    #[test]
+    fn test_inject_limit_no_limit_gets_injected() {
+        let out = inject_row_limit("SELECT * FROM users");
+        assert_eq!(out, format!("SELECT * FROM users LIMIT {}", MAX_ROWS + 1));
+    }
+
+    #[test]
+    fn test_inject_limit_own_limit_untouched() {
+        let sql = "SELECT * FROM users LIMIT 10";
+        assert_eq!(inject_row_limit(sql), sql);
+        // Case-insensitive and newline-separated LIMIT is still detected.
+        let sql2 = "SELECT id FROM t\nlimit 5";
+        assert_eq!(inject_row_limit(sql2), sql2);
+    }
+
+    #[test]
+    fn test_inject_limit_trailing_semicolon_stripped_then_appended() {
+        let out = inject_row_limit("SELECT * FROM users;");
+        assert_eq!(out, format!("SELECT * FROM users LIMIT {}", MAX_ROWS + 1));
+    }
+
+    #[test]
+    fn test_inject_limit_skips_mutations() {
+        let sql = "DELETE FROM users";
+        assert_eq!(inject_row_limit(sql), sql);
+        let sql2 = "UPDATE users SET x = 1";
+        assert_eq!(inject_row_limit(sql2), sql2);
+        // Data-modifying CTE leads with WITH but must not be treated as a read.
+        let sql3 = "WITH d AS (DELETE FROM users RETURNING *) SELECT * FROM d";
+        assert_eq!(inject_row_limit(sql3), sql3);
+    }
+
+    #[test]
+    fn test_inject_limit_read_cte_gets_injected() {
+        let out = inject_row_limit("WITH t AS (SELECT 1) SELECT * FROM t");
+        assert_eq!(
+            out,
+            format!("WITH t AS (SELECT 1) SELECT * FROM t LIMIT {}", MAX_ROWS + 1)
+        );
+    }
+
+    #[test]
+    fn test_inject_limit_multi_statement_untouched() {
+        let sql = "SELECT * FROM users; SELECT * FROM orders";
+        assert_eq!(inject_row_limit(sql), sql);
+    }
+
+    #[test]
+    fn test_inject_limit_line_comment_untouched() {
+        // A trailing line comment would swallow an appended LIMIT — leave as-is.
+        let sql = "SELECT * FROM users -- all of them";
+        assert_eq!(inject_row_limit(sql), sql);
+    }
+
+    #[test]
+    fn test_inject_limit_literal_with_limit_word_still_injected() {
+        // "limit" only appears inside a string literal, so a real LIMIT is added.
+        let out = inject_row_limit("SELECT * FROM t WHERE note = 'no limit here'");
+        assert_eq!(
+            out,
+            format!(
+                "SELECT * FROM t WHERE note = 'no limit here' LIMIT {}",
+                MAX_ROWS + 1
+            )
+        );
+    }
+
+    #[test]
+    fn test_response_ceiling_rejects_oversize_body() {
+        let big = "x".repeat(MAX_RESPONSE_BYTES + 1);
+        let err = ensure_response_within_ceiling(&big).unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)));
+        assert!(format!("{err}").contains("too large"));
+    }
+
+    #[test]
+    fn test_response_ceiling_allows_normal_body() {
+        let ok = "[]";
+        assert!(ensure_response_within_ceiling(ok).is_ok());
     }
 
     #[test]
