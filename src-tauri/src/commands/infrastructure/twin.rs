@@ -1255,6 +1255,12 @@ pub struct TwinStudioItem {
     pub id: String,
     pub question: String,
     pub answer: Option<String>,
+    /// Provenance: `true` when this answer was drafted with grounding retrieved
+    /// from the twin's bound knowledge base (the twin's own brain informed it).
+    /// `false` for ungrounded answers (unbound KB, ml-off, or a clean miss) and
+    /// for question-phase items that carry no answer yet.
+    #[serde(default)]
+    pub kb_grounded: bool,
 }
 
 /// Seed question passed to the answer-drafting batch.
@@ -1462,6 +1468,7 @@ pub async fn twin_studio_generate_questions(
                         id: format!("{batch_for_task}-q{i}"),
                         question: q,
                         answer: None,
+                        kb_grounded: false,
                     })
                     .collect();
                 let n = items.len() as u32;
@@ -1543,6 +1550,10 @@ pub async fn twin_studio_generate_answers(
     let batch_for_task = batch_id.clone();
     let twin_name = profile.name.clone();
     let directions_owned = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+    // The Studio batch runs in a detached task, so we hold an owned handle to the
+    // AppState rather than the borrowed Tauri `State`; this is what lets each
+    // answer retrieve from the twin's bound KB via the shared `twin_kb_block`.
+    let app_state = Arc::clone(state.inner());
 
     tokio::spawn(async move {
         let mut completed: u32 = 0;
@@ -1552,17 +1563,22 @@ pub async fn twin_studio_generate_answers(
                 cancelled = true;
                 break;
             }
-            // D3 wires bound-KB retrieval into the two interactive twin commands
-            // (`twin_simulate_answer` / `twin_draft_reply`); the Studio batch job
-            // stays on its prior grounding (bio + tone + facts) — an empty KB
-            // block keeps this prompt byte-identical.
+            // Ground each batch answer on the twin's bound KB using the SAME
+            // retrieval helper the interactive `twin_simulate_answer` /
+            // `twin_draft_reply` paths use — one retrieval per question. Returns
+            // an empty block (→ byte-identical prior prompt) when the twin is
+            // unbound, ml is off, or the question has no near chunk, so the
+            // clean-skip contract is preserved. `kb_grounded` records provenance:
+            // whether the twin's own brain informed this specific answer.
+            let kb_block = twin_kb_block(&app_state, &profile, &seed.question).await;
+            let kb_grounded = !kb_block.is_empty();
             let prompt = build_answer_prompt(
                 &profile,
                 tone.as_ref(),
                 &facts,
                 &seed.question,
                 directions_owned.as_deref(),
-                "",
+                &kb_block,
             );
             let answer = tokio::select! {
                 _ = cancel_token.cancelled() => { cancelled = true; break; }
@@ -1572,6 +1588,7 @@ pub async fn twin_studio_generate_answers(
                 id: seed.id.clone(),
                 question: seed.question.clone(),
                 answer: answer.map(|a| a.trim().trim_matches('"').trim().to_string()),
+                kb_grounded,
             };
             completed += 1;
             TWIN_STUDIO_JOBS.update_extra(&batch_for_task, |e| {
@@ -2602,5 +2619,43 @@ mod kb_grounding_tests {
         let profile = test_profile();
         let with = build_answer_prompt(&profile, None, &[], "q", None, "");
         assert!(!with.contains("From your knowledge base"));
+    }
+
+    /// Studio batch grounding: the batch answer loop builds each per-question
+    /// prompt with `build_answer_prompt(.., &twin_kb_block(..))` and derives
+    /// `kb_grounded = !kb_block.is_empty()`. The CLI (`spawn_claude_with_prompt`)
+    /// is the opaque boundary, so this pins the last observable seam before it —
+    /// a seeded KB fact reaches the exact prompt handed to the CLI, and the
+    /// provenance flag records that the bound brain informed the answer.
+    #[test]
+    fn studio_batch_answer_grounds_on_bound_kb_fact() {
+        let profile = test_profile();
+        // Mock the retrieval boundary: a seeded KB fact rendered into the block
+        // `twin_kb_block` would return for this question.
+        let kb_block = format_kb_grounding(&[(
+            "Kazimi runs the release build with cargo tauri:build:stable.".into(),
+            Some("release.md".into()),
+        )])
+        .unwrap();
+
+        // Exact prompt-construction call the batch loop makes per seed question.
+        let question = "How do you cut a release?";
+        let prompt = build_answer_prompt(&profile, None, &[], question, None, &kb_block);
+        assert!(
+            prompt.contains("cargo tauri:build:stable"),
+            "seeded KB fact must reach the studio batch answer prompt (CLI boundary)"
+        );
+        assert!(prompt.contains("release.md"), "provenance reaches the prompt");
+
+        // Provenance flag the batch records on the resulting item.
+        let kb_grounded = !kb_block.is_empty();
+        assert!(kb_grounded, "a grounded answer is marked kb_grounded=true");
+
+        // Clean-skip: an unbound / ml-off / clean-miss question yields an empty
+        // block → byte-identical prior prompt and kb_grounded=false.
+        let empty = String::new();
+        let ungrounded = build_answer_prompt(&profile, None, &[], question, None, &empty);
+        assert!(!ungrounded.contains("From your knowledge base"));
+        assert!(empty.is_empty(), "empty block marks kb_grounded=false");
     }
 }

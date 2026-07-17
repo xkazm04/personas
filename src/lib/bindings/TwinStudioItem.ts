@@ -3,4 +3,11 @@
 /**
  * One question (and optionally a drafted answer) in a Studio batch.
  */
-export type TwinStudioItem = { id: string, question: string, answer: string | null, };
+export type TwinStudioItem = { id: string, question: string, answer: string | null, 
+/**
+ * Provenance: `true` when this answer was drafted with grounding retrieved
+ * from the twin's bound knowledge base (the twin's own brain informed it).
+ * `false` for ungrounded answers (unbound KB, ml-off, or a clean miss) and
+ * for question-phase items that carry no answer yet.
+ */
+kbGrounded: boolean, };
