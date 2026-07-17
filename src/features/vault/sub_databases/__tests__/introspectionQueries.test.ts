@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  getListColumnsQuery,
   getSelectAllQuery,
   getConnectorFamily,
 } from '../introspectionQueries';
@@ -55,32 +54,6 @@ describe('introspectionQueries — printable-char preservation', () => {
       // getSelectAllQuery default branch uses postgres-style quoting.
       const sql = getSelectAllQuery('mongodb', 'order-items');
       expect(sql).toBe('SELECT * FROM "order-items" LIMIT 100;');
-    });
-  });
-
-  describe('getListColumnsQuery', () => {
-    it('produces a literal SQL with hyphenated table name preserved', () => {
-      const q = getListColumnsQuery('supabase', 'users-prod');
-      expect(q).not.toBeNull();
-      // The table name appears as a single-quoted SQL literal; hyphen survives.
-      expect(q).toContain("'users-prod'");
-    });
-
-    it('escapes single quotes by doubling per SQL-92', () => {
-      const q = getListColumnsQuery('supabase', "O'Brien");
-      expect(q).not.toBeNull();
-      expect(q).toContain("'O''Brien'");
-    });
-
-    it('strips ASCII control characters from the table-name literal', () => {
-      const q = getListColumnsQuery('supabase', 'foo\x00bar');
-      expect(q).not.toBeNull();
-      expect(q).toContain("'foobar'");
-    });
-
-    it('returns null for unsupported families', () => {
-      expect(getListColumnsQuery('redis', 'whatever')).toBeNull();
-      expect(getListColumnsQuery('mongodb', 'whatever')).toBeNull();
     });
   });
 

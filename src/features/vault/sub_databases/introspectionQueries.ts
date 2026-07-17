@@ -1,3 +1,11 @@
+// Live table/column introspection runs through the backend's PARAMETERIZED
+// commands (`introspect_db_tables` / `introspect_db_columns`, see
+// db_query.rs + db_schema.rs) via useTableIntrospection — a single
+// injection-defense implementation. The former frontend interpolated SQL
+// builders (getListTablesQuery / getListColumnsQuery / getRedisKeyScanCommand)
+// were a weaker second implementation and have been deleted. What remains here
+// is connector-family CLASSIFICATION plus getSelectAllQuery, a clipboard helper
+// that emits a copy-paste SELECT for the user (not an executed introspection).
 export type ConnectorFamily = 'postgres' | 'mysql' | 'redis' | 'convex' | 'sqlite' | 'notion' | 'airtable' | 'unsupported';
 
 export function getConnectorFamily(serviceType: string): ConnectorFamily {
@@ -26,20 +34,6 @@ export function getConnectorFamily(serviceType: string): ConnectorFamily {
 /** Whether this family uses API-based introspection (no SQL queries). */
 export function isApiFamily(family: ConnectorFamily): boolean {
   return family === 'notion' || family === 'airtable';
-}
-
-export function getListTablesQuery(serviceType: string): string | null {
-  const family = getConnectorFamily(serviceType);
-  switch (family) {
-    case 'postgres':
-      return `SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`;
-    case 'mysql':
-      return `SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY table_name`;
-    case 'sqlite':
-      return `SELECT name AS table_name, type AS table_type FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' ORDER BY name`;
-    default:
-      return null;
-  }
 }
 
 /**
@@ -83,32 +77,6 @@ function escapeMysqlIdent(value: string): string {
  */
 function escapeRedisGlob(value: string): string {
   return value.replace(/[\\*?[\]]/g, '\\$&');
-}
-
-export function getListColumnsQuery(serviceType: string, tableName: string): string | null {
-  // The introspection queries below match table_name as a STRING LITERAL
-  // against the catalog (information_schema.columns / sqlite_master) — they
-  // are NOT identifier interpolation. The previous strip regex
-  // [^a-zA-Z0-9_] silently rewrote 'My Table' → 'MyTable' and 'users-prod'
-  // → 'usersprod', causing zero-column results for any table name with a
-  // hyphen, space, or case-sensitive Postgres quoted identifier. Now: quote-
-  // escape the literal so the user's actual name reaches the catalog query.
-  const safeLiteral = escapeSqlStringLiteral(tableName);
-  const family = getConnectorFamily(serviceType);
-  switch (family) {
-    case 'postgres':
-      return `SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '${safeLiteral}' ORDER BY ordinal_position`;
-    case 'mysql':
-      return `SELECT column_name, column_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '${safeLiteral}' ORDER BY ordinal_position`;
-    case 'sqlite':
-      return `PRAGMA table_info('${safeLiteral}')`;
-    default:
-      return null;
-  }
-}
-
-export function getRedisKeyScanCommand(): string {
-  return 'SCAN 0 MATCH * COUNT 100';
 }
 
 /** Generate a DB-specific SELECT-all query for clipboard copy. */

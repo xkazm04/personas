@@ -85,7 +85,10 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
 
   if (family === 'unsupported') {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 h-full min-h-[300px]">
+      <div
+        data-testid="db-tables-unsupported"
+        className="flex flex-col items-center justify-center gap-4 h-full min-h-[300px]"
+      >
         <p className="typo-body text-foreground">
           {t.vault.databases.introspection_unavailable}
         </p>
@@ -97,7 +100,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
   const pinnedTableNames = new Set(pinnedTables.map((p) => p.table_name));
 
   return (
-    <div className="flex h-full min-h-[500px]">
+    <div data-testid="db-tables-tab" className="flex h-full min-h-[500px]">
       <TableListSidebar
         tables={tables} redisKeys={redisKeys} loading={loading} error={error}
         isRedis={isRedis} isApi={isApi} filter={filter} onFilterChange={setFilter}
