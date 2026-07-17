@@ -14,6 +14,11 @@ import type { PersonaChangeEntry } from "@/lib/bindings/PersonaChangeEntry";
 import type { BulkDeleteOutcome } from "@/lib/bindings/BulkDeleteOutcome";
 import type { DuplicatePersonaResult } from "@/lib/bindings/DuplicatePersonaResult";
 export type { DuplicatePersonaResult } from "@/lib/bindings/DuplicatePersonaResult";
+import type { ImportResult } from "@/lib/bindings/ImportResult";
+export type { ImportResult } from "@/lib/bindings/ImportResult";
+import type { GalleryPublishResult } from "@/lib/bindings/GalleryPublishResult";
+import type { PresetPublishResult } from "@/lib/bindings/PresetPublishResult";
+import type { ReferralStats } from "@/lib/bindings/ReferralStats";
 
 /** Batched persona detail returned by the single `get_persona_detail` IPC command. */
 export interface PersonaDetailResponse extends Persona {
@@ -126,12 +131,6 @@ export const resolveEffectiveConfigBulk = (personaIds: string[]) =>
 // ============================================================================
 // Import / Export
 // ============================================================================
-
-import type { ImportResult } from "@/lib/bindings/ImportResult";
-export type { ImportResult } from "@/lib/bindings/ImportResult";
-import type { GalleryPublishResult } from "@/lib/bindings/GalleryPublishResult";
-import type { PresetPublishResult } from "@/lib/bindings/PresetPublishResult";
-import type { ReferralStats } from "@/lib/bindings/ReferralStats";
 
 /** Opens a save dialog and writes the persona bundle to disk. Returns false if cancelled. */
 export const exportPersona = (personaId: string) =>

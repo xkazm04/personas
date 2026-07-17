@@ -57,15 +57,24 @@ export const executePersona = (
   useCaseId?: string,
   continuation?: Continuation,
   idempotencyKey?: string,
-) =>
-  invoke<PersonaExecution>("execute_persona", {
+) => {
+  // Most callers (manual "Run" clicks, trigger fires, reruns, onboarding
+  // steps, ...) don't supply a key. `execute_persona` is deliberately kept
+  // off BLOCKING_MUTATION_TIMEOUTS *because* it relies on server-side
+  // idempotency-key dedup (see tauriInvoke.ts) — a guarantee that only holds
+  // when a key is actually sent. Default one here so every call is at least
+  // self-dedup'd against a concurrent duplicate (double-click, double-fire,
+  // React re-invoke) even when the caller didn't think to pass one.
+  const resolvedKey = idempotencyKey ?? crypto.randomUUID();
+  return invoke<PersonaExecution>("execute_persona", {
     personaId,
     triggerId: triggerId,
     inputData: inputData,
     useCaseId: useCaseId,
     continuation: continuation,
-    idempotencyKey: idempotencyKey,
-  }, idempotencyKey ? { idempotencyKey } : undefined);
+    idempotencyKey: resolvedKey,
+  }, { idempotencyKey: resolvedKey });
+};
 
 export const preparePersonaExecution = (personaId: string) =>
   invoke<string>("prepare_persona_execution", { personaId });
