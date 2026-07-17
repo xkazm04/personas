@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Bell, Check } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useAgentStore } from '@/stores/agentStore';
@@ -34,11 +34,23 @@ export function NotificationsDimCard({ uc, personaId }: NotificationsDimCardProp
   const active = uc.dimensions.includes('message');
   const [pending, setPending] = useState<NotificationChannelType | null>(null);
 
+  // Latest-known channels, resynced when the persisted props change. Each
+  // toggle reads and updates this ref rather than the `channels` closure
+  // snapshot, so two quick toggles (e.g. Slack then Telegram before the
+  // first refetch resolves) compose instead of the second one clobbering
+  // the first via a stale read-modify-write.
+  const channelsRef = useRef(channels);
+  useEffect(() => {
+    channelsRef.current = channels;
+  }, [channels]);
+
   const handleToggle = async (type: NotificationChannelType) => {
-    const has = channels.some((c) => c.type === type);
+    const base = channelsRef.current;
+    const has = base.some((c) => c.type === type);
     const next: NotificationChannel[] = has
-      ? channels.filter((c) => c.type !== type)
-      : [...channels, { type, enabled: true, config: {} }];
+      ? base.filter((c) => c.type !== type)
+      : [...base, { type, enabled: true, config: {} }];
+    channelsRef.current = next;
     setPending(type);
     try {
       await mutateSingleUseCase(personaId, uc.id, (existing) => ({

@@ -134,13 +134,17 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
       // 1. Persist the alias map onto the capability.
       await setUseCaseGenerationSettings(personaId, useCase.id, next);
 
-      // 2. Reconcile consumers per the user's chosen action — only for rows
-      //    that have an existing-from-name with consumers, and only when the
-      //    chosen action isn't "leave".
+      // 2. Reconcile consumers per the user's chosen action — for every row
+      //    with a from+to pair, when the chosen action isn't "leave". We
+      //    deliberately do NOT pre-filter on `existingCounts` here: those
+      //    counts are a best-effort advisory fetch (debounced, may still be
+      //    in flight when the user hits Save) and gating the reconcile call
+      //    on them means a fast save can silently skip rewiring consumers.
+      //    The backend is authoritative — it reports 0 touched when there's
+      //    nothing to reconcile.
       if (action !== 'leave') {
         const reconciles = rows
           .filter((r) => r.from.trim().length > 0 && r.to.trim().length > 0)
-          .filter((r) => (r.existingCounts?.subscriptions ?? 0) + (r.existingCounts?.triggers ?? 0) > 0)
           .map((r) =>
             renameEventListeners(r.from.trim(), r.to.trim(), action, personaId),
           );
