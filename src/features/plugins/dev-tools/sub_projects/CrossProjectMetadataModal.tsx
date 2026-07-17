@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { StatCard } from '../sub_overview/OverviewParts';
 import {
   X, RefreshCw, Network, Layers, Tag, Database, Globe,
   FolderTree, Target, Link2, Sparkles, Clock, AlertCircle,
@@ -462,35 +463,3 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
   );
 }
 
-// ---------------------------------------------------------------------------
-// Small stat card
-// ---------------------------------------------------------------------------
-
-// Static class map — Tailwind's JIT only sees literal class strings, so the
-// previous `border-${color}-500/20` interpolation produced classes that were
-// never generated and all five stat tiles rendered unstyled.
-const STAT_CARD_CLASSES = {
-  amber: { box: 'border-amber-500/20 bg-amber-500/5', text: 'text-amber-400' },
-  emerald: { box: 'border-emerald-500/20 bg-emerald-500/5', text: 'text-emerald-400' },
-  blue: { box: 'border-blue-500/20 bg-blue-500/5', text: 'text-blue-400' },
-  violet: { box: 'border-violet-500/20 bg-violet-500/5', text: 'text-violet-400' },
-  pink: { box: 'border-pink-500/20 bg-pink-500/5', text: 'text-pink-400' },
-} satisfies Record<string, { box: string; text: string }>;
-
-function StatCard({ label, value, icon: Icon, color }: {
-  label: string;
-  value: number;
-  icon: typeof Tag;
-  color: keyof typeof STAT_CARD_CLASSES;
-}) {
-  const classes = STAT_CARD_CLASSES[color] ?? STAT_CARD_CLASSES.blue;
-  return (
-    <div className={`rounded-modal border ${classes.box} p-3`}>
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className={`w-3.5 h-3.5 ${classes.text}`} />
-        <span className="text-md text-foreground">{label}</span>
-      </div>
-      <div className={`text-md font-bold ${classes.text}`}>{value}</div>
-    </div>
-  );
-}

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
@@ -169,7 +170,7 @@ export function ConsolidationReview({
                   <div className="typo-caption text-foreground">
                     {run.itemsTotal} <DebtText k="auto_proposals_52cac85b" /> {run.itemsPending} <DebtText k="auto_pending_5829114a" />{' '}
                     {run.itemsApplied} <DebtText k="auto_applied_8858b48c" /> {run.itemsRejected} <DebtText k="auto_rejected_bb194a7a" />{' '}
-                    {formatRelativeTime(run.triggeredAt)}
+                    <RelativeTime timestamp={run.triggeredAt} showTooltip={false} />
                   </div>
                   {run.errorText && (
                     <div className="typo-caption text-rose-400 mt-1 truncate">
@@ -529,16 +530,3 @@ function ItemCard({
   );
 }
 
-function formatRelativeTime(iso: string): string {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return iso;
-  const diffSec = (Date.now() - t) / 1000;
-  if (diffSec < 60) return 'just now';
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
-  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
-  if (diffSec < 7 * 86400) return `${Math.floor(diffSec / 86400)}d ago`;
-  return new Date(t).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  });
-}

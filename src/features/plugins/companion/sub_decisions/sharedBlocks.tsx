@@ -2,7 +2,7 @@ import { Loader2, ScrollText, Search, Sparkles, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState, {
   NoResults,
-} from '@/features/shared/components/feedback/EmptyState';
+} from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 /**
  * Presentational fragments shared by the Decisions panel prototype

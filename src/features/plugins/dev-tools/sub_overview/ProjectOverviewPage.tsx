@@ -11,6 +11,7 @@ import {
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
@@ -369,7 +370,7 @@ export default function ProjectOverviewPage() {
                   <>
                     <MetaPill icon={GitBranch} text={repoStats.defaultBranch} />
                     {repoStats.lastPushAt && (
-                      <MetaPill text={`pushed ${relativeTime(repoStats.lastPushAt)}`} />
+                      <MetaPill text={`pushed ${formatRelativeTime(repoStats.lastPushAt)}`} />
                     )}
                     {activeRepoCredId && credentials.find((c) => c.id === activeRepoCredId) && (
                       <MetaPill icon={Key} text={credentials.find((c) => c.id === activeRepoCredId)!.name} dim />
@@ -675,19 +676,6 @@ function MetaPill({
   );
 }
 
-function relativeTime(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  const m = Math.round(ms / 60_000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.round(h / 24);
-  if (d < 7) return `${d}d ago`;
-  const w = Math.round(d / 7);
-  return `${w}w ago`;
-}
-
 // ---------------------------------------------------------------------------
 // ActivityRow — one entry in the "Today" cross-tab feed
 // ---------------------------------------------------------------------------
@@ -708,7 +696,7 @@ function ActivityRow({ event, onJump }: { event: ActivityEvent; onJump: (e: Acti
     <div className="flex items-center gap-2.5 px-4 py-2">
       <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.tint}`} />
       <span className="text-md text-foreground truncate flex-1">{event.label}</span>
-      <span className="typo-caption text-foreground tabular-nums shrink-0">{relativeTime(event.timestamp)}</span>
+      <span className="typo-caption text-foreground tabular-nums shrink-0">{formatRelativeTime(event.timestamp)}</span>
     </div>
   );
   return (

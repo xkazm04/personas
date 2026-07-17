@@ -31,6 +31,7 @@ import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { SidebarSection } from '@/lib/types/types';
 import { useCompanionStore } from '../companionStore';
 import { actionLabel } from '../athenaLabels';
+import { COMPANION_NAV_ROUTES } from '../companionRoutes';
 import type { DecisionOption, PendingDecision } from './types';
 
 /**
@@ -52,23 +53,11 @@ import type { DecisionOption, PendingDecision } from './types';
  * resolves (clearing `pendingDecision`).
  */
 
-const VALID_ROUTES: SidebarSection[] = [
-  'home',
-  'overview',
-  'personas',
-  'events',
-  'credentials',
-  'design-reviews',
-  'plugins',
-  'schedules',
-  'settings',
-];
-
 /** Apply an approval's UI-only follow-up (currently just `navigate`). */
 function applyClientAction(action: ClientAction) {
   if (action.type === 'navigate') {
     const route = action.route as SidebarSection;
-    if (!VALID_ROUTES.includes(route)) return;
+    if (!COMPANION_NAV_ROUTES.includes(route)) return;
     useSystemStore.getState().setSidebarSection(route);
   }
   // Other ClientAction kinds (prefill / open_companion_tab) are not produced by
