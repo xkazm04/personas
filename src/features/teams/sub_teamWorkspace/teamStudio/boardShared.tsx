@@ -43,7 +43,7 @@ export const STEP_STATUS_META: Record<string, StepStatusMeta> = {
   failed: { icon: XCircle, tone: 'text-red-400', tint: 'bg-red-500/10', label: 'Failed' },
 };
 
-const PENDING_META: StepStatusMeta = { icon: CircleDashed, tone: 'text-foreground/40', tint: 'bg-secondary/30', label: 'Pending' };
+const PENDING_META: StepStatusMeta = STEP_STATUS_META.pending!;
 
 export function stepMeta(status: string): StepStatusMeta {
   return STEP_STATUS_META[status] ?? PENDING_META;

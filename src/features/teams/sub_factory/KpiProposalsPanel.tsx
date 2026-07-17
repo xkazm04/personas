@@ -13,26 +13,13 @@ import { Sparkles, Check, X, SlidersHorizontal, Loader2, Lightbulb } from 'lucid
 import { listKpis, updateKpi, scanKpis, getKpiScanStatus } from '@/api/devTools/kpis';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 
-import { CATEGORY_LABEL, CADENCE_LABEL, fmtUnit, type KpiCategory } from './factoryModel';
+import { CATEGORY_LABEL, CADENCE_LABEL, fmtUnit, describeMeasureConfig, type KpiCategory } from './factoryModel';
 
 /** Cadence token → label, tolerant of any stored string. */
 const cadenceLabel = (c: string) => CADENCE_LABEL[c as 'daily' | 'weekly' | 'manual'] ?? c;
 import { errMsg } from './composeTask';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-/** Human one-liner for a proposal's measurement procedure (measure_config). */
-function describeProcedure(cfg: string): string {
-  try {
-    const o = JSON.parse(cfg) as Record<string, unknown>;
-    if (o.cmd) return `runs \`${o.cmd}\``;
-    if (o.metric) return `orchestrator metric: ${o.metric}`;
-    if (o.connector) return `via ${o.connector}`;
-    if (o.recipe) return `recipe: ${o.recipe}`;
-    if (o.instruction) return String(o.instruction);
-  } catch { /* fall through */ }
-  return 'manual measurement';
-}
 
 export function KpiProposalsPanel({
   projectId,
@@ -160,7 +147,7 @@ function ProposalCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="typo-body text-foreground font-medium">{kpi.name}</span>
-            <span className="typo-caption opacity-70">{CATEGORY_LABEL[cat]} · {describeProcedure(kpi.measure_config)}</span>
+            <span className="typo-caption opacity-70">{CATEGORY_LABEL[cat]} · {describeMeasureConfig(kpi.measure_config)}</span>
           </div>
           {kpi.rationale && <p className="typo-caption opacity-80 mt-0.5">{kpi.rationale}</p>}
           <p className="typo-caption opacity-60 mt-0.5">

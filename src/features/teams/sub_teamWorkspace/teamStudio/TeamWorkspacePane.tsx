@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, Settings, Check, Trash2, Layers } from 'lucide-react';
-import { TEAM_COLORS } from '../CreateTeamForm';
+import { TeamColorPicker } from '../TeamColorPicker';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useToastStore } from '@/stores/toastStore';
 import { updateTeam } from '@/api/pipeline/teams';
@@ -204,23 +204,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
         </label>
         <div>
           <span className="typo-label text-foreground/85 mb-1.5 block">{t.pipeline.color}</span>
-          <div className="flex gap-1.5 flex-wrap">
-            {Object.entries(TEAM_COLORS).map(([hex, colorName]) => (
-              <button
-                key={hex}
-                type="button"
-                onClick={() => setColor(hex)}
-                title={colorName}
-                aria-pressed={color === hex}
-                className={`w-7 h-7 rounded-card transition-all flex items-center justify-center ${
-                  color === hex ? 'scale-110' : 'hover:scale-105'
-                }`}
-                style={{ backgroundColor: hex }}
-              >
-                {color === hex && <Check className="w-3.5 h-3.5 text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />}
-              </button>
-            ))}
-          </div>
+          <TeamColorPicker value={color} onChange={setColor} size="sm" />
         </div>
         <p className="typo-caption font-normal text-foreground">{ts.identity_hint}</p>
       </div>

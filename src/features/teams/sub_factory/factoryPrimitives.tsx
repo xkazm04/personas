@@ -5,32 +5,38 @@
 import { Star, ChevronLeft } from 'lucide-react';
 import { STATUS_COLOR, STATUS_LABEL, TRAFFIC_COLOR, trafficCounts, progressPct, fmtUnit, type Traffic, type KpiStatus, type MockKpi, kpiStatus } from './factoryModel';
 
-/** Compact measurement sparkline (oldest → newest). */
+/** Compact measurement sparkline (oldest → newest). Accepts either `series`
+ *  (Factory KPI callers) or `values` (passport trend callers) — the single
+ *  Sparkline implementation for both surfaces. `color` defaults to
+ *  `currentColor` so it can inherit from a wrapping text-color span. */
 export function Sparkline({
   series,
+  values,
   color,
   width = 64,
   height = 18,
 }: {
-  series: number[];
-  color: string;
+  series?: number[];
+  values?: number[];
+  color?: string;
   width?: number;
   height?: number;
 }) {
-  if (series.length < 2) return <span className="inline-block text-muted-foreground/50 typo-caption">—</span>;
-  const min = Math.min(...series);
-  const max = Math.max(...series);
+  const data = series ?? values ?? [];
+  if (data.length < 2) return <span className="inline-block text-muted-foreground/50 typo-caption">—</span>;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
   const span = max - min || 1;
-  const pts = series
+  const pts = data
     .map((v, i) => {
-      const x = (i / (series.length - 1)) * width;
+      const x = (i / (data.length - 1)) * width;
       const y = height - ((v - min) / span) * (height - 3) - 1.5;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(' ');
   return (
     <svg width={width} height={height} aria-hidden="true" className="flex-shrink-0">
-      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+      <polyline points={pts} fill="none" stroke={color ?? 'currentColor'} strokeWidth={1.5} strokeLinejoin="round" />
     </svg>
   );
 }

@@ -76,11 +76,6 @@ function persistenceChips(p: AppPassport): string[] {
   });
 }
 
-function integrationChips(p: AppPassport): string[] {
-  // Concrete vendor names, grouped sentence-style by kind for the chip label.
-  return p.stack.integrations.map((i) => `${i.name}`);
-}
-
 // -- the sections (order: automation readiness → production → stack → tooling) -
 
 export const SECTIONS: SectionSpec[] = [
@@ -135,7 +130,7 @@ export const SECTIONS: SectionSpec[] = [
     label: 'Tooling & integrations',
     icon: 'plug',
     rows: [
-      { key: 'integrations', label: 'Integrations', get: (p) => ({ kind: 'chips', items: integrationChips(p) }) },
+      { key: 'integrations', label: 'Integrations', get: (p) => ({ kind: 'chips', items: p.stack.integrations.map((i) => i.name) }) },
       { key: 'errors', label: 'Error tracking', get: (p) => ({ kind: 'present', label: p.stack.monitoring.errorTracking }) },
       { key: 'logs', label: 'Logs', get: (p) => ({ kind: 'present', label: p.stack.monitoring.logs }) },
       { key: 'metrics', label: 'Metrics', get: (p) => ({ kind: 'present', label: p.stack.monitoring.metrics }) },
