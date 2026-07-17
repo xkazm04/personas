@@ -103,8 +103,18 @@ export function transformReducer(
     case 'TRANSFORM_SECTIONS':
       return { ...slice, streamingSections: action.sections };
 
-    case 'TRANSFORM_SECTION_PUSH':
-      return { ...slice, streamingSections: [...slice.streamingSections, action.section] };
+    case 'TRANSFORM_SECTION_PUSH': {
+      // Upsert by (kind,index) -- the same section can arrive twice via a
+      // push event followed by (or interleaved with) a polling snapshot.
+      const existingIdx = slice.streamingSections.findIndex(
+        (s) => s.kind === action.section.kind && s.index === action.section.index,
+      );
+      const streamingSections =
+        existingIdx === -1
+          ? [...slice.streamingSections, action.section]
+          : slice.streamingSections.map((s, i) => (i === existingIdx ? action.section : s));
+      return { ...slice, streamingSections };
+    }
 
     case 'TRANSFORM_COMPLETED': {
       if (!normalizeDraftFromUnknown(action.draft) || !action.draft.system_prompt?.trim()) {

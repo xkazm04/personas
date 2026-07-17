@@ -138,13 +138,11 @@ function extractSurroundingContext(text: string, keyword: string): string {
 
   // Find the sentence or line containing the keyword
   const start = Math.max(0, text.lastIndexOf('.', idx) + 1, text.lastIndexOf('\n', idx) + 1);
-  const end = Math.min(
-    text.length,
-    Math.min(
-      text.indexOf('.', idx + keyword.length) + 1 || text.length,
-      text.indexOf('\n', idx + keyword.length) || text.length,
-    ),
-  );
+  const periodIdx = text.indexOf('.', idx + keyword.length);
+  const periodEnd = periodIdx === -1 ? text.length : periodIdx + 1;
+  const newlineIdx = text.indexOf('\n', idx + keyword.length);
+  const newlineEnd = newlineIdx === -1 ? text.length : newlineIdx;
+  const end = Math.min(text.length, periodEnd, newlineEnd);
 
   const snippet = text.slice(start, end).trim();
   if (snippet.length > 120) {
