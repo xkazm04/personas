@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { X, ShieldCheck, MessageSquare, Activity, FileText } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import { useInboxActions } from '@/features/plugins/companion/inbox/hooks/useInboxActions';
 import { formatRelativeTime } from '@/features/plugins/companion/inbox/utils/formatRelativeTime';
+import { inboxKindIcon } from '@/features/plugins/companion/inbox/_shared/inboxKindIcon';
 import type { UnifiedInboxItem } from '@/features/plugins/companion/inbox/types';
 import { DebtText } from '@/i18n/DebtText';
 
@@ -132,16 +133,16 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
 }
 
 function KindBadge({ kind }: { kind: UnifiedInboxItem['kind'] }) {
-  const map = {
-    approval: { icon: <ShieldCheck className="w-3.5 h-3.5" />, cls: 'bg-amber-500/15 text-amber-300' },
-    message: { icon: <MessageSquare className="w-3.5 h-3.5" />, cls: 'bg-violet-500/15 text-violet-300' },
-    health: { icon: <Activity className="w-3.5 h-3.5" />, cls: 'bg-rose-500/15 text-rose-300' },
-    output: { icon: <FileText className="w-3.5 h-3.5" />, cls: 'bg-emerald-500/15 text-emerald-300' },
+  const clsMap = {
+    approval: 'bg-amber-500/15 text-amber-300',
+    message: 'bg-violet-500/15 text-violet-300',
+    health: 'bg-rose-500/15 text-rose-300',
+    output: 'bg-emerald-500/15 text-emerald-300',
   } as const;
-  const { icon, cls } = map[kind];
+  const Icon = inboxKindIcon(kind);
   return (
-    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-input shrink-0 ${cls}`}>
-      {icon}
+    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-input shrink-0 ${clsMap[kind]}`}>
+      <Icon className="w-3.5 h-3.5" />
     </span>
   );
 }

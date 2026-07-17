@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Inbox, ShieldCheck, MessageSquare, Activity, FileText } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUnifiedInbox } from '@/features/plugins/companion/inbox/hooks/useUnifiedInbox';
 import { formatRelativeTime } from '@/features/plugins/companion/inbox/utils/formatRelativeTime';
 import { toneForInboxItem } from '@/features/plugins/companion/inbox/_shared/inboxTone';
+import { inboxKindIcon } from '@/features/plugins/companion/inbox/_shared/inboxKindIcon';
 import type { UnifiedInboxItem } from '@/features/plugins/companion/inbox/types';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
@@ -77,11 +78,7 @@ function KindGlyph({
   kind: UnifiedInboxItem['kind'];
   tone: 'amber' | 'violet' | 'emerald' | 'rose' | 'gold';
 }) {
-  const Icon =
-    kind === 'approval' ? ShieldCheck
-    : kind === 'message' ? MessageSquare
-    : kind === 'health' ? Activity
-    : FileText;
+  const Icon = inboxKindIcon(kind);
   const cls =
     tone === 'amber' ? 'text-amber-400'
     : tone === 'violet' ? 'text-violet-400'

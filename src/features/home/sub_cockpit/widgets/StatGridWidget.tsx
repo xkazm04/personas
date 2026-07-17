@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { intentTextClass, intentTrendClass } from './intentColors';
 
 /**
  * `stat_grid` — N labeled numbers in a compact tile grid; generalizes
@@ -32,13 +33,6 @@ interface StatItem {
   trend?: 'up' | 'down' | 'flat';
   intent?: 'default' | 'good' | 'warn' | 'bad';
 }
-
-const VALUE_TEXT: Record<NonNullable<StatItem['intent']>, string> = {
-  default: 'text-foreground',
-  good: 'text-emerald-400',
-  warn: 'text-amber-400',
-  bad: 'text-rose-400',
-};
 
 export function StatGridWidget({ config, title }: CockpitWidgetProps) {
   const { t } = useTranslation();
@@ -74,7 +68,7 @@ export function StatGridWidget({ config, title }: CockpitWidgetProps) {
                 {stat.label}
               </div>
               <div
-                className={`typo-data-lg tabular-nums mt-0.5 ${VALUE_TEXT[stat.intent ?? 'default']}`}
+                className={`typo-data-lg tabular-nums mt-0.5 ${intentTextClass(stat.intent)}`}
               >
                 {stat.value === null || stat.value === undefined ? '—' : String(stat.value)}
                 {stat.unit ? (
@@ -83,13 +77,7 @@ export function StatGridWidget({ config, title }: CockpitWidgetProps) {
               </div>
               {stat.delta && (
                 <div
-                  className={`typo-caption tabular-nums ${
-                    stat.trend === 'up'
-                      ? 'text-emerald-400'
-                      : stat.trend === 'down'
-                        ? 'text-rose-400'
-                        : ''
-                  }`}
+                  className={`typo-caption tabular-nums ${intentTrendClass(stat.trend, '')}`}
                 >
                   {stat.delta}
                 </div>

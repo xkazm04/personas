@@ -6,6 +6,7 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { runDecisionOption } from '@/features/plugins/companion/decision/resolveDecision';
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { intentTextClass } from './intentColors';
 
 /**
  * `verdict` — Athena's answer card. The headline IS the recommendation;
@@ -37,14 +38,7 @@ export function VerdictWidget({ config, title }: CockpitWidgetProps) {
   const recommendedOption = config?.recommended_option as number | undefined;
   const caveat = config?.caveat as string | undefined;
 
-  const intentClass =
-    intent === 'good'
-      ? 'text-emerald-400'
-      : intent === 'warn'
-        ? 'text-amber-400'
-        : intent === 'bad'
-          ? 'text-rose-400'
-          : 'text-primary';
+  const intentClass = intentTextClass(intent, 'info');
 
   const confidenceLabel =
     confidence === 'high'

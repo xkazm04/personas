@@ -1,4 +1,5 @@
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { intentTextClass, intentTrendClass } from './intentColors';
 
 /**
  * `metric_spark` — single KPI card with optional trend marker.
@@ -29,21 +30,9 @@ export function MetricSparkWidget({ config, title }: CockpitWidgetProps) {
   const unit = config?.unit as string | undefined;
   const intent = (config?.intent as string | undefined) ?? 'default';
 
-  const intentClass =
-    intent === 'good'
-      ? 'text-emerald-400'
-      : intent === 'warn'
-        ? 'text-amber-400'
-        : intent === 'bad'
-          ? 'text-rose-400'
-          : 'text-foreground';
+  const intentClass = intentTextClass(intent);
 
-  const trendClass =
-    trend === 'up'
-      ? 'text-emerald-400'
-      : trend === 'down'
-        ? 'text-rose-400'
-        : 'text-foreground';
+  const trendClass = intentTrendClass(trend);
 
   const displayValue =
     value === null || value === undefined ? '—' : String(value);
