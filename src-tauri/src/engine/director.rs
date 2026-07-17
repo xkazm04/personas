@@ -28,7 +28,7 @@
 //!   + `ai_healing::apply_db_fixes`. Scheduler tick in `background.rs`.
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
@@ -44,6 +44,29 @@ use crate::error::AppError;
 use crate::AppState;
 
 use super::director_brain::{brain_enabled, read_brain_history, write_brain_note};
+use super::inflight_guard::InflightGuard;
+
+/// Process-global single-flight guard keyed by *target* persona id: at most one
+/// Director review per persona may be in flight at any moment.
+///
+/// Two paths can trigger a review of the same persona concurrently — the
+/// reactive `director_storm` subscription (a burst of step failures) and a
+/// manual/batch cycle. Both run a real LLM review anchored on the persona's
+/// newest execution and finish by calling `set_director_review` on it; run
+/// them at once and you burn two CLI runs to restate the same verdict, with a
+/// last-writer-wins race on the stored review.
+///
+/// We **skip** rather than queue: a second concurrent review sees the same
+/// anchor + context and adds nothing, so the loser bails immediately instead of
+/// waiting to redo identical work. `run_director_cycle_for` (storm + manual
+/// single) and the batch loop both claim through this one guard, so a review in
+/// flight on *either* path turns the other away.
+///
+/// Bounding: [`InflightGuard`] removes each key on guard drop, so the tracked
+/// set only ever holds the personas whose reviews are running *right now* (a
+/// handful) — it self-evicts on completion, unlike the never-evicting
+/// `oauth_refresh_lock` map.
+static REVIEW_GUARD: LazyLock<InflightGuard> = LazyLock::new(InflightGuard::new);
 
 // ---------------------------------------------------------------------------
 // Locked constants
@@ -1107,6 +1130,17 @@ pub async fn run_director_cycle_for(
         return Ok(0);
     }
 
+    // Single-flight: if a review of this persona is already running (storm,
+    // manual, or batch), skip — a concurrent review of the same anchor adds
+    // nothing and would race on the stored verdict. Held until this fn returns.
+    let Some(_review_guard) = REVIEW_GUARD.guard(target_persona_id) else {
+        tracing::info!(
+            persona_id = %target_persona_id,
+            "director: review already in flight for this persona — skipping concurrent attempt",
+        );
+        return Ok(0);
+    };
+
     let ctx = gather_context(&state.db, target_persona_id)?;
 
     // A persona with NO executions cannot anchor a manual review (FK requires
@@ -1215,6 +1249,23 @@ pub async fn run_director_cycle_batch(
                 continue;
             }
         }
+
+        // Single-flight: skip if a review of this persona is already running on
+        // another path (e.g. a concurrent storm tick). Same guard as
+        // `run_director_cycle_for`, so the two paths never double-review one
+        // persona. Held through the memory-cleanup pass below; drops at the end
+        // of this loop iteration.
+        let _review_guard = match REVIEW_GUARD.guard(&p.id) {
+            Some(g) => g,
+            None => {
+                tracing::info!(
+                    persona_id = %p.id,
+                    persona = %p.name,
+                    "director: review already in flight for this persona — skipping in batch",
+                );
+                continue;
+            }
+        };
 
         match evaluate_with_llm(state, app.clone(), &director_id, &ctx).await {
             Ok(verdicts) => {
@@ -1845,6 +1896,39 @@ pub fn director_portfolio(pool: &DbPool, days: i64) -> Result<DirectorPortfolio,
 mod tests {
     use super::*;
     use crate::db::init_test_db;
+
+    /// single-flight-director: with a review in flight for a persona (guard
+    /// held), a concurrent attempt on the same persona must SKIP (guard returns
+    /// `None`), while a different persona proceeds independently and the slot is
+    /// reusable once the first review completes (guard dropped).
+    #[tokio::test]
+    async fn concurrent_review_of_same_persona_skips() {
+        // First review claims the slot and holds it across an await point,
+        // mimicking an in-flight LLM review that yields to the runtime.
+        let held = REVIEW_GUARD.guard("persona-single-flight");
+        assert!(held.is_some(), "first review claims the single-flight slot");
+        tokio::task::yield_now().await;
+
+        // A concurrent task attempting the SAME persona is turned away.
+        let skipped =
+            tokio::spawn(async { REVIEW_GUARD.guard("persona-single-flight").is_none() })
+                .await
+                .unwrap();
+        assert!(skipped, "second concurrent review of the same persona must skip");
+
+        // A different persona is unaffected.
+        assert!(
+            REVIEW_GUARD.guard("persona-other-flight").is_some(),
+            "a different persona reviews independently",
+        );
+
+        // Once the first review completes (guard drops), the slot frees up.
+        drop(held);
+        assert!(
+            REVIEW_GUARD.guard("persona-single-flight").is_some(),
+            "slot is reusable after the first review completes",
+        );
+    }
 
     /// Direction 3 (pinned-judge-consistency): a fresh seed pins the Director's
     /// model, and re-seeding backfills the pin ONLY into a NULL/empty
