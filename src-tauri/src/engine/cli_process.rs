@@ -333,6 +333,115 @@ pub fn spawn_headless_claude(
 }
 
 // =============================================================================
+// run_claude_cli -- shared one-shot "prompt in, text out" envelope
+// =============================================================================
+
+/// Run a single-turn, non-interactive Claude CLI call and return the raw
+/// stdout text.
+///
+/// Shared by the memory-review (`commands::core::memories`) and
+/// memory-compile (`commands::core::memory_compile`) pipelines, which were
+/// previously hand-rolling an identical spawn/timeout/env-strip block each
+/// (near-mirror, byte-for-byte equivalent). Deliberately distinct from
+/// [`spawn_headless_claude`]: those call sites need `--output-format
+/// stream-json` event parsing, while this one wants plain `-p -` text output
+/// that the caller regex/JSON-extracts directly, plus a single bounded
+/// `--max-turns 1` review/compile pass with the whole response read into one
+/// `String` (not streamed to the caller).
+///
+/// Owns: CLI arg resolution (`claude_cli_invocation`), Windows
+/// `CREATE_NO_WINDOW`, the `CLAUDECODE`/`CLAUDE_CODE`/
+/// `CLI_SUBSCRIPTION_RESERVED_ENV` strip (subscription-only billing --
+/// must not drift between copies), piping the prompt to stdin, reading
+/// stdout to EOF under `timeout`, and the kill-on-timeout dance.
+///
+/// Returns `Err` with `timeout_message` if `timeout` elapses before the CLI
+/// exits, or if stdout is empty once it does.
+pub async fn run_claude_cli(
+    prompt: &str,
+    timeout: std::time::Duration,
+    timeout_message: &str,
+) -> Result<String, crate::error::AppError> {
+    use crate::error::AppError;
+
+    let (command, mut args) = claude_cli_invocation();
+    args.extend(
+        ["-p", "-", "--max-turns", "1", "--dangerously-skip-permissions"]
+            .iter()
+            .map(|s| s.to_string()),
+    );
+
+    let mut cmd = Command::new(&command);
+    cmd.args(&args)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    cmd.env_remove("CLAUDECODE");
+    cmd.env_remove("CLAUDE_CODE");
+    // Subscription-only billing safety invariant -- never bill the API account.
+    force_subscription_auth(&mut cmd);
+
+    let mut child = cmd.spawn().map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            AppError::Internal(
+                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
+                    .into(),
+            )
+        } else {
+            AppError::Internal(format!("Failed to spawn CLI: {e}"))
+        }
+    })?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin
+            .write_all(prompt.as_bytes())
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}")))?;
+        stdin
+            .shutdown()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to close CLI stdin: {e}")))?;
+    }
+
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| AppError::Internal("No stdout".into()))?;
+    let mut reader = BufReader::new(stdout);
+    let mut full_output = String::new();
+
+    let read_result = tokio::time::timeout(timeout, async {
+        let mut line = String::new();
+        while reader.read_line(&mut line).await.unwrap_or(0) > 0 {
+            full_output.push_str(&line);
+            line.clear();
+        }
+    })
+    .await;
+
+    if read_result.is_err() {
+        let _ = child.kill().await;
+        let _ = child.wait().await;
+        return Err(AppError::Internal(timeout_message.to_string()));
+    }
+    let _ = child.wait().await;
+
+    if full_output.trim().is_empty() {
+        return Err(AppError::Internal("CLI produced no output".into()));
+    }
+
+    Ok(full_output)
+}
+
+// =============================================================================
 // CliProcessDriver -- unified CLI subprocess lifecycle
 // =============================================================================
 
