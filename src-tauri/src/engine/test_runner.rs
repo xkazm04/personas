@@ -1177,7 +1177,19 @@ async fn spawn_cli_and_collect_structured(
         })
         .await;
 
-    let exit = driver.wait().await;
+    // On a collect-timeout the child is presumed hung (that's why the stream
+    // never produced a `Result` line within the window) -- kill it instead of
+    // awaiting a natural exit that may never come, which would otherwise wedge
+    // this task (and the lab run's progress) with no upper time bound.
+    let exit = if stream_err.is_err() {
+        driver.kill().await;
+        Err(std::io::Error::new(
+            std::io::ErrorKind::TimedOut,
+            "collect_lines_with_timeout timed out",
+        ))
+    } else {
+        driver.wait().await
+    };
     let duration_ms = start.elapsed().as_millis() as u64;
     driver.cleanup_dir();
 

@@ -800,10 +800,53 @@ pub async fn execute_api_request(
     } else {
         (None, fields)
     };
-    let mut token = strategy
+    let resolved_token = strategy
         .resolve_auth_token(connector_metadata, &fields)
-        .await?
-        .map(|r| r.token);
+        .await?;
+
+    // Persist a rotated refresh_token / fresh expiry from the inline resolve
+    // path, not just the explicit 401-retry path. `resolve_auth_token` may
+    // have exchanged an already-locally-expired access_token for a new one
+    // here (not only via `force_refresh_single_credential`), and providers
+    // that enforce refresh-token rotation (Google, Microsoft) invalidate the
+    // old refresh_token the moment they issue a new one -- dropping it here
+    // would silently brick the credential on the next refresh attempt. Write
+    // under the oauth_refresh_lock already held above so this can't race the
+    // background refresh tick.
+    if let Some(ref resolved) = resolved_token {
+        if let Some(ref new_refresh_token) = resolved.refresh_token {
+            if let Err(e) =
+                cred_repo::upsert_field(pool, credential_id, "refresh_token", new_refresh_token, true)
+            {
+                tracing::warn!(
+                    credential_id,
+                    error = %e,
+                    "Failed to persist rotated refresh_token from inline OAuth resolve"
+                );
+            } else {
+                tracing::info!(credential_id, "Persisted rotated refresh_token from inline OAuth resolve");
+            }
+        }
+        if let Some(expires_in) = resolved.expires_in_secs {
+            let expires_at = (chrono::Utc::now() + chrono::Duration::seconds(expires_in as i64))
+                .to_rfc3339();
+            if let Err(e) = cred_repo::upsert_field(
+                pool,
+                credential_id,
+                "oauth_token_expires_at",
+                &expires_at,
+                false,
+            ) {
+                tracing::warn!(
+                    credential_id,
+                    error = %e,
+                    "Failed to persist oauth_token_expires_at from inline OAuth resolve"
+                );
+            }
+        }
+    }
+
+    let mut token = resolved_token.map(|r| r.token);
 
     // Validate header names + body size once, up front (independent of retries).
     for k in custom_headers.keys() {

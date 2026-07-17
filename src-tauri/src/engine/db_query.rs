@@ -886,13 +886,31 @@ struct PostgrestSelect {
     filters: Vec<String>,
 }
 
+/// Case-insensitive (ASCII) search for `needle` in `haystack`, returning a
+/// byte offset **into `haystack` itself** rather than into a case-folded copy.
+///
+/// `str::to_uppercase()` is not byte-length-preserving for some Unicode (e.g.
+/// the `ﬀ` ligature is 3 bytes but uppercases to 2-byte `FF`), so offsets
+/// found in an uppercased copy can land on the wrong byte -- or mid-codepoint
+/// -- when sliced back into the original string. Matching directly against
+/// the original bytes avoids that entirely: since `needle` is pure ASCII, a
+/// byte-for-byte match can only start on an ASCII byte, which is always a
+/// valid UTF-8 char boundary.
+fn find_ci(haystack: &str, needle: &str) -> Option<usize> {
+    let hb = haystack.as_bytes();
+    let nb = needle.as_bytes();
+    if nb.is_empty() || nb.len() > hb.len() {
+        return None;
+    }
+    (0..=(hb.len() - nb.len())).find(|&start| hb[start..start + nb.len()].eq_ignore_ascii_case(nb))
+}
+
 /// Parse a simple SELECT SQL query into PostgREST components.
 ///
 /// Supports: SELECT [cols] FROM table [WHERE simple_conds] [ORDER BY cols] [LIMIT n]
 /// Does NOT support: JOINs, subqueries, GROUP BY, HAVING, UNION, CTEs, aggregates.
 fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
-    let upper = sql.to_uppercase();
-    if !upper.starts_with("SELECT") {
+    if !sql.get(0..6).is_some_and(|s| s.eq_ignore_ascii_case("SELECT")) {
         return None;
     }
 
@@ -900,17 +918,16 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
     for kw in &[
         "JOIN ", "GROUP BY", "HAVING ", "UNION ", "WITH ", "INSERT ", "UPDATE ", "DELETE ",
     ] {
-        if upper.contains(kw) {
+        if find_ci(sql, kw).is_some() {
             return None;
         }
     }
 
     // Split into clauses by finding keyword positions
-    let from_pos = upper.find(" FROM ")?;
+    let from_pos = find_ci(sql, " FROM ")?;
     let select_part = sql[6..from_pos].trim(); // after "SELECT"
 
     let after_from = &sql[from_pos + 6..]; // after " FROM "
-    let after_from_upper = upper[from_pos + 6..].to_string();
 
     // Extract table name (first word after FROM, stripping quotes)
     let table_end = after_from
@@ -935,7 +952,6 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
     validate_sql_identifier(&table)?;
 
     let remainder = after_from[table_end..].trim();
-    let remainder_upper = after_from_upper[table_end..].trim().to_string();
 
     // Parse SELECT columns with identifier validation
     let select = if select_part == "*" {
@@ -956,7 +972,7 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
     let mut filters: Vec<String> = Vec::new();
 
     // Extract LIMIT
-    if let Some(lim_pos) = remainder_upper.find("LIMIT ") {
+    if let Some(lim_pos) = find_ci(remainder, "LIMIT ") {
         let after_limit = remainder[lim_pos + 6..].trim();
         if let Some(num) = after_limit.split_whitespace().next() {
             limit = num.parse().ok();
@@ -964,27 +980,29 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
     }
 
     // Extract ORDER BY
-    if let Some(ord_pos) = remainder_upper.find("ORDER BY ") {
+    if let Some(ord_pos) = find_ci(remainder, "ORDER BY ") {
         let after_order = &remainder[ord_pos + 9..];
         // Take until LIMIT or end
-        let end = after_order
-            .to_uppercase()
-            .find("LIMIT ")
-            .unwrap_or(after_order.len());
+        let end = find_ci(after_order, "LIMIT ").unwrap_or(after_order.len());
         let order_str = after_order[..end].trim();
 
         let mut order_parts: Vec<String> = Vec::new();
         for part in order_str.split(',') {
             let part = part.trim();
-            let upper_part = part.to_uppercase();
-            let (col, dir) = if upper_part.ends_with(" DESC") {
+            // Compare the ASCII suffix on the raw bytes (no char-boundary
+            // requirement for a `&[u8]` slice) before ever slicing `part` as a
+            // `&str` -- slicing by `part.len() - N` directly is only safe
+            // once we know those last N bytes are themselves ASCII.
+            let pb = part.as_bytes();
+            let (col, dir) = if pb.len() >= 5 && pb[pb.len() - 5..].eq_ignore_ascii_case(b" DESC")
+            {
                 (
                     part[..part.len() - 5]
                         .trim()
                         .trim_matches(|c: char| c == '"' || c == '`'),
                     "desc",
                 )
-            } else if upper_part.ends_with(" ASC") {
+            } else if pb.len() >= 4 && pb[pb.len() - 4..].eq_ignore_ascii_case(b" ASC") {
                 (
                     part[..part.len() - 4]
                         .trim()
@@ -1002,12 +1020,12 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
     }
 
     // Extract simple WHERE conditions
-    if let Some(where_pos) = remainder_upper.find("WHERE ") {
+    if let Some(where_pos) = find_ci(remainder, "WHERE ") {
         let after_where = &remainder[where_pos + 6..];
         // Take until ORDER BY or LIMIT or end
         let end = ["ORDER BY", "LIMIT "]
             .iter()
-            .filter_map(|kw| after_where.to_uppercase().find(kw))
+            .filter_map(|kw| find_ci(after_where, kw))
             .min()
             .unwrap_or(after_where.len());
         let where_str = after_where[..end].trim();

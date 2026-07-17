@@ -592,6 +592,18 @@ pub fn retry_failed_members(
         >,
     >,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
+    // Refuse a concurrent/double retry of the same team's failed members —
+    // mirrors the `adopt_preset` guard above. Without this, two concurrent
+    // retries both read `get_members` before either inserts, both see the
+    // role absent, and both adopt: duplicate personas + duplicate team
+    // members for the same role. RAII handle releases on every return path.
+    let inflight_key = format!("{preset_id}:{team_id}");
+    let _inflight = ADOPT_INFLIGHT.guard(&inflight_key).ok_or_else(|| {
+        AppError::RateLimited(format!(
+            "Team '{team_id}' is already retrying failed members — wait for it to finish"
+        ))
+    })?;
+
     let preset: TeamPreset = team_preset_loader::get_preset(preset_id, language)?;
 
     // Verify the team still exists. Returns NotFound if the user
