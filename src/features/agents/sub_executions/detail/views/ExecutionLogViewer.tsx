@@ -23,23 +23,26 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
   const [copied, setCopied] = useState(false);
 
   const handleCopyLog = useCallback(() => {
-    if (logContent) {
-      copyText(logContent).then(() => {
+    const doCopy = (content: string) => {
+      copyText(content).then(() => {
         setCopied(true);
+        setLogError(null);
         setTimeout(() => setCopied(false), 2000);
-      }).catch(() => { /* ignore */ });
+      }).catch(() => {
+        setLogError(t.agents.executions.copy_log_failed);
+      });
+    };
+    if (logContent !== null) {
+      doCopy(logContent);
     } else {
       getExecutionLog(executionId, personaId ?? '').then((content) => {
         setLogContent(content ?? '');
-        if (content) {
-          copyText(content).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          }).catch(() => {});
-        }
-      }).catch(() => { /* ignore */ });
+        doCopy(content ?? '');
+      }).catch(() => {
+        setLogError(t.agents.executions.copy_log_failed);
+      });
     }
-  }, [logContent, executionId, personaId]);
+  }, [logContent, executionId, personaId, t.agents.executions.copy_log_failed]);
 
   const handleToggleLog = useCallback(async () => {
     if (showLog) {

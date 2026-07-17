@@ -105,7 +105,7 @@ function getWorker(): Worker | null {
         pending.reject(error);
       }
       worker?.terminate();
-      worker = null;
+      worker = undefined;
     };
   } catch {
     worker = null;
@@ -121,10 +121,14 @@ export function computeLineDiffOffThread(
   const key = diffCacheKey(left, right);
   const cached = lineCache.get(key);
   if (cached) {
+    let cancelled = false;
     return {
-      cancel: () => undefined,
+      cancel: () => {
+        cancelled = true;
+      },
       promise: new Promise((resolve) => {
         queueMicrotask(() => {
+          if (cancelled) return;
           onChunk(cached);
           resolve(cached);
         });

@@ -3,6 +3,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { Clock, RotateCw, ShieldAlert, ExternalLink } from 'lucide-react';
 import type { HealingEventPayload } from '../../runnerTypes';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 /** Inline Healing Notification Card */
 export function HealingCard({
@@ -43,7 +44,7 @@ export function HealingCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`typo-heading ${styles.accent}`}>{notification.title}</span>
-              <span className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 text-foreground border border-primary/10">{notification.severity}</span>
+              <span className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 text-foreground border border-primary/10">{tokenLabel(t, 'severity', notification.severity)}</span>
             </div>
           </div>
           <button onClick={onDismiss} className="text-foreground hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5">

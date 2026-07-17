@@ -143,7 +143,13 @@ export function BulkRerunToolbar({
             {latestAnnotationDate && (
               <button
                 onClick={() => {
-                  setSinceValue(latestAnnotationDate.slice(0, 16));
+                  const parsed = new Date(latestAnnotationDate);
+                  const localValue = new Date(
+                    parsed.getTime() - parsed.getTimezoneOffset() * 60000,
+                  )
+                    .toISOString()
+                    .slice(0, 16);
+                  setSinceValue(localValue);
                   onSelectSinceTimestamp(latestAnnotationDate);
                 }}
                 className="px-2 py-1 typo-body rounded-card text-primary/80 hover:bg-primary/10 transition-colors"

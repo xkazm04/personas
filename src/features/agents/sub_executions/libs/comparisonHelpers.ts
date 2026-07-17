@@ -39,7 +39,17 @@ export function deltaColor(pct: number, lowerIsBetter = true): string {
   return good ? 'text-emerald-400' : 'text-amber-400';
 }
 
-/** Simple word-level diff for terminal output lines. */
+/**
+ * Simple membership-based diff for terminal output lines.
+ *
+ * NOTE: this is a Set-membership diff, not a sequence (LCS) diff — it is
+ * intentionally cheap for large terminal logs. Known limitations: a line
+ * repeated a different number of times in A vs B still reads as fully
+ * "same"; a line present in both but reordered is not flagged as moved;
+ * and all "added" lines are appended after A's lines rather than shown
+ * in their real position. Good enough for a quick "did anything change"
+ * signal — do not rely on it for exact positional diffing.
+ */
 export function diffLines(linesA: string[], linesB: string[]): Array<{ type: 'same' | 'added' | 'removed'; text: string }> {
   const result: Array<{ type: 'same' | 'added' | 'removed'; text: string }> = [];
   const setA = new Set(linesA);
