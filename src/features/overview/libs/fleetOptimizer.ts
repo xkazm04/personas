@@ -183,13 +183,16 @@ export function generateFleetRecommendation(
     const worst = recentAnomalies.reduce((a, b) =>
       a.deviation_sigma > b.deviation_sigma ? a : b,
     );
-    const multiplier = worst.deviation_sigma.toFixed(1);
+    const multiplier = worst.moving_avg > 0 ? (worst.cost / worst.moving_avg).toFixed(1) : null;
+    const comparisonPhrase = multiplier
+      ? `${multiplier}x above normal`
+      : `${worst.deviation_sigma.toFixed(1)}σ above normal`;
     return {
       id: `cost-anomaly-${worst.date}`,
       type: 'cost_anomaly',
       severity: 'critical',
       title: 'Cost Spike Detected',
-      description: `Spending on ${worst.date} was ${multiplier}x above normal ($${worst.cost.toFixed(2)} vs $${worst.moving_avg.toFixed(2)} avg).`,
+      description: `Spending on ${worst.date} was ${comparisonPhrase} ($${worst.cost.toFixed(2)} vs $${worst.moving_avg.toFixed(2)} avg).`,
       personaIds: [],
       personaNames: [],
       impact: `$${(worst.cost - worst.moving_avg).toFixed(2)} above expected spending`,

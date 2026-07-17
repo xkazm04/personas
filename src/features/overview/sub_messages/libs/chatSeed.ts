@@ -28,8 +28,8 @@ export function buildSummariseChatPrompt(
     ``,
     `--- Message content ---`,
     message.content || '(empty)',
-    reviewBullets ? `\n--- Linked human reviews ---\n${reviewBullets}` : '',
+    ...(reviewBullets ? [``, `--- Linked human reviews ---`, reviewBullets] : []),
     ``,
     `Cover: what the persona produced, anything notable, and any review actions pending.`,
-  ].filter(Boolean).join('\n');
+  ].join('\n');
 }

@@ -79,9 +79,17 @@ function avgField(arr: Array<Record<string, string | number>>, key: string): num
   return nums.reduce((sum, pt) => sum + (pt[key] as number), 0) / nums.length;
 }
 
-function makeTrend(current: number, previous: number): TrendValue {
+function makeTrend(current: number, previous: number, isAverage = false): TrendValue {
   if (previous === 0 && current === 0) return { pctChange: 0, direction: 'stable' };
-  if (previous === 0) return { pctChange: 100, direction: 'up' };
+  if (previous === 0) {
+    // For sum metrics (cost/executions), "no activity → some activity" is a
+    // real, meaningful +100%. For average metrics (successRate/latency), a
+    // previous value of 0 typically means "no samples in the prior period",
+    // not "the average was literally zero" — presenting that as a precise
+    // "+100%" fabricates a delta from missing data. Suppress it instead.
+    if (isAverage) return { pctChange: 0, direction: 'stable' };
+    return { pctChange: 100, direction: 'up' };
+  }
   const pct = ((current - previous) / Math.abs(previous)) * 100;
   if (Math.abs(pct) < STABLE_THRESHOLD_PCT) return { pctChange: 0, direction: 'stable' };
   return { pctChange: Math.abs(pct), direction: pct > 0 ? 'up' : 'down' };
@@ -106,7 +114,7 @@ export function computePeriodTrends(
   return {
     cost: makeTrend(sumField(curr, 'cost'), sumField(prev, 'cost')),
     executions: makeTrend(sumField(curr, 'executions'), sumField(prev, 'executions')),
-    successRate: makeTrend(avgField(curr, 'successRate'), avgField(prev, 'successRate')),
-    latency: makeTrend(avgField(curr, 'p50'), avgField(prev, 'p50')),
+    successRate: makeTrend(avgField(curr, 'successRate'), avgField(prev, 'successRate'), true),
+    latency: makeTrend(avgField(curr, 'p50'), avgField(prev, 'p50'), true),
   };
 }

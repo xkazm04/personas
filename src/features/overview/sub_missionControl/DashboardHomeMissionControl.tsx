@@ -209,7 +209,8 @@ export default function DashboardHomeMissionControl() {
     return { totalTraffic, totalErrors };
   }, [chartData]);
 
-  const lastSyncedIso = Object.values(pipelineFetchedAt).filter(Boolean).sort().pop();
+  const syncedTimestamps = Object.values(pipelineFetchedAt).filter(Boolean);
+  const lastSyncedIso = syncedTimestamps.length > 0 ? Math.max(...syncedTimestamps) : undefined;
   const lastSyncedLabel = lastSyncedIso
     ? new Date(lastSyncedIso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '—';

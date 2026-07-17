@@ -46,7 +46,13 @@ export default function VaultRecentChangesCard() {
           }
         });
       })
-      .catch(silentCatch('dashboard/VaultRecentChangesCard'));
+      .catch((err) => {
+        // A transient RPC failure (e.g. obsidianBrainGetSyncLog rejecting after
+        // config resolved truthy) must not leave `loaded` false forever — that
+        // renders this card as `null`, indistinguishable from "not configured".
+        if (!cancelled) setLoaded(true);
+        silentCatch('dashboard/VaultRecentChangesCard')(err);
+      });
     return () => { cancelled = true; };
   }, []);
 
