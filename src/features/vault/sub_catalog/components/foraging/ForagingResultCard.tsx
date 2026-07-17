@@ -37,11 +37,19 @@ const SOURCE_META: Record<ForageSource, { icon: typeof Cloud; labelKey: Foraging
   git_config: { icon: Globe, labelKey: "source_git_config", color: "text-pink-400" },
 };
 
-const CONFIDENCE_STYLES = {
+const CONFIDENCE_STYLES: Record<string, string> = {
   high: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
   medium: "bg-amber-500/15 text-amber-400 border-amber-500/20",
   low: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
 };
+
+const FALLBACK_SOURCE_META: { icon: typeof Cloud; labelKey: ForagingLabelKey; color: string } = {
+  icon: FileKey,
+  labelKey: "source_unknown",
+  color: "text-foreground",
+};
+
+const FALLBACK_CONFIDENCE_STYLE = "bg-zinc-500/15 text-zinc-400 border-zinc-500/20";
 
 export function ForagingResultCard({
   credential,
@@ -52,7 +60,7 @@ export function ForagingResultCard({
 }: ForagingResultCardProps) {
   const { t } = useTranslation();
   const fg = t.vault.foraging;
-  const meta = SOURCE_META[credential.source];
+  const meta = SOURCE_META[credential.source] ?? FALLBACK_SOURCE_META;
   const sourceLabel = fg[meta.labelKey];
   const Icon = meta.icon;
   const disabled = credential.already_imported || isImported || isImporting;
@@ -133,7 +141,7 @@ export function ForagingResultCard({
           <div className="mt-1.5 flex items-center gap-2">
             <span className="typo-body text-foreground">{sourceLabel}</span>
             <span
-              className={`typo-body px-1.5 py-0.5 rounded border font-medium ${CONFIDENCE_STYLES[credential.confidence]}`}
+              className={`typo-body px-1.5 py-0.5 rounded border font-medium ${CONFIDENCE_STYLES[credential.confidence] ?? FALLBACK_CONFIDENCE_STYLE}`}
             >
               {tokenLabel(t, 'forage_confidence', credential.confidence)}
             </span>

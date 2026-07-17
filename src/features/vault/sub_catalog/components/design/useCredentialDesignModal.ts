@@ -60,8 +60,15 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
   // Capture auto-setup result when design completes
   const orchResult = orch.contextValue?.result;
   useEffect(() => {
-    if (autoSetupPending && orch.phase === 'preview' && orchResult) {
+    if (!autoSetupPending) return;
+    if (orch.phase === 'preview' && orchResult) {
       setAutoSetupResult(orchResult);
+      setAutoSetupPending(false);
+    } else if (orch.phase === 'error' || orch.phase === 'idle') {
+      // Design run ended without reaching preview (error, cancel, or a
+      // start-over back to idle) -- clear the flag so it doesn't leak into a
+      // later, unrelated design attempt within the same open modal and force
+      // it into the AutoCred panel without consent.
       setAutoSetupPending(false);
     }
   }, [autoSetupPending, orch.phase, orchResult]);

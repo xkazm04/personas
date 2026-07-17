@@ -194,10 +194,17 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setPhase('saving');
     try {
       const healthcheckPassed = healthResult?.success === true;
+      // Strip transport-only keys (e.g. `__procedure_log`, smuggled in by the
+      // adapter for the dev-only "save procedure" button) before persisting --
+      // they aren't credential secrets and shouldn't be written into the
+      // encrypted data blob.
+      const persistableValues = Object.fromEntries(
+        Object.entries(extractedValues).filter(([key]) => !key.startsWith('__')),
+      );
       const id = await createCredential({
         name: credentialName.trim() || tx(credentialSuffix, { name: designResult.connector.label }),
         service_type: designResult.connector.name,
-        data: extractedValues,
+        data: persistableValues,
         healthcheck_passed: healthcheckPassed,
       });
       await fetchCredentials();
