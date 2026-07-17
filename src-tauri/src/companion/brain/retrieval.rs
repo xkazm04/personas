@@ -25,6 +25,7 @@ use crate::companion::brain::episodic::{self, Episode};
 use crate::companion::brain::goals::{self, Goal};
 use crate::companion::brain::procedural::{self, Procedural};
 use crate::companion::brain::semantic::{self, Fact};
+use crate::companion::brain::util;
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
@@ -429,25 +430,7 @@ fn extract_section(md: &str, anchor: &str) -> Option<String> {
 }
 
 fn slugify(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    let mut prev_dash = false;
-    for ch in s.chars() {
-        if ch.is_ascii_alphanumeric() {
-            out.push(ch.to_ascii_lowercase());
-            prev_dash = false;
-        } else if !prev_dash && !out.is_empty() {
-            out.push('-');
-            prev_dash = true;
-        }
-    }
-    while out.ends_with('-') {
-        out.pop();
-    }
-    if out.is_empty() {
-        "section".into()
-    } else {
-        out
-    }
+    util::slugify(s, "section", None)
 }
 
 fn parse_role_and_body(full: &str) -> (String, String) {

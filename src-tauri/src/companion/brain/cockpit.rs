@@ -10,8 +10,8 @@ use std::fs;
 
 use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
-use sha2::{Digest, Sha256};
 
+use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
 use crate::error::AppError;
@@ -32,10 +32,7 @@ pub fn save_cockpit(pool: &UserDbPool, spec_json: &str) -> Result<(), AppError> 
     let now = Utc::now().to_rfc3339();
     let abs_path = disk::brain_root()?.join(COCKPIT_REL_PATH);
     fs::write(&abs_path, spec_json)?;
-    let hash = format!(
-        "sha256:{}",
-        hex::encode(Sha256::digest(spec_json.as_bytes()))
-    );
+    let hash = util::sha256_hex(spec_json);
     let excerpt = excerpt_500(spec_json);
 
     let conn = pool.get()?;
@@ -168,5 +165,5 @@ pub fn load_cockpit(pool: &UserDbPool) -> Result<Option<Cockpit>, AppError> {
 }
 
 fn excerpt_500(s: &str) -> String {
-    crate::utils::text::truncate_on_char_boundary(s, 500).to_string()
+    util::excerpt(s, 500)
 }

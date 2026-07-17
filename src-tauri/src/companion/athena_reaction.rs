@@ -788,6 +788,34 @@ pub(crate) fn match_braces(s: &str) -> Option<usize> {
     None
 }
 
+/// Scan `blob` for every occurrence of `marker` (a quoted JSON key, e.g.
+/// `"kpi_procedure"`), rewind to the enclosing `{`, brace-match to find the
+/// object's end, and parse it as `T`. Returns the *last* successfully parsed
+/// match (mirrors "last object wins" semantics of the call sites this
+/// replaces). Consolidates the duplicate "extract the last `{...}` envelope
+/// carrying key K from noisy LLM output" loops that used to be copy-pasted
+/// per call site (see refactor-bughunt-2026-07-10, tauri-engine-4-10 #6).
+pub(crate) fn extract_json_envelope<T: serde::de::DeserializeOwned>(
+    blob: &str,
+    marker: &str,
+) -> Option<T> {
+    let mut result = None;
+    let mut from = 0;
+    while let Some(rel) = blob[from..].find(marker) {
+        let pos = from + rel;
+        from = pos + marker.len();
+        let Some(open) = blob[..pos].rfind('{') else {
+            continue;
+        };
+        if let Some(close) = match_braces(&blob[open..]) {
+            if let Ok(env) = serde_json::from_str::<T>(&blob[open..open + close + 1]) {
+                result = Some(env);
+            }
+        }
+    }
+    result
+}
+
 // ---------------------------------------------------------------------------
 // Review resolution (B) — Athena RESOLVES parked awaiting_review cap-outs
 // ---------------------------------------------------------------------------

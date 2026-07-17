@@ -28,10 +28,10 @@ use std::sync::Arc;
 #[cfg(feature = "ml")]
 use chrono::Utc;
 use rusqlite::params;
-use sha2::{Digest, Sha256};
 
 #[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
+use crate::companion::brain::util;
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
@@ -461,30 +461,11 @@ fn split_oversized(content: &str, cap: usize) -> Vec<String> {
 }
 
 fn slugify(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    let mut prev_dash = false;
-    for ch in s.chars() {
-        if ch.is_ascii_alphanumeric() {
-            out.push(ch.to_ascii_lowercase());
-            prev_dash = false;
-        } else if !prev_dash && !out.is_empty() {
-            out.push('-');
-            prev_dash = true;
-        }
-    }
-    while out.ends_with('-') {
-        out.pop();
-    }
-    if out.is_empty() {
-        "section".into()
-    } else {
-        out
-    }
+    util::slugify(s, "section", None)
 }
 
 fn sha256_hex(s: &str) -> String {
-    let digest = Sha256::digest(s.as_bytes());
-    format!("sha256:{}", hex::encode(digest))
+    util::sha256_hex(s)
 }
 
 // ── upsert ─────────────────────────────────────────────────────────────
@@ -638,16 +619,11 @@ fn prune_orphans(pool: &UserDbPool, seen: &[String]) -> Result<usize, AppError> 
 }
 
 fn excerpt_500(content: &str) -> String {
-    crate::utils::text::truncate_on_char_boundary(content, 500).to_string()
+    util::excerpt(content, 500)
 }
 
 fn short_random() -> String {
-    uuid::Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(10)
-        .collect()
+    util::short_id(10)
 }
 
 // Path is intentionally unused on builds without the ml feature — silence.

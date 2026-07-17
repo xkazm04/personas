@@ -12,9 +12,8 @@ use std::fs;
 
 use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
-use sha2::{Digest, Sha256};
-use uuid::Uuid;
 
+use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
 use crate::error::AppError;
@@ -293,53 +292,25 @@ fn format_goal_markdown(id: &str, now: &str, input: &GoalInput<'_>, status: &str
 }
 
 fn body_after_frontmatter(md: &str) -> String {
-    if let Some(after) = md.strip_prefix("---\n") {
-        if let Some(end) = after.find("\n---") {
-            return after[end + 4..].trim_start().to_string();
-        }
-    }
-    md.to_string()
+    util::body_after_frontmatter(md)
 }
 
 fn escape_yaml(s: &str) -> String {
-    s.replace('\\', "\\\\").replace('"', "\\\"")
+    util::escape_yaml(s)
 }
 
 fn slugify(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    let mut prev_dash = false;
-    for ch in s.chars() {
-        if ch.is_ascii_alphanumeric() {
-            out.push(ch.to_ascii_lowercase());
-            prev_dash = false;
-        } else if !prev_dash && !out.is_empty() {
-            out.push('-');
-            prev_dash = true;
-        }
-    }
-    while out.ends_with('-') {
-        out.pop();
-    }
-    if out.is_empty() {
-        "goal".into()
-    } else {
-        out.chars().take(40).collect()
-    }
+    util::slugify(s, "goal", Some(40))
 }
 
 fn sha256_hex(s: &str) -> String {
-    format!("sha256:{}", hex::encode(Sha256::digest(s.as_bytes())))
+    util::sha256_hex(s)
 }
 
 fn excerpt_500(s: &str) -> String {
-    crate::utils::text::truncate_on_char_boundary(s, 500).to_string()
+    util::excerpt(s, 500)
 }
 
 fn short_uuid() -> String {
-    Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(8)
-        .collect()
+    util::short_id(8)
 }

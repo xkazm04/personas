@@ -12,11 +12,10 @@ use std::sync::Arc;
 
 use chrono::Utc;
 use rusqlite::params;
-use sha2::{Digest, Sha256};
-use uuid::Uuid;
 
 #[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
+use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
@@ -234,25 +233,19 @@ fn parse_episode_body(full: &str) -> (String, String) {
 }
 
 fn sha256_hex(s: &str) -> String {
-    let digest = Sha256::digest(s.as_bytes());
-    format!("sha256:{}", hex::encode(digest))
+    util::sha256_hex(s)
 }
 
 fn excerpt_500(content: &str) -> String {
     // Cap shared with the excerpt-vs-full-body decision
     // (`retrieval::excerpt_holds_full_body`) — the reader's completeness
     // guarantee depends on the writer's cap and boundary backoff staying
-    // exactly this shape. `truncate_on_char_boundary` uses the identical
+    // exactly this shape. `util::excerpt` uses the identical
     // backward-scan-to-boundary algorithm, so the invariant holds.
     const CAP: usize = crate::retrieval::EPISODE_EXCERPT_CAP;
-    crate::utils::text::truncate_on_char_boundary(content, CAP).to_string()
+    util::excerpt(content, CAP)
 }
 
 fn short_uuid() -> String {
-    Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(8)
-        .collect()
+    util::short_id(8)
 }
