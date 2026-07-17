@@ -191,6 +191,7 @@ export function GlyphCard({
           <AnimatePresence>
             {activeDim && (
               <DimensionPanel
+                key={activeDim}
                 dim={activeDim}
                 row={row}
                 onClose={() => setActiveDim(null)}

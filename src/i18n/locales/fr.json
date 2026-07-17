@@ -3597,7 +3597,23 @@
         "other": "Autre"
       },
       "title": "Historique des modifications"
-    }
+    },
+    "sigil_edit_channels_label": "Canaux",
+    "sigil_edit_custom_connector": "Connecteur personnalisé — aucune icône de marque correspondante.",
+    "sigil_edit_error_off": "Utilise la politique d'erreur par défaut.",
+    "sigil_edit_error_on": "Une politique de gestion des erreurs personnalisée est configurée.",
+    "sigil_edit_event_off": "Aucun abonnement à des événements configuré.",
+    "sigil_edit_event_on": "Cette capacité s'abonne à des événements.",
+    "sigil_edit_memory_off": "La mémoire est désactivée — la capacité s'exécute sans état.",
+    "sigil_edit_memory_on": "La mémoire persistante est activée pour cette capacité.",
+    "sigil_edit_no_channels": "Aucun canal de notification pour cette capacité.",
+    "sigil_edit_no_connector": "Cette capacité ne déclare aucun connecteur.",
+    "sigil_edit_no_dim_editor": "Aucun éditeur configuré pour cette dimension pour le moment.",
+    "sigil_edit_no_trigger": "Aucun déclencheur configuré sur cette capacité.",
+    "sigil_edit_review_off": "Aucune validation humaine requise — les actions sont autonomes.",
+    "sigil_edit_review_on": "Une validation humaine est requise avant que cette capacité n'agisse.",
+    "sigil_edit_service_label": "Service : {key}",
+    "sigil_edit_when_label": "Quand"
   },
   "vault": {
     "workspace_connect": "Connexion espace de travail",
@@ -16014,6 +16030,10 @@
       "taking_longer": "Plus long que prévu",
       "complete": "Terminé",
       "resuming": "Reprise de la session de transformation précédente...",
+      "starting_transformation": "Démarrage de la transformation...",
+      "step_progress": "Étape {step} sur {total}",
+      "starting_short": "Démarrage...",
+      "check_output_details": "Consultez la sortie ci-dessous pour plus de détails.",
       "cancel_transformation": "Annuler la transformation",
       "draft_generated": "Brouillon généré avec succès",
       "transformation_failed": "Échec de la transformation",

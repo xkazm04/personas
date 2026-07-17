@@ -3597,7 +3597,23 @@
         "other": "Lainnya"
       },
       "title": "Riwayat perubahan"
-    }
+    },
+    "sigil_edit_channels_label": "Saluran",
+    "sigil_edit_custom_connector": "Konektor kustom — tidak cocok dengan ikon merek mana pun.",
+    "sigil_edit_error_off": "Menggunakan kebijakan error default.",
+    "sigil_edit_error_on": "Kebijakan penanganan error kustom telah dikonfigurasi.",
+    "sigil_edit_event_off": "Tidak ada langganan event yang dikonfigurasi.",
+    "sigil_edit_event_on": "Kapabilitas ini berlangganan event.",
+    "sigil_edit_memory_off": "Memori nonaktif — kapabilitas berjalan tanpa status.",
+    "sigil_edit_memory_on": "Memori persisten aktif untuk kapabilitas ini.",
+    "sigil_edit_no_channels": "Tidak ada saluran notifikasi untuk kapabilitas ini.",
+    "sigil_edit_no_connector": "Kapabilitas ini tidak mendeklarasikan konektor.",
+    "sigil_edit_no_dim_editor": "Belum ada editor yang terhubung untuk dimensi ini.",
+    "sigil_edit_no_trigger": "Tidak ada trigger yang dikonfigurasi pada kapabilitas ini.",
+    "sigil_edit_review_off": "Tidak ada gerbang tinjauan manusia — tindakan berjalan otonom.",
+    "sigil_edit_review_on": "Tinjauan manusia diperlukan sebelum kapabilitas ini bertindak.",
+    "sigil_edit_service_label": "Layanan: {key}",
+    "sigil_edit_when_label": "Kapan"
   },
   "vault": {
     "workspace_connect": "Hubungkan Workspace",
@@ -16014,6 +16030,10 @@
       "taking_longer": "Memakan waktu lebih lama dari yang diharapkan",
       "complete": "Selesai",
       "resuming": "Melanjutkan sesi transformasi sebelumnya...",
+      "starting_transformation": "Memulai transformasi...",
+      "step_progress": "Langkah {step} dari {total}",
+      "starting_short": "Memulai...",
+      "check_output_details": "Periksa output di bawah untuk detailnya.",
       "cancel_transformation": "Batalkan transformasi",
       "draft_generated": "Draf berhasil dibuat",
       "transformation_failed": "Transformasi gagal",

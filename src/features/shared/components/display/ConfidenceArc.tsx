@@ -35,7 +35,8 @@ export function ConfidenceArc({ value, width = 24, height = 14, showLabel = fals
   const angle = Math.PI * fraction;
   const endX = cx - r * Math.cos(angle);
   const endY = cy - r * Math.sin(angle);
-  const largeArc = fraction > 0.5 ? 1 : 0;
+  // The fill arc is always a semicircle sweep (≤180°), so it's always the minor arc.
+  const largeArc = 0;
   const fgPath = fraction > 0 ? `M ${cx - r} ${cy} A ${r} ${r} 0 ${largeArc} 1 ${endX} ${endY}` : '';
 
   // Gradient ID unique per instance

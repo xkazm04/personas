@@ -2789,5 +2789,21 @@
       "other": "기타"
     },
     "title": "변경 이력"
-  }
+  },
+  "sigil_edit_channels_label": "채널",
+  "sigil_edit_custom_connector": "커스텀 커넥터 — 일치하는 브랜드 아이콘이 없습니다.",
+  "sigil_edit_error_off": "기본 오류 정책을 따릅니다.",
+  "sigil_edit_error_on": "커스텀 오류 처리 정책이 설정되어 있습니다.",
+  "sigil_edit_event_off": "구성된 이벤트 구독이 없습니다.",
+  "sigil_edit_event_on": "이 기능은 이벤트를 구독합니다.",
+  "sigil_edit_memory_off": "메모리가 꺼져 있습니다 — 이 기능은 상태 없이 실행됩니다.",
+  "sigil_edit_memory_on": "이 기능에는 영구 메모리가 켜져 있습니다.",
+  "sigil_edit_no_channels": "이 기능에 설정된 알림 채널이 없습니다.",
+  "sigil_edit_no_connector": "이 기능은 커넥터를 지정하지 않았습니다.",
+  "sigil_edit_no_dim_editor": "이 항목에 연결된 편집기가 아직 없습니다.",
+  "sigil_edit_no_trigger": "이 기능에 설정된 트리거가 없습니다.",
+  "sigil_edit_review_off": "사람 검토 절차 없이 자율적으로 작동합니다.",
+  "sigil_edit_review_on": "이 기능이 작동하려면 사람의 검토가 필요합니다.",
+  "sigil_edit_service_label": "서비스: {key}",
+  "sigil_edit_when_label": "실행 조건"
 }

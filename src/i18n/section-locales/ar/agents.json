@@ -2789,5 +2789,21 @@
       "other": "أخرى"
     },
     "title": "سجل التغييرات"
-  }
+  },
+  "sigil_edit_channels_label": "القنوات",
+  "sigil_edit_custom_connector": "رابط مخصص — لا يوجد شعار مطابق للعلامة التجارية.",
+  "sigil_edit_error_off": "يعتمد على سياسة الأخطاء الافتراضية.",
+  "sigil_edit_error_on": "تم تكوين سياسة مخصصة لمعالجة الأخطاء.",
+  "sigil_edit_event_off": "لا توجد اشتراكات في الأحداث.",
+  "sigil_edit_event_on": "هذه القدرة تشترك في الأحداث.",
+  "sigil_edit_memory_off": "الذاكرة متوقفة — تعمل القدرة بدون حالة.",
+  "sigil_edit_memory_on": "الذاكرة الدائمة مفعّلة لهذه القدرة.",
+  "sigil_edit_no_channels": "لا توجد قنوات إشعارات لهذه القدرة.",
+  "sigil_edit_no_connector": "هذه القدرة لا تحدد رابطًا.",
+  "sigil_edit_no_dim_editor": "لا يوجد محرر متصل بهذا البُعد بعد.",
+  "sigil_edit_no_trigger": "لا يوجد مُشغّل مكوّن لهذه القدرة.",
+  "sigil_edit_review_off": "لا توجد بوابة مراجعة بشرية — الإجراءات تتم بشكل مستقل.",
+  "sigil_edit_review_on": "المراجعة البشرية مطلوبة قبل أن تتصرف هذه القدرة.",
+  "sigil_edit_service_label": "الخدمة: {key}",
+  "sigil_edit_when_label": "عند"
 }

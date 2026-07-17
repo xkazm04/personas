@@ -3597,7 +3597,23 @@
         "other": "Ostatní"
       },
       "title": "Historie změn"
-    }
+    },
+    "sigil_edit_channels_label": "Kanály",
+    "sigil_edit_custom_connector": "Vlastní konektor — bez odpovídající značkové ikony.",
+    "sigil_edit_error_off": "Používá se výchozí zásada zpracování chyb.",
+    "sigil_edit_error_on": "Je nastavena vlastní zásada zpracování chyb.",
+    "sigil_edit_event_off": "Nejsou nastaveny žádné odběry událostí.",
+    "sigil_edit_event_on": "Tato schopnost odebírá události.",
+    "sigil_edit_memory_off": "Paměť je vypnutá — schopnost běží bez uchování stavu.",
+    "sigil_edit_memory_on": "Pro tuto schopnost je zapnutá trvalá paměť.",
+    "sigil_edit_no_channels": "Pro tuto schopnost nejsou nastaveny žádné oznamovací kanály.",
+    "sigil_edit_no_connector": "Tato schopnost nemá deklarovaný konektor.",
+    "sigil_edit_no_dim_editor": "Pro tuto dimenzi zatím není propojen žádný editor.",
+    "sigil_edit_no_trigger": "Pro tuto schopnost není nastaven žádný spouštěč.",
+    "sigil_edit_review_off": "Bez brány lidské kontroly — akce probíhají autonomně.",
+    "sigil_edit_review_on": "Před provedením této schopnosti je vyžadována lidská kontrola.",
+    "sigil_edit_service_label": "Služba: {key}",
+    "sigil_edit_when_label": "Kdy"
   },
   "vault": {
     "workspace_connect": "Připojení Workspace",
@@ -16014,6 +16030,10 @@
       "taking_longer": "Trvá déle než obvykle",
       "complete": "Dokončeno",
       "resuming": "Obnovování předchozí transformační relace...",
+      "starting_transformation": "Zahajuje se transformace...",
+      "step_progress": "Krok {step} z {total}",
+      "starting_short": "Zahajuje se...",
+      "check_output_details": "Podrobnosti najdete ve výstupu níže.",
       "cancel_transformation": "Zrušit transformaci",
       "draft_generated": "Návrh úspěšně vygenerován",
       "transformation_failed": "Transformace selhala",

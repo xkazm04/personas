@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { DIM_META } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
+import { useGlyphDimText } from '@/features/shared/glyph/persona-sigil';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /** Status-pip colour per petal state. */
@@ -45,13 +46,14 @@ export function PetalRow({
   const meta = DIM_META[dim];
   const Icon = meta.icon;
   const lit = state === 'resolved' || state === 'filling';
+  const dimText = useGlyphDimText();
 
   return (
-    <Tooltip content={tooltip ?? meta.labelKey} placement="right">
+    <Tooltip content={tooltip ?? dimText.label[dim]} placement="right">
       <button
         type="button"
         onClick={() => onSelect(dim)}
-        aria-label={ariaLabel ?? dim}
+        aria-label={ariaLabel ?? dimText.label[dim] ?? dim}
         className={`group flex w-full items-center gap-2 rounded-card transition-all cursor-pointer ${
           active ? 'ring-2 ring-primary/40' : ''
         }`}

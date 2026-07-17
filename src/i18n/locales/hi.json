@@ -3597,7 +3597,23 @@
         "other": "अन्य"
       },
       "title": "परिवर्तन इतिहास"
-    }
+    },
+    "sigil_edit_channels_label": "चैनल",
+    "sigil_edit_custom_connector": "कस्टम कनेक्टर — कोई ब्रांड आइकन मेल नहीं खाता।",
+    "sigil_edit_error_off": "डिफ़ॉल्ट एरर पॉलिसी पर वापस चला जाता है।",
+    "sigil_edit_error_on": "कस्टम एरर-हैंडलिंग पॉलिसी कॉन्फ़िगर की गई है।",
+    "sigil_edit_event_off": "कोई इवेंट सब्सक्रिप्शन कॉन्फ़िगर नहीं है।",
+    "sigil_edit_event_on": "यह क्षमता इवेंट्स को सब्सक्राइब करती है।",
+    "sigil_edit_memory_off": "मेमोरी बंद है — यह क्षमता स्टेटलेस मोड में चलती है।",
+    "sigil_edit_memory_on": "इस क्षमता के लिए स्थायी मेमोरी चालू है।",
+    "sigil_edit_no_channels": "इस क्षमता के लिए कोई नोटिफिकेशन चैनल नहीं है।",
+    "sigil_edit_no_connector": "यह क्षमता कोई कनेक्टर घोषित नहीं करती।",
+    "sigil_edit_no_dim_editor": "इस डिम के लिए अभी कोई एडिटर सेट नहीं है।",
+    "sigil_edit_no_trigger": "इस क्षमता पर कोई ट्रिगर कॉन्फ़िगर नहीं है।",
+    "sigil_edit_review_off": "कोई ह्यूमन रिव्यू गेट नहीं — क्रियाएँ स्वायत्त रूप से होती हैं।",
+    "sigil_edit_review_on": "इस क्षमता के कार्य करने से पहले ह्यूमन रिव्यू आवश्यक है।",
+    "sigil_edit_service_label": "सेवा: {key}",
+    "sigil_edit_when_label": "कब"
   },
   "vault": {
     "workspace_connect": "वर्कस्पेस कनेक्ट",
@@ -16014,6 +16030,10 @@
       "taking_longer": "अपेक्षा से अधिक समय लग रहा है",
       "complete": "पूर्ण",
       "resuming": "पिछला रूपांतरण सेशन फिर शुरू हो रहा है...",
+      "starting_transformation": "रूपांतरण शुरू हो रहा है...",
+      "step_progress": "चरण {step} में से {total}",
+      "starting_short": "शुरू हो रहा है...",
+      "check_output_details": "विवरण के लिए नीचे आउटपुट देखें।",
       "cancel_transformation": "रूपांतरण रद्द करें",
       "draft_generated": "ड्राफ्ट सफलतापूर्वक जेनरेट हुआ",
       "transformation_failed": "रूपांतरण विफल",

@@ -7,7 +7,13 @@ export function humanizeCron(cron: string): string {
   if (parts.length !== 5) return cron;
   const [min, hour, dom, mon, dow] = parts as [string, string, string, string, string];
 
+  // Multi-value hour fields (comma lists, ranges) can't collapse to a single
+  // "HH:MM" without losing runs — leave timeStr unset so callers fall through
+  // to the raw cron instead of misrepresenting the schedule.
+  const hourMultiValued = /[,-]/.test(hour);
+
   const timeStr = (() => {
+    if (hourMultiValued) return null;
     const h = parseInt(hour, 10);
     const m = parseInt(min, 10);
     if (Number.isNaN(h) || Number.isNaN(m)) return null;
@@ -27,6 +33,16 @@ export function humanizeCron(cron: string): string {
   if (dom === '*' && mon === '*' && timeStr) {
     const days: string[] = [];
     for (const part of dow.split(',')) {
+      const range = /^(\d)-(\d)$/.exec(part);
+      if (range) {
+        const start = parseInt(range[1]!, 10);
+        const end = parseInt(range[2]!, 10);
+        for (let n = start; n <= end; n++) {
+          const name = DAYS[n % 7];
+          if (name) days.push(name);
+        }
+        continue;
+      }
       const n = parseInt(part, 10);
       if (Number.isNaN(n) || n < 0 || n > 7) continue;
       const name = DAYS[n % 7];

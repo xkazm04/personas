@@ -2789,5 +2789,21 @@
       "other": "Sonstiges"
     },
     "title": "Änderungsverlauf"
-  }
+  },
+  "sigil_edit_channels_label": "Kanäle",
+  "sigil_edit_custom_connector": "Benutzerdefinierter Connector — kein passendes Marken-Icon.",
+  "sigil_edit_error_off": "Fällt auf die Standard-Fehlerrichtlinie zurück.",
+  "sigil_edit_error_on": "Es ist eine benutzerdefinierte Fehlerbehandlung konfiguriert.",
+  "sigil_edit_event_off": "Keine Event-Abonnements konfiguriert.",
+  "sigil_edit_event_on": "Diese Capability abonniert Events.",
+  "sigil_edit_memory_off": "Memory ist deaktiviert — die Capability läuft zustandslos.",
+  "sigil_edit_memory_on": "Persistenter Memory ist für diese Capability aktiviert.",
+  "sigil_edit_no_channels": "Keine Benachrichtigungskanäle für diese Capability.",
+  "sigil_edit_no_connector": "Diese Capability deklariert keinen Connector.",
+  "sigil_edit_no_dim_editor": "Für diese Dimension ist noch kein Editor verknüpft.",
+  "sigil_edit_no_trigger": "Für diese Capability ist kein Trigger konfiguriert.",
+  "sigil_edit_review_off": "Kein Human-Review-Gate — Aktionen laufen autonom.",
+  "sigil_edit_review_on": "Vor dieser Capability-Aktion ist eine Human-Review erforderlich.",
+  "sigil_edit_service_label": "Dienst: {key}",
+  "sigil_edit_when_label": "Wann"
 }

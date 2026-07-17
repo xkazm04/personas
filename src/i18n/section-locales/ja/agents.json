@@ -2789,5 +2789,21 @@
       "other": "その他"
     },
     "title": "変更履歴"
-  }
+  },
+  "sigil_edit_channels_label": "チャンネル",
+  "sigil_edit_custom_connector": "カスタムコネクタ — 一致するブランドアイコンがありません。",
+  "sigil_edit_error_off": "デフォルトのエラーポリシーにフォールバックします。",
+  "sigil_edit_error_on": "カスタムのエラー処理ポリシーが設定されています。",
+  "sigil_edit_event_off": "イベント購読は設定されていません。",
+  "sigil_edit_event_on": "このケイパビリティはイベントを購読しています。",
+  "sigil_edit_memory_off": "メモリはオフです — このケイパビリティはステートレスに動作します。",
+  "sigil_edit_memory_on": "このケイパビリティでは永続メモリが有効です。",
+  "sigil_edit_no_channels": "このケイパビリティに通知チャンネルはありません。",
+  "sigil_edit_no_connector": "このケイパビリティはコネクタを宣言していません。",
+  "sigil_edit_no_dim_editor": "このディメンションにはまだエディタが接続されていません。",
+  "sigil_edit_no_trigger": "このケイパビリティにトリガーは設定されていません。",
+  "sigil_edit_review_off": "人によるレビューゲートはありません — アクションは自律的に実行されます。",
+  "sigil_edit_review_on": "このケイパビリティが動作する前に人によるレビューが必要です。",
+  "sigil_edit_service_label": "サービス: {key}",
+  "sigil_edit_when_label": "条件"
 }

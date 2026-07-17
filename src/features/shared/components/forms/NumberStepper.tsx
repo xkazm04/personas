@@ -105,7 +105,7 @@ export function NumberStepper({
   }, []);
 
   const doStep = useCallback(
-    (dir: 1 | -1) => {
+    (dir: 1 | -1): boolean => {
       // Stepping out of an empty field lands on the seed value, not seed ± step.
       const next =
         valueRef.current == null
@@ -114,7 +114,9 @@ export function NumberStepper({
       if (next !== valueRef.current) {
         valueRef.current = next;
         onChange(next);
+        return true;
       }
+      return false;
     },
     [clamp, step, defaultValue, min, onChange],
   );
@@ -127,26 +129,36 @@ export function NumberStepper({
       repeatTimer.current = null;
     }
   }, []);
-  const startRepeat = useCallback(
-    (dir: 1 | -1) => {
-      doStep(dir);
-      let delay = 350;
-      const tick = () => {
-        doStep(dir);
-        delay = Math.max(40, delay * 0.82);
-        repeatTimer.current = window.setTimeout(tick, delay);
-      };
-      repeatTimer.current = window.setTimeout(tick, delay);
-    },
-    [doStep],
-  );
-  useEffect(() => stopRepeat, [stopRepeat]);
-
   // Releasing (or leaving) a held button ends the step interaction and settles onCommit.
   const endStep = useCallback(() => {
     stopRepeat();
     fireCommit(valueRef.current);
   }, [stopRepeat, fireCommit]);
+  const startRepeat = useCallback(
+    (dir: 1 | -1) => {
+      // If the very first step is already a no-op (already at the boundary),
+      // there is nothing to repeat — don't schedule a loop that would spin
+      // forever once the button becomes `disabled` (a disabled button never
+      // fires pointerup/pointerleave, so the loop would otherwise outlive
+      // the interaction).
+      if (!doStep(dir)) return;
+      let delay = 350;
+      const tick = () => {
+        if (!doStep(dir)) {
+          // Hit min/max mid-hold — the button is about to become `disabled`
+          // and will stop receiving pointer events, so end the interaction
+          // here rather than waiting for a pointerup that may never come.
+          endStep();
+          return;
+        }
+        delay = Math.max(40, delay * 0.82);
+        repeatTimer.current = window.setTimeout(tick, delay);
+      };
+      repeatTimer.current = window.setTimeout(tick, delay);
+    },
+    [doStep, endStep],
+  );
+  useEffect(() => stopRepeat, [stopRepeat]);
 
   const commitDraft = useCallback(
     (raw: string) => {

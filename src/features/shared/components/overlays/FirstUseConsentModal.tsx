@@ -67,11 +67,32 @@ interface SectionProps {
   isNew?: boolean;
 }
 
+/**
+ * Static lookup for the accordion's open-state border/tint, keyed by the same
+ * palette names the section icons already use. Tailwind only emits classes it
+ * can see as complete literals at build time -- `border-${color}/25` template
+ * interpolation gets purged, so this map must enumerate every color the
+ * consent sections pass in (kept in sync with the `color` props below).
+ */
+const CONSENT_TONE: Record<string, { border: string; bg: string }> = {
+  violet: { border: 'border-violet-500/25', bg: 'bg-violet-500/5' },
+  emerald: { border: 'border-emerald-500/25', bg: 'bg-emerald-500/5' },
+  cyan: { border: 'border-cyan-500/25', bg: 'bg-cyan-500/5' },
+  amber: { border: 'border-amber-500/25', bg: 'bg-amber-500/5' },
+  indigo: { border: 'border-indigo-500/25', bg: 'bg-indigo-500/5' },
+  teal: { border: 'border-teal-500/25', bg: 'bg-teal-500/5' },
+  orange: { border: 'border-orange-500/25', bg: 'bg-orange-500/5' },
+  rose: { border: 'border-rose-500/25', bg: 'bg-rose-500/5' },
+};
+
 function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false, isNew }: SectionProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const tone = CONSENT_TONE[color];
   return (
-    <div className={`border rounded-xl overflow-hidden transition-colors ${open ? `border-${color}/25 bg-${color}/5` : 'border-primary/10 bg-secondary/20'}`}
-      style={open ? { borderColor: `var(--color-${color}, rgba(100,100,100,0.25))` } : undefined}
+    <div
+      className={`border rounded-xl overflow-hidden transition-colors ${
+        open ? `${tone?.border ?? 'border-primary/25'} ${tone?.bg ?? 'bg-primary/5'}` : 'border-primary/10 bg-secondary/20'
+      }`}
     >
       <button
         onClick={() => setOpen(v => !v)}

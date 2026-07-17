@@ -2789,5 +2789,21 @@
       "other": "其他"
     },
     "title": "变更历史"
-  }
+  },
+  "sigil_edit_channels_label": "通知渠道",
+  "sigil_edit_custom_connector": "自定义连接器 — 无匹配的品牌图标。",
+  "sigil_edit_error_off": "使用默认错误处理策略。",
+  "sigil_edit_error_on": "已配置自定义错误处理策略。",
+  "sigil_edit_event_off": "未配置事件订阅。",
+  "sigil_edit_event_on": "此能力订阅了事件。",
+  "sigil_edit_memory_off": "记忆功能已关闭 — 此能力以无状态方式运行。",
+  "sigil_edit_memory_on": "此能力已启用持久记忆。",
+  "sigil_edit_no_channels": "此能力未配置通知渠道。",
+  "sigil_edit_no_connector": "此能力未声明连接器。",
+  "sigil_edit_no_dim_editor": "此维度尚未接入编辑器。",
+  "sigil_edit_no_trigger": "此能力未配置触发器。",
+  "sigil_edit_review_off": "无人工审核关卡 — 操作自主执行。",
+  "sigil_edit_review_on": "此能力执行前需要人工审核。",
+  "sigil_edit_service_label": "服务：{key}",
+  "sigil_edit_when_label": "触发条件"
 }

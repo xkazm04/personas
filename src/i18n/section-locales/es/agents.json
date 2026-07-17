@@ -2789,5 +2789,21 @@
       "other": "Otro"
     },
     "title": "Historial de cambios"
-  }
+  },
+  "sigil_edit_channels_label": "Canales",
+  "sigil_edit_custom_connector": "Conector personalizado: sin ícono de marca coincidente.",
+  "sigil_edit_error_off": "Usa la política de errores predeterminada.",
+  "sigil_edit_error_on": "Hay una política de manejo de errores personalizada configurada.",
+  "sigil_edit_event_off": "No hay suscripciones a eventos configuradas.",
+  "sigil_edit_event_on": "Esta capacidad se suscribe a eventos.",
+  "sigil_edit_memory_off": "La memoria está desactivada: la capacidad se ejecuta sin estado.",
+  "sigil_edit_memory_on": "La memoria persistente está activada para esta capacidad.",
+  "sigil_edit_no_channels": "No hay canales de notificación para esta capacidad.",
+  "sigil_edit_no_connector": "Esta capacidad no declara un conector.",
+  "sigil_edit_no_dim_editor": "Aún no hay un editor asociado a esta dimensión.",
+  "sigil_edit_no_trigger": "No hay un disparador configurado en esta capacidad.",
+  "sigil_edit_review_off": "No hay control de revisión humana: las acciones son autónomas.",
+  "sigil_edit_review_on": "Se requiere revisión humana antes de que esta capacidad actúe.",
+  "sigil_edit_service_label": "Servicio: {key}",
+  "sigil_edit_when_label": "Cuándo"
 }

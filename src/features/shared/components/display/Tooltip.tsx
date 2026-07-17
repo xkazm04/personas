@@ -214,6 +214,14 @@ export function Tooltip({
   const tooltipId = useId();
 
   const show = useCallback(() => {
+    // mouseenter + focus can both fire before the matching leave/blur (e.g. a
+    // click that also hovers) -- clear any already-scheduled timer first so a
+    // second `show()` can't leave an orphaned timer that fires after `hide()`
+    // already ran, producing a ghost tooltip.
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
     timerRef.current = setTimeout(() => {
       setVisible(true);
     }, delay);

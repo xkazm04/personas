@@ -425,7 +425,7 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
                 activeCapability.dimensions.includes(editingPetal) &&
                 !disabledDimsForActive.has(editingPetal)
               }
-              body={resolveSigilEditBody(editingPetal, { uc: activeCapability })}
+              body={resolveSigilEditBody(editingPetal, { uc: activeCapability, t })}
               onToggleActive={(next) => toggleDimDisabled(editingPetal, next)}
               onClose={() => setEditingPetal(null)}
             />

@@ -2789,5 +2789,21 @@
       "other": "Khác"
     },
     "title": "Lịch sử thay đổi"
-  }
+  },
+  "sigil_edit_channels_label": "Kênh",
+  "sigil_edit_custom_connector": "Trình kết nối tùy chỉnh — không khớp biểu tượng thương hiệu.",
+  "sigil_edit_error_off": "Sử dụng chính sách xử lý lỗi mặc định.",
+  "sigil_edit_error_on": "Đã cấu hình chính sách xử lý lỗi tùy chỉnh.",
+  "sigil_edit_event_off": "Chưa cấu hình đăng ký sự kiện nào.",
+  "sigil_edit_event_on": "Năng lực này đăng ký nhận sự kiện.",
+  "sigil_edit_memory_off": "Bộ nhớ đang tắt — năng lực chạy không lưu trạng thái.",
+  "sigil_edit_memory_on": "Bộ nhớ lâu dài đang bật cho năng lực này.",
+  "sigil_edit_no_channels": "Không có kênh thông báo nào cho năng lực này.",
+  "sigil_edit_no_connector": "Năng lực này không khai báo trình kết nối nào.",
+  "sigil_edit_no_dim_editor": "Chưa có trình chỉnh sửa cho mục này.",
+  "sigil_edit_no_trigger": "Chưa cấu hình trình kích hoạt nào cho năng lực này.",
+  "sigil_edit_review_off": "Không có cổng xét duyệt của con người — hành động được thực hiện tự động.",
+  "sigil_edit_review_on": "Cần có xét duyệt của con người trước khi năng lực này hành động.",
+  "sigil_edit_service_label": "Dịch vụ: {key}",
+  "sigil_edit_when_label": "Khi"
 }
