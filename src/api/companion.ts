@@ -376,16 +376,19 @@ export interface KokoroStatus {
 }
 
 /**
- * Streaming progress for the one-click Kokoro install. The frontend subscribes
- * to `KOKORO_INSTALL_EVENT` and matches on `phase`. `bytesTotal` is null when
- * the upstream didn't send Content-Length.
+ * Streaming progress for a one-click TTS sidecar install (Kokoro or Pocket).
+ * The frontend subscribes to the relevant install event and matches on
+ * `phase`. `bytesTotal` is null when the upstream didn't send Content-Length.
  */
-export interface KokoroInstallProgress {
+export interface SidecarInstallProgress {
   phase: 'downloading_engine' | 'downloading_model' | 'extracting' | 'completed' | 'failed';
   bytesDownloaded: number;
   bytesTotal: number | null;
   error: string | null;
 }
+
+/** @deprecated Use {@link SidecarInstallProgress} — kept as an alias for existing imports. */
+export type KokoroInstallProgress = SidecarInstallProgress;
 
 /** Tauri event channel for Kokoro install progress + terminal states. */
 export const KOKORO_INSTALL_EVENT = 'companion://kokoro-install';
@@ -435,14 +438,9 @@ export interface PocketStatus {
 
 /**
  * Streaming progress for the one-click Pocket TTS install. Same shape and
- * semantics as `KokoroInstallProgress`.
+ * semantics as {@link SidecarInstallProgress}.
  */
-export interface PocketInstallProgress {
-  phase: 'downloading_engine' | 'downloading_model' | 'extracting' | 'completed' | 'failed';
-  bytesDownloaded: number;
-  bytesTotal: number | null;
-  error: string | null;
-}
+export type PocketInstallProgress = SidecarInstallProgress;
 
 /** Tauri event channel for Pocket TTS install progress + terminal states. */
 export const POCKET_INSTALL_EVENT = 'companion://pocket-install';

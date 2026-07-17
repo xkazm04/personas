@@ -13,9 +13,7 @@ import { Copy, Check, ExternalLink, Server } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-
-
-const MCP_BASE_URL = 'http://127.0.0.1:9420';
+import { MCP_BASE_URL } from '../libs/mcpServer';
 
 const ENDPOINTS = [
   { method: 'GET', path: '/health', descriptionKey: 'endpoint_health' as const },

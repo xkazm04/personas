@@ -1,23 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Shield, RotateCcw, Play, AlertTriangle, ScrollText } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { CONSENT_KEY, hasUserConsented, resetUserConsent } from '@/features/shared/components/overlays/FirstUseConsentModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useConfirmClick } from '@/features/settings/shared/useConfirmClick';
 
 export default function AdminSettings() {
   const [consentStatus, setConsentStatus] = useState(hasUserConsented);
-  const [confirmConsentReset, setConfirmConsentReset] = useState(false);
   const { t } = useTranslation();
   const s = t.settings.admin;
 
-  // Clear the pending confirm-flag auto-revert timer on unmount so it doesn't
-  // setState after unmount (and doesn't fire after a re-click that would have
-  // reset the flag on its own).
-  const consentResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (consentResetTimerRef.current) clearTimeout(consentResetTimerRef.current);
-  }, []);
+  // First click arms + auto-reverts after 3s; second click commits the reset.
+  // The timer is ref-tracked and cleared on unmount inside the hook.
+  const { armed: confirmConsentReset, trigger: triggerConsentReset } = useConfirmClick(
+    () => {
+      resetUserConsent();
+      setConsentStatus(false);
+    },
+  );
 
   return (
     <ContentBox>
@@ -52,24 +53,7 @@ export default function AdminSettings() {
 
               <div className="flex items-center gap-2 pt-1">
                 <button
-                  onClick={() => {
-                    if (!confirmConsentReset) {
-                      setConfirmConsentReset(true);
-                      if (consentResetTimerRef.current) clearTimeout(consentResetTimerRef.current);
-                      consentResetTimerRef.current = setTimeout(() => {
-                        consentResetTimerRef.current = null;
-                        setConfirmConsentReset(false);
-                      }, 3000);
-                      return;
-                    }
-                    if (consentResetTimerRef.current) {
-                      clearTimeout(consentResetTimerRef.current);
-                      consentResetTimerRef.current = null;
-                    }
-                    resetUserConsent();
-                    setConsentStatus(false);
-                    setConfirmConsentReset(false);
-                  }}
+                  onClick={triggerConsentReset}
                   className={`flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal border transition-colors ${
                     confirmConsentReset
                       ? 'bg-red-500/15 text-red-300 border-red-500/25 hover:bg-red-500/25'

@@ -26,14 +26,13 @@ import { Copy, Check, AlertTriangle, X } from 'lucide-react';
 import type { CreateApiKeyResponse } from '@/api/auth/externalApiKeys';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { MCP_BASE_URL } from '../libs/mcpServer';
 
 
 interface CreatedKeyDialogProps {
   response: CreateApiKeyResponse;
   onClose: () => void;
 }
-
-const MCP_BASE_URL = 'http://127.0.0.1:9420';
 
 const PANEL_SPRING = { type: 'spring' as const, stiffness: 260, damping: 24 };
 const FIELD_SPRING = { type: 'spring' as const, stiffness: 240, damping: 22, delay: 0.08 };

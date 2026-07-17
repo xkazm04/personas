@@ -37,6 +37,7 @@ import { revokePairing } from '@/api/auth/pairing';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
+import { useConfirmClick } from '@/features/settings/shared/useConfirmClick';
 
 // A key is considered "stale" — i.e. probably forgotten — when it's older than
 // the grace window AND either never used or unused for the inactivity window.
@@ -290,7 +291,7 @@ interface ApiKeyRowProps {
 function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRowProps) {
   const { t, tx } = useTranslation();
   const s = t.settings.api_keys;
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const { armed: confirmDelete, trigger: triggerDelete } = useConfirmClick(onDelete);
 
   const isRevoked = apiKey.revoked_at !== null || !apiKey.enabled;
   const expiry = expiryInfo(apiKey);
@@ -395,15 +396,7 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRow
         )}
         <button
           type="button"
-          onClick={() => {
-            if (!confirmDelete) {
-              setConfirmDelete(true);
-              setTimeout(() => setConfirmDelete(false), 3000);
-              return;
-            }
-            setConfirmDelete(false);
-            onDelete();
-          }}
+          onClick={triggerDelete}
           disabled={actioning}
           className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
             confirmDelete
@@ -440,7 +433,7 @@ interface PairedAppRowProps {
 function PairedAppRow({ apiKey, actioning, onDisconnect, onAudit }: PairedAppRowProps) {
   const { t, tx } = useTranslation();
   const s = t.settings.api_keys;
-  const [confirm, setConfirm] = useState(false);
+  const { armed: confirm, trigger: triggerDisconnect } = useConfirmClick(onDisconnect);
   const expiry = expiryInfo(apiKey);
   const lastUsed = formatRelativeTime(apiKey.last_used_at, s.never_used, { dateFallbackDays: 30 });
 
@@ -488,15 +481,7 @@ function PairedAppRow({ apiKey, actioning, onDisconnect, onAudit }: PairedAppRow
         </button>
         <button
           type="button"
-          onClick={() => {
-            if (!confirm) {
-              setConfirm(true);
-              setTimeout(() => setConfirm(false), 3000);
-              return;
-            }
-            setConfirm(false);
-            onDisconnect();
-          }}
+          onClick={triggerDisconnect}
           disabled={actioning}
           className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
             confirm
