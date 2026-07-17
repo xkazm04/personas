@@ -529,17 +529,28 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         void get().finishChatStream(fullResponse, pid, sid, get().activeExecutionId ?? undefined, 'cancelled');
       }
 
-      // Preserve the execution ID for Resume before clearing active state.
-      const lastId = get().activeExecutionId;
-      // Foreground run is being torn down — drop its stable idempotency key so
-      // a subsequent identical request mints a fresh one.
-      pendingForegroundIdem = null;
-      // Always reset execution state regardless of API success/failure.
-      executionLifecycle.markCancelled(set);
-      set({ activeExecutionId: null, lastExecutionId: lastId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null, isExecuting: false });
-      try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch4")(err); }
-      const personaId = get().selectedPersona?.id;
-      if (personaId) get().fetchExecutions(personaId);
+      // If another path (e.g. clearExecutionOutput) already tore this
+      // execution's state down — or a new execution has since started — skip
+      // the redundant teardown below. Without this guard, an un-awaited
+      // cancelExecution racing clearExecutionOutput would overwrite
+      // lastExecutionId with null (losing the Resume id) and double-run
+      // markCancelled/localStorage-removal/fetchExecutions.
+      // (No `return` here — a control-flow statement inside `finally` would
+      // silently swallow whatever the try/catch above was doing — so the
+      // rest of the teardown is gated by wrapping it in this `if` instead.)
+      if (get().activeExecutionId === executionId) {
+        // Preserve the execution ID for Resume before clearing active state.
+        const lastId = get().activeExecutionId;
+        // Foreground run is being torn down — drop its stable idempotency key
+        // so a subsequent identical request mints a fresh one.
+        pendingForegroundIdem = null;
+        // Always reset execution state regardless of API success/failure.
+        executionLifecycle.markCancelled(set);
+        set({ activeExecutionId: null, lastExecutionId: lastId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null, isExecuting: false });
+        try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch4")(err); }
+        const personaId = get().selectedPersona?.id;
+        if (personaId) get().fetchExecutions(personaId);
+      }
     }
   },
 
@@ -741,15 +752,19 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   clearExecutionOutput: () => {
     // If an execution is still running, cancel it on the backend first to
     // avoid orphaning the engine (which would keep consuming API credits).
+    // cancelExecution is fired-and-forgotten (not awaited) here, but its
+    // finally-block teardown now no-ops once activeExecutionId no longer
+    // matches (see cancelExecution), so it won't clobber the lastExecutionId
+    // we set below or double-run teardown.
     const activeId = get().activeExecutionId;
     if (activeId && get().isExecuting) {
-      get().cancelExecution(activeId);
+      void get().cancelExecution(activeId);
     }
     executionSink.clear();
     // Drop any stable foreground idempotency key — the run is being abandoned.
     pendingForegroundIdem = null;
     executionLifecycle.markCancelled(set);
-    set({ executionOutput: [], executionOutputBytes: 0, activeExecutionId: null, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: null, queuePosition: null, queueDepth: null, isExecuting: false });
+    set({ executionOutput: [], executionOutputBytes: 0, activeExecutionId: null, lastExecutionId: activeId ?? get().lastExecutionId, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: null, queuePosition: null, queueDepth: null, isExecuting: false });
   },
 
   setQueueStatus: (position, depth) => {

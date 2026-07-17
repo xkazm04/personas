@@ -3,6 +3,15 @@ import * as Sentry from "@sentry/react";
 import type { SystemStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import * as api from "@/api/researchLab/researchLab";
+import type {
+  ResearchProject, CreateResearchProject, UpdateResearchProject,
+  ResearchSource, CreateResearchSource, CreateSourceResult,
+  ResearchHypothesis, CreateResearchHypothesis,
+  ResearchExperiment, CreateResearchExperiment,
+  ResearchFinding, CreateResearchFinding,
+  ResearchReport, CreateResearchReport,
+  ResearchDashboardStats,
+} from "@/api/researchLab/researchLab";
 
 /**
  * Passive list-load failure handler. Research-lab list fetches run on mount,
@@ -20,15 +29,6 @@ function logPassiveFetchFailure(action: string, err: unknown): void {
     Sentry.captureException(err);
   });
 }
-import type {
-  ResearchProject, CreateResearchProject, UpdateResearchProject,
-  ResearchSource, CreateResearchSource, CreateSourceResult,
-  ResearchHypothesis, CreateResearchHypothesis,
-  ResearchExperiment, CreateResearchExperiment,
-  ResearchFinding, CreateResearchFinding,
-  ResearchReport, CreateResearchReport,
-  ResearchDashboardStats,
-} from "@/api/researchLab/researchLab";
 
 export interface ResearchLabSlice {
   // Projects

@@ -783,7 +783,11 @@ export const createMatrixBuildSlice: StateCreator<
     })));
     // Emit AFTER commit so listeners can read settled state and any reentrant
     // set() they trigger doesn't interleave with this updater closure.
-    const sess = get().buildSessions[event.session_id];
+    // Resolve the target the same way updateSessionInState did (falling back
+    // to the active session when session_id is absent) so the broadcast
+    // doesn't silently miss the transition it just committed.
+    const targetId = event.session_id ?? get().activeBuildSessionId;
+    const sess = targetId ? get().buildSessions[targetId] : undefined;
     if (sess) {
       storeBus.emit('build:phase-changed', { phase, personaId: sess.personaId });
     }

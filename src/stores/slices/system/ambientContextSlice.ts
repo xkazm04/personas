@@ -118,6 +118,7 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
   },
 
   updateSensoryPolicy: async (personaId: string, policy: SensoryPolicy) => {
+    latestPolicyPersonaId = personaId;
     try {
       await setAmbientSensoryPolicy(personaId, policy);
       // Only commit if this is still the active persona. Otherwise the user

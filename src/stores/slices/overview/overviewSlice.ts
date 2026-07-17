@@ -200,7 +200,6 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       const limit = reset
         ? GLOBAL_PAGE_SIZE
         : Math.min(prevLimit + GLOBAL_PAGE_SIZE, MAX_GLOBAL_LIMIT);
-      set({ globalExecutionsLimit: limit });
 
       const statusFilter = status === 'running' ? 'running' : status;
       const rows = await listAllExecutions(limit, statusFilter, personaId);
@@ -235,6 +234,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       const rawCount = rows.length;
       set({
         globalExecutions: merged,
+        globalExecutionsLimit: limit,
         globalExecutionsHasMore: rawCount >= limit,
         globalExecutionsOffset: merged.length,
         globalExecutionsWarning: null,

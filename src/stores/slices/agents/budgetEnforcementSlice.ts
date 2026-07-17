@@ -111,16 +111,15 @@ export const createBudgetEnforcementSlice: StateCreator<AgentStore, [], [], Budg
   }),
 
   getBudgetStatus: (personaId: string) => {
+    // Pure read: never mutate the store here — see budgetEnforcementLoading
+    // side-effect note above `deduplicateFetch`. Passive refresh on
+    // staleness/TTL-expiry is handled out-of-band by the sidebar's 30s
+    // poller (useBadgeCounts -> fetchBudgetSpend), not by this getter, so
+    // components can call it safely from a render-time selector.
     const state = get();
-    if (state.budgetStale) {
-      // Passive refresh: kick off a background fetch so the next check has fresh data
-      void get().fetchBudgetSpend();
-      return 'stale';
-    }
+    if (state.budgetStale) return 'stale';
     // Treat cache as stale if it's older than the TTL
     if (state.budgetLastFetchedAt !== null && Date.now() - state.budgetLastFetchedAt > BUDGET_TTL_MS) {
-      // Passive refresh on TTL expiry
-      void get().fetchBudgetSpend();
       return 'stale';
     }
     const entry = state.budgetSpendMap.get(personaId);
@@ -132,16 +131,13 @@ export const createBudgetEnforcementSlice: StateCreator<AgentStore, [], [], Budg
   },
 
   isBudgetBlocked: (personaId: string) => {
+    // Pure read — see getBudgetStatus comment above.
     const state = get();
     // Fail closed: if budget data is stale, block unless user explicitly overrode
     if (state.budgetStale) {
-      // Passive refresh so stale state resolves automatically
-      void get().fetchBudgetSpend();
       return !state.budgetStaleOverrides.has(personaId);
     }
     if (state.budgetLastFetchedAt !== null && Date.now() - state.budgetLastFetchedAt > BUDGET_TTL_MS) {
-      // Passive refresh on TTL expiry
-      void get().fetchBudgetSpend();
       return !state.budgetStaleOverrides.has(personaId);
     }
     const entry = state.budgetSpendMap.get(personaId);

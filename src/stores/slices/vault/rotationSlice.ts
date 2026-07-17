@@ -41,6 +41,15 @@ export interface RotationOverviewItem {
   status: RotationStatus;
 }
 
+// Signature of the credential-id set as of the last full
+// fetchAllRotationStatuses success. Lets the "already cached" short-circuit
+// distinguish "nothing changed since last fetch" from "the credential set
+// changed but every entry in it happens to already have a (possibly stale)
+// cached status" — without this, adding/removing credentials or a
+// backend-side status change (rotation daemon) would never be picked up
+// again once every id had been seen once.
+let lastFetchedCredentialSignature: string | null = null;
+
 export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice> = (set, get) => ({
   rotationStatuses: {},
 
@@ -59,17 +68,28 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
 
   fetchAllRotationStatuses: async () => {
     const credentials = get().credentials;
-    if (credentials.length === 0) return;
+    if (credentials.length === 0) {
+      // Nothing to show — also drop any orphaned entries from a previous
+      // credential set so a fully-cleared vault doesn't leave stale badges.
+      lastFetchedCredentialSignature = null;
+      if (Object.keys(get().rotationStatuses).length > 0) {
+        set({ rotationStatuses: {} });
+      }
+      return;
+    }
 
-    // Skip when every credential's status is already cached this session.
-    // Without this guard, every mount of RotationOverviewPanel re-fetched
-    // statuses that hadn't changed (the 2026-05-17 perf-walk observed 25
-    // get_rotation_status calls on every Overview landing). Callers that need
-    // freshness should clear `rotationStatuses` or use `fetchRotationStatus`
-    // for the specific credential.
+    // Skip when every credential's status is already cached AND the
+    // credential set itself hasn't changed since the last full fetch. This
+    // still avoids the redundant re-fetch on every RotationOverviewPanel
+    // mount (the 2026-05-17 perf-walk observed 25 get_rotation_status calls
+    // on every Overview landing) while allowing a genuinely new/removed
+    // credential to trigger a refresh. Callers that need to force a refresh
+    // of unchanged data should clear `rotationStatuses` or use
+    // `fetchRotationStatus` for the specific credential.
+    const signature = credentials.map((c) => c.id).sort().join(',');
     const cached = get().rotationStatuses;
     const allCached = credentials.every((c) => cached[c.id]);
-    if (allCached) return;
+    if (allCached && signature === lastFetchedCredentialSignature) return;
 
     // Single batched IPC instead of N per-credential round-trips. The
     // 2026-05-25 profiling pass measured 27 get_rotation_status calls
@@ -77,9 +97,18 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
     // backend now computes every credential's status in one command.
     try {
       const statuses = await getAllRotationStatuses();
-      set((state) => ({
-        rotationStatuses: { ...state.rotationStatuses, ...statuses },
-      }));
+      const currentIds = new Set(credentials.map((c) => c.id));
+      set((state) => {
+        // Merge fresh statuses, then prune any entry whose credential no
+        // longer exists (deleted since it was last cached).
+        const merged = { ...state.rotationStatuses, ...statuses };
+        const pruned: Record<string, RotationStatus> = {};
+        for (const [id, status] of Object.entries(merged)) {
+          if (currentIds.has(id)) pruned[id] = status;
+        }
+        return { rotationStatuses: pruned };
+      });
+      lastFetchedCredentialSignature = signature;
     } catch (err) {
       reportError(err, "Failed to fetch rotation statuses", set);
     }

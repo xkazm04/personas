@@ -167,7 +167,7 @@ function finalise(issues: DryRunIssue[]): DryRunResult {
   const hasNonInfo = issues.some((i) => i.severity !== 'info');
   const status: DryRunResult['status'] =
     hasError ? 'blocked' :
-    issues.length > 0 ? (hasNonInfo ? 'partial' : 'partial') :
+    issues.length > 0 ? (hasNonInfo ? 'partial' : 'ready') :
     'ready';
   return { status, capabilities: [], issues };
 }

@@ -39,12 +39,15 @@ export interface MemorySlice {
     deleteIdA: string,
     deleteIdB: string,
   ) => Promise<boolean>;
-  reviewMemories: (personaId?: string) => Promise<MemoryReviewResult>;
+  /** Returns null (without starting a new review) if a review is already
+   *  in flight and no prior result exists yet to return instead. */
+  reviewMemories: (personaId?: string) => Promise<MemoryReviewResult | null>;
   /** Reflection pass (Memory Engine v2): consolidate related memories into
    *  insights with provenance. Proposal-mode only; per-persona. Shares the
    *  memoryReview* running/result/error state with reviewMemories — the UI
-   *  treats both as "an LLM memory pass is in flight". */
-  reflectMemories: (personaId: string, instructions?: string) => Promise<MemoryReviewResult>;
+   *  treats both as "an LLM memory pass is in flight". Returns null under
+   *  the same already-running-with-no-prior-result condition as reviewMemories. */
+  reflectMemories: (personaId: string, instructions?: string) => Promise<MemoryReviewResult | null>;
   clearMemoryReviewResult: () => void;
   setMemoryTier: (id: string, tier: MemoryTier) => Promise<void>;
   dismissMemoryAction: (actionId: string) => void;
@@ -209,7 +212,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
 
   reviewMemories: async (personaId?) => {
     // Guard against double-clicks while a review is already running.
-    if (get().memoryReviewRunning) return get().memoryReviewResult as MemoryReviewResult;
+    if (get().memoryReviewRunning) return get().memoryReviewResult;
     set({ memoryReviewRunning: true, memoryReviewResult: null, memoryReviewError: null });
     try {
       const memoriesBefore = get().memories;
@@ -238,7 +241,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
   },
 
   reflectMemories: async (personaId, instructions?) => {
-    if (get().memoryReviewRunning) return get().memoryReviewResult as MemoryReviewResult;
+    if (get().memoryReviewRunning) return get().memoryReviewResult;
     set({ memoryReviewRunning: true, memoryReviewResult: null, memoryReviewError: null });
     try {
       const result = await reflectMemoriesWithCli(personaId, instructions);

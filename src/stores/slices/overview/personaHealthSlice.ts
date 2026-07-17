@@ -138,24 +138,31 @@ export interface PersonaHealthSlice {
 // sub-score). The shared budget curve is now strictly monotonic.
 
 function detectFailureTrend(
-  personaDailyRates: number[],
+  personaDailyPoints: { date: string; rate: number }[],
 ): { trend: 'improving' | 'stable' | 'degrading'; predictedFailureDays: number | null } {
-  // `personaDailyRates` is THIS persona's own daily success rate (0-100), one
-  // entry per active day, chronological. Regress the trailing 14 to detect a
-  // real per-persona slope instead of the fleet-wide noise the old proxy fed.
-  const dailyRates = personaDailyRates.slice(-14);
-  if (dailyRates.length < 3) return { trend: 'stable', predictedFailureDays: null };
+  // `personaDailyPoints` is THIS persona's own daily success rate (0-100), one
+  // entry per active day, chronological, each keyed to its real calendar
+  // date. Regress the trailing 14 active days against their actual day
+  // offsets (not array position) so an intermittently-active persona (e.g.
+  // activity every 3rd day) doesn't get its slope compressed into a
+  // per-active-day rate that's then mislabeled as "% change per day".
+  const points = personaDailyPoints.slice(-14);
+  if (points.length < 3) return { trend: 'stable', predictedFailureDays: null };
 
-  // Simple linear regression on success rates
-  const n = dailyRates.length;
-  const xMean = (n - 1) / 2;
-  const yMean = dailyRates.reduce((s, v) => s + v, 0) / n;
+  const MS_PER_DAY = 86_400_000;
+  const t0 = new Date(points[0]!.date).getTime();
+  const xs = points.map((p) => (new Date(p.date).getTime() - t0) / MS_PER_DAY);
+
+  // Simple linear regression on success rates against real day offsets
+  const n = points.length;
+  const xMean = xs.reduce((s, v) => s + v, 0) / n;
+  const yMean = points.reduce((s, p) => s + p.rate, 0) / n;
   let num = 0, den = 0;
   for (let i = 0; i < n; i++) {
-    num += (i - xMean) * (dailyRates[i]! - yMean);
-    den += (i - xMean) ** 2;
+    num += (xs[i]! - xMean) * (points[i]!.rate - yMean);
+    den += (xs[i]! - xMean) ** 2;
   }
-  const slope = den !== 0 ? num / den : 0; // % change per day
+  const slope = den !== 0 ? num / den : 0; // % change per calendar day
 
   const trend: 'improving' | 'stable' | 'degrading' =
     slope > 1 ? 'improving' : slope < -1 ? 'degrading' : 'stable';
@@ -163,7 +170,7 @@ function detectFailureTrend(
   // Predict when success rate hits 50% (catastrophic)
   let predictedFailureDays: number | null = null;
   if (slope < -0.5) {
-    const currentRate = dailyRates[dailyRates.length - 1]!;
+    const currentRate = points[points.length - 1]!.rate;
     if (currentRate > 50) {
       predictedFailureDays = Math.ceil((currentRate - 50) / Math.abs(slope));
     }
@@ -276,12 +283,14 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
         const personaReliability = bundle.personaStats ?? [];
         const personaDaily = bundle.personaDaily ?? [];
         const reliabilityMap = new Map(personaReliability.map(r => [r.persona_id, r]));
-        const dailyRatesByPersona = new Map<string, number[]>();
+        const dailyRatesByPersona = new Map<string, { date: string; rate: number }[]>();
         for (const d of personaDaily) {
           // persona_daily is ordered day-ascending per persona server-side, so
           // this preserves chronological order for the trend regression.
+          // Keep each point's real calendar date so the regression can use
+          // true day offsets instead of packed array position.
           const arr = dailyRatesByPersona.get(d.persona_id) ?? [];
-          arr.push(d.success_rate * 100);
+          arr.push({ date: d.date, rate: d.success_rate * 100 });
           dailyRatesByPersona.set(d.persona_id, arr);
         }
 

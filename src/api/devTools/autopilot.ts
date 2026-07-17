@@ -8,9 +8,18 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
  *  global autonomy flags; the UI renders that as `off`. */
 export type AutopilotMode = "off" | "measure" | "suggest" | "full";
 
+const KNOWN_MODES = new Set<string>(["off", "measure", "suggest", "full"]);
+
+/** Narrow a raw backend string to a known mode, or `null` if it's unset/unrecognized
+ *  (schema drift, a new mode the UI doesn't know, a stale DB value). Never lets an
+ *  unknown string flow through typed as a valid `AutopilotMode`. */
+function toKnownMode(v: string | null): AutopilotMode | null {
+  return v != null && KNOWN_MODES.has(v) ? (v as AutopilotMode) : null;
+}
+
 export async function getAutopilotMode(projectId: string): Promise<AutopilotMode | null> {
   const v = await invoke<string | null>("dev_tools_get_autopilot_mode", { projectId });
-  return (v as AutopilotMode | null) ?? null;
+  return toKnownMode(v);
 }
 
 /** Set a project's mode. Pass an empty string to clear the override (revert to
@@ -20,5 +29,5 @@ export async function setAutopilotMode(
   mode: AutopilotMode | "",
 ): Promise<AutopilotMode | null> {
   const v = await invoke<string | null>("dev_tools_set_autopilot_mode", { projectId, mode });
-  return (v as AutopilotMode | null) ?? null;
+  return toKnownMode(v);
 }

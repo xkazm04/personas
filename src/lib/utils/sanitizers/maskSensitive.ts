@@ -48,8 +48,22 @@ export function maskSensitiveJson(raw: string | null | undefined): string | null
 
 // -- Error message sanitization -------------------------------------------
 
-// Unix/Windows absolute file paths with optional :line:col
-const FILE_PATH_RE = /(?:\/[\w./-]+|[A-Z]:\\[\w.\\ -]+)(?::\d+(?::\d+)?)?/g;
+// Unix/Windows absolute file paths with optional :line:col. The unix-path
+// branch requires the leading `/` NOT be preceded by `:` or another `/` --
+// otherwise it also matches the `//host/path` portion of an ordinary URL
+// (e.g. `https://api.example.com/v1/run`), shredding it into `https:[path]`
+// before EMAIL/host rules ever see it.
+const FILE_PATH_RE = /(?:(?<![:/])\/[\w./-]+|[A-Z]:\\[\w.\\ -]+)(?::\d+(?::\d+)?)?/g;
+
+// Full http(s) URLs, matched and protected before FILE_PATH_RE runs so a
+// URL's path segment isn't mistaken for a filesystem path. Query/fragment
+// (where tokens live) are stripped; scheme+host+path are preserved for
+// diagnostic value.
+const URL_RE = /\bhttps?:\/\/[^\s"'<>]+/g;
+
+// Placeholder wrapper used to shield a protected URL from the redaction
+// passes below. Unlikely to collide with real error text.
+const URL_PLACEHOLDER_RE = /@@SANITIZED_URL_(\d+)@@/g;
 
 // IPv4 addresses (but not version-like patterns such as 1.2.3)
 const IPV4_RE = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b/g;
@@ -73,11 +87,34 @@ const PREFIXED_SECRET_RE = /\b(PMR?S|gh[pous]|AKIA|sk_live_|xox[baprs]-)[a-zA-Z0
  * and potential secrets from a string to prevent leakage in plaintext storage.
  */
 export function sanitizeErrorMessage(msg: string): string {
-  return msg
+  // Protect full URLs before the file-path pass runs (it would otherwise
+  // mistake the `//host/path` portion of a URL for a unix path and shred it,
+  // e.g. `Failed to reach https://api.example.com/v1/run` -> `Failed to
+  // reach https:[path]`). Strip the query/fragment now -- that's where a
+  // token would live -- and stash the scheme+host+path behind a placeholder
+  // so the later IP/host/email/secret passes still get a look at it, then
+  // restore it at the end.
+  const urls: string[] = [];
+  let out = msg.replace(URL_RE, (match) => {
+    let safe = match;
+    try {
+      const u = new URL(match);
+      safe = `${u.protocol}//${u.host}${u.pathname}`;
+    } catch {
+      // Not a parseable URL despite matching the loose regex; leave as-is
+      // and let the remaining passes handle it.
+    }
+    const idx = urls.push(safe) - 1;
+    return `@@SANITIZED_URL_${idx}@@`;
+  });
+
+  out = out
     .replace(FILE_PATH_RE, '[path]')
     .replace(IPV4_RE, '[ip]')
     .replace(INTERNAL_HOST_RE, '[host]')
     .replace(EMAIL_RE, '[email]')
     .replace(INLINE_SECRET_RE, (_match, key) => `${key}: [secret]`)
     .replace(PREFIXED_SECRET_RE, '[secret]');
+
+  return out.replace(URL_PLACEHOLDER_RE, (_m, idx: string) => urls[Number(idx)] ?? '[url]');
 }

@@ -89,17 +89,30 @@ export const startRecipeVersioning = (recipeId: string, changeRequirements: stri
 export const cancelRecipeVersioning = () =>
   invoke<CancelResult>("cancel_recipe_versioning");
 
-export const acceptRecipeVersion = (
-  recipeId: string,
-  promptTemplate: string,
-  inputSchema: string | null,
-  sampleInputs: string | null,
-  description: string | null,
-  changesSummary: string | null,
+export interface AcceptRecipeVersionInput {
+  recipeId: string;
+  promptTemplate: string;
+  inputSchema: string | null;
+  sampleInputs: string | null;
+  description: string | null;
+  changesSummary: string | null;
   /** Recipe updated_at captured when generation started — optimistic-lock token
    *  so an edit during the generation window is rejected, not clobbered. */
-  expectedUpdatedAt: string | null,
-) =>
+  expectedUpdatedAt: string | null;
+}
+
+// Options object (not positional args) — six same-typed `string | null` fields
+// invite a silent mis-mapping (e.g. transposed description/changesSummary) that
+// TypeScript can't catch across a flat positional signature.
+export const acceptRecipeVersion = ({
+  recipeId,
+  promptTemplate,
+  inputSchema,
+  sampleInputs,
+  description,
+  changesSummary,
+  expectedUpdatedAt,
+}: AcceptRecipeVersionInput) =>
   invoke<RecipeDefinition>("accept_recipe_version", {
     recipeId, promptTemplate, inputSchema, sampleInputs, description, changesSummary, expectedUpdatedAt,
   });

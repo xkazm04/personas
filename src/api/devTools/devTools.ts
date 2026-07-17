@@ -579,8 +579,12 @@ export const cancelScanCodebase = (scanId: string) =>
   safeInvoke<boolean>(false, "dev_tools_cancel_scan_codebase", { scanId });
 
 export const getScanCodebaseStatus = (scanId: string) =>
+  // "unavailable" (command not registered in this build) must stay distinct from
+  // the real "not_found" status the backend returns for an unknown/expired scan
+  // id — otherwise a scan that never started masquerades as one that simply
+  // ended, and a poller can't tell the two apart.
   safeInvoke<{ scan_id: string; status: string; error: string | null; lines: string[] }>(
-    { scan_id: scanId, status: "not_found", error: null, lines: [] },
+    { scan_id: scanId, status: "unavailable", error: null, lines: [] },
     "dev_tools_get_scan_codebase_status",
     { scanId },
   );

@@ -785,7 +785,10 @@ const registry: EventRegistration[] = [
         (payload) => {
           const url = payload?.url;
           if (url && typeof url === "string") {
-            tracing("[share-link-received]", url);
+            // Share/import deep links can carry a capability token or slug in
+            // the path/query -- log only scheme+host so a share token never
+            // lands in console/log output (mirrors sentry.ts's URL scrubbing).
+            tracing("[share-link-received]", redactUrlForLog(url));
             // Dispatch a DOM event so any mounted import dialog can react.
             window.dispatchEvent(
               new CustomEvent("personas:share-link", { detail: { url } }),
@@ -949,6 +952,22 @@ const registry: EventRegistration[] = [
 
 function tracing(...args: unknown[]) {
   logger.info(args.map(String).join(" "));
+}
+
+/**
+ * Reduce a URL to scheme + host + path for logging, stripping query/fragment
+ * (where share/capability tokens live). Falls back to `[unparseable-url]` for
+ * non-standard schemes (e.g. custom deep-link schemes without `//`).
+ */
+function redactUrlForLog(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+  } catch {
+    // Custom deep-link schemes (e.g. `personas://share/...`) may not parse as
+    // a standard URL; redact wholesale rather than leaking the raw string.
+    return "[unparseable-url]";
+  }
 }
 
 // ---------------------------------------------------------------------------
