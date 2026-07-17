@@ -2191,6 +2191,7 @@ pub fn run() {
             commands::credentials::db_schema::delete_db_saved_query,
             commands::credentials::db_schema::execute_db_query,
             commands::credentials::db_schema::classify_db_query,
+            commands::credentials::db_schema::db_connector_capability,
             commands::credentials::db_schema::introspect_db_tables,
             commands::credentials::db_schema::introspect_db_columns,
             // Credentials -- Query Debug (AI-assisted)

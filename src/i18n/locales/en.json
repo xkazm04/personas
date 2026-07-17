@@ -4274,7 +4274,15 @@
       "refresh": "Refresh",
       "introspection_unavailable": "Table introspection is not available for this connector type.",
       "not_null": "NOT NULL",
-      "ctrl_enter": "Ctrl+Enter"
+      "ctrl_enter": "Ctrl+Enter",
+      "capability_full_sql": "Full SQL",
+      "capability_full_sql_hint": "This connector runs arbitrary SQL, including JOINs, aggregates, and writes.",
+      "capability_select_subset": "SELECT only",
+      "capability_select_subset_hint": "Only simple single-table SELECT queries run here — filter with WHERE, sort with ORDER BY, cap with LIMIT. JOINs, aggregates, CTEs, and writes are not supported.",
+      "capability_key_value": "Key-value",
+      "capability_key_value_hint": "This is a key-value store. Use key commands like SCAN, GET, and TYPE — not SQL.",
+      "capability_introspection_only": "Browse only",
+      "capability_introspection_only_hint": "This connector has no ad-hoc query lane here — browse tables and columns; run queries in the provider's own console."
     },
     "dependencies": {
       "simulate_revocation": "Simulate Revocation",

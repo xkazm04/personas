@@ -414,7 +414,15 @@
     "refresh": "ताज़ा करें",
     "introspection_unavailable": "इस कनेक्टर प्रकार के लिए टेबल इंट्रोस्पेक्शन उपलब्ध नहीं है।",
     "not_null": "NOT NULL",
-    "ctrl_enter": "Ctrl+Enter"
+    "ctrl_enter": "Ctrl+Enter",
+    "capability_full_sql": "पूर्ण SQL",
+    "capability_full_sql_hint": "यह कनेक्टर JOIN, एग्रीगेट और राइट सहित कोई भी SQL चलाता है।",
+    "capability_introspection_only": "केवल ब्राउज़",
+    "capability_introspection_only_hint": "इस कनेक्टर में यहाँ कोई एड-हॉक क्वेरी लेन नहीं है — टेबल और कॉलम ब्राउज़ करें; क्वेरी प्रदाता के अपने कंसोल में चलाएँ।",
+    "capability_key_value": "की-वैल्यू",
+    "capability_key_value_hint": "यह एक की-वैल्यू स्टोर है। SCAN, GET और TYPE जैसे की कमांड का उपयोग करें — SQL नहीं।",
+    "capability_select_subset": "केवल SELECT",
+    "capability_select_subset_hint": "यहाँ केवल एकल-टेबल की सरल SELECT क्वेरी चलती हैं — WHERE से फ़िल्टर करें, ORDER BY से क्रमबद्ध करें, LIMIT से सीमित करें। JOIN, एग्रीगेट, CTE और राइट समर्थित नहीं हैं।"
   },
   "dependencies": {
     "simulate_revocation": "रद्दीकरण अनुकरण करें",

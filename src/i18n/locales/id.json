@@ -4030,7 +4030,15 @@
       "refresh": "Perbarui",
       "introspection_unavailable": "Introspeksi tabel tidak tersedia untuk jenis konektor ini.",
       "not_null": "NOT NULL",
-      "ctrl_enter": "Ctrl+Enter untuk menjalankan"
+      "ctrl_enter": "Ctrl+Enter untuk menjalankan",
+      "capability_full_sql": "SQL penuh",
+      "capability_full_sql_hint": "Konektor ini menjalankan SQL arbitrer, termasuk JOIN, agregasi, dan penulisan.",
+      "capability_introspection_only": "Hanya menjelajah",
+      "capability_introspection_only_hint": "Konektor ini tidak memiliki jalur kueri ad-hoc di sini — jelajahi tabel dan kolom; jalankan kueri di konsol milik penyedia.",
+      "capability_key_value": "Kunci-nilai",
+      "capability_key_value_hint": "Ini adalah penyimpanan kunci-nilai. Gunakan perintah kunci seperti SCAN, GET, dan TYPE — bukan SQL.",
+      "capability_select_subset": "Hanya SELECT",
+      "capability_select_subset_hint": "Di sini hanya kueri SELECT sederhana pada satu tabel yang berjalan — saring dengan WHERE, urutkan dengan ORDER BY, batasi dengan LIMIT. JOIN, agregasi, CTE, dan penulisan tidak didukung."
     },
     "dependencies": {
       "simulate_revocation": "Simulasi Pencabutan",

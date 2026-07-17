@@ -414,7 +414,15 @@
     "refresh": "새로 고침",
     "introspection_unavailable": "이 커넥터 유형에는 테이블 내부 검사를 사용할 수 없습니다.",
     "not_null": "NOT NULL",
-    "ctrl_enter": "Ctrl+Enter"
+    "ctrl_enter": "Ctrl+Enter",
+    "capability_full_sql": "전체 SQL",
+    "capability_full_sql_hint": "이 커넥터는 JOIN, 집계, 쓰기를 포함한 임의의 SQL을 실행합니다.",
+    "capability_introspection_only": "탐색 전용",
+    "capability_introspection_only_hint": "이 커넥터에는 여기에 임시 쿼리 경로가 없습니다. 테이블과 열을 탐색하고, 쿼리는 공급자 자체 콘솔에서 실행하세요.",
+    "capability_key_value": "키-값",
+    "capability_key_value_hint": "이것은 키-값 저장소입니다. SQL이 아니라 SCAN, GET, TYPE 같은 키 명령을 사용하세요.",
+    "capability_select_subset": "SELECT 전용",
+    "capability_select_subset_hint": "여기서는 단일 테이블의 단순 SELECT 쿼리만 실행됩니다. WHERE로 필터링하고, ORDER BY로 정렬하고, LIMIT으로 제한하세요. JOIN, 집계, CTE, 쓰기는 지원되지 않습니다."
   },
   "dependencies": {
     "simulate_revocation": "취소 시뮬레이션",

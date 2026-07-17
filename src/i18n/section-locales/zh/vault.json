@@ -414,7 +414,15 @@
     "refresh": "刷新",
     "introspection_unavailable": "此连接器类型不支持表格内省。",
     "not_null": "NOT NULL",
-    "ctrl_enter": "Ctrl+Enter"
+    "ctrl_enter": "Ctrl+Enter",
+    "capability_full_sql": "完整 SQL",
+    "capability_full_sql_hint": "此连接器可运行任意 SQL，包括 JOIN、聚合和写入。",
+    "capability_introspection_only": "仅浏览",
+    "capability_introspection_only_hint": "此连接器在这里没有即席查询通道——请浏览表和列；在提供商自己的控制台中运行查询。",
+    "capability_key_value": "键值",
+    "capability_key_value_hint": "这是一个键值存储。请使用 SCAN、GET 和 TYPE 等键命令，而非 SQL。",
+    "capability_select_subset": "仅 SELECT",
+    "capability_select_subset_hint": "这里仅运行针对单个表的简单 SELECT 查询——用 WHERE 过滤、ORDER BY 排序、LIMIT 限制。不支持 JOIN、聚合、CTE 和写入。"
   },
   "dependencies": {
     "simulate_revocation": "模拟撤销",

@@ -453,6 +453,90 @@ pub async fn execute_query(
 }
 
 // ============================================================================
+// Connector capability class -- honest query-lane advertising
+// ============================================================================
+
+/// The query-capability class of a database connector.
+///
+/// Single source of truth for what the SQL editor can honestly promise for a
+/// given `service_type`. Different connectors expose very different query lanes:
+/// raw pass-through drivers accept arbitrary SQL, Supabase's PostgREST lane only
+/// parses simple single-table SELECTs, Redis is key-value, and API connectors
+/// have no ad-hoc query lane at all. The frontend renders a capability note from
+/// this so the editor never implies more than the connector actually supports.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "kebab-case")]
+pub enum DbConnectorCapability {
+    /// Arbitrary SQL, including JOINs, aggregates, CTEs, and writes.
+    FullSql,
+    /// Single-table SELECT with WHERE / ORDER BY / LIMIT only — no JOINs,
+    /// aggregates, CTEs, or writes (e.g. Supabase PostgREST).
+    SelectSubset,
+    /// Key-value command surface (SCAN / GET / TYPE, …), not SQL.
+    KeyValue,
+    /// No ad-hoc query lane — schema browsing only (API connectors).
+    IntrospectionOnly,
+}
+
+/// Classify a connector `service_type` into its honest query-capability class.
+///
+/// Kept immediately next to the `execute_query` dispatch above so the advertised
+/// capability and the actual execution behavior can never silently drift.
+pub fn connector_capability(service_type: &str) -> DbConnectorCapability {
+    match service_type {
+        // Raw SQL pass-through drivers + the built-in local SQLite database.
+        "neon" | "planetscale" | "personas_database" => DbConnectorCapability::FullSql,
+        // Supabase's PostgREST lane parses only simple single-table SELECTs.
+        "supabase" => DbConnectorCapability::SelectSubset,
+        // Convex runs scoped read function-queries (db.query(...).take(n)) — a
+        // limited query surface, not arbitrary SQL.
+        "convex" => DbConnectorCapability::SelectSubset,
+        // Redis-family key-value stores.
+        "upstash" | "redis" => DbConnectorCapability::KeyValue,
+        // API connectors: browse schema only; execute_query has no lane for them.
+        "notion" | "airtable" => DbConnectorCapability::IntrospectionOnly,
+        // Unknown/unsupported: execute_query rejects these outright, so the most
+        // honest advertisement is "no ad-hoc query lane".
+        _ => DbConnectorCapability::IntrospectionOnly,
+    }
+}
+
+#[cfg(test)]
+mod capability_tests {
+    use super::{connector_capability, DbConnectorCapability};
+
+    #[test]
+    fn classifies_each_known_connector() {
+        assert_eq!(connector_capability("neon"), DbConnectorCapability::FullSql);
+        assert_eq!(
+            connector_capability("planetscale"),
+            DbConnectorCapability::FullSql
+        );
+        assert_eq!(
+            connector_capability("personas_database"),
+            DbConnectorCapability::FullSql
+        );
+        assert_eq!(
+            connector_capability("supabase"),
+            DbConnectorCapability::SelectSubset
+        );
+        assert_eq!(
+            connector_capability("upstash"),
+            DbConnectorCapability::KeyValue
+        );
+        assert_eq!(
+            connector_capability("notion"),
+            DbConnectorCapability::IntrospectionOnly
+        );
+        assert_eq!(
+            connector_capability("some-future-db"),
+            DbConnectorCapability::IntrospectionOnly
+        );
+    }
+}
+
+// ============================================================================
 // Introspection -- connector-aware table/column discovery
 // ============================================================================
 
@@ -839,10 +923,12 @@ pub(crate) async fn execute_supabase(
     // Supabase cloud does not have a raw SQL endpoint.
     let parsed = parse_select_to_postgrest(sql).ok_or_else(|| {
         AppError::Internal(
-            "Supabase REST API only supports SELECT queries. \
-             Complex SQL (JOINs, subqueries, aggregates, INSERT/UPDATE/DELETE) \
-             is not available via the PostgREST API. \
-             Use simple queries like: SELECT * FROM table_name LIMIT 100"
+            "Supabase (PostgREST) supports single-table SELECT queries only: \
+             choose columns, filter with WHERE, sort with ORDER BY, and cap with \
+             LIMIT. JOINs, subqueries, GROUP BY / aggregates, CTEs (WITH), and \
+             INSERT / UPDATE / DELETE are not available over the REST API. \
+             Example: SELECT * FROM table_name WHERE status = 'active' \
+             ORDER BY created_at LIMIT 100"
                 .into(),
         )
     })?;

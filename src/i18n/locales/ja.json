@@ -4030,7 +4030,15 @@
       "refresh": "更新",
       "introspection_unavailable": "このコネクタタイプではテーブルのイントロスペクションは利用できません。",
       "not_null": "NOT NULL",
-      "ctrl_enter": "Ctrl+Enter"
+      "ctrl_enter": "Ctrl+Enter",
+      "capability_full_sql": "フル SQL",
+      "capability_full_sql_hint": "このコネクタは JOIN、集計、書き込みを含む任意の SQL を実行します。",
+      "capability_introspection_only": "参照のみ",
+      "capability_introspection_only_hint": "このコネクタにはここにアドホックなクエリ手段がありません。テーブルや列を参照し、クエリはプロバイダー自身のコンソールで実行してください。",
+      "capability_key_value": "キー・バリュー",
+      "capability_key_value_hint": "これはキー・バリュー ストアです。SQL ではなく、SCAN、GET、TYPE などのキー コマンドを使用してください。",
+      "capability_select_subset": "SELECT のみ",
+      "capability_select_subset_hint": "ここでは単一テーブルの単純な SELECT クエリのみ実行できます。WHERE で絞り込み、ORDER BY で並べ替え、LIMIT で件数を制限します。JOIN、集計、CTE、書き込みはサポートされていません。"
     },
     "dependencies": {
       "simulate_revocation": "失効をシミュレート",

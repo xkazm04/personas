@@ -4030,7 +4030,15 @@
       "refresh": "Aktualisieren",
       "introspection_unavailable": "Tabellen-Introspektion ist für diesen Konnektor-Typ nicht verfügbar.",
       "not_null": "NOT NULL",
-      "ctrl_enter": "Strg+Eingabe"
+      "ctrl_enter": "Strg+Eingabe",
+      "capability_full_sql": "Vollständiges SQL",
+      "capability_full_sql_hint": "Dieser Connector führt beliebiges SQL aus, einschließlich JOINs, Aggregationen und Schreibvorgängen.",
+      "capability_introspection_only": "Nur durchsuchen",
+      "capability_introspection_only_hint": "Dieser Connector hat hier keine Ad-hoc-Abfragezeile — durchsuchen Sie Tabellen und Spalten; führen Sie Abfragen in der Konsole des Anbieters aus.",
+      "capability_key_value": "Schlüssel-Wert",
+      "capability_key_value_hint": "Dies ist ein Schlüssel-Wert-Speicher. Verwenden Sie Schlüsselbefehle wie SCAN, GET und TYPE — kein SQL.",
+      "capability_select_subset": "Nur SELECT",
+      "capability_select_subset_hint": "Hier laufen nur einfache SELECT-Abfragen auf einer einzelnen Tabelle — filtern mit WHERE, sortieren mit ORDER BY, begrenzen mit LIMIT. JOINs, Aggregationen, CTEs und Schreibvorgänge werden nicht unterstützt."
     },
     "dependencies": {
       "simulate_revocation": "Widerruf simulieren",

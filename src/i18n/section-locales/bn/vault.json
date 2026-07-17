@@ -414,7 +414,15 @@
     "refresh": "রিফ্রেশ করুন",
     "introspection_unavailable": "এই কানেক্টর ধরনের জন্য টেবিল ইন্ট্রোস্পেকশন পাওয়া যায় না।",
     "not_null": "NOT NULL",
-    "ctrl_enter": "Ctrl+Enter"
+    "ctrl_enter": "Ctrl+Enter",
+    "capability_full_sql": "সম্পূর্ণ SQL",
+    "capability_full_sql_hint": "এই কানেক্টর JOIN, অ্যাগ্রিগেট এবং রাইট সহ যেকোনো SQL চালায়।",
+    "capability_introspection_only": "শুধু ব্রাউজ",
+    "capability_introspection_only_hint": "এই কানেক্টরে এখানে কোনো অ্যাড-হক কোয়েরি লেন নেই — টেবিল ও কলাম ব্রাউজ করুন; কোয়েরি প্রোভাইডারের নিজস্ব কনসোলে চালান।",
+    "capability_key_value": "কী-ভ্যালু",
+    "capability_key_value_hint": "এটি একটি কী-ভ্যালু স্টোর। SCAN, GET এবং TYPE-এর মতো কী কমান্ড ব্যবহার করুন — SQL নয়।",
+    "capability_select_subset": "শুধু SELECT",
+    "capability_select_subset_hint": "এখানে শুধু একক-টেবিলের সরল SELECT কোয়েরি চলে — WHERE দিয়ে ফিল্টার, ORDER BY দিয়ে সাজানো, LIMIT দিয়ে সীমা নির্ধারণ। JOIN, অ্যাগ্রিগেট, CTE এবং রাইট সমর্থিত নয়।"
   },
   "dependencies": {
     "simulate_revocation": "বাতিলকরণ সিমুলেট করুন",

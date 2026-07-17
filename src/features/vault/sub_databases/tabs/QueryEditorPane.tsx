@@ -92,6 +92,7 @@ export function QueryEditorPane({
       <QueryToolbar
         selectedTitle={selectedTitle}
         language={language}
+        serviceType={serviceType}
         saveState={saveState}
         executing={executing}
         editorValue={editorValue}

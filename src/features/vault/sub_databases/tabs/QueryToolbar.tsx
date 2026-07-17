@@ -1,10 +1,12 @@
 import { Play, Wand2, Save, Check, Shield, ShieldOff } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ConnectorCapabilityNote } from './ConnectorCapabilityNote';
 
 interface QueryToolbarProps {
   selectedTitle: string;
   language: string;
+  serviceType: string;
   saveState: 'idle' | 'saving' | 'saved';
   executing: boolean;
   editorValue: string;
@@ -19,6 +21,7 @@ interface QueryToolbarProps {
 export function QueryToolbar({
   selectedTitle,
   language,
+  serviceType,
   saveState,
   executing,
   editorValue,
@@ -38,6 +41,7 @@ export function QueryToolbar({
       <span className="typo-body uppercase tracking-wider text-foreground px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8 font-medium">
         {language}
       </span>
+      <ConnectorCapabilityNote serviceType={serviceType} />
 
       <button
         onClick={onSave}

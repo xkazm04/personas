@@ -4281,6 +4281,14 @@ export type Translations = {
       introspection_unavailable: string;
       not_null: string;
       ctrl_enter: string;
+      capability_full_sql: string;
+      capability_full_sql_hint: string;
+      capability_select_subset: string;
+      capability_select_subset_hint: string;
+      capability_key_value: string;
+      capability_key_value_hint: string;
+      capability_introspection_only: string;
+      capability_introspection_only_hint: string;
     };
     dependencies: {
       simulate_revocation: string;

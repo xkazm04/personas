@@ -4030,7 +4030,15 @@
       "refresh": "Actualizar",
       "introspection_unavailable": "La introspección de tablas no está disponible para este tipo de conector.",
       "not_null": "NOT NULL",
-      "ctrl_enter": "Ctrl+Enter"
+      "ctrl_enter": "Ctrl+Enter",
+      "capability_full_sql": "SQL completo",
+      "capability_full_sql_hint": "Este conector ejecuta SQL arbitrario, incluidos JOIN, agregaciones y escrituras.",
+      "capability_introspection_only": "Solo explorar",
+      "capability_introspection_only_hint": "Este conector no tiene aquí una vía de consultas ad-hoc: explora tablas y columnas; ejecuta las consultas en la consola del propio proveedor.",
+      "capability_key_value": "Clave-valor",
+      "capability_key_value_hint": "Es un almacén de clave-valor. Usa comandos de clave como SCAN, GET y TYPE, no SQL.",
+      "capability_select_subset": "Solo SELECT",
+      "capability_select_subset_hint": "Aquí solo se ejecutan consultas SELECT simples de una sola tabla: filtra con WHERE, ordena con ORDER BY y limita con LIMIT. No se admiten JOIN, agregaciones, CTE ni escrituras."
     },
     "dependencies": {
       "simulate_revocation": "Simular revocación",

@@ -414,7 +414,15 @@
     "refresh": "تحديث",
     "introspection_unavailable": "فحص الجداول غير متاح لهذا النوع من الموصّلات.",
     "not_null": "NOT NULL",
-    "ctrl_enter": "Ctrl+Enter"
+    "ctrl_enter": "Ctrl+Enter",
+    "capability_full_sql": "SQL كامل",
+    "capability_full_sql_hint": "يشغّل هذا الموصّل استعلامات SQL عشوائية، بما في ذلك JOIN والتجميعات وعمليات الكتابة.",
+    "capability_introspection_only": "التصفح فقط",
+    "capability_introspection_only_hint": "لا يوفّر هذا الموصّل مسار استعلام مخصّص هنا — تصفّح الجداول والأعمدة؛ ونفّذ الاستعلامات في وحدة تحكم المزوّد نفسه.",
+    "capability_key_value": "مفتاح-قيمة",
+    "capability_key_value_hint": "هذا مخزن من نوع مفتاح-قيمة. استخدم أوامر المفاتيح مثل SCAN وGET وTYPE — وليس SQL.",
+    "capability_select_subset": "SELECT فقط",
+    "capability_select_subset_hint": "تُشغَّل هنا فقط استعلامات SELECT البسيطة على جدول واحد — التصفية باستخدام WHERE، والترتيب باستخدام ORDER BY، والتحديد باستخدام LIMIT. أما JOIN والتجميعات وCTE وعمليات الكتابة فغير مدعومة."
   },
   "dependencies": {
     "simulate_revocation": "محاكاة الإبطال",

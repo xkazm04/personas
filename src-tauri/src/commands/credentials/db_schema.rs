@@ -141,6 +141,16 @@ pub fn classify_db_query(query_text: String) -> bool {
     crate::engine::db_query::is_mutation(&query_text)
 }
 
+/// Report a connector's honest query-capability class (full-SQL / SELECT-subset
+/// / key-value / introspection-only) so the editor can advertise only what the
+/// connector actually supports. Pure classification — no DB access.
+#[tauri::command]
+pub fn db_connector_capability(
+    service_type: String,
+) -> crate::engine::db_query::DbConnectorCapability {
+    crate::engine::db_query::connector_capability(&service_type)
+}
+
 // ============================================================================
 // Schema Introspection
 // ============================================================================

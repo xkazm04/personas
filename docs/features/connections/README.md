@@ -85,6 +85,16 @@ When the refresh engine detects a revoked grant it does three durable things, no
 
 **Structured extraction (Structured Data tab).** Beyond search, a knowledge base can be turned into queryable typed rows. It runs in two passes with a review step between them: `kb_infer_schema` samples the corpus and proposes a schema of the objects the documents describe (entity types + fields); the user edits that schema; `kb_run_extraction` then processes each document against the approved schema in the background (progress on `kb-extraction-progress`) and writes `kb_entities` — each row keeping the document and page it came from and an extraction confidence. `kb_list_entities` reads them back. The rationale and data model live in `src/features/vault/shared/vector/DESIGN.md`. This is a UI-driven authoring flow; extraction is not yet exposed as an agent connector tool.
 
+## Database query surface (`sub_databases`)
+
+A saved database credential opens a workspace with a **Tables** browser, a **SQL editor** (saved queries), and an **assistant Chat** that turns natural language into SQL.
+
+**Safe mode is shared across the editor and chat.** Both run through `useQuerySafeMode` (safe mode ON by default): a query classified as a mutation (INSERT/UPDATE/DELETE/DDL) is stashed and the user must confirm it in the shared `MutationConfirmBanner` before it executes with `allowMutation: true`; reads run directly. This means AI-suggested mutations are now runnable **from chat** with the same confirm-then-write semantics as the editor — previously the chat "Run" button executed with no mutation flag and the backend rejected every write. A context-drift guard clears any pending mutation if the underlying connection changes beneath the confirm dialog.
+
+**Table/column introspection is one backend implementation.** The Tables browser discovers schema exclusively through the backend's **parameterized** `introspect_db_tables` / `introspect_db_columns` commands (Postgres/MySQL `information_schema`, SQLite catalog, Supabase PostgREST OpenAPI, Redis SCAN, API connectors). The former frontend interpolated-SQL builders were a weaker second injection-defense and have been removed.
+
+**The editor advertises each connector's honest query-capability class.** A note next to the language badge shows one of **full-SQL** (raw pass-through drivers + the local SQLite DB), **SELECT-subset** (Supabase PostgREST: single-table `SELECT` with `WHERE`/`ORDER BY`/`LIMIT` only), **key-value** (Redis-family), or **introspection-only** (API connectors). The class is resolved from a single backend source of truth (`db_connector_capability`, keyed by `service_type`, next to the query dispatch in `engine/db_query.rs`), so the editor never implies more SQL than a connector supports. Supabase parse-rejection messages name what *is* supported rather than only what is not.
+
 ## Backend command families
 
 | Family | Modules |

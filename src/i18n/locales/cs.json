@@ -4030,7 +4030,15 @@
       "refresh": "Obnovit",
       "introspection_unavailable": "Průzkum tabulek není pro tento typ konektoru dostupný.",
       "not_null": "NOT NULL",
-      "ctrl_enter": "Ctrl+Enter"
+      "ctrl_enter": "Ctrl+Enter",
+      "capability_full_sql": "Plné SQL",
+      "capability_full_sql_hint": "Tento konektor spouští libovolné SQL včetně JOINů, agregací a zápisů.",
+      "capability_introspection_only": "Jen procházení",
+      "capability_introspection_only_hint": "Tento konektor zde nemá žádnou ad-hoc dotazovací vrstvu — procházejte tabulky a sloupce; dotazy spouštějte v konzoli poskytovatele.",
+      "capability_key_value": "Klíč-hodnota",
+      "capability_key_value_hint": "Toto je úložiště typu klíč-hodnota. Používejte klíčové příkazy jako SCAN, GET a TYPE — ne SQL.",
+      "capability_select_subset": "Jen SELECT",
+      "capability_select_subset_hint": "Zde běží pouze jednoduché dotazy SELECT nad jednou tabulkou — filtrování pomocí WHERE, řazení pomocí ORDER BY, omezení pomocí LIMIT. JOINy, agregace, CTE a zápisy nejsou podporovány."
     },
     "dependencies": {
       "simulate_revocation": "Simulovat zneplatnění",

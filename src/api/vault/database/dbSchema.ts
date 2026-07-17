@@ -3,7 +3,8 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { DbSchemaTable } from "@/lib/bindings/DbSchemaTable";
 import type { DbSavedQuery } from "@/lib/bindings/DbSavedQuery";
 import type { QueryResult } from "@/lib/bindings/QueryResult";
-export type { DbSchemaTable, DbSavedQuery, QueryResult };
+import type { DbConnectorCapability } from "@/lib/bindings/DbConnectorCapability";
+export type { DbSchemaTable, DbSavedQuery, QueryResult, DbConnectorCapability };
 
 // -- Schema Tables ------------------------------------------------------
 
@@ -62,6 +63,10 @@ export const deleteDbSavedQuery = (id: string) =>
 /** Returns `true` if the query is classified as a mutation (INSERT, UPDATE, DELETE, DROP, etc.). */
 export const classifyDbQuery = (queryText: string) =>
   invoke<boolean>('classify_db_query', { queryText });
+
+/** The active connector's honest query-capability class, keyed by service type. */
+export const dbConnectorCapability = (serviceType: string) =>
+  invoke<DbConnectorCapability>('db_connector_capability', { serviceType });
 
 // -- Query Execution ----------------------------------------------------
 

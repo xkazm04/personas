@@ -4030,7 +4030,15 @@
       "refresh": "Обновить",
       "introspection_unavailable": "Интроспекция таблиц недоступна для этого типа коннектора.",
       "not_null": "NOT NULL",
-      "ctrl_enter": "Ctrl+Enter"
+      "ctrl_enter": "Ctrl+Enter",
+      "capability_full_sql": "Полный SQL",
+      "capability_full_sql_hint": "Этот коннектор выполняет произвольный SQL, включая JOIN, агрегаты и запись.",
+      "capability_introspection_only": "Только просмотр",
+      "capability_introspection_only_hint": "У этого коннектора здесь нет произвольного канала запросов — просматривайте таблицы и столбцы; выполняйте запросы в консоли самого провайдера.",
+      "capability_key_value": "Ключ-значение",
+      "capability_key_value_hint": "Это хранилище «ключ-значение». Используйте команды ключей, такие как SCAN, GET и TYPE, а не SQL.",
+      "capability_select_subset": "Только SELECT",
+      "capability_select_subset_hint": "Здесь выполняются только простые запросы SELECT к одной таблице — фильтрация через WHERE, сортировка через ORDER BY, ограничение через LIMIT. JOIN, агрегаты, CTE и запись не поддерживаются."
     },
     "dependencies": {
       "simulate_revocation": "Симулировать отзыв",
