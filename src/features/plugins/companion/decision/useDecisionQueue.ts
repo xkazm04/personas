@@ -144,7 +144,7 @@ function incidentToDecision(message: ProactiveMessage): PendingDecision {
     {
       key: 'resolve',
       label: c.decision_resolve,
-      run: () => {
+      run: async () => {
         // Mirror ProactiveCard's incident_blocker engage path: take the user
         // to Overview → Incidents and deep-link the specific incident.
         useSystemStore.getState().setSidebarSection('overview');
@@ -153,7 +153,19 @@ function incidentToDecision(message: ProactiveMessage): PendingDecision {
           setPendingIncidentDeepLink(message.triggerRef);
           storeBus.emit('incidents:open-detail', { incidentId: message.triggerRef });
         }
-        useCompanionStore.getState().removeProactive(message.id);
+        // Persist the engage server-side (mirrors messageAttentionToDecision's
+        // `engage`) — without this the proactive row stays `pending` and
+        // `pump()`'s next `buildQueue()` re-fetches it, re-surfacing the same
+        // decision on the orb right after the user just acted on it.
+        try {
+          await companionEngageProactive(message.id);
+          useCompanionStore.getState().removeProactive(message.id);
+        } catch (err) {
+          silentCatch('companion/decision:incident-resolve')(err);
+          // Propagate so runDecisionOption keeps the decision pending + toasts
+          // on failure instead of falsely clearing it as resolved.
+          throw err;
+        }
       },
     },
     {

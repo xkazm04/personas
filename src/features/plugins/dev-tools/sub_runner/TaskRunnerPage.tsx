@@ -629,7 +629,9 @@ export default function TaskRunnerPage() {
   // one click rather than hunting failed cards individually.
   const handleRetryAllFailed = useCallback(() => {
     for (const task of tasks.filter((t) => t.status === 'failed')) {
-      createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId });
+      // Preserve source-idea attribution so retried tasks still count toward
+      // per-agent implementation-rate stats and the idea lifecycle strip.
+      createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId, sourceIdeaId: task.source });
     }
   }, [tasks, createTask]);
 
@@ -795,7 +797,7 @@ export default function TaskRunnerPage() {
             const task = tasks.find((t) => t.id === taskId);
             if (task) {
               try {
-                await createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId });
+                await createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId, sourceIdeaId: task.source });
               } catch (err) { silentCatch("features/plugins/dev-tools/sub_runner/TaskRunnerPage:catch1")(err); }
             }
           }} />

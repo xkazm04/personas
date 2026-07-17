@@ -199,6 +199,7 @@ export function resolveIllustration(persona: PersonaLike): ResolvedIllustration 
 export function useIllustration(persona: PersonaLike): ResolvedIllustration {
   return useMemo(
     () => resolveIllustration(persona),
-    [persona],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [persona.id, persona.name, persona.description, persona.icon, persona.design_context, persona.template_category],
   );
 }

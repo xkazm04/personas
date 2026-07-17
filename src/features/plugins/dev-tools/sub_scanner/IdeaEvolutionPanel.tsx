@@ -46,7 +46,8 @@ export function IdeaEvolutionPanel() {
         return { idea: i, task: representative, totalTasks: linkedTasks.length, shipped: Boolean(shipped) };
       })
       // Most recent accepted ideas first; cap to 6 so the panel stays scannable.
-      .sort((a, b) => b.idea.id.localeCompare(a.idea.id))
+      // `id` is a random uuid v4 (not time-sortable) — sort by created_at.
+      .sort((a, b) => b.idea.created_at.localeCompare(a.idea.created_at))
       .slice(0, 6);
   }, [ideas, tasks]);
 

@@ -133,7 +133,7 @@ export default function MonitoringSection() {
           <StateMessage icon={<AlertCircle className="w-8 h-8 text-red-400/70" />} title={dt.mon_error_title} subtitle={error ?? dt.mon_unknown_error} />
         ) : stats ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <StatCard label={po.unresolved_issues} value={stats.unresolvedIssues} icon={Bug} tone={stats.unresolvedIssues === 0 ? 'success' : stats.unresolvedIssues > 5 ? 'danger' : 'warning'} />
+            <StatCard label={po.unresolved_issues} value={stats.unresolvedIssues ?? '—'} icon={Bug} tone={stats.unresolvedIssues === null ? 'warning' : stats.unresolvedIssues === 0 ? 'success' : stats.unresolvedIssues > 5 ? 'danger' : 'warning'} />
             <StatCard label={po.events_24h} value={stats.eventsLast24h} icon={Activity} tone={stats.eventsLast24h === 0 ? 'success' : stats.eventsLast24h > 100 ? 'danger' : 'warning'} />
             <StatCard label={po.events_7d} value={stats.eventsLastWeek} icon={BarChart3} tone="info" />
           </div>
