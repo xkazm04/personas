@@ -224,6 +224,19 @@ fn strip_sql_literals(sql: &str) -> String {
     out
 }
 
+/// True if the payload contains more than one SQL statement — i.e. any content
+/// after an intermediate `;` once string literals are stripped (so a `;` inside
+/// a quoted value never false-positives). Trailing semicolons are fine. Used by
+/// the safe-mode guard in [`execute_query`]: the first-keyword classifier only
+/// sees statement one, while Neon/PlanetScale forward the raw payload verbatim.
+fn has_multiple_statements(query_text: &str) -> bool {
+    let stripped = strip_sql_literals(query_text);
+    stripped
+        .trim()
+        .trim_end_matches(';')
+        .contains(';')
+}
+
 /// True if a `WITH`-led statement embeds a data-modifying verb in its body.
 /// Literals are stripped first, and matching is token-exact (split on
 /// non-`[A-Za-z0-9_]`) so columns like `updated_at` / `deleted` do not
@@ -368,6 +381,23 @@ pub async fn execute_query(
         return Err(AppError::Validation(
             "This query appears to modify data (INSERT, UPDATE, DELETE, DROP, etc.). \
              Enable write mode or confirm the mutation to execute it."
+                .to_string(),
+        ));
+    }
+
+    // Safe-mode multi-statement guard: `is_mutation` classifies by the FIRST
+    // statement only, but the raw pass-through connectors (Neon, PlanetScale)
+    // forward the whole payload verbatim — so `SELECT 1; DELETE FROM users`
+    // classified as a read and the trailing mutation could execute in "safe
+    // mode" if the endpoint honors stacked statements. In safe mode a request
+    // is one statement, period. (Write mode is exempt: the user explicitly
+    // confirmed a mutating request.) Literals are stripped first so a
+    // semicolon inside a string value never false-positives; the companion
+    // lane has enforced the same invariant since its inception.
+    if !allow_mutation && has_multiple_statements(query_text) {
+        return Err(AppError::Validation(
+            "Multiple SQL statements are not allowed in safe mode. \
+             Run one statement at a time, or enable write mode for a confirmed mutation."
                 .to_string(),
         ));
     }
@@ -2667,6 +2697,26 @@ fn airtable_error_message(json: &Value, status: reqwest::StatusCode) -> String {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    // -- safe-mode multi-statement guard (stacked-statement bypass) --
+
+    #[test]
+    fn test_stacked_statements_detected() {
+        // The bypass shape: leading SELECT classifies as a read while the raw
+        // pass-through connectors would forward the trailing mutation verbatim.
+        assert!(has_multiple_statements("SELECT 1; DELETE FROM users"));
+        assert!(has_multiple_statements("SELECT 1;\nDROP TABLE t;"));
+    }
+
+    #[test]
+    fn test_single_statement_shapes_allowed() {
+        assert!(!has_multiple_statements("SELECT * FROM users"));
+        assert!(!has_multiple_statements("SELECT * FROM users;"));
+        assert!(!has_multiple_statements("SELECT * FROM users;  \n"));
+        // Semicolon INSIDE a string literal is data, not a separator.
+        assert!(!has_multiple_statements("SELECT * FROM t WHERE note = 'a;b'"));
+        assert!(!has_multiple_statements("SELECT ';' AS sep FROM t;"));
+    }
 
     // -- safe-mode mutation classifier (CTE bypass regression) -------
 
