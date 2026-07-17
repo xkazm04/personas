@@ -534,6 +534,9 @@ impl ExecutionEngine {
             // registered setting (default ON). Read once here; the env var
             // still overrides at read time. See skill_scratchpad::is_enabled.
             crate::engine::skill_scratchpad::seed_enabled_from_settings(p);
+            // Same for the per-connector SKILL.md sidecar (skills_sidecar_enabled,
+            // default ON). See skills_sidecar::is_enabled.
+            crate::engine::skills_sidecar::seed_enabled_from_settings(p);
         }
 
         let circuit_breaker = match pool {

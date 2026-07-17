@@ -118,6 +118,13 @@ fn deep_fanout_enabled(persona: &Persona) -> bool {
 
 /// Assemble the full prompt string from persona configuration, tools, input data,
 /// optional credential environment variable hints, and optional workspace shared instructions.
+///
+/// Thin wrapper over [`assemble_prompt_with_skills`] that passes no written-skill
+/// set, so the connector-usage shrink (when the sidecar is enabled) emits a
+/// pointer for every bound connector. Callers that installed the SKILL.md
+/// sidecar first — the runner's main path — should call
+/// [`assemble_prompt_with_skills`] with the exact set of connectors whose file
+/// was written, so a connector whose write failed keeps its inline usage.
 pub fn assemble_prompt(
     persona: &Persona,
     tools: &[PersonaToolDefinition],
@@ -126,6 +133,38 @@ pub fn assemble_prompt(
     workspace_instructions: Option<&str>,
     connector_usage_hints: Option<&[ResolvedConnectorHint]>,
     #[cfg(feature = "desktop")] ambient_context: Option<&str>,
+) -> String {
+    assemble_prompt_with_skills(
+        persona,
+        tools,
+        input_data,
+        credential_hints,
+        workspace_instructions,
+        connector_usage_hints,
+        #[cfg(feature = "desktop")]
+        ambient_context,
+        None,
+    )
+}
+
+/// Full prompt assembly with an explicit per-connector written-skill set.
+///
+/// `written_connector_skills` — when `Some`, the connector-usage shrink emits a
+/// skill pointer ONLY for connectors whose `name` is in the set (i.e. whose
+/// SKILL.md was actually written by `skills_sidecar::install_sidecar`), and
+/// falls back to full inline usage text for the rest. When `None`, every
+/// connector gets a pointer (the sidecar is assumed installed for all). See
+/// `skills_sidecar/DESIGN.md` for the lockstep rationale.
+#[allow(clippy::too_many_arguments)]
+pub fn assemble_prompt_with_skills(
+    persona: &Persona,
+    tools: &[PersonaToolDefinition],
+    input_data: Option<&serde_json::Value>,
+    credential_hints: Option<&[&str]>,
+    workspace_instructions: Option<&str>,
+    connector_usage_hints: Option<&[ResolvedConnectorHint]>,
+    #[cfg(feature = "desktop")] ambient_context: Option<&str>,
+    written_connector_skills: Option<&[String]>,
 ) -> String {
     let mut prompt = String::new();
 
@@ -549,14 +588,49 @@ pub fn assemble_prompt(
     if let Some(connector_hints) = connector_usage_hints {
         if !connector_hints.is_empty() {
             let shrink = crate::engine::skills_sidecar::is_enabled();
+            // Per-connector shrink decision: a connector shrinks to a skill
+            // pointer ONLY when the sidecar is enabled AND its SKILL.md was
+            // actually written. `written_connector_skills == None` means the
+            // caller couldn't tell us which files landed (resume/prepared-cache
+            // paths, external callers), so we trust the enable flag and point
+            // at all — the pre-per-skill behaviour.
+            let has_skill = |name: &str| -> bool {
+                shrink
+                    && written_connector_skills
+                        .map(|w| w.iter().any(|n| n == name))
+                        .unwrap_or(true)
+            };
+            let render_inline = |prompt: &mut String, entry: &ResolvedConnectorHint| {
+                prompt.push_str(&format!("### {}\n{}\n\n", entry.label, entry.hint.overview));
+                if !entry.hint.examples.is_empty() {
+                    prompt.push_str("Examples:\n");
+                    for example in &entry.hint.examples {
+                        prompt.push_str(&format!("```\n{}\n```\n", example));
+                    }
+                }
+                if let Some(gotchas) = &entry.hint.gotchas {
+                    if !gotchas.is_empty() {
+                        prompt.push_str("Gotchas:\n");
+                        for g in gotchas {
+                            prompt.push_str(&format!("- {}\n", g));
+                        }
+                    }
+                }
+                prompt.push('\n');
+            };
+
+            prompt.push_str("## Connector Usage Reference\n");
             if shrink {
-                prompt.push_str("## Connector Usage Reference\n");
                 prompt.push_str(
                     "Per-connector usage docs live in your skill catalog. Invoke the matching \
                      `personas-connector-<name>` skill on demand instead of pre-loading every \
-                     connector's body.\n\n",
+                     connector's body. Connectors listed inline below have their reference here.\n\n",
                 );
-                for entry in connector_hints {
+            } else {
+                prompt.push_str("Quick reference for the connectors above. Use these examples as starting points -- adapt params to your task.\n\n");
+            }
+            for entry in connector_hints {
+                if has_skill(&entry.name) {
                     prompt.push_str(&format!(
                         "- **{}** — see skill `personas-connector-{}`\n",
                         entry.label,
@@ -564,30 +638,11 @@ pub fn assemble_prompt(
                             .strip_prefix("personas-connector-")
                             .unwrap_or(&entry.name),
                     ));
-                }
-                prompt.push('\n');
-            } else {
-                prompt.push_str("## Connector Usage Reference\n");
-                prompt.push_str("Quick reference for the connectors above. Use these examples as starting points -- adapt params to your task.\n\n");
-                for entry in connector_hints {
-                    prompt.push_str(&format!("### {}\n{}\n\n", entry.label, entry.hint.overview));
-                    if !entry.hint.examples.is_empty() {
-                        prompt.push_str("Examples:\n");
-                        for example in &entry.hint.examples {
-                            prompt.push_str(&format!("```\n{}\n```\n", example));
-                        }
-                    }
-                    if let Some(gotchas) = &entry.hint.gotchas {
-                        if !gotchas.is_empty() {
-                            prompt.push_str("Gotchas:\n");
-                            for g in gotchas {
-                                prompt.push_str(&format!("- {}\n", g));
-                            }
-                        }
-                    }
-                    prompt.push('\n');
+                } else {
+                    render_inline(&mut prompt, entry);
                 }
             }
+            prompt.push('\n');
         }
     }
 
@@ -1368,7 +1423,10 @@ mod tests {
             label: "GitHub".into(),
             hint,
         }];
-        let prompt = assemble_prompt(
+        // Force the INLINE path deterministically: an empty written-skills set
+        // means no connector shrank to a pointer, so full usage renders
+        // regardless of the sidecar enable flag (which now defaults ON).
+        let prompt = assemble_prompt_with_skills(
             &persona,
             &[],
             None,
@@ -1377,6 +1435,7 @@ mod tests {
             Some(&hints),
             #[cfg(feature = "desktop")]
             None,
+            Some(&[]),
         );
 
         assert!(prompt.contains("## Connector Usage Reference"));
@@ -1386,6 +1445,94 @@ mod tests {
         assert!(prompt.contains("api.github.com/user"));
         assert!(prompt.contains("Gotchas:"));
         assert!(prompt.contains("?per_page=100"));
+    }
+
+    /// Contract: when the sidecar is enabled and a connector's SKILL.md WAS
+    /// written, its usage shrinks to a skill pointer (no inline body).
+    #[test]
+    fn test_prompt_usage_reference_shrinks_to_pointer_when_written() {
+        // SAFETY: shares the process-global sidecar env with other tests; set
+        // it explicitly rather than relying on the default (mirrors the
+        // hooks_sidecar env-var test convention).
+        std::env::set_var(crate::engine::skills_sidecar::SIDECAR_ENV, "1");
+        let persona = test_persona();
+        let hints = vec![ResolvedConnectorHint {
+            name: "github".into(),
+            label: "GitHub".into(),
+            hint: LlmUsageHint {
+                overview: "GitHub REST API v3.".into(),
+                examples: vec!["curl https://api.github.com/user".into()],
+                gotchas: None,
+            },
+        }];
+        let prompt = assemble_prompt_with_skills(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            Some(&hints),
+            #[cfg(feature = "desktop")]
+            None,
+            Some(&["github".to_string()]),
+        );
+        std::env::remove_var(crate::engine::skills_sidecar::SIDECAR_ENV);
+
+        assert!(prompt.contains("## Connector Usage Reference"));
+        assert!(prompt.contains("see skill `personas-connector-github`"));
+        // Shrunk — no inline body / examples for the written connector.
+        assert!(!prompt.contains("### GitHub"));
+        assert!(!prompt.contains("api.github.com/user"));
+    }
+
+    /// Per-skill lockstep: with the sidecar enabled, a connector whose SKILL.md
+    /// was written shrinks to a pointer, while a connector NOT in the written
+    /// set (e.g. its write failed) KEEPS its full inline usage text.
+    #[test]
+    fn test_prompt_usage_reference_per_skill_lockstep() {
+        std::env::set_var(crate::engine::skills_sidecar::SIDECAR_ENV, "1");
+        let persona = test_persona();
+        let hints = vec![
+            ResolvedConnectorHint {
+                name: "github".into(),
+                label: "GitHub".into(),
+                hint: LlmUsageHint {
+                    overview: "GitHub REST API v3.".into(),
+                    examples: vec!["curl https://api.github.com/user".into()],
+                    gotchas: None,
+                },
+            },
+            ResolvedConnectorHint {
+                name: "slack".into(),
+                label: "Slack".into(),
+                hint: LlmUsageHint {
+                    overview: "Slack Web API. Post via chat.postMessage.".into(),
+                    examples: vec!["curl https://slack.com/api/chat.postMessage".into()],
+                    gotchas: None,
+                },
+            },
+        ];
+        // Only github's SKILL.md was written; slack's write failed.
+        let prompt = assemble_prompt_with_skills(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            Some(&hints),
+            #[cfg(feature = "desktop")]
+            None,
+            Some(&["github".to_string()]),
+        );
+        std::env::remove_var(crate::engine::skills_sidecar::SIDECAR_ENV);
+
+        // github → pointer, no inline body.
+        assert!(prompt.contains("see skill `personas-connector-github`"));
+        assert!(!prompt.contains("### GitHub"));
+        // slack → keeps full inline usage (write failed → no pointer).
+        assert!(prompt.contains("### Slack"));
+        assert!(prompt.contains("chat.postMessage"));
+        assert!(!prompt.contains("see skill `personas-connector-slack`"));
     }
 
     /// Contract: when no connector hints are in scope, the section header

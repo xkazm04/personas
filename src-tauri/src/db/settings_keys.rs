@@ -613,6 +613,18 @@ pub const CHAIN_MAX_LINKS: &str = "chain_max_links";
 /// 50 links is already a pathological fan-out); set the row to `"0"` to disable.
 pub const CHAIN_MAX_LINKS_DEFAULT: u32 = 50;
 
+/// Whether the per-connector SKILL.md sidecar is enabled — writes a lazily
+/// discovered `.claude/skills/personas-connector-<name>/SKILL.md` per bound
+/// connector and shrinks the eager `## Connector Usage Reference` prompt
+/// section to skill pointers (token savings). Default ON. Read once at engine
+/// startup and cached process-wide by
+/// [`crate::engine::skills_sidecar::seed_enabled_from_settings`]; the
+/// `PERSONAS_SKILLS_SIDECAR` env var overrides it for dev. Stored
+/// `"true"`/`"false"`. MUST equal `skills_sidecar::SETTING_KEY`.
+pub const SKILLS_SIDECAR_ENABLED: &str = "skills_sidecar_enabled";
+/// Default for [`SKILLS_SIDECAR_ENABLED`] — ON (the connector-skills sidecar ships enabled).
+pub const SKILLS_SIDECAR_ENABLED_DEFAULT: bool = true;
+
 /// Whether the per-persona skill scratchpad is enabled — the third knowledge
 /// layer (after memories + recipes): durable technique notes the agent authors
 /// during a run and that inject into future prompts. Default ON. Read once at
@@ -704,6 +716,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CHAIN_MAX_COST_USD,
     CHAIN_MAX_LINKS,
     SCRATCHPAD_ENABLED,
+    SKILLS_SIDECAR_ENABLED,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -843,6 +856,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_KPI_EVALUATION
         | AUTONOMOUS_DIRECTOR_STORM
         | SCRATCHPAD_ENABLED
+        | SKILLS_SIDECAR_ENABLED
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {
                 "true" | "false" => Ok(()),
@@ -1064,6 +1078,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | MAX_PARALLEL_EXECUTIONS
         | EXECUTION_WORKTREE_ISOLATION
         | SCRATCHPAD_ENABLED
+        | SKILLS_SIDECAR_ENABLED
         | FILE_WATCHER_DEBOUNCE_MS => "engine",
         // Numeric ceilings / rate limits.
         MONTHLY_COST_CEILING_USD
@@ -1185,6 +1200,17 @@ mod tests {
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "-1").is_err());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "").is_err());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, " 5 ").is_err());
+    }
+
+    #[test]
+    fn skills_sidecar_enabled_key_and_value_validation() {
+        assert!(validate_key(SKILLS_SIDECAR_ENABLED).is_ok());
+        assert!(validate_value(SKILLS_SIDECAR_ENABLED, "true").is_ok());
+        assert!(validate_value(SKILLS_SIDECAR_ENABLED, "false").is_ok());
+        assert!(validate_value(SKILLS_SIDECAR_ENABLED, "1").is_err());
+        assert!(validate_value(SKILLS_SIDECAR_ENABLED, "").is_err());
+        assert!(SKILLS_SIDECAR_ENABLED_DEFAULT);
+        assert_eq!(audit_category(SKILLS_SIDECAR_ENABLED), Some("engine"));
     }
 
     #[test]

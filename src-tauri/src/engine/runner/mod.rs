@@ -586,6 +586,147 @@ pub async fn run_execution(
         })),
     );
 
+    // Per-execution git-worktree isolation (Slice C, DEFAULT-OFF). When the
+    // `execution_worktree_isolation` setting is ON and this persona is pinned
+    // to a dev_project whose root_path is a git work tree, give THIS execution
+    // its own worktree on branch `personas/exec/<id>`. Two concurrent
+    // executions against the same repo then write disjoint working dirs instead
+    // of clobbering the shared per-persona scratch dir. The branch is left for
+    // review on completion (no auto-merge — see finalize). Resolved here (before
+    // exec_dir) so the worktree path can become both the cwd and the
+    // CODEBASE_ROOT_PATH override below. Any failure falls back to the
+    // non-isolated path and never fails the execution.
+    let exec_worktree: Option<crate::commands::infrastructure::dev_tools::workspace::ExecutionWorkspace> = {
+        let isolation_on = crate::db::repos::core::settings::get(
+            &pool,
+            crate::db::settings_keys::EXECUTION_WORKTREE_ISOLATION,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if isolation_on {
+            // Resolve the pinned dev_project's repo root the same robust way the
+            // CODEBASE_* injection does below: read `devProjectId` from the raw
+            // design_context JSON (the strict struct parse would drop it), then
+            // look up dev_projects.root_path via the repo.
+            let repo_root: Option<std::path::PathBuf> = persona
+                .design_context
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+                .and_then(|v| {
+                    v.get("devProjectId")
+                        .and_then(|x| x.as_str())
+                        .map(|s| s.to_string())
+                })
+                .and_then(|id| {
+                    crate::db::repos::dev_tools::get_project_by_id(&pool, &id).ok()
+                })
+                .map(|p| std::path::PathBuf::from(p.root_path.as_str()))
+                .filter(|p| p.join(".git").exists());
+            match repo_root {
+                Some(root) => {
+                    match crate::commands::infrastructure::dev_tools::workspace::ExecutionWorkspace::new_for_execution(
+                        &root,
+                        &execution_id,
+                    ) {
+                        Ok(ws) => {
+                            logger.log(&format!(
+                                "[WORKTREE] isolated execution in {} on branch personas/exec/{}",
+                                ws.path().display(),
+                                &execution_id
+                            ));
+                            Some(ws)
+                        }
+                        Err(e) => {
+                            logger.log(&format!(
+                                "[WORKTREE] isolation requested but worktree create failed ({e}); falling back to shared per-persona dir"
+                            ));
+                            None
+                        }
+                    }
+                }
+                None => {
+                    logger.log(
+                        "[WORKTREE] isolation requested but persona has no pinned git dev_project; falling back to shared per-persona dir",
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        }
+    };
+
+    // Create a stable per-persona working directory (persists across executions).
+    // When isolation is active, use the per-execution worktree instead.
+    let exec_dir = match &exec_worktree {
+        Some(ws) => ws.path().to_path_buf(),
+        None => {
+            let stable_dir = std::env::temp_dir()
+                .join("personas-workspace")
+                .join(&persona.id);
+            if std::fs::create_dir_all(&stable_dir).is_ok() {
+                stable_dir
+            } else {
+                std::env::temp_dir().join(format!("personas-exec-{}", &execution_id))
+            }
+        }
+    };
+    if let Err(e) = std::fs::create_dir_all(&exec_dir) {
+        let err_msg = format!("Failed to create execution directory: {e}");
+        logger.log(&format!("Failed to create exec dir: {e}"));
+        let _ = exec_repo::update_status(
+            &pool,
+            &execution_id,
+            crate::db::models::UpdateExecutionStatus {
+                status: ExecutionState::Failed,
+                error_message: Some(err_msg.clone()),
+                duration_ms: Some(start_time.elapsed().as_millis() as i64),
+                ..Default::default()
+            },
+        );
+        return ExecutionResult {
+            success: false,
+            error: Some(err_msg),
+            log_file_path: Some(log_file_path),
+            duration_ms: start_time.elapsed().as_millis() as u64,
+            ..default_result()
+        };
+    }
+
+    // Install Claude Code hooks sidecar (Karpathy-style auto-capture).
+    // No-op unless PERSONAS_HOOKS_SIDECAR=1 — see hooks_sidecar.rs for details.
+    // Best-effort: never fails the execution if the sidecar can't be written.
+    match super::hooks_sidecar::install_sidecar(&exec_dir) {
+        Ok(true) => logger.log("[hooks] installed Claude Code hooks sidecar in exec_dir"),
+        Ok(false) => {} // disabled or skipped
+        Err(e) => logger.log(&format!("[hooks] sidecar install failed (non-fatal): {e}")),
+    }
+
+    // Install per-connector SKILL.md sidecar (Printing Press lazy-discovery
+    // pattern). Default ON via the `skills_sidecar_enabled` setting — see
+    // skills_sidecar/DESIGN.md. Runs BEFORE prompt assembly so the returned
+    // set of connectors whose SKILL.md actually landed drives the per-skill
+    // prompt shrink below (a connector whose write failed keeps inline usage).
+    // Best-effort, never fails execution.
+    let written_connector_skills: Vec<String> =
+        match super::skills_sidecar::install_sidecar(&exec_dir, &connector_usage_hints) {
+            Ok(written) => {
+                if !written.is_empty() {
+                    logger.log(&format!(
+                        "[skills] wrote {} per-connector SKILL.md file(s) in exec_dir",
+                        written.len()
+                    ));
+                }
+                written
+            }
+            Err(e) => {
+                logger.log(&format!("[skills] sidecar install failed (non-fatal): {e}"));
+                Vec::new()
+            }
+        };
+
     // Assemble prompt (with credential env var hints)
     let prompt_span = trace.start_span(
         SpanType::PromptAssembly,
@@ -642,7 +783,7 @@ pub async fn run_execution(
             )
         }
     } else {
-        prompt::assemble_prompt(
+        prompt::assemble_prompt_with_skills(
             &persona,
             &tools,
             input_data.as_ref(),
@@ -655,6 +796,9 @@ pub async fn run_execution(
             connector_hints_opt,
             #[cfg(feature = "desktop")]
             None, // Ambient context is injected by the engine layer (see mod.rs)
+            // Per-skill lockstep: shrink to a pointer only for connectors whose
+            // SKILL.md was actually written just above.
+            Some(&written_connector_skills),
         )
     };
 
@@ -967,137 +1111,6 @@ pub async fn run_execution(
             .join(", ")
     ));
     logger.log(&format!("Prompt length: {} characters", prompt_text.len()));
-
-    // Per-execution git-worktree isolation (Slice C, DEFAULT-OFF). When the
-    // `execution_worktree_isolation` setting is ON and this persona is pinned
-    // to a dev_project whose root_path is a git work tree, give THIS execution
-    // its own worktree on branch `personas/exec/<id>`. Two concurrent
-    // executions against the same repo then write disjoint working dirs instead
-    // of clobbering the shared per-persona scratch dir. The branch is left for
-    // review on completion (no auto-merge — see finalize). Resolved here (before
-    // exec_dir) so the worktree path can become both the cwd and the
-    // CODEBASE_ROOT_PATH override below. Any failure falls back to the
-    // non-isolated path and never fails the execution.
-    let exec_worktree: Option<crate::commands::infrastructure::dev_tools::workspace::ExecutionWorkspace> = {
-        let isolation_on = crate::db::repos::core::settings::get(
-            &pool,
-            crate::db::settings_keys::EXECUTION_WORKTREE_ISOLATION,
-        )
-        .ok()
-        .flatten()
-        .as_deref()
-            == Some("true");
-        if isolation_on {
-            // Resolve the pinned dev_project's repo root the same robust way the
-            // CODEBASE_* injection does below: read `devProjectId` from the raw
-            // design_context JSON (the strict struct parse would drop it), then
-            // look up dev_projects.root_path via the repo.
-            let repo_root: Option<std::path::PathBuf> = persona
-                .design_context
-                .as_deref()
-                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-                .and_then(|v| {
-                    v.get("devProjectId")
-                        .and_then(|x| x.as_str())
-                        .map(|s| s.to_string())
-                })
-                .and_then(|id| {
-                    crate::db::repos::dev_tools::get_project_by_id(&pool, &id).ok()
-                })
-                .map(|p| std::path::PathBuf::from(p.root_path.as_str()))
-                .filter(|p| p.join(".git").exists());
-            match repo_root {
-                Some(root) => {
-                    match crate::commands::infrastructure::dev_tools::workspace::ExecutionWorkspace::new_for_execution(
-                        &root,
-                        &execution_id,
-                    ) {
-                        Ok(ws) => {
-                            logger.log(&format!(
-                                "[WORKTREE] isolated execution in {} on branch personas/exec/{}",
-                                ws.path().display(),
-                                &execution_id
-                            ));
-                            Some(ws)
-                        }
-                        Err(e) => {
-                            logger.log(&format!(
-                                "[WORKTREE] isolation requested but worktree create failed ({e}); falling back to shared per-persona dir"
-                            ));
-                            None
-                        }
-                    }
-                }
-                None => {
-                    logger.log(
-                        "[WORKTREE] isolation requested but persona has no pinned git dev_project; falling back to shared per-persona dir",
-                    );
-                    None
-                }
-            }
-        } else {
-            None
-        }
-    };
-
-    // Create a stable per-persona working directory (persists across executions).
-    // When isolation is active, use the per-execution worktree instead.
-    let exec_dir = match &exec_worktree {
-        Some(ws) => ws.path().to_path_buf(),
-        None => {
-            let stable_dir = std::env::temp_dir()
-                .join("personas-workspace")
-                .join(&persona.id);
-            if std::fs::create_dir_all(&stable_dir).is_ok() {
-                stable_dir
-            } else {
-                std::env::temp_dir().join(format!("personas-exec-{}", &execution_id))
-            }
-        }
-    };
-    if let Err(e) = std::fs::create_dir_all(&exec_dir) {
-        let err_msg = format!("Failed to create execution directory: {e}");
-        logger.log(&format!("Failed to create exec dir: {e}"));
-        let _ = exec_repo::update_status(
-            &pool,
-            &execution_id,
-            crate::db::models::UpdateExecutionStatus {
-                status: ExecutionState::Failed,
-                error_message: Some(err_msg.clone()),
-                duration_ms: Some(start_time.elapsed().as_millis() as i64),
-                ..Default::default()
-            },
-        );
-        return ExecutionResult {
-            success: false,
-            error: Some(err_msg),
-            log_file_path: Some(log_file_path),
-            duration_ms: start_time.elapsed().as_millis() as u64,
-            ..default_result()
-        };
-    }
-
-    // Install Claude Code hooks sidecar (Karpathy-style auto-capture).
-    // No-op unless PERSONAS_HOOKS_SIDECAR=1 — see hooks_sidecar.rs for details.
-    // Best-effort: never fails the execution if the sidecar can't be written.
-    match super::hooks_sidecar::install_sidecar(&exec_dir) {
-        Ok(true) => logger.log("[hooks] installed Claude Code hooks sidecar in exec_dir"),
-        Ok(false) => {} // disabled or skipped
-        Err(e) => logger.log(&format!("[hooks] sidecar install failed (non-fatal): {e}")),
-    }
-
-    // Install per-connector SKILL.md sidecar (Printing Press lazy-discovery
-    // pattern). No-op unless PERSONAS_SKILLS_SIDECAR=1 — see
-    // skills_sidecar/DESIGN.md for details. Lockstep with the prompt-section
-    // shrink in `engine/prompt/mod.rs`. Best-effort, never fails execution.
-    match super::skills_sidecar::install_sidecar(&exec_dir, &connector_usage_hints) {
-        Ok(true) => logger.log(&format!(
-            "[skills] wrote {} per-connector SKILL.md file(s) in exec_dir",
-            connector_usage_hints.len()
-        )),
-        Ok(false) => {} // disabled or no hints
-        Err(e) => logger.log(&format!("[skills] sidecar install failed (non-fatal): {e}")),
-    }
 
     // Project tiered persona memories into exec_dir/CLAUDE.md so they survive
     // Claude Code's /compact (which re-reads CLAUDE.md from disk).

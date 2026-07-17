@@ -17,21 +17,68 @@
 //! that don't write to `exec_dir` should not have the env set.
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU8, Ordering};
 
 use crate::engine::prompt::ResolvedConnectorHint;
 use crate::error::AppError;
 
-/// Env var that gates the sidecar write AND the prompt-section shrink. Unset
-/// → both are no-ops.
+/// Env var that OVERRIDES the sidecar enable state (write + prompt-section
+/// shrink). `"1"` forces ON, `"0"` forces OFF; any other/unset value defers to
+/// the DB-seeded [`SETTING_KEY`] setting.
 pub const SIDECAR_ENV: &str = "PERSONAS_SKILLS_SIDECAR";
+
+/// Registered settings key that gates the sidecar. MUST equal
+/// [`crate::db::settings_keys::SKILLS_SIDECAR_ENABLED`] — asserted by a unit
+/// test (cross-module constant-equality discipline).
+pub const SETTING_KEY: &str = "skills_sidecar_enabled";
 
 /// Skill folder prefix — chosen to avoid colliding with user-authored skills
 /// the user might already have in `.claude/skills/`.
 const SKILL_PREFIX: &str = "personas-connector-";
 
-/// Returns true when the sidecar feature is enabled via env var.
+/// Process-global cache of the DB-seeded enable state. `0` = unseeded (fall
+/// back to [`DEFAULT_ENABLED`]), `1` = OFF, `2` = ON. Seeded once at engine
+/// startup; the env var still overrides it at read time.
+static ENABLED_CACHE: AtomicU8 = AtomicU8::new(0);
+const CACHE_OFF: u8 = 1;
+const CACHE_ON: u8 = 2;
+
+/// Default when neither the env override nor the DB cache resolves — the
+/// registered setting's default (ON). Single source of truth with the
+/// allowlist so the two can't drift.
+const DEFAULT_ENABLED: bool = crate::db::settings_keys::SKILLS_SIDECAR_ENABLED_DEFAULT;
+
+/// Seed the process-global enable cache from an explicit bool.
+pub fn seed_enabled(enabled: bool) {
+    ENABLED_CACHE.store(if enabled { CACHE_ON } else { CACHE_OFF }, Ordering::Relaxed);
+}
+
+/// Read the `skills_sidecar_enabled` setting from the DB and seed the cache.
+/// Called once at engine construction. A missing/invalid row keeps
+/// [`DEFAULT_ENABLED`].
+pub fn seed_enabled_from_settings(pool: &crate::db::DbPool) {
+    let enabled = crate::db::repos::core::settings::get(pool, SETTING_KEY)
+        .ok()
+        .flatten()
+        .map(|s| s.trim() != "false")
+        .unwrap_or(DEFAULT_ENABLED);
+    seed_enabled(enabled);
+}
+
+/// Returns true when the sidecar feature is enabled. Env var wins (`"1"`/`"0"`),
+/// else the DB-seeded cache, else [`DEFAULT_ENABLED`] (ON). Precedence matches
+/// [`crate::engine::skill_scratchpad::is_enabled`].
 pub fn is_enabled() -> bool {
-    std::env::var(SIDECAR_ENV).ok().as_deref() == Some("1")
+    match std::env::var(SIDECAR_ENV).ok().as_deref() {
+        Some("1") => return true,
+        Some("0") => return false,
+        _ => {}
+    }
+    match ENABLED_CACHE.load(Ordering::Relaxed) {
+        CACHE_ON => true,
+        CACHE_OFF => false,
+        _ => DEFAULT_ENABLED,
+    }
 }
 
 /// Build the skill folder name for a given connector name. Lower-cases and
@@ -132,18 +179,23 @@ pub fn build_skill_md(hint: &ResolvedConnectorHint) -> String {
 /// Write one `SKILL.md` file per connector hint into
 /// `exec_dir/.claude/skills/personas-connector-<slug>/SKILL.md`.
 ///
-/// Reads `PERSONAS_SKILLS_SIDECAR` and short-circuits to `Ok(false)` when
-/// unset — the caller does not need to branch on the env check itself.
-/// Returns `Ok(true)` after writing at least one file. Returns
-/// `Ok(false)` when no hints were passed.
+/// Reads the enable state ([`is_enabled`]) and short-circuits to an empty set
+/// when disabled — the caller does not need to branch on the check itself.
 ///
-/// This is best-effort: an I/O failure on a single file is logged and
-/// skipped, never propagated. Skill discovery is a nice-to-have, not a hard
-/// requirement, mirroring the philosophy of `hooks_sidecar`.
+/// Returns the set of connector `name`s whose SKILL.md was ACTUALLY written.
+/// The prompt-section shrink in `engine::prompt` consults this exact set so it
+/// only emits a skill pointer for a connector that has a file on disk — a
+/// per-skill lockstep that never points the agent at a missing skill. A
+/// connector whose write failed is absent from the set, so the prompt keeps
+/// its full inline usage text.
+///
+/// Best-effort: an I/O failure on a single file is logged with a
+/// `skills_sidecar` trace marker and skipped, never propagated. Skill
+/// discovery is a nice-to-have, mirroring `hooks_sidecar`'s philosophy.
 pub fn install_sidecar(
     exec_dir: &Path,
     hints: &[ResolvedConnectorHint],
-) -> Result<bool, AppError> {
+) -> Result<Vec<String>, AppError> {
     install_sidecar_inner(exec_dir, hints, is_enabled())
 }
 
@@ -154,14 +206,14 @@ fn install_sidecar_inner(
     exec_dir: &Path,
     hints: &[ResolvedConnectorHint],
     enabled: bool,
-) -> Result<bool, AppError> {
+) -> Result<Vec<String>, AppError> {
     if !enabled {
-        return Ok(false);
+        return Ok(Vec::new());
     }
 
     if hints.is_empty() {
         tracing::debug!("skills_sidecar: no connector hints to write — skipping");
-        return Ok(false);
+        return Ok(Vec::new());
     }
 
     let skills_root = exec_dir.join(".claude").join("skills");
@@ -171,10 +223,10 @@ fn install_sidecar_inner(
             dir = %skills_root.display(),
             "skills_sidecar: failed to create .claude/skills/ — skipping sidecar"
         );
-        return Ok(false);
+        return Ok(Vec::new());
     }
 
-    let mut wrote_any = false;
+    let mut written: Vec<String> = Vec::with_capacity(hints.len());
     for hint in hints {
         let folder_name = skill_folder_name(&hint.name);
         let folder_path = skills_root.join(&folder_name);
@@ -183,7 +235,7 @@ fn install_sidecar_inner(
                 error = %e,
                 dir = %folder_path.display(),
                 connector = %hint.name,
-                "skills_sidecar: failed to create skill folder — skipping connector"
+                "skills_sidecar: failed to create skill folder — connector keeps inline usage"
             );
             continue;
         }
@@ -192,7 +244,7 @@ fn install_sidecar_inner(
         let body = build_skill_md(hint);
         match std::fs::write(&skill_md_path, body) {
             Ok(()) => {
-                wrote_any = true;
+                written.push(hint.name.clone());
                 tracing::debug!(
                     path = %skill_md_path.display(),
                     connector = %hint.name,
@@ -204,13 +256,13 @@ fn install_sidecar_inner(
                     error = %e,
                     path = %skill_md_path.display(),
                     connector = %hint.name,
-                    "skills_sidecar: failed to write SKILL.md — skipping connector"
+                    "skills_sidecar: failed to write SKILL.md — connector keeps inline usage"
                 );
             }
         }
     }
 
-    Ok(wrote_any)
+    Ok(written)
 }
 
 /// Compose a one-line description for the YAML frontmatter. Seeds from
@@ -401,16 +453,37 @@ mod tests {
     }
 
     #[test]
+    fn setting_key_matches_settings_keys_constant() {
+        // Cross-module constant-equality discipline (round-10 P1): the key this
+        // module reads MUST equal the registered allowlist key, or the seeded
+        // read misses and set() rejects the toggle.
+        assert_eq!(SETTING_KEY, crate::db::settings_keys::SKILLS_SIDECAR_ENABLED);
+    }
+
+    #[test]
+    fn is_enabled_defaults_on_and_env_overrides() {
+        // Cache unseeded → default ON.
+        std::env::remove_var(SIDECAR_ENV);
+        assert!(is_enabled());
+        // Env override wins both ways.
+        std::env::set_var(SIDECAR_ENV, "0");
+        assert!(!is_enabled());
+        std::env::set_var(SIDECAR_ENV, "1");
+        assert!(is_enabled());
+        std::env::remove_var(SIDECAR_ENV);
+    }
+
+    #[test]
     fn install_sidecar_disabled_is_noop() {
         let dir = tempdir().expect("tempdir");
-        let result = install_sidecar_inner(dir.path(), &[sample_hint()], false).expect("ok");
-        assert!(!result, "expected no-op when disabled");
+        let written = install_sidecar_inner(dir.path(), &[sample_hint()], false).expect("ok");
+        assert!(written.is_empty(), "expected no-op when disabled");
         // No skills directory should have been created.
         assert!(!dir.path().join(".claude").join("skills").exists());
     }
 
     #[test]
-    fn install_sidecar_writes_one_file_per_hint() {
+    fn install_sidecar_writes_one_file_per_hint_and_returns_names() {
         let dir = tempdir().expect("tempdir");
         let mut hints = vec![sample_hint()];
         let mut second = sample_hint();
@@ -418,8 +491,8 @@ mod tests {
         second.label = "Slack".to_string();
         hints.push(second);
 
-        let result = install_sidecar_inner(dir.path(), &hints, true).expect("ok");
-        assert!(result, "expected wrote_any=true");
+        let written = install_sidecar_inner(dir.path(), &hints, true).expect("ok");
+        assert_eq!(written, vec!["github".to_string(), "slack".to_string()]);
 
         let github_path = skill_md_path(dir.path(), "github");
         let slack_path = skill_md_path(dir.path(), "slack");
@@ -435,8 +508,8 @@ mod tests {
     #[test]
     fn install_sidecar_empty_hints_is_noop() {
         let dir = tempdir().expect("tempdir");
-        let result = install_sidecar_inner(dir.path(), &[], true).expect("ok");
-        assert!(!result, "expected no-op when no hints");
+        let written = install_sidecar_inner(dir.path(), &[], true).expect("ok");
+        assert!(written.is_empty(), "expected no-op when no hints");
         assert!(!dir.path().join(".claude").join("skills").exists());
     }
 }

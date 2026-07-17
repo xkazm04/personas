@@ -72,13 +72,13 @@ const APP_DATA_SUBDIR: &str = "com.personas.desktop";
 /// back to [`DEFAULT_ENABLED`]), `1` = OFF, `2` = ON. Seeded once at engine
 /// startup; the env var still overrides it at read time.
 static ENABLED_CACHE: AtomicU8 = AtomicU8::new(0);
-const CACHE_UNSET: u8 = 0;
 const CACHE_OFF: u8 = 1;
 const CACHE_ON: u8 = 2;
 
-/// Default when neither the env override nor the DB cache resolves — ON, since
-/// the scratchpad now ships enabled (`scratchpad_enabled` default `true`).
-const DEFAULT_ENABLED: bool = true;
+/// Default when neither the env override nor the DB cache resolves — the
+/// registered setting's default (ON). Single source of truth with the
+/// allowlist so the two can't drift.
+const DEFAULT_ENABLED: bool = crate::db::settings_keys::SCRATCHPAD_ENABLED_DEFAULT;
 
 /// Seed the process-global enable cache from an explicit bool. Called by
 /// [`seed_enabled_from_settings`]; exposed for tests.
