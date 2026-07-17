@@ -49,9 +49,15 @@ export function NegotiatorGuidingPhase({
 }: NegotiatorGuidingPhaseProps) {
   const { t } = useTranslation();
   const totalSteps = visibleSteps.length;
-  const completedCount = completedSteps.size;
+  // Count only steps still present in the visible set — completedSteps can
+  // retain indices for steps the step graph later resolved out (skipped),
+  // which would otherwise overcount progress against the current view.
+  const completedCount = visibleSteps.reduce(
+    (count, _step, index) => (completedSteps.has(index) ? count + 1 : count),
+    0,
+  );
   const allDone = totalSteps > 0 && completedCount >= totalSteps;
-  const progressPercent = totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0;
+  const progressPercent = totalSteps > 0 ? Math.min((completedCount / totalSteps) * 100, 100) : 0;
 
   // Focus management: move focus to the newly active step header on transitions
   const prevStepRef = useRef(activeStepIndex);

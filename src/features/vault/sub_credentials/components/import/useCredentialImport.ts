@@ -18,6 +18,7 @@ export interface CredentialImportState {
   rawInput: string;
   parseResult: ImportParseResult | null;
   mappings: SecretServiceMapping[];
+  /** Set of selected `ImportedSecret.id` values — not `key`, which parsers can duplicate. */
   selectedKeys: Set<string>;
   syncConfig: SyncConfig | null;
   error: string | null;
@@ -27,7 +28,7 @@ export interface CredentialImportActions {
   selectSource: (id: ImportSourceId) => void;
   setRawInput: (input: string) => void;
   parse: () => void;
-  toggleKey: (key: string) => void;
+  toggleKey: (id: string) => void;
   selectAll: () => void;
   deselectAll: () => void;
   setSyncConfig: (config: SyncConfig | null) => void;
@@ -70,23 +71,23 @@ export function useCredentialImport(): CredentialImportState & CredentialImportA
 
     const detectedMappings = buildMappings(result.secrets);
     setMappings(detectedMappings);
-    setSelectedKeys(new Set(result.secrets.map((s) => s.key)));
+    setSelectedKeys(new Set(result.secrets.map((s) => s.id)));
     setError(null);
     setPhase('preview');
   }, [sourceId, rawInput]);
 
-  const toggleKey = useCallback((key: string) => {
+  const toggleKey = useCallback((id: string) => {
     setSelectedKeys((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
 
   const selectAll = useCallback(() => {
     if (parseResult) {
-      setSelectedKeys(new Set(parseResult.secrets.map((s) => s.key)));
+      setSelectedKeys(new Set(parseResult.secrets.map((s) => s.id)));
     }
   }, [parseResult]);
 
@@ -97,9 +98,9 @@ export function useCredentialImport(): CredentialImportState & CredentialImportA
   const buildResults = useCallback((): CredentialDesignResult[] => {
     if (!parseResult) return [];
 
-    const selected = parseResult.secrets.filter((s) => selectedKeys.has(s.key));
+    const selected = parseResult.secrets.filter((s) => selectedKeys.has(s.id));
     const selectedMappings = selected.map((s) => {
-      const idx = parseResult.secrets.indexOf(s);
+      const idx = parseResult.secrets.findIndex((x) => x.id === s.id);
       return mappings[idx]!;
     });
     const groups = groupByService(selected, selectedMappings);

@@ -104,7 +104,14 @@ export function FieldActionButtons({
             if (current === copiedValue) {
               await copyText('');
             }
-          } catch (err) { silentCatch("features/vault/sub_credentials/components/forms/FieldCaptureHelpers:catch2")(err); }
+          } catch (err) {
+            // readText() can be denied (permission revoked, focus lost, webview
+            // policy) — in that case we can't confirm the clipboard still holds
+            // our value, but the TTL guarantee still has to hold. Fall back to
+            // an unconditional clear rather than silently skipping the wipe.
+            silentCatch("features/vault/sub_credentials/components/forms/FieldCaptureHelpers:catch2")(err);
+            try { await copyText(''); } catch (clearErr) { silentCatch("features/vault/sub_credentials/components/forms/FieldCaptureHelpers:catch2b")(clearErr); }
+          }
         }, SECRET_CLIPBOARD_TTL_MS);
       }
     } catch (err) { silentCatch("features/vault/sub_credentials/components/forms/FieldCaptureHelpers:catch3")(err); }
