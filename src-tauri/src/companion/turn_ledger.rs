@@ -22,7 +22,6 @@
 
 use rusqlite::params;
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::db::UserDbPool;
 use crate::error::AppError;
@@ -113,7 +112,7 @@ pub fn record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Option<String> {
 }
 
 fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppError> {
-    let id = format!("turn_{}", short_uuid());
+    let id = format!("turn_{}", crate::companion::util::short_id(12));
     let u = rec.usage.clone().unwrap_or_default();
     let conn = pool.get()?;
     conn.execute(
@@ -182,10 +181,6 @@ pub fn prune_old_turns(pool: &UserDbPool) -> Result<usize, AppError> {
         );
     }
     Ok(n)
-}
-
-fn short_uuid() -> String {
-    Uuid::new_v4().simple().to_string().chars().take(12).collect()
 }
 
 #[cfg(test)]

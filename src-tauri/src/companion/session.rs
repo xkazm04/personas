@@ -421,7 +421,7 @@ pub async fn send_turn(
     conversation_id: String,
 ) -> Result<TurnResult, AppError> {
     let session_id = conversation_id;
-    let turn_id = format!("turn_{}", short_random());
+    let turn_id = format!("turn_{}", crate::companion::util::short_id(12));
 
     // Serialize turns (see TURN_LOCK). User-initiated paths wait for any
     // in-flight turn; background spawners skip rather than queue, so
@@ -2141,7 +2141,10 @@ pub fn wipe_transcript(
 }
 
 fn write_temp_prompt(content: &str) -> Result<std::path::PathBuf, AppError> {
-    let path = std::env::temp_dir().join(format!("athena-prompt-{}.md", short_random()));
+    let path = std::env::temp_dir().join(format!(
+        "athena-prompt-{}.md",
+        crate::companion::util::short_id(12)
+    ));
     std::fs::write(&path, content)
         .map_err(|e| AppError::Internal(format!("write prompt file: {e}")))?;
     Ok(path)
@@ -2262,11 +2265,3 @@ fn emit_error(app: &AppHandle, session_id: &str, turn_id: &str, msg: &str) {
     );
 }
 
-fn short_random() -> String {
-    uuid::Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(8)
-        .collect()
-}

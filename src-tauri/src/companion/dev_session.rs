@@ -123,7 +123,7 @@ pub async fn run_improvement(
     embedder: EmbedderArg<'_>,
     feedback: String,
 ) -> Result<ImprovementOutcome, AppError> {
-    let id = short_random();
+    let id = crate::companion::util::short_id(12);
     let dir = ensure_pending_dir()?;
     let marker_path = dir.join(format!("{id}.json"));
     let stream_path = dir.join(format!("{id}.stream.jsonl"));
@@ -278,7 +278,7 @@ async fn spawn_detached(
     let stderr_file = std::fs::File::create(stderr_path)
         .map_err(|e| AppError::Internal(format!("create stderr file: {e}")))?;
 
-    let repo_root = resolve_repo_root();
+    let repo_root = crate::companion::dev_mode::repo_root();
     // Shared resolver — verified absolute claude.cmd (PATH-shadow immune).
     let (cmd_program, mut argv) = crate::engine::cli_process::claude_cli_invocation();
     argv.extend([
@@ -366,7 +366,7 @@ fn finalize_from_disk(
     let mut saw_result_event = false;
     let mut result_was_error = false;
 
-    let repo_root = resolve_repo_root();
+    let repo_root = crate::companion::dev_mode::repo_root();
     for line in stream.lines() {
         let value = match serde_json::from_str::<serde_json::Value>(line) {
             Ok(v) => v,
@@ -592,14 +592,6 @@ Discipline:
   pick up your changes via hot reload.
 ";
 
-fn resolve_repo_root() -> PathBuf {
-    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    manifest
-        .parent()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
-}
-
 fn normalize_repo_path(input: &str, repo_root: &PathBuf) -> String {
     let p = std::path::Path::new(input);
     if let Ok(rel) = p.strip_prefix(repo_root) {
@@ -650,11 +642,3 @@ fn format_episode(feedback: &str, outcome: &ImprovementOutcome) -> String {
     s
 }
 
-fn short_random() -> String {
-    uuid::Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(10)
-        .collect()
-}
