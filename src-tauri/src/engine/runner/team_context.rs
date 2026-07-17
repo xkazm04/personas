@@ -248,7 +248,16 @@ fn resolve_standards_policy(pool: &DbPool, persona: &Persona, team_id: &str) -> 
 
     let main_b = project.main_branch.as_deref().unwrap_or("main");
     let test_b = project.test_env_branch.as_deref().unwrap_or("");
-    let resolve_branch = |sel: &str| if sel == "test" { test_b } else { main_b };
+    // Fall back to main_b when "test" is selected but test_env_branch isn't
+    // configured — an empty resolved branch would otherwise render as a
+    // blank PR-base directive in the injected prompt.
+    let resolve_branch = |sel: &str| {
+        if sel == "test" && !test_b.is_empty() {
+            test_b
+        } else {
+            main_b
+        }
+    };
 
     let branching = cfg.get("branching");
     let pr_base = resolve_branch(

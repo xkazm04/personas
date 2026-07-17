@@ -95,9 +95,18 @@ pub fn build_capability_prompt(
          Emit the v3 `capability_resolution` events for capability `{id}` and NOTHING \
          else. Resolve each applicable field: suggested_trigger, connectors, tool_hints, \
          event_subscriptions, input_schema, sample_input, review_policy, memory_policy, \
-         notification_channels, error_handling. Do NOT resolve other capabilities; do NOT \
-         emit behavior_core / capability_enumeration / persona_resolution / agent_ir; do \
-         NOT ask clarifying questions — pick sensible defaults.\n\n\
+         notification_channels, error_handling, model_override, model_rationale. Do NOT \
+         resolve other capabilities; do NOT emit behavior_core / capability_enumeration / \
+         persona_resolution / agent_ir; do NOT ask clarifying questions — pick sensible \
+         defaults.\n\n\
+         ## Model recommendation (model_override / model_rationale)\n\
+         You MUST emit `model_override` and `model_rationale` for this capability. \
+         Default to `claude-sonnet-4-6`. Pick `claude-haiku-4-5-20251001` for narrow, \
+         mostly-deterministic work (single-tool fetch + templated digest, simple \
+         classification, trivial transforms). Pick `claude-opus-4-8` only for long \
+         agentic loops with branching/self-correction, non-trivial code writing, or deep \
+         multi-source research synthesis. `model_rationale` is one sentence (\u{2264} 160 \
+         chars) explaining the pick in user terms.\n\n\
          Output raw JSON only, one event per line, each of the form:\n\
          {{\"capability_resolution\": {{\"id\": \"{id}\", \"field\": \"<field-name>\", \
          \"value\": <field-value>, \"status\": \"resolved\"}}}}\n",

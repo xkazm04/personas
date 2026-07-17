@@ -332,7 +332,7 @@ pub(super) fn cleanup_session(
     session_id: &str,
     generation: u64,
 ) {
-    {
+    let should_remove = {
         let mut sessions = sessions_map.lock().unwrap_or_else(|e| e.into_inner());
         let should_remove = sessions
             .get(session_id)
@@ -340,6 +340,13 @@ pub(super) fn cleanup_session(
         if should_remove {
             sessions.remove(session_id);
         }
+        should_remove
+    };
+    // Only unregister the process-registry entry when this task actually owns
+    // the current generation — otherwise a stale predecessor generation's
+    // cleanup could unregister a newer generation's live PID (see finding
+    // "cleanup_session unregisters without the generation guard").
+    if should_remove {
+        registry.unregister_run("build_session", session_id);
     }
-    registry.unregister_run("build_session", session_id);
 }

@@ -907,11 +907,21 @@ pub(crate) async fn inject_credential(
         || connector_name == "google_drive"
         || connector_name == "google_sheets";
     if is_google_family && prefix != "GOOGLE" {
-        if let Some(access_token) = fields.get("access_token").filter(|v| !v.is_empty()) {
-            env_vars.push(("GOOGLE_ACCESS_TOKEN".to_string(), access_token.clone()));
+        // Guard against a second Google-family connector (e.g. both `google`
+        // and `google_calendar` linked) pushing a conflicting second
+        // GOOGLE_ACCESS_TOKEN/GOOGLE_REFRESH_TOKEN — first connector
+        // resolved in the loop wins, matching the "seen" semantics used
+        // elsewhere in this module rather than leaving both in `env_vars`
+        // with an order-dependent effective value.
+        if !env_vars.iter().any(|(k, _)| k == "GOOGLE_ACCESS_TOKEN") {
+            if let Some(access_token) = fields.get("access_token").filter(|v| !v.is_empty()) {
+                env_vars.push(("GOOGLE_ACCESS_TOKEN".to_string(), access_token.clone()));
+            }
         }
-        if let Some(refresh_token) = fields.get("refresh_token").filter(|v| !v.is_empty()) {
-            env_vars.push(("GOOGLE_REFRESH_TOKEN".to_string(), refresh_token.clone()));
+        if !env_vars.iter().any(|(k, _)| k == "GOOGLE_REFRESH_TOKEN") {
+            if let Some(refresh_token) = fields.get("refresh_token").filter(|v| !v.is_empty()) {
+                env_vars.push(("GOOGLE_REFRESH_TOKEN".to_string(), refresh_token.clone()));
+            }
         }
     }
 
