@@ -70,8 +70,12 @@ export const dbConnectorCapability = (serviceType: string) =>
 
 // -- Query Execution ----------------------------------------------------
 
-export const executeDbQuery = (credentialId: string, queryText: string, savedQueryId?: string, allowMutation?: boolean, ddlOnly?: boolean) =>
-  invoke<QueryResult>('execute_db_query', { credentialId, queryText, savedQueryId, allowMutation, ddlOnly });
+export const executeDbQuery = (credentialId: string, queryText: string, savedQueryId?: string, allowMutation?: boolean, ddlOnly?: boolean, queryId?: string) =>
+  invoke<QueryResult>('execute_db_query', { credentialId, queryText, savedQueryId, allowMutation, ddlOnly, queryId });
+
+/** Cancel an in-flight `executeDbQuery` run by its `queryId` (aborts HTTP / interrupts local SQLite). */
+export const cancelDbQuery = (queryId: string) =>
+  invoke<void>('cancel_db_query', { queryId });
 
 // -- Schema Introspection ----------------------------------------------
 

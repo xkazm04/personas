@@ -11,9 +11,10 @@
 
 use std::collections::HashMap;
 use std::sync::{LazyLock, OnceLock};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use serde_json::Value;
+use tokio_util::sync::CancellationToken;
 
 use crate::db::models::QueryResult;
 use crate::db::repos::resources::audit_log;
@@ -24,6 +25,17 @@ use crate::error::AppError;
 
 /// Maximum rows returned per query to prevent memory exhaustion.
 const MAX_ROWS: usize = 500;
+
+/// Per-query wall-clock deadline for user-initiated DB queries. A query that
+/// exceeds this is aborted (HTTP future dropped, or local SQLite interrupted)
+/// and returns a clear timeout error rather than hanging a UI spinner forever.
+const QUERY_TIMEOUT: Duration = Duration::from_secs(60);
+
+/// Busy-handler timeout for the built-in SQLite connection: how long a statement
+/// waits on a locked database before failing fast. Kept well under
+/// [`QUERY_TIMEOUT`] so lock contention surfaces as a quick, actionable error
+/// instead of consuming the whole query budget.
+const SQLITE_BUSY_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Hard ceiling on a connector's raw HTTP response body before it is parsed.
 /// The pass-through connectors (Neon, PlanetScale) stream the full result set
@@ -453,6 +465,48 @@ pub async fn execute_query(
     allow_mutation: bool,
     ddl_only: bool,
 ) -> Result<QueryResult, AppError> {
+    execute_query_cancellable(
+        pool,
+        credential_id,
+        query_text,
+        user_db,
+        allow_mutation,
+        ddl_only,
+        None,
+    )
+    .await
+}
+
+/// Wait for the (optional) cancellation token, or never resolve when absent.
+async fn wait_cancelled(cancel: Option<&CancellationToken>) {
+    match cancel {
+        Some(t) => t.cancelled().await,
+        None => std::future::pending::<()>().await,
+    }
+}
+
+/// As [`execute_query`], but additionally bounded by [`QUERY_TIMEOUT`] and an
+/// optional [`CancellationToken`] so the UI can abort a long-running query.
+///
+/// - REST connectors: the in-flight request future is dropped on cancel/timeout,
+///   which closes the connection.
+/// - Built-in SQLite: a `busy_timeout` is set and the running statement is
+///   interrupted via `rusqlite`'s interrupt handle. The pooled connection is
+///   always returned to the pool (the blocking task owns it and is awaited to
+///   completion after an interrupt).
+///
+/// All existing callers reach this via [`execute_query`] with `cancel = None`
+/// and so gain the [`QUERY_TIMEOUT`] guarantee for free.
+#[allow(clippy::too_many_arguments)]
+pub async fn execute_query_cancellable(
+    pool: &DbPool,
+    credential_id: &str,
+    query_text: &str,
+    user_db: Option<&UserDbPool>,
+    allow_mutation: bool,
+    ddl_only: bool,
+    cancel: Option<&CancellationToken>,
+) -> Result<QueryResult, AppError> {
     // DDL-only guard: when set, only safe CREATE statements and tx control are allowed.
     // This protects the built-in database from destructive AI-proposed or user-edited SQL
     // during schema setup (template adoption DataStep).
@@ -494,10 +548,7 @@ pub async fn execute_query(
     if service == "personas_database" {
         let udb = user_db
             .ok_or_else(|| AppError::Internal("User database pool not available".to_string()))?;
-        let mut qr = execute_local_sqlite(udb, query_text)?;
-        qr.duration_ms = start.elapsed().as_millis() as u64;
-        qr.row_count = qr.rows.len();
-        return Ok(qr);
+        return run_local_sqlite_guarded(udb, query_text, cancel, start).await;
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
@@ -512,16 +563,32 @@ pub async fn execute_query(
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
     }
 
-    let result = match service {
-        "supabase" => execute_supabase(&fields, query_text).await,
-        "neon" => execute_neon(&fields, query_text).await,
-        "upstash" => execute_upstash(&fields, query_text).await,
-        "planetscale" => execute_planetscale(&fields, query_text).await,
-        "convex" => execute_convex(&fields, query_text).await,
-        other => Err(AppError::Internal(format!(
-            "Direct query execution is not yet supported for '{other}'. \
-             Supported connectors with REST APIs: Supabase, Neon, Upstash, PlanetScale, Convex."
-        ))),
+    // Run the connector call under the query deadline + optional cancellation.
+    // Dropping `work` (on cancel or timeout) aborts the in-flight HTTP request.
+    let work = async {
+        match service {
+            "supabase" => execute_supabase(&fields, query_text).await,
+            "neon" => execute_neon(&fields, query_text).await,
+            "upstash" => execute_upstash(&fields, query_text).await,
+            "planetscale" => execute_planetscale(&fields, query_text).await,
+            "convex" => execute_convex(&fields, query_text).await,
+            other => Err(AppError::Internal(format!(
+                "Direct query execution is not yet supported for '{other}'. \
+                 Supported connectors with REST APIs: Supabase, Neon, Upstash, PlanetScale, Convex."
+            ))),
+        }
+    };
+
+    let result = tokio::select! {
+        biased;
+        _ = wait_cancelled(cancel) => Err(AppError::Validation("Query cancelled.".to_string())),
+        r = tokio::time::timeout(QUERY_TIMEOUT, work) => match r {
+            Ok(inner) => inner,
+            Err(_) => Err(AppError::Validation(format!(
+                "Query timed out after {}s. Narrow the query or add a LIMIT.",
+                QUERY_TIMEOUT.as_secs()
+            ))),
+        },
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
@@ -2321,6 +2388,58 @@ fn convex_value_to_query_result(value: &Value) -> Result<QueryResult, AppError> 
 // Local SQLite (Built-in Database)
 // ============================================================================
 
+/// Run a built-in SQLite query under the query deadline + optional cancellation.
+///
+/// The blocking `rusqlite` work runs on a `spawn_blocking` thread that **owns**
+/// the pooled connection, so the connection is always returned to the pool when
+/// the closure ends — including after an interrupt. On cancel/timeout the
+/// running statement is aborted via the connection's interrupt handle and the
+/// blocking task is awaited to completion (never detached) before returning.
+async fn run_local_sqlite_guarded(
+    user_db: &UserDbPool,
+    query_text: &str,
+    cancel: Option<&CancellationToken>,
+    start: Instant,
+) -> Result<QueryResult, AppError> {
+    let conn = user_db
+        .get()
+        .map_err(|e| AppError::Internal(format!("Failed to connect to user database: {e}")))?;
+
+    // Fail fast on a locked DB instead of blocking the whole query budget.
+    let _ = conn.busy_timeout(SQLITE_BUSY_TIMEOUT);
+    // Interrupt handle is Send+Sync and can be fired from another task/thread.
+    let interrupt = conn.get_interrupt_handle();
+    let query = query_text.to_string();
+
+    // The closure moves `conn`; it is dropped (returned to the pool) when the
+    // task finishes, whether it completed normally or was interrupted.
+    let mut task = tokio::task::spawn_blocking(move || execute_local_sqlite_conn(&conn, &query));
+
+    tokio::select! {
+        biased;
+        _ = wait_cancelled(cancel) => {
+            interrupt.interrupt();
+            let _ = (&mut task).await; // let the blocking task unwind + return the conn
+            Err(AppError::Validation("Query cancelled.".to_string()))
+        }
+        _ = tokio::time::sleep(QUERY_TIMEOUT) => {
+            interrupt.interrupt();
+            let _ = (&mut task).await;
+            Err(AppError::Validation(format!(
+                "Query timed out after {}s. Narrow the query or add a LIMIT.",
+                QUERY_TIMEOUT.as_secs()
+            )))
+        }
+        joined = &mut task => {
+            let mut qr = joined
+                .map_err(|e| AppError::Internal(format!("Local query task failed: {e}")))??;
+            qr.duration_ms = start.elapsed().as_millis() as u64;
+            qr.row_count = qr.rows.len();
+            Ok(qr)
+        }
+    }
+}
+
 /// Execute a SQL query against the local user-facing SQLite database.
 /// This is completely isolated from the internal app database.
 pub fn execute_local_sqlite(
@@ -2330,7 +2449,17 @@ pub fn execute_local_sqlite(
     let conn = user_db
         .get()
         .map_err(|e| AppError::Internal(format!("Failed to connect to user database: {e}")))?;
+    execute_local_sqlite_conn(&conn, query_text)
+}
 
+/// Core SQLite execution against an already-acquired connection. Factored out so
+/// [`run_local_sqlite_guarded`] can hold the connection (to set `busy_timeout`
+/// and obtain an interrupt handle) before running the statement on a blocking
+/// thread.
+fn execute_local_sqlite_conn(
+    conn: &rusqlite::Connection,
+    query_text: &str,
+) -> Result<QueryResult, AppError> {
     let trimmed = query_text.trim();
 
     if is_sqlite_read(trimmed) {
@@ -3114,6 +3243,39 @@ mod tests {
     fn test_response_ceiling_allows_normal_body() {
         let ok = "[]";
         assert!(ensure_response_within_ceiling(ok).is_ok());
+    }
+
+    // -- Query timeout / cancellation (local SQLite guarded path) ----------
+
+    fn memory_user_db() -> UserDbPool {
+        use r2d2::Pool;
+        use r2d2_sqlite::SqliteConnectionManager;
+        let manager = SqliteConnectionManager::memory();
+        Pool::builder().max_size(1).build(manager).expect("pool")
+    }
+
+    #[tokio::test]
+    async fn test_local_guarded_completes_without_cancel() {
+        let pool = memory_user_db();
+        let qr = run_local_sqlite_guarded(&pool, "SELECT 1 AS n", None, Instant::now())
+            .await
+            .expect("query should succeed");
+        assert_eq!(qr.row_count, 1);
+        assert_eq!(qr.rows[0][0], json!(1));
+    }
+
+    #[tokio::test]
+    async fn test_local_guarded_respects_precancelled_token() {
+        let pool = memory_user_db();
+        let token = CancellationToken::new();
+        token.cancel(); // already cancelled before the query starts
+        let err = run_local_sqlite_guarded(&pool, "SELECT 1 AS n", Some(&token), Instant::now())
+            .await
+            .expect_err("pre-cancelled token must abort the query");
+        assert!(matches!(err, AppError::Validation(_)));
+        assert!(format!("{err}").contains("cancelled"));
+        // The pooled connection must have been returned despite the abort.
+        assert!(pool.get().is_ok());
     }
 
     #[test]

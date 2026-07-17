@@ -1,5 +1,7 @@
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, LazyLock, Mutex};
 use tauri::State;
+use tokio_util::sync::CancellationToken;
 
 use crate::db::models::{DbSavedQuery, DbSchemaTable, QueryResult};
 use crate::db::repos::resources::db_schema as repo;
@@ -7,6 +9,29 @@ use crate::error::AppError;
 
 use crate::AppState;
 use personas_macros::requires;
+
+/// Registry of in-flight user-initiated DB queries, keyed by a caller-supplied
+/// `query_id`, so [`cancel_db_query`] can abort a running query. Entries are
+/// removed as soon as the query settles (success, error, or cancel).
+static IN_FLIGHT_QUERIES: LazyLock<Mutex<HashMap<String, CancellationToken>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn register_query(query_id: &str) -> CancellationToken {
+    let token = CancellationToken::new();
+    if let Ok(mut map) = IN_FLIGHT_QUERIES.lock() {
+        // If a stale id lingers, cancel it before replacing.
+        if let Some(old) = map.insert(query_id.to_string(), token.clone()) {
+            old.cancel();
+        }
+    }
+    token
+}
+
+fn deregister_query(query_id: &str) {
+    if let Ok(mut map) = IN_FLIGHT_QUERIES.lock() {
+        map.remove(query_id);
+    }
+}
 
 // ============================================================================
 // Schema Tables
@@ -185,6 +210,7 @@ pub async fn introspect_db_columns(
 // Query Execution
 // ============================================================================
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 #[requires(privileged)]
 pub async fn execute_db_query(
@@ -194,16 +220,27 @@ pub async fn execute_db_query(
     saved_query_id: Option<String>,
     allow_mutation: Option<bool>,
     ddl_only: Option<bool>,
+    query_id: Option<String>,
 ) -> Result<QueryResult, AppError> {
-    let result = crate::engine::db_query::execute_query(
+    // Register a cancellation token when the caller supplies a query_id so a
+    // Cancel action can interrupt this run. Enforced deregistration on every
+    // exit path keeps the registry from leaking.
+    let cancel = query_id.as_deref().map(register_query);
+
+    let result = crate::engine::db_query::execute_query_cancellable(
         &state.db,
         &credential_id,
         &query_text,
         Some(&state.user_db),
         allow_mutation.unwrap_or(false),
         ddl_only.unwrap_or(false),
+        cancel.as_ref(),
     )
     .await;
+
+    if let Some(id) = query_id.as_deref() {
+        deregister_query(id);
+    }
 
     if let Some(id) = saved_query_id {
         let success = result.is_ok();
@@ -214,4 +251,22 @@ pub async fn execute_db_query(
     }
 
     result
+}
+
+/// Cancel an in-flight [`execute_db_query`] run by its `query_id`. Aborts the
+/// connector HTTP request or interrupts the running local SQLite statement.
+/// No-op if the query already settled or the id is unknown.
+#[tauri::command]
+#[requires(privileged)]
+pub fn cancel_db_query(
+    state: State<'_, Arc<AppState>>,
+    query_id: String,
+) -> Result<(), AppError> {
+    let _ = &state; // required by #[requires(privileged)] session guard
+    if let Ok(mut map) = IN_FLIGHT_QUERIES.lock() {
+        if let Some(token) = map.remove(&query_id) {
+            token.cancel();
+        }
+    }
+    Ok(())
 }

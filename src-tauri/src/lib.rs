@@ -2190,6 +2190,7 @@ pub fn run() {
             commands::credentials::db_schema::update_db_saved_query,
             commands::credentials::db_schema::delete_db_saved_query,
             commands::credentials::db_schema::execute_db_query,
+            commands::credentials::db_schema::cancel_db_query,
             commands::credentials::db_schema::classify_db_query,
             commands::credentials::db_schema::db_connector_capability,
             commands::credentials::db_schema::introspect_db_tables,

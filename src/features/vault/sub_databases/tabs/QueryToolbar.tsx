@@ -1,4 +1,4 @@
-import { Play, Wand2, Save, Check, Shield, ShieldOff } from 'lucide-react';
+import { Play, Wand2, Save, Check, Shield, ShieldOff, X } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ConnectorCapabilityNote } from './ConnectorCapabilityNote';
@@ -14,6 +14,7 @@ interface QueryToolbarProps {
   safeMode: boolean;
   onSave: () => void;
   onExecute: () => void;
+  onCancel: () => void;
   onAiRun: () => void;
   onToggleSafeMode: () => void;
 }
@@ -29,6 +30,7 @@ export function QueryToolbar({
   safeMode,
   onSave,
   onExecute,
+  onCancel,
   onAiRun,
   onToggleSafeMode,
 }: QueryToolbarProps) {
@@ -58,14 +60,24 @@ export function QueryToolbar({
         {saveState === 'saved' ? db.saved : saveState === 'saving' ? db.saving : db.save}
       </button>
 
-      <button
-        onClick={onExecute}
-        disabled={executing || !editorValue.trim()}
-        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-      >
-        {executing ? <LoadingSpinner size="xs" /> : <Play className="w-3 h-3" />}
-        {executing ? db.running : db.run}
-      </button>
+      {executing ? (
+        <button
+          onClick={onCancel}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30 transition-all"
+        >
+          <X className="w-3 h-3" />
+          {t.common.cancel}
+        </button>
+      ) : (
+        <button
+          onClick={onExecute}
+          disabled={!editorValue.trim()}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        >
+          <Play className="w-3 h-3" />
+          {db.run}
+        </button>
+      )}
 
       <button
         onClick={onAiRun}

@@ -16,6 +16,28 @@ Connections is the credential, connector, resource, database, and dependency-man
 
 Navigation tab definitions live in `credentialItems` in `sidebarData.ts`.
 
+**SQL editor safeguards (`engine/db_query.rs`).** Query execution is bounded so a
+careless query can't exhaust memory or hang the UI:
+
+- **Bounded results.** Results are capped at `MAX_ROWS` (500) rows. For the
+  pass-through connectors (Neon, PlanetScale) a bare `SELECT` without its own
+  `LIMIT` gets a defensive `LIMIT 501` appended (append-only — the caller's SQL
+  is never rewritten, mutations are never touched, and a query with its own
+  `LIMIT` is left alone). Any connector response body larger than
+  `MAX_RESPONSE_BYTES` (8 MB) is rejected with a "result too large — narrow the
+  query" error instead of being parsed. The extra row above the cap is what
+  drives the `truncated` flag.
+- **Timeout + cancel.** Every query runs under a `QUERY_TIMEOUT` (60s) deadline;
+  on expiry it returns a clear timeout error (REST future dropped, or the local
+  SQLite statement interrupted). The SQL editor's Run button becomes a **Cancel**
+  button while a query is in flight — `cancel_db_query` aborts the in-flight
+  request or interrupts the built-in SQLite statement (which also carries a
+  `busy_timeout` so a locked database fails fast). The pooled connection is
+  always returned regardless of how the query ends.
+- **AI debug reaches the built-in database.** The AI query-debug flow
+  (`query_debug.rs`) threads the user database pool through, so debugging works
+  against the built-in `personas_database` connector, not just external ones.
+
 ## Credential manager mechanics
 
 The credentials manager uses `useCredentialManagerState`, `CredentialNavContext`, and `useCredentialViewFSM` to keep list/detail/create/import/catalog states explicit. It includes:

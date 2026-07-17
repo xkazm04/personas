@@ -192,6 +192,7 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "update_db_saved_query",
     "delete_db_saved_query",
     "execute_db_query",
+    "cancel_db_query",
     "classify_db_query",
     "introspect_db_tables",
     "introspect_db_columns",

@@ -98,6 +98,7 @@ export type CommandName =
   | "cancel_build_session"
   | "cancel_credential_design"
   | "cancel_credential_negotiation"
+  | "cancel_db_query"
   | "cancel_design_analysis"
   | "cancel_design_review_run"
   | "cancel_execution"

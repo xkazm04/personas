@@ -1,5 +1,5 @@
 import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
 import { SqlEditor } from '../SqlEditor';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
@@ -32,6 +32,8 @@ export function QueryEditorPane({
 }: QueryEditorPaneProps) {
   const updateQuery = useVaultStore((s) => s.updateDbSavedQuery);
   const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
+  const cancelDbQuery = useVaultStore((s) => s.cancelDbQuery);
+  const runningQueryId = useRef<string | null>(null);
 
   const [executing, setExecuting] = useState(false);
   const [result, setResult] = useState<QueryResult | null>(null);
@@ -61,16 +63,24 @@ export function QueryEditorPane({
   }, [selectedId, editorValue, updateQuery, saveState]);
 
   const runQuery = useCallback(async (text: string, allowMutation: boolean) => {
+    const queryId = crypto.randomUUID();
+    runningQueryId.current = queryId;
     setExecuting(true); setError(null); setResult(null);
     try {
-      const res = await executeDbQuery(credentialId, text, selectedId ?? undefined, allowMutation);
+      const res = await executeDbQuery(credentialId, text, selectedId ?? undefined, allowMutation, queryId);
       setResult(res);
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
+      if (runningQueryId.current === queryId) runningQueryId.current = null;
       setExecuting(false);
     }
   }, [credentialId, executeDbQuery, selectedId]);
+
+  const handleCancel = useCallback(() => {
+    const queryId = runningQueryId.current;
+    if (queryId) void cancelDbQuery(queryId);
+  }, [cancelDbQuery]);
 
   const { safeMode, setSafeMode, pendingMutation, guardedExecute, confirmMutation: handleConfirmMutation, cancelMutation: handleCancelMutation } = useQuerySafeMode(runQuery);
 
@@ -100,6 +110,7 @@ export function QueryEditorPane({
         safeMode={safeMode}
         onSave={handleSave}
         onExecute={handleExecute}
+        onCancel={handleCancel}
         onAiRun={handleAiRun}
         onToggleSafeMode={() => setSafeMode((v) => !v)}
       />

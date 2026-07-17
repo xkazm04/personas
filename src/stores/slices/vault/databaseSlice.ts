@@ -43,7 +43,9 @@ export interface DatabaseSlice {
     queryText: string,
     savedQueryId?: string,
     allowMutation?: boolean,
+    queryId?: string,
   ) => Promise<QueryResult>;
+  cancelDbQuery: (queryId: string) => Promise<void>;
 }
 
 export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice> = (set) => ({
@@ -140,7 +142,15 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
 
   // -- Query Execution ------------------------------------------------
 
-  executeDbQuery: async (credentialId, queryText, savedQueryId, allowMutation) => {
-    return dbApi.executeDbQuery(credentialId, queryText, savedQueryId, allowMutation);
+  executeDbQuery: async (credentialId, queryText, savedQueryId, allowMutation, queryId) => {
+    return dbApi.executeDbQuery(credentialId, queryText, savedQueryId, allowMutation, undefined, queryId);
+  },
+
+  cancelDbQuery: async (queryId) => {
+    try {
+      await dbApi.cancelDbQuery(queryId);
+    } catch (err) {
+      reportError(err, "Failed to cancel query", set);
+    }
   },
 });
