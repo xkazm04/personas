@@ -529,6 +529,11 @@ impl ExecutionEngine {
             })
             .unwrap_or(crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_DEFAULT);
             tracker.set_global_max_concurrent(configured);
+
+            // Seed the per-persona skill-scratchpad enable state from its
+            // registered setting (default ON). Read once here; the env var
+            // still overrides at read time. See skill_scratchpad::is_enabled.
+            crate::engine::skill_scratchpad::seed_enabled_from_settings(p);
         }
 
         let circuit_breaker = match pool {

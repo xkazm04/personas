@@ -613,6 +613,17 @@ pub const CHAIN_MAX_LINKS: &str = "chain_max_links";
 /// 50 links is already a pathological fan-out); set the row to `"0"` to disable.
 pub const CHAIN_MAX_LINKS_DEFAULT: u32 = 50;
 
+/// Whether the per-persona skill scratchpad is enabled — the third knowledge
+/// layer (after memories + recipes): durable technique notes the agent authors
+/// during a run and that inject into future prompts. Default ON. Read once at
+/// engine startup and cached process-wide by
+/// [`crate::engine::skill_scratchpad::seed_enabled_from_settings`]; the
+/// `PERSONAS_SKILL_SCRATCHPAD` env var overrides it for dev. Stored
+/// `"true"`/`"false"`. MUST equal `skill_scratchpad::SETTING_KEY`.
+pub const SCRATCHPAD_ENABLED: &str = "scratchpad_enabled";
+/// Default for [`SCRATCHPAD_ENABLED`] — ON (the scratchpad ships enabled).
+pub const SCRATCHPAD_ENABLED_DEFAULT: bool = true;
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -692,6 +703,7 @@ const ALLOWED_KEYS: &[&str] = &[
     APP_LANGUAGE,
     CHAIN_MAX_COST_USD,
     CHAIN_MAX_LINKS,
+    SCRATCHPAD_ENABLED,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -830,6 +842,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_KPI_GOAL_DERIVATION
         | AUTONOMOUS_KPI_EVALUATION
         | AUTONOMOUS_DIRECTOR_STORM
+        | SCRATCHPAD_ENABLED
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {
                 "true" | "false" => Ok(()),
@@ -1050,6 +1063,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | SEMANTIC_LINT_MODEL
         | MAX_PARALLEL_EXECUTIONS
         | EXECUTION_WORKTREE_ISOLATION
+        | SCRATCHPAD_ENABLED
         | FILE_WATCHER_DEBOUNCE_MS => "engine",
         // Numeric ceilings / rate limits.
         MONTHLY_COST_CEILING_USD
@@ -1171,6 +1185,18 @@ mod tests {
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "-1").is_err());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "").is_err());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, " 5 ").is_err());
+    }
+
+    #[test]
+    fn scratchpad_enabled_key_and_value_validation() {
+        assert!(validate_key(SCRATCHPAD_ENABLED).is_ok());
+        assert!(validate_value(SCRATCHPAD_ENABLED, "true").is_ok());
+        assert!(validate_value(SCRATCHPAD_ENABLED, "false").is_ok());
+        assert!(validate_value(SCRATCHPAD_ENABLED, "1").is_err());
+        assert!(validate_value(SCRATCHPAD_ENABLED, "").is_err());
+        // Ships enabled, and the audit bucket is `engine`.
+        assert!(SCRATCHPAD_ENABLED_DEFAULT);
+        assert_eq!(audit_category(SCRATCHPAD_ENABLED), Some("engine"));
     }
 
     #[test]
