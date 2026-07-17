@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { toastCatch } from '@/lib/silentCatch';
 import { useInboxActions } from '@/features/plugins/companion/inbox/hooks/useInboxActions';
 import { formatRelativeTime } from '@/features/plugins/companion/inbox/utils/formatRelativeTime';
 import { inboxKindIcon } from '@/features/plugins/companion/inbox/_shared/inboxKindIcon';
@@ -41,6 +42,8 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
     try {
       await action.run(notes.trim() || undefined);
       onClose();
+    } catch (e) {
+      toastCatch('DecisionDrawer:action')(e);
     } finally {
       setBusy(null);
     }

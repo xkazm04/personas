@@ -26,7 +26,9 @@ export function ConnectedServicesWidget({ config, title }: CockpitWidgetProps) {
   const { credentials, fetchCredentials } = useVaultStore(
     useShallow((s) => ({ credentials: s.credentials, fetchCredentials: s.fetchCredentials })),
   );
-  const personas = useAgentStore((s) => s.personas);
+  const { personas, fetchPersonas } = useAgentStore(
+    useShallow((s) => ({ personas: s.personas, fetchPersonas: s.fetchPersonas })),
+  );
 
   // Fetch-if-empty exactly once: an empty vault re-produces the guard state
   // (fresh [] identity per fetch), which looped fetchCredentials indefinitely.
@@ -37,6 +39,16 @@ export function ConnectedServicesWidget({ config, title }: CockpitWidgetProps) {
       fetchCredentials().catch(() => {});
     }
   }, [credentials, fetchCredentials]);
+
+  // Same fetch-if-empty guard for personas: without this, usage counts stay
+  // "—" until the user happens to visit another tab that fetches personas.
+  const personasRequestedRef = useRef(false);
+  useEffect(() => {
+    if ((!personas || personas.length === 0) && !personasRequestedRef.current) {
+      personasRequestedRef.current = true;
+      fetchPersonas().catch(silentCatch('cockpit_connected_services_fetch_personas'));
+    }
+  }, [personas, fetchPersonas]);
 
   /**
    * Build usage counts: for each credential id, count personas whose

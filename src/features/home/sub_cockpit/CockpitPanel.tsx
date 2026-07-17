@@ -252,7 +252,7 @@ export default function CockpitPanel() {
           </div>
         )}
 
-        {!contextualCockpit && loading ? (
+        {!contextualCockpit && loading && !spec ? (
           <div className="flex items-center justify-center py-20">
             <LoadingSpinner size="lg" />
           </div>

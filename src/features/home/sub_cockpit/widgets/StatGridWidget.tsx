@@ -38,7 +38,8 @@ export function StatGridWidget({ config, title }: CockpitWidgetProps) {
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
   const stats = (config?.stats as StatItem[] | undefined) ?? [];
-  const columns = Math.max(2, Math.min((config?.columns as number | undefined) ?? 3, 4));
+  const rawColumns = Number(config?.columns);
+  const columns = Number.isFinite(rawColumns) ? Math.max(2, Math.min(rawColumns, 4)) : 3;
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
