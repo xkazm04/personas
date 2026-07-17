@@ -179,6 +179,14 @@ pub struct Operation {
 #[derive(Default)]
 pub struct OperativeMemory {
     operations: RwLock<HashMap<String, Operation>>,
+    /// `athena.checkpoint` calls that raced the SessionStart hook — the
+    /// MCP call landed before `record_session_event` ever materialized a
+    /// SessionRef for this `fleet_session_id`. Buffered here instead of
+    /// dropped; flushed into the SessionRef as soon as one exists (see
+    /// `record_session_event`). Bounded the same way as
+    /// `SessionRef::checkpoints` so a session that's never registered
+    /// can't grow this unbounded.
+    pending_checkpoints: RwLock<HashMap<String, Vec<Checkpoint>>>,
 }
 
 static MEMORY: OnceLock<OperativeMemory> = OnceLock::new();
@@ -323,6 +331,29 @@ impl OperativeMemory {
             sref.last_state = state;
             sref.claude_session_id = claude_session_id.map(str::to_string);
             op.sessions.push(sref);
+        }
+
+        // Flush any `athena.checkpoint` calls that raced this hook —
+        // recorded into `pending_checkpoints` by `record_checkpoint`
+        // when no SessionRef existed yet for this session.
+        {
+            let mut pending = self
+                .pending_checkpoints
+                .write()
+                .unwrap_or_else(|e| e.into_inner());
+            if let Some(mut queued) = pending.remove(fleet_session_id) {
+                if let Some(s) = op
+                    .sessions
+                    .iter_mut()
+                    .find(|s| s.fleet_session_id == fleet_session_id)
+                {
+                    s.checkpoints.append(&mut queued);
+                    if s.checkpoints.len() > MAX_CHECKPOINTS_PER_SESSION {
+                        let drop = s.checkpoints.len() - MAX_CHECKPOINTS_PER_SESSION;
+                        s.checkpoints.drain(0..drop);
+                    }
+                }
+            }
         }
 
         // If every session is Exited, mark the operation Completed.
@@ -578,6 +609,11 @@ impl OperativeMemory {
             })
             .map(|(id, _)| id.clone());
         let Some(opid) = op_id else {
+            // Session isn't registered yet (racing the SessionStart
+            // hook). Don't drop the checkpoint — stash it so
+            // `record_session_event` can flush it into the SessionRef
+            // the moment one is materialized.
+            self.stash_pending_checkpoint(fleet_session_id, progress, blockers);
             return false;
         };
         let op = ops.get_mut(&opid).expect("just found");
@@ -586,6 +622,7 @@ impl OperativeMemory {
             .iter_mut()
             .find(|s| s.fleet_session_id == fleet_session_id)
         else {
+            self.stash_pending_checkpoint(fleet_session_id, progress, blockers);
             return false;
         };
         let now = now_ms();
@@ -600,6 +637,27 @@ impl OperativeMemory {
             s.checkpoints.drain(0..drop);
         }
         true
+    }
+
+    /// Buffer a checkpoint that arrived before its session was
+    /// registered. Bounded to `MAX_CHECKPOINTS_PER_SESSION` per session,
+    /// same as the materialized log, so a session that never registers
+    /// can't grow this unbounded.
+    fn stash_pending_checkpoint(&self, fleet_session_id: &str, progress: &str, blockers: Option<&str>) {
+        let mut pending = self
+            .pending_checkpoints
+            .write()
+            .unwrap_or_else(|e| e.into_inner());
+        let q = pending.entry(fleet_session_id.to_string()).or_default();
+        q.push(Checkpoint {
+            at_ms: now_ms(),
+            progress: progress.to_string(),
+            blockers: blockers.map(str::to_string),
+        });
+        if q.len() > MAX_CHECKPOINTS_PER_SESSION {
+            let drop = q.len() - MAX_CHECKPOINTS_PER_SESSION;
+            q.drain(0..drop);
+        }
     }
 
     /// D5 path: pre-attach a SessionRef to an Athena-dispatched

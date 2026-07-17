@@ -1103,6 +1103,12 @@ async fn local_drive_list_files(args: &Value) -> Result<String, AppError> {
     Ok(out)
 }
 
+// Bounds mirroring `scan_codebase`'s walk guard: this is an auto-fire
+// (non-approval-gated) capability, so a symlink/junction cycle inside
+// the managed drive must not be able to pin a worker indefinitely.
+const COUNT_FILES_MAX_ENTRIES: usize = 200_000;
+const COUNT_FILES_WALK_TIMEOUT_SECS: u64 = 30;
+
 async fn local_drive_count_files(args: &Value) -> Result<String, AppError> {
     let rel = args.get("rel_path").and_then(|v| v.as_str()).unwrap_or("");
     let root = drive_root_path()?;
@@ -1113,8 +1119,11 @@ async fn local_drive_count_files(args: &Value) -> Result<String, AppError> {
     let mut file_count: usize = 0;
     let mut folder_count: usize = 0;
     let mut bytes: u64 = 0;
+    let mut entries_seen: usize = 0;
+    let mut bailed: Option<&str> = None;
+    let started = std::time::Instant::now();
     let mut stack = vec![target.clone()];
-    while let Some(dir) = stack.pop() {
+    'walk: while let Some(dir) = stack.pop() {
         if !dir.is_dir() {
             file_count += 1;
             if let Ok(md) = std::fs::metadata(&dir) {
@@ -1123,9 +1132,28 @@ async fn local_drive_count_files(args: &Value) -> Result<String, AppError> {
             continue;
         }
         for entry in std::fs::read_dir(&dir)? {
+            entries_seen += 1;
+            if entries_seen > COUNT_FILES_MAX_ENTRIES {
+                bailed = Some("entry cap");
+                break 'walk;
+            }
+            if started.elapsed().as_secs() > COUNT_FILES_WALK_TIMEOUT_SECS {
+                bailed = Some("time budget");
+                break 'walk;
+            }
             let entry = entry?;
             let name = entry.file_name().to_string_lossy().to_string();
             if matches!(name.as_str(), ".DS_Store" | "Thumbs.db" | "desktop.ini") {
+                continue;
+            }
+            // Don't follow symlinks/junctions — a cycle inside the
+            // managed drive (e.g. `a/ -> ../`) would otherwise make the
+            // walk push directories forever.
+            let is_symlink = entry
+                .file_type()
+                .map(|ft| ft.is_symlink())
+                .unwrap_or(false);
+            if is_symlink {
                 continue;
             }
             let path = entry.path();
@@ -1142,8 +1170,12 @@ async fn local_drive_count_files(args: &Value) -> Result<String, AppError> {
     }
     let label = if rel.is_empty() { "/".to_string() } else { format!("/{rel}") };
     let mb = (bytes as f64) / 1_048_576.0;
+    let note = match bailed {
+        Some(reason) => format!(" _(stopped early — {reason} exceeded)_"),
+        None => String::new(),
+    };
     Ok(format!(
-        "## Local drive -- `{label}` contains **{file_count}** file(s) across **{folder_count}** folder(s) -- {mb:.2} MB total"
+        "## Local drive -- `{label}` contains **{file_count}** file(s) across **{folder_count}** folder(s) -- {mb:.2} MB total{note}"
     ))
 }
 

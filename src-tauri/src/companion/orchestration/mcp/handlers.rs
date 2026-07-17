@@ -242,8 +242,12 @@ async fn request_guidance(
         return Err(internal_error(format!("failed to emit notice: {e}")));
     }
 
-    match rx.await {
-        Ok(Ok(response)) => {
+    // The receiver side has no independent timeout otherwise: `sweep_expired`
+    // only runs inside `submit`, so if no further MCP request is ever
+    // submitted for this hub, a bare `rx.await` would block past the
+    // documented REQUEST_TTL. Wrap it so an idle hub still bounds the wait.
+    match tokio::time::timeout(pending::REQUEST_TTL, rx).await {
+        Ok(Ok(Ok(response))) => {
             // Convention: Athena's response is `{ "text": "..." }`.
             let text = response
                 .get("text")
@@ -252,8 +256,12 @@ async fn request_guidance(
                 .to_string();
             Ok(text_result(text))
         }
-        Ok(Err(msg)) => Err(internal_error(format!("guidance unavailable: {msg}"))),
-        Err(_) => Err(internal_error("guidance channel closed unexpectedly")),
+        Ok(Ok(Err(msg))) => Err(internal_error(format!("guidance unavailable: {msg}"))),
+        Ok(Err(_)) => Err(internal_error("guidance channel closed unexpectedly")),
+        Err(_) => {
+            pending::resolve(&request_id, Err("request expired".to_string()));
+            Err(internal_error("guidance request expired waiting for a response"))
+        }
     }
 }
 
@@ -296,8 +304,11 @@ async fn request_approval(
         return Err(internal_error(format!("failed to emit notice: {e}")));
     }
 
-    match rx.await {
-        Ok(Ok(response)) => {
+    // See request_guidance: an idle hub never sweeps this entry on its own,
+    // so bound the wait explicitly instead of trusting a future `submit` to
+    // trigger the sweep.
+    match tokio::time::timeout(pending::REQUEST_TTL, rx).await {
+        Ok(Ok(Ok(response))) => {
             // Convention: response is `{ "approved": bool, "note"?: string }`.
             let approved = response
                 .get("approved")
@@ -318,8 +329,12 @@ async fn request_approval(
                 "isError": !approved
             }))
         }
-        Ok(Err(msg)) => Err(internal_error(format!("approval unavailable: {msg}"))),
-        Err(_) => Err(internal_error("approval channel closed unexpectedly")),
+        Ok(Ok(Err(msg))) => Err(internal_error(format!("approval unavailable: {msg}"))),
+        Ok(Err(_)) => Err(internal_error("approval channel closed unexpectedly")),
+        Err(_) => {
+            pending::resolve(&request_id, Err("request expired".to_string()));
+            Err(internal_error("approval request expired waiting for a response"))
+        }
     }
 }
 
