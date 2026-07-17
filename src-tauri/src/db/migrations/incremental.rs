@@ -3984,6 +3984,59 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Retire the orphaned DB skills system ("System A": skills / skill_components
+    // / persona_skills). It was unreachable at both ends — no execution path read
+    // `persona_skills`, no seeder wrote rows, and its frontend API had zero
+    // importers (retired 2026-07-17). Fresh DBs no longer create the tables (the
+    // CREATE was removed from initial.rs); this step cleans up LEGACY databases
+    // that still carry them.
+    //
+    // GUARDED DROP — never delete user data. Each table is dropped ONLY IF it is
+    // empty (`SELECT COUNT(*) = 0`). A non-empty table is left in place with a
+    // `tracing::warn` so a user who somehow populated it keeps their rows and is
+    // told why the table survived. Child tables are dropped before `skills` to
+    // respect the FK references. Because `already_applied` is schema-shape-based
+    // (no migration ledger), a non-empty table simply means this step re-checks
+    // (and re-warns) on each boot until the rows are gone — cheap and informative.
+    // NOTE: this step MUST live in `run_incremental` (not `ensure_composite_fires_table`)
+    // — `init_test_db` and the boot path replay both, but only `run_incremental` is
+    // the canonical home for schema teardown of this kind.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "retire_db_skills_system",
+            description: "Drop the orphaned DB skills system (skills/skill_components/persona_skills) IF empty; leave non-empty tables in place with a warning",
+            already_applied: |conn| {
+                Ok(!has_table(conn, "skills")?
+                    && !has_table(conn, "skill_components")?
+                    && !has_table(conn, "persona_skills")?)
+            },
+            apply: |conn| {
+                // Drop children first (both reference skills(id)).
+                for table in ["persona_skills", "skill_components", "skills"] {
+                    if !has_table(conn, table)? {
+                        continue;
+                    }
+                    let count: i64 = conn.query_row(
+                        &format!("SELECT COUNT(*) FROM {table}"),
+                        [],
+                        |r| r.get(0),
+                    )?;
+                    if count == 0 {
+                        ddl_step(conn, &format!("DROP TABLE IF EXISTS {table};"))?;
+                    } else {
+                        tracing::warn!(
+                            table,
+                            row_count = count,
+                            "Retired DB skills system: leaving non-empty table in place to avoid deleting user data; drop it manually if the rows are no longer needed"
+                        );
+                    }
+                }
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
@@ -6095,5 +6148,83 @@ mod tests {
             ddl.contains("'incomplete'"),
             "persona_executions status CHECK does not allow 'incomplete'"
         );
+    }
+
+    /// The retired DB skills system ("System A") must be absent from a fresh
+    /// database: the CREATE was removed from initial.rs, so a fresh install
+    /// never creates `skills` / `skill_components` / `persona_skills`.
+    #[test]
+    fn fresh_database_has_no_db_skills_tables() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        for table in ["skills", "skill_components", "persona_skills"] {
+            assert!(
+                !has_table(&conn, table).unwrap(),
+                "retired DB skills table `{table}` was created on a fresh install"
+            );
+        }
+    }
+
+    /// The guarded-drop retirement migration removes the three legacy tables
+    /// when they are EMPTY, but preserves any table that still holds rows
+    /// (never delete user data). Simulates a legacy database by recreating the
+    /// old schema, then replays `run_incremental`.
+    #[test]
+    fn retire_db_skills_drops_empty_but_preserves_nonempty() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+
+        // Recreate the legacy System-A schema on top of the fresh DB.
+        conn.execute_batch(
+            "CREATE TABLE skills (
+                id TEXT PRIMARY KEY, name TEXT NOT NULL, version TEXT NOT NULL DEFAULT '1.0.0',
+                description TEXT, category TEXT, is_builtin INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')), UNIQUE(name, version));
+             CREATE TABLE skill_components (
+                id TEXT PRIMARY KEY,
+                skill_id TEXT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+                component_type TEXT NOT NULL, component_data TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')));
+             CREATE TABLE persona_skills (
+                id TEXT PRIMARY KEY, persona_id TEXT NOT NULL,
+                skill_id TEXT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+                enabled INTEGER NOT NULL DEFAULT 1, config TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')), UNIQUE(persona_id, skill_id));",
+        )
+        .unwrap();
+
+        // Case 1: all empty → all dropped on replay.
+        run_incremental(&conn).unwrap();
+        for table in ["skills", "skill_components", "persona_skills"] {
+            assert!(
+                !has_table(&conn, table).unwrap(),
+                "empty legacy table `{table}` was not dropped by the retirement migration"
+            );
+        }
+
+        // Case 2: a non-empty `skills` table must be preserved.
+        conn.execute_batch(
+            "CREATE TABLE skills (
+                id TEXT PRIMARY KEY, name TEXT NOT NULL, version TEXT NOT NULL DEFAULT '1.0.0',
+                description TEXT, category TEXT, is_builtin INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')), UNIQUE(name, version));",
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO skills (id, name) VALUES ('s1', 'user skill')",
+            [],
+        )
+        .unwrap();
+        run_incremental(&conn).unwrap();
+        assert!(
+            has_table(&conn, "skills").unwrap(),
+            "non-empty legacy `skills` table was deleted — user data lost"
+        );
+        let rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM skills", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(rows, 1, "user skill row was lost");
     }
 }

@@ -55,7 +55,6 @@ mod settings_audit_log;
 mod shared_event;
 #[cfg(feature = "p2p")]
 mod signing;
-mod skill;
 mod sla;
 mod smee_relay;
 mod system_op;
@@ -131,7 +130,6 @@ pub use settings_audit_log::*;
 pub use shared_event::*;
 #[cfg(feature = "p2p")]
 pub use signing::*;
-pub use skill::*;
 pub use sla::*;
 pub use smee_relay::*;
 pub use system_op::*;

@@ -29,7 +29,6 @@ pub mod rotation;
 pub mod settings_audit_log;
 #[cfg(feature = "p2p")]
 pub mod signing;
-pub mod skills;
 pub mod team_channel;
 pub mod team_memories;
 pub mod teams;

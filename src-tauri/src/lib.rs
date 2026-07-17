@@ -2034,17 +2034,6 @@ pub fn run() {
             commands::design::template_feedback::create_template_feedback,
             commands::design::template_feedback::list_template_feedback,
             commands::design::template_feedback::get_template_performance,
-            // Design -- Skills
-            commands::design::skills::create_skill,
-            commands::design::skills::get_skill,
-            commands::design::skills::list_skills,
-            commands::design::skills::update_skill,
-            commands::design::skills::delete_skill,
-            commands::design::skills::add_skill_component,
-            commands::design::skills::remove_skill_component,
-            commands::design::skills::assign_skill,
-            commands::design::skills::remove_skill,
-            commands::design::skills::get_persona_skills,
             // Design -- Team Synthesis
             commands::design::team_synthesis::synthesize_team_from_templates,
             // Design -- Platform Definitions

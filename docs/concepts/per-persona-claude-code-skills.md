@@ -1,6 +1,22 @@
 # Per-Persona Claude Code Skills — Concept
 
-> **Status:** Proposal. Generalization of in-flight `engine/skills_sidecar/` work.
+> **⚠️ RETIREMENT NOTE (2026-07-17):** **System A — the DB skills system**
+> (`skills` / `skill_components` / `persona_skills` tables, `models/skill.rs`,
+> `repos/resources/skills.rs`, `commands/design/skills.rs`, `src/api/skills/`, and
+> their ts-rs bindings) **has been retired and deleted.** It was orphaned at both
+> ends: no execution path read `persona_skills`, no seeder populated it, and its
+> frontend API had zero importers. Approaches A and C below (which reused that DB
+> table) are therefore **no longer buildable as written** — they would need a fresh
+> schema. Fresh databases no longer create the tables; a guarded migration drops
+> them from legacy databases only when empty (non-empty tables are preserved with a
+> `tracing::warn`, never deleted). **The surviving skill systems are:**
+> **(B)** the connector-skills sidecar — `src-tauri/src/engine/skills_sidecar/`;
+> **(C)** the scratchpad — `skill_scratchpad`;
+> **(D)** the CLI `.claude/skills` file browser — `commands/infrastructure/skill_files.rs`;
+> **(E)** the A2A skill surface.
+> This document is retained for historical design context only.
+>
+> **Status:** Retired proposal (was: generalization of in-flight `engine/skills_sidecar/` work).
 > **Source:** `/research` run 2026-05-09 ([Claude + CapCut for Editors — Matt Loui](https://www.youtube.com/watch?v=8oIFBQ9BhVU))
 > **Related (in flight):** `src-tauri/src/engine/skills_sidecar/DESIGN.md` — per-connector variant, designed by a sibling `/research` run earlier today.
 > **Related (catalogs):** `scripts/templates/`, `scripts/connectors/builtin/` — peer filesystem catalogs.

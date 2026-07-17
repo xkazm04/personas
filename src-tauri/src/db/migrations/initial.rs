@@ -330,42 +330,17 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         "CREATE INDEX IF NOT EXISTS idx_nts_status_updated ON n8n_transform_sessions(status, updated_at DESC);"
     )?;
 
-    // -- Composable Agent Skills ------------------------------------------------
-    conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS skills (
-            id          TEXT PRIMARY KEY,
-            name        TEXT NOT NULL,
-            version     TEXT NOT NULL DEFAULT '1.0.0',
-            description TEXT,
-            category    TEXT,
-            is_builtin  INTEGER NOT NULL DEFAULT 0,
-            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
-            UNIQUE(name, version)
-        );
-        CREATE INDEX IF NOT EXISTS idx_skills_category ON skills(category);
-
-        CREATE TABLE IF NOT EXISTS skill_components (
-            id              TEXT PRIMARY KEY,
-            skill_id        TEXT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
-            component_type  TEXT NOT NULL,
-            component_data  TEXT NOT NULL,
-            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-        CREATE INDEX IF NOT EXISTS idx_skill_components_skill ON skill_components(skill_id);
-
-        CREATE TABLE IF NOT EXISTS persona_skills (
-            id          TEXT PRIMARY KEY,
-            persona_id  TEXT NOT NULL,
-            skill_id    TEXT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
-            enabled     INTEGER NOT NULL DEFAULT 1,
-            config      TEXT,
-            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-            UNIQUE(persona_id, skill_id)
-        );
-        CREATE INDEX IF NOT EXISTS idx_persona_skills_persona ON persona_skills(persona_id);
-        CREATE INDEX IF NOT EXISTS idx_persona_skills_skill ON persona_skills(skill_id);",
-    )?;
+    // -- Composable Agent Skills (RETIRED 2026-07-17) ---------------------------
+    // The `skills` / `skill_components` / `persona_skills` DB system ("System A")
+    // was orphaned at both ends — no execution path read `persona_skills`, no
+    // seeder populated it, and its frontend API had zero importers. It is retired
+    // in favor of the surviving skill systems: the connector-skills sidecar
+    // (`engine/skills_sidecar`, "System B"), the scratchpad, the CLI `.claude/
+    // skills` file browser (`commands/infrastructure/skill_files.rs`), and the
+    // A2A skill surface. Fresh databases therefore no longer create these tables.
+    // Legacy databases that already have them are cleaned up by the guarded drop
+    // in `run_incremental` (which drops each table ONLY IF empty — never deletes
+    // user data). See `docs/concepts/per-persona-claude-code-skills.md`.
 
     // -- A2A Gateway: external API keys for management API auth ---------------
     conn.execute_batch(
