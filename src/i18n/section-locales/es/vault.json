@@ -1220,7 +1220,12 @@
     "guidance_timeout": "La sesión superó el tiempo de espera. Es posible que el servicio sea lento o requiera interacción manual.",
     "guidance_cli_not_found": "El CLI de Claude no está instalado o no es accesible. Instálelo e inténtelo de nuevo.",
     "guidance_api_billing": "Puede haber un problema con su clave API o con la facturación. Revise su cuenta de Anthropic.",
-    "guidance_default": "La sesión falló de forma inesperada. Consulte el registro de la sesión para más detalles, o configure la credencial manualmente."
+    "guidance_default": "La sesión falló de forma inesperada. Consulte el registro de la sesión para más detalles, o configure la credencial manualmente.",
+    "guided_fallback_body": "No se encontró Playwright MCP, así que esta configuración se ejecutará en modo guiado — Personas te acompaña paso a paso y tú introduces los valores manualmente.",
+    "guided_fallback_hint": "Para que Personas controle el navegador por ti, instala Playwright MCP con: npx @playwright/mcp@latest",
+    "guided_fallback_title": "La automatización del navegador no está disponible",
+    "mode_active_automated": "Automatizado (navegador)",
+    "mode_active_guided": "Guiado (manual)"
   },
   "negotiator_extra": {
     "panel_title": "Negociador de credenciales IA",

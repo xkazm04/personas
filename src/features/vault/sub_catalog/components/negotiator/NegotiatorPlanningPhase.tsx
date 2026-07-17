@@ -15,6 +15,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
     <div
       key="negotiator-planning"
       className="animate-fade-slide-in space-y-4"
+      data-testid="vault-negotiator-planning"
     >
       <div className="flex items-center gap-3 px-4 py-3 bg-violet-500/10 border border-violet-500/20 rounded-modal">
         <Brain className="w-4 h-4 text-violet-400 shrink-0 animate-pulse" />

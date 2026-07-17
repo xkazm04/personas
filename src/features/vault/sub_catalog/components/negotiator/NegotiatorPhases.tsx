@@ -21,6 +21,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
       exit="exit"
       transition={PHASE_TRANSITION}
       className="space-y-3"
+      data-testid="vault-negotiator-idle"
     >
       <p className="typo-body text-foreground/90">
         {tx(neg.start_description, { label: connectorLabel })}
@@ -29,6 +30,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
         <button
           onClick={onStart}
           disabled={authDetectLoading}
+          data-testid="vault-negotiator-start"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal bg-violet-500/15 border border-violet-500/25 text-violet-300 typo-body font-medium hover:bg-violet-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {authDetectLoading ? (
@@ -65,6 +67,7 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
       exit="exit"
       transition={PHASE_TRANSITION}
       className="flex flex-col items-center py-6 gap-3"
+      data-testid="vault-negotiator-done"
     >
       <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
         <Zap className="w-5 h-5 text-emerald-400" />
@@ -75,6 +78,7 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
       </p>
       <button
         onClick={onFinish}
+        data-testid="vault-negotiator-apply"
         className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal typo-body font-medium transition-colors mt-1"
       >
         {neg.apply_button}
@@ -102,6 +106,7 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
       exit="exit"
       transition={PHASE_TRANSITION}
       className="space-y-3"
+      data-testid="vault-negotiator-error"
     >
       <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-modal">
         <p className="typo-body text-red-300">{error}</p>

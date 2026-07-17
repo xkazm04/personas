@@ -4836,7 +4836,12 @@
       "guidance_timeout": "انتهت مهلة الجلسة. قد تكون الخدمة بطيئة أو تتطلب تدخّلاً يدويًا.",
       "guidance_cli_not_found": "Claude CLI غير مثبَّت أو غير متاح. ثبِّته وحاول مرة أخرى.",
       "guidance_api_billing": "قد تكون هناك مشكلة في مفتاح API أو في الفوترة. تحقّق من حساب Anthropic الخاص بك.",
-      "guidance_default": "فشلت الجلسة بشكل غير متوقع. راجع سجل الجلسة للاطلاع على التفاصيل، أو أعدّ بيانات الاعتماد يدويًا."
+      "guidance_default": "فشلت الجلسة بشكل غير متوقع. راجع سجل الجلسة للاطلاع على التفاصيل، أو أعدّ بيانات الاعتماد يدويًا.",
+      "guided_fallback_body": "لم يتم العثور على Playwright MCP، لذا سيتم تنفيذ هذا الإعداد في الوضع الموجّه — يرشدك Personas خطوة بخطوة وتقوم أنت بلصق القيم بنفسك.",
+      "guided_fallback_hint": "للسماح لـ Personas بتشغيل المتصفح نيابة عنك، ثبّت Playwright MCP عبر: npx @playwright/mcp@latest",
+      "guided_fallback_title": "أتمتة المتصفح غير متاحة",
+      "mode_active_automated": "تلقائي (متصفح)",
+      "mode_active_guided": "موجّه (يدوي)"
     },
     "negotiator_extra": {
       "panel_title": "مُفاوِض بيانات الاعتماد بالذكاء الاصطناعي",

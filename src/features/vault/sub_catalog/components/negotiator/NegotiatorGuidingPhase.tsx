@@ -76,6 +76,7 @@ export function NegotiatorGuidingPhase({
     <div
       key="negotiator-guiding"
       className="animate-fade-slide-in space-y-4"
+      data-testid="vault-negotiator-guiding"
     >
       {/* Live region for screen reader step-transition announcements */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">

@@ -19,6 +19,7 @@ import { useAutoCredSession } from '../helpers/useAutoCredSession';
 import { tauriPlaywrightAdapter, tauriGuidedAdapter } from '../helpers/TauriPlaywrightAdapter';
 import { checkPlaywrightAvailable } from '@/api/vault/autoCredBrowser';
 import { AutoCredConsent } from './AutoCredConsent';
+import { AutoCredModeBanner } from './AutoCredModeBanner';
 import { AutoCredBrowser } from './AutoCredBrowser';
 import { AutoCredReview } from './AutoCredReview';
 import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
@@ -105,7 +106,11 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
   };
 
   return (
-    <div className="space-y-4" data-testid="vault-autocred-panel" data-phase={session.phase}>
+    <div className="space-y-4" data-testid="vault-autocred-panel" data-phase={session.phase} data-mode={mode}>
+      {/* Active mode + guided-fallback explanation, shown while setup is in progress. */}
+      {(session.phase === 'consent' || session.phase === 'browser') && (
+        <AutoCredModeBanner mode={mode} />
+      )}
       <AnimatePresence mode="wait">
         {session.phase === 'consent' && (
           <motion.div key="consent" {...PHASE_TRANSITION}>

@@ -131,7 +131,7 @@ export function GuidingStepList({
   const totalSteps = visibleSteps.length;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="vault-negotiator-step-list">
       {visibleSteps.map((node, visibleIndex) => (
         <NegotiatorStepCard
           key={node.originalIndex}

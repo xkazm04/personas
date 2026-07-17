@@ -5101,6 +5101,11 @@ export type Translations = {
       browser_hint: string;
       guided_badge: string;
       playwright_badge: string;
+      mode_active_automated: string;
+      mode_active_guided: string;
+      guided_fallback_title: string;
+      guided_fallback_body: string;
+      guided_fallback_hint: string;
       invalid_url: string;
       playwright_available: string;
       guided_mode: string;

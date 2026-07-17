@@ -4836,7 +4836,12 @@
       "guidance_timeout": "セッションがタイムアウトしました。サービスの応答が遅いか、手動操作が必要な可能性があります。",
       "guidance_cli_not_found": "Claude CLI がインストールされていないか、アクセスできません。インストールしてから再試行してください。",
       "guidance_api_billing": "API キーまたは請求情報に問題がある可能性があります。Anthropic アカウントを確認してください。",
-      "guidance_default": "セッションが予期せず失敗しました。詳細はセッションログを確認するか、認証情報を手動で設定してください。"
+      "guidance_default": "セッションが予期せず失敗しました。詳細はセッションログを確認するか、認証情報を手動で設定してください。",
+      "guided_fallback_body": "Playwright MCPが見つからなかったため、このセットアップはガイドモードで実行されます — Personasが各ステップを案内し、値はご自身で貼り付けていただきます。",
+      "guided_fallback_hint": "Personasにブラウザ操作を代行させるには、次のコマンドでPlaywright MCPをインストールしてください: npx @playwright/mcp@latest",
+      "guided_fallback_title": "ブラウザ自動化は利用できません",
+      "mode_active_automated": "自動(ブラウザ)",
+      "mode_active_guided": "ガイド(手動)"
     },
     "negotiator_extra": {
       "panel_title": "AI認証情報ネゴシエーター",

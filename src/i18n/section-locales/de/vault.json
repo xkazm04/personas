@@ -1220,7 +1220,12 @@
     "guidance_timeout": "Die Sitzung ist abgelaufen. Der Dienst reagiert möglicherweise langsam oder erfordert eine manuelle Interaktion.",
     "guidance_cli_not_found": "Die Claude CLI ist nicht installiert oder nicht erreichbar. Installieren Sie sie und versuchen Sie es erneut.",
     "guidance_api_billing": "Es könnte ein Problem mit Ihrem API-Schlüssel oder der Abrechnung vorliegen. Überprüfen Sie Ihr Anthropic-Konto.",
-    "guidance_default": "Die Sitzung ist unerwartet fehlgeschlagen. Prüfen Sie das Sitzungsprotokoll für Details, oder richten Sie die Zugangsdaten manuell ein."
+    "guidance_default": "Die Sitzung ist unerwartet fehlgeschlagen. Prüfen Sie das Sitzungsprotokoll für Details, oder richten Sie die Zugangsdaten manuell ein.",
+    "guided_fallback_body": "Playwright MCP wurde nicht gefunden, daher läuft diese Einrichtung im geführten Modus — Personas führt dich durch jeden Schritt und du trägst die Werte selbst ein.",
+    "guided_fallback_hint": "Damit Personas den Browser für dich steuern kann, installiere Playwright MCP mit: npx @playwright/mcp@latest",
+    "guided_fallback_title": "Browser-Automatisierung nicht verfügbar",
+    "mode_active_automated": "Automatisiert (Browser)",
+    "mode_active_guided": "Geführt (manuell)"
   },
   "negotiator_extra": {
     "panel_title": "KI-Zugangsdaten-Verhandler",

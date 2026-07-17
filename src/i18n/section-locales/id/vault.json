@@ -1220,7 +1220,12 @@
     "guidance_timeout": "Sesi telah melewati batas waktu. Layanan mungkin sedang lambat atau memerlukan interaksi manual.",
     "guidance_cli_not_found": "Claude CLI tidak terinstal atau tidak dapat diakses. Instal terlebih dahulu, lalu coba lagi.",
     "guidance_api_billing": "Mungkin ada masalah dengan kunci API atau penagihan Anda. Periksa akun Anthropic Anda.",
-    "guidance_default": "Sesi gagal secara tak terduga. Periksa log sesi untuk detailnya, atau siapkan kredensial secara manual."
+    "guidance_default": "Sesi gagal secara tak terduga. Periksa log sesi untuk detailnya, atau siapkan kredensial secara manual.",
+    "guided_fallback_body": "Playwright MCP tidak ditemukan, jadi penyiapan ini akan berjalan dalam mode terpandu — Personas akan memandu Anda di setiap langkah dan Anda menempelkan nilainya sendiri.",
+    "guided_fallback_hint": "Agar Personas dapat mengendalikan browser untuk Anda, instal Playwright MCP dengan: npx @playwright/mcp@latest",
+    "guided_fallback_title": "Otomatisasi browser tidak tersedia",
+    "mode_active_automated": "Otomatis (browser)",
+    "mode_active_guided": "Terpandu (manual)"
   },
   "negotiator_extra": {
     "panel_title": "Negosiator Kredensial AI",

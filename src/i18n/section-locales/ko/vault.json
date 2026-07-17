@@ -1220,7 +1220,12 @@
     "guidance_timeout": "세션이 시간 초과되었습니다. 서비스가 느리거나 수동 조작이 필요할 수 있습니다.",
     "guidance_cli_not_found": "Claude CLI가 설치되어 있지 않거나 접근할 수 없습니다. 설치한 후 다시 시도하세요.",
     "guidance_api_billing": "API 키 또는 결제에 문제가 있을 수 있습니다. Anthropic 계정을 확인하세요.",
-    "guidance_default": "세션이 예기치 않게 실패했습니다. 세션 로그에서 자세한 내용을 확인하거나 자격 증명을 수동으로 설정하세요."
+    "guidance_default": "세션이 예기치 않게 실패했습니다. 세션 로그에서 자세한 내용을 확인하거나 자격 증명을 수동으로 설정하세요.",
+    "guided_fallback_body": "Playwright MCP를 찾을 수 없어 안내 모드로 진행합니다 — Personas가 각 단계를 안내하며, 값은 직접 입력하시면 됩니다.",
+    "guided_fallback_hint": "Personas가 브라우저를 대신 조작하도록 하려면 다음 명령으로 Playwright MCP를 설치하세요: npx @playwright/mcp@latest",
+    "guided_fallback_title": "브라우저 자동화를 사용할 수 없습니다",
+    "mode_active_automated": "자동 (브라우저)",
+    "mode_active_guided": "안내 (수동)"
   },
   "negotiator_extra": {
     "panel_title": "AI 자격 증명 협상기",

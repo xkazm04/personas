@@ -1220,7 +1220,12 @@
     "guidance_timeout": "Phiên đã hết thời gian chờ. Dịch vụ có thể đang chậm hoặc yêu cầu thao tác thủ công.",
     "guidance_cli_not_found": "Claude CLI chưa được cài đặt hoặc không thể truy cập. Hãy cài đặt và thử lại.",
     "guidance_api_billing": "Có thể đang gặp sự cố với API key hoặc thanh toán của bạn. Hãy kiểm tra tài khoản Anthropic của bạn.",
-    "guidance_default": "Phiên đã thất bại đột ngột. Hãy kiểm tra nhật ký phiên để biết chi tiết, hoặc thiết lập thông tin xác thực theo cách thủ công."
+    "guidance_default": "Phiên đã thất bại đột ngột. Hãy kiểm tra nhật ký phiên để biết chi tiết, hoặc thiết lập thông tin xác thực theo cách thủ công.",
+    "guided_fallback_body": "Không tìm thấy Playwright MCP, vì vậy quá trình thiết lập này sẽ chạy ở chế độ hướng dẫn — Personas sẽ hướng dẫn bạn qua từng bước và bạn tự dán giá trị vào.",
+    "guided_fallback_hint": "Để Personas tự động điều khiển trình duyệt thay bạn, hãy cài đặt Playwright MCP bằng lệnh: npx @playwright/mcp@latest",
+    "guided_fallback_title": "Không có sẵn tính năng tự động hóa trình duyệt",
+    "mode_active_automated": "Tự động (trình duyệt)",
+    "mode_active_guided": "Có hướng dẫn (thủ công)"
   },
   "negotiator_extra": {
     "panel_title": "Trình đàm phán thông tin xác thực AI",

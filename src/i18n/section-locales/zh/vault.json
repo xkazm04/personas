@@ -1220,7 +1220,12 @@
     "guidance_timeout": "会话已超时，该服务可能响应缓慢，或需要手动操作。",
     "guidance_cli_not_found": "未安装或无法访问 Claude CLI，请安装后重试。",
     "guidance_api_billing": "您的 API 密钥或账单可能存在问题，请检查您的 Anthropic 账户。",
-    "guidance_default": "会话意外失败。请查看会话日志了解详情，或手动设置凭据。"
+    "guidance_default": "会话意外失败。请查看会话日志了解详情，或手动设置凭据。",
+    "guided_fallback_body": "未检测到 Playwright MCP，因此本次设置将以引导模式进行——Personas 会带你逐步完成每个步骤，并由你自行粘贴相应的值。",
+    "guided_fallback_hint": "若要让 Personas 为你自动操作浏览器，请安装 Playwright MCP：npx @playwright/mcp@latest",
+    "guided_fallback_title": "浏览器自动化不可用",
+    "mode_active_automated": "自动（浏览器）",
+    "mode_active_guided": "引导（手动）"
   },
   "negotiator_extra": {
     "panel_title": "AI 凭证协商器",

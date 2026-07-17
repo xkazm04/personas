@@ -112,7 +112,11 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
   };
 
   return (
-    <div className="animate-fade-slide-in overflow-hidden">
+    <div
+      className="animate-fade-slide-in overflow-hidden"
+      data-testid="vault-negotiator-panel"
+      data-phase={negotiator.phase}
+    >
       <div className="rounded-modal border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-violet-500/10">

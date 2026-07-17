@@ -1220,7 +1220,12 @@
     "guidance_timeout": "Relace vypršela. Služba může být pomalá nebo může vyžadovat ruční zásah.",
     "guidance_cli_not_found": "Claude CLI není nainstalováno nebo není dostupné. Nainstalujte jej a zkuste to znovu.",
     "guidance_api_billing": "Může jít o problém s vaším API klíčem nebo fakturací. Zkontrolujte svůj účet Anthropic.",
-    "guidance_default": "Relace neočekávaně selhala. Podrobnosti najdete v logu relace, nebo nastavte přihlašovací údaj ručně."
+    "guidance_default": "Relace neočekávaně selhala. Podrobnosti najdete v logu relace, nebo nastavte přihlašovací údaj ručně.",
+    "guided_fallback_body": "Playwright MCP nebyl nalezen, takže toto nastavení poběží v asistovaném režimu — Personas vás provede každým krokem a hodnoty vložíte sami.",
+    "guided_fallback_hint": "Aby mohl Personas ovládat prohlížeč za vás, nainstalujte Playwright MCP pomocí: npx @playwright/mcp@latest",
+    "guided_fallback_title": "Automatizace prohlížeče není k dispozici",
+    "mode_active_automated": "Automatizované (prohlížeč)",
+    "mode_active_guided": "Asistované (ruční)"
   },
   "negotiator_extra": {
     "panel_title": "AI vyjednávač přihlašovacích údajů",
