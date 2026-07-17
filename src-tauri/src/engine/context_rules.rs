@@ -262,11 +262,11 @@ impl ContextRuleEngine {
                     return false;
                 }
             } else {
-                // No app info and filter requires one — skip non-app_focus events
-                // unless the pattern explicitly allows them via empty sources
-                if event.source != "app_focus" {
-                    // App filter only blocks app_focus events; other sources pass through
-                }
+                // No app info on the event but the rule requires a specific app
+                // to be focused (e.g. "only when Slack is focused") -- an event
+                // with no app_name (clipboard, file_watcher, ...) can never
+                // satisfy that, so it's a mismatch, not a pass-through.
+                return false;
             }
         }
 

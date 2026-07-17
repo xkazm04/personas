@@ -164,16 +164,21 @@ pub fn generate_digest(pool: &DbPool, period_days: i64) -> PerformanceDigest {
     // Current period summary
     let (total, success, failed, cost) = query_period_summary(pool, period_days);
     // Previous period summary (for trend)
-    let (prev_total, prev_success, _prev_failed, prev_cost) =
+    let (_prev_total, prev_success, prev_failed, prev_cost) =
         query_prev_period_summary(pool, period_days);
 
-    let success_rate = if total > 0 {
-        success as f64 / total as f64
+    // Denominator is the terminal (completed + failed) universe, not the raw
+    // row count -- rows still `queued`/`running`/`cancelled` in the window are
+    // neither a success nor a failure and would otherwise deflate the rate.
+    let terminal = success + failed;
+    let success_rate = if terminal > 0 {
+        success as f64 / terminal as f64
     } else {
         0.0
     };
-    let prev_success_rate = if prev_total > 0 {
-        prev_success as f64 / prev_total as f64
+    let prev_terminal = prev_success + prev_failed;
+    let prev_success_rate = if prev_terminal > 0 {
+        prev_success as f64 / prev_terminal as f64
     } else {
         0.0
     };

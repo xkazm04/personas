@@ -335,7 +335,12 @@ async fn run_claude_oneshot(prompt: &str) -> Result<String, AppError> {
     cmd.args(&args)
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
+        .stderr(std::process::Stdio::piped())
+        // Guarantee the CLI child is killed if this future is dropped for any
+        // reason other than the timeout branch below (app shutdown, task
+        // cancellation, an outer timeout) — matches CliProcessDriver's safety
+        // net (see cli_process.rs) which this ad-hoc spawn otherwise bypasses.
+        .kill_on_drop(true);
     #[cfg(windows)]
     {
         #[allow(unused_imports)]

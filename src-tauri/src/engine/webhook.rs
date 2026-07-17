@@ -242,10 +242,16 @@ async fn handle_webhook(
 ) -> impl IntoResponse {
     let headers_json = serialize_headers(&headers);
     let body_str = String::from_utf8_lossy(&body).to_string();
+    // The event payload itself is encrypted at rest (see mark_triggered_and_publish
+    // below via crypto::encrypt_for_db). Don't undermine that by also writing the
+    // identical raw body into webhook_request_logs in plaintext — inbound webhooks
+    // routinely carry secrets/PII (GitHub payloads, third-party tokens). Redact the
+    // logged body to headers + status only; the durable, encrypted copy lives on the
+    // persona_event row.
     let body_for_log = if body_str.is_empty() {
         None
     } else {
-        Some(body_str.clone())
+        Some("[redacted: see encrypted persona_event payload]".to_string())
     };
 
     let (status, extra_headers, response) =
