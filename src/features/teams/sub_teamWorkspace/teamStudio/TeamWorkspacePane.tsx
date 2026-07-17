@@ -94,13 +94,15 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
 
   const dirty = useMemo(() => {
     if (!team) return false;
-    const profile = MODEL_OPTIONS.find((m) => m.key === modelKey)?.model ?? null;
     const budgetNum = budget.trim() === '' ? null : Number(budget);
     const turnsNum = turns.trim() === '' ? null : Number(turns);
     return (
       identityDirty ||
       (instructions || null) !== (team.shared_instructions ?? null) ||
-      profile !== (team.default_model_profile ? JSON.parse(team.default_model_profile).model ?? null : null) ||
+      // Reuse the tolerant reader (also used to seed modelKey above) instead of
+      // JSON.parse-ing team.default_model_profile directly — a non-JSON legacy
+      // value there would otherwise throw during render.
+      modelKey !== modelKeyFromProfile(team.default_model_profile ?? null) ||
       budgetNum !== (team.default_max_budget_usd ?? null) ||
       turnsNum !== (team.default_max_turns ?? null)
     );

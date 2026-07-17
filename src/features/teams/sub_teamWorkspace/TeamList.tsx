@@ -110,6 +110,10 @@ export default function TeamList() {
         mode: 'team',
       };
       if (newMainBranch.trim()) data.main_branch = newMainBranch.trim();
+      // Record the GitHub PAT credential the user picked for the repo browser
+      // so the linkage isn't silently dropped — it was previously consumed
+      // only for listing repos and never persisted on the connector.
+      if (newPrCred) data.credential_id = newPrCred;
       try {
         await useVaultStore.getState().createCredential({
           name: `Codebase — ${newName.trim()}`,

@@ -121,12 +121,15 @@ export function useTeamDeliberations(teamId: string) {
     const iv = setInterval(() => {
       // While a capability is running, reap it (posts output + resumes) instead
       // of a plain refresh, so the flow recovers even without the autonomous tick.
-      if (running) void pollDeliberationAction(selectedId).catch(() => {});
+      // Skip the reap here when approveAction's own imperative loop already owns
+      // it (actionBusy) — otherwise both loops call pollDeliberationAction for the
+      // same id concurrently.
+      if (running && !actionBusy) void pollDeliberationAction(selectedId).catch(() => {});
       void refreshDetail(selectedId);
       void refreshList();
     }, POLL_MS);
     return () => clearInterval(iv);
-  }, [selectedId, detail, refreshDetail, refreshList]);
+  }, [selectedId, detail, refreshDetail, refreshList, actionBusy]);
 
   const create = useCallback(
     async (topic: string, goal?: string, costBudgetUsd?: number) => {

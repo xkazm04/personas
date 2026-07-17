@@ -26,16 +26,17 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
   const { t, tx } = useTranslation();
   const at = useAutoTeam();
   const inputRef = useRef<HTMLInputElement>(null);
+  const { reset } = at;
 
   useEffect(() => {
     if (!open) {
-      at.reset();
+      reset();
       return;
     }
 
     const timer = setTimeout(() => inputRef.current?.focus(), 100);
     return () => clearTimeout(timer);
-  }, [at, open]);
+  }, [open, reset]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && at.phase === 'idle') {

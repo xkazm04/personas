@@ -63,7 +63,10 @@ export function useAssignmentNotificationDispatcher() {
           );
         } catch (err) {
           // Detail fetch failures here are not fatal — the user can still see
-          // the awaiting_review status in the panel itself.
+          // the awaiting_review status in the panel itself. Undo the dedupe mark
+          // so a subsequent awaiting_review event for this assignment retries the
+          // notification instead of being permanently suppressed.
+          notifiedRef.current.delete(assignment_id);
           silentCatch('teams/useAssignmentNotificationDispatcher')(err);
         }
       },
