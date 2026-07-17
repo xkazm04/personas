@@ -4,7 +4,7 @@ import { useOAuthConsent } from '@/hooks/design/oauth/useOAuthConsent';
 import { useUniversalOAuth } from '@/hooks/design/oauth/useUniversalOAuth';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import { extractFirstUrl, OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
-import { detectAuthenticatedServices } from '@/api/auth/authDetect';
+import { detectAuthenticatedServices, toAuthDetectionInfo } from '@/api/auth/authDetect';
 import type { AuthDetectionInfo } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { CredentialDesignContextValue } from '@/features/vault/sub_catalog/components/design/CredentialDesignContext';
 import type { CredentialDesignOrchestrator } from './orchestratorTypes';
@@ -51,16 +51,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     detectAuthenticatedServices()
       .then((detections) => {
         if (cancelled) return;
-        const mapped: AuthDetectionInfo[] = detections
-          .filter((d) => d.authenticated)
-          .map((d) => ({
-            serviceType: d.service_type,
-            method: d.method,
-            authenticated: d.authenticated,
-            identity: d.identity,
-            confidence: d.confidence,
-          }));
-        setPrefetchedAuthDetections(mapped);
+        setPrefetchedAuthDetections(toAuthDetectionInfo(detections));
       })
       .catch((err) => {
         // Auth-detection prefetch is best-effort — surface a Sentry breadcrumb

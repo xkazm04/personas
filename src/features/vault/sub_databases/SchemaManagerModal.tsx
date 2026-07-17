@@ -13,6 +13,7 @@ import { TablesTab } from './tabs/TablesTab';
 import { QueriesTab } from './tabs/QueriesTab';
 import { ConsoleTab } from './tabs/ConsoleTab';
 import { ChatTab } from './tabs/ChatTab';
+import { getQueryLanguage } from './introspectionQueries';
 
 type SchemaTab = 'chat' | 'tables' | 'queries' | 'console';
 
@@ -215,22 +216,4 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
       </div>
     </BaseModal>
   );
-}
-
-function getQueryLanguage(serviceType: string): string {
-  switch (serviceType) {
-    case 'upstash':
-    case 'redis':
-      return 'redis';
-    case 'mongodb':
-      return 'mongodb';
-    case 'convex':
-      return 'convex';
-    case 'notion':
-      return 'notion';
-    case 'airtable':
-      return 'airtable';
-    default:
-      return 'sql';
-  }
 }

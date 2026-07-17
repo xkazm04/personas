@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Loader2, Zap } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PHASE_VARIANTS, PHASE_TRANSITION } from './negotiatorMotion';
 
@@ -107,13 +108,9 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
         <p className="typo-body text-red-300">{error}</p>
       </div>
       <div className="flex gap-2">
-        <button
-          onClick={onRetry}
-          disabled={authDetectLoading}
-          className="px-4 py-2 rounded-modal bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 typo-body transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <Button variant="secondary" onClick={onRetry} disabled={authDetectLoading}>
           {neg.try_again}
-        </button>
+        </Button>
         <button
           onClick={onClose}
           className="px-4 py-2 rounded-modal text-foreground typo-body hover:text-foreground/95 transition-colors"

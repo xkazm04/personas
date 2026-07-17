@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, ArrowRight, RefreshCw, PackagePlus } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface DonePhaseProps {
@@ -59,12 +60,9 @@ export function DonePhase({
       )}
 
       <div className="flex items-center gap-2 mt-2">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-modal typo-body font-medium transition-all"
-        >
+        <Button variant="secondary" onClick={onClose}>
           {t.common.done}
-        </button>
+        </Button>
         {onViewCredential && (
           <button
             onClick={onViewCredential}
@@ -96,14 +94,14 @@ export function DonePhase({
               placeholder={dp.refine_placeholder}
               className="flex-1 px-3 py-2 bg-secondary/40 border border-primary/10 rounded-modal typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             />
-            <button
+            <Button
+              variant="secondary"
+              icon={<RefreshCw className="w-3.5 h-3.5" />}
               onClick={handleRefineSubmit}
               disabled={!refinementText.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-modal typo-body font-medium transition-all disabled:opacity-40 disabled:pointer-events-none"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
               {dp.refine}
-            </button>
+            </Button>
           </div>
         </div>
       )}

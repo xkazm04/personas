@@ -7,6 +7,7 @@ import { ChatMessages, type ChatMessage } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { extractErrorMessage } from '../safeModeUtils';
 import { silentCatch } from '@/lib/silentCatch';
+import { getNlDatabaseDialect } from '../introspectionQueries';
 
 
 interface ChatTabProps {
@@ -29,7 +30,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  const dbType = getDatabaseType(serviceType);
+  const dbType = getNlDatabaseDialect(serviceType);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -181,15 +182,6 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
       />
     </div>
   );
-}
-
-function getDatabaseType(serviceType: string): string {
-  switch (serviceType) {
-    case 'supabase': case 'neon': return 'postgresql';
-    case 'planetscale': return 'mysql';
-    case 'upstash': case 'redis': return 'redis';
-    default: return 'sql';
-  }
 }
 
 function getSuggestions(lang: string): string[] {

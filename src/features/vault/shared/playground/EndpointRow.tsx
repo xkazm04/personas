@@ -3,6 +3,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { ApiEndpoint } from '@/api/system/apiProxy';
 import type { EndpointTestResult } from './useApiTestRunner';
 import { useTranslation } from '@/i18n/useTranslation';
+import { prettyJson } from './prettyJson';
 
 // -- Method badge colors ------------------------------------------
 
@@ -131,7 +132,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
               </div>
               {endpoint.request_body.schema_json && (
                 <pre className="typo-code text-foreground font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[120px]">
-                  {formatSchema(endpoint.request_body.schema_json)}
+                  {prettyJson(endpoint.request_body.schema_json)}
                 </pre>
               )}
             </div>
@@ -140,15 +141,6 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
       )}
     </div>
   );
-}
-
-function formatSchema(schemaJson: string): string {
-  try {
-    return JSON.stringify(JSON.parse(schemaJson), null, 2);
-  } catch {
-    // intentional: non-critical -- JSON parse fallback
-    return schemaJson;
-  }
 }
 
 // -- Test result badge ---------------------------------------------

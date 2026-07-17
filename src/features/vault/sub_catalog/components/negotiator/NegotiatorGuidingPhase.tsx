@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { NegotiationPlan } from '@/hooks/design/credential/useCredentialNegotiator';
+import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { StepNode } from '@/hooks/design/credential/negotiatorStepGraph';
 import {
@@ -113,12 +114,9 @@ export function NegotiatorGuidingPhase({
 
       {/* Footer buttons */}
       <div className="flex items-center justify-between pt-1">
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
-        >
+        <Button variant="secondary" onClick={onCancel}>
           {t.common.cancel}
-        </button>
+        </Button>
         {allDone && (
           <button
             onClick={onFinish}

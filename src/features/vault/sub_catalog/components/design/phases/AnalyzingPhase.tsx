@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Check, Circle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Button } from '@/features/shared/components/buttons';
 import { useStepProgress } from '@/hooks/useStepProgress';
 import { formatElapsed as _formatElapsed } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -53,8 +54,10 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
     setDerivedIndex(derivedIdx);
   }, [derivedIdx, setDerivedIndex]);
 
-  // Progress: use derived index directly against total (4) for smooth 0->100
-  const progress = Math.min((derivedIdx / STAGE_KEYS.length) * 100, 100);
+  // Progress: `setDerivedIndex` marks every prior stage complete, so
+  // `sp.progressPercent` (completedCount / totalSteps) already tracks
+  // `derivedIdx` 1:1 — reuse it instead of recomputing a parallel value here.
+  const progress = sp.progressPercent;
 
   return (
     <div
@@ -123,13 +126,13 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
       </div>
 
       <div className="flex justify-end">
-        <button
+        <Button
+          variant="secondary"
           onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
           data-testid="analyzing-cancel-btn"
         >
           {t.common.cancel}
-        </button>
+        </Button>
       </div>
     </div>
   );

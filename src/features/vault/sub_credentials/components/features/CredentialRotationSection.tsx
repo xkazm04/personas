@@ -5,7 +5,7 @@ import type { RotationStatus } from '@/api/vault/rotation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { AnomalyScorePanel } from '@/features/vault/sub_credentials/components/features/AnomalyScorePanel';
 import { RotationPolicyControls } from '@/features/vault/sub_credentials/components/features/RotationPolicyControls';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useThemeStore } from '@/stores/themeStore';
