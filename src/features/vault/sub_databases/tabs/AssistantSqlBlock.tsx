@@ -61,6 +61,7 @@ export function AssistantSqlBlock({
 
       {(msg.status === 'ready' || msg.status === 'done') && (
         <button
+          data-testid="chat-run-sql"
           onClick={() => onExecuteSql(msg.id, msg.sql!)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
         >

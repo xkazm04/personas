@@ -5,6 +5,8 @@ import { startNlQuery, getNlQuerySnapshot, cancelNlQuery } from '@/api/vault/dat
 import type { ConversationTurn, NlQuerySnapshot } from '@/api/vault/database/nlQuery';
 import { ChatMessages, type ChatMessage } from './ChatMessages';
 import { ChatInput } from './ChatInput';
+import { MutationConfirmBanner } from './MutationConfirmBanner';
+import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
 import { extractErrorMessage } from '../safeModeUtils';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -28,6 +30,11 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  // The message whose SQL is currently being run/confirmed. Held in a ref so
+  // runQuery keeps a stable identity across chat messages (the connection is
+  // fixed for the whole ChatTab via credentialId), while still routing the
+  // result to the right message.
+  const runTargetMsgIdRef = useRef<string | null>(null);
 
   const dbType = getDatabaseType(serviceType);
 
@@ -128,15 +135,29 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
     }
   }, [activeQueryId]);
 
-  const handleExecuteSql = useCallback(async (msgId: string, sql: string) => {
+  // Runs the SQL for whichever message is the current run target. Bound to
+  // credentialId only, so the shared safe-mode drift guard clears any pending
+  // mutation if the underlying connection changes beneath the user.
+  const runQuery = useCallback(async (sql: string, allowMutation: boolean) => {
+    const msgId = runTargetMsgIdRef.current;
+    if (!msgId) return;
     setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, status: 'executing' as const } : m)));
     try {
-      const result = await executeDbQuery(credentialId, sql);
-      setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, result, status: 'done' as const } : m)));
+      const result = await executeDbQuery(credentialId, sql, undefined, allowMutation);
+      setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, result, error: undefined, status: 'done' as const } : m)));
     } catch (err) {
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, error: extractErrorMessage(err), status: 'done' as const } : m)));
     }
   }, [credentialId, executeDbQuery]);
+
+  const { pendingMutation, guardedExecute, confirmMutation, cancelMutation } = useQuerySafeMode(runQuery);
+
+  const handleExecuteSql = useCallback(async (msgId: string, sql: string) => {
+    // AI-suggested mutations get the same confirm dialog as the SQL editor,
+    // driven by the shared useQuerySafeMode hook (safe mode on by default).
+    runTargetMsgIdRef.current = msgId;
+    await guardedExecute(sql);
+  }, [guardedExecute]);
 
   const handleCopySql = useCallback((sql: string, msgId: string) => {
     copySqlText(msgId, sql);
@@ -169,6 +190,14 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
         onEditSql={handleEditSql}
         onSuggestionClick={(s) => { setInput(s); inputRef.current?.focus(); }}
       />
+      {pendingMutation && (
+        <MutationConfirmBanner
+          sql={pendingMutation}
+          onConfirm={confirmMutation}
+          onCancel={cancelMutation}
+          className="mx-4 mb-2"
+        />
+      )}
       <ChatInput
         input={input}
         generating={generating}
