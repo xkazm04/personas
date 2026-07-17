@@ -505,8 +505,10 @@ pub async fn run_scan_core(
         };
 
         match result {
-            Ok(idea_count) => {
-                // Update scan record with results
+            Ok(counts) => {
+                // Update scan record with results -- `idea_count` for a normal
+                // scan means ideas created, not triage/goal-relation actions.
+                let idea_count = counts.ideas_created;
                 let _ = repo::update_scan(
                     &pool,
                     &scan_id_for_task,
@@ -610,6 +612,29 @@ pub fn dev_tools_get_idea_scan_status(
 // Core scan logic
 // =============================================================================
 
+/// Separate tallies for the three protocol outcomes `run_idea_scan` handles.
+/// A normal scan (`run_scan_core`) only creates ideas; a backlog-triage run
+/// (`run_backlog_triage`) only applies triage/goal-relation decisions -- but
+/// both funnel through the same stream loop and previously shared one
+/// `ideas_created` counter, so a triage run's "decisions" and a scan's
+/// incidental protocol lines could inflate/misreport each other's number.
+#[derive(Debug, Clone, Copy, Default)]
+struct IdeaScanCounts {
+    ideas_created: i32,
+    triage_decisions: i32,
+    relations_created: i32,
+}
+
+impl IdeaScanCounts {
+    /// Total protocol actions applied, regardless of kind -- used for the
+    /// "did anything happen" checks (partial-success-on-timeout, non-zero
+    /// exit tolerance) where the kind doesn't matter, only whether progress
+    /// was made.
+    fn total(&self) -> i32 {
+        self.ideas_created + self.triage_decisions + self.relations_created
+    }
+}
+
 async fn run_idea_scan(
     app: &tauri::AppHandle,
     scan_id: &str,
@@ -617,7 +642,7 @@ async fn run_idea_scan(
     project_id: &str,
     root_path: &str,
     prompt_text: String,
-) -> Result<i32, AppError> {
+) -> Result<IdeaScanCounts, AppError> {
     IDEA_SCAN_JOBS.emit_line(app, scan_id, "[Milestone] Starting idea scan...");
 
     let exec_dir = std::path::PathBuf::from(root_path);
@@ -658,7 +683,7 @@ async fn run_idea_scan(
         .ok_or_else(|| AppError::Internal("Missing stdout pipe".into()))?;
     let mut reader = BufReader::new(stdout).lines();
 
-    let mut ideas_created = 0i32;
+    let mut counts = IdeaScanCounts::default();
 
     // Extended to 20 minutes. If timeout fires but ideas were created,
     // the scan is treated as a partial success (see check below).
@@ -724,11 +749,11 @@ async fn run_idea_scan(
                                     Some("claude-sonnet-4-6"),
                                 ) {
                                     Ok(_) => {
-                                        ideas_created += 1;
+                                        counts.ideas_created += 1;
                                         IDEA_SCAN_JOBS.emit_line(
                                             app,
                                             scan_id,
-                                            format!("[Idea #{ideas_created}] [{scan_type}] {title}"),
+                                            format!("[Idea #{}] [{scan_type}] {title}", counts.ideas_created),
                                         );
                                     }
                                     Err(e) => {
@@ -758,7 +783,7 @@ async fn run_idea_scan(
                                     pool, project_id, &idea_id, &action, priority,
                                     reason.as_deref(),
                                 ) {
-                                    ideas_created += 1; // counts applied decisions
+                                    counts.triage_decisions += 1;
                                     IDEA_SCAN_JOBS.emit_line(
                                         app,
                                         scan_id,
@@ -774,7 +799,7 @@ async fn run_idea_scan(
                                 if apply_goal_relation(
                                     pool, project_id, &from_goal_id, &to_goal_id, &relation,
                                 ) {
-                                    ideas_created += 1;
+                                    counts.relations_created += 1;
                                     IDEA_SCAN_JOBS.emit_line(
                                         app,
                                         scan_id,
@@ -815,16 +840,17 @@ async fn run_idea_scan(
         let _ = child.kill().await;
         let _ = tokio::time::timeout(std::time::Duration::from_secs(5), child.wait()).await;
 
-        // Smart timeout handling: if ideas were created, treat as partial success.
-        if ideas_created > 0 {
+        // Smart timeout handling: if anything was created/applied, treat as partial success.
+        if counts.total() > 0 {
             IDEA_SCAN_JOBS.emit_line(
                 app,
                 scan_id,
                 format!(
-                    "[Warning] Scan timed out after 20 minutes but {ideas_created} ideas were created. Treating as partial success."
+                    "[Warning] Scan timed out after 20 minutes but {} ideas / {} triage decisions / {} goal relations were applied. Treating as partial success.",
+                    counts.ideas_created, counts.triage_decisions, counts.relations_created
                 ),
             );
-            return Ok(ideas_created);
+            return Ok(counts);
         }
         // Attach captured stderr so the user can attribute the timeout —
         // an auth error / rate limit / missing config produces stderr
@@ -847,7 +873,7 @@ async fn run_idea_scan(
     // it as a failure even if stdout closed normally — and attach stderr
     // so the user can see the cause.
     if let Ok(status) = exit {
-        if !status.success() && ideas_created == 0 {
+        if !status.success() && counts.total() == 0 {
             let stderr_tail = snapshot_stderr(&stderr_ring);
             let detail = if stderr_tail.is_empty() {
                 format!(
@@ -869,10 +895,13 @@ async fn run_idea_scan(
     IDEA_SCAN_JOBS.emit_line(
         app,
         scan_id,
-        format!("[Complete] Generated {ideas_created} ideas"),
+        format!(
+            "[Complete] Generated {} ideas, applied {} triage decisions, {} goal relations",
+            counts.ideas_created, counts.triage_decisions, counts.relations_created
+        ),
     );
 
-    Ok(ideas_created)
+    Ok(counts)
 }
 
 // =============================================================================
@@ -1160,7 +1189,11 @@ pub async fn run_backlog_triage(
             ) => res
         };
         match result {
-            Ok(decisions) => {
+            Ok(counts) => {
+                // A backlog-triage run only ever produces triage/goal-relation
+                // decisions (never `IdeaProtocol::Idea`), so this is the
+                // decisions tally, not an ideas-created count.
+                let decisions = counts.triage_decisions + counts.relations_created;
                 let _ = repo::update_scan(
                     &pool, &scan_id_for_task, Some("complete"), Some(decisions),
                     None, None, None, None,

@@ -438,7 +438,8 @@ pub async fn login_with_google(
     }
 
     let nav_handle = app.clone();
-    WebviewWindowBuilder::new(
+    let close_state = state.inner().clone();
+    let build_result = WebviewWindowBuilder::new(
         &app,
         "oauth",
         tauri::WebviewUrl::External(
@@ -481,8 +482,28 @@ pub async fn login_with_google(
         }
         true // Allow Supabase -> Google -> consent redirects
     })
-    .build()
-    .map_err(|e| AppError::Auth(format!("Failed to open sign-in window: {e}")))?;
+    .build();
+
+    let window = match build_result {
+        Ok(win) => win,
+        Err(e) => {
+            clear_pending_oauth_state(state.inner()).await;
+            return Err(AppError::Auth(format!("Failed to open sign-in window: {e}")));
+        }
+    };
+    // If the user closes the popup before the callback fires, the CSRF
+    // nonce guard would otherwise stay set forever, permanently blocking
+    // every future sign-in attempt with "already in progress". `on_window_event`
+    // is a WebviewWindow method (not available on the builder), so this must
+    // run after `.build()`.
+    window.on_window_event(move |event| {
+        if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
+            let state = close_state.clone();
+            tauri::async_runtime::spawn(async move {
+                clear_pending_oauth_state(&state).await;
+            });
+        }
+    });
 
     tracing::info!("Opened OAuth sign-in window");
     Ok(())
@@ -544,7 +565,8 @@ pub async fn login_with_google_drive(
     }
 
     let nav_handle = app.clone();
-    WebviewWindowBuilder::new(
+    let close_state = state.inner().clone();
+    let build_result = WebviewWindowBuilder::new(
         &app,
         "oauth",
         tauri::WebviewUrl::External(
@@ -582,8 +604,28 @@ pub async fn login_with_google_drive(
         }
         true
     })
-    .build()
-    .map_err(|e| AppError::Auth(format!("Failed to open Drive sign-in window: {e}")))?;
+    .build();
+
+    let window = match build_result {
+        Ok(win) => win,
+        Err(e) => {
+            clear_pending_oauth_state(state.inner()).await;
+            return Err(AppError::Auth(format!(
+                "Failed to open Drive sign-in window: {e}"
+            )));
+        }
+    };
+    // Same abandon-path guard as `login_with_google`: don't leave the CSRF
+    // nonce set forever if the popup is closed without completing.
+    // `on_window_event` is a WebviewWindow method, so it must run post-build.
+    window.on_window_event(move |event| {
+        if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
+            let state = close_state.clone();
+            tauri::async_runtime::spawn(async move {
+                clear_pending_oauth_state(&state).await;
+            });
+        }
+    });
 
     tracing::info!("Opened Google Drive OAuth sign-in window");
     Ok(())
@@ -799,6 +841,17 @@ pub fn spawn_session_refresh_loop(app: AppHandle, state: Arc<AppState>) {
             }
         }
     });
+}
+
+/// Clear the one-shot OAuth CSRF nonce guard.
+///
+/// Called both by the happy-path callback (`handle_auth_callback` takes it)
+/// and by the abandon paths (popup closed without completing sign-in, or the
+/// webview window failed to build) so a cancelled/failed OAuth attempt
+/// doesn't permanently block every subsequent `login_with_google*` call with
+/// "An OAuth sign-in is already in progress".
+async fn clear_pending_oauth_state(state: &Arc<AppState>) {
+    state.auth.write().await.pending_oauth_state = None;
 }
 
 // ---------------------------------------------------------------------------

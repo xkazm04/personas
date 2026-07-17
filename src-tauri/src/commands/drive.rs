@@ -1195,14 +1195,16 @@ pub fn drive_move(
             dst_rel
         )));
     }
-    if let Some(parent) = dst.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    // Refuse to move a folder inside itself.
+    // Refuse to move a folder inside itself -- checked BEFORE creating the
+    // destination's parent directory tree, so a rejected in-itself move
+    // doesn't leave a stray empty-dir artifact behind.
     if src.is_dir() && dst.starts_with(&src) {
         return Err(AppError::Validation(
             "Cannot move a folder inside itself".into(),
         ));
+    }
+    if let Some(parent) = dst.parent() {
+        std::fs::create_dir_all(parent)?;
     }
     std::fs::rename(&src, &dst)?;
     let entry = build_entry(&root, &dst)?;
@@ -1239,16 +1241,19 @@ pub fn drive_copy(
             dst_rel
         )));
     }
+    let was_dir = src.is_dir();
+    // Refuse to copy a folder inside itself -- checked BEFORE creating the
+    // destination's parent directory tree, so a rejected in-itself copy
+    // doesn't leave a stray empty-dir artifact behind.
+    if was_dir && dst.starts_with(&src) {
+        return Err(AppError::Validation(
+            "Cannot copy a folder inside itself".into(),
+        ));
+    }
     if let Some(parent) = dst.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let was_dir = src.is_dir();
     if was_dir {
-        if dst.starts_with(&src) {
-            return Err(AppError::Validation(
-                "Cannot copy a folder inside itself".into(),
-            ));
-        }
         copy_dir_recursive(&src, &dst)?;
     } else {
         std::fs::copy(&src, &dst)?;
