@@ -212,7 +212,7 @@ async fn poll_one_trigger(
         // but still advance the schedule so it doesn't pile up as overdue.
         if !trigger.is_within_active_window(now) {
             let next = sched_logic::compute_next_trigger_at(&trigger, now);
-            let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
+            try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
             return;
         }
 

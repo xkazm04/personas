@@ -27,6 +27,14 @@ use crate::error::AppError;
 // State
 // ---------------------------------------------------------------------------
 
+/// Page size for `list_trigger_firings`. The API only exposes a `limit`
+/// param (no offset/cursor), so this is the most firings we can see in a
+/// single poll for a given trigger. Kept well above the old default of 20
+/// to make it unlikely a burst exceeds the page in one poll interval; if it
+/// still does, `firings_fetch_hit_cap` below logs a warning so the gap is
+/// at least visible instead of silently stranding older firings forever.
+const FIRING_FETCH_LIMIT: u32 = 200;
+
 /// Tracks the last-seen firing timestamp per cloud trigger to avoid
 /// re-processing firings across poll cycles.
 pub struct CloudWebhookRelayState {
@@ -197,7 +205,9 @@ pub async fn cloud_webhook_relay_tick(
             let trigger_id = trigger.id.clone();
             let dep_idx = *dep_idx;
             async move {
-                let result = client.list_trigger_firings(&trigger_id, Some(20)).await;
+                let result = client
+                    .list_trigger_firings(&trigger_id, Some(FIRING_FETCH_LIMIT))
+                    .await;
                 (i, dep_idx, result)
             }
         })
@@ -214,13 +224,23 @@ pub async fn cloud_webhook_relay_tick(
             }
         };
 
-    // 4. Process firings sequentially (DB writes + state updates)
+    // 4. Process firings sequentially (DB writes + state updates).
+    // Snapshot the watermarks under a short lock, then release the async
+    // Mutex for the duration of the loop below: it does a blocking
+    // pool.get() + SQLite transaction per firing, and the lock is only
+    // needed to guard `last_seen`/`total_relayed`, not to serialize the
+    // whole tick (that's `tick_lock`'s job).
     let mut total_new = 0u32;
-    let mut s = state.lock().await;
+    let last_seen_snapshot: HashMap<String, String> = {
+        let s = state.lock().await;
+        s.last_seen.clone()
+    };
 
     // Track the highest fired_at per trigger so the watermark always
     // advances to the newest timestamp regardless of API sort order.
     let mut max_fired_at: HashMap<String, String> = HashMap::new();
+    // last_seen updates to apply once processing is done.
+    let mut last_seen_updates: HashMap<String, String> = HashMap::new();
 
     for (trigger_idx, dep_idx, result) in &firing_results {
         let deployment = &webhook_deployments[*dep_idx];
@@ -237,7 +257,23 @@ pub async fn cloud_webhook_relay_tick(
             }
         };
 
-        let cutoff = s.last_seen.get(&trigger.id).cloned();
+        let cutoff = last_seen_snapshot.get(&trigger.id).cloned();
+
+        // If the API returned exactly the page cap, there may be older
+        // firings (> cutoff) that fell outside this page and will never be
+        // fetched again once the watermark advances past what we did see —
+        // they'd be silently stranded. We can't page further back (the API
+        // has no offset/cursor), so surface it loudly instead of losing it
+        // quietly.
+        if firings.len() as u32 >= FIRING_FETCH_LIMIT {
+            tracing::warn!(
+                trigger_id = %trigger.id,
+                fetched = firings.len(),
+                limit = FIRING_FETCH_LIMIT,
+                "Cloud webhook relay hit the firings page cap; older firings beyond \
+                 this page may be stranded if the burst exceeded the page size"
+            );
+        }
 
         // Process oldest-first so a publish failure holds the watermark at the
         // last contiguous success rather than letting a later success advance
@@ -330,10 +366,10 @@ pub async fn cloud_webhook_relay_tick(
                 Ok(event) => {
                     emit_event_bus(app, &event);
                     total_new += 1;
-                    s.total_relayed += 1;
-                    // Update in-memory state only after the transaction commits
+                    // Update in-memory state only after the transaction commits.
+                    // Deferred: applied to `state` in one short lock after the loop.
                     max_fired_at.insert(trigger.id.clone(), watermark.clone());
-                    s.last_seen.insert(trigger.id.clone(), watermark);
+                    last_seen_updates.insert(trigger.id.clone(), watermark);
                 }
                 Err(e) => {
                     // Hold the watermark at the last successful firing and stop
@@ -352,12 +388,20 @@ pub async fn cloud_webhook_relay_tick(
         }
     }
 
-    // Prune last_seen entries for triggers that no longer exist, then update state
-    s.last_seen.retain(|id, _| active_trigger_ids.contains(id));
+    // Re-acquire the lock only for the short, purely in-memory mutations:
+    // apply the deferred last_seen updates, prune stale entries, and update
+    // the poll bookkeeping.
     let active_ids: Vec<&str> = active_trigger_ids.iter().map(|s| s.as_str()).collect();
     if let Err(e) = watermark_repo::prune(pool, &active_ids) {
         tracing::debug!(error = %e, "Failed to prune stale webhook watermarks");
     }
+    let mut s = state.lock().await;
+    for (trigger_id, watermark) in last_seen_updates {
+        s.last_seen.insert(trigger_id, watermark);
+    }
+    s.total_relayed += total_new as u64;
+    // Prune last_seen entries for triggers that no longer exist, then update state
+    s.last_seen.retain(|id, _| active_trigger_ids.contains(id));
     s.last_poll_at = Some(now);
     s.last_error = None;
     s.active_webhook_triggers = trigger_count;

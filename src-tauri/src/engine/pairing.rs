@@ -98,6 +98,20 @@ pub fn register(
     }
     let mut map = pending().lock().map_err(|_| "lock poisoned".to_string())?;
     prune(&mut map);
+    // If this nonce already resolved (approved or rejected), don't reset it
+    // back to Pending -- a benign double-submit (double POST, resent deep
+    // link) would otherwise discard an already-minted, unclaimed token and
+    // hang the app's claim poll indefinitely.
+    if let Some(existing) = map.get(nonce) {
+        if !matches!(existing.outcome, Outcome::Pending) {
+            return Ok(PendingPairingView {
+                nonce: nonce.to_string(),
+                origin: existing.origin.clone(),
+                requested_scopes: existing.requested_scopes.clone(),
+                app_name: existing.app_name.clone(),
+            });
+        }
+    }
     if map.len() >= MAX_PENDING && !map.contains_key(nonce) {
         return Err("too many pending pairings".into());
     }
