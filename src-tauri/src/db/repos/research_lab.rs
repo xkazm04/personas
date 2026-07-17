@@ -7,6 +7,7 @@ use crate::db::models::{
     ResearchExperiment, ResearchExperimentRun, ResearchFinding, ResearchHypothesis,
     ResearchProject, ResearchReport, ResearchSource, UpdateResearchProject,
 };
+use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -35,7 +36,7 @@ pub fn list_projects(pool: &DbPool) -> Result<Vec<ResearchProject>, AppError> {
             updated_at: row.get(10)?,
         })
     })?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(collect_rows(rows, "research_lab::list_projects"))
 }
 
 pub fn get_project(pool: &DbPool, id: &str) -> Result<ResearchProject, AppError> {
@@ -117,7 +118,7 @@ pub fn list_sources(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchSourc
         "SELECT {SOURCE_COLUMNS} FROM research_sources WHERE project_id = ?1 ORDER BY created_at DESC"
     ))?;
     let rows = stmt.query_map(params![project_id], row_to_source)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(collect_rows(rows, "research_lab::list_sources"))
 }
 
 /// Maps a full `research_sources` row to a `ResearchSource`. The SELECT column
@@ -285,7 +286,7 @@ pub fn list_hypotheses(
         "SELECT {HYPOTHESIS_COLUMNS} FROM research_hypotheses WHERE project_id = ?1 ORDER BY created_at DESC"
     ))?;
     let rows = stmt.query_map(params![project_id], row_to_hypothesis)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(collect_rows(rows, "research_lab::list_hypotheses"))
 }
 
 const HYPOTHESIS_COLUMNS: &str = "id, project_id, statement, rationale, status, confidence, parent_hypothesis_id, generated_by, supporting_evidence, counter_evidence, linked_experiments, created_at, updated_at";
@@ -403,7 +404,7 @@ pub fn list_experiments(
         "SELECT {EXPERIMENT_COLUMNS} FROM research_experiments WHERE project_id = ?1 ORDER BY created_at DESC"
     ))?;
     let rows = stmt.query_map(params![project_id], row_to_experiment)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(collect_rows(rows, "research_lab::list_experiments"))
 }
 
 pub fn create_experiment(
@@ -459,7 +460,7 @@ pub fn list_findings(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchFind
         "SELECT {FINDING_COLUMNS} FROM research_findings WHERE project_id = ?1 ORDER BY confidence DESC"
     ))?;
     let rows = stmt.query_map(params![project_id], row_to_finding)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(collect_rows(rows, "research_lab::list_findings"))
 }
 
 pub fn create_finding(
@@ -510,7 +511,7 @@ pub fn list_reports(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchRepor
         "SELECT {REPORT_COLUMNS} FROM research_reports WHERE project_id = ?1 ORDER BY updated_at DESC"
     ))?;
     let rows = stmt.query_map(params![project_id], row_to_report)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(collect_rows(rows, "research_lab::list_reports"))
 }
 
 pub fn create_report(
@@ -623,7 +624,7 @@ pub fn list_experiment_runs(
             created_at: row.get(10)?,
         })
     })?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(collect_rows(rows, "research_lab::list_experiment_runs"))
 }
 
 pub fn create_experiment_run(
