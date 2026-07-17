@@ -78,6 +78,20 @@ pub fn get(pool: &UserDbPool, id: &str) -> Result<Option<KnownProject>, AppError
     Ok(row)
 }
 
+/// Strip Windows' extended-length verbatim prefix (`\\?\` / `\\?\UNC\`) that
+/// `std::fs::canonicalize` emits, so we never store/display an ugly
+/// `\\?\C:\...` path (echoed verbatim into Athena's prompt via
+/// `prompt.rs::format_plugins`). No-op on non-Windows paths.
+fn strip_verbatim_prefix(path: &str) -> String {
+    if let Some(rest) = path.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{rest}")
+    } else if let Some(rest) = path.strip_prefix(r"\\?\") {
+        rest.to_string()
+    } else {
+        path.to_string()
+    }
+}
+
 pub fn register(
     pool: &UserDbPool,
     name: &str,
@@ -97,7 +111,7 @@ pub fn register(
     // on-disk entry; fall back to a lexical normalization when the path isn't
     // on disk yet.
     let path: String = std::fs::canonicalize(path)
-        .map(|c| c.to_string_lossy().to_string())
+        .map(|c| strip_verbatim_prefix(&c.to_string_lossy()))
         .unwrap_or_else(|_| path.trim().trim_end_matches(['/', '\\']).to_string());
     let path = path.as_str();
     let id = format!("proj_{}", crate::companion::util::short_id(12));

@@ -187,8 +187,13 @@ pub async fn retrieve(
     );
 
     // Episodes: hydrate (SQL excerpt when complete, disk for long bodies),
-    // then merge with recent oldest-first.
-    let mut extra_episodes = load_episodes_by_ids(pool, &episode_ids).unwrap_or_default();
+    // then merge with recent oldest-first. Re-impose the session filter
+    // here — the vector lane only filters on kind='episode', so without
+    // this a semantically similar episode authored in a *different*
+    // conversation would bleed into this session's working memory,
+    // breaking the isolation `episodic::list_recent` enforces.
+    let mut extra_episodes =
+        load_episodes_by_ids(pool, &episode_ids, session_id).unwrap_or_default();
     extra_episodes.sort_by(|a, b| a.created_at.cmp(&b.created_at));
     let mut episodes = extra_episodes;
     episodes.extend(recent);
@@ -284,7 +289,11 @@ fn lookup_kinds(
 /// file was manually deleted now still surfaces — episodes are append-only by
 /// doctrine, so a missing file is an anomaly and the SQL copy is authoritative
 /// enough for recall.)
-fn load_episodes_by_ids(pool: &UserDbPool, ids: &[String]) -> Result<Vec<Episode>, AppError> {
+fn load_episodes_by_ids(
+    pool: &UserDbPool,
+    ids: &[String],
+    session_id: &str,
+) -> Result<Vec<Episode>, AppError> {
     if ids.is_empty() {
         return Ok(Vec::new());
     }
@@ -293,10 +302,12 @@ fn load_episodes_by_ids(pool: &UserDbPool, ids: &[String]) -> Result<Vec<Episode
     let sql = format!(
         "SELECT id, file_path, created_at, body_excerpt
          FROM companion_node
-         WHERE kind = 'episode' AND id IN ({placeholders})"
+         WHERE kind = 'episode' AND session_id = ? AND id IN ({placeholders})"
     );
     let mut stmt = conn.prepare(&sql)?;
-    let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+    let params: Vec<&dyn rusqlite::ToSql> = std::iter::once(&session_id as &dyn rusqlite::ToSql)
+        .chain(ids.iter().map(|s| s as &dyn rusqlite::ToSql))
+        .collect();
     let rows = stmt
         .query_map(params.as_slice(), |row| {
             Ok((

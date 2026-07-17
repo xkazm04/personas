@@ -263,6 +263,38 @@ pub struct ItemEdits {
     pub confidence: Option<f32>,
 }
 
+/// The model's `supersedes_id` is untrusted input — validate it refers to a
+/// live fact (`kind='fact'`, `importance>0`) in the same scope before
+/// letting `apply_item` demote anything. Without this, a hallucinated or
+/// unrelated id would silently zero out an arbitrary fact's importance,
+/// defeating the human-review step `apply_item` is meant to gate.
+fn validate_supersedes(
+    pool: &UserDbPool,
+    item_id: &str,
+    prior_id: &str,
+    scope_str: &str,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    let prior_scope: Option<String> = conn
+        .query_row(
+            "SELECT f.scope FROM companion_fact f
+             JOIN companion_node n ON n.id = f.id
+             WHERE f.id = ?1 AND n.kind = 'fact' AND n.importance > 0",
+            params![prior_id],
+            |r| r.get(0),
+        )
+        .optional()?;
+    match prior_scope {
+        Some(s) if s == scope_str => Ok(()),
+        Some(_) => Err(AppError::Validation(format!(
+            "consolidation item `{item_id}`: supersedes_id `{prior_id}` is in a different scope"
+        ))),
+        None => Err(AppError::Validation(format!(
+            "consolidation item `{item_id}`: supersedes_id `{prior_id}` does not refer to a live fact"
+        ))),
+    }
+}
+
 #[cfg(feature = "ml")]
 pub async fn apply_item(
     pool: &UserDbPool,
@@ -284,6 +316,9 @@ pub async fn apply_item(
     let importance = edits.importance.unwrap_or(item.importance);
     let confidence = edits.confidence.unwrap_or(item.confidence);
     let supersedes = item.supersedes_id.as_deref();
+    if let Some(prior_id) = supersedes {
+        validate_supersedes(pool, item_id, prior_id, scope_str)?;
+    }
 
     let input = semantic::FactInput {
         scope,
@@ -375,6 +410,9 @@ pub async fn apply_item(
     let importance = edits.importance.unwrap_or(item.importance);
     let confidence = edits.confidence.unwrap_or(item.confidence);
     let supersedes = item.supersedes_id.as_deref();
+    if let Some(prior_id) = supersedes {
+        validate_supersedes(pool, item_id, prior_id, scope_str)?;
+    }
 
     let input = semantic::FactInput {
         scope,
@@ -473,30 +511,45 @@ pub fn decay_unused_facts(pool: &UserDbPool) -> Result<i64, AppError> {
     let now = Utc::now().to_rfc3339();
     let cutoff = (Utc::now() - chrono::Duration::days(DECAY_THRESHOLD_DAYS)).to_rfc3339();
     let conn = pool.get()?;
-    let updated = conn.execute(
-        "UPDATE companion_node
-         SET importance = MAX(1, importance - ?1), updated_at = ?2
-         WHERE id IN (
-             SELECT n.id FROM companion_node n
-             JOIN companion_fact f ON f.id = n.id
-             WHERE n.kind = 'fact'
-               AND n.importance > 1
-               AND f.last_seen_at < ?3
-         )",
-        params![DECAY_DECREMENT, now, cutoff],
+    // Guard on last_decayed_at so a fact decays at most once per
+    // DECAY_THRESHOLD_DAYS window even if consolidation is re-run sooner
+    // (decay itself doesn't bump last_seen_at, so without this guard the
+    // same stale fact would be decremented again on every pass). Resolve
+    // the id set up front so the follow-up "mark as decayed" write targets
+    // exactly the rows just decremented, rather than re-selecting by
+    // `updated_at = ?1` (which could also catch an unrelated fact touched
+    // at the same RFC3339 instant) or by `importance > 1` (which would miss
+    // rows that were decremented down to the floor of 1 by this very pass).
+    let mut stmt = conn.prepare(
+        "SELECT n.id FROM companion_node n
+         JOIN companion_fact f ON f.id = n.id
+         WHERE n.kind = 'fact'
+           AND n.importance > 1
+           AND f.last_seen_at < ?1
+           AND (f.last_decayed_at IS NULL OR f.last_decayed_at < ?1)",
     )?;
-    // Mark them as decayed so the next pass doesn't double-decay
-    // (we'd need to reinforce by recall to restart the clock).
-    if updated > 0 {
-        conn.execute(
-            "UPDATE companion_fact
-             SET last_decayed_at = ?1
-             WHERE id IN (
-                 SELECT id FROM companion_node WHERE kind = 'fact' AND updated_at = ?1
-             )",
-            params![now],
-        )?;
+    let ids: Vec<String> = stmt
+        .query_map(params![cutoff], |r| r.get(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    drop(stmt);
+    if ids.is_empty() {
+        return Ok(0);
     }
+    let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    let node_sql = format!(
+        "UPDATE companion_node SET importance = MAX(1, importance - ?1), updated_at = ?2
+         WHERE id IN ({placeholders})"
+    );
+    let mut node_params: Vec<&dyn rusqlite::ToSql> = vec![&DECAY_DECREMENT, &now];
+    node_params.extend(ids.iter().map(|id| id as &dyn rusqlite::ToSql));
+    let updated = conn.execute(&node_sql, node_params.as_slice())?;
+
+    let fact_sql =
+        format!("UPDATE companion_fact SET last_decayed_at = ?1 WHERE id IN ({placeholders})");
+    let mut fact_params: Vec<&dyn rusqlite::ToSql> = vec![&now];
+    fact_params.extend(ids.iter().map(|id| id as &dyn rusqlite::ToSql));
+    conn.execute(&fact_sql, fact_params.as_slice())?;
+
     Ok(updated as i64)
 }
 

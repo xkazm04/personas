@@ -161,13 +161,17 @@ pub fn update_outcome(pool: &UserDbPool, turn_id: &str, outcome_json: &str) {
 }
 
 /// Delete ledger rows older than the retention window. Usage history earns a
-/// longer window than the 30-day background-job retention. Mirrors
-/// `jobs::prune_terminal_jobs`'s string-prefix cutoff comparison (the
-/// `YYYY-MM-DD` prefix orders correctly across the `datetime('now')` /
-/// RFC3339 separator difference).
+/// longer window than the 30-day background-job retention. `created_at` is
+/// stored via `datetime('now')` (`"YYYY-MM-DD HH:MM:SS"`, space separator),
+/// so the cutoff must be formatted the same way rather than as RFC3339
+/// (`T` separator) — a same-day string comparison of the two encodings
+/// would order every row on the boundary day as "older" regardless of
+/// time-of-day.
 pub fn prune_old_turns(pool: &UserDbPool) -> Result<usize, AppError> {
     const RETENTION_DAYS: i64 = 90;
-    let cutoff = (chrono::Utc::now() - chrono::Duration::days(RETENTION_DAYS)).to_rfc3339();
+    let cutoff = (chrono::Utc::now() - chrono::Duration::days(RETENTION_DAYS))
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
     let conn = pool.get()?;
     let n = conn.execute(
         "DELETE FROM companion_turn WHERE created_at < ?1",
