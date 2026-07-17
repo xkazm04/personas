@@ -6,10 +6,9 @@ use tokio_util::sync::CancellationToken;
 use serde::Serialize;
 
 use crate::background_job::BackgroundJobManager;
-use crate::commands::design::n8n_transform::run_claude_prompt_text_inner;
+use crate::engine::ai_helpers;
 use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
-use crate::engine::prompt;
 use crate::error::AppError;
 use crate::AppState;
 use personas_macros::requires;
@@ -183,22 +182,14 @@ async fn run_nl_query(params: RunParams) {
     // 2. Build the AI prompt
     let system_prompt = build_nl_prompt(&question, &conversation_history, &schema_context, db_type);
 
-    // 3. Build CLI args -- fast model, single turn
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
-
+    // 3. Run the AI helper (fast model, single turn -- shared scaffold)
     let app_clone = app.clone();
     let id_clone = query_id.clone();
     let on_line = move |line: &str| {
         NL_QUERY_JOBS.emit_line(&app_clone, &id_clone, line);
     };
 
-    let cli_result =
-        run_claude_prompt_text_inner(system_prompt, &cli_args, Some(&on_line), None, None, 120)
-            .await;
+    let cli_result = ai_helpers::run_single_turn_prompt(system_prompt, Some(&on_line)).await;
 
     if cancel_token.is_cancelled() {
         emit_line(&app, &query_id, "> Cancelled.");
@@ -206,9 +197,9 @@ async fn run_nl_query(params: RunParams) {
     }
 
     match cli_result {
-        Ok((output, _session_id, _)) => {
-            let sql = extract_sql_block(&output);
-            let explanation = extract_explanation(&output);
+        Ok((output, _session_id)) => {
+            let sql = ai_helpers::extract_fenced_block(&output, "sql");
+            let explanation = ai_helpers::extract_explanation(&output);
 
             match sql {
                 Some(generated_sql) => {
@@ -395,89 +386,3 @@ async fn build_db_schema_context(
     ctx
 }
 
-/// Extract the SQL code block from Claude's output.
-fn extract_sql_block(text: &str) -> Option<String> {
-    let mut in_block = false;
-    let mut is_sql = false;
-    let mut content = String::new();
-    let mut blocks: Vec<(String, bool)> = Vec::new();
-
-    for line in text.lines() {
-        if !in_block && line.trim_start().starts_with("```") {
-            in_block = true;
-            let tag = line
-                .trim_start()
-                .trim_start_matches('`')
-                .trim()
-                .to_lowercase();
-            is_sql = tag.is_empty()
-                || [
-                    "sql",
-                    "sqlite",
-                    "sqlite3",
-                    "mysql",
-                    "postgresql",
-                    "postgres",
-                ]
-                .iter()
-                .any(|t| tag == *t);
-            continue;
-        }
-        if in_block {
-            if line.trim_start().starts_with("```") {
-                let trimmed = content.trim().to_string();
-                if !trimmed.is_empty() {
-                    blocks.push((trimmed, is_sql));
-                }
-                in_block = false;
-                content.clear();
-                continue;
-            }
-            content.push_str(line);
-            content.push('\n');
-        }
-    }
-
-    // Handle unclosed block
-    let trimmed = content.trim().to_string();
-    if in_block && !trimmed.is_empty() {
-        blocks.push((trimmed, is_sql));
-    }
-
-    // Prefer SQL-tagged blocks; fall back to first block
-    blocks
-        .iter()
-        .find(|(_, is_match)| *is_match)
-        .or_else(|| blocks.first())
-        .map(|(content, _)| content.clone())
-}
-
-/// Extract the explanation text that comes after the SQL code block.
-fn extract_explanation(text: &str) -> Option<String> {
-    let mut found_sql_block = false;
-    let mut in_block = false;
-    let mut explanation_lines: Vec<&str> = Vec::new();
-
-    for line in text.lines() {
-        if line.trim_start().starts_with("```") {
-            if in_block {
-                in_block = false;
-                found_sql_block = true;
-                continue;
-            }
-            in_block = true;
-            continue;
-        }
-
-        if found_sql_block && !in_block {
-            explanation_lines.push(line);
-        }
-    }
-
-    let explanation = explanation_lines.join("\n").trim().to_string();
-    if explanation.is_empty() {
-        None
-    } else {
-        Some(explanation)
-    }
-}

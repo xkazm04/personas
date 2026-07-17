@@ -6,12 +6,10 @@ use tokio_util::sync::CancellationToken;
 use serde::Serialize;
 
 use crate::background_job::BackgroundJobManager;
-use crate::commands::design::n8n_transform::run_claude_prompt_text_inner;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::engine::ai_helpers;
 use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
-use crate::engine::prompt;
 use crate::error::AppError;
 use crate::AppState;
 use personas_macros::requires;
@@ -243,13 +241,6 @@ async fn run_schema_proposal(params: RunParams) {
         database_type.as_deref().unwrap_or("sqlite"),
     );
 
-    // Build CLI args (no persona, default provider, fast model)
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
-
     let app_clone = app.clone();
     let id_clone = proposal_id.clone();
     let on_line = move |line: &str| {
@@ -258,9 +249,8 @@ async fn run_schema_proposal(params: RunParams) {
 
     emit_line(&app, &proposal_id, "> Generating schema with AI...");
 
-    let cli_result =
-        run_claude_prompt_text_inner(system_prompt, &cli_args, Some(&on_line), None, None, 120)
-            .await;
+    // Run the AI helper (fast model, single turn -- shared scaffold)
+    let cli_result = ai_helpers::run_single_turn_prompt(system_prompt, Some(&on_line)).await;
 
     if cancel_token.is_cancelled() {
         emit_line(&app, &proposal_id, "> Cancelled.");
@@ -268,10 +258,10 @@ async fn run_schema_proposal(params: RunParams) {
     }
 
     match cli_result {
-        Ok((output, _session_id, _)) => {
+        Ok((output, _session_id)) => {
             // Extract SQL from code block
             let sql = ai_helpers::extract_fenced_block(&output, "sql");
-            let explanation = extract_explanation(&output);
+            let explanation = ai_helpers::extract_explanation(&output);
 
             match sql {
                 Some(proposed_sql) => {
@@ -389,53 +379,5 @@ fn build_prompt(
     prompt
 }
 
-/// Extract the explanation text that comes after the SQL code block.
-fn extract_explanation(text: &str) -> Option<String> {
-    let mut found_sql_block = false;
-    let mut in_block = false;
-    let mut explanation_lines: Vec<&str> = Vec::new();
-
-    for line in text.lines() {
-        if line.trim_start().starts_with("```") {
-            if in_block {
-                in_block = false;
-                found_sql_block = true;
-                continue;
-            }
-            in_block = true;
-            continue;
-        }
-
-        if found_sql_block && !in_block {
-            explanation_lines.push(line);
-        }
-    }
-
-    let explanation = explanation_lines.join("\n").trim().to_string();
-    if explanation.is_empty() {
-        None
-    } else {
-        Some(explanation)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // SQL block extraction tests have moved to engine::ai_helpers::tests
-
-    #[test]
-    fn test_extract_explanation() {
-        let text = "Here:\n```sql\nCREATE TABLE t (id INT);\n```\n\nThe `t` table stores items.";
-        let explanation = extract_explanation(text).unwrap();
-        assert!(explanation.contains("The `t` table stores items."));
-    }
-
-    #[test]
-    fn test_extract_explanation_none() {
-        let text = "```sql\nCREATE TABLE t (id INT);\n```";
-        // Only whitespace after block
-        assert_eq!(extract_explanation(text), None);
-    }
-}
+// SQL block extraction and explanation extraction tests have moved to
+// engine::ai_helpers::tests.
