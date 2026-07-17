@@ -27,6 +27,9 @@ mod tools;
 
 pub use config::{is_remote_http_provider, DEFAULT_BASE_URL, DEFAULT_MODEL};
 pub use secrets::{clear_qwen_api_key, qwen_key_configured, store_qwen_api_key};
+/// SSRF egress guard, reused by other engine modules (e.g. the Zapier deploy
+/// path) that POST to an externally-supplied URL.
+pub(crate) use tools::is_blocked_ip;
 
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
