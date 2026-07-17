@@ -98,6 +98,24 @@ pub fn create_trigger(
     repo::create(&state.db, input)
 }
 
+/// Load the trigger by `id` and verify it belongs to `persona_id`. Shared by
+/// every command that mutates a trigger — centralizes both the lookup and
+/// the ownership check so a new command can't accidentally skip it.
+fn ensure_trigger_owned(
+    db: &crate::db::DbPool,
+    id: &str,
+    persona_id: &str,
+) -> Result<PersonaTrigger, AppError> {
+    let existing = repo::get_by_id(db, id)?;
+    if existing.persona_id != persona_id {
+        return Err(AppError::Validation(format!(
+            "Trigger {} does not belong to persona {}",
+            id, persona_id
+        )));
+    }
+    Ok(existing)
+}
+
 #[tauri::command]
 pub fn update_trigger(
     state: State<'_, Arc<AppState>>,
@@ -108,13 +126,7 @@ pub fn update_trigger(
     require_auth_sync(&state)?;
     check(tv::validate_config_json(input.config.as_deref()))?;
     // Verify ownership: the trigger must belong to the specified persona
-    let existing = repo::get_by_id(&state.db, &id)?;
-    if existing.persona_id != persona_id {
-        return Err(AppError::Validation(format!(
-            "Trigger {} does not belong to persona {}",
-            id, persona_id
-        )));
-    }
+    let existing = ensure_trigger_owned(&state.db, &id, &persona_id)?;
     // For chain cycle detection and polling URL validation on update, we need
     // the existing trigger's data to fill in fields not being changed.
     if input.trigger_type.is_some() || input.config.is_some() {
@@ -153,13 +165,7 @@ pub fn set_trigger_unattended_mode(
 ) -> Result<PersonaTrigger, AppError> {
     require_auth_sync(&state)?;
     // Verify ownership: the trigger must belong to the specified persona.
-    let existing = repo::get_by_id(&state.db, &id)?;
-    if existing.persona_id != persona_id {
-        return Err(AppError::Validation(format!(
-            "Trigger {} does not belong to persona {}",
-            id, persona_id
-        )));
-    }
+    ensure_trigger_owned(&state.db, &id, &persona_id)?;
     repo::set_unattended_mode(&state.db, &id, &mode)
 }
 
@@ -215,13 +221,7 @@ pub fn delete_trigger(
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     // Verify ownership: the trigger must belong to the specified persona
-    let existing = repo::get_by_id(&state.db, &id)?;
-    if existing.persona_id != persona_id {
-        return Err(AppError::Validation(format!(
-            "Trigger {} does not belong to persona {}",
-            id, persona_id
-        )));
-    }
+    ensure_trigger_owned(&state.db, &id, &persona_id)?;
 
     // Fix 4a: cascade-delete the paired auto-listener event_listener, if any,
     // BEFORE the primary delete. Best-effort — a failure here doesn't block
@@ -950,6 +950,25 @@ pub fn cron_fire_times_in_range(
     Ok(runs)
 }
 
+/// Describe a schedule trigger's cadence for display: prefers the cron
+/// expression (via [`cron_to_human`]) and falls back to a plain interval
+/// description, or a "not configured" placeholder if neither is set.
+/// Shared so the interval-format shape can't drift from `cron_to_human`'s
+/// style across the panels that build schedule text.
+fn describe_schedule(cron: Option<&str>, interval_seconds: Option<u64>) -> String {
+    cron.map(cron_to_human)
+        .or_else(|| {
+            interval_seconds.map(|s| {
+                if s >= 3600 {
+                    format!("Every {} hours", s / 3600)
+                } else {
+                    format!("Every {} minutes", s / 60)
+                }
+            })
+        })
+        .unwrap_or_else(|| "No schedule configured".into())
+}
+
 /// Convert a 5-field cron expression to a human-readable string.
 fn cron_to_human(expr: &str) -> String {
     let fields: Vec<&str> = expr.split_whitespace().collect();
@@ -1504,19 +1523,7 @@ pub fn list_cron_agents(state: State<'_, Arc<AppState>>) -> Result<Vec<CronAgent
             })
             .unwrap_or((None, None, None));
 
-        let description = cron_expression
-            .as_deref()
-            .map(cron_to_human)
-            .or_else(|| {
-                interval_seconds.map(|s| {
-                    if s >= 3600 {
-                        format!("Every {} hours", s / 3600)
-                    } else {
-                        format!("Every {} minutes", s / 60)
-                    }
-                })
-            })
-            .unwrap_or_else(|| "No schedule configured".into());
+        let description = describe_schedule(cron_expression.as_deref(), interval_seconds);
 
         Ok(CronAgent {
             persona_id: row.get("persona_id")?,
