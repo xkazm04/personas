@@ -217,8 +217,16 @@ export function buildMonitorModel(
 
   // --- process attribution -------------------------------------------------
   const personaIds = new Set(personas.map((p) => p.id));
+  // A display label is not a namespaced key: two personas can share a name, and
+  // a system/app process's free-form label can coincidentally equal a persona's
+  // name. Track collisions so the fallback below only fires when the name
+  // unambiguously identifies exactly one persona.
   const nameToId = new Map<string, string>();
-  for (const p of personas) nameToId.set(p.name, p.id);
+  const nameCollisions = new Set<string>();
+  for (const p of personas) {
+    if (nameToId.has(p.name)) nameCollisions.add(p.name);
+    else nameToId.set(p.name, p.id);
+  }
 
   const processesByPersona = new Map<string, ProcessEntry[]>();
   const systemProcesses: ProcessEntry[] = [];
@@ -229,7 +237,7 @@ export function buildMonitorModel(
       owner = proc.personaId;
     } else if (proc.navigateTo?.personaId && personaIds.has(proc.navigateTo.personaId)) {
       owner = proc.navigateTo.personaId;
-    } else if (proc.label && nameToId.has(proc.label)) {
+    } else if (proc.label && nameToId.has(proc.label) && !nameCollisions.has(proc.label)) {
       owner = nameToId.get(proc.label)!;
     }
     if (owner) push(processesByPersona, owner, entry);

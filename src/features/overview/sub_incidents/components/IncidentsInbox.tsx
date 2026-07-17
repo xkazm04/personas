@@ -9,7 +9,7 @@ import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineE
 import { storeBus } from '@/lib/storeBus';
 import { silentCatch } from '@/lib/silentCatch';
 import { getAuditIncident } from '@/api/overview/incidents';
-import { useIncidentsData } from '../libs/useIncidentsData';
+import { useIncidentsData, DEFAULT_LIMIT } from '../libs/useIncidentsData';
 import { useIncidentActions } from '../libs/useIncidentActions';
 import { consumePendingIncidentDeepLink } from '../libs/incidentDeepLink';
 import { IncidentsInboxKpiHeader } from './IncidentsInboxKpiHeader';
@@ -120,7 +120,7 @@ export default function IncidentsInbox() {
   const colWidths = useColumnWidths(INCIDENT_TABLE_ID);
   const gridTemplate = colWidths.template(INCIDENT_COLUMNS);
 
-  const { incidents, summary, loading, error, refresh } = useIncidentsData(filters);
+  const { incidents, summary, loading, error, refresh, truncated } = useIncidentsData(filters);
   // Stable identity so `useIncidentActions`'s useCallback chain (and everything
   // downstream that depends on `actions`) survives unrelated re-renders.
   const onAfterChange = useCallback(async () => {
@@ -340,11 +340,12 @@ export default function IncidentsInbox() {
           }
           break;
         case 'r':
-          if (curIdx >= 0) {
+          if (curIdx >= 0 && (list[curIdx]!.status === 'open' || list[curIdx]!.status === 'acknowledged' || list[curIdx]!.status === 'in_progress')) {
             e.preventDefault();
             const inc = list[curIdx]!;
-            void actionsRef.current.resolve(inc.id);
-            setAnnouncement(`${tRef.current.overview.incidents.a11y_resolved}: ${inc.title}`);
+            void actionsRef.current.resolve(inc.id).then((ok) => {
+              if (ok) setAnnouncement(`${tRef.current.overview.incidents.a11y_resolved}: ${inc.title}`);
+            });
           }
           break;
         case 'Escape':
@@ -465,6 +466,13 @@ export default function IncidentsInbox() {
           </div>
         ) : (
           <div className={colWidths.isResizing ? 'select-none cursor-col-resize' : undefined}>
+            {truncated && (
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-secondary/20">
+                <span className="typo-caption text-foreground">
+                  {t.overview.incidents.list_truncated.replace('{limit}', String(DEFAULT_LIMIT))}
+                </span>
+              </div>
+            )}
             {newCount > 0 && (
               <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
                 <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />

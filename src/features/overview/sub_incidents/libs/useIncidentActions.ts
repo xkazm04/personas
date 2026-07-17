@@ -23,17 +23,23 @@ export function useIncidentActions({ onAfterChange }: UseIncidentActionsArgs) {
 
   const handle = useCallback(
     async (
-      promise: Promise<unknown>,
+      promise: Promise<boolean>,
       opName: string,
-    ) => {
+    ): Promise<boolean> => {
       try {
-        await promise;
+        const ok = await promise;
+        if (!ok) {
+          addToast(t.overview.incidents.action_refused, 'error', 4000);
+          return false;
+        }
         await onAfterChange();
+        return true;
       } catch (e) {
         addToast(`${t.overview.incidents.action_failed_prefix} ${opName}: ${e}`, 'error', 4000);
+        return false;
       }
     },
-    [addToast, onAfterChange, t.overview.incidents.action_failed_prefix],
+    [addToast, onAfterChange, t.overview.incidents.action_failed_prefix, t.overview.incidents.action_refused],
   );
 
   const acknowledge = useCallback(
