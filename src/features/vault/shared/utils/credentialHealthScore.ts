@@ -36,6 +36,15 @@ const REMEDIATION_SCORE: Record<Remediation, number> = {
 
 function healthcheckScore(result: HealthResult | null): number {
   if (result === null) return 50; // untested = neutral
+  // Three-state probe result (wave 9): a connector with no live probe is
+  // UNVERIFIABLE — that is neutral evidence, not health. Scoring it 100 made
+  // the composite dot claim "healthy" for credentials nothing ever checked
+  // (the list correctly shows a neutral badge). Neutral 50 keeps the dot and
+  // the list telling the same story. Legacy results without `state` fall back
+  // to the boolean.
+  if (result.state === 'unverifiable') return 50;
+  if (result.state === 'verified') return 100;
+  if (result.state === 'failed') return 0;
   return result.success ? 100 : 0;
 }
 
@@ -87,7 +96,14 @@ export function computeHealthScore(
     {
       name: 'healthcheck',
       value: hc,
-      reason: healthResult === null ? 'Never tested' : healthResult.success ? 'Healthy' : 'Healthcheck failing',
+      reason:
+        healthResult === null
+          ? 'Never tested'
+          : healthResult.state === 'unverifiable'
+            ? 'No live probe exists for this connector'
+            : healthResult.success
+              ? 'Healthy'
+              : 'Healthcheck failing',
     },
     {
       name: 'anomaly',

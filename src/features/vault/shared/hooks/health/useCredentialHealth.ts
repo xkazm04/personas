@@ -37,6 +37,9 @@ import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/u
 export interface HealthResult {
   success: boolean;
   message: string;
+  /** Typed probe state (wave 9): verified | unverifiable | failed. Absent on
+   *  legacy/persisted results — consumers fall back to `success`. */
+  state?: 'verified' | 'unverifiable' | 'failed' | null;
   /** Only populated for design-flow healthchecks */
   healthcheckConfig?: Record<string, unknown> | null;
   lastSuccessfulTestAt?: string | null;
@@ -136,6 +139,7 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
       resultCache.set(key, {
         success: false,
         message: e instanceof Error ? e.message : 'Healthcheck failed',
+        state: 'failed',
       });
     } finally {
       endLoading(key);
