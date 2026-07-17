@@ -2,6 +2,7 @@ use rusqlite::{params, Row};
 
 use crate::db::models::{CreateTeamMemoryInput, TeamMemory, TeamMemoryStats};
 use crate::db::query_builder::QueryBuilder;
+use crate::db::repos::utils::escape_like;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -12,14 +13,6 @@ const IMPORTANCE_MAX: i32 = 10;
 /// Clamp importance to the valid 1–10 range.
 fn clamp_importance(value: i32) -> i32 {
     value.clamp(IMPORTANCE_MIN, IMPORTANCE_MAX)
-}
-
-/// Escape LIKE metacharacters (%, _) so they are matched literally.
-fn escape_like(input: &str) -> String {
-    input
-        .replace('\\', "\\\\")
-        .replace('%', "\\%")
-        .replace('_', "\\_")
 }
 
 fn row_to_team_memory(row: &Row) -> rusqlite::Result<TeamMemory> {

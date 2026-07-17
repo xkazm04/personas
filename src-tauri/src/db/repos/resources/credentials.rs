@@ -826,15 +826,14 @@ pub fn append_healthcheck_metadata(
             let mut ledger = CredentialLedger::parse(current_raw.as_deref());
 
             // Delegate to rotation engine for ring-buffer append logic (entry
-            // construction, FIFO overflow, error classification).
-            let existing =
-                crate::engine::rotation::ledger_entries_to_engine(&ledger.healthcheck_results);
-            let updated =
-                crate::engine::rotation::append_healthcheck_entry(&existing, success, message);
-
-            // Write updated ring buffer back into the ledger using typed conversion
-            ledger.healthcheck_results =
-                crate::engine::rotation::engine_entries_to_ledger(&updated);
+            // construction, FIFO overflow, error classification). `HealthcheckEntry`
+            // is a type alias for `LedgerHealthEntry`, so no conversion is needed.
+            let updated = crate::engine::rotation::append_healthcheck_entry(
+                &ledger.healthcheck_results,
+                success,
+                message,
+            );
+            ledger.healthcheck_results = updated;
             let now = chrono::Utc::now().to_rfc3339();
             ledger.healthcheck_last_success = Some(success);
             if success {

@@ -3,6 +3,7 @@ use rusqlite::params_from_iter;
 use std::collections::HashMap;
 
 use crate::db::repos::resources::settings_audit_log;
+use crate::db::repos::utils::escape_like;
 use crate::db::settings_keys;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -194,13 +195,7 @@ pub fn get_batch(
 pub fn get_by_prefix(pool: &DbPool, prefix: &str) -> Result<Vec<(String, String)>, AppError> {
     timed_query!("app_settings", "app_settings::get_by_prefix", {
         let conn = pool.get()?;
-        // Escape LIKE metacharacters so prefixes containing `_` or `%` match literally.
-        // Order matters: `\` must be escaped first so it does not double-escape later ones.
-        let escaped = prefix
-            .replace('\\', "\\\\")
-            .replace('%', "\\%")
-            .replace('_', "\\_");
-        let pattern = format!("{escaped}%");
+        let pattern = format!("{}%", escape_like(prefix));
         let mut stmt =
             conn.prepare("SELECT key, value FROM app_settings WHERE key LIKE ?1 ESCAPE '\\'")?;
         let rows = stmt.query_map(params![pattern], |row| {

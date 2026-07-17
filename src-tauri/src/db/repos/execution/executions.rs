@@ -240,39 +240,7 @@ pub fn get_all_global(
 
             let row_mapper = |row: &Row| -> rusqlite::Result<GlobalExecutionRow> {
                 Ok(GlobalExecutionRow {
-                    id: row.get("id")?,
-                    persona_id: row.get("persona_id")?,
-                    trigger_id: row.get("trigger_id")?,
-                    use_case_id: row.get("use_case_id")?,
-                    status: row.get("status")?,
-                    input_data: row.get("input_data")?,
-                    output_data: row.get("output_data")?,
-                    claude_session_id: row.get("claude_session_id")?,
-                    log_file_path: row.get("log_file_path")?,
-                    execution_flows: row.get("execution_flows")?,
-                    model_used: row.get("model_used")?,
-        thinking_level: row.get("thinking_level").unwrap_or(None),
-                    input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
-                    output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
-                    cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
-                    error_message: row.get("error_message")?,
-                    duration_ms: row.get("duration_ms")?,
-                    tool_steps: row.get("tool_steps")?,
-                    retry_of_execution_id: row.get("retry_of_execution_id")?,
-                    retry_count: row.get::<_, Option<i64>>("retry_count")?.unwrap_or(0),
-                    started_at: row.get("started_at")?,
-                    completed_at: row.get("completed_at")?,
-                    created_at: row.get("created_at")?,
-                    execution_config: row.get("execution_config").unwrap_or(None),
-                    log_truncated: row
-                        .get::<_, Option<bool>>("log_truncated")?
-                        .unwrap_or(false),
-                    is_simulation: row
-                        .get::<_, Option<bool>>("is_simulation")?
-                        .unwrap_or(false),
-                    business_outcome: row
-                        .get::<_, Option<String>>("business_outcome")?
-                        .unwrap_or_else(|| "unknown".to_string()),
+                    base: row_to_execution(row)?,
                     persona_name: row.get("persona_name")?,
                     persona_icon: row.get("persona_icon")?,
                     persona_color: row.get("persona_color")?,
@@ -696,6 +664,78 @@ fn redact_execution_fields(input: &mut UpdateExecutionStatus) {
     redact::redact_opt(&mut input.business_outcome);
 }
 
+/// Shared 18-column execution-status `UPDATE`, parameterized only by the
+/// trailing `WHERE` predicate. `update_status`, `update_status_if_running`,
+/// and `update_status_if_not_final` differ *only* in which rows they're
+/// allowed to touch (unguarded / CAS-if-running / CAS-if-not-final) — this
+/// owns the shared SET clause + param binding so the three copies can never
+/// drift out of sync (see refactor-bughunt-2026-07-10 #7).
+fn exec_status_update(
+    conn: &rusqlite::Connection,
+    id: &str,
+    input: &UpdateExecutionStatus,
+    where_clause: &str,
+) -> Result<usize, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let started_at: Option<String> = if input.status == ExecutionState::Running {
+        Some(now.clone())
+    } else {
+        None
+    };
+
+    let completed_at: Option<String> = if input.status.is_terminal() {
+        Some(now)
+    } else {
+        None
+    };
+
+    // Serialize ExecutionState to its DB string form
+    let status_str = input.status.as_str();
+
+    let sql = format!(
+        "UPDATE persona_executions SET
+            status = ?1,
+            output_data = COALESCE(?2, output_data),
+            error_message = COALESCE(?3, error_message),
+            duration_ms = COALESCE(?4, duration_ms),
+            log_file_path = COALESCE(?5, log_file_path),
+            execution_flows = COALESCE(?6, execution_flows),
+            input_tokens = COALESCE(?7, input_tokens),
+            output_tokens = COALESCE(?8, output_tokens),
+            cost_usd = COALESCE(?9, cost_usd),
+            started_at = COALESCE(?10, started_at),
+            completed_at = COALESCE(?11, completed_at),
+            tool_steps = COALESCE(?13, tool_steps),
+            claude_session_id = COALESCE(?14, claude_session_id),
+            execution_config = COALESCE(?15, execution_config),
+            log_truncated = ?16,
+            business_outcome = COALESCE(?17, business_outcome)
+         {where_clause}"
+    );
+    let mut stmt = conn.prepare_cached(&sql)?;
+    let rows_changed = stmt.execute(params![
+        status_str,
+        input.output_data,
+        input.error_message,
+        input.duration_ms,
+        input.log_file_path,
+        input.execution_flows,
+        input.input_tokens,
+        input.output_tokens,
+        input.cost_usd,
+        started_at,
+        completed_at,
+        id,
+        input.tool_steps,
+        input.claude_session_id,
+        input.execution_config,
+        input.log_truncated,
+        input.business_outcome,
+    ])?;
+    Ok(rows_changed)
+}
+
 pub fn update_status(
     pool: &DbPool,
     id: &str,
@@ -703,64 +743,8 @@ pub fn update_status(
 ) -> Result<(), AppError> {
     redact_execution_fields(&mut input);
     timed_query!("persona_executions", "persona_executions::update_status", {
-        let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
-
-        let started_at: Option<String> = if input.status == ExecutionState::Running {
-            Some(now.clone())
-        } else {
-            None
-        };
-
-        let completed_at: Option<String> = if input.status.is_terminal() {
-            Some(now)
-        } else {
-            None
-        };
-
-        // Serialize ExecutionState to its DB string form
-        let status_str = input.status.as_str();
-
-        let mut stmt = conn.prepare_cached(
-            "UPDATE persona_executions SET
-                status = ?1,
-                output_data = COALESCE(?2, output_data),
-                error_message = COALESCE(?3, error_message),
-                duration_ms = COALESCE(?4, duration_ms),
-                log_file_path = COALESCE(?5, log_file_path),
-                execution_flows = COALESCE(?6, execution_flows),
-                input_tokens = COALESCE(?7, input_tokens),
-                output_tokens = COALESCE(?8, output_tokens),
-                cost_usd = COALESCE(?9, cost_usd),
-                started_at = COALESCE(?10, started_at),
-                completed_at = COALESCE(?11, completed_at),
-                tool_steps = COALESCE(?13, tool_steps),
-                claude_session_id = COALESCE(?14, claude_session_id),
-                execution_config = COALESCE(?15, execution_config),
-                log_truncated = ?16,
-                business_outcome = COALESCE(?17, business_outcome)
-             WHERE id = ?12",
-        )?;
-        stmt.execute(params![
-            status_str,
-            input.output_data,
-            input.error_message,
-            input.duration_ms,
-            input.log_file_path,
-            input.execution_flows,
-            input.input_tokens,
-            input.output_tokens,
-            input.cost_usd,
-            started_at,
-            completed_at,
-            id,
-            input.tool_steps,
-            input.claude_session_id,
-            input.execution_config,
-            input.log_truncated,
-            input.business_outcome,
-        ])?;
-
+        exec_status_update(&conn, id, &input, "WHERE id = ?12")?;
         Ok(())
     })
 }
@@ -781,63 +765,13 @@ pub fn update_status_if_running(
         "persona_executions",
         "persona_executions::update_status_if_running",
         {
-            let now = chrono::Utc::now().to_rfc3339();
             let conn = pool.get()?;
-
-            let started_at: Option<String> = if input.status == ExecutionState::Running {
-                Some(now.clone())
-            } else {
-                None
-            };
-
-            let completed_at: Option<String> = if input.status.is_terminal() {
-                Some(now)
-            } else {
-                None
-            };
-
-            let status_str = input.status.as_str();
-
-            let mut stmt = conn.prepare_cached(
-                "UPDATE persona_executions SET
-                status = ?1,
-                output_data = COALESCE(?2, output_data),
-                error_message = COALESCE(?3, error_message),
-                duration_ms = COALESCE(?4, duration_ms),
-                log_file_path = COALESCE(?5, log_file_path),
-                execution_flows = COALESCE(?6, execution_flows),
-                input_tokens = COALESCE(?7, input_tokens),
-                output_tokens = COALESCE(?8, output_tokens),
-                cost_usd = COALESCE(?9, cost_usd),
-                started_at = COALESCE(?10, started_at),
-                completed_at = COALESCE(?11, completed_at),
-                tool_steps = COALESCE(?13, tool_steps),
-                claude_session_id = COALESCE(?14, claude_session_id),
-                execution_config = COALESCE(?15, execution_config),
-                log_truncated = ?16,
-                business_outcome = COALESCE(?17, business_outcome)
-             WHERE id = ?12 AND status = 'running'",
-            )?;
-            let rows_changed = stmt.execute(params![
-                status_str,
-                input.output_data,
-                input.error_message,
-                input.duration_ms,
-                input.log_file_path,
-                input.execution_flows,
-                input.input_tokens,
-                input.output_tokens,
-                input.cost_usd,
-                started_at,
-                completed_at,
+            let rows_changed = exec_status_update(
+                &conn,
                 id,
-                input.tool_steps,
-                input.claude_session_id,
-                input.execution_config,
-                input.log_truncated,
-                input.business_outcome,
-            ])?;
-
+                &input,
+                "WHERE id = ?12 AND status = 'running'",
+            )?;
             Ok(rows_changed > 0)
         }
     )
@@ -907,21 +841,7 @@ pub fn update_status_if_not_final(
         "persona_executions",
         "persona_executions::update_status_if_not_final",
         {
-            let now = chrono::Utc::now().to_rfc3339();
             let conn = pool.get()?;
-
-            let started_at: Option<String> = if input.status == ExecutionState::Running {
-                Some(now.clone())
-            } else {
-                None
-            };
-
-            let completed_at: Option<String> = if input.status.is_terminal() {
-                Some(now)
-            } else {
-                None
-            };
-
             let status_str = input.status.as_str();
 
             // Cancellation is a terminal sink: a completion/failure must NEVER
@@ -935,46 +855,7 @@ pub fn update_status_if_not_final(
             } else {
                 "WHERE id = ?12 AND status = 'running'"
             };
-            let sql = format!(
-                "UPDATE persona_executions SET
-                status = ?1,
-                output_data = COALESCE(?2, output_data),
-                error_message = COALESCE(?3, error_message),
-                duration_ms = COALESCE(?4, duration_ms),
-                log_file_path = COALESCE(?5, log_file_path),
-                execution_flows = COALESCE(?6, execution_flows),
-                input_tokens = COALESCE(?7, input_tokens),
-                output_tokens = COALESCE(?8, output_tokens),
-                cost_usd = COALESCE(?9, cost_usd),
-                started_at = COALESCE(?10, started_at),
-                completed_at = COALESCE(?11, completed_at),
-                tool_steps = COALESCE(?13, tool_steps),
-                claude_session_id = COALESCE(?14, claude_session_id),
-                execution_config = COALESCE(?15, execution_config),
-                log_truncated = ?16,
-                business_outcome = COALESCE(?17, business_outcome)
-             {where_clause}"
-            );
-            let mut stmt = conn.prepare_cached(&sql)?;
-            let rows_changed = stmt.execute(params![
-                status_str,
-                input.output_data,
-                input.error_message,
-                input.duration_ms,
-                input.log_file_path,
-                input.execution_flows,
-                input.input_tokens,
-                input.output_tokens,
-                input.cost_usd,
-                started_at,
-                completed_at,
-                id,
-                input.tool_steps,
-                input.claude_session_id,
-                input.execution_config,
-                input.log_truncated,
-                input.business_outcome,
-            ])?;
+            let rows_changed = exec_status_update(&conn, id, &input, where_clause)?;
 
             Ok(rows_changed > 0)
         }
@@ -1571,12 +1452,8 @@ pub fn get_retry_chains_batch(
             let conn = pool.get()?;
 
             // Step 1: resolve root IDs for all requested execution_ids
-            let placeholders: String = execution_ids
-                .iter()
-                .enumerate()
-                .map(|(i, _)| format!("?{}", i + 1))
-                .collect::<Vec<_>>()
-                .join(", ");
+            let placeholders: String =
+                crate::db::repos::utils::in_placeholders(execution_ids.len());
 
             let root_sql = format!(
         "SELECT id, retry_of_execution_id FROM persona_executions WHERE id IN ({placeholders})"
@@ -1612,12 +1489,7 @@ pub fn get_retry_chains_batch(
 
             // Step 2: fetch all retry executions for these roots in one query
             let root_list: Vec<&str> = root_ids.iter().map(|s| s.as_str()).collect();
-            let root_placeholders: String = root_list
-                .iter()
-                .enumerate()
-                .map(|(i, _)| format!("?{}", i + 1))
-                .collect::<Vec<_>>()
-                .join(", ");
+            let root_placeholders: String = crate::db::repos::utils::in_placeholders(root_list.len());
 
             let _chain_sql = format!(
                 "SELECT * FROM persona_executions

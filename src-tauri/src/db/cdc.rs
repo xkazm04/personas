@@ -100,16 +100,6 @@ pub struct CdcEvent {
     pub rowid: i64,
 }
 
-/// Payload emitted to the frontend for tables that only need a notification
-/// (no full row fetch).
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CdcNotification {
-    pub action: CdcAction,
-    pub table: String,
-    pub rowid: i64,
-}
-
 // ---------------------------------------------------------------------------
 // Channel infrastructure
 // ---------------------------------------------------------------------------
@@ -149,15 +139,11 @@ impl CdcCustomizer {
 
 impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for CdcCustomizer {
     fn on_acquire(&self, conn: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
-        // Set standard pragmas (same as SqlitePragmaCustomizer)
-        conn.execute_batch(
-            "PRAGMA foreign_keys = ON;
-             PRAGMA busy_timeout = 5000;
-             PRAGMA synchronous = NORMAL;
-             PRAGMA mmap_size = 268435456;
-             PRAGMA temp_store = 2;
-             PRAGMA cache_size = -2000;",
-        )?;
+        // Set standard pragmas. Delegates to the same shared helper as
+        // `SqlitePragmaCustomizer` (crate::db::apply_standard_pragmas) so this
+        // customizer can never silently drift from the canonical pragma set —
+        // see refactor-bughunt-2026-07-10/tauri-db.md #3.
+        crate::db::apply_standard_pragmas(conn)?;
 
         // Register the CDC update hook
         let tx = self.sender.clone();
@@ -247,8 +233,8 @@ fn table_to_event(table: &str, action: CdcAction) -> Option<&'static str> {
 /// and emits them to the frontend via Tauri.
 ///
 /// For `persona_events`, the task fetches the full row by rowid (needed by the
-/// frontend event bus).  For all other tables, it emits a lightweight
-/// [`CdcNotification`] payload.
+/// frontend event bus).  For all other tables, it emits the lightweight
+/// [`CdcEvent`] itself as the notification payload.
 pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: crate::db::DbPool) {
     tauri::async_runtime::spawn(async move {
         // Capture the persona_events high-water rowid BEFORE the startup wait.
@@ -374,13 +360,11 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
                 continue;
             }
 
-            // All other tables: emit lightweight notification
-            let notification = CdcNotification {
-                action: event.action,
-                table: event.table,
-                rowid: event.rowid,
-            };
-            if let Err(e) = app_handle.emit(event_name, &notification) {
+            // All other tables: emit the lightweight CdcEvent itself as the
+            // notification payload (previously rebuilt into a field-for-field
+            // duplicate `CdcNotification` — see
+            // refactor-bughunt-2026-07-10/tauri-db.md #6).
+            if let Err(e) = app_handle.emit(event_name, &event) {
                 tracing::warn!(
                     event_name,
                     error = %e,

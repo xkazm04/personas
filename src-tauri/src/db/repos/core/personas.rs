@@ -8,6 +8,7 @@ use crate::db::models::{
     CreatePersonaInput, HealthStatus, Persona, PersonaGatewayExposure, PersonaHealth,
     PersonaLifecycle, PersonaSummary, PersonaTrustLevel, PersonaTrustOrigin, UpdatePersonaInput,
 };
+use crate::db::query_builder::QueryBuilder;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::engine::crypto;
@@ -467,17 +468,15 @@ pub fn get_all_by_lifecycle(pool: &DbPool, stages: &[&str]) -> Result<Vec<Person
     }
     timed_query!("personas", "personas::get_all_by_lifecycle", {
         let conn = pool.get()?;
-        let placeholders: Vec<String> = (0..stages.len()).map(|i| format!("?{}", i + 1)).collect();
-        let sql = format!(
-            "SELECT * FROM personas WHERE COALESCE(lifecycle, 'active') IN ({}) ORDER BY created_at DESC",
-            placeholders.join(", ")
+        let mut qb = QueryBuilder::new();
+        qb.where_in(
+            "COALESCE(lifecycle, 'active')",
+            stages.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
         );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = stages
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
+        qb.order_by("created_at", "DESC");
+        let sql = qb.build_select("SELECT * FROM personas");
         let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_persona_redacted)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_persona_redacted)?;
         Ok(collect_rows(rows, "personas::get_all_by_lifecycle"))
     })
 }
@@ -627,18 +626,15 @@ pub fn get_all_by_lifecycle_lean(
     }
     timed_query!("personas", "personas::get_all_by_lifecycle_lean", {
         let conn = pool.get()?;
-        let placeholders: Vec<String> = (0..stages.len()).map(|i| format!("?{}", i + 1)).collect();
-        let sql = format!(
-            "SELECT {LEAN_LIST_COLUMNS} FROM personas \
-             WHERE COALESCE(lifecycle, 'active') IN ({}) ORDER BY created_at DESC",
-            placeholders.join(", ")
+        let mut qb = QueryBuilder::new();
+        qb.where_in(
+            "COALESCE(lifecycle, 'active')",
+            stages.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
         );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = stages
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
+        qb.order_by("created_at", "DESC");
+        let sql = qb.build_select(&format!("SELECT {LEAN_LIST_COLUMNS} FROM personas"));
         let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_persona_lean)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_persona_lean)?;
         Ok(collect_rows(rows, "personas::get_all_by_lifecycle_lean"))
     })
 }
@@ -686,21 +682,11 @@ pub fn get_by_ids(pool: &DbPool, ids: &[String]) -> Result<Vec<Persona>, AppErro
     }
     timed_query!("personas", "personas::get_by_ids", {
         let conn = pool.get()?;
-        let placeholders: Vec<String> = ids
-            .iter()
-            .enumerate()
-            .map(|(i, _)| format!("?{}", i + 1))
-            .collect();
-        let sql = format!(
-            "SELECT * FROM personas WHERE id IN ({})",
-            placeholders.join(", ")
-        );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = ids
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
+        let mut qb = QueryBuilder::new();
+        qb.where_in("id", ids.to_vec());
+        let sql = qb.build_select("SELECT * FROM personas");
         let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_persona)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_persona)?;
         Ok(collect_rows(rows, "personas::get_by_ids"))
     })
 }

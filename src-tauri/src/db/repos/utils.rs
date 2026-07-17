@@ -1,3 +1,31 @@
+/// Build a `?1, ?2, ..., ?N` placeholder list for a hand-rolled `IN (...)`
+/// clause. For straightforward single-column bulk fetches, prefer
+/// `QueryBuilder::where_in` (in `db::query_builder`), which also owns the
+/// param boxing. This helper exists for the call sites that can't route
+/// through `QueryBuilder` — e.g. the `IN` clause is combined with other raw
+/// SQL text/params, or the same placeholder list is reused verbatim across
+/// more than one clause in the same statement.
+pub fn in_placeholders(n: usize) -> String {
+    (0..n)
+        .map(|i| format!("?{}", i + 1))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// Escape SQL `LIKE` metacharacters (`\`, `%`, `_`) so a caller-supplied
+/// string matches only literally when used with an `ESCAPE '\'` clause (e.g.
+/// `QueryBuilder::where_like_escape`/`where_like_escape_any`, or a hand-rolled
+/// `LIKE ?N ESCAPE '\\'`). Order matters: `\` must be escaped first so it
+/// doesn't double-escape the `%`/`_` escapes introduced after it. Previously
+/// hand-rolled identically in multiple repos (team_memories, settings) — hoist
+/// here so the escaping rule lives in exactly one place.
+pub fn escape_like(input: &str) -> String {
+    input
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_")
+}
+
 /// Collect rows from a query while logging row-mapping failures.
 ///
 /// This keeps list endpoints resilient to individual corrupted rows and gives

@@ -4,6 +4,7 @@ use crate::db::models::{
     CreateEventSubscriptionInput, CreatePersonaEventInput, CreateTriggerInput, EventFilterInput,
     PersonaEvent, PersonaEventStatus, PersonaEventSubscription, UpdateEventSubscriptionInput,
 };
+use crate::db::query_builder::QueryBuilder;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::engine::crypto;
@@ -874,17 +875,10 @@ pub fn move_to_dead_letter(
 /// attempts — but we still need a ceiling to prevent infinite loops.
 pub const MAX_MANUAL_RETRIES: i32 = 5;
 
-pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppError> {
-    timed_query!("persona_events", "persona_events::retry_dead_letter", {
-        let conn = pool.get()?;
-
-        // Single atomic UPDATE: flip status to 'pending', bump retry_count, and
-        // preserve the prior error message — all guarded by the dead_letter +
-        // retry-cap predicate. This closes the TOCTOU race where two concurrent
-        // retry callers could both pass a SELECT-side cap check and then both
-        // increment retry_count past MAX_MANUAL_RETRIES.
-        let rows = conn.execute(
-            "UPDATE persona_events
+/// Shared by `retry_dead_letter` (single) and `bulk_retry_dead_letter` (looped
+/// per id inside one transaction) — the retry-cap CASE is the TOCTOU guard and
+/// must never drift between the two paths. `?1` = id, `?2` = MAX_MANUAL_RETRIES.
+const RETRY_DLQ_SQL: &str = "UPDATE persona_events
              SET status = 'pending',
                  retry_count = retry_count + 1,
                  error_message = CASE
@@ -895,9 +889,24 @@ pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppErr
                  processed_at = NULL
              WHERE id = ?1
                AND status = 'dead_letter'
-               AND retry_count < ?2",
-            params![id, MAX_MANUAL_RETRIES],
-        )?;
+               AND retry_count < ?2";
+
+/// Shared by `discard_dead_letter` (single) and `bulk_discard_dead_letter`
+/// (looped per id inside one transaction). `?1` = processed_at, `?2` = id.
+const DISCARD_DLQ_SQL: &str = "UPDATE persona_events
+             SET status = 'discarded', processed_at = ?1
+             WHERE id = ?2 AND status = 'dead_letter'";
+
+pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppError> {
+    timed_query!("persona_events", "persona_events::retry_dead_letter", {
+        let conn = pool.get()?;
+
+        // Single atomic UPDATE: flip status to 'pending', bump retry_count, and
+        // preserve the prior error message — all guarded by the dead_letter +
+        // retry-cap predicate. This closes the TOCTOU race where two concurrent
+        // retry callers could both pass a SELECT-side cap check and then both
+        // increment retry_count past MAX_MANUAL_RETRIES.
+        let rows = conn.execute(RETRY_DLQ_SQL, params![id, MAX_MANUAL_RETRIES])?;
 
         if rows == 0 {
             // Distinguish the three failure modes by reading current state.
@@ -938,12 +947,7 @@ pub fn discard_dead_letter(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("persona_events", "persona_events::discard_dead_letter", {
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
-        let rows = conn.execute(
-            "UPDATE persona_events
-             SET status = 'discarded', processed_at = ?1
-             WHERE id = ?2 AND status = 'dead_letter'",
-            params![now, id],
-        )?;
+        let rows = conn.execute(DISCARD_DLQ_SQL, params![now, id])?;
         if rows == 0 {
             return Err(AppError::NotFound(format!(
                 "Dead-lettered PersonaEvent {id}"
@@ -999,21 +1003,7 @@ pub fn bulk_retry_dead_letter(
         let mut failed: Vec<BulkDeadLetterFailure> = Vec::new();
 
         for id in ids {
-            let rows = tx.execute(
-                "UPDATE persona_events
-                 SET status = 'pending',
-                     retry_count = retry_count + 1,
-                     error_message = CASE
-                         WHEN error_message IS NOT NULL
-                         THEN '[Retry #' || (retry_count + 1) || ' — previous error: ' || error_message || ']'
-                         ELSE NULL
-                     END,
-                     processed_at = NULL
-                 WHERE id = ?1
-                   AND status = 'dead_letter'
-                   AND retry_count < ?2",
-                params![id, MAX_MANUAL_RETRIES],
-            )?;
+            let rows = tx.execute(RETRY_DLQ_SQL, params![id, MAX_MANUAL_RETRIES])?;
 
             if rows == 1 {
                 succeeded.push(id.clone());
@@ -1070,12 +1060,7 @@ pub fn bulk_discard_dead_letter(
             let mut failed: Vec<BulkDeadLetterFailure> = Vec::new();
 
             for id in ids {
-                let rows = tx.execute(
-                    "UPDATE persona_events
-                     SET status = 'discarded', processed_at = ?1
-                     WHERE id = ?2 AND status = 'dead_letter'",
-                    params![now, id],
-                )?;
+                let rows = tx.execute(DISCARD_DLQ_SQL, params![now, id])?;
 
                 if rows == 1 {
                     succeeded.push(id.clone());
@@ -1291,21 +1276,12 @@ pub fn get_subscriptions_by_persona_ids(
         "event_subscriptions::get_subscriptions_by_persona_ids",
         {
             let conn = pool.get()?;
-            let placeholders: Vec<String> = persona_ids
-                .iter()
-                .enumerate()
-                .map(|(i, _)| format!("?{}", i + 1))
-                .collect();
-            let sql = format!(
-            "SELECT * FROM persona_event_subscriptions WHERE persona_id IN ({}) ORDER BY created_at DESC",
-            placeholders.join(", ")
-        );
-            let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
-                .iter()
-                .map(|s| s as &dyn rusqlite::types::ToSql)
-                .collect();
+            let mut qb = QueryBuilder::new();
+            qb.where_in("persona_id", persona_ids.to_vec());
+            qb.order_by("created_at", "DESC");
+            let sql = qb.build_select("SELECT * FROM persona_event_subscriptions");
             let mut stmt = conn.prepare(&sql)?;
-            let rows = stmt.query_map(params_ref.as_slice(), row_to_subscription)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_subscription)?;
             Ok(collect_rows(rows, "get_subscriptions_by_persona_ids"))
         }
     )
@@ -1385,23 +1361,13 @@ pub fn get_subscriptions_by_event_types(
         "event_subscriptions::get_subscriptions_by_event_types",
         {
             let conn = pool.get()?;
-            let placeholders: Vec<String> = event_types
-                .iter()
-                .enumerate()
-                .map(|(i, _)| format!("?{}", i + 1))
-                .collect();
-            let sql = format!(
-                "SELECT * FROM persona_event_subscriptions
-             WHERE event_type IN ({}) AND enabled = 1
-             ORDER BY created_at DESC",
-                placeholders.join(", ")
-            );
-            let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
-                .iter()
-                .map(|s| s as &dyn rusqlite::types::ToSql)
-                .collect();
+            let mut qb = QueryBuilder::new();
+            qb.where_in("event_type", event_types.to_vec());
+            qb.where_raw(|_| "enabled = 1".to_string(), vec![]);
+            qb.order_by("created_at", "DESC");
+            let sql = qb.build_select("SELECT * FROM persona_event_subscriptions");
             let mut stmt = conn.prepare(&sql)?;
-            let rows = stmt.query_map(params_ref.as_slice(), row_to_subscription)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_subscription)?;
             Ok(collect_rows(rows, "get_subscriptions_by_event_types"))
         }
     )

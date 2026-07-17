@@ -113,32 +113,10 @@ pub fn delete_project(pool: &DbPool, id: &str) -> Result<(), AppError> {
 
 pub fn list_sources(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchSource>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT id, project_id, source_type, title, authors, year, abstract_text, doi, url, pdf_path, citation_count, metadata, relevance_score, knowledge_base_id, status, ingested_at, created_at, updated_at
-         FROM research_sources WHERE project_id = ?1 ORDER BY created_at DESC"
-    )?;
-    let rows = stmt.query_map(params![project_id], |row| {
-        Ok(ResearchSource {
-            id: row.get(0)?,
-            project_id: row.get(1)?,
-            source_type: row.get(2)?,
-            title: row.get(3)?,
-            authors: row.get(4)?,
-            year: row.get(5)?,
-            abstract_text: row.get(6)?,
-            doi: row.get(7)?,
-            url: row.get(8)?,
-            pdf_path: row.get(9)?,
-            citation_count: row.get(10)?,
-            metadata: row.get(11)?,
-            relevance_score: row.get(12)?,
-            knowledge_base_id: row.get(13)?,
-            status: row.get(14)?,
-            ingested_at: row.get(15)?,
-            created_at: row.get(16)?,
-            updated_at: row.get(17)?,
-        })
-    })?;
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {SOURCE_COLUMNS} FROM research_sources WHERE project_id = ?1 ORDER BY created_at DESC"
+    ))?;
+    let rows = stmt.query_map(params![project_id], row_to_source)?;
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
@@ -303,28 +281,31 @@ pub fn list_hypotheses(
     project_id: &str,
 ) -> Result<Vec<ResearchHypothesis>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT id, project_id, statement, rationale, status, confidence, parent_hypothesis_id, generated_by, supporting_evidence, counter_evidence, linked_experiments, created_at, updated_at
-         FROM research_hypotheses WHERE project_id = ?1 ORDER BY created_at DESC"
-    )?;
-    let rows = stmt.query_map(params![project_id], |row| {
-        Ok(ResearchHypothesis {
-            id: row.get(0)?,
-            project_id: row.get(1)?,
-            statement: row.get(2)?,
-            rationale: row.get(3)?,
-            status: row.get(4)?,
-            confidence: row.get(5)?,
-            parent_hypothesis_id: row.get(6)?,
-            generated_by: row.get(7)?,
-            supporting_evidence: row.get(8)?,
-            counter_evidence: row.get(9)?,
-            linked_experiments: row.get(10)?,
-            created_at: row.get(11)?,
-            updated_at: row.get(12)?,
-        })
-    })?;
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {HYPOTHESIS_COLUMNS} FROM research_hypotheses WHERE project_id = ?1 ORDER BY created_at DESC"
+    ))?;
+    let rows = stmt.query_map(params![project_id], row_to_hypothesis)?;
     Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
+const HYPOTHESIS_COLUMNS: &str = "id, project_id, statement, rationale, status, confidence, parent_hypothesis_id, generated_by, supporting_evidence, counter_evidence, linked_experiments, created_at, updated_at";
+
+fn row_to_hypothesis(row: &rusqlite::Row) -> rusqlite::Result<ResearchHypothesis> {
+    Ok(ResearchHypothesis {
+        id: row.get(0)?,
+        project_id: row.get(1)?,
+        statement: row.get(2)?,
+        rationale: row.get(3)?,
+        status: row.get(4)?,
+        confidence: row.get(5)?,
+        parent_hypothesis_id: row.get(6)?,
+        generated_by: row.get(7)?,
+        supporting_evidence: row.get(8)?,
+        counter_evidence: row.get(9)?,
+        linked_experiments: row.get(10)?,
+        created_at: row.get(11)?,
+        updated_at: row.get(12)?,
+    })
 }
 
 pub fn create_hypothesis(
@@ -333,21 +314,11 @@ pub fn create_hypothesis(
 ) -> Result<ResearchHypothesis, AppError> {
     let id = Uuid::new_v4().to_string();
     let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO research_hypotheses (id, project_id, statement, rationale, generated_by) VALUES (?1, ?2, ?3, ?4, ?5)",
+    conn.query_row(
+        "INSERT INTO research_hypotheses (id, project_id, statement, rationale, generated_by) VALUES (?1, ?2, ?3, ?4, ?5)
+         RETURNING id, project_id, statement, rationale, status, confidence, parent_hypothesis_id, generated_by, supporting_evidence, counter_evidence, linked_experiments, created_at, updated_at",
         params![id, input.project_id, input.statement, input.rationale, input.generated_by],
-    )?;
-    let conn2 = pool.get()?;
-    conn2.query_row(
-        "SELECT id, project_id, statement, rationale, status, confidence, parent_hypothesis_id, generated_by, supporting_evidence, counter_evidence, linked_experiments, created_at, updated_at FROM research_hypotheses WHERE id = ?1",
-        params![id],
-        |row| Ok(ResearchHypothesis {
-            id: row.get(0)?, project_id: row.get(1)?, statement: row.get(2)?,
-            rationale: row.get(3)?, status: row.get(4)?, confidence: row.get(5)?,
-            parent_hypothesis_id: row.get(6)?, generated_by: row.get(7)?,
-            supporting_evidence: row.get(8)?, counter_evidence: row.get(9)?,
-            linked_experiments: row.get(10)?, created_at: row.get(11)?, updated_at: row.get(12)?,
-        }),
+        row_to_hypothesis,
     ).map_err(AppError::from)
 }
 
@@ -405,30 +376,33 @@ pub fn delete_hypothesis(pool: &DbPool, id: &str) -> Result<(), AppError> {
 // Research Experiments
 // ============================================================================
 
+const EXPERIMENT_COLUMNS: &str = "id, project_id, hypothesis_id, name, methodology, input_schema, success_criteria, status, pipeline_id, created_at, updated_at";
+
+fn row_to_experiment(row: &rusqlite::Row) -> rusqlite::Result<ResearchExperiment> {
+    Ok(ResearchExperiment {
+        id: row.get(0)?,
+        project_id: row.get(1)?,
+        hypothesis_id: row.get(2)?,
+        name: row.get(3)?,
+        methodology: row.get(4)?,
+        input_schema: row.get(5)?,
+        success_criteria: row.get(6)?,
+        status: row.get(7)?,
+        pipeline_id: row.get(8)?,
+        created_at: row.get(9)?,
+        updated_at: row.get(10)?,
+    })
+}
+
 pub fn list_experiments(
     pool: &DbPool,
     project_id: &str,
 ) -> Result<Vec<ResearchExperiment>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT id, project_id, hypothesis_id, name, methodology, input_schema, success_criteria, status, pipeline_id, created_at, updated_at
-         FROM research_experiments WHERE project_id = ?1 ORDER BY created_at DESC"
-    )?;
-    let rows = stmt.query_map(params![project_id], |row| {
-        Ok(ResearchExperiment {
-            id: row.get(0)?,
-            project_id: row.get(1)?,
-            hypothesis_id: row.get(2)?,
-            name: row.get(3)?,
-            methodology: row.get(4)?,
-            input_schema: row.get(5)?,
-            success_criteria: row.get(6)?,
-            status: row.get(7)?,
-            pipeline_id: row.get(8)?,
-            created_at: row.get(9)?,
-            updated_at: row.get(10)?,
-        })
-    })?;
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {EXPERIMENT_COLUMNS} FROM research_experiments WHERE project_id = ?1 ORDER BY created_at DESC"
+    ))?;
+    let rows = stmt.query_map(params![project_id], row_to_experiment)?;
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
@@ -438,20 +412,11 @@ pub fn create_experiment(
 ) -> Result<ResearchExperiment, AppError> {
     let id = Uuid::new_v4().to_string();
     let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO research_experiments (id, project_id, hypothesis_id, name, methodology, input_schema, success_criteria) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+    conn.query_row(
+        "INSERT INTO research_experiments (id, project_id, hypothesis_id, name, methodology, input_schema, success_criteria) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+         RETURNING id, project_id, hypothesis_id, name, methodology, input_schema, success_criteria, status, pipeline_id, created_at, updated_at",
         params![id, input.project_id, input.hypothesis_id, input.name, input.methodology, input.input_schema, input.success_criteria],
-    )?;
-    let conn2 = pool.get()?;
-    conn2.query_row(
-        "SELECT id, project_id, hypothesis_id, name, methodology, input_schema, success_criteria, status, pipeline_id, created_at, updated_at FROM research_experiments WHERE id = ?1",
-        params![id],
-        |row| Ok(ResearchExperiment {
-            id: row.get(0)?, project_id: row.get(1)?, hypothesis_id: row.get(2)?,
-            name: row.get(3)?, methodology: row.get(4)?, input_schema: row.get(5)?,
-            success_criteria: row.get(6)?, status: row.get(7)?, pipeline_id: row.get(8)?,
-            created_at: row.get(9)?, updated_at: row.get(10)?,
-        }),
+        row_to_experiment,
     ).map_err(AppError::from)
 }
 
@@ -468,29 +433,32 @@ pub fn delete_experiment(pool: &DbPool, id: &str) -> Result<(), AppError> {
 // Research Findings
 // ============================================================================
 
+const FINDING_COLUMNS: &str = "id, project_id, title, description, confidence, category, source_experiment_ids, source_ids, hypothesis_ids, generated_by, status, created_at, updated_at";
+
+fn row_to_finding(row: &rusqlite::Row) -> rusqlite::Result<ResearchFinding> {
+    Ok(ResearchFinding {
+        id: row.get(0)?,
+        project_id: row.get(1)?,
+        title: row.get(2)?,
+        description: row.get(3)?,
+        confidence: row.get(4)?,
+        category: row.get(5)?,
+        source_experiment_ids: row.get(6)?,
+        source_ids: row.get(7)?,
+        hypothesis_ids: row.get(8)?,
+        generated_by: row.get(9)?,
+        status: row.get(10)?,
+        created_at: row.get(11)?,
+        updated_at: row.get(12)?,
+    })
+}
+
 pub fn list_findings(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchFinding>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT id, project_id, title, description, confidence, category, source_experiment_ids, source_ids, hypothesis_ids, generated_by, status, created_at, updated_at
-         FROM research_findings WHERE project_id = ?1 ORDER BY confidence DESC"
-    )?;
-    let rows = stmt.query_map(params![project_id], |row| {
-        Ok(ResearchFinding {
-            id: row.get(0)?,
-            project_id: row.get(1)?,
-            title: row.get(2)?,
-            description: row.get(3)?,
-            confidence: row.get(4)?,
-            category: row.get(5)?,
-            source_experiment_ids: row.get(6)?,
-            source_ids: row.get(7)?,
-            hypothesis_ids: row.get(8)?,
-            generated_by: row.get(9)?,
-            status: row.get(10)?,
-            created_at: row.get(11)?,
-            updated_at: row.get(12)?,
-        })
-    })?;
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {FINDING_COLUMNS} FROM research_findings WHERE project_id = ?1 ORDER BY confidence DESC"
+    ))?;
+    let rows = stmt.query_map(params![project_id], row_to_finding)?;
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
@@ -501,21 +469,11 @@ pub fn create_finding(
     let id = Uuid::new_v4().to_string();
     let confidence = input.confidence.unwrap_or(0.5);
     let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO research_findings (id, project_id, title, description, confidence, category, generated_by) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+    conn.query_row(
+        "INSERT INTO research_findings (id, project_id, title, description, confidence, category, generated_by) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+         RETURNING id, project_id, title, description, confidence, category, source_experiment_ids, source_ids, hypothesis_ids, generated_by, status, created_at, updated_at",
         params![id, input.project_id, input.title, input.description, confidence, input.category, input.generated_by],
-    )?;
-    let conn2 = pool.get()?;
-    conn2.query_row(
-        "SELECT id, project_id, title, description, confidence, category, source_experiment_ids, source_ids, hypothesis_ids, generated_by, status, created_at, updated_at FROM research_findings WHERE id = ?1",
-        params![id],
-        |row| Ok(ResearchFinding {
-            id: row.get(0)?, project_id: row.get(1)?, title: row.get(2)?,
-            description: row.get(3)?, confidence: row.get(4)?, category: row.get(5)?,
-            source_experiment_ids: row.get(6)?, source_ids: row.get(7)?,
-            hypothesis_ids: row.get(8)?, generated_by: row.get(9)?,
-            status: row.get(10)?, created_at: row.get(11)?, updated_at: row.get(12)?,
-        }),
+        row_to_finding,
     ).map_err(AppError::from)
 }
 
@@ -529,26 +487,29 @@ pub fn delete_finding(pool: &DbPool, id: &str) -> Result<(), AppError> {
 // Research Reports
 // ============================================================================
 
+const REPORT_COLUMNS: &str = "id, project_id, title, report_type, status, template, format, review_id, created_at, updated_at";
+
+fn row_to_report(row: &rusqlite::Row) -> rusqlite::Result<ResearchReport> {
+    Ok(ResearchReport {
+        id: row.get(0)?,
+        project_id: row.get(1)?,
+        title: row.get(2)?,
+        report_type: row.get(3)?,
+        status: row.get(4)?,
+        template: row.get(5)?,
+        format: row.get(6)?,
+        review_id: row.get(7)?,
+        created_at: row.get(8)?,
+        updated_at: row.get(9)?,
+    })
+}
+
 pub fn list_reports(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchReport>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT id, project_id, title, report_type, status, template, format, review_id, created_at, updated_at
-         FROM research_reports WHERE project_id = ?1 ORDER BY updated_at DESC"
-    )?;
-    let rows = stmt.query_map(params![project_id], |row| {
-        Ok(ResearchReport {
-            id: row.get(0)?,
-            project_id: row.get(1)?,
-            title: row.get(2)?,
-            report_type: row.get(3)?,
-            status: row.get(4)?,
-            template: row.get(5)?,
-            format: row.get(6)?,
-            review_id: row.get(7)?,
-            created_at: row.get(8)?,
-            updated_at: row.get(9)?,
-        })
-    })?;
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {REPORT_COLUMNS} FROM research_reports WHERE project_id = ?1 ORDER BY updated_at DESC"
+    ))?;
+    let rows = stmt.query_map(params![project_id], row_to_report)?;
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
@@ -558,20 +519,11 @@ pub fn create_report(
 ) -> Result<ResearchReport, AppError> {
     let id = Uuid::new_v4().to_string();
     let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO research_reports (id, project_id, title, report_type, format, template) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+    conn.query_row(
+        "INSERT INTO research_reports (id, project_id, title, report_type, format, template) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+         RETURNING id, project_id, title, report_type, status, template, format, review_id, created_at, updated_at",
         params![id, input.project_id, input.title, input.report_type, input.format, input.template],
-    )?;
-    let conn2 = pool.get()?;
-    conn2.query_row(
-        "SELECT id, project_id, title, report_type, status, template, format, review_id, created_at, updated_at FROM research_reports WHERE id = ?1",
-        params![id],
-        |row| Ok(ResearchReport {
-            id: row.get(0)?, project_id: row.get(1)?, title: row.get(2)?,
-            report_type: row.get(3)?, status: row.get(4)?, template: row.get(5)?,
-            format: row.get(6)?, review_id: row.get(7)?,
-            created_at: row.get(8)?, updated_at: row.get(9)?,
-        }),
+        row_to_report,
     ).map_err(AppError::from)
 }
 

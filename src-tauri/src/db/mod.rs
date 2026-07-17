@@ -129,23 +129,35 @@ impl<'a> Drop for FkDisabledGuard<'a> {
     }
 }
 
+/// The standard per-connection SQLite pragma batch applied to every pooled
+/// connection, regardless of which [`CustomizeConnection`] wraps it.
+///
+/// Single source of truth for these settings — [`SqlitePragmaCustomizer`] and
+/// [`crate::db::cdc::CdcCustomizer`] both delegate to [`apply_standard_pragmas`]
+/// instead of hand-copying this batch, so the two customizers can never drift
+/// out of sync again (see refactor-bughunt-2026-07-10/tauri-db.md #3).
+pub(crate) const STANDARD_PRAGMAS: &str = "PRAGMA foreign_keys = ON;
+     PRAGMA busy_timeout = 5000;
+     PRAGMA page_size = 4096;
+     PRAGMA synchronous = NORMAL;
+     PRAGMA mmap_size = 268435456;
+     PRAGMA temp_store = 2;
+     PRAGMA analysis_limit = 1000;
+     PRAGMA cache_size = -2000;";
+
+/// Apply [`STANDARD_PRAGMAS`] to `conn`. Shared by every connection customizer
+/// so the pragma set is maintained in exactly one place.
+pub(crate) fn apply_standard_pragmas(conn: &rusqlite::Connection) -> Result<(), rusqlite::Error> {
+    conn.execute_batch(STANDARD_PRAGMAS)
+}
+
 /// Connection customizer that sets per-connection SQLite pragmas.
 #[derive(Debug)]
 struct SqlitePragmaCustomizer;
 
 impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for SqlitePragmaCustomizer {
     fn on_acquire(&self, conn: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
-        conn.execute_batch(
-            "PRAGMA foreign_keys = ON;
-             PRAGMA busy_timeout = 5000;
-             PRAGMA page_size = 4096;
-             PRAGMA synchronous = NORMAL;
-             PRAGMA mmap_size = 268435456;
-             PRAGMA temp_store = 2;
-             PRAGMA analysis_limit = 1000;
-             PRAGMA cache_size = -2000;",
-        )?;
-        Ok(())
+        apply_standard_pragmas(conn)
     }
 }
 
