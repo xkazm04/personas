@@ -27,10 +27,20 @@ export default function TitleBar() {
     void appWindow.isMaximized().then(setMaximized);
     // Listen for resize changes
     let unlisten: (() => void) | undefined;
+    let cancelled = false;
     void appWindow.onResized(async () => {
       setMaximized(await appWindow.isMaximized());
-    }).then((fn) => { unlisten = fn; });
-    return () => unlisten?.();
+    }).then((fn) => {
+      if (cancelled) {
+        fn();
+      } else {
+        unlisten = fn;
+      }
+    });
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
   }, []);
 
   const { t } = useTranslation();
