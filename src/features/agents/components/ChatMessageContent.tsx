@@ -31,6 +31,13 @@ function makeStreamSafe(content: string): string {
   const lastFence = content.lastIndexOf('\n```');
   const start = lastFence === -1 ? content.indexOf('```') : lastFence + 1;
   if (start === -1) return content;
+  if (start === 0) {
+    // The unterminated fence is the very first content (e.g. a code-first
+    // streaming reply) — there's nothing before it to keep, so slicing to
+    // `start` would discard the whole streamed body. Preserve it and just
+    // close the fence so the partial code renders incrementally.
+    return content + '\n```';
+  }
   return content.slice(0, start) + '```\n```';
 }
 

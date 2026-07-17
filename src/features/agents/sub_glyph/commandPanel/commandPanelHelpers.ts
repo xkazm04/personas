@@ -42,12 +42,19 @@ export const EMPTY_DRAFT: IntentDraft = {
   messaging: "",
 };
 
+// Zero-width sentinel prefixed onto machine-composed `Label: ` headers so
+// parseIntent can tell "this is a section boundary composeIntent emitted"
+// apart from a user typing a line that happens to start with a recognized
+// label word followed by a colon (e.g. "Output: ranked list" typed inside
+// the Task field). Invisible in rendered text/inputs.
+const SECTION_SENTINEL = "​";
+
 export function composeIntent(draft: IntentDraft): string {
   const parts: string[] = [];
   for (const row of INTENT_ROWS) {
     const v = draft[row.key].trim();
     if (!v) continue;
-    parts.push(`${row.composeLabel}: ${v}`);
+    parts.push(`${SECTION_SENTINEL}${row.composeLabel}: ${v}`);
   }
   return parts.join("\n");
 }
@@ -58,6 +65,11 @@ export function composeIntent(draft: IntentDraft): string {
  * intentText that may already include `Label: ` prefixes from a prior
  * round-trip — without this, the prefix accumulates ("Task: Task: …")
  * each time the composer remounts.
+ *
+ * Only lines carrying the SECTION_SENTINEL marker are treated as section
+ * headers, so free-form text that merely starts with a label word + colon
+ * (typed by the user, not machine-composed) stays in whatever row it was
+ * typed into instead of being silently re-bucketed.
  */
 export function parseIntent(text: string): IntentDraft {
   const draft: IntentDraft = { ...EMPTY_DRAFT };
@@ -67,7 +79,10 @@ export function parseIntent(text: string): IntentDraft {
   );
   let active: IntentKey = "task";
   for (const rawLine of text.split("\n")) {
-    const m = rawLine.match(/^([A-Za-z][A-Za-z ]*?):\s*(.*)$/);
+    const sentineled = rawLine.startsWith(SECTION_SENTINEL);
+    const m = sentineled
+      ? rawLine.slice(SECTION_SENTINEL.length).match(/^([A-Za-z][A-Za-z ]*?):\s*(.*)$/)
+      : null;
     const label = m?.[1];
     const value = m?.[2] ?? "";
     if (label && labelToKey.has(label)) {
