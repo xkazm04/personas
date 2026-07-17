@@ -4,7 +4,7 @@
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { SystemStore } from "./storeTypes";
+import { createCoreState, type SystemStore } from "./storeTypes";
 import { createDedupedJSONStorage } from "./util/dedupedStorage";
 
 import { createUiSlice } from "./slices/system/uiSlice";
@@ -30,8 +30,7 @@ import { silentCatch } from '@/lib/silentCatch';
 export const useSystemStore = create<SystemStore>()(
   persist(
     (...a) => ({
-      errorKind: null,
-      sliceErrors: {},
+      ...createCoreState(),
       ...createUiSlice(...a),
       ...createCloudSlice(...a),
       ...createGitLabSlice(...a),

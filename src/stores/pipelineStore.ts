@@ -2,7 +2,7 @@
  * Pipeline domain store -- triggers, teams, recipes, and assignments.
  */
 import { create } from "zustand";
-import type { PipelineStore } from "./storeTypes";
+import { createCoreState, type PipelineStore } from "./storeTypes";
 
 import { createTriggerSlice } from "./slices/pipeline/triggerSlice";
 import { createTeamSlice } from "./slices/pipeline/teamSlice";
@@ -11,10 +11,7 @@ import { createAssignmentSlice } from "./slices/pipeline/assignmentSlice";
 import { createChannelSlice } from "./slices/pipeline/channelSlice";
 
 export const usePipelineStore = create<PipelineStore>()((...a) => ({
-  error: null,
-  errorKind: null,
-  isLoading: false,
-  sliceErrors: {},
+  ...createCoreState(),
   ...createTriggerSlice(...a),
   ...createTeamSlice(...a),
   ...createRecipeSlice(...a),

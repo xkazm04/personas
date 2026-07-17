@@ -183,6 +183,15 @@ export interface CoreState {
   sliceErrors: Record<string, SliceError>;
 }
 
+/** Seed the shared `CoreState` fields. Spread `...createCoreState()` first in every
+ *  domain store's initializer so the four fields can't drift between stores. */
+export const createCoreState = (): CoreState => ({
+  error: null,
+  errorKind: null,
+  isLoading: false,
+  sliceErrors: {},
+});
+
 // -- Domain store types --------------------------------------------------
 
 /** Agents domain: personas, tools, executions, tests, lab, mini-player, health, budget, chat */

@@ -3,21 +3,10 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { AuthUser, AuthStateResponse } from "@/api/auth/auth";
 import { clearCryptoCache } from "@/lib/utils/platform/crypto";
 import { getActiveTranslations } from "@/i18n/useTranslation";
+import { errMsg } from "./storeTypes";
 
 // Re-export so existing consumers can still import from authStore
 export type { AuthUser, AuthStateResponse };
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Extract a human-readable message from Tauri IPC error objects ({error, kind}). */
-function extractError(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === "object" && err !== null && "error" in err)
-    return String((err as { error: unknown }).error);
-  return String(err);
-}
 
 // ---------------------------------------------------------------------------
 // Store
@@ -83,7 +72,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     } catch (err) {
       clearLoginTimeout();
       void invoke("clear_pending_oauth");
-      set({ isLoading: false, error: extractError(err) });
+      set({ isLoading: false, error: errMsg(err, "Login failed") });
     }
   },
 
@@ -99,7 +88,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         error: null,
       });
     } catch (err) {
-      set({ error: extractError(err) });
+      set({ error: errMsg(err, "Logout failed") });
     }
   },
 }));

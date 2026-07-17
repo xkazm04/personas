@@ -57,6 +57,24 @@ export interface TeamSlice {
   updateTeamMemory: (id: string, title?: string, content?: string, category?: string, importance?: number) => Promise<void>;
 }
 
+// Shared reset for the team-detail sub-state (members/connections/memories/filters).
+// Both selectTeam and deleteTeam must clear the exact same fields when leaving/removing
+// the currently selected team; keep this the single source of truth for that shape.
+// A function (not a static `as const` object) so each call gets fresh mutable
+// arrays, matching the slice's array field types.
+function teamDetailReset() {
+  return {
+    teamMembers: [] as PersonaTeamMember[],
+    teamConnections: [] as PersonaTeamConnection[],
+    teamMemories: [] as TeamMemory[],
+    teamMemoriesTotal: 0,
+    teamMemoryStats: null as TeamMemoryStats | null,
+    memoryFilterCategory: undefined as string | undefined,
+    memoryFilterSearch: undefined as string | undefined,
+    memoryFilterRunId: undefined as string | undefined,
+  };
+}
+
 export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (set, get) => ({
   teams: [],
   teamCounts: {},
@@ -87,7 +105,7 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
   },
 
   selectTeam: (teamId) => {
-    set({ selectedTeamId: teamId, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null, memoryFilterCategory: undefined, memoryFilterSearch: undefined, memoryFilterRunId: undefined });
+    set({ selectedTeamId: teamId, ...teamDetailReset() });
     if (teamId) get().fetchTeamDetails(teamId);
   },
 
@@ -144,7 +162,7 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
   deleteTeam: async (teamId) => {
     try {
       await deleteTeam(teamId);
-      if (get().selectedTeamId === teamId) set({ selectedTeamId: null, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null, memoryFilterCategory: undefined, memoryFilterSearch: undefined, memoryFilterRunId: undefined });
+      if (get().selectedTeamId === teamId) set({ selectedTeamId: null, ...teamDetailReset() });
       await get().fetchTeams();
     } catch (err) {
       reportError(err, "Failed to delete team", set);

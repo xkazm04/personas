@@ -6,6 +6,7 @@ import type { MemoryStats, MemoryReviewResult, MemoryTier } from "@/api/overview
 import type { MemoryAction } from "@/features/overview/sub_memories/libs/memoryActions";
 import { extractActionsFromReview, loadActions, saveActions } from "@/features/overview/sub_memories/libs/memoryActions";
 import { createMemory, deleteMemory, listMemoriesWithStats, mergeMemoriesAtomic, reflectMemoriesWithCli, reviewMemoriesWithCli, updateMemoryTier } from "@/api/overview/memories";
+import { createLatestWins } from "../../util/latestWins";
 
 
 export interface MemorySlice {
@@ -85,8 +86,9 @@ function decrementCountEntry(entries: Array<[string, number]>, key: string): Arr
 }
 
 export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice> = (set, get) => {
-  /** Monotonic counter – only the latest fetch writes to state. */
-  let fetchRequestId = 0;
+  // Only the latest fetch writes to state. Same shape as
+  // `cronAgentsSlice.fetchCronAgents` / `certificationSlice.loadEvalRunDetail`.
+  const latestWins = createLatestWins();
 
   return {
   memories: [],
@@ -100,7 +102,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
   memoryReviewError: null,
 
   fetchMemories: async (filters?) => {
-    const requestId = ++fetchRequestId;
+    const token = latestWins.next();
     set({ memoriesLoading: true, memoriesError: null });
     try {
       const hasSearch = !!filters?.search?.trim();
@@ -118,10 +120,10 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
         filters?.sort_direction,
       );
       // Discard stale responses — a newer fetch is already in-flight.
-      if (requestId !== fetchRequestId) return;
+      if (!latestWins.isCurrent(token)) return;
       set({ memories: result.memories, memoriesTotal: result.total, memoryStats: result.stats, memoriesLoading: false });
     } catch (err) {
-      if (requestId !== fetchRequestId) return;
+      if (!latestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch memories", set);
       set({ memoriesLoading: false, memoriesError: err instanceof Error ? err.message : String(err) });
     }

@@ -74,6 +74,11 @@ function saveNotifications(items: PipelineNotification[]): void {
   } catch (err) { silentCatch("stores/notificationCenterStore:catch1")(err); }
 }
 
+/** Single derivation point for the unread badge count — never recompute this inline. */
+function countUnread(items: PipelineNotification[]): number {
+  return items.filter((n) => !n.read).length;
+}
+
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -109,9 +114,16 @@ let nextId = 0;
 export const useNotificationCenterStore = create<NotificationCenterStore>((set, get) => {
   const initial = loadNotifications();
 
+  // Persist to localStorage AND update store state in one place, so unreadCount
+  // can never drift from `notifications` (both are derived from `countUnread`).
+  const commit = (updated: PipelineNotification[]) => {
+    saveNotifications(updated);
+    set({ notifications: updated, unreadCount: countUnread(updated) });
+  };
+
   return {
     notifications: initial,
-    unreadCount: initial.filter((n) => !n.read).length,
+    unreadCount: countUnread(initial),
 
     addNotification: (n) => {
       const notification: PipelineNotification = {
@@ -121,8 +133,7 @@ export const useNotificationCenterStore = create<NotificationCenterStore>((set, 
         read: false,
       };
       const updated = [notification, ...get().notifications].slice(0, MAX_NOTIFICATIONS);
-      saveNotifications(updated);
-      set({ notifications: updated, unreadCount: updated.filter((x) => !x.read).length });
+      commit(updated);
     },
 
     addProcessNotification: (n) => {
@@ -147,33 +158,28 @@ export const useNotificationCenterStore = create<NotificationCenterStore>((set, 
         ...(n.executionId ? { executionId: n.executionId } : {}),
       };
       const updated = [notification, ...get().notifications].slice(0, MAX_NOTIFICATIONS);
-      saveNotifications(updated);
-      set({ notifications: updated, unreadCount: updated.filter((x) => !x.read).length });
+      commit(updated);
     },
 
     markRead: (id) => {
       const updated = get().notifications.map((n) =>
         n.id === id ? { ...n, read: true } : n,
       );
-      saveNotifications(updated);
-      set({ notifications: updated, unreadCount: updated.filter((x) => !x.read).length });
+      commit(updated);
     },
 
     markAllRead: () => {
       const updated = get().notifications.map((n) => ({ ...n, read: true }));
-      saveNotifications(updated);
-      set({ notifications: updated, unreadCount: 0 });
+      commit(updated);
     },
 
     dismiss: (id) => {
       const updated = get().notifications.filter((n) => n.id !== id);
-      saveNotifications(updated);
-      set({ notifications: updated, unreadCount: updated.filter((x) => !x.read).length });
+      commit(updated);
     },
 
     clearAll: () => {
-      saveNotifications([]);
-      set({ notifications: [], unreadCount: 0 });
+      commit([]);
     },
   };
 });
