@@ -84,10 +84,13 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
             <span className="typo-body text-foreground w-16 text-right">{ageLabel}</span>
             {!isAutoFixed && !isAutoFixPending && (
               <button
-                onClick={() => onResolve(issue.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onResolve(issue.id);
+                }}
                 className="px-2 py-1 typo-heading text-emerald-400 hover:bg-emerald-500/10 rounded-card transition-colors"
               >
-                Resolve
+                {t.common.resolve}
               </button>
             )}
           </div>
