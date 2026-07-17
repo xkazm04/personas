@@ -6,6 +6,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { listCliSpecs, refreshCredentialCliNow, type CliSpecInfo } from '@/api/auth/cliCapture';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import { useVaultStore } from '@/stores/vaultStore';
+import { parseCredentialLedger } from '@/lib/credentials/parseCredentialLedger';
 import { STATUS_PALETTE } from '@/lib/design/statusTokens';
 
 const WARNING = STATUS_PALETTE.warning;
@@ -33,6 +35,7 @@ interface ReauthEntry {
 export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: string) => void }) {
   const { t } = useTranslation();
   const [entries, setEntries] = useState<ReauthEntry[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [cliSpecs, setCliSpecs] = useState<CliSpecInfo[] | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
@@ -63,6 +66,42 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
   );
   useTypedTauriEvent(EventName.CREDENTIAL_REAUTH_RESOLVED, handleReauthResolved);
 
+  // Mount-time hydration from the PERSISTED needs_reauth flag. The startup
+  // OAuth sweep detects revocations and fires CREDENTIAL_REAUTH_REQUIRED
+  // *before* this webview has mounted its listener — so the most common
+  // discovery path (revoked while the app was closed) would otherwise never
+  // show the banner (smoke 2026-07-17: three genuinely revoked credentials,
+  // empty banner). Events remain the live channel; this seeds the durable
+  // state at mount. Dismiss stays session-local; an unresolved revocation
+  // legitimately reappears on remount.
+  const credentials = useVaultStore((s) => s.credentials);
+  useEffect(() => {
+    const flagged = credentials.filter(
+      (c) => parseCredentialLedger(c.metadata).needs_reauth === true,
+    );
+    if (flagged.length === 0) return;
+    setEntries((prev) => {
+      const next = [...prev];
+      for (const c of flagged) {
+        if (dismissedIds.has(c.id)) continue;
+        if (next.some((e) => e.credentialId === c.id)) continue;
+        let source: string | null;
+        try {
+          source = c.metadata ? (JSON.parse(c.metadata).source ?? null) : null;
+        } catch {
+          source = null;
+        }
+        next.push({
+          credentialId: c.id,
+          credentialName: c.name,
+          serviceType: c.service_type,
+          source,
+        });
+      }
+      return next.length === prev.length ? prev : next;
+    });
+  }, [credentials, dismissedIds]);
+
   // Lazily fetch CLI specs the first time a CLI-sourced entry appears, so we
   // can show the spec's login instruction (e.g. "Run `gcloud auth login`...").
   const hasCliEntry = entries.some((e) => e.source === 'cli');
@@ -75,6 +114,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
   }, [hasCliEntry, cliSpecs]);
 
   const dismiss = useCallback((credentialId: string) => {
+    setDismissedIds((prev) => new Set(prev).add(credentialId));
     setEntries((prev) => prev.filter((e) => e.credentialId !== credentialId));
   }, []);
 
