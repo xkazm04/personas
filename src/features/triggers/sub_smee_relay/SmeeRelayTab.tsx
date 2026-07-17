@@ -10,7 +10,7 @@ import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RELAY_GLYPH } from '@/features/shared/glyph/glyphs/relayGlyph';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useSmeeRelayStatus } from '@/hooks/realtime/useSmeeRelayStatus';

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { JsonPayloadBlock } from './JsonPayloadBlock';
 import type { WebhookRequestLog } from '@/lib/bindings/WebhookRequestLog';
 import {
   listWebhookRequestLogs,
@@ -45,24 +46,6 @@ function formatTime(iso: string): string {
   } catch {
     return iso;
   }
-}
-
-function JsonBlock({ label, data }: { label: string; data: string | null }) {
-  if (!data) return null;
-  let formatted: string;
-  try {
-    formatted = JSON.stringify(JSON.parse(data), null, 2);
-  } catch {
-    formatted = data;
-  }
-  return (
-    <div className="space-y-1">
-      <div className="typo-label font-medium text-foreground uppercase tracking-wide">{label}</div>
-      <pre className="px-2.5 py-2 rounded-card bg-background/40 border border-primary/5 typo-code font-mono text-foreground overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
-        {formatted}
-      </pre>
-    </div>
-  );
 }
 
 // --- Request Row -----------------------------------------------------------
@@ -119,8 +102,8 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
                 <span>{<AbsoluteTime timestamp={entry.receivedAt} />}</span>
               </div>
 
-              <JsonBlock label="Headers" data={entry.headers} />
-              <JsonBlock label="Body" data={entry.body} />
+              <JsonPayloadBlock label="Headers" data={entry.headers} />
+              <JsonPayloadBlock label="Body" data={entry.body} />
 
               {entry.errorMessage && (
                 <div className="space-y-1">

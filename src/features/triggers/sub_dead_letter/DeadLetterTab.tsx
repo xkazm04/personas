@@ -27,7 +27,7 @@ import type { PersonaEvent } from '@/lib/types/types';
 import type { BulkDeadLetterOutcome } from '@/lib/bindings/BulkDeadLetterOutcome';
 import type { BulkDeadLetterFailure } from '@/lib/bindings/BulkDeadLetterFailure';
 import { useTranslation } from '@/i18n/useTranslation';
-import EmptyState, { NoResults } from '@/features/shared/components/feedback/EmptyState';
+import EmptyState, { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 
 /**

@@ -26,7 +26,7 @@ import { listAllTriggers } from '@/api/pipeline/triggers';
 import { listEvents } from '@/api/overview/events';
 import { silentCatch } from '@/lib/silentCatch';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { findTemplateByEventType } from '@/features/triggers/lib/eventSourceTemplates';
 import { useStudioComposer } from './useStudioComposer';
