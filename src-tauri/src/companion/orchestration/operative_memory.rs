@@ -634,10 +634,23 @@ impl OperativeMemory {
     /// sessions (with their MCP-reported intents, checkpoints,
     /// per-session summaries, failures) and builds a single
     /// human-readable wrap-up. Stamps `op.completion_summary` and
-    /// returns it. Returns None if the operation doesn't exist.
+    /// returns it. Returns None if the operation doesn't exist, has no
+    /// sessions, or has already been synthesized.
+    ///
+    /// Compare-and-set: the `completion_summary.is_some()` check and the
+    /// stamp both happen under the same write-lock acquisition, so two
+    /// concurrent callers (the PTY reaper and the JS bridge can both fire
+    /// reconciliation for the same exit) can't both observe "not yet
+    /// synthesized" and both proceed — only the winner gets `Some(summary)`
+    /// back; the loser gets `None` and must skip its side effects (episode
+    /// append, proactive nudge).
     pub fn synthesize_operation_summary(&self, operation_id: &str) -> Option<String> {
         let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
         let op = ops.get_mut(operation_id)?;
+
+        if op.completion_summary.is_some() {
+            return None;
+        }
 
         let total = op.sessions.len();
         if total == 0 {

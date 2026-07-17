@@ -515,7 +515,12 @@ pub async fn auto_resolve_if_allowed(
     // rather than leaving the row stuck in 'running'.
     if !AUTOAPPROVE_ALLOWLIST.contains(&action.as_str()) {
         finalize_approval(&state, &approval.id, APPROVAL_STATUS_APPROVED_FAILED)?;
-        return Ok(false);
+        // `Ok(false)` means "left pending for the user" per the caller
+        // contract; this path just finalized the row as approved_failed,
+        // i.e. it DID auto-resolve (to a failure) — return `Ok(true)` so a
+        // caller doesn't surface this terminal row as a still-pending orb
+        // consult.
+        return Ok(true);
     }
     // (Owner re-check removed with the propose-time guard above — autonomous +
     // high-confidence may now drive a user's own CLI. `execute_fleet_send_input`
@@ -1687,7 +1692,10 @@ fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, days: i64) ->
         Ok(c) => c,
         Err(e) => return format!("(fleet data unavailable: {e})"),
     };
-    let window = format!("-{days} days");
+    // `persona_executions.created_at` is stored as RFC3339 (`chrono::Utc::now().to_rfc3339()`),
+    // so a `datetime('now', ?)` string compare mis-orders on the `T`/`Z` separator (see
+    // `gather_daily_brief_digest` above for the same trap). Use julianday() math instead.
+    let win_days = days as f64;
     let all_teams: Vec<(String, String)> = match conn
         .prepare("SELECT id, name FROM persona_teams WHERE COALESCE(enabled,1)=1 ORDER BY name")
     {
@@ -1721,12 +1729,12 @@ fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, days: i64) ->
                     AVG(director_score)
              FROM persona_executions
              WHERE COALESCE(is_simulation,0)=0
-               AND created_at >= datetime('now', ?1)
+               AND julianday('now') - julianday(created_at) <= ?1
                AND persona_id IN (
                  SELECT id FROM personas WHERE home_team_id = ?2
                  UNION SELECT persona_id FROM persona_team_members WHERE team_id = ?2
                )",
-            params![window, id],
+            params![win_days, id],
             |r| {
                 Ok((
                     r.get::<_, i64>(0)?,
@@ -3613,7 +3621,13 @@ fn execute_fleet_broadcast(params: &serde_json::Value) -> Result<ExecuteResult, 
             )));
         }
     };
-    targets.dedup();
+    {
+        // `Vec::dedup()` only collapses *consecutive* duplicates; non-adjacent
+        // repeats (e.g. a model-supplied `ids: ["a","b","a"]`) would otherwise
+        // survive and cause the same session to receive the broadcast twice.
+        let mut seen = std::collections::HashSet::with_capacity(targets.len());
+        targets.retain(|id| seen.insert(id.clone()));
+    }
     if targets.is_empty() {
         return Ok(ExecuteResult::message(
             "fleet_broadcast: no sessions matched the target (nothing sent).".into(),

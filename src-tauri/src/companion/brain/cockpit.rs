@@ -7,6 +7,7 @@
 //! `companion_node` alone plus the markdown file under `cockpit.md` is enough.
 
 use std::fs;
+use std::sync::Mutex;
 
 use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
@@ -18,6 +19,17 @@ use crate::error::AppError;
 
 const COCKPIT_ID: &str = "cockpit";
 const COCKPIT_REL_PATH: &str = "cockpit.md";
+
+/// Serializes the cockpit's read-modify-write cycle. The spec is a single
+/// JSON blob (`load_cockpit` → mutate in memory → `save_cockpit`) with no
+/// DB-level transaction or version check, so two interleaved writers (a
+/// user pin racing Athena's `compose_cockpit`, or two rapid pins) can
+/// clobber each other's change. Callers that do load+modify+save should
+/// hold this lock for the full critical section — see
+/// `commands::companion::consolidate::companion_pin_widget_to_cockpit`,
+/// `companion_unpin_widget_from_cockpit`, and the compose path in
+/// `companion::session`.
+pub static COCKPIT_WRITE_LOCK: Mutex<()> = Mutex::new(());
 
 /// Save (insert or replace) the cockpit spec. `spec_json` is the
 /// already-serialized JSON body the frontend will parse.
@@ -68,6 +80,11 @@ pub fn save_cockpit_preserving_pinned(
     pool: &UserDbPool,
     new_spec_json: &str,
 ) -> Result<(), AppError> {
+    // Hold the write lock across the whole load-modify-save cycle so this
+    // doesn't race a concurrent `companion_pin_widget_to_cockpit` /
+    // `companion_unpin_widget_from_cockpit` call (both do their own
+    // load-modify-save over the same JSON blob — see `COCKPIT_WRITE_LOCK`).
+    let _guard = COCKPIT_WRITE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let merged_json = match merge_with_pinned(pool, new_spec_json)? {
         Some(merged) => merged,
         None => new_spec_json.to_string(),

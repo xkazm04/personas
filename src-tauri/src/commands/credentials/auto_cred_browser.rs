@@ -957,8 +957,16 @@ pub async fn start_auto_cred_browser(
                     // to avoid noisy log entries like "Navigating...", "Working..."
                     if let Ok(mut ctx) = ctx_ref.lock() {
                         ctx.tool_call_count += 1;
-                        // Guard against infinite browser automation loops
-                        if ctx.tool_call_count >= MAX_TOOL_INVOCATIONS {
+                        // Guard against infinite browser automation loops. This
+                        // check previously only queued a warning — the read loop
+                        // kept consuming the stream until the model stopped on
+                        // its own or the 600s session timeout fired, so a
+                        // misbehaving loop could burn most of that budget before
+                        // "the limit" took effect. Actively kill the child here
+                        // (mirrors `cancel_auto_cred_browser`) so the session is
+                        // torn down at the boundary. `==` (not `>=`) fires this
+                        // exactly once per session, at the crossing.
+                        if ctx.tool_call_count == MAX_TOOL_INVOCATIONS {
                             queue_progress(
                                 &progress_tx_ref,
                                 AutoCredProgressFrame::new(
@@ -970,6 +978,9 @@ pub async fn start_auto_cred_browser(
                                     ),
                                 ),
                             );
+                            if let Some(pid) = registry.take_pid("auto_cred") {
+                                kill_pid(pid);
+                            }
                         }
 
                         let action = match tool_name.as_str() {
@@ -1481,30 +1492,38 @@ fn extract_urls(text: &str) -> Vec<String> {
     urls
 }
 
+/// Kill a subprocess (and its tree, on Windows) by PID. Shared by the
+/// explicit user-facing cancel command and the `MAX_TOOL_INVOCATIONS`
+/// runaway-session guard, which needs to actively tear the process down
+/// rather than just warn once the limit is crossed.
+fn kill_pid(pid: u32) {
+    tracing::info!(pid, "Killing auto-cred CLI subprocess");
+    #[cfg(windows)]
+    {
+        // On Windows, use taskkill to kill the process tree (works on x64 + ARM64)
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/T", "/PID", &pid.to_string()])
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+    }
+    #[cfg(all(not(windows), not(target_os = "android")))]
+    {
+        unsafe {
+            libc::kill(pid as i32, libc::SIGTERM);
+        }
+    }
+}
+
 /// Cancel a running auto-cred browser session by killing the CLI subprocess.
 #[tauri::command]
 pub async fn cancel_auto_cred_browser(state: State<'_, Arc<AppState>>) -> Result<(), String> {
     let pid = state.process_registry.take_pid("auto_cred");
     if let Some(pid) = pid {
-        tracing::info!(pid, "Killing auto-cred CLI subprocess");
-        #[cfg(windows)]
-        {
-            // On Windows, use taskkill to kill the process tree (works on x64 + ARM64)
-            #[allow(unused_imports)]
-            use std::os::windows::process::CommandExt;
-            let _ = std::process::Command::new("taskkill")
-                .args(["/F", "/T", "/PID", &pid.to_string()])
-                .creation_flags(0x08000000) // CREATE_NO_WINDOW
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .status();
-        }
-        #[cfg(all(not(windows), not(target_os = "android")))]
-        {
-            unsafe {
-                libc::kill(pid as i32, libc::SIGTERM);
-            }
-        }
+        kill_pid(pid);
     }
     Ok(())
 }

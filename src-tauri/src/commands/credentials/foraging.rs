@@ -159,6 +159,13 @@ fn scan_env_vars() -> Vec<ForagedCredential> {
     // Group already-masked display values by service_type.
     let mut masked_fields: HashMap<String, HashMap<String, String>> = HashMap::new();
     let mut service_vars: HashMap<String, Vec<String>> = HashMap::new();
+    // Which concrete env var actually won each field_key slot, so the
+    // foraged id can point the resolver at exactly that variable instead
+    // of re-deriving from service_type at import time (which would
+    // re-scan ALL matching vars and silently last-writer-wins again —
+    // possibly picking a different value than what was shown/masked here
+    // if the environment changed between scan and import).
+    let mut chosen_env_key: HashMap<String, HashMap<String, String>> = HashMap::new();
 
     for &(env_key, service_type, field_key) in ENV_PATTERNS {
         if let Ok(value) = std::env::var(env_key) {
@@ -174,6 +181,10 @@ fn scan_env_vars() -> Vec<ForagedCredential> {
                 .entry(service_type.to_string())
                 .or_default()
                 .insert(field_key.to_string(), masked);
+            chosen_env_key
+                .entry(service_type.to_string())
+                .or_default()
+                .insert(field_key.to_string(), env_key.to_string());
             service_vars
                 .entry(service_type.to_string())
                 .or_default()
@@ -186,11 +197,22 @@ fn scan_env_vars() -> Vec<ForagedCredential> {
         let label_suffix = if var_names.len() == 1 {
             format!(" ({})", var_names[0])
         } else {
-            format!(" ({} vars)", var_names.len())
+            format!(" ({} vars)", var_names.join(", "))
         };
+        // Encode exactly the env vars that fed the fields above (one per
+        // field_key, comma-separated) so import re-reads the SAME
+        // variables rather than re-deriving from service_type and
+        // re-running the same collision-prone last-writer-wins logic.
+        let chosen = chosen_env_key
+            .get(&service_type)
+            .cloned()
+            .unwrap_or_default();
+        let mut chosen_keys: Vec<&str> = chosen.values().map(|s| s.as_str()).collect();
+        chosen_keys.sort_unstable();
+        chosen_keys.dedup();
 
         results.push(ForagedCredential {
-            id: format!("env:{service_type}"),
+            id: format!("env:{service_type}:{}", chosen_keys.join(",")),
             label: format!("{service_type}{label_suffix}"),
             service_type: service_type.clone(),
             source: ForageSource::EnvVar,
@@ -749,6 +771,35 @@ impl ForageSourceResolver for EnvResolver {
             return Err("Invalid service type in foraged ID".to_string());
         }
         let mut fields = HashMap::new();
+        // The foraged id carries the exact env var(s) `scan_env_vars` chose
+        // for each field_key (comma-separated, as its third segment). Resolve
+        // only those — re-deriving from service_type alone would re-run the
+        // same "every pattern with this service_type, last one wins" scan
+        // and could silently pick a different variable (e.g. GH_TOKEN vs
+        // GITHUB_TOKEN) than the one whose masked value the user reviewed.
+        if let Some(env_keys_csv) = parts.get(1).filter(|s| !s.is_empty()) {
+            for env_key in env_keys_csv.split(',') {
+                let env_key = env_key.trim();
+                if env_key.is_empty() || !is_safe_path_component(env_key) {
+                    continue;
+                }
+                let Some(&(_, _, field_key)) =
+                    ENV_PATTERNS.iter().find(|&&(k, s, _)| k == env_key && s == *svc)
+                else {
+                    continue;
+                };
+                if let Ok(value) = std::env::var(env_key) {
+                    if !value.is_empty() {
+                        fields.insert(field_key.to_string(), value);
+                    }
+                }
+            }
+            return Ok(fields);
+        }
+
+        // Back-compat: older foraged ids (`env:{service_type}` with no third
+        // segment) predate the encoded-var-list format. Fall back to the
+        // original service_type-wide scan.
         for &(env_key, service_type, field_key) in ENV_PATTERNS {
             if service_type == *svc {
                 if let Ok(value) = std::env::var(env_key) {

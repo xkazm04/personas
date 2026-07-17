@@ -477,11 +477,18 @@ pub async fn import_portability_bundle(
     if let (Some(envelope), Some(ref pp)) = (&bundle.encrypted_credentials, &passphrase) {
         if !pp.is_empty() {
             match apply_encrypted_credentials(pool, envelope, pp, &bundle.credentials) {
-                Ok(count) => {
+                Ok((count, unmatched)) => {
                     if count > 0 {
                         result.warnings.push(format!(
                             "{} credential secret(s) decrypted and applied",
                             count
+                        ));
+                    }
+                    if !unmatched.is_empty() {
+                        result.warnings.push(format!(
+                            "{} credential secret(s) had no matching imported shell and were not applied: {}",
+                            unmatched.len(),
+                            unmatched.join(", ")
                         ));
                     }
                 }
@@ -646,11 +653,18 @@ pub async fn import_portability_bundle_from_path(
     if let (Some(envelope), Some(ref pp)) = (&bundle.encrypted_credentials, &passphrase) {
         if !pp.is_empty() {
             match apply_encrypted_credentials(pool, envelope, pp, &bundle.credentials) {
-                Ok(count) => {
+                Ok((count, unmatched)) => {
                     if count > 0 {
                         result.warnings.push(format!(
                             "{} credential secret(s) decrypted and applied",
                             count
+                        ));
+                    }
+                    if !unmatched.is_empty() {
+                        result.warnings.push(format!(
+                            "{} credential secret(s) had no matching imported shell and were not applied: {}",
+                            unmatched.len(),
+                            unmatched.join(", ")
                         ));
                     }
                 }
@@ -1557,11 +1571,15 @@ fn import_bundle(
 
     // Phase 3: Import credential metadata (no secrets — user must re-enter via Credential Vault)
     for c in &bundle.credentials {
-        // Skip if credential with same name and service_type already exists
+        let imported_name = format!("{} (imported)", c.name);
+        // Skip if a credential shell for this import already exists. Check
+        // against the name actually stored below (the "(imported)"-suffixed
+        // one) — checking the raw export name here would never match what
+        // gets inserted, letting re-imports pile up duplicate shells.
         let exists = tx
             .query_row(
                 "SELECT COUNT(*) FROM persona_credentials WHERE name = ?1 AND service_type = ?2",
-                rusqlite::params![c.name, c.service_type],
+                rusqlite::params![imported_name, c.service_type],
                 |row| row.get::<_, i32>(0),
             )
             .unwrap_or(0)
@@ -1580,7 +1598,7 @@ fn import_bundle(
              VALUES (?1,?2,?3,?4,?5,?6,?7,?7)",
             rusqlite::params![
                 id,
-                format!("{} (imported)", c.name),
+                imported_name,
                 c.service_type,
                 empty_encrypted.0,
                 empty_encrypted.1,
@@ -1778,11 +1796,21 @@ fn import_bundle(
                     std::collections::HashMap::new();
 
                 for m in &t.members {
-                    let new_persona_id = result
-                        .id_mapping
-                        .get(&m.persona_id)
-                        .cloned()
-                        .unwrap_or_else(|| m.persona_id.clone());
+                    // No entry in `id_mapping` means the persona was never
+                    // created in this import — either it wasn't in the
+                    // bundle, or Phase 4 skipped it (e.g. keyring
+                    // unavailable while encrypting notification channels).
+                    // Falling back to the raw exported persona_id would
+                    // insert a member row pointing at an id that exists
+                    // nowhere in the new DB. Skip it and say so instead.
+                    let Some(new_persona_id) = result.id_mapping.get(&m.persona_id).cloned()
+                    else {
+                        result.warnings.push(format!(
+                            "Team '{}' member skipped: persona '{}' was not imported",
+                            t.name, m.persona_id
+                        ));
+                        continue;
+                    };
 
                     let mid = uuid::Uuid::new_v4().to_string();
                     let role = m.role.as_deref().unwrap_or("worker");
@@ -2222,13 +2250,17 @@ fn build_encrypted_credentials(
 
 /// Decrypt embedded credentials from a portability bundle and write the fields
 /// to the matching imported credential shells.
-/// Returns the number of credentials whose secrets were successfully applied.
+/// Returns `(applied, unmatched_names)` — the count of credentials whose
+/// secrets were successfully applied, and the names of any entries that had
+/// no matching imported shell (e.g. Phase 3 skipped creating one because a
+/// same-name credential already existed) so the caller can surface an
+/// explicit warning instead of the failure being invisible.
 fn apply_encrypted_credentials(
     pool: &DbPool,
     envelope: &CredentialExportEnvelope,
     passphrase: &str,
     _credential_metas: &[CredentialMetaExport],
-) -> Result<u32, AppError> {
+) -> Result<(u32, Vec<String>), AppError> {
     if envelope.format != CREDENTIAL_EXPORT_FORMAT {
         return Err(AppError::Validation(format!(
             "Unsupported embedded credential format: {} (expected {})",
@@ -2263,6 +2295,7 @@ fn apply_encrypted_credentials(
     let existing = cred_repo::get_all(pool).unwrap_or_default();
 
     let mut applied = 0u32;
+    let mut unmatched: Vec<String> = Vec::new();
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
 
@@ -2274,6 +2307,7 @@ fn apply_encrypted_credentials(
             .find(|c| c.name == imported_name && c.service_type == entry.service_type);
 
         let Some(cred) = matching_cred else {
+            unmatched.push(entry.name.clone());
             continue;
         };
 
@@ -2311,7 +2345,7 @@ fn apply_encrypted_credentials(
     }
 
     tx.commit().map_err(AppError::Database)?;
-    Ok(applied)
+    Ok((applied, unmatched))
 }
 
 // ============================================================================
