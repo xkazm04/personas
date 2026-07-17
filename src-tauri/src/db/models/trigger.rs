@@ -184,18 +184,27 @@ impl ActiveWindow {
             }
         };
 
-        if !self.days.contains(&weekday) {
-            return false;
-        }
-
         let start_minutes = self.start_hour as u16 * 60 + self.start_minute as u16;
         let end_minutes = self.end_hour as u16 * 60 + self.end_minute as u16;
 
         if start_minutes <= end_minutes {
+            if !self.days.contains(&weekday) {
+                return false;
+            }
             now_minutes >= start_minutes && now_minutes < end_minutes
         } else {
-            // Overnight window (e.g. 22:00 → 06:00)
-            now_minutes >= start_minutes || now_minutes < end_minutes
+            // Overnight window (e.g. 22:00 → 06:00). The active span belongs to
+            // the day it opened: after midnight (`now_minutes < end_minutes`),
+            // the window is still the *previous* day's window, so membership
+            // must be tested against `weekday - 1`, not today.
+            if now_minutes < end_minutes {
+                // Still within the overnight tail — belongs to yesterday's window.
+                let prev_weekday = (weekday + 6) % 7;
+                self.days.contains(&prev_weekday)
+            } else {
+                // Not yet past midnight — belongs to today's window if it has opened.
+                self.days.contains(&weekday) && now_minutes >= start_minutes
+            }
         }
     }
 

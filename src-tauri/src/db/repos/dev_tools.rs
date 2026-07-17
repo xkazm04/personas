@@ -1309,7 +1309,7 @@ pub fn portfolio_summary(pool: &DbPool) -> Result<PortfolioSummary, AppError> {
     let projects = list_projects(pool, None)?;
     let goals = list_all_goals(pool)?;
     let now = chrono::Utc::now();
-    let now_s = now.to_rfc3339();
+    let today_date = now.date_naive();
     let stale_before = (now - chrono::Duration::days(7)).to_rfc3339();
 
     // Accumulator per project, seeded so projects with zero goals still appear.
@@ -1355,7 +1355,18 @@ pub fn portfolio_summary(pool: &DbPool) -> Result<PortfolioSummary, AppError> {
             _ => a.open += 1,
         }
         if goal_status_is_ongoing(&g.status) {
-            let overdue = g.target_date.as_deref().is_some_and(|d| d < now_s.as_str());
+            // `target_date` is an opaque caller-supplied string -- commonly a
+            // date-only "2026-07-10" from a date picker, but a lexicographic
+            // compare against a full RFC3339 `now_s` flags "due today" as
+            // already overdue from 00:00 (refactor-bughunt-2026-07-10 repos#5).
+            // Compare on the date portion only (the first 10 chars of either
+            // shape are always YYYY-MM-DD) against today's date.
+            let overdue = g.target_date.as_deref().is_some_and(|d| {
+                let date_part = d.get(0..10).unwrap_or(d);
+                chrono::NaiveDate::parse_from_str(date_part, "%Y-%m-%d")
+                    .map(|target| target < today_date)
+                    .unwrap_or(false)
+            });
             if overdue {
                 a.overdue += 1;
             } else if g.updated_at.as_str() < stale_before.as_str() {

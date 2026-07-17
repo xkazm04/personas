@@ -1612,6 +1612,46 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<(Persona, Duplication
             return Err(AppError::NotFound(format!("Persona {source_id}")));
         }
 
+        // 2026-07-16 (refactor-bughunt-2026-07-10 repos#3) — enforce the same
+        // name-uniqueness invariant `create()`/`update_name()` pay a
+        // transaction to hold. A bare `name || ' (Copy)'` collides with
+        // itself on a second duplicate, or with a pre-existing "X (Copy)"
+        // row, producing indistinguishable personas in the sidebar. Unlike
+        // create()/update_name()'s generic numeric-suffix stripper (which
+        // would mangle the literal "(Copy)" text), just keep appending
+        // " (N)" onto the copy's base name until it's unique in the project.
+        let (project_id, base_name): (String, String) = tx.query_row(
+            "SELECT project_id, name FROM personas WHERE id = ?1",
+            params![new_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        let mut final_name = base_name.clone();
+        let mut suffix = 2u32;
+        loop {
+            let collides: bool = tx
+                .query_row(
+                    "SELECT 1 FROM personas WHERE project_id = ?1 AND name = ?2 AND id <> ?3 LIMIT 1",
+                    params![project_id, final_name, new_id],
+                    |_| Ok(()),
+                )
+                .is_ok();
+            if !collides {
+                break;
+            }
+            final_name = format!("{base_name} ({suffix})");
+            suffix += 1;
+            if suffix > 99 {
+                // Defensive ceiling, mirrors create()/update_name().
+                break;
+            }
+        }
+        if final_name != base_name {
+            tx.execute(
+                "UPDATE personas SET name = ?1 WHERE id = ?2",
+                params![final_name, new_id],
+            )?;
+        }
+
         let mut summary = DuplicationSummary::default();
 
         // ── Copy triggers (disabled on the copy) ──

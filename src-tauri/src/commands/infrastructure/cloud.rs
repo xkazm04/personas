@@ -664,7 +664,13 @@ pub async fn cloud_execute_persona(
                 if delay > 0 {
                     tokio::time::sleep(std::time::Duration::from_secs(delay)).await;
                 }
-                match executions::update_status(&pool, &exec_id, update.clone()) {
+                // CAS-guarded: a user Stop racing this async finalize must never
+                // resurrect a cancelled row back to completed/failed (see
+                // refactor-bughunt-2026-07-10 repos#4). Cancellation writes the
+                // row to 'cancelled' via `persist_status_if_running`, guarded
+                // only while still 'running' -- so this write must use the same
+                // guard rather than the unconditional `update_status`.
+                match executions::update_status_if_not_final(&pool, &exec_id, update.clone()) {
                     Ok(_) => {
                         if attempt > 0 {
                             tracing::info!(

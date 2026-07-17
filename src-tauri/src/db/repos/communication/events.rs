@@ -5,6 +5,7 @@ use crate::db::models::{
     PersonaEvent, PersonaEventStatus, PersonaEventSubscription, UpdateEventSubscriptionInput,
 };
 use crate::db::query_builder::QueryBuilder;
+use crate::db::repos::resources::triggers::encrypt_config;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::engine::crypto;
@@ -1194,7 +1195,10 @@ pub fn search(
         if let Some(ref v) = filter.search {
             if !v.is_empty() {
                 let pattern = format!("%{v}%");
-                qb.where_like_any(&["event_type", "source_type", "payload"], pattern);
+                // `payload` is stored encrypted at rest (see `encrypt_optional_payload`);
+                // a LIKE against it matches ciphertext and silently returns zero hits.
+                // Only search the plaintext columns here.
+                qb.where_like_any(&["event_type", "source_type"], pattern);
             }
         }
 
@@ -1445,12 +1449,15 @@ pub fn create_subscription_with_trigger(
             } else {
                 "disabled"
             };
-            let encrypted_config = trigger_input.config.as_deref().map(|c| {
-                crypto::encrypt_trigger_config(c).unwrap_or_else(|e| {
-                    tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
-                    c.to_string()
-                })
-            });
+            // Secrets must never be stored in plaintext -- propagate encryption
+            // failures instead of silently falling back to the raw config
+            // (matches the contract `triggers::encrypt_config` enforces on the
+            // primary trigger path; see refactor-bughunt-2026-07-10 repos#2).
+            let encrypted_config = trigger_input
+                .config
+                .as_deref()
+                .map(encrypt_config)
+                .transpose()?;
             tx.execute(
             "INSERT INTO persona_triggers
              (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
@@ -1578,12 +1585,12 @@ pub fn update_subscription(
                 "listen_event_type": new_event_type,
                 "source_filter": new_source_filter,
             });
+            // Secrets must never be stored in plaintext -- propagate encryption
+            // failures instead of silently falling back to the raw config
+            // (see refactor-bughunt-2026-07-10 repos#2).
             let encrypted_config = {
                 let raw = serde_json::to_string(&config).unwrap_or_default();
-                crypto::encrypt_trigger_config(&raw).unwrap_or_else(|e| {
-                    tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
-                    raw
-                })
+                encrypt_config(&raw)?
             };
 
             if let Some(enabled) = input.enabled {

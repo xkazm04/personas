@@ -142,7 +142,7 @@ pub fn row_to_lab_result_base(row: &rusqlite::Row) -> rusqlite::Result<LabResult
         rationale: row.get("rationale")?,
         suggestions: row.get("suggestions")?,
         error_message: row.get("error_message")?,
-        eval_method: row.get("eval_method").unwrap_or(None),
+        eval_method: row.get::<_, Option<String>>("eval_method")?,
         created_at: row.get("created_at")?,
     })
 }
