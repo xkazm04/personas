@@ -3,6 +3,30 @@ use rusqlite::Connection;
 use crate::db::credential_fields::{classify_field_type, NON_SENSITIVE_KEYS};
 use crate::error::AppError;
 
+/// Stringify a legacy credential blob's JSON field value for storage in
+/// `credential_fields.encrypted_value` (which is text). Legacy blobs were
+/// assumed to encode every field as a JSON string, but some fields (e.g. a
+/// numeric `port`, a boolean `oauth_client_mode`) are legitimately
+/// non-string — deserializing straight into `HashMap<String, String>` errors
+/// on those blobs and skips the credential forever (see
+/// refactor-bughunt-2026-07-10/tauri-db-misc.md #2). Numbers/bools render via
+/// their natural string form; nested arrays/objects fall back to their JSON
+/// text so no information is lost; `null` becomes an empty string.
+fn stringify_field_value(v: &serde_json::Value) -> String {
+    match v {
+        serde_json::Value::String(s) => s.clone(),
+        serde_json::Value::Null => String::new(),
+        serde_json::Value::Number(_) | serde_json::Value::Bool(_) => {
+            // `to_string()` on these Value variants renders their bare form
+            // (e.g. `5432`, `true`) without surrounding quotes.
+            v.to_string()
+        }
+        serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
+            serde_json::to_string(v).unwrap_or_default()
+        }
+    }
+}
+
 /// Split existing monolithic encrypted_data blobs into per-field rows.
 /// Only processes credentials that don't already have field rows (idempotent).
 /// Runs inside the caller's connection -- the incremental migration context
@@ -57,7 +81,8 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
             }
         };
 
-        let fields: HashMap<String, String> = match serde_json::from_str(&plaintext) {
+        let raw_fields: HashMap<String, serde_json::Value> = match serde_json::from_str(&plaintext)
+        {
             Ok(f) => f,
             Err(e) => {
                 tracing::warn!(
@@ -68,6 +93,10 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
                 continue;
             }
         };
+        let fields: HashMap<String, String> = raw_fields
+            .iter()
+            .map(|(k, v)| (k.clone(), stringify_field_value(v)))
+            .collect();
 
         // Extract this credential's FULL field-set atomically: every field
         // commits together or none does. A crash or an encrypt failure partway
@@ -190,7 +219,7 @@ pub(super) fn clear_legacy_credential_blobs(conn: &Connection) -> Result<(), App
                 Err(_) => continue,
             }
         };
-        let expected: HashMap<String, String> = match serde_json::from_str(&plaintext) {
+        let expected: HashMap<String, serde_json::Value> = match serde_json::from_str(&plaintext) {
             Ok(f) => f,
             Err(_) => continue,
         };

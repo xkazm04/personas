@@ -1498,10 +1498,10 @@ pub fn list_cron_agents(state: State<'_, Arc<AppState>>) -> Result<Vec<CronAgent
             t.last_triggered_at,
             t.next_trigger_at,
             COALESCE((SELECT COUNT(*) FROM persona_executions e
-                       WHERE e.persona_id = p.id AND e.created_at >= ?1), 0)
+                       WHERE e.persona_id = p.id AND e.trigger_id = t.id AND e.created_at >= ?1), 0)
                             AS recent_executions,
             COALESCE((SELECT COUNT(*) FROM persona_executions e
-                       WHERE e.persona_id = p.id AND e.status = 'failed' AND e.created_at >= ?1), 0)
+                       WHERE e.persona_id = p.id AND e.trigger_id = t.id AND e.status = 'failed' AND e.created_at >= ?1), 0)
                             AS recent_failures
          FROM persona_triggers t
          JOIN personas p ON p.id = t.persona_id
@@ -1843,7 +1843,13 @@ pub fn webhook_request_to_curl(
                     continue;
                 }
                 if let Some(v) = value.as_str() {
-                    parts.push(format!("  -H '{}: {}'", key, v));
+                    // Escape single quotes in header key/value for shell safety
+                    // (same treatment as the body below — header values are
+                    // logged inbound webhook data and may contain arbitrary
+                    // characters, including `'`).
+                    let key_escaped = key.replace('\'', "'\\''");
+                    let v_escaped = v.replace('\'', "'\\''");
+                    parts.push(format!("  -H '{key_escaped}: {v_escaped}'"));
                 }
             }
         }

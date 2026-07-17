@@ -246,26 +246,16 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
         // DB after the wait (see below).
         let startup_watermark = max_persona_event_rowid(&db);
 
-        // Wait for the WebView IPC bridge to be established before emitting
-        // events.  Without this delay, every `app_handle.emit()` fires a
-        // "send was called before connect" unhandled‐promise rejection on the
-        // frontend, producing tens of thousands of log lines and wasting CPU.
-        // This is why we can't emit earlier — hence the replay-after-wait above
-        // rather than draining immediately.
-        tokio::time::sleep(std::time::Duration::from_secs(6)).await;
-        tracing::info!("CDC drain task started");
-
-        // Startup blackout recovery: re-emit every persona_events row inserted
-        // during the wait, directly from the DB. The bounded channel will also
-        // redeliver any survivors it still holds, but the frontend event log
-        // dedupes by id (useEventLog.ts), so double-delivery is harmless — and
-        // this path additionally recovers rows the channel dropped on overflow.
-        replay_persona_events_after(&app_handle, &db, startup_watermark);
-
-        // We run the blocking recv in a dedicated thread to avoid holding up
-        // the tokio runtime.  The thread sends batched events to the async
-        // world via a tokio mpsc channel.
-        let (tx, mut rx) = tokio::sync::mpsc::channel::<CdcEvent>(256);
+        // Spawn the sync reader thread and the tokio forwarding channel
+        // IMMEDIATELY — before the readiness wait below — so the bounded
+        // std_mpsc channel (fixed capacity, drops on full) is drained from the
+        // first moment writes can happen. The unbounded tokio channel absorbs
+        // any startup write burst without dropping; only the *emit* to the
+        // frontend is gated on WebView readiness (see refactor-bughunt
+        // tauri-db.md #2 — the drain task previously slept for 6s before
+        // spawning this reader, so boot-time bursts overflowed the 512-slot
+        // std_mpsc channel with nobody consuming it).
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<CdcEvent>();
 
         // Sync reader thread
         std::thread::Builder::new()
@@ -274,7 +264,7 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
                 loop {
                     match receiver.recv() {
                         Ok(event) => {
-                            if tx.blocking_send(event).is_err() {
+                            if tx.send(event).is_err() {
                                 // Async side dropped — shutting down
                                 break;
                             }
@@ -288,6 +278,24 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
                 }
             })
             .expect("Failed to spawn CDC reader thread");
+
+        // Wait for the WebView IPC bridge to be established before emitting
+        // events.  Without this delay, every `app_handle.emit()` fires a
+        // "send was called before connect" unhandled‐promise rejection on the
+        // frontend, producing tens of thousands of log lines and wasting CPU.
+        // This is why we can't emit earlier — hence the replay-after-wait above
+        // rather than draining immediately. Events arriving during this wait
+        // are queued in the unbounded `rx` above (drained from `receiver` by
+        // the reader thread that's already running), not dropped.
+        tokio::time::sleep(std::time::Duration::from_secs(6)).await;
+        tracing::info!("CDC drain task started");
+
+        // Startup blackout recovery: re-emit every persona_events row inserted
+        // during the wait, directly from the DB. The queued channel events will
+        // also redeliver any survivors, but the frontend event log dedupes by
+        // id (useEventLog.ts), so double-delivery is harmless — and this path
+        // additionally recovers rows from before the reader thread's first read.
+        replay_persona_events_after(&app_handle, &db, startup_watermark);
 
         // Async consumer
         while let Some(event) = rx.recv().await {

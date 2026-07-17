@@ -116,15 +116,25 @@ pub fn automation_blast_radius(
 #[tauri::command]
 pub fn delete_automation(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
-    let active_runs = repo::get_runs_by_automation(&state.db, &id, Some(50))?;
-    let in_flight = active_runs.iter().any(|r| {
-        matches!(
-            r.status,
-            crate::db::models::AutomationRunStatus::Pending
-                | crate::db::models::AutomationRunStatus::Running
+
+    // Hold the same in-flight guard `trigger_automation`/`test_automation_webhook`
+    // take, keyed on this automation id, for the duration of the check-then-delete.
+    // Without it, a concurrent trigger could start a run between the existence
+    // check below and `repo::delete`, deleting the automation out from under an
+    // active run (refactor-bughunt-2026-07-10/tauri-commands-misc-2.md #4). If
+    // another trigger/test is currently in flight, surface that instead of
+    // racing it.
+    let _handle = INFLIGHT_TRIGGERS.guard(&id).ok_or_else(|| {
+        AppError::Validation(
+            "Automation is currently being triggered. Please wait for the current run to \
+             complete before deleting."
+                .into(),
         )
-    });
-    if in_flight {
+    })?;
+
+    // Unbounded existence check (not capped like `get_runs_by_automation`) so a
+    // pending/running run older than the most-recent 50 is never missed.
+    if repo::has_active_run(&state.db, &id)? {
         return Err(AppError::Validation(
             "Cannot delete automation while it has pending or running executions. \
              Wait for them to complete or cancel them first."
