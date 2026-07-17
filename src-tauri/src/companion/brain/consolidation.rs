@@ -22,11 +22,11 @@ use std::time::Duration;
 use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::companion::brain::oneshot::{
     call_claude_text, extract_json_span, preview,
 };
+use crate::companion::brain::util;
 use crate::companion::brain::{episodic, semantic};
 use crate::companion::session::DEFAULT_SESSION_ID;
 use crate::db::UserDbPool;
@@ -847,10 +847,5 @@ fn parse_envelope(text: &str) -> Result<ProposalEnvelope, AppError> {
 }
 
 fn short_uuid() -> String {
-    Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(10)
-        .collect()
+    util::short_id(10)
 }

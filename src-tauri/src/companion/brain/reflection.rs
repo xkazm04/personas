@@ -16,11 +16,10 @@ use std::time::Duration;
 
 use chrono::Utc;
 use rusqlite::params;
-use sha2::{Digest, Sha256};
-use uuid::Uuid;
 
 use crate::companion::brain::episodic;
 use crate::companion::brain::oneshot::call_claude_text;
+use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::companion::session::DEFAULT_SESSION_ID;
 use crate::db::UserDbPool;
@@ -67,7 +66,7 @@ pub async fn run_reflection(
     );
     fs::write(&abs_path, &body)?;
 
-    let hash = format!("sha256:{}", hex::encode(Sha256::digest(body.as_bytes())));
+    let hash = util::sha256_hex(&body);
     let excerpt = excerpt_500(&reflection_text);
 
     let conn = pool.get()?;
@@ -198,23 +197,13 @@ async fn call_claude_oneshot(prompt: &str) -> Result<String, AppError> {
 }
 
 fn body_after_frontmatter(md: &str) -> String {
-    if let Some(after) = md.strip_prefix("---\n") {
-        if let Some(end) = after.find("\n---") {
-            return after[end + 4..].trim_start().to_string();
-        }
-    }
-    md.to_string()
+    util::body_after_frontmatter(md)
 }
 
 fn excerpt_500(s: &str) -> String {
-    crate::utils::text::truncate_on_char_boundary(s, 500).to_string()
+    util::excerpt(s, 500)
 }
 
 fn short_uuid() -> String {
-    Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(8)
-        .collect()
+    util::short_id(8)
 }
