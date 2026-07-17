@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Stethoscope, Search, Wrench, CheckCircle2, XCircle, ChevronDown, ChevronUp, X } from 'lucide-react';
 import type { AiHealingState, AiHealingPhase } from '@/hooks/execution/useAiHealingStream';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -8,30 +8,33 @@ import { DebtText } from '@/i18n/DebtText';
 function useElapsedTime(active: boolean): number {
   const startRef = useRef<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
-  const rafRef = useRef<number | null>(null);
-
-  const tick = useCallback(() => {
-    if (startRef.current !== null) {
-      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  }, []);
+  // Tracks whether the previous render was active, so a completed -> started
+  // transition (overlay stays mounted across sessions) starts a fresh clock
+  // instead of carrying over the prior session's startRef.
+  const wasActiveRef = useRef(false);
 
   useEffect(() => {
     if (active) {
-      if (startRef.current === null) startRef.current = Date.now();
-      rafRef.current = requestAnimationFrame(tick);
-    } else {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-      // Keep the final elapsed value visible after completion; only
-      // reset if no timer was ever started (idle -> idle transition).
-      if (startRef.current === null) setElapsed(0);
+      if (!wasActiveRef.current) {
+        startRef.current = Date.now();
+        setElapsed(0);
+      }
+      wasActiveRef.current = true;
+      // A 1 Hz display only needs a 1 Hz clock; rAF fired ~60x/s for no
+      // visible benefit and burned CPU during long heals.
+      const id = setInterval(() => {
+        if (startRef.current !== null) {
+          setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+        }
+      }, 1000);
+      return () => clearInterval(id);
     }
-    return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-    };
-  }, [active, tick]);
+    wasActiveRef.current = false;
+    // Keep the final elapsed value visible after completion; only reset if
+    // no timer was ever started (idle -> idle transition).
+    if (startRef.current === null) setElapsed(0);
+    return undefined;
+  }, [active]);
 
   return elapsed;
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Compass } from 'lucide-react';
 import { HEALING_CATEGORY_COLORS, formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
@@ -15,6 +15,14 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
   const { t } = useTranslation();
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Reset keyboard focus when the issue list identity changes (e.g. a filter
+  // chip shortens/reorders it) — otherwise focusedIndex can point past the
+  // new length, leaving the listbox with no tab stop.
+  useEffect(() => {
+    setFocusedIndex(-1);
+    rowRefs.current.length = issues.length;
+  }, [issues]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
