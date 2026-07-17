@@ -8,6 +8,12 @@ import { ChatInput } from './ChatInput';
 import { extractErrorMessage } from '../safeModeUtils';
 import { silentCatch } from '@/lib/silentCatch';
 import { getNlDatabaseDialect } from '../introspectionQueries';
+import { useTranslation } from '@/i18n/useTranslation';
+
+// If the backend job never reaches a terminal status (crash, dropped job,
+// stuck snapshot), stop polling after this long instead of locking the chat
+// input forever.
+const NL_QUERY_POLL_TIMEOUT_MS = 60_000;
 
 
 interface ChatTabProps {
@@ -20,6 +26,7 @@ let chatIdCounter = 0;
 function nextId() { return `chat-${Date.now()}-${++chatIdCounter}`; }
 
 export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
+  const { t } = useTranslation();
   const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -74,7 +81,23 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
       const history = buildConversationHistory();
       await startNlQuery(queryId, credentialId, question, history, dbType);
 
+      const pollStartedAt = Date.now();
       pollRef.current = setInterval(async () => {
+        if (Date.now() - pollStartedAt > NL_QUERY_POLL_TIMEOUT_MS) {
+          clearInterval(pollRef.current);
+          pollRef.current = undefined;
+          setActiveQueryId(null);
+          setGenerating(false);
+          cancelNlQuery(queryId).catch(() => {});
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsg.id
+                ? { ...m, content: t.vault.databases.query_timeout, error: t.vault.databases.query_timeout, status: 'failed' as const }
+                : m,
+            ),
+          );
+          return;
+        }
         try {
           const snapshot: NlQuerySnapshot = await getNlQuerySnapshot(queryId);
           if (snapshot.status === 'completed') {
@@ -115,7 +138,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
         ),
       );
     }
-  }, [input, generating, credentialId, dbType, buildConversationHistory]);
+  }, [input, generating, credentialId, dbType, buildConversationHistory, t]);
 
   const handleCancel = useCallback(() => {
     if (activeQueryId) {

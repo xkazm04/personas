@@ -59,12 +59,28 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
     );
   }
 
+  // Header and body render as two separate <table>s (below) so the header can
+  // stay put while the body scrolls/virtualizes. Two tables auto-size columns
+  // from their own content independently, so without a shared width contract
+  // the header drifts out of alignment with the data underneath it. A fixed
+  // table layout plus an identical <colgroup> in both tables forces the same
+  // per-column width in each, keeping header and body columns locked together.
+  const colWidthPct = 100 / Math.max(1, result.columns.length);
+  const colGroup = (
+    <colgroup>
+      {result.columns.map((_, i) => (
+        <col key={i} style={{ width: `${colWidthPct}%` }} />
+      ))}
+    </colgroup>
+  );
+
   return (
     <div className="space-y-2">
       <div className="rounded-modal border border-primary/10 overflow-hidden">
         {/* Sticky header */}
         <div className="overflow-x-auto">
-          <table className="w-full typo-body">
+          <table className="w-full typo-body" style={{ tableLayout: 'fixed' }}>
+            {colGroup}
             <thead>
               <tr className="bg-secondary/40 border-b border-primary/10">
                 {result.columns.map((col, i) => {
@@ -104,7 +120,8 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
         {/* Virtualized body */}
         <div ref={scrollRef} className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 400 }}>
           <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}>
-            <table className="w-full typo-body" style={{ position: 'absolute', top: 0, left: 0 }}>
+            <table className="w-full typo-body" style={{ position: 'absolute', top: 0, left: 0, tableLayout: 'fixed' }}>
+              {colGroup}
               <tbody>
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                   const rowIdx = virtualRow.index;

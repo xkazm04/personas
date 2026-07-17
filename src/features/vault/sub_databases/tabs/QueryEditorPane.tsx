@@ -10,6 +10,7 @@ import { useDbQueryRunner } from '../hooks/useDbQueryRunner';
 import { ResultsTable } from './ResultsTable';
 import { QueryToolbar } from './QueryToolbar';
 import { MutationConfirmBanner } from './MutationConfirmBanner';
+import { toastCatch } from '@/lib/silentCatch';
 
 interface QueryEditorPaneProps {
   credentialId: string;
@@ -58,8 +59,12 @@ export function QueryEditorPane({
       await updateQuery(selectedId, { queryText: editorValue });
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 1500);
-    } catch {
+    } catch (err) {
+      // Surface the failure — previously this silently reset the button to
+      // idle, which reads identically to a successful save and led users to
+      // believe an edit persisted when it didn't.
       setSaveState('idle');
+      toastCatch('QueryEditorPane:handleSave')(err);
     }
   }, [selectedId, editorValue, updateQuery, saveState]);
 

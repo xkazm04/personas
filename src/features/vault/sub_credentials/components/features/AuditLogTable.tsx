@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight as ChevronRightIcon, ScrollText } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -34,6 +34,13 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / AUDIT_PAGE_SIZE));
   const pageEntries = filtered.slice(auditPage * AUDIT_PAGE_SIZE, (auditPage + 1) * AUDIT_PAGE_SIZE);
+
+  // If the log shrinks (re-fetch, filter change, credential switch on a
+  // mounted component) the current page can point past the new last page,
+  // rendering a blank table with no obvious "go back" affordance.
+  useEffect(() => {
+    setAuditPage((p) => Math.min(p, totalPages - 1));
+  }, [totalPages]);
 
   const handleFilterChange = (f: string) => {
     setAuditFilter(f);

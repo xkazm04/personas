@@ -27,7 +27,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
   const updateCredentialEvent = useVaultStore((s) => s.updateCredentialEvent);
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<string | null>(null);
+  const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
 
   // Merge connector-specific events with universal rotation templates, deduping by id
   const connectorEvents = eventsProp ?? [];
@@ -57,12 +57,27 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
   };
 
   const toggleInFlightRef = useRef<Set<string>>(new Set());
+  const configInFlightRef = useRef<Set<string>>(new Set());
+
+  const markSaving = (templateId: string) =>
+    setSavingIds((prev) => {
+      const next = new Set(prev);
+      next.add(templateId);
+      return next;
+    });
+  const clearSaving = (templateId: string) =>
+    setSavingIds((prev) => {
+      if (!prev.has(templateId)) return prev;
+      const next = new Set(prev);
+      next.delete(templateId);
+      return next;
+    });
 
   const handleToggleEvent = async (eventTemplateId: string, eventTemplateName: string) => {
     if (toggleInFlightRef.current.has(eventTemplateId)) return;
     toggleInFlightRef.current.add(eventTemplateId);
     const existing = getEventForTemplate(eventTemplateId);
-    setSaving(eventTemplateId);
+    markSaving(eventTemplateId);
     try {
       if (existing) {
         await updateCredentialEvent(existing.id, { enabled: !existing.enabled });
@@ -80,24 +95,33 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
       logger.error('Failed to toggle event', { error: String(err) });
     } finally {
       toggleInFlightRef.current.delete(eventTemplateId);
-      setSaving(null);
+      clearSaving(eventTemplateId);
     }
   };
 
   const handleUpdateConfig = async (eventId: string, templateId: string, updates: Record<string, unknown>) => {
-    const existing = myEvents.find(e => e.id === eventId);
-    if (!existing) return;
-
-    setSaving(templateId);
+    // Serialize concurrent config writes on the same event: a second write
+    // that starts before the first resolves would otherwise merge against a
+    // stale pre-update snapshot and clobber the first write's field.
+    if (configInFlightRef.current.has(eventId)) return;
+    configInFlightRef.current.add(eventId);
     try {
-      const currentConfig = safeParseConfig(existing.config);
-      const updatedConfig = { ...currentConfig, ...updates };
-      await updateCredentialEvent(eventId, { config: updatedConfig });
-      await fetchCredentialEvents();
-    } catch (err) {
-      logger.error('Failed to update event config', { error: String(err) });
+      const existing = myEvents.find(e => e.id === eventId);
+      if (!existing) return;
+
+      markSaving(templateId);
+      try {
+        const currentConfig = safeParseConfig(existing.config);
+        const updatedConfig = { ...currentConfig, ...updates };
+        await updateCredentialEvent(eventId, { config: updatedConfig });
+        await fetchCredentialEvents();
+      } catch (err) {
+        logger.error('Failed to update event config', { error: String(err) });
+      } finally {
+        clearSaving(templateId);
+      }
     } finally {
-      setSaving(null);
+      configInFlightRef.current.delete(eventId);
     }
   };
 
@@ -122,7 +146,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
           key={et.id}
           template={et}
           existing={getEventForTemplate(et.id)}
-          isSaving={saving === et.id}
+          isSaving={savingIds.has(et.id)}
           onToggle={handleToggleEvent}
           onUpdateConfig={handleUpdateConfig}
         />
