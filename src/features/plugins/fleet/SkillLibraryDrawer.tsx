@@ -22,8 +22,14 @@ interface Props {
  * sidebar region; lists the shared (global) skill library — searchable, with a
  * project/global source toggle. Clicking a skill writes its slash command into
  * the focused session's terminal (`onApply`); each row also offers
- * "Install to repo" (reuses SkillInstallModal). Portaled to body so it sits
- * above both the single-pane view and the fullscreen grid overlay.
+ * "Install to repo" (reuses SkillInstallModal).
+ *
+ * Mounted ONCE in `FleetGridPage` (as a sibling of `FleetTerminalOverlay`, not
+ * inside it) and portaled to `document.body`, so a single instance serves BOTH
+ * reach points: the **single-pane** "Skills" button above the CLI
+ * (`data-testid="fleet-open-skills"`) and the **fullscreen grid overlay**
+ * header button (`FleetTerminalOverlay` → `onOpenSkills`). Both toggle the same
+ * `skillsDrawerOpen` state, so the drawer sits above whichever pane is active.
  */
 export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Props) {
   const { t, tx } = useTranslation();
