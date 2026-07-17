@@ -294,6 +294,7 @@
     "path_parameters": "路径参数",
     "query_parameters": "查询参数",
     "recipes_title": "已保存配方",
+    "request_headers": "请求头",
     "truncated_warning": "响应已截断以供显示",
     "value_col": "值"
   },
@@ -339,6 +340,7 @@
     "describe_query": "描述您要查询的内容，我将为您生成 {language}。您可以审查、编辑并执行生成的查询。",
     "query_generated": "查询已生成。",
     "query_failed": "查询生成失败。",
+    "query_timeout": "等待响应超时，请重试。",
     "cancelled": "已取消。",
     "loading_columns": "正在加载列...",
     "no_properties": "未找到属性",
@@ -947,7 +949,8 @@
     "source_docker_config": "Docker",
     "source_git_hub_cli": "GitHub CLI",
     "source_ssh_key": "SSH 密钥",
-    "source_git_config": "Git 配置"
+    "source_git_config": "Git 配置",
+    "source_unknown": "未知来源"
   },
   "desktop_discovery": {
     "title": "桌面应用",

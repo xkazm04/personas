@@ -294,6 +294,7 @@
     "path_parameters": "معاملات المسار",
     "query_parameters": "معاملات الاستعلام",
     "recipes_title": "الوصفات المحفوظة",
+    "request_headers": "الترويسات",
     "truncated_warning": "الاستجابة مقطوعة للعرض",
     "value_col": "القيمة"
   },
@@ -339,6 +340,7 @@
     "describe_query": "صف ما تريد استعلامه وسأُنشئ {language} لك. يمكنك مراجعة الاستعلام المُنشأ وتعديله وتنفيذه.",
     "query_generated": "تم إنشاء الاستعلام.",
     "query_failed": "فشل إنشاء الاستعلام.",
+    "query_timeout": "انتهت مهلة انتظار الاستجابة. يرجى المحاولة مرة أخرى.",
     "cancelled": "تم الإلغاء.",
     "loading_columns": "جارٍ تحميل الأعمدة...",
     "no_properties": "لم تُعثَر على خصائص",
@@ -947,7 +949,8 @@
     "source_docker_config": "Docker",
     "source_git_hub_cli": "GitHub CLI",
     "source_ssh_key": "مفتاح SSH",
-    "source_git_config": "إعدادات Git"
+    "source_git_config": "إعدادات Git",
+    "source_unknown": "مصدر غير معروف"
   },
   "desktop_discovery": {
     "title": "تطبيقات سطح المكتب",

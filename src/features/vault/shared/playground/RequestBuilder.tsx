@@ -116,7 +116,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
         <KeyValueEditor entries={queryParams} onChange={setQueryParams} />
       </Section>
 
-      <Section label={t.common.actions}>
+      <Section label={vt.request_headers}>
         <KeyValueEditor entries={headers} onChange={setHeaders} />
       </Section>
 

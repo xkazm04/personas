@@ -128,7 +128,12 @@ function extractDimensionData(
   }
 
   // Connectors — apply user's credential picks from the questionnaire.
-  const connectors = ((d.suggested_connectors ?? d.required_connectors ?? []) as unknown[]);
+  // `??` only falls back on null/undefined; an authored-but-empty
+  // suggested_connectors array must also fall back to required_connectors.
+  const suggestedConnectors = (d.suggested_connectors as unknown[] | undefined) ?? [];
+  const connectors = (suggestedConnectors.length > 0
+    ? suggestedConnectors
+    : ((d.required_connectors ?? []) as unknown[]));
   if (connectors.length > 0) {
     const rewritten = connectors.map((c) => {
       const o = c as Record<string, unknown>;
@@ -162,7 +167,10 @@ function extractDimensionData(
   }
 
   // Triggers — drop any tied to a disabled use case
-  const triggersRaw = ((d.suggested_triggers ?? d.triggers ?? []) as unknown[]);
+  const suggestedTriggers = (d.suggested_triggers as unknown[] | undefined) ?? [];
+  const triggersRaw = (suggestedTriggers.length > 0
+    ? suggestedTriggers
+    : ((d.triggers ?? []) as unknown[]));
   const triggers = ucFilterActive
     ? triggersRaw.filter((tr) => matchesUseCaseFilter((tr as Record<string, unknown>).use_case_id))
     : triggersRaw;

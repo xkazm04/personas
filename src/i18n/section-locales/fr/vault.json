@@ -294,6 +294,7 @@
     "path_parameters": "Paramètres de chemin",
     "query_parameters": "Paramètres de requête",
     "recipes_title": "Recettes",
+    "request_headers": "En-têtes",
     "truncated_warning": "Réponse tronquée",
     "value_col": "Valeur"
   },
@@ -339,6 +340,7 @@
     "describe_query": "Décrivez ce que vous voulez interroger et je générerai le {language} pour vous. Vous pourrez vérifier, modifier et exécuter la requête générée.",
     "query_generated": "Requête générée",
     "query_failed": "Échec de la requête",
+    "query_timeout": "Délai d'attente dépassé pour la réponse. Veuillez réessayer.",
     "cancelled": "Annulé",
     "loading_columns": "Chargement des colonnes...",
     "no_properties": "Aucune propriété",
@@ -947,7 +949,8 @@
     "source_docker_config": "Docker",
     "source_git_hub_cli": "GitHub CLI",
     "source_ssh_key": "Clé SSH",
-    "source_git_config": "Configuration Git"
+    "source_git_config": "Configuration Git",
+    "source_unknown": "Source inconnue"
   },
   "desktop_discovery": {
     "title": "Applications de bureau",

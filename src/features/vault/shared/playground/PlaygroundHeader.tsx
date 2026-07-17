@@ -7,7 +7,7 @@ import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';
 import * as credApi from '@/api/vault/credentials';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { silentCatch } from '@/lib/silentCatch';
+import { toastCatch } from '@/lib/silentCatch';
 import { useCredentialRename } from '@/features/vault/shared/hooks/useCredentialRename';
 
 
@@ -48,7 +48,11 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
       useVaultStore.setState((s) => ({
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
-    } catch (err) { silentCatch("features/vault/shared/playground/PlaygroundHeader:catch2")(err); }
+    } catch (err) {
+      // Surface tag-save failures — the tag list otherwise appears unchanged
+      // with no signal that the write didn't persist.
+      toastCatch("features/vault/shared/playground/PlaygroundHeader:catch2")(err);
+    }
   }, [credential]);
 
   const addTag = useCallback((tag: string) => {

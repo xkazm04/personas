@@ -3895,6 +3895,7 @@
       "path_parameters": "Parameter Jalur",
       "query_parameters": "Parameter Kueri",
       "recipes_title": "Resep Tersimpan",
+      "request_headers": "Header",
       "truncated_warning": "Respons terpotong untuk ditampilkan",
       "value_col": "Nilai"
     },
@@ -3940,6 +3941,7 @@
       "describe_query": "Jelaskan apa yang ingin Anda kueri dan saya akan menghasilkan {language} untuk Anda. Anda dapat meninjau, mengedit, dan mengeksekusi kueri yang dihasilkan.",
       "query_generated": "Kueri dihasilkan.",
       "query_failed": "Pembuatan kueri gagal.",
+      "query_timeout": "Waktu tunggu respons habis. Silakan coba lagi.",
       "cancelled": "Dibatalkan.",
       "loading_columns": "Memuat kolom...",
       "no_properties": "Tidak ada properti ditemukan",
@@ -4345,7 +4347,7 @@
       "via_connector": "melalui {connector}"
     },
     "reauth_banner": {
-      "access_revoked": "Akses dicabut",
+      "access_revoked": ") -- akses telah dicabut. Silakan otorisasi ulang untuk melanjutkan otomatisasi.",
       "reconnect": "Sambungkan ulang",
       "cli_expired": ") -- Sesi CLI kedaluwarsa. Masuk melalui terminal Anda, lalu coba lagi.",
       "retry_capture": "Coba tangkap lagi",
@@ -4548,7 +4550,8 @@
       "source_docker_config": "Docker",
       "source_git_hub_cli": "GitHub CLI",
       "source_ssh_key": "Kunci SSH",
-      "source_git_config": "Konfigurasi Git"
+      "source_git_config": "Konfigurasi Git",
+      "source_unknown": "Sumber Tidak Dikenal"
     },
     "desktop_discovery": {
       "title": "Aplikasi Desktop",

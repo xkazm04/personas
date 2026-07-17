@@ -3,7 +3,7 @@ import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';
 import * as credApi from '@/api/vault/credentials';
 import type { CredentialMetadata } from '@/lib/types/types';
-import { silentCatch } from '@/lib/silentCatch';
+import { toastCatch } from '@/lib/silentCatch';
 
 export interface UseCredentialRenameResult {
   isEditingName: boolean;
@@ -58,7 +58,10 @@ export function useCredentialRename(credential: CredentialMetadata, logContext: 
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
     } catch (err) {
-      silentCatch(logContext)(err);
+      // Surface the failure and keep the editor open so the user can retry —
+      // silently closing on a failed write reads as a successful save.
+      toastCatch(logContext)(err);
+      return;
     }
     setIsEditingName(false);
   }, [credential.id, credential.name, editName, logContext]);

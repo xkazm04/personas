@@ -294,6 +294,7 @@
     "path_parameters": "Pfadparameter",
     "query_parameters": "Abfrageparameter",
     "recipes_title": "Gespeicherte Rezepte",
+    "request_headers": "Header",
     "truncated_warning": "Antwort für Anzeige gekürzt",
     "value_col": "Wert"
   },
@@ -339,6 +340,7 @@
     "describe_query": "Beschreiben Sie, was Sie abfragen möchten, und ich generiere das {language} für Sie. Sie können die generierte Abfrage prüfen, bearbeiten und ausführen.",
     "query_generated": "Abfrage generiert.",
     "query_failed": "Abfragegenerierung fehlgeschlagen.",
+    "query_timeout": "Zeitüberschreitung beim Warten auf eine Antwort. Bitte versuchen Sie es erneut.",
     "cancelled": "Abgebrochen.",
     "loading_columns": "Spalten werden geladen...",
     "no_properties": "Keine Eigenschaften gefunden",
@@ -947,7 +949,8 @@
     "source_docker_config": "Docker",
     "source_git_hub_cli": "GitHub CLI",
     "source_ssh_key": "SSH-Schlüssel",
-    "source_git_config": "Git-Konfiguration"
+    "source_git_config": "Git-Konfiguration",
+    "source_unknown": "Unbekannte Quelle"
   },
   "desktop_discovery": {
     "title": "Desktop-Apps",

@@ -1,5 +1,6 @@
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
+import { parseCsv } from '@/features/templates/sub_generated/adoption/SelectPills';
 
 /**
  * Aliases for connector service_types. The same logical provider gets stored
@@ -120,7 +121,16 @@ export function deriveCredentialBindings(
     // call) — those don't carry credential bindings.
     if (q.dynamic_source?.source === 'vault') {
       const category = q.dynamic_source.service_type;
-      if (category) bindings[category] = answer;
+      if (category) {
+        // Multi-select vault pickers store CSV-encoded answers (SelectPills.toCsv).
+        // `bindings` is category -> single service_type, so a multi answer can't
+        // rewrite every placeholder connector — but using the raw CSV string
+        // verbatim (the prior behavior) produced no match at all downstream.
+        // Bind the first picked service_type so at least one credential is
+        // correctly rewritten instead of leaving the placeholder un-rewritten.
+        const picked = q.dynamic_source.multi ? parseCsv(answer)[0] : answer;
+        if (picked) bindings[category] = picked;
+      }
     }
   }
   return bindings;

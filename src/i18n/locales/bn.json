@@ -3895,6 +3895,7 @@
       "path_parameters": "পাথ প্যারামিটার",
       "query_parameters": "কোয়েরি প্যারামিটার",
       "recipes_title": "সংরক্ষিত রেসিপি",
+      "request_headers": "হেডার",
       "truncated_warning": "প্রদর্শনের জন্য প্রতিক্রিয়া সংক্ষিপ্ত করা হয়েছে",
       "value_col": "মান"
     },
@@ -3940,6 +3941,7 @@
       "describe_query": "আপনি কী কোয়েরি করতে চান বর্ণনা করুন এবং আমি আপনার জন্য {language} তৈরি করব। আপনি তৈরি কোয়েরি পর্যালোচনা, সম্পাদনা এবং এক্সিকিউট করতে পারবেন।",
       "query_generated": "কোয়েরি তৈরি হয়েছে।",
       "query_failed": "কোয়েরি তৈরি ব্যর্থ হয়েছে।",
+      "query_timeout": "প্রতিক্রিয়ার জন্য অপেক্ষার সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।",
       "cancelled": "বাতিল হয়েছে।",
       "loading_columns": "কলাম লোড হচ্ছে...",
       "no_properties": "কোনো প্রপার্টি পাওয়া যায়নি",
@@ -4548,7 +4550,8 @@
       "source_docker_config": "Docker",
       "source_git_hub_cli": "GitHub CLI",
       "source_ssh_key": "SSH কী",
-      "source_git_config": "Git কনফিগ"
+      "source_git_config": "Git কনফিগ",
+      "source_unknown": "অজানা উৎস"
     },
     "desktop_discovery": {
       "title": "ডেস্কটপ অ্যাপ",

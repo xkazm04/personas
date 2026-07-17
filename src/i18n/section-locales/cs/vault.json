@@ -294,6 +294,7 @@
     "path_parameters": "Parametry cesty",
     "query_parameters": "Parametry dotazu",
     "recipes_title": "Uložené recepty",
+    "request_headers": "Hlavičky",
     "truncated_warning": "Odpověď byla pro zobrazení zkrácena",
     "value_col": "Hodnota"
   },
@@ -339,6 +340,7 @@
     "describe_query": "Popište, co chcete zjistit, a já vytvořím {language} kód. Můžete jej pak upravit nebo spustit.",
     "query_generated": "Dotaz byl vygenerován.",
     "query_failed": "Generování dotazu selhalo.",
+    "query_timeout": "Vypršel časový limit čekání na odpověď. Zkuste to prosím znovu.",
     "cancelled": "Zrušeno.",
     "loading_columns": "Načítání sloupců...",
     "no_properties": "Žádné vlastnosti nebyly nalezeny",
@@ -947,7 +949,8 @@
     "source_docker_config": "Docker",
     "source_git_hub_cli": "GitHub CLI",
     "source_ssh_key": "SSH klíč",
-    "source_git_config": "Git konfigurace"
+    "source_git_config": "Git konfigurace",
+    "source_unknown": "Neznámý zdroj"
   },
   "desktop_discovery": {
     "title": "Desktopové aplikace",

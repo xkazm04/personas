@@ -3895,6 +3895,7 @@
       "path_parameters": "Параметры пути",
       "query_parameters": "Параметры запроса",
       "recipes_title": "Сохранённые рецепты",
+      "request_headers": "Заголовки",
       "truncated_warning": "Ответ усечён для отображения",
       "value_col": "Значение"
     },
@@ -3940,6 +3941,7 @@
       "describe_query": "Опишите что хотите запросить, и я сгенерирую {language}. Вы можете проверить, отредактировать и выполнить запрос.",
       "query_generated": "Запрос сгенерирован.",
       "query_failed": "Генерация запроса не удалась.",
+      "query_timeout": "Истекло время ожидания ответа. Попробуйте ещё раз.",
       "cancelled": "Отменено.",
       "loading_columns": "Загрузка столбцов...",
       "no_properties": "Свойства не найдены",
@@ -4548,7 +4550,8 @@
       "source_docker_config": "Docker",
       "source_git_hub_cli": "GitHub CLI",
       "source_ssh_key": "SSH-ключ",
-      "source_git_config": "Конфигурация Git"
+      "source_git_config": "Конфигурация Git",
+      "source_unknown": "Неизвестный источник"
     },
     "desktop_discovery": {
       "title": "Десктопные приложения",

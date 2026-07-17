@@ -3895,6 +3895,7 @@
       "path_parameters": "पाथ पैरामीटर",
       "query_parameters": "क्वेरी पैरामीटर",
       "recipes_title": "सहेजी गई रेसिपी",
+      "request_headers": "हेडर",
       "truncated_warning": "प्रदर्शन के लिए प्रतिक्रिया छोटी की गई",
       "value_col": "मूल्य"
     },
@@ -3940,6 +3941,7 @@
       "describe_query": "वर्णन करें कि आप क्या क्वेरी करना चाहते हैं और मैं आपके लिए {language} जनरेट करूंगा। आप जनरेट की गई क्वेरी की समीक्षा, संपादन और निष्पादन कर सकते हैं।",
       "query_generated": "क्वेरी जनरेट हुई।",
       "query_failed": "क्वेरी जनरेशन विफल।",
+      "query_timeout": "प्रतिक्रिया की प्रतीक्षा में समय समाप्त हो गया। कृपया पुनः प्रयास करें।",
       "cancelled": "रद्द किया।",
       "loading_columns": "कॉलम लोड हो रहे हैं...",
       "no_properties": "कोई गुण नहीं मिले",
@@ -4548,7 +4550,8 @@
       "source_docker_config": "Docker",
       "source_git_hub_cli": "GitHub CLI",
       "source_ssh_key": "SSH कुंजी",
-      "source_git_config": "Git कॉन्फ़िग"
+      "source_git_config": "Git कॉन्फ़िग",
+      "source_unknown": "अज्ञात स्रोत"
     },
     "desktop_discovery": {
       "title": "डेस्कटॉप ऐप",

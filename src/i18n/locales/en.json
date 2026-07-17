@@ -4139,6 +4139,7 @@
       "path_parameters": "Path Parameters",
       "query_parameters": "Query Parameters",
       "recipes_title": "Saved Recipes",
+      "request_headers": "Headers",
       "truncated_warning": "Response truncated for display",
       "value_col": "Value"
     },
@@ -4184,6 +4185,7 @@
       "describe_query": "Describe what you want to query and I'll generate the {language} for you. You can review, edit, and execute the generated query.",
       "query_generated": "Query generated.",
       "query_failed": "Query generation failed.",
+      "query_timeout": "Timed out waiting for a response. Please try again.",
       "cancelled": "Cancelled.",
       "loading_columns": "Loading columns...",
       "no_properties": "No properties found",
@@ -4787,6 +4789,7 @@
       "source_git_hub_cli": "GitHub CLI",
       "source_ssh_key": "SSH Key",
       "source_git_config": "Git Config",
+      "source_unknown": "Unknown Source",
       "env_var_one": "{count} env var",
       "env_var_other": "{count} env vars",
       "import_server": "Import",

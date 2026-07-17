@@ -294,6 +294,7 @@
     "path_parameters": "Tham số đường dẫn",
     "query_parameters": "Tham số truy vấn",
     "recipes_title": "Công thức đã lưu",
+    "request_headers": "Tiêu đề",
     "truncated_warning": "Phản hồi bị cắt bớt để hiển thị",
     "value_col": "Giá trị"
   },
@@ -339,6 +340,7 @@
     "describe_query": "Mô tả những gì bạn muốn truy vấn và tôi sẽ tạo {language} cho bạn. Bạn có thể xem, chỉnh sửa và thực thi truy vấn được tạo.",
     "query_generated": "Đã tạo truy vấn.",
     "query_failed": "Tạo truy vấn thất bại.",
+    "query_timeout": "Hết thời gian chờ phản hồi. Vui lòng thử lại.",
     "cancelled": "Đã hủy.",
     "loading_columns": "Đang tải cột...",
     "no_properties": "Không tìm thấy thuộc tính",
@@ -947,7 +949,8 @@
     "source_docker_config": "Docker",
     "source_git_hub_cli": "GitHub CLI",
     "source_ssh_key": "Khóa SSH",
-    "source_git_config": "Cấu hình Git"
+    "source_git_config": "Cấu hình Git",
+    "source_unknown": "Nguồn không xác định"
   },
   "desktop_discovery": {
     "title": "Ứng dụng máy tính",

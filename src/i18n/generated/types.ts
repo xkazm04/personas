@@ -4145,6 +4145,7 @@ export type Translations = {
       path_parameters: string;
       query_parameters: string;
       recipes_title: string;
+      request_headers: string;
       truncated_warning: string;
       value_col: string;
     };
@@ -4190,6 +4191,7 @@ export type Translations = {
       describe_query: string;
       query_generated: string;
       query_failed: string;
+      query_timeout: string;
       cancelled: string;
       loading_columns: string;
       no_properties: string;
@@ -4793,6 +4795,7 @@ export type Translations = {
       source_git_hub_cli: string;
       source_ssh_key: string;
       source_git_config: string;
+      source_unknown: string;
       env_var_one: string;
       env_var_other: string;
       import_server: string;
