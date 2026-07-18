@@ -93,14 +93,7 @@ fn migrate_export_bundle(mut value: serde_json::Value) -> Result<PersonaExportBu
     }
 
     while version < u64::from(CURRENT_SCHEMA_VERSION) {
-        value = match version {
-            1 => migrate_export_bundle_v1_to_v2(value)?,
-            _ => {
-                return Err(AppError::Validation(format!(
-                    "Unsupported bundle version: {version}"
-                )));
-            }
-        };
+        value = migrate_one_step(version, value)?;
         version = value
             .get("version")
             .and_then(serde_json::Value::as_u64)
@@ -115,6 +108,38 @@ fn migrate_export_bundle(mut value: serde_json::Value) -> Result<PersonaExportBu
         .map_err(|e| AppError::Validation(format!("Invalid persona file: {e}")))
 }
 
+/// Apply exactly one up-migration step: schema version `version` -> `version + 1`.
+///
+/// The `while version < CURRENT_SCHEMA_VERSION` loop in `migrate_export_bundle`
+/// calls this repeatedly until the bundle reaches the current schema. Every
+/// version reachable by that loop (i.e. every version < CURRENT_SCHEMA_VERSION)
+/// MUST have a real migrator arm here before the constant is bumped past it.
+///
+/// The `every_version_below_current_has_a_real_migrator` test enforces exactly
+/// that: bumping `CURRENT_SCHEMA_VERSION` without shipping the matching migrator
+/// makes it fail in CI, rather than making every v1 bundle fail import for real
+/// users. If you add a version, add its arm here AND a real migrator function.
+fn migrate_one_step(
+    version: u64,
+    value: serde_json::Value,
+) -> Result<serde_json::Value, AppError> {
+    match version {
+        1 => migrate_export_bundle_v1_to_v2(value),
+        _ => Err(AppError::Validation(format!(
+            "Unsupported bundle version: {version}"
+        ))),
+    }
+}
+
+/// STUB — IMPLEMENT before bumping `CURRENT_SCHEMA_VERSION` to 2.
+///
+/// This is a placeholder that returns the "is not implemented" sentinel error.
+/// It is currently UNREACHABLE (CURRENT_SCHEMA_VERSION == 1, so the migrate
+/// loop never runs). The moment `CURRENT_SCHEMA_VERSION` is bumped to 2, this
+/// arm becomes reachable for every v1 bundle — so it must be replaced with a
+/// real v1 -> v2 field migrator first. The
+/// `every_version_below_current_has_a_real_migrator` test is wired to this
+/// contract: it fails if a version below CURRENT still resolves to this stub.
 #[allow(dead_code)]
 fn migrate_export_bundle_v1_to_v2(
     _value: serde_json::Value,
@@ -590,5 +615,32 @@ mod tests {
         let err = migrate_export_bundle(bundle).expect_err("missing version should reject");
 
         assert!(err.to_string().contains("missing numeric version"));
+    }
+
+    /// Contract guard: every schema version reachable by the migrate loop
+    /// (i.e. every version below CURRENT_SCHEMA_VERSION) MUST resolve to a real
+    /// up-migrator, not the `migrate_export_bundle_v1_to_v2` stub or a missing
+    /// dispatch arm. This makes "bump CURRENT_SCHEMA_VERSION without shipping
+    /// the migrator" break CI here rather than making every prior-version
+    /// bundle fail import for real users.
+    ///
+    /// A real migrator may still legitimately error on a bare `{"version": N}`
+    /// (it needs fields to migrate), so we only fail on the two sentinels that
+    /// prove no migrator exists: the stub's "is not implemented" and the
+    /// dispatch fallthrough's "Unsupported bundle version".
+    #[test]
+    fn every_version_below_current_has_a_real_migrator() {
+        for version in 1..u64::from(CURRENT_SCHEMA_VERSION) {
+            let stub_bundle = json!({ "version": version });
+            if let Err(e) = migrate_one_step(version, stub_bundle) {
+                let msg = e.to_string();
+                assert!(
+                    !msg.contains("is not implemented")
+                        && !msg.contains("Unsupported bundle version"),
+                    "schema v{version} has no real up-migrator ({msg}) — implement it \
+                     before bumping CURRENT_SCHEMA_VERSION"
+                );
+            }
+        }
     }
 }
