@@ -117,7 +117,9 @@
     "generating_icon": "Generating...",
     "generate_icon_prompt_placeholder": "Describe the icon you want...",
     "select_agent_icon": "Pilih ikon agen",
-    "select_agent_icon_desc": "Pilih ikon untuk agen ini. Varian tema gelap/terang akan ditampilkan secara otomatis."
+    "select_agent_icon_desc": "Pilih ikon untuk agen ini. Varian tema gelap/terang akan ditampilkan secara otomatis.",
+    "icon_gen_cost_notice": "Membuat gambar memakai kredit gambar berbayar konektor Anda.",
+    "icon_gen_spend_summary": "≈{cost} untuk {count} pembuatan · {days}h terakhir"
   },
   "reasoning_trace": {
     "system_init": "Inisialisasi Sistem",

@@ -1776,6 +1776,8 @@ pub fn run() {
             commands::core::persona_icon_gen::list_image_gen_credentials,
             #[cfg(feature = "desktop")]
             commands::core::persona_icon_gen::generate_persona_icon,
+            #[cfg(feature = "desktop")]
+            commands::core::persona_icon_gen::get_persona_icon_gen_spend,
             // Core -- Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,

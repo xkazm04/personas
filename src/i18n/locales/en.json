@@ -16303,6 +16303,8 @@
       "generate_icon": "Generate",
       "generating_icon": "Generating…",
       "generate_icon_prompt_placeholder": "Describe the icon you want…",
+      "icon_gen_cost_notice": "Generating uses your connector's paid image credits.",
+      "icon_gen_spend_summary": "≈{cost} across {count} generations · last {days}d",
       "clear_icon": "Clear icon",
       "filter_placeholder": "Filter...",
       "reset_to_default": "Reset to default",

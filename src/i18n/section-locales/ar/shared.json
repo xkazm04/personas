@@ -117,7 +117,9 @@
     "generating_icon": "جار التوليد...",
     "generate_icon_prompt_placeholder": "صف الأيقونة التي تريدها...",
     "select_agent_icon": "اختيار أيقونة الوكيل",
-    "select_agent_icon_desc": "اختر أيقونة لهذا الوكيل. تُعرض تلقائيًا نسخ داكنة وفاتحة حسب السمة."
+    "select_agent_icon_desc": "اختر أيقونة لهذا الوكيل. تُعرض تلقائيًا نسخ داكنة وفاتحة حسب السمة.",
+    "icon_gen_cost_notice": "التوليد يستخدم أرصدة الصور المدفوعة الخاصة بموصّلك.",
+    "icon_gen_spend_summary": "≈{cost} عبر {count} عملية توليد · آخر {days}ي"
   },
   "reasoning_trace": {
     "system_init": "تهيئة النظام",

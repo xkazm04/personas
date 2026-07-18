@@ -117,7 +117,9 @@
     "generating_icon": "Generating...",
     "generate_icon_prompt_placeholder": "Describe the icon you want...",
     "select_agent_icon": "Выбрать значок агента",
-    "select_agent_icon_desc": "Выберите значок для этого агента. Варианты для тёмной и светлой темы применяются автоматически."
+    "select_agent_icon_desc": "Выберите значок для этого агента. Варианты для тёмной и светлой темы применяются автоматически.",
+    "icon_gen_cost_notice": "Генерация расходует платные кредиты изображений вашего коннектора.",
+    "icon_gen_spend_summary": "≈{cost} за {count} генераций · за {days} дн."
   },
   "reasoning_trace": {
     "system_init": "Инициализация системы",

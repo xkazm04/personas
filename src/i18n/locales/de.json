@@ -16018,7 +16018,9 @@
       "generating_icon": "Wird generiert...",
       "generate_icon_prompt_placeholder": "Beschreiben Sie das gewuenschte Symbol...",
       "select_agent_icon": "Agenten-Icon auswählen",
-      "select_agent_icon_desc": "Wählen Sie ein Icon für diesen Agenten aus. Passende Hell-/Dunkel-Varianten werden automatisch verwendet."
+      "select_agent_icon_desc": "Wählen Sie ein Icon für diesen Agenten aus. Passende Hell-/Dunkel-Varianten werden automatisch verwendet.",
+      "icon_gen_cost_notice": "Das Generieren verbraucht die kostenpflichtigen Bildguthaben deines Connectors.",
+      "icon_gen_spend_summary": "≈{cost} für {count} Generierungen · letzte {days}d"
     },
     "reasoning_trace": {
       "system_init": "System-Init",

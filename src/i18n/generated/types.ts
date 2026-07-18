@@ -16309,6 +16309,8 @@ export type Translations = {
       generate_icon: string;
       generating_icon: string;
       generate_icon_prompt_placeholder: string;
+      icon_gen_cost_notice: string;
+      icon_gen_spend_summary: string;
       clear_icon: string;
       filter_placeholder: string;
       reset_to_default: string;

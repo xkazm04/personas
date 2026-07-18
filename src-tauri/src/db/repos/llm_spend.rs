@@ -110,6 +110,28 @@ pub fn parse_result_line(ctx: &SpendCtx, line: &str) -> Option<LlmSpendInsert> {
     })
 }
 
+/// Total USD cost + row count for a single `source` over the last
+/// `window_days` (clamped 1..=365). A focused counterpart to `dashboard` for
+/// callers that just want one tier's running spend — e.g. the persona-icon
+/// generation surface showing recent image-API spend at the generate button.
+pub fn source_summary(
+    pool: &DbPool,
+    source: &str,
+    window_days: i64,
+) -> Result<(f64, i64), AppError> {
+    let days = window_days.clamp(1, 365);
+    let since = format!("-{days} days");
+    let conn = pool.get()?;
+    let row = conn.query_row(
+        "SELECT COALESCE(SUM(cost_usd), 0.0), COUNT(*)
+           FROM dev_llm_spend
+          WHERE source = ?1 AND created_at >= datetime('now', ?2)",
+        params![source, since],
+        |r| Ok((r.get::<_, f64>(0)?, r.get::<_, i64>(1)?)),
+    )?;
+    Ok(row)
+}
+
 // ---------------------------------------------------------------------------
 // Dashboard aggregation
 // ---------------------------------------------------------------------------

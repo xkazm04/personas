@@ -8,6 +8,7 @@
  */
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import type { ImageGenCredential } from '@/lib/bindings/ImageGenCredential';
+import type { IconGenSpendSummary } from '@/lib/bindings/IconGenSpendSummary';
 
 /**
  * Import an image file (chosen via the file dialog) as a custom persona icon.
@@ -51,4 +52,13 @@ export function generatePersonaIcon(credentialId: string, prompt: string): Promi
     { credentialId, prompt },
     { timeoutMs: 150_000 },
   );
+}
+
+/**
+ * Recent spend on persona-icon generation (last 30 days), read from the shared
+ * `dev_llm_spend` ledger. Surfaced at the generate-icon affordance so the
+ * metered image-API cost isn't invisible.
+ */
+export function getPersonaIconGenSpend(): Promise<IconGenSpendSummary> {
+  return invoke<IconGenSpendSummary>('get_persona_icon_gen_spend');
 }

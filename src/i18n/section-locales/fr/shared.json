@@ -117,7 +117,9 @@
     "generating_icon": "Generation...",
     "generate_icon_prompt_placeholder": "Decrivez l'icone souhaitee...",
     "select_agent_icon": "Sélectionner une icône d'agent",
-    "select_agent_icon_desc": "Choisissez une icône pour cet agent. Les versions adaptées au thème clair/sombre s'affichent automatiquement."
+    "select_agent_icon_desc": "Choisissez une icône pour cet agent. Les versions adaptées au thème clair/sombre s'affichent automatiquement.",
+    "icon_gen_cost_notice": "La génération utilise les crédits d'image payants de votre connecteur.",
+    "icon_gen_spend_summary": "≈{cost} sur {count} générations · {days} derniers j"
   },
   "reasoning_trace": {
     "system_init": "Initialisation système",

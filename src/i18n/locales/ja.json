@@ -16018,7 +16018,9 @@
       "generating_icon": "Generating...",
       "generate_icon_prompt_placeholder": "Describe the icon you want...",
       "select_agent_icon": "エージェントのアイコンを選択",
-      "select_agent_icon_desc": "このエージェント用のアイコンを選択してください。ダーク/ライトテーマ用のバリエーションは自動的に表示されます。"
+      "select_agent_icon_desc": "このエージェント用のアイコンを選択してください。ダーク/ライトテーマ用のバリエーションは自動的に表示されます。",
+      "icon_gen_cost_notice": "生成にはコネクタの有料画像クレジットを使用します。",
+      "icon_gen_spend_summary": "≈{cost} / {count}回の生成 · 直近{days}日"
     },
     "reasoning_trace": {
       "system_init": "システム初期化",

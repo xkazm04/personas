@@ -16,8 +16,10 @@ import {
   deletePersonaIcon,
   listImageGenCredentials,
   generatePersonaIcon,
+  getPersonaIconGenSpend,
 } from '@/api/agents/personaIcons';
 import type { ImageGenCredential } from '@/lib/bindings/ImageGenCredential';
+import type { IconGenSpendSummary } from '@/lib/bindings/IconGenSpendSummary';
 import { toastCatch } from '@/lib/silentCatch';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -61,18 +63,25 @@ export function PersonaIconPickerModal({
   personaName,
   personaDescription,
 }: PersonaIconPickerModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [customIcons, setCustomIcons] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [genCreds, setGenCreds] = useState<ImageGenCredential[]>([]);
   const [selectedCredId, setSelectedCredId] = useState('');
   const [prompt, setPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [spend, setSpend] = useState<IconGenSpendSummary | null>(null);
 
   const refreshCustomIcons = useCallback(() => {
     listPersonaIcons()
       .then(setCustomIcons)
       .catch(toastCatch('PersonaIconPickerModal:listPersonaIcons'));
+  }, []);
+
+  const refreshSpend = useCallback(() => {
+    getPersonaIconGenSpend()
+      .then(setSpend)
+      .catch(toastCatch('PersonaIconPickerModal:getPersonaIconGenSpend'));
   }, []);
 
   // Load the uploaded-icon library + available image-gen credentials, and
@@ -87,9 +96,11 @@ export function PersonaIconPickerModal({
         setSelectedCredId((prev) =>
           creds.some((c) => c.id === prev) ? prev : creds[0]?.id ?? '',
         );
+        // Only fetch spend when the user actually has an image-gen credential.
+        if (creds.length > 0) refreshSpend();
       })
       .catch(toastCatch('PersonaIconPickerModal:listImageGenCredentials'));
-  }, [isOpen, refreshCustomIcons, personaName, personaDescription]);
+  }, [isOpen, refreshCustomIcons, refreshSpend, personaName, personaDescription]);
 
   const handlePick = useCallback((iconValue: string) => {
     onChange(iconValue);
@@ -136,13 +147,15 @@ export function PersonaIconPickerModal({
     try {
       setGenerating(true);
       const assetId = await generatePersonaIcon(selectedCredId, prompt.trim());
+      // The generation was charged — refresh the running spend before closing.
+      refreshSpend();
       handlePick(toCustomIconValue(assetId));
     } catch (e) {
       toastCatch('PersonaIconPickerModal:generatePersonaIcon')(e);
     } finally {
       setGenerating(false);
     }
-  }, [selectedCredId, prompt, handlePick]);
+  }, [selectedCredId, prompt, handlePick, refreshSpend]);
 
   return (
     <BaseModal
@@ -281,6 +294,23 @@ export function PersonaIconPickerModal({
                 <Sparkles className="w-3.5 h-3.5" />
                 {t.shared.forms_extra.generate_with_ai}
               </h3>
+              <div className="mb-3 space-y-0.5">
+                <p className="typo-caption text-foreground">
+                  {t.shared.forms_extra.icon_gen_cost_notice}
+                </p>
+                {spend && spend.generationCount > 0 && (
+                  <p data-testid="icon-gen-spend" className="typo-caption text-foreground">
+                    {tx(t.shared.forms_extra.icon_gen_spend_summary, {
+                      cost:
+                        spend.totalCostUsd < 0.005
+                          ? '<$0.01'
+                          : `$${spend.totalCostUsd.toFixed(2)}`,
+                      count: spend.generationCount,
+                      days: spend.windowDays,
+                    })}
+                  </p>
+                )}
+              </div>
               <div className="space-y-3 rounded-modal border border-primary/15 bg-background/40 p-4">
                 <textarea
                   value={prompt}

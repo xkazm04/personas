@@ -117,7 +117,9 @@
     "generating_icon": "Generating...",
     "generate_icon_prompt_placeholder": "Describe the icon you want...",
     "select_agent_icon": "选择人格图标",
-    "select_agent_icon_desc": "为此人格选择一个图标，深色/浅色主题版本会自动适配。"
+    "select_agent_icon_desc": "为此人格选择一个图标，深色/浅色主题版本会自动适配。",
+    "icon_gen_cost_notice": "生成会消耗你连接器的付费图像额度。",
+    "icon_gen_spend_summary": "≈{cost} · {count} 次生成 · 近 {days} 天"
   },
   "reasoning_trace": {
     "system_init": "系统初始化",

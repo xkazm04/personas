@@ -16018,7 +16018,9 @@
       "generating_icon": "Generování...",
       "generate_icon_prompt_placeholder": "Popište ikonu, kterou chcete...",
       "select_agent_icon": "Výběr ikony agenta",
-      "select_agent_icon_desc": "Zvolte ikonu pro tohoto agenta. Varianty pro tmavý a světlý motiv se vykreslí automaticky."
+      "select_agent_icon_desc": "Zvolte ikonu pro tohoto agenta. Varianty pro tmavý a světlý motiv se vykreslí automaticky.",
+      "icon_gen_cost_notice": "Generování využívá placené obrazové kredity vašeho konektoru.",
+      "icon_gen_spend_summary": "≈{cost} za {count} generování · posledních {days}d"
     },
     "reasoning_trace": {
       "system_init": "Inicializace systému",

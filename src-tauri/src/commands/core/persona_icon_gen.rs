@@ -16,7 +16,7 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use futures_util::StreamExt;
 use serde::Serialize;
@@ -26,6 +26,8 @@ use ts_rs::TS;
 
 use personas_macros::requires;
 
+use crate::db::models::LlmSpendInsert;
+use crate::db::repos::llm_spend;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::error::AppError;
 use crate::AppState;
@@ -46,12 +48,44 @@ const LEONARDO_MODEL_ID: &str = "b24e16ff-06e3-43eb-8d33-4416c2d75876";
 /// Higgsfield text-to-image model (see the connector's `llm_usage_hint`).
 const HIGGSFIELD_MODEL: &str = "flux-pro/kontext/max";
 
-/// Async-job polling budget. 40 × 3s = 2 minutes.
+/// Async-job polling budget: at most `POLL_ATTEMPTS` polls, `POLL_INTERVAL`
+/// apart. This bounds the *number* of polls but not wall-clock time — each poll
+/// request can itself take up to `HTTP_TIMEOUT`, so 40 slow polls could run far
+/// past 2 minutes. `POLL_DEADLINE` is the real bound: the loop aborts with a
+/// clean "timed out" error once total elapsed wall-clock crosses it, whichever
+/// comes first. Kept below the 150s frontend IPC timeout so the backend, not the
+/// IPC layer, owns the timeout error.
 const POLL_ATTEMPTS: u32 = 40;
 const POLL_INTERVAL: Duration = Duration::from_secs(3);
+const POLL_DEADLINE: Duration = Duration::from_secs(120);
 
 /// Per-request HTTP timeout.
 const HTTP_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Spend-ledger coordinates for persona-icon generations. Rows land in the
+/// shared `dev_llm_spend` ledger under this `source`/`trigger_kind` (token
+/// columns left null — these are third-party image-API calls, not LLM spawns).
+const SPEND_SOURCE: &str = "image_gen";
+const SPEND_TRIGGER: &str = "persona_icon";
+
+/// Recent-spend window (days) surfaced at the generate-icon affordance.
+const SPEND_WINDOW_DAYS: i64 = 30;
+
+/// Documented per-image USD cost estimates, used when the provider's response
+/// carries no machine-readable cost. Order-of-magnitude list-price estimates
+/// for a single 1:1 image at the model/size this module requests — update if
+/// provider pricing shifts.
+///
+/// Leonardo Lightning XL, 512×512, 1 image. Leonardo bills in API credits
+/// (~$9 per 3500 credits ≈ $0.00257/credit); Lightning XL is a low-credit
+/// model, so one icon lands around $0.006. When the generation response carries
+/// `apiCreditCost`, that exact credit count is converted instead of this flat
+/// fallback.
+const LEONARDO_ESTIMATED_COST_USD: f64 = 0.006;
+const LEONARDO_USD_PER_CREDIT: f64 = 0.00257;
+
+/// Higgsfield flux-pro/kontext/max, 1:1 — a premium Flux tier; ≈$0.08/image.
+const HIGGSFIELD_ESTIMATED_COST_USD: f64 = 0.08;
 
 /// A vault credential capable of generating images.
 #[derive(Debug, Clone, Serialize, TS)]
@@ -83,6 +117,37 @@ pub fn list_image_gen_credentials(
         }
     }
     Ok(out)
+}
+
+/// Recent persona-icon-generation spend, surfaced at the generate affordance so
+/// the metered image-API cost isn't invisible.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct IconGenSpendSummary {
+    /// Estimated USD spent generating persona icons in the window.
+    pub total_cost_usd: f64,
+    /// Number of generations recorded in the window.
+    #[ts(type = "number")]
+    pub generation_count: i64,
+    /// Window length in days (echoed for the UI copy).
+    #[ts(type = "number")]
+    pub window_days: i64,
+}
+
+/// Recent spend on persona-icon generation (last `SPEND_WINDOW_DAYS`). Reads the
+/// shared `dev_llm_spend` ledger filtered to this feature's `source`.
+#[tauri::command]
+pub fn get_persona_icon_gen_spend(
+    state: State<'_, Arc<AppState>>,
+) -> Result<IconGenSpendSummary, AppError> {
+    let (total_cost_usd, generation_count) =
+        llm_spend::source_summary(&state.db, SPEND_SOURCE, SPEND_WINDOW_DAYS)?;
+    Ok(IconGenSpendSummary {
+        total_cost_usd,
+        generation_count,
+        window_days: SPEND_WINDOW_DAYS,
+    })
 }
 
 /// Generate a persona icon from a text prompt using a vault image-gen
@@ -118,7 +183,7 @@ pub async fn generate_persona_icon(
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client: {e}")))?;
 
-    let image_bytes = match credential.service_type.as_str() {
+    let (image_bytes, cost_usd) = match credential.service_type.as_str() {
         "leonardo_ai" => leonardo_generate(&client, &fields, prompt).await?,
         "higgsfield" => higgsfield_generate(&client, &fields, prompt).await?,
         other => {
@@ -128,17 +193,34 @@ pub async fn generate_persona_icon(
         }
     };
 
+    // The metered API call succeeded — record the spend BEFORE storing the icon
+    // so a downstream storage failure can't hide that the user was charged.
+    // `record` is best-effort (logs + swallows), so it never fails generation.
+    llm_spend::record(
+        &state.db,
+        &LlmSpendInsert {
+            source: SPEND_SOURCE.to_string(),
+            trigger_kind: SPEND_TRIGGER.to_string(),
+            model: Some(credential.service_type.clone()),
+            cost_usd: Some(cost_usd),
+            ..Default::default()
+        },
+    );
+
     store_icon_bytes(&app, image_bytes).await
 }
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 
 /// Leonardo AI: POST a generation job, poll `/generations/{id}` for the result.
+/// Returns the image bytes plus the USD cost — the exact `apiCreditCost` from
+/// the POST response converted at the documented per-credit rate when present,
+/// else the flat per-image estimate.
 async fn leonardo_generate(
     client: &reqwest::Client,
     fields: &HashMap<String, String>,
     prompt: &str,
-) -> Result<Vec<u8>, AppError> {
+) -> Result<(Vec<u8>, f64), AppError> {
     let api_key = require_field(fields, "api_key")?;
     let auth = format!("Bearer {api_key}");
 
@@ -159,13 +241,18 @@ async fn leonardo_generate(
         .map_err(|e| AppError::Internal(format!("Leonardo request failed: {e}")))?;
     let json = ok_json(resp, "Leonardo").await?;
 
+    let cost_usd = find_number(&json, &["apiCreditCost"])
+        .map(|credits| credits * LEONARDO_USD_PER_CREDIT)
+        .unwrap_or(LEONARDO_ESTIMATED_COST_USD);
+
     let generation_id = find_string(&json, &["generationId", "id"]).ok_or_else(|| {
         AppError::Internal("Leonardo did not return a generation id".into())
     })?;
     let status_url =
         format!("https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}");
     let image_url = poll_for_image(client, &status_url, &auth, "Leonardo").await?;
-    download_image(client, &image_url).await
+    let bytes = download_image(client, &image_url).await?;
+    Ok((bytes, cost_usd))
 }
 
 /// Higgsfield: POST a generation job, poll `/requests/{id}/status` for the
@@ -174,7 +261,7 @@ async fn higgsfield_generate(
     client: &reqwest::Client,
     fields: &HashMap<String, String>,
     prompt: &str,
-) -> Result<Vec<u8>, AppError> {
+) -> Result<(Vec<u8>, f64), AppError> {
     let key_id = require_field(fields, "key_id")?;
     let key_secret = require_field(fields, "key_secret")?;
     let auth = format!("Key {key_id}:{key_secret}");
@@ -194,6 +281,10 @@ async fn higgsfield_generate(
         .map_err(|e| AppError::Internal(format!("Higgsfield request failed: {e}")))?;
     let json = ok_json(resp, "Higgsfield").await?;
 
+    // Higgsfield's response carries no reliable USD cost, so use the documented
+    // per-image estimate for this premium Flux tier.
+    let cost_usd = HIGGSFIELD_ESTIMATED_COST_USD;
+
     let request_id =
         find_string(&json, &["request_id", "requestId", "id"]).ok_or_else(|| {
             AppError::Internal("Higgsfield did not return a request id".into())
@@ -201,7 +292,8 @@ async fn higgsfield_generate(
     let status_url =
         format!("https://platform.higgsfield.ai/requests/{request_id}/status");
     let image_url = poll_for_image(client, &status_url, &auth, "Higgsfield").await?;
-    download_image(client, &image_url).await
+    let bytes = download_image(client, &image_url).await?;
+    Ok((bytes, cost_usd))
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
@@ -237,14 +329,22 @@ async fn ok_json(resp: reqwest::Response, provider: &str) -> Result<Value, AppEr
 }
 
 /// Poll a status endpoint until an image URL appears, the job fails, or the
-/// polling budget is exhausted.
+/// polling budget is exhausted — bounded by an explicit wall-clock
+/// `POLL_DEADLINE` so slow poll requests can't drag a stuck job on indefinitely
+/// (and quietly keep the user's credits at risk of a retry storm).
 async fn poll_for_image(
     client: &reqwest::Client,
     status_url: &str,
     auth: &str,
     provider: &str,
 ) -> Result<String, AppError> {
+    let started = Instant::now();
     for _ in 0..POLL_ATTEMPTS {
+        // Wall-clock deadline: check before sleeping so a run that has already
+        // burned the budget on slow polls fails cleanly instead of blocking.
+        if started.elapsed() >= POLL_DEADLINE {
+            return Err(generation_timed_out(provider));
+        }
         tokio::time::sleep(POLL_INTERVAL).await;
 
         let resp = client
@@ -275,10 +375,18 @@ async fn poll_for_image(
             return Ok(url);
         }
     }
-    Err(AppError::Internal(format!(
-        "{provider} generation timed out after {}s",
-        POLL_ATTEMPTS as u64 * POLL_INTERVAL.as_secs()
-    )))
+    Err(generation_timed_out(provider))
+}
+
+/// The "generation timed out" error, phrased consistently for both the
+/// wall-clock deadline and the attempt-budget exhaustion. The "timed out"
+/// substring maps to the translated `timed_out` entry in the frontend error
+/// registry (`src/i18n/useTranslatedError.ts`).
+fn generation_timed_out(provider: &str) -> AppError {
+    AppError::Internal(format!(
+        "{provider} icon generation timed out after {}s",
+        POLL_DEADLINE.as_secs()
+    ))
 }
 
 /// Download an image URL into bytes, enforcing `MAX_SOURCE_BYTES` *during* the
@@ -363,6 +471,24 @@ fn find_string(value: &Value, keys: &[&str]) -> Option<String> {
     }
 }
 
+/// Recursively search a JSON value for the first number stored under any of
+/// `keys`. Used to pull a provider-reported cost (e.g. Leonardo's
+/// `apiCreditCost`) from a response of uncertain nesting.
+fn find_number(value: &Value, keys: &[&str]) -> Option<f64> {
+    match value {
+        Value::Object(map) => {
+            for k in keys {
+                if let Some(n) = map.get(*k).and_then(Value::as_f64) {
+                    return Some(n);
+                }
+            }
+            map.values().find_map(|child| find_number(child, keys))
+        }
+        Value::Array(arr) => arr.iter().find_map(|child| find_number(child, keys)),
+        _ => None,
+    }
+}
+
 /// Recursively search a JSON value for the first plausible HTTPS image URL.
 /// Prefers values under common image-URL keys; otherwise accepts any HTTPS
 /// string with an image extension.
@@ -425,6 +551,31 @@ mod tests {
             "generations_by_pk": { "status": "PENDING", "generated_images": [] }
         });
         assert_eq!(find_image_url(&v), None);
+    }
+
+    #[test]
+    fn find_number_pulls_leonardo_credit_cost() {
+        let v = serde_json::json!({
+            "sdGenerationJob": { "generationId": "gen-1", "apiCreditCost": 8 }
+        });
+        assert_eq!(find_number(&v, &["apiCreditCost"]), Some(8.0));
+    }
+
+    #[test]
+    fn find_number_none_when_absent() {
+        let v = serde_json::json!({ "sdGenerationJob": { "generationId": "gen-1" } });
+        assert_eq!(find_number(&v, &["apiCreditCost"]), None);
+    }
+
+    #[test]
+    fn generation_timed_out_is_recoverable_and_maps_to_registry() {
+        let err = generation_timed_out("Leonardo");
+        match err {
+            // Message must contain "timed out" so the frontend error registry's
+            // `timed_out` rule resolves it to a translated, friendly message.
+            AppError::Internal(msg) => assert!(msg.contains("timed out"), "got: {msg}"),
+            other => panic!("expected Internal, got {other:?}"),
+        }
     }
 
     #[test]

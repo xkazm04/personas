@@ -117,7 +117,9 @@
     "generating_icon": "Generating...",
     "generate_icon_prompt_placeholder": "Describe the icon you want...",
     "select_agent_icon": "एजेंट आइकन चुनें",
-    "select_agent_icon_desc": "इस एजेंट के लिए एक आइकन चुनें। थीम्ड डार्क/लाइट वेरिएंट अपने आप रेंडर होते हैं।"
+    "select_agent_icon_desc": "इस एजेंट के लिए एक आइकन चुनें। थीम्ड डार्क/लाइट वेरिएंट अपने आप रेंडर होते हैं।",
+    "icon_gen_cost_notice": "जेनरेट करने पर आपके कनेक्टर के पेड इमेज क्रेडिट खर्च होते हैं।",
+    "icon_gen_spend_summary": "≈{cost} · {count} जेनरेशन · पिछले {days}दि"
   },
   "reasoning_trace": {
     "system_init": "सिस्टम इनिट",

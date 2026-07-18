@@ -117,7 +117,9 @@
     "generating_icon": "Generando...",
     "generate_icon_prompt_placeholder": "Describe el icono que quieres...",
     "select_agent_icon": "Seleccionar icono del agente",
-    "select_agent_icon_desc": "Elija un icono para este agente. Las variantes de tema oscuro/claro se muestran automáticamente."
+    "select_agent_icon_desc": "Elija un icono para este agente. Las variantes de tema oscuro/claro se muestran automáticamente.",
+    "icon_gen_cost_notice": "Generar consume los créditos de imagen de pago de tu conector.",
+    "icon_gen_spend_summary": "≈{cost} en {count} generaciones · últimos {days}d"
   },
   "reasoning_trace": {
     "system_init": "Inicialización del Sistema",

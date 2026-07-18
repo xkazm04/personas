@@ -16018,7 +16018,9 @@
       "generating_icon": "Generating...",
       "generate_icon_prompt_placeholder": "Describe the icon you want...",
       "select_agent_icon": "Chọn biểu tượng tác nhân",
-      "select_agent_icon_desc": "Chọn một biểu tượng cho tác nhân này. Các biến thể sáng/tối theo chủ đề sẽ tự động hiển thị."
+      "select_agent_icon_desc": "Chọn một biểu tượng cho tác nhân này. Các biến thể sáng/tối theo chủ đề sẽ tự động hiển thị.",
+      "icon_gen_cost_notice": "Việc tạo ảnh sử dụng tín dụng ảnh trả phí của kết nối của bạn.",
+      "icon_gen_spend_summary": "≈{cost} cho {count} lần tạo · {days} ngày qua"
     },
     "reasoning_trace": {
       "system_init": "Khởi tạo hệ thống",
