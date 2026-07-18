@@ -8,6 +8,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import type { ExposedResource, CreateExposedResourceInput, AccessLevel, ResourceType } from '@/api/network/exposure';
+import { BundleExportDialog } from './BundleExportDialog';
 import { IdentitySettings } from './IdentitySettings';
 import { InlineConfirm } from './InlineConfirm';
 import { NetworkDashboard } from './NetworkDashboard';
@@ -224,6 +225,7 @@ export default function ExposureManager() {
   const { t } = useTranslation();
   const st = t.sharing;
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -301,13 +303,23 @@ export default function ExposureManager() {
             icon={<Package className="w-4 h-4 text-cyan-400" />}
             titleClassName="text-primary"
             action={
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                {st.expose_resource}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowExport(true)}
+                  data-testid="bundle-export-trigger"
+                  className="px-2.5 py-1 typo-caption rounded-card border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 transition-colors flex items-center gap-1.5"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  {st.export_share_button}
+                </button>
+                <button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {st.expose_resource}
+                </button>
+              </div>
             }
           >
             <div
@@ -346,6 +358,8 @@ export default function ExposureManager() {
           <PeerList />
         </div>
       </ContentBody>
+
+      <BundleExportDialog isOpen={showExport} onClose={() => setShowExport(false)} />
     </ContentBox>
   );
 }
