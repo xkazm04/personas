@@ -5711,7 +5711,12 @@
     "imported_resources_one": "{count} sumber daya diimpor",
     "imported_resources_other": "{count} sumber daya diimpor",
     "identity_degraded_title": "Identitas penandatanganan tidak tersedia",
-    "identity_degraded_hint": "Kunci penandatanganan perangkat Anda tidak dapat dimuat — keyring OS mungkin telah direset. Kepercayaan antar perangkat dan sinkronisasi terganggu sampai Anda menginisialisasi ulang identitas Anda."
+    "identity_degraded_hint": "Kunci penandatanganan perangkat Anda tidak dapat dimuat — keyring OS mungkin telah direset. Kepercayaan antar perangkat dan sinkronisasi terganggu sampai Anda menginisialisasi ulang identitas Anda.",
+    "export_share_button": "Ekspor / Bagikan",
+    "team_publish_button": "Terbitkan",
+    "team_publish_failed": "Tidak dapat menerbitkan tim ini ke katalog",
+    "team_publish_hint": "Siapa pun dapat mengadopsi cetak biru tim ini di Personas. Tidak ada kredensial yang disertakan.",
+    "team_publish_title": "Diterbitkan ke katalog komunitas"
   },
   "overview": {
     "filters": {

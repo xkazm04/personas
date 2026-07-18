@@ -5711,7 +5711,12 @@
     "imported_resources_one": "{count} संसाधन आयात किया गया",
     "imported_resources_other": "{count} संसाधन आयात किए गए",
     "identity_degraded_title": "साइनिंग पहचान अनुपलब्ध",
-    "identity_degraded_hint": "आपके डिवाइस की साइनिंग की लोड नहीं हो सकी — OS keyring रीसेट हो गई होगी। पहचान पुनः आरंभ करने तक पीयर ट्रस्ट और सिंक टूटे हुए हैं।"
+    "identity_degraded_hint": "आपके डिवाइस की साइनिंग की लोड नहीं हो सकी — OS keyring रीसेट हो गई होगी। पहचान पुनः आरंभ करने तक पीयर ट्रस्ट और सिंक टूटे हुए हैं।",
+    "export_share_button": "निर्यात / साझा करें",
+    "team_publish_button": "प्रकाशित करें",
+    "team_publish_failed": "इस टीम को कैटलॉग में प्रकाशित नहीं किया जा सका",
+    "team_publish_hint": "कोई भी Personas में इस टीम ब्लूप्रिंट को अपना सकता है। कोई क्रेडेंशियल शामिल नहीं है।",
+    "team_publish_title": "समुदाय कैटलॉग में प्रकाशित"
   },
   "overview": {
     "filters": {

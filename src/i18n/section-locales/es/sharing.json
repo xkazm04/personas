@@ -174,5 +174,10 @@
   "imported_resources_one": "Se importó {count} recurso",
   "imported_resources_other": "Se importaron {count} recursos",
   "identity_degraded_title": "Identidad de firma no disponible",
-  "identity_degraded_hint": "No se pudo cargar la clave de firma del dispositivo — puede que el llavero del sistema operativo haya sido restablecido. La confianza entre pares y la sincronización están interrumpidas hasta que reinicies tu identidad."
+  "identity_degraded_hint": "No se pudo cargar la clave de firma del dispositivo — puede que el llavero del sistema operativo haya sido restablecido. La confianza entre pares y la sincronización están interrumpidas hasta que reinicies tu identidad.",
+  "export_share_button": "Exportar / Compartir",
+  "team_publish_button": "Publicar",
+  "team_publish_failed": "No se pudo publicar este equipo en el catálogo",
+  "team_publish_hint": "Cualquiera puede adoptar este esquema de equipo en Personas. No se incluye ninguna credencial.",
+  "team_publish_title": "Publicado en el catálogo de la comunidad"
 }

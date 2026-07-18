@@ -174,5 +174,10 @@
   "imported_resources_one": "Importován {count} prostředek",
   "imported_resources_other": "Importováno {count} prostředků",
   "identity_degraded_title": "Podpisová identita nedostupná",
-  "identity_degraded_hint": "Podpisový klíč vašeho zařízení nelze načíst — klíčenka OS mohla být resetována. Důvěra mezi zařízeními a synchronizace jsou přerušeny, dokud znovu neinicializujete svou identitu."
+  "identity_degraded_hint": "Podpisový klíč vašeho zařízení nelze načíst — klíčenka OS mohla být resetována. Důvěra mezi zařízeními a synchronizace jsou přerušeny, dokud znovu neinicializujete svou identitu.",
+  "export_share_button": "Exportovat / Sdílet",
+  "team_publish_button": "Publikovat",
+  "team_publish_failed": "Tento tým se nepodařilo publikovat do katalogu",
+  "team_publish_hint": "Kdokoli může tuto šablonu týmu převzít v Personas. Nejsou zahrnuty žádné přihlašovací údaje.",
+  "team_publish_title": "Publikováno v katalogu komunity"
 }

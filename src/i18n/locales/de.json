@@ -5711,7 +5711,12 @@
     "imported_resources_one": "{count} Ressource importiert",
     "imported_resources_other": "{count} Ressourcen importiert",
     "identity_degraded_title": "Signaturidentität nicht verfügbar",
-    "identity_degraded_hint": "Der Signierschlüssel Ihres Geräts konnte nicht geladen werden — der OS-Schlüsselbund wurde möglicherweise zurückgesetzt. Peer-Vertrauen und Synchronisierung sind unterbrochen, bis Sie Ihre Identität neu initialisieren."
+    "identity_degraded_hint": "Der Signierschlüssel Ihres Geräts konnte nicht geladen werden — der OS-Schlüsselbund wurde möglicherweise zurückgesetzt. Peer-Vertrauen und Synchronisierung sind unterbrochen, bis Sie Ihre Identität neu initialisieren.",
+    "export_share_button": "Exportieren / Teilen",
+    "team_publish_button": "Veröffentlichen",
+    "team_publish_failed": "Dieses Team konnte nicht im Katalog veröffentlicht werden",
+    "team_publish_hint": "Jeder kann diese Team-Vorlage in Personas übernehmen. Es sind keine Anmeldedaten enthalten.",
+    "team_publish_title": "Im Community-Katalog veröffentlicht"
   },
   "overview": {
     "filters": {

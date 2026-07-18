@@ -5711,7 +5711,12 @@
     "imported_resources_one": "{count} 個のリソースをインポートしました",
     "imported_resources_other": "{count} 個のリソースをインポートしました",
     "identity_degraded_title": "署名IDが利用できません",
-    "identity_degraded_hint": "デバイスの署名キーを読み込めませんでした — OSキーリングがリセットされた可能性があります。IDを再初期化するまで、ピアの信頼と同期は機能しません。"
+    "identity_degraded_hint": "デバイスの署名キーを読み込めませんでした — OSキーリングがリセットされた可能性があります。IDを再初期化するまで、ピアの信頼と同期は機能しません。",
+    "export_share_button": "エクスポート / 共有",
+    "team_publish_button": "公開",
+    "team_publish_failed": "このチームをカタログに公開できませんでした",
+    "team_publish_hint": "誰でも Personas でこのチームのブループリントを利用できます。認証情報は含まれません。",
+    "team_publish_title": "コミュニティカタログに公開しました"
   },
   "overview": {
     "filters": {

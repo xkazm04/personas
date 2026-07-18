@@ -17,6 +17,7 @@ import {
 } from './teamStudioShared';
 import type { StudioMember } from './useTeamStudioData';
 import { TeamReadinessChip } from '../../components/TeamReadinessChip';
+import { TeamPublishButton } from './TeamPublishButton';
 
 /**
  * SPLIT variant — "console".
@@ -109,16 +110,19 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
         title={ts.header_label}
         subtitle={teamName}
         actions={
-          onBack ? (
-            <button
-              type="button"
-              onClick={requestBack}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {ts.teams_header_label}
-            </button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <TeamPublishButton teamId={teamId} teamName={teamName} />
+            {onBack ? (
+              <button
+                type="button"
+                onClick={requestBack}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {ts.teams_header_label}
+              </button>
+            ) : null}
+          </div>
         }
       />
 

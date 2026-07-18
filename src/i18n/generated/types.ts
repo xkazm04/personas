@@ -5736,6 +5736,11 @@ export type Translations = {
   sharing: {
     export_title: string;
     export_subtitle: string;
+    export_share_button: string;
+    team_publish_button: string;
+    team_publish_title: string;
+    team_publish_hint: string;
+    team_publish_failed: string;
     seal_enclave_title: string;
     seal_enclave_subtitle: string;
     mode_bundle: string;

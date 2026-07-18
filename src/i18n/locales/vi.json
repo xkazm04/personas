@@ -5711,7 +5711,12 @@
     "imported_resources_one": "Đã nhập {count} tài nguyên",
     "imported_resources_other": "Đã nhập {count} tài nguyên",
     "identity_degraded_title": "Danh tính ký không khả dụng",
-    "identity_degraded_hint": "Không thể tải khóa ký của thiết bị — keyring của hệ điều hành có thể đã bị đặt lại. Tin cậy ngang hàng và đồng bộ bị ngắt cho đến khi bạn khởi tạo lại danh tính."
+    "identity_degraded_hint": "Không thể tải khóa ký của thiết bị — keyring của hệ điều hành có thể đã bị đặt lại. Tin cậy ngang hàng và đồng bộ bị ngắt cho đến khi bạn khởi tạo lại danh tính.",
+    "export_share_button": "Xuất / Chia sẻ",
+    "team_publish_button": "Xuất bản",
+    "team_publish_failed": "Không thể xuất bản nhóm này lên danh mục",
+    "team_publish_hint": "Bất kỳ ai cũng có thể áp dụng bản thiết kế nhóm này trong Personas. Không bao gồm thông tin xác thực nào.",
+    "team_publish_title": "Đã xuất bản lên danh mục cộng đồng"
   },
   "overview": {
     "filters": {

@@ -5711,7 +5711,12 @@
     "imported_resources_one": "{count} ressource importée",
     "imported_resources_other": "{count} ressources importées",
     "identity_degraded_title": "Identité de signature indisponible",
-    "identity_degraded_hint": "La clé de signature de votre appareil n'a pas pu être chargée — le trousseau du système d'exploitation a peut-être été réinitialisé. La confiance entre pairs et la synchronisation sont interrompues jusqu'à ce que vous réinitialisiez votre identité."
+    "identity_degraded_hint": "La clé de signature de votre appareil n'a pas pu être chargée — le trousseau du système d'exploitation a peut-être été réinitialisé. La confiance entre pairs et la synchronisation sont interrompues jusqu'à ce que vous réinitialisiez votre identité.",
+    "export_share_button": "Exporter / Partager",
+    "team_publish_button": "Publier",
+    "team_publish_failed": "Impossible de publier cette équipe dans le catalogue",
+    "team_publish_hint": "Tout le monde peut adopter ce modèle d'équipe dans Personas. Aucun identifiant n'est inclus.",
+    "team_publish_title": "Publié dans le catalogue de la communauté"
   },
   "overview": {
     "filters": {

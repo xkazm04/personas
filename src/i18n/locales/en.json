@@ -5730,6 +5730,11 @@
   "sharing": {
     "export_title": "Export Bundle",
     "export_subtitle": "Select exposed resources to include in the signed .persona bundle.",
+    "export_share_button": "Export / Share",
+    "team_publish_button": "Publish",
+    "team_publish_title": "Published to the community catalog",
+    "team_publish_hint": "Anyone can adopt this team blueprint in Personas. No credentials are included.",
+    "team_publish_failed": "Couldn't publish this team to the catalog",
     "seal_enclave_title": "Seal Enclave",
     "seal_enclave_subtitle": "Create a cryptographically sealed persona enclave with execution constraints.",
     "mode_bundle": "Bundle",

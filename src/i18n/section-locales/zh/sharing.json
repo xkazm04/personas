@@ -174,5 +174,10 @@
   "imported_resources_one": "已导入 {count} 个资源",
   "imported_resources_other": "已导入 {count} 个资源",
   "identity_degraded_title": "签名身份不可用",
-  "identity_degraded_hint": "您设备的签名密钥无法加载 — 操作系统密钥链可能已被重置。对等信任和同步已中断，请重新初始化您的身份。"
+  "identity_degraded_hint": "您设备的签名密钥无法加载 — 操作系统密钥链可能已被重置。对等信任和同步已中断，请重新初始化您的身份。",
+  "export_share_button": "导出 / 分享",
+  "team_publish_button": "发布",
+  "team_publish_failed": "无法将此团队发布到目录",
+  "team_publish_hint": "任何人都可以在 Personas 中采用此团队蓝图。不包含任何凭据。",
+  "team_publish_title": "已发布到社区目录"
 }
