@@ -5533,7 +5533,19 @@
     "cron_daily_midnight": "毎日深夜（UTC）",
     "cron_daily_9am": "毎日午前9時（UTC）",
     "cron_weekdays_9am": "平日午前9時（UTC）",
-    "cron_weekly_sun": "毎週日曜深夜（UTC）"
+    "cron_weekly_sun": "毎週日曜深夜（UTC）",
+    "reconcile": {
+      "adopt": "引き継ぐ",
+      "adopt_title": "このデプロイを保持してローカルに記録する",
+      "dismiss": "閉じる",
+      "explain": "これらはこのデバイスにローカル記録がありません。引き継いで稼働を維持しここで追跡するか、デプロイ解除して停止してください。",
+      "heading": "前回のセッションのデプロイ",
+      "summary_one": "{count} 件のデプロイがオーケストレーターでまだ稼働しており、コストが発生している可能性があります。",
+      "summary_other": "{count} 件のデプロイがオーケストレーターでまだ稼働しており、コストが発生している可能性があります。",
+      "undeploy": "デプロイ解除",
+      "undeploy_title": "オーケストレーターでこのデプロイを停止する",
+      "unknown_persona": "不明なペルソナ"
+    }
   },
   "sharing": {
     "export_title": "バンドルをエクスポート",

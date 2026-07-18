@@ -239,5 +239,17 @@
   "cron_daily_midnight": "每天午夜 UTC",
   "cron_daily_9am": "每天上午 9 点 UTC",
   "cron_weekdays_9am": "工作日上午 9 点 UTC",
-  "cron_weekly_sun": "每周日午夜 UTC"
+  "cron_weekly_sun": "每周日午夜 UTC",
+  "reconcile": {
+    "adopt": "接管",
+    "adopt_title": "保留此部署并在本地记录",
+    "dismiss": "忽略",
+    "explain": "它们在此设备上没有本地记录。接管其一以保持运行并在此跟踪，或将其下线以关闭。",
+    "heading": "来自上一会话的部署",
+    "summary_one": "{count} 个部署仍在编排器上运行，可能正在产生费用。",
+    "summary_other": "{count} 个部署仍在编排器上运行，可能正在产生费用。",
+    "undeploy": "下线",
+    "undeploy_title": "在编排器上关闭此部署",
+    "unknown_persona": "未知角色"
+  }
 }

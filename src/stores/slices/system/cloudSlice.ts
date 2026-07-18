@@ -22,6 +22,7 @@ import {
   cloudPauseDeployment,
   cloudResumeDeployment,
   cloudUndeploy,
+  cloudAdoptDeployment,
   cloudGetBaseUrl,
   type CloudConfig,
   type CloudStatusResponse,
@@ -29,6 +30,7 @@ import {
   type CloudOAuthStatusResponse,
   type CloudDeployment,
 } from "@/api/system/cloud";
+import { listDeploymentHistoryAll } from "@/api/system/gitlab";
 import { silentCatch } from '@/lib/silentCatch';
 
 
@@ -60,6 +62,15 @@ export interface CloudSlice {
   cloudDeployments: CloudDeployment[];
   cloudIsDeploying: boolean;
   cloudBaseUrl: string | null;
+  /**
+   * Server-side deployments this install has no local `deployment_history`
+   * record of — i.e. still running (and billing) from a previous session or
+   * another machine. Populated on (re)connect; READ-ONLY until the user adopts
+   * or undeploys each one.
+   */
+  cloudOrphanDeployments: CloudDeployment[];
+  /** Whether the orphan reconcile scan is in flight. */
+  cloudIsReconciling: boolean;
 
   // Actions
   cloudInitialize: () => Promise<void>;
@@ -79,6 +90,18 @@ export interface CloudSlice {
   cloudClearReconnect: () => void;
   // Deployment actions
   cloudFetchDeployments: () => Promise<void>;
+  /**
+   * Reconcile server-side deployments against the local audit trail and surface
+   * any orphans (running remotely with no local record). READ-ONLY — never
+   * auto-undeploys. Called on (re)connect.
+   */
+  cloudReconcileDeployments: () => Promise<void>;
+  /** Adopt an orphan into the local history so it's no longer flagged. */
+  cloudAdoptOrphan: (deploymentId: string) => Promise<void>;
+  /** Undeploy an orphan (destructive) and drop it from the reconcile list. */
+  cloudUndeployOrphan: (deploymentId: string) => Promise<void>;
+  /** Dismiss the reconcile surface without acting (keeps orphans running). */
+  cloudDismissReconcile: () => void;
   cloudDeploy: (personaId: string, maxMonthlyBudgetUsd?: number) => Promise<CloudDeployment>;
   cloudPauseDeploy: (deploymentId: string) => Promise<void>;
   cloudResumeDeploy: (deploymentId: string) => Promise<void>;
@@ -117,6 +140,8 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
   cloudDeployments: [],
   cloudIsDeploying: false,
   cloudBaseUrl: null,
+  cloudOrphanDeployments: [],
+  cloudIsReconciling: false,
   cloudOAuthStatus: null,
   cloudPendingOAuthState: null,
   cloudError: null,
@@ -136,6 +161,8 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
           const latencyMs = await cloudReconnectFromKeyring();
           const refreshed = await cloudGetConfig();
           set({ cloudConfig: refreshed, cloudConnectionLatencyMs: latencyMs || null });
+          // Surface deployments still running from a previous session.
+          void get().cloudReconcileDeployments();
         } catch (err) {
           if (isAuthError(err)) {
             set({ cloudError: "Credentials expired or revoked. Please reconnect to the cloud orchestrator." });
@@ -152,6 +179,8 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       const latencyMs = await cloudConnect(url, apiKey);
       const config = await cloudGetConfig();
       set({ cloudConfig: config, cloudIsConnecting: false, cloudConnectionLatencyMs: latencyMs, cloudReconnectState: IDLE_RECONNECT });
+      // Surface deployments still running from a previous session.
+      void get().cloudReconcileDeployments();
     } catch (err) {
       set({ cloudIsConnecting: false, cloudError: translateCloudError(err) });
       throw err;
@@ -172,6 +201,8 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
         cloudReconnectState: IDLE_RECONNECT,
         cloudDeployments: [],
         cloudBaseUrl: null,
+        cloudOrphanDeployments: [],
+        cloudIsReconciling: false,
       });
     } catch (err) {
       set({ cloudError: translateCloudError(err) });
@@ -279,6 +310,62 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
     } catch (err) {
       set({ cloudError: translateCloudError(err) });
     }
+  },
+
+  cloudReconcileDeployments: async () => {
+    set({ cloudIsReconciling: true });
+    try {
+      // Server truth vs. this install's local audit trail. A cloud deploy records
+      // its deployment id in deployment_history.agent_id (target='cloud'); any
+      // live server deployment whose id is NOT in that recorded set was created
+      // from a previous session / another machine and the user may have forgotten
+      // it's still running and billing.
+      const [serverDeployments, history] = await Promise.all([
+        cloudListDeployments(),
+        listDeploymentHistoryAll().catch(() => []),
+      ]);
+      const knownIds = new Set(
+        history
+          .filter((h) => h.target === 'cloud' && h.agentId)
+          .map((h) => h.agentId as string),
+      );
+      const orphans = serverDeployments.filter((d) => !knownIds.has(d.id));
+      set({ cloudOrphanDeployments: orphans, cloudIsReconciling: false });
+    } catch (err) {
+      // Reconcile is advisory; never surface a blocking error for it.
+      set({ cloudIsReconciling: false });
+      silentCatch("stores/slices/system/cloudSlice:cloudReconcileDeployments")(err);
+    }
+  },
+
+  cloudAdoptOrphan: async (deploymentId: string) => {
+    const prevOrphans = get().cloudOrphanDeployments;
+    try {
+      await cloudAdoptDeployment(deploymentId);
+      set((state) => ({
+        cloudOrphanDeployments: state.cloudOrphanDeployments.filter((d) => d.id !== deploymentId),
+      }));
+    } catch (err) {
+      reportError(err, "Failed to adopt deployment", set, { stateUpdates: { cloudOrphanDeployments: prevOrphans, cloudError: translateCloudError(err) } });
+    }
+  },
+
+  cloudUndeployOrphan: async (deploymentId: string) => {
+    const prevOrphans = get().cloudOrphanDeployments;
+    try {
+      await cloudUndeploy(deploymentId);
+      set((state) => ({
+        cloudOrphanDeployments: state.cloudOrphanDeployments.filter((d) => d.id !== deploymentId),
+        cloudDeployments: state.cloudDeployments.filter((d) => d.id !== deploymentId),
+      }));
+      emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'cloud', detail: deploymentId });
+    } catch (err) {
+      reportError(err, "Failed to undeploy orphaned deployment", set, { stateUpdates: { cloudOrphanDeployments: prevOrphans, cloudError: translateCloudError(err) } });
+    }
+  },
+
+  cloudDismissReconcile: () => {
+    set({ cloudOrphanDeployments: [] });
   },
 
   cloudDeploy: async (personaId: string, maxMonthlyBudgetUsd?: number) => {

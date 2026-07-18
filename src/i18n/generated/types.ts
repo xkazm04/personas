@@ -5540,6 +5540,18 @@ export type Translations = {
       no_deployments_yet: string;
       active_deployments: string;
     };
+    reconcile: {
+      heading: string;
+      summary_one: string;
+      summary_other: string;
+      explain: string;
+      adopt: string;
+      adopt_title: string;
+      undeploy: string;
+      undeploy_title: string;
+      dismiss: string;
+      unknown_persona: string;
+    };
     exec_detail: {
       fetching_output: string;
       no_output: string;

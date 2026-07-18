@@ -5533,7 +5533,19 @@
     "cron_daily_midnight": "Tous les jours à minuit UTC",
     "cron_daily_9am": "Tous les jours à 9h UTC",
     "cron_weekdays_9am": "Jours ouvrés à 9h UTC",
-    "cron_weekly_sun": "Hebdomadaire (dim. minuit UTC)"
+    "cron_weekly_sun": "Hebdomadaire (dim. minuit UTC)",
+    "reconcile": {
+      "adopt": "Adopter",
+      "adopt_title": "Conserver ce déploiement et l'enregistrer localement",
+      "dismiss": "Ignorer",
+      "explain": "Ils n'ont aucun enregistrement local sur cet appareil. Adoptez-en un pour le garder actif et le suivre ici, ou retirez-le pour l'arrêter.",
+      "heading": "Déploiements d'une session précédente",
+      "summary_one": "{count} déploiement est toujours actif sur l'orchestrateur et peut engendrer des coûts.",
+      "summary_other": "{count} déploiements sont toujours actifs sur l'orchestrateur et peuvent engendrer des coûts.",
+      "undeploy": "Retirer",
+      "undeploy_title": "Arrêter ce déploiement sur l'orchestrateur",
+      "unknown_persona": "Persona inconnu"
+    }
   },
   "sharing": {
     "export_title": "Exporter le bundle",

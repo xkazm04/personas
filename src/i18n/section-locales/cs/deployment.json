@@ -239,5 +239,17 @@
   "cron_daily_midnight": "Denně o půlnoci UTC",
   "cron_daily_9am": "Denně v 9:00 UTC",
   "cron_weekdays_9am": "V pracovní dny v 9:00 UTC",
-  "cron_weekly_sun": "Týdně (Ne půlnoc UTC)"
+  "cron_weekly_sun": "Týdně (Ne půlnoc UTC)",
+  "reconcile": {
+    "adopt": "Převzít",
+    "adopt_title": "Ponechat toto nasazení a zaznamenat je lokálně",
+    "dismiss": "Zavřít",
+    "explain": "Na tomto zařízení nemají žádný lokální záznam. Převezměte jedno, aby dál běželo a bylo zde sledováno, nebo je zrušte, abyste je vypnuli.",
+    "heading": "Nasazení z předchozí relace",
+    "summary_one": "{count} nasazení stále běží na orchestrátoru a může generovat náklady.",
+    "summary_other": "{count} nasazení stále běží na orchestrátoru a mohou generovat náklady.",
+    "undeploy": "Zrušit nasazení",
+    "undeploy_title": "Vypnout toto nasazení na orchestrátoru",
+    "unknown_persona": "Neznámá persona"
+  }
 }

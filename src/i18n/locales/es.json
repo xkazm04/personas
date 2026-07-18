@@ -5533,7 +5533,19 @@
     "cron_daily_midnight": "Diario a medianoche UTC",
     "cron_daily_9am": "Diario a las 9am UTC",
     "cron_weekdays_9am": "Días hábiles a las 9am UTC",
-    "cron_weekly_sun": "Semanal (dom. medianoche UTC)"
+    "cron_weekly_sun": "Semanal (dom. medianoche UTC)",
+    "reconcile": {
+      "adopt": "Adoptar",
+      "adopt_title": "Conservar este despliegue y registrarlo localmente",
+      "dismiss": "Descartar",
+      "explain": "No tienen registro local en este dispositivo. Adopta uno para mantenerlo en ejecución y seguirlo aquí, o retíralo para apagarlo.",
+      "heading": "Despliegues de una sesión anterior",
+      "summary_one": "{count} despliegue sigue en ejecución en el orquestador y puede estar generando costos.",
+      "summary_other": "{count} despliegues siguen en ejecución en el orquestador y pueden estar generando costos.",
+      "undeploy": "Retirar",
+      "undeploy_title": "Apagar este despliegue en el orquestador",
+      "unknown_persona": "Persona desconocida"
+    }
   },
   "sharing": {
     "export_title": "Exportar paquete",

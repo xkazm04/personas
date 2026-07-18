@@ -12,6 +12,7 @@ import { CloudOAuthPanel } from '@/features/agents/sub_deployment/components/clo
 import { CloudDeploymentsPanel } from '@/features/agents/sub_deployment/components/cloud/CloudDeploymentsPanel';
 import { CloudHistoryPanel } from '@/features/agents/sub_deployment/components/cloud/CloudHistoryPanel';
 import { CloudSchedulesPanel } from '@/features/agents/sub_deployment/components/cloud/CloudSchedulesPanel';
+import { CloudReconcileBanner } from '@/features/agents/sub_deployment/components/cloud/CloudReconcileBanner';
 import { cloudDiagnose, type CloudDiagnostics } from '@/api/system/cloud';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { useCloudHealthMonitor } from '@/features/agents/sub_deployment/hooks/useCloudHealthMonitor';
@@ -206,6 +207,10 @@ export default function CloudDeployPanel() {
 
       {/* Tab content */}
       <ContentBody>
+        {/* Proactive reconcile surface: deployments still running from a
+            previous session with no local record. Shown above the tabs so it
+            is visible regardless of which tab is active. */}
+        {isConnected && <div className="mb-4"><CloudReconcileBanner /></div>}
         <div
           role="tabpanel"
           id={`cloud-deploy-panel-${activeTab}`}

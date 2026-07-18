@@ -5533,7 +5533,19 @@
     "cron_daily_midnight": "Harian pukul tengah malam UTC",
     "cron_daily_9am": "Harian pukul 09.00 UTC",
     "cron_weekdays_9am": "Hari kerja pukul 09.00 UTC",
-    "cron_weekly_sun": "Mingguan (Minggu tengah malam UTC)"
+    "cron_weekly_sun": "Mingguan (Minggu tengah malam UTC)",
+    "reconcile": {
+      "adopt": "Adopsi",
+      "adopt_title": "Pertahankan deployment ini dan catat secara lokal",
+      "dismiss": "Abaikan",
+      "explain": "Ini tidak memiliki catatan lokal di perangkat ini. Adopsi salah satu untuk tetap berjalan dan dilacak di sini, atau hapus deployment untuk mematikannya.",
+      "heading": "Deployment dari sesi sebelumnya",
+      "summary_one": "{count} deployment masih berjalan di orkestrator dan mungkin menimbulkan biaya.",
+      "summary_other": "{count} deployment masih berjalan di orkestrator dan mungkin menimbulkan biaya.",
+      "undeploy": "Hapus",
+      "undeploy_title": "Matikan deployment ini di orkestrator",
+      "unknown_persona": "Persona tidak dikenal"
+    }
   },
   "sharing": {
     "export_title": "Ekspor Bundle",

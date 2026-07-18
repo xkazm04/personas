@@ -5534,6 +5534,18 @@
       "no_deployments_yet": "No deployments yet. Select a persona above to deploy it as a cloud API endpoint.",
       "active_deployments": "Active Deployments"
     },
+    "reconcile": {
+      "heading": "Deployments from a previous session",
+      "summary_one": "{count} deployment is still running on the orchestrator and may be incurring cost.",
+      "summary_other": "{count} deployments are still running on the orchestrator and may be incurring cost.",
+      "explain": "These have no local record on this device. Adopt one to keep it running and track it here, or undeploy it to shut it down.",
+      "adopt": "Adopt",
+      "adopt_title": "Keep this deployment and record it locally",
+      "undeploy": "Undeploy",
+      "undeploy_title": "Shut this deployment down on the orchestrator",
+      "dismiss": "Dismiss",
+      "unknown_persona": "Unknown persona"
+    },
     "exec_detail": {
       "fetching_output": "Fetching output...",
       "no_output": "No output",

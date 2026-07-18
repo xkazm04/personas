@@ -239,5 +239,17 @@
   "cron_daily_midnight": "Täglich um Mitternacht UTC",
   "cron_daily_9am": "Täglich um 9 Uhr UTC",
   "cron_weekdays_9am": "Wochentags um 9 Uhr UTC",
-  "cron_weekly_sun": "Wöchentlich (So. Mitternacht UTC)"
+  "cron_weekly_sun": "Wöchentlich (So. Mitternacht UTC)",
+  "reconcile": {
+    "adopt": "Übernehmen",
+    "adopt_title": "Dieses Deployment behalten und lokal erfassen",
+    "dismiss": "Verwerfen",
+    "explain": "Für sie gibt es auf diesem Gerät keinen lokalen Eintrag. Übernimm eines, um es weiterlaufen zu lassen und hier zu verfolgen, oder entferne es, um es abzuschalten.",
+    "heading": "Deployments aus einer früheren Sitzung",
+    "summary_one": "{count} Deployment läuft noch auf dem Orchestrator und verursacht möglicherweise Kosten.",
+    "summary_other": "{count} Deployments laufen noch auf dem Orchestrator und verursachen möglicherweise Kosten.",
+    "undeploy": "Entfernen",
+    "undeploy_title": "Dieses Deployment auf dem Orchestrator abschalten",
+    "unknown_persona": "Unbekannte Persona"
+  }
 }

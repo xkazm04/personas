@@ -5533,7 +5533,19 @@
     "cron_daily_midnight": "Hàng ngày lúc nửa đêm UTC",
     "cron_daily_9am": "Hàng ngày lúc 9 giờ sáng UTC",
     "cron_weekdays_9am": "Các ngày trong tuần lúc 9 giờ sáng UTC",
-    "cron_weekly_sun": "Hàng tuần (Chủ Nhật nửa đêm UTC)"
+    "cron_weekly_sun": "Hàng tuần (Chủ Nhật nửa đêm UTC)",
+    "reconcile": {
+      "adopt": "Tiếp quản",
+      "adopt_title": "Giữ lại triển khai này và ghi nhận cục bộ",
+      "dismiss": "Bỏ qua",
+      "explain": "Chúng không có bản ghi cục bộ trên thiết bị này. Tiếp quản một mục để giữ nó chạy và theo dõi tại đây, hoặc gỡ triển khai để tắt nó.",
+      "heading": "Các triển khai từ phiên trước",
+      "summary_one": "{count} triển khai vẫn đang chạy trên bộ điều phối và có thể phát sinh chi phí.",
+      "summary_other": "{count} triển khai vẫn đang chạy trên bộ điều phối và có thể phát sinh chi phí.",
+      "undeploy": "Gỡ triển khai",
+      "undeploy_title": "Tắt triển khai này trên bộ điều phối",
+      "unknown_persona": "Persona không xác định"
+    }
   },
   "sharing": {
     "export_title": "Xuất gói",

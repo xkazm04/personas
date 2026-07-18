@@ -86,6 +86,14 @@ export const cloudResumeDeployment = (deploymentId: string) =>
 export const cloudUndeploy = (deploymentId: string) =>
   invoke<void>("cloud_undeploy", { deploymentId });
 
+/**
+ * Adopt an orphaned server-side deployment into the local audit trail so it is
+ * recognized as known and stops being flagged by the reconcile surface. Does
+ * not pause/resume/remove the deployment on the orchestrator.
+ */
+export const cloudAdoptDeployment = (deploymentId: string) =>
+  invoke<CloudDeployment>("cloud_adopt_deployment", { deploymentId });
+
 export const cloudGetBaseUrl = () =>
   invoke<string | null>("cloud_get_base_url");
 

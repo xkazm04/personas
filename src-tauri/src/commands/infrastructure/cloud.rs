@@ -1031,6 +1031,44 @@ pub async fn cloud_undeploy(
     Ok(())
 }
 
+/// Adopt an orphaned cloud deployment into the local audit trail.
+///
+/// The reconcile surface flags server-side deployments that this install has no
+/// `deployment_history` record of (created from a previous session / another
+/// machine / after a DB reset, and still live + billing). "Adopting" one records
+/// a best-effort history row keyed on the cloud deployment id (stored in
+/// `agent_id`, mirroring `cloud_deploy_persona`) so it is henceforth recognized
+/// as a known deployment and stops being flagged as an orphan. It is READ-ONLY
+/// with respect to the orchestrator — nothing is paused, resumed, or removed.
+#[tauri::command]
+#[requires(cloud)]
+pub async fn cloud_adopt_deployment(
+    state: State<'_, Arc<AppState>>,
+    deployment_id: String,
+) -> Result<cloud::client::CloudDeployment, AppError> {
+    let client = get_cloud_client(&state).await?;
+    // Re-fetch from the orchestrator so persona_id / label are authoritative.
+    let deployment = client.get_deployment(&deployment_id).await?;
+
+    deployment_history::insert(
+        &state.db,
+        &deployment.persona_id,
+        &deployment.label,
+        0,
+        "adopted",
+        0,
+        "success",
+        Some(&deployment.id),
+        None,
+        None,
+        None,
+        "cloud",
+    )?;
+    tracing::info!(deployment_id = %deployment_id, "Adopted orphaned cloud deployment into history");
+
+    Ok(deployment)
+}
+
 /// Get the cloud orchestrator base URL (for building endpoint URLs in the UI).
 #[tauri::command]
 #[requires(cloud)]

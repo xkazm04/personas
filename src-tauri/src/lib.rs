@@ -2917,6 +2917,7 @@ pub fn run() {
             commands::infrastructure::cloud::cloud_pause_deployment,
             commands::infrastructure::cloud::cloud_resume_deployment,
             commands::infrastructure::cloud::cloud_undeploy,
+            commands::infrastructure::cloud::cloud_adopt_deployment,
             commands::infrastructure::cloud::cloud_get_base_url,
             commands::infrastructure::cloud::cloud_list_pending_reviews,
             commands::infrastructure::cloud::cloud_respond_to_review,
