@@ -9,36 +9,47 @@
 
 // -- Shared error translation ----------------------------------------
 
-import { en } from "@/i18n/en";
+import type { Translations } from "@/i18n/en";
+import { getActiveTranslations } from "@/i18n/useTranslation";
 
 interface ErrorRule {
   patterns: string[];
-  message: string;
+  /**
+   * Resolve the user-facing message from the ACTIVE translation bundle.
+   *
+   * Resolving lazily (at call time) rather than capturing a string at module
+   * load is what makes deploy error messages locale-reactive: a language
+   * switch after this module first loaded is reflected the next time an error
+   * is translated, instead of being frozen in whichever locale loaded first.
+   */
+  resolve: (t: Translations) => string;
 }
 
 /** Error rules shared across all deploy targets. */
 const SHARED_ERROR_RULES: ErrorRule[] = [
   // Connection / network
-  { patterns: ['not reachable', 'connection refused', 'connect error'], message: en.deploy_errors.not_reachable },
-  { patterns: ['timed out', 'timeout'], message: en.deploy_errors.timed_out },
-  { patterns: ['dns', 'resolve', 'no such host'], message: en.deploy_errors.dns_resolve },
+  { patterns: ['not reachable', 'connection refused', 'connect error'], resolve: (t) => t.deploy_errors.not_reachable },
+  { patterns: ['timed out', 'timeout'], resolve: (t) => t.deploy_errors.timed_out },
+  { patterns: ['dns', 'resolve', 'no such host'], resolve: (t) => t.deploy_errors.dns_resolve },
   // Auth
-  { patterns: ['401', 'unauthorized'], message: en.deploy_errors.unauthorized },
-  { patterns: ['403', 'forbidden'], message: en.deploy_errors.forbidden },
+  { patterns: ['401', 'unauthorized'], resolve: (t) => t.deploy_errors.unauthorized },
+  { patterns: ['403', 'forbidden'], resolve: (t) => t.deploy_errors.forbidden },
   // Server
-  { patterns: ['500', 'internal server error'], message: en.deploy_errors.internal_server_error },
-  { patterns: ['502', '503', '504', 'bad gateway', 'service unavailable'], message: en.deploy_errors.service_unavailable },
+  { patterns: ['500', 'internal server error'], resolve: (t) => t.deploy_errors.internal_server_error },
+  { patterns: ['502', '503', '504', 'bad gateway', 'service unavailable'], resolve: (t) => t.deploy_errors.service_unavailable },
   // Not connected
-  { patterns: ['not connected'], message: en.deploy_errors.not_connected },
+  { patterns: ['not connected'], resolve: (t) => t.deploy_errors.not_connected },
   // Keyring
-  { patterns: ['keyring'], message: en.deploy_errors.keyring },
+  { patterns: ['keyring'], resolve: (t) => t.deploy_errors.keyring },
 ];
 
 /**
  * Translate a raw error into a user-friendly message.
  *
  * Checks target-specific rules first, then shared rules, then falls back
- * to stripping a common prefix from the raw string.
+ * to stripping a common prefix from the raw string. The message strings are
+ * resolved from the active locale at call time, so they follow language
+ * switches.
  */
 export function translateDeployError(
   err: unknown,
@@ -46,15 +57,16 @@ export function translateDeployError(
   prefixStrip: RegExp,
 ): string {
   const raw = String(err).toLowerCase();
+  const t = getActiveTranslations();
 
   // Target-specific rules first (higher priority)
   for (const rule of targetRules) {
-    if (rule.patterns.some((p) => raw.includes(p))) return rule.message;
+    if (rule.patterns.some((p) => raw.includes(p))) return rule.resolve(t);
   }
 
   // Shared rules
   for (const rule of SHARED_ERROR_RULES) {
-    if (rule.patterns.some((p) => raw.includes(p))) return rule.message;
+    if (rule.patterns.some((p) => raw.includes(p))) return rule.resolve(t);
   }
 
   // Fallback
@@ -64,9 +76,9 @@ export function translateDeployError(
 // -- Cloud-specific error rules --------------------------------------
 
 export const CLOUD_ERROR_RULES: ErrorRule[] = [
-  { patterns: ['oauth', 'expired'], message: en.deploy_errors.oauth_expired },
-  { patterns: ['url must not be empty'], message: en.deploy_errors.url_empty },
-  { patterns: ['api key must not be empty'], message: en.deploy_errors.api_key_empty },
+  { patterns: ['oauth', 'expired'], resolve: (t) => t.deploy_errors.oauth_expired },
+  { patterns: ['url must not be empty'], resolve: (t) => t.deploy_errors.url_empty },
+  { patterns: ['api key must not be empty'], resolve: (t) => t.deploy_errors.api_key_empty },
 ];
 
 export const CLOUD_ERROR_PREFIX = /^Cloud error:\s*/i;
@@ -78,7 +90,7 @@ export function translateCloudError(err: unknown): string {
 // -- GitLab-specific error rules -------------------------------------
 
 export const GITLAB_ERROR_RULES: ErrorRule[] = [
-  { patterns: ['token must not be empty'], message: en.deploy_errors.token_empty },
+  { patterns: ['token must not be empty'], resolve: (t) => t.deploy_errors.token_empty },
 ];
 
 export const GITLAB_ERROR_PREFIX = /^GitLab error:\s*/i;
