@@ -88,3 +88,7 @@ Bindings (`src/lib/bindings/Cloud*`) keep the TS shapes in sync with the Rust ty
 - The unified dashboard mixes Cloud + GitLab targets, but extending to a third target requires a new `mapXyzStatus` mapper in `deploymentTypes.ts` and a new path in the row renderer; there is no plugin contract for "deployment target."
 - The schedules panel inside cloud is a separate surface from [schedules.md](../schedules.md) (which covers local cron-driven personas). Cross-environment unification is not yet a thing.
 - The cloud OAuth flow assumes a redirect handled by the local HTTP server — the UI dialog labels mention the desktop app must be running during the redirect; we don't currently surface that as a first-class precondition state.
+
+## Orphaned-deployment reconcile
+
+On (re)connect, the cloud panel diffs the orchestrator's list of your live deployments against what this install has recorded and surfaces any it doesn't recognize (another machine, a reinstall, or pruned history) in an advisory banner (`CloudReconcileBanner`) — read-only, with per-deployment **Adopt** (record it locally so it stops billing invisibly) or **Undeploy**. Nothing is auto-undeployed. Deploy-error strings now resolve at call time, so they follow a mid-session language switch.
