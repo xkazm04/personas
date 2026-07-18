@@ -13,10 +13,8 @@ use crate::validation;
 use crate::AppState;
 
 use super::export_types::{
-    MemoryExport, SubscriptionExport, TriggerExport, MAX_CONFIG_LEN, MAX_DESCRIPTION_LEN,
-    MAX_DESIGN_CONTEXT_LEN, MAX_MEMORIES, MAX_MEMORY_CONTENT_LEN, MAX_NAME_LEN,
-    MAX_SHORT_FIELD_LEN, MAX_STRUCTURED_PROMPT_LEN, MAX_SUBSCRIPTIONS, MAX_SYSTEM_PROMPT_LEN,
-    MAX_TRIGGERS,
+    MemoryExport, SubscriptionExport, TriggerExport, MAX_CONFIG_LEN, MAX_MEMORIES,
+    MAX_MEMORY_CONTENT_LEN, MAX_NAME_LEN, MAX_SHORT_FIELD_LEN, MAX_SUBSCRIPTIONS, MAX_TRIGGERS,
 };
 
 /// Maximum import file size (5 MB).
@@ -318,6 +316,9 @@ pub(crate) fn import_persona_from_value(
 
     // Validate persona fields
     let p = &bundle.persona;
+    // Reject a blank *raw* name before it is suffixed — otherwise the
+    // " (imported)" suffix below would make an empty name look non-empty to
+    // the shared validator.
     validation::require_non_empty("persona name", &p.name)?;
     // The persona is stored with an " (imported)" suffix (see the create()
     // call below). Validate the *final* mutated name, not the raw p.name —
@@ -326,26 +327,18 @@ pub(crate) fn import_persona_from_value(
     // persona_repo::create with a confusing post-validation error (or
     // silently breaching the invariant the check was meant to enforce).
     let imported_name = format!("{} (imported)", p.name);
-    validation::require_max_len("persona name", &imported_name, MAX_NAME_LEN)?;
-    validation::require_max_len("system_prompt", &p.system_prompt, MAX_SYSTEM_PROMPT_LEN)?;
-    validation::require_optional_max_len("description", &p.description, MAX_DESCRIPTION_LEN)?;
-    validation::require_optional_max_len(
-        "structured_prompt",
-        &p.structured_prompt,
-        MAX_STRUCTURED_PROMPT_LEN,
-    )?;
-    validation::require_optional_max_len("icon", &p.icon, MAX_SHORT_FIELD_LEN)?;
-    validation::require_optional_max_len("color", &p.color, MAX_SHORT_FIELD_LEN)?;
-    validation::require_optional_max_len(
-        "notification_channels",
-        &p.notification_channels,
-        MAX_SHORT_FIELD_LEN,
-    )?;
-    validation::require_optional_max_len("model_profile", &p.model_profile, MAX_SHORT_FIELD_LEN)?;
-    validation::require_optional_max_len(
-        "design_context",
-        &p.design_context,
-        MAX_DESIGN_CONTEXT_LEN,
+    // Single shared validator (also used by engine::bundle's signed-bundle
+    // importer) so the two import paths enforce identical field-length caps.
+    super::export_types::validate_persona_import_fields(
+        &imported_name,
+        &p.system_prompt,
+        p.description.as_deref(),
+        p.structured_prompt.as_deref(),
+        p.icon.as_deref(),
+        p.color.as_deref(),
+        p.notification_channels.as_deref(),
+        p.model_profile.as_deref(),
+        p.design_context.as_deref(),
     )?;
 
     // Validate trigger fields

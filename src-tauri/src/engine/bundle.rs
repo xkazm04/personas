@@ -677,40 +677,68 @@ fn import_persona_from_value(pool: &DbPool, value: &serde_json::Value) -> Result
         .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+    let structured_prompt = obj
+        .get("structured_prompt")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let icon = obj
+        .get("icon")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let color = obj
+        .get("color")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let model_profile = obj
+        .get("model_profile")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let design_context = obj
+        .get("design_context")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    // Apply the SAME field-length caps as the rigorous `.persona.json`
+    // importer (commands::core::import_export). A signed bundle carries a
+    // valid signature, but signature verification only proves *who* built the
+    // bundle — not that its fields are sane. A trusted-but-careless or
+    // compromised peer must not be able to land a persona with unvalidated,
+    // oversized fields. Reject rather than silently truncate. Shares the
+    // single validator in export_types so the two import paths cannot drift.
+    crate::commands::core::export_types::validate_persona_import_fields(
+        &name,
+        &system_prompt,
+        description.as_deref(),
+        structured_prompt.as_deref(),
+        icon.as_deref(),
+        color.as_deref(),
+        None, // this path does not import notification_channels
+        model_profile.as_deref(),
+        design_context.as_deref(),
+    )?;
 
     let input = CreatePersonaInput {
         name,
         description,
         system_prompt,
-        structured_prompt: obj
-            .get("structured_prompt")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
-        icon: obj
-            .get("icon")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
-        color: obj
-            .get("color")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
-        model_profile: obj
-            .get("model_profile")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
+        structured_prompt,
+        icon,
+        color,
+        model_profile,
         max_budget_usd: obj.get("max_budget_usd").and_then(|v| v.as_f64()),
         max_turns: obj
             .get("max_turns")
             .and_then(|v| v.as_i64())
             .map(|n| n as i32),
         project_id: None,
-        enabled: Some(true),
+        // Land DISABLED, matching import_export.rs and every other import
+        // path. An imported persona must never auto-run before the user has
+        // reviewed it — importing `enabled: true` let a signed bundle stand up
+        // an active persona that immediately executed.
+        enabled: Some(false),
         max_concurrent: None,
         timeout_ms: None,
-        design_context: obj
-            .get("design_context")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
+        design_context,
         notification_channels: None,
         lifecycle: None,
     };
@@ -878,5 +906,69 @@ fn extract_network_scope(bundle_bytes: &[u8], manifest: &BundleManifest) -> Netw
         domains: sorted_domains,
         tool_integrations: sorted_tools,
         api_endpoints,
+    }
+}
+
+#[cfg(test)]
+mod import_persona_tests {
+    use super::*;
+    use crate::commands::core::export_types::MAX_SYSTEM_PROMPT_LEN;
+    use serde_json::json;
+
+    /// A signed-bundle persona must land DISABLED, matching every other import
+    /// path — never `enabled: true` (which would let it auto-run immediately).
+    #[test]
+    fn imported_persona_lands_disabled() {
+        let pool = crate::db::init_test_db().unwrap();
+        let value = json!({
+            "name": "Bundle Persona",
+            "system_prompt": "Be useful.",
+        });
+
+        let id = import_persona_from_value(&pool, &value).expect("valid persona imports");
+        let persona = persona_repo::get_by_id(&pool, &id).expect("persona exists");
+        assert!(
+            !persona.enabled,
+            "imported signed-bundle persona must be disabled by default"
+        );
+        assert_eq!(persona.name, "Bundle Persona");
+    }
+
+    /// An oversized field must be REJECTED with an error, never silently
+    /// truncated into an active persona.
+    #[test]
+    fn oversized_field_is_rejected() {
+        let pool = crate::db::init_test_db().unwrap();
+        let value = json!({
+            "name": "Bundle Persona",
+            "system_prompt": "x".repeat(MAX_SYSTEM_PROMPT_LEN + 1),
+        });
+
+        let err = import_persona_from_value(&pool, &value)
+            .expect_err("oversized system_prompt must be rejected");
+        assert!(
+            err.to_string().contains("system_prompt"),
+            "error should name the offending field, got: {err}"
+        );
+    }
+
+    /// A valid persona value round-trips: all picked fields are persisted.
+    #[test]
+    fn valid_persona_round_trips() {
+        let pool = crate::db::init_test_db().unwrap();
+        let value = json!({
+            "name": "Round Trip",
+            "system_prompt": "Do the thing.",
+            "description": "A described persona",
+            "color": "#abcdef",
+        });
+
+        let id = import_persona_from_value(&pool, &value).expect("valid persona imports");
+        let persona = persona_repo::get_by_id(&pool, &id).expect("persona exists");
+        assert_eq!(persona.name, "Round Trip");
+        assert_eq!(persona.system_prompt, "Do the thing.");
+        assert_eq!(persona.description.as_deref(), Some("A described persona"));
+        assert_eq!(persona.color.as_deref(), Some("#abcdef"));
+        assert!(!persona.enabled);
     }
 }
