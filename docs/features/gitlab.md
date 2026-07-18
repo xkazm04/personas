@@ -41,7 +41,12 @@ The picker filters by what the connected GitLab tier supports. Adding a new temp
 | Persona deploy (versioned) | `gitlab_deploy_persona`, `gitlab_deploy_persona_versioned`, `gitlab_undeploy_agent`, `gitlab_list_agents` |
 | Versions + branches | `gitlab_list_persona_versions`, `gitlab_list_persona_branches`, `gitlab_setup_persona_branches` |
 | Rollback | `gitlab_rollback_persona`, `gitlab_rollback_from_history` |
-| Deployment history | `gitlab_list_deployment_history` |
+| Deployment history | `gitlab_list_deployment_history`, `list_deployment_history_all` (unified GitLab + cloud audit trail) |
+| Deployment status | `gitlab_deployment_status` (honest, probe-derived per-deployment status) |
+
+### Honest deployment status
+
+The unified deployment dashboard no longer renders every GitLab row as a green `active` by construction. `gitlab_deployment_status` reconciles the LIVE Duo Agent registry (`gitlab_list_agents`) against `deployment_history` and returns a real per-deployment state: `active` (a live Duo agent confirmed present), `file-based` (deployed via the AGENTS.md fallback — no live Duo agent; previously invisible), `failed` (an API deploy whose agent is gone), or `unknown` (the GitLab probe could not confirm live state — never a false green).
 
 The frontend wrappers for these commands live alongside the panel imports (see `GitLabPanel.tsx` for the consumer set).
 

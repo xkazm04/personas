@@ -66,6 +66,10 @@ Frontend wrappers live in `src/api/system/cloud.ts`. Backend modules are under `
 
 Bindings (`src/lib/bindings/Cloud*`) keep the TS shapes in sync with the Rust types.
 
+### Unified deployment audit trail
+
+`cloudDeployPersona` and `cloudSyncPersona` record a best-effort row in `deployment_history` (target `cloud`, `project_id` 0) capturing the assembled-prompt snapshot. The write is additive — a failed history insert is logged and never fails the deploy/sync. The dashboard's collapsible "Deployment history" panel reads `list_deployment_history_all` to show these cloud rows alongside GitLab deploys, each tagged with its target and a prompt-snapshot indicator. The stored snapshot is the substrate a future cloud-version-rollback will restore from.
+
 ## Engine — `src-tauri/src/cloud/`
 
 | File | Concern |
