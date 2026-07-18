@@ -846,6 +846,7 @@ export type CommandName =
   | "gitlab_connect_from_vault"
   | "gitlab_deploy_persona"
   | "gitlab_deploy_persona_versioned"
+  | "gitlab_deployment_status"
   | "gitlab_disconnect"
   | "gitlab_get_config"
   | "gitlab_list_agents"

@@ -111,6 +111,7 @@
     "active": "Activo",
     "paused": "En pausa",
     "failed": "Fallido",
+    "file-based": "Basado en archivo",
     "unknown": "Desconocido"
   },
   "delivery": {

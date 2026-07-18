@@ -2948,6 +2948,7 @@ pub fn run() {
             commands::infrastructure::gitlab::gitlab_list_projects,
             commands::infrastructure::gitlab::gitlab_deploy_persona,
             commands::infrastructure::gitlab::gitlab_list_agents,
+            commands::infrastructure::gitlab::gitlab_deployment_status,
             commands::infrastructure::gitlab::gitlab_undeploy_agent,
             commands::infrastructure::gitlab::gitlab_revoke_credentials,
             commands::infrastructure::gitlab::gitlab_list_persona_versions,

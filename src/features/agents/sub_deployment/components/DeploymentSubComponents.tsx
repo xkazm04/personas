@@ -1,6 +1,6 @@
 import {
   Activity,
-  CheckCircle2, PauseCircle, XCircle, AlertCircle,
+  CheckCircle2, PauseCircle, XCircle, AlertCircle, FileText,
 } from 'lucide-react';
 import type { DeployStatus, SortKey, SortDir } from './deploymentTypes';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -15,6 +15,7 @@ export function statusIcon(s: DeployStatus) {
     case 'active': return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
     case 'paused': return <PauseCircle className="w-3.5 h-3.5 text-amber-400" />;
     case 'failed': return <XCircle className="w-3.5 h-3.5 text-red-400" />;
+    case 'file-based': return <FileText className="w-3.5 h-3.5 text-sky-400" />;
     default: return <AlertCircle className="w-3.5 h-3.5 text-foreground" />;
   }
 }

@@ -22,9 +22,17 @@ describe('mapCloudStatus', () => {
 });
 
 describe('mapGitlabStatus', () => {
-  it('treats every present agent row as active', () => {
-    expect(mapGitlabStatus({ id: 1, name: 'foo' })).toBe('active');
-    expect(mapGitlabStatus({})).toBe('active');
-    expect(mapGitlabStatus(null)).toBe('active');
+  it('passes through honest backend-probed status tokens', () => {
+    expect(mapGitlabStatus('active')).toBe('active');
+    expect(mapGitlabStatus('file-based')).toBe('file-based');
+    expect(mapGitlabStatus('failed')).toBe('failed');
+    expect(mapGitlabStatus('unknown')).toBe('unknown');
+  });
+
+  it('never renders a false green — unrecognized/empty/null collapse to unknown', () => {
+    expect(mapGitlabStatus('deploying')).toBe('unknown');
+    expect(mapGitlabStatus('')).toBe('unknown');
+    expect(mapGitlabStatus(null)).toBe('unknown');
+    expect(mapGitlabStatus(undefined)).toBe('unknown');
   });
 });

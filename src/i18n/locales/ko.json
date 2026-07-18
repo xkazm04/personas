@@ -11623,6 +11623,7 @@
       "active": "활성",
       "paused": "일시 중지",
       "failed": "실패",
+      "file-based": "파일 기반",
       "unknown": "알 수 없음"
     },
     "delivery": {

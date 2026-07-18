@@ -423,6 +423,123 @@ pub async fn gitlab_list_agents(
     }
 }
 
+/// Probe the REAL status of every known GitLab deployment in a project.
+///
+/// This is the honest replacement for the dashboard's old "every row is
+/// `active` by construction" behaviour. It reconciles the LIVE Duo Agent
+/// registry (`list_duo_agents`, a real GitLab API call) against
+/// `deployment_history`:
+///
+/// - Each live agent → `active` (confirmed present in GitLab right now).
+/// - A history deploy whose persona has no live agent → `file-based` when it
+///   was deployed via AGENTS.md, or `failed` when it once had a live Duo agent
+///   that is now gone.
+/// - If the live probe cannot be performed (API unreachable / Duo API not
+///   available), api-method deploys fall back to `unknown` (never a false
+///   green); file-based deploys stay `file-based` because that fact is recorded
+///   at deploy time, not probed live.
+///
+/// Deduplicated by persona slug, newest history row wins.
+#[tauri::command]
+#[requires(cloud)]
+pub async fn gitlab_deployment_status(
+    state: State<'_, Arc<AppState>>,
+    project_id: i64,
+) -> Result<Vec<GitLabDeploymentStatus>, AppError> {
+    let client = get_gitlab_client(&state).await?;
+
+    // History is the local audit trail; safe to read even if GitLab is down.
+    let history = deployment_history::list_by_project(&state.db, project_id, 200)
+        .unwrap_or_default();
+
+    // Real probe: fetch the live Duo Agent registry from GitLab.
+    match client.list_duo_agents(project_id).await {
+        Ok(agents) => {
+            let mut out: Vec<GitLabDeploymentStatus> = Vec::new();
+            let mut seen: Vec<String> = Vec::new();
+
+            // Live agents are honestly `active`.
+            for a in &agents {
+                let hist = history
+                    .iter()
+                    .find(|h| h.agent_id.as_deref() == Some(a.id.as_str()));
+                seen.push(slugify_persona_name(&a.name));
+                out.push(GitLabDeploymentStatus {
+                    agent_id: Some(a.id.clone()),
+                    persona_id: hist.map(|h| h.persona_id.clone()),
+                    persona_name: a.name.clone(),
+                    method: "api".to_string(),
+                    web_url: a.web_url.clone(),
+                    status: "active".to_string(),
+                    created_at: a.created_at.clone().or_else(|| {
+                        hist.map(|h| h.created_at.clone())
+                    }),
+                });
+            }
+
+            // History rows with no matching live agent: file-based, or failed
+            // (an api deploy whose agent has since vanished).
+            for h in &history {
+                let slug = slugify_persona_name(&h.persona_name);
+                if seen.contains(&slug) {
+                    continue;
+                }
+                seen.push(slug);
+                let status = if h.method == "agents_md" {
+                    "file-based"
+                } else {
+                    "failed"
+                };
+                out.push(GitLabDeploymentStatus {
+                    agent_id: h.agent_id.clone(),
+                    persona_id: Some(h.persona_id.clone()),
+                    persona_name: h.persona_name.clone(),
+                    method: h.method.clone(),
+                    web_url: h.web_url.clone(),
+                    status: status.to_string(),
+                    created_at: Some(h.created_at.clone()),
+                });
+            }
+
+            Ok(out)
+        }
+        // Duo Agent API not available on this instance, or unreachable — derive
+        // an honest best-effort from history alone. Live truth is unknown, so
+        // api-method deploys become `unknown` (never a false green); file-based
+        // deploys remain `file-based` (a recorded, not probed, fact).
+        Err(e) => {
+            tracing::warn!(
+                project_id = project_id,
+                "Live Duo agent probe failed, deriving status from history only: {e}"
+            );
+            let mut out: Vec<GitLabDeploymentStatus> = Vec::new();
+            let mut seen: Vec<String> = Vec::new();
+            for h in &history {
+                let slug = slugify_persona_name(&h.persona_name);
+                if seen.contains(&slug) {
+                    continue;
+                }
+                seen.push(slug);
+                let status = if h.method == "agents_md" {
+                    "file-based"
+                } else {
+                    "unknown"
+                };
+                out.push(GitLabDeploymentStatus {
+                    agent_id: h.agent_id.clone(),
+                    persona_id: Some(h.persona_id.clone()),
+                    persona_name: h.persona_name.clone(),
+                    method: h.method.clone(),
+                    web_url: h.web_url.clone(),
+                    status: status.to_string(),
+                    created_at: Some(h.created_at.clone()),
+                });
+            }
+            Ok(out)
+        }
+    }
+}
+
 /// Remove a deployed Duo Agent from a project.
 #[tauri::command]
 #[requires(cloud)]

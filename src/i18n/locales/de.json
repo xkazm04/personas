@@ -11623,6 +11623,7 @@
       "active": "Aktiv",
       "paused": "Pausiert",
       "failed": "Fehlgeschlagen",
+      "file-based": "Dateibasiert",
       "unknown": "Unbekannt"
     },
     "delivery": {

@@ -11935,6 +11935,7 @@ export type Translations = {
       active: string;
       paused: string;
       failed: string;
+      "file-based": string;
       unknown: string;
     };
     delivery: {

@@ -12,6 +12,7 @@ import {
   gitlabListProjects,
   gitlabDeployPersona,
   gitlabListAgents,
+  gitlabDeploymentStatus,
   gitlabUndeployAgent,
   gitlabRevokeCredentials,
   gitlabTriggerPipeline,
@@ -36,6 +37,7 @@ import {
   type GitLabRollbackResult,
   type GitLabPersonaBranch,
   type GitLabDeploymentRecord,
+  type GitLabDeploymentStatus,
 } from "@/api/system/gitlab";
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -51,6 +53,8 @@ export interface GitLabSlice {
   gitlabIsConnecting: boolean;
   gitlabProjects: GitLabProject[];
   gitlabAgents: GitLabAgent[];
+  /** Backend-probed, reconciled per-deployment status (live agents + file deploys). */
+  gitlabDeploymentStatuses: GitLabDeploymentStatus[];
   gitlabError: string | null;
   gitlabSelectedProjectId: number | null;
   gitlabDeploymentMeta: Record<string, GitLabDeploymentMeta>;
@@ -146,6 +150,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
   gitlabIsConnecting: false,
   gitlabProjects: [],
   gitlabAgents: [],
+  gitlabDeploymentStatuses: [],
   gitlabError: null,
   gitlabSelectedProjectId: null,
   gitlabDeploymentMeta: loadDeploymentMeta(),
@@ -298,8 +303,15 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
 
   gitlabFetchAgents: async (projectId: number) => {
     try {
-      const agents = await gitlabListAgents(projectId);
-      set({ gitlabAgents: agents, gitlabError: null });
+      // Fetch the live agent list and the reconciled, backend-probed statuses
+      // together so the dashboard renders truthful state (not "active" by
+      // construction). Status probe is best-effort — a failure there must not
+      // blank out the agent list.
+      const [agents, statuses] = await Promise.all([
+        gitlabListAgents(projectId),
+        gitlabDeploymentStatus(projectId).catch(() => [] as GitLabDeploymentStatus[]),
+      ]);
+      set({ gitlabAgents: agents, gitlabDeploymentStatuses: statuses, gitlabError: null });
     } catch (err) {
       set({ gitlabError: translateGitLabError(err) });
     }
@@ -308,9 +320,12 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
   gitlabUndeployAgent: async (projectId: number, agentId: string) => {
     try {
       await gitlabUndeployAgent(projectId, agentId);
-      // Refresh the list
-      const agents = await gitlabListAgents(projectId);
-      set({ gitlabAgents: agents, gitlabError: null });
+      // Refresh the list + reconciled statuses
+      const [agents, statuses] = await Promise.all([
+        gitlabListAgents(projectId),
+        gitlabDeploymentStatus(projectId).catch(() => [] as GitLabDeploymentStatus[]),
+      ]);
+      set({ gitlabAgents: agents, gitlabDeploymentStatuses: statuses, gitlabError: null });
       emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'gitlab', detail: `agent:${agentId}` });
     } catch (err) {
       set({ gitlabError: translateGitLabError(err) });
@@ -343,9 +358,12 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     set({ gitlabRedeployingAgentId: agentName, gitlabError: null });
     try {
       const result = await state.gitlabDeployPersona(personaId, projectId, true);
-      // Refresh agent list
-      const agents = await gitlabListAgents(projectId);
-      set({ gitlabAgents: agents, gitlabRedeployingAgentId: null });
+      // Refresh agent list + reconciled statuses
+      const [agents, statuses] = await Promise.all([
+        gitlabListAgents(projectId),
+        gitlabDeploymentStatus(projectId).catch(() => [] as GitLabDeploymentStatus[]),
+      ]);
+      set({ gitlabAgents: agents, gitlabDeploymentStatuses: statuses, gitlabRedeployingAgentId: null });
       storeBus.emit('toast', { message: "Agent redeployed successfully", type: "success" });
       return result;
     } catch (err) {

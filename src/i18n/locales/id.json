@@ -11623,6 +11623,7 @@
       "active": "Aktif",
       "paused": "Dijeda",
       "failed": "Gagal",
+      "file-based": "Berbasis file",
       "unknown": "Tidak Diketahui"
     },
     "delivery": {

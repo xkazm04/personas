@@ -11,6 +11,7 @@ import type { GitLabPersonaVersion } from "@/lib/bindings/GitLabPersonaVersion";
 import type { GitLabRollbackResult } from "@/lib/bindings/GitLabRollbackResult";
 import type { GitLabPersonaBranch } from "@/lib/bindings/GitLabPersonaBranch";
 import type { GitLabDeploymentRecord } from "@/lib/bindings/GitLabDeploymentRecord";
+import type { GitLabDeploymentStatus } from "@/lib/bindings/GitLabDeploymentStatus";
 
 export type { GitLabConfig } from "@/lib/bindings/GitLabConfig";
 export type { GitLabUser } from "@/lib/bindings/GitLabUser";
@@ -25,6 +26,7 @@ export type { GitLabPersonaVersion } from "@/lib/bindings/GitLabPersonaVersion";
 export type { GitLabRollbackResult } from "@/lib/bindings/GitLabRollbackResult";
 export type { GitLabPersonaBranch } from "@/lib/bindings/GitLabPersonaBranch";
 export type { GitLabDeploymentRecord } from "@/lib/bindings/GitLabDeploymentRecord";
+export type { GitLabDeploymentStatus } from "@/lib/bindings/GitLabDeploymentStatus";
 
 // Connection
 export const gitlabConnect = (token: string, instanceUrl?: string) =>
@@ -68,6 +70,14 @@ export const gitlabListAgents = (projectId: number) =>
 
 export const gitlabUndeployAgent = (projectId: number, agentId: string) =>
   invoke<void>("gitlab_undeploy_agent", { projectId, agentId });
+
+/**
+ * Probe the real, reconciled status of every known GitLab deployment in a
+ * project (live Duo agents + AGENTS.md file deploys). Replaces the old
+ * "every row is active" assumption with a backend-verified lifecycle.
+ */
+export const gitlabDeploymentStatus = (projectId: number) =>
+  invoke<GitLabDeploymentStatus[]>("gitlab_deployment_status", { projectId });
 
 // Pipelines
 

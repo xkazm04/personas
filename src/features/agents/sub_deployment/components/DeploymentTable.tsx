@@ -111,7 +111,11 @@ export function DeploymentTable({
                 </span>
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${statusBadge(row.status)}`}>
+                <span
+                  data-testid={`deploy-status-${row.id}`}
+                  data-status={row.status}
+                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${statusBadge(row.status)}`}
+                >
                   {statusIcon(row.status)}
                   {tokenLabel(t, 'deployment', row.status)}
                 </span>

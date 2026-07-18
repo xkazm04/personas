@@ -30,15 +30,23 @@ export type DeployTarget = 'cloud' | 'gitlab';
  *   action to recover (redeploy, rotate credentials, etc.). Cloud uses
  *   literal `"failed"`; GitLab does not produce this today.
  *
- * - `unknown` — the source status string did not match any known variant.
- *   This is a safety fallback for forward-compat (the cloud backend may
- *   add new statuses like `"deploying"` or `"degraded"`) and surfaces in
- *   the UI as a neutral grey badge with no actions. **Authors MUST NOT
- *   collapse "deployment is broken" or "heartbeat missing" into `unknown`
- *   — those are `failed`. Reserve `unknown` strictly for unrecognized
- *   strings.**
+ * - `file-based` — a GitLab deploy that landed via the AGENTS.md fallback,
+ *   i.e. no live Duo agent exists. Honest distinct state (neither a healthy
+ *   live agent nor a failure) surfaced as a neutral/info badge. GitLab-only.
+ *
+ * - `unknown` — the source status string did not match any known variant,
+ *   OR a live GitLab probe could not confirm the deployment's state
+ *   (API unreachable). This is a safety fallback for forward-compat (the
+ *   cloud backend may add new statuses like `"deploying"` or `"degraded"`)
+ *   and surfaces in the UI as a neutral grey badge with no actions.
+ *   **Authors MUST NOT collapse "deployment is broken" or "heartbeat
+ *   missing" into `unknown` — those are `failed`. Reserve `unknown` for
+ *   unrecognized strings or unconfirmable probes.**
  */
-export type DeployStatus = 'active' | 'paused' | 'failed' | 'unknown';
+export type DeployStatus = 'active' | 'paused' | 'failed' | 'file-based' | 'unknown';
+
+/** The set of honest lifecycle tokens the GitLab status probe can emit. */
+const GITLAB_STATUS_TOKENS = new Set<DeployStatus>(['active', 'file-based', 'failed', 'unknown']);
 
 /**
  * Map a Personas Cloud `CloudDeployment.status` string to a `DeployStatus`.
@@ -53,15 +61,16 @@ export function mapCloudStatus(raw: string | null | undefined): DeployStatus {
 }
 
 /**
- * Map a GitLab agent record to a `DeployStatus`.
+ * Map a GitLab deployment's backend-probed status token to a `DeployStatus`.
  *
- * GitLab's `/agents` endpoint returns rows only for live agents and provides
- * no lifecycle field — every row is therefore treated as `active`. If a
- * future API surface adds an explicit `status` field, extend this mapper
- * (do NOT branch on it at call sites).
+ * The status now comes from the `gitlab_deployment_status` command, which
+ * reconciles the live Duo Agent registry against deployment history — so a
+ * crashed/removed agent no longer renders a false green `active`. Unrecognized
+ * tokens collapse to `unknown` (never a false green).
  */
-export function mapGitlabStatus(_agent: unknown): DeployStatus {
-  return 'active';
+export function mapGitlabStatus(raw: string | null | undefined): DeployStatus {
+  if (raw && GITLAB_STATUS_TOKENS.has(raw as DeployStatus)) return raw as DeployStatus;
+  return 'unknown';
 }
 
 export interface UnifiedDeployment {
@@ -97,6 +106,7 @@ export function statusBadge(s: DeployStatus): string {
     active: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
     paused: 'bg-amber-500/10 border-amber-500/25 text-amber-400',
     failed: 'bg-red-500/10 border-red-500/20 text-red-400',
+    'file-based': 'bg-sky-500/10 border-sky-500/20 text-sky-400',
     unknown: 'bg-secondary/40 border-primary/15 text-foreground',
   };
   return colors[s];

@@ -26,6 +26,7 @@ export function UnifiedDeploymentDashboard() {
   const cloudConfig = useSystemStore((s) => s.cloudConfig);
   const gitlabConfig = useSystemStore((s) => s.gitlabConfig);
   const gitlabAgents = useSystemStore((s) => s.gitlabAgents);
+  const gitlabDeploymentStatuses = useSystemStore((s) => s.gitlabDeploymentStatuses);
   const gitlabSelectedProjectId = useSystemStore((s) => s.gitlabSelectedProjectId);
 
   const cloudFetchDeployments = useSystemStore((s) => s.cloudFetchDeployments);
@@ -71,16 +72,34 @@ export function UnifiedDeploymentDashboard() {
         _cloud: d,
       });
     }
-    for (const a of gitlabAgents) {
-      rows.push({
-        id: `gitlab-${a.id}`, target: 'gitlab', personaName: a.name, personaId: null,
-        name: a.name, status: mapGitlabStatus(a), invocations: 0,
-        lastActivity: a.createdAt, createdAt: a.createdAt, webUrl: a.webUrl,
-        _gitlab: a, _gitlabProjectId: gitlabSelectedProjectId ?? undefined,
-      });
+    if (gitlabDeploymentStatuses.length > 0) {
+      // Preferred path: honest, backend-probed status per deployment. Includes
+      // AGENTS.md ("file-based") deploys that have no live Duo agent, which the
+      // raw agent list never surfaced.
+      for (const s of gitlabDeploymentStatuses) {
+        const liveAgent = s.agentId ? gitlabAgents.find((a) => a.id === s.agentId) : undefined;
+        rows.push({
+          id: `gitlab-${s.agentId ?? `file-${s.personaName}`}`,
+          target: 'gitlab', personaName: s.personaName, personaId: s.personaId,
+          name: s.personaName, status: mapGitlabStatus(s.status), invocations: 0,
+          lastActivity: s.createdAt, createdAt: s.createdAt, webUrl: s.webUrl,
+          _gitlab: liveAgent,
+          _gitlabProjectId: liveAgent ? (gitlabSelectedProjectId ?? undefined) : undefined,
+        });
+      }
+    } else {
+      // Fallback (statuses not yet loaded / probe unavailable): list live agents.
+      for (const a of gitlabAgents) {
+        rows.push({
+          id: `gitlab-${a.id}`, target: 'gitlab', personaName: a.name, personaId: null,
+          name: a.name, status: mapGitlabStatus('active'), invocations: 0,
+          lastActivity: a.createdAt, createdAt: a.createdAt, webUrl: a.webUrl,
+          _gitlab: a, _gitlabProjectId: gitlabSelectedProjectId ?? undefined,
+        });
+      }
     }
     return rows;
-  }, [cloudDeployments, gitlabAgents, cloudBaseUrl, personaName, gitlabSelectedProjectId]);
+  }, [cloudDeployments, gitlabAgents, gitlabDeploymentStatuses, cloudBaseUrl, personaName, gitlabSelectedProjectId]);
 
   const { healthMap } = useDeploymentHealth(unified);
   const { tests, runTest, dismissResult } = useDeploymentTest();

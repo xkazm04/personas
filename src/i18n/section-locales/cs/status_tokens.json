@@ -111,6 +111,7 @@
     "active": "Aktivní",
     "paused": "Pozastaveno",
     "failed": "Selhalo",
+    "file-based": "Založené na souboru",
     "unknown": "Neznámé"
   },
   "delivery": {

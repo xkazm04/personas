@@ -11623,6 +11623,7 @@
       "active": "活跃",
       "paused": "已暂停",
       "failed": "失败",
+      "file-based": "基于文件",
       "unknown": "未知"
     },
     "delivery": {

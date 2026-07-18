@@ -11929,6 +11929,7 @@
       "active": "Active",
       "paused": "Paused",
       "failed": "Failed",
+      "file-based": "File-based",
       "unknown": "Unknown"
     },
     "delivery": {

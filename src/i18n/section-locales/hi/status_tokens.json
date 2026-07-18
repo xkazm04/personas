@@ -111,6 +111,7 @@
     "active": "सक्रिय",
     "paused": "रुका हुआ",
     "failed": "विफल",
+    "file-based": "फ़ाइल-आधारित",
     "unknown": "अज्ञात"
   },
   "delivery": {
