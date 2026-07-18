@@ -270,6 +270,9 @@ pub struct GitLabDeploymentRecord {
     pub snapshot_prompt: Option<String>,
     /// If this was a rollback, the ID of the deployment it rolled back from
     pub rolled_back_from: Option<String>,
+    /// Deploy target: "gitlab" (Duo agent / AGENTS.md) or "cloud" (Personas
+    /// Cloud managed endpoint). Lets the unified audit trail mix both sources.
+    pub target: String,
     pub created_at: String,
 }
 

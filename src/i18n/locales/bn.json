@@ -5515,7 +5515,10 @@
       "stage_failed": "ব্যর্থ",
       "tool_calls": "{count}টি টুল কল",
       "connect_cloud_cta": "একটি ক্লাউড টার্গেট সংযুক্ত করুন",
-      "connect_gitlab_cta": "GitLab সংযুক্ত করুন"
+      "connect_gitlab_cta": "GitLab সংযুক্ত করুন",
+      "history_title": "ডিপ্লয়মেন্ট ইতিহাস",
+      "history_empty": "এখনও কোনও ডিপ্লয়মেন্ট ইতিহাস নেই",
+      "history_snapshot": "প্রম্পট স্ন্যাপশট সংরক্ষিত"
     },
     "cloud_trigger_schedule": "নির্ধারিত (Cron)",
     "cloud_trigger_polling": "পোলিং",

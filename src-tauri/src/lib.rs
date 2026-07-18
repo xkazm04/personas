@@ -2957,6 +2957,7 @@ pub fn run() {
             commands::infrastructure::gitlab::gitlab_list_persona_branches,
             commands::infrastructure::gitlab::gitlab_setup_persona_branches,
             commands::infrastructure::gitlab::gitlab_list_deployment_history,
+            commands::infrastructure::gitlab::list_deployment_history_all,
             commands::infrastructure::gitlab::gitlab_rollback_from_history,
             // Workflows
             commands::infrastructure::workflows::get_workflows_overview,

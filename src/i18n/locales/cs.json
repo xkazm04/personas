@@ -5515,7 +5515,10 @@
       "stage_failed": "Selhalo",
       "tool_calls": "{count} volání nástrojů",
       "connect_cloud_cta": "Připojit cloudový cíl",
-      "connect_gitlab_cta": "Připojit GitLab"
+      "connect_gitlab_cta": "Připojit GitLab",
+      "history_title": "Historie nasazení",
+      "history_empty": "Zatím žádná historie nasazení",
+      "history_snapshot": "Snímek promptu uložen"
     },
     "cloud_trigger_schedule": "Plánované (Cron)",
     "cloud_trigger_polling": "Pollování",

@@ -5707,7 +5707,10 @@
       "stage_generating": "Generating",
       "stage_completed": "Completed",
       "stage_failed": "Failed",
-      "tool_calls": "{count} tool calls"
+      "tool_calls": "{count} tool calls",
+      "history_title": "Deployment history",
+      "history_empty": "No deployment history yet",
+      "history_snapshot": "Prompt snapshot captured"
     },
     "cloud_trigger_schedule": "Scheduled (Cron)",
     "cloud_trigger_polling": "Polling",

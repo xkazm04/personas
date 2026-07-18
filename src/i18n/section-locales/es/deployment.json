@@ -221,7 +221,10 @@
     "stage_failed": "Fallido",
     "tool_calls": "{count} llamadas a herramientas",
     "connect_cloud_cta": "Conectar un destino en la nube",
-    "connect_gitlab_cta": "Conectar GitLab"
+    "connect_gitlab_cta": "Conectar GitLab",
+    "history_title": "Historial de despliegues",
+    "history_empty": "Aún no hay historial de despliegues",
+    "history_snapshot": "Instantánea del prompt guardada"
   },
   "cloud_trigger_schedule": "Programado (Cron)",
   "cloud_trigger_polling": "Sondeo",

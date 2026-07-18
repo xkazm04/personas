@@ -221,7 +221,10 @@
     "stage_failed": "已失败",
     "tool_calls": "{count} 次工具调用",
     "connect_cloud_cta": "连接云目标",
-    "connect_gitlab_cta": "连接 GitLab"
+    "connect_gitlab_cta": "连接 GitLab",
+    "history_title": "部署历史",
+    "history_empty": "暂无部署历史",
+    "history_snapshot": "已捕获提示词快照"
   },
   "cloud_trigger_schedule": "计划（Cron）",
   "cloud_trigger_polling": "轮询",

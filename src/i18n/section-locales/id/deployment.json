@@ -221,7 +221,10 @@
     "stage_failed": "Gagal",
     "tool_calls": "{count} pemanggilan alat",
     "connect_cloud_cta": "Hubungkan target cloud",
-    "connect_gitlab_cta": "Hubungkan GitLab"
+    "connect_gitlab_cta": "Hubungkan GitLab",
+    "history_title": "Riwayat penerapan",
+    "history_empty": "Belum ada riwayat penerapan",
+    "history_snapshot": "Snapshot prompt tersimpan"
   },
   "cloud_trigger_schedule": "Terjadwal (Cron)",
   "cloud_trigger_polling": "Polling",

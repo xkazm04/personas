@@ -19,4 +19,9 @@ snapshotPrompt: string | null,
 /**
  * If this was a rollback, the ID of the deployment it rolled back from
  */
-rolledBackFrom: string | null, createdAt: string, };
+rolledBackFrom: string | null, 
+/**
+ * Deploy target: "gitlab" (Duo agent / AGENTS.md) or "cloud" (Personas
+ * Cloud managed endpoint). Lets the unified audit trail mix both sources.
+ */
+target: string, createdAt: string, };

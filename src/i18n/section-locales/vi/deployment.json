@@ -221,7 +221,10 @@
     "stage_failed": "Thất bại",
     "tool_calls": "{count} lần gọi công cụ",
     "connect_cloud_cta": "Kết nối mục tiêu đám mây",
-    "connect_gitlab_cta": "Kết nối GitLab"
+    "connect_gitlab_cta": "Kết nối GitLab",
+    "history_title": "Lịch sử triển khai",
+    "history_empty": "Chưa có lịch sử triển khai",
+    "history_snapshot": "Đã lưu ảnh chụp prompt"
   },
   "cloud_trigger_schedule": "Theo lịch (Cron)",
   "cloud_trigger_polling": "Thăm dò",

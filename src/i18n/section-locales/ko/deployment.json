@@ -221,7 +221,10 @@
     "stage_failed": "실패",
     "tool_calls": "{count}번 도구 호출",
     "connect_cloud_cta": "클라우드 대상 연결",
-    "connect_gitlab_cta": "GitLab 연결"
+    "connect_gitlab_cta": "GitLab 연결",
+    "history_title": "배포 기록",
+    "history_empty": "아직 배포 기록이 없습니다",
+    "history_snapshot": "프롬프트 스냅샷 캡처됨"
   },
   "cloud_trigger_schedule": "예약됨 (Cron)",
   "cloud_trigger_polling": "폴링",

@@ -103,6 +103,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             web_url         TEXT,
             snapshot_prompt TEXT,
             rolled_back_from TEXT,
+            target          TEXT NOT NULL DEFAULT 'gitlab',
             created_at      TEXT NOT NULL DEFAULT (datetime('now'))
         );
         CREATE INDEX IF NOT EXISTS idx_deploy_hist_persona_project

@@ -158,3 +158,11 @@ export const gitlabRollbackFromHistory = (
     projectId,
     deploymentId,
   });
+
+/**
+ * List the UNIFIED deployment audit trail across all targets — GitLab deploys
+ * AND Personas Cloud deploys/syncs — newest first. Cloud rows carry
+ * `target: "cloud"` and a `projectId` of 0.
+ */
+export const listDeploymentHistoryAll = (limit?: number) =>
+  invoke<GitLabDeploymentRecord[]>("list_deployment_history_all", { limit });

@@ -221,7 +221,10 @@
     "stage_failed": "Échoué",
     "tool_calls": "{count} appels d'outils",
     "connect_cloud_cta": "Connecter une cible cloud",
-    "connect_gitlab_cta": "Connecter GitLab"
+    "connect_gitlab_cta": "Connecter GitLab",
+    "history_title": "Historique des déploiements",
+    "history_empty": "Aucun historique de déploiement",
+    "history_snapshot": "Instantané du prompt capturé"
   },
   "cloud_trigger_schedule": "Planifié (Cron)",
   "cloud_trigger_polling": "Interrogation",

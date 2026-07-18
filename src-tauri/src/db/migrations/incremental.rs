@@ -5659,6 +5659,22 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "deployment_history.target",
+            description: "Deploy target for a history row: 'gitlab' (legacy default — Duo agent / AGENTS.md) or 'cloud' (Personas Cloud managed endpoint). Lets the unified deployment audit trail carry cloud deploys alongside GitLab, and is the substrate the deferred cloud-version-rollback builds on.",
+            already_applied: |conn| has_column(conn, "deployment_history", "target"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE deployment_history ADD COLUMN target TEXT NOT NULL DEFAULT 'gitlab';",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

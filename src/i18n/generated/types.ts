@@ -5714,6 +5714,9 @@ export type Translations = {
       stage_completed: string;
       stage_failed: string;
       tool_calls: string;
+      history_title: string;
+      history_empty: string;
+      history_snapshot: string;
     };
     cloud_trigger_schedule: string;
     cloud_trigger_polling: string;

@@ -17,7 +17,7 @@ use crate::db::models::{
 use crate::db::repos::communication::smee_relays as smee_relay_repo;
 use crate::db::repos::core::personas;
 use crate::db::repos::execution::executions;
-use crate::db::repos::resources::tools;
+use crate::db::repos::resources::{deployment_history, tools};
 use crate::engine;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth};
@@ -886,6 +886,31 @@ pub async fn cloud_deploy_persona(
         "Persona deployed to cloud"
     );
 
+    // Record the deploy in the unified deployment audit trail with the assembled
+    // prompt snapshot. Cloud deploys have no GitLab project, so `project_id` is a
+    // 0 sentinel and `target` = "cloud". Best-effort: a failed history write must
+    // NOT fail the deploy (the deployment already succeeded above). This is the
+    // substrate the deferred cloud-version-rollback will build on.
+    if let Err(e) = deployment_history::insert(
+        &state.db,
+        &persona.id,
+        &persona.name,
+        0,
+        "cloud",
+        0,
+        "success",
+        Some(&deployment.id),
+        None,
+        Some(&prompt),
+        None,
+        "cloud",
+    ) {
+        tracing::warn!(
+            persona_id = %persona_id,
+            "Failed to record cloud deployment in history: {e}"
+        );
+    }
+
     Ok(deployment)
 }
 
@@ -934,6 +959,30 @@ pub async fn cloud_sync_persona(
     client.upsert_persona(&persona_body).await?;
 
     tracing::info!(persona_id = %persona_id, "Persona synced to cloud");
+
+    // Record the sync in the unified deployment audit trail with the freshly
+    // assembled prompt snapshot, so cloud prompt updates are auditable alongside
+    // GitLab deploys. Best-effort — a failed history write must NOT fail the sync.
+    if let Err(e) = deployment_history::insert(
+        &state.db,
+        &persona.id,
+        &persona.name,
+        0,
+        "cloud",
+        0,
+        "success",
+        None,
+        None,
+        Some(&prompt),
+        None,
+        "cloud",
+    ) {
+        tracing::warn!(
+            persona_id = %persona_id,
+            "Failed to record cloud sync in history: {e}"
+        );
+    }
+
     Ok(())
 }
 

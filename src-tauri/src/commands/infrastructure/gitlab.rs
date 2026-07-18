@@ -359,6 +359,7 @@ pub async fn gitlab_deploy_persona(
         result.web_url.as_deref(),
         Some(&persona.system_prompt),
         None,
+        "gitlab",
     ) {
         tracing::warn!(
             persona_id = %persona_id,
@@ -902,6 +903,7 @@ pub async fn gitlab_deploy_persona_versioned(
         deploy_result.web_url.as_deref(),
         Some(&persona.system_prompt),
         None,
+        "gitlab",
     ) {
         tracing::warn!(
             persona_id = %persona_id,
@@ -1083,6 +1085,7 @@ pub async fn gitlab_rollback_persona(
         deploy_result.web_url.as_deref(),
         Some(&definition.system_prompt),
         Some(&target_tag),
+        "gitlab",
     ) {
         tracing::warn!(
             persona_id = %persona.id,
@@ -1211,6 +1214,20 @@ pub async fn gitlab_list_deployment_history(
     }
 }
 
+/// List the UNIFIED deployment audit trail across ALL targets (GitLab + cloud),
+/// newest first. Cloud rows carry `target = "cloud"` and a `project_id` of 0.
+/// Backs the unified deployment history surface so cloud deploys/syncs show up
+/// alongside GitLab deploys.
+#[tauri::command]
+#[requires(cloud)]
+pub async fn list_deployment_history_all(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+) -> Result<Vec<GitLabDeploymentRecord>, AppError> {
+    let max = limit.unwrap_or(100);
+    deployment_history::list_all(&state.db, max)
+}
+
 /// Rollback to a previous deployment from history.
 ///
 /// Finds the specified deployment record, redeploys that persona snapshot,
@@ -1301,6 +1318,7 @@ pub async fn gitlab_rollback_from_history(
         deploy_result.web_url.as_deref(),
         Some(&definition.system_prompt),
         Some(&deployment_id),
+        "gitlab",
     ) {
         tracing::warn!(
             persona_id = %persona.id,

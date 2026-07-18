@@ -221,7 +221,10 @@
     "stage_failed": "Сбой",
     "tool_calls": "{count} вызовов инструментов",
     "connect_cloud_cta": "Подключить облачный сервер",
-    "connect_gitlab_cta": "Подключить GitLab"
+    "connect_gitlab_cta": "Подключить GitLab",
+    "history_title": "История развёртываний",
+    "history_empty": "История развёртываний пока пуста",
+    "history_snapshot": "Снимок промпта сохранён"
   },
   "cloud_trigger_schedule": "По расписанию (Cron)",
   "cloud_trigger_polling": "Опрос",

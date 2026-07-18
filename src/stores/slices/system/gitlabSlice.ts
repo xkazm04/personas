@@ -26,6 +26,7 @@ import {
   gitlabListPersonaBranches,
   gitlabSetupPersonaBranches,
   gitlabListDeploymentHistory,
+  listDeploymentHistoryAll,
   gitlabRollbackFromHistory,
   type GitLabConfig,
   type GitLabProject,
@@ -123,9 +124,14 @@ export interface GitLabSlice {
   gitlabDeploymentHistoryLoading: boolean;
   gitlabRollingBackFromHistory: boolean;
 
+  // Unified (GitLab + cloud) deployment audit trail
+  unifiedDeploymentHistory: GitLabDeploymentRecord[];
+  unifiedDeploymentHistoryLoading: boolean;
+
   // Deployment history actions
   gitlabFetchDeploymentHistory: (projectId: number, personaId?: string) => Promise<void>;
   gitlabRollbackFromHistory: (projectId: number, deploymentId: string) => Promise<GitLabDeployResult>;
+  fetchUnifiedDeploymentHistory: (limit?: number) => Promise<void>;
 }
 
 const DEPLOY_META_KEY = "gitlab_deployment_meta";
@@ -562,6 +568,20 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
   gitlabDeploymentHistory: [],
   gitlabDeploymentHistoryLoading: false,
   gitlabRollingBackFromHistory: false,
+  unifiedDeploymentHistory: [],
+  unifiedDeploymentHistoryLoading: false,
+
+  fetchUnifiedDeploymentHistory: async (limit?: number) => {
+    set({ unifiedDeploymentHistoryLoading: true });
+    try {
+      const history = await listDeploymentHistoryAll(limit);
+      set({ unifiedDeploymentHistory: history, unifiedDeploymentHistoryLoading: false, gitlabError: null });
+    } catch (err) {
+      // Best-effort surface — never blank the dashboard on a history error.
+      set({ unifiedDeploymentHistoryLoading: false });
+      silentCatch("stores/slices/system/gitlabSlice:fetchUnifiedDeploymentHistory")(err);
+    }
+  },
 
   gitlabFetchDeploymentHistory: async (projectId: number, personaId?: string) => {
     set({ gitlabDeploymentHistoryLoading: true });

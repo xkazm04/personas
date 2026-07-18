@@ -5515,7 +5515,10 @@
       "stage_failed": "فشل",
       "tool_calls": "{count} استدعاء أداة",
       "connect_cloud_cta": "ربط هدف سحابي",
-      "connect_gitlab_cta": "ربط GitLab"
+      "connect_gitlab_cta": "ربط GitLab",
+      "history_title": "سجل النشر",
+      "history_empty": "لا يوجد سجل نشر بعد",
+      "history_snapshot": "تم التقاط لقطة المطالبة"
     },
     "cloud_trigger_schedule": "مجدوَل (Cron)",
     "cloud_trigger_polling": "استطلاع",

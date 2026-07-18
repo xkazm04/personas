@@ -11,6 +11,7 @@ import { compareValues, mapCloudStatus, mapGitlabStatus } from './deploymentType
 import { SummaryCard } from './DeploymentSubComponents';
 import { DeploymentTable } from './DeploymentTable';
 import { DeploymentFilters } from './DeploymentFilters';
+import { UnifiedDeploymentHistory } from './UnifiedDeploymentHistory';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { DEPLOYMENT_ACCENTS } from './deploymentTokens';
 import { useDeploymentHealth } from '../hooks/useDeploymentHealth';
@@ -269,6 +270,9 @@ export function UnifiedDeploymentDashboard() {
           <span>{dt.total_invocations} <Numeric value={totalInvocations} className="typo-data text-foreground" /></span>
         </div>
       )}
+
+      {/* Unified audit trail — cloud + GitLab deploy/sync history */}
+      {(cloudConnected || gitlabConnected) && <UnifiedDeploymentHistory />}
     </div>
   );
 }

@@ -221,7 +221,10 @@
     "stage_failed": "失敗",
     "tool_calls": "{count}回のツール呼び出し",
     "connect_cloud_cta": "クラウドターゲットを接続",
-    "connect_gitlab_cta": "GitLabを接続"
+    "connect_gitlab_cta": "GitLabを接続",
+    "history_title": "デプロイ履歴",
+    "history_empty": "デプロイ履歴はまだありません",
+    "history_snapshot": "プロンプトのスナップショットを保存済み"
   },
   "cloud_trigger_schedule": "スケジュール（cron）",
   "cloud_trigger_polling": "ポーリング",
