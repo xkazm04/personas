@@ -303,6 +303,7 @@ export function QuestionCard({
   const isFreeText =
     question.type === 'text' ||
     question.type === 'textarea' ||
+    question.type === 'long_text' ||
     question.type === 'source_definition';
 
   useEffect(() => {
@@ -460,12 +461,18 @@ export function QuestionCard({
             onChange={onAnswer}
             localPlaceholder={question.default || undefined}
           />
-        ) : question.type === 'textarea' ? (
+        ) : question.type === 'textarea' || question.type === 'long_text' ? (
+          // `long_text` is the authoring alias for a multi-paragraph paste (voice
+          // samples, policy docs, reference copy). It MUST land here: falling
+          // through to the single-line <input> below silently makes newline-
+          // delimited answers unenterable, which is how the only brand-voice
+          // grounding input in the marketing templates was dead on arrival
+          // (UAT 2026-07-20). Any new multi-line type belongs in this branch.
           <textarea
             value={answer}
             onChange={(e) => onAnswer(e.target.value)}
             placeholder={question.default ?? t.templates.adopt_modal.describe_in_detail}
-            rows={3}
+            rows={question.type === 'long_text' ? 8 : 3}
             className="w-full max-w-lg px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all resize-y min-h-[60px]"
           />
         ) : (

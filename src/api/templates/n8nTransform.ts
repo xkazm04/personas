@@ -78,7 +78,15 @@ export interface TransformQuestionResponse {
   id: string;
   category?: string;
   question: string;
-  type: 'select' | 'text' | 'textarea' | 'boolean' | 'devtools_project' | 'directory_picker' | 'source_definition';
+  /**
+   * `long_text` is an authoring alias for `textarea` used by template JSON for
+   * multi-paragraph pastes (voice samples, policy text). It was declared in
+   * template content before any renderer or type knew about it, so answers fell
+   * through to a single-line `<input>` and newlines could not be typed at all
+   * (UAT 2026-07-20). Keep it here and in the multi-line branch of
+   * `QuestionnaireFormGridParts` together.
+   */
+  type: 'select' | 'text' | 'textarea' | 'long_text' | 'boolean' | 'devtools_project' | 'directory_picker' | 'source_definition';
   options?: string[];
   default?: string;
   context?: string;
