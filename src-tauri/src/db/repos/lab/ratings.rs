@@ -134,9 +134,21 @@ fn composite_and_coverage(
 
 /// Aggregate measured scores per (prompt version, model) for one persona across
 /// every version-attributed lab result (Arena / Eval / A-B). Powers the
-/// consolidated Lab "Versions & Ratings" table. Only `completed` results carrying
-/// a non-null `version_id` are counted, so legacy current-prompt arena runs are
-/// excluded. The composite applies `SCORE_WEIGHTS` over the present sub-scores.
+/// consolidated Lab "Versions & Ratings" table. Only results carrying a non-null
+/// `version_id` are counted, so legacy current-prompt arena runs are excluded.
+/// The composite applies `SCORE_WEIGHTS` over the present sub-scores.
+///
+/// STATUS VOCABULARY — do not filter on `'completed'` here. Lab *result* rows are
+/// stamped by `test_runner::verdict_status`, whose entire domain is
+/// `passed | failed | inconclusive`. `'completed'` belongs to the *run* status
+/// (`LabRunStatus::Completed`). A `r.status = 'completed'` predicate therefore
+/// matches zero result rows and silently empties this whole table — that was a
+/// real shipped bug (UAT 2026-07-20: 13 real results rendered as "Not measured").
+///
+/// A row counts as measured when it produced at least one sub-score. That keeps
+/// `failed` scenarios (a low score is still a measurement) and `inconclusive`
+/// ones (surfaced separately via `degraded_count`), while dropping rows that
+/// errored out before scoring anything.
 pub fn get_version_ratings(
     pool: &DbPool,
     persona_id: &str,
@@ -153,21 +165,30 @@ pub fn get_version_ratings(
                        r.eval_method AS eval_method,
                        r.created_at AS created_at
                 FROM lab_eval_results r JOIN lab_eval_runs run ON r.run_id = run.id
-                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
+                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL
+                  AND (r.tool_accuracy_score IS NOT NULL
+                       OR r.output_quality_score IS NOT NULL
+                       OR r.protocol_compliance IS NOT NULL)
                 UNION ALL
                 SELECT r.version_id, r.version_number, r.model_id, r.provider,
                        r.tool_accuracy_score, r.output_quality_score, r.protocol_compliance,
                        r.cost_usd, r.duration_ms, r.input_tokens, r.output_tokens,
                        r.eval_method, r.created_at
                 FROM lab_ab_results r JOIN lab_ab_runs run ON r.run_id = run.id
-                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
+                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL
+                  AND (r.tool_accuracy_score IS NOT NULL
+                       OR r.output_quality_score IS NOT NULL
+                       OR r.protocol_compliance IS NOT NULL)
                 UNION ALL
                 SELECT r.version_id, r.version_number, r.model_id, r.provider,
                        r.tool_accuracy_score, r.output_quality_score, r.protocol_compliance,
                        r.cost_usd, r.duration_ms, r.input_tokens, r.output_tokens,
                        r.eval_method, r.created_at
                 FROM lab_arena_results r JOIN lab_arena_runs run ON r.run_id = run.id
-                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
+                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL
+                  AND (r.tool_accuracy_score IS NOT NULL
+                       OR r.output_quality_score IS NOT NULL
+                       OR r.protocol_compliance IS NOT NULL)
             )
             SELECT version_id,
                    MAX(version_number) AS version_number,
@@ -225,9 +246,19 @@ pub fn get_version_ratings(
 }
 
 /// F21: per (version × model) eval economics — attempted-vs-resolved + cost-per-
-/// success. Unlike [`get_version_ratings`] (which filters to completed results),
-/// this counts ALL eval attempts so the resolve rate and cost efficiency are
-/// visible. Scoped to `lab_eval_results` (the table that carries `error_message`).
+/// success. Unlike [`get_version_ratings`] (which counts only rows that produced
+/// a score), this counts ALL attempts so the resolve rate and cost efficiency are
+/// visible.
+///
+/// Unions Arena / A-B / Eval. It was previously scoped to `lab_eval_results`
+/// alone, but `startEval` has no UI caller — so for every user reaching the Lab
+/// through the shipped path (row flask -> Arena) that table is empty and this
+/// panel rendered "No eval results yet" forever, while the guided tour advertised
+/// it (UAT 2026-07-20: `lab_eval_results` = 0 rows on a real profile).
+///
+/// `resolved` counts `'passed'` — see the STATUS VOCABULARY note on
+/// [`get_version_ratings`]; `'completed'` is a *run* status and never appears on
+/// a result row.
 pub fn get_version_economics(
     pool: &DbPool,
     persona_id: &str,
@@ -235,17 +266,33 @@ pub fn get_version_economics(
     timed_query!("lab_version_economics", "lab::get_version_economics", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT r.version_id AS version_id, r.model_id AS model_id,
-                    MAX(r.provider) AS provider,
-                    COUNT(*) AS attempted,
-                    SUM(CASE WHEN r.status = 'completed'
-                                  AND (r.error_message IS NULL OR r.error_message = '')
-                             THEN 1 ELSE 0 END) AS resolved,
-                    COALESCE(SUM(r.cost_usd), 0) AS total_cost
-             FROM lab_eval_results r JOIN lab_eval_runs run ON r.run_id = run.id
-             WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL
-             GROUP BY r.version_id, r.model_id
-             ORDER BY r.model_id",
+            "WITH attempts AS (
+                SELECT r.version_id AS version_id, r.model_id AS model_id,
+                       r.provider AS provider, r.status AS status,
+                       r.error_message AS error_message, r.cost_usd AS cost_usd
+                FROM lab_eval_results r JOIN lab_eval_runs run ON r.run_id = run.id
+                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL
+                UNION ALL
+                SELECT r.version_id, r.model_id, r.provider, r.status,
+                       r.error_message, r.cost_usd
+                FROM lab_ab_results r JOIN lab_ab_runs run ON r.run_id = run.id
+                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL
+                UNION ALL
+                SELECT r.version_id, r.model_id, r.provider, r.status,
+                       r.error_message, r.cost_usd
+                FROM lab_arena_results r JOIN lab_arena_runs run ON r.run_id = run.id
+                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL
+            )
+            SELECT version_id, model_id,
+                   MAX(provider) AS provider,
+                   COUNT(*) AS attempted,
+                   SUM(CASE WHEN status = 'passed'
+                                 AND (error_message IS NULL OR error_message = '')
+                            THEN 1 ELSE 0 END) AS resolved,
+                   COALESCE(SUM(cost_usd), 0) AS total_cost
+            FROM attempts
+            GROUP BY version_id, model_id
+            ORDER BY model_id",
         )?;
         let rows = stmt
             .query_map(params![persona_id], |row| {
@@ -267,6 +314,125 @@ pub fn get_version_economics(
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     })
+}
+
+#[cfg(test)]
+mod status_vocabulary_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    fn test_pool() -> DbPool {
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let uri = format!("file:lab_ratings_testdb_{id}?mode=memory&cache=shared");
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
+        let pool = r2d2::Pool::builder()
+            .max_size(4)
+            .build(manager)
+            .expect("test pool build");
+        {
+            let conn = pool.get().expect("conn");
+            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            crate::db::migrations::run(&conn).expect("initial migrations");
+            crate::db::migrations::run_incremental(&conn).expect("incremental migrations");
+        }
+        pool
+    }
+
+    /// Seed one persona + one arena run + one arena result stamped with the given
+    /// `verdict_status` value, attributed to version `v1`.
+    fn seed_arena_result(pool: &DbPool, status: &str, ta: Option<i32>, oq: Option<i32>) {
+        let conn = pool.get().expect("conn");
+        conn.execute(
+            "INSERT OR IGNORE INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('p1', 'T', 'sp', '2026-01-01', '2026-01-01')",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT OR IGNORE INTO lab_arena_runs (id, persona_id, status, created_at)
+             VALUES ('r1', 'p1', 'completed', '2026-01-01')",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO lab_arena_results
+                (id, run_id, scenario_name, model_id, provider, status,
+                 tool_accuracy_score, output_quality_score, protocol_compliance,
+                 cost_usd, duration_ms, eval_method, version_id, version_number, created_at)
+             VALUES (?1, 'r1', 'sc', 'haiku', 'anthropic', ?2, ?3, ?4, 70,
+                     0.01, 1000, 'llm', 'v1', 1, '2026-01-01')",
+            rusqlite::params![format!("res-{status}-{:?}", (ta, oq)), status, ta, oq],
+        )
+        .unwrap();
+    }
+
+    /// REGRESSION (UAT 2026-07-20). Arena results are stamped by
+    /// `test_runner::verdict_status`, whose domain is `passed | failed |
+    /// inconclusive`. `'completed'` is a *run* status. A `status = 'completed'`
+    /// predicate on the result row matched nothing and silently emptied the whole
+    /// "Versions & Ratings" table while real measurements sat in the DB.
+    #[test]
+    fn arena_verdict_statuses_are_counted_as_measured() {
+        for status in ["passed", "failed", "inconclusive"] {
+            let pool = test_pool();
+            seed_arena_result(&pool, status, Some(80), Some(90));
+            let ratings = get_version_ratings(&pool, "p1").expect("query ok");
+            assert_eq!(
+                ratings.len(),
+                1,
+                "status '{status}' must count as a measurement — \
+                 it is what verdict_status actually writes"
+            );
+        }
+    }
+
+    /// The literal that caused the bug must never resurface as a result status.
+    #[test]
+    fn completed_is_not_a_result_status() {
+        let pool = test_pool();
+        seed_arena_result(&pool, "completed", Some(80), Some(90));
+        // Even if some caller wrote it, the score-presence predicate still counts
+        // the row — the table must never go blank on an unexpected status value.
+        let ratings = get_version_ratings(&pool, "p1").expect("query ok");
+        assert_eq!(
+            ratings.len(),
+            1,
+            "the predicate must key on score presence, not a status allowlist"
+        );
+    }
+
+    /// A row that errored before producing any sub-score is not a measurement.
+    #[test]
+    fn scoreless_rows_are_not_counted() {
+        let pool = test_pool();
+        seed_arena_result(&pool, "failed", None, None);
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "UPDATE lab_arena_results SET protocol_compliance = NULL",
+            [],
+        )
+        .unwrap();
+        drop(conn);
+        let ratings = get_version_ratings(&pool, "p1").expect("query ok");
+        assert!(
+            ratings.is_empty(),
+            "a row with no sub-scores at all carries no measurement"
+        );
+    }
+
+    /// Economics must see Arena attempts — it was scoped to `lab_eval_results`
+    /// alone, which no shipped UI path ever writes.
+    #[test]
+    fn economics_counts_arena_attempts_and_passed_resolutions() {
+        let pool = test_pool();
+        seed_arena_result(&pool, "passed", Some(80), Some(90));
+        seed_arena_result(&pool, "failed", Some(10), Some(20));
+        let eco = get_version_economics(&pool, "p1").expect("query ok");
+        assert_eq!(eco.len(), 1, "arena attempts must reach the economics panel");
+        assert_eq!(eco[0].attempted, 2);
+        assert_eq!(eco[0].resolved, 1, "only 'passed' resolves");
+    }
 }
 
 #[cfg(test)]
