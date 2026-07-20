@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { FlaskConical, Trophy, Target, FileText, Shield } from 'lucide-react';
+import { useAgentStore } from '@/stores/agentStore';
 import { LabHistoryTable, type LabHistoryColumn } from '../shared/LabHistoryTable';
 import { LabResultModal } from '../shared/LabResultModal';
 import { ImprovePromptButton } from '../shared/ImprovePromptButton';
@@ -11,6 +12,9 @@ import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { debtText } from '@/i18n/DebtText';
 
+
+/** Stable empty reference so memo deps don't churn on runs with no results yet. */
+const EMPTY_RESULTS: LabArenaResult[] = [];
 
 interface ArenaHistoryProps {
   runs: LabArenaRun[];
@@ -108,6 +112,55 @@ export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, 
   const activeRun = useMemo(() => runs.find((r) => r.id === expandedRunId), [runs, expandedRunId]);
   const columns = useMemo(() => buildColumns(t, resultsMap), [t, resultsMap]);
 
+  // Human rating channel. `lab_user_ratings` is the ONLY source of `user_feedback`
+  // for `generate_targeted_improvements` — so leaving these props off this call
+  // site (as shipped) closed the sole path for a person to tell the improvement
+  // engine which output was actually wrong (UAT 2026-07-20). Keep them wired.
+  const userRatingsByRun = useAgentStore((s) => s.userRatings);
+  const fetchUserRatings = useAgentStore((s) => s.fetchUserRatings);
+  const rateResult = useAgentStore((s) => s.rateResult);
+
+  const activeRunId = activeRun?.id;
+  useEffect(() => {
+    if (activeRunId) void fetchUserRatings(activeRunId);
+  }, [activeRunId, fetchUserRatings]);
+
+  // Memoised: a fresh `[]` each render would change the identity of every
+  // downstream useMemo dep and defeat them. (This repo has burned a session on
+  // exactly this shape — see the ContextMap refetch loop.)
+  const activeResults = useMemo(
+    () => (activeRunId ? (resultsMap[activeRunId] ?? EMPTY_RESULTS) : EMPTY_RESULTS),
+    [activeRunId, resultsMap],
+  );
+
+  // ArenaResultsView keys ratings by `scenario::model`; the stored rows carry
+  // scenarioName + resultId, so resolve the model through the result row.
+  const ratingsForView = useMemo(() => {
+    if (!activeRunId) return undefined;
+    const rows = userRatingsByRun[activeRunId] ?? [];
+    const byId = new Map(activeResults.map((r) => [r.id, r]));
+    const out: Record<string, { rating: number; feedback?: string }> = {};
+    for (const row of rows) {
+      const modelId = row.resultId ? byId.get(row.resultId)?.modelId : undefined;
+      if (!modelId) continue;
+      out[`${row.scenarioName}::${modelId}`] = {
+        rating: row.rating,
+        feedback: row.feedback ?? undefined,
+      };
+    }
+    return out;
+  }, [activeRunId, userRatingsByRun, activeResults]);
+
+  const handleRate = useMemo(() => {
+    if (!activeRunId) return undefined;
+    return (scenarioName: string, modelId: string, rating: number, feedback?: string) => {
+      const match = activeResults.find(
+        (r) => r.scenarioName === scenarioName && r.modelId === modelId,
+      );
+      void rateResult(activeRunId, match?.id ?? null, scenarioName, rating, feedback);
+    };
+  }, [activeRunId, activeResults, rateResult]);
+
   return (
     <>
       <LabHistoryTable
@@ -143,7 +196,14 @@ export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, 
             ) : undefined
           }
         >
-          <ArenaResultsView results={resultsMap[activeRun.id] ?? []} runId={activeRun.id} llmSummary={activeRun.llmSummary ?? undefined} loading={resultsMap[activeRun.id] === undefined} />
+          <ArenaResultsView
+            results={activeResults}
+            runId={activeRun.id}
+            llmSummary={activeRun.llmSummary ?? undefined}
+            loading={resultsMap[activeRun.id] === undefined}
+            userRatings={ratingsForView}
+            onRate={handleRate}
+          />
         </LabResultModal>
       )}
     </>
