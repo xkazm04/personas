@@ -339,6 +339,20 @@ export interface LabSlice {
   // Versions
   promptVersions: PersonaPromptVersion[];
   fetchVersions: (personaId: string) => Promise<void>;
+  /**
+   * Run the REAL improvement engine for a completed lab run: the backend
+   * (`lab_improve_prompt` -> `generate_targeted_improvements`) grounds an LLM
+   * rewrite in the full current prompt + per-scenario judge rationale/suggestions
+   * + this run's user ratings, and persists the result as a new `experimental`
+   * version. Returns the created version (or null on failure). The binding
+   * existed with zero callers, so "Improve" only ever seeded a chat box and the
+   * judge's own diagnosis was dropped (UAT 2026-07-20).
+   */
+  improvePromptVersion: (
+    personaId: string,
+    runId: string,
+    mode: 'arena' | 'ab' | 'eval' | 'matrix',
+  ) => Promise<PersonaPromptVersion | null>;
   tagVersion: (id: string, tag: string) => Promise<void>;
   rollbackVersion: (versionId: string) => Promise<void>;
   healthErrorRate: number | null;
@@ -522,6 +536,20 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         set({ promptVersions: versions });
       } catch (err) {
         reportError(err, "Failed to fetch prompt versions", set, { action: "lab.fetchVersions" });
+      }
+    },
+    improvePromptVersion: async (personaId, runId, mode) => {
+      try {
+        const version = await api.labImprovePrompt(personaId, runId, mode);
+        // A fresh experimental version now exists — surface it in the table so
+        // the user can measure it against the baseline immediately.
+        get().fetchVersions(personaId);
+        return version;
+      } catch (err) {
+        reportError(err, "Failed to generate an improved version", set, {
+          action: "lab.improvePromptVersion",
+        });
+        return null;
       }
     },
     tagVersion: async (id, tag) => {

@@ -3,7 +3,6 @@ import { Wand2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { buildTestMetadataForDesignContext } from '../../libs/labFeedbackLoop';
 import { parseDesignContext, serializeDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
-import { useSeedAthenaComposer } from '@/features/plugins/companion/useSeedAthenaComposer';
 import { useTranslation } from '@/i18n/useTranslation';
 
 
@@ -54,24 +53,26 @@ function avgScores(results: Array<Record<string, unknown>>) {
 }
 
 /**
- * "Improve" action for a completed lab run. It does two things — the SAME single
- * improve mechanism the Versions table uses:
+ * "Auto-Improve" action for a completed lab run. Runs the REAL improvement
+ * engine and creates a grounded new version:
  *  1. Enriches the persona's design_context with lab test metadata (the durable
- *     feedback loop from testing back into building — fired straight from the
- *     run's results, no separate matrix run required).
- *  2. Seeds Athena's composer with an improvement brief and opens the panel,
- *     letting the user specify the focus before sending.
+ *     feedback loop from testing back into building).
+ *  2. Calls `lab_improve_prompt` (via `improvePromptVersion`), which grounds an
+ *     LLM rewrite server-side in the full current prompt + per-scenario judge
+ *     rationale/suggestions + this run's user ratings, and persists it as a new
+ *     `experimental` version that appears in the Versions table ready to measure.
  *
- * (Previously this fired a Matrix run whose results had no surface in the
- * consolidated Lab, then toasted a pointer to a removed tab — both removed. The
- * matrix/ab/eval slice machinery is untouched; only this button's usage of it.)
+ * Previously this only seeded the Athena chat composer with ~4 scalars and asked
+ * the user "what should I focus on?", dropping the judge's own diagnosis — the
+ * `lab_improve_prompt` binding had zero callers (UAT 2026-07-20). The judge's
+ * rationale/suggestions now reach the thing that writes the next version.
  */
 export function ImprovePromptButton({ personaId, runId, mode, disabled }: ImprovePromptButtonProps) {
   const { t, tx } = useTranslation();
   const lab = t.agents.lab;
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const seedAthena = useSeedAthenaComposer();
+  const [newVersion, setNewVersion] = useState<number | null>(null);
 
   const handleClick = async () => {
     setState('loading');
@@ -101,23 +102,16 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
         await useAgentStore.getState().updatePersona(personaId, { design_context: enriched });
       }
 
-      // 2. Seed Athena's composer with an improvement brief (single improve path).
-      const persona = useAgentStore.getState().selectedPersona;
-      const name = persona?.name ?? '';
-      const scores = avgScores(results);
-      let seed: string;
-      if (scores) {
-        const metrics = [
-          { label: lab.vr_metric_tool, v: scores.ta },
-          { label: lab.vr_metric_quality, v: scores.oq },
-          { label: lab.vr_metric_protocol, v: scores.pc },
-        ];
-        const weakest = metrics.reduce((a, b) => (b.v < a.v ? b : a));
-        seed = tx(lab.improve_run_seed_measured, { name, metric: weakest.label, score: weakest.v });
-      } else {
-        seed = tx(lab.improve_run_seed_plain, { name });
+      // 2. Run the real improvement engine — grounded in judge rationale +
+      //    suggestions + user ratings server-side — and persist a new version.
+      const version = await useAgentStore.getState().improvePromptVersion(personaId, runId, mode);
+      if (!version) {
+        // reportError already surfaced the cause via the store.
+        setState('error');
+        setErrorMsg(lab.improve_failed);
+        return;
       }
-      seedAthena(seed);
+      setNewVersion(version.version_number);
       setState('success');
     } catch (err) {
       setState('error');
@@ -129,7 +123,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-emerald-500/15 text-emerald-400">
         <CheckCircle2 className="w-3.5 h-3.5" />
-        {lab.improve_seeded}
+        {newVersion != null ? `${lab.improve_ready_title} · v${newVersion}` : lab.improve_ready_title}
       </span>
     );
   }
