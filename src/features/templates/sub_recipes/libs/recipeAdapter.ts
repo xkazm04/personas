@@ -189,13 +189,36 @@ function nonEmptyString(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim().length > 0 ? v.trim() : undefined;
 }
 
-/** Collapse the UC review-mode vocabulary (always / never / conditional /
- *  on_low_confidence / …) into the 3-state toggle the adoption flow knows. */
+/** Collapse the UC review-mode vocabulary (always / never / on_low_confidence /
+ *  auto_triage / …) into the 3-state toggle the adoption flow knows.
+ *
+ *  This MUST mirror the backend's `review_policy.mode` -> runtime mapping
+ *  (`dispatch::pick_generation_policy`), because the value we return is written
+ *  into `generation_settings.reviews`, which the backend gives PRECEDENCE over
+ *  `review_policy.mode`. There is no path in the backend from a review-mode to
+ *  `TrustLlm` — so a review-mode must never produce `'trust_llm'` here either.
+ *
+ *  The shipped catch-all did the opposite: any mode that wasn't never/off/always
+ *  fell to `'trust_llm'` (auto-resolve, never queue a human). So `on_low_confidence`
+ *  — which the builder path correctly maps to `On` (review) and which the user
+ *  reads as "pause when unsure" — silently became "never review" on the adoption
+ *  path, while the guardrails card labelled it "Conditional" (UAT 2026-07-20,
+ *  support-lead). Two identically-worded options, opposite safety behaviour.
+ *
+ *  Fail SAFE: an unrecognised mode means review, never skip-the-human. Only the
+ *  genuine auto-resolve modes (`auto_triage`, explicit `trust_llm`) land in the
+ *  no-human-queue bucket. There is no confidence signal in the product, so
+ *  `on_low_confidence` can only conservatively mean "review". */
 function reviewModeToSetting(mode: string | undefined): 'on' | 'off' | 'trust_llm' | undefined {
   if (!mode) return undefined;
-  if (mode === 'never' || mode === 'off') return 'off';
-  if (mode === 'always') return 'on';
-  return 'trust_llm';
+  const m = mode.toLowerCase();
+  if (m === 'never' || m === 'off') return 'off';
+  // auto_triage and an explicit trust_llm are the only modes that legitimately
+  // resolve without a human queue; everything else (always, on_low_confidence,
+  // conditional, and any unknown mode) resolves to review.
+  if (m === 'auto_triage' || m === 'autotriage' || m === 'auto-triage') return 'trust_llm';
+  if (m === 'trust_llm' || m === 'trustllm' || m === 'trust-llm') return 'trust_llm';
+  return 'on';
 }
 
 function parsePromptTemplate(prompt: string): ParsedUseCase {

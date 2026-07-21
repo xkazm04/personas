@@ -101,7 +101,29 @@ describe('recipeDefinitionToRecipe', () => {
     expect(r.template.reviewPolicy).toEqual({ mode: 'on_low_confidence', context: 'Reviewed when unsure.' });
     expect(r.template.memoryPolicy).toEqual({ enabled: true, context: 'Remembers approver stats.' });
     expect(r.template.errorHandling).toBe('Retry once, then flag.');
-    expect(r.template.generationSettings).toEqual({ reviews: 'trust_llm', memories: 'on' });
+    // REGRESSION (UAT 2026-07-20): on_low_confidence must map to 'on' (review),
+    // NOT 'trust_llm'. The backend maps this mode to ReviewPolicy::On; mapping it
+    // to trust_llm here silently auto-resolved every review on the adoption path
+    // while the UI labelled it "Conditional" — a human-safety inversion.
+    expect(r.template.generationSettings).toEqual({ reviews: 'on', memories: 'on' });
+  });
+
+  it('maps auto_triage to the LLM auto-resolve bucket, and unknown modes fail SAFE to review', () => {
+    const triage = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc', review_policy: { mode: 'auto_triage' } }),
+    );
+    expect(triage.template.generationSettings).toEqual({ reviews: 'trust_llm' });
+
+    // An unrecognised mode must resolve to review, never skip-the-human.
+    const unknown = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc', review_policy: { mode: 'something_new' } }),
+    );
+    expect(unknown.template.generationSettings).toEqual({ reviews: 'on' });
+
+    const always = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc', review_policy: { mode: 'always' } }),
+    );
+    expect(always.template.generationSettings).toEqual({ reviews: 'on' });
   });
 
   it('maps never-review + disabled memory to off settings', () => {
