@@ -99,6 +99,13 @@ The Lab tab opened on this profile (Team+/dev), and the sidebar renders Events +
 | `run-and-review-execution` | L1-conditional | not driven this pass |
 | `set-trigger-automate` | L1-fail (2 of 3) | not driven this pass |
 
+## Fix verification (post-report, same session)
+
+Both headline Lab fixes were driven live on `:17320` after landing:
+
+- **Status-vocabulary fix (`724c43fb3`)** — re-measured persona `0cdfed77`. Table went from `v1 · — · Not measured` to **v2/haiku 86 · v1/sonnet 45 · v1/haiku 31, all "Measured"**; economics from "No eval results yet" to **haiku 5/5 100% $0.038 · haiku 4/0 0% · sonnet 4/0 0%**. All 13 real results now render.
+- **Scenario-set pinning (`3985a425b`)** — on a clean persona (`76d1999b`), measured v1 then v2 (haiku). **Before the fix: 0-of-4 scenario overlap. After: 5-of-5 — the two versions drew an identical scenario set** (`Daily Digest…`, `URL Summarizer — JS-only SPA…`, `URL Summarizer — successful article fetch`, `Web Q&A — all search results fail…`, `Web Q&A — multi-source synthesis…`), with zero foreign scenarios in v2. The Δ column now compares prompt-vs-prompt on one exam.
+
 ## Revised fix priority (L2-informed)
 
 The status-filter bug reorders everything. Corrected order for the Lab:
