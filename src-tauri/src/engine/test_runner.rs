@@ -54,6 +54,24 @@ fn truncate_chars(s: &str, max_chars: usize) -> String {
     s.chars().take(max_chars).collect()
 }
 
+/// Cache key for a persona's generated test scenarios.
+///
+/// DELIBERATELY excludes the prompt text. The Lab's "Versions & Ratings" Δ column
+/// compares two prompt *versions* of one persona, and a version-scoped measure
+/// swaps that version's prompt onto the persona before generating scenarios
+/// (`lab_start_arena` version resolution). If the prompt were in this key, v1 and
+/// v2 would each generate — and be graded on — a *different* LLM-invented exam,
+/// so the Δ would subtract scores earned on different questions. UAT 2026-07-20
+/// proved it live: a one-line prompt tweak produced a 0-of-4-overlap scenario set
+/// and a +54.7-pt "improvement" that was pure exam drift.
+///
+/// Keying on `(persona.id, tools, use_case_filter)` instead pins one scenario set
+/// per persona, so every version is graded against the same questions and the Δ
+/// is apples-to-apples. The tradeoff (accepted): a persona whose prompt was
+/// materially rewritten keeps, for up to the cache TTL, an exam authored before
+/// the rewrite. `fixture_inputs` runs already bypass the cache for fresh data,
+/// and the TTL bounds staleness. Do NOT re-add the prompt here without also
+/// making the Δ column scenario-set-aware.
 fn scenario_cache_key(
     persona: &crate::db::models::Persona,
     tools: &[crate::db::models::PersonaToolDefinition],
@@ -62,8 +80,6 @@ fn scenario_cache_key(
     use std::hash::{Hash, Hasher};
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     persona.id.hash(&mut hasher);
-    persona.system_prompt.hash(&mut hasher);
-    persona.structured_prompt.hash(&mut hasher);
     for t in tools {
         t.name.hash(&mut hasher);
         t.description.hash(&mut hasher);
@@ -3088,6 +3104,48 @@ mod tests {
         // Smart quotes / em-dashes are multibyte too — must pass through intact.
         let mixed = "“café” — 你好 🚀";
         assert_eq!(truncate_chars(mixed, 2000), mixed);
+    }
+
+    /// REGRESSION (UAT 2026-07-20): the scenario cache key must be STABLE across
+    /// a prompt change, so every version of a persona is graded on one scenario
+    /// set and the Δ column compares like with like. When the prompt was in the
+    /// key, a version-scoped measure (which swaps the version's prompt onto the
+    /// persona) regenerated the exam and the Δ subtracted scores from different
+    /// questions.
+    #[test]
+    fn scenario_cache_key_is_stable_across_prompt_changes() {
+        let mut p = crate::db::models::Persona {
+            id: "persona-1".into(),
+            ..Default::default()
+        };
+        p.system_prompt = "v1 system prompt".into();
+        p.structured_prompt = Some("{\"instructions\":\"v1\"}".into());
+        let k1 = scenario_cache_key(&p, &[], None);
+
+        // Simulate a version-scoped measure swapping v2's prompt onto the persona.
+        p.system_prompt = "v2 system prompt — materially different".into();
+        p.structured_prompt = Some("{\"instructions\":\"v2 rewritten\"}".into());
+        let k2 = scenario_cache_key(&p, &[], None);
+
+        assert_eq!(k1, k2, "prompt text must not change the scenario cache key");
+    }
+
+    /// The key must still discriminate on the axes that legitimately change the
+    /// exam: persona identity, the tool surface, and the use-case filter.
+    #[test]
+    fn scenario_cache_key_discriminates_persona_tools_and_filter() {
+        let p1 = crate::db::models::Persona { id: "a".into(), ..Default::default() };
+        let p2 = crate::db::models::Persona { id: "b".into(), ..Default::default() };
+        assert_ne!(
+            scenario_cache_key(&p1, &[], None),
+            scenario_cache_key(&p2, &[], None),
+            "different personas must get different scenario sets"
+        );
+        assert_ne!(
+            scenario_cache_key(&p1, &[], None),
+            scenario_cache_key(&p1, &[], Some("uc-1")),
+            "a use-case filter must change the scenario set"
+        );
     }
 
     // -- Direction 1: unscoped-arena attribution --------------------------------
