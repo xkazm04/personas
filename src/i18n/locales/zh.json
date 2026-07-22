@@ -261,7 +261,12 @@
     "stream_no_speakers": "无发言者",
     "stream_none": "无",
     "stream_search": "搜索消息",
-    "stream_title": "消息流"
+    "stream_title": "消息流",
+    "columns_action_empty": "现在没有需要你处理的事项",
+    "columns_needs_attention": "需要关注",
+    "columns_active_goals": "进行中的目标",
+    "columns_no_team": "无所属团队",
+    "columns_all_clear": "一切正常"
   },
   "common": {
     "loading": "加载中...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "{count} 跳",
       "active_chains_one": "{count} 条链运行中",
       "active_chains_other": "{count} 条链运行中",
-      "active_chains_title": "运行中的链"
+      "active_chains_title": "运行中的链",
+      "copy_log_failed": "无法将日志复制到剪贴板"
     },
     "lab": {
       "mode_arena": "竞技场",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "依赖关系图",
       "ct_swap_alt_tooltip": "切换到备用连接器",
       "ct_deps": "{count} 个依赖",
-      "dg_no_deps": "无依赖关系可显示。",
-      "dg_broken": "{count} 个已损坏",
-      "dg_blast_radius": "影响范围",
-      "dg_dependencies": "依赖关系",
-      "dg_select_cred": "选择凭据以查看其过期时的影响",
-      "dg_relationships": "关系（{count}）",
-      "dg_more": "+{count} 更多",
-      "dg_affected_tools": "受影响工具",
-      "dg_affected_auto": "受影响自动化",
-      "dg_low_risk": "低风险",
-      "dg_medium_risk": "中等风险",
-      "dg_high_risk": "高风险",
-      "dg_high_blast": "若此凭据过期或离线，{count} 项功能将失效。",
-      "dg_medium_blast": "{count} 项功能依赖此凭据。",
-      "dg_low_blast": "无工具或自动化依赖此凭据。",
       "dm_needed": "需要 {count} 个凭据",
       "dm_fulfilled": "{fulfilled}/{total} 个连接器已满足",
       "dm_reuse_hint": "{count} 个可复用现有凭据",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "触发器和订阅",
       "sub_suggested": "{count} 个建议",
       "sub_filter": "筛选：{filter}",
-      "lifecycle_error_load_triggers": "加载触发器失败：{error}",
-      "lifecycle_error_load_subscriptions": "加载订阅失败：{error}",
-      "lifecycle_error_activate_trigger": "触发器启用失败",
-      "lifecycle_error_activate_subscription": "订阅启用失败",
-      "lifecycle_error_retire_trigger": "删除触发器失败",
-      "lifecycle_error_retire_subscription": "删除订阅失败",
-      "lifecycle_error_delete_persists": "删除失败。订阅可能仍然存在。",
       "auto_error_deploy_check_credentials": "部署失败，请检查您的平台凭据后重试。",
       "auto_error_deploy_generic": "自动化部署失败",
       "test_healthcheck_failed_default": "健康检查失败",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "暂无注释——为此次运行添加标签、备注或收藏，方便日后查找。",
       "col_verdict": "评定",
       "verdict_none": "尚未经过 Director 审核",
-      "verdict_tooltip": "Director 评定：{score}/5"
+      "verdict_tooltip": "Director 评定：{score}/5",
+      "annotation_saving": "保存中…"
     },
     "settings_status": {
       "saving": "正在保存 {sections}...",
@@ -3612,7 +3597,23 @@
         "other": "其他"
       },
       "title": "变更历史"
-    }
+    },
+    "sigil_edit_channels_label": "通知渠道",
+    "sigil_edit_custom_connector": "自定义连接器 — 无匹配的品牌图标。",
+    "sigil_edit_error_off": "使用默认错误处理策略。",
+    "sigil_edit_error_on": "已配置自定义错误处理策略。",
+    "sigil_edit_event_off": "未配置事件订阅。",
+    "sigil_edit_event_on": "此能力订阅了事件。",
+    "sigil_edit_memory_off": "记忆功能已关闭 — 此能力以无状态方式运行。",
+    "sigil_edit_memory_on": "此能力已启用持久记忆。",
+    "sigil_edit_no_channels": "此能力未配置通知渠道。",
+    "sigil_edit_no_connector": "此能力未声明连接器。",
+    "sigil_edit_no_dim_editor": "此维度尚未接入编辑器。",
+    "sigil_edit_no_trigger": "此能力未配置触发器。",
+    "sigil_edit_review_off": "无人工审核关卡 — 操作自主执行。",
+    "sigil_edit_review_on": "此能力执行前需要人工审核。",
+    "sigil_edit_service_label": "服务：{key}",
+    "sigil_edit_when_label": "触发条件"
   },
   "vault": {
     "workspace_connect": "工作区连接",
@@ -3911,7 +3912,8 @@
       "query_parameters": "查询参数",
       "recipes_title": "已保存配方",
       "truncated_warning": "响应已截断以供显示",
-      "value_col": "值"
+      "value_col": "值",
+      "request_headers": "请求头"
     },
     "ingest": {
       "save_name": "保存名称",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "键值",
       "capability_key_value_hint": "这是一个键值存储。请使用 SCAN、GET 和 TYPE 等键命令，而非 SQL。",
       "capability_select_subset": "仅 SELECT",
-      "capability_select_subset_hint": "这里仅运行针对单个表的简单 SELECT 查询——用 WHERE 过滤、ORDER BY 排序、LIMIT 限制。不支持 JOIN、聚合、CTE 和写入。"
+      "capability_select_subset_hint": "这里仅运行针对单个表的简单 SELECT 查询——用 WHERE 过滤、ORDER BY 排序、LIMIT 限制。不支持 JOIN、聚合、CTE 和写入。",
+      "query_timeout": "等待响应超时，请重试。"
     },
     "dependencies": {
       "simulate_revocation": "模拟撤销",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "将扫描的内容",
       "read_error_item": "无法读取 {source}",
       "read_errors_title": "部分来源无法读取",
-      "select_high_confidence": "高置信度"
+      "select_high_confidence": "高置信度",
+      "source_unknown": "未知来源"
     },
     "desktop_discovery": {
       "title": "桌面应用",
@@ -5875,7 +5879,9 @@
       "col_days": "天数",
       "col_incident": "事件",
       "guidance_mcp_sidecar": "由于缺少 personas-mcp 二进制文件,代理在没有内置 MCP 工具的情况下运行。请重新安装或修复应用,确保其随桌面应用一起提供。",
-      "source_mcp_sidecar": "MCP 工具集"
+      "source_mcp_sidecar": "MCP 工具集",
+      "list_truncated": "仅显示前 {limit} 个事件——请缩小筛选范围以查看其余内容。",
+      "action_refused": "操作未生效——该事件的状态可能已发生变化。"
     },
     "observability": {
       "title": "可观测性",
@@ -9545,7 +9551,8 @@
       "event_type_required": "需要提供要监听的事件类型。",
       "watch_path_required": "至少需要提供一个监视路径。",
       "composite_min_conditions": "组合触发器至少需要 2 个条件。",
-      "composite_window_minimum": "时间窗口至少需要 5 秒。"
+      "composite_window_minimum": "时间窗口至少需要 5 秒。",
+      "endpoint_required": "需要端点URL或事件。"
     },
     "dead_letter_select_all": "选择 all",
     "dead_letter_select_visible": "选择 visible",
@@ -9750,7 +9757,9 @@
       "watch": "关注",
       "watching": "关注中",
       "watching_only": "仅关注"
-    }
+    },
+    "overdue_label": "已逾期",
+    "relay_delete_failed": "删除中继失败 — 请重试"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "活跃",
       "paused": "已暂停",
       "failed": "失败",
-      "file-based": "基于文件",
-      "unknown": "未知"
+      "unknown": "未知",
+      "file-based": "基于文件"
     },
     "delivery": {
       "delivered": "已送达",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "s 已耗时",
       "s_remaining": "s 剩余",
       "show_cli_output": "显示 CLI 输出",
-      "hide_cli_output": "隐藏 CLI 输出"
+      "hide_cli_output": "隐藏 CLI 输出",
+      "starting_transformation": "正在开始转换...",
+      "step_progress": "第 {step} 步，共 {total} 步",
+      "starting_short": "正在开始...",
+      "check_output_details": "请查看下方输出以了解详情。"
     },
     "terminal_extra": {
       "press_enter": "按 Enter 或点击播放以开始",

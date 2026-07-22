@@ -1136,7 +1136,7 @@ pub async fn run_execution(
     // and fire `drive.document.*` events for files the persona produced.
     // The drive root is only available after at least one `drive_*` command
     // has initialised it in this process; snapshot is `None` otherwise.
-    let drive_root_for_sync = crate::commands::drive::cached_managed_root();
+    let drive_root_for_sync = crate::commands::drive::managed_root_cache();
     let pre_drive_snapshot = drive_root_for_sync
         .as_deref()
         .map(crate::commands::drive::snapshot_drive);

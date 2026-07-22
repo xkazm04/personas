@@ -260,5 +260,10 @@
   "stream_no_speakers": "Нет участников",
   "stream_none": "Нет",
   "stream_search": "Поиск по сообщениям",
-  "stream_title": "Лента"
+  "stream_title": "Лента",
+  "columns_action_empty": "Сейчас ничего не требует вашего внимания",
+  "columns_needs_attention": "Требует внимания",
+  "columns_active_goals": "Активные цели",
+  "columns_no_team": "Нет команды",
+  "columns_all_clear": "Всё в порядке"
 }

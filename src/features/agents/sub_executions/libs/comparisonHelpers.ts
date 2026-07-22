@@ -19,13 +19,18 @@ export function fmtPct(v: number): string {
   return `${sign}${v.toFixed(0)}%`;
 }
 
-export function fmtTokens(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+export function fmtTokens(n: number, opts?: { withMillions?: boolean }): string {
+  if (opts?.withMillions && n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}${opts?.withMillions ? 'K' : 'k'}`;
   return String(n);
 }
 
-export function fmtCost(v: number): string {
-  return v < 0.001 ? '<$0.001' : `$${v.toFixed(4)}`;
+export function fmtCost(v: number, opts?: { precision?: 4 | 'auto' }): string {
+  if (v < 0.001) return '<$0.001';
+  if (opts?.precision === 'auto') {
+    return v < 0.01 ? `$${v.toFixed(3)}` : `$${v.toFixed(2)}`;
+  }
+  return `$${v.toFixed(4)}`;
 }
 
 export function deltaColor(pct: number, lowerIsBetter = true): string {
@@ -34,7 +39,17 @@ export function deltaColor(pct: number, lowerIsBetter = true): string {
   return good ? 'text-emerald-400' : 'text-amber-400';
 }
 
-/** Simple word-level diff for terminal output lines. */
+/**
+ * Simple membership-based diff for terminal output lines.
+ *
+ * NOTE: this is a Set-membership diff, not a sequence (LCS) diff — it is
+ * intentionally cheap for large terminal logs. Known limitations: a line
+ * repeated a different number of times in A vs B still reads as fully
+ * "same"; a line present in both but reordered is not flagged as moved;
+ * and all "added" lines are appended after A's lines rather than shown
+ * in their real position. Good enough for a quick "did anything change"
+ * signal — do not rely on it for exact positional diffing.
+ */
 export function diffLines(linesA: string[], linesB: string[]): Array<{ type: 'same' | 'added' | 'removed'; text: string }> {
   const result: Array<{ type: 'same' | 'added' | 'removed'; text: string }> = [];
   const setA = new Set(linesA);

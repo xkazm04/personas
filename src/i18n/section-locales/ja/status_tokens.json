@@ -111,8 +111,8 @@
     "active": "有効",
     "paused": "一時停止",
     "failed": "失敗",
-    "file-based": "ファイルベース",
-    "unknown": "不明"
+    "unknown": "不明",
+    "file-based": "ファイルベース"
   },
   "delivery": {
     "delivered": "配信済み",

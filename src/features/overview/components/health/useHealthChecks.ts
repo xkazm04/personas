@@ -12,6 +12,9 @@ const IPC_FALLBACKS: Record<string, HealthCheckSection> = {
   local: makeFallback('local', 'Local Environment', [
     { id: 'ipc', label: 'Application Bridge', status: 'error', detail: 'The Tauri IPC bridge is not responding. The app may need to be rebuilt or restarted.', installable: false },
   ]),
+  environment: makeFallback('environment', 'Environment', [
+    { id: 'environment', label: 'Environment', status: 'inactive', detail: 'Cannot check — IPC unavailable', installable: false },
+  ]),
   agents: makeFallback('agents', 'Agents', [
     { id: 'ollama_api_key', label: 'Ollama Cloud API Key', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
     { id: 'litellm_proxy', label: 'LiteLLM Proxy', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
@@ -65,7 +68,15 @@ export function useHealthChecks() {
           if (result.status === 'fulfilled') return result.value;
           anyIpcError = true;
           const checkId = CHECKS[i]!.id;
-          return IPC_FALLBACKS[checkId]!;
+          // Defensive: a missing fallback entry ('environment' was absent)
+          // made this undefined, crashed the .every() below inside the
+          // .then(), and the health panel spun forever.
+          return (
+            IPC_FALLBACKS[checkId] ??
+            makeFallback(checkId, checkId, [
+              { id: checkId, label: checkId, status: 'inactive', detail: 'Cannot check — IPC unavailable', installable: false },
+            ])
+          );
         });
 
         const sorted = sortSections(resolved);

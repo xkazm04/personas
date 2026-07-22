@@ -261,7 +261,12 @@
     "stream_no_speakers": "لا متحدثون",
     "stream_none": "لا شيء",
     "stream_search": "بحث في الإرساليات",
-    "stream_title": "التدفق"
+    "stream_title": "التدفق",
+    "columns_action_empty": "لا شيء يحتاج إليك الآن",
+    "columns_needs_attention": "يحتاج إلى انتباه",
+    "columns_active_goals": "الأهداف النشطة",
+    "columns_no_team": "بلا فريق",
+    "columns_all_clear": "كل شيء على ما يرام"
   },
   "common": {
     "loading": "جارٍ التحميل...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "{count} قفزات",
       "active_chains_one": "سلسلة {count} قيد التنفيذ",
       "active_chains_other": "{count} سلاسل قيد التنفيذ",
-      "active_chains_title": "سلاسل قيد التنفيذ"
+      "active_chains_title": "سلاسل قيد التنفيذ",
+      "copy_log_failed": "تعذر نسخ السجل إلى الحافظة"
     },
     "lab": {
       "mode_arena": "الساحة",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "رسم بياني للتبعيات",
       "ct_swap_alt_tooltip": "التبديل للموصِّل البديل",
       "ct_deps": "{count} تبعية",
-      "dg_no_deps": "لا تبعيات للعرض.",
-      "dg_broken": "{count} معطوب",
-      "dg_blast_radius": "نطاق التأثير",
-      "dg_dependencies": "التبعيات",
-      "dg_select_cred": "اختر بيانات اعتماد لمعرفة ما سينكسر عند انتهاء صلاحيتها",
-      "dg_relationships": "العلاقات ({count})",
-      "dg_more": "+{count} أخرى",
-      "dg_affected_tools": "الأدوات المتأثرة",
-      "dg_affected_auto": "الأتمتة المتأثرة",
-      "dg_low_risk": "خطر منخفض",
-      "dg_medium_risk": "خطر متوسط",
-      "dg_high_risk": "خطر مرتفع",
-      "dg_high_blast": "إذا انتهت صلاحية هذه البيانات أو توقفت، ستنكسر {count} قدرة.",
-      "dg_medium_blast": "{count} قدرة تعتمد على هذه البيانات.",
-      "dg_low_blast": "لا أدوات أو أتمتة تعتمد على هذه البيانات.",
       "dm_needed": "{count} بيانات اعتماد مطلوبة",
       "dm_fulfilled": "{fulfilled}/{total} موصِّل مكتمل",
       "dm_reuse_hint": "{count} يمكن إعادة استخدام بيانات اعتماد موجودة",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "المُشغّلات والاشتراكات",
       "sub_suggested": "{count} مقترح",
       "sub_filter": "تصفية: {filter}",
-      "lifecycle_error_load_triggers": "تعذّر تحميل المُشغِّلات: {error}",
-      "lifecycle_error_load_subscriptions": "تعذّر تحميل الاشتراكات: {error}",
-      "lifecycle_error_activate_trigger": "تعذّر تفعيل المُشغِّل",
-      "lifecycle_error_activate_subscription": "تعذّر تفعيل الاشتراك",
-      "lifecycle_error_retire_trigger": "تعذّر حذف المُشغِّل",
-      "lifecycle_error_retire_subscription": "تعذّر حذف الاشتراك",
-      "lifecycle_error_delete_persists": "تعذّر الحذف. قد يظل الاشتراك موجودًا.",
       "auto_error_deploy_check_credentials": "تعذّر النشر. تحقّق من بيانات اعتماد المنصّة وأعد المحاولة.",
       "auto_error_deploy_generic": "تعذّر نشر الأتمتة",
       "test_healthcheck_failed_default": "تعذّر فحص السلامة",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "لا تعليق بعد على هذا التشغيل — أضف وسمًا أو ملاحظة أو ميّزه بنجمة لتسهيل العثور عليه لاحقًا.",
       "col_verdict": "الحكم",
       "verdict_none": "لم يراجعه المدير بعد",
-      "verdict_tooltip": "حكم المدير: {score}/5"
+      "verdict_tooltip": "حكم المدير: {score}/5",
+      "annotation_saving": "جارٍ الحفظ…"
     },
     "settings_status": {
       "saving": "جارٍ حفظ {sections}...",
@@ -3612,7 +3597,23 @@
         "other": "أخرى"
       },
       "title": "سجل التغييرات"
-    }
+    },
+    "sigil_edit_channels_label": "القنوات",
+    "sigil_edit_custom_connector": "رابط مخصص — لا يوجد شعار مطابق للعلامة التجارية.",
+    "sigil_edit_error_off": "يعتمد على سياسة الأخطاء الافتراضية.",
+    "sigil_edit_error_on": "تم تكوين سياسة مخصصة لمعالجة الأخطاء.",
+    "sigil_edit_event_off": "لا توجد اشتراكات في الأحداث.",
+    "sigil_edit_event_on": "هذه القدرة تشترك في الأحداث.",
+    "sigil_edit_memory_off": "الذاكرة متوقفة — تعمل القدرة بدون حالة.",
+    "sigil_edit_memory_on": "الذاكرة الدائمة مفعّلة لهذه القدرة.",
+    "sigil_edit_no_channels": "لا توجد قنوات إشعارات لهذه القدرة.",
+    "sigil_edit_no_connector": "هذه القدرة لا تحدد رابطًا.",
+    "sigil_edit_no_dim_editor": "لا يوجد محرر متصل بهذا البُعد بعد.",
+    "sigil_edit_no_trigger": "لا يوجد مُشغّل مكوّن لهذه القدرة.",
+    "sigil_edit_review_off": "لا توجد بوابة مراجعة بشرية — الإجراءات تتم بشكل مستقل.",
+    "sigil_edit_review_on": "المراجعة البشرية مطلوبة قبل أن تتصرف هذه القدرة.",
+    "sigil_edit_service_label": "الخدمة: {key}",
+    "sigil_edit_when_label": "عند"
   },
   "vault": {
     "workspace_connect": "ربط مساحة العمل",
@@ -3911,7 +3912,8 @@
       "query_parameters": "معاملات الاستعلام",
       "recipes_title": "الوصفات المحفوظة",
       "truncated_warning": "الاستجابة مقطوعة للعرض",
-      "value_col": "القيمة"
+      "value_col": "القيمة",
+      "request_headers": "الترويسات"
     },
     "ingest": {
       "save_name": "حفظ الاسم",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "مفتاح-قيمة",
       "capability_key_value_hint": "هذا مخزن من نوع مفتاح-قيمة. استخدم أوامر المفاتيح مثل SCAN وGET وTYPE — وليس SQL.",
       "capability_select_subset": "SELECT فقط",
-      "capability_select_subset_hint": "تُشغَّل هنا فقط استعلامات SELECT البسيطة على جدول واحد — التصفية باستخدام WHERE، والترتيب باستخدام ORDER BY، والتحديد باستخدام LIMIT. أما JOIN والتجميعات وCTE وعمليات الكتابة فغير مدعومة."
+      "capability_select_subset_hint": "تُشغَّل هنا فقط استعلامات SELECT البسيطة على جدول واحد — التصفية باستخدام WHERE، والترتيب باستخدام ORDER BY، والتحديد باستخدام LIMIT. أما JOIN والتجميعات وCTE وعمليات الكتابة فغير مدعومة.",
+      "query_timeout": "انتهت مهلة انتظار الاستجابة. يرجى المحاولة مرة أخرى."
     },
     "dependencies": {
       "simulate_revocation": "محاكاة الإبطال",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "ما الذي يتم فحصه",
       "read_error_item": "تعذّرت قراءة {source}",
       "read_errors_title": "تعذّرت قراءة بعض المصادر",
-      "select_high_confidence": "ثقة عالية"
+      "select_high_confidence": "ثقة عالية",
+      "source_unknown": "مصدر غير معروف"
     },
     "desktop_discovery": {
       "title": "تطبيقات سطح المكتب",
@@ -5875,7 +5879,9 @@
       "col_days": "الأيام",
       "col_incident": "الحادثة",
       "guidance_mcp_sidecar": "تعذّر تشغيل الوكيل بأدواته المدمجة عبر MCP لأن ملف personas-mcp التنفيذي كان مفقودًا. أعد تثبيت أو إصلاح التطبيق للتأكد من تضمينه مع التطبيق.",
-      "source_mcp_sidecar": "أدوات MCP"
+      "source_mcp_sidecar": "أدوات MCP",
+      "list_truncated": "يتم عرض أول {limit} حادثة — ضيّق نطاق الفلاتر لرؤية الباقي.",
+      "action_refused": "لم يتم تطبيق الإجراء — ربما تغيرت حالة الحادث بالفعل."
     },
     "observability": {
       "title": "المراقبة",
@@ -9545,7 +9551,8 @@
       "event_type_required": "يجب تحديد نوع الحدث المطلوب الاستماع إليه.",
       "watch_path_required": "يجب تحديد مسار مراقبة واحد على الأقل.",
       "composite_min_conditions": "تحتاج المُشغِّلات المركّبة إلى شرطين على الأقل.",
-      "composite_window_minimum": "يجب أن تكون النافذة الزمنية 5 ثوانٍ على الأقل."
+      "composite_window_minimum": "يجب أن تكون النافذة الزمنية 5 ثوانٍ على الأقل.",
+      "endpoint_required": "رابط نقطة النهاية أو الحدث مطلوب."
     },
     "dead_letter_select_all": "تحديد all",
     "dead_letter_select_visible": "تحديد visible",
@@ -9750,7 +9757,9 @@
       "watch": "مراقبة",
       "watching": "قيد المراقبة",
       "watching_only": "المراقَبة فقط"
-    }
+    },
+    "overdue_label": "متأخر",
+    "relay_delete_failed": "فشل حذف الترحيل — يرجى المحاولة مرة أخرى"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "نشط",
       "paused": "متوقف مؤقتًا",
       "failed": "فاشل",
-      "file-based": "قائم على الملفات",
-      "unknown": "غير معروف"
+      "unknown": "غير معروف",
+      "file-based": "قائم على الملفات"
     },
     "delivery": {
       "delivered": "تم التسليم",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "ث منقضٍ",
       "s_remaining": "ث متبقٍ",
       "show_cli_output": "إظهار إخراج CLI",
-      "hide_cli_output": "إخفاء إخراج CLI"
+      "hide_cli_output": "إخفاء إخراج CLI",
+      "starting_transformation": "جارٍ بدء التحويل...",
+      "step_progress": "الخطوة {step} من {total}",
+      "starting_short": "جارٍ البدء...",
+      "check_output_details": "راجع المخرجات أدناه لمزيد من التفاصيل."
     },
     "terminal_extra": {
       "press_enter": "اضغط Enter أو انقر على تشغيل للبدء",

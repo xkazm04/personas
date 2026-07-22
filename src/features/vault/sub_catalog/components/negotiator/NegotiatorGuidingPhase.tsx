@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { NegotiationPlan } from '@/hooks/design/credential/useCredentialNegotiator';
+import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { StepNode } from '@/hooks/design/credential/negotiatorStepGraph';
 import {
@@ -48,9 +49,15 @@ export function NegotiatorGuidingPhase({
 }: NegotiatorGuidingPhaseProps) {
   const { t } = useTranslation();
   const totalSteps = visibleSteps.length;
-  const completedCount = completedSteps.size;
+  // Count only steps still present in the visible set — completedSteps can
+  // retain indices for steps the step graph later resolved out (skipped),
+  // which would otherwise overcount progress against the current view.
+  const completedCount = visibleSteps.reduce(
+    (count, _step, index) => (completedSteps.has(index) ? count + 1 : count),
+    0,
+  );
   const allDone = totalSteps > 0 && completedCount >= totalSteps;
-  const progressPercent = totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0;
+  const progressPercent = totalSteps > 0 ? Math.min((completedCount / totalSteps) * 100, 100) : 0;
 
   // Focus management: move focus to the newly active step header on transitions
   const prevStepRef = useRef(activeStepIndex);
@@ -114,12 +121,9 @@ export function NegotiatorGuidingPhase({
 
       {/* Footer buttons */}
       <div className="flex items-center justify-between pt-1">
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
-        >
+        <Button variant="secondary" onClick={onCancel}>
           {t.common.cancel}
-        </button>
+        </Button>
         {allDone && (
           <button
             onClick={onFinish}

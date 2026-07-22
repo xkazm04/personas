@@ -114,8 +114,16 @@ export function useAnnotationData({ selectedPersonaId, healingIssues }: Annotati
       .filter(isDefined),
   [healingIssues]);
 
-  const chartAnnotations = useAnnotationComposer(
+  // Stable sources tuple — a fresh array literal here would defeat the
+  // composer's useMemo and churn chartAnnotations identity every render,
+  // cascading into full re-renders of memo(MetricsCharts).
+  const sources = useMemo(
+    () => [promptAnnotations, rotationAnnotations, healingAnnotations],
     [promptAnnotations, rotationAnnotations, healingAnnotations],
+  );
+
+  const chartAnnotations = useAnnotationComposer(
+    sources,
     { filterPersonaId: selectedPersonaId },
   );
 

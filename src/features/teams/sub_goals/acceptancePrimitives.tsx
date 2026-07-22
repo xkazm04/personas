@@ -7,8 +7,8 @@ import { useState } from 'react';
 import { Check, RotateCcw, Send } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
-import type { PendingKpi, PendingTeam } from './goalAcceptanceMock';
-import { kpiPct } from './goalAcceptanceMock';
+import type { PendingKpi, PendingTeam } from './goalAcceptanceModel';
+import { kpiPct } from './goalAcceptanceModel';
 
 /** Color-mix helper — a translucent wash of a team/KPI accent. */
 export function wash(color: string, pct: number): string {

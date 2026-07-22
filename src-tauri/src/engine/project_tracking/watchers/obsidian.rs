@@ -169,10 +169,7 @@ fn extract_title_and_summary(body: &str) -> (Option<String>, String) {
         }
     }
     if summary.len() > SUMMARY_BYTE_CAP {
-        let mut end = SUMMARY_BYTE_CAP;
-        while !summary.is_char_boundary(end) && end > 0 {
-            end -= 1;
-        }
+        let end = crate::utils::text::floor_char_boundary(&summary, SUMMARY_BYTE_CAP);
         summary.truncate(end);
         summary.push('…');
     }

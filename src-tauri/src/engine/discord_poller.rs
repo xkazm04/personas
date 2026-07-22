@@ -187,6 +187,13 @@ async fn poll_channel(
 
     let mut dispatched = 0usize;
     let mut newest_id: Option<String> = cursor.clone();
+    // Once a dispatch fails transiently (queue full, DB blip, momentary lock),
+    // stop advancing the cursor past that point so the next poll re-fetches
+    // the failed message (and everything after it) instead of permanently
+    // skipping it. Later successful re-dispatches are safe: `execute_persona_inner`
+    // is keyed by an idempotency key and `message_already_logged` skips messages
+    // that already logged a successful outcome.
+    let mut cursor_advance_ok = true;
     // Count non-bot messages whose content came back empty. If EVERY human
     // message in a fetch is empty, the bot almost certainly lacks the
     // privileged Message Content Intent — Discord strips `content` from
@@ -200,11 +207,15 @@ async fn poll_channel(
     // human watching the channel would see them.
     for msg in messages.into_iter().rev() {
         // Track newest seen regardless of whether we dispatch, so a bot's
-        // own message still advances the cursor.
-        if newest_id
-            .as_deref()
-            .map(|c| compare_snowflakes(&msg.id, c).is_gt())
-            .unwrap_or(true)
+        // own message still advances the cursor -- but only while nothing in
+        // this poll has failed yet; once a dispatch fails we freeze the
+        // cursor so the failed message (and anything after it) is retried
+        // on the next poll instead of being skipped forever.
+        if cursor_advance_ok
+            && newest_id
+                .as_deref()
+                .map(|c| compare_snowflakes(&msg.id, c).is_gt())
+                .unwrap_or(true)
         {
             newest_id = Some(msg.id.clone());
         }
@@ -267,6 +278,7 @@ async fn poll_channel(
         )?;
 
         if error.is_some() {
+            cursor_advance_ok = false;
             tracing::warn!(
                 persona_id = persona_id,
                 channel_id = channel_id,

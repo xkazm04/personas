@@ -36,6 +36,51 @@ export function isApiFamily(family: ConnectorFamily): boolean {
   return family === 'notion' || family === 'airtable';
 }
 
+/** Editor syntax-highlighting language for a connector's query editor. */
+export type QueryLanguage = 'sql' | 'redis' | 'mongodb' | 'convex' | 'notion' | 'airtable';
+
+const QUERY_LANGUAGE_BY_FAMILY: Record<ConnectorFamily, QueryLanguage> = {
+  postgres: 'sql',
+  mysql: 'sql',
+  sqlite: 'sql',
+  redis: 'redis',
+  convex: 'convex',
+  notion: 'notion',
+  airtable: 'airtable',
+  unsupported: 'sql',
+};
+
+/**
+ * Derive the query editor's syntax-highlighting language from serviceType.
+ * `mongodb` is handled as a special case (it's not a `getConnectorFamily`
+ * family — mongo has no SQL-style introspection query builder here — but it
+ * does need its own editor language), everything else derives from the
+ * canonical `ConnectorFamily` mapping so this can't drift from it.
+ */
+export function getQueryLanguage(serviceType: string): QueryLanguage {
+  if (serviceType === 'mongodb') return 'mongodb';
+  return QUERY_LANGUAGE_BY_FAMILY[getConnectorFamily(serviceType)];
+}
+
+/** NL-query backend dialect for a connector. */
+export type NlDatabaseDialect = 'postgresql' | 'mysql' | 'redis' | 'sql';
+
+const NL_DIALECT_BY_FAMILY: Record<ConnectorFamily, NlDatabaseDialect> = {
+  postgres: 'postgresql',
+  mysql: 'mysql',
+  sqlite: 'sql',
+  redis: 'redis',
+  convex: 'sql',
+  notion: 'sql',
+  airtable: 'sql',
+  unsupported: 'sql',
+};
+
+/** Derive the NL-query backend dialect from serviceType, via the canonical family. */
+export function getNlDatabaseDialect(serviceType: string): NlDatabaseDialect {
+  return NL_DIALECT_BY_FAMILY[getConnectorFamily(serviceType)];
+}
+
 /**
  * Escape a string for use inside a single-quoted SQL literal — doubles every
  * single quote per SQL-92. Use this for VALUES that go inside `'...'` (e.g.

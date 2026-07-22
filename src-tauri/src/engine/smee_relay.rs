@@ -17,7 +17,7 @@ use ts_rs::TS;
 
 use super::event_registry::{emit_event_bus, event_name};
 use super::safe_json;
-use super::ssrf_safe_dns;
+use super::url_safety;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::DbPool;
@@ -271,7 +271,7 @@ async fn relay_sse_core(
     // even if a validated smee.io URL somehow resolves to a private IP (DNS rebinding).
     let http = reqwest::Client::builder()
         .no_proxy()
-        .dns_resolver(std::sync::Arc::new(ssrf_safe_dns::SsrfSafeDnsResolver))
+        .dns_resolver(std::sync::Arc::new(url_safety::SsrfSafeDnsResolver))
         .build()
         .map_err(|e| format!("HTTP client error: {e}"))?;
 

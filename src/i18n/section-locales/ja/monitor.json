@@ -260,5 +260,10 @@
   "stream_no_speakers": "発言者なし",
   "stream_none": "なし",
   "stream_search": "通信を検索",
-  "stream_title": "ストリーム"
+  "stream_title": "ストリーム",
+  "columns_action_empty": "今のところ対応が必要な項目はありません",
+  "columns_needs_attention": "要対応",
+  "columns_active_goals": "アクティブな目標",
+  "columns_no_team": "チームなし",
+  "columns_all_clear": "問題なし"
 }

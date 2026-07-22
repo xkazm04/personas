@@ -31,6 +31,7 @@ import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { SidebarSection } from '@/lib/types/types';
 import { useCompanionStore } from '../companionStore';
 import { actionLabel } from '../athenaLabels';
+import { COMPANION_NAV_ROUTES } from '../companionRoutes';
 import type { DecisionOption, PendingDecision } from './types';
 
 /**
@@ -52,23 +53,11 @@ import type { DecisionOption, PendingDecision } from './types';
  * resolves (clearing `pendingDecision`).
  */
 
-const VALID_ROUTES: SidebarSection[] = [
-  'home',
-  'overview',
-  'personas',
-  'events',
-  'credentials',
-  'design-reviews',
-  'plugins',
-  'schedules',
-  'settings',
-];
-
 /** Apply an approval's UI-only follow-up (currently just `navigate`). */
 function applyClientAction(action: ClientAction) {
   if (action.type === 'navigate') {
     const route = action.route as SidebarSection;
-    if (!VALID_ROUTES.includes(route)) return;
+    if (!COMPANION_NAV_ROUTES.includes(route)) return;
     useSystemStore.getState().setSidebarSection(route);
   }
   // Other ClientAction kinds (prefill / open_companion_tab) are not produced by
@@ -155,7 +144,7 @@ function incidentToDecision(message: ProactiveMessage): PendingDecision {
     {
       key: 'resolve',
       label: c.decision_resolve,
-      run: () => {
+      run: async () => {
         // Mirror ProactiveCard's incident_blocker engage path: take the user
         // to Overview → Incidents and deep-link the specific incident.
         useSystemStore.getState().setSidebarSection('overview');
@@ -164,7 +153,19 @@ function incidentToDecision(message: ProactiveMessage): PendingDecision {
           setPendingIncidentDeepLink(message.triggerRef);
           storeBus.emit('incidents:open-detail', { incidentId: message.triggerRef });
         }
-        useCompanionStore.getState().removeProactive(message.id);
+        // Persist the engage server-side (mirrors messageAttentionToDecision's
+        // `engage`) — without this the proactive row stays `pending` and
+        // `pump()`'s next `buildQueue()` re-fetches it, re-surfacing the same
+        // decision on the orb right after the user just acted on it.
+        try {
+          await companionEngageProactive(message.id);
+          useCompanionStore.getState().removeProactive(message.id);
+        } catch (err) {
+          silentCatch('companion/decision:incident-resolve')(err);
+          // Propagate so runDecisionOption keeps the decision pending + toasts
+          // on failure instead of falsely clearing it as resolved.
+          throw err;
+        }
       },
     },
     {

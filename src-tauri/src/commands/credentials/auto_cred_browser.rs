@@ -402,10 +402,10 @@ fn structured_error(
     .unwrap_or_else(|_| message.to_string())
 }
 
-/// Build the prompt for Claude to drive Playwright and extract credentials.
-fn build_browser_prompt(req: &AutoCredBrowserRequest) -> String {
-    let fields_desc: Vec<String> = req
-        .fields
+/// Render the `- \`key\` (Label) [REQUIRED] placeholder: ... -- help_text` field
+/// description block shared by all four prompt builders.
+fn render_fields_desc(fields: &[AutoCredField]) -> String {
+    fields
         .iter()
         .map(|f| {
             let mut desc = format!("- `{}` ({})", f.key, f.label);
@@ -420,7 +420,27 @@ fn build_browser_prompt(req: &AutoCredBrowserRequest) -> String {
             }
             desc
         })
-        .collect();
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
+/// Resolve the universal-mode `(service_url, service_description)` defaults
+/// shared by `build_universal_browser_prompt` and `build_universal_guided_prompt`.
+fn service_targets(req: &AutoCredBrowserRequest) -> (&str, &str) {
+    let service_url = req
+        .service_url
+        .as_deref()
+        .unwrap_or("the service's website");
+    let service_desc = req
+        .service_description
+        .as_deref()
+        .unwrap_or("API credentials");
+    (service_url, service_desc)
+}
+
+/// Build the prompt for Claude to drive Playwright and extract credentials.
+fn build_browser_prompt(req: &AutoCredBrowserRequest) -> String {
+    let fields_desc = render_fields_desc(&req.fields);
 
     let docs_section = if let Some(ref url) = req.docs_url {
         format!("Start by navigating to: {url}")
@@ -486,30 +506,14 @@ IMPORTANT:
         docs_section = docs_section,
         instructions_section = instructions_section,
         procedure_section = procedure_section,
-        fields = fields_desc.join("\n"),
+        fields = fields_desc,
     )
 }
 
 /// Build the prompt for the guided (non-browser) fallback mode.
 /// Claude guides the user step-by-step through manual credential creation.
 fn build_guided_prompt(req: &AutoCredBrowserRequest) -> String {
-    let fields_desc: Vec<String> = req
-        .fields
-        .iter()
-        .map(|f| {
-            let mut desc = format!("- `{}` ({})", f.key, f.label);
-            if f.required {
-                desc.push_str(" [REQUIRED]");
-            }
-            if let Some(ref ph) = f.placeholder {
-                desc.push_str(&format!(" placeholder: {ph}"));
-            }
-            if let Some(ref ht) = f.help_text {
-                desc.push_str(&format!(" -- {ht}"));
-            }
-            desc
-        })
-        .collect();
+    let fields_desc = render_fields_desc(&req.fields);
 
     let docs_section = if let Some(ref url) = req.docs_url {
         format!("The setup page is at: {url}\nFirst output: OPEN_URL:{url}")
@@ -580,21 +584,14 @@ IMPORTANT:
         connector_name = req.connector_name,
         docs_section = docs_section,
         instructions_section = instructions_section,
-        fields = fields_desc.join("\n"),
+        fields = fields_desc,
     )
 }
 
 /// Build the prompt for universal mode (no pre-defined connector).
 /// Claude discovers fields dynamically and auto-generates a connector definition.
 fn build_universal_browser_prompt(req: &AutoCredBrowserRequest) -> String {
-    let service_url = req
-        .service_url
-        .as_deref()
-        .unwrap_or("the service's website");
-    let service_desc = req
-        .service_description
-        .as_deref()
-        .unwrap_or("API credentials");
+    let (service_url, service_desc) = service_targets(req);
 
     format!(
         r##"You are an automated credential discovery and extraction assistant. Your job is to use the Playwright browser tools to find and create API credentials for a web service.
@@ -662,14 +659,7 @@ IMPORTANT:
 
 /// Build the guided prompt for universal mode (no browser automation).
 fn build_universal_guided_prompt(req: &AutoCredBrowserRequest) -> String {
-    let service_url = req
-        .service_url
-        .as_deref()
-        .unwrap_or("the service's website");
-    let service_desc = req
-        .service_description
-        .as_deref()
-        .unwrap_or("API credentials");
+    let (service_url, service_desc) = service_targets(req);
 
     format!(
         r##"You are a guided credential discovery assistant. Browser automation is NOT available. You will guide the user step-by-step through finding and creating API credentials for a web service.
@@ -770,7 +760,7 @@ pub async fn start_auto_cred_browser(
     let mode = if force_guided {
         tracing::info!(session_id = %session_id, "Guided mode forced by request");
         AutoCredMode::Guided
-    } else if check_playwright_available() {
+    } else if check_playwright_available_async().await {
         AutoCredMode::Playwright
     } else {
         tracing::info!(session_id = %session_id, "Playwright MCP not available, falling back to guided mode");
@@ -1037,8 +1027,16 @@ pub async fn start_auto_cred_browser(
                     // to avoid noisy log entries like "Navigating...", "Working..."
                     if let Ok(mut ctx) = ctx_ref.lock() {
                         ctx.tool_call_count += 1;
-                        // Guard against infinite browser automation loops
-                        if ctx.tool_call_count >= MAX_TOOL_INVOCATIONS {
+                        // Guard against infinite browser automation loops. This
+                        // check previously only queued a warning — the read loop
+                        // kept consuming the stream until the model stopped on
+                        // its own or the 600s session timeout fired, so a
+                        // misbehaving loop could burn most of that budget before
+                        // "the limit" took effect. Actively kill the child here
+                        // (mirrors `cancel_auto_cred_browser`) so the session is
+                        // torn down at the boundary. `==` (not `>=`) fires this
+                        // exactly once per session, at the crossing.
+                        if ctx.tool_call_count == MAX_TOOL_INVOCATIONS {
                             queue_progress(
                                 &progress_tx_ref,
                                 AutoCredProgressFrame::new(
@@ -1050,6 +1048,9 @@ pub async fn start_auto_cred_browser(
                                     ),
                                 ),
                             );
+                            if let Some(pid) = registry.take_pid("auto_cred") {
+                                kill_pid(pid);
+                            }
                         }
 
                         let action = match tool_name.as_str() {
@@ -1488,6 +1489,34 @@ fn cleanup_orphaned_browsers() {
     }
 }
 
+/// Cached result of the Playwright probe (answer rarely changes in-session).
+static PLAYWRIGHT_PROBE: std::sync::Mutex<Option<(std::time::Instant, bool)>> =
+    std::sync::Mutex::new(None);
+
+/// Async wrapper around the npx probe. The raw probe runs `npx --yes
+/// @playwright/mcp@latest --help`, which can hit the npm registry and take
+/// seconds-to-minutes on a cold cache — running it inline pinned a tokio
+/// worker and froze the auto-cred UI. Off-thread with a 15s ceiling and a
+/// 5-minute cache shared by session start and the upfront UI check.
+async fn check_playwright_available_async() -> bool {
+    const TTL: std::time::Duration = std::time::Duration::from_secs(300);
+    if let Some((at, ok)) = *PLAYWRIGHT_PROBE.lock().expect("probe cache poisoned") {
+        if at.elapsed() < TTL {
+            return ok;
+        }
+    }
+    let ok = tokio::time::timeout(
+        std::time::Duration::from_secs(15),
+        tokio::task::spawn_blocking(check_playwright_available),
+    )
+    .await
+    .ok()
+    .and_then(|joined| joined.ok())
+    .unwrap_or(false);
+    *PLAYWRIGHT_PROBE.lock().expect("probe cache poisoned") = Some((std::time::Instant::now(), ok));
+    ok
+}
+
 /// Check if Playwright MCP is likely to work (npx and @playwright/mcp available).
 fn check_playwright_available() -> bool {
     let npx_cmd = if cfg!(windows) { "cmd" } else { "npx" };
@@ -1549,30 +1578,38 @@ fn extract_urls(text: &str) -> Vec<String> {
     urls
 }
 
+/// Kill a subprocess (and its tree, on Windows) by PID. Shared by the
+/// explicit user-facing cancel command and the `MAX_TOOL_INVOCATIONS`
+/// runaway-session guard, which needs to actively tear the process down
+/// rather than just warn once the limit is crossed.
+fn kill_pid(pid: u32) {
+    tracing::info!(pid, "Killing auto-cred CLI subprocess");
+    #[cfg(windows)]
+    {
+        // On Windows, use taskkill to kill the process tree (works on x64 + ARM64)
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/T", "/PID", &pid.to_string()])
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+    }
+    #[cfg(all(not(windows), not(target_os = "android")))]
+    {
+        unsafe {
+            libc::kill(pid as i32, libc::SIGTERM);
+        }
+    }
+}
+
 /// Cancel a running auto-cred browser session by killing the CLI subprocess.
 #[tauri::command]
 pub async fn cancel_auto_cred_browser(state: State<'_, Arc<AppState>>) -> Result<(), String> {
     let pid = state.process_registry.take_pid("auto_cred");
     if let Some(pid) = pid {
-        tracing::info!(pid, "Killing auto-cred CLI subprocess");
-        #[cfg(windows)]
-        {
-            // On Windows, use taskkill to kill the process tree (works on x64 + ARM64)
-            #[allow(unused_imports)]
-            use std::os::windows::process::CommandExt;
-            let _ = std::process::Command::new("taskkill")
-                .args(["/F", "/T", "/PID", &pid.to_string()])
-                .creation_flags(0x08000000) // CREATE_NO_WINDOW
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .status();
-        }
-        #[cfg(all(not(windows), not(target_os = "android")))]
-        {
-            unsafe {
-                libc::kill(pid as i32, libc::SIGTERM);
-            }
-        }
+        kill_pid(pid);
     }
     Ok(())
 }
@@ -1581,7 +1618,7 @@ pub async fn cancel_auto_cred_browser(state: State<'_, Arc<AppState>>) -> Result
 /// so the frontend can decide the UI mode upfront.
 #[tauri::command]
 pub async fn check_auto_cred_playwright_available() -> Result<bool, String> {
-    Ok(check_playwright_available())
+    Ok(check_playwright_available_async().await)
 }
 
 /// Best-effort partial extraction: scan text for any field values even without

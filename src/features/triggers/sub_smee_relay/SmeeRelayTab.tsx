@@ -10,7 +10,7 @@ import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RELAY_GLYPH } from '@/features/shared/glyph/glyphs/relayGlyph';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useSmeeRelayStatus } from '@/hooks/realtime/useSmeeRelayStatus';
@@ -23,6 +23,7 @@ import { openExternalUrl } from '@/api/system/system';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import { useToastStore } from '@/stores/toastStore';
 
 
 interface SmeeRelayTabProps {
@@ -31,6 +32,7 @@ interface SmeeRelayTabProps {
 
 export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
   const { t } = useTranslation();
+  const addToast = useToastStore((s) => s.addToast);
   const globalStatus = useSmeeRelayStatus();
   const personas = useAgentStore((s) => s.personas);
 
@@ -118,7 +120,11 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         setExitingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
       }, 300);
       setConfirmDeleteId(null);
-    } catch (err) { silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch3")(err); }
+    } catch (err) {
+      silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch3")(err);
+      setConfirmDeleteId(null);
+      addToast(t.triggers.relay_delete_failed, 'error');
+    }
   };
 
   const markTouched = (field: string) =>
@@ -138,7 +144,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     : null;
 
   const activeCount = relays.filter((r) => r.status === 'active').length;
-  const totalRelayed = relays.reduce((sum, r) => sum + r.eventsRelayed, 0);
+  const totalRelayed = relays.reduce((sum, r) => sum + Number(r.eventsRelayed), 0);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -384,7 +390,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                       <div className="flex items-center gap-3 flex-wrap">
                         {relay.eventsRelayed > 0 && (
                           <span className="typo-caption text-purple-400/60">
-                            {relay.eventsRelayed} event{relay.eventsRelayed !== 1 ? 's' : ''}
+                            {Number(relay.eventsRelayed)} event{Number(relay.eventsRelayed) !== 1 ? 's' : ''}
                           </span>
                         )}
                         {relay.lastEventAt && (

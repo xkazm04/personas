@@ -1,5 +1,6 @@
 import { Check, Brain } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface NegotiatorPlanningPhaseProps {
@@ -52,12 +53,9 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
       </div>
 
       <div className="flex justify-end">
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
-        >
+        <Button variant="secondary" onClick={onCancel}>
           {t.common.cancel}
-        </button>
+        </Button>
       </div>
     </div>
   );

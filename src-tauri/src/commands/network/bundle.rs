@@ -233,6 +233,17 @@ pub fn apply_bundle_from_clipboard(
         ));
     }
 
+    // TOCTOU mitigation: when a preview was performed, the hash check is
+    // mandatory -- mirrors `apply_bundle_import`'s file-path guard. Without
+    // this, a clipboard payload swapped after the preview was shown to the
+    // user could be applied on a preview-cache miss with no integrity check.
+    if options.preview_id.is_some() && options.expected_bundle_hash.is_none() {
+        return Err(AppError::Validation(
+            "Bundle hash is required when importing a previewed bundle. \
+             Please re-preview the bundle before importing."
+                .into(),
+        ));
+    }
     // TOCTOU mitigation: verify the bundle hash matches what was shown at preview time.
     if let Some(ref expected_hash) = options.expected_bundle_hash {
         let actual_hash = hex::encode(sha2::Sha256::digest(&bytes));

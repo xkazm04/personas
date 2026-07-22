@@ -261,7 +261,12 @@
     "stream_no_speakers": "Không có người nói",
     "stream_none": "Không có",
     "stream_search": "Tìm kiếm tin nhắn",
-    "stream_title": "Luồng"
+    "stream_title": "Luồng",
+    "columns_action_empty": "Hiện không có gì cần bạn xử lý",
+    "columns_needs_attention": "Cần chú ý",
+    "columns_active_goals": "Mục tiêu đang hoạt động",
+    "columns_no_team": "Không có nhóm",
+    "columns_all_clear": "Mọi thứ đều ổn"
   },
   "common": {
     "loading": "Đang tải...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "{count} bước nhảy",
       "active_chains_one": "{count} chuỗi đang chạy",
       "active_chains_other": "{count} chuỗi đang chạy",
-      "active_chains_title": "Chuỗi đang chạy"
+      "active_chains_title": "Chuỗi đang chạy",
+      "copy_log_failed": "Không thể sao chép nhật ký vào bộ nhớ tạm"
     },
     "lab": {
       "mode_arena": "Đấu trường",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "Đồ thị phụ thuộc",
       "ct_swap_alt_tooltip": "Hoán đổi sang trình kết nối thay thế",
       "ct_deps": "{count} phụ thuộc",
-      "dg_no_deps": "Không có phụ thuộc để hiển thị.",
-      "dg_broken": "{count} bị hỏng",
-      "dg_blast_radius": "Phạm vi ảnh hưởng",
-      "dg_dependencies": "Phụ thuộc",
-      "dg_select_cred": "Chọn thông tin xác thực để xem điều gì bị hỏng khi hết hạn",
-      "dg_relationships": "Mối quan hệ ({count})",
-      "dg_more": "+{count} nữa",
-      "dg_affected_tools": "Công cụ bị ảnh hưởng",
-      "dg_affected_auto": "Tự động hóa bị ảnh hưởng",
-      "dg_low_risk": "Rủi ro thấp",
-      "dg_medium_risk": "Rủi ro trung bình",
-      "dg_high_risk": "Rủi ro cao",
-      "dg_high_blast": "Nếu thông tin xác thực này hết hạn hoặc ngoại tuyến, {count} khả năng sẽ bị hỏng.",
-      "dg_medium_blast": "{count} khả năng phụ thuộc vào thông tin xác thực này.",
-      "dg_low_blast": "Không có công cụ hoặc tự động hóa nào phụ thuộc vào thông tin xác thực này.",
       "dm_needed": "{count} thông tin xác thực cần thiết",
       "dm_fulfilled": "{fulfilled}/{total} trình kết nối đã đáp ứng",
       "dm_reuse_hint": "{count} có thể tái sử dụng thông tin xác thực hiện có",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "Trình kích hoạt & Đăng ký",
       "sub_suggested": "{count} được đề xuất",
       "sub_filter": "lọc: {filter}",
-      "lifecycle_error_load_triggers": "Không thể tải trình kích hoạt: {error}",
-      "lifecycle_error_load_subscriptions": "Không thể tải đăng ký: {error}",
-      "lifecycle_error_activate_trigger": "Không thể bật trình kích hoạt",
-      "lifecycle_error_activate_subscription": "Không thể bật đăng ký",
-      "lifecycle_error_retire_trigger": "Không thể xóa trình kích hoạt",
-      "lifecycle_error_retire_subscription": "Không thể xóa đăng ký",
-      "lifecycle_error_delete_persists": "Xóa không thành công. Đăng ký có thể vẫn còn tồn tại.",
       "auto_error_deploy_check_credentials": "Triển khai thất bại. Kiểm tra thông tin xác thực nền tảng của bạn và thử lại.",
       "auto_error_deploy_generic": "Triển khai tự động hóa thất bại",
       "test_healthcheck_failed_default": "Healthcheck thất bại",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "Chưa có chú thích nào — hãy gắn thẻ, ghi chú hoặc gắn sao cho lần chạy này để dễ tìm lại sau.",
       "col_verdict": "Phán quyết",
       "verdict_none": "Chưa được Director đánh giá",
-      "verdict_tooltip": "Phán quyết Director: {score}/5"
+      "verdict_tooltip": "Phán quyết Director: {score}/5",
+      "annotation_saving": "Đang lưu…"
     },
     "settings_status": {
       "saving": "Đang lưu {sections}...",
@@ -3612,7 +3597,23 @@
         "other": "Khác"
       },
       "title": "Lịch sử thay đổi"
-    }
+    },
+    "sigil_edit_channels_label": "Kênh",
+    "sigil_edit_custom_connector": "Trình kết nối tùy chỉnh — không khớp biểu tượng thương hiệu.",
+    "sigil_edit_error_off": "Sử dụng chính sách xử lý lỗi mặc định.",
+    "sigil_edit_error_on": "Đã cấu hình chính sách xử lý lỗi tùy chỉnh.",
+    "sigil_edit_event_off": "Chưa cấu hình đăng ký sự kiện nào.",
+    "sigil_edit_event_on": "Năng lực này đăng ký nhận sự kiện.",
+    "sigil_edit_memory_off": "Bộ nhớ đang tắt — năng lực chạy không lưu trạng thái.",
+    "sigil_edit_memory_on": "Bộ nhớ lâu dài đang bật cho năng lực này.",
+    "sigil_edit_no_channels": "Không có kênh thông báo nào cho năng lực này.",
+    "sigil_edit_no_connector": "Năng lực này không khai báo trình kết nối nào.",
+    "sigil_edit_no_dim_editor": "Chưa có trình chỉnh sửa cho mục này.",
+    "sigil_edit_no_trigger": "Chưa cấu hình trình kích hoạt nào cho năng lực này.",
+    "sigil_edit_review_off": "Không có cổng xét duyệt của con người — hành động được thực hiện tự động.",
+    "sigil_edit_review_on": "Cần có xét duyệt của con người trước khi năng lực này hành động.",
+    "sigil_edit_service_label": "Dịch vụ: {key}",
+    "sigil_edit_when_label": "Khi"
   },
   "vault": {
     "workspace_connect": "Kết nối không gian làm việc",
@@ -3911,7 +3912,8 @@
       "query_parameters": "Tham số truy vấn",
       "recipes_title": "Công thức đã lưu",
       "truncated_warning": "Phản hồi bị cắt bớt để hiển thị",
-      "value_col": "Giá trị"
+      "value_col": "Giá trị",
+      "request_headers": "Tiêu đề"
     },
     "ingest": {
       "save_name": "Lưu tên",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "Khóa-giá trị",
       "capability_key_value_hint": "Đây là kho khóa-giá trị. Hãy dùng các lệnh khóa như SCAN, GET và TYPE — không phải SQL.",
       "capability_select_subset": "Chỉ SELECT",
-      "capability_select_subset_hint": "Ở đây chỉ chạy các truy vấn SELECT đơn giản trên một bảng — lọc bằng WHERE, sắp xếp bằng ORDER BY, giới hạn bằng LIMIT. JOIN, tổng hợp, CTE và ghi không được hỗ trợ."
+      "capability_select_subset_hint": "Ở đây chỉ chạy các truy vấn SELECT đơn giản trên một bảng — lọc bằng WHERE, sắp xếp bằng ORDER BY, giới hạn bằng LIMIT. JOIN, tổng hợp, CTE và ghi không được hỗ trợ.",
+      "query_timeout": "Hết thời gian chờ phản hồi. Vui lòng thử lại."
     },
     "dependencies": {
       "simulate_revocation": "Mô phỏng thu hồi",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "Những gì sẽ được quét",
       "read_error_item": "Không thể đọc {source}",
       "read_errors_title": "Một số nguồn không thể đọc được",
-      "select_high_confidence": "Độ tin cậy cao"
+      "select_high_confidence": "Độ tin cậy cao",
+      "source_unknown": "Nguồn không xác định"
     },
     "desktop_discovery": {
       "title": "Ứng dụng máy tính",
@@ -5875,7 +5879,9 @@
       "col_days": "Ngày",
       "col_incident": "Sự cố",
       "guidance_mcp_sidecar": "Agent đã chạy mà không có các công cụ MCP tích hợp sẵn vì thiếu tệp nhị phân personas-mcp. Hãy cài đặt lại hoặc sửa chữa ứng dụng để đảm bảo nó đi kèm với ứng dụng desktop.",
-      "source_mcp_sidecar": "Bộ công cụ MCP"
+      "source_mcp_sidecar": "Bộ công cụ MCP",
+      "action_refused": "Hành động chưa được áp dụng — trạng thái sự cố có thể đã thay đổi.",
+      "list_truncated": "Đang hiển thị {limit} sự cố đầu tiên — thu hẹp bộ lọc để xem phần còn lại."
     },
     "observability": {
       "title": "Khả năng quan sát",
@@ -9545,7 +9551,8 @@
       "event_type_required": "Cần chỉ định loại sự kiện cần theo dõi.",
       "watch_path_required": "Cần ít nhất một đường dẫn theo dõi.",
       "composite_min_conditions": "Trình kích hoạt tổng hợp cần ít nhất 2 điều kiện.",
-      "composite_window_minimum": "Khung thời gian phải tối thiểu 5 giây."
+      "composite_window_minimum": "Khung thời gian phải tối thiểu 5 giây.",
+      "endpoint_required": "Cần có URL endpoint hoặc sự kiện."
     },
     "dead_letter_select_all": "Chọn all",
     "dead_letter_select_visible": "Chọn visible",
@@ -9750,7 +9757,9 @@
       "watch": "Theo dõi",
       "watching": "Đang theo dõi",
       "watching_only": "Chỉ theo dõi"
-    }
+    },
+    "overdue_label": "Quá hạn",
+    "relay_delete_failed": "Xóa relay thất bại — vui lòng thử lại"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "Đang hoạt động",
       "paused": "Đã tạm dừng",
       "failed": "Thất bại",
-      "file-based": "Dựa trên tệp",
-      "unknown": "Không xác định"
+      "unknown": "Không xác định",
+      "file-based": "Dựa trên tệp"
     },
     "delivery": {
       "delivered": "Đã giao",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "s đã trôi qua",
       "s_remaining": "s còn lại",
       "show_cli_output": "Hiện đầu ra CLI",
-      "hide_cli_output": "Ẩn đầu ra CLI"
+      "hide_cli_output": "Ẩn đầu ra CLI",
+      "starting_transformation": "Đang bắt đầu chuyển đổi...",
+      "step_progress": "Bước {step} trên {total}",
+      "starting_short": "Đang bắt đầu...",
+      "check_output_details": "Kiểm tra kết quả bên dưới để biết chi tiết."
     },
     "terminal_extra": {
       "press_enter": "Nhấn Enter hoặc nhấp Phát để bắt đầu",

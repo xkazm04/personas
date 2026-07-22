@@ -76,17 +76,24 @@ function CatalogAutoSetupInner({ connector, onComplete, onCancel }: CatalogAutoS
   }, []);
 
   const design = useCredentialDesign();
-  const recipeLookedUpRef = useRef(false);
+  // Tracks the recipe lookup lifecycle rather than just "started" -- 'pending'
+  // guards against a stale re-fire (this effect's `design` dep is a fresh
+  // object every render) calling `design.start` while the recipe promise is
+  // still in flight, which previously raced a cached-recipe result against a
+  // redundant live LLM analysis.
+  const recipeLookupStateRef = useRef<'idle' | 'pending' | 'done'>('idle');
 
   useEffect(() => {
     if (phase !== 'analyzing' || design.phase !== 'idle') return;
-    if (recipeLookedUpRef.current) {
+    if (recipeLookupStateRef.current === 'pending') return;
+    if (recipeLookupStateRef.current === 'done') {
       design.start(`Analyze ${connector.label} (${connector.name}) connector and discover setup procedures for creating API credentials.`);
       return;
     }
-    recipeLookedUpRef.current = true;
+    recipeLookupStateRef.current = 'pending';
 
     void lookupRecipeAsDesignResult(connector.name).then((cached) => {
+      recipeLookupStateRef.current = 'done';
       if (cached) {
         setDesignResult({ ...cached, match_existing: connector.name });
         setPhase('auto');

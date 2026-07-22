@@ -28,13 +28,14 @@ import { ContentBox, ContentBody, ContentHeader } from '@/features/shared/compon
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { IllustratedEmptyState as EmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { KpiTile, type KpiTrend } from '@/features/overview/components/shared/KpiTile';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
 import { computeSeriesTrendPct } from '@/features/overview/libs/computeTrends';
 import FleetOptimizationCard from './cards/FleetOptimizationCard';
+import { PaneHeader } from './PaneHeader';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { TrafficErrorsChart } from '@/features/overview/components/dashboard/widgets/TrafficErrorsChart';
 import { DashboardRangeSwitch } from '@/features/overview/components/dashboard/widgets/DashboardRangeSwitch';
@@ -208,7 +209,8 @@ export default function DashboardHomeMissionControl() {
     return { totalTraffic, totalErrors };
   }, [chartData]);
 
-  const lastSyncedIso = Object.values(pipelineFetchedAt).filter(Boolean).sort().pop();
+  const syncedTimestamps = Object.values(pipelineFetchedAt).filter(Boolean);
+  const lastSyncedIso = syncedTimestamps.length > 0 ? Math.max(...syncedTimestamps) : undefined;
   const lastSyncedLabel = lastSyncedIso
     ? new Date(lastSyncedIso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '—';
@@ -789,26 +791,6 @@ export const StatusTicker = memo(function StatusTicker({
     </div>
   );
 });
-
-// ---------------------------------------------------------------------------
-// Shared pane header
-// ---------------------------------------------------------------------------
-
-function PaneHeader({
-  label, subtitle, children,
-}: { label: string; subtitle?: string; children?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
-      <div className="flex items-baseline gap-2">
-        <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground">{label}</span>
-        {subtitle && (
-          <span className="typo-caption text-foreground">{subtitle}</span>
-        )}
-      </div>
-      {children}
-    </div>
-  );
-}
 
 // Small chip marking a pane (or sub-section) as fleet-wide — its data ignores
 // the header persona filter. Rendered wherever Mission Control mixes

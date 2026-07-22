@@ -295,7 +295,8 @@
     "query_parameters": "क्वेरी पैरामीटर",
     "recipes_title": "सहेजी गई रेसिपी",
     "truncated_warning": "प्रदर्शन के लिए प्रतिक्रिया छोटी की गई",
-    "value_col": "मूल्य"
+    "value_col": "मूल्य",
+    "request_headers": "हेडर"
   },
   "ingest": {
     "save_name": "नाम सहेजें",
@@ -422,7 +423,8 @@
     "capability_key_value": "की-वैल्यू",
     "capability_key_value_hint": "यह एक की-वैल्यू स्टोर है। SCAN, GET और TYPE जैसे की कमांड का उपयोग करें — SQL नहीं।",
     "capability_select_subset": "केवल SELECT",
-    "capability_select_subset_hint": "यहाँ केवल एकल-टेबल की सरल SELECT क्वेरी चलती हैं — WHERE से फ़िल्टर करें, ORDER BY से क्रमबद्ध करें, LIMIT से सीमित करें। JOIN, एग्रीगेट, CTE और राइट समर्थित नहीं हैं।"
+    "capability_select_subset_hint": "यहाँ केवल एकल-टेबल की सरल SELECT क्वेरी चलती हैं — WHERE से फ़िल्टर करें, ORDER BY से क्रमबद्ध करें, LIMIT से सीमित करें। JOIN, एग्रीगेट, CTE और राइट समर्थित नहीं हैं।",
+    "query_timeout": "प्रतिक्रिया की प्रतीक्षा में समय समाप्त हो गया। कृपया पुनः प्रयास करें।"
   },
   "dependencies": {
     "simulate_revocation": "रद्दीकरण अनुकरण करें",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "क्या scan किया जाता है",
     "read_error_item": "{source} को पढ़ा नहीं जा सका",
     "read_errors_title": "कुछ स्रोत पढ़े नहीं जा सके",
-    "select_high_confidence": "उच्च-विश्वसनीयता"
+    "select_high_confidence": "उच्च-विश्वसनीयता",
+    "source_unknown": "अज्ञात स्रोत"
   },
   "desktop_discovery": {
     "title": "डेस्कटॉप ऐप",

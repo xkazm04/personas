@@ -7,14 +7,13 @@
 //! *synthesizes* them. The two are complementary — review keeps the floor
 //! clean, compile builds the ceiling.
 //!
-//! Pattern is intentionally a near-mirror of `review_memories_with_cli` so
-//! the spawn/timeout/IPC-auth wiring is consistent and reviewable.
+//! Pattern mirrors `review_memories_with_cli`'s prompt/parse shape; the
+//! spawn/timeout/env-strip wiring itself is shared via
+//! `engine::cli_process::run_claude_cli`.
 
 use std::sync::Arc;
 
 use tauri::State;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command;
 use ts_rs::TS;
 use uuid::Uuid;
 
@@ -176,93 +175,15 @@ Raw memories:
         )));
     }
 
-    // 3. Build CLI args (shared resolver — verified absolute claude.cmd).
-    let (command, mut args) = crate::engine::cli_process::claude_cli_invocation();
-    args.extend(
-        [
-            "-p",
-            "-",
-            "--max-turns",
-            "1",
-            "--dangerously-skip-permissions",
-        ]
-        .iter()
-        .map(|s| s.to_string()),
-    );
-
-    // 4. Spawn the CLI.
-    let mut cmd = Command::new(&command);
-    cmd.args(&args)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-
-    cmd.env_remove("CLAUDECODE");
-    cmd.env_remove("CLAUDE_CODE");
-    // Evaluation runs on the Claude monthly subscription only — never the API.
-    for key in crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV {
-        cmd.env_remove(key);
-    }
-
-    let mut child = cmd.spawn().map_err(|e| {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            AppError::Internal(
-                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
-                    .into(),
-            )
-        } else {
-            AppError::Internal(format!("Failed to spawn CLI: {e}"))
-        }
-    })?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(prompt.as_bytes())
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}")))?;
-        stdin
-            .shutdown()
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to close CLI stdin: {e}")))?;
-    }
-
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| AppError::Internal("No stdout".into()))?;
-    let mut reader = BufReader::new(stdout);
-    let mut full_output = String::new();
-
+    // 3-4. Spawn the CLI (shared spawn/timeout/env-strip envelope) and read
+    // its full stdout text.
     let timeout = std::time::Duration::from_secs(180);
-    let read_result = tokio::time::timeout(timeout, async {
-        let mut line = String::new();
-        while reader.read_line(&mut line).await.unwrap_or(0) > 0 {
-            full_output.push_str(&line);
-            line.clear();
-        }
-    })
-    .await;
-
-    if read_result.is_err() {
-        let _ = child.kill().await;
-        let _ = child.wait().await;
-        return Err(AppError::Internal(
-            "Memory compile timed out after 3 minutes".into(),
-        ));
-    }
-
-    let _ = child.wait().await;
-
-    if full_output.trim().is_empty() {
-        return Err(AppError::Internal("CLI produced no output".into()));
-    }
+    let full_output = crate::engine::cli_process::run_claude_cli(
+        &prompt,
+        timeout,
+        "Memory compile timed out after 3 minutes",
+    )
+    .await?;
 
     // 5. Parse the JSON array out of the response.
     let json_str = extract_json_array(&full_output)
@@ -342,40 +263,9 @@ Raw memories:
 }
 
 /// Extract the first top-level JSON array from mixed text output.
-/// Mirror of the helper in `commands::core::memories` — kept here to avoid
-/// reaching across modules and to keep this file self-contained.
-fn extract_json_array(text: &str) -> Option<String> {
-    let start = text.find('[')?;
-    let mut depth = 0i32;
-    let mut in_string = false;
-    let mut escape_next = false;
-    for (i, ch) in text[start..].char_indices() {
-        if escape_next {
-            escape_next = false;
-            continue;
-        }
-        if in_string {
-            match ch {
-                '\\' => escape_next = true,
-                '"' => in_string = false,
-                _ => {}
-            }
-            continue;
-        }
-        match ch {
-            '"' => in_string = true,
-            '[' => depth += 1,
-            ']' => {
-                depth -= 1;
-                if depth == 0 {
-                    return Some(text[start..start + i + 1].to_string());
-                }
-            }
-            _ => {}
-        }
-    }
-    None
-}
+/// Reuses the shared helper in `commands::core::memories` instead of
+/// re-implementing the string-scanning parser.
+use super::memories::extract_json_array_from as extract_json_array;
 
 #[cfg(test)]
 mod tests {

@@ -60,7 +60,7 @@ pub async fn companion_request_improvement(
     }
     #[cfg(not(feature = "ml"))]
     {
-        dev_session::run_improvement(&state.user_db, feedback).await
+        dev_session::run_improvement(&state.user_db, None, feedback).await
     }
 }
 

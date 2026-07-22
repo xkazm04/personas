@@ -261,7 +261,12 @@
     "stream_no_speakers": "कोई वक्ता नहीं",
     "stream_none": "कोई नहीं",
     "stream_search": "प्रसारण खोजें",
-    "stream_title": "स्ट्रीम"
+    "stream_title": "स्ट्रीम",
+    "columns_action_empty": "अभी आपको किसी चीज़ की ज़रूरत नहीं है",
+    "columns_needs_attention": "ध्यान देने की आवश्यकता है",
+    "columns_active_goals": "सक्रिय लक्ष्य",
+    "columns_no_team": "कोई टीम नहीं",
+    "columns_all_clear": "सब कुछ ठीक है"
   },
   "common": {
     "loading": "लोड हो रहा है...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "{count} हॉप",
       "active_chains_one": "{count} चेन चल रही है",
       "active_chains_other": "{count} चेन चल रही हैं",
-      "active_chains_title": "चल रही चेन"
+      "active_chains_title": "चल रही चेन",
+      "copy_log_failed": "लॉग क्लिपबोर्ड पर कॉपी नहीं हो सका"
     },
     "lab": {
       "mode_arena": "एरेना",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "निर्भरता ग्राफ",
       "ct_swap_alt_tooltip": "वैकल्पिक कनेक्टर में बदलें",
       "ct_deps": "{count} निर्भरता",
-      "dg_no_deps": "दिखाने के लिए कोई निर्भरताएं नहीं।",
-      "dg_broken": "{count} टूटे हुए",
-      "dg_blast_radius": "ब्लास्ट रेडियस",
-      "dg_dependencies": "निर्भरताएं",
-      "dg_select_cred": "देखने के लिए एक क्रेडेंशियल चुनें कि इसके समाप्त होने पर क्या टूटता है",
-      "dg_relationships": "संबंध ({count})",
-      "dg_more": "+{count} और",
-      "dg_affected_tools": "प्रभावित टूल",
-      "dg_affected_auto": "प्रभावित ऑटोमेशन",
-      "dg_low_risk": "कम जोखिम",
-      "dg_medium_risk": "मध्यम जोखिम",
-      "dg_high_risk": "उच्च जोखिम",
-      "dg_high_blast": "यदि यह क्रेडेंशियल समाप्त हो जाए या ऑफलाइन हो जाए, तो {count} क्षमताएं टूट जाएंगी।",
-      "dg_medium_blast": "{count} क्षमताएं इस क्रेडेंशियल पर निर्भर हैं।",
-      "dg_low_blast": "कोई टूल या ऑटोमेशन इस क्रेडेंशियल पर निर्भर नहीं।",
       "dm_needed": "{count} क्रेडेंशियल आवश्यक",
       "dm_fulfilled": "{fulfilled}/{total} कनेक्टर पूर्ण",
       "dm_reuse_hint": "{count} मौजूदा क्रेडेंशियल का पुनः उपयोग कर सकते हैं",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "ट्रिगर और सब्सक्रिप्शन",
       "sub_suggested": "{count} सुझाए गए",
       "sub_filter": "फ़िल्टर: {filter}",
-      "lifecycle_error_load_triggers": "ट्रिगर लोड करने में विफल: {error}",
-      "lifecycle_error_load_subscriptions": "सब्सक्रिप्शन लोड करने में विफल: {error}",
-      "lifecycle_error_activate_trigger": "ट्रिगर सक्रिय करने में विफल",
-      "lifecycle_error_activate_subscription": "सब्सक्रिप्शन सक्रिय करने में विफल",
-      "lifecycle_error_retire_trigger": "ट्रिगर हटाने में विफल",
-      "lifecycle_error_retire_subscription": "सब्सक्रिप्शन हटाने में विफल",
-      "lifecycle_error_delete_persists": "हटाना विफल। सब्सक्रिप्शन अब भी मौजूद हो सकता है।",
       "auto_error_deploy_check_credentials": "तैनाती विफल। अपने प्लेटफ़ॉर्म क्रेडेंशियल जाँचें और पुनः प्रयास करें।",
       "auto_error_deploy_generic": "ऑटोमेशन तैनाती विफल",
       "test_healthcheck_failed_default": "हेल्थचेक विफल",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "अभी तक कोई टिप्पणी नहीं — बाद में आसानी से खोजने के लिए इस रन को टैग करें, नोट जोड़ें या स्टार करें।",
       "col_verdict": "निर्णय",
       "verdict_none": "Director द्वारा अभी समीक्षा नहीं",
-      "verdict_tooltip": "Director का निर्णय: {score}/5"
+      "verdict_tooltip": "Director का निर्णय: {score}/5",
+      "annotation_saving": "सहेजा जा रहा है…"
     },
     "settings_status": {
       "saving": "{sections} सहेजा जा रहा है...",
@@ -3612,7 +3597,23 @@
         "other": "अन्य"
       },
       "title": "परिवर्तन इतिहास"
-    }
+    },
+    "sigil_edit_channels_label": "चैनल",
+    "sigil_edit_custom_connector": "कस्टम कनेक्टर — कोई ब्रांड आइकन मेल नहीं खाता।",
+    "sigil_edit_error_off": "डिफ़ॉल्ट एरर पॉलिसी पर वापस चला जाता है।",
+    "sigil_edit_error_on": "कस्टम एरर-हैंडलिंग पॉलिसी कॉन्फ़िगर की गई है।",
+    "sigil_edit_event_off": "कोई इवेंट सब्सक्रिप्शन कॉन्फ़िगर नहीं है।",
+    "sigil_edit_event_on": "यह क्षमता इवेंट्स को सब्सक्राइब करती है।",
+    "sigil_edit_memory_off": "मेमोरी बंद है — यह क्षमता स्टेटलेस मोड में चलती है।",
+    "sigil_edit_memory_on": "इस क्षमता के लिए स्थायी मेमोरी चालू है।",
+    "sigil_edit_no_channels": "इस क्षमता के लिए कोई नोटिफिकेशन चैनल नहीं है।",
+    "sigil_edit_no_connector": "यह क्षमता कोई कनेक्टर घोषित नहीं करती।",
+    "sigil_edit_no_dim_editor": "इस डिम के लिए अभी कोई एडिटर सेट नहीं है।",
+    "sigil_edit_no_trigger": "इस क्षमता पर कोई ट्रिगर कॉन्फ़िगर नहीं है।",
+    "sigil_edit_review_off": "कोई ह्यूमन रिव्यू गेट नहीं — क्रियाएँ स्वायत्त रूप से होती हैं।",
+    "sigil_edit_review_on": "इस क्षमता के कार्य करने से पहले ह्यूमन रिव्यू आवश्यक है।",
+    "sigil_edit_service_label": "सेवा: {key}",
+    "sigil_edit_when_label": "कब"
   },
   "vault": {
     "workspace_connect": "वर्कस्पेस कनेक्ट",
@@ -3911,7 +3912,8 @@
       "query_parameters": "क्वेरी पैरामीटर",
       "recipes_title": "सहेजी गई रेसिपी",
       "truncated_warning": "प्रदर्शन के लिए प्रतिक्रिया छोटी की गई",
-      "value_col": "मूल्य"
+      "value_col": "मूल्य",
+      "request_headers": "हेडर"
     },
     "ingest": {
       "save_name": "नाम सहेजें",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "की-वैल्यू",
       "capability_key_value_hint": "यह एक की-वैल्यू स्टोर है। SCAN, GET और TYPE जैसे की कमांड का उपयोग करें — SQL नहीं।",
       "capability_select_subset": "केवल SELECT",
-      "capability_select_subset_hint": "यहाँ केवल एकल-टेबल की सरल SELECT क्वेरी चलती हैं — WHERE से फ़िल्टर करें, ORDER BY से क्रमबद्ध करें, LIMIT से सीमित करें। JOIN, एग्रीगेट, CTE और राइट समर्थित नहीं हैं।"
+      "capability_select_subset_hint": "यहाँ केवल एकल-टेबल की सरल SELECT क्वेरी चलती हैं — WHERE से फ़िल्टर करें, ORDER BY से क्रमबद्ध करें, LIMIT से सीमित करें। JOIN, एग्रीगेट, CTE और राइट समर्थित नहीं हैं।",
+      "query_timeout": "प्रतिक्रिया की प्रतीक्षा में समय समाप्त हो गया। कृपया पुनः प्रयास करें।"
     },
     "dependencies": {
       "simulate_revocation": "रद्दीकरण अनुकरण करें",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "क्या scan किया जाता है",
       "read_error_item": "{source} को पढ़ा नहीं जा सका",
       "read_errors_title": "कुछ स्रोत पढ़े नहीं जा सके",
-      "select_high_confidence": "उच्च-विश्वसनीयता"
+      "select_high_confidence": "उच्च-विश्वसनीयता",
+      "source_unknown": "अज्ञात स्रोत"
     },
     "desktop_discovery": {
       "title": "डेस्कटॉप ऐप",
@@ -5875,7 +5879,9 @@
       "col_days": "दिन",
       "col_incident": "घटना",
       "guidance_mcp_sidecar": "एजेंट अपने बिल्ट-इन MCP टूल के बिना चला क्योंकि personas-mcp बाइनरी गायब थी। ऐप को फिर से इंस्टॉल या रिपेयर करें ताकि यह डेस्कटॉप ऐप के साथ शामिल हो।",
-      "source_mcp_sidecar": "MCP टूलबेल्ट"
+      "source_mcp_sidecar": "MCP टूलबेल्ट",
+      "list_truncated": "पहली {limit} घटनाएं दिखाई जा रही हैं — बाकी देखने के लिए फ़िल्टर सीमित करें।",
+      "action_refused": "कार्रवाई लागू नहीं हुई — घटना की स्थिति पहले ही बदल चुकी हो सकती है।"
     },
     "observability": {
       "title": "अवलोकनशीलता",
@@ -9545,7 +9551,8 @@
       "event_type_required": "सुनने के लिए इवेंट प्रकार आवश्यक है।",
       "watch_path_required": "कम से कम एक निगरानी पथ आवश्यक है।",
       "composite_min_conditions": "कंपोज़िट ट्रिगर के लिए कम से कम 2 शर्तें आवश्यक हैं।",
-      "composite_window_minimum": "समय विंडो कम से कम 5 सेकंड की होनी चाहिए।"
+      "composite_window_minimum": "समय विंडो कम से कम 5 सेकंड की होनी चाहिए।",
+      "endpoint_required": "एंडपॉइंट URL या इवेंट आवश्यक है।"
     },
     "dead_letter_select_all": "चुनें all",
     "dead_letter_select_visible": "चुनें visible",
@@ -9750,7 +9757,9 @@
       "watch": "देखें",
       "watching": "देखा जा रहा है",
       "watching_only": "केवल देखे जा रहे"
-    }
+    },
+    "overdue_label": "अतिदेय",
+    "relay_delete_failed": "relay हटाने में विफल — कृपया पुनः प्रयास करें"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "सक्रिय",
       "paused": "रुका हुआ",
       "failed": "विफल",
-      "file-based": "फ़ाइल-आधारित",
-      "unknown": "अज्ञात"
+      "unknown": "अज्ञात",
+      "file-based": "फ़ाइल-आधारित"
     },
     "delivery": {
       "delivered": "डिलीवर हुआ",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "s बीता",
       "s_remaining": "s शेष",
       "show_cli_output": "CLI output दिखाएँ",
-      "hide_cli_output": "CLI output छिपाएँ"
+      "hide_cli_output": "CLI output छिपाएँ",
+      "starting_transformation": "रूपांतरण शुरू हो रहा है...",
+      "step_progress": "चरण {step} में से {total}",
+      "starting_short": "शुरू हो रहा है...",
+      "check_output_details": "विवरण के लिए नीचे आउटपुट देखें।"
     },
     "terminal_extra": {
       "press_enter": "शुरू करने के लिए Enter दबाएं या Play क्लिक करें",

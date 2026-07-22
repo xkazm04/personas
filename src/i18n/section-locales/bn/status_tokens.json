@@ -111,8 +111,8 @@
     "active": "সক্রিয়",
     "paused": "বিরতিতে",
     "failed": "ব্যর্থ",
-    "file-based": "ফাইল-ভিত্তিক",
-    "unknown": "অজানা"
+    "unknown": "অজানা",
+    "file-based": "ফাইল-ভিত্তিক"
   },
   "delivery": {
     "delivered": "বিতরণ হয়েছে",

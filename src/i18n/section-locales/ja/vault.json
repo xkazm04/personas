@@ -295,7 +295,8 @@
     "query_parameters": "クエリパラメータ",
     "recipes_title": "保存済みレシピ",
     "truncated_warning": "表示のためにレスポンスを切り捨てました",
-    "value_col": "値"
+    "value_col": "値",
+    "request_headers": "ヘッダー"
   },
   "ingest": {
     "save_name": "名前を保存",
@@ -422,7 +423,8 @@
     "capability_key_value": "キー・バリュー",
     "capability_key_value_hint": "これはキー・バリュー ストアです。SQL ではなく、SCAN、GET、TYPE などのキー コマンドを使用してください。",
     "capability_select_subset": "SELECT のみ",
-    "capability_select_subset_hint": "ここでは単一テーブルの単純な SELECT クエリのみ実行できます。WHERE で絞り込み、ORDER BY で並べ替え、LIMIT で件数を制限します。JOIN、集計、CTE、書き込みはサポートされていません。"
+    "capability_select_subset_hint": "ここでは単一テーブルの単純な SELECT クエリのみ実行できます。WHERE で絞り込み、ORDER BY で並べ替え、LIMIT で件数を制限します。JOIN、集計、CTE、書き込みはサポートされていません。",
+    "query_timeout": "応答待ちがタイムアウトしました。もう一度お試しください。"
   },
   "dependencies": {
     "simulate_revocation": "失効をシミュレート",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "スキャン対象",
     "read_error_item": "{source} を読み取れませんでした",
     "read_errors_title": "一部のソースを読み取れませんでした",
-    "select_high_confidence": "信頼度が高い"
+    "select_high_confidence": "信頼度が高い",
+    "source_unknown": "不明なソース"
   },
   "desktop_discovery": {
     "title": "デスクトップアプリ",

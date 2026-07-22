@@ -25,6 +25,43 @@ pub struct BridgeActionResult {
     pub action: String,
 }
 
+impl BridgeActionResult {
+    /// Build a `BridgeActionResult` from the outcome of running a bridge action,
+    /// folding the success/error envelope construction that every bridge's
+    /// `execute` fn used to repeat inline.
+    fn finish(bridge: &str, action: String, duration_ms: u64, result: Result<String, AppError>) -> Self {
+        match result {
+            Ok(output) => Self {
+                success: true,
+                output,
+                error: None,
+                duration_ms,
+                bridge: bridge.into(),
+                action,
+            },
+            Err(e) => Self {
+                success: false,
+                output: String::new(),
+                error: Some(e.to_string()),
+                duration_ms,
+                bridge: bridge.into(),
+                action,
+            },
+        }
+    }
+}
+
+/// Derive a short action name from an action enum's `{:?}` representation,
+/// taking just the variant name (the token before the first whitespace or
+/// opening brace/paren of its debug-formatted fields).
+fn first_variant_name<T: std::fmt::Debug>(action: &T) -> String {
+    format!("{:?}", action)
+        .split_whitespace()
+        .next()
+        .unwrap_or("unknown")
+        .to_string()
+}
+
 // ========================================================================
 // VS Code Bridge
 // ========================================================================
@@ -60,11 +97,7 @@ pub mod vscode {
         action: VsCodeAction,
     ) -> Result<BridgeActionResult, AppError> {
         let start = Instant::now();
-        let action_name = format!("{:?}", &action)
-            .split_whitespace()
-            .next()
-            .unwrap_or("unknown")
-            .to_string();
+        let action_name = first_variant_name(&action);
 
         let result = match action {
             VsCodeAction::OpenFile { path, line } => {
@@ -100,24 +133,12 @@ pub mod vscode {
         };
 
         let duration_ms = start.elapsed().as_millis() as u64;
-        match result {
-            Ok(output) => Ok(BridgeActionResult {
-                success: true,
-                output,
-                error: None,
-                duration_ms,
-                bridge: "vscode".into(),
-                action: action_name,
-            }),
-            Err(e) => Ok(BridgeActionResult {
-                success: false,
-                output: String::new(),
-                error: Some(e.to_string()),
-                duration_ms,
-                bridge: "vscode".into(),
-                action: action_name,
-            }),
-        }
+        Ok(BridgeActionResult::finish(
+            "vscode",
+            action_name,
+            duration_ms,
+            result,
+        ))
     }
 }
 
@@ -170,11 +191,7 @@ pub mod docker {
         action: DockerAction,
     ) -> Result<BridgeActionResult, AppError> {
         let start = Instant::now();
-        let action_name = format!("{:?}", &action)
-            .split_whitespace()
-            .next()
-            .unwrap_or("unknown")
-            .to_string();
+        let action_name = first_variant_name(&action);
 
         let result = match action {
             DockerAction::ListContainers { all } => {
@@ -279,24 +296,12 @@ pub mod docker {
         };
 
         let duration_ms = start.elapsed().as_millis() as u64;
-        match result {
-            Ok(output) => Ok(BridgeActionResult {
-                success: true,
-                output,
-                error: None,
-                duration_ms,
-                bridge: "docker".into(),
-                action: action_name,
-            }),
-            Err(e) => Ok(BridgeActionResult {
-                success: false,
-                output: String::new(),
-                error: Some(e.to_string()),
-                duration_ms,
-                bridge: "docker".into(),
-                action: action_name,
-            }),
-        }
+        Ok(BridgeActionResult::finish(
+            "docker",
+            action_name,
+            duration_ms,
+            result,
+        ))
     }
 }
 
@@ -438,11 +443,7 @@ pub mod terminal {
         manifest: &DesktopConnectorManifest,
     ) -> Result<BridgeActionResult, AppError> {
         let start = Instant::now();
-        let action_name = format!("{:?}", &action)
-            .split_whitespace()
-            .next()
-            .unwrap_or("unknown")
-            .to_string();
+        let action_name = first_variant_name(&action);
 
         let result = match action {
             TerminalAction::Execute {
@@ -618,24 +619,12 @@ pub mod terminal {
         };
 
         let duration_ms = start.elapsed().as_millis() as u64;
-        match result {
-            Ok(output) => Ok(BridgeActionResult {
-                success: true,
-                output,
-                error: None,
-                duration_ms,
-                bridge: "terminal".into(),
-                action: action_name,
-            }),
-            Err(e) => Ok(BridgeActionResult {
-                success: false,
-                output: String::new(),
-                error: Some(e.to_string()),
-                duration_ms,
-                bridge: "terminal".into(),
-                action: action_name,
-            }),
-        }
+        Ok(BridgeActionResult::finish(
+            "terminal",
+            action_name,
+            duration_ms,
+            result,
+        ))
     }
 
     /// Windows-executable extensions that must be stripped before blocklist comparison.
@@ -778,11 +767,7 @@ pub mod obsidian {
         action: ObsidianAction,
     ) -> Result<BridgeActionResult, AppError> {
         let start = Instant::now();
-        let action_name = format!("{:?}", &action)
-            .split_whitespace()
-            .next()
-            .unwrap_or("unknown")
-            .to_string();
+        let action_name = first_variant_name(&action);
 
         // Try REST API first, fall back to filesystem
         let result = if let (Some(port), Some(key)) = (api_port, api_key) {
@@ -798,24 +783,12 @@ pub mod obsidian {
         };
 
         let duration_ms = start.elapsed().as_millis() as u64;
-        match result {
-            Ok(output) => Ok(BridgeActionResult {
-                success: true,
-                output,
-                error: None,
-                duration_ms,
-                bridge: "obsidian".into(),
-                action: action_name,
-            }),
-            Err(e) => Ok(BridgeActionResult {
-                success: false,
-                output: String::new(),
-                error: Some(e.to_string()),
-                duration_ms,
-                bridge: "obsidian".into(),
-                action: action_name,
-            }),
-        }
+        Ok(BridgeActionResult::finish(
+            "obsidian",
+            action_name,
+            duration_ms,
+            result,
+        ))
     }
 
     /// Execute via Obsidian Local REST API plugin.

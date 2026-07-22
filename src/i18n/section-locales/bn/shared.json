@@ -195,7 +195,11 @@
     "s_elapsed": "s অতিবাহিত",
     "s_remaining": "s বাকি",
     "show_cli_output": "CLI আউটপুট দেখান",
-    "hide_cli_output": "CLI আউটপুট লুকান"
+    "hide_cli_output": "CLI আউটপুট লুকান",
+    "starting_transformation": "ট্রান্সফরমেশন শুরু হচ্ছে…",
+    "step_progress": "ধাপ {step}, মোট {total}",
+    "starting_short": "শুরু হচ্ছে…",
+    "check_output_details": "বিস্তারিত জানতে নিচের আউটপুট দেখুন।"
   },
   "terminal_extra": {
     "press_enter": "শুরু করতে Enter চাপুন বা Play-এ ক্লিক করুন।",

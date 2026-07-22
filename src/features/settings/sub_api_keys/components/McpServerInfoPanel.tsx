@@ -14,9 +14,7 @@ import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { probeMcpServer, type McpServerLiveness } from '@/api/agents/mcpTools';
-
-
-const MCP_BASE_URL = 'http://127.0.0.1:9420';
+import { MCP_BASE_URL } from '../libs/mcpServer';
 
 /** How often the panel re-probes the local server's live state. */
 const PROBE_INTERVAL_MS = 30_000;

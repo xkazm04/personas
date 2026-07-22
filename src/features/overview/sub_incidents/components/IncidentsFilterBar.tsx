@@ -4,6 +4,7 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { sourceTableLabel } from '../libs/incidentTaxonomy';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
+import { OPEN_ONLY_FILTERS } from '../libs/incidentFilterDefaults';
 
 interface Props {
   filters: IncidentFilters;
@@ -23,16 +24,6 @@ const SOURCE_VALUES = [
 ] as const;
 
 const HOUR_MS = 3_600_000;
-
-/** The inbox's resting state (open-only, no other narrowing) — what "Clear
- *  filters" resets to. Mirrors DEFAULT_FILTERS in IncidentsInbox. */
-const OPEN_ONLY_FILTERS: IncidentFilters = {
-  statuses: ['open'],
-  severities: null,
-  source_tables: null,
-  persona_id: null,
-  since: null,
-};
 
 /** Turn a friendly range key into the `since` timestamp the filter expects. */
 function sinceFromRange(key: string): string | null {

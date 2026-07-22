@@ -17,7 +17,7 @@ interface ImportPreviewProps {
   selectedKeys: Set<string>;
   errors: string[];
   syncConfig: SyncConfig | null;
-  onToggleKey: (key: string) => void;
+  onToggleKey: (id: string) => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
   onImport: () => void;
@@ -106,16 +106,16 @@ export function ImportPreview({
               </div>
               <div className="divide-y divide-primary/5">
                 {groupSecrets.map((secret) => {
-                  const isSelected = selectedKeys.has(secret.key);
+                  const isSelected = selectedKeys.has(secret.id);
                   return (
                     <label
-                      key={secret.key}
+                      key={secret.id}
                       className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-secondary/30 transition-colors"
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => onToggleKey(secret.key)}
+                        onChange={() => onToggleKey(secret.id)}
                         className="rounded border-primary/30 text-primary focus-visible:ring-primary/30"
                       />
                       <div className="min-w-0 flex-1">

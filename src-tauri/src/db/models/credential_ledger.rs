@@ -234,8 +234,10 @@ impl CredentialLedger {
     pub fn increment_refresh_backoff(&mut self, backoff_steps: &[i64]) -> (u64, i64) {
         let fail_count = self.oauth_refresh_fail_count.unwrap_or(0);
         let new_fail_count = fail_count + 1;
-        let step_idx = (fail_count as usize).min(backoff_steps.len() - 1);
-        let backoff_secs = backoff_steps[step_idx];
+        let backoff_secs = match backoff_steps.len().checked_sub(1) {
+            Some(max_idx) => backoff_steps[(fail_count as usize).min(max_idx)],
+            None => 0, // no backoff schedule configured — retry immediately
+        };
         let backoff_until =
             (chrono::Utc::now() + chrono::Duration::seconds(backoff_secs)).to_rfc3339();
 

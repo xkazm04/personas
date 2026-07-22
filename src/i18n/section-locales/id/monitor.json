@@ -260,5 +260,10 @@
   "stream_no_speakers": "Tidak ada pembicara",
   "stream_none": "Tidak ada",
   "stream_search": "Cari transmisi",
-  "stream_title": "Aliran"
+  "stream_title": "Aliran",
+  "columns_action_empty": "Tidak ada yang memerlukan Anda saat ini",
+  "columns_needs_attention": "Perlu perhatian",
+  "columns_active_goals": "Tujuan aktif",
+  "columns_no_team": "Tanpa tim",
+  "columns_all_clear": "Semua beres"
 }

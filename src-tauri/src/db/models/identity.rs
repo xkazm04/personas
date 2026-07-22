@@ -4,6 +4,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::db::models::serde_util::double_option;
 use crate::error::AppError;
 
 // -- Enums ---------------------------------------------------------------
@@ -203,5 +204,6 @@ pub struct ImportTrustedPeerInput {
 pub struct UpdateTrustedPeerInput {
     pub display_name: Option<String>,
     pub trust_level: Option<TrustLevel>,
+    #[serde(default, deserialize_with = "double_option")]
     pub notes: Option<Option<String>>,
 }

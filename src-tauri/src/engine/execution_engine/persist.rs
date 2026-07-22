@@ -186,7 +186,13 @@ pub(crate) async fn persist_status_if_not_final(
         .unwrap_or_else(|| "Conditional status persist failed".into());
 
     if !matches!(update.status, ExecutionState::Failed) {
-        let _ = exec_repo::update_status(
+        // Use the conditional writer here too: this dead-letter path only runs
+        // after repeated DB errors, but the execution's terminal status may
+        // have been set by a concurrent writer in the interim. Forcing an
+        // unconditional Failed would silently clobber a real Completed/
+        // Cancelled result -- defeating the "if not final" guarantee this
+        // function exists to provide.
+        let _ = exec_repo::update_status_if_not_final(
             pool,
             exec_id,
             UpdateExecutionStatus {

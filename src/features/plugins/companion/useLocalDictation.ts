@@ -167,6 +167,11 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
 
   const start = useCallback(() => {
     if (listening) return;
+    // `listening` only flips true after getUserMedia resolves, so a second
+    // trigger during the permission-prompt window (double-tap, orb + footer
+    // both driving capture) would otherwise pass this guard and acquire a
+    // second mic stream, overwriting streamRef and leaking the first one.
+    if (pendingStartRef.current) return;
     if (!modelRef.current) {
       setError('no_model_selected');
       return;

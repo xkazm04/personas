@@ -1,6 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { ShieldCheck } from 'lucide-react';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { TeamCertCard } from './TeamCertCard';
 import type { TeamCertStatus } from '@/lib/bindings/TeamCertStatus';
 

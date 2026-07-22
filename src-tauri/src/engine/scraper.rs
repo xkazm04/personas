@@ -433,10 +433,12 @@ fn row_to_config(row: &rusqlite::Row) -> rusqlite::Result<ScraperConfig> {
 }
 
 /// Next fire time for a cron expression as an RFC3339 string (None if invalid /
-/// no upcoming fire). Cron is evaluated in UTC by `engine::cron`.
+/// no upcoming fire). Cron is evaluated in the machine's local timezone, matching
+/// the semantics used elsewhere in the scheduler (persona cron, `ActiveWindow`) --
+/// a user-configured "0 9 * * *" fires at 9am local, not 9am UTC.
 fn compute_next_run(cron: &str) -> Option<String> {
     let sched = crate::engine::cron::parse_cron(cron).ok()?;
-    crate::engine::cron::next_fire_time(&sched, chrono::Utc::now()).map(|t| t.to_rfc3339())
+    crate::engine::cron::next_fire_time_local(&sched, chrono::Utc::now()).map(|t| t.to_rfc3339())
 }
 
 /// Create or update a saved scrape config (upsert by `id`; generates one if

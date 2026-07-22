@@ -53,8 +53,8 @@ export function ComposerEventPickerModal({
     setQuery("");
     setActivePersonaId(list[0]?.id ?? null);
     setFreeTextByTrigger({});
-    const t = setTimeout(() => searchRef.current?.focus(), 80);
-    return () => clearTimeout(t);
+    const focusTimer = setTimeout(() => searchRef.current?.focus(), 80);
+    return () => clearTimeout(focusTimer);
   }, [open, selected, list]);
 
   const filteredPersonas = useMemo(() => {

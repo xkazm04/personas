@@ -260,5 +260,10 @@
   "stream_no_speakers": "无发言者",
   "stream_none": "无",
   "stream_search": "搜索消息",
-  "stream_title": "消息流"
+  "stream_title": "消息流",
+  "columns_action_empty": "现在没有需要你处理的事项",
+  "columns_needs_attention": "需要关注",
+  "columns_active_goals": "进行中的目标",
+  "columns_no_team": "无所属团队",
+  "columns_all_clear": "一切正常"
 }

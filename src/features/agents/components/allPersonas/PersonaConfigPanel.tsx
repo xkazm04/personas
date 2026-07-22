@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import { RefreshCw, Globe, FolderOpen, User, Minus, AlertTriangle, Search, X, Layers, ChevronRight, CornerDownRight } from 'lucide-react';
 import { listPersonas, resolveEffectiveConfigBulk } from '@/api/agents/personas';
 import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
@@ -296,11 +296,18 @@ export function PersonaConfigPanel() {
 
   const filtersActive = filter.trim().length > 0 || overridesOnly;
 
+  // Tracks the most recently started load() call so a slower, superseded
+  // call (unmount mid-await, or a Refresh click while an initial load is
+  // still in flight) can bail before writing stale state over fresh state.
+  const loadRequestIdRef = useRef(0);
+
   const load = async (forceRefresh = false) => {
+    const requestId = ++loadRequestIdRef.current;
     setGlobalLoading(true);
     try {
       if (forceRefresh) clearConfigCache();
       const personas = await listPersonas();
+      if (loadRequestIdRef.current !== requestId) return;
       const initial: PersonaRow[] = personas.map((p) => {
         const cached = configCache.get(p.id);
         if (isFresh(cached)) {
@@ -313,7 +320,7 @@ export function PersonaConfigPanel() {
       // Only resolve personas whose cache is stale or missing.
       const stale = personas.filter((p) => !isFresh(configCache.get(p.id)));
       if (stale.length === 0) {
-        setGlobalLoading(false);
+        if (loadRequestIdRef.current === requestId) setGlobalLoading(false);
         return;
       }
 
@@ -344,6 +351,7 @@ export function PersonaConfigPanel() {
         });
       }
 
+      if (loadRequestIdRef.current !== requestId) return;
       setRows(personas.map((p) => {
         const cached = configCache.get(p.id);
         return {
@@ -354,9 +362,9 @@ export function PersonaConfigPanel() {
         };
       }));
     } catch {
-      setRows([]);
+      if (loadRequestIdRef.current === requestId) setRows([]);
     } finally {
-      setGlobalLoading(false);
+      if (loadRequestIdRef.current === requestId) setGlobalLoading(false);
     }
   };
 

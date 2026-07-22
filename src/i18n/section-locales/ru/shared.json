@@ -195,7 +195,11 @@
     "s_elapsed": "с прошло",
     "s_remaining": "с осталось",
     "show_cli_output": "Показать вывод CLI",
-    "hide_cli_output": "Скрыть вывод CLI"
+    "hide_cli_output": "Скрыть вывод CLI",
+    "starting_transformation": "Начало преобразования...",
+    "step_progress": "Шаг {step} из {total}",
+    "starting_short": "Запуск...",
+    "check_output_details": "Подробности см. в выводе ниже."
   },
   "terminal_extra": {
     "press_enter": "Нажмите Enter или кликните «Воспроизвести» для начала",

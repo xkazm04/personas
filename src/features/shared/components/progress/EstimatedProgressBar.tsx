@@ -55,8 +55,16 @@ export function EstimatedProgressBar({
       p = 85 + 13 * (1 - 1 / (1 + over * 0.05));
     }
     setProgress(p);
-    rafRef.current = requestAnimationFrame(tick);
+    rafRef.current = requestAnimationFrame(tickRef.current);
   }, [estimatedSeconds]);
+
+  // Keep the latest tick in a ref so the driver effect below doesn't need to
+  // depend on it (tick's identity changes whenever estimatedSeconds changes,
+  // which would otherwise cancel and fail to reschedule the rAF loop mid-run).
+  const tickRef = useRef(tick);
+  useEffect(() => {
+    tickRef.current = tick;
+  }, [tick]);
 
   useEffect(() => {
     if (isRunning && !wasRunningRef.current) {
@@ -64,7 +72,7 @@ export function EstimatedProgressBar({
       startRef.current = Date.now();
       setProgress(0);
       setElapsed(0);
-      rafRef.current = requestAnimationFrame(tick);
+      rafRef.current = requestAnimationFrame(tickRef.current);
     } else if (!isRunning && wasRunningRef.current) {
       // Completed -- jump to 100%
       cancelAnimationFrame(rafRef.current);
@@ -73,7 +81,7 @@ export function EstimatedProgressBar({
     wasRunningRef.current = isRunning;
 
     return () => cancelAnimationFrame(rafRef.current);
-  }, [isRunning, tick]);
+  }, [isRunning]);
 
   // Don't show anything if never started
   if (progress === 0 && !isRunning) return null;

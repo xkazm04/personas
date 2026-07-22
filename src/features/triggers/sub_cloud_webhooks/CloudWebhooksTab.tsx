@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Cloud, CloudOff, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
 import { CopyButton, Button } from '@/features/shared/components/buttons';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useAgentStore } from '@/stores/agentStore';
 import { useCloudWebhookRelay } from '@/hooks/realtime/useCloudWebhookRelay';
@@ -148,21 +148,21 @@ export function CloudWebhooksTab() {
             <span className="typo-body text-foreground">
               {relay.connected ? t.triggers.cloud_relay_active : t.common.connecting}
             </span>
-            {relay.active_webhook_triggers > 0 && (
+            {relay.activeWebhookTriggers > 0 && (
               <span className="typo-caption text-foreground">
-                {relay.active_webhook_triggers} webhook{relay.active_webhook_triggers !== 1 ? 's' : ''}
+                {relay.activeWebhookTriggers} webhook{relay.activeWebhookTriggers !== 1 ? 's' : ''}
               </span>
             )}
-            {relay.total_relayed > 0 && (
+            {relay.totalRelayed > 0 && (
               <span className="typo-caption text-blue-400/70">
-                {relay.total_relayed} relayed
+                {Number(relay.totalRelayed)} relayed
               </span>
             )}
           </div>
           <div className="flex items-center gap-2">
-            {relay.last_poll_at && (
+            {relay.lastPollAt && (
               <span className="typo-caption text-foreground">
-                {t.triggers.last_poll_label} <RelativeTime timestamp={relay.last_poll_at} />
+                {t.triggers.last_poll_label} <RelativeTime timestamp={relay.lastPollAt} />
               </span>
             )}
             <button
@@ -198,7 +198,7 @@ export function CloudWebhooksTab() {
               >
                 <option value="">{t.triggers.select_persona}</option>
                 {personas
-                  .filter((p) => !deployedPersonaIds.has(p.id) || true)
+                  .filter((p) => !deployedPersonaIds.has(p.id))
                   .map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}

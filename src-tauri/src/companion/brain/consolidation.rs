@@ -16,20 +16,19 @@
 //! bad fact distillation can poison every future retrieval. We make
 //! reviewing fast, not silent.
 
-use std::process::Stdio;
 use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command;
-use tokio::time::timeout;
-use uuid::Uuid;
 
+use crate::companion::brain::oneshot::{
+    call_claude_text, extract_json_span, preview,
+};
+use crate::companion::brain::util;
 use crate::companion::brain::{episodic, semantic};
-use crate::companion::session::{base_cli_invocation, DEFAULT_SESSION_ID};
+use crate::companion::session::DEFAULT_SESSION_ID;
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
@@ -264,6 +263,38 @@ pub struct ItemEdits {
     pub confidence: Option<f32>,
 }
 
+/// The model's `supersedes_id` is untrusted input — validate it refers to a
+/// live fact (`kind='fact'`, `importance>0`) in the same scope before
+/// letting `apply_item` demote anything. Without this, a hallucinated or
+/// unrelated id would silently zero out an arbitrary fact's importance,
+/// defeating the human-review step `apply_item` is meant to gate.
+fn validate_supersedes(
+    pool: &UserDbPool,
+    item_id: &str,
+    prior_id: &str,
+    scope_str: &str,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    let prior_scope: Option<String> = conn
+        .query_row(
+            "SELECT f.scope FROM companion_fact f
+             JOIN companion_node n ON n.id = f.id
+             WHERE f.id = ?1 AND n.kind = 'fact' AND n.importance > 0",
+            params![prior_id],
+            |r| r.get(0),
+        )
+        .optional()?;
+    match prior_scope {
+        Some(s) if s == scope_str => Ok(()),
+        Some(_) => Err(AppError::Validation(format!(
+            "consolidation item `{item_id}`: supersedes_id `{prior_id}` is in a different scope"
+        ))),
+        None => Err(AppError::Validation(format!(
+            "consolidation item `{item_id}`: supersedes_id `{prior_id}` does not refer to a live fact"
+        ))),
+    }
+}
+
 #[cfg(feature = "ml")]
 pub async fn apply_item(
     pool: &UserDbPool,
@@ -285,6 +316,9 @@ pub async fn apply_item(
     let importance = edits.importance.unwrap_or(item.importance);
     let confidence = edits.confidence.unwrap_or(item.confidence);
     let supersedes = item.supersedes_id.as_deref();
+    if let Some(prior_id) = supersedes {
+        validate_supersedes(pool, item_id, prior_id, scope_str)?;
+    }
 
     let input = semantic::FactInput {
         scope,
@@ -376,6 +410,9 @@ pub async fn apply_item(
     let importance = edits.importance.unwrap_or(item.importance);
     let confidence = edits.confidence.unwrap_or(item.confidence);
     let supersedes = item.supersedes_id.as_deref();
+    if let Some(prior_id) = supersedes {
+        validate_supersedes(pool, item_id, prior_id, scope_str)?;
+    }
 
     let input = semantic::FactInput {
         scope,
@@ -474,30 +511,45 @@ pub fn decay_unused_facts(pool: &UserDbPool) -> Result<i64, AppError> {
     let now = Utc::now().to_rfc3339();
     let cutoff = (Utc::now() - chrono::Duration::days(DECAY_THRESHOLD_DAYS)).to_rfc3339();
     let conn = pool.get()?;
-    let updated = conn.execute(
-        "UPDATE companion_node
-         SET importance = MAX(1, importance - ?1), updated_at = ?2
-         WHERE id IN (
-             SELECT n.id FROM companion_node n
-             JOIN companion_fact f ON f.id = n.id
-             WHERE n.kind = 'fact'
-               AND n.importance > 1
-               AND f.last_seen_at < ?3
-         )",
-        params![DECAY_DECREMENT, now, cutoff],
+    // Guard on last_decayed_at so a fact decays at most once per
+    // DECAY_THRESHOLD_DAYS window even if consolidation is re-run sooner
+    // (decay itself doesn't bump last_seen_at, so without this guard the
+    // same stale fact would be decremented again on every pass). Resolve
+    // the id set up front so the follow-up "mark as decayed" write targets
+    // exactly the rows just decremented, rather than re-selecting by
+    // `updated_at = ?1` (which could also catch an unrelated fact touched
+    // at the same RFC3339 instant) or by `importance > 1` (which would miss
+    // rows that were decremented down to the floor of 1 by this very pass).
+    let mut stmt = conn.prepare(
+        "SELECT n.id FROM companion_node n
+         JOIN companion_fact f ON f.id = n.id
+         WHERE n.kind = 'fact'
+           AND n.importance > 1
+           AND f.last_seen_at < ?1
+           AND (f.last_decayed_at IS NULL OR f.last_decayed_at < ?1)",
     )?;
-    // Mark them as decayed so the next pass doesn't double-decay
-    // (we'd need to reinforce by recall to restart the clock).
-    if updated > 0 {
-        conn.execute(
-            "UPDATE companion_fact
-             SET last_decayed_at = ?1
-             WHERE id IN (
-                 SELECT id FROM companion_node WHERE kind = 'fact' AND updated_at = ?1
-             )",
-            params![now],
-        )?;
+    let ids: Vec<String> = stmt
+        .query_map(params![cutoff], |r| r.get(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    drop(stmt);
+    if ids.is_empty() {
+        return Ok(0);
     }
+    let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    let node_sql = format!(
+        "UPDATE companion_node SET importance = MAX(1, importance - ?1), updated_at = ?2
+         WHERE id IN ({placeholders})"
+    );
+    let mut node_params: Vec<&dyn rusqlite::ToSql> = vec![&DECAY_DECREMENT, &now];
+    node_params.extend(ids.iter().map(|id| id as &dyn rusqlite::ToSql));
+    let updated = conn.execute(&node_sql, node_params.as_slice())?;
+
+    let fact_sql =
+        format!("UPDATE companion_fact SET last_decayed_at = ?1 WHERE id IN ({placeholders})");
+    let mut fact_params: Vec<&dyn rusqlite::ToSql> = vec![&now];
+    fact_params.extend(ids.iter().map(|id| id as &dyn rusqlite::ToSql));
+    conn.execute(&fact_sql, fact_params.as_slice())?;
+
     Ok(updated as i64)
 }
 
@@ -818,164 +870,27 @@ fn build_consolidation_prompt(
 /// stdout, parse the JSON envelope. No `--resume`, no system-prompt
 /// file (we put everything in the user prompt for total control), no
 /// stream events to the UI — this is a backend computation.
+///
+/// Spawn/stream/timeout plumbing lives in
+/// [`oneshot::call_claude_text`](crate::companion::brain::oneshot::call_claude_text);
+/// this wrapper owns only the consolidation-specific model choice and
+/// typed envelope parsing.
 async fn call_claude_oneshot(prompt: &str) -> Result<ProposalEnvelope, AppError> {
-    let cwd = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
-    let (cmd_program, mut argv) = base_cli_invocation();
-    argv.extend([
-        "-p".into(),
-        "-".into(),
-        "--output-format".into(),
-        "stream-json".into(),
-        "--verbose".into(),
-        "--dangerously-skip-permissions".into(),
-        "--exclude-dynamic-system-prompt-sections".into(),
-        "--model".into(),
-        "claude-opus-4-8".into(),
-    ]);
-
-    let mut cmd = Command::new(&cmd_program);
-    cmd.args(&argv)
-        .current_dir(&cwd)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
-    // Subscription-only — never the API account.
-    crate::engine::cli_process::force_subscription_auth(&mut cmd);
-    // No console window on Windows (desktop-heap / 0xC0000142 guard).
-    crate::companion::session::apply_no_console_window(&mut cmd);
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| AppError::Internal(format!("spawn claude (consolidation): {e}")))?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(prompt.as_bytes())
-            .await
-            .map_err(|e| AppError::Internal(format!("write stdin: {e}")))?;
-        drop(stdin);
-    }
-
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| AppError::Internal("claude stdout missing".into()))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| AppError::Internal("claude stderr missing".into()))?;
-
-    let stderr_buf = Arc::new(tokio::sync::Mutex::new(String::new()));
-    let stderr_handle = {
-        let buf = stderr_buf.clone();
-        tokio::spawn(async move {
-            let mut lines = BufReader::new(stderr).lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                let mut g = buf.lock().await;
-                if !g.is_empty() {
-                    g.push('\n');
-                }
-                g.push_str(&line);
-            }
-        })
-    };
-
-    // Reuse the streaming JSON parser to extract assistant text deltas.
-    let mut assistant_text = String::new();
-    let mut reader = BufReader::new(stdout).lines();
-
-    let collect = async {
-        while let Some(line) = reader
-            .next_line()
-            .await
-            .map_err(|e| AppError::Internal(format!("read stdout: {e}")))?
-        {
-            if let Some(delta) = extract_assistant_text(&line) {
-                assistant_text.push_str(&delta);
-            }
-        }
-        Ok::<(), AppError>(())
-    };
-
-    timeout(CONSOLIDATION_TIMEOUT, collect)
-        .await
-        .map_err(|_| {
-            AppError::Internal(format!(
-                "consolidation timed out after {:?}",
-                CONSOLIDATION_TIMEOUT
-            ))
-        })??;
-
-    let _ = stderr_handle.await;
-    let status = child
-        .wait()
-        .await
-        .map_err(|e| AppError::Internal(format!("await claude: {e}")))?;
-    if !status.success() {
-        let err = stderr_buf.lock().await.clone();
-        return Err(AppError::Internal(format!(
-            "claude consolidation exited {}: {}",
-            status.code().map(|c| c.to_string()).unwrap_or("?".into()),
-            err
-        )));
-    }
-
-    parse_envelope(&assistant_text)
-}
-
-/// Strip stream-json wrapping and pull text deltas. Matches the
-/// extractor on the frontend (extractAssistantText in CompanionPanel).
-fn extract_assistant_text(line: &str) -> Option<String> {
-    let v: serde_json::Value = serde_json::from_str(line).ok()?;
-    if v.get("type")?.as_str()? != "assistant" {
-        return None;
-    }
-    let blocks = v.get("message")?.get("content")?.as_array()?;
-    let mut out = String::new();
-    for b in blocks {
-        if b.get("type").and_then(|x| x.as_str()) == Some("text") {
-            if let Some(t) = b.get("text").and_then(|x| x.as_str()) {
-                out.push_str(t);
-            }
-        }
-    }
-    if out.is_empty() {
-        None
-    } else {
-        Some(out)
-    }
+    let text = call_claude_text(
+        prompt,
+        "claude-opus-4-8",
+        "consolidation",
+        CONSOLIDATION_TIMEOUT,
+    )
+    .await?;
+    parse_envelope(&text)
 }
 
 /// Parse the assembled assistant text. Tolerant of code-fenced replies
 /// (Claude sometimes wraps despite explicit instructions) and trailing
 /// commentary — find the first `{` and the matching last `}`.
 fn parse_envelope(text: &str) -> Result<ProposalEnvelope, AppError> {
-    let trimmed = text.trim();
-    let raw = if let Some(stripped) = strip_code_fence(trimmed) {
-        stripped
-    } else {
-        trimmed
-    };
-    // Find the first '{' and last '}' to be tolerant of preface/suffix.
-    let start = raw.find('{').ok_or_else(|| {
-        AppError::Internal(format!(
-            "consolidation reply missing JSON object; got: {}",
-            preview(raw, 200)
-        ))
-    })?;
-    let end = raw.rfind('}').ok_or_else(|| {
-        AppError::Internal(format!(
-            "consolidation reply missing closing `}}`; got: {}",
-            preview(raw, 200)
-        ))
-    })?;
-    if end <= start {
-        return Err(AppError::Internal(format!(
-            "consolidation reply has no valid JSON span; got: {}",
-            preview(raw, 200)
-        )));
-    }
-    let json = &raw[start..=end];
+    let json = extract_json_span(text, "consolidation reply")?;
     serde_json::from_str(json).map_err(|e| {
         AppError::Internal(format!(
             "consolidation reply not valid JSON: {e}; got: {}",
@@ -984,40 +899,6 @@ fn parse_envelope(text: &str) -> Result<ProposalEnvelope, AppError> {
     })
 }
 
-fn strip_code_fence(s: &str) -> Option<&str> {
-    let mut s = s;
-    if let Some(rest) = s.strip_prefix("```json") {
-        s = rest;
-    } else if let Some(rest) = s.strip_prefix("```") {
-        s = rest;
-    } else {
-        return None;
-    }
-    let s = s.trim_start_matches('\n');
-    if let Some(end) = s.rfind("```") {
-        Some(s[..end].trim())
-    } else {
-        Some(s.trim())
-    }
-}
-
-fn preview(s: &str, n: usize) -> String {
-    if s.len() <= n {
-        s.to_string()
-    } else {
-        let mut end = n;
-        while !s.is_char_boundary(end) && end > 0 {
-            end -= 1;
-        }
-        format!("{}…", &s[..end])
-    }
-}
-
 fn short_uuid() -> String {
-    Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(10)
-        .collect()
+    util::short_id(10)
 }

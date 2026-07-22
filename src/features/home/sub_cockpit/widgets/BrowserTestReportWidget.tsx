@@ -61,18 +61,26 @@ export function BrowserTestReportWidget({ config, title }: CockpitWidgetProps) {
 
   // Goal-UAT linkage: when this report is a goal's acceptance gate and EVERY
   // step passed, close the gate (tick the verify item → goal can reach done).
+  // The "attempted" flag is persisted per goal so a remount (tab revisit,
+  // spec recompose) can't re-fire the close call — a fresh ref would reset.
   const goalId = typeof config?.goal_id === 'string' ? config.goal_id : '';
   const allPass = steps.length > 0 && steps.every((s) => s.result === 'pass');
   const [uatClosed, setUatClosed] = useState(false);
-  const closeAttempted = useRef(false);
+  const closeAttemptedStorageKey = goalId ? `cockpit_uat_close_attempted:${goalId}` : '';
+  const closeAttempted = useRef(
+    closeAttemptedStorageKey ? window.localStorage.getItem(closeAttemptedStorageKey) === '1' : false,
+  );
   useEffect(() => {
     if (goalId && allPass && !closeAttempted.current) {
       closeAttempted.current = true;
+      try {
+        window.localStorage.setItem(closeAttemptedStorageKey, '1');
+      } catch (err) { silentCatch('BrowserTestReportWidget:persistAttempted')(err); }
       completeGoalUat(goalId)
         .then(() => setUatClosed(true))
         .catch(silentCatch('BrowserTestReportWidget:completeGoalUat'));
     }
-  }, [goalId, allPass]);
+  }, [goalId, allPass, closeAttemptedStorageKey]);
 
   if (steps.length === 0) {
     return (

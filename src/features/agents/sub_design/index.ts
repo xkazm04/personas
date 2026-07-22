@@ -1,11 +1,7 @@
 export { DesignTab } from './DesignTab';
 export { DesignHub } from './DesignHub';
-export { DesignWizard } from './wizard/DesignWizard';
 export { DesignPhasePanel } from './phases/DesignPhasePanel';
 export { DesignQuestionPanel } from './DesignQuestionPanel';
 export { PhaseIndicator } from './PhaseIndicator';
 export { IntentResultExtras } from './IntentResultExtras';
 export { useDesignTabState } from './libs/useDesignTabState';
-export { WIZARD_STEPS } from './wizard/wizardSteps';
-export type { WizardStep, WizardQuestion, WizardOption, WizardAnswers } from './wizard/wizardSteps';
-export { compileWizardInstruction, compileWizardToAgentIR, getAnswerSummary } from './wizard/wizardCompiler';

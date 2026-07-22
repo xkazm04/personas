@@ -143,7 +143,9 @@
     "col_days": "الأيام",
     "col_incident": "الحادثة",
     "guidance_mcp_sidecar": "تعذّر تشغيل الوكيل بأدواته المدمجة عبر MCP لأن ملف personas-mcp التنفيذي كان مفقودًا. أعد تثبيت أو إصلاح التطبيق للتأكد من تضمينه مع التطبيق.",
-    "source_mcp_sidecar": "أدوات MCP"
+    "source_mcp_sidecar": "أدوات MCP",
+    "list_truncated": "يتم عرض أول {limit} حادثة — ضيّق نطاق الفلاتر لرؤية الباقي.",
+    "action_refused": "لم يتم تطبيق الإجراء — ربما تغيرت حالة الحادث بالفعل."
   },
   "observability": {
     "title": "المراقبة",

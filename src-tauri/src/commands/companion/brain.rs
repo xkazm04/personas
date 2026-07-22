@@ -61,6 +61,34 @@ pub fn companion_list_brain_items(
     kind: String,
 ) -> Result<Vec<BrainListItem>, AppError> {
     ipc_auth::require_auth_sync(&state)?;
+    list_brain_items_impl(&state, &kind)
+}
+
+/// Single-IPC counts for the Brain Viewer type picker. Reuses the exact list
+/// dispatch (no second dispatch to drift) but ships only the lengths — the
+/// picker used to fire 13 parallel list IPCs and discard every row it paid
+/// to serialize (episodes/reflections payloads grow with the whole history).
+/// Kinds that error count as 0, matching the picker's old silent-catch.
+#[tauri::command]
+pub fn companion_count_brain_items(
+    state: State<'_, Arc<AppState>>,
+    kinds: Vec<String>,
+) -> Result<std::collections::HashMap<String, i64>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let mut out = std::collections::HashMap::with_capacity(kinds.len());
+    for kind in kinds {
+        let count = list_brain_items_impl(&state, &kind)
+            .map(|items| items.len() as i64)
+            .unwrap_or(0);
+        out.insert(kind, count);
+    }
+    Ok(out)
+}
+
+fn list_brain_items_impl(
+    state: &State<'_, Arc<AppState>>,
+    kind: &str,
+) -> Result<Vec<BrainListItem>, AppError> {
     // Recognize scoped fact kinds: `fact:user`, `fact:project`, `fact:world`,
     // and bare `fact` (= all scopes flattened). The viewer renders one
     // scope per row group, so we keep the dispatch shape generic.
@@ -76,7 +104,7 @@ pub fn companion_list_brain_items(
                 )))
             }
         };
-        return list_facts(&state, scope);
+        return list_facts(state, scope);
     }
     // Phase D scoped kinds.
     if let Some(rest) = kind.strip_prefix("procedural") {
@@ -92,25 +120,25 @@ pub fn companion_list_brain_items(
                 )))
             }
         };
-        return list_procedurals(&state, scope);
+        return list_procedurals(state, scope);
     }
     if kind == "goal" || kind.starts_with("goal:") {
         let status_filter = kind.strip_prefix("goal:");
-        return list_goals(&state, status_filter);
+        return list_goals(state, status_filter);
     }
     if kind == "ritual" || kind.starts_with("ritual:") {
         let kind_filter = kind.strip_prefix("ritual:");
-        return list_rituals(&state, kind_filter);
+        return list_rituals(state, kind_filter);
     }
     if kind == "backlog" || kind.starts_with("backlog:") {
         let kind_filter = kind.strip_prefix("backlog:");
-        return list_backlog(&state, kind_filter);
+        return list_backlog(state, kind_filter);
     }
-    match kind.as_str() {
-        "episode" => list_episodes(&state),
-        "doctrine" => list_doctrine(&state),
-        "reflection" => list_reflections(&state),
-        "design_decision" => list_design_decisions(&state),
+    match kind {
+        "episode" => list_episodes(state),
+        "doctrine" => list_doctrine(state),
+        "reflection" => list_reflections(state),
+        "design_decision" => list_design_decisions(state),
         "identity" => Ok(single_file_list(
             "identity",
             "Identity",
@@ -288,9 +316,13 @@ fn list_episodes(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>,
     for (id, rel_path, excerpt, created_at) in rows {
         // Pull the role from disk frontmatter so the row label is
         // accurate even if older rows pre-date a body_excerpt write.
+        // Head-only read: this loop used to read_to_string up to 200 FULL
+        // episode bodies (long chat turns) inside a sync IPC command on
+        // every viewer open — hundreds of ms of blocking I/O for one
+        // frontmatter line that always sits in the first few bytes.
         let role = root
             .as_ref()
-            .and_then(|r| std::fs::read_to_string(r.join(&rel_path)).ok())
+            .and_then(|r| read_file_head(&r.join(&rel_path), 512))
             .as_deref()
             .map(role_from_frontmatter)
             .unwrap_or_else(|| "episode".to_string());
@@ -304,6 +336,17 @@ fn list_episodes(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>,
         });
     }
     Ok(out)
+}
+
+/// Read at most `max_bytes` from the start of a file (lossy UTF-8). Enough
+/// for frontmatter extraction without materializing whole episode bodies.
+fn read_file_head(path: &std::path::Path, max_bytes: usize) -> Option<String> {
+    use std::io::Read;
+    let mut file = std::fs::File::open(path).ok()?;
+    let mut buf = vec![0u8; max_bytes];
+    let n = file.read(&mut buf).ok()?;
+    buf.truncate(n);
+    Some(String::from_utf8_lossy(&buf).into_owned())
 }
 
 fn get_episode(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetail, AppError> {

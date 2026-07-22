@@ -12,35 +12,11 @@ import { useMemo } from "react";
 import { MessageSquare, X, Inbox, Plug, AlertCircle } from "lucide-react";
 import { useHealthyConnectors } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
-import type { ChannelSpecV2Type } from "@/lib/bindings/ChannelSpecV2Type";
 import { useTranslation } from "@/i18n/useTranslation";
 import { CommandPanelRow, CommandPanelAttachButton } from "./CommandPanelRow";
 import { ComposerBrandIcon } from "./composer/ComposerBrandIcon";
 import type { IntentRowDef } from "./commandPanelHelpers";
-
-/** Required destination keys per channel type — mirrors DESTINATION_FIELDS
- *  in ComposerMessagingPickerModal. Kept in sync there; the source of truth
- *  is the dispatcher's `deliver_*` adapters in `notifications.rs`. */
-const REQUIRED_KEYS: Record<ChannelSpecV2Type, string[]> = {
-  "built-in": [],
-  titlebar: [],
-  slack: ["channel"],
-  telegram: ["chat_id"],
-  discord: ["channel_id"],
-  teams: ["team_id", "channel_id"],
-  email: ["to"],
-};
-
-function isFullyConfigured(spec: ChannelSpecV2): boolean {
-  const keys = REQUIRED_KEYS[spec.type] ?? [];
-  if (keys.length === 0) return true;
-  const cfg = spec.config as Record<string, unknown> | null;
-  if (!cfg) return false;
-  return keys.every((k) => {
-    const v = cfg[k];
-    return typeof v === "string" && v.trim().length > 0;
-  });
-}
+import { isFullyConfigured } from "./messagingChannelDefaults";
 
 interface CommandPanelMessagingRowProps {
   rowDef: IntentRowDef;

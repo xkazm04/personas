@@ -4,7 +4,7 @@
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AgentStore } from "./storeTypes";
+import { createCoreState, type AgentStore } from "./storeTypes";
 import { createDedupedJSONStorage } from "./util/dedupedStorage";
 
 import { createPersonaSlice } from "./slices/agents/personaSlice";
@@ -22,10 +22,7 @@ import { createMatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
 export const useAgentStore = create<AgentStore>()(
   persist(
     (...a) => ({
-      error: null,
-      errorKind: null,
-      isLoading: false,
-      sliceErrors: {},
+      ...createCoreState(),
       ...createPersonaSlice(...a),
       ...createToolSlice(...a),
       ...createExecutionSlice(...a),

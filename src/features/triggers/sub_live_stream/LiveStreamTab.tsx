@@ -57,6 +57,48 @@ export function LiveStreamTab() {
   // many events landed that frame.
   const pendingEventsRef = useRef<PersonaEvent[]>([]);
   const flushScheduledRef = useRef(false);
+  // Stats counters accumulate here and commit inside the same rAF flush — a
+  // per-event setTotalReceived/setEventsPerMin would render the whole tab once
+  // per event, defeating the frame batching above.
+  const pendingReceivedRef = useRef(0);
+
+  // One flush per animation frame for everything the listener touches: stats
+  // counters, the paused-queue badge, and the buffered event batch.
+  const scheduleFlush = () => {
+    if (flushScheduledRef.current) return;
+    flushScheduledRef.current = true;
+    requestAnimationFrame(() => {
+      flushScheduledRef.current = false;
+      const received = pendingReceivedRef.current;
+      pendingReceivedRef.current = 0;
+      if (received > 0) setTotalReceived((c) => c + received);
+      setEventsPerMin(recvTimestamps.current.length);
+      setPausedQueueCount(pausedQueueRef.current.length);
+      const batch = pendingEventsRef.current;
+      if (batch.length === 0) return;
+      pendingEventsRef.current = [];
+      setEvents((prev) => {
+        let next = prev;
+        for (const e of batch) {
+          if (eventIdIndex.current.has(e.id)) {
+            // Status update on an already-displayed event — replace in place.
+            // Reference inequality drives re-render only for the changed row.
+            next = next.map((existing) => (existing.id === e.id ? e : existing));
+            continue;
+          }
+          eventIdIndex.current.add(e.id);
+          newEventIds.current.add(e.id);
+          setTimeout(() => newEventIds.current.delete(e.id), 1600);
+          next = [e, ...next];
+        }
+        if (next.length > 200) {
+          for (let i = 200; i < next.length; i++) eventIdIndex.current.delete(next[i]!.id);
+          next = next.slice(0, 200);
+        }
+        return next;
+      });
+    });
+  };
 
   // Run-once backfill on mount. The fetch body never reads `personas`
   // (source-persona resolution consumes it reactively during render via
@@ -96,48 +138,20 @@ export function LiveStreamTab() {
     if (recvTimestamps.current.length > STREAM_TIMESTAMP_CAP) {
       recvTimestamps.current.splice(0, recvTimestamps.current.length - STREAM_TIMESTAMP_CAP);
     }
-    setTotalReceived((c) => c + 1);
-    setEventsPerMin(recvTimestamps.current.length);
+    pendingReceivedRef.current += 1;
 
     if (isPaused) {
       // Buffer for replay on resume — but only NEW events; status updates on
       // already-displayed events still flow through to keep the UI honest.
       if (!eventIdIndex.current.has(evt.id)) {
         pausedQueueRef.current.push(evt);
-        setPausedQueueCount(pausedQueueRef.current.length);
+        scheduleFlush();
         return;
       }
     }
 
     pendingEventsRef.current.push(evt);
-    if (flushScheduledRef.current) return;
-    flushScheduledRef.current = true;
-    requestAnimationFrame(() => {
-      flushScheduledRef.current = false;
-      const batch = pendingEventsRef.current;
-      if (batch.length === 0) return;
-      pendingEventsRef.current = [];
-      setEvents((prev) => {
-        let next = prev;
-        for (const e of batch) {
-          if (eventIdIndex.current.has(e.id)) {
-            // Status update on an already-displayed event — replace in place.
-            // Reference inequality drives re-render only for the changed row.
-            next = next.map((existing) => (existing.id === e.id ? e : existing));
-            continue;
-          }
-          eventIdIndex.current.add(e.id);
-          newEventIds.current.add(e.id);
-          setTimeout(() => newEventIds.current.delete(e.id), 1600);
-          next = [e, ...next];
-        }
-        if (next.length > 200) {
-          for (let i = 200; i < next.length; i++) eventIdIndex.current.delete(next[i]!.id);
-          next = next.slice(0, 200);
-        }
-        return next;
-      });
-    });
+    scheduleFlush();
   });
 
   // Tick the events/min counter even when no new events arrive — old timestamps
@@ -183,8 +197,10 @@ export function LiveStreamTab() {
     eventIdIndex.current.clear();
     newEventIds.current.clear();
     pausedQueueRef.current = [];
+    pendingEventsRef.current = [];
     setPausedQueueCount(0);
     setTotalReceived(0);
+    pendingReceivedRef.current = 0;
     recvTimestamps.current = [];
     setEventsPerMin(0);
   }, []);

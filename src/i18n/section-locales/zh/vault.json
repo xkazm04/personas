@@ -295,7 +295,8 @@
     "query_parameters": "查询参数",
     "recipes_title": "已保存配方",
     "truncated_warning": "响应已截断以供显示",
-    "value_col": "值"
+    "value_col": "值",
+    "request_headers": "请求头"
   },
   "ingest": {
     "save_name": "保存名称",
@@ -422,7 +423,8 @@
     "capability_key_value": "键值",
     "capability_key_value_hint": "这是一个键值存储。请使用 SCAN、GET 和 TYPE 等键命令，而非 SQL。",
     "capability_select_subset": "仅 SELECT",
-    "capability_select_subset_hint": "这里仅运行针对单个表的简单 SELECT 查询——用 WHERE 过滤、ORDER BY 排序、LIMIT 限制。不支持 JOIN、聚合、CTE 和写入。"
+    "capability_select_subset_hint": "这里仅运行针对单个表的简单 SELECT 查询——用 WHERE 过滤、ORDER BY 排序、LIMIT 限制。不支持 JOIN、聚合、CTE 和写入。",
+    "query_timeout": "等待响应超时，请重试。"
   },
   "dependencies": {
     "simulate_revocation": "模拟撤销",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "将扫描的内容",
     "read_error_item": "无法读取 {source}",
     "read_errors_title": "部分来源无法读取",
-    "select_high_confidence": "高置信度"
+    "select_high_confidence": "高置信度",
+    "source_unknown": "未知来源"
   },
   "desktop_discovery": {
     "title": "桌面应用",

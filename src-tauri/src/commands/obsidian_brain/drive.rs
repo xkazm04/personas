@@ -73,6 +73,7 @@ use ts_rs::TS;
 use crate::error::AppError;
 
 use super::markdown::compute_content_hash;
+use super::vault_fs::{relative_path, walk_markdown_files, ErrorPolicy, WalkOptions};
 
 // ============================================================================
 // Types
@@ -488,7 +489,7 @@ pub async fn push_to_drive(
         let drive_subfolder = ensure_folder(&client, folder_name, Some(&vault_folder_id)).await?;
 
         // Walk local files
-        match walk_markdown_files(&local_folder) {
+        match walk_markdown_files_relative(&local_folder) {
             Ok(files) => {
                 for (relative_path, full_path) in files {
                     let file_key = format!("{folder_name}/{relative_path}");
@@ -709,39 +710,22 @@ pub async fn get_drive_status(token: &str, vault_name: &str) -> Result<DriveStat
 // Helpers
 // ============================================================================
 
-/// Recursively walk a directory and collect all .md files with their relative paths.
-fn walk_markdown_files(dir: &Path) -> Result<Vec<(String, std::path::PathBuf)>, std::io::Error> {
-    let mut files = Vec::new();
-    walk_dir_recursive(dir, dir, &mut files)?;
-    Ok(files)
-}
-
-fn walk_dir_recursive(
-    base: &Path,
-    current: &Path,
-    files: &mut Vec<(String, std::path::PathBuf)>,
-) -> Result<(), std::io::Error> {
-    for entry in std::fs::read_dir(current)? {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_dir() {
-            // Skip hidden directories
-            if path
-                .file_name()
-                .map(|n| n.to_string_lossy().starts_with('.'))
-                .unwrap_or(true)
-            {
-                continue;
-            }
-            walk_dir_recursive(base, &path, files)?;
-        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
-            let relative = path
-                .strip_prefix(base)
-                .unwrap_or(&path)
-                .to_string_lossy()
-                .replace('\\', "/");
-            files.push((relative, path));
-        }
-    }
-    Ok(())
+/// Recursively walk a directory and collect all .md files with their relative
+/// paths. Propagates the first `read_dir` error (matches the pre-extraction
+/// behavior — a Drive sync that silently skipped an unreadable local
+/// subdirectory could push a stale/incomplete snapshot without the caller
+/// knowing).
+fn walk_markdown_files_relative(
+    dir: &Path,
+) -> Result<Vec<(String, std::path::PathBuf)>, std::io::Error> {
+    let opts = WalkOptions {
+        max_depth: WalkOptions::UNBOUNDED_DEPTH,
+        on_error: ErrorPolicy::Abort,
+        skip_hidden_files: false,
+    };
+    let files = walk_markdown_files(dir, &opts)?;
+    Ok(files
+        .into_iter()
+        .map(|path| (relative_path(dir, &path), path))
+        .collect())
 }

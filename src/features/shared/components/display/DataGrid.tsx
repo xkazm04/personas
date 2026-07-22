@@ -171,8 +171,18 @@ export function DataGrid<T>({
 
   const effectivePageSize = internalPageSize;
 
-  // Reset page when data length changes significantly (filters changed)
-  useEffect(() => { setPage(1); }, [data.length]);
+  // Clamp (don't reset) the page when the row count changes. A plain reset to
+  // page 1 on every `data.length` change conflates routine add/remove (e.g.
+  // deleting a single row on page 4) with an actual filter change, which
+  // snapped the user back to page 1 after ordinary edits. Clamping only moves
+  // the page back when it's no longer in range.
+  useEffect(() => {
+    setPage((p) => {
+      if (effectivePageSize <= 0) return 1;
+      const newTotalPages = Math.max(1, Math.ceil(data.length / effectivePageSize));
+      return Math.min(p, newTotalPages);
+    });
+  }, [data.length, effectivePageSize]);
 
   // Esc clears the active selection — only attached while the toolbar is visible.
   const showBulkToolbar = selectedCount > 0 && !!bulkActions && bulkActions.length > 0;

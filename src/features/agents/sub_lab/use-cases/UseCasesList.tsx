@@ -45,7 +45,7 @@ const _parseCache = new Map<string, DesignContextData>();
  *
  * Results are memoized in a bounded LRU keyed by the raw string, so repeated
  * calls with the same string (e.g. from useConnectorStatuses,
- * subscriptionLifecycle, the personaSelectors hooks, etc.) skip parsing AND
+ * the personaSelectors hooks, etc.) skip parsing AND
  * return a reference-stable object. The null/empty case returns one shared
  * frozen reference.
  */

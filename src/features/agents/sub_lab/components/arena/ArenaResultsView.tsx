@@ -286,7 +286,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
           <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.agents.lab.scenario_breakdown}</h4>
           <span className="text-[10px] text-foreground">{t.agents.lab.click_cell_details}</span>
         </div>
-        <div className="overflow-x-auto border border-primary/10 rounded-modal">
+        <div data-virtual-scroll className="overflow-x-auto max-h-[70vh] overflow-y-auto border border-primary/10 rounded-modal">
           <table className="w-full typo-body">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/20">

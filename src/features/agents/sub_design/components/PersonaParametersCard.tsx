@@ -1,6 +1,6 @@
 import { Sliders, Info } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { DebtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';

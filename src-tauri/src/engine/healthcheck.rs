@@ -790,11 +790,13 @@ fn resolve_connector_healthcheck(
         Some(hc) => hc,
         None => {
             // Check if credential fields or connector metadata indicate an OAuth provider
+            // Note: `oauth_scope` (a scope string, not a provider name) cannot
+            // resolve to a healthcheck provider via `resolve_oauth_provider_healthcheck`
+            // (which matches literal provider names like "github"/"slack"), so it
+            // is intentionally not consulted here -- only `oauth_provider` and the
+            // connector-metadata `oauth_type` fall back to a provider name.
             let provider = fields
-                .and_then(|f| {
-                    f.get("oauth_provider")
-                        .or_else(|| f.get("oauth_scope").and(None))
-                })
+                .and_then(|f| f.get("oauth_provider"))
                 .cloned()
                 .or_else(|| {
                     connector
@@ -1029,7 +1031,7 @@ async fn execute_healthcheck_request_with_strategy(
         reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .dns_resolver(std::sync::Arc::new(
-                crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+                crate::engine::url_safety::SsrfSafeDnsResolver,
             ))
             .build()
             .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?
@@ -1401,7 +1403,7 @@ pub(crate) fn validate_healthcheck_url(url: &str) -> Result<(), AppError> {
 /// the three historical copies cannot drift. That predicate additionally blocks
 /// CGNAT (`100.64.0.0/10`, e.g. Tailscale) and IPv4-mapped-IPv6 private
 /// addresses — the gaps this local copy used to miss, which were an SSRF bypass
-/// on the live API-proxy resolver (`ssrf_safe_dns`, which filters via this fn).
+/// on the live API-proxy resolver (`url_safety::SsrfSafeDnsResolver`, which filters via this fn).
 pub(crate) fn is_private_ip(ip: &IpAddr) -> bool {
     super::url_safety::is_private_ip(*ip)
 }

@@ -195,7 +195,11 @@
     "s_elapsed": "ث منقضٍ",
     "s_remaining": "ث متبقٍ",
     "show_cli_output": "إظهار إخراج CLI",
-    "hide_cli_output": "إخفاء إخراج CLI"
+    "hide_cli_output": "إخفاء إخراج CLI",
+    "starting_transformation": "جارٍ بدء التحويل...",
+    "step_progress": "الخطوة {step} من {total}",
+    "starting_short": "جارٍ البدء...",
+    "check_output_details": "راجع المخرجات أدناه لمزيد من التفاصيل."
   },
   "terminal_extra": {
     "press_enter": "اضغط Enter أو انقر على تشغيل للبدء",

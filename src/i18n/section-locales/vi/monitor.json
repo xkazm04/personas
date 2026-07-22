@@ -260,5 +260,10 @@
   "stream_no_speakers": "Không có người nói",
   "stream_none": "Không có",
   "stream_search": "Tìm kiếm tin nhắn",
-  "stream_title": "Luồng"
+  "stream_title": "Luồng",
+  "columns_action_empty": "Hiện không có gì cần bạn xử lý",
+  "columns_needs_attention": "Cần chú ý",
+  "columns_active_goals": "Mục tiêu đang hoạt động",
+  "columns_no_team": "Không có nhóm",
+  "columns_all_clear": "Mọi thứ đều ổn"
 }

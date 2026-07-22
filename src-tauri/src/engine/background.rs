@@ -407,7 +407,7 @@ pub fn start_loops(
     );
 
     // Build the HTTP client for the polling subscription.
-    // Uses SsrfSafeResolver to reject private IPs at connect time,
+    // Uses SsrfSafeDnsResolver to reject private IPs at connect time,
     // closing the DNS-rebinding TOCTOU window (CWE-367).
     let http = super::url_safety::build_ssrf_safe_client(Duration::from_secs(30));
 

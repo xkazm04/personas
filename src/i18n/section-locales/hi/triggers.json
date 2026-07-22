@@ -592,7 +592,8 @@
     "event_type_required": "सुनने के लिए इवेंट प्रकार आवश्यक है।",
     "watch_path_required": "कम से कम एक निगरानी पथ आवश्यक है।",
     "composite_min_conditions": "कंपोज़िट ट्रिगर के लिए कम से कम 2 शर्तें आवश्यक हैं।",
-    "composite_window_minimum": "समय विंडो कम से कम 5 सेकंड की होनी चाहिए।"
+    "composite_window_minimum": "समय विंडो कम से कम 5 सेकंड की होनी चाहिए।",
+    "endpoint_required": "एंडपॉइंट URL या इवेंट आवश्यक है।"
   },
   "dead_letter_select_all": "चुनें all",
   "dead_letter_select_visible": "चुनें visible",
@@ -797,5 +798,7 @@
     "watch": "देखें",
     "watching": "देखा जा रहा है",
     "watching_only": "केवल देखे जा रहे"
-  }
+  },
+  "overdue_label": "अतिदेय",
+  "relay_delete_failed": "relay हटाने में विफल — कृपया पुनः प्रयास करें"
 }

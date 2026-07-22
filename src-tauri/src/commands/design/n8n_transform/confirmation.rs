@@ -90,7 +90,17 @@ pub fn create_persona_atomically(
     // back — the user can retry once the keyring is healthy.
     let encrypted_channels = match &draft.notification_channels {
         Some(json) if !json.trim().is_empty() => {
-            Some(persona_repo::encrypt_notification_channels(json)?)
+            match persona_repo::encrypt_notification_channels(json) {
+                Ok(enc) => Some(enc),
+                Err(e) => {
+                    // tx is dropped here (auto-rollback of any tx-scoped work so
+                    // far); reconcile the staged row so it doesn't linger forever.
+                    let err_msg = e.to_string();
+                    drop(tx);
+                    record_import_tx_status(&mut conn, &tx_id, "rolled_back", None, Some(&err_msg));
+                    return Err(e);
+                }
+            }
         }
         other => other.clone(),
     };
@@ -335,7 +345,14 @@ pub fn create_persona_atomically(
     }
 
     // Commit the transaction
-    tx.commit().map_err(AppError::Database)?;
+    if let Err(e) = tx.commit() {
+        // The tx is consumed by a failed commit attempt (no explicit rollback
+        // possible), but the staged row must not be left stuck at 'staged'
+        // forever -- reconcile it so retry-cleanup logic can see the failure.
+        let err_msg = e.to_string();
+        record_import_tx_status(&mut conn, &tx_id, "rolled_back", None, Some(&err_msg));
+        return Err(AppError::Database(e));
+    }
 
     // Record successful import
     let entity_results_json = serde_json::to_string(&entity_errors).ok();

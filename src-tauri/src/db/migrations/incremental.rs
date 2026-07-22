@@ -5953,6 +5953,13 @@ fn research_lab_align_columns(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_team_channel_messages_team
             ON team_channel_messages(team_id, created_at);",
     );
+    // Deliberation turns are read newest-first per deliberation on the
+    // moderator/persona-turn hot path (list_for_deliberation).
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_team_channel_messages_deliberation
+            ON team_channel_messages(deliberation_id, created_at);",
+    );
 
     // Obsidian Brain — Revitalize run history. One row per finished pass
     // (completed or failed) so the panel can show "last runs: when, which
@@ -6007,6 +6014,37 @@ fn research_lab_align_columns(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_scheduled_retries_due
             ON scheduled_retries(retry_at);",
     );
+
+    // Cloud-sync watermark expression indexes. The incremental sync predicate
+    // is `datetime({cursor_col}) > datetime(?)` (rows.rs::fetch) — datetime()
+    // on the COLUMN tolerates the mixed timestamp formats different writers
+    // use (to_rfc3339 vs datetime('now')), but is non-sargable against a plain
+    // column index, so every sync pass full-scanned every synced table even
+    // when nothing changed. An expression index on datetime(col) matches the
+    // predicate's expression tree exactly, turning each pass into an index
+    // seek while preserving the format-normalizing semantics.
+    for (table, col) in [
+        ("personas", "updated_at"),
+        ("persona_executions", "created_at"),
+        ("persona_events", "created_at"),
+        ("persona_manual_reviews", "updated_at"),
+        ("persona_messages", "created_at"),
+        ("persona_metrics_snapshots", "created_at"),
+        ("persona_tool_usage", "created_at"),
+        ("persona_memories", "updated_at"),
+        ("execution_knowledge", "updated_at"),
+        ("persona_healing_issues", "created_at"),
+        ("persona_triggers", "updated_at"),
+        ("persona_tombstones", "deleted_at"),
+    ] {
+        let _ = ddl_step(
+            conn,
+            &format!(
+                "CREATE INDEX IF NOT EXISTS idx_{table}_sync_watermark
+                    ON {table}(datetime({col}));"
+            ),
+        );
+    }
 }
 
 #[cfg(test)]

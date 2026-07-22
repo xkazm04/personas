@@ -65,7 +65,12 @@ export function useDebouncedSave(
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isDirty, cancel, delay, deps]);
+    // Spread caller deps into the effect list so React compares the VALUES,
+    // not the identity of the (freshly-built-per-render) array — otherwise the
+    // debounce tears down and restarts on every unrelated re-render, which can
+    // postpone auto-save indefinitely on a hot-rendering editor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty, cancel, delay, ...deps]);
 
   // Flush (not just cancel) a pending save on UNMOUNT. A discrete edit made in
   // the final debounce window before the editor closes — e.g. picking a persona

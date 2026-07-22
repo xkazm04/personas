@@ -592,7 +592,8 @@
     "event_type_required": "Le type d'événement à écouter est requis.",
     "watch_path_required": "Au moins un chemin à surveiller est requis.",
     "composite_min_conditions": "Les déclencheurs composites nécessitent au moins 2 conditions.",
-    "composite_window_minimum": "La fenêtre temporelle doit être d'au moins 5 secondes."
+    "composite_window_minimum": "La fenêtre temporelle doit être d'au moins 5 secondes.",
+    "endpoint_required": "Une URL de point de terminaison ou un événement est requis."
   },
   "dead_letter_select_all": "Sélectionner all",
   "dead_letter_select_visible": "Sélectionner visible",
@@ -797,5 +798,7 @@
     "watch": "Surveiller",
     "watching": "Surveillé",
     "watching_only": "Surveillé uniquement"
-  }
+  },
+  "overdue_label": "En retard",
+  "relay_delete_failed": "Échec de la suppression du relais — veuillez réessayer"
 }

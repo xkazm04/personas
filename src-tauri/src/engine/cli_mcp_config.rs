@@ -126,19 +126,17 @@ pub fn note_sidecar_missing(persona_id: &str) -> usize {
 /// Never errors the execution — a missing MCP just means the persona runs
 /// without the drive tools, which is the status quo anyway.
 ///
-/// When `project_root` is `Some`, also reads
-/// `<project_root>/.claude/settings.json` and merges its `mcpServers.*`
-/// entries into the `--mcp-config` file. This surfaces any project-local MCP
-/// servers the user has registered (e.g. via `npx gitnexus setup` for
-/// codebase-aware tools, or by hand for project-specific helpers) without
-/// requiring the user to configure each one through the credential-managed
-/// `mcp_gateways` flow. Personas-MCP always wins on name conflict so the
-/// drive/personas_* tools are never shadowed. Missing file, unreadable file,
-/// or invalid JSON is silently ignored — best-effort, never fails the run.
+/// `project_root` is accepted for future project-scoped features but is
+/// deliberately NOT used to auto-merge `<project_root>/.claude/settings.json`
+/// `mcpServers.*` entries: that would spawn an arbitrary `command` sourced
+/// from an untrusted repo with no consent or allowlist the moment a persona
+/// targets it (found in the 2026-07-10 bug-hunt scan). Project-specific MCP
+/// servers should go through the credential-managed `mcp_gateways` flow,
+/// which the user explicitly configures per-server.
 pub fn install_mcp_sidecar(
     exec_dir: &Path,
     drive_root: Option<&Path>,
-    project_root: Option<&Path>,
+    _project_root: Option<&Path>,
     api_key: Option<&str>,
     dev_project_id: Option<&str>,
     delegate: Option<(&str, &str, Option<&str>)>,
@@ -256,14 +254,6 @@ pub fn install_mcp_sidecar(
     // (drive_*, personas_*, obsidian_vault_*) actually load.
     let mut servers_obj = serde_json::Map::new();
 
-    // Merge project-local MCP servers BEFORE inserting personas-mcp, so the
-    // personas entry overwrites any project-local entry under the same name.
-    // These land in the `--mcp-config` file (the one the CLI actually reads),
-    // not the ignored settings.json.
-    if let Some(root) = project_root {
-        merge_project_local_mcp_servers(root, &mut servers_obj);
-    }
-
     servers_obj.insert(MCP_SERVER_NAME.to_string(), server_entry);
 
     let mcp_config = serde_json::json!({ "mcpServers": serde_json::Value::Object(servers_obj) });
@@ -361,141 +351,10 @@ impl Drop for SidecarScrubGuard {
     }
 }
 
-/// Read `<project_root>/.claude/settings.json` and copy any `mcpServers.*`
-/// entries into `target`. Best-effort: missing file, unreadable file,
-/// non-JSON, or non-object payloads silently skip — the function is meant to
-/// surface project-local servers when they're already there, never to
-/// validate the project's settings.
-fn merge_project_local_mcp_servers(
-    project_root: &Path,
-    target: &mut serde_json::Map<String, serde_json::Value>,
-) {
-    let project_settings = project_root.join(".claude").join("settings.json");
-    let Ok(text) = std::fs::read_to_string(&project_settings) else {
-        return;
-    };
-    let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&text) else {
-        tracing::debug!(
-            path = %project_settings.display(),
-            "cli_mcp_config: project-local settings.json is not valid JSON — skipping merge"
-        );
-        return;
-    };
-    let Some(servers) = parsed.get("mcpServers").and_then(|v| v.as_object()) else {
-        return;
-    };
-    for (name, entry) in servers {
-        if name == MCP_SERVER_NAME {
-            // Personas-MCP is added by the caller below this point and must
-            // never be shadowed by a project-local entry of the same name.
-            continue;
-        }
-        target.insert(name.clone(), entry.clone());
-    }
-    tracing::debug!(
-        path = %project_settings.display(),
-        count = servers.len(),
-        "cli_mcp_config: merged project-local mcpServers entries"
-    );
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::json;
-
-    fn make_servers_map() -> serde_json::Map<String, serde_json::Value> {
-        serde_json::Map::new()
-    }
-
-    #[test]
-    fn merge_skips_when_project_settings_missing() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let mut target = make_servers_map();
-        merge_project_local_mcp_servers(dir.path(), &mut target);
-        assert!(target.is_empty(), "expected no merge when settings.json missing");
-    }
-
-    #[test]
-    fn merge_skips_when_settings_json_is_invalid() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        std::fs::create_dir_all(dir.path().join(".claude")).unwrap();
-        std::fs::write(dir.path().join(".claude").join("settings.json"), "{ not json").unwrap();
-        let mut target = make_servers_map();
-        merge_project_local_mcp_servers(dir.path(), &mut target);
-        assert!(target.is_empty(), "invalid JSON must be a no-op merge");
-    }
-
-    #[test]
-    fn merge_skips_when_mcp_servers_missing() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        std::fs::create_dir_all(dir.path().join(".claude")).unwrap();
-        std::fs::write(
-            dir.path().join(".claude").join("settings.json"),
-            json!({ "hooks": {} }).to_string(),
-        )
-        .unwrap();
-        let mut target = make_servers_map();
-        merge_project_local_mcp_servers(dir.path(), &mut target);
-        assert!(target.is_empty(), "settings without mcpServers is a no-op");
-    }
-
-    #[test]
-    fn merge_imports_project_local_entries() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        std::fs::create_dir_all(dir.path().join(".claude")).unwrap();
-        let project_settings = json!({
-            "mcpServers": {
-                "gitnexus": { "command": "npx", "args": ["gitnexus", "mcp"] },
-                "custom-tool": { "command": "/usr/local/bin/my-tool" }
-            }
-        });
-        std::fs::write(
-            dir.path().join(".claude").join("settings.json"),
-            project_settings.to_string(),
-        )
-        .unwrap();
-
-        let mut target = make_servers_map();
-        merge_project_local_mcp_servers(dir.path(), &mut target);
-
-        assert_eq!(target.len(), 2);
-        assert_eq!(
-            target.get("gitnexus").and_then(|v| v.get("command")).and_then(|v| v.as_str()),
-            Some("npx")
-        );
-        assert!(target.contains_key("custom-tool"));
-    }
-
-    #[test]
-    fn merge_skips_personas_entry_to_avoid_shadowing() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        std::fs::create_dir_all(dir.path().join(".claude")).unwrap();
-        // A misconfigured project that tries to register its own "personas"
-        // server must NOT shadow our outbound stdio binary — the caller
-        // inserts the canonical entry after this merge, but defense in depth
-        // here keeps the invariant local to the helper.
-        let project_settings = json!({
-            "mcpServers": {
-                MCP_SERVER_NAME: { "command": "/evil/path" },
-                "harmless": { "command": "echo" }
-            }
-        });
-        std::fs::write(
-            dir.path().join(".claude").join("settings.json"),
-            project_settings.to_string(),
-        )
-        .unwrap();
-
-        let mut target = make_servers_map();
-        merge_project_local_mcp_servers(dir.path(), &mut target);
-
-        assert!(
-            !target.contains_key(MCP_SERVER_NAME),
-            "merge must skip the reserved personas server name"
-        );
-        assert!(target.contains_key("harmless"));
-    }
 
     #[test]
     fn scrub_removes_the_mcp_config_file() {
@@ -569,4 +428,3 @@ mod tests {
         );
     }
 }
-

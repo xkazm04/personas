@@ -523,7 +523,8 @@
     "active_chains_hops_other": "{count} हॉप",
     "active_chains_one": "{count} चेन चल रही है",
     "active_chains_other": "{count} चेन चल रही हैं",
-    "active_chains_title": "चल रही चेन"
+    "active_chains_title": "चल रही चेन",
+    "copy_log_failed": "लॉग क्लिपबोर्ड पर कॉपी नहीं हो सका"
   },
   "lab": {
     "mode_arena": "एरेना",
@@ -1093,21 +1094,6 @@
     "ct_graph_view": "निर्भरता ग्राफ",
     "ct_swap_alt_tooltip": "वैकल्पिक कनेक्टर में बदलें",
     "ct_deps": "{count} निर्भरता",
-    "dg_no_deps": "दिखाने के लिए कोई निर्भरताएं नहीं।",
-    "dg_broken": "{count} टूटे हुए",
-    "dg_blast_radius": "ब्लास्ट रेडियस",
-    "dg_dependencies": "निर्भरताएं",
-    "dg_select_cred": "देखने के लिए एक क्रेडेंशियल चुनें कि इसके समाप्त होने पर क्या टूटता है",
-    "dg_relationships": "संबंध ({count})",
-    "dg_more": "+{count} और",
-    "dg_affected_tools": "प्रभावित टूल",
-    "dg_affected_auto": "प्रभावित ऑटोमेशन",
-    "dg_low_risk": "कम जोखिम",
-    "dg_medium_risk": "मध्यम जोखिम",
-    "dg_high_risk": "उच्च जोखिम",
-    "dg_high_blast": "यदि यह क्रेडेंशियल समाप्त हो जाए या ऑफलाइन हो जाए, तो {count} क्षमताएं टूट जाएंगी।",
-    "dg_medium_blast": "{count} क्षमताएं इस क्रेडेंशियल पर निर्भर हैं।",
-    "dg_low_blast": "कोई टूल या ऑटोमेशन इस क्रेडेंशियल पर निर्भर नहीं।",
     "dm_needed": "{count} क्रेडेंशियल आवश्यक",
     "dm_fulfilled": "{fulfilled}/{total} कनेक्टर पूर्ण",
     "dm_reuse_hint": "{count} मौजूदा क्रेडेंशियल का पुनः उपयोग कर सकते हैं",
@@ -1122,13 +1108,6 @@
     "sub_triggers_title": "ट्रिगर और सब्सक्रिप्शन",
     "sub_suggested": "{count} सुझाए गए",
     "sub_filter": "फ़िल्टर: {filter}",
-    "lifecycle_error_load_triggers": "ट्रिगर लोड करने में विफल: {error}",
-    "lifecycle_error_load_subscriptions": "सब्सक्रिप्शन लोड करने में विफल: {error}",
-    "lifecycle_error_activate_trigger": "ट्रिगर सक्रिय करने में विफल",
-    "lifecycle_error_activate_subscription": "सब्सक्रिप्शन सक्रिय करने में विफल",
-    "lifecycle_error_retire_trigger": "ट्रिगर हटाने में विफल",
-    "lifecycle_error_retire_subscription": "सब्सक्रिप्शन हटाने में विफल",
-    "lifecycle_error_delete_persists": "हटाना विफल। सब्सक्रिप्शन अब भी मौजूद हो सकता है।",
     "auto_error_deploy_check_credentials": "तैनाती विफल। अपने प्लेटफ़ॉर्म क्रेडेंशियल जाँचें और पुनः प्रयास करें।",
     "auto_error_deploy_generic": "ऑटोमेशन तैनाती विफल",
     "test_healthcheck_failed_default": "हेल्थचेक विफल",
@@ -1730,7 +1709,8 @@
     "annotation_empty": "अभी तक कोई टिप्पणी नहीं — बाद में आसानी से खोजने के लिए इस रन को टैग करें, नोट जोड़ें या स्टार करें।",
     "col_verdict": "निर्णय",
     "verdict_none": "Director द्वारा अभी समीक्षा नहीं",
-    "verdict_tooltip": "Director का निर्णय: {score}/5"
+    "verdict_tooltip": "Director का निर्णय: {score}/5",
+    "annotation_saving": "सहेजा जा रहा है…"
   },
   "settings_status": {
     "saving": "{sections} सहेजा जा रहा है...",
@@ -2809,5 +2789,21 @@
       "other": "अन्य"
     },
     "title": "परिवर्तन इतिहास"
-  }
+  },
+  "sigil_edit_channels_label": "चैनल",
+  "sigil_edit_custom_connector": "कस्टम कनेक्टर — कोई ब्रांड आइकन मेल नहीं खाता।",
+  "sigil_edit_error_off": "डिफ़ॉल्ट एरर पॉलिसी पर वापस चला जाता है।",
+  "sigil_edit_error_on": "कस्टम एरर-हैंडलिंग पॉलिसी कॉन्फ़िगर की गई है।",
+  "sigil_edit_event_off": "कोई इवेंट सब्सक्रिप्शन कॉन्फ़िगर नहीं है।",
+  "sigil_edit_event_on": "यह क्षमता इवेंट्स को सब्सक्राइब करती है।",
+  "sigil_edit_memory_off": "मेमोरी बंद है — यह क्षमता स्टेटलेस मोड में चलती है।",
+  "sigil_edit_memory_on": "इस क्षमता के लिए स्थायी मेमोरी चालू है।",
+  "sigil_edit_no_channels": "इस क्षमता के लिए कोई नोटिफिकेशन चैनल नहीं है।",
+  "sigil_edit_no_connector": "यह क्षमता कोई कनेक्टर घोषित नहीं करती।",
+  "sigil_edit_no_dim_editor": "इस डिम के लिए अभी कोई एडिटर सेट नहीं है।",
+  "sigil_edit_no_trigger": "इस क्षमता पर कोई ट्रिगर कॉन्फ़िगर नहीं है।",
+  "sigil_edit_review_off": "कोई ह्यूमन रिव्यू गेट नहीं — क्रियाएँ स्वायत्त रूप से होती हैं।",
+  "sigil_edit_review_on": "इस क्षमता के कार्य करने से पहले ह्यूमन रिव्यू आवश्यक है।",
+  "sigil_edit_service_label": "सेवा: {key}",
+  "sigil_edit_when_label": "कब"
 }

@@ -37,11 +37,7 @@ import { ComposerEventPickerModal } from "./commandPanel/composer/ComposerEventP
 import { ComposerConnectorsPickerModal } from "./commandPanel/composer/ComposerConnectorsPickerModal";
 import { ComposerSchedulePickerModal } from "./commandPanel/composer/ComposerSchedulePickerModal";
 import { ComposerMessagingPickerModal } from "./commandPanel/composer/ComposerMessagingPickerModal";
-
-const BUILT_IN_INBOX: ChannelSpecV2 = {
-  type: "built-in", enabled: true, credential_id: null,
-  use_case_ids: "*", event_filter: null, config: null,
-};
+import { BUILT_IN_INBOX } from "./commandPanel/messagingChannelDefaults";
 
 /** A configurable compose dimension, ready to render as a chip/node/row. */
 export interface ComposeConfigItem {

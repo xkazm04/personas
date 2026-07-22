@@ -592,7 +592,8 @@
     "event_type_required": "Cần chỉ định loại sự kiện cần theo dõi.",
     "watch_path_required": "Cần ít nhất một đường dẫn theo dõi.",
     "composite_min_conditions": "Trình kích hoạt tổng hợp cần ít nhất 2 điều kiện.",
-    "composite_window_minimum": "Khung thời gian phải tối thiểu 5 giây."
+    "composite_window_minimum": "Khung thời gian phải tối thiểu 5 giây.",
+    "endpoint_required": "Cần có URL endpoint hoặc sự kiện."
   },
   "dead_letter_select_all": "Chọn all",
   "dead_letter_select_visible": "Chọn visible",
@@ -797,5 +798,7 @@
     "watch": "Theo dõi",
     "watching": "Đang theo dõi",
     "watching_only": "Chỉ theo dõi"
-  }
+  },
+  "overdue_label": "Quá hạn",
+  "relay_delete_failed": "Xóa relay thất bại — vui lòng thử lại"
 }

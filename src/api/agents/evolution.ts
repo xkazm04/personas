@@ -24,7 +24,12 @@ export const upsertPolicy = (
 ) =>
   invoke<EvolutionPolicy>("evolution_upsert_policy", {
     personaId,
-    ...opts,
+    enabled: opts.enabled,
+    fitnessObjective: opts.fitnessObjective,
+    mutationRate: opts.mutationRate,
+    variantsPerCycle: opts.variantsPerCycle,
+    improvementThreshold: opts.improvementThreshold,
+    minExecutionsBetween: opts.minExecutionsBetween,
   });
 
 export const toggleEvolution = (personaId: string, enabled: boolean) =>

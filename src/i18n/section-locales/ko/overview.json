@@ -143,7 +143,9 @@
     "col_days": "일수",
     "col_incident": "인시던트",
     "guidance_mcp_sidecar": "personas-mcp 바이너리가 없어서 에이전트가 내장 MCP 도구 없이 실행되었습니다. 앱과 함께 제공되도록 앱을 다시 설치하거나 복구하세요.",
-    "source_mcp_sidecar": "MCP 툴벨트"
+    "source_mcp_sidecar": "MCP 툴벨트",
+    "list_truncated": "처음 {limit}개의 인시던트를 표시하고 있습니다 — 나머지를 보려면 필터를 좁혀보세요.",
+    "action_refused": "작업이 적용되지 않았습니다 — 인시던트 상태가 이미 변경되었을 수 있습니다."
   },
   "observability": {
     "title": "관측성",

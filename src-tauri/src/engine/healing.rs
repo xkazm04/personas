@@ -589,7 +589,7 @@ pub fn diagnose(
 // Helpers
 // ---------------------------------------------------------------------------
 
-use super::str_utils::truncate_str as truncate;
+use crate::utils::text::truncate_on_char_boundary as truncate;
 
 // ---------------------------------------------------------------------------
 // Tests

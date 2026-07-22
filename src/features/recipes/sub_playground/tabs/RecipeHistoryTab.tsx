@@ -3,7 +3,7 @@ import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime'
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 

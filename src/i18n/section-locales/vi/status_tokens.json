@@ -111,8 +111,8 @@
     "active": "Đang hoạt động",
     "paused": "Đã tạm dừng",
     "failed": "Thất bại",
-    "file-based": "Dựa trên tệp",
-    "unknown": "Không xác định"
+    "unknown": "Không xác định",
+    "file-based": "Dựa trên tệp"
   },
   "delivery": {
     "delivered": "Đã giao",

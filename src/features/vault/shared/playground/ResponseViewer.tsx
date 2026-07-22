@@ -4,6 +4,7 @@ import { Clock, Copy, Check } from 'lucide-react';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { ApiProxyResponse } from '@/api/system/apiProxy';
+import { prettyJson } from './prettyJson';
 
 // -- Status styling -----------------------------------------------
 
@@ -30,13 +31,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
   const prettyBody = useMemo(() => {
     if (!response.body) return '';
-    try {
-      const parsed = JSON.parse(response.body);
-      return JSON.stringify(parsed, null, 2);
-    } catch {
-      // intentional: non-critical -- JSON parse fallback
-      return response.body;
-    }
+    return prettyJson(response.body);
   }, [response.body]);
 
   const isJson = useMemo(() => {

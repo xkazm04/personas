@@ -42,6 +42,17 @@ use crate::db::UserDbPool;
 use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
 
+/// cfg-gated seam for the optional ml-feature embedder handle, mirroring
+/// `athena_reaction::embedding_manager_of`. Non-ml builds never construct
+/// a `Some(_)` value of this type — it exists purely so the call sites
+/// (`run_improvement` / `recover_orphan_improvements` / `log_outcome_episode`)
+/// have ONE signature across both feature builds instead of a whole-function
+/// cfg split.
+#[cfg(feature = "ml")]
+pub type EmbedderArg<'a> = Option<&'a std::sync::Arc<EmbeddingManager>>;
+#[cfg(not(feature = "ml"))]
+pub type EmbedderArg<'a> = Option<&'a ()>;
+
 /// Hard ceiling: a coding session that takes longer than 10 minutes is
 /// either stuck or doing something we don't want anyway.
 const IMPROVE_TIMEOUT: Duration = Duration::from_secs(600);
@@ -107,13 +118,12 @@ fn ensure_pending_dir() -> Result<PathBuf, AppError> {
 /// transcript. If the parent process dies during the wait, the CLI
 /// continues and `recover_orphan_improvements` later picks up the
 /// outcome.
-#[cfg(feature = "ml")]
 pub async fn run_improvement(
     user_db: &UserDbPool,
-    embedder: Option<&std::sync::Arc<EmbeddingManager>>,
+    embedder: EmbedderArg<'_>,
     feedback: String,
 ) -> Result<ImprovementOutcome, AppError> {
-    let id = short_random();
+    let id = crate::companion::util::short_id(12);
     let dir = ensure_pending_dir()?;
     let marker_path = dir.join(format!("{id}.json"));
     let stream_path = dir.join(format!("{id}.stream.jsonl"));
@@ -182,67 +192,6 @@ pub async fn run_improvement(
     Ok(outcome)
 }
 
-#[cfg(not(feature = "ml"))]
-pub async fn run_improvement(
-    user_db: &UserDbPool,
-    feedback: String,
-) -> Result<ImprovementOutcome, AppError> {
-    // Same pipeline minus embedding. Kept symmetric for cross-feature builds.
-    let id = short_random();
-    let dir = ensure_pending_dir()?;
-    let marker_path = dir.join(format!("{id}.json"));
-    let stream_path = dir.join(format!("{id}.stream.jsonl"));
-    let stderr_path = dir.join(format!("{id}.stderr.txt"));
-    let prompt_path = std::env::temp_dir().join(format!("athena-improve-{id}.md"));
-    std::fs::write(&prompt_path, IMPROVE_SYSTEM_PROMPT)?;
-    let started = std::time::Instant::now();
-    let started_iso = chrono::Utc::now().to_rfc3339();
-    let spawn_outcome = spawn_detached(
-        &feedback,
-        &prompt_path,
-        &stream_path,
-        &stderr_path,
-        &marker_path,
-        &id,
-        &started_iso,
-    )
-    .await;
-    let mut child = match spawn_outcome {
-        Ok(c) => c,
-        Err(e) => {
-            let _ = std::fs::remove_file(&prompt_path);
-            return Ok(failure_outcome(format!("spawn: {e}"), started));
-        }
-    };
-    if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(feedback.as_bytes()).await;
-        drop(stdin);
-    }
-    let status = match timeout(IMPROVE_TIMEOUT, child.wait()).await {
-        Ok(Ok(s)) => Some(s),
-        _ => None,
-    };
-    let outcome = finalize_from_disk(
-        &feedback,
-        &stream_path,
-        &stderr_path,
-        status.map(|s| s.success()).unwrap_or(false),
-        started,
-    );
-    let episode_text = format_episode(&feedback, &outcome);
-    let _ = episodic::append_episode(
-        user_db,
-        DEFAULT_SESSION_ID,
-        EpisodeRole::System,
-        &episode_text,
-    );
-    let _ = std::fs::remove_file(&marker_path);
-    let _ = std::fs::remove_file(&stream_path);
-    let _ = std::fs::remove_file(&stderr_path);
-    let _ = std::fs::remove_file(&prompt_path);
-    Ok(outcome)
-}
-
 /// Walk the pending-improvements dir. For each marker whose PID has
 /// exited, parse its stream file, write the outcome episode, and clean
 /// up the on-disk artifacts. Markers whose PID is still alive are
@@ -250,10 +199,9 @@ pub async fn run_improvement(
 ///
 /// Returns the number of orphans recovered. Best-effort: a parse error
 /// on one orphan doesn't stop the others.
-#[cfg(feature = "ml")]
 pub async fn recover_orphan_improvements(
     user_db: &UserDbPool,
-    embedder: Option<&std::sync::Arc<EmbeddingManager>>,
+    embedder: EmbedderArg<'_>,
 ) -> Result<usize, AppError> {
     let dir = match ensure_pending_dir() {
         Ok(d) => d,
@@ -314,63 +262,6 @@ pub async fn recover_orphan_improvements(
     Ok(recovered)
 }
 
-#[cfg(not(feature = "ml"))]
-pub async fn recover_orphan_improvements(user_db: &UserDbPool) -> Result<usize, AppError> {
-    let dir = match ensure_pending_dir() {
-        Ok(d) => d,
-        Err(_) => return Ok(0),
-    };
-    let mut recovered = 0_usize;
-    let entries = match std::fs::read_dir(&dir) {
-        Ok(e) => e,
-        Err(_) => return Ok(0),
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("json") {
-            continue;
-        }
-        let marker: ImprovementMarker = match std::fs::read_to_string(&path)
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-        {
-            Some(m) => m,
-            None => {
-                let _ = std::fs::remove_file(&path);
-                continue;
-            }
-        };
-        if pid_alive(marker.pid) {
-            continue;
-        }
-        let stream_path = PathBuf::from(&marker.stream_path);
-        let stderr_path = PathBuf::from(&marker.stderr_path);
-        let outcome = finalize_from_disk(
-            &marker.feedback,
-            &stream_path,
-            &stderr_path,
-            true,
-            std::time::Instant::now(),
-        );
-        let outcome = correct_post_mortem_status(outcome, &marker.started_at);
-        let episode_text = format_episode(
-            &format!("{} (recovered post-restart)", marker.feedback),
-            &outcome,
-        );
-        let _ = episodic::append_episode(
-            user_db,
-            DEFAULT_SESSION_ID,
-            EpisodeRole::System,
-            &episode_text,
-        );
-        let _ = std::fs::remove_file(&path);
-        let _ = std::fs::remove_file(&stream_path);
-        let _ = std::fs::remove_file(&stderr_path);
-        recovered += 1;
-    }
-    Ok(recovered)
-}
-
 // ── internals ───────────────────────────────────────────────────────────
 
 async fn spawn_detached(
@@ -387,7 +278,7 @@ async fn spawn_detached(
     let stderr_file = std::fs::File::create(stderr_path)
         .map_err(|e| AppError::Internal(format!("create stderr file: {e}")))?;
 
-    let repo_root = resolve_repo_root();
+    let repo_root = crate::companion::dev_mode::repo_root();
     // Shared resolver — verified absolute claude.cmd (PATH-shadow immune).
     let (cmd_program, mut argv) = crate::engine::cli_process::claude_cli_invocation();
     argv.extend([
@@ -475,7 +366,7 @@ fn finalize_from_disk(
     let mut saw_result_event = false;
     let mut result_was_error = false;
 
-    let repo_root = resolve_repo_root();
+    let repo_root = crate::companion::dev_mode::repo_root();
     for line in stream.lines() {
         let value = match serde_json::from_str::<serde_json::Value>(line) {
             Ok(v) => v,
@@ -601,30 +492,51 @@ fn failure_outcome(error: String, started: std::time::Instant) -> ImprovementOut
     }
 }
 
-#[cfg(feature = "ml")]
+/// Write the outcome episode, embedding it when an embedder is available.
+/// The embed-or-plain-append choice lives in `append_episode_maybe_embed`
+/// (cfg-gated seam, mirrors `embedding_manager_of`); this wrapper is the
+/// single non-cfg-gated call site used by both `run_improvement` and
+/// `recover_orphan_improvements`.
 async fn log_outcome_episode(
     user_db: &UserDbPool,
-    embedder: Option<&std::sync::Arc<EmbeddingManager>>,
+    embedder: EmbedderArg<'_>,
     feedback: &str,
     outcome: &ImprovementOutcome,
 ) {
     let text = format_episode(feedback, outcome);
-    let result = match embedder {
+    if let Err(e) = append_episode_maybe_embed(user_db, embedder, &text).await {
+        tracing::warn!(error = %e, "self-improve: failed to log outcome episode");
+    }
+}
+
+#[cfg(feature = "ml")]
+async fn append_episode_maybe_embed(
+    user_db: &UserDbPool,
+    embedder: EmbedderArg<'_>,
+    text: &str,
+) -> Result<String, AppError> {
+    match embedder {
         Some(emb) => {
             episodic::append_episode_and_embed(
                 user_db,
                 emb,
                 DEFAULT_SESSION_ID,
                 EpisodeRole::System,
-                &text,
+                text,
             )
             .await
         }
-        None => episodic::append_episode(user_db, DEFAULT_SESSION_ID, EpisodeRole::System, &text),
-    };
-    if let Err(e) = result {
-        tracing::warn!(error = %e, "self-improve: failed to log outcome episode");
+        None => episodic::append_episode(user_db, DEFAULT_SESSION_ID, EpisodeRole::System, text),
     }
+}
+
+#[cfg(not(feature = "ml"))]
+async fn append_episode_maybe_embed(
+    user_db: &UserDbPool,
+    _embedder: EmbedderArg<'_>,
+    text: &str,
+) -> Result<String, AppError> {
+    episodic::append_episode(user_db, DEFAULT_SESSION_ID, EpisodeRole::System, text)
 }
 
 // ── PID liveness ────────────────────────────────────────────────────────
@@ -680,14 +592,6 @@ Discipline:
   pick up your changes via hot reload.
 ";
 
-fn resolve_repo_root() -> PathBuf {
-    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    manifest
-        .parent()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
-}
-
 fn normalize_repo_path(input: &str, repo_root: &PathBuf) -> String {
     let p = std::path::Path::new(input);
     if let Ok(rel) = p.strip_prefix(repo_root) {
@@ -738,11 +642,3 @@ fn format_episode(feedback: &str, outcome: &ImprovementOutcome) -> String {
     s
 }
 
-fn short_random() -> String {
-    uuid::Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(10)
-        .collect()
-}

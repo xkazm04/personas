@@ -516,7 +516,12 @@ pub async fn auto_resolve_if_allowed(
     // rather than leaving the row stuck in 'running'.
     if !AUTOAPPROVE_ALLOWLIST.contains(&action.as_str()) {
         finalize_approval(&state, &approval.id, APPROVAL_STATUS_APPROVED_FAILED)?;
-        return Ok(false);
+        // `Ok(false)` means "left pending for the user" per the caller
+        // contract; this path just finalized the row as approved_failed,
+        // i.e. it DID auto-resolve (to a failure) — return `Ok(true)` so a
+        // caller doesn't surface this terminal row as a still-pending orb
+        // consult.
+        return Ok(true);
     }
     // (Owner re-check removed with the propose-time guard above — autonomous +
     // high-confidence may now drive a user's own CLI. `execute_fleet_send_input`
@@ -1502,22 +1507,37 @@ async fn execute_evaluate_kpi(
     )))
 }
 
-/// KPI layer — launch a KPI proposal scan for a project (LLM reads the context
-/// map and proposes measurable KPIs across technical/quality/traffic/value).
-/// Resolves the project by id / name / path with a most-recent fallback, mirroring
-/// `execute_enqueue_dev_job`. Proposals land in the review queue, never active.
-fn execute_scan_kpis(
-    state: &State<'_, Arc<AppState>>,
-    app: &tauri::AppHandle,
+/// Resolve a Dev Tools project (`dev_projects` row) from Athena-supplied
+/// params. Collects candidate identifiers from `project_id` / `project_name`
+/// / `name` / `path`, checking both the top-level `params` object and a
+/// nested `params.params` object (some callers wrap their arguments there),
+/// then tries each candidate in order against `id`, `name`, and a
+/// slash-normalized `root_path` (so a Windows backslash path matches a
+/// forward-slash one). Falls back to the most-recently-registered project
+/// when no candidate was supplied, or when none matched.
+///
+/// Returns `(project_id, matched)`. `matched` is `false` only when the caller
+/// supplied at least one candidate and NONE of them matched a real row — i.e.
+/// the resolution silently fell back to "most recent" instead of honoring
+/// what was asked for. Callers should surface that via `stale_project_note`
+/// rather than acting on a possibly-wrong project without telling the user
+/// (see Theme I dedup: this used to be five copy-pasted blocks that had
+/// drifted — some warned on a mismatch, some silently swallowed it).
+fn resolve_dev_project(
+    conn: &rusqlite::Connection,
     params: &serde_json::Value,
-) -> Result<ExecuteResult, AppError> {
-    use crate::db::repos::dev_tools as dt;
+) -> Result<(String, bool), AppError> {
+    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
     let mut candidates: Vec<String> = Vec::new();
     for v in [
         params.get("project_id").and_then(|v| v.as_str()),
+        p.get("project_id").and_then(|v| v.as_str()),
         params.get("project_name").and_then(|v| v.as_str()),
+        p.get("project_name").and_then(|v| v.as_str()),
         params.get("name").and_then(|v| v.as_str()),
+        p.get("name").and_then(|v| v.as_str()),
         params.get("path").and_then(|v| v.as_str()),
+        p.get("path").and_then(|v| v.as_str()),
     ]
     .into_iter()
     .flatten()
@@ -1527,44 +1547,80 @@ fn execute_scan_kpis(
             candidates.push(v.to_string());
         }
     }
-    let project_id: String = {
-        let conn = state.db.get()?;
-        let mut found: Option<String> = None;
-        for n in &candidates {
-            if let Ok(id) = conn.query_row(
-                "SELECT id FROM dev_projects \
-                 WHERE id = ?1 OR name = ?1 \
-                    OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
-                 ORDER BY (id = ?1) DESC LIMIT 1",
-                rusqlite::params![n],
+
+    let mut found: Option<String> = None;
+    for n in &candidates {
+        if let Ok(id) = conn.query_row(
+            "SELECT id FROM dev_projects \
+             WHERE id = ?1 OR name = ?1 \
+                OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
+             ORDER BY (id = ?1) DESC LIMIT 1",
+            rusqlite::params![n],
+            |r| r.get::<_, String>(0),
+        ) {
+            found = Some(id);
+            break;
+        }
+    }
+    // A real hit above already means "matched"; empty candidates means
+    // nothing specific was requested, so falling back isn't a mismatch
+    // either. Only "candidates given but none matched" should warn.
+    let matched = found.is_some() || candidates.is_empty();
+    if found.is_none() {
+        found = conn
+            .query_row(
+                "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
+                [],
                 |r| r.get::<_, String>(0),
-            ) {
-                found = Some(id);
-                break;
-            }
-        }
-        if found.is_none() {
-            found = conn
-                .query_row(
-                    "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
-                    [],
-                    |r| r.get::<_, String>(0),
-                )
-                .ok();
-        }
-        found.ok_or_else(|| {
-            AppError::Validation(
-                "No Dev Tools projects registered yet. Register one first with register_project."
-                    .into(),
             )
-        })?
+            .ok();
+    }
+    let project_id = found.ok_or_else(|| {
+        AppError::Validation(
+            "No Dev Tools projects registered yet. Register one first with register_project."
+                .into(),
+        )
+    })?;
+    Ok((project_id, matched))
+}
+
+/// User-facing note to append when `resolve_dev_project`'s `matched` flag is
+/// false — Athena asked for a specific project and it didn't resolve, so we
+/// used the most-recently-registered one instead. Empty string when nothing
+/// needs flagging. Every dev-project-resolving executor uses this so a
+/// resolution mismatch is never silent (previously two of the five call
+/// sites swallowed it).
+fn stale_project_note(matched: bool) -> &'static str {
+    if matched {
+        ""
+    } else {
+        " (note: the requested project didn't match any registered project — using the \
+         most-recently-registered one)"
+    }
+}
+
+/// KPI layer — launch a KPI proposal scan for a project (LLM reads the context
+/// map and proposes measurable KPIs across technical/quality/traffic/value).
+/// Resolves the project via `resolve_dev_project` (id / name / path, with a
+/// most-recent fallback). Proposals land in the review queue, never active.
+fn execute_scan_kpis(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::db::repos::dev_tools as dt;
+    let (project_id, matched) = {
+        let conn = state.db.get()?;
+        resolve_dev_project(&conn, params)?
     };
     let project = dt::get_project_by_id(&state.db, &project_id)?;
+    let stale_note = stale_project_note(matched);
     crate::commands::infrastructure::kpi_scan::launch_kpi_scan(app.clone(), &state.db, &project)?;
     Ok(ExecuteResult::message(format!(
-        "KPI proposal scan started for `{}` — Claude is reading its context map and proposing \
-         measurable KPIs across technical, quality, traffic, and value. They'll land in the KPIs \
-         review queue for you to accept or adjust; nothing goes active without your sign-off.",
+        "KPI proposal scan started for `{}`{stale_note} — Claude is reading its context map and \
+         proposing measurable KPIs across technical, quality, traffic, and value. They'll land in \
+         the KPIs review queue for you to accept or adjust; nothing goes active without your \
+         sign-off.",
         project.name
     )))
 }
@@ -1585,52 +1641,11 @@ fn execute_propose_kpi(
         .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::Internal("propose_kpi: missing `name`".into()))?;
     // Resolve the project (id / name / path → most-recent fallback).
-    let mut candidates: Vec<String> = Vec::new();
-    for v in [
-        params.get("project_id").and_then(|v| v.as_str()),
-        params.get("project_name").and_then(|v| v.as_str()),
-        params.get("path").and_then(|v| v.as_str()),
-    ]
-    .into_iter()
-    .flatten()
-    {
-        let v = v.trim();
-        if !v.is_empty() && !candidates.iter().any(|c| c == v) {
-            candidates.push(v.to_string());
-        }
-    }
-    let project_id: String = {
+    let (project_id, matched) = {
         let conn = state.db.get()?;
-        let mut found: Option<String> = None;
-        for n in &candidates {
-            if let Ok(id) = conn.query_row(
-                "SELECT id FROM dev_projects \
-                 WHERE id = ?1 OR name = ?1 \
-                    OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
-                 ORDER BY (id = ?1) DESC LIMIT 1",
-                rusqlite::params![n],
-                |r| r.get::<_, String>(0),
-            ) {
-                found = Some(id);
-                break;
-            }
-        }
-        if found.is_none() {
-            found = conn
-                .query_row(
-                    "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
-                    [],
-                    |r| r.get::<_, String>(0),
-                )
-                .ok();
-        }
-        found.ok_or_else(|| {
-            AppError::Validation(
-                "No Dev Tools projects registered yet. Register one first with register_project."
-                    .into(),
-            )
-        })?
+        resolve_dev_project(&conn, params)?
     };
+    let stale_note = stale_project_note(matched);
 
     let category = params.get("category").and_then(|v| v.as_str()).unwrap_or("technical");
     if !matches!(category, "technical" | "quality" | "traffic" | "value") {
@@ -1662,7 +1677,7 @@ fn execute_propose_kpi(
         _ => "",
     };
     Ok(ExecuteResult::message(format!(
-        "Proposed KPI \"{}\" — review it in Teams › KPIs (status: proposed).{setup}",
+        "Proposed KPI \"{}\" — review it in Teams › KPIs (status: proposed).{setup}{stale_note}",
         kpi.name
     )))
 }
@@ -1700,7 +1715,10 @@ fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, days: i64) ->
         Ok(c) => c,
         Err(e) => return format!("(fleet data unavailable: {e})"),
     };
-    let window = format!("-{days} days");
+    // `persona_executions.created_at` is stored as RFC3339 (`chrono::Utc::now().to_rfc3339()`),
+    // so a `datetime('now', ?)` string compare mis-orders on the `T`/`Z` separator (see
+    // `gather_daily_brief_digest` above for the same trap). Use julianday() math instead.
+    let win_days = days as f64;
     let all_teams: Vec<(String, String)> = match conn
         .prepare("SELECT id, name FROM persona_teams WHERE COALESCE(enabled,1)=1 ORDER BY name")
     {
@@ -1734,12 +1752,12 @@ fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, days: i64) ->
                     AVG(director_score)
              FROM persona_executions
              WHERE COALESCE(is_simulation,0)=0
-               AND created_at >= datetime('now', ?1)
+               AND julianday('now') - julianday(created_at) <= ?1
                AND persona_id IN (
                  SELECT id FROM personas WHERE home_team_id = ?2
                  UNION SELECT persona_id FROM persona_team_members WHERE team_id = ?2
                )",
-            params![window, id],
+            params![win_days, id],
             |r| {
                 Ok((
                     r.get::<_, i64>(0)?,
@@ -1953,71 +1971,28 @@ fn execute_run_browser_test(
             .to_string()
     });
 
-    // Explicit URL wins; otherwise resolve the project's test-env URL the
-    // same way execute_open_test_env does (id / name / path candidates with
-    // a most-recent-project fallback).
-    let (url, project_label) = match str_param("url") {
-        Some(u) => (u, str_param("project_name")),
+    // Explicit URL wins; otherwise resolve the project's test-env URL via
+    // `resolve_dev_project_with_test_env` (id / name / path candidates with
+    // a most-recent-project fallback, same as `execute_open_test_env`).
+    let (url, project_label, matched) = match str_param("url") {
+        Some(u) => (u, str_param("project_name"), true),
         None => {
             let conn = state.db.get()?;
-            let mut found: Option<(String, Option<String>)> = None;
-            for n in [
-                str_param("project_id"),
-                str_param("project_name"),
-                str_param("name"),
-                str_param("path"),
-            ]
-            .into_iter()
-            .flatten()
-            {
-                if let Ok(row) = conn.query_row(
-                    "SELECT test_env_url, name FROM dev_projects \
-                     WHERE id = ?1 OR name = ?1 \
-                        OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
-                     ORDER BY (id = ?1) DESC LIMIT 1",
-                    rusqlite::params![n],
-                    |r| {
-                        Ok((
-                            r.get::<_, Option<String>>(0)?,
-                            r.get::<_, String>(1)?,
-                        ))
-                    },
-                ) {
-                    found = Some((row.0.unwrap_or_default(), Some(row.1)));
-                    break;
-                }
-            }
-            if found.is_none() {
-                found = conn
-                    .query_row(
-                        "SELECT test_env_url, name FROM dev_projects \
-                         ORDER BY created_at DESC LIMIT 1",
-                        [],
-                        |r| {
-                            Ok((
-                                r.get::<_, Option<String>>(0)?,
-                                r.get::<_, String>(1)?,
-                            ))
-                        },
-                    )
-                    .map(|(u, n)| (u.unwrap_or_default(), Some(n)))
-                    .ok();
-            }
-            match found {
-                Some((u, label)) if !u.trim().is_empty() => (u.trim().to_string(), label),
-                Some((_, label)) => {
-                    return Err(AppError::Validation(format!(
-                        "Project {} has no test-environment URL configured. Set one in \
-                         Dev Tools → Projects → Source control, or pass an explicit `url`.",
-                        label.as_deref().unwrap_or("?")
-                    )))
-                }
-                None => {
-                    return Err(AppError::Validation(
+            let (test_env_url, name, matched) =
+                resolve_dev_project_with_test_env(&conn, params).map_err(|_| {
+                    AppError::Validation(
                         "No Dev Tools projects registered and no explicit `url` given. \
                          Register a project or pass a url."
                             .into(),
-                    ))
+                    )
+                })?;
+            match test_env_url.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+                Some(u) => (u.to_string(), Some(name), matched),
+                None => {
+                    return Err(AppError::Validation(format!(
+                        "Project {name} has no test-environment URL configured. Set one in \
+                         Dev Tools → Projects → Source control, or pass an explicit `url`."
+                    )))
                 }
             }
         }
@@ -2036,9 +2011,29 @@ fn execute_run_browser_test(
     } else {
         "the bundled test browser"
     };
+    let stale_note = stale_project_note(matched);
     Ok(ExecuteResult::message(format!(
-        "Browser test started — Athena is opening {url} in {backend} and will report findings here."
+        "Browser test started — Athena is opening {url} in {backend} and will report findings \
+         here.{stale_note}"
     )))
+}
+
+/// Like `resolve_dev_project`, but also returns the resolved project's
+/// `test_env_url` and display name in one round-trip — used by
+/// `execute_run_browser_test`, which needs the URL a project resolves to
+/// rather than just its id. Thin wrapper: does the one extra lookup instead
+/// of duplicating the candidate-collection + query logic.
+fn resolve_dev_project_with_test_env(
+    conn: &rusqlite::Connection,
+    params: &serde_json::Value,
+) -> Result<(Option<String>, String, bool), AppError> {
+    let (project_id, matched) = resolve_dev_project(conn, params)?;
+    let (test_env_url, name) = conn.query_row(
+        "SELECT test_env_url, name FROM dev_projects WHERE id = ?1",
+        rusqlite::params![project_id],
+        |r| Ok((r.get::<_, Option<String>>(0)?, r.get::<_, String>(1)?)),
+    )?;
+    Ok((test_env_url, name, matched))
 }
 
 /// Shared browser-test spawner: pin the approved origin with the bridge, build
@@ -3111,68 +3106,12 @@ fn execute_open_test_env(
     _app: &tauri::AppHandle,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
-    // Mirror enqueue_dev_job's candidate collection (top-level + nested
-    // `params`), so Athena can send any of project_id / project_name / name /
-    // path interchangeably.
-    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
-    let mut candidates: Vec<String> = Vec::new();
-    for v in [
-        params.get("project_id").and_then(|v| v.as_str()),
-        p.get("project_id").and_then(|v| v.as_str()),
-        params.get("project_name").and_then(|v| v.as_str()),
-        p.get("project_name").and_then(|v| v.as_str()),
-        params.get("name").and_then(|v| v.as_str()),
-        p.get("name").and_then(|v| v.as_str()),
-        params.get("path").and_then(|v| v.as_str()),
-        p.get("path").and_then(|v| v.as_str()),
-    ]
-    .into_iter()
-    .flatten()
-    {
-        let v = v.trim();
-        if !v.is_empty() && !candidates.iter().any(|c| c == v) {
-            candidates.push(v.to_string());
-        }
-    }
-
-    let project_id: String = {
+    // Candidate collection (top-level + nested `params`) and resolution now
+    // live in `resolve_dev_project`, so Athena can send any of project_id /
+    // project_name / name / path interchangeably.
+    let (project_id, matched) = {
         let conn = state.db.get()?;
-        let mut found: Option<String> = None;
-        for n in &candidates {
-            if let Ok(id) = conn.query_row(
-                "SELECT id FROM dev_projects \
-                 WHERE id = ?1 OR name = ?1 \
-                    OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
-                 ORDER BY (id = ?1) DESC LIMIT 1",
-                rusqlite::params![n],
-                |r| r.get::<_, String>(0),
-            ) {
-                found = Some(id);
-                break;
-            }
-        }
-        // Fall back to the most-recently-registered project when nothing was
-        // specified or nothing matched (e.g. a stale project_id carried over
-        // from a prior session). Mirrors execute_enqueue_dev_job.
-        if found.is_none() {
-            found = conn
-                .query_row(
-                    "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
-                    [],
-                    |r| r.get::<_, String>(0),
-                )
-                .ok();
-        }
-        match found {
-            Some(id) => id,
-            None => {
-                return Err(AppError::Validation(
-                    "No Dev Tools projects registered yet. Register one first with \
-                     register_project (name + filesystem path)."
-                        .into(),
-                ))
-            }
-        }
+        resolve_dev_project(&conn, params)?
     };
 
     let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
@@ -3187,8 +3126,9 @@ fn execute_open_test_env(
         }
     };
 
+    let stale_note = stale_project_note(matched);
     Ok(ExecuteResult {
-        message: format!("Opening the test environment for {}…", project.name),
+        message: format!("Opening the test environment for {}…{stale_note}", project.name),
         client_action: Some(ClientAction::OpenExternalUrl { url }),
     })
 }
@@ -3214,94 +3154,20 @@ fn execute_enqueue_dev_job(
         )));
     }
     // Resolve the target Dev Tools project. Accept ANY of project_id / path /
-    // project name (Athena may send several); try each. Path comparison is
-    // slash-normalized because a stored root_path uses OS separators (Windows
-    // backslashes) while the chat passes forward slashes. Fall back to the
-    // most-recently-registered project when nothing is specified.
-    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
-    let mut candidates: Vec<String> = Vec::new();
-    for v in [
-        params.get("project_id").and_then(|v| v.as_str()),
-        params.get("project_name").and_then(|v| v.as_str()),
-        params.get("name").and_then(|v| v.as_str()),
-        params.get("path").and_then(|v| v.as_str()),
-        p.get("project_id").and_then(|v| v.as_str()),
-        p.get("project_name").and_then(|v| v.as_str()),
-        p.get("name").and_then(|v| v.as_str()),
-        p.get("path").and_then(|v| v.as_str()),
-    ]
-    .into_iter()
-    .flatten()
-    {
-        let v = v.trim();
-        if !v.is_empty() && !candidates.iter().any(|c| c == v) {
-            candidates.push(v.to_string());
-        }
-    }
-
-    let project_id: String = {
+    // project name (Athena may send several); try each, top-level or nested
+    // under `params`. Path comparison is slash-normalized because a stored
+    // root_path uses OS separators (Windows backslashes) while the chat
+    // passes forward slashes. Falls back to the most-recently-registered
+    // project when nothing is specified, or nothing matched — in which case
+    // `matched` is false and the success message below names the mismatch so
+    // the user's "kick off a scan" ask never silently no-op's on a rotted id.
+    let (project_id, matched) = {
         let conn = state.db.get()?;
-        let mut found: Option<String> = None;
-        for n in &candidates {
-            if let Ok(id) = conn.query_row(
-                "SELECT id FROM dev_projects \
-                 WHERE id = ?1 OR name = ?1 \
-                    OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
-                 ORDER BY (id = ?1) DESC LIMIT 1",
-                rusqlite::params![n],
-                |r| r.get::<_, String>(0),
-            ) {
-                found = Some(id);
-                break;
-            }
-        }
-        // Two fallback layers:
-        //   1. Athena passed no candidates → use most-recent project.
-        //   2. Athena passed candidates but none matched (typically a stale
-        //      project_id she carried over from a prior session's
-        //      observability digest) → fall back to most-recent project AND
-        //      record the mismatch so the success message names what we
-        //      actually scanned. This keeps the user's "kick off a scan"
-        //      ask from silently no-op'ing when the ID rotted.
-        if found.is_none() {
-            found = conn
-                .query_row(
-                    "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
-                    [],
-                    |r| r.get::<_, String>(0),
-                )
-                .ok();
-        }
-        match found {
-            Some(id) => id,
-            None => {
-                return Err(AppError::Validation(
-                    "No Dev Tools projects registered yet. Register one first with \
-                     register_project (name + filesystem path)."
-                        .into(),
-                ))
-            }
-        }
+        resolve_dev_project(&conn, params)?
     };
     let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
-    // Only call it a "miss" if NONE of the candidates matched by id, name, OR
-    // (slash-normalized) path — the same three keys the SELECT matched on.
-    // Without the path check this fired even on a correct path match (the
-    // candidate is a path, never the id/name), making Athena wrongly report
-    // "didn't match — using most-recent" for a scan that hit the right project.
-    let norm = |s: &str| s.replace('\\', "/");
-    let project_path_norm = norm(&project.root_path);
-    let matched = candidates
-        .iter()
-        .any(|c| c == &project.id || c == &project.name || norm(c) == project_path_norm);
-    let stale_id_note = if !candidates.is_empty() && !matched {
-        format!(
-            " (note: requested {:?} didn't match any project — using the most-recently-registered one)",
-            candidates
-        )
-    } else {
-        String::new()
-    };
+    let stale_id_note = stale_project_note(matched);
+    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
     let delta = p.get("delta_mode").and_then(|v| v.as_bool()).unwrap_or(false);
 
     crate::commands::infrastructure::context_generation::launch_context_scan(
@@ -3778,7 +3644,13 @@ fn execute_fleet_broadcast(params: &serde_json::Value) -> Result<ExecuteResult, 
             )));
         }
     };
-    targets.dedup();
+    {
+        // `Vec::dedup()` only collapses *consecutive* duplicates; non-adjacent
+        // repeats (e.g. a model-supplied `ids: ["a","b","a"]`) would otherwise
+        // survive and cause the same session to receive the broadcast twice.
+        let mut seen = std::collections::HashSet::with_capacity(targets.len());
+        targets.retain(|id| seen.insert(id.clone()));
+    }
     if targets.is_empty() {
         return Ok(ExecuteResult::message(
             "fleet_broadcast: no sessions matched the target (nothing sent).".into(),

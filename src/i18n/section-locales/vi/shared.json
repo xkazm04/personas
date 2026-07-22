@@ -195,7 +195,11 @@
     "s_elapsed": "s đã trôi qua",
     "s_remaining": "s còn lại",
     "show_cli_output": "Hiện đầu ra CLI",
-    "hide_cli_output": "Ẩn đầu ra CLI"
+    "hide_cli_output": "Ẩn đầu ra CLI",
+    "starting_transformation": "Đang bắt đầu chuyển đổi...",
+    "step_progress": "Bước {step} trên {total}",
+    "starting_short": "Đang bắt đầu...",
+    "check_output_details": "Kiểm tra kết quả bên dưới để biết chi tiết."
   },
   "terminal_extra": {
     "press_enter": "Nhấn Enter hoặc nhấp Phát để bắt đầu",

@@ -30,6 +30,11 @@ import { DIM_META } from "@/features/shared/glyph/dimMeta";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerBrandIcon } from "./ComposerBrandIcon";
 import { DebtText } from '@/i18n/DebtText';
+import {
+  BUILT_IN_INBOX,
+  DESTINATION_FIELDS,
+  isFullyConfigured,
+} from "../messagingChannelDefaults";
 
 
 interface ComposerMessagingPickerModalProps {
@@ -76,42 +81,6 @@ function serviceTypeToChannelType(
   }
 }
 
-/** Per-channel destination field metadata — drives the inline inputs.
- *  `labelKey`/`placeholderKey` index into the i18n bundle's
- *  `agents.messaging_picker.{field_labels,field_placeholders}` records. */
-type DestFieldKey = "channel" | "chat_id" | "channel_id" | "team_id" | "to";
-
-interface DestinationFieldDef {
-  key: string;
-  labelKey: DestFieldKey;
-  placeholderKey: DestFieldKey;
-}
-
-const DESTINATION_FIELDS: Record<ChannelSpecV2Type, DestinationFieldDef[]> = {
-  "built-in": [],
-  titlebar: [],
-  slack: [{ key: "channel", labelKey: "channel", placeholderKey: "channel" }],
-  telegram: [{ key: "chat_id", labelKey: "chat_id", placeholderKey: "chat_id" }],
-  discord: [
-    { key: "channel_id", labelKey: "channel_id", placeholderKey: "channel_id" },
-  ],
-  teams: [
-    { key: "team_id", labelKey: "team_id", placeholderKey: "team_id" },
-    { key: "channel_id", labelKey: "channel_id", placeholderKey: "channel_id" },
-  ],
-  email: [{ key: "to", labelKey: "to", placeholderKey: "to" }],
-};
-
-/** Always-on built-in inbox row (cannot be deselected). */
-const BUILT_IN_INBOX: ChannelSpecV2 = {
-  type: "built-in",
-  enabled: true,
-  credential_id: null,
-  use_case_ids: "*",
-  event_filter: null,
-  config: null,
-};
-
 interface PickableChannel {
   /** Stable key: `<channel_type>:<credential_id>` */
   key: string;
@@ -148,19 +117,6 @@ function setConfigValue(
   };
 }
 
-/**
- * Whether the spec is fully configured for delivery: every required
- * destination field has a non-empty value. Empty config means the
- * dispatcher will rely on the credential's scoped_resources fallback,
- * which may or may not be populated — we surface that as "incomplete"
- * so the user sees the warning during build instead of at delivery time.
- */
-function isFullyConfigured(spec: ChannelSpecV2): boolean {
-  const fields = DESTINATION_FIELDS[spec.type] ?? [];
-  if (fields.length === 0) return true;
-  return fields.every((f) => getConfigValue(spec, f.key).length > 0);
-}
-
 export function ComposerMessagingPickerModal({
   open,
   onClose,
@@ -180,8 +136,8 @@ export function ComposerMessagingPickerModal({
     // pinBuiltIn: force the inbox into the draft. Otherwise honour `selected`
     // as-is so the user can reach an empty (no-message) selection.
     setDraft(pinBuiltIn && !hasBuiltIn ? [BUILT_IN_INBOX, ...selected] : selected);
-    const t = setTimeout(() => inputRef.current?.focus(), 80);
-    return () => clearTimeout(t);
+    const focusTimer = setTimeout(() => inputRef.current?.focus(), 80);
+    return () => clearTimeout(focusTimer);
   }, [open, selected, pinBuiltIn]);
 
   const builtInSelected = draft.some((s) => s.type === "built-in");

@@ -252,9 +252,17 @@ export function useEventLog() {
     if (filteredEvents.length === 0) return;
 
     // Pick the chronologically oldest event regardless of sort direction.
+    // Compare parsed epoch ms, not raw strings — the backend emits both
+    // RFC3339 ("...T...Z") and SQLite-naive ("YYYY-MM-DD HH:MM:SS") shapes,
+    // and a lexicographic compare misorders them if the two ever mix.
     let oldest = filteredEvents[0]!;
+    let oldestMs = Date.parse(oldest.created_at);
     for (const e of filteredEvents) {
-      if (e.created_at < oldest.created_at) oldest = e;
+      const ms = Date.parse(e.created_at);
+      if (!Number.isNaN(ms) && (Number.isNaN(oldestMs) || ms < oldestMs)) {
+        oldest = e;
+        oldestMs = ms;
+      }
     }
 
     setIsLoadingOlder(true);
@@ -280,9 +288,11 @@ export function useEventLog() {
         ...serverResults.map((e) => e.id),
         ...olderEvents.map((e) => e.id),
       ]);
-      const newOnes = result.events.filter(
-        (e) => !existing.has(e.id) && e.created_at < oldest.created_at,
-      );
+      const newOnes = result.events.filter((e) => {
+        if (existing.has(e.id)) return false;
+        const ms = Date.parse(e.created_at);
+        return !Number.isNaN(ms) && (Number.isNaN(oldestMs) || ms < oldestMs);
+      });
 
       if (newOnes.length === 0) {
         setHasMoreOlder(false);

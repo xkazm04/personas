@@ -67,40 +67,69 @@ function hasContradictionSignal(a: string, b: string): boolean {
   return false;
 }
 
-function topicOverlap(a: string, b: string): number {
-  const tokensA = new Set(tokenize(a));
-  const tokensB = new Set(tokenize(b));
-  if (tokensA.size === 0 || tokensB.size === 0) return 0;
-  let overlap = 0;
-  for (const t of tokensA) if (tokensB.has(t)) overlap++;
-  return overlap / Math.min(tokensA.size, tokensB.size);
-}
+// topicOverlap (overlap / min set size) is computed inline in detectConflicts
+// from the shared intersection pass — see the pair loop below.
 
 const MIN_TIME_DIFF_MS = SUPERSEDED_MIN_TIME_DIFF_MS;
 // Thresholds (DUPLICATE_THRESHOLD / CONTRADICTION_TOPIC_THRESHOLD /
-// SUPERSEDED_TOPIC_THRESHOLD) are imported from `@/lib/memoryLimits` —
-// changing them in one place updates both this lib and the parallel hook copy.
+// SUPERSEDED_TOPIC_THRESHOLD) are imported from `@/lib/memoryLimits`.
+
+/** Per-memory text features, computed once per detectConflicts call so the
+ * O(n²) pair loop never re-tokenizes or re-bigrams the same memory. */
+interface MemoryFeatures {
+  content: string;
+  tokens: Set<string>;
+  bigramSet: Set<string>;
+}
 
 export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
   const conflicts: MemoryConflict[] = [];
   const seen = new Set<string>();
 
+  // O(n) precompute — previously each memory's title+content was
+  // re-tokenized and re-bigrammed for every pair (~3·(n-1) times per memory).
+  const features: MemoryFeatures[] = memories.map((m) => {
+    const content = `${m.title} ${m.content}`;
+    return { content, tokens: new Set(tokenize(content)), bigramSet: bigrams(content) };
+  });
+
   for (let i = 0; i < memories.length; i++) {
+    const fa = features[i]!;
     for (let j = i + 1; j < memories.length; j++) {
       const a = memories[i]!; const b = memories[j]!;
+      const fb = features[j]!;
       const pairKey = [a.id, b.id].sort().join(':');
       if (seen.has(pairKey)) continue;
-      const contentA = `${a.title} ${a.content}`;
-      const contentB = `${b.title} ${b.content}`;
-      const sim = textSimilarity(contentA, contentB);
-      const topic = topicOverlap(contentA, contentB);
+      const contentA = fa.content;
+      const contentB = fb.content;
 
-      if (sim >= DUPLICATE_THRESHOLD) {
-        seen.add(pairKey);
-        const crossPersona = a.persona_id !== b.persona_id;
-        conflicts.push({ id: pairKey, kind: 'duplicate', similarity: sim, memoryA: a, memoryB: b,
-          reason: crossPersona ? `Near-duplicate memories across different agents (${Math.round(sim * 100)}% similar)` : `Near-duplicate memories within the same agent (${Math.round(sim * 100)}% similar)` });
-        continue;
+      // Single intersection pass powers both word-Jaccard and topic overlap.
+      let intersection = 0;
+      for (const t of fa.tokens) { if (fb.tokens.has(t)) intersection++; }
+      // Zero shared tokens (with at least one non-empty set) ⇒ topic = 0 and
+      // sim ≤ TEXT_SIM_BIGRAM_WEIGHT (0.6) < DUPLICATE_THRESHOLD (0.7): no
+      // conflict kind can fire — skip before touching the larger bigram sets.
+      if (intersection === 0 && (fa.tokens.size > 0 || fb.tokens.size > 0)) continue;
+
+      const bothEmpty = fa.tokens.size === 0 && fb.tokens.size === 0;
+      const union = fa.tokens.size + fb.tokens.size - intersection;
+      const wordSim = bothEmpty ? 1 : (union === 0 ? 0 : intersection / union);
+      const topic = (fa.tokens.size === 0 || fb.tokens.size === 0)
+        ? 0
+        : intersection / Math.min(fa.tokens.size, fb.tokens.size);
+
+      // Only pay for the bigram Jaccard when even a perfect bigram match
+      // could push the blended score over the duplicate threshold.
+      if (wordSim * TEXT_SIM_WORD_WEIGHT + TEXT_SIM_BIGRAM_WEIGHT >= DUPLICATE_THRESHOLD) {
+        const sim = wordSim * TEXT_SIM_WORD_WEIGHT
+          + jaccard(fa.bigramSet, fb.bigramSet) * TEXT_SIM_BIGRAM_WEIGHT;
+        if (sim >= DUPLICATE_THRESHOLD) {
+          seen.add(pairKey);
+          const crossPersona = a.persona_id !== b.persona_id;
+          conflicts.push({ id: pairKey, kind: 'duplicate', similarity: sim, memoryA: a, memoryB: b,
+            reason: crossPersona ? `Near-duplicate memories across different agents (${Math.round(sim * 100)}% similar)` : `Near-duplicate memories within the same agent (${Math.round(sim * 100)}% similar)` });
+          continue;
+        }
       }
 
       if (topic >= CONTRADICTION_TOPIC_THRESHOLD && hasContradictionSignal(contentA, contentB)) {

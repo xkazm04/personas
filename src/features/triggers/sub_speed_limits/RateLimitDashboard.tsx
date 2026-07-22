@@ -46,7 +46,7 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
   }, [triggers, rateLimits]);
 
   // Show empty state when no rate limits configured
-  if (stats.rateLimitedCount === 0 && stats.throttledCount === 0 && stats.totalQueued === 0) {
+  if (stats.rateLimitedCount === 0 && stats.throttledCount === 0 && stats.totalQueued === 0 && stats.totalConcurrent === 0) {
     return (
       <div className="mx-6 mt-4 rounded-modal border border-dashed border-primary/15 bg-secondary/10 p-6 flex flex-col items-center gap-3 text-center">
         <MotionizedGlyph data={RATELIMIT_GLYPH.data} viewBox={RATELIMIT_GLYPH.viewBox} spread={1} className="w-28 h-28 -mb-1" />

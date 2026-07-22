@@ -16,9 +16,8 @@ use std::fs;
 
 use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
-use sha2::{Digest, Sha256};
-use uuid::Uuid;
 
+use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
 use crate::error::AppError;
@@ -241,14 +240,9 @@ fn format_item_markdown(id: &str, kind: &str, now: &str, input: &BacklogInput<'_
 }
 
 fn sha256_hex(s: &str) -> String {
-    format!("sha256:{}", hex::encode(Sha256::digest(s.as_bytes())))
+    util::sha256_hex(s)
 }
 
 fn short_uuid() -> String {
-    Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(8)
-        .collect()
+    util::short_id(8)
 }

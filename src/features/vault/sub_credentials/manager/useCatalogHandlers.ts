@@ -67,13 +67,18 @@ export function useCatalogHandlers({
   const universalOAuth = useUniversalOAuth();
 
   // Populate form with the universal OAuth session ref for
-  // healthcheck/confirmation (tokens are redeemed server-side at save time)
+  // healthcheck/confirmation (tokens are redeemed server-side at save time).
+  // Deps are the stable primitives (completedAt/valuesVersion) — NOT the
+  // `universalOAuth` object, whose identity changes every render and would
+  // re-dispatch SET_OAUTH_VALUES in an infinite loop. `getValues` is a
+  // stable ref-backed function.
+  const getUniversalOAuthValues = universalOAuth.getValues;
   useEffect(() => {
     if (!universalOAuth.completedAt || !catalogFormData) return;
-    const values = universalOAuth.getValues();
+    const values = getUniversalOAuthValues();
     if (!values[OAUTH_FIELD.SESSION_REF]) return;
     dispatch({ type: 'SET_OAUTH_VALUES', values });
-  }, [catalogFormData, dispatch, universalOAuth, universalOAuth.completedAt]);
+  }, [catalogFormData, dispatch, universalOAuth.completedAt, universalOAuth.valuesVersion, getUniversalOAuthValues]);
 
   const handlePickType = useCallback((connector: ConnectorDefinition) => {
     oauth.reset();

@@ -295,7 +295,8 @@
     "query_parameters": "Parameter Kueri",
     "recipes_title": "Resep Tersimpan",
     "truncated_warning": "Respons terpotong untuk ditampilkan",
-    "value_col": "Nilai"
+    "value_col": "Nilai",
+    "request_headers": "Header"
   },
   "ingest": {
     "save_name": "Simpan nama",
@@ -422,7 +423,8 @@
     "capability_key_value": "Kunci-nilai",
     "capability_key_value_hint": "Ini adalah penyimpanan kunci-nilai. Gunakan perintah kunci seperti SCAN, GET, dan TYPE — bukan SQL.",
     "capability_select_subset": "Hanya SELECT",
-    "capability_select_subset_hint": "Di sini hanya kueri SELECT sederhana pada satu tabel yang berjalan — saring dengan WHERE, urutkan dengan ORDER BY, batasi dengan LIMIT. JOIN, agregasi, CTE, dan penulisan tidak didukung."
+    "capability_select_subset_hint": "Di sini hanya kueri SELECT sederhana pada satu tabel yang berjalan — saring dengan WHERE, urutkan dengan ORDER BY, batasi dengan LIMIT. JOIN, agregasi, CTE, dan penulisan tidak didukung.",
+    "query_timeout": "Waktu tunggu respons habis. Silakan coba lagi."
   },
   "dependencies": {
     "simulate_revocation": "Simulasi Pencabutan",
@@ -766,7 +768,7 @@
     "via_connector": "melalui {connector}"
   },
   "reauth_banner": {
-    "access_revoked": "Akses dicabut",
+    "access_revoked": ") -- akses telah dicabut. Silakan otorisasi ulang untuk melanjutkan otomatisasi.",
     "reconnect": "Sambungkan ulang",
     "cli_expired": ") -- Sesi CLI kedaluwarsa. Masuk melalui terminal Anda, lalu coba lagi.",
     "retry_capture": "Coba tangkap lagi",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "Apa yang dipindai",
     "read_error_item": "Tidak dapat membaca {source}",
     "read_errors_title": "Beberapa sumber tidak dapat dibaca",
-    "select_high_confidence": "Keyakinan tinggi"
+    "select_high_confidence": "Keyakinan tinggi",
+    "source_unknown": "Sumber Tidak Dikenal"
   },
   "desktop_discovery": {
     "title": "Aplikasi Desktop",

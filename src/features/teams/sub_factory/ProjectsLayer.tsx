@@ -6,10 +6,13 @@
 //
 // The Passport Wall is the production baseline here — the earlier KPI-health
 // Cards and the Heat-grid prototype were consolidated out (2026-06-21).
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Target } from 'lucide-react';
 
-import { setStandardsConfig, scanCodebase, createTask, executeTask, updateProject, installSkill } from '@/api/devTools/devTools';
+import { setStandardsConfig, scanCodebase, createTask, executeTask, updateProject, installSkill, listContexts } from '@/api/devTools/devTools';
+import { listKpis } from '@/api/devTools/kpis';
+import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
+import { silentCatch } from '@/lib/silentCatch';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useImproveActivityStore } from '@/stores/improveActivityStore';
 import { Button } from '@/features/shared/components/buttons';
@@ -100,6 +103,27 @@ export function ProjectsLayer({
     },
   }), [rawByProject, reload]);
 
+  // R18 — the Statband cover's volume stats: contexts count + KPI pass rate per
+  // project. Fetched once per passport set (2 light IPC calls per project);
+  // covers render dim placeholders until it lands.
+  const [headerStats, setHeaderStats] = useState<Map<string, { contexts: number; kpiPassed: number; kpiTotal: number }>>(new Map());
+  useEffect(() => {
+    if (passports.length === 0) return;
+    let alive = true;
+    void Promise.all(
+      passports.map(async (p) => {
+        const slug = p.identity.slug;
+        const [ctxs, kpis] = await Promise.all([listContexts(slug), listKpis(slug)]);
+        const active = kpis.filter((k) => k.status === 'active');
+        const passed = active.filter((k) => kpiTrack(k) === 'met').length;
+        return [slug, { contexts: ctxs.length, kpiPassed: passed, kpiTotal: active.length }] as const;
+      }),
+    )
+      .then((entries) => { if (alive) setHeaderStats(new Map(entries)); })
+      .catch(silentCatch('ProjectsLayer:headerStats'));
+    return () => { alive = false; };
+  }, [passports]);
+
   // Off-track (crit) KPIs per project — folds the old AttentionBand into the
   // matrix as a per-project warning badge on each cover.
   const attentionByProject = useMemo(() => {
@@ -165,7 +189,7 @@ export function ProjectsLayer({
         </div>
       ) : (
         <ImproveProvider value={improve}>
-          <ProjectsPassportWall passports={passports} openSlugs={openSlugs} onOpen={onOpen} attentionByProject={attentionByProject} onJumpKpi={onJumpKpi} />
+          <ProjectsPassportWall passports={passports} openSlugs={openSlugs} onOpen={onOpen} attentionByProject={attentionByProject} onJumpKpi={onJumpKpi} headerStats={headerStats} />
           <ImprovePlanPanel open={showPlan} onClose={() => setShowPlan(false)} />
         </ImproveProvider>
       )}

@@ -14,6 +14,7 @@ import {
   type AlertEvalHealth,
 } from '@/stores/slices/overview/alertSlice';
 import { silentCatch } from '@/lib/silentCatch';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -204,12 +205,7 @@ function RuleRow({
 function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
   if (!health.lastEvalAt) return null;
 
-  const age = Date.now() - new Date(health.lastEvalAt).getTime();
-  const agoText = age < 60_000
-    ? `${Math.round(age / 1000)}s ago`
-    : age < 3_600_000
-      ? `${Math.round(age / 60_000)}m ago`
-      : `${Math.round(age / 3_600_000)}h ago`;
+  const agoText = formatRelativeTime(health.lastEvalAt);
 
   const isHealthy = !health.lastError;
   const dotColor = isHealthy ? 'bg-emerald-400' : 'bg-red-400';

@@ -121,25 +121,38 @@ pub fn create_policy(
             let policy_type = input.policy_type.as_deref().unwrap_or("scheduled");
             let enabled = input.enabled.unwrap_or(true);
 
-            // Enforce single-active-policy invariant: disable any existing enabled
-            // policies for this credential before creating an enabled one.
-            if enabled {
-                disable_policies_for_credential(pool, &input.credential_id)?;
-            }
-
             let enabled_i32 = enabled as i32;
 
             // Compute next_rotation_at
             let next = chrono::Utc::now() + chrono::Duration::days(interval as i64);
             let next_str = next.to_rfc3339();
 
-            let conn = pool.get()?;
-            conn.execute(
+            // IMMEDIATE so the disable-existing-policies step and the INSERT of
+            // the new enabled policy are one serialized unit — DbPool hands out
+            // independent connections, so without a transaction two concurrent
+            // create_policy calls for the same credential can both disable the
+            // (not-yet-inserted) other's policy and both insert enabled=1,
+            // leaving two active policies (violates the single-active-policy
+            // invariant this block claims to enforce).
+            let mut conn = pool.get()?;
+            let tx = conn
+                .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+                .map_err(AppError::Database)?;
+            if enabled {
+                tx.execute(
+                    "UPDATE credential_rotation_policies
+                 SET enabled = 0, updated_at = ?1
+                 WHERE credential_id = ?2 AND enabled = 1",
+                    params![now, input.credential_id],
+                )?;
+            }
+            tx.execute(
             "INSERT INTO credential_rotation_policies
              (id, credential_id, enabled, rotation_interval_days, policy_type, next_rotation_at, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
             params![id, input.credential_id, enabled_i32, interval, policy_type, next_str, now],
         )?;
+            tx.commit().map_err(AppError::Database)?;
 
             get_policy_by_id(pool, &id)
         }
@@ -157,16 +170,8 @@ pub fn update_policy(
         {
             let existing = get_policy_by_id(pool, id)?;
             let now = chrono::Utc::now().to_rfc3339();
-            let conn = pool.get()?;
 
             let enabled_bool = input.enabled.unwrap_or(existing.enabled);
-
-            // Enforce single-active-policy invariant: when enabling a policy,
-            // disable all other enabled policies for the same credential.
-            if enabled_bool && !existing.enabled {
-                disable_policies_for_credential(pool, &existing.credential_id)?;
-            }
-
             let enabled = enabled_bool as i32;
             let interval = input
                 .rotation_interval_days
@@ -182,12 +187,29 @@ pub fn update_policy(
             let next = base + chrono::Duration::days(interval as i64);
             let next_str = next.to_rfc3339();
 
-            conn.execute(
+            // IMMEDIATE so the disable-others step and this policy's enabling
+            // UPDATE are one serialized unit — see create_policy for the race
+            // this closes (two concurrent enables both disabling the other's
+            // not-yet-committed row and both ending up enabled).
+            let mut conn = pool.get()?;
+            let tx = conn
+                .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+                .map_err(AppError::Database)?;
+            if enabled_bool && !existing.enabled {
+                tx.execute(
+                    "UPDATE credential_rotation_policies
+                 SET enabled = 0, updated_at = ?1
+                 WHERE credential_id = ?2 AND enabled = 1",
+                    params![now, existing.credential_id],
+                )?;
+            }
+            tx.execute(
                 "UPDATE credential_rotation_policies
              SET enabled = ?1, rotation_interval_days = ?2, next_rotation_at = ?3, updated_at = ?4
              WHERE id = ?5",
                 params![enabled, interval, next_str, now, id],
             )?;
+            tx.commit().map_err(AppError::Database)?;
 
             get_policy_by_id(pool, id)
         }

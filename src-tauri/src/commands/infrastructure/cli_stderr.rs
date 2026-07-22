@@ -27,10 +27,7 @@ pub fn push_stderr_line(buf: &Mutex<String>, line: &str) {
             // Drop oldest bytes; align on a UTF-8 boundary so we don't
             // truncate mid-char.
             let drop = s.len() - STDERR_RING_CAP;
-            let mut idx = drop;
-            while idx < s.len() && !s.is_char_boundary(idx) {
-                idx += 1;
-            }
+            let idx = crate::utils::text::ceil_char_boundary(&s, drop);
             s.drain(..idx);
         }
     }

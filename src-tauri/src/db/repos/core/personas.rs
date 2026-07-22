@@ -8,6 +8,7 @@ use crate::db::models::{
     CreatePersonaInput, HealthStatus, Persona, PersonaGatewayExposure, PersonaHealth,
     PersonaLifecycle, PersonaSummary, PersonaTrustLevel, PersonaTrustOrigin, UpdatePersonaInput,
 };
+use crate::db::query_builder::QueryBuilder;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::engine::crypto;
@@ -467,17 +468,15 @@ pub fn get_all_by_lifecycle(pool: &DbPool, stages: &[&str]) -> Result<Vec<Person
     }
     timed_query!("personas", "personas::get_all_by_lifecycle", {
         let conn = pool.get()?;
-        let placeholders: Vec<String> = (0..stages.len()).map(|i| format!("?{}", i + 1)).collect();
-        let sql = format!(
-            "SELECT * FROM personas WHERE COALESCE(lifecycle, 'active') IN ({}) ORDER BY created_at DESC",
-            placeholders.join(", ")
+        let mut qb = QueryBuilder::new();
+        qb.where_in(
+            "COALESCE(lifecycle, 'active')",
+            stages.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
         );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = stages
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
+        qb.order_by("created_at", "DESC");
+        let sql = qb.build_select("SELECT * FROM personas");
         let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_persona_redacted)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_persona_redacted)?;
         Ok(collect_rows(rows, "personas::get_all_by_lifecycle"))
     })
 }
@@ -627,18 +626,15 @@ pub fn get_all_by_lifecycle_lean(
     }
     timed_query!("personas", "personas::get_all_by_lifecycle_lean", {
         let conn = pool.get()?;
-        let placeholders: Vec<String> = (0..stages.len()).map(|i| format!("?{}", i + 1)).collect();
-        let sql = format!(
-            "SELECT {LEAN_LIST_COLUMNS} FROM personas \
-             WHERE COALESCE(lifecycle, 'active') IN ({}) ORDER BY created_at DESC",
-            placeholders.join(", ")
+        let mut qb = QueryBuilder::new();
+        qb.where_in(
+            "COALESCE(lifecycle, 'active')",
+            stages.iter().map(|s| s.to_string()).collect::<Vec<_>>(),
         );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = stages
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
+        qb.order_by("created_at", "DESC");
+        let sql = qb.build_select(&format!("SELECT {LEAN_LIST_COLUMNS} FROM personas"));
         let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_persona_lean)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_persona_lean)?;
         Ok(collect_rows(rows, "personas::get_all_by_lifecycle_lean"))
     })
 }
@@ -686,21 +682,11 @@ pub fn get_by_ids(pool: &DbPool, ids: &[String]) -> Result<Vec<Persona>, AppErro
     }
     timed_query!("personas", "personas::get_by_ids", {
         let conn = pool.get()?;
-        let placeholders: Vec<String> = ids
-            .iter()
-            .enumerate()
-            .map(|(i, _)| format!("?{}", i + 1))
-            .collect();
-        let sql = format!(
-            "SELECT * FROM personas WHERE id IN ({})",
-            placeholders.join(", ")
-        );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = ids
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
+        let mut qb = QueryBuilder::new();
+        qb.where_in("id", ids.to_vec());
+        let sql = qb.build_select("SELECT * FROM personas");
         let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_persona)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_persona)?;
         Ok(collect_rows(rows, "personas::get_by_ids"))
     })
 }
@@ -1624,6 +1610,46 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<(Persona, Duplication
         )?;
         if inserted == 0 {
             return Err(AppError::NotFound(format!("Persona {source_id}")));
+        }
+
+        // 2026-07-16 (refactor-bughunt-2026-07-10 repos#3) — enforce the same
+        // name-uniqueness invariant `create()`/`update_name()` pay a
+        // transaction to hold. A bare `name || ' (Copy)'` collides with
+        // itself on a second duplicate, or with a pre-existing "X (Copy)"
+        // row, producing indistinguishable personas in the sidebar. Unlike
+        // create()/update_name()'s generic numeric-suffix stripper (which
+        // would mangle the literal "(Copy)" text), just keep appending
+        // " (N)" onto the copy's base name until it's unique in the project.
+        let (project_id, base_name): (String, String) = tx.query_row(
+            "SELECT project_id, name FROM personas WHERE id = ?1",
+            params![new_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        let mut final_name = base_name.clone();
+        let mut suffix = 2u32;
+        loop {
+            let collides: bool = tx
+                .query_row(
+                    "SELECT 1 FROM personas WHERE project_id = ?1 AND name = ?2 AND id <> ?3 LIMIT 1",
+                    params![project_id, final_name, new_id],
+                    |_| Ok(()),
+                )
+                .is_ok();
+            if !collides {
+                break;
+            }
+            final_name = format!("{base_name} ({suffix})");
+            suffix += 1;
+            if suffix > 99 {
+                // Defensive ceiling, mirrors create()/update_name().
+                break;
+            }
+        }
+        if final_name != base_name {
+            tx.execute(
+                "UPDATE personas SET name = ?1 WHERE id = ?2",
+                params![final_name, new_id],
+            )?;
         }
 
         let mut summary = DuplicationSummary::default();

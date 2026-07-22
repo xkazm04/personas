@@ -62,6 +62,13 @@ export const IMPORT_SOURCES: ImportSourceMeta[] = [
 
 /** A single parsed secret entry from any source */
 export interface ImportedSecret {
+  /**
+   * Stable synthetic identity for this parsed row. Parsers can legitimately
+   * emit duplicate `key`s (e.g. a `.env` file with a repeated variable), so
+   * `id` — not `key` — is the unique handle used for selection, React list
+   * keys, and mapping alignment.
+   */
+  id: string;
   key: string;
   value: string;
   /** Original path/reference in the source vault */
@@ -189,7 +196,7 @@ export function parseEnvFile(content: string): ImportParseResult {
     }
 
     if (key && value) {
-      secrets.push({ key, value });
+      secrets.push({ id: String(secrets.length), key, value });
     }
   }
 
@@ -212,6 +219,7 @@ export function parse1PasswordOutput(jsonStr: string): ImportParseResult {
       for (const field of fields) {
         if (field.value && field.label !== 'username') {
           secrets.push({
+            id: String(secrets.length),
             key: `${title}_${field.label ?? field.id}`.replace(/\s+/g, '_').toUpperCase(),
             value: field.value,
             sourcePath: `op://${item.vault?.name ?? 'vault'}/${title}/${field.label ?? field.id}`,
@@ -239,13 +247,13 @@ export function parseAwsSecretsOutput(jsonStr: string): ImportParseResult {
         const parsed = JSON.parse(secretString);
         for (const [key, val] of Object.entries(parsed)) {
           if (typeof val === 'string') {
-            secrets.push({ key, value: val, sourcePath: data.ARN ?? data.Name });
+            secrets.push({ id: String(secrets.length), key, value: val, sourcePath: data.ARN ?? data.Name });
           }
         }
       } catch {
         // If SecretString is plain text
         const name = data.Name ?? 'AWS_SECRET';
-        secrets.push({ key: name.replace(/[/\s]/g, '_').toUpperCase(), value: secretString, sourcePath: data.ARN });
+        secrets.push({ id: String(secrets.length), key: name.replace(/[/\s]/g, '_').toUpperCase(), value: secretString, sourcePath: data.ARN });
       }
     } else {
       errors.push('No SecretString found in AWS response');
@@ -269,6 +277,7 @@ export function parseAzureKeyVaultOutput(jsonStr: string): ImportParseResult {
       if (item.value) {
         const name = item.name ?? item.id?.split('/')?.pop() ?? 'AZURE_SECRET';
         secrets.push({
+          id: String(secrets.length),
           key: name.replace(/[-\s]/g, '_').toUpperCase(),
           value: item.value,
           sourcePath: item.id,
@@ -293,7 +302,7 @@ export function parseDopplerOutput(jsonStr: string): ImportParseResult {
       // Doppler returns { KEY: { raw: "value", computed: "value" } } or plain { KEY: "value" }
       const value = typeof val === 'string' ? val : (val as Record<string, string>)?.computed ?? (val as Record<string, string>)?.raw;
       if (typeof value === 'string' && !key.startsWith('DOPPLER_')) {
-        secrets.push({ key, value, sourcePath: `doppler://${key}` });
+        secrets.push({ id: String(secrets.length), key, value, sourcePath: `doppler://${key}` });
       }
     }
   } catch {

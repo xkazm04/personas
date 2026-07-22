@@ -24,7 +24,11 @@ export default function TourLauncher() {
 
   const tourId: TourId = isStarter ? "getting-started-simple" : "getting-started";
   const steps = getActiveTourSteps(tourId);
-  const completedCount = Object.values(tourStepCompleted).filter(Boolean).length;
+  // Count only THIS tour's steps: tourStepCompleted holds the LAST ACTIVE
+  // tour's map, so counting all truthy values showed e.g. "Resume 5/4" on
+  // the getting-started launcher after finishing a different 5-step tour.
+  // (Mirrors GuidedTour's per-tour computation.)
+  const completedCount = steps.filter((s) => tourStepCompleted[s.id]).length;
   const totalSteps = steps.length;
   const hasProgress = completedCount > 0;
 

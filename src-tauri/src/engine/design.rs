@@ -259,22 +259,12 @@ fn extract_fenced_json(output: &str) -> Option<serde_json::Value> {
 /// given discriminating keys. This is the shared implementation behind all
 /// `extract_bare_*_json` helpers.
 fn extract_bare_json_with_key(output: &str, keys: &[&str]) -> Option<serde_json::Value> {
-    let chars: Vec<char> = output.chars().collect();
-    let len = chars.len();
-    let mut i = 0;
-
-    while i < len {
-        if chars[i] == '{' {
-            if let Some(end) = find_matching_brace(&chars, i) {
-                let candidate: String = chars[i..=end].iter().collect();
-                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&candidate) {
-                    if keys.iter().any(|k| val.get(*k).is_some()) {
-                        return Some(val);
-                    }
-                }
+    for candidate in crate::engine::str_utils::balanced_json_objects(output) {
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(candidate) {
+            if keys.iter().any(|k| val.get(*k).is_some()) {
+                return Some(val);
             }
         }
-        i += 1;
     }
 
     None
@@ -292,41 +282,6 @@ pub fn extract_json_by_key(output: &str, keys: &[&str]) -> Option<serde_json::Va
     }
     // Strategy 2: bare JSON object with discriminant key
     extract_bare_json_with_key(output, keys)
-}
-
-/// Find the index of the matching closing brace for an opening brace at `start`.
-fn find_matching_brace(chars: &[char], start: usize) -> Option<usize> {
-    let mut depth = 0;
-    let mut in_string = false;
-    let mut escape_next = false;
-
-    for (i, &ch) in chars.iter().enumerate().skip(start) {
-        if escape_next {
-            escape_next = false;
-            continue;
-        }
-        if ch == '\\' && in_string {
-            escape_next = true;
-            continue;
-        }
-        if ch == '"' {
-            in_string = !in_string;
-            continue;
-        }
-        if in_string {
-            continue;
-        }
-        if ch == '{' {
-            depth += 1;
-        } else if ch == '}' {
-            depth -= 1;
-            if depth == 0 {
-                return Some(i);
-            }
-        }
-    }
-
-    None
 }
 
 // ============================================================================

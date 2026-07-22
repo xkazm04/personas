@@ -592,7 +592,8 @@
     "event_type_required": "Der zu überwachende Ereignistyp ist erforderlich.",
     "watch_path_required": "Mindestens ein Überwachungspfad ist erforderlich.",
     "composite_min_conditions": "Zusammengesetzte Trigger benötigen mindestens 2 Bedingungen.",
-    "composite_window_minimum": "Das Zeitfenster muss mindestens 5 Sekunden betragen."
+    "composite_window_minimum": "Das Zeitfenster muss mindestens 5 Sekunden betragen.",
+    "endpoint_required": "Endpoint-URL oder Ereignis ist erforderlich."
   },
   "dead_letter_select_all": "Auswählen all",
   "dead_letter_select_visible": "Auswählen visible",
@@ -797,5 +798,7 @@
     "watch": "Beobachten",
     "watching": "Beobachtet",
     "watching_only": "Nur beobachtete"
-  }
+  },
+  "overdue_label": "Überfällig",
+  "relay_delete_failed": "Relay konnte nicht gelöscht werden — bitte erneut versuchen"
 }

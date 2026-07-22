@@ -4,6 +4,8 @@ use crate::db::models::{
     CreateEventSubscriptionInput, CreatePersonaEventInput, CreateTriggerInput, EventFilterInput,
     PersonaEvent, PersonaEventStatus, PersonaEventSubscription, UpdateEventSubscriptionInput,
 };
+use crate::db::query_builder::QueryBuilder;
+use crate::db::repos::resources::triggers::encrypt_config;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::engine::crypto;
@@ -250,6 +252,35 @@ pub fn claim_pending(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, App
         )?;
         let rows = stmt.query_map(params![limit], row_to_event)?;
         Ok(collect_rows(rows, "claim_pending"))
+    })
+}
+
+/// Like [`claim_pending`], but claims only events the DAEMON owns: events
+/// whose target persona is headless, or events with no target persona (the
+/// daemon marks those Delivered immediately). Filtering in SQL prevents the
+/// former claim-then-release ping-pong — non-headless events kept their
+/// created_at when released back to pending, so the same 5 rows were
+/// re-claimed every 5s tick (~11 wasted statements + WAL churn per tick) —
+/// and the starvation where a full window of non-headless events blocked
+/// headless ones indefinitely while the windowed app was closed.
+pub fn claim_pending_headless(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, AppError> {
+    timed_query!("persona_events", "persona_events::claim_pending_headless", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "UPDATE persona_events
+             SET status = 'processing'
+             WHERE id IN (
+                 SELECT e.id FROM persona_events e
+                 LEFT JOIN personas p ON p.id = e.target_persona_id
+                 WHERE e.status = 'pending'
+                   AND (e.target_persona_id IS NULL OR p.headless = 1)
+                 ORDER BY e.created_at ASC, e.id ASC
+                 LIMIT ?1
+             )
+             RETURNING *",
+        )?;
+        let rows = stmt.query_map(params![limit], row_to_event)?;
+        Ok(collect_rows(rows, "claim_pending_headless"))
     })
 }
 
@@ -845,17 +876,10 @@ pub fn move_to_dead_letter(
 /// attempts — but we still need a ceiling to prevent infinite loops.
 pub const MAX_MANUAL_RETRIES: i32 = 5;
 
-pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppError> {
-    timed_query!("persona_events", "persona_events::retry_dead_letter", {
-        let conn = pool.get()?;
-
-        // Single atomic UPDATE: flip status to 'pending', bump retry_count, and
-        // preserve the prior error message — all guarded by the dead_letter +
-        // retry-cap predicate. This closes the TOCTOU race where two concurrent
-        // retry callers could both pass a SELECT-side cap check and then both
-        // increment retry_count past MAX_MANUAL_RETRIES.
-        let rows = conn.execute(
-            "UPDATE persona_events
+/// Shared by `retry_dead_letter` (single) and `bulk_retry_dead_letter` (looped
+/// per id inside one transaction) — the retry-cap CASE is the TOCTOU guard and
+/// must never drift between the two paths. `?1` = id, `?2` = MAX_MANUAL_RETRIES.
+const RETRY_DLQ_SQL: &str = "UPDATE persona_events
              SET status = 'pending',
                  retry_count = retry_count + 1,
                  error_message = CASE
@@ -866,9 +890,24 @@ pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppErr
                  processed_at = NULL
              WHERE id = ?1
                AND status = 'dead_letter'
-               AND retry_count < ?2",
-            params![id, MAX_MANUAL_RETRIES],
-        )?;
+               AND retry_count < ?2";
+
+/// Shared by `discard_dead_letter` (single) and `bulk_discard_dead_letter`
+/// (looped per id inside one transaction). `?1` = processed_at, `?2` = id.
+const DISCARD_DLQ_SQL: &str = "UPDATE persona_events
+             SET status = 'discarded', processed_at = ?1
+             WHERE id = ?2 AND status = 'dead_letter'";
+
+pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppError> {
+    timed_query!("persona_events", "persona_events::retry_dead_letter", {
+        let conn = pool.get()?;
+
+        // Single atomic UPDATE: flip status to 'pending', bump retry_count, and
+        // preserve the prior error message — all guarded by the dead_letter +
+        // retry-cap predicate. This closes the TOCTOU race where two concurrent
+        // retry callers could both pass a SELECT-side cap check and then both
+        // increment retry_count past MAX_MANUAL_RETRIES.
+        let rows = conn.execute(RETRY_DLQ_SQL, params![id, MAX_MANUAL_RETRIES])?;
 
         if rows == 0 {
             // Distinguish the three failure modes by reading current state.
@@ -909,12 +948,7 @@ pub fn discard_dead_letter(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("persona_events", "persona_events::discard_dead_letter", {
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
-        let rows = conn.execute(
-            "UPDATE persona_events
-             SET status = 'discarded', processed_at = ?1
-             WHERE id = ?2 AND status = 'dead_letter'",
-            params![now, id],
-        )?;
+        let rows = conn.execute(DISCARD_DLQ_SQL, params![now, id])?;
         if rows == 0 {
             return Err(AppError::NotFound(format!(
                 "Dead-lettered PersonaEvent {id}"
@@ -970,21 +1004,7 @@ pub fn bulk_retry_dead_letter(
         let mut failed: Vec<BulkDeadLetterFailure> = Vec::new();
 
         for id in ids {
-            let rows = tx.execute(
-                "UPDATE persona_events
-                 SET status = 'pending',
-                     retry_count = retry_count + 1,
-                     error_message = CASE
-                         WHEN error_message IS NOT NULL
-                         THEN '[Retry #' || (retry_count + 1) || ' — previous error: ' || error_message || ']'
-                         ELSE NULL
-                     END,
-                     processed_at = NULL
-                 WHERE id = ?1
-                   AND status = 'dead_letter'
-                   AND retry_count < ?2",
-                params![id, MAX_MANUAL_RETRIES],
-            )?;
+            let rows = tx.execute(RETRY_DLQ_SQL, params![id, MAX_MANUAL_RETRIES])?;
 
             if rows == 1 {
                 succeeded.push(id.clone());
@@ -1041,12 +1061,7 @@ pub fn bulk_discard_dead_letter(
             let mut failed: Vec<BulkDeadLetterFailure> = Vec::new();
 
             for id in ids {
-                let rows = tx.execute(
-                    "UPDATE persona_events
-                     SET status = 'discarded', processed_at = ?1
-                     WHERE id = ?2 AND status = 'dead_letter'",
-                    params![now, id],
-                )?;
+                let rows = tx.execute(DISCARD_DLQ_SQL, params![now, id])?;
 
                 if rows == 1 {
                     succeeded.push(id.clone());
@@ -1180,7 +1195,10 @@ pub fn search(
         if let Some(ref v) = filter.search {
             if !v.is_empty() {
                 let pattern = format!("%{v}%");
-                qb.where_like_any(&["event_type", "source_type", "payload"], pattern);
+                // `payload` is stored encrypted at rest (see `encrypt_optional_payload`);
+                // a LIKE against it matches ciphertext and silently returns zero hits.
+                // Only search the plaintext columns here.
+                qb.where_like_any(&["event_type", "source_type"], pattern);
             }
         }
 
@@ -1262,21 +1280,12 @@ pub fn get_subscriptions_by_persona_ids(
         "event_subscriptions::get_subscriptions_by_persona_ids",
         {
             let conn = pool.get()?;
-            let placeholders: Vec<String> = persona_ids
-                .iter()
-                .enumerate()
-                .map(|(i, _)| format!("?{}", i + 1))
-                .collect();
-            let sql = format!(
-            "SELECT * FROM persona_event_subscriptions WHERE persona_id IN ({}) ORDER BY created_at DESC",
-            placeholders.join(", ")
-        );
-            let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
-                .iter()
-                .map(|s| s as &dyn rusqlite::types::ToSql)
-                .collect();
+            let mut qb = QueryBuilder::new();
+            qb.where_in("persona_id", persona_ids.to_vec());
+            qb.order_by("created_at", "DESC");
+            let sql = qb.build_select("SELECT * FROM persona_event_subscriptions");
             let mut stmt = conn.prepare(&sql)?;
-            let rows = stmt.query_map(params_ref.as_slice(), row_to_subscription)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_subscription)?;
             Ok(collect_rows(rows, "get_subscriptions_by_persona_ids"))
         }
     )
@@ -1356,23 +1365,13 @@ pub fn get_subscriptions_by_event_types(
         "event_subscriptions::get_subscriptions_by_event_types",
         {
             let conn = pool.get()?;
-            let placeholders: Vec<String> = event_types
-                .iter()
-                .enumerate()
-                .map(|(i, _)| format!("?{}", i + 1))
-                .collect();
-            let sql = format!(
-                "SELECT * FROM persona_event_subscriptions
-             WHERE event_type IN ({}) AND enabled = 1
-             ORDER BY created_at DESC",
-                placeholders.join(", ")
-            );
-            let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
-                .iter()
-                .map(|s| s as &dyn rusqlite::types::ToSql)
-                .collect();
+            let mut qb = QueryBuilder::new();
+            qb.where_in("event_type", event_types.to_vec());
+            qb.where_raw(|_| "enabled = 1".to_string(), vec![]);
+            qb.order_by("created_at", "DESC");
+            let sql = qb.build_select("SELECT * FROM persona_event_subscriptions");
             let mut stmt = conn.prepare(&sql)?;
-            let rows = stmt.query_map(params_ref.as_slice(), row_to_subscription)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_subscription)?;
             Ok(collect_rows(rows, "get_subscriptions_by_event_types"))
         }
     )
@@ -1450,12 +1449,15 @@ pub fn create_subscription_with_trigger(
             } else {
                 "disabled"
             };
-            let encrypted_config = trigger_input.config.as_deref().map(|c| {
-                crypto::encrypt_trigger_config(c).unwrap_or_else(|e| {
-                    tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
-                    c.to_string()
-                })
-            });
+            // Secrets must never be stored in plaintext -- propagate encryption
+            // failures instead of silently falling back to the raw config
+            // (matches the contract `triggers::encrypt_config` enforces on the
+            // primary trigger path; see refactor-bughunt-2026-07-10 repos#2).
+            let encrypted_config = trigger_input
+                .config
+                .as_deref()
+                .map(encrypt_config)
+                .transpose()?;
             tx.execute(
             "INSERT INTO persona_triggers
              (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
@@ -1532,10 +1534,33 @@ pub fn update_subscription(
             // 1) Update the subscription row
             let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
             let mut param_idx = 2u32;
+            let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> =
+                vec![Box::new(now.clone())];
 
-            push_field!(input.event_type, "event_type", sets, param_idx);
-            push_field!(input.source_filter, "source_filter", sets, param_idx);
-            push_field!(input.enabled, "enabled", sets, param_idx);
+            push_field_param!(
+                input.event_type,
+                "event_type",
+                sets,
+                param_idx,
+                param_values,
+                clone
+            );
+            push_field_param!(
+                input.source_filter,
+                "source_filter",
+                sets,
+                param_idx,
+                param_values,
+                clone
+            );
+            push_field_param!(
+                input.enabled,
+                "enabled",
+                sets,
+                param_idx,
+                param_values,
+                bool
+            );
 
             let sql = format!(
                 "UPDATE persona_event_subscriptions SET {} WHERE id = ?{}",
@@ -1543,18 +1568,6 @@ pub fn update_subscription(
                 param_idx
             );
 
-            let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> =
-                vec![Box::new(now.clone())];
-
-            if let Some(ref v) = input.event_type {
-                param_values.push(Box::new(v.clone()));
-            }
-            if let Some(ref v) = input.source_filter {
-                param_values.push(Box::new(v.clone()));
-            }
-            if let Some(v) = input.enabled {
-                param_values.push(Box::new(v as i32));
-            }
             param_values.push(Box::new(id.to_string()));
 
             let params_ref: Vec<&dyn rusqlite::types::ToSql> =
@@ -1572,12 +1585,12 @@ pub fn update_subscription(
                 "listen_event_type": new_event_type,
                 "source_filter": new_source_filter,
             });
+            // Secrets must never be stored in plaintext -- propagate encryption
+            // failures instead of silently falling back to the raw config
+            // (see refactor-bughunt-2026-07-10 repos#2).
             let encrypted_config = {
                 let raw = serde_json::to_string(&config).unwrap_or_default();
-                crypto::encrypt_trigger_config(&raw).unwrap_or_else(|e| {
-                    tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
-                    raw
-                })
+                encrypt_config(&raw)?
             };
 
             if let Some(enabled) = input.enabled {

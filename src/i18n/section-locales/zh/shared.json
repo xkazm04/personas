@@ -195,7 +195,11 @@
     "s_elapsed": "s 已耗时",
     "s_remaining": "s 剩余",
     "show_cli_output": "显示 CLI 输出",
-    "hide_cli_output": "隐藏 CLI 输出"
+    "hide_cli_output": "隐藏 CLI 输出",
+    "starting_transformation": "正在开始转换...",
+    "step_progress": "第 {step} 步，共 {total} 步",
+    "starting_short": "正在开始...",
+    "check_output_details": "请查看下方输出以了解详情。"
   },
   "terminal_extra": {
     "press_enter": "按 Enter 或点击播放以开始",

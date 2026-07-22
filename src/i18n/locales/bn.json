@@ -261,7 +261,12 @@
     "stream_no_speakers": "কোনো বক্তা নেই",
     "stream_none": "কিছু না",
     "stream_search": "সম্প্রচার অনুসন্ধান করুন",
-    "stream_title": "স্ট্রিম"
+    "stream_title": "স্ট্রিম",
+    "columns_action_empty": "এখন আপনার কিছু করার নেই",
+    "columns_needs_attention": "মনোযোগ প্রয়োজন",
+    "columns_active_goals": "সক্রিয় লক্ষ্য",
+    "columns_no_team": "কোনো দল নেই",
+    "columns_all_clear": "সব ঠিক আছে"
   },
   "common": {
     "loading": "লোড হচ্ছে...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "{count}টি ধাপ",
       "active_chains_one": "{count}টি চেইন চলমান",
       "active_chains_other": "{count}টি চেইন চলমান",
-      "active_chains_title": "চলমান চেইন"
+      "active_chains_title": "চলমান চেইন",
+      "copy_log_failed": "লগ ক্লিপবোর্ডে কপি করা যায়নি"
     },
     "lab": {
       "mode_arena": "আরেনা",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "নির্ভরতা গ্রাফ",
       "ct_swap_alt_tooltip": "বিকল্প কানেক্টরে পরিবর্তন করুন",
       "ct_deps": "{count}টি নির্ভরতা",
-      "dg_no_deps": "প্রদর্শনের জন্য কোনো নির্ভরতা নেই।",
-      "dg_broken": "{count}টি ভাঙা",
-      "dg_blast_radius": "ব্লাস্ট রেডিয়াস",
-      "dg_dependencies": "নির্ভরতাসমূহ",
-      "dg_select_cred": "মেয়াদ শেষ হলে কী ভাঙবে দেখতে একটি ক্রেডেনশিয়াল নির্বাচন করুন",
-      "dg_relationships": "সম্পর্কসমূহ ({count})",
-      "dg_more": "+{count} আরো",
-      "dg_affected_tools": "প্রভাবিত টুলসমূহ",
-      "dg_affected_auto": "প্রভাবিত অটোমেশনসমূহ",
-      "dg_low_risk": "কম ঝুঁকি",
-      "dg_medium_risk": "মাঝারি ঝুঁকি",
-      "dg_high_risk": "উচ্চ ঝুঁকি",
-      "dg_high_blast": "এই ক্রেডেনশিয়ালের মেয়াদ শেষ বা অফলাইন হলে {count}টি সক্ষমতা ভাঙবে।",
-      "dg_medium_blast": "{count}টি সক্ষমতা এই ক্রেডেনশিয়ালের উপর নির্ভরশীল।",
-      "dg_low_blast": "কোনো টুল বা অটোমেশন এই ক্রেডেনশিয়ালের উপর নির্ভরশীল নয়।",
       "dm_needed": "{count}টি ক্রেডেনশিয়াল প্রয়োজন",
       "dm_fulfilled": "{fulfilled}/{total}টি কানেক্টর পূরণ হয়েছে",
       "dm_reuse_hint": "{count}টি বিদ্যমান ক্রেডেনশিয়াল পুনরায় ব্যবহার করতে পারে",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "ট্রিগার ও সাবস্ক্রিপশনসমূহ",
       "sub_suggested": "{count}টি প্রস্তাবিত",
       "sub_filter": "ফিল্টার: {filter}",
-      "lifecycle_error_load_triggers": "ট্রিগার লোড করতে ব্যর্থ: {error}",
-      "lifecycle_error_load_subscriptions": "সাবস্ক্রিপশন লোড করতে ব্যর্থ: {error}",
-      "lifecycle_error_activate_trigger": "ট্রিগার সক্রিয় করতে ব্যর্থ",
-      "lifecycle_error_activate_subscription": "সাবস্ক্রিপশন সক্রিয় করতে ব্যর্থ",
-      "lifecycle_error_retire_trigger": "ট্রিগার মুছতে ব্যর্থ",
-      "lifecycle_error_retire_subscription": "সাবস্ক্রিপশন মুছতে ব্যর্থ",
-      "lifecycle_error_delete_persists": "মুছে ফেলা ব্যর্থ হয়েছে। সাবস্ক্রিপশনটি এখনও থাকতে পারে।",
       "auto_error_deploy_check_credentials": "ডিপ্লয়মেন্ট ব্যর্থ হয়েছে। আপনার প্ল্যাটফর্ম ক্রেডেনশিয়াল পরীক্ষা করে আবার চেষ্টা করুন।",
       "auto_error_deploy_generic": "অটোমেশন ডিপ্লয়মেন্ট ব্যর্থ হয়েছে",
       "test_healthcheck_failed_default": "সংযোগ পরীক্ষা ব্যর্থ হয়েছে",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "এখনও কোনো অ্যানোটেশন নেই — পরে সহজে খুঁজে পেতে এই রানে ট্যাগ বা নোট যোগ করুন, অথবা তারকাচিহ্নিত করুন।",
       "col_verdict": "রায়",
       "verdict_none": "Director এখনও পর্যালোচনা করেননি",
-      "verdict_tooltip": "Director-এর রায়: {score}/5"
+      "verdict_tooltip": "Director-এর রায়: {score}/5",
+      "annotation_saving": "সংরক্ষণ করা হচ্ছে…"
     },
     "settings_status": {
       "saving": "{sections} সংরক্ষণ হচ্ছে...",
@@ -3612,7 +3597,23 @@
         "other": "অন্যান্য"
       },
       "title": "পরিবর্তনের ইতিহাস"
-    }
+    },
+    "sigil_edit_channels_label": "চ্যানেল",
+    "sigil_edit_custom_connector": "কাস্টম কানেক্টর — কোনো ব্র্যান্ড আইকন মেলেনি।",
+    "sigil_edit_error_off": "ডিফল্ট এরর পলিসিতে ফিরে যায়।",
+    "sigil_edit_error_on": "কাস্টম এরর-হ্যান্ডলিং পলিসি কনফিগার করা আছে।",
+    "sigil_edit_event_off": "কোনো ইভেন্ট সাবস্ক্রিপশন কনফিগার করা নেই।",
+    "sigil_edit_event_on": "এই ক্যাপাবিলিটি ইভেন্টে সাবস্ক্রাইব করে।",
+    "sigil_edit_memory_off": "মেমরি বন্ধ আছে — এই ক্যাপাবিলিটি স্টেটলেসভাবে চলে।",
+    "sigil_edit_memory_on": "এই ক্যাপাবিলিটির জন্য পার্সিস্টেন্ট মেমরি চালু আছে।",
+    "sigil_edit_no_channels": "এই ক্যাপাবিলিটির জন্য কোনো নোটিফিকেশন চ্যানেল নেই।",
+    "sigil_edit_no_connector": "এই ক্যাপাবিলিটি কোনো কানেক্টর ঘোষণা করে না।",
+    "sigil_edit_no_dim_editor": "এই ডাইমের জন্য এখনো কোনো এডিটর যুক্ত করা হয়নি।",
+    "sigil_edit_no_trigger": "এই ক্যাপাবিলিটিতে কোনো ট্রিগার কনফিগার করা নেই।",
+    "sigil_edit_review_off": "কোনো হিউম্যান রিভিউ গেট নেই — অ্যাকশনগুলো স্বতন্ত্রভাবে সম্পন্ন হয়।",
+    "sigil_edit_review_on": "এই ক্যাপাবিলিটি কাজ করার আগে হিউম্যান রিভিউ আবশ্যক।",
+    "sigil_edit_service_label": "সার্ভিস: {key}",
+    "sigil_edit_when_label": "কখন"
   },
   "vault": {
     "workspace_connect": "ওয়ার্কস্পেস কানেক্ট",
@@ -3911,7 +3912,8 @@
       "query_parameters": "কোয়েরি প্যারামিটার",
       "recipes_title": "সংরক্ষিত রেসিপি",
       "truncated_warning": "প্রদর্শনের জন্য প্রতিক্রিয়া সংক্ষিপ্ত করা হয়েছে",
-      "value_col": "মান"
+      "value_col": "মান",
+      "request_headers": "হেডার"
     },
     "ingest": {
       "save_name": "নাম সংরক্ষণ করুন",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "কী-ভ্যালু",
       "capability_key_value_hint": "এটি একটি কী-ভ্যালু স্টোর। SCAN, GET এবং TYPE-এর মতো কী কমান্ড ব্যবহার করুন — SQL নয়।",
       "capability_select_subset": "শুধু SELECT",
-      "capability_select_subset_hint": "এখানে শুধু একক-টেবিলের সরল SELECT কোয়েরি চলে — WHERE দিয়ে ফিল্টার, ORDER BY দিয়ে সাজানো, LIMIT দিয়ে সীমা নির্ধারণ। JOIN, অ্যাগ্রিগেট, CTE এবং রাইট সমর্থিত নয়।"
+      "capability_select_subset_hint": "এখানে শুধু একক-টেবিলের সরল SELECT কোয়েরি চলে — WHERE দিয়ে ফিল্টার, ORDER BY দিয়ে সাজানো, LIMIT দিয়ে সীমা নির্ধারণ। JOIN, অ্যাগ্রিগেট, CTE এবং রাইট সমর্থিত নয়।",
+      "query_timeout": "প্রতিক্রিয়ার জন্য অপেক্ষার সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।"
     },
     "dependencies": {
       "simulate_revocation": "বাতিলকরণ সিমুলেট করুন",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "কী স্ক্যান করা হবে",
       "read_error_item": "{source} পড়া যায়নি",
       "read_errors_title": "কিছু উৎস পড়া যায়নি",
-      "select_high_confidence": "উচ্চ-নির্ভরযোগ্যতা"
+      "select_high_confidence": "উচ্চ-নির্ভরযোগ্যতা",
+      "source_unknown": "অজানা উৎস"
     },
     "desktop_discovery": {
       "title": "ডেস্কটপ অ্যাপ",
@@ -5875,7 +5879,9 @@
       "col_days": "দিন",
       "col_incident": "ঘটনা",
       "guidance_mcp_sidecar": "এজেন্টটি তার বিল্ট-ইন MCP টুল ছাড়াই চলেছে কারণ personas-mcp বাইনারিটি অনুপস্থিত ছিল। অ্যাপটি যাতে এটির সাথেই আসে তা নিশ্চিত করতে অ্যাপটি পুনরায় ইনস্টল বা মেরামত করুন।",
-      "source_mcp_sidecar": "MCP টুলবেল্ট"
+      "source_mcp_sidecar": "MCP টুলবেল্ট",
+      "action_refused": "অ্যাকশনটি প্রয়োগ হয়নি — ঘটনার অবস্থা ইতিমধ্যে পরিবর্তিত হয়ে থাকতে পারে।",
+      "list_truncated": "প্রথম {limit}টি ঘটনা দেখানো হচ্ছে — বাকিগুলো দেখতে ফিল্টার সংকুচিত করুন।"
     },
     "observability": {
       "title": "অবজার্ভেবিলিটি",
@@ -9545,7 +9551,8 @@
       "event_type_required": "শোনার জন্য ইভেন্ট টাইপ আবশ্যক।",
       "watch_path_required": "অন্তত একটি ওয়াচ পাথ আবশ্যক।",
       "composite_min_conditions": "সম্মিলিত ট্রিগারে অন্তত ২টি শর্ত প্রয়োজন।",
-      "composite_window_minimum": "সময় উইন্ডো অন্তত ৫ সেকেন্ড হতে হবে।"
+      "composite_window_minimum": "সময় উইন্ডো অন্তত ৫ সেকেন্ড হতে হবে।",
+      "endpoint_required": "এন্ডপয়েন্ট URL বা ইভেন্ট প্রয়োজন।"
     },
     "dead_letter_select_all": "নির্বাচন করুন all",
     "dead_letter_select_visible": "নির্বাচন করুন visible",
@@ -9750,7 +9757,9 @@
       "watch": "ওয়াচ",
       "watching": "ওয়াচ করা হচ্ছে",
       "watching_only": "শুধু ওয়াচ করা"
-    }
+    },
+    "overdue_label": "বকেয়া",
+    "relay_delete_failed": "রিলে মুছতে ব্যর্থ হয়েছে — অনুগ্রহ করে আবার চেষ্টা করুন"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "সক্রিয়",
       "paused": "বিরতিতে",
       "failed": "ব্যর্থ",
-      "file-based": "ফাইল-ভিত্তিক",
-      "unknown": "অজানা"
+      "unknown": "অজানা",
+      "file-based": "ফাইল-ভিত্তিক"
     },
     "delivery": {
       "delivered": "বিতরণ হয়েছে",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "s অতিবাহিত",
       "s_remaining": "s বাকি",
       "show_cli_output": "CLI আউটপুট দেখান",
-      "hide_cli_output": "CLI আউটপুট লুকান"
+      "hide_cli_output": "CLI আউটপুট লুকান",
+      "starting_transformation": "ট্রান্সফরমেশন শুরু হচ্ছে…",
+      "step_progress": "ধাপ {step}, মোট {total}",
+      "starting_short": "শুরু হচ্ছে…",
+      "check_output_details": "বিস্তারিত জানতে নিচের আউটপুট দেখুন।"
     },
     "terminal_extra": {
       "press_enter": "শুরু করতে Enter চাপুন বা Play-এ ক্লিক করুন।",

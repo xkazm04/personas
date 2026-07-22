@@ -143,7 +143,9 @@
     "col_days": "Jours",
     "col_incident": "Incident",
     "guidance_mcp_sidecar": "L'agent s'est exécuté sans ses outils MCP intégrés car le binaire personas-mcp était manquant. Réinstallez ou réparez l'application pour qu'il soit livré avec elle.",
-    "source_mcp_sidecar": "Boîte à outils MCP"
+    "source_mcp_sidecar": "Boîte à outils MCP",
+    "action_refused": "Action non appliquée : le statut de l'incident a peut-être déjà changé.",
+    "list_truncated": "Affichage des {limit} premiers incidents — affinez les filtres pour voir le reste."
   },
   "observability": {
     "title": "Observabilité",

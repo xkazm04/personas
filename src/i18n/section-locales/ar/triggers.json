@@ -592,7 +592,8 @@
     "event_type_required": "يجب تحديد نوع الحدث المطلوب الاستماع إليه.",
     "watch_path_required": "يجب تحديد مسار مراقبة واحد على الأقل.",
     "composite_min_conditions": "تحتاج المُشغِّلات المركّبة إلى شرطين على الأقل.",
-    "composite_window_minimum": "يجب أن تكون النافذة الزمنية 5 ثوانٍ على الأقل."
+    "composite_window_minimum": "يجب أن تكون النافذة الزمنية 5 ثوانٍ على الأقل.",
+    "endpoint_required": "رابط نقطة النهاية أو الحدث مطلوب."
   },
   "dead_letter_select_all": "تحديد all",
   "dead_letter_select_visible": "تحديد visible",
@@ -797,5 +798,7 @@
     "watch": "مراقبة",
     "watching": "قيد المراقبة",
     "watching_only": "المراقَبة فقط"
-  }
+  },
+  "overdue_label": "متأخر",
+  "relay_delete_failed": "فشل حذف الترحيل — يرجى المحاولة مرة أخرى"
 }

@@ -41,6 +41,7 @@ export function prettyTriggerType(t: Translations, type: string): string {
     case 'webhook': return c.trigger_webhook;
     case 'manual': return c.trigger_manual;
     case 'polling': return c.trigger_polling;
+    case 'event':
     case 'event_listener': return c.trigger_event;
     case 'file_watcher': return c.trigger_file_watch;
     case 'app_focus': return c.trigger_app_focus;

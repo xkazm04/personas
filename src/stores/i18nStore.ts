@@ -41,12 +41,23 @@ function loadFontForLanguage(lang: Language) {
   link.media = 'print';
   link.onload = () => {
     link.media = 'all';
-    useI18nStore.setState({ fontReady: true });
+    // Only flip fontReady if this font's language is still the active one —
+    // a fast switch (e.g. zh -> ja) means an earlier language's onload must
+    // not mark the CURRENT language's font ready (flash of unstyled text).
+    if (useI18nStore.getState().language === lang) {
+      useI18nStore.setState({ fontReady: true });
+    }
   };
   link.onerror = () => {
-    // Still mark ready so UI doesn't hang waiting for a failed font
-    link.media = 'all';
-    useI18nStore.setState({ fontReady: true });
+    // Drop from loadedFonts so a later switch back to this language retries
+    // the load instead of being permanently marked as "loaded" (and thus
+    // never re-attempted) after a transient failure.
+    loadedFonts.delete(lang);
+    // Still mark ready (if this language is still active) so the UI doesn't
+    // hang waiting for a failed font.
+    if (useI18nStore.getState().language === lang) {
+      useI18nStore.setState({ fontReady: true });
+    }
   };
   document.head.appendChild(link);
 }

@@ -520,6 +520,13 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
         twinPendingMemories: state.twinPendingMemories.map((m) =>
           m.id === id ? reviewed : m,
         ),
+        // Keep the readiness corpus (deliberately isolated from
+        // twinPendingMemories — see fetchTwinReadinessApproved above) in sync
+        // with a fresh approval so the readiness score/milestone reflects it
+        // immediately instead of waiting on an unrelated refetch.
+        twinReadinessApproved: approved
+          ? [...state.twinReadinessApproved.filter((m) => m.id !== id), reviewed]
+          : state.twinReadinessApproved.filter((m) => m.id !== id),
         error: null,
       }));
     } catch (err) {

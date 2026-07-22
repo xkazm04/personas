@@ -11,6 +11,7 @@ import {
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
@@ -202,7 +203,7 @@ export default function ProjectOverviewPage() {
   const issueTone = !repoStats || repoStats.openIssues === 0 ? 'neutral' : repoStats.openIssues > 50 ? 'error' : 'warning';
   const prTone = !repoStats || repoStats.openPullRequests === 0 ? 'neutral' : 'info';
   const commitsTone = !repoStats || repoStats.commitsLastWeek === 0 ? 'warning' : 'success';
-  const unresolvedTone = !monitorStats || monitorStats.unresolvedIssues === 0 ? 'success' : monitorStats.unresolvedIssues > 5 ? 'error' : 'warning';
+  const unresolvedTone = !monitorStats || monitorStats.unresolvedIssues === null ? 'neutral' : monitorStats.unresolvedIssues === 0 ? 'success' : monitorStats.unresolvedIssues > 5 ? 'error' : 'warning';
   const events24Tone = !monitorStats || monitorStats.eventsLast24h === 0 ? 'success' : monitorStats.eventsLast24h > 100 ? 'error' : 'warning';
   const events7Tone = !monitorStats || monitorStats.eventsLastWeek === 0 ? 'success' : 'info';
 
@@ -305,9 +306,9 @@ export default function ProjectOverviewPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {(() => {
               const tilesById: Record<TileId, { icon: typeof CircleDot; value: string | number; label: string; tone: Tone; loading: boolean }> = {
-                open_issues: { icon: CircleDot, value: repoStats?.openIssues ?? '—', label: po.open_issues, tone: issueTone, loading: repoState === 'loading' },
-                open_prs:    { icon: GitPullRequest, value: repoStats?.openPullRequests ?? '—', label: isGitLab ? po.open_mrs : po.open_prs, tone: prTone, loading: repoState === 'loading' },
-                commits:     { icon: GitCommitHorizontal, value: repoStats?.commitsLastWeek ?? '—', label: po.commits_this_week, tone: commitsTone, loading: repoState === 'loading' },
+                open_issues: { icon: CircleDot, value: repoStats ? `${repoStats.openIssues}${repoStats.openIssuesCapped ? '+' : ''}` : '—', label: po.open_issues, tone: issueTone, loading: repoState === 'loading' },
+                open_prs:    { icon: GitPullRequest, value: repoStats ? `${repoStats.openPullRequests}${repoStats.openPullRequestsCapped ? '+' : ''}` : '—', label: isGitLab ? po.open_mrs : po.open_prs, tone: prTone, loading: repoState === 'loading' },
+                commits:     { icon: GitCommitHorizontal, value: repoStats ? `${repoStats.commitsLastWeek}${repoStats.commitsLastWeekCapped ? '+' : ''}` : '—', label: po.commits_this_week, tone: commitsTone, loading: repoState === 'loading' },
                 unresolved:  { icon: Bug, value: monitorStats?.unresolvedIssues ?? '—', label: po.unresolved_issues, tone: unresolvedTone, loading: monitorState === 'loading' },
                 events_24h:  { icon: Activity, value: monitorStats?.eventsLast24h ?? '—', label: po.events_24h, tone: events24Tone, loading: monitorState === 'loading' },
                 events_7d:   { icon: BarChart3, value: monitorStats?.eventsLastWeek ?? '—', label: po.events_7d, tone: events7Tone, loading: monitorState === 'loading' },
@@ -369,7 +370,7 @@ export default function ProjectOverviewPage() {
                   <>
                     <MetaPill icon={GitBranch} text={repoStats.defaultBranch} />
                     {repoStats.lastPushAt && (
-                      <MetaPill text={`pushed ${relativeTime(repoStats.lastPushAt)}`} />
+                      <MetaPill text={`pushed ${formatRelativeTime(repoStats.lastPushAt)}`} />
                     )}
                     {activeRepoCredId && credentials.find((c) => c.id === activeRepoCredId) && (
                       <MetaPill icon={Key} text={credentials.find((c) => c.id === activeRepoCredId)!.name} dim />
@@ -436,7 +437,7 @@ export default function ProjectOverviewPage() {
               meta={
                 monitorLinked ? (
                   <>
-                    <MetaPill icon={Bug} text={`${monitorStats!.unresolvedIssues} unresolved`} tone={unresolvedTone} />
+                    <MetaPill icon={Bug} text={`${monitorStats!.unresolvedIssues ?? '—'} unresolved`} tone={unresolvedTone} />
                     <MetaPill text={splitSentrySlug(activeProject.monitoring_project_slug)[1] ?? '-'} dim />
                     {monitoringCred && <MetaPill icon={Key} text={monitoringCred.name} dim />}
                   </>
@@ -675,19 +676,6 @@ function MetaPill({
   );
 }
 
-function relativeTime(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  const m = Math.round(ms / 60_000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.round(h / 24);
-  if (d < 7) return `${d}d ago`;
-  const w = Math.round(d / 7);
-  return `${w}w ago`;
-}
-
 // ---------------------------------------------------------------------------
 // ActivityRow — one entry in the "Today" cross-tab feed
 // ---------------------------------------------------------------------------
@@ -708,7 +696,7 @@ function ActivityRow({ event, onJump }: { event: ActivityEvent; onJump: (e: Acti
     <div className="flex items-center gap-2.5 px-4 py-2">
       <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.tint}`} />
       <span className="text-md text-foreground truncate flex-1">{event.label}</span>
-      <span className="typo-caption text-foreground tabular-nums shrink-0">{relativeTime(event.timestamp)}</span>
+      <span className="typo-caption text-foreground tabular-nums shrink-0">{formatRelativeTime(event.timestamp)}</span>
     </div>
   );
   return (

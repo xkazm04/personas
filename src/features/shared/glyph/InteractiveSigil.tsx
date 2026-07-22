@@ -4,6 +4,7 @@ import { GLYPH_DIMENSIONS } from './types';
 import type { GlyphRow, GlyphDimension } from './types';
 import { DIM_META, PETAL_ANGLES } from './dimMeta';
 import { SigilPetal } from './SigilPetal';
+import { useGlyphDimText } from './persona-sigil';
 
 interface InteractiveSigilProps {
   row: GlyphRow;
@@ -106,6 +107,7 @@ export function InteractiveSigil({
 }: InteractiveSigilProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
+  const dimText = useGlyphDimText();
   const linkedCount = useMemo(
     () => Object.values(row.presence).filter((p) => p === 'linked').length,
     [row.presence],
@@ -242,7 +244,7 @@ export function InteractiveSigil({
 
         {GLYPH_DIMENSIONS.map((dim, i) => {
           const presence = row.presence[dim];
-          const dimLabel = c[DIM_META[dim].labelKey];
+          const dimLabel = dimText.label[dim];
           const stateLabel =
             presence === 'linked'
               ? c.presence_linked
@@ -303,7 +305,7 @@ export function InteractiveSigil({
         const iconBox = presence === 'linked' ? iconBoxLinked : iconBoxOther;
         const x = presence === 'linked' ? xLinked : presence === 'shared' ? xShared : xEmpty;
         const y = presence === 'linked' ? yLinked : presence === 'shared' ? yShared : yEmpty;
-        const label = c[meta.labelKey];
+        const label = dimText.label[dim];
 
         return (
           <div

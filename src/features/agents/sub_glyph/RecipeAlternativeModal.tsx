@@ -18,30 +18,21 @@ import { LoadingSpinner } from "@/features/shared/components/feedback/LoadingSpi
 import { getConnectorMeta, ConnectorIcon } from "@/lib/connectors/connectorMeta";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
+import { parseRecipeNameList } from "./commandPanel/commandPanelHelpers";
 
 const ACCENT = "#60A5FA";
 
-/** Best-effort extraction of connector service-type strings from a recipe's
- *  JSON requirement blobs (shape varies: array of strings, or of objects with
- *  service_type/name/connector). Never throws — returns a de-duped name list. */
-function parseConnectorNames(raw: string | null): string[] {
-  if (!raw) return [];
-  try {
-    const v = JSON.parse(raw);
-    const arr = Array.isArray(v) ? v : Array.isArray(v?.connectors) ? v.connectors : [];
-    const out: string[] = [];
-    const seen = new Set<string>();
-    for (const item of arr) {
-      const name = typeof item === "string" ? item : (item?.service_type || item?.connector || item?.name || "");
-      const key = String(name).toLowerCase();
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      out.push(String(name));
-    }
-    return out;
-  } catch {
-    return [];
+/** Case-insensitive de-dupe, preserving first-seen casing/order. */
+function dedupeNames(names: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const name of names) {
+    const key = name.toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
   }
+  return out;
 }
 
 function parseTags(raw: string | null): string[] {
@@ -105,7 +96,10 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
   }, [recipeId]);
 
   const connectors = recipe
-    ? Array.from(new Set([...parseConnectorNames(recipe.credential_requirements), ...parseConnectorNames(recipe.tool_requirements)]))
+    ? dedupeNames([
+        ...parseRecipeNameList(recipe.credential_requirements),
+        ...parseRecipeNameList(recipe.tool_requirements),
+      ])
     : [];
   const tags = recipe ? parseTags(recipe.tags) : [];
   const dimensions = recipe ? parseDimensions(recipe.input_schema) : [];

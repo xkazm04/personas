@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Bot, RotateCcw } from 'lucide-react';
 import { toastCatch } from '@/lib/silentCatch';
 import { webbuildListProjects, webbuildListRoutes } from '@/api/webbuild';
@@ -49,12 +50,39 @@ export default function StudioPage() {
   const initStream = useStudioStore((s) => s.initStream);
   const createWithVision = useStudioStore((s) => s.createWithVision);
   const activeId = useStudioStore((s) => s.activeId);
-  const runtimes = useStudioStore((s) => s.runtimes);
-  const tabOrder = useStudioStore((s) => s.tabOrder);
+  const tabCount = useStudioStore((s) => s.tabOrder.length);
   const lastCreateError = useStudioStore((s) => s.lastCreateError);
-
-  const active = activeId ? runtimes[activeId] : undefined;
-  const tabCount = tabOrder.length;
+  // Narrow subscriptions (perf) — StudioPage never reads `stream`, but the CLI
+  // emits many stream deltas per second during a build turn, each replacing the
+  // runtime object. Subscribing to the whole `runtimes` map re-rendered this
+  // entire tree (tab strip, warm iframes, toolbar, dock) per delta, so select
+  // only the shallow-comparable fields the page actually renders.
+  const active = useStudioStore(
+    useShallow((s) => {
+      const rt = s.activeId ? s.runtimes[s.activeId] : undefined;
+      if (!rt) return undefined;
+      return {
+        name: rt.name,
+        phase: rt.phase,
+        healthy: !!rt.status?.healthy,
+        question: rt.question,
+        decisionArea: rt.decisionArea,
+        decisionSelector: rt.decisionSelector,
+      };
+    }),
+  );
+  // Warm previews: id → dev-server URL for every live+healthy tab, in tab order.
+  // String values keep the useShallow compare stable across stream deltas.
+  const previewUrls = useStudioStore(
+    useShallow((s) => {
+      const out: Record<string, string> = {};
+      for (const id of s.tabOrder) {
+        const rt = s.runtimes[id];
+        if (rt && rt.phase === 'live' && rt.status?.healthy) out[id] = rt.status.url;
+      }
+      return out;
+    }),
+  );
   const activeNonce = activeId ? (iframeNonces[activeId] ?? 0) : 0;
 
   const refreshProjects = useCallback(async () => {
@@ -163,11 +191,8 @@ export default function StudioPage() {
   );
 
   const showVision = creating || tabCount === 0;
-  const live = !!active && active.phase === 'live' && !!active.status?.healthy;
-  const liveTabs = tabOrder.filter((id) => {
-    const rt = runtimes[id];
-    return !!rt && rt.phase === 'live' && !!rt.status?.healthy;
-  });
+  const live = !!active && active.phase === 'live' && active.healthy;
+  const liveTabs = Object.keys(previewUrls);
   const navRoutes = ((activeId && routesByTab[activeId]) || []).filter((r) => !r.includes('['));
   const reloadActive = () =>
     activeId && setIframeNonces((m) => ({ ...m, [activeId]: (m[activeId] ?? 0) + 1 }));
@@ -198,8 +223,6 @@ export default function StudioPage() {
           <>
             {/* Warm previews — every live tab stays mounted; only active is shown. */}
             {liveTabs.map((id) => {
-              const rt = runtimes[id];
-              if (!rt || !rt.status) return null;
               const route = previewRoutes[id] ?? '/';
               const nonce = iframeNonces[id] ?? 0;
               const isActive = id === activeId;
@@ -207,7 +230,7 @@ export default function StudioPage() {
                 <iframe
                   key={`${id}-${nonce}`}
                   data-tab={id}
-                  src={`${rt.status.url}${route === '/' ? '' : route}`}
+                  src={`${previewUrls[id]}${route === '/' ? '' : route}`}
                   title={isActive ? 'preview' : `preview-${id}`}
                   aria-hidden={!isActive}
                   className={`absolute inset-0 h-full w-full border-0 bg-white transition-opacity duration-200 ${
@@ -217,7 +240,7 @@ export default function StudioPage() {
               );
             })}
 
-            {live && activeId && active?.status ? (
+            {active && live && activeId ? (
               <>
                 {/* Unified preview toolbar — reload · routes · versions in one bar
                     instead of three overlays scattered around the preview edges. */}

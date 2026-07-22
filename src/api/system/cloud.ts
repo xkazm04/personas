@@ -11,8 +11,10 @@ import type { CloudExecutionStats } from "@/lib/bindings/CloudExecutionStats";
 import type { CloudTrigger } from "@/lib/bindings/CloudTrigger";
 import type { CloudTriggerFiring } from "@/lib/bindings/CloudTriggerFiring";
 import type { CloudDiagnostics } from "@/lib/bindings/CloudDiagnostics";
+import type { SmeeRelay } from "@/lib/bindings/SmeeRelay";
 
 export type { CloudConfig } from "@/lib/bindings/CloudConfig";
+export type { SmeeRelay } from "@/lib/bindings/SmeeRelay";
 export type { CloudWorkerCounts } from "@/lib/bindings/CloudWorkerCounts";
 export type { CloudStatusResponse } from "@/lib/bindings/CloudStatusResponse";
 export type { CloudOAuthAuthorizeResponse } from "@/lib/bindings/CloudOAuthAuthorizeResponse";
@@ -167,37 +169,8 @@ export const cloudListTriggerFirings = (triggerId: string, limit?: number) =>
   });
 
 // ============================================================================
-// Cloud Webhook Relay
-// ============================================================================
-
-export interface CloudWebhookRelayStatus {
-  connected: boolean;
-  last_poll_at: string | null;
-  active_webhook_triggers: number;
-  total_relayed: number;
-  error: string | null;
-}
-
-export const cloudWebhookRelayStatus = () =>
-  invoke<CloudWebhookRelayStatus>("cloud_webhook_relay_status");
-
-// ============================================================================
 // Smee Relay Management
 // ============================================================================
-
-export interface SmeeRelay {
-  id: string;
-  label: string;
-  channelUrl: string;
-  status: 'active' | 'paused' | 'error';
-  eventFilter: string | null;
-  targetPersonaId: string | null;
-  eventsRelayed: number;
-  lastEventAt: string | null;
-  error: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface CreateSmeeRelayInput {
   label: string;

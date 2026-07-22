@@ -24,7 +24,7 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 // Stat tile (shared across baseline + variants)
 // ---------------------------------------------------------------------------
 
-export type StatColor = 'amber' | 'blue' | 'violet' | 'emerald' | 'red' | 'primary';
+export type StatColor = 'amber' | 'blue' | 'violet' | 'emerald' | 'red' | 'primary' | 'pink';
 
 const STAT_COLORS: Record<StatColor, { bg: string; border: string; icon: string }> = {
   amber: { bg: 'bg-amber-500/15', border: 'border-amber-500/25', icon: 'text-amber-400' },
@@ -33,6 +33,7 @@ const STAT_COLORS: Record<StatColor, { bg: string; border: string; icon: string 
   emerald: { bg: 'bg-emerald-500/15', border: 'border-emerald-500/25', icon: 'text-emerald-400' },
   red: { bg: 'bg-red-500/15', border: 'border-red-500/25', icon: 'text-red-400' },
   primary: { bg: 'bg-primary/15', border: 'border-primary/25', icon: 'text-primary' },
+  pink: { bg: 'bg-pink-500/15', border: 'border-pink-500/25', icon: 'text-pink-400' },
 };
 
 export function StatCard({

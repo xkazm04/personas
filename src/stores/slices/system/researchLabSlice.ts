@@ -3,6 +3,15 @@ import * as Sentry from "@sentry/react";
 import type { SystemStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import * as api from "@/api/researchLab/researchLab";
+import type {
+  ResearchProject, CreateResearchProject, UpdateResearchProject,
+  ResearchSource, CreateResearchSource, CreateSourceResult,
+  ResearchHypothesis, CreateResearchHypothesis,
+  ResearchExperiment, CreateResearchExperiment,
+  ResearchFinding, CreateResearchFinding,
+  ResearchReport, CreateResearchReport,
+  ResearchDashboardStats,
+} from "@/api/researchLab/researchLab";
 
 /**
  * Passive list-load failure handler. Research-lab list fetches run on mount,
@@ -20,15 +29,6 @@ function logPassiveFetchFailure(action: string, err: unknown): void {
     Sentry.captureException(err);
   });
 }
-import type {
-  ResearchProject, CreateResearchProject, UpdateResearchProject,
-  ResearchSource, CreateResearchSource, CreateSourceResult,
-  ResearchHypothesis, CreateResearchHypothesis,
-  ResearchExperiment, CreateResearchExperiment,
-  ResearchFinding, CreateResearchFinding,
-  ResearchReport, CreateResearchReport,
-  ResearchDashboardStats,
-} from "@/api/researchLab/researchLab";
 
 export interface ResearchLabSlice {
   // Projects
@@ -89,26 +89,66 @@ export interface ResearchLabSlice {
   updateSourceStatus: (id: string, status: string, knowledgeBaseId?: string) => Promise<void>;
 }
 
+/**
+ * Six of the resource groups below (projects/sources/hypotheses/experiments/
+ * findings/reports) share the exact same fetch-list and create/delete shape:
+ * set loading -> await api -> set data + loading:false (or logPassiveFetchFailure
+ * on error), and prepend-on-create / filter-on-delete. These two tiny generic
+ * helpers collapse that boilerplate; `createResearchSource`'s dedup logic stays
+ * hand-written below since it isn't a plain prepend. The `as unknown as
+ * Partial<SystemStore>` casts are contained here — callers keep normal typed
+ * arguments (list keys of ResearchLabSlice, well-typed api functions).
+ */
+function makeListFetcher<T, Args extends unknown[]>(
+  set: (partial: Partial<SystemStore>) => void,
+  actionName: string,
+  dataKey: keyof ResearchLabSlice,
+  loadingKey: keyof ResearchLabSlice,
+  apiCall: (...args: Args) => Promise<T[]>,
+) {
+  return async (...args: Args) => {
+    set({ [loadingKey]: true } as unknown as Partial<SystemStore>);
+    try {
+      const data = await apiCall(...args);
+      set({ [dataKey]: data, [loadingKey]: false } as unknown as Partial<SystemStore>);
+    } catch (err) {
+      logPassiveFetchFailure(actionName, err);
+      set({ [loadingKey]: false } as unknown as Partial<SystemStore>);
+    }
+  };
+}
+
+function makePrepend<T extends { id: string }>(
+  set: (updater: (s: SystemStore) => Partial<SystemStore>) => void,
+  dataKey: keyof ResearchLabSlice,
+) {
+  return (item: T) =>
+    set((s) => ({
+      [dataKey]: [item, ...(s[dataKey as keyof SystemStore] as unknown as T[])],
+    } as unknown as Partial<SystemStore>));
+}
+
+function makeRemoveById(
+  set: (updater: (s: SystemStore) => Partial<SystemStore>) => void,
+  dataKey: keyof ResearchLabSlice,
+) {
+  return (id: string) =>
+    set((s) => ({
+      [dataKey]: (s[dataKey as keyof SystemStore] as unknown as { id: string }[]).filter((x) => x.id !== id),
+    } as unknown as Partial<SystemStore>));
+}
+
 export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchLabSlice> = (set) => ({
   // -- Projects --
   researchProjects: [],
   activeResearchProjectId: null,
   researchProjectsLoading: false,
 
-  fetchResearchProjects: async () => {
-    set({ researchProjectsLoading: true });
-    try {
-      const researchProjects = await api.listProjects();
-      set({ researchProjects, researchProjectsLoading: false });
-    } catch (err) {
-      logPassiveFetchFailure("fetchResearchProjects", err);
-      set({ researchProjectsLoading: false });
-    }
-  },
+  fetchResearchProjects: makeListFetcher(set, "fetchResearchProjects", "researchProjects", "researchProjectsLoading", api.listProjects),
 
   createResearchProject: async (input) => {
     const project = await api.createProject(input);
-    set((s) => ({ researchProjects: [project, ...s.researchProjects] }));
+    makePrepend<ResearchProject>(set, "researchProjects")(project);
     return project;
   },
 
@@ -131,16 +171,7 @@ export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchL
   researchSources: [],
   researchSourcesLoading: false,
 
-  fetchResearchSources: async (projectId) => {
-    set({ researchSourcesLoading: true });
-    try {
-      const researchSources = await api.listSources(projectId);
-      set({ researchSources, researchSourcesLoading: false });
-    } catch (err) {
-      logPassiveFetchFailure("fetchResearchSources", err);
-      set({ researchSourcesLoading: false });
-    }
-  },
+  fetchResearchSources: makeListFetcher(set, "fetchResearchSources", "researchSources", "researchSourcesLoading", api.listSources),
 
   createResearchSource: async (input) => {
     const result = await api.createSource(input);
@@ -159,111 +190,75 @@ export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchL
 
   deleteResearchSource: async (id) => {
     await api.deleteSource(id);
-    set((s) => ({ researchSources: s.researchSources.filter((s2) => s2.id !== id) }));
+    makeRemoveById(set, "researchSources")(id);
   },
 
   // -- Hypotheses --
   researchHypotheses: [],
   researchHypothesesLoading: false,
 
-  fetchResearchHypotheses: async (projectId) => {
-    set({ researchHypothesesLoading: true });
-    try {
-      const researchHypotheses = await api.listHypotheses(projectId);
-      set({ researchHypotheses, researchHypothesesLoading: false });
-    } catch (err) {
-      logPassiveFetchFailure("fetchResearchHypotheses", err);
-      set({ researchHypothesesLoading: false });
-    }
-  },
+  fetchResearchHypotheses: makeListFetcher(set, "fetchResearchHypotheses", "researchHypotheses", "researchHypothesesLoading", api.listHypotheses),
 
   createResearchHypothesis: async (input) => {
     const hypothesis = await api.createHypothesis(input);
-    set((s) => ({ researchHypotheses: [hypothesis, ...s.researchHypotheses] }));
+    makePrepend<ResearchHypothesis>(set, "researchHypotheses")(hypothesis);
     return hypothesis;
   },
 
   deleteResearchHypothesis: async (id) => {
     await api.deleteHypothesis(id);
-    set((s) => ({ researchHypotheses: s.researchHypotheses.filter((h) => h.id !== id) }));
+    makeRemoveById(set, "researchHypotheses")(id);
   },
 
   // -- Experiments --
   researchExperiments: [],
   researchExperimentsLoading: false,
 
-  fetchResearchExperiments: async (projectId) => {
-    set({ researchExperimentsLoading: true });
-    try {
-      const researchExperiments = await api.listExperiments(projectId);
-      set({ researchExperiments, researchExperimentsLoading: false });
-    } catch (err) {
-      logPassiveFetchFailure("fetchResearchExperiments", err);
-      set({ researchExperimentsLoading: false });
-    }
-  },
+  fetchResearchExperiments: makeListFetcher(set, "fetchResearchExperiments", "researchExperiments", "researchExperimentsLoading", api.listExperiments),
 
   createResearchExperiment: async (input) => {
     const experiment = await api.createExperiment(input);
-    set((s) => ({ researchExperiments: [experiment, ...s.researchExperiments] }));
+    makePrepend<ResearchExperiment>(set, "researchExperiments")(experiment);
     return experiment;
   },
 
   deleteResearchExperiment: async (id) => {
     await api.deleteExperiment(id);
-    set((s) => ({ researchExperiments: s.researchExperiments.filter((e) => e.id !== id) }));
+    makeRemoveById(set, "researchExperiments")(id);
   },
 
   // -- Findings --
   researchFindings: [],
   researchFindingsLoading: false,
 
-  fetchResearchFindings: async (projectId) => {
-    set({ researchFindingsLoading: true });
-    try {
-      const researchFindings = await api.listFindings(projectId);
-      set({ researchFindings, researchFindingsLoading: false });
-    } catch (err) {
-      logPassiveFetchFailure("fetchResearchFindings", err);
-      set({ researchFindingsLoading: false });
-    }
-  },
+  fetchResearchFindings: makeListFetcher(set, "fetchResearchFindings", "researchFindings", "researchFindingsLoading", api.listFindings),
 
   createResearchFinding: async (input) => {
     const finding = await api.createFinding(input);
-    set((s) => ({ researchFindings: [finding, ...s.researchFindings] }));
+    makePrepend<ResearchFinding>(set, "researchFindings")(finding);
     return finding;
   },
 
   deleteResearchFinding: async (id) => {
     await api.deleteFinding(id);
-    set((s) => ({ researchFindings: s.researchFindings.filter((f) => f.id !== id) }));
+    makeRemoveById(set, "researchFindings")(id);
   },
 
   // -- Reports --
   researchReports: [],
   researchReportsLoading: false,
 
-  fetchResearchReports: async (projectId) => {
-    set({ researchReportsLoading: true });
-    try {
-      const researchReports = await api.listReports(projectId);
-      set({ researchReports, researchReportsLoading: false });
-    } catch (err) {
-      logPassiveFetchFailure("fetchResearchReports", err);
-      set({ researchReportsLoading: false });
-    }
-  },
+  fetchResearchReports: makeListFetcher(set, "fetchResearchReports", "researchReports", "researchReportsLoading", api.listReports),
 
   createResearchReport: async (input) => {
     const report = await api.createReport(input);
-    set((s) => ({ researchReports: [report, ...s.researchReports] }));
+    makePrepend<ResearchReport>(set, "researchReports")(report);
     return report;
   },
 
   deleteResearchReport: async (id) => {
     await api.deleteReport(id);
-    set((s) => ({ researchReports: s.researchReports.filter((r) => r.id !== id) }));
+    makeRemoveById(set, "researchReports")(id);
   },
 
   // -- Dashboard --

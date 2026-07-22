@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { DragEvent } from "react";
 
 import {
   DriveEntry,
@@ -83,6 +84,24 @@ async function runBulk<T>(
   await Promise.all(workers);
 }
 
+/**
+ * Extract + parse the `application/x-drive-move` JSON drag payload set by
+ * drag-source rows (see DriveFileList's onDragStart). Returns null when the
+ * event carries no drive-move payload (e.g. an OS file drop) or the payload
+ * is malformed — callers should treat null as "not a drive-move drop".
+ */
+export function parseDriveMovePayload(e: DragEvent): string[] | null {
+  const raw = e.dataTransfer.getData("application/x-drive-move");
+  if (!raw) return null;
+  try {
+    const { paths } = JSON.parse(raw) as { paths: string[] };
+    return Array.isArray(paths) ? paths : null;
+  } catch (err) {
+    silentCatch("features/plugins/drive/hooks/useDrive:parseDriveMovePayload")(err);
+    return null;
+  }
+}
+
 export interface DriveClipboard {
   mode: ClipboardMode;
   paths: string[];
@@ -145,6 +164,16 @@ export interface UseDriveResult {
   rename: (path: string, newName: string) => Promise<void>;
   remove: (paths: string[]) => Promise<void>;
   move: (src: string, dst: string) => Promise<void>;
+  /** Bulk move with ONE refresh at the end — use for every multi-item path. */
+  moveMany: (pairs: Array<{ src: string; dst: string }>) => Promise<void>;
+  /**
+   * Bulk move `paths` into folder `dst`, applying the shared self-skip +
+   * ancestor→descendant guard, then delegating to `moveMany` for a single
+   * refresh. Use for every drag-into-folder / move-selection surface
+   * (list row drop, sidebar node drop, breadcrumb segment drop, bulk
+   * selection move) instead of re-deriving the pair list inline.
+   */
+  moveManyInto: (paths: string[], dst: string) => Promise<void>;
 
   // Storage meter
   storage: DriveStorageInfo | null;
@@ -671,6 +700,55 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     [refresh, refreshTree, refreshRecent, flashWrite],
   );
 
+  /**
+   * Bulk move: raw driveMove per pair via runBulk (concurrency 8), then ONE
+   * cache clear + refresh at the end — mirroring pasteHere/remove. `move()`
+   * bundles its own refresh cascade (drive_list + 4-level drive_list_tree +
+   * drive_recent), so the bulk callers that looped over it issued ~4 IPC
+   * round-trips per item and re-rendered the whole Finder N times mid-drag.
+   */
+  const moveMany = useCallback(
+    async (pairs: Array<{ src: string; dst: string }>) => {
+      if (pairs.length === 0) return;
+      await runBulk(pairs, async ({ src, dst }) => {
+        try {
+          const entry = await driveMove(src, dst);
+          flashWrite(entry.path);
+        } catch (e) {
+          toastCatch("drive:move")(e);
+        }
+      });
+      pathCacheRef.current.clear();
+      refresh();
+      refreshTree();
+      refreshRecent();
+    },
+    [refresh, refreshTree, refreshRecent, flashWrite],
+  );
+
+  /**
+   * Shared pair-building + guard logic for every "move these paths into
+   * folder dst" surface — drag-drop onto a list row, sidebar tree node,
+   * breadcrumb segment, and the bulk selection move action. Previously each
+   * call site re-implemented this loop (self-skip + ancestor→descendant
+   * refusal), and one of the four copies (the list view) had silently
+   * drifted without the ancestor guard.
+   */
+  const moveManyInto = useCallback(
+    async (paths: string[], dst: string) => {
+      const pairs: Array<{ src: string; dst: string }> = [];
+      for (const p of paths) {
+        if (p === dst) continue;
+        // Refuse ancestor → descendant moves (would orphan the subtree).
+        if (dst !== "" && dst.startsWith(`${p}/`)) continue;
+        const name = p.split("/").pop() ?? p;
+        pairs.push({ src: p, dst: dst ? `${dst}/${name}` : name });
+      }
+      await moveMany(pairs);
+    },
+    [moveMany],
+  );
+
   // Derived flags
   const canGoBack = historyIndex > 0;
   const canGoForward = historyIndex < history.length - 1;
@@ -723,6 +801,8 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     rename,
     remove,
     move,
+    moveMany,
+    moveManyInto,
 
     storage,
     refreshStorage,

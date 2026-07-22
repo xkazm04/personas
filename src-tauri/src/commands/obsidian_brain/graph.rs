@@ -29,6 +29,7 @@ use crate::AppState;
 use notify::{event::EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 
 use super::get_config_or_err;
+use super::vault_fs::{extract_wikilinks, strip_alias_and_section, walk_markdown_files, WalkOptions};
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -88,55 +89,71 @@ struct NoteEntry {
     outgoing: Vec<String>,
 }
 
-fn wikilink_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"\[\[([^\]\|#]+)(?:[#\|][^\]]*)?\]\]").expect("wikilink regex"))
+/// Short-TTL vault-index cache keyed by vault root. `walk_vault` reads the
+/// FULL body of every `.md` note; every graph command (search per keystroke,
+/// backlinks, orphans, MOCs, stats) called it per invocation — O(vault bytes)
+/// disk I/O each time. The file watcher (obsidian_graph_start_watcher) clears
+/// the cache on any .md change; the 30s TTL bounds staleness for vaults
+/// edited outside the app while the watcher isn't running.
+static VAULT_INDEX_CACHE: OnceLock<Mutex<HashMap<PathBuf, (Instant, Arc<Vec<NoteEntry>>)>>> =
+    OnceLock::new();
+const VAULT_INDEX_TTL: Duration = Duration::from_secs(30);
+
+fn vault_index_cache() -> &'static Mutex<HashMap<PathBuf, (Instant, Arc<Vec<NoteEntry>>)>> {
+    VAULT_INDEX_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn walk_vault(vault_root: &Path) -> Vec<NoteEntry> {
-    fn walk(dir: &Path, out: &mut Vec<NoteEntry>, depth: u32) {
-        if depth > 12 {
-            return;
-        }
-        let Ok(entries) = std::fs::read_dir(dir) else {
-            return;
-        };
-        for entry in entries.flatten() {
-            let path = entry.path();
-            let name = match path.file_name().and_then(|n| n.to_str()) {
-                Some(n) => n.to_string(),
-                None => continue,
-            };
-            if name.starts_with('.') {
-                continue;
+fn invalidate_vault_index_cache() {
+    if let Ok(mut map) = vault_index_cache().lock() {
+        map.clear();
+    }
+}
+
+fn walk_vault(vault_root: &Path) -> Arc<Vec<NoteEntry>> {
+    if let Ok(map) = vault_index_cache().lock() {
+        if let Some((at, notes)) = map.get(vault_root) {
+            if at.elapsed() < VAULT_INDEX_TTL {
+                return notes.clone();
             }
-            if path.is_dir() {
-                walk(&path, out, depth + 1);
-                continue;
-            }
-            if path.extension().and_then(|e| e.to_str()) != Some("md") {
-                continue;
-            }
-            let body = match std::fs::read_to_string(&path) {
-                Ok(b) => b,
-                Err(_) => continue,
-            };
-            let title = name.trim_end_matches(".md").to_string();
-            let outgoing = wikilink_re()
-                .captures_iter(&body)
-                .filter_map(|c| c.get(1).map(|m| m.as_str().trim().to_string()))
-                .collect();
-            out.push(NoteEntry {
-                path,
-                title,
-                body,
-                outgoing,
-            });
         }
     }
-    let mut out = Vec::new();
-    walk(vault_root, &mut out, 0);
-    out
+    // graph.rs's original walker capped recursion at depth 12 and skipped
+    // unreadable directories silently — that's `WalkOptions::default()`
+    // (max_depth: 12, on_error: SkipSilently). It also treated dot-prefixed
+    // FILES (not just dirs) as hidden, unlike the other four walkers, hence
+    // `skip_hidden_files: true`.
+    let walk_opts = WalkOptions {
+        skip_hidden_files: true,
+        ..WalkOptions::default()
+    };
+    let paths = walk_markdown_files(vault_root, &walk_opts).unwrap_or_default();
+    let mut out = Vec::with_capacity(paths.len());
+    for path in paths {
+        let body = match std::fs::read_to_string(&path) {
+            Ok(b) => b,
+            Err(_) => continue,
+        };
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default();
+        let title = name.trim_end_matches(".md").to_string();
+        let outgoing = extract_wikilinks(&body)
+            .into_iter()
+            .map(|raw| strip_alias_and_section(&raw))
+            .collect();
+        out.push(NoteEntry {
+            path,
+            title,
+            body,
+            outgoing,
+        });
+    }
+    let notes = Arc::new(out);
+    if let Ok(mut map) = vault_index_cache().lock() {
+        map.insert(vault_root.to_path_buf(), (Instant::now(), notes.clone()));
+    }
+    notes
 }
 
 fn build_backlink_map(notes: &[NoteEntry]) -> HashMap<String, Vec<usize>> {
@@ -328,24 +345,22 @@ pub fn obsidian_graph_outgoing_links(
 
     let mut out = Vec::new();
     let mut seen = HashSet::new();
-    for cap in wikilink_re().captures_iter(&body) {
-        if let Some(m) = cap.get(1) {
-            let raw = m.as_str().trim();
-            let key = raw.to_lowercase();
-            if !seen.insert(key.clone()) {
-                continue;
-            }
-            if let Some(note) = title_index.get(&key) {
-                out.push(VaultLinkRef {
-                    path: note.path.to_string_lossy().to_string(),
-                    title: note.title.clone(),
-                });
-            } else {
-                out.push(VaultLinkRef {
-                    path: String::new(),
-                    title: raw.to_string(),
-                });
-            }
+    for raw_link in extract_wikilinks(&body) {
+        let raw = strip_alias_and_section(&raw_link);
+        let key = raw.to_lowercase();
+        if !seen.insert(key.clone()) {
+            continue;
+        }
+        if let Some(note) = title_index.get(&key) {
+            out.push(VaultLinkRef {
+                path: note.path.to_string_lossy().to_string(),
+                title: note.title.clone(),
+            });
+        } else {
+            out.push(VaultLinkRef {
+                path: String::new(),
+                title: raw,
+            });
         }
     }
     Ok(out)
@@ -401,7 +416,7 @@ pub fn obsidian_graph_list_orphans(
     let limit = limit.unwrap_or(50).min(500) as usize;
 
     let mut out = Vec::new();
-    for note in &notes {
+    for note in notes.iter() {
         if !backlink_map.contains_key(&note.title.to_lowercase()) {
             out.push(VaultLinkRef {
                 path: note.path.to_string_lossy().to_string(),
@@ -714,6 +729,9 @@ pub fn obsidian_graph_start_watcher(
         if md_paths.is_empty() {
             return;
         }
+        // A note changed — drop the graph-command index cache so the next
+        // search/backlinks call re-reads fresh content.
+        invalidate_vault_index_cache();
         let mut state = pending_for_callback.lock().expect("pending mutex");
         for p in md_paths {
             if !state.0.contains(&p) {

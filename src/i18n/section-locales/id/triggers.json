@@ -592,7 +592,8 @@
     "event_type_required": "Jenis peristiwa yang akan didengarkan wajib diisi.",
     "watch_path_required": "Setidaknya satu jalur pemantauan diperlukan.",
     "composite_min_conditions": "Pemicu komposit memerlukan minimal 2 kondisi.",
-    "composite_window_minimum": "Jendela waktu harus minimal 5 detik."
+    "composite_window_minimum": "Jendela waktu harus minimal 5 detik.",
+    "endpoint_required": "URL endpoint atau event diperlukan."
   },
   "dead_letter_select_all": "Pilih all",
   "dead_letter_select_visible": "Pilih visible",
@@ -797,5 +798,7 @@
     "watch": "Pantau",
     "watching": "Memantau",
     "watching_only": "Hanya memantau"
-  }
+  },
+  "overdue_label": "Terlambat",
+  "relay_delete_failed": "Gagal menghapus relai — silakan coba lagi"
 }

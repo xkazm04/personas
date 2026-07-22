@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { ToolCallStep } from '@/hooks/execution/useReplayTimeline';
 import { formatMs } from '../libs/useReplayState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -25,6 +25,13 @@ export function TimelineScrubber({
 }) {
   const { t, tx } = useTranslation();
   const trackRef = useRef<HTMLDivElement>(null);
+  const cleanupDragRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      cleanupDragRef.current?.();
+    };
+  }, []);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -37,13 +44,20 @@ export function TimelineScrubber({
       scrub(e.clientX);
       const scrubFrame = createRafCoalescer((clientX: number) => scrub(clientX));
       const onMove = (ev: PointerEvent) => scrubFrame.schedule(ev.clientX);
-      const onUp = () => {
+      const cleanup = () => {
         scrubFrame.cancel();
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+        cleanupDragRef.current = null;
       };
+      const onUp = () => {
+        cleanup();
+      };
+      cleanupDragRef.current = cleanup;
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
     },
     [totalMs, onScrub],
   );

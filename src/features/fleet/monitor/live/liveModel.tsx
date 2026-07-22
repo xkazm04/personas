@@ -12,6 +12,8 @@ import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { resolveCompact } from '../channels/MergedRow';
 import type { TaggedItem } from '../channels/types';
 import type { Persona } from '@/lib/bindings/Persona';
+import { avatarBgFor } from '@/features/teams/sub_collab/collabRender';
+import { cleanName } from '../grid/fleetGridModel';
 
 /** A single channel message, projected for the corner live overlay. */
 export interface LiveMessage {
@@ -49,14 +51,11 @@ export function authorAccent(m: LiveMessage): string {
   return m.personaColor ?? 'rgb(148 163 184)';
 }
 
-/** Soft background tint class for an author's avatar chip. */
+/** Soft background tint class for an author's avatar chip. Delegates to the
+ *  shared `avatarBgFor` (collabRender) so the Timeline row (MergedRow) and this
+ *  corner overlay never drift apart. */
 export function avatarTint(m: LiveMessage): string {
-  switch (m.kind) {
-    case 'athena': return 'bg-violet-500/15';
-    case 'director': return 'bg-sky-500/15';
-    case 'directive': return 'bg-emerald-500/15';
-    default: return 'bg-secondary/60';
-  }
+  return avatarBgFor(m.kind);
 }
 
 const NON_PERSONA_ICON: Partial<Record<LiveMessage['kind'], { Icon: LucideIcon; color: string }>> = {
@@ -128,7 +127,7 @@ export function projectChannelItem(tagged: TaggedItem, persona: Persona | undefi
     teamName: team.teamName,
     teamColor: team.teamColor,
     personaId: item.personaId,
-    personaName: persona ? persona.name.replace(/^T: /, '') : '',
+    personaName: persona ? cleanName(persona.name) : '',
     personaIcon: persona?.icon ?? null,
     personaColor: persona?.color ?? null,
     kind: item.kind as LiveMessage['kind'],

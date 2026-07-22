@@ -3,6 +3,7 @@ import { CheckSquare, Layers, RotateCw, X, Calendar } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
+import { isFailedExecutionStatus } from '../../libs/executionStatus';
 
 interface BulkRerunToolbarProps {
   bulkMode: boolean;
@@ -17,10 +18,6 @@ interface BulkRerunToolbarProps {
   onStart: () => void;
   hasExecutions: boolean;
   hasEnoughToBulk: boolean;
-}
-
-function isFailed(status: string): boolean {
-  return status === 'failed' || status === 'cancelled' || status === 'timeout';
 }
 
 export function BulkRerunToolbar({
@@ -42,7 +39,7 @@ export function BulkRerunToolbar({
   const [showSincePicker, setShowSincePicker] = useState(false);
   const [sinceValue, setSinceValue] = useState<string>('');
 
-  const failedCount = useMemo(() => rows.filter((r) => isFailed(r.status)).length, [rows]);
+  const failedCount = useMemo(() => rows.filter((r) => isFailedExecutionStatus(r.status)).length, [rows]);
 
   const latestAnnotationDate = useMemo(() => {
     if (annotations.length === 0) return null;
@@ -146,7 +143,13 @@ export function BulkRerunToolbar({
             {latestAnnotationDate && (
               <button
                 onClick={() => {
-                  setSinceValue(latestAnnotationDate.slice(0, 16));
+                  const parsed = new Date(latestAnnotationDate);
+                  const localValue = new Date(
+                    parsed.getTime() - parsed.getTimezoneOffset() * 60000,
+                  )
+                    .toISOString()
+                    .slice(0, 16);
+                  setSinceValue(localValue);
                   onSelectSinceTimestamp(latestAnnotationDate);
                 }}
                 className="px-2 py-1 typo-body rounded-card text-primary/80 hover:bg-primary/10 transition-colors"

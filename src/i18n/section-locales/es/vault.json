@@ -295,7 +295,8 @@
     "query_parameters": "Parámetros de consulta",
     "recipes_title": "Recetas guardadas",
     "truncated_warning": "Respuesta truncada para visualización",
-    "value_col": "Valor"
+    "value_col": "Valor",
+    "request_headers": "Encabezados"
   },
   "ingest": {
     "save_name": "Guardar nombre",
@@ -422,7 +423,8 @@
     "capability_key_value": "Clave-valor",
     "capability_key_value_hint": "Es un almacén de clave-valor. Usa comandos de clave como SCAN, GET y TYPE, no SQL.",
     "capability_select_subset": "Solo SELECT",
-    "capability_select_subset_hint": "Aquí solo se ejecutan consultas SELECT simples de una sola tabla: filtra con WHERE, ordena con ORDER BY y limita con LIMIT. No se admiten JOIN, agregaciones, CTE ni escrituras."
+    "capability_select_subset_hint": "Aquí solo se ejecutan consultas SELECT simples de una sola tabla: filtra con WHERE, ordena con ORDER BY y limita con LIMIT. No se admiten JOIN, agregaciones, CTE ni escrituras.",
+    "query_timeout": "Se agotó el tiempo de espera de la respuesta. Vuelve a intentarlo."
   },
   "dependencies": {
     "simulate_revocation": "Simular revocación",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "Qué se escanea",
     "read_error_item": "No se pudo leer {source}",
     "read_errors_title": "Algunas fuentes no se pudieron leer",
-    "select_high_confidence": "Alta confianza"
+    "select_high_confidence": "Alta confianza",
+    "source_unknown": "Fuente desconocida"
   },
   "desktop_discovery": {
     "title": "Aplicaciones de escritorio",

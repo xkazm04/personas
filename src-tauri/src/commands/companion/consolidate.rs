@@ -353,6 +353,12 @@ pub fn companion_pin_widget_to_cockpit(
     config: Option<serde_json::Value>,
 ) -> Result<(), AppError> {
     ipc_auth::require_auth_sync(&state)?;
+    // Hold the cockpit write lock across the whole load-modify-save cycle
+    // so this doesn't race a concurrent pin or an Athena `compose_cockpit`
+    // (both do their own load-modify-save over the same JSON blob).
+    let _guard = cockpit::COCKPIT_WRITE_LOCK
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let now = chrono::Utc::now().to_rfc3339();
     let mut spec: serde_json::Value = match cockpit::load_cockpit(&state.user_db)? {
         Some(c) => serde_json::from_str(&c.spec_json).unwrap_or_else(|_| {
@@ -447,6 +453,9 @@ pub fn companion_unpin_widget_from_cockpit(
     widget_id: String,
 ) -> Result<(), AppError> {
     ipc_auth::require_auth_sync(&state)?;
+    let _guard = cockpit::COCKPIT_WRITE_LOCK
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let now = chrono::Utc::now().to_rfc3339();
     let mut spec: serde_json::Value = match cockpit::load_cockpit(&state.user_db)? {
         Some(c) => match serde_json::from_str(&c.spec_json) {

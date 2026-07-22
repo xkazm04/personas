@@ -79,6 +79,21 @@ const HEALING_DURATION_MS = 8000;
 /** Maximum toasts kept in state (including hidden overflow). */
 const MAX_TOASTS = 10;
 
+/**
+ * Cap `toasts` at MAX_TOASTS by evicting the lowest-priority (then oldest)
+ * entries, instead of blindly slicing to the most recent. A burst of
+ * low-priority success/info toasts must not push out an unseen high-priority
+ * (e.g. critical healing) toast — priority exists specifically to rank
+ * importance, so eviction must respect it too, not just render order.
+ */
+function capToasts(toasts: Toast[]): Toast[] {
+  if (toasts.length <= MAX_TOASTS) return toasts;
+  return [...toasts]
+    .sort((a, b) => (b.priority - a.priority) || (b.timestamp - a.timestamp))
+    .slice(0, MAX_TOASTS)
+    .sort((a, b) => a.timestamp - b.timestamp);
+}
+
 /** Maximum visible toasts rendered on screen. */
 export const MAX_VISIBLE_TOASTS = 3;
 
@@ -118,7 +133,7 @@ export const useToastStore = create<ToastStore>((set) => ({
       action,
     };
     set((s) => ({
-      toasts: [...s.toasts, toast].slice(-MAX_TOASTS),
+      toasts: capToasts([...s.toasts, toast]),
     }));
     announceImperative(message, type === 'error' ? 'assertive' : 'polite');
   },
@@ -145,7 +160,7 @@ export const useToastStore = create<ToastStore>((set) => ({
     set((s) => {
       // Deduplicate by issueId
       const filtered = s.toasts.filter((t) => t.id !== toast.id);
-      return { toasts: [...filtered, toast].slice(-MAX_TOASTS) };
+      return { toasts: capToasts([...filtered, toast]) };
     });
     const urgency = normalizedSeverity === 'critical' || normalizedSeverity === 'high'
       ? 'assertive' as const

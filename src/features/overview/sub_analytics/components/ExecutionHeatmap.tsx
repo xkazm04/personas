@@ -10,7 +10,7 @@ import type { ExecutionHeatmapData } from '@/lib/bindings/ExecutionHeatmapData';
 import type { HeatmapDay } from '@/lib/bindings/HeatmapDay';
 import type { HeatmapInsights } from '@/lib/bindings/HeatmapInsights';
 import type { Translations } from '@/i18n/en';
-import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { IllustratedEmptyState as EmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 
 
 interface ExecutionHeatmapProps {

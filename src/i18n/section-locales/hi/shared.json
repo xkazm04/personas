@@ -195,7 +195,11 @@
     "s_elapsed": "s बीता",
     "s_remaining": "s शेष",
     "show_cli_output": "CLI output दिखाएँ",
-    "hide_cli_output": "CLI output छिपाएँ"
+    "hide_cli_output": "CLI output छिपाएँ",
+    "starting_transformation": "रूपांतरण शुरू हो रहा है...",
+    "step_progress": "चरण {step} में से {total}",
+    "starting_short": "शुरू हो रहा है...",
+    "check_output_details": "विवरण के लिए नीचे आउटपुट देखें।"
   },
   "terminal_extra": {
     "press_enter": "शुरू करने के लिए Enter दबाएं या Play क्लिक करें",

@@ -195,7 +195,11 @@
     "s_elapsed": "s écoulées",
     "s_remaining": "s restantes",
     "show_cli_output": "Afficher la sortie CLI",
-    "hide_cli_output": "Masquer la sortie CLI"
+    "hide_cli_output": "Masquer la sortie CLI",
+    "starting_transformation": "Démarrage de la transformation...",
+    "step_progress": "Étape {step} sur {total}",
+    "starting_short": "Démarrage...",
+    "check_output_details": "Consultez la sortie ci-dessous pour plus de détails."
   },
   "terminal_extra": {
     "press_enter": "Appuyez sur Entrée ou cliquez sur Lecture pour démarrer",

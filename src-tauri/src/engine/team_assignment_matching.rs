@@ -286,21 +286,13 @@ Pick exactly one candidate from the list above. The use_case_id must match the c
 /// since Claude sometimes wraps replies in prose despite the "ONLY a JSON
 /// object" instruction.
 pub fn parse_llm_match_response(raw: &str) -> Result<LlmMatchResponse, AppError> {
-    let trimmed = raw.trim();
-    if let Ok(parsed) = serde_json::from_str::<LlmMatchResponse>(trimmed) {
-        return Ok(parsed);
-    }
-    if let (Some(start), Some(end)) = (trimmed.find('{'), trimmed.rfind('}')) {
-        if start < end {
-            if let Ok(parsed) = serde_json::from_str::<LlmMatchResponse>(&trimmed[start..=end]) {
-                return Ok(parsed);
-            }
-        }
-    }
-    Err(AppError::Internal(format!(
-        "LLM match returned unparseable response: {}",
-        &trimmed[..trimmed.len().min(300)]
-    )))
+    crate::engine::safe_json::parse_lenient_json(raw).map_err(|_| {
+        let trimmed = raw.trim();
+        AppError::Internal(format!(
+            "LLM match returned unparseable response: {}",
+            crate::utils::text::truncate_on_char_boundary(trimmed, 300)
+        ))
+    })
 }
 
 /// Resolve a step's assignee by asking Sonnet to pick from the candidates.
@@ -499,19 +491,14 @@ pub async fn decompose_goal(
         .map_err(|e| AppError::Internal(format!("Decompose timeout/failure: {e}")))?;
     let _ = driver.finish().await;
 
-    let trimmed = assistant_text.trim();
-    let parsed: DecomposeResponse = if let Ok(p) = serde_json::from_str::<DecomposeResponse>(trimmed) {
-        p
-    } else if let (Some(start), Some(end)) = (trimmed.find('{'), trimmed.rfind('}')) {
-        serde_json::from_str(&trimmed[start..=end]).map_err(|e| {
-            AppError::Internal(format!("Decompose JSON parse error: {e}"))
-        })?
-    } else {
-        return Err(AppError::Internal(format!(
-            "Decompose returned unparseable response: {}",
-            &trimmed[..trimmed.len().min(300)]
-        )));
-    };
+    let parsed: DecomposeResponse =
+        crate::engine::safe_json::parse_lenient_json(&assistant_text).map_err(|_| {
+            let trimmed = assistant_text.trim();
+            AppError::Internal(format!(
+                "Decompose returned unparseable response: {}",
+                crate::utils::text::truncate_on_char_boundary(trimmed, 300)
+            ))
+        })?;
 
     if parsed.steps.is_empty() {
         return Err(AppError::Internal(

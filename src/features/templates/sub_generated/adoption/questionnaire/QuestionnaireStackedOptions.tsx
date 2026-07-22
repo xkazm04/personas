@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { MOTION } from '@/lib/utils/animation/animationPresets';
+import { MOTION_PRESETS } from '@/lib/utils/animation/animationPresets';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import type { QuestionnaireNormalizedOption } from './types';
 
@@ -29,7 +29,7 @@ export function QuestionnaireStackedOptions({
   const { shouldAnimate } = useMotion();
   const [focused, setFocused] = useState(false);
   const showBadges = focused;
-  const fadeTransition = shouldAnimate ? MOTION.snappy.framer : { duration: 0 };
+  const fadeTransition = shouldAnimate ? MOTION_PRESETS.snappy.framer : { duration: 0 };
 
   return (
     <div

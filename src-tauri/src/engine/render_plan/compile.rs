@@ -974,6 +974,12 @@ pub fn compile(
             if let Some(o) = s.overlap_next.as_mut() {
                 o.duration_seconds = snap(o.duration_seconds);
             }
+            // A sub-half-frame clip can round both boundaries to the same
+            // snapped instant (I2 requires output_end > output_start) —
+            // floor to one frame rather than failing the whole compile.
+            if s.output_end <= s.output_start {
+                s.output_end = s.output_start + 1.0 / fps_f;
+            }
             // Reconcile source_end against snapped output window.
             s.source_end = s.source_in + (s.output_end - s.output_start) * s.speed;
             // Keep fadeIn + fadeOut <= duration after snap.
@@ -989,6 +995,9 @@ pub fn compile(
                 s.output_end = snap(s.output_end);
                 s.fade_in = snap(s.fade_in);
                 s.fade_out = snap(s.fade_out);
+                if s.output_end <= s.output_start {
+                    s.output_end = s.output_start + 1.0 / fps_f;
+                }
                 s.source_end = s.source_in + (s.output_end - s.output_start) * s.speed;
                 let dur = (s.output_end - s.output_start).max(0.0);
                 if s.fade_in + s.fade_out > dur {
@@ -1003,6 +1012,9 @@ pub fn compile(
                     i.output_end = snap(i.output_end);
                     i.fade_in = snap(i.fade_in);
                     i.fade_out = snap(i.fade_out);
+                    if i.output_end <= i.output_start {
+                        i.output_end = i.output_start + 1.0 / fps_f;
+                    }
                     let dur = (i.output_end - i.output_start).max(0.0);
                     if i.fade_in + i.fade_out > dur {
                         i.fade_out = (dur - i.fade_in).max(0.0);
@@ -1013,6 +1025,9 @@ pub fn compile(
                     t.output_end = snap(t.output_end);
                     t.fade_in = snap(t.fade_in);
                     t.fade_out = snap(t.fade_out);
+                    if t.output_end <= t.output_start {
+                        t.output_end = t.output_start + 1.0 / fps_f;
+                    }
                     let dur = (t.output_end - t.output_start).max(0.0);
                     if t.fade_in + t.fade_out > dur {
                         t.fade_out = (dur - t.fade_in).max(0.0);

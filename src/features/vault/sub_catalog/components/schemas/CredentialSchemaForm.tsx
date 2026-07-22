@@ -211,6 +211,7 @@ export function CredentialSchemaForm({
         initialValues={initialValues}
         onSave={handleSave}
         onCancel={onBack}
+        onValuesChanged={() => health.invalidate()}
         onHealthcheck={hasHealthcheck ? handleHealthcheck : undefined}
         isHealthchecking={health.isHealthchecking}
         healthcheckResult={health.result}

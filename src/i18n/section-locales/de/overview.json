@@ -143,7 +143,9 @@
     "col_days": "Tage",
     "col_incident": "Vorfall",
     "guidance_mcp_sidecar": "Der Agent lief ohne seine integrierten MCP-Tools, weil die personas-mcp-Binärdatei fehlte. Installieren oder reparieren Sie die App neu, damit sie mit der Desktop-App ausgeliefert wird.",
-    "source_mcp_sidecar": "MCP-Werkzeugkasten"
+    "source_mcp_sidecar": "MCP-Werkzeugkasten",
+    "list_truncated": "Die ersten {limit} Vorfälle werden angezeigt – grenzen Sie die Filter ein, um den Rest zu sehen.",
+    "action_refused": "Aktion wurde nicht angewendet – der Status des Vorfalls hat sich möglicherweise geändert."
   },
   "observability": {
     "title": "Beobachtbarkeit",

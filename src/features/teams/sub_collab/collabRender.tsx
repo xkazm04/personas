@@ -2,7 +2,11 @@ import type { LucideIcon } from 'lucide-react';
 import { MessageSquare, Sparkles, Compass } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
-import { memberColor } from '@/lib/channel/eventModel';
+import { memberColor, FAMILY_TEXT } from '@/lib/channel/eventModel';
+
+/** Re-exported for the surfaces that import event-family colour from here
+ *  (the shared source of truth lives in `eventModel.ts`, alongside `eventFamily`). */
+export { FAMILY_TEXT };
 
 /**
  * Minimal member shape the channel surfaces need (presence avatars +
@@ -50,17 +54,6 @@ export const STEP_TONE: Record<string, string> = {
   created: 'text-foreground/60',
 };
 
-/** Event-family text tone (bus events). */
-export const FAMILY_TEXT: Record<string, string> = {
-  handoff: 'text-violet-300',
-  pr: 'text-status-info',
-  qa: 'text-status-warning',
-  release: 'text-status-success',
-  failure: 'text-status-error',
-  build: 'text-sky-300',
-  other: 'text-foreground/60',
-};
-
 export interface AuthorMeta {
   label: string;
   Icon: LucideIcon;
@@ -99,6 +92,18 @@ export const AUTHOR_KIND_META: Record<'persona' | 'athena' | 'director', AuthorM
   },
 };
 
+/** Soft background tint class for an author's avatar chip, keyed by channel-item
+ *  kind. Shared by the Timeline row (MergedRow) and the corner live overlay
+ *  (liveModel) so the same author looks identical in both surfaces. */
+export function avatarBgFor(kind: string): string {
+  switch (kind) {
+    case 'athena': return 'bg-violet-500/15';
+    case 'director': return 'bg-sky-500/15';
+    case 'directive': return 'bg-emerald-500/15';
+    default: return 'bg-secondary/60';
+  }
+}
+
 /** Resolve a display name for any channel item. */
 export function authorName(item: TeamChannelItem, persona: Persona | undefined): string {
   if (persona) return persona.name.replace(/^T: /, '');
@@ -114,10 +119,4 @@ export function itemAccent(item: TeamChannelItem, persona: Persona | undefined):
   if (item.kind === 'director') return AUTHOR_KIND_META.director.accent;
   if (item.kind === 'directive') return 'rgb(52 211 153)'; // user / emerald
   return memberColor(persona, item.personaId);
-}
-
-/** Day bucket key for chapter dividers. */
-export function dayKey(at: string): string {
-  const d = new Date(at);
-  return Number.isNaN(d.getTime()) ? at : d.toDateString();
 }

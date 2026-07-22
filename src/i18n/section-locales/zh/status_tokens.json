@@ -111,8 +111,8 @@
     "active": "活跃",
     "paused": "已暂停",
     "failed": "失败",
-    "file-based": "基于文件",
-    "unknown": "未知"
+    "unknown": "未知",
+    "file-based": "基于文件"
   },
   "delivery": {
     "delivered": "已送达",

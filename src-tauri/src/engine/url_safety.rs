@@ -3,9 +3,17 @@
 //! Validates that outbound HTTP requests target external hosts only,
 //! blocking loopback, private RFC 1918, link-local, and metadata endpoints.
 //!
-//! Includes a [`SsrfSafeResolver`] that implements `reqwest::dns::Resolve`
+//! Includes a [`SsrfSafeDnsResolver`] that implements `reqwest::dns::Resolve`
 //! to reject private IPs at connect time, closing the DNS-rebinding window
 //! that exists when validation and request use separate DNS lookups (CWE-367).
+//!
+//! [`build_ssrf_safe_client`] is the single consolidated SSRF-safe HTTP
+//! client builder for the whole engine (formerly duplicated with a weaker,
+//! redirect-unaware copy in `engine::ssrf_safe_dns`, which has been folded
+//! in here). It combines DNS-rebinding protection (resolver rejects private
+//! IPs at connect time) with per-hop redirect re-validation (a `Location`
+//! header carrying a raw private IP literal skips DNS entirely and must be
+//! re-checked on every redirect hop, not just the initial request).
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
 use std::sync::Arc;
@@ -188,9 +196,17 @@ pub fn is_url_target_private(url: &url::Url) -> bool {
 ///
 /// When a hostname resolves to *any* private IP the entire resolution is
 /// rejected so the HTTP request never reaches a local service.
-pub struct SsrfSafeResolver;
+///
+/// This is the single consolidated SSRF-safe resolver for the engine — it
+/// used to have an independent twin (`ssrf_safe_dns::SsrfSafeDnsResolver`)
+/// that delegated to the same [`is_private_ip`] predicate but was
+/// instantiated directly at several call sites. Kept this name
+/// (`SsrfSafeDnsResolver`, not the shorter `SsrfSafeResolver` this struct
+/// used to have) because it was the name in wider direct use across the
+/// engine at the time of consolidation.
+pub struct SsrfSafeDnsResolver;
 
-impl reqwest::dns::Resolve for SsrfSafeResolver {
+impl reqwest::dns::Resolve for SsrfSafeDnsResolver {
     fn resolve(&self, name: reqwest::dns::Name) -> reqwest::dns::Resolving {
         let host = name.as_str().to_string();
         Box::pin(async move {
@@ -233,15 +249,38 @@ impl reqwest::dns::Resolve for SsrfSafeResolver {
     }
 }
 
-/// Build a `reqwest::Client` that uses [`SsrfSafeResolver`] to reject
+/// Build a `reqwest::Client` that uses [`SsrfSafeDnsResolver`] to reject
 /// private IPs at connect time, preventing DNS-rebinding SSRF bypasses.
+///
+/// Also installs a custom redirect policy that re-validates the target IP of
+/// *every* redirect hop via [`is_url_target_private`]. The DNS resolver only
+/// sees *hostnames*, so it blocks DNS rebinding but NOT a
+/// `Location: http://169.254.169.254/...` (or any raw IP literal) returned
+/// by an upstream redirect — that target skips DNS entirely. Without this
+/// policy reqwest auto-follows up to 10 hops and would issue the request
+/// straight to cloud-metadata / an internal service after the initial
+/// request already passed the SSRF check.
+///
+/// Client construction failure is fail-closed: it panics rather than
+/// silently falling back to a stock `reqwest::Client` with the system DNS
+/// resolver and no redirect protection, which would be a silent, total loss
+/// of SSRF protection for every caller of this function.
 pub fn build_ssrf_safe_client(timeout: std::time::Duration) -> reqwest::Client {
     reqwest::Client::builder()
         .timeout(timeout)
         .user_agent("Personas-Polling/1.0")
-        .dns_resolver(Arc::new(SsrfSafeResolver))
+        .dns_resolver(Arc::new(SsrfSafeDnsResolver))
+        .redirect(reqwest::redirect::Policy::custom(|attempt| {
+            if is_url_target_private(attempt.url()) {
+                attempt.error("redirect target is a private/internal address")
+            } else if attempt.previous().len() >= 5 {
+                attempt.stop()
+            } else {
+                attempt.follow()
+            }
+        }))
         .build()
-        .unwrap_or_default()
+        .expect("Failed to build SSRF-safe HTTP client")
 }
 
 #[cfg(test)]
@@ -352,11 +391,11 @@ mod tests {
     #[tokio::test]
     async fn test_resolver_blocks_loopback() {
         use reqwest::dns::Resolve;
-        let resolver = SsrfSafeResolver;
+        let resolver = SsrfSafeDnsResolver;
         let name: reqwest::dns::Name = "localhost".parse().unwrap();
         let result = resolver.resolve(name).await;
         // localhost resolves to 127.0.0.1 which must be rejected
-        assert!(result.is_err(), "SsrfSafeResolver must reject localhost");
+        assert!(result.is_err(), "SsrfSafeDnsResolver must reject localhost");
     }
 
     #[test]

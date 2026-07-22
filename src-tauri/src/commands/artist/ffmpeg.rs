@@ -85,7 +85,24 @@ static MEDIA_EXPORT_JOBS: BackgroundJobManager<MediaExportExtra> = BackgroundJob
 // FFmpeg detection
 // =============================================================================
 
+/// Process-lifetime cache for the resolved ffmpeg path. Discovery walks the
+/// WinGet package tree, stats ~10 candidates, walks PATH, and can spawn
+/// `where`/`ffmpeg -version` — and it used to re-run on EVERY artist command
+/// (7 call sites; probing N clips paid it N+ times). `artist_check_ffmpeg`
+/// re-scans and refreshes the cache so a mid-session install is picked up.
+/// Outer Option = "have we discovered yet", inner = the discovery result.
+static FFMPEG_PATH_CACHE: std::sync::Mutex<Option<Option<PathBuf>>> = std::sync::Mutex::new(None);
+
 async fn find_ffmpeg_path() -> Option<PathBuf> {
+    if let Some(cached) = FFMPEG_PATH_CACHE.lock().expect("ffmpeg cache poisoned").clone() {
+        return cached;
+    }
+    let discovered = discover_ffmpeg_path().await;
+    *FFMPEG_PATH_CACHE.lock().expect("ffmpeg cache poisoned") = Some(discovered.clone());
+    discovered
+}
+
+async fn discover_ffmpeg_path() -> Option<PathBuf> {
     #[cfg(target_os = "windows")]
     {
         // 1. Common system-wide install locations.
@@ -342,6 +359,36 @@ fn validate_ffmpeg_input(path: &str) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Reject any ffmpeg output path that is not a plain local file path.
+///
+/// ffmpeg picks the output muxer/protocol from the destination string just
+/// like it does for `-i` inputs -- an `output_path` such as `ftp://host/x.mp4`
+/// or `tcp://host:port` makes ffmpeg write the encoded media to a remote
+/// endpoint instead of disk (SSRF-style exfiltration of the rendered file).
+/// Every command here is directly IPC-invokable with an arbitrary string, so
+/// the output side needs the same scheme/protocol denylist the input side
+/// already has. Unlike `validate_ffmpeg_input`, the output file need not
+/// exist yet (ffmpeg creates it), so we only check the path *shape*.
+fn validate_ffmpeg_output(path: &str) -> Result<(), AppError> {
+    if path.contains("://") {
+        return Err(AppError::Validation(format!(
+            "ffmpeg output rejected (URL/protocol scheme not allowed): {path}"
+        )));
+    }
+
+    if let Some(colon) = path.find(':') {
+        let scheme = &path[..colon];
+        // A single-char prefix (`C:`) is a Windows drive and is kept.
+        if scheme.len() > 1 && scheme.chars().all(|c| c.is_ascii_alphabetic()) {
+            return Err(AppError::Validation(format!(
+                "ffmpeg output rejected (looks like a '{scheme}:' protocol, not a local file): {path}"
+            )));
+        }
+    }
+
+    Ok(())
+}
+
 // =============================================================================
 // Commands
 // =============================================================================
@@ -351,7 +398,12 @@ fn validate_ffmpeg_input(path: &str) -> Result<(), AppError> {
 pub async fn artist_check_ffmpeg(
     state: State<'_, Arc<AppState>>,
 ) -> Result<FfmpegStatus, AppError> {
-    match find_ffmpeg_path().await {
+    // Fresh discovery + cache refresh: this is the explicit "is ffmpeg
+    // installed?" probe, so a user who installs ffmpeg mid-session gets a
+    // correct answer and subsequent commands use the new path.
+    let fresh = discover_ffmpeg_path().await;
+    *FFMPEG_PATH_CACHE.lock().expect("ffmpeg cache poisoned") = Some(fresh.clone());
+    match fresh {
         Some(p) => {
             let version = get_ffmpeg_version_async(&p).await.ok();
             Ok(FfmpegStatus {
@@ -580,6 +632,10 @@ pub async fn artist_extract_audio(
 ) -> Result<String, AppError> {
     // LFI/SSRF guard: reject protocol/demuxer inputs before touching ffmpeg.
     validate_ffmpeg_input(&input_path)?;
+    // Same guard on the output side -- ffmpeg picks the muxer/protocol from
+    // the destination string too, so an unvalidated output_path can exfiltrate
+    // the rendered file to a remote endpoint.
+    validate_ffmpeg_output(&output_path)?;
 
     let ffmpeg = find_ffmpeg_path()
         .await
@@ -630,6 +686,7 @@ pub async fn artist_save_thumbnail(
 ) -> Result<String, AppError> {
     // LFI/SSRF guard: reject protocol/demuxer inputs before touching ffmpeg.
     validate_ffmpeg_input(&input_path)?;
+    validate_ffmpeg_output(&output_path)?;
 
     let ffmpeg = find_ffmpeg_path()
         .await
@@ -754,6 +811,7 @@ pub async fn artist_trim_file(
 ) -> Result<String, AppError> {
     // LFI/SSRF guard: reject protocol/demuxer inputs before touching ffmpeg.
     validate_ffmpeg_input(&input_path)?;
+    validate_ffmpeg_output(&output_path)?;
 
     let ffmpeg = find_ffmpeg_path()
         .await
@@ -926,6 +984,11 @@ async fn run_ffmpeg_export(
 // stages to ffmpeg filter graph notation.
 
 pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<String>, AppError> {
+    // LFI/SSRF guard on the output side too -- ffmpeg picks its output
+    // muxer/protocol from this string, so an unvalidated path could make it
+    // write the rendered file to a remote endpoint instead of disk.
+    validate_ffmpeg_output(&output_path.to_string_lossy())?;
+
     // overwrite output, and (defense-in-depth) restrict input demuxers to the
     // local-file protocol plus the synthetic lavfi/pipe sources this builder
     // itself emits. This blocks SSRF/LFI even if a composition smuggled a

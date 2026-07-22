@@ -139,7 +139,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
       setGithubRepos([]); setGithubPerms(null); setGithubRepo(null); return;
     }
     // Guard against a stale resolve overwriting state after platform /
-    // credential changes mid-flight (canonical shape: subscriptionLifecycle.ts).
+    // credential changes mid-flight (cancelled-flag pattern).
     let cancelled = false;
     setLoadingRepos(true);
     Promise.all([

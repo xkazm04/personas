@@ -39,15 +39,20 @@ function validateRelPath(relPath: string): string {
   }
   return relPath;
 }
-// drive_delete on the managed root would `remove_dir_all` the entire sandbox.
-// Reject any rel_path that addresses the root: empty/separator-only, or one
-// whose segments are all "." ("./", "./.", ".\\."). The Rust backend has its
-// own guard, but we want the bad call to never cross IPC.
+// Some ops (drive_delete, drive_write*, drive_mkdir) must never target the
+// managed root itself: drive_delete on the root would `remove_dir_all` the
+// entire sandbox, and drive_write*/drive_mkdir on the root would write a
+// file/dir "at" the root path — the empty-string fast path in
+// validateRelPath ("empty == managed root") is legitimate for read/list ops
+// but not for these. Reject any rel_path that addresses the root:
+// empty/separator-only, or one whose segments are all "." ("./", "./.",
+// "./."). The Rust backend has its own guard, but we want the bad call to
+// never cross IPC.
 function validateNonRootRelPath(relPath: string): string {
   validateRelPath(relPath);
   const trimmed = relPath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
   if (trimmed.length === 0 || trimmed.split('/').every((seg) => seg === '' || seg === '.')) {
-    throw new Error('drive: refusing to delete the managed root');
+    throw new Error('drive: refusing to target the managed root');
   }
   return relPath;
 }
@@ -124,26 +129,31 @@ export const driveSearch = (query: string, maxResults?: number) =>
 export const driveRecent = (limit?: number) =>
   invoke<DriveEntry[]>("drive_recent", { limit: limit ?? null });
 
+// Raw-byte IPC: the command returns tauri::ipc::Response, so invoke resolves
+// to an ArrayBuffer instead of a JSON number array (~3-4x smaller transfer,
+// no boxed-number intermediate). Callers wrap it in new Uint8Array(...).
+// NOTE: drive_write still ships Array.from(content) JSON — raw-body upload is
+// a follow-up (uploads are far colder than the per-thumbnail read path).
 export const driveRead = (relPath: string) =>
-  invoke<number[]>("drive_read", { relPath: validateRelPath(relPath) });
+  invoke<ArrayBuffer>("drive_read", { relPath: validateRelPath(relPath) });
 
 export const driveReadText = (relPath: string) =>
   invoke<string>("drive_read_text", { relPath: validateRelPath(relPath) });
 
 export const driveWrite = (relPath: string, content: Uint8Array) =>
   invoke<DriveEntry>("drive_write", {
-    relPath: validateRelPath(relPath),
+    relPath: validateNonRootRelPath(relPath),
     content: Array.from(content),
   });
 
 export const driveWriteText = (relPath: string, content: string) =>
   invoke<DriveEntry>("drive_write_text", {
-    relPath: validateRelPath(relPath),
+    relPath: validateNonRootRelPath(relPath),
     content,
   });
 
 export const driveMkdir = (relPath: string) =>
-  invoke<DriveEntry>("drive_mkdir", { relPath: validateRelPath(relPath) });
+  invoke<DriveEntry>("drive_mkdir", { relPath: validateNonRootRelPath(relPath) });
 
 export const driveDelete = (relPath: string) =>
   invoke<void>("drive_delete", { relPath: validateNonRootRelPath(relPath) });

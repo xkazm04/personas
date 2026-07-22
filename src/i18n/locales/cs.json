@@ -261,7 +261,12 @@
     "stream_no_speakers": "Žádní mluvčí",
     "stream_none": "Žádné",
     "stream_search": "Hledat přenosy",
-    "stream_title": "Stream"
+    "stream_title": "Stream",
+    "columns_action_empty": "Momentálně nic nevyžaduje vaši pozornost",
+    "columns_needs_attention": "Vyžaduje pozornost",
+    "columns_active_goals": "Aktivní cíle",
+    "columns_no_team": "Bez týmu",
+    "columns_all_clear": "Vše v pořádku"
   },
   "common": {
     "loading": "Načítání...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "{count} skoků",
       "active_chains_one": "{count} řetězec běží",
       "active_chains_other": "{count} řetězců běží",
-      "active_chains_title": "Běžící řetězce"
+      "active_chains_title": "Běžící řetězce",
+      "copy_log_failed": "Log se nepodařilo zkopírovat do schránky"
     },
     "lab": {
       "mode_arena": "Aréna",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "Graf závislostí",
       "ct_swap_alt_tooltip": "Přepnout na alternativní konektor",
       "ct_deps": "{count} závisl.",
-      "dg_no_deps": "Žádné závislosti k zobrazení.",
-      "dg_broken": "{count} nefunkčních",
-      "dg_blast_radius": "Oblast dopadu",
-      "dg_dependencies": "Závislosti",
-      "dg_select_cred": "Vyberte údaje, abyste viděli, co se rozbije po vypršení",
-      "dg_relationships": "Vztahy ({count})",
-      "dg_more": "+{count} dalších",
-      "dg_affected_tools": "Dotčené nástroje",
-      "dg_affected_auto": "Dotčené automatizace",
-      "dg_low_risk": "Nízké riziko",
-      "dg_medium_risk": "Střední riziko",
-      "dg_high_risk": "Vysoké riziko",
-      "dg_high_blast": "Pokud tyto údaje vyprší nebo budou offline, {count} funkcí přestane fungovat.",
-      "dg_medium_blast": "Na těchto údajích závisí {count} funkcí.",
-      "dg_low_blast": "Žádné nástroje ani automatizace na těchto údajích nezávisí.",
       "dm_needed": "Potřebujete {count} přihlašovací údaj(e)",
       "dm_fulfilled": "{fulfilled}/{total} konektorů zajištěno",
       "dm_reuse_hint": "{count} může znovu použít existující údaje",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "Spouštěče a odběry",
       "sub_suggested": "{count} navržených",
       "sub_filter": "filtr: {filter}",
-      "lifecycle_error_load_triggers": "Nepodařilo se načíst spouštěče: {error}",
-      "lifecycle_error_load_subscriptions": "Nepodařilo se načíst odběry: {error}",
-      "lifecycle_error_activate_trigger": "Nepodařilo se aktivovat spouštěč",
-      "lifecycle_error_activate_subscription": "Nepodařilo se aktivovat odběr",
-      "lifecycle_error_retire_trigger": "Nepodařilo se smazat spouštěč",
-      "lifecycle_error_retire_subscription": "Nepodařilo se smazat odběr",
-      "lifecycle_error_delete_persists": "Smazání se nezdařilo. Odběr možná stále existuje.",
       "auto_error_deploy_check_credentials": "Nasazení se nezdařilo. Zkontrolujte přihlašovací údaje platformy a zkuste to znovu.",
       "auto_error_deploy_generic": "Nasazení automatizace se nezdařilo",
       "test_healthcheck_failed_default": "Kontrola stavu selhala",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "Zatím žádná anotace — přidejte k tomuto běhu štítek, poznámku nebo hvězdičku, abyste ho později snadno našli.",
       "col_verdict": "Verdikt",
       "verdict_none": "Dosud nehodnoceno ředitelem",
-      "verdict_tooltip": "Verdikt ředitele: {score}/5"
+      "verdict_tooltip": "Verdikt ředitele: {score}/5",
+      "annotation_saving": "Ukládání…"
     },
     "settings_status": {
       "saving": "Ukládání {sections}...",
@@ -3612,7 +3597,23 @@
         "other": "Ostatní"
       },
       "title": "Historie změn"
-    }
+    },
+    "sigil_edit_channels_label": "Kanály",
+    "sigil_edit_custom_connector": "Vlastní konektor — bez odpovídající značkové ikony.",
+    "sigil_edit_error_off": "Používá se výchozí zásada zpracování chyb.",
+    "sigil_edit_error_on": "Je nastavena vlastní zásada zpracování chyb.",
+    "sigil_edit_event_off": "Nejsou nastaveny žádné odběry událostí.",
+    "sigil_edit_event_on": "Tato schopnost odebírá události.",
+    "sigil_edit_memory_off": "Paměť je vypnutá — schopnost běží bez uchování stavu.",
+    "sigil_edit_memory_on": "Pro tuto schopnost je zapnutá trvalá paměť.",
+    "sigil_edit_no_channels": "Pro tuto schopnost nejsou nastaveny žádné oznamovací kanály.",
+    "sigil_edit_no_connector": "Tato schopnost nemá deklarovaný konektor.",
+    "sigil_edit_no_dim_editor": "Pro tuto dimenzi zatím není propojen žádný editor.",
+    "sigil_edit_no_trigger": "Pro tuto schopnost není nastaven žádný spouštěč.",
+    "sigil_edit_review_off": "Bez brány lidské kontroly — akce probíhají autonomně.",
+    "sigil_edit_review_on": "Před provedením této schopnosti je vyžadována lidská kontrola.",
+    "sigil_edit_service_label": "Služba: {key}",
+    "sigil_edit_when_label": "Kdy"
   },
   "vault": {
     "workspace_connect": "Připojení Workspace",
@@ -3911,7 +3912,8 @@
       "query_parameters": "Parametry dotazu",
       "recipes_title": "Uložené recepty",
       "truncated_warning": "Odpověď byla pro zobrazení zkrácena",
-      "value_col": "Hodnota"
+      "value_col": "Hodnota",
+      "request_headers": "Hlavičky"
     },
     "ingest": {
       "save_name": "Uložit název",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "Klíč-hodnota",
       "capability_key_value_hint": "Toto je úložiště typu klíč-hodnota. Používejte klíčové příkazy jako SCAN, GET a TYPE — ne SQL.",
       "capability_select_subset": "Jen SELECT",
-      "capability_select_subset_hint": "Zde běží pouze jednoduché dotazy SELECT nad jednou tabulkou — filtrování pomocí WHERE, řazení pomocí ORDER BY, omezení pomocí LIMIT. JOINy, agregace, CTE a zápisy nejsou podporovány."
+      "capability_select_subset_hint": "Zde běží pouze jednoduché dotazy SELECT nad jednou tabulkou — filtrování pomocí WHERE, řazení pomocí ORDER BY, omezení pomocí LIMIT. JOINy, agregace, CTE a zápisy nejsou podporovány.",
+      "query_timeout": "Vypršel časový limit čekání na odpověď. Zkuste to prosím znovu."
     },
     "dependencies": {
       "simulate_revocation": "Simulovat zneplatnění",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "Co se skenuje",
       "read_error_item": "Nepodařilo se přečíst {source}",
       "read_errors_title": "Některé zdroje se nepodařilo přečíst",
-      "select_high_confidence": "Vysoká spolehlivost"
+      "select_high_confidence": "Vysoká spolehlivost",
+      "source_unknown": "Neznámý zdroj"
     },
     "desktop_discovery": {
       "title": "Desktopové aplikace",
@@ -5875,7 +5879,9 @@
       "col_days": "Dny",
       "col_incident": "Incident",
       "guidance_mcp_sidecar": "Agent běžel bez svých vestavěných nástrojů MCP, protože chyběl binární soubor personas-mcp. Přeinstalujte nebo opravte aplikaci, aby byl součástí instalace.",
-      "source_mcp_sidecar": "Sada nástrojů MCP"
+      "source_mcp_sidecar": "Sada nástrojů MCP",
+      "list_truncated": "Zobrazeno prvních {limit} incidentů — zúžte filtry, chcete-li vidět zbytek.",
+      "action_refused": "Akce nebyla použita — stav incidentu se mohl mezitím změnit."
     },
     "observability": {
       "title": "Pozorovatelnost",
@@ -9545,7 +9551,8 @@
       "event_type_required": "Vyžadován typ události k naslouchání.",
       "watch_path_required": "Vyžadována alespoň jedna sledovaná cesta.",
       "composite_min_conditions": "Kombinované spouštěče vyžadují alespoň 2 podmínky.",
-      "composite_window_minimum": "Časové okno musí být alespoň 5 sekund."
+      "composite_window_minimum": "Časové okno musí být alespoň 5 sekund.",
+      "endpoint_required": "Je vyžadována URL koncového bodu nebo událost."
     },
     "dead_letter_select_all": "Vybrat all",
     "dead_letter_select_visible": "Vybrat visible",
@@ -9750,7 +9757,9 @@
       "watch": "Sledovat",
       "watching": "Sledováno",
       "watching_only": "Pouze sledované"
-    }
+    },
+    "overdue_label": "Po termínu",
+    "relay_delete_failed": "Relé se nepodařilo smazat — zkuste to prosím znovu"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "Aktivní",
       "paused": "Pozastaveno",
       "failed": "Selhalo",
-      "file-based": "Založené na souboru",
-      "unknown": "Neznámé"
+      "unknown": "Neznámé",
+      "file-based": "Založené na souboru"
     },
     "delivery": {
       "delivered": "Doručeno",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "s uplynulo",
       "s_remaining": "s zbývá",
       "show_cli_output": "Zobrazit CLI výstup",
-      "hide_cli_output": "Skrýt CLI výstup"
+      "hide_cli_output": "Skrýt CLI výstup",
+      "starting_transformation": "Zahajuje se transformace...",
+      "step_progress": "Krok {step} z {total}",
+      "starting_short": "Zahajuje se...",
+      "check_output_details": "Podrobnosti najdete ve výstupu níže."
     },
     "terminal_extra": {
       "press_enter": "Stiskněte Enter nebo klikněte na Play pro spuštění",

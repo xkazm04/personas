@@ -477,21 +477,31 @@ fn page_min_ts(msgs: &[SlackMessage]) -> Option<String> {
         .min_by(|a, b| compare_ts(a, b))
 }
 
+/// One shared connection-pooled client for the whole poller. Building a fresh
+/// Client per poll/reply (on a 5-second loop) re-established TLS connections
+/// and threw away the pool every tick.
+fn shared_http_client() -> &'static reqwest::Client {
+    static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+    CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .timeout(HTTP_TIMEOUT)
+            .build()
+            .expect("failed to build Slack HTTP client")
+    })
+}
+
 async fn fetch_new_messages(
     bot_token: &str,
     channel_id: &str,
     after_ts: Option<&str>,
 ) -> Result<Vec<SlackMessage>, AppError> {
-    let client = reqwest::Client::builder()
-        .timeout(HTTP_TIMEOUT)
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
+    let client = shared_http_client();
 
     let after_ts = after_ts.filter(|s| !s.is_empty());
 
     // First page: the newest FETCH_LIMIT messages within (after_ts, now].
     let (mut all, mut has_more) =
-        fetch_history_page(&client, bot_token, channel_id, after_ts, None).await?;
+        fetch_history_page(client, bot_token, channel_id, after_ts, None).await?;
 
     // Steady state (<= FETCH_LIMIT new messages this tick) → single page, done.
     // First poll (no cursor) → take only the newest page and let the cursor jump
@@ -518,7 +528,7 @@ async fn fetch_new_messages(
     while has_more && pages < MAX_DRAIN_PAGES {
         let Some(latest) = frontier.clone() else { break };
         let (page, more) =
-            fetch_history_page(&client, bot_token, channel_id, after_ts, Some(&latest)).await?;
+            fetch_history_page(client, bot_token, channel_id, after_ts, Some(&latest)).await?;
         has_more = more;
         if page.is_empty() {
             break;
@@ -560,10 +570,7 @@ async fn post_reply(
         body["thread_ts"] = json!(thread_ts);
     }
 
-    let client = reqwest::Client::builder()
-        .timeout(HTTP_TIMEOUT)
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
+    let client = shared_http_client();
 
     let resp = client
         .post(url)

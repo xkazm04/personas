@@ -261,7 +261,12 @@
     "stream_no_speakers": "発言者なし",
     "stream_none": "なし",
     "stream_search": "通信を検索",
-    "stream_title": "ストリーム"
+    "stream_title": "ストリーム",
+    "columns_action_empty": "今のところ対応が必要な項目はありません",
+    "columns_needs_attention": "要対応",
+    "columns_active_goals": "アクティブな目標",
+    "columns_no_team": "チームなし",
+    "columns_all_clear": "問題なし"
   },
   "common": {
     "loading": "読み込み中...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "{count} ホップ",
       "active_chains_one": "実行中のチェーン {count} 件",
       "active_chains_other": "実行中のチェーン {count} 件",
-      "active_chains_title": "実行中のチェーン"
+      "active_chains_title": "実行中のチェーン",
+      "copy_log_failed": "ログをクリップボードにコピーできませんでした"
     },
     "lab": {
       "mode_arena": "アリーナ",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "依存グラフ",
       "ct_swap_alt_tooltip": "代替コネクタに切り替え",
       "ct_deps": "{count} 依存",
-      "dg_no_deps": "表示する依存関係なし。",
-      "dg_broken": "{count} 件壊れています",
-      "dg_blast_radius": "影響範囲",
-      "dg_dependencies": "依存関係",
-      "dg_select_cred": "認証情報を選択して有効期限切れ時の影響を確認",
-      "dg_relationships": "関係 ({count})",
-      "dg_more": "+{count} 件",
-      "dg_affected_tools": "影響を受けるツール",
-      "dg_affected_auto": "影響を受けるオートメーション",
-      "dg_low_risk": "低リスク",
-      "dg_medium_risk": "中リスク",
-      "dg_high_risk": "高リスク",
-      "dg_high_blast": "この認証情報が無効になると {count} 件の機能が壊れます。",
-      "dg_medium_blast": "{count} 件の機能がこの認証情報に依存しています。",
-      "dg_low_blast": "この認証情報に依存するツールまたはオートメーションなし。",
       "dm_needed": "{count} 件の認証情報が必要",
       "dm_fulfilled": "{fulfilled}/{total} 件のコネクタが充足",
       "dm_reuse_hint": "{count} 件は既存の認証情報を再利用可能",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "トリガーとサブスクリプション",
       "sub_suggested": "{count} 件の推奨",
       "sub_filter": "フィルター: {filter}",
-      "lifecycle_error_load_triggers": "トリガーの読み込みに失敗しました: {error}",
-      "lifecycle_error_load_subscriptions": "サブスクリプションの読み込みに失敗しました: {error}",
-      "lifecycle_error_activate_trigger": "トリガーの有効化に失敗しました",
-      "lifecycle_error_activate_subscription": "サブスクリプションの有効化に失敗しました",
-      "lifecycle_error_retire_trigger": "トリガーの削除に失敗しました",
-      "lifecycle_error_retire_subscription": "サブスクリプションの削除に失敗しました",
-      "lifecycle_error_delete_persists": "削除に失敗しました。サブスクリプションが残っている可能性があります。",
       "auto_error_deploy_check_credentials": "デプロイに失敗しました。プラットフォームの認証情報を確認し、もう一度お試しください。",
       "auto_error_deploy_generic": "オートメーションのデプロイに失敗しました",
       "test_healthcheck_failed_default": "ヘルスチェックに失敗しました",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "まだ注釈はありません — タグ、メモ、スターを付けておくと後で見つけやすくなります。",
       "col_verdict": "評価",
       "verdict_none": "Directorによる審査はまだありません",
-      "verdict_tooltip": "Director の評価: {score}/5"
+      "verdict_tooltip": "Director の評価: {score}/5",
+      "annotation_saving": "保存中…"
     },
     "settings_status": {
       "saving": "{sections} を保存中...",
@@ -3612,7 +3597,23 @@
         "other": "その他"
       },
       "title": "変更履歴"
-    }
+    },
+    "sigil_edit_channels_label": "チャンネル",
+    "sigil_edit_custom_connector": "カスタムコネクタ — 一致するブランドアイコンがありません。",
+    "sigil_edit_error_off": "デフォルトのエラーポリシーにフォールバックします。",
+    "sigil_edit_error_on": "カスタムのエラー処理ポリシーが設定されています。",
+    "sigil_edit_event_off": "イベント購読は設定されていません。",
+    "sigil_edit_event_on": "このケイパビリティはイベントを購読しています。",
+    "sigil_edit_memory_off": "メモリはオフです — このケイパビリティはステートレスに動作します。",
+    "sigil_edit_memory_on": "このケイパビリティでは永続メモリが有効です。",
+    "sigil_edit_no_channels": "このケイパビリティに通知チャンネルはありません。",
+    "sigil_edit_no_connector": "このケイパビリティはコネクタを宣言していません。",
+    "sigil_edit_no_dim_editor": "このディメンションにはまだエディタが接続されていません。",
+    "sigil_edit_no_trigger": "このケイパビリティにトリガーは設定されていません。",
+    "sigil_edit_review_off": "人によるレビューゲートはありません — アクションは自律的に実行されます。",
+    "sigil_edit_review_on": "このケイパビリティが動作する前に人によるレビューが必要です。",
+    "sigil_edit_service_label": "サービス: {key}",
+    "sigil_edit_when_label": "条件"
   },
   "vault": {
     "workspace_connect": "ワークスペース接続",
@@ -3911,7 +3912,8 @@
       "query_parameters": "クエリパラメータ",
       "recipes_title": "保存済みレシピ",
       "truncated_warning": "表示のためにレスポンスを切り捨てました",
-      "value_col": "値"
+      "value_col": "値",
+      "request_headers": "ヘッダー"
     },
     "ingest": {
       "save_name": "名前を保存",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "キー・バリュー",
       "capability_key_value_hint": "これはキー・バリュー ストアです。SQL ではなく、SCAN、GET、TYPE などのキー コマンドを使用してください。",
       "capability_select_subset": "SELECT のみ",
-      "capability_select_subset_hint": "ここでは単一テーブルの単純な SELECT クエリのみ実行できます。WHERE で絞り込み、ORDER BY で並べ替え、LIMIT で件数を制限します。JOIN、集計、CTE、書き込みはサポートされていません。"
+      "capability_select_subset_hint": "ここでは単一テーブルの単純な SELECT クエリのみ実行できます。WHERE で絞り込み、ORDER BY で並べ替え、LIMIT で件数を制限します。JOIN、集計、CTE、書き込みはサポートされていません。",
+      "query_timeout": "応答待ちがタイムアウトしました。もう一度お試しください。"
     },
     "dependencies": {
       "simulate_revocation": "失効をシミュレート",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "スキャン対象",
       "read_error_item": "{source} を読み取れませんでした",
       "read_errors_title": "一部のソースを読み取れませんでした",
-      "select_high_confidence": "信頼度が高い"
+      "select_high_confidence": "信頼度が高い",
+      "source_unknown": "不明なソース"
     },
     "desktop_discovery": {
       "title": "デスクトップアプリ",
@@ -5875,7 +5879,9 @@
       "col_days": "日数",
       "col_incident": "インシデント",
       "guidance_mcp_sidecar": "personas-mcp バイナリが見つからなかったため、エージェントは組み込みの MCP ツールなしで実行されました。デスクトップアプリに同梱されるよう、アプリを再インストールまたは修復してください。",
-      "source_mcp_sidecar": "MCP ツールベルト"
+      "source_mcp_sidecar": "MCP ツールベルト",
+      "list_truncated": "最初の{limit}件のインシデントを表示しています——残りを見るにはフィルターを絞り込んでください。",
+      "action_refused": "操作は適用されませんでした——インシデントのステータスがすでに変わっている可能性があります。"
     },
     "observability": {
       "title": "オブザーバビリティ",
@@ -9545,7 +9551,8 @@
       "event_type_required": "リッスンするイベントタイプは必須です。",
       "watch_path_required": "監視パスを少なくとも1つ指定してください。",
       "composite_min_conditions": "コンポジットトリガーには少なくとも2つの条件が必要です。",
-      "composite_window_minimum": "時間枠は5秒以上にする必要があります。"
+      "composite_window_minimum": "時間枠は5秒以上にする必要があります。",
+      "endpoint_required": "エンドポイントURLまたはイベントが必要です。"
     },
     "dead_letter_select_all": "選択 all",
     "dead_letter_select_visible": "選択 visible",
@@ -9750,7 +9757,9 @@
       "watch": "ウォッチ",
       "watching": "ウォッチ中",
       "watching_only": "ウォッチ中のみ"
-    }
+    },
+    "overdue_label": "期限超過",
+    "relay_delete_failed": "リレーの削除に失敗しました — もう一度お試しください"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "有効",
       "paused": "一時停止",
       "failed": "失敗",
-      "file-based": "ファイルベース",
-      "unknown": "不明"
+      "unknown": "不明",
+      "file-based": "ファイルベース"
     },
     "delivery": {
       "delivered": "配信済み",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "秒経過",
       "s_remaining": "秒残り",
       "show_cli_output": "CLI 出力を表示",
-      "hide_cli_output": "CLI 出力を非表示"
+      "hide_cli_output": "CLI 出力を非表示",
+      "starting_transformation": "変換を開始しています...",
+      "step_progress": "ステップ {step} / {total}",
+      "starting_short": "開始しています...",
+      "check_output_details": "詳細は下記の出力をご確認ください。"
     },
     "terminal_extra": {
       "press_enter": "Enterキーを押すか再生をクリックして開始",

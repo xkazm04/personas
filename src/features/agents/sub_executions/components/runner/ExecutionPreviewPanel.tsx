@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Eye, DollarSign, Brain, Wrench, Zap, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { previewExecution, type ExecutionPreview } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
+import { fmtCost as fmtCostBase, fmtTokens as fmtTokensBase } from '../../libs/comparisonHelpers';
 
 interface ExecutionPreviewPanelProps {
   personaId: string;
@@ -9,17 +10,8 @@ interface ExecutionPreviewPanelProps {
   useCaseId?: string;
 }
 
-function fmtCost(usd: number): string {
-  if (usd < 0.001) return '<$0.001';
-  if (usd < 0.01) return `$${usd.toFixed(3)}`;
-  return `$${usd.toFixed(2)}`;
-}
-
-function fmtTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-}
+const fmtCost = (usd: number) => fmtCostBase(usd, { precision: 'auto' });
+const fmtTokens = (n: number) => fmtTokensBase(n, { withMillions: true });
 
 export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: ExecutionPreviewPanelProps) {
   const { t, tx } = useTranslation();

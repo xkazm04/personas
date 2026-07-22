@@ -260,5 +260,10 @@
   "stream_no_speakers": "발화자 없음",
   "stream_none": "없음",
   "stream_search": "전송 검색",
-  "stream_title": "스트림"
+  "stream_title": "스트림",
+  "columns_action_empty": "지금은 처리할 항목이 없습니다",
+  "columns_needs_attention": "주의 필요",
+  "columns_active_goals": "진행 중인 목표",
+  "columns_no_team": "팀 없음",
+  "columns_all_clear": "모두 정상"
 }

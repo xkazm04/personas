@@ -131,54 +131,16 @@ pub struct ExecutionSearchResult {
 
 /// Execution row with persona metadata included via SQL JOIN.
 /// Eliminates N+1 queries when listing executions across all personas.
+///
+/// Flattens `PersonaExecution` as its base (see that struct for field docs,
+/// including the ts-rs `execution_flows` workaround) so new execution columns
+/// only need to be added once and can't silently drift between the two shapes.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct GlobalExecutionRow {
-    pub id: String,
-    pub persona_id: String,
-    pub trigger_id: Option<String>,
-    pub use_case_id: Option<String>,
-    pub status: String,
-    pub input_data: Option<String>,
-    pub output_data: Option<String>,
-    pub claude_session_id: Option<String>,
-    pub log_file_path: Option<String>,
-    // ts-rs doesn't resolve the `serde_json/JsonValue` subdir import when the
-    // type is wrapped in `Json<T>` (transparent TS impl visits the dep but
-    // import-path resolution misses it). Pin the TS type to `unknown | null`
-    // for now — the field is a JSON blob in practice, so the type relaxation
-    // is honest. Revisit if ts-rs ever fixes nested-path imports for wrapper
-    // generics.
-    #[ts(type = "unknown")]
-    pub execution_flows: Option<Json<serde_json::Value>>,
-    pub model_used: Option<String>,
-    /// Resolved Claude CLI `--effort` level the run was spawned with
-    /// (low/medium/high) — the "thinking" dial for cost observability.
-    pub thinking_level: Option<String>,
-    #[ts(type = "number")]
-    pub input_tokens: i64,
-    #[ts(type = "number")]
-    pub output_tokens: i64,
-    pub cost_usd: f64,
-    pub error_message: Option<String>,
-    #[ts(type = "number | null")]
-    pub duration_ms: Option<i64>,
-    pub tool_steps: Option<Json<Vec<ToolCallStep>>>,
-    pub retry_of_execution_id: Option<String>,
-    #[ts(type = "number")]
-    pub retry_count: i64,
-    pub started_at: Option<String>,
-    pub completed_at: Option<String>,
-    pub created_at: String,
-    pub execution_config: Option<String>,
-    /// `true` when the execution log file may be incomplete due to I/O errors.
-    #[serde(default)]
-    pub log_truncated: bool,
-    /// Phase C3 — simulation runs are excluded from the default activity feed.
-    #[serde(default)]
-    pub is_simulation: bool,
-    #[serde(default = "default_business_outcome")]
-    pub business_outcome: String,
+    #[serde(flatten)]
+    #[ts(flatten)]
+    pub base: PersonaExecution,
     // Persona metadata from JOIN
     pub persona_name: Option<String>,
     pub persona_icon: Option<String>,

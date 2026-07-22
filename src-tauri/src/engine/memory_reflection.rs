@@ -220,36 +220,12 @@ struct ReflectionOutput {
 
 /// Extract the outermost brace-balanced JSON object from LLM output that
 /// may carry prose or markdown fences around it. String- and escape-aware.
+///
+/// Thin wrapper over the shared `safe_json::extract_balanced_object` (kept
+/// as a distinct `pub(crate)` name for call-site stability; see
+/// refactor-bughunt-2026-07-10, tauri-engine-3-10 #8).
 pub(crate) fn extract_json_object(s: &str) -> Option<String> {
-    let start = s.find('{')?;
-    let bytes = s.as_bytes();
-    let mut depth = 0i32;
-    let mut in_string = false;
-    let mut escaped = false;
-    for (i, &b) in bytes.iter().enumerate().skip(start) {
-        if in_string {
-            if escaped {
-                escaped = false;
-            } else if b == b'\\' {
-                escaped = true;
-            } else if b == b'"' {
-                in_string = false;
-            }
-            continue;
-        }
-        match b {
-            b'"' => in_string = true,
-            b'{' => depth += 1,
-            b'}' => {
-                depth -= 1;
-                if depth == 0 {
-                    return Some(s[start..=i].to_string());
-                }
-            }
-            _ => {}
-        }
-    }
-    None
+    super::safe_json::extract_balanced_object(s).map(|s| s.to_string())
 }
 
 // ---------------------------------------------------------------------------
@@ -359,7 +335,12 @@ async fn run_claude_oneshot(prompt: &str) -> Result<String, AppError> {
     cmd.args(&args)
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
+        .stderr(std::process::Stdio::piped())
+        // Guarantee the CLI child is killed if this future is dropped for any
+        // reason other than the timeout branch below (app shutdown, task
+        // cancellation, an outer timeout) — matches CliProcessDriver's safety
+        // net (see cli_process.rs) which this ad-hoc spawn otherwise bypasses.
+        .kill_on_drop(true);
     #[cfg(windows)]
     {
         #[allow(unused_imports)]

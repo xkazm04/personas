@@ -24,7 +24,7 @@ export function parseOutputData(raw: string | null): ParsedOutput | null {
   try {
     const data = JSON.parse(raw);
     if (data && typeof data === 'object' && !Array.isArray(data)) {
-      if (data.user_message || data.execution_flow || data.memories || data.events) {
+      if (data.user_message || data.execution_flow || data.memories || data.events || data.reviews || data.manual_reviews || data.outcome_assessment || data.knowledge_annotation) {
         result.data = data;
         result.memories = Array.isArray(data.memories) ? data.memories : [];
         result.events = Array.isArray(data.events) ? data.events : [];

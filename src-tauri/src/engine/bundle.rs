@@ -398,6 +398,13 @@ pub fn apply_import(
     let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bundle_bytes))
         .map_err(|e| AppError::Validation(format!("Invalid bundle ZIP: {e}")))?;
 
+    // Same check preview_bundle performed — apply_import must not simply
+    // trust the embedded signature, and must record whether it actually
+    // verified (previously hardcoded `true` regardless of outcome).
+    let manifest_bytes = serde_json::to_string_pretty(&manifest)?;
+    let (sig_valid, _signer_trusted) =
+        verify_against_trusted_key(pool, &sig, manifest_bytes.as_bytes());
+
     let mut imported = 0u32;
     let mut skipped = 0u32;
     let mut errors = Vec::new();
@@ -472,7 +479,7 @@ pub fn apply_import(
                         source_peer_id: sig.signer_peer_id.clone(),
                         source_display_name: None,
                         bundle_hash: Some(bundle_hash.clone()),
-                        signature_verified: true,
+                        signature_verified: sig_valid,
                     };
                     if let Err(e) = exposure_repo::upsert_provenance(pool, provenance) {
                         // Roll back the just-imported persona, but DON'T abort

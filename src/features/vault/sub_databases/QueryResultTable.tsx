@@ -45,7 +45,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
   }, [copyToClipboard]);
 
   const handleCellClick = useCallback((cell: unknown, rowIdx: number, colIdx: number) => {
-    copyToClipboard(formatCell(cell), `cell-${rowIdx}-${colIdx}`);
+    copyToClipboard(formatCell(cell, { pretty: true }), `cell-${rowIdx}-${colIdx}`);
   }, [copyToClipboard]);
 
   if (result.columns.length === 0 && result.rows.length === 0) {
@@ -59,12 +59,28 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
     );
   }
 
+  // Header and body render as two separate <table>s (below) so the header can
+  // stay put while the body scrolls/virtualizes. Two tables auto-size columns
+  // from their own content independently, so without a shared width contract
+  // the header drifts out of alignment with the data underneath it. A fixed
+  // table layout plus an identical <colgroup> in both tables forces the same
+  // per-column width in each, keeping header and body columns locked together.
+  const colWidthPct = 100 / Math.max(1, result.columns.length);
+  const colGroup = (
+    <colgroup>
+      {result.columns.map((_, i) => (
+        <col key={i} style={{ width: `${colWidthPct}%` }} />
+      ))}
+    </colgroup>
+  );
+
   return (
     <div className="space-y-2">
       <div className="rounded-modal border border-primary/10 overflow-hidden">
         {/* Sticky header */}
         <div className="overflow-x-auto">
-          <table className="w-full typo-body">
+          <table className="w-full typo-body" style={{ tableLayout: 'fixed' }}>
+            {colGroup}
             <thead>
               <tr className="bg-secondary/40 border-b border-primary/10">
                 {result.columns.map((col, i) => {
@@ -104,7 +120,8 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
         {/* Virtualized body */}
         <div ref={scrollRef} className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 400 }}>
           <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}>
-            <table className="w-full typo-body" style={{ position: 'absolute', top: 0, left: 0 }}>
+            <table className="w-full typo-body" style={{ position: 'absolute', top: 0, left: 0, tableLayout: 'fixed' }}>
+              {colGroup}
               <tbody>
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                   const rowIdx = virtualRow.index;
@@ -129,7 +146,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                       {row.map((cell, colIdx) => {
                         const cellKey = `cell-${rowIdx}-${colIdx}`;
                         const isCellCopied = copiedCell === cellKey;
-                        const cellText = renderCell(cell);
+                        const cellText = formatCell(cell);
                         const isNull = cell === null || cell === undefined;
 
                         return (
@@ -139,7 +156,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                             onKeyDown={(e) => onCopyKey(e, () => handleCellClick(cell, rowIdx, colIdx))}
                             tabIndex={0}
                             role="button"
-                            aria-label={tx(db.click_copy_cell, { value: formatCell(cell) })}
+                            aria-label={tx(db.click_copy_cell, { value: formatCell(cell, { pretty: true }) })}
                             className={`px-3 py-1.5 max-w-[300px] cursor-pointer transition-all duration-150 select-text focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 ${
                               isCellCopied
                                 ? 'bg-emerald-500/10 text-emerald-400'
@@ -147,7 +164,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                                   ? 'text-foreground italic'
                                   : 'text-foreground hover:bg-primary/5'
                             }`}
-                            title={isCellCopied ? db.copied : tx(db.click_copy_cell, { value: formatCell(cell) })}
+                            title={isCellCopied ? db.copied : tx(db.click_copy_cell, { value: formatCell(cell, { pretty: true }) })}
                           >
                             <span className="block truncate">
                               {isCellCopied ? (
@@ -192,15 +209,17 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
   );
 }
 
-function renderCell(cell: unknown): string {
+/**
+ * Serialize a cell value to a display string. `pretty` controls JSON
+ * indentation — display uses compact JSON (`pretty: false`), copy/aria-label
+ * uses indented JSON (`pretty: true`) for readability once pasted elsewhere.
+ * Single source of truth for NULL/boolean/object formatting so display and
+ * copy text can't silently diverge (they previously did via two near-
+ * identical functions, `renderCell` and `formatCell`).
+ */
+function formatCell(cell: unknown, opts: { pretty?: boolean } = {}): string {
   if (cell === null || cell === undefined) return 'NULL';
   if (typeof cell === 'boolean') return cell ? 'true' : 'false';
-  if (typeof cell === 'object') return JSON.stringify(cell);
-  return String(cell);
-}
-
-function formatCell(cell: unknown): string {
-  if (cell === null || cell === undefined) return 'NULL';
-  if (typeof cell === 'object') return JSON.stringify(cell, null, 2);
+  if (typeof cell === 'object') return JSON.stringify(cell, null, opts.pretty ? 2 : undefined);
   return String(cell);
 }

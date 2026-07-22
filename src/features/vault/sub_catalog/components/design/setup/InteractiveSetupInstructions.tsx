@@ -44,15 +44,20 @@ export function InteractiveSetupInstructions({
     completedCount,
     totalSteps,
     toggleStep: rawToggle,
+    reset: resetProgress,
   } = useStepProgress(steps.length);
 
-  // Restore persisted step completions on mount
+  // Restore persisted step completions whenever the instructions change (a
+  // new storageKey = different markdown, e.g. after "Refine"). Reset first —
+  // otherwise stale completions from the previous version's step indices
+  // bleed into the new one instead of being replaced by its own saved state.
   const [restored, setRestored] = useState(false);
   useEffect(() => {
+    resetProgress();
     const saved = readPersistedSteps(storageKey);
     saved.forEach((i) => rawToggle(i));
     setRestored(true);
-  }, [rawToggle, storageKey]);
+  }, [rawToggle, resetProgress, storageKey]);
 
   // Persist whenever completedSteps changes (after initial restore)
   useEffect(() => {

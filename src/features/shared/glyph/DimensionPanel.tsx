@@ -61,7 +61,7 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
       // page stay interactive around it, there's no backdrop or focus
       // trap, so BaseModal semantics would be wrong here.
       role="region"
-      aria-label={c[meta.labelKey]}
+      aria-label={dimText.label[dim]}
       tabIndex={-1}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
@@ -96,7 +96,7 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
           <Icon className="w-4 h-4" style={{ color: '#fff' }} />
         </span>
         <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground">
-          {c[meta.labelKey]}
+          {dimText.label[dim]}
         </span>
       </div>
       <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-thin">

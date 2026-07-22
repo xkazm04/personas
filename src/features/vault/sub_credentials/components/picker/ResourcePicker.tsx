@@ -139,6 +139,21 @@ export function ResourcePicker({
       }
       return out;
     });
+    // Also clear the downstream fetch cache — otherwise the fetch effect's
+    // `if (state[spec.id]) continue` skip sees the stale cached entry and
+    // never re-fetches, so the list keeps showing items scoped to the old
+    // parent pick even though `selections` above was cleared.
+    setState((prev) => {
+      let changed = false;
+      const out = { ...prev };
+      for (const other of orderedSpecs) {
+        if ((other.depends_on ?? []).includes(spec.id) && other.id in out) {
+          delete out[other.id];
+          changed = true;
+        }
+      }
+      return changed ? out : prev;
+    });
   };
 
   const isSelected = (specId: string, id: string) =>

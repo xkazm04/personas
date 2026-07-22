@@ -215,7 +215,7 @@ pub async fn test_credential_design_healthcheck(
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .dns_resolver(std::sync::Arc::new(
-            crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+            crate::engine::url_safety::SsrfSafeDnsResolver,
         ))
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;

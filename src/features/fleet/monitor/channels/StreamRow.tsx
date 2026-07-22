@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Ear, ExternalLink } from 'lucide-react';
-import { memberColor, parsePayload } from '@/lib/channel/eventModel';
+import { memberColor, parsePayload, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { TaggedItem } from './types';
 import { callsign, itemKind, rowFamily } from './lensModel';
@@ -28,17 +28,6 @@ import { callsign, itemKind, rowFamily } from './lensModel';
 
 /** The radio row is a fixed 30px — exact virtualizer math, no measurement. */
 export const ROW_HEIGHT = 30;
-
-const FAMILY_TEXT: Record<string, string> = {
-  handoff: 'text-violet-300',
-  pr: 'text-blue-300',
-  qa: 'text-amber-300',
-  release: 'text-emerald-300',
-  failure: 'text-red-300',
-  build: 'text-sky-300',
-  note: 'text-amber-200/90',
-  other: 'text-foreground/60',
-};
 
 const KIND_TEXT: Record<string, string> = {
   step: 'text-sky-300',

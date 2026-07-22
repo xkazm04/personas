@@ -59,14 +59,22 @@ export default function LimitsSettings() {
         const key = pt.date.slice(0, 7); // YYYY-MM (server-bucketed calendar date)
         byMonth.set(key, (byMonth.get(key) ?? 0) + (pt.cost ?? 0));
       }
-      const now = new Date();
+      // Anchor "current month" on the server's own bucketed date domain (the
+      // max chart_points date) rather than the client's local clock — a
+      // client behind/ahead of the server around a month boundary would
+      // otherwise mislabel the head row for a few hours.
+      const maxKey = data.chart_points.reduce<string | null>((acc, pt) => {
+        const key = pt.date.slice(0, 7);
+        return !acc || key > acc ? key : acc;
+      }, null);
+      const anchor = maxKey ? new Date(`${maxKey}-01T00:00:00Z`) : new Date();
       const months: MonthSpend[] = [];
       for (let i = 0; i < 5; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const d = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth() - i, 1));
+        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
         months.push({
           key,
-          label: d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' }),
+          label: d.toLocaleDateString(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' }),
           spend: byMonth.get(key) ?? 0,
         });
       }

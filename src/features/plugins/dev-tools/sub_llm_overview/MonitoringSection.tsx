@@ -21,12 +21,15 @@ import AssignmentMatrix from './AssignmentMatrix';
 import { useMonitoringPinpoints } from './useMonitoringPinpoints';
 import type { AssignmentMatrixProps } from './matrixShared';
 
-function MonMatrix() {
+// monCreds comes from the parent's single useMonitoringPinpoints instance —
+// calling the hook here too ran the whole load() chain (vault listCredentials
+// + fetchSentryOrgs + fetchSentryStats) TWICE per tab open, and the header's
+// reload button only refreshed the parent copy.
+function MonMatrix({ monCreds }: { monCreds: ReturnType<typeof useMonitoringPinpoints>['monCreds'] }) {
   const { t } = useTranslation();
   const dt = t.plugins.dev_tools;
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
-  const { monCreds } = useMonitoringPinpoints();
 
   const assign = useCallback(
     async (projectId: string, credId: string | null) => {
@@ -85,7 +88,7 @@ export default function MonitoringSection() {
 
   return (
     <>
-      <MonMatrix />
+      <MonMatrix monCreds={monCreds} />
       <div className="flex-1 min-h-0 mx-4 my-3 flex flex-col rounded-card border border-primary/10 overflow-hidden">
         <div className="px-4 py-2 border-b border-primary/10 flex items-center gap-2">
           <Shield className="w-3.5 h-3.5 text-red-400" />
@@ -130,7 +133,7 @@ export default function MonitoringSection() {
           <StateMessage icon={<AlertCircle className="w-8 h-8 text-red-400/70" />} title={dt.mon_error_title} subtitle={error ?? dt.mon_unknown_error} />
         ) : stats ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <StatCard label={po.unresolved_issues} value={stats.unresolvedIssues} icon={Bug} tone={stats.unresolvedIssues === 0 ? 'success' : stats.unresolvedIssues > 5 ? 'danger' : 'warning'} />
+            <StatCard label={po.unresolved_issues} value={stats.unresolvedIssues ?? '—'} icon={Bug} tone={stats.unresolvedIssues === null ? 'warning' : stats.unresolvedIssues === 0 ? 'success' : stats.unresolvedIssues > 5 ? 'danger' : 'warning'} />
             <StatCard label={po.events_24h} value={stats.eventsLast24h} icon={Activity} tone={stats.eventsLast24h === 0 ? 'success' : stats.eventsLast24h > 100 ? 'danger' : 'warning'} />
             <StatCard label={po.events_7d} value={stats.eventsLastWeek} icon={BarChart3} tone="info" />
           </div>

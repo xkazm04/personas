@@ -261,7 +261,12 @@
     "stream_no_speakers": "Aucun intervenant",
     "stream_none": "Aucun",
     "stream_search": "Rechercher des transmissions",
-    "stream_title": "Flux"
+    "stream_title": "Flux",
+    "columns_action_empty": "Rien ne nécessite votre attention pour le moment",
+    "columns_needs_attention": "Nécessite une attention",
+    "columns_active_goals": "Objectifs actifs",
+    "columns_no_team": "Sans équipe",
+    "columns_all_clear": "Tout est en ordre"
   },
   "common": {
     "loading": "Chargement...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "{count} sauts",
       "active_chains_one": "{count} chaîne en cours",
       "active_chains_other": "{count} chaînes en cours",
-      "active_chains_title": "Chaînes en cours"
+      "active_chains_title": "Chaînes en cours",
+      "copy_log_failed": "Impossible de copier le journal"
     },
     "lab": {
       "mode_arena": "Arène",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "Graphe de dépendances",
       "ct_swap_alt_tooltip": "Passer au connecteur alternatif",
       "ct_deps": "{count} dép.",
-      "dg_no_deps": "Aucune dépendance à afficher.",
-      "dg_broken": "{count} cassé(s)",
-      "dg_blast_radius": "Rayon d'impact",
-      "dg_dependencies": "Dépendances",
-      "dg_select_cred": "Sélectionnez un identifiant pour voir ce qui se casse lors de son expiration",
-      "dg_relationships": "Relations ({count})",
-      "dg_more": "+{count} autres",
-      "dg_affected_tools": "Outils affectés",
-      "dg_affected_auto": "Automatisations affectées",
-      "dg_low_risk": "Risque faible",
-      "dg_medium_risk": "Risque moyen",
-      "dg_high_risk": "Risque élevé",
-      "dg_high_blast": "Si cet identifiant expire ou se déconnecte, {count} capacités seront cassées.",
-      "dg_medium_blast": "{count} capacités dépendent de cet identifiant.",
-      "dg_low_blast": "Aucun outil ou automatisation ne dépend de cet identifiant.",
       "dm_needed": "{count} identifiant(s) requis",
       "dm_fulfilled": "{fulfilled}/{total} connecteur(s) satisfait(s)",
       "dm_reuse_hint": "{count} peuvent réutiliser des identifiants existants",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "Déclencheurs & abonnements",
       "sub_suggested": "{count} suggéré(s)",
       "sub_filter": "filtre : {filter}",
-      "lifecycle_error_load_triggers": "Échec du chargement des déclencheurs : {error}",
-      "lifecycle_error_load_subscriptions": "Échec du chargement des abonnements : {error}",
-      "lifecycle_error_activate_trigger": "Échec de l'activation du déclencheur",
-      "lifecycle_error_activate_subscription": "Échec de l'activation de l'abonnement",
-      "lifecycle_error_retire_trigger": "Échec de la suppression du déclencheur",
-      "lifecycle_error_retire_subscription": "Échec de la suppression de l'abonnement",
-      "lifecycle_error_delete_persists": "Échec de la suppression. L'abonnement existe peut-être encore.",
       "auto_error_deploy_check_credentials": "Échec du déploiement. Vérifiez vos identifiants de plateforme, puis réessayez.",
       "auto_error_deploy_generic": "Échec du déploiement de l'automatisation",
       "test_healthcheck_failed_default": "Échec du contrôle d'état",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "Aucune annotation pour l’instant — ajoutez un tag, une note ou une étoile à cette exécution pour la retrouver plus facilement plus tard.",
       "col_verdict": "Verdict",
       "verdict_none": "Pas encore examiné par le Director",
-      "verdict_tooltip": "Verdict du Director : {score}/5"
+      "verdict_tooltip": "Verdict du Director : {score}/5",
+      "annotation_saving": "Enregistrement…"
     },
     "settings_status": {
       "saving": "Enregistrement {sections}...",
@@ -3612,7 +3597,23 @@
         "other": "Autre"
       },
       "title": "Historique des modifications"
-    }
+    },
+    "sigil_edit_channels_label": "Canaux",
+    "sigil_edit_custom_connector": "Connecteur personnalisé — aucune icône de marque correspondante.",
+    "sigil_edit_error_off": "Utilise la politique d'erreur par défaut.",
+    "sigil_edit_error_on": "Une politique de gestion des erreurs personnalisée est configurée.",
+    "sigil_edit_event_off": "Aucun abonnement à des événements configuré.",
+    "sigil_edit_event_on": "Cette capacité s'abonne à des événements.",
+    "sigil_edit_memory_off": "La mémoire est désactivée — la capacité s'exécute sans état.",
+    "sigil_edit_memory_on": "La mémoire persistante est activée pour cette capacité.",
+    "sigil_edit_no_channels": "Aucun canal de notification pour cette capacité.",
+    "sigil_edit_no_connector": "Cette capacité ne déclare aucun connecteur.",
+    "sigil_edit_no_dim_editor": "Aucun éditeur configuré pour cette dimension pour le moment.",
+    "sigil_edit_no_trigger": "Aucun déclencheur configuré sur cette capacité.",
+    "sigil_edit_review_off": "Aucune validation humaine requise — les actions sont autonomes.",
+    "sigil_edit_review_on": "Une validation humaine est requise avant que cette capacité n'agisse.",
+    "sigil_edit_service_label": "Service : {key}",
+    "sigil_edit_when_label": "Quand"
   },
   "vault": {
     "workspace_connect": "Connexion espace de travail",
@@ -3911,7 +3912,8 @@
       "query_parameters": "Paramètres de requête",
       "recipes_title": "Recettes",
       "truncated_warning": "Réponse tronquée",
-      "value_col": "Valeur"
+      "value_col": "Valeur",
+      "request_headers": "En-têtes"
     },
     "ingest": {
       "save_name": "Enregistrer sous le nom",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "Clé-valeur",
       "capability_key_value_hint": "Il s'agit d'un magasin clé-valeur. Utilisez des commandes de clé comme SCAN, GET et TYPE — pas de SQL.",
       "capability_select_subset": "SELECT uniquement",
-      "capability_select_subset_hint": "Seules des requêtes SELECT simples sur une seule table s'exécutent ici : filtrez avec WHERE, triez avec ORDER BY, limitez avec LIMIT. Les JOIN, agrégations, CTE et écritures ne sont pas pris en charge."
+      "capability_select_subset_hint": "Seules des requêtes SELECT simples sur une seule table s'exécutent ici : filtrez avec WHERE, triez avec ORDER BY, limitez avec LIMIT. Les JOIN, agrégations, CTE et écritures ne sont pas pris en charge.",
+      "query_timeout": "Délai d'attente dépassé pour la réponse. Veuillez réessayer."
     },
     "dependencies": {
       "simulate_revocation": "Simuler la révocation",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "Ce qui est analysé",
       "read_error_item": "Impossible de lire {source}",
       "read_errors_title": "Certaines sources n'ont pas pu être lues",
-      "select_high_confidence": "Haute confiance"
+      "select_high_confidence": "Haute confiance",
+      "source_unknown": "Source inconnue"
     },
     "desktop_discovery": {
       "title": "Applications de bureau",
@@ -5875,7 +5879,9 @@
       "col_days": "Jours",
       "col_incident": "Incident",
       "guidance_mcp_sidecar": "L'agent s'est exécuté sans ses outils MCP intégrés car le binaire personas-mcp était manquant. Réinstallez ou réparez l'application pour qu'il soit livré avec elle.",
-      "source_mcp_sidecar": "Boîte à outils MCP"
+      "source_mcp_sidecar": "Boîte à outils MCP",
+      "action_refused": "Action non appliquée : le statut de l'incident a peut-être déjà changé.",
+      "list_truncated": "Affichage des {limit} premiers incidents — affinez les filtres pour voir le reste."
     },
     "observability": {
       "title": "Observabilité",
@@ -9545,7 +9551,8 @@
       "event_type_required": "Le type d'événement à écouter est requis.",
       "watch_path_required": "Au moins un chemin à surveiller est requis.",
       "composite_min_conditions": "Les déclencheurs composites nécessitent au moins 2 conditions.",
-      "composite_window_minimum": "La fenêtre temporelle doit être d'au moins 5 secondes."
+      "composite_window_minimum": "La fenêtre temporelle doit être d'au moins 5 secondes.",
+      "endpoint_required": "Une URL de point de terminaison ou un événement est requis."
     },
     "dead_letter_select_all": "Sélectionner all",
     "dead_letter_select_visible": "Sélectionner visible",
@@ -9750,7 +9757,9 @@
       "watch": "Surveiller",
       "watching": "Surveillé",
       "watching_only": "Surveillé uniquement"
-    }
+    },
+    "overdue_label": "En retard",
+    "relay_delete_failed": "Échec de la suppression du relais — veuillez réessayer"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "Actif",
       "paused": "En pause",
       "failed": "Échoué",
-      "file-based": "Basé sur fichier",
-      "unknown": "Inconnu"
+      "unknown": "Inconnu",
+      "file-based": "Basé sur fichier"
     },
     "delivery": {
       "delivered": "Livré",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "s écoulées",
       "s_remaining": "s restantes",
       "show_cli_output": "Afficher la sortie CLI",
-      "hide_cli_output": "Masquer la sortie CLI"
+      "hide_cli_output": "Masquer la sortie CLI",
+      "starting_transformation": "Démarrage de la transformation...",
+      "step_progress": "Étape {step} sur {total}",
+      "starting_short": "Démarrage...",
+      "check_output_details": "Consultez la sortie ci-dessous pour plus de détails."
     },
     "terminal_extra": {
       "press_enter": "Appuyez sur Entrée ou cliquez sur Lecture pour démarrer",

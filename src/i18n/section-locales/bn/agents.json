@@ -523,7 +523,8 @@
     "active_chains_hops_other": "{count}টি ধাপ",
     "active_chains_one": "{count}টি চেইন চলমান",
     "active_chains_other": "{count}টি চেইন চলমান",
-    "active_chains_title": "চলমান চেইন"
+    "active_chains_title": "চলমান চেইন",
+    "copy_log_failed": "লগ ক্লিপবোর্ডে কপি করা যায়নি"
   },
   "lab": {
     "mode_arena": "আরেনা",
@@ -1093,21 +1094,6 @@
     "ct_graph_view": "নির্ভরতা গ্রাফ",
     "ct_swap_alt_tooltip": "বিকল্প কানেক্টরে পরিবর্তন করুন",
     "ct_deps": "{count}টি নির্ভরতা",
-    "dg_no_deps": "প্রদর্শনের জন্য কোনো নির্ভরতা নেই।",
-    "dg_broken": "{count}টি ভাঙা",
-    "dg_blast_radius": "ব্লাস্ট রেডিয়াস",
-    "dg_dependencies": "নির্ভরতাসমূহ",
-    "dg_select_cred": "মেয়াদ শেষ হলে কী ভাঙবে দেখতে একটি ক্রেডেনশিয়াল নির্বাচন করুন",
-    "dg_relationships": "সম্পর্কসমূহ ({count})",
-    "dg_more": "+{count} আরো",
-    "dg_affected_tools": "প্রভাবিত টুলসমূহ",
-    "dg_affected_auto": "প্রভাবিত অটোমেশনসমূহ",
-    "dg_low_risk": "কম ঝুঁকি",
-    "dg_medium_risk": "মাঝারি ঝুঁকি",
-    "dg_high_risk": "উচ্চ ঝুঁকি",
-    "dg_high_blast": "এই ক্রেডেনশিয়ালের মেয়াদ শেষ বা অফলাইন হলে {count}টি সক্ষমতা ভাঙবে।",
-    "dg_medium_blast": "{count}টি সক্ষমতা এই ক্রেডেনশিয়ালের উপর নির্ভরশীল।",
-    "dg_low_blast": "কোনো টুল বা অটোমেশন এই ক্রেডেনশিয়ালের উপর নির্ভরশীল নয়।",
     "dm_needed": "{count}টি ক্রেডেনশিয়াল প্রয়োজন",
     "dm_fulfilled": "{fulfilled}/{total}টি কানেক্টর পূরণ হয়েছে",
     "dm_reuse_hint": "{count}টি বিদ্যমান ক্রেডেনশিয়াল পুনরায় ব্যবহার করতে পারে",
@@ -1122,13 +1108,6 @@
     "sub_triggers_title": "ট্রিগার ও সাবস্ক্রিপশনসমূহ",
     "sub_suggested": "{count}টি প্রস্তাবিত",
     "sub_filter": "ফিল্টার: {filter}",
-    "lifecycle_error_load_triggers": "ট্রিগার লোড করতে ব্যর্থ: {error}",
-    "lifecycle_error_load_subscriptions": "সাবস্ক্রিপশন লোড করতে ব্যর্থ: {error}",
-    "lifecycle_error_activate_trigger": "ট্রিগার সক্রিয় করতে ব্যর্থ",
-    "lifecycle_error_activate_subscription": "সাবস্ক্রিপশন সক্রিয় করতে ব্যর্থ",
-    "lifecycle_error_retire_trigger": "ট্রিগার মুছতে ব্যর্থ",
-    "lifecycle_error_retire_subscription": "সাবস্ক্রিপশন মুছতে ব্যর্থ",
-    "lifecycle_error_delete_persists": "মুছে ফেলা ব্যর্থ হয়েছে। সাবস্ক্রিপশনটি এখনও থাকতে পারে।",
     "auto_error_deploy_check_credentials": "ডিপ্লয়মেন্ট ব্যর্থ হয়েছে। আপনার প্ল্যাটফর্ম ক্রেডেনশিয়াল পরীক্ষা করে আবার চেষ্টা করুন।",
     "auto_error_deploy_generic": "অটোমেশন ডিপ্লয়মেন্ট ব্যর্থ হয়েছে",
     "test_healthcheck_failed_default": "সংযোগ পরীক্ষা ব্যর্থ হয়েছে",
@@ -1730,7 +1709,8 @@
     "annotation_empty": "এখনও কোনো অ্যানোটেশন নেই — পরে সহজে খুঁজে পেতে এই রানে ট্যাগ বা নোট যোগ করুন, অথবা তারকাচিহ্নিত করুন।",
     "col_verdict": "রায়",
     "verdict_none": "Director এখনও পর্যালোচনা করেননি",
-    "verdict_tooltip": "Director-এর রায়: {score}/5"
+    "verdict_tooltip": "Director-এর রায়: {score}/5",
+    "annotation_saving": "সংরক্ষণ করা হচ্ছে…"
   },
   "settings_status": {
     "saving": "{sections} সংরক্ষণ হচ্ছে...",
@@ -2809,5 +2789,21 @@
       "other": "অন্যান্য"
     },
     "title": "পরিবর্তনের ইতিহাস"
-  }
+  },
+  "sigil_edit_channels_label": "চ্যানেল",
+  "sigil_edit_custom_connector": "কাস্টম কানেক্টর — কোনো ব্র্যান্ড আইকন মেলেনি।",
+  "sigil_edit_error_off": "ডিফল্ট এরর পলিসিতে ফিরে যায়।",
+  "sigil_edit_error_on": "কাস্টম এরর-হ্যান্ডলিং পলিসি কনফিগার করা আছে।",
+  "sigil_edit_event_off": "কোনো ইভেন্ট সাবস্ক্রিপশন কনফিগার করা নেই।",
+  "sigil_edit_event_on": "এই ক্যাপাবিলিটি ইভেন্টে সাবস্ক্রাইব করে।",
+  "sigil_edit_memory_off": "মেমরি বন্ধ আছে — এই ক্যাপাবিলিটি স্টেটলেসভাবে চলে।",
+  "sigil_edit_memory_on": "এই ক্যাপাবিলিটির জন্য পার্সিস্টেন্ট মেমরি চালু আছে।",
+  "sigil_edit_no_channels": "এই ক্যাপাবিলিটির জন্য কোনো নোটিফিকেশন চ্যানেল নেই।",
+  "sigil_edit_no_connector": "এই ক্যাপাবিলিটি কোনো কানেক্টর ঘোষণা করে না।",
+  "sigil_edit_no_dim_editor": "এই ডাইমের জন্য এখনো কোনো এডিটর যুক্ত করা হয়নি।",
+  "sigil_edit_no_trigger": "এই ক্যাপাবিলিটিতে কোনো ট্রিগার কনফিগার করা নেই।",
+  "sigil_edit_review_off": "কোনো হিউম্যান রিভিউ গেট নেই — অ্যাকশনগুলো স্বতন্ত্রভাবে সম্পন্ন হয়।",
+  "sigil_edit_review_on": "এই ক্যাপাবিলিটি কাজ করার আগে হিউম্যান রিভিউ আবশ্যক।",
+  "sigil_edit_service_label": "সার্ভিস: {key}",
+  "sigil_edit_when_label": "কখন"
 }

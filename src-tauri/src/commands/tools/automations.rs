@@ -126,8 +126,9 @@ pub fn delete_automation(state: State<'_, Arc<AppState>>, id: String) -> Result<
     // Serialize deletion against live triggers on the SAME primitive
     // `trigger_automation`/`test_automation_webhook` hold: without this, a delete
     // could slip through the check→delete window while a trigger fires an outbound
-    // webhook, deleting the parent under a live run. If a trigger holds the guard
-    // right now, refuse rather than race it.
+    // webhook, deleting the parent under a live run
+    // (refactor-bughunt-2026-07-10/tauri-commands-misc-2.md #4). If a trigger holds
+    // the guard right now, refuse rather than race it.
     let _handle = INFLIGHT_TRIGGERS.guard(&id).ok_or_else(|| {
         AppError::Validation(
             "Cannot delete automation while it is being triggered. \

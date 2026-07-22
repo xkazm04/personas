@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**115 reusable components** live under `src/features/shared/components/`.
+**117 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -41,10 +41,10 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DragHandle` | Visual size of the grip icon. |
 | `DropIndicator` | Orientation of the list the indicator sits in. |
 | `EmptyIllustration` | _(add a `@catalog` tag)_ |
-| `EmptyState` | _(add a `@catalog` tag)_ |
 | `FieldHint` | Valid value range, e. |
 | `GroupedVirtualList` | Virtualized list that buckets ordered items under sticky date/category group headers (Today / Yesterday / …). |
 | `HeroMesh` | _(add a `@catalog` tag)_ |
+| `IllustratedEmptyState` | _(add a `@catalog` tag)_ |
 | `InlineEditableText` | Click-to-edit inline text field. |
 | `LiveStatusDot` | Liveness dot with one shared vocabulary (off=muted, active=emerald, syncing=amber-pulse) plus an optional ping halo — used across  |
 | `MotionizedGlyph` | Traced multi-path SVG glyph that draws itself in with a center-out reveal. |
@@ -77,15 +77,16 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 
 | Component | What it's for |
 |---|---|
+| `Banner` | _(add a `@catalog` tag)_ |
 | `ConfirmDialog` | Confirm/cancel dialog for destructive or irreversible actions. |
 | `ConnectionStatusBadge` | _(add a `@catalog` tag)_ |
 | `DropZoneGlow` | rounded-card (8) / rounded-modal (12) so the SVG outline aligns. |
-| `EmptyState` | _(add a `@catalog` tag)_ |
 | `ErrorBanner` | User-facing error display — inline / banner / panel variants with retry + dismiss. |
 | `ErrorBoundary` | Called when the user clicks "Go to dashboard". |
 | `ErrorRecoveryBanner` | _(add a `@catalog` tag)_ |
 | `InlineErrorBanner` | _(add a `@catalog` tag)_ |
 | `LoadingSpinner` | Canonical loading spinner with size + a11y label. Use for any full-element loading state. |
+| `ScenarioEmptyState` | _(add a `@catalog` tag)_ |
 | `StalenessIndicator` | Epoch ms when this data source was last successfully fetched. |
 | `SuspenseFallback` | Standard fallback for React.lazy/Suspense boundaries. |
 
@@ -114,6 +115,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `SuccessCheck` | SVG checkmark whose stroke draws in via the . |
 | `TableSelector` | _(add a `@catalog` tag)_ |
 | `ThemedSelect` | Extra wrapper classes (width, margin, etc. |
+| `useAnchoredPortalPosition` | True when the menu was flipped above the trigger for lack of room below. |
 | `useAsyncFieldValidation` | link . |
 | `useFieldValidation` | Async (or sync) validator — return an error string or null/undefined for valid. |
 | `useShakeError` | the . |
@@ -184,4 +186,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_115 components, 42 without a `@catalog` description._
+_117 components, 43 without a `@catalog` description._

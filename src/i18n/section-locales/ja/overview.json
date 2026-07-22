@@ -143,7 +143,9 @@
     "col_days": "日数",
     "col_incident": "インシデント",
     "guidance_mcp_sidecar": "personas-mcp バイナリが見つからなかったため、エージェントは組み込みの MCP ツールなしで実行されました。デスクトップアプリに同梱されるよう、アプリを再インストールまたは修復してください。",
-    "source_mcp_sidecar": "MCP ツールベルト"
+    "source_mcp_sidecar": "MCP ツールベルト",
+    "list_truncated": "最初の{limit}件のインシデントを表示しています——残りを見るにはフィルターを絞り込んでください。",
+    "action_refused": "操作は適用されませんでした——インシデントのステータスがすでに変わっている可能性があります。"
   },
   "observability": {
     "title": "オブザーバビリティ",

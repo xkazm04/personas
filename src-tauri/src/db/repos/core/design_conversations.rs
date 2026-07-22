@@ -10,6 +10,13 @@ row_mapper!(row_to_conversation -> DesignConversation {
 });
 
 /// List all conversations for a persona, newest first.
+///
+/// PAYLOAD TRIM: rows are returned with `messages = '[]'` and
+/// `last_result = NULL`. This list backs a title/status/date picker that
+/// re-fetches on every persona switch — `SELECT *` shipped every
+/// conversation's full 500-message history (potentially megabytes) over IPC
+/// just to render labels. Consumers that need the history (resume) fetch the
+/// single conversation via `get_by_id`.
 pub fn list_by_persona(
     pool: &DbPool,
     persona_id: &str,
@@ -20,7 +27,9 @@ pub fn list_by_persona(
         {
             let conn = pool.get()?;
             let mut stmt = conn.prepare(
-                "SELECT * FROM design_conversations WHERE persona_id = ?1 ORDER BY updated_at DESC",
+                "SELECT id, persona_id, title, status, '[]' AS messages, NULL AS last_result,
+                        created_at, updated_at
+                 FROM design_conversations WHERE persona_id = ?1 ORDER BY updated_at DESC",
             )?;
             let rows = stmt.query_map(params![persona_id], row_to_conversation)?;
             Ok(collect_rows(rows, "design_conversations::list_by_persona"))
@@ -146,17 +155,20 @@ pub fn append_single_message(
                 params![id, message_json, last_result, now, max_messages],
             )?;
 
-            let conversation = get_by_id(pool, id)?;
             let message_count: u32 = if truncated {
                 max_messages
             } else {
                 count_before + 1
             };
 
+            // Metadata-only echo: re-fetching the whole row here shipped the
+            // entire message history back over IPC on EVERY append — exactly
+            // the O(n) waste this function's inbound path was built to avoid.
+            // The frontend keeps its local copy authoritative.
             Ok(AppendMessageResult {
-                conversation,
                 truncated,
                 message_count,
+                updated_at: now,
             })
         }
     )

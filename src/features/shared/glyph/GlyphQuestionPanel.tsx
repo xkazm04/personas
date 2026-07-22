@@ -1,25 +1,10 @@
 import { useState } from 'react';
 import { HelpCircle, Send, Hash } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useSystemStore } from '@/stores/systemStore';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import { VaultConnectorPicker } from '@/features/vault/components/VaultConnectorPicker';
 import { DIM_META } from './dimMeta';
-import type { GlyphDimension } from './types';
-
-
-/** Maps the backend cell keys to our 8-dimension vocabulary. Used so the
- *  question card can tint itself with the right dim colour. */
-const CELL_KEY_TO_DIM: Record<string, GlyphDimension> = {
-  'use-cases': 'task',
-  'connectors': 'connector',
-  'triggers': 'trigger',
-  'human-review': 'review',
-  'messages': 'message',
-  'memory': 'memory',
-  'error-handling': 'error',
-  'events': 'event',
-};
+import { CELL_KEY_TO_DIM } from './persona-sigil/cellDimMap';
 
 interface GlyphQuestionCardProps {
   question: BuildQuestion;
@@ -39,12 +24,6 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
     if (!v) return;
     onAnswer(question.cellKey, v);
     setFreeText('');
-  };
-
-  // Route "Add from Catalog" to the Vault catalog so the user can create the
-  // missing connector without losing the build session.
-  const openVaultCatalog = () => {
-    useSystemStore.getState().setSidebarSection('credentials');
   };
 
   return (
@@ -71,7 +50,6 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
           category={connectorCategory}
           value=""
           onChange={(serviceType) => submit(serviceType)}
-          onAddFromCatalog={openVaultCatalog}
           suggested={question.suggested}
         />
       ) : (

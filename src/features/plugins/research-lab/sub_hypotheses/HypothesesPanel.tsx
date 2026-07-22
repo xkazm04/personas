@@ -21,7 +21,6 @@ export default function HypothesesPanel() {
   const deleteHypothesis = useSystemStore((s) => s.deleteResearchHypothesis);
   const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
   const projects = useSystemStore((s) => s.researchProjects);
-  const sources = useSystemStore((s) => s.researchSources);
   const fetchSources = useSystemStore((s) => s.fetchResearchSources);
   const personas = useAgentStore((s) => s.personas);
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
@@ -32,10 +31,15 @@ export default function HypothesesPanel() {
   useEffect(() => {
     if (activeProjectId) {
       fetchHypotheses(activeProjectId);
-      // sources are used as context for the generator
-      if (sources.length === 0) fetchSources(activeProjectId);
+      // Sources feed the generator's grounding context. Fetch unconditionally
+      // on project change (like the sibling Literature/Graph/Experiments
+      // panels): the store's researchSources is one flat cross-project array,
+      // so a non-empty length proves nothing about THIS project — the old
+      // length-guard left Project A's rows in place after switching to B and
+      // hypothesis generation silently ran with zero grounding sources.
+      fetchSources(activeProjectId);
     }
-  }, [activeProjectId, fetchHypotheses, fetchSources, sources.length]);
+  }, [activeProjectId, fetchHypotheses, fetchSources]);
 
   useEffect(() => {
     if (personas.length === 0) fetchPersonas();

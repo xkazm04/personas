@@ -1,8 +1,8 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { Activity, AlertTriangle, Clock, ChevronDown, ChevronUp, Zap, TrendingUp, TrendingDown, Wrench } from 'lucide-react';
 import type { PersonaSlaStats } from '@/api/overview/sla';
-import { formatPercent, formatDuration, formatMtbf } from '../libs/slaHelpers';
-import { rateToHealth, healthClasses, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
+import { formatPercent, formatDuration, formatMtbf, SLA_CARD_COLOR_CLASSES, type SlaMetricColor } from '../libs/slaHelpers';
+import { rateToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
 
 export function SlaCard({ label, value, sub, color, icon, tooltip, scope }: {
   label: string; value: string; sub: string; color: string; icon: React.ReactNode;
@@ -18,16 +18,7 @@ export function SlaCard({ label, value, sub, color, icon, tooltip, scope }: {
    *  see `get_sla_dashboard` in `sla.rs` for the policy. */
   scope?: string;
 }) {
-  const colorMap: Record<string, string> = {
-    emerald: healthClasses('healthy'),
-    amber: healthClasses('warning'),
-    red: healthClasses('critical'),
-    blue: healthClasses('info'),
-    violet: `text-violet-400 bg-violet-500/10 border-violet-500/20`,
-    // No-data / not-enough-activity state: neutral grey card, never red.
-    neutral: healthClasses('neutral'),
-  };
-  const cls = colorMap[color] || colorMap['emerald'];
+  const cls = SLA_CARD_COLOR_CLASSES[color as SlaMetricColor] ?? SLA_CARD_COLOR_CLASSES.emerald;
 
   return (
     <div className={`rounded-modal border p-4 relative shadow-elevation-1 ${cls}`} title={tooltip}>

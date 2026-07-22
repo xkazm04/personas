@@ -438,6 +438,15 @@ export function UnifiedBuildEntry() {
   // lets the user finish the last keystroke and lets a quick LLM follow-up
   // question (which would re-populate `pendingQuestions`) cancel the submit.
   const autoSubmitTimer = useRef<number | null>(null);
+  // `build` is a fresh object literal every render (useBuild returns a new
+  // object each call), so depending on it directly re-arms this timer on
+  // every render — including the frequent re-renders that happen while the
+  // CLI streams output — and the debounce never gets a quiet window to
+  // fire. Depend on the specific primitives the effect actually reads, and
+  // call handleSubmitAnswers via a ref so identity churn doesn't reset it.
+  const handleSubmitAnswersRef = useRef(build.handleSubmitAnswers);
+  handleSubmitAnswersRef.current = build.handleSubmitAnswers;
+  const pendingQuestionsLength = build.pendingQuestions?.length ?? 0;
   useEffect(() => {
     if (autoSubmitTimer.current !== null) {
       window.clearTimeout(autoSubmitTimer.current);
@@ -446,11 +455,11 @@ export function UnifiedBuildEntry() {
     if (!draftPersonaId) return;
     const phase = build.buildPhase;
     if (phase !== 'awaiting_input' && phase !== 'analyzing' && phase !== 'resolving') return;
-    if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
+    if (pendingQuestionsLength > 0) return;
     if (build.pendingAnswerCount === 0) return;
     autoSubmitTimer.current = window.setTimeout(() => {
       autoSubmitTimer.current = null;
-      void build.handleSubmitAnswers();
+      void handleSubmitAnswersRef.current();
     }, 250);
     return () => {
       if (autoSubmitTimer.current !== null) {
@@ -458,7 +467,7 @@ export function UnifiedBuildEntry() {
         autoSubmitTimer.current = null;
       }
     };
-  }, [build, draftPersonaId]);
+  }, [build.buildPhase, pendingQuestionsLength, build.pendingAnswerCount, draftPersonaId]);
 
   // -- Sync build phase → process activity status -------------------------
 

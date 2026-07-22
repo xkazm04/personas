@@ -6,7 +6,7 @@ import { getQwenStatus } from '@/api/system/qwen';
 import { PROVIDER_OPTIONS, ENGINE_LABELS } from '../libs/byomHelpers';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { ProviderSparkline } from './ProviderSparkline';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 

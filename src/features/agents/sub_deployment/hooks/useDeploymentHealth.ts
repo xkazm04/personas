@@ -35,8 +35,14 @@ export function useDeploymentHealth(
   // Cache fetched stats so re-mapping doesn't require re-fetching
   const statsCache = useRef<Record<string, HealthDataPoint[]>>({});
 
+  // Effect keys ONLY on the two string keys. Having the per-render
+  // uniquePersonaIds array in the deps re-ran this effect after every render,
+  // and the re-map branch's unconditional fresh-object setHealthMap turned
+  // that into an unbounded render→effect→setState loop while the dashboard
+  // was mounted.
   useEffect(() => {
-    const needsFetch = stableKey !== prevKeyRef.current && uniquePersonaIds.length > 0;
+    const ids = stableKey ? stableKey.split(',') : [];
+    const needsFetch = stableKey !== prevKeyRef.current && ids.length > 0;
     if (!needsFetch) {
       // Persona IDs unchanged — just re-map with current deployment rows
       const entries = personaEntriesRef.current;
@@ -61,7 +67,7 @@ export function useDeploymentHealth(
 
         // Fetch stats for each unique personaId (7-day window)
         const results = await Promise.allSettled(
-          uniquePersonaIds.map(async (pid) => {
+          ids.map(async (pid) => {
             const stats = await cloudExecutionStats(pid, 7);
             return { personaId: pid, daily: stats.dailyBreakdown };
           }),
@@ -98,7 +104,7 @@ export function useDeploymentHealth(
     })();
 
     return () => { cancelled = true; };
-  }, [stableKey, deploymentIdsKey, uniquePersonaIds]);
+  }, [stableKey, deploymentIdsKey]);
 
   return { healthMap, isLoading };
 }

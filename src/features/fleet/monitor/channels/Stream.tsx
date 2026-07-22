@@ -15,6 +15,7 @@ import {
   matchesLens, memoryModesAvailable, type LensState, type MemoryMode,
 } from './lensModel';
 import type { StreamTeam, TaggedItem } from './types';
+import { cleanName } from '../grid/fleetGridModel';
 
 /* ----------------------------------------------------------------------------
  * STREAM — the Monitor's log. One virtualized, read-only feed with composable
@@ -55,8 +56,6 @@ const KIND_META: Record<ChannelKind, { labelKey: keyof Translations['monitor']; 
   message: { labelKey: 'stream_kind_message', icon: Users },
   deliberation: { labelKey: 'stream_kind_deliberation', icon: Radio },
 };
-
-const cleanName = (n: string) => n.replace(/^SDLC[ —-]*/i, '') || n;
 
 /** One facet row: a value, a live count, on/off. */
 function FacetRow({

@@ -592,7 +592,8 @@
     "event_type_required": "Se requiere el tipo de evento a escuchar.",
     "watch_path_required": "Se requiere al menos una ruta a vigilar.",
     "composite_min_conditions": "Los disparadores compuestos necesitan al menos 2 condiciones.",
-    "composite_window_minimum": "La ventana de tiempo debe ser de al menos 5 segundos."
+    "composite_window_minimum": "La ventana de tiempo debe ser de al menos 5 segundos.",
+    "endpoint_required": "Se requiere una URL de endpoint o un evento."
   },
   "dead_letter_select_all": "Seleccionar all",
   "dead_letter_select_visible": "Seleccionar visible",
@@ -797,5 +798,7 @@
     "watch": "Seguir",
     "watching": "Siguiendo",
     "watching_only": "Solo siguiendo"
-  }
+  },
+  "overdue_label": "Atrasado",
+  "relay_delete_failed": "No se pudo eliminar el relay — inténtalo de nuevo"
 }

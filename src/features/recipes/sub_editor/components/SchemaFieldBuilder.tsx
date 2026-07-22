@@ -6,6 +6,9 @@ import { DragHandle } from '@/features/shared/components/display/DragHandle';
 import { DropIndicator } from '@/features/shared/components/display/DropIndicator';
 
 export interface SchemaField {
+  /** Stable client-side row identity — never serialized; keeps React keys
+   *  stable while the user types into the (mutable) `key` field. */
+  id: string;
   key: string;
   type: string;
   label: string;
@@ -25,7 +28,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
   const addField = useCallback(() => {
-    onChange([...fields, { key: '', type: 'text', label: '', default: '' }]);
+    onChange([...fields, { id: crypto.randomUUID(), key: '', type: 'text', label: '', default: '' }]);
   }, [fields, onChange]);
 
   const updateField = useCallback((index: number, patch: Partial<SchemaField>) => {
@@ -60,7 +63,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
         <AnimatePresence initial={false}>
           {fields.map((field, index) => (
             <Reorder.Item
-              key={`${index}-${field.key || 'new'}`}
+              key={field.id}
               value={field}
               initial={{ opacity: 0, height: 0 }}
               animate={{

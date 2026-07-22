@@ -1,48 +1,17 @@
 // Standards & branching policy — the Tier-0 (instant, reversible, no-code) upgrade
 // engine for the passport matrix. A project's `standards_config` JSON drives its
 // CI level, security policy, and self-verify pips in the passport; toggling these
-// golden-standard practices is the cheapest readiness lift. Single source of truth
-// for parsing the shape (also consumed by passportDerive) + the action catalog.
+// golden-standard practices is the cheapest readiness lift. The parse/serialize
+// shape itself lives in the shared `@/lib/standards/standardsConfig` module
+// (also consumed by the dev-tools pipeline UI, so both surfaces agree on what
+// an empty config means) — this module owns the action catalog on top of it.
 import type { DevProject } from '@/lib/bindings/DevProject';
+import {
+  type StandardsConfig, parseStandards, serializeStandards,
+} from '@/lib/standards/standardsConfig';
 
-export interface Standards {
-  precommit: { lint: boolean; docs_required: boolean; code_quality: boolean };
-  branching: { pr_base: string | null; automerge: { enabled: boolean; target: string | null } };
-}
-
-function empty(): Standards {
-  return { precommit: { lint: false, docs_required: false, code_quality: false }, branching: { pr_base: null, automerge: { enabled: false, target: null } } };
-}
-
-export function parseStandards(raw: string | null | undefined): Standards {
-  if (!raw) return empty();
-  try {
-    const j = JSON.parse(raw) as {
-      precommit?: { lint?: unknown; docs_required?: unknown; code_quality?: unknown };
-      branching?: { pr_base?: unknown; automerge?: { enabled?: unknown; target?: unknown } };
-    };
-    return {
-      precommit: {
-        lint: Boolean(j?.precommit?.lint),
-        docs_required: Boolean(j?.precommit?.docs_required),
-        code_quality: Boolean(j?.precommit?.code_quality),
-      },
-      branching: {
-        pr_base: typeof j?.branching?.pr_base === 'string' ? j.branching.pr_base : null,
-        automerge: {
-          enabled: Boolean(j?.branching?.automerge?.enabled),
-          target: typeof j?.branching?.automerge?.target === 'string' ? j.branching.automerge.target : null,
-        },
-      },
-    };
-  } catch {
-    return empty();
-  }
-}
-
-export function serializeStandards(s: Standards): string {
-  return JSON.stringify(s);
-}
+export type Standards = StandardsConfig;
+export { parseStandards, serializeStandards };
 
 /** Is `standards_config` already fully golden (every action enabled)? */
 export function isGolden(raw: string | null | undefined): boolean {
@@ -84,7 +53,10 @@ export const STANDARDS_ACTIONS: StandardsAction[] = [
     hint: 'PRs must target the project base branch',
     row: 'ci',
     applicable: (s) => !s.branching.pr_base,
-    apply: (s, p) => ({ ...s, branching: { ...s.branching, pr_base: p.main_branch ?? 'main' } }),
+    // pr_base is a *selector* ('main' | 'test'), not the literal branch name —
+    // the project's actual main_branch is resolved for display elsewhere
+    // (resolveBranchName), so gating always targets the 'main' selector.
+    apply: (s) => ({ ...s, branching: { ...s.branching, pr_base: 'main' } }),
   },
   {
     id: 'automerge',
@@ -92,8 +64,8 @@ export const STANDARDS_ACTIONS: StandardsAction[] = [
     hint: 'Merge automatically once checks pass',
     row: 'ci',
     applicable: (s) => !s.branching.automerge.enabled,
-    apply: (s, p) => {
-      const base = s.branching.pr_base ?? p.main_branch ?? 'main';
+    apply: (s) => {
+      const base = s.branching.pr_base ?? 'main';
       return { ...s, branching: { pr_base: base, automerge: { enabled: true, target: base } } };
     },
   },

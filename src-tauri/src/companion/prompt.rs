@@ -139,15 +139,24 @@ pub fn summarize_recall(recall: &Recall, synthesized: bool) -> RecallPreview {
     }
 }
 
+/// cfg-gated seam for the optional ml-feature embedder handle, mirroring
+/// `athena_reaction::embedding_manager_of` / `dev_session::EmbedderArg`.
+/// Non-ml builds never construct a `Some(_)` value of this type — it
+/// exists purely so `build_system_prompt` has ONE signature across both
+/// feature builds instead of a whole-function cfg split.
+#[cfg(feature = "ml")]
+pub type EmbedderArg<'a> = Option<&'a Arc<EmbeddingManager>>;
+#[cfg(not(feature = "ml"))]
+pub type EmbedderArg<'a> = Option<&'a ()>;
+
 /// Build the full system prompt.
 ///
 /// `query` is the user's current message — used to seed retrieval. Pass
 /// an empty string for non-retrieval prompts (e.g., reflection cycles).
-#[cfg(feature = "ml")]
 pub async fn build_system_prompt(
     user_db: &UserDbPool,
     sys_db: &DbPool,
-    embedder: Option<&Arc<EmbeddingManager>>,
+    embedder: EmbedderArg<'_>,
     session_id: &str,
     query: &str,
     voice_enabled: bool,
@@ -181,57 +190,11 @@ pub async fn build_system_prompt(
         crate::companion::conversation::roster_digest_for_prompt(user_db, session_id),
     );
 
-    let recall = match embedder {
-        Some(emb) => retrieval::retrieve(user_db, emb, session_id, query)
-            .await
-            .unwrap_or_default(),
-        None => Recall {
-            episodes: episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),
-            doctrine: Vec::new(),
-            facts: crate::companion::brain::semantic::list_facts(user_db, None, false, 6)
-                .unwrap_or_default(),
-            procedurals: crate::companion::brain::procedural::list_rules(user_db, None, false, 6)
-                .unwrap_or_default(),
-            goals: crate::companion::brain::goals::list_goals(
-                user_db,
-                Some(crate::companion::brain::goals::GoalStatus::Active),
-                8,
-            )
-            .unwrap_or_default(),
-            backlog: crate::companion::brain::backlog::list_items(user_db, None, true, 6)
-                .unwrap_or_default(),
-        },
-    };
-
-    // Recall synthesis: when the user has opted in AND raw recall exceeds
-    // the budget, ask Claude to synthesize a focused briefing that replaces
-    // the raw chunks. Best-effort throughout: any failure (timeout, JSON
-    // parse, non-zero exit) falls through to raw chunks so synthesis never
-    // breaks a chat turn.
-    let briefing: Option<Briefing> = if recall_synthesis_enabled
-        && recall_synthesis::estimate_recall_tokens(&recall) > SYNTHESIS_TOKEN_THRESHOLD
-    {
-        match recall_synthesis::synthesize_recall(&recall, query).await {
-            Ok(b) => {
-                tracing::info!(
-                    summary_chars = b.summary.len(),
-                    key_facts = b.key_facts.len(),
-                    obligations = b.salient_obligations.len(),
-                    "companion: recall synthesis succeeded"
-                );
-                Some(b)
-            }
-            Err(e) => {
-                tracing::warn!(
-                    error = %e,
-                    "companion: recall synthesis failed; falling through to raw chunks"
-                );
-                None
-            }
-        }
-    } else {
-        None
-    };
+    // The only genuinely ml-vs-non-ml seams: whether retrieval is
+    // embedding-backed, and whether recall synthesis can run at all.
+    let recall = recall_for(user_db, embedder, session_id, query).await;
+    let briefing: Option<Briefing> =
+        synthesize_if_enabled(&recall, query, recall_synthesis_enabled).await;
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
     // PROGRESS narration is always-on (visual timeline); the TTS grammar
@@ -282,44 +245,10 @@ pub async fn build_system_prompt(
     Ok((composed, preview))
 }
 
-#[cfg(not(feature = "ml"))]
-pub async fn build_system_prompt(
-    user_db: &UserDbPool,
-    sys_db: &DbPool,
-    session_id: &str,
-    _query: &str,
-    voice_enabled: bool,
-    _recall_synthesis_enabled: bool,
-    autonomous_mode: bool,
-) -> Result<(String, RecallPreview), AppError> {
-    let root = disk::brain_root()?;
-    let constitution =
-        fs::read_to_string(root.join("constitution.md")).unwrap_or_else(|_| String::new());
-    let identity = fs::read_to_string(root.join("identity.md")).unwrap_or_else(|_| String::new());
-
-    let observability_md = observability::build(sys_db)
-        .ok()
-        .as_ref()
-        .map(observability::format_for_prompt)
-        .unwrap_or_default();
-
-    // Append the operative-memory digest — active orchestration view
-    // for Athena (live per-session work, files touched, recent
-    // failures). Empty string when no operations are tracked so the
-    // prompt stays clean for users not using fleet. This *replaces*
-    // the older flat fleet-state digest with an operation-grouped
-    // narrative tied to user intent.
-    let observability_md = format!(
-        "{}{}{}",
-        observability_md,
-        crate::companion::orchestration::operative_memory::memory().digest_for_prompt(),
-        // Multi-conversation: the roster of the user's OTHER open threads, so one
-        // Athena stays aware of all her conversations (design §2). Empty when
-        // there's only this thread.
-        crate::companion::conversation::roster_digest_for_prompt(user_db, session_id),
-    );
-
-    let recall = Recall {
+/// Raw (unsynthesized) recall — shared by both the embedding-backed and
+/// plain retrieval paths.
+fn manual_recall(user_db: &UserDbPool, session_id: &str) -> Recall {
+    Recall {
         episodes: episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),
         doctrine: Vec::new(),
         facts: crate::companion::brain::semantic::list_facts(user_db, None, false, 6)
@@ -334,52 +263,76 @@ pub async fn build_system_prompt(
         .unwrap_or_default(),
         backlog: crate::companion::brain::backlog::list_items(user_db, None, true, 6)
             .unwrap_or_default(),
-    };
+    }
+}
 
-    let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
-    // PROGRESS narration is always-on (visual timeline); the TTS grammar
-    // rides the same prompt slot but only when voice playback is active.
-    let voice_md = format!(
-        "{}{}",
-        voice_addendum_if_needed(voice_enabled),
-        progress_addendum()
-    );
-    let display_md = display_addendum_if_voice_active(voice_enabled);
-    // Dev-mode self-model rides the "mode addenda" slot — see the ml
-    // variant above for rationale. Language directive rides the same slot.
-    let autonomous_md = format!(
-        "{}{}{}",
-        autonomous_addendum_if_enabled(autonomous_mode),
-        crate::companion::dev_mode::addendum_if_enabled(sys_db),
-        language_addendum(sys_db),
-    );
-    let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
-    let connectors_md = format_connectors(&connector_names);
-    let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
-    let projects = dev_tools_registry_for_prompt(sys_db);
-    let tracking_pulses_md = format_project_tracking_pulses(user_db, &plugin_names);
-    let plugins_md = format!(
-        "{}{}{}",
-        format_plugins(&plugin_names, &projects, &tracking_pulses_md),
-        format_project_goals(sys_db),
-        format_project_kpis(sys_db),
-    );
+/// ml build: embedding-backed hybrid retrieval when an embedder is
+/// configured, falling back to plain recent-history recall otherwise.
+#[cfg(feature = "ml")]
+async fn recall_for(
+    user_db: &UserDbPool,
+    embedder: EmbedderArg<'_>,
+    session_id: &str,
+    query: &str,
+) -> Recall {
+    match embedder {
+        Some(emb) => retrieval::retrieve(user_db, emb, session_id, query)
+            .await
+            .unwrap_or_default(),
+        None => manual_recall(user_db, session_id),
+    }
+}
 
-    let preview = summarize_recall(&recall, false);
-    let composed = compose(
-        &constitution,
-        &identity,
-        &observability_md,
-        &recall,
-        None, // synthesis is ml-feature gated; non-ml builds never synthesize
-        &plugins_md,
-        &connectors_md,
-        &onboarding_md,
-        &voice_md,
-        &display_md,
-        &autonomous_md,
-    );
-    Ok((composed, preview))
+/// non-ml build: no embedder type exists at all, so retrieval is always
+/// the plain recent-history recall.
+#[cfg(not(feature = "ml"))]
+async fn recall_for(
+    user_db: &UserDbPool,
+    _embedder: EmbedderArg<'_>,
+    session_id: &str,
+    _query: &str,
+) -> Recall {
+    manual_recall(user_db, session_id)
+}
+
+/// Recall synthesis: when the user has opted in AND raw recall exceeds
+/// the budget, ask Claude to synthesize a focused briefing that replaces
+/// the raw chunks. Best-effort throughout: any failure (timeout, JSON
+/// parse, non-zero exit) falls through to raw chunks so synthesis never
+/// breaks a chat turn. ml-feature gated — non-ml builds never synthesize.
+#[cfg(feature = "ml")]
+async fn synthesize_if_enabled(recall: &Recall, query: &str, enabled: bool) -> Option<Briefing> {
+    if enabled && recall_synthesis::estimate_recall_tokens(recall) > SYNTHESIS_TOKEN_THRESHOLD {
+        match recall_synthesis::synthesize_recall(recall, query).await {
+            Ok(b) => {
+                tracing::info!(
+                    summary_chars = b.summary.len(),
+                    key_facts = b.key_facts.len(),
+                    obligations = b.salient_obligations.len(),
+                    "companion: recall synthesis succeeded"
+                );
+                Some(b)
+            }
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "companion: recall synthesis failed; falling through to raw chunks"
+                );
+                None
+            }
+        }
+    } else {
+        None
+    }
+}
+
+#[cfg(not(feature = "ml"))]
+async fn synthesize_if_enabled(
+    _recall: &Recall,
+    _query: &str,
+    _enabled: bool,
+) -> Option<Briefing> {
+    None
 }
 
 fn format_episodes(episodes: &[Episode]) -> String {
@@ -730,11 +683,10 @@ fn first_paragraph(s: &str, max_len: usize) -> String {
     if firstline.len() <= max_len {
         firstline.to_string()
     } else {
-        let mut end = max_len;
-        while !firstline.is_char_boundary(end) && end > 0 {
-            end -= 1;
-        }
-        format!("{}…", &firstline[..end])
+        format!(
+            "{}…",
+            crate::utils::text::truncate_on_char_boundary(firstline, max_len)
+        )
     }
 }
 

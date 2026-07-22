@@ -3,8 +3,9 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Play } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SqlEditor } from '@/features/vault/sub_databases/SqlEditor';
-import { Section, KeyValueEditor, initQueryParams, formatSchema, type KeyValue } from './BuilderParams';
+import { Section, KeyValueEditor, initQueryParams, type KeyValue } from './BuilderParams';
 import type { ApiEndpoint } from '@/api/system/apiProxy';
+import { prettyJson } from './prettyJson';
 
 // -- HTTP Methods -------------------------------------------------
 
@@ -33,7 +34,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
     setMethod(endpoint.method.toUpperCase());
     setPath(endpoint.path);
     setQueryParams(initQueryParams(endpoint));
-    setBody(endpoint.request_body?.schema_json ? formatSchema(endpoint.request_body.schema_json) : '');
+    setBody(endpoint.request_body?.schema_json ? prettyJson(endpoint.request_body.schema_json) : '');
   }, [endpoint, endpointKey]);
 
   const pathParams = useMemo(() => {
@@ -115,7 +116,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
         <KeyValueEditor entries={queryParams} onChange={setQueryParams} />
       </Section>
 
-      <Section label={t.common.actions}>
+      <Section label={vt.request_headers}>
         <KeyValueEditor entries={headers} onChange={setHeaders} />
       </Section>
 

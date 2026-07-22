@@ -4,7 +4,7 @@ import type { ToolPerformanceSummary } from '@/lib/bindings/ToolPerformanceSumma
 import { getToolPerformanceSummary } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
-import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { IllustratedEmptyState as EmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { CARD_PADDING } from '@/lib/utils/designTokens';

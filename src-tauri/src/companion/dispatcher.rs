@@ -1957,7 +1957,7 @@ fn insert_approval(
     session_id: &str,
     env: &OpEnvelope,
 ) -> Result<CreatedApproval, AppError> {
-    let id = format!("appr_{}", short_random());
+    let id = format!("appr_{}", crate::companion::util::short_id(12));
     let params_json = env.params.to_string();
     let payload = serde_json::json!({
         "action": env.action,
@@ -1990,15 +1990,6 @@ fn insert_approval(
         params_json,
         rationale: env.rationale.clone(),
     })
-}
-
-fn short_random() -> String {
-    uuid::Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(10)
-        .collect()
 }
 
 // ─────────────────────────────────────────────────────────────────────────

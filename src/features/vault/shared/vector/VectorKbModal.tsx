@@ -1,13 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('vector-kb-modal');
 import { X, FileText, Search, Settings, Brain, Pencil, Check, Table2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toCredentialMetadata } from '@/lib/types/types';
-import { useVaultStore } from '@/stores/vaultStore';
-import * as credApi from '@/api/vault/credentials';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { KnowledgeBase } from '@/api/vault/database/vectorKb';
 import { getKnowledgeBase } from '@/api/vault/database/vectorKb';
@@ -16,7 +13,7 @@ import { DocumentsTab } from './tabs/DocumentsTab';
 import { SearchTab } from './tabs/SearchTab';
 import { SettingsTab } from './tabs/SettingsTab';
 import { ExtractTab } from './tabs/ExtractTab';
-import { silentCatch } from '@/lib/silentCatch';
+import { useCredentialRename } from '@/features/vault/shared/hooks/useCredentialRename';
 
 
 type VectorTab = 'documents' | 'search' | 'extract' | 'settings';
@@ -65,33 +62,8 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
     void refreshKb();
   }, [refreshKb, kbId]);
 
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editName, setEditName] = useState(credential.name);
-  const nameInputRef = useRef<HTMLInputElement>(null);
-
-  const saveName = useCallback(async () => {
-    const trimmed = editName.trim();
-    if (!trimmed || trimmed === credential.name) {
-      setIsEditingName(false);
-      setEditName(credential.name);
-      return;
-    }
-    try {
-      const updatedRaw = await credApi.updateCredential(credential.id, {
-        name: trimmed,
-        serviceType: null,
-        encryptedData: null,
-        iv: null,
-        metadata: null,
-        sessionEncryptedData: null,
-      });
-      const updated = toCredentialMetadata(updatedRaw);
-      useVaultStore.setState((s) => ({
-        credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
-      }));
-    } catch (err) { silentCatch("features/vault/shared/vector/VectorKbModal:catch1")(err); }
-    setIsEditingName(false);
-  }, [credential.id, credential.name, editName]);
+  const { isEditingName, editName, nameInputRef, setEditName, startEditing, saveName, handleKeyDown } =
+    useCredentialRename(credential, 'features/vault/shared/vector/VectorKbModal:catch1');
 
   const color = connector?.color || '#8B5CF6';
 
@@ -121,10 +93,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') saveName();
-                    if (e.key === 'Escape') { setIsEditingName(false); setEditName(credential.name); }
-                  }}
+                  onKeyDown={handleKeyDown}
                   onBlur={saveName}
                   autoFocus
                   className="flex-1 min-w-0 typo-heading font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
@@ -143,7 +112,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                   {kb?.name || credential.name}
                 </h2>
                 <button
-                  onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
+                  onClick={startEditing}
                   className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
                   title={sh.rename_credential}
                 >

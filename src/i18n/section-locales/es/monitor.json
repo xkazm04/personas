@@ -260,5 +260,10 @@
   "stream_no_speakers": "Sin participantes",
   "stream_none": "Ninguno",
   "stream_search": "Buscar transmisiones",
-  "stream_title": "Flujo"
+  "stream_title": "Flujo",
+  "columns_action_empty": "Nada necesita tu atención ahora mismo",
+  "columns_needs_attention": "Necesita atención",
+  "columns_active_goals": "Objetivos activos",
+  "columns_no_team": "Sin equipo",
+  "columns_all_clear": "Todo en orden"
 }

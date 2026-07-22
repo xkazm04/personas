@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, Settings, Check, Trash2, Layers } from 'lucide-react';
-import { TEAM_COLORS } from '../CreateTeamForm';
+import { TeamColorPicker } from '../TeamColorPicker';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useToastStore } from '@/stores/toastStore';
 import { updateTeam } from '@/api/pipeline/teams';
@@ -94,13 +94,15 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
 
   const dirty = useMemo(() => {
     if (!team) return false;
-    const profile = MODEL_OPTIONS.find((m) => m.key === modelKey)?.model ?? null;
     const budgetNum = budget.trim() === '' ? null : Number(budget);
     const turnsNum = turns.trim() === '' ? null : Number(turns);
     return (
       identityDirty ||
       (instructions || null) !== (team.shared_instructions ?? null) ||
-      profile !== (team.default_model_profile ? JSON.parse(team.default_model_profile).model ?? null : null) ||
+      // Reuse the tolerant reader (also used to seed modelKey above) instead of
+      // JSON.parse-ing team.default_model_profile directly — a non-JSON legacy
+      // value there would otherwise throw during render.
+      modelKey !== modelKeyFromProfile(team.default_model_profile ?? null) ||
       budgetNum !== (team.default_max_budget_usd ?? null) ||
       turnsNum !== (team.default_max_turns ?? null)
     );
@@ -204,23 +206,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
         </label>
         <div>
           <span className="typo-label text-foreground/85 mb-1.5 block">{t.pipeline.color}</span>
-          <div className="flex gap-1.5 flex-wrap">
-            {Object.entries(TEAM_COLORS).map(([hex, colorName]) => (
-              <button
-                key={hex}
-                type="button"
-                onClick={() => setColor(hex)}
-                title={colorName}
-                aria-pressed={color === hex}
-                className={`w-7 h-7 rounded-card transition-all flex items-center justify-center ${
-                  color === hex ? 'scale-110' : 'hover:scale-105'
-                }`}
-                style={{ backgroundColor: hex }}
-              >
-                {color === hex && <Check className="w-3.5 h-3.5 text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />}
-              </button>
-            ))}
-          </div>
+          <TeamColorPicker value={color} onChange={setColor} size="sm" />
         </div>
         <p className="typo-caption font-normal text-foreground">{ts.identity_hint}</p>
       </div>

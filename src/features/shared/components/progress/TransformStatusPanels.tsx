@@ -59,10 +59,14 @@ export function TransformStatusPanels({
                 key={transformPhase?.label ?? 'processing'}
                 className="animate-fade-slide-in typo-heading text-foreground"
               >
-                {transformPhase?.label ?? 'Starting transformation...'}
+                {transformPhase?.label ?? t.shared.progress_extra.starting_transformation}
               </p>
             <p className="typo-body text-foreground mt-0.5">
-              {transformPhase ? `Step ${transformPhase.step} of ${transformPhase.total}` : 'Starting...'}
+              {transformPhase
+                ? t.shared.progress_extra.step_progress
+                    .replace('{step}', String(transformPhase.step))
+                    .replace('{total}', String(transformPhase.total))
+                : t.shared.progress_extra.starting_short}
             </p>
 
             <div className="mt-3 h-1.5 rounded-full bg-secondary/40 overflow-hidden">
@@ -83,7 +87,7 @@ export function TransformStatusPanels({
               title={t.shared.progress_extra.cancel_transformation}
             >
               <XCircle className="w-3.5 h-3.5" />
-              Cancel
+              {t.common.cancel}
             </button>
           )}
         </div>
@@ -118,7 +122,7 @@ export function TransformStatusPanels({
         <div className="flex-1 min-w-0">
           <p className="typo-heading text-red-400">{t.shared.progress_extra.transformation_failed}</p>
           <p className="typo-body text-red-400/60 mt-0.5">
-            {errorMessage || 'Check the output below for details.'}
+            {errorMessage || t.shared.progress_extra.check_output_details}
           </p>
         </div>
         {onRetry && (
@@ -127,7 +131,7 @@ export function TransformStatusPanels({
             className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl border border-violet-500/25 text-violet-300 hover:bg-violet-500/15 transition-colors flex-shrink-0"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Retry
+            {t.common.retry}
           </button>
         )}
       </div>

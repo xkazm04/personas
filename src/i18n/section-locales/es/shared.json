@@ -195,7 +195,11 @@
     "s_elapsed": "s transcurridos",
     "s_remaining": "s restantes",
     "show_cli_output": "Mostrar salida de CLI",
-    "hide_cli_output": "Ocultar salida de CLI"
+    "hide_cli_output": "Ocultar salida de CLI",
+    "starting_transformation": "Iniciando transformación...",
+    "step_progress": "Paso {step} de {total}",
+    "starting_short": "Iniciando...",
+    "check_output_details": "Consulta la salida a continuación para más detalles."
   },
   "terminal_extra": {
     "press_enter": "Presiona Enter o haz clic en Reproducir para iniciar",

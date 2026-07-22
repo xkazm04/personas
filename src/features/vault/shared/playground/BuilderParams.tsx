@@ -97,11 +97,3 @@ export function initQueryParams(endpoint: { parameters: { location: string; name
   return queryParams.map((p) => ({ key: p.name, value: '' }));
 }
 
-export function formatSchema(schemaJson: string): string {
-  try {
-    return JSON.stringify(JSON.parse(schemaJson), null, 2);
-  } catch {
-    // intentional: non-critical -- JSON parse fallback
-    return schemaJson;
-  }
-}

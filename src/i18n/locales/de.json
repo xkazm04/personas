@@ -261,7 +261,12 @@
     "stream_no_speakers": "Keine Sprecher",
     "stream_none": "Keine",
     "stream_search": "Übertragungen durchsuchen",
-    "stream_title": "Stream"
+    "stream_title": "Stream",
+    "columns_action_empty": "Gerade ist nichts zu erledigen",
+    "columns_needs_attention": "Erfordert Aufmerksamkeit",
+    "columns_active_goals": "Aktive Ziele",
+    "columns_no_team": "Kein Team",
+    "columns_all_clear": "Alles in Ordnung"
   },
   "common": {
     "loading": "Laden...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "{count} Sprünge",
       "active_chains_one": "{count} Kette aktiv",
       "active_chains_other": "{count} Ketten aktiv",
-      "active_chains_title": "Aktive Ketten"
+      "active_chains_title": "Aktive Ketten",
+      "copy_log_failed": "Protokoll konnte nicht kopiert werden"
     },
     "lab": {
       "mode_arena": "Arena",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "Abhängigkeitsgraph",
       "ct_swap_alt_tooltip": "Zu alternativem Konnektor wechseln",
       "ct_deps": "{count} Abhängigkeit(en)",
-      "dg_no_deps": "Keine Abhängigkeiten anzuzeigen.",
-      "dg_broken": "{count} defekt",
-      "dg_blast_radius": "Auswirkungsradius",
-      "dg_dependencies": "Abhängigkeiten",
-      "dg_select_cred": "Zugangsdaten auswählen, um zu sehen, was bei Ablauf defekt wird",
-      "dg_relationships": "Beziehungen ({count})",
-      "dg_more": "+{count} weitere",
-      "dg_affected_tools": "Betroffene Tools",
-      "dg_affected_auto": "Betroffene Automatisierungen",
-      "dg_low_risk": "Geringes Risiko",
-      "dg_medium_risk": "Mittleres Risiko",
-      "dg_high_risk": "Hohes Risiko",
-      "dg_high_blast": "Wenn diese Zugangsdaten ablaufen oder offline gehen, werden {count} Funktionen defekt.",
-      "dg_medium_blast": "{count} Funktionen hängen von diesen Zugangsdaten ab.",
-      "dg_low_blast": "Keine Tools oder Automatisierungen hängen von diesen Zugangsdaten ab.",
       "dm_needed": "{count} Zugangsdaten benötigt",
       "dm_fulfilled": "{fulfilled}/{total} Konnektor(en) erfüllt",
       "dm_reuse_hint": "{count} können vorhandene Zugangsdaten wiederverwenden",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "Trigger & Abonnements",
       "sub_suggested": "{count} vorgeschlagen",
       "sub_filter": "Filter: {filter}",
-      "lifecycle_error_load_triggers": "Trigger konnten nicht geladen werden: {error}",
-      "lifecycle_error_load_subscriptions": "Abonnements konnten nicht geladen werden: {error}",
-      "lifecycle_error_activate_trigger": "Trigger konnte nicht aktiviert werden",
-      "lifecycle_error_activate_subscription": "Abonnement konnte nicht aktiviert werden",
-      "lifecycle_error_retire_trigger": "Trigger konnte nicht gelöscht werden",
-      "lifecycle_error_retire_subscription": "Abonnement konnte nicht gelöscht werden",
-      "lifecycle_error_delete_persists": "Löschen fehlgeschlagen. Das Abonnement besteht möglicherweise noch.",
       "auto_error_deploy_check_credentials": "Bereitstellung fehlgeschlagen. Prüfen Sie Ihre Plattform-Zugangsdaten und versuchen Sie es erneut.",
       "auto_error_deploy_generic": "Bereitstellung der Automatisierung fehlgeschlagen",
       "test_healthcheck_failed_default": "Statusprüfung fehlgeschlagen",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "Noch keine Anmerkung — versehen Sie diesen Lauf mit Tag, Notiz oder Markierung, um ihn später leichter wiederzufinden.",
       "col_verdict": "Urteil",
       "verdict_none": "Noch nicht vom Director bewertet",
-      "verdict_tooltip": "Director-Urteil: {score}/5"
+      "verdict_tooltip": "Director-Urteil: {score}/5",
+      "annotation_saving": "Speichern…"
     },
     "settings_status": {
       "saving": "{sections} wird gespeichert...",
@@ -3612,7 +3597,23 @@
         "other": "Sonstiges"
       },
       "title": "Änderungsverlauf"
-    }
+    },
+    "sigil_edit_channels_label": "Kanäle",
+    "sigil_edit_custom_connector": "Benutzerdefinierter Connector — kein passendes Marken-Icon.",
+    "sigil_edit_error_off": "Fällt auf die Standard-Fehlerrichtlinie zurück.",
+    "sigil_edit_error_on": "Es ist eine benutzerdefinierte Fehlerbehandlung konfiguriert.",
+    "sigil_edit_event_off": "Keine Event-Abonnements konfiguriert.",
+    "sigil_edit_event_on": "Diese Capability abonniert Events.",
+    "sigil_edit_memory_off": "Memory ist deaktiviert — die Capability läuft zustandslos.",
+    "sigil_edit_memory_on": "Persistenter Memory ist für diese Capability aktiviert.",
+    "sigil_edit_no_channels": "Keine Benachrichtigungskanäle für diese Capability.",
+    "sigil_edit_no_connector": "Diese Capability deklariert keinen Connector.",
+    "sigil_edit_no_dim_editor": "Für diese Dimension ist noch kein Editor verknüpft.",
+    "sigil_edit_no_trigger": "Für diese Capability ist kein Trigger konfiguriert.",
+    "sigil_edit_review_off": "Kein Human-Review-Gate — Aktionen laufen autonom.",
+    "sigil_edit_review_on": "Vor dieser Capability-Aktion ist eine Human-Review erforderlich.",
+    "sigil_edit_service_label": "Dienst: {key}",
+    "sigil_edit_when_label": "Wann"
   },
   "vault": {
     "workspace_connect": "Workspace-Verbindung",
@@ -3911,7 +3912,8 @@
       "query_parameters": "Abfrageparameter",
       "recipes_title": "Gespeicherte Rezepte",
       "truncated_warning": "Antwort für Anzeige gekürzt",
-      "value_col": "Wert"
+      "value_col": "Wert",
+      "request_headers": "Header"
     },
     "ingest": {
       "save_name": "Name speichern",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "Schlüssel-Wert",
       "capability_key_value_hint": "Dies ist ein Schlüssel-Wert-Speicher. Verwenden Sie Schlüsselbefehle wie SCAN, GET und TYPE — kein SQL.",
       "capability_select_subset": "Nur SELECT",
-      "capability_select_subset_hint": "Hier laufen nur einfache SELECT-Abfragen auf einer einzelnen Tabelle — filtern mit WHERE, sortieren mit ORDER BY, begrenzen mit LIMIT. JOINs, Aggregationen, CTEs und Schreibvorgänge werden nicht unterstützt."
+      "capability_select_subset_hint": "Hier laufen nur einfache SELECT-Abfragen auf einer einzelnen Tabelle — filtern mit WHERE, sortieren mit ORDER BY, begrenzen mit LIMIT. JOINs, Aggregationen, CTEs und Schreibvorgänge werden nicht unterstützt.",
+      "query_timeout": "Zeitüberschreitung beim Warten auf eine Antwort. Bitte versuchen Sie es erneut."
     },
     "dependencies": {
       "simulate_revocation": "Widerruf simulieren",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "Was gescannt wird",
       "read_error_item": "{source} konnte nicht gelesen werden",
       "read_errors_title": "Einige Quellen konnten nicht gelesen werden",
-      "select_high_confidence": "Hohe Zuverlässigkeit"
+      "select_high_confidence": "Hohe Zuverlässigkeit",
+      "source_unknown": "Unbekannte Quelle"
     },
     "desktop_discovery": {
       "title": "Desktop-Apps",
@@ -5875,7 +5879,9 @@
       "col_days": "Tage",
       "col_incident": "Vorfall",
       "guidance_mcp_sidecar": "Der Agent lief ohne seine integrierten MCP-Tools, weil die personas-mcp-Binärdatei fehlte. Installieren oder reparieren Sie die App neu, damit sie mit der Desktop-App ausgeliefert wird.",
-      "source_mcp_sidecar": "MCP-Werkzeugkasten"
+      "source_mcp_sidecar": "MCP-Werkzeugkasten",
+      "list_truncated": "Die ersten {limit} Vorfälle werden angezeigt – grenzen Sie die Filter ein, um den Rest zu sehen.",
+      "action_refused": "Aktion wurde nicht angewendet – der Status des Vorfalls hat sich möglicherweise geändert."
     },
     "observability": {
       "title": "Beobachtbarkeit",
@@ -9545,7 +9551,8 @@
       "event_type_required": "Der zu überwachende Ereignistyp ist erforderlich.",
       "watch_path_required": "Mindestens ein Überwachungspfad ist erforderlich.",
       "composite_min_conditions": "Zusammengesetzte Trigger benötigen mindestens 2 Bedingungen.",
-      "composite_window_minimum": "Das Zeitfenster muss mindestens 5 Sekunden betragen."
+      "composite_window_minimum": "Das Zeitfenster muss mindestens 5 Sekunden betragen.",
+      "endpoint_required": "Endpoint-URL oder Ereignis ist erforderlich."
     },
     "dead_letter_select_all": "Auswählen all",
     "dead_letter_select_visible": "Auswählen visible",
@@ -9750,7 +9757,9 @@
       "watch": "Beobachten",
       "watching": "Beobachtet",
       "watching_only": "Nur beobachtete"
-    }
+    },
+    "overdue_label": "Überfällig",
+    "relay_delete_failed": "Relay konnte nicht gelöscht werden — bitte erneut versuchen"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "Aktiv",
       "paused": "Pausiert",
       "failed": "Fehlgeschlagen",
-      "file-based": "Dateibasiert",
-      "unknown": "Unbekannt"
+      "unknown": "Unbekannt",
+      "file-based": "Dateibasiert"
     },
     "delivery": {
       "delivered": "Zugestellt",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "s vergangen",
       "s_remaining": "s verbleibend",
       "show_cli_output": "CLI-Ausgabe anzeigen",
-      "hide_cli_output": "CLI-Ausgabe ausblenden"
+      "hide_cli_output": "CLI-Ausgabe ausblenden",
+      "starting_transformation": "Transformation wird gestartet...",
+      "step_progress": "Schritt {step} von {total}",
+      "starting_short": "Wird gestartet...",
+      "check_output_details": "Details finden Sie in der Ausgabe unten."
     },
     "terminal_extra": {
       "press_enter": "Eingabe drücken oder Abspielen klicken, um zu starten",

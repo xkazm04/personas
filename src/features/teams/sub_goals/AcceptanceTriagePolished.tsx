@@ -16,8 +16,8 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, Check, FolderGit2, Clock, Target } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
-import type { PendingGoal, PendingProject, PendingTeam, PendingKpi } from './goalAcceptanceMock';
-import { groupByProjectThenKpi } from './goalAcceptanceMock';
+import type { PendingGoal, PendingProject, PendingTeam, PendingKpi } from './goalAcceptanceModel';
+import { groupByProjectThenKpi } from './goalAcceptanceModel';
 import { AcceptRejectControls, KpiDivider, TeamMonogram, EmptyQueue } from './acceptancePrimitives';
 
 interface Props {
@@ -27,9 +27,12 @@ interface Props {
   projects: PendingProject[];
   onAccept: (goalId: string) => void;
   onReject: (goalId: string, comment: string) => void;
+  /** Bulk "Accept all" for a project's goals — accepts every id concurrently
+   *  then does a single refetch, instead of N racing accept+refetch cycles. */
+  onAcceptAll: (goalIds: string[]) => void | Promise<void>;
 }
 
-export function AcceptanceTriagePolished({ goals, teams, kpis, projects, onAccept, onReject }: Props) {
+export function AcceptanceTriagePolished({ goals, teams, kpis, projects, onAccept, onReject, onAcceptAll }: Props) {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const grouped = groupByProjectThenKpi(goals, kpis, projects);
@@ -73,7 +76,12 @@ export function AcceptanceTriagePolished({ goals, teams, kpis, projects, onAccep
               </button>
               <button
                 type="button"
-                onClick={() => pg.kpiGroups.flatMap((kg) => kg.goals).forEach((g) => onAccept(g.id))}
+                onClick={() => {
+                  // acceptAll fires N accepts then a single refetch (via
+                  // onAcceptAll) instead of N concurrent accept+refetch
+                  // cycles racing to setRows.
+                  void onAcceptAll(pg.kpiGroups.flatMap((kg) => kg.goals).map((g) => g.id));
+                }}
                 className="inline-flex items-center gap-1.5 typo-caption font-medium rounded-interactive px-2.5 py-1 text-[var(--success)] bg-[var(--success)]/15 hover:bg-[var(--success)]/25 transition-colors shrink-0"
               >
                 <Check className="w-3.5 h-3.5" /> {dl.accept_accept_all}

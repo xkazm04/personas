@@ -2,6 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { AlertCircle, CheckCircle2, AlertTriangle, Activity } from 'lucide-react';
 import type { AuditIncidentSummary } from '@/lib/bindings/AuditIncidentSummary';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
+import { OPEN_ONLY_FILTERS as OPEN_FILTERS } from '../libs/incidentFilterDefaults';
 
 interface Props {
   summary: AuditIncidentSummary | null;
@@ -14,9 +15,6 @@ interface Props {
 // Each tile is a one-click jump to the exact slice its number counts. The
 // summary KPIs are global (no source/time/persona scoping), so the targets
 // clear those dimensions to keep the list count matching the headline number.
-const OPEN_FILTERS: IncidentFilters = {
-  statuses: ['open'], severities: null, source_tables: null, persona_id: null, since: null,
-};
 const CRITICAL_FILTERS: IncidentFilters = {
   statuses: ['open'], severities: ['critical'], source_tables: null, persona_id: null, since: null,
 };

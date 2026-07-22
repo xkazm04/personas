@@ -195,7 +195,11 @@
     "s_elapsed": "d terlewat",
     "s_remaining": "d tersisa",
     "show_cli_output": "Tampilkan keluaran CLI",
-    "hide_cli_output": "Sembunyikan keluaran CLI"
+    "hide_cli_output": "Sembunyikan keluaran CLI",
+    "starting_transformation": "Memulai transformasi...",
+    "step_progress": "Langkah {step} dari {total}",
+    "starting_short": "Memulai...",
+    "check_output_details": "Periksa output di bawah untuk detailnya."
   },
   "terminal_extra": {
     "press_enter": "Tekan Enter atau klik Putar untuk memulai",

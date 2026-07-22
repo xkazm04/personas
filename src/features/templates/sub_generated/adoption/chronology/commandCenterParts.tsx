@@ -219,7 +219,10 @@ export function TestResultsPanel({
       </div>
 
       {showReport && createPortal(
-        <TestReportModal results={toolResults} summary={summary} onClose={() => setShowReport(false)} onCredentialAdded={onReject} />,
+        // NOTE: onCredentialAdded is a "refresh the connector list" hook,
+        // not a rejection — wiring it to onReject abandoned the draft the
+        // moment a user successfully fixed a missing credential from here.
+        <TestReportModal results={toolResults} summary={summary} onClose={() => setShowReport(false)} />,
         document.body,
       )}
     </div>

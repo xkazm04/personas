@@ -332,6 +332,17 @@ fn finalize_run(
     }
 }
 
+/// Extract the HTTP status from the fixed `"Webhook returned HTTP {status}: {body}"`
+/// prefix `invoke_webhook` emits on >= 400 responses. Only ever looks at the
+/// prefix -- never scans into the appended response body, which is untrusted,
+/// attacker/echo-controlled content that may itself contain text like
+/// "HTTP 5xx" or "HTTP 401" and would otherwise be misread as the real status.
+fn extract_http_status(msg: &str) -> Option<u16> {
+    let rest = msg.strip_prefix("Webhook returned HTTP ")?;
+    let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+    digits.parse().ok()
+}
+
 /// Check if a webhook error is transient and worth retrying.
 ///
 /// Retryable: timeouts, connection failures, 5xx server errors.
@@ -342,8 +353,7 @@ fn is_retryable_error(result: &Result<(String, u16, Vec<String>), AppError>) -> 
         Err(AppError::Execution(msg)) => {
             msg.contains("timed out")
                 || msg.contains("Failed to connect")
-                || msg.contains("HTTP 5")
-                || msg.contains("HTTP 401")
+                || extract_http_status(msg).is_some_and(|s| s / 100 == 5 || s == 401)
         }
         _ => false,
     }
@@ -351,7 +361,7 @@ fn is_retryable_error(result: &Result<(String, u16, Vec<String>), AppError>) -> 
 
 fn is_auth_failure(result: &Result<(String, u16, Vec<String>), AppError>) -> bool {
     match result {
-        Err(AppError::Execution(msg)) => msg.contains("HTTP 401"),
+        Err(AppError::Execution(msg)) => extract_http_status(msg) == Some(401),
         _ => false,
     }
 }

@@ -343,6 +343,9 @@ impl ConcurrencyTracker {
         if !self.quota_available() {
             return None;
         }
+        if !self.resource_available() {
+            return None;
+        }
         if !self.has_capacity(persona_id, max_concurrent) {
             return None;
         }
@@ -389,6 +392,9 @@ impl ConcurrencyTracker {
     /// empty / blocked on their per-persona limits.
     pub fn drain_next_global(&mut self) -> Option<QueuedExecution> {
         if !self.quota_available() {
+            return None;
+        }
+        if !self.resource_available() {
             return None;
         }
         if !self.has_global_capacity() {

@@ -143,7 +143,9 @@
     "col_days": "Ngày",
     "col_incident": "Sự cố",
     "guidance_mcp_sidecar": "Agent đã chạy mà không có các công cụ MCP tích hợp sẵn vì thiếu tệp nhị phân personas-mcp. Hãy cài đặt lại hoặc sửa chữa ứng dụng để đảm bảo nó đi kèm với ứng dụng desktop.",
-    "source_mcp_sidecar": "Bộ công cụ MCP"
+    "source_mcp_sidecar": "Bộ công cụ MCP",
+    "action_refused": "Hành động chưa được áp dụng — trạng thái sự cố có thể đã thay đổi.",
+    "list_truncated": "Đang hiển thị {limit} sự cố đầu tiên — thu hẹp bộ lọc để xem phần còn lại."
   },
   "observability": {
     "title": "Khả năng quan sát",

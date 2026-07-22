@@ -3,6 +3,7 @@ import { Check, Minus, Star } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { intentTextClass } from './intentColors';
 
 /**
  * `comparison_cards` — the decision's options side-by-side with pros,
@@ -32,13 +33,6 @@ interface ComparisonOption {
   recommended?: boolean;
   intent?: 'good' | 'warn' | 'bad' | 'info';
 }
-
-const INTENT_TEXT: Record<NonNullable<ComparisonOption['intent']>, string> = {
-  good: 'text-emerald-400',
-  warn: 'text-amber-400',
-  bad: 'text-rose-400',
-  info: 'text-primary',
-};
 
 export function ComparisonCardsWidget({ config, title }: CockpitWidgetProps) {
   const { t } = useTranslation();
@@ -76,7 +70,7 @@ export function ComparisonCardsWidget({ config, title }: CockpitWidgetProps) {
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span
-                  className={`typo-body font-semibold truncate ${INTENT_TEXT[opt.intent ?? 'info']}`}
+                  className={`typo-body font-semibold truncate ${intentTextClass(opt.intent, 'info')}`}
                 >
                   {opt.label}
                 </span>

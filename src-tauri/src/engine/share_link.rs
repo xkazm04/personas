@@ -251,8 +251,14 @@ pub async fn fetch_share_link(url: &str) -> Result<Vec<u8>, AppError> {
     // perspective until the request returns). Generous for LAN bundle bytes
     // — share bundles are bounded by MAX_DECOMPRESSED_SIZE = 50 MB which
     // even on a slow link transfers well under 30s.
+    // No redirects: a malicious LAN host that passes `is_safe_share_host`
+    // could otherwise 302 the request to an arbitrary internal/external
+    // target that was never itself validated (the redirect hop bypasses the
+    // host check above). The share endpoint always serves bytes directly —
+    // it has no legitimate reason to redirect.
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(30))
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|e| AppError::Internal(format!("Failed to build HTTP client: {e}")))?;
     let resp = client

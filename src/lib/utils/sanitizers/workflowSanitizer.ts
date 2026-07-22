@@ -11,6 +11,8 @@
  * 5. Validating structural integrity of workflow JSON
  */
 
+import { stripInjectionPatterns, escapeForPrompt } from './promptInjection';
+
 // -- Allowlists & Limits ----------------------------------------------
 
 /** Safe characters for workflow and node names */
@@ -27,32 +29,11 @@ const MAX_LENGTHS = {
 } as const;
 
 // -- Prompt Injection Patterns ----------------------------------------
-
-/**
- * Patterns that indicate prompt injection attempts.
- * These are stripped from all text before embedding in prompts.
- */
-const INJECTION_PATTERNS: RegExp[] = [
-  // Section delimiter injection (matches the app's own prompt format)
-  /---SECTION:\w+---/gi,
-  // Role/instruction override attempts
-  /(?:^|\n)\s*(?:system|user|assistant|human|ai)\s*:/gi,
-  // Markdown heading injection (could break prompt structure)
-  /(?:^|\n)\s*#{1,6}\s+(INJECT|OVERRIDE|IGNORE|IMPORTANT|CRITICAL|SYSTEM|INSTRUCTION|NOTE:|WARNING:)/gi,
-  // XML/HTML tag injection
-  /<\/?(?:system|instruction|prompt|role|override|ignore)[^>]*>/gi,
-  // Common prompt injection phrases
-  /ignore\s+(?:all\s+)?(?:previous|prior|above|system)\s+(?:instructions?|prompts?|rules?)/gi,
-  /disregard\s+(?:all\s+)?(?:previous|prior|above)\s+/gi,
-  /you\s+are\s+now\s+(?:a\s+different|no\s+longer|free\s+from)/gi,
-  /override\s+(?:system|safety|security)\s+(?:prompt|instruction|rule)/gi,
-  /bypass\s+(?:safety|security|restriction|guardrail|filter)/gi,
-  // Zero-width characters used to hide content
-  /(?:\u200b|\u200c|\u200d|\u200e|\u200f|\ufeff|\u2060|\u2061|\u2062|\u2063|\u2064)/g,
-  // ANSI escape sequences
-  // eslint-disable-next-line no-control-regex
-  /\x1b\[[0-9;]*[a-zA-Z]/g,
-];
+//
+// The shared pattern set (plus a non-BMP homoglyph defense this file didn't
+// previously have) and strip/escape helpers now live in `promptInjection.ts`
+// (also used by `variableSanitizer.ts`) so the two sanitizers can't drift
+// apart again.
 
 // -- Core Sanitization Functions --------------------------------------
 
@@ -130,33 +111,6 @@ export function sanitizeParamValue(value: unknown, depth = 0): unknown {
   }
 
   return null;
-}
-
-// -- Injection Pattern Stripping --------------------------------------
-
-/**
- * Strip known prompt injection patterns from text.
- */
-function stripInjectionPatterns(text: string): string {
-  let clean = text;
-  for (const pattern of INJECTION_PATTERNS) {
-    clean = clean.replace(pattern, '');
-  }
-  return clean;
-}
-
-/**
- * Escape characters that could break prompt structure.
- * Replaces markdown heading markers and triple backticks.
- */
-function escapeForPrompt(text: string): string {
-  return text
-    // Escape markdown headings that could inject prompt sections
-    .replace(/^(#{1,6})\s/gm, (_, hashes: string) => `${hashes.replace(/#/g, '＃')} `)
-    // Escape triple backticks (could break markdown code fences)
-    .replace(/```/g, '\\`\\`\\`')
-    // Escape section-like delimiters
-    .replace(/^---+$/gm, '------');
 }
 
 // -- JSON Sanitization ------------------------------------------------

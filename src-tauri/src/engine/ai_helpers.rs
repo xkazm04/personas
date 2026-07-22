@@ -129,6 +129,81 @@ pub fn extract_fenced_block(text: &str, language: &str) -> Option<String> {
         .map(|(c, _)| c.clone())
 }
 
+/// Extract the explanation text that comes after the (first) fenced code block.
+///
+/// Shared by the DB-query AI flows (nl_query, schema_proposal) which all ask
+/// the model for "```sql ... ``` <plain-English explanation>" and need the
+/// trailing prose separated from the code.
+pub fn extract_explanation(text: &str) -> Option<String> {
+    let mut found_code_block = false;
+    let mut in_block = false;
+    let mut explanation_lines: Vec<&str> = Vec::new();
+
+    for line in text.lines() {
+        if line.trim_start().starts_with("```") {
+            if in_block {
+                in_block = false;
+                found_code_block = true;
+                continue;
+            }
+            in_block = true;
+            continue;
+        }
+
+        if found_code_block && !in_block {
+            explanation_lines.push(line);
+        }
+    }
+
+    let explanation = explanation_lines.join("\n").trim().to_string();
+    if explanation.is_empty() {
+        None
+    } else {
+        Some(explanation)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Single-turn AI-CLI helper scaffold
+// ---------------------------------------------------------------------------
+
+/// Build the CLI args shared by the single-turn DB-query AI helper flows
+/// (nl_query, schema_proposal, query_debug): default persona/provider, pinned
+/// to a fast model, capped at a single turn.
+pub fn build_single_turn_cli_args() -> crate::engine::types::CliArgs {
+    let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push("claude-sonnet-4-6".to_string());
+    cli_args.args.push("--max-turns".to_string());
+    cli_args.args.push("1".to_string());
+    cli_args
+}
+
+/// Run a single-turn AI helper prompt using the shared model pin, turn limit,
+/// and timeout used by the DB-query AI flows.
+///
+/// Returns `(output_text, claude_session_id)`. Callers that need to resume the
+/// session (e.g. query_debug's fix-and-retry loop) should use
+/// [`build_single_turn_cli_args`] directly alongside
+/// `crate::engine::prompt::build_resume_cli_args`.
+pub async fn run_single_turn_prompt(
+    prompt_text: String,
+    on_line: Option<&(dyn Fn(&str) + Send + Sync)>,
+) -> Result<(String, Option<String>), String> {
+    let cli_args = build_single_turn_cli_args();
+    let (text, session_id, _) =
+        crate::commands::design::n8n_transform::run_claude_prompt_text_inner(
+            prompt_text,
+            &cli_args,
+            on_line,
+            None,
+            None,
+            120,
+        )
+        .await?;
+    Ok((text, session_id))
+}
+
 // ---------------------------------------------------------------------------
 // Schema context builder
 // ---------------------------------------------------------------------------
@@ -287,5 +362,20 @@ mod tests {
             extract_fenced_block(text, "sql"),
             Some("CREATE TABLE t (x INT);".into()),
         );
+    }
+
+    // -- extract_explanation ------------------------------------------------
+
+    #[test]
+    fn extract_explanation_after_block() {
+        let text = "Here:\n```sql\nCREATE TABLE t (id INT);\n```\n\nThe `t` table stores items.";
+        let explanation = extract_explanation(text).unwrap();
+        assert!(explanation.contains("The `t` table stores items."));
+    }
+
+    #[test]
+    fn extract_explanation_none_when_only_whitespace() {
+        let text = "```sql\nCREATE TABLE t (id INT);\n```";
+        assert_eq!(extract_explanation(text), None);
     }
 }

@@ -111,6 +111,14 @@ export function classifyError(error: string): ErrorCategory {
 
   // Provider / CLI / model not found. Includes Anthropic's `not_found_error`
   // (404) for a retired or unknown model id, plus the raw CLI/spawn shapes.
+  //
+  // NOTE: this intentionally mirrors the Rust `error_taxonomy::classify_error`
+  // ladder byte-for-byte (see errorTaxonomy.parity.test.ts) -- including the
+  // broad `'not found'` substring match, which also catches ordinary domain
+  // 404s ("persona not found", "credential not found") and over-escalates
+  // them to `critical`/failover-eligible. Narrowing this on the TS side alone
+  // would break cross-FFI parity; fixing it for real requires a matching
+  // change to the Rust ladder in the same PR.
   if (
     lower.includes('not found') ||
     lower.includes('enoent') ||

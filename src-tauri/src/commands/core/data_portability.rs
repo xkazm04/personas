@@ -13,6 +13,7 @@ use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use ts_rs::TS;
 
+use crate::db::credential_fields::classify_field_type;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::dev_tools as dev_tools_repo;
 use crate::engine::persona_icon::export_safe_icon;
@@ -303,28 +304,26 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
     let teams = team_repo::get_all(pool)?;
     let credentials = cred_repo::get_all(pool)?;
 
-    let mut memory_count: u32 = 0;
-    let mut test_suite_count: u32 = 0;
-    for p in &personas {
-        memory_count += memory_repo::get_total_count(pool, Some(&p.id), None, None, None)? as u32;
-        test_suite_count += suite_repo::list_by_persona(pool, &p.id)?.len() as u32;
-    }
-
-    let mut team_memory_count: u32 = 0;
-    for t in &teams {
-        team_memory_count +=
-            team_memory_repo::get_total_count(pool, &t.id, None, None, None)? as u32;
-    }
-
+    // Scalar COUNTs for the preview numbers. The previous per-persona loops
+    // ran 2 queries per persona (200+ sequential queries on a big workspace)
+    // and list_by_persona hydrated full test_suites rows — including the
+    // up-to-500KB scenarios blob — just to .len() them. The stats are
+    // workspace-wide, so plain aggregates are both correct and O(1) queries.
+    let conn = pool.get()?;
+    let scalar_count = |sql: &str| -> Result<u32, AppError> {
+        Ok(conn
+            .query_row(sql, [], |r| r.get::<_, i64>(0))
+            .map_err(crate::error::AppError::Database)? as u32)
+    };
+    let memory_count = scalar_count("SELECT COUNT(*) FROM persona_memories")?;
+    let test_suite_count = scalar_count("SELECT COUNT(*) FROM test_suites")?;
+    let team_memory_count = scalar_count("SELECT COUNT(*) FROM team_memories")?;
     // KPIs that are part of a live "setup" — active or paused (proposed = review
-    // queue, archived = retired; neither travels). Matches the export filter.
-    let kpi_count = dev_tools_repo::list_all_kpis(pool)
-        .map(|kpis| {
-            kpis.iter()
-                .filter(|k| is_exportable_kpi(&k.status))
-                .count() as u32
-        })
-        .unwrap_or(0);
+    // queue, archived = retired; neither travels). Matches the export filter
+    // (is_exportable_kpi).
+    let kpi_count =
+        scalar_count("SELECT COUNT(*) FROM dev_kpis WHERE status IN ('active', 'paused')")
+            .unwrap_or(0);
 
     Ok(ExportStats {
         persona_count: personas.len() as u32,
@@ -478,11 +477,18 @@ pub async fn import_portability_bundle(
     if let (Some(envelope), Some(ref pp)) = (&bundle.encrypted_credentials, &passphrase) {
         if !pp.is_empty() {
             match apply_encrypted_credentials(pool, envelope, pp, &bundle.credentials) {
-                Ok(count) => {
+                Ok((count, unmatched)) => {
                     if count > 0 {
                         result.warnings.push(format!(
                             "{} credential secret(s) decrypted and applied",
                             count
+                        ));
+                    }
+                    if !unmatched.is_empty() {
+                        result.warnings.push(format!(
+                            "{} credential secret(s) had no matching imported shell and were not applied: {}",
+                            unmatched.len(),
+                            unmatched.join(", ")
                         ));
                     }
                 }
@@ -647,11 +653,18 @@ pub async fn import_portability_bundle_from_path(
     if let (Some(envelope), Some(ref pp)) = (&bundle.encrypted_credentials, &passphrase) {
         if !pp.is_empty() {
             match apply_encrypted_credentials(pool, envelope, pp, &bundle.credentials) {
-                Ok(count) => {
+                Ok((count, unmatched)) => {
                     if count > 0 {
                         result.warnings.push(format!(
                             "{} credential secret(s) decrypted and applied",
                             count
+                        ));
+                    }
+                    if !unmatched.is_empty() {
+                        result.warnings.push(format!(
+                            "{} credential secret(s) had no matching imported shell and were not applied: {}",
+                            unmatched.len(),
+                            unmatched.join(", ")
                         ));
                     }
                 }
@@ -1558,11 +1571,15 @@ fn import_bundle(
 
     // Phase 3: Import credential metadata (no secrets — user must re-enter via Credential Vault)
     for c in &bundle.credentials {
-        // Skip if credential with same name and service_type already exists
+        let imported_name = format!("{} (imported)", c.name);
+        // Skip if a credential shell for this import already exists. Check
+        // against the name actually stored below (the "(imported)"-suffixed
+        // one) — checking the raw export name here would never match what
+        // gets inserted, letting re-imports pile up duplicate shells.
         let exists = tx
             .query_row(
                 "SELECT COUNT(*) FROM persona_credentials WHERE name = ?1 AND service_type = ?2",
-                rusqlite::params![c.name, c.service_type],
+                rusqlite::params![imported_name, c.service_type],
                 |row| row.get::<_, i32>(0),
             )
             .unwrap_or(0)
@@ -1581,7 +1598,7 @@ fn import_bundle(
              VALUES (?1,?2,?3,?4,?5,?6,?7,?7)",
             rusqlite::params![
                 id,
-                format!("{} (imported)", c.name),
+                imported_name,
                 c.service_type,
                 empty_encrypted.0,
                 empty_encrypted.1,
@@ -1779,11 +1796,21 @@ fn import_bundle(
                     std::collections::HashMap::new();
 
                 for m in &t.members {
-                    let new_persona_id = result
-                        .id_mapping
-                        .get(&m.persona_id)
-                        .cloned()
-                        .unwrap_or_else(|| m.persona_id.clone());
+                    // No entry in `id_mapping` means the persona was never
+                    // created in this import — either it wasn't in the
+                    // bundle, or Phase 4 skipped it (e.g. keyring
+                    // unavailable while encrypting notification channels).
+                    // Falling back to the raw exported persona_id would
+                    // insert a member row pointing at an id that exists
+                    // nowhere in the new DB. Skip it and say so instead.
+                    let Some(new_persona_id) = result.id_mapping.get(&m.persona_id).cloned()
+                    else {
+                        result.warnings.push(format!(
+                            "Team '{}' member skipped: persona '{}' was not imported",
+                            t.name, m.persona_id
+                        ));
+                        continue;
+                    };
 
                     let mid = uuid::Uuid::new_v4().to_string();
                     let role = m.role.as_deref().unwrap_or("worker");
@@ -2223,13 +2250,17 @@ fn build_encrypted_credentials(
 
 /// Decrypt embedded credentials from a portability bundle and write the fields
 /// to the matching imported credential shells.
-/// Returns the number of credentials whose secrets were successfully applied.
+/// Returns `(applied, unmatched_names)` — the count of credentials whose
+/// secrets were successfully applied, and the names of any entries that had
+/// no matching imported shell (e.g. Phase 3 skipped creating one because a
+/// same-name credential already existed) so the caller can surface an
+/// explicit warning instead of the failure being invisible.
 fn apply_encrypted_credentials(
     pool: &DbPool,
     envelope: &CredentialExportEnvelope,
     passphrase: &str,
     _credential_metas: &[CredentialMetaExport],
-) -> Result<u32, AppError> {
+) -> Result<(u32, Vec<String>), AppError> {
     if envelope.format != CREDENTIAL_EXPORT_FORMAT {
         return Err(AppError::Validation(format!(
             "Unsupported embedded credential format: {} (expected {})",
@@ -2264,6 +2295,7 @@ fn apply_encrypted_credentials(
     let existing = cred_repo::get_all(pool).unwrap_or_default();
 
     let mut applied = 0u32;
+    let mut unmatched: Vec<String> = Vec::new();
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
 
@@ -2275,6 +2307,7 @@ fn apply_encrypted_credentials(
             .find(|c| c.name == imported_name && c.service_type == entry.service_type);
 
         let Some(cred) = matching_cred else {
+            unmatched.push(entry.name.clone());
             continue;
         };
 
@@ -2286,7 +2319,7 @@ fn apply_encrypted_credentials(
             let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
                 .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
 
-            let field_type = classify_credential_field_type(key);
+            let field_type = classify_field_type(key);
             let field_id = uuid::Uuid::new_v4().to_string();
             let now = chrono::Utc::now().to_rfc3339();
 
@@ -2312,7 +2345,7 @@ fn apply_encrypted_credentials(
     }
 
     tx.commit().map_err(AppError::Database)?;
-    Ok(applied)
+    Ok((applied, unmatched))
 }
 
 // ============================================================================
@@ -2716,7 +2749,7 @@ pub async fn import_credentials(
             let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
                 .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
 
-            let field_type = classify_credential_field_type(key);
+            let field_type = classify_field_type(key);
             let field_id = uuid::Uuid::new_v4().to_string();
 
             tx.execute(
@@ -2741,27 +2774,6 @@ pub async fn import_credentials(
 
     tx.commit().map_err(AppError::Database)?;
     Ok(Some(result))
-}
-
-/// Classify a credential field key into a type category.
-/// Mirrors the private `classify_field_type` in cred_repo.
-fn classify_credential_field_type(key: &str) -> &'static str {
-    let lower = key.to_lowercase();
-    if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
-        "url"
-    } else if lower.contains("token")
-        || lower.contains("key")
-        || lower.contains("secret")
-        || lower.contains("password")
-    {
-        "secret"
-    } else if lower == "port" {
-        "number"
-    } else if lower.contains("email") || lower.contains("username") || lower.contains("user") {
-        "identity"
-    } else {
-        "text"
-    }
 }
 
 #[cfg(test)]

@@ -312,6 +312,19 @@ fn migrate_persona_healing_issues(conn: &Connection) -> Result<(), AppError> {
         &[
             "DELETE FROM persona_healing_issues \
              WHERE persona_id NOT IN (SELECT id FROM personas);",
+            // The rebuild below adds a UNIQUE(persona_id, execution_id) index
+            // (WHERE execution_id IS NOT NULL). The original table never had
+            // that constraint, so a legacy DB can hold duplicate healing
+            // issues for the same (persona, execution) pair — de-dupe first
+            // (keep the newest row per pair) or CREATE UNIQUE INDEX aborts
+            // the whole migration and startup fails. See
+            // refactor-bughunt-2026-07-10/tauri-db-misc.md #3.
+            "DELETE FROM persona_healing_issues \
+             WHERE execution_id IS NOT NULL AND rowid NOT IN (
+                 SELECT MAX(rowid) FROM persona_healing_issues \
+                 WHERE execution_id IS NOT NULL \
+                 GROUP BY persona_id, execution_id
+             );",
         ],
         "CREATE TABLE persona_healing_issues_new (
             id          TEXT PRIMARY KEY,

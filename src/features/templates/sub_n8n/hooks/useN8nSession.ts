@@ -36,14 +36,28 @@ interface DbSlice {
   error: string | null;
 }
 
+// Serialize-per-reference cache: reducer state is immutable, so a given
+// object reference always serializes to the same string. Avoids re-running
+// JSON.stringify on the (potentially huge) parse result for every dispatch.
+const stringifyCache = new WeakMap<object, string>();
+
+function cachedStringify(obj: object): string {
+  let s = stringifyCache.get(obj);
+  if (s === undefined) {
+    s = JSON.stringify(obj);
+    stringifyCache.set(obj, s);
+  }
+  return s;
+}
+
 function deriveDbSlice(state: N8nImportState): DbSlice {
   return {
     step: state.step,
     status: deriveSessionStatus(state),
-    parserResult: state.parsedResult ? JSON.stringify(state.parsedResult) : null,
-    draftJson: state.draft ? JSON.stringify(state.draft) : null,
-    questionsJson: state.questions ? JSON.stringify(state.questions) : null,
-    userAnswers: Object.keys(state.userAnswers).length > 0 ? JSON.stringify(state.userAnswers) : null,
+    parserResult: state.parsedResult ? cachedStringify(state.parsedResult) : null,
+    draftJson: state.draft ? cachedStringify(state.draft) : null,
+    questionsJson: state.questions ? cachedStringify(state.questions) : null,
+    userAnswers: Object.keys(state.userAnswers).length > 0 ? cachedStringify(state.userAnswers) : null,
     transformId: state.backgroundTransformId,
     error: state.error,
   };
@@ -138,7 +152,10 @@ export function useN8nSession(
         dbTimerRef.current = null;
       }
     };
-  }, [state.sessionId, state.step, state.parsedResult, state.draft, state.questions, state.userAnswers, state.backgroundTransformId, state.error, state.transforming, state.transformSubPhase, state.created, state]);
+    // Deps cover every field deriveDbSlice/deriveSessionStatus read; the whole
+    // `state` object is deliberately NOT a dep so per-line stream dispatches
+    // (TRANSFORM_LINES etc.) don't re-run this effect.
+  }, [state.sessionId, state.step, state.parsedResult, state.draft, state.questions, state.userAnswers, state.backgroundTransformId, state.error, state.transforming, state.transformSubPhase, state.created]);
 
   // -- Auto-sync to localStorage (debounced) -- only during active transform --
 

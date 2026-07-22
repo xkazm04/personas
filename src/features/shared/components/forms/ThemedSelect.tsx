@@ -4,6 +4,7 @@ import { ChevronDown, Search, Check } from 'lucide-react';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAnchoredPortalPosition } from '@/features/shared/components/forms/useAnchoredPortalPosition';
 
 export interface ThemedSelectOption {
   value: string;
@@ -92,33 +93,9 @@ function FilterableSelect({
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number; flipUp: boolean } | null>(null);
+  const dropdownPos = useAnchoredPortalPosition(containerRef, open, { flip: true, maxMenuHeight: 220, gap: 4, bottomMargin: 8 });
 
   const close = useCallback(() => { setOpen(false); setQuery(''); }, []);
-
-  // Position the dropdown relative to the trigger via portal
-  useEffect(() => {
-    if (!open || !containerRef.current) return;
-    const updatePos = () => {
-      const rect = containerRef.current!.getBoundingClientRect();
-      const dropdownMaxH = 220; // search bar + max-h-48 options
-      const spaceBelow = window.innerHeight - rect.bottom - 8;
-      const flipUp = spaceBelow < dropdownMaxH && rect.top > spaceBelow;
-      setDropdownPos({
-        top: flipUp ? rect.top - 4 : rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-        flipUp,
-      });
-    };
-    updatePos();
-    window.addEventListener('scroll', updatePos, true);
-    window.addEventListener('resize', updatePos);
-    return () => {
-      window.removeEventListener('scroll', updatePos, true);
-      window.removeEventListener('resize', updatePos);
-    };
-  }, [open]);
 
   // Close on click outside (handles both trigger and portalled dropdown)
   useEffect(() => {

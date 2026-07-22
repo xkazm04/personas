@@ -1,6 +1,6 @@
 import { Rocket, Plus, BookOpen } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
 import { useTranslation } from '@/i18n/useTranslation';
 

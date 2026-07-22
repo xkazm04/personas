@@ -592,7 +592,8 @@
     "event_type_required": "Vyžadován typ události k naslouchání.",
     "watch_path_required": "Vyžadována alespoň jedna sledovaná cesta.",
     "composite_min_conditions": "Kombinované spouštěče vyžadují alespoň 2 podmínky.",
-    "composite_window_minimum": "Časové okno musí být alespoň 5 sekund."
+    "composite_window_minimum": "Časové okno musí být alespoň 5 sekund.",
+    "endpoint_required": "Je vyžadována URL koncového bodu nebo událost."
   },
   "dead_letter_select_all": "Vybrat all",
   "dead_letter_select_visible": "Vybrat visible",
@@ -797,5 +798,7 @@
     "watch": "Sledovat",
     "watching": "Sledováno",
     "watching_only": "Pouze sledované"
-  }
+  },
+  "overdue_label": "Po termínu",
+  "relay_delete_failed": "Relé se nepodařilo smazat — zkuste to prosím znovu"
 }

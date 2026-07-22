@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { StatCard } from '../sub_overview/OverviewParts';
 import {
   X, RefreshCw, Network, Layers, Tag, Database, Globe,
   FolderTree, Target, Link2, Sparkles, Clock, AlertCircle,
@@ -462,23 +463,3 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
   );
 }
 
-// ---------------------------------------------------------------------------
-// Small stat card
-// ---------------------------------------------------------------------------
-
-function StatCard({ label, value, icon: Icon, color }: {
-  label: string;
-  value: number;
-  icon: typeof Tag;
-  color: string;
-}) {
-  return (
-    <div className={`rounded-modal border border-${color}-500/20 bg-${color}-500/5 p-3`}>
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className={`w-3.5 h-3.5 text-${color}-400`} />
-        <span className="text-md text-foreground">{label}</span>
-      </div>
-      <div className={`text-md font-bold text-${color}-400`}>{value}</div>
-    </div>
-  );
-}

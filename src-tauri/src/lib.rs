@@ -64,8 +64,9 @@ pub(crate) static SHARED_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
 /// HTTP client with SSRF-safe DNS resolver that rejects private/internal IPs
 /// at connection time.  Used by the API proxy and any other path where the
 /// target URL is influenced by user-supplied credential data.
-pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> =
-    LazyLock::new(|| engine::ssrf_safe_dns::build_ssrf_safe_client());
+pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    engine::url_safety::build_ssrf_safe_client(std::time::Duration::from_secs(30))
+});
 
 /// HTTP client WITHOUT the SSRF-safe DNS resolver — it can reach private/loopback
 /// targets by design. Used ONLY for connector requests whose connector metadata
@@ -2748,6 +2749,7 @@ pub fn run() {
             commands::companion::browser_test::browser_bridge_regenerate_token,
             commands::companion::browser_test::companion_file_browser_defects,
             commands::companion::brain::companion_list_brain_items,
+            commands::companion::brain::companion_count_brain_items,
             commands::companion::brain::companion_get_brain_item,
             commands::companion::brain::companion_delete_brain_item,
             commands::companion::brain::companion_save_identity,
@@ -3430,7 +3432,6 @@ pub fn run() {
             commands::fleet::commands::fleet_resize_session,
             commands::fleet::commands::fleet_subscribe_terminal,
             commands::fleet::commands::fleet_unsubscribe_terminal,
-            commands::fleet::commands::fleet_terminal_previews,
             commands::fleet::commands::fleet_kill_session,
             commands::fleet::commands::fleet_list_sessions,
             commands::fleet::commands::fleet_remove_session,

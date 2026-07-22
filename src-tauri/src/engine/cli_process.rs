@@ -240,6 +240,208 @@ pub(crate) async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
 }
 
 // =============================================================================
+// spawn_headless_claude -- shared envelope for one-shot headless LLM calls
+// =============================================================================
+
+/// Spawn a one-shot headless Claude CLI process for the "scan/compose/generate"
+/// family of commands (idea scans, task execution, twin bio/wiki generation,
+/// context/KPI/use-case scans). Owns the entire spawn envelope that used to be
+/// hand-rolled at each call site: `build_cli_args` + `--model` override,
+/// Windows `CREATE_NO_WINDOW`, the env_removals/env_overrides loops, the spawn
+/// error mapping, and a detached stdin-writer task that streams `prompt_text`
+/// to the child off the calling task (avoids the classic pipe deadlock where a
+/// full stdout buffer blocks the child while the caller is still writing
+/// stdin).
+///
+/// `force_subscription_auth` is baked in unconditionally. Before this helper,
+/// some call sites called it explicitly ("parity with every other headless
+/// spawn") and some forgot to — meaning idea scans, task executions, and twin
+/// generations could silently fall back to pay-as-you-go API billing instead
+/// of the user's Claude subscription. Folding it into the shared spawn path
+/// closes that gap for every caller, with no opt-out.
+///
+/// `exec_dir` sets the child's working directory (`None` inherits the
+/// caller's cwd — used by twin's one-shot bio/wiki helpers, which don't need
+/// a project root). `capture_stderr` pipes stderr for the caller to consume
+/// (e.g. into a ring buffer + live-log tee); pass `false` to discard it via
+/// `Stdio::null()`. `extra_args` appends any caller-specific CLI flags after
+/// `--model` (e.g. task_executor's `--worktree <name>`); pass `&[]` when none.
+pub fn spawn_headless_claude(
+    prompt_text: String,
+    model: &str,
+    extra_args: &[String],
+    exec_dir: Option<&std::path::Path>,
+    capture_stderr: bool,
+) -> Result<tokio::process::Child, crate::error::AppError> {
+    let mut cli_args = super::prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(model.to_string());
+    cli_args.args.extend(extra_args.iter().cloned());
+
+    let mut cmd = Command::new(&cli_args.command);
+    cmd.args(&cli_args.args)
+        .kill_on_drop(true)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(if capture_stderr {
+            std::process::Stdio::piped()
+        } else {
+            std::process::Stdio::null()
+        });
+
+    if let Some(dir) = exec_dir {
+        cmd.current_dir(dir);
+    }
+
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    for key in &cli_args.env_removals {
+        cmd.env_remove(key);
+    }
+    for (key, val) in &cli_args.env_overrides {
+        cmd.env(key, val);
+    }
+    // Mandatory — see doc comment above. No caller may opt out.
+    force_subscription_auth(&mut cmd);
+
+    let mut child = cmd.spawn().map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            crate::error::AppError::Internal(
+                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
+                    .into(),
+            )
+        } else {
+            crate::error::AppError::Internal(format!("Failed to spawn Claude CLI: {e}"))
+        }
+    })?;
+
+    // Write prompt to stdin in a detached task to prevent pipe deadlock.
+    if let Some(mut stdin) = child.stdin.take() {
+        let prompt_bytes = prompt_text.into_bytes();
+        tokio::spawn(async move {
+            let _ = stdin.write_all(&prompt_bytes).await;
+            let _ = stdin.shutdown().await;
+        });
+    }
+
+    Ok(child)
+}
+
+// =============================================================================
+// run_claude_cli -- shared one-shot "prompt in, text out" envelope
+// =============================================================================
+
+/// Run a single-turn, non-interactive Claude CLI call and return the raw
+/// stdout text.
+///
+/// Shared by the memory-review (`commands::core::memories`) and
+/// memory-compile (`commands::core::memory_compile`) pipelines, which were
+/// previously hand-rolling an identical spawn/timeout/env-strip block each
+/// (near-mirror, byte-for-byte equivalent). Deliberately distinct from
+/// [`spawn_headless_claude`]: those call sites need `--output-format
+/// stream-json` event parsing, while this one wants plain `-p -` text output
+/// that the caller regex/JSON-extracts directly, plus a single bounded
+/// `--max-turns 1` review/compile pass with the whole response read into one
+/// `String` (not streamed to the caller).
+///
+/// Owns: CLI arg resolution (`claude_cli_invocation`), Windows
+/// `CREATE_NO_WINDOW`, the `CLAUDECODE`/`CLAUDE_CODE`/
+/// `CLI_SUBSCRIPTION_RESERVED_ENV` strip (subscription-only billing --
+/// must not drift between copies), piping the prompt to stdin, reading
+/// stdout to EOF under `timeout`, and the kill-on-timeout dance.
+///
+/// Returns `Err` with `timeout_message` if `timeout` elapses before the CLI
+/// exits, or if stdout is empty once it does.
+pub async fn run_claude_cli(
+    prompt: &str,
+    timeout: std::time::Duration,
+    timeout_message: &str,
+) -> Result<String, crate::error::AppError> {
+    use crate::error::AppError;
+
+    let (command, mut args) = claude_cli_invocation();
+    args.extend(
+        ["-p", "-", "--max-turns", "1", "--dangerously-skip-permissions"]
+            .iter()
+            .map(|s| s.to_string()),
+    );
+
+    let mut cmd = Command::new(&command);
+    cmd.args(&args)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    cmd.env_remove("CLAUDECODE");
+    cmd.env_remove("CLAUDE_CODE");
+    // Subscription-only billing safety invariant -- never bill the API account.
+    force_subscription_auth(&mut cmd);
+
+    let mut child = cmd.spawn().map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            AppError::Internal(
+                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
+                    .into(),
+            )
+        } else {
+            AppError::Internal(format!("Failed to spawn CLI: {e}"))
+        }
+    })?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin
+            .write_all(prompt.as_bytes())
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}")))?;
+        stdin
+            .shutdown()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to close CLI stdin: {e}")))?;
+    }
+
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| AppError::Internal("No stdout".into()))?;
+    let mut reader = BufReader::new(stdout);
+    let mut full_output = String::new();
+
+    let read_result = tokio::time::timeout(timeout, async {
+        let mut line = String::new();
+        while reader.read_line(&mut line).await.unwrap_or(0) > 0 {
+            full_output.push_str(&line);
+            line.clear();
+        }
+    })
+    .await;
+
+    if read_result.is_err() {
+        let _ = child.kill().await;
+        let _ = child.wait().await;
+        return Err(AppError::Internal(timeout_message.to_string()));
+    }
+    let _ = child.wait().await;
+
+    if full_output.trim().is_empty() {
+        return Err(AppError::Internal("CLI produced no output".into()));
+    }
+
+    Ok(full_output)
+}
+
+// =============================================================================
 // CliProcessDriver -- unified CLI subprocess lifecycle
 // =============================================================================
 
@@ -364,48 +566,13 @@ impl CliProcessDriver {
 
     /// Build and spawn with stderr discarded (piped to null).
     /// Useful for test/lab runners that don't need stderr.
+    ///
+    /// `build_and_spawn_core` (used by [`spawn_temp`]) already defaults stderr
+    /// to `Stdio::null()`, so this variant is now behaviorally identical to
+    /// `spawn_temp` — kept as a thin alias for call-site stability (see
+    /// refactor-bughunt-2026-07-10, tauri-engine-3-10 #6).
     pub fn spawn_temp_no_stderr(cli_args: &CliArgs, temp_prefix: &str) -> Result<Self, String> {
-        let exec_dir =
-            std::env::temp_dir().join(format!("{}-{}", temp_prefix, uuid::Uuid::new_v4()));
-        std::fs::create_dir_all(&exec_dir)
-            .map_err(|e| format!("Failed to create temp dir: {e}"))?;
-
-        let mut cmd = Command::new(&cli_args.command);
-        cmd.args(&cli_args.args)
-            .current_dir(&exec_dir)
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::null())
-            // Same orphan-prevention guarantee as build_and_spawn_core: if the
-            // owning future is dropped (cancel/panic/timeout) the CLI dies with
-            // it instead of running on and consuming API credits.
-            .kill_on_drop(true);
-
-        #[cfg(windows)]
-        {
-            #[allow(unused_imports)]
-            use std::os::windows::process::CommandExt;
-            cmd.creation_flags(0x08000000);
-        }
-
-        for key in &cli_args.env_removals {
-            cmd.env_remove(key);
-        }
-        for (key, val) in &cli_args.env_overrides {
-            cmd.env(key, val);
-        }
-        force_subscription_auth(&mut cmd);
-
-        let child = cmd
-            .spawn()
-            .map_err(|e| format!("Failed to spawn CLI: {e}"))?;
-        let pid = child.id();
-        Ok(Self {
-            child,
-            exec_dir,
-            owns_exec_dir: true,
-            pid,
-        })
+        Self::spawn_temp(cli_args, temp_prefix)
     }
 
     /// Returns the PID of the child process (if available).

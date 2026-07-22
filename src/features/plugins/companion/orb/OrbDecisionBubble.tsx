@@ -84,6 +84,18 @@ export function OrbDecisionBubble() {
     setHidden(false);
   }, [decisionId]);
 
+  // `pos` below reads window.innerWidth/innerHeight at render time, but this
+  // component only re-renders on store changes — a viewport resize (or the
+  // Tauri webview being snapped) while a decision is pending would otherwise
+  // leave the bubble pinned to stale viewport math until an unrelated store
+  // update forces a re-render. Force one on resize.
+  const [, forceRerenderOnResize] = useState(0);
+  useEffect(() => {
+    const onResize = () => forceRerenderOnResize((n) => n + 1);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   // On a fresh decision: promote Athena out of dormancy so the orb is visible,
   // and ring the element the bubble is asking about (best-effort). Promote
   // ONLY from the dormant states — when the chat panel is `open` the user is

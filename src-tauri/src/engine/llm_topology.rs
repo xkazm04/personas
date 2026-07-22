@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use crate::db::models::{Persona, PersonaDesignReview};
 
-use super::str_utils::truncate_str;
+use crate::utils::text::truncate_on_char_boundary as truncate_str;
 use super::topology_types::{
     compute_dag_layout, BlueprintConnection, BlueprintMember, TopologyBlueprint,
 };

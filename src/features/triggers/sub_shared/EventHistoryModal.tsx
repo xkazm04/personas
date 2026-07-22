@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ExternalLink, History, Tag } from 'lucide-react';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';

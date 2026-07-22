@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   History, ChevronDown, ChevronRight, AlertTriangle,
   RefreshCw, RotateCcw, CheckCircle2, XCircle,
@@ -9,29 +9,8 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { useTriggerHistory } from '../hooks/useTriggerHistory';
 import { TriggerHealthSparkline } from './TriggerHealthSparkline';
+import { JsonPayloadBlock } from './JsonPayloadBlock';
 import { useTranslation } from '@/i18n/useTranslation';
-
-// --- Payload Inspector ----------------------------------------------
-
-function PayloadBlock({ label, data }: { label: string; data: string | null }) {
-  if (!data) return null;
-
-  let formatted: string;
-  try {
-    formatted = JSON.stringify(JSON.parse(data), null, 2);
-  } catch {
-    formatted = data;
-  }
-
-  return (
-    <div className="space-y-1">
-      <div className="typo-body font-medium text-foreground uppercase tracking-wide">{label}</div>
-      <pre className="px-2.5 py-2 rounded-card bg-background/40 border border-primary/5 typo-code font-mono text-foreground overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
-        {formatted}
-      </pre>
-    </div>
-  );
-}
 
 // --- Execution Row --------------------------------------------------
 
@@ -96,8 +75,8 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
               </div>
 
               {/* Payloads */}
-              <PayloadBlock label="Input" data={exec.input_data} />
-              <PayloadBlock label="Output" data={exec.output_data} />
+              <JsonPayloadBlock label="Input" data={exec.input_data} labelClassName="typo-body" />
+              <JsonPayloadBlock label="Output" data={exec.output_data} labelClassName="typo-body" />
               {exec.error_message && (
                 <div className="space-y-1">
                   <div className="typo-body font-medium text-red-400/70 uppercase tracking-wide">Error</div>
@@ -148,12 +127,18 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
   const history = useTriggerHistory(triggerId, personaId);
   const [open, setOpen] = useState(defaultOpen);
 
-  // Auto-fetch on first open
+  // Auto-fetch once per (open, trigger). Guarding on executions.length === 0
+  // with the whole history object in deps treated an empty result as "never
+  // fetched", so a trigger that never fired refetched in an infinite IPC loop
+  // while its section was open.
+  const fetchedForRef = useRef<string | null>(null);
+  const { fetch: fetchHistory } = history;
   useEffect(() => {
-    if (open && history.executions.length === 0 && !history.loading) {
-      void history.fetch();
+    if (open && fetchedForRef.current !== triggerId) {
+      fetchedForRef.current = triggerId;
+      void fetchHistory();
     }
-  }, [history, open]);
+  }, [open, triggerId, fetchHistory]);
 
   const toggle = () => setOpen((v) => !v);
 

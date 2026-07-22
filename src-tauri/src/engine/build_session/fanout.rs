@@ -95,9 +95,18 @@ pub fn build_capability_prompt(
          Emit the v3 `capability_resolution` events for capability `{id}` and NOTHING \
          else. Resolve each applicable field: suggested_trigger, connectors, tool_hints, \
          event_subscriptions, input_schema, sample_input, review_policy, memory_policy, \
-         notification_channels, error_handling. Do NOT resolve other capabilities; do NOT \
-         emit behavior_core / capability_enumeration / persona_resolution / agent_ir; do \
-         NOT ask clarifying questions — pick sensible defaults.\n\n\
+         notification_channels, error_handling, model_override, model_rationale. Do NOT \
+         resolve other capabilities; do NOT emit behavior_core / capability_enumeration / \
+         persona_resolution / agent_ir; do NOT ask clarifying questions — pick sensible \
+         defaults.\n\n\
+         ## Model recommendation (model_override / model_rationale)\n\
+         You MUST emit `model_override` and `model_rationale` for this capability. \
+         Default to `claude-sonnet-4-6`. Pick `claude-haiku-4-5-20251001` for narrow, \
+         mostly-deterministic work (single-tool fetch + templated digest, simple \
+         classification, trivial transforms). Pick `claude-opus-4-8` only for long \
+         agentic loops with branching/self-correction, non-trivial code writing, or deep \
+         multi-source research synthesis. `model_rationale` is one sentence (\u{2264} 160 \
+         chars) explaining the pick in user terms.\n\n\
          Output raw JSON only, one event per line, each of the form:\n\
          {{\"capability_resolution\": {{\"id\": \"{id}\", \"field\": \"<field-name>\", \
          \"value\": <field-value>, \"status\": \"resolved\"}}}}\n",
@@ -109,6 +118,13 @@ pub fn build_capability_prompt(
         id = cap_id,
     )
 }
+
+/// Hard ceiling on one capability's whole CLI turn (spawn through stdout EOF).
+/// `read_line_limited` already has its own 300s per-line watchdog, but that
+/// only bounds a single stalled read — a lane that keeps dribbling small
+/// output forever without ever hitting EOF could otherwise run unbounded.
+/// Matches `FIX_PASS_CLI_TIMEOUT`'s convention for a single-turn CLI call.
+const FANOUT_LANE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(300);
 
 /// Resolve one capability in its own CLI conversation (fresh temp dir, no
 /// `--continue`). Returns the capability's `capability_resolution` events
@@ -135,37 +151,64 @@ async fn resolve_one_capability(
             }
         }
     };
-    if let Err(e) = driver.write_stdin_line(prompt.as_bytes()).await {
-        driver.kill().await;
-        return CapabilityResolution {
-            capability_id,
-            events: vec![],
-            error: Some(format!("write failed: {e}")),
-            usage: TurnUsage::default(),
-        };
-    }
-    driver.close_stdin().await;
 
-    let mut raw_events: Vec<BuildEvent> = Vec::new();
-    let mut usage = TurnUsage::default();
-    if let Some(mut reader) = driver.take_stdout_reader() {
-        loop {
-            match read_line_limited(&mut reader).await {
-                Ok(Some(line)) => {
-                    if let Some(u) = super::parser::extract_result_usage(&line) {
-                        usage.add(TurnUsage {
-                            cost_usd: u.cost_usd,
-                            input_tokens: u.input_tokens,
-                            output_tokens: u.output_tokens,
-                        });
+    let turn = async {
+        if let Err(e) = driver.write_stdin_line(prompt.as_bytes()).await {
+            driver.kill().await;
+            return Err(format!("write failed: {e}"));
+        }
+        driver.close_stdin().await;
+
+        let mut raw_events: Vec<BuildEvent> = Vec::new();
+        let mut usage = TurnUsage::default();
+        if let Some(mut reader) = driver.take_stdout_reader() {
+            loop {
+                match read_line_limited(&mut reader).await {
+                    Ok(Some(line)) => {
+                        if let Some(u) = super::parser::extract_result_usage(&line) {
+                            usage.add(TurnUsage {
+                                cost_usd: u.cost_usd,
+                                input_tokens: u.input_tokens,
+                                output_tokens: u.output_tokens,
+                            });
+                        }
+                        raw_events.extend(parse_build_line(&line, &session_id));
                     }
-                    raw_events.extend(parse_build_line(&line, &session_id));
+                    Ok(None) | Err(_) => break,
                 }
-                Ok(None) | Err(_) => break,
             }
         }
-    }
-    let _ = driver.finish().await;
+        let _ = driver.finish().await;
+        Ok((raw_events, usage))
+    };
+
+    // driver has kill_on_drop(true) — if the timeout elapses, dropping the
+    // in-flight `turn` future (and the driver it owns) kills the child, so
+    // a hung sub-agent can't stall this lane (or the fan-out it's part of)
+    // forever.
+    let (raw_events, usage) = match tokio::time::timeout(FANOUT_LANE_TIMEOUT, turn).await {
+        Ok(Ok(pair)) => pair,
+        Ok(Err(e)) => {
+            return CapabilityResolution {
+                capability_id,
+                events: vec![],
+                error: Some(e),
+                usage: TurnUsage::default(),
+            }
+        }
+        Err(_) => {
+            tracing::warn!(cap = %capability_id, "fan-out lane: timed out, killing sub-agent");
+            return CapabilityResolution {
+                capability_id,
+                events: vec![],
+                error: Some(format!(
+                    "capability resolution timed out after {}s",
+                    FANOUT_LANE_TIMEOUT.as_secs()
+                )),
+                usage: TurnUsage::default(),
+            };
+        }
+    };
 
     // Keep only THIS capability's resolution events; stamp the lane.
     let mut events = Vec::new();

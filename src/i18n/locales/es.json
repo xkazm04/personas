@@ -261,7 +261,12 @@
     "stream_no_speakers": "Sin participantes",
     "stream_none": "Ninguno",
     "stream_search": "Buscar transmisiones",
-    "stream_title": "Flujo"
+    "stream_title": "Flujo",
+    "columns_action_empty": "Nada necesita tu atención ahora mismo",
+    "columns_needs_attention": "Necesita atención",
+    "columns_active_goals": "Objetivos activos",
+    "columns_no_team": "Sin equipo",
+    "columns_all_clear": "Todo en orden"
   },
   "common": {
     "loading": "Cargando...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "{count} saltos",
       "active_chains_one": "{count} cadena en curso",
       "active_chains_other": "{count} cadenas en curso",
-      "active_chains_title": "Cadenas en curso"
+      "active_chains_title": "Cadenas en curso",
+      "copy_log_failed": "No se pudo copiar el registro al portapapeles"
     },
     "lab": {
       "mode_arena": "Arena",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "Gráfico de dependencias",
       "ct_swap_alt_tooltip": "Cambiar a conector alternativo",
       "ct_deps": "{count} dep(s)",
-      "dg_no_deps": "No hay dependencias para mostrar.",
-      "dg_broken": "{count} roto(s)",
-      "dg_blast_radius": "Radio de impacto",
-      "dg_dependencies": "Dependencias",
-      "dg_select_cred": "Selecciona una credencial para ver qué falla cuando expira",
-      "dg_relationships": "Relaciones ({count})",
-      "dg_more": "+{count} más",
-      "dg_affected_tools": "Herramientas afectadas",
-      "dg_affected_auto": "Automatizaciones afectadas",
-      "dg_low_risk": "Riesgo bajo",
-      "dg_medium_risk": "Riesgo medio",
-      "dg_high_risk": "Riesgo alto",
-      "dg_high_blast": "Si esta credencial expira o se desconecta, {count} capacidades se romperán.",
-      "dg_medium_blast": "{count} capacidades dependen de esta credencial.",
-      "dg_low_blast": "Ninguna herramienta ni automatización depende de esta credencial.",
       "dm_needed": "{count} credencial(es) necesaria(s)",
       "dm_fulfilled": "{fulfilled}/{total} conector(es) cumplido(s)",
       "dm_reuse_hint": "{count} pueden reutilizar credenciales existentes",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "Disparadores y suscripciones",
       "sub_suggested": "{count} sugerida(s)",
       "sub_filter": "filtro: {filter}",
-      "lifecycle_error_load_triggers": "No se pudieron cargar los disparadores: {error}",
-      "lifecycle_error_load_subscriptions": "No se pudieron cargar las suscripciones: {error}",
-      "lifecycle_error_activate_trigger": "No se pudo activar el disparador",
-      "lifecycle_error_activate_subscription": "No se pudo activar la suscripción",
-      "lifecycle_error_retire_trigger": "No se pudo eliminar el disparador",
-      "lifecycle_error_retire_subscription": "No se pudo eliminar la suscripción",
-      "lifecycle_error_delete_persists": "No se pudo eliminar. Es posible que la suscripción siga existiendo.",
       "auto_error_deploy_check_credentials": "No se pudo desplegar. Compruebe las credenciales de la plataforma e inténtelo de nuevo.",
       "auto_error_deploy_generic": "No se pudo desplegar la automatización",
       "test_healthcheck_failed_default": "Fallo en la comprobación de estado",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "Aún no hay anotaciones — etiquete, añada una nota o destaque esta ejecución para encontrarla fácilmente más tarde.",
       "col_verdict": "Veredicto",
       "verdict_none": "Aún no revisado por el Director",
-      "verdict_tooltip": "Veredicto del Director: {score}/5"
+      "verdict_tooltip": "Veredicto del Director: {score}/5",
+      "annotation_saving": "Guardando…"
     },
     "settings_status": {
       "saving": "Guardando {sections}...",
@@ -3612,7 +3597,23 @@
         "other": "Otro"
       },
       "title": "Historial de cambios"
-    }
+    },
+    "sigil_edit_channels_label": "Canales",
+    "sigil_edit_custom_connector": "Conector personalizado: sin ícono de marca coincidente.",
+    "sigil_edit_error_off": "Usa la política de errores predeterminada.",
+    "sigil_edit_error_on": "Hay una política de manejo de errores personalizada configurada.",
+    "sigil_edit_event_off": "No hay suscripciones a eventos configuradas.",
+    "sigil_edit_event_on": "Esta capacidad se suscribe a eventos.",
+    "sigil_edit_memory_off": "La memoria está desactivada: la capacidad se ejecuta sin estado.",
+    "sigil_edit_memory_on": "La memoria persistente está activada para esta capacidad.",
+    "sigil_edit_no_channels": "No hay canales de notificación para esta capacidad.",
+    "sigil_edit_no_connector": "Esta capacidad no declara un conector.",
+    "sigil_edit_no_dim_editor": "Aún no hay un editor asociado a esta dimensión.",
+    "sigil_edit_no_trigger": "No hay un disparador configurado en esta capacidad.",
+    "sigil_edit_review_off": "No hay control de revisión humana: las acciones son autónomas.",
+    "sigil_edit_review_on": "Se requiere revisión humana antes de que esta capacidad actúe.",
+    "sigil_edit_service_label": "Servicio: {key}",
+    "sigil_edit_when_label": "Cuándo"
   },
   "vault": {
     "workspace_connect": "Conexión de espacio de trabajo",
@@ -3911,7 +3912,8 @@
       "query_parameters": "Parámetros de consulta",
       "recipes_title": "Recetas guardadas",
       "truncated_warning": "Respuesta truncada para visualización",
-      "value_col": "Valor"
+      "value_col": "Valor",
+      "request_headers": "Encabezados"
     },
     "ingest": {
       "save_name": "Guardar nombre",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "Clave-valor",
       "capability_key_value_hint": "Es un almacén de clave-valor. Usa comandos de clave como SCAN, GET y TYPE, no SQL.",
       "capability_select_subset": "Solo SELECT",
-      "capability_select_subset_hint": "Aquí solo se ejecutan consultas SELECT simples de una sola tabla: filtra con WHERE, ordena con ORDER BY y limita con LIMIT. No se admiten JOIN, agregaciones, CTE ni escrituras."
+      "capability_select_subset_hint": "Aquí solo se ejecutan consultas SELECT simples de una sola tabla: filtra con WHERE, ordena con ORDER BY y limita con LIMIT. No se admiten JOIN, agregaciones, CTE ni escrituras.",
+      "query_timeout": "Se agotó el tiempo de espera de la respuesta. Vuelve a intentarlo."
     },
     "dependencies": {
       "simulate_revocation": "Simular revocación",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "Qué se escanea",
       "read_error_item": "No se pudo leer {source}",
       "read_errors_title": "Algunas fuentes no se pudieron leer",
-      "select_high_confidence": "Alta confianza"
+      "select_high_confidence": "Alta confianza",
+      "source_unknown": "Fuente desconocida"
     },
     "desktop_discovery": {
       "title": "Aplicaciones de escritorio",
@@ -5875,7 +5879,9 @@
       "col_days": "Días",
       "col_incident": "Incidente",
       "guidance_mcp_sidecar": "El agente se ejecutó sin sus herramientas MCP integradas porque faltaba el binario personas-mcp. Reinstala o repara la aplicación para que se incluya junto con la app de escritorio.",
-      "source_mcp_sidecar": "Conjunto de herramientas MCP"
+      "source_mcp_sidecar": "Conjunto de herramientas MCP",
+      "list_truncated": "Mostrando los primeros {limit} incidentes — reduce los filtros para ver el resto.",
+      "action_refused": "La acción no se aplicó: es posible que el estado del incidente ya haya cambiado."
     },
     "observability": {
       "title": "Observabilidad",
@@ -9545,7 +9551,8 @@
       "event_type_required": "Se requiere el tipo de evento a escuchar.",
       "watch_path_required": "Se requiere al menos una ruta a vigilar.",
       "composite_min_conditions": "Los disparadores compuestos necesitan al menos 2 condiciones.",
-      "composite_window_minimum": "La ventana de tiempo debe ser de al menos 5 segundos."
+      "composite_window_minimum": "La ventana de tiempo debe ser de al menos 5 segundos.",
+      "endpoint_required": "Se requiere una URL de endpoint o un evento."
     },
     "dead_letter_select_all": "Seleccionar all",
     "dead_letter_select_visible": "Seleccionar visible",
@@ -9750,7 +9757,9 @@
       "watch": "Seguir",
       "watching": "Siguiendo",
       "watching_only": "Solo siguiendo"
-    }
+    },
+    "overdue_label": "Atrasado",
+    "relay_delete_failed": "No se pudo eliminar el relay — inténtalo de nuevo"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "Activo",
       "paused": "En pausa",
       "failed": "Fallido",
-      "file-based": "Basado en archivo",
-      "unknown": "Desconocido"
+      "unknown": "Desconocido",
+      "file-based": "Basado en archivo"
     },
     "delivery": {
       "delivered": "Entregado",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "s transcurridos",
       "s_remaining": "s restantes",
       "show_cli_output": "Mostrar salida de CLI",
-      "hide_cli_output": "Ocultar salida de CLI"
+      "hide_cli_output": "Ocultar salida de CLI",
+      "starting_transformation": "Iniciando transformación...",
+      "step_progress": "Paso {step} de {total}",
+      "starting_short": "Iniciando...",
+      "check_output_details": "Consulta la salida a continuación para más detalles."
     },
     "terminal_extra": {
       "press_enter": "Presiona Enter o haz clic en Reproducir para iniciar",

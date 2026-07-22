@@ -26,11 +26,27 @@ function openBuilder(personaId: string, after?: () => void) {
 }
 
 export function QuickAnswerBody({ onAfterBuilderNav }: { onAfterBuilderNav?: () => void }) {
+  // Standalone host (e.g. ConversationBriefing): mount the data layer here.
+  const interactions = usePendingInteractions();
+  return <QuickAnswerBodyView interactions={interactions} onAfterBuilderNav={onAfterBuilderNav} />;
+}
+
+/**
+ * Pure view over an already-mounted `usePendingInteractions` instance. The
+ * popover mounts the hook ONCE and renders this directly — previously both
+ * the popover (for the header count) and the body mounted independent hook
+ * instances, doubling every initial fetch and all four polling loops
+ * (including a 300-row message scan) while the popover was open.
+ */
+export function QuickAnswerBodyView({ interactions, onAfterBuilderNav }: {
+  interactions: ReturnType<typeof usePendingInteractions>;
+  onAfterBuilderNav?: () => void;
+}) {
   const { t } = useTranslation();
   const {
     questionGroups, reviews, total, isProcessing,
     submitQuestionAnswers, handleReviewAction, handleDispatchAction,
-  } = usePendingInteractions();
+  } = interactions;
 
   if (total === 0) {
     return (

@@ -195,7 +195,11 @@
     "s_elapsed": "秒経過",
     "s_remaining": "秒残り",
     "show_cli_output": "CLI 出力を表示",
-    "hide_cli_output": "CLI 出力を非表示"
+    "hide_cli_output": "CLI 出力を非表示",
+    "starting_transformation": "変換を開始しています...",
+    "step_progress": "ステップ {step} / {total}",
+    "starting_short": "開始しています...",
+    "check_output_details": "詳細は下記の出力をご確認ください。"
   },
   "terminal_extra": {
     "press_enter": "Enterキーを押すか再生をクリックして開始",

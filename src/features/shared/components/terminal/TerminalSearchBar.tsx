@@ -13,9 +13,12 @@ const LINE_TYPE_CHIPS: { type: TerminalLineStyle; label: string; color: string; 
   { type: 'tool', label: 'Tool', color: 'text-cyan-400/50 border-cyan-500/20', activeColor: 'text-cyan-400 bg-cyan-500/15 border-cyan-500/30' },
   { type: 'status', label: 'Status', color: 'text-emerald-400/50 border-emerald-500/20', activeColor: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30' },
   { type: 'text', label: 'Text', color: 'text-foreground border-border/30', activeColor: 'text-foreground bg-foreground/10 border-foreground/20' },
+  { type: 'meta', label: 'Meta', color: 'text-violet-400/50 border-violet-500/20', activeColor: 'text-violet-400 bg-violet-500/15 border-violet-500/30' },
+  { type: 'summary', label: 'Summary', color: 'text-amber-400/50 border-amber-500/20', activeColor: 'text-amber-400 bg-amber-500/15 border-amber-500/30' },
 ];
 
-const ALL_TYPES = new Set<TerminalLineStyle>(['error', 'tool', 'status', 'text', 'meta', 'summary']);
+// Derived from the chip list so the "all types" count always matches what the UI can actually toggle.
+const ALL_TYPES = new Set<TerminalLineStyle>(LINE_TYPE_CHIPS.map((c) => c.type));
 
 interface TerminalSearchBarProps {
   filter: TerminalFilter;
@@ -23,7 +26,7 @@ interface TerminalSearchBarProps {
 }
 
 export function useTerminalFilter() {
-  const [filter, setFilter] = useState<TerminalFilter>({ keyword: '', activeTypes: ALL_TYPES });
+  const [filter, setFilter] = useState<TerminalFilter>({ keyword: '', activeTypes: new Set(ALL_TYPES) });
 
   const isLineVisible = useCallback(
     (line: string, lineType: TerminalLineStyle): boolean => {
@@ -37,7 +40,7 @@ export function useTerminalFilter() {
   const isFiltering = filter.keyword !== '' || filter.activeTypes.size < ALL_TYPES.size;
 
   const resetFilter = useCallback(() => {
-    setFilter({ keyword: '', activeTypes: ALL_TYPES });
+    setFilter({ keyword: '', activeTypes: new Set(ALL_TYPES) });
   }, []);
 
   return { filter, setFilter, isLineVisible, isFiltering, resetFilter };
@@ -101,7 +104,7 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
 
       <button
         onClick={() => {
-          onChange({ keyword: '', activeTypes: ALL_TYPES });
+          onChange({ keyword: '', activeTypes: new Set(ALL_TYPES) });
           setExpanded(false);
         }}
         className="text-foreground hover:text-foreground/95 transition-colors flex-shrink-0"

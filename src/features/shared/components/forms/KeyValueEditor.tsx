@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Plus, Trash2, Code, List } from 'lucide-react';
 import { JsonEditor } from '../editors/JsonEditor';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -48,9 +48,19 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
   const [isAdvanced, setIsAdvanced] = useState(false);
   const [rows, setRows] = useState<KeyValuePair[]>(() => jsonToRows(value) ?? [{ key: '', value: '' }]);
 
+  // Tracks the JSON string we most recently emitted via onChange. `rowsToJson`
+  // can't represent a keyless-but-valued row (it drops it), so a round trip
+  // through the parent (value prop echoed back after our own onChange) would
+  // otherwise re-derive `rows` from that lossy JSON and wipe local edits made
+  // before a key was typed. Skip the resync when `value` is just an echo of
+  // what we ourselves last emitted -- only re-derive on a genuinely external
+  // value change (e.g. a rerun).
+  const lastEmittedRef = useRef<string | null>(null);
+
   // If external value changes (e.g. rerun), sync rows
   useEffect(() => {
     if (isAdvanced) return;
+    if (lastEmittedRef.current !== null && value === lastEmittedRef.current) return;
     const parsed = jsonToRows(value);
     if (parsed !== null) {
       setRows(parsed.length > 0 ? parsed : [{ key: '', value: '' }]);
@@ -62,7 +72,9 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
 
   const syncToJson = useCallback((updated: KeyValuePair[]) => {
     setRows(updated);
-    onChange(rowsToJson(updated));
+    const json = rowsToJson(updated);
+    lastEmittedRef.current = json;
+    onChange(json);
   }, [onChange]);
 
   const updateRow = useCallback((index: number, field: 'key' | 'value', val: string) => {

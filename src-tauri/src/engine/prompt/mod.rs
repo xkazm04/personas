@@ -729,7 +729,7 @@ pub fn assemble_prompt_with_skills(
          capability's `tool_hints` lists `web_search`, that means the native \
          WebSearch tool.\n\n",
     );
-    if let Some(drive_root) = crate::commands::drive::cached_managed_root() {
+    if let Some(drive_root) = crate::commands::drive::managed_root_cache() {
         prompt.push_str(&format!(
             "**Sandbox snapshot.** The user's local-drive sandbox is at \
              `{}`. Files surfaced by `drive.document.*` events live under \

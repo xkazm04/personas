@@ -83,20 +83,35 @@ export function createRunLifecycle<
     }, RUN_MAX_DURATION_MS);
   }
 
+  /**
+   * Arm the safety timeout for either a freshly-started or a recovered run.
+   * Both markStarted and markRecovered need the exact same onTimeout behavior
+   * (warn log + 'timed_out' transition + identical error copy) — only the log
+   * message differs, so that's the sole parameter. Keeping this in one place
+   * means the timeout-expiry behavior and its user-facing error string can
+   * only drift by editing here.
+   */
+  function armSafetyTimeout(set: (partial: Record<string, unknown>) => void, reason: 'start' | 'recovered') {
+    scheduleSafetyTimeout(() => {
+      const message = reason === 'start'
+        ? "Safety timeout fired — run may have stalled"
+        : "Safety timeout fired for recovered run — may have stalled";
+      logger.warn(message, { timeoutMinutes: RUN_MAX_DURATION_MS / 60_000, isRunningKey, progressKey });
+      tryTransition('timed_out');
+      set({
+        [isRunningKey]: false,
+        [progressKey]: null,
+        error: `Run timed out after ${RUN_MAX_DURATION_MS / 60_000} minutes. The operation may have stalled.`,
+      });
+    });
+  }
+
   return {
     /** Set isRunning=true, clear progress, schedule 30min safety timeout. */
     markStarted(set: (partial: Record<string, unknown>) => void) {
       if (!tryTransition('running')) return;
       set({ [isRunningKey]: true, [progressKey]: null, error: null });
-      scheduleSafetyTimeout(() => {
-        logger.warn("Safety timeout fired — run may have stalled", { timeoutMinutes: RUN_MAX_DURATION_MS / 60_000, isRunningKey, progressKey });
-        tryTransition('timed_out');
-        set({
-          [isRunningKey]: false,
-          [progressKey]: null,
-          error: `Run timed out after ${RUN_MAX_DURATION_MS / 60_000} minutes. The operation may have stalled.`,
-        });
-      });
+      armSafetyTimeout(set, 'start');
     },
 
     /**
@@ -115,15 +130,7 @@ export function createRunLifecycle<
      */
     markRecovered(set: (partial: Record<string, unknown>) => void) {
       if (!tryTransition('running')) return;
-      scheduleSafetyTimeout(() => {
-        logger.warn("Safety timeout fired for recovered run — may have stalled", { timeoutMinutes: RUN_MAX_DURATION_MS / 60_000, isRunningKey, progressKey });
-        tryTransition('timed_out');
-        set({
-          [isRunningKey]: false,
-          [progressKey]: null,
-          error: `Run timed out after ${RUN_MAX_DURATION_MS / 60_000} minutes. The operation may have stalled.`,
-        });
-      });
+      armSafetyTimeout(set, 'recovered');
     },
 
     /** Clear safety timeout and set isRunning=false (on error during start). */

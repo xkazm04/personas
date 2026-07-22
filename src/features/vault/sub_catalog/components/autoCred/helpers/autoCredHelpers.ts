@@ -10,13 +10,26 @@ type AutoCredExtraKey = keyof Translations['vault']['auto_cred_extra'];
 
 export type SessionState = 'connecting' | 'working' | 'action_required' | 'opening_url';
 
+/**
+ * Shared "log entry type -> session/phase state" mapping used by both
+ * `deriveSessionState` (scans a whole log tail) and `deriveEntryPhase`
+ * (classifies a single grouped entry), so the rule set stays in one place.
+ * Returns `null` for types that don't map to a definitive state, letting
+ * callers apply their own fallback.
+ */
+function entryTypeToState(type: BrowserLogEntry['type']): SessionState | null {
+  if (type === 'warning' || type === 'input_request') return 'action_required';
+  if (type === 'url') return 'opening_url';
+  if (type === 'action' || type === 'info') return 'working';
+  return null;
+}
+
 export function deriveSessionState(logs: BrowserLogEntry[]): SessionState {
   if (logs.length === 0) return 'connecting';
   for (let i = logs.length - 1; i >= 0; i--) {
     const entry = logs[i]!;
-    if (entry.type === 'warning' || entry.type === 'input_request') return 'action_required';
-    if (entry.type === 'url') return 'opening_url';
-    if (entry.type === 'action' || entry.type === 'info') return 'working';
+    const state = entryTypeToState(entry.type);
+    if (state) return state;
   }
   return 'working';
 }
@@ -127,10 +140,7 @@ export function groupLogEntries(logs: BrowserLogEntry[]): GroupedEntry[] {
 
 export function deriveEntryPhase(group: GroupedEntry): SessionState {
   if (group.kind === 'action_block') return 'working';
-  const t = group.entry.type;
-  if (t === 'warning' || t === 'input_request') return 'action_required';
-  if (t === 'url') return 'opening_url';
-  return 'working';
+  return entryTypeToState(group.entry.type) ?? 'working';
 }
 
 export const PHASE_LABEL_KEYS: Record<SessionState, AutoCredExtraKey> = {
@@ -161,14 +171,20 @@ export const PHASE_LABEL_KEYS: Record<SessionState, AutoCredExtraKey> = {
 export const URL_REGEX = /https?:\/\/[^\s)>\]"'`*_]+/g;
 
 /**
+ * Non-global source of {@link URL_REGEX}, for one-shot matchers that must
+ * not share `lastIndex` state with the global regex.
+ */
+export const URL_PATTERN_SOURCE = URL_REGEX.source;
+
+/**
  * Extract the first URL from `text`, or `null` if none/empty.
  *
- * Uses {@link URL_REGEX}'s pattern in non-global mode so it stops at the
+ * Uses {@link URL_PATTERN_SOURCE} in non-global mode so it stops at the
  * first match without sharing `lastIndex` state.
  */
 export function extractFirstUrl(text?: string | null): string | null {
   if (!text) return null;
-  const match = text.match(/https?:\/\/[^\s)>\]"'`*_]+/);
+  const match = text.match(new RegExp(URL_PATTERN_SOURCE));
   return match ? match[0] : null;
 }
 

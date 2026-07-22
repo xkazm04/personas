@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import {
   Play, Plus, ListChecks, XCircle, ChevronDown, ChevronRight,
   Loader2, CheckCircle2, AlertCircle, Clock, Ban, X, Link2,
@@ -261,18 +261,25 @@ function TaskModal({
 // Task Card
 // ---------------------------------------------------------------------------
 
-function TaskCard({
+// Stable fallback so the per-card buffer selector returns a referentially
+// stable value when a task has no output yet (`?? []` would create a fresh
+// array per store snapshot and defeat Zustand's Object.is bail-out).
+const EMPTY_LINES: string[] = [];
+
+// Memoized: during streaming only `taskOutputBuffers` changes in the store,
+// and each card subscribes to its own buffer below — so a streamed line
+// re-renders only the card it belongs to, not the whole queue.
+const TaskCard = memo(function TaskCard({
   task,
   rawTask,
   index: _index,
-  outputLines,
 }: {
   task: RunnerTask;
   rawTask: DevTask;
   index: number;
-  outputLines: string[];
 }) {
   const { t } = useTranslation();
+  const outputLines = useSystemStore((s) => s.taskOutputBuffers[task.id] ?? EMPTY_LINES);
   const [expanded, setExpanded] = useState(false);
   const { staggerDelay: _staggerDelay } = useMotion();
   const phaseCfg = PHASE_CONFIG[task.phase];
@@ -435,7 +442,7 @@ function TaskCard({
       <PrBridge task={rawTask} />
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Main Page
@@ -449,7 +456,6 @@ export default function TaskRunnerPage() {
   const fetchTasks = useSystemStore((s) => s.fetchTasks);
   const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const taskOutputBuffers = useSystemStore((s) => s.taskOutputBuffers);
 
   const [showModal, setShowModal] = useState(false);
   const [taskWarnings, setTaskWarnings] = useState<Record<string, string[]>>({});
@@ -458,8 +464,11 @@ export default function TaskRunnerPage() {
   const activeProjectIdRef = useRef(activeProjectId);
   activeProjectIdRef.current = activeProjectId;
 
-  // Map DevTask to RunnerTask view model
-  const tasks: RunnerTask[] = storeTasks.map((t) => ({
+  // Map DevTask to RunnerTask view model. Memoized (with the by-id lookup and
+  // status grouping below) so a re-render doesn't rebuild the whole queue's
+  // derived arrays — TaskCard is memo'd, so stable references let unchanged
+  // cards skip re-rendering entirely.
+  const tasks: RunnerTask[] = useMemo(() => storeTasks.map((t) => ({
     id: t.id,
     title: t.title,
     description: t.description ?? '',
@@ -472,7 +481,13 @@ export default function TaskRunnerPage() {
     createdAt: t.created_at,
     depth: t.depth ?? 'quick',
     contextWarnings: taskWarnings[t.id],
-  }));
+  })), [storeTasks, taskWarnings]);
+
+  // O(1) raw-task lookup for cards instead of a `.find` per card per render.
+  const taskById = useMemo(
+    () => new Map(storeTasks.map((t) => [t.id, t])),
+    [storeTasks],
+  );
 
   // Consume any pending task-focus handoff (e.g. from goal spotlight task
   // click). Capture into local state, clear from the store immediately, then
@@ -614,15 +629,17 @@ export default function TaskRunnerPage() {
   // one click rather than hunting failed cards individually.
   const handleRetryAllFailed = useCallback(() => {
     for (const task of tasks.filter((t) => t.status === 'failed')) {
-      createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId });
+      // Preserve source-idea attribution so retried tasks still count toward
+      // per-agent implementation-rate stats and the idea lifecycle strip.
+      createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId, sourceIdeaId: task.source });
     }
   }, [tasks, createTask]);
 
   // Group the queue by status for clustered rendering.
-  const tasksByStatus = tasks.reduce((acc, task) => {
+  const tasksByStatus = useMemo(() => tasks.reduce((acc, task) => {
     (acc[task.status] ??= []).push(task);
     return acc;
-  }, {} as Record<TaskStatus, RunnerTask[]>);
+  }, {} as Record<TaskStatus, RunnerTask[]>), [tasks]);
 
   return (
     <ContentBox>
@@ -780,7 +797,7 @@ export default function TaskRunnerPage() {
             const task = tasks.find((t) => t.id === taskId);
             if (task) {
               try {
-                await createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId });
+                await createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId, sourceIdeaId: task.source });
               } catch (err) { silentCatch("features/plugins/dev-tools/sub_runner/TaskRunnerPage:catch1")(err); }
             }
           }} />
@@ -832,7 +849,7 @@ export default function TaskRunnerPage() {
                         <span className="text-[10px] text-foreground tabular-nums">{group.length}</span>
                       </div>
                       {group.map((task, i) => {
-                        const raw = storeTasks.find((st) => st.id === task.id);
+                        const raw = taskById.get(task.id);
                         if (!raw) return null;
                         return (
                           <TaskCard
@@ -840,7 +857,6 @@ export default function TaskRunnerPage() {
                             task={task}
                             rawTask={raw}
                             index={i}
-                            outputLines={taskOutputBuffers[task.id] ?? []}
                           />
                         );
                       })}

@@ -15,6 +15,8 @@ import type {
   PromoteBuildResult,
   TestReport,
 } from "@/lib/types/buildTypes";
+import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
+import type { SimulationArtefacts } from "@/lib/bindings/SimulationArtefacts";
 
 /**
  * Start a new build session for a persona. Returns the session ID.
@@ -165,54 +167,20 @@ export async function promoteBuildDraft(
 // Backend: src-tauri/src/commands/design/build_simulate.rs
 // ---------------------------------------------------------------------------
 
-/** Minimal shape of a PersonaExecution row returned by simulate_build_draft.
- * Snake-case fields mirror what `serde` emits (no rename_all on PersonaExecution).
+/**
+ * `simulate_build_draft` returns the full `PersonaExecution` row (see the
+ * generated `@/lib/bindings/PersonaExecution` — single source of truth,
+ * mirrors what `serde` emits with no `rename_all`). Re-exported here so
+ * existing `import { SimulatedExecution } from '@/api/agents/buildSession'`
+ * consumers keep working. A hand-rolled duplicate with an `[key: string]:
+ * unknown` escape hatch previously shadowed this binding and could silently
+ * drift from backend field changes.
  */
-export interface SimulatedExecution {
-  id: string;
-  persona_id: string;
-  status: string;
-  is_simulation?: boolean;
-  use_case_id?: string | null;
-  created_at?: string;
-  updated_at?: string;
-  // Other fields (input_data, output_data, error_message, ...) are present
-  // but the dry-run UI doesn't currently consume them — kept open via index.
-  [key: string]: unknown;
-}
+export type SimulatedExecution = PersonaExecution;
 
-/** Bundled artefacts response from get_simulation_artefacts. CamelCase per the
- * Rust struct's `#[serde(rename_all = "camelCase")]`. */
-export interface SimulationArtefacts {
-  executionId: string;
-  /** Manual reviews emitted during the simulated execution. Snake-case fields
-   * inside each item mirror PersonaManualReview as serialised today. */
-  reviews: Array<{
-    id: string;
-    execution_id: string;
-    persona_id: string;
-    title: string;
-    description: string | null;
-    severity: string;
-    status: "pending" | "approved" | "rejected" | "resolved";
-    reviewer_notes: string | null;
-    use_case_id: string | null;
-    created_at: string;
-    updated_at: string;
-    [key: string]: unknown;
-  }>;
-  /** Memories the agent stored during the simulated execution. */
-  memories: Array<{
-    id: string;
-    persona_id: string;
-    title: string;
-    content: string;
-    category: string | null;
-    importance: number | null;
-    created_at: string;
-    [key: string]: unknown;
-  }>;
-}
+/** Bundled artefacts response from get_simulation_artefacts — re-exported
+ * from the generated `@/lib/bindings/SimulationArtefacts` binding. */
+export type { SimulationArtefacts };
 
 /**
  * Run a capability against the draft persona's `agent_ir` without promoting.

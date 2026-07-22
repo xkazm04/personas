@@ -1,6 +1,31 @@
 use rusqlite::Connection;
 
+use crate::db::credential_fields::{classify_field_type, NON_SENSITIVE_KEYS};
 use crate::error::AppError;
+
+/// Stringify a legacy credential blob's JSON field value for storage in
+/// `credential_fields.encrypted_value` (which is text). Legacy blobs were
+/// assumed to encode every field as a JSON string, but some fields (e.g. a
+/// numeric `port`, a boolean `oauth_client_mode`) are legitimately
+/// non-string — deserializing straight into `HashMap<String, String>` errors
+/// on those blobs and skips the credential forever (see
+/// refactor-bughunt-2026-07-10/tauri-db-misc.md #2). Numbers/bools render via
+/// their natural string form; nested arrays/objects fall back to their JSON
+/// text so no information is lost; `null` becomes an empty string.
+fn stringify_field_value(v: &serde_json::Value) -> String {
+    match v {
+        serde_json::Value::String(s) => s.clone(),
+        serde_json::Value::Null => String::new(),
+        serde_json::Value::Number(_) | serde_json::Value::Bool(_) => {
+            // `to_string()` on these Value variants renders their bare form
+            // (e.g. `5432`, `true`) without surrounding quotes.
+            v.to_string()
+        }
+        serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
+            serde_json::to_string(v).unwrap_or_default()
+        }
+    }
+}
 
 /// Split existing monolithic encrypted_data blobs into per-field rows.
 /// Only processes credentials that don't already have field rows (idempotent).
@@ -36,27 +61,6 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
     let mut total_fields = 0usize;
     let mut migrated_creds = 0usize;
 
-    // Classify which field keys are typically non-sensitive (queryable)
-    const NON_SENSITIVE_KEYS: &[&str] = &[
-        "base_url",
-        "url",
-        "host",
-        "hostname",
-        "server",
-        "port",
-        "database",
-        "project",
-        "organization",
-        "org",
-        "workspace",
-        "team",
-        "region",
-        "scope",
-        "scopes",
-        "oauth_client_mode",
-        "token_type",
-    ];
-
     for (cred_id, encrypted_data, iv) in &rows {
         // Decrypt the blob to get the JSON fields. On failure we skip this
         // credential entirely -- nothing is inserted and the blob is left
@@ -77,7 +81,8 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
             }
         };
 
-        let fields: HashMap<String, String> = match serde_json::from_str(&plaintext) {
+        let raw_fields: HashMap<String, serde_json::Value> = match serde_json::from_str(&plaintext)
+        {
             Ok(f) => f,
             Err(e) => {
                 tracing::warn!(
@@ -88,6 +93,10 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
                 continue;
             }
         };
+        let fields: HashMap<String, String> = raw_fields
+            .iter()
+            .map(|(k, v)| (k.clone(), stringify_field_value(v)))
+            .collect();
 
         // Extract this credential's FULL field-set atomically: every field
         // commits together or none does. A crash or an encrypt failure partway
@@ -210,7 +219,7 @@ pub(super) fn clear_legacy_credential_blobs(conn: &Connection) -> Result<(), App
                 Err(_) => continue,
             }
         };
-        let expected: HashMap<String, String> = match serde_json::from_str(&plaintext) {
+        let expected: HashMap<String, serde_json::Value> = match serde_json::from_str(&plaintext) {
             Ok(f) => f,
             Err(_) => continue,
         };
@@ -288,16 +297,9 @@ pub(super) fn assert_credential_blob_invariant(conn: &Connection) -> Result<(), 
 /// This migration renames them so all code paths can use the canonical snake_case
 /// key without dual-convention checks.
 pub(super) fn normalize_credential_field_keys(conn: &Connection) -> Result<(), AppError> {
-    // Map of camelCase → snake_case field keys to normalize.
-    let renames: &[(&str, &str)] = &[
-        ("refreshToken", "refresh_token"),
-        ("accessToken", "access_token"),
-        ("clientId", "client_id"),
-        ("clientSecret", "client_secret"),
-        ("tokenType", "token_type"),
-    ];
+    use crate::db::credential_fields::FIELD_KEY_RENAMES;
 
-    for &(old_key, new_key) in renames {
+    for &(old_key, new_key) in FIELD_KEY_RENAMES {
         // Only rename if there isn't already a row with the canonical key for
         // the same credential (avoid unique-constraint violations).
         let updated = conn.execute(
@@ -405,6 +407,22 @@ pub(super) fn install_persona_memory_invariants(conn: &Connection) -> Result<(),
         return Ok(());
     }
 
+    // Skip the DROP+CREATE when both triggers already exist — the re-create
+    // was an unconditional sqlite_master/journal WRITE on every app boot.
+    // NOTE: if you change the trigger bodies below, also change the trigger
+    // names (or delete this guard for one release) so existing DBs pick up
+    // the new definition.
+    let triggers_present: i64 = conn
+        .prepare(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name IN
+             ('persona_memories_importance_insert', 'persona_memories_importance_update')",
+        )?
+        .query_row([], |row| row.get(0))
+        .unwrap_or(0);
+    if triggers_present == 2 {
+        return Ok(());
+    }
+
     conn.execute_batch(
         r#"
         DROP TRIGGER IF EXISTS persona_memories_importance_insert;
@@ -428,24 +446,4 @@ pub(super) fn install_persona_memory_invariants(conn: &Connection) -> Result<(),
         "#,
     )?;
     Ok(())
-}
-
-/// Classify a credential field key into a type hint.
-pub(super) fn classify_field_type(key: &str) -> &'static str {
-    let lower = key.to_lowercase();
-    if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
-        "url"
-    } else if lower.contains("token")
-        || lower.contains("key")
-        || lower.contains("secret")
-        || lower.contains("password")
-    {
-        "secret"
-    } else if lower == "port" {
-        "number"
-    } else if lower.contains("email") || lower.contains("username") || lower.contains("user") {
-        "identity"
-    } else {
-        "text"
-    }
 }

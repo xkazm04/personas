@@ -5,6 +5,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::db::models::serde_util::double_option;
 use crate::error::AppError;
 
 // ============================================================================
@@ -868,10 +869,14 @@ pub struct PersonaSummary {
 #[ts(export)]
 pub struct UpdatePersonaInput {
     pub name: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub description: Option<Option<String>>,
     pub system_prompt: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub structured_prompt: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub icon: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub color: Option<Option<String>>,
     pub enabled: Option<bool>,
     pub sensitive: Option<bool>,
@@ -879,13 +884,21 @@ pub struct UpdatePersonaInput {
     pub max_concurrent: Option<i32>,
     pub timeout_ms: Option<i32>,
     pub notification_channels: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub last_design_result: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub last_test_report: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub model_profile: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub max_budget_usd: Option<Option<f64>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub max_turns: Option<Option<i32>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub design_context: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub home_team_id: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub parameters: Option<Option<String>>,
     pub gateway_exposure: Option<PersonaGatewayExposure>,
     /// Phase 5 v1: per-persona Claude CLI session-resume awareness gate.
@@ -894,6 +907,7 @@ pub struct UpdatePersonaInput {
     /// Outer `Option` follows the partial-update pattern (`None` = leave
     /// unchanged); inner `Option<String>` lets callers explicitly clear
     /// the column with `Some(None)`. Set by the View-mode SigilEditModal.
+    #[serde(default, deserialize_with = "double_option")]
     pub disabled_dims_json: Option<Option<String>>,
     /// Lifecycle stage (`draft` | `active` | `archived`). Partial-update:
     /// `None` = leave unchanged. Promote/archive/restore drive this; the repo

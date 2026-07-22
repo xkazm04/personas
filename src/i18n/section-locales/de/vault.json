@@ -295,7 +295,8 @@
     "query_parameters": "Abfrageparameter",
     "recipes_title": "Gespeicherte Rezepte",
     "truncated_warning": "Antwort für Anzeige gekürzt",
-    "value_col": "Wert"
+    "value_col": "Wert",
+    "request_headers": "Header"
   },
   "ingest": {
     "save_name": "Name speichern",
@@ -422,7 +423,8 @@
     "capability_key_value": "Schlüssel-Wert",
     "capability_key_value_hint": "Dies ist ein Schlüssel-Wert-Speicher. Verwenden Sie Schlüsselbefehle wie SCAN, GET und TYPE — kein SQL.",
     "capability_select_subset": "Nur SELECT",
-    "capability_select_subset_hint": "Hier laufen nur einfache SELECT-Abfragen auf einer einzelnen Tabelle — filtern mit WHERE, sortieren mit ORDER BY, begrenzen mit LIMIT. JOINs, Aggregationen, CTEs und Schreibvorgänge werden nicht unterstützt."
+    "capability_select_subset_hint": "Hier laufen nur einfache SELECT-Abfragen auf einer einzelnen Tabelle — filtern mit WHERE, sortieren mit ORDER BY, begrenzen mit LIMIT. JOINs, Aggregationen, CTEs und Schreibvorgänge werden nicht unterstützt.",
+    "query_timeout": "Zeitüberschreitung beim Warten auf eine Antwort. Bitte versuchen Sie es erneut."
   },
   "dependencies": {
     "simulate_revocation": "Widerruf simulieren",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "Was gescannt wird",
     "read_error_item": "{source} konnte nicht gelesen werden",
     "read_errors_title": "Einige Quellen konnten nicht gelesen werden",
-    "select_high_confidence": "Hohe Zuverlässigkeit"
+    "select_high_confidence": "Hohe Zuverlässigkeit",
+    "source_unknown": "Unbekannte Quelle"
   },
   "desktop_discovery": {
     "title": "Desktop-Apps",

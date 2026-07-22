@@ -1588,7 +1588,12 @@ pub fn dev_tools_run_triage_rules(
                 } else {
                     "rejected"
                 };
-                let _ = repo::update_idea(
+                let rejection_reason = if new_status == "rejected" {
+                    Some(format!("Auto-rejected by triage rule '{}'", rule.name))
+                } else {
+                    None
+                };
+                let update_result = repo::update_idea(
                     &state.db,
                     &idea.id,
                     None,
@@ -1598,8 +1603,14 @@ pub fn dev_tools_run_triage_rules(
                     None,
                     None,
                     None,
-                    None,
+                    rejection_reason.as_deref().map(Some),
                 );
+                // Mirror the manual accept/reject path: write the decision to
+                // the team's shared memory ledger so future scans don't
+                // re-propose an idea this rule was created to kill.
+                if let Ok(updated_idea) = &update_result {
+                    record_idea_decision_by(&state.db, updated_idea, new_status, "TriageRule");
+                }
                 // Increment times_fired
                 let _ = repo::update_triage_rule(
                     &state.db,

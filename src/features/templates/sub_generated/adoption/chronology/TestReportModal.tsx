@@ -21,6 +21,24 @@ import { silentCatch } from '@/lib/silentCatch';
 
 
 // ---------------------------------------------------------------------------
+// Shared tool-label helpers
+// ---------------------------------------------------------------------------
+
+/** Prefer the connector name (the credential subject) over the generic tool
+ *  that drove the call — e.g. "alpha vantage" instead of "http request" —
+ *  with underscores replaced by spaces. Lowercase: used for sentence-
+ *  embedded text (e.g. "we couldn't verify access to {subject}"). */
+function toolSubject(r: ToolTestResult): string {
+  const src = r.connector && r.connector.length > 0 ? r.connector : r.tool_name;
+  return src.replace(/_/g, ' ');
+}
+
+/** Title-cased version of {@link toolSubject}, for headings/labels. */
+function toolLabel(r: ToolTestResult): string {
+  return toolSubject(r).replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// ---------------------------------------------------------------------------
 // TestReportModal
 // ---------------------------------------------------------------------------
 
@@ -136,11 +154,7 @@ function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isA
     : r.status === 'credential_missing'
     ? <Key className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
     : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />;
-  // Prefer the connector name (the credential subject) over the generic
-  // tool that drove the call so users see "Alpha Vantage" rather than
-  // "Http Request" in the sidebar.
-  const labelSource = r.connector && r.connector.length > 0 ? r.connector : r.tool_name;
-  const label = labelSource.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const label = toolLabel(r);
   const latencyLabel = r.latency_ms != null && r.latency_ms > 0
     ? r.latency_ms < 500 ? t.templates.test_report.latency_fast : r.latency_ms < 2000 ? t.templates.test_report.latency_ok : t.templates.test_report.latency_slow
     : null;
@@ -376,10 +390,6 @@ function SectionBlock({ icon, label, children }: { icon: React.ReactNode; label:
 
 function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: ToolTestResult[]; failed: ToolTestResult[]; credentialMissing: ToolTestResult[]; skipped: ToolTestResult[] }) {
   const { t } = useTranslation();
-  const toolLabel = (r: ToolTestResult) => {
-    const src = r.connector && r.connector.length > 0 ? r.connector : r.tool_name;
-    return src.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  };
   return (
     <div className="space-y-3">
       {passed.length > 0 && (
@@ -464,10 +474,9 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
   // Prefer the connector name (the credential subject — e.g. "alpha vantage")
   // over the generic tool that drove the call (e.g. "http request"). Falls
   // back to tool_name for platform-native rows that have no connector.
-  const subject = (result.connector && result.connector.length > 0 ? result.connector : result.tool_name).replace(/_/g, ' ');
-  const toolLabel = subject;
+  const subject = toolSubject(result);
 
-  const toolSummaryLine = sections?.results.split('\n').find((line) => line.toLowerCase().includes(toolLabel.toLowerCase())) ?? null;
+  const toolSummaryLine = sections?.results.split('\n').find((line) => line.toLowerCase().includes(subject.toLowerCase())) ?? null;
   const fallbackDescription = isPassed
     ? result.output_preview || t.templates.test_report.verified_default
     : isSkipped

@@ -43,9 +43,13 @@ export const useRemoteCommandStore = create<RemoteCommandState>((set) => ({
     set({ busyId: id });
     try {
       await approveRemoteCommand(id);
-      set((s) => ({ queue: s.queue.filter((c) => c.id !== id), busyId: null }));
+      // Only clear busyId if it still belongs to this call — a concurrent
+      // approve/reject on a different command may have already overwritten
+      // it, and clearing unconditionally would prematurely re-enable that
+      // other command's buttons while its own request is still in flight.
+      set((s) => ({ queue: s.queue.filter((c) => c.id !== id), busyId: s.busyId === id ? null : s.busyId }));
     } catch (e) {
-      set({ busyId: null });
+      set((s) => ({ busyId: s.busyId === id ? null : s.busyId }));
       toastCatch('remoteCommands:approve')(e);
     }
   },
@@ -54,9 +58,9 @@ export const useRemoteCommandStore = create<RemoteCommandState>((set) => ({
     set({ busyId: id });
     try {
       await rejectRemoteCommand(id);
-      set((s) => ({ queue: s.queue.filter((c) => c.id !== id), busyId: null }));
+      set((s) => ({ queue: s.queue.filter((c) => c.id !== id), busyId: s.busyId === id ? null : s.busyId }));
     } catch (e) {
-      set({ busyId: null });
+      set((s) => ({ busyId: s.busyId === id ? null : s.busyId }));
       toastCatch('remoteCommands:reject')(e);
     }
   },

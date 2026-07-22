@@ -34,6 +34,22 @@ export function checkStepPrecondition(
   return null;
 }
 
+/**
+ * Single source of truth for "which step should we land on, given only the
+ * data we have" — used whenever a persisted/target step turns out to be
+ * unreachable (failed/interrupted sessions, or a restored step whose
+ * precondition fails). Centralized so the session-restore call site and the
+ * reducer's own fallback can't silently diverge.
+ */
+export function fallbackStepForData(state: {
+  draft: unknown;
+  parsedResult: unknown;
+}): N8nWizardStep {
+  if (state.draft) return 'edit';
+  if (state.parsedResult) return 'analyze';
+  return 'upload';
+}
+
 // -- Reducer --
 
 export function navigationReducer(

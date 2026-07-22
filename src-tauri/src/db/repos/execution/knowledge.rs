@@ -462,6 +462,22 @@ fn query_with_optional_persona(
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
+/// Maps the `get_summary` aggregate-count row (6 columns: total + 5 category
+/// sub-counts) to a tuple. Shared by the persona-filtered and unfiltered
+/// branches of `get_summary`'s `count_sql` query, which previously carried a
+/// byte-for-byte copy of this closure differing only in the bound params.
+type SummaryCounts = (i64, i64, i64, i64, i64, i64);
+fn map_summary_count_row(row: &rusqlite::Row) -> rusqlite::Result<SummaryCounts> {
+    Ok((
+        row.get::<_, i64>(0)?,
+        row.get::<_, Option<i64>>(1)?.unwrap_or(0),
+        row.get::<_, Option<i64>>(2)?.unwrap_or(0),
+        row.get::<_, Option<i64>>(3)?.unwrap_or(0),
+        row.get::<_, Option<i64>>(4)?.unwrap_or(0),
+        row.get::<_, Option<i64>>(5)?.unwrap_or(0),
+    ))
+}
+
 /// Get a summary of the knowledge graph for dashboard display.
 pub fn get_summary(
     pool: &DbPool,
@@ -489,27 +505,9 @@ pub fn get_summary(
 
         let (total, tool_seq, fail_pat, model_perf, annotation_cnt, unverified_cnt) =
             if let Some(pid) = persona_id {
-                conn.query_row(&count_sql, params![pid], |row| {
-                    Ok((
-                        row.get::<_, i64>(0)?,
-                        row.get::<_, Option<i64>>(1)?.unwrap_or(0),
-                        row.get::<_, Option<i64>>(2)?.unwrap_or(0),
-                        row.get::<_, Option<i64>>(3)?.unwrap_or(0),
-                        row.get::<_, Option<i64>>(4)?.unwrap_or(0),
-                        row.get::<_, Option<i64>>(5)?.unwrap_or(0),
-                    ))
-                })?
+                conn.query_row(&count_sql, params![pid], map_summary_count_row)?
             } else {
-                conn.query_row(&count_sql, [], |row| {
-                    Ok((
-                        row.get::<_, i64>(0)?,
-                        row.get::<_, Option<i64>>(1)?.unwrap_or(0),
-                        row.get::<_, Option<i64>>(2)?.unwrap_or(0),
-                        row.get::<_, Option<i64>>(3)?.unwrap_or(0),
-                        row.get::<_, Option<i64>>(4)?.unwrap_or(0),
-                        row.get::<_, Option<i64>>(5)?.unwrap_or(0),
-                    ))
-                })?
+                conn.query_row(&count_sql, [], map_summary_count_row)?
             };
 
         let top_sql = format!(

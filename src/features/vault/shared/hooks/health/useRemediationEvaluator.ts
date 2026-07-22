@@ -76,8 +76,11 @@ export function useRemediationEvaluator() {
       const parsed = parseAnomalyFromMetadata(cred.metadata);
       const embeddedRemediation = parsed?.anomaly_score?.remediation;
 
-      // Skip healthy credentials entirely (no API call needed)
-      if (!embeddedRemediation || embeddedRemediation === 'healthy') {
+      // Skip healthy credentials entirely (no API call needed). The Rust
+      // `Remediation` enum has no `rename_all`, so it serializes as
+      // PascalCase ("Healthy") — matching actionsForRemediation()'s switch,
+      // not the lowercase string this comparison used to check against.
+      if (!embeddedRemediation || embeddedRemediation === 'Healthy') {
         continue;
       }
 
@@ -182,14 +185,16 @@ function buildReason(
 ): string {
   const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
 
+  // Matches the Rust `Remediation` enum's default (PascalCase) serde output —
+  // same mismatch as the fast-path skip above defeated this switch too.
   switch (remediation) {
-    case 'backoff_retry':
+    case 'BackoffRetry':
       return `Transient failure rate at ${pct(score.transient_failure_rate_1h)} (1h). Applying exponential backoff.`;
-    case 'preemptive_rotation':
+    case 'PreemptiveRotation':
       return `Sustained degradation: ${pct(score.failure_rate_1h)} failure rate (1h). Scheduling preemptive rotation.`;
-    case 'rotate_then_alert':
+    case 'RotateThenAlert':
       return `Permanent errors detected: ${pct(score.permanent_failure_rate_1h)} permanent failure rate (1h). Rotating and alerting.`;
-    case 'disable':
+    case 'Disable':
       return `Critical: ${pct(score.permanent_failure_rate_1h)} permanent failure rate (1h). Auto-disabling rotation policies.`;
     default:
       return `Remediation level: ${remediation}`;

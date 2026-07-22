@@ -65,6 +65,12 @@ export function useEditorDraft() {
   // Reset draft when persona changes (not during a pending switch)
   useEffect(() => {
     if (selectedPersona && !pendingPersonaId) {
+      // Only reset on an ACTUAL persona switch. The store replaces the
+      // selectedPersona object after every applyPersonaOp autosave round-trip,
+      // and resetting then wiped the undo history (Ctrl+Z dead across
+      // autosaves) and clobbered keystrokes typed since the save snapshot
+      // back to persisted values.
+      if (selectedPersona.id === prevPersonaIdRef.current) return;
       const d = buildDraft(selectedPersona);
       setDraft(d);
       setBaseline(d);

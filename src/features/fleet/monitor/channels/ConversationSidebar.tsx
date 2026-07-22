@@ -5,6 +5,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { channelKey, countUnread, EMPTY_CHANNEL } from '@/stores/slices/pipeline/channelSlice';
 import { derivePresence } from '@/features/teams/sub_collab/useTeamChannel';
+import { cleanName } from '../grid/fleetGridModel';
 import type { StreamTeam } from './types';
 
 /* ----------------------------------------------------------------------------
@@ -18,8 +19,6 @@ import type { StreamTeam } from './types';
  * Not the design question — both variants use it unchanged — so it's shared
  * from the start rather than duplicated and reconciled later.
  * -------------------------------------------------------------------------- */
-
-const cleanName = (n: string) => n.replace(/^SDLC[ —-]*/i, '') || n;
 
 function previewOf(body: string | null | undefined): string {
   if (!body) return '—';

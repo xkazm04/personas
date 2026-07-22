@@ -141,10 +141,6 @@ pub fn dev_tools_start_competition(
     // Verify project exists
     let project = repo::get_project_by_id(&state.db, &project_id)?;
 
-    // Baseline capture — measure project health BEFORE competitors run.
-    // Non-blocking: if any check fails, we still create the competition.
-    let baseline = capture_project_baseline(&project.root_path);
-
     // Apply worktree.baseRef into <project_root>/.claude/settings.json if
     // requested. Best-effort: a failure here logs and falls through so the
     // competition still runs with whatever settings.json (if any) already
@@ -175,13 +171,27 @@ pub fn dev_tools_start_competition(
         worktree_base_ref.as_deref(),
     )?;
 
-    // Persist the baseline on the competition record (best-effort update)
-    if let Ok(baseline_str) = serde_json::to_string(&baseline) {
-        let _ = state.db.get().map(|conn| {
-            conn.execute(
-                "UPDATE dev_competitions SET baseline_json = ?1 WHERE id = ?2",
-                rusqlite::params![baseline_str, competition.id],
-            )
+    // Baseline capture — measure project health BEFORE competitors run.
+    // Runs off-thread: it spawns `npx tsc --noEmit` and `cargo check`
+    // (tens of seconds to minutes on real projects), which used to execute
+    // inline in this sync command, freezing the Start-competition click for
+    // the whole build. The baseline is only READ at review time, so it can
+    // land on the row after the command returns. Kicked off before the
+    // competitor slots spawn so it measures pre-competition state.
+    {
+        let db = state.db.clone();
+        let competition_id = competition.id.clone();
+        let root_path = project.root_path.clone();
+        std::thread::spawn(move || {
+            let baseline = capture_project_baseline(&root_path);
+            if let Ok(baseline_str) = serde_json::to_string(&baseline) {
+                let _ = db.get().map(|conn| {
+                    conn.execute(
+                        "UPDATE dev_competitions SET baseline_json = ?1 WHERE id = ?2",
+                        rusqlite::params![baseline_str, competition_id],
+                    )
+                });
+            }
         });
     }
 
@@ -963,6 +973,22 @@ static DEV_SERVERS: std::sync::LazyLock<
     std::sync::Mutex<std::collections::HashMap<String, (u32, u16)>>,
 > = std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
 
+/// Check whether a PID still refers to a live process.
+///
+/// `DEV_SERVERS` stores raw PIDs (the spawned `Child` handle is dropped once
+/// the process is launched), so a crashed/killed server otherwise leaves a
+/// stale entry that (a) permanently blocks the slot from restarting via the
+/// "already_running" short-circuit, and (b) can cause `dev_tools_stop_slot_server`
+/// to `taskkill`/`kill` an unrelated process if the OS has since reused the PID.
+fn is_pid_alive(pid: u32) -> bool {
+    let mut sys = sysinfo::System::new();
+    sys.refresh_processes(
+        sysinfo::ProcessesToUpdate::Some(&[sysinfo::Pid::from_u32(pid)]),
+        true,
+    );
+    sys.process(sysinfo::Pid::from_u32(pid)).is_some()
+}
+
 /// Find a free TCP port by binding to port 0.
 fn find_free_port() -> Option<u16> {
     std::net::TcpListener::bind("127.0.0.1:0")
@@ -1017,16 +1043,26 @@ pub fn dev_tools_start_slot_server(
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
 
-    // Check if already running
+    // Check if already running -- but verify the stored PID is still alive
+    // first; a crashed/killed server would otherwise leave a stale entry
+    // that blocks the slot from ever restarting.
     {
-        let servers = DEV_SERVERS.lock().unwrap();
-        if let Some((pid, port)) = servers.get(&slot_id) {
-            return Ok(serde_json::json!({
-                "status": "already_running",
-                "port": port,
-                "pid": pid,
-                "url": format!("http://localhost:{}", port),
-            }));
+        let mut servers = DEV_SERVERS.lock().unwrap();
+        if let Some((pid, port)) = servers.get(&slot_id).copied() {
+            if is_pid_alive(pid) {
+                return Ok(serde_json::json!({
+                    "status": "already_running",
+                    "port": port,
+                    "pid": pid,
+                    "url": format!("http://localhost:{}", port),
+                }));
+            }
+            tracing::warn!(
+                "Dev server for slot {} (PID {}) is no longer running; clearing stale entry",
+                slot_id,
+                pid
+            );
+            servers.remove(&slot_id);
         }
     }
 
@@ -1123,6 +1159,17 @@ pub fn dev_tools_stop_slot_server(
     require_auth_sync(&state)?;
     let entry = DEV_SERVERS.lock().unwrap().remove(&slot_id);
     if let Some((pid, port)) = entry {
+        if !is_pid_alive(pid) {
+            // The process already exited; the OS may have reused this PID
+            // for something unrelated by now, so do NOT issue a kill.
+            tracing::info!(
+                "Dev server for slot {} (PID {}, port {}) already exited; skipping kill",
+                slot_id,
+                pid,
+                port
+            );
+            return Ok(true);
+        }
         tracing::info!(
             "Stopping dev server for slot {} (PID {}, port {})",
             slot_id,

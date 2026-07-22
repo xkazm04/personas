@@ -20,6 +20,21 @@
  */
 import { Calendar, Clock, type LucideIcon } from 'lucide-react';
 
+/** Normalize trigger type aliases to the canonical enum values the backend expects.
+ *  Single source of truth for both adoption surfaces (ChronologyAdoptionView and
+ *  useUseCaseChronology) — previously duplicated and had drifted. */
+export const TRIGGER_TYPE_ALIASES: Record<string, string> = {
+  event: 'event_listener', event_bus: 'event_listener', event_sub: 'event_listener', event_subscription: 'event_listener',
+  cron: 'schedule', scheduled: 'schedule', timer: 'schedule',
+  poll: 'polling', hook: 'webhook', http: 'webhook', web_hook: 'webhook',
+  watcher: 'file_watcher', fs_watcher: 'file_watcher', watch: 'file_watcher',
+  focus: 'app_focus', window_focus: 'app_focus',
+};
+
+export function normalizeTriggerType(raw: string): string {
+  return TRIGGER_TYPE_ALIASES[raw] ?? raw;
+}
+
 export type TimePreset = 'hourly' | 'daily' | 'weekly';
 
 export interface TimeTriggerSelection {

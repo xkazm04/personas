@@ -148,6 +148,23 @@ export function LiveChannelOverlay() {
     return () => clearInterval(iv);
   }, [enabled]);
 
+  // Prune the tombstone set whenever the live window shrinks (CAP eviction or
+  // an enqueue) — otherwise `dismissed` is a permanent set that only grows,
+  // one entry per pop-up ever shown, for the life of a long live-mode session.
+  useEffect(() => {
+    const liveIds = new Set(incoming.map((m) => m.id));
+    setDismissed((prev) => {
+      if (prev.size === 0) return prev;
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (liveIds.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [incoming]);
+
   const live = useMemo(() => incoming.filter((m) => !dismissed.has(m.id)), [incoming, dismissed]);
   const props: LiveVariantProps = { messages: live, onDismiss, onDismissAll, onOpenTimeline, onHover, reducedMotion };
 

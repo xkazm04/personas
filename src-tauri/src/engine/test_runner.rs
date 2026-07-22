@@ -218,6 +218,16 @@ pub struct TestScores {
 
 /// Run a full test session: generate scenarios, execute across models, score, summarize.
 /// If `preloaded_scenarios` is Some, skip generation and use those scenarios directly.
+///
+/// Thin wrapper around the shared `run_lab_loop` (the same engine arena, A/B,
+/// eval, matrix, and consensus modes use) — see the refactor-audit note on
+/// `run_lab_loop` for why this consolidation exists. What stays here, because
+/// it genuinely isn't part of the generic shape: the `preloaded_scenarios` /
+/// `fixture_inputs` passthrough (threaded into `run_lab_loop` as params), the
+/// P2 aggregate-cost budget ledger (wired via `LabCallbacks::should_halt_budget`
+/// / `record_cost`, register/finish as bookends), and the dashboard
+/// "recent activity" feed (`process_activity`, which only standard test runs
+/// emit — no other lab mode does).
 #[allow(clippy::too_many_arguments)]
 pub async fn run_test(
     app: AppHandle,
@@ -234,51 +244,11 @@ pub async fn run_test(
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
 
-    // Phase 1: Generate or load scenarios
-    let scenarios = if let Some(preloaded) = preloaded_scenarios {
-        if preloaded.is_empty() {
-            finish_with_error(&app, &pool, &run_id, "Saved test suite has no scenarios");
-            return;
-        }
-        preloaded
-    } else {
-        emit_status(&app, &run_id, "generating", None);
-
-        match generate_scenarios(
-            persona,
-            tools,
-            use_case_filter.as_deref(),
-            fixture_inputs.as_deref(),
-            &pool,
-        )
-        .await
-        {
-            Ok(s) if s.is_empty() => {
-                finish_with_error(&app, &pool, &run_id, "No test scenarios were generated");
-                return;
-            }
-            Ok(s) => s,
-            Err(e) => {
-                finish_with_error(
-                    &app,
-                    &pool,
-                    &run_id,
-                    &format!("Scenario generation failed: {e}"),
-                );
-                return;
-            }
-        }
-    };
-
-    let scenario_count = scenarios.len();
-    let _ = repo::update_run_status(
-        &pool,
+    // P2: track aggregate cost across this run's scenario × model spawns.
+    crate::engine::run_budget::ledger().register(
         &run_id,
-        LabRunStatus::Running,
-        Some(scenario_count as i32),
-        None,
-        None,
-        None,
+        "lab",
+        crate::engine::run_budget::lab_ceiling_usd(),
     );
 
     super::process_activity::emit_process_activity(
@@ -289,296 +259,106 @@ pub async fn run_test(
         Some(&persona.name),
     );
 
-    let _ = app.emit(
-        event_name::TEST_RUN_STATUS,
-        TestRunStatusEvent {
-            run_id: run_id.clone(),
-            phase: "generated".into(),
-            scenarios_count: Some(scenario_count),
-            scenarios: Some(scenarios.clone()),
-            ..Default::default()
-        },
-    );
+    // Single unlabeled variant: standard tests don't compare persona
+    // variants, only models — matching the (empty-label) key shape
+    // `build_arena_summary` already expects.
+    let variants = vec![LabVariant {
+        persona,
+        label: String::new(),
+        tools: Vec::new(),
+    }];
 
-    // P2: track aggregate cost across this run's scenario × model spawns.
-    crate::engine::run_budget::ledger().register(
-        &run_id,
-        "lab",
-        crate::engine::run_budget::lab_ceiling_usd(),
-    );
-
-    // Phase 2: Execute each scenario × model combination
-    let total = scenario_count * model_configs.len();
-    let mut current = 0usize;
-
-    // Track results for summary
-    #[allow(clippy::type_complexity)]
-    let results_tracker: Arc<
-        Mutex<Vec<(String, Option<i32>, Option<i32>, Option<i32>, f64, i64)>>,
-    > = Arc::new(Mutex::new(Vec::new()));
-
-    for scenario in &scenarios {
-        // Check cancellation before each scenario
-        if cancelled.load(std::sync::atomic::Ordering::Acquire) {
-            let _ = repo::update_run_status(
-                &pool,
-                &run_id,
-                LabRunStatus::Cancelled,
-                None,
-                None,
-                None,
-                None,
-            );
-            emit_status(&app, &run_id, "cancelled", None);
-            return;
-        }
-
-        // P2 enforce-mode: stop launching further scenarios once the run's budget
-        // is exhausted (warn-only never halts). The run finalizes below (Phase 3)
-        // with the partial results already collected.
-        if crate::engine::run_budget::ledger().should_halt(&run_id) {
-            tracing::warn!(
-                run_id = %run_id,
-                "Lab run halted scenario execution — budget ceiling reached (enforce mode)",
-            );
-            break;
-        }
-
-        // Spawn all model executions for this scenario concurrently
-        let mut handles = Vec::new();
-        for (mi, model) in model_configs.iter().enumerate() {
-            let persona_c = persona.clone();
-            let pool_c = pool.clone();
-            let tools_c = tools.to_vec();
-            let scenario_c = scenario.clone();
-            let model_c = model.clone();
-            let cancelled_c = cancelled.clone();
-
-            handles.push(tokio::spawn(async move {
-                if cancelled_c.load(std::sync::atomic::Ordering::Acquire) {
-                    return (
-                        mi,
-                        "cancelled".to_string(),
-                        ScoreResult {
-                            tool_accuracy: None,
-                            output_quality: None,
-                            protocol_compliance: None,
-                            output_preview: None,
-                            tool_calls_actual: None,
-                            input_tokens: 0,
-                            output_tokens: 0,
-                            cost_usd: 0.0,
-                            duration_ms: 0,
-                            error_message: Some("Cancelled".to_string()),
-                            rationale: None,
-                            suggestions: None,
-                            eval_method: None,
-                            events: Vec::new(),
-                        },
-                    );
-                }
-                let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
-                let (status, scores) = match &result {
-                    Ok(r) => {
-                        let s = score_result(r, &scenario_c, &persona_c, &pool_c).await;
-                        (verdict_status(&s), s)
-                    }
-                    Err(e) => (
-                        "error".to_string(),
-                        ScoreResult {
-                            tool_accuracy: None,
-                            output_quality: None,
-                            protocol_compliance: None,
-                            output_preview: Some(e.clone()),
-                            tool_calls_actual: None,
-                            input_tokens: 0,
-                            output_tokens: 0,
-                            cost_usd: 0.0,
-                            duration_ms: 0,
-                            error_message: Some(e.clone()),
-                            rationale: None,
-                            suggestions: None,
-                            eval_method: None,
-                            events: Vec::new(),
-                        },
-                    ),
-                };
-                (mi, status, scores)
-            }));
-        }
-
-        // Collect results from all model handles for this scenario
-        let mut scenario_results: Vec<(usize, String, ScoreResult)> = Vec::new();
-        for handle in handles {
-            match handle.await {
-                Ok(r) => scenario_results.push(r),
-                Err(e) => {
-                    tracing::error!("Test task panicked: {e}");
-                }
+    let cb = LabCallbacks {
+        event_name: event_name::TEST_RUN_STATUS,
+        update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
+            let _ = repo::update_run_status(pool, id, status, sc, sum, err, ca);
+        }),
+        persist_result: Box::new(|pool, run_id, _variant, scenario, model, status, scores| {
+            let input = CreateTestResultInput {
+                test_run_id: run_id.to_string(),
+                scenario_name: scenario.name.clone(),
+                model_id: model.id.clone(),
+                provider: model.provider.clone(),
+                status: status.to_string(),
+                output_preview: scores.output_preview.clone(),
+                tool_calls_expected: scenario
+                    .expected_tool_sequence
+                    .as_ref()
+                    .map(|v| crate::db::models::Json(v.clone())),
+                tool_calls_actual: scores.tool_calls_actual.clone(),
+                tool_accuracy_score: scores.tool_accuracy,
+                output_quality_score: scores.output_quality,
+                protocol_compliance: scores.protocol_compliance,
+                input_tokens: scores.input_tokens,
+                output_tokens: scores.output_tokens,
+                cost_usd: scores.cost_usd,
+                duration_ms: scores.duration_ms,
+                error_message: scores.error_message.clone(),
             };
-        }
-
-        // P2: record each model spawn's cost against the run budget (warn-only).
-        // scores.cost_usd mirrors lab_results.cost_usd, so the ledger total
-        // tracks SUM(lab_results.cost_usd) for this run.
-        for (_, _, scores) in &scenario_results {
-            let outcome = crate::engine::run_budget::ledger().record(&run_id, scores.cost_usd);
+            if let Err(e) = repo::create_result(pool, &input) {
+                tracing::error!("Test result create failed: {e}");
+            }
+        }),
+        build_summary: Box::new(build_arena_summary),
+        // `persona_test_runs` has no llm_summary column (unlike the other lab
+        // run tables) — the prose summary `run_lab_loop` generates is simply
+        // not persisted for standard tests. Known trade-off of the
+        // consolidation: standard runs now pay for that extra LLM call same
+        // as every other lab mode, with nowhere (yet) to show the result.
+        update_llm_summary: Box::new(|_pool, _id, _text| {}),
+        should_halt_budget: Box::new(|run_id| crate::engine::run_budget::ledger().should_halt(run_id)),
+        record_cost: Box::new(|run_id, cost_usd| {
+            // scores.cost_usd mirrors lab_results.cost_usd, so the ledger
+            // total tracks SUM(persona_test_results.cost_usd) for this run.
+            let outcome = crate::engine::run_budget::ledger().record(run_id, cost_usd);
             if outcome.exceeded_now {
                 tracing::warn!(
-                    run_id = %run_id,
+                    run_id,
                     spent_usd = outcome.spent_usd,
                     ceiling_usd = outcome.ceiling_usd,
                     "Lab run exceeded its aggregate budget ceiling (warn-only; run continues)",
                 );
             }
-        }
+        }),
+    };
 
-        // Build batch inputs for DB write
-        let batch_inputs: Vec<CreateTestResultInput> = scenario_results
-            .iter()
-            .map(|(mi, status, scores)| {
-                let model = &model_configs[*mi];
-                CreateTestResultInput {
-                    test_run_id: run_id.clone(),
-                    scenario_name: scenario.name.clone(),
-                    model_id: model.id.clone(),
-                    provider: model.provider.clone(),
-                    status: status.clone(),
-                    output_preview: scores.output_preview.clone(),
-                    tool_calls_expected: scenario
-                        .expected_tool_sequence
-                        .as_ref()
-                        .map(|v| crate::db::models::Json(v.clone())),
-                    tool_calls_actual: scores.tool_calls_actual.clone(),
-                    tool_accuracy_score: scores.tool_accuracy,
-                    output_quality_score: scores.output_quality,
-                    protocol_compliance: scores.protocol_compliance,
-                    input_tokens: scores.input_tokens,
-                    output_tokens: scores.output_tokens,
-                    cost_usd: scores.cost_usd,
-                    duration_ms: scores.duration_ms,
-                    error_message: scores.error_message.clone(),
-                }
-            })
-            .collect();
-
-        // Batch-write all results for this scenario in a single transaction
-        if let Err(e) = repo::batch_create_results(&pool, &batch_inputs) {
-            let msg = format!("Failed to persist test results: {e}");
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = repo::update_run_status(
-                &pool,
-                &run_id,
-                LabRunStatus::Failed,
-                Some(scenario_count as i32),
-                None,
-                Some(msg.as_str()),
-                Some(&now),
-            );
-            let _ = app.emit(
-                event_name::TEST_RUN_STATUS,
-                TestRunStatusEvent {
-                    run_id: run_id.clone(),
-                    phase: "failed".into(),
-                    scenarios_count: Some(scenario_count),
-                    current: Some(current),
-                    total: Some(total),
-                    model_id: None,
-                    scenario_name: Some(scenario.name.clone()),
-                    status: Some("error".into()),
-                    scores: None,
-                    summary: None,
-                    error: Some(msg),
-                    scenarios: None,
-                    elapsed_ms: None,
-                },
-            );
-            return;
-        }
-
-        // Track for summary and emit progress for each result
-        for (mi, status, scores) in scenario_results {
-            current += 1;
-            let model = &model_configs[mi];
-
-            {
-                let mut tracker = results_tracker.lock().await;
-                tracker.push((
-                    model.id.clone(),
-                    scores.tool_accuracy,
-                    scores.output_quality,
-                    scores.protocol_compliance,
-                    scores.cost_usd,
-                    scores.duration_ms,
-                ));
-            }
-
-            let _ = app.emit(
-                event_name::TEST_RUN_STATUS,
-                TestRunStatusEvent {
-                    run_id: run_id.clone(),
-                    phase: "executing".into(),
-                    scenarios_count: Some(scenario_count),
-                    current: Some(current),
-                    total: Some(total),
-                    model_id: Some(model.id.clone()),
-                    scenario_name: Some(scenario.name.clone()),
-                    status: Some(status),
-                    scores: Some(TestScores {
-                        tool_accuracy: scores.tool_accuracy,
-                        output_quality: scores.output_quality,
-                        protocol_compliance: scores.protocol_compliance,
-                    }),
-                    summary: None,
-                    error: scores.error_message,
-                    scenarios: None,
-                    elapsed_ms: None,
-                },
-            );
-        }
-    }
-
-    // Phase 3: Build summary
-    let summary = build_summary(&results_tracker, &model_configs).await;
-    let summary_str = serde_json::to_string(&summary).unwrap_or_default();
-    let now = chrono::Utc::now().to_rfc3339();
-
-    let _ = repo::update_run_status(
+    run_lab_loop(
+        &app,
         &pool,
         &run_id,
-        LabRunStatus::Completed,
-        None,
-        Some(&summary_str),
-        None,
-        Some(&now),
-    );
-
-    super::process_activity::emit_process_activity(
-        &app,
-        "test",
-        "completed",
-        Some(&run_id),
-        Some(&persona.name),
-    );
-
-    let _ = app.emit(
-        event_name::TEST_RUN_STATUS,
-        TestRunStatusEvent {
-            run_id: run_id.clone(),
-            phase: "completed".into(),
-            scenarios_count: Some(scenario_count),
-            current: Some(total),
-            total: Some(total),
-            summary: Some(summary),
-            ..Default::default()
-        },
-    );
+        persona,
+        tools,
+        &model_configs,
+        &variants,
+        &cancelled,
+        use_case_filter.as_deref(),
+        fixture_inputs.as_deref(),
+        preloaded_scenarios,
+        &cb,
+    )
+    .await;
 
     // P2: finalize + persist the run's budget (in-memory 30m; the row survives
     // restarts for cost-trend dashboards).
     if let Some(budget) = crate::engine::run_budget::ledger().finish(&run_id) {
         if let Err(e) = crate::db::repos::run_budget::persist(&pool, &budget) {
             tracing::warn!(run_id = %run_id, "run-budget persist failed: {e}");
+        }
+    }
+
+    // Dashboard activity feed: only announce "completed" when the run
+    // actually finalized as Completed (mirrors the old unconditional-success
+    // emission, but now correctly stays silent on Failed/Cancelled instead of
+    // always claiming success once the loop returns).
+    if let Ok(run) = repo::get_run_by_id(&pool, &run_id) {
+        if run.status == LabRunStatus::Completed {
+            super::process_activity::emit_process_activity(
+                &app,
+                "test",
+                "completed",
+                Some(&run_id),
+                Some(&persona.name),
+            );
         }
     }
 }
@@ -912,6 +692,36 @@ pub(crate) struct ScoreResult {
     pub(crate) events: Vec<CreateLabResultEventInput>,
 }
 
+impl ScoreResult {
+    /// Build a placeholder result for a cancelled or errored cell: every
+    /// score/telemetry field is empty/zeroed, and `error_message` carries `msg`.
+    /// Callers that also want `output_preview` populated (the "error" branch,
+    /// as opposed to "cancelled") should set it on the returned value.
+    ///
+    /// Replaces four verbatim-duplicated 17-field `ScoreResult` literals that
+    /// had drifted apart across `run_test` and `run_lab_loop` (refactor audit,
+    /// Theme I).
+    fn from_error(msg: impl Into<String>) -> ScoreResult {
+        let msg = msg.into();
+        ScoreResult {
+            tool_accuracy: None,
+            output_quality: None,
+            protocol_compliance: None,
+            output_preview: None,
+            tool_calls_actual: None,
+            input_tokens: 0,
+            output_tokens: 0,
+            cost_usd: 0.0,
+            duration_ms: 0,
+            error_message: Some(msg),
+            rationale: None,
+            suggestions: None,
+            eval_method: None,
+            events: Vec::new(),
+        }
+    }
+}
+
 pub(crate) async fn execute_scenario(
     persona: &Persona,
     tools: &[PersonaToolDefinition],
@@ -1231,90 +1041,6 @@ fn provider_cost_is_known(provider: &str) -> bool {
     provider != super::types::providers::OLLAMA
 }
 
-#[allow(clippy::type_complexity)]
-async fn build_summary(
-    results: &Arc<Mutex<Vec<(String, Option<i32>, Option<i32>, Option<i32>, f64, i64)>>>,
-    models: &[TestModelConfig],
-) -> serde_json::Value {
-    let data = results.lock().await;
-
-    let mut per_model: HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>> =
-        HashMap::new();
-    for (model_id, ta, oq, pc, cost, duration) in data.iter() {
-        per_model
-            .entry(model_id.clone())
-            .or_default()
-            .push((*ta, *oq, *pc, *cost, *duration));
-    }
-
-    let mut rankings: Vec<serde_json::Value> = Vec::new();
-
-    for model in models {
-        if let Some(results) = per_model.get(&model.id) {
-            let count = results.len() as f64;
-            let avg_ta = avg_scored(results.iter().map(|r| r.0)).unwrap_or(0.0);
-            let avg_oq = avg_scored(results.iter().map(|r| r.1)).unwrap_or(0.0);
-            let avg_pc = avg_scored(results.iter().map(|r| r.2)).unwrap_or(0.0);
-            let total_cost: f64 = results.iter().map(|r| r.3).sum();
-            let avg_duration = results.iter().map(|r| r.4 as f64).sum::<f64>() / count;
-
-            // Renormalise over present sub-scores so an all-sandbox run (no
-            // tool_accuracy) isn't dragged down by a phantom zero — mirrors the
-            // per-cell `verdict_status`.
-            let composite = renormalized_composite(
-                avg_scored(results.iter().map(|r| r.0)),
-                avg_scored(results.iter().map(|r| r.1)),
-                avg_scored(results.iter().map(|r| r.2)),
-            )
-            .unwrap_or(0.0);
-            let cost_known = provider_cost_is_known(&model.provider);
-            let value_score = compute_value_score(composite, total_cost);
-
-            rankings.push(serde_json::json!({
-                "model_id": model.id,
-                "provider": model.provider,
-                "avg_tool_accuracy": avg_ta.round() as i32,
-                "avg_output_quality": avg_oq.round() as i32,
-                "avg_protocol_compliance": avg_pc.round() as i32,
-                "composite_score": composite.round() as i32,
-                "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
-                "cost_unknown": !cost_known,
-                "avg_duration_ms": avg_duration.round() as i64,
-                "value_score": value_score.round() as i32,
-                "scenarios_tested": count as i32,
-            }));
-        }
-    }
-
-    // Sort by composite score descending
-    rankings.sort_by(|a, b| {
-        let sa = a
-            .get("composite_score")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
-        let sb = b
-            .get("composite_score")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
-        sb.cmp(&sa)
-    });
-
-    let best_model = rankings
-        .first()
-        .and_then(|r| r.get("model_id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("unknown")
-        .to_string();
-
-    let best_value = best_value_model(&rankings);
-
-    serde_json::json!({
-        "best_quality_model": best_model,
-        "best_value_model": best_value,
-        "rankings": rankings,
-    })
-}
-
 /// Pick the best-value model from a set of ranking objects, considering ONLY
 /// cost-known models (`cost_unknown != true`). A cost-unknown model (Ollama)
 /// has a hardcoded-zero cost that would otherwise score as perfect efficiency
@@ -1524,7 +1250,19 @@ async fn spawn_cli_and_collect_structured(
         })
         .await;
 
-    let exit = driver.wait().await;
+    // On a collect-timeout the child is presumed hung (that's why the stream
+    // never produced a `Result` line within the window) -- kill it instead of
+    // awaiting a natural exit that may never come, which would otherwise wedge
+    // this task (and the lab run's progress) with no upper time bound.
+    let exit = if stream_err.is_err() {
+        driver.kill().await;
+        Err(std::io::Error::new(
+            std::io::ErrorKind::TimedOut,
+            "collect_lines_with_timeout timed out",
+        ))
+    } else {
+        driver.wait().await
+    };
     let duration_ms = start.elapsed().as_millis() as u64;
     driver.cleanup_dir();
 
@@ -1555,46 +1293,9 @@ async fn spawn_cli_and_collect_structured(
     })
 }
 
-// -- Utility helpers --------------------------------------------
-
-fn emit_status(app: &AppHandle, run_id: &str, phase: &str, error: Option<&str>) {
-    let _ = app.emit(
-        event_name::TEST_RUN_STATUS,
-        TestRunStatusEvent {
-            run_id: run_id.to_string(),
-            phase: phase.to_string(),
-            scenarios_count: None,
-            current: None,
-            total: None,
-            model_id: None,
-            scenario_name: None,
-            status: None,
-            scores: None,
-            summary: None,
-            error: error.map(|s| s.to_string()),
-            scenarios: None,
-            elapsed_ms: None,
-        },
-    );
-}
-
-fn finish_with_error(app: &AppHandle, pool: &DbPool, run_id: &str, error: &str) {
-    let now = chrono::Utc::now().to_rfc3339();
-    let _ = repo::update_run_status(
-        pool,
-        run_id,
-        LabRunStatus::Failed,
-        None,
-        None,
-        Some(error),
-        Some(&now),
-    );
-    super::process_activity::emit_process_activity(app, "test", "failed", Some(run_id), None);
-    emit_status(app, run_id, "failed", Some(error));
-}
-
 // ============================================================================
-// Lab: Generic executor for arena, A/B, eval, and matrix modes
+// Lab: Generic executor for standard tests, arena, A/B, eval, matrix, and
+// consensus modes
 // ============================================================================
 
 fn emit_lab_status(
@@ -1659,6 +1360,18 @@ struct LabCallbacks<'a> {
             + 'a,
     >,
     update_llm_summary: Box<dyn Fn(&DbPool, &str, &str) + Send + Sync + 'a>,
+    /// Optional aggregate-cost ceiling check, polled once per scenario before
+    /// spawning its cells. Only the standard test-run path wires a real budget
+    /// ledger (see `run_budget`); other lab modes pass a constant `false` and
+    /// are unaffected. Returning `true` halts further scenario launches (the
+    /// run still finalizes using the partial results already collected — see
+    /// `halted_by_budget` below, which keeps that intentional stop from
+    /// tripping the completeness gate).
+    should_halt_budget: Box<dyn Fn(&str) -> bool + Send + Sync + 'a>,
+    /// Optional per-cell cost recorder, called once per completed cell with
+    /// its `cost_usd`. Only the standard test-run path records into the
+    /// budget ledger; other lab modes pass a no-op.
+    record_cost: Box<dyn Fn(&str, f64) + Send + Sync + 'a>,
 }
 
 /// Generate a prose LLM summary of test results. Returns the summary text, or None on failure.
@@ -1746,7 +1459,8 @@ Rules:
     }
 }
 
-/// Generic lab execution loop shared by arena, A/B, eval, and matrix modes.
+/// Generic lab execution loop shared by standard tests, arena, A/B, eval,
+/// matrix, and consensus modes.
 #[allow(clippy::too_many_arguments)]
 async fn run_lab_loop(
     app: &AppHandle,
@@ -1758,14 +1472,45 @@ async fn run_lab_loop(
     variants: &[LabVariant<'_>],
     cancelled: &Arc<std::sync::atomic::AtomicBool>,
     use_case_filter: Option<&str>,
+    // Custom scenario-generation input. `None` for every mode except standard
+    // tests, which can seed a saved suite's fixture data.
+    fixture_inputs: Option<&str>,
+    // When `Some`, skip generation entirely and use these scenarios directly
+    // (standard tests re-running a saved suite). An empty vec fails the run
+    // with the same "no scenarios" message generation-failure uses.
+    preloaded_scenarios: Option<Vec<TestScenario>>,
     cb: &LabCallbacks<'_>,
 ) {
     let run_start = std::time::Instant::now();
 
-    emit_lab_status(app, cb.event_name, run_id, "generating", None);
+    let scenarios = if let Some(preloaded) = preloaded_scenarios {
+        if preloaded.is_empty() {
+            let now = chrono::Utc::now().to_rfc3339();
+            (cb.update_status)(
+                pool,
+                run_id,
+                LabRunStatus::Failed,
+                None,
+                None,
+                Some("Saved test suite has no scenarios"),
+                Some(&now),
+            );
+            emit_lab_status(
+                app,
+                cb.event_name,
+                run_id,
+                "failed",
+                Some("Saved test suite has no scenarios"),
+            );
+            return;
+        }
+        preloaded
+    } else {
+        emit_lab_status(app, cb.event_name, run_id, "generating", None);
 
-    let scenarios =
-        match generate_scenarios(persona_for_scenarios, tools, use_case_filter, None, pool).await {
+        match generate_scenarios(persona_for_scenarios, tools, use_case_filter, fixture_inputs, pool)
+            .await
+        {
             Ok(s) if s.is_empty() => {
                 let now = chrono::Utc::now().to_rfc3339();
                 (cb.update_status)(
@@ -1802,7 +1547,8 @@ async fn run_lab_loop(
                 emit_lab_status(app, cb.event_name, run_id, "failed", Some(&msg));
                 return;
             }
-        };
+        }
+    };
 
     let scenario_count = scenarios.len();
     (cb.update_status)(
@@ -1821,6 +1567,11 @@ async fn run_lab_loop(
             run_id: run_id.to_string(),
             phase: "generated".into(),
             scenarios_count: Some(scenario_count),
+            // Standard test runs use this to let the frontend save the
+            // generated scenarios into a reusable suite (see testSlice's
+            // `scenarios` / `createTestSuite`). Harmless for other lab modes,
+            // which don't read this field off their own progress payload.
+            scenarios: Some(scenarios.clone()),
             elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
             ..Default::default()
         },
@@ -1828,6 +1579,11 @@ async fn run_lab_loop(
 
     let total = scenario_count * model_configs.len() * variants.len();
     let mut current = 0usize;
+    // Set when a mode-specific budget ceiling halts further scenario launches
+    // (see `should_halt_budget`). This is an intentional, disclosed partial
+    // run — distinct from cells lost to task panics/errors — so it must not
+    // trip the completeness gate below.
+    let mut halted_by_budget = false;
     #[allow(clippy::type_complexity)]
     let mut tracker: HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>> =
         HashMap::new();
@@ -1848,6 +1604,19 @@ async fn run_lab_loop(
             );
             emit_lab_status(app, cb.event_name, run_id, "cancelled", None);
             return;
+        }
+
+        // Mode-specific budget ceiling (currently only standard test runs):
+        // stop launching further scenarios once the run's aggregate cost
+        // ceiling is reached (warn-only never halts). The run still finalizes
+        // below with the partial results already collected.
+        if (cb.should_halt_budget)(run_id) {
+            tracing::warn!(
+                run_id,
+                "Lab run halted scenario execution — budget ceiling reached (enforce mode)",
+            );
+            halted_by_budget = true;
+            break;
         }
 
         // Spawn all model × variant pairs for this scenario concurrently
@@ -1877,22 +1646,7 @@ async fn run_lab_loop(
                             mi,
                             vi,
                             "cancelled".to_string(),
-                            ScoreResult {
-                                tool_accuracy: None,
-                                output_quality: None,
-                                protocol_compliance: None,
-                                output_preview: None,
-                                tool_calls_actual: None,
-                                input_tokens: 0,
-                                output_tokens: 0,
-                                cost_usd: 0.0,
-                                duration_ms: 0,
-                                error_message: Some("Cancelled".to_string()),
-                                rationale: None,
-                                suggestions: None,
-                                eval_method: None,
-                                events: Vec::new(),
-                            },
+                            ScoreResult::from_error("Cancelled"),
                         );
                     }
                     // Race execution against cancellation. If cancel fires mid-run
@@ -1909,25 +1663,11 @@ async fn run_lab_loop(
                             let s = score_result(r, &scenario_c, &persona_c, &pool_c).await;
                             (verdict_status(&s), s)
                         }
-                        Err(e) => (
-                            "error".to_string(),
-                            ScoreResult {
-                                tool_accuracy: None,
-                                output_quality: None,
-                                protocol_compliance: None,
-                                output_preview: Some(e.clone()),
-                                tool_calls_actual: None,
-                                input_tokens: 0,
-                                output_tokens: 0,
-                                cost_usd: 0.0,
-                                duration_ms: 0,
-                                error_message: Some(e.clone()),
-                                rationale: None,
-                                suggestions: None,
-                                eval_method: None,
-                                events: Vec::new(),
-                            },
-                        ),
+                        Err(e) => {
+                            let mut sr = ScoreResult::from_error(e.clone());
+                            sr.output_preview = Some(e.clone());
+                            ("error".to_string(), sr)
+                        }
                     };
                     (mi, vi, status, scores)
                 }));
@@ -1968,6 +1708,7 @@ async fn run_lab_loop(
             ));
 
             (cb.persist_result)(pool, run_id, variant, scenario, model, &status, &scores);
+            (cb.record_cost)(run_id, scores.cost_usd);
 
             let _ = app.emit(
                 cb.event_name,
@@ -2051,7 +1792,11 @@ async fn run_lab_loop(
     // incrementing `current`, so `current < total` means cells were silently lost.
     // Finalize as Failed with a count rather than presenting a partial sample as a
     // trustworthy comparison (the leaderboards would average over missing data).
-    let incomplete = current < total;
+    //
+    // Exception: a budget-halted run is *intentionally* short of `total` — the
+    // scenario loop stopped on purpose, not because a cell was lost — so it
+    // must not trip this gate.
+    let incomplete = !halted_by_budget && current < total;
     let (run_status, status_error, phase): (LabRunStatus, Option<String>, &str) = if incomplete {
         let msg = format!(
             "Run incomplete: {current}/{total} cells produced results; {} lost to task panics/errors",
@@ -2334,6 +2079,8 @@ pub async fn run_arena_test(
         update_llm_summary: Box::new(|pool, id, text| {
             let _ = arena_repo::update_llm_summary(pool, id, text);
         }),
+        should_halt_budget: Box::new(|_run_id| false),
+        record_cost: Box::new(|_run_id, _cost| {}),
     };
 
     run_lab_loop(
@@ -2346,6 +2093,8 @@ pub async fn run_arena_test(
         &variants,
         &cancelled,
         use_case_filter.as_deref(),
+        None,
+        None,
         &cb,
     )
     .await;
@@ -2428,6 +2177,8 @@ pub async fn run_consensus_test(
         update_llm_summary: Box::new(|pool, id, text| {
             let _ = consensus_repo::update_llm_summary(pool, id, text);
         }),
+        should_halt_budget: Box::new(|_run_id| false),
+        record_cost: Box::new(|_run_id, _cost| {}),
     };
 
     let model_configs = vec![model_config];
@@ -2441,6 +2192,8 @@ pub async fn run_consensus_test(
         &variants,
         &cancelled,
         use_case_filter.as_deref(),
+        None,
+        None,
         &cb,
     )
     .await;
@@ -2588,6 +2341,8 @@ pub async fn run_ab_test(
         update_llm_summary: Box::new(|pool, id, text| {
             let _ = ab_repo::update_llm_summary(pool, id, text);
         }),
+        should_halt_budget: Box::new(|_run_id| false),
+        record_cost: Box::new(|_run_id, _cost| {}),
     };
 
     run_lab_loop(
@@ -2600,6 +2355,8 @@ pub async fn run_ab_test(
         &lab_variants,
         &cancelled,
         use_case_filter.as_deref(),
+        None,
+        None,
         &cb,
     )
     .await;
@@ -2668,6 +2425,8 @@ pub async fn run_eval_test(
         update_llm_summary: Box::new(|pool, id, text| {
             let _ = eval_repo::update_llm_summary(pool, id, text);
         }),
+        should_halt_budget: Box::new(|_run_id| false),
+        record_cost: Box::new(|_run_id, _cost| {}),
     };
 
     run_lab_loop(
@@ -2680,6 +2439,8 @@ pub async fn run_eval_test(
         &lab_variants,
         &cancelled,
         use_case_filter.as_deref(),
+        None,
+        None,
         &cb,
     )
     .await;
@@ -2804,6 +2565,8 @@ pub async fn run_matrix_test(
         update_llm_summary: Box::new(|pool, id, text| {
             let _ = matrix_repo::update_llm_summary(pool, id, text);
         }),
+        should_halt_budget: Box::new(|_run_id| false),
+        record_cost: Box::new(|_run_id, _cost| {}),
     };
 
     // Transition Drafting -> Generating so run_lab_loop can then go Generating -> Running -> Completed
@@ -2827,6 +2590,8 @@ pub async fn run_matrix_test(
         &variants,
         &cancelled,
         use_case_filter.as_deref(),
+        None,
+        None,
         &cb,
     )
     .await;

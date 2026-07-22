@@ -295,7 +295,8 @@
     "query_parameters": "쿼리 매개변수",
     "recipes_title": "저장된 레시피",
     "truncated_warning": "표시를 위해 응답이 잘렸습니다",
-    "value_col": "값"
+    "value_col": "값",
+    "request_headers": "헤더"
   },
   "ingest": {
     "save_name": "이름 저장",
@@ -422,7 +423,8 @@
     "capability_key_value": "키-값",
     "capability_key_value_hint": "이것은 키-값 저장소입니다. SQL이 아니라 SCAN, GET, TYPE 같은 키 명령을 사용하세요.",
     "capability_select_subset": "SELECT 전용",
-    "capability_select_subset_hint": "여기서는 단일 테이블의 단순 SELECT 쿼리만 실행됩니다. WHERE로 필터링하고, ORDER BY로 정렬하고, LIMIT으로 제한하세요. JOIN, 집계, CTE, 쓰기는 지원되지 않습니다."
+    "capability_select_subset_hint": "여기서는 단일 테이블의 단순 SELECT 쿼리만 실행됩니다. WHERE로 필터링하고, ORDER BY로 정렬하고, LIMIT으로 제한하세요. JOIN, 집계, CTE, 쓰기는 지원되지 않습니다.",
+    "query_timeout": "응답 대기 시간이 초과되었습니다. 다시 시도해 주세요."
   },
   "dependencies": {
     "simulate_revocation": "취소 시뮬레이션",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "스캔 대상",
     "read_error_item": "{source}을(를) 읽을 수 없습니다",
     "read_errors_title": "일부 소스를 읽을 수 없습니다",
-    "select_high_confidence": "신뢰도 높음"
+    "select_high_confidence": "신뢰도 높음",
+    "source_unknown": "알 수 없는 소스"
   },
   "desktop_discovery": {
     "title": "데스크톱 앱",

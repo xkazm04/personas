@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useToastStore } from '@/stores/toastStore';
@@ -33,6 +33,7 @@ import {
   companionDeleteBrainItem,
   companionGetBrainItem,
   companionListBrainItems,
+  companionCountBrainItems,
   companionRunConsolidation,
   companionRunReflection,
   companionSaveIdentity,
@@ -255,18 +256,17 @@ function TypesView() {
   const setBrainView = useCompanionStore((s) => s.setBrainView);
   const [counts, setCounts] = useState<Partial<Record<BrainKind, number>>>({});
 
-  // Load list-counts in parallel so the cards show "N items" right away.
-  // Each kind's count is a separate IPC; cheap, doesn't block render.
+  // One counts IPC for all kinds. Firing 13 parallel companionListBrainItems
+  // calls deserialized every row (episode/reflection payloads grow with the
+  // whole history) just to render "N items" labels.
   useEffect(() => {
     let cancelled = false;
-    KINDS.forEach(({ kind }) => {
-      companionListBrainItems(kind)
-        .then((items) => {
-          if (cancelled) return;
-          setCounts((c) => ({ ...c, [kind]: items.length }));
-        })
-        .catch(silentCatch(`companion_list_brain_items:${kind}`));
-    });
+    companionCountBrainItems(KINDS.map(({ kind }) => kind))
+      .then((counts) => {
+        if (cancelled) return;
+        setCounts(counts);
+      })
+      .catch(silentCatch('companion_count_brain_items'));
     return () => {
       cancelled = true;
     };

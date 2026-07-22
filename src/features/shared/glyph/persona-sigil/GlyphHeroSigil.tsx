@@ -2,7 +2,7 @@ import { memo } from "react";
 import { DIM_META, PETAL_ANGLES, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type { PetalState } from "./types";
-import { useTranslation } from "@/i18n/useTranslation";
+import { useGlyphDimText } from "./useGlyphDimText";
 
 interface GlyphHeroSigilProps {
   size: number;
@@ -123,8 +123,7 @@ const HeroPetal = memo(function HeroPetal({
 export function GlyphHeroSigil({
   size, petalStates, activeDim, onHover, onClick, dimmed = false,
 }: GlyphHeroSigilProps) {
-  const { t } = useTranslation();
-  const c = t.templates.chronology;
+  const dimText = useGlyphDimText();
   const center = size / 2;
   const petalOuter = size * 0.44;
   const petalInner = size * 0.13;
@@ -181,7 +180,7 @@ export function GlyphHeroSigil({
           isActive={activeDim === dim}
           dimOther={activeDim !== null && activeDim !== dim}
           center={center}
-          ariaLabel={c[DIM_META[dim].labelKey]}
+          ariaLabel={dimText.label[dim]}
           onHover={onHover}
           onClick={onClick}
         />

@@ -9,6 +9,7 @@ import type { ContextRule } from '@/lib/bindings/ContextRule';
 import type { ContextAction } from '@/lib/bindings/ContextAction';
 import { DEFAULT_SENSORY_POLICY } from '@/stores/slices/system/ambientContextSlice';
 import { useTranslation } from '@/i18n/useTranslation';
+import { toastCatch } from '@/lib/silentCatch';
 
 const SOURCE_ICONS: Record<string, typeof Clipboard> = {
   clipboard: Clipboard,
@@ -86,33 +87,45 @@ export function AmbientContextPanel() {
   const handlePolicyChange = useCallback(
     (field: keyof SensoryPolicy, value: boolean) => {
       if (!selectedPersonaId) return;
+      const previous = localPolicy;
       const updated = { ...localPolicy, [field]: value };
       setLocalPolicy(updated);
-      updateSensoryPolicy(selectedPersonaId, updated);
+      updateSensoryPolicy(selectedPersonaId, updated).catch((e: unknown) => {
+        setLocalPolicy(previous);
+        toastCatch('AmbientContextPanel:updatePolicy')(e);
+      });
     },
     [localPolicy, selectedPersonaId, updateSensoryPolicy],
   );
 
   const handleAddFilter = useCallback(() => {
     if (!filterInput.trim() || !selectedPersonaId) return;
+    const previous = localPolicy;
     const updated = {
       ...localPolicy,
       focusAppFilter: [...localPolicy.focusAppFilter, filterInput.trim()],
     };
     setLocalPolicy(updated);
-    updateSensoryPolicy(selectedPersonaId, updated);
+    updateSensoryPolicy(selectedPersonaId, updated).catch((e: unknown) => {
+      setLocalPolicy(previous);
+      toastCatch('AmbientContextPanel:addFilter')(e);
+    });
     setFilterInput('');
   }, [filterInput, localPolicy, selectedPersonaId, updateSensoryPolicy]);
 
   const handleRemoveFilter = useCallback(
     (index: number) => {
       if (!selectedPersonaId) return;
+      const previous = localPolicy;
       const updated = {
         ...localPolicy,
         focusAppFilter: localPolicy.focusAppFilter.filter((_, i) => i !== index),
       };
       setLocalPolicy(updated);
-      updateSensoryPolicy(selectedPersonaId, updated);
+      updateSensoryPolicy(selectedPersonaId, updated).catch((e: unknown) => {
+        setLocalPolicy(previous);
+        toastCatch('AmbientContextPanel:removeFilter')(e);
+      });
     },
     [localPolicy, selectedPersonaId, updateSensoryPolicy],
   );
@@ -139,15 +152,19 @@ export function AmbientContextPanel() {
       enabled: true,
       cooldownSecs: ruleCooldown,
     };
-    await addContextRule(rule);
-    setRuleName('');
-    setRuleSources([]);
-    setRuleSummaryContains('');
-    setRulePathGlob('');
-    setRuleAppFilter('');
-    setRuleAction('emitEvent');
-    setRuleCooldown(60);
-    setShowRuleForm(false);
+    try {
+      await addContextRule(rule);
+      setRuleName('');
+      setRuleSources([]);
+      setRuleSummaryContains('');
+      setRulePathGlob('');
+      setRuleAppFilter('');
+      setRuleAction('emitEvent');
+      setRuleCooldown(60);
+      setShowRuleForm(false);
+    } catch (e) {
+      toastCatch('AmbientContextPanel:addRule')(e);
+    }
   }, [selectedPersonaId, ruleName, ruleSources, ruleSummaryContains, rulePathGlob, ruleAppFilter, ruleAction, ruleCooldown, addContextRule]);
 
   const toggleSource = useCallback((source: string) => {

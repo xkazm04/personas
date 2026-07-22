@@ -380,20 +380,11 @@ struct ProcedureEnvelope {
 }
 
 fn parse_procedure(blob: &str) -> Option<Procedure> {
-    let marker = "\"kpi_procedure\"";
-    let mut result = None;
-    let mut from = 0;
-    while let Some(rel) = blob[from..].find(marker) {
-        let pos = from + rel;
-        from = pos + marker.len();
-        let Some(open) = blob[..pos].rfind('{') else { continue };
-        if let Some(close) = crate::companion::athena_reaction::match_braces(&blob[open..]) {
-            if let Ok(env) = serde_json::from_str::<ProcedureEnvelope>(&blob[open..open + close + 1]) {
-                result = Some(env.kpi_procedure);
-            }
-        }
-    }
-    result
+    crate::companion::athena_reaction::extract_json_envelope::<ProcedureEnvelope>(
+        blob,
+        "\"kpi_procedure\"",
+    )
+    .map(|env| env.kpi_procedure)
 }
 
 fn connector_brief(pool: &DbPool, service_type: &str) -> String {

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use rusqlite::{params, OptionalExtension};
 
+use crate::db::credential_fields::{classify_field_type, normalize_field_key, NON_SENSITIVE_KEYS};
 use crate::db::models::{
     CreateCredentialEventInput, CreateCredentialInput, CredentialEvent, CredentialField,
     CredentialLedger, PersonaCredential, UpdateCredentialEventInput, UpdateCredentialInput,
@@ -29,30 +30,13 @@ row_mapper!(row_to_credential_event -> CredentialEvent {
 });
 
 // ============================================================================
-// Non-sensitive field keys (single source of truth)
+// Non-sensitive field keys
 // ============================================================================
-
-/// Field keys that are stored as queryable plaintext rather than encrypted.
-/// Used by both `create_with_fields` and `save_fields` to classify sensitivity.
-pub const NON_SENSITIVE_KEYS: &[&str] = &[
-    "base_url",
-    "url",
-    "host",
-    "hostname",
-    "server",
-    "port",
-    "database",
-    "project",
-    "organization",
-    "org",
-    "workspace",
-    "team",
-    "region",
-    "scope",
-    "scopes",
-    "oauth_client_mode",
-    "token_type",
-];
+//
+// `NON_SENSITIVE_KEYS` and `classify_field_type` now live in
+// `db::credential_fields` (single source of truth shared with the migration
+// helpers and data_portability) -- see that module's doc comment for why the
+// triplication was a real encrypt-vs-plaintext-at-rest risk.
 
 /// Build a lookup map of `field_key -> is_sensitive` from a connector's fields
 /// JSON.  Returns `None` if the connector is not found or its fields column
@@ -860,15 +844,14 @@ pub fn append_healthcheck_metadata(
                 .map_err(|e| refuse_corrupt_metadata(credential_id, e))?;
 
             // Delegate to rotation engine for ring-buffer append logic (entry
-            // construction, FIFO overflow, error classification).
-            let existing =
-                crate::engine::rotation::ledger_entries_to_engine(&ledger.healthcheck_results);
-            let updated =
-                crate::engine::rotation::append_healthcheck_entry(&existing, success, message);
-
-            // Write updated ring buffer back into the ledger using typed conversion
-            ledger.healthcheck_results =
-                crate::engine::rotation::engine_entries_to_ledger(&updated);
+            // construction, FIFO overflow, error classification). `HealthcheckEntry`
+            // is a type alias for `LedgerHealthEntry`, so no conversion is needed.
+            let updated = crate::engine::rotation::append_healthcheck_entry(
+                &ledger.healthcheck_results,
+                success,
+                message,
+            );
+            ledger.healthcheck_results = updated;
             let now = chrono::Utc::now().to_rfc3339();
             ledger.healthcheck_last_success = Some(success);
             if success {
@@ -1473,59 +1456,6 @@ pub fn get_decrypted_fields(
         result.insert(key, value);
     }
     Ok(result)
-}
-
-/// Normalize legacy camelCase credential field keys to canonical snake_case.
-///
-/// This runs on every read so that any camelCase fields missed by the DB
-/// migration (e.g. created between migration and app restart) are
-/// transparently mapped.
-fn normalize_field_key(key: &str) -> String {
-    match key {
-        "refreshToken" => "refresh_token".to_string(),
-        "accessToken" => "access_token".to_string(),
-        "clientId" => "client_id".to_string(),
-        "clientSecret" => "client_secret".to_string(),
-        "tokenType" => "token_type".to_string(),
-        _ => key.to_string(),
-    }
-}
-
-/// Classify a credential field key into a type hint.
-///
-/// The `"secret"` classification doubles as the non-negotiable name backstop
-/// in `is_field_sensitive`: a secret-typed, non-allowlisted key is ALWAYS
-/// encrypted regardless of what the (user/AI-authorable) connector schema
-/// declares. The match list is therefore deliberately broad — ad-hoc
-/// token-shaped keys written by the OAuth refresh path or hand-authored
-/// connector schemas (`jwt`, `bearer`, `passphrase`, `pwd`, `credential`,
-/// plus any `*token*`/`*key*`/`*secret*`/`*password*` variant) must never be
-/// classifiable as plain text. Widening this list only ever upgrades a field
-/// to encrypted-at-rest; the `NON_SENSITIVE_KEYS` allowlist still exempts
-/// legitimately public names like `token_type`.
-fn classify_field_type(key: &str) -> &'static str {
-    let lower = key.to_lowercase();
-    if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
-        "url"
-    } else if lower.contains("token")
-        || lower.contains("key")
-        || lower.contains("secret")
-        || lower.contains("password")
-        || lower.contains("passphrase")
-        || lower.contains("credential")
-        || lower.contains("jwt")
-        || lower.contains("bearer")
-        || lower == "pwd"
-        || lower.ends_with("_pwd")
-    {
-        "secret"
-    } else if lower == "port" {
-        "number"
-    } else if lower.contains("email") || lower.contains("username") || lower.contains("user") {
-        "identity"
-    } else {
-        "text"
-    }
 }
 
 #[cfg(test)]

@@ -772,7 +772,7 @@ pub fn extract_chain_metadata(
     let Ok(val) = serde_json::from_str::<serde_json::Value>(payload) else {
         tracing::warn!(
             payload_len = payload.len(),
-            payload_prefix = %&payload[..payload.len().min(200)],
+            payload_prefix = %crate::utils::text::truncate_on_char_boundary(payload, 200),
             "Chain metadata extraction failed: payload is not valid JSON — \
              chain_trace_id will be lost and downstream executions will create orphaned trace roots"
         );

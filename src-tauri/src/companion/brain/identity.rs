@@ -188,18 +188,37 @@ fn section_range(lines: &[String], target: &str) -> Option<(usize, usize)> {
     start.map(|s| (s, lines.len()))
 }
 
-/// Find the bullet line in `[start, end)` matching `anchor` (trimmed equality or
-/// prefix so a `(ep_xxx)` provenance suffix still matches).
+/// Find the bullet line in `[start, end)` matching `anchor`. Prefers an
+/// exact (trimmed) match; only falls back to a prefix match when the
+/// remainder looks like a stored `(ep_xxx)` provenance suffix, and only
+/// when exactly one bullet matches that way — otherwise a short anchor
+/// could silently target the wrong (longer) bullet that happens to share
+/// its prefix.
 fn find_bullet(lines: &[String], start: usize, end: usize, anchor: &str) -> Option<usize> {
     for (offset, line) in lines[start..end].iter().enumerate() {
         if let Some(b) = line.trim_start().strip_prefix("- ") {
-            let b = b.trim();
-            if b == anchor || b.starts_with(anchor) {
+            if b.trim() == anchor {
                 return Some(start + offset);
             }
         }
     }
-    None
+    let mut prefix_match: Option<usize> = None;
+    for (offset, line) in lines[start..end].iter().enumerate() {
+        if let Some(b) = line.trim_start().strip_prefix("- ") {
+            let b = b.trim();
+            if let Some(rest) = b.strip_prefix(anchor) {
+                if rest.starts_with(" (ep_") {
+                    if prefix_match.is_some() {
+                        // Ambiguous — more than one bullet shares this
+                        // anchor as a prefix. Don't guess.
+                        return None;
+                    }
+                    prefix_match = Some(start + offset);
+                }
+            }
+        }
+    }
+    prefix_match
 }
 
 /// Validate a diff against the current doc lines without mutating — used for a

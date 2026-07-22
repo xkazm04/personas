@@ -56,6 +56,13 @@ const TRASH_TTL_SECS: u64 = 7 * 24 * 60 * 60;
 /// Cached canonical managed root — resolved lazily on first call.
 static MANAGED_ROOT: OnceLock<PathBuf> = OnceLock::new();
 
+/// Returns true for filesystem noise the drive walkers should never surface
+/// (OS-generated metadata files). Shared by every directory walker so the
+/// clutter list only needs to be updated in one place.
+fn is_os_clutter(name: &str) -> bool {
+    name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini"
+}
+
 /// TTL for the cached `drive_storage_info` result. The Drive UI calls
 /// `refreshStorage` on mount and after every paste/createFile/remove —
 /// without throttling, a multi-paste fans out to N full-tree walks of
@@ -76,26 +83,16 @@ fn storage_info_cache() -> &'static Mutex<StorageInfoCache> {
     STORAGE_INFO_CACHE.get_or_init(|| Mutex::new(StorageInfoCache::default()))
 }
 
-/// Return the cached managed root if [`managed_root`] has already been
-/// resolved (at least one `drive_*` command has run this session). Lets
-/// engine code (which doesn't hold an `AppHandle`) address the drive sandbox
-/// without bootstrapping it from cwd/app_data_dir itself. Returns `None`
-/// before the first call — callers must tolerate a missing drive.
-pub(crate) fn cached_managed_root() -> Option<PathBuf> {
-    MANAGED_ROOT.get().cloned()
-}
-
-/// Publish a `drive.document.*` event directly via the DB pool. Mirrors
-/// [`emit_drive_event`] but without an `AppHandle`, so engine-side callers
-/// (post-execution drive sync in `runner.rs`) can report file changes the
-/// persona produced during a run. Best-effort — returns unit regardless of
-/// DB outcome so a publish failure can't cancel the caller's happy path.
-pub(crate) fn publish_drive_event_from_engine(
-    pool: &crate::db::DbPool,
+/// Build the `{path,name,extension}` payload (merged with any caller-supplied
+/// `extra` fields) and wrap it in a `CreatePersonaEventInput` ready to
+/// publish. Shared by [`publish_drive_event_from_engine`] (DbPool-only) and
+/// [`emit_drive_event`] (AppHandle) so a payload/schema change only needs to
+/// happen once.
+fn build_drive_event_input(
     event_type: &str,
     rel_path: &str,
     extra: Option<serde_json::Value>,
-) {
+) -> crate::db::models::CreatePersonaEventInput {
     let name = std::path::Path::new(rel_path)
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
@@ -118,7 +115,7 @@ pub(crate) fn publish_drive_event_from_engine(
         }
     }
 
-    let input = crate::db::models::CreatePersonaEventInput {
+    crate::db::models::CreatePersonaEventInput {
         event_type: event_type.to_string(),
         source_type: DRIVE_SOURCE_TYPE.to_string(),
         project_id: None,
@@ -126,7 +123,16 @@ pub(crate) fn publish_drive_event_from_engine(
         target_persona_id: None,
         payload: serde_json::to_string(&payload).ok(),
         use_case_id: None,
-    };
+    }
+}
+
+pub(crate) fn publish_drive_event_from_engine(
+    pool: &crate::db::DbPool,
+    event_type: &str,
+    rel_path: &str,
+    extra: Option<serde_json::Value>,
+) {
+    let input = build_drive_event_input(event_type, rel_path, extra);
 
     if let Err(e) = crate::db::repos::communication::events::publish(pool, input) {
         tracing::warn!(
@@ -190,7 +196,7 @@ fn walk_snapshot(
             .file_name()
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_default();
-        if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+        if is_os_clutter(&name) {
             continue;
         }
         out.insert(
@@ -579,37 +585,7 @@ fn emit_drive_event(
         None => return,
     };
 
-    let name = std::path::Path::new(rel_path)
-        .file_name()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_default();
-    let ext = std::path::Path::new(rel_path)
-        .extension()
-        .and_then(|s| s.to_str())
-        .map(|s| s.to_ascii_lowercase());
-
-    let mut payload = serde_json::json!({
-        "path": rel_path,
-        "name": name,
-        "extension": ext,
-    });
-    if let (Some(obj), Some(extra)) = (payload.as_object_mut(), extra) {
-        if let Some(extra_obj) = extra.as_object() {
-            for (k, v) in extra_obj {
-                obj.insert(k.clone(), v.clone());
-            }
-        }
-    }
-
-    let input = crate::db::models::CreatePersonaEventInput {
-        event_type: event_type.to_string(),
-        source_type: DRIVE_SOURCE_TYPE.to_string(),
-        project_id: None,
-        source_id: Some(rel_path.to_string()),
-        target_persona_id: None,
-        payload: serde_json::to_string(&payload).ok(),
-        use_case_id: None,
-    };
+    let input = build_drive_event_input(event_type, rel_path, extra);
 
     if let Err(e) = crate::db::repos::communication::events::publish(&state.db, input) {
         tracing::warn!(
@@ -718,7 +694,7 @@ pub fn drive_list(app: AppHandle, rel_path: String) -> Result<Vec<DriveEntry>, A
         // Skip OS clutter so the UI stays tidy.
         let name = entry.file_name();
         let name_str = name.to_string_lossy();
-        if name_str == ".DS_Store" || name_str == "Thumbs.db" || name_str == "desktop.ini" {
+        if is_os_clutter(&name_str) {
             continue;
         }
         entries.push(build_entry(&root, &entry.path())?);
@@ -847,7 +823,7 @@ fn walk_search(
         }
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
-        if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+        if is_os_clutter(&name) {
             continue;
         }
         let is_dir = entry.file_type().map(|f| f.is_dir()).unwrap_or(false);
@@ -897,7 +873,7 @@ fn walk_recent(root: &Path, dir: &Path, acc: &mut Vec<DriveEntry>) {
     for entry in read.flatten() {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
-        if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+        if is_os_clutter(&name) {
             continue;
         }
         // Trash bin lives at <root>/.trash and is a soft-delete graveyard —
@@ -929,9 +905,19 @@ pub fn drive_stat(app: AppHandle, rel_path: String) -> Result<DriveEntry, AppErr
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn drive_read(app: AppHandle, rel_path: String) -> Result<Vec<u8>, AppError> {
-    let root = managed_root(&app)?;
-    let abs = resolve_safe(&root, &rel_path)?;
+pub fn drive_read(app: AppHandle, rel_path: String) -> Result<tauri::ipc::Response, AppError> {
+    // Raw-byte IPC response (frontend receives an ArrayBuffer). Returning
+    // Vec<u8> serialized every byte as a JSON number — a 3MB image became
+    // ~10-12MB of JSON that WebView2 stringified/parsed on every thumbnail,
+    // lightbox navigation, and preview.
+    Ok(tauri::ipc::Response::new(read_bytes_capped(
+        &app, &rel_path,
+    )?))
+}
+
+fn read_bytes_capped(app: &AppHandle, rel_path: &str) -> Result<Vec<u8>, AppError> {
+    let root = managed_root(app)?;
+    let abs = resolve_safe(&root, rel_path)?;
     let meta = std::fs::metadata(&abs)?;
     if meta.len() > MAX_READ_BYTES {
         return Err(AppError::Validation(format!(
@@ -945,7 +931,7 @@ pub fn drive_read(app: AppHandle, rel_path: String) -> Result<Vec<u8>, AppError>
 
 #[tauri::command]
 pub fn drive_read_text(app: AppHandle, rel_path: String) -> Result<String, AppError> {
-    let bytes = drive_read(app, rel_path)?;
+    let bytes = read_bytes_capped(&app, &rel_path)?;
     String::from_utf8(bytes)
         .map_err(|e| AppError::Validation(format!("File is not valid UTF-8: {e}")))
 }
@@ -1209,14 +1195,16 @@ pub fn drive_move(
             dst_rel
         )));
     }
-    if let Some(parent) = dst.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    // Refuse to move a folder inside itself.
+    // Refuse to move a folder inside itself -- checked BEFORE creating the
+    // destination's parent directory tree, so a rejected in-itself move
+    // doesn't leave a stray empty-dir artifact behind.
     if src.is_dir() && dst.starts_with(&src) {
         return Err(AppError::Validation(
             "Cannot move a folder inside itself".into(),
         ));
+    }
+    if let Some(parent) = dst.parent() {
+        std::fs::create_dir_all(parent)?;
     }
     std::fs::rename(&src, &dst)?;
     let entry = build_entry(&root, &dst)?;
@@ -1253,16 +1241,19 @@ pub fn drive_copy(
             dst_rel
         )));
     }
+    let was_dir = src.is_dir();
+    // Refuse to copy a folder inside itself -- checked BEFORE creating the
+    // destination's parent directory tree, so a rejected in-itself copy
+    // doesn't leave a stray empty-dir artifact behind.
+    if was_dir && dst.starts_with(&src) {
+        return Err(AppError::Validation(
+            "Cannot copy a folder inside itself".into(),
+        ));
+    }
     if let Some(parent) = dst.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let was_dir = src.is_dir();
     if was_dir {
-        if dst.starts_with(&src) {
-            return Err(AppError::Validation(
-                "Cannot copy a folder inside itself".into(),
-            ));
-        }
         copy_dir_recursive(&src, &dst)?;
     } else {
         std::fs::copy(&src, &dst)?;
@@ -1318,7 +1309,7 @@ fn emit_added_for_subtree(app: &AppHandle, root: &Path, subtree_root: &Path, src
                 .file_name()
                 .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or_default();
-            if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+            if is_os_clutter(&name) {
                 continue;
             }
             let Ok(meta) = entry.metadata() else { continue };

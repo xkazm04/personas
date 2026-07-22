@@ -1,15 +1,16 @@
 import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
 import { SqlEditor } from '../SqlEditor';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { useQueryDebug } from '@/hooks/database/useQueryDebug';
 import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
+import { useDbQueryRunner } from '../hooks/useDbQueryRunner';
 import { ResultsTable } from './ResultsTable';
 import { QueryToolbar } from './QueryToolbar';
 import { MutationConfirmBanner } from './MutationConfirmBanner';
-import type { QueryResult } from '@/api/vault/database/dbSchema';
-import { extractErrorMessage } from '../safeModeUtils';
+import { toastCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface QueryEditorPaneProps {
   credentialId: string;
@@ -31,20 +32,21 @@ export function QueryEditorPane({
   onEditorChange,
 }: QueryEditorPaneProps) {
   const updateQuery = useVaultStore((s) => s.updateDbSavedQuery);
-  const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
-  const cancelDbQuery = useVaultStore((s) => s.cancelDbQuery);
-  const runningQueryId = useRef<string | null>(null);
+  const { t } = useTranslation();
+  const db = t.vault.databases;
 
-  const [executing, setExecuting] = useState(false);
-  const [result, setResult] = useState<QueryResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [terminalExpanded, setTerminalExpanded] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const queryDebug = useQueryDebug();
 
+  const { executing, result, error, setResult, setError, runQuery, cancelQuery } = useDbQueryRunner(
+    credentialId,
+    selectedId ?? undefined,
+  );
+
   useEffect(() => {
     if (queryDebug.result) { setResult(queryDebug.result); setError(null); }
-  }, [queryDebug.result]);
+  }, [queryDebug.result, setResult, setError]);
 
   useEffect(() => {
     if (queryDebug.correctedQuery) onEditorChange(queryDebug.correctedQuery);
@@ -57,30 +59,16 @@ export function QueryEditorPane({
       await updateQuery(selectedId, { queryText: editorValue });
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 1500);
-    } catch {
+    } catch (err) {
+      // Surface the failure — previously this silently reset the button to
+      // idle, which reads identically to a successful save and led users to
+      // believe an edit persisted when it didn't.
       setSaveState('idle');
+      toastCatch('QueryEditorPane:handleSave')(err);
     }
   }, [selectedId, editorValue, updateQuery, saveState]);
 
-  const runQuery = useCallback(async (text: string, allowMutation: boolean) => {
-    const queryId = crypto.randomUUID();
-    runningQueryId.current = queryId;
-    setExecuting(true); setError(null); setResult(null);
-    try {
-      const res = await executeDbQuery(credentialId, text, selectedId ?? undefined, allowMutation, queryId);
-      setResult(res);
-    } catch (err) {
-      setError(extractErrorMessage(err));
-    } finally {
-      if (runningQueryId.current === queryId) runningQueryId.current = null;
-      setExecuting(false);
-    }
-  }, [credentialId, executeDbQuery, selectedId]);
-
-  const handleCancel = useCallback(() => {
-    const queryId = runningQueryId.current;
-    if (queryId) void cancelDbQuery(queryId);
-  }, [cancelDbQuery]);
+  const handleCancel = cancelQuery;
 
   const { safeMode, setSafeMode, pendingMutation, guardedExecute, confirmMutation: handleConfirmMutation, cancelMutation: handleCancelMutation } = useQuerySafeMode(runQuery);
 
@@ -134,7 +122,8 @@ export function QueryEditorPane({
       {/* Mutation confirmation dialog */}
       {pendingMutation && (
         <MutationConfirmBanner
-          sql={pendingMutation}
+          pendingMutation={pendingMutation}
+          hint={db.modifies_data_hint_short}
           onConfirm={handleConfirmMutation}
           onCancel={handleCancelMutation}
         />

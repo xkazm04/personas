@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
@@ -178,6 +178,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   // we trigger a fresh fetch; the next render that includes the row will
   // re-fire this effect and open the modal. The focus is cleared once
   // the modal opens so the same id can't loop on remount.
+  const focusFetchAttemptedForRef = useRef<string | null>(null);
   useEffect(() => {
     if (!pendingExecutionFocus) return;
     const match = globalExecutions.find((e) => e.id === pendingExecutionFocus);
@@ -186,9 +187,20 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
       setPendingExecutionFocus(null);
       return;
     }
-    // Not loaded yet — kick a one-off fetch and let the next render handle it.
-    void fetchGlobalExecutions(true).catch(() => {});
-  }, [pendingExecutionFocus, globalExecutions, fetchGlobalExecutions, setPendingExecutionFocus]);
+    // Not loaded yet — kick ONE fetch and let the next render handle it.
+    // Without the attempt guard, an id that never appears (pruned row, or
+    // beyond the page cap) refetched in a tight loop: the store write makes
+    // a fresh globalExecutions reference, re-running this effect on a miss.
+    if (focusFetchAttemptedForRef.current === pendingExecutionFocus) {
+      // Second miss for the same id — the row isn't coming. Give up.
+      setPendingExecutionFocus(null);
+      return;
+    }
+    focusFetchAttemptedForRef.current = pendingExecutionFocus;
+    // Preserve the active status filter — the bare refetch also used to
+    // clobber the filtered list with unfiltered data.
+    void fetchGlobalExecutions(true, filter === 'all' ? undefined : filter).catch(() => {});
+  }, [pendingExecutionFocus, globalExecutions, fetchGlobalExecutions, setPendingExecutionFocus, filter]);
 
   const hasRunning = useMemo(
     () => globalExecutions.some((e) => e.status === 'running' || e.status === 'pending'),

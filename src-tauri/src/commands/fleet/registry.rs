@@ -655,45 +655,6 @@ impl FleetRegistry {
         }
     }
 
-    /// Cooked preview lines for several sessions at once — the data source for
-    /// the grid's *unwatched* tiles (the watched/active tile renders a real
-    /// terminal instead). Unknown sessions are skipped. One map lock + a brief
-    /// per-session ring lock; called at a low poll rate, so cheap even at 16
-    /// tiles. `max_lines` caps each entry.
-    /// Cooked previews for the requested sessions, change-gated: each request
-    /// carries the ring rev the caller last rendered (`None` = never seen).
-    /// A session whose ring rev still equals the known rev is OMITTED from
-    /// the result — its tile hasn't changed, so there's nothing to re-cook,
-    /// re-serialize, or re-render. Idle tiles thus cost ~one u32 compare per
-    /// poll instead of a 64 KiB ANSI cook.
-    pub fn preview_outputs(
-        &self,
-        requests: &[(String, Option<u32>)],
-        max_lines: usize,
-    ) -> Vec<(String, u32, Vec<String>)> {
-        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        requests
-            .iter()
-            .filter_map(|(id, known_rev)| {
-                let session = map.get(id)?;
-                let mut ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
-                let rev = ring.rev();
-                if *known_rev == Some(rev) {
-                    return None; // unchanged since the caller last looked
-                }
-                // Reconstruct the rendered screen (vt100) rather than line-cook,
-                // so an at-prompt tile shows the actual menu/prompt instead of the
-                // alt-screen fragments the cooker produced. Keep the bottom
-                // `max_lines` (the cursor/prompt region) for the glance tile.
-                let mut lines = ring.render_screen(session.rows, session.cols);
-                if lines.len() > max_lines {
-                    lines.drain(0..lines.len() - max_lines);
-                }
-                Some((id.clone(), rev, lines))
-            })
-            .collect()
-    }
-
     /// Reconstruct the rendered screen for one session (its `rev` + the visible
     /// grid as lines), using the session's stored PTY dims. `None` for an unknown
     /// session. The companion orchestration uses this to actually READ what a

@@ -54,6 +54,18 @@ export function useTeamDeliberations(teamId: string) {
   const [decisionBusy, setDecisionBusy] = useState(false);
   const [running, setRunning] = useState(false);
   const runningRef = useRef(false);
+  // Cooperative cancellation for the long-running loops. Without this,
+  // approveAction's reap loop kept polling every 2s for up to 20 minutes
+  // after the user navigated away (plus the post-loop refresh fan-out), and
+  // runToBudget/runAllTracks only stopped on teamId change, not on unmount.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      runningRef.current = false;
+    };
+  }, []);
 
   const refreshList = useCallback(async () => {
     try {
@@ -109,12 +121,15 @@ export function useTeamDeliberations(teamId: string) {
     const iv = setInterval(() => {
       // While a capability is running, reap it (posts output + resumes) instead
       // of a plain refresh, so the flow recovers even without the autonomous tick.
-      if (running) void pollDeliberationAction(selectedId).catch(() => {});
+      // Skip the reap here when approveAction's own imperative loop already owns
+      // it (actionBusy) — otherwise both loops call pollDeliberationAction for the
+      // same id concurrently.
+      if (running && !actionBusy) void pollDeliberationAction(selectedId).catch(() => {});
       void refreshDetail(selectedId);
       void refreshList();
     }, POLL_MS);
     return () => clearInterval(iv);
-  }, [selectedId, detail, refreshDetail, refreshList]);
+  }, [selectedId, detail, refreshDetail, refreshList, actionBusy]);
 
   const create = useCallback(
     async (topic: string, goal?: string, costBudgetUsd?: number) => {
@@ -189,14 +204,15 @@ export function useTeamDeliberations(teamId: string) {
         await refreshDetail(id);
         await refreshList();
         // Wait out the capability (each poll is a short call — no long invoke).
-        for (let i = 0; i < 600 && d.status === 'action_running'; i++) {
+        for (let i = 0; i < 600 && mountedRef.current && d.status === 'action_running'; i++) {
           await new Promise((r) => setTimeout(r, 2000));
           d = await pollDeliberationAction(id);
         }
+        if (!mountedRef.current) return;
         await refreshDetail(id);
         await refreshList();
         // Recovery: discuss the freshly-posted output.
-        if (d.status === 'open') {
+        if (d.status === 'open' && mountedRef.current) {
           await advanceTeamDeliberation(id);
           await refreshDetail(id);
           await refreshList();

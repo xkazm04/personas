@@ -1,4 +1,5 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import type { BlastRadiusItem } from "@/api/agents/personas";
 import type { PersonaAutomation } from "@/lib/bindings/PersonaAutomation";
 import type { AutomationRun } from "@/lib/bindings/AutomationRun";
 import type { CreateAutomationInput } from "@/lib/bindings/CreateAutomationInput";
@@ -37,7 +38,6 @@ export const updateAutomation = (id: string, input: UpdateAutomationInput) =>
 export const deleteAutomation = (id: string) =>
   invoke<boolean>("delete_automation", { id });
 
-import type { BlastRadiusItem } from "@/api/agents/personas";
 export const getAutomationBlastRadius = (id: string) =>
   invoke<BlastRadiusItem[]>("automation_blast_radius", { id });
 

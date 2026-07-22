@@ -68,6 +68,7 @@ import {
   type ProactiveDeliveryEvent,
 } from '@/api/companion';
 import type { SidebarSection } from '@/lib/types/types';
+import { COMPANION_NAV_ROUTES } from './companionRoutes';
 import { ApprovalCard } from './ApprovalCard';
 import { McpRequestPanel } from './mcp/McpRequestPanel';
 import { LiveOpsStrip } from './orchestration/LiveOpsStrip';
@@ -154,21 +155,7 @@ function daySeparatorLabel(iso: string, todayLabel: string, yesterdayLabel: stri
   });
 }
 
-// Mirrors the backend `ALLOWED_ROUTES` allow-list in
-// src-tauri/src/companion/dispatcher.rs. Defensive: backend already
-// filtered, but a stale frontend or future-protocol mismatch shouldn't
-// throw the sidebar into an unknown state.
-const VALID_NAV_ROUTES: SidebarSection[] = [
-  'home',
-  'overview',
-  'personas',
-  'events',
-  'credentials',
-  'design-reviews',
-  'plugins',
-  'schedules',
-  'settings',
-];
+// See companionRoutes.ts — single source of truth shared with useDecisionQueue.
 
 // After Athena navigates, briefly ring the destination's primary surface so the
 // user's eye lands on what she brought them to (proactive "look here" glow).
@@ -1237,7 +1224,7 @@ function Body(props: BodyProps) {
         useSystemStore.getState().setMonitorOpen(true);
         return;
       }
-      if (!VALID_NAV_ROUTES.includes(route as SidebarSection)) return;
+      if (!COMPANION_NAV_ROUTES.includes(route as SidebarSection)) return;
       useSystemStore.getState().setSidebarSection(route as SidebarSection);
       // Briefly ring the destination's primary surface (if one is mapped) so
       // the eye lands on what Athena navigated to. The flash tracker waits for

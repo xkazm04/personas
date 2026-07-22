@@ -260,5 +260,10 @@
   "stream_no_speakers": "কোনো বক্তা নেই",
   "stream_none": "কিছু না",
   "stream_search": "সম্প্রচার অনুসন্ধান করুন",
-  "stream_title": "স্ট্রিম"
+  "stream_title": "স্ট্রিম",
+  "columns_action_empty": "এখন আপনার কিছু করার নেই",
+  "columns_needs_attention": "মনোযোগ প্রয়োজন",
+  "columns_active_goals": "সক্রিয় লক্ষ্য",
+  "columns_no_team": "কোনো দল নেই",
+  "columns_all_clear": "সব ঠিক আছে"
 }

@@ -2,37 +2,43 @@ import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface MutationConfirmBannerProps {
-  /** The pending mutation SQL awaiting confirmation. */
-  sql: string;
+  /** The pending mutation query text (already known non-null by the caller). */
+  pendingMutation: string;
+  /** Hint copy — differs slightly between the Console tab and the saved-query editor. */
+  hint: string;
   onConfirm: () => void;
   onCancel: () => void;
-  /** Outer container classes (margins differ between editor and chat). */
+  /** Outer wrapper spacing — the two call sites use different vertical margins. */
   className?: string;
 }
 
+const DEFAULT_CLASS_NAME = 'mx-4 mb-3 p-3 rounded-modal bg-amber-500/8 border border-amber-500/20 space-y-2.5';
+
 /**
- * Shared "this query modifies data" confirmation banner.
- *
- * Presentational only — all safety logic lives in `useQuerySafeMode`. Rendered
- * identically by the SQL editor (QueryEditorPane) and the AI chat (ChatTab) so
- * the confirm affordance can never drift between the two surfaces.
+ * Confirmation banner shown when safe mode intercepts a mutating query
+ * (DELETE/UPDATE/INSERT/...). Shared by ChatTab, ConsoleTab, and
+ * QueryEditorPane — previously copy-pasted across them with only the hint
+ * text (and, for ChatTab, the prop name) differing.
  */
-export function MutationConfirmBanner({ sql, onConfirm, onCancel, className = 'mx-4 mt-2' }: MutationConfirmBannerProps) {
+export function MutationConfirmBanner({
+  pendingMutation,
+  hint,
+  onConfirm,
+  onCancel,
+  className,
+}: MutationConfirmBannerProps) {
   const { t } = useTranslation();
   const db = t.vault.databases;
 
   return (
-    <div
-      data-testid="db-mutation-confirm"
-      className={`${className} p-3 rounded-modal bg-amber-500/8 border border-amber-500/20 space-y-2.5`}
-    >
+    <div data-testid="db-mutation-confirm" className={className ?? DEFAULT_CLASS_NAME}>
       <div className="flex items-start gap-2">
         <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
         <div className="space-y-1 min-w-0">
           <p className="typo-body font-medium text-amber-300/90">{db.modifies_data}</p>
-          <p className="typo-body text-foreground">{db.modifies_data_hint_short}</p>
+          <p className="typo-body text-foreground">{hint}</p>
           <pre className="typo-code font-mono text-foreground bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-x-auto max-h-20 border border-primary/5">
-            {sql.length > 200 ? sql.slice(0, 200) + '...' : sql}
+            {pendingMutation.length > 200 ? pendingMutation.slice(0, 200) + '...' : pendingMutation}
           </pre>
         </div>
       </div>

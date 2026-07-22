@@ -295,7 +295,8 @@
     "query_parameters": "Parametry dotazu",
     "recipes_title": "Uložené recepty",
     "truncated_warning": "Odpověď byla pro zobrazení zkrácena",
-    "value_col": "Hodnota"
+    "value_col": "Hodnota",
+    "request_headers": "Hlavičky"
   },
   "ingest": {
     "save_name": "Uložit název",
@@ -422,7 +423,8 @@
     "capability_key_value": "Klíč-hodnota",
     "capability_key_value_hint": "Toto je úložiště typu klíč-hodnota. Používejte klíčové příkazy jako SCAN, GET a TYPE — ne SQL.",
     "capability_select_subset": "Jen SELECT",
-    "capability_select_subset_hint": "Zde běží pouze jednoduché dotazy SELECT nad jednou tabulkou — filtrování pomocí WHERE, řazení pomocí ORDER BY, omezení pomocí LIMIT. JOINy, agregace, CTE a zápisy nejsou podporovány."
+    "capability_select_subset_hint": "Zde běží pouze jednoduché dotazy SELECT nad jednou tabulkou — filtrování pomocí WHERE, řazení pomocí ORDER BY, omezení pomocí LIMIT. JOINy, agregace, CTE a zápisy nejsou podporovány.",
+    "query_timeout": "Vypršel časový limit čekání na odpověď. Zkuste to prosím znovu."
   },
   "dependencies": {
     "simulate_revocation": "Simulovat zneplatnění",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "Co se skenuje",
     "read_error_item": "Nepodařilo se přečíst {source}",
     "read_errors_title": "Některé zdroje se nepodařilo přečíst",
-    "select_high_confidence": "Vysoká spolehlivost"
+    "select_high_confidence": "Vysoká spolehlivost",
+    "source_unknown": "Neznámý zdroj"
   },
   "desktop_discovery": {
     "title": "Desktopové aplikace",

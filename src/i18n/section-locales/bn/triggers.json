@@ -592,7 +592,8 @@
     "event_type_required": "শোনার জন্য ইভেন্ট টাইপ আবশ্যক।",
     "watch_path_required": "অন্তত একটি ওয়াচ পাথ আবশ্যক।",
     "composite_min_conditions": "সম্মিলিত ট্রিগারে অন্তত ২টি শর্ত প্রয়োজন।",
-    "composite_window_minimum": "সময় উইন্ডো অন্তত ৫ সেকেন্ড হতে হবে।"
+    "composite_window_minimum": "সময় উইন্ডো অন্তত ৫ সেকেন্ড হতে হবে।",
+    "endpoint_required": "এন্ডপয়েন্ট URL বা ইভেন্ট প্রয়োজন।"
   },
   "dead_letter_select_all": "নির্বাচন করুন all",
   "dead_letter_select_visible": "নির্বাচন করুন visible",
@@ -797,5 +798,7 @@
     "watch": "ওয়াচ",
     "watching": "ওয়াচ করা হচ্ছে",
     "watching_only": "শুধু ওয়াচ করা"
-  }
+  },
+  "overdue_label": "বকেয়া",
+  "relay_delete_failed": "রিলে মুছতে ব্যর্থ হয়েছে — অনুগ্রহ করে আবার চেষ্টা করুন"
 }

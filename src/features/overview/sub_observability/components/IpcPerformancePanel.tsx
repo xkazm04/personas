@@ -13,6 +13,7 @@ import { latencyToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens'
 import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 
 function useIpcSnapshot() {
@@ -52,12 +53,7 @@ function LatencyBar({ value, max }: { value: number; max: number }) {
 }
 
 function ageLabel(timestamp: number): string {
-  const age = Date.now() - timestamp;
-  return age < 60_000
-    ? `${Math.floor(age / 1000)}s ago`
-    : age < 3_600_000
-      ? `${Math.floor(age / 60_000)}m ago`
-      : `${Math.floor(age / 3_600_000)}h ago`;
+  return formatRelativeTime(new Date(timestamp).toISOString());
 }
 
 type Tab = 'commands' | 'slowest';

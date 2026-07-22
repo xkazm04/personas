@@ -5,6 +5,7 @@ import type { DriveEntry, DriveTreeNode } from "@/api/drive";
 import { driveFormatBytes, driveList, driveParentPath } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult } from "../hooks/useDrive";
+import { parseDriveMovePayload } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatRelativeTime, visualForEntry } from "../designTokens";
 import { useScrollShadows } from "../hooks/useScrollShadows";
@@ -407,20 +408,12 @@ function TreeNode({
       e.preventDefault();
       e.stopPropagation();
       setDropActive(false);
-      const raw = e.dataTransfer.getData("application/x-drive-move");
-      if (!raw) return;
+      const paths = parseDriveMovePayload(e);
+      if (!paths) return;
       try {
-        const { paths } = JSON.parse(raw) as { paths: string[] };
-        for (const p of paths) {
-          if (p === node.path) continue;
-          // Refuse moving an ancestor folder into its own descendant — it
-          // would orphan the subtree. The backend would also reject, but
-          // catching here avoids the toast on a predictable mis-drop.
-          if (node.path !== "" && node.path.startsWith(`${p}/`)) continue;
-          const name = p.split("/").pop() ?? p;
-          const dst = node.path ? `${node.path}/${name}` : name;
-          await drive.move(p, dst);
-        }
+        // Shared self-skip + ancestor-guard + single-refresh bulk move —
+        // see useDrive.moveManyInto.
+        await drive.moveManyInto(paths, node.path);
         // Expand the destination after a successful drop so the user can
         // see where their files landed without re-clicking.
         if (hasChildren && !expanded) setExpanded(true);

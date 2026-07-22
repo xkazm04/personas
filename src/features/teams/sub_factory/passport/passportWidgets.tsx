@@ -137,27 +137,6 @@ export function GapMark({ label = 'Absent' }: { label?: string }) {
   );
 }
 
-/** A tiny inline trend line — normalises the series to its own min/max so even
- *  small readiness moves are visible. Renders nothing below two points. */
-export function Sparkline({ values, width = 42, height = 12, color }: { values: number[]; width?: number; height?: number; color?: string }) {
-  if (values.length < 2) return null;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const pts = values
-    .map((v, i) => {
-      const x = (i / (values.length - 1)) * width;
-      const y = height - ((v - min) / range) * (height - 2) - 1;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden className="overflow-visible">
-      <polyline points={pts} fill="none" stroke={color ?? 'currentColor'} strokeWidth={1.25} strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 /** A named token chip (language, framework, integration vendor). */
 export function Chip({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'accent' }) {
   return (

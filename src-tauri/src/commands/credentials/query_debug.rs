@@ -294,12 +294,10 @@ async fn run_query_debug(params: RunParams) {
         &format!("> Analyzing query for {connector_family} ({service_type})..."),
     );
 
-    // Build CLI args (no persona, default provider)
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-6".to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
+    // Build CLI args (no persona, default provider, fast model, single turn --
+    // shared scaffold; kept as a value here since the retry loop's fresh-prompt
+    // branch reuses it).
+    let cli_args = ai_helpers::build_single_turn_cli_args();
 
     let app_clone = app.clone();
     let debug_id_clone = debug_id.clone();
@@ -308,11 +306,10 @@ async fn run_query_debug(params: RunParams) {
     };
 
     // Run the initial prompt
-    let cli_result =
-        run_claude_prompt_text_inner(prompt, &cli_args, Some(&on_line), None, None, 120).await;
+    let cli_result = ai_helpers::run_single_turn_prompt(prompt, Some(&on_line)).await;
 
     let (mut output, mut session_id) = match cli_result {
-        Ok((text, sid, _)) => (text, sid),
+        Ok((text, sid)) => (text, sid),
         Err(e) => {
             tracing::warn!(debug_id = %debug_id, "Claude CLI failed: {}", e);
             emit_line(

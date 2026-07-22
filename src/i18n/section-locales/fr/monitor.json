@@ -260,5 +260,10 @@
   "stream_no_speakers": "Aucun intervenant",
   "stream_none": "Aucun",
   "stream_search": "Rechercher des transmissions",
-  "stream_title": "Flux"
+  "stream_title": "Flux",
+  "columns_action_empty": "Rien ne nécessite votre attention pour le moment",
+  "columns_needs_attention": "Nécessite une attention",
+  "columns_active_goals": "Objectifs actifs",
+  "columns_no_team": "Sans équipe",
+  "columns_all_clear": "Tout est en ordre"
 }

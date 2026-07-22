@@ -523,7 +523,8 @@
     "active_chains_hops_other": "{count} ホップ",
     "active_chains_one": "実行中のチェーン {count} 件",
     "active_chains_other": "実行中のチェーン {count} 件",
-    "active_chains_title": "実行中のチェーン"
+    "active_chains_title": "実行中のチェーン",
+    "copy_log_failed": "ログをクリップボードにコピーできませんでした"
   },
   "lab": {
     "mode_arena": "アリーナ",
@@ -1093,21 +1094,6 @@
     "ct_graph_view": "依存グラフ",
     "ct_swap_alt_tooltip": "代替コネクタに切り替え",
     "ct_deps": "{count} 依存",
-    "dg_no_deps": "表示する依存関係なし。",
-    "dg_broken": "{count} 件壊れています",
-    "dg_blast_radius": "影響範囲",
-    "dg_dependencies": "依存関係",
-    "dg_select_cred": "認証情報を選択して有効期限切れ時の影響を確認",
-    "dg_relationships": "関係 ({count})",
-    "dg_more": "+{count} 件",
-    "dg_affected_tools": "影響を受けるツール",
-    "dg_affected_auto": "影響を受けるオートメーション",
-    "dg_low_risk": "低リスク",
-    "dg_medium_risk": "中リスク",
-    "dg_high_risk": "高リスク",
-    "dg_high_blast": "この認証情報が無効になると {count} 件の機能が壊れます。",
-    "dg_medium_blast": "{count} 件の機能がこの認証情報に依存しています。",
-    "dg_low_blast": "この認証情報に依存するツールまたはオートメーションなし。",
     "dm_needed": "{count} 件の認証情報が必要",
     "dm_fulfilled": "{fulfilled}/{total} 件のコネクタが充足",
     "dm_reuse_hint": "{count} 件は既存の認証情報を再利用可能",
@@ -1122,13 +1108,6 @@
     "sub_triggers_title": "トリガーとサブスクリプション",
     "sub_suggested": "{count} 件の推奨",
     "sub_filter": "フィルター: {filter}",
-    "lifecycle_error_load_triggers": "トリガーの読み込みに失敗しました: {error}",
-    "lifecycle_error_load_subscriptions": "サブスクリプションの読み込みに失敗しました: {error}",
-    "lifecycle_error_activate_trigger": "トリガーの有効化に失敗しました",
-    "lifecycle_error_activate_subscription": "サブスクリプションの有効化に失敗しました",
-    "lifecycle_error_retire_trigger": "トリガーの削除に失敗しました",
-    "lifecycle_error_retire_subscription": "サブスクリプションの削除に失敗しました",
-    "lifecycle_error_delete_persists": "削除に失敗しました。サブスクリプションが残っている可能性があります。",
     "auto_error_deploy_check_credentials": "デプロイに失敗しました。プラットフォームの認証情報を確認し、もう一度お試しください。",
     "auto_error_deploy_generic": "オートメーションのデプロイに失敗しました",
     "test_healthcheck_failed_default": "ヘルスチェックに失敗しました",
@@ -1730,7 +1709,8 @@
     "annotation_empty": "まだ注釈はありません — タグ、メモ、スターを付けておくと後で見つけやすくなります。",
     "col_verdict": "評価",
     "verdict_none": "Directorによる審査はまだありません",
-    "verdict_tooltip": "Director の評価: {score}/5"
+    "verdict_tooltip": "Director の評価: {score}/5",
+    "annotation_saving": "保存中…"
   },
   "settings_status": {
     "saving": "{sections} を保存中...",
@@ -2809,5 +2789,21 @@
       "other": "その他"
     },
     "title": "変更履歴"
-  }
+  },
+  "sigil_edit_channels_label": "チャンネル",
+  "sigil_edit_custom_connector": "カスタムコネクタ — 一致するブランドアイコンがありません。",
+  "sigil_edit_error_off": "デフォルトのエラーポリシーにフォールバックします。",
+  "sigil_edit_error_on": "カスタムのエラー処理ポリシーが設定されています。",
+  "sigil_edit_event_off": "イベント購読は設定されていません。",
+  "sigil_edit_event_on": "このケイパビリティはイベントを購読しています。",
+  "sigil_edit_memory_off": "メモリはオフです — このケイパビリティはステートレスに動作します。",
+  "sigil_edit_memory_on": "このケイパビリティでは永続メモリが有効です。",
+  "sigil_edit_no_channels": "このケイパビリティに通知チャンネルはありません。",
+  "sigil_edit_no_connector": "このケイパビリティはコネクタを宣言していません。",
+  "sigil_edit_no_dim_editor": "このディメンションにはまだエディタが接続されていません。",
+  "sigil_edit_no_trigger": "このケイパビリティにトリガーは設定されていません。",
+  "sigil_edit_review_off": "人によるレビューゲートはありません — アクションは自律的に実行されます。",
+  "sigil_edit_review_on": "このケイパビリティが動作する前に人によるレビューが必要です。",
+  "sigil_edit_service_label": "サービス: {key}",
+  "sigil_edit_when_label": "条件"
 }

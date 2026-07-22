@@ -8,10 +8,14 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import Sidebar from '@/features/shared/chrome/sidebar/Sidebar';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
+// Deep import, NOT the sub_canvas barrel: the barrel re-exports the whole
+// canvas module graph (incl. @xyflow/react runtime via edges/nodes), which
+// dragged the entire feature into this eagerly-loaded page's chunk. The
+// context file itself has zero heavy deps.
+import { CanvasDragProvider } from '@/features/teams/sub_canvas/libs/CanvasDragContext';
 import { CredentialNavProvider } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
-import { CanvasDragProvider } from '@/features/teams/sub_canvas';
 import DesktopFooter from '@/features/shared/chrome/DesktopFooter';
 import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
 import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';

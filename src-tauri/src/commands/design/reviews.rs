@@ -325,6 +325,7 @@ pub async fn start_design_review_run(
                         input.suggested_adjustment = Some(
                             "Claude asked a clarification question instead of generating. Re-run with a more specific instruction.".into()
                         );
+                        failed_count += 1;
                         if let Err(e) = repo::create_review(&pool, &input) {
                             tracing::error!(
                                 test_case = %test_case_name,
@@ -1562,8 +1563,9 @@ pub fn add_review_message(
 }
 
 // -- Dev Seed: create a mock manual review --------------------
-// pending: consumed by `seed_mock_manual_review` (also unwired in
-// invoke_handler); the cascade flags the constants as unused.
+// pending: consumed by the debug-only body of `seed_mock_manual_review`,
+// which IS registered in invoke_handler; `#[allow(dead_code)]` only covers
+// the release build, where that body is compiled out.
 
 #[allow(dead_code)]
 const MOCK_TITLES: &[&str] = &[

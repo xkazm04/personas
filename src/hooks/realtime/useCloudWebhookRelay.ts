@@ -1,20 +1,15 @@
 import { useState } from 'react';
 import { EventName } from '@/lib/eventRegistry';
 import { createSingletonListener } from './createSingletonListener';
+import type { CloudWebhookRelayStatus } from '@/lib/bindings/CloudWebhookRelayStatus';
 
-export interface CloudWebhookRelayStatus {
-  connected: boolean;
-  last_poll_at: string | null;
-  active_webhook_triggers: number;
-  total_relayed: number;
-  error: string | null;
-}
+export type { CloudWebhookRelayStatus } from '@/lib/bindings/CloudWebhookRelayStatus';
 
 const DEFAULT_STATUS: CloudWebhookRelayStatus = {
   connected: false,
-  last_poll_at: null,
-  active_webhook_triggers: 0,
-  total_relayed: 0,
+  lastPollAt: null,
+  activeWebhookTriggers: 0,
+  totalRelayed: 0n,
   error: null,
 };
 

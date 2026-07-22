@@ -295,7 +295,8 @@
     "query_parameters": "Параметры запроса",
     "recipes_title": "Сохранённые рецепты",
     "truncated_warning": "Ответ усечён для отображения",
-    "value_col": "Значение"
+    "value_col": "Значение",
+    "request_headers": "Заголовки"
   },
   "ingest": {
     "save_name": "Сохранить название",
@@ -422,7 +423,8 @@
     "capability_key_value": "Ключ-значение",
     "capability_key_value_hint": "Это хранилище «ключ-значение». Используйте команды ключей, такие как SCAN, GET и TYPE, а не SQL.",
     "capability_select_subset": "Только SELECT",
-    "capability_select_subset_hint": "Здесь выполняются только простые запросы SELECT к одной таблице — фильтрация через WHERE, сортировка через ORDER BY, ограничение через LIMIT. JOIN, агрегаты, CTE и запись не поддерживаются."
+    "capability_select_subset_hint": "Здесь выполняются только простые запросы SELECT к одной таблице — фильтрация через WHERE, сортировка через ORDER BY, ограничение через LIMIT. JOIN, агрегаты, CTE и запись не поддерживаются.",
+    "query_timeout": "Истекло время ожидания ответа. Попробуйте ещё раз."
   },
   "dependencies": {
     "simulate_revocation": "Симулировать отзыв",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "Что сканируется",
     "read_error_item": "Не удалось прочитать {source}",
     "read_errors_title": "Некоторые источники не удалось прочитать",
-    "select_high_confidence": "Высокая достоверность"
+    "select_high_confidence": "Высокая достоверность",
+    "source_unknown": "Неизвестный источник"
   },
   "desktop_discovery": {
     "title": "Десктопные приложения",

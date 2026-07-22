@@ -523,7 +523,8 @@
     "active_chains_hops_other": "홉 {count}회",
     "active_chains_one": "실행 중인 체인 {count}개",
     "active_chains_other": "실행 중인 체인 {count}개",
-    "active_chains_title": "실행 중인 체인"
+    "active_chains_title": "실행 중인 체인",
+    "copy_log_failed": "로그를 클립보드에 복사하지 못했습니다"
   },
   "lab": {
     "mode_arena": "아레나",
@@ -1093,21 +1094,6 @@
     "ct_graph_view": "의존성 그래프",
     "ct_swap_alt_tooltip": "대안 커넥터로 교체",
     "ct_deps": "{count}개 의존성",
-    "dg_no_deps": "표시할 의존성 없음.",
-    "dg_broken": "{count}개 손상",
-    "dg_blast_radius": "폭발 반경",
-    "dg_dependencies": "의존성",
-    "dg_select_cred": "자격 증명이 만료될 때 무엇이 손상되는지 보려면 선택하세요",
-    "dg_relationships": "관계 ({count})",
-    "dg_more": "+{count}개 더",
-    "dg_affected_tools": "영향받는 도구",
-    "dg_affected_auto": "영향받는 자동화",
-    "dg_low_risk": "낮은 위험",
-    "dg_medium_risk": "중간 위험",
-    "dg_high_risk": "높은 위험",
-    "dg_high_blast": "이 자격 증명이 만료되거나 오프라인이 되면 {count}개 기능이 손상됩니다.",
-    "dg_medium_blast": "{count}개 기능이 이 자격 증명에 의존합니다.",
-    "dg_low_blast": "이 자격 증명에 의존하는 도구나 자동화가 없습니다.",
     "dm_needed": "{count}개 자격 증명 필요",
     "dm_fulfilled": "{fulfilled}/{total}개 커넥터 충족",
     "dm_reuse_hint": "{count}개는 기존 자격 증명 재사용 가능",
@@ -1122,13 +1108,6 @@
     "sub_triggers_title": "트리거 & 구독",
     "sub_suggested": "{count}개 제안됨",
     "sub_filter": "필터: {filter}",
-    "lifecycle_error_load_triggers": "트리거를 불러오지 못했습니다: {error}",
-    "lifecycle_error_load_subscriptions": "구독 정보를 불러오지 못했습니다: {error}",
-    "lifecycle_error_activate_trigger": "트리거를 활성화하지 못했습니다",
-    "lifecycle_error_activate_subscription": "구독을 활성화하지 못했습니다",
-    "lifecycle_error_retire_trigger": "트리거를 삭제하지 못했습니다",
-    "lifecycle_error_retire_subscription": "구독을 삭제하지 못했습니다",
-    "lifecycle_error_delete_persists": "삭제하지 못했습니다. 구독이 아직 남아 있을 수 있습니다.",
     "auto_error_deploy_check_credentials": "배포에 실패했습니다. 플랫폼 자격 증명을 확인한 후 다시 시도하세요.",
     "auto_error_deploy_generic": "자동화 배포에 실패했습니다",
     "test_healthcheck_failed_default": "상태 확인에 실패했습니다",
@@ -1730,7 +1709,8 @@
     "annotation_empty": "아직 주석이 없습니다 — 나중에 쉽게 찾을 수 있도록 이 실행에 태그, 메모를 추가하거나 즐겨찾기하세요.",
     "col_verdict": "평결",
     "verdict_none": "Director가 아직 검토하지 않았습니다",
-    "verdict_tooltip": "Director 평결: {score}/5"
+    "verdict_tooltip": "Director 평결: {score}/5",
+    "annotation_saving": "저장 중…"
   },
   "settings_status": {
     "saving": "{sections} 저장 중...",
@@ -2809,5 +2789,21 @@
       "other": "기타"
     },
     "title": "변경 이력"
-  }
+  },
+  "sigil_edit_channels_label": "채널",
+  "sigil_edit_custom_connector": "커스텀 커넥터 — 일치하는 브랜드 아이콘이 없습니다.",
+  "sigil_edit_error_off": "기본 오류 정책을 따릅니다.",
+  "sigil_edit_error_on": "커스텀 오류 처리 정책이 설정되어 있습니다.",
+  "sigil_edit_event_off": "구성된 이벤트 구독이 없습니다.",
+  "sigil_edit_event_on": "이 기능은 이벤트를 구독합니다.",
+  "sigil_edit_memory_off": "메모리가 꺼져 있습니다 — 이 기능은 상태 없이 실행됩니다.",
+  "sigil_edit_memory_on": "이 기능에는 영구 메모리가 켜져 있습니다.",
+  "sigil_edit_no_channels": "이 기능에 설정된 알림 채널이 없습니다.",
+  "sigil_edit_no_connector": "이 기능은 커넥터를 지정하지 않았습니다.",
+  "sigil_edit_no_dim_editor": "이 항목에 연결된 편집기가 아직 없습니다.",
+  "sigil_edit_no_trigger": "이 기능에 설정된 트리거가 없습니다.",
+  "sigil_edit_review_off": "사람 검토 절차 없이 자율적으로 작동합니다.",
+  "sigil_edit_review_on": "이 기능이 작동하려면 사람의 검토가 필요합니다.",
+  "sigil_edit_service_label": "서비스: {key}",
+  "sigil_edit_when_label": "실행 조건"
 }

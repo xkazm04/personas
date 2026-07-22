@@ -592,7 +592,8 @@
     "event_type_required": "リッスンするイベントタイプは必須です。",
     "watch_path_required": "監視パスを少なくとも1つ指定してください。",
     "composite_min_conditions": "コンポジットトリガーには少なくとも2つの条件が必要です。",
-    "composite_window_minimum": "時間枠は5秒以上にする必要があります。"
+    "composite_window_minimum": "時間枠は5秒以上にする必要があります。",
+    "endpoint_required": "エンドポイントURLまたはイベントが必要です。"
   },
   "dead_letter_select_all": "選択 all",
   "dead_letter_select_visible": "選択 visible",
@@ -797,5 +798,7 @@
     "watch": "ウォッチ",
     "watching": "ウォッチ中",
     "watching_only": "ウォッチ中のみ"
-  }
+  },
+  "overdue_label": "期限超過",
+  "relay_delete_failed": "リレーの削除に失敗しました — もう一度お試しください"
 }

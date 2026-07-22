@@ -321,34 +321,111 @@ pub fn update_project(
 
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-        push_field!(name, "name", sets, param_idx);
-        push_field!(description, "description", sets, param_idx);
-        push_field!(status, "status", sets, param_idx);
-        push_field!(tech_stack, "tech_stack", sets, param_idx);
-        push_field!(github_url, "github_url", sets, param_idx);
-        push_field!(
-            monitoring_credential_id,
+        push_field_param!(
+            name.map(|s| s.to_string()),
+            "name",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            description.map(|o| o.map(|s| s.to_string())),
+            "description",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            status.map(|s| s.to_string()),
+            "status",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            tech_stack.map(|o| o.map(|s| s.to_string())),
+            "tech_stack",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            github_url.map(|o| o.map(|s| s.to_string())),
+            "github_url",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            monitoring_credential_id.map(|o| o.map(|s| s.to_string())),
             "monitoring_credential_id",
             sets,
-            param_idx
+            param_idx,
+            param_values,
+            clone
         );
-        push_field!(
-            monitoring_project_slug,
+        push_field_param!(
+            monitoring_project_slug.map(|o| o.map(|s| s.to_string())),
             "monitoring_project_slug",
             sets,
-            param_idx
+            param_idx,
+            param_values,
+            clone
         );
-        push_field!(team_id, "team_id", sets, param_idx);
-        push_field!(pr_credential_id, "pr_credential_id", sets, param_idx);
-        push_field!(test_env_url, "test_env_url", sets, param_idx);
-        push_field!(test_env_branch, "test_env_branch", sets, param_idx);
-        push_field!(main_branch, "main_branch", sets, param_idx);
-        push_field!(
-            llm_tracking_credential_id,
+        push_field_param!(
+            team_id.map(|o| o.map(|s| s.to_string())),
+            "team_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            pr_credential_id.map(|o| o.map(|s| s.to_string())),
+            "pr_credential_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            test_env_url.map(|o| o.map(|s| s.to_string())),
+            "test_env_url",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            test_env_branch.map(|o| o.map(|s| s.to_string())),
+            "test_env_branch",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            main_branch.map(|o| o.map(|s| s.to_string())),
+            "main_branch",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            llm_tracking_credential_id.map(|o| o.map(|s| s.to_string())),
             "llm_tracking_credential_id",
             sets,
-            param_idx
+            param_idx,
+            param_values,
+            clone
         );
 
         let sql = format!(
@@ -357,46 +434,6 @@ pub fn update_project(
             param_idx
         );
 
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-        if let Some(v) = name {
-            param_values.push(Box::new(v.to_string()));
-        }
-        if let Some(v) = description {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = status {
-            param_values.push(Box::new(v.to_string()));
-        }
-        if let Some(v) = tech_stack {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = github_url {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = monitoring_credential_id {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = monitoring_project_slug {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = team_id {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = pr_credential_id {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = test_env_url {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = test_env_branch {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = main_branch {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = llm_tracking_credential_id {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
         param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
@@ -652,16 +689,73 @@ pub fn update_goal(
 
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-        push_field!(title, "title", sets, param_idx);
-        push_field!(description, "description", sets, param_idx);
-        push_field!(status, "status", sets, param_idx);
-        push_field!(progress, "progress", sets, param_idx);
-        push_field!(target_date, "target_date", sets, param_idx);
-        push_field!(context_id, "context_id", sets, param_idx);
-        push_field!(started_at, "started_at", sets, param_idx);
-        push_field!(completed_at, "completed_at", sets, param_idx);
-        push_field!(kpi_id, "kpi_id", sets, param_idx);
+        push_field_param!(
+            title.map(|s| s.to_string()),
+            "title",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            description.map(|o| o.map(|s| s.to_string())),
+            "description",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            status.map(|s| s.to_string()),
+            "status",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(progress, "progress", sets, param_idx, param_values, copy);
+        push_field_param!(
+            target_date.map(|o| o.map(|s| s.to_string())),
+            "target_date",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            context_id.map(|o| o.map(|s| s.to_string())),
+            "context_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            started_at.map(|o| o.map(|s| s.to_string())),
+            "started_at",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            completed_at.map(|o| o.map(|s| s.to_string())),
+            "completed_at",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            kpi_id.map(|o| o.map(|s| s.to_string())),
+            "kpi_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
 
         let sql = format!(
             "UPDATE dev_goals SET {} WHERE id = ?{}",
@@ -669,34 +763,6 @@ pub fn update_goal(
             param_idx
         );
 
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-        if let Some(v) = title {
-            param_values.push(Box::new(v.to_string()));
-        }
-        if let Some(v) = description {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = status {
-            param_values.push(Box::new(v.to_string()));
-        }
-        if let Some(v) = progress {
-            param_values.push(Box::new(v));
-        }
-        if let Some(v) = target_date {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = context_id {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = started_at {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = completed_at {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = kpi_id {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
         param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
@@ -1243,7 +1309,7 @@ pub fn portfolio_summary(pool: &DbPool) -> Result<PortfolioSummary, AppError> {
     let projects = list_projects(pool, None)?;
     let goals = list_all_goals(pool)?;
     let now = chrono::Utc::now();
-    let now_s = now.to_rfc3339();
+    let today_date = now.date_naive();
     let stale_before = (now - chrono::Duration::days(7)).to_rfc3339();
 
     // Accumulator per project, seeded so projects with zero goals still appear.
@@ -1289,7 +1355,18 @@ pub fn portfolio_summary(pool: &DbPool) -> Result<PortfolioSummary, AppError> {
             _ => a.open += 1,
         }
         if goal_status_is_ongoing(&g.status) {
-            let overdue = g.target_date.as_deref().is_some_and(|d| d < now_s.as_str());
+            // `target_date` is an opaque caller-supplied string -- commonly a
+            // date-only "2026-07-10" from a date picker, but a lexicographic
+            // compare against a full RFC3339 `now_s` flags "due today" as
+            // already overdue from 00:00 (refactor-bughunt-2026-07-10 repos#5).
+            // Compare on the date portion only (the first 10 chars of either
+            // shape are always YYYY-MM-DD) against today's date.
+            let overdue = g.target_date.as_deref().is_some_and(|d| {
+                let date_part = d.get(0..10).unwrap_or(d);
+                chrono::NaiveDate::parse_from_str(date_part, "%Y-%m-%d")
+                    .map(|target| target < today_date)
+                    .unwrap_or(false)
+            });
             if overdue {
                 a.overdue += 1;
             } else if g.updated_at.as_str() < stale_before.as_str() {

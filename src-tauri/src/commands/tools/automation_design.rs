@@ -159,11 +159,29 @@ fn extract_automation_design_result(text: &str) -> Option<serde_json::Value> {
         }
     }
 
-    // Look for JSON between curly braces (skip markdown fences)
+    // Look for JSON between curly braces (skip markdown fences). Tracks
+    // in-string / escape state so a brace inside a quoted string value (e.g. a
+    // regex `"^\\{"` or a text field mentioning `{`) doesn't shift the depth
+    // count — see refactor-bughunt-2026-07-10/tauri-commands-misc-2.md #3.
     let mut depth = 0i32;
     let mut start = None;
+    let mut in_string = false;
+    let mut escaped = false;
     for (i, ch) in trimmed.char_indices() {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            continue;
+        }
         match ch {
+            '"' => {
+                in_string = true;
+            }
             '{' => {
                 if depth == 0 {
                     start = Some(i);

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { createPortal } from 'react-dom';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FolderGit2, FolderInput, ListChecks, Plus, X } from 'lucide-react';
@@ -21,7 +22,38 @@ export default function StudioTabBar({
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const tabOrder = useStudioStore((s) => s.tabOrder);
-  const runtimes = useStudioStore((s) => s.runtimes);
+  // Perf: the strip only needs each tab's name + status-dot class. Selecting the
+  // whole `runtimes` map re-rendered the strip on every CLI stream delta (each
+  // delta replaces a runtime object); string-valued records keep the shallow
+  // compare stable until a name/phase/busy state actually changes.
+  const tabNames = useStudioStore(
+    useShallow((s) => {
+      const out: Record<string, string> = {};
+      for (const id of s.tabOrder) {
+        const rt = s.runtimes[id];
+        if (rt) out[id] = rt.name;
+      }
+      return out;
+    }),
+  );
+  const tabDots = useStudioStore(
+    useShallow((s) => {
+      const out: Record<string, string> = {};
+      for (const id of s.tabOrder) {
+        const rt = s.runtimes[id];
+        if (!rt) continue;
+        out[id] =
+          rt.autonomous || rt.busy
+            ? 'bg-primary animate-pulse'
+            : rt.phase === 'live'
+              ? 'bg-status-success'
+              : rt.phase === 'error'
+                ? 'bg-status-error'
+                : 'bg-foreground/30';
+      }
+      return out;
+    }),
+  );
   const activeId = useStudioStore((s) => s.activeId);
   const setActive = useStudioStore((s) => s.setActive);
   const closeTab = useStudioStore((s) => s.closeTab);
@@ -91,17 +123,10 @@ export default function StudioTabBar({
   return (
     <header className="relative flex w-full min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border px-3 py-1.5">
       {tabOrder.map((id) => {
-        const rt = runtimes[id];
-        if (!rt) return null;
+        const name = tabNames[id];
+        const dot = tabDots[id];
+        if (name === undefined || dot === undefined) return null;
         const active = activeId === id;
-        const dot =
-          rt.autonomous || rt.busy
-            ? 'bg-primary animate-pulse'
-            : rt.phase === 'live'
-              ? 'bg-status-success'
-              : rt.phase === 'error'
-                ? 'bg-status-error'
-                : 'bg-foreground/30';
         return (
           <div
             key={id}
@@ -118,12 +143,12 @@ export default function StudioTabBar({
               }`}
             >
               <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
-              <span className="max-w-[10rem] truncate">{rt.name}</span>
+              <span className="max-w-[10rem] truncate">{name}</span>
             </button>
             <button
               type="button"
               onClick={() => closeTab(id)}
-              aria-label={`Close ${rt.name}`}
+              aria-label={`Close ${name}`}
               className="mr-1 shrink-0 rounded-interactive p-0.5 text-foreground/40 opacity-0 hover:text-foreground group-hover:opacity-100"
             >
               <X className="h-3 w-3" />

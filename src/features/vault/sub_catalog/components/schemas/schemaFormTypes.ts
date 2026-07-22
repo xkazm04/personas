@@ -65,6 +65,19 @@ export function buildEnvMap(extras: Record<string, unknown>): Record<string, str
   return map;
 }
 
+/**
+ * base64-encode an arbitrary UTF-8 string. `btoa` only accepts Latin1 and
+ * throws `InvalidCharacterError` on accented letters, emoji, or any
+ * non-Latin1 codepoint — which real credential values (username/password)
+ * are not guaranteed to avoid.
+ */
+function utf8ToBase64(input: string): string {
+  const bytes = new TextEncoder().encode(input);
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
 export function buildCustomHealthcheck(
   template: string,
   values: Record<string, string>,
@@ -84,7 +97,7 @@ export function buildCustomHealthcheck(
     case 'basic': {
       const u = values.username ?? '';
       const p = values.password ?? '';
-      headers['Authorization'] = `Basic ${btoa(`${u}:${p}`)}`;
+      headers['Authorization'] = `Basic ${utf8ToBase64(`${u}:${p}`)}`;
       break;
     }
     case 'custom-headers':

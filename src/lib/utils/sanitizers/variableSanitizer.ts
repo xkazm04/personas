@@ -11,6 +11,8 @@
  */
 
 import type { AdoptionRequirement } from '@/lib/types/designTypes';
+import { stripInjectionPatterns, escapeForPrompt } from './promptInjection';
+import { isBlockedHostname, hasUnsafeCodepoints } from './sanitizeUrl';
 
 // -- Type-Specific Validators ------------------------------------------
 
@@ -34,32 +36,11 @@ const MAX_JSON_VALUE_LENGTH = 10_000;
 // than a blocklist of specific injection phrases (which are trivially
 // bypassed via synonyms, word-splitting, homoglyphs, and encoding tricks).
 // Per OWASP LLM01, structural isolation is the primary defence.
-
-const STRUCTURAL_PATTERNS: RegExp[] = [
-  // Section delimiter injection
-  /---SECTION:\w+---/gi,
-  // Role override lines (system:, user:, assistant:, etc.)
-  /(?:^|\n)\s*(?:system|user|assistant|human|ai)\s*:/gi,
-  // Dangerous XML/HTML tags that could inject prompt structure
-  /<\/?(?:system|instruction|prompt|role|override|ignore)[^>]*>/gi,
-  /ignore\s+(?:all\s+)?(?:previous|prior|above|system)\s+(?:instructions?|prompts?|rules?)/gi,
-  /disregard\s+(?:all\s+)?(?:previous|prior|above)\s+/gi,
-  /you\s+are\s+now\s+(?:a\s+different|no\s+longer|free\s+from)/gi,
-  /override\s+(?:system|safety|security)\s+(?:prompt|instruction|rule)/gi,
-  /bypass\s+(?:safety|security|restriction|guardrail|filter)/gi,
-  // Invisible/zero-width Unicode characters
-  // eslint-disable-next-line no-misleading-character-class
-  /[\u200b\u200c\u200d\u200e\u200f\ufeff\u2060\u2061\u2062\u2063\u2064]/g,
-  // ANSI escape sequences
-  // eslint-disable-next-line no-control-regex
-  /\x1b\[[0-9;]*[a-zA-Z]/g,
-  // Non-BMP Unicode (homoglyph defence -- e.g. Mathematical Alphanumeric Symbols)
-  /[\u{10000}-\u{10FFFF}]/gu,
-];
-
-/** Blocked hostname patterns for URL validation (mirrors sanitizeUrl.ts) */
-const BLOCKED_HOSTNAME_RE =
-  /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+|0\.0\.0\.0|\[::1?\]|.*\.local)$/i;
+//
+// The shared pattern set + strip/escape helpers live in `promptInjection.ts`
+// (also used by `workflowSanitizer.ts`) so the two sanitizers can't drift
+// apart again. Hostname blocking + unsafe-codepoint checks are shared with
+// `sanitizeUrl.ts`.
 
 // -- Validation Result --------------------------------------------------
 
@@ -72,6 +53,14 @@ export interface VariableValidation {
 // -- Type Validators ----------------------------------------------------
 
 function validateUrl(value: string): VariableValidation {
+  // Check the original input (before trim) for unsafe codepoints --
+  // JS trim() strips BOM and some zero-width chars, which would let them
+  // slip past the check otherwise (mirrors sanitizeUrl.ts's
+  // sanitizeExternalUrl ordering).
+  if (hasUnsafeCodepoints(value)) {
+    return { valid: false, error: 'URL contains invalid or unsafe characters' };
+  }
+
   const trimmed = value.trim();
   if (!trimmed) return { valid: true, error: '' };
 
@@ -92,7 +81,7 @@ function validateUrl(value: string): VariableValidation {
     return { valid: false, error: 'Only HTTP/HTTPS URLs are allowed' };
   }
 
-  if (BLOCKED_HOSTNAME_RE.test(parsed.hostname)) {
+  if (isBlockedHostname(parsed.hostname)) {
     return { valid: false, error: 'Private/local network URLs are not allowed' };
   }
 
@@ -253,27 +242,17 @@ export function validateAllVariables(
  * Strip structural patterns from a variable value.
  */
 function stripStructuralPatterns(text: string): string {
-  let clean = text;
-  for (const pattern of STRUCTURAL_PATTERNS) {
-    clean = clean.replace(pattern, '');
-  }
-  return clean;
+  return stripInjectionPatterns(text);
 }
 
 /**
  * Escape structural characters that could break prompt formatting
- * when a variable value is substituted into a prompt section.
+ * when a variable value is substituted into a prompt section. Also
+ * neutralizes `{{...}}` recursive template-variable substitution, since
+ * this is the variable-value sanitizer.
  */
 function escapeForPromptContext(text: string): string {
-  return text
-    // Escape markdown headings that could inject prompt sections
-    .replace(/^(#{1,6})\s/gm, (_, hashes: string) => `${hashes.replace(/#/g, '＃')} `)
-    // Escape triple backticks (could break markdown code fences)
-    .replace(/```/g, '\\`\\`\\`')
-    // Escape section-like delimiters
-    .replace(/^---+$/gm, '------')
-    // Neutralize {{...}} patterns to prevent recursive substitution
-    .replace(/\{\{(\w+)\}\}/g, '{ {$1} }');
+  return escapeForPrompt(text, { neutralizeTemplateVars: true });
 }
 
 /**

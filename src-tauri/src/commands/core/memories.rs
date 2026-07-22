@@ -1,7 +1,5 @@
 use std::sync::Arc;
 use tauri::State;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command;
 
 use ts_rs::TS;
 
@@ -266,6 +264,22 @@ pub struct MemoryReviewResult {
 /// prompts into the steering field.
 pub(crate) const MAX_INSTRUCTIONS_CHARS: usize = 4096;
 
+/// Validate optional natural-language steering text against
+/// `MAX_INSTRUCTIONS_CHARS`. Shared by every IPC boundary that accepts an
+/// `instructions` field (review/reflect/team-reflect here, plus
+/// `commands::core::persona_jobs::enqueue_persona_memory_curation`) so the
+/// cap can't drift out of sync between enqueue-time and run-time checks.
+pub(crate) fn validate_instructions(s: Option<&str>) -> Result<(), AppError> {
+    if let Some(s) = s {
+        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
+            return Err(AppError::Validation(format!(
+                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
+            )));
+        }
+    }
+    Ok(())
+}
+
 // -- Shared memory-review pipeline helper ----------------------------------
 //
 // Used by:
@@ -437,87 +451,15 @@ Memories to review:
 {memories_json}"#
     );
 
-    // 3. Build CLI args (shared resolver — verified absolute claude.cmd).
-    let (program, mut args) = crate::engine::cli_process::claude_cli_invocation();
-    args.extend(
-        [
-            "-p",
-            "-",
-            "--max-turns",
-            "1",
-            "--dangerously-skip-permissions",
-        ]
-        .iter()
-        .map(|s| s.to_string()),
-    );
-
-    // 4. Spawn CLI.
-    let mut cmd = Command::new(&program);
-    cmd.args(&args)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-    cmd.env_remove("CLAUDECODE");
-    cmd.env_remove("CLAUDE_CODE");
-    // Evaluation runs on the Claude monthly subscription only — never bill the
-    // API account (strip any inherited/injected ANTHROPIC_* auth).
-    for key in crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV {
-        cmd.env_remove(key);
-    }
-    let mut child = cmd.spawn().map_err(|e| {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            AppError::Internal(
-                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
-                    .into(),
-            )
-        } else {
-            AppError::Internal(format!("Failed to spawn CLI: {e}"))
-        }
-    })?;
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(prompt.as_bytes())
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}")))?;
-        stdin
-            .shutdown()
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to close CLI stdin: {e}")))?;
-    }
-
-    // 5. Read stdout.
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| AppError::Internal("No stdout".into()))?;
-    let mut reader = BufReader::new(stdout);
-    let mut full_output = String::new();
+    // 3-5. Spawn the CLI (shared spawn/timeout/env-strip envelope) and read
+    // its full stdout text.
     let cli_timeout = std::time::Duration::from_secs(180);
-    let read_result = tokio::time::timeout(cli_timeout, async {
-        let mut line = String::new();
-        while reader.read_line(&mut line).await.unwrap_or(0) > 0 {
-            full_output.push_str(&line);
-            line.clear();
-        }
-    })
-    .await;
-    if read_result.is_err() {
-        let _ = child.kill().await;
-        let _ = child.wait().await;
-        return Err(AppError::Internal(
-            "Memory review timed out after 3 minutes".into(),
-        ));
-    }
-    let _ = child.wait().await;
-    if full_output.trim().is_empty() {
-        return Err(AppError::Internal("CLI produced no output".into()));
-    }
+    let full_output = crate::engine::cli_process::run_claude_cli(
+        &prompt,
+        cli_timeout,
+        "Memory review timed out after 3 minutes",
+    )
+    .await?;
 
     // 6. Parse JSON array from output.
     let json_str = extract_json_array(&full_output)
@@ -719,13 +661,7 @@ pub async fn review_memories_with_cli(
     auto_apply: Option<bool>,
 ) -> Result<MemoryReviewResult, AppError> {
     require_auth(&state).await?;
-    if let Some(ref s) = instructions {
-        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
-            return Err(AppError::Validation(format!(
-                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
-            )));
-        }
-    }
+    validate_instructions(instructions.as_deref())?;
     let db = state.db.clone();
     let threshold = threshold.unwrap_or(7);
     // Default to true to preserve back-compat with existing review-button
@@ -1110,13 +1046,7 @@ pub async fn reflect_memories_with_cli(
     instructions: Option<String>,
 ) -> Result<MemoryReviewResult, AppError> {
     require_auth(&state).await?;
-    if let Some(ref s) = instructions {
-        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
-            return Err(AppError::Validation(format!(
-                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
-            )));
-        }
-    }
+    validate_instructions(instructions.as_deref())?;
     let db = state.db.clone();
     let outcome = match crate::engine::memory_reflection::run_memory_reflection(
         &db,
@@ -1170,13 +1100,7 @@ pub async fn reflect_team_memories_with_cli(
     instructions: Option<String>,
 ) -> Result<MemoryReviewResult, AppError> {
     require_auth(&state).await?;
-    if let Some(ref s) = instructions {
-        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
-            return Err(AppError::Validation(format!(
-                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
-            )));
-        }
-    }
+    validate_instructions(instructions.as_deref())?;
     let db = state.db.clone();
     let outcome = match crate::engine::memory_reflection::run_team_memory_reflection(
         &db,

@@ -10,6 +10,7 @@ import { EventName } from "@/lib/eventRegistry";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 
 import { reportError } from "../../storeTypes";
+import { log } from "@/lib/log";
 
 export interface HealingSlice {
   // State
@@ -59,11 +60,18 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
   },
 
   resolveHealingIssue: async (id: string, personaId?: string) => {
+    // Derive persona_id from loaded issues or fall back to the provided value.
+    // Don't fabricate an empty-string scope: the backend may silently no-op
+    // on an unrecognized scope, which would leave the issue optimistically
+    // removed from the UI while it's still unresolved server-side.
+    const callerPersonaId = personaId
+      ?? get().healingIssues.find((i) => i.id === id)?.persona_id
+      ?? null;
+    if (!callerPersonaId) {
+      reportError(new Error("Cannot resolve healing issue: no persona_id available"), "Failed to resolve healing issue", set);
+      return;
+    }
     try {
-      // Derive persona_id from loaded issues or fall back to the provided value
-      const callerPersonaId = personaId
-        ?? get().healingIssues.find((i) => i.id === id)?.persona_id
-        ?? '';
       await updateHealingStatus(id, "resolved", callerPersonaId);
       set((state) => ({ healingIssues: state.healingIssues.filter((i) => i.id !== id) }));
     } catch (err) {
@@ -103,11 +111,21 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
             i.id === issueId ? updated : i,
           ),
         }));
-      } catch {
-        // Issue may have been deleted or is no longer accessible — remove it
-        set((state) => ({
-          healingIssues: state.healingIssues.filter((i) => i.id !== issueId),
-        }));
+      } catch (err) {
+        // Only drop the issue from the list on a definitive "not found"
+        // signal — the backend's AppError::NotFound serializes as "Not
+        // found: <entity> <id>". Any other failure (IPC hiccup, lock
+        // contention, transient read error) is not evidence the issue was
+        // deleted; leave it in place so the user doesn't lose visibility
+        // into a still-live failure.
+        const message = err instanceof Error ? err.message : String(err);
+        if (/not found/i.test(message)) {
+          set((state) => ({
+            healingIssues: state.healingIssues.filter((i) => i.id !== issueId),
+          }));
+        } else {
+          log.warn('healingSlice', 'subscribeHealingEvents: transient getHealingIssue failure, keeping stale entry', { issueId, error: message });
+        }
       }
     });
     return unlisten;

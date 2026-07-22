@@ -100,16 +100,6 @@ pub struct CdcEvent {
     pub rowid: i64,
 }
 
-/// Payload emitted to the frontend for tables that only need a notification
-/// (no full row fetch).
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CdcNotification {
-    pub action: CdcAction,
-    pub table: String,
-    pub rowid: i64,
-}
-
 // ---------------------------------------------------------------------------
 // Channel infrastructure
 // ---------------------------------------------------------------------------
@@ -149,15 +139,11 @@ impl CdcCustomizer {
 
 impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for CdcCustomizer {
     fn on_acquire(&self, conn: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
-        // Set standard pragmas (same as SqlitePragmaCustomizer)
-        conn.execute_batch(
-            "PRAGMA foreign_keys = ON;
-             PRAGMA busy_timeout = 5000;
-             PRAGMA synchronous = NORMAL;
-             PRAGMA mmap_size = 268435456;
-             PRAGMA temp_store = 2;
-             PRAGMA cache_size = -2000;",
-        )?;
+        // Set standard pragmas. Delegates to the same shared helper as
+        // `SqlitePragmaCustomizer` (crate::db::apply_standard_pragmas) so this
+        // customizer can never silently drift from the canonical pragma set —
+        // see refactor-bughunt-2026-07-10/tauri-db.md #3.
+        crate::db::apply_standard_pragmas(conn)?;
 
         // Register the CDC update hook
         let tx = self.sender.clone();
@@ -247,8 +233,8 @@ fn table_to_event(table: &str, action: CdcAction) -> Option<&'static str> {
 /// and emits them to the frontend via Tauri.
 ///
 /// For `persona_events`, the task fetches the full row by rowid (needed by the
-/// frontend event bus).  For all other tables, it emits a lightweight
-/// [`CdcNotification`] payload.
+/// frontend event bus).  For all other tables, it emits the lightweight
+/// [`CdcEvent`] itself as the notification payload.
 pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: crate::db::DbPool) {
     tauri::async_runtime::spawn(async move {
         // Capture the persona_events high-water rowid BEFORE the startup wait.
@@ -260,26 +246,16 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
         // DB after the wait (see below).
         let startup_watermark = max_persona_event_rowid(&db);
 
-        // Wait for the WebView IPC bridge to be established before emitting
-        // events.  Without this delay, every `app_handle.emit()` fires a
-        // "send was called before connect" unhandled‐promise rejection on the
-        // frontend, producing tens of thousands of log lines and wasting CPU.
-        // This is why we can't emit earlier — hence the replay-after-wait above
-        // rather than draining immediately.
-        tokio::time::sleep(std::time::Duration::from_secs(6)).await;
-        tracing::info!("CDC drain task started");
-
-        // Startup blackout recovery: re-emit every persona_events row inserted
-        // during the wait, directly from the DB. The bounded channel will also
-        // redeliver any survivors it still holds, but the frontend event log
-        // dedupes by id (useEventLog.ts), so double-delivery is harmless — and
-        // this path additionally recovers rows the channel dropped on overflow.
-        replay_persona_events_after(&app_handle, &db, startup_watermark);
-
-        // We run the blocking recv in a dedicated thread to avoid holding up
-        // the tokio runtime.  The thread sends batched events to the async
-        // world via a tokio mpsc channel.
-        let (tx, mut rx) = tokio::sync::mpsc::channel::<CdcEvent>(256);
+        // Spawn the sync reader thread and the tokio forwarding channel
+        // IMMEDIATELY — before the readiness wait below — so the bounded
+        // std_mpsc channel (fixed capacity, drops on full) is drained from the
+        // first moment writes can happen. The unbounded tokio channel absorbs
+        // any startup write burst without dropping; only the *emit* to the
+        // frontend is gated on WebView readiness (see refactor-bughunt
+        // tauri-db.md #2 — the drain task previously slept for 6s before
+        // spawning this reader, so boot-time bursts overflowed the 512-slot
+        // std_mpsc channel with nobody consuming it).
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<CdcEvent>();
 
         // Sync reader thread
         std::thread::Builder::new()
@@ -288,7 +264,7 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
                 loop {
                     match receiver.recv() {
                         Ok(event) => {
-                            if tx.blocking_send(event).is_err() {
+                            if tx.send(event).is_err() {
                                 // Async side dropped — shutting down
                                 break;
                             }
@@ -302,6 +278,24 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
                 }
             })
             .expect("Failed to spawn CDC reader thread");
+
+        // Wait for the WebView IPC bridge to be established before emitting
+        // events.  Without this delay, every `app_handle.emit()` fires a
+        // "send was called before connect" unhandled‐promise rejection on the
+        // frontend, producing tens of thousands of log lines and wasting CPU.
+        // This is why we can't emit earlier — hence the replay-after-wait above
+        // rather than draining immediately. Events arriving during this wait
+        // are queued in the unbounded `rx` above (drained from `receiver` by
+        // the reader thread that's already running), not dropped.
+        tokio::time::sleep(std::time::Duration::from_secs(6)).await;
+        tracing::info!("CDC drain task started");
+
+        // Startup blackout recovery: re-emit every persona_events row inserted
+        // during the wait, directly from the DB. The queued channel events will
+        // also redeliver any survivors, but the frontend event log dedupes by
+        // id (useEventLog.ts), so double-delivery is harmless — and this path
+        // additionally recovers rows from before the reader thread's first read.
+        replay_persona_events_after(&app_handle, &db, startup_watermark);
 
         // Async consumer
         while let Some(event) = rx.recv().await {
@@ -374,13 +368,11 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
                 continue;
             }
 
-            // All other tables: emit lightweight notification
-            let notification = CdcNotification {
-                action: event.action,
-                table: event.table,
-                rowid: event.rowid,
-            };
-            if let Err(e) = app_handle.emit(event_name, &notification) {
+            // All other tables: emit the lightweight CdcEvent itself as the
+            // notification payload (previously rebuilt into a field-for-field
+            // duplicate `CdcNotification` — see
+            // refactor-bughunt-2026-07-10/tauri-db.md #6).
+            if let Err(e) = app_handle.emit(event_name, &event) {
                 tracing::warn!(
                     event_name,
                     error = %e,

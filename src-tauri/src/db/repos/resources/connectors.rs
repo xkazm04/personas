@@ -180,7 +180,31 @@ pub fn update(
         get_by_id(pool, id)?;
 
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+        let mut conn = pool.get()?;
+
+        // IMMEDIATE so the name-existence check and the UPDATE are one atomic
+        // unit, mirroring create's guard: a custom connector must not be able
+        // to shadow a builtin (or another custom connector) by renaming onto
+        // an in-use name.
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
+        if let Some(ref name) = input.name {
+            let name_taken: bool = tx
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM connector_definitions WHERE name = ?1 AND id <> ?2)",
+                    params![name, id],
+                    |row| row.get::<_, i64>(0),
+                )
+                .map_err(AppError::Database)?
+                != 0;
+            if name_taken {
+                return Err(AppError::Validation(format!(
+                    "A connector named '{}' already exists",
+                    name
+                )));
+            }
+        }
 
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
@@ -241,7 +265,8 @@ pub fn update(
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
             param_values.iter().map(|p| p.as_ref()).collect();
-        conn.execute(&sql, params_ref.as_slice())?;
+        tx.execute(&sql, params_ref.as_slice())?;
+        tx.commit().map_err(AppError::Database)?;
 
         get_by_id(pool, id)
     })

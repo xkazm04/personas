@@ -260,5 +260,10 @@
   "stream_no_speakers": "Keine Sprecher",
   "stream_none": "Keine",
   "stream_search": "Übertragungen durchsuchen",
-  "stream_title": "Stream"
+  "stream_title": "Stream",
+  "columns_action_empty": "Gerade ist nichts zu erledigen",
+  "columns_needs_attention": "Erfordert Aufmerksamkeit",
+  "columns_active_goals": "Aktive Ziele",
+  "columns_no_team": "Kein Team",
+  "columns_all_clear": "Alles in Ordnung"
 }

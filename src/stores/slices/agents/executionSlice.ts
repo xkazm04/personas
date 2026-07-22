@@ -207,6 +207,17 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     };
   }
 
+  // Shared "finalize a recovered execution" step: mark the lifecycle finished,
+  // reset the recovered execution's transient fields, and drop the localStorage
+  // recovery record. Used by the store-init reconciliation, retryExecutionVerification,
+  // and dismissVerificationFailure — keep the reset shape and the storage key in sync
+  // across all three call sites by editing only this function.
+  const finalizeRecovered = (execId: string | null) => {
+    executionLifecycle.markFinished(set);
+    set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, isExecuting: false });
+    try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catchFinalizeRecovered")(err); }
+  };
+
   // Recovery: restore active execution state from localStorage
   const recoveredState = (() => {
     try {
@@ -245,9 +256,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         const execution = await getExecution(activeExecutionId, executionPersonaId ?? activeExecutionId);
         if (TERMINAL_STATUS_SET.has(execution.status)) {
           logger.info("Recovered execution already finished — clearing stale state", { executionId: activeExecutionId, status: execution.status });
-          executionLifecycle.markFinished(set);
-          set({ activeExecutionId: null, lastExecutionId: activeExecutionId, executionPersonaId: null, isExecuting: false });
-          try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch2")(err); }
+          finalizeRecovered(activeExecutionId);
         } else {
           logger.info("Recovered execution still active — keeping state", { executionId: activeExecutionId, status: execution.status });
         }
@@ -520,17 +529,28 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         void get().finishChatStream(fullResponse, pid, sid, get().activeExecutionId ?? undefined, 'cancelled');
       }
 
-      // Preserve the execution ID for Resume before clearing active state.
-      const lastId = get().activeExecutionId;
-      // Foreground run is being torn down — drop its stable idempotency key so
-      // a subsequent identical request mints a fresh one.
-      pendingForegroundIdem = null;
-      // Always reset execution state regardless of API success/failure.
-      executionLifecycle.markCancelled(set);
-      set({ activeExecutionId: null, lastExecutionId: lastId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null, isExecuting: false });
-      try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch4")(err); }
-      const personaId = get().selectedPersona?.id;
-      if (personaId) get().fetchExecutions(personaId);
+      // If another path (e.g. clearExecutionOutput) already tore this
+      // execution's state down — or a new execution has since started — skip
+      // the redundant teardown below. Without this guard, an un-awaited
+      // cancelExecution racing clearExecutionOutput would overwrite
+      // lastExecutionId with null (losing the Resume id) and double-run
+      // markCancelled/localStorage-removal/fetchExecutions.
+      // (No `return` here — a control-flow statement inside `finally` would
+      // silently swallow whatever the try/catch above was doing — so the
+      // rest of the teardown is gated by wrapping it in this `if` instead.)
+      if (get().activeExecutionId === executionId) {
+        // Preserve the execution ID for Resume before clearing active state.
+        const lastId = get().activeExecutionId;
+        // Foreground run is being torn down — drop its stable idempotency key
+        // so a subsequent identical request mints a fresh one.
+        pendingForegroundIdem = null;
+        // Always reset execution state regardless of API success/failure.
+        executionLifecycle.markCancelled(set);
+        set({ activeExecutionId: null, lastExecutionId: lastId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null, isExecuting: false });
+        try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch4")(err); }
+        const personaId = get().selectedPersona?.id;
+        if (personaId) get().fetchExecutions(personaId);
+      }
     }
   },
 
@@ -732,15 +752,19 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   clearExecutionOutput: () => {
     // If an execution is still running, cancel it on the backend first to
     // avoid orphaning the engine (which would keep consuming API credits).
+    // cancelExecution is fired-and-forgotten (not awaited) here, but its
+    // finally-block teardown now no-ops once activeExecutionId no longer
+    // matches (see cancelExecution), so it won't clobber the lastExecutionId
+    // we set below or double-run teardown.
     const activeId = get().activeExecutionId;
     if (activeId && get().isExecuting) {
-      get().cancelExecution(activeId);
+      void get().cancelExecution(activeId);
     }
     executionSink.clear();
     // Drop any stable foreground idempotency key — the run is being abandoned.
     pendingForegroundIdem = null;
     executionLifecycle.markCancelled(set);
-    set({ executionOutput: [], executionOutputBytes: 0, activeExecutionId: null, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: null, queuePosition: null, queueDepth: null, isExecuting: false });
+    set({ executionOutput: [], executionOutputBytes: 0, activeExecutionId: null, lastExecutionId: activeId ?? get().lastExecutionId, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: null, queuePosition: null, queueDepth: null, isExecuting: false });
   },
 
   setQueueStatus: (position, depth) => {
@@ -794,9 +818,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       set({ executionVerificationFailed: false });
       if (TERMINAL_STATUS_SET.has(execution.status)) {
         logger.info("Recovered execution already finished — clearing stale state", { executionId: execId, status: execution.status });
-        executionLifecycle.markFinished(set);
-        set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, isExecuting: false });
-        try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch6")(err); }
+        finalizeRecovered(execId);
       } else {
         logger.info("Recovered execution still active — keeping state", { executionId: execId, status: execution.status });
       }
@@ -809,9 +831,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     const execId = get().activeExecutionId;
     logger.info("User dismissed verification failure — abandoning recovered execution", { executionId: execId });
     set({ executionVerificationFailed: false });
-    executionLifecycle.markFinished(set);
-    set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, isExecuting: false });
-    try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch7")(err); }
+    finalizeRecovered(execId);
   },
 });
 };

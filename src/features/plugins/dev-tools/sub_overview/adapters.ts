@@ -20,10 +20,24 @@ export interface RepoStats {
   commitsLastWeek: number;
   defaultBranch: string;
   lastPushAt: string | null;
+  /**
+   * True when a value below was derived from a single `per_page=100` page
+   * that came back full — the true count is >= the reported number, not
+   * exact. (A page-length fetch can't distinguish "exactly 100" from
+   * "1000+"; callers should render e.g. "100+" rather than treating these
+   * as precise.) `openIssues` is also marked capped when `openPullRequests`
+   * is, since GitHub derives it by subtracting the (possibly capped) PR count.
+   */
+  openPullRequestsCapped?: boolean;
+  commitsLastWeekCapped?: boolean;
+  openIssuesCapped?: boolean;
 }
 
 export interface MonitoringStats {
-  unresolvedIssues: number;
+  /** `null` when Sentry's count couldn't be determined (missing X-Hits header
+   * on every attempt) — render as "—", not "0", so a project with real
+   * unresolved errors doesn't read as healthy. */
+  unresolvedIssues: number | null;
   eventsLast24h: number;
   eventsLastWeek: number;
 }
@@ -90,6 +104,9 @@ export async function fetchGitHubStats(
   );
   const prData = JSON.parse(prRes.body);
   const openPrs = Array.isArray(prData) ? prData.length : 0;
+  // A full page (exactly per_page items) means there may be more beyond it —
+  // a single `?per_page=100` page length is not a reliable total.
+  const openPrsCapped = openPrs === 100;
 
   // 3. Commits last week
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -101,6 +118,7 @@ export async function fetchGitHubStats(
   );
   const commitsData = JSON.parse(commitsRes.body);
   const commitsLastWeek = Array.isArray(commitsData) ? commitsData.length : 0;
+  const commitsLastWeekCapped = commitsLastWeek === 100;
 
   // GitHub open_issues_count includes PRs — subtract them for pure issue count
   const rawIssueCount = repoData.open_issues_count ?? 0;
@@ -111,6 +129,11 @@ export async function fetchGitHubStats(
     commitsLastWeek,
     defaultBranch: repoData.default_branch ?? 'main',
     lastPushAt: repoData.pushed_at ?? null,
+    openPullRequestsCapped: openPrsCapped,
+    commitsLastWeekCapped,
+    // The derived issue count also becomes unreliable once the PR count it
+    // subtracts is itself a lower bound.
+    openIssuesCapped: openPrsCapped,
   };
 }
 
@@ -164,6 +187,8 @@ export async function fetchGitLabStats(
     commitsLastWeek,
     defaultBranch: projData.default_branch ?? 'main',
     lastPushAt: projData.last_activity_at ?? null,
+    openPullRequestsCapped: openMRs === 100,
+    commitsLastWeekCapped: commitsLastWeek === 100,
   };
 }
 
@@ -293,9 +318,14 @@ export async function fetchSentryStats(
   if (issuesRes.status >= 400) {
     throw new Error(`Sentry issues request failed (${issuesRes.status}): ${issuesRes.body.slice(0, 200)}`);
   }
-  // Sentry returns total in X-Hits header or we count items
+  // Sentry returns the total in the X-Hits header (limit=1 keeps the body
+  // cheap, so there's no item array to fall back to counting). Some
+  // deployments/proxies strip or rename the header — in that case don't
+  // silently report 0 (which would render as "healthy"/green); report
+  // `null` so the caller can show "—" instead.
   const totalHeader = issuesRes.headers['x-hits'] ?? issuesRes.headers['X-Hits'];
-  const unresolvedIssues = totalHeader ? parseInt(totalHeader, 10) : 0;
+  const parsedTotal = totalHeader ? parseInt(totalHeader, 10) : NaN;
+  const unresolvedIssues = Number.isFinite(parsedTotal) ? parsedTotal : null;
 
   // 2. Events stats (24h + 7d)
   const now = Math.floor(Date.now() / 1000);

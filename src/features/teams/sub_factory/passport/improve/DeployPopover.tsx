@@ -90,14 +90,18 @@ export function DeployPopover({
     }
   };
 
-  // Every project that has the same gap — backs "Queue for all N".
-  const eligibleForBatch = (a: DeployAction) =>
-    (engine.allRaw() ?? [])
+  // Every project that has the same gap — backs "Queue for all N". Computed
+  // once per action here (not inline in JSX, where the guard + the label both
+  // called this and re-walked the whole fleet each time).
+  function eligibleForBatch(a: DeployAction) {
+    return (engine!.allRaw() ?? [])
       .map((r) => ({ r, p: derivePassportFromMetadata(r.meta, r.project, { hasSkills: r.hasSkills, evidence: r.evidence }) }))
       .filter(({ p }) => a.applicable(p));
+  }
+  const batchByAction = new Map(actions.map((a) => [a.id, eligibleForBatch(a)]));
 
   const runBatch = async (a: DeployAction) => {
-    const eligible = eligibleForBatch(a);
+    const eligible = batchByAction.get(a.id) ?? eligibleForBatch(a);
     setBusy(a.id);
     try {
       await Promise.all(eligible.map(({ r, p }) => engine.queueTask(r.project.id, a.taskTitle?.(r.project) ?? a.label, a.prompt?.(r.project, p) ?? '')));
@@ -172,9 +176,9 @@ export function DeployPopover({
                 </>
               )}
             </div>
-            {a.kind === 'task' && eligibleForBatch(a).length > 1 && (
+            {a.kind === 'task' && (batchByAction.get(a.id)?.length ?? 0) > 1 && (
               <button type="button" onClick={() => runBatch(a)} disabled={busy === a.id} className="block ml-auto mt-1 typo-caption text-primary hover:underline disabled:opacity-50">
-                Queue for all {eligibleForBatch(a).length} projects that need this →
+                Queue for all {batchByAction.get(a.id)?.length} projects that need this →
               </button>
             )}
           </div>

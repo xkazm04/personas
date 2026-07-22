@@ -96,6 +96,10 @@ function waitForIpcToken(): Promise<void> {
   const isReady = () => !!g.__IPC_TOKEN;
   if (isReady()) return Promise.resolve();
   if (_tokenReady) return _tokenReady;
+  // Once this settles (found or gave up), every later caller reuses the
+  // resolved promise rather than re-polling — cheap, and safe: any call
+  // made after the token genuinely arrives late still takes the isReady()
+  // fast-path above, since that's re-checked fresh on every invocation.
   _tokenReady = new Promise<void>((resolve) => {
     let tries = 0;
     const iv = setInterval(() => {
@@ -393,6 +397,20 @@ export function invokeWithTimeout<T>(
         }
       },
     );
+
+    // Clone the value handed to the PRIMARY caller too. Without this, the
+    // primary caller receives the exact object instance cached in the map;
+    // if it mutates the array/object in place (.sort()/.push()/a mutating
+    // store reducer) within the TTL window, every later caller sharing this
+    // cache entry clones the already-mutated value. Cloning on every
+    // hand-out (primary included) closes that hole.
+    return promise.then((v) => {
+      try {
+        return structuredClone(v);
+      } catch {
+        return v;
+      }
+    });
   }
 
   return promise;

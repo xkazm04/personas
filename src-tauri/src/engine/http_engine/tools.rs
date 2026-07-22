@@ -78,7 +78,15 @@ pub(super) async fn run_tool_loop(
             Ok(r) => {
                 let status = r.status();
                 let text = r.text().await.unwrap_or_default();
-                return fail(emitter, execution_id, &format!("{provider} API error ({status}): {}", &text[..text.len().min(300)]), start_time);
+                return fail(
+                    emitter,
+                    execution_id,
+                    &format!(
+                        "{provider} API error ({status}): {}",
+                        crate::utils::text::truncate_on_char_boundary(&text, 300)
+                    ),
+                    start_time,
+                );
             }
             Err(e) => return fail(emitter, execution_id, &format!("Cannot reach {provider}: {e}"), start_time),
         };
@@ -249,13 +257,19 @@ async fn http_get_guarded(client: &Client, raw: &str) -> Result<String, String> 
     Ok(format!("HTTP {status}\n{}{truncated}", String::from_utf8_lossy(slice)))
 }
 
-fn is_blocked_ip(ip: &std::net::IpAddr) -> bool {
+pub(crate) fn is_blocked_ip(ip: &std::net::IpAddr) -> bool {
     match ip {
         std::net::IpAddr::V4(v4) => {
             v4.is_loopback() || v4.is_private() || v4.is_link_local() || v4.is_unspecified() || v4.is_broadcast()
         }
         std::net::IpAddr::V6(v6) => {
-            v6.is_loopback() || v6.is_unspecified() || (v6.segments()[0] & 0xfe00) == 0xfc00 // fc00::/7 unique-local
+            if let Some(v4) = v6.to_ipv4_mapped() {
+                return is_blocked_ip(&std::net::IpAddr::V4(v4));
+            }
+            v6.is_loopback()
+                || v6.is_unspecified()
+                || (v6.segments()[0] & 0xfe00) == 0xfc00 // fc00::/7 unique-local
+                || (v6.segments()[0] & 0xffc0) == 0xfe80 // fe80::/10 link-local
         }
     }
 }

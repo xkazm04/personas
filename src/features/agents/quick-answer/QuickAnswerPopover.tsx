@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import { X, Activity } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePendingInteractions } from './usePendingInteractions';
-import { QuickAnswerBody } from './QuickAnswerBody';
+import { QuickAnswerBodyView } from './QuickAnswerBody';
 
 interface QuickAnswerPopoverProps {
   onClose: () => void;
@@ -20,8 +20,11 @@ interface QuickAnswerPopoverProps {
 export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopoverProps) {
   const { t, tx } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
-  // Just the count for the header chip — the body owns the full data itself.
-  const { total } = usePendingInteractions();
+  // Single data mount for the whole popover: header chip AND body share this
+  // instance. Calling usePendingInteractions here and again inside
+  // QuickAnswerBody double-mounted four polling loops per open popover.
+  const interactions = usePendingInteractions();
+  const { total } = interactions;
 
   // Esc closes; click-outside closes. (Route nav / Back already clear the
   // header overlay centrally in uiSlice.)
@@ -85,7 +88,7 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
 
       {/* Body */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
-        <QuickAnswerBody onAfterBuilderNav={onClose} />
+        <QuickAnswerBodyView interactions={interactions} onAfterBuilderNav={onClose} />
       </div>
     </motion.div>
   );

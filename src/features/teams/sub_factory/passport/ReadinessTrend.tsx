@@ -2,7 +2,7 @@
 // delta since its last real change. Appears only once there are ≥2 recorded
 // snapshots, so it accrues as the user scans/upgrades over time. A downward
 // delta renders red — the lightweight regression signal.
-import { Sparkline } from './passportWidgets';
+import { Sparkline } from '../factoryPrimitives';
 import { getHistory, trendDelta } from './passportHistory';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
@@ -18,7 +18,7 @@ export function ReadinessTrend({ slug }: { slug: string }) {
       <span className="inline-flex items-center gap-1.5 cursor-default">
         <span className="typo-label text-foreground/40 flex-shrink-0">Trend</span>
         <span className="text-foreground/30 flex-shrink-0">
-          <Sparkline values={golden} />
+          <Sparkline values={golden} width={42} height={12} />
         </span>
         {dg !== 0 && (
           <span className={`typo-label tabular-nums font-semibold ${tone}`}>{dg > 0 ? '▲' : '▼'}{Math.abs(dg)}</span>

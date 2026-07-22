@@ -295,7 +295,8 @@
     "query_parameters": "কোয়েরি প্যারামিটার",
     "recipes_title": "সংরক্ষিত রেসিপি",
     "truncated_warning": "প্রদর্শনের জন্য প্রতিক্রিয়া সংক্ষিপ্ত করা হয়েছে",
-    "value_col": "মান"
+    "value_col": "মান",
+    "request_headers": "হেডার"
   },
   "ingest": {
     "save_name": "নাম সংরক্ষণ করুন",
@@ -422,7 +423,8 @@
     "capability_key_value": "কী-ভ্যালু",
     "capability_key_value_hint": "এটি একটি কী-ভ্যালু স্টোর। SCAN, GET এবং TYPE-এর মতো কী কমান্ড ব্যবহার করুন — SQL নয়।",
     "capability_select_subset": "শুধু SELECT",
-    "capability_select_subset_hint": "এখানে শুধু একক-টেবিলের সরল SELECT কোয়েরি চলে — WHERE দিয়ে ফিল্টার, ORDER BY দিয়ে সাজানো, LIMIT দিয়ে সীমা নির্ধারণ। JOIN, অ্যাগ্রিগেট, CTE এবং রাইট সমর্থিত নয়।"
+    "capability_select_subset_hint": "এখানে শুধু একক-টেবিলের সরল SELECT কোয়েরি চলে — WHERE দিয়ে ফিল্টার, ORDER BY দিয়ে সাজানো, LIMIT দিয়ে সীমা নির্ধারণ। JOIN, অ্যাগ্রিগেট, CTE এবং রাইট সমর্থিত নয়।",
+    "query_timeout": "প্রতিক্রিয়ার জন্য অপেক্ষার সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।"
   },
   "dependencies": {
     "simulate_revocation": "বাতিলকরণ সিমুলেট করুন",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "কী স্ক্যান করা হবে",
     "read_error_item": "{source} পড়া যায়নি",
     "read_errors_title": "কিছু উৎস পড়া যায়নি",
-    "select_high_confidence": "উচ্চ-নির্ভরযোগ্যতা"
+    "select_high_confidence": "উচ্চ-নির্ভরযোগ্যতা",
+    "source_unknown": "অজানা উৎস"
   },
   "desktop_discovery": {
     "title": "ডেস্কটপ অ্যাপ",

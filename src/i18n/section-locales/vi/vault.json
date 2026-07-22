@@ -295,7 +295,8 @@
     "query_parameters": "Tham số truy vấn",
     "recipes_title": "Công thức đã lưu",
     "truncated_warning": "Phản hồi bị cắt bớt để hiển thị",
-    "value_col": "Giá trị"
+    "value_col": "Giá trị",
+    "request_headers": "Tiêu đề"
   },
   "ingest": {
     "save_name": "Lưu tên",
@@ -422,7 +423,8 @@
     "capability_key_value": "Khóa-giá trị",
     "capability_key_value_hint": "Đây là kho khóa-giá trị. Hãy dùng các lệnh khóa như SCAN, GET và TYPE — không phải SQL.",
     "capability_select_subset": "Chỉ SELECT",
-    "capability_select_subset_hint": "Ở đây chỉ chạy các truy vấn SELECT đơn giản trên một bảng — lọc bằng WHERE, sắp xếp bằng ORDER BY, giới hạn bằng LIMIT. JOIN, tổng hợp, CTE và ghi không được hỗ trợ."
+    "capability_select_subset_hint": "Ở đây chỉ chạy các truy vấn SELECT đơn giản trên một bảng — lọc bằng WHERE, sắp xếp bằng ORDER BY, giới hạn bằng LIMIT. JOIN, tổng hợp, CTE và ghi không được hỗ trợ.",
+    "query_timeout": "Hết thời gian chờ phản hồi. Vui lòng thử lại."
   },
   "dependencies": {
     "simulate_revocation": "Mô phỏng thu hồi",
@@ -986,7 +988,8 @@
     "consent_what_scanned": "Những gì sẽ được quét",
     "read_error_item": "Không thể đọc {source}",
     "read_errors_title": "Một số nguồn không thể đọc được",
-    "select_high_confidence": "Độ tin cậy cao"
+    "select_high_confidence": "Độ tin cậy cao",
+    "source_unknown": "Nguồn không xác định"
   },
   "desktop_discovery": {
     "title": "Ứng dụng máy tính",

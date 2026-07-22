@@ -415,7 +415,11 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         verify_step: Some(CliStep { cmd: "flyctl", args: &["auth", "whoami"] }),
         docs_url: "https://fly.io/docs/flyctl/install/",
     },
-    // Railway -- long-lived API token from `railway whoami`.
+    // Railway -- verify-only. `railway whoami` prints identity text ("Logged
+    // in as user@example.com"), not a token — it does not expose the real
+    // API token via any CLI subcommand, so we verify session only and let
+    // the user paste the real token via the API Token tab when they need
+    // agent API access.
     CaptureSpec {
         service_type: "railway",
         binary: "railway",
@@ -423,11 +427,7 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
             cmd: "railway",
             args: &["whoami"],
         },
-        fields: &[CaptureField {
-            field_key: "api_token",
-            sensitive: true,
-            step: CliStep { cmd: "railway", args: &["whoami"] },
-        }],
+        fields: &[],
         file_fields: &[],
         token_ttl_seconds: None,
         auth_instruction: "Run `railway login` in a terminal, then retry.",

@@ -4,6 +4,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::db::models::serde_util::double_option;
 use crate::engine::lifecycle::AutomationDeployStatus;
 
 // ============================================================================
@@ -253,19 +254,28 @@ pub struct CreateAutomationInput {
 pub struct UpdateAutomationInput {
     pub name: Option<String>,
     pub description: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub use_case_id: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub platform_workflow_id: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub platform_url: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub webhook_url: Option<Option<String>>,
     pub webhook_method: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub platform_credential_id: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub credential_mapping: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub input_schema: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub output_schema: Option<Option<String>>,
     pub timeout_ms: Option<i64>,
     pub retry_count: Option<i32>,
     pub fallback_mode: Option<AutomationFallbackMode>,
     pub deployment_status: Option<AutomationDeployStatus>,
+    #[serde(default, deserialize_with = "double_option")]
     pub error_message: Option<Option<String>>,
 }
 

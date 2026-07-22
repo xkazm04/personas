@@ -41,6 +41,37 @@ export function LensStream({
     [data, labels],
   );
 
+  // Freshness is read against a SNAPSHOT of `seenRef` taken before this pass —
+  // mutating the set mid-loop (the old bug) meant a size-triggered clear() made
+  // later rows in the same pass compute `fresh = true` and replay the entrance
+  // animation even though they'd already been shown. The actual set mutation
+  // (add + cap) happens once, after render, in the effect below.
+  const freshIds = useMemo(() => {
+    const seen = seenRef.current;
+    const ids = new Set<string>();
+    const now = Date.now();
+    for (const row of rows) {
+      if (row.kind === 'header') continue;
+      const id = row.item.item.id;
+      const at = Date.parse(row.item.item.at);
+      if (Number.isFinite(at) && now - at < 8000 && !seen.has(id)) ids.add(id);
+    }
+    return ids;
+  }, [rows]);
+
+  useEffect(() => {
+    if (freshIds.size === 0) return;
+    for (const id of freshIds) seenRef.current.add(id);
+    if (seenRef.current.size > 600) {
+      // Reseed with just the ids currently in the window rather than wiping
+      // outright, so a row already marked "seen" this session doesn't
+      // re-animate on the very next render.
+      const windowIds = new Set<string>();
+      for (const row of rows) if (row.kind !== 'header') windowIds.add(row.item.item.id);
+      seenRef.current = windowIds;
+    }
+  }, [freshIds, rows]);
+
   const { virtualizer } = useGroupedVirtualizer({
     count: rows.length,
     headerIndexes,
@@ -88,13 +119,7 @@ export function LensStream({
               );
             }
             const id = row.item.item.id;
-            const at = Date.parse(row.item.item.at);
-            const recent = Number.isFinite(at) && Date.now() - at < 8000;
-            const fresh = recent && !seenRef.current.has(id);
-            if (recent) {
-              if (seenRef.current.size > 600) seenRef.current.clear();
-              seenRef.current.add(id);
-            }
+            const fresh = freshIds.has(id);
             const persona = row.item.item.personaId ? personaIndex.get(row.item.item.personaId) : undefined;
             return (
               <div

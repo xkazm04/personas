@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, X } from 'lucide-react';
 import { useCredentialNegotiator, type NegotiatorContext, type AuthDetectionInfo } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
-import { detectAuthenticatedServices } from '@/api/auth/authDetect';
+import { detectAuthenticatedServices, toAuthDetectionInfo } from '@/api/auth/authDetect';
 import { NegotiatorPlanningPhase } from './NegotiatorPlanningPhase';
 import { NegotiatorGuidingPhase } from './NegotiatorGuidingPhase';
 import { NegotiatorIdlePhase, NegotiatorDonePhase, NegotiatorErrorPhase } from './NegotiatorPhases';
@@ -32,16 +32,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
     detectAuthenticatedServices()
       .then((detections) => {
         if (cancelled) return;
-        const mapped: AuthDetectionInfo[] = detections
-          .filter((d) => d.authenticated)
-          .map((d) => ({
-            serviceType: d.service_type,
-            method: d.method,
-            authenticated: d.authenticated,
-            identity: d.identity,
-            confidence: d.confidence,
-          }));
-        setAuthDetections(mapped);
+        setAuthDetections(toAuthDetectionInfo(detections));
       })
       .catch(silentCatch('NegotiatorPanel:detectAuthenticatedServices'))
       .finally(() => {

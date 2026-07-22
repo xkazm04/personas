@@ -285,6 +285,12 @@ impl QueryBuilder {
             parts.push(format!("LIMIT ?{} OFFSET ?{}", total - 1, total));
         } else if self.has_limit {
             parts.push(format!("LIMIT ?{total}"));
+        } else if self.has_offset {
+            // SQLite requires LIMIT before OFFSET; `-1` is the SQLite idiom for
+            // "no limit" so offset-only callers still get a valid, fully-bound
+            // clause instead of a dropped OFFSET with a dangling param (see
+            // refactor-bughunt tauri-db.md #4).
+            parts.push(format!("LIMIT -1 OFFSET ?{total}"));
         }
 
         parts.join(" ")

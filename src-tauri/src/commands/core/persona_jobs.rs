@@ -13,22 +13,11 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
-/// Maximum instructions length, mirrored from the IPC boundaries used
-/// elsewhere (companion::consolidate, commands::core::memories) so an
-/// over-length payload fails fast at enqueue time rather than at
-/// worker dispatch.
-const MAX_INSTRUCTIONS_CHARS: usize = 4096;
-
-fn validate_instructions(s: Option<&str>) -> Result<(), AppError> {
-    if let Some(s) = s {
-        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
-            return Err(AppError::Validation(format!(
-                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
-            )));
-        }
-    }
-    Ok(())
-}
+/// Instructions-length validation reuses the shared cap + check from
+/// `commands::core::memories` (the same IPC boundary used by
+/// review/reflect/team-reflect) so the limit can't drift out of sync
+/// between enqueue-time and run-time.
+use super::memories::validate_instructions;
 
 /// Enqueue a memory-curation run for a persona (or workspace-wide if
 /// `persona_id` is None). Returns the job id immediately; the worker

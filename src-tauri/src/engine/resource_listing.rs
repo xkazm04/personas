@@ -79,6 +79,11 @@ enum Pagination {
         page_param: String,
         #[serde(default)]
         per_page: Option<u32>,
+        /// Query key for the page-size value. Connectors vary (`per_page`,
+        /// `pageSize`, `limit`, `count`, ...); defaults to `per_page` for specs
+        /// that don't set it, matching prior behavior.
+        #[serde(default = "default_per_page_param")]
+        per_page_param: String,
         #[serde(default = "default_pages")]
         max_pages: u32,
     },
@@ -92,6 +97,10 @@ enum Pagination {
 
 fn default_pages() -> u32 {
     5
+}
+
+fn default_per_page_param() -> String {
+    "per_page".to_string()
 }
 
 #[derive(Debug, Deserialize)]
@@ -281,7 +290,7 @@ async fn fetch_all_pages(
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(15))
         .dns_resolver(std::sync::Arc::new(
-            crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+            crate::engine::url_safety::SsrfSafeDnsResolver,
         ))
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
@@ -313,12 +322,13 @@ async fn fetch_all_pages(
         Pagination::PageParam {
             page_param,
             per_page,
+            per_page_param,
             max_pages,
         } => {
             for page in 1..=*max_pages {
                 let mut query = vec![(page_param.clone(), page.to_string())];
                 if let Some(pp) = per_page {
-                    query.push(("per_page".to_string(), pp.to_string()));
+                    query.push((per_page_param.clone(), pp.to_string()));
                 }
                 let body = fetch_one(&client, spec, values, None, Some(&query), None).await?;
                 let items = extract_items(&body, &spec.response_mapping.items_path);

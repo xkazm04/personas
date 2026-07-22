@@ -185,20 +185,11 @@ struct KpiGoalDecision {
 }
 
 fn parse_kpi_goal(blob: &str) -> Option<KpiGoalDecision> {
-    let marker = "\"kpi_goal\"";
-    let mut result = None;
-    let mut from = 0;
-    while let Some(rel) = blob[from..].find(marker) {
-        let pos = from + rel;
-        from = pos + marker.len();
-        let Some(open) = blob[..pos].rfind('{') else { continue };
-        if let Some(close) = crate::companion::athena_reaction::match_braces(&blob[open..]) {
-            if let Ok(env) = serde_json::from_str::<KpiGoalEnvelope>(&blob[open..open + close + 1]) {
-                result = Some(env.kpi_goal);
-            }
-        }
-    }
-    result
+    crate::companion::athena_reaction::extract_json_envelope::<KpiGoalEnvelope>(
+        blob,
+        "\"kpi_goal\"",
+    )
+    .map(|env| env.kpi_goal)
 }
 
 fn build_derivation_prompt(pool: &DbPool, kpi: &DevKpi) -> String {

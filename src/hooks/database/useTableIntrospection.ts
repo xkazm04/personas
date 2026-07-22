@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { introspectDbTables, introspectDbColumns } from '@/api/vault/database/dbSchema';
 import { getConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
 import { errMsg } from '@/stores/storeTypes';
@@ -154,6 +154,7 @@ export function useTableIntrospection({
   const [columns, setColumns] = useState<IntrospectedColumn[]>([]);
   const [columnsLoading, setColumnsLoading] = useState(false);
   const [columnsError, setColumnsError] = useState<string | null>(null);
+  const latestColumnsRequestRef = useRef<string | null>(null);
 
   const fetchTables = useCallback(async (skipCache = false) => {
     if (!skipCache) {
@@ -188,6 +189,12 @@ export function useTableIntrospection({
   }, [credentialId, isRedis]);
 
   const fetchColumns = useCallback(async (tableName: string) => {
+    // Guard against out-of-order responses: if the user selects table A then
+    // table B before A's introspection resolves, A's late response must not
+    // overwrite B's columns. Track the most recently *requested* table and
+    // drop any resolution that isn't for it.
+    latestColumnsRequestRef.current = tableName;
+
     const cacheKey = `${credentialId}:${tableName}`;
     const cached = _columnCache.get(cacheKey);
     if (cached) {
@@ -201,11 +208,11 @@ export function useTableIntrospection({
       const result = await introspectDbColumns(credentialId, tableName);
       const parsed = parseColumnsResult(result);
       boundedSet(_columnCache, cacheKey, parsed, MAX_COLUMN_CACHE);
-      setColumns(parsed);
+      if (latestColumnsRequestRef.current === tableName) setColumns(parsed);
     } catch (err) {
-      setColumnsError(errMsg(err, 'Failed to fetch columns'));
+      if (latestColumnsRequestRef.current === tableName) setColumnsError(errMsg(err, 'Failed to fetch columns'));
     } finally {
-      setColumnsLoading(false);
+      if (latestColumnsRequestRef.current === tableName) setColumnsLoading(false);
     }
   }, [credentialId]);
 

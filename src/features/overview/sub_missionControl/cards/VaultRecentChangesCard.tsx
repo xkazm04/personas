@@ -7,21 +7,13 @@ import {
   type SyncLogEntry,
 } from '@/api/obsidianBrain';
 import { silentCatch } from '@/lib/silentCatch';
+import { formatRelativeShort } from '@/features/overview/libs/formatRelativeShort';
+import { PaneHeader } from '../PaneHeader';
 
 const MAX_ROWS = 8;
 
 function formatTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  const now = Date.now();
-  const diffMs = now - d.getTime();
-  const mins = Math.round(diffMs / 60_000);
-  const hours = Math.round(diffMs / 3_600_000);
-  const days = Math.round(diffMs / 86_400_000);
-  if (mins < 1) return 'now';
-  if (mins < 60) return `${mins}m`;
-  if (hours < 24) return `${hours}h`;
-  return `${days}d`;
+  return formatRelativeShort(iso)?.label ?? '—';
 }
 
 function shortPath(p: string | null): string {
@@ -54,7 +46,13 @@ export default function VaultRecentChangesCard() {
           }
         });
       })
-      .catch(silentCatch('dashboard/VaultRecentChangesCard'));
+      .catch((err) => {
+        // A transient RPC failure (e.g. obsidianBrainGetSyncLog rejecting after
+        // config resolved truthy) must not leave `loaded` false forever — that
+        // renders this card as `null`, indistinguishable from "not configured".
+        if (!cancelled) setLoaded(true);
+        silentCatch('dashboard/VaultRecentChangesCard')(err);
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -62,17 +60,12 @@ export default function VaultRecentChangesCard() {
 
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
-        <div className="flex items-baseline gap-2">
-          <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground">
-            {t.overview.vault_recent_changes.title}
-          </span>
-          <span className="typo-caption text-foreground">
-            {t.overview.vault_recent_changes.subtitle}
-          </span>
-        </div>
+      <PaneHeader
+        label={t.overview.vault_recent_changes.title}
+        subtitle={t.overview.vault_recent_changes.subtitle}
+      >
         <ArrowRight className="w-3 h-3 text-foreground" />
-      </div>
+      </PaneHeader>
       {entries.length === 0 ? (
         <div className="px-4 py-6 typo-body text-foreground text-center">
           {t.overview.vault_recent_changes.empty}

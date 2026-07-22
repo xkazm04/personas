@@ -260,5 +260,10 @@
   "stream_no_speakers": "لا متحدثون",
   "stream_none": "لا شيء",
   "stream_search": "بحث في الإرساليات",
-  "stream_title": "التدفق"
+  "stream_title": "التدفق",
+  "columns_action_empty": "لا شيء يحتاج إليك الآن",
+  "columns_needs_attention": "يحتاج إلى انتباه",
+  "columns_active_goals": "الأهداف النشطة",
+  "columns_no_team": "بلا فريق",
+  "columns_all_clear": "كل شيء على ما يرام"
 }

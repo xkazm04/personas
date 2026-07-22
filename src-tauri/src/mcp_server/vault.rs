@@ -124,14 +124,8 @@ pub fn snippet_for(body: &str, query_lc: &str) -> String {
     let Some(pos) = body_lc.find(query_lc) else {
         return body.chars().take(160).collect();
     };
-    let mut start = pos.saturating_sub(60);
-    let mut end = (pos + query_lc.len() + 100).min(body.len());
-    while start > 0 && !body.is_char_boundary(start) {
-        start -= 1;
-    }
-    while end < body.len() && !body.is_char_boundary(end) {
-        end += 1;
-    }
+    let start = crate::utils::text::floor_char_boundary(body, pos.saturating_sub(60));
+    let end = crate::utils::text::ceil_char_boundary(body, (pos + query_lc.len() + 100).min(body.len()));
     let mut s = body[start..end].replace('\n', " ");
     if start > 0 {
         s.insert_str(0, "…");

@@ -195,7 +195,11 @@
     "s_elapsed": "s uplynulo",
     "s_remaining": "s zbývá",
     "show_cli_output": "Zobrazit CLI výstup",
-    "hide_cli_output": "Skrýt CLI výstup"
+    "hide_cli_output": "Skrýt CLI výstup",
+    "starting_transformation": "Zahajuje se transformace...",
+    "step_progress": "Krok {step} z {total}",
+    "starting_short": "Zahajuje se...",
+    "check_output_details": "Podrobnosti najdete ve výstupu níže."
   },
   "terminal_extra": {
     "press_enter": "Stiskněte Enter nebo klikněte na Play pro spuštění",

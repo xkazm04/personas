@@ -11,7 +11,7 @@ import { QuickEditPopover } from '@/features/shared/components/overlays/QuickEdi
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
-import { parseStandards, resolveBranchName } from '../sub_projects/pipeline/standardsConfig';
+import { parseStandards, defaultStandards, resolveBranchName } from '../sub_projects/pipeline/standardsConfig';
 import type { PipelineFieldId } from '../sub_projects/pipeline/pipelineTypes';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
@@ -54,7 +54,10 @@ export function EditableProjectPipeline({ project, teams, credentials, onSaved }
   }, [project.main_branch, project.test_env_branch, dp.standards_branch_main, dp.standards_branch_test]);
 
   const buildDraft = (field: PipelineFieldId): { draft: Draft; title: string } => {
-    const std = parseStandards(project.standards_config);
+    // Read-time parse defaults to all-false (nothing actually enforced); when
+    // opening the editor for a project with no stored config yet, pre-fill
+    // with sensible starting values instead of showing "everything off".
+    const std = project.standards_config ? parseStandards(project.standards_config) : defaultStandards();
     switch (field) {
       case 'name':
         return { title: dp.project_name, draft: { kind: 'text', value: project.name, placeholder: dp.project_name_placeholder } };
@@ -71,9 +74,9 @@ export function EditableProjectPipeline({ project, teams, credentials, onSaved }
       case 'std-precommit':
         return { title: dp.standards_precommit_heading, draft: { kind: 'precommit', lint: std.precommit.lint, docs: std.precommit.docs_required, quality: std.precommit.code_quality } };
       case 'std-pr-base':
-        return { title: dp.standards_pr_base, draft: { kind: 'select', value: std.branching.pr_base, options: branchOptions } };
+        return { title: dp.standards_pr_base, draft: { kind: 'select', value: std.branching.pr_base ?? 'main', options: branchOptions } };
       case 'std-automerge':
-        return { title: dp.standards_automerge, draft: { kind: 'automerge', enabled: std.branching.automerge.enabled, target: std.branching.automerge.target, branchOptions } };
+        return { title: dp.standards_automerge, draft: { kind: 'automerge', enabled: std.branching.automerge.enabled, target: std.branching.automerge.target ?? 'main', branchOptions } };
     }
   };
 

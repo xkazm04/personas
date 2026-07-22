@@ -153,14 +153,7 @@ fn sanitize_content(text: &str) -> String {
 
 /// Truncate a string safely at a UTF-8 char boundary.
 fn truncate_safe(s: &str, max: usize) -> String {
-    if s.len() <= max {
-        return s.to_string();
-    }
-    let mut end = max;
-    while end > 0 && !s.is_char_boundary(end) {
-        end -= 1;
-    }
-    s[..end].to_string()
+    crate::utils::text::truncate_on_char_boundary(s, max).to_string()
 }
 
 /// Wrap untrusted content in XML boundary tags with a random nonce.

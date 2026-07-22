@@ -286,6 +286,11 @@ export function PersonaOverviewVariantConstellation({
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const handleNodePointerDown = useCallback((id: string, e: React.PointerEvent) => {
+    // Clear any latch left by a previous drag whose trailing click landed on
+    // a different element (e.g. a rail chip) and never reached this node's
+    // onClick to reset it. Without this, the next legitimate click here would
+    // be silently suppressed.
+    justDraggedRef.current = false;
     dragStateRef.current = {
       personaId: id,
       startX: e.clientX,

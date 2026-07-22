@@ -189,7 +189,7 @@ export function AnnotationEditor({
           disabled={saving || !dirty}
           className="px-3 py-1 typo-body rounded-interactive bg-primary/15 text-primary/90 border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          {saving ? a.annotation_saved : a.annotation_save}
+          {saving ? a.annotation_saving : a.annotation_save}
         </button>
         {annotation && onDelete && (
           <button

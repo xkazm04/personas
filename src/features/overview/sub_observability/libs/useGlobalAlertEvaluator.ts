@@ -21,8 +21,15 @@ const ALERT_EVAL_WINDOW_DAYS = 1;
 export function useGlobalAlertEvaluator(): void {
   useEffect(() => {
     let cancelled = false;
+    let running = false;
 
     const run = async () => {
+      // Guard against overlapping ticks: if a prior pass (rules/history/bundle
+      // fetch under a slow backend) is still in flight when the next 60s tick
+      // fires, skip it rather than letting two evaluateAlertRules calls race
+      // past the cooldown check and double-fire the same alert.
+      if (running) return;
+      running = true;
       const store = useOverviewStore.getState();
       try {
         // Rules drive what to evaluate; history feeds the cooldown fallback so
@@ -38,6 +45,8 @@ export function useGlobalAlertEvaluator(): void {
         });
       } catch (err) {
         if (!cancelled) silentCatch('useGlobalAlertEvaluator')(err);
+      } finally {
+        running = false;
       }
     };
 

@@ -12,7 +12,7 @@ import { getTriggerHealthMap } from '@/api/pipeline/triggers';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, WEBHOOK_BASE_URL } from '@/lib/utils/platform/triggerConstants';
 import { formatTimestamp } from '@/lib/utils/formatters';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import type { TriggerHealth } from './triggerListTypes';
 import { HealthDot } from './HealthDot';
 import { TriggerCountdown } from './TriggerCountdown';

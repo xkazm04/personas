@@ -768,14 +768,19 @@ pub async fn detect_authenticated_services(
 ) -> Result<Vec<AuthDetection>, AppError> {
     require_auth(&state).await?;
 
-    // Return cached results if still fresh
-    {
-        let cache = state.auth_detect_cache.lock().await;
-        if let Some((cached_at, ref results)) = *cache {
-            if cached_at.elapsed() < AUTH_DETECT_CACHE_TTL {
-                tracing::debug!("Returning cached auth detection results");
-                return Ok(results.clone());
-            }
+    // Single-flight: hold the cache lock across the whole check-then-recompute
+    // cycle, not just the read. Two callers landing in the same tick (the
+    // wizard mounts multiple panels that both call this) would otherwise both
+    // see a stale/empty cache, both release the lock, and both independently
+    // spawn ~8 CLI subprocesses + copy browser cookie DBs before either
+    // writes the cache back. Holding the (async) mutex through the probes
+    // makes the second caller simply wait and then read the first caller's
+    // fresh result instead of duplicating the work.
+    let mut cache = state.auth_detect_cache.lock().await;
+    if let Some((cached_at, ref results)) = *cache {
+        if cached_at.elapsed() < AUTH_DETECT_CACHE_TTL {
+            tracing::debug!("Returning cached auth detection results");
+            return Ok(results.clone());
         }
     }
 
@@ -800,7 +805,7 @@ pub async fn detect_authenticated_services(
     }
 
     // Cache the results
-    *state.auth_detect_cache.lock().await = Some((std::time::Instant::now(), results.clone()));
+    *cache = Some((std::time::Instant::now(), results.clone()));
 
     Ok(results)
 }

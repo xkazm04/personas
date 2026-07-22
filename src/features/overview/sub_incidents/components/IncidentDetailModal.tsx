@@ -8,6 +8,7 @@ import { StatusShape } from '@/features/shared/components/display/StatusShape';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Button } from '@/features/shared/components/buttons';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
 import {
   setIncidentInProgress,
   resolveAuditIncident,
@@ -69,6 +70,7 @@ export function IncidentDetailModal({
   onFilterPersona,
 }: IncidentDetailModalProps) {
   const { t } = useTranslation();
+  const addToast = useToastStore((s) => s.addToast);
   const [note, setNote] = useState('');
   const [pending, setPending] = useState<Action | null>(null);
   const [siblings, setSiblings] = useState<AuditIncident[]>([]);
@@ -110,10 +112,15 @@ export function IncidentDetailModal({
   const canBackToOpen = status === 'in_progress';
   const canReopen = status === 'resolved' || status === 'dismissed';
 
-  const run = async (action: Action, fn: () => Promise<unknown>) => {
+  const run = async (action: Action, fn: () => Promise<boolean>) => {
     setPending(action);
     try {
-      await fn();
+      const ok = await fn();
+      if (!ok) {
+        addToast(t.overview.incidents.action_refused, 'error', 4000);
+        setPending(null);
+        return;
+      }
       onChanged?.();
       onClose();
     } catch (err) {

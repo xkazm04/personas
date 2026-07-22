@@ -1,17 +1,6 @@
-use serde::{Deserialize, Deserializer, Serialize};
+use crate::db::models::serde_util::double_option;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
-
-/// Three-state deserializer for nullable update fields (absent = preserve,
-/// `null` = clear, value = set). Mirrors the helper in `group.rs` — kept
-/// local to avoid a cross-module re-export. See group.rs for the full
-/// rationale.
-fn double_option<'de, T, D>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
-where
-    T: Deserialize<'de>,
-    D: Deserializer<'de>,
-{
-    Option::<T>::deserialize(deserializer).map(Some)
-}
 
 // ============================================================================
 // Teams
@@ -59,9 +48,13 @@ pub struct CreateTeamInput {
 #[ts(export)]
 pub struct UpdateTeamInput {
     pub name: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub description: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub canvas_data: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub team_config: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
     pub icon: Option<Option<String>>,
     pub color: Option<String>,
     pub enabled: Option<bool>,

@@ -68,7 +68,12 @@ export function buildTriggerConfig(s: TriggerFormState, t: Translations): BuildR
     const parsed = parseInt(s.interval);
     if (isNaN(parsed) || parsed < 60) return { ok: false, error: v.interval_minimum };
     config.interval_seconds = parsed;
-    if (s.selectedEventId) { config.event_id = s.selectedEventId; } else { config.endpoint = s.endpoint; }
+    if (s.selectedEventId) {
+      config.event_id = s.selectedEventId;
+    } else {
+      if (!s.endpoint.trim()) return { ok: false, error: v.endpoint_required };
+      config.endpoint = s.endpoint;
+    }
   } else if (s.triggerType === 'webhook') {
     config.webhook_secret = s.hmacSecret || generateWebhookSecret();
   } else if (s.triggerType === 'event_listener') {

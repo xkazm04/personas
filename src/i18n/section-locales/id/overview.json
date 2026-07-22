@@ -143,7 +143,9 @@
     "col_days": "Hari",
     "col_incident": "Insiden",
     "guidance_mcp_sidecar": "Agen berjalan tanpa alat MCP bawaannya karena biner personas-mcp hilang. Instal ulang atau perbaiki aplikasi agar tersedia bersama aplikasi desktop.",
-    "source_mcp_sidecar": "Perangkat alat MCP"
+    "source_mcp_sidecar": "Perangkat alat MCP",
+    "list_truncated": "Menampilkan {limit} insiden pertama — persempit filter untuk melihat sisanya.",
+    "action_refused": "Tindakan tidak diterapkan — status insiden mungkin telah berubah."
   },
   "observability": {
     "title": "Observabilitas",

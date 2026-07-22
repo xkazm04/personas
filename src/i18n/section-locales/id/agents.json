@@ -523,7 +523,8 @@
     "active_chains_hops_other": "{count} lompatan",
     "active_chains_one": "{count} rantai berjalan",
     "active_chains_other": "{count} rantai berjalan",
-    "active_chains_title": "Rantai berjalan"
+    "active_chains_title": "Rantai berjalan",
+    "copy_log_failed": "Gagal menyalin log ke papan klip"
   },
   "lab": {
     "mode_arena": "Arena",
@@ -1093,21 +1094,6 @@
     "ct_graph_view": "Grafik dependensi",
     "ct_swap_alt_tooltip": "Tukar ke konektor alternatif",
     "ct_deps": "{count} dep",
-    "dg_no_deps": "Tidak ada dependensi untuk ditampilkan.",
-    "dg_broken": "{count} rusak",
-    "dg_blast_radius": "Radius Dampak",
-    "dg_dependencies": "Dependensi",
-    "dg_select_cred": "Pilih kredensial untuk melihat apa yang rusak ketika kedaluwarsa",
-    "dg_relationships": "Hubungan ({count})",
-    "dg_more": "+{count} lainnya",
-    "dg_affected_tools": "Alat yang Terpengaruh",
-    "dg_affected_auto": "Otomasi yang Terpengaruh",
-    "dg_low_risk": "Risiko Rendah",
-    "dg_medium_risk": "Risiko Sedang",
-    "dg_high_risk": "Risiko Tinggi",
-    "dg_high_blast": "Jika kredensial ini kedaluwarsa atau offline, {count} kapabilitas akan rusak.",
-    "dg_medium_blast": "{count} kapabilitas bergantung pada kredensial ini.",
-    "dg_low_blast": "Tidak ada alat atau otomasi yang bergantung pada kredensial ini.",
     "dm_needed": "{count} kredensial diperlukan",
     "dm_fulfilled": "{fulfilled}/{total} konektor terpenuhi",
     "dm_reuse_hint": "{count} dapat menggunakan ulang kredensial yang ada",
@@ -1122,13 +1108,6 @@
     "sub_triggers_title": "Pemicu & Langganan",
     "sub_suggested": "{count} disarankan",
     "sub_filter": "pola: {filter}",
-    "lifecycle_error_load_triggers": "Gagal memuat pemicu: {error}",
-    "lifecycle_error_load_subscriptions": "Gagal memuat langganan: {error}",
-    "lifecycle_error_activate_trigger": "Gagal mengaktifkan pemicu",
-    "lifecycle_error_activate_subscription": "Gagal mengaktifkan langganan",
-    "lifecycle_error_retire_trigger": "Gagal menghapus pemicu",
-    "lifecycle_error_retire_subscription": "Gagal menghapus langganan",
-    "lifecycle_error_delete_persists": "Gagal menghapus. Langganan mungkin masih ada.",
     "auto_error_deploy_check_credentials": "Penerapan gagal. Periksa kredensial platform Anda dan coba lagi.",
     "auto_error_deploy_generic": "Penerapan otomatisasi gagal",
     "test_healthcheck_failed_default": "Pemeriksaan kesehatan gagal",
@@ -1730,7 +1709,8 @@
     "annotation_empty": "Belum ada anotasi — beri tag, catatan, atau bintang pada eksekusi ini agar mudah ditemukan nanti.",
     "col_verdict": "Putusan",
     "verdict_none": "Belum ditinjau oleh Director",
-    "verdict_tooltip": "Putusan Director: {score}/5"
+    "verdict_tooltip": "Putusan Director: {score}/5",
+    "annotation_saving": "Menyimpan…"
   },
   "settings_status": {
     "saving": "Menyimpan {sections}...",
@@ -2809,5 +2789,21 @@
       "other": "Lainnya"
     },
     "title": "Riwayat perubahan"
-  }
+  },
+  "sigil_edit_channels_label": "Saluran",
+  "sigil_edit_custom_connector": "Konektor kustom — tidak cocok dengan ikon merek mana pun.",
+  "sigil_edit_error_off": "Menggunakan kebijakan error default.",
+  "sigil_edit_error_on": "Kebijakan penanganan error kustom telah dikonfigurasi.",
+  "sigil_edit_event_off": "Tidak ada langganan event yang dikonfigurasi.",
+  "sigil_edit_event_on": "Kapabilitas ini berlangganan event.",
+  "sigil_edit_memory_off": "Memori nonaktif — kapabilitas berjalan tanpa status.",
+  "sigil_edit_memory_on": "Memori persisten aktif untuk kapabilitas ini.",
+  "sigil_edit_no_channels": "Tidak ada saluran notifikasi untuk kapabilitas ini.",
+  "sigil_edit_no_connector": "Kapabilitas ini tidak mendeklarasikan konektor.",
+  "sigil_edit_no_dim_editor": "Belum ada editor yang terhubung untuk dimensi ini.",
+  "sigil_edit_no_trigger": "Tidak ada trigger yang dikonfigurasi pada kapabilitas ini.",
+  "sigil_edit_review_off": "Tidak ada gerbang tinjauan manusia — tindakan berjalan otonom.",
+  "sigil_edit_review_on": "Tinjauan manusia diperlukan sebelum kapabilitas ini bertindak.",
+  "sigil_edit_service_label": "Layanan: {key}",
+  "sigil_edit_when_label": "Kapan"
 }

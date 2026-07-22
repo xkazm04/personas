@@ -2,7 +2,7 @@
  * Vault domain store -- credentials, databases, automations, and rotation.
  */
 import { create } from "zustand";
-import type { VaultStore } from "./storeTypes";
+import { createCoreState, type VaultStore } from "./storeTypes";
 
 import { createCredentialSlice } from "./slices/vault/credentialSlice";
 import { createDatabaseSlice } from "./slices/vault/databaseSlice";
@@ -11,10 +11,7 @@ import { createRotationSlice } from "./slices/vault/rotationSlice";
 import { createCatalogPrefsSlice } from "./slices/vault/catalogPrefsSlice";
 
 export const useVaultStore = create<VaultStore>()((...a) => ({
-  error: null,
-  errorKind: null,
-  isLoading: false,
-  sliceErrors: {},
+  ...createCoreState(),
   ...createCredentialSlice(...a),
   ...createDatabaseSlice(...a),
   ...createAutomationSlice(...a),

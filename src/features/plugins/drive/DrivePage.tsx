@@ -366,11 +366,12 @@ export default function DrivePage() {
   // original name (timestamp prefix stripped). Name collisions surface as
   // per-item toasts via drive.move's own error handling.
   const handleRestoreSelection = useCallback(async () => {
-    const paths = Array.from(drive.selection);
-    for (const p of paths) {
+    const pairs = Array.from(drive.selection).map((p) => {
       const base = p.split("/").pop() ?? p;
-      await drive.move(p, trashEntryInfo(base).originalName);
-    }
+      return { src: p, dst: trashEntryInfo(base).originalName };
+    });
+    // One bulk move + single refresh instead of a cascade per item.
+    await drive.moveMany(pairs);
     drive.clearSelection();
   }, [drive]);
 
@@ -479,16 +480,9 @@ export default function DrivePage() {
 
   const handleMoveSelection = useCallback(
     async (dst: string) => {
-      const paths = Array.from(drive.selection);
-      for (const p of paths) {
-        if (p === dst) continue;
-        // Refuse moving an ancestor folder into its own descendant — would
-        // orphan the subtree. Same guard the sidebar drop applies.
-        if (dst !== "" && dst.startsWith(`${p}/`)) continue;
-        const name = p.split("/").pop() ?? p;
-        const finalDst = dst ? `${dst}/${name}` : name;
-        await drive.move(p, finalDst);
-      }
+      // Shared self-skip + ancestor-guard + single-refresh bulk move — see
+      // useDrive.moveManyInto.
+      await drive.moveManyInto(Array.from(drive.selection), dst);
     },
     [drive],
   );

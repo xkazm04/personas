@@ -107,9 +107,15 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
 
   // Track in-flight checks so we can clean up orphaned refcounts on unmount.
   const inflightRef = useRef(0);
+  // Set on unmount so an in-flight check's `finally` doesn't resurrect a
+  // preview-mode cache entry the cleanup effect already deleted (the entry
+  // would then survive with nothing left mounted to ever clear it).
+  const unmountedRef = useRef(false);
 
   useEffect(() => {
+    unmountedRef.current = false;
     return () => {
+      unmountedRef.current = true;
       // On unmount, if any checks are still in-flight, their finally blocks
       // will eventually decrement. But if the component is destroyed due to
       // an uncaught error boundary, force-clear to prevent stuck loading.
@@ -134,19 +140,25 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
     resultCache.notify();
     try {
       const r = await fn();
-      resultCache.set(key, r);
+      // If a preview-mode key was already torn down by the unmount cleanup,
+      // don't resurrect it — nothing remains mounted to ever clear it again.
+      if (!(targetMode === 'preview' && unmountedRef.current)) {
+        resultCache.set(key, r);
+      }
     } catch (e) {
-      resultCache.set(key, {
-        success: false,
-        message: e instanceof Error ? e.message : 'Healthcheck failed',
-        state: 'failed',
-      });
+      if (!(targetMode === 'preview' && unmountedRef.current)) {
+        resultCache.set(key, {
+          success: false,
+          message: e instanceof Error ? e.message : 'Healthcheck failed',
+          state: 'failed',
+        });
+      }
     } finally {
       endLoading(key);
       inflightRef.current = Math.max(0, inflightRef.current - 1);
       resultCache.notify();
     }
-  }, [key]);
+  }, [key, targetMode]);
 
   /**
    * Check a stored credential by ID. Also persists the result into

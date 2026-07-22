@@ -181,14 +181,30 @@ fn required_field<'a>(
 
 /// Cap an upstream error body so a verbose 500 page doesn't pollute
 /// the chat transcript or blow embedder token budgets on the next turn.
-fn truncate_for_episode(s: &str, max: usize) -> String {
-    if s.len() <= max {
-        s.to_string()
+/// Delegates to the shared char-boundary-safe truncator
+/// (`crate::utils::text::truncate_on_char_boundary`) instead of the old
+/// local implementation, which gated on `s.len()` (bytes) but truncated
+/// with `s.chars().take(max)` (chars) — a units mismatch that could clip
+/// a multibyte body at the wrong point.
+fn truncate_for_episode(s: &str, max_bytes: usize) -> String {
+    let truncated = crate::utils::text::truncate_on_char_boundary(s, max_bytes);
+    if truncated.len() < s.len() {
+        format!("{truncated}…")
     } else {
-        let mut out = s.chars().take(max).collect::<String>();
-        out.push_str("…");
-        out
+        truncated.to_string()
     }
+}
+
+/// Render the "upstream HTTP call failed" markdown episode shared by
+/// every per-service handler below. Previously each of the ~15 call
+/// sites hand-rolled this exact shape (service label + status + capped
+/// body) — centralizing it means the error format or truncation cap
+/// changes in one place instead of fifteen.
+fn upstream_err_md(service_label: &str, status: reqwest::StatusCode, body: &str) -> String {
+    format!(
+        "## {service_label} failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
+        body = truncate_for_episode(body, 500)
+    )
 }
 
 // ============================================================================
@@ -226,10 +242,7 @@ async fn sentry_list_issues(
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
-        return Ok(format!(
-            "## Sentry — list_issues failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
-        ));
+        return Ok(upstream_err_md("Sentry — list_issues", status, &body));
     }
     let issues: Vec<Value> = serde_json::from_str(&body).map_err(|e| {
         AppError::Internal(format!("sentry list_issues: malformed JSON — {e}"))
@@ -294,9 +307,10 @@ async fn sentry_get_issue(
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
-        return Ok(format!(
-            "## Sentry — get_issue `{issue_id}` failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
+        return Ok(upstream_err_md(
+            &format!("Sentry — get_issue `{issue_id}`"),
+            status,
+            &body,
         ));
     }
     let issue: Value = serde_json::from_str(&body).map_err(|e| {
@@ -382,10 +396,7 @@ async fn github_list_repos(
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
-        return Ok(format!(
-            "## GitHub — list_repos failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
-        ));
+        return Ok(upstream_err_md("GitHub — list_repos", status, &body));
     }
     let repos: Vec<Value> = serde_json::from_str(&body)
         .map_err(|e| AppError::Internal(format!("github list_repos: malformed JSON — {e}")))?;
@@ -457,9 +468,10 @@ async fn github_list_open_prs(
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
-        return Ok(format!(
-            "## GitHub — list_open_prs `{owner}/{repo}` failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
+        return Ok(upstream_err_md(
+            &format!("GitHub — list_open_prs `{owner}/{repo}`"),
+            status,
+            &body,
         ));
     }
     let prs: Vec<Value> = serde_json::from_str(&body)
@@ -534,10 +546,7 @@ async fn slack_list_channels(
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
-        return Ok(format!(
-            "## Slack — list_channels failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
-        ));
+        return Ok(upstream_err_md("Slack — list_channels", status, &body));
     }
     let parsed: Value = serde_json::from_str(&body)
         .map_err(|e| AppError::Internal(format!("slack list_channels: malformed JSON — {e}")))?;
@@ -622,10 +631,7 @@ async fn gmail_list_recent_threads(
         return Ok("## Gmail — access token expired\n\nRe-authorize the Gmail connector in **Connections → Gmail**, then ask me again.".into());
     }
     if !status.is_success() {
-        return Ok(format!(
-            "## Gmail — list_recent_threads failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
-        ));
+        return Ok(upstream_err_md("Gmail — list_recent_threads", status, &body));
     }
     let parsed: Value = serde_json::from_str(&body).map_err(|e| {
         AppError::Internal(format!("gmail list_recent_threads: malformed JSON — {e}"))
@@ -679,10 +685,7 @@ async fn gmail_mark_thread_read(
         return Ok("## Gmail — access token expired\n\nRe-authorize in **Connections → Gmail**, then try again.".into());
     }
     if !status.is_success() {
-        return Ok(format!(
-            "## Gmail — mark_thread_read failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
-        ));
+        return Ok(upstream_err_md("Gmail — mark_thread_read", status, &body));
     }
     Ok(format!(
         "## Gmail — thread `{thread_id}` marked as read\n\nUNREAD label removed."
@@ -730,10 +733,7 @@ async fn gmail_send_message(
         return Ok("## Gmail — access token expired\n\nRe-authorize in **Connections → Gmail**, then try again.".into());
     }
     if !status.is_success() {
-        return Ok(format!(
-            "## Gmail — send_message failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&resp_body, 500)
-        ));
+        return Ok(upstream_err_md("Gmail — send_message", status, &resp_body));
     }
     let parsed: Value = serde_json::from_str(&resp_body).unwrap_or(serde_json::json!({}));
     let id = parsed.get("id").and_then(|v| v.as_str()).unwrap_or("?");
@@ -777,8 +777,8 @@ async fn discord_list_recent_messages(
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
         return Ok(format!(
-            "## Discord — list_recent_messages failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```\n\n_(401/403 typically means the bot isn't a member of this channel's guild, or the channel id is wrong.)_",
-            body = truncate_for_episode(&body, 500)
+            "{}\n\n_(401/403 typically means the bot isn't a member of this channel's guild, or the channel id is wrong.)_",
+            upstream_err_md("Discord — list_recent_messages", status, &body)
         ));
     }
     let messages: Value = serde_json::from_str(&body).map_err(|e| {
@@ -834,8 +834,8 @@ async fn discord_post_message(
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
         return Ok(format!(
-            "## Discord — post_message failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```\n\n_(401/403 typically means the bot doesn't have permission to post in this channel.)_",
-            body = truncate_for_episode(&body, 500)
+            "{}\n\n_(401/403 typically means the bot doesn't have permission to post in this channel.)_",
+            upstream_err_md("Discord — post_message", status, &body)
         ));
     }
     let parsed: Value = serde_json::from_str(&body).unwrap_or(serde_json::json!({}));
@@ -882,10 +882,7 @@ async fn notion_list_pages(
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
-        return Ok(format!(
-            "## Notion -- list_pages failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
-        ));
+        return Ok(upstream_err_md("Notion -- list_pages", status, &body));
     }
     let parsed: Value = serde_json::from_str(&body).map_err(|e| {
         AppError::Internal(format!("notion list_pages: malformed JSON -- {e}"))
@@ -970,10 +967,7 @@ async fn notion_get_page(
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
-        return Ok(format!(
-            "## Notion -- get_page failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
-        ));
+        return Ok(upstream_err_md("Notion -- get_page", status, &body));
     }
     Ok(format!(
         "## Notion -- page `{page_id}`\n\n```json\n{body}\n```",
@@ -1003,10 +997,7 @@ async fn notion_delete_page(
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
-        return Ok(format!(
-            "## Notion -- delete_page failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
-        ));
+        return Ok(upstream_err_md("Notion -- delete_page", status, &body));
     }
     Ok(format!(
         "## Notion -- page `{page_id}` archived\n\nThe page is now `archived: true` (Notion's soft-delete -- disappears from search and most views; restorable from Notion trash within 30 days)."
@@ -1112,6 +1103,12 @@ async fn local_drive_list_files(args: &Value) -> Result<String, AppError> {
     Ok(out)
 }
 
+// Bounds mirroring `scan_codebase`'s walk guard: this is an auto-fire
+// (non-approval-gated) capability, so a symlink/junction cycle inside
+// the managed drive must not be able to pin a worker indefinitely.
+const COUNT_FILES_MAX_ENTRIES: usize = 200_000;
+const COUNT_FILES_WALK_TIMEOUT_SECS: u64 = 30;
+
 async fn local_drive_count_files(args: &Value) -> Result<String, AppError> {
     let rel = args.get("rel_path").and_then(|v| v.as_str()).unwrap_or("");
     let root = drive_root_path()?;
@@ -1122,8 +1119,11 @@ async fn local_drive_count_files(args: &Value) -> Result<String, AppError> {
     let mut file_count: usize = 0;
     let mut folder_count: usize = 0;
     let mut bytes: u64 = 0;
+    let mut entries_seen: usize = 0;
+    let mut bailed: Option<&str> = None;
+    let started = std::time::Instant::now();
     let mut stack = vec![target.clone()];
-    while let Some(dir) = stack.pop() {
+    'walk: while let Some(dir) = stack.pop() {
         if !dir.is_dir() {
             file_count += 1;
             if let Ok(md) = std::fs::metadata(&dir) {
@@ -1132,9 +1132,28 @@ async fn local_drive_count_files(args: &Value) -> Result<String, AppError> {
             continue;
         }
         for entry in std::fs::read_dir(&dir)? {
+            entries_seen += 1;
+            if entries_seen > COUNT_FILES_MAX_ENTRIES {
+                bailed = Some("entry cap");
+                break 'walk;
+            }
+            if started.elapsed().as_secs() > COUNT_FILES_WALK_TIMEOUT_SECS {
+                bailed = Some("time budget");
+                break 'walk;
+            }
             let entry = entry?;
             let name = entry.file_name().to_string_lossy().to_string();
             if matches!(name.as_str(), ".DS_Store" | "Thumbs.db" | "desktop.ini") {
+                continue;
+            }
+            // Don't follow symlinks/junctions — a cycle inside the
+            // managed drive (e.g. `a/ -> ../`) would otherwise make the
+            // walk push directories forever.
+            let is_symlink = entry
+                .file_type()
+                .map(|ft| ft.is_symlink())
+                .unwrap_or(false);
+            if is_symlink {
                 continue;
             }
             let path = entry.path();
@@ -1151,8 +1170,12 @@ async fn local_drive_count_files(args: &Value) -> Result<String, AppError> {
     }
     let label = if rel.is_empty() { "/".to_string() } else { format!("/{rel}") };
     let mb = (bytes as f64) / 1_048_576.0;
+    let note = match bailed {
+        Some(reason) => format!(" _(stopped early — {reason} exceeded)_"),
+        None => String::new(),
+    };
     Ok(format!(
-        "## Local drive -- `{label}` contains **{file_count}** file(s) across **{folder_count}** folder(s) -- {mb:.2} MB total"
+        "## Local drive -- `{label}` contains **{file_count}** file(s) across **{folder_count}** folder(s) -- {mb:.2} MB total{note}"
     ))
 }
 
@@ -1200,10 +1223,7 @@ async fn elevenlabs_list_voices(
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
     if !status.is_success() {
-        return Ok(format!(
-            "## ElevenLabs -- list_voices failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
-        ));
+        return Ok(upstream_err_md("ElevenLabs -- list_voices", status, &body));
     }
     let parsed: Value = serde_json::from_str(&body).map_err(|e| {
         AppError::Internal(format!("elevenlabs list_voices: malformed JSON -- {e}"))
@@ -1266,10 +1286,7 @@ async fn elevenlabs_generate_tts(
     let status = resp.status();
     if !status.is_success() {
         let body = resp.text().await.unwrap_or_default();
-        return Ok(format!(
-            "## ElevenLabs -- generate_tts failed\n\nUpstream returned **{status}**.\n\n```\n{body}\n```",
-            body = truncate_for_episode(&body, 500)
-        ));
+        return Ok(upstream_err_md("ElevenLabs -- generate_tts", status, &body));
     }
     let audio_bytes = resp
         .bytes()

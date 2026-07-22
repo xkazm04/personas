@@ -195,7 +195,11 @@
     "s_elapsed": "s vergangen",
     "s_remaining": "s verbleibend",
     "show_cli_output": "CLI-Ausgabe anzeigen",
-    "hide_cli_output": "CLI-Ausgabe ausblenden"
+    "hide_cli_output": "CLI-Ausgabe ausblenden",
+    "starting_transformation": "Transformation wird gestartet...",
+    "step_progress": "Schritt {step} von {total}",
+    "starting_short": "Wird gestartet...",
+    "check_output_details": "Details finden Sie in der Ausgabe unten."
   },
   "terminal_extra": {
     "press_enter": "Eingabe drücken oder Abspielen klicken, um zu starten",

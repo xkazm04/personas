@@ -16,24 +16,23 @@
 // each cover morphs between its grid tile and its table column.
 import { Fragment, useMemo, useRef, useState } from 'react';
 import { LayoutGroup, motion, useReducedMotion } from 'framer-motion';
-import { AlertTriangle, CheckCircle2, ArrowUpRight, ChevronLeft, ChevronRight, FileDown } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowUpRight, Boxes, CheckCircle2, ChevronLeft, ChevronRight, Database, FileDown, KeyRound, Server } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { passportToMarkdown } from './passportExport';
 import { SECTIONS, type CellValue } from './passportRows';
 import {
   sortByNameAsc,
-  ARCHETYPE_LABEL, LIFECYCLE_LABEL, CRITICALITY_LABEL,
-  AUTOMATION_LABEL, PROD_BAND_LABEL, AUTOMATION_SCALE, PROD_BAND_SCALE,
+  AUTOMATION_LABEL, PROD_BAND_LABEL,
   type AppPassport,
 } from './passportModel';
 import { INK, InkTabs, SegBar, TechInk, inkKindOf, scoreInk } from './passportInk';
+import { trendDelta } from './passportHistory';
+import { resolveTechIcon } from './techIcons';
 import { Pips, BoolMark, SectionIcon } from './passportWidgets';
-import { scoreAgainstRubric } from './improve/goldenStandard';
 import { ImproveCell } from './improve/ImproveCell';
 import { StandardsScan } from './improve/StandardsScan';
-import { ReadinessTrend } from './ReadinessTrend';
 import { LlmTrackingCell } from './LlmTrackingCell';
 import { WarningBadge, type WarningItem } from './WarningBadge';
 
@@ -85,6 +84,7 @@ export function ProjectsPassportWall({
   onOpen,
   attentionByProject,
   onJumpKpi,
+  headerStats,
 }: {
   passports: AppPassport[];
   openSlugs?: Set<string>;
@@ -93,6 +93,9 @@ export function ProjectsPassportWall({
   attentionByProject?: Map<string, WarningItem[]>;
   /** Deep-link from a warning into that KPI's console. */
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
+  /** R18 — per-slug header stats (contexts count, KPI pass rate) computed by
+   *  the host; the cover renders 0/dim placeholders when absent. */
+  headerStats?: Map<string, { contexts: number; kpiPassed: number; kpiTotal: number }>;
 }) {
   const reduce = useReducedMotion();
   const [view, setView] = useState<WallView>('overview');
@@ -138,6 +141,7 @@ export function ProjectsPassportWall({
     onOpen,
     attention: attentionByProject?.get(p.identity.slug) ?? [],
     onJumpKpi,
+    stats: headerStats?.get(p.identity.slug) ?? null,
   });
 
   return (
@@ -309,50 +313,92 @@ export function ProjectsPassportWall({
   );
 }
 
-/** A passport cover — shared by the Overview tile and the Compare column
- *  header: clickable identity, warning badge + scan + export, meta chips, the
- *  two readiness axes as segmented level bars, golden gauge, trend. */
+/** R18 — the Statband cover (bench R16/R17 winner, real data): identity +
+ *  action icons + the 5-slot stack strip on one line, then the labeled
+ *  mini-scoreboard band (Auto / Prod / Trend / Ctx / KPI). The axis depth the
+ *  old cover carried lives in the Compare rows; production affordances
+ *  (warning badge, standards scan, markdown export) stay on the title row. */
+const BAND_CODE: Record<string, string> = {
+  prototype: 'PT', internal: 'IN', beta: 'BE', production: 'PR', hardened: 'HD',
+};
+
+interface HeaderStatsShape { contexts: number; kpiPassed: number; kpiTotal: number }
+
+function StackStrip({ p, size = 13 }: { p: AppPassport; size?: number }) {
+  const slots: Array<{ key: string; category: string; label: string | null; fallback: LucideIcon }> = [
+    { key: 'framework', category: 'Framework', label: p.stack.frameworks[0] ?? null, fallback: Boxes },
+    { key: 'persistence', category: 'Persistence', label: p.stack.persistence[0]?.engine ?? null, fallback: Database },
+    { key: 'hosting', category: 'Hosting', label: p.stack.hosting ?? null, fallback: Server },
+    { key: 'auth', category: 'Auth', label: p.stack.auth ?? null, fallback: KeyRound },
+    { key: 'monitoring', category: 'Monitoring', label: p.stack.monitoring.errorTracking, fallback: Activity },
+  ];
+  return (
+    <span className="inline-flex items-center gap-1.5" data-testid="passport-stack-strip">
+      {slots.map((slot) => {
+        const match = slot.label ? resolveTechIcon(slot.label) : null;
+        const Fallback = slot.fallback;
+        if (match) {
+          return (
+            <span key={slot.key} title={`${slot.category}: ${slot.label}`} className="inline-flex shrink-0">
+              <svg width={size} height={size} viewBox="0 0 24 24" fill={match.icon.color ?? 'currentColor'} aria-hidden>
+                <path d={match.icon.path} />
+              </svg>
+            </span>
+          );
+        }
+        if (slot.label) {
+          return (
+            <span key={slot.key} title={`${slot.category}: ${slot.label}`} className="inline-flex shrink-0 text-foreground/75">
+              <Fallback style={{ width: size, height: size }} aria-hidden />
+            </span>
+          );
+        }
+        return (
+          <span key={slot.key} title={`${slot.category} — not wired`} className="inline-flex shrink-0 text-foreground/20" data-testid={`passport-unwired-${slot.key}`}>
+            <Fallback style={{ width: size, height: size }} aria-hidden />
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 function CoverBody({
-  p, openable, onOpen, attention, onJumpKpi,
+  p, openable, onOpen, attention, onJumpKpi, stats,
 }: {
   p: AppPassport;
   openable: boolean;
   onOpen?: (slug: string) => void;
   attention: WarningItem[];
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
+  stats: HeaderStatsShape | null;
 }) {
-  const critical = p.identity.criticality === 'mission-critical';
   const worst = scoreInk(Math.min(p.automationReadiness.score, p.productionReadiness.score));
-  const axis = (label: string, code: string, name: string, score: number, reached: number, steps: number) => {
-    const hue = scoreInk(score);
-    return (
-      <div className="w-full">
-        <div className="flex items-baseline gap-1.5 mb-1">
-          <span className="text-[10px] uppercase tracking-[0.12em] text-foreground/45">{label}</span>
-          <Tooltip content={`${name} — ${score}/100`}>
-            <span className="inline-flex items-baseline gap-1 cursor-default ml-auto">
-              <span className="typo-caption font-bold tabular-nums leading-none" style={{ color: hue }}>{code}</span>
-              <span className="typo-caption tabular-nums leading-none opacity-70" style={{ color: hue }}>{score}</span>
-            </span>
-          </Tooltip>
-        </div>
-        <SegBar steps={steps} reached={reached} hue={hue} />
-      </div>
-    );
-  };
+  const trend = trendDelta(p.identity.slug)?.golden ?? 0;
+  const kpiHue =
+    !stats || stats.kpiTotal === 0 ? 'rgba(148,163,184,.35)'
+    : stats.kpiPassed === stats.kpiTotal ? INK.emerald
+    : stats.kpiPassed / stats.kpiTotal >= 0.5 ? INK.amber : INK.red;
+
+  const cell = (value: React.ReactNode, label: string, title: string) => (
+    <span className="flex flex-col items-center gap-0.5 min-w-0" title={title}>
+      <span className="text-[11.5px] font-semibold tabular-nums leading-none">{value}</span>
+      <span className="text-[8.5px] uppercase tracking-[0.14em] text-foreground/35 leading-none">{label}</span>
+    </span>
+  );
 
   return (
     <>
-      {/* worst-state dot + title + warning badge + scan + export */}
+      {/* identity + production affordances + stack strip */}
       <div className="flex items-center gap-1.5 min-w-0">
         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} aria-hidden />
         {openable ? (
           <button type="button" onClick={() => onOpen!(p.identity.slug)} title={p.identity.purpose} className="group/cov inline-flex items-center gap-1 min-w-0 text-left">
-            <span className="typo-heading-lg tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
+            <span className="typo-body font-semibold tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
             <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0 opacity-0 group-hover/cov:opacity-100 text-primary/70 transition-opacity" aria-hidden />
           </button>
         ) : (
-          <span title={p.identity.purpose} className="typo-heading-lg tracking-tight truncate block">{p.identity.name}</span>
+          <span title={p.identity.purpose} className="typo-body font-semibold tracking-tight truncate block">{p.identity.name}</span>
         )}
         <WarningBadge projectName={p.identity.name} items={attention} onJump={(g, k) => onJumpKpi?.(p.identity.slug, g, k)} />
         <StandardsScan slug={p.identity.slug} projectName={p.identity.name} />
@@ -362,60 +408,44 @@ function CoverBody({
           tooltip="Copy readiness report (markdown)"
           className="flex-shrink-0 p-0.5 text-foreground/45 hover:text-primary"
         />
+        <span className="ml-auto shrink-0"><StackStrip p={p} /></span>
       </div>
 
-      {/* identity as quiet ink text — no pill chips */}
-      <div className="typo-label text-foreground/40 mt-1">
-        {ARCHETYPE_LABEL[p.identity.archetype]} · {LIFECYCLE_LABEL[p.identity.lifecycle]} ·{' '}
-        <span className={critical ? 'text-red-300' : undefined}>{CRITICALITY_LABEL[p.identity.criticality]}</span>
-      </div>
-
-      <div className="flex flex-col gap-2.5 mt-3">
-        {axis(
-          COPY.automation,
-          p.automationReadiness.level,
-          AUTOMATION_LABEL[p.automationReadiness.level],
-          p.automationReadiness.score,
-          AUTOMATION_SCALE.indexOf(p.automationReadiness.level) + 1,
-          AUTOMATION_SCALE.length,
+      {/* the labeled scoreboard band */}
+      <div
+        className="mt-2.5 flex items-center justify-between rounded-card px-2.5 py-1.5"
+        style={{ background: 'rgba(148,163,184,.05)', border: '1px solid rgba(148,163,184,.10)' }}
+        data-testid={`passport-statband-${p.identity.slug}`}
+      >
+        {cell(
+          <span style={{ color: scoreInk(p.automationReadiness.score) }}>{p.automationReadiness.level}</span>,
+          'Auto',
+          `Automation: ${AUTOMATION_LABEL[p.automationReadiness.level]} — ${p.automationReadiness.score}/100`,
         )}
-        {axis(
-          COPY.production,
-          PROD_BAND_LABEL[p.productionReadiness.band],
-          PROD_BAND_LABEL[p.productionReadiness.band],
-          p.productionReadiness.score,
-          PROD_BAND_SCALE.indexOf(p.productionReadiness.band) + 1,
-          PROD_BAND_SCALE.length,
+        {cell(
+          <span style={{ color: scoreInk(p.productionReadiness.score) }}>{BAND_CODE[p.productionReadiness.band]}</span>,
+          'Prod',
+          `Production: ${PROD_BAND_LABEL[p.productionReadiness.band]} — ${p.productionReadiness.score}/100`,
         )}
-        <GoldenInk p={p} />
-        <ReadinessTrend slug={p.identity.slug} />
+        {cell(
+          trend === 0
+            ? <span className="text-foreground/30">—</span>
+            : <span style={{ color: trend > 0 ? INK.emerald : INK.red }}>{trend > 0 ? '▲' : '▼'}{Math.abs(trend)}</span>,
+          'Trend',
+          'Golden-standard trend since last recorded change',
+        )}
+        {cell(
+          <span style={{ color: !stats || stats.contexts === 0 ? INK.blue : 'rgba(226,232,240,.9)' }}>{stats?.contexts ?? 0}</span>,
+          'Ctx',
+          `${stats?.contexts ?? 0} contexts mapped`,
+        )}
+        {cell(
+          <span style={{ color: kpiHue }}>{stats ? `${stats.kpiPassed}/${stats.kpiTotal}` : '0/0'}</span>,
+          'KPI',
+          `${stats?.kpiPassed ?? 0} of ${stats?.kpiTotal ?? 0} KPIs meeting target`,
+        )}
       </div>
     </>
-  );
-}
-
-/** The golden-standard line in ink — same rubric as the improve engine's gauge,
- *  painted with the ink score ramp (the original scoreTint's blue-at-60 would
- *  collide with ink's blue = SETUP vocabulary). */
-function GoldenInk({ p }: { p: AppPassport }) {
-  const r = scoreAgainstRubric(p);
-  const hue = scoreInk(r.goldenPct);
-  const tip = r.belowTarget.length
-    ? `Below the ${ARCHETYPE_LABEL[r.archetype]} golden standard on: ${r.belowTarget.map((d) => d.label).join(', ')}`
-    : `Meets the ${ARCHETYPE_LABEL[r.archetype]} golden standard`;
-  return (
-    <Tooltip content={tip}>
-      <span className="inline-flex items-center gap-1.5 w-full cursor-default">
-        <span className="text-[10px] uppercase tracking-[0.12em] text-foreground/45 flex-shrink-0">Golden</span>
-        <span className="relative flex-1 h-[2px] rounded-full" style={{ background: 'rgba(148,163,184,.10)' }}>
-          <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${r.goldenPct}%`, background: hue, boxShadow: `0 0 4px ${hue}55` }} />
-        </span>
-        <span className="typo-caption tabular-nums font-semibold leading-none flex-shrink-0" style={{ color: hue }}>{r.goldenPct}%</span>
-        {r.belowTarget.length > 0 && (
-          <span className="typo-label text-foreground/40 flex-shrink-0">· {r.belowTarget.length}&nbsp;below</span>
-        )}
-      </span>
-    </Tooltip>
   );
 }
 

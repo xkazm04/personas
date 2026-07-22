@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::db::models::serde_util::double_option;
+
 // ============================================================================
 // Credentials
 // ============================================================================
@@ -90,6 +92,7 @@ pub struct UpdateCredentialInput {
     /// the command layer sets it from the encryption result.
     #[serde(skip_deserializing, default)]
     pub iv: Option<String>,
+    #[serde(default, deserialize_with = "double_option")]
     pub metadata: Option<Option<String>>,
     pub session_encrypted_data: Option<String>,
     /// One-time reference to a completed in-memory OAuth session — see

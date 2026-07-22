@@ -105,7 +105,10 @@ pub(super) async fn run_streaming(
             return fail(
                 emitter,
                 execution_id,
-                &format!("{provider} API error ({status}): {}", &text[..text.len().min(300)]),
+                &format!(
+                    "{provider} API error ({status}): {}",
+                    crate::utils::text::truncate_on_char_boundary(&text, 300)
+                ),
                 start_time,
             );
         }

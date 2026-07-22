@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Compass, Info, MessageCircle } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -62,11 +62,22 @@ export default function CockpitPanel() {
     useShallow((s) => ({ personas: s.personas, fetchPersonas: s.fetchPersonas })),
   );
   const [metrics, setMetrics] = useState<MetricsSummary | null>(null);
+  // Metrics: once on mount. Keying this on `personas` refetched the summary on
+  // every fleet-array identity change (renames, background refreshes).
   useEffect(() => {
-    if (!personas || personas.length === 0) fetchPersonas().catch(silentCatch('cockpit_fetch_personas'));
     getMetricsSummary(DEFAULT_COCKPIT_METRICS_DAYS)
       .then(setMetrics)
       .catch(silentCatch('cockpit_metrics_summary'));
+  }, []);
+  // Personas: fetch-if-empty exactly once. An empty fleet re-produces the
+  // guard state (fresh [] identity per fetch), which looped fetchPersonas
+  // for as long as the panel was open on a zero-persona install.
+  const personasRequestedRef = useRef(false);
+  useEffect(() => {
+    if ((!personas || personas.length === 0) && !personasRequestedRef.current) {
+      personasRequestedRef.current = true;
+      fetchPersonas().catch(silentCatch('cockpit_fetch_personas'));
+    }
   }, [personas, fetchPersonas]);
 
   // Empty-state CTA: seed Athena with a concrete "compose a persona overview
@@ -241,7 +252,7 @@ export default function CockpitPanel() {
           </div>
         )}
 
-        {!contextualCockpit && loading ? (
+        {!contextualCockpit && loading && !spec ? (
           <div className="flex items-center justify-center py-20">
             <LoadingSpinner size="lg" />
           </div>

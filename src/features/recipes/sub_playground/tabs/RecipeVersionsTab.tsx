@@ -52,9 +52,14 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
     loadVersions();
   }, [loadVersions]);
 
+  // Reset the versioning stream on unmount/recipe change. Depend on the
+  // stable `reset` function, NOT the `versioning` memo object — its identity
+  // changes on every phase transition and streamed progress line, which
+  // would fire this cleanup and tear down the in-flight stream.
+  const resetVersioning = versioning.reset;
   useEffect(() => {
-    return () => versioning.reset();
-  }, [recipe.id, versioning]);
+    return () => resetVersioning();
+  }, [recipe.id, resetVersioning]);
 
   const handleGenerate = useCallback(async () => {
     if (!requirements.trim()) return;
@@ -70,15 +75,15 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
     setError(null);
     try {
       const draft = versioning.draft;
-      const updated = await recipeApi.acceptRecipeVersion(
-        recipe.id,
-        draft.prompt_template,
-        draft.input_schema ?? null,
-        draft.sample_inputs ?? null,
-        draft.description ?? null,
-        draft.changes_summary ?? null,
-        baseUpdatedAtRef.current,
-      );
+      const updated = await recipeApi.acceptRecipeVersion({
+        recipeId: recipe.id,
+        promptTemplate: draft.prompt_template,
+        inputSchema: draft.input_schema ?? null,
+        sampleInputs: draft.sample_inputs ?? null,
+        description: draft.description ?? null,
+        changesSummary: draft.changes_summary ?? null,
+        expectedUpdatedAt: baseUpdatedAtRef.current,
+      });
       onRecipeUpdated(updated);
       versioning.reset();
       setRequirements('');

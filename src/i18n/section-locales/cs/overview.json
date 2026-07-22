@@ -143,7 +143,9 @@
     "col_days": "Dny",
     "col_incident": "Incident",
     "guidance_mcp_sidecar": "Agent běžel bez svých vestavěných nástrojů MCP, protože chyběl binární soubor personas-mcp. Přeinstalujte nebo opravte aplikaci, aby byl součástí instalace.",
-    "source_mcp_sidecar": "Sada nástrojů MCP"
+    "source_mcp_sidecar": "Sada nástrojů MCP",
+    "list_truncated": "Zobrazeno prvních {limit} incidentů — zúžte filtry, chcete-li vidět zbytek.",
+    "action_refused": "Akce nebyla použita — stav incidentu se mohl mezitím změnit."
   },
   "observability": {
     "title": "Pozorovatelnost",

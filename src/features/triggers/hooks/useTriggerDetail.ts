@@ -31,6 +31,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
   // -- Delete confirmation --
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const testResultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // -- Clipboard --
   const { copied: copiedUrl, copy: copyUrl } = useCopyToClipboard();
@@ -39,12 +40,14 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
   useEffect(() => {
     return () => {
       if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+      if (testResultTimerRef.current) clearTimeout(testResultTimerRef.current);
     };
   }, []);
 
   // -- Test fire ----------------------------------------------------------
 
   const handleTestFire = useCallback(async () => {
+    if (testResultTimerRef.current) clearTimeout(testResultTimerRef.current);
     setTesting(true);
     setTestResult(null);
     try {
@@ -55,12 +58,14 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
         setTestResult({ success: true, message: `Config OK. Execution ${result.data.execution.id.slice(0, 8)} started` });
       } else if (result.data?.validationFailures) {
         setTestResult({ success: false, message: `Validation failed -- ${result.data.validationFailures}` });
+      } else {
+        setTestResult({ success: true, message: 'Trigger fired' });
       }
     } catch (err) {
       setTestResult({ success: false, message: err instanceof Error ? err.message : 'Failed to fire trigger' });
     } finally {
       setTesting(false);
-      setTimeout(() => setTestResult(null), 8000);
+      testResultTimerRef.current = setTimeout(() => setTestResult(null), 8000);
     }
   }, [triggerId, ops]);
 

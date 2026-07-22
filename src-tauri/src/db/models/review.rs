@@ -194,17 +194,17 @@ pub struct CreateReviewMessageInput {
 // Connector Counts
 // ============================================================================
 
+/// Shared `{ name, count }` shape for distinct-value tallies (connectors,
+/// categories). Not ts-rs exported (internal repo/command return type only),
+/// so a type alias is safe here without touching any generated bindings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConnectorWithCount {
+pub struct NameWithCount {
     pub name: String,
     pub count: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CategoryWithCount {
-    pub name: String,
-    pub count: i64,
-}
+pub type ConnectorWithCount = NameWithCount;
+pub type CategoryWithCount = NameWithCount;
 
 // ============================================================================
 // Design Reviews

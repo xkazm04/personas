@@ -72,7 +72,25 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Vec<Validati
     let mut errors = Vec::new();
 
     if let Some(config_str) = config {
-        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(config_str) {
+        // Fail CLOSED on malformed JSON. This used to be `if let Ok(parsed)`,
+        // silently skipping every check below on a parse error — so a webhook
+        // trigger created via the repo/build-session paths (which don't also
+        // call validate_config_json) could bypass the webhook_secret HMAC
+        // requirement, the interval floor, and the composite window clamp
+        // just by carrying malformed config. LLM-generated configs are the
+        // inputs most likely to be malformed.
+        let parse_result = if config_str.trim().is_empty() {
+            None
+        } else {
+            match serde_json::from_str::<serde_json::Value>(config_str) {
+                Ok(parsed) => Some(parsed),
+                Err(_) => {
+                    errors.push(ValidationError::new("config", "json", "Invalid config JSON"));
+                    return errors;
+                }
+            }
+        };
+        if let Some(parsed) = parse_result {
             if let Some(interval) = parsed.get("interval_seconds") {
                 match interval.as_i64() {
                     Some(n) if n < MIN_INTERVAL_SECONDS => {
@@ -166,6 +184,13 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Vec<Validati
                     }
                 }
             }
+        } else if trigger_type == "webhook" {
+            // Present-but-empty config: same contract as absent config.
+            errors.push(ValidationError::new(
+                "config",
+                "required",
+                "Webhook triggers require a config with a non-empty webhook_secret",
+            ));
         }
     } else if trigger_type == "webhook" {
         errors.push(ValidationError::new(
@@ -324,6 +349,19 @@ mod tests {
             Some(r#"{"cron_expression": "0 * * * *"}"#)
         )
         .is_empty());
+    }
+
+    #[test]
+    fn malformed_config_fails_closed() {
+        // Fail closed: unparseable JSON must produce an error from
+        // validate_config itself, not rely on callers also invoking
+        // validate_config_json (the repo + build-session paths don't).
+        let errs = validate_config("webhook", Some("{not json"));
+        assert!(errs.iter().any(|e| e.field == "config" && e.rule == "json"));
+
+        // Present-but-empty config is rejected like absent config.
+        let errs = validate_config("webhook", Some("   "));
+        assert!(errs.iter().any(|e| e.rule == "required"));
     }
 
     #[test]

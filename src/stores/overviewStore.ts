@@ -6,7 +6,7 @@
  * Only ephemeral client-side toast state remains in the Zustand store.
  */
 import { create } from "zustand";
-import type { OverviewStore } from "./storeTypes";
+import { createCoreState, type OverviewStore } from "./storeTypes";
 
 import { createOverviewSlice } from "./slices/overview/overviewSlice";
 import { createMessageSlice } from "./slices/overview/messageSlice";
@@ -22,10 +22,7 @@ import { createHomeSpineSlice } from "./slices/overview/homeSpineSlice";
 
 export const useOverviewStore = create<OverviewStore>()(
   (...a) => ({
-    error: null,
-    errorKind: null,
-    isLoading: false,
-    sliceErrors: {},
+    ...createCoreState(),
     ...createOverviewSlice(...a),
     ...createMessageSlice(...a),
     ...createEventSlice(...a),

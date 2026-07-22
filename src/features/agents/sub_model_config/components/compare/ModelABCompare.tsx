@@ -29,15 +29,16 @@ export function ModelABCompare() {
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [lastResults, setLastResults] = useState<import('@/lib/bindings/LabArenaResult').LabArenaResult[] | null>(null);
 
-  // Fetch results when run completes
+  // Fetch results when run completes. Trigger deliberately does NOT depend on
+  // arenaResultsMap: fetchArenaResults writes a fresh map reference on every
+  // call, so keying this effect on the map made it refetch in an infinite
+  // IPC/render loop for as long as the panel stayed open after a completed run.
+  // The effect below is the sole store→local sync.
   useEffect(() => {
     if (activeRunId && !isLabRunning && labProgress === null) {
-      fetchArenaResults(activeRunId).then(() => {
-        const results = arenaResultsMap[activeRunId];
-        if (results) setLastResults(results);
-      }).catch(silentCatch("ModelABCompare:fetchArenaResults"));
+      fetchArenaResults(activeRunId).catch(silentCatch("ModelABCompare:fetchArenaResults"));
     }
-  }, [activeRunId, isLabRunning, labProgress, fetchArenaResults, arenaResultsMap]);
+  }, [activeRunId, isLabRunning, labProgress, fetchArenaResults]);
 
   // Also sync from store when results arrive
   useEffect(() => {

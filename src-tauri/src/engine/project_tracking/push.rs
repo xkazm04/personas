@@ -256,13 +256,19 @@ async fn run_out_of_cadence_for_project(
     // Pull recent events from the raw log to feed the consolidator. The
     // out-of-cadence path doesn't run watchers (the user already
     // signaled they have something to add and the next scheduled tick
-    // will sweep up anything else). Using the events_since cutoff at
-    // 24h — the consolidator's job is to pick the relevant slice.
+    // will sweep up anything else).
+    //
+    // Cutoff is the subscription's last_pulse_at watermark (same helper the
+    // scheduler uses), NOT a fixed 24h: the fixed window re-fed a whole
+    // day's already-consolidated events into the Sonnet prompt on EVERY push
+    // (up to 12/hour), and because pulse::upsert_today accumulates counts as
+    // deltas, the day's commit/run/note/token counters inflated monotonically
+    // with each push.
     //
     // SQLite Statement is !Send so we drop the conn + stmt before the
     // first await point on the consolidator call.
     let events: Vec<EventPayload> = {
-        let since = chrono::Utc::now() - chrono::Duration::hours(24);
+        let since = subscription::watch_since(&sub);
         let conn = handle.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT payload_json FROM engine_cli_event
@@ -293,5 +299,10 @@ async fn run_out_of_cadence_for_project(
     let snapshot = TickSnapshot::from_events(project_name, &events);
 
     consolidator::run_for_project(&handle.pool, &sub, snapshot, Some(&handle.app_handle))
-        .await
+        .await?;
+
+    // Advance the watermark (mirrors scheduler::run_project) so the next
+    // push/tick consolidates only the NEW slice instead of overlapping ranges.
+    subscription::update_last_pulse_at(&handle.pool, &sub.project_id, chrono::Utc::now())?;
+    Ok(())
 }

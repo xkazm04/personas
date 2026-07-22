@@ -111,8 +111,8 @@
     "active": "نشط",
     "paused": "متوقف مؤقتًا",
     "failed": "فاشل",
-    "file-based": "قائم على الملفات",
-    "unknown": "غير معروف"
+    "unknown": "غير معروف",
+    "file-based": "قائم على الملفات"
   },
   "delivery": {
     "delivered": "تم التسليم",

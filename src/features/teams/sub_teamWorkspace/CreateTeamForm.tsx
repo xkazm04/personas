@@ -1,4 +1,4 @@
-import { Check, Code2, GitFork } from 'lucide-react';
+import { Code2, GitFork } from 'lucide-react';
 import { FormField, type FieldAvailability } from '@/features/shared/components/forms/FormField';
 import {
   useAsyncFieldValidation,
@@ -8,6 +8,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { GitHubRepoSelector, parseRepoUrl } from '@/features/plugins/dev-tools/sub_projects/GitHubRepoSelector';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import { TeamColorPicker } from './TeamColorPicker';
 
 export const TEAM_COLORS: Record<string, string> = {
   '#6366f1': 'Indigo',
@@ -124,30 +125,7 @@ export function CreateTeamForm({
         </FormField>
         <div>
           <label className="typo-body font-medium text-foreground mb-1.5 block">{t.pipeline.color}</label>
-          <div className="flex gap-2 flex-wrap">
-            {Object.entries(TEAM_COLORS).map(([hex, name]) => {
-              const isSelected = newColor === hex;
-              return (
-                <button
-                  key={hex}
-                  onClick={() => onColorChange(hex)}
-                  className={`flex flex-col items-center gap-1 group`}
-                >
-                  <span
-                    className={`w-9 h-9 rounded-card transition-all flex items-center justify-center ${isSelected ? 'scale-110' : 'hover:scale-105'}`}
-                    style={{ backgroundColor: hex }}
-                  >
-                    {isSelected && (
-                      <Check className="w-4 h-4 text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
-                    )}
-                  </span>
-                  <span className={`text-[10px] leading-tight ${isSelected ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
-                    {name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <TeamColorPicker value={newColor} onChange={onColorChange} size="md" />
         </div>
         {/* Codebase repository — wires the team to a GitHub repo via a
             Codebase connector created on submit (see TeamList.handleCreate). */}

@@ -3,13 +3,13 @@ import { RefreshCw, Inbox, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import EmptyState, { InboxZero } from '@/features/shared/components/feedback/EmptyState';
+import EmptyState, { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { storeBus } from '@/lib/storeBus';
 import { silentCatch } from '@/lib/silentCatch';
 import { getAuditIncident } from '@/api/overview/incidents';
-import { useIncidentsData } from '../libs/useIncidentsData';
+import { useIncidentsData, DEFAULT_LIMIT } from '../libs/useIncidentsData';
 import { useIncidentActions } from '../libs/useIncidentActions';
 import { consumePendingIncidentDeepLink } from '../libs/incidentDeepLink';
 import { IncidentsInboxKpiHeader } from './IncidentsInboxKpiHeader';
@@ -24,14 +24,7 @@ import { IncidentDetailModal } from './IncidentDetailModal';
 import { groupIncidents, type IncidentGroupMode } from '../libs/groupIncidents';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
-
-const DEFAULT_FILTERS: IncidentFilters = {
-  statuses: ['open'], // default to open-only — the inbox's primary use case
-  severities: null,
-  source_tables: null,
-  persona_id: null,
-  since: null,
-};
+import { OPEN_ONLY_FILTERS as DEFAULT_FILTERS, isNarrowedFilters } from '../libs/incidentFilterDefaults';
 
 const COLLAPSED_GROUPS_KEY = 'incidents:collapsed-groups';
 const GROUP_MODE_KEY = 'incidents:group-mode';
@@ -127,13 +120,14 @@ export default function IncidentsInbox() {
   const colWidths = useColumnWidths(INCIDENT_TABLE_ID);
   const gridTemplate = colWidths.template(INCIDENT_COLUMNS);
 
-  const { incidents, summary, loading, error, refresh } = useIncidentsData(filters);
-  const actions = useIncidentActions({
-    onAfterChange: async () => {
-      clearedByActionRef.current = true;
-      await refresh();
-    },
-  });
+  const { incidents, summary, loading, error, refresh, truncated } = useIncidentsData(filters);
+  // Stable identity so `useIncidentActions`'s useCallback chain (and everything
+  // downstream that depends on `actions`) survives unrelated re-renders.
+  const onAfterChange = useCallback(async () => {
+    clearedByActionRef.current = true;
+    await refresh();
+  }, [refresh]);
+  const actions = useIncidentActions({ onAfterChange });
 
   // Keep the latest loaded incidents in a ref so the deep-link resolver can
   // prefer the in-memory list without making the storeBus subscription depend
@@ -346,11 +340,12 @@ export default function IncidentsInbox() {
           }
           break;
         case 'r':
-          if (curIdx >= 0) {
+          if (curIdx >= 0 && (list[curIdx]!.status === 'open' || list[curIdx]!.status === 'acknowledged' || list[curIdx]!.status === 'in_progress')) {
             e.preventDefault();
             const inc = list[curIdx]!;
-            void actionsRef.current.resolve(inc.id);
-            setAnnouncement(`${tRef.current.overview.incidents.a11y_resolved}: ${inc.title}`);
+            void actionsRef.current.resolve(inc.id).then((ok) => {
+              if (ok) setAnnouncement(`${tRef.current.overview.incidents.a11y_resolved}: ${inc.title}`);
+            });
           }
           break;
         case 'Escape':
@@ -362,35 +357,40 @@ export default function IncidentsInbox() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Stable per-row handlers so the memoized IncidentRow can skip re-renders
+  // during keyboard triage (the focus cursor is threaded through
+  // IncidentAgentGroup as a per-row boolean instead of a renderRow dep).
+  // Depend on the individual callbacks — the `actions` container object gets a
+  // fresh identity each render even though its members are stable.
+  const { acknowledge, resolve, dismiss, reopen } = actions;
+  const handleAcknowledge = useCallback((id: string) => void acknowledge(id), [acknowledge]);
+  const handleResolve = useCallback((id: string) => void resolve(id), [resolve]);
+  const handleDismiss = useCallback((id: string) => void dismiss(id), [dismiss]);
+  const handleReopen = useCallback((id: string) => void reopen(id), [reopen]);
+  const openDetail = useCallback((incident: AuditIncident) => setDetailIncident(incident), []);
+
   const renderRow = useCallback(
-    (incident: AuditIncident) => (
+    (incident: AuditIncident, focused: boolean) => (
       <IncidentRow
         key={incident.id}
         incident={incident}
         gridTemplate={gridTemplate}
-        focused={focusedId === incident.id}
-        onAcknowledge={() => void actions.acknowledge(incident.id)}
-        onResolve={() => void actions.resolve(incident.id)}
-        onDismiss={() => void actions.dismiss(incident.id)}
-        onReopen={() => void actions.reopen(incident.id)}
-        onOpenDetail={() => setDetailIncident(incident)}
+        focused={focused}
+        onAcknowledge={handleAcknowledge}
+        onResolve={handleResolve}
+        onDismiss={handleDismiss}
+        onReopen={handleReopen}
+        onOpenDetail={openDetail}
       />
     ),
-    [focusedId, actions, gridTemplate],
+    [gridTemplate, handleAcknowledge, handleResolve, handleDismiss, handleReopen, openDetail],
   );
 
   // "Narrowed" = the user moved beyond the default open-only inbox view. The
   // default (statuses: ['open'], nothing else) is NOT narrowed, so reaching
   // zero there reads as a healthy "all clear" rather than a no-match result —
   // and only that path earns the inbox-zero celebration.
-  const statusesAreDefaultOpen =
-    !filters.statuses || (filters.statuses.length === 1 && filters.statuses[0] === 'open');
-  const isNarrowed =
-    !statusesAreDefaultOpen ||
-    (filters.severities?.length ?? 0) > 0 ||
-    (filters.source_tables?.length ?? 0) > 0 ||
-    !!filters.persona_id ||
-    !!filters.since;
+  const isNarrowed = isNarrowedFilters(filters);
 
   // Detect an action-driven drain to zero. Evaluated once the refresh settles;
   // a non-action path (filter change) leaves the ref unarmed, so no pop fires.
@@ -466,6 +466,13 @@ export default function IncidentsInbox() {
           </div>
         ) : (
           <div className={colWidths.isResizing ? 'select-none cursor-col-resize' : undefined}>
+            {truncated && (
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-secondary/20">
+                <span className="typo-caption text-foreground">
+                  {t.overview.incidents.list_truncated.replace('{limit}', String(DEFAULT_LIMIT))}
+                </span>
+              </div>
+            )}
             {newCount > 0 && (
               <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
                 <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
@@ -529,6 +536,7 @@ export default function IncidentsInbox() {
                 group={group}
                 collapsed={collapsedGroups.has(group.key)}
                 onToggle={() => toggleGroup(group.key)}
+                focusedId={focusedId}
                 renderRow={renderRow}
               />
             ))}

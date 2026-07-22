@@ -261,7 +261,12 @@
     "stream_no_speakers": "발화자 없음",
     "stream_none": "없음",
     "stream_search": "전송 검색",
-    "stream_title": "스트림"
+    "stream_title": "스트림",
+    "columns_action_empty": "지금은 처리할 항목이 없습니다",
+    "columns_needs_attention": "주의 필요",
+    "columns_active_goals": "진행 중인 목표",
+    "columns_no_team": "팀 없음",
+    "columns_all_clear": "모두 정상"
   },
   "common": {
     "loading": "로딩 중...",
@@ -1326,7 +1331,8 @@
       "active_chains_hops_other": "홉 {count}회",
       "active_chains_one": "실행 중인 체인 {count}개",
       "active_chains_other": "실행 중인 체인 {count}개",
-      "active_chains_title": "실행 중인 체인"
+      "active_chains_title": "실행 중인 체인",
+      "copy_log_failed": "로그를 클립보드에 복사하지 못했습니다"
     },
     "lab": {
       "mode_arena": "아레나",
@@ -1896,21 +1902,6 @@
       "ct_graph_view": "의존성 그래프",
       "ct_swap_alt_tooltip": "대안 커넥터로 교체",
       "ct_deps": "{count}개 의존성",
-      "dg_no_deps": "표시할 의존성 없음.",
-      "dg_broken": "{count}개 손상",
-      "dg_blast_radius": "폭발 반경",
-      "dg_dependencies": "의존성",
-      "dg_select_cred": "자격 증명이 만료될 때 무엇이 손상되는지 보려면 선택하세요",
-      "dg_relationships": "관계 ({count})",
-      "dg_more": "+{count}개 더",
-      "dg_affected_tools": "영향받는 도구",
-      "dg_affected_auto": "영향받는 자동화",
-      "dg_low_risk": "낮은 위험",
-      "dg_medium_risk": "중간 위험",
-      "dg_high_risk": "높은 위험",
-      "dg_high_blast": "이 자격 증명이 만료되거나 오프라인이 되면 {count}개 기능이 손상됩니다.",
-      "dg_medium_blast": "{count}개 기능이 이 자격 증명에 의존합니다.",
-      "dg_low_blast": "이 자격 증명에 의존하는 도구나 자동화가 없습니다.",
       "dm_needed": "{count}개 자격 증명 필요",
       "dm_fulfilled": "{fulfilled}/{total}개 커넥터 충족",
       "dm_reuse_hint": "{count}개는 기존 자격 증명 재사용 가능",
@@ -1925,13 +1916,6 @@
       "sub_triggers_title": "트리거 & 구독",
       "sub_suggested": "{count}개 제안됨",
       "sub_filter": "필터: {filter}",
-      "lifecycle_error_load_triggers": "트리거를 불러오지 못했습니다: {error}",
-      "lifecycle_error_load_subscriptions": "구독 정보를 불러오지 못했습니다: {error}",
-      "lifecycle_error_activate_trigger": "트리거를 활성화하지 못했습니다",
-      "lifecycle_error_activate_subscription": "구독을 활성화하지 못했습니다",
-      "lifecycle_error_retire_trigger": "트리거를 삭제하지 못했습니다",
-      "lifecycle_error_retire_subscription": "구독을 삭제하지 못했습니다",
-      "lifecycle_error_delete_persists": "삭제하지 못했습니다. 구독이 아직 남아 있을 수 있습니다.",
       "auto_error_deploy_check_credentials": "배포에 실패했습니다. 플랫폼 자격 증명을 확인한 후 다시 시도하세요.",
       "auto_error_deploy_generic": "자동화 배포에 실패했습니다",
       "test_healthcheck_failed_default": "상태 확인에 실패했습니다",
@@ -2533,7 +2517,8 @@
       "annotation_empty": "아직 주석이 없습니다 — 나중에 쉽게 찾을 수 있도록 이 실행에 태그, 메모를 추가하거나 즐겨찾기하세요.",
       "col_verdict": "평결",
       "verdict_none": "Director가 아직 검토하지 않았습니다",
-      "verdict_tooltip": "Director 평결: {score}/5"
+      "verdict_tooltip": "Director 평결: {score}/5",
+      "annotation_saving": "저장 중…"
     },
     "settings_status": {
       "saving": "{sections} 저장 중...",
@@ -3612,7 +3597,23 @@
         "other": "기타"
       },
       "title": "변경 이력"
-    }
+    },
+    "sigil_edit_channels_label": "채널",
+    "sigil_edit_custom_connector": "커스텀 커넥터 — 일치하는 브랜드 아이콘이 없습니다.",
+    "sigil_edit_error_off": "기본 오류 정책을 따릅니다.",
+    "sigil_edit_error_on": "커스텀 오류 처리 정책이 설정되어 있습니다.",
+    "sigil_edit_event_off": "구성된 이벤트 구독이 없습니다.",
+    "sigil_edit_event_on": "이 기능은 이벤트를 구독합니다.",
+    "sigil_edit_memory_off": "메모리가 꺼져 있습니다 — 이 기능은 상태 없이 실행됩니다.",
+    "sigil_edit_memory_on": "이 기능에는 영구 메모리가 켜져 있습니다.",
+    "sigil_edit_no_channels": "이 기능에 설정된 알림 채널이 없습니다.",
+    "sigil_edit_no_connector": "이 기능은 커넥터를 지정하지 않았습니다.",
+    "sigil_edit_no_dim_editor": "이 항목에 연결된 편집기가 아직 없습니다.",
+    "sigil_edit_no_trigger": "이 기능에 설정된 트리거가 없습니다.",
+    "sigil_edit_review_off": "사람 검토 절차 없이 자율적으로 작동합니다.",
+    "sigil_edit_review_on": "이 기능이 작동하려면 사람의 검토가 필요합니다.",
+    "sigil_edit_service_label": "서비스: {key}",
+    "sigil_edit_when_label": "실행 조건"
   },
   "vault": {
     "workspace_connect": "워크스페이스 연결",
@@ -3911,7 +3912,8 @@
       "query_parameters": "쿼리 매개변수",
       "recipes_title": "저장된 레시피",
       "truncated_warning": "표시를 위해 응답이 잘렸습니다",
-      "value_col": "값"
+      "value_col": "값",
+      "request_headers": "헤더"
     },
     "ingest": {
       "save_name": "이름 저장",
@@ -4038,7 +4040,8 @@
       "capability_key_value": "키-값",
       "capability_key_value_hint": "이것은 키-값 저장소입니다. SQL이 아니라 SCAN, GET, TYPE 같은 키 명령을 사용하세요.",
       "capability_select_subset": "SELECT 전용",
-      "capability_select_subset_hint": "여기서는 단일 테이블의 단순 SELECT 쿼리만 실행됩니다. WHERE로 필터링하고, ORDER BY로 정렬하고, LIMIT으로 제한하세요. JOIN, 집계, CTE, 쓰기는 지원되지 않습니다."
+      "capability_select_subset_hint": "여기서는 단일 테이블의 단순 SELECT 쿼리만 실행됩니다. WHERE로 필터링하고, ORDER BY로 정렬하고, LIMIT으로 제한하세요. JOIN, 집계, CTE, 쓰기는 지원되지 않습니다.",
+      "query_timeout": "응답 대기 시간이 초과되었습니다. 다시 시도해 주세요."
     },
     "dependencies": {
       "simulate_revocation": "취소 시뮬레이션",
@@ -4602,7 +4605,8 @@
       "consent_what_scanned": "스캔 대상",
       "read_error_item": "{source}을(를) 읽을 수 없습니다",
       "read_errors_title": "일부 소스를 읽을 수 없습니다",
-      "select_high_confidence": "신뢰도 높음"
+      "select_high_confidence": "신뢰도 높음",
+      "source_unknown": "알 수 없는 소스"
     },
     "desktop_discovery": {
       "title": "데스크톱 앱",
@@ -5875,7 +5879,9 @@
       "col_days": "일수",
       "col_incident": "인시던트",
       "guidance_mcp_sidecar": "personas-mcp 바이너리가 없어서 에이전트가 내장 MCP 도구 없이 실행되었습니다. 앱과 함께 제공되도록 앱을 다시 설치하거나 복구하세요.",
-      "source_mcp_sidecar": "MCP 툴벨트"
+      "source_mcp_sidecar": "MCP 툴벨트",
+      "list_truncated": "처음 {limit}개의 인시던트를 표시하고 있습니다 — 나머지를 보려면 필터를 좁혀보세요.",
+      "action_refused": "작업이 적용되지 않았습니다 — 인시던트 상태가 이미 변경되었을 수 있습니다."
     },
     "observability": {
       "title": "관측성",
@@ -9545,7 +9551,8 @@
       "event_type_required": "수신할 이벤트 유형이 필요합니다.",
       "watch_path_required": "감시 경로가 하나 이상 필요합니다.",
       "composite_min_conditions": "복합 트리거는 조건이 2개 이상 필요합니다.",
-      "composite_window_minimum": "시간 윈도우는 5초 이상이어야 합니다."
+      "composite_window_minimum": "시간 윈도우는 5초 이상이어야 합니다.",
+      "endpoint_required": "엔드포인트 URL 또는 이벤트가 필요합니다."
     },
     "dead_letter_select_all": "선택 all",
     "dead_letter_select_visible": "선택 visible",
@@ -9750,7 +9757,9 @@
       "watch": "관찰",
       "watching": "관찰 중",
       "watching_only": "관찰만"
-    }
+    },
+    "overdue_label": "기한 초과",
+    "relay_delete_failed": "릴레이 삭제 실패 — 다시 시도해 주세요"
   },
   "settings": {
     "account": {
@@ -11643,8 +11652,8 @@
       "active": "활성",
       "paused": "일시 중지",
       "failed": "실패",
-      "file-based": "파일 기반",
-      "unknown": "알 수 없음"
+      "unknown": "알 수 없음",
+      "file-based": "파일 기반"
     },
     "delivery": {
       "delivered": "전달됨",
@@ -16117,7 +16126,11 @@
       "s_elapsed": "초 경과",
       "s_remaining": "초 남음",
       "show_cli_output": "CLI 출력 표시",
-      "hide_cli_output": "CLI 출력 숨기기"
+      "hide_cli_output": "CLI 출력 숨기기",
+      "starting_transformation": "변환을 시작하는 중...",
+      "step_progress": "{total}단계 중 {step}단계",
+      "starting_short": "시작하는 중...",
+      "check_output_details": "자세한 내용은 아래 출력을 확인하세요."
     },
     "terminal_extra": {
       "press_enter": "시작하려면 Enter 키를 누르거나 재생 버튼을 클릭하세요",

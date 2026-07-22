@@ -30,6 +30,11 @@ const logger = createLogger("crypto");
 let cachedPublicKey: CryptoKey | null = null;
 let cachedPem: string | null = null;
 let lastFetchAt = 0;
+// In-flight refresh promise, so concurrent encrypts during the stale window
+// (cold-start, or first use after the 60s cache expires) share one IPC
+// round-trip + RSA import instead of each independently re-fetching and
+// re-importing the same PEM.
+let refreshInFlight: Promise<CryptoKey> | null = null;
 
 const PUBLIC_KEY_REFRESH_INTERVAL_MS = 60_000;
 
@@ -39,6 +44,7 @@ export function clearCryptoCache(): void {
   cachedPublicKey = null;
   cachedPem = null;
   lastFetchAt = 0;
+  refreshInFlight = null;
 }
 
 async function getOrRefreshSessionPublicKey(): Promise<CryptoKey> {
@@ -46,17 +52,27 @@ async function getOrRefreshSessionPublicKey(): Promise<CryptoKey> {
   if (cachedPublicKey && now - lastFetchAt < PUBLIC_KEY_REFRESH_INTERVAL_MS) {
     return cachedPublicKey;
   }
-  const pem = await getSessionPublicKey();
-  if (cachedPublicKey && pem === cachedPem) {
-    // Same key as last time we checked; just renew the freshness stamp.
-    lastFetchAt = now;
-    return cachedPublicKey;
+  if (refreshInFlight) {
+    return refreshInFlight;
   }
-  // PEM changed (or never fetched) — re-import as a fresh CryptoKey.
-  cachedPem = pem;
-  cachedPublicKey = await importPublicKey(pem);
-  lastFetchAt = now;
-  return cachedPublicKey;
+  refreshInFlight = (async () => {
+    try {
+      const pem = await getSessionPublicKey();
+      if (cachedPublicKey && pem === cachedPem) {
+        // Same key as last time we checked; just renew the freshness stamp.
+        lastFetchAt = Date.now();
+        return cachedPublicKey;
+      }
+      // PEM changed (or never fetched) — re-import as a fresh CryptoKey.
+      cachedPem = pem;
+      cachedPublicKey = await importPublicKey(pem);
+      lastFetchAt = Date.now();
+      return cachedPublicKey;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+  return refreshInFlight;
 }
 
 /**

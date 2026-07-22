@@ -304,9 +304,15 @@ pub fn complete_cycle(
         "lab_evolution_cycles::complete_cycle",
         {
             let now = chrono::Utc::now().to_rfc3339();
-            let conn = pool.get()?;
+            let mut conn = pool.get()?;
 
-            conn.execute(
+            // Both UPDATEs must land together: a crash/error between them would
+            // leave a cycle marked completed/promoted while total_cycles /
+            // total_promotions never increment, under-counting the policy stats
+            // and possibly letting should_evolve re-fire immediately.
+            let tx = conn.transaction().map_err(AppError::Database)?;
+
+            tx.execute(
                 "UPDATE evolution_cycles SET
                 status = 'completed',
                 promoted = ?1,
@@ -326,7 +332,7 @@ pub fn complete_cycle(
             )?;
 
             // Update policy stats
-            conn.execute(
+            tx.execute(
                 "UPDATE evolution_policies SET
                 last_cycle_at = ?1,
                 total_cycles = total_cycles + 1,
@@ -335,6 +341,8 @@ pub fn complete_cycle(
              WHERE id = (SELECT policy_id FROM evolution_cycles WHERE id = ?3)",
                 params![now, promoted as i32, id],
             )?;
+
+            tx.commit().map_err(AppError::Database)?;
 
             Ok(())
         }

@@ -2,10 +2,14 @@ import type { ReactNode } from 'react';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import type { Translations } from '@/i18n/en';
+import { interpolate } from '@/i18n/useTranslation';
 
 interface SigilBodyArgs {
   /** The capability the modal is editing. */
   uc: DisplayUseCase;
+  /** Active translations, threaded so this read-only body renders localized copy. */
+  t: Translations;
 }
 
 /**
@@ -19,7 +23,8 @@ interface SigilBodyArgs {
  * (see docs/development/template-sigil-migration.md §3): if the
  * capability's source field is populated, the dim is active.
  */
-export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs): ReactNode {
+export function resolveSigilEditBody(dim: GlyphDimension, { uc, t }: SigilBodyArgs): ReactNode {
+  const c = t.agents;
   switch (dim) {
     case 'task':
       return (
@@ -35,10 +40,10 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
 
     case 'trigger': {
       const label = uc.triggerLabel?.trim();
-      if (!label) return inactiveBody('No trigger configured on this capability.');
+      if (!label) return inactiveBody(c.sigil_edit_no_trigger);
       return (
         <div className="flex flex-col gap-1.5">
-          <span className="typo-label uppercase tracking-wider text-foreground">When</span>
+          <span className="typo-label uppercase tracking-wider text-foreground">{c.sigil_edit_when_label}</span>
           <span className="typo-body-lg text-foreground">{label}</span>
         </div>
       );
@@ -46,7 +51,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
 
     case 'connector': {
       if (!uc.connectorKey && !uc.connector) {
-        return inactiveBody('This capability does not declare a connector.');
+        return inactiveBody(c.sigil_edit_no_connector);
       }
       const key = uc.connectorKey;
       const meta = key ? getConnectorMeta(key) : null;
@@ -60,7 +65,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
           <div className="flex flex-col">
             <span className="typo-body-lg text-foreground">{meta?.label ?? uc.connector}</span>
             <span className="typo-caption text-foreground">
-              {key ? `Service: ${key}` : 'Custom connector — no brand icon match.'}
+              {key ? interpolate(c.sigil_edit_service_label, { key }) : c.sigil_edit_custom_connector}
             </span>
           </div>
         </div>
@@ -70,14 +75,14 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
     case 'message': {
       const channels = uc.notificationChannels;
       if (channels.length === 0) {
-        return inactiveBody('No notification channels for this capability.');
+        return inactiveBody(c.sigil_edit_no_channels);
       }
       return (
         <div className="flex flex-col gap-1.5">
-          <span className="typo-label uppercase tracking-wider text-foreground">Channels</span>
+          <span className="typo-label uppercase tracking-wider text-foreground">{c.sigil_edit_channels_label}</span>
           <ul className="flex flex-col gap-1">
-            {channels.map((c, i) => (
-              <li key={`${c}-${i}`} className="typo-body-lg text-foreground">{c}</li>
+            {channels.map((ch, i) => (
+              <li key={`${ch}-${i}`} className="typo-body-lg text-foreground">{ch}</li>
             ))}
           </ul>
         </div>
@@ -90,10 +95,10 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
     case 'error': {
       const active = uc.dimensions.includes(dim);
       const labels: Record<typeof dim, { on: string; off: string }> = {
-        memory: { on: 'Persistent memory is on for this capability.', off: 'Memory is off — the capability runs stateless.' },
-        review: { on: 'Human review is required before this capability acts.', off: 'No human review gate — actions are autonomous.' },
-        event: { on: 'This capability subscribes to events.', off: 'No event subscriptions configured.' },
-        error: { on: 'Custom error-handling policy is configured.', off: 'Falls back to the default error policy.' },
+        memory: { on: c.sigil_edit_memory_on, off: c.sigil_edit_memory_off },
+        review: { on: c.sigil_edit_review_on, off: c.sigil_edit_review_off },
+        event: { on: c.sigil_edit_event_on, off: c.sigil_edit_event_off },
+        error: { on: c.sigil_edit_error_on, off: c.sigil_edit_error_off },
       };
       const copy = labels[dim];
       return (
@@ -104,7 +109,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
     }
 
     default:
-      return inactiveBody('No editor wired for this dim yet.');
+      return inactiveBody(c.sigil_edit_no_dim_editor);
   }
 }
 

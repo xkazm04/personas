@@ -123,14 +123,53 @@ impl SessionPool {
     }
 }
 
-/// Compute a fast config fingerprint for invalidation checks.
-/// Uses FNV-style hash of the key config fields.
-#[allow(dead_code)]
-pub fn compute_config_hash(system_prompt: &str, model_profile: &str, tool_count: usize) -> u64 {
+/// Compute the config fingerprint for invalidation checks.
+///
+/// This is the CANONICAL hash used by BOTH the `offer()` site (engine result
+/// handling) and the `take()` site (execution start). The two sites previously
+/// hand-rolled hashes over disjoint inputs (execution_config JSON vs persona
+/// fields), so `take` never matched and warm session reuse was a permanent
+/// no-op — every run cold-started. Always call this helper from both sides.
+pub fn compute_config_hash(
+    system_prompt: &str,
+    structured_prompt: Option<&str>,
+    model_profile: Option<&str>,
+    tool_count: usize,
+    capabilities_fingerprint: &str,
+) -> u64 {
     use std::hash::{Hash, Hasher};
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     system_prompt.hash(&mut hasher);
-    model_profile.hash(&mut hasher);
+    structured_prompt.unwrap_or("").hash(&mut hasher);
+    model_profile.unwrap_or("").hash(&mut hasher);
     tool_count.hash(&mut hasher);
+    capabilities_fingerprint.hash(&mut hasher);
     hasher.finish()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn offer_take_round_trip_with_shared_hash() {
+        let pool = SessionPool::new();
+        let hash = compute_config_hash("prompt", Some("structured"), Some("sonnet"), 3, "caps");
+        pool.offer("p1", "sess-1".into(), hash).await;
+        assert_eq!(pool.take("p1", hash).await.as_deref(), Some("sess-1"));
+        // Consumed — a second take misses.
+        assert_eq!(pool.take("p1", hash).await, None);
+    }
+
+    #[tokio::test]
+    async fn take_invalidates_on_config_change() {
+        let pool = SessionPool::new();
+        let offered = compute_config_hash("prompt", None, None, 3, "caps");
+        let changed = compute_config_hash("prompt", Some("new-structured"), None, 3, "caps");
+        assert_ne!(offered, changed);
+        pool.offer("p1", "sess-1".into(), offered).await;
+        assert_eq!(pool.take("p1", changed).await, None);
+        // Invalidation consumed the entry entirely.
+        assert_eq!(pool.count().await, 0);
+    }
 }

@@ -93,9 +93,15 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
   }, [reviewIdx, resetAction]);
 
   const current = pending[reviewIdx] ?? null;
-  const { decisions, galleryImage, contextText } = current
-    ? parseDecisions(current.context_data)
-    : { decisions: [], galleryImage: null, contextText: null };
+  // Memoized on the raw payload: re-parsing on every render (each notes
+  // keystroke / verdict change) re-ran JSON.parse AND gave `decisions` a fresh
+  // identity, rebuilding decideAndAdvance/setAllDecisions/buildVerdictNotes
+  // and churning the window keydown listener every render.
+  const contextData = current?.context_data;
+  const { decisions, galleryImage, contextText } = useMemo(
+    () => parseDecisions(contextData),
+    [contextData],
+  );
   const hasDecisions = decisions.length > 0;
   const hasMultipleDecisions = decisions.length > 1;
   const currentDecision = hasDecisions ? decisions[decisionIdx] : null;

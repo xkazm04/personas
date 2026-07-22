@@ -32,14 +32,23 @@ export function useAppSetting(
   const [error, setError] = useState<string | null>(null);
   const valueRef = useRef(value);
   valueRef.current = value;
+  // `validate`/`defaultValue` are configuration, not data deps: callers pass
+  // inline closures, and depending on them re-ran the load on every render —
+  // one IPC probe per render AND setValueRaw clobbering the user's unsaved
+  // edits whenever the promise resolved. Latch them in refs and load per key.
+  const validateRef = useRef(validate);
+  validateRef.current = validate;
+  const defaultValueRef = useRef(defaultValue);
+  defaultValueRef.current = defaultValue;
 
   useEffect(() => {
     getAppSettingCoalesced(key)
       .then((val) => {
         if (val) {
-          if (validate && !validate(val)) {
+          const validateFn = validateRef.current;
+          if (validateFn && !validateFn(val)) {
             logger.warn('App setting failed validation, using default', { key });
-            setValueRaw(defaultValue);
+            setValueRaw(defaultValueRef.current);
           } else {
             setValueRaw(val);
           }
@@ -49,7 +58,7 @@ export function useAppSetting(
         logger.error('Failed to load app setting', { key, err: err instanceof Error ? err.message : String(err) });
       })
       .finally(() => setLoaded(true));
-  }, [defaultValue, key, validate]);
+  }, [key]);
 
   const setValue = useCallback((v: string) => {
     setValueRaw(v);

@@ -33,7 +33,10 @@ const EASE_CURVE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 export const TRANSITION_NORMAL = { duration: 0.25, ease: EASE_CURVE };
 export const TRANSITION_SLOW = { duration: 0.4, ease: EASE_CURVE };
 
-export const MOTION = {
+// Named MOTION_PRESETS (not MOTION) to avoid colliding with the unrelated
+// MOTION duration/delay registry exported by `@/lib/utils/designTokens` --
+// see refactor-bughunt-2026-07-10 finding #6.
+export const MOTION_PRESETS = {
   snappy: {
     framer: { duration: 0.15, ease: 'easeOut' as const },
     css: CSS_DURATION_CLASS.snappy,
@@ -49,8 +52,8 @@ export const MOTION = {
 } as const;
 
 export const MOTION_TIMING = {
-  SNAP: MOTION.snappy.framer,
-  FLOW: MOTION.smooth.framer,
+  SNAP: MOTION_PRESETS.snappy.framer,
+  FLOW: MOTION_PRESETS.smooth.framer,
   EASE: { type: 'spring' as const, stiffness: 300, damping: 25 },
 };
 
@@ -70,12 +73,12 @@ export const staggerItem: Variants = {
   show: {
     opacity: 1,
     y: 0,
-    transition: { ...MOTION.smooth.framer, ease: [0.22, 1, 0.36, 1] },
+    transition: { ...MOTION_PRESETS.smooth.framer, ease: [0.22, 1, 0.36, 1] },
   },
   exit: {
     opacity: 0,
     y: -8,
-    transition: MOTION.snappy.framer,
+    transition: MOTION_PRESETS.snappy.framer,
   },
 };
 
@@ -114,7 +117,7 @@ export function useTemplateMotion() {
     if (shouldAnimate) {
       return {
         prefersReducedMotion: false,
-        motion: MOTION,
+        motion: MOTION_PRESETS,
         staggerDelay: 0.04,
         staggerContainer,
         staggerItem,

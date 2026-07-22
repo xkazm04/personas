@@ -143,7 +143,9 @@
     "col_days": "Días",
     "col_incident": "Incidente",
     "guidance_mcp_sidecar": "El agente se ejecutó sin sus herramientas MCP integradas porque faltaba el binario personas-mcp. Reinstala o repara la aplicación para que se incluya junto con la app de escritorio.",
-    "source_mcp_sidecar": "Conjunto de herramientas MCP"
+    "source_mcp_sidecar": "Conjunto de herramientas MCP",
+    "list_truncated": "Mostrando los primeros {limit} incidentes — reduce los filtros para ver el resto.",
+    "action_refused": "La acción no se aplicó: es posible que el estado del incidente ya haya cambiado."
   },
   "observability": {
     "title": "Observabilidad",

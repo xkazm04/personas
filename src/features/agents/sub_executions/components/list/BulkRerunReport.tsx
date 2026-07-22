@@ -3,6 +3,7 @@ import { formatDuration } from '@/lib/utils/formatters';
 import { fmtCost } from '../../libs/comparisonHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BulkRunItem, BulkRunCohort } from '../../libs/useBulkRerun';
+import { isFailedExecutionStatus } from '../../libs/executionStatus';
 
 interface BulkRerunReportProps {
   cohort: BulkRunCohort;
@@ -30,14 +31,14 @@ export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkR
   const regressions = items.filter(
     (it) =>
       it.newStatus &&
-      it.origStatus === 'completed' &&
-      (it.newStatus === 'failed' || it.newStatus === 'cancelled' || it.newStatus === 'timeout'),
+      !isFailedExecutionStatus(it.origStatus) &&
+      isFailedExecutionStatus(it.newStatus),
   );
   const recoveries = items.filter(
     (it) =>
       it.newStatus &&
-      (it.origStatus === 'failed' || it.origStatus === 'cancelled' || it.origStatus === 'timeout') &&
-      it.newStatus === 'completed',
+      isFailedExecutionStatus(it.origStatus) &&
+      !isFailedExecutionStatus(it.newStatus),
   );
 
   return (

@@ -78,6 +78,13 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
       const personaId = itemToDelete.personaId;
       if (personaId) {
         await get().fetchAutomations(personaId);
+      } else {
+        // No personaId to scope a re-fetch by — reconcile state directly by
+        // restoring the optimistically-removed item so the UI doesn't
+        // silently diverge from the (still-existing) backend row.
+        set((state) => (state.automations.some((a) => a.id === id)
+          ? state
+          : { automations: [...state.automations, itemToDelete] }));
       }
       reportError(err, "Failed to delete automation", set);
     }

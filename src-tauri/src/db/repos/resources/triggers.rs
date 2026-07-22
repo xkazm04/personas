@@ -1,6 +1,7 @@
 use rusqlite::{params, OptionalExtension};
 
 use crate::db::models::{CreateTriggerInput, PersonaTrigger, TriggerConfig, UpdateTriggerInput};
+use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::engine::{chain, crypto, scheduler};
 use crate::error::AppError;
@@ -78,21 +79,12 @@ pub fn get_by_persona_ids(
                 return Ok(Vec::new());
             }
             let conn = pool.get()?;
-            let placeholders: Vec<String> = persona_ids
-                .iter()
-                .enumerate()
-                .map(|(i, _)| format!("?{}", i + 1))
-                .collect();
-            let sql = format!(
-                "SELECT * FROM persona_triggers WHERE persona_id IN ({}) ORDER BY created_at DESC",
-                placeholders.join(", ")
-            );
-            let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
-                .iter()
-                .map(|s| s as &dyn rusqlite::types::ToSql)
-                .collect();
+            let mut qb = QueryBuilder::new();
+            qb.where_in("persona_id", persona_ids.to_vec());
+            qb.order_by("created_at", "DESC");
+            let sql = qb.build_select("SELECT * FROM persona_triggers");
             let mut stmt = conn.prepare(&sql)?;
-            let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_trigger)?;
             let triggers = rows
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)?;
@@ -372,12 +364,48 @@ pub fn update(
         // Build dynamic SET clause
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-        push_field!(input.trigger_type, "trigger_type", sets, param_idx);
-        push_field!(encrypted_config, "config", sets, param_idx);
-        push_field!(input.enabled, "enabled", sets, param_idx);
-        push_field!(derived_status, "status", sets, param_idx);
-        push_field!(input.next_trigger_at, "next_trigger_at", sets, param_idx);
+        push_field_param!(
+            input.trigger_type,
+            "trigger_type",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            encrypted_config,
+            "config",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.enabled,
+            "enabled",
+            sets,
+            param_idx,
+            param_values,
+            bool
+        );
+        push_field_param!(
+            derived_status,
+            "status",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.next_trigger_at,
+            "next_trigger_at",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
 
         let sql = format!(
             "UPDATE persona_triggers SET {} WHERE id = ?{}",
@@ -385,23 +413,6 @@ pub fn update(
             param_idx
         );
 
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-
-        if let Some(ref v) = input.trigger_type {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = encrypted_config {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(v) = input.enabled {
-            param_values.push(Box::new(v as i32));
-        }
-        if let Some(ref v) = derived_status {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.next_trigger_at {
-            param_values.push(Box::new(v.clone()));
-        }
         param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
@@ -1502,25 +1513,17 @@ pub fn get_event_listeners_for_event_types(
                 return Ok(Vec::new());
             }
             let conn = pool.get()?;
-            let placeholders: Vec<String> = event_types
-                .iter()
-                .enumerate()
-                .map(|(i, _)| format!("?{}", i + 1))
-                .collect();
-            let sql = format!(
-                "SELECT * FROM persona_triggers
-             WHERE trigger_type = 'event_listener'
-               AND status = 'active'
-               AND json_extract(config, '$.listen_event_type') IN ({})
-             ORDER BY created_at DESC",
-                placeholders.join(", ")
+            let mut qb = QueryBuilder::new();
+            qb.where_raw(|_| "trigger_type = 'event_listener'".to_string(), vec![]);
+            qb.where_raw(|_| "status = 'active'".to_string(), vec![]);
+            qb.where_in(
+                "json_extract(config, '$.listen_event_type')",
+                event_types.to_vec(),
             );
-            let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
-                .iter()
-                .map(|s| s as &dyn rusqlite::types::ToSql)
-                .collect();
+            qb.order_by("created_at", "DESC");
+            let sql = qb.build_select("SELECT * FROM persona_triggers");
             let mut stmt = conn.prepare(&sql)?;
-            let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_trigger)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
         }

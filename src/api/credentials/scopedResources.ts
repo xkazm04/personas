@@ -30,8 +30,14 @@ export async function getScopedResources(credentialId: string): Promise<ScopedRe
   if (raw == null) return null;
   try {
     return JSON.parse(raw) as ScopedResources;
-  } catch {
-    return {};
+  } catch (err) {
+    // Do NOT silently collapse to `{}` — that's the valid "picker opened, user
+    // skipped" state, and a caller that re-saves after seeing it would
+    // permanently discard whatever scoping was actually persisted. Surface the
+    // corruption instead so the UI can show an error rather than an
+    // editable-but-empty picker.
+    console.error('[scopedResources] corrupt scoped_resources blob for credential', credentialId, err);
+    throw new Error('scoped_resources_corrupt', { cause: err });
   }
 }
 

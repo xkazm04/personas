@@ -35,7 +35,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 import { BUILTIN_CONNECTORS, connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
-import type { TriggerSelection } from "./useCasePickerShared";
+import { normalizeTriggerType, type TriggerSelection } from "./useCasePickerShared";
 import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { UseCaseErrorPolicy } from "@/lib/types/frontendTypes";
@@ -52,18 +52,6 @@ interface ChronologyAdoptionViewProps {
 }
 
 type CellDataMap = Record<string, { items?: string[]; summary?: string; raw?: Record<string, unknown> }>;
-
-/** Normalize trigger type aliases to the canonical enum values the backend expects. */
-const TRIGGER_TYPE_ALIASES: Record<string, string> = {
-  event: "event_listener", event_bus: "event_listener", event_sub: "event_listener", event_subscription: "event_listener",
-  cron: "schedule", scheduled: "schedule", timer: "schedule",
-  poll: "polling", hook: "webhook", http: "webhook", web_hook: "webhook",
-  watcher: "file_watcher", fs_watcher: "file_watcher", watch: "file_watcher",
-  focus: "app_focus", window_focus: "app_focus",
-};
-function normalizeTriggerType(raw: string): string {
-  return TRIGGER_TYPE_ALIASES[raw] ?? raw;
-}
 
 /**
  * Humanize a snake_case use_case identifier into a readable label.
@@ -140,7 +128,12 @@ function extractDimensionData(
   }
 
   // Connectors — apply user's credential picks from the questionnaire.
-  const connectors = ((d.suggested_connectors ?? d.required_connectors ?? []) as unknown[]);
+  // `??` only falls back on null/undefined; an authored-but-empty
+  // suggested_connectors array must also fall back to required_connectors.
+  const suggestedConnectors = (d.suggested_connectors as unknown[] | undefined) ?? [];
+  const connectors = (suggestedConnectors.length > 0
+    ? suggestedConnectors
+    : ((d.required_connectors ?? []) as unknown[]));
   if (connectors.length > 0) {
     const rewritten = connectors.map((c) => {
       const o = c as Record<string, unknown>;
@@ -174,7 +167,10 @@ function extractDimensionData(
   }
 
   // Triggers — drop any tied to a disabled use case
-  const triggersRaw = ((d.suggested_triggers ?? d.triggers ?? []) as unknown[]);
+  const suggestedTriggers = (d.suggested_triggers as unknown[] | undefined) ?? [];
+  const triggersRaw = (suggestedTriggers.length > 0
+    ? suggestedTriggers
+    : ((d.triggers ?? []) as unknown[]));
   const triggers = ucFilterActive
     ? triggersRaw.filter((tr) => matchesUseCaseFilter((tr as Record<string, unknown>).use_case_id))
     : triggersRaw;

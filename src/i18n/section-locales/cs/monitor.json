@@ -260,5 +260,10 @@
   "stream_no_speakers": "Žádní mluvčí",
   "stream_none": "Žádné",
   "stream_search": "Hledat přenosy",
-  "stream_title": "Stream"
+  "stream_title": "Stream",
+  "columns_action_empty": "Momentálně nic nevyžaduje vaši pozornost",
+  "columns_needs_attention": "Vyžaduje pozornost",
+  "columns_active_goals": "Aktivní cíle",
+  "columns_no_team": "Bez týmu",
+  "columns_all_clear": "Vše v pořádku"
 }

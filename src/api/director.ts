@@ -141,11 +141,26 @@ export async function runDirectorMemoryCleanup(
   );
 }
 
+// `run_director_batch` has no server-side dedup, and its 30-min timeout
+// (unlike single-target `runDirectorOnPersona`, bounded by the 360s backend
+// ceiling) can genuinely be exceeded by a large fleet — so a post-timeout
+// retry is a real risk of double-charging LLM spend, not just a double-click.
+// The idempotencyKey below dedups the common case (overlapping concurrent
+// calls, e.g. an impatient double-click on "Run batch" while the first is
+// still in flight): they share the same in-flight promise instead of
+// spawning a second batch. It does NOT protect a retry issued *after* the
+// original settles/times out — that needs backend-side dedup, tracked
+// separately.
+const RUN_DIRECTOR_BATCH_IDEMPOTENCY_KEY = 'run_director_batch';
+
 export async function runDirectorBatch(maxPersonas?: number): Promise<DirectorReport> {
   return invoke<DirectorReport>(
     'run_director_batch',
     { maxPersonas: maxPersonas ?? null },
-    { timeoutMs: directorBatchTimeoutMs(maxPersonas) },
+    {
+      timeoutMs: directorBatchTimeoutMs(maxPersonas),
+      idempotencyKey: RUN_DIRECTOR_BATCH_IDEMPOTENCY_KEY,
+    },
   );
 }
 

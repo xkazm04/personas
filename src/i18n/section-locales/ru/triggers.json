@@ -592,7 +592,8 @@
     "event_type_required": "Необходимо указать тип отслеживаемого события.",
     "watch_path_required": "Необходимо указать хотя бы один отслеживаемый путь.",
     "composite_min_conditions": "Составным триггерам нужно как минимум 2 условия.",
-    "composite_window_minimum": "Временное окно должно быть не менее 5 секунд."
+    "composite_window_minimum": "Временное окно должно быть не менее 5 секунд.",
+    "endpoint_required": "Требуется URL конечной точки или событие."
   },
   "dead_letter_select_all": "Выбрать all",
   "dead_letter_select_visible": "Выбрать visible",
@@ -797,5 +798,7 @@
     "watch": "Отслеживать",
     "watching": "Отслеживается",
     "watching_only": "Только отслеживаемые"
-  }
+  },
+  "overdue_label": "Просрочено",
+  "relay_delete_failed": "Не удалось удалить ретранслятор — попробуйте снова"
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
@@ -34,7 +35,23 @@ export default function StudioChatInput() {
   const [planOpen, setPlanOpen] = useState(false);
   const { shouldAnimate } = useMotion();
   const activeId = useStudioStore((s) => s.activeId);
-  const rt = useStudioStore((s) => (s.activeId ? s.runtimes[s.activeId] : undefined));
+  // Perf: select only the fields the dock renders (shallow-compared) instead of
+  // the whole runtime — the runtime object is replaced on every CLI stream
+  // delta, which would re-render the dock tens of times per second mid-build.
+  // `phases` stays reference-stable across stream patches, so shallow holds.
+  const rt = useStudioStore(
+    useShallow((s) => {
+      const r = s.activeId ? s.runtimes[s.activeId] : undefined;
+      if (!r) return undefined;
+      return {
+        busy: r.busy,
+        question: r.question,
+        autonomous: r.autonomous,
+        name: r.name,
+        phases: r.phases,
+      };
+    }),
+  );
   const sendTurn = useStudioStore((s) => s.sendTurn);
   const startAutonomous = useStudioStore((s) => s.startAutonomous);
   const stopAutonomous = useStudioStore((s) => s.stopAutonomous);

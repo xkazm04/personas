@@ -8,7 +8,7 @@ import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineE
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { getSlaDashboard } from '@/api/overview/sla';
 import type { SlaDashboardData } from '@/api/overview/sla';
-import { DAY_OPTIONS, formatPercent, formatDuration, slaColor } from '../libs/slaHelpers';
+import { DAY_OPTIONS, formatPercent, formatDuration, slaColor, SLA_METRIC_TEXT_CLASSES, type SlaMetricColor } from '../libs/slaHelpers';
 import { rateToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
 import { SlaCard, PersonaRow, DailyTrendChart } from './SLACard';
 
@@ -176,16 +176,7 @@ function SectionHeader({ icon: Icon, title, accent }: { icon: LucideIcon; title:
 function CompactMetric({ icon, label, value, sub, color }: {
   icon: React.ReactNode; label: string; value: string; sub: string; color: string;
 }) {
-  const colorMap: Record<string, string> = {
-    emerald: 'text-emerald-400',
-    amber: 'text-amber-400',
-    red: 'text-rose-400',
-    blue: 'text-blue-400',
-    violet: 'text-violet-400',
-    // No-data / not-enough-activity state: neutral foreground, never red.
-    neutral: 'text-foreground',
-  };
-  const tone = colorMap[color] ?? 'text-foreground';
+  const tone = SLA_METRIC_TEXT_CLASSES[color as SlaMetricColor] ?? SLA_METRIC_TEXT_CLASSES.neutral;
   return (
     <div className="flex items-center gap-2.5 min-w-0">
       <span className={`flex items-center justify-center w-7 h-7 rounded-card bg-secondary/30 border border-primary/10 ${tone}`}>

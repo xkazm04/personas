@@ -217,6 +217,29 @@ export function applyEdit(k: MockKpi, e?: KpiEdit): MockKpi {
   };
 }
 
+/** Human one-liner describing a measurement methodic (the `measure_config` JSON
+ *  string) — shared by the KPI console's methodic preview and the proposals
+ *  panel's per-proposal summary, so a new measure kind or a JSON shape change
+ *  only has to be taught here once. `emptyText` covers a missing/empty config;
+ *  `unparsedFallback` covers JSON that fails to parse or matches no known key
+ *  (defaults to `emptyText` when omitted). */
+export function describeMeasureConfig(
+  cfg: string | undefined,
+  opts?: { emptyText?: string; unparsedFallback?: string },
+): string {
+  const emptyText = opts?.emptyText ?? 'manual measurement';
+  if (!cfg) return emptyText;
+  try {
+    const o = JSON.parse(cfg) as Record<string, unknown>;
+    if (o.cmd) return `runs \`${o.cmd}\`${o.parse ? ` · parse ${o.parse}` : ''}`;
+    if (o.metric) return `orchestrator metric: ${o.metric}`;
+    if (o.connector) return `connector ${o.connector}${o.instruction ? `: ${o.instruction}` : ''}`;
+    if (o.recipe) return `recipe: ${o.recipe}`;
+    if (o.instruction) return String(o.instruction);
+  } catch { /* fall through */ }
+  return opts?.unparsedFallback ?? emptyText;
+}
+
 /** Format a value with its unit: space word-units ("0 errors") but not "%" ("78%"). */
 export function fmtUnit(v: number | null | undefined, unit: string): string {
   const num = v ?? '—';

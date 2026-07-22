@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Plug, Zap, Bell } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConnectorsSection } from '@/features/templates/sub_generated/design-preview/ConnectorsSection';
 import { EventsSection } from '@/features/templates/sub_generated/design-preview/EventsSection';
 import { MessagesSection } from '@/features/templates/sub_generated/design-preview/MessagesSection';

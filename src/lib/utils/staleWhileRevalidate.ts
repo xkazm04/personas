@@ -16,6 +16,24 @@ const _inflight = new Map<string, Promise<unknown>>();
 /** Default TTL: 30 seconds */
 const DEFAULT_TTL_MS = 30_000;
 
+/**
+ * Hard cap on retained cache entries. TTL only gates freshness, not
+ * retention -- without a size cap, a long-lived desktop session accumulates
+ * one entry per distinct key forever when keys are derived from anything
+ * variadic (per-persona/per-execution ids). Evicted in insertion order
+ * (`Map` preserves insertion order; re-`set`ting a key on cache hit refreshes
+ * its position), which approximates LRU well enough for a soft memory cap.
+ */
+const MAX_CACHE_ENTRIES = 500;
+
+function evictOldestIfOverCap(): void {
+  while (_cache.size > MAX_CACHE_ENTRIES) {
+    const oldestKey = _cache.keys().next().value;
+    if (oldestKey === undefined) break;
+    _cache.delete(oldestKey);
+  }
+}
+
 export interface SWRResult<T> {
   /** The data (possibly stale). `undefined` only on first fetch. */
   data: T | undefined;
@@ -56,7 +74,11 @@ export function createSWRFetcher<T>(
     // Start fetch
     const promise = fn()
       .then((data) => {
+        // Refresh insertion order on write so recently-used keys stay ahead
+        // of the eviction cursor.
+        _cache.delete(key);
         _cache.set(key, { data, fetchedAt: Date.now() });
+        evictOldestIfOverCap();
         return data;
       })
       .finally(() => {

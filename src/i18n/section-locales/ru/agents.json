@@ -523,7 +523,8 @@
     "active_chains_hops_other": "{count} переходов",
     "active_chains_one": "{count} цепочка в работе",
     "active_chains_other": "{count} цепочек в работе",
-    "active_chains_title": "Цепочки в работе"
+    "active_chains_title": "Цепочки в работе",
+    "copy_log_failed": "Не удалось скопировать журнал"
   },
   "lab": {
     "mode_arena": "Арена",
@@ -1093,21 +1094,6 @@
     "ct_graph_view": "Граф зависимостей",
     "ct_swap_alt_tooltip": "Переключить на альтернативный коннектор",
     "ct_deps": "{count} зависим.",
-    "dg_no_deps": "Зависимостей нет.",
-    "dg_broken": "{count} сломано",
-    "dg_blast_radius": "Радиус поражения",
-    "dg_dependencies": "Зависимости",
-    "dg_select_cred": "Выберите учётные данные для просмотра последствий истечения",
-    "dg_relationships": "Связи ({count})",
-    "dg_more": "+{count} ещё",
-    "dg_affected_tools": "Затронутые инструменты",
-    "dg_affected_auto": "Затронутые автоматизации",
-    "dg_low_risk": "Низкий риск",
-    "dg_medium_risk": "Средний риск",
-    "dg_high_risk": "Высокий риск",
-    "dg_high_blast": "При истечении этих учётных данных сломаются {count} возможностей.",
-    "dg_medium_blast": "{count} возможностей зависят от этих учётных данных.",
-    "dg_low_blast": "Ни один инструмент не зависит от этих учётных данных.",
     "dm_needed": "{count} учётных данных нужно",
     "dm_fulfilled": "{fulfilled}/{total} коннекторов заполнено",
     "dm_reuse_hint": "{count} могут использовать существующие учётные данные",
@@ -1122,13 +1108,6 @@
     "sub_triggers_title": "Триггеры и подписки",
     "sub_suggested": "{count} предложено",
     "sub_filter": "фильтр: {filter}",
-    "lifecycle_error_load_triggers": "Не удалось загрузить триггеры: {error}",
-    "lifecycle_error_load_subscriptions": "Не удалось загрузить подписки: {error}",
-    "lifecycle_error_activate_trigger": "Не удалось активировать триггер",
-    "lifecycle_error_activate_subscription": "Не удалось активировать подписку",
-    "lifecycle_error_retire_trigger": "Не удалось удалить триггер",
-    "lifecycle_error_retire_subscription": "Не удалось удалить подписку",
-    "lifecycle_error_delete_persists": "Не удалось удалить. Подписка может по-прежнему существовать.",
     "auto_error_deploy_check_credentials": "Не удалось развернуть. Проверьте учётные данные платформы и повторите попытку.",
     "auto_error_deploy_generic": "Не удалось развернуть автоматизацию",
     "test_healthcheck_failed_default": "Тест подключения не пройден",
@@ -1730,7 +1709,8 @@
     "annotation_empty": "Аннотаций пока нет — добавьте тег, заметку или отметьте этот запуск звездой, чтобы легко найти его позже.",
     "col_verdict": "Вердикт",
     "verdict_none": "Ещё не проверено Director’ом",
-    "verdict_tooltip": "Вердикт Director: {score}/5"
+    "verdict_tooltip": "Вердикт Director: {score}/5",
+    "annotation_saving": "Сохранение…"
   },
   "settings_status": {
     "saving": "Сохранение {sections}...",
@@ -2809,5 +2789,21 @@
       "other": "Другое"
     },
     "title": "История изменений"
-  }
+  },
+  "sigil_edit_channels_label": "Каналы",
+  "sigil_edit_custom_connector": "Пользовательский коннектор — совпадений по бренд-иконке нет.",
+  "sigil_edit_error_off": "Используется политика обработки ошибок по умолчанию.",
+  "sigil_edit_error_on": "Настроена пользовательская политика обработки ошибок.",
+  "sigil_edit_event_off": "Подписки на события не настроены.",
+  "sigil_edit_event_on": "Эта возможность подписана на события.",
+  "sigil_edit_memory_off": "Память отключена — возможность работает без сохранения состояния.",
+  "sigil_edit_memory_on": "Для этой возможности включена постоянная память.",
+  "sigil_edit_no_channels": "Для этой возможности нет каналов уведомлений.",
+  "sigil_edit_no_connector": "Эта возможность не использует коннектор.",
+  "sigil_edit_no_dim_editor": "Для этого параметра редактор ещё не подключён.",
+  "sigil_edit_no_trigger": "Для этой возможности не настроен триггер.",
+  "sigil_edit_review_off": "Проверка человеком не требуется — действия выполняются автономно.",
+  "sigil_edit_review_on": "Перед выполнением этой возможности требуется проверка человеком.",
+  "sigil_edit_service_label": "Сервис: {key}",
+  "sigil_edit_when_label": "Когда"
 }

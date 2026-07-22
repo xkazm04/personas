@@ -30,6 +30,8 @@ use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
+use super::vault_fs::{walk_markdown_files, ErrorPolicy, WalkOptions};
+
 /// Hard cap for one revitalize pass. Must stay safely under the job
 /// manager's ~10.5-minute stale-running sweep, otherwise snapshot polling
 /// would mark a still-streaming job as failed. The prompt bounds the work
@@ -95,26 +97,21 @@ impl VaultScanStats {
 }
 
 /// Count markdown notes + bytes under `root`, skipping dot-directories
-/// (`.obsidian`, `.trash`, …). Iterative walk: vaults can nest deeply.
+/// (`.obsidian`, `.trash`, …). Unreadable subdirectories are skipped rather
+/// than aborting the whole scan (matches the pre-extraction behavior — this
+/// is a best-effort before/after measurement around a revitalize pass, not a
+/// correctness-critical walk).
 fn scan_vault_notes(root: &Path) -> VaultScanStats {
     let mut stats = VaultScanStats::default();
-    let mut stack: Vec<PathBuf> = vec![root.to_path_buf()];
-    while let Some(dir) = stack.pop() {
-        let Ok(entries) = std::fs::read_dir(&dir) else {
-            continue;
-        };
-        for entry in entries.flatten() {
-            let path = entry.path();
-            let name = entry.file_name().to_string_lossy().to_string();
-            if path.is_dir() {
-                if !name.starts_with('.') {
-                    stack.push(path);
-                }
-            } else if path.extension().map(|e| e == "md").unwrap_or(false) {
-                stats.note_count += 1;
-                stats.total_bytes += entry.metadata().map(|m| m.len()).unwrap_or(0);
-            }
-        }
+    let opts = WalkOptions {
+        max_depth: WalkOptions::UNBOUNDED_DEPTH,
+        on_error: ErrorPolicy::SkipSilently,
+        skip_hidden_files: false,
+    };
+    let files = walk_markdown_files(root, &opts).unwrap_or_default();
+    for path in files {
+        stats.note_count += 1;
+        stats.total_bytes += std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
     }
     stats
 }

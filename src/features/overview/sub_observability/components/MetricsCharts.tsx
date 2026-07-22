@@ -5,7 +5,8 @@ import { CHART_COLORS_PURPLE, CHART_GRAD, getGridStroke, getAxisTickFill } from 
 import { useScaledFontSize } from '@/stores/themeStore';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { MetricChart } from '@/features/overview/sub_usage/components/MetricChart';
-import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import type { RechartsModule } from '@/features/shared/charts/RechartsWrapper';
+import { IllustratedEmptyState as EmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import type { ChartAnnotationRecord } from '../libs/chartAnnotations';
@@ -17,6 +18,38 @@ const TOOLTIP_CONTENT = <ChartTooltip />;
 const COST_AXIS_FORMATTER = (v: number) => `$${v}`;
 const DATE_AXIS_FORMATTER = (v: string) =>
   new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+/**
+ * Renders the shared annotation marker for a chart's `visibleAnnotations`:
+ * a dashed `ReferenceLine` whose label is a small dot with a hover title
+ * ("label · formatted timestamp"). Extracted because the cost `AreaChart`
+ * and health `BarChart` below rendered an identical block verbatim, only
+ * differing in the React `key` prefix.
+ */
+function renderAnnotationReferenceLines(
+  R: RechartsModule,
+  annotations: ChartAnnotationRecord[],
+  keyPrefix: string,
+) {
+  return annotations.map((annotation, index) => (
+    <R.ReferenceLine
+      key={`${keyPrefix}-annotation-${annotation.date}-${annotation.type}-${index}`}
+      x={annotation.date}
+      stroke={getAnnotationColor(annotation.type, annotation.color)}
+      strokeDasharray="4 4"
+      strokeOpacity={0.65}
+      label={({ viewBox }) => {
+        if (!viewBox) return null;
+        return (
+          <g>
+            <title>{`${annotation.label} · ${Number.isFinite(Date.parse(annotation.timestamp)) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(Date.parse(annotation.timestamp)) : annotation.timestamp}`}</title>
+            <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
+          </g>
+        );
+      }}
+    />
+  ));
+}
 
 export interface PieDataPoint {
   name: string;
@@ -71,24 +104,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
               <R.YAxis tick={axisTickSm} tickFormatter={COST_AXIS_FORMATTER} />
               <R.Tooltip content={TOOLTIP_CONTENT} />
               <R.Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${CHART_GRAD.cost})`} strokeWidth={2} />
-              {visibleAnnotations.map((annotation, index) => (
-                <R.ReferenceLine
-                  key={`cost-annotation-${annotation.date}-${annotation.type}-${index}`}
-                  x={annotation.date}
-                  stroke={getAnnotationColor(annotation.type, annotation.color)}
-                  strokeDasharray="4 4"
-                  strokeOpacity={0.65}
-                  label={({ viewBox }) => {
-                    if (!viewBox) return null;
-                    return (
-                      <g>
-                        <title>{`${annotation.label} · ${Number.isFinite(Date.parse(annotation.timestamp)) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(Date.parse(annotation.timestamp)) : annotation.timestamp}`}</title>
-                        <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
-                      </g>
-                    );
-                  }}
-                />
-              ))}
+              {renderAnnotationReferenceLines(R, visibleAnnotations, 'cost')}
               {/* Anomaly markers — clickable pulsing diamonds */}
               {costAnomalies.map((anomaly) => (
                 <R.ReferenceLine
@@ -189,24 +205,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
                 if (data.payload?.date && data.payload.failed > 0) onFailureBarClick(data.payload.date);
               } : undefined}
             />
-            {visibleAnnotations.map((annotation, index) => (
-              <R.ReferenceLine
-                key={`health-annotation-${annotation.date}-${annotation.type}-${index}`}
-                x={annotation.date}
-                stroke={getAnnotationColor(annotation.type, annotation.color)}
-                strokeDasharray="4 4"
-                strokeOpacity={0.65}
-                label={({ viewBox }) => {
-                  if (!viewBox) return null;
-                  return (
-                    <g>
-                      <title>{`${annotation.label} · ${Number.isFinite(Date.parse(annotation.timestamp)) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(Date.parse(annotation.timestamp)) : annotation.timestamp}`}</title>
-                      <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
-                    </g>
-                  );
-                }}
-              />
-            ))}
+            {renderAnnotationReferenceLines(R, visibleAnnotations, 'health')}
           </R.BarChart>
         )}
       />

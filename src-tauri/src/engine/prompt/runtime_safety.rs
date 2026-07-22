@@ -88,15 +88,7 @@ pub(super) fn is_invisible_runtime_char(c: char) -> bool {
 /// 8. Recursive {{variable}} pattern neutralization
 pub(super) fn sanitize_runtime_variable(value: &str) -> String {
     // 1. Truncate at UTF-8 boundary
-    let truncated = if value.len() > MAX_RUNTIME_VAR_LENGTH {
-        let mut end = MAX_RUNTIME_VAR_LENGTH;
-        while end > 0 && !value.is_char_boundary(end) {
-            end -= 1;
-        }
-        &value[..end]
-    } else {
-        value
-    };
+    let truncated = crate::utils::text::truncate_on_char_boundary(value, MAX_RUNTIME_VAR_LENGTH);
 
     // 2. Strip invisible/zero-width characters
     let clean: String = truncated

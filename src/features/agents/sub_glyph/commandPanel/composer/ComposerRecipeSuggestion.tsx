@@ -76,8 +76,8 @@ export function ComposerRecipeSuggestion({ task, onApply, onRunDirect }: Props) 
       setMatch(null);
       return;
     }
+    let cancelled = false;
     const handle = setTimeout(() => {
-      let cancelled = false;
       invokeWithTimeout<RecipeMatch[]>("match_recipes_to_intent", {
         intent: trimmed,
         topK: 1,
@@ -93,11 +93,11 @@ export function ComposerRecipeSuggestion({ task, onApply, onRunDirect }: Props) 
           }
         })
         .catch(silentCatch("ComposerRecipeSuggestion.match"));
-      return () => {
-        cancelled = true;
-      };
     }, DEBOUNCE_MS);
-    return () => clearTimeout(handle);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
   }, [task]);
 
   // Don't show after explicit dismiss for the same recipe id, until intent shifts.

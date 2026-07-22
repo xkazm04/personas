@@ -38,6 +38,62 @@ export function formatRunTimeUTC(date: Date): string {
   return `${time} UTC`;
 }
 
+const TIMELINE_ACCENT = {
+  primary: {
+    track: 'bg-primary/15',
+    dotActive: 'bg-primary',
+    dotInactive: 'bg-primary/40',
+    ring: 'ring-primary/10',
+    labelActive: 'text-primary/70 font-medium',
+  },
+  amber: {
+    track: 'bg-amber-400/15',
+    dotActive: 'bg-amber-400',
+    dotInactive: 'bg-amber-400/40',
+    ring: 'ring-amber-400/10',
+    labelActive: 'text-amber-400/80 font-medium',
+  },
+} as const;
+
+/** Shared "mini timeline" widget: a track from "now" to the last scheduled run, with a dot per run. */
+function ScheduleTimeline({ runs, now, accent }: { runs: Date[]; now: number; accent: keyof typeof TIMELINE_ACCENT }) {
+  const lastRun = runs[runs.length - 1];
+  const totalSpan = lastRun ? lastRun.getTime() - now : 0;
+  const cls = TIMELINE_ACCENT[accent];
+
+  return (
+    <div className="relative h-6 mx-1">
+      {/* Track */}
+      <div className={`absolute top-1/2 left-0 right-0 h-px ${cls.track} -translate-y-1/2`} />
+
+      {/* "Now" marker */}
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
+        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+        <span className="typo-body text-foreground mt-1.5 absolute top-full whitespace-nowrap">now</span>
+      </div>
+
+      {/* Run dots */}
+      {runs.map((run, i) => {
+        const pct = totalSpan > 0 ? Math.min(((run.getTime() - now) / totalSpan) * 100, 100) : 0;
+        return (
+          <div
+            key={i}
+            className="animate-fade-slide-in absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group"
+            style={{ left: `${pct}%` }}
+          >
+            <div className={`w-2 h-2 rounded-full ${i === 0 ? cls.dotActive : cls.dotInactive} ring-2 ${cls.ring}`} />
+            <span className={`typo-body mt-1.5 absolute top-full whitespace-nowrap ${
+              i === 0 ? cls.labelActive : 'text-foreground opacity-0 group-hover:opacity-100 transition-opacity'
+            }`}>
+              {formatRunTime(run)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeconds: number; triggerType: string }) {
   const { t } = useTranslation();
   const runs = useMemo(() => computeNextRuns(intervalSeconds, 5), [intervalSeconds]);
@@ -47,7 +103,6 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
 
   // Timeline spans from now to last run
   const now = Date.now();
-  const totalSpan = lastRun.getTime() - now;
 
   return (
     <div
@@ -64,36 +119,7 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
         </p>
       </div>
 
-      {/* Mini timeline */}
-      <div className="relative h-6 mx-1">
-        {/* Track */}
-        <div className="absolute top-1/2 left-0 right-0 h-px bg-primary/15 -translate-y-1/2" />
-
-        {/* "Now" marker */}
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
-          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-          <span className="typo-body text-foreground mt-1.5 absolute top-full whitespace-nowrap">now</span>
-        </div>
-
-        {/* Run dots */}
-        {runs.map((run, i) => {
-          const pct = ((run.getTime() - now) / totalSpan) * 100;
-          return (
-            <div
-              key={i}
-              className="animate-fade-slide-in absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group"
-              style={{ left: `${pct}%` }}
-            >
-              <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary' : 'bg-primary/40'} ring-2 ring-primary/10`} />
-              <span className={`typo-body mt-1.5 absolute top-full whitespace-nowrap ${
-                i === 0 ? 'text-primary/70 font-medium' : 'text-foreground opacity-0 group-hover:opacity-100 transition-opacity'
-              }`}>
-                {formatRunTime(run)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      <ScheduleTimeline runs={runs} now={now} accent="primary" />
     </div>
   );
 }
@@ -127,35 +153,7 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
         </p>
       </div>
 
-      {/* Mini timeline */}
-      <div className="relative h-6 mx-1">
-        <div className="absolute top-1/2 left-0 right-0 h-px bg-amber-400/15 -translate-y-1/2" />
-
-        {/* "Now" marker */}
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center">
-          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-          <span className="typo-body text-foreground mt-1.5 absolute top-full whitespace-nowrap">now</span>
-        </div>
-
-        {/* Run dots */}
-        {runs.map((run, i) => {
-          const pct = Math.min(((run.getTime() - now) / totalSpan) * 100, 100);
-          return (
-            <div
-              key={i}
-              className="animate-fade-slide-in absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group"
-              style={{ left: `${pct}%` }}
-            >
-              <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-amber-400' : 'bg-amber-400/40'} ring-2 ring-amber-400/10`} />
-              <span className={`typo-body mt-1.5 absolute top-full whitespace-nowrap ${
-                i === 0 ? 'text-amber-400/80 font-medium' : 'text-foreground opacity-0 group-hover:opacity-100 transition-opacity'
-              }`}>
-                {formatRunTime(run)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      <ScheduleTimeline runs={runs} now={now} accent="amber" />
     </div>
   );
 }

@@ -8,6 +8,15 @@ fn get_email_pattern() -> &'static Regex {
         .get_or_init(|| Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b").unwrap())
 }
 
+// Compiled once like EMAIL_PATTERN above: sanitize_secrets runs on every
+// audit-log write and engine error path (some in loops), and recompiling
+// these four patterns per call — NFA construction, dominated by the big
+// re_pairs alternation — dwarfed the actual matching on short log strings.
+static AUTH_PATTERN: OnceLock<Regex> = OnceLock::new();
+static PAIRS_PATTERN: OnceLock<Regex> = OnceLock::new();
+static PREFIXES_PATTERN: OnceLock<Regex> = OnceLock::new();
+static BEARER_PATTERN: OnceLock<Regex> = OnceLock::new();
+
 /// Sanitize a string by masking potential secrets (API keys, tokens, emails).
 /// Used before storing untrusted API responses or error messages in plaintext columns.
 pub fn sanitize_secrets(text: &str) -> String {
@@ -17,17 +26,19 @@ pub fn sanitize_secrets(text: &str) -> String {
     // We use a specific order: longer/more specific patterns first.
 
     // a. Authorization: bearer/basic tokens
-    let re_auth = Regex::new(
-        r"(?i)\b(authorization|auth)\b\s*[:=]\s*(bearer|basic)\s+([a-zA-Z0-9\-_.~+/=]+)",
-    )
-    .unwrap();
+    let re_auth = AUTH_PATTERN.get_or_init(|| {
+        Regex::new(
+            r"(?i)\b(authorization|auth)\b\s*[:=]\s*(bearer|basic)\s+([a-zA-Z0-9\-_.~+/=]+)",
+        )
+        .unwrap()
+    });
     sanitized = re_auth.replace_all(&sanitized, "$1: [secret]").to_string();
 
     // b. Generic key: value pairs. The key/value quotes are optional so this
     // matches both plain-text log lines ("api key: 12345") AND JSON-quoted
     // pairs ("token":"sk-...") — settings audit-log values are JSON blobs,
     // and a JSON key is never adjacent to `:` without an intervening `"`.
-    let re_pairs = Regex::new(r#"(?i)\b(api[-_ ]?key|apikey|secret|token|password|passwd|credential|private[-_ ]?key|client[-_ ]?secret|access[-_ ]?key|access[-_ ]?token|refresh[-_ ]?token|dsn|connection[-_ ]?string|cookie|session[-_ ]?id)\b"?\s*([:= ]|is[: ]?)\s*"?([^"\s,}]+)"#).unwrap();
+    let re_pairs = PAIRS_PATTERN.get_or_init(|| Regex::new(r#"(?i)\b(api[-_ ]?key|apikey|secret|token|password|passwd|credential|private[-_ ]?key|client[-_ ]?secret|access[-_ ]?key|access[-_ ]?token|refresh[-_ ]?token|dsn|connection[-_ ]?string|cookie|session[-_ ]?id)\b"?\s*([:= ]|is[: ]?)\s*"?([^"\s,}]+)"#).unwrap());
     sanitized = re_pairs
         .replace_all(&sanitized, |caps: &regex::Captures| {
             format!("{}: [secret]", &caps[1])
@@ -35,12 +46,15 @@ pub fn sanitize_secrets(text: &str) -> String {
         .to_string();
 
     // c. Standalone prefixed tokens (ghp_, sk_live_, etc)
-    let re_prefixes =
-        Regex::new(r"\b(PMR?S|gh[pous]|AKIA|sk_live_|xox[baprs]-)[a-zA-Z0-9]{16,}\b").unwrap();
+    let re_prefixes = PREFIXES_PATTERN.get_or_init(|| {
+        Regex::new(r"\b(PMR?S|gh[pous]|AKIA|sk_live_|xox[baprs]-)[a-zA-Z0-9]{16,}\b").unwrap()
+    });
     sanitized = re_prefixes.replace_all(&sanitized, "[secret]").to_string();
 
     // d. Generic bearer/basic not prefixed by "authorization"
-    let re_bearer = Regex::new(r"(?i)\b(bearer|basic)\b\s+([a-zA-Z0-9\-_.~+/=]+)").unwrap();
+    let re_bearer = BEARER_PATTERN.get_or_init(|| {
+        Regex::new(r"(?i)\b(bearer|basic)\b\s+([a-zA-Z0-9\-_.~+/=]+)").unwrap()
+    });
     sanitized = re_bearer
         .replace_all(&sanitized, |caps: &regex::Captures| {
             // Only replace if not already next to a [secret] tag to avoid double masking

@@ -14,8 +14,6 @@
 use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
@@ -80,6 +78,20 @@ pub fn get(pool: &UserDbPool, id: &str) -> Result<Option<KnownProject>, AppError
     Ok(row)
 }
 
+/// Strip Windows' extended-length verbatim prefix (`\\?\` / `\\?\UNC\`) that
+/// `std::fs::canonicalize` emits, so we never store/display an ugly
+/// `\\?\C:\...` path (echoed verbatim into Athena's prompt via
+/// `prompt.rs::format_plugins`). No-op on non-Windows paths.
+fn strip_verbatim_prefix(path: &str) -> String {
+    if let Some(rest) = path.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{rest}")
+    } else if let Some(rest) = path.strip_prefix(r"\\?\") {
+        rest.to_string()
+    } else {
+        path.to_string()
+    }
+}
+
 pub fn register(
     pool: &UserDbPool,
     name: &str,
@@ -99,10 +111,10 @@ pub fn register(
     // on-disk entry; fall back to a lexical normalization when the path isn't
     // on disk yet.
     let path: String = std::fs::canonicalize(path)
-        .map(|c| c.to_string_lossy().to_string())
+        .map(|c| strip_verbatim_prefix(&c.to_string_lossy()))
         .unwrap_or_else(|_| path.trim().trim_end_matches(['/', '\\']).to_string());
     let path = path.as_str();
-    let id = format!("proj_{}", short_uuid());
+    let id = format!("proj_{}", crate::companion::util::short_id(12));
     let now = Utc::now().to_rfc3339();
     let conn = pool.get()?;
     // Upsert on path so re-registering the same repo updates the name
@@ -148,17 +160,12 @@ pub fn record_scan(pool: &UserDbPool, project_id: &str, summary: &str) -> Result
 }
 
 /// Seed the registry with the Personas repo on first init. Idempotent
-/// via the `path` UNIQUE constraint. The path is computed from
-/// `CARGO_MANIFEST_DIR` at compile time (which is `src-tauri/`) and
-/// resolved up one level to the repo root.
+/// via the `path` UNIQUE constraint. The path is resolved via
+/// `dev_mode::repo_root()` (compile-time `CARGO_MANIFEST_DIR/..`).
 pub fn seed_default_project(pool: &UserDbPool) -> Result<(), AppError> {
-    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    // CARGO_MANIFEST_DIR points at src-tauri/, repo root is its parent.
-    let repo_root = manifest_dir
-        .parent()
-        .map(|p| p.to_path_buf())
-        .unwrap_or(manifest_dir.clone());
-    let path_str = repo_root.to_string_lossy().to_string();
+    let path_str = crate::companion::dev_mode::repo_root()
+        .to_string_lossy()
+        .to_string();
     let _ = register(
         pool,
         "Personas",
@@ -168,11 +175,3 @@ pub fn seed_default_project(pool: &UserDbPool) -> Result<(), AppError> {
     Ok(())
 }
 
-fn short_uuid() -> String {
-    Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(10)
-        .collect()
-}

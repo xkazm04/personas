@@ -283,13 +283,15 @@ function SchedulesSidebarNav() {
   useEffect(() => { void fetchTeams(); }, [fetchTeams]);
 
   useEffect(() => {
+    let unsub: (() => void) | undefined;
     void import('@/stores/overviewStore').then(({ useOverviewStore }) => {
       let prev = useOverviewStore.getState().cronAgents;
       setCronAgents(prev);
-      return useOverviewStore.subscribe((s) => {
+      unsub = useOverviewStore.subscribe((s) => {
         if (s.cronAgents !== prev) { prev = s.cronAgents; setCronAgents(s.cronAgents); }
       });
-    }).then((unsub) => { return () => unsub?.(); });
+    });
+    return () => { unsub?.(); };
   }, []);
 
   // Group scheduled personas by their home team; everything without a team

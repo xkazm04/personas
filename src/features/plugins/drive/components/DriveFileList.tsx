@@ -15,6 +15,7 @@ import type { DriveEntry, DriveSearchHit } from "@/api/drive";
 import { driveFormatBytes, driveList, driveParentPath } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, SortKey } from "../hooks/useDrive";
+import { parseDriveMovePayload } from "../hooks/useDrive";
 import { useLazyImageThumb } from "../hooks/useLazyImageThumb";
 import { useScrollShadows } from "../hooks/useScrollShadows";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -365,16 +366,12 @@ function ListView({
       e.preventDefault();
       setDragTarget(null);
       if (target.kind !== "folder") return;
-      const raw = e.dataTransfer.getData("application/x-drive-move");
-      if (!raw) return;
+      const paths = parseDriveMovePayload(e);
+      if (!paths) return;
       try {
-        const { paths } = JSON.parse(raw) as { paths: string[] };
-        for (const p of paths) {
-          if (p === target.path) continue;
-          const name = p.split("/").pop() ?? p;
-          const dst = target.path ? `${target.path}/${name}` : name;
-          await drive.move(p, dst);
-        }
+        // Shared self-skip + ancestor-guard + single-refresh bulk move —
+        // see useDrive.moveManyInto.
+        await drive.moveManyInto(paths, target.path);
       } catch (err) {
         silentCatch("drive:drop-payload")(err);
       }

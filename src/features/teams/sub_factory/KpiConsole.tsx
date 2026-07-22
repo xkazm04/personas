@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { Clock, SlidersHorizontal, Activity, Play, Settings2, Loader2, Hand } from 'lucide-react';
 
 import { evaluateKpi } from '@/api/devTools/kpis';
-import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, KIND_LABEL, CADENCE_LABEL, TIER_LABEL, kpiStatus, progressPct, fmtUnit, type MockKpi, type KpiEdit, type KpiStatus } from './factoryModel';
+import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, KIND_LABEL, CADENCE_LABEL, TIER_LABEL, kpiStatus, progressPct, fmtUnit, describeMeasureConfig, type MockKpi, type KpiEdit, type KpiStatus } from './factoryModel';
 import { Sparkline, CalibrationTrack, StatusPill, ThresholdSlider, AssessmentEditor } from './factoryPrimitives';
 import { errMsg } from './composeTask';
 import { MeasureSetupModal } from './MeasureSetupModal';
@@ -24,21 +24,6 @@ function domain(kpi: MockKpi): { min: number; max: number } {
   const hi = Math.max(...vals);
   const pad = (hi - lo) * 0.15 || 1;
   return { min: Math.round((lo - pad) * 100) / 100, max: Math.round((hi + pad) * 100) / 100 };
-}
-
-/** Human one-liner describing the measurement methodic (measure_config). */
-function describeMethodic(cfg: string | undefined): string {
-  if (!cfg) return '(no methodic configured)';
-  try {
-    const o = JSON.parse(cfg) as Record<string, unknown>;
-    if (o.cmd) return `runs \`${o.cmd}\`${o.parse ? ` · parse ${o.parse}` : ''}`;
-    if (o.metric) return `orchestrator metric: ${o.metric}`;
-    if (o.connector) return `connector ${o.connector}${o.instruction ? `: ${o.instruction}` : ''}`;
-    if (o.instruction) return String(o.instruction);
-    return cfg;
-  } catch {
-    return cfg;
-  }
 }
 
 export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiEdit) => void }) {
@@ -119,7 +104,9 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
           {/* methodic: preview + configure */}
           <div className="rounded-interactive border border-primary/10 bg-background/40 p-2.5 mb-2">
             <div className="flex items-start gap-2">
-              <span className="typo-caption flex-1 break-words">{describeMethodic(kpi.measureConfig)}</span>
+              <span className="typo-caption flex-1 break-words">
+                {describeMeasureConfig(kpi.measureConfig, { emptyText: '(no methodic configured)', unparsedFallback: kpi.measureConfig })}
+              </span>
               <button type="button" onClick={() => setShowSetup(true)} className="typo-caption inline-flex items-center gap-1 text-primary hover:underline flex-shrink-0">
                 <Settings2 className="w-3 h-3" /> configure
               </button>
