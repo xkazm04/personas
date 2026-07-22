@@ -29,6 +29,8 @@ export function DimTile({ node, x, y, w, h, band }: {
 
   return (
     <g transform={`translate(${x} ${y})`} opacity={absent ? 0.6 : 1}>
+      {/* native tooltip — names the dimension even when zoomed-out LOD hides labels */}
+      <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ' — not set up' : ''}`}</title>
       <rect
         width={w} height={h} rx={8}
         fill={absent ? mix('var(--secondary)', 40, 'var(--background)') : mix(ink, 16, 'var(--background)')}

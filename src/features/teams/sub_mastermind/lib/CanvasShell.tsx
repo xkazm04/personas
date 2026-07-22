@@ -3,7 +3,7 @@
 // routing. Variants supply only the island renderer. Round 5 (Figma pass):
 // edit-first — groups move/resize inline (GroupLayer owns that), the connect
 // tool links projects via island taps, headers open the project sidebar.
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { mix } from './ink';
 import { loadGroups, saveGroups } from './groups';
@@ -13,6 +13,7 @@ import { LinkEditor } from './LinkEditor';
 import { LinkLayer } from './LinkLayer';
 import { Route } from './Route';
 import { ZoomBadge } from './ZoomBadge';
+import { ZoomControls } from './ZoomControls';
 import { sceneBounds, zoomBand, type CanvasMode, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
 import { useCanvasCamera } from './useCanvasCamera';
 
@@ -31,13 +32,19 @@ export interface IslandCtx {
   /** Island tapped (header click in edit, any click in connect) — the shell
    *  routes it: connect endpoint vs project sidebar. */
   onIslandTap: (slug: string) => void;
+  /** Connect mode: pointer went down on an island — starts the rubber-band
+   *  drag (release over another island creates the link; a plain click falls
+   *  back to the tap flow). */
+  onConnectStart: (slug: string, e: React.PointerEvent) => void;
+  /** Double-click — frame this island (focus travel). */
+  onIslandFocus: (slug: string) => void;
 }
 
 export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const { cam, panning, fit, handlers } = useCanvasCamera(svgRef);
+  const { cam, panning, fit, zoomBy, handlers } = useCanvasCamera(svgRef);
   const [hover, setHover] = useState<string | null>(null);
   const [groups, setGroups] = useState<GroupRect[]>(loadGroups);
   const [draft, setDraft] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
@@ -45,8 +52,24 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   const [links, setLinks] = useState<UserLink[]>(loadLinks);
   const [linkSource, setLinkSource] = useState<string | null>(null);
   const [editingLink, setEditingLink] = useState<string | null>(null);
+  const [rubber, setRubber] = useState<{ x: number; y: number } | null>(null);
+  const connectDrag = useRef<{ id: number; from: string; sx: number; sy: number } | null>(null);
   const drawId = useRef<number | null>(null);
   const fitted = useRef(false);
+
+  // Esc = universal cancel for the shell's overlays and half-drawn state.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setLinkSource(null);
+      setEditingLink(null);
+      setEditing(null);
+      setRubber(null);
+      connectDrag.current = null;
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, []);
 
   useLayoutEffect(() => {
     if (!fitted.current && scene.islands.length > 0) {
@@ -81,25 +104,49 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
     saveLinks(next);
   };
 
-  // Connect tool: first tap marks the source, second creates the link and
-  // opens its editor. Tapping the source again (or the sea) cancels.
+  const createLink = (from: string, to: string) => {
+    const l: UserLink = { id: `l${Date.now().toString(36)}`, from, to, label: '', dashed: false, color: LINK_PALETTE[0] };
+    commitLinks([...links, l]);
+    setLinkSource(null);
+    setEditingLink(l.id);
+  };
+
+  // Connect tool, tap flow (fallback to the drag gesture): first tap marks the
+  // source, second creates the link. Tapping the source again (or sea) cancels.
   const onIslandTap = (slug: string) => {
     if (mode !== 'connect') {
       onProjectOpen(slug);
       return;
     }
-    if (!linkSource) {
-      setLinkSource(slug);
-      return;
+    if (!linkSource) setLinkSource(slug);
+    else if (linkSource === slug) setLinkSource(null);
+    else createLink(linkSource, slug);
+  };
+
+  // Connect tool, drag flow: capture on the svg so moves keep arriving while
+  // the rubber band follows the cursor; release near another island links it.
+  const onConnectStart = (slug: string, e: React.PointerEvent) => {
+    if (mode !== 'connect' || e.button !== 0) return;
+    e.stopPropagation();
+    svgRef.current?.setPointerCapture(e.pointerId);
+    connectDrag.current = { id: e.pointerId, from: slug, sx: e.clientX, sy: e.clientY };
+  };
+
+  /** Nearest island to a world point within a generous drop radius. */
+  const islandAt = (p: { x: number; y: number }, exclude?: string): Island | null => {
+    let best: Island | null = null;
+    let bestD = 320;
+    for (const i of scene.islands) {
+      if (i.slug === exclude) continue;
+      const d = Math.hypot(i.x - p.x, i.y - p.y);
+      if (d < bestD) { best = i; bestD = d; }
     }
-    if (linkSource === slug) {
-      setLinkSource(null);
-      return;
-    }
-    const l: UserLink = { id: `l${Date.now().toString(36)}`, from: linkSource, to: slug, label: '', dashed: false, color: LINK_PALETTE[0] };
-    commitLinks([...links, l]);
-    setLinkSource(null);
-    setEditingLink(l.id);
+    return best;
+  };
+
+  const onIslandFocus = (slug: string) => {
+    const i = bySlug.get(slug);
+    if (i) fit({ minX: i.x - 480, maxX: i.x + 480, minY: i.y - 400, maxY: i.y + 400 });
   };
 
   // Group mode: left-drag draws; middle-drag still pans (forwarded to camera).
@@ -120,6 +167,11 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
       setDraft({ ...draft, x1: p.x, y1: p.y });
       return;
     }
+    const cd = connectDrag.current;
+    if (cd && cd.id === e.pointerId) {
+      if (rubber || Math.hypot(e.clientX - cd.sx, e.clientY - cd.sy) > 4) setRubber(toWorld(e));
+      return;
+    }
     handlers.onPointerMove(e);
   };
   const onPointerEnd = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -133,6 +185,18 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
           commitGroups([...groups, g]);
           setEditing(g.id);
         }
+      }
+      return;
+    }
+    const cd = connectDrag.current;
+    if (cd && cd.id === e.pointerId) {
+      connectDrag.current = null;
+      if (rubber) {
+        const target = islandAt(rubber, cd.from);
+        setRubber(null);
+        if (target) createLink(cd.from, target.slug);
+      } else {
+        onIslandTap(cd.from);
       }
       return;
     }
@@ -196,7 +260,6 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
             bySlug={bySlug}
             z={cam.z}
             clickable={mode === 'edit' || mode === 'connect'}
-            sourceSlug={mode === 'connect' ? linkSource : null}
             onEdit={setEditingLink}
           />
           {scene.islands.map((i) =>
@@ -210,12 +273,25 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
               onIslandCommit,
               onFleetOpen,
               onIslandTap,
+              onConnectStart,
+              onIslandFocus,
             }),
+          )}
+          {/* connect overlay — ABOVE the islands so source/target/rubber are
+              unmistakable (the round-5 under-island ring was barely visible) */}
+          {mode === 'connect' && (
+            <ConnectOverlay
+              source={connectDrag.current ? bySlug.get(connectDrag.current.from) : linkSource ? bySlug.get(linkSource) : undefined}
+              rubber={rubber}
+              target={rubber ? islandAt(rubber, connectDrag.current?.from) : null}
+              z={cam.z}
+            />
           )}
         </g>
       </svg>
 
       <ZoomBadge z={cam.z} />
+      <ZoomControls onZoomBy={zoomBy} onFit={() => fit(sceneBounds(scene.islands))} />
 
       {/* inline label editor for the group being named/renamed */}
       {editingGroup && (
@@ -259,3 +335,33 @@ const normalize = (d: { x0: number; y0: number; x1: number; y1: number }) => ({
   w: Math.abs(d.x1 - d.x0),
   h: Math.abs(d.y1 - d.y0),
 });
+
+/** Connect-mode feedback: bright counter-scaled ring on the source, a dashed
+ *  rubber line to the cursor, and a success-tinted ring on the drop target. */
+function ConnectOverlay({ source, rubber, target, z }: {
+  source: Island | undefined;
+  rubber: { x: number; y: number } | null;
+  target: Island | null;
+  z: number;
+}) {
+  const k = 1 / z;
+  const ring = (i: Island, color: string, r: number) => (
+    <g transform={`translate(${i.x} ${i.y}) scale(${k})`}>
+      <circle r={r} fill="none" stroke={color} strokeWidth={3} strokeDasharray="10 7" opacity={0.95} />
+      <circle r={r + 7} fill="none" stroke={color} strokeWidth={1} opacity={0.4} />
+    </g>
+  );
+  return (
+    <g pointerEvents="none">
+      {source && rubber && (
+        <line
+          x1={source.x} y1={source.y} x2={rubber.x} y2={rubber.y}
+          stroke="var(--primary)" strokeWidth={2.5} strokeDasharray="10 8"
+          strokeLinecap="round" vectorEffect="non-scaling-stroke" opacity={0.9}
+        />
+      )}
+      {source && ring(source, 'var(--primary)', 42)}
+      {target && ring(target, 'var(--status-success)', 48)}
+    </g>
+  );
+}

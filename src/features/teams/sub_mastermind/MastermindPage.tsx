@@ -82,6 +82,21 @@ function MastermindInner() {
     return () => { live = false; };
   }, []);
 
+  // Keyboard: E/G/C switch modes, Esc closes panels (the shell handles its own
+  // Esc for half-drawn links/editors). Ignored while typing.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return;
+      if (e.key === 'Escape') { setOpenSlug(null); setPreviewId(null); }
+      else if (e.key === 'e' || e.key === 'E') setMode('edit');
+      else if (e.key === 'g' || e.key === 'G') setMode('group');
+      else if (e.key === 'c' || e.key === 'C') setMode('connect');
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, []);
+
   const kpiByProject = useMemo(() => {
     const m = new Map<string, KpiRollup>();
     for (const p of factoryProjects) {
@@ -158,7 +173,7 @@ function MastermindInner() {
       )}
 
       {scene.demo && (
-        <div className="absolute bottom-3 right-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10">
+        <div className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10">
           {COPY.demo}
         </div>
       )}

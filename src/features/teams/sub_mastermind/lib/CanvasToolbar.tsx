@@ -7,10 +7,17 @@ import type { CanvasMode } from './types';
 
 const COPY = { edit: 'Edit', group: 'Group', connect: 'Connect', label: 'Canvas mode' };
 
-const MODES: Array<{ id: CanvasMode; icon: typeof Move; label: string }> = [
-  { id: 'edit', icon: Move, label: COPY.edit },
-  { id: 'group', icon: BoxSelect, label: COPY.group },
-  { id: 'connect', icon: Spline, label: COPY.connect },
+// One-line orientation per mode — what the mouse does right now.
+const HINTS: Record<CanvasMode, string> = {
+  edit: 'Drag a header to move · click it for details',
+  group: 'Drag on the canvas to draw a group',
+  connect: 'Drag from one project to another',
+};
+
+const MODES: Array<{ id: CanvasMode; icon: typeof Move; label: string; key: string }> = [
+  { id: 'edit', icon: Move, label: COPY.edit, key: 'E' },
+  { id: 'group', icon: BoxSelect, label: COPY.group, key: 'G' },
+  { id: 'connect', icon: Spline, label: COPY.connect, key: 'C' },
 ];
 
 export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onModeChange: (m: CanvasMode) => void }) {
@@ -20,7 +27,7 @@ export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onMode
       role="group"
       aria-label={COPY.label}
     >
-      {MODES.map(({ id, icon: Icon, label }) => {
+      {MODES.map(({ id, icon: Icon, label, key }) => {
         const active = mode === id;
         return (
           <button
@@ -29,6 +36,7 @@ export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onMode
             data-testid={`mm-mode-${id}`}
             onClick={() => onModeChange(id)}
             aria-pressed={active}
+            title={`${label} (${key})`}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption font-medium transition-colors focus-ring ${
               active ? 'bg-primary/15 text-foreground' : 'text-foreground/70 hover:bg-primary/5 hover:text-foreground'
             }`}
@@ -38,6 +46,9 @@ export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onMode
           </button>
         );
       })}
+      <span className="hidden sm:inline typo-caption text-foreground/55 border-l border-primary/15 pl-2.5 pr-1.5 ml-1 whitespace-nowrap">
+        {HINTS[mode]}
+      </span>
     </div>
   );
 }

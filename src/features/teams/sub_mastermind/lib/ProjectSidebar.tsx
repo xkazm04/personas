@@ -48,12 +48,14 @@ export function ProjectSidebar({ passport, name, onClose }: {
             <CoverBody p={passport} openable={false} attention={[]} />
             {bodySections.map((section) => (
               <div key={section.key} className="mt-5">
-                <div className="flex items-center gap-1.5 pb-1.5 border-b border-primary/10">
+                {/* dividers run brighter than the wall's — the secondary panel
+                    backdrop swallows the wall's primary/[0.06] hairlines */}
+                <div className="flex items-center gap-1.5 pb-1.5 border-b border-foreground/20">
                   <SectionIcon name={section.icon} className="w-3.5 h-3.5 text-primary/70" />
                   <span className="typo-label text-foreground/70">{section.label}</span>
                 </div>
                 {section.rows.map((row) => (
-                  <div key={row.key} className="py-2 border-t border-primary/[0.06] first:border-t-0">
+                  <div key={row.key} className="py-2 border-t border-foreground/12 first:border-t-0">
                     <span className="block typo-caption text-foreground/55 mb-1">{row.label}</span>
                     <InkWallCell value={row.get(passport)} />
                   </div>

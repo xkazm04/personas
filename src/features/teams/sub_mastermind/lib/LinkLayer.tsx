@@ -6,18 +6,15 @@
 import { mix } from './ink';
 import type { Island, UserLink } from './types';
 
-export function LinkLayer({ links, bySlug, z, clickable, sourceSlug, onEdit }: {
+export function LinkLayer({ links, bySlug, z, clickable, onEdit }: {
   links: UserLink[];
   bySlug: Map<string, Island>;
   z: number;
   /** Edit/connect modes: label pills are clickable to reopen the editor. */
   clickable: boolean;
-  /** Half-drawn link source (connect mode) — marked with a dashed ring. */
-  sourceSlug: string | null;
   onEdit: (id: string) => void;
 }) {
   const k = 1 / z;
-  const source = sourceSlug ? bySlug.get(sourceSlug) : undefined;
   return (
     <g>
       {links.map((l) => {
@@ -50,11 +47,6 @@ export function LinkLayer({ links, bySlug, z, clickable, sourceSlug, onEdit }: {
           </g>
         );
       })}
-      {source && (
-        <g transform={`translate(${source.x} ${source.y}) scale(${k})`} pointerEvents="none">
-          <circle r={30} fill="none" stroke={mix('var(--primary)', 75)} strokeWidth={2} strokeDasharray="6 6" />
-        </g>
-      )}
     </g>
   );
 }

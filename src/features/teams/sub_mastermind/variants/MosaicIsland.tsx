@@ -25,7 +25,7 @@ const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2)
 
 const COPY = { empty: 'not set up' };
 
-export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap }: { island: Island } & IslandCtx) {
+export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   // Cluster extents depend on how many cells are occupied (8 dims stay within
@@ -41,8 +41,8 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
       style={{ opacity: dimmed ? 0.3 : 1, transition: 'opacity 200ms ease', cursor: mode === 'connect' ? 'pointer' : undefined }}
       onPointerEnter={() => onHover(island.slug)}
       onPointerLeave={() => onHover(null)}
-      onClick={mode === 'connect' ? () => onIslandTap(island.slug) : undefined}
-      onPointerDown={mode === 'connect' ? (e) => e.stopPropagation() : undefined}
+      onPointerDown={mode === 'connect' ? (e) => onConnectStart(island.slug, e) : undefined}
+      onDoubleClick={(e) => { e.stopPropagation(); onIslandFocus(island.slug); }}
       data-testid={`mm-island-${island.slug}`}
     >
       {/* state halo behind the honeycomb — keeps the island recognizable when tiny */}
@@ -91,6 +91,8 @@ function MosaicCell({ node, x, y, band }: { node: DimNode; x: number; y: number;
 
   return (
     <g transform={`translate(${x} ${y})`} opacity={absent ? 0.6 : 1}>
+      {/* native tooltip — names the dimension even when zoomed-out LOD hides labels */}
+      <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ' — not set up' : ''}`}</title>
       <polygon
         points={hexPoints(0, 0, CELL - 1.5)}
         fill={absent ? mix('var(--secondary)', 45, 'var(--background)') : mix(ink, 20, 'var(--secondary)')}

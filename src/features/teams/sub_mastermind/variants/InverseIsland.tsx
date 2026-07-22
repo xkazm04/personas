@@ -22,7 +22,7 @@ const RING: Array<[number, number]> = [
   [0, -2], [1, -2], [-1, -2],
 ];
 
-export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap }: { island: Island } & IslandCtx) {
+export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   const zoomedIn = bandGte(band, 'near');
@@ -37,8 +37,8 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
       style={{ opacity: dimmed ? 0.3 : 1, transition: 'opacity 200ms ease', cursor: mode === 'connect' ? 'pointer' : undefined }}
       onPointerEnter={() => onHover(island.slug)}
       onPointerLeave={() => onHover(null)}
-      onClick={mode === 'connect' ? () => onIslandTap(island.slug) : undefined}
-      onPointerDown={mode === 'connect' ? (e) => e.stopPropagation() : undefined}
+      onPointerDown={mode === 'connect' ? (e) => onConnectStart(island.slug, e) : undefined}
+      onDoubleClick={(e) => { e.stopPropagation(); onIslandFocus(island.slug); }}
       data-testid={`mm-island-${island.slug}`}
     >
       <rect

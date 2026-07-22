@@ -15,6 +15,8 @@ export interface CameraControl {
   cam: Camera;
   panning: boolean;
   fit: (b: { minX: number; minY: number; maxX: number; maxY: number }) => void;
+  /** Zoom by a factor around the viewport centre (toolbar +/− buttons). */
+  zoomBy: (factor: number) => void;
   handlers: {
     onPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
     onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -81,6 +83,13 @@ export function useCanvasCamera(svgRef: RefObject<SVGSVGElement | null>): Camera
     zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.shiftKey ? 1 / 1.7 : 1.7);
   }, [zoomAt]);
 
+  const zoomBy = useCallback((factor: number) => {
+    const el = svgRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    zoomAt(r.width / 2, r.height / 2, factor);
+  }, [svgRef, zoomAt]);
+
   const fit = useCallback((b: { minX: number; minY: number; maxX: number; maxY: number }) => {
     const el = svgRef.current;
     if (!el) return;
@@ -96,6 +105,7 @@ export function useCanvasCamera(svgRef: RefObject<SVGSVGElement | null>): Camera
     cam,
     panning,
     fit,
+    zoomBy,
     handlers: { onPointerDown, onPointerMove, onPointerUp: endDrag, onPointerCancel: endDrag, onDoubleClick },
   };
 }
