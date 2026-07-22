@@ -255,7 +255,32 @@ export function useLifecycle({
           total_count: 8,
         });
 
-        sendAppNotification('Agent Promoted', 'Your agent has been promoted to production and is ready to use.').catch(silentCatch("lifecycle:promoted"));
+        // Be honest about readiness. The atomic promote reports connectors that
+        // still need a credential and entities that failed to create; claiming
+        // "ready to use" while a persona is being marked needs_credentials is the
+        // exact silent failure a non-technical founder gets burned by (UAT
+        // 2026-07-20: promoted "ready to use", then the agent had no way into
+        // Gmail). Name what's outstanding instead.
+        const needsSetup = result.connectors_needing_setup ?? [];
+        const entityErrors = result.entity_errors ?? [];
+        if (needsSetup.length > 0 || entityErrors.length > 0) {
+          const parts: string[] = [];
+          if (needsSetup.length > 0) {
+            parts.push(
+              `Connect ${needsSetup.length === 1 ? '1 service' : `${needsSetup.length} services`} before it can run: ${needsSetup.join(', ')}.`,
+            );
+          }
+          if (entityErrors.length > 0) {
+            parts.push(
+              `${entityErrors.length === 1 ? '1 item' : `${entityErrors.length} items`} couldn't be set up: ${entityErrors.map((e) => e.entity_name).join(', ')}.`,
+            );
+          }
+          sendAppNotification('Agent Promoted — needs setup', parts.join(' ')).catch(
+            silentCatch('lifecycle:promoted-needs-setup'),
+          );
+        } else {
+          sendAppNotification('Agent Promoted', 'Your agent has been promoted to production and is ready to use.').catch(silentCatch("lifecycle:promoted"));
+        }
         return {
           success: true,
           triggersCreated: result.triggers_created,
