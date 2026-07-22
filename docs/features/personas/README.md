@@ -365,8 +365,8 @@ Per-row **actions**:
 | Action | Effect |
 |---|---|
 | **Activate** | Atomically (one backend transaction, `lab_activate_version`) rolls the version's prompt live + tags it `production` **and** switches the persona's active model (`model_profile`) — a failure leaves the persona fully unchanged. If any use case still pins a different model via `model_override`, a post-activation dialog lists the diverging pins with per-use-case **Clear pin** (follow the new default) or keep-pin; dismissing changes nothing. |
-| **Measure** | Runs a version-scoped **Arena** across models — the only surviving panel from the old switcher; results populate the row's rating. |
-| **Improve** | Opens the **Athena** companion with a pre-filled improvement brief (persona + version + weakest measured metric) and waits for the user to specify the focus. |
+| **Measure** | Runs a version-scoped **Arena** across models — the only surviving panel from the old switcher; results populate the row's rating. Every version of a persona is graded on the **same** generated scenario set (the set is keyed on the persona + tools, not the prompt text), so a version-vs-version **Δ** compares like with like rather than two different exams. |
+| **Improve** | Runs the improvement engine (`lab_improve_prompt`): an LLM rewrite grounded in the current prompt + each scenario's judge rationale/suggestions + this run's user ratings, persisted as a new `experimental` version that appears in the table ready to measure. (A completed Arena run's detail modal also exposes per-scenario 👍/👎 ratings that feed this.) |
 | **Diff** | Compares the version's prompt against the active version. |
 | **Baseline** | Pins the row's version as the regression baseline; other rows then show **Δ vs baseline** on the same model (a drop ≥5 points is flagged). |
 | **Archive** | Tags the version `archived`. |
