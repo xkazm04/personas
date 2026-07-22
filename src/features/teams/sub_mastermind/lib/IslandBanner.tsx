@@ -1,41 +1,48 @@
 // Floating name banner — the readability workhorse. Rendered in world space
 // but counter-scaled by 1/z, so it keeps a constant SCREEN size at every zoom
-// (the Civilization city-label pattern): project identity + state + scores are
-// legible from the farthest overview to the closest inspection.
+// (the Civilization city-label pattern). Round 3: the title grows as the
+// camera pulls back (far > mid > near) so distant identity reads instantly.
 import { mix, SERIF, STATE_INK } from './ink';
-import type { Island } from './types';
+import type { Island, ZoomBand } from './types';
 
 const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-export function IslandBanner({ island, z, topWorldY }: {
+/** Screen-px title size per band — bigger when zoomed out. */
+const TITLE_FS: Record<ZoomBand, number> = { far: 20, mid: 17, near: 14, close: 13 };
+
+export function IslandBanner({ island, z, band, topWorldY }: {
   island: Island;
   z: number;
+  band: ZoomBand;
   /** World-space Y of the banner anchor (above the island's visual top). */
   topWorldY: number;
 }) {
   const ink = STATE_INK[island.state];
   const name = trunc(island.name, 26);
   const hasFlag = island.blockers > 0;
-  const w = Math.min(330, Math.max(150, name.length * 7.4 + (hasFlag ? 128 : 104)));
+  const fs = TITLE_FS[band];
+  const h = fs + 16;
+  const metaW = (hasFlag ? 24 : 0) + 44;
+  const w = Math.min(430, Math.max(150, name.length * fs * 0.58 + metaW + 62));
   const k = 1 / z;
   return (
     <g transform={`translate(0 ${topWorldY}) scale(${k})`} pointerEvents="none">
-      <g transform="translate(0 -16)">
+      <g transform={`translate(0 ${-h / 2 - 2})`}>
         <rect
-          x={-w / 2} y={-14} width={w} height={28} rx={14}
+          x={-w / 2} y={-h / 2} width={w} height={h} rx={h / 2}
           fill={mix('var(--background)', 86)}
           stroke={mix(ink, 55)} strokeWidth={1.25}
         />
-        <circle cx={-w / 2 + 15} r={4} fill={ink} />
-        <text x={-w / 2 + 27} y={4.5} fontSize={13} fontWeight={600} fontFamily={SERIF} fill="var(--foreground)" letterSpacing="0.01em">
+        <circle cx={-w / 2 + h / 2} r={fs * 0.33} fill={ink} />
+        <text x={-w / 2 + h / 2 + 12} y={fs * 0.36} fontSize={fs} fontWeight={600} fontFamily={SERIF} fill="var(--foreground)" letterSpacing="0.01em">
           {name}
         </text>
         {hasFlag && (
-          <text x={w / 2 - 58} y={4} textAnchor="end" fontSize={10.5} fontWeight={700} fill="var(--status-error)" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          <text x={w / 2 - 56} y={4} textAnchor="end" fontSize={11} fontWeight={700} fill="var(--status-error)" style={{ fontVariantNumeric: 'tabular-nums' }}>
             !{island.blockers}
           </text>
         )}
-        <text x={w / 2 - 13} y={4} textAnchor="end" fontSize={10} fill={mix('var(--foreground)', 55)} style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <text x={w / 2 - 13} y={4} textAnchor="end" fontSize={10.5} fill={mix('var(--foreground)', 55)} style={{ fontVariantNumeric: 'tabular-nums' }}>
           {island.autoScore}·{island.prodScore}
         </text>
       </g>

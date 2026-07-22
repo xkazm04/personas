@@ -1,14 +1,16 @@
 // One project as a honeycomb puzzle: core cell + 8 dimension cells snapped
-// edge-to-edge on the axial hex lattice (true tessellation — cells interlock
-// like puzzle pieces). Identity lives on the counter-scaled banner (always
-// legible); in-cell text is legibility-gated so no zoom level shows mush —
-// zoomed out, the cluster reads as a coloured mosaic silhouette.
+// edge-to-edge on the axial hex lattice. Round-3 LOD (band-driven):
+//   far/mid  → FULLSCALE state-coloured icon per cell (dimension states
+//              readable from orbit), title large on the banner
+//   near     → icon + uppercase label
+//   close    → + tool detail + progress
 import { DIM_ICON } from '../lib/dimMeta';
 import { DIM_INK, mix, STATE_INK } from '../lib/ink';
 import { hexPoints } from '../lib/hex';
 import { IslandBanner } from '../lib/IslandBanner';
 import { useIslandDrag } from '../lib/useIslandDrag';
-import type { CanvasMode, DimNode, Island } from '../lib/types';
+import type { IslandCtx } from '../lib/CanvasShell';
+import type { DimNode, Island, ZoomBand } from '../lib/types';
 
 const CELL = 56;
 // Axial cells: ring-1 six + two ring-2 caps (contiguous with the ring) for the
@@ -18,15 +20,7 @@ const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2)
 
 const COPY = { empty: 'not set up' };
 
-export function MosaicIsland({ island, z, mode, dimmed, onHover, onIslandMove, onIslandCommit }: {
-  island: Island;
-  z: number;
-  mode: CanvasMode;
-  dimmed: boolean;
-  onHover: (slug: string | null) => void;
-  onIslandMove: (slug: string, x: number, y: number) => void;
-  onIslandCommit: (slug: string, x: number, y: number) => void;
-}) {
+export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit });
 
@@ -46,35 +40,35 @@ export function MosaicIsland({ island, z, mode, dimmed, onHover, onIslandMove, o
         const ax = AXIAL[k];
         if (!ax) return null;
         const p = cellXY(ax[0], ax[1]);
-        return <MosaicCell key={n.key} node={n} x={p.x} y={p.y} z={z} />;
+        return <MosaicCell key={n.key} node={n} x={p.x} y={p.y} band={band} />;
       })}
 
       {/* core cell */}
       <polygon points={hexPoints(0, 0, CELL - 1.5)} fill={mix(ink, 26, 'var(--secondary)')} stroke={mix(ink, 70)} strokeWidth={2} strokeLinejoin="round" />
-      {z >= 0.55 && (
+      {(band === 'far' || band === 'mid') && (
+        <circle r={CELL * 0.32} fill="none" stroke={mix(ink, 85)} strokeWidth={5} />
+      )}
+      {(band === 'near' || band === 'close') && (
         <text y={5} textAnchor="middle" fontSize={15} fontWeight={700} fill="var(--foreground)" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {island.autoScore}·{island.prodScore}
         </text>
       )}
-      {z >= 0.9 && (
+      {band === 'close' && (
         <text y={21} textAnchor="middle" fontSize={7} letterSpacing="0.16em" fill={mix('var(--foreground)', 55)} style={{ textTransform: 'uppercase' }}>
           auto·prod
         </text>
       )}
 
-      <IslandBanner island={island} z={z} topWorldY={-CELL * 2.6} />
+      <IslandBanner island={island} z={z} band={band} topWorldY={-CELL * 2.6} />
     </g>
   );
 }
 
-function MosaicCell({ node, x, y, z }: { node: DimNode; x: number; y: number; z: number }) {
+function MosaicCell({ node, x, y, band }: { node: DimNode; x: number; y: number; band: ZoomBand }) {
   const ink = DIM_INK[node.status];
   const absent = node.status === 'absent';
   const Icon = DIM_ICON[node.key];
-  // Legibility gates: an element renders only when it would be ≥ ~9 screen px.
-  const showIcon = z >= 0.45;
-  const showLabel = z >= 0.8;
-  const showDetail = z >= 1.05;
+  const zoomedOut = band === 'far' || band === 'mid';
 
   return (
     <g transform={`translate(${x} ${y})`} opacity={absent ? 0.6 : 1}>
@@ -84,27 +78,29 @@ function MosaicCell({ node, x, y, z }: { node: DimNode; x: number; y: number; z:
         stroke={absent ? mix('var(--muted-foreground)', 40) : mix(ink, 55)}
         strokeWidth={1.5} strokeDasharray={absent ? '5 5' : undefined} strokeLinejoin="round"
       />
-      {showIcon && (
-        <Icon
-          x={-10} y={showLabel ? -26 : -10} width={20} height={20} strokeWidth={1.75}
-          style={{ color: absent ? 'var(--muted-foreground)' : ink }}
-        />
-      )}
-      {showLabel && (
-        <text y={8} textAnchor="middle" fontSize={9.5} letterSpacing="0.1em" fontWeight={600} fill={absent ? 'var(--muted-foreground)' : mix('var(--foreground)', 90)} style={{ textTransform: 'uppercase' }}>
-          {node.label}
-        </text>
-      )}
-      {showDetail && (
-        <text y={24} textAnchor="middle" fontSize={9} fontStyle="italic" fill={absent ? mix('var(--muted-foreground)', 85) : mix('var(--foreground)', 65)}>
-          {node.detail ?? (absent ? COPY.empty : '')}
-        </text>
-      )}
-      {showDetail && node.steps > 0 && !absent && (
-        <g transform="translate(0 33)">
-          <rect x={-20} y={-2} width={40} height={3.5} rx={1.75} fill={mix('var(--foreground)', 10)} />
-          <rect x={-20} y={-2} width={(40 * node.reached) / node.steps} height={3.5} rx={1.75} fill={ink} />
-        </g>
+      {zoomedOut ? (
+        // fullscale icon — the cell IS the icon when zoomed out
+        <Icon x={-27} y={-27} width={54} height={54} strokeWidth={1.5} style={{ color: absent ? 'var(--muted-foreground)' : ink }} />
+      ) : (
+        <>
+          <Icon x={-11} y={-30} width={22} height={22} strokeWidth={1.75} style={{ color: absent ? 'var(--muted-foreground)' : ink }} />
+          <text y={8} textAnchor="middle" fontSize={12} letterSpacing="0.08em" fontWeight={600} fill={absent ? 'var(--muted-foreground)' : mix('var(--foreground)', 90)} style={{ textTransform: 'uppercase' }}>
+            {node.label}
+          </text>
+          {band === 'close' && (
+            <>
+              <text y={24} textAnchor="middle" fontSize={9.5} fontStyle="italic" fill={absent ? mix('var(--muted-foreground)', 85) : mix('var(--foreground)', 65)}>
+                {node.detail ?? (absent ? COPY.empty : '')}
+              </text>
+              {node.steps > 0 && !absent && (
+                <g transform="translate(0 34)">
+                  <rect x={-20} y={-2} width={40} height={3.5} rx={1.75} fill={mix('var(--foreground)', 10)} />
+                  <rect x={-20} y={-2} width={(40 * node.reached) / node.steps} height={3.5} rx={1.75} fill={ink} />
+                </g>
+              )}
+            </>
+          )}
+        </>
       )}
     </g>
   );

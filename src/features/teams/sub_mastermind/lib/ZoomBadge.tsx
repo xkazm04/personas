@@ -2,7 +2,7 @@
 // in readability can be reported per level ("at z 0.48 the labels are mush").
 // Prototype instrumentation — likely demoted or removed at consolidation.
 import { mix, MONO } from './ink';
-import { zoomMode } from './types';
+import { zoomBand } from './types';
 
 export function ZoomBadge({ z }: { z: number }) {
   return (
@@ -19,7 +19,7 @@ export function ZoomBadge({ z }: { z: number }) {
       }}
       data-testid="mm-zoom-badge"
     >
-      z {z.toFixed(2)} · {Math.round(z * 100)}% · {zoomMode(z).toUpperCase()}
+      z {z.toFixed(2)} · {Math.round(z * 100)}% · {zoomBand(z).toUpperCase()}
     </div>
   );
 }

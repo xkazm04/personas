@@ -28,7 +28,7 @@ export function scoreInkVar(score: number): string {
 export const mix = (color: string, pct: number, base = 'transparent'): string =>
   `color-mix(in srgb, ${color} ${pct}%, ${base})`;
 
-// The two variants forge their own typographic identities (deliberately NOT the
-// app's UI stack): Archipelago = cartographic serif, Command Grid = tactical mono.
+// The canvas forges its own typographic identity (deliberately NOT the app's
+// UI stack): cartographic serif for identity/details, mono for instrumentation.
 export const SERIF = `'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif`;
 export const MONO = `ui-monospace, 'Cascadia Code', Consolas, 'SF Mono', monospace`;

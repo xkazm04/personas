@@ -58,8 +58,9 @@ export interface Camera {
   z: number;
 }
 
-/** Canvas interaction mode: view = pan/zoom only; edit = islands are draggable. */
-export type CanvasMode = 'view' | 'edit';
+/** Canvas interaction mode: view = pan/zoom only; edit = islands are
+ *  draggable; group = drag draws a labelled organizational rectangle. */
+export type CanvasMode = 'view' | 'edit' | 'group';
 
 /** Common contract every canvas variant implements (prototype scaffold). */
 export interface VariantProps {
@@ -71,9 +72,34 @@ export interface VariantProps {
   onIslandCommit: (slug: string, x: number, y: number) => void;
 }
 
-export type ZoomMode = 'far' | 'mid' | 'near';
+// Zoom bands — the single source of truth for level-of-detail. Round-3 split:
+// the old NEAR secretly contained two levels (labels vs details); `close` makes
+// that explicit so each band can be tuned independently from user feedback.
+export type ZoomBand = 'far' | 'mid' | 'near' | 'close';
 
-export const zoomMode = (z: number): ZoomMode => (z < 0.34 ? 'far' : z < 0.72 ? 'mid' : 'near');
+export const ZOOM_THRESHOLDS = { mid: 0.34, near: 0.72, close: 1.05 } as const;
+
+export function zoomBand(z: number): ZoomBand {
+  if (z < ZOOM_THRESHOLDS.mid) return 'far';
+  if (z < ZOOM_THRESHOLDS.near) return 'mid';
+  if (z < ZOOM_THRESHOLDS.close) return 'near';
+  return 'close';
+}
+
+const BAND_ORDER: Record<ZoomBand, number> = { far: 0, mid: 1, near: 2, close: 3 };
+
+/** True when `band` is at least as zoomed-in as `min` (far < mid < near < close). */
+export const bandGte = (band: ZoomBand, min: ZoomBand): boolean => BAND_ORDER[band] >= BAND_ORDER[min];
+
+/** User-drawn organizational rectangle on the canvas (world coordinates). */
+export interface GroupRect {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 /** World-space bounding box of the scene, padded so fit() leaves shoreline room. */
 export function sceneBounds(islands: Island[], pad = 300): { minX: number; minY: number; maxX: number; maxY: number } {

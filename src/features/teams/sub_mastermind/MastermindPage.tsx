@@ -2,11 +2,11 @@
 // Development). Live data: readiness passports (usePassportData) as islands,
 // cross-project relations as integration edges.
 //
-// ── PROTOTYPE SCAFFOLD (/prototype round 2, throwaway) ──────────────────────
-// Archipelago won round 1 and is the baseline; round 2 adds two variants
-// derived from it (hex-puzzle composition vs grid/box composition), a debug
-// zoom badge, and a view/edit mouse-mode toolbar (edit drags islands; the
-// arrangement persists via localStorage and is shared across variants).
+// ── PROTOTYPE SCAFFOLD (/prototype round 3, throwaway) ──────────────────────
+// Hex Puzzle and Grid Board develop in parallel; Inverse Grid (core centered,
+// dimension layer around) replaced Archipelago. Shared CanvasShell provides
+// sea/camera/routes/zoom-badge plus the toolbar modes: view (pan), edit (drag
+// islands, persisted), group (draw labelled dashed rectangles, persisted).
 // Prototype copy is hardcoded (COPY const) pending consolidation i18n.
 import { useEffect, useMemo, useState } from 'react';
 
@@ -18,29 +18,29 @@ import { CanvasToolbar } from './lib/CanvasToolbar';
 import { deriveScene } from './lib/deriveScene';
 import { loadPositions, savePositions } from './lib/positions';
 import type { CanvasMode } from './lib/types';
-import { MastermindArchipelago } from './variants/MastermindArchipelago';
 import { MastermindGridBoard } from './variants/MastermindGridBoard';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
+import { MastermindInverseGrid } from './variants/MastermindInverseGrid';
 
 const COPY = {
-  archipelago: 'Archipelago (R1)',
   mosaic: 'Hex Puzzle',
   board: 'Grid Board',
+  inverse: 'Inverse Grid',
   demo: 'demo data — no projects scanned yet',
   switcher: 'Mastermind prototype variant',
 };
 
-type VariantId = 'archipelago' | 'mosaic' | 'board';
+type VariantId = 'mosaic' | 'board' | 'inverse';
 const VARIANT_TABS: Array<{ id: VariantId; label: string }> = [
-  { id: 'archipelago', label: COPY.archipelago },
   { id: 'mosaic', label: COPY.mosaic },
   { id: 'board', label: COPY.board },
+  { id: 'inverse', label: COPY.inverse },
 ];
 
 const VARIANTS = {
-  archipelago: MastermindArchipelago,
   mosaic: MastermindHexMosaic,
   board: MastermindGridBoard,
+  inverse: MastermindInverseGrid,
 } as const;
 
 export default function MastermindPage() {
