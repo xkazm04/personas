@@ -20,6 +20,12 @@ export type ObservabilityLevel = 'none' | 'logs' | 'errors' | 'metrics' | 'traci
 export type GraphLevel = 'none' | 'partial' | 'full';
 export type EvalsLevel = 'none' | 'partial' | 'full';
 export type MigrationsLevel = 'none' | 'scripted' | 'versioned';
+/** Agent memory for the repo: none → ad-hoc artifact → curated (indexed, fresh)
+ *  → governed (a review/decay loop maintains it — Brainiac-adoption P3). */
+export type MemoryLevel = 'none' | 'adhoc' | 'curated' | 'governed';
+/** Documentation: none → README only → structured docs/ → source-synced (a
+ *  doc-map couples docs to code; 'fresh' rot-scan rung arrives in P2). */
+export type DocsLevel = 'none' | 'readme' | 'structured' | 'synced';
 export type IntegrationKind =
   | 'llm' | 'vcs' | 'auth' | 'payments' | 'email' | 'storage'
   | 'queue' | 'analytics' | 'search' | 'comms' | 'ci-cd' | 'infra' | 'other';
@@ -77,12 +83,56 @@ export interface PassportStack {
   auth?: string | null;
   integrations: PassportIntegration[];
   secretsFrom?: string;
+  /** Per-environment sources for the env-dependent dimensions (db / monitoring
+   *  / hosting). Absent on passports built before the env split — rows fall
+   *  back to their legacy single-value fields. */
+  environments?: PassportEnvironments;
+  /** Monthly app cost from the well-known cost file. null = file absent (the
+   *  wall renders NA + an agent dispatch that creates it); absent = derive
+   *  predates the cost row. */
+  appCost?: AppCost | null;
+}
+
+// -- environments (local / test / production) ---------------------------------
+
+export type EnvKey = 'local' | 'test' | 'production';
+export const ENV_KEYS: EnvKey[] = ['local', 'test', 'production'];
+export const ENV_LABEL: Record<EnvKey, string> = { local: 'Local', test: 'Test', production: 'Prod' };
+
+/** One environment's slot for a dimension: the observed source/config label, or
+ *  null — an honest "no source or config known in the codebase" gap the wall
+ *  renders as an empty state, never an invented value. */
+export interface EnvSlot { label: string | null; sub?: string }
+export type EnvSlots = Record<EnvKey, EnvSlot>;
+
+export interface PassportEnvironments {
+  db: EnvSlots;
+  monitoring: EnvSlots;
+  hosting: EnvSlots;
+}
+
+// -- app cost (the well-known, user-maintained monthly-cost ledger) ------------
+
+/** The file the App-cost row reads from the repo root. Expected gitignored —
+ *  cost data is personal and never belongs in version control. */
+export const APP_COST_FILENAME = 'app-cost.json';
+
+export interface AppCostService { name: string; monthly: number | null; note?: string }
+export interface AppCost {
+  currency: string;
+  services: AppCostService[];
+  /** The file existed but wasn't valid JSON — surfaced, not silently dropped. */
+  parseError?: boolean;
 }
 
 export interface PassportArtifacts {
   agentInstructions: string[];
   contextGraph: GraphLevel;
-  memory: boolean;
+  /** Repo-level agent memory, graded from the evidence probe (was a hardcoded
+   *  boolean until Brainiac-adoption P0 made it a real dimension). */
+  memory: MemoryLevel;
+  /** Documentation posture, graded from the evidence probe (P0). */
+  docs: DocsLevel;
   manifest: boolean;
   evals: EvalsLevel;
   skills: boolean;
@@ -141,6 +191,8 @@ export const OBSERVABILITY_SCALE: ObservabilityLevel[] = ['none', 'logs', 'error
 export const GRAPH_SCALE: GraphLevel[] = ['none', 'partial', 'full'];
 export const EVALS_SCALE: EvalsLevel[] = ['none', 'partial', 'full'];
 export const MIGRATIONS_SCALE: MigrationsLevel[] = ['none', 'scripted', 'versioned'];
+export const MEMORY_SCALE: MemoryLevel[] = ['none', 'adhoc', 'curated', 'governed'];
+export const DOCS_SCALE: DocsLevel[] = ['none', 'readme', 'structured', 'synced'];
 
 /** Position of an ordinal value within its scale, as 0..1 (for heatmap tinting). */
 export function scalePos<T extends string>(scale: T[], value: T): number {
@@ -171,6 +223,8 @@ export const OBSERVABILITY_LABEL: Record<ObservabilityLevel, string> = {
 export const GRAPH_LABEL: Record<GraphLevel, string> = { none: 'None', partial: 'Partial', full: 'Full' };
 export const EVALS_LABEL: Record<EvalsLevel, string> = { none: 'None', partial: 'Partial', full: 'Full' };
 export const MIGRATIONS_LABEL: Record<MigrationsLevel, string> = { none: 'None', scripted: 'Scripted', versioned: 'Versioned' };
+export const MEMORY_LABEL: Record<MemoryLevel, string> = { none: 'None', adhoc: 'Ad-hoc', curated: 'Curated', governed: 'Governed' };
+export const DOCS_LABEL: Record<DocsLevel, string> = { none: 'None', readme: 'README only', structured: 'Structured', synced: 'Source-synced' };
 export const ARCHETYPE_LABEL: Record<Archetype, string> = { solo: 'Solo', team: 'Team', org: 'Org' };
 export const LIFECYCLE_LABEL: Record<Lifecycle, string> = {
   prototype: 'Prototype', alpha: 'Alpha', beta: 'Beta', ga: 'GA', maintenance: 'Maintenance', deprecated: 'Deprecated',

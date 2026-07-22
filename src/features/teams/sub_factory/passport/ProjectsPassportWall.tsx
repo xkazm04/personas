@@ -24,9 +24,10 @@ import { passportToMarkdown } from './passportExport';
 import { SECTIONS, type CellValue } from './passportRows';
 import {
   sortByNameAsc,
-  AUTOMATION_LABEL, PROD_BAND_LABEL,
+  AUTOMATION_LABEL, PROD_BAND_LABEL, ENV_LABEL, APP_COST_FILENAME,
   type AppPassport,
 } from './passportModel';
+import { formatCost } from '@/lib/utils/formatters';
 import { INK, InkTabs, SegBar, TechInk, inkKindOf, scoreInk } from './passportInk';
 import { trendDelta } from './passportHistory';
 import { resolveTechIcon } from './techIcons';
@@ -42,11 +43,13 @@ import { RowSetupModal } from './RowSetupModal';
 // code-requiring or connector-bindable row: context/CLAUDE.md/tests/evals/
 // security/migrations/observability (Claude deploy or scan), the monitoring
 // tooling rows (errors/logs/metrics/tracing → connector wire), hosting (deploy),
-// aiflow + skills. Each opens the cell popover with its level ladder + actions.
+// the env-split monitoring row (connector wire), app cost (agent-created cost
+// file), aiflow + skills. Each opens the cell popover with its ladder + actions.
 const IMPROVABLE_ROWS = new Set([
-  'ci', 'selfverify', 'context', 'instructions',
+  'ci', 'selfverify', 'context', 'instructions', 'docs', 'memory',
   'observability', 'aiflow', 'skills',
   'errors', 'logs', 'metrics', 'tracing', 'hosting', 'llmtracking',
+  'monitoring', 'appcost',
 ]);
 
 // R19 — the UNIFIED setup rows: always-available setup icon (any level, not
@@ -589,6 +592,63 @@ export function InkWallCell({ value }: { value: CellValue }) {
               <span className="typo-label text-foreground/45">{i.label}</span>
             </span>
           ))}
+        </span>
+      );
+    }
+    case 'env': {
+      // Three visually separated slots (local / test / prod). A known source
+      // renders in TechInk (brand glyph when resolvable); an unknown one is an
+      // explicit em-dash empty state — the honest "nothing in the codebase".
+      return (
+        <span className="flex min-w-0 max-w-[220px]" data-testid="env-split-cell">
+          {value.slots.map((s, i) => (
+            <span key={s.env} className={`flex flex-col gap-1 min-w-0 flex-1 ${i > 0 ? 'pl-2 ml-2 border-l border-foreground/10' : ''}`}>
+              <span className={`text-[8.5px] uppercase tracking-[0.14em] leading-none ${s.label ? 'text-foreground/45' : 'text-foreground/25'}`}>{ENV_LABEL[s.env]}</span>
+              {s.label ? (
+                <span title={s.sub ? `${s.label} — ${s.sub}` : undefined} className="min-w-0"><TechInk label={s.label} /></span>
+              ) : (
+                <span className="typo-caption text-foreground/25 leading-none" title={`${ENV_LABEL[s.env]}: no source or config known in the codebase`}>—</span>
+              )}
+            </span>
+          ))}
+        </span>
+      );
+    }
+    case 'cost': {
+      if (value.state === 'missing') {
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-0" title={`No ${APP_COST_FILENAME} in the repo — the gear dispatches an agent to create it`}>
+            <span className="typo-caption font-medium text-foreground/45">NA</span>
+            <span className="typo-label text-foreground/35">no cost file</span>
+          </span>
+        );
+      }
+      if (value.state === 'empty') {
+        return (
+          <span
+            className="typo-caption font-medium"
+            style={{ color: INK.blue }}
+            title={value.invalid ? `${APP_COST_FILENAME} isn't valid JSON — fix it by hand` : `${APP_COST_FILENAME} exists — add your services and monthly costs by hand`}
+          >
+            {value.invalid ? 'invalid cost file' : 'add services →'}
+          </span>
+        );
+      }
+      const services = value.services ?? [];
+      const unpriced = services.filter((s) => s.monthly == null).length;
+      const amount = value.currency && value.currency !== 'USD'
+        ? `${value.total ?? 0} ${value.currency}`
+        : formatCost(value.total ?? 0);
+      return (
+        <span
+          className="inline-flex flex-col gap-0.5 min-w-0"
+          title={services.map((s) => `${s.name}: ${s.monthly == null ? '?' : s.monthly}${s.note ? ` (${s.note})` : ''}`).join(' · ')}
+          data-testid="app-cost-cell"
+        >
+          <span className="typo-caption font-semibold text-foreground/90 tabular-nums">{amount}/mo</span>
+          <span className="typo-label text-foreground/45 truncate">
+            {services.length} service{services.length === 1 ? '' : 's'}{unpriced > 0 ? ` · ${unpriced} unpriced` : ''}
+          </span>
         </span>
       );
     }

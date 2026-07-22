@@ -7,6 +7,7 @@ import {
   GRAPH_SCALE, GRAPH_LABEL, CI_SCALE, CI_LABEL, TESTS_SCALE, TESTS_LABEL,
   SECURITY_SCALE, SECURITY_LABEL, OBSERVABILITY_SCALE, OBSERVABILITY_LABEL,
   EVALS_SCALE, EVALS_LABEL, MIGRATIONS_SCALE, MIGRATIONS_LABEL,
+  MEMORY_SCALE, MEMORY_LABEL, DOCS_SCALE, DOCS_LABEL,
   type AppPassport,
 } from '../passportModel';
 
@@ -33,6 +34,16 @@ const LADDERS: Record<string, LadderDef> = {
     title: 'Context coverage', scale: GRAPH_SCALE, label: GRAPH_LABEL,
     current: (p) => p.automationReadiness.artifacts.contextGraph,
     note: 'Run a context scan to map more of the repo into the graph.',
+  },
+  docs: {
+    title: 'Documentation', scale: DOCS_SCALE, label: DOCS_LABEL,
+    current: (p) => p.automationReadiness.artifacts.docs,
+    note: 'Start with a real README, grow a docs/ tree, then couple docs to source with a doc-map.',
+  },
+  memory: {
+    title: 'Agent memory', scale: MEMORY_SCALE, label: MEMORY_LABEL,
+    current: (p) => p.automationReadiness.artifacts.memory,
+    note: 'Seed an agent-maintained MEMORY.md, then keep it indexed and fresh.',
   },
   ci: {
     title: 'CI', scale: CI_SCALE, label: CI_LABEL,

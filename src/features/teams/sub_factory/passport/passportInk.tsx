@@ -54,6 +54,12 @@ export function inkKindOf(v: CellValue): InkKind {
       return v.on ? 'good' : 'warn';
     case 'counts':
       return v.items.some((i) => i.count > 0) ? 'info' : 'setup';
+    // Env gaps are expected early — partial wiring reads as info (recedes);
+    // an all-empty dimension is a setup invitation, not a failure.
+    case 'env':
+      return v.slots.some((s) => s.label) ? 'info' : 'setup';
+    case 'cost':
+      return v.state === 'known' ? 'info' : 'setup';
   }
 }
 

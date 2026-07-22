@@ -348,6 +348,19 @@ export interface RepoEvidence {
   has_codeql: boolean;
   has_migrations: boolean;
   has_eval: boolean;
+  /** Agent memory + docs signals (Brainiac-adoption P0). Optional so a derive
+   *  against an older backend (fields absent from the IPC payload) degrades to
+   *  "no signal" instead of lying. */
+  has_repo_memory?: boolean;
+  memory_file_count?: number;
+  memory_index_lines?: number;
+  memory_age_days?: number | null;
+  docs_file_count?: number;
+  has_doc_map?: boolean;
+  /** Raw `app-cost.json` contents (user-maintained monthly-cost ledger at the
+   *  repo root), null when the file doesn't exist. Optional for the same
+   *  older-backend reason as the fields above. */
+  app_cost_raw?: string | null;
 }
 
 export const probeRepoEvidence = (rootPath: string) =>

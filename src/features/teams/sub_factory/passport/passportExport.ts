@@ -7,6 +7,7 @@ import { scoreAgainstRubric } from './improve/goldenStandard';
 import {
   AUTOMATION_LABEL, PROD_BAND_LABEL, CI_LABEL, TESTS_LABEL, SECURITY_LABEL,
   OBSERVABILITY_LABEL, GRAPH_LABEL, EVALS_LABEL, MIGRATIONS_LABEL, ARCHETYPE_LABEL,
+  MEMORY_LABEL, DOCS_LABEL,
   type AppPassport,
 } from './passportModel';
 
@@ -32,6 +33,8 @@ export function passportToMarkdown(p: AppPassport, now: number): string {
     '|---|---|',
     `| Context coverage | ${GRAPH_LABEL[a.artifacts.contextGraph]} |`,
     `| Agent instructions | ${a.artifacts.agentInstructions.length ? 'Present' : 'None'} |`,
+    `| Documentation | ${DOCS_LABEL[a.artifacts.docs]} |`,
+    `| Agent memory | ${MEMORY_LABEL[a.artifacts.memory]} |`,
     `| Self-verify | ${selfVerify} |`,
     `| Evals | ${EVALS_LABEL[a.artifacts.evals]} |`,
     `| CI | ${CI_LABEL[pr.ci.level]} |`,

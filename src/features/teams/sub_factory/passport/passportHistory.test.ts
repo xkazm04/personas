@@ -20,7 +20,7 @@ function mk(slug: string, auto: number, prod: number): AppPassport {
     passport: 'app-passport', passportVersion: '0',
     identity: { name: slug, slug, purpose: '', archetype: 'team', lifecycle: 'alpha', criticality: 'internal' },
     stack: { languages: [], frameworks: [], persistence: [], monitoring: { errorTracking: null, logs: null, metrics: null, tracing: null }, integrations: [] },
-    automationReadiness: { level: 'L1', score: auto, artifacts: { agentInstructions: [], contextGraph: 'none', memory: false, manifest: false, evals: 'none', skills: false }, selfVerify: { build: false, test: false, lint: false, typecheck: false }, aiInWorkflow: false, blockers: [] },
+    automationReadiness: { level: 'L1', score: auto, artifacts: { agentInstructions: [], contextGraph: 'none', memory: 'none', docs: 'none', manifest: false, evals: 'none', skills: false }, selfVerify: { build: false, test: false, lint: false, typecheck: false }, aiInWorkflow: false, blockers: [] },
     productionReadiness: { band: 'prototype', score: prod, ci: { level: 'none' }, tests: { level: 'none' }, security: { level: 'none' }, observability: { level: 'none' }, delivery: { migrations: 'none', iac: false, rollback: false }, blockers: [] },
   };
 }

@@ -38,6 +38,8 @@ const DIM_ACTION: Record<string, { kind: PlanKind; tier: number; deployRow?: str
   security: { kind: 'task', tier: 3, deployRow: 'security' },
   evals: { kind: 'task', tier: 3, deployRow: 'evals' },
   migrations: { kind: 'task', tier: 3, deployRow: 'migrations' },
+  docs: { kind: 'task', tier: 3, deployRow: 'docs' },
+  memory: { kind: 'task', tier: 3, deployRow: 'memory' },
   observability: { kind: 'connector', tier: 2 },
   aiflow: { kind: 'connector', tier: 2 },
   skills: { kind: 'skills', tier: 2 },
