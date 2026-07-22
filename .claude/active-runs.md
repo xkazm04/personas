@@ -2,10 +2,10 @@
 
 ## Active
 
-### passport-env-appcost — env-split rows (local/test/prod for db/monitoring/hosting) + App-cost row w/ agent-created cost file — session fable-5
-- Started: 2026-07-22. Status: started.
-- Paths: src-tauri/src/commands/infrastructure/dev_tools.rs (RepoEvidence: +app_cost_raw field + probe read — additive, end of struct), src/api/devTools/devTools.ts (RepoEvidence interface +1 field), src/features/teams/sub_factory/passport/{passportModel.ts (+EnvKey/PassportEnvironments/AppCost), passportDerive.ts (+environments/appCost in stack), passportRows.ts (+'env'/'cost' CellValue kinds; persistence+hosting rows → env cells; new 'monitoring' env row + 'appcost' row in tooling), passportInk.tsx (inkKindOf +2 cases), ProjectsPassportWall.tsx (InkWallCell +2 cases, IMPROVABLE_ROWS +monitoring/appcost)}, passport/improve/{deployActions.ts (+appcost action), connectors.ts (+monitoring spec)}, new test file.
-- ⚠ COORDINATION w/ brainiac-p0-memory-docs-rows (entry below): near-total path overlap (RepoEvidence struct + interface, model/derive/rows, deployActions, IMPROVABLE_ROWS). User approved parallel work on main checkout. All my edits are ADDITIVE (new fields at end of struct, new rows appended, new set entries); at commit time I diff per file and land-both-with-attribution if hunks interleave (R20 precedent).
+### brainiac-p1-skill-usage — P1 of docs/plans/brainiac-adoption-skills-memory-docs.md: skill registry + usage events + transcript mining + dormancy — session fable-5
+- Started: 2026-07-23. Status: started.
+- Paths: src-tauri/src/commands/infrastructure/skill_usage.rs (NEW), src-tauri/src/db/migrations/incremental.rs (3 tables), src-tauri/src/lib.rs (registration), src-tauri/src/commands/infrastructure/dev_tools.rs (pub the encoder only), src/api/devTools/devTools.ts, src/features/teams/sub_factory/passport/{usePassportData,passportModel,passportRows,ProjectsPassportWall,improve/{ImproveContext,SkillsModal}}, findings emitter (skill_dormant).
+- NOTE to concurrent env/cost session: shared-file overlap on usePassportData/SkillsModal/wall counts renderer — my hunks land per the running land-together protocol.
 - Main checkout. Ledger NOT staged separately.
 
 
@@ -1078,6 +1078,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### passport-env-appcost — env-split rows (local/test/prod) + App-cost row w/ agent-created cost file — session fable-5
+- Started 2026-07-22, completed 2026-07-23. Commits: core hunks rode inside `89ae3faf5` (the parallel brainiac-p0 commit swept the shared passport files — land-together protocol, attribution in `0c7289409`'s message) + `0c7289409` (NA-state testid, passportEnvCost.test.ts 8 tests, dev-tools.md wall-narrative section).
+- Shipped: (1) ENV SPLIT — Database/Hosting + new Monitoring row render 3 separated local/test/production slots (new 'env' CellValue), filled ONLY by observed signals (repo db engine → local; dev/start script → local hosting; test_env_url host → test hosting; bound monitoring connector → production monitoring), em-dash empty state + info-tone recede when partial, setup-blue when all-empty; 'monitoring' rowKey wired to the connector-bind popover. (2) APP COST — new 'cost' CellValue + tooling row reading app-cost.json at repo root via RepoEvidence.app_cost_raw (64KB cap, lenient TS parse: absent→missing, invalid→present+parseError, bad monthly→null=unpriced); missing → NA + ImproveCell gear → DeployPopover 'Create the cost file' Dev-runner task (JSON skeleton + .gitignore entry, NO invented costs — user fills manually); known → formatCost total/mo + service count + unpriced tally.
+- Verified: 16 passport vitest green, tsc clean, cargo check clean, live via :17320 (33 env cells/11 projects in Compare, NA cells, popover w/ queue/deploy + batch-for-11). Gotchas: /click IGNORES its text field (first selector match only — use precise selectors/testids); /eval is fire-and-forget (no return; read via /query); the shared live app gets navigated away by parallel sessions mid-verification — re-navigate, don't fight it.
 
 ### brainiac-p0-memory-docs-rows — Brainiac-adoption P0: real Agent-memory ordinal + new Documentation dimension — session fable-5
 - Started+completed 2026-07-22. Commits: `d5516f2ae` (adoption analysis doc, docs/plans/brainiac-adoption-skills-memory-docs.md, from 3 Explore deep-dives over C:\Users\mkdol\dolla\brainiac) + `89ae3faf5` (P0 code).
