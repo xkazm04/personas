@@ -10,6 +10,7 @@ import { hexPoints } from '../lib/hex';
 import { FleetDock } from '../lib/FleetDock';
 import { IslandBanner } from '../lib/IslandBanner';
 import { mockStats } from '../lib/statsMock';
+import { StatColumns } from '../lib/StatColumns';
 import { StatPanels } from '../lib/StatPanels';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
@@ -86,6 +87,7 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
       {statsStyle === 'panels' && <StatPanels stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />}
+      {statsStyle === 'columns' && <StatColumns stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />}
       <FleetDock fleet={island.fleet} z={z} yWorld={botY + 12} onOpen={onFleetOpen} />
     </g>
   );

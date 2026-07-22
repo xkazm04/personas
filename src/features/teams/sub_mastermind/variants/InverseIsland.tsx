@@ -7,6 +7,7 @@ import { mix, scoreInkVar, STATE_INK } from '../lib/ink';
 import { FleetDock } from '../lib/FleetDock';
 import { IslandBanner } from '../lib/IslandBanner';
 import { mockStats } from '../lib/statsMock';
+import { StatColumns } from '../lib/StatColumns';
 import { StatPanels } from '../lib/StatPanels';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
@@ -95,6 +96,9 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
       />
       {statsStyle === 'panels' && (
         <StatPanels stats={mockStats(island.slug)} z={z} leftX={-(CW * 1.5 + GAP + 10)} rightX={CW * 1.5 + GAP + 10} />
+      )}
+      {statsStyle === 'columns' && (
+        <StatColumns stats={mockStats(island.slug)} z={z} leftX={-(CW * 1.5 + GAP + 10)} rightX={CW * 1.5 + GAP + 10} />
       )}
       <FleetDock fleet={island.fleet} z={z} yWorld={botY + 14} onOpen={onFleetOpen} />
     </g>

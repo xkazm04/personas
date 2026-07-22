@@ -31,13 +31,15 @@ const COPY = {
   inverse: 'Inverse Grid',
   demo: 'demo data — no projects scanned yet',
   switcher: 'Mastermind prototype variant',
-  statsSwitcher: 'Stats panels (prototype)',
-  statsOn: 'Stats',
+  statsSwitcher: 'Stats treatment (prototype)',
+  statsPanels: 'Panels',
+  statsColumns: 'Columns',
   statsOff: 'No stats',
 };
 
 const STATS_TABS: Array<{ id: StatsStyle; label: string }> = [
-  { id: 'panels', label: COPY.statsOn },
+  { id: 'panels', label: COPY.statsPanels },
+  { id: 'columns', label: COPY.statsColumns },
   { id: 'off', label: COPY.statsOff },
 ];
 
@@ -71,7 +73,7 @@ function MastermindInner() {
   const [overrides, setOverrides] = useState(loadPositions);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
-  const [statsStyle, setStatsStyle] = useState<StatsStyle>('panels');
+  const [statsStyle, setStatsStyle] = useState<StatsStyle>('columns');
 
   // Fleet sessions: the live-event listeners live in FleetGridPage only, so
   // off that page the store is a snapshot — refresh on mount + a slow poll.
