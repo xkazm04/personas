@@ -23,9 +23,10 @@ export interface IslandCtx {
   onHover: (slug: string | null) => void;
   onIslandMove: (slug: string, x: number, y: number) => void;
   onIslandCommit: (slug: string, x: number, y: number) => void;
+  onFleetOpen: (sessionId: string) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -151,6 +152,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, renderI
               onHover: setHover,
               onIslandMove,
               onIslandCommit,
+              onFleetOpen,
             }),
           )}
         </g>

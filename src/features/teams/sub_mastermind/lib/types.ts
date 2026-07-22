@@ -5,9 +5,19 @@
 
 export type IslandState = 'healthy' | 'building' | 'warning' | 'critical';
 
-export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk';
+export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert';
 
-export type DimKey = 'db' | 'monitoring' | 'ci' | 'tests' | 'security' | 'hosting' | 'auth' | 'agents';
+export type DimKey =
+  | 'db' | 'monitoring' | 'ci' | 'tests' | 'security' | 'hosting' | 'auth' | 'agents'
+  | 'skills' | 'llm' | 'kpi';
+
+/** One open Fleet CLI session docked to a project island. Colour resolves from
+ *  `state` (FleetSessionState) at render time via FLEET_INK. */
+export interface FleetNode {
+  id: string;
+  label: string;
+  state: string;
+}
 
 export interface DimNode {
   key: DimKey;
@@ -34,6 +44,8 @@ export interface Island {
   automationLabel: string;
   blockers: number;
   nodes: DimNode[];
+  /** Open Fleet CLI sessions working in this project (page attaches them). */
+  fleet: FleetNode[];
 }
 
 export interface IslandEdge {
@@ -70,6 +82,8 @@ export interface VariantProps {
   onIslandMove: (slug: string, x: number, y: number) => void;
   /** Drag finished — persist the position. */
   onIslandCommit: (slug: string, x: number, y: number) => void;
+  /** Fleet node clicked — open the CLI preview popover for this session. */
+  onFleetOpen: (sessionId: string) => void;
 }
 
 // Zoom bands — the single source of truth for level-of-detail. Round-3 split:

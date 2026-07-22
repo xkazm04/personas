@@ -15,6 +15,20 @@ export const DIM_INK: Record<DimStatus, string> = {
   solid: 'var(--status-success)',
   partial: 'var(--status-info)',
   risk: 'var(--status-warning)',
+  alert: 'var(--status-error)',
+};
+
+/** Fleet session state → ink. Mirrors the Fleet grid's accent palette
+ *  (FleetGridPage STATE_ACCENT); violet/indigo have no semantic token yet so
+ *  they stay literal, matching the fleet feature's own identity. */
+export const FLEET_INK: Record<string, string> = {
+  spawning: 'var(--accent)',
+  running: 'var(--status-processing)',
+  awaiting_input: '#a78bfa',
+  idle: 'var(--status-success)',
+  stale: 'var(--status-warning)',
+  hibernated: '#818cf8',
+  exited: 'var(--status-neutral)',
 };
 
 /** Score → ink, mirroring the passport ramp (80+ success / 60+ info / 40+ warning / else error). */

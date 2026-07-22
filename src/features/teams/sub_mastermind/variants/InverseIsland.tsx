@@ -4,6 +4,7 @@
 // at far/mid, labels at near, details at close; identity on the banner.
 import { DimTile } from '../lib/DimTile';
 import { mix, scoreInkVar, STATE_INK } from '../lib/ink';
+import { FleetDock } from '../lib/FleetDock';
 import { IslandBanner } from '../lib/IslandBanner';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
@@ -13,13 +14,22 @@ import { bandGte } from '../lib/types';
 const CW = 104;
 const CH = 92;
 const GAP = 8;
-// Layer-1 cells clockwise from north: N, NE, E, SE, S, SW, W, NW.
-const RING: Array<[number, number]> = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]];
+// Layer-1 cells clockwise from north (N, NE, E, SE, S, SW, W, NW), then
+// layer-2 opens along the top row for dimensions 9-11 — the "layers around
+// the core" growth direction.
+const RING: Array<[number, number]> = [
+  [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1],
+  [0, -2], [1, -2], [-1, -2],
+];
 
-export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit }: { island: Island } & IslandCtx) {
+export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit });
   const zoomedIn = bandGte(band, 'near');
+  // Formation extents grow with layer 2 — halo, banner, and dock track them.
+  const rows = RING.slice(0, island.nodes.length).map(([, r]) => r);
+  const topY = (Math.min(0, ...rows)) * (CH + GAP) - CH / 2;
+  const botY = (Math.max(0, ...rows)) * (CH + GAP) + CH / 2;
 
   return (
     <g
@@ -31,8 +41,8 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
       data-testid={`mm-island-${island.slug}`}
     >
       <rect
-        x={-CW * 1.5 - GAP - 12} y={-CH * 1.5 - GAP - 12}
-        width={CW * 3 + GAP * 2 + 24} height={CH * 3 + GAP * 2 + 24}
+        x={-CW * 1.5 - GAP - 12} y={topY - 12}
+        width={CW * 3 + GAP * 2 + 24} height={botY - topY + 24}
         rx={26} fill={mix(ink, 9, 'var(--secondary)')} opacity={0.55} filter="url(#mm-coast)"
       />
 
@@ -72,7 +82,8 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
         <circle r={Math.min(CW, CH) * 0.24} fill="none" stroke={mix(ink, 85)} strokeWidth={6} />
       )}
 
-      <IslandBanner island={island} z={z} band={band} topWorldY={-CH * 1.5 - GAP - 16} />
+      <IslandBanner island={island} z={z} band={band} topWorldY={topY - 14} />
+      <FleetDock fleet={island.fleet} z={z} yWorld={botY + 16} onOpen={onFleetOpen} />
     </g>
   );
 }

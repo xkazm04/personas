@@ -7,8 +7,9 @@ import type { Island, ZoomBand } from './types';
 
 const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-/** Screen-px title size per band — bigger when zoomed out. */
-const TITLE_FS: Record<ZoomBand, number> = { far: 20, mid: 17, near: 14, close: 13 };
+/** Screen-px title size per band — bigger when zoomed out, and (round 4)
+ *  raised at near/close so the name stays commanding during inspection. */
+const TITLE_FS: Record<ZoomBand, number> = { far: 20, mid: 18, near: 17, close: 16 };
 
 export function IslandBanner({ island, z, band, topWorldY }: {
   island: Island;

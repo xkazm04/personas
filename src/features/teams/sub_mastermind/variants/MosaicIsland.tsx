@@ -7,22 +7,33 @@
 import { DIM_ICON } from '../lib/dimMeta';
 import { DIM_INK, mix, STATE_INK } from '../lib/ink';
 import { hexPoints } from '../lib/hex';
+import { FleetDock } from '../lib/FleetDock';
 import { IslandBanner } from '../lib/IslandBanner';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
 import type { DimNode, Island, ZoomBand } from '../lib/types';
 
 const CELL = 56;
-// Axial cells: ring-1 six + two ring-2 caps (contiguous with the ring) for the
-// 7th/8th dimension. Order matches deriveScene's node order.
-const AXIAL: Array<[number, number]> = [[0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0], [2, -1], [-2, 1]];
+// Axial cells: ring-1 six + contiguous ring-2 caps for dimensions 7-11.
+// Order matches deriveScene's node order; every cap shares an edge with the
+// ring so the puzzle stays interlocked.
+const AXIAL: Array<[number, number]> = [
+  [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0],
+  [2, -1], [-2, 1], [1, -2], [-1, 2], [2, 0],
+];
 const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2), y: CELL * 1.5 * r });
 
 const COPY = { empty: 'not set up' };
 
-export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit }: { island: Island } & IslandCtx) {
+export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit });
+  // Cluster extents depend on how many cells are occupied (8 dims stay within
+  // r=±1 caps; 11 reach r=±2) — banner, dock, and halo track them.
+  const ys = AXIAL.slice(0, island.nodes.length).map(([q, r]) => cellXY(q, r).y);
+  const topY = Math.min(0, ...ys) - CELL;
+  const botY = Math.max(0, ...ys) + CELL;
+  const haloR = Math.max(CELL * 3.1, (botY - topY) / 2 + CELL * 0.8);
 
   return (
     <g
@@ -34,7 +45,7 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
       data-testid={`mm-island-${island.slug}`}
     >
       {/* state halo behind the honeycomb — keeps the island recognizable when tiny */}
-      <circle r={CELL * 3.1} fill={mix(ink, 10, 'var(--secondary)')} opacity={0.5} filter="url(#mm-coast)" />
+      <circle r={haloR} fill={mix(ink, 10, 'var(--secondary)')} opacity={0.5} filter="url(#mm-coast)" />
 
       {island.nodes.map((n, k) => {
         const ax = AXIAL[k];
@@ -59,7 +70,8 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
         </text>
       )}
 
-      <IslandBanner island={island} z={z} band={band} topWorldY={-CELL * 2.6} />
+      <IslandBanner island={island} z={z} band={band} topWorldY={topY - 10} />
+      <FleetDock fleet={island.fleet} z={z} yWorld={botY + 14} onOpen={onFleetOpen} />
     </g>
   );
 }
