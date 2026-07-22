@@ -1,19 +1,17 @@
-// BASELINE (round-1 winner) — "Archipelago": the project portfolio as a
-// nautical chart. Civ-like organic islands on a deep sea, dotted shipping
-// routes between integrated projects, serif cartographic typography, isoline
-// contours. Semantic zoom: far = silhouettes + fixed-size screen-space labels;
-// mid = core + status dots; near = full dimension hexes with tool names.
+// DIRECTION 3 (round 2, from Archipelago) — "Hex Puzzle": each project is a
+// honeycomb of interlocking cells on the sea. Readability strategy: identity on
+// a counter-scaled banner (constant screen size), in-cell content gated by
+// legibility thresholds, mosaic colour carrying state at any distance.
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-import { FarLabels } from '../lib/FarLabels';
-import { mix, SERIF } from '../lib/ink';
+import { mix } from '../lib/ink';
 import { Route } from '../lib/Route';
 import { ZoomBadge } from '../lib/ZoomBadge';
-import { sceneBounds, zoomMode, type VariantProps } from '../lib/types';
+import { sceneBounds, type VariantProps } from '../lib/types';
 import { useCanvasCamera } from '../lib/useCanvasCamera';
-import { ArchipelagoIsland } from './ArchipelagoIsland';
+import { MosaicIsland } from './MosaicIsland';
 
-export function MastermindArchipelago({ scene, mode, onIslandMove, onIslandCommit }: VariantProps) {
+export function MastermindHexMosaic({ scene, mode, onIslandMove, onIslandCommit }: VariantProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const { cam, panning, fit, handlers } = useCanvasCamera(svgRef);
   const [hover, setHover] = useState<string | null>(null);
@@ -26,9 +24,7 @@ export function MastermindArchipelago({ scene, mode, onIslandMove, onIslandCommi
     }
   }, [scene.islands, fit]);
 
-  const zoom = zoomMode(cam.z);
   const bySlug = useMemo(() => new Map(scene.islands.map((i) => [i.slug, i])), [scene.islands]);
-  // Hover focus: the hovered island and its integration neighbours stay lit.
   const lit = useMemo(() => {
     if (!hover) return null;
     const s = new Set([hover]);
@@ -66,10 +62,9 @@ export function MastermindArchipelago({ scene, mode, onIslandMove, onIslandCommi
             <Route key={`${e.from}→${e.to}`} e={e} a={bySlug.get(e.from)} b={bySlug.get(e.to)} lit={hover === e.from || hover === e.to} />
           ))}
           {scene.islands.map((i) => (
-            <ArchipelagoIsland
+            <MosaicIsland
               key={i.slug}
               island={i}
-              zoom={zoom}
               z={cam.z}
               mode={mode}
               dimmed={lit !== null && !lit.has(i.slug)}
@@ -79,8 +74,6 @@ export function MastermindArchipelago({ scene, mode, onIslandMove, onIslandCommi
             />
           ))}
         </g>
-
-        {zoom === 'far' && <FarLabels islands={scene.islands} cam={cam} fontFamily={SERIF} />}
       </svg>
       <ZoomBadge z={cam.z} />
     </>

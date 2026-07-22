@@ -5,7 +5,8 @@
 import { hash01, hexPoints, satellitePositions } from '../lib/hex';
 import { DIM_ICON } from '../lib/dimMeta';
 import { DIM_INK, mix, SERIF, STATE_INK } from '../lib/ink';
-import type { DimNode, Island, ZoomMode } from '../lib/types';
+import { useIslandDrag } from '../lib/useIslandDrag';
+import type { CanvasMode, DimNode, Island, ZoomMode } from '../lib/types';
 
 const LAND_R = 150;
 const CORE_R = 64;
@@ -16,22 +17,28 @@ const COPY = { uncharted: 'not set up' };
 
 const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-export function ArchipelagoIsland({ island, mode, dimmed, onHover }: {
+export function ArchipelagoIsland({ island, zoom, z, mode, dimmed, onHover, onIslandMove, onIslandCommit }: {
   island: Island;
-  mode: ZoomMode;
+  zoom: ZoomMode;
+  z: number;
+  mode: CanvasMode;
   dimmed: boolean;
   onHover: (slug: string | null) => void;
+  onIslandMove: (slug: string, x: number, y: number) => void;
+  onIslandCommit: (slug: string, x: number, y: number) => void;
 }) {
   const ink = STATE_INK[island.state];
   const seed = hash01(island.slug);
   const positions = satellitePositions(island.nodes.length, NODE_RING, NODE_RING + 62);
+  const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit });
 
   return (
     <g
       transform={`translate(${island.x} ${island.y})`}
-      style={{ opacity: dimmed ? 0.3 : 1, transition: 'opacity 200ms ease' }}
+      style={{ opacity: dimmed ? 0.3 : 1, transition: 'opacity 200ms ease', cursor: mode === 'edit' ? 'move' : undefined }}
       onPointerEnter={() => onHover(island.slug)}
       onPointerLeave={() => onHover(null)}
+      {...drag}
       data-testid={`mm-island-${island.slug}`}
     >
       {/* landmass — two soft plates; the outer carries the state tint like shallows */}
@@ -43,7 +50,7 @@ export function ArchipelagoIsland({ island, mode, dimmed, onHover }: {
       />
 
       {/* isoline contours — the cartographic signature; hidden when far */}
-      {mode !== 'far' && (
+      {zoom !== 'far' && (
         <>
           <circle r={LAND_R + 40} fill="none" stroke={mix('var(--foreground)', 9)} strokeWidth={1.2} strokeDasharray="1 7" strokeLinecap="round" />
           <circle r={LAND_R + 64} fill="none" stroke={mix('var(--foreground)', 5)} strokeWidth={1} strokeDasharray="1 9" strokeLinecap="round" />
@@ -51,13 +58,13 @@ export function ArchipelagoIsland({ island, mode, dimmed, onHover }: {
       )}
 
       {/* dimension satellites */}
-      {mode !== 'far' && island.nodes.map((n, k) => {
+      {zoom !== 'far' && island.nodes.map((n, k) => {
         const p = positions[k];
-        return p ? <Satellite key={n.key} node={n} x={p.x} y={p.y} mode={mode} /> : null;
+        return p ? <Satellite key={n.key} node={n} x={p.x} y={p.y} mode={zoom} /> : null;
       })}
 
       {/* core nameplate */}
-      {mode === 'far' ? (
+      {zoom === 'far' ? (
         <circle r={30} fill={mix(ink, 55, 'var(--secondary)')} stroke={mix(ink, 80)} strokeWidth={3} />
       ) : (
         <g>

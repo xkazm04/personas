@@ -58,6 +58,19 @@ export interface Camera {
   z: number;
 }
 
+/** Canvas interaction mode: view = pan/zoom only; edit = islands are draggable. */
+export type CanvasMode = 'view' | 'edit';
+
+/** Common contract every canvas variant implements (prototype scaffold). */
+export interface VariantProps {
+  scene: Scene;
+  mode: CanvasMode;
+  /** Live drag update — island world position while dragging. */
+  onIslandMove: (slug: string, x: number, y: number) => void;
+  /** Drag finished — persist the position. */
+  onIslandCommit: (slug: string, x: number, y: number) => void;
+}
+
 export type ZoomMode = 'far' | 'mid' | 'near';
 
 export const zoomMode = (z: number): ZoomMode => (z < 0.34 ? 'far' : z < 0.72 ? 'mid' : 'near');
