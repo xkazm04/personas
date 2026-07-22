@@ -2,7 +2,11 @@
  * Lifecycle hook orchestrating the post-build test/approve/reject/refine/promote flow.
  *
  * After the matrix build reaches draft_ready, this hook handles:
- *   1. Starting a real API test via testBuildDraft (executes each tool against live APIs)
+ *   1. Starting a test via testBuildDraft. Credential-backed tools are executed
+ *      against live APIs with real credentials; built-in platform tools
+ *      (database, messaging, file, vector-db, CLI-native web) are marked
+ *      available-at-runtime WITHOUT a live call — they are not exercised here,
+ *      so their result is "available", not "verified".
  *   2. Listening for streaming per-tool test results via Tauri events
  *   3. Promoting a tested draft to production (credential coverage + updatePersona)
  *   4. Rejecting a test and returning to draft_ready for refinement
@@ -107,7 +111,8 @@ export function useLifecycle({
   }, []);
 
   // -- handleStartTest -------------------------------------------------------
-  // Calls testBuildDraft which executes each tool against real APIs
+  // Calls testBuildDraft: credential-backed tools run against real APIs; built-in
+  // platform tools are reported available-at-runtime, not executed (see docblock).
 
   const handleStartTest = useCallback(async () => {
     // Always read fresh from the store — closure `personaId` can be stale
