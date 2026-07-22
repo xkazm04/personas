@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Users, Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Rocket } from 'lucide-react';
+import { Users, Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Rocket, Network } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -38,15 +38,16 @@ const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'v
 // "Development" group — the project-engineering surfaces folded in from the
 // retired Dev Tools tabs. Grouped rather than four sibling top-level entries.
 const DEV_ITEMS: Array<{
-  id: Extract<TeamsTab, 'projects' | 'lifecycle' | 'factory' | 'competition'>;
+  id: Extract<TeamsTab, 'projects' | 'lifecycle' | 'factory' | 'competition' | 'mastermind'>;
   icon: typeof LayoutDashboard;
-  labelKey: 'manage' | 'lifecycle' | 'factory' | 'competition';
+  labelKey: 'manage' | 'lifecycle' | 'factory' | 'competition' | 'mastermind';
   testId: string;
 }> = [
   { id: 'projects', icon: FolderKanban, labelKey: 'manage', testId: 'teams-projects-nav' },
   { id: 'lifecycle', icon: GitBranch, labelKey: 'lifecycle', testId: 'teams-lifecycle-nav' },
   { id: 'factory', icon: Factory, labelKey: 'factory', testId: 'teams-factory-nav' },
   { id: 'competition', icon: Swords, labelKey: 'competition', testId: 'teams-competition-nav' },
+  { id: 'mastermind', icon: Network, labelKey: 'mastermind', testId: 'teams-mastermind-nav' },
 ];
 
 export function TeamsSidebarNav() {

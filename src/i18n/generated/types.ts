@@ -602,6 +602,7 @@ export type Translations = {
     manage: string;
     lifecycle: string;
     competition: string;
+    mastermind: string;
   };
   home: {
     get_started: {
