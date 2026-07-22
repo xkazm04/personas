@@ -36,8 +36,9 @@ export type CellValue =
   /** A single yes/no capability. */
   | { kind: 'bool'; on: boolean }
   /** Labeled tallies (e.g. shared vs codebase-specific skills). Zero-total
-   *  reads as a setup invitation. */
-  | { kind: 'counts'; items: Array<{ label: string; count: number }> }
+   *  reads as a setup invitation; a `warn` item with count > 0 keeps the row
+   *  in full ink (a dormant skill is a deficiency, not information). */
+  | { kind: 'counts'; items: Array<{ label: string; count: number; warn?: boolean }> }
   /** Per-environment slots (local / test / production) for the env-dependent
    *  dimensions. A null label is an honest "no source or config known in the
    *  codebase" — rendered as a visually separated empty state, never invented. */
@@ -138,11 +139,15 @@ export const SECTIONS: SectionSpec[] = [
       { key: 'instructions', label: 'Agent instructions', info: 'Guidance coding agents read before touching the repo — a CLAUDE.md file and/or an assigned team policy.', get: (p) => ({ kind: 'chips', items: p.automationReadiness.artifacts.agentInstructions }) },
       { key: 'docs', label: 'Documentation', info: 'Documentation agents (and humans) can ground in — from a bare README, through a structured docs/ tree, to docs coupled to source via a doc-map so freshness is managed.', get: (p) => (ordinalCell(DOCS_SCALE, p.automationReadiness.artifacts.docs, DOCS_LABEL[p.automationReadiness.artifacts.docs])) },
       { key: 'memory', label: 'Agent memory', info: 'Persistent agent memory for this repo — learnings that survive across sessions (Claude Code auto-memory or an in-repo MEMORY.md). Curated = an indexed store with recent entries.', get: (p) => (ordinalCell(MEMORY_SCALE, p.automationReadiness.artifacts.memory, MEMORY_LABEL[p.automationReadiness.artifacts.memory])) },
-      { key: 'skills', label: 'Reusable skills', info: 'Claude skills in .claude/skills — how many are shared with your library or other projects, and how many are specific to this codebase.', get: (p) => {
+      { key: 'skills', label: 'Reusable skills', info: 'Claude skills in .claude/skills — shared with your library or other projects vs specific to this codebase. Dormant = installed 30+ days with zero observed invocations (mined from Claude Code session transcripts).', get: (p) => {
         const c = p.automationReadiness.artifacts.skillCounts;
-        return c
-          ? { kind: 'counts', items: [{ label: 'shared', count: c.reused }, { label: 'specific', count: c.own }] }
-          : { kind: 'bool', on: p.automationReadiness.artifacts.skills };
+        if (!c) return { kind: 'bool', on: p.automationReadiness.artifacts.skills };
+        const items: Array<{ label: string; count: number; warn?: boolean }> = [
+          { label: 'shared', count: c.reused },
+          { label: 'specific', count: c.own },
+        ];
+        if ((c.dormant ?? 0) > 0) items.push({ label: 'dormant', count: c.dormant ?? 0, warn: true });
+        return { kind: 'counts', items };
       } },
       { key: 'evals', label: 'Evals', info: 'Runnable, scored evaluation cases that regression-check the product’s core behaviour.', get: (p) => (ordinalCell(EVALS_SCALE, p.automationReadiness.artifacts.evals, EVALS_LABEL[p.automationReadiness.artifacts.evals])) },
       { key: 'aiflow', label: 'AI in workflow', info: 'Whether AI is wired into delivery — auto-PR on green, a team pipeline, or a PR connector.', get: (p) => ({ kind: 'bool', on: p.automationReadiness.aiInWorkflow }) },

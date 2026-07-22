@@ -588,8 +588,13 @@ export function InkWallCell({ value }: { value: CellValue }) {
         <span className="inline-flex items-center gap-x-2.5 min-w-0">
           {value.items.map((i) => (
             <span key={i.label} className="inline-flex items-baseline gap-1">
-              <span className={`typo-caption font-semibold tabular-nums ${i.count > 0 ? 'text-foreground/90' : 'text-foreground/35'}`}>{i.count}</span>
-              <span className="typo-label text-foreground/45">{i.label}</span>
+              <span
+                className={`typo-caption font-semibold tabular-nums ${i.warn && i.count > 0 ? '' : i.count > 0 ? 'text-foreground/90' : 'text-foreground/35'}`}
+                style={i.warn && i.count > 0 ? { color: INK.amber } : undefined}
+              >
+                {i.count}
+              </span>
+              <span className="typo-label text-foreground/45" style={i.warn && i.count > 0 ? { color: `${INK.amber}B3` } : undefined}>{i.label}</span>
             </span>
           ))}
         </span>

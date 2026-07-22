@@ -702,6 +702,7 @@ export const FINDING_ORIGINS = [
   "llm_cost",
   "sentry_spike",
   "kpi_offtrack",
+  "skill_dormant",
 ] as const;
 export type FindingOrigin = (typeof FINDING_ORIGINS)[number];
 
@@ -1211,6 +1212,40 @@ export const previewInstallSkill = (
     sourceProjectId,
     targetProjectId,
   });
+
+// -- skill usage telemetry (Brainiac-adoption P1) -----------------------------
+
+/** One registry row + its usage aggregates. Hand-typed to mirror the Rust
+ *  `SkillUsageRow` (snake_case serde). Project rows count their own project's
+ *  invokes; global rows count the name across all projects. */
+export interface SkillUsageRow {
+  name: string;
+  scope: 'global' | 'project';
+  project_id: string | null;
+  content_hash: string | null;
+  description: string | null;
+  first_seen_at: string;
+  last_changed_at: string;
+  missing_since: string | null;
+  invokes_30d: number;
+  last_invoked_at: string | null;
+  /** Age-guarded: present ≥30d AND zero invokes in the window. */
+  dormant: boolean;
+}
+
+/** Incremental transcript-mining sweep + registry reconcile. Idempotent;
+ *  bounded per call (`exhausted` = call again to continue). Generous timeout —
+ *  the FIRST run parses up to ~48MB of transcript history. */
+export const scanSkillUsage = () =>
+  invoke<{ files_scanned: number; events_added: number; exhausted: boolean }>(
+    "skill_usage_scan",
+    {},
+    undefined,
+    120_000,
+  );
+
+export const getSkillUsageOverview = () =>
+  safeInvoke<SkillUsageRow[]>([], "skill_usage_overview", {});
 
 export const readSkillFile = (skillName: string, fileName: string, projectId?: string | null) =>
   invoke<SkillFileContent>("skill_files_read", { skillName, fileName, projectId: projectId ?? null });

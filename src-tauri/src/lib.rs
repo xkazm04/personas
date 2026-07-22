@@ -2638,6 +2638,9 @@ pub fn run() {
             commands::infrastructure::skill_files::skill_files_write,
             commands::infrastructure::skill_files::skill_files_install,
             commands::infrastructure::skill_files::skill_files_install_preview,
+            // Skill usage telemetry (Brainiac-adoption P1)
+            commands::infrastructure::skill_usage::skill_usage_scan,
+            commands::infrastructure::skill_usage::skill_usage_overview,
             // Bridge Manifest -- declarative desktop bridges
             #[cfg(feature = "desktop")]
             commands::infrastructure::bridge_manifest::bridge_manifest_list_all,

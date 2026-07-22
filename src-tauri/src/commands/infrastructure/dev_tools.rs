@@ -3418,7 +3418,7 @@ fn re_exists(root: &std::path::Path, rel: &str) -> bool {
 /// absolute cwd with every non-alphanumeric character mapped to `-`
 /// (e.g. `C:\Users\x\repo` → `C--Users-x-repo`). Mirrors the CLI's encoding so
 /// the probe can find a repo's auto-memory without walking every project dir.
-fn encode_claude_project_dir(root_path: &str) -> String {
+pub(crate) fn encode_claude_project_dir(root_path: &str) -> String {
     root_path
         .chars()
         .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })

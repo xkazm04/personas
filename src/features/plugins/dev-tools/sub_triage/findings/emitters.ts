@@ -25,6 +25,7 @@ import {
   PASSPORT_MAX_TIER,
   SENTRY_COUNT_THRESHOLD,
   SENTRY_TOP_N,
+  SKILL_DORMANT_TOP_N,
   UNNAMED_CALL_SHARE,
   UNNAMED_MIN_CALLS,
 } from './findingConfig';
@@ -217,6 +218,55 @@ export function emitSentryFindings(
       impact: 5,
       effort: 3,
       risk: 2,
+    }));
+}
+
+// ---------------------------------------------------------------------------
+// E6 — dormant skills (Brainiac-adoption P1: "a skill nobody invokes goes red")
+// ---------------------------------------------------------------------------
+
+/** The subset of `SkillUsageRow` this emitter reads — the caller has already
+ *  filtered to skills INSTALLED in this project (project copies + the global
+ *  copies of globally-provided skills). Dormancy itself is computed upstream
+ *  (age-guarded: present ≥30d AND zero invokes in the window), so this emitter
+ *  stays a pure threshold-free mapper. */
+export interface DormantSkill {
+  name: string;
+  scope: 'global' | 'project';
+  first_seen_at: string;
+  last_invoked_at: string | null;
+  dormant: boolean;
+}
+
+/** Oldest-unused first, capped — a skill cleanup should be a deliberate pass,
+ *  not sweep spam. The dedup key matches the adoption plan's scheme, so a skill
+ *  that wakes up (or gets removed) clears via the normal probe path. */
+export function emitSkillDormantFindings(skills: DormantSkill[]): FindingDraft[] {
+  return skills
+    .filter((s) => s.dormant)
+    .sort((a, b) => a.first_seen_at.localeCompare(b.first_seen_at))
+    .slice(0, SKILL_DORMANT_TOP_N)
+    .map((s) => ({
+      origin: 'skill_dormant' as const,
+      title: `Dormant skill: “${s.name}”`,
+      description:
+        `The ${s.scope === 'global' ? 'library' : 'project'} skill “${s.name}” has been installed for 30+ days with ` +
+        `zero observed invocations in Claude Code sessions` +
+        `${s.last_invoked_at ? ` (last invoked ${s.last_invoked_at})` : ' (never invoked)'}. ` +
+        `Decide its fate: make it discoverable (name/description/CLAUDE.md pointer), fold it into a ` +
+        `skill that IS used, or retire it — an unused skill is maintenance surface with no return.`,
+      category: 'maintainability',
+      evidence: {
+        skillName: s.name,
+        scope: s.scope,
+        firstSeenAt: s.first_seen_at,
+        lastInvokedAt: s.last_invoked_at,
+        invokes30d: 0,
+      },
+      dedupKey: `skill:${s.scope}:${s.name}`,
+      impact: 2,
+      effort: 1,
+      risk: 1,
     }));
 }
 

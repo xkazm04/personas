@@ -4037,6 +4037,68 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Skill usage telemetry (Brainiac-adoption P1 — docs/plans/brainiac-adoption-
+    // skills-memory-docs.md). Registry = filesystem-reconciled identity + hash
+    // history for `.claude/skills` (global + per-project); events = APPEND-ONLY
+    // invocation log mined from Claude Code transcripts (repos expose
+    // insert+select only — the Brainiac grant discipline); scan_state = per-file
+    // byte watermark so mining stays incremental. Names deliberately avoid the
+    // retired System-A `skills` tables above. MUST stay INSIDE `run_incremental`
+    // (the tail belongs to `ensure_composite_fires_table`).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "skill_usage_telemetry",
+            description: "Skill registry + append-only usage events + transcript scan watermarks",
+            already_applied: |conn| has_table(conn, "skill_usage_events"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS skill_registry (
+                        id              TEXT PRIMARY KEY,
+                        name            TEXT NOT NULL,
+                        scope           TEXT NOT NULL CHECK (scope IN ('global','project')),
+                        project_id      TEXT,
+                        content_hash    TEXT,
+                        description     TEXT,
+                        origin          TEXT NOT NULL DEFAULT 'authored',
+                        first_seen_at   TEXT NOT NULL DEFAULT (datetime('now')),
+                        last_changed_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        missing_since   TEXT
+                    );
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_skill_registry_ident
+                        ON skill_registry(name, scope, COALESCE(project_id,''));
+                    CREATE TABLE IF NOT EXISTS skill_revisions (
+                        skill_id     TEXT NOT NULL REFERENCES skill_registry(id) ON DELETE CASCADE,
+                        rev          INTEGER NOT NULL,
+                        content_hash TEXT,
+                        changed_at   TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (skill_id, rev)
+                    );
+                    CREATE TABLE IF NOT EXISTS skill_usage_events (
+                        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                        skill_name  TEXT NOT NULL,
+                        project_id  TEXT,
+                        session_id  TEXT,
+                        event       TEXT NOT NULL CHECK (event IN ('invoke','fetch')),
+                        source      TEXT NOT NULL CHECK (source IN ('transcript','dev_runner')),
+                        occurred_at TEXT NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_sue_name
+                        ON skill_usage_events(skill_name, project_id, occurred_at DESC);
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_sue_dedup
+                        ON skill_usage_events(session_id, skill_name, occurred_at);
+                    CREATE TABLE IF NOT EXISTS skill_scan_state (
+                        file_path   TEXT PRIMARY KEY,
+                        byte_offset INTEGER NOT NULL DEFAULT 0,
+                        updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

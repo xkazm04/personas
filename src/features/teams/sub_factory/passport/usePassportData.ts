@@ -6,7 +6,8 @@
 // project rows (used after a Tier-0 config write — no need to re-scan).
 import { useCallback, useEffect, useState } from 'react';
 
-import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, listSkills, listSkillsGlobal, probeRepoEvidence, type RepoEvidence } from '@/api/devTools/devTools';
+import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, listSkills, listSkillsGlobal, probeRepoEvidence, scanSkillUsage, getSkillUsageOverview, type RepoEvidence, type SkillUsageRow } from '@/api/devTools/devTools';
+import { silentCatch } from '@/lib/silentCatch';
 import { derivePassportFromMetadata } from './passportDerive';
 import { recordSnapshot } from './passportHistory';
 import { sortByNameAsc, type AppPassport } from './passportModel';
@@ -47,10 +48,30 @@ export function usePassportData(): PassportData {
 
     // Reusable skills: each project's .claude/skills + the global library. Build a
     // catalog (name → first source) so a project can adopt skills its siblings have.
-    const [globalSkills, projectSkillLists] = await Promise.all([
+    const [globalSkills, projectSkillLists, usageRows] = await Promise.all([
       listSkillsGlobal().catch(() => []),
       Promise.all(map.projects.map((m) => listSkills(m.project_id).then((s) => [m.project_id, s] as const).catch(() => [m.project_id, []] as const))),
+      getSkillUsageOverview().catch(() => [] as SkillUsageRow[]),
     ]);
+    // Usage telemetry (P1) — registry rows keyed for the two lookups the wall
+    // needs: this project's copy first, the global library copy as fallback.
+    const usageByProject = new Map<string, Map<string, SkillUsageRow>>();
+    const usageGlobal = new Map<string, SkillUsageRow>();
+    for (const r of usageRows) {
+      if (r.scope === 'project' && r.project_id) {
+        let m = usageByProject.get(r.project_id);
+        if (!m) { m = new Map(); usageByProject.set(r.project_id, m); }
+        m.set(r.name, r);
+      } else if (r.scope === 'global') {
+        usageGlobal.set(r.name, r);
+      }
+    }
+    // hash → global name, for the "your library already has this content under
+    // another name" share-dedup (Brainiac's proposal guardrail, localized).
+    const globalByHash = new Map<string, string>();
+    for (const r of usageRows) {
+      if (r.scope === 'global' && r.content_hash && !r.missing_since) globalByHash.set(r.content_hash, r.name);
+    }
     const skillCatalog = new Map<string, { source: string | null; description: string | null }>();
     for (const g of globalSkills) if (!skillCatalog.has(g.name)) skillCatalog.set(g.name, { source: null, description: g.description });
     for (const [pid, list] of projectSkillLists) for (const s of list) if (!skillCatalog.has(s.name)) skillCatalog.set(s.name, { source: pid, description: s.description });
@@ -82,16 +103,41 @@ export function usePassportData(): PassportData {
       const installedList = projectSkillLists.find(([pid]) => pid === meta.project_id)?.[1] ?? [];
       const hasSkills = installed.size > 0;
       const reused = [...installed].filter(isShared).length;
-      const skillCounts = { reused, own: installed.size - reused };
+      // Usage per installed skill: the project copy's registry row, else the
+      // global copy's. Dormancy is Brainiac's age-guarded rule, computed in Rust.
+      const projUsage = usageByProject.get(meta.project_id);
+      const usageFor = (name: string) => projUsage?.get(name) ?? usageGlobal.get(name);
+      const skillUsage: Record<string, { invokes30d: number; lastInvokedAt: string | null; dormant: boolean }> = {};
+      let dormant = 0;
+      for (const name of installed) {
+        const u = usageFor(name);
+        if (!u) continue;
+        skillUsage[name] = { invokes30d: u.invokes_30d, lastInvokedAt: u.last_invoked_at, dormant: u.dormant };
+        if (u.dormant) dormant += 1;
+      }
+      const skillCounts = { reused, own: installed.size - reused, dormant };
       const evidence = evidenceById.get(meta.project_id) ?? null;
       const skillsToAdd = [...skillCatalog.entries()]
         .filter(([name, info]) => !installed.has(name) && info.source !== meta.project_id)
         .map(([name, info]) => ({ name, source: info.source, description: info.description }));
-      // Share candidates: this project's skills the global library doesn't have.
+      // Liveliness of adopt candidates at their SOURCE — a skill used 12× in 30d
+      // elsewhere is a better adoption bet than one nobody invokes.
+      const catalogUsage: Record<string, { invokes30d: number; lastInvokedAt: string | null }> = {};
+      for (const c of skillsToAdd) {
+        const u = usageGlobal.get(c.name) ?? (c.source ? usageByProject.get(c.source)?.get(c.name) : undefined);
+        if (u) catalogUsage[c.name] = { invokes30d: u.invokes_30d, lastInvokedAt: u.last_invoked_at };
+      }
+      // Share candidates: this project's skills the global library doesn't have —
+      // by name AND by content (an identical library skill under another name
+      // means the library already decided; don't re-generalize it).
       const skillsToShare = installedList
         .filter((s) => !globalNames.has(s.name))
+        .filter((s) => {
+          const hash = projUsage?.get(s.name)?.content_hash;
+          return !(hash && globalByHash.has(hash));
+        })
         .map((s) => ({ name: s.name, description: s.description }));
-      rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillsToAdd, skillsToShare, evidence });
+      rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillUsage, catalogUsage, skillsToAdd, skillsToShare, evidence });
       passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts }));
     }
     const sorted = sortByNameAsc(passports);
@@ -106,6 +152,26 @@ export function usePassportData(): PassportData {
     build(false).catch((e) => {
       if (!cancelled) setState((s) => ({ ...s, loading: false, error: e instanceof Error ? e.message : String(e) }));
     });
+    return () => { cancelled = true; };
+  }, [build]);
+
+  // Skill-usage mining (P1) — kick the incremental transcript sweep once per
+  // mount, then re-derive so fresh invoke counts reach the cells. Bounded per
+  // call (`exhausted` → continue, max 3 rounds ≈ 144MB, only ever on a cold
+  // store) and warn-only: telemetry must never break the wall.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        for (let i = 0; i < 3; i++) {
+          const s = await scanSkillUsage();
+          if (cancelled || !s.exhausted) break;
+        }
+        if (!cancelled) build(false).catch(silentCatch('usePassportData:usageRebuild'));
+      } catch (e) {
+        silentCatch('usePassportData:skillUsageScan')(e);
+      }
+    })();
     return () => { cancelled = true; };
   }, [build]);
 

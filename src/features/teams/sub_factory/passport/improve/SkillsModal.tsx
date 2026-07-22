@@ -10,14 +10,35 @@
 // is locked (spinning gear) until the run's terminal event fires, and the wall
 // re-derives itself on completion (eventBridge → factory-process-complete).
 import { useState } from 'react';
-import { ArrowDownToLine, ArrowUpFromLine, Lock, Puzzle } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, Lock, MoonStar, Puzzle } from 'lucide-react';
 
 import { BaseModal } from '@/features/shared/components/modals';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useToastStore } from '@/stores/toastStore';
 import { useImproveActivityStore } from '@/stores/improveActivityStore';
-import { InkTabs } from '../passportInk';
+import { INK, InkTabs } from '../passportInk';
 import { useImprove } from './ImproveContext';
 import { adoptTaskPrompt, adoptTaskTitle, shareTaskPrompt, shareTaskTitle, type AdoptItem } from './skillTasks';
+
+/** Terse usage line (P1 transcript telemetry): 30-day invokes + last-invoked.
+ *  `null` usage renders nothing — no telemetry is not the same as unused. */
+function UsageLine({ invokes30d, lastInvokedAt, dormant }: { invokes30d: number; lastInvokedAt: string | null; dormant?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 typo-label text-foreground/45 whitespace-nowrap">
+      {dormant && (
+        <span className="inline-flex items-center gap-0.5" style={{ color: INK.amber }} title="Installed 30+ days with zero observed invocations">
+          <MoonStar className="w-3 h-3" aria-hidden /> dormant
+        </span>
+      )}
+      <span className="tabular-nums">{invokes30d}× / 30d</span>
+      {lastInvokedAt && (
+        <span className="inline-flex items-baseline gap-1">
+          · last <RelativeTime timestamp={lastInvokedAt} className="tabular-nums" />
+        </span>
+      )}
+    </span>
+  );
+}
 
 type SkillsTab = 'adopt' | 'share';
 const TABS: Array<{ id: SkillsTab; label: string }> = [
@@ -97,6 +118,12 @@ export function SkillsModal({ slug, onClose }: { slug: string; onClose: () => vo
               <span className="typo-caption font-semibold tabular-nums text-foreground/90">{counts.own}</span>
               <span className="typo-label text-foreground/45">specific</span>
             </span>
+            {(counts.dormant ?? 0) > 0 && (
+              <span className="inline-flex items-baseline gap-1" title="Installed 30+ days with zero observed invocations">
+                <span className="typo-caption font-semibold tabular-nums" style={{ color: INK.amber }}>{counts.dormant}</span>
+                <span className="typo-label" style={{ color: `${INK.amber}B3` }}>dormant</span>
+              </span>
+            )}
           </span>
         </div>
 
@@ -144,6 +171,9 @@ export function SkillsModal({ slug, onClose }: { slug: string; onClose: () => vo
                           <span className="flex items-baseline gap-2 min-w-0">
                             <span className="typo-caption font-medium text-foreground truncate">{s.name}</span>
                             <span className="typo-label text-foreground/40 flex-shrink-0">{sourceLabel(s.source)}</span>
+                            {raw.catalogUsage?.[s.name] && (
+                              <span className="ml-auto flex-shrink-0"><UsageLine {...raw.catalogUsage[s.name]!} /></span>
+                            )}
                           </span>
                           {s.description && <span className="typo-caption text-foreground/55 block leading-snug truncate" style={{ fontWeight: 400 }}>{s.description}</span>}
                         </span>
@@ -170,7 +200,12 @@ export function SkillsModal({ slug, onClose }: { slug: string; onClose: () => vo
                     <li key={s.name} className="flex items-start gap-2 px-1.5 py-1.5 rounded-interactive hover:bg-primary/[0.04]">
                       <ArrowUpFromLine className="w-3.5 h-3.5 mt-0.5 text-primary/70 flex-shrink-0" aria-hidden />
                       <span className="min-w-0 flex-1">
-                        <span className="typo-caption font-medium text-foreground block truncate">{s.name}</span>
+                        <span className="flex items-baseline gap-2 min-w-0">
+                          <span className="typo-caption font-medium text-foreground truncate">{s.name}</span>
+                          {raw.skillUsage?.[s.name] && (
+                            <span className="ml-auto flex-shrink-0"><UsageLine {...raw.skillUsage[s.name]!} /></span>
+                          )}
+                        </span>
                         {s.description && <span className="typo-caption text-foreground/55 block leading-snug truncate" style={{ fontWeight: 400 }}>{s.description}</span>}
                       </span>
                       <button

@@ -5,7 +5,9 @@ import {
   emitLlmCostFindings,
   emitPassportGaps,
   emitSentryFindings,
+  emitSkillDormantFindings,
   emitStandardsFindings,
+  type DormantSkill,
 } from '../emitters';
 import {
   LLM_COST_THRESHOLD_USD,
@@ -177,6 +179,37 @@ describe('emitKpiFindings', () => {
     const out = emitKpiFindings([
       { groupId: 'g1', kpiId: 'k2', name: 'conversion', current: null, target: 5, unit: '%' },
     ]);
+    expect(out[0]!.description).not.toMatch(/undefined|null/);
+  });
+});
+
+describe('emitSkillDormantFindings (E6)', () => {
+  const skill = (over: Partial<DormantSkill>): DormantSkill => ({
+    name: 'x',
+    scope: 'project',
+    first_seen_at: '2026-01-01 00:00:00',
+    last_invoked_at: null,
+    dormant: true,
+    ...over,
+  });
+
+  it('emits only dormant skills, oldest-first, capped, with the plan dedup scheme', () => {
+    const out = emitSkillDormantFindings([
+      skill({ name: 'alive', dormant: false }),
+      skill({ name: 'newer', first_seen_at: '2026-06-01 00:00:00' }),
+      skill({ name: 'oldest', first_seen_at: '2025-11-01 00:00:00', scope: 'global' }),
+      skill({ name: 'mid', first_seen_at: '2026-03-01 00:00:00' }),
+      skill({ name: 'fourth', first_seen_at: '2026-06-15 00:00:00' }),
+    ]);
+    expect(out).toHaveLength(3); // SKILL_DORMANT_TOP_N caps
+    expect(out[0]!.dedupKey).toBe('skill:global:oldest');
+    expect(out.every((d) => d.origin === 'skill_dormant')).toBe(true);
+    expect(out[0]!.evidence).toMatchObject({ invokes30d: 0, scope: 'global' });
+  });
+
+  it('says "never invoked" instead of rendering a null timestamp', () => {
+    const out = emitSkillDormantFindings([skill({ name: 'ghost' })]);
+    expect(out[0]!.description).toContain('never invoked');
     expect(out[0]!.description).not.toMatch(/undefined|null/);
   });
 });

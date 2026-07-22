@@ -10,7 +10,7 @@ priority: number | null, provider: string | null, model: string | null, rejectio
  * Which sensor raised this (the findings spine — see
  * `docs/plans/dev-findings-loop.md`). `None` = a classic Idea-Scanner idea.
  * One of: `standards_finding` | `passport_gap` | `llm_cost` | `sentry_spike`
- * | `kpi_offtrack`.
+ * | `kpi_offtrack` | `skill_dormant`.
  */
 origin: string | null, 
 /**

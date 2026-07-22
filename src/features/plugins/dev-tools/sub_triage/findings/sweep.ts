@@ -11,7 +11,9 @@
 // reads as "nothing else to do".
 import {
   createFinding,
+  getSkillUsageOverview,
   listFindingDedupKeys,
+  listSkills,
   listStandards,
   setFindingVerifyState,
 } from '@/api/devTools/devTools';
@@ -37,7 +39,9 @@ import {
   emitLlmCostFindings,
   emitPassportGaps,
   emitSentryFindings,
+  emitSkillDormantFindings,
   emitStandardsFindings,
+  type DormantSkill,
 } from './emitters';
 import { SWEEP_CAP } from './findingConfig';
 import type { FindingDraft, KpiAttention, SweepResult } from './types';
@@ -126,6 +130,38 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   // -- E5: KPIs ---------------------------------------------------------------
   if (kpiAttention && kpiAttention.length > 0) {
     drafts.push(...emitKpiFindings(kpiAttention));
+  }
+
+  // -- E6: dormant skills (P1 transcript telemetry) ----------------------------
+  // Installed = this project's .claude/skills; a skill provided only globally
+  // counts through its global registry row. Empty telemetry (never mined /
+  // older build) yields zero rows → the sensor is skipped, never guessed.
+  try {
+    const [usage, installed] = await Promise.all([
+      getSkillUsageOverview(),
+      listSkills(project.id).catch(() => []),
+    ]);
+    if (usage.length === 0) {
+      skippedSensors.push('skills');
+    } else {
+      const installedNames = new Set(installed.map((s) => s.name));
+      const rows: DormantSkill[] = usage
+        .filter((r) => !r.missing_since)
+        .filter((r) =>
+          r.scope === 'project' ? r.project_id === project.id : installedNames.has(r.name),
+        )
+        .map((r) => ({
+          name: r.name,
+          scope: r.scope,
+          first_seen_at: r.first_seen_at,
+          last_invoked_at: r.last_invoked_at,
+          dormant: r.dormant,
+        }));
+      drafts.push(...emitSkillDormantFindings(rows));
+    }
+  } catch (e) {
+    silentCatch('findings/sweep:skills')(e);
+    skippedSensors.push('skills');
   }
 
   // -- VERIFY (Phase 3A) ------------------------------------------------------

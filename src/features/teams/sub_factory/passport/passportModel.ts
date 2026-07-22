@@ -137,10 +137,11 @@ export interface PassportArtifacts {
   evals: EvalsLevel;
   skills: boolean;
   /** Skill tallies: `reused` = the name also exists in the global library or a
-   *  sibling project; `own` = specific to this codebase. Absent on derives that
-   *  didn't fetch skill lists (projection previews) — the row falls back to the
-   *  boolean `skills`. */
-  skillCounts?: { reused: number; own: number };
+   *  sibling project; `own` = specific to this codebase; `dormant` = installed
+   *  ≥30d with zero observed invocations in the window (P1 transcript mining).
+   *  Absent on derives that didn't fetch skill lists (projection previews) —
+   *  the row falls back to the boolean `skills`. */
+  skillCounts?: { reused: number; own: number; dormant?: number };
 }
 export interface PassportSelfVerify {
   build: boolean;

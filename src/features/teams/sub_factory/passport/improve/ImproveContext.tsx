@@ -12,8 +12,12 @@ export interface ImproveRaw {
   meta: CrossProjectProjectMetadata;
   /** Whether the project has reusable skills in `.claude/skills` (drives the passport). */
   hasSkills?: boolean;
-  /** Shared-vs-codebase-specific skill tallies (see usePassportData). */
-  skillCounts?: { reused: number; own: number };
+  /** Shared-vs-codebase-specific skill tallies + dormant count (see usePassportData). */
+  skillCounts?: { reused: number; own: number; dormant?: number };
+  /** Usage telemetry per INSTALLED skill (P1 transcript mining). */
+  skillUsage?: Record<string, { invokes30d: number; lastInvokedAt: string | null; dormant: boolean }>;
+  /** Source-side liveliness per ADOPTABLE skill (how alive it is where it lives). */
+  catalogUsage?: Record<string, { invokes30d: number; lastInvokedAt: string | null }>;
   /** Deterministic repo file-evidence (D1) — real test/CI/CLAUDE.md/migration signals. */
   evidence?: RepoEvidence | null;
   /** Skills installed elsewhere (other projects / global) but missing here. */
