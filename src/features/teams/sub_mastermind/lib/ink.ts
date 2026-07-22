@@ -46,3 +46,13 @@ export const mix = (color: string, pct: number, base = 'transparent'): string =>
 // UI stack): cartographic serif for identity/details, mono for instrumentation.
 export const SERIF = `'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif`;
 export const MONO = `ui-monospace, 'Cascadia Code', Consolas, 'SF Mono', monospace`;
+
+// Note-tool fonts. Deliberately IMPORT-FREE (the "light alternative" per the
+// round-7 brief): each stack leads with the requested face for users who have
+// it installed and falls back to a visually-equivalent system face — Caveat's
+// handwriting look maps to Segoe Script / Ink Free, which ship with Windows.
+export const NOTE_FONT: Record<'inter' | 'roboto' | 'caveat', string> = {
+  inter: `'Inter', ui-sans-serif, system-ui, 'Segoe UI', sans-serif`,
+  roboto: `'Roboto', 'Segoe UI', Arial, sans-serif`,
+  caveat: `'Caveat', 'Segoe Script', 'Ink Free', 'Comic Sans MS', cursive`,
+};

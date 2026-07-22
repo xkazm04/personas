@@ -1,23 +1,25 @@
 // Bottom canvas toolbar — mouse-mode switch. View = pan/zoom; Edit = drag a
 // project island to rearrange the map (position persists). Prototype copy is
 // hardcoded (COPY const) pending consolidation i18n.
-import { BoxSelect, Move, Spline } from 'lucide-react';
+import { BoxSelect, Move, Spline, Type } from 'lucide-react';
 
 import type { CanvasMode } from './types';
 
-const COPY = { edit: 'Edit', group: 'Group', connect: 'Connect', label: 'Canvas mode' };
+const COPY = { edit: 'Edit', group: 'Group', connect: 'Connect', note: 'Note', label: 'Canvas mode' };
 
 // One-line orientation per mode — what the mouse does right now.
 const HINTS: Record<CanvasMode, string> = {
   edit: 'Drag a header to move · click it for details',
   group: 'Drag on the canvas to draw a group',
   connect: 'Drag from one project to another',
+  note: 'Click on the canvas to write a note',
 };
 
 const MODES: Array<{ id: CanvasMode; icon: typeof Move; label: string; key: string }> = [
   { id: 'edit', icon: Move, label: COPY.edit, key: 'E' },
   { id: 'group', icon: BoxSelect, label: COPY.group, key: 'G' },
   { id: 'connect', icon: Spline, label: COPY.connect, key: 'C' },
+  { id: 'note', icon: Type, label: COPY.note, key: 'N' },
 ];
 
 export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onModeChange: (m: CanvasMode) => void }) {

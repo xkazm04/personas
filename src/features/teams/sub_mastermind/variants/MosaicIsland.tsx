@@ -4,7 +4,7 @@
 //              readable from orbit), title large on the banner
 //   near     → icon + uppercase label
 //   close    → + tool detail + progress
-import { DIM_ICON } from '../lib/dimMeta';
+import { DimGlyph } from '../lib/DimGlyph';
 import { DIM_INK, mix, STATE_INK } from '../lib/ink';
 import { hexPoints } from '../lib/hex';
 import { FleetDock } from '../lib/FleetDock';
@@ -25,7 +25,7 @@ const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2)
 
 const COPY = { empty: 'not set up' };
 
-export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus }: { island: Island } & IslandCtx) {
+export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   // Cluster extents depend on how many cells are occupied (8 dims stay within
@@ -52,7 +52,7 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
         const ax = AXIAL[k];
         if (!ax) return null;
         const p = cellXY(ax[0], ax[1]);
-        return <MosaicCell key={n.key} node={n} x={p.x} y={p.y} band={band} />;
+        return <MosaicCell key={n.key} node={n} x={p.x} y={p.y} band={band} highlighted={highlightKey === n.key} />;
       })}
 
       {/* core cell */}
@@ -77,20 +77,20 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
         band={band}
         topWorldY={topY - 10}
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
+        onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
       <FleetDock fleet={island.fleet} z={z} yWorld={botY + 14} onOpen={onFleetOpen} />
     </g>
   );
 }
 
-function MosaicCell({ node, x, y, band }: { node: DimNode; x: number; y: number; band: ZoomBand }) {
+function MosaicCell({ node, x, y, band, highlighted }: { node: DimNode; x: number; y: number; band: ZoomBand; highlighted: boolean }) {
   const ink = DIM_INK[node.status];
   const absent = node.status === 'absent';
-  const Icon = DIM_ICON[node.key];
   const zoomedOut = band === 'far' || band === 'mid';
 
   return (
-    <g transform={`translate(${x} ${y})`} opacity={absent ? 0.6 : 1}>
+    <g transform={`translate(${x} ${y})`} opacity={absent && !highlighted ? 0.6 : 1}>
       {/* native tooltip — names the dimension even when zoomed-out LOD hides labels */}
       <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ' — not set up' : ''}`}</title>
       <polygon
@@ -99,12 +99,19 @@ function MosaicCell({ node, x, y, band }: { node: DimNode; x: number; y: number;
         stroke={absent ? mix('var(--muted-foreground)', 40) : mix(ink, 55)}
         strokeWidth={1.5} strokeDasharray={absent ? '5 5' : undefined} strokeLinejoin="round"
       />
+      {/* context-menu hover echo — unmistakably THIS cell */}
+      {highlighted && (
+        <>
+          <polygon points={hexPoints(0, 0, CELL + 2)} fill="none" stroke={mix('var(--primary)', 95)} strokeWidth={3.5} strokeLinejoin="round" />
+          <polygon points={hexPoints(0, 0, CELL + 9)} fill="none" stroke={mix('var(--primary)', 35)} strokeWidth={2} strokeLinejoin="round" />
+        </>
+      )}
       {zoomedOut ? (
         // fullscale icon — the cell IS the icon when zoomed out
-        <Icon x={-27} y={-27} width={54} height={54} strokeWidth={1.5} style={{ color: absent ? 'var(--muted-foreground)' : ink }} />
+        <DimGlyph node={node} x={-27} y={-27} size={54} strokeWidth={1.5} color={absent ? 'var(--muted-foreground)' : ink} />
       ) : (
         <>
-          <Icon x={-11} y={-30} width={22} height={22} strokeWidth={1.75} style={{ color: absent ? 'var(--muted-foreground)' : ink }} />
+          <DimGlyph node={node} x={-11} y={-30} size={22} strokeWidth={1.75} color={absent ? 'var(--muted-foreground)' : ink} />
           <text y={8} textAnchor="middle" fontSize={12} letterSpacing="0.08em" fontWeight={600} fill={absent ? 'var(--muted-foreground)' : mix('var(--foreground)', 90)} style={{ textTransform: 'uppercase' }}>
             {node.label}
           </text>

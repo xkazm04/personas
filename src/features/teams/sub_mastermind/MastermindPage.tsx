@@ -92,6 +92,7 @@ function MastermindInner() {
       else if (e.key === 'e' || e.key === 'E') setMode('edit');
       else if (e.key === 'g' || e.key === 'G') setMode('group');
       else if (e.key === 'c' || e.key === 'C') setMode('connect');
+      else if (e.key === 'n' || e.key === 'N') setMode('note');
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);

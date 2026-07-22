@@ -22,7 +22,7 @@ const RING: Array<[number, number]> = [
   [0, -2], [1, -2], [-1, -2],
 ];
 
-export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus }: { island: Island } & IslandCtx) {
+export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   const zoomedIn = bandGte(band, 'near');
@@ -52,7 +52,7 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
         if (!cell) return null;
         const tx = cell[0] * (CW + GAP) - CW / 2;
         const ty = cell[1] * (CH + GAP) - CH / 2;
-        return <DimTile key={n.key} node={n} x={tx} y={ty} w={CW} h={CH} band={band} />;
+        return <DimTile key={n.key} node={n} x={tx} y={ty} w={CW} h={CH} band={band} highlighted={highlightKey === n.key} />;
       })}
 
       {/* core — the center cell */}
@@ -89,6 +89,7 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
         band={band}
         topWorldY={topY - 14}
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
+        onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
       <FleetDock fleet={island.fleet} z={z} yWorld={botY + 16} onOpen={onFleetOpen} />
     </g>

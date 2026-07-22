@@ -75,7 +75,20 @@ export interface Camera {
  *  groups, open the project sidebar by header click.
  *  group = drag draws a labelled organizational rectangle.
  *  connect = click two projects to link them (styled, labelled lines). */
-export type CanvasMode = 'edit' | 'group' | 'connect';
+export type CanvasMode = 'edit' | 'group' | 'connect' | 'note';
+
+export type NoteSize = 'sm' | 'md' | 'lg';
+export type NoteFont = 'inter' | 'roboto' | 'caveat';
+
+/** Free text note placed on the canvas (note tool). World coordinates. */
+export interface CanvasNote {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  size: NoteSize;
+  font: NoteFont;
+}
 
 /** Common contract every canvas variant implements (prototype scaffold). */
 export interface VariantProps {

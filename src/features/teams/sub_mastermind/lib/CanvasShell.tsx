@@ -8,13 +8,17 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { mix } from './ink';
 import { loadGroups, saveGroups } from './groups';
 import { loadLinks, saveLinks, LINK_PALETTE } from './links';
+import { loadNotes, saveNotes } from './notes';
 import { GroupLayer } from './GroupLayer';
+import { IslandMenu } from './IslandMenu';
 import { LinkEditor } from './LinkEditor';
 import { LinkLayer } from './LinkLayer';
+import { NoteEditor } from './NoteEditor';
+import { NoteLayer } from './NoteLayer';
 import { Route } from './Route';
 import { ZoomBadge } from './ZoomBadge';
 import { ZoomControls } from './ZoomControls';
-import { sceneBounds, zoomBand, type CanvasMode, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
+import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
 import { useCanvasCamera } from './useCanvasCamera';
 
 const COPY = { labelPlaceholder: 'Group label…', defaultLabel: 'Group' };
@@ -38,6 +42,10 @@ export interface IslandCtx {
   onConnectStart: (slug: string, e: React.PointerEvent) => void;
   /** Double-click — frame this island (focus travel). */
   onIslandFocus: (slug: string) => void;
+  /** Right-click on the header — open the dimension context menu. */
+  onIslandMenu: (slug: string, e: React.MouseEvent) => void;
+  /** Dimension key highlighted for THIS island (context-menu row hover). */
+  highlightKey: string | null;
 }
 
 export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, renderIsland }: VariantProps & {
@@ -53,7 +61,12 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   const [linkSource, setLinkSource] = useState<string | null>(null);
   const [editingLink, setEditingLink] = useState<string | null>(null);
   const [rubber, setRubber] = useState<{ x: number; y: number } | null>(null);
+  const [notes, setNotes] = useState<CanvasNote[]>(loadNotes);
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
+  const [highlight, setHighlight] = useState<{ slug: string; key: string } | null>(null);
   const connectDrag = useRef<{ id: number; from: string; sx: number; sy: number } | null>(null);
+  const noteTap = useRef<{ id: number; sx: number; sy: number } | null>(null);
   const drawId = useRef<number | null>(null);
   const fitted = useRef(false);
 
@@ -65,6 +78,9 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
       setEditingLink(null);
       setEditing(null);
       setRubber(null);
+      setEditingNote(null);
+      setMenu(null);
+      setHighlight(null);
       connectDrag.current = null;
     };
     window.addEventListener('keydown', h);
@@ -102,6 +118,28 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   const commitLinks = (next: UserLink[]) => {
     setLinks(next);
     saveLinks(next);
+  };
+  const commitNotes = (next: CanvasNote[], persist = true) => {
+    setNotes(next);
+    if (persist) saveNotes(next);
+  };
+
+  /** Screen coords of a mouse event relative to the canvas container. */
+  const toScreen = (e: { clientX: number; clientY: number }) => {
+    const rect = svgRef.current!.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const onIslandMenu = (slug: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const p = toScreen(e);
+    const rect = svgRef.current?.getBoundingClientRect();
+    setMenu({
+      slug,
+      x: Math.min(p.x, (rect?.width ?? 600) - 248),
+      y: Math.min(p.y, (rect?.height ?? 400) - 340),
+    });
   };
 
   const createLink = (from: string, to: string) => {
@@ -159,6 +197,10 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
       return;
     }
     if (mode === 'connect' && e.button === 0) setLinkSource(null);
+    // Note mode: remember the press — a still click places a note on release
+    // (pan keeps working for real drags).
+    if (mode === 'note' && e.button === 0) noteTap.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY };
+    if (menu) setMenu(null);
     handlers.onPointerDown(e);
   };
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -200,6 +242,16 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
       }
       return;
     }
+    const nt = noteTap.current;
+    if (nt && nt.id === e.pointerId) {
+      noteTap.current = null;
+      if (Math.hypot(e.clientX - nt.sx, e.clientY - nt.sy) <= 4) {
+        const p = toWorld(e);
+        const n: CanvasNote = { id: `n${Date.now().toString(36)}`, x: p.x, y: p.y, text: '', size: 'md', font: 'inter' };
+        commitNotes([...notes, n]);
+        setEditingNote(n.id);
+      }
+    }
     handlers.onPointerUp(e);
   };
 
@@ -224,7 +276,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
         onDoubleClick={handlers.onDoubleClick}
         data-testid="mastermind-canvas"
         className="absolute inset-0 w-full h-full select-none"
-        style={{ touchAction: 'none', cursor: mode === 'group' ? 'crosshair' : panning ? 'grabbing' : 'grab' }}
+        style={{ touchAction: 'none', cursor: mode === 'group' || mode === 'note' ? 'crosshair' : panning ? 'grabbing' : 'grab' }}
       >
         <defs>
           <radialGradient id="mm-sea" cx="32%" cy="22%" r="95%">
@@ -275,8 +327,11 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
               onIslandTap,
               onConnectStart,
               onIslandFocus,
+              onIslandMenu,
+              highlightKey: highlight?.slug === i.slug ? highlight.key : null,
             }),
           )}
+          <NoteLayer notes={notes} z={cam.z} mode={mode} onNotesChange={commitNotes} onEdit={setEditingNote} />
           {/* connect overlay — ABOVE the islands so source/target/rubber are
               unmistakable (the round-5 under-island ring was barely visible) */}
           {mode === 'connect' && (
@@ -325,6 +380,39 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
           onClose={() => setEditingLink(null)}
         />
       )}
+
+      {(() => {
+        const n = editingNote ? notes.find((x) => x.id === editingNote) : null;
+        if (!n) return null;
+        return (
+          <NoteEditor
+            note={n}
+            x={n.x * cam.z + cam.x}
+            y={n.y * cam.z + cam.y}
+            onChange={(patch) => commitNotes(notes.map((x) => (x.id === n.id ? { ...x, ...patch } : x)))}
+            onDelete={() => { commitNotes(notes.filter((x) => x.id !== n.id)); setEditingNote(null); }}
+            onClose={() => {
+              // discard empty notes on close so misclicks don't litter the map
+              if (!n.text.trim()) commitNotes(notes.filter((x) => x.id !== n.id));
+              setEditingNote(null);
+            }}
+          />
+        );
+      })()}
+
+      {menu && (() => {
+        const island = bySlug.get(menu.slug);
+        if (!island) return null;
+        return (
+          <IslandMenu
+            island={island}
+            x={menu.x}
+            y={menu.y}
+            onHoverDim={(key) => setHighlight(key ? { slug: menu.slug, key } : null)}
+            onClose={() => { setMenu(null); setHighlight(null); }}
+          />
+        );
+      })()}
     </>
   );
 }
