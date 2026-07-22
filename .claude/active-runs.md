@@ -2,6 +2,13 @@
 
 ## Active
 
+### passport-env-appcost — env-split rows (local/test/prod for db/monitoring/hosting) + App-cost row w/ agent-created cost file — session fable-5
+- Started: 2026-07-22. Status: started.
+- Paths: src-tauri/src/commands/infrastructure/dev_tools.rs (RepoEvidence: +app_cost_raw field + probe read — additive, end of struct), src/api/devTools/devTools.ts (RepoEvidence interface +1 field), src/features/teams/sub_factory/passport/{passportModel.ts (+EnvKey/PassportEnvironments/AppCost), passportDerive.ts (+environments/appCost in stack), passportRows.ts (+'env'/'cost' CellValue kinds; persistence+hosting rows → env cells; new 'monitoring' env row + 'appcost' row in tooling), passportInk.tsx (inkKindOf +2 cases), ProjectsPassportWall.tsx (InkWallCell +2 cases, IMPROVABLE_ROWS +monitoring/appcost)}, passport/improve/{deployActions.ts (+appcost action), connectors.ts (+monitoring spec)}, new test file.
+- ⚠ COORDINATION w/ brainiac-p0-memory-docs-rows (entry below): near-total path overlap (RepoEvidence struct + interface, model/derive/rows, deployActions, IMPROVABLE_ROWS). User approved parallel work on main checkout. All my edits are ADDITIVE (new fields at end of struct, new rows appended, new set entries); at commit time I diff per file and land-both-with-attribution if hunks interleave (R20 precedent).
+- Main checkout. Ledger NOT staged separately.
+
+
 
 ### passport-unified-setup-r19 — unified Evals/Security/Tests/Migrations flow, Fleet as engine — session fable-5 (cockpit line)
 - Started: 2026-07-22. Status: COMMITTED 87314c14b (passportFleet.tsx + RowSetupModal.tsx) + pushed master.
@@ -9,6 +16,8 @@
 - What: always-visible setup icon (0.10 opacity) on the 4 rows at ANY level -> full 3-direction modal (scan-derived applicableDeployActions lead w/ 'from scan' badge, generic Scan/Harden/Gate fill; custom instructions) -> Deploy to FLEET (repo root, passport:<row>:<slug> key, dedup); live session -> state-tinted TerminalSquare on the cell -> PassportTerminalModal (Mastermind FleetPreviewPanel composition in BaseModal, reply row).
 - ⚠ COORDINATION w/ passport-wall-followups (entry above): my ProjectsPassportWall.tsx hunks (UNIFIED_ROWS split from IMPROVABLE_ROWS, fleetSessions hook, setupModal/terminalKey state, unified-* cell branch, modals at wall root) are INTERLEAVED with your uncommitted wall work in the SAME file. Whoever commits the wall next, land both together and attribute; note SkillsModal.tsx + skillTasks.ts are still untracked — committing ImproveCell without them breaks master.
 - Verified live: 44 setup icons / 11 projects, modal gating, evals shows scan-derived direction first. Real Fleet dispatch NOT fired in verification (real repo + skip-permissions — user's call during review).
+- R21 4cfd677e1: **BENCH RETIRED** — sub_cockpit deleted (25 files, -3231 lines), 'skills' tab removed from union/DevToolsPage/sidebar/navCatalog; FactoryBreadcrumb (sibling-switcher crumb) migrated to Factory L2 at retirement; NEW dev_tools_get_project_favicon (Rust probe: public/, src/app, app/, static/, src-tauri/icons, root; 256KB cap, data URL) → covers show real favicons (7/11 live), dot fallback. R17 scope-sidebar + pair→verify = git-history design refs (4de5567cc) for dispatch-concept round. Clippy clean.
+- R20 061889baa: wall integration LANDED (untangled after followups e7640175d); dispatch no longer auto-opens the terminal (fleet icon = the door); rowDirections.ts = skills-first prompt library (check repo .claude/skills + ~/.claude/skills per skillHints before generic plan; outcome-oriented bodies; shared working contract); Security review direction adopts claude-security plugin report discipline (severity=IMPACT w/ separate confidence, coverage disclosure, impact-first file:line findings, root-cause fix at sink); plan doc §3.1 = proposed security-rating composition (process level × open findings, tint clamped by worst unresolved severity). Verified live: security modal = scan-derived first + new library.
 
 ### refactor-bughunt-ml-sweep — docs/harness/refactor-bughunt-2026-07-10 remaining 310 Medium/Low findings — session sonnet-5 — COMPLETED
 - Started: 2026-07-17. Completed: 2026-07-17. Commits: 970feb3d8..b4930ee02 (34 commits, ~5 batches/wave × 8 waves + 1 mid-wave lint/i18n-gap fixup). All 8 waves pushed and gate-verified individually: Wave1 970feb3d8..6abe426ad, Wave2 ..8e4b00a73, Wave3 ..960f0041d, Wave4 ..893242636 (caught+fixed a real regression in tauriInvoke.ts mid-wave — see below), Wave5 ..5607fdfd2, Wave6 ..6a61cf18c, Wave7 ..a123d9026, Wave8 ..b4930ee02.
@@ -1069,6 +1078,12 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### brainiac-p0-memory-docs-rows — Brainiac-adoption P0: real Agent-memory ordinal + new Documentation dimension — session fable-5
+- Started+completed 2026-07-22. Commits: `d5516f2ae` (adoption analysis doc, docs/plans/brainiac-adoption-skills-memory-docs.md, from 3 Explore deep-dives over C:\Users\mkdol\dolla\brainiac) + `89ae3faf5` (P0 code).
+- Shipped: RepoEvidence probe extension (in-repo MEMORY.md/.claude/memory + Claude auto-memory dir via encode_claude_project_dir cwd-encoding + bounded docs/ census + feature-doc-map check); Agent memory row none→adhoc→curated→governed (replaces hardcoded false); NEW Documentation row none→readme→structured→synced; both wired into autoScore, golden rubric, ladders, provenance, improve plan, and two Dev-runner setup tasks (docs-baseline, memory-seed). Live-verified on the wall: "Structured 2/3" / "Curated 2/3" cells with real probe data (tauri dev auto-rebuilt the Rust side).
+- Coordination: commit 89ae3faf5 also carries the CONCURRENT session's compiling env/cost hunks in the shared passport files (land-together protocol, mirrors R20); their failing WIP test passportEnvCost.test.ts left uncommitted — that session should fold it into its next commit. cargo test binaries still hit the environment-wide STATUS_ENTRYPOINT_NOT_FOUND (known since 2026-07-17); encoder tests compile + assert the real on-disk dir name.
+- Next phases (P1 skill usage counting via transcript mining, P2 doc-rot scan, P3 memory claims/TTL/health) live in the plan doc.
 
 ### passport-wall-followups — row-info popups, rescan confirm, context-coverage scan modes, skills counts + LLM adopt/share module — session fable-5
 - Started+completed 2026-07-22. Commit `e7640175d` on master.

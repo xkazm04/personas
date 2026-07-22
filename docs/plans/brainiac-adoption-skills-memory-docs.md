@@ -364,7 +364,7 @@ sub-label: `3 dirty · 2 never read`.
 
 | Phase | Scope | Schema? | LLM? |
 |---|---|---|---|
-| **P0** | Memory probe + docs probe → both passport rows live (memory ordinal replaces hardcoded false; new Documentation row); RepoEvidence extension; derive/scoring update | none | none |
+| **P0 — SHIPPED `89ae3faf5` (2026-07-22)** | Memory probe + docs probe → both passport rows live (memory ordinal replaces hardcoded false; new Documentation row); RepoEvidence extension; derive/scoring update; golden-rubric dims + ladders + provenance + two Dev-runner setup tasks | none | none |
 | **P1** | `skill_registry` + `skill_usage_events` + transcript mining sweep; skills cell dormancy signal; `skill_dormant` findings; SkillsModal usage column + proposal dedup | yes | none |
 | **P2** | `doc_status` + doc-rot git scan + `doc_rot` findings + Dev-runner refresh task prompts; `doc_read_events` mining; passport `fresh/synced` grades | yes | task-level only |
 | **P3** | Memory engine upgrades: `valid_to` TTLs + neglect sweep, `memory_claims` + ranking nudge + `memory_disputed` findings; `knowledge_health_snapshots` + cover trend | yes | none |
