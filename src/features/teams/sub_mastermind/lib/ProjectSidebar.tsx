@@ -45,7 +45,7 @@ export function ProjectSidebar({ passport, name, onClose }: {
       <div className="px-4 py-3">
         {passport ? (
           <>
-            <CoverBody p={passport} openable={false} attention={[]} />
+            <CoverBody p={passport} openable={false} attention={[]} stats={null} />
             {bodySections.map((section) => (
               <div key={section.key} className="mt-5">
                 {/* dividers run brighter than the wall's — the secondary panel
