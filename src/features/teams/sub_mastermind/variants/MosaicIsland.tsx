@@ -10,8 +10,7 @@ import { hexPoints } from '../lib/hex';
 import { FleetDock } from '../lib/FleetDock';
 import { IslandBanner } from '../lib/IslandBanner';
 import { mockStats } from '../lib/statsMock';
-import { StatGauges } from '../lib/StatGauges';
-import { StatStrip } from '../lib/StatStrip';
+import { StatPanels } from '../lib/StatPanels';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
 import type { DimNode, Island, ZoomBand } from '../lib/types';
@@ -32,10 +31,14 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   // Cluster extents depend on how many cells are occupied (8 dims stay within
-  // r=±1 caps; 11 reach r=±2) — banner, dock, and halo track them.
-  const ys = AXIAL.slice(0, island.nodes.length).map(([q, r]) => cellXY(q, r).y);
+  // r=±1 caps; 11 reach r=±2) — banner, dock, halo, and stat panels track them.
+  const pts = AXIAL.slice(0, island.nodes.length).map(([q, r]) => cellXY(q, r));
+  const ys = pts.map((p) => p.y);
+  const xs = pts.map((p) => p.x);
   const topY = Math.min(0, ...ys) - CELL;
   const botY = Math.max(0, ...ys) + CELL;
+  const leftX = Math.min(0, ...xs) - CELL;
+  const rightX = Math.max(0, ...xs) + CELL;
   const haloR = Math.max(CELL * 3.1, (botY - topY) / 2 + CELL * 0.8);
 
   return (
@@ -82,15 +85,8 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
-      {statsStyle === 'strip' && <StatStrip stats={mockStats(island.slug)} z={z} yWorld={botY + 12} />}
-      {statsStyle === 'gauges' && <StatGauges stats={mockStats(island.slug)} z={z} yWorld={botY + 12} />}
-      <FleetDock
-        fleet={island.fleet}
-        z={z}
-        yWorld={statsStyle === 'gauges' ? botY + 96 : botY + 12}
-        screenOffset={statsStyle === 'strip' ? 56 : 14}
-        onOpen={onFleetOpen}
-      />
+      {statsStyle === 'panels' && <StatPanels stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />}
+      <FleetDock fleet={island.fleet} z={z} yWorld={botY + 12} onOpen={onFleetOpen} />
     </g>
   );
 }

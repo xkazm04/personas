@@ -7,8 +7,7 @@ import { mix, scoreInkVar, STATE_INK } from '../lib/ink';
 import { FleetDock } from '../lib/FleetDock';
 import { IslandBanner } from '../lib/IslandBanner';
 import { mockStats } from '../lib/statsMock';
-import { StatGauges } from '../lib/StatGauges';
-import { StatStrip } from '../lib/StatStrip';
+import { StatPanels } from '../lib/StatPanels';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
 import type { Island } from '../lib/types';
@@ -94,15 +93,10 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
-      {statsStyle === 'strip' && <StatStrip stats={mockStats(island.slug)} z={z} yWorld={botY + 14} />}
-      {statsStyle === 'gauges' && <StatGauges stats={mockStats(island.slug)} z={z} yWorld={botY + 14} />}
-      <FleetDock
-        fleet={island.fleet}
-        z={z}
-        yWorld={statsStyle === 'gauges' ? botY + 98 : botY + 14}
-        screenOffset={statsStyle === 'strip' ? 56 : 14}
-        onOpen={onFleetOpen}
-      />
+      {statsStyle === 'panels' && (
+        <StatPanels stats={mockStats(island.slug)} z={z} leftX={-(CW * 1.5 + GAP + 10)} rightX={CW * 1.5 + GAP + 10} />
+      )}
+      <FleetDock fleet={island.fleet} z={z} yWorld={botY + 14} onOpen={onFleetOpen} />
     </g>
   );
 }

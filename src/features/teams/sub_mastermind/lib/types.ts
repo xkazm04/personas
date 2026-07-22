@@ -79,8 +79,9 @@ export type CanvasMode = 'edit' | 'group' | 'connect' | 'note';
 
 export type NoteSize = 'sm' | 'md' | 'lg' | 'xl';
 
-/** Prototype toggle for the per-island stats panel treatments (round 8). */
-export type StatsStyle = 'strip' | 'gauges' | 'off';
+/** Prototype toggle for the per-island stats panels (round-9 winner: side
+ *  panels; gauges and the inline strip were retired). */
+export type StatsStyle = 'panels' | 'off';
 export type NoteFont = 'inter' | 'roboto' | 'caveat';
 
 /** Free text note placed on the canvas (note tool). World coordinates. */
