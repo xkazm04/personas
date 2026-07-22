@@ -40,6 +40,14 @@ export function FleetBadges({ fleet, z, yWorld, onOpenList }: {
             >
               <title>{`${counts.get(state)} × ${state.replace('_', ' ')}`}</title>
               <rect x={-BADGE_W / 2} y={-14} width={BADGE_W} height={28} rx={14} fill={mix(ink, 16, 'var(--background)')} stroke={mix(ink, 55)} strokeWidth={1.25} />
+              {/* awaiting_input pulses — a terminal is literally waiting on the user */}
+              {state === 'awaiting_input' && (
+                <circle
+                  cx={-BADGE_W / 2 + 13} r={7} fill={ink} opacity={0.5}
+                  className="animate-ping"
+                  style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+                />
+              )}
               <circle cx={-BADGE_W / 2 + 13} r={4} fill={ink} />
               <text x={7} y={5} textAnchor="middle" fontSize={14} fontWeight={600} fontFamily={SERIF} fill="var(--foreground)" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {counts.get(state)}

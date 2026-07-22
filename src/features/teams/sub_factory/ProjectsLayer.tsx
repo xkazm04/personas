@@ -9,19 +9,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Target } from 'lucide-react';
 
-import { setStandardsConfig, scanCodebase, createTask, executeTask, updateProject, installSkill, listContexts } from '@/api/devTools/devTools';
+import { listContexts } from '@/api/devTools/devTools';
 import { listKpis } from '@/api/devTools/kpis';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
-import { useOverviewStore } from '@/stores/overviewStore';
-import { useImproveActivityStore } from '@/stores/improveActivityStore';
 import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ProjectsPassportWall } from './passport';
 import type { WarningItem } from './passport/WarningBadge';
-import { ImproveProvider, type ImproveEngine } from './passport/improve/ImproveContext';
+import { ImproveProvider } from './passport/improve/ImproveContext';
 import { ImprovePlanPanel } from './passport/improve/ImprovePlanPanel';
+import { useImproveEngine } from './passport/improve/useImproveEngine';
 import { usePassportData } from './passport/usePassportData';
 import { useFactoryData } from './factoryData';
 import { collectKpiAttention } from './factoryModel';
@@ -38,70 +37,9 @@ export function ProjectsLayer({
   const [showPlan, setShowPlan] = useState(false);
   const openSlugs = useMemo(() => new Set(passports.map((p) => p.identity.slug)), [passports]);
 
-  // Improve engine — lets actionable cells project + apply Tier-0 standards upgrades.
-  const improve = useMemo<ImproveEngine>(() => ({
-    getRaw: (slug) => rawByProject.get(slug),
-    allRaw: () => [...rawByProject.values()],
-    applyStandards: async (slug, json) => { await setStandardsConfig(slug, json); reload(); },
-    runContextScan: async (slug) => {
-      const raw = rawByProject.get(slug);
-      if (!raw) return undefined;
-      const { scan_id } = await scanCodebase(slug, raw.project.root_path);
-      // Register in the global activity dock (titlebar) so the scan stays
-      // visible while the user navigates across modules; completion is resolved
-      // globally in eventBridge (CONTEXT_GEN_COMPLETE → factory_scan). The Rust
-      // side runs the scan detached, so scanCodebase returns a scan_id at once.
-      useOverviewStore.getState().processStarted(
-        'factory_scan',
-        scan_id,
-        `Context scan: ${raw.project.name}`,
-        { section: 'plugins', tab: 'context-map' },
-      );
-      return scan_id;
-    },
-    bindConnector: async (slug, credId, field) => {
-      const updates =
-        field === 'pr' ? { prCredentialId: credId }
-        : field === 'llm_tracking' ? { llmTrackingCredentialId: credId }
-        : { monitoringCredentialId: credId };
-      await updateProject(slug, updates);
-      reload();
-    },
-    installSkills: async (slug, items) => {
-      await Promise.all(items.map((it) => installSkill(it.name, it.source, slug, false)));
-      reload();
-    },
-    queueTask: async (slug, title, prompt) => { await createTask(title, slug, prompt); },
-    deployNow: async (slug, title, prompt) => {
-      const raw = rawByProject.get(slug);
-      const task = await createTask(title, slug, prompt);
-      // Surface the Claude-Code run in the global activity dock keyed by task id,
-      // deep-linking to the Task Runner where its output streams live (same
-      // surface as every other Claude-Code CLI execution). The run dispatches
-      // detached on the Rust side; its terminal status (completed/failed/
-      // cancelled) is resolved globally in eventBridge → factory_deploy, which
-      // also raises the completion notification, so the user can switch modules
-      // and be told when the LLM is done.
-      const ov = useOverviewStore.getState();
-      ov.processStarted(
-        'factory_deploy',
-        task.id,
-        `Upgrade ${raw?.project.name ?? 'project'}: ${title}`,
-        { section: 'plugins', tab: 'task-runner' },
-      );
-      try {
-        await executeTask(task.id);
-      } catch (e) {
-        // executeTask only rejects on dispatch failure (before any event), so
-        // settle the dock entry + un-busy the cell here; in-run terminal states
-        // arrive via events.
-        ov.processEnded('factory_deploy', 'failed', task.id);
-        useImproveActivityStore.getState().endByRun(task.id);
-        throw e;
-      }
-      return task.id;
-    },
-  }), [rawByProject, reload]);
+  // Improve engine — lets actionable cells project + apply Tier-0 standards
+  // upgrades. Extracted to useImproveEngine (shared with the Mastermind canvas).
+  const improve = useImproveEngine(rawByProject, reload);
 
   // R18 — the Statband cover's volume stats: contexts count + KPI pass rate per
   // project. Fetched once per passport set (2 light IPC calls per project);

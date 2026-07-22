@@ -28,6 +28,13 @@ export interface DimNode {
   /** Ordinal progress within the dimension's scale; 0/0 for boolean dimensions. */
   reached: number;
   steps: number;
+  /** Passport-wall row key this dimension maps to (page-decorated; null = no
+   *  wall counterpart, e.g. auth/kpi). */
+  rowKey?: string | null;
+  /** Improve action available for this cell (page-decorated from the engine):
+   *  standards = Tier-0 config popover, deploy = Claude deploy/connector/skills
+   *  popover, null = inert (no click, no hover affordance). */
+  action?: 'standards' | 'deploy' | null;
 }
 
 export interface Island {
@@ -79,15 +86,6 @@ export type CanvasMode = 'edit' | 'group' | 'connect' | 'note';
 
 export type NoteSize = 'sm' | 'md' | 'lg' | 'xl';
 
-/** Stats toggle (round-11: Columns won; Panels deleted). Columns auto-hide at
- *  FAR zoom — the band gate lives in the islands. */
-export type StatsStyle = 'columns' | 'off';
-
-/** Prototype toggle for multi-session terminal handling (round 11):
- *  cells = sessions occupy free hex/grid slots as first-class cells (animal
- *  icon per session); badges = per-state count badges under the island that
- *  open a session-list popover. */
-export type FleetStyle = 'cells' | 'badges';
 export type NoteFont = 'inter' | 'roboto' | 'caveat';
 
 /** Free text note placed on the canvas (note tool). World coordinates. */
@@ -112,10 +110,9 @@ export interface VariantProps {
   onFleetOpen: (sessionId: string) => void;
   /** Project header clicked (not dragged) — open the project sidebar. */
   onProjectOpen: (slug: string) => void;
-  /** Which stats-panel treatment to render (prototype A/B). */
-  statsStyle: StatsStyle;
-  /** Which multi-session terminal treatment to render (prototype A/B). */
-  fleetStyle: FleetStyle;
+  /** Actionable dimension cell clicked — open its Improve popover at the
+   *  cursor (same popovers the Passport wall uses). */
+  onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
 }
 
 // Zoom bands — the single source of truth for level-of-detail. Round-3 split:

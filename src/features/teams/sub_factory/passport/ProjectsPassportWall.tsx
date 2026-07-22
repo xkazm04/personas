@@ -41,7 +41,7 @@ import { WarningBadge, type WarningItem } from './WarningBadge';
 // security/migrations/observability (Claude deploy or scan), the monitoring
 // tooling rows (errors/logs/metrics/tracing → connector wire), hosting (deploy),
 // aiflow + skills. Each opens the cell popover with its level ladder + actions.
-const IMPROVABLE_ROWS = new Set([
+export const IMPROVABLE_ROWS = new Set([
   'ci', 'security', 'selfverify', 'context', 'instructions', 'tests', 'evals',
   'migrations', 'observability', 'aiflow', 'skills',
   'errors', 'logs', 'metrics', 'tracing', 'hosting', 'llmtracking',

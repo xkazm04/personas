@@ -14,15 +14,20 @@ import { getCrossProjectMetadata, type CrossProjectMetadataMap } from '@/api/dev
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { FactoryDataProvider, useFactoryData } from '@/features/teams/sub_factory/factoryData';
 import { collectKpiAttention, groupKpis } from '@/features/teams/sub_factory/factoryModel';
+import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
+import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/DeployPopover';
+import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/ImprovePopover';
+import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { CanvasToolbar } from './lib/CanvasToolbar';
 import { deriveScene, type KpiRollup } from './lib/deriveScene';
+import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { loadPositions, savePositions } from './lib/positions';
 import { ProjectSidebar } from './lib/ProjectSidebar';
-import type { CanvasMode, FleetNode, FleetStyle, StatsStyle } from './lib/types';
+import type { CanvasMode, DimNode, FleetNode } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 import { MastermindInverseGrid } from './variants/MastermindInverseGrid';
 
@@ -31,23 +36,7 @@ const COPY = {
   inverse: 'Inverse Grid',
   demo: 'demo data — no projects scanned yet',
   switcher: 'Mastermind prototype variant',
-  statsSwitcher: 'Stats (prototype)',
-  statsOn: 'Stats',
-  statsOff: 'No stats',
-  fleetSwitcher: 'Terminal treatment (prototype)',
-  fleetCells: 'Cells',
-  fleetBadges: 'Badges',
 };
-
-const STATS_TABS: Array<{ id: StatsStyle; label: string }> = [
-  { id: 'columns', label: COPY.statsOn },
-  { id: 'off', label: COPY.statsOff },
-];
-
-const FLEET_TABS: Array<{ id: FleetStyle; label: string }> = [
-  { id: 'cells', label: COPY.fleetCells },
-  { id: 'badges', label: COPY.fleetBadges },
-];
 
 type VariantId = 'mosaic' | 'inverse';
 const VARIANT_TABS: Array<{ id: VariantId; label: string }> = [
@@ -71,16 +60,16 @@ export default function MastermindPage() {
 }
 
 function MastermindInner() {
-  const { passports, loading, error } = usePassportData();
+  const { passports, rawByProject, loading, error, reload } = usePassportData();
   const { projects: factoryProjects } = useFactoryData();
+  const improve = useImproveEngine(rawByProject, reload);
   const [meta, setMeta] = useState<CrossProjectMetadataMap | null>(null);
   const [variant, setVariant] = useState<VariantId>('mosaic');
   const [mode, setMode] = useState<CanvasMode>('edit');
   const [overrides, setOverrides] = useState(loadPositions);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
-  const [statsStyle, setStatsStyle] = useState<StatsStyle>('columns');
-  const [fleetStyle, setFleetStyle] = useState<FleetStyle>('cells');
+  const [improvePopup, setImprovePopup] = useState<{ slug: string; rowKey: string; standards: boolean; anchor: DOMRect } | null>(null);
 
   // Fleet sessions: the live-event listeners live in FleetGridPage only, so
   // off that page the store is a snapshot — refresh on mount + a slow poll.
@@ -148,15 +137,20 @@ function MastermindInner() {
   }, [sessions, projects]);
 
   const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject), [passports, meta, loading, kpiByProject]);
-  // Saved positions + live fleet docks overlay the derived scene.
+  // Saved positions + live fleet + per-dim Improve actionability overlay the
+  // derived scene. Actionability mirrors the wall's ImproveCell checks, so a
+  // canvas cell is clickable exactly when its wall row would show a gear.
   const positioned = useMemo(() => ({
     ...scene,
     islands: scene.islands.map((i) => {
       const o = overrides[i.slug];
       const fleet = scene.demo ? i.fleet : fleetByProject.get(i.slug) ?? [];
-      return { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet };
+      const passport = passports.find((p) => p.identity.slug === i.slug);
+      const raw = rawByProject.get(i.slug);
+      const nodes = i.nodes.map((n) => ({ ...n, ...dimAction(n.key, passport, raw) }));
+      return { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, nodes };
     }),
-  }), [scene, overrides, fleetByProject]);
+  }), [scene, overrides, fleetByProject, passports, rawByProject]);
 
   const onIslandMove = (slug: string, x: number, y: number) =>
     setOverrides((prev) => ({ ...prev, [slug]: { x, y } }));
@@ -172,19 +166,21 @@ function MastermindInner() {
   const openPassport = openSlug ? passports.find((p) => p.identity.slug === openSlug) ?? null : null;
   const Canvas = VARIANTS[variant];
 
+  // Canvas cell → the same Improve popovers the Passport wall opens, anchored
+  // at the click point (they flip/clamp against the window themselves).
+  const onDimOpen = (slug: string, node: DimNode, e: React.MouseEvent) => {
+    if (!node.action || !node.rowKey) return;
+    setImprovePopup({ slug, rowKey: node.rowKey, standards: node.action === 'standards', anchor: new DOMRect(e.clientX, e.clientY, 1, 1) });
+  };
+
   return (
+    <ImproveProvider value={improve}>
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      <Canvas scene={positioned} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} statsStyle={statsStyle} fleetStyle={fleetStyle} />
+      <Canvas scene={positioned} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} onDimOpen={onDimOpen} />
 
       {/* prototype-only variant switcher */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
         <SegmentedTabs tabs={VARIANT_TABS} activeTab={variant} onTabChange={setVariant} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.switcher} />
-      </div>
-
-      {/* prototype-only treatment switchers (stats + terminals) */}
-      <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 items-start">
-        <SegmentedTabs tabs={STATS_TABS} activeTab={statsStyle} onTabChange={setStatsStyle} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.statsSwitcher} />
-        <SegmentedTabs tabs={FLEET_TABS} activeTab={fleetStyle} onTabChange={setFleetStyle} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.fleetSwitcher} />
       </div>
 
       <CanvasToolbar mode={mode} onModeChange={setMode} />
@@ -197,6 +193,12 @@ function MastermindInner() {
         <ProjectSidebar passport={openPassport} name={openIsland.name} onClose={() => setOpenSlug(null)} />
       )}
 
+      {improvePopup && (improvePopup.standards ? (
+        <ImprovePopover slug={improvePopup.slug} rowKey={improvePopup.rowKey} anchor={improvePopup.anchor} onClose={() => setImprovePopup(null)} />
+      ) : (
+        <DeployPopover slug={improvePopup.slug} rowKey={improvePopup.rowKey} anchor={improvePopup.anchor} onClose={() => setImprovePopup(null)} />
+      ))}
+
       {scene.demo && (
         <div className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10">
           {COPY.demo}
@@ -208,5 +210,6 @@ function MastermindInner() {
         </div>
       )}
     </div>
+    </ImproveProvider>
   );
 }

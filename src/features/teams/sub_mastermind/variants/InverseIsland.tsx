@@ -3,39 +3,33 @@
 // overflow dimensions). Same band LOD as the other variants — fullscale icons
 // at far/mid, labels at near, details at close; identity on the banner.
 import { DimTile } from '../lib/DimTile';
-import { FLEET_INK, mix, scoreInkVar, STATE_INK } from '../lib/ink';
-import { animalIcon } from '../lib/fleetMeta';
+import { mix, scoreInkVar, STATE_INK } from '../lib/ink';
 import { FleetBadges } from '../lib/FleetBadges';
 import { IslandBanner } from '../lib/IslandBanner';
 import { mockStats } from '../lib/statsMock';
 import { StatColumns } from '../lib/StatColumns';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
-import type { FleetNode, Island, ZoomBand } from '../lib/types';
+import type { Island } from '../lib/types';
 import { bandGte } from '../lib/types';
 
 const CW = 104;
 const CH = 92;
 const GAP = 8;
 // Layer-1 cells clockwise from north (N, NE, E, SE, S, SW, W, NW), then
-// layer-2 opens along the top row for dimensions 9-11, then FREE SLOTS the
-// Cells fleet treatment fills dynamically — one tile per terminal session.
+// layer-2 opens along the top row for dimensions 9-11 — the "layers around
+// the core" growth direction.
 const RING: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1],
   [0, -2], [1, -2], [-1, -2],
-  [2, -2], [-2, -2], [2, -1], [-2, -1], [2, 0], [-2, 0], [2, 1],
 ];
 
-export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, statsStyle, fleetStyle, onFleetList }: { island: Island } & IslandCtx) {
+export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   const zoomedIn = bandGte(band, 'near');
-  // Cells treatment: sessions occupy the free grid slots after the dims.
-  const fleetCells = fleetStyle === 'cells'
-    ? island.fleet.slice(0, Math.max(0, RING.length - island.nodes.length))
-    : [];
-  // Formation extents grow with layer 2 + fleet cells — halo, banner, badges track them.
-  const used = RING.slice(0, island.nodes.length + fleetCells.length);
+  // Formation extents grow with layer 2 — halo, banner, badges track them.
+  const used = RING.slice(0, island.nodes.length);
   const rows = used.map(([, r]) => r);
   const cols = used.map(([c]) => c);
   const topY = (Math.min(0, ...rows)) * (CH + GAP) - CH / 2;
@@ -64,14 +58,19 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
         if (!cell) return null;
         const tx = cell[0] * (CW + GAP) - CW / 2;
         const ty = cell[1] * (CH + GAP) - CH / 2;
-        return <DimTile key={n.key} node={n} x={tx} y={ty} w={CW} h={CH} band={band} highlighted={highlightKey === n.key} />;
-      })}
-      {fleetCells.map((f, k) => {
-        const cell = RING[island.nodes.length + k];
-        if (!cell) return null;
-        const tx = cell[0] * (CW + GAP) - CW / 2;
-        const ty = cell[1] * (CH + GAP) - CH / 2;
-        return <FleetTileCell key={f.id} node={f} x={tx} y={ty} band={band} onOpen={onFleetOpen} />;
+        return (
+          <DimTile
+            key={n.key}
+            node={n}
+            x={tx}
+            y={ty}
+            w={CW}
+            h={CH}
+            band={band}
+            highlighted={highlightKey === n.key}
+            onAction={n.action ? (e) => onDimOpen(island.slug, n, e) : undefined}
+          />
+        );
       })}
 
       {/* core — the center cell */}
@@ -110,46 +109,10 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
-      {statsStyle === 'columns' && band !== 'far' && (
+      {band !== 'far' && (
         <StatColumns stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />
       )}
-      {fleetStyle === 'badges' && (
-        <FleetBadges fleet={island.fleet} z={z} yWorld={botY + 14} onOpenList={(state, e) => onFleetList(island.slug, state, e)} />
-      )}
-    </g>
-  );
-}
-
-/** A terminal session as a first-class grid tile (Cells treatment): state ink
- *  + the session's animal glyph; click opens the terminal preview. */
-function FleetTileCell({ node, x, y, band, onOpen }: { node: FleetNode; x: number; y: number; band: ZoomBand; onOpen: (id: string) => void }) {
-  const ink = FLEET_INK[node.state] ?? 'var(--status-neutral)';
-  const Animal = animalIcon(node.id);
-  const zoomedOut = band === 'far' || band === 'mid';
-  const big = Math.min(CW, CH) * 0.58;
-  return (
-    <g
-      transform={`translate(${x} ${y})`}
-      style={{ cursor: 'pointer' }}
-      onPointerDown={(e) => e.stopPropagation()}
-      onClick={(e) => { e.stopPropagation(); onOpen(node.id); }}
-      data-testid={`mm-fleet-cell-${node.id}`}
-    >
-      <title>{`${node.label} — ${node.state.replace('_', ' ')}`}</title>
-      <rect width={CW} height={CH} rx={10} fill={mix(ink, 20, 'var(--secondary)')} stroke={mix(ink, 70)} strokeWidth={1.75} />
-      {zoomedOut ? (
-        <Animal x={(CW - big) / 2} y={(CH - big) / 2} width={big} height={big} strokeWidth={1.5} style={{ color: ink }} />
-      ) : (
-        <>
-          <Animal x={8} y={8} width={20} height={20} strokeWidth={1.75} style={{ color: ink }} />
-          <text x={CW / 2} y={CH - 30} textAnchor="middle" fontSize={11.5} fontWeight={600} fill={mix('var(--foreground)', 92)}>
-            {node.label.length > 12 ? `${node.label.slice(0, 11)}…` : node.label}
-          </text>
-          <text x={CW / 2} y={CH - 14} textAnchor="middle" fontSize={8} letterSpacing="0.1em" fill={ink} style={{ textTransform: 'uppercase' }}>
-            {node.state.replace('_', ' ')}
-          </text>
-        </>
-      )}
+      <FleetBadges fleet={island.fleet} z={z} yWorld={botY + 14} onOpenList={(state, e) => onFleetList(island.slug, state, e)} />
     </g>
   );
 }

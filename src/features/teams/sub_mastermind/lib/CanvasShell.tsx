@@ -19,7 +19,7 @@ import { NoteLayer } from './NoteLayer';
 import { Route } from './Route';
 import { ZoomBadge } from './ZoomBadge';
 import { ZoomControls } from './ZoomControls';
-import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type FleetStyle, type GroupRect, type Island, type StatsStyle, type UserLink, type VariantProps, type ZoomBand } from './types';
+import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type DimNode, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
 import { useCanvasCamera } from './useCanvasCamera';
 
 const COPY = { labelPlaceholder: 'Group label…', defaultLabel: 'Group' };
@@ -47,15 +47,13 @@ export interface IslandCtx {
   onIslandMenu: (slug: string, e: React.MouseEvent) => void;
   /** Dimension key highlighted for THIS island (context-menu row hover). */
   highlightKey: string | null;
-  /** Stats-panel treatment (prototype A/B). */
-  statsStyle: StatsStyle;
-  /** Multi-session terminal treatment (prototype A/B). */
-  fleetStyle: FleetStyle;
-  /** Badges treatment: badge clicked — open the state-filtered session list. */
+  /** Fleet badge clicked — open the state-filtered session list. */
   onFleetList: (slug: string, state: string, e: React.MouseEvent) => void;
+  /** Actionable dimension cell clicked — page opens its Improve popover. */
+  onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, statsStyle, fleetStyle, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -350,9 +348,8 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
               onIslandFocus,
               onIslandMenu,
               highlightKey: highlight?.slug === i.slug ? highlight.key : null,
-              statsStyle,
-              fleetStyle,
               onFleetList,
+              onDimOpen,
             }),
           )}
           <NoteLayer notes={notes} z={cam.z} mode={mode} onNotesChange={commitNotes} onEdit={setEditingNote} />

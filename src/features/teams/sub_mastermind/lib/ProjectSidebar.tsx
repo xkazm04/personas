@@ -4,7 +4,8 @@
 // content layers come in a later round.
 import { X } from 'lucide-react';
 
-import { CoverBody, InkWallCell } from '@/features/teams/sub_factory/passport/ProjectsPassportWall';
+import { CoverBody, IMPROVABLE_ROWS, InkWallCell } from '@/features/teams/sub_factory/passport/ProjectsPassportWall';
+import { ImproveCell } from '@/features/teams/sub_factory/passport/improve/ImproveCell';
 import { SECTIONS } from '@/features/teams/sub_factory/passport/passportRows';
 import { SectionIcon } from '@/features/teams/sub_factory/passport/passportWidgets';
 import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
@@ -54,12 +55,23 @@ export function ProjectSidebar({ passport, name, onClose }: {
                   <SectionIcon name={section.icon} className="w-3.5 h-3.5 text-primary/70" />
                   <span className="typo-label text-foreground/70">{section.label}</span>
                 </div>
-                {section.rows.map((row) => (
-                  <div key={row.key} className="py-2 border-t border-foreground/12 first:border-t-0">
-                    <span className="block typo-caption text-foreground/55 mb-1">{row.label}</span>
-                    <InkWallCell value={row.get(passport)} />
-                  </div>
-                ))}
+                {section.rows.map((row) => {
+                  const cell = <InkWallCell value={row.get(passport)} />;
+                  return (
+                    <div key={row.key} className="py-2 border-t border-foreground/12 first:border-t-0">
+                      <span className="block typo-caption text-foreground/55 mb-1">{row.label}</span>
+                      {/* same actionable setup machinery as the Passport wall —
+                          ImproveCell renders plain when nothing is applicable;
+                          its popovers clamp/flip against the window, so the
+                          right-edge sidebar stays safe. */}
+                      {IMPROVABLE_ROWS.has(row.key) ? (
+                        <ImproveCell slug={passport.identity.slug} rowKey={row.key} passport={passport}>{cell}</ImproveCell>
+                      ) : (
+                        cell
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </>
