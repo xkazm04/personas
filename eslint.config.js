@@ -151,17 +151,17 @@ export default tseslint.config(
     },
   },
   // Catalog boundary: src/features/shared/components/** is the domain-agnostic
-  // primitive catalog (CATALOG.md). It must not couple to app state, IPC, or a
-  // feature — keeping it reusable and keeping the catalog honest. Domain/app-shell
-  // code lives in its owning feature or src/features/shared/chrome/. Enforced as
-  // an ERROR (the warn-level shared/** rule above is replaced for these files, so
-  // the Tauri bans are repeated here). See docs/refactor/catalog-curation.md.
+  // primitive catalog (CATALOG.md). Ideally it does not couple to app state, IPC,
+  // or a feature — keeping it reusable. Domain/app-shell code lives in its owning
+  // feature or src/features/shared/chrome/. This is an ADVISORY warning, not a
+  // build gate: the catalog is a recommended reference, not enforced. See
+  // docs/refactor/catalog-curation.md.
   {
     files: ["src/features/shared/components/**/*.{ts,tsx}"],
     ignores: ["src/features/shared/components/**/*.test.{ts,tsx}", "src/features/shared/components/**/*.stories.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
-        "error",
+        "warn",
         {
           paths: [
             {

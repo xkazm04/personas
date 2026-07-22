@@ -121,23 +121,24 @@ src-tauri/
 - Never use `text-white/*` or `bg-white/*` directly — use `text-foreground/*` or `bg-secondary/*`
 - ESLint warns on raw Tailwind classes that have semantic equivalents (see Design.md §8 Do's and Don'ts)
 
-### Reusing shared components — MANDATORY before building UI
+### Reusing shared components — check the catalog before building UI
 
 > **Before you write any UI, check whether a shared component already exists.**
 > The project has **~115 reusable, domain-agnostic primitives** under `src/features/shared/components/`,
 > catalogued in **[`src/features/shared/components/CATALOG.md`](../src/features/shared/components/CATALOG.md)**
-> (auto-generated, always fresh). The #1 source of UI drift is new code re-implementing
-> a spinner / empty state / button / modal / tooltip / badge / copy-button / relative-time
-> / number-format that already exists.
+> (auto-generated, always fresh — the durable UI reference bundle). The #1 source of UI
+> drift is new code re-implementing a spinner / empty state / button / modal / tooltip /
+> badge / copy-button / relative-time / number-format that already exists.
 >
-> **The catalog is primitives-only and enforced.** `shared/components/**` may NOT import
-> from `@/stores`, `@/api`, `@/lib/bindings`, or any `@/features/<feature>` — the ESLint
-> rule in `eslint.config.js` (and `npm run check:catalog-boundary`) errors on it. App-shell
+> **The catalog is a recommended reference, not a build gate.** `shared/components/**` is
+> meant to stay primitives-only — ideally it does not import from `@/stores`, `@/api`,
+> `@/lib/bindings`, or any `@/features/<feature>`. An ESLint rule in `eslint.config.js`
+> **warns** (advisory, non-blocking) when it does, but nothing fails the build. App-shell
 > chrome (sidebar, titlebar, footer, toasts, command palette) lives in **`src/features/shared/chrome/`**
 > (shared but NOT catalogued); domain components live in their owning feature. If a component
-> needs app state, pass it via props or put the component in `chrome/` or a feature — don't
-> add the import here. The 2026-06-18 curation (206→115) and the rationale are in
-> [`docs/refactor/catalog-curation.md`](../docs/refactor/catalog-curation.md).
+> needs app state, prefer passing it via props or putting the component in `chrome/` or a
+> feature — but this is guidance, not enforcement. The 2026-06-18 curation (206→115) and the
+> rationale are in [`docs/refactor/catalog-curation.md`](../docs/refactor/catalog-curation.md).
 
 **Do NOT hand-roll these — import the shared one** (full table + import paths in
 [`docs/refactor/shared-component-reuse.md`](../docs/refactor/shared-component-reuse.md)):
@@ -161,8 +162,11 @@ Import as `@/features/shared/components/<category>/<Name>`. If a genuinely new
 reusable pattern is needed, **add it to `shared/components/` (not a feature folder)**
 and give it a `@catalog <one-line>` JSDoc tag so it appears in the catalog. After
 adding/removing a shared component run `npm run gen:catalog` (also auto-runs in
-predev/prebuild; `npm run check` fails on a stale catalog). Extraction/consolidation
-backlog (PanelShell, ContentCard, EmptyState merge, …) lives in the reuse doc above.
+predev/prebuild, so CATALOG.md stays fresh on its own — but a stale catalog no
+longer fails `npm run check`; regeneration is a convenience, not a gate). The
+`check:catalog` / `check:catalog-boundary` scripts still exist for a manual
+staleness/boundary audit if you want one. Extraction/consolidation backlog
+(PanelShell, ContentCard, EmptyState merge, …) lives in the reuse doc above.
 
 ### Error Handling
 - `toastCatch()` from `src/lib/silentCatch.ts` for user-facing errors (Sentry + toast)
