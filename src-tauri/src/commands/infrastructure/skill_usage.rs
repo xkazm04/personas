@@ -106,6 +106,17 @@ fn skill_content_hash(entry_path: &str) -> Option<String> {
     }
 }
 
+/// The skill's REAL age: filesystem creation time (modified as fallback),
+/// SQLite-datetime formatted. Without this, every registry row is born "today"
+/// and the 30-day dormancy age-guard can't fire for a month even though the
+/// skill has sat unused on disk since spring.
+fn fs_first_seen(entry_path: &str) -> Option<String> {
+    let meta = std::fs::metadata(entry_path).ok()?;
+    let t = meta.created().or_else(|_| meta.modified()).ok()?;
+    let dt: chrono::DateTime<chrono::Utc> = t.into();
+    Some(dt.format("%Y-%m-%d %H:%M:%S").to_string())
+}
+
 fn reconcile_scope(
     conn: &rusqlite::Connection,
     scope: &str,
@@ -135,14 +146,15 @@ fn reconcile_scope(
             )
             .ok();
 
+        let first_seen = fs_first_seen(&e.path);
         match existing {
             None => {
                 let id = uuid::Uuid::new_v4().to_string();
                 conn.execute(
                     "INSERT INTO skill_registry
-                       (id, name, scope, project_id, content_hash, description)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                    rusqlite::params![id, e.name, scope, project_id, hash, desc],
+                       (id, name, scope, project_id, content_hash, description, first_seen_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, COALESCE(?7, datetime('now')))",
+                    rusqlite::params![id, e.name, scope, project_id, hash, desc, first_seen],
                 )?;
                 conn.execute(
                     "INSERT INTO skill_revisions (skill_id, rev, content_hash) VALUES (?1, 1, ?2)",
@@ -172,6 +184,15 @@ fn reconcile_scope(
                         rusqlite::params![id, desc],
                     )?;
                 }
+                // Converge first_seen_at DOWN to the filesystem's knowledge —
+                // heals rows born before this stamp existed. Monotonic, so a
+                // copied/reinstalled file can never make a skill look older
+                // than the registry already knows.
+                conn.execute(
+                    "UPDATE skill_registry SET first_seen_at = ?2
+                     WHERE id = ?1 AND ?2 IS NOT NULL AND ?2 < first_seen_at",
+                    rusqlite::params![id, first_seen],
+                )?;
             }
         }
     }
