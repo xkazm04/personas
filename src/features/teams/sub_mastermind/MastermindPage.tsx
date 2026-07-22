@@ -21,6 +21,7 @@ import { CanvasToolbar } from './lib/CanvasToolbar';
 import { deriveScene, type KpiRollup } from './lib/deriveScene';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { loadPositions, savePositions } from './lib/positions';
+import { ProjectSidebar } from './lib/ProjectSidebar';
 import type { CanvasMode, FleetNode } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 import { MastermindInverseGrid } from './variants/MastermindInverseGrid';
@@ -58,9 +59,10 @@ function MastermindInner() {
   const { projects: factoryProjects } = useFactoryData();
   const [meta, setMeta] = useState<CrossProjectMetadataMap | null>(null);
   const [variant, setVariant] = useState<VariantId>('mosaic');
-  const [mode, setMode] = useState<CanvasMode>('view');
+  const [mode, setMode] = useState<CanvasMode>('edit');
   const [overrides, setOverrides] = useState(loadPositions);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
 
   // Fleet sessions: the live-event listeners live in FleetGridPage only, so
   // off that page the store is a snapshot — refresh on mount + a slow poll.
@@ -132,11 +134,13 @@ function MastermindInner() {
     });
 
   const previewSession = previewId ? sessions.find((s) => s.id === previewId) ?? null : null;
+  const openIsland = openSlug ? positioned.islands.find((i) => i.slug === openSlug) ?? null : null;
+  const openPassport = openSlug ? passports.find((p) => p.identity.slug === openSlug) ?? null : null;
   const Canvas = VARIANTS[variant];
 
   return (
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      <Canvas scene={positioned} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} />
+      <Canvas scene={positioned} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} />
 
       {/* prototype-only variant switcher */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
@@ -147,6 +151,10 @@ function MastermindInner() {
 
       {previewId && (
         <FleetPreviewPanel sessionId={previewId} session={previewSession} onClose={() => setPreviewId(null)} />
+      )}
+
+      {openIsland && (
+        <ProjectSidebar passport={openPassport} name={openIsland.name} onClose={() => setOpenSlug(null)} />
       )}
 
       {scene.demo && (

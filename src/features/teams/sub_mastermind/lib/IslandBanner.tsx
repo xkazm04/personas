@@ -11,12 +11,15 @@ const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…
  *  raised at near/close so the name stays commanding during inspection. */
 const TITLE_FS: Record<ZoomBand, number> = { far: 20, mid: 18, near: 17, close: 16 };
 
-export function IslandBanner({ island, z, band, topWorldY }: {
+export function IslandBanner({ island, z, band, topWorldY, handleProps }: {
   island: Island;
   z: number;
   band: ZoomBand;
   /** World-space Y of the banner anchor (above the island's visual top). */
   topWorldY: number;
+  /** When set, the banner IS the island's move/select handle (edit mode):
+   *  pointer handlers land on the pill, inner content stays transparent. */
+  handleProps?: { handlers: Record<string, (e: React.PointerEvent<SVGGElement>) => void>; cursor: string };
 }) {
   const ink = STATE_INK[island.state];
   const name = trunc(island.name, 26);
@@ -27,8 +30,13 @@ export function IslandBanner({ island, z, band, topWorldY }: {
   const w = Math.min(430, Math.max(150, name.length * fs * 0.58 + metaW + 62));
   const k = 1 / z;
   return (
-    <g transform={`translate(0 ${topWorldY}) scale(${k})`} pointerEvents="none">
-      <g transform={`translate(0 ${-h / 2 - 2})`}>
+    <g transform={`translate(0 ${topWorldY}) scale(${k})`} pointerEvents={handleProps ? undefined : 'none'}>
+      <g
+        transform={`translate(0 ${-h / 2 - 2})`}
+        {...(handleProps?.handlers ?? {})}
+        style={handleProps ? { cursor: handleProps.cursor } : undefined}
+        data-testid={`mm-header-${island.slug}`}
+      >
         <rect
           x={-w / 2} y={-h / 2} width={w} height={h} rx={h / 2}
           fill={mix('var(--background)', 86)}

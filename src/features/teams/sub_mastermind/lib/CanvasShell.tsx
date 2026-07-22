@@ -1,15 +1,19 @@
-// Shared canvas shell for every Mastermind variant (hoisted in round 3): sea
-// backdrop, camera, routes, hover focus, zoom badge, and the group-draw tool.
-// Variants supply only the island renderer — the "differently shaped thing on
-// the same sea" contract.
+// Shared canvas shell for every Mastermind variant: sea backdrop, camera,
+// routes, hover focus, zoom badge, group tool, connect tool, project-open
+// routing. Variants supply only the island renderer. Round 5 (Figma pass):
+// edit-first — groups move/resize inline (GroupLayer owns that), the connect
+// tool links projects via island taps, headers open the project sidebar.
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { mix } from './ink';
 import { loadGroups, saveGroups } from './groups';
+import { loadLinks, saveLinks, LINK_PALETTE } from './links';
 import { GroupLayer } from './GroupLayer';
+import { LinkEditor } from './LinkEditor';
+import { LinkLayer } from './LinkLayer';
 import { Route } from './Route';
 import { ZoomBadge } from './ZoomBadge';
-import { sceneBounds, zoomBand, type CanvasMode, type GroupRect, type Island, type VariantProps, type ZoomBand } from './types';
+import { sceneBounds, zoomBand, type CanvasMode, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
 import { useCanvasCamera } from './useCanvasCamera';
 
 const COPY = { labelPlaceholder: 'Group label…', defaultLabel: 'Group' };
@@ -24,9 +28,12 @@ export interface IslandCtx {
   onIslandMove: (slug: string, x: number, y: number) => void;
   onIslandCommit: (slug: string, x: number, y: number) => void;
   onFleetOpen: (sessionId: string) => void;
+  /** Island tapped (header click in edit, any click in connect) — the shell
+   *  routes it: connect endpoint vs project sidebar. */
+  onIslandTap: (slug: string) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -35,6 +42,9 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   const [groups, setGroups] = useState<GroupRect[]>(loadGroups);
   const [draft, setDraft] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  const [links, setLinks] = useState<UserLink[]>(loadLinks);
+  const [linkSource, setLinkSource] = useState<string | null>(null);
+  const [editingLink, setEditingLink] = useState<string | null>(null);
   const drawId = useRef<number | null>(null);
   const fitted = useRef(false);
 
@@ -62,9 +72,34 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
     return { x: (e.clientX - rect.left - cam.x) / cam.z, y: (e.clientY - rect.top - cam.y) / cam.z };
   };
 
-  const commitGroups = (next: GroupRect[]) => {
+  const commitGroups = (next: GroupRect[], persist = true) => {
     setGroups(next);
-    saveGroups(next);
+    if (persist) saveGroups(next);
+  };
+  const commitLinks = (next: UserLink[]) => {
+    setLinks(next);
+    saveLinks(next);
+  };
+
+  // Connect tool: first tap marks the source, second creates the link and
+  // opens its editor. Tapping the source again (or the sea) cancels.
+  const onIslandTap = (slug: string) => {
+    if (mode !== 'connect') {
+      onProjectOpen(slug);
+      return;
+    }
+    if (!linkSource) {
+      setLinkSource(slug);
+      return;
+    }
+    if (linkSource === slug) {
+      setLinkSource(null);
+      return;
+    }
+    const l: UserLink = { id: `l${Date.now().toString(36)}`, from: linkSource, to: slug, label: '', dashed: false, color: LINK_PALETTE[0] };
+    commitLinks([...links, l]);
+    setLinkSource(null);
+    setEditingLink(l.id);
   };
 
   // Group mode: left-drag draws; middle-drag still pans (forwarded to camera).
@@ -76,6 +111,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
       setDraft({ x0: p.x, y0: p.y, x1: p.x, y1: p.y });
       return;
     }
+    if (mode === 'connect' && e.button === 0) setLinkSource(null);
     handlers.onPointerDown(e);
   };
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -104,6 +140,14 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   };
 
   const editingGroup = editing ? groups.find((g) => g.id === editing) ?? null : null;
+  const editingLinkObj = editingLink ? links.find((l) => l.id === editingLink) ?? null : null;
+  const editorAnchor = useMemo(() => {
+    if (!editingLinkObj) return null;
+    const a = bySlug.get(editingLinkObj.from);
+    const b = bySlug.get(editingLinkObj.to);
+    if (!a || !b) return null;
+    return { x: ((a.x + b.x) / 2) * cam.z + cam.x, y: ((a.y + b.y) / 2) * cam.z + cam.y };
+  }, [editingLinkObj, bySlug, cam]);
 
   return (
     <>
@@ -136,13 +180,25 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
             groups={groups}
             draft={draft ? normalize(draft) : null}
             z={cam.z}
-            interactive={mode === 'group'}
+            mode={mode}
+            islands={scene.islands}
+            onGroupsChange={commitGroups}
+            onIslandMove={onIslandMove}
+            onIslandCommit={onIslandCommit}
             onRename={setEditing}
             onDelete={(id) => commitGroups(groups.filter((g) => g.id !== id))}
           />
           {scene.edges.map((e) => (
             <Route key={`${e.from}→${e.to}`} e={e} a={bySlug.get(e.from)} b={bySlug.get(e.to)} lit={hover === e.from || hover === e.to} />
           ))}
+          <LinkLayer
+            links={links}
+            bySlug={bySlug}
+            z={cam.z}
+            clickable={mode === 'edit' || mode === 'connect'}
+            sourceSlug={mode === 'connect' ? linkSource : null}
+            onEdit={setEditingLink}
+          />
           {scene.islands.map((i) =>
             renderIsland(i, {
               z: cam.z,
@@ -153,6 +209,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
               onIslandMove,
               onIslandCommit,
               onFleetOpen,
+              onIslandTap,
             }),
           )}
         </g>
@@ -179,6 +236,17 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
             setEditing(null);
           }}
           data-testid="mm-group-label-input"
+        />
+      )}
+
+      {editingLinkObj && editorAnchor && (
+        <LinkEditor
+          link={editingLinkObj}
+          x={editorAnchor.x}
+          y={editorAnchor.y}
+          onChange={(patch) => commitLinks(links.map((l) => (l.id === editingLinkObj.id ? { ...l, ...patch } : l)))}
+          onDelete={() => { commitLinks(links.filter((l) => l.id !== editingLinkObj.id)); setEditingLink(null); }}
+          onClose={() => setEditingLink(null)}
         />
       )}
     </>

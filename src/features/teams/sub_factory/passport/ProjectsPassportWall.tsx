@@ -311,8 +311,9 @@ export function ProjectsPassportWall({
 
 /** A passport cover — shared by the Overview tile and the Compare column
  *  header: clickable identity, warning badge + scan + export, meta chips, the
- *  two readiness axes as segmented level bars, golden gauge, trend. */
-function CoverBody({
+ *  two readiness axes as segmented level bars, golden gauge, trend.
+ *  Exported for reuse as the Mastermind project sidebar's header. */
+export function CoverBody({
   p, openable, onOpen, attention, onJumpKpi,
 }: {
   p: AppPassport;
@@ -421,8 +422,9 @@ function GoldenInk({ p }: { p: AppPassport }) {
 
 /** Cell renderer in Focus ink — segmented level bars for ordinals, brand icons
  *  with visible names for stack/tooling, blue "set up →" for meaningful gaps.
- *  Pips/bool keep the production widgets (their labels already read well). */
-function InkWallCell({ value }: { value: CellValue }) {
+ *  Pips/bool keep the production widgets (their labels already read well).
+ *  Exported for reuse in the Mastermind project sidebar. */
+export function InkWallCell({ value }: { value: CellValue }) {
   switch (value.kind) {
     case 'level':
     case 'band': {

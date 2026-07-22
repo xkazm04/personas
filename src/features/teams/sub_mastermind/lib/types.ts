@@ -70,9 +70,12 @@ export interface Camera {
   z: number;
 }
 
-/** Canvas interaction mode: view = pan/zoom only; edit = islands are
- *  draggable; group = drag draws a labelled organizational rectangle. */
-export type CanvasMode = 'view' | 'edit' | 'group';
+/** Canvas interaction mode (round 5 — Figma-like, edit-first):
+ *  edit = default; pan on empty sea, move islands by their header, move/resize
+ *  groups, open the project sidebar by header click.
+ *  group = drag draws a labelled organizational rectangle.
+ *  connect = click two projects to link them (styled, labelled lines). */
+export type CanvasMode = 'edit' | 'group' | 'connect';
 
 /** Common contract every canvas variant implements (prototype scaffold). */
 export interface VariantProps {
@@ -84,6 +87,8 @@ export interface VariantProps {
   onIslandCommit: (slug: string, x: number, y: number) => void;
   /** Fleet node clicked — open the CLI preview popover for this session. */
   onFleetOpen: (sessionId: string) => void;
+  /** Project header clicked (not dragged) — open the project sidebar. */
+  onProjectOpen: (slug: string) => void;
 }
 
 // Zoom bands — the single source of truth for level-of-detail. Round-3 split:
@@ -113,6 +118,17 @@ export interface GroupRect {
   y: number;
   w: number;
   h: number;
+}
+
+/** User-drawn connection between two projects (connect tool). */
+export interface UserLink {
+  id: string;
+  from: string;
+  to: string;
+  label: string;
+  dashed: boolean;
+  /** CSS colour (theme token or literal) from the short palette. */
+  color: string;
 }
 
 /** World-space bounding box of the scene, padded so fit() leaves shoreline room. */

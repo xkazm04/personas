@@ -25,9 +25,9 @@ const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2)
 
 const COPY = { empty: 'not set up' };
 
-export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen }: { island: Island } & IslandCtx) {
+export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
-  const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit });
+  const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   // Cluster extents depend on how many cells are occupied (8 dims stay within
   // r=±1 caps; 11 reach r=±2) — banner, dock, and halo track them.
   const ys = AXIAL.slice(0, island.nodes.length).map(([q, r]) => cellXY(q, r).y);
@@ -38,10 +38,11 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
   return (
     <g
       transform={`translate(${island.x} ${island.y})`}
-      style={{ opacity: dimmed ? 0.3 : 1, transition: 'opacity 200ms ease', cursor: mode === 'edit' ? 'move' : undefined }}
+      style={{ opacity: dimmed ? 0.3 : 1, transition: 'opacity 200ms ease', cursor: mode === 'connect' ? 'pointer' : undefined }}
       onPointerEnter={() => onHover(island.slug)}
       onPointerLeave={() => onHover(null)}
-      {...drag}
+      onClick={mode === 'connect' ? () => onIslandTap(island.slug) : undefined}
+      onPointerDown={mode === 'connect' ? (e) => e.stopPropagation() : undefined}
       data-testid={`mm-island-${island.slug}`}
     >
       {/* state halo behind the honeycomb — keeps the island recognizable when tiny */}
@@ -70,7 +71,13 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
         </text>
       )}
 
-      <IslandBanner island={island} z={z} band={band} topWorldY={topY - 10} />
+      <IslandBanner
+        island={island}
+        z={z}
+        band={band}
+        topWorldY={topY - 10}
+        handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
+      />
       <FleetDock fleet={island.fleet} z={z} yWorld={botY + 14} onOpen={onFleetOpen} />
     </g>
   );
