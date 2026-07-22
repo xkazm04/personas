@@ -617,7 +617,7 @@ export function InkWallCell({ value }: { value: CellValue }) {
     case 'cost': {
       if (value.state === 'missing') {
         return (
-          <span className="inline-flex flex-col gap-0.5 min-w-0" title={`No ${APP_COST_FILENAME} in the repo — the gear dispatches an agent to create it`}>
+          <span className="inline-flex flex-col gap-0.5 min-w-0" title={`No ${APP_COST_FILENAME} in the repo — the gear dispatches an agent to create it`} data-testid="app-cost-missing">
             <span className="typo-caption font-medium text-foreground/45">NA</span>
             <span className="typo-label text-foreground/35">no cost file</span>
           </span>
