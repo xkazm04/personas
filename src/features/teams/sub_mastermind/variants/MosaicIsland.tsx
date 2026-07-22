@@ -9,6 +9,9 @@ import { DIM_INK, mix, STATE_INK } from '../lib/ink';
 import { hexPoints } from '../lib/hex';
 import { FleetDock } from '../lib/FleetDock';
 import { IslandBanner } from '../lib/IslandBanner';
+import { mockStats } from '../lib/statsMock';
+import { StatGauges } from '../lib/StatGauges';
+import { StatStrip } from '../lib/StatStrip';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
 import type { DimNode, Island, ZoomBand } from '../lib/types';
@@ -25,7 +28,7 @@ const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2)
 
 const COPY = { empty: 'not set up' };
 
-export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey }: { island: Island } & IslandCtx) {
+export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, statsStyle }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   // Cluster extents depend on how many cells are occupied (8 dims stay within
@@ -79,7 +82,15 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
-      <FleetDock fleet={island.fleet} z={z} yWorld={botY + 14} onOpen={onFleetOpen} />
+      {statsStyle === 'strip' && <StatStrip stats={mockStats(island.slug)} z={z} yWorld={botY + 12} />}
+      {statsStyle === 'gauges' && <StatGauges stats={mockStats(island.slug)} z={z} yWorld={botY + 12} />}
+      <FleetDock
+        fleet={island.fleet}
+        z={z}
+        yWorld={statsStyle === 'gauges' ? botY + 96 : botY + 12}
+        screenOffset={statsStyle === 'strip' ? 56 : 14}
+        onOpen={onFleetOpen}
+      />
     </g>
   );
 }

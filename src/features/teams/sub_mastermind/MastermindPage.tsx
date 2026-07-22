@@ -22,7 +22,7 @@ import { deriveScene, type KpiRollup } from './lib/deriveScene';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { loadPositions, savePositions } from './lib/positions';
 import { ProjectSidebar } from './lib/ProjectSidebar';
-import type { CanvasMode, FleetNode } from './lib/types';
+import type { CanvasMode, FleetNode, StatsStyle } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 import { MastermindInverseGrid } from './variants/MastermindInverseGrid';
 
@@ -31,7 +31,17 @@ const COPY = {
   inverse: 'Inverse Grid',
   demo: 'demo data — no projects scanned yet',
   switcher: 'Mastermind prototype variant',
+  statsSwitcher: 'Stats panel style (prototype)',
+  statsStrip: 'Strip',
+  statsGauges: 'Gauges',
+  statsOff: 'No stats',
 };
+
+const STATS_TABS: Array<{ id: StatsStyle; label: string }> = [
+  { id: 'strip', label: COPY.statsStrip },
+  { id: 'gauges', label: COPY.statsGauges },
+  { id: 'off', label: COPY.statsOff },
+];
 
 type VariantId = 'mosaic' | 'inverse';
 const VARIANT_TABS: Array<{ id: VariantId; label: string }> = [
@@ -63,6 +73,7 @@ function MastermindInner() {
   const [overrides, setOverrides] = useState(loadPositions);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
+  const [statsStyle, setStatsStyle] = useState<StatsStyle>('strip');
 
   // Fleet sessions: the live-event listeners live in FleetGridPage only, so
   // off that page the store is a snapshot — refresh on mount + a slow poll.
@@ -156,11 +167,16 @@ function MastermindInner() {
 
   return (
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      <Canvas scene={positioned} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} />
+      <Canvas scene={positioned} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} statsStyle={statsStyle} />
 
       {/* prototype-only variant switcher */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
         <SegmentedTabs tabs={VARIANT_TABS} activeTab={variant} onTabChange={setVariant} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.switcher} />
+      </div>
+
+      {/* prototype-only stats treatment switcher */}
+      <div className="absolute top-3 left-3 z-10">
+        <SegmentedTabs tabs={STATS_TABS} activeTab={statsStyle} onTabChange={setStatsStyle} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.statsSwitcher} />
       </div>
 
       <CanvasToolbar mode={mode} onModeChange={setMode} />

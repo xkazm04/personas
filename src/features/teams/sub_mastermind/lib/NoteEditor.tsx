@@ -1,23 +1,30 @@
-// Note editor popover — text, three sizes, three fonts (each font button
-// renders in its own face so the choice is visible before committing), delete.
-// Commits live; Enter (without Shift) or Done closes.
+// Note editor popover — text, four sizes, three fonts, delete. The size
+// buttons render at PROPORTIONAL type sizes and the textarea previews the
+// chosen size+face live (capped so XL stays inside the dialog), so what you
+// pick is what lands on the canvas. Commits live; Enter (no Shift) closes.
 import { Check, Trash2 } from 'lucide-react';
 
 import { NOTE_FONT } from './ink';
+import { NOTE_SIZE_PX } from './notes';
 import type { CanvasNote, NoteFont, NoteSize } from './types';
 
 const COPY = { placeholder: 'Write a note…', done: 'Done', remove: 'Remove note' };
 
-const SIZES: Array<{ id: NoteSize; label: string }> = [
-  { id: 'sm', label: 'S' },
-  { id: 'md', label: 'M' },
-  { id: 'lg', label: 'L' },
+// Button font size ≈ the applied world size, scaled to fit a control row.
+const SIZES: Array<{ id: NoteSize; label: string; fs: number }> = [
+  { id: 'sm', label: 'S', fs: 11 },
+  { id: 'md', label: 'M', fs: 14 },
+  { id: 'lg', label: 'L', fs: 18 },
+  { id: 'xl', label: 'XL', fs: 22 },
 ];
 const FONTS: Array<{ id: NoteFont; label: string }> = [
   { id: 'inter', label: 'Inter' },
   { id: 'roboto', label: 'Roboto' },
   { id: 'caveat', label: 'Caveat' },
 ];
+
+/** Live textarea preview size — the real world px, capped for the dialog. */
+const previewPx = (size: NoteSize) => Math.min(34, NOTE_SIZE_PX[size]);
 
 export function NoteEditor({ note, x, y, onChange, onDelete, onClose }: {
   note: CanvasNote;
@@ -50,17 +57,27 @@ export function NoteEditor({ note, x, y, onChange, onDelete, onClose }: {
           if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onClose(); }
           if (e.key === 'Escape') onClose();
         }}
-        className="w-full px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-primary/15 text-foreground outline-none focus:border-primary/40 resize-none"
-        style={{ fontFamily: NOTE_FONT[note.font] }}
+        className="w-full px-2.5 py-1.5 rounded-input bg-background/70 border border-primary/15 text-foreground outline-none focus:border-primary/40 resize-none"
+        style={{ fontFamily: NOTE_FONT[note.font], fontSize: previewPx(note.size), lineHeight: 1.25 }}
         data-testid="mm-note-text-input"
       />
-      <div className="flex items-center gap-1">
+      {/* sizes — buttons scale with the size they apply, baseline-aligned */}
+      <div className="flex items-end gap-1">
         {SIZES.map((s) => (
-          <button key={s.id} type="button" onClick={() => onChange({ size: s.id })} aria-pressed={note.size === s.id} className={chip(note.size === s.id)}>
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => onChange({ size: s.id })}
+            aria-pressed={note.size === s.id}
+            className={chip(note.size === s.id)}
+            style={{ fontSize: s.fs, lineHeight: 1.1 }}
+          >
             {s.label}
           </button>
         ))}
-        <span className="w-px h-4 bg-primary/15 mx-1" aria-hidden />
+      </div>
+      {/* fonts — own row so all three faces fit comfortably */}
+      <div className="flex items-center gap-1">
         {FONTS.map((f) => (
           <button
             key={f.id}
@@ -68,7 +85,7 @@ export function NoteEditor({ note, x, y, onChange, onDelete, onClose }: {
             onClick={() => onChange({ font: f.id })}
             aria-pressed={note.font === f.id}
             className={chip(note.font === f.id)}
-            style={{ fontFamily: NOTE_FONT[f.id] }}
+            style={{ fontFamily: NOTE_FONT[f.id], fontSize: 14 }}
           >
             {f.label}
           </button>

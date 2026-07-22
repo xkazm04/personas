@@ -5,6 +5,8 @@ import { mix, MONO } from './ink';
 import { zoomBand } from './types';
 
 export function ZoomBadge({ z }: { z: number }) {
+  // Debug instrumentation — dev builds only.
+  if (!import.meta.env.DEV) return null;
   return (
     <div
       className="absolute top-3 right-3 z-10 pointer-events-none px-2.5 py-1.5 rounded-interactive"

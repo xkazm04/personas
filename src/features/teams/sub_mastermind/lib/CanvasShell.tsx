@@ -18,7 +18,7 @@ import { NoteLayer } from './NoteLayer';
 import { Route } from './Route';
 import { ZoomBadge } from './ZoomBadge';
 import { ZoomControls } from './ZoomControls';
-import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
+import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type GroupRect, type Island, type StatsStyle, type UserLink, type VariantProps, type ZoomBand } from './types';
 import { useCanvasCamera } from './useCanvasCamera';
 
 const COPY = { labelPlaceholder: 'Group label…', defaultLabel: 'Group' };
@@ -46,9 +46,11 @@ export interface IslandCtx {
   onIslandMenu: (slug: string, e: React.MouseEvent) => void;
   /** Dimension key highlighted for THIS island (context-menu row hover). */
   highlightKey: string | null;
+  /** Stats-panel treatment (prototype A/B). */
+  statsStyle: StatsStyle;
 }
 
-export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, statsStyle, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -329,6 +331,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
               onIslandFocus,
               onIslandMenu,
               highlightKey: highlight?.slug === i.slug ? highlight.key : null,
+              statsStyle,
             }),
           )}
           <NoteLayer notes={notes} z={cam.z} mode={mode} onNotesChange={commitNotes} onEdit={setEditingNote} />

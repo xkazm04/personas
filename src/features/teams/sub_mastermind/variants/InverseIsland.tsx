@@ -6,6 +6,9 @@ import { DimTile } from '../lib/DimTile';
 import { mix, scoreInkVar, STATE_INK } from '../lib/ink';
 import { FleetDock } from '../lib/FleetDock';
 import { IslandBanner } from '../lib/IslandBanner';
+import { mockStats } from '../lib/statsMock';
+import { StatGauges } from '../lib/StatGauges';
+import { StatStrip } from '../lib/StatStrip';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
 import type { Island } from '../lib/types';
@@ -22,7 +25,7 @@ const RING: Array<[number, number]> = [
   [0, -2], [1, -2], [-1, -2],
 ];
 
-export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey }: { island: Island } & IslandCtx) {
+export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, statsStyle }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   const zoomedIn = bandGte(band, 'near');
@@ -91,7 +94,15 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
-      <FleetDock fleet={island.fleet} z={z} yWorld={botY + 16} onOpen={onFleetOpen} />
+      {statsStyle === 'strip' && <StatStrip stats={mockStats(island.slug)} z={z} yWorld={botY + 14} />}
+      {statsStyle === 'gauges' && <StatGauges stats={mockStats(island.slug)} z={z} yWorld={botY + 14} />}
+      <FleetDock
+        fleet={island.fleet}
+        z={z}
+        yWorld={statsStyle === 'gauges' ? botY + 98 : botY + 14}
+        screenOffset={statsStyle === 'strip' ? 56 : 14}
+        onOpen={onFleetOpen}
+      />
     </g>
   );
 }

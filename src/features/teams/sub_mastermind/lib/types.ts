@@ -77,7 +77,10 @@ export interface Camera {
  *  connect = click two projects to link them (styled, labelled lines). */
 export type CanvasMode = 'edit' | 'group' | 'connect' | 'note';
 
-export type NoteSize = 'sm' | 'md' | 'lg';
+export type NoteSize = 'sm' | 'md' | 'lg' | 'xl';
+
+/** Prototype toggle for the per-island stats panel treatments (round 8). */
+export type StatsStyle = 'strip' | 'gauges' | 'off';
 export type NoteFont = 'inter' | 'roboto' | 'caveat';
 
 /** Free text note placed on the canvas (note tool). World coordinates. */
@@ -102,6 +105,8 @@ export interface VariantProps {
   onFleetOpen: (sessionId: string) => void;
   /** Project header clicked (not dragged) — open the project sidebar. */
   onProjectOpen: (slug: string) => void;
+  /** Which stats-panel treatment to render (prototype A/B). */
+  statsStyle: StatsStyle;
 }
 
 // Zoom bands — the single source of truth for level-of-detail. Round-3 split:

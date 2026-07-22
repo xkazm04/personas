@@ -8,18 +8,21 @@ import type { FleetNode } from './types';
 const R = 9;
 const GAP = 26;
 
-export function FleetDock({ fleet, z, yWorld, onOpen }: {
+export function FleetDock({ fleet, z, yWorld, onOpen, screenOffset = 14 }: {
   fleet: FleetNode[];
   z: number;
   /** World-space Y anchor (below the island's visual bottom). */
   yWorld: number;
   onOpen: (sessionId: string) => void;
+  /** Screen-px offset below the anchor — lets the dock clear a stats strip
+   *  that counter-scales from the same anchor. */
+  screenOffset?: number;
 }) {
   if (fleet.length === 0) return null;
   const w = (fleet.length - 1) * GAP;
   return (
     <g transform={`translate(0 ${yWorld}) scale(${1 / z})`}>
-      <g transform="translate(0 14)">
+      <g transform={`translate(0 ${screenOffset})`}>
         {fleet.map((f, i) => {
           const ink = FLEET_INK[f.state] ?? 'var(--status-neutral)';
           const cx = -w / 2 + i * GAP;
