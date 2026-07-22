@@ -2,7 +2,11 @@
  * Lifecycle hook orchestrating the post-build test/approve/reject/refine/promote flow.
  *
  * After the matrix build reaches draft_ready, this hook handles:
- *   1. Starting a real API test via testBuildDraft (executes each tool against live APIs)
+ *   1. Starting a test via testBuildDraft. Credential-backed tools are executed
+ *      against live APIs with real credentials; built-in platform tools
+ *      (database, messaging, file, vector-db, CLI-native web) are marked
+ *      available-at-runtime WITHOUT a live call — they are not exercised here,
+ *      so their result is "available", not "verified".
  *   2. Listening for streaming per-tool test results via Tauri events
  *   3. Promoting a tested draft to production (credential coverage + updatePersona)
  *   4. Rejecting a test and returning to draft_ready for refinement
@@ -107,7 +111,8 @@ export function useLifecycle({
   }, []);
 
   // -- handleStartTest -------------------------------------------------------
-  // Calls testBuildDraft which executes each tool against real APIs
+  // Calls testBuildDraft: credential-backed tools run against real APIs; built-in
+  // platform tools are reported available-at-runtime, not executed (see docblock).
 
   const handleStartTest = useCallback(async () => {
     // Always read fresh from the store — closure `personaId` can be stale
@@ -255,7 +260,32 @@ export function useLifecycle({
           total_count: 8,
         });
 
-        sendAppNotification('Agent Promoted', 'Your agent has been promoted to production and is ready to use.').catch(silentCatch("lifecycle:promoted"));
+        // Be honest about readiness. The atomic promote reports connectors that
+        // still need a credential and entities that failed to create; claiming
+        // "ready to use" while a persona is being marked needs_credentials is the
+        // exact silent failure a non-technical founder gets burned by (UAT
+        // 2026-07-20: promoted "ready to use", then the agent had no way into
+        // Gmail). Name what's outstanding instead.
+        const needsSetup = result.connectors_needing_setup ?? [];
+        const entityErrors = result.entity_errors ?? [];
+        if (needsSetup.length > 0 || entityErrors.length > 0) {
+          const parts: string[] = [];
+          if (needsSetup.length > 0) {
+            parts.push(
+              `Connect ${needsSetup.length === 1 ? '1 service' : `${needsSetup.length} services`} before it can run: ${needsSetup.join(', ')}.`,
+            );
+          }
+          if (entityErrors.length > 0) {
+            parts.push(
+              `${entityErrors.length === 1 ? '1 item' : `${entityErrors.length} items`} couldn't be set up: ${entityErrors.map((e) => e.entity_name).join(', ')}.`,
+            );
+          }
+          sendAppNotification('Agent Promoted — needs setup', parts.join(' ')).catch(
+            silentCatch('lifecycle:promoted-needs-setup'),
+          );
+        } else {
+          sendAppNotification('Agent Promoted', 'Your agent has been promoted to production and is ready to use.').catch(silentCatch("lifecycle:promoted"));
+        }
         return {
           success: true,
           triggersCreated: result.triggers_created,

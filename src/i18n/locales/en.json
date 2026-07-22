@@ -600,7 +600,8 @@
     "development": "Development",
     "manage": "Manage",
     "lifecycle": "Lifecycle",
-    "competition": "Competition"
+    "competition": "Competition",
+    "mastermind": "Mastermind"
   },
   "home": {
     "get_started": {

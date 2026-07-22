@@ -382,7 +382,7 @@ pub async fn run_tool_tests(
                     "latency_ms": 0,
                     "error": null,
                     "connector": null,
-                    "output_preview": "Built-in platform tool — auto-verified",
+                    "output_preview": "Built-in platform tool — available at runtime, not executed in this test",
                 }));
             }
         }
@@ -406,7 +406,7 @@ pub async fn run_tool_tests(
                     "latency_ms": 0,
                     "error": null,
                     "connector": cname,
-                    "output_preview": "Built-in platform connector — auto-verified",
+                    "output_preview": "Built-in platform connector — available at runtime, not executed in this test",
                 }));
                 continue;
             }
@@ -518,7 +518,14 @@ pub async fn run_tool_tests(
             .is_some_and(|c| c.starts_with("personas_") || c == "builtin");
 
         let result = if is_cli_native || is_builtin_platform {
-            // CLI-native tools and built-in platform connectors auto-pass
+            // CLI-native + built-in platform tools are reported available rather
+            // than executed: there is no live call here, so the preview must not
+            // imply verification. Claiming "tested against live data" for a DB/
+            // messaging tool that was never run is a trust-destroying false green
+            // (UAT 2026-07-20: "a checkmark that means nothing is worse than no
+            // checkmark"). NOTE: these still count toward `passed`/the promote
+            // gate — whether an unexercised built-in should count as a pass is a
+            // separate, gate-affecting decision left to a follow-up.
             passed += 1;
             tool_runner::ToolTestResult {
                 tool_name: tool_name.to_string(),
@@ -527,7 +534,9 @@ pub async fn run_tool_tests(
                 latency_ms: 0,
                 error: None,
                 connector: connector.clone(),
-                output_preview: Some(description),
+                output_preview: Some(format!(
+                    "{description} — available at runtime, not executed in this test"
+                )),
             }
         } else if curl_cmd.is_empty() {
             skipped += 1;
