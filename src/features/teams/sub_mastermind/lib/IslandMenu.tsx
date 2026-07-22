@@ -35,7 +35,7 @@ export function IslandMenu({ island, x, y, onHoverDim, onClose }: {
   const items = [...island.nodes].sort((a, b) => a.label.localeCompare(b.label));
   return (
     <div
-      className="absolute z-30 w-[236px] py-1.5 rounded-card border border-primary/20 bg-secondary/95 shadow-elevation-3 overflow-hidden"
+      className="absolute z-30 w-[307px] py-1.5 rounded-card border border-primary/20 bg-secondary/95 shadow-elevation-3 overflow-hidden"
       style={{ left: x, top: y }}
       onPointerDown={(e) => e.stopPropagation()}
       onPointerLeave={() => onHoverDim(null)}
@@ -59,7 +59,7 @@ export function IslandMenu({ island, x, y, onHoverDim, onClose }: {
               >
                 <MenuGlyph node={n} />
                 <span className={`typo-caption ${absent ? 'text-foreground/50' : 'text-foreground/90'}`}>{n.label}</span>
-                <span className="ml-auto typo-label text-foreground/45 truncate max-w-[92px]" style={absent ? { color: mix('var(--muted-foreground)', 80) } : undefined}>
+                <span className="ml-auto typo-label text-foreground/45 truncate max-w-[160px]" style={absent ? { color: mix('var(--muted-foreground)', 80) } : undefined}>
                   {n.detail ?? (absent ? COPY.empty : '')}
                 </span>
               </button>

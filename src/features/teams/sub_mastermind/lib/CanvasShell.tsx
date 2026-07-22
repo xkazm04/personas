@@ -137,7 +137,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
     const rect = svgRef.current?.getBoundingClientRect();
     setMenu({
       slug,
-      x: Math.min(p.x, (rect?.width ?? 600) - 248),
+      x: Math.min(p.x, (rect?.width ?? 600) - 320),
       y: Math.min(p.y, (rect?.height ?? 400) - 340),
     });
   };
