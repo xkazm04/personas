@@ -2,6 +2,14 @@
 
 ## Active
 
+
+### passport-unified-setup-r19 — unified Evals/Security/Tests/Migrations flow, Fleet as engine — session fable-5 (cockpit line)
+- Started: 2026-07-22. Status: COMMITTED 87314c14b (passportFleet.tsx + RowSetupModal.tsx) + pushed master.
+- Paths: src/features/teams/sub_factory/passport/{passportFleet.tsx NEW, RowSetupModal.tsx NEW, ProjectsPassportWall.tsx INTEGRATION UNCOMMITTED}.
+- What: always-visible setup icon (0.10 opacity) on the 4 rows at ANY level -> full 3-direction modal (scan-derived applicableDeployActions lead w/ 'from scan' badge, generic Scan/Harden/Gate fill; custom instructions) -> Deploy to FLEET (repo root, passport:<row>:<slug> key, dedup); live session -> state-tinted TerminalSquare on the cell -> PassportTerminalModal (Mastermind FleetPreviewPanel composition in BaseModal, reply row).
+- ⚠ COORDINATION w/ passport-wall-followups (entry above): my ProjectsPassportWall.tsx hunks (UNIFIED_ROWS split from IMPROVABLE_ROWS, fleetSessions hook, setupModal/terminalKey state, unified-* cell branch, modals at wall root) are INTERLEAVED with your uncommitted wall work in the SAME file. Whoever commits the wall next, land both together and attribute; note SkillsModal.tsx + skillTasks.ts are still untracked — committing ImproveCell without them breaks master.
+- Verified live: 44 setup icons / 11 projects, modal gating, evals shows scan-derived direction first. Real Fleet dispatch NOT fired in verification (real repo + skip-permissions — user's call during review).
+
 ### refactor-bughunt-ml-sweep — docs/harness/refactor-bughunt-2026-07-10 remaining 310 Medium/Low findings — session sonnet-5 — COMPLETED
 - Started: 2026-07-17. Completed: 2026-07-17. Commits: 970feb3d8..b4930ee02 (34 commits, ~5 batches/wave × 8 waves + 1 mid-wave lint/i18n-gap fixup). All 8 waves pushed and gate-verified individually: Wave1 970feb3d8..6abe426ad, Wave2 ..8e4b00a73, Wave3 ..960f0041d, Wave4 ..893242636 (caught+fixed a real regression in tauriInvoke.ts mid-wave — see below), Wave5 ..5607fdfd2, Wave6 ..6a61cf18c, Wave7 ..a123d9026, Wave8 ..b4930ee02.
 - Method: 5 parallel general-purpose agents per wave (one per 1-2 harness report files), each independently verifying a finding is still open against CURRENT code (not trusting the frozen 2026-07-10 report) before fixing, explicitly forbidden from running any git command. Orchestrator (this session) collected each wave's diffs, ran the full gate suite (cargo check / tsc / vitest full-suite / i18n coverage+untranslated), committed per-batch, then pushed once the whole wave was green.
@@ -1061,6 +1069,13 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### passport-wall-followups — row-info popups, rescan confirm, context-coverage scan modes, skills counts + LLM adopt/share module — session fable-5
+- Started+completed 2026-07-22. Commit `e7640175d` on master.
+- Shipped: (1) Compare row labels are click-targets → meaning popups (RowInfoLabel; RowSpec.info on every row). (2) Header Rescan behind a confirm popover. (3) "Context graph"→"Context coverage" rename + cell popover offers incremental/full scan modes (runContextScan(slug, delta) → dev_tools_scan_codebase delta_mode, same as Context Map). (4) Skills cell → shared/specific tallies (new 'counts' CellValue) + full SkillsModal replacing SkillsSection: Adopt-from-library / Share-to-library, BOTH LLM-backed Dev-runner tasks (deployNow; prompts in improve/skillTasks.ts — adopt customizes to codebase, share generalizes into ~/.claude/skills); cell locks until TASK_EXEC_STATUS terminal → eventBridge endByRun → wall re-derive. No new Rust command needed (CLI runs with permissions bypassed, so the share task writes to ~/.claude/skills directly) — the originally-planned skill_files_share_to_global was dropped when the user redirected adoption/share through the LLM.
+- GOTCHA (found via live :17320 verification): reading `e.currentTarget.getBoundingClientRect()` INSIDE a setState updater crashes/no-ops — currentTarget is detached once the handler returns; capture the rect before setState. Also: the harness /eval is fire-and-forget → stash results in a hidden #__probe div and read via /query.
+- **ProjectsPassportWall.tsx left UNCOMMITTED**: co-mingled with a concurrent session's in-flight R19 work (passportFleet.tsx + RowSetupModal.tsx, both untracked). My three wall edits (RowInfoLabel import, rail usage, 'counts' case in InkWallCell) must ride along with that file's next commit — do NOT revert them.
+- Paths: src/features/teams/sub_factory/{ProjectsLayer.tsx, passport/** except ProjectsPassportWall.tsx}, sub_cockpit/cockpitGlyphs.tsx (counts case), docs/features/plugins/dev tools/dev-tools.md.
 
 ### athena-p4-p1 — bench follow-through: constitution v44 + P4 routing + P1 partition core — session fable-5
 - Started+completed 2026-07-14. Merged to master `d6065177e` (ed443a4b3 constitution v44; 31c715589 P4 routing + P1 backend; f3b8db2bd P1 frontend partition). Bench campaign itself: corpus v2 a61dae780, isolation e32c0003f, report b93e98ed9 (s-high-r 96.5% > o-base 93.9%).
