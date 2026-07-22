@@ -2019,7 +2019,7 @@ function Body(props: BodyProps) {
                     onOpenInBrain={handleOpenInBrain}
                   />
                 )}
-                <div className="relative group">
+                <div className="space-y-1.5">
                   {/*
                     We intentionally do NOT render the live token stream
                     here — the token-by-token prose reflowed constantly and
@@ -2046,16 +2046,23 @@ function Body(props: BodyProps) {
                       <TypingDots />
                     </span>
                   </Bubble>
-                  <button
-                    type="button"
-                    onClick={handleInterrupt}
-                    className="absolute -top-2 -right-2 rounded-full bg-foreground/80 hover:bg-foreground text-background w-6 h-6 flex items-center justify-center shadow-elevation-2 transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
-                    aria-label={t.plugins.companion.stop_turn}
-                    title={t.plugins.companion.stop_turn}
-                    data-testid="companion-stop-turn"
-                  >
-                    <Square className="w-3 h-3" fill="currentColor" />
-                  </button>
+                  {/* Always-visible interrupt pill: the old corner icon was
+                      opacity-0 until hover, so users sat through slow turns
+                      without realizing they could stop the reply. Same
+                      interrupt path + testid; only discoverability changes. */}
+                  <div className="flex justify-start">
+                    <button
+                      type="button"
+                      onClick={handleInterrupt}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive bg-foreground/10 hover:bg-foreground/15 text-foreground/85 typo-caption font-medium shadow-elevation-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30"
+                      aria-label={t.plugins.companion.stop_turn}
+                      title={t.plugins.companion.stop_turn}
+                      data-testid="companion-stop-turn"
+                    >
+                      <Square className="w-3 h-3" fill="currentColor" />
+                      {t.plugins.companion.stop_turn}
+                    </button>
+                  </div>
                 </div>
                 {/*
                   Live narration log (D2): the dimmed history of beats +
