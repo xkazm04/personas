@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { RefreshCw, Target } from 'lucide-react';
 
-import { setStandardsConfig, scanCodebase, createTask, executeTask, updateProject, listContexts } from '@/api/devTools/devTools';
+import { setStandardsConfig, scanCodebase, createTask, executeTask, updateProject, listContexts, getProjectFavicon } from '@/api/devTools/devTools';
 import { listKpis } from '@/api/devTools/kpis';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
@@ -125,6 +125,26 @@ export function ProjectsLayer({
     return () => { alive = false; };
   }, [passports]);
 
+  // R21 — real app favicons for the covers (probed from each project's repo);
+  // covers fall back to the status dot where none exists.
+  const [faviconBySlug, setFaviconBySlug] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    if (rawByProject.size === 0) return;
+    let alive = true;
+    void Promise.all(
+      [...rawByProject.entries()].map(async ([slug, raw]) => {
+        const url = raw.project.root_path ? await getProjectFavicon(raw.project.root_path) : null;
+        return [slug, url] as const;
+      }),
+    )
+      .then((entries) => {
+        if (!alive) return;
+        setFaviconBySlug(new Map(entries.filter((e): e is [string, string] => e[1] !== null)));
+      })
+      .catch(silentCatch('ProjectsLayer:favicons'));
+    return () => { alive = false; };
+  }, [rawByProject]);
+
   // Off-track (crit) KPIs per project — folds the old AttentionBand into the
   // matrix as a per-project warning badge on each cover.
   const attentionByProject = useMemo(() => {
@@ -181,7 +201,7 @@ export function ProjectsLayer({
         </div>
       ) : (
         <ImproveProvider value={improve}>
-          <ProjectsPassportWall passports={passports} openSlugs={openSlugs} onOpen={onOpen} attentionByProject={attentionByProject} onJumpKpi={onJumpKpi} headerStats={headerStats} />
+          <ProjectsPassportWall passports={passports} openSlugs={openSlugs} onOpen={onOpen} attentionByProject={attentionByProject} onJumpKpi={onJumpKpi} headerStats={headerStats} faviconBySlug={faviconBySlug} />
           <ImprovePlanPanel open={showPlan} onClose={() => setShowPlan(false)} />
         </ImproveProvider>
       )}

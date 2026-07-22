@@ -461,6 +461,11 @@ export function parseCompetitionSlotDiffStats(
 // Context Groups
 // ============================================================================
 
+/** R21 — the project's favicon as a data URL (well-known frontend/Tauri
+ *  locations probed on the Rust side); null when none exists. */
+export const getProjectFavicon = (rootPath: string) =>
+  safeInvoke<string | null>(null, "dev_tools_get_project_favicon", { rootPath });
+
 export const listContextGroups = (projectId: string) =>
   safeInvoke<DevContextGroup[]>([], "dev_tools_list_context_groups", { projectId });
 

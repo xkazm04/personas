@@ -3557,3 +3557,52 @@ pub fn dev_tools_probe_repo_evidence(
 
     Ok(ev)
 }
+
+/// R21 — probe a project's well-known favicon locations (frontend + Tauri
+/// conventions) and return the first hit as a data URL, so the Passport wall
+/// can show the real app icon instead of a colored dot. `None` when nothing
+/// suitable exists — the wall falls back to its status dot.
+#[tauri::command]
+pub async fn dev_tools_get_project_favicon(root_path: String) -> Result<Option<String>, String> {
+    use base64::Engine as _;
+    const CANDIDATES: &[&str] = &[
+        "public/favicon.svg",
+        "public/favicon.ico",
+        "public/favicon.png",
+        "public/favicon-32x32.png",
+        "public/icon.svg",
+        "public/icon.png",
+        "src/app/favicon.ico",
+        "src/app/icon.svg",
+        "src/app/icon.png",
+        "app/favicon.ico",
+        "app/icon.png",
+        "static/favicon.png",
+        "static/favicon.ico",
+        "src-tauri/icons/32x32.png",
+        "favicon.ico",
+    ];
+    // A favicon larger than this is not a favicon; skip rather than ship it
+    // over IPC for every wall render.
+    const MAX_BYTES: u64 = 262_144;
+    let root = std::path::Path::new(&root_path);
+    if !root.is_dir() {
+        return Ok(None);
+    }
+    for rel in CANDIDATES {
+        let p = root.join(rel);
+        let Ok(meta) = std::fs::metadata(&p) else { continue };
+        if !meta.is_file() || meta.len() == 0 || meta.len() > MAX_BYTES {
+            continue;
+        }
+        let Ok(bytes) = std::fs::read(&p) else { continue };
+        let mime = match p.extension().and_then(|e| e.to_str()) {
+            Some("svg") => "image/svg+xml",
+            Some("ico") => "image/x-icon",
+            _ => "image/png",
+        };
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+        return Ok(Some(format!("data:{mime};base64,{b64}")));
+    }
+    Ok(None)
+}

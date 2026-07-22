@@ -7,8 +7,10 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { saveKpiAssessment } from '@/api/devTools/kpis';
 
-import { projectKpis, applyEdit, type KpiEdit, type MockKpi, type MockProject } from './factoryModel';
+import { projectKpis, applyEdit, collectKpiAttention, type KpiEdit, type MockKpi, type MockProject } from './factoryModel';
 import { Breadcrumb } from './factoryPrimitives';
+import { FactoryBreadcrumb } from './FactoryBreadcrumb';
+import { INK } from './passport/passportInk';
 import { ProjectsLayer } from './ProjectsLayer';
 import { GroupKpiLayer } from './GroupKpiLayer';
 import { KpiConsole } from './KpiConsole';
@@ -113,7 +115,25 @@ export function FactoryShell({
     layerKey = `groups:${project.id}`;
     content = (
       <>
-        <Breadcrumb trail={[{ label: 'Projects', onClick: () => setProjectId(null) }, { label: project.name }]} />
+        {(() => {
+          const hueFor = (pj: MockProject) => (collectKpiAttention(pj).length > 0 ? INK.red : INK.emerald);
+          const noteFor = (pj: MockProject) => {
+            const n = collectKpiAttention(pj).length;
+            return n > 0 ? `${n} off-track` : 'healthy';
+          };
+          return (
+            <FactoryBreadcrumb
+              root="Projects"
+              onRoot={() => setProjectId(null)}
+              leaf={{
+                label: project.name,
+                hue: hueFor(project),
+                siblings: projects.map((pj) => ({ id: pj.id, label: pj.name, note: noteFor(pj), hue: hueFor(pj) })),
+                onSelect: (id) => { setProjectId(id); setGroupId(null); setKpiId(null); },
+              }}
+            />
+          );
+        })()}
         <p className="typo-caption mb-3">{project.stack}</p>
         {/* L2 restructure (2026-07): four ink tabs — KPIs (proposals queue +
             the matrix, keeping the L3/L4 drill) · Context map · Observability ·

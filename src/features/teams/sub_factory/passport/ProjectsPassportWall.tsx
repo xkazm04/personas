@@ -92,6 +92,7 @@ export function ProjectsPassportWall({
   attentionByProject,
   onJumpKpi,
   headerStats,
+  faviconBySlug,
 }: {
   passports: AppPassport[];
   openSlugs?: Set<string>;
@@ -103,6 +104,8 @@ export function ProjectsPassportWall({
   /** R18 — per-slug header stats (contexts count, KPI pass rate) computed by
    *  the host; the cover renders 0/dim placeholders when absent. */
   headerStats?: Map<string, { contexts: number; kpiPassed: number; kpiTotal: number }>;
+  /** R21 — per-slug favicon data URLs; covers fall back to the status dot. */
+  faviconBySlug?: Map<string, string>;
 }) {
   const reduce = useReducedMotion();
   const [view, setView] = useState<WallView>('overview');
@@ -153,6 +156,7 @@ export function ProjectsPassportWall({
     attention: attentionByProject?.get(p.identity.slug) ?? [],
     onJumpKpi,
     stats: headerStats?.get(p.identity.slug) ?? null,
+    favicon: faviconBySlug?.get(p.identity.slug) ?? null,
   });
 
   return (
@@ -428,7 +432,7 @@ function StackStrip({ p, size = 13 }: { p: AppPassport; size?: number }) {
 }
 
 export function CoverBody({
-  p, openable, onOpen, attention, onJumpKpi, stats,
+  p, openable, onOpen, attention, onJumpKpi, stats, favicon = null,
 }: {
   p: AppPassport;
   openable: boolean;
@@ -436,6 +440,8 @@ export function CoverBody({
   attention: WarningItem[];
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
   stats: HeaderStatsShape | null;
+  /** Real app favicon (data URL); null → the worst-state dot stays. */
+  favicon?: string | null;
 }) {
   const worst = scoreInk(Math.min(p.automationReadiness.score, p.productionReadiness.score));
   const trend = trendDelta(p.identity.slug)?.golden ?? 0;
@@ -455,7 +461,11 @@ export function CoverBody({
     <>
       {/* identity + production affordances + stack strip */}
       <div className="flex items-center gap-1.5 min-w-0">
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} aria-hidden />
+        {favicon ? (
+          <img src={favicon} alt="" className="w-4 h-4 rounded-[3px] shrink-0" data-testid="cover-favicon" aria-hidden />
+        ) : (
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} aria-hidden />
+        )}
         {openable ? (
           <button type="button" onClick={() => onOpen!(p.identity.slug)} title={p.identity.purpose} className="group/cov inline-flex items-center gap-1 min-w-0 text-left">
             <span className="typo-body font-semibold tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>

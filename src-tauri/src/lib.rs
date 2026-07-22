@@ -3216,6 +3216,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_get_portfolio_health,
             commands::infrastructure::dev_tools::dev_tools_get_tech_radar,
             commands::infrastructure::dev_tools::dev_tools_get_risk_matrix,
+            commands::infrastructure::dev_tools::dev_tools_get_project_favicon,
             // Twin plugin -- profile CRUD (P0)
             commands::infrastructure::twin::twin_list_profiles,
             commands::infrastructure::twin::twin_get_profile,
