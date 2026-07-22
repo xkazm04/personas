@@ -15,6 +15,7 @@ import { applicableDeployActions } from './deployActions';
 import { connectorSpecFor } from './connectors';
 import { ImprovePopover } from './ImprovePopover';
 import { DeployPopover } from './DeployPopover';
+import { SkillsModal } from './SkillsModal';
 
 // Rows whose improve action is a pure Tier-0 config toggle (ImprovePopover).
 // Security moved to the deploy/scan path (DeployPopover) so it can offer a real
@@ -32,10 +33,13 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
 
   const raw = engine?.getRaw(slug);
   const isStandards = STANDARDS_ROWS.has(rowKey);
+  const isSkills = rowKey === 'skills';
   const hasStandards = isStandards && raw ? applicableStandardsActions(raw.project.standards_config).length > 0 : false;
   const hasDeploy = !isStandards && applicableDeployActions(rowKey, passport).length > 0; // LLM-upgradeable
   const hasConnector = !isStandards && Boolean(connectorSpecFor(rowKey)?.applicable(passport));
-  const hasSkills = !isStandards && rowKey === 'skills' && (raw?.skillsToAdd?.length ?? 0) > 0;
+  // The skills cell always opens its module — even with nothing to adopt, the
+  // Share direction (project skill → library) may still apply.
+  const hasSkills = isSkills && Boolean(raw);
 
   if (!engine || (!hasStandards && !hasDeploy && !hasConnector && !hasSkills)) return <>{children}</>;
 
@@ -83,9 +87,11 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
           <Sparkles className="w-3 h-3 flex-shrink-0 text-primary opacity-0 group-hover/imp:opacity-70 transition-opacity" aria-hidden />
         </button>
       )}
-      {open && (isStandards
-        ? <ImprovePopover slug={slug} rowKey={rowKey} anchor={anchor} onClose={() => setOpen(false)} />
-        : <DeployPopover slug={slug} rowKey={rowKey} anchor={anchor} onClose={() => setOpen(false)} />)}
+      {open && (isSkills
+        ? <SkillsModal slug={slug} onClose={() => setOpen(false)} />
+        : isStandards
+          ? <ImprovePopover slug={slug} rowKey={rowKey} anchor={anchor} onClose={() => setOpen(false)} />
+          : <DeployPopover slug={slug} rowKey={rowKey} anchor={anchor} onClose={() => setOpen(false)} />)}
     </>
   );
 }

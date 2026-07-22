@@ -48,7 +48,7 @@ function levelFromScore(score: number): AutomationLevel {
 export function derivePassportFromMetadata(
   meta: CrossProjectProjectMetadata,
   project: DevProject,
-  opts?: { hasSkills?: boolean; evidence?: RepoEvidence | null },
+  opts?: { hasSkills?: boolean; evidence?: RepoEvidence | null; skillCounts?: { reused: number; own: number } },
 ): AppPassport {
   const hasSkills = Boolean(opts?.hasSkills);
   // Deep evidence (D1) — real file signals from the repo probe. Null on older
@@ -167,7 +167,7 @@ export function derivePassportFromMetadata(
 
   // -- honest blockers (feed the Wall's "Why it's not ready" band) ------------
   const autoBlockers: string[] = [];
-  if (contextGraph !== 'full') autoBlockers.push('Context graph incomplete — rescan to map the whole repo');
+  if (contextGraph !== 'full') autoBlockers.push('Context coverage incomplete — rescan to map the whole repo');
   if (!selfVerify.test) autoBlockers.push('No automated test signal an agent can self-verify against');
   if (!aiInWorkflow) autoBlockers.push('No automated PR / team pipeline wired');
   if (!hasManifest) autoBlockers.push('No standards & branching policy set');
@@ -226,6 +226,7 @@ export function derivePassportFromMetadata(
         manifest: hasManifest,
         evals: evalsLevel,
         skills: hasSkills,
+        skillCounts: opts?.skillCounts,
       },
       selfVerify,
       aiInWorkflow,

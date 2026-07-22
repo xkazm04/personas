@@ -34,7 +34,7 @@ export const DEPLOY_ACTIONS: DeployAction[] = [
     id: 'context-scan',
     row: 'context',
     label: 'Run context scan',
-    hint: 'Map the repo into the context graph so agents understand it',
+    hint: 'Map the repo into contexts so agents understand it — incremental only re-derives what changed since the last scan',
     kind: 'scan',
     applicable: (p) => p.automationReadiness.artifacts.contextGraph !== 'full',
   },

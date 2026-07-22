@@ -86,6 +86,11 @@ export interface PassportArtifacts {
   manifest: boolean;
   evals: EvalsLevel;
   skills: boolean;
+  /** Skill tallies: `reused` = the name also exists in the global library or a
+   *  sibling project; `own` = specific to this codebase. Absent on derives that
+   *  didn't fetch skill lists (projection previews) — the row falls back to the
+   *  boolean `skills`. */
+  skillCounts?: { reused: number; own: number };
 }
 export interface PassportSelfVerify {
   build: boolean;

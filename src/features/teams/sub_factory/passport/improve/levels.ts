@@ -30,7 +30,7 @@ interface LadderDef {
 
 const LADDERS: Record<string, LadderDef> = {
   context: {
-    title: 'Context graph', scale: GRAPH_SCALE, label: GRAPH_LABEL,
+    title: 'Context coverage', scale: GRAPH_SCALE, label: GRAPH_LABEL,
     current: (p) => p.automationReadiness.artifacts.contextGraph,
     note: 'Run a context scan to map more of the repo into the graph.',
   },

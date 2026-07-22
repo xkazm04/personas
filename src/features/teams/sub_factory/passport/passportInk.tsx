@@ -52,6 +52,8 @@ export function inkKindOf(v: CellValue): InkKind {
     }
     case 'bool':
       return v.on ? 'good' : 'warn';
+    case 'counts':
+      return v.items.some((i) => i.count > 0) ? 'info' : 'setup';
   }
 }
 

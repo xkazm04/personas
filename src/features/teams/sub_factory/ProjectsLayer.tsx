@@ -6,10 +6,11 @@
 //
 // The Passport Wall is the production baseline here — the earlier KPI-health
 // Cards and the Heat-grid prototype were consolidated out (2026-06-21).
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { RefreshCw, Target } from 'lucide-react';
 
-import { setStandardsConfig, scanCodebase, createTask, executeTask, updateProject, installSkill, listContexts } from '@/api/devTools/devTools';
+import { setStandardsConfig, scanCodebase, createTask, executeTask, updateProject, listContexts } from '@/api/devTools/devTools';
 import { listKpis } from '@/api/devTools/kpis';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
@@ -19,6 +20,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ProjectsPassportWall } from './passport';
+import { anchorTip } from './passport/passportInk';
 import type { WarningItem } from './passport/WarningBadge';
 import { ImproveProvider, type ImproveEngine } from './passport/improve/ImproveContext';
 import { ImprovePlanPanel } from './passport/improve/ImprovePlanPanel';
@@ -43,10 +45,13 @@ export function ProjectsLayer({
     getRaw: (slug) => rawByProject.get(slug),
     allRaw: () => [...rawByProject.values()],
     applyStandards: async (slug, json) => { await setStandardsConfig(slug, json); reload(); },
-    runContextScan: async (slug) => {
+    runContextScan: async (slug, delta) => {
       const raw = rawByProject.get(slug);
       if (!raw) return undefined;
-      const { scan_id } = await scanCodebase(slug, raw.project.root_path);
+      // Same dev_tools_scan_codebase path as the Dev-Tools Context Map page —
+      // delta=true is its incremental "Re-scan" (only re-derives contexts for
+      // files changed since the last scan), delta=false/undefined the full scan.
+      const { scan_id } = await scanCodebase(slug, raw.project.root_path, delta);
       // Register in the global activity dock (titlebar) so the scan stays
       // visible while the user navigates across modules; completion is resolved
       // globally in eventBridge (CONTEXT_GEN_COMPLETE → factory_scan). The Rust
@@ -54,7 +59,7 @@ export function ProjectsLayer({
       useOverviewStore.getState().processStarted(
         'factory_scan',
         scan_id,
-        `Context scan: ${raw.project.name}`,
+        `Context ${delta ? 're-scan' : 'scan'}: ${raw.project.name}`,
         { section: 'plugins', tab: 'context-map' },
       );
       return scan_id;
@@ -65,10 +70,6 @@ export function ProjectsLayer({
         : field === 'llm_tracking' ? { llmTrackingCredentialId: credId }
         : { monitoringCredentialId: credId };
       await updateProject(slug, updates);
-      reload();
-    },
-    installSkills: async (slug, items) => {
-      await Promise.all(items.map((it) => installSkill(it.name, it.source, slug, false)));
       reload();
     },
     queueTask: async (slug, title, prompt) => { await createTask(title, slug, prompt); },
@@ -160,16 +161,7 @@ export function ProjectsLayer({
               Improve plan
             </Button>
           )}
-          <Button
-            variant="accent"
-            accentColor="violet"
-            size="sm"
-            icon={<RefreshCw className="w-3.5 h-3.5" />}
-            loading={rescanning}
-            onClick={rescan}
-          >
-            Rescan
-          </Button>
+          <RescanConfirmButton rescanning={rescanning} onConfirm={rescan} />
         </div>
       </div>
 
@@ -194,5 +186,78 @@ export function ProjectsLayer({
         </ImproveProvider>
       )}
     </div>
+  );
+}
+
+const RESCAN_CONFIRM_WIDTH = 288;
+
+/** The header Rescan behind a confirm popover — the scan takes a while across a
+ *  large fleet, so a stray click shouldn't fire it. Explains what it does. */
+function RescanConfirmButton({ rescanning, onConfirm }: { rescanning: boolean; onConfirm: () => void }) {
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!anchor) return;
+    const close = () => setAnchor(null);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const onDown = (e: MouseEvent) => { if (panelRef.current && !panelRef.current.contains(e.target as Node)) close(); };
+    window.addEventListener('keydown', onKey);
+    const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
+    return () => { window.removeEventListener('keydown', onKey); window.clearTimeout(id); document.removeEventListener('mousedown', onDown); };
+  }, [anchor]);
+
+  const pos = anchor ? anchorTip(anchor, RESCAN_CONFIRM_WIDTH, 150) : null;
+
+  return (
+    <>
+      <Button
+        variant="accent"
+        accentColor="violet"
+        size="sm"
+        icon={<RefreshCw className="w-3.5 h-3.5" />}
+        loading={rescanning}
+        onClick={(e) => {
+          // Read the rect NOW — e.currentTarget is detached by the time a
+          // state-updater callback runs.
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          setAnchor((a) => (a ? null : rect));
+        }}
+      >
+        Rescan
+      </Button>
+      {anchor && pos && createPortal(
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-label="Confirm rescan"
+          style={{ top: pos.top, left: pos.left, width: RESCAN_CONFIRM_WIDTH }}
+          className="fixed z-[9995] rounded-modal border border-primary/15 bg-background shadow-elevation-4 px-3 py-2.5"
+        >
+          <span className="typo-caption font-semibold text-foreground block mb-1">Rescan all projects?</span>
+          <p className="typo-caption text-foreground/60 leading-snug mb-2.5" style={{ fontWeight: 400 }}>
+            Re-runs the cross-project metadata scan over every registered project and re-derives each readiness
+            passport — stack, coverage and scores. Read-only: nothing in your repos is modified.
+          </p>
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={() => setAnchor(null)}
+              className="px-2.5 py-1 rounded-interactive typo-caption font-medium text-foreground hover:bg-secondary/40 border border-primary/10 transition-colors"
+            >
+              No
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAnchor(null); onConfirm(); }}
+              className="px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors"
+            >
+              Yes, rescan
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

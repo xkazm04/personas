@@ -25,7 +25,7 @@ export interface RubricDim {
 // ladder (none·smoke·partial·substantial·comprehensive).
 export const RUBRIC: RubricDim[] = [
   {
-    key: 'context', label: 'Context graph', weight: 3,
+    key: 'context', label: 'Context coverage', weight: 3,
     pos: (p) => scalePos(GRAPH_SCALE, p.automationReadiness.artifacts.contextGraph),
     target: { solo: 0.5, team: 1, org: 1 },
   },

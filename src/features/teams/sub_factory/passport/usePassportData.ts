@@ -55,6 +55,13 @@ export function usePassportData(): PassportData {
     for (const g of globalSkills) if (!skillCatalog.has(g.name)) skillCatalog.set(g.name, { source: null, description: g.description });
     for (const [pid, list] of projectSkillLists) for (const s of list) if (!skillCatalog.has(s.name)) skillCatalog.set(s.name, { source: pid, description: s.description });
     const installedByProject = new Map(projectSkillLists.map(([pid, list]) => [pid, new Set(list.map((s) => s.name))]));
+    // Shared-vs-specific split: a skill counts as SHARED (reused) when its name
+    // also exists in the global library or in a sibling project; the rest are
+    // specific to that codebase — the split the skills cell + modal render.
+    const globalNames = new Set(globalSkills.map((g) => g.name));
+    const nameOwners = new Map<string, number>();
+    for (const [, list] of projectSkillLists) for (const s of list) nameOwners.set(s.name, (nameOwners.get(s.name) ?? 0) + 1);
+    const isShared = (name: string) => globalNames.has(name) || (nameOwners.get(name) ?? 0) > 1;
 
     // Deep evidence (D1): a deterministic file probe per project, in parallel.
     // Defensive — null on older builds (command unregistered) or unreadable paths,
@@ -72,13 +79,20 @@ export function usePassportData(): PassportData {
       const project = byId.get(meta.project_id);
       if (!project) continue;
       const installed = installedByProject.get(meta.project_id) ?? new Set<string>();
+      const installedList = projectSkillLists.find(([pid]) => pid === meta.project_id)?.[1] ?? [];
       const hasSkills = installed.size > 0;
+      const reused = [...installed].filter(isShared).length;
+      const skillCounts = { reused, own: installed.size - reused };
       const evidence = evidenceById.get(meta.project_id) ?? null;
       const skillsToAdd = [...skillCatalog.entries()]
         .filter(([name, info]) => !installed.has(name) && info.source !== meta.project_id)
         .map(([name, info]) => ({ name, source: info.source, description: info.description }));
-      rawByProject.set(project.id, { project, meta, hasSkills, skillsToAdd, evidence });
-      passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence }));
+      // Share candidates: this project's skills the global library doesn't have.
+      const skillsToShare = installedList
+        .filter((s) => !globalNames.has(s.name))
+        .map((s) => ({ name: s.name, description: s.description }));
+      rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillsToAdd, skillsToShare, evidence });
+      passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts }));
     }
     const sorted = sortByNameAsc(passports);
     // Append to the local readiness history (deduped) so the cover sparkline +

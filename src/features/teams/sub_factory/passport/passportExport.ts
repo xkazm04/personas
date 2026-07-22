@@ -30,7 +30,7 @@ export function passportToMarkdown(p: AppPassport, now: number): string {
     '',
     '| Dimension | Level |',
     '|---|---|',
-    `| Context graph | ${GRAPH_LABEL[a.artifacts.contextGraph]} |`,
+    `| Context coverage | ${GRAPH_LABEL[a.artifacts.contextGraph]} |`,
     `| Agent instructions | ${a.artifacts.agentInstructions.length ? 'Present' : 'None'} |`,
     `| Self-verify | ${selfVerify} |`,
     `| Evals | ${EVALS_LABEL[a.artifacts.evals]} |`,
