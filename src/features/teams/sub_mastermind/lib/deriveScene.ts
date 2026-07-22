@@ -17,7 +17,7 @@ import type { DimNode, DimStatus, FleetNode, Island, IslandEdge, IslandState, Sc
 const LABEL = {
   db: 'Database', monitoring: 'Monitoring', ci: 'CI', tests: 'Tests',
   security: 'Security', hosting: 'Hosting', auth: 'Auth', agents: 'Agents',
-  skills: 'Skills', llm: 'LLM cost', kpi: 'KPIs',
+  skills: 'Skills', llm: 'LLM cost', kpi: 'KPIs', ideas: 'Ideas',
 } as const;
 
 /** Per-project KPI rollup (Factory data): total active KPIs + off-track count. */
@@ -27,6 +27,18 @@ const ord = <T extends string>(scale: T[], v: T) => {
   const i = Math.max(0, scale.indexOf(v));
   return { reached: i, steps: scale.length - 1, pos: scale.length > 1 ? i / (scale.length - 1) : 0 };
 };
+
+/** Days since the last idea scan → node fields. Freshness bands: green <7d,
+ *  amber 7–30d, red >30d, grey when the scanner was never used. */
+function ideasNode(lastScanAt: string | null | undefined): DimNode {
+  const days = lastScanAt ? Math.max(0, Math.floor((Date.now() - new Date(lastScanAt).getTime()) / 86_400_000)) : null;
+  return {
+    key: 'ideas', label: LABEL.ideas,
+    status: days === null ? 'absent' : days < 7 ? 'solid' : days <= 30 ? 'risk' : 'alert',
+    detail: days === null ? null : days === 0 ? 'today' : `${days}d ago`,
+    reached: 0, steps: 0, days,
+  };
+}
 
 function dimNodes(p: AppPassport, kpi: KpiRollup | undefined): DimNode[] {
   const { stack, productionReadiness: prod, automationReadiness: auto } = p;
@@ -99,7 +111,7 @@ function islandState(p: AppPassport): IslandState {
   return 'critical';
 }
 
-function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined): Island {
+function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined): Island {
   const pos = spiralPlace(i, p.identity.slug);
   return {
     slug: p.identity.slug,
@@ -112,7 +124,7 @@ function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined): Island
     lifecycle: LIFECYCLE_LABEL[p.identity.lifecycle],
     automationLabel: AUTOMATION_LABEL[p.automationReadiness.level],
     blockers: p.automationReadiness.blockers.length + p.productionReadiness.blockers.length,
-    nodes: dimNodes(p, kpi),
+    nodes: [...dimNodes(p, kpi), ideasNode(lastScanAt)],
     fleet: [],
   };
 }
@@ -144,9 +156,10 @@ export function deriveScene(
   meta: CrossProjectMetadataMap | null,
   loading: boolean,
   kpiByProject?: Map<string, KpiRollup>,
+  ideaScanAt?: Map<string, string | null>,
 ): Scene {
   if (passports.length > 0) {
-    const islands = passports.map((p, i) => toIsland(p, i, kpiByProject?.get(p.identity.slug)));
+    const islands = passports.map((p, i) => toIsland(p, i, kpiByProject?.get(p.identity.slug), ideaScanAt?.get(p.identity.slug)));
     return { islands, edges: deriveEdges(meta, new Set(islands.map((i) => i.slug))), demo: false };
   }
   if (loading) return { islands: [], edges: [], demo: false };
@@ -155,11 +168,11 @@ export function deriveScene(
 
 // -- demo scene (rendered only when no projects have been cross-scanned) ------
 
-type Row = [DimNode['key'], DimStatus, string | null, number, number];
+type Row = [DimNode['key'], DimStatus, string | null, number, number, (number | null)?];
 const mk = (slug: string, name: string, purpose: string, i: number, state: IslandState,
   autoScore: number, prodScore: number, lifecycle: string, automationLabel: string, blockers: number, rows: Row[], fleet: FleetNode[] = []): Island => ({
   slug, name, purpose, ...spiralPlace(i, slug), state, autoScore, prodScore, lifecycle, automationLabel, blockers,
-  nodes: rows.map(([key, status, detail, reached, steps]) => ({ key, label: LABEL[key], status, detail, reached, steps })),
+  nodes: rows.map(([key, status, detail, reached, steps, days]) => ({ key, label: LABEL[key], status, detail, reached, steps, days: days ?? null })),
   fleet,
 });
 
@@ -169,36 +182,36 @@ function demoScene(): Scene {
       ['db', 'solid', 'SQLite', 0, 0], ['monitoring', 'solid', 'Sentry', 3, 4], ['ci', 'solid', 'GitHub Actions', 3, 5],
       ['tests', 'solid', '81% cov', 4, 4], ['security', 'partial', null, 1, 4], ['hosting', 'solid', 'Installer', 0, 0],
       ['auth', 'absent', null, 0, 0], ['agents', 'solid', 'Integrated', 3, 4],
-      ['skills', 'solid', 'installed', 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'alert', '2 off-track', 0, 0]],
+      ['skills', 'solid', 'installed', 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'alert', '2 off-track', 0, 0], ['ideas', 'solid', '2d ago', 0, 0, 2]],
       [{ id: 'demo-f1', label: 'ui-scan', state: 'running' }, { id: 'demo-f2', label: 'i18n-sweep', state: 'awaiting_input' }, { id: 'demo-f6', label: 'doc-sync', state: 'running' }, { id: 'demo-f7', label: 'bench', state: 'idle' }]),
     mk('demo-web', 'Atlas Web', 'Marketing site + mobile dashboard', 1, 'building', 66, 58, 'Beta', 'Augmented', 2, [
       ['db', 'solid', 'Postgres', 0, 0], ['monitoring', 'partial', 'Vercel logs', 1, 4], ['ci', 'solid', 'Vercel', 4, 5],
       ['tests', 'risk', 'smoke', 1, 4], ['security', 'absent', null, 0, 4], ['hosting', 'solid', 'Vercel', 0, 0],
       ['auth', 'solid', 'Clerk', 0, 0], ['agents', 'partial', 'Augmented', 2, 4],
-      ['skills', 'absent', null, 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'solid', '4 on track', 0, 0]],
+      ['skills', 'absent', null, 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'solid', '4 on track', 0, 0], ['ideas', 'risk', '12d ago', 0, 0, 12]],
       [{ id: 'demo-f3', label: 'seo-pass', state: 'idle' }]),
     mk('demo-sonar', 'ChainSonar', 'On-chain anomaly scanner', 2, 'warning', 48, 39, 'Alpha', 'Assisted', 4, [
       ['db', 'partial', 'Mongo', 0, 0], ['monitoring', 'absent', null, 0, 4], ['ci', 'partial', null, 1, 5],
       ['tests', 'absent', null, 0, 4], ['security', 'absent', null, 0, 4], ['hosting', 'solid', 'Fly.io', 0, 0],
       ['auth', 'absent', null, 0, 0], ['agents', 'risk', 'Assisted', 1, 4],
-      ['skills', 'absent', null, 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'absent', null, 0, 0]],
+      ['skills', 'absent', null, 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'absent', null, 0, 0], ['ideas', 'alert', '45d ago', 0, 0, 45]],
       [{ id: 'demo-f4', label: 'bugfix', state: 'stale' }]),
     mk('demo-codex', 'Codex Companion', 'Personal memory companion', 3, 'critical', 31, 24, 'Prototype', 'Manual', 6, [
       ['db', 'absent', null, 0, 0], ['monitoring', 'absent', null, 0, 4], ['ci', 'absent', null, 0, 5],
       ['tests', 'absent', null, 0, 4], ['security', 'absent', null, 0, 4], ['hosting', 'absent', null, 0, 0],
       ['auth', 'absent', null, 0, 0], ['agents', 'risk', 'Manual', 0, 4],
-      ['skills', 'absent', null, 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'absent', null, 0, 0]]),
+      ['skills', 'absent', null, 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'absent', null, 0, 0], ['ideas', 'absent', null, 0, 0]]),
     mk('demo-vibe', 'Vibeman', 'Context-map generator for repos', 4, 'building', 72, 61, 'Beta', 'Integrated', 1, [
       ['db', 'solid', 'SQLite', 0, 0], ['monitoring', 'partial', 'logs', 1, 4], ['ci', 'solid', 'GitHub Actions', 2, 5],
       ['tests', 'partial', '54% cov', 2, 4], ['security', 'partial', null, 1, 4], ['hosting', 'absent', null, 0, 0],
       ['auth', 'absent', null, 0, 0], ['agents', 'solid', 'Integrated', 3, 4],
-      ['skills', 'solid', 'installed', 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'solid', '2 on track', 0, 0]],
+      ['skills', 'solid', 'installed', 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'solid', '2 on track', 0, 0], ['ideas', 'solid', 'today', 0, 0, 0]],
       [{ id: 'demo-f5', label: 'kb-refresh', state: 'hibernated' }]),
     mk('demo-ascent', 'Ascent', 'AI-native onboarding grader', 5, 'healthy', 90, 79, 'GA', 'Autonomous', 0, [
       ['db', 'solid', 'Postgres', 0, 0], ['monitoring', 'solid', 'Datadog', 4, 4], ['ci', 'solid', 'CircleCI', 4, 5],
       ['tests', 'solid', '88% cov', 3, 4], ['security', 'solid', 'Snyk', 2, 4], ['hosting', 'solid', 'AWS', 0, 0],
       ['auth', 'solid', 'Auth.js', 0, 0], ['agents', 'solid', 'Autonomous', 4, 4],
-      ['skills', 'solid', 'installed', 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'solid', '6 on track', 0, 0]]),
+      ['skills', 'solid', 'installed', 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'solid', '6 on track', 0, 0], ['ideas', 'risk', '9d ago', 0, 0, 9]]),
   ];
   const edges: IslandEdge[] = [
     { from: 'demo-desktop', to: 'demo-web', kind: 'relation', strength: 1, label: 'shares API' },

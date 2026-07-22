@@ -9,7 +9,7 @@ export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert';
 
 export type DimKey =
   | 'db' | 'monitoring' | 'ci' | 'tests' | 'security' | 'hosting' | 'auth' | 'agents'
-  | 'skills' | 'llm' | 'kpi';
+  | 'skills' | 'llm' | 'kpi' | 'ideas';
 
 /** One open Fleet CLI session docked to a project island. Colour resolves from
  *  `state` (FleetSessionState) at render time via FLEET_INK. */
@@ -33,8 +33,11 @@ export interface DimNode {
   rowKey?: string | null;
   /** Improve action available for this cell (page-decorated from the engine):
    *  standards = Tier-0 config popover, deploy = Claude deploy/connector/skills
-   *  popover, null = inert (no click, no hover affordance). */
-  action?: 'standards' | 'deploy' | null;
+   *  popover, ideas = the idea-scan dispatch popover, null = inert (no click,
+   *  no hover affordance). */
+  action?: 'standards' | 'deploy' | 'ideas' | null;
+  /** Ideas dimension only: whole days since the last idea scan (null = never). */
+  days?: number | null;
 }
 
 export interface Island {

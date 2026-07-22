@@ -22,14 +22,18 @@ export const DIM_TO_ROW: Record<DimKey, string | null> = {
   skills: 'skills',
   llm: 'llmtracking',
   kpi: null,
+  ideas: null,
 };
 
-/** Mirror of ImproveCell's applicability checks (ci is a Tier-0 standards row). */
+/** Mirror of ImproveCell's applicability checks (ci is a Tier-0 standards row).
+ *  The ideas dimension is always actionable on a real project — its click opens
+ *  the scan-dispatch popover (running one IS the setup path). */
 export function dimAction(
   dimKey: DimKey,
   passport: AppPassport | undefined,
   raw: ImproveRaw | undefined,
 ): { rowKey: string | null; action: DimNode['action'] } {
+  if (dimKey === 'ideas') return { rowKey: null, action: passport ? 'ideas' : null };
   const rowKey = DIM_TO_ROW[dimKey];
   if (!rowKey || !passport) return { rowKey: rowKey ?? null, action: null };
   if (rowKey === 'ci') {

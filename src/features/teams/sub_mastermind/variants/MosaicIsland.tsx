@@ -18,11 +18,11 @@ import type { IslandCtx } from '../lib/CanvasShell';
 import type { DimNode, Island, ZoomBand } from '../lib/types';
 
 const CELL = 56;
-// Axial cells: ring-1 six + contiguous ring-2 caps for dimensions 7-11.
+// Axial cells: ring-1 six + contiguous ring-2 caps for dimensions 7-12.
 // Order matches deriveScene's node order.
 const AXIAL: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0],
-  [2, -1], [-2, 1], [1, -2], [-1, 2], [2, 0],
+  [2, -1], [-2, 1], [1, -2], [-1, 2], [2, 0], [-2, 0],
 ];
 const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2), y: CELL * 1.5 * r });
 
@@ -147,8 +147,18 @@ function MosaicCell({ node, x, y, band, highlighted, onAction }: {
         <polygon points={hexPoints(0, 0, CELL + 1)} fill="none" stroke={mix('var(--primary)', 70)} strokeWidth={2} strokeLinejoin="round" />
       )}
       {zoomedOut ? (
-        // fullscale icon — the cell IS the icon when zoomed out
-        <DimGlyph node={node} x={-27} y={-27} size={54} strokeWidth={1.5} color={absent ? 'var(--muted-foreground)' : ink} />
+        node.key === 'ideas' && node.days != null ? (
+          // ideas cell: days-since-last-scan IS the payload when zoomed out
+          <>
+            <DimGlyph node={node} x={-8} y={-34} size={16} strokeWidth={1.75} color={ink} />
+            <text y={18} textAnchor="middle" fontSize={30} fontWeight={700} fill={ink} style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {node.days}d
+            </text>
+          </>
+        ) : (
+          // fullscale icon — the cell IS the icon when zoomed out
+          <DimGlyph node={node} x={-27} y={-27} size={54} strokeWidth={1.5} color={absent ? 'var(--muted-foreground)' : ink} />
+        )
       ) : (
         <>
           <DimGlyph node={node} x={-11} y={-30} size={22} strokeWidth={1.75} color={absent ? 'var(--muted-foreground)' : ink} />

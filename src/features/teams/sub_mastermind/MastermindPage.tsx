@@ -7,11 +7,13 @@
 // Hex Puzzle + Inverse Grid develop in parallel (Grid Board retired). 11
 // dimensions per island; Fleet dock nodes open the CLI preview popover.
 // Prototype copy is hardcoded (COPY const) pending consolidation i18n.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { getCrossProjectMetadata, type CrossProjectMetadataMap } from '@/api/devTools/devTools';
+import { getCrossProjectMetadata, listScans, runScan, type CrossProjectMetadataMap } from '@/api/devTools/devTools';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
+import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
 import { FactoryDataProvider, useFactoryData } from '@/features/teams/sub_factory/factoryData';
 import { collectKpiAttention, groupKpis } from '@/features/teams/sub_factory/factoryModel';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
@@ -19,13 +21,21 @@ import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/Dep
 import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/ImprovePopover';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
+import type { DevScan } from '@/lib/bindings/DevScan';
+import { EventName } from '@/lib/eventRegistry';
+import { toastCatch } from '@/lib/silentCatch';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 
 import { CanvasToolbar } from './lib/CanvasToolbar';
 import { deriveScene, type KpiRollup } from './lib/deriveScene';
 import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
+import { IdeaScanPopover } from './lib/IdeaScanPopover';
 import { loadPositions, savePositions } from './lib/positions';
+import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
 import type { CanvasMode, DimNode, FleetNode } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
@@ -49,6 +59,19 @@ const VARIANTS = { mosaic: MastermindHexMosaic, inverse: MastermindInverseGrid }
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
 const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
 
+const HIDDEN_KEY = 'mastermind.hidden.v1';
+const loadHidden = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(HIDDEN_KEY);
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch {
+    return new Set();
+  }
+};
+const saveHidden = (s: Set<string>) => {
+  try { localStorage.setItem(HIDDEN_KEY, JSON.stringify([...s])); } catch { /* best-effort */ }
+};
+
 export default function MastermindPage() {
   // Factory data context feeds the KPI dimension (same rollup the Passport
   // wall's warning badges use — the two surfaces must agree on "off track").
@@ -70,6 +93,17 @@ function MastermindInner() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [improvePopup, setImprovePopup] = useState<{ slug: string; rowKey: string; standards: boolean; anchor: DOMRect } | null>(null);
+  const [scanPopup, setScanPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
+  const [scanBusy, setScanBusy] = useState(false);
+  const [scansBySlug, setScansBySlug] = useState<Map<string, DevScan[]>>(new Map());
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(loadHidden);
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const { startBackgroundScan } = useContextScanBackground();
+  const addToast = useToastStore((s) => s.addToast);
+  const storeCreateProject = useSystemStore((s) => s.createProject);
+  const storeUpdateProject = useSystemStore((s) => s.updateProject);
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
 
   // Fleet sessions: the live-event listeners live in FleetGridPage only, so
   // off that page the store is a snapshot — refresh on mount + a slow poll.
@@ -88,6 +122,36 @@ function MastermindInner() {
     getCrossProjectMetadata().then((m) => { if (live) setMeta(m); }).catch(() => {});
     return () => { live = false; };
   }, []);
+
+  // Idea-scan history per project — feeds the Ideas dimension's freshness
+  // colour + the dispatch popover's context line. DevScan rows in the DB
+  // already carry scan_type + created_at, so this is a read, not new storage.
+  const refreshScans = useCallback(async (slugs: string[]) => {
+    const entries = await Promise.all(
+      slugs.map(async (slug) => [slug, await listScans(slug, 20)] as const),
+    );
+    setScansBySlug((prev) => {
+      const next = new Map(prev);
+      for (const [slug, rows] of entries) next.set(slug, rows);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (passports.length === 0) return;
+    void refreshScans(passports.map((p) => p.identity.slug));
+  }, [passports, refreshScans]);
+
+  // A scan finishing anywhere (here or in the Idea Scanner page) refreshes the
+  // freshness data.
+  const onScanStatus = useCallback((event: { payload: { status: string } }) => {
+    const { status } = event.payload;
+    if (status === 'completed' || status === 'completed_with_warning' || status === 'failed') {
+      void refreshScans(passports.map((p) => p.identity.slug));
+      setScanBusy(false);
+    }
+  }, [passports, refreshScans]);
+  useTauriEvent<{ job_id: string; status: string; error?: string }>(EventName.IDEA_SCAN_STATUS, onScanStatus);
 
   // Keyboard: E/G/C switch modes, Esc closes panels (the shell handles its own
   // Esc for half-drawn links/editors). Ignored while typing.
@@ -136,7 +200,13 @@ function MastermindInner() {
     return m;
   }, [sessions, projects]);
 
-  const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject), [passports, meta, loading, kpiByProject]);
+  const ideaScanAt = useMemo(() => {
+    const m = new Map<string, string | null>();
+    for (const [slug, rows] of scansBySlug) m.set(slug, rows[0]?.created_at ?? null);
+    return m;
+  }, [scansBySlug]);
+
+  const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt), [passports, meta, loading, kpiByProject, ideaScanAt]);
   // Saved positions + live fleet + per-dim Improve actionability overlay the
   // derived scene. Actionability mirrors the wall's ImproveCell checks, so a
   // canvas cell is clickable exactly when its wall row would show a gear.
@@ -161,27 +231,102 @@ function MastermindInner() {
       return next;
     });
 
+  // Sidebar hide/show filter — the canvas renders only visible islands; the
+  // project list sees all of them.
+  const canvasScene = useMemo(() => ({
+    ...positioned,
+    islands: positioned.islands.filter((i) => !hiddenSlugs.has(i.slug)),
+  }), [positioned, hiddenSlugs]);
+
+  const toggleVisible = (slug: string) =>
+    setHiddenSlugs((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      saveHidden(next);
+      return next;
+    });
+
   const previewSession = previewId ? sessions.find((s) => s.id === previewId) ?? null : null;
   const openIsland = openSlug ? positioned.islands.find((i) => i.slug === openSlug) ?? null : null;
   const openPassport = openSlug ? passports.find((p) => p.identity.slug === openSlug) ?? null : null;
   const Canvas = VARIANTS[variant];
 
   // Canvas cell → the same Improve popovers the Passport wall opens, anchored
-  // at the click point (they flip/clamp against the window themselves).
+  // at the click point (they flip/clamp against the window themselves). The
+  // Ideas dimension opens the scan-dispatch popover instead.
   const onDimOpen = (slug: string, node: DimNode, e: React.MouseEvent) => {
+    if (node.action === 'ideas') {
+      setScanPopup({ slug, x: e.clientX, y: e.clientY });
+      return;
+    }
     if (!node.action || !node.rowKey) return;
     setImprovePopup({ slug, rowKey: node.rowKey, standards: node.action === 'standards', anchor: new DOMRect(e.clientX, e.clientY, 1, 1) });
+  };
+
+  // Dispatch ONE agent's idea scan for the popup's project through the
+  // canonical recorded pipeline (writes the DevScan row the freshness reads).
+  const runIdeaScan = async (agentKey: string) => {
+    if (!scanPopup || scanBusy) return;
+    setScanBusy(true);
+    useOverviewStore.getState().processStarted(
+      'idea_scan',
+      undefined,
+      `Idea Scan (${agentKey})`,
+      { section: 'plugins', tab: 'idea-scanner' },
+    );
+    try {
+      await runScan(scanPopup.slug, [agentKey]);
+      addToast(`Idea scan dispatched (${agentKey})`, 'success');
+      void refreshScans([scanPopup.slug]);
+      setScanPopup(null);
+    } catch (err) {
+      useOverviewStore.getState().processEnded('idea_scan', 'failed');
+      setScanBusy(false);
+      toastCatch('mastermind idea scan')(err);
+    }
+  };
+
+  // New project — same mechanism as the Projects manager (ProjectModal +
+  // store create/update, path-dedup included).
+  const handleCreateProject = async (data: { name: string; path: string; projectType: string; githubUrl: string; teamId: string | null; prCredentialId: string | null; testEnvUrl: string; testEnvBranch: string; mainBranch: string }) => {
+    const existing = projects.find((p) => p.root_path === data.path);
+    if (existing) return { id: existing.id };
+    try {
+      const project = await storeCreateProject(data.name, data.path, '', data.projectType, data.githubUrl || undefined, data.teamId ?? undefined);
+      await storeUpdateProject(project.id, {
+        teamId: data.teamId,
+        prCredentialId: data.prCredentialId,
+        testEnvUrl: data.testEnvUrl || null,
+        testEnvBranch: data.testEnvBranch || null,
+        mainBranch: data.mainBranch || null,
+      });
+      void fetchProjects();
+      reload();
+      return { id: project.id };
+    } catch {
+      return undefined;
+    }
   };
 
   return (
     <ImproveProvider value={improve}>
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      <Canvas scene={positioned} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} onDimOpen={onDimOpen} />
+      <Canvas scene={canvasScene} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} onDimOpen={onDimOpen} />
 
       {/* prototype-only variant switcher */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
         <SegmentedTabs tabs={VARIANT_TABS} activeTab={variant} onTabChange={setVariant} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.switcher} />
       </div>
+
+      <ProjectListSidebar
+        islands={positioned.islands}
+        hidden={hiddenSlugs}
+        open={projectsOpen}
+        onOpenToggle={() => setProjectsOpen((v) => !v)}
+        onToggleVisible={toggleVisible}
+        onNewProject={() => setNewProjectOpen(true)}
+      />
 
       <CanvasToolbar mode={mode} onModeChange={setMode} />
 
@@ -198,6 +343,26 @@ function MastermindInner() {
       ) : (
         <DeployPopover slug={improvePopup.slug} rowKey={improvePopup.rowKey} anchor={improvePopup.anchor} onClose={() => setImprovePopup(null)} />
       ))}
+
+      {scanPopup && (
+        <IdeaScanPopover
+          name={positioned.islands.find((i) => i.slug === scanPopup.slug)?.name ?? scanPopup.slug}
+          scans={scansBySlug.get(scanPopup.slug) ?? []}
+          anchor={{ x: scanPopup.x, y: scanPopup.y }}
+          busy={scanBusy}
+          onRun={(agentKey) => void runIdeaScan(agentKey)}
+          onClose={() => setScanPopup(null)}
+        />
+      )}
+
+      <ProjectModal
+        open={newProjectOpen}
+        onClose={() => setNewProjectOpen(false)}
+        onCreate={handleCreateProject}
+        onUpdate={async (id, data) => { await storeUpdateProject(id, { name: data.name, githubUrl: data.githubUrl, teamId: data.teamId }); }}
+        onScanNow={startBackgroundScan}
+        editProject={null}
+      />
 
       {scene.demo && (
         <div className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10">

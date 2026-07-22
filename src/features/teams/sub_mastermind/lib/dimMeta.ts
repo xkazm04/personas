@@ -1,5 +1,5 @@
 // Icon per Mastermind dimension node — shared by both canvas variants.
-import { Activity, Bot, BrainCircuit, Database, FlaskConical, Gauge, KeyRound, Server, ShieldCheck, Wand2, Workflow, type LucideIcon } from 'lucide-react';
+import { Activity, Bot, BrainCircuit, Database, FlaskConical, Gauge, KeyRound, Lightbulb, Server, ShieldCheck, Wand2, Workflow, type LucideIcon } from 'lucide-react';
 
 import { resolveTechIcon } from '@/features/teams/sub_factory/passport/techIcons';
 
@@ -21,4 +21,5 @@ export const DIM_ICON: Record<DimKey, LucideIcon> = {
   skills: Wand2,
   llm: BrainCircuit,
   kpi: Gauge,
+  ideas: Lightbulb,
 };

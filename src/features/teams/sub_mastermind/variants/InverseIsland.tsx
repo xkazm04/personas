@@ -21,7 +21,7 @@ const GAP = 8;
 // the core" growth direction.
 const RING: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1],
-  [0, -2], [1, -2], [-1, -2],
+  [0, -2], [1, -2], [-1, -2], [2, -2],
 ];
 
 export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen }: { island: Island } & IslandCtx) {
