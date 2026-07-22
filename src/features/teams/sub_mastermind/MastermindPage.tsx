@@ -22,7 +22,7 @@ import { deriveScene, type KpiRollup } from './lib/deriveScene';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { loadPositions, savePositions } from './lib/positions';
 import { ProjectSidebar } from './lib/ProjectSidebar';
-import type { CanvasMode, FleetNode, StatsStyle } from './lib/types';
+import type { CanvasMode, FleetNode, FleetStyle, StatsStyle } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 import { MastermindInverseGrid } from './variants/MastermindInverseGrid';
 
@@ -31,16 +31,22 @@ const COPY = {
   inverse: 'Inverse Grid',
   demo: 'demo data — no projects scanned yet',
   switcher: 'Mastermind prototype variant',
-  statsSwitcher: 'Stats treatment (prototype)',
-  statsPanels: 'Panels',
-  statsColumns: 'Columns',
+  statsSwitcher: 'Stats (prototype)',
+  statsOn: 'Stats',
   statsOff: 'No stats',
+  fleetSwitcher: 'Terminal treatment (prototype)',
+  fleetCells: 'Cells',
+  fleetBadges: 'Badges',
 };
 
 const STATS_TABS: Array<{ id: StatsStyle; label: string }> = [
-  { id: 'panels', label: COPY.statsPanels },
-  { id: 'columns', label: COPY.statsColumns },
+  { id: 'columns', label: COPY.statsOn },
   { id: 'off', label: COPY.statsOff },
+];
+
+const FLEET_TABS: Array<{ id: FleetStyle; label: string }> = [
+  { id: 'cells', label: COPY.fleetCells },
+  { id: 'badges', label: COPY.fleetBadges },
 ];
 
 type VariantId = 'mosaic' | 'inverse';
@@ -74,6 +80,7 @@ function MastermindInner() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [statsStyle, setStatsStyle] = useState<StatsStyle>('columns');
+  const [fleetStyle, setFleetStyle] = useState<FleetStyle>('cells');
 
   // Fleet sessions: the live-event listeners live in FleetGridPage only, so
   // off that page the store is a snapshot — refresh on mount + a slow poll.
@@ -167,16 +174,17 @@ function MastermindInner() {
 
   return (
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      <Canvas scene={positioned} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} statsStyle={statsStyle} />
+      <Canvas scene={positioned} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} statsStyle={statsStyle} fleetStyle={fleetStyle} />
 
       {/* prototype-only variant switcher */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
         <SegmentedTabs tabs={VARIANT_TABS} activeTab={variant} onTabChange={setVariant} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.switcher} />
       </div>
 
-      {/* prototype-only stats treatment switcher */}
-      <div className="absolute top-3 left-3 z-10">
+      {/* prototype-only treatment switchers (stats + terminals) */}
+      <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 items-start">
         <SegmentedTabs tabs={STATS_TABS} activeTab={statsStyle} onTabChange={setStatsStyle} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.statsSwitcher} />
+        <SegmentedTabs tabs={FLEET_TABS} activeTab={fleetStyle} onTabChange={setFleetStyle} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.fleetSwitcher} />
       </div>
 
       <CanvasToolbar mode={mode} onModeChange={setMode} />

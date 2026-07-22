@@ -170,7 +170,7 @@ function demoScene(): Scene {
       ['tests', 'solid', '81% cov', 4, 4], ['security', 'partial', null, 1, 4], ['hosting', 'solid', 'Installer', 0, 0],
       ['auth', 'absent', null, 0, 0], ['agents', 'solid', 'Integrated', 3, 4],
       ['skills', 'solid', 'installed', 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'alert', '2 off-track', 0, 0]],
-      [{ id: 'demo-f1', label: 'ui-scan', state: 'running' }, { id: 'demo-f2', label: 'i18n-sweep', state: 'awaiting_input' }]),
+      [{ id: 'demo-f1', label: 'ui-scan', state: 'running' }, { id: 'demo-f2', label: 'i18n-sweep', state: 'awaiting_input' }, { id: 'demo-f6', label: 'doc-sync', state: 'running' }, { id: 'demo-f7', label: 'bench', state: 'idle' }]),
     mk('demo-web', 'Atlas Web', 'Marketing site + mobile dashboard', 1, 'building', 66, 58, 'Beta', 'Augmented', 2, [
       ['db', 'solid', 'Postgres', 0, 0], ['monitoring', 'partial', 'Vercel logs', 1, 4], ['ci', 'solid', 'Vercel', 4, 5],
       ['tests', 'risk', 'smoke', 1, 4], ['security', 'absent', null, 0, 4], ['hosting', 'solid', 'Vercel', 0, 0],

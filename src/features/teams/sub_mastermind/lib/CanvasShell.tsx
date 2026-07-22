@@ -9,6 +9,7 @@ import { mix } from './ink';
 import { loadGroups, saveGroups } from './groups';
 import { loadLinks, saveLinks, LINK_PALETTE } from './links';
 import { loadNotes, saveNotes } from './notes';
+import { FleetListPopover } from './FleetListPopover';
 import { GroupLayer } from './GroupLayer';
 import { IslandMenu } from './IslandMenu';
 import { LinkEditor } from './LinkEditor';
@@ -18,7 +19,7 @@ import { NoteLayer } from './NoteLayer';
 import { Route } from './Route';
 import { ZoomBadge } from './ZoomBadge';
 import { ZoomControls } from './ZoomControls';
-import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type GroupRect, type Island, type StatsStyle, type UserLink, type VariantProps, type ZoomBand } from './types';
+import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type FleetStyle, type GroupRect, type Island, type StatsStyle, type UserLink, type VariantProps, type ZoomBand } from './types';
 import { useCanvasCamera } from './useCanvasCamera';
 
 const COPY = { labelPlaceholder: 'Group label…', defaultLabel: 'Group' };
@@ -48,9 +49,13 @@ export interface IslandCtx {
   highlightKey: string | null;
   /** Stats-panel treatment (prototype A/B). */
   statsStyle: StatsStyle;
+  /** Multi-session terminal treatment (prototype A/B). */
+  fleetStyle: FleetStyle;
+  /** Badges treatment: badge clicked — open the state-filtered session list. */
+  onFleetList: (slug: string, state: string, e: React.MouseEvent) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, statsStyle, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, statsStyle, fleetStyle, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -67,6 +72,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [highlight, setHighlight] = useState<{ slug: string; key: string } | null>(null);
+  const [fleetMenu, setFleetMenu] = useState<{ slug: string; state: string; x: number; y: number } | null>(null);
   const connectDrag = useRef<{ id: number; from: string; sx: number; sy: number } | null>(null);
   const noteTap = useRef<{ id: number; sx: number; sy: number } | null>(null);
   const drawId = useRef<number | null>(null);
@@ -83,6 +89,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
       setEditingNote(null);
       setMenu(null);
       setHighlight(null);
+      setFleetMenu(null);
       connectDrag.current = null;
     };
     window.addEventListener('keydown', h);
@@ -141,6 +148,17 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
       slug,
       x: Math.min(p.x, (rect?.width ?? 600) - 320),
       y: Math.min(p.y, (rect?.height ?? 400) - 340),
+    });
+  };
+
+  const onFleetList = (slug: string, state: string, e: React.MouseEvent) => {
+    const p = toScreen(e);
+    const rect = svgRef.current?.getBoundingClientRect();
+    setFleetMenu({
+      slug,
+      state,
+      x: Math.min(p.x, (rect?.width ?? 600) - 244),
+      y: Math.min(p.y + 10, (rect?.height ?? 400) - 280),
     });
   };
 
@@ -203,6 +221,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
     // (pan keeps working for real drags).
     if (mode === 'note' && e.button === 0) noteTap.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY };
     if (menu) setMenu(null);
+    if (fleetMenu) setFleetMenu(null);
     handlers.onPointerDown(e);
   };
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -332,6 +351,8 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
               onIslandMenu,
               highlightKey: highlight?.slug === i.slug ? highlight.key : null,
               statsStyle,
+              fleetStyle,
+              onFleetList,
             }),
           )}
           <NoteLayer notes={notes} z={cam.z} mode={mode} onNotesChange={commitNotes} onEdit={setEditingNote} />
@@ -413,6 +434,21 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
             y={menu.y}
             onHoverDim={(key) => setHighlight(key ? { slug: menu.slug, key } : null)}
             onClose={() => { setMenu(null); setHighlight(null); }}
+          />
+        );
+      })()}
+
+      {fleetMenu && (() => {
+        const island = bySlug.get(fleetMenu.slug);
+        if (!island) return null;
+        return (
+          <FleetListPopover
+            sessions={island.fleet.filter((f) => f.state === fleetMenu.state)}
+            state={fleetMenu.state}
+            x={fleetMenu.x}
+            y={fleetMenu.y}
+            onPick={onFleetOpen}
+            onClose={() => setFleetMenu(null)}
           />
         );
       })()}

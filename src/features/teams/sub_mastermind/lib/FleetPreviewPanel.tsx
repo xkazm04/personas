@@ -1,16 +1,11 @@
-// CLI window preview popover — opened from a Fleet dock node on any canvas
-// layer. Embeds the managed live terminal (FleetTerminalPane — master retired
-// the polled tile-preview path, so the durable xterm manager is the one
-// terminal surface). The pane is interactive: typing goes straight to the
-// PTY; the reply row remains for quick submit-with-Enter messages. Headless
-// and exited sessions have no TTY — they get a status body instead.
-import { useState } from 'react';
-import { Send, X } from 'lucide-react';
+// CLI window preview popover — opened from a Fleet node on any canvas layer.
+// Embeds the managed live terminal (FleetTerminalPane): fully interactive, so
+// the user types directly into the rendered window — no separate reply row.
+// Headless and exited sessions have no TTY — they get a status body instead.
+import { X } from 'lucide-react';
 
-import { writeInput } from '@/api/fleet/fleet';
 import { FleetTerminalPane } from '@/features/plugins/fleet/FleetTerminalPane';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
-import { silentCatch } from '@/lib/silentCatch';
 
 import { FLEET_INK, mix, MONO } from './ink';
 
@@ -18,8 +13,6 @@ const COPY = {
   demo: 'Demo session — no live terminal behind this node.',
   gone: 'Session is no longer running.',
   headless: 'Headless session — no terminal window. State and insights live in the Fleet grid.',
-  placeholder: 'Reply to this session…',
-  send: 'Send',
   close: 'Hide preview',
 };
 
@@ -29,17 +22,9 @@ export function FleetPreviewPanel({ sessionId, session, onClose }: {
   session: FleetSession | null;
   onClose: () => void;
 }) {
-  const [reply, setReply] = useState('');
   const live = session !== null && session.state !== 'exited' && session.mode !== 'headless';
   const ink = FLEET_INK[session?.state ?? 'exited'] ?? 'var(--status-neutral)';
   const label = session ? session.name ?? session.title ?? session.projectLabel : sessionId;
-
-  const send = () => {
-    const text = reply.trim();
-    if (!text || !live) return;
-    writeInput(sessionId, `${text}\r`).catch(silentCatch('mastermind fleet reply'));
-    setReply('');
-  };
 
   return (
     <div
@@ -64,7 +49,7 @@ export function FleetPreviewPanel({ sessionId, session, onClose }: {
         </button>
       </div>
 
-      <div className="h-[260px] bg-background/80">
+      <div className="h-[280px] bg-background/80">
         {live ? (
           <FleetTerminalPane sessionId={sessionId} className="h-full" autoFocus={false} />
         ) : (
@@ -73,29 +58,6 @@ export function FleetPreviewPanel({ sessionId, session, onClose }: {
           </p>
         )}
       </div>
-
-      {live && (
-        <div className="flex items-center gap-1.5 px-2 py-2 border-t border-primary/10">
-          <input
-            value={reply}
-            onChange={(e) => setReply(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
-            placeholder={COPY.placeholder}
-            className="flex-1 min-w-0 px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-primary/15 text-foreground outline-none focus:border-primary/40"
-            data-testid="mm-fleet-reply-input"
-          />
-          <button
-            type="button"
-            onClick={send}
-            disabled={reply.trim().length === 0}
-            aria-label={COPY.send}
-            className="shrink-0 p-1.5 rounded-interactive text-primary hover:bg-primary/10 disabled:opacity-40 transition-colors focus-ring"
-            data-testid="mm-fleet-reply-send"
-          >
-            <Send className="w-4 h-4" aria-hidden />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

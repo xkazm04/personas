@@ -79,9 +79,15 @@ export type CanvasMode = 'edit' | 'group' | 'connect' | 'note';
 
 export type NoteSize = 'sm' | 'md' | 'lg' | 'xl';
 
-/** Prototype toggle for the per-island stats treatments: panels (round-9
- *  boxed side panels) vs columns (round-10 transparent icon+value columns). */
-export type StatsStyle = 'panels' | 'columns' | 'off';
+/** Stats toggle (round-11: Columns won; Panels deleted). Columns auto-hide at
+ *  FAR zoom — the band gate lives in the islands. */
+export type StatsStyle = 'columns' | 'off';
+
+/** Prototype toggle for multi-session terminal handling (round 11):
+ *  cells = sessions occupy free hex/grid slots as first-class cells (animal
+ *  icon per session); badges = per-state count badges under the island that
+ *  open a session-list popover. */
+export type FleetStyle = 'cells' | 'badges';
 export type NoteFont = 'inter' | 'roboto' | 'caveat';
 
 /** Free text note placed on the canvas (note tool). World coordinates. */
@@ -108,6 +114,8 @@ export interface VariantProps {
   onProjectOpen: (slug: string) => void;
   /** Which stats-panel treatment to render (prototype A/B). */
   statsStyle: StatsStyle;
+  /** Which multi-session terminal treatment to render (prototype A/B). */
+  fleetStyle: FleetStyle;
 }
 
 // Zoom bands — the single source of truth for level-of-detail. Round-3 split:
