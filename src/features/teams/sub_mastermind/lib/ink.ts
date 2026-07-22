@@ -15,6 +15,20 @@ export const DIM_INK: Record<DimStatus, string> = {
   solid: 'var(--status-success)',
   partial: 'var(--status-info)',
   risk: 'var(--status-warning)',
+  alert: 'var(--status-error)',
+};
+
+/** Fleet session state → ink. Mirrors the Fleet grid's accent palette
+ *  (FleetGridPage STATE_ACCENT); violet/indigo have no semantic token yet so
+ *  they stay literal, matching the fleet feature's own identity. */
+export const FLEET_INK: Record<string, string> = {
+  spawning: 'var(--accent)',
+  running: 'var(--status-processing)',
+  awaiting_input: '#a78bfa',
+  idle: 'var(--status-success)',
+  stale: 'var(--status-warning)',
+  hibernated: '#818cf8',
+  exited: 'var(--status-neutral)',
 };
 
 /** Score → ink, mirroring the passport ramp (80+ success / 60+ info / 40+ warning / else error). */
@@ -28,7 +42,17 @@ export function scoreInkVar(score: number): string {
 export const mix = (color: string, pct: number, base = 'transparent'): string =>
   `color-mix(in srgb, ${color} ${pct}%, ${base})`;
 
-// The two variants forge their own typographic identities (deliberately NOT the
-// app's UI stack): Archipelago = cartographic serif, Command Grid = tactical mono.
+// The canvas forges its own typographic identity (deliberately NOT the app's
+// UI stack): cartographic serif for identity/details, mono for instrumentation.
 export const SERIF = `'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif`;
 export const MONO = `ui-monospace, 'Cascadia Code', Consolas, 'SF Mono', monospace`;
+
+// Note-tool fonts. Deliberately IMPORT-FREE (the "light alternative" per the
+// round-7 brief): each stack leads with the requested face for users who have
+// it installed and falls back to a visually-equivalent system face — Caveat's
+// handwriting look maps to Segoe Script / Ink Free, which ship with Windows.
+export const NOTE_FONT: Record<'inter' | 'roboto' | 'caveat', string> = {
+  inter: `'Inter', ui-sans-serif, system-ui, 'Segoe UI', sans-serif`,
+  roboto: `'Roboto', 'Segoe UI', Arial, sans-serif`,
+  caveat: `'Caveat', 'Segoe Script', 'Ink Free', 'Comic Sans MS', cursive`,
+};

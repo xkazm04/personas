@@ -317,7 +317,8 @@ export function ProjectsPassportWall({
  *  action icons + the 5-slot stack strip on one line, then the labeled
  *  mini-scoreboard band (Auto / Prod / Trend / Ctx / KPI). The axis depth the
  *  old cover carried lives in the Compare rows; production affordances
- *  (warning badge, standards scan, markdown export) stay on the title row. */
+ *  (warning badge, standards scan, markdown export) stay on the title row.
+ *  Exported for reuse as the Mastermind project sidebar's header. */
 const BAND_CODE: Record<string, string> = {
   prototype: 'PT', internal: 'IN', beta: 'BE', production: 'PR', hardened: 'HD',
 };
@@ -363,7 +364,7 @@ function StackStrip({ p, size = 13 }: { p: AppPassport; size?: number }) {
   );
 }
 
-function CoverBody({
+export function CoverBody({
   p, openable, onOpen, attention, onJumpKpi, stats,
 }: {
   p: AppPassport;
@@ -451,8 +452,9 @@ function CoverBody({
 
 /** Cell renderer in Focus ink — segmented level bars for ordinals, brand icons
  *  with visible names for stack/tooling, blue "set up →" for meaningful gaps.
- *  Pips/bool keep the production widgets (their labels already read well). */
-function InkWallCell({ value }: { value: CellValue }) {
+ *  Pips/bool keep the production widgets (their labels already read well).
+ *  Exported for reuse in the Mastermind project sidebar. */
+export function InkWallCell({ value }: { value: CellValue }) {
   switch (value.kind) {
     case 'level':
     case 'band': {
