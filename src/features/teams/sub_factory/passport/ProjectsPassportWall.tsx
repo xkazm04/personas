@@ -16,7 +16,7 @@
 // each cover morphs between its grid tile and its table column.
 import { Fragment, useMemo, useRef, useState } from 'react';
 import { LayoutGroup, motion, useReducedMotion } from 'framer-motion';
-import { Activity, AlertTriangle, ArrowUpRight, Boxes, CheckCircle2, ChevronLeft, ChevronRight, Database, FileDown, KeyRound, Server } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowUpRight, Boxes, CheckCircle2, ChevronLeft, ChevronRight, Database, FileDown, KeyRound, Server, Settings2, TerminalSquare } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
@@ -30,11 +30,13 @@ import {
 import { INK, InkTabs, SegBar, TechInk, inkKindOf, scoreInk } from './passportInk';
 import { trendDelta } from './passportHistory';
 import { resolveTechIcon } from './techIcons';
-import { Pips, BoolMark, SectionIcon } from './passportWidgets';
+import { Pips, BoolMark, SectionIcon, RowInfoLabel } from './passportWidgets';
 import { ImproveCell } from './improve/ImproveCell';
 import { StandardsScan } from './improve/StandardsScan';
 import { LlmTrackingCell } from './LlmTrackingCell';
 import { WarningBadge, type WarningItem } from './WarningBadge';
+import { PASSPORT_FLEET_INK, PassportTerminalModal, passportDispatchKey, usePassportFleetSessions } from './passportFleet';
+import { RowSetupModal } from './RowSetupModal';
 
 // Improvable cells. Tier-0 standards-config rows (CI / Self-verify) + every
 // code-requiring or connector-bindable row: context/CLAUDE.md/tests/evals/
@@ -42,10 +44,15 @@ import { WarningBadge, type WarningItem } from './WarningBadge';
 // tooling rows (errors/logs/metrics/tracing → connector wire), hosting (deploy),
 // aiflow + skills. Each opens the cell popover with its level ladder + actions.
 const IMPROVABLE_ROWS = new Set([
-  'ci', 'security', 'selfverify', 'context', 'instructions', 'tests', 'evals',
-  'migrations', 'observability', 'aiflow', 'skills',
+  'ci', 'selfverify', 'context', 'instructions',
+  'observability', 'aiflow', 'skills',
   'errors', 'logs', 'metrics', 'tracing', 'hosting', 'llmtracking',
 ]);
+
+// R19 — the UNIFIED setup rows: always-available setup icon (any level, not
+// just red), full setup modal with three directions, Fleet as the LLM engine,
+// state-tinted terminal icon + terminal modal while a run is live.
+const UNIFIED_ROWS = new Set(['evals', 'security', 'tests', 'migrations']);
 
 const COPY = {
   blockersTitle: 'Why it’s not ready',
@@ -100,6 +107,10 @@ export function ProjectsPassportWall({
   const reduce = useReducedMotion();
   const [view, setView] = useState<WallView>('overview');
   const [sort, setSort] = useState<WallSort>('name');
+  // R19 — unified-row machinery: live fleet sessions per dispatch key + modals.
+  const fleetSessions = usePassportFleetSessions();
+  const [setupModal, setSetupModal] = useState<{ rowKey: string; rowLabel: string; passport: AppPassport; currentLabel: string } | null>(null);
+  const [terminalKey, setTerminalKey] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Horizontal scroll from the header so the user never hunts for the bottom
@@ -240,7 +251,7 @@ export function ProjectsPassportWall({
                     {section.rows.map((row) => (
                       <tr key={row.key} className="hover:bg-primary/[0.02] transition-colors">
                         <td className={`${rail} px-3 py-2 border-t border-primary/[0.06] align-top`}>
-                          <span className="typo-caption text-foreground/65">{row.label}</span>
+                          <RowInfoLabel label={row.label} info={row.info} />
                         </td>
                         {columns.map((p) => {
                           const value = row.get(p);
@@ -261,7 +272,41 @@ export function ProjectsPassportWall({
                             );
                           return (
                             <td key={p.identity.slug} className={`px-3 py-2 align-top border-t border-primary/[0.06] ${colChrome} ${recede ? 'opacity-45' : ''}`}>
-                              {IMPROVABLE_ROWS.has(row.key) ? (
+                              {UNIFIED_ROWS.has(row.key) ? (() => {
+                                const dk = passportDispatchKey(row.key, p.identity.slug);
+                                const fl = fleetSessions.get(dk);
+                                const currentLabel = value.kind === 'ordinal' ? value.label : value.kind === 'present' ? (value.label ?? 'not set') : '';
+                                return (
+                                  <span className="group/uni relative flex items-start w-full gap-1" data-testid={`unified-${row.key}-${p.identity.slug}`}>
+                                    <span className="min-w-0 flex-1">{cell}</span>
+                                    {fl ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => setTerminalKey(dk)}
+                                        title={`Fleet is working this row — ${String(fl.state).replace('_', ' ')} (click to open the terminal)`}
+                                        className="shrink-0 p-0.5 rounded-interactive transition-colors hover:bg-primary/10 focus-ring"
+                                        data-testid={`unified-fleet-${row.key}-${p.identity.slug}`}
+                                      >
+                                        <TerminalSquare
+                                          className={`w-3.5 h-3.5 ${fl.state === 'running' || fl.state === 'spawning' ? 'animate-pulse' : ''}`}
+                                          style={{ color: PASSPORT_FLEET_INK[String(fl.state)] ?? INK.violet }}
+                                          aria-hidden
+                                        />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => setSetupModal({ rowKey: row.key, rowLabel: row.label, passport: p, currentLabel })}
+                                        title={`Set up ${row.label}`}
+                                        className="shrink-0 p-0.5 rounded-interactive opacity-[0.10] group-hover/uni:opacity-100 transition-opacity hover:bg-primary/10 focus-ring"
+                                        data-testid={`unified-setup-${row.key}-${p.identity.slug}`}
+                                      >
+                                        <Settings2 className="w-3.5 h-3.5" style={{ color: INK.teal }} aria-hidden />
+                                      </button>
+                                    )}
+                                  </span>
+                                );
+                              })() : IMPROVABLE_ROWS.has(row.key) ? (
                                 <ImproveCell slug={p.identity.slug} rowKey={row.key} passport={p}>{cell}</ImproveCell>
                               ) : (
                                 cell
@@ -309,6 +354,24 @@ export function ProjectsPassportWall({
           </div>
         )}
       </LayoutGroup>
+
+      {setupModal && (
+        <RowSetupModal
+          rowKey={setupModal.rowKey}
+          rowLabel={setupModal.rowLabel}
+          passport={setupModal.passport}
+          currentLabel={setupModal.currentLabel}
+          onDispatched={() => { /* R20: no auto-open — the cell's fleet icon is the door; it appears via the 5s poll */ }}
+          onClose={() => setSetupModal(null)}
+        />
+      )}
+      {terminalKey && (
+        <PassportTerminalModal
+          sessionId={fleetSessions.get(terminalKey)?.id ?? ''}
+          session={fleetSessions.get(terminalKey) ?? null}
+          onClose={() => setTerminalKey(null)}
+        />
+      )}
     </div>
   );
 }
@@ -505,5 +568,19 @@ export function InkWallCell({ value }: { value: CellValue }) {
       return <Pips items={value.items} />;
     case 'bool':
       return <BoolMark on={value.on} />;
+    case 'counts': {
+      const total = value.items.reduce((a, i) => a + i.count, 0);
+      if (total === 0) return <span className="typo-caption font-medium" style={{ color: INK.blue }}>{COPY.add}</span>;
+      return (
+        <span className="inline-flex items-center gap-x-2.5 min-w-0">
+          {value.items.map((i) => (
+            <span key={i.label} className="inline-flex items-baseline gap-1">
+              <span className={`typo-caption font-semibold tabular-nums ${i.count > 0 ? 'text-foreground/90' : 'text-foreground/35'}`}>{i.count}</span>
+              <span className="typo-label text-foreground/45">{i.label}</span>
+            </span>
+          ))}
+        </span>
+      );
+    }
   }
 }

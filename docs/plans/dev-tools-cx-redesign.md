@@ -163,6 +163,31 @@ business dimension? · how much of the improve engine migrates into
 establishment vs stays on wall cells? · does the cockpit *replace* the KPIs tab
 or open as drill-in from the wall (R2 tests both entries)?
 
+### 3.1 Security rating — composition inspired by the Claude Security plugin (2026-07-22)
+
+The official `claude-security` plugin (claude-plugins-official) settles two
+things our passport's Security row should adopt:
+
+1. **Severity is impact, confidence is separate.** HIGH = system control or
+   broad cross-user data exposure; MEDIUM = real harm with limits; LOW =
+   defense in depth. Confidence (low/medium/high) is clamped by an adversarial
+   verifier panel — only unanimous findings may claim high. Our wall's scan
+   direction prompt now encodes this contract; the findings-spine emitters
+   should carry `severity` + `confidence` as separate fields when security
+   findings land in `dev_ideas`.
+2. **Coverage is part of the result.** "No findings" is only meaningful next
+   to "what was NOT examined and why" — the same *measurement before opinion*
+   rule the cockpit already lives by.
+
+**Proposed passport composition (future round):** the Security cell stops being
+a pure process ordinal (`none…supply-chain`) and becomes
+`process level × open findings`: display `gated · 2 HIGH open`, clamp the tint
+to red while any HIGH-impact finding is unresolved and amber for MEDIUM, and
+let the sweep-is-the-probe verdict engine clear them (origin
+`security_finding`, dedup by file:line+rule, evidence = the finding's impact
+line). Scan runs land through the unified Fleet dispatch; the report's
+`findings.json`-shaped output is what the emitter parses.
+
 ## 4. Docs & consolidation state
 
 - Channel-1 docs home: **`docs/features/teams/`** (README updated with the

@@ -8,7 +8,7 @@
 // The chosen direction (+ optional custom instructions) dispatches a FLEET
 // terminal in the project's repo root — Fleet is the LLM engine here, not the
 // Dev Runner. The cell's icon then flips to the state-tinted terminal icon.
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Rocket, ScanSearch, ShieldCheck, Sparkles, X } from 'lucide-react';
 
 import { BaseModal } from '@/features/shared/components/modals';
@@ -19,6 +19,7 @@ import { INK } from './passportInk';
 import { applicableDeployActions } from './improve/deployActions';
 import { useImprove } from './improve/ImproveContext';
 import { dispatchRowToFleet, passportDispatchKey } from './passportFleet';
+import { ROW_DIRECTIONS, buildDirectionPrompt } from './rowDirections';
 
 interface Direction {
   id: string;
@@ -27,31 +28,6 @@ interface Direction {
   fromScan: boolean;
   buildPrompt: (projectName: string) => string;
 }
-
-/** Generic app directions per row — always available, used to fill up to three
- *  slots when the scan offers fewer targeted ones. */
-const GENERIC_DIRECTIONS: Record<string, Array<{ id: string; label: string; hint: string; prompt: string }>> = {
-  tests: [
-    { id: 'g-tests-scan', label: 'Scan test coverage', hint: 'map the suite, rank the untested critical paths', prompt: 'Map the current test coverage: run the existing suite, identify untested critical paths, and produce a ranked gap list with effort estimates. Do not change code yet — end with the report.' },
-    { id: 'g-tests-harden', label: 'Harden critical paths', hint: 'write tests where a regression hurts most', prompt: 'Write tests for the highest-risk untested critical paths (auth, data writes, money/state transitions). Follow the repo’s existing test conventions and frameworks; commit atomically per covered path.' },
-    { id: 'g-tests-stabilize', label: 'Stabilize the suite', hint: 'hunt flaky/slow tests, make CI trustworthy', prompt: 'Find flaky or slow tests: run the suite twice, diff outcomes, fix the flakes (timeouts, shared state, order dependence) and quarantine what cannot be fixed now with a tracking note.' },
-  ],
-  security: [
-    { id: 'g-sec-scan', label: 'Scan for vulnerabilities', hint: 'dependency + code audit, ranked findings', prompt: 'Audit the codebase for security issues: dependency vulnerabilities, injection risks, secrets in code, unsafe defaults. Produce a ranked findings list with concrete fixes. Do not change code yet — end with the report.' },
-    { id: 'g-sec-harden', label: 'Harden inputs & authz', hint: 'validate at boundaries, tighten access checks', prompt: 'Harden the highest-risk input boundaries and authorization checks found in the code: add validation, tighten permissive defaults, and cover each fix with a test. Commit atomically per boundary.' },
-    { id: 'g-sec-gate', label: 'Gate CI with security checks', hint: 'make the pipeline catch regressions', prompt: 'Add security gates to the CI pipeline (dependency audit, static analysis appropriate to the stack, secret scanning). Keep the gates fast and actionable; document how to silence false positives.' },
-  ],
-  evals: [
-    { id: 'g-evals-scan', label: 'Scan LLM call sites', hint: 'find prompts without evals, rank by blast radius', prompt: 'Inventory every LLM call site in the codebase (prompts, models, output contracts) and rank them by blast radius. Report which have evals, which do not, and what a minimal eval per site would assert. No code changes yet.' },
-    { id: 'g-evals-author', label: 'Author evals for critical flows', hint: 'pin the behaviors that must not regress', prompt: 'Author evals for the most critical LLM flows: golden inputs with expected-output assertions, using the repo’s existing eval tooling if present (introduce a minimal harness if not). Commit atomically per flow.' },
-    { id: 'g-evals-ci', label: 'Wire evals into CI', hint: 'run them on every change that touches prompts', prompt: 'Wire the existing evals into CI so they run on changes touching prompts or LLM plumbing. Keep the job fast (subset on PR, full on main) and make failures actionable.' },
-  ],
-  migrations: [
-    { id: 'g-mig-scan', label: 'Scan schema drift', hint: 'compare live schema vs migrations story', prompt: 'Analyze the persistence layer: compare the actual schema with the migrations history, find drift, undocumented tables/columns, and destructive patterns. Report findings ranked by risk. No code changes yet.' },
-    { id: 'g-mig-version', label: 'Version the migrations', hint: 'move to ordered, reproducible migrations', prompt: 'Introduce (or repair) versioned migrations: ordered, reproducible, with a clean bootstrap path for a fresh database. Migrate any ad-hoc schema changes into the sequence. Commit atomically.' },
-    { id: 'g-mig-rollback', label: 'Add rollback safety', hint: 'down-paths or documented recovery per migration', prompt: 'Add rollback safety to the migrations story: down-migrations where the framework supports them, or documented recovery steps per irreversible migration. Verify the down-path on the most recent migration.' },
-  ],
-};
 
 const ROW_ICON: Record<string, typeof ShieldCheck> = {
   tests: ScanSearch, security: ShieldCheck, evals: Sparkles, migrations: ScanSearch,
@@ -69,6 +45,8 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
   const engine = useImprove();
   const [selected, setSelected] = useState<string | null>(null);
   const [instruction, setInstruction] = useState('');
+  const instructionRef = useRef(instruction);
+  instructionRef.current = instruction;
   const [busy, setBusy] = useState(false);
 
   const slug = passport.identity.slug;
@@ -87,12 +65,12 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
         fromScan: true,
         buildPrompt: () => (raw ? a.prompt!(raw.project, passport) : a.hint),
       }));
-    const generics: Direction[] = (GENERIC_DIRECTIONS[rowKey] ?? []).map((g) => ({
+    const generics: Direction[] = (ROW_DIRECTIONS[rowKey] ?? []).map((g) => ({
       id: g.id,
       label: g.label,
       hint: g.hint,
       fromScan: false,
-      buildPrompt: (projectName: string) => `Project “${projectName}”. ${g.prompt}`,
+      buildPrompt: (projectName: string) => buildDirectionPrompt({ projectName, direction: g, instruction: instructionRef.current }),
     }));
     return [...scanActs, ...generics.filter((g) => !scanActs.some((s) => s.label === g.label))].slice(0, 3);
   }, [rowKey, passport, raw]);
@@ -101,10 +79,14 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
     const dir = directions.find((d) => d.id === selected);
     if (!dir || !raw) return;
     setBusy(true);
-    const prompt =
-      `${dir.buildPrompt(raw.project.name)}` +
-      (instruction.trim() ? ` Additional instructions: ${instruction.trim()}.` : '') +
-      ' Work in this repository. Commit atomically with clear messages, and finish with a short report of what changed and how to verify it.';
+    // Generic directions come fully framed by buildDirectionPrompt; scan-derived
+    // prompts get the same instruction + working contract appended here.
+    const base = dir.buildPrompt(raw.project.name);
+    const prompt = dir.fromScan
+      ? base +
+        (instruction.trim() ? ` Additional instructions from the operator: ${instruction.trim()}.` : '') +
+        ' Work in this repository, commit atomically with clear messages, and finish with a short report: what changed, what you verified, what remains.'
+      : base;
     dispatchRowToFleet(passportDispatchKey(rowKey, slug), raw.project.root_path, prompt)
       .then(() => { setBusy(false); onDispatched(); onClose(); })
       .catch((e) => { setBusy(false); toastCatch('passport fleet deploy')(e); });
