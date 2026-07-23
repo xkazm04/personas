@@ -2103,17 +2103,45 @@ fn aggregate_project_metadata(
 
 /// Generate a rich cross-project metadata map by aggregating each project's
 /// existing context map. No filesystem scanning — reuses data already in the DB.
+/// `project_id: Some(..)` scopes the re-aggregation to ONE project: every other
+/// project's entry is carried over from the cached map (cross-project insights
+/// still recompute over the merged set), sparing the full-fleet pass.
 #[tauri::command]
 pub fn dev_tools_generate_cross_project_metadata(
     state: State<'_, Arc<AppState>>,
+    project_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
     let projects = repo::list_projects(&state.db, None)?;
     let relations = repo::list_cross_project_relations(&state.db)?;
 
+    // Scoped rescan: reuse cached entries for every project except the target.
+    let cached_projects: Vec<serde_json::Value> = if project_id.is_some() {
+        crate::db::repos::core::settings::get(
+            &state.db,
+            crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA,
+        )?
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .and_then(|c| c.get("projects").and_then(|v| v.as_array().cloned()))
+        .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
     // Aggregate per project
     let mut project_metadata: Vec<serde_json::Value> = Vec::new();
     for project in &projects {
+        let carry_over = match &project_id {
+            Some(pid) if pid != &project.id => cached_projects
+                .iter()
+                .find(|m| m.get("project_id").and_then(|v| v.as_str()) == Some(project.id.as_str()))
+                .cloned(),
+            _ => None,
+        };
+        if let Some(existing) = carry_over {
+            project_metadata.push(existing);
+            continue;
+        }
         match aggregate_project_metadata(&state.db, project) {
             Ok(meta) => project_metadata.push(meta),
             Err(e) => {

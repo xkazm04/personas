@@ -327,8 +327,10 @@ export interface CrossProjectMetadataMap {
   total_projects: number;
 }
 
-export const generateCrossProjectMetadata = () =>
-  invoke<CrossProjectMetadataMap>("dev_tools_generate_cross_project_metadata");
+/** No arg = full-fleet regeneration; `projectId` = scoped rescan (only that
+ *  project re-aggregates; the rest carry over from the cached map). */
+export const generateCrossProjectMetadata = (projectId?: string) =>
+  invoke<CrossProjectMetadataMap>("dev_tools_generate_cross_project_metadata", projectId ? { projectId } : {});
 
 export const getCrossProjectMetadata = () =>
   safeInvoke<CrossProjectMetadataMap | null>(null, "dev_tools_get_cross_project_metadata");

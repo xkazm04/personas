@@ -29,7 +29,7 @@ const RAIL = 'sticky left-0 z-20 bg-background';
 const COL_CHROME = 'border-l border-primary/[0.08]';
 
 export function WallCompareTable({
-  columns, reduce, coverProps, scrollRef, fleetSessions, onOpenSetup, onOpenTerminal,
+  columns, reduce, coverProps, scrollRef, fleetSessions, onOpenSetup, onOpenTerminal, renderActions,
 }: {
   columns: AppPassport[];
   reduce: boolean | null;
@@ -39,6 +39,9 @@ export function WallCompareTable({
   fleetSessions: Map<string, FleetSession>;
   onOpenSetup: (target: WallSetupTarget) => void;
   onOpenTerminal: (dispatchKey: string) => void;
+  /** Per-project action buttons rendered on the FIRST group's header line
+   *  (the "Stack" band) — the wall's consent-gated action row. */
+  renderActions?: (p: AppPassport) => React.ReactNode;
 }) {
   return (
     <div ref={scrollRef} className="overflow-x-auto rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1">
@@ -67,17 +70,36 @@ export function WallCompareTable({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: reduce ? 0 : 0.12 }}
         >
-          {BODY_SECTIONS.map((section) => (
+          {BODY_SECTIONS.map((section, sectionIdx) => (
             <Fragment key={section.key}>
-              <tr>
-                {/* full-width band so the section name spreads across the row instead of wrapping in the narrow rail */}
-                <td colSpan={columns.length + 1} className="border-t border-primary/10 bg-primary/[0.03] p-0">
-                  <span className="sticky left-0 z-10 inline-flex items-center gap-1.5 typo-label text-foreground/70 whitespace-nowrap px-3 py-1.5">
-                    <SectionIcon name={section.icon} className="w-3.5 h-3.5 text-primary/70" />
-                    {section.label}
-                  </span>
-                </td>
-              </tr>
+              {sectionIdx === 0 && renderActions ? (
+                <tr>
+                  {/* the FIRST group header doubles as the ACTIONS row — the
+                      section label keeps the rail, each project column gets its
+                      consent-gated action buttons, well visible up top */}
+                  <td className={`${RAIL} px-3 py-1.5 border-t border-primary/10 bg-primary/[0.03] align-middle`}>
+                    <span className="inline-flex items-center gap-1.5 typo-label text-foreground/70 whitespace-nowrap">
+                      <SectionIcon name={section.icon} className="w-3.5 h-3.5 text-primary/70" />
+                      {section.label}
+                    </span>
+                  </td>
+                  {columns.map((p) => (
+                    <td key={p.identity.slug} className={`px-3 py-1 border-t border-primary/10 bg-primary/[0.03] align-middle ${COL_CHROME}`}>
+                      {renderActions(p)}
+                    </td>
+                  ))}
+                </tr>
+              ) : (
+                <tr>
+                  {/* full-width band so the section name spreads across the row instead of wrapping in the narrow rail */}
+                  <td colSpan={columns.length + 1} className="border-t border-primary/10 bg-primary/[0.03] p-0">
+                    <span className="sticky left-0 z-10 inline-flex items-center gap-1.5 typo-label text-foreground/70 whitespace-nowrap px-3 py-1.5">
+                      <SectionIcon name={section.icon} className="w-3.5 h-3.5 text-primary/70" />
+                      {section.label}
+                    </span>
+                  </td>
+                </tr>
+              )}
               {section.rows.map((row) => (
                 <tr key={row.key} className="hover:bg-primary/[0.02] transition-colors">
                   <td className={`${RAIL} px-3 py-2 border-t border-primary/[0.06] align-top`}>

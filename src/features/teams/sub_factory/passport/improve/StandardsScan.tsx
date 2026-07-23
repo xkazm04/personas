@@ -38,7 +38,7 @@ export function StandardsScan({ slug, projectName }: { slug: string; projectName
   );
 }
 
-function FindingsPopover({ slug, projectName, anchor, onClose }: { slug: string; projectName: string; anchor: DOMRect | null; onClose: () => void }) {
+export function FindingsPopover({ slug, projectName, anchor, onClose }: { slug: string; projectName: string; anchor: DOMRect | null; onClose: () => void }) {
   const engine = useImprove();
   const addToast = useToastStore((s) => s.addToast);
   const panelRef = useRef<HTMLDivElement>(null);
