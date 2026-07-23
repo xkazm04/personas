@@ -12006,7 +12006,15 @@
       "skill_sync_diverged": "Divergé",
       "skill_sync_diverged_hint": "Cette copie ne correspond plus à sa source installée — la copie ou sa source a changé.",
       "skill_sync_in_sync": "Synchronisé",
-      "skill_sync_in_sync_hint": "Cette copie installée correspond toujours à la source depuis laquelle elle a été installée."
+      "skill_sync_in_sync_hint": "Cette copie installée correspond toujours à la source depuis laquelle elle a été installée.",
+      "footer_empty": "Aucune session suivie",
+      "footer_hint_close_grid": "Cliquez pour fermer la grille de terminaux",
+      "footer_hint_open_grid": "Cliquez pour ouvrir la grille de terminaux",
+      "footer_hint_open_page": "Cliquez pour ouvrir Fleet",
+      "footer_needs_you_one": "{count} session a besoin de vous",
+      "footer_needs_you_other": "{count} sessions ont besoin de vous",
+      "footer_open_page": "Ouvrir la page Fleet",
+      "footer_title": "Flotte"
     },
     "title": "Extensions",
     "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",

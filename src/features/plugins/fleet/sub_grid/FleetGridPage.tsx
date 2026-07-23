@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { useShallow } from 'zustand/react/shallow';
 import {
   Terminal as TerminalIcon,
   Play,
@@ -29,7 +28,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { EventName } from '@/lib/eventRegistry';
-import { spawnSession, spawnHeadlessSession, writeInput, hibernateSession, wakeSession, killSession } from '@/api/fleet/fleet';
+import { spawnSession, spawnHeadlessSession, writeInput, hibernateSession, wakeSession } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useToastStore } from '@/stores/toastStore';
@@ -39,20 +38,19 @@ import { FleetSessionInsights } from './FleetSessionInsights';
 import { FleetContextPill } from './FleetContextPill';
 import { FleetTokenSummaryBar } from './FleetTokenSummaryBar';
 import { SkillLibraryDrawer } from '../SkillLibraryDrawer';
-import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
 import { gcTerminals } from '../fleetTerminalManager';
 import { useFleetTerminalConfig } from '../useFleetTerminalConfig';
-import { sessionAttention, attentionClass, craftStalePrompt } from '../fleetAttention';
+import { useFleetOverlayActions } from '../useFleetOverlayActions';
+import { sessionAttention, attentionClass } from '../fleetAttention';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
 import { notifyFleetAwaiting } from '@/lib/notifications/notifyFleetAwaiting';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { companionApproveAction, companionRejectAction, companionSendMessage } from '@/api/companion';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { useFleetHotkeys } from '../useFleetHotkeys';
 import { FleetHotkeysHelp } from '../FleetHotkeysHelp';
 import { FleetSpawnTaskModal } from '../FleetSpawnTaskModal';
 import { FleetSummaryPills } from '../FleetSummaryPills';
+import { fleetStateCounts } from '../fleetStateMeta';
 import type { FleetLabelKey } from '../FleetStatusDots';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
@@ -104,21 +102,30 @@ const GROUP_ORDER: ReadonlyArray<{
  *    actions; no resubscribe on every render.
  */
 export default function FleetGridPage() {
-  const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
   const refresh = useSystemStore((s) => s.fleetRefresh);
   const startSessionListeners = useSystemStore((s) => s.fleetStartSessionListeners);
   const patchSession = useSystemStore((s) => s.fleetPatchSession);
   const removeLocal = useSystemStore((s) => s.fleetRemoveSessionLocal);
   const recordTransition = useSystemStore((s) => s.fleetRecordTransition);
-  const activeSessionId = useSystemStore((s) => s.fleetActiveSessionId);
-  const setActiveSession = useSystemStore((s) => s.fleetSetActiveSession);
-  const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const projects = useSystemStore(useShallow((s) => s.projects));
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const notifyAwaiting = useSystemStore((s) => s.fleetNotifyAwaiting);
   const setNotifyAwaiting = useSystemStore((s) => s.fleetSetNotifyAwaiting);
-  const companionApprovals = useCompanionStore(useShallow((s) => s.approvals));
-  const removeApproval = useCompanionStore((s) => s.removeApproval);
+
+  // Session list, focus, project + the operations the fullscreen grid also
+  // drives (spawn / apply skill) — shared with `FleetGridOverlayHost` so both
+  // surfaces behave identically. The overlay itself is NOT rendered here: it
+  // is an app-wide layer (`FleetGridLayer`) so it can be raised from the
+  // footer on any page.
+  const {
+    sessions,
+    liveSessions,
+    activeSessionId,
+    setActiveSession,
+    activeProject,
+    spawning,
+    handleSpawn,
+    handleApplySkill,
+  } = useFleetOverlayActions();
 
   const { t, tx } = useTranslation();
 
@@ -126,18 +133,14 @@ export default function FleetGridPage() {
   // to every live managed terminal, and track the app's light/dark appearance.
   useFleetTerminalConfig();
 
-  const [spawning, setSpawning] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   // Spawn-with-a-first-task composer (seeds the new session's prompt via argv).
   const [spawnTaskOpen, setSpawnTaskOpen] = useState(false);
   // Fullscreen terminal grid overlay (transient — minimizing returns to the
   // single-pane view showing the last-selected session). Driven by the store
-  // so the footer Fleet toggle can close it from outside this component.
+  // so the footer Fleet toggle and the app-wide layer share one flag.
   const gridOpen = useSystemStore((s) => s.fleetGridOpen);
   const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
-  // Session ids with an in-flight "Ask Athena" proactive turn (drives the
-  // tile's "thinking" affordance until the turn resolves).
-  const [askingAthena, setAskingAthena] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FleetSessionState | null>(null);
   const [query, setQuery] = useState('');
   // Right column shows either the live terminal or the transcript-intelligence
@@ -149,11 +152,6 @@ export default function FleetGridPage() {
   const [hotkeysHelpOpen, setHotkeysHelpOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const addToast = useToastStore((s) => s.addToast);
-
-  const activeProject = useMemo(
-    () => (activeProjectId ? projects.find((p) => p.id === activeProjectId) : null) ?? null,
-    [activeProjectId, projects],
-  );
 
   // Hold the latest refresh/patch/remove in refs so the listener effect can
   // stay attached once for the lifetime of the page. Without this, every
@@ -275,22 +273,6 @@ export default function FleetGridPage() {
     }
   }, [sessions, addToast, t, tx]);
 
-  // Apply a library skill (full slash command, incl. any args) to the focused
-  // session — writes `<command>⏎` to its PTY (same mechanism as broadcast).
-  const handleApplySkill = useCallback(async (command: string) => {
-    if (!activeSessionId || !command.trim()) return;
-    try {
-      await writeInput(activeSessionId, `${command}\r`);
-      const sess = sessions.find((s) => s.id === activeSessionId);
-      addToast(
-        tx(t.plugins.fleet.skill_applied_toast, { command, name: sess?.name ?? sess?.projectLabel ?? '' }),
-        'success',
-      );
-    } catch (e) {
-      toastCatch('FleetGridPage:applySkill', 'Failed to apply skill')(e);
-    }
-  }, [activeSessionId, sessions, addToast, t, tx]);
-
   // Hibernate: free the process, keep the row resumable. Wake: respawn
   // `claude --resume` and focus the new session. (F3)
   const handleHibernate = useCallback(async (id: string) => {
@@ -308,56 +290,6 @@ export default function FleetGridPage() {
       toastCatch('FleetGridPage:wake', 'Failed to wake session')(e);
     }
   }, [setActiveSession]);
-  // Kill a session's process from the grid tile (it exits → leaves the grid).
-  const handleKill = useCallback(async (id: string) => {
-    try {
-      await killSession(id);
-    } catch (e) {
-      toastCatch('FleetGridPage:kill', 'Failed to kill session')(e);
-    }
-  }, []);
-
-  // Companion approvals no longer surface in the Needs-You banner — Athena's
-  // orb owns decision approval in Grid mode (`OrbDecisionBubble`). The store
-  // read + resolve handlers stay: the grid overlay still shows the matching
-  // `fleet_send_input` proposal on its target tile, and these resolve it.
-  const handleApprove = useCallback(async (id: string) => {
-    try {
-      await companionApproveAction(id);
-      removeApproval(id);
-    } catch (e) {
-      toastCatch('FleetGridPage:approve', 'Failed to approve action')(e);
-    }
-  }, [removeApproval]);
-
-  const handleRejectApproval = useCallback(async (id: string) => {
-    try {
-      await companionRejectAction(id);
-      removeApproval(id);
-    } catch (e) {
-      toastCatch('FleetGridPage:rejectApproval', 'Failed to reject action')(e);
-    }
-  }, [removeApproval]);
-
-  // Ask Athena to reason about one stale session and (if there's a clear
-  // winner) propose writing the next step into its terminal. Her proposal
-  // returns as an on-tile approval via the companion approvals event.
-  const handleAskAthena = useCallback(async (session: FleetSession) => {
-    setAskingAthena((prev) => new Set(prev).add(session.id));
-    try {
-      // Tag as a Fleet-originated request so it persists as a System turn
-      // (not an impersonated user message) and Athena/the chat see the source.
-      await companionSendMessage(craftStalePrompt(session), false, false, false, 'Fleet');
-    } catch (e) {
-      toastCatch('FleetGridPage:askAthena', 'Failed to reach Athena')(e);
-    } finally {
-      setAskingAthena((prev) => {
-        const next = new Set(prev);
-        next.delete(session.id);
-        return next;
-      });
-    }
-  }, []);
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? null,
@@ -371,21 +303,6 @@ export default function FleetGridPage() {
     [sessions],
   );
 
-  // Sessions that can host a live terminal (everything but exited) — drives
-  // the tiled grid view. Most-recently-active first.
-  const liveSessions = useMemo(
-    () =>
-      sessions
-        // Hibernated sessions have no PTY to tile — exclude alongside exited.
-        .filter((s) => s.state !== 'exited' && s.state !== 'hibernated')
-        // LOCKED spatial order: spawn time (stable), NOT activity. Reordering
-        // tiles on every state change is disorienting at scale — the operator
-        // builds muscle memory for "which session is in which cell", so a tile
-        // must stay put. New sessions append at the end; the grid never reshuffles.
-        .sort((a, b) => Number(a.createdAtMs) - Number(b.createdAtMs)),
-    [sessions],
-  );
-
   // Reap managed terminals whose session disappeared (removed from the
   // registry). Terminals persist across active-session switches and even
   // across leaving/returning to the Fleet page — only an actual removal
@@ -393,26 +310,6 @@ export default function FleetGridPage() {
   useEffect(() => {
     gcTerminals(new Set(sessions.map((s) => s.id)));
   }, [sessions]);
-
-  // If every session exits/closes while the grid overlay is up, minimize back
-  // to the single view rather than showing an empty fullscreen grid.
-  useEffect(() => {
-    if (gridOpen && liveSessions.length === 0) setGridOpen(false);
-  }, [gridOpen, liveSessions.length, setGridOpen]);
-
-  const handleSpawn = useCallback(async () => {
-    if (!activeProject || spawning) return;
-    setSpawning(true);
-    try {
-      const id = await spawnSession(activeProject.root_path);
-      setActiveSession(id);
-      refresh();
-    } catch (e) {
-      toastCatch('FleetGridPage:spawn', 'Failed to spawn Claude Code session')(e);
-    } finally {
-      setSpawning(false);
-    }
-  }, [activeProject, spawning, refresh, setActiveSession]);
 
   // Spawn seeded with a first task — the prompt rides as a positional argv
   // (`claude "<task>"`), so the session starts working the moment it boots.
@@ -436,13 +333,7 @@ export default function FleetGridPage() {
   // Count sessions in every lifecycle state — feeds the summary pills and
   // the header subtitle. A full Record keeps the pill component honest about
   // states the subtitle previously ignored (spawning, stale).
-  const stateCounts = useMemo(() => {
-    const c: Record<FleetSessionState, number> = {
-      spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, hibernated: 0, exited: 0,
-    };
-    for (const s of sessions) c[s.state] += 1;
-    return c;
-  }, [sessions]);
+  const stateCounts = useMemo(() => fleetStateCounts(sessions), [sessions]);
 
   const toggleFilter = useCallback(
     (state: FleetSessionState) => setFilter((cur) => (cur === state ? null : state)),
@@ -874,23 +765,6 @@ export default function FleetGridPage() {
           onSpawn={handleSpawnWithTask}
         />
       )}
-
-      <FleetTerminalOverlay
-        open={gridOpen}
-        sessions={liveSessions}
-        activeSessionId={activeSessionId}
-        onSelect={setActiveSession}
-        onClose={() => setGridOpen(false)}
-        approvals={companionApprovals}
-        askingSessionIds={askingAthena}
-        onApprove={handleApprove}
-        onReject={handleRejectApproval}
-        onAskAthena={handleAskAthena}
-        onOpenSkills={() => setSkillsDrawerOpen(true)}
-        onSpawn={handleSpawn}
-        canSpawn={!!activeProject && !spawning}
-        onKill={handleKill}
-      />
 
       <SkillLibraryDrawer
         open={skillsDrawerOpen}

@@ -12006,7 +12006,15 @@
       "skill_sync_diverged": "غير متطابق",
       "skill_sync_diverged_hint": "لم تعد هذه النسخة مطابقة لمصدرها المثبَّت — تغيّرت النسخة أو مصدرها.",
       "skill_sync_in_sync": "متزامن",
-      "skill_sync_in_sync_hint": "لا تزال هذه النسخة المثبّتة مطابقة للمصدر الذي ثُبّتت منه."
+      "skill_sync_in_sync_hint": "لا تزال هذه النسخة المثبّتة مطابقة للمصدر الذي ثُبّتت منه.",
+      "footer_empty": "لا توجد جلسات متتبَّعة",
+      "footer_hint_close_grid": "انقر لإغلاق شبكة الطرفية",
+      "footer_hint_open_grid": "انقر لفتح شبكة الطرفية",
+      "footer_hint_open_page": "انقر لفتح Fleet",
+      "footer_needs_you_one": "{count} جلسة تحتاج إليك",
+      "footer_needs_you_other": "{count} جلسة تحتاج إليك",
+      "footer_open_page": "فتح صفحة Fleet",
+      "footer_title": "الأسطول"
     },
     "title": "الإضافات",
     "subtitle": "وسّع مساحة عملك بالإضافات. بدّل لإظهار أو إخفاء من الشريط الجانبي.",

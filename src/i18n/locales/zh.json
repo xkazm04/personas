@@ -12006,7 +12006,15 @@
       "skill_sync_diverged": "已偏离",
       "skill_sync_diverged_hint": "此副本已与其安装来源不一致——副本或其来源已更改。",
       "skill_sync_in_sync": "已同步",
-      "skill_sync_in_sync_hint": "此已安装的副本仍与其安装来源保持一致。"
+      "skill_sync_in_sync_hint": "此已安装的副本仍与其安装来源保持一致。",
+      "footer_empty": "未跟踪任何会话",
+      "footer_hint_close_grid": "点击关闭终端网格",
+      "footer_hint_open_grid": "点击打开终端网格",
+      "footer_hint_open_page": "点击打开 Fleet",
+      "footer_needs_you_one": "{count} 个会话需要你处理",
+      "footer_needs_you_other": "{count} 个会话需要你处理",
+      "footer_open_page": "打开 Fleet 页面",
+      "footer_title": "舰队"
     },
     "title": "插件",
     "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",

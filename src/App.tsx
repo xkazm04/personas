@@ -117,6 +117,11 @@ const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network
 const CompanionPanel = lazyRetry(() => import("@/features/plugins/companion/CompanionPanel"));
 const AthenaOrbLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
 const StudioAttention = lazyRetry(() => import("@/features/studio/StudioAttention"));
+// Fleet grid is an app-wide LAYER, not a page surface: the footer raises it
+// over whatever you're looking at so checking a CLI never costs a navigation.
+// The component itself is cheap (no xterm) — it lazy-loads the terminal grid
+// on first open. DEV-only, matching Fleet's availability.
+const FleetGridLayer = lazyRetry(() => import("@/features/plugins/fleet/FleetGridLayer"));
 const AthenaGuideLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaGuideLayer"));
 // First-run onboarding overlay. Self-guards on `onboardingActive` (returns null
 // until startOnboarding() flips it), so it's safe to mount unconditionally once
@@ -372,6 +377,7 @@ export default function App() {
                   <AthenaOrbLayer />
                   <AthenaGuideLayer />
                   {import.meta.env.DEV && <StudioAttention />}
+                  {import.meta.env.DEV && <FleetGridLayer />}
                 </Suspense>
               </SilentErrorBoundary>
             </>

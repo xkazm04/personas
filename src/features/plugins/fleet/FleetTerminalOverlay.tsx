@@ -65,16 +65,18 @@ export function FleetTerminalOverlay({
 }: Props) {
   const { t, tx } = useTranslation();
   const setBackInterceptor = useSystemStore((s) => s.setBackInterceptor);
-  const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
   const dim = useMemo(() => gridDim(sessions.length), [sessions.length]);
 
-  // Flag the grid as open so the Athena orb floats above this overlay (it's
-  // otherwise z-50, behind the z-[200] overlay) — she stays visible/reactable
-  // while you orchestrate in the grid.
-  useEffect(() => {
-    setGridOpen(open);
-    return () => setGridOpen(false);
-  }, [open, setGridOpen]);
+  // NOTE: this component must NEVER write `fleetGridOpen`. That flag is now
+  // the *input* that decides whether the app-wide `FleetGridLayer` mounts this
+  // overlay at all — it used to also be an output here (an effect that set it
+  // on mount and cleared it on unmount, so the Athena orb could lift itself
+  // above the z-[200] overlay). Once the layer started rendering FROM the flag
+  // that became a cycle: under StrictMode's mount → cleanup → mount effect
+  // double-invoke, the cleanup's `setGridOpen(false)` re-entered the layer's
+  // render mid-flush and left the overlay wedged open — visibly mounted but
+  // no longer closeable from the footer. The orb reads the same store flag, so
+  // nothing was lost by deleting the write.
 
   // Per-tile Terminal/Insights view (P2.1 in the grid). Membership = showing
   // Insights; default (absent) = the live terminal.

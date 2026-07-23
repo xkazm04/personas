@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
-import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp, X, Keyboard, Map, LayoutGrid, Compass } from 'lucide-react';
+import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp, X, Keyboard, Map, Compass } from 'lucide-react';
 import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
 import { getActiveTourSteps } from '@/stores/slices/system/tourSlice';
 import { useAuthStore } from '@/stores/authStore';
@@ -18,6 +18,9 @@ import SystemLoadFooterIcon from '@/features/shared/chrome/SystemLoadFooterIcon'
 
 const CompanionFooterIcon = lazy(() => import('@/features/plugins/companion/CompanionFooterIcon'));
 const RadioFooter = lazy(() => import('@/features/plugins/radio/components/RadioFooter'));
+// Fleet status cluster (DEV-only). Lazy so the fleet module graph stays out of
+// the always-mounted footer chunk.
+const FleetFooterIcon = lazy(() => import('@/features/plugins/fleet/FleetFooterIcon'));
 
 /** Custom event name used to toggle sidebar collapse from anywhere. */
 export const SIDEBAR_TOGGLE_EVENT = 'personas:sidebar-toggle';
@@ -544,47 +547,6 @@ function OnboardingReplayFooterIcon() {
 // Desktop footer bar
 // ---------------------------------------------------------------------------
 
-/**
- * Quick toggle for the Fleet plugin (DEV-only). Outside the grid it jumps
- * straight to the Fleet page; while the fullscreen grid overlay is open it
- * closes it — so the footer (lifted above the overlay) is a way out of grid
- * mode without hunting for the overlay's own Back/Escape.
- */
-function FleetFooterIcon() {
-  const gridOpen = useSystemStore((s) => s.fleetGridOpen);
-  const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const setPluginTab = useSystemStore((s) => s.setPluginTab);
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
-
-  const onClick = useCallback(() => {
-    if (gridOpen) {
-      setGridOpen(false);
-      return;
-    }
-    setSidebarSection('plugins');
-    setPluginTab('dev-tools');
-    setDevToolsTab('fleet');
-  }, [gridOpen, setGridOpen, setSidebarSection, setPluginTab, setDevToolsTab]);
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      data-testid="footer-fleet-toggle"
-      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-        gridOpen
-          ? 'text-primary bg-primary/10'
-          : 'text-foreground hover:text-foreground hover:bg-secondary/50'
-      }`}
-      title={gridOpen ? 'Close Fleet grid' : 'Open Fleet'}
-      aria-label={gridOpen ? 'Close Fleet grid' : 'Open Fleet'}
-    >
-      <LayoutGrid className="w-5 h-5" />
-    </button>
-  );
-}
-
 export default function DesktopFooter() {
   const radioEnabled = useSystemStore((s) => s.radioEnabled);
   // Lift the footer above the Fleet grid overlay (z-200 portal) while it's open
@@ -635,7 +597,9 @@ export default function DesktopFooter() {
       <div className="flex items-center gap-1.5">
         {import.meta.env.DEV && (
           <>
-            <FleetFooterIcon />
+            <Suspense fallback={null}>
+              <FleetFooterIcon />
+            </Suspense>
             <div className="w-px h-4 bg-primary/10" />
           </>
         )}

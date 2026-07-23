@@ -12273,7 +12273,15 @@
       "spawn_headless_hint": "Headless mode — no live terminal, much lighter on CPU and RAM. Reply from the \"Needs you\" banner; inspect progress in Insights.",
       "headless_badge": "Background",
       "headless_no_terminal": "Background session — runs without a terminal. Reply from the \"Needs you\" banner; progress shows in Insights.",
-      "live_slot_hibernated_toast": "{name} was hibernated to stay within the live-session limit — its conversation is saved; wake it to resume."
+      "live_slot_hibernated_toast": "{name} was hibernated to stay within the live-session limit — its conversation is saved; wake it to resume.",
+      "footer_title": "Fleet",
+      "footer_empty": "No sessions tracked",
+      "footer_open_page": "Open Fleet page",
+      "footer_hint_open_grid": "Click to open the terminal grid",
+      "footer_hint_close_grid": "Click to close the terminal grid",
+      "footer_hint_open_page": "Click to open Fleet",
+      "footer_needs_you_one": "{count} session needs you",
+      "footer_needs_you_other": "{count} sessions need you"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

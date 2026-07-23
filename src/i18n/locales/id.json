@@ -12006,7 +12006,15 @@
       "skill_sync_diverged": "Menyimpang",
       "skill_sync_diverged_hint": "Salinan ini tidak lagi cocok dengan sumber terpasangnya — salinan atau sumbernya berubah.",
       "skill_sync_in_sync": "Tersinkron",
-      "skill_sync_in_sync_hint": "Salinan terpasang ini masih cocok dengan sumber tempat ia dipasang."
+      "skill_sync_in_sync_hint": "Salinan terpasang ini masih cocok dengan sumber tempat ia dipasang.",
+      "footer_empty": "Tidak ada sesi yang dilacak",
+      "footer_hint_close_grid": "Klik untuk menutup kisi terminal",
+      "footer_hint_open_grid": "Klik untuk membuka kisi terminal",
+      "footer_hint_open_page": "Klik untuk membuka Fleet",
+      "footer_needs_you_one": "{count} sesi membutuhkan Anda",
+      "footer_needs_you_other": "{count} sesi membutuhkan Anda",
+      "footer_open_page": "Buka halaman Fleet",
+      "footer_title": "Armada"
     },
     "title": "Plugin",
     "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",

@@ -12006,7 +12006,15 @@
       "skill_sync_diverged": "Divergido",
       "skill_sync_diverged_hint": "Esta copia ya no coincide con su fuente instalada: la copia o su fuente cambió.",
       "skill_sync_in_sync": "Sincronizado",
-      "skill_sync_in_sync_hint": "Esta copia instalada aún coincide con la fuente desde la que se instaló."
+      "skill_sync_in_sync_hint": "Esta copia instalada aún coincide con la fuente desde la que se instaló.",
+      "footer_empty": "No hay sesiones registradas",
+      "footer_hint_close_grid": "Haz clic para cerrar la cuadrícula de terminales",
+      "footer_hint_open_grid": "Haz clic para abrir la cuadrícula de terminales",
+      "footer_hint_open_page": "Haz clic para abrir Fleet",
+      "footer_needs_you_one": "{count} sesión te necesita",
+      "footer_needs_you_other": "{count} sesiones te necesitan",
+      "footer_open_page": "Abrir la página de Fleet",
+      "footer_title": "Flota"
     },
     "title": "Plugins",
     "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",

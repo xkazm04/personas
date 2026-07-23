@@ -12006,7 +12006,15 @@
       "skill_sync_diverged": "Khác biệt",
       "skill_sync_diverged_hint": "Bản sao này không còn khớp với nguồn đã cài đặt — bản sao hoặc nguồn của nó đã thay đổi.",
       "skill_sync_in_sync": "Đã đồng bộ",
-      "skill_sync_in_sync_hint": "Bản sao đã cài đặt này vẫn khớp với nguồn mà nó được cài đặt từ đó."
+      "skill_sync_in_sync_hint": "Bản sao đã cài đặt này vẫn khớp với nguồn mà nó được cài đặt từ đó.",
+      "footer_empty": "Không có phiên nào được theo dõi",
+      "footer_hint_close_grid": "Nhấp để đóng lưới terminal",
+      "footer_hint_open_grid": "Nhấp để mở lưới terminal",
+      "footer_hint_open_page": "Nhấp để mở Fleet",
+      "footer_needs_you_one": "{count} phiên đang cần bạn",
+      "footer_needs_you_other": "{count} phiên đang cần bạn",
+      "footer_open_page": "Mở trang Fleet",
+      "footer_title": "Hạm đội"
     },
     "title": "Plugin",
     "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",

@@ -12006,7 +12006,15 @@
       "skill_sync_diverged": "Abweichend",
       "skill_sync_diverged_hint": "Diese Kopie stimmt nicht mehr mit ihrer installierten Quelle überein – die Kopie oder ihre Quelle wurde geändert.",
       "skill_sync_in_sync": "Synchron",
-      "skill_sync_in_sync_hint": "Diese installierte Kopie stimmt weiterhin mit der Quelle überein, aus der sie installiert wurde."
+      "skill_sync_in_sync_hint": "Diese installierte Kopie stimmt weiterhin mit der Quelle überein, aus der sie installiert wurde.",
+      "footer_empty": "Keine Sitzungen erfasst",
+      "footer_hint_close_grid": "Klicken, um das Terminal-Raster zu schließen",
+      "footer_hint_open_grid": "Klicken, um das Terminal-Raster zu öffnen",
+      "footer_hint_open_page": "Klicken, um Fleet zu öffnen",
+      "footer_needs_you_one": "{count} Sitzung braucht dich",
+      "footer_needs_you_other": "{count} Sitzungen brauchen dich",
+      "footer_open_page": "Fleet-Seite öffnen",
+      "footer_title": "Flotte"
     },
     "title": "Plugins",
     "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",

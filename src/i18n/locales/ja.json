@@ -12006,7 +12006,15 @@
       "skill_sync_diverged": "乖離",
       "skill_sync_diverged_hint": "このコピーはインストール元のソースと一致しなくなりました — コピーまたはソースが変更されています。",
       "skill_sync_in_sync": "同期済み",
-      "skill_sync_in_sync_hint": "このインストール済みのコピーは、インストール元のソースと一致しています。"
+      "skill_sync_in_sync_hint": "このインストール済みのコピーは、インストール元のソースと一致しています。",
+      "footer_empty": "追跡中のセッションはありません",
+      "footer_hint_close_grid": "クリックでターミナルグリッドを閉じます",
+      "footer_hint_open_grid": "クリックでターミナルグリッドを開きます",
+      "footer_hint_open_page": "クリックで Fleet を開きます",
+      "footer_needs_you_one": "{count} 件のセッションが対応待ちです",
+      "footer_needs_you_other": "{count} 件のセッションが対応待ちです",
+      "footer_open_page": "Fleet ページを開く",
+      "footer_title": "フリート"
     },
     "title": "プラグイン",
     "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",

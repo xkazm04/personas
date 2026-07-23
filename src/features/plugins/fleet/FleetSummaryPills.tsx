@@ -1,6 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
-import type { Translations } from '@/i18n/generated/types';
+import { FLEET_STATE_META } from './fleetStateMeta';
 
 /**
  * Glanceable fleet summary — a row of colored count pills, one per
@@ -11,25 +11,10 @@ import type { Translations } from '@/i18n/generated/types';
  * state; clicking the active pill (or "all") clears the filter. This is the
  * desktop shape of the mobile companion's glance view — the same compact
  * status summary a phone would render remotely.
+ *
+ * Palette + order come from `fleetStateMeta`, shared with the footer status
+ * cluster so a state can't read violet here and blue there.
  */
-
-type FleetTranslations = Translations['plugins']['fleet'];
-
-const STATE_META: ReadonlyArray<{
-  id: FleetSessionState;
-  /** Tailwind dot fill. */
-  dot: string;
-  /** plugins.fleet key for the short label. */
-  labelKey: keyof FleetTranslations;
-}> = [
-  { id: 'awaiting_input', dot: 'bg-violet-400', labelKey: 'state_awaiting_input' },
-  { id: 'running', dot: 'bg-blue-400', labelKey: 'state_working' },
-  { id: 'spawning', dot: 'bg-cyan-400', labelKey: 'state_spawning' },
-  { id: 'idle', dot: 'bg-emerald-400', labelKey: 'state_idle' },
-  { id: 'stale', dot: 'bg-orange-400', labelKey: 'state_stale' },
-  { id: 'hibernated', dot: 'bg-indigo-400', labelKey: 'state_hibernated' },
-  { id: 'exited', dot: 'bg-zinc-500', labelKey: 'state_exited' },
-];
 
 interface FleetSummaryPillsProps {
   /** Count of sessions in each state. */
@@ -42,7 +27,7 @@ interface FleetSummaryPillsProps {
 
 export function FleetSummaryPills({ counts, activeFilter, onToggle }: FleetSummaryPillsProps) {
   const { t, tx } = useTranslation();
-  const visible = STATE_META.filter((m) => counts[m.id] > 0);
+  const visible = FLEET_STATE_META.filter((m) => counts[m.id] > 0);
   if (visible.length === 0) return null;
 
   return (

@@ -12006,7 +12006,15 @@
       "skill_sync_diverged": "불일치",
       "skill_sync_diverged_hint": "이 사본은 더 이상 설치 원본과 일치하지 않습니다 — 사본 또는 원본이 변경되었습니다.",
       "skill_sync_in_sync": "동기화됨",
-      "skill_sync_in_sync_hint": "이 설치된 사본은 설치 원본과 여전히 일치합니다."
+      "skill_sync_in_sync_hint": "이 설치된 사본은 설치 원본과 여전히 일치합니다.",
+      "footer_empty": "추적 중인 세션 없음",
+      "footer_hint_close_grid": "클릭하여 터미널 그리드 닫기",
+      "footer_hint_open_grid": "클릭하여 터미널 그리드 열기",
+      "footer_hint_open_page": "클릭하여 Fleet 열기",
+      "footer_needs_you_one": "{count}개 세션이 응답을 기다립니다",
+      "footer_needs_you_other": "{count}개 세션이 응답을 기다립니다",
+      "footer_open_page": "Fleet 페이지 열기",
+      "footer_title": "플릿"
     },
     "title": "플러그인",
     "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",

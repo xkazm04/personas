@@ -24,12 +24,13 @@ interface Props {
  * the focused session's terminal (`onApply`); each row also offers
  * "Install to repo" (reuses SkillInstallModal).
  *
- * Mounted ONCE in `FleetGridPage` (as a sibling of `FleetTerminalOverlay`, not
- * inside it) and portaled to `document.body`, so a single instance serves BOTH
- * reach points: the **single-pane** "Skills" button above the CLI
- * (`data-testid="fleet-open-skills"`) and the **fullscreen grid overlay**
- * header button (`FleetTerminalOverlay` → `onOpenSkills`). Both toggle the same
- * `skillsDrawerOpen` state, so the drawer sits above whichever pane is active.
+ * Mounted once per reach point and portaled to `document.body` (z-[300], above
+ * the z-[200] grid overlay), so it sits over whichever pane is active:
+ * `FleetGridPage` mounts one for the **single-pane** "Skills" button above the
+ * CLI (`data-testid="fleet-open-skills"`), and `FleetGridOverlayHost` mounts
+ * one for the **fullscreen grid overlay** header button
+ * (`FleetTerminalOverlay` → `onOpenSkills`). Only one of the two surfaces is
+ * ever showing, so the instances never overlap.
  */
 export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Props) {
   const { t, tx } = useTranslation();
