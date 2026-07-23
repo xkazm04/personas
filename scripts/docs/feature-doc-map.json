@@ -589,6 +589,12 @@
         "src-tauri/src/commands/teams/deliberations.rs",
         "src-tauri/src/engine/deliberation.rs"
       ]
+    },
+    {
+      "doc": "docs/features/plugins/dev tools/mastermind.md",
+      "sourceGlobs": [
+        "src/features/teams/sub_mastermind/**"
+      ]
     }
   ]
 }
