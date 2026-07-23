@@ -74,9 +74,9 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | Live monitoring | `liveState.loadMonitoringSummaries` — per-project bound monitoring credential → the Observability tab's Sentry adapter | absent credential ⇒ readiness-only colour |
 | Layout artifacts | `layoutStore` (app-settings document) | |
 
-**Demo scene:** with zero scanned projects, `deriveScene` emits a built-in 6-island demo (varied states, fleet sessions, personas, all Ideas freshness bands) plus a "demo data" chip. Demo islands are inert for Improve/terminal actions.
+**Demo scene:** with zero scanned projects, `deriveScene` emits a built-in 6-island demo (varied states, fleet sessions, personas, all Ideas freshness bands). A centered **DemoNotice card** (`lib/DemoNotice.tsx`) makes the sample unmistakable and offers the two exits — scan the workspace (`rescan()`) or add a project; dismissing it leaves a corner "sample data" badge for the session. Demo islands are inert for Improve/terminal actions. The canvas is also held back behind a spinner during the FIRST passport load (not just layout hydration), so an in-flight fetch never renders as an empty world.
 
-**Data honesty:** each fetch family carries a status; failures surface in `DataHealthBar` by name with a retry — the canvas never silently renders a partial truth.
+**Data honesty:** each fetch family carries a status; failures surface in `DataHealthBar` by name with a retry — the canvas never silently renders a partial truth. The passport family itself is included (a failed passport load joins the bar rather than rendering a raw error string), and the bar anchors ABOVE the mode toolbar so degraded data never hides mode switching. Idea-scan dispatches are busy **per project** with a 3-minute safety timeout; the in-flight Ideas cell pulses.
 
 ## 5. Dimensions (the island body)
 
@@ -177,6 +177,5 @@ Both sidebars, the context menu, and the list popovers share the app sidebar-men
 - `auth` and `kpi` dimensions have no Improve counterpart yet (inert).
 - **Fleet-lane scan dispatch** (see §10 deviation).
 - **Dimension categories** for ≥15 dimensions (see §5). Candidate future dimensions were brainstormed (Memory, Billing gate, Integrations constellation, Brand-in-core, Secrets hygiene, Dependency health, Backups/DR, i18n, Uptime, Agent Context, Evals) — design notes live in session history, not yet implemented.
-- **i18n** — canvas-internal copy is still local `COPY` consts pending consolidation; chrome added later (zoom/tidy/data-health/terminal) already uses the `mastermind.*` i18n section.
 - Demo islands cannot exercise Improve actions, terminals, or real scan freshness.
 - Persona attribution requires the project to have a `team_id`.
