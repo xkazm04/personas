@@ -4,12 +4,17 @@ import { loadPositions, savePositions, type PositionMap } from '../lib/positions
 import { loadGroups, saveGroups } from '../lib/groups';
 import { loadLinks, saveLinks } from '../lib/links';
 import { loadNotes, saveNotes } from '../lib/notes';
+import { __resetLayoutStoreForTests } from '../lib/layoutStore';
 import { hexPoints, hash01, spiralPlace } from '../lib/hex';
 import type { GroupRect, UserLink, CanvasNote } from '../lib/types';
 
-describe('canvas persistence — localStorage round-trips', () => {
+// The persistence modules now delegate to the durable layout store (in-memory
+// doc + debounced DB write-through). These cover the SYNC module API — the
+// read/save identity every canvas caller relies on. The DB boundary (hydration,
+// migration, debounce) is covered in layoutStore.test.ts.
+describe('canvas persistence — module API round-trips', () => {
   beforeEach(() => {
-    localStorage.clear();
+    __resetLayoutStoreForTests();
   });
 
   it('positions: save → load identity', () => {
@@ -43,15 +48,14 @@ describe('canvas persistence — localStorage round-trips', () => {
     expect(loadNotes()).toEqual([]);
   });
 
-  it('corrupted JSON falls back to empty (never throws)', () => {
-    localStorage.setItem('mastermind.positions.v1', '{not json');
-    localStorage.setItem('mastermind.groups.v1', 'oops[');
-    localStorage.setItem('mastermind.links.v1', '<<<');
-    localStorage.setItem('mastermind.notes.v1', '}}}');
-    expect(loadPositions()).toEqual({});
-    expect(loadGroups()).toEqual([]);
-    expect(loadLinks()).toEqual([]);
-    expect(loadNotes()).toEqual([]);
+  it('getters return fresh containers — adding/removing entries cannot corrupt the store', () => {
+    savePositions({ a: { x: 1, y: 2 } });
+    const first = loadPositions();
+    first.b = { x: 5, y: 5 };
+    expect(loadPositions()).toEqual({ a: { x: 1, y: 2 } });
+    const g = loadGroups();
+    g.push({ id: 'x', label: '', x: 0, y: 0, w: 0, h: 0 });
+    expect(loadGroups()).toHaveLength(0);
   });
 });
 

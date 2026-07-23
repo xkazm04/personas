@@ -1,8 +1,7 @@
-// Persisted user-drawn project connections (connect tool). Prototype-stage
-// persistence: localStorage, shared across canvas variants like positions.
-import type { UserLink } from './types';
-
-const KEY = 'mastermind.links.v1';
+// User-drawn project connections (connect tool). Persistence now lives in the
+// durable layout store (one versioned DB document); this module keeps the link
+// palette and the stable load/save import surface for callers.
+export { loadLinks, saveLinks } from './layoutStore';
 
 /** The short palette offered by the link editor — theme tokens first. */
 export const LINK_PALETTE = [
@@ -13,20 +12,3 @@ export const LINK_PALETTE = [
   'var(--status-error)',
   '#a78bfa',
 ] as const;
-
-export function loadLinks(): UserLink[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as UserLink[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveLinks(links: UserLink[]): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(links));
-  } catch {
-    // best-effort — a full/blocked storage never breaks the canvas
-  }
-}

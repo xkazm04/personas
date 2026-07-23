@@ -13,6 +13,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { getCrossProjectMetadata, listScans, runScan, type CrossProjectMetadataMap } from '@/api/devTools/devTools';
 import { spawnSession } from '@/api/fleet/fleet';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
@@ -37,6 +38,7 @@ import { deriveScene, type KpiRollup } from './lib/deriveScene';
 import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { IdeaScanPopover } from './lib/IdeaScanPopover';
+import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
 import { loadPositions, savePositions } from './lib/positions';
 import { IconSetProvider, loadIconSet, saveIconSet, type IconSetId } from './lib/iconSet';
 import { PersonaListPopover } from './lib/PersonaListPopover';
@@ -55,6 +57,7 @@ const COPY = {
   iconConcept: 'Concept',
   iconForge: 'Forge',
   iconLine: 'Line',
+  loadingLayout: 'Loading canvas layout',
 };
 
 type VariantId = 'mosaic' | 'inverse';
@@ -74,19 +77,6 @@ const VARIANTS = { mosaic: MastermindHexMosaic, inverse: MastermindInverseGrid }
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
 const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
 
-const HIDDEN_KEY = 'mastermind.hidden.v1';
-const loadHidden = (): Set<string> => {
-  try {
-    const raw = localStorage.getItem(HIDDEN_KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
-  }
-};
-const saveHidden = (s: Set<string>) => {
-  try { localStorage.setItem(HIDDEN_KEY, JSON.stringify([...s])); } catch { /* best-effort */ }
-};
-
 export default function MastermindPage() {
   // Factory data context feeds the KPI dimension (same rollup the Passport
   // wall's warning badges use — the two surfaces must agree on "off track").
@@ -105,6 +95,11 @@ function MastermindInner() {
   const [variant, setVariant] = useState<VariantId>('mosaic');
   const [iconSet, setIconSet] = useState<IconSetId>(loadIconSet);
   const [mode, setMode] = useState<CanvasMode>('edit');
+  // Durable layout hydrates once per session from the DB (async IPC). Until it
+  // resolves the canvas is held back so CanvasShell's sync `useState(loadGroups)`
+  // initializers read the hydrated doc, not an empty one. `isLayoutHydrated()`
+  // is already true on remounts, so this only gates the first-ever mount.
+  const [layoutReady, setLayoutReady] = useState(isLayoutHydrated);
   const [overrides, setOverrides] = useState(loadPositions);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
@@ -139,6 +134,21 @@ function MastermindInner() {
     const t = setInterval(() => void fleetRefresh(), 5000);
     return () => clearInterval(t);
   }, [fleetRefresh]);
+
+  // One-time layout hydration: read the durable doc from the DB, then re-seed
+  // the state that was initialized from the (empty) pre-hydration doc and drop
+  // the canvas gate. Runs at most once per session (guarded by layoutReady).
+  useEffect(() => {
+    if (layoutReady) return;
+    let live = true;
+    void hydrateLayout().then(() => {
+      if (!live) return;
+      setOverrides(loadPositions());
+      setHiddenSlugs(loadHidden());
+      setLayoutReady(true);
+    });
+    return () => { live = false; };
+  }, [layoutReady]);
 
   useEffect(() => {
     let live = true;
@@ -381,18 +391,24 @@ function MastermindInner() {
     <ImproveProvider value={improve}>
     <IconSetProvider value={iconSet}>
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      <Canvas
-        scene={canvasScene}
-        mode={mode}
-        onIslandMove={onIslandMove}
-        onIslandCommit={onIslandCommit}
-        onFleetOpen={setPreviewId}
-        onProjectOpen={setOpenSlug}
-        onDimOpen={onDimOpen}
-        onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
-        onOpenTerminal={openTerminal}
-        canOpenTerminal={canOpenTerminal}
-      />
+      {/* Hold the canvas back until the durable layout doc has hydrated, so the
+          variant's sync layout initializers read the persisted doc. */}
+      {layoutReady ? (
+        <Canvas
+          scene={canvasScene}
+          mode={mode}
+          onIslandMove={onIslandMove}
+          onIslandCommit={onIslandCommit}
+          onFleetOpen={setPreviewId}
+          onProjectOpen={setOpenSlug}
+          onDimOpen={onDimOpen}
+          onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
+          onOpenTerminal={openTerminal}
+          canOpenTerminal={canOpenTerminal}
+        />
+      ) : (
+        <LoadingSpinner label={COPY.loadingLayout} />
+      )}
 
       {/* prototype-only switchers — canvas variant + dimension icon set */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5">
