@@ -2,11 +2,6 @@
 
 ## Active
 
-### [2026-07-23] /research — claude-code-2-1-201-to-218
-- **Source:** https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md (2.1.201–2.1.218), focus=code
-- **Paths:** src-tauri/src/engine/provider/claude.rs, src-tauri/src/engine/prompt/cli_args.rs, src-tauri/src/engine/parser.rs (+ Obsidian vault Research/Lessons). NOT touching src/features/** — disjoint from the sessions below.
-- **Status:** started
-
 ### kpi-simulation-p0p2 — docs/plans/kpi-simulation-skill.md execution: env axis on measurements + env switcher UI + kpi-sim skill/dispatch/ingest — session fable-5
 - Started: 2026-07-23. Status: code complete, gates running (vitest 2401 green, i18n strict clean, cargo check clean; ts-rs regen via CARGO_TARGET_DIR=target-bindings — main target/debug has the exe lock + STATUS_ENTRYPOINT_NOT_FOUND test issue). Live verify + L1/L2 comparison runs next.
 - Paths: src-tauri/src/db/migrations/incremental.rs (env column + source CHECK widen on dev_kpi_measurements), src-tauri/src/commands/infrastructure/kpi_sim.rs (NEW: prepare/ingest), src-tauri/src/lib.rs (registration), src-tauri/src/engine/kpi_eval.rs (sim write path, no roll-forward), src/lib/bindings/DevKpiMeasurement.ts (regen), src/api/** (kpi sim api), src/features/teams/sub_kpis/{KPIDashboard,KpiDetailModal,useKpiDetail,kpiSim*} (env switcher, dashed sim series, LLM-engine provenance, Simulate dispatch + import), .claude/skills/kpi-sim/ (NEW skill), docs/plans/kpi-simulation-skill.md (decision updates).
@@ -1147,6 +1142,22 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### mm-perf-fixes — optimizer-scan remediation (7 findings) — session fable-5 — COMPLETED
+- Started+completed 2026-07-23. Commit: 83777b8be (cherry-picked from worktree-mm-perf 2ee62e9eb) + doc-sync.
+- Shipped: render-free island drag (imperative <g> transform, single commit on release; GroupLayer member moves imperative too; onIslandMove DELETED end-to-end) · content-stable island identity in MastermindPage.positioned (per-slug cache — fleet ticks re-render 1 island, not all; O(n²) passports.find → Map) · quantized island z (1.06 steps) · imperative hover dimming via data-mm-island (dimmed prop DELETED from IslandCtx) · per-state radialGradient halos (mm-coast feGaussianBlur DELETED) · mid-pan culling commit per ~350 world units · two-phase passport publish in usePassportData (SHARED with wall; evidence probe concurrency 5→10, recordSnapshot final-build only).
+- Gates: tsc 0 · vitest FULL 2529/2529 · eslint 0 errors.
+- NOT live-profiled: the wins are structural (memo integrity, filter removal); a profiler pass on a 30+ island portfolio remains smoke debt alongside the wave-15 list.
+- Paths: src/features/teams/sub_mastermind/**, src/features/teams/sub_factory/passport/usePassportData.ts, docs/features/plugins/dev tools/mastermind.md.
+
+### [2026-07-23] /research — claude-code-2-1-201-to-218 — session opus-4-8[1m] — COMPLETED
+- **Status:** completed (commits: 7c1a970ab, b14e3117f, 7812eef42, 241c48dcf)
+- **Source:** Claude Code CHANGELOG 2.1.201–2.1.218, focus=code. 11th CLI-release-log run. Floor 2.1.199 → **2.1.218**.
+- **What landed:** (1) floor bump — the range is dense on personas' `-p`/stream-json surface: 2.1.208 truncated stream-json + missing `result` message (silently un-costed executions), 2.1.214 exit-drain truncation, 2.1.208 headless memory leaks + 7× faster tool rounds with many MCP tools, three Windows fixes (2.1.211 unreadable stdin, 2.1.208 CRLF, 2.1.218 `\u` path→CJK), 2.1.212 TRACEPARENT OTLP correlation, 2.1.212 SIGTERM process-tree orphaning, and 2.1.207 SECURITY (`claude -p` runs recorded remote managed settings as consented without showing the dialog). (2) `parent_tool_use_id` attribution — P4's design doc marked Phase 3 done but the linking key was implemented nowhere, so subagent text reached the chat bubble and a subagent's tool_result surfaced as the root agent's; new `SubagentMessage` line type + structured event + `classifyLine` `  subagent`→meta rule (also fixes a pre-existing leak of `subagent started:` lines). (3) `--forward-subagent-text` (CLI 2.1.211) gated on the `deep_fanout` persona parameter. (4) `codebase-stack.md` fan-out section corrected — it claimed the Task fan-out was "exposed but UNUSED", which predates P4 shipping.
+- **Declined:** pinning the new CLI fan-out governance env vars (`CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` / `_MAX_SUBAGENTS_PER_SESSION` / `_MAX_WEB_SEARCHES_PER_SESSION` / `_MAX_SUBAGENT_SPAWN_DEPTH`) — defaults are sane; recorded in the `claude.rs` floor narrative instead.
+- **Paths:** src-tauri/src/engine/{provider/claude.rs, parser.rs, types.rs, test_runner.rs, runner/mod.rs, prompt/{cli_args.rs,mod.rs}}, src/lib/{utils/terminalColors.ts, types/terminalEvents.ts, eventRegistry.ts}, src/hooks/execution/useStructuredStream.ts, src/features/agents/sub_executions/detail/inspector/SubagentTree.tsx, .claude/codebase-stack.md.
+- **Gates:** cargo check --features desktop --tests clean · tsc clean (outside a concurrent session's sub_mastermind/sub_factory i18n drift) · eslint clean · vitest 2529/2529. ⚠ `cargo test --lib` could NOT run — test binary exits `STATUS_ENTRYPOINT_NOT_FOUND` (0xc0000139) after a 14-min link on the shared `target/debug`; the kpi-simulation-p0p2 session independently hit the same thing. The two new Rust tests compile but were never executed.
+- **Vault:** [[Research/2026-07-23-claude-code-2-1-201-to-218]] · [[Lessons/2026-07-23-research]]
 
 ### mm-ux-fixes — UX-review remediation (6 findings) — session fable-5 — COMPLETED
 - Started+completed 2026-07-23. Commits: 29039de50 (remediation, cherry-picked from worktree-mm-ux fc52839fa) + doc-sync follow-up.
