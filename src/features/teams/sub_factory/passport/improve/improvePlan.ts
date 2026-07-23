@@ -38,6 +38,8 @@ const DIM_ACTION: Record<string, { kind: PlanKind; tier: number; deployRow?: str
   security: { kind: 'task', tier: 3, deployRow: 'security' },
   evals: { kind: 'task', tier: 3, deployRow: 'evals' },
   migrations: { kind: 'task', tier: 3, deployRow: 'migrations' },
+  docs: { kind: 'task', tier: 3, deployRow: 'docs' },
+  memory: { kind: 'task', tier: 3, deployRow: 'memory' },
   observability: { kind: 'connector', tier: 2 },
   aiflow: { kind: 'connector', tier: 2 },
   skills: { kind: 'skills', tier: 2 },
@@ -48,7 +50,7 @@ const DIM_ACTION: Record<string, { kind: PlanKind; tier: number; deployRow?: str
 const SUM_W = RUBRIC.reduce((a, d) => a + d.weight, 0);
 
 function passportOf(raw: ImproveRaw): AppPassport {
-  return derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence });
+  return derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts, docRot: raw.docRot });
 }
 
 /** Every below-target gap across the fleet, ranked by impact-per-effort. */

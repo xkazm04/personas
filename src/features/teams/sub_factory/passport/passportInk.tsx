@@ -52,6 +52,18 @@ export function inkKindOf(v: CellValue): InkKind {
     }
     case 'bool':
       return v.on ? 'good' : 'warn';
+    case 'counts':
+      // A warn tally (dormant skills) keeps the row in full ink; otherwise
+      // any content recedes as info and an all-zero cell invites setup.
+      return v.items.some((i) => i.warn && i.count > 0) ? 'warn'
+        : v.items.some((i) => i.count > 0) ? 'info'
+        : 'setup';
+    // Env gaps are expected early — partial wiring reads as info (recedes);
+    // an all-empty dimension is a setup invitation, not a failure.
+    case 'env':
+      return v.slots.some((s) => s.label) ? 'info' : 'setup';
+    case 'cost':
+      return v.state === 'known' ? 'info' : 'setup';
   }
 }
 

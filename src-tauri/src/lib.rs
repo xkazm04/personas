@@ -2638,6 +2638,12 @@ pub fn run() {
             commands::infrastructure::skill_files::skill_files_write,
             commands::infrastructure::skill_files::skill_files_install,
             commands::infrastructure::skill_files::skill_files_install_preview,
+            // Skill usage telemetry (Brainiac-adoption P1)
+            commands::infrastructure::skill_usage::skill_usage_scan,
+            commands::infrastructure::skill_usage::skill_usage_overview,
+            // Doc-rot telemetry (Brainiac-adoption P2)
+            commands::infrastructure::doc_rot::doc_rot_scan,
+            commands::infrastructure::doc_rot::doc_rot_overview,
             // Bridge Manifest -- declarative desktop bridges
             #[cfg(feature = "desktop")]
             commands::infrastructure::bridge_manifest::bridge_manifest_list_all,
@@ -3216,6 +3222,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_get_portfolio_health,
             commands::infrastructure::dev_tools::dev_tools_get_tech_radar,
             commands::infrastructure::dev_tools::dev_tools_get_risk_matrix,
+            commands::infrastructure::dev_tools::dev_tools_get_project_favicon,
             // Twin plugin -- profile CRUD (P0)
             commands::infrastructure::twin::twin_list_profiles,
             commands::infrastructure::twin::twin_get_profile,

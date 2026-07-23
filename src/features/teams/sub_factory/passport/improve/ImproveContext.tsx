@@ -12,10 +12,20 @@ export interface ImproveRaw {
   meta: CrossProjectProjectMetadata;
   /** Whether the project has reusable skills in `.claude/skills` (drives the passport). */
   hasSkills?: boolean;
+  /** Shared-vs-codebase-specific skill tallies + dormant count (see usePassportData). */
+  skillCounts?: { reused: number; own: number; dormant?: number };
+  /** Usage telemetry per INSTALLED skill (P1 transcript mining). */
+  skillUsage?: Record<string, { invokes30d: number; lastInvokedAt: string | null; dormant: boolean }>;
+  /** Source-side liveliness per ADOPTABLE skill (how alive it is where it lives). */
+  catalogUsage?: Record<string, { invokes30d: number; lastInvokedAt: string | null }>;
+  /** Doc-rot rollup (P2 git scan): absent = the scan hasn't run for this project. */
+  docRot?: { tracked: number; dirty: number; neverRead: number };
   /** Deterministic repo file-evidence (D1) — real test/CI/CLAUDE.md/migration signals. */
   evidence?: RepoEvidence | null;
   /** Skills installed elsewhere (other projects / global) but missing here. */
   skillsToAdd?: { name: string; source: string | null; description: string | null }[];
+  /** This project's skills the global library doesn't have yet — shareable. */
+  skillsToShare?: { name: string; description: string | null }[];
 }
 
 export interface ImproveEngine {
@@ -25,12 +35,12 @@ export interface ImproveEngine {
   allRaw: () => ImproveRaw[];
   /** Write a project's standards_config and re-derive the matrix (Tier-0). */
   applyStandards: (slug: string, standardsJson: string) => Promise<void>;
-  /** Run the project's context scan (Tier-1) — maps the repo into the graph. Returns the scan id. */
-  runContextScan: (slug: string) => Promise<string | undefined>;
+  /** Run the project's context scan (Tier-1) — maps the repo into contexts.
+   *  `delta` = incremental (only re-derives what changed since the last scan,
+   *  same delta_mode as the Dev-Tools Context Map). Returns the scan id. */
+  runContextScan: (slug: string, delta?: boolean) => Promise<string | undefined>;
   /** Bind a vault credential to a project slot (Tier-2 connector wire) + re-derive. */
   bindConnector: (slug: string, credentialId: string, field: 'monitoring' | 'pr' | 'llm_tracking') => Promise<void>;
-  /** Install reusable skills (from sibling projects / global) into the project + re-derive. */
-  installSkills: (slug: string, items: { name: string; source: string | null }[]) => Promise<void>;
   /** Queue a Claude-Code upgrade task (Tier-3) without running it yet. */
   queueTask: (slug: string, title: string, prompt: string) => Promise<void>;
   /** Queue AND dispatch a Claude-Code upgrade task — runs the CLI, auto-PRs on green. Returns the task id. */

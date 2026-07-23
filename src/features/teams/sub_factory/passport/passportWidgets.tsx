@@ -2,9 +2,12 @@
 // atoms both variants (Grid + Wall) compose. Keeping the seal / pips / gap mark
 // identical across variants is deliberate: the cell LAYOUT diverges per variant
 // metaphor, but a "readiness seal" should read the same wherever it appears.
-import { Bot, ShieldCheck, Layers, Plug, Check, Minus, type LucideIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Bot, ShieldCheck, Layers, Plug, Check, Minus, Info, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { scoreTint, AUTOMATION_LABEL, PROD_BAND_LABEL, type AutomationLevel, type ProdBand } from './passportModel';
+import { anchorTip } from './passportInk';
 
 const SECTION_ICONS: Record<string, LucideIcon> = {
   bot: Bot, 'shield-check': ShieldCheck, layers: Layers, plug: Plug,
@@ -134,6 +137,67 @@ export function GapMark({ label = 'Absent' }: { label?: string }) {
       <span className="w-1.5 h-1.5 rounded-full bg-slate-500/40 flex-shrink-0" aria-hidden />
       {label}
     </span>
+  );
+}
+
+const INFO_TIP_WIDTH = 252;
+
+/**
+ * A dimension-row label that opens a small click-popup explaining what the row
+ * MEANS (click, not hover — the wall is dense and hover tips would fire
+ * constantly while scanning columns). Portalled + element-anchored via
+ * `anchorTip` so the matrix's overflow-x-auto never clips it.
+ */
+export function RowInfoLabel({ label, info }: { label: string; info: string }) {
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!anchor) return;
+    const close = () => setAnchor(null);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const onDown = (e: MouseEvent) => { if (panelRef.current && !panelRef.current.contains(e.target as Node)) close(); };
+    window.addEventListener('keydown', onKey);
+    const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
+    return () => { window.removeEventListener('keydown', onKey); window.clearTimeout(id); document.removeEventListener('mousedown', onDown); };
+  }, [anchor]);
+
+  const pos = anchor ? anchorTip(anchor, INFO_TIP_WIDTH, 96) : null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => {
+          // Read the rect NOW — e.currentTarget is detached by the time a
+          // state-updater callback runs.
+          const rect = e.currentTarget.getBoundingClientRect();
+          setAnchor((a) => (a ? null : rect));
+        }}
+        aria-expanded={Boolean(anchor)}
+        title={`What "${label}" means`}
+        className="group/rl inline-flex items-center gap-1 text-left rounded-interactive -mx-1 px-1 py-0.5 hover:bg-primary/[0.05] transition-colors cursor-help focus-ring"
+      >
+        <span className="typo-caption text-foreground/65 group-hover/rl:text-foreground/90 transition-colors">{label}</span>
+        <Info className="w-3 h-3 flex-shrink-0 text-primary/70 opacity-0 group-hover/rl:opacity-100 transition-opacity" aria-hidden />
+      </button>
+      {anchor && pos && createPortal(
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-label={`${label} — meaning`}
+          style={{ top: pos.top, left: pos.left, width: INFO_TIP_WIDTH }}
+          className="fixed z-[9996] rounded-modal border border-primary/15 bg-background shadow-elevation-4 px-3 py-2.5"
+        >
+          <span className="flex items-center gap-1.5 typo-caption font-semibold text-foreground mb-1">
+            <Info className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" aria-hidden />
+            {label}
+          </span>
+          <p className="typo-caption text-foreground/65 leading-snug" style={{ fontWeight: 400 }}>{info}</p>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }
 

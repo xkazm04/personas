@@ -6,9 +6,13 @@
 import {
   CI_LABEL, TESTS_LABEL, SECURITY_LABEL,
   OBSERVABILITY_LABEL, GRAPH_LABEL, EVALS_LABEL, MIGRATIONS_LABEL, INTEGRATION_KIND_LABEL,
+  MEMORY_LABEL, DOCS_LABEL,
   CI_SCALE, TESTS_SCALE, SECURITY_SCALE, OBSERVABILITY_SCALE, GRAPH_SCALE, EVALS_SCALE, MIGRATIONS_SCALE,
+  MEMORY_SCALE, DOCS_SCALE,
   scalePos,
+  ENV_KEYS, APP_COST_FILENAME,
   type AppPassport, type AutomationLevel, type ProdBand,
+  type AppCost, type AppCostService, type EnvKey, type EnvSlots,
 } from './passportModel';
 
 // -- normalized cell value (the only shape a variant has to render) -----------
@@ -30,11 +34,26 @@ export type CellValue =
   /** A set of on/off capabilities rendered as filled/empty pips. */
   | { kind: 'pips'; items: Array<{ label: string; on: boolean }> }
   /** A single yes/no capability. */
-  | { kind: 'bool'; on: boolean };
+  | { kind: 'bool'; on: boolean }
+  /** Labeled tallies (e.g. shared vs codebase-specific skills). Zero-total
+   *  reads as a setup invitation; a `warn` item with count > 0 keeps the row
+   *  in full ink (a dormant skill is a deficiency, not information). */
+  | { kind: 'counts'; items: Array<{ label: string; count: number; warn?: boolean }> }
+  /** Per-environment slots (local / test / production) for the env-dependent
+   *  dimensions. A null label is an honest "no source or config known in the
+   *  codebase" — rendered as a visually separated empty state, never invented. */
+  | { kind: 'env'; slots: Array<{ env: EnvKey; label: string | null; sub?: string }> }
+  /** Monthly app cost from the well-known cost file. `missing` = no file (NA +
+   *  agent dispatch), `empty` = file exists but nothing itemized yet (the user
+   *  fills it manually), `known` = itemized services with a monthly total. */
+  | { kind: 'cost'; state: 'missing' | 'empty' | 'known'; total?: number; currency?: string; services?: AppCostService[]; invalid?: boolean };
 
 export interface RowSpec {
   key: string;
   label: string;
+  /** One-or-two-line plain-language meaning of the row — shown in the
+   *  click-popup on the row label so the wall never needs a manual. */
+  info: string;
   /** Headline rows render larger / lead their section. */
   headline?: boolean;
   get: (p: AppPassport) => CellValue;
@@ -76,6 +95,31 @@ function persistenceChips(p: AppPassport): string[] {
   });
 }
 
+/** Env-split cell for an env-dependent dimension. `fallback` fills slots for
+ *  passports built before the env split (mocks / projections) from the legacy
+ *  single-value fields, so the row never regresses to a blank. */
+function envCell(slots: EnvSlots | undefined, fallback: Partial<Record<EnvKey, string | null>>): CellValue {
+  return {
+    kind: 'env',
+    slots: ENV_KEYS.map((env) => {
+      const s = slots?.[env];
+      return { env, label: s ? s.label : fallback[env] ?? null, sub: s?.sub };
+    }),
+  };
+}
+
+function appCostCell(c: AppCost | null | undefined): CellValue {
+  if (!c) return { kind: 'cost', state: 'missing' };
+  if (c.services.length === 0) return { kind: 'cost', state: 'empty', currency: c.currency, invalid: c.parseError };
+  return {
+    kind: 'cost',
+    state: 'known',
+    currency: c.currency,
+    total: c.services.reduce((a, s) => a + (s.monthly ?? 0), 0),
+    services: c.services,
+  };
+}
+
 // -- the sections (order: automation readiness → production → stack → tooling) -
 
 export const SECTIONS: SectionSpec[] = [
@@ -84,19 +128,35 @@ export const SECTIONS: SectionSpec[] = [
     label: 'Readiness for full automation',
     icon: 'bot',
     rows: [
-      { key: 'auto', label: 'Automation level', headline: true, get: (p) => ({ kind: 'level', level: p.automationReadiness.level, score: p.automationReadiness.score }) },
-      { key: 'selfverify', label: 'Self-verify locally', get: (p) => ({ kind: 'pips', items: [
+      { key: 'auto', label: 'Automation level', info: 'Headline score (L1–L5): how ready this repo is for coding agents to work in it autonomously.', headline: true, get: (p) => ({ kind: 'level', level: p.automationReadiness.level, score: p.automationReadiness.score }) },
+      { key: 'selfverify', label: 'Self-verify locally', info: 'Whether an agent can check its own work without a human — build, test, lint and type-check signals detected in the repo.', get: (p) => ({ kind: 'pips', items: [
         { label: 'build', on: p.automationReadiness.selfVerify.build },
         { label: 'test', on: p.automationReadiness.selfVerify.test },
         { label: 'lint', on: p.automationReadiness.selfVerify.lint },
         { label: 'types', on: p.automationReadiness.selfVerify.typecheck },
       ] }) },
-      { key: 'context', label: 'Context graph', get: (p) => (ordinalCell(GRAPH_SCALE, p.automationReadiness.artifacts.contextGraph, GRAPH_LABEL[p.automationReadiness.artifacts.contextGraph])) },
-      { key: 'instructions', label: 'Agent instructions', get: (p) => ({ kind: 'chips', items: p.automationReadiness.artifacts.agentInstructions }) },
-      { key: 'memory', label: 'Agent memory', get: (p) => ({ kind: 'bool', on: p.automationReadiness.artifacts.memory }) },
-      { key: 'skills', label: 'Reusable skills', get: (p) => ({ kind: 'bool', on: p.automationReadiness.artifacts.skills }) },
-      { key: 'evals', label: 'Evals', get: (p) => (ordinalCell(EVALS_SCALE, p.automationReadiness.artifacts.evals, EVALS_LABEL[p.automationReadiness.artifacts.evals])) },
-      { key: 'aiflow', label: 'AI in workflow', get: (p) => ({ kind: 'bool', on: p.automationReadiness.aiInWorkflow }) },
+      { key: 'context', label: 'Context coverage', info: 'How much of the codebase is mapped into the contexts agents navigate. Graded from the project context scan — none / partial / full.', get: (p) => (ordinalCell(GRAPH_SCALE, p.automationReadiness.artifacts.contextGraph, GRAPH_LABEL[p.automationReadiness.artifacts.contextGraph])) },
+      { key: 'instructions', label: 'Agent instructions', info: 'Guidance coding agents read before touching the repo — a CLAUDE.md file and/or an assigned team policy.', get: (p) => ({ kind: 'chips', items: p.automationReadiness.artifacts.agentInstructions }) },
+      { key: 'docs', label: 'Documentation', info: 'Documentation agents (and humans) can ground in — from a bare README, through a structured docs/ tree, to docs coupled to source via a doc-map. The sub-line is the git rot scan: dirty = coupled sources changed after the doc’s last update; unread = no session has opened it since telemetry began.', get: (p) => {
+        const rot = p.automationReadiness.artifacts.docRot;
+        const bits: string[] = [];
+        if (rot && rot.dirty > 0) bits.push(`${rot.dirty} dirty`);
+        if (rot && rot.neverRead > 0) bits.push(`${rot.neverRead} unread`);
+        return ordinalCell(DOCS_SCALE, p.automationReadiness.artifacts.docs, DOCS_LABEL[p.automationReadiness.artifacts.docs], bits.length ? bits.join(' · ') : undefined);
+      } },
+      { key: 'memory', label: 'Agent memory', info: 'Persistent agent memory for this repo — learnings that survive across sessions (Claude Code auto-memory or an in-repo MEMORY.md). Curated = an indexed store with recent entries.', get: (p) => (ordinalCell(MEMORY_SCALE, p.automationReadiness.artifacts.memory, MEMORY_LABEL[p.automationReadiness.artifacts.memory])) },
+      { key: 'skills', label: 'Reusable skills', info: 'Claude skills in .claude/skills — shared with your library or other projects vs specific to this codebase. Dormant = installed 30+ days with zero observed invocations (mined from Claude Code session transcripts).', get: (p) => {
+        const c = p.automationReadiness.artifacts.skillCounts;
+        if (!c) return { kind: 'bool', on: p.automationReadiness.artifacts.skills };
+        const items: Array<{ label: string; count: number; warn?: boolean }> = [
+          { label: 'shared', count: c.reused },
+          { label: 'specific', count: c.own },
+        ];
+        if ((c.dormant ?? 0) > 0) items.push({ label: 'dormant', count: c.dormant ?? 0, warn: true });
+        return { kind: 'counts', items };
+      } },
+      { key: 'evals', label: 'Evals', info: 'Runnable, scored evaluation cases that regression-check the product’s core behaviour.', get: (p) => (ordinalCell(EVALS_SCALE, p.automationReadiness.artifacts.evals, EVALS_LABEL[p.automationReadiness.artifacts.evals])) },
+      { key: 'aiflow', label: 'AI in workflow', info: 'Whether AI is wired into delivery — auto-PR on green, a team pipeline, or a PR connector.', get: (p) => ({ kind: 'bool', on: p.automationReadiness.aiInWorkflow }) },
     ],
   },
   {
@@ -104,12 +164,12 @@ export const SECTIONS: SectionSpec[] = [
     label: 'Production readiness',
     icon: 'shield-check',
     rows: [
-      { key: 'band', label: 'Production band', headline: true, get: (p) => ({ kind: 'band', band: p.productionReadiness.band, score: p.productionReadiness.score }) },
-      { key: 'ci', label: 'CI', get: (p) => (ordinalCell(CI_SCALE, p.productionReadiness.ci.level, CI_LABEL[p.productionReadiness.ci.level], p.productionReadiness.ci.provider ?? undefined)) },
-      { key: 'tests', label: 'Tests', get: (p) => (ordinalCell(TESTS_SCALE, p.productionReadiness.tests.level, TESTS_LABEL[p.productionReadiness.tests.level], testsSub(p))) },
-      { key: 'security', label: 'Security', get: (p) => (ordinalCell(SECURITY_SCALE, p.productionReadiness.security.level, SECURITY_LABEL[p.productionReadiness.security.level], p.productionReadiness.security.tools?.join(' · '))) },
-      { key: 'observability', label: 'Observability', get: (p) => (ordinalCell(OBSERVABILITY_SCALE, p.productionReadiness.observability.level, OBSERVABILITY_LABEL[p.productionReadiness.observability.level])) },
-      { key: 'migrations', label: 'Migrations', get: (p) => (ordinalCell(MIGRATIONS_SCALE, p.productionReadiness.delivery.migrations, MIGRATIONS_LABEL[p.productionReadiness.delivery.migrations])) },
+      { key: 'band', label: 'Production band', info: 'Headline band (prototype → hardened), scored from CI, security, observability, tests and delivery.', headline: true, get: (p) => ({ kind: 'band', band: p.productionReadiness.band, score: p.productionReadiness.score }) },
+      { key: 'ci', label: 'CI', info: 'How merges are protected — from no checks, through pre-commit checks and gated PRs, to automated delivery.', get: (p) => (ordinalCell(CI_SCALE, p.productionReadiness.ci.level, CI_LABEL[p.productionReadiness.ci.level], p.productionReadiness.ci.provider ?? undefined)) },
+      { key: 'tests', label: 'Tests', info: 'The automated test suite detected in the repo, graded by how much it covers.', get: (p) => (ordinalCell(TESTS_SCALE, p.productionReadiness.tests.level, TESTS_LABEL[p.productionReadiness.tests.level], testsSub(p))) },
+      { key: 'security', label: 'Security', info: 'Security posture — a written policy first, then dependency + code scanning (Dependabot / CodeQL), then CI-gated scans.', get: (p) => (ordinalCell(SECURITY_SCALE, p.productionReadiness.security.level, SECURITY_LABEL[p.productionReadiness.security.level], p.productionReadiness.security.tools?.join(' · '))) },
+      { key: 'observability', label: 'Observability', info: 'Whether the running app reports back — error tracking first, then logs, metrics and tracing.', get: (p) => (ordinalCell(OBSERVABILITY_SCALE, p.productionReadiness.observability.level, OBSERVABILITY_LABEL[p.productionReadiness.observability.level])) },
+      { key: 'migrations', label: 'Migrations', info: 'How database schema changes ship — ad-hoc, scripted, or versioned and repeatable.', get: (p) => (ordinalCell(MIGRATIONS_SCALE, p.productionReadiness.delivery.migrations, MIGRATIONS_LABEL[p.productionReadiness.delivery.migrations])) },
     ],
   },
   {
@@ -117,12 +177,12 @@ export const SECTIONS: SectionSpec[] = [
     label: 'Stack',
     icon: 'layers',
     rows: [
-      { key: 'languages', label: 'Languages', get: (p) => ({ kind: 'chips', items: p.stack.languages.map((l) => l.name) }) },
-      { key: 'runtime', label: 'Runtime', get: (p) => ({ kind: 'present', label: p.stack.runtime ?? null }) },
-      { key: 'frameworks', label: 'Frameworks', get: (p) => ({ kind: 'chips', items: p.stack.frameworks }) },
-      { key: 'persistence', label: 'Persistence', get: (p) => ({ kind: 'chips', items: persistenceChips(p) }) },
-      { key: 'hosting', label: 'Hosting', get: (p) => ({ kind: 'present', label: p.stack.hosting ?? null }) },
-      { key: 'auth', label: 'Auth', get: (p) => ({ kind: 'present', label: p.stack.auth ?? null }) },
+      { key: 'languages', label: 'Languages', info: 'Programming languages detected in the repo by the cross-project scan.', get: (p) => ({ kind: 'chips', items: p.stack.languages.map((l) => l.name) }) },
+      { key: 'runtime', label: 'Runtime', info: 'The runtime the app executes on (node, rust, …), detected from the repo.', get: (p) => ({ kind: 'present', label: p.stack.runtime ?? null }) },
+      { key: 'frameworks', label: 'Frameworks', info: 'Application frameworks detected in the repo.', get: (p) => ({ kind: 'chips', items: p.stack.frameworks }) },
+      { key: 'persistence', label: 'Database', info: 'The database per environment — local / test / production. An empty slot means no source or config for that environment is known in the codebase.', get: (p) => envCell(p.stack.environments?.db, { local: persistenceChips(p).join(' · ') || null }) },
+      { key: 'hosting', label: 'Hosting', info: 'Where the app runs per environment — local / test / production. An empty slot means no hosting config for that environment is known in the codebase.', get: (p) => envCell(p.stack.environments?.hosting, { test: p.stack.hosting ?? null }) },
+      { key: 'auth', label: 'Auth', info: 'The auth method (Clerk / Auth.js / Supabase / …) detected from the repo’s dependencies.', get: (p) => ({ kind: 'present', label: p.stack.auth ?? null }) },
     ],
   },
   {
@@ -130,12 +190,14 @@ export const SECTIONS: SectionSpec[] = [
     label: 'Tooling & integrations',
     icon: 'plug',
     rows: [
-      { key: 'integrations', label: 'Integrations', get: (p) => ({ kind: 'chips', items: p.stack.integrations.map((i) => i.name) }) },
-      { key: 'errors', label: 'Error tracking', get: (p) => ({ kind: 'present', label: p.stack.monitoring.errorTracking }) },
-      { key: 'logs', label: 'Logs', get: (p) => ({ kind: 'present', label: p.stack.monitoring.logs }) },
-      { key: 'metrics', label: 'Metrics', get: (p) => ({ kind: 'present', label: p.stack.monitoring.metrics }) },
-      { key: 'tracing', label: 'Tracing', get: (p) => ({ kind: 'present', label: p.stack.monitoring.tracing }) },
-      { key: 'llmtracking', label: 'LLM tracking', get: (p) => ({ kind: 'present', label: p.stack.llmTracking ?? null }) },
+      { key: 'integrations', label: 'Integrations', info: 'External services the app talks to (VCS, payments, LLM APIs, …), detected from config and keywords.', get: (p) => ({ kind: 'chips', items: p.stack.integrations.map((i) => i.name) }) },
+      { key: 'monitoring', label: 'Monitoring', info: 'Which environments have a monitoring source wired — local / test / production. A bound connector watches the deployed app, so it fills the production slot; empty slots mean no source is known in the codebase.', get: (p) => envCell(p.stack.environments?.monitoring, { production: p.stack.monitoring.errorTracking }) },
+      { key: 'errors', label: 'Error tracking', info: 'An error-tracking connector bound to this project — collects crashes and exceptions from the running app.', get: (p) => ({ kind: 'present', label: p.stack.monitoring.errorTracking }) },
+      { key: 'logs', label: 'Logs', info: 'Log aggregation, covered by the bound monitoring connector.', get: (p) => ({ kind: 'present', label: p.stack.monitoring.logs }) },
+      { key: 'metrics', label: 'Metrics', info: 'Runtime metrics, covered by the bound monitoring connector.', get: (p) => ({ kind: 'present', label: p.stack.monitoring.metrics }) },
+      { key: 'tracing', label: 'Tracing', info: 'Distributed tracing, covered by the bound monitoring connector.', get: (p) => ({ kind: 'present', label: p.stack.monitoring.tracing }) },
+      { key: 'llmtracking', label: 'LLM tracking', info: 'An LLM-observability connector — tracks this project’s model calls and 30-day spend.', get: (p) => ({ kind: 'present', label: p.stack.llmTracking ?? null }) },
+      { key: 'appcost', label: 'App cost', info: `Monthly running cost of the app's known services, read from ${APP_COST_FILENAME} at the repo root (user-maintained, gitignored). NA until the file exists — the cell can dispatch an agent to create it.`, get: (p) => appCostCell(p.stack.appCost) },
     ],
   },
 ];
@@ -156,6 +218,9 @@ export function cellSortValue(v: CellValue): number {
     case 'chips': return v.items.length;
     case 'pips': return v.items.filter((i) => i.on).length;
     case 'bool': return v.on ? 100 : 0;
+    case 'counts': return v.items.reduce((a, i) => a + i.count, 0);
+    case 'env': return v.slots.filter((s) => s.label).length;
+    case 'cost': return v.state === 'known' ? 100 : v.state === 'empty' ? 40 : 0;
   }
 }
 

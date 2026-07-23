@@ -16,7 +16,7 @@
 // each cover morphs between its grid tile and its table column.
 import { Fragment, useMemo, useRef, useState } from 'react';
 import { LayoutGroup, motion, useReducedMotion } from 'framer-motion';
-import { Activity, AlertTriangle, ArrowUpRight, Boxes, CheckCircle2, ChevronLeft, ChevronRight, Database, FileDown, KeyRound, Server } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowUpRight, Boxes, CheckCircle2, ChevronLeft, ChevronRight, Database, FileDown, KeyRound, Server, Settings2, TerminalSquare } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
@@ -24,28 +24,38 @@ import { passportToMarkdown } from './passportExport';
 import { SECTIONS, type CellValue } from './passportRows';
 import {
   sortByNameAsc,
-  AUTOMATION_LABEL, PROD_BAND_LABEL,
+  AUTOMATION_LABEL, PROD_BAND_LABEL, ENV_LABEL, APP_COST_FILENAME,
   type AppPassport,
 } from './passportModel';
+import { formatCost } from '@/lib/utils/formatters';
 import { INK, InkTabs, SegBar, TechInk, inkKindOf, scoreInk } from './passportInk';
 import { trendDelta } from './passportHistory';
 import { resolveTechIcon } from './techIcons';
-import { Pips, BoolMark, SectionIcon } from './passportWidgets';
+import { Pips, BoolMark, SectionIcon, RowInfoLabel } from './passportWidgets';
 import { ImproveCell } from './improve/ImproveCell';
 import { StandardsScan } from './improve/StandardsScan';
 import { LlmTrackingCell } from './LlmTrackingCell';
 import { WarningBadge, type WarningItem } from './WarningBadge';
+import { PASSPORT_FLEET_INK, PassportTerminalModal, passportDispatchKey, usePassportFleetSessions } from './passportFleet';
+import { RowSetupModal } from './RowSetupModal';
 
 // Improvable cells. Tier-0 standards-config rows (CI / Self-verify) + every
 // code-requiring or connector-bindable row: context/CLAUDE.md/tests/evals/
 // security/migrations/observability (Claude deploy or scan), the monitoring
 // tooling rows (errors/logs/metrics/tracing → connector wire), hosting (deploy),
-// aiflow + skills. Each opens the cell popover with its level ladder + actions.
+// the env-split monitoring row (connector wire), app cost (agent-created cost
+// file), aiflow + skills. Each opens the cell popover with its ladder + actions.
 export const IMPROVABLE_ROWS = new Set([
-  'ci', 'security', 'selfverify', 'context', 'instructions', 'tests', 'evals',
-  'migrations', 'observability', 'aiflow', 'skills',
+  'ci', 'selfverify', 'context', 'instructions', 'docs', 'memory',
+  'observability', 'aiflow', 'skills',
   'errors', 'logs', 'metrics', 'tracing', 'hosting', 'llmtracking',
+  'monitoring', 'appcost',
 ]);
+
+// R19 — the UNIFIED setup rows: always-available setup icon (any level, not
+// just red), full setup modal with three directions, Fleet as the LLM engine,
+// state-tinted terminal icon + terminal modal while a run is live.
+const UNIFIED_ROWS = new Set(['evals', 'security', 'tests', 'migrations']);
 
 const COPY = {
   blockersTitle: 'Why it’s not ready',
@@ -85,6 +95,7 @@ export function ProjectsPassportWall({
   attentionByProject,
   onJumpKpi,
   headerStats,
+  faviconBySlug,
 }: {
   passports: AppPassport[];
   openSlugs?: Set<string>;
@@ -96,10 +107,16 @@ export function ProjectsPassportWall({
   /** R18 — per-slug header stats (contexts count, KPI pass rate) computed by
    *  the host; the cover renders 0/dim placeholders when absent. */
   headerStats?: Map<string, { contexts: number; kpiPassed: number; kpiTotal: number }>;
+  /** R21 — per-slug favicon data URLs; covers fall back to the status dot. */
+  faviconBySlug?: Map<string, string>;
 }) {
   const reduce = useReducedMotion();
   const [view, setView] = useState<WallView>('overview');
   const [sort, setSort] = useState<WallSort>('name');
+  // R19 — unified-row machinery: live fleet sessions per dispatch key + modals.
+  const fleetSessions = usePassportFleetSessions();
+  const [setupModal, setSetupModal] = useState<{ rowKey: string; rowLabel: string; passport: AppPassport; currentLabel: string } | null>(null);
+  const [terminalKey, setTerminalKey] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Horizontal scroll from the header so the user never hunts for the bottom
@@ -142,6 +159,7 @@ export function ProjectsPassportWall({
     attention: attentionByProject?.get(p.identity.slug) ?? [],
     onJumpKpi,
     stats: headerStats?.get(p.identity.slug) ?? null,
+    favicon: faviconBySlug?.get(p.identity.slug) ?? null,
   });
 
   return (
@@ -240,7 +258,7 @@ export function ProjectsPassportWall({
                     {section.rows.map((row) => (
                       <tr key={row.key} className="hover:bg-primary/[0.02] transition-colors">
                         <td className={`${rail} px-3 py-2 border-t border-primary/[0.06] align-top`}>
-                          <span className="typo-caption text-foreground/65">{row.label}</span>
+                          <RowInfoLabel label={row.label} info={row.info} />
                         </td>
                         {columns.map((p) => {
                           const value = row.get(p);
@@ -261,7 +279,41 @@ export function ProjectsPassportWall({
                             );
                           return (
                             <td key={p.identity.slug} className={`px-3 py-2 align-top border-t border-primary/[0.06] ${colChrome} ${recede ? 'opacity-45' : ''}`}>
-                              {IMPROVABLE_ROWS.has(row.key) ? (
+                              {UNIFIED_ROWS.has(row.key) ? (() => {
+                                const dk = passportDispatchKey(row.key, p.identity.slug);
+                                const fl = fleetSessions.get(dk);
+                                const currentLabel = value.kind === 'ordinal' ? value.label : value.kind === 'present' ? (value.label ?? 'not set') : '';
+                                return (
+                                  <span className="group/uni relative flex items-start w-full gap-1" data-testid={`unified-${row.key}-${p.identity.slug}`}>
+                                    <span className="min-w-0 flex-1">{cell}</span>
+                                    {fl ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => setTerminalKey(dk)}
+                                        title={`Fleet is working this row — ${String(fl.state).replace('_', ' ')} (click to open the terminal)`}
+                                        className="shrink-0 p-0.5 rounded-interactive transition-colors hover:bg-primary/10 focus-ring"
+                                        data-testid={`unified-fleet-${row.key}-${p.identity.slug}`}
+                                      >
+                                        <TerminalSquare
+                                          className={`w-3.5 h-3.5 ${fl.state === 'running' || fl.state === 'spawning' ? 'animate-pulse' : ''}`}
+                                          style={{ color: PASSPORT_FLEET_INK[String(fl.state)] ?? INK.violet }}
+                                          aria-hidden
+                                        />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => setSetupModal({ rowKey: row.key, rowLabel: row.label, passport: p, currentLabel })}
+                                        title={`Set up ${row.label}`}
+                                        className="shrink-0 p-0.5 rounded-interactive opacity-[0.10] group-hover/uni:opacity-100 transition-opacity hover:bg-primary/10 focus-ring"
+                                        data-testid={`unified-setup-${row.key}-${p.identity.slug}`}
+                                      >
+                                        <Settings2 className="w-3.5 h-3.5" style={{ color: INK.teal }} aria-hidden />
+                                      </button>
+                                    )}
+                                  </span>
+                                );
+                              })() : IMPROVABLE_ROWS.has(row.key) ? (
                                 <ImproveCell slug={p.identity.slug} rowKey={row.key} passport={p}>{cell}</ImproveCell>
                               ) : (
                                 cell
@@ -309,6 +361,24 @@ export function ProjectsPassportWall({
           </div>
         )}
       </LayoutGroup>
+
+      {setupModal && (
+        <RowSetupModal
+          rowKey={setupModal.rowKey}
+          rowLabel={setupModal.rowLabel}
+          passport={setupModal.passport}
+          currentLabel={setupModal.currentLabel}
+          onDispatched={() => { /* R20: no auto-open — the cell's fleet icon is the door; it appears via the 5s poll */ }}
+          onClose={() => setSetupModal(null)}
+        />
+      )}
+      {terminalKey && (
+        <PassportTerminalModal
+          sessionId={fleetSessions.get(terminalKey)?.id ?? ''}
+          session={fleetSessions.get(terminalKey) ?? null}
+          onClose={() => setTerminalKey(null)}
+        />
+      )}
     </div>
   );
 }
@@ -365,7 +435,7 @@ function StackStrip({ p, size = 13 }: { p: AppPassport; size?: number }) {
 }
 
 export function CoverBody({
-  p, openable, onOpen, attention, onJumpKpi, stats,
+  p, openable, onOpen, attention, onJumpKpi, stats, favicon = null,
 }: {
   p: AppPassport;
   openable: boolean;
@@ -373,6 +443,8 @@ export function CoverBody({
   attention: WarningItem[];
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
   stats: HeaderStatsShape | null;
+  /** Real app favicon (data URL); null → the worst-state dot stays. */
+  favicon?: string | null;
 }) {
   const worst = scoreInk(Math.min(p.automationReadiness.score, p.productionReadiness.score));
   const trend = trendDelta(p.identity.slug)?.golden ?? 0;
@@ -392,7 +464,11 @@ export function CoverBody({
     <>
       {/* identity + production affordances + stack strip */}
       <div className="flex items-center gap-1.5 min-w-0">
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} aria-hidden />
+        {favicon ? (
+          <img src={favicon} alt="" className="w-4 h-4 rounded-[3px] shrink-0" data-testid="cover-favicon" aria-hidden />
+        ) : (
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} aria-hidden />
+        )}
         {openable ? (
           <button type="button" onClick={() => onOpen!(p.identity.slug)} title={p.identity.purpose} className="group/cov inline-flex items-center gap-1 min-w-0 text-left">
             <span className="typo-body font-semibold tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
@@ -505,5 +581,81 @@ export function InkWallCell({ value }: { value: CellValue }) {
       return <Pips items={value.items} />;
     case 'bool':
       return <BoolMark on={value.on} />;
+    case 'counts': {
+      const total = value.items.reduce((a, i) => a + i.count, 0);
+      if (total === 0) return <span className="typo-caption font-medium" style={{ color: INK.blue }}>{COPY.add}</span>;
+      return (
+        <span className="inline-flex items-center gap-x-2.5 min-w-0">
+          {value.items.map((i) => (
+            <span key={i.label} className="inline-flex items-baseline gap-1">
+              <span
+                className={`typo-caption font-semibold tabular-nums ${i.warn && i.count > 0 ? '' : i.count > 0 ? 'text-foreground/90' : 'text-foreground/35'}`}
+                style={i.warn && i.count > 0 ? { color: INK.amber } : undefined}
+              >
+                {i.count}
+              </span>
+              <span className="typo-label text-foreground/45" style={i.warn && i.count > 0 ? { color: `${INK.amber}B3` } : undefined}>{i.label}</span>
+            </span>
+          ))}
+        </span>
+      );
+    }
+    case 'env': {
+      // Three visually separated slots (local / test / prod). A known source
+      // renders in TechInk (brand glyph when resolvable); an unknown one is an
+      // explicit em-dash empty state — the honest "nothing in the codebase".
+      return (
+        <span className="flex min-w-0 max-w-[220px]" data-testid="env-split-cell">
+          {value.slots.map((s, i) => (
+            <span key={s.env} className={`flex flex-col gap-1 min-w-0 flex-1 ${i > 0 ? 'pl-2 ml-2 border-l border-foreground/10' : ''}`}>
+              <span className={`text-[8.5px] uppercase tracking-[0.14em] leading-none ${s.label ? 'text-foreground/45' : 'text-foreground/25'}`}>{ENV_LABEL[s.env]}</span>
+              {s.label ? (
+                <span title={s.sub ? `${s.label} — ${s.sub}` : undefined} className="min-w-0"><TechInk label={s.label} /></span>
+              ) : (
+                <span className="typo-caption text-foreground/25 leading-none" title={`${ENV_LABEL[s.env]}: no source or config known in the codebase`}>—</span>
+              )}
+            </span>
+          ))}
+        </span>
+      );
+    }
+    case 'cost': {
+      if (value.state === 'missing') {
+        return (
+          <span className="inline-flex flex-col gap-0.5 min-w-0" title={`No ${APP_COST_FILENAME} in the repo — the gear dispatches an agent to create it`} data-testid="app-cost-missing">
+            <span className="typo-caption font-medium text-foreground/45">NA</span>
+            <span className="typo-label text-foreground/35">no cost file</span>
+          </span>
+        );
+      }
+      if (value.state === 'empty') {
+        return (
+          <span
+            className="typo-caption font-medium"
+            style={{ color: INK.blue }}
+            title={value.invalid ? `${APP_COST_FILENAME} isn't valid JSON — fix it by hand` : `${APP_COST_FILENAME} exists — add your services and monthly costs by hand`}
+          >
+            {value.invalid ? 'invalid cost file' : 'add services →'}
+          </span>
+        );
+      }
+      const services = value.services ?? [];
+      const unpriced = services.filter((s) => s.monthly == null).length;
+      const amount = value.currency && value.currency !== 'USD'
+        ? `${value.total ?? 0} ${value.currency}`
+        : formatCost(value.total ?? 0);
+      return (
+        <span
+          className="inline-flex flex-col gap-0.5 min-w-0"
+          title={services.map((s) => `${s.name}: ${s.monthly == null ? '?' : s.monthly}${s.note ? ` (${s.note})` : ''}`).join(' · ')}
+          data-testid="app-cost-cell"
+        >
+          <span className="typo-caption font-semibold text-foreground/90 tabular-nums">{amount}/mo</span>
+          <span className="typo-label text-foreground/45 truncate">
+            {services.length} service{services.length === 1 ? '' : 's'}{unpriced > 0 ? ` · ${unpriced} unpriced` : ''}
+          </span>
+        </span>
+      );
+    }
   }
 }

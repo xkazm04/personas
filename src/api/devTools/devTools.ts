@@ -348,6 +348,19 @@ export interface RepoEvidence {
   has_codeql: boolean;
   has_migrations: boolean;
   has_eval: boolean;
+  /** Agent memory + docs signals (Brainiac-adoption P0). Optional so a derive
+   *  against an older backend (fields absent from the IPC payload) degrades to
+   *  "no signal" instead of lying. */
+  has_repo_memory?: boolean;
+  memory_file_count?: number;
+  memory_index_lines?: number;
+  memory_age_days?: number | null;
+  docs_file_count?: number;
+  has_doc_map?: boolean;
+  /** Raw `app-cost.json` contents (user-maintained monthly-cost ledger at the
+   *  repo root), null when the file doesn't exist. Optional for the same
+   *  older-backend reason as the fields above. */
+  app_cost_raw?: string | null;
 }
 
 export const probeRepoEvidence = (rootPath: string) =>
@@ -460,6 +473,11 @@ export function parseCompetitionSlotDiffStats(
 // ============================================================================
 // Context Groups
 // ============================================================================
+
+/** R21 — the project's favicon as a data URL (well-known frontend/Tauri
+ *  locations probed on the Rust side); null when none exists. */
+export const getProjectFavicon = (rootPath: string) =>
+  safeInvoke<string | null>(null, "dev_tools_get_project_favicon", { rootPath });
 
 export const listContextGroups = (projectId: string) =>
   safeInvoke<DevContextGroup[]>([], "dev_tools_list_context_groups", { projectId });
@@ -684,6 +702,8 @@ export const FINDING_ORIGINS = [
   "llm_cost",
   "sentry_spike",
   "kpi_offtrack",
+  "skill_dormant",
+  "doc_rot",
 ] as const;
 export type FindingOrigin = (typeof FINDING_ORIGINS)[number];
 
@@ -1193,6 +1213,74 @@ export const previewInstallSkill = (
     sourceProjectId,
     targetProjectId,
   });
+
+// -- skill usage telemetry (Brainiac-adoption P1) -----------------------------
+
+/** One registry row + its usage aggregates. Hand-typed to mirror the Rust
+ *  `SkillUsageRow` (snake_case serde). Project rows count their own project's
+ *  invokes; global rows count the name across all projects. */
+export interface SkillUsageRow {
+  name: string;
+  scope: 'global' | 'project';
+  project_id: string | null;
+  content_hash: string | null;
+  description: string | null;
+  first_seen_at: string;
+  last_changed_at: string;
+  missing_since: string | null;
+  invokes_30d: number;
+  last_invoked_at: string | null;
+  /** Age-guarded: present ≥30d AND zero invokes in the window. */
+  dormant: boolean;
+}
+
+/** Incremental transcript-mining sweep + registry reconcile. Idempotent;
+ *  bounded per call (`exhausted` = call again to continue). Generous timeout —
+ *  the FIRST run parses up to ~48MB of transcript history. */
+export const scanSkillUsage = () =>
+  invoke<{ files_scanned: number; events_added: number; exhausted: boolean }>(
+    "skill_usage_scan",
+    {},
+    undefined,
+    120_000,
+  );
+
+export const getSkillUsageOverview = () =>
+  safeInvoke<SkillUsageRow[]>([], "skill_usage_overview", {});
+
+// -- doc-rot telemetry (Brainiac-adoption P2) ---------------------------------
+
+/** One tracked doc + its rot state and read aggregates. Mirrors the Rust
+ *  `DocRotRow` (snake_case). `unscoped` = no coupling known (doc-map or
+ *  referenced paths) — tracked but never dirty-able. */
+export interface DocRotRow {
+  project_id: string;
+  doc_path: string;
+  unscoped: boolean;
+  last_doc_commit: string | null;
+  last_source_commit: string | null;
+  /** The local dirty_at — set while coupled sources are newer than the doc. */
+  dirty_since: string | null;
+  changed_sources: string[];
+  scanned_at: string;
+  reads_30d: number;
+  /** Reads that happened while the doc was already dirty — rot being consumed. */
+  dirty_reads_30d: number;
+  last_read_at: string | null;
+}
+
+/** Git-based doc-rot scan over every registered project. Throttled per project
+ *  (6h) unless `force`; one bounded `git log` per repo. */
+export const scanDocRot = (force = false) =>
+  invoke<{ projects_scanned: number; docs_tracked: number; dirty: number }>(
+    "doc_rot_scan",
+    { force },
+    undefined,
+    120_000,
+  );
+
+export const getDocRotOverview = () =>
+  safeInvoke<DocRotRow[]>([], "doc_rot_overview", {});
 
 export const readSkillFile = (skillName: string, fileName: string, projectId?: string | null) =>
   invoke<SkillFileContent>("skill_files_read", { skillName, fileName, projectId: projectId ?? null });

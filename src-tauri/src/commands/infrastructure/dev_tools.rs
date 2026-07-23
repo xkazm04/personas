@@ -3385,10 +3385,147 @@ pub struct RepoEvidence {
     pub has_codeql: bool,
     pub has_migrations: bool,
     pub has_eval: bool,
+    // -- Agent memory (Brainiac-adoption P0) ---------------------------------
+    /// In-repo agent memory artifacts: root MEMORY.md, .claude/memory/ or
+    /// .claude/MEMORY.md.
+    pub has_repo_memory: bool,
+    /// Markdown files in the Claude Code auto-memory dir for this repo
+    /// (~/.claude/projects/<encoded-root>/memory). 0 when none exists.
+    pub memory_file_count: u32,
+    /// Bullet lines in that dir's MEMORY.md index (the per-memory pointers).
+    pub memory_index_lines: u32,
+    /// Days since ANY counted memory file (auto-memory or in-repo) last
+    /// changed. None when no memory artifact exists at all.
+    pub memory_age_days: Option<u32>,
+    // -- Documentation (Brainiac-adoption P0) --------------------------------
+    /// Markdown files under docs/ (bounded walk).
+    pub docs_file_count: u32,
+    /// A source→doc coupling manifest exists (feature-doc-map.json) — the
+    /// signal that doc freshness is *managed*, not incidental.
+    pub has_doc_map: bool,
+    // -- App cost (passport env/cost rows) -----------------------------------
+    /// Raw contents of the well-known `app-cost.json` at the repo root — the
+    /// user-maintained (and expected-gitignored) monthly-cost ledger. None when
+    /// the file doesn't exist; parsed leniently on the frontend.
+    pub app_cost_raw: Option<String>,
 }
 
 fn re_exists(root: &std::path::Path, rel: &str) -> bool {
     root.join(rel).exists()
+}
+
+/// Claude Code's per-project directory name under `~/.claude/projects/`: the
+/// absolute cwd with every non-alphanumeric character mapped to `-`
+/// (e.g. `C:\Users\x\repo` → `C--Users-x-repo`). Mirrors the CLI's encoding so
+/// the probe can find a repo's auto-memory without walking every project dir.
+pub(crate) fn encode_claude_project_dir(root_path: &str) -> String {
+    root_path
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .collect()
+}
+
+/// Days since `mtime`, saturating at 0 for future timestamps. None on error.
+fn days_since(meta: std::io::Result<std::fs::Metadata>) -> Option<u32> {
+    let modified = meta.ok()?.modified().ok()?;
+    let elapsed = std::time::SystemTime::now().duration_since(modified).unwrap_or_default();
+    Some((elapsed.as_secs() / 86_400) as u32)
+}
+
+/// Agent-memory probe: in-repo artifacts + the Claude Code auto-memory dir for
+/// this repo. Returns (has_repo_memory, file_count, index_lines, age_days).
+fn probe_agent_memory(root: &std::path::Path, root_path: &str) -> (bool, u32, u32, Option<u32>) {
+    let mut newest_age: Option<u32> = None;
+    let mut bump_age = |age: Option<u32>| {
+        if let Some(a) = age {
+            newest_age = Some(newest_age.map_or(a, |n| n.min(a)));
+        }
+    };
+
+    let repo_candidates = [root.join("MEMORY.md"), root.join(".claude").join("MEMORY.md")];
+    let mut has_repo_memory = false;
+    for p in &repo_candidates {
+        if p.is_file() {
+            has_repo_memory = true;
+            bump_age(days_since(std::fs::metadata(p)));
+        }
+    }
+    let repo_mem_dir = root.join(".claude").join("memory");
+    if repo_mem_dir.is_dir() {
+        has_repo_memory = true;
+        bump_age(days_since(std::fs::metadata(&repo_mem_dir)));
+    }
+
+    // Auto-memory: ~/.claude/projects/<encoded>/memory — flat dir of .md files
+    // with a MEMORY.md index. Shallow read, capped; missing dir is the common
+    // case and must stay silent + cheap.
+    let mut file_count: u32 = 0;
+    let mut index_lines: u32 = 0;
+    if let Some(home) = dirs::home_dir() {
+        let mem_dir = home
+            .join(".claude")
+            .join("projects")
+            .join(encode_claude_project_dir(root_path))
+            .join("memory");
+        if let Ok(rd) = std::fs::read_dir(&mem_dir) {
+            for entry in rd.flatten().take(200) {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if !name.to_lowercase().ends_with(".md") {
+                    continue;
+                }
+                file_count += 1;
+                bump_age(days_since(entry.metadata().map_err(std::io::Error::from)));
+                if name == "MEMORY.md" {
+                    if let Ok(txt) = std::fs::read_to_string(entry.path()) {
+                        index_lines = txt
+                            .lines()
+                            .filter(|l| {
+                                let t = l.trim_start();
+                                t.starts_with("- ") || t.starts_with("* ")
+                            })
+                            .count() as u32;
+                    }
+                }
+            }
+        }
+    }
+
+    (has_repo_memory, file_count, index_lines, newest_age)
+}
+
+/// Documentation probe: bounded count of markdown files under docs/ plus the
+/// doc-map manifest signal. (README/CLAUDE.md presence is probed separately.)
+fn probe_docs(root: &std::path::Path) -> (u32, bool) {
+    const MAX_ENTRIES: u32 = 2000;
+    const MAX_DEPTH: usize = 4;
+    let mut count: u32 = 0;
+    let mut seen: u32 = 0;
+    let docs = root.join("docs");
+    let mut stack: Vec<(std::path::PathBuf, usize)> = vec![(docs, 0)];
+    while let Some((dir, depth)) = stack.pop() {
+        if seen >= MAX_ENTRIES {
+            break;
+        }
+        let Ok(rd) = std::fs::read_dir(&dir) else { continue };
+        for entry in rd.flatten() {
+            seen += 1;
+            if seen >= MAX_ENTRIES {
+                break;
+            }
+            let name = entry.file_name().to_string_lossy().to_lowercase();
+            if entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                if depth + 1 <= MAX_DEPTH && !name.starts_with('.') {
+                    stack.push((entry.path(), depth + 1));
+                }
+            } else if name.ends_with(".md") || name.ends_with(".mdx") {
+                count += 1;
+            }
+        }
+    }
+    let has_doc_map = re_exists(root, "scripts/docs/feature-doc-map.json")
+        || re_exists(root, "docs/feature-doc-map.json")
+        || re_exists(root, "feature-doc-map.json");
+    (count, has_doc_map)
 }
 
 /// Bounded walk: counts test files + detects migration/eval dirs without
@@ -3555,5 +3692,90 @@ pub fn dev_tools_probe_repo_evidence(
     ev.has_migrations = has_mig;
     ev.has_eval = has_eval;
 
+    let (has_repo_memory, mem_files, mem_index, mem_age) = probe_agent_memory(root, &root_path);
+    ev.has_repo_memory = has_repo_memory;
+    ev.memory_file_count = mem_files;
+    ev.memory_index_lines = mem_index;
+    ev.memory_age_days = mem_age;
+
+    let (docs_count, has_doc_map) = probe_docs(root);
+    ev.docs_file_count = docs_count;
+    ev.has_doc_map = has_doc_map;
+
+    // App-cost ledger — a small manual file; size-capped so a mislabeled data
+    // file never ships over IPC on every wall render.
+    let cost_path = root.join("app-cost.json");
+    ev.app_cost_raw = std::fs::metadata(&cost_path)
+        .ok()
+        .filter(|m| m.is_file() && m.len() <= 65_536)
+        .and_then(|_| std::fs::read_to_string(&cost_path).ok());
+
     Ok(ev)
+}
+
+/// R21 — probe a project's well-known favicon locations (frontend + Tauri
+/// conventions) and return the first hit as a data URL, so the Passport wall
+/// can show the real app icon instead of a colored dot. `None` when nothing
+/// suitable exists — the wall falls back to its status dot.
+#[tauri::command]
+pub async fn dev_tools_get_project_favicon(root_path: String) -> Result<Option<String>, String> {
+    use base64::Engine as _;
+    const CANDIDATES: &[&str] = &[
+        "public/favicon.svg",
+        "public/favicon.ico",
+        "public/favicon.png",
+        "public/favicon-32x32.png",
+        "public/icon.svg",
+        "public/icon.png",
+        "src/app/favicon.ico",
+        "src/app/icon.svg",
+        "src/app/icon.png",
+        "app/favicon.ico",
+        "app/icon.png",
+        "static/favicon.png",
+        "static/favicon.ico",
+        "src-tauri/icons/32x32.png",
+        "favicon.ico",
+    ];
+    // A favicon larger than this is not a favicon; skip rather than ship it
+    // over IPC for every wall render.
+    const MAX_BYTES: u64 = 262_144;
+    let root = std::path::Path::new(&root_path);
+    if !root.is_dir() {
+        return Ok(None);
+    }
+    for rel in CANDIDATES {
+        let p = root.join(rel);
+        let Ok(meta) = std::fs::metadata(&p) else { continue };
+        if !meta.is_file() || meta.len() == 0 || meta.len() > MAX_BYTES {
+            continue;
+        }
+        let Ok(bytes) = std::fs::read(&p) else { continue };
+        let mime = match p.extension().and_then(|e| e.to_str()) {
+            Some("svg") => "image/svg+xml",
+            Some("ico") => "image/x-icon",
+            _ => "image/png",
+        };
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+        return Ok(Some(format!("data:{mime};base64,{b64}")));
+    }
+    Ok(None)
+}
+
+#[cfg(test)]
+mod repo_evidence_tests {
+    use super::encode_claude_project_dir;
+
+    #[test]
+    fn encodes_windows_paths_like_claude_code() {
+        assert_eq!(
+            encode_claude_project_dir(r"C:\Users\mkdol\dolla\personas"),
+            "C--Users-mkdol-dolla-personas"
+        );
+    }
+
+    #[test]
+    fn encodes_unix_paths_like_claude_code() {
+        assert_eq!(encode_claude_project_dir("/home/x/repo.app"), "-home-x-repo-app");
+    }
 }

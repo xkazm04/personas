@@ -6,10 +6,11 @@
 //
 // The Passport Wall is the production baseline here — the earlier KPI-health
 // Cards and the Heat-grid prototype were consolidated out (2026-06-21).
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { RefreshCw, Target } from 'lucide-react';
 
-import { listContexts } from '@/api/devTools/devTools';
+import { listContexts, getProjectFavicon } from '@/api/devTools/devTools';
 import { listKpis } from '@/api/devTools/kpis';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
@@ -17,6 +18,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ProjectsPassportWall } from './passport';
+import { anchorTip } from './passport/passportInk';
 import type { WarningItem } from './passport/WarningBadge';
 import { ImproveProvider } from './passport/improve/ImproveContext';
 import { ImprovePlanPanel } from './passport/improve/ImprovePlanPanel';
@@ -62,6 +64,26 @@ export function ProjectsLayer({
     return () => { alive = false; };
   }, [passports]);
 
+  // R21 — real app favicons for the covers (probed from each project's repo);
+  // covers fall back to the status dot where none exists.
+  const [faviconBySlug, setFaviconBySlug] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    if (rawByProject.size === 0) return;
+    let alive = true;
+    void Promise.all(
+      [...rawByProject.entries()].map(async ([slug, raw]) => {
+        const url = raw.project.root_path ? await getProjectFavicon(raw.project.root_path) : null;
+        return [slug, url] as const;
+      }),
+    )
+      .then((entries) => {
+        if (!alive) return;
+        setFaviconBySlug(new Map(entries.filter((e): e is [string, string] => e[1] !== null)));
+      })
+      .catch(silentCatch('ProjectsLayer:favicons'));
+    return () => { alive = false; };
+  }, [rawByProject]);
+
   // Off-track (crit) KPIs per project — folds the old AttentionBand into the
   // matrix as a per-project warning badge on each cover.
   const attentionByProject = useMemo(() => {
@@ -98,16 +120,7 @@ export function ProjectsLayer({
               Improve plan
             </Button>
           )}
-          <Button
-            variant="accent"
-            accentColor="violet"
-            size="sm"
-            icon={<RefreshCw className="w-3.5 h-3.5" />}
-            loading={rescanning}
-            onClick={rescan}
-          >
-            Rescan
-          </Button>
+          <RescanConfirmButton rescanning={rescanning} onConfirm={rescan} />
         </div>
       </div>
 
@@ -127,10 +140,83 @@ export function ProjectsLayer({
         </div>
       ) : (
         <ImproveProvider value={improve}>
-          <ProjectsPassportWall passports={passports} openSlugs={openSlugs} onOpen={onOpen} attentionByProject={attentionByProject} onJumpKpi={onJumpKpi} headerStats={headerStats} />
+          <ProjectsPassportWall passports={passports} openSlugs={openSlugs} onOpen={onOpen} attentionByProject={attentionByProject} onJumpKpi={onJumpKpi} headerStats={headerStats} faviconBySlug={faviconBySlug} />
           <ImprovePlanPanel open={showPlan} onClose={() => setShowPlan(false)} />
         </ImproveProvider>
       )}
     </div>
+  );
+}
+
+const RESCAN_CONFIRM_WIDTH = 288;
+
+/** The header Rescan behind a confirm popover — the scan takes a while across a
+ *  large fleet, so a stray click shouldn't fire it. Explains what it does. */
+function RescanConfirmButton({ rescanning, onConfirm }: { rescanning: boolean; onConfirm: () => void }) {
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!anchor) return;
+    const close = () => setAnchor(null);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const onDown = (e: MouseEvent) => { if (panelRef.current && !panelRef.current.contains(e.target as Node)) close(); };
+    window.addEventListener('keydown', onKey);
+    const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
+    return () => { window.removeEventListener('keydown', onKey); window.clearTimeout(id); document.removeEventListener('mousedown', onDown); };
+  }, [anchor]);
+
+  const pos = anchor ? anchorTip(anchor, RESCAN_CONFIRM_WIDTH, 150) : null;
+
+  return (
+    <>
+      <Button
+        variant="accent"
+        accentColor="violet"
+        size="sm"
+        icon={<RefreshCw className="w-3.5 h-3.5" />}
+        loading={rescanning}
+        onClick={(e) => {
+          // Read the rect NOW — e.currentTarget is detached by the time a
+          // state-updater callback runs.
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          setAnchor((a) => (a ? null : rect));
+        }}
+      >
+        Rescan
+      </Button>
+      {anchor && pos && createPortal(
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-label="Confirm rescan"
+          style={{ top: pos.top, left: pos.left, width: RESCAN_CONFIRM_WIDTH }}
+          className="fixed z-[9995] rounded-modal border border-primary/15 bg-background shadow-elevation-4 px-3 py-2.5"
+        >
+          <span className="typo-caption font-semibold text-foreground block mb-1">Rescan all projects?</span>
+          <p className="typo-caption text-foreground/60 leading-snug mb-2.5" style={{ fontWeight: 400 }}>
+            Re-runs the cross-project metadata scan over every registered project and re-derives each readiness
+            passport — stack, coverage and scores. Read-only: nothing in your repos is modified.
+          </p>
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={() => setAnchor(null)}
+              className="px-2.5 py-1 rounded-interactive typo-caption font-medium text-foreground hover:bg-secondary/40 border border-primary/10 transition-colors"
+            >
+              No
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAnchor(null); onConfirm(); }}
+              className="px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors"
+            >
+              Yes, rescan
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

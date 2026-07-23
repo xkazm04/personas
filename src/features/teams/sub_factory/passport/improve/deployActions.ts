@@ -5,12 +5,12 @@
 // PR). The PROMPTS are the IP: they encode what "golden" means for each gap and
 // are written to be read-the-codebase-first, stack-aware, and non-destructive.
 import type { DevProject } from '@/lib/bindings/DevProject';
-import type { AppPassport } from '../passportModel';
+import { APP_COST_FILENAME, type AppPassport } from '../passportModel';
 
 export interface DeployAction {
   id: string;
   /** The passport row this action improves. */
-  row: 'context' | 'instructions' | 'tests' | 'observability' | 'evals' | 'security' | 'migrations' | 'hosting';
+  row: 'context' | 'instructions' | 'tests' | 'observability' | 'evals' | 'security' | 'migrations' | 'hosting' | 'docs' | 'memory' | 'appcost';
   label: string;
   hint: string;
   /** `scan` runs an existing dev-tools scan; `task` deploys Claude Code. */
@@ -34,7 +34,7 @@ export const DEPLOY_ACTIONS: DeployAction[] = [
     id: 'context-scan',
     row: 'context',
     label: 'Run context scan',
-    hint: 'Map the repo into the context graph so agents understand it',
+    hint: 'Map the repo into contexts so agents understand it — incremental only re-derives what changed since the last scan',
     kind: 'scan',
     applicable: (p) => p.automationReadiness.artifacts.contextGraph !== 'full',
   },
@@ -58,6 +58,66 @@ export const DEPLOY_ACTIONS: DeployAction[] = [
         '',
         stackLine(p),
         'Keep it concise (one screen), factual, and immediately useful. Do not invent commands that do not exist.',
+      ].join('\n'),
+  },
+  {
+    id: 'docs-baseline',
+    row: 'docs',
+    label: 'Write baseline documentation',
+    hint: 'Deploy Claude Code to ground a README + docs/ tree in the real codebase',
+    kind: 'task',
+    applicable: (p) => p.automationReadiness.artifacts.docs === 'none' || p.automationReadiness.artifacts.docs === 'readme',
+    taskTitle: () => 'Write baseline documentation (README + docs/)',
+    prompt: (_project, p) =>
+      [
+        'Establish baseline documentation for this project so both humans and coding agents can ground in it.',
+        '',
+        stackLine(p),
+        'Read the codebase first — document only what exists, never invent commands or features.',
+        '- Make the README real: one-line purpose, architecture sketch, install/build/test/run commands, key directories.',
+        '- Create a docs/ tree with one focused page per major feature/subsystem (a handful of pages, not a wiki dump).',
+        '- Where a page describes specific source areas, name those paths in the page so the coupling is explicit.',
+        'Keep every page concise and factual. Do not touch application code.',
+      ].join('\n'),
+  },
+  {
+    id: 'docs-refresh',
+    row: 'docs',
+    label: 'Refresh stale docs',
+    hint: 'Deploy Claude Code to update the docs whose coupled sources changed after them',
+    kind: 'task',
+    applicable: (p) => (p.automationReadiness.artifacts.docRot?.dirty ?? 0) > 0,
+    taskTitle: (project) => `Refresh stale docs in ${project.name}`,
+    prompt: (_project, p) =>
+      [
+        `${p.automationReadiness.artifacts.docRot?.dirty ?? 0} docs in this repo are STALE: source paths they document changed after the doc's last update.`,
+        '',
+        'For each stale doc (git tells you which — compare each doc\'s last commit against commits touching the source areas it references):',
+        '1. Read the doc, then read what actually changed in its coupled sources since the doc was last touched (`git log` + the diffs).',
+        '2. Update ONLY what those changes made wrong or missing — keep unaffected sections byte-identical.',
+        '3. Never describe behaviour you cannot point to in the current code; when a documented feature was removed, say so rather than silently deleting the section.',
+        '',
+        'Prefer several small accurate edits over one rewrite. Do not touch application code.',
+      ].join('\n'),
+  },
+  {
+    id: 'memory-seed',
+    row: 'memory',
+    label: 'Set up agent memory',
+    hint: 'Deploy Claude Code to establish a durable, indexed memory convention',
+    kind: 'task',
+    applicable: (p) => p.automationReadiness.artifacts.memory === 'none',
+    taskTitle: () => 'Set up agent memory (MEMORY.md convention)',
+    prompt: (_project, p) =>
+      [
+        'Establish a durable agent-memory convention for this repo so learnings survive across coding-agent sessions.',
+        '',
+        stackLine(p),
+        'Read the codebase first. Then:',
+        '- Create a MEMORY.md at the repo root as an INDEX: one line per memory entry with a short hook.',
+        '- Seed it with 3-5 real, non-obvious facts you learned reading this repo (gotchas, invariants, non-derivable decisions) — no filler.',
+        '- Add a short section to CLAUDE.md (create it only if missing) telling agents to record durable learnings there and to check it at session start.',
+        'Keep entries factual and terse. Do not touch application code.',
       ].join('\n'),
   },
   {
@@ -168,6 +228,31 @@ export const DEPLOY_ACTIONS: DeployAction[] = [
         'Read the codebase to determine the right target (static site, Node service, containerised app, desktop bundle, …).',
         'Add the idiomatic config: a Dockerfile and/or a platform config (Vercel / Netlify / Fly / Railway / Render) appropriate to the stack, plus a one-command build and a short DEPLOY note covering env vars and the deploy step.',
         'Do not hardcode secrets. Keep it minimal and buildable.',
+      ].join('\n'),
+  },
+  {
+    id: 'app-cost-file',
+    row: 'appcost',
+    label: 'Create the cost file',
+    hint: `Deploy Claude Code to add a gitignored ${APP_COST_FILENAME} skeleton you then fill with monthly service costs`,
+    kind: 'task',
+    // Only when the file is genuinely absent — once it exists (even empty or
+    // invalid) the user maintains it by hand.
+    applicable: (p) => !p.stack.appCost,
+    taskTitle: () => `Add ${APP_COST_FILENAME} (monthly cost tracking)`,
+    prompt: () =>
+      [
+        `Create \`${APP_COST_FILENAME}\` at the repo root so the app's monthly running costs can be tracked, and keep it out of version control.`,
+        '',
+        `1. Write \`${APP_COST_FILENAME}\` at the repo root with EXACTLY this skeleton (valid JSON, nothing else):`,
+        '{',
+        '  "currency": "USD",',
+        '  "services": []',
+        '}',
+        `2. Add \`${APP_COST_FILENAME}\` to the repo's .gitignore (create .gitignore if it does not exist; skip if the entry is already there) — cost data is personal and must never be committed.`,
+        '3. Do NOT invent, estimate or add any services or costs — the user fills the file manually. A future entry has the shape { "name": "<service>", "monthly": <number>, "note": "<optional>" }.',
+        '',
+        'Do not touch anything else in the repo.',
       ].join('\n'),
   },
 ];

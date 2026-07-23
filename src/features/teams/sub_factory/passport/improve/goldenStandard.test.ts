@@ -11,7 +11,7 @@ function mk(over: { archetype?: Archetype; full?: boolean } = {}): AppPassport {
     stack: { languages: [], frameworks: [], persistence: [], monitoring: { errorTracking: null, logs: null, metrics: null, tracing: null }, integrations: [] },
     automationReadiness: {
       level: 'L1', score: 0,
-      artifacts: { agentInstructions: full ? ['x'] : [], contextGraph: full ? 'full' : 'none', memory: false, manifest: full, evals: full ? 'full' : 'none', skills: full },
+      artifacts: { agentInstructions: full ? ['x'] : [], contextGraph: full ? 'full' : 'none', memory: full ? 'governed' : 'none', docs: full ? 'synced' : 'none', manifest: full, evals: full ? 'full' : 'none', skills: full },
       selfVerify: { build: full, test: full, lint: full, typecheck: full },
       aiInWorkflow: full, blockers: [],
     },

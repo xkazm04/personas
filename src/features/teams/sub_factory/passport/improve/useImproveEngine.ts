@@ -17,10 +17,10 @@ export function useImproveEngine(rawByProject: Map<string, ImproveRaw>, reload: 
     getRaw: (slug) => rawByProject.get(slug),
     allRaw: () => [...rawByProject.values()],
     applyStandards: async (slug, json) => { await setStandardsConfig(slug, json); reload(); },
-    runContextScan: async (slug) => {
+    runContextScan: async (slug, delta) => {
       const raw = rawByProject.get(slug);
       if (!raw) return undefined;
-      const { scan_id } = await scanCodebase(slug, raw.project.root_path);
+      const { scan_id } = await scanCodebase(slug, raw.project.root_path, delta);
       // Register in the global activity dock (titlebar) so the scan stays
       // visible while the user navigates across modules; completion is resolved
       // globally in eventBridge (CONTEXT_GEN_COMPLETE → factory_scan). The Rust
@@ -28,7 +28,7 @@ export function useImproveEngine(rawByProject: Map<string, ImproveRaw>, reload: 
       useOverviewStore.getState().processStarted(
         'factory_scan',
         scan_id,
-        `Context scan: ${raw.project.name}`,
+        `Context ${delta ? 're-scan' : 'scan'}: ${raw.project.name}`,
         { section: 'plugins', tab: 'context-map' },
       );
       return scan_id;

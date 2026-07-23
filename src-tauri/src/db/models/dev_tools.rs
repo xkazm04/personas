@@ -574,7 +574,7 @@ pub struct DevIdea {
     /// Which sensor raised this (the findings spine — see
     /// `docs/plans/dev-findings-loop.md`). `None` = a classic Idea-Scanner idea.
     /// One of: `standards_finding` | `passport_gap` | `llm_cost` | `sentry_spike`
-    /// | `kpi_offtrack`.
+    /// | `kpi_offtrack` | `skill_dormant` | `doc_rot`.
     pub origin: Option<String>,
     /// The use case the emitting signal belongs to. Orphan-tolerant (no FK).
     pub use_case_id: Option<String>,
@@ -601,12 +601,14 @@ pub const VERIFY_STATES: [&str; 5] = ["pending", "cleared", "moved", "unchanged"
 
 /// The sensors that can raise a finding. Kept as a validated allowlist so a typo
 /// in an emitter can't quietly create a new origin the triage UI won't render.
-pub const FINDING_ORIGINS: [&str; 5] = [
+pub const FINDING_ORIGINS: [&str; 7] = [
     "standards_finding",
     "passport_gap",
     "llm_cost",
     "sentry_spike",
     "kpi_offtrack",
+    "skill_dormant",
+    "doc_rot",
 ];
 
 // ============================================================================

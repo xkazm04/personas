@@ -140,7 +140,6 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'fleet', label: 'Fleet', icon: Terminal },
   // TEMPORARY — /prototype R1 lab bench (Project Cockpit, mock data) on the
   // previously-vestigial `skills` id. Removed at consolidation.
-  { id: 'skills', label: 'Cockpit (proto)', icon: FlaskConical },
 ];
 
 export const twinItems: SubNavItem[] = [

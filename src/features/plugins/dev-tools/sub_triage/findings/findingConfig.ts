@@ -26,6 +26,15 @@ export const SENTRY_TOP_N = 3;
  *  (a full Claude deploy) stays a human decision on the passport. */
 export const PASSPORT_MAX_TIER = 2;
 
+/** At most this many dormant-skill findings per sweep — the oldest-unused
+ *  first; a fleet-wide skill cleanup should be one deliberate pass, not spam. */
+export const SKILL_DORMANT_TOP_N = 3;
+
+/** At most this many doc-rot findings per sweep, harm-ranked (dirty reads
+ *  first, then staleness age) — docs rot broadly; the sweep raises the ones
+ *  that are actually hurting. */
+export const DOC_ROT_TOP_N = 3;
+
 /** Hard cap on new findings per sweep. Anything beyond is dropped and REPORTED —
  *  a silent truncation would read as "nothing else to do". */
 export const SWEEP_CAP = 10;

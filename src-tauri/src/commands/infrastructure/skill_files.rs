@@ -191,7 +191,7 @@ fn skills_dir(state: &AppState, project_id: Option<&str>) -> Result<PathBuf, App
 
 /// Resolve `~/.claude/skills` — the user-global Claude Code skills library,
 /// available to every project. `None` if the home dir can't be resolved.
-fn global_skills_dir() -> Option<PathBuf> {
+pub(crate) fn global_skills_dir() -> Option<PathBuf> {
     dirs::home_dir().map(|h| h.join(".claude").join("skills"))
 }
 
@@ -284,7 +284,7 @@ fn collect_skill_files(dir: &Path) -> BTreeMap<String, u64> {
 /// and bytes, in sorted order, excluding the provenance sidecar. Returns `None`
 /// if the directory can't be read. Two directories with identical file trees
 /// hash equal regardless of filesystem walk order.
-fn hash_skill_dir(dir: &Path) -> Option<String> {
+pub(crate) fn hash_skill_dir(dir: &Path) -> Option<String> {
     if !dir.is_dir() {
         return None;
     }
@@ -353,7 +353,7 @@ fn classify_sync_state(skill_dir: &Path) -> (String, Option<String>) {
 /// empty vec when the directory is missing or unreadable — callers that need
 /// a hard error (the project-scoped list) resolve + check the dir first via
 /// [`skills_dir`]; the global list tolerates a missing library.
-fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
+pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
     let mut entries = Vec::new();
     let Ok(read_dir) = std::fs::read_dir(dir) else {
         return entries;

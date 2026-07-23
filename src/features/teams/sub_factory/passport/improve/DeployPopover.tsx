@@ -13,7 +13,6 @@ import { derivePassportFromMetadata } from '../passportDerive';
 import { useImprove } from './ImproveContext';
 import { applicableDeployActions, type DeployAction } from './deployActions';
 import { ConnectorSection } from './ConnectorSection';
-import { SkillsSection } from './SkillsSection';
 import { connectorSpecFor } from './connectors';
 import { LevelLadder } from './LevelLadder';
 import { ladderFor } from './levels';
@@ -37,10 +36,9 @@ export function DeployPopover({
   const [busy, setBusy] = useState<string | null>(null);
 
   const raw = engine?.getRaw(slug);
-  const passport = raw ? derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence }) : null;
+  const passport = raw ? derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts, docRot: raw.docRot }) : null;
   const actions = passport ? applicableDeployActions(rowKey, passport) : [];
   const showConnector = Boolean(passport && connectorSpecFor(rowKey)?.applicable(passport));
-  const showSkills = rowKey === 'skills' && (raw?.skillsToAdd?.length ?? 0) > 0;
   const ladder = passport ? ladderFor(rowKey, passport) : null;
   const reason = raw ? dimensionReason(rowKey, raw) : null;
 
@@ -61,7 +59,7 @@ export function DeployPopover({
     return () => { window.removeEventListener('keydown', onKey); window.clearTimeout(id); document.removeEventListener('mousedown', onDown); };
   }, [onClose]);
 
-  if (!engine || !raw || !passport || !anchor || (actions.length === 0 && !showConnector && !showSkills && !ladder)) return null;
+  if (!engine || !raw || !passport || !anchor || (actions.length === 0 && !showConnector && !ladder)) return null;
 
   // Marks this exact cell busy so its gear spins + disables until the run's
   // terminal event fires (resolved by run id in eventBridge → endByRun).
@@ -69,13 +67,13 @@ export function DeployPopover({
     if (runId) useImproveActivityStore.getState().start(`${slug}:${rowKey}`, runId, kind);
   };
 
-  const run = async (a: DeployAction, mode: 'scan' | 'queue' | 'deploy') => {
+  const run = async (a: DeployAction, mode: 'scan' | 'queue' | 'deploy', delta?: boolean) => {
     setBusy(a.id);
     try {
       if (mode === 'scan') {
-        const scanId = await engine.runContextScan(slug);
+        const scanId = await engine.runContextScan(slug, delta);
         markBusy(scanId, 'scan');
-        addToast(`Context scan started for ${raw.project.name}`, 'success');
+        addToast(`Context ${delta ? 're-scan (incremental)' : 'scan'} started for ${raw.project.name}`, 'success');
       } else {
         const title = a.taskTitle?.(raw.project) ?? a.label;
         const prompt = a.prompt?.(raw.project, passport) ?? '';
@@ -95,7 +93,7 @@ export function DeployPopover({
   // called this and re-walked the whole fleet each time).
   function eligibleForBatch(a: DeployAction) {
     return (engine!.allRaw() ?? [])
-      .map((r) => ({ r, p: derivePassportFromMetadata(r.meta, r.project, { hasSkills: r.hasSkills, evidence: r.evidence }) }))
+      .map((r) => ({ r, p: derivePassportFromMetadata(r.meta, r.project, { hasSkills: r.hasSkills, evidence: r.evidence, skillCounts: r.skillCounts, docRot: r.docRot }) }))
       .filter(({ p }) => a.applicable(p));
   }
   const batchByAction = new Map(actions.map((a) => [a.id, eligibleForBatch(a)]));
@@ -139,7 +137,6 @@ export function DeployPopover({
         )}
         {ladder && <LevelLadder rowKey={rowKey} passport={passport} />}
         {showConnector && <ConnectorSection slug={slug} rowKey={rowKey} onClose={onClose} />}
-        {showSkills && <SkillsSection slug={slug} onClose={onClose} />}
         {actions.map((a) => (
           <div key={a.id} className="rounded-interactive border border-primary/10 bg-secondary/15 p-2">
             <div className="flex items-start gap-2">
@@ -168,7 +165,17 @@ export function DeployPopover({
 
             <div className="flex items-center justify-end gap-1.5 mt-2">
               {a.kind === 'scan' ? (
-                <ActionButton primary onClick={() => run(a, 'scan')} busy={busy === a.id} label="Run scan" />
+                // Same two modes as the Dev-Tools Context Map: incremental
+                // re-scan once a map exists, full scan always. A never-scanned
+                // project has nothing to delta against, so it gets full only.
+                raw.meta.context_count > 0 ? (
+                  <>
+                    <ActionButton onClick={() => run(a, 'scan', true)} busy={busy === a.id} label="Re-scan (incremental)" title="Only re-derives contexts for files changed since the last scan" />
+                    <ActionButton primary onClick={() => run(a, 'scan', false)} busy={busy === a.id} label="Full re-scan" title="Re-maps the whole repo from scratch" />
+                  </>
+                ) : (
+                  <ActionButton primary onClick={() => run(a, 'scan', false)} busy={busy === a.id} label="Run scan" />
+                )
               ) : (
                 <>
                   <ActionButton onClick={() => run(a, 'queue')} busy={busy === a.id} label="Queue task" />

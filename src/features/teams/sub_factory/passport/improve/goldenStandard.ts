@@ -6,7 +6,7 @@
 // which is the whole point of "fair, golden-standard tracking".
 import {
   GRAPH_SCALE, CI_SCALE, TESTS_SCALE, SECURITY_SCALE, OBSERVABILITY_SCALE,
-  EVALS_SCALE, MIGRATIONS_SCALE, scalePos,
+  EVALS_SCALE, MIGRATIONS_SCALE, MEMORY_SCALE, DOCS_SCALE, scalePos,
   type AppPassport, type Archetype,
 } from '../passportModel';
 
@@ -25,7 +25,7 @@ export interface RubricDim {
 // ladder (none·smoke·partial·substantial·comprehensive).
 export const RUBRIC: RubricDim[] = [
   {
-    key: 'context', label: 'Context graph', weight: 3,
+    key: 'context', label: 'Context coverage', weight: 3,
     pos: (p) => scalePos(GRAPH_SCALE, p.automationReadiness.artifacts.contextGraph),
     target: { solo: 0.5, team: 1, org: 1 },
   },
@@ -33,6 +33,20 @@ export const RUBRIC: RubricDim[] = [
     key: 'instructions', label: 'Agent instructions', weight: 2,
     pos: (p) => (p.automationReadiness.artifacts.agentInstructions.length > 0 ? 1 : 0),
     target: { solo: 1, team: 1, org: 1 },
+  },
+  {
+    // 4-rung docs ladder: readme=0.33, structured=0.67, synced=1. Solo gets by
+    // on a README; teams need structure; orgs need managed source→doc coupling.
+    key: 'docs', label: 'Documentation', weight: 2,
+    pos: (p) => scalePos(DOCS_SCALE, p.automationReadiness.artifacts.docs),
+    target: { solo: 0.34, team: 0.67, org: 1 },
+  },
+  {
+    // 4-rung memory ladder: adhoc=0.33, curated=0.67, governed=1. Governed
+    // needs the P3 review/decay loop, so org targets curated until it ships.
+    key: 'memory', label: 'Agent memory', weight: 1,
+    pos: (p) => scalePos(MEMORY_SCALE, p.automationReadiness.artifacts.memory),
+    target: { solo: 0.34, team: 0.67, org: 0.67 },
   },
   {
     key: 'selfverify', label: 'Self-verify locally', weight: 3,

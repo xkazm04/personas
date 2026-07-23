@@ -52,6 +52,15 @@ export const CONNECTOR_SPECS: Record<string, ConnectorSpec> = {
   // each bound to the single project monitoring slot. A modern monitoring
   // platform (Datadog/Grafana/Sentry/…) covers error-tracking, logs, metrics and
   // tracing, so binding one lights up all four rows (see passportDerive).
+  // The env-split Monitoring row — same category + slot as the capability rows
+  // below; wiring a connector fills the production slot (see passportDerive).
+  monitoring: {
+    rowKey: 'monitoring',
+    categoryLabel: 'monitoring / error-tracking',
+    serviceTypes: MONITORING_SERVICE_TYPES,
+    bindField: 'monitoring',
+    applicable: (p) => !p.stack.monitoring.errorTracking,
+  },
   errors: {
     rowKey: 'errors',
     categoryLabel: 'error tracking',

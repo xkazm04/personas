@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest';
 
 import {
+  emitDocRotFindings,
   emitKpiFindings,
   emitLlmCostFindings,
   emitPassportGaps,
   emitSentryFindings,
+  emitSkillDormantFindings,
   emitStandardsFindings,
+  type DormantSkill,
+  type RottingDoc,
 } from '../emitters';
 import {
   LLM_COST_THRESHOLD_USD,
@@ -178,5 +182,69 @@ describe('emitKpiFindings', () => {
       { groupId: 'g1', kpiId: 'k2', name: 'conversion', current: null, target: 5, unit: '%' },
     ]);
     expect(out[0]!.description).not.toMatch(/undefined|null/);
+  });
+});
+
+describe('emitSkillDormantFindings (E6)', () => {
+  const skill = (over: Partial<DormantSkill>): DormantSkill => ({
+    name: 'x',
+    scope: 'project',
+    first_seen_at: '2026-01-01 00:00:00',
+    last_invoked_at: null,
+    dormant: true,
+    ...over,
+  });
+
+  it('emits only dormant skills, oldest-first, capped, with the plan dedup scheme', () => {
+    const out = emitSkillDormantFindings([
+      skill({ name: 'alive', dormant: false }),
+      skill({ name: 'newer', first_seen_at: '2026-06-01 00:00:00' }),
+      skill({ name: 'oldest', first_seen_at: '2025-11-01 00:00:00', scope: 'global' }),
+      skill({ name: 'mid', first_seen_at: '2026-03-01 00:00:00' }),
+      skill({ name: 'fourth', first_seen_at: '2026-06-15 00:00:00' }),
+    ]);
+    expect(out).toHaveLength(3); // SKILL_DORMANT_TOP_N caps
+    expect(out[0]!.dedupKey).toBe('skill:global:oldest');
+    expect(out.every((d) => d.origin === 'skill_dormant')).toBe(true);
+    expect(out[0]!.evidence).toMatchObject({ invokes30d: 0, scope: 'global' });
+  });
+
+  it('says "never invoked" instead of rendering a null timestamp', () => {
+    const out = emitSkillDormantFindings([skill({ name: 'ghost' })]);
+    expect(out[0]!.description).toContain('never invoked');
+    expect(out[0]!.description).not.toMatch(/undefined|null/);
+  });
+});
+
+describe('emitDocRotFindings (E7)', () => {
+  const doc = (over: Partial<RottingDoc>): RottingDoc => ({
+    doc_path: 'docs/x.md',
+    dirty_since: '2026-06-01 00:00:00',
+    changed_sources: ['src/x/one.rs'],
+    reads_30d: 0,
+    dirty_reads_30d: 0,
+    ...over,
+  });
+
+  it('ranks consumed rot first, then oldest staleness, capped', () => {
+    const out = emitDocRotFindings([
+      doc({ doc_path: 'docs/clean.md', dirty_since: null }),
+      doc({ doc_path: 'docs/old.md', dirty_since: '2026-03-01 00:00:00' }),
+      doc({ doc_path: 'docs/read-while-stale.md', dirty_since: '2026-07-01 00:00:00', dirty_reads_30d: 4 }),
+      doc({ doc_path: 'docs/mid.md', dirty_since: '2026-05-01 00:00:00' }),
+      doc({ doc_path: 'docs/newest.md', dirty_since: '2026-07-10 00:00:00' }),
+    ]);
+    expect(out).toHaveLength(3); // DOC_ROT_TOP_N
+    expect(out[0]!.dedupKey).toBe('doc:docs/read-while-stale.md');
+    expect(out[0]!.impact).toBe(4); // consumed rot outranks quiet rot
+    expect(out[1]!.dedupKey).toBe('doc:docs/old.md');
+    expect(out[0]!.description).toContain('WHILE stale');
+  });
+
+  it('carries the changed sources into the refresh prompt + evidence', () => {
+    const out = emitDocRotFindings([doc({ changed_sources: ['src/a.rs', 'src/b.rs'] })]);
+    expect(out[0]!.description).toContain('src/a.rs');
+    expect(out[0]!.evidence).toMatchObject({ changedSources: ['src/a.rs', 'src/b.rs'] });
+    expect(out[0]!.description).not.toMatch(/undefined/);
   });
 });

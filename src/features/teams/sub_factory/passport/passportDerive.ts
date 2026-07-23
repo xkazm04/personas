@@ -14,7 +14,8 @@ import {
   type AppPassport, type AutomationLevel, type ProdBand,
   type GraphLevel, type CiLevel, type IntegrationKind, type PassportIntegration,
   type PassportLanguage, type TestsLevel, type EvalsLevel, type MigrationsLevel,
-  type SecurityLevel,
+  type SecurityLevel, type MemoryLevel, type DocsLevel,
+  type AppCost, type EnvSlot, type PassportEnvironments,
 } from './passportModel';
 import { parseStandards } from './improve/standards';
 
@@ -29,6 +30,38 @@ const VENDOR_HINTS: Array<[RegExp, string, IntegrationKind]> = [
   [/posthog|segment|mixpanel/i, 'Analytics', 'analytics'],
   [/sentry/i, 'Sentry', 'other'],
 ];
+
+/** Compact host for a URL-ish string ('https://x.fly.dev/a' → 'x.fly.dev');
+ *  the raw value when it doesn't parse as a URL. */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host || url;
+  } catch {
+    return url;
+  }
+}
+
+/** Lenient parse of the well-known `app-cost.json` (see APP_COST_FILENAME).
+ *  null/undefined raw = file absent → null (the NA state). Invalid JSON =
+ *  present-but-unreadable → empty services + parseError, never a throw. */
+export function parseAppCost(raw: string | null | undefined): AppCost | null {
+  if (raw == null) return null;
+  try {
+    const json = JSON.parse(raw) as { currency?: unknown; services?: unknown };
+    const services = Array.isArray(json.services)
+      ? json.services
+          .filter((s): s is Record<string, unknown> => Boolean(s) && typeof s === 'object')
+          .map((s) => ({
+            name: typeof s.name === 'string' && s.name.trim() ? s.name : 'unnamed',
+            monthly: typeof s.monthly === 'number' && Number.isFinite(s.monthly) ? s.monthly : null,
+            note: typeof s.note === 'string' ? s.note : undefined,
+          }))
+      : [];
+    return { currency: typeof json.currency === 'string' ? json.currency : 'USD', services };
+  } catch {
+    return { currency: 'USD', services: [], parseError: true };
+  }
+}
 
 function bandFromScore(score: number): ProdBand {
   if (score >= 85) return 'hardened';
@@ -48,7 +81,12 @@ function levelFromScore(score: number): AutomationLevel {
 export function derivePassportFromMetadata(
   meta: CrossProjectProjectMetadata,
   project: DevProject,
-  opts?: { hasSkills?: boolean; evidence?: RepoEvidence | null },
+  opts?: {
+    hasSkills?: boolean;
+    evidence?: RepoEvidence | null;
+    skillCounts?: { reused: number; own: number; dormant?: number };
+    docRot?: { tracked: number; dirty: number; neverRead: number };
+  },
 ): AppPassport {
   const hasSkills = Boolean(opts?.hasSkills);
   // Deep evidence (D1) — real file signals from the repo probe. Null on older
@@ -114,6 +152,27 @@ export function derivePassportFromMetadata(
   ].filter(Boolean) as string[];
   const evalsLevel: EvalsLevel = ev?.has_eval ? 'partial' : 'none';
 
+  // Agent memory (Brainiac-adoption P0) — graded from the probe. `curated`
+  // needs an index with real entries that changed recently; `governed` is
+  // unreachable until the P3 review/decay loop exists (the ladder shows the
+  // rung so the target is visible). Probe fields are optional — an older
+  // backend yields "no signal", never an invented level.
+  const memFiles = ev?.memory_file_count ?? 0;
+  const memIndex = ev?.memory_index_lines ?? 0;
+  const memAge = ev?.memory_age_days ?? null;
+  const memoryLevel: MemoryLevel = !(ev?.has_repo_memory || memFiles > 0) ? 'none'
+    : memIndex >= 5 && memAge != null && memAge <= 30 ? 'curated'
+    : 'adhoc';
+
+  // Documentation (P0) — a doc-map manifest means freshness is *managed*
+  // (source→doc coupling exists), which outranks raw volume. The 'fresh'
+  // rot-scan rung arrives with the P2 git-based dirty scan.
+  const docsCount = ev?.docs_file_count ?? 0;
+  const docsLevel: DocsLevel = ev?.has_doc_map && docsCount > 0 ? 'synced'
+    : docsCount >= 3 ? 'structured'
+    : ev?.has_readme ? 'readme'
+    : 'none';
+
   const autoScore = Math.min(100,
     (contextGraph === 'full' ? 35 : contextGraph === 'partial' ? 18 : 0)
     + Object.values(selfVerify).filter(Boolean).length * 7
@@ -122,7 +181,9 @@ export function derivePassportFromMetadata(
     + (hasSkills ? 8 : 0)
     + (evalsLevel !== 'none' ? 7 : 0)
     + (ev?.has_claude_md ? 6 : 0)
-    + (meta.active_goal_count > 0 ? 9 : 0),
+    + (meta.active_goal_count > 0 ? 9 : 0)
+    + (memoryLevel === 'curated' ? 7 : memoryLevel === 'adhoc' ? 3 : 0)
+    + (docsLevel === 'synced' ? 8 : docsLevel === 'structured' ? 5 : docsLevel === 'readme' ? 2 : 0),
   );
 
   // -- production readiness ---------------------------------------------------
@@ -167,10 +228,11 @@ export function derivePassportFromMetadata(
 
   // -- honest blockers (feed the Wall's "Why it's not ready" band) ------------
   const autoBlockers: string[] = [];
-  if (contextGraph !== 'full') autoBlockers.push('Context graph incomplete — rescan to map the whole repo');
+  if (contextGraph !== 'full') autoBlockers.push('Context coverage incomplete — rescan to map the whole repo');
   if (!selfVerify.test) autoBlockers.push('No automated test signal an agent can self-verify against');
   if (!aiInWorkflow) autoBlockers.push('No automated PR / team pipeline wired');
   if (!hasManifest) autoBlockers.push('No standards & branching policy set');
+  if (docsLevel === 'none') autoBlockers.push('No documentation an agent can ground in');
 
   const prodBlockers: string[] = [];
   if (observabilityLevel === 'none') prodBlockers.push('No error tracking / monitoring connector bound');
@@ -179,6 +241,30 @@ export function derivePassportFromMetadata(
   if (ciLevel === 'none' || ciLevel === 'checks') prodBlockers.push('Merges are not gated by checks');
 
   const lifecycle = meta.context_count >= 25 ? 'beta' : meta.context_count >= 8 ? 'alpha' : 'prototype';
+
+  // -- environments (local / test / production) — only what was OBSERVED ------
+  // A slot stays null (an honest empty state) unless something real backs it:
+  // a repo-detected db engine runs in dev at minimum; a dev/start script is a
+  // local host signal; test_env_url is the test host; a bound monitoring
+  // connector watches the DEPLOYED app, so it fills the production slot.
+  const slot = (label: string | null, sub?: string): EnvSlot => (sub ? { label, sub } : { label });
+  const environments: PassportEnvironments = {
+    db: {
+      local: slot(persistence[0]?.engine ?? null),
+      test: slot(null),
+      production: slot(null),
+    },
+    monitoring: {
+      local: slot(null),
+      test: slot(null),
+      production: slot(project.monitoring_credential_id ? 'connected' : null),
+    },
+    hosting: {
+      local: slot(ev?.package_scripts.some((s) => s === 'dev' || s === 'start') ? 'dev script' : null),
+      test: slot(project.test_env_url ? hostOf(project.test_env_url) : null),
+      production: slot(null),
+    },
+  };
 
   return {
     passport: 'app-passport',
@@ -215,6 +301,8 @@ export function derivePassportFromMetadata(
       // Auth method detected from the repo's dependencies (view-only).
       auth: ev?.auth_method ?? null,
       integrations,
+      environments,
+      appCost: parseAppCost(ev?.app_cost_raw),
     },
     automationReadiness: {
       level: levelFromScore(autoScore),
@@ -222,10 +310,13 @@ export function derivePassportFromMetadata(
       artifacts: {
         agentInstructions,
         contextGraph,
-        memory: false,
+        memory: memoryLevel,
+        docs: docsLevel,
         manifest: hasManifest,
         evals: evalsLevel,
         skills: hasSkills,
+        skillCounts: opts?.skillCounts,
+        docRot: opts?.docRot,
       },
       selfVerify,
       aiInWorkflow,
