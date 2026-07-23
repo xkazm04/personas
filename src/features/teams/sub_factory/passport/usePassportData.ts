@@ -23,8 +23,12 @@ interface PassportData {
   /** ISO timestamp of the scan the passports were derived from. */
   generatedAt: string | null;
   rescanning: boolean;
+  /** Project id currently in a scoped rescan (null when idle). */
+  rescanningProject: string | null;
   /** Re-run the cross-project scan and re-derive every passport. */
   rescan: () => void;
+  /** Scoped rescan: re-aggregate ONE project, carry the rest from cache. */
+  rescanProject: (projectId: string) => Promise<unknown>;
   /** Re-fetch project rows + re-derive from the cached scan (post config write). */
   reload: () => void;
 }
@@ -109,8 +113,9 @@ export function usePassportData(): PassportData {
       : { passports: [], rawByProject: EMPTY, loading: true, error: null, generatedAt: null },
   );
   const [rescanning, setRescanning] = useState(false);
+  const [rescanningProject, setRescanningProject] = useState<string | null>(null);
 
-  const build = useCallback(async (regen: boolean) => {
+  const build = useCallback(async (regen: boolean, projectId?: string) => {
     // Every publish also refreshes the module cache so the NEXT mount paints
     // from it instantly.
     const publish = (passports: AppPassport[], rawByProject: Map<string, ImproveRaw>, generatedAt: string | null) => {
@@ -119,7 +124,7 @@ export function usePassportData(): PassportData {
     };
     const [projects, cached] = await Promise.all([
       listProjects(),
-      regen ? generateCrossProjectMetadata() : getCrossProjectMetadata(),
+      regen ? generateCrossProjectMetadata(projectId) : getCrossProjectMetadata(),
     ]);
     // First run (no cached scan yet) → generate one so the Wall is never empty
     // when projects exist but have never been cross-scanned.
@@ -339,6 +344,15 @@ export function usePassportData(): PassportData {
       .finally(() => setRescanning(false));
   }, [build]);
 
+  // Project-scoped rescan — only the target re-aggregates in Rust; siblings
+  // carry over from the cached map. Same re-derive downstream.
+  const rescanProject = useCallback((projectId: string) => {
+    setRescanningProject(projectId);
+    return build(true, projectId)
+      .catch((e) => setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })))
+      .finally(() => setRescanningProject(null));
+  }, [build]);
+
   const reload = useCallback(() => {
     build(false).catch((e) => setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })));
   }, [build]);
@@ -370,5 +384,5 @@ export function usePassportData(): PassportData {
     };
   }, [build]);
 
-  return { ...state, rescanning, rescan, reload };
+  return { ...state, rescanning, rescanningProject, rescan, rescanProject, reload };
 }

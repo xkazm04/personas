@@ -22,13 +22,25 @@ const KIND_META: Record<PlanKind, { icon: typeof Rocket; label: string; tone: st
 
 const MAX_VISIBLE = 40;
 
-export function ImprovePlanPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function ImprovePlanPanel({ open, onClose, slug }: {
+  open: boolean;
+  onClose: () => void;
+  /** Scope the plan to ONE project (the wall's per-project action). Absent =
+   *  the original fleet-wide program. */
+  slug?: string;
+}) {
   const engine = useImprove();
   const addToast = useToastStore((s) => s.addToast);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
-  const raws = useMemo(() => engine?.allRaw() ?? [], [engine]);
+  const raws = useMemo(() => {
+    if (slug) {
+      const one = engine?.getRaw(slug);
+      return one ? [one] : [];
+    }
+    return engine?.allRaw() ?? [];
+  }, [engine, slug]);
   const plan = useMemo(() => buildImprovePlan(raws), [raws]);
   const avgNow = useMemo(() => fleetGoldenAvg(raws), [raws]);
 

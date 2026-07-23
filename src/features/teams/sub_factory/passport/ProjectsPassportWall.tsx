@@ -21,6 +21,8 @@ import { InkTabs } from './passportInk';
 import type { CoverBodyProps } from './CoverBody';
 import type { WarningItem } from './WarningBadge';
 import { onboardDispatchKey } from './onboardDispatch';
+import { ImprovePlanPanel } from './improve/ImprovePlanPanel';
+import { PassportActionsCell } from './PassportActionsRow';
 import { PassportTerminalModal, usePassportFleetSessions } from './passportFleet';
 import { RowSetupModal } from './RowSetupModal';
 import { WallOverviewGrid } from './WallOverviewGrid';
@@ -41,6 +43,8 @@ export function ProjectsPassportWall({
   onJumpKpi,
   headerStats,
   faviconBySlug,
+  rescanningProject,
+  onRescanProject,
 }: {
   passports: AppPassport[];
   openSlugs?: Set<string>;
@@ -54,6 +58,10 @@ export function ProjectsPassportWall({
   headerStats?: Map<string, { contexts: number; kpiPassed: number; kpiTotal: number }>;
   /** R21 — per-slug favicon data URLs; covers fall back to the status dot. */
   faviconBySlug?: Map<string, string>;
+  /** Project id currently in a scoped rescan (spins that row's button). */
+  rescanningProject?: string | null;
+  /** Scoped per-project rescan — the actions row's Rescan. */
+  onRescanProject?: (slug: string) => void;
 }) {
   const reduce = useReducedMotion();
   const [view, setView] = useState<WallView>('overview');
@@ -62,6 +70,8 @@ export function ProjectsPassportWall({
   const fleetSessions = usePassportFleetSessions();
   const [setupModal, setSetupModal] = useState<WallSetupTarget | null>(null);
   const [terminalKey, setTerminalKey] = useState<string | null>(null);
+  // Project-scoped Improve plan (opened from the actions row).
+  const [planSlug, setPlanSlug] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Horizontal scroll from the header so the user never hunts for the bottom
@@ -89,21 +99,30 @@ export function ProjectsPassportWall({
     }
   }, [passports, sort]);
 
-  const coverProps = (p: AppPassport): CoverBodyProps => {
+  const coverProps = (p: AppPassport): CoverBodyProps => ({
+    p,
+    openable: Boolean(openSlugs?.has(p.identity.slug) && onOpen),
+    onOpen,
+    attention: attentionByProject?.get(p.identity.slug) ?? [],
+    onJumpKpi,
+    stats: headerStats?.get(p.identity.slug) ?? null,
+    favicon: faviconBySlug?.get(p.identity.slug) ?? null,
+  });
+
+  // The per-project actions row (Compare view, "Stack" group header line) —
+  // every action opens a consent popover before running.
+  const renderActions = (p: AppPassport) => {
     const onboardKey = onboardDispatchKey(p.identity.slug);
-    return {
-      p,
-      openable: Boolean(openSlugs?.has(p.identity.slug) && onOpen),
-      onOpen,
-      attention: attentionByProject?.get(p.identity.slug) ?? [],
-      onJumpKpi,
-      stats: headerStats?.get(p.identity.slug) ?? null,
-      favicon: faviconBySlug?.get(p.identity.slug) ?? null,
-      onboard: {
-        session: fleetSessions.get(onboardKey) ?? null,
-        onOpenTerminal: () => setTerminalKey(onboardKey),
-      },
-    };
+    return (
+      <PassportActionsCell
+        p={p}
+        onboardSession={fleetSessions.get(onboardKey) ?? null}
+        onOpenOnboardTerminal={() => setTerminalKey(onboardKey)}
+        rescanning={rescanningProject === p.identity.slug}
+        onRescanProject={() => onRescanProject?.(p.identity.slug)}
+        onOpenPlan={() => setPlanSlug(p.identity.slug)}
+      />
+    );
   };
 
   return (
@@ -139,9 +158,14 @@ export function ProjectsPassportWall({
             fleetSessions={fleetSessions}
             onOpenSetup={setSetupModal}
             onOpenTerminal={setTerminalKey}
+            renderActions={renderActions}
           />
         )}
       </LayoutGroup>
+
+      {planSlug && (
+        <ImprovePlanPanel open onClose={() => setPlanSlug(null)} slug={planSlug} />
+      )}
 
       {setupModal && (
         <RowSetupModal
