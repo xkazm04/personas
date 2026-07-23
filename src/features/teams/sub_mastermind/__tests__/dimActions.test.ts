@@ -5,7 +5,8 @@ import { applicableStandardsActions } from '@/features/teams/sub_factory/passpor
 import { connectorSpecFor } from '@/features/teams/sub_factory/passport/improve/connectors';
 import type { ImproveRaw } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 
-import { DIM_TO_ROW, dimAction } from '../lib/dimActions';
+import { dimAction } from '../lib/dimActions';
+import { DIM_ORDER, DIM_REGISTRY } from '../lib/dimRegistry';
 import { makePassport } from './passportFactory';
 
 // dimActions owns only the branching; its collaborators (the wall's
@@ -28,9 +29,10 @@ const passport = makePassport();
 const raw = (standardsConfig: string | null = null, skillsToAdd: ImproveRaw['skillsToAdd'] = []) =>
   ({ project: { standards_config: standardsConfig }, skillsToAdd }) as unknown as ImproveRaw;
 
-describe('dimActions — DIM_TO_ROW mapping', () => {
+describe('dimActions — dim → wall-row mapping (via the dimension registry)', () => {
   it('maps every canvas dim to its wall row (snapshot)', () => {
-    expect(DIM_TO_ROW).toEqual({
+    const mapping = Object.fromEntries(DIM_ORDER.map((k) => [k, DIM_REGISTRY[k].rowKey]));
+    expect(mapping).toEqual({
       db: 'migrations',
       monitoring: 'observability',
       ci: 'ci',
