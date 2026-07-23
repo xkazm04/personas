@@ -39,7 +39,7 @@ export function buildKpiSimPrompt(project: DevProject, mode: KpiSimMode): string
   return [
     `You are orchestrating a KPI SIMULATION for the project "${project.name}" (this repo). You are the ORCHESTRATOR — plan, dispatch research subagents, execute measurements, and synthesize a machine-readable result. Use the Task/Agent tool for fan-out research; when the harness lets you pick a subagent model, use a faster sonnet-class model for research subagents and keep synthesis/judgement in this session.`,
     '',
-    'GROUND TRUTH: read `kpi-sim/snapshot.json` at the repo root first. It holds the project identity and every managed KPI (id, name, category, measure_kind, measure_config, unit, direction, baseline/target/current, cadence, tier). KPI ids in your output MUST come from this file verbatim.',
+    'GROUND TRUTH: read `kpi-sim/snapshot.json` at the repo root first. It holds the project identity and every managed KPI (id, name, category, measure_kind, measure_config, unit, direction, baseline/target/current, cadence, tier, status). KPI ids in your output MUST come from this file verbatim. KPIs with status "proposed" are PENDING HUMAN REVIEW from an earlier run/scan — never re-propose them (by id or by name) and do not measure them; they are context only.',
     '',
     'SKILL AWARENESS: check `.claude/skills/` for a kpi-sim or uat skill, and the repo root for a `uat/` overlay (characters/, journeys/) or a `kpi-sim/bindings/` directory. If present, follow/reuse them (Characters especially — do not invent a second cast). If absent, use the embedded procedure below — do NOT install anything.',
     '',

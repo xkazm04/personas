@@ -170,9 +170,12 @@ pub async fn dev_tools_kpi_sim_prepare(
     }
 
     let kpis = repo::list_kpis(&state.db, &project_id, None)?;
+    // Proposed KPIs ride along (status distinguishes them) so a repeat run
+    // KNOWS what already awaits review and never re-proposes it — the first
+    // L1→L2 comparison produced duplicate new-KPI proposals without this.
     let managed: Vec<_> = kpis
         .iter()
-        .filter(|k| k.status == "active" || k.status == "paused")
+        .filter(|k| k.status == "active" || k.status == "paused" || k.status == "proposed")
         .collect();
     let snapshot = json!({
         "generated_at": chrono::Utc::now().to_rfc3339(),
@@ -386,6 +389,16 @@ pub async fn dev_tools_kpi_sim_ingest(
                         continue;
                     }
                 };
+                // Name-level dedup across runs — the queue must never collect
+                // the same proposal twice (any status counts: a proposed twin
+                // is pending, an archived twin was rejected).
+                if kpis.iter().any(|k| k.name.trim().eq_ignore_ascii_case(np.name.trim())) {
+                    summary.skipped.push(format!(
+                        "proposal[{i}]: a KPI named '{}' already exists in this project",
+                        np.name.trim()
+                    ));
+                    continue;
+                }
                 let rationale = format!(
                     "[simulation {sim_run_id}] {}{}",
                     p.rationale.clone().unwrap_or_default(),

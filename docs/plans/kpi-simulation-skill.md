@@ -179,6 +179,43 @@ tier for class-1 procedures only (those are free after adoption).
    result quality over L1 alone — the open question the P3 convergence view
    later answers continuously.
 
+## First L1-vs-L2 comparison (2026-07-23, ai-paralegal, Claude Code CLI engine)
+
+Two live runs over the same 5 managed KPIs (`kpi-sim/runs/2026-07-23-1119` L1;
+`…-1401` L1+L2), both dispatched from the dashboard/Fleet path:
+
+| | L1 (static) | L1+L2 (live) |
+|---|---|---|
+| Wall-clock | ~17 min | ~30 min (12 live gens ≈ 14 min) |
+| Measurements | 2 (class-1 commands) | 3 (+ the class-2 bounce-rate 0/9, env `test`, conf 0.5) |
+| Refusals | 3 KPIs honestly unmeasured | same 3-way honesty held |
+| Unique findings | dead-enum KPI, parse zero-blind-spot, unmeasurable trio, zero-citation trust gap, benchmark-calibrated target | everything L1 found (coverage byte-identical — deterministic) **plus** the class L1 is structurally blind to |
+
+**What L2 uniquely bought:** (1) the measurement L1 *refused* to fake — it drove
+the app's real demand-draft LLM call 12× through the repo's own eval-gate
+harness (it correctly chose the documented harness over standing up
+Playwright) and judged real output against the reused uat Characters' bars;
+(2) a genuinely new defect no static pass could see — 6/9 raw drafts carry
+reviewer-visible preamble/"Notes for attorney review" trailers that every hard
+gate misses and the critique pass doesn't strip (clean in PDF, rendered on
+screen/copy/docx); (3) an evidence-backed *positive* verdict (senior-grade
+substance, real citations, prompt-injection resisted) that L1 could only
+hypothesize; (4) live-web benchmark validation (Princeton CITP 6.57 % floor →
+the 5 % target is aggressive-but-credible).
+
+**Verdict:** L1 is the right default cadence — cheap, catches structural and
+measurability gaps, never fabricates. L2 is not "better L1" but a different
+instrument: it measures *actual output quality of the AI surfaces*, the one
+thing this product category lives on. Run L1 routinely, L2 deliberately (per
+release, or whenever class-2 KPIs carry the decision). Caveat: L2 was cheap
+here *because the repo ships an eval harness* — repos without one degrade to
+L1 + a "no live-simulation path" finding, per doctrine.
+
+**Fixed from live testing:** idle-parked sessions (auto-ingest on idle, honest
+"finished" label, Re-run reclaims the dispatch key) and duplicate proposals on
+re-runs (snapshot now carries `proposed` KPIs as never-re-propose context;
+ingest dedupes new-KPI names against all statuses).
+
 ## Open questions
 
 1. **Where does class-2 L2 (live harness) run?** The app instance is a
