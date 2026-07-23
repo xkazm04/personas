@@ -2,6 +2,10 @@
 
 ## Active
 
+### passport-onboard-politicas — 2nd field run of /passport-onboard on fresh repo C:\Users\mkdol\dolla\politicas — session fable-5
+- Started: 2026-07-23. Status: started. Project registered in app as 674f1dd5 (politicas).
+- Paths: edits land in the politicas repo (own git); Personas side only this ledger + possible skill refinements.
+
 
 
 ### kpi-simulation-p0p2 — docs/plans/kpi-simulation-skill.md execution: env axis on measurements + env switcher UI + kpi-sim skill/dispatch/ingest — session fable-5
