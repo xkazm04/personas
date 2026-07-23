@@ -266,6 +266,11 @@ panic = "unwind"
 
 [profile.dev]
 opt-level = 0
+# Line tables only: full debug info overflowed the MSVC linker's 4GB PDB limit
+# (LNK1140) once the crate graph grew past ~760 crates (2026-07-23). Backtraces
+# and panic locations stay precise; only native-debugger variable inspection is
+# lost. Also cuts link time and target-dir weight.
+debug = "line-tables-only"
 
 # Compile all dependencies with basic optimizations even in dev.
 # Barely slows initial compile (cached after first build), but makes
