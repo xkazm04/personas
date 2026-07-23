@@ -1153,6 +1153,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+### fleet-perf-fixes — fleet grid scan remediation (3 findings) — session fable-5 — COMPLETED
+- Started+completed 2026-07-23. Commit: 3ac5c15ef (cherry-picked from worktree-fleet-perf).
+- Scan verdict: module already scale-optimized (scale-tiers work held up) — only 3 grounded findings. Shipped: useNowTick → ONE shared module ticker via useSyncExternalStore (was one setInterval per card/tile/banner instance, unsynchronized 30s re-render waves) · FleetSessionCard provenance tooltip computed lazily on pointer-enter (cards no longer re-render every 30s for hover-only text) · FleetSessionInsights 15s TTL cache keyed by claudeSessionId (was refetching on every focus switch + terminal↔insights toggle; refresh/retry bypass; __resetInsightsCacheForTests for vitest).
+- LIVE SMOKE (partial): fleet page mounts with the new code, 3 real session rows render, no errors. Insights-toggle + hover-provenance live drives were interrupted — the operator started actively using the app mid-smoke (fresh HMR edits from another session appeared); structural changes are gate-verified instead. Smoke debt: insights cache hit + hover tooltip on a live session.
+- Gates: tsc 0 · vitest FULL 2541/2541 (insights suite updated) · eslint 0 errors.
+- Paths: src/features/plugins/fleet/{relativeAgo.ts, FleetSessionCard.tsx, sub_grid/FleetSessionInsights.tsx, sub_grid/__tests__/FleetSessionInsights.test.tsx}.
+
 ### wall-perf-fixes — passport wall data-loading remediation (6 findings) — session fable-5 — COMPLETED
 - Started+completed 2026-07-23. Commit: d915d211a (cherry-picked from worktree-mm-wall).
 - Shipped: module-scope stale-while-revalidate snapshot cache (remounts paint instantly; <60s cache skips rebuild — Factory↔Mastermind toggles cost 0 IPC) · phase-0 metadata-only paint (first load renders covers after 2 IPC, skills×N no longer gates) · ProjectsLayer headerStats+favicon effects keyed on slug/root signature (were re-running per publish phase — 2-3× per mount) · both fan-outs bounded via mapWithConcurrency(5) + module-scope favicon cache per root_path · usePassportFleetSessions store-event-driven (5s listSessions poll DELETED; dispatchRowToFleet keeps its one-shot guard) · telemetry sweep (doc-rot/mem-health/skill mining) throttled to 15min/app-session.
