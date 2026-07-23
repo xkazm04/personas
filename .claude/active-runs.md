@@ -2,11 +2,6 @@
 
 ## Active
 
-### brainiac-p1-skill-usage — P1 of docs/plans/brainiac-adoption-skills-memory-docs.md: skill registry + usage events + transcript mining + dormancy — session fable-5
-- Started: 2026-07-23. Status: started.
-- Paths: src-tauri/src/commands/infrastructure/skill_usage.rs (NEW), src-tauri/src/db/migrations/incremental.rs (3 tables), src-tauri/src/lib.rs (registration), src-tauri/src/commands/infrastructure/dev_tools.rs (pub the encoder only), src/api/devTools/devTools.ts, src/features/teams/sub_factory/passport/{usePassportData,passportModel,passportRows,ProjectsPassportWall,improve/{ImproveContext,SkillsModal}}, findings emitter (skill_dormant).
-- NOTE to concurrent env/cost session: shared-file overlap on usePassportData/SkillsModal/wall counts renderer — my hunks land per the running land-together protocol.
-- Main checkout. Ledger NOT staged separately.
 
 
 
@@ -1078,6 +1073,13 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### brainiac-p1-skill-usage — Brainiac-adoption P1: skill usage telemetry via transcript mining + dormancy — session fable-5
+- Started+completed 2026-07-23. Commits: `9fed7a945` (P1 core) + `643119a79` (first_seen_at from filesystem creation time — the fix that made dormancy honest on day one).
+- Shipped: skill_registry/skill_revisions/skill_usage_events/skill_scan_state (migration `skill_usage_telemetry`; events APPEND-ONLY, deduped session+skill+normalized-ts); skill_usage_scan mines ~/.claude/projects JSONLs incrementally (Skill tool_use + <command-name> markers, 48MB/call budget + watermarks, built-ins filtered by registry join); skill_usage_overview serves 30d invokes + age-guarded dormancy (project rows count their project, global rows count fleet-wide). Wall: amber dormant tally in the skills counts cell (warn keeps full ink); SkillsModal: per-skill usage lines, adopt-candidate source liveliness, dormant header tally, hash-based share dedup ("library already decided"). Findings: skill_dormant origin (6th; Rust+TS allowlists + badge + hand-synced DevIdea binding), E6 emitter oldest-first top-3, presence-shaped verify, honest sensor-skip.
+- LIVE-VERIFIED on the real fleet: first full mine ≈96MB → 59 skills tracked, 5 in active use (ship-loop 3×, tiger 3×, prototype 2×…), 40 dormant after the first_seen heal; wall cells render "4 shared · 0 specific · 1 dormant" etc.
+- GOTCHAS: (1) registry rows born "today" made the age guard blind for 30 days — seed first_seen_at from fs creation time and converge existing rows DOWN (monotonic); (2) `window.__TAURI_INTERNALS__.invoke` from harness /eval is the fastest way to live-test a new command without UI wiring; (3) cargo test binaries STILL hit machine-wide STATUS_ENTRYPOINT_NOT_FOUND (since 07-17) — mine_line/encoder tests compile but can't execute.
+- Next: P2 doc-rot scan + doc reads mining; P3 memory claims/TTL/health (plan doc phasing table is the tracker).
 
 ### passport-env-appcost — env-split rows (local/test/prod) + App-cost row w/ agent-created cost file — session fable-5
 - Started 2026-07-22, completed 2026-07-23. Commits: core hunks rode inside `89ae3faf5` (the parallel brainiac-p0 commit swept the shared passport files — land-together protocol, attribution in `0c7289409`'s message) + `0c7289409` (NA-state testid, passportEnvCost.test.ts 8 tests, dev-tools.md wall-narrative section).
