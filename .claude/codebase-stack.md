@@ -196,9 +196,51 @@ Personas orchestrates multi-step / multi-agent work by spawning a **separate
   copies of this doc said these were "NOT captured, prompt-cache effectiveness
   invisible"; that predates the cache-token capture and is no longer true.
 - **Global concurrency cap = 4** (`engine/queue.rs:92` `GLOBAL_MAX_CONCURRENT`).
-- **The in-CLI `Workflow`/`Task` fan-out is exposed but UNUSED** — no `agent_id` /
-  `parent_agent_id` parsing anywhere; OTEL sub-agent spans are wired
-  (`build_cli_args_with_trace`) but the stream/UI doesn't render sub-agent structure.
+- **The in-CLI `Task` fan-out IS used — as the opt-in `deep_fanout` persona
+  parameter (P4).** Corrected in `/research` run 2026-07-23; earlier copies of
+  this doc said "exposed but UNUSED — no `agent_id`/`parent_agent_id` parsing
+  anywhere", which predates P4 shipping. The live surface:
+  - **Opt-in:** a `deep_fanout` boolean in the persona's `parameters` JSON
+    (`engine/prompt/mod.rs::deep_fanout_enabled`) injects `FANOUT_DIRECTIVE`
+    (same file, ~line 92) telling the model to delegate parallel sub-tasks
+    via `Task`. Off by default.
+  - **Capability gate:** `engine/cli_capabilities.rs` probes a bounded
+    `claude -p` (mirroring `build_cli_args`) and reads the `system/init`
+    tool registry → `CliCapabilities { has_workflow, has_task, … }`, cached.
+    `Workflow` is Max/Team-gated, so this must stay a gate, not an assumption.
+  - **Attribution key is `parent_tool_use_id`, not `agent_id`.** Every
+    `assistant`/`user` line carries it: `null` for the root agent, the parent
+    `Task` call's id for a subagent's own messages. `engine/parser.rs`
+    routes those to `StreamLineType::SubagentMessage` so they never render as
+    root-agent output; `system/task_started` + `system/task_notification`
+    become `TaskStarted` / `TaskNotification`. All three reach the frontend as
+    `subagent_started` / `subagent_update` / `subagent_message` structured
+    events and render in `SubagentTree.tsx`.
+  - **`--forward-subagent-text`** (CLI ≥ 2.1.211) is pushed by `cli_args.rs`
+    **only** for `deep_fanout` personas — that flag is what puts a subagent's
+    own text and thinking on the stream at all.
+  - Still open: subagent events are **not persisted**, so a completed
+    execution viewed post-hoc shows an empty fan-out tree. Design + Phase 0
+    empirical data live in `src-tauri/src/engine/p4_fanout_DESIGN.md`.
+  - The CLI's own fan-out governance knobs (`CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`
+     = 20, `CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION` = 200,
+    `CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION` = 200,
+    `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` — nesting OFF by default since
+    2.1.217) are deliberately **NOT pinned**; see the `minimum_version()`
+    narrative in `provider/claude.rs` for the reasoning.
+
+### `classifyLine` is the gate between the legacy text channel and the chat bubble
+
+`src/lib/utils/terminalColors.ts::classifyLine` maps each `executionOutput`
+string to a style, and the chat surfaces (`useExecutionStream` → `ChatTab` /
+`StreamingBubble`) keep only the lines it classifies as `'text'`. It is a
+**prefix matcher**, so anything the Rust side emits without a recognized prefix
+silently becomes chat content. Any /research finding that adds a new runner
+display string must add a matching prefix rule here, or the line leaks into the
+user-visible conversation. Discovered in run 2026-07-23: the P4 `  subagent
+started:` / `  subagent completed` lines had been leaking into the bubble since
+P4 shipped, because no rule covered them (fixed by a `'  subagent'` → `meta`
+rule in the same run).
 
 **Routing implication:** a /research finding about "deeper orchestration" or "token
 efficiency" lands against THIS model. The big lever (consolidate fan-out into one
