@@ -24,7 +24,7 @@ const RING: Array<[number, number]> = [
   [0, -2], [1, -2], [-1, -2], [2, -2],
 ];
 
-export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen }: { island: Island } & IslandCtx) {
+export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   const zoomedIn = bandGte(band, 'near');
@@ -112,7 +112,14 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
       {band !== 'far' && (
         <StatColumns stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />
       )}
-      <FleetBadges fleet={island.fleet} z={z} yWorld={botY + 14} onOpenList={(state, e) => onFleetList(island.slug, state, e)} />
+      <FleetBadges
+        fleet={island.fleet}
+        personas={island.personasRunning}
+        z={z}
+        yWorld={botY + 14}
+        onOpenList={(state, e) => onFleetList(island.slug, state, e)}
+        onOpenPersonas={(e) => onPersonasOpen(island.slug, e)}
+      />
     </g>
   );
 }

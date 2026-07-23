@@ -28,7 +28,7 @@ const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2)
 
 const COPY = { empty: 'not set up' };
 
-export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen }: { island: Island } & IslandCtx) {
+export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   // Cluster extents depend on how many cells are occupied — banner, badges,
@@ -97,7 +97,14 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
       {band !== 'far' && <StatColumns stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />}
-      <FleetBadges fleet={island.fleet} z={z} yWorld={botY + 12} onOpenList={(state, e) => onFleetList(island.slug, state, e)} />
+      <FleetBadges
+        fleet={island.fleet}
+        personas={island.personasRunning}
+        z={z}
+        yWorld={botY + 12}
+        onOpenList={(state, e) => onFleetList(island.slug, state, e)}
+        onOpenPersonas={(e) => onPersonasOpen(island.slug, e)}
+      />
     </g>
   );
 }

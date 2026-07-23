@@ -56,6 +56,9 @@ export interface Island {
   nodes: DimNode[];
   /** Open Fleet CLI sessions working in this project (page attaches them). */
   fleet: FleetNode[];
+  /** Names of personas with an execution in progress for this project's team
+   *  (page attaches them — same persona→team→project join the Monitor uses). */
+  personasRunning: string[];
 }
 
 export interface IslandEdge {
@@ -116,6 +119,8 @@ export interface VariantProps {
   /** Actionable dimension cell clicked — open its Improve popover at the
    *  cursor (same popovers the Passport wall uses). */
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
+  /** In-progress-personas badge clicked — open the persona name list. */
+  onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
 }
 
 // Zoom bands — the single source of truth for level-of-detail. Round-3 split:

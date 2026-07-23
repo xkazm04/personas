@@ -2,6 +2,7 @@
 // Round-5 content: the Passport wall's project column (CoverBody header + the
 // dimension sections in Focus ink) — it fits the width well; scenario-specific
 // content layers come in a later round.
+import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 import { CoverBody, IMPROVABLE_ROWS, InkWallCell } from '@/features/teams/sub_factory/passport/ProjectsPassportWall';
@@ -26,12 +27,16 @@ export function ProjectSidebar({ passport, name, onClose }: {
   const bodySections = SECTIONS.map((s) => ({ ...s, rows: s.rows.filter((r) => !r.headline) }));
 
   return (
-    <aside
-      className="absolute top-0 right-0 bottom-0 w-[320px] z-20 bg-secondary/95 backdrop-blur-sm border-l border-primary/12 shadow-elevation-3 overflow-y-auto animate-in slide-in-from-right duration-200"
+    <motion.aside
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 24 }}
+      transition={{ duration: 0.2, ease: 'linear' }}
+      className="absolute top-0 right-0 bottom-0 w-[320px] z-20 bg-secondary/95 backdrop-blur-sm border-l border-primary/15 shadow-elevation-4 overflow-y-auto"
       data-testid="mm-project-sidebar"
     >
-      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2.5 bg-secondary/95 border-b border-primary/10">
-        <span className="typo-label text-foreground/50 uppercase tracking-wider">{COPY.title}</span>
+      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 bg-secondary/95 border-b border-primary/10">
+        <span className="typo-label text-foreground/90">{COPY.title}</span>
         <button
           type="button"
           onClick={onClose}
@@ -82,6 +87,6 @@ export function ProjectSidebar({ passport, name, onClose }: {
           </>
         )}
       </div>
-    </aside>
+    </motion.aside>
   );
 }

@@ -35,31 +35,32 @@ export function IslandMenu({ island, x, y, onHoverDim, onClose }: {
   const items = [...island.nodes].sort((a, b) => a.label.localeCompare(b.label));
   return (
     <div
-      className="absolute z-30 w-[307px] py-1.5 rounded-card border border-primary/20 bg-secondary/95 shadow-elevation-3 overflow-hidden"
+      className="absolute z-30 w-[307px] rounded-card border border-primary/15 bg-secondary/95 backdrop-blur-sm shadow-elevation-4 overflow-hidden"
       style={{ left: x, top: y }}
       onPointerDown={(e) => e.stopPropagation()}
       onPointerLeave={() => onHoverDim(null)}
       data-testid="mm-island-menu"
     >
-      <div className="px-3 pb-1.5 pt-0.5 border-b border-foreground/10">
-        <span className="typo-caption font-semibold text-foreground truncate block">{island.name}</span>
+      {/* header styled like the app sidebar's section header */}
+      <div className="px-3 py-2 border-b border-primary/10 bg-primary/5">
+        <span className="typo-label text-foreground/90 truncate block">{island.name}</span>
       </div>
-      <ul className="max-h-[300px] overflow-y-auto py-0.5">
+      <ul className="max-h-[300px] overflow-y-auto py-1">
         {items.map((n) => {
           const absent = n.status === 'absent';
           return (
             <li key={n.key}>
               <button
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-primary/10 transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-md typo-body transition-colors text-foreground/70 hover:bg-secondary/40 hover:text-foreground"
                 onMouseEnter={() => onHoverDim(n.key)}
                 onMouseLeave={() => onHoverDim(null)}
                 onClick={onClose}
                 data-testid={`mm-menu-dim-${n.key}`}
               >
                 <MenuGlyph node={n} />
-                <span className={`typo-caption ${absent ? 'text-foreground/50' : 'text-foreground/90'}`}>{n.label}</span>
-                <span className="ml-auto typo-label text-foreground/45 truncate max-w-[160px]" style={absent ? { color: mix('var(--muted-foreground)', 80) } : undefined}>
+                <span className={absent ? 'text-foreground/50' : undefined}>{n.label}</span>
+                <span className="ml-auto typo-caption text-foreground/50 truncate max-w-[150px]" style={absent ? { color: mix('var(--muted-foreground)', 80) } : undefined}>
                   {n.detail ?? (absent ? COPY.empty : '')}
                 </span>
               </button>

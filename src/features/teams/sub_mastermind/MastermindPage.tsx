@@ -8,6 +8,7 @@
 // dimensions per island; Fleet dock nodes open the CLI preview popover.
 // Prototype copy is hardcoded (COPY const) pending consolidation i18n.
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 
 import { getCrossProjectMetadata, listScans, runScan, type CrossProjectMetadataMap } from '@/api/devTools/devTools';
@@ -25,6 +26,7 @@ import { useTauriEvent } from '@/hooks/useTauriEvent';
 import type { DevScan } from '@/lib/bindings/DevScan';
 import { EventName } from '@/lib/eventRegistry';
 import { toastCatch } from '@/lib/silentCatch';
+import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -35,6 +37,7 @@ import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { IdeaScanPopover } from './lib/IdeaScanPopover';
 import { loadPositions, savePositions } from './lib/positions';
+import { PersonaListPopover } from './lib/PersonaListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
 import type { CanvasMode, DimNode, FleetNode } from './lib/types';
@@ -99,7 +102,14 @@ function MastermindInner() {
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(loadHidden);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   const { startBackgroundScan } = useContextScanBackground();
+  // In-progress personas — same sources + persona→team→project join the
+  // Monitor's project columns use (active processes attributed to personas).
+  const agentPersonas = useAgentStore(useShallow((s) => s.personas));
+  const fetchPersonaSummaries = useAgentStore((s) => s.fetchPersonaSummaries);
+  const activeProcesses = useOverviewStore((s) => s.activeProcesses);
+  useEffect(() => { void fetchPersonaSummaries(); }, [fetchPersonaSummaries]);
   const addToast = useToastStore((s) => s.addToast);
   const storeCreateProject = useSystemStore((s) => s.createProject);
   const storeUpdateProject = useSystemStore((s) => s.updateProject);
@@ -200,6 +210,29 @@ function MastermindInner() {
     return m;
   }, [sessions, projects]);
 
+  // Running-persona names per project: process.personaId → persona →
+  // home_team_id → dev project with that team_id.
+  const personasByProject = useMemo(() => {
+    const byId = new Map(agentPersonas.map((p) => [p.id, p]));
+    const namesByTeam = new Map<string, string[]>();
+    const seen = new Set<string>();
+    for (const proc of Object.values(activeProcesses)) {
+      if (proc.status !== 'running' || !proc.personaId || seen.has(proc.personaId)) continue;
+      seen.add(proc.personaId);
+      const persona = byId.get(proc.personaId);
+      const team = persona?.home_team_id;
+      if (!persona || !team) continue;
+      const list = namesByTeam.get(team);
+      if (list) list.push(persona.name);
+      else namesByTeam.set(team, [persona.name]);
+    }
+    const m = new Map<string, string[]>();
+    for (const proj of projects) {
+      if (proj.team_id && namesByTeam.has(proj.team_id)) m.set(proj.id, namesByTeam.get(proj.team_id)!);
+    }
+    return m;
+  }, [agentPersonas, activeProcesses, projects]);
+
   const ideaScanAt = useMemo(() => {
     const m = new Map<string, string | null>();
     for (const [slug, rows] of scansBySlug) m.set(slug, rows[0]?.created_at ?? null);
@@ -215,12 +248,13 @@ function MastermindInner() {
     islands: scene.islands.map((i) => {
       const o = overrides[i.slug];
       const fleet = scene.demo ? i.fleet : fleetByProject.get(i.slug) ?? [];
+      const personasRunning = scene.demo ? i.personasRunning : personasByProject.get(i.slug) ?? [];
       const passport = passports.find((p) => p.identity.slug === i.slug);
       const raw = rawByProject.get(i.slug);
       const nodes = i.nodes.map((n) => ({ ...n, ...dimAction(n.key, passport, raw) }));
-      return { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, nodes };
+      return { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes };
     }),
-  }), [scene, overrides, fleetByProject, passports, rawByProject]);
+  }), [scene, overrides, fleetByProject, personasByProject, passports, rawByProject]);
 
   const onIslandMove = (slug: string, x: number, y: number) =>
     setOverrides((prev) => ({ ...prev, [slug]: { x, y } }));
@@ -312,7 +346,16 @@ function MastermindInner() {
   return (
     <ImproveProvider value={improve}>
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      <Canvas scene={canvasScene} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} onDimOpen={onDimOpen} />
+      <Canvas
+        scene={canvasScene}
+        mode={mode}
+        onIslandMove={onIslandMove}
+        onIslandCommit={onIslandCommit}
+        onFleetOpen={setPreviewId}
+        onProjectOpen={setOpenSlug}
+        onDimOpen={onDimOpen}
+        onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
+      />
 
       {/* prototype-only variant switcher */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
@@ -334,8 +377,19 @@ function MastermindInner() {
         <FleetPreviewPanel sessionId={previewId} session={previewSession} onClose={() => setPreviewId(null)} />
       )}
 
-      {openIsland && (
-        <ProjectSidebar passport={openPassport} name={openIsland.name} onClose={() => setOpenSlug(null)} />
+      <AnimatePresence>
+        {openIsland && (
+          <ProjectSidebar key="project-sidebar" passport={openPassport} name={openIsland.name} onClose={() => setOpenSlug(null)} />
+        )}
+      </AnimatePresence>
+
+      {personaMenu && (
+        <PersonaListPopover
+          names={positioned.islands.find((i) => i.slug === personaMenu.slug)?.personasRunning ?? []}
+          x={personaMenu.x}
+          y={personaMenu.y}
+          onClose={() => setPersonaMenu(null)}
+        />
       )}
 
       {improvePopup && (improvePopup.standards ? (

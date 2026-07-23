@@ -126,6 +126,7 @@ function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastSca
     blockers: p.automationReadiness.blockers.length + p.productionReadiness.blockers.length,
     nodes: [...dimNodes(p, kpi), ideasNode(lastScanAt)],
     fleet: [],
+    personasRunning: [],
   };
 }
 
@@ -168,12 +169,19 @@ export function deriveScene(
 
 // -- demo scene (rendered only when no projects have been cross-scanned) ------
 
+// Demo in-progress personas so the badge + list are evaluable without live data.
+const DEMO_PERSONAS: Record<string, string[]> = {
+  'demo-desktop': ['Atlas Writer', 'QA Guardian'],
+  'demo-vibe': ['Context Cartographer'],
+};
+
 type Row = [DimNode['key'], DimStatus, string | null, number, number, (number | null)?];
 const mk = (slug: string, name: string, purpose: string, i: number, state: IslandState,
   autoScore: number, prodScore: number, lifecycle: string, automationLabel: string, blockers: number, rows: Row[], fleet: FleetNode[] = []): Island => ({
   slug, name, purpose, ...spiralPlace(i, slug), state, autoScore, prodScore, lifecycle, automationLabel, blockers,
   nodes: rows.map(([key, status, detail, reached, steps, days]) => ({ key, label: LABEL[key], status, detail, reached, steps, days: days ?? null })),
   fleet,
+  personasRunning: DEMO_PERSONAS[slug] ?? [],
 });
 
 function demoScene(): Scene {

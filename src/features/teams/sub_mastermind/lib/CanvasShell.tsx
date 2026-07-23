@@ -4,6 +4,7 @@
 // edit-first — groups move/resize inline (GroupLayer owns that), the connect
 // tool links projects via island taps, headers open the project sidebar.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { mix } from './ink';
 import { loadGroups, saveGroups } from './groups';
@@ -51,9 +52,11 @@ export interface IslandCtx {
   onFleetList: (slug: string, state: string, e: React.MouseEvent) => void;
   /** Actionable dimension cell clicked — page opens its Improve popover. */
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
+  /** In-progress-personas badge clicked — page opens the persona list. */
+  onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -202,7 +205,8 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
 
   const onIslandFocus = (slug: string) => {
     const i = bySlug.get(slug);
-    if (i) fit({ minX: i.x - 480, maxX: i.x + 480, minY: i.y - 400, maxY: i.y + 400 });
+    // Linear tween to the island — no sudden jump (double-click zoom brief).
+    if (i) fit({ minX: i.x - 480, maxX: i.x + 480, minY: i.y - 400, maxY: i.y + 400 }, true);
   };
 
   // Group mode: left-drag draws; middle-drag still pans (forwarded to camera).
@@ -333,25 +337,36 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
             clickable={mode === 'edit' || mode === 'connect'}
             onEdit={setEditingLink}
           />
-          {scene.islands.map((i) =>
-            renderIsland(i, {
-              z: cam.z,
-              band,
-              mode,
-              dimmed: lit !== null && !lit.has(i.slug),
-              onHover: setHover,
-              onIslandMove,
-              onIslandCommit,
-              onFleetOpen,
-              onIslandTap,
-              onConnectStart,
-              onIslandFocus,
-              onIslandMenu,
-              highlightKey: highlight?.slug === i.slug ? highlight.key : null,
-              onFleetList,
-              onDimOpen,
-            }),
-          )}
+          <AnimatePresence>
+            {scene.islands.map((i) => (
+              <motion.g
+                key={i.slug}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25, ease: 'linear' }}
+              >
+                {renderIsland(i, {
+                  z: cam.z,
+                  band,
+                  mode,
+                  dimmed: lit !== null && !lit.has(i.slug),
+                  onHover: setHover,
+                  onIslandMove,
+                  onIslandCommit,
+                  onFleetOpen,
+                  onIslandTap,
+                  onConnectStart,
+                  onIslandFocus,
+                  onIslandMenu,
+                  highlightKey: highlight?.slug === i.slug ? highlight.key : null,
+                  onFleetList,
+                  onDimOpen,
+                  onPersonasOpen,
+                })}
+              </motion.g>
+            ))}
+          </AnimatePresence>
           <NoteLayer notes={notes} z={cam.z} mode={mode} onNotesChange={commitNotes} onEdit={setEditingNote} />
           {/* connect overlay — ABOVE the islands so source/target/rubber are
               unmistakable (the round-5 under-island ring was barely visible) */}
@@ -367,7 +382,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
       </svg>
 
       <ZoomBadge z={cam.z} />
-      <ZoomControls onZoomBy={zoomBy} onFit={() => fit(sceneBounds(scene.islands))} />
+      <ZoomControls onZoomBy={zoomBy} onFit={() => fit(sceneBounds(scene.islands), true)} />
 
       {/* inline label editor for the group being named/renamed */}
       {editingGroup && (
