@@ -2,12 +2,6 @@
 
 ## Active
 
-### kpi-sim-p3-remainder — predict mode + sim-suggestions adoption path (autopilot cadence loop) — session opus-4-8[1m]
-- Started: 2026-07-23. Status: code complete, gates green, live-verified. Frontend-only (no Rust/schema — deliberately, to avoid the concurrent passport-wall-extensions session on db/models/repos).
-- Paths: src/features/teams/sub_kpis/{kpiSimPrompt.ts (predict mode), KpiSimControl.tsx (predict button + mode-param dispatch), KpiSimSuggestions.tsx NEW, KPIDashboard.tsx (mount suggestions), __tests__/kpiSimPrompt.test.ts}, src/i18n/locales/** (kpis.predict_*/suggest_* — 11 keys ×13 locales), docs/{plans/kpi-simulation-skill.md, features/teams/kpis.md}.
-- Reuses existing commands only (updateKpi, listIdeas, acceptIdea, rejectIdea, kpiSimPrepare/Ingest) — no new IPC. Live-verified: predict button renders; suggestions panel shows the 2 actionable kpi_sim findings (10 informational filtered); Apply moved Sign-Off-Age target 2→3, finding→accepted, panel 2→1.
-- Main checkout. Ledger NOT staged separately.
-
 ### passport-wall-extensions — stack-first + framework versions + Data-analysis/Support dimensions — session fable-5
 - Started: 2026-07-23. Status: COMPLETED — commit `c2a194f36` on master (UNPUSHED; tree carries the kpi-sim session's in-flight sub_kpis TS errors, so pre-push typecheck would fail — push after their entry lands).
 - Shipped: (1) Stack section leads the Compare matrix. (2) Frameworks row = real names+versions from a new RepoEvidence.frameworks probe (package.json exact deps incl. Next.js/Nuxt + Cargo.toml Tauri/Axum/Actix; clean_semver → "Next.js 16.2"); context-scan prompt + detect_tech_layers updated; techIcons residual join is whitespace-based (version dots survive). (3) Data analysis row (Tooling): user-declared related data-processing projects via DataLinksPopover → new dev_projects.data_links JSON column; picker lists ALL registered projects (listProjects, wider than the cross-scanned wall). DECISION (user): manual link only — no scan detection; verified NO code evidence of Brainiac↔Pumper exists in either repo. (4) Support row (Tooling): channel types (Email/Discord) from new dev_projects.support_credential_id via the standard ConnectorSection bind (discord/gmail/microsoft_outlook); bindField union + engine.setDataLinks added.
@@ -1144,6 +1138,12 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### kpi-sim-p3-remainder — predict mode + sim-suggestions adoption path (autopilot cadence loop) — session opus-4-8[1m]
+- Started+completed 2026-07-23. Commit `019037da5`. Frontend-only (no Rust/schema — deliberately, to stay clear of the concurrent passport-wall-extensions session on db/models/repos).
+- Shipped: (a) **predict mode** = research-only class-3 refresh (`buildKpiPredictPrompt`, zero measurements, benchmark-cited target proposals) behind a "Refresh predictions" button; same ingest contract + dispatch key as the full sim. (b) **KpiSimSuggestions** = the adoption surface closing the "adopted class-1 recipes ride autopilot Measure" loop — surfaces the sim's actionable adopt_measure_config/adjust_target/retire findings (parsed from dev_ideas evidence, origin kpi_sim; informational findings stay in triage) next to their KPIs; one-click Apply → updateKpi (adopt sets measure_kind=codebase + bumps manual cadence→weekly so it rides the free Measure tier) + acceptIdea to resolve; Dismiss → rejectIdea. Reuses existing IPC only.
+- Key insight: codebase KPIs ALREADY auto-measure on the autopilot Measure cadence — the only missing link was the adoption UI, not any engine change. Gotcha: kpi_sim findings split ACTIONABLE (evidence has `kind`+`kpi_id`) vs INFORMATIONAL (evidence has `detail`); panel shows only actionable.
+- Gates: tsc clean, eslint 0 err, vitest 2518/2518, i18n strict+untranslated clean. Live-verified on ai-paralegal: Apply moved Sign-Off-Age target 2→3, finding→accepted, panel 2→1. Prediction ledger = the one open P3 item, deferred until production data accrues.
 
 ### kpi-sim-p3-convergence — sim-vs-real convergence view SHIPPED — session fable-5
 - Started+completed 2026-07-23. Commit `134d7b786`. Detail-modal story chart: production = solid truth line, sim channel dashed overlay (hollow dots); readout = signed latest gap in KPI units + % of target span + converging/diverging/stable/needs-more verdict across runs (kpiConvergence.ts — nearest-in-time pairing, degenerate span → no invented share; 7 unit tests) + STALE-production nudge into Measure-now. 10 kpis.conv_* keys ×14 locales (3 legit-identical allowlisted). Live-verified on ai-paralegal coverage KPI: "+13.86 % (sim 65.79 · real 51.93 · 77% of target span)" + 42d-stale hint. P3 remainder open: class-1 recipes on autopilot Measure cadence, /predict refresh.
