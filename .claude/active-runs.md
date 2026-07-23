@@ -3,6 +3,12 @@
 ## Active
 
 
+### kpi-simulation-p0p2 — docs/plans/kpi-simulation-skill.md execution: env axis on measurements + env switcher UI + kpi-sim skill/dispatch/ingest — session fable-5
+- Started: 2026-07-23. Status: started.
+- Paths: src-tauri/src/db/migrations/incremental.rs (env column + source CHECK widen on dev_kpi_measurements), src-tauri/src/commands/infrastructure/kpi_sim.rs (NEW: prepare/ingest), src-tauri/src/lib.rs (registration), src-tauri/src/engine/kpi_eval.rs (sim write path, no roll-forward), src/lib/bindings/DevKpiMeasurement.ts (regen), src/api/** (kpi sim api), src/features/teams/sub_kpis/{KPIDashboard,KpiDetailModal,useKpiDetail,kpiSim*} (env switcher, dashed sim series, LLM-engine provenance, Simulate dispatch + import), .claude/skills/kpi-sim/ (NEW skill), docs/plans/kpi-simulation-skill.md (decision updates).
+- Main checkout. Ledger NOT staged separately.
+
+
 
 
 
@@ -1074,6 +1080,13 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### brainiac-p3-memory-health — Brainiac-adoption P3: memory dispute claims + recall demotion + knowledge-health snapshots + governed rung — session fable-5
+- Started+completed 2026-07-23. Commit `9c5c57ebd` (66 files — includes the concurrent kpi-sim session's compiling kpi_sim.rs hunks under land-together; their session owns its completion entry).
+- Shipped: memory_claims (open-until-resolved; helpful never opens; memory-level resolution; deprecated archives) + persona_memories.open_claim_count (claims repo = only writer, same-tx) + decay_score dispute penalty (1−0.35·tanh(open/2) — recall demotion AND faster forget, never silent deletion); memory_disputed findings (E9, top-3 most-disputed, dedup memory:<id>, routes to HUMAN resolution — not a Claude-task seed); MemoryClaimsSection in MemoryDetailModal (file wrong/outdated + one-decision resolve; 18 i18n keys × 13 locales, strict clean); memory_health_scan/overview + knowledge_health_snapshots (currency via THE SAME half-life table recall decays by; consistency = disputed drag; governance = proposal backlog vs 7d SLO; composite capped <70 at ≥3 disputes); passport memory row `health N · M disputed` sub-line + GOVERNED rung (curated + fresh team snapshot); memHealth threaded through all projection derives; health scan in the wall's mount sweep.
+- KEY GROUNDING FIND: the plan's valid_to/neglect-sweep was ALREADY IMPLEMENTED in continuous form (category half-life decay + run_lifecycle's working-tier 30d expiry + ACTIVE_CAP) — deviations recorded in plan doc + migration comment instead of building redundant machinery.
+- LIVE-VERIFIED: full claims loop on a real memory (file wrong → counter 1 → memory_disputed_overview row → resolve reverified → counter 0, history clean); 7 team-bound projects snapshotted (scores 98/100/96; 4 teamless honestly skipped); wall renders "Governed · health 100 · 3/3". GOTCHA: concurrent session rebuilds kept wiping #__probe mid-test — re-run after health-until-loop, don't chain sleeps.
+- P0–P3 of the adoption plan COMPLETE. Remaining: P4 advisory extras (contradiction-on-write proposals, doc faithfulness sampling, skill share-mining) — optional, LLM-advisory.
 
 ### brainiac-p2-doc-rot — Brainiac-adoption P2: git doc-rot loop + doc-reads mining + doc_rot findings — session fable-5
 - Started+completed 2026-07-23. Commits: `bb2f11d20` (P2 core) + `b4a6faaa2` (heuristic precision: file refs couple per-file after the first fleet scan marked 78% dirty via directory coupling).
